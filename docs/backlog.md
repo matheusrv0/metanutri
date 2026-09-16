@@ -7,45 +7,49 @@ o que transforma a ferramenta em produto pago · **v2** = app do paciente e miss
 (exige CRN validado, LGPD completa e telenutrição).
 Esforço: P (dias), M (1 a 2 semanas), G (3+ semanas) para um dev solo.
 
+Status revisado em 16/09/2026 contra o código: **pronto** é o que está construído e
+testado. O que ficou de fora está explicado em [pendencias.md](pendencias.md), com o
+motivo — decisão sua ou risco clínico.
+
 | ID | Ideia | Quem / quando | Fase | Esforço | Depende de | Status |
 |---|---|---|---|---|---|---|
-| B-01 | Sugerir alimentos que cobrem o micronutriente que falta ("cobrir") | conversa original; confirmada pela nutri em 15/09 ("ajuda enorme") | MVP | M | B-02, tabela de alimentos, DRI | no protótipo v1 |
-| B-02 | Perfil do caso com sexo, idade, peso, altura e nível de atividade; cálculo de TMB e GET com fórmula escolhível | nutri, 15/09 08:35 | MVP | P | — | no protótipo v2 |
-| B-03 | Entrada rápida de alimentos: digitar "150 arroz int" e ver opções na hora ("escrita inteligente") | nutri, 15/09 09:45 | MVP | M | tabela de alimentos; medidas caseiras (B-04) | no protótipo v3 |
-| B-04 | Medidas caseiras ("2 colheres de arroz") convertidas para gramas, e o inverso para escrever o plano em medida caseira | derivada da B-03; o modelo do professor exige medida caseira (15/09) | **MVP** (subiu) | M | tabela POF/IBGE de medidas | ideia |
-| B-05 | Fluxo antes dos micros: anamnese resumida e medidas (antropometria) do paciente, porque a ferramenta é complementar e "isso precisa ser antes de chegar na distribuição de micro" | nutri, 15/09 12:48 | MVP (versão mínima) / MVP+ (completa) | mínima P, completa G | B-02 | ideia |
-| B-06 | Alertas de diretriz: condição clínica marcada na anamnese (ex.: doença renal crônica) gera alerta quando um nutriente passa do recomendado (ex.: potássio) | nutri, 15/09 12:49 | MVP+ | M para 5 condições; G para cobertura ampla | B-05 (anamnese com condições), tabela condição → limite com fonte | ideia |
-| B-07 | Painel de distribuição de macros: % de kcal de proteína, carboidrato e gordura, metas por faixa (e proteína em g/kg), para saber se "já coloquei a quantidade que precisa" | nutri, 15/09 12:50 | MVP | P | B-02 | ideia |
-| B-08 | Substituições: "Substituto 1" e "Substituto 2" por refeição com porção equivalente (por proteína e kcal, mantendo o micro crítico); no futuro, o paciente troca sozinho no app | nutri, 15/09 12:53; o modelo do professor exige 2 substitutos por refeição (15/09) | **MVP** na versão simples (estudante escolhe o substituto, sistema calcula a porção) · paciente: v2 | M (nutri) / G (paciente) | motor de equivalência; v2 para o lado do paciente | subiu |
-| B-09 | "Refeições livres mais controladas": o paciente escolhe entre opções permitidas com limites (kcal, grupos), em vez de refeição livre solta | nutri, 15/09 12:54 | v2 | M | app do paciente, B-08 | ideia |
-| B-10 | Missões diárias geradas do plano, com sequências e progressão semanal; painel de adesão para o nutri | conversa original | v2 | G | CRN validado, LGPD, TCLE, app do paciente | ideia |
-| B-11 | Exportar para **Word (.docx)** em dois formatos: (a) "Aconselhamento Nutricional" no modelo do professor (cabeçalho do paciente, antropometria, refeições por horário com Principal + Substituto 1 + Substituto 2 em medida caseira, orientações, receitas); (b) memorial de cálculo com kcal, macros e adequação de micros (RDA ou EAR). PDF fica como opção secundária | brainstorming; corrigido pela estudante em 15/09; modelo em `docs/modelos/modelo_planejamento_estagio.docx` | MVP | M | B-01, B-04, B-07, B-08 | reescrito com o modelo em mãos |
-| B-12 | Modo estudante: paciente fictício ou "eu mesmo", sem dados de terceiros | pesquisa legal (Lei 8.234/1991) | MVP | P | — | decisão tomada |
-| B-13 | Limite de adequação com presets "Individual: 90% da RDA" e "Coletivo: 50% da EAR", mais "Personalizado" (porcentagem e referência livres); alerta de UL | estudante, 15/09 (regra real da faculdade; o "75%" não era a regra acadêmica; confirmado: coletivo = EAR, individual = RDA) | MVP | P | tabela DRI com EAR além de RDA | confirmado |
-| B-14 | Extensão da base com USDA (domínio público) para B12, folato, vitaminas D e E, que a TACO não tem; TBCA (USP) só se um dia valer o esforço de pedir licença | pesquisa | MVP+ | M | mapeamento alimento TACO ↔ USDA | ideia |
-| B-15 | Modo estágio: estudante monta o plano, preceptora (com CRN) revisa e aprova; histórico de revisões | estudante, 15/09 (já atende no estágio com preceptora) | v2 | G | dados de paciente real, LGPD, CRN validado | ideia |
-| B-16 | Fatores de atividade editáveis, com o conjunto que a faculdade usa com Mifflin como padrão: sedentário 1,2 · pouco ativo 1,37 · moderadamente ativo 1,55 · muito ativo 1,7 · extremamente ativo 1,9; o nutri pode trocar o conjunto ou digitar o fator ("vai da conduta") | estudante, 15/09 | MVP | P | B-02 | confirmado |
-| B-17 | Cabeçalho do caso no padrão do estágio: diagnóstico clínico, data da consulta, ocupação, estagiário(a), preceptor(a); antropometria básica (IMC, circunferência da cintura e da panturrilha com referência e diagnóstico) | modelo do professor, 15/09 | MVP (versão mínima da B-05) | P | B-05 | ideia |
-| B-18 | Refeições por horário com nome padrão (6:00 desjejum, 9:00 lanche da manhã, 12:00 almoço, 16:00 lanche da tarde, 19:00 jantar, 21:00 ceia), editáveis | modelo do professor, 15/09 | MVP | P | — | ideia |
-| B-19 | Conta de usuário: cadastro por e-mail e Google, confirmação e onboarding de três perguntas (nome, estudante ou formada, CRN) | revisão de produto, 15/09 | SaaS | M | back-end (Supabase) | ideia |
-| B-20 | Assinatura e cobrança: três planos, teste de 14 dias sem cartão, Pix e cartão, upgrade e cancelamento em dois cliques | revisão de produto, 15/09 | SaaS | M | B-19 | ideia |
-| B-21 | Paciente como entidade própria, separado de atendimento e de plano; ficha, histórico e evolução | revisão de produto, 15/09 | SaaS | G | B-19, LGPD | ideia |
-| B-22 | Prescrição rápida: montar a dieta sem nenhuma medida, com meta de energia digitada; antropometria escondida e botão para virar atendimento completo | revisão de produto, 15/09 | MVP+ | M | — | ideia |
-| B-23 | Dieta em PDF de uma página, para entregar no celular do paciente | revisão de produto, 15/09 | MVP+ | P | B-11 | ideia |
-| B-24 | Entrega ao paciente por link privado com prazo de validade, com refeições, substitutos e lista de compras | revisão de produto, 15/09 | v2 | G | B-21, LGPD | ideia |
-| B-25 | Cadastro de produto industrializado pelo rótulo, com porção declarada e medida caseira | revisão de produto, 15/09 | MVP+ | M | — | ideia |
-| B-26 | Selo de completude por alimento (completo, parcial, mínimo) e aviso quando o plano usa alimento parcial | revisão de produto, 15/09; base tem só 6 de 597 alimentos completos | MVP+ | P | B-14 | ideia |
-| B-27 | Modelos de plano por objetivo e salvar plano existente como modelo | revisão de produto, 15/09 | MVP+ | M | — | ideia |
-| B-28 | Lista de substituições por grupo de equivalência, anexada à dieta | revisão de produto, 15/09 | MVP+ | M | B-08 | ideia |
-| B-29 | Composição corporal: dobras cutâneas por protocolo e bioimpedância | revisão de produto, 15/09 | MVP+ | M | B-05 | ideia |
-| B-30 | Restrições e alergias no paciente, filtrando as sugestões do cobrir | revisão de produto, 15/09 | MVP+ | P | B-21 | ideia |
-| B-31 | Favoritos de alimentos e ordenação por uso | revisão de produto, 15/09 | MVP+ | P | — | ideia |
+| B-01 | Sugerir alimentos que cobrem o micronutriente que falta ("cobrir") | conversa original; confirmada pela nutri em 15/09 ("ajuda enorme") | MVP | M | B-02, tabela de alimentos, DRI | **pronto** |
+| B-02 | Perfil do caso com sexo, idade, peso, altura e nível de atividade; cálculo de TMB e GET com fórmula escolhível | nutri, 15/09 08:35 | MVP | P | — | **pronto** |
+| B-03 | Entrada rápida de alimentos: digitar "150 arroz int" e ver opções na hora ("escrita inteligente") | nutri, 15/09 09:45 | MVP | M | tabela de alimentos; medidas caseiras (B-04) | **pronto** |
+| B-04 | Medidas caseiras ("2 colheres de arroz") convertidas para gramas, e o inverso para escrever o plano em medida caseira | derivada da B-03; o modelo do professor exige medida caseira (15/09) | **MVP** (subiu) | M | tabela POF/IBGE de medidas | **pronto** |
+| B-05 | Fluxo antes dos micros: anamnese resumida e medidas (antropometria) do paciente, porque a ferramenta é complementar e "isso precisa ser antes de chegar na distribuição de micro" | nutri, 15/09 12:48 | MVP (versão mínima) / MVP+ (completa) | mínima P, completa G | B-02 | **pronto** |
+| B-06 | Alertas de diretriz: condição clínica marcada na anamnese (ex.: doença renal crônica) gera alerta quando um nutriente passa do recomendado (ex.: potássio) | nutri, 15/09 12:49 | MVP+ | M para 5 condições; G para cobertura ampla | B-05 (anamnese com condições), tabela condição → limite com fonte | depende de revisão clínica |
+| B-07 | Painel de distribuição de macros: % de kcal de proteína, carboidrato e gordura, metas por faixa (e proteína em g/kg), para saber se "já coloquei a quantidade que precisa" | nutri, 15/09 12:50 | MVP | P | B-02 | **pronto** |
+| B-08 | Substituições: "Substituto 1" e "Substituto 2" por refeição com porção equivalente (por proteína e kcal, mantendo o micro crítico); no futuro, o paciente troca sozinho no app | nutri, 15/09 12:53; o modelo do professor exige 2 substitutos por refeição (15/09) | **MVP** na versão simples (estudante escolhe o substituto, sistema calcula a porção) · paciente: v2 | M (nutri) / G (paciente) | motor de equivalência; v2 para o lado do paciente | **pronto** |
+| B-09 | "Refeições livres mais controladas": o paciente escolhe entre opções permitidas com limites (kcal, grupos), em vez de refeição livre solta | nutri, 15/09 12:54 | v2 | M | app do paciente, B-08 | depende do app do paciente |
+| B-10 | Missões diárias geradas do plano, com sequências e progressão semanal; painel de adesão para o nutri | conversa original | v2 | G | CRN validado, LGPD, TCLE, app do paciente | depende do app do paciente |
+| B-11 | Exportar para **Word (.docx)** em dois formatos: (a) "Aconselhamento Nutricional" no modelo do professor (cabeçalho do paciente, antropometria, refeições por horário com Principal + Substituto 1 + Substituto 2 em medida caseira, orientações, receitas); (b) memorial de cálculo com kcal, macros e adequação de micros (RDA ou EAR). PDF fica como opção secundária | brainstorming; corrigido pela estudante em 15/09; modelo em `docs/modelos/modelo_planejamento_estagio.docx` | MVP | M | B-01, B-04, B-07, B-08 | **pronto** |
+| B-12 | Modo estudante: paciente fictício ou "eu mesmo", sem dados de terceiros | pesquisa legal (Lei 8.234/1991) | MVP | P | — | **pronto** |
+| B-13 | Limite de adequação com presets "Individual: 90% da RDA" e "Coletivo: 50% da EAR", mais "Personalizado" (porcentagem e referência livres); alerta de UL | estudante, 15/09 (regra real da faculdade; o "75%" não era a regra acadêmica; confirmado: coletivo = EAR, individual = RDA) | MVP | P | tabela DRI com EAR além de RDA | **pronto** |
+| B-14 | Extensão da base com USDA (domínio público) para B12, folato, vitaminas D e E, que a TACO não tem; TBCA (USP) só se um dia valer o esforço de pedir licença | pesquisa | MVP+ | M | mapeamento alimento TACO ↔ USDA | não feito de propósito: casar TACO e USDA por nome gera número errado (docs/pendencias.md) |
+| B-15 | Modo estágio: estudante monta o plano, preceptora (com CRN) revisa e aprova; histórico de revisões | estudante, 15/09 (já atende no estágio com preceptora) | v2 | G | dados de paciente real, LGPD, CRN validado | parcial: o campo Preceptor(a) e a linha de responsabilidade existem; revisão com aprovação, não |
+| B-16 | Fatores de atividade editáveis, com o conjunto que a faculdade usa com Mifflin como padrão: sedentário 1,2 · pouco ativo 1,37 · moderadamente ativo 1,55 · muito ativo 1,7 · extremamente ativo 1,9; o nutri pode trocar o conjunto ou digitar o fator ("vai da conduta") | estudante, 15/09 | MVP | P | B-02 | **pronto** |
+| B-17 | Cabeçalho do caso no padrão do estágio: diagnóstico clínico, data da consulta, ocupação, estagiário(a), preceptor(a); antropometria básica (IMC, circunferência da cintura e da panturrilha com referência e diagnóstico) | modelo do professor, 15/09 | MVP (versão mínima da B-05) | P | B-05 | **pronto** |
+| B-18 | Refeições por horário com nome padrão (6:00 desjejum, 9:00 lanche da manhã, 12:00 almoço, 16:00 lanche da tarde, 19:00 jantar, 21:00 ceia), editáveis | modelo do professor, 15/09 | MVP | P | — | **pronto** |
+| B-19 | Conta de usuário: cadastro por e-mail e Google, confirmação e onboarding de três perguntas (nome, estudante ou formada, CRN) | revisão de produto, 15/09 | SaaS | M | back-end (Supabase) | depende de decisão sua (docs/pendencias.md) |
+| B-20 | Assinatura e cobrança: três planos, teste de 14 dias sem cartão, Pix e cartão, upgrade e cancelamento em dois cliques | revisão de produto, 15/09 | SaaS | M | B-19 | depende de decisão sua (docs/pendencias.md) |
+| B-21 | Paciente como entidade própria, separado de atendimento e de plano; ficha, histórico e evolução | revisão de produto, 15/09 | SaaS | G | B-19, LGPD | **pronto** |
+| B-22 | Prescrição rápida: montar a dieta sem nenhuma medida, com meta de energia digitada; antropometria escondida e botão para virar atendimento completo | revisão de produto, 15/09 | MVP+ | M | — | **pronto** |
+| B-23 | Dieta em PDF de uma página, para entregar no celular do paciente | revisão de produto, 15/09 | MVP+ | P | B-11 | **pronto** |
+| B-24 | Entrega ao paciente por link privado com prazo de validade, com refeições, substitutos e lista de compras | revisão de produto, 15/09 | v2 | G | B-21, LGPD | depende de decisão sua (docs/pendencias.md) |
+| B-25 | Cadastro de produto industrializado pelo rótulo, com porção declarada e medida caseira | revisão de produto, 15/09 | MVP+ | M | — | **pronto** |
+| B-26 | Selo de completude por alimento (completo, parcial, mínimo) e aviso quando o plano usa alimento parcial | revisão de produto, 15/09; base tem só 6 de 597 alimentos completos | MVP+ | P | B-14 | parcial: a falta de dado aparece por nutriente (travessão e nota), sem selo por alimento |
+| B-27 | Modelos de plano por objetivo e salvar plano existente como modelo | revisão de produto, 15/09 | MVP+ | M | — | **pronto** |
+| B-28 | Lista de substituições por grupo de equivalência, anexada à dieta | revisão de produto, 15/09 | MVP+ | M | B-08 | parcial: substituto por refeição está pronto; falta a lista por grupo anexada ao documento |
+| B-29 | Composição corporal: dobras cutâneas por protocolo e bioimpedância | revisão de produto, 15/09 | MVP+ | M | B-05 | **pronto** |
+| B-30 | Restrições e alergias no paciente, filtrando as sugestões do cobrir | revisão de produto, 15/09 | MVP+ | P | B-21 | **pronto** |
+| B-31 | Favoritos de alimentos e ordenação por uso | revisão de produto, 15/09 | MVP+ | P | — | **pronto** |
 | B-32 | Preparações e receitas com ingredientes, rendimento e valor por porção | revisão de produto, 15/09 | MVP+ | M | — | ideia |
-| B-33 | Marca do profissional nos documentos: logo, cor e assinatura digitalizada | revisão de produto, 15/09 | SaaS | P | B-19 | ideia |
-| B-34 | Painel inicial com pendências do dia, planos recentes e os dois botões de criação | revisão de produto, 15/09 | SaaS | P | B-21 | ideia |
-| B-35 | LGPD: consentimento, exportação, exclusão de conta e registro de acesso a dado de paciente | revisão de produto, 15/09 | SaaS | M | B-21 | obrigatória antes de dado real |
-| B-36 | Ranking do cobrir por uso comum, para não sugerir sarapatel e caranguejo | revisão de produto, 15/09 | MVP+ | P | B-01 | ideia |
-| B-37 | Renomear caso para paciente e atendimento no produto inteiro | revisão de produto, 15/09 | MVP+ | P | B-21 | ideia |
+| B-33 | Marca do profissional nos documentos: logo, cor e assinatura digitalizada | revisão de produto, 15/09 | SaaS | P | B-19 | parcial: logo e linha de responsabilidade na folha do paciente; cor da marca não |
+| B-34 | Painel inicial com pendências do dia, planos recentes e os dois botões de criação | revisão de produto, 15/09 | SaaS | P | B-21 | **pronto** |
+| B-35 | LGPD: consentimento, exportação, exclusão de conta e registro de acesso a dado de paciente | revisão de produto, 15/09 | SaaS | M | B-21 | obrigatória antes de dado real (docs/pendencias.md) |
+| B-36 | Ranking do cobrir por uso comum, para não sugerir sarapatel e caranguejo | revisão de produto, 15/09 | MVP+ | P | B-01 | **pronto** |
+| B-37 | Renomear caso para paciente e atendimento no produto inteiro | revisão de produto, 15/09 | MVP+ | P | B-21 | **pronto** |
 
 ## Origem das ideias B-19 a B-37
 
