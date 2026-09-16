@@ -59,17 +59,17 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara }: TelaPainelPr
           </div>
         </Card>
 
-        <Card className="gap-0 p-0">
+        <Card className="gap-0 self-start p-0">
           <ul className="grid grid-cols-3">
             {numeros.map((n, i) => (
               <li key={n.rotulo} className={i > 0 ? 'border-l border-fio' : ''}>
                 <button
                   type="button"
                   onClick={n.ir}
-                  className="flex w-full flex-col gap-1 px-4 py-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full flex-col gap-0.5 px-4 py-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
+                  <span className="numeros font-titulo text-3xl leading-none font-bold text-heading">{n.valor}</span>
                   <span className="rotulo">{n.rotulo}</span>
-                  <span className="numeros font-titulo text-2xl font-bold text-heading">{n.valor}</span>
                 </button>
               </li>
             ))}

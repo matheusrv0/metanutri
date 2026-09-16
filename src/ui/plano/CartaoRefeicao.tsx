@@ -115,6 +115,7 @@ export function CartaoRefeicao({
         <EntradaRapida
           rotulo={`Adicionar alimento em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`}
           aoAdicionar={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
+          comAtalhos
         />
 
         {itens.length === 0 ? (

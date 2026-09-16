@@ -123,7 +123,7 @@ function Conteudo() {
 
   if (rota.tela === 'produtos') {
     return (
-      <Estrutura {...base} titulo="Meus produtos" subtitulo="Industrializados cadastrados pelo rótulo">
+      <Estrutura {...base} titulo="Meus produtos" subtitulo="Cadastrados pelo rótulo">
         <TelaProdutos />
       </Estrutura>
     )
@@ -215,7 +215,7 @@ function Conteudo() {
     <Estrutura
       {...base}
       titulo="Planos"
-      subtitulo="Planos alimentares salvos neste aparelho"
+      subtitulo="Salvos neste aparelho"
       acoes={
         <EscolherModo
           aoEscolher={novoCaso}

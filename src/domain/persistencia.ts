@@ -1,5 +1,6 @@
 // Salvamento dos casos no próprio navegador (SPEC CA-49, CA-50, CB-08, CB-09, D-3).
 import { criarCasoVazio } from './caso.ts'
+import { duplicarCaso } from './duplicar.ts'
 import { criarPlanoPadrao, type GerarId } from './plano.ts'
 import type { Caso, Plano } from './tipos.ts'
 
@@ -188,7 +189,7 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
 
     duplicar(id: string): CasoSalvo {
       const original = exigir(id)
-      return salvar({ caso: { ...original.caso, id: gerarId(), nome: `${original.caso.nome.trim() || 'Plano sem nome'} (cópia)` }, plano: original.plano })
+      return salvar(duplicarCaso(original, gerarId, { hoje: agora().slice(0, 10) }))
     },
 
     renomear(id: string, nome: string): CasoSalvo {

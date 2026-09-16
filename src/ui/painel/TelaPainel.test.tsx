@@ -57,8 +57,8 @@ describe('Painel', () => {
   it('conta pacientes e planos, e abre o plano recente', async () => {
     const { aoAbrirPlano, usuario } = montar(true)
     const numeros = screen.getAllByRole('button').map((b) => b.textContent)
-    expect(numeros).toContain('Planos2')
-    expect(numeros).toContain('Pacientes1')
+    expect(numeros).toContain('2Planos')
+    expect(numeros).toContain('1Pacientes')
 
     const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
     expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()

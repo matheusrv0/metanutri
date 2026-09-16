@@ -7,19 +7,12 @@ import { CampoTexto } from '../caso/CampoTexto.tsx'
 import { Alert } from '../componentes/alert.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 import { DialogoProduto } from './DialogoProduto.tsx'
-
-function armazenamento() {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
 
 /** Meus produtos: o que vem de rótulo e não existe na tabela de composição. */
 export function TelaProdutos() {
-  const repositorio = useMemo(() => criarRepositorioProdutos(armazenamento()), [])
+  const repositorio = useMemo(() => criarRepositorioProdutos(armazenamentoLocal()), [])
   const [versao, setVersao] = useState(0)
   const [busca, setBusca] = useState('')
   const [editando, setEditando] = useState<Produto | 'novo' | null>(null)

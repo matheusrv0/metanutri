@@ -81,9 +81,11 @@ describe('repositório de casos', () => {
     const copia = repo.duplicar(a.caso.id)
     expect(copia.caso.id).not.toBe(a.caso.id)
     expect(copia.caso.nome).toBe('Maria (cópia)')
-    expect(copia.plano).toEqual(a.plano)
+    // Mesmas refeições, ids próprios: mexer numa cópia nunca alcança a outra.
+    expect(copia.plano.refeicoes.map((r) => r.nome)).toEqual(a.plano.refeicoes.map((r) => r.nome))
+    expect(copia.plano.refeicoes.map((r) => r.id)).not.toEqual(a.plano.refeicoes.map((r) => r.id))
     expect(repo.listar()).toHaveLength(2)
-    expect(repo.duplicar(repo.criar('  ').caso.id).caso.nome).toBe('Plano sem nome (cópia)')
+    expect(repo.duplicar(repo.criar('  ').caso.id).caso.nome).toBe('Cópia do plano')
   })
 
   it('CB-08: caso excluído em outra aba some da lista desta aba', () => {

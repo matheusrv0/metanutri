@@ -1,4 +1,4 @@
-import { ClipboardList, Plus, Trash, UserRound } from 'lucide-react'
+import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
@@ -25,7 +25,7 @@ interface TelaPacienteProps {
 /** Ficha do paciente: dados, restrições, histórico de planos e evolução do peso. */
 export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
-  const { casos, repositorio: repoCasos } = useCasos()
+  const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
 
   const paciente = repositorio.obter(pacienteId)
@@ -53,6 +53,13 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
         </Button>
       </Card>
     )
+  }
+
+  /** O retorno começa do plano anterior: copia tudo, troca a data e abre a cópia. */
+  const duplicar = (casoId: string) => {
+    const copia = repoCasos.duplicar(casoId)
+    atualizarCasos()
+    aoAbrirPlano(copia.caso.id)
   }
 
   const alterar = (mudanca: Partial<Paciente>) => {
@@ -190,6 +197,10 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
                       {`${p.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · ${formatarAlteracao(p.atualizadoEm).toLowerCase()}`}
                     </p>
                   </div>
+                  <Button size="sm" variant="ghost" onClick={() => duplicar(p.id)} title="Começar o retorno a partir deste plano">
+                    <Copy aria-hidden="true" />
+                    <span className="sr-only">{`Duplicar ${p.nome.trim() || 'plano sem nome'}`}</span>
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => aoAbrirPlano(p.id)}>
                     Abrir
                   </Button>
