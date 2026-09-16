@@ -11,6 +11,9 @@ npm install     # uma vez, baixa as dependências
 npm run dev     # abre em http://localhost:5173
 ```
 
+Na primeira vez, o painel oferece **Ver um plano de exemplo**: um dia inteiro já
+montado, para entender o sistema mexendo nele. Pode apagar depois.
+
 Outros comandos:
 
 | Comando | O que faz |
@@ -34,7 +37,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
    corporal por dobras ou bioimpedância, e o gasto energético com a fórmula à mostra.
 2. **Plano alimentar** — refeições por horário, cada uma com opção principal e dois
    substitutos. Digite `150 arroz integral` e tecle Enter: a medida caseira e as kcal
-   aparecem sozinhas. Os alimentos que você mais usa viram atalho com a porção de sempre.
+   aparecem sozinhas. Os alimentos que você mais usa viram atalho com a porção de sempre,
+   e a busca avisa quando a tabela só tem parte dos nutrientes daquele alimento.
 3. **Adequação** — vitaminas e minerais comparados com a DRI, com o botão **cobrir**,
    que sugere até cinco alimentos de grupos diferentes para fechar a falta.
 
@@ -46,6 +50,9 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Meus produtos** — industrializado não está na tabela de composição. Cadastre pelo
   rótulo, lendo o código de barras pela câmera ou digitando; os dados vêm da Open Food
   Facts para você conferir com a embalagem. Depois ele entra no plano como qualquer alimento.
+- **Trocas** — a folha do paciente sai com uma lista de trocas: mesmo grupo, mesma
+  energia, em medida caseira, respeitando as restrições da ficha. Doce e ultraprocessado
+  não entram como equivalente de comida.
 - **Exportar** — dieta para imprimir (vira PDF pelo próprio navegador), aconselhamento
   em Word no modelo do estágio, memorial de cálculo em Word e a tabela de adequação
   copiada para colar no Word.

@@ -38,9 +38,9 @@ motivo — decisão sua ou risco clínico.
 | B-23 | Dieta em PDF de uma página, para entregar no celular do paciente | revisão de produto, 15/09 | MVP+ | P | B-11 | **pronto** |
 | B-24 | Entrega ao paciente por link privado com prazo de validade, com refeições, substitutos e lista de compras | revisão de produto, 15/09 | v2 | G | B-21, LGPD | depende de decisão sua (docs/pendencias.md) |
 | B-25 | Cadastro de produto industrializado pelo rótulo, com porção declarada e medida caseira | revisão de produto, 15/09 | MVP+ | M | — | **pronto** |
-| B-26 | Selo de completude por alimento (completo, parcial, mínimo) e aviso quando o plano usa alimento parcial | revisão de produto, 15/09; base tem só 6 de 597 alimentos completos | MVP+ | P | B-14 | parcial: a falta de dado aparece por nutriente (travessão e nota), sem selo por alimento |
+| B-26 | Selo de completude por alimento (completo, parcial, mínimo) e aviso quando o plano usa alimento parcial | revisão de produto, 15/09; base tem só 6 de 597 alimentos completos | MVP+ | P | B-14 | **pronto** |
 | B-27 | Modelos de plano por objetivo e salvar plano existente como modelo | revisão de produto, 15/09 | MVP+ | M | — | **pronto** |
-| B-28 | Lista de substituições por grupo de equivalência, anexada à dieta | revisão de produto, 15/09 | MVP+ | M | B-08 | parcial: substituto por refeição está pronto; falta a lista por grupo anexada ao documento |
+| B-28 | Lista de substituições por grupo de equivalência, anexada à dieta | revisão de produto, 15/09 | MVP+ | M | B-08 | **pronto** |
 | B-29 | Composição corporal: dobras cutâneas por protocolo e bioimpedância | revisão de produto, 15/09 | MVP+ | M | B-05 | **pronto** |
 | B-30 | Restrições e alergias no paciente, filtrando as sugestões do cobrir | revisão de produto, 15/09 | MVP+ | P | B-21 | **pronto** |
 | B-31 | Favoritos de alimentos e ordenação por uso | revisão de produto, 15/09 | MVP+ | P | — | **pronto** |
