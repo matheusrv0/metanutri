@@ -1,5 +1,5 @@
-import { Plus } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { LayoutTemplate, Plus } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import {
   adicionarItem,
   adicionarRefeicao,
@@ -12,6 +12,7 @@ import {
 } from '@/domain/plano.ts'
 import type { OpcaoId, Plano } from '@/domain/tipos.ts'
 import { Button } from '../componentes/button.tsx'
+import { DialogoModelos } from '../modelos/DialogoModelos.tsx'
 import { CartaoRefeicao } from './CartaoRefeicao.tsx'
 
 interface TelaPlanoProps {
@@ -26,8 +27,16 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
 /** Etapa 2: refeições do dia com entrada rápida de alimentos (CA-12 a CA-21). */
 export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOpcao }: TelaPlanoProps) {
+  const [modelosAbertos, setModelosAbertos] = useState(false)
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
+          <LayoutTemplate aria-hidden="true" />
+          Modelos de plano
+        </Button>
+      </div>
+
       {plano.refeicoes.map((refeicao) => (
         <CartaoRefeicao
           key={refeicao.id}
@@ -50,6 +59,8 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
         <Plus aria-hidden="true" />
         Adicionar refeição
       </Button>
+
+      <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
     </div>
   )
 }
