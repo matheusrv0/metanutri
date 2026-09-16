@@ -5,7 +5,6 @@ describe('navegação por endereço', () => {
     ['', ROTA_INICIAL],
     ['#/', ROTA_INICIAL],
     ['#/casos', { tela: 'casos' }],
-    ['#/fontes', { tela: 'fontes' }],
     ['#/caso/abc-123', { tela: 'planejador', casoId: 'abc-123', aba: 'caso' }],
     ['#/caso/abc-123/plano', { tela: 'planejador', casoId: 'abc-123', aba: 'plano' }],
     ['#/caso/abc-123/adequacao', { tela: 'planejador', casoId: 'abc-123', aba: 'adequacao' }],
@@ -20,7 +19,6 @@ describe('navegação por endereço', () => {
     const rota = { tela: 'planejador', casoId: 'caso com espaço/barra', aba: 'adequacao' } as const
     expect(lerRota(escreverRota(rota))).toEqual(rota)
     expect(escreverRota({ tela: 'casos' })).toBe('#/casos')
-    expect(escreverRota({ tela: 'fontes' })).toBe('#/fontes')
   })
 })
 

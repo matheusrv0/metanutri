@@ -27,7 +27,7 @@ describe('App: estrutura', () => {
   it('abre em Meus casos, sem item de caso enquanto não há casos', () => {
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Meus casos' })).toBeInTheDocument()
-    expect(menuFixo().getByRole('button', { name: /Meus casos/ })).toHaveAttribute('aria-current', 'page')
+    expect(menuFixo().getByRole('button', { name: /Planos/ })).toHaveAttribute('aria-current', 'page')
     expect(menuFixo().queryByRole('button', { name: /Continuar caso|Caso aberto/ })).not.toBeInTheDocument()
     expect(document.title).toBe('Meus casos · MetaNutri')
   })
@@ -69,12 +69,12 @@ describe('App: estrutura', () => {
     expect(window.location.hash).toBe('#/casos')
   })
 
-  it('navega para Fontes científicas', async () => {
+  it('navega para Pacientes', async () => {
     renderizar()
-    await userEvent.setup().click(menuFixo().getByRole('button', { name: 'Fontes científicas' }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Fontes científicas' })).toBeInTheDocument()
-    expect(window.location.hash).toBe('#/fontes')
-    expect(screen.getByText(/Tabela Brasileira de Composição de Alimentos/)).toBeInTheDocument()
+    await userEvent.setup().click(menuFixo().getByRole('button', { name: 'Pacientes' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/pacientes')
+    expect(screen.getByRole('button', { name: 'Novo paciente' })).toBeInTheDocument()
   })
 
   it('aparência com três opções: escuro, claro e sistema', async () => {
@@ -97,8 +97,8 @@ describe('App: estrutura', () => {
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Abrir menu' }))
     const gaveta = screen.getByRole('dialog', { name: 'Menu' })
-    await usuario.click(within(gaveta).getByRole('button', { name: 'Fontes científicas' }))
+    await usuario.click(within(gaveta).getByRole('button', { name: 'Pacientes' }))
     expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'Fontes científicas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 })

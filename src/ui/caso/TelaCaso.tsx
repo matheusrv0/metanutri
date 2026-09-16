@@ -16,6 +16,9 @@ import { PainelAntropometria } from './PainelAntropometria.tsx'
 interface TelaCasoProps {
   readonly caso: Caso
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
+  /** Pacientes cadastrados, para vincular este plano a uma ficha. */
+  readonly pacientes?: readonly { readonly id: string; readonly nome: string }[]
+  readonly aoVincularPaciente?: (pacienteId: string | null) => void
   /** Painéis extras da coluna da direita (ex.: Resumo do dia). */
   readonly lateral?: ReactNode
 }
@@ -29,7 +32,7 @@ const CONDICOES: readonly { readonly valor: TipoCondicao; readonly rotulo: strin
 ]
 
 /** Etapa 1: dados do caso e avaliação antropométrica (CA-01 a CA-05). */
-export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
+export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularPaciente }: TelaCasoProps) {
   const validacao = useMemo(() => validarCaso(caso), [caso])
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
   const { erros } = validacao
@@ -57,6 +60,26 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
             <CardTitle>Identificação</CardTitle>
             <CardDescription>Aparece no cabeçalho do documento exportado.</CardDescription>
           </CardHeader>
+          {aoVincularPaciente ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="paciente-do-plano">Paciente</Label>
+              <select
+                id="paciente-do-plano"
+                value={caso.pacienteId ?? ''}
+                onChange={(e) => aoVincularPaciente(e.target.value || null)}
+                className="h-9 rounded-xs border border-input bg-card px-3 text-sm"
+              >
+                <option value="">Sem paciente vinculado</option>
+                {pacientes.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome.trim() || 'Paciente sem nome'}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">Vincular traz restrições e histórico da ficha para este plano.</p>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <CampoTexto rotulo="Nome do caso" valor={caso.nome} aoMudar={(v) => aoAlterar({ nome: v })} placeholder="Maria, 28 anos" />
             <CampoTexto rotulo="Diagnóstico clínico" valor={caso.diagnosticoClinico} aoMudar={(v) => aoAlterar({ diagnosticoClinico: v })} />

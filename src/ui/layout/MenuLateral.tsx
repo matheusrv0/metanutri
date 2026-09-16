@@ -1,4 +1,4 @@
-import { Barcode, BookOpen, ClipboardList, FolderOpen, HardDrive, Plus, TriangleAlert } from 'lucide-react'
+import { Barcode, ClipboardList, FolderOpen, HardDrive, Plus, TriangleAlert, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -67,8 +67,14 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
 
         <Secao titulo="Trabalho">
           <ItemMenu
+            icone={<UserRound aria-hidden="true" />}
+            rotulo="Pacientes"
+            ativo={rota.tela === 'pacientes' || rota.tela === 'paciente'}
+            aoClicar={() => ir({ tela: 'pacientes' })}
+          />
+          <ItemMenu
             icone={<FolderOpen aria-hidden="true" />}
-            rotulo="Meus casos"
+            rotulo="Planos"
             ativo={rota.tela === 'casos'}
             aoClicar={() => ir({ tela: 'casos' })}
             extra={
@@ -95,9 +101,6 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
           <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus produtos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
         </Secao>
 
-        <Secao titulo="Consulta">
-          <ItemMenu icone={<BookOpen aria-hidden="true" />} rotulo="Fontes científicas" ativo={rota.tela === 'fontes'} aoClicar={() => ir({ tela: 'fontes' })} />
-        </Secao>
       </div>
 
       <div className="flex shrink-0 flex-col gap-3 border-t border-lombadafio px-4 py-4">

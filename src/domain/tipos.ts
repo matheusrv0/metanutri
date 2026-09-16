@@ -63,6 +63,8 @@ export type ModoPlano = 'rapido' | 'completo'
 /** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
+  /** Paciente a quem este plano pertence; `null` enquanto não vinculado. */
+  readonly pacienteId: string | null
   readonly nome: string
   readonly diagnosticoClinico: string
   readonly dataConsulta: string | null

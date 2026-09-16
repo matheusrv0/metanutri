@@ -1,5 +1,6 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { calcularEnergia } from './domain/energia.ts'
+import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
@@ -10,13 +11,16 @@ import { Button } from './ui/componentes/button.tsx'
 import { Card } from './ui/componentes/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
+import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
+import { usePacientes } from './ui/estado/contextoPacientes.ts'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
+import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
+import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
-import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
 import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
@@ -26,6 +30,7 @@ import { useRota } from './ui/usarRota.ts'
 function Conteudo() {
   const [rota, navegar] = useRota()
   const { casos, repositorio, atualizar } = useCasos()
+  const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
 
   const recente = casos[0]
@@ -35,9 +40,23 @@ function Conteudo() {
       ? { id: recente.id, nome: recente.nome }
       : null
 
-  const novoCaso = (modo: ModoPlano) => {
+  const novoCaso = (modo: ModoPlano, pacienteId: string | null = null) => {
     const criado = repositorio.criar('')
-    const salvo = repositorio.salvar({ caso: { ...criado.caso, modo }, plano: criado.plano })
+    const paciente = pacienteId ? pacientes.find((p) => p.id === pacienteId) ?? null : null
+    const idade = paciente ? idadeDe(paciente.nascimento) : null
+    const salvo = repositorio.salvar({
+      caso: {
+        ...criado.caso,
+        modo,
+        pacienteId,
+        // O plano já nasce com o que a ficha do paciente sabe.
+        nome: paciente?.nome ?? criado.caso.nome,
+        sexo: paciente?.sexo ?? criado.caso.sexo,
+        idadeAnos: idade?.anos ?? criado.caso.idadeAnos,
+        idadeMesesAdicionais: idade?.meses ?? criado.caso.idadeMesesAdicionais,
+      },
+      plano: criado.plano,
+    })
     atualizar()
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
   }
@@ -45,18 +64,36 @@ function Conteudo() {
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
   const irParaCasos = { rotulo: 'Meus casos', aoClicar: () => navegar({ tela: 'casos' }) }
 
-  if (rota.tela === 'produtos') {
+  if (rota.tela === 'pacientes') {
     return (
-      <Estrutura {...base} titulo="Meus produtos" subtitulo="Industrializados cadastrados pelo rótulo">
-        <TelaProdutos />
+      <Estrutura {...base} titulo="Pacientes" subtitulo="Quem você atende">
+        <TelaPacientes aoAbrir={(id) => navegar({ tela: 'paciente', pacienteId: id })} />
       </Estrutura>
     )
   }
 
-  if (rota.tela === 'fontes') {
+  if (rota.tela === 'paciente') {
+    const paciente = pacientes.find((p) => p.id === rota.pacienteId)
     return (
-      <Estrutura {...base} titulo="Fontes científicas" subtitulo="De onde vem cada número do planejador">
-        <TelaFontes />
+      <Estrutura
+        {...base}
+        titulo={paciente?.nome.trim() || 'Paciente sem nome'}
+        trilha={[{ rotulo: 'Pacientes', aoClicar: () => navegar({ tela: 'pacientes' }) }]}
+      >
+        <TelaPaciente
+          pacienteId={rota.pacienteId}
+          aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
+          aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
+          aoVoltar={() => navegar({ tela: 'pacientes' })}
+        />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'produtos') {
+    return (
+      <Estrutura {...base} titulo="Meus produtos" subtitulo="Industrializados cadastrados pelo rótulo">
+        <TelaProdutos />
       </Estrutura>
     )
   }
@@ -75,6 +112,9 @@ function Conteudo() {
         </Estrutura>
       )
     }
+
+    const pacienteDoPlano = registro.caso.pacienteId ? pacientes.find((p) => p.id === registro.caso.pacienteId) ?? null : null
+    const restricoesDoPaciente = pacienteDoPlano ? listaDeRestricoes(pacienteDoPlano.restricoes) : []
 
     const indice = ETAPAS.findIndex((e) => e.aba === rota.aba)
     const etapa = ETAPAS[indice]
@@ -98,6 +138,8 @@ function Conteudo() {
             <TelaCaso
               caso={registro.caso}
               aoAlterar={alterarCaso}
+              pacientes={pacientes.map((p) => ({ id: p.id, nome: p.nome }))}
+              aoVincularPaciente={(pacienteId) => alterarCaso({ pacienteId })}
               lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}
             />
           ) : rota.aba === 'plano' ? (
@@ -118,6 +160,7 @@ function Conteudo() {
                     getManual: registro.caso.energia.getManual,
                   }).get
                 }
+                restricoes={restricoesDoPaciente}
                 aoAlterarCaso={alterarCaso}
                 aoAlterarPlano={alterarPlano}
               />
@@ -162,8 +205,10 @@ function Conteudo() {
 export function App() {
   return (
     <ProvedorCasos>
-      <Conteudo />
-      <AvisoPrimeiroAcesso />
+      <ProvedorPacientes>
+        <Conteudo />
+        <AvisoPrimeiroAcesso />
+      </ProvedorPacientes>
     </ProvedorCasos>
   )
 }

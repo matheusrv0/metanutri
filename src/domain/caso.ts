@@ -29,6 +29,7 @@ export const FAIXAS = {
 export function criarCasoVazio(id: string): Caso {
   return {
     id,
+    pacienteId: null,
     nome: '',
     diagnosticoClinico: '',
     dataConsulta: null,

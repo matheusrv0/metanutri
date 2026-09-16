@@ -23,9 +23,26 @@ interface GavetaCobrirProps {
   readonly totais: Totais
   readonly adequacao: ResultadoAdequacao
   readonly gastoEnergetico: number | null
+  /** O que o paciente não come; a sugestão que casar com qualquer termo é descartada. */
+  readonly restricoes?: readonly string[]
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number) => void
   readonly aoFechar: () => void
+}
+
+const semAcento = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+
+/** Verdadeiro quando a descrição do alimento contém alguma palavra da lista de restrições. */
+export function casaRestricao(descricao: string, restricoes: readonly string[]): boolean {
+  const alvo = semAcento(descricao)
+  return restricoes.some((r) => {
+    const termo = semAcento(r).trim()
+    return termo.length >= 3 && alvo.includes(termo)
+  })
 }
 
 function descreverAvisos(s: Sugestao): readonly string[] {
@@ -45,6 +62,7 @@ export function GavetaCobrir({
   totais,
   adequacao,
   gastoEnergetico,
+  restricoes = [],
   aoAlterarCaso,
   aoAdicionar,
   aoFechar,
@@ -131,7 +149,7 @@ export function GavetaCobrir({
         ) : null}
 
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
-          {(resultado?.sugestoes ?? []).map((s) => {
+          {(resultado?.sugestoes ?? []).filter((s) => !casaRestricao(s.descricao, restricoes)).map((s) => {
             const medida = medidaEquivalente(s.alimentoId, s.gramas)
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-fio pb-3 last:border-0">

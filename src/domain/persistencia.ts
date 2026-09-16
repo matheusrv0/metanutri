@@ -22,6 +22,9 @@ export interface ResumoCaso {
   readonly id: string
   readonly nome: string
   readonly atualizadoEm: string
+  readonly pacienteId: string | null
+  readonly modo: Caso['modo']
+  readonly pesoKg: number | null
 }
 
 const PREFIXO = 'metanutri:'
@@ -163,7 +166,14 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
       return lerIndice()
         .map((id) => obter(id))
         .filter((c): c is CasoSalvo => c !== null)
-        .map((c) => ({ id: c.caso.id, nome: c.caso.nome, atualizadoEm: c.atualizadoEm }))
+        .map((c) => ({
+          id: c.caso.id,
+          nome: c.caso.nome,
+          atualizadoEm: c.atualizadoEm,
+          pacienteId: c.caso.pacienteId,
+          modo: c.caso.modo,
+          pesoKg: c.caso.pesoKg,
+        }))
         .sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm))
     },
 

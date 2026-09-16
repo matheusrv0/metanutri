@@ -20,6 +20,8 @@ interface TelaAdequacaoProps {
   readonly caso: Caso
   readonly plano: Plano
   readonly gastoEnergetico: number | null
+  /** Restrições do paciente vinculado; filtram as sugestões do cobrir. */
+  readonly restricoes?: readonly string[]
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAlterarPlano: (novo: Plano) => void
   readonly gerarId?: GerarId
@@ -105,7 +107,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
 }
 
 /** Etapa 3: adequação de micronutrientes e ação "cobrir" (CA-25 a CA-40). */
-export function TelaAdequacao({ caso, plano, gastoEnergetico, aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao }: TelaAdequacaoProps) {
+export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao }: TelaAdequacaoProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const prefs = caso.adequacao
 
@@ -215,6 +217,7 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, aoAlterarCaso, aoA
         totais={totais}
         adequacao={resultado}
         gastoEnergetico={gastoEnergetico}
+        restricoes={restricoes}
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
         aoAdicionar={(refeicaoId, opcao, alimentoId, gramas) => {
