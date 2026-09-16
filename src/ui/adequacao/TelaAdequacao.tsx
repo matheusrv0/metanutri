@@ -60,9 +60,9 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         {`${formatarNumero(linha.referencia.valor, 2)} ${linha.unidade}`}
         <span className="block text-xs uppercase text-muted-foreground">{linha.referencia.tipo}</span>
       </TableCell>
-      <TableCell className="min-w-32">
+      <TableCell className="min-w-28">
         <Progress value={linha.adequacaoPct} />
-        <span className="numeros mt-1 block text-xs text-muted-foreground">{`${formatarNumero(linha.adequacaoPct, 0)}% da referência (meta ${formatarNumero(linha.metaPct, 0)}%)`}</span>
+        <span className="numeros mt-1 block whitespace-nowrap text-xs text-muted-foreground">{`${formatarNumero(linha.adequacaoPct, 0)}% (meta ${formatarNumero(linha.metaPct, 0)}%)`}</span>
       </TableCell>
       <TableCell>
         <Badge variant={VARIANTE[linha.estado]}>{ROTULO_ESTADO[linha.estado]}</Badge>

@@ -62,7 +62,7 @@ describe('Etapa 3: adequação', () => {
     expect(screen.getByRole('columnheader', { name: 'Nutriente' })).toBeInTheDocument()
     const ferro = linhaDe('Ferro')
     expect(ferro.getAllByText(/mg$/).length).toBeGreaterThan(0)
-    expect(ferro.getByText(/% da referência/)).toBeInTheDocument()
+    expect(ferro.getByText(/% \(meta/)).toBeInTheDocument()
     expect(ferro.getByText(/Abaixo da meta|Adequado|Acima do limite superior/)).toBeInTheDocument()
     expect(screen.getByText(/Composição: .*Referências: /)).toBeInTheDocument()
   })
@@ -99,7 +99,7 @@ describe('Etapa 3: adequação', () => {
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
     const usuario = montar()
-    expect(linhaDe('Ferro').getByText(/^0% da referência/)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(/^0% \(meta/)).toBeInTheDocument()
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     expect(gaveta.getByText(/Faltam .* mg para a meta/)).toBeInTheDocument()
   })
@@ -116,13 +116,13 @@ describe('Etapa 3: adequação', () => {
 
   it('CA-38: escolher a refeição e confirmar adiciona o alimento e recalcula', async () => {
     const usuario = montar(adulta, planoComArroz())
-    const antes = linhaDe('Ferro').getByText(/% da referência/).textContent
+    const antes = linhaDe('Ferro').getByText(/% \(meta/).textContent
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(linhaDe('Ferro').getByText(/% da referência/).textContent).not.toBe(antes)
+    expect(linhaDe('Ferro').getByText(/% \(meta/).textContent).not.toBe(antes)
   })
 
   it('CA-40: sugestão oculta não volta a aparecer', async () => {
