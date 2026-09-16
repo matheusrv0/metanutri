@@ -1,4 +1,4 @@
-import { Barcode, ClipboardList, Plus, TriangleAlert, UserRound } from 'lucide-react'
+import { Barcode, ClipboardList, Plus, Sparkles, TriangleAlert, UserRound } from 'lucide-react'
 import { useMemo } from 'react'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
@@ -13,10 +13,12 @@ interface TelaPainelProps {
   readonly aoNovoPlano: (modo: ModoPlano) => void
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoIrPara: (tela: 'pacientes' | 'casos' | 'produtos') => void
+  /** Cria e abre um plano de demonstração; só aparece enquanto não há plano nenhum. */
+  readonly aoVerExemplo: () => void
 }
 
 /** Primeira tela do dia: o que precisa de atenção, onde você parou e o que fazer agora. */
-export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara }: TelaPainelProps) {
+export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }: TelaPainelProps) {
   const { casos, avisoArmazenamento } = useCasos()
   const { pacientes } = usePacientes()
 
@@ -57,6 +59,15 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara }: TelaPainelPr
               Cadastrar produto
             </Button>
           </div>
+          {casos.length === 0 ? (
+            <div className="flex flex-wrap items-center gap-2 border-t border-fio pt-3">
+              <p className="min-w-0 flex-1 text-sm text-muted-foreground">Nunca usou? Abra um dia inteiro já montado e mexa à vontade.</p>
+              <Button variant="lightprimary" size="sm" onClick={aoVerExemplo}>
+                <Sparkles aria-hidden="true" />
+                Ver um plano de exemplo
+              </Button>
+            </div>
+          ) : null}
         </Card>
 
         <Card className="gap-0 self-start p-0">

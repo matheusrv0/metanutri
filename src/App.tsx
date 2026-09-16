@@ -1,5 +1,6 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { calcularEnergia } from './domain/energia.ts'
+import { criarExemplo } from './domain/exemplo.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
@@ -64,6 +65,13 @@ function Conteudo() {
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
   }
 
+  // Primeiro acesso: um dia inteiro montado, para entender o sistema mexendo nele.
+  const verExemplo = () => {
+    const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), new Date().toISOString().slice(0, 10)))
+    atualizar()
+    navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
+  }
+
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
   const irParaCasos = { rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }
 
@@ -74,6 +82,7 @@ function Conteudo() {
           aoNovoPlano={(modo) => novoCaso(modo)}
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
           aoIrPara={(tela) => navegar({ tela })}
+          aoVerExemplo={verExemplo}
         />
       </Estrutura>
     )

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarRepositorioPacientes } from '@/domain/pacientes.ts'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
@@ -37,14 +37,15 @@ function montar(comDados: boolean) {
   const aoNovoPlano = vi.fn()
   const aoAbrirPlano = vi.fn()
   const aoIrPara = vi.fn()
+  const aoVerExemplo = vi.fn()
   render(
     <ProvedorCasos repositorio={casos}>
       <ProvedorPacientes repositorio={pacientes}>
-        <TelaPainel aoNovoPlano={aoNovoPlano} aoAbrirPlano={aoAbrirPlano} aoIrPara={aoIrPara} />
+        <TelaPainel aoNovoPlano={aoNovoPlano} aoAbrirPlano={aoAbrirPlano} aoIrPara={aoIrPara} aoVerExemplo={aoVerExemplo} />
       </ProvedorPacientes>
     </ProvedorCasos>,
   )
-  return { aoNovoPlano, aoAbrirPlano, aoIrPara, usuario: userEvent.setup(), casos }
+  return { aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo, usuario: userEvent.setup(), casos }
 }
 
 describe('Painel', () => {
@@ -52,6 +53,16 @@ describe('Painel', () => {
     montar(false)
     expect(screen.getByText('Nenhum plano ainda. Comece pelo botão acima.')).toBeInTheDocument()
     expect(screen.getByText('Nenhum paciente cadastrado')).toBeInTheDocument()
+  })
+
+  it('sem nenhum plano, oferece o exemplo; com plano, some', async () => {
+    const { aoVerExemplo, usuario } = montar(false)
+    await usuario.click(screen.getByRole('button', { name: 'Ver um plano de exemplo' }))
+    expect(aoVerExemplo).toHaveBeenCalledOnce()
+
+    cleanup()
+    montar(true)
+    expect(screen.queryByRole('button', { name: 'Ver um plano de exemplo' })).not.toBeInTheDocument()
   })
 
   it('conta pacientes e planos, e abre o plano recente', async () => {
