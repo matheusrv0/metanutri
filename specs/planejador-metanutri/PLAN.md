@@ -21,10 +21,10 @@
 | 1. Dados | concluída (T-10 TACO, T-11 medidas caseiras, T-12 DRI, T-13 energia, T-14 antropometria) |
 | 2. Regras | concluída (T-20 a T-33); 449 testes passando, lint e typecheck limpos |
 | Portão G-1 | aprovado (template MaterialM, R-5 a R-8 e dependências da fase 3) |
-| 3. Telas | em andamento: T-40, T-41 e T-42 concluídas; 486 testes passando |
+| 3. Telas | em andamento: T-40 a T-43 concluídas; 498 testes passando |
 | 4. Validação | não iniciada |
 
-Critérios que dependem só de tela e ainda não têm teste: CA-01 (campos do formulário), CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.
+Critérios que dependem só de tela e ainda não têm teste: CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.
 
 ## 2. Como o código fica organizado
 
@@ -108,7 +108,7 @@ Cada tarefa vira um commit próprio (Conventional Commits) e só é marcada como
 | T-40 | Base visual: Tailwind 4, tokens do MaterialM, fonte Inter embutida, tema claro/escuro, utilitário `cn`, componentes shadcn usados (botão, cartão, campo, rótulo, seleção, abas, selo, diálogo, gaveta, menu suspenso, dica, tabela, progresso, separador, interruptor, alerta, área de texto) e aviso de licença | `vite.config.ts`, `tsconfig.app.json` (alias `@/`), `components.json`, `src/main.tsx`, `src/ui/tema/globals.css`, `src/ui/tema/ProvedorTema.tsx`, `src/lib/utils.ts`, `src/ui/componentes/*.tsx`, `THIRD_PARTY_NOTICES.md` | R-5 a R-7 | teste de renderização dos componentes; captura de tela nos temas claro e escuro para sua revisão |
 | T-41 | Estrutura do app: menu lateral, cabeçalho, gaveta no celular, navegação por endereço, estado do caso aberto compartilhado entre Casos e Planejador | `src/App.tsx` e teste, `src/ui/layout/Estrutura.tsx`, `src/ui/layout/MenuLateral.tsx`, `src/ui/layout/Cabecalho.tsx`, `src/ui/navegacao.ts` e teste, `src/ui/usarRota.ts`, `src/ui/estado/contextoCasos.ts`, `src/ui/estado/ProvedorCasos.tsx` (lista de casos compartilhada; o caso aberto vem do endereço), `src/ui/fontes/TelaFontes.tsx`, `src/ui/layout/ItemMenu.tsx`, `src/ui/layout/SeletorTema.tsx`, `src/ui/layout/EtapasDoCaso.tsx` | T-40, R-8 | testes da navegação; e2e abre e fecha a gaveta |
 | T-42 | Tela Casos: lista, criar, duplicar, renomear, excluir com confirmação, aviso de primeiro acesso, aviso de armazenamento indisponível e de alteração em outra aba | `src/ui/casos/*`, `src/ui/estado/*` (aviso de outra aba), `src/domain/persistencia.ts` (armazenamento como fonte da verdade, para refletir exclusão em outra aba; nome da cópia de caso sem nome) | T-30, T-41 | CA-49, CA-50, CA-51, CB-08, CB-09 |
-| T-43 | Aba Caso: formulário, validação com mensagens por campo, resultados antropométricos com fonte | `src/ui/caso/*` | T-21, T-22, T-41 | CA-01 a CA-05, CA-02a a CA-02c, CB-01 a CB-03, CB-12 |
+| T-43 | Aba Caso: formulário, validação com mensagens por campo, resultados antropométricos com fonte | `src/ui/caso/*`, `src/ui/estado/usarCasoAberto.ts` (edição salva na hora) | T-21, T-22, T-41 | CA-01 a CA-05, CA-02a a CA-02c, CB-01 a CB-03, CB-12 |
 | T-44 | Resumo do dia: energia (fórmula, nível de atividade, fator livre, GET manual, % do GET) e macros com metas editáveis | `src/ui/resumo/*` | T-23, T-25, T-41 | CA-06 a CA-11, CA-06a a CA-06d, CA-22 a CA-24, CA-31a |
 | T-45 | Aba Plano alimentar: refeições (renomear, horário, adicionar, remover), opções em abas, entrada rápida com teclado, linha com gramas, medida caseira e kcal | `src/ui/plano/*` | T-27, T-33, T-41 | CA-12 a CA-21, CB-04, CB-05, CB-07 |
 | T-46 | Substitutos: calcular porção equivalente a partir de um item do Principal, com critério e diferenças | `src/ui/plano/Substituto*.tsx` | T-29, T-45 | CA-41 a CA-43 |

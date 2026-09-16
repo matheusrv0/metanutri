@@ -1,10 +1,12 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
-import { Button } from './ui/componentes/button.tsx'
-import { Card } from './ui/componentes/card.tsx'
+import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { AvisoPrimeiroAcesso } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
+import { Button } from './ui/componentes/button.tsx'
+import { Card } from './ui/componentes/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
+import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
 import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
@@ -15,11 +17,11 @@ import { useRota } from './ui/usarRota.ts'
 function Conteudo() {
   const [rota, navegar] = useRota()
   const { casos, repositorio, atualizar } = useCasos()
+  const { registro, alterarCaso } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
 
-  const casoAberto = rota.tela === 'planejador' ? repositorio.obter(rota.casoId) : null
   const recente = casos[0]
-  const casoAtual: CasoAtual | null = casoAberto
-    ? { id: casoAberto.caso.id, nome: casoAberto.caso.nome }
+  const casoAtual: CasoAtual | null = registro
+    ? { id: registro.caso.id, nome: registro.caso.nome }
     : recente
       ? { id: recente.id, nome: recente.nome }
       : null
@@ -42,7 +44,7 @@ function Conteudo() {
   }
 
   if (rota.tela === 'planejador') {
-    if (!casoAberto) {
+    if (!registro) {
       return (
         <Estrutura {...base} titulo="Caso não encontrado" trilha={[irParaCasos]}>
           <Card className="items-start gap-4">
@@ -62,21 +64,29 @@ function Conteudo() {
     return (
       <Estrutura
         {...base}
-        titulo={casoAberto.caso.nome || 'Caso sem nome'}
+        titulo={registro.caso.nome || 'Caso sem nome'}
         subtitulo={etapa ? `Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}` : undefined}
         trilha={[irParaCasos]}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
-          <Card className="items-start gap-4">
-            <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
-            {proxima ? (
+
+          {rota.aba === 'caso' ? (
+            <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} />
+          ) : (
+            <Card className="items-start gap-4">
+              <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
+            </Card>
+          )}
+
+          {proxima ? (
+            <div className="flex justify-end">
               <Button onClick={() => navegar({ tela: 'planejador', casoId: rota.casoId, aba: proxima.aba })}>
                 Próxima etapa: {proxima.rotulo}
                 <ArrowRight aria-hidden="true" />
               </Button>
-            ) : null}
-          </Card>
+            </div>
+          ) : null}
         </div>
       </Estrutura>
     )
