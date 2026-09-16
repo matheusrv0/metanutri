@@ -21,7 +21,7 @@
 | 1. Dados | concluída (T-10 TACO, T-11 medidas caseiras, T-12 DRI, T-13 energia, T-14 antropometria) |
 | 2. Regras | concluída (T-20 a T-33); 449 testes passando, lint e typecheck limpos |
 | Portão G-1 | aprovado (template MaterialM, R-5 a R-8 e dependências da fase 3) |
-| 3. Telas | em andamento: T-40 a T-47 concluídas; 532 testes passando |
+| 3. Telas | em andamento: T-40 a T-48 concluídas; 536 testes passando |
 | 4. Validação | não iniciada |
 
 Critérios que dependem só de tela e ainda não têm teste: CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.

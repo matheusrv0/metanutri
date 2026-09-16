@@ -154,6 +154,21 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
 
         <Card>
           <CardHeader>
+            <CardTitle>Orientações e receitas</CardTitle>
+            <CardDescription>Entram no documento de aconselhamento exportado.</CardDescription>
+          </CardHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="orientacoes">Orientações nutricionais</Label>
+            <Textarea id="orientacoes" rows={4} value={caso.orientacoes} onChange={(e) => aoAlterar({ orientacoes: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="receitas">Receitas</Label>
+            <Textarea id="receitas" rows={4} value={caso.receitas} onChange={(e) => aoAlterar({ receitas: e.target.value })} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Observações</CardTitle>
             <CardDescription>Anotações livres sobre o caso.</CardDescription>
           </CardHeader>

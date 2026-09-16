@@ -11,6 +11,7 @@ import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
+import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
 import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
@@ -71,6 +72,7 @@ function Conteudo() {
         titulo={registro.caso.nome || 'Caso sem nome'}
         subtitulo={etapa ? `Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}` : undefined}
         trilha={[irParaCasos]}
+        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} />}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
