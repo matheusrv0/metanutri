@@ -2,7 +2,8 @@
 
 Regras: toda ideia entra aqui antes de virar SPEC. Nada sai daqui direto para código.
 Fases: **MVP** = preenchedor de micros (estudante e recém-formado, sem paciente real) ·
-**MVP+** = melhorias no mesmo produto logo após o lançamento · **v2** = app do paciente e missões
+**MVP+** = melhorias no mesmo produto logo após o lançamento · **SaaS** = conta, cobrança e paciente,
+o que transforma a ferramenta em produto pago · **v2** = app do paciente e missões
 (exige CRN validado, LGPD completa e telenutrição).
 Esforço: P (dias), M (1 a 2 semanas), G (3+ semanas) para um dev solo.
 
@@ -26,6 +27,31 @@ Esforço: P (dias), M (1 a 2 semanas), G (3+ semanas) para um dev solo.
 | B-16 | Fatores de atividade editáveis, com o conjunto que a faculdade usa com Mifflin como padrão: sedentário 1,2 · pouco ativo 1,37 · moderadamente ativo 1,55 · muito ativo 1,7 · extremamente ativo 1,9; o nutri pode trocar o conjunto ou digitar o fator ("vai da conduta") | estudante, 15/09 | MVP | P | B-02 | confirmado |
 | B-17 | Cabeçalho do caso no padrão do estágio: diagnóstico clínico, data da consulta, ocupação, estagiário(a), preceptor(a); antropometria básica (IMC, circunferência da cintura e da panturrilha com referência e diagnóstico) | modelo do professor, 15/09 | MVP (versão mínima da B-05) | P | B-05 | ideia |
 | B-18 | Refeições por horário com nome padrão (6:00 desjejum, 9:00 lanche da manhã, 12:00 almoço, 16:00 lanche da tarde, 19:00 jantar, 21:00 ceia), editáveis | modelo do professor, 15/09 | MVP | P | — | ideia |
+| B-19 | Conta de usuário: cadastro por e-mail e Google, confirmação e onboarding de três perguntas (nome, estudante ou formada, CRN) | revisão de produto, 15/09 | SaaS | M | back-end (Supabase) | ideia |
+| B-20 | Assinatura e cobrança: três planos, teste de 14 dias sem cartão, Pix e cartão, upgrade e cancelamento em dois cliques | revisão de produto, 15/09 | SaaS | M | B-19 | ideia |
+| B-21 | Paciente como entidade própria, separado de atendimento e de plano; ficha, histórico e evolução | revisão de produto, 15/09 | SaaS | G | B-19, LGPD | ideia |
+| B-22 | Prescrição rápida: montar a dieta sem nenhuma medida, com meta de energia digitada; antropometria escondida e botão para virar atendimento completo | revisão de produto, 15/09 | MVP+ | M | — | ideia |
+| B-23 | Dieta em PDF de uma página, para entregar no celular do paciente | revisão de produto, 15/09 | MVP+ | P | B-11 | ideia |
+| B-24 | Entrega ao paciente por link privado com prazo de validade, com refeições, substitutos e lista de compras | revisão de produto, 15/09 | v2 | G | B-21, LGPD | ideia |
+| B-25 | Cadastro de produto industrializado pelo rótulo, com porção declarada e medida caseira | revisão de produto, 15/09 | MVP+ | M | — | ideia |
+| B-26 | Selo de completude por alimento (completo, parcial, mínimo) e aviso quando o plano usa alimento parcial | revisão de produto, 15/09; base tem só 6 de 597 alimentos completos | MVP+ | P | B-14 | ideia |
+| B-27 | Modelos de plano por objetivo e salvar plano existente como modelo | revisão de produto, 15/09 | MVP+ | M | — | ideia |
+| B-28 | Lista de substituições por grupo de equivalência, anexada à dieta | revisão de produto, 15/09 | MVP+ | M | B-08 | ideia |
+| B-29 | Composição corporal: dobras cutâneas por protocolo e bioimpedância | revisão de produto, 15/09 | MVP+ | M | B-05 | ideia |
+| B-30 | Restrições e alergias no paciente, filtrando as sugestões do cobrir | revisão de produto, 15/09 | MVP+ | P | B-21 | ideia |
+| B-31 | Favoritos de alimentos e ordenação por uso | revisão de produto, 15/09 | MVP+ | P | — | ideia |
+| B-32 | Preparações e receitas com ingredientes, rendimento e valor por porção | revisão de produto, 15/09 | MVP+ | M | — | ideia |
+| B-33 | Marca do profissional nos documentos: logo, cor e assinatura digitalizada | revisão de produto, 15/09 | SaaS | P | B-19 | ideia |
+| B-34 | Painel inicial com pendências do dia, planos recentes e os dois botões de criação | revisão de produto, 15/09 | SaaS | P | B-21 | ideia |
+| B-35 | LGPD: consentimento, exportação, exclusão de conta e registro de acesso a dado de paciente | revisão de produto, 15/09 | SaaS | M | B-21 | obrigatória antes de dado real |
+| B-36 | Ranking do cobrir por uso comum, para não sugerir sarapatel e caranguejo | revisão de produto, 15/09 | MVP+ | P | B-01 | ideia |
+| B-37 | Renomear caso para paciente e atendimento no produto inteiro | revisão de produto, 15/09 | MVP+ | P | B-21 | ideia |
+
+## Origem das ideias B-19 a B-37
+
+Todas vêm da revisão crítica de 15/09/2026, em `docs/revisao-produto-2026-09-15.md`.
+A revisão mediu a base de alimentos e encontrou 5 nutrientes exigidos ausentes (gordura saturada,
+açúcares, vitamina D, B12 e folato) e só 6 de 597 alimentos com todos os campos preenchidos.
 
 ## Fatos de mercado que sustentam as prioridades (entrevista com estudante, 15/09)
 - Plano na faculdade levava ~2 h no início; o que mais demora é achar o alimento e adequar micros (B-03 e B-01 são o produto).
