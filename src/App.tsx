@@ -18,6 +18,7 @@ import { TelaPlano } from './ui/plano/TelaPlano.tsx'
 import { TelaPainel } from './ui/painel/TelaPainel.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
+import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
@@ -100,6 +101,14 @@ function Conteudo() {
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}
         />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'ajuda') {
+    return (
+      <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
+        <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
       </Estrutura>
     )
   }
