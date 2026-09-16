@@ -1,0 +1,107 @@
+{
+  "fontes": {
+    "sisvan2011": "Brasil. Ministério da Saúde. Orientações para a coleta e análise de dados antropométricos em serviços de saúde: norma técnica do SISVAN. Brasília; 2011.",
+    "nsi1994": "The Nutrition Screening Initiative, 1994 (pontos de corte adotados pelo SISVAN para idosos, Quadro 18).",
+    "who1995": "WHO. Physical status: the use and interpretation of anthropometry. Technical Report Series 854. Geneva; 1995 (adultos, Quadro 16 do SISVAN; panturrilha).",
+    "who2000": "WHO. Obesity: preventing and managing the global epidemic. Technical Report Series 894. Geneva; 2000 (graus de obesidade).",
+    "who2008": "WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation. Geneva, 8-11 December 2008.",
+    "who2006e2007": "Curvas OMS 2006 (até 5 anos) e 2007 (5 a 19 anos), classificação do SISVAN (Quadros 10, 11, 13 e 14).",
+    "kac2021": "Kac G, Carrilho TRB, et al. Gestational weight gain charts: results from the Brazilian Maternal and Child Nutrition Consortium. Am J Clin Nutr 2021;113:1351-1360. Adotadas pelo Ministério da Saúde em 2022."
+  },
+  "imcAdulto": {
+    "idadeMin": 20,
+    "idadeMax": 59,
+    "fonte": "sisvan2011",
+    "faixas": [
+      { "classe": "Baixo peso", "min": null, "minInclusivo": false, "max": 18.5, "maxInclusivo": false },
+      { "classe": "Eutrofia", "min": 18.5, "minInclusivo": true, "max": 25, "maxInclusivo": false },
+      { "classe": "Sobrepeso", "min": 25, "minInclusivo": true, "max": 30, "maxInclusivo": false },
+      { "classe": "Obesidade", "min": 30, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ],
+    "grausObesidade": {
+      "fonte": "who2000",
+      "faixas": [
+        { "classe": "Obesidade grau I", "min": 30, "minInclusivo": true, "max": 35, "maxInclusivo": false },
+        { "classe": "Obesidade grau II", "min": 35, "minInclusivo": true, "max": 40, "maxInclusivo": false },
+        { "classe": "Obesidade grau III", "min": 40, "minInclusivo": true, "max": null, "maxInclusivo": false }
+      ]
+    }
+  },
+  "imcIdoso": {
+    "idadeMin": 60,
+    "idadeMax": null,
+    "fonte": "nsi1994",
+    "faixas": [
+      { "classe": "Baixo peso", "min": null, "minInclusivo": false, "max": 22, "maxInclusivo": true },
+      { "classe": "Eutrofia", "min": 22, "minInclusivo": false, "max": 27, "maxInclusivo": false },
+      { "classe": "Sobrepeso", "min": 27, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ]
+  },
+  "imcIdadeEscoreZ": {
+    "fonte": "who2006e2007",
+    "menoresDe5Anos": [
+      { "classe": "Magreza acentuada", "min": null, "minInclusivo": false, "max": -3, "maxInclusivo": false },
+      { "classe": "Magreza", "min": -3, "minInclusivo": true, "max": -2, "maxInclusivo": false },
+      { "classe": "Eutrofia", "min": -2, "minInclusivo": true, "max": 1, "maxInclusivo": true },
+      { "classe": "Risco de sobrepeso", "min": 1, "minInclusivo": false, "max": 2, "maxInclusivo": true },
+      { "classe": "Sobrepeso", "min": 2, "minInclusivo": false, "max": 3, "maxInclusivo": true },
+      { "classe": "Obesidade", "min": 3, "minInclusivo": false, "max": null, "maxInclusivo": false }
+    ],
+    "de5a19Anos": [
+      { "classe": "Magreza acentuada", "min": null, "minInclusivo": false, "max": -3, "maxInclusivo": false },
+      { "classe": "Magreza", "min": -3, "minInclusivo": true, "max": -2, "maxInclusivo": false },
+      { "classe": "Eutrofia", "min": -2, "minInclusivo": true, "max": 1, "maxInclusivo": true },
+      { "classe": "Sobrepeso", "min": 1, "minInclusivo": false, "max": 2, "maxInclusivo": true },
+      { "classe": "Obesidade", "min": 2, "minInclusivo": false, "max": 3, "maxInclusivo": true },
+      { "classe": "Obesidade grave", "min": 3, "minInclusivo": false, "max": null, "maxInclusivo": false }
+    ]
+  },
+  "estaturaIdadeEscoreZ": {
+    "fonte": "who2006e2007",
+    "faixas": [
+      { "classe": "Muito baixa estatura para a idade", "min": null, "minInclusivo": false, "max": -3, "maxInclusivo": false },
+      { "classe": "Baixa estatura para a idade", "min": -3, "minInclusivo": true, "max": -2, "maxInclusivo": false },
+      { "classe": "Estatura adequada para a idade", "min": -2, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ]
+  },
+  "cintura": {
+    "fonte": "who2008",
+    "notaSisvan": "A norma do SISVAN (2011, Quadro 17) usa apenas o primeiro ponto de corte: 94 cm para homens e 80 cm para mulheres.",
+    "M": [
+      { "classe": "Sem risco aumentado", "min": null, "minInclusivo": false, "max": 94, "maxInclusivo": false },
+      { "classe": "Risco aumentado", "min": 94, "minInclusivo": true, "max": 102, "maxInclusivo": false },
+      { "classe": "Risco substancialmente aumentado", "min": 102, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ],
+    "F": [
+      { "classe": "Sem risco aumentado", "min": null, "minInclusivo": false, "max": 80, "maxInclusivo": false },
+      { "classe": "Risco aumentado", "min": 80, "minInclusivo": true, "max": 88, "maxInclusivo": false },
+      { "classe": "Risco substancialmente aumentado", "min": 88, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ]
+  },
+  "panturrilha": {
+    "idadeMin": 60,
+    "fonte": "who1995",
+    "notaAlternativa": "Estudos brasileiros propõem pontos de corte por sexo (34 cm homens, 33 cm mulheres). A escolha deve ser confirmada pela nutricionista.",
+    "faixas": [
+      { "classe": "Indicativo de redução de massa muscular", "min": null, "minInclusivo": false, "max": 31, "maxInclusivo": false },
+      { "classe": "Adequada", "min": 31, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ]
+  },
+  "gestacao": {
+    "fonte": "kac2021",
+    "notaAdolescentes": "As curvas brasileiras foram construídas com gestantes adultas; para gestantes adolescentes a classificação deve ser interpretada com cautela.",
+    "notaSisvan2011": "A norma do SISVAN de 2011 (Quadro 20) ainda traz as faixas do IOM 1990; o Ministério da Saúde adotou as curvas brasileiras em 2022.",
+    "imcPreGestacional": [
+      { "classe": "baixo-peso", "rotulo": "Baixo peso", "min": null, "minInclusivo": false, "max": 18.5, "maxInclusivo": false },
+      { "classe": "eutrofia", "rotulo": "Eutrofia", "min": 18.5, "minInclusivo": true, "max": 25, "maxInclusivo": false },
+      { "classe": "sobrepeso", "rotulo": "Sobrepeso", "min": 25, "minInclusivo": true, "max": 30, "maxInclusivo": false },
+      { "classe": "obesidade", "rotulo": "Obesidade", "min": 30, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ],
+    "ganhoPesoTotalAte40SemanasKg": {
+      "baixo-peso": { "min": 9.7, "max": 12.2 },
+      "eutrofia": { "min": 8, "max": 12 },
+      "sobrepeso": { "min": 7, "max": 9 },
+      "obesidade": { "min": 5, "max": 7.2 }
+    }
+  }
+}

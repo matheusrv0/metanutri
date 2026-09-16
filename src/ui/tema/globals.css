@@ -1,0 +1,194 @@
+/*
+ * Tema visual do MetaNutri, portado do template MaterialM Free (WrapPixel, licença MIT).
+ * Tokens de cor, raio e sombra: docs/design/direcao-visual.md.
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------- Tokens MaterialM: tema claro ---------- */
+:root {
+  --color-primary: #00a1ff;
+  --color-secondary: #16cdc7;
+  --color-info: #46caeb;
+  --color-success: #00ceb6;
+  --color-warning: #ffb900;
+  --color-error: #ff6692;
+
+  --color-white: #fff;
+  --color-dark: #111c2d;
+  --color-darkgray: #1a2537;
+  --color-lightgray: #f8fafd;
+  --color-link: #2a3547;
+  --color-darklink: #7b8893;
+  --color-defaultBorder: #e0e6eb;
+  --color-darkborder: #333f55;
+  --color-charcoal: #2a3547;
+
+  --color-lightprimary: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  --color-lightsecondary: color-mix(in oklab, var(--color-secondary) 12%, transparent);
+  --color-lightsuccess: color-mix(in oklab, var(--color-success) 12%, transparent);
+  --color-lightwarning: color-mix(in oklab, var(--color-warning) 14%, transparent);
+  --color-lighterror: color-mix(in oklab, var(--color-error) 12%, transparent);
+  --color-lightinfo: color-mix(in oklab, var(--color-info) 12%, transparent);
+
+  --color-primaryemphasis: color-mix(in oklab, var(--color-primary) 80%, black);
+  --color-secondaryemphasis: color-mix(in oklab, var(--color-secondary) 80%, black);
+  --color-erroremphasis: color-mix(in oklab, var(--color-error) 80%, black);
+
+  /* texto sobre fundos claros de estado: versões mais escuras para contraste legível */
+  --color-successtext: #008a7a;
+  --color-warningtext: #9a6b00;
+  --color-errortext: #d6336c;
+  --color-infotext: #0b7fa0;
+
+  --shadow-card: 0px 1px 4px 0px rgba(133, 146, 173, 0.2);
+
+  /* variáveis do shadcn/ui */
+  --radius: 10px;
+  --background: var(--color-lightgray);
+  --foreground: var(--color-link);
+  --card: var(--color-white);
+  --card-foreground: var(--color-link);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-link);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-white);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-white);
+  --muted: #eff4fa;
+  --muted-foreground: #5f6b7a;
+  --accent: var(--color-lightprimary);
+  --accent-foreground: var(--color-primary);
+  --destructive: var(--color-error);
+  --border: var(--color-defaultBorder);
+  --input: var(--color-defaultBorder);
+  --ring: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  --heading: var(--color-dark);
+}
+
+/* ---------- Tokens MaterialM: tema escuro ---------- */
+.dark {
+  --color-defaultBorder: #333f55;
+  --color-charcoal: #7b8893;
+  --color-lightprimary: #00a1ff26;
+  --color-successtext: #3de3cf;
+  --color-warningtext: #ffcc4d;
+  --color-errortext: #ff8fb0;
+  --color-infotext: #7fdcf3;
+
+  --background: var(--color-darkgray);
+  --foreground: #c9d1da;
+  --card: var(--color-dark);
+  --card-foreground: #c9d1da;
+  --popover: var(--color-darkgray);
+  --popover-foreground: #c9d1da;
+  --muted: #2a3851;
+  --muted-foreground: #95a1ad;
+  --border: var(--color-darkborder);
+  --input: var(--color-darkborder);
+  --heading: var(--color-white);
+  --shadow-card: 0px 1px 4px 0px rgba(0, 0, 0, 0.35);
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-card: var(--shadow-card);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-heading: var(--heading);
+
+  --color-info: var(--color-info);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-lightprimary: var(--color-lightprimary);
+  --color-lightsecondary: var(--color-lightsecondary);
+  --color-lightsuccess: var(--color-lightsuccess);
+  --color-lightwarning: var(--color-lightwarning);
+  --color-lighterror: var(--color-lighterror);
+  --color-lightinfo: var(--color-lightinfo);
+  --color-primaryemphasis: var(--color-primaryemphasis);
+  --color-secondaryemphasis: var(--color-secondaryemphasis);
+  --color-erroremphasis: var(--color-erroremphasis);
+  --color-successtext: var(--color-successtext);
+  --color-warningtext: var(--color-warningtext);
+  --color-errortext: var(--color-errortext);
+  --color-infotext: var(--color-infotext);
+  --color-charcoal: var(--color-charcoal);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans text-sm antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-heading font-semibold;
+    text-wrap: balance;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input[type='number'] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility card-title {
+  @apply text-lg font-semibold text-heading;
+}
+
+@utility numeros {
+  font-variant-numeric: tabular-nums;
+}

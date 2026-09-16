@@ -1,0 +1,3494 @@
+{
+ "fonte": {
+  "nome": "Dietary Reference Intakes Summary Tables (Appendix J)",
+  "publicacao": "NASEM. Dietary Reference Intakes for Sodium and Potassium. Washington (DC): National Academies Press; 2019.",
+  "url": "https://www.ncbi.nlm.nih.gov/books/NBK545442/",
+  "baixadoEm": "2026-09-15"
+ },
+ "nutrientes": {
+  "calcio_mg": {
+   "rotulo": "Cálcio",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "cobre_mg": {
+   "rotulo": "Cobre",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "ferro_mg": {
+   "rotulo": "Ferro",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "fosforo_mg": {
+   "rotulo": "Fósforo",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "iodo_mcg": {
+   "rotulo": "Iodo",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "magnesio_mg": {
+   "rotulo": "Magnésio",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "farmacologico",
+    "nota": "UL representa apenas magnésio de agente farmacológico; não inclui alimentos e água."
+   }
+  },
+  "manganes_mg": {
+   "rotulo": "Manganês",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "potassio_mg": {
+   "rotulo": "Potássio",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "selenio_mcg": {
+   "rotulo": "Selênio",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "sodio_mg": {
+   "rotulo": "Sódio",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "zinco_mg": {
+   "rotulo": "Zinco",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "vitamina_a_rae_mcg": {
+   "rotulo": "Vitamina A (RAE)",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "vitamina-a-pre-formada",
+    "nota": "UL apenas para vitamina A pré-formada (retinol), não para carotenoides."
+   }
+  },
+  "vitamina_c_mg": {
+   "rotulo": "Vitamina C",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "vitamina_d_mcg": {
+   "rotulo": "Vitamina D",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "vitamina_e_mg": {
+   "rotulo": "Vitamina E",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "sintetica",
+    "nota": "UL aplica-se a formas sintéticas de suplementos e alimentos fortificados."
+   }
+  },
+  "tiamina_mg": {
+   "rotulo": "Tiamina (B1)",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "riboflavina_mg": {
+   "rotulo": "Riboflavina (B2)",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "niacina_mg": {
+   "rotulo": "Niacina (B3)",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "sintetica",
+    "nota": "UL aplica-se a formas sintéticas de suplementos e alimentos fortificados."
+   }
+  },
+  "piridoxina_mg": {
+   "rotulo": "Piridoxina (B6)",
+   "unidade": "mg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "folato_dfe_mcg": {
+   "rotulo": "Folato (DFE)",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "sintetica",
+    "nota": "UL aplica-se a formas sintéticas de suplementos e alimentos fortificados."
+   }
+  },
+  "vitamina_b12_mcg": {
+   "rotulo": "Vitamina B12",
+   "unidade": "µg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "fibra_g": {
+   "rotulo": "Fibra alimentar",
+   "unidade": "g",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "carboidrato_g": {
+   "rotulo": "Carboidrato",
+   "unidade": "g",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "proteina_g": {
+   "rotulo": "Proteína",
+   "unidade": "g",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  },
+  "proteina_g_kg": {
+   "rotulo": "Proteína por kg",
+   "unidade": "g/kg",
+   "ul": {
+    "escopo": "total",
+    "nota": null
+   }
+  }
+ },
+ "estagios": [
+  {
+   "id": "crianca-1-3",
+   "sexo": null,
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 1,
+   "idadeMax": 3
+  },
+  {
+   "id": "crianca-4-8",
+   "sexo": null,
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 4,
+   "idadeMax": 8
+  },
+  {
+   "id": "masculino-9-13",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 9,
+   "idadeMax": 13
+  },
+  {
+   "id": "masculino-14-18",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 14,
+   "idadeMax": 18
+  },
+  {
+   "id": "masculino-19-30",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 19,
+   "idadeMax": 30
+  },
+  {
+   "id": "masculino-31-50",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 31,
+   "idadeMax": 50
+  },
+  {
+   "id": "masculino-51-70",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 51,
+   "idadeMax": 70
+  },
+  {
+   "id": "masculino-71+",
+   "sexo": "M",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 71,
+   "idadeMax": null
+  },
+  {
+   "id": "feminino-9-13",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 9,
+   "idadeMax": 13
+  },
+  {
+   "id": "feminino-14-18",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 14,
+   "idadeMax": 18
+  },
+  {
+   "id": "feminino-19-30",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 19,
+   "idadeMax": 30
+  },
+  {
+   "id": "feminino-31-50",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 31,
+   "idadeMax": 50
+  },
+  {
+   "id": "feminino-51-70",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 51,
+   "idadeMax": 70
+  },
+  {
+   "id": "feminino-71+",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": false,
+   "idadeMin": 71,
+   "idadeMax": null
+  },
+  {
+   "id": "gestante-14-18",
+   "sexo": "F",
+   "gestante": true,
+   "lactante": false,
+   "idadeMin": 14,
+   "idadeMax": 18
+  },
+  {
+   "id": "gestante-19-30",
+   "sexo": "F",
+   "gestante": true,
+   "lactante": false,
+   "idadeMin": 19,
+   "idadeMax": 30
+  },
+  {
+   "id": "gestante-31-50",
+   "sexo": "F",
+   "gestante": true,
+   "lactante": false,
+   "idadeMin": 31,
+   "idadeMax": 50
+  },
+  {
+   "id": "lactante-14-18",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": true,
+   "idadeMin": 14,
+   "idadeMax": 18
+  },
+  {
+   "id": "lactante-19-30",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": true,
+   "idadeMin": 19,
+   "idadeMax": 30
+  },
+  {
+   "id": "lactante-31-50",
+   "sexo": "F",
+   "gestante": false,
+   "lactante": true,
+   "idadeMin": 31,
+   "idadeMax": 50
+  }
+ ],
+ "valores": {
+  "crianca-1-3": {
+   "calcio_mg": {
+    "ear": 500,
+    "rda": 700,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.87,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 210,
+    "rda": 300,
+    "ai": null,
+    "ul": 600
+   },
+   "vitamina_c_mg": {
+    "ear": 13,
+    "rda": 15,
+    "ai": null,
+    "ul": 400
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 63
+   },
+   "vitamina_e_mg": {
+    "ear": 5,
+    "rda": 6,
+    "ai": null,
+    "ul": 200
+   },
+   "tiamina_mg": {
+    "ear": 0.4,
+    "rda": 0.5,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.4,
+    "rda": 0.5,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 5,
+    "rda": 6,
+    "ai": null,
+    "ul": 10
+   },
+   "piridoxina_mg": {
+    "ear": 0.4,
+    "rda": 0.5,
+    "ai": null,
+    "ul": 30
+   },
+   "folato_dfe_mcg": {
+    "ear": 120,
+    "rda": 150,
+    "ai": null,
+    "ul": 300
+   },
+   "vitamina_b12_mcg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.26,
+    "rda": 0.34,
+    "ai": null,
+    "ul": 1
+   },
+   "iodo_mcg": {
+    "ear": 65,
+    "rda": 90,
+    "ai": null,
+    "ul": 200
+   },
+   "ferro_mg": {
+    "ear": 3,
+    "rda": 7,
+    "ai": null,
+    "ul": 40
+   },
+   "magnesio_mg": {
+    "ear": 65,
+    "rda": 80,
+    "ai": null,
+    "ul": 65
+   },
+   "fosforo_mg": {
+    "ear": 380,
+    "rda": 460,
+    "ai": null,
+    "ul": 3000
+   },
+   "selenio_mcg": {
+    "ear": 17,
+    "rda": 20,
+    "ai": null,
+    "ul": 90
+   },
+   "zinco_mg": {
+    "ear": 2.5,
+    "rda": 3,
+    "ai": null,
+    "ul": 7
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.2,
+    "ul": 2
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2000,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 800,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 19,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 13,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "crianca-4-8": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.76,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 275,
+    "rda": 400,
+    "ai": null,
+    "ul": 900
+   },
+   "vitamina_c_mg": {
+    "ear": 22,
+    "rda": 25,
+    "ai": null,
+    "ul": 650
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 75
+   },
+   "vitamina_e_mg": {
+    "ear": 6,
+    "rda": 7,
+    "ai": null,
+    "ul": 300
+   },
+   "tiamina_mg": {
+    "ear": 0.5,
+    "rda": 0.6,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.5,
+    "rda": 0.6,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 6,
+    "rda": 8,
+    "ai": null,
+    "ul": 15
+   },
+   "piridoxina_mg": {
+    "ear": 0.5,
+    "rda": 0.6,
+    "ai": null,
+    "ul": 40
+   },
+   "folato_dfe_mcg": {
+    "ear": 160,
+    "rda": 200,
+    "ai": null,
+    "ul": 400
+   },
+   "vitamina_b12_mcg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.34,
+    "rda": 0.44,
+    "ai": null,
+    "ul": 3
+   },
+   "iodo_mcg": {
+    "ear": 65,
+    "rda": 90,
+    "ai": null,
+    "ul": 300
+   },
+   "ferro_mg": {
+    "ear": 4.1,
+    "rda": 10,
+    "ai": null,
+    "ul": 40
+   },
+   "magnesio_mg": {
+    "ear": 110,
+    "rda": 130,
+    "ai": null,
+    "ul": 110
+   },
+   "fosforo_mg": {
+    "ear": 405,
+    "rda": 500,
+    "ai": null,
+    "ul": 3000
+   },
+   "selenio_mcg": {
+    "ear": 23,
+    "rda": 30,
+    "ai": null,
+    "ul": 150
+   },
+   "zinco_mg": {
+    "ear": 4,
+    "rda": 5,
+    "ai": null,
+    "ul": 12
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.5,
+    "ul": 3
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2300,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1000,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 25,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 19,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-9-13": {
+   "calcio_mg": {
+    "ear": 1100,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.76,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 445,
+    "rda": 600,
+    "ai": null,
+    "ul": 1700
+   },
+   "vitamina_c_mg": {
+    "ear": 39,
+    "rda": 45,
+    "ai": null,
+    "ul": 1200
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 9,
+    "rda": 11,
+    "ai": null,
+    "ul": 600
+   },
+   "tiamina_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.8,
+    "rda": 0.9,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 9,
+    "rda": 12,
+    "ai": null,
+    "ul": 20
+   },
+   "piridoxina_mg": {
+    "ear": 0.8,
+    "rda": 1,
+    "ai": null,
+    "ul": 60
+   },
+   "folato_dfe_mcg": {
+    "ear": 250,
+    "rda": 300,
+    "ai": null,
+    "ul": 600
+   },
+   "vitamina_b12_mcg": {
+    "ear": 1.5,
+    "rda": 1.8,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.54,
+    "rda": 0.7,
+    "ai": null,
+    "ul": 5
+   },
+   "iodo_mcg": {
+    "ear": 73,
+    "rda": 120,
+    "ai": null,
+    "ul": 600
+   },
+   "ferro_mg": {
+    "ear": 5.9,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "magnesio_mg": {
+    "ear": 200,
+    "rda": 240,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 35,
+    "rda": 40,
+    "ai": null,
+    "ul": 280
+   },
+   "zinco_mg": {
+    "ear": 7,
+    "rda": 8,
+    "ai": null,
+    "ul": 23
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.9,
+    "ul": 6
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2500,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1200,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 31,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 34,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-14-18": {
+   "calcio_mg": {
+    "ear": 1100,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.73,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 630,
+    "rda": 900,
+    "ai": null,
+    "ul": 2800
+   },
+   "vitamina_c_mg": {
+    "ear": 63,
+    "rda": 75,
+    "ai": null,
+    "ul": 1800
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 800
+   },
+   "tiamina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 12,
+    "rda": 16,
+    "ai": null,
+    "ul": 30
+   },
+   "piridoxina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 80
+   },
+   "folato_dfe_mcg": {
+    "ear": 330,
+    "rda": 400,
+    "ai": null,
+    "ul": 800
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.685,
+    "rda": 0.89,
+    "ai": null,
+    "ul": 8
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 900
+   },
+   "ferro_mg": {
+    "ear": 7.7,
+    "rda": 11,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 340,
+    "rda": 410,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 8.5,
+    "rda": 11,
+    "ai": null,
+    "ul": 34
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.2,
+    "ul": 9
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 3000,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 38,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 52,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-19-30": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 625,
+    "rda": 900,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 75,
+    "rda": 90,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 12,
+    "rda": 16,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 330,
+    "rda": 400,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.4,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.3,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 3400,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 38,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 56,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-31-50": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 625,
+    "rda": 900,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 75,
+    "rda": 90,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 12,
+    "rda": 16,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 350,
+    "rda": 420,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.4,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.3,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 3400,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 38,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 56,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-51-70": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 625,
+    "rda": 900,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 75,
+    "rda": 90,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 12,
+    "rda": 16,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.4,
+    "rda": 1.7,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 350,
+    "rda": 420,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.4,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.3,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 3400,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 30,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 56,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "masculino-71+": {
+   "calcio_mg": {
+    "ear": 1000,
+    "rda": 1200,
+    "ai": null,
+    "ul": 2000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 625,
+    "rda": 900,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 75,
+    "rda": 90,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 20,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 12,
+    "rda": 16,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.4,
+    "rda": 1.7,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 350,
+    "rda": 420,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.4,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.3,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 3400,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 30,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 56,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-9-13": {
+   "calcio_mg": {
+    "ear": 1100,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.76,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 420,
+    "rda": 600,
+    "ai": null,
+    "ul": 1700
+   },
+   "vitamina_c_mg": {
+    "ear": 39,
+    "rda": 45,
+    "ai": null,
+    "ul": 1200
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 9,
+    "rda": 11,
+    "ai": null,
+    "ul": 600
+   },
+   "tiamina_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.8,
+    "rda": 0.9,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 9,
+    "rda": 12,
+    "ai": null,
+    "ul": 20
+   },
+   "piridoxina_mg": {
+    "ear": 0.8,
+    "rda": 1,
+    "ai": null,
+    "ul": 60
+   },
+   "folato_dfe_mcg": {
+    "ear": 250,
+    "rda": 300,
+    "ai": null,
+    "ul": 600
+   },
+   "vitamina_b12_mcg": {
+    "ear": 1.5,
+    "rda": 1.8,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.54,
+    "rda": 0.7,
+    "ai": null,
+    "ul": 5
+   },
+   "iodo_mcg": {
+    "ear": 73,
+    "rda": 120,
+    "ai": null,
+    "ul": 600
+   },
+   "ferro_mg": {
+    "ear": 5.7,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "magnesio_mg": {
+    "ear": 200,
+    "rda": 240,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 35,
+    "rda": 40,
+    "ai": null,
+    "ul": 280
+   },
+   "zinco_mg": {
+    "ear": 7,
+    "rda": 8,
+    "ai": null,
+    "ul": 23
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.6,
+    "ul": 6
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2300,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1200,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 26,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 34,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-14-18": {
+   "calcio_mg": {
+    "ear": 1100,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.71,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 485,
+    "rda": 700,
+    "ai": null,
+    "ul": 2800
+   },
+   "vitamina_c_mg": {
+    "ear": 56,
+    "rda": 65,
+    "ai": null,
+    "ul": 1800
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 800
+   },
+   "tiamina_mg": {
+    "ear": 0.9,
+    "rda": 1,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.9,
+    "rda": 1,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 11,
+    "rda": 14,
+    "ai": null,
+    "ul": 30
+   },
+   "piridoxina_mg": {
+    "ear": 1,
+    "rda": 1.2,
+    "ai": null,
+    "ul": 80
+   },
+   "folato_dfe_mcg": {
+    "ear": 330,
+    "rda": 400,
+    "ai": null,
+    "ul": 800
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.685,
+    "rda": 0.89,
+    "ai": null,
+    "ul": 8
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 900
+   },
+   "ferro_mg": {
+    "ear": 7.9,
+    "rda": 15,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 300,
+    "rda": 360,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 7.3,
+    "rda": 9,
+    "ai": null,
+    "ul": 34
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.6,
+    "ul": 9
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2300,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 26,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 46,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-19-30": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 500,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 60,
+    "rda": 75,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 11,
+    "rda": 14,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 8.1,
+    "rda": 18,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 255,
+    "rda": 310,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 6.8,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.8,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2600,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 25,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 46,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-31-50": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 500,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 60,
+    "rda": 75,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 11,
+    "rda": 14,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 8.1,
+    "rda": 18,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 265,
+    "rda": 320,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 6.8,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.8,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2600,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 25,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 46,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-51-70": {
+   "calcio_mg": {
+    "ear": 1000,
+    "rda": 1200,
+    "ai": null,
+    "ul": 2000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 500,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 60,
+    "rda": 75,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 11,
+    "rda": 14,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.3,
+    "rda": 1.5,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 5,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 265,
+    "rda": 320,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 6.8,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.8,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2600,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 21,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 46,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "feminino-71+": {
+   "calcio_mg": {
+    "ear": 1000,
+    "rda": 1200,
+    "ai": null,
+    "ul": 2000
+   },
+   "carboidrato_g": {
+    "ear": 100,
+    "rda": 130,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.66,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 500,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 60,
+    "rda": 75,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 20,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 0.9,
+    "rda": 1.1,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 11,
+    "rda": 14,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.3,
+    "rda": 1.5,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 320,
+    "rda": 400,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2,
+    "rda": 2.4,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.7,
+    "rda": 0.9,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 95,
+    "rda": 150,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 5,
+    "rda": 8,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 265,
+    "rda": 320,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 3000
+   },
+   "selenio_mcg": {
+    "ear": 45,
+    "rda": 55,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 6.8,
+    "rda": 8,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1.8,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2600,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 21,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 46,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "gestante-14-18": {
+   "calcio_mg": {
+    "ear": 1000,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 135,
+    "rda": 175,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.88,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 530,
+    "rda": 750,
+    "ai": null,
+    "ul": 2800
+   },
+   "vitamina_c_mg": {
+    "ear": 66,
+    "rda": 80,
+    "ai": null,
+    "ul": 1800
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 800
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 14,
+    "rda": 18,
+    "ai": null,
+    "ul": 30
+   },
+   "piridoxina_mg": {
+    "ear": 1.6,
+    "rda": 1.9,
+    "ai": null,
+    "ul": 80
+   },
+   "folato_dfe_mcg": {
+    "ear": 520,
+    "rda": 600,
+    "ai": null,
+    "ul": 800
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.2,
+    "rda": 2.6,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.785,
+    "rda": 1,
+    "ai": null,
+    "ul": 8
+   },
+   "iodo_mcg": {
+    "ear": 160,
+    "rda": 220,
+    "ai": null,
+    "ul": 900
+   },
+   "ferro_mg": {
+    "ear": 23,
+    "rda": 27,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 335,
+    "rda": 400,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 3500
+   },
+   "selenio_mcg": {
+    "ear": 49,
+    "rda": 60,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 10.5,
+    "rda": 12,
+    "ai": null,
+    "ul": 34
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2,
+    "ul": 9
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2600,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 28,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "gestante-19-30": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 135,
+    "rda": 175,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.88,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 550,
+    "rda": 770,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 70,
+    "rda": 85,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 14,
+    "rda": 18,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.6,
+    "rda": 1.9,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 520,
+    "rda": 600,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.2,
+    "rda": 2.6,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.8,
+    "rda": 1,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 160,
+    "rda": 220,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 22,
+    "rda": 27,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 290,
+    "rda": 350,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 3500
+   },
+   "selenio_mcg": {
+    "ear": 49,
+    "rda": 60,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.5,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2900,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 28,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "gestante-31-50": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 135,
+    "rda": 175,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 0.88,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 550,
+    "rda": 770,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 70,
+    "rda": 85,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 12,
+    "rda": 15,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 14,
+    "rda": 18,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.6,
+    "rda": 1.9,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 520,
+    "rda": 600,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.2,
+    "rda": 2.6,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.8,
+    "rda": 1,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 160,
+    "rda": 220,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 22,
+    "rda": 27,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 300,
+    "rda": 360,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 3500
+   },
+   "selenio_mcg": {
+    "ear": 49,
+    "rda": 60,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 9.5,
+    "rda": 11,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2900,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 28,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "lactante-14-18": {
+   "calcio_mg": {
+    "ear": 1000,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "carboidrato_g": {
+    "ear": 160,
+    "rda": 210,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 1.05,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 885,
+    "rda": 1200,
+    "ai": null,
+    "ul": 2800
+   },
+   "vitamina_c_mg": {
+    "ear": 96,
+    "rda": 115,
+    "ai": null,
+    "ul": 1800
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 16,
+    "rda": 19,
+    "ai": null,
+    "ul": 800
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.3,
+    "rda": 1.6,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 13,
+    "rda": 17,
+    "ai": null,
+    "ul": 30
+   },
+   "piridoxina_mg": {
+    "ear": 1.7,
+    "rda": 2,
+    "ai": null,
+    "ul": 80
+   },
+   "folato_dfe_mcg": {
+    "ear": 450,
+    "rda": 500,
+    "ai": null,
+    "ul": 800
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.4,
+    "rda": 2.8,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 0.985,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 8
+   },
+   "iodo_mcg": {
+    "ear": 209,
+    "rda": 290,
+    "ai": null,
+    "ul": 900
+   },
+   "ferro_mg": {
+    "ear": 7,
+    "rda": 10,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 300,
+    "rda": 360,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 1055,
+    "rda": 1250,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 59,
+    "rda": 70,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 10.9,
+    "rda": 13,
+    "ai": null,
+    "ul": 34
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.6,
+    "ul": 9
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2500,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 29,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "lactante-19-30": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 160,
+    "rda": 210,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 1.05,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 900,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 100,
+    "rda": 120,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 16,
+    "rda": 19,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.3,
+    "rda": 1.6,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 13,
+    "rda": 17,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.7,
+    "rda": 2,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 450,
+    "rda": 500,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.4,
+    "rda": 2.8,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 209,
+    "rda": 290,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6.5,
+    "rda": 9,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 255,
+    "rda": 310,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 59,
+    "rda": 70,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 10.4,
+    "rda": 12,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.6,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2800,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 29,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  },
+  "lactante-31-50": {
+   "calcio_mg": {
+    "ear": 800,
+    "rda": 1000,
+    "ai": null,
+    "ul": 2500
+   },
+   "carboidrato_g": {
+    "ear": 160,
+    "rda": 210,
+    "ai": null,
+    "ul": null
+   },
+   "proteina_g_kg": {
+    "ear": 1.05,
+    "rda": null,
+    "ai": null,
+    "ul": null
+   },
+   "vitamina_a_rae_mcg": {
+    "ear": 900,
+    "rda": 1300,
+    "ai": null,
+    "ul": 3000
+   },
+   "vitamina_c_mg": {
+    "ear": 100,
+    "rda": 120,
+    "ai": null,
+    "ul": 2000
+   },
+   "vitamina_d_mcg": {
+    "ear": 10,
+    "rda": 15,
+    "ai": null,
+    "ul": 100
+   },
+   "vitamina_e_mg": {
+    "ear": 16,
+    "rda": 19,
+    "ai": null,
+    "ul": 1000
+   },
+   "tiamina_mg": {
+    "ear": 1.2,
+    "rda": 1.4,
+    "ai": null,
+    "ul": null
+   },
+   "riboflavina_mg": {
+    "ear": 1.3,
+    "rda": 1.6,
+    "ai": null,
+    "ul": null
+   },
+   "niacina_mg": {
+    "ear": 13,
+    "rda": 17,
+    "ai": null,
+    "ul": 35
+   },
+   "piridoxina_mg": {
+    "ear": 1.7,
+    "rda": 2,
+    "ai": null,
+    "ul": 100
+   },
+   "folato_dfe_mcg": {
+    "ear": 450,
+    "rda": 500,
+    "ai": null,
+    "ul": 1000
+   },
+   "vitamina_b12_mcg": {
+    "ear": 2.4,
+    "rda": 2.8,
+    "ai": null,
+    "ul": null
+   },
+   "cobre_mg": {
+    "ear": 1,
+    "rda": 1.3,
+    "ai": null,
+    "ul": 10
+   },
+   "iodo_mcg": {
+    "ear": 209,
+    "rda": 290,
+    "ai": null,
+    "ul": 1100
+   },
+   "ferro_mg": {
+    "ear": 6.5,
+    "rda": 9,
+    "ai": null,
+    "ul": 45
+   },
+   "magnesio_mg": {
+    "ear": 265,
+    "rda": 320,
+    "ai": null,
+    "ul": 350
+   },
+   "fosforo_mg": {
+    "ear": 580,
+    "rda": 700,
+    "ai": null,
+    "ul": 4000
+   },
+   "selenio_mcg": {
+    "ear": 59,
+    "rda": 70,
+    "ai": null,
+    "ul": 400
+   },
+   "zinco_mg": {
+    "ear": 10.4,
+    "rda": 12,
+    "ai": null,
+    "ul": 40
+   },
+   "manganes_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2.6,
+    "ul": 11
+   },
+   "potassio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 2800,
+    "ul": null
+   },
+   "sodio_mg": {
+    "ear": null,
+    "rda": null,
+    "ai": 1500,
+    "ul": null
+   },
+   "fibra_g": {
+    "ear": null,
+    "rda": null,
+    "ai": 29,
+    "ul": null
+   },
+   "proteina_g": {
+    "ear": null,
+    "rda": 71,
+    "ai": null,
+    "ul": null
+   }
+  }
+ },
+ "sodioCdrr": [
+  {
+   "idadeMin": 1,
+   "idadeMax": 3,
+   "valor": 1200
+  },
+  {
+   "idadeMin": 4,
+   "idadeMax": 8,
+   "valor": 1500
+  },
+  {
+   "idadeMin": 9,
+   "idadeMax": 13,
+   "valor": 1800
+  },
+  {
+   "idadeMin": 14,
+   "idadeMax": 18,
+   "valor": 2300
+  },
+  {
+   "idadeMin": 19,
+   "idadeMax": null,
+   "valor": 2300
+  }
+ ],
+ "amdr": [
+  {
+   "id": "1-3",
+   "idadeMin": 1,
+   "idadeMax": 3,
+   "gordura_pct": {
+    "min": 30,
+    "max": 40
+   },
+   "carboidrato_pct": {
+    "min": 45,
+    "max": 65
+   },
+   "proteina_pct": {
+    "min": 5,
+    "max": 20
+   }
+  },
+  {
+   "id": "4-18",
+   "idadeMin": 4,
+   "idadeMax": 18,
+   "gordura_pct": {
+    "min": 25,
+    "max": 35
+   },
+   "carboidrato_pct": {
+    "min": 45,
+    "max": 65
+   },
+   "proteina_pct": {
+    "min": 10,
+    "max": 30
+   }
+  },
+  {
+   "id": "adulto",
+   "idadeMin": 19,
+   "idadeMax": null,
+   "gordura_pct": {
+    "min": 20,
+    "max": 35
+   },
+   "carboidrato_pct": {
+    "min": 45,
+    "max": 65
+   },
+   "proteina_pct": {
+    "min": 10,
+    "max": 35
+   }
+  }
+ ]
+}

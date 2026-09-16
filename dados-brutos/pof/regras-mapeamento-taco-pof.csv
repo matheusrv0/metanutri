@@ -1,0 +1,196 @@
+padrao_taco;codigo_pof;medidas_excluidas;observacao
+^Arroz, tipo [12], cozido$;6300101;;POF: ARROZ (POLIDO, PARBOILIZADO), medidas de arroz pronto
+^Arroz, integral, cozido$;6300201;;POF: ARROZ INTEGRAL
+^Aveia, flocos, crua$;6500401;;POF: AVEIA EM FLOCOS
+^Biscoito, doce, recheado;8004801;CONCHA|COPO*|POTE|PRATO*|TIGELA|XICARA*;POF: BISCOITO RECHEADO
+^Biscoito, doce, maisena|^Biscoito, doce, wafer;8002301;CONCHA|COPO*|POTE|PRATO*|TIGELA|XICARA*;POF: BISCOITO DOCE
+^Biscoito, salgado, cream cracker;8002201;CONCHA|COPO*|POTE|PRATO*|TIGELA|XICARA*;POF: BISCOITO SALGADO
+^Pão, trigo, francês$;8000105;;POF: PAO DE SAL (pão francês)
+^Pão, trigo, forma, integral$;8001401;;POF: PAO INTEGRAL
+^Pão, trigo, sovado$;8001501;;POF: PAO NAO ESPECIFICADO (pão sovado)
+#removida: pão de forma branco não existe na TACO;;;POF: PAO DE FORMA INDUSTRIALIZADO
+^Pão, de queijo, assado$;8000801;;POF: PAO DE QUEIJO
+^Pão, milho, forma$;8001101;;POF: PAO DE MILHO
+^Torrada, pão francês$;8001901;;POF: TORRADA DE QUALQUER PAO
+^Cereal matinal, milho$;6500903;BARRA;POF: CEREAL MATINAL DE MILHO EM FLOCOS
+^Farinha, de mandioca, torrada$;6501401;;POF: FARINHA DE MANDIOCA
+^Milho, verde, enlatado, drenado$;7700401;;POF: MILHO VERDE EM CONSERVA
+^Pamonha;6905101;;POF: PAMONHA
+^Curau, milho verde$;8501904;;POF: CURAU
+^Pipoca;8501202;;POF: PIPOCA DOCE OU SALGADA
+^Polenta;8500218;;POF: POLENTA
+^Cuscuz, de milho, cozido com sal$;6902901;;POF: CUSCUZ
+^Tapioca, com manteiga$;6501516;;POF: TAPIOCA DE GOMA
+^Pastel, de (carne|queijo), frito$;8500202;;POF: PASTEL
+^Feijão, fradinho, cozido$;6301603;;POF: FEIJAO DE CORDA (feijão-fradinho)
+^Feijão, (carioca|preto|rajado|rosinha|roxo|jalo), cozido$;6303102;;POF: FEIJAO (PRETO, MULATINHO, ROXO, ROSINHA, ETC), medidas de feijão pronto
+^Feijão tropeiro mineiro$;8506101;;POF: FEIJAO TROPEIRO
+^Lentilha, cozida$;6302901;;POF: LENTILHA
+^Ervilha, enlatada, drenada$;7700201;;POF: ERVILHA EM CONSERVA
+^Ervilha, em vagem$;6705501;;POF: ERVILHA EM VAGEM
+^Amendoim, grão, cru$;6301001;;POF: AMENDOIM (EM GRAO) (IN NATURA)
+^Paçoca, amendoim$;6903203;;POF: PACOCA
+^Abóbora, ;6703901;;POF: ABOBORA
+^Abobrinha, ;6703701;;POF: ABOBRINHA
+^Acelga, crua$;6701501;;POF: ACELGA
+^Agrião, cru$;6701301;;POF: AGRIAO
+^Alface, ;6700101;;POF: ALFACE
+^Alho, cru$;6706201;;POF: ALHO
+^Alho-poró, cru$;6706301;;POF: ALHO PORO
+^Almeirão, ;6701601;;POF: ALMEIRAO
+^Batata, inglesa, (crua|cozida|frita|sauté)$;6400101;;POF: BATATA INGLESA
+^Batata, doce, (crua|cozida)$;6400401;;POF: BATATA DOCE
+^Batata, baroa, cozida$;6400304;;POF: CENOURA AMARELA (BATATA BAROA)
+^Berinjela, ;6705401;;POF: BERINJELA
+^Beterraba, ;6401101;;POF: BETERRABA
+^Brócolis, ;6701704;;POF: BROCOLIS
+^Cará, ;6400701;;POF: CARA
+^Caruru, cru$;6701901;;POF: CARURU (verdura)
+^Catalonha, ;6705801;;POF: CATALONHA
+^Cebola, crua$;6705701;;POF: CEBOLA
+^Cebolinha, crua$;6701101;;POF: CEBOLINHA
+^Cenoura, ;6401201;;POF: CENOURA
+^Chicória, crua$;6700301;;POF: CHICORIA
+^Chuchu, ;6704101;;POF: CHUCHU
+^Couve, manteiga, ;6700501;;POF: COUVE
+^Couve-flor, ;6700601;;POF: COUVE FLOR
+^Espinafre, ;6700701;;POF: ESPINAFRE
+^Inhame, cru$;6400501;;POF: INHAME
+^Jiló, cru$;6704201;;POF: JILO
+^Jurubeba, crua$;6808201;;POF: JURUBEBA
+^Mandioca, (crua|cozida|frita)$;6400601;;POF: MANDIOCA
+^Maxixe, cru$;6704301;;POF: MAXIXE
+^Mostarda, folha, crua$;6700801;;POF: MOSTARDA (VERDURA)
+^Nabo, cru$;6401301;;POF: NABO
+^Palmito, (juçara|pupunha), em conserva$;7700501;;POF: PALMITO EM CONSERVA
+^Pepino, cru$;6704001;;POF: PEPINO
+^Pimentão, ;6704501;;POF: PIMENTAO
+^Quiabo, cru$;6705001;;POF: QUIABO
+^Rabanete, cru$;6401001;;POF: RABANETE
+^Repolho, ;6700901;;POF: REPOLHO
+^Rúcula, crua$;6702001;;POF: RUCULA
+^Serralha, crua$;6701801;;POF: SERRALHA
+^Taioba, crua$;6701401;;POF: TAIOBA
+^Tomate, com semente, cru$;6705101;;POF: TOMATE
+^Vagem, ;6705201;;POF: VAGEM
+^Abacate, cru$;6802701;;POF: ABACATE
+^Abacaxi, cru$;6802601;;POF: ABACAXI
+^Abiu, cru$;6808001;;POF: ABIU
+^Acerola, crua$;6807701;;POF: ACEROLA
+^Ameixa, crua$;6804301;;POF: AMEIXA
+^Atemóia, crua$;6805401;;POF: ATEMOIA
+^Banana, [^,]+, crua$;6801101;;POF: BANANA (OURO, PRATA, D'AGUA, DA TERRA, ETC)
+^Cacau, cru$;6806301;;POF: CACAU
+^Cajá-Manga, cru$;6804601;;POF: CAJA MANGA
+^Caju, cru$;6804401;;POF: CAJU
+^Caqui, chocolate, cru$;6802801;;POF: CAQUI
+^Carambola, crua$;6804801;;POF: CARAMBOLA
+^Ciriguela, crua$;6806901;;POF: CIRIGUELA
+^Cupuaçu, cru$;6807301;;POF: CUPUACU
+^Figo, cru$;6802901;;POF: FIGO
+^Fruta-pão, crua$;6805901;;POF: FRUTA PAO
+^Goiaba, (branca|vermelha), com casca, crua$;6804201;;POF: GOIABA
+^Graviola, crua$;6805001;;POF: GRAVIOLA
+^Jaca, crua$;6804101;;POF: JACA
+^Jambo, cru$;6805301;;POF: JAMBO
+^Jamelão, cru$;6810201;;POF: JAMELAO (JAMBURAO)
+^Kiwi, cru$;6807801;;POF: KIWI
+^Laranja, [^,]+, crua$;6801801;;POF: LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC)
+^Limão, [^,]+, cru$;6802001;;POF: LIMAO (COMUM, GALEGO, ETC)
+^Maçã, [^,]+, com casca, crua$;6803001;;POF: MACA
+^Mamão, (Formosa|Papaia), cru$;6803101;;POF: MAMAO
+^Manga, [^,]+, crua$;6803201;;POF: MANGA
+^Maracujá, cru$;6803301;;POF: MARACUJA
+^Melancia, crua$;6803401;;POF: MELANCIA
+^Melão, cru$;6803501;;POF: MELAO
+^Mexerica, [^,]+, crua$;6802202;;POF: MEXERICA
+^Morango, cru$;6805201;;POF: MORANGO
+^Nêspera, crua$;6805801;;POF: NESPERA
+^Pequi, cru$;6806701;;POF: PEQUI
+^Pera, [^,]+, crua$|^Pêra, [^,]+, crua$;6803601;;POF: PERA
+^Pêssego, [^,]+, cru$;6803701;;POF: PESSEGO
+^Pinha, crua$;6803802;;POF: PINHA (FRUTA DE CONDE)
+^Pitanga, crua$;6806801;;POF: PITANGA
+^Romã, crua$;6807601;;POF: ROMA
+^Tamarindo, cru$;6806201;;POF: TAMARINDO
+^Tangerina, [^,]+, crua$;6802201;;POF: TANGERINA
+^Tucumã, cru$;6601108;;POF: TUCUMA
+^Umbu, cru$;6807101;;POF: UMBU
+^Uva, [^,]+, crua$;6803901;;POF: UVA
+^Carne, bovina, acém, moído, cozido$;7104301;;POF: CARNE MOIDA
+^Carne, bovina, acém, sem gordura, cozido$;7100801;;POF: ACEM
+^Carne, bovina, contra-filé, (com|sem) gordura, grelhado$;7100201;;POF: CONTRAFILE
+^Carne, bovina, miolo de alcatra, sem gordura, grelhado$;7100301;;POF: ALCATRA
+^Carne, bovina, picanha, (com|sem) gordura, grelhada$;7100304;;POF: PICANHA
+^Carne, bovina, patinho, sem gordura, grelhado$;7100501;;POF: PATINHO
+^Carne, bovina, músculo, sem gordura, cozido$;7101001;;POF: MUSCULO BOVINO
+^Carne, bovina, peito, sem gordura, cozido$;7101101;;POF: PEITO BOVINO
+^Carne, bovina, costela, assada$;7101301;;POF: COSTELA BOVINA
+^Carne, bovina, fígado, grelhado$;7102501;;POF: FIGADO BOVINO
+^Carne, bovina, língua, cozida$;7102701;;POF: LINGUA BOVINA
+^Carne, bovina, lagarto, cozido$;7106401;;POF: LAGARTO BOVINO
+^Frango, coxa, (com|sem) pele, (assada|cozida)$;7800302;ASA|PEITO|SOBRECOXA|PESCOCO|COSTELA|BIFE|FILE;POF: FRANGO EM PEDACOS, só medidas que servem para coxa
+^Frango, sobrecoxa, (com|sem) pele, assada$;7800302;ASA|PEITO|COXA|PESCOCO|COSTELA|BIFE|FILE;POF: FRANGO EM PEDACOS, só medidas que servem para sobrecoxa
+^Frango, peito, (com|sem) pele, (cozido|grelhado|assado)$;7800302;ASA|COXA|SOBRECOXA|PESCOCO|COSTELA;POF: FRANGO EM PEDACOS, só medidas que servem para peito
+#removida: TACO só tem asa crua;;;
+#^Frango, asa, com pele, assada$;7800302;PEITO|COXA|SOBRECOXA|PESCOCO|COSTELA|BIFE|FILE;POF: FRANGO EM PEDACOS, só medidas que servem para asa
+^Frango, fígado, cru$;;;sem mapeamento: forma crua de víscera
+^Porco, bisteca, grelhada$;7103305;;POF: BISTECA SUINA
+^Porco, lombo, assado$;7103701;;POF: LOMBO SUINO
+^Porco, pernil, assado$;7103401;;POF: PERNIL SUINO
+^Porco, costela, assada$;7103501;;POF: COSTELA SUINA
+^Lingüiça, porco, (frita|grelhada)$;8102204;;POF: LINGUICA (SUINA, BOVINA, MISTA, ETC)
+^Lingüiça, frango, (frita|grelhada)$;8102207;;POF: LINGUICA DE FRANGO
+^Hambúrguer, bovino, (frito|grelhado)$;8100502;;POF: HAMBURGUER DE CARNE BOVINA
+^Mortadela$;8102601;;POF: MORTADELA
+^Presunto, (com|sem) capa de gordura$;8102901;;POF: PRESUNTO
+^Salame$;8102701;;POF: SALAME
+^Apresuntado$;8103601;;POF: APRESUNTADO
+^Quibe, (assado|frito)$;8500211;;POF: QUIBE
+^Coxinha de frango, frita$;8500205;;POF: COXINHA
+^Croquete, de carne, frito$;8500203;;POF: CROQUETE
+^Empada de frango, pré-cozida, assada$;8500206;;POF: EMPADA
+^Atum, conserva em óleo$;7703402;;POF: ATUM EM CONSERVA
+^Sardinha, conserva em óleo$;7703002;;POF: SARDINHA EM CONSERVA
+^(Pescada|Merluza|Corvina do mar|Cação|Abadejo|Pescadinha|Salmão|Manjuba|Sardinha, inteira)[^,]*,.*(cozid|grelhad|assad|frit|ensopad)[ao]?.*$;7200101;BOLA;POF: PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC)
+^(Pintado|Tucunaré|Lambari|Corimba|Corimbatá|Dourada de água doce|Corvina de água doce|Porquinho)[^,]*,.*(cozid|grelhad|assad|frit|ensopad)[ao]?.*$;7400101;BOLA;POF: PEIXE DE AGUA DOCE (INTEIRO, EM POSTA, EM FILE, ETC)
+^Bacalhau, salgado, refogado$;7270401;;POF: BACALHAU
+^Camarão, .*(cozido|frito)$;7260101;;POF: CAMARAO
+^Caranguejo, cozido$;7262101;;POF: CARANGUEJO
+^Leite, de vaca, integral$;7900101;;POF: LEITE DE VACA INTEGRAL
+^Leite, de vaca, desnatado, UHT$;7903601;;POF: LEITE DE VACA DESNATADO
+^Leite, de cabra$;7900301;;POF: LEITE DE CABRA
+^Iogurte, natural, desnatado$;7901203;PONTA DE FACA;POF: IOGURTE DESNATADO
+^Iogurte, natural$;7901204;;POF: IOGURTE NATURAL
+^Iogurte, sabor ;7901201;;POF: IOGURTE DE QUALQUER SABOR
+^Bebida láctea, ;7901303;;POF: BEBIDA LACTEA
+^Queijo, minas, frescal$;7902001;;POF: QUEIJO DE MINAS
+^Queijo, mozarela$;7901801;;POF: QUEIJO MUZARELLA
+^Queijo, prato$;7901701;;POF: QUEIJO PRATO
+^Queijo, parmesão$;7902403;;POF: QUEIJO RALADO
+^Queijo, ricota$;7902201;;POF: QUEIJO RICOTA
+^Queijo, requeijão, cremoso$;7902901;;POF: REQUEIJAO
+^Creme de Leite$;7901001;;POF: CREME DE LEITE
+^Ovo, de galinha, inteiro, (cozido/10minutos|frito)$;7803301;;POF: OVO DE GALINHA
+^Ovo, de codorna, inteiro, cru$;7803501;;POF: OVO DE CODORNA
+^Omelete, de queijo$;8506501;;POF: OMELETE
+^Castanha-do-Brasil, crua$;6600701;;POF: CASTANHA DO PARA
+^Castanha-de-caju, torrada, salgada$;6600801;CONCHA|COPO*;POF: CASTANHA DE CAJU
+^Amêndoa, torrada, salgada$;6600501;;POF: AMENDOA
+^Noz, crua$;6601501;;POF: NOZ
+^Linhaça, semente$;6302001;;POF: SEMENTE DE LINHACA
+^Açúcar, (cristal|refinado)$;6906602;;POF: ACUCAR
+^Açúcar, mascavo$;6900304;;POF: ACUCAR MASCAVO
+^Mel, de abelha$;6901602;;POF: MEL
+^Azeite, de oliva, extra virgem$;8400101;;POF: AZEITE DE OLIVA
+^Óleo, de soja$;8400301;;POF: OLEO DE SOJA
+^Óleo, de (canola|girassol|milho)$;8403201;;POF: OLEO NAO ESPECIFICADO
+^Manteiga, (com|sem) sal$;7901501;;POF: MANTEIGA COM OU SEM SAL
+^Margarina, ;7901602;;POF: MARGARINA COM OU SEM SAL
+^Café, infusão 10%$;8501302;;POF: CAFE
+^Chá, [^,]+, infusão 5%$;8206301;;POF: CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC)
+^Chocolate, ao leite$;6900702;;POF: BARRA DE CHOCOLATE
+#removida: goiabada não existe na TACO;;;
+^Geléia, mocotó, natural$;6901101;;POF: GELEIA DE MOCOTO
+^Refrigerante, tipo cola$;8200101;;POF: REFRIGERANTE DE COLA TRADICIONAL
+^Refrigerante, tipo guaraná$;8200301;;POF: REFRIGERANTE DE GUARANA TRADICIONAL

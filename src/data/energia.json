@@ -1,0 +1,284 @@
+{
+ "fonte": {
+  "nome": "Dietary Reference Intakes for Energy, Summary Tables S-1 a S-6",
+  "publicacao": "NASEM. Dietary Reference Intakes for Energy. Washington (DC): National Academies Press; 2023.",
+  "url": "https://www.ncbi.nlm.nih.gov/books/NBK591034/",
+  "baixadoEm": "2026-09-15"
+ },
+ "unidades": {
+  "idade": "anos",
+  "estatura": "cm",
+  "peso": "kg",
+  "gestacao": "semanas",
+  "resultado": "kcal/dia"
+ },
+ "categoriasAtividade": [
+  "inativo",
+  "pouco-ativo",
+  "ativo",
+  "muito-ativo"
+ ],
+ "equacoes": {
+  "crianca-1-2-M": {
+   "constante": -716.45,
+   "idade": -1,
+   "estatura": 17.82,
+   "peso": 15.06,
+   "gestacaoSemanas": 0
+  },
+  "crianca-1-2-F": {
+   "constante": -69.15,
+   "idade": 80,
+   "estatura": 2.65,
+   "peso": 54.15,
+   "gestacaoSemanas": 0
+  },
+  "3-18-M": {
+   "inativo": {
+    "constante": -447.51,
+    "idade": 3.68,
+    "estatura": 13.01,
+    "peso": 13.15,
+    "gestacaoSemanas": 0
+   },
+   "pouco-ativo": {
+    "constante": 19.12,
+    "idade": 3.68,
+    "estatura": 8.62,
+    "peso": 20.28,
+    "gestacaoSemanas": 0
+   },
+   "ativo": {
+    "constante": -388.19,
+    "idade": 3.68,
+    "estatura": 12.66,
+    "peso": 20.46,
+    "gestacaoSemanas": 0
+   },
+   "muito-ativo": {
+    "constante": -671.75,
+    "idade": 3.68,
+    "estatura": 15.38,
+    "peso": 23.25,
+    "gestacaoSemanas": 0
+   }
+  },
+  "3-18-F": {
+   "inativo": {
+    "constante": 55.59,
+    "idade": -22.25,
+    "estatura": 8.43,
+    "peso": 17.07,
+    "gestacaoSemanas": 0
+   },
+   "pouco-ativo": {
+    "constante": -297.54,
+    "idade": -22.25,
+    "estatura": 12.77,
+    "peso": 14.73,
+    "gestacaoSemanas": 0
+   },
+   "ativo": {
+    "constante": -189.55,
+    "idade": -22.25,
+    "estatura": 11.74,
+    "peso": 18.34,
+    "gestacaoSemanas": 0
+   },
+   "muito-ativo": {
+    "constante": -709.59,
+    "idade": -22.25,
+    "estatura": 18.22,
+    "peso": 14.25,
+    "gestacaoSemanas": 0
+   }
+  },
+  "adulto-M": {
+   "inativo": {
+    "constante": 753.07,
+    "idade": -10.83,
+    "estatura": 6.5,
+    "peso": 14.1,
+    "gestacaoSemanas": 0
+   },
+   "pouco-ativo": {
+    "constante": 581.47,
+    "idade": -10.83,
+    "estatura": 8.3,
+    "peso": 14.94,
+    "gestacaoSemanas": 0
+   },
+   "ativo": {
+    "constante": 1004.82,
+    "idade": -10.83,
+    "estatura": 6.52,
+    "peso": 15.91,
+    "gestacaoSemanas": 0
+   },
+   "muito-ativo": {
+    "constante": -517.88,
+    "idade": -10.83,
+    "estatura": 15.61,
+    "peso": 19.11,
+    "gestacaoSemanas": 0
+   }
+  },
+  "adulto-F": {
+   "inativo": {
+    "constante": 584.9,
+    "idade": -7.01,
+    "estatura": 5.72,
+    "peso": 11.71,
+    "gestacaoSemanas": 0
+   },
+   "pouco-ativo": {
+    "constante": 575.77,
+    "idade": -7.01,
+    "estatura": 6.6,
+    "peso": 12.14,
+    "gestacaoSemanas": 0
+   },
+   "ativo": {
+    "constante": 710.25,
+    "idade": -7.01,
+    "estatura": 6.54,
+    "peso": 12.34,
+    "gestacaoSemanas": 0
+   },
+   "muito-ativo": {
+    "constante": 511.83,
+    "idade": -7.01,
+    "estatura": 9.07,
+    "peso": 12.56,
+    "gestacaoSemanas": 0
+   }
+  },
+  "gestacao": {
+   "inativo": {
+    "constante": 1131.2,
+    "idade": -2.04,
+    "estatura": 0.34,
+    "peso": 12.15,
+    "gestacaoSemanas": 9.16
+   },
+   "pouco-ativo": {
+    "constante": 693.35,
+    "idade": -2.04,
+    "estatura": 5.73,
+    "peso": 10.2,
+    "gestacaoSemanas": 9.16
+   },
+   "ativo": {
+    "constante": -223.84,
+    "idade": -2.04,
+    "estatura": 13.23,
+    "peso": 8.15,
+    "gestacaoSemanas": 9.16
+   },
+   "muito-ativo": {
+    "constante": -779.72,
+    "idade": -2.04,
+    "estatura": 18.45,
+    "peso": 8.73,
+    "gestacaoSemanas": 9.16
+   }
+  }
+ },
+ "custoCrescimento": [
+  {
+   "sexo": "M",
+   "idadeMin": 1,
+   "idadeMax": 2,
+   "kcal": 20,
+   "nota": "meninos de 6 meses a 2,99 anos: 20 kcal/d"
+  },
+  {
+   "sexo": "M",
+   "idadeMin": 3,
+   "idadeMax": 3,
+   "kcal": 20,
+   "nota": "meninos, 3 anos: 20 kcal/d"
+  },
+  {
+   "sexo": "M",
+   "idadeMin": 4,
+   "idadeMax": 8,
+   "kcal": 15,
+   "nota": "meninos, 4 a 8 anos: 15 kcal/d"
+  },
+  {
+   "sexo": "M",
+   "idadeMin": 9,
+   "idadeMax": 13,
+   "kcal": 25,
+   "nota": "meninos, 9 a 13 anos: 25 kcal/d"
+  },
+  {
+   "sexo": "M",
+   "idadeMin": 14,
+   "idadeMax": 18,
+   "kcal": 20,
+   "nota": "meninos, 14 a 18 anos: 20 kcal/d"
+  },
+  {
+   "sexo": "F",
+   "idadeMin": 1,
+   "idadeMax": 2,
+   "kcal": 15,
+   "nota": "meninas de 12 a 35,99 meses: 15 kcal/d"
+  },
+  {
+   "sexo": "F",
+   "idadeMin": 3,
+   "idadeMax": 3,
+   "kcal": 15,
+   "nota": "meninas, 3 anos: 15 kcal/d"
+  },
+  {
+   "sexo": "F",
+   "idadeMin": 4,
+   "idadeMax": 8,
+   "kcal": 15,
+   "nota": "meninas, 4 a 8 anos: 15 kcal/d"
+  },
+  {
+   "sexo": "F",
+   "idadeMin": 9,
+   "idadeMax": 13,
+   "kcal": 30,
+   "nota": "meninas, 9 a 13 anos: 30 kcal/d"
+  },
+  {
+   "sexo": "F",
+   "idadeMin": 14,
+   "idadeMax": 18,
+   "kcal": 20,
+   "nota": "meninas, 14 a 18 anos: 20 kcal/d"
+  }
+ ],
+ "gestacao": {
+  "semanaInicioSegundoTrimestre": 14,
+  "notaPrimeiroTrimestre": "No 1º trimestre usa-se a equação de não gestante; depósito considerado desprezível.",
+  "depositoPorImcPreGestacional": {
+   "baixo-peso": 300,
+   "eutrofia": 200,
+   "sobrepeso": 150,
+   "obesidade": -50
+  }
+ },
+ "lactacao": {
+  "exclusiva": {
+   "mesesMin": 0,
+   "mesesMax": 6,
+   "producaoLeite": 540,
+   "mobilizacao": 140
+  },
+  "parcial": {
+   "mesesMin": 7,
+   "mesesMax": 12,
+   "producaoLeite": 380,
+   "mobilizacao": 0
+  },
+  "notaAposDozeMeses": "Sem valor definido nas tabelas para mais de 12 meses pós-parto."
+ }
+}

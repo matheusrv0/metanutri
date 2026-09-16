@@ -1,0 +1,2089 @@
+© 2011 Ministério da Saúde.
+Todos os direitos reservados. É permitida a reprodução parcial ou total desta obra, desde que citada a fonte e que não seja para venda ou qualquer fim comercial.
+A responsabilidade pelos direitos autorais de textos e imagens dessa obra é da área técnica.
+A coleção institucional do Ministério da Saúde pode ser acessada, na íntegra, na Biblioteca Virtual em Saúde do Ministério da Saúde: http://www.saude.gov.br/bvs
+
+Série G. Estatística e Informação em Saúde
+
+Tiragem: 1ª edição ­ 2011 ­ 25.000 exemplares
+
+Elaboração, distribuição e informações:
+
+MINISTÉRIO DA SAÚDE
+Secretaria de Atenção à Saúde
+Departamento de Atenção Básica
+Coordenação-Geral de Alimentação e Nutrição
+SAF Sul, Quadra 2, Lotes 5/6, Edifício Premium, Bloco II, Subsolo, Sala 8
+CEP: 70070-600, Brasília ­ DF
+E-mail: cgpan@saude.gov.br
+Home page: www.saude.gov.br/nutricao
+
+Supervisão geral:
+
+Ana Beatriz Vasconcellos (CGAN/ DAB/ SAS/ MS)
+
+Equipe de elaboração:
+
+Antônio Fagundes (CGAN/ DAB/ SAS/ MS)
+Eduardo Augusto Nilson (CGAN/ DAB/ SAS/ MS)
+Janine Giuberti Coutinho (OPAS)
+Helen Altoé Duar (CGAN/ DAB/ SAS/ MS)
+Kathleen Sousa Oliveira (CGAN/ DAB/ SAS/ MS)
+Kelva Aquino (CGAN/ DAB/ SAS/ MS)
+Muriel Gubert (Universidade de Brasília)
+Natacha Toral (CGAN/ DAB/ SAS/ MS)
+
+Colaboradores especiais:
+
+Wolney Lisboa Conde (Faculdade de Saúde Pública ­ Universidade de São Paulo)
+Márcia Vítolo (Fundação Faculdade Federal de Ciências Médicas de Porto Alegre-RS)
+
+Normalização:
+
+Amanda Soares Moreira - Editora MS
+
+Projeto gráfico, capa e diagramação:
+
+Hosana Seiffert
+
+Impresso no Brasil / Printed in Brazil
+
+                        Ficha Catalográfica
+
+Brasil. Ministério da Saúde. Secretaria de Atenção à Saúde. Departamento de Atenção Básica.
+    Orientações para a coleta e análise de dados antropométricos em serviços de saúde : Norma Técnica do Sistema de Vigilância Alimentar e
+
+Nutricional - SISVAN / Ministério da Saúde, Secretaria de Atenção à Saúde, Departamento de Atenção Básica. ­ Brasília : Ministério da Saúde, 2011.
+    76 p. : il. ­ (Série G. Estatística e Informação em Saúde)
+
+ISBN 978-85-334-1813-4
+
+    1. Sistema de Informações sobre Vigilância alimentar e nutricional. 2. Vigilância nutricional. 3. Administração de serviços de saúde. 4. Gestão do SUS. I.
+Título. II. Série.
+
+                                             CDU 614:572.087
+
+                        Catalogação na fonte ­ Coordenação-Geral de Documentação e Informação ­ Editora MS ­ OS 2011/0032
+
+Títulos para indexação:
+Em inglês: Guidelines for collection and analysis of anthropometric data in health services: technical standard system of food and nutrition surveillance ­ SISVAN
+Em espanhol: Orientaciones para recoger y analizar datos antropométricos en servicios de salud: norma técnica del sistema de vigilancia alimentar y nutricional ­ SISVAN
+SUMÁRIO
+
+   Introdução....................................................................................................................................................................7
+   PARTE I ­ DEFINIÇÕES E CONCEITOS PARA O DIAGNÓSTICO E O ACOMPANHAMENTO
+DO ESTADO NUTRICIONAL.............................................................................................................................................8
+   PARTE II - PARÂMETROS PRECONIZADOS PELA VIGILÂNCIA NUTRICIONAL PARA CADA FASE DO
+   CURSO DA VIDA...............................................................................................................................................................13
+   CRIANÇAS (< 10 anos de idade)......................................................................................................................................13
+   ADOLESCENTES ( 10 anos e < 20 anos de idade).......................................................................................................19
+   ADULTOS ( 20 anos e < 60 anos de idade)...................................................................................................................21
+   IDOSOS ( 60 anos) .........................................................................................................................................................23
+   GESTANTES.......................................................................................................................................................................24
+   PARTE III - O MÉTODO ANTROPOMÉTRICO...............................................................................................................30
+   EQUIPAMENTOS ANTROPOMÉTRICOS.......................................................................................................................31
+   AFERIÇÃO DO PESO DE CRIANÇAS MENORES DE 2 ANOS......................................................................................32
+   AFERIÇÃO DO PESO DE CRIANÇAS MAIORES DE 2 ANOS, ADOLESCENTES E ADULTOS...................................34
+   AFERIÇÃO DO COMPRIMENTO DE CRIANÇAS MENORES DE 2 ANOS...................................................................36
+   AFERIÇÃO DA ALTURA DE CRIANÇAS MAIORES DE 2 ANOS, ADOLESCENTES E ADULTOS..............................37
+   AFERIÇÃO DA CIRCUNFERÊNCIA DA CINTURA DE ADULTOS................................................................................38
+   Referências....................................................................................................................................................................39
+   Anexo A...........................................................................................................................................................................40
+            Orientações para a coleta e análise
+                         de dados antropométricos
+                                    em serviços de saúde
+
+INTRODUÇÃO
+
+        A Vigilância Alimentar e Nutricional está inserida no contexto da Vigilância Epidemiológica, considerada como
+o sistema de coleta, análise e disseminação de informações relevantes para a prevenção e o controle de problemas
+em saúde pública.
+
+        O. foco das estratégias de Vigilância Alimentar e Nutricional se configura no Sistema de Vigilância Alimentar e
+Nutrição - SISVAN, conduzido pelo Ministério da Saúde. Este é um sistema composto por uma série de indicadores
+de consumo, antropométricos e bioquímicos, com o objetivo de avaliar e monitorar o estado nutricional e alimentar
+da população brasileira.
+
+        A Vigilância Alimentar e Nutricional é um valioso instrumento de apoio às ações de promoção da saúde que
+o Ministério da Saúde recomenda que seja adotado pelos profissionais da área e pelos gestores do Sistema Único de
+Saúde - SUS, visando o aumento da qualidade da assistência à população. Valorizar a avaliação do estado nutricional
+é atitude essencial ao aperfeiçoamento da assistência e da promoção à saúde.
+
+        Não é tarefa fácil propor a uniformização das práticas para fins de vigilância epidemiológica em um país com
+tantas diversidades e contrastes, como é o caso do Brasil. No entanto, para que se tenha a informação padronizada
+e passível de comparações entre municípios, Estados, Regiões e outros estratos pertinentes, é imprescindível a
+construção de um sistema para todas as Unidades da Federação. Espera-se que o SISVAN, uma vez adotado em
+todos os municípios brasileiros, possa contribuir para a melhoria do perfil de saúde e nutrição do país.
+
+        O objetivo do presente material é divulgar as informações básicas sobre antropometria, visando a coleta de
+informações necessárias para a realização da Vigilância Nutricional entre indivíduos de diferentes fases do curso da vida.
+
+                                                                                                                            7
+        MINISTÉRIO DA SAÚDE
+         Secretaria de Atenção à Saúde
+         Departamento de Atenção Básica
+
+    PARTE I ­ DEFINIÇÕES E CONCEITOS PARA O DIAGNÓSTICO E O
+    ACOMPANHAMENTO DO ESTADO NUTRICIONAL
+
+     O que é estado nutricional?
+              É o resultado do equilíbrio entre o consumo de nutrientes e o gasto energético do organismo para suprir
+
+      as necessidades nutricionais (BRASIL, 2007). O estado nutricional pode ter três tipos de manifestação orgânica:
+              - Adequação Nutricional (Eutrofia): manifestação produzida pelo equilíbrio entre o consumo e as
+
+      necessidades nutricionais.
+              - Carência Nutricional: situação em que deficiências gerais ou específicas de energia e nutrientes resultam
+
+      na instalação de processos orgânicos adversos à saúde.
+              - Distúrbio Nutricional: problemas relacionados ao consumo inadequado de alimentos, tanto por escassez
+
+      quanto por excesso, como a desnutrição e a obesidade.
+
+     Qual é o método de escolha a ser usado na avaliação do estado nutricional em serviços
+     de saúde?
+
+              O uso de indicadores antropométricos na avaliação do estado nutricional de indivíduo ou coletividades
+      é, entre várias opções, a mais adequada e viável para ser adotada em serviços de saúde, considerando as suas
+      vantagens como: baixo custo, a simplicidade de realização, sua facilidade de aplicação e padronização, amplitude
+      dos aspectos analisados, além de não ser invasiva. A avaliação antropométrica é um método de investigação
+      em nutrição baseado na medição das variações físicas de alguns segmentos ou da composição corporal global.
+      É aplicável em todas as fases do curso da vida e permite a classificação de indivíduos e grupos segundo o seu
+      estado nutricional.
+
+              Outra vantagem da utilização de indicadores antropométricos é a grande quantidade de ferramentas e
+      recursos metodológicos e técnicos já disponíveis para a análise da situação nutricional de indivíduos ou populações
+      e, principalmente, para comunicação e comparação dos resultados. Assim, o método antropométrico estimula o
+      agrupamento dos diagnósticos individuais e permite traçar o perfil nutricional dos grupos de situação nutricional
+      mais vulnerável em faixas etárias, regiões ou em nível nacional.
+
+              Por serem de uso corrente em todo o mundo, os indicadores antropométricos permitem que se façam
+      comparações internacionais da situação nutricional de grupos vulneráveis e o amplo estudo de seus determinantes
+      em plano regional, nacional ou internacional.
+
+     Quais são as fases do curso da vida e suas faixas etárias contempladas pela Vigilância Nutricional?
+              - Criança: menor de 10 anos de idade
+              - Adolescente: maior ou igual a 10 anos e menor que 20 anos de idade
+              - Adulto: maior ou igual a 20 anos e menor que 60 anos de idade
+              - Idoso: maior ou igual a 60 anos de idade
+              - Gestante: qualquer mulher grávida
+
+     Quais são os dados fundamentais a serem coletados para fins de vigilância nutricional que
+     possibilitam a avaliação do estado nutricional?
+
+              .Tais dados dependem da fase do curso da vida em que se encontra o indivíduo a ser avaliado. O quadro a
+      seguir indica os dados antropométricos ou demográficos a serem coletados em cada situação:
+
+8
+                                                                 Orientações para a coleta e análise
+                                                                              de dados antropométricos
+                                                                                         em serviços de saúde
+
+      Quadro 1 - Dados antropométricos e demográficos a serem coletados para  fins de vigilância nutricional
+
+          Dados a coletar:    Criança Adolescente        Adulto  Idoso  Gestante
+
+Demográficos
+
+Sexo                          X                       X       X  X
+
+Data de nascimento            X                       X       X  X      X
+
+Data da última menstruação                                              X
+
+Antropométricos
+
+Peso                          X                       X       X  X      X
+
+Estatura                      X                       X       X  X      X
+
+Circunferência da cintura                                     X
+
+         Com estes dados, podem-se calcular os índices antropométricos ou nutricionais mais utilizados, lembrando
+que cada uma das fases do curso da vida possui referências e pontos de corte específicos.
+
+O que são índices e indicadores?
+
+        O índice é a combinação entre duas medidas antropométricas (por exemplo, peso e estatura) ou entre
+uma medida antropométrica e uma medida demográfica (por exemplo, peso-para-idade, estatura-para-idade). A
+importância do índice é a possibilidade de produzir uma avaliação mais rica e complexa do estado nutricional de
+crianças ou adultos a partir da integração de dados antropométricos e demográficos. Os índices antropométricos
+podem ser expressos em percentis ou em escores-z, como apresentado a seguir, ou até como percentuais da mediana.
+
+        O termo indicador refere-se à aplicação dos índices. Corresponde à classificação que é atribuída a um indivíduo
+ou a uma população, saudável ou não, como resultado da aplicação de um valor crítico (ponto de corte) a um índice.
+
+O que são pontos de corte?
+
+        Para ser feito um diagnóstico antropométrico, é necessária a comparação dos valores encontrados na avaliação
+com valores de referência que caracterizam a distribuição do índice em uma população saudável, isto é, como o índice
+se distribuiria se não houvesse nenhuma interferência ambiental ou social que pudesse prejudicar o crescimento e
+desenvolvimento da criança ou a saúde das pessoas em outras fases da vida. Os pontos de corte, também chamados
+de valores críticos, correspondem aos limites que separam os indivíduos que estão saudáveis daqueles que não estão.
+Por exemplo, o percentil 3 da distribuição do peso-para-idade é o ponto de corte que o Ministério da Saúde adota
+para indicar baixo peso para idade entre crianças.
+
+O que são populações de referência e padrões de crescimento?
+
+      Uma população de referência é aquela cujas medidas antropométricas foram aferidas em indivíduos sadios,
+
+vivendo em condições socioeconômicas, culturais e ambientais satisfatórias, tornando-se uma referência para
+
+comparações com outros grupos. Com a distribuição gráfica das medidas de peso e estatura de indivíduos sadios,
+
+são construídas curvas de crescimento de referência.
+
+      O Ministério da Saúde adota as recomendações da Organização Mundial da Saúde (OMS) quanto ao uso de
+
+curvas de referência para avaliação do estado nutricional. Assim, para crianças menores de cinco anos, recomenda-
+
+se utilizar a referência da OMS lançada em 2006 (WHO, 2006), que já consta na Caderneta de Saúde da Criança.
+
+Para as crianças com cinco anos ou mais e adolescentes, recomenda-se o uso da referência internacional da OMS
+
+lançada em 2007 (WHO, 2007).                                                                                             9
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+               As curvas publicadas pela OMS em 2006 para crianças menores de cinco anos são uma inovação no uso de
+       curvas de referência para avaliação do estado nutricional. Tais curvas descrevem o crescimento de crianças que vivem
+       em ambientes socioeconômicos adequados e que foram submetidas a cuidados de saúde e alimentação compatíveis
+       com um crescimento e um desenvolvimento saudáveis. Dessa forma, as curvas da OMS (2006) pretendem descrever
+       como deve crescer uma criança saudável.
+
+               A construção das curvas para menores de 5 anos incorporou uma série de métodos estatísticos mais
+       sofisticados, os quais permitiram lidar melhor com a variabilidade do crescimento infantil. Por isso, estas curvas
+       são mais que uma referência; trata-se de um padrão de crescimento. Um padrão é um modelo a que todos devem
+       se igualar. Por outro lado, uma referência serve para que se façam comparações de dados entre populações. Logo,
+       pode-se afirmar que todo padrão é uma referência, mas nem toda referência é um padrão.
+
+      Como são definidos percentil e escore-z?
+               A avaliação nutricional de um indivíduo ou de um grupo populacional é realizada por meio de critérios
+
+       estatísticos que expressam a classificação dos índices antropométricos.
+               Percentil é um termo estatístico e refere-se à posição ocupada por determinada observação no interior de
+
+       uma distribuição. Para obtê-lo, os valores da distribuição devem ser ordenados do menor para o maior; em seguida,
+       a distribuição é dividida em 100 partes de modo que cada observação corresponda um percentil daquela distribuição.
+
+               Como exemplo, aos 4 anos de idade, a mediana de estatura na população de referência, isto é, o percentil
+       50 (equivalente ao escore-z 0), é de 103,3 cm para meninos e 102,7 cm para meninas. Uma criança nessa idade
+       com 100,5 cm estará no percentil 25 (equivalente ao escore-z de -0,67), se for do sexo masculino ou no percentil
+       30 (equivalente ao escore-z -0,52) se for do sexo feminino para o índice de estatura por idade.
+
+               Escore-z é outro termo estatístico e quantifica a distância do valor observado em relação à mediana dessa
+       medida ou ao valor que é considerado normal na população. Corresponde à diferença padronizada entre o valor
+       aferido e a mediana dessa medida da população de referência e é calculado pela seguinte fórmula:
+
+                                Escore-z = (valor observado) ­ (valor da mediana de referência)
+                                               Desvio-padrão da população de referência
+
+               Como exemplo, aos 3 anos de idade, a mediana de peso na população de referência, isto é, escore-z 0
+       (equivalente ao percentil 50), é de 14,3kg para meninos e 13,9kg para meninas. O cálculo do escore-z para uma
+       criança nessa idade com peso de 15,1 kg indicará o valor de 0,43 escore-z (equivalente ao percentil 66) se for do sexo
+       masculino ou 0,66 escore-z (equivalente ao percentil 75) se for do sexo feminino para o índice de peso por idade.
+
+      Qual é a relação existente entre percentil e escore-z em uma curva normal?
+               Para avaliação do estado nutricional, assume-se que as medidas antropométricas dos indivíduos seguem uma
+
+       distribuição normal, ou seja, conforme a curva a seguir. Esta mostra a distribuição hipotética de uma população
+       com crescimento saudável, a qual está dividida em vários intervalos (estratos). Calcula-se a proporção (prevalência)
+       de indivíduos esperada em cada estrato, sempre considerando uma população saudável. Neste caso, a prevalência
+       esperada de crianças com muito baixo peso, isto é, abaixo do percentil 0,1 ou do escore-z -3, é de apenas 0,13%.
+       Se considerarmos o conjunto de crianças com baixo peso ou muito baixo peso, a prevalência esperada, isto é, abaixo
+       do percentil 3 ou do escore-z -2 em uma população saudável, seria de apenas 2,3% das crianças nessa situação.
+
+10
+                                                                                                       Orientações para a coleta e análise
+                                                                                                                     de dados antropométricos
+                                                                                                                                em serviços de saúde
+
+          Gráfico 1 - Medidas antropométricas segundo distribuição normal
+
+        Assim, cada valor de escore-z apresenta um valor de percentil correspondente e por isso pode-se
+converter um valor de escore-z em percentil ou um valor de percentil em escore-z, utilizando-se as fórmulas
+apropriadas. Assumem-se as equivalências entre percentis e escores-z conforme apresentado no quadro a
+seguir. Até o momento, o Ministério da Saúde adotava o uso do sistema percentil. Contudo, na próxima versão
+da Caderneta da Saúde da Criança, será incorporada a classificação do escore-z nos gráficos de avaliação
+do crescimento infantil. Todas as alterações nos instrumentos de vigilância nutricional serão devidamente
+acompanhadas de orientações específicas para cada caso.
+
+          Quadro 2 - Equivalências entre percentis e escores-z
+
+Escore-z  Percentil                Interpretação
+
+                     Espera-se que em uma população saudável
+
+-3        0,1        sejam encontradas 0,1% das crianças abaixo
+
+                     desse valor.
+
+                     Espera-se que em uma população saudável
+
+-2        2,3        sejam encontradas 2,3% das crianças abaixo
+                     desse valor. Convenciona-se que o equivalente
+
+                     ao escore-z -2 é o percentil 3.
+
+                     Espera-se que em uma população saudável
+
+-1        0,1        sejam encontradas 15,9% das crianças abaixo
+
+                     desse valor.
+
+                     É o valor que corresponde à média da
+
+0         50,0       população, isto é, em uma população saudável,
+                     espera-se encontrar 50% da população acima
+
+                     e 50% da população abaixo desse valor.
+
+                     Espera-se que em uma população saudável
+
+                     sejam encontradas 84,1% das crianças abaixo
+
++1        84,1       desse valor, ou seja, apenas 15,9% estariam
+
+                     acima desse valor. Convenciona-se que o
+
+                     equivalente ao escore-z +1 é o percentil 85.
+
+                     Espera-se que em uma população saudável
+
+                     sejam encontradas 97,7% das crianças abaixo
+
++2        97,7       desse valor, ou seja, apenas 2,3% estariam
+
+                     acima desse valor. Convenciona-se que o
+
+                     equivalente ao escore-z +2 é o percentil 97.
+
+                     Espera-se que em uma população saudável
+
++3        99,9       sejam encontradas 99,9% das crianças abaixo
+                     desse valor, ou seja, apenas 0,1% estariam
+
+                     acima desse valor.                                                                                                               11
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Quais são os índices antropométricos e demais parâmetros adotados pela Vigilância Nutricional,
+            segundo as recomendações da Organização Mundial da Saúde e do Ministério da Saúde?
+
+    Quadro 3 - Índices antropométricos e demais parâmetros adotados para a vigilância nutricional, segundo
+
+    recomendações da Organização Mundial de Saúde e do Ministério da Saúde
+
+    FASES DO CURSO DA VIDA                        ÍNDICES E PARÂMETROS
+
+    Crianças                                        Peso por idade a, b
+                                                  Estatura por idade a, b
+                                                   Peso por estatura a
+
+                                                    IMC por idade a, b
+
+    Adolescentes                                    IMC por idade b
+                                                  Estatura por idade b
+
+    Adultos                                                    IMC c
+                                                  Circunferência da Cintura d
+
+    Idosos                                        IMC e
+
+    Gestantes                                     IMC por semana gestacional f
+                                                  Ganho de peso gestacional c, g
+
+    Fontes:
+    a (WHO, 2006)
+    b (WHO, 2007)
+    c (WHO, 1995)
+    d (WHO, 2000)
+    e (THE NUTRITION SCREENING INITIATIVE, 1994)
+    f (ATALAH SAMUR, E., 1997)
+    g (INSTITUTE OF MEDICINE, 1990)
+
+12
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+PARTE II ­ PARÂMETROS PRECONIZADOS PELA VIGILÂNCIA
+NUTRICIONAL PARA CADA FASE DO CURSO DA VIDA
+
+                 CRIANÇAS (< 10 anos de idade)
+
+        O acompanhamento sistemático do crescimento e do desenvolvimento infantil é de grande importância,
+pois corresponde ao monitoramento das condições de saúde e nutrição da criança assistida.
+
+        Os índices antropométricos são utilizados como o principal critério desse acompanhamento. Essa
+indicação baseia-se no conhecimento de que o desequilíbrio entre as necessidades fisiológicas e a ingestão de
+alimentos causa alterações físicas nos indivíduos, desde quadros de desnutrição até o sobrepeso e a obesidade.
+
+        O acompanhamento da saúde infantil é proposto pelo Ministério da Saúde segundo um calendário
+mínimo de consultas para avaliar e acompanhar, de maneira sistemática, o crescimento e o desenvolvimento
+da criança. Fica estabelecido quando e quantas vezes a criança deve ir ao serviço de saúde nos seus primeiros
+dez anos de vida.
+
+           Quadro 4 - Calendário mínimo de consultas para assistência à criança
+
+                        IDADE
+
+    Nº DE  Dias  Meses                             Anos
+CONSULTAS
+
+           15 1 2 4 6 9 12 18 24 3 4 5 6 7 8 9 10
+
+1º ano     X XXXXXX
+
+2º ano                  XX
+
+3º ano                         X
+
+4º ano                            X
+
+5º ano                                          X
+
+6º ano                                             X
+
+7º ano                                                X
+
+8º ano                                                                           X
+
+9º ano                                                                              X
+
+10º ano                                                                                X
+
+Fonte: Adaptado de: (BRASIL, 2002)
+
+        A Caderneta de Saúde da Criança é o instrumento usado para orientar o monitoramento nutricional de
+crianças menores de 10 anos. A Caderneta lançada em 2009 está disponível em uma versão com seções de cores
+
+                                    diferenciadas: verde para meninos e laranja para meninas, que, além da cor, diferem
+                                    na curva de crescimento em virtude do desenvolvimento físico ser diferente para
+                                    cada sexo. Toda criança menor de dez anos tem o direito de possuir um exemplar da
+                                    Caderneta, que tem distribuição nacional, sendo entregue às mães na maternidade
+                                    ou, se isto não ocorrer, quando estas forem a algum Estabelecimento Assistencial de
+                                    Saúde - EAS.
+
+                                             Cada criança deve possuir apenas uma Caderneta, onde são anotadas e
+                                    atualizadas as informações mais importantes sobre sua história de saúde, como
+                                    intercorrências, monitoramento do crescimento, mediante os gráficos de peso
+                                    por idade e estatura por idade, e o controle das imunizações e suplementação
+                                    medicamentosa de ferro, desde o nascimento.
+
+                                                                                                                      13
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+               A mãe ou responsável deve ser muito bem orientada para compreender as informações contidas na Caderneta
+       de Saúde da Criança, guardá-la em boas condições e apresentá-la em todos os contatos com profissionais e/ou
+       serviços de saúde, pois se trata de instrumento de caráter motivacional e educativo para a melhoria da saúde infantil,
+       dentro da abordagem dos cuidados primários de saúde.
+
+               Os gráficos de crescimento da Caderneta de Saúde da Criança de 2009 seguem a seguinte padronização:
+               · Variáveis: peso, estatura e idade
+               · Índices: Peso/Idade (P/I),  Estatura/Idade (E/I) e Índice de Massa Corporal/Idade (IMC/I).
+               · Referências: Organização Mundial da Saúde (WHO, 2006) para as crianças menores de 5 anos e (WHO
+       2007) para aquelas entre 5 e 10 anos.
+               · Classificação: escores-z
+               · Pontos de corte: vide quadros 10 e 11.
+               Nota: Para crianças que têm a caderneta antiga, a classificação do estado nutricional é em percentil e nos
+       seguintes pontos de corte: p3; p10 e p97. Referências: Organização Mundial da Saúde (WHO, 2006) para as crianças
+       menores de 5 anos e National Center for Health Statistics ­ NCHS (HAMILL et al., 1977) para aquelas entre 5 e 10 anos.
+
+       Índices antropométricos:
+               Os índices antropométricos mais amplamente usados, recomendados pela OMS e adotados pelo Ministério
+
+       da Saúde para a avaliação do estado nutricional de crianças, são:
+
+               Peso-para-idade (P/I): Expressa a relação entre a massa corporal e a idade cronológica da criança. É o índice
+       utilizado para a avaliação do estado nutricional, contemplado na Caderneta de Saúde da Criança, principalmente
+       para avaliação do baixo peso. Essa avaliação é muito adequada para o acompanhamento do ganho de peso e reflete
+       a situação global da criança; porém, não diferencia o comprometimento nutricional atual ou agudo dos pregressos
+       ou crônicos. Por isso, é importante complementar a avaliação com outro índice antropométrico.
+
+               Peso-para-estatura (P/E): Este índice dispensa a informação da idade; expressa a harmonia entre as
+       dimensões de massa corporal e estatura. É utilizado tanto para identificar o emagrecimento da criança, como o
+       excesso de peso.
+
+               Índice de Massa Corporal (IMC)-para-idade: expressa a relação entre o peso da criança e o quadrado da
+       estatura. É utilizado para identificar o excesso de peso entre crianças e tem a vantagem de ser um índice que será
+       utilizado em outras fases do curso da vida.
+
+               Para o cálculo do IMC, é utilizada a seguinte fórmula:
+
+                                              Índice de Massa Corporal (IMC) = Peso (kg)
+                                                                                              Estatura² (m)
+
+               O SISVAN recomenda a classificação do Índice de Massa Corporal - IMC proposta pela Organização
+       Mundial da Saúde, tanto para menores de 5 anos (WHO, 2006), como para crianças a partir dos 5 anos (WHO
+       ,2007). As curvas de avaliação do crescimento para crianças dos 5 aos 19 anos foram lançadas recentemente
+       pela OMS. Trata-se de uma reanálise dos dados do NCHS de 1977 (Hamill et al. 1977), além de um alisamento
+       das curvas no período de transição entre os menores de 5 anos de idade, avaliados segundo o estudo-base dos
+       dados lançados em 2006, e os indivíduos a partir dos 5 anos.
+
+               No Anexo, constam os valores de IMC e dos outros índices antropométricos para a avaliação do estado
+       nutricional de crianças em cada faixa de idade e sexo, tanto em percentis como em escores-z.
+
+               Estatura-para-idade (E/I): Expressa o crescimento linear da criança. É o índice que melhor indica o efeito
+       cumulativo de situações adversas sobre o crescimento da criança. É considerado o indicador mais sensível para aferir a
+       qualidade de vida de uma população. Trata-se de um índice incluído recentemente na Caderneta de Saúde da Criança.
+
+14
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Pontos de Corte:
+        Os pontos de corte da Vigilância Nutricional no Brasil, determinados pelo Ministério da Saúde, são baseados
+
+em recomendações adotadas internacionalmente. A seguir, são apresentados os pontos de corte para a avaliação
+do estado antropométrico de crianças segundo cada índice.
+
+Quadro 5 - Pontos de corte de peso-para-idade para crianças (0 a 10 anos)
+
+VALORES CRÍTICOS                    DIAGNÓSTICO NUTRICIONAL
+                                        Muito baixo peso para a idade
+< Percentil 0,1    < Escore-z -3            Baixo peso para a idade
+
+Percentil 0,1 e <  Escore-z -3 e <       Peso adequado para a idade
+  Percentil 3       Escore-z -2           Peso elevado para a idade*
+
+Percentil 3 e      Escore-z -2 e
+Percentil 97       Escore-z +2
+
+> Percentil 97     > Escore-z +2
+
+Fontes:
+(WHO, 1995)
+(BRASIL, 2002)
+* Nota: Este não é o índice antropométrico mais recomendado para a avaliação do excesso de peso entre crianças. Esta situação
+deve ser avaliada pela interpretação dos índices de peso-para-estatura ou IMC-para-idade.
+
+Quadro 6 - Pontos de corte de peso-para-estatura para crianças (0 a 5 anos*)
+
+VALORES CRÍTICOS                    DIAGNÓSTICO NUTRICIONAL
+                                              Magreza acentuada
+< Percentil 0,1    < Escore-z -3                     Magreza
+
+Percentil 0,1 e <  Escore-z -3 e <                   Eutrofia
+  Percentil 3       Escore-z -2
+                                              Risco de sobrepeso
+Percentil 3 e      Escore-z -2 e
+Percentil 85       Escore-z +1                     Sobrepeso
+                                                   Obesidade
+> Percentil 85 e   > Escore-z +1 e
+    Percentil 97       Escore-z +2
+
+> Percentil 97 e   > Escore-z +2 e
+  Percentil 99,9      Escore-z +3
+
+> Percentil 99,9   > Escore-z +3
+
+Fontes:
+(WHO, 1995)
+
+(BRASIL, 2002)
+
+(BRASIL, 2005)
+
+* Nota: A Organização Mundial da Saúde apresenta referências de peso-para-estatura apenas para menores de 5 anos pelo padrão
+de crescimento de 2006. A partir dessa idade, deve ser utilizado o Índice de Massa Corporal para idade para avaliar a proporção
+entre o peso e a estatura da criança.
+
+                                                                                                                                                                                           15
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Quadro 7 - Pontos de corte de IMC-para-idade para crianças menores de 5 anos
+
+                 VALORES CRÍTICOS                       DIAGNÓSTICO NUTRICIONAL
+                                                                  Magreza acentuada
+    < Percentil 0,1                 < Escore-z -3                        Magreza
+
+    Percentil 0,1 e <               Escore-z -3 e                        Eutrofia
+      Percentil 3                    Escore-z -2
+                                                                  Risco de sobrepeso
+    > Percentil 3 e                 Escore-z -2 e
+       Percentil 85                 Escore-z +1                        Sobrepeso
+                                                                       Obesidade
+    > Percentil 85 e                > Escore-z +1 e
+        Percentil 97                    Escore-z +2
+
+    > Percentil 97 e                > Escore-z +2 e
+      Percentil 99,9                    Escore-z +3
+
+    > Percentil 99,9                > Escore-z +3
+
+    Quadro 8 - Pontos de corte de IMC-para-idade para crianças dos 5 aos 10 anos
+
+                 VALORES CRÍTICOS                       DIAGNÓSTICO NUTRICIONAL
+                                                                  Magreza acentuada
+      < Percentil 0,1                  < Escore-z -3                     Magreza
+
+      Percentil 0,1 e <                Escore-z -3 e <                   Eutrofia
+        Percentil 3                     Escore-z -2
+                                                                       Sobrepeso
+       Percentil 3 e                > Escore-z -2 e
+        Percentil 85                    Escore-z +1                    Obesidade
+                                                                    Obesidade grave
+    > Percentil 85 e                > Escore-z +1 e
+        Percentil 97                    Escore-z +2
+
+    > Percentil 97 e                > Escore-z +2 e
+      Percentil 99,9                    Escore-z +3
+
+    > Percentil 99,9                > Escore-z +3
+
+    Fontes:
+    (WHO, 2006)
+    (WHO, 2007)
+
+    Quadro 9 - Pontos de corte de estatura-para-idade para crianças (0 a 10 anos)
+
+                 VALORES CRÍTICOS                       DIAGNÓSTICO NUTRICIONAL
+                                                          Muito baixa estatura para a idade
+    < Percentil 0,1                 < Escore-z -3             Baixa estatura para a idade
+                                                           Estatura adequada para a idade
+    Percentil 0,1 e <               Escore-z -3 e <
+      Percentil 3                    Escore-z -2
+
+    Percentil 3                     Escore-z -2
+
+    Fontes:
+    (WHO, 1995)
+    (BRASIL, 2002)
+
+16
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Faixas de vigilância nutricional:
+        Destaca-se que uma criança classificada entre os percentis 3 e 15 requer uma atenção especial do profissional
+
+de saúde e dos cuidadores da criança. Deve-se estar atento para a evolução do crescimento da criança. Se a linha
+de crescimento registrada na Caderneta de Saúde da Criança estiver descendo ao longo dos atendimentos, trata-se
+de um sinal de alerta, já que a criança está se aproximando de uma situação de baixo peso por idade ou de baixa
+estatura por idade. Logo, o intervalo entre os percentis 3 e 15 (isto é, entre os escores-z -1 e -2) é considerado
+como uma faixa importante para a vigilância para o baixo peso. Contudo, não é adotada mais a classificação de risco
+nutricional, como realizado anteriormente.
+
+        Quadro resumo:
+        .O quadro a seguir apresenta um resumo das classificações do estado nutricional de crianças recomendadas
+pelo SISVAN para cada índice antropométrico.
+
+Quadro 10 - Classificação do estado nutricional de crianças menores de cinco anos para cada índice
+                              antropométrico, segundo recomendações do SISVAN
+
+                                     ÍNDICES ANTROPOMÉTRICOS PARA MENORES DE 5 ANOS
+
+VALORES CRÍTICOS                     Peso-           Peso-      IMC-        Estatura-
+                                                                           para-idade
+                                     para-idade para-estatura para-idade
+
+< Percentil 0,1 < Escore-z -3        Muito baixo     Magreza    Magreza    Muito baixa
+                                      peso para      acentuada  acentuada  estatura para
+
+                                        a idade                               a idade
+
+Percentil 0,1 e Escore-z -3 e        Baixo peso      Magreza    Magreza    Baixa estatura
+< Percentil 3 < Escore-z -2          para a idade                           para a idade
+
+  Percentil 3 e     Escore-z -2 e                    Eutrofia   Eutrofia
+< Percentil 15     < Escore-z -1
+
+   Percentil 15 e     Escore-z -1 e  Peso adequado    Risco de   Risco de     Estatura
+    Percentil 85      Escore-z +1     para a idade   sobrepeso  sobrepeso  adequada para
+
+> Percentil 85 e   > Escore-z +1 e                                            a idade 2
+    Percentil 97      Escore-z +2
+
+> Percentil 97 e > Escore-z +2 e     Peso elevado    Sobrepeso  Sobrepeso
+  Percentil 99,9 Escore-z +3         para a idade 1  Obesidade  Obesidade
+
+> Percentil 99,9 > Escore-z +3
+
+Fonte: Adaptado de: (OMS, 2006)
+  1  Uma criança com a classificação de peso elevado para a idade pode ter problemas de crescimento, mas o melhor índice para essa avaliação é o
+  IMC-para-idade (ou o peso-para-estatura).
+
+  2  Uma criança classificada com estatura para idade acima do percentil 99,9 (Escore-z +3) é muito alta, mas raramente corresponde a um problema.
+  Contudo, alguns casos correspondem a desordens endócrinas e tumores. Em caso de suspeitas dessas situações, a criança deve ser referenciada
+  para um atendimento especializado.
+
+                                                                                                                                                                                           17
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Quadro 11 - Classificação do estado nutricional de crianças de 5 a 10 anos para cada índice antropométrico,
+                                                  segundo recomendações do SISVAN
+
+    VALORES CRÍTICOS                                  ÍNDICES ANTROPOMÉTRICOS PARA CRIANÇAS
+                                                                            DE 5 A 10 ANOS
+
+                                                         Peso-              IMC-              Estatura-
+                                                      para-idade         para-idade          para-idade
+
+    < Percentil 0,1                 < Escore-z -3     Muito baixo peso   Magreza            Muito baixa
+                                                         para a idade    acentuada          estatura para
+
+                                                                                               a idade
+
+    Percentil 0,1 e                  Escore-z -3 e    Baixo peso para a  Magreza            Baixa estatura
+    < Percentil 3                   < Escore-z -2            idade                           para a idade
+
+       Percentil 3 e                   Escore-z -2 e  Peso adequado       Eutrofia        Estatura adequada
+    < Percentil 15                   < Escore-z -1     para a idade      Sobrepeso                para
+
+    > Percentil 15 e                   Escore-z -1 e                                           a idade 2
+     < Percentil 85                    Escore-z +1
+
+      Percentil 85 e                > Escore-z +1 e
+       Percentil 97                     Escore-z +2
+
+    > Percentil 97 e                > Escore-z +2 e   Peso elevado          Obesidade
+      Percentil 99,9                    Escore-z +3   para a idade 1     Obesidade grave
+
+    > Percentil 99,9                 > Escore-z +3
+
+    Fonte: Adaptado de: (OMS, 2006)
+    1. Uma criança com a classificação de peso elevado para a idade pode ter problemas de crescimento, mas o melhor índice para essa avaliação é
+    o IMC-para-idade.
+
+    2. Uma criança classificada com estatura para idade acima do percentil 99,9 (Escore-z +3) é muito alta, mas raramente corresponde a um problema.
+    Contudo, alguns casos correspondem a desordens endócrinas e tumores. Em caso de suspeitas dessas situações, a criança deve ser referenciada
+    para um atendimento especializado.
+
+    Padronização para a idade:
+
+            Para a avaliação dos índices antropométricos da criança (peso por idade, estatura por idade ou índice de
+    massa corporal), é necessário saber com precisão sua idade em dias ou meses de vida.
+
+            As informações disponíveis nas curvas de crescimento são em meses. A regra de aproximação que deve ser
+    seguida para as idades não exatas é:
+
+            - Fração de idade até 15 dias: aproxima-se a idade para baixo, isto é, o último mês completado.
+            - Fração de idade igual ou superior a 16 dias: aproxima-se a idade para cima, isto é, para o próximo mês a
+    ser completado.
+
+            EXEMPLO: Eduardo nasceu em 09/07/2004 e Isabela em 06/11/2007. Eles foram a um EAS para uma consulta
+    de rotina no dia 22/01/2008. Quais as idades que devem ser procuradas nos gráficos de crescimento infantil da
+    Caderneta de Saúde da Criança para fazer o diagnóstico nutricional?
+
+            - Eduardo: 3 anos, 6 meses e 13 dias = 3 anos e 6 meses
+            - Isabela: 2 meses e 16 dias = 3 meses
+
+    EM RESUMO, OS PASSOS PARA A ANTROPOMETRIA E O DIAGNÓSTICO NUTRICIONAL DA
+
+                                                    CRIANÇA SÃO:
+
+    1º PASSO: Calcular a idade em anos completos e meses, fazendo as aproximações necessárias.
+
+    2º PASSO: Pesar e medir a criança, utilizando as técnicas e os instrumentos adequados.
+
+    3º PASSO: Anotar os dados no formulário da Vigilância Alimentar e Nutricional - SISVAN.
+
+    4º PASSO: Marcar nos gráficos de crescimento da Caderneta de Saúde da Criança o ponto de interseção
+
+18  entre o peso e a idade, entre a estatura e a idade, e entre o Índice de Massa Corporal e a idade da criança.
+                                                                                                                                Orientações para a coleta e análise
+                                                                                                                                             de dados antropométricos
+                                                                                                                                                         em serviços de saúde
+
+5º PASSO: Calcular o IMC da criança.
+6º PASSO: Fazer o diagnóstico nutricional da criança, interpretando cada índice avaliado.
+7º PASSO: Verificar a inclinação das curvas de crescimento para complementar o diagnóstico nutricional.
+8º PASSO: Compartilhar com a mãe/responsável o diagnóstico nutricional da criança.
+9º PASSO: Fazer a intervenção adequada para cada situação.
+10º PASSO: Realizar ações de promoção da saúde. Valorizar o diagnóstico nutricional é ter atitude de vigilância!
+
+        Ressalta-se que:
+
+        - As ações básicas de saúde da criança, sobretudo o monitoramento do crescimento e do desenvolvimento,
+devem ser desenvolvidas em conjunto com a vigilância nutricional. Para a Vigilância Alimentar e Nutricional - SISVAN,
+essa conjugação é fundamental para a atitude de vigilância. Com isso, será possível melhorar a eficiência das ações
+de promoção da saúde e de prevenção dos problemas nutricionais.
+
+        - A avaliação do peso ao nascer é o primeiro diagnóstico nutricional, feito imediatamente após o nascimento.
+Este peso reflete os problemas nutricionais ocorridos durante a gestação. A classificação usada é:
+
+Quadro 12 - Classificação do estado nutricional de crianças imediatamente após o nascimento
+
+PESO DA CRIANÇA                CLASSIFICAÇÃO
+
+                    2.500 g    Peso adequado
+
+                    < 2.500 g  Baixo peso ao nascer (BPN)
+
+                    < 1.500 g  Muito baixo peso ao nascer
+
+Fonte: (OMS, 1993)
+
+                           ADOLESCENTES ( 10 anos e < 20 anos de idade)
+
+        O IMC para a idade é recomendado internacionalmente para diagnóstico individual e coletivo dos distúrbios
+nutricionais na adolescência. Este indicador incorpora a informação da idade do indivíduo, foi validado como indicador
+de gordura corporal total nos percentis superiores e proporciona uma continuidade com o indicador utilizado
+entre adultos. Além do IMC, também se recomenda a utilização do índice de estatura por idade para a avaliação do
+crescimento linear.
+
+        Para a avaliação nutricional de adolescentes, o SISVAN recomenda a adoção da referência proposta
+recentemente pela Organização Mundial de Saúde (WHO, 2007). Esta passou a ser recomendada para a classificação
+dos índices antropométricos na adolescência: IMC por idade e altura por idade. No Anexo, constam os valores de
+cada índice para a avaliação do estado nutricional de adolescentes em cada faixa de idade e sexo, tanto em percentis
+como em escores-z.
+
+        Para o cálculo do IMC, adota-se a seguinte fórmula:
+
+                                      Índice de Massa Corporal (IMC) = Peso (kg)
+                                                                                        Altura² (m)
+
+                                                                                                                                                                               19
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+                       Quadro 13 - Pontos de corte de IMC-para-idade estabelecidos para adolescentes
+
+    VALORES CRÍTICOS                                DIAGNÓSTICO NUTRICIONAL
+                                                              Magreza acentuada
+    < Percentil 0,1         < Escore-z -3                            Magreza
+
+    Percentil 0,1 e          Escore-z -3 e                           Eutrofia
+    < Percentil 3           < Escore-z -2
+                                                                   Sobrepeso
+    > Percentil 3 e <       Escore-z -2 e        
+       Percentil 85         Escore-z +1                            Obesidade
+                                                                Obesidade grave
+    > Percentil 85 e         Escore-z +1 e     
+        Percentil 97        < Escore-z +2
+
+    > Percentil 97 e        Escore-z +2 e      
+      Percentil 99,9         Escore-z +3
+
+    > Percentil 99,9        > Escore-z +3
+
+    Fontes:  (WHO, 2007)
+    * Nota: A referência de IMC para idade da Organização Mundial da Saúde de 2007 apresenta valores até 19 anos completos, já que
+    a partir desta idade a instituição considera os indivíduos como adultos. Como o Ministério da Saúde considera que a fase adulta se
+    inicia apenas com 20 anos completos, sugere-se a adoção dos mesmos valores de 19 anos completos para a avaliação de indivíduos
+    com 19 anos e 1 mês até 19 anos e 11 meses.
+
+    Quadro 14 - Pontos de corte de estatura-para-idade estabelecidos para adolescentes
+
+    VALORES CRÍTICOS                                DIAGNÓSTICO NUTRICIONAL
+                                                      Muito baixa estatura para a idade
+    < Percentil 0,1         < Escore-z -3                 Baixa estatura para a idade
+                                                       Estatura adequada para a idade
+    Percentil 0,1 e          Escore-z -3 e        
+    < Percentil 3           < Escore-z -2
+
+    Percentil 3             Escore-z -2
+
+    Fonte: (WHO, 2007)    
+
+    Quadro resumo:
+            O quadro a seguir apresenta um resumo das classificações do estado nutricional de adolescentes recomendadas
+
+    pelo SISVAN para cada índice antropométrico.
+
+20
+                                                           Orientações para a coleta e análise
+                                                                        de dados antropométricos
+                                                                                   em serviços de saúde
+
+Quadro 15 - Classificação do estado nutricional de adolescentes para cada índice antropométrico, segundo
+                                                   recomendações do SISVAN
+
+                                                           ÍNDICES ANTROPOMÉTRICOS
+
+                  VALORES CRÍTICOS                         IMC-para-idade    Estatura-
+                                                                            para-idade
+
+< Percentil 0,1               < Escore-z -3                 Magreza          Muito baixa
+                                                           acentuada 1      estatura para
+
+Percentil 0,1 e < Percentil 3 Escore-z -3 e < Escore-z -2  Magreza              a idade
+                                                                            Baixa estatura
+Percentil 3 e < Percentil 15  Escore-z -2 e < Escore-z -1  Eutrofia          para a idade
+Percentil 15 e Percentil 85   Escore-z -1 e Escore-z +1
+                                                                               Estatura
+> Percentil 85 e Percentil 97 > Escore-z +1 e Escore-z +2     Sobrepeso     adequada para
+                                                              Obesidade
+> Percentil 97 e Percentil    > Escore-z +2 e              Obesidade grave     a idade 2
+                99,9              Escore-z +3
+
+> Percentil 99,9              > Escore-z +3
+
+Fonte: Adaptado de: (OMS, 2006)
+1  Um adolescente classificado com IMC-para-idade abaixo do percentil 0,1 (Escore-z -3) é muito magro. Em populações saudáveis, encontra-se 1
+adolescente nessa situação para cada 1000. Contudo, alguns casos correspondem a transtornos alimentares. Em caso de suspeita dessas situações,
+o adolescente deve ser referenciado para um atendimento especializado.
+
+2  Um adolescente classificado com estatura-para-idade acima do percentil 99,9 (Escore-z +3) é muito alto, mas raramente corresponde a um
+problema. Contudo, alguns casos correspondem a desordens endócrinas e tumores. Em caso de suspeitas dessas situações, o adolescente deve
+ser referenciado para um atendimento especializado.
+
+EM RESUMO, OS PASSOS PARA A ANTROPOMETRIA E O DIAGNÓSTICO NUTRICIONAL DO
+ADOLESCENTE SÃO:
+
+        1º PASSO: Avaliar o adolescente, considerando sua idade em anos e seu sexo.
+        2º PASSO: Pesar e medir o adolescente, utilizando as técnicas e os instrumentos adequados.
+        3º PASSO: Anotar os dados no formulário da Vigilância Alimentar e Nutricional - SISVAN.
+        4º PASSO: Calcular o IMC e fazer o diagnóstico nutricional do adolescente.
+        5º PASSO: Compartilhar com o adolescente e a mãe/responsável o diagnóstico nutricional do adolescente.
+        6º PASSO: Fazer a intervenção adequada para cada situação.
+        7º PASSO: Realizar ações de promoção da saúde. Valorizar o diagnóstico nutricional é ter atitude de vigilância!
+
+                                ADULTOS ( 20 anos e < 60 anos de idade)
+
+        Nos procedimentos de diagnóstico nutricional de adultos, a Vigilância Alimentar e Nutricional - SISVAN
+recomenda o uso da classificação do IMC proposta pela OMS (WHO, 1995).
+
+        As vantagens de se usar esse método para avaliação nutricional de adultos são: a) facilidade de obtenção
+e padronização das medidas de peso e altura; b) dispensa a informação da idade para o cálculo; c) possui alta
+correlação com a massa corporal e indicadores de composição corporal e d) não necessita de comparação com
+curvas de referência. Outra característica a ser ressaltada é a sua capacidade de predição de riscos de morbi-
+mortalidade, especialmente em seus limites extremos.
+
+                                                                                                                      21
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+            Para o cálculo do IMC, adota-se a seguinte fórmula:
+
+                                          Índice de Massa Corporal (IMC) = Peso (kg)
+                                                                                            Altura² (m)
+
+                        Quadro 16 - Pontos de corte estabelecidos para adultos
+
+                        IMC (kg/m²)    DIAGNÓSTICO NUTRICIONAL
+                            < 18,5                    Baixo Peso
+
+                          18,5 e < 25         Adequado ou Eutrófico
+                           25 e < 30                  Sobrepeso
+                                                      Obesidade
+                                30
+
+    Fonte: (WHO, 1995)
+
+    Circunferência da cintura:
+
+            Outro parâmetro que poderá ser utilizado para adultos na Vigilância Alimentar e Nutricional - SISVAN, com
+    objetivo de complementar o diagnóstico nutricional, é a circunferência da cintura. Este indicador afere a localização
+    da gordura corporal. Em adultos, o padrão de distribuição do tecido adiposo tem relação direta com o risco de
+    morbi-mortalidade.
+
+                        Quadro 17 - Parâmetros de Circunferência da Cintura (para adultos)
+
+    Circunferência da Cintura          DIAGNÓSTICO NUTRICIONAL
+                  80,0 cm                           Para Mulheres
+                  94,0 cm                            Para Homens
+
+    Fonte: (WHO, 2000)
+
+    EM RESUMO, OS PASSOS PARA A ANTROPOMETRIA E O DIAGNÓSTICO NUTRICIONAL DO
+    ADULTO SÃO:
+
+            1º PASSO: Pesar a cada consulta e medir a estatura na primeira consulta, repetindo esta medida anualmente,
+    utilizando as técnicas e os instrumentos adequados.
+
+            2º PASSO: Calcular o IMC e fazer o diagnóstico nutricional segundo os pontos de corte estipulados para a
+    Vigilância Alimentar e Nutricional - SISVAN.
+
+            3º PASSO: Aferir a medida da circunferência da cintura e fazer a avaliação do risco para doenças
+    cardiovasculares segundo os pontos de corte estipulados para a Vigilância Alimentar e Nutricional - SISVAN.
+
+            4º PASSO: Anotar os dados no formulário do SISVAN.
+            5° PASSO: Compartilhar com o adulto o diagnóstico nutricional;
+            6º PASSO: Fazer a intervenção adequada para cada situação.
+            7º PASSO: Realizar ações de promoção da saúde. Valorizar o diagnóstico nutricional é ter atitude de vigilância!
+
+22
+                                                   Orientações para a coleta e análise
+                                                                de dados antropométricos
+                                                                           em serviços de saúde
+
+             IDOSOS ( 60 anos)
+
+        A antropometria é muito útil para o diagnóstico nutricional dos idosos. É um método simples e com boa
+predição para doenças futuras, mortalidade e incapacidade funcional, podendo ser usada como triagem inicial, tanto
+para diagnóstico quanto para o monitoramento de doenças.
+
+        Nos procedimentos de diagnóstico e acompanhamento do estado nutricional de idosos, a Vigilância Alimentar
+e Nutricional - SISVAN utilizará como critério prioritário a classificação do IMC, considerando pontos de corte
+diferentes daqueles utilizados para adultos. Essa diferença deve-se às alterações fisiológicas nos idosos, entre as
+quais se destacam:
+
+        - declínio da altura com o avançar da idade, que ocorre em decorrência da compressão vertebral, mudanças
+nos discos intervertebrais, perda do tônus muscular e alterações posturais;
+
+        - diminuição do peso com a idade, que está relacionada à redução do conteúdo da água corporal e da massa
+muscular, sendo mais evidente no sexo masculino;
+
+        - alterações ósseas em decorrência da osteoporose;
+        - mudança na quantidade e distribuição do tecido adiposo subcutâneo.
+        - redução da massa muscular devida à sua transformação em gordura intramuscular, o que leva a alteração
+na elasticidade e na capacidade de compressão dos tecidos.
+
+        Para o cálculo do IMC, adota-se a seguinte fórmula:
+
+                                      Índice de Massa Corporal (IMC) = Peso (kg)
+                                                                                        Altura² (m)
+
+Quadro 18 - Pontos de corte estabelecidos para idosos
+
+IMC (kg/m²)                                        DIAGNÓSTICO NUTRICIONAL
+         22                                                       Baixo Peso
+
+> 22 e < 27                                               Adequado ou Eutrófico
+        27                                                        Sobrepeso
+
+Fonte: (THE NUTRITION SCREENING INITIATIVE, 1994)
+
+EM RESUMO, OS PASSOS PARA A ANTROPOMETRIA E O DIAGNÓSTICO NUTRICIONAL DO
+IDOSO SÃO:
+
+        1º PASSO: Pesar a cada consulta e medir a estatura na primeira consulta, repetindo este procedimento
+anualmente, utilizando as técnicas e os instrumentos adequados.
+
+        2º PASSO: Calcular o IMC e fazer o diagnóstico nutricional segundo os pontos de corte estipulados para a
+Vigilância Alimentar e Nutricional - SISVAN.
+
+        3º PASSO: Anotar os dados no formulário do SISVAN.
+        4° PASSO: Compartilhar o diagnóstico nutricional com o idoso e/ou cuidador do idoso;
+        5º PASSO: Fazer intervenção adequada, para cada situação.
+        6º PASSO: Realizar ações de promoção da saúde. Valorizar o diagnóstico nutricional é ter atitude de vigilância!
+
+                                                                                                                         23
+MINISTÉRIO DA SAÚDE
+Secretaria de Atenção à Saúde
+Departamento de Atenção Básica
+
+                                GESTANTES
+
+        A diferença da avaliação do estado nutricional da gestante em relação a outros períodos do curso da vida é
+que se pretende caracterizar as condições nutricionais da mulher e, indiretamente, o crescimento do feto (WHO,
+1995). O diagnóstico e o acompanhamento da situação nutricional da gestante correspondem a uma parte essencial
+dos procedimentos básicos da atenção pré-natal (BRASIL, 2006).
+
+        Para avaliar o estado nutricional da gestante, é necessário que na primeira consulta seja realizada a aferição do
+peso e da estatura da mulher, além do cálculo da semana gestacional. Com esses dados, será determinado o estado
+nutricional da gestante, tendo como critério prioritário a classificação do IMC por semana gestacional. Destaca-se
+que o ponto de corte para classificação de baixo peso materno difere do adotado para adultos, sendo essa diferença
+atribuída aos cuidados necessários para minimizar os riscos de retardo de crescimento intra-uterino, baixo peso ao
+nascer, prematuridade e outras possíveis complicações maternas e neonatais (WHO, 1995).
+
+        Na primeira consulta de pré-natal, a avaliação nutricional da gestante, com base em seu peso e sua estatura,
+permite conhecer seu estado nutricional atual e subsidiar a previsão do ganho de peso até o final da gestação. O
+peso deve ser aferido em todas as consultas de pré-natal. A estatura da gestante adulta pode ser aferida apenas na
+primeira consulta e a da gestante adolescente pelo menos trimestralmente.
+
+        Outra variável muito importante para a avaliação da gestante refere-se à data da última menstruação (DUM).
+A partir desse valor, é determinada a semana gestacional e com isso é possível avaliar o ganho de peso alcançado
+e recomendado para a gravidez. A DUM normalmente deve ser do conhecimento da gestante, mas também pode
+ser obtida a partir de exames realizados durante a gravidez. Caso não haja uma fonte confiável dessa informação,
+deve-se estimar a data, a partir do último mês de menstruação da gestante.
+
+        A avaliação do estado nutricional deve ser feita conforme descrito a seguir:
+
+1. Calcule o IMC da gestante:
+
+                                      Índice de Massa Corporal (IMC) = Peso (kg)
+                                                                                        Altura² (m)
+
+       2. Calcule a semana gestacional:
+               Atenção: Quando necessário, arredonde a semana gestacional da seguinte forma: 1, 2, 3 dias ­ considere o
+
+       número de semanas completas e 4, 5, 6 dias ­ considere a semana seguinte.
+               Exemplo: Gestante com 12 semanas e 2 dias = 12 semanas
+                               Gestante com 12 semanas e 5 dias = 13 semanas
+
+       3. Realize o diagnóstico nutricional:
+               Localize na primeira coluna do quadro a seguir a semana gestacional calculada e identifique, nas colunas
+
+       seguintes, a classificação do estado nutricional da gestante, a partir de IMC calculado.
+
+        OBSERVAÇÃO IMPORTANTE:
+                 O ideal é que o IMC considerado no diagnóstico inicial da gestante seja o IMC calculado a partir de medição
+
+        realizada até a 13ª semana gestacional ou o IMC pré-gestacional referido (limite máximo são 2 meses antes). Caso
+        isso não seja possível, inicie a avaliação da gestante com os dados da primeira consulta de pré-natal, mesmo que
+        esta ocorra após a 13ª semana gestacional.
+
+               Em seguida, classifique o estado nutricional da gestante segundo IMC por semana gestacional da seguinte forma:
+
+               Baixo Peso (BP): quando o valor do IMC calculado for menor ou igual aos valores correspondentes à coluna
+       do estado nutricional de baixo peso.
+
+               Adequado (A): quando o IMC calculado estiver compreendido na faixa de valores respondentes à coluna do
+
+24 estado nutricional adequado.
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+        Sobrepeso (S): quando o IMC calculado estiver compreendido na faixa de valores correspondentes à coluna
+do estado nutricional de sobrepeso.
+
+        Obesidade (O): quando o valor do IMC for maior ou igual aos valores correspondentes à coluna do estado
+nutricional de obesidade.
+
+Quadro 19 - Avaliação do estado nutricional da gestante segundo Índice de Massa Corporal por semana
+                                                           gestacional
+
+  Semana     Baixo peso  Adequado (A)        Sobrepeso (S)       Obesidade (O)
+gestacional  (BP) IMC      IMC entre           IMC entre              IMC 
+
+6            19,9        20,0          24,9  25,0          30,0  30,1
+
+7            20,0        20,1          25,0  25,1          30,1  30,2
+
+8            20,1        20,2          25,0  25,1          30,1  30,2
+
+9            20,2        20,3          25,1  25,2          30,2  30,3
+
+10           20,2        20,3          25,2  25,3          30,2  30,3
+
+11           20,3        20,4          25,3  25,4          30,3  30,4
+
+12           20,4        20,5          25,4  25,5          30,3  30,4
+
+13           20,6        20,7          25,6  25,7          30,4  30,5
+
+14           20,7        20,8          25,7  25,8          30,5  30,6
+
+15           20,8        20,9          25,8  25,9          30,6  30,7
+
+16           21,0        21,1          25,9  26,0          30,7  30,8
+
+17           21,1        21,2          26,0  26,1          30,8  30,9
+
+18           21,2        21,3          26,1  26,2          30,9  31,0
+
+19           21,4        21,5          26,2  26,3          30,9  31,0
+
+20           21,5        21,6          26,3  26,4          31,0  31,1
+
+21           21,7        21,8          26,4  26,5          31,1  31,2
+
+22           21,8        21,9          26,6  26,7          31,2  31,3
+
+23           22,0        22,1          26,8  26,9          31,3  31,4
+
+24           22,2        22,3          26,9  27,0          31,5  31,6
+
+25           22,4        22,5          27,0  27,1          31,6  31,7
+
+26           22,6        22,7          27,2  27,3          31,7  31,8
+
+27           22,7        22,8          27,3  27,4          31,8  31,9
+
+28           22,9        23,0          27,5  27,6          31,9  32,0
+
+29           23,1        23,2          27,6  27,7          32,0  32,1
+
+30           23,3        23,4          27,8  27,9          32,1  32,2
+
+31           23,4        23,5          27,9  28,0          32,2  32,3
+
+32           23,6        23,7          28,0  28,1          32,3  32,4
+
+33           23,8        23,9          28,1  28,2          32,4  32,5
+
+34           23,9        24,0          28,3  28,4          32,5  32,6
+
+35           24,1        24,2          28,4  28,5          32,6  32,7
+
+36           24,2        24,3          28,5  28,6          32,7  32,8
+
+37           24,3        24,5          28,7  28,8          32,8  32,9
+
+38           24,5        24,6          28,8  28,9          32,9  33,0
+
+39           24,7        24,8          28,9  29,0          33,0  33,1
+
+40           24,9        25,0          29,1  29,2          33,1  33,2
+
+41           25,0        25,1          29,2  29,3          33,2  33,3
+
+42           25,0        25,1          29,2  29,3          33,2  33,3
+
+Fonte: Adaptado de: (ATALAH SAMUR, E., 1997)
+
+                                                                                                                     25
+MINISTÉRIO DA SAÚDE
+Secretaria de Atenção à Saúde
+Departamento de Atenção Básica
+
+4. Estime a recomendação do ganho de peso para gestantes:
+
+        Em função do estado nutricional pré-gestacional, estime o ganho de peso total recomendado até o final
+da gestação, conforme o quadro a seguir. Para cada situação nutricional inicial (estado nutricional pré-gestacional
+determinado como baixo peso, adequado, sobrepeso ou obesidade), há uma faixa de ganho de peso recomendada.
+Para o 1º trimestre, o ganho de peso foi agrupado para todo período, enquanto que, para o 2º e o 3º trimestres, é
+previsto por semana. Portanto, já na primeira consulta, deve-se estimar quantos gramas a gestante deverá ganhar no
+1º trimestre, assim como o ganho por semana até o final da gestação. Esta informação deve ser fornecida à gestante.
+
+        Observe que cada gestante deverá ter ganho de peso de acordo com seu IMC pré-gestacional. Para a previsão
+do ganho de peso total, isto é, durante todo o período de gestação, faz-se necessário calcular quanto peso a gestante
+já ganhou e quanto ainda falta até o final da gestação em função da avaliação clínica.
+
+Quadro 20 - Ganho de peso (kg) recomendado durante a gestação, segundo o estado nutricional inicial
+
+Estado Nutricional   Recomendação de           Recomendação de       Recomendação de ganho
+    Inicial (IMC)    ganho de peso (kg)        ganho de peso (kg)      de peso (kg) total na
+                    total no 1º trimestre  semanal médio no 2º e 3º            gestação
+   Baixo Peso (BP)
+    Adequado (A)                2,3                  trimestres                 12,5-18,0
+    Sobrepeso (S)               1,6                       0,5                   11,5-16,0
+   Obesidade (O)                0,9                       0,4                   7,0-11,5
+                                 -                        0,3
+                                                          0,3                       7,0
+
+Fonte: (INSTITUTE OF MEDICINE, 1990)
+(WHO, 1995)
+
+        Gestantes de baixo peso pré-gestacional (BP) deverão ganhar entre 12,5 e 18,0 kg durante toda a gestação,
+sendo este ganho, em média, de 2,3 kg no primeiro trimestre da gestação (até a 14ª semana) e de 0,5 kg por semana no
+2º e 3º trimestres de gestação. Essa variabilidade de ganho recomendado deve-se ao entendimento de que gestantes
+com BP acentuado, ou seja, aquelas muito distantes da faixa de normalidade, devem ganhar mais peso (até 18 kg)
+do que aquelas situadas em área próxima à faixa de normalidade, cujo ganho deve situar-se em torno de 12,5 kg.
+
+        Da mesma forma, gestantes com IMC pré-gestacional adequado devem ganhar, ao final da gestação, entre
+11,5 e 16,0 kg. Aquelas com sobrepeso devem acumular entre 7,0 e 11,5 kg e as obesas devem apresentar ganho
+em torno de 7,0 kg, com recomendação de 0,3 kg por semana no segundo e no terceiro trimestres de gestação.
+
+      Consultas subseqüentes
+
+               Nas consultas subseqüentes, a avaliação nutricional deve repetir os procedimentos descritos anteriormente.
+       A avaliação continuada permite acompanhar a evolução do ganho de peso durante a gestação e examinar se este
+       ganho está adequado em função do estado nutricional da gestante no início da gravidez. Esta análise pode ser feita
+       com base em dois instrumentos: o quadro que indica qual é a faixa de ganho de peso recomendado segundo o
+       estado nutricional da gestante no início do pré-natal; e o Gráfico no qual se acompanha a curva de Índice de Massa
+       Corporal (IMC), segundo semana gestacional, identrificando se a inclinação do traçado é ascendente, horizontal
+       ou descendente.
+
+               Realize o acompanhamento do estado nutricional utilizando o Gráfico de IMC por semana gestacional. Este
+       é composto por um eixo horizontal com os valores de semana gestacional e por um eixo vertical com os valores de
+       IMC (peso (kg)/altura² (m)). O gráfico apresenta o desenho de três inclinações possíveis, que delimitam as quatro
+
+26 categorias do estado nutricional: Baixo Peso (BP), Adequado (A), Sobrepeso (S) e Obesidade (O).
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+        A inclinação para o traçado da curva irá variar de acordo com o estado nutricional inicial da gestante, conforme
+o quadro a seguir:
+
+Quadro 21 - Avaliação do traçado da curva de acompanhamento do estado nutricional da gestante,
+                 segundo o gráfico de Índice de Massa Corporal por semana gestacional
+
+Estado Nutricional da gestante Inclinação da curva no Gráfico  Exemplo*
+
+na 1ª avaliação  de IMC por semana gestacional
+
+Baixo Peso (BP)   A curva de ganho de peso deve
+                 apresentar inclinação ascendente
+                 maior que a da curva que delimita
+                 a parte superior da faixa de estado
+
+                     nutricional Baixo Peso (BP).
+
+Adequado (A)           A curva deve apresentar
+Sobrepeso (S)     inclinação ascendente paralela às
+Obesidade (O)      curvas que delimitam a área de
+                  estado nutricional adequado (A)       
+
+                               no gráfico.
+
+                 A curva deve apresentar inclinação
+                  ascendente semelhante às curvas
+
+                   que delimitam a de sobrepeso
+                    (S), a depender do seu estado
+                 nutricional inicial. Por exemplo: se
+                  uma gestante de sobrepeso inicia
+                    a gestação com IMC próximo
+                  ao limite inferior desta faixa, sua
+                  curva de ganho de peso deve ter
+                 inclinação ascendente semelhante
+                     à curva que delimita a parte
+                    inferior desta faixa no gráfico
+
+                 A curva deve apresentar inclinação
+                   semelhante ou inferior (desde
+                    que ascendente) à curva que
+
+                 delimita a parte inferior da faixa de
+                             obesidade (O).
+
+* Observação: As linhas em azul foram desenhadas aleatoriamente apenas para exemplificar as possíveis tendências de inclinação das curvas.
+
+                                                                                                                     27
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+                            Gráfico 2 - Gráfico de Índice de Massa Corporal segundo semana de gestação
+
+        Fonte: Adaptado de: (ATALAH SAMUR, E., 2006)
+
+               .O Cartão da Gestante é o instrumento usado para registrar os principais dados de acompanhamento da
+       gravidez, os quais são importantes para a referência e contra-referência. Este deverá ficar sempre com a gestante.
+
+                                          Na versão de 2006, há espaços disponíveis para o registro do peso e do IMC
+                                          observado em cada consulta, além do gráfico para marcação e acompanhamento
+                                          do estado nutricional da gestante.
+
+                                                   É de extrema relevância o registro do estado nutricional tanto na ficha
+                                          do SISVAN e em prontuários de atendimento como no Cartão da Gestante. A
+                                           avaliação do estado nutricional é capaz de fornecer informações essenciais para
+                                           a prevenção e o controle de agravos à saúde e nutrição. Contudo, vale ressaltar
+                                           a importância da realização de outros procedimentos complementares ao
+                                           diagnóstico nutricional ou que podem alterar a interpretação deste, conforme
+                                           a necessidade de cada gestante. Assim, destacam-se a avaliação clínica para
+                                           detecção de doenças associadas à nutrição (ex: diabetes), a observação da
+                                           presença de edema, que acarreta aumento de peso e prejudica o diagnóstico
+                                           do estado nutricional, e a avaliação laboratorial para diagnóstico de anemia e de
+                                           outras doenças de interesse clínico na gravidez.
+
+28
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+  Gestante Adolescente
+          Deve-se observar que a classificação do estado nutricional na gestação aqui proposta não é específica
+
+  para gestantes adolescentes, devido ao crescimento e imaturidade biológica presentes nesta fase do curso de
+  vida. No entanto, esta classificação pode ser usada desde que a interpretação dos resultados seja flexível e se
+  considere a especificidade deste grupo. Para adolescentes que engravidaram dois ou mais anos após a menarca
+  (em geral, maiores de 15 anos), a interpretação dos dados é equivalente a das adultas. Para as que engravidaram
+  com menos de dois anos após a menarca, é provável que muitas sejam classificadas como de baixo peso. Estas
+  devem ter sua altura mensurada em todas as consultas, pois se encontram ainda em fase de crescimento. Também
+  nestes casos, o mais importante é acompanhar o traçado da curva de IMC por semana gestacional, que deverá
+  ser ascendente ao longo das consultas. Deve-se tratar a gestante adolescente como de risco nutricional, reforçar
+  a abordagem nutricional e aumentar o número de visitas aos EAS.
+
+EM RESUMO, OS PASSOS PARA O DIAGNÓSTICO NUTRICIONAL DA GESTANTE SÃO:
+
+        1º PASSO: Realizar as medidas antropométricas. Pesar a cada consulta e medir a altura na primeira consulta.
+No caso de gestantes adolescentes, a avaliação da altura deve ser realizada, no mínimo, a cada trimestre. Calcular
+o IMC da gestante.
+
+        2º PASSO: Calcular a semana gestacional da mulher grávida.
+        3º PASSO: Localizar, no eixo horizontal, a semana gestacional calculada e identificar, no eixo vertical, o IMC
+da gestante.
+        4º PASSO: Marcar um ponto na interseção dos valores de IMC e da semana gestacional.
+        5º PASSO: Classificar o estado nutricional da gestante segundo IMC por semana gestacional, conforme legenda
+do gráfico: BP, A, S, O. No caso de gestantes adolescentes, ver as observações contidas no quadro apresentado
+anteriormente.
+        6º PASSO: Estimar a recomendação do ganho de peso para a gestante.
+        7º PASSO: A partir da 2ª consulta, ligar os pontos obtidos e observar o traçado resultante. A marcação
+de dois ou mais pontos no gráfico (primeira consulta e subseqüentes) possibilita construir o traçado da curva por
+semana gestacional.
+
+  Considere:
+  - traçado ascendente: ganho de peso adequado;
+  - traçado horizontal ou descendente: ganho de peso inadequado (gestante de risco).
+
+                                                                                                                      29
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+     PARTE III ­ O MÉTODO ANTROPOMÉTRICO
+
+               O método antropométrico permite a avaliação do peso, da estatura e de outras medidas do corpo
+       humano. Ele representa um importante recurso para a avaliação do estado nutricional do indivíduo e ainda
+       oferece dados para o acompanhamento do crescimento e desenvolvimento de crianças e adolescentes.
+
+               Neste item, descrevem-se os procedimentos comumente utilizados para a correta tomada das medidas
+       antropométricas. A Vigilância Alimentar e Nutricional - SISVAN recomenda a coleta do peso e da estatura para
+       todos os indivíduos (crianças, gestantes, adolescentes, adultos e idosos) e da circunferência da cintura no caso
+       de adultos.
+
+               Pesar e medir são atividades de rotina nos serviços de saúde, e por serem atividades relativamente
+       simples, a maioria das pessoas julga-se apta a realizá-las. No entanto, erros nos procedimentos, na leitura ou na
+       anotação da medida são freqüentes. Estas situações podem ser evitadas com um bom treinamento das equipes,
+       uma revisão constante dos conceitos e procedimentos e uma manutenção freqüente dos equipamentos.
+
+               Antropometrista é a denominação para o profissional capacitado para a coleta de medidas antropométricas.
+       Para que tais medidas sejam confiáveis e precisas, é necessário que os antropometristas envolvidos nesta tarefa
+       tenham alto senso de responsabilidade, concentração e atenção durante a realização do procedimento. Na
+       dúvida, deve-se sempre repeti-lo. O valor da medida antropométrica obtida deve ser anotado, imediatamente,
+       com segurança e com boa caligrafia.
+
+               Para a correta tomada do peso e da estatura, deve-se garantir, previamente, o perfeito funcionamento
+       dos equipamentos. A manutenção dos equipamentos é muito importante a fim de evitar erros causados por
+       problemas ou defeitos dos mesmos. Dentre os equipamentos citados, a balança é o que gera mais erros por
+       falta de manutenção. Para evitar possíveis problemas ao adquirir este equipamento, o EAS deve solicitar
+       um exame pelos órgãos responsáveis por este serviço. São eles: o Instituto de Pesos e Medidas (IPEM) e o
+       Instituto Nacional de Metrologia (INMETRO). Porém, o procedimento de aferição e regulagem de balanças e/
+       ou seu conserto também pode ser realizado por uma firma idônea, ficando a escolha a critério da instituição.
+
+               Na manutenção do antropômetro de madeira, é importante observar se está localizado em lugar seco, pois
+       existe o risco de empenar com a umidade local, gerando erros na medição. Recomenda-se que o infantômetro
+       (antropômetro horizontal para medir o comprimento de crianças menores de 2 anos) e a balança pediátrica
+       estejam apoiados em mesa ou bancada, confeccionadas em material firme e resistente (por exemplo, metal,
+       mármore ou madeira). O estadiômetro (antropômetro vertical) deve ser colocado em parede lisa e sem rodapé
+       e a balança plataforma em superfície lisa e nivelada.
+
+               Um bom antropometrista deve conferir os equipamentos que utiliza, rotineiramente, antes de cada
+       pesagem ou medição. Além disso, o local de instalação dos equipamentos deve ser escolhido de modo a:
+
+               a. oferecer claridade suficiente para que se possa fazer uma boa leitura da escala de medidas;
+               b. permitir a privacidade do indivíduo e de sua família;
+               c. proporcionar conforto térmico, evitando-se correntes de ar que podem afetar, especialmente, os
+       bebês e as pessoas idosas;
+               d. ter espaço suficiente para permitir o trabalho dos profissionais e a presença da mãe e/ou familiares.
+
+               Esse conjunto de cuidados e procedimentos é fundamental para a confiabilidade da classificação e
+       do diagnóstico nutricional em todas as faixas etárias avaliadas em uma unidade de saúde. Descuidos ou
+       procedimentos mal realizados poderão, por exemplo, fazer com que não se note o déficit nutricional de uma
+       criança ou o excesso de peso de um adulto ou, ainda, o ganho inadequado de peso por uma gestante. Uma
+       medida mal realizada hoje poderá comprometer a interpretação da evolução do estado nutricional de uma
+       criança ou gestante, ainda que as medidas anteriores ou subseqüentes sejam bem realizadas. Por estas razões,
+       o antropometrista deve seguir rigorosamente as técnicas e recomendações presentes nesta publicação.
+
+30
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+                                  EQUIPAMENTOS ANTROPOMÉTRICOS
+Balança:
+
+        É o instrumento utilizado para medir a massa corporal total. O equipamento deverá ter precisão necessária
+para informar o peso de um indivíduo da forma mais exata possível. A precisão da escala numérica das balanças
+varia de acordo com o tipo (mecânica ou eletrônica) ou fabricante. É recomendável que as balanças pediátricas
+tenham precisão mínima de dez gramas e, as balanças tipo plataforma, de cem gramas. Isso porque pequenas
+alterações no peso são indicadores nutricionais importantes, em particular, para as crianças menores de dois
+anos. A balança deve estar instalada em local nivelado, pois o equipamento deve permanecer estável durante
+o procedimento.
+
+        Existem vários tipos de balança, sendo as mais recomendadas para uso em EAS as seguintes:
+                                             Figura 1 - Balança pediátrica mecânica
+
+        a - balança pediátrica ou "tipo-bebê", utilizada para crianças menores de 2 anos ou com até 16 kg; pode ser  
+mecânica ou eletrônica (digital).
+
+                                             Figura 2 - Balança plataforma mecânica
+
+        b - balança plataforma: pesa crianças maiores de 2 anos, adolescentes, adultos, idosos, gestantes e nutrizes;
+pode ser mecânica ou eletrônica(digital).
+
+        c - balança de campo ou tipo pêndulo: esta balança é assim denominada porque é portátil e foi idealizada
+para utilização em atividades externas ao serviço de saúde.
+
+        d - balança de campo tipo eletrônica (digital): esta balança é também portátil, apropriada para o trabalho de
+campo como pesquisas populacionais ou Chamadas Nutricionais.
+
+                                                                                                                      31
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+               Antropômetro horizontal (infantômetro) e vertical:
+               A medida da estatura pode ser obtida na posição deitada, em sentido horizontal, quando se trata do
+       comprimento e, na posição em pé, no sentido vertical, para o que se denomina altura.
+               O infantômetro é o equipamento utilizado para medir o comprimento de crianças menores de dois anos.
+       Pode ser denominado de antropômetro infantil, horizontal, régua antropométrica, ou pediômetro.
+               Para crianças maiores de dois anos, adolescentes, adultos, idosos e gestantes, a altura é aferida utilizando-se
+       o antropômetro vertical ou estadiômetro.
+
+       Estatura versus Altura
+                 O termo "estatura" pode ser utilizado para expressar tanto o comprimento (medida aferida com o indivíduo
+
+        deitado) quanto a altura (medida aferida com o indivíduo em pé). Adota-se o termo "comprimento" para a estatura
+        de crianças menores de 2 anos e o termo "altura" para a estatura de crianças maiores de 2 anos, adolescentes,
+        adultos, idosos e gestantes.
+
+               Existem vários modelos de antropômetros verticais e horizontais, sendo normalmente confeccionados de
+       alumínio (material recomendado, por ser mais resistente e permitir melhor higienização) ou de madeira.
+
+                                                        Figura 3 - Antropômetro infantil
+
+      Fita métrica:
+               A fita métrica deve ser utilizada somente para medir a circunferência da cintura em adultos. Utilize, de
+
+       preferência, uma fita métrica de material resistente, inelástica e flexível, com precisão de 0,1 cm. A fita comum (de
+       costura) não deve ser utilizada, pois tende a esgarçar com o tempo, alterando assim a medida.
+
+       Pesando e medindo crianças
+                 O ato de pesar e medir requer contato físico e isto pode gerar uma situação normal de insegurança e estresse
+
+        nas crianças. A situação pede concentração, paciência e muita cordialidade. Nunca se deve pesar ou medir uma
+        criança sem antes conversar com ela e/ou com a família explicando o que vai ser feito. Não subestime a força ou
+        a agilidade das crianças, mesmo as muito pequenas. Um antropometrista, depois de receber treinamento, leva
+        cerca de 1(um) minuto para realizar a tomada de uma medida antropométrica. Porém, muitas crianças costumam
+        chorar durante a tomada do peso ou da estatura. Caso o choro não cesse e o nível de estresse fique alto, solicite
+        à mãe que pegue a criança no colo e aguarde um instante. Seja firme, porém gentil com as crianças. A segurança
+        transmitida pelo profissional será percebida pela criança e pela mãe.
+
+                           AFERIÇÃO DO PESO DE CRIANÇAS MENORES DE 2 ANOS
+
+               As crianças menores de 2 anos devem ser pesadas e medidas sempre completamente despidas e na
+       presença da mãe ou do responsável, pois estes devem auxiliar na retirada da roupa da criança e na tomada da
+       medida. Lembre-se que uma fralda molhada pode representar até 20% do peso de uma criança.
+
+       Se for utilizar balança pediátrica ou "tipo bebê":
+
+               A balança pediátrica ou "tipo bebê" é o equipamento apropriado para crianças menores de 2 anos que
+       ainda não ficam de pé com segurança. É preciso ter muito cuidado para pesar crianças pequenas, a fim de se
+       evitar acidentes. Certifique-se de que a balança está apoiada sobre uma superfície plana, lisa e firme. Forre o
+
+32 prato com uma proteção (papel destacável ou fralda) antes de calibrar a balança para evitar erros na pesagem.
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+        1º Passo: Destravar a balança.
+        2º Passo: Verificar se a balança está calibrada (a agulha do braço e o fiel devem estar na mesma linha
+horizontal). Caso contrário, calibrá-la, girando lentamente o calibrador.
+        3º Passo: Esperar até que a agulha do braço e o fiel estejam nivelados.
+        4º Passo: Após constatar que a balança está calibrada, ela deve ser travada.
+        5º Passo: Despir a criança com o auxílio da mãe ou responsável.
+        6º Passo: Colocar a criança sentada ou deitada no centro do prato, de modo a distribuir o peso
+igualmente. Destravar a balança, mantendo a criança parada o máximo possível nessa posição. Orientar a mãe
+ou responsável a manter-se próximo, sem tocar na criança, nem no equipamento.
+        7º Passo: Mover o cursor maior sobre a escala numérica para marcar os quilos.
+        8º Passo: Depois mover o cursor menor para marcar os gramas.
+        9º Passo: Esperar até que a agulha do braço e o fiel estejam nivelados.
+        10º Passo: Travar a balança, evitando, assim, que sua mola desgaste, assegurando o bom funcionamento
+do equipamento.
+        11º Passo: Realizar a leitura de frente para o equipamento com os olhos no mesmo nível da escala para
+visualizar melhor os valores apontados pelos cursores.
+        12º Passo: Anotar o peso no formulário da Vigilância Alimentar e Nutricional/ prontuário.
+        13º Passo: Retirar a criança e retornar os cursores ao zero na escala numérica.
+        14º Passo: Marcar o peso na Caderneta de Saúde da Criança.
+
+             Figura 4 - Aferição de peso de crianças menores de 2 anos em balança pediátrica mecânica
+
+                                                                                                                      33
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Se for utilizar balança pediátrica eletrônica (digital)
+
+            1º Passo: A balança deve estar ligada antes de a criança ser colocada sobre o equipamento. Esperar que a
+    balança chegue ao zero.
+
+            2º Passo: Despir totalmente a criança com o auxílio da mãe/responsável.
+            3º Passo: Colocar a criança despida no centro do prato da balança, sentada ou deitada, de modo que o peso
+    fique distribuído. Manter a criança parada (o máximo possível) nessa posição. Orientar a mãe/responsável a manter-
+    se próximo, sem tocar na criança, nem no equipamento.
+            4º Passo: Aguardar que o valor do peso esteja fixado no visor e realizar a leitura.
+            5º Passo: Anotar o peso no formulário da Vigilância Alimentar e Nutricional - SISVAN/prontuário. Retirar
+    a criança.
+            6º Passo: Marcar o peso na Caderneta de Saúde da Criança.
+
+                 Figura 5 - Aferição de peso de crianças menores de 2 anos em balança pediátrica eletrônica
+
+    Se for utilizar balança suspensa tipo pêndulo
+
+            Para o uso de balanças suspensas (tipo pêndulo), observe que estas devem ser penduradas em local seguro
+    e em altura que permita uma boa visualização da escala, normalmente na altura dos olhos do profissional de saúde.
+    As orientações descritas para o uso da balança mecânica pediátrica podem ser adaptadas para a técnica de pesagem
+    com balanças suspensas.
+
+    AFERIÇÃO DO PESO DE CRIANÇAS MAIORES DE 2 ANOS,
+                         ADOLESCENTES E ADULTOS
+
+            As crianças maiores de 2 anos devem ser pesadas descalças e com roupas bem leves. Idealmente, devem
+    usar apenas calcinha, short ou cueca, na presença da mãe ou do responsável.
+
+            Os adultos e adolescentes devem ser pesados descalços e usando roupas leves. Devem ser orientados a
+    retirarem objetos pesados tais como chaves, cintos, óculos, telefones celulares e quaisquer outros objetos que
+    possam interferir no peso total.
+
+    Se for utilizar balança mecânica de plataforma:
+
+34  Inicialmente certifique-se de que a balança plataforma está afastada da parede.
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+        1º Passo: Destravar a balança.
+        2º Passo: Verificar se a balança está calibrada (a agulha do braço e o fiel devem estar na mesma linha horizontal).
+Caso contrário, calibrá-la, girando lentamente o calibrador,
+        3º Passo: Esperar até que a agulha do braço e o fiel estejam nivelados.
+        4º Passo: Após a calibração da balança, ela deve ser travada e só então a criança, adolescente e adulto deve
+subir na plataforma para ser pesado.
+        5º Passo: Posicionar o indivíduo de costas para a balança, descalço, com o mínimo de roupa possível, no centro
+do equipamento, ereto, com os pés juntos e os braços estendidos ao longo do corpo. Mantê-lo parado nessa posição.
+        6º Passo: Destravar a balança.
+        7º Passo: Mover o cursor maior sobre a escala numérica, para marcar os quilos.
+        8º Passo: Depois mover o cursor menor para marcar os gramas.
+        9º Passo: Esperar até que a agulha do braço e o fiel estejam nivelados.
+        10º Passo: Travar a balança, evitando, assim que sua mola desgaste, assegurando o bom funcionamento do
+equipamento.
+        11º Passo: Realizar a leitura de frente para o equipamento, para visualizar melhor os valores apontados
+pelos cursores.
+        12º Passo: Anotar o peso no formulário da Vigilância Alimentar e Nutricional ­ SISVAN e no prontuário.
+        13º Passo: Retirar a criança, adolescente ou adulto.
+        14º Passo: Retornar os cursores ao zero na escala numérica.
+        15º Passo: Marcar o peso das crianças na Caderneta de Saúde da Criança.
+
+                       Figura 6 - Aferição de peso de adultos em balança mecânica de plataforma
+
+                                                                                                                      35
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+      Se for utilizar balança eletrônica (digital):
+               1º Passo: A balança deve estar ligada antes do indivíduo posicionar-se sobre o equipamento. Esperar que a
+
+       balança chegue ao zero.
+               2º Passo: Colocar a criança, adolescente ou adulto, no centro do equipamento, com o mínimo de roupa
+
+       possível, descalço, ereto, com os pés juntos e os braços estendidos ao longo do corpo. Mantê-lo parado nessa posição.
+               3º Passo: Realizar a leitura após o valor de o peso estar fixado no visor.
+               4º Passo: Anotar o peso no formulário da Vigilância Alimentar e Nutricional ­ SISVAN e no prontuário.
+
+       Retirar a criança, adolescente ou adulto da balança.
+               5º Passo: Para crianças, anotar o peso na Caderneta de Saúde da Criança.
+                              Figura 7 - Aferição de peso de adultos em balança mecânica de plataforma
+
+                   AFERIÇÃO DO COMPRIMENTO DE CRIANÇAS MENORES DE 2 ANOS
+
+               O comprimento é a distância que vai da sola (planta) dos pés descalços, ao topo da cabeça, comprimindo os
+       cabelos, com a criança deitada em superfície horizontal, firme e lisa. Deve-se retirar os sapatos da criança. Deve-se,
+       também, retirar toucas, fivelas ou enfeites de cabelo que possam interferir na tomada da medida.
+
+               1º Passo: Deitar a criança no centro do infantômetro, descalça e com a cabeça livre de adereços.
+               2º Passo: Manter, com a ajuda da mãe/ responsável:
+               - a cabeça apoiada firmemente contra a parte fixa do equipamento, com o pescoço reto e o queixo afastado
+       do peito, no plano de Frankfurt (margem inferior da abertura do orbital e a margem superior do meatus auditivo
+       externo deverão ficar em uma mesma linha horizontal).;
+               - os ombros totalmente em contato com a superfície de apoio do infantômetro;
+               - os braços estendidos ao longo do corpo.
+               3º Passo: As nádegas e os calcanhares da criança em pleno contato com a superfície que apóia o infantômetro.
+               4º Passo: Pressionar, cuidadosamente, os joelhos da criança para baixo, com uma das mãos, de modo que
+       eles fiquem estendidos. Juntar os pés, fazendo um ângulo reto com as pernas. Levar a parte móvel do equipamento
+       até as plantas dos pés, com cuidado para que não se mexam.
+
+                              Figura 8 - Técnica de aferição do comprimento segundo Plano de Frankfurt
+
+36
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+        5º Passo: Realizar a leitura do comprimento quando estiver seguro de que a criança não se moveu da
+posição indicada.
+
+        6º Passo: Anotar o resultado no formulário da Vigilância Alimentar e Nutricional - SISVAN e no prontuário
+e retirar a criança. Marcar a medida da estatura na Caderneta de Saúde da Criança.
+
+                           Figura 9 - Aferição do comprimento de crianças menores de 2 anos
+
+      AFERIÇÃO DA ALTURA DE CRIANÇAS MAIORES DE 2 ANOS, ADOLESCENTES
+                                                      E ADULTOS
+
+        A estatura é a medida do indivíduo na posição de pé, encostado numa parede ou antropômetro vertical.
+        1º Passo: Posicionar a criança, adolescente ou adulto descalço e com a cabeça livre de adereços, no centro do
+equipamento. Mantê-lo de pé, ereto, com os braços estendidos ao longo do corpo, com a cabeça erguida, olhando
+para um ponto fixo na altura dos olhos.
+        2º Passo: A cabeça do indivíduo deve ser posicionada no plano de Frankfurt (margem inferior da abertura
+do orbital e a margem superior do meatus auditivo externo deverão ficar em uma mesma linha horizontal).
+        3º Passo: As pernas devem estar paralelas, mas não é necessário que as partes internas das mesmas
+estejam encostadas. Os pés devem formar um ângulo reto com as pernas.
+        Idealmente, o indivíduo deve encostar os calcanhares, as panturilhas, os glúteos, as escápulas e parte posterior
+da cabeça (região do occipital) no estadiômetro ou parede. Quando não for possível encostar esses cinco pontos,
+devem-se posicionar no mínimo três deles.
+
+                           Figura 10 - Técnica de aferição da altura segundo Plano de Frankfurt
+
+                                                                                                                      37
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+               4º Passo: Abaixar a parte móvel do equipamento, fixando-a contra a cabeça, com pressão suficiente para
+       comprimir o cabelo. Retirar o indivíduo, quando tiver certeza de que o mesmo não se moveu.
+
+               5º Passo: Realizar a leitura da estatura, sem soltar a parte móvel do equipamento.
+               6º Passo: Anotar o resultado no formulário da Vigilância Alimentar e Nutricional - SISVAN e no prontuário.
+       Para crianças, marcar a altura na Caderneta de Saúde da Criança.
+
+                         Figura 11 - Aferição da altura de crianças maiores de 2 anos, adolescentes e adultos
+
+                        AFERIÇÃO DA CIRCUNFERÊNCIA DA CINTURA DE ADULTOS
+
+               Esta medida permite uma avaliação aproximada da massa de gordura intra-abdominal e da gordura total do
+       corpo. É utilizada na avaliação da distribuição de gordura em adultos, visto que algumas complicações, como as
+       doenças metabólicas crônicas, estão associadas à deposição da gordura abdominal.
+
+               1º Passo: A pessoa deve estar de pé, ereta, abdômen relaxado, braços estendidos ao longo do corpo e as
+       pernas paralelas, ligeiramente separadas.
+
+               2º Passo: A roupa deve ser afastada, de forma que a região da cintura fique despida. A medida não deve ser
+       feita sobre a roupa ou cinto.
+
+               3º Passo: O antropometrista deve realizar uma marcação pequena a caneta no ponto médio entre a borda
+       inferior da última costela e o osso do quadril (crista ilíaca), visualizado na frente da pessoa, do lado direito ou esquerdo.
+
+               4º Passo: O antropometrista deve segurar o ponto zero da fita métrica com uma mão e com a outra passar
+       a fita ao redor da cintura sobre a marcação realizada.
+
+               5º Passo: Deve-se verificar se a fita está no mesmo nível em todas as partes da cintura; não deve ficar larga,
+       nem apertada.
+
+               6º Passo: Pedir à pessoa que inspire e, em seguida, que expire totalmente. Realizar a leitura imediata antes
+       que a pessoa inspire novamente.
+
+               7º Passo: Anotar a medida no formulário da Vigilância Alimentar e Nutricional - SISVAN e no prontuário.
+
+38
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+referências
+
+ATALAH SAMUR, E. et al. Propuesta de um nuevo estándar de Evaluación nutricional em embarazadas. Rev. Med.
+Chile, [S. l.], v. 125, n. 12, p. 1429-1436, 1997.
+
+BORGHI, E. et al. Development of a WHO growth reference for school-aged children and adolescents. Bulletin of
+the World Health Organization, [S. l.], v. 85, p. 660-667, 2007.
+
+BRASIL.M. inistério da Saúde. Secretaria de Políticas de Saúde. Departamento de Atenção Básica. Saúde da Criança:
+acompanhamento do crescimento e desenvolvimento infantil. Brasília: Ministério da Saúde, 2002. (Cadernos de
+Atenção Básica, v. 11.)
+
+BRASIL. Ministério da Saúde. Secretariad. e Atenção à Saúde. Coordenação Geral da Política de Alimentação e Nutrição.
+Manual de atendimento da criança com desnutrição grave em nível hospitalar. Brasília: Ministério da Saúde,
+2005. (Série A. Normas e Manuais Técnicos.)
+
+DE ONIS, M. et al. Development of a WHO growth reference for school-aged children and adolescents. Bulletin
+of the World Health Organization, [S. l.], v. 85, p. 660-667, 2007.
+
+INSTITUTE OF MEDICINE. Nutrition during pregnancy. Washington D.C. US: National Academy Press, 1990.
+
+ORGANIZAÇÃO MUNDIAL DA SAÚDE. Revisão II-5: definições, regulamentações, regras, normas para mortalidade
+e morbidade. In: ______. Classificação Internacional das Doenças. São Paulo: Centro Brasileiro de Classificação
+de Doenças, 1993.
+
+ORGANIZACIÓN MUNDIAL DE LA SALUD. Curso de capacitación sobre la evaluación del crecimiento del
+niño: versión 1. Ginebra: OMS, 2006.
+
+THE NUTRITION SCREENING INITIATIVE. Incorporating nutrition screening and interventions into medical
+practice: a monograph for physicians. Washington D.C. US: American Academy of Family Physicians, The American
+Dietetic Association, National Council on Aging Inc., 1994.
+
+WORLD HEALTH ORGANIZATION. Who child growth standards: length/height-for-age,weight-for-age, weight-
+for-length, weight-for-height and body mass index-for-age. Methods and development. WHO (nonserial publication).
+Geneva, Switzerland: WHO, 2006.
+
+WORLD HEALTH ORGANIZATION. Obesity: preventing and managing the global epidemic: Report of a WHO
+consultation on obesity. (WHO Technical Report Series n. 894). Geneva, Switzerland: WHO, 2000.
+
+WORLD HEALTH ORGANIZATION. Physical Status: the use and interpretation of anthropometry. Geneva,
+Switzerland: WHO, 1995. (WHO Technical Report Series, n. 854).
+
+WORLD HEALTH ORGANIZATION. WHO child growth standards: Length/height-for-age, weight-for-age,
+weight-for-length, weight-for-height and body mass index-for-age. Methods and development. WHO (nonserial
+publication). Geneva, Switzerland: WHO, 2006.
+
+WORLD HEALTH ORGANIZATION. Physical status: the use and interpretation of anthropometry. Geneva,
+Switzerland: WHO, 1995. (WHO Technical Report Series, n. 854).
+
+                                                                                                                       39
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+     ANEXO A
+
+       Tabela 1: Peso (kg) por idade (meses) para sexo masculino ­ menores de 5 anos
+
+         Fonte: (WHO, 2006)
+
+40
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 2: Peso (kg) por idade (meses) para sexo feminino ­ menores de 5 anos
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      41
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Tabela 3: Peso (kg) por comprimento (cm) para sexo masculino ­ menores de 5 anos
+
+42                                                                                    continua...
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      43
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 4: Peso (kg) por comprimento (cm) para sexo feminino ­ menores de 5 anos
+
+                                                                                                                    continua...
+
+44
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continua...
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      45
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Tabela 5: Peso (kg) por estatura (cm) para sexo masculino ­ menores de 5 anos
+
+46                                                                                 continua...
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      47
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+    Tabela 6: Peso (kg) por estatura (cm) para sexo feminino ­ menores de 5 anos
+
+48                                                                                continua...
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+Fonte: (WHO, 2006)   
+
+                                                                                                                      49
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 7: Comprimento (cm) por idade (meses) para o sexo masculino ­ menores de 5 anos
+
+         Fonte: (WHO, 2006)
+
+50
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 8: Comprimento (cm) por idade (meses) para o sexo feminino ­ menores de 5 anos
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      51
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 9: Estatura (cm) por idade (meses) para o sexo masculino ­ menores de 5 anos
+
+          Fonte: (WHO, 2006)
+
+52
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 10: Estatura (cm) por idade (meses) para o sexo feminino ­ menores de 5 anos
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      53
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 11: IMC (kg/m²) por idade (meses) para o sexo masculino ­ menores de 2 anos:
+
+         Fonte: (WHO, 2006)
+
+54
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 12: IMC (kg/m²) por idade (meses) para o sexo feminino ­ menores de 2 anos
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      55
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 13: IMC (kg/m²) por idade (meses) para o sexo masculino ­ entre 2 e 5 anos
+
+          Fonte: (WHO, 2006)
+
+56
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 14: IMC (kg/m²) por idade (meses) para o sexo feminino ­ entre 2 e 5 anos
+
+Fonte: (WHO, 2006)
+
+                                                                                                                      57
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 15: IMC (kg/m²) por idade (em meses) para o masculino ­ a partir dos 5 anos e 1 mês (61 meses) aos
+       19 anos (228 meses)
+
+                                                                                                                   continua...
+
+58
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+             continua...                                   59
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+                        continuação
+
+         Fonte: (WHO, 2007)
+
+60
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 16: IMC (kg/m²) por idade (em meses) para o feminino ­ a partir dos 5 anos e
+1 mês (61 meses) aos 19 anos (228 meses)
+
+                                                                                                            continua...
+
+                                                                                                                      61
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+                         continuação
+
+62
+
+                                                                                                                    continua...
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+Fonte: (WHO, 2007)
+
+                                                                                                                      63
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 17: Altura (cm) por idade (em meses) para o sexo masculino ­ a partir dos 5 anos e 1 mês (61 meses)
+       aos 19 anos (228 meses)
+
+                                                                                                                    continua...
+
+64
+             Orientações para a coleta e análise
+                          de dados antropométricos
+                                     em serviços de saúde
+
+continuação
+
+             continua...                                   65
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+                         continuação
+
+         Fonte: (WHO, 2007)
+
+66
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 18: Altura (cm) por idade (em meses) para o sexo feminino ­ a partir dos 5 anos e 1 mês (61 meses)
+aos 19 anos (228 meses)
+
+                                                                                                            continua...
+
+                                                                                                                      67
+    MINISTÉRIO DA SAÚDE
+    Secretaria de Atenção à Saúde
+    Departamento de Atenção Básica
+
+                     continuação
+
+68                                  continua...
+                               Orientações para a coleta e análise
+                                            de dados antropométricos
+                                                       em serviços de saúde
+
+                  continuação
+
+Fonte: (WHO, 2007)
+
+                                                                             69
+          MINISTÉRIO DA SAÚDE
+          Secretaria de Atenção à Saúde
+          Departamento de Atenção Básica
+
+       Tabela 19: Peso (kg) por idade (em meses) para o sexo masculino ­ a partir dos 5 anos e 1 mês (61 meses)
+       aos 10 anos (120 meses)
+
+         Fonte: (WHO, 2007)
+
+70
+                                                                                                                                            Orientações para a coleta e análise
+                                                                                                                                                         de dados antropométricos
+                                                                                                                                                                     em serviços de saúde
+
+Tabela 20: Peso (kg) por idade (em meses) para o sexo feminino ­ a partir dos 5 anos e 1 mês (61 meses)
+aos 10 anos (120 meses)
+
+Fonte: (WHO, 2007)
+
+                                                                                                                      71
+Espaço para as informações da Gráfica
+                    (Colofão)
+

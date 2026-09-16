@@ -1,0 +1,109 @@
+import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
+import { Button } from './ui/componentes/button.tsx'
+import { Card } from './ui/componentes/card.tsx'
+import { AvisoPrimeiroAcesso } from './ui/casos/AvisoPrimeiroAcesso.tsx'
+import { TelaCasos } from './ui/casos/TelaCasos.tsx'
+import { useCasos } from './ui/estado/contextoCasos.ts'
+import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
+import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
+import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
+import { Estrutura } from './ui/layout/Estrutura.tsx'
+import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
+import { ETAPAS } from './ui/navegacao.ts'
+import { useRota } from './ui/usarRota.ts'
+
+function Conteudo() {
+  const [rota, navegar] = useRota()
+  const { casos, repositorio, atualizar } = useCasos()
+
+  const casoAberto = rota.tela === 'planejador' ? repositorio.obter(rota.casoId) : null
+  const recente = casos[0]
+  const casoAtual: CasoAtual | null = casoAberto
+    ? { id: casoAberto.caso.id, nome: casoAberto.caso.nome }
+    : recente
+      ? { id: recente.id, nome: recente.nome }
+      : null
+
+  const novoCaso = () => {
+    const salvo = repositorio.criar('')
+    atualizar()
+    navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
+  }
+
+  const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
+  const irParaCasos = { rotulo: 'Meus casos', aoClicar: () => navegar({ tela: 'casos' }) }
+
+  if (rota.tela === 'fontes') {
+    return (
+      <Estrutura {...base} titulo="Fontes científicas" subtitulo="De onde vem cada número do planejador">
+        <TelaFontes />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'planejador') {
+    if (!casoAberto) {
+      return (
+        <Estrutura {...base} titulo="Caso não encontrado" trilha={[irParaCasos]}>
+          <Card className="items-start gap-4">
+            <p>Este caso não existe mais neste aparelho. Ele pode ter sido excluído em outra aba.</p>
+            <Button variant="lightprimary" onClick={() => navegar({ tela: 'casos' })}>
+              <FolderOpen aria-hidden="true" />
+              Voltar para Meus casos
+            </Button>
+          </Card>
+        </Estrutura>
+      )
+    }
+
+    const indice = ETAPAS.findIndex((e) => e.aba === rota.aba)
+    const etapa = ETAPAS[indice]
+    const proxima = ETAPAS[indice + 1]
+    return (
+      <Estrutura
+        {...base}
+        titulo={casoAberto.caso.nome || 'Caso sem nome'}
+        subtitulo={etapa ? `Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}` : undefined}
+        trilha={[irParaCasos]}
+      >
+        <div className="flex flex-col gap-6">
+          <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
+          <Card className="items-start gap-4">
+            <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
+            {proxima ? (
+              <Button onClick={() => navegar({ tela: 'planejador', casoId: rota.casoId, aba: proxima.aba })}>
+                Próxima etapa: {proxima.rotulo}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+            ) : null}
+          </Card>
+        </div>
+      </Estrutura>
+    )
+  }
+
+  return (
+    <Estrutura
+      {...base}
+      titulo="Meus casos"
+      subtitulo="Planos alimentares salvos neste aparelho"
+      acoes={
+        <Button size="sm" className="xl:hidden" onClick={novoCaso}>
+          <Plus aria-hidden="true" />
+          Novo caso
+        </Button>
+      }
+    >
+      <TelaCasos aoAbrir={(id) => navegar({ tela: 'planejador', casoId: id, aba: 'caso' })} aoNovoCaso={novoCaso} />
+    </Estrutura>
+  )
+}
+
+export function App() {
+  return (
+    <ProvedorCasos>
+      <Conteudo />
+      <AvisoPrimeiroAcesso />
+    </ProvedorCasos>
+  )
+}
