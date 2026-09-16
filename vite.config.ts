@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Caminho relativo: o mesmo build serve em localhost e numa subpasta (GitHub Pages).
+  base: './',
   plugins: [
     react(),
     tailwindcss(),
@@ -25,8 +27,8 @@ export default defineConfig({
         lang: 'pt-BR',
         start_url: './',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#00A1FF',
+        background_color: '#fbfbf7',
+        theme_color: '#12301c',
         icons: [{ src: 'icone.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
       },
     }),

@@ -63,6 +63,8 @@ O tema escuro é a **prova em negativo**: papel `#1b1f17`, mesa `#12150f`, tinta
 
 - Menu fixo de 264 px em telas de 1280 px ou mais; abaixo disso vira gaveta.
 - Conteúdo em até 1400 px, com 32 px de margem lateral no desktop e 16 px no celular.
+- **Coluna que encolhe.** Todo grid de duas colunas declara `minmax(0,1fr)` também no celular; coluna `auto` não encolhe abaixo do conteúdo e faz a página inteira rolar para o lado.
+- **Linha que empilha.** Abaixo de 640 px, a linha do alimento põe o nome numa linha e gramas, kcal e ações na seguinte, em vez de espremer o nome.
 - Etapa 3 usa largura total, com o resumo do dia em faixa horizontal, porque a tabela de micronutrientes tem seis colunas.
 - Etapas 1 e 2 usam duas colunas: trabalho à esquerda, painel do dia à direita, 360 px.
 
@@ -83,6 +85,10 @@ Retângulo de canto 2 px, altura 36 a 40 px. `default` verde sólido, `outline` 
 ### Tabela
 
 Cabeçalho em versalete sobre fio forte, linhas separadas por fio fino, linha par com tinta a 50% de `muted`, rodapé de notas separado por fio forte. Marcas de notação: `†` total possivelmente subestimado, `‡` limite superior que não vale para a forma presente nos alimentos.
+
+### Atalhos de alimento
+
+Na montagem da refeição, com o campo de busca vazio, aparecem até seis alimentos mais usados como fichas de fio fino, cada uma com a última porção usada. Fora dali (janela de substituto), não aparecem.
 
 ### Campos
 

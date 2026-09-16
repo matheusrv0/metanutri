@@ -22,7 +22,10 @@ O concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora
 
 ## Operating Context
 
+- Dois caminhos na criação do plano: **prescrição rápida** (nome, sexo, idade e meta de kcal) e **atendimento completo** (com antropometria e gasto energético calculado). O rápido vira completo a qualquer momento; o contrário, não.
 - Fluxo em três etapas: dados do caso, plano alimentar, adequação. Depois exporta.
+- Ficha de paciente separada do plano: restrições, condições, anamnese, histórico e evolução do peso. Um plano de retorno começa duplicando o anterior.
+- Produto industrializado entra pelo rótulo, com leitura do código de barras (câmera ou digitação) e preenchimento pela Open Food Facts, sempre conferido com a embalagem.
 - Documento final no modelo do estágio: cabeçalho do caso, antropometria, refeições por horário com principal e dois substitutos, orientações, receitas e assinaturas.
 - Clínica pede gramas; unidade básica de saúde e atendimento social pedem medida caseira.
 - Preceptora usa preset individual (RDA, 90%) e coletivo (EAR, 50%).
@@ -33,11 +36,14 @@ O concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora
 
 - Idades de 1 ano em diante, incluindo gestantes e lactantes.
 - Base TACO com 597 alimentos, medidas caseiras da POF, DRI do NASEM 2019, energia do NASEM 2023, curvas da OMS, cortes do SISVAN e ganho de peso gestacional de Kac 2021.
+- Buracos conhecidos da base, medidos e admitidos em tela: só 6 dos 597 alimentos têm todos os nutrientes; 57,3% não têm vitamina A; 39,4% não têm fibra; 6 não têm energia. Vitamina D, B12, folato, açúcares e gordura saturada não existem na TACO — só aparecem em produto cadastrado pelo rótulo.
 - Energia: Mifflin-St Jeor (padrão) e Harris-Benedict para adultos; equações próprias do NASEM para crianças, adolescentes, gestantes e lactantes.
 - Substitutos não entram na soma do dia nem na adequação.
 - Falta de dado nunca vira zero silencioso: o nutriente é marcado como possivelmente subestimado.
 - React 18, TypeScript estrito, Tailwind, Vite, shadcn/ui, tudo no navegador. Sem back-end.
+- Composição corporal opcional por dobras (Jackson e Pollock, Faulkner) ou bioimpedância.
 - Pendente: revisão clínica das oito referências pela nutricionista antes do lançamento.
+- Pendente e dependente do dono do produto: conta de usuário, cobrança, link do plano para o paciente e política de privacidade. Ver `docs/pendencias.md`.
 
 ## Brand Commitments
 
@@ -58,6 +64,7 @@ O concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora
 2. Falta de dado aparece como falta de dado, nunca como zero.
 3. A estudante decide; o app sugere e explica o critério.
 4. O trabalho nunca se perde: salva a cada tecla, funciona offline e exporta para Word.
+   Como tudo fica no navegador, o backup em Configurações é parte do produto, não um extra.
 5. O plano é o produto: a interface existe para chegar ao documento entregue.
 
 ## Accessibility & Inclusion
