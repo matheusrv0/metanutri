@@ -369,3 +369,16 @@
     break-inside: avoid;
   }
 }
+
+/* Halo do fundo da área pública (AuroraBackground). */
+@keyframes pulso-aurora {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.06);
+  }
+}

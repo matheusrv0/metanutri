@@ -20,6 +20,12 @@ import { TelaPainel } from './ui/painel/TelaPainel.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
+import { TelaConta } from './ui/conta/TelaConta.tsx'
+import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
+import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
+import { TelaEntrar } from './ui/publico/TelaEntrar.tsx'
+import { TelaInicio } from './ui/publico/TelaInicio.tsx'
+import { useConta } from './ui/estado/usarConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
@@ -36,6 +42,7 @@ function Conteudo() {
   const { casos, repositorio, atualizar } = useCasos()
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
+  const conta = useConta()
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -70,6 +77,35 @@ function Conteudo() {
     const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), new Date().toISOString().slice(0, 10)))
     atualizar()
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
+  }
+
+  const irPara = (destino: DestinoPublico) => navegar({ tela: destino })
+
+  // Escolher plano ainda não cobra: leva para a conta, que é o passo que existe.
+  const escolherPlano = () => navegar({ tela: 'entrar' })
+
+  if (rota.tela === 'inicio') {
+    return (
+      <MolduraPublica atual="inicio" aoIrPara={irPara} estrelas={55}>
+        <TelaInicio aoAbrirSistema={() => navegar({ tela: 'painel' })} aoVerPrecos={() => navegar({ tela: 'precos' })} aoVerExemplo={verExemplo} />
+      </MolduraPublica>
+    )
+  }
+
+  if (rota.tela === 'precos') {
+    return (
+      <MolduraPublica atual="precos" aoIrPara={irPara} estrelas={30}>
+        <SecaoPrecos aoEscolher={escolherPlano} />
+      </MolduraPublica>
+    )
+  }
+
+  if (rota.tela === 'entrar') {
+    return (
+      <MolduraPublica atual="entrar" aoIrPara={irPara} estrelas={25}>
+        <TelaEntrar conta={conta} aoEntrar={() => navegar({ tela: 'painel' })} aoAbrirSistema={() => navegar({ tela: 'painel' })} />
+      </MolduraPublica>
+    )
   }
 
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
@@ -118,6 +154,19 @@ function Conteudo() {
     return (
       <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'conta') {
+    return (
+      <Estrutura {...base} titulo="Conta e plano" subtitulo="Acesso e assinatura">
+        <TelaConta
+          conta={conta}
+          aoEntrar={() => navegar({ tela: 'entrar' })}
+          aoVerPrecos={() => navegar({ tela: 'precos' })}
+          aoIrParaConfig={() => navegar({ tela: 'config' })}
+        />
       </Estrutura>
     )
   }

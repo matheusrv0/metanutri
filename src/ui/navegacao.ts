@@ -2,7 +2,15 @@
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
+/** Telas públicas: quem ainda não trabalha no sistema, ou está entrando nele. */
+export const TELAS_PUBLICAS = ['inicio', 'precos', 'entrar'] as const
+export type TelaPublica = (typeof TELAS_PUBLICAS)[number]
+
 export type Rota =
+  | { readonly tela: 'inicio' }
+  | { readonly tela: 'precos' }
+  | { readonly tela: 'entrar' }
+  | { readonly tela: 'conta' }
   | { readonly tela: 'painel' }
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
@@ -19,6 +27,10 @@ export const ROTA_INICIAL: Rota = { tela: 'painel' }
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   const [tela, id, aba] = partes
+  if (tela === 'inicio') return { tela: 'inicio' }
+  if (tela === 'precos') return { tela: 'precos' }
+  if (tela === 'entrar') return { tela: 'entrar' }
+  if (tela === 'conta') return { tela: 'conta' }
   if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'config') return { tela: 'config' }
   if (tela === 'ajuda') return { tela: 'ajuda' }
@@ -33,6 +45,14 @@ export function lerRota(hash: string): Rota {
 
 export function escreverRota(rota: Rota): string {
   switch (rota.tela) {
+    case 'inicio':
+      return '#/inicio'
+    case 'precos':
+      return '#/precos'
+    case 'entrar':
+      return '#/entrar'
+    case 'conta':
+      return '#/conta'
     case 'painel':
       return '#/painel'
     case 'casos':
@@ -65,3 +85,8 @@ export const ETAPAS: readonly Etapa[] = [
   { aba: 'plano', numero: 2, rotulo: 'Plano alimentar', descricao: 'Refeições e alimentos' },
   { aba: 'adequacao', numero: 3, rotulo: 'Adequação', descricao: 'Vitaminas e minerais' },
 ]
+
+/** A moldura da área pública é outra: sem menu lateral, com fundo escuro. */
+export function ehTelaPublica(rota: Rota): boolean {
+  return (TELAS_PUBLICAS as readonly string[]).includes(rota.tela)
+}
