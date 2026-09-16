@@ -7,6 +7,7 @@ import { Card } from './ui/componentes/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
+import { TelaPlano } from './ui/plano/TelaPlano.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
 import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
@@ -18,7 +19,7 @@ import { useRota } from './ui/usarRota.ts'
 function Conteudo() {
   const [rota, navegar] = useRota()
   const { casos, repositorio, atualizar } = useCasos()
-  const { registro, alterarCaso } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
+  const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -76,9 +77,13 @@ function Conteudo() {
             <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />} />
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-              <Card className="items-start gap-4">
-                <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
-              </Card>
+              {rota.aba === 'plano' ? (
+                <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
+              ) : (
+                <Card className="items-start gap-4">
+                  <p className="text-muted-foreground">Esta etapa chega na próxima tarefa.</p>
+                </Card>
+              )}
               <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
             </div>
           )}
