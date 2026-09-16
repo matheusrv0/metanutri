@@ -22,9 +22,9 @@
 | 2. Regras | concluída (T-20 a T-33); 449 testes passando, lint e typecheck limpos |
 | Portão G-1 | aprovado (template MaterialM, R-5 a R-8 e dependências da fase 3) |
 | 3. Telas | concluída (T-40 a T-50); 539 testes de unidade e 2 de ponta a ponta |
-| 4. Validação | não iniciada |
+| 4. Validação | T-60 e T-61 concluídas (ver `VALIDATION.md`); falta só a T-62, a revisão clínica da nutricionista |
 
-Critérios que dependem só de tela e ainda não têm teste: CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.
+Critérios sem teste automatizado: nenhum (matriz em `VALIDATION.md`). Antes cobertos só depois das telas: CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.
 
 ## 2. Como o código fica organizado
 
