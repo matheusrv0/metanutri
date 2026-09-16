@@ -1,5 +1,6 @@
 import { ArrowLeftRight, X } from 'lucide-react'
 import { medidaEquivalente } from '@/domain/busca.ts'
+import { explicarCompletude } from '@/domain/completude.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -19,6 +20,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
   const alimento = buscarAlimento(item.alimentoId)
   const descricao = alimento?.descricao ?? 'Alimento não encontrado'
   const medida = medidaEquivalente(item.alimentoId, item.gramas)
+  const incompleto = alimento ? explicarCompletude(alimento) : null
   const porCem = alimento?.nutrientes.energia_kcal ?? null
   // A tabela não traz energia deste alimento: mostra travessão, nunca zero (princípio do produto).
   const kcal = porCem === null ? null : (porCem * item.gramas) / 100
@@ -27,7 +29,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
     // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
     <li className="flex flex-col gap-1 border-b border-fio py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3">
       <div className="min-w-0 sm:flex-1">
-        <p className="truncate text-sm text-foreground" title={descricao}>
+        <p className="truncate text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
           {descricao}
         </p>
         {medida ? <p className="truncate text-xs text-muted-foreground">{medida.texto}</p> : null}

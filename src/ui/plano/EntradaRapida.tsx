@@ -1,6 +1,7 @@
 import { Plus, Search } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
 import { buscarAlimentos, GRAMAS_PADRAO, type ResultadoBusca } from '@/domain/busca.ts'
+import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
 import { criarRepositorioFrequentes } from '@/domain/frequentes.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -15,7 +16,26 @@ interface EntradaRapidaProps {
   readonly comAtalhos?: boolean
 }
 
-const kcalDe = (r: ResultadoBusca, gramas: number) => ((r.alimento.nutrientes.energia_kcal ?? 0) * gramas) / 100
+// Alimento sem energia na tabela mostra travessão, nunca zero (princípio do produto).
+const kcalDe = (r: ResultadoBusca, gramas: number): string => {
+  const porCem = r.alimento.nutrientes.energia_kcal
+  return porCem === null ? '— kcal' : `${formatarNumero((porCem * gramas) / 100, 0)} kcal`
+}
+
+/** Diz, na hora de escolher, o quanto a tabela sabe sobre este alimento. */
+function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['alimento'] }) {
+  const { nivel } = completudeDe(alimento)
+  if (nivel === 'completo') return null
+  const explicacao = explicarCompletude(alimento) ?? ''
+  return (
+    <span
+      className={cn('rotulo shrink-0', nivel === 'minimo' ? 'text-errortext' : 'text-warningtext')}
+      title={explicacao}
+    >
+      {nivel === 'minimo' ? 'dado mínimo' : 'dado parcial'}
+    </span>
+  )
+}
 
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
 export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: EntradaRapidaProps) {
@@ -135,10 +155,11 @@ export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: Entra
                 >
                   <Plus className="size-4 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate">{r.alimento.descricao}</span>
+                  <MarcaDeCompletude alimento={r.alimento} />
                   <span className="numeros shrink-0 text-xs text-muted-foreground">
                     {r.gramas === null
                       ? r.aviso ?? 'medida indisponível'
-                      : `${formatarNumero(gramas, 0)} g${r.medida ? ` · ${r.medida.quantidade} ${r.medida.nome}` : ''} · ${formatarNumero(kcalDe(r, gramas), 0)} kcal`}
+                      : `${formatarNumero(gramas, 0)} g${r.medida ? ` · ${r.medida.quantidade} ${r.medida.nome}` : ''} · ${kcalDe(r, gramas)}`}
                   </span>
                 </button>
               </li>

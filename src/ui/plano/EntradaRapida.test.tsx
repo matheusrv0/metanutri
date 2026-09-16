@@ -56,3 +56,21 @@ describe('Alimentos usados com frequência', () => {
     expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
   })
 })
+
+describe('Honestidade do dado', () => {
+  it('alimento sem energia na tabela mostra travessão, não zero', async () => {
+    const usuario = montar()
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'leite de vaca integral')
+    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Leite, de vaca, integral'))
+    expect(opcao).toBeDefined()
+    expect(opcao?.textContent).toContain('— kcal')
+    expect(opcao?.textContent).not.toContain('0 kcal')
+  })
+
+  it('alimento com dado faltando sai marcado na lista', async () => {
+    const usuario = montar()
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'leite de vaca integral')
+    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Leite, de vaca, integral'))
+    expect(opcao?.textContent).toMatch(/dado (parcial|mínimo)/)
+  })
+})
