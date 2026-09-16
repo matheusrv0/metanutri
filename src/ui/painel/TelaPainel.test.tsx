@@ -68,8 +68,9 @@ describe('Painel', () => {
   it('conta pacientes e planos, e abre o plano recente', async () => {
     const { aoAbrirPlano, usuario } = montar(true)
     const numeros = screen.getAllByRole('button').map((b) => b.textContent)
-    expect(numeros).toContain('2Planos')
-    expect(numeros).toContain('1Pacientes')
+    // O cartão traz número, rótulo e uma linha de apoio; basta o começo bater.
+    expect(numeros.some((t) => t?.startsWith('2Planos'))).toBe(true)
+    expect(numeros.some((t) => t?.startsWith('1Pacientes'))).toBe(true)
 
     const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
     expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()

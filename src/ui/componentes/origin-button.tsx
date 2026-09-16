@@ -126,6 +126,9 @@ export const OriginButton = React.forwardRef<HTMLButtonElement, OriginButtonProp
       setTamanho(diametroDeCobertura(caixa.width, caixa.height, origem.x, origem.y))
     }
     medir()
+    // Nem todo ambiente tem ResizeObserver (jsdom, navegador antigo): sem ele o
+    // círculo usa a medida do primeiro toque, que já cobre o botão.
+    if (typeof ResizeObserver === 'undefined') return
     const observador = new ResizeObserver(medir)
     observador.observe(no)
     return () => observador.disconnect()
