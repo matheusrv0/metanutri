@@ -36,9 +36,10 @@ describe('App: estrutura', () => {
     renderizar()
     const usuario = userEvent.setup()
     await usuario.click(menuFixo().getByRole('button', { name: 'Novo caso' }))
+    await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
 
     expect(window.location.hash).toMatch(/^#\/caso\/.+\/caso$/)
-    expect(screen.getByText('Etapa 1 de 3: Dados do caso')).toBeInTheDocument()
+    expect(screen.getByText(/Etapa 1 de 3: Dados do caso/)).toBeInTheDocument()
     const etapas = within(screen.getByRole('navigation', { name: 'Etapas do caso' }))
     expect(etapas.getByRole('button', { name: /Dados do caso/ })).toHaveAttribute('aria-current', 'step')
     expect(menuFixo().getByRole('button', { name: /Caso aberto/ })).toHaveAttribute('aria-current', 'page')
@@ -55,8 +56,9 @@ describe('App: estrutura', () => {
     renderizar()
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Criar primeiro caso' }))
+    await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
     await usuario.click(screen.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }))
-    expect(screen.getByText('Etapa 2 de 3: Plano alimentar')).toBeInTheDocument()
+    expect(screen.getByText(/Etapa 2 de 3: Plano alimentar/)).toBeInTheDocument()
   })
 
   it('endereço de caso inexistente oferece volta para Meus casos', async () => {

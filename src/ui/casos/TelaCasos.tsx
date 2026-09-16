@@ -1,5 +1,7 @@
 import { CircleCheck, FolderOpen, Info, Plus, TriangleAlert, X } from 'lucide-react'
 import { useState } from 'react'
+import type { ModoPlano } from '@/domain/tipos.ts'
+import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { Alert } from '../componentes/alert.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Card } from '../componentes/card.tsx'
@@ -10,7 +12,7 @@ import { DialogoRenomear } from './DialogoRenomear.tsx'
 
 interface TelaCasosProps {
   readonly aoAbrir: (id: string) => void
-  readonly aoNovoCaso: () => void
+  readonly aoNovoCaso: (modo: ModoPlano) => void
 }
 
 type Acao = { readonly tipo: 'renomear' | 'excluir'; readonly id: string; readonly nome: string }
@@ -85,10 +87,15 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           <p className="max-w-[48ch] text-sm text-muted-foreground">
             Um caso guarda os dados da pessoa, o plano alimentar e a adequação de micronutrientes. Comece criando o primeiro.
           </p>
-          <Button onClick={aoNovoCaso}>
-            <Plus aria-hidden="true" />
-            Criar primeiro caso
-          </Button>
+          <EscolherModo
+            aoEscolher={aoNovoCaso}
+            gatilho={
+              <Button>
+                <Plus aria-hidden="true" />
+                Criar primeiro caso
+              </Button>
+            }
+          />
         </Card>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Casos salvos">

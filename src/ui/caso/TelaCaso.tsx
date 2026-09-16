@@ -1,7 +1,10 @@
+import { Ruler } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { validarCaso } from '@/domain/caso.ts'
 import type { Caso, CondicaoFisiologica, Objetivo, Sexo } from '@/domain/tipos.ts'
+import { Alert } from '../componentes/alert.tsx'
+import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
 import { Label } from '../componentes/label.tsx'
 import { Textarea } from '../componentes/textarea.tsx'
@@ -44,6 +47,7 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
   }
 
   const { condicao } = caso
+  const rapido = caso.modo === 'rapido'
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -65,8 +69,12 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Pessoa e medidas</CardTitle>
-            <CardDescription>Base da antropometria e do gasto energético. Pode usar vírgula, como 68,5.</CardDescription>
+            <CardTitle>{rapido ? 'Pessoa e meta' : 'Pessoa e medidas'}</CardTitle>
+            <CardDescription>
+              {rapido
+                ? 'Sexo e idade escolhem as referências de micronutrientes. Peso e estatura são opcionais aqui.'
+                : 'Base da antropometria e do gasto energético. Pode usar vírgula, como 68,5.'}
+            </CardDescription>
           </CardHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <GrupoOpcoes<Sexo>
@@ -97,8 +105,25 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
               dica="Usado nas curvas da OMS até 19 anos."
               erro={erros.idadeMesesAdicionais}
             />
+            {rapido ? (
+              <CampoNumero
+                rotulo="Meta de energia"
+                valor={caso.metaEnergiaKcal}
+                aoMudar={numero('metaEnergiaKcal')}
+                sufixo="kcal"
+                dica="É o gasto do dia que o plano vai perseguir."
+                erro={erros.metaEnergiaKcal}
+              />
+            ) : null}
             <CampoNumero rotulo="Peso" valor={caso.pesoKg} aoMudar={numero('pesoKg')} sufixo="kg" erro={erros.pesoKg} />
             <CampoNumero rotulo="Estatura" valor={caso.estaturaCm} aoMudar={numero('estaturaCm')} sufixo="cm" erro={erros.estaturaCm} />
+            {rapido ? (
+              <Alert variant="info" className="sm:col-span-2">
+                <Ruler aria-hidden="true" />
+                <p>Peso e estatura aqui servem só para estimar a meta e para a proteína em g/kg. Nada é classificado nem vira diagnóstico.</p>
+              </Alert>
+            ) : null}
+            {rapido ? null : (
             <CampoNumero
               rotulo="Circunferência da cintura"
               valor={caso.circunferenciaCinturaCm}
@@ -106,6 +131,8 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
               sufixo="cm"
               erro={erros.circunferenciaCinturaCm}
             />
+            )}
+            {rapido ? null : (
             <CampoNumero
               rotulo="Circunferência da panturrilha"
               valor={caso.circunferenciaPanturrilhaCm}
@@ -114,6 +141,7 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
               dica="Avaliada a partir de 60 anos."
               erro={erros.circunferenciaPanturrilhaCm}
             />
+            )}
           </div>
         </Card>
 
@@ -180,7 +208,22 @@ export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
       </div>
 
       <div className="flex flex-col gap-6">
-        <PainelAntropometria resultado={antropometria} />
+        {rapido ? (
+          <Card className="gap-3">
+            <div className="flex items-center gap-2">
+              <Ruler className="size-4 text-primary" aria-hidden="true" />
+              <CardTitle>Sem avaliação neste plano</CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Esta é uma prescrição rápida: nenhuma medida foi coletada, e o documento exportado diz isso.
+            </p>
+            <Button variant="lightprimary" className="self-start" onClick={() => aoAlterar({ modo: 'completo' })}>
+              Virar atendimento completo
+            </Button>
+          </Card>
+        ) : (
+          <PainelAntropometria resultado={antropometria} />
+        )}
         {lateral}
       </div>
     </div>

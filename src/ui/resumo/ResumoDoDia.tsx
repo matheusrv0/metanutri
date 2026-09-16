@@ -11,6 +11,7 @@ import { Badge } from '../componentes/badge.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Card, CardTitle } from '../componentes/card.tsx'
 import { Progress } from '../componentes/progress.tsx'
+import { CampoNumero } from '../caso/CampoNumero.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
 
@@ -87,7 +88,21 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           </Button>
         </div>
 
-        {ajustando ? <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} /> : null}
+        {ajustando ? (
+          caso.modo === 'rapido' ? (
+            <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
+              <CampoNumero
+                rotulo="Meta de energia"
+                valor={caso.metaEnergiaKcal}
+                aoMudar={(v) => aoAlterar({ metaEnergiaKcal: v })}
+                sufixo="kcal"
+                dica="Na prescrição rápida, a meta substitui o cálculo por fórmula."
+              />
+            </div>
+          ) : (
+            <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} />
+          )
+        ) : null}
 
         {energia.motivoSemCalculo ? (
           <Alert variant="warning">
@@ -125,7 +140,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           ) : null}
         </div>
 
-        {energia.tmb !== null || energia.get !== null ? (
+        {caso.modo === 'completo' && (energia.tmb !== null || energia.get !== null) ? (
           <dl className="flex flex-col gap-1.5 border-t border-border pt-3 text-sm">
             {energia.tmb !== null ? (
               <div className="flex justify-between gap-2">

@@ -45,8 +45,10 @@ describe('Tela Meus casos', () => {
   it('lista vazia convida a criar o primeiro caso', async () => {
     const { aoNovoCaso } = montar()
     expect(screen.getByRole('heading', { name: 'Nenhum caso ainda' })).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Criar primeiro caso' }))
-    expect(aoNovoCaso).toHaveBeenCalledOnce()
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Criar primeiro caso' }))
+    await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
+    expect(aoNovoCaso).toHaveBeenCalledWith('rapido')
   })
 
   it('CA-50: mostra os casos, do mais recente ao mais antigo, e abre o escolhido', async () => {

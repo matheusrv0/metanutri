@@ -1,6 +1,8 @@
 import { BookOpen, ClipboardList, FolderOpen, HardDrive, Plus, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
+import type { ModoPlano } from '@/domain/tipos.ts'
+import { EscolherModo } from '../caso/EscolherModo.tsx'
 import type { Rota } from '../navegacao.ts'
 import { ItemMenu } from './ItemMenu.tsx'
 import { SeletorTema } from './SeletorTema.tsx'
@@ -15,7 +17,7 @@ interface MenuLateralProps {
   /** Caso aberto agora ou o último alterado; `null` quando não há casos. */
   readonly casoAtual: CasoAtual | null
   readonly navegar: (rota: Rota) => void
-  readonly aoNovoCaso: () => void
+  readonly aoNovoCaso: (modo: ModoPlano) => void
   readonly aoEscolher?: () => void
 }
 
@@ -47,17 +49,21 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
       </div>
 
       <div className="flex flex-1 flex-col gap-7 overflow-y-auto px-2 py-5">
-        <button
-          type="button"
-          onClick={() => {
-            aoNovoCaso()
+        <EscolherModo
+          aoEscolher={(modo) => {
+            aoNovoCaso(modo)
             aoEscolher?.()
           }}
-          className="mx-1 flex items-center justify-center gap-2 rounded-xs bg-papel px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:bg-lombadatexto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60 [&_svg]:size-4"
-        >
-          <Plus aria-hidden="true" />
-          Novo caso
-        </button>
+          gatilho={
+            <button
+              type="button"
+              className="mx-1 flex items-center justify-center gap-2 rounded-xs bg-papel px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:bg-lombadatexto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60 [&_svg]:size-4"
+            >
+              <Plus aria-hidden="true" />
+              Novo caso
+            </button>
+          }
+        />
 
         <Secao titulo="Trabalho">
           <ItemMenu

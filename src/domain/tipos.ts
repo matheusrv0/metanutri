@@ -53,6 +53,13 @@ export interface PreferenciasAdequacao {
   readonly ocultos: readonly number[]
 }
 
+/**
+ * Como o plano foi montado.
+ * `rapido`: só nome, sexo, idade e meta de energia; nenhuma medida é pedida.
+ * `completo`: avaliação antropométrica e energia calculada por fórmula.
+ */
+export type ModoPlano = 'rapido' | 'completo'
+
 /** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
@@ -73,6 +80,9 @@ export interface Caso {
   readonly circunferenciaCinturaCm: number | null
   readonly circunferenciaPanturrilhaCm: number | null
   readonly condicao: CondicaoFisiologica
+  readonly modo: ModoPlano
+  /** Meta de energia digitada no modo rápido, em kcal. */
+  readonly metaEnergiaKcal: number | null
   readonly energia: PreferenciasEnergia
   readonly metasMacros: MetasMacros
   readonly adequacao: PreferenciasAdequacao

@@ -1,6 +1,8 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { calcularEnergia } from './domain/energia.ts'
+import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
+import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { AvisoPrimeiroAcesso } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
@@ -32,8 +34,9 @@ function Conteudo() {
       ? { id: recente.id, nome: recente.nome }
       : null
 
-  const novoCaso = () => {
-    const salvo = repositorio.criar('')
+  const novoCaso = (modo: ModoPlano) => {
+    const criado = repositorio.criar('')
+    const salvo = repositorio.salvar({ caso: { ...criado.caso, modo }, plano: criado.plano })
     atualizar()
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
   }
@@ -71,7 +74,11 @@ function Conteudo() {
       <Estrutura
         {...base}
         titulo={registro.caso.nome || 'Caso sem nome'}
-        subtitulo={etapa ? `Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}` : undefined}
+        subtitulo={
+          etapa
+            ? `${registro.caso.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}`
+            : undefined
+        }
         trilha={[irParaCasos]}
         acoes={<MenuExportar caso={registro.caso} plano={registro.plano} />}
       >
@@ -79,7 +86,11 @@ function Conteudo() {
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
 
           {rota.aba === 'caso' ? (
-            <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />} />
+            <TelaCaso
+              caso={registro.caso}
+              aoAlterar={alterarCaso}
+              lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}
+            />
           ) : rota.aba === 'plano' ? (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
               <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
@@ -123,10 +134,15 @@ function Conteudo() {
       titulo="Meus casos"
       subtitulo="Planos alimentares salvos neste aparelho"
       acoes={
-        <Button size="sm" className="xl:hidden" onClick={novoCaso}>
-          <Plus aria-hidden="true" />
-          Novo caso
-        </Button>
+        <EscolherModo
+          aoEscolher={novoCaso}
+          gatilho={
+            <Button size="sm" className="xl:hidden">
+              <Plus aria-hidden="true" />
+              Novo caso
+            </Button>
+          }
+        />
       }
     >
       <TelaCasos aoAbrir={(id) => navegar({ tela: 'planejador', casoId: id, aba: 'caso' })} aoNovoCaso={novoCaso} />

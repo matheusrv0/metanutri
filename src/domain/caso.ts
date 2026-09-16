@@ -15,6 +15,7 @@ export interface ResultadoValidacao {
 }
 
 export const FAIXAS = {
+  metaEnergiaKcal: { min: 500, max: 6000 },
   idadeAnos: { min: 1, max: 120 },
   pesoKg: { min: 5, max: 350 },
   estaturaCm: { min: 45, max: 250 },
@@ -44,6 +45,8 @@ export function criarCasoVazio(id: string): Caso {
     circunferenciaCinturaCm: null,
     circunferenciaPanturrilhaCm: null,
     condicao: { tipo: 'nenhuma' },
+    modo: 'completo',
+    metaEnergiaKcal: null,
     energia: { fator: 1.2, formula: 'mifflin', getManual: null },
     metasMacros: {},
     adequacao: { preset: { tipo: 'individual' }, porcaoMaximaG: 200, incluirIngredientes: false, ocultos: [] },
@@ -93,14 +96,24 @@ export function validarCaso(caso: Caso): ResultadoValidacao {
     erros.idadeMesesAdicionais = 'Os meses adicionais vão de 0 a 11.'
   }
 
+  if (caso.modo === 'rapido') {
+    // No modo rápido a meta de energia substitui o cálculo: peso e estatura deixam de ser obrigatórios.
+    if (caso.metaEnergiaKcal === null) {
+      avisos.push('Informe a meta de energia para acompanhar quanto o plano já cobre.')
+    } else if (fora(caso.metaEnergiaKcal, FAIXAS.metaEnergiaKcal)) {
+      erros.metaEnergiaKcal = `A meta de energia deve estar entre ${FAIXAS.metaEnergiaKcal.min} e ${FAIXAS.metaEnergiaKcal.max} kcal.`
+    }
+  }
+
   if (caso.pesoKg === null) {
-    faltando.push('pesoKg')
+    // No modo rápido peso é opcional; no completo, sem ele não há cálculo.
+    if (caso.modo === 'completo') faltando.push('pesoKg')
   } else if (fora(caso.pesoKg, FAIXAS.pesoKg)) {
     erros.pesoKg = `Peso deve estar entre ${FAIXAS.pesoKg.min} e ${FAIXAS.pesoKg.max} kg.`
   }
 
   if (caso.estaturaCm === null) {
-    faltando.push('estaturaCm')
+    if (caso.modo === 'completo') faltando.push('estaturaCm')
   } else if (fora(caso.estaturaCm, FAIXAS.estaturaCm)) {
     erros.estaturaCm = `Estatura deve estar entre ${FAIXAS.estaturaCm.min} e ${FAIXAS.estaturaCm.max} cm.`
   }

@@ -111,6 +111,24 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
 
   const validacao = validarCaso(caso)
   const { sexo, idadeAnos, pesoKg, estaturaCm, condicao } = caso
+
+  // Prescrição rápida: a meta digitada é o gasto do dia; nenhuma fórmula é aplicada.
+  if (caso.modo === 'rapido' && manual === null) {
+    const meta = caso.metaEnergiaKcal
+    return {
+      metodo: null,
+      tmb: null,
+      fator: opcoes.fator,
+      categoriaAtividade: null,
+      adicionais: [],
+      get: meta,
+      getManual: meta !== null,
+      fonte: null,
+      avisos,
+      motivoSemCalculo: meta === null ? 'Informe a meta de energia para acompanhar quanto o plano já cobre.' : null,
+    }
+  }
+
   if (!validacao.podeCalcular || sexo === null || idadeAnos === null || pesoKg === null || estaturaCm === null) {
     const nomes: Record<string, string> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
     const faltando = validacao.faltando.map((c) => nomes[c] ?? c)

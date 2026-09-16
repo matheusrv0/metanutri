@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
+import type { ModoPlano } from '@/domain/tipos.ts'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
 import { MenuLateral, type CasoAtual } from './MenuLateral.tsx'
@@ -8,7 +9,7 @@ interface EstruturaProps {
   readonly rota: Rota
   readonly navegar: (rota: Rota) => void
   readonly casoAtual: CasoAtual | null
-  readonly aoNovoCaso: () => void
+  readonly aoNovoCaso: (modo: ModoPlano) => void
   readonly titulo: string
   readonly subtitulo?: string | undefined
   readonly trilha?: readonly PassoTrilha[] | undefined
