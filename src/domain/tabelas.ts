@@ -11,7 +11,20 @@ export const FONTE_ALIMENTOS = tabelaAlimentos.fonte
 
 const alimentosPorId = new Map<number, Alimento>(ALIMENTOS.map((a) => [a.id, a]))
 
-export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id)
+/** Produtos cadastrados pelo rótulo, registrados pela interface ao abrir o app. */
+const extras = new Map<number, Alimento>()
+
+export function registrarProdutos(lista: readonly Alimento[]): void {
+  extras.clear()
+  for (const a of lista) extras.set(a.id, a)
+}
+
+/** A tabela mais os produtos cadastrados; a busca usa esta lista. */
+export function alimentosComProdutos(): readonly Alimento[] {
+  return extras.size === 0 ? ALIMENTOS : [...ALIMENTOS, ...extras.values()]
+}
+
+export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? extras.get(id)
 
 export type CampoDri = 'ear' | 'rda' | 'ai' | 'ul'
 

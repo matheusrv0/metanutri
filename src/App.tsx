@@ -12,6 +12,7 @@ import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
+import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
@@ -43,6 +44,14 @@ function Conteudo() {
 
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
   const irParaCasos = { rotulo: 'Meus casos', aoClicar: () => navegar({ tela: 'casos' }) }
+
+  if (rota.tela === 'produtos') {
+    return (
+      <Estrutura {...base} titulo="Meus produtos" subtitulo="Industrializados cadastrados pelo rótulo">
+        <TelaProdutos />
+      </Estrutura>
+    )
+  }
 
   if (rota.tela === 'fontes') {
     return (

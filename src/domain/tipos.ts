@@ -120,6 +120,9 @@ export type ChaveNutrienteAlimento =
   | 'proteina_g'
   | 'lipideos_g'
   | 'carboidrato_g'
+  /* Açúcares e gordura saturada não existem na TACO: vêm do rótulo de produto cadastrado. */
+  | 'acucares_g'
+  | 'gordura_saturada_g'
   | 'fibra_g'
   | 'colesterol_mg'
   | 'calcio_mg'

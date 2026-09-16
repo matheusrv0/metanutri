@@ -6,6 +6,8 @@ export const CHAVES_NUTRIENTES: readonly ChaveNutrienteAlimento[] = [
   'proteina_g',
   'lipideos_g',
   'carboidrato_g',
+  'acucares_g',
+  'gordura_saturada_g',
   'fibra_g',
   'colesterol_mg',
   'calcio_mg',

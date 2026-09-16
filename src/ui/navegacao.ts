@@ -5,6 +5,7 @@ export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 export type Rota =
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
+  | { readonly tela: 'produtos' }
   | { readonly tela: 'fontes' }
 
 export const ABAS: readonly AbaPlanejador[] = ['caso', 'plano', 'adequacao']
@@ -15,6 +16,7 @@ export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   const [tela, id, aba] = partes
   if (tela === 'fontes') return { tela: 'fontes' }
+  if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'caso' && id) {
     return { tela: 'planejador', casoId: id, aba: ABAS.includes(aba as AbaPlanejador) ? (aba as AbaPlanejador) : 'caso' }
   }
@@ -25,6 +27,8 @@ export function escreverRota(rota: Rota): string {
   switch (rota.tela) {
     case 'casos':
       return '#/casos'
+    case 'produtos':
+      return '#/produtos'
     case 'fontes':
       return '#/fontes'
     case 'planejador':

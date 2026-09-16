@@ -1,7 +1,7 @@
 import { Plus, Search } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
 import { buscarAlimentos, GRAMAS_PADRAO, type ResultadoBusca } from '@/domain/busca.ts'
-import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { alimentosComProdutos } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '../componentes/input.tsx'
@@ -19,7 +19,7 @@ export function EntradaRapida({ rotulo, aoAdicionar }: EntradaRapidaProps) {
   const [selecionado, setSelecionado] = useState(0)
   const idLista = useId()
 
-  const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, ALIMENTOS), [texto])
+  const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos()), [texto])
   const escolhido = resultados[Math.min(selecionado, resultados.length - 1)]
   const semResultado = texto.trim() !== '' && resultados.length === 0
 
