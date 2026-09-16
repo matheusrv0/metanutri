@@ -8,6 +8,7 @@ import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '../caso/CampoNumero.tsx'
+import { lerOcultosGlobais, ocultarGlobalmente } from '../estado/ocultosGlobais.ts'
 import { Alert } from '../componentes/alert.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
@@ -51,6 +52,7 @@ export function GavetaCobrir({
   const { adequacao: prefs } = caso
   const [refeicaoId, setRefeicaoId] = useState(plano.refeicoes[0]?.id ?? '')
   const [opcao] = useState<OpcaoId>('principal')
+  const [versaoOcultos, setVersaoOcultos] = useState(0)
 
   const resultado = useMemo(
     () =>
@@ -61,12 +63,18 @@ export function GavetaCobrir({
             gastoEnergetico,
             porcaoMaximaG: prefs.porcaoMaximaG,
             incluirIngredientes: prefs.incluirIngredientes,
-            ocultos: new Set(prefs.ocultos),
+            // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
+            ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais()]),
           }),
-    [chave, totais, adequacao, gastoEnergetico, prefs],
+    // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos],
   )
 
-  const ocultar = (alimentoId: number) => aoAlterarCaso({ adequacao: { ...prefs, ocultos: [...prefs.ocultos, alimentoId] } })
+  const ocultar = (alimentoId: number) => {
+    ocultarGlobalmente(alimentoId)
+    setVersaoOcultos((v) => v + 1)
+  }
 
   return (
     <Sheet open={chave !== null} onOpenChange={(v) => !v && aoFechar()}>
@@ -143,9 +151,9 @@ export function GavetaCobrir({
                   <Button size="sm" onClick={() => aoAdicionar(refeicaoId, opcao, s.alimentoId, s.gramas)}>
                     Adicionar
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => ocultar(s.alimentoId)} aria-label={`Ocultar ${s.descricao}`}>
+                  <Button size="sm" variant="ghost" onClick={() => ocultar(s.alimentoId)} aria-label={`Nunca sugerir ${s.descricao}`}>
                     <EyeOff aria-hidden="true" />
-                    Ocultar
+                    Nunca sugerir
                   </Button>
                 </div>
               </li>

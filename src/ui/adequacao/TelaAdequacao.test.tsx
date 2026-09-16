@@ -129,13 +129,13 @@ describe('Etapa 3: adequação', () => {
     expect(linhaDe('Ferro').getByText(/% \(meta/).textContent).not.toBe(antes)
   })
 
-  it('CA-40: sugestão oculta não volta a aparecer', async () => {
+  it('sugestão escondida não volta a aparecer, em nenhum plano', async () => {
     const usuario = montar(adulta, planoComArroz())
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     const lista = () => within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem')
     const primeiro = lista()[0]?.textContent ?? ''
 
-    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: /^Ocultar/ }))
+    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: /^Nunca sugerir/ }))
     expect(lista()[0]?.textContent).not.toBe(primeiro)
   })
 

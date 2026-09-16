@@ -24,7 +24,8 @@ test('do caso novo ao Word exportado', async ({ page }) => {
 
   // Criar caso e preencher a etapa 1
   await page.getByRole('button', { name: 'Novo caso' }).first().click()
-  await expect(page.getByText('Etapa 1 de 3: Dados do caso')).toBeVisible()
+  await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
+  await expect(page.getByText(/Etapa 1 de 3: Dados do caso/)).toBeVisible()
 
   await preencher(page, 'Nome do caso', 'Maria, 28 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
@@ -116,6 +117,7 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
   await expect(page.getByRole('heading', { level: 1, name: 'Meus casos' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Novo caso' }).first().click()
+  await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
   await page.getByLabel('Peso').fill('60')
   await page.getByLabel('Estatura').fill('165')
   await page.getByLabel('Idade').fill('28')

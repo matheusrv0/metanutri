@@ -1,8 +1,8 @@
 import { calcularAdequacao } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, ehSugerivel, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
-import { ALIMENTOS } from './tabelas.ts'
+import { COBERTURA_MINIMA_PCT, ehDeUsoComum, ehSugerivel, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Totais } from './totais.ts'
-import { CHAVES_NUTRIENTES } from './totais.ts'
+import { CHAVES_NUTRIENTES, totaisDeItens } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const totais = (v: Partial<Record<ChaveNutrienteAlimento, number>>): Totais => ({
@@ -209,5 +209,25 @@ describe('ehSugerivel (CA-36a)', () => {
     'Castanha-do-Brasil, crua',
   ])('sugere "%s"', (d) => {
     expect(ehSugerivel(porDescricao(d))).toBe(true)
+  })
+})
+
+describe('uso comum nas sugestões', () => {
+  it('sarapatel, fígado e caranguejo saem da frente', () => {
+    expect(ehDeUsoComum({ descricao: 'Sarapatel' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Fígado, bovino, grelhado' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Caranguejo, cozido' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Feijão, carioca, cozido' } as Alimento)).toBe(true)
+    expect(ehDeUsoComum({ descricao: 'Couve, manteiga, refogada' } as Alimento)).toBe(true)
+  })
+
+  it('a primeira sugestão de ferro é de uso comum', () => {
+    const totais = totaisDeItens([], buscarAlimento)
+    const perfil = { sexo: 'F' as const, idadeAnos: 28, condicao: { tipo: 'nenhuma' as const } }
+    const adequacao = calcularAdequacao(totais, perfil, { tipo: 'individual' })
+    const r = sugerirParaCobrir('ferro_mg', totais, adequacao, { alimentos: ALIMENTOS, gastoEnergetico: 1800 })
+    const primeira = r.sugestoes[0]
+    expect(primeira).toBeDefined()
+    expect(ehDeUsoComum({ descricao: primeira?.descricao ?? '' } as Alimento)).toBe(true)
   })
 })

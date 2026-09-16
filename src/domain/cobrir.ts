@@ -55,6 +55,19 @@ const FARINHAS_CONSUMIDAS = new Set(['Farinha, de mandioca, torrada', 'Farinha, 
  * Indica se o alimento faz sentido como sugestão para comer (CA-36a).
  * Exclui itens que a tabela lista como ingrediente ou em forma não consumível.
  */
+/**
+ * Itens que a tabela traz mas quase ninguém põe no plano de rotina:
+ * vísceras, miúdos, caça, frutos do mar de exceção e pratos regionais de véspera.
+ * Não somem da lista; só perdem a frente para o que é de uso comum.
+ */
+const POUCO_USUAL =
+  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a))($|[\s,])/i
+
+/** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
+export function ehDeUsoComum(alimento: Alimento): boolean {
+  return !POUCO_USUAL.test(alimento.descricao)
+}
+
 export function ehSugerivel(alimento: Alimento): boolean {
   const { descricao, categoria, preparo } = alimento
   if (categoria === 'Miscelâneas') return false
@@ -130,7 +143,7 @@ export function sugerirParaCobrir(
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
 
-  const candidatas: Sugestao[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!opcoes.incluirIngredientes && !ehSugerivel(alimento)) continue
@@ -156,6 +169,7 @@ export function sugerirParaCobrir(
     }
 
     candidatas.push({
+      comum: ehDeUsoComum(alimento),
       alimentoId: alimento.id,
       descricao: alimento.descricao,
       gramas,
@@ -169,7 +183,10 @@ export function sugerirParaCobrir(
   // Menor acréscimo de kcal por parte da falta coberta (densidade do nutriente por kcal);
   // no empate, a que cobre mais. Assim uma verdura rica vem antes de um doce que cobre tudo de uma vez.
   const kcalPorFaltaInteira = (s: Sugestao) => s.kcalAdicionadas / (s.coberturaPct / 100)
-  candidatas.sort((a, b) => kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) || b.coberturaPct - a.coberturaPct)
+  // Alimento de uso comum vem primeiro: víscera e fruto do mar de exceção só aparecem se sobrar espaço.
+  candidatas.sort(
+    (a, b) => Number(b.comum) - Number(a.comum) || kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) || b.coberturaPct - a.coberturaPct,
+  )
 
   const sugestoes = variarPorGrupo(candidatas, opcoes.alimentos)
   return {
