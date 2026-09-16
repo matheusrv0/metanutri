@@ -1,4 +1,4 @@
-import { ClipboardCopy, Download, FileText } from 'lucide-react'
+import { ClipboardCopy, Download, FileText, Printer } from 'lucide-react'
 import { useState } from 'react'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
@@ -14,6 +14,7 @@ import { criarMemorial } from '@/export/memorial-docx.ts'
 import { Button } from '../componentes/button.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../componentes/dropdown-menu.tsx'
 import { baixarBlob, copiarTabela, nomeDeArquivo } from './baixar.ts'
+import { DialogoImprimir } from './DialogoImprimir.tsx'
 
 interface MenuExportarProps {
   readonly caso: Caso
@@ -23,6 +24,7 @@ interface MenuExportarProps {
 /** CA-44 a CA-48: baixar os dois documentos Word e copiar a tabela de adequação. */
 export function MenuExportar({ caso, plano }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
+  const [imprimindo, setImprimindo] = useState(false)
 
   const baixarAconselhamento = async () => {
     const documento = criarAconselhamento({
@@ -70,6 +72,10 @@ export function MenuExportar({ caso, plano }: MenuExportarProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setImprimindo(true)}>
+            <Printer aria-hidden="true" />
+            Dieta para imprimir (PDF)
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void baixarAconselhamento()}>
             <FileText aria-hidden="true" />
             Aconselhamento em Word
@@ -84,6 +90,8 @@ export function MenuExportar({ caso, plano }: MenuExportarProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} aoFechar={() => setImprimindo(false)} />
     </div>
   )
 }
