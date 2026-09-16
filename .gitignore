@@ -28,3 +28,5 @@ docs/modelos/
 # revisão visual do skill impeccable (capturas e mocks)
 .impeccable/review/
 .impeccable/mocks/
+.env.local
+.env

@@ -10,7 +10,15 @@ caixas: **decisão sua** (não é trabalho de código, é escolha de dono do pro
 
 ### 1. Conta de usuário
 
-Hoje não existe login: quem abre o endereço usa o sistema, e os dados ficam no
+**Atualizado em 16/09: a camada está escrita e ligada.** Falta só você criar o
+projeto no Supabase e colar as duas chaves em `.env.local` (passo a passo no
+README). Sem elas o app roda igual e a tela de conta explica o que falta.
+
+O que ainda não existe depois disso: **sincronizar os planos** entre aparelhos.
+Login é uma coisa; mover os dados do navegador para o banco é outra, e é o
+trabalho grande. Hoje quem faz esse papel é o backup em Configurações.
+
+Contexto original: quem abre o endereço usa o sistema, e os dados ficam no
 navegador daquela pessoa. Isso é uma vantagem real (privacidade, funciona offline,
 nada para vazar) e vira problema no dia em que você quiser cobrar ou deixar a pessoa
 trocar de computador.
@@ -21,9 +29,14 @@ o backup em Configurações resolve a troca de aparelho.
 
 ### 2. Cobrança
 
-O preço-alvo registrado é até R$ 20 por mês. Falta escolher o meio (Pix, cartão,
-Mercado Pago, Stripe) e o modelo (mensal, anual, teste grátis de X dias). Cobrança
-exige conta de usuário primeiro — uma coisa depende da outra.
+**Atualizado em 16/09: a página de preços existe** (`#/precos`), com três planos e
+a chave mensal/anual. Nenhum botão cobra: o "Assinar" leva para criar conta.
+
+Falta o meio de pagamento. E há uma restrição de arquitetura que muda o projeto:
+o Mercado Pago **exige um back-end** para criar a preferência de pagamento — o
+access token não pode ir para o navegador, senão qualquer pessoa que abrir o site
+consegue cobrar em seu nome. O caminho natural, já que a conta é Supabase, é uma
+Edge Function. Ou seja: cobrança depende da conta estar no ar primeiro.
 
 ### 3. Link do plano para o paciente
 

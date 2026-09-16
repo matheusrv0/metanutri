@@ -23,6 +23,15 @@ Outros comandos:
 | `npm run preview` | serve o `dist/` para conferir o build |
 | `npx playwright test` | testes de ponta a ponta em navegador real |
 
+## As duas áreas
+
+**Pública** (`#/inicio`, `#/precos`, `#/entrar`) — fundo escuro animado, para
+explicar e vender. É o que alguém de fora vê primeiro.
+
+**De trabalho** (o resto) — papel claro, porque tabela de nutriente se lê em papel,
+por horas. A densidade e os cartões seguem a linguagem do Berry; a identidade
+continua a da tabela impressa.
+
 ## O que o sistema faz
 
 **Dois caminhos, escolhidos ao criar o plano.** *Prescrição rápida* pede só nome,
@@ -58,6 +67,30 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   copiada para colar no Word.
 - **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
   do paciente, e backup: exportar e restaurar tudo num arquivo.
+- **Conta e plano** — entrar, sair e ver a assinatura. Funciona sem conta; veja abaixo.
+
+## Conta na nuvem (opcional)
+
+O sistema roda inteiro sem conta: tudo fica no navegador. A conta serve para usar em
+mais de um aparelho e, no futuro, para cobrar.
+
+Para ligar:
+
+1. Crie um projeto em <https://supabase.com> (o plano gratuito serve)
+2. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
+3. `cp .env.example .env.local` e cole as duas
+4. Reinicie o `npm run dev`
+
+Sem isso, a tela de conta explica o que falta e o app segue normal. **Nunca** coloque
+a chave `service_role` no `.env.local`: ela dá acesso total ao banco e iria para o
+navegador de quem abrir o site.
+
+### Preços
+
+Os planos (Estudante grátis, Profissional R$ 19/mês, Clínica R$ 49/mês) estão em
+[src/domain/conta.ts](src/domain/conta.ts) — mude lá e a página de preços acompanha.
+**Nada é cobrado nem bloqueado hoje**: sem cobrança, aplicar limite seria mentira
+(a constante `LIMITES_ATIVOS` registra isso).
 
 ## De onde vêm os números
 
