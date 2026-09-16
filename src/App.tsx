@@ -7,6 +7,7 @@ import { Card } from './ui/componentes/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
+import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
 import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
@@ -72,11 +73,14 @@ function Conteudo() {
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
 
           {rota.aba === 'caso' ? (
-            <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} />
+            <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />} />
           ) : (
-            <Card className="items-start gap-4">
-              <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
-            </Card>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <Card className="items-start gap-4">
+                <p className="text-muted-foreground">Esta etapa chega nas próximas tarefas.</p>
+              </Card>
+              <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+            </div>
           )}
 
           {proxima ? (

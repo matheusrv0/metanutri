@@ -10,6 +10,35 @@ export type CondicaoFisiologica =
   | { readonly tipo: 'gestante'; readonly semanasGestacao: number | null; readonly pesoPreGestacionalKg: number | null }
   | { readonly tipo: 'lactante'; readonly mesesPosParto: number | null }
 
+export type FormulaTmb = 'mifflin' | 'harris-benedict'
+
+/** Escolhas do cálculo de energia guardadas com o caso (CA-07 a CA-09). */
+export interface PreferenciasEnergia {
+  readonly fator: number
+  readonly formula: FormulaTmb
+  /** GET digitado pela pessoa; substitui o calculado (CA-09). */
+  readonly getManual: number | null
+}
+
+export interface MetaPct {
+  readonly tipo: 'pct'
+  readonly min: number
+  readonly max: number
+}
+
+export interface MetaGKg {
+  readonly tipo: 'g_kg'
+  readonly min: number
+  readonly max: number
+}
+
+/** Metas de macronutrientes escolhidas pela pessoa (CA-24); vazio usa as faixas padrão da idade. */
+export interface MetasMacros {
+  readonly proteina?: MetaPct | MetaGKg
+  readonly carboidrato?: MetaPct
+  readonly gordura?: MetaPct
+}
+
 /** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
@@ -30,6 +59,12 @@ export interface Caso {
   readonly circunferenciaCinturaCm: number | null
   readonly circunferenciaPanturrilhaCm: number | null
   readonly condicao: CondicaoFisiologica
+  readonly energia: PreferenciasEnergia
+  readonly metasMacros: MetasMacros
+  /** Orientações gerais escritas para o documento de aconselhamento (CA-44). */
+  readonly orientacoes: string
+  /** Receitas anexadas ao documento (CA-44). */
+  readonly receitas: string
 }
 
 export type OpcaoId = 'principal' | 'substituto1' | 'substituto2'

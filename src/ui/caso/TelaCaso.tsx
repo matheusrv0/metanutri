@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { validarCaso } from '@/domain/caso.ts'
 import type { Caso, CondicaoFisiologica, Objetivo, Sexo } from '@/domain/tipos.ts'
@@ -13,6 +13,8 @@ import { PainelAntropometria } from './PainelAntropometria.tsx'
 interface TelaCasoProps {
   readonly caso: Caso
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
+  /** Painéis extras da coluna da direita (ex.: Resumo do dia). */
+  readonly lateral?: ReactNode
 }
 
 type TipoCondicao = CondicaoFisiologica['tipo']
@@ -24,7 +26,7 @@ const CONDICOES: readonly { readonly valor: TipoCondicao; readonly rotulo: strin
 ]
 
 /** Etapa 1: dados do caso e avaliação antropométrica (CA-01 a CA-05). */
-export function TelaCaso({ caso, aoAlterar }: TelaCasoProps) {
+export function TelaCaso({ caso, aoAlterar, lateral }: TelaCasoProps) {
   const validacao = useMemo(() => validarCaso(caso), [caso])
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
   const { erros } = validacao
@@ -162,8 +164,9 @@ export function TelaCaso({ caso, aoAlterar }: TelaCasoProps) {
         </Card>
       </div>
 
-      <div className="xl:sticky xl:top-[86px] xl:self-start">
+      <div className="flex flex-col gap-6">
         <PainelAntropometria resultado={antropometria} />
+        {lateral}
       </div>
     </div>
   )

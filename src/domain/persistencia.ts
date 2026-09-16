@@ -90,7 +90,8 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
       if (bruto === null) return null
       const v: unknown = JSON.parse(bruto)
       if (!ehCasoSalvo(v)) return null
-      return { caso: v.caso, plano: v.plano, versao: v.versao, atualizadoEm: v.atualizadoEm }
+      // Casos gravados por versões antigas podem não ter todos os campos: completa com os padrões.
+      return { caso: { ...criarCasoVazio(v.caso.id), ...v.caso }, plano: v.plano, versao: v.versao, atualizadoEm: v.atualizadoEm }
     } catch {
       return null
     }

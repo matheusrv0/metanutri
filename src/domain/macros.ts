@@ -2,6 +2,7 @@
 import { DRI } from './tabelas.ts'
 import type { FaixaAmdr } from './tabelas.ts'
 import type { Totais } from './totais.ts'
+import type { MetaGKg, MetaPct, MetasMacros } from './tipos.ts'
 
 /** Fatores de Atwater (kcal por grama). */
 export const KCAL_POR_GRAMA = { proteina: 4, carboidrato: 4, gordura: 9 } as const
@@ -11,23 +12,7 @@ const PRECISAO = 1e6
 
 export type EstadoFaixa = 'abaixo' | 'dentro' | 'acima'
 
-export interface MetaPct {
-  readonly tipo: 'pct'
-  readonly min: number
-  readonly max: number
-}
-
-export interface MetaGKg {
-  readonly tipo: 'g_kg'
-  readonly min: number
-  readonly max: number
-}
-
-export interface MetasMacros {
-  readonly proteina?: MetaPct | MetaGKg
-  readonly carboidrato?: MetaPct
-  readonly gordura?: MetaPct
-}
+export type { MetaGKg, MetaPct, MetasMacros } from './tipos.ts'
 
 export interface ResultadoMacro {
   readonly gramas: number

@@ -2,10 +2,10 @@
 import tabela from '../data/energia.json'
 import { calcularImc, classificarImcPreGestacional, type ClasseImcPreGestacional } from './antropometria.ts'
 import { validarCaso } from './caso.ts'
-import type { Caso, Sexo } from './tipos.ts'
+import type { Caso, FormulaTmb, Sexo } from './tipos.ts'
 
 export type CategoriaAtividade = 'inativo' | 'pouco-ativo' | 'ativo' | 'muito-ativo'
-export type FormulaAdulto = 'mifflin' | 'harris-benedict'
+export type FormulaAdulto = FormulaTmb
 
 export const NIVEIS_ATIVIDADE: readonly { readonly id: string; readonly rotulo: string; readonly fator: number; readonly categoria: CategoriaAtividade }[] = [
   { id: 'sedentario', rotulo: 'Sedentário', fator: 1.2, categoria: 'inativo' },

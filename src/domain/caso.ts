@@ -44,6 +44,10 @@ export function criarCasoVazio(id: string): Caso {
     circunferenciaCinturaCm: null,
     circunferenciaPanturrilhaCm: null,
     condicao: { tipo: 'nenhuma' },
+    energia: { fator: 1.2, formula: 'mifflin', getManual: null },
+    metasMacros: {},
+    orientacoes: '',
+    receitas: '',
   }
 }
 
