@@ -32,6 +32,8 @@ export const CAMPOS_OPCIONAIS: readonly { readonly chave: ChaveNutrienteAlimento
 
 export interface Produto {
   readonly id: number
+  /** EAN lido do rótulo; vazio quando cadastrado à mão. */
+  readonly codigoBarras: string
   readonly nome: string
   readonly marca: string
   /** Porção declarada no rótulo, em gramas ou mililitros. */
@@ -53,7 +55,9 @@ export function porCem(valorNaPorcao: number, porcaoG: number): number {
   return Math.round(((valorNaPorcao * 100) / porcaoG) * 100) / 100
 }
 
-export function validarProduto(p: Produto): readonly ProblemaProduto[] {
+export type DadosProduto = Pick<Produto, 'nome' | 'marca' | 'porcaoG' | 'medidaCaseira' | 'porPorcao'>
+
+export function validarProduto(p: DadosProduto): readonly ProblemaProduto[] {
   const problemas: ProblemaProduto[] = []
   if (p.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'O produto precisa de um nome.' })
   if (!(p.porcaoG > 0)) problemas.push({ campo: 'porcaoG', mensagem: 'A porção precisa ser maior que zero.' })
@@ -104,7 +108,8 @@ export function produtoComoAlimento(p: Produto): Alimento {
 
 export interface RepositorioProdutos {
   listar(): readonly Produto[]
-  salvar(dados: Omit<Produto, 'id' | 'criadoEm'> & { readonly id?: number }): Produto
+  salvar(dados: Omit<Produto, 'id' | 'criadoEm' | 'codigoBarras'> & { readonly id?: number; readonly codigoBarras?: string }): Produto
+  porCodigo(codigo: string): Produto | null
   excluir(id: number): void
   readonly persistente: boolean
 }
@@ -154,6 +159,7 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
       const anterior = lista.find((p) => p.id === id)
       const produto: Produto = {
         id,
+        codigoBarras: dados.codigoBarras ?? anterior?.codigoBarras ?? '',
         nome: dados.nome,
         marca: dados.marca,
         porcaoG: dados.porcaoG,
@@ -163,6 +169,11 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
       }
       gravar([...lista.filter((p) => p.id !== id), produto])
       return produto
+    },
+
+    porCodigo(codigo) {
+      const digitos = codigo.replace(/\D/g, '')
+      return digitos === '' ? null : (ler().find((p) => p.codigoBarras === digitos) ?? null)
     },
 
     excluir(id) {

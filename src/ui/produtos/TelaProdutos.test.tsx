@@ -19,6 +19,7 @@ class MemoriaFalsa implements Armazenamento {
 
 const iogurte: Produto = {
   id: 900001,
+  codigoBarras: '7891000100103',
   nome: 'Iogurte natural',
   marca: 'Marca X',
   porcaoG: 170,

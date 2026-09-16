@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import { CAMPOS_OPCIONAIS, CAMPOS_ROTULO, porCem, validarProduto, type Produto } from '@/domain/produtos.ts'
+import { LeitorCodigo } from './LeitorCodigo.tsx'
 import type { ChaveNutrienteAlimento } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '../caso/CampoNumero.tsx'
@@ -35,9 +37,36 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
   const [medidaCaseira, setMedidaCaseira] = useState(inicial?.medidaCaseira ?? '')
   const [valores, setValores] = useState<Valores>(inicial?.porPorcao ?? {})
   const [tentouSalvar, setTentouSalvar] = useState(false)
+  const [codigoBarras, setCodigoBarras] = useState(inicial?.codigoBarras ?? '')
+  const [procurando, setProcurando] = useState(false)
+  const [avisoCodigo, setAvisoCodigo] = useState<string | null>(null)
+
+  const lerCodigo = async (codigo: string) => {
+    setProcurando(true)
+    setAvisoCodigo(null)
+    setCodigoBarras(codigo)
+    try {
+      const achado = await buscarRotuloPorCodigo(codigo)
+      if (!achado) {
+        setAvisoCodigo('Não achei esse código na base pública. Copie os números da embalagem e o produto fica salvo aqui.')
+        return
+      }
+      if (achado.nome) setNome(achado.nome)
+      if (achado.marca) setMarca(achado.marca)
+      if (achado.porcaoG) setPorcaoG(achado.porcaoG)
+      if (achado.medidaCaseira) setMedidaCaseira(achado.medidaCaseira)
+      setValores((atual) => ({ ...atual, ...achado.porPorcao }))
+      setAvisoCodigo(`Dados trazidos da ${achado.fonte}. Confira com a embalagem antes de salvar: base colaborativa erra às vezes.`)
+    } catch {
+      setAvisoCodigo('Sem internet para consultar o código. Digite os valores do rótulo.')
+    } finally {
+      setProcurando(false)
+    }
+  }
 
   const dados = {
     ...(inicial ? { id: inicial.id } : {}),
+    codigoBarras,
     nome,
     marca,
     porcaoG: porcaoG ?? 0,
@@ -45,7 +74,7 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
     porPorcao: valores,
   }
 
-  const problemas = validarProduto({ ...dados, id: inicial?.id ?? 0, criadoEm: '' })
+  const problemas = validarProduto(dados)
   const erroDe = (campo: string) => (tentouSalvar ? problemas.find((p) => p.campo === campo)?.mensagem : undefined)
 
   const campo = (c: { readonly chave: ChaveNutrienteAlimento; readonly rotulo: string; readonly unidade: string }) => (
@@ -75,6 +104,15 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
         <DialogTitle>{inicial ? 'Editar produto' : 'Cadastrar produto pelo rótulo'}</DialogTitle>
         <DialogDescription>Copie os números como estão na embalagem, na porção que o rótulo declara. A conversão para 100 g é automática.</DialogDescription>
       </DialogHeader>
+
+      <LeitorCodigo aoLer={(codigo) => void lerCodigo(codigo)} ocupado={procurando} />
+
+      {avisoCodigo ? (
+        <Alert variant={avisoCodigo.startsWith('Dados trazidos') ? 'info' : 'warning'}>
+          <span aria-hidden="true">i</span>
+          <p>{avisoCodigo}</p>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoTexto rotulo="Nome do produto" valor={nome} aoMudar={setNome} placeholder="Iogurte natural" erro={erroDe('nome')} />

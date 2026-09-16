@@ -2,6 +2,7 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
+import { casaRestricao } from '@/domain/restricoes.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
@@ -28,21 +29,6 @@ interface GavetaCobrirProps {
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number) => void
   readonly aoFechar: () => void
-}
-
-const semAcento = (s: string) =>
-  s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-
-/** Verdadeiro quando a descrição do alimento contém alguma palavra da lista de restrições. */
-export function casaRestricao(descricao: string, restricoes: readonly string[]): boolean {
-  const alvo = semAcento(descricao)
-  return restricoes.some((r) => {
-    const termo = semAcento(r).trim()
-    return termo.length >= 3 && alvo.includes(termo)
-  })
 }
 
 function descreverAvisos(s: Sugestao): readonly string[] {

@@ -4,7 +4,7 @@ import { criarRepositorioPacientes, idadeDe, listaDeRestricoes } from '@/domain/
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
 import { ProvedorPacientes } from '../estado/ProvedorPacientes.tsx'
-import { casaRestricao } from '../adequacao/GavetaCobrir.tsx'
+import { casaRestricao } from '@/domain/restricoes.ts'
 import { TelaPaciente } from './TelaPaciente.tsx'
 import { TelaPacientes } from './TelaPacientes.tsx'
 
