@@ -8,6 +8,7 @@ import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
 import { Label } from '../componentes/label.tsx'
 import { Textarea } from '../componentes/textarea.tsx'
+import { CartaoComposicao } from './CartaoComposicao.tsx'
 import { CampoNumero } from './CampoNumero.tsx'
 import { CampoTexto } from './CampoTexto.tsx'
 import { GrupoOpcoes } from './GrupoOpcoes.tsx'
@@ -167,6 +168,8 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
             )}
           </div>
         </Card>
+
+        {rapido ? null : <CartaoComposicao caso={caso} aoAlterar={aoAlterar} />}
 
         <Card>
           <CardHeader>

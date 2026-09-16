@@ -60,6 +60,25 @@ export interface PreferenciasAdequacao {
  */
 export type ModoPlano = 'rapido' | 'completo'
 
+/** Medidas de composição corporal deste atendimento. */
+export interface ComposicaoCorporal {
+  readonly protocolo: 'jackson-pollock-3' | 'faulkner-4'
+  readonly dobras: {
+    readonly tricipital: number | null
+    readonly subescapular: number | null
+    readonly suprailiaca: number | null
+    readonly abdominal: number | null
+    readonly peitoral: number | null
+    readonly coxa: number | null
+  }
+  readonly bioimpedancia: {
+    readonly gorduraPct: number | null
+    readonly massaMagraKg: number | null
+    readonly aguaPct: number | null
+    readonly aparelho: string
+  }
+}
+
 /** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
@@ -85,6 +104,7 @@ export interface Caso {
   readonly modo: ModoPlano
   /** Meta de energia digitada no modo rápido, em kcal. */
   readonly metaEnergiaKcal: number | null
+  readonly composicao: ComposicaoCorporal
   readonly energia: PreferenciasEnergia
   readonly metasMacros: MetasMacros
   readonly adequacao: PreferenciasAdequacao

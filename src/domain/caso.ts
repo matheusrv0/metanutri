@@ -48,6 +48,11 @@ export function criarCasoVazio(id: string): Caso {
     condicao: { tipo: 'nenhuma' },
     modo: 'completo',
     metaEnergiaKcal: null,
+    composicao: {
+      protocolo: 'jackson-pollock-3',
+      dobras: { tricipital: null, subescapular: null, suprailiaca: null, abdominal: null, peitoral: null, coxa: null },
+      bioimpedancia: { gorduraPct: null, massaMagraKg: null, aguaPct: null, aparelho: '' },
+    },
     energia: { fator: 1.2, formula: 'mifflin', getManual: null },
     metasMacros: {},
     adequacao: { preset: { tipo: 'individual' }, porcaoMaximaG: 200, incluirIngredientes: false, ocultos: [] },
