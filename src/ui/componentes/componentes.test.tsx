@@ -15,7 +15,7 @@ describe('componentes base (MaterialM)', () => {
     render(<Button>Adicionar</Button>)
     const botao = screen.getByRole('button', { name: 'Adicionar' })
     expect(botao).toHaveAttribute('type', 'button')
-    expect(botao.className).toContain('rounded-full')
+    expect(botao.className).toContain('rounded-xs')
     expect(botao.className).toContain('bg-primary')
   })
 

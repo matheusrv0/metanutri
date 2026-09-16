@@ -16,23 +16,24 @@ interface CabecalhoProps {
   readonly aoAbrirMenu: () => void
 }
 
+/** Cabeça de página: trilha fina, título e, à direita, a seção corrente. */
 export function Cabecalho({ titulo, subtitulo, trilha, acoes, aoAbrirMenu }: CabecalhoProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex min-h-[70px] max-w-[1400px] items-center gap-3 px-4 py-2 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-fioforte bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex min-h-[64px] max-w-[1400px] items-center gap-3 px-4 py-2 sm:px-8">
         <Button variant="ghost" size="icon" className="xl:hidden" onClick={aoAbrirMenu} aria-label="Abrir menu">
           <Menu className="size-5" aria-hidden="true" />
         </Button>
         <div className="min-w-0 flex-1">
           {trilha && trilha.length > 0 ? (
             <nav aria-label="Você está em">
-              <ol className="flex items-center gap-1 text-xs text-muted-foreground">
+              <ol className="rotulo flex items-center gap-1">
                 {trilha.map((p) => (
                   <li key={p.rotulo} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={p.aoClicar}
-                      className="rounded hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="rounded-xs hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {p.rotulo}
                     </button>
@@ -42,9 +43,9 @@ export function Cabecalho({ titulo, subtitulo, trilha, acoes, aoAbrirMenu }: Cab
               </ol>
             </nav>
           ) : null}
-          <h1 className="truncate text-lg leading-tight">{titulo}</h1>
-          {subtitulo ? <p className="truncate text-xs text-muted-foreground">{subtitulo}</p> : null}
+          <h1 className="truncate text-xl leading-tight">{titulo}</h1>
         </div>
+        {subtitulo ? <p className="rotulo hidden max-w-56 truncate text-right md:block">{subtitulo}</p> : null}
         {acoes ? <div className="flex shrink-0 items-center gap-2">{acoes}</div> : null}
       </div>
     </header>

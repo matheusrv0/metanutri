@@ -14,8 +14,8 @@ export function SeletorTema() {
   const { preferencia, definir } = useTema()
 
   return (
-    <div role="radiogroup" aria-label="Aparência" className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
-      {OPCOES.map((o) => {
+    <div role="radiogroup" aria-label="Aparência" className="grid grid-cols-3 border border-lombadafio">
+      {OPCOES.map((o, i) => {
         const marcado = preferencia === o.valor
         return (
           <button
@@ -25,9 +25,10 @@ export function SeletorTema() {
             aria-checked={marcado}
             onClick={() => definir(o.valor)}
             className={cn(
-              'flex items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              marcado ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              'flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60',
+              i > 0 && 'border-l border-lombadafio',
+              marcado ? 'bg-papel text-tinta' : 'text-lombadafraca hover:text-lombadatexto',
             )}
           >
             {o.icone}

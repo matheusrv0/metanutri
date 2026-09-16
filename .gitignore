@@ -24,3 +24,7 @@ docs/design/referencia/*.zip
 
 # modelo do estágio: contém nome de pessoa real, fica só local
 docs/modelos/
+
+# revisão visual do skill impeccable (capturas e mocks)
+.impeccable/review/
+.impeccable/mocks/

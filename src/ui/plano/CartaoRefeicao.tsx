@@ -88,7 +88,7 @@ export function CartaoRefeicao({
         </Button>
       </div>
 
-      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="flex flex-wrap gap-1 rounded-full bg-muted p-1">
+      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="flex flex-wrap border-b border-fioforte">
         {OPCOES_ORDEM.map((o) => {
           const ativa = o === opcaoAtiva
           const quantos = refeicao.opcoes[o].length
@@ -100,8 +100,8 @@ export function CartaoRefeicao({
               aria-selected={ativa}
               onClick={() => setOpcaoAtiva(o)}
               className={cn(
-                'flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                ativa ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                '-mb-px flex-1 border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                ativa ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
               {ROTULO_OPCAO[o]}

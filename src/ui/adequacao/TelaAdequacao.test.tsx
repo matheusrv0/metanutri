@@ -64,7 +64,8 @@ describe('Etapa 3: adequação', () => {
     expect(ferro.getAllByText(/mg$/).length).toBeGreaterThan(0)
     expect(ferro.getByText(/% \(meta/)).toBeInTheDocument()
     expect(ferro.getByText(/Abaixo da meta|Adequado|Acima do limite superior/)).toBeInTheDocument()
-    expect(screen.getByText(/Composição: .*Referências: /)).toBeInTheDocument()
+    expect(screen.getByText(/^Composição: /)).toBeInTheDocument()
+    expect(screen.getByText(/^Referências de ingestão: /)).toBeInTheDocument()
   })
 
   it('CA-26 e CA-27: preset individual usa RDA e coletivo usa EAR', async () => {
@@ -94,7 +95,10 @@ describe('Etapa 3: adequação', () => {
 
   it('CA-32: nutriente com alimentos sem dado avisa que o total é subestimado', () => {
     montar(adulta, planoComArroz())
-    expect(screen.getAllByText(/sem dado: total possivelmente subestimado/).length).toBeGreaterThan(0)
+    const marcas = screen.getAllByTitle(/total possivelmente subestimado/)
+    expect(marcas.length).toBeGreaterThan(0)
+    expect(marcas[0]).toHaveTextContent("†")
+    expect(screen.getByText(/Falta de dado nunca entra como zero/)).toBeInTheDocument()
   })
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {

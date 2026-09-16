@@ -12,6 +12,7 @@ interface ItemMenuProps {
   readonly aoClicar: () => void
 }
 
+/** Entrada do índice na lombada: ativa vira uma tarja de papel sobre a tinta. */
 export function ItemMenu({ icone, rotulo, detalhe, extra, ativo, aoClicar }: ItemMenuProps) {
   return (
     <button
@@ -19,15 +20,15 @@ export function ItemMenu({ icone, rotulo, detalhe, extra, ativo, aoClicar }: Ite
       onClick={aoClicar}
       aria-current={ativo ? 'page' : undefined}
       className={cn(
-        'flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-left text-sm font-medium transition-colors [&_svg]:size-5 [&_svg]:shrink-0',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        ativo ? 'bg-lightprimary text-primary' : 'text-foreground hover:bg-lightprimary hover:text-primary',
+        'flex w-full items-center gap-3 rounded-xs px-3 py-2 text-left text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60',
+        ativo ? 'bg-papel text-tinta' : 'text-lombadatexto/85 hover:bg-lombadatexto/10 hover:text-lombadatexto',
       )}
     >
       {icone}
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate">{rotulo}</span>
-        {detalhe ? <span className="truncate text-xs font-normal text-muted-foreground">{detalhe}</span> : null}
+        <span className={cn('truncate', ativo ? 'font-semibold' : 'font-medium')}>{rotulo}</span>
+        {detalhe ? <span className={cn('truncate text-xs font-normal', ativo ? 'text-muted-foreground' : 'text-lombadafraca')}>{detalhe}</span> : null}
       </span>
       {extra}
     </button>

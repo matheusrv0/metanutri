@@ -78,7 +78,7 @@ export function TelaFontes() {
               href={f.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 self-start rounded-full text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-1.5 self-start rounded-xs text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Abrir fonte
               <ExternalLink className="size-3.5" aria-hidden="true" />

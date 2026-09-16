@@ -14,9 +14,11 @@ interface CampoTextoProps {
   readonly numerico?: boolean
   readonly sufixo?: string
   readonly placeholder?: string
+  /** Mantém o rótulo só para leitores de tela (linhas de tabela onde a coluna já nomeia o campo). */
+  readonly rotuloOculto?: boolean
 }
 
-export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', numerico = false, sufixo, placeholder }: CampoTextoProps) {
+export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', numerico = false, sufixo, placeholder, rotuloOculto = false }: CampoTextoProps) {
   const id = useId()
   const idErro = `${id}-erro`
   const idDica = `${id}-dica`
@@ -24,7 +26,9 @@ export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', 
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{rotulo}</Label>
+      <Label htmlFor={id} className={rotuloOculto ? 'sr-only' : undefined}>
+        {rotulo}
+      </Label>
       <div className="relative">
         <Input
           id={id}
@@ -35,9 +39,9 @@ export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', 
           aria-describedby={descricao || undefined}
           inputMode={numerico ? 'decimal' : undefined}
           placeholder={placeholder}
-          className={sufixo ? 'pr-12' : undefined}
+          className={sufixo ? 'pr-9' : undefined}
         />
-        {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}
+        {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}
       </div>
       {erro ? (
         <p id={idErro} role="alert" className="text-xs text-errortext">

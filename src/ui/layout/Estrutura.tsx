@@ -34,26 +34,26 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtit
           e.preventDefault()
           document.getElementById('conteudo')?.focus()
         }}
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xs focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
       >
         Pular para o conteúdo
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] border-r border-border xl:block">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] xl:block">
         <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} />
       </aside>
 
       <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-        <SheetContent side="left" className="w-[290px] p-0">
+        <SheetContent side="left" className="w-[280px] border-none p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navegação principal do MetaNutri</SheetDescription>
           <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} aoEscolher={fecharMenu} />
         </SheetContent>
       </Sheet>
 
-      <div className="xl:pl-[270px]">
+      <div className="xl:pl-[264px]">
         <Cabecalho titulo={titulo} subtitulo={subtitulo} trilha={trilha} acoes={acoes} aoAbrirMenu={() => setMenuAberto(true)} />
-        <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-6 sm:py-8">
+        <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
           {children}
         </main>
       </div>

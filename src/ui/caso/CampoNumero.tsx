@@ -9,6 +9,7 @@ interface CampoNumeroProps {
   readonly erro?: string | undefined
   readonly dica?: string | undefined
   readonly sufixo?: string
+  readonly rotuloOculto?: boolean
 }
 
 const paraTexto = (valor: number | null) => (valor === null ? '' : String(valor).replace('.', ','))
@@ -17,7 +18,7 @@ const paraTexto = (valor: number | null) => (valor === null ? '' : String(valor)
  * Campo numérico que guarda o texto digitado enquanto a pessoa escreve.
  * Sem isso, digitar "68," (ainda sem número válido) apagaria o campo (CB-12).
  */
-export function CampoNumero({ rotulo, valor, aoMudar, erro, dica, sufixo }: CampoNumeroProps) {
+export function CampoNumero({ rotulo, valor, aoMudar, erro, dica, sufixo, rotuloOculto = false }: CampoNumeroProps) {
   const [texto, setTexto] = useState(() => paraTexto(valor))
   const [valorConhecido, setValorConhecido] = useState(valor)
 
@@ -36,6 +37,7 @@ export function CampoNumero({ rotulo, valor, aoMudar, erro, dica, sufixo }: Camp
         aoMudar(lerNumero(v))
       }}
       numerico
+      rotuloOculto={rotuloOculto}
       erro={erro}
       dica={dica}
       {...(sufixo ? { sufixo } : {})}

@@ -78,9 +78,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
       <Card className="gap-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-full bg-lightprimary text-primary">
-              <Flame className="size-5" aria-hidden="true" />
-            </span>
+            <Flame className="size-4 text-primary" aria-hidden="true" />
             <CardTitle>Resumo do dia</CardTitle>
           </div>
           <Button variant="ghost" size="sm" onClick={() => setAjustando((v) => !v)} aria-expanded={ajustando}>

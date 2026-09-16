@@ -73,7 +73,7 @@ export function EntradaRapida({ rotulo, aoAdicionar }: EntradaRapidaProps) {
       {semResultado && !aviso ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}
 
       {resultados.length > 0 ? (
-        <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col gap-1 rounded-2xl bg-muted/60 p-1">
+        <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col border border-fioforte bg-card">
           {resultados.map((r, i) => {
             const gramas = r.gramas ?? GRAMAS_PADRAO
             const atual = r === escolhido
@@ -86,9 +86,9 @@ export function EntradaRapida({ rotulo, aoAdicionar }: EntradaRapidaProps) {
                   onClick={() => adicionar(r)}
                   onMouseEnter={() => setSelecionado(i)}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors',
+                    'flex w-full items-center gap-2 border-b border-fio px-3 py-2 text-left text-sm transition-colors last:border-0',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    atual ? 'bg-lightprimary text-primary' : 'hover:bg-card',
+                    atual ? 'bg-lightprimary text-primary' : 'hover:bg-muted',
                   )}
                 >
                   <Plus className="size-4 shrink-0" aria-hidden="true" />

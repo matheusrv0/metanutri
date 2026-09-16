@@ -1,4 +1,4 @@
-import { Info, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
@@ -13,7 +13,7 @@ import { Badge } from '../componentes/badge.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
 import { Progress } from '../componentes/progress.tsx'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../componentes/table.tsx'
+import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '../componentes/table.tsx'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 
 interface TelaAdequacaoProps {
@@ -45,17 +45,43 @@ const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly 
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
+/** "feminino-19-30" vira "mulheres de 19 a 30 anos"; "gestante-19-30" vira "gestantes de 19 a 30 anos". */
+function descreverEstagio(estagio: { readonly idadeMin: number; readonly idadeMax: number | null; readonly sexo: string | null; readonly gestante: boolean; readonly lactante: boolean }): string {
+  const grupo = estagio.gestante
+    ? 'gestantes'
+    : estagio.lactante
+      ? 'lactantes'
+      : estagio.sexo === 'F'
+        ? 'mulheres'
+        : estagio.sexo === 'M'
+          ? 'homens'
+          : 'crianças'
+  const faixa = estagio.idadeMax === null ? `${estagio.idadeMin} anos ou mais` : `${estagio.idadeMin} a ${estagio.idadeMax} anos`
+  return `${grupo} de ${faixa}`
+}
+
 function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly aoCobrir: () => void }) {
   return (
     <TableRow>
       <TableCell>
         <span className="font-medium text-heading">{linha.rotulo}</span>
-        {linha.semDado > 0 ? (
-          <span className="block text-xs text-warningtext">{`${linha.semDado} ${linha.semDado === 1 ? 'alimento sem dado' : 'alimentos sem dado'}: total possivelmente subestimado`}</span>
+        {linha.notaLimite ? (
+          <abbr title={linha.notaLimite} className="ml-0.5 cursor-help align-super text-[10px] font-semibold text-muted-foreground no-underline">
+            ‡
+          </abbr>
         ) : null}
-        {linha.notaLimite ? <span className="block text-xs text-muted-foreground">{linha.notaLimite}</span> : null}
       </TableCell>
-      <TableCell className="numeros whitespace-nowrap">{`${formatarNumero(linha.total, 2)} ${linha.unidade}`}</TableCell>
+      <TableCell className="numeros whitespace-nowrap">
+        {`${formatarNumero(linha.total, 2)} ${linha.unidade}`}
+        {linha.semDado > 0 ? (
+          <abbr
+            title={`${linha.semDado} ${linha.semDado === 1 ? 'alimento do plano não tem' : 'alimentos do plano não têm'} este nutriente na tabela: total possivelmente subestimado.`}
+            className="ml-0.5 cursor-help align-super text-[10px] font-semibold text-warningtext no-underline"
+          >
+            †
+          </abbr>
+        ) : null}
+      </TableCell>
       <TableCell className="numeros whitespace-nowrap">
         {`${formatarNumero(linha.referencia.valor, 2)} ${linha.unidade}`}
         <span className="block text-xs uppercase text-muted-foreground">{linha.referencia.tipo}</span>
@@ -69,7 +95,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell>
         {linha.estado === 'abaixo' ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
+          <Button size="sm" variant="outline" onClick={aoCobrir} className="text-primary">
             Cobrir
           </Button>
         ) : null}
@@ -136,7 +162,7 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, aoAlterarCaso, aoA
         <Card className="gap-4">
           <CardHeader>
             <CardTitle>Micronutrientes</CardTitle>
-            <CardDescription>{resultado.estagio ? `Estágio de vida: ${resultado.estagio.id}` : ''}</CardDescription>
+            <CardDescription>{resultado.estagio ? `Estágio de vida: ${descreverEstagio(resultado.estagio)}` : ''}</CardDescription>
           </CardHeader>
 
           <div className="overflow-x-auto">
@@ -161,13 +187,23 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, aoAlterarCaso, aoA
             </Table>
           </div>
 
-          <Alert variant="info">
-            <Info aria-hidden="true" />
+          <TableFootnotes>
             <p>
-              {`Composição: ${FONTE_ALIMENTOS.nome}. Referências: ${resultado.fonte}`}
-              {prefs.ocultos.length > 0 ? ` Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.` : ''}
+              <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
+              Total possivelmente subestimado: algum alimento do plano não tem esse nutriente na tabela de composição. Falta de dado nunca entra como zero.
             </p>
-          </Alert>
+            <p className="mt-1">
+              <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
+              O limite superior da tabela não vale para a forma do nutriente presente nos alimentos; o texto completo aparece ao passar o cursor.
+            </p>
+            <p className="mt-1">
+              Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
+              <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
+            </p>
+            <p className="mt-2">{`Composição: ${FONTE_ALIMENTOS.nome}`}</p>
+            <p>{`Referências de ingestão: ${resultado.fonte}`}</p>
+            {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
+          </TableFootnotes>
         </Card>
       )}
 

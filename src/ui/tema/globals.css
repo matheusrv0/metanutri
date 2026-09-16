@@ -1,106 +1,152 @@
 /*
- * Tema visual do MetaNutri, portado do template MaterialM Free (WrapPixel, licença MIT).
- * Tokens de cor, raio e sombra: docs/design/direcao-visual.md.
+ * MetaNutri — mundo visual "tabela impressa".
+ * A tela é uma folha de tabela de composição: papel, fios finos, versaletes nas colunas,
+ * numeral tabular em tudo e a notação da própria TACO (Tr para traço, travessão para não analisado).
+ * Decisões duráveis em DESIGN.md. Contrato da direção em index.html.
  */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
-/* ---------- Tokens MaterialM: tema claro ---------- */
+/* ---------- Folha: tema claro ---------- */
 :root {
-  --color-primary: #00a1ff;
-  --color-secondary: #16cdc7;
-  --color-info: #46caeb;
-  --color-success: #00ceb6;
-  --color-warning: #ffb900;
-  --color-error: #ff6692;
+  /* papel e tinta */
+  --papel: #fbfbf7;
+  --mesa: #e9eae1;
+  --tinta: #15180f;
+  --tinta-media: #4d5346;
+  --tinta-fraca: #6f7567;
+
+  /* acentos impressos: verde de capa, ocre de atenção, vermelhão de limite */
+  --color-primary: #0b6e33;
+  --color-secondary: #1c4f7c;
+  --color-info: #1c4f7c;
+  --color-success: #0b6e33;
+  --color-warning: #a8700e;
+  --color-error: #b3221c;
 
   --color-white: #fff;
-  --color-dark: #111c2d;
-  --color-darkgray: #1a2537;
-  --color-lightgray: #f8fafd;
-  --color-link: #2a3547;
-  --color-darklink: #7b8893;
-  --color-defaultBorder: #e0e6eb;
-  --color-darkborder: #333f55;
-  --color-charcoal: #2a3547;
+  --color-dark: var(--tinta);
+  --color-darkgray: #1d2118;
+  --color-lightgray: var(--mesa);
+  --color-link: var(--tinta);
+  --color-darklink: var(--tinta-fraca);
+  --color-defaultBorder: color-mix(in oklab, var(--tinta) 16%, transparent);
+  --color-darkborder: color-mix(in oklab, #e9eae1 18%, transparent);
+  --color-charcoal: var(--tinta-fraca);
 
-  --color-lightprimary: color-mix(in oklab, var(--color-primary) 12%, transparent);
-  --color-lightsecondary: color-mix(in oklab, var(--color-secondary) 12%, transparent);
-  --color-lightsuccess: color-mix(in oklab, var(--color-success) 12%, transparent);
+  /* fundos de estado: tinta diluída no papel, nunca pastilha saturada */
+  --color-lightprimary: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  --color-lightsecondary: color-mix(in oklab, var(--color-secondary) 10%, transparent);
+  --color-lightsuccess: color-mix(in oklab, var(--color-success) 10%, transparent);
   --color-lightwarning: color-mix(in oklab, var(--color-warning) 14%, transparent);
-  --color-lighterror: color-mix(in oklab, var(--color-error) 12%, transparent);
-  --color-lightinfo: color-mix(in oklab, var(--color-info) 12%, transparent);
+  --color-lighterror: color-mix(in oklab, var(--color-error) 10%, transparent);
+  --color-lightinfo: color-mix(in oklab, var(--color-info) 10%, transparent);
 
-  --color-primaryemphasis: color-mix(in oklab, var(--color-primary) 80%, black);
-  --color-secondaryemphasis: color-mix(in oklab, var(--color-secondary) 80%, black);
-  --color-erroremphasis: color-mix(in oklab, var(--color-error) 80%, black);
+  --color-primaryemphasis: color-mix(in oklab, var(--color-primary) 82%, black);
+  --color-secondaryemphasis: color-mix(in oklab, var(--color-secondary) 82%, black);
+  --color-erroremphasis: color-mix(in oklab, var(--color-error) 82%, black);
 
-  /* texto sobre fundos claros de estado: versões mais escuras para contraste legível */
-  --color-successtext: #008a7a;
-  --color-warningtext: #9a6b00;
-  --color-errortext: #d6336c;
-  --color-infotext: #0b7fa0;
+  --color-successtext: #0a5b2b;
+  --color-warningtext: #8a5a09;
+  --color-errortext: #971914;
+  --color-infotext: #164263;
 
-  --shadow-card: 0px 1px 4px 0px rgba(133, 146, 173, 0.2);
+  /* fios da tabela: a única "sombra" deste mundo */
+  --fio: color-mix(in oklab, var(--tinta) 14%, transparent);
+  --fio-forte: color-mix(in oklab, var(--tinta) 42%, transparent);
+  --shadow-card: 0 1px 0 0 var(--fio);
+  --shadow-folha: 0 1px 2px 0 color-mix(in oklab, var(--tinta) 8%, transparent), 0 8px 24px -12px color-mix(in oklab, var(--tinta) 18%, transparent);
+
+  /* campo escuro do menu: a lombada da publicação */
+  --lombada: #12301c;
+  --lombada-texto: #eceee4;
+  --lombada-fraca: #9fb2a4;
+  --lombada-fio: color-mix(in oklab, #eceee4 18%, transparent);
 
   /* variáveis do shadcn/ui */
-  --radius: 10px;
-  --background: var(--color-lightgray);
-  --foreground: var(--color-link);
-  --card: var(--color-white);
-  --card-foreground: var(--color-link);
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-link);
+  --radius: 3px;
+  --background: var(--mesa);
+  --foreground: var(--tinta);
+  --card: var(--papel);
+  --card-foreground: var(--tinta);
+  --popover: var(--papel);
+  --popover-foreground: var(--tinta);
   --primary: var(--color-primary);
-  --primary-foreground: var(--color-white);
+  --primary-foreground: #fbfbf7;
   --secondary: var(--color-secondary);
-  --secondary-foreground: var(--color-white);
-  --muted: #eff4fa;
-  --muted-foreground: #5f6b7a;
+  --secondary-foreground: #fbfbf7;
+  --muted: color-mix(in oklab, var(--tinta) 5%, var(--papel));
+  --muted-foreground: var(--tinta-media);
   --accent: var(--color-lightprimary);
   --accent-foreground: var(--color-primary);
   --destructive: var(--color-error);
-  --border: var(--color-defaultBorder);
-  --input: var(--color-defaultBorder);
-  --ring: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  --heading: var(--color-dark);
+  --border: var(--fio);
+  --input: var(--fio-forte);
+  --ring: color-mix(in oklab, var(--color-primary) 55%, transparent);
+  --heading: var(--tinta);
 }
 
-/* ---------- Tokens MaterialM: tema escuro ---------- */
+/* ---------- Prova em negativo: tema escuro ---------- */
 .dark {
-  --color-defaultBorder: #333f55;
-  --color-charcoal: #7b8893;
-  --color-lightprimary: #00a1ff26;
-  --color-successtext: #3de3cf;
-  --color-warningtext: #ffcc4d;
-  --color-errortext: #ff8fb0;
-  --color-infotext: #7fdcf3;
+  --papel: #1b1f17;
+  --mesa: #12150f;
+  --tinta: #eceee4;
+  --tinta-media: #b6bbad;
+  --tinta-fraca: #8d9384;
 
-  --background: var(--color-darkgray);
-  --foreground: #c9d1da;
-  --card: var(--color-dark);
-  --card-foreground: #c9d1da;
-  --popover: var(--color-darkgray);
-  --popover-foreground: #c9d1da;
-  --muted: #2a3851;
-  --muted-foreground: #95a1ad;
-  --border: var(--color-darkborder);
-  --input: var(--color-darkborder);
-  --heading: var(--color-white);
-  --shadow-card: 0px 1px 4px 0px rgba(0, 0, 0, 0.35);
+  --color-primary: #59b877;
+  --color-secondary: #79b4de;
+  --color-info: #79b4de;
+  --color-success: #59b877;
+  --color-warning: #dfa93f;
+  --color-error: #e8776b;
+
+  --color-defaultBorder: color-mix(in oklab, var(--tinta) 20%, transparent);
+  --color-charcoal: var(--tinta-fraca);
+
+  --color-successtext: #7fd59a;
+  --color-warningtext: #edc172;
+  --color-errortext: #f0958b;
+  --color-infotext: #9ccbef;
+
+  --fio: color-mix(in oklab, var(--tinta) 18%, transparent);
+  --fio-forte: color-mix(in oklab, var(--tinta) 46%, transparent);
+  --shadow-card: 0 1px 0 0 var(--fio);
+  --shadow-folha: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+
+  --lombada: #0d1b11;
+  --lombada-texto: #e4e8db;
+  --lombada-fraca: #93a596;
+  --lombada-fio: color-mix(in oklab, #e4e8db 14%, transparent);
+
+  --background: var(--mesa);
+  --foreground: var(--tinta);
+  --card: var(--papel);
+  --card-foreground: var(--tinta);
+  --popover: var(--papel);
+  --popover-foreground: var(--tinta);
+  --primary-foreground: #0f1410;
+  --secondary-foreground: #0f1410;
+  --muted: color-mix(in oklab, var(--tinta) 8%, var(--papel));
+  --muted-foreground: var(--tinta-media);
+  --border: var(--fio);
+  --input: var(--fio-forte);
+  --heading: var(--tinta);
 }
 
 @theme inline {
   --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-titulo: 'Archivo Variable', 'Archivo', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
 
   --shadow-card: var(--shadow-card);
+  --shadow-folha: var(--shadow-folha);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -121,6 +167,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-heading: var(--heading);
+
+  --color-papel: var(--papel);
+  --color-mesa: var(--mesa);
+  --color-tinta: var(--tinta);
+  --color-fio: var(--fio);
+  --color-fioforte: var(--fio-forte);
+  --color-lombada: var(--lombada);
+  --color-lombadatexto: var(--lombada-texto);
+  --color-lombadafraca: var(--lombada-fraca);
+  --color-lombadafio: var(--lombada-fio);
 
   --color-info: var(--color-info);
   --color-success: var(--color-success);
@@ -149,10 +205,55 @@
 
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  .dark html,
+  html:has(.dark) {
+    color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground font-sans text-sm antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Superfícies do navegador vestidas com a mesma tinta */
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 22%, transparent);
+    color: var(--tinta);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--fio-forte) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--fio-forte);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--color-primary);
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
   }
 
   h1,
@@ -161,7 +262,11 @@
   h4,
   h5,
   h6 {
-    @apply text-heading font-semibold;
+    @apply text-heading;
+    font-family: var(--font-titulo);
+    font-weight: 600;
+    font-stretch: 92%;
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
 
@@ -170,7 +275,10 @@
     cursor: pointer;
   }
 
-  input[type='number'] {
+  input[type='number'],
+  input[inputmode='decimal'],
+  td,
+  th {
     font-variant-numeric: tabular-nums;
   }
 
@@ -185,10 +293,38 @@
   }
 }
 
+/* Título de bloco: o nome que abre uma folha da tabela. */
 @utility card-title {
-  @apply text-lg font-semibold text-heading;
+  font-family: var(--font-titulo);
+  font-weight: 650;
+  font-stretch: 90%;
+  letter-spacing: -0.01em;
+  @apply text-base text-heading;
+}
+
+/* Cabeçalho de coluna: versalete condensado, como na tabela impressa. */
+@utility rotulo {
+  font-family: var(--font-titulo);
+  font-weight: 650;
+  font-stretch: 80%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  @apply text-[11px] leading-none text-muted-foreground;
 }
 
 @utility numeros {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Folha: papel com fio, sem sombra de cartão. */
+@utility folha {
+  background: var(--card);
+  border: 1px solid var(--fio);
+  border-radius: var(--radius-md);
+}
+
+/* Fio de regra, mais forte que a borda comum: separa cabeçalho de corpo. */
+@utility fio-regra {
+  border-bottom: 1.5px solid var(--fio-forte);
 }

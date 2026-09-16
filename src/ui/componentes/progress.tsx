@@ -3,7 +3,7 @@ import * as ProgressPrimitive from '@radix-ui/react-progress'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-export const progressIndicatorVariants = cva('h-full w-full flex-1 rounded-full transition-transform', {
+export const progressIndicatorVariants = cva('h-full w-full flex-1 rounded-none transition-transform', {
   variants: {
     variant: {
       default: 'bg-primary',
@@ -27,7 +27,7 @@ export interface ProgressProps
 export const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root>, ProgressProps>(({ className, value, variant, ...props }, ref) => {
   const limitado = Math.max(0, Math.min(100, value))
   return (
-    <ProgressPrimitive.Root ref={ref} value={limitado} className={cn('relative h-2 w-full overflow-hidden rounded-full bg-muted', className)} {...props}>
+    <ProgressPrimitive.Root ref={ref} value={limitado} className={cn('relative h-1.5 w-full overflow-hidden rounded-none border border-fio bg-muted', className)} {...props}>
       <ProgressPrimitive.Indicator className={progressIndicatorVariants({ variant })} style={{ transform: `translateX(-${100 - limitado}%)` }} />
     </ProgressPrimitive.Root>
   )

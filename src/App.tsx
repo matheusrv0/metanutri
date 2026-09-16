@@ -10,6 +10,7 @@ import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
+import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { TelaFontes } from './ui/fontes/TelaFontes.tsx'
@@ -79,26 +80,27 @@ function Conteudo() {
 
           {rota.aba === 'caso' ? (
             <TelaCaso caso={registro.caso} aoAlterar={alterarCaso} lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />} />
-          ) : (
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-              {rota.aba === 'plano' ? (
-                <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
-              ) : (
-                <TelaAdequacao
-                  caso={registro.caso}
-                  plano={registro.plano}
-                  gastoEnergetico={
-                    calcularEnergia(registro.caso, {
-                      fator: registro.caso.energia.fator,
-                      formula: registro.caso.energia.formula,
-                      getManual: registro.caso.energia.getManual,
-                    }).get
-                  }
-                  aoAlterarCaso={alterarCaso}
-                  aoAlterarPlano={alterarPlano}
-                />
-              )}
+          ) : rota.aba === 'plano' ? (
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
               <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              <FaixaResumo caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+              <TelaAdequacao
+                caso={registro.caso}
+                plano={registro.plano}
+                gastoEnergetico={
+                  calcularEnergia(registro.caso, {
+                    fator: registro.caso.energia.fator,
+                    formula: registro.caso.energia.formula,
+                    getManual: registro.caso.energia.getManual,
+                  }).get
+                }
+                aoAlterarCaso={alterarCaso}
+                aoAlterarPlano={alterarPlano}
+              />
             </div>
           )}
 

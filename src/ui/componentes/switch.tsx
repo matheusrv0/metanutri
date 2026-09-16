@@ -12,7 +12,7 @@ export const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitive.R
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb className="pointer-events-none block size-4 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0.5" />
+      <SwitchPrimitive.Thumb className="pointer-events-none block size-4 rounded-full bg-papel shadow-sm transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0.5" />
     </SwitchPrimitive.Root>
   ),
 )

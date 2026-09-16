@@ -19,7 +19,7 @@ export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }:
   return (
     <Card className="gap-4 p-5">
       <div className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-lightprimary text-primary">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
           <ClipboardList className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">

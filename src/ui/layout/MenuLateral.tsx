@@ -1,6 +1,5 @@
-import { BookOpen, ClipboardList, FolderOpen, HardDrive, Leaf, Plus, TriangleAlert } from 'lucide-react'
+import { BookOpen, ClipboardList, FolderOpen, HardDrive, Plus, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from '../componentes/button.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import type { Rota } from '../navegacao.ts'
 import { ItemMenu } from './ItemMenu.tsx'
@@ -23,16 +22,15 @@ interface MenuLateralProps {
 function Secao({ titulo, children }: { readonly titulo: string; readonly children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="px-4 pb-1 text-xs font-bold uppercase tracking-wider text-charcoal">{titulo}</p>
+      <p className="rotulo px-3 pb-2 text-lombadafraca">{titulo}</p>
       {children}
     </div>
   )
 }
 
 /**
- * Menu em três blocos, do mais usado ao menos usado:
- * ação principal (Novo caso) · trabalho (Meus casos e o caso atual) · consulta (Fontes científicas).
- * O rodapé mostra onde os dados ficam e a aparência.
+ * Lombada da publicação: capa com o nome, índice em duas seções e, no pé,
+ * onde os dados ficam e a aparência.
  */
 export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }: MenuLateralProps) {
   const { casos, avisoArmazenamento } = useCasos()
@@ -42,25 +40,24 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
   }
 
   return (
-    <nav aria-label="Menu principal" className="flex h-full flex-col bg-card">
-      <div className="flex h-[70px] shrink-0 items-center gap-2 px-6">
-        <span className="flex size-9 items-center justify-center rounded-full bg-lightprimary text-primary">
-          <Leaf className="size-5" aria-hidden="true" />
-        </span>
-        <span className="text-lg font-bold tracking-tight text-heading">MetaNutri</span>
+    <nav aria-label="Menu principal" className="flex h-full flex-col bg-lombada text-lombadatexto">
+      <div className="flex shrink-0 flex-col gap-1 border-b border-lombadafio px-5 py-5">
+        <span className="font-titulo text-[22px] font-bold uppercase leading-none tracking-[0.12em] [font-stretch:80%]">MetaNutri</span>
+        <span className="rotulo text-lombadafraca">Planejador alimentar</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pb-4">
-        <Button
-          className="w-full"
+      <div className="flex flex-1 flex-col gap-7 overflow-y-auto px-2 py-5">
+        <button
+          type="button"
           onClick={() => {
             aoNovoCaso()
             aoEscolher?.()
           }}
+          className="mx-1 flex items-center justify-center gap-2 rounded-xs bg-papel px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:bg-lombadatexto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60 [&_svg]:size-4"
         >
           <Plus aria-hidden="true" />
           Novo caso
-        </Button>
+        </button>
 
         <Secao titulo="Trabalho">
           <ItemMenu
@@ -70,7 +67,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
             aoClicar={() => ir({ tela: 'casos' })}
             extra={
               casos.length > 0 ? (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                <span className="numeros rounded-xs border border-lombadafio px-1.5 py-0.5 text-[11px] text-lombadafraca">
                   {casos.length}
                   <span className="sr-only"> {casos.length === 1 ? 'caso' : 'casos'}</span>
                 </span>
@@ -93,14 +90,14 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
         </Secao>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-4">
+      <div className="flex shrink-0 flex-col gap-3 border-t border-lombadafio px-4 py-4">
         {avisoArmazenamento ? (
-          <p role="status" className="flex items-start gap-2 px-2 text-xs text-warningtext">
+          <p role="status" className="flex items-start gap-2 text-xs text-warningtext">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             {avisoArmazenamento}
           </p>
         ) : (
-          <p className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
+          <p className="flex items-center gap-2 text-xs text-lombadafraca">
             <HardDrive className="size-4 shrink-0" aria-hidden="true" />
             Casos salvos só neste aparelho
           </p>

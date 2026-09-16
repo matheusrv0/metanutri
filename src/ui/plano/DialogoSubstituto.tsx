@@ -68,7 +68,7 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
               <p>{resultado.motivoSemCalculo}</p>
             </Alert>
           ) : (
-            <div className="flex flex-col gap-3 rounded-2xl bg-muted/60 p-4">
+            <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
               <p className="text-sm font-semibold text-heading">{substituto.descricao}</p>
               <p className="numeros text-lg font-bold text-primary">
                 {`${formatarNumero(resultado.gramas ?? 0, 0)} g${resultado.medida ? ` · ${resultado.medida.texto}` : ''}`}

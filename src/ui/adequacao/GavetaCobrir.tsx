@@ -80,7 +80,7 @@ export function GavetaCobrir({
             : ''}
         </SheetDescription>
 
-        <div className="flex flex-col gap-3 rounded-2xl bg-muted/60 p-4">
+        <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
           <CampoNumero
             rotulo="Porção máxima por sugestão"
             valor={prefs.porcaoMaximaG}
@@ -105,7 +105,7 @@ export function GavetaCobrir({
             id="refeicao-destino"
             value={refeicaoId}
             onChange={(e) => setRefeicaoId(e.target.value)}
-            className="h-10 rounded-full border border-input bg-card px-4 text-sm"
+            className="h-9 rounded-xs border border-input bg-card px-3 text-sm"
           >
             {plano.refeicoes.map((r) => (
               <option key={r.id} value={r.id}>
@@ -126,7 +126,7 @@ export function GavetaCobrir({
           {(resultado?.sugestoes ?? []).map((s) => {
             const medida = medidaEquivalente(s.alimentoId, s.gramas)
             return (
-              <li key={s.alimentoId} className="flex flex-col gap-2 rounded-2xl border border-border p-3">
+              <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-fio pb-3 last:border-0">
                 <p className="text-sm font-semibold text-heading">{s.descricao}</p>
                 <p className="numeros text-sm text-muted-foreground">
                   {`${formatarNumero(s.gramas, 0)} g${medida ? ` · ${medida.texto}` : ''} · cobre ${formatarNumero(s.coberturaPct, 0)}% da falta · +${formatarNumero(

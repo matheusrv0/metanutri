@@ -34,9 +34,7 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
     <section aria-label="Avaliação antropométrica">
     <Card className="gap-4">
       <div className="flex items-center gap-2">
-        <span className="flex size-9 items-center justify-center rounded-full bg-lightprimary text-primary">
-          <Ruler className="size-5" aria-hidden="true" />
-        </span>
+        <Ruler className="size-4 text-primary" aria-hidden="true" />
         <CardTitle>Avaliação antropométrica</CardTitle>
       </div>
 

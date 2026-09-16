@@ -17,7 +17,7 @@ export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergia
   const nivelAtual = NIVEIS_ATIVIDADE.find((n) => n.fator === energia.fator)
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-muted/60 p-4">
+    <div className="flex flex-col gap-4 border border-fio bg-muted p-4">
       {mostrarFormula ? (
         <GrupoOpcoes<FormulaTmb>
           rotulo="Fórmula da TMB"

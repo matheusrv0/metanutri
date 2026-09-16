@@ -6,29 +6,29 @@ interface EtapasDoCasoProps {
   readonly aoEscolher: (aba: AbaPlanejador) => void
 }
 
-/** Trilha numerada do planejador: mostra onde a estudante está e deixa ir para qualquer etapa. */
+/** Trilho das etapas: três colunas separadas por fio, a atual marcada como a linha em leitura. */
 export function EtapasDoCaso({ abaAtual, aoEscolher }: EtapasDoCasoProps) {
   return (
-    <nav aria-label="Etapas do caso">
-      <ol className="grid grid-cols-3 gap-2">
-        {ETAPAS.map((etapa) => {
+    <nav aria-label="Etapas do caso" className="border border-border bg-card">
+      <ol className="grid grid-cols-3">
+        {ETAPAS.map((etapa, i) => {
           const atual = etapa.aba === abaAtual
           return (
-            <li key={etapa.aba} className="flex">
+            <li key={etapa.aba} className={cn('flex', i > 0 && 'border-l border-fio')}>
               <button
                 type="button"
                 onClick={() => aoEscolher(etapa.aba)}
                 aria-current={atual ? 'step' : undefined}
                 className={cn(
-                  'flex w-full flex-col items-center gap-1.5 rounded-2xl border px-2 py-2.5 text-center transition-colors sm:flex-row sm:gap-3 sm:px-4 sm:py-3 sm:text-left',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  atual ? 'border-primary bg-lightprimary' : 'border-border bg-card hover:border-primary',
+                  'group flex w-full flex-col items-center gap-1.5 px-2 py-2.5 text-center transition-colors sm:flex-row sm:gap-3 sm:px-4 sm:py-3 sm:text-left',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:-outline-offset-2',
+                  atual ? 'bg-lightprimary' : 'hover:bg-muted',
                 )}
               >
                 <span
                   className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                    atual ? 'bg-primary text-white' : 'bg-muted text-muted-foreground',
+                    'numeros flex size-7 shrink-0 items-center justify-center rounded-xs border text-sm font-semibold',
+                    atual ? 'border-primary bg-primary text-primary-foreground' : 'border-fioforte text-muted-foreground',
                   )}
                   aria-hidden="true"
                 >
