@@ -1,4 +1,5 @@
 import { medidaEquivalente } from '@/domain/busca.ts'
+import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -34,6 +35,8 @@ export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
   const totais = totaisDoPlano(plano, buscarAlimento)
   const energia = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula, getManual: caso.energia.getManual })
   const kcal = totais.nutrientes.energia_kcal.total
+  const missoes = missoesDoPlano(plano, { pesoKg: caso.pesoKg })
+  const compras = listaDeCompras(plano)
 
   return (
     <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-5 bg-card p-8 text-[13px] leading-relaxed text-tinta">
@@ -89,6 +92,29 @@ export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
           </section>
         ))}
       </div>
+
+      <section className="break-inside-avoid">
+        <h3 className="font-titulo text-[15px] font-semibold">Missões do dia</h3>
+        <ul className="mt-1 flex flex-col gap-1">
+          {missoes.map((m) => (
+            <li key={m.id} className="flex items-start gap-2">
+              <span aria-hidden="true" className="mt-0.5 inline-block size-3.5 shrink-0 border border-fioforte" />
+              <span>{m.texto}</span>
+            </li>
+          ))}
+        </ul>
+        {missoes.length === 0 ? <p className="mt-1 text-muted-foreground">As missões aparecem quando o plano tiver alimentos.</p> : null}
+      </section>
+
+      <section className="break-inside-avoid">
+        <h3 className="font-titulo text-[15px] font-semibold">Lista de compras do dia</h3>
+        <ul className="mt-1 grid gap-0.5 sm:grid-cols-2">
+          {compras.map((c) => (
+            <li key={c.descricao} className="numeros">{`${c.descricao} — ${formatarNumero(c.gramas, 0)} g`}</li>
+          ))}
+        </ul>
+        {compras.length === 0 ? <p className="mt-1 text-muted-foreground">Sem alimentos no plano ainda.</p> : null}
+      </section>
 
       {caso.orientacoes.trim() ? (
         <section className="break-inside-avoid">
