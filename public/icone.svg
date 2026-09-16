@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MetaNutri">
+  <rect width="512" height="512" rx="112" fill="#00A1FF" />
+  <path
+    d="M356 140c8 96-30 160-100 178-28 7-52 4-70-4 4-54 28-94 70-120 30-19 62-31 100-54z"
+    fill="#FFFFFF"
+  />
+  <path d="M168 392c8-70 40-124 96-162" fill="none" stroke="#16CDC7" stroke-width="24" stroke-linecap="round" />
+</svg>

@@ -21,7 +21,7 @@
 | 1. Dados | concluída (T-10 TACO, T-11 medidas caseiras, T-12 DRI, T-13 energia, T-14 antropometria) |
 | 2. Regras | concluída (T-20 a T-33); 449 testes passando, lint e typecheck limpos |
 | Portão G-1 | aprovado (template MaterialM, R-5 a R-8 e dependências da fase 3) |
-| 3. Telas | em andamento: T-40 a T-48 concluídas; 536 testes passando |
+| 3. Telas | em andamento: T-40 a T-49 concluídas; 539 testes passando |
 | 4. Validação | não iniciada |
 
 Critérios que dependem só de tela e ainda não têm teste: CA-13 (interação de refeições), CA-16 (tecla Enter e setas), CA-38 (escolher refeição da sugestão), CB-10 e CB-11 (funcionamento offline e desempenho da interface). As regras por trás deles já estão implementadas e testadas.
@@ -129,7 +129,7 @@ Cada tarefa vira um commit próprio (Conventional Commits) e só é marcada como
 
 **Já aprovadas (padrão do CLAUDE.md ou decisão de 15/09):** react, react-dom, vite, @vitejs/plugin-react, typescript, eslint e plugins de TS e React, vitest, @testing-library/react, @testing-library/jest-dom, jsdom, @playwright/test, tailwindcss, componentes shadcn/ui (Radix), docx.
 
-**Aprovadas em 15/09:** vite-plugin-pwa (funcionar sem internet), jszip (somente em testes).
+**Aprovadas em 15/09:** vite-plugin-pwa (funcionar sem internet; instalada a 1.3.0, que aceita o Vite 8), jszip (somente em testes; já vem com a docx).
 
 **Pedindo aprovação para a fase 3 (R-5 a R-8):** `@tailwindcss/vite` (integração do Tailwind 4 com o Vite), bibliotecas que o shadcn usa por baixo (`class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css` e os pacotes `@radix-ui/*` de cada componente), `lucide-react` (ícones) e `@fontsource-variable/inter` (fonte embutida). Nada das demais bibliotecas do template (ApexCharts, Swiper, lodash, moment, redux-persist, simplebar, tailwind-sidebar, next-themes, Iconify).
 
