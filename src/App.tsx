@@ -18,6 +18,7 @@ import { TelaPlano } from './ui/plano/TelaPlano.tsx'
 import { TelaPainel } from './ui/painel/TelaPainel.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
+import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
@@ -99,6 +100,14 @@ function Conteudo() {
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}
         />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'config') {
+    return (
+      <Estrutura {...base} titulo="Configurações" subtitulo="Perfil, marca e seus dados">
+        <TelaConfiguracoes />
       </Estrutura>
     )
   }

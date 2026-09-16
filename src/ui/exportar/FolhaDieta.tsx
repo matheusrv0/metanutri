@@ -1,5 +1,6 @@
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
+import { lerPerfil, linhaDeResponsabilidade } from '@/domain/perfil.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -37,13 +38,23 @@ export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
   const kcal = totais.nutrientes.energia_kcal.total
   const missoes = missoesDoPlano(plano, { pesoKg: caso.pesoKg })
   const compras = listaDeCompras(plano)
+  const perfil = lerPerfil(((): Storage | null => {
+    try {
+      return globalThis.localStorage ?? null
+    } catch {
+      return null
+    }
+  })())
 
   return (
     <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-5 bg-card p-8 text-[13px] leading-relaxed text-tinta">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-fioforte pb-3">
-        <div>
+        <div className="flex items-end gap-3">
+          {perfil.logo ? <img src={perfil.logo} alt="" className="h-12 w-auto" /> : null}
+          <div>
           <h2 className="font-titulo text-2xl font-bold leading-tight">Plano alimentar</h2>
-          <p className="text-sm text-muted-foreground">{caso.nome.trim() || 'Sem nome'}</p>
+            <p className="text-sm text-muted-foreground">{caso.nome.trim() || 'Sem nome'}</p>
+          </div>
         </div>
         <dl className="numeros grid gap-x-6 gap-y-0.5 text-right text-xs sm:grid-cols-2">
           {caso.dataConsulta ? (
@@ -138,7 +149,12 @@ export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
           Documento de apoio ao planejamento. A prescrição é responsabilidade do nutricionista.
         </p>
         <p className="mt-1">
-          {[caso.estagiario.trim() && `Elaborado por ${caso.estagiario.trim()}`, caso.preceptor.trim() && `Responsável: ${caso.preceptor.trim()}`]
+          {[
+            caso.estagiario.trim() && `Elaborado por ${caso.estagiario.trim()}`,
+            caso.preceptor.trim() && `Responsável: ${caso.preceptor.trim()}`,
+            perfil.nome.trim() && linhaDeResponsabilidade(perfil),
+            perfil.instituicao.trim() || null,
+          ]
             .filter(Boolean)
             .join(' · ')}
         </p>

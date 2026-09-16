@@ -1,4 +1,4 @@
-import { Barcode, ClipboardList, FolderOpen, HardDrive, LayoutDashboard, Plus, TriangleAlert, UserRound } from 'lucide-react'
+import { Barcode, ClipboardList, FolderOpen, HardDrive, LayoutDashboard, Plus, Settings, TriangleAlert, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -100,6 +100,10 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
 
         <Secao titulo="Alimentos">
           <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus produtos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
+        </Secao>
+
+        <Secao titulo="Sistema">
+          <ItemMenu icone={<Settings aria-hidden="true" />} rotulo="Configurações" ativo={rota.tela === 'config'} aoClicar={() => ir({ tela: 'config' })} />
         </Secao>
 
       </div>
