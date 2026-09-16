@@ -17,9 +17,9 @@ interface TelaCasosProps {
 
 type Acao = { readonly tipo: 'renomear' | 'excluir'; readonly id: string; readonly nome: string }
 
-const nomeVisivel = (nome: string) => nome.trim() || 'Caso sem nome'
+const nomeVisivel = (nome: string) => nome.trim() || 'Plano sem nome'
 
-/** Lista de casos salvos: abrir, criar, renomear, duplicar e excluir (CA-50), com avisos de CB-08 e CB-09. */
+/** Lista de planos salvos: abrir, criar, renomear, duplicar e excluir (CA-50), com avisos de CB-08 e CB-09. */
 export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   const { casos, repositorio, atualizar, avisoArmazenamento, mudouEmOutraAba, dispensarAvisoOutraAba } = useCasos()
   const [acao, setAcao] = useState<Acao | null>(null)
@@ -31,7 +31,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
     if (acao?.tipo !== 'renomear') return
     repositorio.renomear(acao.id, nome)
     atualizar()
-    setMensagem(`Caso renomeado para “${nomeVisivel(nome)}”.`)
+    setMensagem(`Plano renomeado para “${nomeVisivel(nome)}”.`)
     fechar()
   }
 
@@ -45,7 +45,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
     if (acao?.tipo !== 'excluir') return
     repositorio.excluir(acao.id)
     atualizar()
-    setMensagem(`Caso “${acao.nome}” excluído.`)
+    setMensagem(`Plano “${acao.nome}” excluído.`)
     fechar()
   }
 
@@ -83,22 +83,22 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           <span className="flex size-11 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
             <FolderOpen className="size-6" aria-hidden="true" />
           </span>
-          <h2 className="card-title">Nenhum caso ainda</h2>
+          <h2 className="card-title">Nenhum plano ainda</h2>
           <p className="max-w-[48ch] text-sm text-muted-foreground">
-            Um caso guarda os dados da pessoa, o plano alimentar e a adequação de micronutrientes. Comece criando o primeiro.
+            Um plano guarda os dados da pessoa, o plano alimentar e a adequação de micronutrientes. Comece criando o primeiro.
           </p>
           <EscolherModo
             aoEscolher={aoNovoCaso}
             gatilho={
               <Button>
                 <Plus aria-hidden="true" />
-                Criar primeiro caso
+                Criar primeiro plano
               </Button>
             }
           />
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Casos salvos">
+        <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Planos salvos">
           {casos.map((c) => (
             <li key={c.id}>
               <CartaoCaso

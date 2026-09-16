@@ -28,45 +28,45 @@ describe('App: estrutura', () => {
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
     expect(menuFixo().getByRole('button', { name: /Painel/ })).toHaveAttribute('aria-current', 'page')
-    expect(menuFixo().queryByRole('button', { name: /Continuar caso|Caso aberto/ })).not.toBeInTheDocument()
+    expect(menuFixo().queryByRole('button', { name: /Continuar plano|Plano aberto/ })).not.toBeInTheDocument()
     expect(document.title).toBe('Painel · MetaNutri')
     expect(screen.getByText('Nenhum plano ainda. Comece pelo botão acima.')).toBeInTheDocument()
   })
 
-  it('Novo caso cria o caso e abre a etapa 1, com trilha de volta', async () => {
+  it('Novo plano cria o caso e abre a etapa 1, com trilha de volta', async () => {
     renderizar()
     const usuario = userEvent.setup()
-    await usuario.click(menuFixo().getByRole('button', { name: 'Novo caso' }))
+    await usuario.click(menuFixo().getByRole('button', { name: 'Novo plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
 
     expect(window.location.hash).toMatch(/^#\/caso\/.+\/caso$/)
-    expect(screen.getByText(/Etapa 1 de 3: Dados do caso/)).toBeInTheDocument()
-    const etapas = within(screen.getByRole('navigation', { name: 'Etapas do caso' }))
-    expect(etapas.getByRole('button', { name: /Dados do caso/ })).toHaveAttribute('aria-current', 'step')
-    expect(menuFixo().getByRole('button', { name: /Caso aberto/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText(/Etapa 1 de 3: Dados e medidas/)).toBeInTheDocument()
+    const etapas = within(screen.getByRole('navigation', { name: 'Etapas do plano' }))
+    expect(etapas.getByRole('button', { name: /Dados e medidas/ })).toHaveAttribute('aria-current', 'step')
+    expect(menuFixo().getByRole('button', { name: /Plano aberto/ })).toHaveAttribute('aria-current', 'page')
 
     await usuario.click(etapas.getByRole('button', { name: /Adequação/ }))
     expect(window.location.hash).toMatch(/\/adequacao$/)
 
-    await usuario.click(within(screen.getByRole('navigation', { name: 'Você está em' })).getByRole('button', { name: 'Meus casos' }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Meus casos' })).toBeInTheDocument()
-    expect(menuFixo().getByRole('button', { name: /Continuar caso/ })).toBeInTheDocument()
+    await usuario.click(within(screen.getByRole('navigation', { name: 'Você está em' })).getByRole('button', { name: 'Planos' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Planos' })).toBeInTheDocument()
+    expect(menuFixo().getByRole('button', { name: /Continuar plano/ })).toBeInTheDocument()
   })
 
   it('botão de próxima etapa avança no planejador', async () => {
     renderizar()
     const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Novo plano' }))
+    await usuario.click(menuFixo().getByRole('button', { name: 'Novo plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
     await usuario.click(screen.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }))
     expect(screen.getByText(/Etapa 2 de 3: Plano alimentar/)).toBeInTheDocument()
   })
 
-  it('endereço de caso inexistente oferece volta para Meus casos', async () => {
+  it('endereço de caso inexistente oferece volta para Planos', async () => {
     window.location.hash = '#/caso/nao-existe/plano'
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Caso não encontrado' })).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Voltar para Meus casos' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Plano não encontrado' })).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Voltar para Planos' }))
     expect(window.location.hash).toBe('#/casos')
   })
 

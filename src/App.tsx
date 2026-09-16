@@ -64,7 +64,7 @@ function Conteudo() {
   }
 
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
-  const irParaCasos = { rotulo: 'Meus casos', aoClicar: () => navegar({ tela: 'casos' }) }
+  const irParaCasos = { rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }
 
   if (rota.tela === 'painel') {
     return (
@@ -123,12 +123,12 @@ function Conteudo() {
   if (rota.tela === 'planejador') {
     if (!registro) {
       return (
-        <Estrutura {...base} titulo="Caso não encontrado" trilha={[irParaCasos]}>
+        <Estrutura {...base} titulo="Plano não encontrado" trilha={[irParaCasos]}>
           <Card className="items-start gap-4">
-            <p>Este caso não existe mais neste aparelho. Ele pode ter sido excluído em outra aba.</p>
+            <p>Este plano não existe mais neste aparelho. Ele pode ter sido excluído em outra aba.</p>
             <Button variant="lightprimary" onClick={() => navegar({ tela: 'casos' })}>
               <FolderOpen aria-hidden="true" />
-              Voltar para Meus casos
+              Voltar para Planos
             </Button>
           </Card>
         </Estrutura>
@@ -144,7 +144,7 @@ function Conteudo() {
     return (
       <Estrutura
         {...base}
-        titulo={registro.caso.nome || 'Caso sem nome'}
+        titulo={registro.caso.nome || 'Plano sem nome'}
         subtitulo={
           etapa
             ? `${registro.caso.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}`
@@ -205,7 +205,7 @@ function Conteudo() {
   return (
     <Estrutura
       {...base}
-      titulo="Meus casos"
+      titulo="Planos"
       subtitulo="Planos alimentares salvos neste aparelho"
       acoes={
         <EscolherModo
@@ -213,7 +213,7 @@ function Conteudo() {
           gatilho={
             <Button size="sm" className="xl:hidden">
               <Plus aria-hidden="true" />
-              Novo caso
+              Novo plano
             </Button>
           }
         />

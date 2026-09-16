@@ -23,11 +23,11 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await boasVindas.getByRole('button', { name: 'Entendi' }).click()
 
   // Criar caso e preencher a etapa 1
-  await page.getByRole('button', { name: 'Novo caso' }).first().click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
-  await expect(page.getByText(/Etapa 1 de 3: Dados do caso/)).toBeVisible()
+  await expect(page.getByText(/Etapa 1 de 3: Dados e medidas/)).toBeVisible()
 
-  await preencher(page, 'Nome do caso', 'Maria, 28 anos')
+  await preencher(page, 'Nome do plano', 'Maria, 28 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await preencher(page, 'Idade', '28')
   await preencher(page, 'Peso', '60')
@@ -114,9 +114,9 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
 
   await context.setOffline(true)
   await page.reload()
-  await expect(page.getByRole('heading', { level: 1, name: 'Meus casos' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Novo caso' }).first().click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
   await page.getByLabel('Peso').fill('60')
   await page.getByLabel('Estatura').fill('165')

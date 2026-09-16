@@ -34,19 +34,19 @@ const montar = (repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relo
   return { repositorio, aoAbrir, aoNovoCaso }
 }
 
-const cartoes = () => within(screen.getByRole('list', { name: 'Casos salvos' })).getAllByRole('listitem')
+const cartoes = () => within(screen.getByRole('list', { name: 'Planos salvos' })).getAllByRole('listitem')
 
 const acoesDo = async (usuario: ReturnType<typeof userEvent.setup>, nome: string) => {
   await usuario.click(screen.getByRole('button', { name: `Mais ações para ${nome}` }))
   return within(screen.getByRole('menu'))
 }
 
-describe('Tela Meus casos', () => {
+describe('Tela Planos', () => {
   it('lista vazia convida a criar o primeiro caso', async () => {
     const { aoNovoCaso } = montar()
-    expect(screen.getByRole('heading', { name: 'Nenhum caso ainda' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nenhum plano ainda' })).toBeInTheDocument()
     const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Criar primeiro caso' }))
+    await usuario.click(screen.getByRole('button', { name: 'Criar primeiro plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
     expect(aoNovoCaso).toHaveBeenCalledWith('rapido')
   })
@@ -69,13 +69,13 @@ describe('Tela Meus casos', () => {
     const usuario = userEvent.setup()
 
     await usuario.click((await acoesDo(usuario, 'Maria')).getByRole('menuitem', { name: 'Renomear' }))
-    const campo = within(screen.getByRole('dialog', { name: 'Renomear caso' })).getByLabelText('Nome do caso')
+    const campo = within(screen.getByRole('dialog', { name: 'Renomear plano' })).getByLabelText('Nome do plano')
     await usuario.clear(campo)
     await usuario.type(campo, 'Maria, 28 anos{Enter}')
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Maria, 28 anos' })).toBeInTheDocument()
-    expect(screen.getByText('Caso renomeado para “Maria, 28 anos”.')).toBeInTheDocument()
+    expect(screen.getByText('Plano renomeado para “Maria, 28 anos”.')).toBeInTheDocument()
   })
 
   it('CA-50: duplica e a cópia aparece na lista', async () => {
@@ -102,7 +102,7 @@ describe('Tela Meus casos', () => {
     expect(cartoes()).toHaveLength(2)
 
     await usuario.click((await acoesDo(usuario, 'Maria')).getByRole('menuitem', { name: 'Excluir' }))
-    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir caso' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir plano' }))
     expect(cartoes().map((li) => within(li).getByRole('heading').textContent)).toEqual(['João'])
     expect(repositorio.listar()).toHaveLength(1)
   })

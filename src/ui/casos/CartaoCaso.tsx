@@ -14,7 +14,7 @@ interface CartaoCasoProps {
 }
 
 export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }: CartaoCasoProps) {
-  const nome = caso.nome.trim() || 'Caso sem nome'
+  const nome = caso.nome.trim() || 'Plano sem nome'
 
   return (
     <Card className="gap-4 p-5">
@@ -52,7 +52,7 @@ export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }:
         </DropdownMenu>
       </div>
       <Button variant="lightprimary" className="w-full" onClick={aoAbrir} aria-label={`Abrir ${nome}`}>
-        Abrir caso
+        Abrir plano
       </Button>
     </Card>
   )

@@ -83,7 +83,7 @@ describe('repositório de casos', () => {
     expect(copia.caso.nome).toBe('Maria (cópia)')
     expect(copia.plano).toEqual(a.plano)
     expect(repo.listar()).toHaveLength(2)
-    expect(repo.duplicar(repo.criar('  ').caso.id).caso.nome).toBe('Caso sem nome (cópia)')
+    expect(repo.duplicar(repo.criar('  ').caso.id).caso.nome).toBe('Plano sem nome (cópia)')
   })
 
   it('CB-08: caso excluído em outra aba some da lista desta aba', () => {

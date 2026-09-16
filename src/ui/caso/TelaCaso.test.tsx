@@ -30,7 +30,7 @@ describe('Etapa 1: dados do caso', () => {
   it('CA-01: mostra todos os campos do cabeçalho do estágio', () => {
     montar()
     for (const rotulo of [
-      'Nome do caso',
+      'Nome do plano',
       'Diagnóstico clínico',
       'Data da consulta',
       'Ocupação',

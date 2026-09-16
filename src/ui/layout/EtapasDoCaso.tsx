@@ -9,7 +9,7 @@ interface EtapasDoCasoProps {
 /** Trilho das etapas: três colunas separadas por fio, a atual marcada como a linha em leitura. */
 export function EtapasDoCaso({ abaAtual, aoEscolher }: EtapasDoCasoProps) {
   return (
-    <nav aria-label="Etapas do caso" className="border border-border bg-card">
+    <nav aria-label="Etapas do plano" className="border border-border bg-card">
       <ol className="grid grid-cols-3">
         {ETAPAS.map((etapa, i) => {
           const atual = etapa.aba === abaAtual

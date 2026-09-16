@@ -57,7 +57,7 @@ export interface Etapa {
 
 /** Etapas do planejador na ordem em que a estudante trabalha. */
 export const ETAPAS: readonly Etapa[] = [
-  { aba: 'caso', numero: 1, rotulo: 'Dados do caso', descricao: 'Pessoa, medidas e energia' },
+  { aba: 'caso', numero: 1, rotulo: 'Dados e medidas', descricao: 'Pessoa, medidas e energia' },
   { aba: 'plano', numero: 2, rotulo: 'Plano alimentar', descricao: 'Refeições e alimentos' },
   { aba: 'adequacao', numero: 3, rotulo: 'Adequação', descricao: 'Vitaminas e minerais' },
 ]

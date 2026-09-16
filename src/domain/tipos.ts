@@ -79,7 +79,7 @@ export interface ComposicaoCorporal {
   }
 }
 
-/** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
+/** Dados e medidas (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
   /** Paciente a quem este plano pertence; `null` enquanto não vinculado. */

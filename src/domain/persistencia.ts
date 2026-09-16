@@ -188,7 +188,7 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
 
     duplicar(id: string): CasoSalvo {
       const original = exigir(id)
-      return salvar({ caso: { ...original.caso, id: gerarId(), nome: `${original.caso.nome.trim() || 'Caso sem nome'} (cópia)` }, plano: original.plano })
+      return salvar({ caso: { ...original.caso, id: gerarId(), nome: `${original.caso.nome.trim() || 'Plano sem nome'} (cópia)` }, plano: original.plano })
     },
 
     renomear(id: string, nome: string): CasoSalvo {

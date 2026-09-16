@@ -3,7 +3,7 @@ import { Button } from '../componentes/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
 
 interface DialogoExcluirProps {
-  /** Nome do caso a excluir; `null` mantém a janela fechada. */
+  /** Nome do plano a excluir; `null` mantém a janela fechada. */
   readonly nome: string | null
   readonly aoConfirmar: () => void
   readonly aoFechar: () => void
@@ -16,7 +16,7 @@ export function DialogoExcluir({ nome, aoConfirmar, aoFechar }: DialogoExcluirPr
       <DialogContent role="alertdialog">
         <DialogHeader>
           <DialogTitle>Excluir “{nome}”?</DialogTitle>
-          <DialogDescription>O caso e o plano alimentar serão apagados deste aparelho. Não dá para desfazer.</DialogDescription>
+          <DialogDescription>O plano alimentar será apagado deste aparelho. Não dá para desfazer.</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="ghost" onClick={aoFechar} autoFocus>
@@ -24,7 +24,7 @@ export function DialogoExcluir({ nome, aoConfirmar, aoFechar }: DialogoExcluirPr
           </Button>
           <Button variant="destructive" onClick={aoConfirmar}>
             <Trash aria-hidden="true" />
-            Excluir caso
+            Excluir plano
           </Button>
         </DialogFooter>
       </DialogContent>

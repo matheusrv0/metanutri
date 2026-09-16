@@ -56,7 +56,7 @@ describe('Prescrição rápida', () => {
 
     expect(screen.getByRole('region', { name: 'Avaliação antropométrica' })).toBeInTheDocument()
     expect(screen.getByLabelText('Circunferência da cintura')).toBeInTheDocument()
-    expect(screen.getByLabelText('Nome do caso')).toHaveValue('Maria')
+    expect(screen.getByLabelText('Nome do plano')).toHaveValue('Maria')
     expect(screen.queryByRole('button', { name: 'Virar atendimento completo' })).not.toBeInTheDocument()
   })
 

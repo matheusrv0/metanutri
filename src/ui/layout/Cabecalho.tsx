@@ -10,7 +10,7 @@ export interface PassoTrilha {
 interface CabecalhoProps {
   readonly titulo: string
   readonly subtitulo?: string | undefined
-  /** Caminho até a tela atual (ex.: Meus casos). O título fecha a trilha. */
+  /** Caminho até a tela atual (ex.: Planos). O título fecha a trilha. */
   readonly trilha?: readonly PassoTrilha[] | undefined
   readonly acoes?: ReactNode
   readonly aoAbrirMenu: () => void

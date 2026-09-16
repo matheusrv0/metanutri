@@ -33,11 +33,11 @@ function Formulario({ nomeAtual, aoConfirmar, aoFechar }: { readonly nomeAtual: 
   return (
     <form onSubmit={enviar} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle>Renomear caso</DialogTitle>
-        <DialogDescription>Use um nome que ajude a achar o caso depois, como "Maria, 28 anos, gestante".</DialogDescription>
+        <DialogTitle>Renomear plano</DialogTitle>
+        <DialogDescription>Use um nome que ajude a achar o plano depois, como "Maria, 28 anos, gestante".</DialogDescription>
       </DialogHeader>
       <div className="grid gap-2">
-        <Label htmlFor={id}>Nome do caso</Label>
+        <Label htmlFor={id}>Nome do plano</Label>
         <Input id={id} value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} autoFocus />
       </div>
       <DialogFooter>

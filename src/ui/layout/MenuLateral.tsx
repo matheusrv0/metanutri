@@ -14,7 +14,7 @@ export interface CasoAtual {
 
 interface MenuLateralProps {
   readonly rota: Rota
-  /** Caso aberto agora ou o último alterado; `null` quando não há casos. */
+  /** Plano aberto agora ou o último alterado; `null` quando não há casos. */
   readonly casoAtual: CasoAtual | null
   readonly navegar: (rota: Rota) => void
   readonly aoNovoCaso: (modo: ModoPlano) => void
@@ -60,7 +60,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
               className="mx-1 flex items-center justify-center gap-2 rounded-xs bg-papel px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:bg-lombadatexto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto/60 [&_svg]:size-4"
             >
               <Plus aria-hidden="true" />
-              Novo caso
+              Novo plano
             </button>
           }
         />
@@ -90,8 +90,8 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
           {casoAtual ? (
             <ItemMenu
               icone={<ClipboardList aria-hidden="true" />}
-              rotulo={rota.tela === 'planejador' ? 'Caso aberto' : 'Continuar caso'}
-              detalhe={casoAtual.nome || 'Caso sem nome'}
+              rotulo={rota.tela === 'planejador' ? 'Plano aberto' : 'Continuar plano'}
+              detalhe={casoAtual.nome || 'Plano sem nome'}
               ativo={rota.tela === 'planejador'}
               aoClicar={() => ir({ tela: 'planejador', casoId: casoAtual.id, aba: rota.tela === 'planejador' ? rota.aba : 'caso' })}
             />
@@ -117,7 +117,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
         ) : (
           <p className="flex items-center gap-2 text-xs text-lombadafraca">
             <HardDrive className="size-4 shrink-0" aria-hidden="true" />
-            Casos salvos só neste aparelho
+            Planos salvos só neste aparelho
           </p>
         )}
         <SeletorTema />

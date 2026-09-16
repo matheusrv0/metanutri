@@ -80,13 +80,13 @@ describe('componentes base (MaterialM)', () => {
           <Button>Excluir</Button>
         </DialogTrigger>
         <DialogContent>
-          <DialogTitle>Excluir caso?</DialogTitle>
+          <DialogTitle>Excluir plano?</DialogTitle>
           <DialogDescription>Não dá para desfazer.</DialogDescription>
         </DialogContent>
       </Dialog>,
     )
     await userEvent.setup().click(screen.getByRole('button', { name: 'Excluir' }))
-    expect(screen.getByRole('dialog', { name: 'Excluir caso?' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Excluir plano?' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
   })
 })
