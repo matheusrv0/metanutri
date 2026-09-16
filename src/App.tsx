@@ -15,6 +15,7 @@ import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
 import { usePacientes } from './ui/estado/contextoPacientes.ts'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
+import { TelaPainel } from './ui/painel/TelaPainel.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
@@ -63,6 +64,18 @@ function Conteudo() {
 
   const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
   const irParaCasos = { rotulo: 'Meus casos', aoClicar: () => navegar({ tela: 'casos' }) }
+
+  if (rota.tela === 'painel') {
+    return (
+      <Estrutura {...base} titulo="Painel" subtitulo="Seu dia no MetaNutri">
+        <TelaPainel
+          aoNovoPlano={(modo) => novoCaso(modo)}
+          aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
+          aoIrPara={(tela) => navegar({ tela })}
+        />
+      </Estrutura>
+    )
+  }
 
   if (rota.tela === 'pacientes') {
     return (

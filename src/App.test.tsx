@@ -24,12 +24,13 @@ describe('App: estrutura', () => {
     window.location.hash = ''
   })
 
-  it('abre em Meus casos, sem item de caso enquanto não há casos', () => {
+  it('abre no Painel, sem item de caso enquanto não há planos', () => {
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Meus casos' })).toBeInTheDocument()
-    expect(menuFixo().getByRole('button', { name: /Planos/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+    expect(menuFixo().getByRole('button', { name: /Painel/ })).toHaveAttribute('aria-current', 'page')
     expect(menuFixo().queryByRole('button', { name: /Continuar caso|Caso aberto/ })).not.toBeInTheDocument()
-    expect(document.title).toBe('Meus casos · MetaNutri')
+    expect(document.title).toBe('Painel · MetaNutri')
+    expect(screen.getByText('Nenhum plano ainda. Comece pelo botão acima.')).toBeInTheDocument()
   })
 
   it('Novo caso cria o caso e abre a etapa 1, com trilha de volta', async () => {
@@ -55,7 +56,7 @@ describe('App: estrutura', () => {
   it('botão de próxima etapa avança no planejador', async () => {
     renderizar()
     const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Criar primeiro caso' }))
+    await usuario.click(screen.getByRole('button', { name: 'Novo plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
     await usuario.click(screen.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }))
     expect(screen.getByText(/Etapa 2 de 3: Plano alimentar/)).toBeInTheDocument()
