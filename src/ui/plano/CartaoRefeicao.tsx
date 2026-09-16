@@ -2,12 +2,13 @@ import { Clock, Trash } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
-import type { OpcaoId, Refeicao } from '@/domain/tipos.ts'
+import type { ItemPlano, OpcaoId, Refeicao } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '../componentes/button.tsx'
 import { Card } from '../componentes/card.tsx'
 import { Input } from '../componentes/input.tsx'
+import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
 
@@ -38,6 +39,7 @@ export function CartaoRefeicao({
   extraDaOpcao,
 }: CartaoRefeicaoProps) {
   const [opcaoAtiva, setOpcaoAtiva] = useState<OpcaoId>('principal')
+  const [itemParaSubstituir, setItemParaSubstituir] = useState<ItemPlano | null>(null)
   // O domínio recusa nome vazio e horário inválido; o texto fica local até ficar válido.
   const [nomeTexto, setNomeTexto] = useState(refeicao.nome)
   const [nomeConhecido, setNomeConhecido] = useState(refeicao.nome)
@@ -125,9 +127,14 @@ export function CartaoRefeicao({
                 item={item}
                 aoMudarGramas={(g) => aoMudarGramas(opcaoAtiva, item.id, g)}
                 aoRemover={() => aoRemoverItem(opcaoAtiva, item.id)}
+                aoSubstituir={opcaoAtiva === 'principal' ? () => setItemParaSubstituir(item) : undefined}
               />
             ))}
           </ul>
+        )}
+
+        {opcaoAtiva === 'principal' ? null : (
+          <p className="text-xs text-muted-foreground">Os substitutos não entram na soma do dia nem na adequação.</p>
         )}
 
         <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
@@ -137,6 +144,12 @@ export function CartaoRefeicao({
 
         {extraDaOpcao?.(opcaoAtiva)}
       </div>
+
+      <DialogoSubstituto
+        item={itemParaSubstituir}
+        aoFechar={() => setItemParaSubstituir(null)}
+        aoAdicionar={(opcao, alimentoId, gramas) => aoAdicionarItem(opcao, alimentoId, gramas)}
+      />
     </Card>
   )
 }

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ArrowLeftRight, X } from 'lucide-react'
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
@@ -10,10 +10,12 @@ interface LinhaItemProps {
   readonly item: ItemPlano
   readonly aoMudarGramas: (gramas: number) => void
   readonly aoRemover: () => void
+  /** Abre a calculadora de substituto; só existe no Principal (CA-41). */
+  readonly aoSubstituir?: (() => void) | undefined
 }
 
 /** CA-19: gramas editáveis, medida caseira equivalente, kcal e remoção. */
-export function LinhaItem({ item, aoMudarGramas, aoRemover }: LinhaItemProps) {
+export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: LinhaItemProps) {
   const alimento = buscarAlimento(item.alimentoId)
   const descricao = alimento?.descricao ?? 'Alimento não encontrado'
   const medida = medidaEquivalente(item.alimentoId, item.gramas)
@@ -37,6 +39,11 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover }: LinhaItemProps) {
         />
       </div>
       <span className="numeros w-20 shrink-0 text-right text-sm font-medium text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
+      {aoSubstituir ? (
+        <Button variant="ghost" size="iconsm" onClick={aoSubstituir} aria-label={`Substituir ${descricao}`}>
+          <ArrowLeftRight aria-hidden="true" />
+        </Button>
+      ) : null}
       <Button variant="ghost" size="iconsm" onClick={aoRemover} aria-label={`Remover ${descricao}`}>
         <X aria-hidden="true" />
       </Button>
