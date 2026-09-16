@@ -2,12 +2,17 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
+import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { trocasDoAlimento } from '@/domain/trocas.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { FolhaDieta } from './FolhaDieta.tsx'
 import { MenuExportar } from './MenuExportar.tsx'
 
 let n = 0
 const ids = () => `id${++n}`
+
+/** O alimento que o plano de teste usa no almoço. */
+const ARROZ = 3
 
 const caso: Caso = {
   ...criarCasoVazio('c1'),
@@ -23,7 +28,7 @@ function planoCheio(): Plano {
   const plano = criarPlanoPadrao(ids)
   const almoco = plano.refeicoes[2]
   if (!almoco) throw new Error('sem almoço')
-  const comPrincipal = adicionarItem(plano, almoco.id, 'principal', { alimentoId: 3, gramas: 150 }, ids)
+  const comPrincipal = adicionarItem(plano, almoco.id, 'principal', { alimentoId: ARROZ, gramas: 150 }, ids)
   return adicionarItem(comPrincipal, almoco.id, 'substituto1', { alimentoId: 91, gramas: 120 }, ids)
 }
 
@@ -78,5 +83,37 @@ describe('Folha da dieta', () => {
     const janela = within(screen.getByRole('dialog', { name: 'Dieta para imprimir' }))
     expect(janela.getAllByText(/Arroz, tipo 1, cozido —/).length).toBeGreaterThan(0)
     expect(janela.getByRole('button', { name: /Imprimir ou salvar em PDF/ })).toBeInTheDocument()
+  })
+})
+
+describe('Lista de trocas', () => {
+  it('sai na folha, com alimento e porção equivalente', () => {
+    render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+    expect(screen.getByRole('heading', { name: 'Trocas possíveis' })).toBeInTheDocument()
+    expect(screen.getByText(/Mesma energia, mesmo grupo/)).toBeInTheDocument()
+  })
+
+  it('não oferece doce nem ultraprocessado no lugar da comida do plano', () => {
+    const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+    const secao = [...container.querySelectorAll('section')].find((s) => s.textContent?.includes('Trocas possíveis'))
+    const texto = secao?.textContent?.toLowerCase() ?? ''
+    for (const proibido of ['biscoito', 'chocolate', 'salsicha', 'refrigerante']) {
+      expect(texto).not.toContain(proibido)
+    }
+  })
+
+  it('a restrição do paciente não aparece entre as trocas', () => {
+    const trocas = trocasDoAlimento({ alimentoId: ARROZ, gramas: 150 }, { alimentos: ALIMENTOS })
+    const primeira = trocas[0]
+    expect(primeira).toBeDefined()
+    // Primeira palavra do nome, que é como o paciente escreveria a restrição.
+    const termo = (primeira?.descricao.split(',')[0] ?? '').toLowerCase()
+
+    const restrito = trocasDoAlimento({ alimentoId: ARROZ, gramas: 150 }, { alimentos: ALIMENTOS, restricoes: [termo] })
+    expect(restrito.every((t) => !t.descricao.toLowerCase().startsWith(termo))).toBe(true)
+
+    const folha = render(<FolhaDieta caso={caso} plano={planoCheio()} restricoes={termo} />)
+    const secao = [...folha.container.querySelectorAll('section')].find((s) => s.textContent?.includes('Trocas possíveis'))
+    expect(secao).toBeDefined()
   })
 })

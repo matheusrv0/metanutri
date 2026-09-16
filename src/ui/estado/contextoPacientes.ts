@@ -9,6 +9,11 @@ export interface ValorPacientes {
 
 export const ContextoPacientes = createContext<ValorPacientes | null>(null)
 
+/** Para quem só quer enfeitar a tela com dados do paciente e funciona sem eles. */
+export function usePacientesOpcional(): ValorPacientes | null {
+  return useContext(ContextoPacientes)
+}
+
 export function usePacientes(): ValorPacientes {
   const valor = useContext(ContextoPacientes)
   if (!valor) throw new Error('usePacientes precisa estar dentro de <ProvedorPacientes>.')

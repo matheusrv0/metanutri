@@ -2,7 +2,9 @@ import { medidaEquivalente } from '@/domain/busca.ts'
 import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
 import { lerPerfil, linhaDeResponsabilidade } from '@/domain/perfil.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
-import { buscarAlimento } from '@/domain/tabelas.ts'
+import { listaDeRestricoes } from '@/domain/pacientes.ts'
+import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
+import { trocasDoPlano } from '@/domain/trocas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { OPCOES, type Caso, type ItemPlano, type OpcaoId, type Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -10,6 +12,8 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 interface FolhaDietaProps {
   readonly caso: Caso
   readonly plano: Plano
+  /** Restrições da ficha do paciente, para não sugerir troca proibida. */
+  readonly restricoes?: string | undefined
 }
 
 const NOME_OPCAO: Record<OpcaoId, string> = { principal: 'Principal', substituto1: 'Substituto 1', substituto2: 'Substituto 2' }
@@ -32,12 +36,13 @@ const dataBr = (iso: string | null) => {
  * Folha da dieta para o paciente: só o que ele precisa ler.
  * Some da tela na impressão tudo que é interface; o navegador salva em PDF.
  */
-export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
+export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
   const totais = totaisDoPlano(plano, buscarAlimento)
   const energia = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula, getManual: caso.energia.getManual })
   const kcal = totais.nutrientes.energia_kcal.total
   const missoes = missoesDoPlano(plano, { pesoKg: caso.pesoKg })
   const compras = listaDeCompras(plano)
+  const trocas = trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, restricoes: listaDeRestricoes(restricoes ?? '') })
   const perfil = lerPerfil(((): Storage | null => {
     try {
       return globalThis.localStorage ?? null
@@ -126,6 +131,28 @@ export function FolhaDieta({ caso, plano }: FolhaDietaProps) {
         </ul>
         {compras.length === 0 ? <p className="mt-1 text-muted-foreground">Sem alimentos no plano ainda.</p> : null}
       </section>
+
+      {trocas.length > 0 ? (
+        <section className="break-inside-avoid">
+          <h3 className="font-titulo text-[15px] font-semibold">Trocas possíveis</h3>
+          <p className="text-xs text-muted-foreground">Mesma energia, mesmo grupo de alimento. Troque sem precisar perguntar.</p>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {trocas.map((g) => (
+              <li key={g.alimentoId} className="break-inside-avoid">
+                <p className="numeros">
+                  <span className="font-semibold">{g.descricao}</span>
+                  {` — ${g.medida ? `${g.medida.texto} (${formatarNumero(g.gramas, 0)} g)` : `${formatarNumero(g.gramas, 0)} g`}`}
+                </p>
+                <p className="numeros pl-4 text-muted-foreground">
+                  {g.trocas
+                    .map((t) => `${t.descricao} ${t.medida ? `${t.medida.texto} (${formatarNumero(t.gramas, 0)} g)` : `${formatarNumero(t.gramas, 0)} g`}`)
+                    .join(' · ')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {caso.orientacoes.trim() ? (
         <section className="break-inside-avoid">

@@ -12,6 +12,7 @@ import { tabelaAdequacaoParaCopiar } from '@/export/copiar-tabela.ts'
 import { gerarBlob } from '@/export/docx-comum.ts'
 import { criarMemorial } from '@/export/memorial-docx.ts'
 import { Button } from '../componentes/button.tsx'
+import { usePacientesOpcional } from '../estado/contextoPacientes.ts'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../componentes/dropdown-menu.tsx'
 import { baixarBlob, copiarTabela, nomeDeArquivo } from './baixar.ts'
 import { DialogoImprimir } from './DialogoImprimir.tsx'
@@ -25,6 +26,8 @@ interface MenuExportarProps {
 export function MenuExportar({ caso, plano }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
+  // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas.
+  const restricoes = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)?.restricoes
 
   const baixarAconselhamento = async () => {
     const documento = criarAconselhamento({
@@ -91,7 +94,7 @@ export function MenuExportar({ caso, plano }: MenuExportarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} aoFechar={() => setImprimindo(false)} />
+      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} restricoes={restricoes} aoFechar={() => setImprimindo(false)} />
     </div>
   )
 }
