@@ -1,4 +1,6 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
+import { calcularEnergia } from './domain/energia.ts'
+import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { AvisoPrimeiroAcesso } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
@@ -80,9 +82,19 @@ function Conteudo() {
               {rota.aba === 'plano' ? (
                 <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
               ) : (
-                <Card className="items-start gap-4">
-                  <p className="text-muted-foreground">Esta etapa chega na próxima tarefa.</p>
-                </Card>
+                <TelaAdequacao
+                  caso={registro.caso}
+                  plano={registro.plano}
+                  gastoEnergetico={
+                    calcularEnergia(registro.caso, {
+                      fator: registro.caso.energia.fator,
+                      formula: registro.caso.energia.formula,
+                      getManual: registro.caso.energia.getManual,
+                    }).get
+                  }
+                  aoAlterarCaso={alterarCaso}
+                  aoAlterarPlano={alterarPlano}
+                />
               )}
               <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
             </div>

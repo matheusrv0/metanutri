@@ -2,7 +2,7 @@
 import { DRI } from './tabelas.ts'
 import type { EstagioDri } from './tabelas.ts'
 import type { Totais } from './totais.ts'
-import type { Caso, ChaveNutrienteAlimento } from './tipos.ts'
+import type { Caso, ChaveNutrienteAlimento, PresetAdequacao } from './tipos.ts'
 
 /** Micronutrientes (e fibra) da TACO avaliados na adequação, na ordem de exibição. */
 export const MICRONUTRIENTES_ADEQUACAO: readonly ChaveNutrienteAlimento[] = [
@@ -24,10 +24,7 @@ export const MICRONUTRIENTES_ADEQUACAO: readonly ChaveNutrienteAlimento[] = [
   'fibra_g',
 ]
 
-export type Preset =
-  | { readonly tipo: 'individual' }
-  | { readonly tipo: 'coletivo' }
-  | { readonly tipo: 'personalizado'; readonly referencia: 'rda' | 'ear'; readonly minimoPct: number }
+export type Preset = PresetAdequacao
 
 export const PRESETS = {
   individual: { referencia: 'rda', minimoPct: 90 },

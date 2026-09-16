@@ -46,6 +46,7 @@ export function criarCasoVazio(id: string): Caso {
     condicao: { tipo: 'nenhuma' },
     energia: { fator: 1.2, formula: 'mifflin', getManual: null },
     metasMacros: {},
+    adequacao: { preset: { tipo: 'individual' }, porcaoMaximaG: 200, incluirIngredientes: false, ocultos: [] },
     orientacoes: '',
     receitas: '',
   }

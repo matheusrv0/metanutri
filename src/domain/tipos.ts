@@ -39,6 +39,20 @@ export interface MetasMacros {
   readonly gordura?: MetaPct
 }
 
+export type PresetAdequacao =
+  | { readonly tipo: 'individual' }
+  | { readonly tipo: 'coletivo' }
+  | { readonly tipo: 'personalizado'; readonly referencia: 'rda' | 'ear'; readonly minimoPct: number }
+
+/** Escolhas da tela de adequação guardadas com o caso (CA-26 a CA-28, CA-40). */
+export interface PreferenciasAdequacao {
+  readonly preset: PresetAdequacao
+  readonly porcaoMaximaG: number
+  readonly incluirIngredientes: boolean
+  /** Ids de alimentos que a pessoa ocultou nas sugestões deste caso (CA-40). */
+  readonly ocultos: readonly number[]
+}
+
 /** Dados do caso (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
@@ -61,6 +75,7 @@ export interface Caso {
   readonly condicao: CondicaoFisiologica
   readonly energia: PreferenciasEnergia
   readonly metasMacros: MetasMacros
+  readonly adequacao: PreferenciasAdequacao
   /** Orientações gerais escritas para o documento de aconselhamento (CA-44). */
   readonly orientacoes: string
   /** Receitas anexadas ao documento (CA-44). */
