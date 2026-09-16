@@ -21,18 +21,22 @@ export function useCasoAberto(id: string): CasoAbertoEditavel {
     setRegistro(repositorio.obter(id))
   }
 
+  // `salvar` mexe no estado do provedor, então é chamado no próprio evento —
+  // nunca dentro do atualizador, que roda durante a renderização.
   const alterarCaso = useCallback(
     (mudanca: Partial<Caso>) => {
-      setRegistro((atual) => (atual ? salvar({ caso: { ...atual.caso, ...mudanca }, plano: atual.plano }) : atual))
+      if (!registro) return
+      setRegistro(salvar({ caso: { ...registro.caso, ...mudanca }, plano: registro.plano }))
     },
-    [salvar],
+    [registro, salvar],
   )
 
   const alterarPlano = useCallback(
     (novo: Plano) => {
-      setRegistro((atual) => (atual ? salvar({ caso: atual.caso, plano: novo }) : atual))
+      if (!registro) return
+      setRegistro(salvar({ caso: registro.caso, plano: novo }))
     },
-    [salvar],
+    [registro, salvar],
   )
 
   return { registro, alterarCaso, alterarPlano }

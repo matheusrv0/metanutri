@@ -130,7 +130,7 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
           <CardTitle>Referência da adequação</CardTitle>
           <CardDescription>Individual usa a RDA; coletivo usa a EAR. Nutrientes sem esses valores usam a AI.</CardDescription>
         </CardHeader>
-        <GrupoOpcoes rotulo="Preset" opcoes={TIPO_PRESET} valor={prefs.preset.tipo} aoEscolher={trocarPreset} />
+        <GrupoOpcoes rotulo="Tipo de referência" opcoes={TIPO_PRESET} valor={prefs.preset.tipo} aoEscolher={trocarPreset} />
 
         {prefs.preset.tipo === 'personalizado' ? (
           <div className="grid gap-4 sm:grid-cols-2">
