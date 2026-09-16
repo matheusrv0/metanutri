@@ -83,7 +83,7 @@ export function CartaoRefeicao({
           onBlur={() => setNomeTexto(refeicao.nome)}
           className="min-w-40 flex-1"
         />
-        <Button variant="ghost" size="icon" onClick={aoRemover} aria-label={`Remover refeição ${refeicao.nome}`}>
+        <Button variant="ghost" size="icon" className="ml-auto" onClick={aoRemover} aria-label={`Remover refeição ${refeicao.nome}`}>
           <Trash aria-hidden="true" />
         </Button>
       </div>

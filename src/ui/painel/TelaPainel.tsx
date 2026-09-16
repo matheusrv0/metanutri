@@ -32,7 +32,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara }: TelaPainelPr
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
         <Card className="gap-4">
           <CardHeader>
             <CardTitle>Começar agora</CardTitle>

@@ -54,7 +54,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
   const rapido = caso.modo === 'rapido'
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>

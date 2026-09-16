@@ -174,7 +174,7 @@ function Conteudo() {
               lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}
             />
           ) : rota.aba === 'plano' ? (
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
               <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
               <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
             </div>
