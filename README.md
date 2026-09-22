@@ -48,6 +48,9 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
    substitutos. Digite `150 arroz integral` e tecle Enter: a medida caseira e as kcal
    aparecem sozinhas. Os alimentos que você mais usa viram atalho com a porção de sempre,
    e a busca avisa quando a tabela só tem parte dos nutrientes daquele alimento.
+   Ao lado, o **medidor de macros** anda a cada alimento: faixa recomendada em destaque,
+   marcador do plano e a frase que responde à pergunta de verdade — "Faltam 6 pontos para
+   a faixa", "Quase lá", "Dentro da faixa", "10 pontos acima".
 3. **Adequação** — vitaminas e minerais comparados com a DRI, com o botão **cobrir**,
    que sugere até cinco alimentos de grupos diferentes para fechar a falta.
 
@@ -56,6 +59,9 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Pacientes** — ficha com restrições, condições clínicas, medicamentos, anamnese,
   histórico de planos e evolução do peso. O plano nasce já sabendo o que a ficha sabe,
   e o retorno começa duplicando o plano anterior.
+- **Tabela de alimentos** — os 597 da TACO navegáveis: busca, filtro por categoria e por
+  completude do dado, ordenação, e a composição inteira de cada alimento com as medidas
+  caseiras. "Não analisado" é falta de medição, não zero.
 - **Meus produtos** — industrializado não está na tabela de composição. Cadastre pelo
   rótulo, lendo o código de barras pela câmera ou digitando; os dados vêm da Open Food
   Facts para você conferir com a embalagem. Depois ele entra no plano como qualquer alimento.
