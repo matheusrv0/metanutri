@@ -1,4 +1,4 @@
-import { atividadePorDia, resumirAtividade, rotuloCurto } from './atividade.ts'
+import { atividadePorDia, resumirAtividade } from './atividade.ts'
 import type { ResumoCaso } from './persistencia.ts'
 
 const caso = (atualizadoEm: string): ResumoCaso => ({
@@ -18,6 +18,7 @@ describe('Atividade por dia', () => {
     expect(dias).toHaveLength(7)
     expect(dias[0]?.data).toBe('2026-09-10')
     expect(dias[6]?.data).toBe('2026-09-16')
+    expect(dias[6]?.rotulo).toBe('16/09')
   })
 
   it('conta quantos planos foram mexidos em cada dia', () => {
@@ -44,11 +45,5 @@ describe('Atividade por dia', () => {
   it('resume total, pico e dias trabalhados', () => {
     const dias = atividadePorDia([caso('2026-09-16T08:00:00.000Z'), caso('2026-09-16T09:00:00.000Z'), caso('2026-09-14T12:00:00.000Z')], 7, hoje)
     expect(resumirAtividade(dias)).toEqual({ total: 3, maior: 2, diasAtivos: 2 })
-  })
-})
-
-describe('rotuloCurto', () => {
-  it('vira dia e mês', () => {
-    expect(rotuloCurto('2026-09-12')).toBe('12/09')
   })
 })

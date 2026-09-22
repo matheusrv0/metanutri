@@ -401,3 +401,23 @@
     transform: scale(1.06);
   }
 }
+
+/* ---------- Toque e foco: o que o navegador faz sozinho, ajustado ao sistema ---------- */
+@layer base {
+  html {
+    /* O cabeçalho fixo tem 64 px: o elemento focado por teclado para abaixo dele, não atrás. */
+    scroll-padding-top: 5rem;
+    /* O retângulo azul do toque no Android não pertence a nenhum tema. */
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary,
+  [role='button'] {
+    /* Sem o atraso de 300 ms do duplo toque no celular. */
+    touch-action: manipulation;
+  }
+}

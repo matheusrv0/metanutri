@@ -101,7 +101,7 @@ export function TelaConfiguracoes() {
             aoEscolher={(tipo) => alterar({ tipo })}
           />
           {perfil.tipo === 'profissional' ? (
-            <CampoTexto rotulo="CRN" valor={perfil.crn} aoMudar={(v) => alterar({ crn: v })} placeholder="CRN-6 12345" />
+            <CampoTexto rotulo="CRN" valor={perfil.crn} aoMudar={(v) => alterar({ crn: v })} placeholder="CRN-6 12345…" />
           ) : (
             <CampoTexto
               rotulo="Responsável técnico"

@@ -98,6 +98,22 @@ describe('Produto pelo rótulo', () => {
     expect(lista.getByText(/170 g · 1 pote|170 g/)).toBeInTheDocument()
   })
 
+  it('excluir pede confirmação; cancelar mantém, confirmar tira da lista e avisa', async () => {
+    criarRepositorioProdutos(localStorage).salvar({ ...iogurte })
+    render(<TelaProdutos />)
+    const usuario = userEvent.setup()
+
+    await usuario.click(screen.getByRole('button', { name: 'Excluir Iogurte natural' }))
+    const confirmacao = screen.getByRole('alertdialog', { name: 'Excluir “Iogurte natural”?' })
+    await usuario.click(within(confirmacao).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.getByRole('heading', { name: 'Iogurte natural' })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Excluir Iogurte natural' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir produto' }))
+    expect(screen.queryByRole('heading', { name: 'Iogurte natural' })).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Produto “Iogurte natural” excluído.')
+  })
+
   it('não salva com campo do rótulo faltando', async () => {
     render(<TelaProdutos />)
     const usuario = userEvent.setup()

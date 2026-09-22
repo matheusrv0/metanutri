@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import type { Rota } from '../navegacao.ts'
@@ -58,6 +59,9 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtit
           {children}
         </main>
       </div>
+
+      {/* Boas-vindas só aqui dentro: quem está na página pública ainda não entrou no sistema. */}
+      <AvisoPrimeiroAcesso />
     </div>
   )
 }

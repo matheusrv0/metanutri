@@ -127,7 +127,16 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
         </p>
 
         <div className="mt-10">
-          <div className="grid gap-x-8 pb-3 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_minmax(0,1fr)]">
+          {/* Empilhado, as colunas viram linhas: a legenda diz o que cada ícone marca. */}
+          <p className="flex flex-wrap gap-x-5 gap-y-1 pb-3 text-[13px] font-semibold text-muted-foreground md:hidden">
+            <span className="inline-flex items-center gap-1.5">
+              <X className="size-3.5" aria-hidden="true" /> Software de nutrição comum
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-primary">
+              <Check className="size-3.5" aria-hidden="true" /> MetaNutri
+            </span>
+          </p>
+          <div className="hidden gap-x-8 pb-3 md:grid md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_minmax(0,1fr)]">
             <p />
             <p className="text-[13px] font-semibold text-muted-foreground">Software de nutrição comum</p>
             <p className="text-[13px] font-semibold text-primary">MetaNutri</p>
@@ -137,7 +146,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
               <div key={rotulo} className="grid items-baseline gap-x-8 gap-y-1.5 border-b border-fio py-6 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_minmax(0,1fr)]">
                 <p className="text-sm font-semibold">{rotulo}</p>
                 <p className="flex items-start gap-2.5 text-[15px] text-muted-foreground">
-                  <X className="mt-0.5 size-4 shrink-0 text-tinta-fraca" aria-hidden="true" />
+                  <X className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span>{eles}</span>
                 </p>
                 <p className="flex items-start gap-2.5 text-[15px] font-medium">
@@ -199,8 +208,8 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
               {LACUNAS_DA_BASE.map((l) => (
                 <div key={l.rotulo} className="grid gap-2 border-b border-lombadafio py-4.5 last:border-0">
                   <div className="flex items-baseline justify-between gap-4">
-                    <span className="numeros font-titulo text-3xl font-normal">{l.valor}</span>
-                    <span className="max-w-[26ch] text-right text-sm text-lombadafraca">{l.rotulo}</span>
+                    <span className="numeros whitespace-nowrap font-titulo text-3xl font-normal">{l.valor}</span>
+                    <span className="min-w-0 max-w-[26ch] text-right text-sm text-lombadafraca">{l.rotulo}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-lombadafio">
                     <div className="h-full rounded-full bg-warning" style={{ width: `${l.proporcao}%` }} />

@@ -33,7 +33,12 @@ export const LACUNAS_DA_BASE: readonly LacunaDaBase[] = (() => {
       rotulo: 'com os 20 nutrientes medidos',
       proporcao: Math.max(pct(completos), 1),
     },
-    { valor: '5', rotulo: 'nutrientes que faltam para todos os alimentos', proporcao: 25 },
+    {
+      valor: '5',
+      rotulo: 'nutrientes que faltam para todos os alimentos',
+      // Cinco de uma lista de 25: os 20 conferidos mais os 5 que a tabela nem traz.
+      proporcao: (5 / (NUTRIENTES_CONFERIDOS.length + 5)) * 100,
+    },
   ]
 })()
 

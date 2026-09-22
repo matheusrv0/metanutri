@@ -1,4 +1,5 @@
 // Atividade das últimas semanas, lida dos planos salvos. Serve ao painel.
+import { dataCurta } from './formatarData.ts'
 import type { ResumoCaso } from './persistencia.ts'
 
 export interface DiaDeAtividade {
@@ -12,12 +13,6 @@ export interface DiaDeAtividade {
 const DIA_MS = 24 * 60 * 60 * 1000
 
 const soData = (iso: string): string => iso.slice(0, 10)
-
-/** "2026-09-12" → "12/09" */
-export function rotuloCurto(data: string): string {
-  const [, mes, dia] = data.split('-')
-  return dia && mes ? `${dia}/${mes}` : data
-}
 
 /**
  * Um ponto por dia, do mais antigo ao mais recente, incluindo os dias sem nada.
@@ -35,7 +30,7 @@ export function atividadePorDia(casos: readonly ResumoCaso[], dias: number, hoje
   const fim = Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate())
   return Array.from({ length: dias }, (_, i) => {
     const data = new Date(fim - (dias - 1 - i) * DIA_MS).toISOString().slice(0, 10)
-    return { data, rotulo: rotuloCurto(data), planos: contagem.get(data) ?? 0 }
+    return { data, rotulo: dataCurta(data), planos: contagem.get(data) ?? 0 }
   })
 }
 

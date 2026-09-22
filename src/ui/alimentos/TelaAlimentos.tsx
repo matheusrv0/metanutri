@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
 import { Input } from '../componentes/input.tsx'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
+import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 
 const ORDENS: readonly { readonly valor: OrdemCatalogo; readonly rotulo: string }[] = [
   { valor: 'nome', rotulo: 'Nome' },
@@ -37,6 +39,9 @@ const ROTULO_NIVEL: Readonly<Record<NivelCompletude, string>> = {
 /** Quantos alimentos a lista mostra de uma vez; o resto entra pelo botão. */
 const PAGINA = 40
 
+/** Acima disto a ficha fica ao lado da lista; abaixo, sobe numa gaveta. Mesmo corte do `xl:` do Tailwind. */
+const LARGO = '(min-width: 1280px)'
+
 /**
  * A tabela de composição inteira, navegável. Antes só dava para achar alimento
  * digitando dentro de uma refeição: não havia como olhar o que existe, nem ver
@@ -49,6 +54,7 @@ export function TelaAlimentos() {
   const [ordem, setOrdem] = useState<OrdemCatalogo>('nome')
   const [quantos, setQuantos] = useState(PAGINA)
   const [aberto, setAberto] = useState<Alimento | null>(null)
+  const largo = useMediaQuery(LARGO)
 
   const categorias = useMemo(() => categoriasDoCatalogo(), [])
   const resumo = useMemo(() => resumoDoCatalogo(), [])
@@ -60,11 +66,12 @@ export function TelaAlimentos() {
     setQuantos(PAGINA)
   }
 
-  const limpar = () => mudarFiltro(() => {
-    setTermo('')
-    setCategoria(null)
-    setNivel(null)
-  })
+  const limpar = () =>
+    mudarFiltro(() => {
+      setTermo('')
+      setCategoria(null)
+      setNivel(null)
+    })
 
   const temFiltro = termo.trim() !== '' || categoria !== null || nivel !== null
 
@@ -82,6 +89,7 @@ export function TelaAlimentos() {
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
+              type="search"
               value={termo}
               onChange={(e) => mudarFiltro(() => setTermo(e.target.value))}
               placeholder="Buscar por nome: arroz integral, queijo minas…"
@@ -119,7 +127,7 @@ export function TelaAlimentos() {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-fio pt-4">
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="rotulo">Ordenar</span>
               {ORDENS.map((o) => (
                 <button
@@ -137,7 +145,7 @@ export function TelaAlimentos() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="rotulo">Dado</span>
               {NIVEIS.map((n) => (
                 <button
@@ -191,21 +199,22 @@ export function TelaAlimentos() {
                       onClick={() => setAberto(a)}
                       aria-pressed={aberto?.id === a.id}
                       className={cn(
-                        'flex w-full items-center gap-3 px-5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                        'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5',
                         aberto?.id === a.id ? 'bg-lightprimary' : 'hover:bg-muted',
                       )}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm">{a.descricao}</p>
+                        {/* Nome da TACO é longo ("Arroz, integral, cozido"): duas linhas antes de cortar. */}
+                        <p className="line-clamp-2 text-sm">{a.descricao}</p>
                         <p className="truncate text-xs text-muted-foreground">{a.categoria}</p>
                       </div>
                       {c.nivel !== 'completo' ? (
-                        <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold', SELO[c.nivel])}>
+                        <span className={cn('hidden shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline', SELO[c.nivel])}>
                           {ROTULO_NIVEL[c.nivel]}
                         </span>
                       ) : null}
                       <span
-                        className="numeros w-20 shrink-0 text-right text-sm font-medium"
+                        className="numeros w-16 shrink-0 text-right text-sm font-medium sm:w-20"
                         title={kcal === null ? 'A tabela de composição não traz energia para este alimento.' : undefined}
                       >
                         {kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}
@@ -228,14 +237,30 @@ export function TelaAlimentos() {
         </Card>
       </div>
 
-      <div className="xl:sticky xl:top-24 xl:self-start">
+      {/* Tela larga: a ficha acompanha a rolagem ao lado da lista. */}
+      <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
         <FichaDoAlimento alimento={aberto} />
       </div>
+
+      {/* Tela estreita: a ficha sobe numa gaveta, senão ficava abaixo de 597 linhas. */}
+      <Sheet open={!largo && aberto !== null} onOpenChange={(abriu) => !abriu && setAberto(null)}>
+        <SheetContent side="bottom" className="gap-0 p-0">
+          {aberto ? (
+            <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5">
+              <div className="flex flex-col gap-1 pr-8">
+                <SheetTitle className="text-base leading-snug">{aberto.descricao}</SheetTitle>
+                <SheetDescription>{`${aberto.categoria} · valores por 100 g`}</SheetDescription>
+              </div>
+              <CorpoDaFicha alimento={aberto} />
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
 
-/** Composição completa de um alimento, com o que falta dito por nome. */
+/** Ficha ao lado da lista; vazia, explica o que vai aparecer. */
 function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
   if (!alimento) {
     return (
@@ -248,18 +273,26 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
     )
   }
 
-  const linhas = composicaoDe(alimento)
-  const c = completudeDe(alimento)
-  const explicacao = explicarCompletude(alimento)
-  const medidas = medidasDoAlimento(alimento.id)
-
   return (
     <Card className="gap-4">
       <CardHeader>
         <CardTitle>{alimento.descricao}</CardTitle>
         <CardDescription>{`${alimento.categoria} · valores por 100 g`}</CardDescription>
       </CardHeader>
+      <CorpoDaFicha alimento={alimento} />
+    </Card>
+  )
+}
 
+/** Composição completa de um alimento, com o que falta dito por nome. Serve à ficha lateral e à gaveta. */
+function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
+  const linhas = composicaoDe(alimento)
+  const c = completudeDe(alimento)
+  const explicacao = explicarCompletude(alimento)
+  const medidas = medidasDoAlimento(alimento.id)
+
+  return (
+    <>
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', SELO[c.nivel])}>
           {`${c.preenchidos} de ${c.total} nutrientes`}
@@ -306,6 +339,6 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
         Fonte: NEPA/UNICAMP. TACO, 4ª edição, 2011. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de
         medição, não ausência do nutriente.
       </p>
-    </Card>
+    </>
   )
 }

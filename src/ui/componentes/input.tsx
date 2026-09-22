@@ -3,10 +3,13 @@ import { cn } from '@/lib/utils'
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type = 'text', ...props }, ref) => (
+// autoComplete desligado por padrão: fora do login a sugestão do navegador só atrapalha
+// (nome de paciente vira endereço, CRN vira CEP). E-mail e senha passam o próprio valor.
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type = 'text', autoComplete = 'off', ...props }, ref) => (
   <input
     ref={ref}
     type={type}
+    autoComplete={autoComplete}
     className={cn(
       'flex h-9 w-full rounded-xs border border-input bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors',
       'focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring',

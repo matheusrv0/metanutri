@@ -2,21 +2,22 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#00A1FF" />
-    <meta name="description" content="Planejador alimentar para estudantes de nutrição." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- A barra do navegador no celular acompanha o fundo da página nos dois temas. -->
+    <meta name="theme-color" content="#f3f6f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0f0d" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Planejador alimentar para estudantes de nutrição: adequação de 20 nutrientes e o que comer para fechar a falta." />
     <link rel="icon" type="image/svg+xml" href="/icone.svg" />
     <title>MetaNutri</title>
   </head>
   <body>
     <!--
-      impeccable:direction seed b8c79b6d
-      THESIS: o planejador tem a forma da fonte que a estudante já lê, a tabela de composição impressa; recusa o painel de SaaS com cartões iguais e sombra.
-      OWN-WORLD: papel quase branco, tinta verde-preta, fios de tabela, verde de capa para ação, ocre para abaixo da meta, vermelhão para acima do limite; menu em campo de tinta; Archivo condensada nos rótulos, Inter no texto, numeral tabular em tudo.
+      impeccable:direction seed b8c79b6d (revista em 22/09/2026)
+      THESIS: todo software diz que faltou cálcio; o MetaNutri diz o que comer.
+      OWN-WORLD: sistema do kit SaaSable (Archivo 400 nos títulos, Figtree no corpo, neutros MD3 com viés de verde, botão pílula, raios grandes) com o verde da marca no lugar do azul do kit. Do produto, não do template: numeral tabular, a notação da TACO e a hachura para "sem dado".
       STORY: a estudante reconhece a folha, confia no número porque a fonte está ao lado, e sai com o Word pronto.
-      FIRST VIEWPORT: lombada de tinta à esquerda com índice; cabeça de página com nome do caso; trilho das três etapas; folha de trabalho à esquerda e quadro do dia à direita.
-      FORM: candidato 2 da lista (tabela de composição impressa), escolhido pelo usuário na página de decisão.
-      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
+      FIRST VIEWPORT: área pública com grade de tabela ao fundo, a tese à esquerda e o painel de adequação respondendo à direita; área de trabalho com lombada de menu, trilho das três etapas e resumo do dia.
+      FORM: escolhido pelo usuário a partir do kit SaaSable, sobre maquete aprovada em 21/09/2026.
     -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -3,6 +3,7 @@
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
 import { medidaEquivalente } from '../domain/busca.ts'
+import { dataCompleta } from '../domain/formatarData.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
 
@@ -37,12 +38,6 @@ export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimen
     .join('; ')
 }
 
-const dataBr = (iso: string | null) => {
-  if (!iso) return ''
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
-}
-
 function blocoTexto(conteudo: string | undefined): Paragraph[] {
   const linhas = texto(conteudo).split(/\r?\n/)
   return linhas.map((l) => paragrafo(l))
@@ -55,7 +50,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
 
   const cabecalho = tabela([
     linha([celulaRotulo('Nome:', caso.nome, 2), celulaRotulo('Diagnóstico clínico:', caso.diagnosticoClinico, 2)]),
-    linha([celulaRotulo('Idade:', idade), celulaRotulo('Sexo:', marcaSexo), celulaRotulo('Data da Consulta:', dataBr(caso.dataConsulta), 2)]),
+    linha([celulaRotulo('Idade:', idade), celulaRotulo('Sexo:', marcaSexo), celulaRotulo('Data da Consulta:', dataCompleta(caso.dataConsulta), 2)]),
     linha([
       celulaRotulo('Peso:', caso.pesoKg === null ? '' : `${formatarNumeroDocx(caso.pesoKg)} kg`),
       celulaRotulo('Estatura:', caso.estaturaCm === null ? '' : `${formatarNumeroDocx(caso.estaturaCm, 0)} cm`),

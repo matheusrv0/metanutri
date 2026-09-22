@@ -82,7 +82,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <CampoTexto rotulo="Nome do plano" valor={caso.nome} aoMudar={(v) => aoAlterar({ nome: v })} placeholder="Maria, 28 anos" />
+            <CampoTexto rotulo="Nome do plano" valor={caso.nome} aoMudar={(v) => aoAlterar({ nome: v })} placeholder="Maria, 28 anos…" />
             <CampoTexto rotulo="Diagnóstico clínico" valor={caso.diagnosticoClinico} aoMudar={(v) => aoAlterar({ diagnosticoClinico: v })} />
             <CampoTexto rotulo="Data da consulta" tipo="date" valor={caso.dataConsulta ?? ''} aoMudar={(v) => aoAlterar({ dataConsulta: v || null })} />
             <CampoTexto rotulo="Ocupação" valor={caso.ocupacao} aoMudar={(v) => aoAlterar({ ocupacao: v })} />

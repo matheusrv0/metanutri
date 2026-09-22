@@ -24,7 +24,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <div className="sticky top-[env(safe-area-inset-top,0px)] z-50 px-4 pt-3.5 sm:px-8">
-        <div className="mx-auto flex min-h-[62px] max-w-[1266px] items-center gap-4 rounded-full border border-border bg-card/85 px-4 shadow-card backdrop-blur-xl sm:px-5">
+        <div className="mx-auto flex min-h-[62px] max-w-[1266px] flex-wrap items-center gap-x-4 rounded-3xl border border-border bg-card/85 px-4 py-2 shadow-card backdrop-blur-xl sm:rounded-full sm:px-5 sm:py-0">
           <button
             type="button"
             onClick={() => aoIrPara('inicio')}
@@ -36,7 +36,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <span className="font-titulo text-[17px] font-semibold tracking-[-0.3px]">MetaNutri</span>
           </button>
 
-          <nav aria-label="Seções" className="ml-auto flex flex-wrap gap-0.5">
+          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-0.5 border-t border-fio pt-1.5 sm:order-none sm:ml-auto sm:w-auto sm:border-0 sm:pt-0">
             {LINKS.map((link) => (
               <button
                 key={link.destino}
@@ -53,7 +53,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             ))}
           </nav>
 
-          <div className="flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-1.5 sm:ml-0">
             <button
               type="button"
               onClick={() => aoIrPara('entrar')}
@@ -64,7 +64,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <button
               type="button"
               onClick={() => aoIrPara('painel')}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primaryemphasis focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primaryemphasis focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Abrir o sistema
               <ArrowRight className="size-4" aria-hidden="true" />

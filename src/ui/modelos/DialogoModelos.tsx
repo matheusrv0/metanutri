@@ -59,8 +59,8 @@ export function DialogoModelos({ aberto, plano, aoUsar, aoFechar }: DialogoModel
         <section className="flex flex-col gap-3 border border-fio bg-muted p-4">
           <h3 className="rotulo">Salvar o plano aberto</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            <CampoTexto rotulo="Nome do modelo" valor={nome} aoMudar={setNome} placeholder="Emagrecimento 1600 kcal" />
-            <CampoTexto rotulo="Para que serve" valor={descricao} aoMudar={setDescricao} placeholder="Adulto, sem restrição" />
+            <CampoTexto rotulo="Nome do modelo" valor={nome} aoMudar={setNome} placeholder="Emagrecimento 1600 kcal…" />
+            <CampoTexto rotulo="Para que serve" valor={descricao} aoMudar={setDescricao} placeholder="Adulto, sem restrição…" />
           </div>
           <Button className="self-start" onClick={salvar} disabled={nome.trim() === ''}>
             <BookmarkPlus aria-hidden="true" />

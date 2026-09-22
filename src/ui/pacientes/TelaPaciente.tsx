@@ -78,7 +78,7 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
             <CardDescription>{idade ? `${idade.anos} anos e ${idade.meses} meses hoje.` : 'A idade é calculada pela data de nascimento.'}</CardDescription>
           </CardHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            <CampoTexto rotulo="Nome" valor={paciente.nome} aoMudar={(v) => alterar({ nome: v })} placeholder="Maria Silva" />
+            <CampoTexto rotulo="Nome" valor={paciente.nome} aoMudar={(v) => alterar({ nome: v })} placeholder="Maria Silva…" />
             <CampoTexto rotulo="Data de nascimento" tipo="date" valor={paciente.nascimento ?? ''} aoMudar={(v) => alterar({ nascimento: v || null })} />
             <GrupoOpcoes<Sexo>
               rotulo="Sexo"
@@ -89,7 +89,7 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
               valor={paciente.sexo}
               aoEscolher={(sexo) => alterar({ sexo })}
             />
-            <CampoTexto rotulo="Objetivo" valor={paciente.objetivo} aoMudar={(v) => alterar({ objetivo: v })} placeholder="Emagrecimento, ganho de massa" />
+            <CampoTexto rotulo="Objetivo" valor={paciente.objetivo} aoMudar={(v) => alterar({ objetivo: v })} placeholder="Emagrecimento, ganho de massa…" />
             <CampoTexto rotulo="Telefone" valor={paciente.telefone} aoMudar={(v) => alterar({ telefone: v })} />
             <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(v) => alterar({ email: v })} />
           </div>

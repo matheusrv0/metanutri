@@ -40,7 +40,7 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
         </CardHeader>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
-            <CampoTexto rotulo="Buscar paciente" valor={busca} aoMudar={setBusca} placeholder="Nome" />
+            <CampoTexto rotulo="Buscar paciente" valor={busca} aoMudar={setBusca} placeholder="Nome…" />
           </div>
           <Button onClick={criar}>
             <Plus aria-hidden="true" />

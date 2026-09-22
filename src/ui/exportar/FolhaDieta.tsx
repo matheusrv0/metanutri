@@ -1,3 +1,4 @@
+import { dataCompleta } from '@/domain/formatarData.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
 import { lerPerfil, linhaDeResponsabilidade } from '@/domain/perfil.ts'
@@ -25,11 +26,6 @@ function descrever(item: ItemPlano): string {
   const gramas = `${formatarNumero(item.gramas, 0)} g`
   const quantidade = medida ? `${medida.texto} (${gramas})` : gramas
   return `${alimento?.descricao ?? 'Alimento removido'} — ${quantidade}`
-}
-
-const dataBr = (iso: string | null) => {
-  const m = (iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
 }
 
 /**
@@ -65,7 +61,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
           {caso.dataConsulta ? (
             <div>
               <dt className="inline text-muted-foreground">Data: </dt>
-              <dd className="inline">{dataBr(caso.dataConsulta)}</dd>
+              <dd className="inline">{dataCompleta(caso.dataConsulta)}</dd>
             </div>
           ) : null}
           <div>

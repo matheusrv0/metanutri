@@ -92,7 +92,7 @@ export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
           <CampoNumero rotulo="Gordura" valor={composicao.bioimpedancia.gorduraPct} aoMudar={(v) => alterarBio({ gorduraPct: v })} sufixo="%" />
           <CampoNumero rotulo="Massa magra" valor={composicao.bioimpedancia.massaMagraKg} aoMudar={(v) => alterarBio({ massaMagraKg: v })} sufixo="kg" />
           <CampoNumero rotulo="Água corporal" valor={composicao.bioimpedancia.aguaPct} aoMudar={(v) => alterarBio({ aguaPct: v })} sufixo="%" />
-          <CampoTexto rotulo="Aparelho" valor={composicao.bioimpedancia.aparelho} aoMudar={(v) => alterarBio({ aparelho: v })} placeholder="Marca e modelo" />
+          <CampoTexto rotulo="Aparelho" valor={composicao.bioimpedancia.aparelho} aoMudar={(v) => alterarBio({ aparelho: v })} placeholder="Marca e modelo…" />
         </div>
         {bio.massaGordaKg !== null ? (
           <p className="numeros text-sm text-muted-foreground">

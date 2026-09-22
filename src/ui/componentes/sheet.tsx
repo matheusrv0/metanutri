@@ -9,12 +9,15 @@ export const SheetTrigger = SheetPrimitive.Trigger
 export const SheetClose = SheetPrimitive.Close
 
 export const sheetVariants = cva(
-  'fixed z-50 flex flex-col gap-4 bg-card text-card-foreground shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
+  // overscroll-contain: rolar a gaveta até o fim não arrasta a página de trás junto.
+  'fixed z-50 flex flex-col gap-4 overscroll-contain bg-card text-card-foreground shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300',
   {
     variants: {
       side: {
         left: 'inset-y-0 left-0 h-full w-[85%] max-w-[300px] data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
         right: 'inset-y-0 right-0 h-full w-full sm:max-w-md data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
+        bottom:
+          'inset-x-0 bottom-0 max-h-[88dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom,0px)] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
       },
     },
     defaultVariants: { side: 'right' },

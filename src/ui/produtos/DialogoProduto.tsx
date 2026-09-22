@@ -115,10 +115,10 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <CampoTexto rotulo="Nome do produto" valor={nome} aoMudar={setNome} placeholder="Iogurte natural" erro={erroDe('nome')} />
+        <CampoTexto rotulo="Nome do produto" valor={nome} aoMudar={setNome} placeholder="Iogurte natural…" erro={erroDe('nome')} />
         <CampoTexto rotulo="Marca" valor={marca} aoMudar={setMarca} placeholder="Opcional" />
         <CampoNumero rotulo="Porção do rótulo" valor={porcaoG} aoMudar={setPorcaoG} sufixo="g ou ml" erro={erroDe('porcaoG')} />
-        <CampoTexto rotulo="Medida caseira da porção" valor={medidaCaseira} aoMudar={setMedidaCaseira} placeholder="1 pote, 2 fatias" />
+        <CampoTexto rotulo="Medida caseira da porção" valor={medidaCaseira} aoMudar={setMedidaCaseira} placeholder="1 pote, 2 fatias…" />
       </div>
 
       <section className="flex flex-col gap-3">

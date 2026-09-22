@@ -6,7 +6,6 @@ import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
-import { AvisoPrimeiroAcesso } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
 import { Button } from './ui/componentes/button.tsx'
 import { Card } from './ui/componentes/card.tsx'
@@ -310,7 +309,6 @@ export function App() {
     <ProvedorCasos>
       <ProvedorPacientes>
         <Conteudo />
-        <AvisoPrimeiroAcesso />
       </ProvedorPacientes>
     </ProvedorCasos>
   )

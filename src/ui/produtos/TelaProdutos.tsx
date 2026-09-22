@@ -4,6 +4,7 @@ import { criarRepositorioProdutos, produtoComoAlimento, type Produto } from '@/d
 import { registrarProdutos } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoTexto } from '../caso/CampoTexto.tsx'
+import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
 import { Alert } from '../componentes/alert.tsx'
 import { Button } from '../componentes/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
@@ -16,6 +17,9 @@ export function TelaProdutos() {
   const [versao, setVersao] = useState(0)
   const [busca, setBusca] = useState('')
   const [editando, setEditando] = useState<Produto | 'novo' | null>(null)
+  const [excluindo, setExcluindo] = useState<Produto | null>(null)
+  // Última ação concluída: fica escrita na tela e o leitor de tela anuncia.
+  const [mensagem, setMensagem] = useState<string | null>(null)
 
   const produtos = useMemo(() => {
     void versao
@@ -24,6 +28,14 @@ export function TelaProdutos() {
   }, [repositorio, versao, busca])
 
   const atualizar = () => setVersao((v) => v + 1)
+
+  const excluir = () => {
+    if (!excluindo) return
+    repositorio.excluir(excluindo.id)
+    setExcluindo(null)
+    setMensagem(`Produto “${excluindo.nome}” excluído.`)
+    atualizar()
+  }
 
   // Mantém a busca de alimentos em dia com o que está cadastrado.
   registrarProdutos(repositorio.listar().map(produtoComoAlimento))
@@ -39,13 +51,17 @@ export function TelaProdutos() {
         </CardHeader>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
-            <CampoTexto rotulo="Buscar produto" valor={busca} aoMudar={setBusca} placeholder="Nome ou marca" />
+            <CampoTexto rotulo="Buscar produto" valor={busca} aoMudar={setBusca} placeholder="Nome ou marca…" />
           </div>
           <Button onClick={() => setEditando('novo')}>
             <Plus aria-hidden="true" />
             Cadastrar pelo rótulo
           </Button>
         </div>
+        {/* Sempre montado: a região viva só anuncia o que muda dentro dela. */}
+        <p role="status" className={mensagem ? 'text-sm text-muted-foreground' : 'sr-only'}>
+          {mensagem}
+        </p>
       </Card>
 
       {produtos.length === 0 ? (
@@ -74,15 +90,7 @@ export function TelaProdutos() {
                     <Button variant="ghost" size="iconsm" onClick={() => setEditando(p)} aria-label={`Editar ${p.nome}`}>
                       <Pencil aria-hidden="true" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="iconsm"
-                      onClick={() => {
-                        repositorio.excluir(p.id)
-                        atualizar()
-                      }}
-                      aria-label={`Excluir ${p.nome}`}
-                    >
+                    <Button variant="ghost" size="iconsm" onClick={() => setExcluindo(p)} aria-label={`Excluir ${p.nome}`}>
                       <Trash aria-hidden="true" />
                     </Button>
                   </div>
@@ -114,10 +122,19 @@ export function TelaProdutos() {
         produto={editando}
         aoFechar={() => setEditando(null)}
         aoSalvar={(dados) => {
-          repositorio.salvar(dados)
+          const salvo = repositorio.salvar(dados)
           atualizar()
           setEditando(null)
+          setMensagem(`Produto “${salvo.nome}” salvo.`)
         }}
+      />
+
+      <DialogoExcluir
+        nome={excluindo?.nome ?? null}
+        descricao="Plano que usa este produto passa a mostrar “Alimento não encontrado” nessa linha. Não dá para desfazer."
+        acao="Excluir produto"
+        aoConfirmar={excluir}
+        aoFechar={() => setExcluindo(null)}
       />
     </div>
   )

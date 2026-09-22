@@ -30,6 +30,16 @@ export function ProvedorTema({ children }: { readonly children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', aplicado === 'escuro')
     document.documentElement.style.colorScheme = aplicado === 'escuro' ? 'dark' : 'light'
+
+    // A barra do navegador no celular segue o tema escolhido aqui, não só o do sistema:
+    // depois de trocar a classe, o token já tem o valor novo.
+    const fundo = getComputedStyle(document.documentElement).getPropertyValue('--mesa').trim()
+    if (fundo) {
+      for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+        meta.content = fundo
+        meta.removeAttribute('media')
+      }
+    }
   }, [aplicado])
 
   const definir = useCallback((p: PreferenciaTema) => {

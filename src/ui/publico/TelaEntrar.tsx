@@ -112,9 +112,10 @@ export function TelaEntrar({ conta, aoEntrar, aoAbrirSistema }: TelaEntrarProps)
             id={`${id}-email`}
             type="email"
             autoComplete="email"
+            spellCheck={false}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="voce@exemplo.com"
+            placeholder="voce@exemplo.com…"
             aria-invalid={erro === 'email-invalido' || erro === 'email-em-uso'}
             className="border-lombadafio bg-lombada/40 text-lombadatexto placeholder:text-lombadafraca/70"
           />

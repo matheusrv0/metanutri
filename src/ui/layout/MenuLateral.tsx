@@ -48,7 +48,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
         <span className="rotulo text-lombadafraca">Planejador alimentar</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-7 overflow-y-auto px-2 py-5">
+      <div className="flex flex-1 flex-col gap-7 overflow-y-auto overscroll-contain px-2 py-5">
         <EscolherModo
           aoEscolher={(modo) => {
             aoNovoCaso(modo)
