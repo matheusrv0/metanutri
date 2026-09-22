@@ -30,3 +30,6 @@ docs/modelos/
 .impeccable/mocks/
 .env.local
 .env
+
+# capturas de conferência ficam fora do repositório
+/*.png
