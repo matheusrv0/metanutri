@@ -17,11 +17,21 @@ const extras = new Map<number, Alimento>()
 export function registrarProdutos(lista: readonly Alimento[]): void {
   extras.clear()
   for (const a of lista) extras.set(a.id, a)
+  comProdutos = null
 }
+
+/**
+ * A mesma lista enquanto os produtos não mudam. A identidade importa: o índice da
+ * busca é guardado por array, então devolver uma cópia nova a cada chamada fazia
+ * o sistema reindexar os 597 alimentos a cada tecla digitada.
+ */
+let comProdutos: readonly Alimento[] | null = null
 
 /** A tabela mais os produtos cadastrados; a busca usa esta lista. */
 export function alimentosComProdutos(): readonly Alimento[] {
-  return extras.size === 0 ? ALIMENTOS : [...ALIMENTOS, ...extras.values()]
+  if (extras.size === 0) return ALIMENTOS
+  comProdutos ??= [...ALIMENTOS, ...extras.values()]
+  return comProdutos
 }
 
 export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? extras.get(id)

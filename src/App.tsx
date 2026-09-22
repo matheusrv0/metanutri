@@ -20,6 +20,7 @@ import { TelaPainel } from './ui/painel/TelaPainel.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
+import { TelaAlimentos } from './ui/alimentos/TelaAlimentos.tsx'
 import { TelaConta } from './ui/conta/TelaConta.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
@@ -86,15 +87,20 @@ function Conteudo() {
 
   if (rota.tela === 'inicio') {
     return (
-      <MolduraPublica atual="inicio" aoIrPara={irPara} estrelas={55}>
-        <TelaInicio aoAbrirSistema={() => navegar({ tela: 'painel' })} aoVerPrecos={() => navegar({ tela: 'precos' })} aoVerExemplo={verExemplo} />
+      <MolduraPublica atual="inicio" aoIrPara={irPara}>
+        <TelaInicio
+          aoAbrirSistema={() => navegar({ tela: 'painel' })}
+          aoVerPrecos={() => navegar({ tela: 'precos' })}
+          aoVerExemplo={verExemplo}
+          aoVerAlimentos={() => navegar({ tela: 'alimentos' })}
+        />
       </MolduraPublica>
     )
   }
 
   if (rota.tela === 'precos') {
     return (
-      <MolduraPublica atual="precos" aoIrPara={irPara} estrelas={30}>
+      <MolduraPublica atual="precos" aoIrPara={irPara}>
         <SecaoPrecos aoEscolher={escolherPlano} />
       </MolduraPublica>
     )
@@ -102,7 +108,7 @@ function Conteudo() {
 
   if (rota.tela === 'entrar') {
     return (
-      <MolduraPublica atual="entrar" aoIrPara={irPara} estrelas={25}>
+      <MolduraPublica atual="entrar" aoIrPara={irPara}>
         <TelaEntrar conta={conta} aoEntrar={() => navegar({ tela: 'painel' })} aoAbrirSistema={() => navegar({ tela: 'painel' })} />
       </MolduraPublica>
     )
@@ -154,6 +160,14 @@ function Conteudo() {
     return (
       <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'alimentos') {
+    return (
+      <Estrutura {...base} titulo="Tabela de alimentos" subtitulo="TACO 4ª edição">
+        <TelaAlimentos />
       </Estrutura>
     )
   }

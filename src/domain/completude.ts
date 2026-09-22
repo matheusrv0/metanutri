@@ -66,10 +66,24 @@ const ROTULOS: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
 export const nomeDoNutriente = (chave: ChaveNutrienteAlimento): string => ROTULOS[chave] ?? chave
 
 /**
+ * A composição de um alimento não muda enquanto o programa roda, e a conta é
+ * refeita a cada tecla no filtro do catálogo: guardar o resultado por alimento.
+ */
+const memoria = new WeakMap<Alimento, Completude>()
+
+/**
  * Traço (`Tr`) conta como dado: a tabela mediu e achou quantidade desprezível.
  * `null` é o que ninguém mediu.
  */
 export function completudeDe(alimento: Alimento): Completude {
+  const guardado = memoria.get(alimento)
+  if (guardado) return guardado
+  const calculado = calcularCompletude(alimento)
+  memoria.set(alimento, calculado)
+  return calculado
+}
+
+function calcularCompletude(alimento: Alimento): Completude {
   const faltando = NUTRIENTES_CONFERIDOS.filter((c) => alimento.nutrientes[c] === null && !alimento.tracos.includes(c))
   const total = NUTRIENTES_CONFERIDOS.length
   const preenchidos = total - faltando.length

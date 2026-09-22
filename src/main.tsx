@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/archivo/wdth.css'
-import '@fontsource-variable/inter'
+import '@fontsource-variable/figtree'
 import './ui/tema/globals.css'
 import { criarRepositorioProdutos, produtoComoAlimento } from './domain/produtos.ts'
 import { registrarProdutos } from './domain/tabelas.ts'

@@ -16,6 +16,7 @@ export type Rota =
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
   | { readonly tela: 'pacientes' }
   | { readonly tela: 'paciente'; readonly pacienteId: string }
+  | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
   | { readonly tela: 'config' }
   | { readonly tela: 'ajuda' }
@@ -31,6 +32,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'precos') return { tela: 'precos' }
   if (tela === 'entrar') return { tela: 'entrar' }
   if (tela === 'conta') return { tela: 'conta' }
+  if (tela === 'alimentos') return { tela: 'alimentos' }
   if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'config') return { tela: 'config' }
   if (tela === 'ajuda') return { tela: 'ajuda' }
@@ -61,6 +63,8 @@ export function escreverRota(rota: Rota): string {
       return '#/pacientes'
     case 'paciente':
       return `#/paciente/${encodeURIComponent(rota.pacienteId)}`
+    case 'alimentos':
+      return '#/alimentos'
     case 'produtos':
       return '#/produtos'
     case 'config':

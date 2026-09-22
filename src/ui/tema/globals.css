@@ -1,8 +1,9 @@
 /*
- * MetaNutri — mundo visual "tabela impressa".
- * A tela é uma folha de tabela de composição: papel, fios finos, versaletes nas colunas,
- * numeral tabular em tudo e a notação da própria TACO (Tr para traço, travessão para não analisado).
- * Decisões duráveis em DESIGN.md. Contrato da direção em index.html.
+ * MetaNutri — sistema do kit SaaSable (Archivo 400 nos títulos, Figtree no corpo,
+ * neutros MD3, botão pílula, raios grandes) com o verde da marca no lugar do azul do kit.
+ * O que veio do produto e não do template: numeral tabular em tudo, a notação da TACO
+ * (Tr para traço, travessão para não analisado) e a hachura para "sem dado".
+ * Decisões duráveis em DESIGN.md.
  */
 @import 'tailwindcss';
 @import 'tw-animate-css';
@@ -11,12 +12,12 @@
 
 /* ---------- Folha: tema claro ---------- */
 :root {
-  /* papel e tinta */
-  --papel: #fbfbf7;
-  --mesa: #e9eae1;
-  --tinta: #15180f;
-  --tinta-media: #4d5346;
-  --tinta-fraca: #6f7567;
+  /* neutros MD3 do kit, com viés de verde: cinza puro lê como não escolhido */
+  --papel: #ffffff;
+  --mesa: #f3f6f4;
+  --tinta: #171c19;
+  --tinta-media: #414b46;
+  --tinta-fraca: #6e7873;
 
   /* acentos impressos: verde de capa, ocre de atenção, vermelhão de limite */
   --color-primary: #0b6e33;
@@ -54,10 +55,17 @@
   --color-infotext: #164263;
 
   /* fios da tabela: a única "sombra" deste mundo */
-  --fio: color-mix(in oklab, var(--tinta) 14%, transparent);
-  --fio-forte: color-mix(in oklab, var(--tinta) 42%, transparent);
-  --shadow-card: 0 1px 0 0 var(--fio);
-  --shadow-folha: 0 1px 2px 0 color-mix(in oklab, var(--tinta) 8%, transparent), 0 8px 24px -12px color-mix(in oklab, var(--tinta) 18%, transparent);
+  /* profundidade do kit: deslocamento mais desfoque, em três camadas */
+  --fio: color-mix(in oklab, var(--tinta) 13%, transparent);
+  --fio-forte: color-mix(in oklab, var(--tinta) 34%, transparent);
+  --shadow-card: 0 1px 2px 0 color-mix(in oklab, var(--tinta) 5%, transparent), 0 4px 12px -6px color-mix(in oklab, var(--tinta) 10%, transparent);
+  --shadow-folha: 0 2px 4px 0 color-mix(in oklab, var(--tinta) 5%, transparent), 0 18px 40px -20px color-mix(in oklab, var(--tinta) 20%, transparent);
+  --shadow-alto: 0 4px 8px 0 color-mix(in oklab, var(--tinta) 6%, transparent), 0 40px 80px -40px color-mix(in oklab, var(--tinta) 32%, transparent);
+
+  /* fundo de grade (GridPattern do 21st.dev) e marca-texto (TextHighlight) */
+  --grade: #d3ddd7;
+  --grade-cheia: #e8f1eb;
+  --marcatexto: #fde047;
 
   /* campo escuro do menu: a lombada da publicação */
   --lombada: #12301c;
@@ -66,7 +74,7 @@
   --lombada-fio: color-mix(in oklab, #eceee4 18%, transparent);
 
   /* variáveis do shadcn/ui */
-  --radius: 3px;
+  --radius: 12px;
   --background: var(--mesa);
   --foreground: var(--tinta);
   --card: var(--papel);
@@ -90,18 +98,18 @@
 
 /* ---------- Prova em negativo: tema escuro ---------- */
 .dark {
-  --papel: #1b1f17;
-  --mesa: #12150f;
-  --tinta: #eceee4;
-  --tinta-media: #b6bbad;
-  --tinta-fraca: #8d9384;
+  --papel: #131714;
+  --mesa: #0c0f0d;
+  --tinta: #e9eeeb;
+  --tinta-media: #c0c8c3;
+  --tinta-fraca: #8e9791;
 
-  --color-primary: #59b877;
+  --color-primary: #6fcf97;
   --color-secondary: #79b4de;
   --color-info: #79b4de;
-  --color-success: #59b877;
-  --color-warning: #dfa93f;
-  --color-error: #e8776b;
+  --color-success: #6fcf97;
+  --color-warning: #ddae52;
+  --color-error: #ef8880;
 
   --color-defaultBorder: color-mix(in oklab, var(--tinta) 20%, transparent);
   --color-charcoal: var(--tinta-fraca);
@@ -111,10 +119,15 @@
   --color-errortext: #f0958b;
   --color-infotext: #9ccbef;
 
-  --fio: color-mix(in oklab, var(--tinta) 18%, transparent);
-  --fio-forte: color-mix(in oklab, var(--tinta) 46%, transparent);
-  --shadow-card: 0 1px 0 0 var(--fio);
-  --shadow-folha: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 10px 26px -14px rgb(0 0 0 / 0.7);
+  --fio: color-mix(in oklab, var(--tinta) 16%, transparent);
+  --fio-forte: color-mix(in oklab, var(--tinta) 32%, transparent);
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 4px 12px -6px rgb(0 0 0 / 0.6);
+  --shadow-folha: 0 2px 4px 0 rgb(0 0 0 / 0.5), 0 18px 40px -20px rgb(0 0 0 / 0.8);
+  --shadow-alto: 0 4px 8px 0 rgb(0 0 0 / 0.6), 0 40px 80px -40px rgb(0 0 0 / 0.9);
+
+  --grade: #242c27;
+  --grade-cheia: #182119;
+  --marcatexto: #c8a22b;
 
   --lombada: #0d1b11;
   --lombada-texto: #e4e8db;
@@ -137,16 +150,19 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Figtree Variable', 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-titulo: 'Archivo Variable', 'Archivo', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-xl: 6px;
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 40px;
 
   --shadow-card: var(--shadow-card);
   --shadow-folha: var(--shadow-folha);
+  --shadow-alto: var(--shadow-alto);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -177,6 +193,9 @@
   --color-lombadatexto: var(--lombada-texto);
   --color-lombadafraca: var(--lombada-fraca);
   --color-lombadafio: var(--lombada-fio);
+  --color-grade: var(--grade);
+  --color-gradecheia: var(--grade-cheia);
+  --color-marcatexto: var(--marcatexto);
 
   --color-info: var(--color-info);
   --color-success: var(--color-success);

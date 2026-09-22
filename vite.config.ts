@@ -41,6 +41,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // Os testes de interface usam userEvent em jsdom, que é lento por natureza.
+    // Com 48 arquivos em paralelo eles passam de 5 s (o padrão do Vitest) por
+    // disputa entre workers, não por lentidão de código: sozinhos rodam em ~1 s.
+    testTimeout: 20000,
     css: false,
   },
 })

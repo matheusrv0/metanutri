@@ -1,4 +1,4 @@
-import { Barcode, CircleHelp, ClipboardList, FolderOpen, HardDrive, LayoutDashboard, Plus, Settings, TriangleAlert, UserCircle, UserRound } from 'lucide-react'
+import { Barcode, BookOpen, CircleHelp, ClipboardList, FolderOpen, HardDrive, LayoutDashboard, Plus, Settings, TriangleAlert, UserCircle, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -99,6 +99,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
         </Secao>
 
         <Secao titulo="Alimentos">
+          <ItemMenu icone={<BookOpen aria-hidden="true" />} rotulo="Tabela de alimentos" ativo={rota.tela === 'alimentos'} aoClicar={() => ir({ tela: 'alimentos' })} />
           <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus produtos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
         </Secao>
 
