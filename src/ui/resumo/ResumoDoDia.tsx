@@ -13,6 +13,7 @@ import { Card, CardTitle } from '../componentes/card.tsx'
 import { Progress } from '../componentes/progress.tsx'
 import { CampoNumero } from '../caso/CampoNumero.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
+import { MedidorMacro } from './MedidorMacro.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
 
 interface ResumoDoDiaProps {
@@ -27,7 +28,6 @@ const VARIANTE: Record<EstadoFaixa, 'lightSuccess' | 'lightWarning' | 'lightErro
   acima: 'lightError',
 }
 
-const ROTULO_ESTADO: Record<EstadoFaixa, string> = { dentro: 'Dentro da meta', abaixo: 'Abaixo da meta', acima: 'Acima da meta' }
 
 function descreverMeta(macro: ResultadoMacro): string | null {
   if (!macro.meta) return null
@@ -38,25 +38,6 @@ function descreverMeta(macro: ResultadoMacro): string | null {
   return `Meta: ${formatarNumero(macro.meta.min, casas)} a ${formatarNumero(macro.meta.max, casas)}${unidade} (${origem})`
 }
 
-function LinhaMacro({ nome, macro }: { readonly nome: string; readonly macro: ResultadoMacro }) {
-  const meta = descreverMeta(macro)
-  return (
-    <div className="flex flex-col gap-1 border-b border-border pb-3 last:border-0 last:pb-0">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-medium text-foreground">{nome}</span>
-        <span className="numeros text-sm font-semibold text-heading">
-          {`${formatarNumero(macro.gramas, 1)} g${macro.pctKcal === null ? '' : ` · ${formatarNumero(macro.pctKcal, 1)}%`}${
-            macro.gPorKg === null ? '' : ` · ${formatarNumero(macro.gPorKg, 2)} g/kg`
-          }`}
-        </span>
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        {meta ? <span className="text-xs text-muted-foreground">{meta}</span> : <span className="text-xs text-muted-foreground">Sem meta definida</span>}
-        {macro.estado ? <Badge variant={VARIANTE[macro.estado]}>{ROTULO_ESTADO[macro.estado]}</Badge> : null}
-      </div>
-    </div>
-  )
-}
 
 /** Painel lateral com energia do dia e macronutrientes do plano (CA-06 a CA-11, CA-22 a CA-24). */
 export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
@@ -174,9 +155,9 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           </Button>
         </div>
         <div className="flex flex-col gap-3">
-          <LinhaMacro nome="Proteína" macro={macros.proteina} />
-          <LinhaMacro nome="Carboidrato" macro={macros.carboidrato} />
-          <LinhaMacro nome="Gordura" macro={macros.gordura} />
+          <MedidorMacro nome="Proteína" macro={macros.proteina} meta={descreverMeta(macros.proteina)} />
+          <MedidorMacro nome="Carboidrato" macro={macros.carboidrato} meta={descreverMeta(macros.carboidrato)} />
+          <MedidorMacro nome="Gordura" macro={macros.gordura} meta={descreverMeta(macros.gordura)} />
         </div>
       </Card>
 

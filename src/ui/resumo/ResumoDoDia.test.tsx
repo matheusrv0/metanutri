@@ -94,7 +94,8 @@ describe('Resumo do dia', () => {
     expect(proteina).toHaveTextContent('7,8 g')
     expect(proteina).toHaveTextContent('0,13 g/kg')
     expect(resumo().getAllByText(/Meta: .* \(faixa da idade\)/).length).toBe(3)
-    expect(resumo().getAllByText(/Abaixo da meta|Dentro da meta|Acima da meta/).length).toBe(3)
+    // O estado agora sai como frase do medidor: dentro, faltam X, quase lá, acima, passou de leve.
+    expect(resumo().getAllByText(/Dentro da faixa|para a faixa|Quase lá|acima da faixa|Passou de leve/).length).toBe(3)
   })
 
   it('CA-24: meta própria de proteína em g/kg passa a valer', async () => {
