@@ -8,12 +8,12 @@ import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { lerOcultosGlobais, ocultarGlobalmente } from '../estado/ocultosGlobais.ts'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
-import { Switch } from '../componentes/switch.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
+import { Switch } from '@ds/componentes/forms/switch.tsx'
 
 interface GavetaCobrirProps {
   /** Nutriente a cobrir; `null` mantém a gaveta fechada. */
@@ -92,7 +92,7 @@ export function GavetaCobrir({
             : ''}
         </SheetDescription>
 
-        <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
+        <div className="flex flex-col gap-3 border border-border bg-muted p-4">
           <CampoNumero
             rotulo="Porção máxima por sugestão"
             valor={prefs.porcaoMaximaG}
@@ -117,7 +117,7 @@ export function GavetaCobrir({
             id="refeicao-destino"
             value={refeicaoId}
             onChange={(e) => setRefeicaoId(e.target.value)}
-            className="h-9 rounded-xs border border-input bg-card px-3 text-sm"
+            className="h-10 rounded-md border border-input bg-card px-3 text-sm"
           >
             {plano.refeicoes.map((r) => (
               <option key={r.id} value={r.id}>
@@ -138,7 +138,7 @@ export function GavetaCobrir({
           {(resultado?.sugestoes ?? []).filter((s) => !casaRestricao(s.descricao, restricoes)).map((s) => {
             const medida = medidaEquivalente(s.alimentoId, s.gramas)
             return (
-              <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-fio pb-3 last:border-0">
+              <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
                 <p className="text-sm font-semibold text-heading">{s.descricao}</p>
                 <p className="numeros text-sm text-muted-foreground">
                   {`${formatarNumero(s.gramas, 0)} g${medida ? ` · ${medida.texto}` : ''} · cobre ${formatarNumero(s.coberturaPct, 0)}% da falta · +${formatarNumero(

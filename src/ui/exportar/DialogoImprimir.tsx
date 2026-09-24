@@ -1,7 +1,7 @@
 import { Printer } from 'lucide-react'
 import type { Caso, Plano } from '@/domain/tipos.ts'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { FolhaDieta } from './FolhaDieta.tsx'
 
 interface DialogoImprimirProps {
@@ -26,7 +26,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, aoFechar }: D
           <DialogDescription>Na janela de impressão, escolha “Salvar como PDF” para entregar ao paciente pelo celular.</DialogDescription>
         </DialogHeader>
 
-        <div className="area-impressao border border-fio print:border-0">
+        <div className="area-impressao border border-border print:border-0">
           <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} />
         </div>
 

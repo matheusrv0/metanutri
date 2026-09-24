@@ -9,11 +9,11 @@ import {
   restaurarBackup,
   type Perfil,
 } from '@/domain/perfil.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { baixarBlob } from '../exportar/baixar.ts'
 
 function armazenamento() {
@@ -114,7 +114,7 @@ export function TelaConfiguracoes() {
           <CampoTexto rotulo="Telefone" valor={perfil.telefone} aoMudar={(v) => alterar({ telefone: v })} />
           <CampoTexto rotulo="E-mail" valor={perfil.email} aoMudar={(v) => alterar({ email: v })} />
         </div>
-        <p className="border-t border-fio pt-3 text-sm text-muted-foreground">
+        <p className="border-t border-border pt-3 text-sm text-muted-foreground">
           No documento vai sair: <span className="text-foreground">{linhaDeResponsabilidade(perfil)}</span>
         </p>
       </Card>
@@ -126,13 +126,13 @@ export function TelaConfiguracoes() {
         </CardHeader>
         <div className="flex flex-wrap items-center gap-4">
           {perfil.logo ? (
-            <img src={perfil.logo} alt="Sua logo" className="h-16 w-auto border border-fio bg-papel p-1" />
+            <img src={perfil.logo} alt="Sua logo" className="h-16 w-auto border border-border bg-card p-1" />
           ) : (
-            <span className="flex size-16 items-center justify-center border border-dashed border-fioforte text-muted-foreground">
+            <span className="flex size-16 items-center justify-center border border-dashed border-borderdefault text-muted-foreground">
               <Image className="size-6" aria-hidden="true" />
             </span>
           )}
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xs border border-fioforte px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-borderdefault px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary">
             <Upload className="size-4" aria-hidden="true" />
             Escolher imagem
             <input type="file" accept="image/*" className="sr-only" onChange={(e) => escolherLogo(e.target.files?.[0])} />
@@ -161,7 +161,7 @@ export function TelaConfiguracoes() {
           </Button>
           <input ref={arquivoRef} type="file" accept="application/json" className="sr-only" onChange={(e) => importar(e.target.files?.[0])} />
         </div>
-        <div className="border-t border-fio pt-4">
+        <div className="border-t border-border pt-4">
           {confirmandoApagar ? (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="destructive" onClick={apagarTudo}>

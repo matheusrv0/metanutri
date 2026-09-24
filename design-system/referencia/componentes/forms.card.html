@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Forms" subtitle="Button, Input, CampoNumero, Select, Textarea, Switch, GrupoOpcoes, Label" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>components/forms/forms.card.html</title>
+<link rel="stylesheet" href="../_runtime/styles.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_runtime/_ds_bundle.js"></script>
+<style>body{background:var(--bg-page);padding:20px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-sans);color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const NS = window.MetaNutriDesignSystem_38356f;
+
+const { Button, Input, CampoNumero, Select, Textarea, Switch, GrupoOpcoes, Label } = NS;
+function App(){
+  const [sw,setSw]=React.useState(true); const [op,setOp]=React.useState('individual');
+  return <div className="col">
+    <div className="row"><span className="lbl">Variant</span><Button icon="plus">Novo plano</Button><Button variant="accent" iconRight="arrow-up-right">Enviar</Button><Button variant="outline" icon="download">Exportar</Button><Button variant="soft" icon="sparkles">Ver exemplo</Button><Button variant="ghost" icon="settings-2">Ajustar</Button></div>
+    <div className="row"><span className="lbl">Size</span><Button size="sm">Cobrir</Button><Button>Salvar</Button><Button size="lg">Começar agora</Button><Button variant="outline" icon="x" aria-label="Remover" /><Button variant="destructive" size="sm" icon="trash-2">Excluir</Button><Button disabled>Desabilitado</Button></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:12}}>
+      <Input label="Nome do plano" placeholder="Ex.: Ana, retorno" />
+      <Input label="Buscar" variant="sunken" icon="search" placeholder="150 arroz integral" />
+      <CampoNumero rotulo="Meta de energia" valor={1800} sufixo="kcal" />
+      <Select label="Adicionar em" options={['07:00 Café da manhã','12:00 Almoço','19:30 Jantar']} />
+      <Input label="Peso" suffix="kg" numeric defaultValue="62,5" error="Informe um valor entre 2 e 300" />
+      <CampoNumero rotulo="Porção máxima" valor={200} sufixo="g" dica="Por sugestão do Cobrir" />
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:16,alignItems:'start'}}>
+      <Textarea label="Orientações" rows={2} placeholder="Beber 2 L de água por dia…" />
+      <div className="col" style={{gap:12}}>
+        <GrupoOpcoes rotulo="Tipo de referência" valor={op} aoEscolher={setOp} opcoes={[{valor:'individual',rotulo:'Individual (RDA, 90%)'},{valor:'coletivo',rotulo:'Coletivo (EAR, 50%)'}]} />
+        <Switch label="Incluir ingredientes e alimentos crus" checked={sw} onChange={setSw} />
+      </div>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

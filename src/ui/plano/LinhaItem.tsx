@@ -4,8 +4,8 @@ import { explicarCompletude } from '@/domain/completude.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
-import { Button } from '../componentes/button.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface LinhaItemProps {
   readonly item: ItemPlano
@@ -27,7 +27,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
 
   return (
     // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
-    <li className="flex flex-col gap-1 border-b border-fio py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3">
+    <li className="flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3">
       <div className="min-w-0 sm:flex-1">
         <p className="truncate text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
           {descricao}

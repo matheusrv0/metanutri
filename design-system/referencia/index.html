@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MetaNutri · referência visual do design system</title>
+    <link rel="stylesheet" href="_runtime/styles.css" />
+    <style>
+      body {
+        padding: 40px 24px 80px;
+      }
+      .env {
+        max-width: 900px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      h1 {
+        font: var(--weight-semibold) var(--text-3xl) / 1.1 var(--font-display);
+        letter-spacing: var(--tracking-display);
+      }
+      h2 {
+        font: var(--weight-semibold) var(--text-lg) / 1.25 var(--font-display);
+      }
+      .sub {
+        color: var(--text-muted);
+        max-width: 62ch;
+      }
+      .grade {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+        gap: 8px;
+      }
+      .item {
+        display: block;
+        padding: 12px 14px;
+        border-radius: var(--radius-input);
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-strong);
+        text-decoration: none;
+        font: var(--weight-medium) var(--text-md) / 1.3 var(--font-sans);
+        transition: border-color var(--dur-fast), transform var(--dur-fast);
+      }
+      .item:hover {
+        border-color: var(--forest-900);
+        transform: translateY(-2px);
+        color: var(--text-strong);
+      }
+      .item small {
+        display: block;
+        margin-top: 3px;
+        font-weight: 400;
+        color: var(--text-muted);
+      }
+      .aviso {
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        background: var(--state-info-bg);
+        color: var(--state-info-text);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="env">
+      <header>
+        <h1>Referência visual</h1>
+        <p class="sub">
+          As telas originais do export do Claude Design, congeladas. Elas não são código do projeto — servem para conferir a intenção do sistema:
+          a cor exata, o raio, a sombra, o espaço. O código de verdade está em <code>design-system/componentes/</code>, e o contrato em
+          <code>DESIGN.md</code>, na raiz.
+        </p>
+      </header>
+
+      <section>
+        <h2>Fundamentos</h2>
+        <div class="grade">
+          <a class="item" href="guidelines/colors-brand.html">Cores da marca<small>lime + forest</small></a>
+          <a class="item" href="guidelines/colors-lime.html">Escala lime<small>50 a 800</small></a>
+          <a class="item" href="guidelines/colors-forest.html">Escala forest<small>100 a 950</small></a>
+          <a class="item" href="guidelines/colors-neutral.html">Neutros<small>cinza puro</small></a>
+          <a class="item" href="guidelines/colors-states.html">Estados<small>dentro · abaixo · acima · sem dado</small></a>
+          <a class="item" href="guidelines/colors-surfaces.html">Superfícies<small>página, cartão, afundado</small></a>
+          <a class="item" href="guidelines/colors-chart.html">Séries de gráfico<small>barras pareadas</small></a>
+          <a class="item" href="guidelines/colors-gradients.html">Gradientes<small>lime, sheen, forest</small></a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Tipografia</h2>
+        <div class="grade">
+          <a class="item" href="guidelines/type-display.html">Display<small>peso 300 com 600</small></a>
+          <a class="item" href="guidelines/type-headings.html">Títulos</a>
+          <a class="item" href="guidelines/type-body.html">Corpo e legenda</a>
+          <a class="item" href="guidelines/type-data.html">Número tabular<small>a fonte de dados</small></a>
+          <a class="item" href="guidelines/type-notation.html">Notação<small>† ‡ — da TACO</small></a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Espaço, forma e marca</h2>
+        <div class="grade">
+          <a class="item" href="guidelines/spacing-scale.html">Escala de espaço</a>
+          <a class="item" href="guidelines/spacing-radii.html">Raios<small>6 a 28 e pílula</small></a>
+          <a class="item" href="guidelines/spacing-shadows.html">Sombras<small>xs · card · raised · pop</small></a>
+          <a class="item" href="guidelines/spacing-layout.html">Layout<small>menu 264, trilho 360</small></a>
+          <a class="item" href="guidelines/brand-logo.html">Logo<small>folha, original e recolorida</small></a>
+          <a class="item" href="guidelines/brand-icons.html">Ícones<small>Lucide, traço 1,75</small></a>
+          <a class="item" href="guidelines/brand-motion.html">Movimento</a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Componentes</h2>
+        <p class="aviso">
+          Estas páginas e as do kit montam os componentes ao vivo com React, Babel e Lucide vindos da internet (unpkg). Com a máquina
+          desconectada elas abrem em branco — os fundamentos acima, não: aqueles funcionam offline.
+        </p>
+        <div class="grade">
+          <a class="item" href="componentes/forms.card.html">Formulário<small>botão, campo, seleção, interruptor</small></a>
+          <a class="item" href="componentes/display.card.html">Exibição<small>cartão, selo, alerta, tabela</small></a>
+          <a class="item" href="componentes/overlay.card.html">Camada<small>diálogo, gaveta, menu</small></a>
+          <a class="item" href="componentes/navigation.card.html">Navegação<small>abas, item de menu, etapas</small></a>
+          <a class="item" href="componentes/nutricao.card.html">Nutrição<small>destaque, adequação, macro</small></a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kit de telas</h2>
+        <div class="grade">
+          <a class="item" href="ui-kit/index.html">App no computador<small>1440 × 900, clicável</small></a>
+          <a class="item" href="ui-kit/mobile.html">App no celular<small>390 px, painel e plano</small></a>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

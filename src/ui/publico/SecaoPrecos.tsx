@@ -4,8 +4,8 @@ import { motion } from 'motion/react'
 import { useRef, useState, type ReactNode } from 'react'
 import { descontoAnualPct, mensalizadoDoAnual, PLANOS, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
-import { OriginButton } from '../componentes/origin-button.tsx'
-import { TimelineContent } from '../componentes/timeline-animation.tsx'
+import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
+import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
 
 interface SecaoPrecosProps {
   readonly aoEscolher: (plano: IdPlano) => void
@@ -27,7 +27,7 @@ function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar
   const desconto = emDestaque ? descontoAnualPct(emDestaque) : 0
   return (
     <div className="flex justify-center">
-      <div role="radiogroup" aria-label="Período de cobrança" className="relative mx-auto flex w-fit rounded-full border border-lombadafio bg-white/5 p-1 backdrop-blur">
+      <div role="radiogroup" aria-label="Período de cobrança" className="relative mx-auto flex w-fit rounded-full border border-border bg-muted p-1">
         {[
           { valor: false, texto: 'Mensal' },
           { valor: true, texto: 'Anual' },
@@ -41,17 +41,17 @@ function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar
               aria-checked={ativo}
               onClick={() => aoTrocar(opcao.valor)}
               className={cn(
-                'relative z-10 h-11 rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
-                ativo ? 'text-lombada' : 'text-lombadatexto/70 hover:text-lombadatexto',
+                'relative z-10 h-11 rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                ativo ? 'text-textoninverse' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {ativo ? (
-                <motion.span layoutId="chave-preco" className="absolute inset-0 rounded-full bg-lombadatexto" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
+                <motion.span layoutId="chave-preco" className="absolute inset-0 rounded-full bg-surfaceinverse" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
               ) : null}
               <span className="relative flex items-center gap-2">
                 {opcao.texto}
                 {opcao.valor && desconto > 0 ? (
-                  <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', ativo ? 'bg-primary text-primary-foreground' : 'bg-white/10 text-lombadatexto')}>
+                  <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', ativo ? 'bg-surfaceaccent text-textonaccent' : 'bg-card text-muted-foreground')}>
                     {`-${desconto}%`}
                   </span>
                 ) : null}
@@ -72,27 +72,27 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
     <div
       className={cn(
         'flex h-full flex-col rounded-md border p-6 text-left backdrop-blur transition-colors',
-        plano.destaque ? 'border-primary/60 bg-white/[0.07] shadow-[0_0_0_1px_var(--color-primary)]' : 'border-lombadafio bg-white/[0.03]',
+        plano.destaque ? 'border-primary/60 bg-card shadow-[0_0_0_1px_var(--color-primary)]' : 'border-border bg-card',
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-titulo text-2xl font-bold text-lombadatexto">{plano.nome}</h3>
+        <h3 className="font-titulo text-2xl font-bold text-foreground">{plano.nome}</h3>
         {plano.destaque ? <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Mais escolhido</span> : null}
       </div>
-      <p className="mt-2 text-sm text-lombadafraca">{plano.resumo}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{plano.resumo}</p>
 
       <div className="mt-5 flex items-baseline gap-1">
         {gratis ? (
-          <span className="font-titulo text-4xl font-bold text-lombadatexto">Grátis</span>
+          <span className="font-titulo text-4xl font-bold text-foreground">Grátis</span>
         ) : (
           <>
-            <span className="numeros font-titulo text-xl font-semibold text-lombadatexto">R$</span>
-            <NumberFlow value={valor} locales="pt-BR" format={{ maximumFractionDigits: 2 }} className="numeros font-titulo text-4xl font-bold text-lombadatexto" />
-            <span className="text-sm text-lombadafraca">/mês</span>
+            <span className="numeros font-titulo text-xl font-semibold text-foreground">R$</span>
+            <NumberFlow value={valor} locales="pt-BR" format={{ maximumFractionDigits: 2 }} className="numeros font-titulo text-4xl font-bold text-foreground" />
+            <span className="text-sm text-muted-foreground">/mês</span>
           </>
         )}
       </div>
-      <p className="mt-1 h-4 text-xs text-lombadafraca">
+      <p className="mt-1 h-4 text-xs text-muted-foreground">
         {gratis ? 'Para sempre, sem cartão.' : anual ? `R$ ${plano.anual.toLocaleString('pt-BR')} cobrados uma vez por ano.` : 'Cancele quando quiser.'}
       </p>
 
@@ -100,7 +100,10 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
         <OriginButton
           onClick={aoEscolher}
           tom={plano.destaque ? 'verde' : 'contorno'}
-          className={cn('w-full', plano.destaque ? 'border-primary/60 bg-primary/10 text-lombadatexto' : 'border-lombadafio bg-transparent text-lombadatexto')}
+          className={cn(
+            'w-full',
+            plano.destaque ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis' : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
+          )}
         >
           {plano.acaoTexto}
         </OriginButton>
@@ -108,7 +111,7 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
 
       <ul className="mt-6 flex flex-col gap-2.5">
         {plano.recursos.map((recurso, i) => (
-          <li key={recurso} className="flex items-center gap-3 text-sm text-lombadatexto">
+          <li key={recurso} className="flex items-center gap-3 text-sm text-foreground">
             <span aria-hidden="true" className="text-primary">
               {ICONES[plano.id][i]}
             </span>
@@ -117,12 +120,12 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
         ))}
       </ul>
 
-      <div className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-lombadafio pt-5">
-        <p className="text-sm font-semibold text-lombadatexto">{plano.inclui[0]}</p>
+      <div className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-border pt-5">
+        <p className="text-sm font-semibold text-foreground">{plano.inclui[0]}</p>
         <ul className="flex flex-col gap-2">
           {plano.inclui.slice(1).map((item) => (
-            <li key={item} className="flex items-start gap-3 text-sm text-lombadafraca">
-              <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full border border-primary/50 bg-primary/10">
+            <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
+              <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full border border-primary/30 bg-lightprimary">
                 <BadgeCheck className="size-3 text-primary" />
               </span>
               {item}
@@ -142,11 +145,11 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
   return (
     <div ref={secao} className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8">
       <div className="mx-auto mb-10 max-w-2xl text-center">
-        <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-lombadatexto sm:text-5xl">
+        <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-foreground sm:text-5xl">
           Um preço que cabe em quem está{' '}
-          <span className="rounded-md border border-dashed border-primary/60 bg-primary/10 px-2 text-primary">começando</span>
+          <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">começando</span>
         </TimelineContent>
-        <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-lombadafraca sm:text-base">
+        <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
           O plano do estágio continua de graça, para sempre. Você paga só quando precisar dos dados fora deste computador.
         </TimelineContent>
       </div>
@@ -163,7 +166,7 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         ))}
       </div>
 
-      <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-lombadafraca">
+      <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
         Os planos pagos ainda não estão no ar: nenhuma cobrança é feita e nada é bloqueado hoje. Criar a conta agora garante o preço de lançamento.
       </p>
     </div>

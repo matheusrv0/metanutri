@@ -156,3 +156,11 @@ Nenhuma outra dependência entra sem nova pergunta.
 6. Circunferência da panturrilha em idosos: ponto de corte a confirmar.
 7. Curvas de crescimento: OMS 2006 (até 5 anos) e OMS 2007 (5 a 19 anos).
 8. Regra de alimentos que não entram nas sugestões do "cobrir" (CA-36a): Miscelâneas, pó e desidratados, farinhas e amidos culinários, versão crua de carnes, pescados, ovos, leguminosas e cereais (exceto aveia).
+
+---
+
+**Nota de 24/09/2026.** A tarefa T-40 está cumprida, mas os caminhos citados nela mudaram: a
+base visual (tokens, utilitário `cn` e os componentes shadcn) saiu de `src/ui/componentes/` e
+`src/lib/utils.ts` e passou a morar em `design-system/`, sob o alias `@ds`. O contrato visual em
+vigor é `DESIGN.md`, na raiz. O plano acima fica como está, porque é o registro do que foi
+planejado e executado na época — reescrevê-lo apagaria a história.

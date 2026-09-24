@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 
 interface TelaAjudaProps {
   readonly aoIrPara: (tela: 'painel' | 'pacientes' | 'casos' | 'produtos' | 'config') => void
@@ -36,8 +36,8 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
         </CardHeader>
         <ol className="flex flex-col">
           {PASSOS.map((p, i) => (
-            <li key={p.titulo} className="flex gap-3 border-b border-fio py-3 last:border-0">
-              <span aria-hidden="true" className="numeros flex size-7 shrink-0 items-center justify-center border border-fioforte text-sm font-semibold">
+            <li key={p.titulo} className="flex gap-3 border-b border-border py-3 last:border-0">
+              <span aria-hidden="true" className="numeros flex size-7 shrink-0 items-center justify-center border border-borderdefault text-sm font-semibold">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
@@ -47,7 +47,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
               <button
                 type="button"
                 onClick={() => aoIrPara(p.tela)}
-                className="shrink-0 self-center rounded-xs text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0 self-center rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Ir
               </button>
@@ -63,7 +63,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
         </CardHeader>
         <ul className="flex flex-col">
           {REFERENCIAS.map((r) => (
-            <li key={r.assunto} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-fio py-2 last:border-0">
+            <li key={r.assunto} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border py-2 last:border-0">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-heading">{r.assunto}</p>
                 <p className="text-xs text-muted-foreground">{r.fonte}</p>
@@ -72,7 +72,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
                 href={r.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-xs text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Abrir
                 <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -97,7 +97,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
         <button
           type="button"
           onClick={() => aoIrPara('config')}
-          className="self-start rounded-xs text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="self-start rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Ir para Configurações
         </button>

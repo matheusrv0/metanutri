@@ -1,7 +1,7 @@
 import { BookOpen, HardDrive, Stethoscope } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 
 export const CHAVE_AVISO_VISTO = 'metanutri:aviso-inicial-visto'
 
@@ -42,7 +42,7 @@ export function AvisoPrimeiroAcesso() {
         <ul className="grid gap-3">
           {PONTOS.map(({ icone: Icone, texto }) => (
             <li key={texto} className="flex items-start gap-3 text-sm">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-xs border border-primary/30 bg-lightprimary text-primary">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-lightprimary text-primary">
                 <Icone className="size-4" aria-hidden="true" />
               </span>
               <span className="pt-1.5">{texto}</span>

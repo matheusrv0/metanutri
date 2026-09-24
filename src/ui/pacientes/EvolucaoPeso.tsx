@@ -38,8 +38,8 @@ export function EvolucaoPeso({ pontos }: { readonly pontos: readonly PontoEvoluc
       <svg viewBox={`0 0 ${largura} ${altura}`} className="w-full" role="img" aria-label="Evolução do peso ao longo dos planos">
         {marcasY.map((valor) => (
           <g key={valor}>
-            <line x1={margem.esquerda} x2={largura - margem.direita} y1={y(valor)} y2={y(valor)} stroke="var(--fio)" strokeWidth="1" />
-            <text x={margem.esquerda - 8} y={y(valor) + 4} textAnchor="end" fontSize="11" fill="var(--tinta-fraca)">
+            <line x1={margem.esquerda} x2={largura - margem.direita} y1={y(valor)} y2={y(valor)} stroke="var(--border-subtle)" strokeWidth="1" />
+            <text x={margem.esquerda - 8} y={y(valor) + 4} textAnchor="end" fontSize="11" fill="var(--text-muted)">
               {formatarNumero(valor, 0)}
             </text>
           </g>
@@ -48,7 +48,7 @@ export function EvolucaoPeso({ pontos }: { readonly pontos: readonly PontoEvoluc
         {pontos.map((p, i) => (
           <g key={`${p.data}-${i}`}>
             <circle cx={x(i)} cy={y(p.pesoKg)} r="4" fill="var(--color-primary)" />
-            <text x={x(i)} y={altura - 10} textAnchor="middle" fontSize="11" fill="var(--tinta-fraca)">
+            <text x={x(i)} y={altura - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)">
               {dataCurta(p.data)}
             </text>
           </g>

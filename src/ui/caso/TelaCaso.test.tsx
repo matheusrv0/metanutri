@@ -56,7 +56,14 @@ describe('Etapa 1: dados do caso', () => {
     expect(painel().getByText('25,2 kg/m²')).toBeInTheDocument()
     expect(painel().getByText('IMC (referência de adulto)')).toBeInTheDocument()
     expect(painel().getByText('Sobrepeso')).toBeInTheDocument()
-    expect(painel().getAllByText(/^Fonte: /).length).toBeGreaterThan(0)
+
+    // CA-05: a fonte não fica na cara do dado, mas continua a um clique.
+    const verFontes = painel().getByRole('button', { name: /Ver a(s \d+)? fontes?/ })
+    expect(verFontes).toHaveAttribute('aria-expanded', 'false')
+    await usuario.click(verFontes)
+    expect(verFontes).toHaveAttribute('aria-expanded', 'true')
+    expect(painel().getByText(/IMC:/)).toBeInTheDocument()
+    expect(painel().getByText(/SISVAN/)).toBeInTheDocument()
   })
 
   it('CA-02: idoso usa a referência de idoso', () => {
@@ -100,7 +107,11 @@ describe('Etapa 1: dados do caso', () => {
     const usuario = montar(adulta)
     await preencher(usuario, 'Circunferência da cintura', '92')
     expect(painel().getByText('Circunferência da cintura')).toBeInTheDocument()
-    expect(painel().getAllByText(/^Fonte: /).length).toBeGreaterThan(1)
+
+    // CA-05: com duas referências na tela, as duas fontes continuam registradas.
+    await usuario.click(painel().getByRole('button', { name: /Ver as \d+ fontes/ }))
+    expect(painel().getByText(/^IMC:/)).toBeInTheDocument()
+    expect(painel().getByText(/^Cintura:/)).toBeInTheDocument()
   })
 
   it('CA-04: panturrilha de idoso mostra classificação', async () => {

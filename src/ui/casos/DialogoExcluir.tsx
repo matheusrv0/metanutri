@@ -1,6 +1,6 @@
 import { Trash } from 'lucide-react'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 
 interface DialogoExcluirProps {
   /** Nome do que vai ser excluído; `null` mantém a janela fechada. */

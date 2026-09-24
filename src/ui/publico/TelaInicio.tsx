@@ -1,9 +1,9 @@
 import { Barcode, Check, CloudOff, FileText, Search, ShieldCheck, Target, X } from 'lucide-react'
 import { adequacaoDoExemplo, coberturaDeCalcio, LACUNAS_DA_BASE } from '@/domain/vitrine.ts'
-import { BarraAdequacao } from '../adequacao/BarraAdequacao.tsx'
-import { FlowButton } from '../componentes/flow-button.tsx'
-import { GridPattern } from '../componentes/grid-pattern.tsx'
-import { TextHighlight } from '../componentes/text-highlight.tsx'
+import { BarraAdequacao } from '@ds/componentes/nutricao/BarraAdequacao.tsx'
+import { FlowButton } from '@ds/componentes/efeitos/flow-button.tsx'
+import { GridPattern } from '@ds/componentes/efeitos/grid-pattern.tsx'
+import { TextHighlight } from '@ds/componentes/efeitos/text-highlight.tsx'
 
 interface TelaInicioProps {
   readonly aoAbrirSistema: () => void
@@ -79,7 +79,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
           </div>
 
           {/* Um pedaço da interface de verdade respondendo à promessa do título. */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-alto">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-pop">
             <div className="flex items-baseline justify-between gap-3 px-5 pb-3.5 pt-5">
               <div>
                 <h2 className="text-[17px] font-semibold">Adequação do dia</h2>
@@ -94,7 +94,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
               ))}
             </div>
 
-            <div className="grid gap-3.5 border-t border-fio bg-muted px-5 py-4">
+            <div className="grid gap-3.5 border-t border-border bg-muted px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold">Cobrir os 320 mg que faltam</p>
                 <span className="text-[13px] text-muted-foreground">grupos diferentes</span>
@@ -141,9 +141,9 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
             <p className="text-[13px] font-semibold text-muted-foreground">Software de nutrição comum</p>
             <p className="text-[13px] font-semibold text-primary">MetaNutri</p>
           </div>
-          <div className="border-t border-fio">
+          <div className="border-t border-border">
             {CONFRONTO.map(([rotulo, eles, nos]) => (
-              <div key={rotulo} className="grid items-baseline gap-x-8 gap-y-1.5 border-b border-fio py-6 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_minmax(0,1fr)]">
+              <div key={rotulo} className="grid items-baseline gap-x-8 gap-y-1.5 border-b border-border py-6 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_minmax(0,1fr)]">
                 <p className="text-sm font-semibold">{rotulo}</p>
                 <p className="flex items-start gap-2.5 text-[15px] text-muted-foreground">
                   <X className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -167,7 +167,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
 
         <div className="mt-2">
           {CAPACIDADES.map(([Icone, titulo, texto]) => (
-            <div key={titulo} className="grid items-start gap-x-7 gap-y-2.5 border-b border-fio py-7 md:grid-cols-[52px_minmax(0,300px)_minmax(0,1fr)]">
+            <div key={titulo} className="grid items-start gap-x-7 gap-y-2.5 border-b border-border py-7 md:grid-cols-[52px_minmax(0,300px)_minmax(0,1fr)]">
               <span aria-hidden="true" className="grid size-11 place-content-center rounded-md bg-lightprimary text-primary">
                 <Icone className="size-5" />
               </span>
@@ -180,25 +180,25 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
 
       {/* A base, com as lacunas admitidas */}
       <section className="mx-auto max-w-[1266px] px-4 pb-20 sm:px-8 sm:pb-24">
-        <div className="overflow-hidden rounded-2xl bg-lombada text-lombadatexto">
+        <div className="overflow-hidden rounded-2xl bg-background text-foreground">
           <div className="grid gap-10 p-8 md:grid-cols-2 md:gap-16 md:p-14">
             <div>
-              <h2 className="font-titulo text-[clamp(26px,3.8vw,45px)] font-normal leading-[1.14] tracking-[-0.4px] text-lombadatexto text-balance">
+              <h2 className="font-titulo text-[clamp(26px,3.8vw,45px)] font-normal leading-[1.14] tracking-[-0.4px] text-foreground text-balance">
                 A base que ninguém mostra
               </h2>
-              <p className="mt-4 max-w-[44ch] text-[15px] leading-relaxed text-lombadafraca">
+              <p className="mt-4 max-w-[44ch] text-[15px] leading-relaxed text-muted-foreground">
                 Menos de um em cada cinco alimentos da TACO tem os 20 nutrientes medidos. O resto tem buraco. Quase todo software
                 trata buraco como zero, e o plano fecha bonito numa conta errada.
               </p>
-              <p className="mt-5 text-[17px] font-semibold text-lombadatexto">Aqui, falta de dado aparece como falta de dado.</p>
-              <p className="mt-5 max-w-[44ch] text-sm leading-relaxed text-lombadafraca">
+              <p className="mt-5 text-[17px] font-semibold text-foreground">Aqui, falta de dado aparece como falta de dado.</p>
+              <p className="mt-5 max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
                 Vitamina D, B12 e folato não existem na tabela. Dava para importar da USDA casando por nome, mas “arroz, tipo 1,
                 cozido” e “rice, white, cooked” não são o mesmo alimento. Número plausível e errado é pior que número ausente.
               </p>
               <button
                 type="button"
                 onClick={aoVerAlimentos}
-                className="mt-6 inline-flex min-h-10 items-center gap-2 rounded-full border border-lombadafio px-5 text-sm font-semibold transition-colors hover:bg-lombadatexto hover:text-lombada focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lombadatexto"
+                className="mt-6 inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-5 text-sm font-semibold transition-colors hover:bg-surfaceinverse hover:text-textoninverse focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Ver a tabela de alimentos
               </button>
@@ -206,12 +206,12 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
 
             <div>
               {LACUNAS_DA_BASE.map((l) => (
-                <div key={l.rotulo} className="grid gap-2 border-b border-lombadafio py-4.5 last:border-0">
+                <div key={l.rotulo} className="grid gap-2 border-b border-border py-4.5 last:border-0">
                   <div className="flex items-baseline justify-between gap-4">
                     <span className="numeros whitespace-nowrap font-titulo text-3xl font-normal">{l.valor}</span>
-                    <span className="min-w-0 max-w-[26ch] text-right text-sm text-lombadafraca">{l.rotulo}</span>
+                    <span className="min-w-0 max-w-[26ch] text-right text-sm text-muted-foreground">{l.rotulo}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-lombadafio">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-border">
                     <div className="h-full rounded-full bg-warning" style={{ width: `${l.proporcao}%` }} />
                   </div>
                 </div>

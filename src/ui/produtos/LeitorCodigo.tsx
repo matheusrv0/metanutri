@@ -1,9 +1,9 @@
 import { Camera, ScanLine, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ehCodigoValido, navegadorLeCodigoBarras } from '@/domain/codigoBarras.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface LeitorCodigoProps {
   readonly aoLer: (codigo: string) => void
@@ -89,7 +89,7 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
+    <div className="flex flex-col gap-3 border border-border bg-muted p-4">
       <div className="flex items-center gap-2">
         <ScanLine className="size-4 text-primary" aria-hidden="true" />
         <h3 className="card-title text-sm">Ler pelo código de barras</h3>
@@ -97,7 +97,7 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
 
       {camera ? (
         <div className="flex flex-col gap-2">
-          <video ref={videoRef} className="w-full max-w-sm border border-fioforte" muted playsInline aria-label="Câmera lendo o código de barras" />
+          <video ref={videoRef} className="w-full max-w-sm border border-borderdefault" muted playsInline aria-label="Câmera lendo o código de barras" />
           <Button variant="ghost" size="sm" className="self-start" onClick={() => pararRef.current?.()}>
             Parar câmera
           </Button>

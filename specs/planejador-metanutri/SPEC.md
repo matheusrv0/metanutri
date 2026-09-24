@@ -38,7 +38,10 @@ Permitir que um estudante de nutrição ou recém-formado monte o plano alimenta
 - **CA-02c** · Dado um caso marcado como lactante, então o sistema pede o tempo pós-parto (meses).
 - **CA-03** · Dado sexo e circunferência da cintura preenchidos em adulto, então o sistema mostra a classificação de risco e a referência usada.
 - **CA-04** · Dado idade de 60 anos ou mais e circunferência da panturrilha preenchida, então o sistema mostra a classificação e a referência usada.
-- **CA-05** · Dado qualquer valor de referência antropométrica exibido, então a fonte aparece ao lado (nome e ano).
+- **CA-05** · Dado qualquer valor de referência antropométrica exibido, então a fonte (nome e ano)
+  fica registrada no mesmo cartão, alcançável em um clique. *Revisto em 24/09/2026: era "ao lado";
+  com seis referências na tela a citação ocupava mais espaço que o dado. A procedência continua
+  obrigatória — o que mudou é que ela fica recolhida por padrão, não que sumiu.*
 
 ### 4.2 Energia (B-02, B-16)
 

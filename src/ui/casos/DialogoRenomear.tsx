@@ -1,8 +1,8 @@
 import { useId, useState, type FormEvent } from 'react'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
-import { Input } from '../componentes/input.tsx'
-import { Label } from '../componentes/label.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { Input } from '@ds/componentes/forms/input.tsx'
+import { Label } from '@ds/componentes/forms/label.tsx'
 
 interface DialogoRenomearProps {
   /** Nome atual; `null` mantém a janela fechada. */

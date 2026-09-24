@@ -1,7 +1,7 @@
 import { NIVEIS_ATIVIDADE } from '@/domain/energia.ts'
 import type { Caso, FormulaTmb } from '@/domain/tipos.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 
 interface AjusteEnergiaProps {
   readonly caso: Caso
@@ -17,7 +17,7 @@ export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergia
   const nivelAtual = NIVEIS_ATIVIDADE.find((n) => n.fator === energia.fator)
 
   return (
-    <div className="flex flex-col gap-4 border border-fio bg-muted p-4">
+    <div className="flex flex-col gap-4 border border-border bg-muted p-4">
       {mostrarFormula ? (
         <GrupoOpcoes<FormulaTmb>
           rotulo="Fórmula da TMB"

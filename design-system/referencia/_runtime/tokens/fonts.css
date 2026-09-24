@@ -1,0 +1,3 @@
+/* Urbanist (display + UI) and Plus Jakarta Sans (tabular data). Loaded from Google Fonts —
+   the production app must self-host these (offline PWA). See readme "Fonts". */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Urbanist:wght@300;400;500;600;700;800&display=swap');

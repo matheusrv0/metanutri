@@ -4,13 +4,13 @@ import { atividadePorDia, resumirAtividade } from '@/domain/atividade.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { OriginButton } from '../componentes/origin-button.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
-import { CartaoDestaque } from './CartaoDestaque.tsx'
+import { CartaoDestaque } from '@ds/componentes/nutricao/CartaoDestaque.tsx'
 import { GraficoAtividade } from './GraficoAtividade.tsx'
 
 interface TelaPainelProps {
@@ -50,7 +50,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           valor={casos.length.toString()}
           apoio={casos.length === 0 ? 'Nenhum ainda' : `${atividade.total} mexidos em ${DIAS_NO_GRAFICO} dias`}
           icone={FolderOpen}
-          tom="verde"
+          tom="lime"
           aoClicar={() => aoIrPara('casos')}
         />
         <CartaoDestaque
@@ -58,7 +58,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           valor={pacientes.length.toString()}
           apoio={pacientes.length === 0 ? 'Comece cadastrando um' : 'Fichas com restrições e histórico'}
           icone={UserRound}
-          tom="escuro"
+          tom="branco"
           aoClicar={() => aoIrPara('pacientes')}
         />
         <CartaoDestaque
@@ -66,14 +66,14 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           valor={atividade.diasAtivos.toString()}
           apoio={`De ${DIAS_NO_GRAFICO} dias corridos`}
           icone={ClipboardList}
-          tom="escuro"
+          tom="branco"
         />
         <CartaoDestaque
           rotulo="Precisa de atenção"
           valor={pendencias.length.toString()}
           apoio={pendencias.length === 0 ? 'Nada pendente' : 'Coisas que atrapalham na entrega'}
           icone={TriangleAlert}
-          tom={pendencias.length > 0 ? 'ocre' : 'escuro'}
+          tom={pendencias.length > 0 ? 'ocre' : 'branco'}
         />
       </div>
 
@@ -114,7 +114,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           </div>
 
           {casos.length === 0 ? (
-            <div className="flex flex-wrap items-center gap-2 border-t border-fio pt-3">
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
               <p className="min-w-0 flex-1 text-sm text-muted-foreground">Nunca usou? Abra um dia inteiro já montado e mexa à vontade.</p>
               <Button variant="lightprimary" size="sm" onClick={aoVerExemplo}>
                 <Sparkles aria-hidden="true" />
@@ -122,7 +122,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
               </Button>
             </div>
           ) : (
-            <div className="border-t border-fio pt-4">
+            <div className="border-t border-border pt-4">
               <p className="rotulo mb-2">Últimos {DIAS_NO_GRAFICO} dias</p>
               <GraficoAtividade dias={dias} maior={atividade.maior} />
             </div>
@@ -139,7 +139,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           ) : (
             <ul className="flex flex-col" aria-label="Planos recentes">
               {recentes.map((c) => (
-                <li key={c.id} className="flex items-center gap-3 border-b border-fio py-2 last:border-0">
+                <li key={c.id} className="flex items-center gap-3 border-b border-border py-2 last:border-0">
                   <ClipboardList className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-heading">{c.nome.trim() || 'Plano sem nome'}</p>
@@ -164,7 +164,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
         </CardHeader>
         <ul className="flex flex-col gap-2 text-sm">
           {pendencias.map((p) => (
-            <li key={p.texto} className="flex items-center justify-between gap-3 border-b border-fio pb-2 last:border-0">
+            <li key={p.texto} className="flex items-center justify-between gap-3 border-b border-border pb-2 last:border-0">
               <span>{p.texto}</span>
               <Button size="sm" variant="ghost" onClick={p.ir}>
                 {p.acao}

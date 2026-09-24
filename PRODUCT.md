@@ -41,6 +41,7 @@ O concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora
 - Substitutos não entram na soma do dia nem na adequação.
 - Falta de dado nunca vira zero silencioso: o nutriente é marcado como possivelmente subestimado.
 - React 18, TypeScript estrito, Tailwind, Vite, shadcn/ui, tudo no navegador. Sem back-end.
+- A interface sai de uma biblioteca só, em `design-system/`; o contrato visual e os tokens estão em `DESIGN.md`.
 - Composição corporal opcional por dobras (Jackson e Pollock, Faulkner) ou bioimpedância.
 - Pendente: revisão clínica das oito referências pela nutricionista antes do lançamento.
 - Pendente e dependente do dono do produto: conta de usuário, cobrança, link do plano para o paciente e política de privacidade. Ver `docs/pendencias.md`.

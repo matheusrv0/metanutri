@@ -2,8 +2,10 @@
 
 ## MaterialM Free (design e componentes de interface)
 
-O visual do MetaNutri (cores, raios, sombras, layout e estilo dos componentes em `src/ui/`) foi portado do template
-MaterialM Tailwind Next.js Free: https://github.com/wrappixel/MaterialM-Tailwind-Nextjs-Free
+Base do visual entre 15 e 21/09/2026: raios grandes, botão pílula e a estrutura de menu lateral mais cabeçalho, que
+continuam valendo. A partir de 24/09/2026 a cor e a tipografia passaram a vir do design system em `design-system/`
+(ver `DESIGN.md`); os componentes de `design-system/componentes/` ainda descendem deste template.
+Template: https://github.com/wrappixel/MaterialM-Tailwind-Nextjs-Free
 
 ```
 MIT License
@@ -35,3 +37,19 @@ publicações públicas da NEPA/UNICAMP (TACO, 4ª edição, 2011) e do IBGE (PO
 Valores factuais citados com fonte: NASEM (Dietary Reference Intakes, 2019 e Energy, 2023), OMS (curvas de crescimento
 2006 e 2007), Ministério da Saúde (norma técnica do SISVAN, 2011) e Kac et al., Am J Clin Nutr 2021. Detalhes em
 `dados-brutos/README.md`.
+
+## Efeitos de interface da 21st.dev
+
+Os seis componentes de `design-system/componentes/efeitos/` (fundo aurora, padrão de grade, botão de fluxo, botão
+origin, marca-texto e linha do tempo animada) são adaptações de componentes publicados em https://21st.dev, usados
+apenas na área pública. Não fazem parte dos 25 componentes do design system.
+
+## Referências visuais do design system
+
+O export que originou `design-system/` (Claude Design, 24/09/2026) trazia oito capturas de um estudo de caso de painel
+financeiro de terceiros, usadas só como referência de linguagem visual. **Elas não foram incorporadas ao projeto**: nem
+a marca, nem o texto, nem as telas de lá aparecem no MetaNutri, e os arquivos não estão neste repositório.
+
+Os ícones são do conjunto **Lucide** (licença ISC, © Lucide Contributors), embutidos via `lucide-react` para funcionar
+offline. As fontes **Archivo**, **Figtree** e **Inter** são distribuídas sob a SIL Open Font License 1.1 e embutidas via
+`@fontsource`.

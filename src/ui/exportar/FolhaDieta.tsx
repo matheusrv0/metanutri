@@ -48,8 +48,8 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
   })())
 
   return (
-    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-5 bg-card p-8 text-[13px] leading-relaxed text-tinta">
-      <header className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-fioforte pb-3">
+    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-5 bg-card p-8 text-[13px] leading-relaxed text-foreground">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-borderdefault pb-3">
         <div className="flex items-end gap-3">
           {perfil.logo ? <img src={perfil.logo} alt="" className="h-12 w-auto" /> : null}
           <div>
@@ -79,7 +79,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
 
       <div className="flex flex-col gap-4">
         {plano.refeicoes.map((refeicao) => (
-          <section key={refeicao.id} className="break-inside-avoid border-b border-fio pb-3 last:border-0">
+          <section key={refeicao.id} className="break-inside-avoid border-b border-border pb-3 last:border-0">
             <h3 className="font-titulo text-[15px] font-semibold">
               <span className="numeros mr-2">{refeicao.horario}</span>
               {refeicao.nome}
@@ -110,7 +110,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
         <ul className="mt-1 flex flex-col gap-1">
           {missoes.map((m) => (
             <li key={m.id} className="flex items-start gap-2">
-              <span aria-hidden="true" className="mt-0.5 inline-block size-3.5 shrink-0 border border-fioforte" />
+              <span aria-hidden="true" className="mt-0.5 inline-block size-3.5 shrink-0 border border-borderdefault" />
               <span>{m.texto}</span>
             </li>
           ))}
@@ -164,7 +164,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
         </section>
       ) : null}
 
-      <footer className="mt-2 border-t border-fioforte pt-3 text-xs text-muted-foreground">
+      <footer className="mt-2 border-t border-borderdefault pt-3 text-xs text-muted-foreground">
         <p>
           {caso.modo === 'rapido'
             ? 'Plano montado em prescrição rápida: sem avaliação antropométrica.'

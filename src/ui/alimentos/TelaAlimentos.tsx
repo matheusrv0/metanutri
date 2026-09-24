@@ -6,10 +6,10 @@ import { completudeDe, explicarCompletude, type NivelCompletude } from '@/domain
 import type { Alimento } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { Input } from '../componentes/input.tsx'
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Input } from '@ds/componentes/forms/input.tsx'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 
 const ORDENS: readonly { readonly valor: OrdemCatalogo; readonly rotulo: string }[] = [
@@ -105,7 +105,7 @@ export function TelaAlimentos() {
               aria-pressed={categoria === null}
               className={cn(
                 'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                categoria === null ? 'border-primary bg-lightprimary text-primary' : 'border-fio text-muted-foreground hover:border-fioforte hover:text-foreground',
+                categoria === null ? 'border-primary bg-lightprimary text-primary' : 'border-border text-muted-foreground hover:border-borderdefault hover:text-foreground',
               )}
             >
               {`Todas · ${resumo.total}`}
@@ -118,7 +118,7 @@ export function TelaAlimentos() {
                 aria-pressed={categoria === c.nome}
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  categoria === c.nome ? 'border-primary bg-lightprimary text-primary' : 'border-fio text-muted-foreground hover:border-fioforte hover:text-foreground',
+                  categoria === c.nome ? 'border-primary bg-lightprimary text-primary' : 'border-border text-muted-foreground hover:border-borderdefault hover:text-foreground',
                 )}
               >
                 {`${c.nome} · ${c.quantos}`}
@@ -126,7 +126,7 @@ export function TelaAlimentos() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-fio pt-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rotulo">Ordenar</span>
               {ORDENS.map((o) => (
@@ -173,7 +173,7 @@ export function TelaAlimentos() {
         </Card>
 
         <Card className="gap-0 p-0">
-          <div className="flex items-center justify-between gap-3 border-b border-fio px-5 py-3.5">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
             <p className="text-sm font-medium">
               {lista.length === 0 ? 'Nenhum alimento' : `${lista.length} ${lista.length === 1 ? 'alimento' : 'alimentos'}`}
             </p>
@@ -193,7 +193,7 @@ export function TelaAlimentos() {
                 const c = completudeDe(a)
                 const kcal = a.nutrientes.energia_kcal
                 return (
-                  <li key={a.id} className="border-b border-fio last:border-0">
+                  <li key={a.id} className="border-b border-border last:border-0">
                     <button
                       type="button"
                       onClick={() => setAberto(a)}
@@ -228,7 +228,7 @@ export function TelaAlimentos() {
           )}
 
           {quantos < lista.length ? (
-            <div className="border-t border-fio px-5 py-4 text-center">
+            <div className="border-t border-border px-5 py-4 text-center">
               <Button variant="outline" size="sm" onClick={() => setQuantos((q) => q + PAGINA)}>
                 {`Mostrar mais ${Math.min(PAGINA, lista.length - quantos)}`}
               </Button>
@@ -303,11 +303,11 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
       {explicacao ? <p className="text-xs leading-relaxed text-muted-foreground">{explicacao}</p> : null}
 
       {medidas.length > 0 ? (
-        <div className="border-t border-fio pt-4">
+        <div className="border-t border-border pt-4">
           <p className="rotulo mb-2">Medidas caseiras · POF/IBGE</p>
           <ul className="flex flex-wrap gap-1.5">
             {medidas.slice(0, 6).map((m) => (
-              <li key={m.nome} className="numeros rounded-full border border-fio px-2.5 py-1 text-xs text-muted-foreground">
+              <li key={m.nome} className="numeros rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
                 {`${m.nome} · ${formatarNumero(m.gramas, 0)} g`}
               </li>
             ))}
@@ -315,11 +315,11 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
         </div>
       ) : null}
 
-      <div className="border-t border-fio pt-4">
+      <div className="border-t border-border pt-4">
         <p className="rotulo mb-2">Composição</p>
         <ul>
           {linhas.map((l) => (
-            <li key={l.chave} className="flex items-baseline justify-between gap-3 border-b border-fio py-2 last:border-0">
+            <li key={l.chave} className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-0">
               <span className="text-sm">{l.nome}</span>
               {l.valor === null ? (
                 <span className="text-xs text-muted-foreground" title="Não analisado pela TACO">

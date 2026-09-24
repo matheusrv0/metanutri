@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x440" name="Overlay" subtitle="Dialog, Sheet, DropdownMenu" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>components/overlay/overlay.card.html</title>
+<link rel="stylesheet" href="../_runtime/styles.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_runtime/_ds_bundle.js"></script>
+<style>body{background:var(--bg-page);padding:20px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-sans);color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const NS = window.MetaNutriDesignSystem_38356f;
+
+const { Dialog, Sheet, DropdownMenu, Button } = NS;
+function App(){
+  const [d,setD]=React.useState(true); const [s,setS]=React.useState(false);
+  return <div style={{position:'relative',height:400,borderRadius:16,overflow:'hidden',background:'var(--bg-page)'}}>
+    <div className="row" style={{padding:4}}>
+      <Button onClick={()=>setD(true)}>Abrir diálogo</Button>
+      <Button variant="outline" onClick={()=>setS(true)}>Abrir gaveta</Button>
+      <DropdownMenu align="start" trigger={<Button variant="outline" icon="download" iconRight="chevron-down">Exportar</Button>} items={[{heading:'Documento'},{icon:'printer',label:'Dieta para imprimir'},{icon:'file-text',label:'Aconselhamento',hint:'.docx'},{icon:'calculator',label:'Memorial de cálculo',hint:'.docx'},{separator:true},{icon:'copy',label:'Copiar tabela de adequação'}]} />
+    </div>
+    {d ? <div style={{position:'absolute',inset:0}}><div className="mn-overlay" style={{position:'absolute'}} onMouseDown={e=>{if(e.target===e.currentTarget)setD(false)}}><div className="mn-dialog" role="dialog">
+      <div><h2 className="mn-dialog__title">Excluir plano?</h2><p className="mn-dialog__desc">“Ana Souza — retorno” sai deste aparelho. Esta ação não pode ser desfeita.</p></div>
+      <span className="mn-dialog__close"><Button variant="ghost" size="sm" icon="x" aria-label="Fechar" onClick={()=>setD(false)} /></span>
+      <div className="mn-dialog__foot"><Button variant="ghost" onClick={()=>setD(false)}>Cancelar</Button><Button variant="destructive" icon="trash-2">Excluir</Button></div>
+    </div></div></div> : null}
+    <Sheet contained open={s} onClose={()=>setS(false)} title="Cobrir Cálcio" description="Faltam 388 mg para a meta. Cabem 240 kcal até o gasto energético.">
+      <p style={{fontSize:13,color:'var(--text-muted)'}}>Sugestões aparecem aqui.</p>
+    </Sheet>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

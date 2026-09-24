@@ -6,14 +6,15 @@ import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { Alert } from '../componentes/alert.tsx'
-import { Badge } from '../componentes/badge.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardTitle } from '../componentes/card.tsx'
-import { Progress } from '../componentes/progress.tsx'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Badge } from '@ds/componentes/display/badge.tsx'
+import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Progress } from '@ds/componentes/display/progress.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
-import { MedidorMacro } from './MedidorMacro.tsx'
+import { MedidorMacro } from '@ds/componentes/nutricao/MedidorMacro.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
 
 interface ResumoDoDiaProps {
@@ -26,6 +27,13 @@ const VARIANTE: Record<EstadoFaixa, 'lightSuccess' | 'lightWarning' | 'lightErro
   dentro: 'lightSuccess',
   abaixo: 'lightWarning',
   acima: 'lightError',
+}
+
+/* A barra carrega o mesmo estado do selo: cor sempre significa alguma coisa. */
+const VARIANTE_BARRA: Record<EstadoFaixa, 'success' | 'warning' | 'error'> = {
+  dentro: 'success',
+  abaixo: 'warning',
+  acima: 'error',
 }
 
 
@@ -71,7 +79,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
 
         {ajustando ? (
           caso.modo === 'rapido' ? (
-            <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
+            <div className="flex flex-col gap-3 border border-border bg-muted p-4">
               <CampoNumero
                 rotulo="Meta de energia"
                 valor={caso.metaEnergiaKcal}
@@ -110,7 +118,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           </div>
           {doGet ? (
             <>
-              <Progress value={doGet.pct} />
+              <Progress value={doGet.pct} variant={VARIANTE_BARRA[doGet.estado]} />
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">{`${formatarNumero(doGet.pct, 0)}% do GET`}</span>
                 <Badge variant={VARIANTE[doGet.estado]}>
@@ -141,7 +149,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
                 <dd className="numeros font-medium text-heading">{`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`}</dd>
               </div>
             ))}
-            {energia.fonte ? <p className="pt-1 text-xs text-muted-foreground">Fonte: {energia.fonte}</p> : null}
+            {energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
           </dl>
         ) : null}
       </Card>

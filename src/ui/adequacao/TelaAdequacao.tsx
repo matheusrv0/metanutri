@@ -6,14 +6,14 @@ import { ALIMENTOS, buscarAlimento, FONTE_ALIMENTOS } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Badge } from '../componentes/badge.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { Progress } from '../componentes/progress.tsx'
-import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '../componentes/table.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Badge } from '@ds/componentes/display/badge.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Progress } from '@ds/componentes/display/progress.tsx'
+import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 
 interface TelaAdequacaoProps {
@@ -31,6 +31,13 @@ const VARIANTE: Record<EstadoAdequacao, 'lightSuccess' | 'lightWarning' | 'light
   adequado: 'lightSuccess',
   abaixo: 'lightWarning',
   'acima-limite': 'lightError',
+}
+
+/* A barra carrega o mesmo estado do selo: cor sempre significa alguma coisa. */
+const VARIANTE_BARRA: Record<EstadoAdequacao, 'success' | 'warning' | 'error'> = {
+  adequado: 'success',
+  abaixo: 'warning',
+  'acima-limite': 'error',
 }
 
 const ROTULO_ESTADO: Record<EstadoAdequacao, string> = {
@@ -89,7 +96,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         <span className="block text-xs uppercase text-muted-foreground">{linha.referencia.tipo}</span>
       </TableCell>
       <TableCell className="min-w-28">
-        <Progress value={linha.adequacaoPct} />
+        <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
         <span className="numeros mt-1 block whitespace-nowrap text-xs text-muted-foreground">{`${formatarNumero(linha.adequacaoPct, 0)}% (meta ${formatarNumero(linha.metaPct, 0)}%)`}</span>
       </TableCell>
       <TableCell>

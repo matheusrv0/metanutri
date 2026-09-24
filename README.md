@@ -23,6 +23,9 @@ Outros comandos:
 | `npm run preview` | serve o `dist/` para conferir o build |
 | `npx playwright test` | testes de ponta a ponta em navegador real |
 
+Trabalhando com um agente de código? As instruções do repositório estão em
+[AGENTS.md](AGENTS.md).
+
 ## As duas áreas
 
 **Pública** (`#/inicio`, `#/precos`, `#/entrar`) — fundo escuro animado, para
@@ -130,14 +133,33 @@ dentro do sistema, em **Ajuda**.
 ## Como o código está organizado
 
 ```
-src/domain/   regras puras, sem React: cálculo, validação, persistência (tudo testado)
-src/data/     tabelas geradas por scripts/dados/*.mjs — não edite à mão
-src/export/   Word (.docx) e cópia de tabela
-src/ui/       telas, divididas por assunto (caso, plano, adequação, pacientes, produtos)
+src/domain/     regras puras, sem React: cálculo, validação, persistência (tudo testado)
+src/data/       tabelas geradas por scripts/dados/*.mjs — não edite à mão
+src/export/     Word (.docx) e cópia de tabela
+src/ui/         telas, divididas por assunto (caso, plano, adequação, pacientes, produtos)
+design-system/  tokens, componentes, vitrine e referência visual
 ```
 
 Regra que vale em todo o projeto: **o domínio não conhece a interface**. Se um cálculo
 está numa tela, ele está no lugar errado.
+
+## O design system
+
+A interface inteira sai de uma biblioteca só, em [design-system/](design-system/). Os
+valores de cor, fonte, espaço e raio ficam em `design-system/tokens/tokens.css`, e o que
+cada um significa está escrito em [DESIGN.md](DESIGN.md) — que é o contrato visual do
+projeto.
+
+Para ver a biblioteca desenhada, com todas as variantes e estados e nos dois temas,
+rode `npm run dev` e abra **<http://localhost:5173/#/design-system>**.
+
+Duas regras valem em todo código de interface: componente novo sai da biblioteca, e
+nenhum valor de cor, fonte, espaçamento ou raio vai escrito no código — sempre token.
+O `npm run check` cobra as duas. O mapa da biblioteca e o passo a passo para criar um
+componente estão em [design-system/LEIA-ME.md](design-system/LEIA-ME.md).
+
+As telas originais do sistema, como o Claude Design as entregou, ficam guardadas em
+`design-system/referencia/` — abra `referencia/index.html` no navegador.
 
 ## Publicar na internet
 

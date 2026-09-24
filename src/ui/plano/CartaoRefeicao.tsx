@@ -5,9 +5,9 @@ import { totaisDeItens } from '@/domain/totais.ts'
 import type { ItemPlano, OpcaoId, Refeicao } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
-import { Button } from '../componentes/button.tsx'
-import { Card } from '../componentes/card.tsx'
-import { Input } from '../componentes/input.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card } from '@ds/componentes/display/card.tsx'
+import { Input } from '@ds/componentes/forms/input.tsx'
 import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
@@ -88,7 +88,7 @@ export function CartaoRefeicao({
         </Button>
       </div>
 
-      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="flex flex-wrap border-b border-fioforte">
+      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="flex flex-wrap border-b border-borderdefault">
         {OPCOES_ORDEM.map((o) => {
           const ativa = o === opcaoAtiva
           const quantos = refeicao.opcoes[o].length
@@ -101,7 +101,7 @@ export function CartaoRefeicao({
               onClick={() => setOpcaoAtiva(o)}
               className={cn(
                 '-mb-px flex-1 border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                ativa ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
+                ativa ? 'border-surfaceaccent font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
               {ROTULO_OPCAO[o]}

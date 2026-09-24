@@ -1,9 +1,9 @@
 import { BadgeCheck, CloudOff, LogIn, LogOut, Sparkles, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { planoPorId, PLANOS } from '@/domain/conta.ts'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import type { ValorConta } from '../estado/usarConta.ts'
 
 interface TelaContaProps {
@@ -38,7 +38,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
           <p className="text-sm text-muted-foreground">Conferindo a sessão…</p>
         ) : conta.sessao ? (
           <div className="flex flex-wrap items-center gap-4">
-            <span aria-hidden="true" className="grid size-12 shrink-0 place-content-center rounded-md border border-fioforte bg-lightprimary text-primary">
+            <span aria-hidden="true" className="grid size-12 shrink-0 place-content-center rounded-md border border-borderdefault bg-lightprimary text-primary">
               <UserRound className="size-6" />
             </span>
             <div className="min-w-0 flex-1">
@@ -64,7 +64,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
             <div>
               <p className="font-medium">A conta na nuvem ainda não foi ligada neste projeto.</p>
               <p className="mt-1 text-sm">
-                Falta criar o projeto no Supabase e preencher as duas chaves em <code className="rounded-xs bg-muted px-1">.env.local</code>. O passo a passo está no
+                Falta criar o projeto no Supabase e preencher as duas chaves em <code className="rounded-md bg-muted px-1">.env.local</code>. O passo a passo está no
                 README. Enquanto isso, o backup em Configurações leva tudo para outro aparelho.
               </p>
               <Button variant="lightprimary" size="sm" className="mt-3" onClick={aoIrParaConfig}>
@@ -81,7 +81,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
           <CardDescription>Nenhuma cobrança está ativa. Os planos pagos entram quando a conta na nuvem estiver no ar.</CardDescription>
         </CardHeader>
 
-        <div className="flex flex-wrap items-center gap-3 border border-fio p-4">
+        <div className="flex flex-wrap items-center gap-3 border border-border p-4">
           <span aria-hidden="true" className="grid size-10 shrink-0 place-content-center rounded-md border border-primary/40 bg-lightprimary text-primary">
             <BadgeCheck className="size-5" />
           </span>

@@ -3,14 +3,14 @@ import { useMemo, useState } from 'react'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { Label } from '../componentes/label.tsx'
-import { Textarea } from '../componentes/textarea.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Label } from '@ds/componentes/forms/label.tsx'
+import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
@@ -190,7 +190,7 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
           ) : (
             <ul className="flex flex-col" aria-label="Planos do paciente">
               {planos.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 border-b border-fio py-2 last:border-0">
+                <li key={p.id} className="flex items-center gap-3 border-b border-border py-2 last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-heading">{p.nome.trim() || 'Plano sem nome'}</p>
                     <p className="text-xs text-muted-foreground">

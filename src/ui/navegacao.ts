@@ -20,6 +20,7 @@ export type Rota =
   | { readonly tela: 'produtos' }
   | { readonly tela: 'config' }
   | { readonly tela: 'ajuda' }
+  | { readonly tela: 'designsystem' }
 
 export const ABAS: readonly AbaPlanejador[] = ['caso', 'plano', 'adequacao']
 
@@ -36,6 +37,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'config') return { tela: 'config' }
   if (tela === 'ajuda') return { tela: 'ajuda' }
+  if (tela === 'design-system') return { tela: 'designsystem' }
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
   if (tela === 'paciente' && id) return { tela: 'paciente', pacienteId: id }
@@ -71,6 +73,8 @@ export function escreverRota(rota: Rota): string {
       return '#/config'
     case 'ajuda':
       return '#/ajuda'
+    case 'designsystem':
+      return '#/design-system'
     case 'planejador':
       return `#/caso/${encodeURIComponent(rota.casoId)}/${rota.aba}`
   }

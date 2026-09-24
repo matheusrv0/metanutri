@@ -1,8 +1,8 @@
 import { ClipboardList, Copy, EllipsisVertical, Pencil, Trash } from 'lucide-react'
 import type { ResumoCaso } from '@/domain/persistencia.ts'
-import { Button } from '../componentes/button.tsx'
-import { Card } from '../componentes/card.tsx'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../componentes/dropdown-menu.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card } from '@ds/componentes/display/card.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@ds/componentes/overlay/dropdown-menu.tsx'
 import { formatarAlteracao } from './formatarAlteracao.ts'
 
 interface CartaoCasoProps {
@@ -19,7 +19,7 @@ export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }:
   return (
     <Card className="gap-4 p-5">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
           <ClipboardList className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">

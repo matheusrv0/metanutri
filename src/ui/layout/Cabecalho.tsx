@@ -1,6 +1,6 @@
 import { ChevronRight, Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from '../componentes/button.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 
 export interface PassoTrilha {
   readonly rotulo: string
@@ -19,7 +19,7 @@ interface CabecalhoProps {
 /** Cabeça de página: trilha fina, título e, à direita, a seção corrente. */
 export function Cabecalho({ titulo, subtitulo, trilha, acoes, aoAbrirMenu }: CabecalhoProps) {
   return (
-    <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-fioforte bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-borderdefault bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex min-h-[64px] max-w-[1400px] items-center gap-3 px-4 py-2 sm:px-8">
         <Button variant="ghost" size="icon" className="xl:hidden" onClick={aoAbrirMenu} aria-label="Abrir menu">
           <Menu className="size-5" aria-hidden="true" />
@@ -33,7 +33,7 @@ export function Cabecalho({ titulo, subtitulo, trilha, acoes, aoAbrirMenu }: Cab
                     <button
                       type="button"
                       onClick={p.aoClicar}
-                      className="rounded-xs hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="rounded-sm hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {p.rotulo}
                     </button>

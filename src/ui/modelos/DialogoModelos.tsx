@@ -2,10 +2,10 @@ import { BookmarkPlus, LayoutTemplate, Trash } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { clonarPlano, criarRepositorioModelos, type ModeloPlano } from '@/domain/modelos.ts'
 import type { Plano } from '@/domain/tipos.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 
 interface DialogoModelosProps {
   readonly aberto: boolean
@@ -56,7 +56,7 @@ export function DialogoModelos({ aberto, plano, aoUsar, aoFechar }: DialogoModel
           <DialogDescription>Guarde um plano que deu certo e use como ponto de partida. As refeições entram no lugar das atuais.</DialogDescription>
         </DialogHeader>
 
-        <section className="flex flex-col gap-3 border border-fio bg-muted p-4">
+        <section className="flex flex-col gap-3 border border-border bg-muted p-4">
           <h3 className="rotulo">Salvar o plano aberto</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <CampoTexto rotulo="Nome do modelo" valor={nome} aoMudar={setNome} placeholder="Emagrecimento 1600 kcal…" />
@@ -82,7 +82,7 @@ export function DialogoModelos({ aberto, plano, aoUsar, aoFechar }: DialogoModel
           ) : (
             <ul className="flex flex-col" aria-label="Modelos salvos">
               {modelos.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 border-b border-fio py-2 last:border-0">
+                <li key={m.id} className="flex items-center gap-3 border-b border-border py-2 last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-heading">{m.nome}</p>
                     <p className="text-xs text-muted-foreground">

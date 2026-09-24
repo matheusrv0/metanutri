@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react'
 import { criarRepositorioProdutos, produtoComoAlimento, type Produto } from '@/domain/produtos.ts'
 import { registrarProdutos } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 import { DialogoProduto } from './DialogoProduto.tsx'
 
@@ -66,7 +66,7 @@ export function TelaProdutos() {
 
       {produtos.length === 0 ? (
         <Card className="items-center gap-3 py-12 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
+          <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
             <Barcode className="size-6" aria-hidden="true" />
           </span>
           <h2 className="card-title">{busca.trim() ? 'Nenhum produto com esse nome' : 'Nenhum produto cadastrado'}</h2>
@@ -94,7 +94,7 @@ export function TelaProdutos() {
                       <Trash aria-hidden="true" />
                     </Button>
                   </div>
-                  <dl className="numeros grid grid-cols-2 gap-x-4 gap-y-1 border-t border-fio pt-3 text-sm">
+                  <dl className="numeros grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border pt-3 text-sm">
                     <div className="flex justify-between gap-2">
                       <dt className="text-muted-foreground">Porção</dt>
                       <dd>{`${formatarNumero(p.porcaoG, 0)} g${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>

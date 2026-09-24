@@ -26,7 +26,7 @@ Comandos: `npm run check` (lint + tipos + testes) e `npm run e2e` (ponta a ponta
 | CA-02c | Dado um caso marcado como lactante, então o sistema pede o tempo pós-parto (meses). | `src/domain/antropometria.test.ts`<br>`src/ui/caso/TelaCaso.test.tsx` |
 | CA-03 | Dado sexo e circunferência da cintura preenchidos em adulto, então o sistema mostra a classificação de risc... | `src/domain/antropometria.test.ts`<br>`src/ui/caso/TelaCaso.test.tsx` |
 | CA-04 | Dado idade de 60 anos ou mais e circunferência da panturrilha preenchida, então o sistema mostra a classifi... | `src/domain/antropometria.test.ts`<br>`src/ui/caso/TelaCaso.test.tsx` |
-| CA-05 | Dado qualquer valor de referência antropométrica exibido, então a fonte aparece ao lado (nome e ano). | `src/domain/antropometria.test.ts`<br>`src/ui/caso/TelaCaso.test.tsx` |
+| CA-05 | Dado qualquer valor de referência antropométrica exibido, então a fonte (nome e ano) fica registrada no mesmo cartão, alcançável em um clique (revisto em 24/09/2026). | `src/domain/antropometria.test.ts`<br>`src/ui/caso/TelaCaso.test.tsx` |
 | CA-06 | Dado um adulto com sexo, idade, peso e estatura válidos, quando o usuário escolhe a fórmula (Mifflin-St Jeo... | `src/domain/energia.test.ts`<br>`src/ui/resumo/ResumoDoDia.test.tsx` |
 | CA-06a | Dado um caso de 1 a 18 anos, então o sistema calcula a necessidade energética com equações próprias para a ... | `src/domain/energia.test.ts`<br>`src/ui/resumo/ResumoDoDia.test.tsx` |
 | CA-06b | Dado uma gestante, então o GET usa as equações de gestação (no 2º e 3º trimestres, com o depósito de energi... | `src/domain/energia.test.ts` |

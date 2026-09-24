@@ -4,11 +4,11 @@ import { CAMPOS_OPCIONAIS, CAMPOS_ROTULO, porCem, validarProduto, type Produto }
 import { LeitorCodigo } from './LeitorCodigo.tsx'
 import type { ChaveNutrienteAlimento } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 
 type Valores = Partial<Record<ChaveNutrienteAlimento, number | null>>
 

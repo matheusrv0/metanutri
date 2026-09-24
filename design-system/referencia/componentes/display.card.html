@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Display" subtitle="Card, Badge, Alert, Progress, Table, Tooltip, Separator, Icon" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>components/display/display.card.html</title>
+<link rel="stylesheet" href="../_runtime/styles.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_runtime/_ds_bundle.js"></script>
+<style>body{background:var(--bg-page);padding:20px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-sans);color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const NS = window.MetaNutriDesignSystem_38356f;
+
+const { Card, Badge, Alert, Progress, Table, Tooltip, Separator, Icon, Button } = NS;
+function App(){
+  return <div className="col">
+    <div className="row"><Badge variant="success">Adequado</Badge><Badge variant="warning">Abaixo da meta</Badge><Badge variant="error">Acima do limite superior</Badge><Badge variant="info">RDA</Badge><Badge variant="neutral" dot>Rascunho</Badge><Badge variant="solid">Plus</Badge><Badge variant="accent" icon="check">Salvo</Badge></div>
+    <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:12}}>
+      <Alert variant="warning">Informe a idade para calcular o gasto energético.</Alert>
+      <Alert variant="info" icon="hard-drive">Planos salvos só neste aparelho.</Alert>
+    </div>
+    <Card title="Micronutrientes" description="Estágio de vida: mulheres de 19 a 30 anos" action={<Button variant="outline" size="sm" icon="copy">Copiar tabela</Button>}>
+      <Table columns={[{key:'n',label:'Nutriente'},{key:'v',label:'No plano',numeric:true,nowrap:true},{key:'r',label:'Referência',numeric:true},{key:'a',label:'Adequação',width:150},{key:'e',label:'Estado'}]}
+        rows={[
+          {n:'Cálcio',v:<span>612 mg<Tooltip content="2 alimentos do plano não têm este nutriente na tabela."><abbr className="mn-mark mn-mark--warn">†</abbr></Tooltip></span>,r:'1.000 mg',a:<Progress value={61} variant="warning" />,e:<Badge variant="warning">Abaixo da meta</Badge>},
+          {n:'Ferro',v:'19,4 mg',r:'18 mg',a:<Progress value={100} variant="lime" />,e:<Badge variant="success">Adequado</Badge>},
+          {n:'Sódio',v:'2.740 mg',r:'2.300 mg',a:<Progress value={100} variant="error" />,e:<Badge variant="error">Acima do limite superior</Badge>}]}
+        footnotes={<p><span className="mn-mark mn-mark--warn">†</span> Total possivelmente subestimado. Falta de dado nunca entra como zero.</p>} />
+    </Card>
+    <div className="row" style={{gap:16,color:'var(--forest-900)'}}>{['layout-dashboard','user-round','folder-open','book-open','barcode','flame','arrow-left-right','clipboard-list','settings','circle-help'].map(n=><Icon key={n} name={n} size={20}/>)}<Separator orientation="vertical" /><span style={{color:'var(--text-muted)',fontSize:13}}>Lucide · 1.75 stroke</span></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

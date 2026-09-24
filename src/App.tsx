@@ -7,8 +7,8 @@ import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
-import { Button } from './ui/componentes/button.tsx'
-import { Card } from './ui/componentes/card.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
 import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
@@ -20,6 +20,7 @@ import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
 import { TelaAlimentos } from './ui/alimentos/TelaAlimentos.tsx'
+import { TelaDesignSystem } from '@ds/vitrine/TelaDesignSystem.tsx'
 import { TelaConta } from './ui/conta/TelaConta.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
@@ -31,7 +32,7 @@ import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './ui/resumo/ResumoDoDia.tsx'
 import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
-import { EtapasDoCaso } from './ui/layout/EtapasDoCaso.tsx'
+import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
 import { ETAPAS } from './ui/navegacao.ts'
@@ -159,6 +160,14 @@ function Conteudo() {
     return (
       <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'designsystem') {
+    return (
+      <Estrutura {...base} titulo="Design system" subtitulo="A biblioteca inteira, nos dois temas">
+        <TelaDesignSystem />
       </Estrutura>
     )
   }

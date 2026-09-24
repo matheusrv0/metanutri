@@ -11,7 +11,7 @@ import {
   type GerarId,
 } from '@/domain/plano.ts'
 import type { OpcaoId, Plano } from '@/domain/tipos.ts'
-import { Button } from '../componentes/button.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { DialogoModelos } from '../modelos/DialogoModelos.tsx'
 import { CartaoRefeicao } from './CartaoRefeicao.tsx'
 

@@ -1,0 +1,21 @@
+:root{
+--font-sans:'Urbanist',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+--font-display:'Urbanist',ui-sans-serif,system-ui,sans-serif;
+--font-data:'Plus Jakarta Sans','Urbanist',ui-sans-serif,system-ui,sans-serif;
+
+--weight-light:300;--weight-regular:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;
+
+--text-2xs:11px;--text-xs:12px;--text-sm:13px;--text-md:14px;--text-base:16px;--text-lg:18px;--text-xl:20px;--text-2xl:24px;--text-3xl:32px;--text-4xl:40px;--text-5xl:56px;--text-6xl:72px;
+
+--leading-tight:1.1;--leading-snug:1.3;--leading-normal:1.5;
+--tracking-display:-0.02em;--tracking-tight:-0.01em;--tracking-caps:0.06em;
+
+/* Roles */
+--type-display:var(--weight-light) var(--text-5xl)/var(--leading-tight) var(--font-display);
+--type-page-title:var(--weight-semibold) var(--text-xl)/var(--leading-snug) var(--font-display);
+--type-card-title:var(--weight-semibold) var(--text-base)/var(--leading-snug) var(--font-display);
+--type-body:var(--weight-regular) var(--text-md)/var(--leading-normal) var(--font-sans);
+--type-caption:var(--weight-regular) var(--text-xs)/var(--leading-normal) var(--font-sans);
+--type-label:var(--weight-medium) var(--text-xs)/1 var(--font-sans);
+--type-metric:var(--weight-semibold) var(--text-3xl)/1 var(--font-display);
+}

@@ -1,10 +1,11 @@
 import { PROTOCOLOS, calcularComposicao, completarBioimpedancia, type ProtocoloDobras } from '@/domain/composicao.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { CampoNumero } from './CampoNumero.tsx'
-import { CampoTexto } from './CampoTexto.tsx'
-import { GrupoOpcoes } from './GrupoOpcoes.tsx'
+import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 
 interface CartaoComposicaoProps {
   readonly caso: Caso
@@ -69,7 +70,7 @@ export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-fio pt-4">
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
         <p className="rotulo">Resultado das dobras</p>
         {resultado.gorduraPct === null ? (
           <p className="text-sm text-muted-foreground">{resultado.motivoSemCalculo}</p>
@@ -81,12 +82,12 @@ export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
                 ? ` · ${formatarNumero(resultado.massaGordaKg, 1)} kg de massa gorda · ${formatarNumero(resultado.massaMagraKg, 1)} kg de massa magra`
                 : ''}
             </p>
-            <p className="text-xs text-muted-foreground">Fonte: {resultado.fonte}</p>
+            <Fontes itens={[{ texto: resultado.fonte }]} />
           </>
         )}
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-fio pt-4">
+      <div className="flex flex-col gap-4 border-t border-border pt-4">
         <p className="rotulo">Bioimpedância</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <CampoNumero rotulo="Gordura" valor={composicao.bioimpedancia.gorduraPct} aoMudar={(v) => alterarBio({ gorduraPct: v })} sufixo="%" />

@@ -4,10 +4,10 @@ import { calcularSubstituto, type CriterioEquivalencia } from '@/domain/substitu
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano, OpcaoId } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 
 interface DialogoSubstitutoProps {
@@ -68,7 +68,7 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
               <p>{resultado.motivoSemCalculo}</p>
             </Alert>
           ) : (
-            <div className="flex flex-col gap-3 border border-fio bg-muted p-4">
+            <div className="flex flex-col gap-3 border border-border bg-muted p-4">
               <p className="text-sm font-semibold text-heading">{substituto.descricao}</p>
               <p className="numeros text-lg font-bold text-primary">
                 {`${formatarNumero(resultado.gramas ?? 0, 0)} g${resultado.medida ? ` · ${resultado.medida.texto}` : ''}`}

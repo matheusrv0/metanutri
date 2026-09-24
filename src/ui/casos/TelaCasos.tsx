@@ -2,9 +2,9 @@ import { CircleCheck, FolderOpen, Info, Plus, TriangleAlert, X } from 'lucide-re
 import { useState } from 'react'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card } from '../componentes/card.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { CartaoCaso } from './CartaoCaso.tsx'
 import { DialogoExcluir } from './DialogoExcluir.tsx'
@@ -62,7 +62,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
         <Alert variant="info">
           <Info aria-hidden="true" />
           <p className="flex-1">A lista foi atualizada com mudanças feitas em outra aba do navegador.</p>
-          <button type="button" onClick={dispensarAvisoOutraAba} aria-label="Fechar aviso" className="rounded-xs p-0.5 hover:bg-card/60">
+          <button type="button" onClick={dispensarAvisoOutraAba} aria-label="Fechar aviso" className="rounded-sm p-0.5 hover:bg-card/60">
             <X className="size-4" aria-hidden="true" />
           </button>
         </Alert>
@@ -72,7 +72,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
         <Alert variant="success">
           <CircleCheck aria-hidden="true" />
           <p className="flex-1">{mensagem}</p>
-          <button type="button" onClick={() => setMensagem(null)} aria-label="Fechar aviso" className="rounded-xs p-0.5 hover:bg-card/60">
+          <button type="button" onClick={() => setMensagem(null)} aria-label="Fechar aviso" className="rounded-sm p-0.5 hover:bg-card/60">
             <X className="size-4" aria-hidden="true" />
           </button>
         </Alert>
@@ -80,7 +80,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
 
       {casos.length === 0 ? (
         <Card className="items-center gap-3 py-12 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
+          <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
             <FolderOpen className="size-6" aria-hidden="true" />
           </span>
           <h2 className="card-title">Nenhum plano ainda</h2>

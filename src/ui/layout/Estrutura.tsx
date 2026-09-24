@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '../componentes/sheet.tsx'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
@@ -36,7 +36,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtit
           e.preventDefault()
           document.getElementById('conteudo')?.focus()
         }}
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xs focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
       >
         Pular para o conteúdo
       </a>

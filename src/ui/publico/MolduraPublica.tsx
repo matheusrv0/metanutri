@@ -36,7 +36,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <span className="font-titulo text-[17px] font-semibold tracking-[-0.3px]">MetaNutri</span>
           </button>
 
-          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-0.5 border-t border-fio pt-1.5 sm:order-none sm:ml-auto sm:w-auto sm:border-0 sm:pt-0">
+          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-0.5 border-t border-border pt-1.5 sm:order-none sm:ml-auto sm:w-auto sm:border-0 sm:pt-0">
             {LINKS.map((link) => (
               <button
                 key={link.destino}
@@ -103,17 +103,17 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <h2 className="mb-3.5 text-[13px] font-semibold text-muted-foreground">Produto</h2>
             <ul className="grid gap-2.5 text-sm">
               <li>
-                <button type="button" onClick={() => aoIrPara('precos')} className="rounded-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => aoIrPara('precos')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Preços
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => aoIrPara('painel')} className="rounded-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => aoIrPara('painel')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Abrir o sistema
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => aoIrPara('entrar')} className="rounded-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => aoIrPara('entrar')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Entrar
                 </button>
               </li>
@@ -121,7 +121,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
           </div>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-[1266px] gap-2 border-t border-fio pt-6 text-[13px] text-muted-foreground">
+        <div className="mx-auto mt-10 grid max-w-[1266px] gap-2 border-t border-border pt-6 text-[13px] text-muted-foreground">
           <p>A prescrição de dieta é privativa de nutricionista com registro no CRN — Lei 8.234/1991.</p>
           <p>Os cálculos ainda não foram conferidos por nutricionista.</p>
         </div>

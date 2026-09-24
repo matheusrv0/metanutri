@@ -1,5 +1,14 @@
 # Direção visual do MetaNutri
 
+> **Este documento é histórico.** O contrato visual em vigor e a fonte da verdade dos
+> tokens estão em [DESIGN.md](../../DESIGN.md), na raiz, e os valores em
+> `design-system/tokens/tokens.css`. O que está abaixo é o registro da decisão de
+> 15/09/2026 e da licença do template — preservado porque a licença continua valendo e
+> porque explica de onde vieram a pílula, os raios grandes e as duas fontes.
+>
+> Em 24/09/2026 a cor e a tipografia passaram a vir do design system incorporado em
+> `design-system/` (lime + forest). Ver *Direções anteriores* em `DESIGN.md`.
+
 **Decisão do usuário (15/09/2026):** usar o template **MaterialM Free (Next.js + Tailwind)** da WrapPixel como base de design.
 Cópia local: `docs/design/referencia/materialm-free-nextjs-v1.zip` (fora do git). Origem: https://github.com/wrappixel/MaterialM-Tailwind-Nextjs-Free · prévia: https://materialm-tailwind-nextjs-free.vercel.app/ · licença MIT (© 2026 WrapPixel), que permite uso comercial mantendo o aviso de copyright.
 

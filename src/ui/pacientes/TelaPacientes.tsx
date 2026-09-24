@@ -2,9 +2,9 @@ import { Plus, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { idadeDe } from '@/domain/pacientes.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
-import { CampoTexto } from '../caso/CampoTexto.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 
@@ -51,7 +51,7 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
 
       {lista.length === 0 ? (
         <Card className="items-center gap-3 py-12 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
+          <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
             <UserRound className="size-6" aria-hidden="true" />
           </span>
           <h2 className="card-title">{busca.trim() ? 'Ninguém com esse nome' : 'Nenhum paciente ainda'}</h2>
@@ -72,7 +72,7 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
               <li key={paciente.id}>
                 <Card className="gap-3 p-5">
                   <div className="flex items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xs border border-primary/25 bg-lightprimary text-primary">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
                       <UserRound className="size-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">

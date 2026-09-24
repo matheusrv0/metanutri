@@ -1,0 +1,299 @@
+/*
+ * MetaNutri — tokens do design system.
+ * FONTE DA VERDADE dos valores visuais. O contrato em prosa está em DESIGN.md (raiz).
+ *
+ * Portado de design-system-export/tokens/*.css (Claude Design, 24/09/2026).
+ * Duas coisas foram acrescentadas aqui, porque o export não trazia:
+ *   1. tema escuro — o projeto já tinha, e não se perde;
+ *   2. a ponte para os nomes antigos, que mora no fim de src/ui/tema/globals.css.
+ *
+ * Camadas, nesta ordem: primitivas -> semânticos (claro) -> semânticos (escuro)
+ * -> tipografia, espaço, raio, sombra, layout e movimento.
+ * Componente nunca usa primitiva direto: usa o semântico.
+ */
+
+/* ---------- Camada 1: primitivas ---------- */
+:root {
+  /* Marca: lime (ação, dentro da meta) + forest (tinta, títulos, botão principal) */
+  --lime-50: #f4fcee;
+  --lime-100: #e6f8d8;
+  --lime-200: #d0f2b6;
+  --lime-300: #b9ee93;
+  --lime-400: #9fe870;
+  --lime-500: #86d855;
+  --lime-600: #62b832;
+  --lime-700: #3f8a1c;
+  --lime-800: #2c6512;
+
+  --forest-950: #041f1a;
+  --forest-900: #062f28;
+  --forest-800: #0b3f36;
+  --forest-700: #14544a;
+  --forest-600: #23695d;
+  --forest-400: #5e8c84;
+  --forest-200: #b9ccc8;
+  --forest-100: #dce6e4;
+
+  /* Neutros: cinza puro, como na referência (#7B7B7B / #E7E7E7) */
+  --gray-0: #ffffff;
+  --gray-25: #fafafa;
+  --gray-50: #f6f6f6;
+  --gray-100: #f1f1f1;
+  --gray-150: #ececec;
+  --gray-200: #e7e7e7;
+  --gray-300: #dadada;
+  --gray-400: #c4c4c4;
+  --gray-500: #a3a3a3;
+  --gray-600: #7b7b7b;
+  --gray-700: #5c5c5c;
+  --gray-800: #3a3a3a;
+  --gray-900: #1f1f1f;
+
+  /* Matizes semânticas */
+  --amber-100: #fdf1d8;
+  --amber-500: #e09a0b;
+  --amber-700: #8a5a09;
+  --red-100: #fde9e8;
+  --red-500: #e5484d;
+  --red-700: #b3221c;
+  --blue-100: #e6eef7;
+  --blue-500: #3a78b8;
+  --blue-700: #1c4f7c;
+}
+
+/* ---------- Camada 2: semânticos, tema claro ---------- */
+:root {
+  --brand-primary: var(--forest-900);
+  --brand-accent: var(--lime-400);
+
+  --bg-page: var(--gray-100);
+  --bg-canvas: var(--gray-200);
+  --surface-card: var(--gray-0);
+  --surface-sunken: var(--gray-50);
+  --surface-hover: var(--gray-100);
+  --surface-inverse: var(--forest-900);
+  --surface-accent: var(--lime-400);
+  --surface-accent-soft: var(--lime-100);
+  --surface-overlay: rgb(6 47 40 / 0.38);
+
+  --text-strong: var(--forest-900);
+  --text-body: #23302d;
+  --text-muted: var(--gray-600);
+  --text-subtle: var(--gray-500);
+  --text-on-inverse: #ffffff;
+  --text-on-accent: var(--forest-900);
+  --text-link: var(--forest-700);
+
+  --border-subtle: var(--gray-150);
+  --border-default: var(--gray-300);
+  --border-strong: var(--gray-400);
+  --border-focus: var(--forest-900);
+  --ring-focus: var(--lime-300);
+
+  /* Estado da adequação (regra do produto): dentro · abaixo · acima · sem dado */
+  --state-ok: var(--lime-500);
+  --state-ok-bg: var(--lime-100);
+  --state-ok-text: var(--lime-800);
+  --state-low: var(--amber-500);
+  --state-low-bg: var(--amber-100);
+  --state-low-text: var(--amber-700);
+  --state-high: var(--red-500);
+  --state-high-bg: var(--red-100);
+  --state-high-text: var(--red-700);
+  --state-info: var(--blue-500);
+  --state-info-bg: var(--blue-100);
+  --state-info-text: var(--blue-700);
+  --state-nodata-a: var(--gray-100);
+  --state-nodata-b: var(--gray-300);
+
+  /* Séries de gráfico: barras pareadas forest + lime */
+  --chart-1: var(--forest-900);
+  --chart-2: var(--lime-400);
+  --chart-3: var(--gray-400);
+  --chart-4: var(--lime-200);
+
+  --gradient-sheen: linear-gradient(180deg, #f5f5f5 0%, #e3e3e3 100%);
+  --gradient-sheen-lime: linear-gradient(180deg, #f2f2f2 0%, #ddf0d0 100%);
+  --gradient-lime: radial-gradient(120% 140% at 85% 110%, #7fe03f 0%, #9fe870 45%, #a9eb7e 100%);
+  --gradient-forest-fade: linear-gradient(90deg, #062f28 0%, #7b8a87 60%, #c9d3d1 100%);
+  /* Cartão de ênfase escura do painel. Não vinha no export: o painel já tinha
+   * um tom "escuro" com a cor no código, e virou token aqui. */
+  --gradient-forest: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-700) 100%);
+
+  /* Hachura de "sem dado": a tabela não mediu. Zero seria mentira. */
+  --pattern-nodata: repeating-linear-gradient(-45deg, var(--state-nodata-a) 0 6px, var(--state-nodata-b) 6px 9px);
+
+  --shadow-xs: 0 1px 2px rgb(6 47 40 / 0.05);
+  --shadow-card: 0 1px 2px rgb(6 47 40 / 0.04), 0 4px 14px -6px rgb(6 47 40 / 0.08);
+  --shadow-raised: 0 2px 4px rgb(6 47 40 / 0.05), 0 10px 24px -10px rgb(6 47 40 / 0.16);
+  --shadow-pop: 0 4px 8px rgb(6 47 40 / 0.06), 0 24px 48px -16px rgb(6 47 40 / 0.24);
+  --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+/* ---------- Camada 3: semânticos, tema escuro ----------
+ * A prova em negativo. O export não trazia tema escuro; estes valores foram
+ * derivados das mesmas primitivas para não perder o recurso que o app já tinha.
+ * Nenhum token existe só aqui: o escuro redefine, nunca inventa.
+ */
+.dark {
+  --bg-page: #0a1613;
+  --bg-canvas: #060f0d;
+  --surface-card: #10201c;
+  --surface-sunken: #0c1a16;
+  --surface-hover: #16302a;
+  --surface-inverse: var(--lime-400);
+  --surface-accent: var(--lime-400);
+  --surface-accent-soft: rgb(159 232 112 / 0.14);
+  --surface-overlay: rgb(2 10 8 / 0.62);
+
+  --text-strong: #e8f3ec;
+  --text-body: #c9d8d2;
+  --text-muted: #93a8a1;
+  --text-subtle: #6e837c;
+  --text-on-inverse: var(--forest-950);
+  --text-on-accent: var(--forest-950);
+  --text-link: var(--lime-400);
+
+  --border-subtle: #1c332c;
+  --border-default: #27443b;
+  --border-strong: #365a4f;
+  --border-focus: var(--lime-400);
+  --ring-focus: rgb(159 232 112 / 0.35);
+
+  --state-ok: var(--lime-400);
+  --state-ok-bg: rgb(159 232 112 / 0.14);
+  --state-ok-text: var(--lime-300);
+  --state-low: #e0a83a;
+  --state-low-bg: rgb(224 154 11 / 0.16);
+  --state-low-text: #f0c368;
+  --state-high: #ef6b6b;
+  --state-high-bg: rgb(229 72 77 / 0.16);
+  --state-high-text: #f5a39c;
+  --state-info: #6aa6dd;
+  --state-info-bg: rgb(58 120 184 / 0.18);
+  --state-info-text: #9ccbef;
+  --state-nodata-a: #16302a;
+  --state-nodata-b: #27443b;
+
+  --chart-1: var(--lime-400);
+  --chart-2: #6fbfa8;
+  --chart-3: #4a625b;
+  --chart-4: var(--lime-800);
+
+  --gradient-sheen: linear-gradient(180deg, #16302a 0%, #0c1a16 100%);
+  --gradient-sheen-lime: linear-gradient(180deg, #16302a 0%, #1d3a24 100%);
+  /* O herói lime não escurece: é a mesma superfície de --surface-accent, que
+   * também fica clara no escuro. Texto por cima é --text-on-accent. */
+  --gradient-lime: radial-gradient(120% 140% at 85% 110%, #7fe03f 0%, #9fe870 45%, #a9eb7e 100%);
+  --gradient-forest-fade: linear-gradient(90deg, #041f1a 0%, #23695d 60%, #5e8c84 100%);
+  --gradient-forest: linear-gradient(135deg, var(--forest-950) 0%, var(--forest-700) 100%);
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.45), 0 4px 14px -6px rgb(0 0 0 / 0.6);
+  --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 4px 8px rgb(0 0 0 / 0.55), 0 24px 48px -16px rgb(0 0 0 / 0.8);
+  --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */
+:root {
+  /* Fontes: o export pedia Urbanist + Plus Jakarta Sans pelo Google Fonts.
+   * Aqui valem as que o app já embute, porque ele roda offline e nenhuma
+   * dependência nova entrou. A troca está registrada em DESIGN.md. */
+  --font-corpo: 'Figtree Variable', 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  --font-data: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Texto sobre --gradient-forest. Não vira de tema: aquele cartão é escuro
+   * nos dois. (--text-on-inverse vira, porque a superfície inversa é lime no escuro.) */
+  --text-on-forest: var(--gray-0);
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --fonte-2xs: 11px;
+  --fonte-xs: 12px;
+  --fonte-sm: 13px;
+  --fonte-md: 14px;
+  --fonte-base: 16px;
+  --fonte-lg: 18px;
+  --fonte-xl: 20px;
+  --fonte-2xl: 24px;
+  --fonte-3xl: 32px;
+  --fonte-4xl: 40px;
+  --fonte-5xl: 56px;
+  --fonte-6xl: 72px;
+
+  /* A escala de tamanho, altura de linha e tracking usa prefixo próprio
+   * (--fonte-*, --altura-*, --traco-*). No export elas se chamavam --text-*,
+   * --leading-* e --tracking-*, que são exatamente os nomes que o Tailwind usa
+   * para a própria escala: manter os nomes do export encolhia todo o texto do
+   * app de 14 para 13 px sem ninguém pedir. Ver DESIGN.md > Tipografia.
+   */
+  --altura-tight: 1.1;
+  --altura-snug: 1.3;
+  --altura-normal: 1.5;
+  --traco-display: -0.02em;
+  --traco-tight: -0.01em;
+  --traco-caps: 0.06em;
+
+  /* Papéis de texto */
+  --type-display: var(--weight-light) var(--fonte-5xl) / var(--altura-tight) var(--font-display);
+  --type-page-title: var(--weight-semibold) var(--fonte-xl) / var(--altura-snug) var(--font-display);
+  --type-card-title: var(--weight-semibold) var(--fonte-base) / var(--altura-snug) var(--font-display);
+  --type-body: var(--weight-regular) var(--fonte-md) / var(--altura-normal) var(--font-corpo);
+  --type-caption: var(--weight-regular) var(--fonte-xs) / var(--altura-normal) var(--font-corpo);
+  --type-label: var(--weight-medium) var(--fonte-xs) / 1 var(--font-corpo);
+  --type-metric: var(--weight-semibold) var(--fonte-3xl) / 1 var(--font-display);
+
+  --space-0: 0;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Raio. Espelhado em @theme inline (globals.css) para virar rounded-*;
+   * mudou aqui, muda lá — os dois números precisam bater. */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+  --radius-card: var(--radius-lg);
+  --radius-input: var(--radius-md);
+  --radius-button: var(--radius-pill);
+  --radius-panel: var(--radius-2xl);
+
+  --layout-sidebar: 264px;
+  --layout-header: 72px;
+  --layout-content-max: 1400px;
+  --layout-gutter: 24px;
+  --layout-gutter-mobile: 16px;
+  --layout-rail: 360px;
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --tap-min: 44px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --dur-meter: 600ms;
+}

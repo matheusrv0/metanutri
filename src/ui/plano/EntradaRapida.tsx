@@ -6,7 +6,7 @@ import { criarRepositorioFrequentes } from '@/domain/frequentes.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
-import { Input } from '../componentes/input.tsx'
+import { Input } from '@ds/componentes/forms/input.tsx'
 import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 
 interface EntradaRapidaProps {
@@ -121,7 +121,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: Entra
               type="button"
               onClick={() => registrar(f.alimentoId, f.gramas)}
               title={`Adicionar ${formatarNumero(f.gramas, 0)} g de ${f.alimento.descricao}`}
-              className="flex max-w-56 items-center gap-1 border border-fio px-2 py-1 text-xs transition-colors hover:border-fioforte hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex max-w-56 items-center gap-1 border border-border px-2 py-1 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Plus className="size-3 shrink-0 text-primary" aria-hidden="true" />
               <span className="min-w-0 truncate">{f.alimento.descricao}</span>
@@ -135,7 +135,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: Entra
       {semResultado && !aviso ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}
 
       {resultados.length > 0 ? (
-        <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col border border-fioforte bg-card">
+        <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col border border-borderdefault bg-card">
           {resultados.map((r, i) => {
             const gramas = r.gramas ?? GRAMAS_PADRAO
             const atual = r === escolhido
@@ -148,7 +148,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: Entra
                   onClick={() => adicionar(r)}
                   onMouseEnter={() => setSelecionado(i)}
                   className={cn(
-                    'flex w-full items-center gap-2 border-b border-fio px-3 py-2 text-left text-sm transition-colors last:border-0',
+                    'flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left text-sm transition-colors last:border-0',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     atual ? 'bg-lightprimary text-primary' : 'hover:bg-muted',
                   )}

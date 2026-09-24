@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { MetaGKg, MetaPct, MetasMacros } from '@/domain/tipos.ts'
-import { CampoNumero } from '../caso/CampoNumero.tsx'
-import { GrupoOpcoes } from '../caso/GrupoOpcoes.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../componentes/dialog.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 
 interface DialogoMetasProps {
   readonly aberto: boolean

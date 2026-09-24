@@ -23,7 +23,7 @@
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
 
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"], "@ds/*": ["./design-system/*"] }
   },
-  "include": ["src", "vitest.setup.ts"]
+  "include": ["src", "design-system", "vitest.setup.ts"]
 }

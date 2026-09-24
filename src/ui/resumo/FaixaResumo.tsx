@@ -7,7 +7,7 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
-import { Button } from '../componentes/button.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
 
 interface FaixaResumoProps {
@@ -24,7 +24,7 @@ const COR: Record<EstadoFaixa, string> = {
 
 function Celula({ rotulo, valor, cor }: { readonly rotulo: string; readonly valor: string; readonly cor?: string }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 border-b border-r border-fio px-4 py-2.5 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 xl:border-b-0 xl:border-r xl:first:pl-0 xl:[&:nth-child(3n)]:border-r">
+    <div className="flex min-w-0 flex-col gap-0.5 border-b border-r border-border px-4 py-2.5 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 xl:border-b-0 xl:border-r xl:first:pl-0 xl:[&:nth-child(3n)]:border-r">
       <span className="rotulo">{rotulo}</span>
       <span className={cn('numeros truncate text-base font-semibold text-heading', cor)}>{valor}</span>
     </div>
@@ -74,7 +74,7 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
         </div>
       </div>
       {ajustando ? (
-        <div className="border-t border-fio p-4">
+        <div className="border-t border-border p-4">
           <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} />
         </div>
       ) : null}

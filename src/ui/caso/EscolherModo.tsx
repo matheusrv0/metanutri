@@ -1,6 +1,6 @@
 import { ClipboardList, Ruler } from 'lucide-react'
 import type { ModoPlano } from '@/domain/tipos.ts'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../componentes/dropdown-menu.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ds/componentes/overlay/dropdown-menu.tsx'
 
 interface EscolherModoProps {
   readonly gatilho: React.ReactNode

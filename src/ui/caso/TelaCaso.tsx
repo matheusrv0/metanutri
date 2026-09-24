@@ -3,15 +3,15 @@ import { useMemo, type ReactNode } from 'react'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { validarCaso } from '@/domain/caso.ts'
 import type { Caso, CondicaoFisiologica, Objetivo, Sexo } from '@/domain/tipos.ts'
-import { Alert } from '../componentes/alert.tsx'
-import { Button } from '../componentes/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '../componentes/card.tsx'
-import { Label } from '../componentes/label.tsx'
-import { Textarea } from '../componentes/textarea.tsx'
+import { Alert } from '@ds/componentes/display/alert.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Label } from '@ds/componentes/forms/label.tsx'
+import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { CartaoComposicao } from './CartaoComposicao.tsx'
-import { CampoNumero } from './CampoNumero.tsx'
-import { CampoTexto } from './CampoTexto.tsx'
-import { GrupoOpcoes } from './GrupoOpcoes.tsx'
+import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { PainelAntropometria } from './PainelAntropometria.tsx'
 
 interface TelaCasoProps {
@@ -68,7 +68,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
                 id="paciente-do-plano"
                 value={caso.pacienteId ?? ''}
                 onChange={(e) => aoVincularPaciente(e.target.value || null)}
-                className="h-9 rounded-xs border border-input bg-card px-3 text-sm"
+                className="h-10 rounded-md border border-input bg-card px-3 text-sm"
               >
                 <option value="">Sem paciente vinculado</option>
                 {pacientes.map((p) => (

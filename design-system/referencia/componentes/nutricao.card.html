@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x540" name="Nutrição" subtitle="CartaoDestaque, BarraAdequacao, MedidorMacro" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>components/nutricao/nutricao.card.html</title>
+<link rel="stylesheet" href="../_runtime/styles.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_runtime/_ds_bundle.js"></script>
+<style>body{background:var(--bg-page);padding:20px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-sans);color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const NS = window.MetaNutriDesignSystem_38356f;
+
+const { CartaoDestaque, BarraAdequacao, MedidorMacro, Card } = NS;
+function App(){
+  return <div className="col">
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:12}}>
+      <CartaoDestaque tom="lime" rotulo="Planos" valor="12" apoio="7 mexidos em 14 dias" icone="folder-open" aoClicar={()=>{}} />
+      <CartaoDestaque rotulo="Pacientes" valor="8" apoio="Fichas com restrições e histórico" icone="user-round" />
+      <CartaoDestaque tom="forest" rotulo="Dias trabalhados" valor="9" apoio="De 14 dias corridos" icone="clipboard-list" />
+      <CartaoDestaque tom="ocre" rotulo="Precisa de atenção" valor="2" apoio="Coisas que atrapalham na entrega" icone="triangle-alert" />
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:12}}>
+      <Card title="Adequação" tight>
+        <BarraAdequacao nome="Ferro" pct={108} detalhe="19,4 de 18 mg" fonte="DRI 2019 · RDA" />
+        <BarraAdequacao nome="Cálcio" pct={61} marca="†" detalhe="612 de 1.000 mg" fonte="DRI 2019 · RDA" />
+        <BarraAdequacao nome="Sódio" pct={119} temLimite detalhe="2.740 de 2.300 mg" fonte="CDRR" />
+        <BarraAdequacao nome="Vitamina D" pct={null} fonte="Não existe na TACO" />
+      </Card>
+      <Card title="Macronutrientes" tight>
+        <MedidorMacro nome="Proteína" valores="78,4 g · 17,6%" faixaInicio={20} faixaFim={70} posicao={36} estado="dentro" frase="Dentro da faixa" meta="Meta: 10 a 35%" />
+        <MedidorMacro nome="Carboidrato" valores="198 g · 44,5%" faixaInicio={45} faixaFim={65} posicao={39} estado="abaixo" frase="Faltam 0,5 ponto para a faixa" meta="Meta: 45 a 65%" />
+        <MedidorMacro nome="Gordura" valores="75,2 g · 38%" faixaInicio={20} faixaFim={35} posicao={43} estado="acima" frase="3 pontos acima" meta="Meta: 20 a 35%" />
+      </Card>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

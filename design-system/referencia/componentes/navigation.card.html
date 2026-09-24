@@ -1,0 +1,34 @@
+<!-- @dsCard group="Components" viewport="700x440" name="Navigation" subtitle="Tabs, ItemMenu, EtapasDoCaso" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>components/navigation/navigation.card.html</title>
+<link rel="stylesheet" href="../_runtime/styles.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_runtime/_ds_bundle.js"></script>
+<style>body{background:var(--bg-page);padding:20px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-sans);color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+</head><body><div id="root"></div><script type="text/babel">
+const NS = window.MetaNutriDesignSystem_38356f;
+
+const { Tabs, ItemMenu, EtapasDoCaso } = NS;
+function App(){
+  const [t,setT]=React.useState('principal'); const [p,setP]=React.useState('14'); const [a,setA]=React.useState('plano'); const [m,setM]=React.useState('painel');
+  return <div style={{display:'grid',gridTemplateColumns:'220px minmax(0,1fr)',gap:16}}>
+    <div style={{background:'var(--gray-100)',borderRadius:16,padding:10,display:'flex',flexDirection:'column',gap:2,border:'1px solid var(--border-subtle)'}}>
+      <ItemMenu icone="layout-dashboard" rotulo="Painel" ativo={m==='painel'} aoClicar={()=>setM('painel')} />
+      <ItemMenu icone="user-round" rotulo="Pacientes" ativo={m==='pac'} aoClicar={()=>setM('pac')} />
+      <ItemMenu icone="folder-open" rotulo="Planos" extra={12} ativo={m==='pl'} aoClicar={()=>setM('pl')} />
+      <ItemMenu icone="clipboard-list" rotulo="Continuar plano" detalhe="Ana Souza — retorno" ativo={m==='c'} aoClicar={()=>setM('c')} />
+      <ItemMenu icone="book-open" rotulo="Tabela de alimentos" ativo={m==='t'} aoClicar={()=>setM('t')} />
+      <ItemMenu icone="barcode" rotulo="Meus produtos" ativo={m==='b'} aoClicar={()=>setM('b')} />
+    </div>
+    <div className="col" style={{gap:20}}>
+      <EtapasDoCaso abaAtual={a} aoEscolher={setA} />
+      <div style={{background:'#fff',borderRadius:16,padding:16,border:'1px solid var(--border-subtle)'}}><Tabs fill value={t} onChange={setT} items={[{value:'principal',label:'Principal',count:4},{value:'s1',label:'Substituto 1',count:2},{value:'s2',label:'Substituto 2'}]} /></div>
+      <Tabs variant="pill" value={p} onChange={setP} items={[{value:'7',label:'7 dias'},{value:'14',label:'14 dias'},{value:'30',label:'30 dias'}]} />
+      <div style={{width:320}}><EtapasDoCaso compact abaAtual={a} aoEscolher={setA} /></div>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

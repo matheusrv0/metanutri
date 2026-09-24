@@ -21,6 +21,8 @@ Thumbs.db
 
 # template de design de referência (arquivo grande, fica só local)
 docs/design/referencia/*.zip
+# export cru do design system: já foi incorporado em design-system/ (32 MB, fica só local)
+design-system-export.zip
 
 # modelo do estágio: contém nome de pessoa real, fica só local
 docs/modelos/
