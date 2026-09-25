@@ -21,7 +21,7 @@ export const TabsTrigger = React.forwardRef<React.ElementRef<typeof TabsPrimitiv
         'relative inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap px-3 text-sm font-medium text-muted-foreground transition-colors',
         'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4',
         'data-[state=active]:font-semibold data-[state=active]:text-foreground',
-        'data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-0.5 data-[state=active]:after:rounded-full data-[state=active]:after:bg-surfaceaccent data-[state=active]:after:content-[""]',
+        'data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-0.5 data-[state=active]:after:rounded-full data-[state=active]:after:bg-surfaceinverse data-[state=active]:after:content-[""]',
         className,
       )}
       {...props}

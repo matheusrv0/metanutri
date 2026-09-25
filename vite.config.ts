@@ -6,9 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // O manifest do PWA é JSON puro: não lê var(). Estes dois espelham
-// --bg-page e --forest-900 de design-system/tokens/tokens.css — mudou lá, muda aqui.
-const COR_FUNDO_PWA = '#f1f1f1'
-const COR_TEMA_PWA = '#062f28'
+// --bg-page e --ink-800 de design-system/tokens/tokens.css — mudou lá, muda aqui.
+const COR_FUNDO_PWA = '#f2f2f3'
+const COR_TEMA_PWA = '#232a33'
 
 export default defineConfig({
   // Caminho relativo: o mesmo build serve em localhost e numa subpasta (GitHub Pages).

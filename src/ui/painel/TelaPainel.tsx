@@ -50,7 +50,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
           valor={casos.length.toString()}
           apoio={casos.length === 0 ? 'Nenhum ainda' : `${atividade.total} mexidos em ${DIAS_NO_GRAFICO} dias`}
           icone={FolderOpen}
-          tom="lime"
+          tom="grafite"
           aoClicar={() => aoIrPara('casos')}
         />
         <CartaoDestaque

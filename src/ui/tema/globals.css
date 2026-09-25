@@ -21,7 +21,7 @@
 
 /* ---------- Os tokens do sistema no vocabulário do shadcn/ui ---------- */
 :root {
-  /* Acentos. A ação principal é a superfície inversa: forest no claro, lime no escuro. */
+  /* A ação principal é a superfície inversa: grafite no claro, clara no escuro. */
   --color-primary: var(--surface-inverse);
   --color-secondary: var(--blue-700);
   --color-info: var(--state-info);
@@ -75,7 +75,7 @@
  */
 .dark {
   --color-secondary: var(--state-info);
-  --secondary-foreground: var(--forest-950);
+  --secondary-foreground: var(--ink-950);
   --color-primaryemphasis: color-mix(in oklab, var(--color-primary) 84%, white);
 }
 
@@ -149,9 +149,9 @@
   --color-textmuted: var(--text-muted);
   --color-textsubtle: var(--text-subtle);
   --color-textoninverse: var(--text-on-inverse);
-  --color-textonforest: var(--text-on-forest);
+  --color-textonink: var(--text-on-ink);
   --color-textonaccent: var(--text-on-accent);
-  --color-textonforest: var(--text-on-forest);
+  --color-textonink: var(--text-on-ink);
   --color-bordersubtle: var(--border-subtle);
   --color-borderdefault: var(--border-default);
   --color-borderstrong: var(--border-strong);

@@ -15,8 +15,8 @@ Para as regras que governam os valores: [DESIGN.md](../../DESIGN.md).
 ## forms/
 
 ### Button
-Botão de ação em pílula. Um `default` (forest) por tela; `accent` (lime) para ação
-positiva e de confirmação. Ícone entra como filho, não como prop.
+Botão de ação em pílula. Um `default` (grafite) por tela; `accent` é ficha neutra para
+ação secundária de destaque. Ícone entra como filho, não como prop.
 
 ```tsx
 <Button><Plus aria-hidden="true" />Novo plano</Button>
@@ -229,7 +229,7 @@ import { Flame } from 'lucide-react'
 ```
 
 Tamanhos: `linha` 16 · `menu` 18 · `cabecalho` 20.
-Pastilhas: `nenhuma` · `cinza` · `forte` (forest com glifo lime) · `acento`.
+Pastilhas: `nenhuma` · `cinza` · `forte` (grafite com glifo claro) · `acento`.
 Sem `titulo` o ícone é decorativo e fica escondido do leitor de tela.
 
 ### Fontes
@@ -340,15 +340,16 @@ Adequação. As etapas vêm de `@/ui/navegacao.ts`, não de prop.
 ## nutricao/
 
 ### CartaoDestaque
-Cartão de número do painel. **No máximo um herói `lime` por linha.**
+Cartão de número do painel. **No máximo um herói `grafite` por linha.**
 
 ```tsx
-<CartaoDestaque tom="lime" rotulo="Energia do dia" valor="1.850" unidade="kcal" apoio="Mifflin-St Jeor, 1990" icone={Flame} />
+<CartaoDestaque tom="grafite" rotulo="Energia do dia" valor="1.850" unidade="kcal" apoio="Mifflin-St Jeor, 1990" icone={Flame} />
 <CartaoDestaque tom="branco" rotulo="Pacientes" valor="8" apoio="Fichas com restrições" icone={UserRound} />
 <CartaoDestaque tom="ocre" rotulo="Precisa de atenção" valor="2" apoio="Abaixo da meta" icone={TriangleAlert} aoClicar={ir} />
 ```
 
-Tons: `branco` · `lime` (herói) · `verde` · `escuro` · `ocre`. `children` entra abaixo do
+Tons: `branco` · `grafite` (herói) · `ocre` (precisa de atenção). Não há tom colorido:
+neste sistema a cor pertence ao estado do nutriente. `children` entra abaixo do
 número (o herói leva dois botões ali). Com `aoClicar` o cartão vira botão e sobe 2 px no
 hover.
 

@@ -4,11 +4,11 @@ import { cn } from '@ds/lib/cn.ts'
 
 /*
  * Cartão de número do painel.
- * `lime` é o herói — um por tela. `escuro` é ênfase, `ocre` é "precisa de atenção",
- * `branco` é o cartão comum e `verde` é a ação principal em gradiente.
+ * `grafite` é o herói — um por tela. `ocre` é "precisa de atenção" e `branco` é o
+ * cartão comum. Não há tom colorido: neste sistema a cor pertence ao estado.
  * Nenhuma cor mora aqui: todas vêm de design-system/tokens/tokens.css.
  */
-export type TomDestaque = 'branco' | 'lime' | 'verde' | 'escuro' | 'ocre'
+export type TomDestaque = 'branco' | 'grafite' | 'ocre'
 
 interface CartaoDestaqueProps {
   readonly rotulo: string
@@ -25,26 +25,20 @@ interface CartaoDestaqueProps {
 
 const TONS: Readonly<Record<TomDestaque, string>> = {
   branco: 'bg-card border border-border text-card-foreground shadow-card',
-  lime: 'bg-[image:var(--gradient-lime)] text-textonaccent',
-  verde: 'bg-gradient-to-br from-primary to-primaryemphasis text-primary-foreground',
-  escuro: 'bg-[image:var(--gradient-forest)] text-textonforest',
+  grafite: 'bg-[image:var(--gradient-ink)] text-textonink',
   ocre: 'bg-gradient-to-br from-warning to-warningtext text-white',
 }
 
 /** No cartão claro o halo branco desaparece; nele o brilho é cinza. */
 const HALO: Readonly<Record<TomDestaque, string>> = {
   branco: 'bg-muted',
-  lime: 'bg-white/25',
-  verde: 'bg-white/10',
-  escuro: 'bg-white/10',
+  grafite: 'bg-white/10',
   ocre: 'bg-white/10',
 }
 
 const PASTILHA: Readonly<Record<TomDestaque, string>> = {
   branco: 'bg-muted',
-  lime: 'bg-white/70',
-  verde: 'bg-white/15',
-  escuro: 'bg-white/15',
+  grafite: 'bg-white/15',
   ocre: 'bg-white/15',
 }
 

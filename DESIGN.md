@@ -8,7 +8,8 @@ está errado.
 Registrado em 24/09/2026, a partir do export do Claude Design incorporado em
 `design-system/`. A direção anterior (a **tabela de composição impressa**: papel
 quase branco, fios no lugar de sombra, raio de 2 a 4 px, lombada escura no menu)
-está registrada no fim, em *Direções anteriores* — ela explica por que várias regras
+e a que veio depois dela (lime + forest) estão registradas no fim, em
+*Direções anteriores* — ela explica por que várias regras
 de produto existem. As regras de produto continuam; a direção visual, não.
 
 **O vocabulário anterior foi aposentado.** Os tokens `--papel`, `--mesa`, `--tinta`,
@@ -33,71 +34,77 @@ escrito no código — sempre token. O `eslint.config.js` cobra as duas.
 
 ## Overview
 
-O mundo é um **SaaS claro e quieto**: mesa cinza, cartões brancos de canto largo,
-botão em pílula e a cor reservada para o que significa alguma coisa. Duas cores de
-marca carregam o sistema — **lime** para ação positiva e "dentro da meta", **forest**
-para tinta, título e ação principal. O resto é cinza puro.
+O mundo é um **SaaS claro e quieto, em grafite**: mesa cinza, cartões brancos de canto
+largo, botão em pílula e a interface inteira em tinta neutra. **A cor não decora e não
+faz marca: a cor é o estado do nutriente.** Quando a única coisa colorida na tela é a
+barra de adequação, o verde e o âmbar passam a significar alguma coisa.
 
 A assinatura do produto continua sendo a **notação**: nenhum número aparece sem dizer
-de onde veio, e falta de dado vira travessão ou marca de rodapé, nunca zero.
+de onde veio, e falta de dado vira travessão ou hachura, nunca zero.
 
 ## Colors
 
-Estratégia: **restrita**. Neutros carregam a tela; a cor só aparece em ação, estado e
-referência. Cor nunca decora.
+Estratégia: **acromática com exceção semântica**. O grafite e os neutros carregam a
+tela inteira. A cor aparece em quatro lugares e em nenhum outro: dentro da meta,
+abaixo, acima do limite e referência.
 
 ### Primary
 
-`--brand-primary` `#062f28` (forest 900). Tinta do sistema: títulos, botão principal,
-cartão de ênfase, primeira série de gráfico.
+`--brand-primary` `#232a33` (ink 800). A tinta do sistema: títulos, botão principal,
+cartão de destaque, primeira série de gráfico.
 
-A superfície de ação usa `--surface-inverse`, que **vira**: forest no claro, lime no
-escuro. É ela que alimenta `--primary` do shadcn — por isso o botão principal continua
-legível nos dois temas sem nenhum `if` no componente.
+A superfície de ação usa `--surface-inverse`, que **vira**: grafite no claro, clara
+(`--ink-100`) no escuro, sempre com `--text-on-inverse` por cima. É ela que alimenta
+`--primary` do shadcn — por isso o botão principal continua legível nos dois temas sem
+nenhum `if` no componente.
 
 ### Accent
 
-`--brand-accent` `#9fe870` (lime 400). Ação positiva ("Cobrir", "Adicionar"), o cartão
-herói do painel, o indicador da aba ativa e o anel de foco.
+Não existe cor de acento. `--brand-accent` e `--surface-accent` são **ênfase neutra**
+(`--ink-100` no claro, `--ink-700` no escuro): a ficha do botão suave, o selo de marca,
+o marca-texto. O que precisa saltar salta pela tinta, não por uma segunda cor.
 
 ### Secondary
 
 `--color-secondary` `#1c4f7c` (claro) · `#6aa6dd` (escuro). Azul de nota: informação,
-fonte e link de referência.
+fonte e link de referência. É estado (`--state-info`), não identidade.
 
-### Estado
+### Estado — a única família colorida
 
-O estado da adequação é a única família semântica, e ela tem nome próprio:
+| Token | Papel | Claro |
+|---|---|---|
+| `--state-ok` / `-bg` / `-text` | dentro da meta | `#1f9d62` |
+| `--state-low` / `-bg` / `-text` | abaixo da meta, dado subestimado | `#d98324` |
+| `--state-high` / `-bg` / `-text` | acima do limite (UL/CDRR), exclusão | `#e5484d` |
+| `--state-info` / `-bg` / `-text` | referência, "AI em vez de RDA" | `#3a78b8` |
+| `--state-nodata-a` / `-b`, `--pattern-nodata` | **sem dado**: hachura, nunca zero | cinza |
 
-| Token | Papel |
-|---|---|
-| `--state-ok` / `-bg` / `-text` | dentro da meta |
-| `--state-low` / `-bg` / `-text` | abaixo da meta, dado possivelmente subestimado |
-| `--state-high` / `-bg` / `-text` | acima do limite superior (UL/CDRR), exclusão |
-| `--state-info` / `-bg` / `-text` | referência, fonte, "AI em vez de RDA" |
-| `--state-nodata-a` / `-b`, `--pattern-nodata` | **sem dado**: hachura, nunca zero |
+O verde do sistema (`--green-*`) existe **só** para `--state-ok`. Não há verde de marca.
 
 ### Neutral
 
-Cinza puro (`--gray-0` a `--gray-900`), sem viés de matiz. Superfícies:
-`--bg-page` (mesa), `--surface-card` (cartão), `--surface-sunken` (painel interno),
-`--surface-hover`. Texto: `--text-strong`, `--text-body`, `--text-muted`, `--text-subtle`.
-Fios: `--border-subtle` (linha de tabela), `--border-default` (campo), `--border-strong`.
+Grafite (`--ink-950` a `--ink-100`) para tinta e ação; cinza puro (`--gray-0` a
+`--gray-900`) para superfície. Superfícies: `--bg-page` (mesa), `--surface-card`,
+`--surface-sunken`, `--surface-hover`. Texto: `--text-strong`, `--text-body`,
+`--text-muted`, `--text-subtle`. Fios: `--border-subtle`, `--border-default`,
+`--border-strong`.
 
-O tema escuro é a **prova em negativo**: mesa `#0a1613`, cartão `#10201c`, tinta
-`#e8f3ec`, e o lime assume o lugar do forest onde ele era a ação. O export não trazia
-tema escuro; os valores foram derivados das mesmas primitivas para não perder o recurso
-que o app já tinha. **Nenhum token existe só no escuro.**
+O tema escuro é **carvão quase neutro**: mesa `#14171c`, cartão `#1e232a`, tinta
+`#e7eaef`. O degrau entre mesa e cartão é de quase 6 pontos de L\* — abaixo disso o
+olho não vê que existe um cartão ali, e a tela lê como um bloco só.
+**Nenhum token existe só no escuro.**
 
 ### Named Rules
 
-- **Cor com significado.** Lime é ação e adequado; âmbar é abaixo; vermelhão é acima do
-  limite; azul é referência. Nenhum bloco colorido decorativo.
+- **Cor é estado, nunca enfeite.** Verde é dentro da meta; âmbar é abaixo; vermelhão é
+  acima do limite; azul é referência. Se um elemento não fala de adequação, ele é
+  neutro.
 - **Sem dado é hachura.** `--pattern-nodata` existe para que "não analisado" nunca seja
-  desenhado como uma barra vazia, que se lê como zero.
-- **Um herói por tela.** O cartão `tom="lime"` aparece uma vez, no que a pessoa veio fazer.
-- **Primitiva não entra em componente.** `--lime-400` fica nos tokens; o componente usa
-  `--surface-accent`.
+  desenhado como barra vazia, que se lê como zero.
+- **Um herói por tela.** O cartão `tom="grafite"` aparece uma vez, no que a pessoa veio
+  fazer.
+- **Primitiva não entra em componente.** `--ink-800` fica nos tokens; o componente usa
+  `--surface-inverse`.
 
 ## Typography
 
@@ -151,7 +158,7 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
 
 ## Elevation & Depth
 
-Quatro degraus macios, todos tingidos de forest em alfa baixo: `--shadow-xs`,
+Quatro degraus macios, todos tingidos de grafite em alfa baixo: `--shadow-xs`,
 `--shadow-card` (o cartão), `--shadow-raised` (cartão clicável no hover) e
 `--shadow-pop` (só camada flutuante: diálogo, gaveta, menu suspenso). Nenhuma sombra
 dura, nenhuma sombra colorida.
@@ -176,9 +183,10 @@ com o que cada subpasta guarda e como criar um componente novo, está em
 
 ### Buttons
 
-Pílula, altura 40 px (32 sm / 48 lg). `default` forest sólido, `accent` lime,
-`outline` com fio, `soft` lime diluído, `ghost` sem moldura, `link` sublinhado, mais
-`secondary`, `lightprimary`, `lighterror` e `destructive`. Hover escurece o preenchimento;
+Pílula, altura 40 px (32 sm / 48 lg). `default` grafite sólido, `accent` ficha neutra,
+`outline` com fio, `soft` neutro diluído, `ghost` sem moldura, `link` sublinhado, mais
+`secondary`, `lightprimary`, `lighterror` e `destructive` — `accent` e `soft` são ênfase neutra, não uma segunda
+cor. Hover escurece o preenchimento;
 `:active` encolhe 3%; foco é anel de 2 px com 2 px de deslocamento; `disabled` cai para
 50%; `loading` mostra a roda e bloqueia o clique.
 
@@ -198,7 +206,7 @@ não aparecem.
 ### Campos
 
 Entrada de 40 px, raio 12, sufixo de unidade dentro do campo, rótulo acima ou oculto
-para leitor de tela quando a coluna já nomeia o dado. Foco põe borda forte e anel lime;
+para leitor de tela quando a coluna já nomeia o dado. Foco põe borda forte e anel;
 `aria-invalid` troca a borda para a cor de erro.
 
 ## Motion
@@ -228,6 +236,13 @@ coluna. **O que sobreviveu:** o numeral tabular em tudo, a notação da TACO, "f
 dado nunca é zero", o versalete como rótulo de seção e a regra de que cor precisa
 significar alguma coisa. O resto — inclusive os nomes de token — saiu do código em
 24/09/2026.
+
+**Lime + forest** (24/09/2026, algumas horas). O export do Claude Design trazia lime
+`#9FE870` com forest `#062f28`. Caiu no mesmo dia, a pedido do usuário: o forest tem
+saturação 41 e passa contraste em 14,5:1 — é preto com um boato de verde, não uma cor
+de ação; e o escuro derivado dele tinha só 4,6 pontos de L\* entre mesa e cartão, o que
+o fazia ler como lama. **O que sobreviveu:** a estrutura inteira do sistema — pílula,
+raio 16, os 25 componentes, os papéis de token e a regra de que cor significa estado.
 
 **Kit MaterialM / SaaSable** (15 a 21/09/2026). Neutros MD3, botão pílula, raios
 grandes, Archivo nos títulos e Figtree no corpo. **O que sobreviveu:** a pílula, os

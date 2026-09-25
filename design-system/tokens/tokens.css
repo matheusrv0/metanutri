@@ -1,5 +1,9 @@
 /*
  * MetaNutri — tokens do design system.
+ *
+ * Direção em vigor desde 24/09/2026: interface em grafite, cor reservada ao
+ * estado do nutriente. O verde e o lime da direção anterior saíram — o verde
+ * que restou é só o "dentro da meta".
  * FONTE DA VERDADE dos valores visuais. O contrato em prosa está em DESIGN.md (raiz).
  *
  * Portado de design-system-export/tokens/*.css (Claude Design, 24/09/2026).
@@ -14,44 +18,46 @@
 
 /* ---------- Camada 1: primitivas ---------- */
 :root {
-  /* Marca: lime (ação, dentro da meta) + forest (tinta, títulos, botão principal) */
-  --lime-50: #f4fcee;
-  --lime-100: #e6f8d8;
-  --lime-200: #d0f2b6;
-  --lime-300: #b9ee93;
-  --lime-400: #9fe870;
-  --lime-500: #86d855;
-  --lime-600: #62b832;
-  --lime-700: #3f8a1c;
-  --lime-800: #2c6512;
+  /* Grafite: a tinta do sistema. É ela que carrega a interface inteira. */
+  --ink-950: #14171c;
+  --ink-900: #1c222a;
+  --ink-800: #232a33;
+  --ink-700: #2d343d;
+  --ink-600: #39424f;
+  --ink-500: #4b5563;
+  --ink-400: #6b7280;
+  --ink-300: #98a1ad;
+  --ink-200: #c6ccd4;
+  --ink-100: #e4e6e9;
 
-  --forest-950: #041f1a;
-  --forest-900: #062f28;
-  --forest-800: #0b3f36;
-  --forest-700: #14544a;
-  --forest-600: #23695d;
-  --forest-400: #5e8c84;
-  --forest-200: #b9ccc8;
-  --forest-100: #dce6e4;
-
-  /* Neutros: cinza puro, como na referência (#7B7B7B / #E7E7E7) */
+  /* Neutros: cinza puro, sem viés de matiz */
   --gray-0: #ffffff;
   --gray-25: #fafafa;
-  --gray-50: #f6f6f6;
-  --gray-100: #f1f1f1;
-  --gray-150: #ececec;
-  --gray-200: #e7e7e7;
-  --gray-300: #dadada;
-  --gray-400: #c4c4c4;
-  --gray-500: #a3a3a3;
-  --gray-600: #7b7b7b;
-  --gray-700: #5c5c5c;
-  --gray-800: #3a3a3a;
-  --gray-900: #1f1f1f;
+  --gray-50: #f6f6f7;
+  --gray-100: #f2f2f3;
+  --gray-150: #ebebed;
+  --gray-200: #e5e5e7;
+  --gray-300: #d8d9dd;
+  --gray-400: #c4c5ca;
+  --gray-500: #a3a5ab;
+  --gray-600: #767980;
+  --gray-700: #585b62;
+  --gray-800: #3a3d43;
+  --gray-900: #1f2226;
 
-  /* Matizes semânticas */
-  --amber-100: #fdf1d8;
-  --amber-500: #e09a0b;
+  /* Verde: a única cor viva do sistema, e só para "dentro da meta".
+   * Não existe verde na interface — existe verde no estado do nutriente. */
+  --green-100: #dcf3e7;
+  --green-300: #7fdcb1;
+  --green-400: #3ec98a;
+  --green-500: #26b174;
+  --green-600: #1f9d62;
+  --green-700: #14794b;
+  --green-800: #0d6b45;
+
+  /* Demais matizes de estado */
+  --amber-100: #fbeedb;
+  --amber-500: #d98324;
   --amber-700: #8a5a09;
   --red-100: #fde9e8;
   --red-500: #e5484d;
@@ -63,37 +69,38 @@
 
 /* ---------- Camada 2: semânticos, tema claro ---------- */
 :root {
-  --brand-primary: var(--forest-900);
-  --brand-accent: var(--lime-400);
+  --brand-primary: var(--ink-800);
+  /* O acento não é uma cor: é ênfase neutra. Cor é estado. */
+  --brand-accent: var(--ink-100);
 
   --bg-page: var(--gray-100);
   --bg-canvas: var(--gray-200);
   --surface-card: var(--gray-0);
   --surface-sunken: var(--gray-50);
   --surface-hover: var(--gray-100);
-  --surface-inverse: var(--forest-900);
-  --surface-accent: var(--lime-400);
-  --surface-accent-soft: var(--lime-100);
-  --surface-overlay: rgb(6 47 40 / 0.38);
+  --surface-inverse: var(--ink-800);
+  --surface-accent: var(--ink-100);
+  --surface-accent-soft: #edeff2;
+  --surface-overlay: rgb(20 23 28 / 0.42);
 
-  --text-strong: var(--forest-900);
-  --text-body: #23302d;
+  --text-strong: var(--ink-900);
+  --text-body: #2b313a;
   --text-muted: var(--gray-600);
   --text-subtle: var(--gray-500);
   --text-on-inverse: #ffffff;
-  --text-on-accent: var(--forest-900);
-  --text-link: var(--forest-700);
+  --text-on-accent: var(--ink-800);
+  --text-link: var(--ink-700);
 
-  --border-subtle: var(--gray-150);
+  --border-subtle: var(--gray-200);
   --border-default: var(--gray-300);
   --border-strong: var(--gray-400);
-  --border-focus: var(--forest-900);
-  --ring-focus: var(--lime-300);
+  --border-focus: var(--ink-800);
+  --ring-focus: var(--ink-600);
 
   /* Estado da adequação (regra do produto): dentro · abaixo · acima · sem dado */
-  --state-ok: var(--lime-500);
-  --state-ok-bg: var(--lime-100);
-  --state-ok-text: var(--lime-800);
+  --state-ok: var(--green-600);
+  --state-ok-bg: var(--green-100);
+  --state-ok-text: var(--green-800);
   --state-low: var(--amber-500);
   --state-low-bg: var(--amber-100);
   --state-low-text: var(--amber-700);
@@ -106,63 +113,60 @@
   --state-nodata-a: var(--gray-100);
   --state-nodata-b: var(--gray-300);
 
-  /* Séries de gráfico: barras pareadas forest + lime */
-  --chart-1: var(--forest-900);
-  --chart-2: var(--lime-400);
+  /* Séries de gráfico: atividade é dado neutro, não estado */
+  --chart-1: var(--ink-800);
+  --chart-2: var(--ink-400);
   --chart-3: var(--gray-400);
-  --chart-4: var(--lime-200);
+  --chart-4: var(--ink-200);
 
-  --gradient-sheen: linear-gradient(180deg, #f5f5f5 0%, #e3e3e3 100%);
-  --gradient-sheen-lime: linear-gradient(180deg, #f2f2f2 0%, #ddf0d0 100%);
-  --gradient-lime: radial-gradient(120% 140% at 85% 110%, #7fe03f 0%, #9fe870 45%, #a9eb7e 100%);
-  --gradient-forest-fade: linear-gradient(90deg, #062f28 0%, #7b8a87 60%, #c9d3d1 100%);
-  /* Cartão de ênfase escura do painel. Não vinha no export: o painel já tinha
-   * um tom "escuro" com a cor no código, e virou token aqui. */
-  --gradient-forest: linear-gradient(135deg, var(--forest-900) 0%, var(--forest-700) 100%);
+  --gradient-sheen: linear-gradient(180deg, #f6f6f7 0%, #e5e5e7 100%);
+  /* Cartão de destaque do painel: grafite, nos dois temas. */
+  --gradient-ink: linear-gradient(135deg, var(--ink-800) 0%, var(--ink-600) 100%);
 
   /* Hachura de "sem dado": a tabela não mediu. Zero seria mentira. */
   --pattern-nodata: repeating-linear-gradient(-45deg, var(--state-nodata-a) 0 6px, var(--state-nodata-b) 6px 9px);
 
-  --shadow-xs: 0 1px 2px rgb(6 47 40 / 0.05);
-  --shadow-card: 0 1px 2px rgb(6 47 40 / 0.04), 0 4px 14px -6px rgb(6 47 40 / 0.08);
-  --shadow-raised: 0 2px 4px rgb(6 47 40 / 0.05), 0 10px 24px -10px rgb(6 47 40 / 0.16);
-  --shadow-pop: 0 4px 8px rgb(6 47 40 / 0.06), 0 24px 48px -16px rgb(6 47 40 / 0.24);
+  --shadow-xs: 0 1px 2px rgb(20 23 28 / 0.05);
+  --shadow-card: 0 1px 2px rgb(20 23 28 / 0.04), 0 4px 14px -6px rgb(20 23 28 / 0.09);
+  --shadow-raised: 0 2px 4px rgb(20 23 28 / 0.05), 0 10px 24px -10px rgb(20 23 28 / 0.17);
+  --shadow-pop: 0 4px 8px rgb(20 23 28 / 0.06), 0 24px 48px -16px rgb(20 23 28 / 0.26);
   --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 
 /* ---------- Camada 3: semânticos, tema escuro ----------
- * A prova em negativo. O export não trazia tema escuro; estes valores foram
- * derivados das mesmas primitivas para não perder o recurso que o app já tinha.
+ * Carvão quase neutro, com degrau de verdade entre fundo e cartão: o olho
+ * precisa de uns 6 pontos de L* para ver que existe um cartão ali.
  * Nenhum token existe só aqui: o escuro redefine, nunca inventa.
  */
 .dark {
-  --bg-page: #0a1613;
-  --bg-canvas: #060f0d;
-  --surface-card: #10201c;
-  --surface-sunken: #0c1a16;
-  --surface-hover: #16302a;
-  --surface-inverse: var(--lime-400);
-  --surface-accent: var(--lime-400);
-  --surface-accent-soft: rgb(159 232 112 / 0.14);
-  --surface-overlay: rgb(2 10 8 / 0.62);
+  --bg-page: #14171c;
+  --bg-canvas: #0f1216;
+  --surface-card: #1e232a;
+  --surface-sunken: #191d23;
+  --surface-hover: #262c34;
+  /* No escuro a ação principal é clara, com tinta por cima. */
+  --surface-inverse: var(--ink-100);
+  --surface-accent: var(--ink-700);
+  --surface-accent-soft: rgb(198 204 212 / 0.1);
+  --surface-overlay: rgb(8 10 13 / 0.64);
 
-  --text-strong: #e8f3ec;
-  --text-body: #c9d8d2;
-  --text-muted: #93a8a1;
-  --text-subtle: #6e837c;
-  --text-on-inverse: var(--forest-950);
-  --text-on-accent: var(--forest-950);
-  --text-link: var(--lime-400);
+  --text-strong: #e7eaef;
+  --text-body: #ccd2da;
+  --text-muted: #98a1ad;
+  --text-subtle: #737b86;
+  --text-on-inverse: var(--ink-900);
+  --text-on-accent: #e7eaef;
+  --text-link: #b9c0ca;
 
-  --border-subtle: #1c332c;
-  --border-default: #27443b;
-  --border-strong: #365a4f;
-  --border-focus: var(--lime-400);
-  --ring-focus: rgb(159 232 112 / 0.35);
+  --border-subtle: #2d343d;
+  --border-default: #3b434e;
+  --border-strong: #4d5663;
+  --border-focus: var(--ink-200);
+  --ring-focus: var(--ink-300);
 
-  --state-ok: var(--lime-400);
-  --state-ok-bg: rgb(159 232 112 / 0.14);
-  --state-ok-text: var(--lime-300);
+  --state-ok: var(--green-400);
+  --state-ok-bg: rgb(62 201 138 / 0.15);
+  --state-ok-text: #6fdcae;
   --state-low: #e0a83a;
   --state-low-bg: rgb(224 154 11 / 0.16);
   --state-low-text: #f0c368;
@@ -172,21 +176,16 @@
   --state-info: #6aa6dd;
   --state-info-bg: rgb(58 120 184 / 0.18);
   --state-info-text: #9ccbef;
-  --state-nodata-a: #16302a;
-  --state-nodata-b: #27443b;
+  --state-nodata-a: #262c34;
+  --state-nodata-b: #3b434e;
 
-  --chart-1: var(--lime-400);
-  --chart-2: #6fbfa8;
-  --chart-3: #4a625b;
-  --chart-4: var(--lime-800);
+  --chart-1: var(--ink-100);
+  --chart-2: var(--ink-300);
+  --chart-3: #4d5663;
+  --chart-4: var(--ink-600);
 
-  --gradient-sheen: linear-gradient(180deg, #16302a 0%, #0c1a16 100%);
-  --gradient-sheen-lime: linear-gradient(180deg, #16302a 0%, #1d3a24 100%);
-  /* O herói lime não escurece: é a mesma superfície de --surface-accent, que
-   * também fica clara no escuro. Texto por cima é --text-on-accent. */
-  --gradient-lime: radial-gradient(120% 140% at 85% 110%, #7fe03f 0%, #9fe870 45%, #a9eb7e 100%);
-  --gradient-forest-fade: linear-gradient(90deg, #041f1a 0%, #23695d 60%, #5e8c84 100%);
-  --gradient-forest: linear-gradient(135deg, var(--forest-950) 0%, var(--forest-700) 100%);
+  --gradient-sheen: linear-gradient(180deg, #262c34 0%, #191d23 100%);
+  --gradient-ink: linear-gradient(135deg, #2a323d 0%, #3e4754 100%);
 
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.45), 0 4px 14px -6px rgb(0 0 0 / 0.6);
@@ -204,9 +203,9 @@
   --font-display: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
   --font-data: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* Texto sobre --gradient-forest. Não vira de tema: aquele cartão é escuro
-   * nos dois. (--text-on-inverse vira, porque a superfície inversa é lime no escuro.) */
-  --text-on-forest: var(--gray-0);
+  /* Texto sobre --gradient-ink. Não vira de tema: aquele cartão é grafite nos
+   * dois. (--text-on-inverse vira, porque no escuro a ação fica clara.) */
+  --text-on-ink: var(--gray-0);
 
   --weight-light: 300;
   --weight-regular: 400;

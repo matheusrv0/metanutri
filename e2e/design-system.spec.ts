@@ -71,7 +71,7 @@ test('a vitrine troca de tema e os tokens acompanham', async ({ page }) => {
   const escuro = await fundoDaPagina(page)
 
   expect(claro).not.toBe(escuro)
-  // O claro é a mesa cinza do sistema (--bg-page) e o escuro é o forest quase preto.
-  expect(claro).toBe('rgb(241, 241, 241)')
-  expect(escuro).toBe('rgb(10, 22, 19)')
+  // O claro é a mesa cinza do sistema (--bg-page); o escuro é o carvão quase neutro.
+  expect(claro).toBe('rgb(242, 242, 243)')
+  expect(escuro).toBe('rgb(20, 23, 28)')
 })
