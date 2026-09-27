@@ -27,6 +27,14 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+        env:
+          # Sem estas duas, o site publicado sai sem conta e sem nuvem: o link das
+          # missões só abriria no navegador de quem montou o plano.
+          # A URL é variável (é pública); a chave anon é secret para ficar fora do
+          # repositório e poder ser trocada sem commit. Ela vai para o JavaScript
+          # do site de qualquer jeito — é assim que o Supabase foi desenhado.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
