@@ -14,9 +14,9 @@ web
 
 Quem paga é o **recém-formado (0–2 anos de profissão)**, seguido da **clínica pequena (2 a 5 nutricionistas)**. O recém-formado sente as duas dores ao mesmo tempo: o acesso grátis de estudante cai na formatura e aparece um boleto de ~R$ 92/mês justo quando ele tem 3 pacientes e ganha pouco, e os pacientes abandonam a dieta na segunda semana.
 
-O **estudante de nutrição em estágio não é cliente, é canal**: Dietbox e WebDiet já dão o software de graça para ele, então nesse público o preço de mercado é R$ 0. Ele entra no plano gratuito para virar pagante na formatura. É dele o uso descrito nas entrevistas: monta planos fora da consulta, em casa ou no laboratório da faculdade, à noite, com prazo do estágio correndo; leva cerca de duas horas por plano no WebDiet gratuito, alternando com planilha e ChatGPT; entrega em Word, no modelo do professor, com assinatura da preceptora, que confere o resultado.
+O **estudante de nutrição em estágio não é cliente, é canal**: Dietbox e WebDiet já dão o software de graça para ele, então nesse público o preço de mercado é R$ 0. Ele entra no plano gratuito, **em modo treino** — pacientes fictícios, sem link externo, com prévia das missões e do painel de micros — para virar pagante na formatura. Estudante de nutrição não atende paciente sozinho (Lei 8.234/1991), e é isso que o modo treino respeita. É dele o uso descrito nas entrevistas: monta planos fora da consulta, em casa ou no laboratório da faculdade, à noite, com prazo do estágio correndo; leva cerca de duas horas por plano no WebDiet gratuito, alternando com planilha e ChatGPT; entrega em Word, no modelo do professor, com assinatura da preceptora, que confere o resultado.
 
-O **paciente** é usuário sem ser cliente: recebe um link (sem baixar app) e marca as missões do dia. É dele a métrica que diz se o produto funciona.
+O **paciente** é usuário sem ser cliente: recebe um link (sem baixar app) e marca as missões do dia. É dele a métrica que diz se o produto funciona. Link de paciente real só sai com CRN informado, em qualquer plano — no começo autodeclarado, com termo de responsabilidade.
 
 ## Product Purpose
 
@@ -59,6 +59,7 @@ Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados p
 - Pendente: revisão clínica das oito referências pela nutricionista antes do lançamento.
 - Ainda não construído, em ordem: sincronização na nuvem (sem ela o link do paciente não sai deste navegador), cobrança de verdade e os documentos de LGPD. As três dependem do projeto no Supabase existir. Ver `docs/pendencias.md`.
 - Pendente antes da Fase 1: as 10 conversas de validação com recém-formados (Fase 0). O roteiro está em `docs/plano-negocio.md`.
+- **Decidido em 27/09: funcionalidade nova está congelada até essas conversas.** A única exceção é a base de alimentos com micronutrientes completos, que é o bloqueador declarado do diferencial. Modo treino e trava de CRN ainda não foram construídos.
 
 ## Brand Commitments
 

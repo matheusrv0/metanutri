@@ -1,7 +1,8 @@
 # Plano de negócio
 
-Aprovado pelo usuário em 26/09/2026. Transcrição do documento
-`Meta Nutri — Plano de Negócio` (26/09/2026), que passa a valer como a estratégia do
+Aprovado pelo usuário em 26/09/2026, **revisado em 27/09/2026** (a seção "Decisões
+tomadas" é nova e responde o conflito legal do plano Estudante). Transcrição do
+documento `Meta Nutri — Plano de Negócio`, que passa a valer como a estratégia do
 produto. Onde este arquivo e o resto do repositório discordarem, este manda — as
 decisões que saíram daqui estão registradas em `decisoes.md`.
 
@@ -17,6 +18,24 @@ O diferencial não é preço, é **adesão do paciente** — o plano alimentar v
 diárias que o paciente marca como feitas. A receita vem do recém-formado e de clínicas
 pequenas, não do estudante. Meta de 12 meses: 100 assinantes pagantes, cerca de
 R$ 4.800 de receita mensal.
+
+## Decisões tomadas
+
+O plano de estudante mantém o MetaNutri empatado com a concorrência; o que coloca o
+produto na frente são as missões diárias e o painel de micros.
+
+- **Estudante: grátis e em modo treino.** Estudante não atende paciente sozinho, então
+  usa pacientes fictícios, sem link externo. O modo treino gira em torno da prévia das
+  missões e do painel de micros, para o aluno se formar conhecendo o diferencial.
+- **Link de paciente real só com CRN informado**, em qualquer plano, inclusive o Free.
+  No começo, CRN autodeclarado com termo de responsabilidade.
+- **O dinheiro vem do recém-formado, no plano Solo**, com a adesão do paciente como
+  argumento de venda — não o preço.
+- **Estudante+ e modo turma ficam para depois.** O WebDiet já vende um plano de
+  conteúdo para estudantes (Estudos+) e já fecha parceria com universidades. Só vale
+  entrar ali com algo que eles não têm, como correção automática dos planos dos alunos.
+- **Funcionalidades novas congeladas até as 10 conversas de validação.** Única
+  exceção: a base de alimentos com micronutrientes completos.
 
 ## Produto
 
@@ -61,19 +80,22 @@ Público em ordem de prioridade:
 
 1. **Recém-formado (0–2 anos)** — sente as duas dores, preço e adesão. É quem paga.
 2. **Clínica pequena (2–5 nutricionistas)** — paga mais e cancela menos.
-3. **Estudante** — não paga. Entra grátis para virar cliente na formatura.
+3. **Estudante** — não paga. Entra grátis, em modo treino, para virar cliente na formatura.
 
 ## Planos e preços
 
 | Plano | Para quem | Preço | Limite |
 |---|---|---|---|
 | Free | Qualquer um | R$ 0 | 2 pacientes ativos, marca MetaNutri no PDF |
-| Estudante | Com comprovante de matrícula | R$ 0 | 10 pacientes, sem marca própria |
+| Estudante | Com comprovante de matrícula | R$ 0 | Modo treino: até 10 pacientes fictícios, sem link externo, com prévia das missões e painel de micros |
 | Solo | Recém-formado | R$ 34,90/mês ou R$ 299/ano | 25 pacientes ativos, logo próprio |
 | Pro | Nutricionista estabelecido | R$ 64,90/mês ou R$ 599/ano | Pacientes ilimitados, painel de micros completo |
 | Clínica | 2+ profissionais | R$ 149/mês (até 4 nutris, +R$ 35 por nutri extra) | Painel do gestor, pacientes compartilhados |
 
-Três regras importam mais que os números:
+Quatro regras importam mais que os números:
+
+**Link de paciente real só com CRN** — sem CRN informado, a conta funciona em modo
+treino, em qualquer plano.
 
 **Cobrança por paciente ativo** — quem teve plano ou missão nos últimos 30 dias. O
 nutricionista sobe de plano conforme cresce, sem sentir que foi cobrado a mais.
