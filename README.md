@@ -89,7 +89,9 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   em Word no modelo do estágio, memorial de cálculo em Word e a tabela de adequação
   copiada para colar no Word.
 - **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
-  do paciente, e backup: exportar e restaurar tudo num arquivo.
+  do paciente, backup em arquivo e **cópia na nuvem** (enviar deste aparelho, trazer
+  para este aparelho). A cópia não é automática de propósito: cada botão sobrescreve
+  um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
 - **Conta e plano** — entrar, sair e ver a assinatura. Funciona sem conta; veja abaixo.
 
 ## Conta na nuvem (opcional)
@@ -102,9 +104,10 @@ Para ligar:
 1. Crie um projeto em <https://supabase.com> (o plano gratuito serve)
 2. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
 3. `cp .env.example .env.local` e cole as duas
-4. Em **SQL Editor > New query**, cole o conteúdo de
-   [supabase/001-acompanhamentos.sql](supabase/001-acompanhamentos.sql) e rode.
-   É o que cria a tabela das missões e as duas funções que o paciente usa
+4. Em **SQL Editor > New query**, cole e rode os dois arquivos de
+   [supabase/](supabase/), na ordem: `001-acompanhamentos.sql` (tabela das missões e
+   as duas funções que o paciente usa) e `002-copia-na-nuvem.sql` (cópia dos dados
+   para trocar de aparelho)
 5. Reinicie o `npm run dev`
 
 Com isso o link do paciente passa a abrir no celular dele. Sem o passo 4, a conta

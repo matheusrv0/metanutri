@@ -44,6 +44,9 @@
 | 26/09/2026 | Token do link: 12 caracteres num alfabeto sem `l`, `1` e `0`. O dia das missões é o **dia local**, não UTC | ninguém erra ao ditar o link por telefone; e `toISOString()` faria as missões de hoje sumirem às 21h de Brasília | Claude |
 | 26/09/2026 | Acompanhamentos ficam no `localStorage` atrás da interface `FonteAcompanhamentos`. O link do paciente só abre no navegador onde o plano foi montado, e a tela diz isso com todas as letras | sem Supabase criado, fingir que o link funciona em outro aparelho seria mentir para o paciente. Trocar para o Supabase é implementar a mesma interface num arquivo | Claude, a confirmar |
 | 26/09/2026 | Plano padrão de quem cria conta passa a ser **Free**, não Estudante | Estudante exige comprovante de matrícula no plano de negócio | Claude |
+| 27/09/2026 | Trocar de aparelho é **cópia explícita na nuvem** (enviar/trazer), não sincronização automática | mesclar dois aparelhos sem o usuário ver perde plano de paciente, e isso é ferramenta de saúde. Cada botão sobrescreve um lado, e a tela diz qual antes | Claude, a confirmar |
+| 27/09/2026 | O paciente chega ao banco por duas funções SECURITY DEFINER, nunca pela tabela. Testado contra o projeto real: anônimo não lê e não escreve na tabela | RLS não consegue conferir um token que o próprio visitante afirma ter; liberar leitura anônima vazaria os pacientes de todos os nutricionistas | Claude |
+| 27/09/2026 | A chave anon entra no build de produção por secret do GitHub, e a URL por variable | o site é construído pelo Actions, que não enxerga `.env.local`; sem isso o site publicado sai sem nuvem | Claude |
 
 Custos de referência (15/09/2026, dólar R$ 5,09): desenvolvimento ≈ R$ 3/mês (domínio); lançamento ≈ R$ 130/mês (Supabase Pro); ~500 usuários ativos ≈ R$ 232/mês (+ Resend Pro). Não incluídos: contador e abertura de ME.
 

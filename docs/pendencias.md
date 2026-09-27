@@ -36,9 +36,16 @@ caixas: **decisão sua** (não é trabalho de código, é escolha de dono do pro
 projeto no Supabase e colar as duas chaves em `.env.local` (passo a passo no
 README). Sem elas o app roda igual e a tela de conta explica o que falta.
 
-O que ainda não existe depois disso: **sincronizar os planos** entre aparelhos.
-Login é uma coisa; mover os dados do navegador para o banco é outra, e é o
-trabalho grande. Hoje quem faz esse papel é o backup em Configurações.
+**Resolvido em 27/09:** existe **cópia na nuvem** em Configurações — enviar deste
+aparelho, trazer para este aparelho. Não é sincronização automática, e isso é decisão:
+mesclar dois aparelhos por conta própria é como se perde plano de paciente. Cada botão
+sobrescreve um lado e a tela diz qual. Precisa do `002-copia-na-nuvem.sql` rodado.
+
+Junto veio um bug sério que estava ali desde sempre: **o backup salvava só o índice
+dos planos**, não os planos. Restaurar em outro aparelho dava zero planos, e o "apagar
+tudo" deixava os planos (com nome e medida de paciente) no navegador. Os dois
+corrigidos, com teste de regressão. **Backup gerado antes de 27/09/2026 está
+incompleto** — gere de novo.
 
 Contexto original: quem abre o endereço usa o sistema, e os dados ficam no
 navegador daquela pessoa. Isso é uma vantagem real (privacidade, funciona offline,
