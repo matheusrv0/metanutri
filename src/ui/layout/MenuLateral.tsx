@@ -18,6 +18,7 @@ import { useCasos } from '../estado/contextoCasos.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import type { Rota } from '../navegacao.ts'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { ItemMenu } from '@ds/componentes/navigation/ItemMenu.tsx'
 import { SeletorTema } from './SeletorTema.tsx'
 
@@ -58,7 +59,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
   return (
     <nav aria-label="Menu principal" className="flex h-full flex-col bg-background text-foreground">
       <div className="flex shrink-0 flex-col gap-1 border-b border-border px-5 py-5">
-        <span className="font-titulo text-[22px] font-bold uppercase leading-none tracking-[0.12em] [font-stretch:80%]">MetaNutri</span>
+        <Logo tamanho={30} />
         <span className="rotulo text-muted-foreground">Planejador alimentar</span>
       </div>
 

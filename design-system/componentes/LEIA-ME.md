@@ -116,6 +116,22 @@ rápido que uma lista suspensa. `valor={null}` é o estado vazio.
 
 ## display/
 
+### Logo
+A marca, do kit de 27/09/2026: o símbolo (check de quatro bolinhas, a última laranja é a
+meta cumprida) vem de `public/marca/`; o nome é texto, em Bricolage Grotesque 700.
+
+```tsx
+<Logo />                                  // segue o tema: símbolo claro ou fundo-escuro
+<Logo tamanho={36} className="mx-auto" /> // altura do símbolo em px; o nome escala junto
+<Logo soSimbolo tamanho={22} />           // só o check
+<Logo variante="claro" tamanho={26} />    // forçado: o PDF, que é sempre claro
+<Logo variante="escuro" tamanho={28} />   // forçado: sobre um cartão teal no tema claro
+```
+
+O kit proíbe recolorir, esticar, sombrear ou usar o símbolo claro em fundo escuro — o
+componente é o único jeito de pôr a marca na tela justamente para isso não acontecer.
+Grafia: o kit escreve "Meta Nutri"; o produto usa "MetaNutri" (decisão de 27/09/2026).
+
 ### Card
 O recipiente de todo bloco. Composto por subcomponentes, não por props de título.
 

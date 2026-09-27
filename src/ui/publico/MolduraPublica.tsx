@@ -1,4 +1,5 @@
-import { ArrowRight, Target } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -30,10 +31,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             onClick={() => aoIrPara('inicio')}
             className="flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span aria-hidden="true" className="grid size-[30px] place-content-center rounded-[9px] bg-primary text-primary-foreground">
-              <Target className="size-4" />
-            </span>
-            <span className="font-titulo text-[17px] font-semibold tracking-[-0.3px]">MetaNutri</span>
+            <Logo tamanho={28} />
           </button>
 
           <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-0.5 border-t border-border pt-1.5 sm:order-none sm:ml-auto sm:w-auto sm:border-0 sm:pt-0">
@@ -81,10 +79,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
         <div className="mx-auto grid max-w-[1266px] gap-9 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">
-              <span aria-hidden="true" className="grid size-[30px] place-content-center rounded-[9px] bg-primary text-primary-foreground">
-                <Target className="size-4" />
-              </span>
-              <span className="font-titulo text-[17px] font-semibold tracking-[-0.3px]">MetaNutri</span>
+              <Logo tamanho={28} />
             </div>
             <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
               Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente. Funciona no navegador, e a conta na nuvem é opcional.

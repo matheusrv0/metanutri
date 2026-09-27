@@ -19,22 +19,26 @@ export default defineConfig({
     // CB-10: depois do primeiro acesso, o planejador abre e calcula sem internet.
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icone.svg'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'marca/*.svg'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         // A base de alimentos e as tabelas entram no pacote JavaScript: precisa caber no cache.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       manifest: {
-        name: 'MetaNutri — planejador alimentar',
+        name: 'MetaNutri — nutrição que diz o que comer',
         short_name: 'MetaNutri',
-        description: 'Planejador alimentar para estudantes de nutrição: energia, macros e adequação de micronutrientes.',
+        description: 'Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente.',
         lang: 'pt-BR',
         start_url: './',
         display: 'standalone',
         background_color: COR_FUNDO_PWA,
         theme_color: COR_TEMA_PWA,
-        icons: [{ src: 'icone.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
       },
     }),
   ],

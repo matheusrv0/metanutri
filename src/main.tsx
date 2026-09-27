@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/archivo/wdth.css'
 import '@fontsource-variable/figtree'
 import '@fontsource-variable/inter'
+// Só o nome da marca usa esta (kit de 27/09/2026); embutida, como as outras, porque o app roda offline.
+import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
 import { criarRepositorioProdutos, produtoComoAlimento } from './domain/produtos.ts'
 import { registrarProdutos } from './domain/tabelas.ts'

@@ -1,4 +1,5 @@
 import { CheckCircle2, Info, Loader2, TriangleAlert } from 'lucide-react'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useId, useState, type FormEvent } from 'react'
 import { MENSAGEM_ERRO, SENHA_MINIMA, validarCadastro, validarEntrada, type ErroConta } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
@@ -60,6 +61,7 @@ export function TelaEntrar({ conta, aoEntrar, aoAbrirSistema }: TelaEntrarProps)
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-16 sm:px-0 sm:py-24">
       <div className="text-center">
+        <Logo tamanho={36} className="mx-auto mb-6" />
         <h1 className="font-titulo text-3xl font-bold text-foreground">{modo === 'entrar' ? 'Entrar na sua conta' : 'Criar sua conta'}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {modo === 'entrar' ? 'Para levar seus planos para outro aparelho.' : 'Leva menos de um minuto. O plano do estágio é de graça.'}

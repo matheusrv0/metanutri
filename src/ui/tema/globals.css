@@ -82,6 +82,7 @@
 @theme inline {
   --font-sans: var(--font-corpo);
   --font-titulo: var(--font-display);
+  --font-marca: var(--font-marca);
   --font-dados: var(--font-data);
 
   /* 11 px é o versalete de cabeçalho de coluna. O Tailwind não tem text-2xs. */
@@ -156,6 +157,10 @@
   --color-borderdefault: var(--border-default);
   --color-borderstrong: var(--border-strong);
   --color-stateok: var(--state-ok);
+  /* A marca, para o componente Logo escolher a cor sem depender do tema. */
+  --color-marca: var(--teal-900);
+  --color-marfim: var(--ivory);
+  --color-laranja: var(--orange-500);
   --color-statelow: var(--state-low);
   --color-statehigh: var(--state-high);
   --color-stateinfo: var(--state-info);

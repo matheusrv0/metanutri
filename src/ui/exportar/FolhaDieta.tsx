@@ -9,6 +9,7 @@ import { trocasDoPlano } from '@/domain/trocas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { OPCOES, type Caso, type ItemPlano, type OpcaoId, type Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 
 interface FolhaDietaProps {
   readonly caso: Caso
@@ -51,7 +52,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
     <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-5 bg-card p-8 text-[13px] leading-relaxed text-foreground">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-borderdefault pb-3">
         <div className="flex items-end gap-3">
-          {perfil.logo ? <img src={perfil.logo} alt="" className="h-12 w-auto" /> : null}
+          {perfil.logo ? <img src={perfil.logo} alt="" className="h-12 w-auto" /> : <Logo variante="claro" tamanho={26} />}
           <div>
           <h2 className="font-titulo text-2xl font-bold leading-tight">Plano alimentar</h2>
             <p className="text-sm text-muted-foreground">{caso.nome.trim() || 'Sem nome'}</p>

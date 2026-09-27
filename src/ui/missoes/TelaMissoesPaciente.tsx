@@ -14,6 +14,7 @@ import {
 } from '@/domain/acompanhamento.ts'
 import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { cn } from '@/lib/utils'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 
 interface TelaMissoesPacienteProps {
   readonly token: string
@@ -127,6 +128,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
           </p>
         </aside>
       ) : null}
+
+      <Logo tamanho={22} className="mb-5" />
 
       <header className="mb-6">
         <p className="text-sm text-muted-foreground">{dataPorExtenso(hoje)}</p>

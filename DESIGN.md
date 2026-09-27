@@ -34,35 +34,60 @@ escrito no código — sempre token. O `eslint.config.js` cobra as duas.
 
 ## Overview
 
-O mundo é um **SaaS claro e quieto, em grafite**: mesa cinza, cartões brancos de canto
-largo, botão em pílula e a interface inteira em tinta neutra. **A cor não decora e não
-faz marca: a cor é o estado do nutriente.** Quando a única coisa colorida na tela é a
-barra de adequação, o verde e o âmbar passam a significar alguma coisa.
+O mundo é um **SaaS claro e quieto**: mesa cinza, cartões brancos de canto largo,
+botão em pílula. Desde 27/09/2026 a tinta de ação é o **teal da marca** (`#0e3b43`) e o
+botão principal leva **marfim** por cima; o **laranja** da marca (`#f26a2e`) é grafismo —
+a última bolinha do símbolo e o marca-texto — e nunca carrega texto nem entra em painel
+de dado. **Fora disso, a cor continua sendo o estado do nutriente.** Quando a única coisa
+colorida dentro de uma tabela é a barra de adequação, o verde e o âmbar passam a
+significar alguma coisa.
 
 A assinatura do produto continua sendo a **notação**: nenhum número aparece sem dizer
 de onde veio, e falta de dado vira travessão ou hachura, nunca zero.
 
 ## Colors
 
-Estratégia: **acromática com exceção semântica**. O grafite e os neutros carregam a
-tela inteira. A cor aparece em quatro lugares e em nenhum outro: dentro da meta,
-abaixo, acima do limite e referência.
+Estratégia: **neutros com a marca na ação e o estado no dado.** Os neutros carregam a
+tela; o teal da marca marca a ação; o laranja da marca é grafismo; e dentro de tabela,
+barra e selo só existe cor de estado. Registrado em 27/09/2026 a partir do kit de marca
+(`public/marca/`, LEIA-ME do designer), que trouxe três cores: base `#0e3b43`, destaque
+`#f26a2e`, marfim `#f6f2ea`.
 
 ### Primary
 
-`--brand-primary` `#232a33` (ink 800). A tinta do sistema: títulos, botão principal,
-cartão de destaque, primeira série de gráfico.
+`--brand-primary` `#0e3b43` (`--teal-900`). A tinta de ação: botão principal, cartão de
+destaque do painel, foco, link, primeira série de gráfico. Os títulos continuam em
+grafite (`--text-strong`): a marca colore o que se clica, não o que se lê.
 
-A superfície de ação usa `--surface-inverse`, que **vira**: grafite no claro, clara
-(`--ink-100`) no escuro, sempre com `--text-on-inverse` por cima. É ela que alimenta
-`--primary` do shadcn — por isso o botão principal continua legível nos dois temas sem
-nenhum `if` no componente.
+A superfície de ação usa `--surface-inverse`, que **vira**: teal no claro, **marfim**
+(`--ivory`) no escuro, sempre com `--text-on-inverse` por cima (marfim no claro, teal no
+escuro). É ela que alimenta `--primary` do shadcn — por isso o botão principal continua
+legível nos dois temas sem nenhum `if` no componente. Medido: marfim sobre teal 10,9:1.
 
 ### Accent
 
-Não existe cor de acento. `--brand-accent` e `--surface-accent` são **ênfase neutra**
-(`--ink-100` no claro, `--ink-700` no escuro): a ficha do botão suave, o selo de marca,
-o marca-texto. O que precisa saltar salta pela tinta, não por uma segunda cor.
+`--brand-accent` `#f26a2e` (`--orange-500`) existe e tem uma regra dura: **é grafismo,
+nunca carrega texto.** Mede 3,05:1 sobre branco e 3,99:1 sobre teal — passa para ícone,
+traço e bolinha (mínimo 3:1), reprova para letra (mínimo 4,5:1). Botão laranja com texto
+em cima está proibido nos dois temas.
+
+Onde ele aparece: a última bolinha do símbolo (a meta cumprida) e o marca-texto, que
+usa `--surface-accent` — uma tinta clara do laranja (`--orange-100` no claro, `#44372f`
+no escuro) com `--text-on-accent` teal por cima (10,6:1 no claro, 7,7:1 no escuro).
+
+E onde ele **não** aparece: dentro de tabela, barra de adequação, selo de estado ou
+medidor. Ali o âmbar (`--state-low`, matiz 31°) já significa "abaixo da meta", e o
+laranja da marca (matiz 18°) fica perto demais para conviver no mesmo painel.
+
+`--surface-accent-soft` (a ficha do ícone, o botão suave, o hover) é uma tinta clara do
+teal (`--teal-100` no claro, `#253c42` no escuro).
+
+### Marfim
+
+`--ivory` `#f6f2ea`. Só sobre teal: o nome da marca no tema escuro, o texto do botão
+principal no claro e a ação principal no escuro. Não é cor de mesa nem de cartão — os
+neutros continuam cinza puro, e misturar um fundo quente com fios frios faria a tela
+parecer suja.
 
 ### Secondary
 
@@ -98,16 +123,23 @@ Grafite (`--ink-950` a `--ink-100`) para tinta e ação; cinza puro (`--gray-0` 
 `--text-muted`, `--text-subtle`. Fios: `--border-subtle`, `--border-default`,
 `--border-strong`.
 
-O tema escuro é **carvão quase neutro**: mesa `#14171c`, cartão `#1e232a`, tinta
-`#e7eaef`. O degrau entre mesa e cartão é de quase 6 pontos de L\* — abaixo disso o
-olho não vê que existe um cartão ali, e a tela lê como um bloco só.
-**Nenhum token existe só no escuro.**
+O tema escuro é **carvão com o matiz do teal**: mesa `#101a1d`, cartão `#192a2f`, tinta
+marfim. As claridades são as de antes (o degrau entre mesa e cartão continua de quase 6
+pontos de L\*, que é o mínimo que o olho percebe); o que mudou em 27/09/2026 foi o
+matiz, para o escuro ser da mesma família que a marca. A ação principal no escuro é
+marfim com teal por cima. **Nenhum token existe só no escuro.** Medido no navegador:
+texto corpo 12,7:1, texto secundário 6,6 a 7,8:1, link 7,3:1, foco 8,6:1.
 
 ### Named Rules
 
-- **Cor é estado, nunca enfeite.** Verde é dentro da meta; âmbar é abaixo; vermelhão é
-  acima do limite; azul é referência. Se um elemento não fala de adequação, ele é
-  neutro.
+- **Dentro do dado, cor é estado, nunca enfeite.** Verde é dentro da meta; âmbar é
+  abaixo; vermelhão é acima do limite; azul é referência. Se um elemento não fala de
+  adequação, ele é neutro ou é marca — e marca é só teal na ação e laranja no grafismo.
+- **Laranja nunca carrega texto** (3,05:1 sobre branco) e nunca entra em painel de dado,
+  onde se confundiria com o âmbar de "abaixo da meta".
+- **A marca entra pela `Logo`**, e só por ela. O kit proíbe recolorir, esticar, sombrear
+  ou usar o símbolo claro em fundo escuro; o componente é o único caminho justamente
+  para isso não acontecer.
 - **Sem dado é hachura.** `--pattern-nodata` existe para que "não analisado" nunca seja
   desenhado como barra vazia, que se lê como zero.
 - **Um herói por tela.** O cartão `tom="grafite"` aparece uma vez, no que a pessoa veio
@@ -117,6 +149,9 @@ olho não vê que existe um cartão ali, e a tela lê como um bloco só.
 
 ## Typography
 
+- **O nome da marca:** `--font-marca` — Bricolage Grotesque Variable, peso 700, tracking
+  −0,035 em. Só na `Logo`; em mais nenhum lugar. Dependência aprovada pelo usuário em
+  27/09/2026, embutida via `@fontsource` como as outras.
 - **Títulos e rótulos:** `--font-display` — Archivo Variable, eixo de largura 80% a 92%.
 - **Texto e campos:** `--font-corpo` — Figtree Variable.
 - **Números:** `--font-data` — Inter Variable, com `tabular-nums` no corpo inteiro.

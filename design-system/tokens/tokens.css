@@ -62,6 +62,16 @@
   --red-100: #fde9e8;
   --red-500: #e5484d;
   --red-700: #b3221c;
+  /* Marca (kit de 27/09/2026): base, destaque e marfim. Os SVGs da marca não
+   * mudam de cor; estes tokens existem para o resto da interface acompanhar. */
+  --teal-900: #0e3b43;
+  --teal-700: #1a5560;
+  --teal-500: #2f7f8e;
+  --teal-300: #7cc0cb;
+  --teal-100: #e3eff1;
+  --orange-500: #f26a2e;
+  --orange-100: #fdece3;
+  --ivory: #f6f2ea;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
@@ -69,18 +79,21 @@
 
 /* ---------- Camada 2: semânticos, tema claro ---------- */
 :root {
-  --brand-primary: var(--ink-800);
-  /* O acento não é uma cor: é ênfase neutra. Cor é estado. */
-  --brand-accent: var(--ink-100);
+  --brand-primary: var(--teal-900);
+  /* O laranja da marca é grafismo, nunca carrega texto: mede 3,05:1 sobre branco e
+   * 3,99:1 sobre o teal — passa para ícone e traço, reprova para letra. E nunca entra
+   * em painel de dado: ali o laranja-âmbar já significa "abaixo da meta". */
+  --brand-accent: var(--orange-500);
 
   --bg-page: var(--gray-100);
   --bg-canvas: var(--gray-200);
   --surface-card: var(--gray-0);
   --surface-sunken: var(--gray-50);
   --surface-hover: var(--gray-100);
-  --surface-inverse: var(--ink-800);
-  --surface-accent: var(--ink-100);
-  --surface-accent-soft: #edeff2;
+  --surface-inverse: var(--teal-900);
+  /* O marca-texto ganha a cor da marca em tinta clara, com o teal por cima. */
+  --surface-accent: var(--orange-100);
+  --surface-accent-soft: var(--teal-100);
   --surface-overlay: rgb(20 23 28 / 0.42);
 
   --text-strong: var(--ink-900);
@@ -88,15 +101,15 @@
   /* gray-600 dava 4,04:1 sobre a mesa: reprova no mínimo de 4,5:1 para texto. */
   --text-muted: var(--gray-700);
   --text-subtle: var(--gray-500);
-  --text-on-inverse: #ffffff;
-  --text-on-accent: var(--ink-800);
-  --text-link: var(--ink-700);
+  --text-on-inverse: var(--ivory);
+  --text-on-accent: var(--teal-900);
+  --text-link: var(--teal-700);
 
   --border-subtle: var(--gray-200);
   --border-default: var(--gray-300);
   --border-strong: var(--gray-400);
-  --border-focus: var(--ink-800);
-  --ring-focus: var(--ink-600);
+  --border-focus: var(--teal-900);
+  --ring-focus: var(--teal-500);
 
   /* Estado da adequação (regra do produto): dentro · abaixo · acima · sem dado */
   --state-ok: var(--green-600);
@@ -115,14 +128,14 @@
   --state-nodata-b: var(--gray-300);
 
   /* Séries de gráfico: atividade é dado neutro, não estado */
-  --chart-1: var(--ink-800);
+  --chart-1: var(--teal-900);
   --chart-2: var(--ink-400);
   --chart-3: var(--gray-400);
   --chart-4: var(--ink-200);
 
   --gradient-sheen: linear-gradient(180deg, #f6f6f7 0%, #e5e5e7 100%);
-  /* Cartão de destaque do painel: grafite, nos dois temas. */
-  --gradient-ink: linear-gradient(135deg, var(--ink-800) 0%, var(--ink-600) 100%);
+  /* Cartão de destaque do painel: o teal da marca, nos dois temas. */
+  --gradient-ink: linear-gradient(135deg, var(--teal-900) 0%, var(--teal-700) 100%);
 
   /* Hachura de "sem dado": a tabela não mediu. Zero seria mentira. */
   --pattern-nodata: repeating-linear-gradient(-45deg, var(--state-nodata-a) 0 6px, var(--state-nodata-b) 6px 9px);
@@ -140,30 +153,32 @@
  * Nenhum token existe só aqui: o escuro redefine, nunca inventa.
  */
 .dark {
-  --bg-page: #14171c;
-  --bg-canvas: #0f1216;
-  --surface-card: #1e232a;
-  --surface-sunken: #191d23;
-  --surface-hover: #262c34;
-  /* No escuro a ação principal é clara, com tinta por cima. */
-  --surface-inverse: var(--ink-100);
-  --surface-accent: var(--ink-700);
-  --surface-accent-soft: rgb(198 204 212 / 0.1);
-  --surface-overlay: rgb(8 10 13 / 0.64);
+  --bg-page: #101a1d;
+  --bg-canvas: #0c1417;
+  --surface-card: #192a2f;
+  --surface-sunken: #142226;
+  --surface-hover: #1f353b;
+  /* No escuro a ação principal é o marfim da marca, com o teal por cima. */
+  --surface-inverse: var(--ivory);
+  /* Opacos de propósito: são 20% de laranja e 12% de teal sobre o cartão, resolvidos
+   * — com alpha o contraste dependeria do que está embaixo e não daria para medir. */
+  --surface-accent: #44372f;
+  --surface-accent-soft: #253c42;
+  --surface-overlay: rgb(6 12 14 / 0.66);
 
-  --text-strong: #e7eaef;
-  --text-body: #ccd2da;
-  --text-muted: #98a1ad;
-  --text-subtle: #737b86;
-  --text-on-inverse: var(--ink-900);
-  --text-on-accent: #e7eaef;
-  --text-link: #b9c0ca;
+  --text-strong: var(--ivory);
+  --text-body: #d3dcde;
+  --text-muted: #9db0b4;
+  --text-subtle: #6f858a;
+  --text-on-inverse: var(--teal-900);
+  --text-on-accent: #f7cdb6;
+  --text-link: var(--teal-300);
 
-  --border-subtle: #2d343d;
-  --border-default: #3b434e;
-  --border-strong: #4d5663;
-  --border-focus: var(--ink-200);
-  --ring-focus: var(--ink-300);
+  --border-subtle: #29434a;
+  --border-default: #35525a;
+  --border-strong: #46666f;
+  --border-focus: var(--teal-300);
+  --ring-focus: var(--teal-300);
 
   --state-ok: var(--green-400);
   --state-ok-bg: rgb(62 201 138 / 0.15);
@@ -177,16 +192,16 @@
   --state-info: #6aa6dd;
   --state-info-bg: rgb(58 120 184 / 0.18);
   --state-info-text: #9ccbef;
-  --state-nodata-a: #262c34;
-  --state-nodata-b: #3b434e;
+  --state-nodata-a: #1f353b;
+  --state-nodata-b: #35525a;
 
-  --chart-1: var(--ink-100);
+  --chart-1: var(--teal-300);
   --chart-2: var(--ink-300);
-  --chart-3: #4d5663;
+  --chart-3: #46666f;
   --chart-4: var(--ink-600);
 
-  --gradient-sheen: linear-gradient(180deg, #262c34 0%, #191d23 100%);
-  --gradient-ink: linear-gradient(135deg, #2a323d 0%, #3e4754 100%);
+  --gradient-sheen: linear-gradient(180deg, #1f353b 0%, #142226 100%);
+  --gradient-ink: linear-gradient(135deg, #1a3a41 0%, #245560 100%);
 
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.45), 0 4px 14px -6px rgb(0 0 0 / 0.6);
@@ -202,6 +217,8 @@
    * dependência nova entrou. A troca está registrada em DESIGN.md. */
   --font-corpo: 'Figtree Variable', 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  /* Só o nome da marca usa esta fonte (kit de 27/09/2026, peso 700). */
+  --font-marca: 'Bricolage Grotesque Variable', var(--font-display);
   --font-data: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   /* Texto sobre --gradient-ink. Não vira de tema: aquele cartão é grafite nos

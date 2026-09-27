@@ -4,6 +4,7 @@ import type { ResultadoMacro } from '@/domain/macros.ts'
 import { useTema } from '@/ui/tema/contextoTema.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Badge } from '@ds/componentes/display/badge.tsx'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
@@ -226,6 +227,20 @@ export function TelaDesignSystem() {
             aoEscolher={() => undefined}
             erro="Escolha um método para calcular a composição."
           />
+        </Secao>
+
+        <Secao nome="Logo" arquivo="display/Logo.tsx" descricao="A marca: símbolo do kit, nome em Bricolage Grotesque 700. Auto segue o tema; claro e escuro forçam">
+          <div className="flex flex-wrap items-center gap-8">
+            <Logo tamanho={40} />
+            <Logo tamanho={28} />
+            <Logo tamanho={28} soSimbolo />
+            <span className="rounded-2xl bg-marca p-4">
+              <Logo variante="escuro" tamanho={28} />
+            </span>
+            <span className="rounded-2xl bg-marfim p-4">
+              <Logo variante="claro" tamanho={28} />
+            </span>
+          </div>
         </Secao>
 
         <Secao nome="Card" arquivo="display/card.tsx" descricao="Raio 16, fio de 1 px, sombra macia">

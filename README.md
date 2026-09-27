@@ -178,6 +178,16 @@ qualquer um — inclusive de alguém dizendo que pagou.
 **Teste antes de valer dinheiro:** use as credenciais de teste e um usuário de teste
 do Mercado Pago. Assinatura pendente não libera plano pago, de propósito.
 
+## A marca
+
+O kit do designer (logo provisória, 27/09/2026) está em `public/` (favicons e ícones do
+app) e `public/marca/` (o símbolo em quatro versões). A marca entra na tela **só pelo
+componente `Logo`** (`design-system/componentes/display/Logo.tsx`): ele escolhe a versão
+certa do símbolo para cada tema e escreve o nome na fonte do kit. As cores — teal
+`#0e3b43`, laranja `#f26a2e`, marfim `#f6f2ea` — viraram tokens em `DESIGN.md`, com uma
+regra que vale saber: o laranja é grafismo e nunca carrega texto. Quando a versão final
+da logo chegar, basta trocar os arquivos mantendo os nomes.
+
 ## De onde vêm os números
 
 | Assunto | Fonte |
