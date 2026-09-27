@@ -161,6 +161,11 @@
   --color-marca: var(--teal-900);
   --color-marfim: var(--ivory);
   --color-laranja: var(--orange-500);
+  --color-surfacebrand: var(--surface-brand);
+  --color-surfacebrandsoft: var(--surface-brand-soft);
+  --color-textonbrand: var(--text-on-brand);
+  --color-textonbrandmuted: var(--text-on-brand-muted);
+  --color-borderonbrand: var(--border-on-brand);
   --color-statelow: var(--state-low);
   --color-statehigh: var(--state-high);
   --color-stateinfo: var(--state-info);

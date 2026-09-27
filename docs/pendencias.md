@@ -155,6 +155,18 @@ dos 100 mais usados, e a origem de cada valor fica marcada na tela.
 
 Mesma história. Existem como campo, entram por rótulo, não são inventados.
 
+### 8. "120 filé" vira 12 kg de frango — a entrada rápida precisa de um freio
+
+Achado em 27/09 ao gerar as capturas: digitar `120 file de frango grelhado` na entrada
+rápida faz o app ler "120 filés" (medida caseira), e o item entra com **12.000 g e
+19.102 kcal**. A opção mostra o número antes do Enter, então não é silencioso — mas
+quem digita "120 file" quase sempre quer 120 gramas, e nada avisa que um item sozinho
+passou de dez vezes o gasto do dia.
+
+Não foi corrigido: é funcionalidade nova e o congelamento de 27/09 vale. Mas é
+ferramenta de saúde, e um freio de quantidade implausível (alerta acima de, digamos,
+2.000 g ou 5.000 kcal num item) é conserto, não feature — decisão sua.
+
 ## Já feito, só para você não procurar
 
 Frequentes, duplicar plano, ficha de paciente, evolução do peso, leitura de código de

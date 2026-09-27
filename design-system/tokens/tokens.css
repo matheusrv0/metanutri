@@ -137,6 +137,16 @@
   /* Cartão de destaque do painel: o teal da marca, nos dois temas. */
   --gradient-ink: linear-gradient(135deg, var(--teal-900) 0%, var(--teal-700) 100%);
 
+  /* Faixas da marca na área pública (27/09/2026). A suave é o marfim do kit; a cheia
+   * é o teal com marfim por cima. O texto secundário sobre teal é marfim puxado para
+   * o teal, nunca cinza: mede 6,5:1. */
+  --surface-brand: var(--teal-900);
+  --surface-brand-soft: var(--ivory);
+  --text-on-brand: var(--ivory);
+  --text-on-brand-muted: #a9bfc2;
+  --border-on-brand: rgb(246 242 234 / 0.18);
+  --gradient-brand-soft: linear-gradient(180deg, var(--surface-brand-soft) 0%, var(--bg-page) 100%);
+
   /* Hachura de "sem dado": a tabela não mediu. Zero seria mentira. */
   --pattern-nodata: repeating-linear-gradient(-45deg, var(--state-nodata-a) 0 6px, var(--state-nodata-b) 6px 9px);
 
@@ -202,6 +212,13 @@
 
   --gradient-sheen: linear-gradient(180deg, #1f353b 0%, #142226 100%);
   --gradient-ink: linear-gradient(135deg, #1a3a41 0%, #245560 100%);
+
+  --surface-brand: var(--teal-900);
+  --surface-brand-soft: #142226;
+  --text-on-brand: var(--ivory);
+  --text-on-brand-muted: #a9bfc2;
+  --border-on-brand: rgb(246 242 234 / 0.16);
+  --gradient-brand-soft: linear-gradient(180deg, #142226 0%, var(--bg-page) 100%);
 
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.45), 0 4px 14px -6px rgb(0 0 0 / 0.6);

@@ -75,7 +75,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
         {children}
       </main>
 
-      <footer className="mt-20 rounded-t-2xl bg-muted px-4 pb-8 pt-14 sm:px-8">
+      <footer className="mt-0 border-t border-bordersubtle bg-surfacebrandsoft px-4 pb-8 pt-14 sm:px-8">
         <div className="mx-auto grid max-w-[1266px] gap-9 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">

@@ -158,7 +158,8 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
   const linhas = comparativoDosPlanos()
 
   return (
-    <div ref={secao} className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8">
+    <div ref={secao} className="bg-[image:var(--gradient-brand-soft)] px-4 py-16 sm:px-8">
+      <div className="mx-auto w-full max-w-6xl">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
           Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
@@ -276,6 +277,7 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         Os planos pagos ainda não estão no ar: nenhuma cobrança é feita e nada é bloqueado hoje. Preço de fundador para as {VAGAS_PRECO_FUNDADOR} primeiras
         assinaturas — quem entra nessa faixa fica nela para sempre, mesmo quando o preço subir.
       </p>
+      </div>
     </div>
   )
 }

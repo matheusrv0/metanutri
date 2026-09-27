@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { FlowButton } from '@ds/componentes/efeitos/flow-button.tsx'
 import { GridPattern } from '@ds/componentes/efeitos/grid-pattern.tsx'
 import { TextHighlight } from '@ds/componentes/efeitos/text-highlight.tsx'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
 
 interface TelaInicioProps {
   readonly aoAbrirSistema: () => void
@@ -56,6 +57,7 @@ function Recurso({
   invertida = false,
   telefone = false,
   nota,
+  sobreposta,
   children,
 }: {
   readonly titulo: string
@@ -67,20 +69,27 @@ function Recurso({
   readonly telefone?: boolean
   /** Dito embaixo da imagem quando ela mostra dado inventado para ilustrar. */
   readonly nota?: string
+  /** Segunda captura que se sobrepõe à primeira por baixo — o truque de camadas da referência. */
+  readonly sobreposta?: { readonly src: string; readonly alt: string }
   readonly children?: React.ReactNode
 }) {
   return (
     <section className="mx-auto grid max-w-[1140px] items-center gap-10 px-4 py-14 sm:px-8 md:grid-cols-2 md:gap-16 md:py-20">
       <div className={cn('min-w-0', invertida ? 'md:order-2' : null)}>
-        <img
-          src={imagem}
-          alt={alt}
-          loading="lazy"
-          className={cn(
-            'w-full rounded-xl border border-border bg-card shadow-pop',
-            telefone ? 'mx-auto max-w-[280px]' : null,
-          )}
-        />
+        <div className={cn('relative', sobreposta ? 'pb-16' : null)}>
+          <img
+            src={imagem}
+            alt={alt}
+            loading="lazy"
+            className={cn(
+              'w-full rounded-2xl border border-border bg-card shadow-pop',
+              telefone ? 'mx-auto block max-w-[300px]' : null,
+            )}
+          />
+          {sobreposta ? (
+            <img src={sobreposta.src} alt={sobreposta.alt} loading="lazy" className="absolute bottom-0 left-0 w-full rounded-2xl border border-border bg-card shadow-pop" />
+          ) : null}
+        </div>
         {nota ? <p className="mt-3 text-center text-xs text-muted-foreground">{nota}</p> : null}
       </div>
 
@@ -98,7 +107,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
   return (
     <>
       {/* Herói: a tese sozinha no centro, e a prova logo abaixo. */}
-      <section className="relative isolate overflow-hidden">
+      <section className="relative isolate overflow-hidden bg-[image:var(--gradient-brand-soft)]">
         <GridPattern squares={CELULAS} className="[mask-image:radial-gradient(120%_80%_at_50%_10%,#000_30%,transparent_75%)]" />
 
         <div className="relative mx-auto grid max-w-[900px] justify-items-center gap-6 px-4 pb-10 pt-16 text-center sm:px-8 sm:pt-24">
@@ -136,10 +145,11 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
       </section>
 
       {/* Três passos, em texto: é o produto inteiro numa frase cada. */}
-      <section className="border-y border-bordersubtle bg-surfacesunken">
+      <section className="border-y border-bordersubtle bg-surfacebrandsoft">
         <div className="mx-auto grid max-w-[1140px] gap-8 px-4 py-14 sm:px-8 md:grid-cols-3 md:gap-12">
           {PASSOS.map(([titulo, texto], i) => (
             <div key={titulo} className="grid gap-2">
+              <span aria-hidden="true" className="inline-block h-1 w-8 rounded-full bg-laranja" />
               <span className="numeros font-titulo text-sm font-semibold text-muted-foreground">{`0${i + 1}`}</span>
               <h2 className="font-titulo text-xl font-medium tracking-[-0.2px]">{titulo}</h2>
               <p className="text-[15px] leading-relaxed text-muted-foreground">{texto}</p>
@@ -179,9 +189,14 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
         titulo="Para o plano não morrer na gaveta"
         chamada="O paciente marca o que fez, e você vê quem está sumindo"
         texto={`O plano vira missões que o paciente abre num link, sem baixar app. Quem marcou em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias ou mais na semana aparece como em dia; quem passa ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo, mesmo que tenha ido bem na semana passada. Check-in básico os concorrentes já têm — aqui ele nasce do plano que você montou.`}
-        imagem="imagens/adesao.png"
-        alt="Painel de adesão do MetaNutri com dados de exemplo: três pacientes ordenados por urgência, com selo de sumindo, atenção e em dia."
-        nota="Tela do MetaNutri com dados de exemplo."
+        imagem="imagens/missoes-paciente.png"
+        alt="A tela do paciente no celular: as missões do dia, com duas marcadas e o progresso."
+        telefone
+        sobreposta={{
+          src: 'imagens/adesao.png',
+          alt: 'Painel de adesão do MetaNutri com dados de exemplo: três pacientes ordenados por urgência, com selo de sumindo, atenção e em dia.',
+        }}
+        nota="Telas do MetaNutri; a lista de adesão usa dados de exemplo."
       />
 
       {/* O que mais tem, sem virar grade de cartões iguais. */}
@@ -204,7 +219,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
       </section>
 
       {/* A base, com as lacunas admitidas. É o que separa este produto dos outros. */}
-      <section className="border-y border-bordersubtle bg-surfacesunken">
+      <section className="border-y border-bordersubtle bg-surfacebrandsoft">
         <div className="mx-auto grid max-w-[1140px] gap-10 px-4 py-14 sm:px-8 md:grid-cols-2 md:gap-16 md:py-20">
           <div>
             <h2 className="font-titulo text-[clamp(26px,3.4vw,40px)] font-normal leading-[1.14] tracking-[-0.4px] text-balance">
@@ -245,21 +260,34 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
         </div>
       </section>
 
-      {/* Conversão */}
-      <section className="mx-auto max-w-[1140px] px-4 py-16 sm:px-8 md:py-24">
-        <div className="grid justify-items-center gap-5 text-center">
-          <h2 className="max-w-[22ch] font-titulo text-[clamp(26px,3.6vw,44px)] font-normal leading-[1.14] tracking-[-0.4px] text-balance">
+      {/* Conversão: a única faixa teal cheia da página. Os botões invertem
+          (marfim com teal por cima) porque o FlowButton, teal sobre teal, sumiria. */}
+      <section className="bg-surfacebrand text-textonbrand">
+        <div className="mx-auto grid max-w-[1140px] justify-items-center gap-5 px-4 py-16 text-center sm:px-8 md:py-24">
+          <Logo variante="escuro" soSimbolo tamanho={44} />
+          <h2 className="max-w-[22ch] font-titulo text-[clamp(26px,3.6vw,44px)] font-normal leading-[1.14] tracking-[-0.4px] text-textonbrand text-balance">
             Abra um dia inteiro já montado
           </h2>
-          <p className="max-w-[48ch] text-[15px] text-muted-foreground">
+          <p className="max-w-[48ch] text-[15px] text-textonbrandmuted">
             Seis refeições, dois substitutos no almoço, 103% do gasto calculado. Mexa à vontade — e gere o link para ver a tela
             do paciente por dentro.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-3">
-            <FlowButton onClick={aoVerExemplo}>Ver o plano de exemplo</FlowButton>
-            <FlowButton tom="linha" onClick={aoAbrirSistema}>
+            <button
+              type="button"
+              onClick={aoVerExemplo}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-textonbrand px-6 text-sm font-semibold text-surfacebrand transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-textonbrand focus-visible:ring-offset-2 focus-visible:ring-offset-surfacebrand"
+            >
+              Ver o plano de exemplo
+            </button>
+            <button
+              type="button"
+              onClick={aoAbrirSistema}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borderonbrand px-6 text-sm font-semibold text-textonbrand transition-colors hover:bg-borderonbrand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-textonbrand focus-visible:ring-offset-2 focus-visible:ring-offset-surfacebrand"
+            >
               Ver o painel
-            </FlowButton>
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>
