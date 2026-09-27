@@ -12,6 +12,13 @@ Atualizado em 26/09/2026.
 > apresentar o MetaNutri. Roteiro em `plano-negocio.md`. O portão para começar a
 > Fase 1 é a dor da adesão confirmada.
 >
+> **Atualizado em 27/09:** a camada do Supabase está escrita e testada, junto com o
+> SQL das tabelas (`supabase/001-acompanhamentos.sql`), a tela de consentimento antes
+> do primeiro link e o apagar-dados que alcança a nuvem. **Falta só você criar o
+> projeto no Supabase e rodar o SQL** — a partir daí o link do paciente abre no
+> celular dele. Material pronto e esperando você: `fase-0-conversas.md`,
+> `lgpd-rascunhos.md` e `revisao-clinica-casos.md`.
+>
 > **Construído em 26/09** (sem SPEC, a pedido seu — registrado em `decisoes.md`):
 > as missões diárias com link do paciente, a tela de Adesão, os cinco planos novos e a
 > contagem de paciente ativo. O que **não** saiu: o meio de pagamento e a sincronização
@@ -66,19 +73,32 @@ plano. O paciente abre o endereço `#/missoes/<token>`, vê a lista do dia, toca
 fez, e o nutricionista acompanha em *Adesão*. Coberto por teste de unidade, de tela e
 de navegador (`e2e/missoes.spec.ts`).
 
-**O que falta, e é a metade que importa:** hoje o link só abre no mesmo navegador onde
-o plano foi montado, porque os dados ficam no `localStorage`. Mandar o endereço por
-WhatsApp para o paciente **não funciona ainda** — ele vê um aviso explicando isso, em
-vez de uma tela quebrada. A troca é pequena e já está isolada: basta implementar a
-interface `FonteAcompanhamentos` (`src/domain/repositorioAcompanhamentos.ts`) contra o
-Supabase. Nenhuma tela muda.
+**Atualizado em 27/09: o código da nuvem está pronto.** `src/domain/fonteSupabase.ts`
+implementa a interface, o provedor escolhe sozinho entre nuvem e navegador conforme as
+chaves, e `supabase/001-acompanhamentos.sql` cria a tabela e as duas funções que o
+paciente usa. Tudo coberto por teste com cliente falso — mas **nada foi rodado contra
+um Supabase de verdade**, porque o projeto não existe.
 
-### 4. Política de privacidade e LGPD — agora é obrigatória
+Falta só você: criar o projeto, colar as chaves no `.env.local` e rodar o SQL (passo a
+passo no README). Enquanto isso não acontece, o link segue valendo só neste navegador
+e a tela do paciente explica isso em vez de quebrar.
+
+### 4. Política de privacidade e LGPD — rascunhos prontos, falta advogado
 
 Enquanto tudo fica no navegador, o tratamento de dado pessoal é seu, não do sistema.
 No momento em que algum dado sair do aparelho, você passa a ser controlador de dado
 de saúde de terceiros, e aí a política deixa de ser formalidade. Não escrevi um texto
 jurídico porque um texto errado é pior do que nenhum.
+
+**Atualizado em 27/09:** os três textos estão rascunhados em `lgpd-rascunhos.md` —
+política de privacidade, consentimento do paciente e as cláusulas do contrato. Foram
+escritos por um assistente de código, não por advogado, e **precisam de revisão
+jurídica antes de publicar**. As lacunas que só você preenche (CNPJ, contato,
+encarregado, prazos) estão marcadas no arquivo.
+
+As três peças de código que a política exigia foram feitas: a tela de consentimento
+antes de gerar o primeiro link, o backup que agora inclui as missões, e o apagar-dados
+que alcança também a nuvem.
 
 **Mudou de status em 26/09:** como o dado do paciente vai para a nuvem, isso saiu do
 "se um dia" e entrou na Fase 1. São quatro peças, e nenhuma é código: política de
@@ -87,11 +107,16 @@ nutricionista como **controlador** e o MetaNutri como **operador**. Vale também
 regra do CFN: o software não prescreve, quem prescreve é o nutricionista — cuidado com
 sugestão automática que possa ser lida como prescrição.
 
-### 5. Revisão clínica
+### 5. Revisão clínica — os casos estão prontos
 
 Os cálculos seguem as referências citadas, mas nenhuma nutricionista conferiu os
 resultados. Antes de qualquer pessoa usar isso num paciente de verdade, peça para a
-preceptora conferir uns cinco casos, incluindo criança e gestante.
+preceptora conferir.
+
+**Atualizado em 27/09:** `revisao-clinica-casos.md` tem seis casos escolhidos para
+cobrir cada faixa de equação (adulta, adulto, criança, adolescente, gestante,
+lactante), em formato de tabela para ela preencher. É só mandar o arquivo e o
+endereço do site.
 
 ## Risco clínico
 
