@@ -5,14 +5,16 @@ Instruções para agentes de código que trabalham neste repositório. O
 
 ## O projeto em uma linha
 
-MetaNutri: software de adesão para nutricionista em começo de carreira — as missões
-diárias do paciente são o diferencial, e ainda não existem em código. O que está
-construído é o planejador alimentar, que roda inteiro no navegador, sem conta e sem
-servidor, e precisa funcionar **offline** (PWA). Interface em pt-BR.
+MetaNutri: software de nutrição para quem está começando na profissão. **O diferencial
+é dizer o que comer**: o painel de micronutrientes mostra o que falta e o botão
+**cobrir** sugere o alimento e a porção que fecham a falta — nenhum concorrente
+brasileiro faz isso. As missões diárias do paciente são o argumento de venda (check-in
+os concorrentes já têm). Roda no navegador, funciona **offline** (PWA), e a conta na
+nuvem (Supabase) é opcional. Interface em pt-BR.
 
 Estratégia aprovada em [docs/plano-negocio.md](docs/plano-negocio.md): quem paga é o
-recém-formado, o estudante é canal e a execução tem quatro fases com portões. O que
-está no repositório é a Fase 2; a Fase 1 (missões) não começou.
+recém-formado, o estudante é canal e a execução tem quatro fases com portões. Missões,
+adesão, nuvem e cobrança estão construídas; a Fase 0 (10 conversas) não foi feita.
 
 ## Comandos
 

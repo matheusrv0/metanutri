@@ -2,10 +2,13 @@
 // herói centrado com a tese e a captura do produto logo abaixo, depois seções
 // alternadas em que a imagem carrega o argumento e o texto explica.
 //
-// A tese mudou em 27/09: a landing vendia o painel de micros, e o plano de negócio
-// diz que a frase que abre a venda é a adesão do paciente — "a aquisição tem que vir
-// pelo assunto adesão, não pela categoria software". Os micros continuam, como a
-// segunda função que carrega o produto.
+// A tese: dizer o que comer. A pesquisa de mercado verificou sete concorrentes
+// brasileiros e nenhum sugere alimento para cobrir o micro que falta — "o espaço mais
+// limpo", "a parte mais defensável". As missões diárias são o argumento de venda, não
+// o diferencial: check-in e metas já existem em WebDiet, Nutrium, DietSystem e Dietbox.
+//
+// Esta página já chegou a liderar com adesão, em 27/09, por leitura errada do plano de
+// negócio — que chama adesão de "argumento de venda" e "aquisição", não de diferencial.
 //
 // As imagens são capturas do MetaNutri rodando, com o caso de exemplo (fictício), e
 // são geradas a partir do próprio app. Nada aqui é mockup.
@@ -31,14 +34,14 @@ const CELULAS = [
 ] as const
 
 const PASSOS = [
-  ['Monte o plano', 'Digite “150 arroz integral” e tecle Enter. Medida caseira, kcal e micros aparecem sozinhos.'],
-  ['Mande o link', 'O plano vira uma lista curta que o paciente abre no celular. Sem baixar app, sem criar conta.'],
-  ['Veja quem está sumindo', `Quem passa ${DIAS_PARA_SUMIR} dias sem marcar aparece no topo — antes de sumir de vez.`],
+  ['Monte o plano', 'Digite “150 arroz integral” e tecle Enter. Medida caseira, kcal, macros e micros aparecem sozinhos.'],
+  ['Veja o que falta', 'A adequação de 15 vitaminas e minerais, mais a fibra, comparada com a DRI da idade e da condição.'],
+  ['Cubra com alimento', 'O botão cobrir sugere até cinco alimentos de grupos diferentes, com a porção que fecha a falta.'],
 ] as const
 
 const CAPACIDADES = [
   [Search, 'Escreva como você fala', 'Digite “150 arroz integral” e tecle Enter. A medida caseira da POF e as kcal aparecem sozinhas, e a busca avisa quando a tabela só tem parte dos nutrientes.'],
-  [Target, 'Cobrir a falta', 'Escolhe alimentos de grupos diferentes, calcula a porção que fecha a meta e mostra quantas kcal isso soma no dia.'],
+  [Target, 'Prescrição rápida', 'Nome, sexo, idade e a meta de kcal. Serve para retorno e ajuste, e vira atendimento completo a qualquer momento — o contrário não, para não apagar medida.'],
   [Barcode, 'Industrializado pelo rótulo', 'Leia o código de barras pela câmera. Os campos vêm preenchidos da Open Food Facts para você conferir com a embalagem.'],
   [FileText, 'Sai pronto para entregar', 'Dieta para imprimir, aconselhamento em Word no modelo do estágio e memorial de cálculo. A folha do paciente vai com a lista de trocas.'],
 ] as const
@@ -100,13 +103,14 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
 
         <div className="relative mx-auto grid max-w-[900px] justify-items-center gap-6 px-4 pb-10 pt-16 text-center sm:px-8 sm:pt-24">
           <h1 className="font-titulo text-[clamp(34px,6vw,64px)] font-normal leading-[1.06] tracking-[-0.8px] text-balance">
-            Seu paciente para de abandonar a dieta na{' '}
-            <TextHighlight delay={0.45}>segunda semana</TextHighlight>
+            Todo software diz que faltou cálcio.
+            <br />O MetaNutri diz <TextHighlight delay={0.45}>o que comer</TextHighlight>.
           </h1>
 
           <p className="max-w-[54ch] text-lg leading-relaxed text-muted-foreground">
-            O plano alimentar vira missões diárias que o paciente marca no celular. Você vê quem está sumindo antes de sumir de
-            vez — e monta o plano em minutos, com a adequação dos micronutrientes do lado.
+            A adequação de 15 vitaminas e minerais, mais a fibra, comparada com a DRI. Quando falta, o botão{' '}
+            <strong className="font-semibold text-foreground">cobrir</strong> sugere alimentos de verdade, com a porção em gramas e
+            em medida caseira. E os macros andam ao vivo enquanto você monta.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3">
@@ -116,7 +120,7 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
             </FlowButton>
           </div>
 
-          <p className="text-[13px] text-muted-foreground">Grátis para começar, sem cartão. O paciente não precisa baixar nada.</p>
+          <p className="text-[13px] text-muted-foreground">Grátis para começar, sem cartão. Funciona sem internet.</p>
         </div>
 
         {/* A captura do produto fecha o herói, como na referência. */}
@@ -124,9 +128,9 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
           {/* A captura termina no meio da lista de propósito: o degradê diz que
               continua, em vez de parecer imagem cortada por acidente. */}
           <img
-            src="imagens/missoes-paciente.png"
-            alt="A tela que o paciente abre no celular: as missões do dia, com duas marcadas e o progresso 2 de 5."
-            className="w-full max-w-[300px] rounded-2xl border border-border bg-card shadow-pop [mask-image:linear-gradient(to_bottom,#000_72%,transparent_99%)]"
+            src="imagens/adequacao.png"
+            alt="O painel de adequação do MetaNutri: cálcio a 66% e ferro a 48% da meta, marcados como abaixo, com o botão cobrir ao lado de cada um."
+            className="w-full max-w-[900px] rounded-2xl border border-border bg-card shadow-pop [mask-image:linear-gradient(to_bottom,#000_82%,transparent_99%)]"
           />
         </div>
       </section>
@@ -145,29 +149,11 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
       </section>
 
       <Recurso
-        titulo="Missões diárias"
-        chamada="O plano vira tarefa do dia, não um PDF que ninguém abre"
-        texto="As refeições por horário, a fruta, os vegetais e a água saem do plano que você montou — e cada missão mostra de onde veio. O paciente toca no que fez. Não precisa de conta nem de aplicativo: é um link que ele guarda."
-        imagem="imagens/link-missoes.png"
-        alt="O cartão do nutricionista: o link do paciente, com o progresso do dia e os dias marcados na semana."
-      />
-
-      <Recurso
-        titulo="Adesão"
-        chamada="A pergunta que o software dos outros não responde: quem está sumindo?"
-        texto={`Quem marcou missão em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias ou mais na semana aparece como em dia. Quem passa ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo da lista, mesmo que tenha ido bem na semana passada — é exatamente esse o caso que não pode ficar escondido atrás de uma média.`}
-        imagem="imagens/adesao.png"
-        alt="Painel de adesão do MetaNutri com dados de exemplo: três pacientes ordenados por urgência, com selo de sumindo, atenção e em dia."
-        invertida
-        nota="Tela do MetaNutri com dados de exemplo."
-      />
-
-      <Recurso
-        titulo="Micronutrientes"
-        chamada="Todo software diz que faltou cálcio. Este diz o que comer."
-        texto="A adequação dos 20 nutrientes comparada com a DRI, e um botão cobrir que sugere até cinco alimentos de grupos diferentes para fechar a falta — com a porção em gramas, em medida caseira, quanto da falta cobrem e quantas kcal somam."
-        imagem="imagens/adequacao.png"
-        alt="Painel de micronutrientes: cálcio e ferro abaixo da meta, com o botão cobrir ao lado."
+        titulo="O diferencial"
+        chamada="“Faltam 617 mg de cálcio” não resolve. “140 g de caruru” resolve."
+        texto="Todo software calcula a adequação e pinta de vermelho. Nenhum concorrente brasileiro diz o que comer para fechar. O botão cobrir sugere até cinco alimentos de grupos diferentes, com a porção em gramas e em medida caseira, quanto da falta cada um cobre e quantas kcal isso soma no dia — respeitando o que ainda cabe no gasto energético."
+        imagem="imagens/cobrir.png"
+        alt="A gaveta cobrir aberta para o cálcio: faltam 617,61 mg, cabem 1.312 kcal, e a lista de alimentos sugeridos com a porção de cada um."
       >
         <ul className="mt-6 grid gap-2.5">
           {['Medidas caseiras da POF/IBGE, por alimento', 'Referência individual (RDA) ou coletiva (EAR)', 'A fonte de cada número, a um clique'].map((item) => (
@@ -178,6 +164,25 @@ export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAli
           ))}
         </ul>
       </Recurso>
+
+      <Recurso
+        titulo="Macronutrientes"
+        chamada="Proteína, carboidrato e gordura andam enquanto você monta"
+        texto="Cada macro tem a faixa recomendada da idade (AMDR) em destaque, o marcador do plano andando a cada alimento, e a frase que responde à pergunta de verdade: “Faltam 6 pontos para a faixa”, “Dentro da faixa”, “10 pontos acima”. Também em gramas por quilo de peso."
+        imagem="imagens/macros.png"
+        alt="O medidor de macros: proteína e carboidrato dentro da faixa, gordura abaixo, cada um com a faixa recomendada e a distância até ela."
+        invertida
+        telefone
+      />
+
+      <Recurso
+        titulo="Para o plano não morrer na gaveta"
+        chamada="O paciente marca o que fez, e você vê quem está sumindo"
+        texto={`O plano vira missões que o paciente abre num link, sem baixar app. Quem marcou em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias ou mais na semana aparece como em dia; quem passa ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo, mesmo que tenha ido bem na semana passada. Check-in básico os concorrentes já têm — aqui ele nasce do plano que você montou.`}
+        imagem="imagens/adesao.png"
+        alt="Painel de adesão do MetaNutri com dados de exemplo: três pacientes ordenados por urgência, com selo de sumindo, atenção e em dia."
+        nota="Tela do MetaNutri com dados de exemplo."
+      />
 
       {/* O que mais tem, sem virar grade de cartões iguais. */}
       <section className="mx-auto max-w-[1140px] px-4 py-14 sm:px-8 md:py-20">

@@ -3,7 +3,7 @@
 **Status:** aprovada pelo usuário em 15/09/2026 · **Data:** 15/09/2026
 **Fontes:** `docs/backlog.md` (B-01 a B-18), `docs/feedback-nutricionista.md`, `docs/entrevista-estudante-2026-09-15.md`, `docs/modelos/modelo_planejamento_estagio.docx`, `docs/decisoes.md`.
 
-> **Nota de 26/09/2026.** O plano de negócio aprovado (`docs/plano-negocio.md`) mudou a estratégia: o cliente que paga é o recém-formado, o estudante é canal, e o diferencial do produto são as missões diárias do paciente. Esta SPEC continua valendo como o contrato do que está construído — o planejador, que no roteiro novo é a **Fase 2**. O que ela descreve não foi revogado; o que mudou é a prioridade e o público de quem compra. Preço e público desta SPEC devem ser lidos em `docs/plano-negocio.md`, não aqui.
+> **Nota de 26/09/2026.** O plano de negócio aprovado (`docs/plano-negocio.md`) mudou a estratégia: o cliente que paga é o recém-formado e o estudante é canal. *Corrigido em 27/09:* o diferencial do produto é o que esta SPEC descreve — o painel de micros com o botão cobrir (§4.7) —, e as missões diárias são o argumento de venda. Esta SPEC continua valendo como o contrato do que está construído; no roteiro do plano ela é a **Fase 2**. O que ela descreve não foi revogado; o que mudou é a prioridade e o público de quem compra. Preço e público desta SPEC devem ser lidos em `docs/plano-negocio.md`, não aqui.
 
 ## 1. Objetivo
 

@@ -1,12 +1,12 @@
 # MetaNutri
 
-Software de adesão para nutricionista em começo de carreira: o objetivo é o paciente
-não abandonar a dieta na segunda semana. O plano alimentar vira **missões diárias**
-que o paciente marca num link próprio, e a tela de Adesão mostra quem está sumindo.
-Junto vem o planejador: monta o plano, confere a adequação de micronutrientes e sai
-com o documento pronto para entregar. Tudo dentro do navegador, sem conta e sem
-servidor — inclusive as missões, que por enquanto só abrem no mesmo navegador onde o
-plano foi montado (ver Pendências).
+Software de nutrição para quem está começando na profissão. **O diferencial é dizer o
+que comer:** todo software calcula a adequação e pinta de vermelho; o MetaNutri mostra
+o que falta e o botão **cobrir** sugere o alimento e a porção que fecham a falta —
+nenhum concorrente brasileiro faz isso. Os macros andam ao vivo enquanto o plano é
+montado. E o plano vira **missões diárias** que o paciente marca num link próprio,
+com a tela de Adesão mostrando quem está sumindo — esse é o argumento de venda.
+Funciona no navegador; a conta na nuvem é opcional.
 
 Estratégia, público, preços e fases: [docs/plano-negocio.md](docs/plano-negocio.md).
 

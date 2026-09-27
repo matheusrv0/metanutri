@@ -14,10 +14,21 @@ essa é a forma mantida (decisão de 26/09/2026).
 MetaNutri é um software de nutrição para quem está começando na profissão: grátis na
 faculdade, barato ao se formar.
 
-O diferencial não é preço, é **adesão do paciente** — o plano alimentar vira missões
-diárias que o paciente marca como feitas. A receita vem do recém-formado e de clínicas
-pequenas, não do estudante. Meta de 12 meses: 100 assinantes pagantes, cerca de
-R$ 4.800 de receita mensal.
+O diferencial não é preço: é **dizer o que comer**. O painel mostra o que falta no
+plano e quais alimentos suprem cada item — nenhum concorrente brasileiro faz isso. A
+**adesão do paciente**, com o plano virando missões diárias, é o **ângulo de venda e de
+aquisição**. A receita vem do recém-formado e de clínicas pequenas, não do estudante.
+Meta de 12 meses: 100 assinantes pagantes, cerca de R$ 4.800 de receita mensal.
+
+> **Correção de 27/09/2026.** Este parágrafo dizia que o diferencial *era* a adesão, e a
+> seção de riscos deste mesmo documento diz que "sem base de alimentos com
+> micronutrientes completos, **o principal diferencial não funciona**" — e missões não
+> dependem da base de micros. As duas frases não podiam estar certas juntas. A pesquisa
+> de mercado decide: "ninguém no Brasil sugere alimentos para cobrir micronutrientes que
+> faltam (…) esse é o espaço mais limpo", "a parte mais defensável", enquanto as missões
+> "já existem em forma básica (metas + check-in + lembrete) em WebDiet, DietSystem,
+> Nutrium e Dietbox". Adesão é como se entra na conversa; cobrir é o que o concorrente
+> não tem.
 
 ## Decisões tomadas
 
@@ -42,14 +53,21 @@ produto na frente são as missões diárias e o painel de micros.
 
 ## Produto
 
-Duas funções carregam o produto; o resto existe por obrigação.
+Duas funções carregam o produto; o resto existe por obrigação. **O painel de micros é
+o diferencial** — é o que ninguém tem. **As missões são o argumento de venda** — é o
+assunto que abre a conversa, sobre uma mecânica que os concorrentes já têm em forma
+básica.
+
+**Painel de micronutrientes.** Mostra o que falta no plano (zinco, magnésio, potássio,
+vitaminas) e, no botão **cobrir**, quais alimentos suprem cada item, com a porção em
+gramas e em medida caseira. Todo software calcula e pinta de vermelho; nenhum diz
+"coloque 30 g de castanha-do-pará e o selênio fecha". O concorrente real dessa função
+não é o Dietbox: é o ChatGPT, e ganhamos dele com porção exata, dados da TACO e tudo
+dentro do plano.
 
 **Missões diárias.** O paciente recebe um link (sem baixar app) com as tarefas do dia:
 fazer as refeições do plano, bater a meta de água, comer a porção de vegetais, treinar.
 Ele marca o que fez, e o nutricionista enxerga quem está sumindo antes de sumir de vez.
-
-**Painel de micronutrientes.** Mostra o que falta no plano (zinco, magnésio, potássio,
-vitaminas) e quais alimentos suprem cada item.
 
 **Paridade** — precisa existir, mas não vende: antropometria, base de alimentos, PDF da
 dieta, prescrição rápida e atendimento completo, cadastro de pacientes.

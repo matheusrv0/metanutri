@@ -20,16 +20,18 @@ O **paciente** é usuário sem ser cliente: recebe um link (sem baixar app) e ma
 
 ## Product Purpose
 
-Fazer o paciente não abandonar a dieta na segunda semana, e dar ao nutricionista a chance de perceber quem está sumindo antes de sumir de vez. Sucesso é o paciente marcar missão em 4 dias ou mais na semana — essa é a métrica do produto, e ela é do paciente, não do nutricionista.
+Dizer o que comer. Montar um plano alimentar completo, ver o que falta de micronutriente e fechar a falta com alimento de verdade — porção em gramas e em medida caseira — em minutos, não em horas, e sair com o documento pronto para entregar. Terminar o planejamento em uma sessão, sem abrir planilha, tabela em PDF nem ChatGPT.
 
-No que já está construído, o propósito é o da Fase 2: montar um plano alimentar completo e conferir a adequação de micronutrientes em minutos, não em horas, e sair com o documento Word pronto para entregar — terminar o planejamento em uma sessão, sem abrir planilha nem tabela em PDF.
+Em volta disso, fazer o plano ser seguido: ele vira missões diárias que o paciente marca, e o nutricionista percebe quem está sumindo antes de sumir de vez. A métrica dessa parte é do paciente — marcar missão em 4 dias ou mais na semana.
 
 ## Positioning
 
-**Software de adesão, que por acaso também prescreve** — não "igual ao Dietbox, mais barato". A frase que abre a venda é "seu paciente para de abandonar a dieta na segunda semana". Duas funções carregam o produto; o resto é paridade, precisa existir mas não vende.
+**O diferencial é dizer o que comer.** Corrigido em 27/09/2026: a pesquisa de mercado verificou sete concorrentes brasileiros e nenhum sugere alimento para cobrir o micronutriente que falta — "o espaço mais limpo", "a parte mais defensável". O concorrente real dessa função é o ChatGPT, e o MetaNutri ganha dele com porção exata, dados da TACO e tudo dentro do plano. O botão cobrir é só de micronutrientes (15 vitaminas e minerais, mais a fibra); macros têm medidor com a faixa da idade, não têm cobrir.
 
-1. **Missões diárias** (construído; sincronização na nuvem pendente): o plano alimentar vira tarefas que o paciente marca como feitas num link próprio, sem conta e sem baixar app, e o nutricionista enxerga em *Adesão* quem está sumindo antes de sumir de vez. Quem passa 4 dias sem marcar sobe para o topo da lista.
-2. **Painel de micronutrientes** (construído): o concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora?" — o botão **cobrir** sugere até cinco alimentos de grupos diferentes que fecham a falta de um micronutriente, com a porção em gramas e em medida caseira, quanto da falta cobrem e quantas kcal somam.
+**A adesão é o argumento de venda**, não o diferencial: check-in, metas e lembrete já existem em WebDiet, Nutrium, DietSystem e Dietbox. A frase que abre a conversa é "seu paciente para de abandonar a dieta na segunda semana" — e o que segura o cliente depois é o cobrir. Não é "igual ao Dietbox, mais barato". Duas funções carregam o produto; o resto é paridade, precisa existir mas não vende.
+
+1. **Painel de micronutrientes com o botão cobrir** (construído): o concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora?" — o botão **cobrir** sugere até cinco alimentos de grupos diferentes que fecham a falta, com a porção em gramas e em medida caseira, quanto da falta cobrem e quantas kcal somam.
+2. **Missões diárias** (construído): o plano alimentar vira tarefas que o paciente marca como feitas num link próprio, sem conta e sem baixar app, e o nutricionista enxerga em *Adesão* quem está sumindo antes de sumir de vez. Quem passa 4 dias sem marcar sobe para o topo da lista.
 
 Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados para servidor.
 
