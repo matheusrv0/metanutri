@@ -102,7 +102,18 @@ Para ligar:
 1. Crie um projeto em <https://supabase.com> (o plano gratuito serve)
 2. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
 3. `cp .env.example .env.local` e cole as duas
-4. Reinicie o `npm run dev`
+4. Em **SQL Editor > New query**, cole o conteúdo de
+   [supabase/001-acompanhamentos.sql](supabase/001-acompanhamentos.sql) e rode.
+   É o que cria a tabela das missões e as duas funções que o paciente usa
+5. Reinicie o `npm run dev`
+
+Com isso o link do paciente passa a abrir no celular dele. Sem o passo 4, a conta
+funciona mas as missões continuam só neste navegador.
+
+Por que duas funções em vez de acesso direto à tabela: o paciente não tem conta, e
+uma política de RLS não consegue conferir um token que o próprio visitante afirma ter
+— liberar leitura anônima vazaria os pacientes de todo mundo. As funções recebem o
+token e trabalham numa linha só.
 
 Sem isso, a tela de conta explica o que falta e o app segue normal. **Nunca** coloque
 a chave `service_role` no `.env.local`: ela dá acesso total ao banco e iria para o

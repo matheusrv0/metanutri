@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
+import { fonteSupabase } from '@/domain/fonteSupabase.ts'
 import { criarRepositorioAcompanhamentos, fonteLocal, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
 
 function armazenamentoDoNavegador(): Armazenamento | null {
@@ -49,12 +51,21 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     [repo, atualizar],
   )
 
-  // A tela do paciente grava sem passar pelo contexto; o `atualizar` mantém a lista do nutri em dia.
+  /**
+   * Com as chaves do Supabase configuradas, o link do paciente passa a abrir no
+   * aparelho dele. Sem elas, tudo continua neste navegador. A cópia local é mantida
+   * nos dois casos: é ela que faz o app funcionar offline.
+   */
   const fonte = useMemo(() => {
     const local = fonteLocal(repo)
+    const cliente = obterSupabase()
+    const remota = cliente ? fonteSupabase(cliente) : null
+
     return {
-      ...local,
+      naNuvem: remota !== null,
+      porToken: async (token: string) => (remota ? ((await remota.porToken(token)) ?? repo.porToken(token)) : local.porToken(token)),
       salvar: async (acompanhamento: Acompanhamento) => {
+        if (remota) await remota.salvar(acompanhamento)
         const salvo = await local.salvar(acompanhamento)
         atualizar()
         return salvo
