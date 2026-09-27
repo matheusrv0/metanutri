@@ -77,10 +77,36 @@ export interface Backup {
   readonly dados: Record<string, string>
 }
 
+/**
+ * Os planos não moram numa chave só: `metanutri:casos` guarda a lista de ids e cada
+ * plano fica em `metanutri:caso:<id>`. Sem expandir, o backup levava o índice e
+ * deixava os planos para trás — restaurar em outro aparelho dava zero planos.
+ */
+function chavesDosCasos(armazenamento: Armazenamento): string[] {
+  try {
+    const indice: unknown = JSON.parse(armazenamento.getItem('metanutri:casos') ?? '[]')
+    if (!Array.isArray(indice)) return []
+    return indice.filter((id): id is string => typeof id === 'string').map((id) => `metanutri:caso:${id}`)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * A lista de chaves com os planos já expandidos. Quem leva dado embora (backup) e
+ * quem apaga dado (excluir tudo) precisam das duas coisas, senão um deixa o plano
+ * para trás e o outro deixa o plano no aparelho.
+ */
+export function expandirChaves(armazenamento: Armazenamento | null, chaves: readonly string[]): string[] {
+  if (!armazenamento) return [...chaves]
+  return [...chaves, ...(chaves.includes('metanutri:casos') ? chavesDosCasos(armazenamento) : [])]
+}
+
 export function montarBackup(armazenamento: Armazenamento | null, chaves: readonly string[], agora: string): Backup {
   const dados: Record<string, string> = {}
   if (armazenamento) {
-    for (const chave of chaves) {
+    const todas = expandirChaves(armazenamento, chaves)
+    for (const chave of todas) {
       const valor = armazenamento.getItem(chave)
       if (valor !== null) dados[chave] = valor
     }

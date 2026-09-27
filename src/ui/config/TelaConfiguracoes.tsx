@@ -2,6 +2,7 @@ import { Download, Image, ShieldCheck, Trash, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import {
   CHAVES_DE_DADOS,
+  expandirChaves,
   gravarPerfil,
   lerPerfil,
   linhaDeResponsabilidade,
@@ -10,6 +11,8 @@ import {
   type Perfil,
 } from '@/domain/perfil.ts'
 import { apagarAcompanhamentosDaNuvem } from '@/domain/fonteSupabase.ts'
+import { apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
+import { CloudDownload, CloudUpload } from 'lucide-react'
 import { obterSupabase } from '../estado/supabase.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -70,9 +73,44 @@ export function TelaConfiguracoes() {
     leitor.readAsText(arquivo)
   }
 
+  const [naNuvem, setNaNuvem] = useState(false)
+
+  // O tipo do cliente do Supabase é fundo demais para o TypeScript casar com a
+  // interface pequena que este módulo pede (TS2589). A forma em tempo de execução é
+  // a mesma; o contrato de verdade está em `ClienteCopia`.
+  const clienteCopia = (): ClienteCopia | null => obterSupabase() as unknown as ClienteCopia | null
+
+  const enviarParaNuvem = () => {
+    const cliente = clienteCopia()
+    if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
+    setNaNuvem(true)
+    const backup = montarBackup(armazenamento(), [...CHAVES_DE_DADOS], new Date().toISOString())
+    void enviarCopia(cliente, backup, apelidoDoAparelho(globalThis.navigator.userAgent)).then(({ erro }) => {
+      setNaNuvem(false)
+      setMensagem(erro ?? `Cópia enviada. Ela substitui a anterior da sua conta: ${Object.keys(backup.dados).length} conjuntos de dados.`)
+    })
+  }
+
+  const trazerDaNuvem = () => {
+    const cliente = clienteCopia()
+    if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
+    setNaNuvem(true)
+    void baixarCopia(cliente).then(({ ok, erro }) => {
+      setNaNuvem(false)
+      if (!ok) return setMensagem(erro)
+      const { restaurados, erro: erroRestauro } = restaurarBackup(armazenamento(), JSON.stringify(ok.backup))
+      setMensagem(
+        erroRestauro ??
+          `${restaurados} ${restaurados === 1 ? 'conjunto veio' : 'conjuntos vieram'} da nuvem (${ok.aparelho}). Recarregue a página para ver.`,
+      )
+    })
+  }
+
   const apagarTudo = () => {
     const guardado = armazenamento()
-    for (const chave of CHAVES_DE_DADOS) guardado?.removeItem(chave)
+    // Expandido: sem isso os planos (metanutri:caso:<id>) ficavam no aparelho depois
+    // de "apagar tudo", com nome e medida de paciente dentro.
+    for (const chave of expandirChaves(guardado, [...CHAVES_DE_DADOS])) guardado?.removeItem(chave)
     setConfirmandoApagar(false)
     setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
 
@@ -157,6 +195,29 @@ export function TelaConfiguracoes() {
             </Button>
           ) : null}
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cópia na nuvem</CardTitle>
+          <CardDescription>
+            Para trocar de aparelho sem passar arquivo. Precisa de conta. Não é automático de propósito: cada botão sobrescreve um lado, e você escolhe qual.
+          </CardDescription>
+        </CardHeader>
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={enviarParaNuvem} disabled={naNuvem}>
+            <CloudUpload aria-hidden="true" />
+            Enviar deste aparelho
+          </Button>
+          <Button variant="outline" onClick={trazerDaNuvem} disabled={naNuvem}>
+            <CloudDownload aria-hidden="true" />
+            Trazer para este aparelho
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <strong>Enviar</strong> substitui a cópia da nuvem pelo que está aqui. <strong>Trazer</strong> escreve por cima do que está neste aparelho. Na dúvida,
+          baixe o backup em arquivo antes.
+        </p>
       </Card>
 
       <Card>
