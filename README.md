@@ -134,6 +134,50 @@ dias (`ehPacienteAtivo`). **Nada é cobrado nem bloqueado hoje**: sem meio de pa
 aplicar limite seria mentira (a constante `LIMITES_ATIVOS` registra isso). A tela de
 Adesão já mostra quantos ativos você tem contra o limite do plano.
 
+## Cobrança (Mercado Pago)
+
+O código está pronto; falta configurar. O pagamento acontece **no Mercado Pago**:
+nenhum dado de cartão passa pelo MetaNutri.
+
+Por que existe servidor aqui: o access token do Mercado Pago dá poder de cobrar em
+nome do dono da conta. Se ele fosse para o navegador, qualquer pessoa que abrisse o
+site emitiria cobrança. Por isso ele vive só nas Edge Functions.
+
+1. Rode `supabase/003-assinaturas.sql` no SQL Editor
+2. Em <https://www.mercadopago.com.br/developers/panel> crie uma aplicação para o
+   MetaNutri e copie o **access token de produção**
+3. Instale a CLI e entre:
+   ```bash
+   npm i -g supabase
+   supabase login
+   supabase link --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+4. Guarde o token no servidor (ele nunca entra no repositório):
+   ```bash
+   supabase secrets set MERCADOPAGO_ACCESS_TOKEN=APP_USR-...
+   supabase secrets set SITE_URL=https://matheusrv0.github.io/metanutri/
+   ```
+5. Publique as duas funções:
+   ```bash
+   supabase functions deploy assinar
+   supabase functions deploy webhook-mercadopago --no-verify-jwt
+   ```
+   O `--no-verify-jwt` é obrigatório na segunda: quem chama é o Mercado Pago, que não
+   tem conta no seu Supabase.
+6. No painel do Mercado Pago, cadastre o webhook apontando para
+   `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
+   evento **Assinaturas**. Copie a chave secreta que ele mostra e guarde:
+   ```bash
+   supabase secrets set MERCADOPAGO_WEBHOOK_SECRET=...
+   ```
+
+Sem o passo 6 o sistema funciona, mas ninguém sai de "pendente": é a notificação do
+Mercado Pago que confirma o pagamento. E sem o segredo, a função aceita notificação de
+qualquer um — inclusive de alguém dizendo que pagou.
+
+**Teste antes de valer dinheiro:** use as credenciais de teste e um usuário de teste
+do Mercado Pago. Assinatura pendente não libera plano pago, de propósito.
+
 ## De onde vêm os números
 
 | Assunto | Fonte |

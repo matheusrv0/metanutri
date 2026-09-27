@@ -1,6 +1,8 @@
-import { BadgeCheck, CloudOff, LogIn, LogOut, Sparkles, UserRound } from 'lucide-react'
+import { BadgeCheck, CloudOff, CreditCard, LogIn, LogOut, Sparkles, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { planoPorId, PLANOS } from '@/domain/conta.ts'
+import { podeAssinar, RECADO_STATUS } from '@/domain/assinatura.ts'
+import { planoPorId, PLANOS, type IdPlano } from '@/domain/conta.ts'
+import { useAssinatura } from '../estado/usarAssinatura.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -16,7 +18,17 @@ interface TelaContaProps {
 /** Estado da conta: quem está conectado, qual plano e o que fazer sem conta. */
 export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
-  const plano = conta.sessao ? planoPorId(conta.sessao.plano) : null
+  const [erroCobranca, setErroCobranca] = useState<string | null>(null)
+  const { assinatura, carregando, assinar } = useAssinatura(conta.sessao !== null)
+
+  // O plano que vale é o da assinatura paga; o da sessão é só o que ficou gravado no
+  // cadastro. Sem isso, quem criasse a assinatura e não pagasse usaria o plano pago.
+  const plano = planoPorId(assinatura.plano) ?? (conta.sessao ? planoPorId(conta.sessao.plano) : null)
+
+  const irPagar = async (escolhido: IdPlano) => {
+    setErroCobranca(null)
+    setErroCobranca(await assinar(escolhido))
+  }
 
   const sair = async () => {
     setSaindo(true)
@@ -78,8 +90,15 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
       <Card className="gap-4">
         <CardHeader>
           <CardTitle>Seu plano</CardTitle>
-          <CardDescription>Nenhuma cobrança está ativa. Os planos pagos entram quando a conta na nuvem estiver no ar.</CardDescription>
+          <CardDescription>{RECADO_STATUS[assinatura.status]}</CardDescription>
         </CardHeader>
+
+        {erroCobranca ? (
+          <Alert variant="error">
+            <CreditCard aria-hidden="true" />
+            <p>{erroCobranca}</p>
+          </Alert>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-3 border border-border p-4">
           <span aria-hidden="true" className="grid size-10 shrink-0 place-content-center rounded-md border border-primary/40 bg-lightprimary text-primary">
@@ -92,10 +111,29 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
           <span className="numeros font-titulo text-xl font-bold text-heading">{(plano?.mensal ?? 0) === 0 ? 'Grátis' : `R$ ${plano?.mensal}/mês`}</span>
         </div>
 
-        <Button variant="outline" className="self-start" onClick={aoVerPrecos}>
-          <Sparkles aria-hidden="true" />
-          Ver os planos
-        </Button>
+        {assinatura.precoTravado ? (
+          <p className="text-xs text-muted-foreground">Você entrou no preço de fundador: ele não sobe quando o preço subir.</p>
+        ) : null}
+
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={aoVerPrecos}>
+            <Sparkles aria-hidden="true" />
+            Ver os planos
+          </Button>
+
+          {conta.sessao && assinatura.status !== 'ativa'
+            ? PLANOS.filter((p) => podeAssinar(p.id)).map((p) => (
+                <Button key={p.id} disabled={carregando} onClick={() => void irPagar(p.id)}>
+                  <CreditCard aria-hidden="true" />
+                  Assinar {p.nome} · R$ {p.mensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                </Button>
+              ))
+            : null}
+        </div>
+
+        {conta.sessao && assinatura.status !== 'ativa' ? (
+          <p className="text-xs text-muted-foreground">O pagamento acontece no Mercado Pago. Nenhum dado de cartão passa pelo MetaNutri.</p>
+        ) : null}
       </Card>
     </div>
   )

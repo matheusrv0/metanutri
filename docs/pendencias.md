@@ -67,8 +67,17 @@ limite por paciente ativo, preço de fundador e a página de preços refeita. A 
 Adesão já compara os pacientes ativos com o limite do plano. Nada bloqueia ninguém
 (`LIMITES_ATIVOS` continua falso) porque ainda não há cobrança.
 
-Falta o meio de pagamento, e é o item mais travado da lista, por uma restrição de
-arquitetura: o Mercado Pago **exige um back-end** para criar a preferência de pagamento — o
+**Atualizado em 27/09: o código da cobrança está escrito.** Duas Edge Functions
+(`supabase/functions/assinar` e `webhook-mercadopago`), a tabela em
+`003-assinaturas.sql` e o botão na tela de Conta. Assinatura pendente **não** libera
+plano pago, e o preço vem do servidor, nunca do navegador.
+
+Falta configurar, e são passos seus (passo a passo no README): rodar o SQL, criar a
+aplicação no Mercado Pago, publicar as duas funções pela CLI e cadastrar o webhook.
+Nada disso foi testado contra o Mercado Pago de verdade — não existe aplicação nem
+token ainda.
+
+O contexto que explica por que precisa de servidor: o Mercado Pago **exige um back-end** para criar a preferência de pagamento — o
 access token não pode ir para o navegador, senão qualquer pessoa que abrir o site
 consegue cobrar em seu nome. O caminho natural, já que a conta é Supabase, é uma
 Edge Function. Ou seja: cobrança depende da conta estar no ar primeiro.
