@@ -1,4 +1,18 @@
-import { Barcode, BookOpen, CircleHelp, ClipboardList, FolderOpen, HardDrive, LayoutDashboard, Plus, Settings, TriangleAlert, UserCircle, UserRound } from 'lucide-react'
+import {
+  Barcode,
+  BookOpen,
+  CircleHelp,
+  ClipboardList,
+  FolderOpen,
+  HardDrive,
+  LayoutDashboard,
+  ListChecks,
+  Plus,
+  Settings,
+  TriangleAlert,
+  UserCircle,
+  UserRound,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -73,6 +87,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
             ativo={rota.tela === 'pacientes' || rota.tela === 'paciente'}
             aoClicar={() => ir({ tela: 'pacientes' })}
           />
+          <ItemMenu icone={<ListChecks aria-hidden="true" />} rotulo="Adesão" ativo={rota.tela === 'adesao'} aoClicar={() => ir({ tela: 'adesao' })} />
           <ItemMenu
             icone={<FolderOpen aria-hidden="true" />}
             rotulo="Planos"

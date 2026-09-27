@@ -1,6 +1,7 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { calcularEnergia } from './domain/energia.ts'
 import { criarExemplo } from './domain/exemplo.ts'
+import { missoesDoPlano } from './domain/missoes.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
@@ -11,6 +12,8 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from './ui/estado/contextoCasos.ts'
 import { ProvedorCasos } from './ui/estado/ProvedorCasos.tsx'
+import { ProvedorAcompanhamentos } from './ui/estado/ProvedorAcompanhamentos.tsx'
+import { useAcompanhamentos } from './ui/estado/contextoAcompanhamentos.ts'
 import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
 import { usePacientes } from './ui/estado/contextoPacientes.ts'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
@@ -22,6 +25,9 @@ import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
 import { TelaAlimentos } from './ui/alimentos/TelaAlimentos.tsx'
 import { TelaDesignSystem } from '@ds/vitrine/TelaDesignSystem.tsx'
 import { TelaConta } from './ui/conta/TelaConta.tsx'
+import { CartaoLinkMissoes } from './ui/missoes/CartaoLinkMissoes.tsx'
+import { TelaAdesao } from './ui/missoes/TelaAdesao.tsx'
+import { TelaMissoesPaciente } from './ui/missoes/TelaMissoesPaciente.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaEntrar } from './ui/publico/TelaEntrar.tsx'
@@ -44,6 +50,7 @@ function Conteudo() {
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const conta = useConta()
+  const { fonte } = useAcompanhamentos()
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -84,6 +91,11 @@ function Conteudo() {
 
   // Escolher plano ainda não cobra: leva para a conta, que é o passo que existe.
   const escolherPlano = () => navegar({ tela: 'entrar' })
+
+  // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
+  if (rota.tela === 'missoes') {
+    return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
+  }
 
   if (rota.tela === 'inicio') {
     return (
@@ -151,6 +163,17 @@ function Conteudo() {
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}
+        />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'adesao') {
+    return (
+      <Estrutura {...base} titulo="Adesão" subtitulo="Quem está sumindo">
+        <TelaAdesao
+          aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'plano' })}
+          {...(conta.sessao ? { plano: conta.sessao.plano } : {})}
         />
       </Estrutura>
     )
@@ -254,9 +277,17 @@ function Conteudo() {
               lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}
             />
           ) : rota.aba === 'plano' ? (
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
-              <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
+                <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+              </div>
+              <CartaoLinkMissoes
+                casoId={registro.caso.id}
+                pacienteId={registro.caso.pacienteId}
+                nome={registro.caso.nome}
+                missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-6">
@@ -317,7 +348,9 @@ export function App() {
   return (
     <ProvedorCasos>
       <ProvedorPacientes>
-        <Conteudo />
+        <ProvedorAcompanhamentos>
+          <Conteudo />
+        </ProvedorAcompanhamentos>
       </ProvedorPacientes>
     </ProvedorCasos>
   )

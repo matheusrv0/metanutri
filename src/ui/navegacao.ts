@@ -8,6 +8,8 @@ export type TelaPublica = (typeof TELAS_PUBLICAS)[number]
 
 export type Rota =
   | { readonly tela: 'inicio' }
+  // Tela do paciente: abre pelo link, no aparelho dele, sem conta e sem menu.
+  | { readonly tela: 'missoes'; readonly token: string }
   | { readonly tela: 'precos' }
   | { readonly tela: 'entrar' }
   | { readonly tela: 'conta' }
@@ -15,6 +17,7 @@ export type Rota =
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
   | { readonly tela: 'pacientes' }
+  | { readonly tela: 'adesao' }
   | { readonly tela: 'paciente'; readonly pacienteId: string }
   | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
@@ -29,6 +32,7 @@ export const ROTA_INICIAL: Rota = { tela: 'painel' }
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   const [tela, id, aba] = partes
+  if (tela === 'missoes' && id) return { tela: 'missoes', token: id }
   if (tela === 'inicio') return { tela: 'inicio' }
   if (tela === 'precos') return { tela: 'precos' }
   if (tela === 'entrar') return { tela: 'entrar' }
@@ -40,6 +44,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'design-system') return { tela: 'designsystem' }
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
+  if (tela === 'adesao') return { tela: 'adesao' }
   if (tela === 'paciente' && id) return { tela: 'paciente', pacienteId: id }
   if (tela === 'caso' && id) {
     return { tela: 'planejador', casoId: id, aba: ABAS.includes(aba as AbaPlanejador) ? (aba as AbaPlanejador) : 'caso' }
@@ -49,6 +54,8 @@ export function lerRota(hash: string): Rota {
 
 export function escreverRota(rota: Rota): string {
   switch (rota.tela) {
+    case 'missoes':
+      return `#/missoes/${encodeURIComponent(rota.token)}`
     case 'inicio':
       return '#/inicio'
     case 'precos':
@@ -63,6 +70,8 @@ export function escreverRota(rota: Rota): string {
       return '#/casos'
     case 'pacientes':
       return '#/pacientes'
+    case 'adesao':
+      return '#/adesao'
     case 'paciente':
       return `#/paciente/${encodeURIComponent(rota.pacienteId)}`
     case 'alimentos':
