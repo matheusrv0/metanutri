@@ -1,4 +1,5 @@
 import {
+  comparativoDosPlanos,
   descontoAnualPct,
   ehPacienteAtivo,
   estadoDoLimite,
@@ -9,6 +10,7 @@ import {
   podeGerarLink,
   planoPorId,
   PLANOS,
+  PLANOS_COMPARADOS,
   SENHA_MINIMA,
   validarCadastro,
   validarEntrada,
@@ -190,5 +192,50 @@ describe('Limite de links de missões (conta de estudante)', () => {
     const free = planoPorId('free')
     if (!free) throw new Error('O plano Free precisa existir.')
     expect(podeGerarLink(free, 2)).toBe(false)
+  })
+})
+
+describe('Comparativo da página de preços', () => {
+  const linhas = comparativoDosPlanos()
+
+  it('compara quatro colunas, sem coluna de Estudante', () => {
+    expect(PLANOS_COMPARADOS).toEqual(['free', 'solo', 'pro', 'clinica'])
+  })
+
+  it('toda linha tem um valor por coluna', () => {
+    for (const linha of linhas) expect(linha.valores).toHaveLength(PLANOS_COMPARADOS.length)
+  })
+
+  it('os números vêm dos planos, não de texto solto na tela', () => {
+    const pacientes = linhas.find((l) => l.rotulo === 'Pacientes ativos')
+    const links = linhas.find((l) => l.rotulo === 'Links de missões')
+
+    expect(pacientes?.valores).toEqual(['2', '25', 'Ilimitados', 'Ilimitados'])
+    expect(links?.valores).toEqual(['2', '25', 'Ilimitados', 'Ilimitados'])
+  })
+
+  it('mudar o limite de um plano muda o comparativo junto', () => {
+    const free = planoPorId('free')
+    const pacientes = linhas.find((l) => l.rotulo === 'Pacientes ativos')
+    expect(pacientes?.valores[0]).toBe(String(free?.limitePacientesAtivos))
+  })
+
+  it('o logo próprio é o inverso da marca no PDF', () => {
+    const logo = linhas.find((l) => l.rotulo === 'Seu logo nos documentos')
+    expect(logo?.valores).toEqual([false, true, true, true])
+  })
+
+  it('o que todo plano tem aparece marcado em todas as colunas', () => {
+    const missoes = linhas.find((l) => l.rotulo === 'Missões diárias do paciente')
+    expect(missoes?.valores).toEqual([true, true, true, true])
+  })
+
+  it('só a Clínica tem mais de um nutricionista', () => {
+    const equipe = linhas.find((l) => l.rotulo.startsWith('Mais de um nutricionista'))
+    expect(equipe?.valores).toEqual([false, false, false, 'Até 4'])
+  })
+
+  it('nenhuma linha fica sem rótulo', () => {
+    for (const linha of linhas) expect(linha.rotulo.length).toBeGreaterThan(3)
   })
 })

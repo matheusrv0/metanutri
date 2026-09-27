@@ -81,6 +81,15 @@ fonte e link de referência. É estado (`--state-info`), não identidade.
 
 O verde do sistema (`--green-*`) existe **só** para `--state-ok`. Não há verde de marca.
 
+**Correção de 27/09/2026.** `--text-muted` apontava para `--gray-600` (`#767980`), que
+mede **4,04:1** sobre a mesa e 4,36:1 sobre o cartão — reprova no mínimo de 4,5:1 para
+texto corrido, e o compromisso de acessibilidade do produto diz o contrário. Passou a
+apontar para `--gray-700` (`#585b62`): 6,1 a 6,8:1 no claro, 6,0 a 6,9:1 no escuro. O
+escuro já estava correto e não mudou.
+
+`--text-subtle` continua em 2,3:1 e **não serve para texto**: é para glifo decorativo
+que tem texto equivalente para leitor de tela, como o travessão de "não incluído".
+
 ### Neutral
 
 Grafite (`--ink-950` a `--ink-100`) para tinta e ação; cinza puro (`--gray-0` a

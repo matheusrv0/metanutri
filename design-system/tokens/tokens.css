@@ -85,7 +85,8 @@
 
   --text-strong: var(--ink-900);
   --text-body: #2b313a;
-  --text-muted: var(--gray-600);
+  /* gray-600 dava 4,04:1 sobre a mesa: reprova no mínimo de 4,5:1 para texto. */
+  --text-muted: var(--gray-700);
   --text-subtle: var(--gray-500);
   --text-on-inverse: #ffffff;
   --text-on-accent: var(--ink-800);

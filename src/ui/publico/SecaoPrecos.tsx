@@ -1,8 +1,28 @@
+// Página de preços em tabela comparativa, no formato da referência (Outline).
+//
+// Por que não são cartões: quatro cartões repetem a mesma lista de linhas e escondem
+// justamente o que a pessoa veio comparar. Pior, faziam Free e Estudante aparecerem
+// como dois preços diferentes quando os dois custam R$ 0. Na tabela, a diferença entre
+// as colunas é a única coisa que se lê.
+//
+// O conteúdo vem de `comparativoDosPlanos()`, derivado dos próprios planos: a tela não
+// tem como afirmar limite que o plano não tem.
 import NumberFlow from '@number-flow/react'
-import { BadgeCheck, CalendarClock, CloudUpload, GraduationCap, Users } from 'lucide-react'
+import { Check, GraduationCap, Minus } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useRef, useState, type ReactNode } from 'react'
-import { descontoAnualPct, mensalizadoDoAnual, planoPorId, PLANOS, VAGAS_PRECO_FUNDADOR, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
+import { useRef, useState } from 'react'
+import {
+  comparativoDosPlanos,
+  descontoAnualPct,
+  mensalizadoDoAnual,
+  planoPorId,
+  PLANOS,
+  PLANOS_COMPARADOS,
+  VAGAS_PRECO_FUNDADOR,
+  type IdPlano,
+  type PlanoAssinatura,
+  type ValorComparativo,
+} from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
 import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
 import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
@@ -11,230 +31,137 @@ interface SecaoPrecosProps {
   readonly aoEscolher: (plano: IdPlano) => void
 }
 
-const ICONES: Readonly<Record<IdPlano, readonly ReactNode[]>> = {
-  free: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CalendarClock key="c" className="size-5" />],
-  estudante: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CalendarClock key="c" className="size-5" />],
-  solo: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CloudUpload key="c" className="size-5" />],
-  pro: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CloudUpload key="c" className="size-5" />],
-  clinica: [<Users key="a" className="size-5" />, <Users key="b" className="size-5" />, <BadgeCheck key="c" className="size-5" />],
+const entrada = {
+  visible: (i: number) => ({ y: 0, opacity: 1, filter: 'blur(0px)', transition: { delay: i * 0.1, duration: 0.5 } }),
+  hidden: { filter: 'blur(10px)', y: -16, opacity: 0 },
 }
 
-const entrada = {
-  visible: (i: number) => ({ y: 0, opacity: 1, filter: 'blur(0px)', transition: { delay: i * 0.12, duration: 0.5 } }),
-  hidden: { filter: 'blur(10px)', y: -20, opacity: 0 },
-}
+const colunas = PLANOS_COMPARADOS.map((id) => planoPorId(id)).filter((p): p is PlanoAssinatura => p !== null)
 
 function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar: (anual: boolean) => void }) {
   const emDestaque = PLANOS.find((p) => p.destaque)
   const desconto = emDestaque ? descontoAnualPct(emDestaque) : 0
+
   return (
-    <div className="flex justify-center">
-      <div role="radiogroup" aria-label="Período de cobrança" className="relative mx-auto flex w-fit rounded-full border border-border bg-muted p-1">
-        {[
-          { valor: false, texto: 'Mensal' },
-          { valor: true, texto: 'Anual' },
-        ].map((opcao) => {
-          const ativo = anual === opcao.valor
-          return (
-            <button
-              key={opcao.texto}
-              type="button"
-              role="radio"
-              aria-checked={ativo}
-              onClick={() => aoTrocar(opcao.valor)}
-              className={cn(
-                'relative z-10 h-11 rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                ativo ? 'text-textoninverse' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {ativo ? (
-                <motion.span layoutId="chave-preco" className="absolute inset-0 rounded-full bg-surfaceinverse" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
+    <div role="radiogroup" aria-label="Período de cobrança" className="mx-auto flex w-fit rounded-full border border-border bg-muted p-1">
+      {[
+        { valor: false, texto: 'Mensal' },
+        { valor: true, texto: 'Anual' },
+      ].map((opcao) => {
+        const ativo = anual === opcao.valor
+        return (
+          <button
+            key={opcao.texto}
+            type="button"
+            role="radio"
+            aria-checked={ativo}
+            onClick={() => aoTrocar(opcao.valor)}
+            className={cn(
+              'relative z-10 h-10 rounded-full px-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              ativo ? 'text-textoninverse' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {ativo ? (
+              <motion.span layoutId="chave-preco" className="absolute inset-0 rounded-full bg-surfaceinverse" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
+            ) : null}
+            <span className="relative flex items-center gap-2">
+              {opcao.texto}
+              {opcao.valor && desconto > 0 ? (
+                <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', ativo ? 'bg-surfaceaccent text-textonaccent' : 'bg-card text-muted-foreground')}>
+                  {`-${desconto}%`}
+                </span>
               ) : null}
-              <span className="relative flex items-center gap-2">
-                {opcao.texto}
-                {opcao.valor && desconto > 0 ? (
-                  <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', ativo ? 'bg-surfaceaccent text-textonaccent' : 'bg-card text-muted-foreground')}>
-                    {`-${desconto}%`}
-                  </span>
-                ) : null}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
 
-function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssinatura; readonly anual: boolean; readonly aoEscolher: () => void }) {
+/** O preço de uma coluna, com a ação embaixo. É a única parte que muda com a chave. */
+function Preco({ plano, anual, aoEscolher }: { readonly plano: PlanoAssinatura; readonly anual: boolean; readonly aoEscolher: () => void }) {
   const temAnual = plano.anual > 0
   const valor = anual && temAnual ? mensalizadoDoAnual(plano) : plano.mensal
-  const gratis = plano.mensal === 0
   const casas = Number.isInteger(valor) ? 0 : 2
-  const limite = plano.limitePacientesAtivos
+  const gratis = plano.mensal === 0
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col rounded-md border p-6 text-left backdrop-blur transition-colors',
-        plano.destaque ? 'border-primary/60 bg-card shadow-[0_0_0_1px_var(--color-primary)]' : 'border-border bg-card',
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-titulo text-2xl font-bold text-foreground">{plano.nome}</h3>
-        {plano.destaque ? <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Mais escolhido</span> : null}
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex items-baseline gap-1">
+        <span className="numeros font-titulo text-lg font-semibold text-muted-foreground">R$</span>
+        <NumberFlow value={valor} locales="pt-BR" format={{ minimumFractionDigits: casas, maximumFractionDigits: casas }} className="numeros font-titulo text-4xl font-bold text-heading" />
+        {gratis ? null : <span className="text-sm text-muted-foreground">/mês</span>}
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">{plano.resumo}</p>
 
-      <div className="mt-5 flex items-baseline gap-1">
-        {gratis ? (
-          <span className="font-titulo text-4xl font-bold text-foreground">Grátis</span>
-        ) : (
-          <>
-            <span className="numeros font-titulo text-xl font-semibold text-foreground">R$</span>
-            <NumberFlow
-              value={valor}
-              locales="pt-BR"
-              format={{ minimumFractionDigits: casas, maximumFractionDigits: casas }}
-              className="numeros font-titulo text-4xl font-bold text-foreground"
-            />
-            <span className="text-sm text-muted-foreground">/mês</span>
-          </>
+      <p className="h-8 text-xs text-muted-foreground">
+        {gratis ? 'Para sempre, sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} uma vez por ano.` : anual ? 'Só no mensal.' : 'Cancele quando quiser.'}
+      </p>
+
+      <OriginButton
+        onClick={aoEscolher}
+        tom={plano.destaque ? 'verde' : 'contorno'}
+        className={cn(
+          'w-full',
+          plano.destaque
+            ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis'
+            : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
         )}
-      </div>
-      <p className="mt-1 h-4 text-xs text-muted-foreground">
-        {gratis
-          ? 'Para sempre, sem cartão.'
-          : anual && temAnual
-            ? `R$ ${plano.anual.toLocaleString('pt-BR')} cobrados uma vez por ano.`
-            : anual
-              ? 'Este plano é só no mensal.'
-              : 'Cancele quando quiser.'}
-      </p>
-      <p className="mt-2 text-xs font-medium text-foreground">
-        {limite === null ? 'Pacientes ativos ilimitados' : `Até ${limite} ${limite === 1 ? 'paciente ativo' : 'pacientes ativos'}`}
-      </p>
-
-      <div className="mt-5">
-        <OriginButton
-          onClick={aoEscolher}
-          tom={plano.destaque ? 'verde' : 'contorno'}
-          className={cn(
-            'w-full',
-            plano.destaque ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis' : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
-          )}
-        >
-          {plano.acaoTexto}
-        </OriginButton>
-      </div>
-
-      <ul className="mt-6 flex flex-col gap-2.5">
-        {plano.recursos.map((recurso, i) => (
-          <li key={recurso} className="flex items-center gap-3 text-sm text-foreground">
-            <span aria-hidden="true" className="text-primary">
-              {ICONES[plano.id][i]}
-            </span>
-            {recurso}
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-6 flex flex-1 flex-col gap-2.5 border-t border-border pt-5">
-        <p className="text-sm font-semibold text-foreground">{plano.inclui[0]}</p>
-        <ul className="flex flex-col gap-2">
-          {plano.inclui.slice(1).map((item) => (
-            <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full border border-primary/30 bg-lightprimary">
-                <BadgeCheck className="size-3 text-primary" />
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
+      >
+        {plano.acaoTexto}
+      </OriginButton>
     </div>
   )
 }
 
-/**
- * Free e Estudante custam os dois R$ 0, e a única diferença é o comprovante de
- * matrícula. Dois cartões dizendo "Grátis" lado a lado faziam a pessoa comparar
- * preço onde não há preço; aqui viram um cartão só, com a subida por dentro.
- */
-function CartaoGratis({ aoEscolher }: { readonly aoEscolher: (plano: IdPlano) => void }) {
-  const gratis = planoPorId('free')
+/** Incluído vira marca; ausente vira travessão. Texto passa direto. */
+function Celula({ valor }: { readonly valor: ValorComparativo }) {
+  if (valor === true) {
+    return (
+      <>
+        <Check className="mx-auto size-5 text-heading" aria-hidden="true" />
+        <span className="sr-only">Incluído</span>
+      </>
+    )
+  }
+  if (valor === false) {
+    return (
+      <>
+        <Minus className="mx-auto size-4 text-textsubtle" aria-hidden="true" />
+        <span className="sr-only">Não incluído</span>
+      </>
+    )
+  }
+  return <span className="numeros text-sm font-semibold text-heading">{valor}</span>
+}
+
+/** A nota do plano Estudante, que não merece uma coluna: é o Grátis com comprovante. */
+function NotaEstudante() {
   const estudante = planoPorId('estudante')
-  if (!gratis) return null
+  if (!estudante) return null
 
   return (
-    <div className="flex h-full flex-col rounded-md border border-border bg-card p-6 text-left backdrop-blur">
-      <h3 className="font-titulo text-2xl font-bold text-foreground">Grátis</h3>
-      <p className="mt-2 text-sm text-muted-foreground">Para conhecer o sistema com um caso real e para o estágio.</p>
-
-      <div className="mt-5 flex items-baseline gap-1">
-        <span className="font-titulo text-4xl font-bold text-foreground">R$ 0</span>
-      </div>
-      <p className="mt-1 h-4 text-xs text-muted-foreground">Para sempre, sem cartão.</p>
-      <p className="mt-2 text-xs font-medium text-foreground">Até {gratis.limitePacientesAtivos} pacientes ativos</p>
-
-      <div className="mt-5">
-        <OriginButton
-          onClick={() => aoEscolher(gratis.id)}
-          tom="contorno"
-          className="w-full border-borderdefault bg-transparent text-foreground hover:border-primary"
-        >
-          {gratis.acaoTexto}
-        </OriginButton>
-      </div>
-
-      <ul className="mt-6 flex flex-col gap-2.5">
-        {gratis.inclui.slice(1).map((item) => (
-          <li key={item} className="flex items-start gap-3 text-sm text-foreground">
-            <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full border border-primary/30 bg-lightprimary">
-              <BadgeCheck className="size-3 text-primary" />
-            </span>
-            {item}
-          </li>
-        ))}
-      </ul>
-
-      {estudante ? (
-        <div className="mt-6 flex flex-1 flex-col gap-2 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
-          <p className="flex items-center gap-2 text-sm font-semibold text-infotext">
-            <GraduationCap className="size-4" aria-hidden="true" />
-            Estudante de nutrição?
-          </p>
-          <p className="text-sm text-foreground">
-            Envie o comprovante de matrícula e o mesmo plano sobe para{' '}
-            <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links de missões</strong>, até a formatura.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Conta de estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
-          </p>
-          <button
-            type="button"
-            onClick={() => aoEscolher(estudante.id)}
-            className="mt-1 self-start text-sm font-semibold text-infotext underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {estudante.acaoTexto}
-          </button>
-        </div>
-      ) : null}
+    <div className="flex items-start gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
+      <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
+      <p className="text-sm text-foreground">
+        <strong className="font-semibold text-infotext">Estudante de nutrição:</strong> envie o comprovante de matrícula e o Grátis sobe para{' '}
+        <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, até a formatura. Conta de
+        estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
+      </p>
     </div>
   )
 }
 
-/** Página de preços. Ainda não cobra nada: o botão leva para a criação de conta. */
 export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
   const [anual, setAnual] = useState(false)
   const secao = useRef<HTMLDivElement>(null)
+  const linhas = comparativoDosPlanos()
 
   return (
     <div ref={secao} className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8">
       <div className="mx-auto mb-10 max-w-2xl text-center">
-        <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-foreground sm:text-5xl">
-          Grátis na faculdade, barato ao se{' '}
-          <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
+        <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
+          Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
         </TimelineContent>
         <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
           Você paga por paciente ativo — quem teve plano ou missão nos últimos 30 dias. Quem parou de atender não conta, e você sobe de plano só quando crescer.
@@ -245,16 +172,104 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         <Chave anual={anual} aoTrocar={setAnual} />
       </TimelineContent>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="h-full">
-          <CartaoGratis aoEscolher={aoEscolher} />
-        </TimelineContent>
+      {/* Tabela: a partir de md. No celular a mesma informação vira uma lista por plano. */}
+      <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="mt-10 hidden md:block">
+        <table className="w-full border-collapse text-sm">
+          <caption className="sr-only">Comparativo dos planos do MetaNutri</caption>
+          <thead>
+            <tr>
+              <th scope="col" className="w-[28%] p-0" />
+              {colunas.map((plano) => (
+                <th
+                  key={plano.id}
+                  scope="col"
+                  className={cn('rounded-t-2xl px-4 pb-5 pt-6 align-top', plano.destaque ? 'bg-card' : 'bg-surfacesunken')}
+                >
+                  <span className="flex flex-col items-center gap-1">
+                    <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
+                    {plano.destaque ? (
+                      <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span>
+                    ) : (
+                      <span className="h-[1.125rem]" />
+                    )}
+                    <span className="mt-3 w-full font-normal">
+                      <Preco plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
+                    </span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
 
-        {PLANOS.filter((plano) => plano.mensal > 0).map((plano, i) => (
-          <TimelineContent key={plano.id} as="div" animationNum={4 + i} timelineRef={secao} customVariants={entrada} className="h-full">
-            <CartaoPlano plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
+          <tbody>
+            {linhas.map((linha, i) => (
+              <tr key={linha.rotulo} className="border-t border-bordersubtle">
+                <th scope="row" className="py-3.5 pr-6 text-left align-middle font-medium text-foreground">
+                  {linha.rotulo}
+                  {linha.detalhe ? <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{linha.detalhe}</span> : null}
+                </th>
+                {linha.valores.map((valor, coluna) => {
+                  const plano = colunas[coluna]
+                  const ultima = i === linhas.length - 1
+                  return (
+                    <td
+                      key={plano?.id ?? coluna}
+                      className={cn(
+                        'px-4 py-3.5 text-center align-middle',
+                        plano?.destaque ? 'bg-card' : 'bg-surfacesunken',
+                        ultima ? 'rounded-b-2xl' : null,
+                      )}
+                    >
+                      <Celula valor={valor} />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="mt-6">
+          <NotaEstudante />
+        </div>
+      </TimelineContent>
+
+      {/* Celular: uma lista por plano, com os mesmos valores da tabela. */}
+      <div className="mt-8 flex flex-col gap-4 md:hidden">
+        {colunas.map((plano, i) => (
+          <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada}>
+            <section
+              aria-label={`Plano ${plano.nome}`}
+              className={cn('rounded-2xl border p-5', plano.destaque ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h3>
+                {plano.destaque ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span> : null}
+              </div>
+
+              <div className="mt-4">
+                <Preco plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
+              </div>
+
+              <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
+                {linhas.map((linha) => {
+                  const valor = linha.valores[colunas.indexOf(plano)]
+                  if (valor === false) return null
+                  return (
+                    <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
+                      <dt className="text-sm text-foreground">{linha.rotulo}</dt>
+                      <dd className="shrink-0 text-sm font-semibold text-heading">
+                        {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
+                      </dd>
+                    </div>
+                  )
+                })}
+              </dl>
+            </section>
           </TimelineContent>
         ))}
+
+        <NotaEstudante />
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">

@@ -251,3 +251,70 @@ export function nomeSugerido(email: string): string {
       .join(' ') || 'Você'
   )
 }
+
+/**
+ * O comparativo da página de preços, derivado dos próprios planos. Existe aqui, e não
+ * na tela, porque já aconteceu de a página afirmar coisa que o plano não dizia: quando
+ * o número sai de `PLANOS`, ele não tem como divergir.
+ *
+ * `true` vira marca de incluído, `false` vira travessão, texto vira texto.
+ */
+export type ValorComparativo = string | boolean
+
+export interface LinhaComparativo {
+  readonly rotulo: string
+  /** Explicação curta, quando o rótulo sozinho engana. */
+  readonly detalhe?: string
+  /** Um valor por plano, na ordem de `PLANOS_COMPARADOS`. */
+  readonly valores: readonly ValorComparativo[]
+}
+
+/** A coluna do Estudante não entra: ela é uma nota dentro da coluna Grátis. */
+export const PLANOS_COMPARADOS: readonly IdPlano[] = ['free', 'solo', 'pro', 'clinica']
+
+const porPlano = (fn: (plano: PlanoAssinatura) => ValorComparativo): readonly ValorComparativo[] =>
+  PLANOS_COMPARADOS.map((id) => {
+    const plano = planoPorId(id)
+    return plano ? fn(plano) : false
+  })
+
+const numeroOuIlimitado = (n: number | null) => (n === null ? 'Ilimitados' : String(n))
+
+export function comparativoDosPlanos(): readonly LinhaComparativo[] {
+  return [
+    {
+      rotulo: 'Pacientes ativos',
+      detalhe: 'Quem teve plano ou missão nos últimos 30 dias.',
+      valores: porPlano((p) => numeroOuIlimitado(p.limitePacientesAtivos)),
+    },
+    {
+      rotulo: 'Links de missões',
+      detalhe: 'O endereço que o paciente abre no celular.',
+      valores: porPlano((p) => numeroOuIlimitado(p.limiteLinksPaciente)),
+    },
+    { rotulo: 'Missões diárias do paciente', valores: porPlano(() => true) },
+    { rotulo: 'Painel de micronutrientes com o botão cobrir', valores: porPlano(() => true) },
+    { rotulo: 'Documento em Word no modelo do estágio', valores: porPlano(() => true) },
+    {
+      rotulo: 'Seu logo nos documentos',
+      detalhe: 'Sem ele, o PDF sai com a marca do MetaNutri.',
+      valores: porPlano((p) => !p.marcaNoPdf),
+    },
+    {
+      rotulo: 'Dados em qualquer aparelho',
+      valores: porPlano((p) => p.mensal > 0),
+    },
+    {
+      rotulo: 'Quem está sumindo, no painel de adesão',
+      valores: porPlano((p) => p.mensal > 0),
+    },
+    {
+      rotulo: 'Mais de um nutricionista na mesma conta',
+      valores: porPlano((p) => (p.id === 'clinica' ? 'Até 4' : false)),
+    },
+    {
+      rotulo: 'Suporte',
+      valores: porPlano((p) => (p.id === 'clinica' ? 'WhatsApp' : p.mensal > 0 ? 'E-mail' : 'Ajuda no app')),
+    },
+  ]
+}
