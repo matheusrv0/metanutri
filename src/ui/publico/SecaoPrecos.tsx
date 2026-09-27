@@ -1,8 +1,8 @@
 import NumberFlow from '@number-flow/react'
-import { BadgeCheck, CalendarClock, CloudUpload, Users } from 'lucide-react'
+import { BadgeCheck, CalendarClock, CloudUpload, GraduationCap, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useRef, useState, type ReactNode } from 'react'
-import { descontoAnualPct, mensalizadoDoAnual, PLANOS, VAGAS_PRECO_FUNDADOR, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
+import { descontoAnualPct, mensalizadoDoAnual, planoPorId, PLANOS, VAGAS_PRECO_FUNDADOR, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
 import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
 import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
@@ -156,6 +156,74 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
   )
 }
 
+/**
+ * Free e Estudante custam os dois R$ 0, e a única diferença é o comprovante de
+ * matrícula. Dois cartões dizendo "Grátis" lado a lado faziam a pessoa comparar
+ * preço onde não há preço; aqui viram um cartão só, com a subida por dentro.
+ */
+function CartaoGratis({ aoEscolher }: { readonly aoEscolher: (plano: IdPlano) => void }) {
+  const gratis = planoPorId('free')
+  const estudante = planoPorId('estudante')
+  if (!gratis) return null
+
+  return (
+    <div className="flex h-full flex-col rounded-md border border-border bg-card p-6 text-left backdrop-blur">
+      <h3 className="font-titulo text-2xl font-bold text-foreground">Grátis</h3>
+      <p className="mt-2 text-sm text-muted-foreground">Para conhecer o sistema com um caso real e para o estágio.</p>
+
+      <div className="mt-5 flex items-baseline gap-1">
+        <span className="font-titulo text-4xl font-bold text-foreground">R$ 0</span>
+      </div>
+      <p className="mt-1 h-4 text-xs text-muted-foreground">Para sempre, sem cartão.</p>
+      <p className="mt-2 text-xs font-medium text-foreground">Até {gratis.limitePacientesAtivos} pacientes ativos</p>
+
+      <div className="mt-5">
+        <OriginButton
+          onClick={() => aoEscolher(gratis.id)}
+          tom="contorno"
+          className="w-full border-borderdefault bg-transparent text-foreground hover:border-primary"
+        >
+          {gratis.acaoTexto}
+        </OriginButton>
+      </div>
+
+      <ul className="mt-6 flex flex-col gap-2.5">
+        {gratis.inclui.slice(1).map((item) => (
+          <li key={item} className="flex items-start gap-3 text-sm text-foreground">
+            <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full border border-primary/30 bg-lightprimary">
+              <BadgeCheck className="size-3 text-primary" />
+            </span>
+            {item}
+          </li>
+        ))}
+      </ul>
+
+      {estudante ? (
+        <div className="mt-6 flex flex-1 flex-col gap-2 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-infotext">
+            <GraduationCap className="size-4" aria-hidden="true" />
+            Estudante de nutrição?
+          </p>
+          <p className="text-sm text-foreground">
+            Envie o comprovante de matrícula e o mesmo plano sobe para{' '}
+            <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links de missões</strong>, até a formatura.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Conta de estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
+          </p>
+          <button
+            type="button"
+            onClick={() => aoEscolher(estudante.id)}
+            className="mt-1 self-start text-sm font-semibold text-infotext underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {estudante.acaoTexto}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 /** Página de preços. Ainda não cobra nada: o botão leva para a criação de conta. */
 export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
   const [anual, setAnual] = useState(false)
@@ -177,9 +245,13 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         <Chave anual={anual} aoTrocar={setAnual} />
       </TimelineContent>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PLANOS.map((plano, i) => (
-          <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada} className="h-full">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="h-full">
+          <CartaoGratis aoEscolher={aoEscolher} />
+        </TimelineContent>
+
+        {PLANOS.filter((plano) => plano.mensal > 0).map((plano, i) => (
+          <TimelineContent key={plano.id} as="div" animationNum={4 + i} timelineRef={secao} customVariants={entrada} className="h-full">
             <CartaoPlano plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
           </TimelineContent>
         ))}

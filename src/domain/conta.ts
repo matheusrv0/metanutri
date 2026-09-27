@@ -92,7 +92,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     exigeComprovante: false,
     marcaNoPdf: false,
     recursos: ['25 pacientes ativos', 'Seu logo nos documentos', 'Dados em qualquer aparelho'],
-    inclui: ['Tudo do Estudante, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
+    inclui: ['Tudo do Grátis, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
   },
   {
     id: 'pro',

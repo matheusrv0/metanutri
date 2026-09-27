@@ -87,7 +87,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
               <span className="font-titulo text-[17px] font-semibold tracking-[-0.3px]">MetaNutri</span>
             </div>
             <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
-              Planejador alimentar para estudante de nutrição e recém-formado. Tudo roda no navegador; nada é enviado para servidor.
+              Software de adesão para estudante de nutrição e recém-formado: o plano vira missões que o paciente marca. Funciona no navegador, e a conta na nuvem é opcional.
             </p>
           </div>
           <div>
