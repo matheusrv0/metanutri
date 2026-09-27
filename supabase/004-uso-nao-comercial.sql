@@ -9,7 +9,11 @@ alter table public.acompanhamentos
   add column if not exists uso_nao_comercial boolean not null default false;
 
 -- A função do paciente precisa devolver a coluna nova, senão o aviso nunca aparece.
-create or replace function public.missoes_por_token(p_token text)
+-- Tem que derrubar antes: o Postgres não deixa `create or replace` mudar o tipo de
+-- retorno de uma função que já existe, e aqui entra uma coluna nova na saída.
+drop function if exists public.missoes_por_token(text);
+
+create function public.missoes_por_token(p_token text)
 returns table (
   id uuid,
   token text,
