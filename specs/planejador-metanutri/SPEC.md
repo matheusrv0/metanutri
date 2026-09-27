@@ -3,6 +3,8 @@
 **Status:** aprovada pelo usuário em 15/09/2026 · **Data:** 15/09/2026
 **Fontes:** `docs/backlog.md` (B-01 a B-18), `docs/feedback-nutricionista.md`, `docs/entrevista-estudante-2026-09-15.md`, `docs/modelos/modelo_planejamento_estagio.docx`, `docs/decisoes.md`.
 
+> **Nota de 26/09/2026.** O plano de negócio aprovado (`docs/plano-negocio.md`) mudou a estratégia: o cliente que paga é o recém-formado, o estudante é canal, e o diferencial do produto são as missões diárias do paciente. Esta SPEC continua valendo como o contrato do que está construído — o planejador, que no roteiro novo é a **Fase 2**. O que ela descreve não foi revogado; o que mudou é a prioridade e o público de quem compra. Preço e público desta SPEC devem ser lidos em `docs/plano-negocio.md`, não aqui.
+
 ## 1. Objetivo
 
 Permitir que um estudante de nutrição ou recém-formado monte o plano alimentar de um caso, confira energia, macronutrientes e adequação de micronutrientes, receba sugestões de alimentos para cobrir o que falta e exporte o resultado em Word no formato exigido pela faculdade.

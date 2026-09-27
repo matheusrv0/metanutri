@@ -5,8 +5,14 @@ Instruções para agentes de código que trabalham neste repositório. O
 
 ## O projeto em uma linha
 
-MetaNutri: planejador alimentar para estudantes de nutrição. Roda inteiro no navegador,
-sem conta e sem servidor, e precisa funcionar **offline** (PWA). Interface em pt-BR.
+MetaNutri: software de adesão para nutricionista em começo de carreira — as missões
+diárias do paciente são o diferencial, e ainda não existem em código. O que está
+construído é o planejador alimentar, que roda inteiro no navegador, sem conta e sem
+servidor, e precisa funcionar **offline** (PWA). Interface em pt-BR.
+
+Estratégia aprovada em [docs/plano-negocio.md](docs/plano-negocio.md): quem paga é o
+recém-formado, o estudante é canal e a execução tem quatro fases com portões. O que
+está no repositório é a Fase 2; a Fase 1 (missões) não começou.
 
 ## Comandos
 

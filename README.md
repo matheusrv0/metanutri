@@ -1,8 +1,14 @@
 # MetaNutri
 
-Planejador alimentar para estudantes de nutrição e recém-formados. Monta o plano,
-confere a adequação de micronutrientes e sai com o documento pronto para entregar
-— tudo dentro do navegador, sem conta e sem servidor.
+Software de adesão para nutricionista em começo de carreira: o objetivo é o paciente
+não abandonar a dieta na segunda semana. O plano alimentar vira **missões diárias**
+que o paciente marca num link próprio, e a tela de Adesão mostra quem está sumindo.
+Junto vem o planejador: monta o plano, confere a adequação de micronutrientes e sai
+com o documento pronto para entregar. Tudo dentro do navegador, sem conta e sem
+servidor — inclusive as missões, que por enquanto só abrem no mesmo navegador onde o
+plano foi montado (ver Pendências).
+
+Estratégia, público, preços e fases: [docs/plano-negocio.md](docs/plano-negocio.md).
 
 ## Como rodar na sua máquina
 
@@ -59,6 +65,14 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 
 **Em volta do plano.**
 
+- **Missões do paciente** — no fim da etapa 2, o botão **Gerar link das missões**
+  transforma o plano numa lista curta que o paciente abre no celular, sem baixar app e
+  sem criar conta: as refeições por horário, os vegetais, a fruta e a água. Ele toca no
+  que fez; cada missão mostra de onde saiu. Gerar o link de novo atualiza as missões com
+  o plano atual e derruba o link antigo, mantendo o histórico.
+- **Adesão** — a tela que responde "quem está sumindo?". Quem passou 4 dias sem marcar
+  aparece no topo, quem marcou em 4 dias ou mais na semana aparece como *em dia*. É
+  também onde você vê quantos pacientes ativos tem contra o limite do seu plano.
 - **Pacientes** — ficha com restrições, condições clínicas, medicamentos, anamnese,
   histórico de planos e evolução do peso. O plano nasce já sabendo o que a ficha sabe,
   e o retorno começa duplicando o plano anterior.
@@ -96,10 +110,15 @@ navegador de quem abrir o site.
 
 ### Preços
 
-Os planos (Estudante grátis, Profissional R$ 19/mês, Clínica R$ 49/mês) estão em
-[src/domain/conta.ts](src/domain/conta.ts) — mude lá e a página de preços acompanha.
-**Nada é cobrado nem bloqueado hoje**: sem cobrança, aplicar limite seria mentira
-(a constante `LIMITES_ATIVOS` registra isso).
+Os cinco planos aprovados em 26/09/2026 estão em
+[src/domain/conta.ts](src/domain/conta.ts) — mude lá e a página de preços acompanha:
+Free R$ 0 (2 pacientes ativos), Estudante R$ 0 com comprovante (10), Solo R$ 34,90 ou
+R$ 299/ano (25), Pro R$ 64,90 ou R$ 599/ano (ilimitado) e Clínica R$ 149/mês.
+
+A unidade de cobrança é o **paciente ativo**: quem teve plano ou missão nos últimos 30
+dias (`ehPacienteAtivo`). **Nada é cobrado nem bloqueado hoje**: sem meio de pagamento,
+aplicar limite seria mentira (a constante `LIMITES_ATIVOS` registra isso). A tela de
+Adesão já mostra quantos ativos você tem contra o limite do plano.
 
 ## De onde vêm os números
 
@@ -136,7 +155,7 @@ dentro do sistema, em **Ajuda**.
 src/domain/     regras puras, sem React: cálculo, validação, persistência (tudo testado)
 src/data/       tabelas geradas por scripts/dados/*.mjs — não edite à mão
 src/export/     Word (.docx) e cópia de tabela
-src/ui/         telas, divididas por assunto (caso, plano, adequação, pacientes, produtos)
+src/ui/         telas, divididas por assunto (caso, plano, adequação, pacientes, produtos, missões)
 design-system/  tokens, componentes, vitrine e referência visual
 ```
 

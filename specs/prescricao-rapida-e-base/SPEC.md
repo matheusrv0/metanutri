@@ -6,6 +6,8 @@ Ciclo 2 do MetaNutri. Status: **aguardando sua aprovação**.
 
 **Objetivo do ciclo:** tornar a ferramenta útil o bastante para uma estudante usar de verdade, sem conta, sem servidor e sem dado de paciente real. Nada aqui exige back-end, cobrança ou LGPD.
 
+> **Nota de 26/09/2026.** Este ciclo é a **Fase 2** do plano de negócio aprovado (`docs/plano-negocio.md`), e o plano manda fazer a **Fase 1** (missões diárias) antes. O escopo aqui continua válido e continua sem back-end; o que mudou é a ordem. A Fase 1, essa sim, exige servidor, dado de paciente na nuvem e LGPD.
+
 ## 1. Decisões deste ciclo
 
 | # | Decisão | Motivo |
