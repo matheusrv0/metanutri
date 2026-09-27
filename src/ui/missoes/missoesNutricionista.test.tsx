@@ -69,10 +69,41 @@ describe('Cartão do link de missões', () => {
     )
 
     await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
 
     const campo = screen.getByLabelText('Link do paciente') as HTMLInputElement
     expect(campo.value).toContain('#/missoes/')
     expect(screen.getByText('Ainda não começou')).toBeInTheDocument()
+  })
+
+  it('pergunta pela autorização do paciente antes de gerar o primeiro link', async () => {
+    const usuario = userEvent.setup()
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+
+    expect(screen.getByText(/o paciente autorizou\?/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Link do paciente')).not.toBeInTheDocument()
+  })
+
+  it('desistir da autorização não gera link nenhum', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
+
+    expect(repo.listar()).toEqual([])
+    expect(screen.getByRole('button', { name: /Gerar link das missões/ })).toBeInTheDocument()
   })
 
   it('gerar link novo troca o token: o antigo para de valer', async () => {
@@ -85,6 +116,7 @@ describe('Cartão do link de missões', () => {
     )
 
     await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
     const primeiro = (screen.getByLabelText('Link do paciente') as HTMLInputElement).value
 
     await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))

@@ -1,6 +1,6 @@
 // O lado do nutricionista: gerar o link do paciente e ver se ele está marcando.
 // Fica junto do plano, porque é do plano que as missões saem.
-import { Check, Copy, Link2, RefreshCw } from 'lucide-react'
+import { Check, Copy, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import {
   criarAcompanhamento,
@@ -32,6 +32,7 @@ interface CartaoLinkMissoesProps {
 export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = diaLocal() }: CartaoLinkMissoesProps) {
   const { repositorio, salvar } = useAcompanhamentos()
   const [copiado, setCopiado] = useState(false)
+  const [pedindoConsentimento, setPedindoConsentimento] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
 
   // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
@@ -39,6 +40,7 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = di
   const gerar = () => {
     salvar(acompanhamento ? regerarLink(acompanhamento, { nome, missoes }) : criarAcompanhamento({ casoId, pacienteId, nome, missoes }))
     setCopiado(false)
+    setPedindoConsentimento(false)
   }
 
   const copiar = async (endereco: string) => {
@@ -68,16 +70,40 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = di
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
           Missões do paciente
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Gere um link para o paciente abrir no celular. Ele marca o que fez no dia e você vê quem está sumindo antes de sumir de vez.
-        </p>
-        <p className="mt-3 text-sm text-foreground">
-          {missoes.length} {missoes.length === 1 ? 'missão sai' : 'missões saem'} deste plano.
-        </p>
-        <Button type="button" onClick={gerar} className="mt-4">
-          <Link2 className="size-4" aria-hidden="true" />
-          Gerar link das missões
-        </Button>
+
+        {pedindoConsentimento ? (
+          <div className="mt-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
+            <p className="flex items-center gap-2 font-medium text-infotext">
+              <ShieldCheck className="size-4" aria-hidden="true" />
+              Antes de gerar: o paciente autorizou?
+            </p>
+            <p className="mt-2 text-sm text-foreground">
+              O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Quem colhe a autorização é você, o
+              nutricionista — o MetaNutri só guarda. Há um texto pronto em <code>docs/lgpd-rascunhos.md</code>.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" onClick={gerar}>
+                Já tenho a autorização, gerar link
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setPedindoConsentimento(false)}>
+                Agora não
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Gere um link para o paciente abrir no celular. Ele marca o que fez no dia e você vê quem está sumindo antes de sumir de vez.
+            </p>
+            <p className="mt-3 text-sm text-foreground">
+              {missoes.length} {missoes.length === 1 ? 'missão sai' : 'missões saem'} deste plano.
+            </p>
+            <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
+              <Link2 className="size-4" aria-hidden="true" />
+              Gerar link das missões
+            </Button>
+          </>
+        )}
       </section>
     )
   }

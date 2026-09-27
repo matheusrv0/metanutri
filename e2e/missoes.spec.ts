@@ -35,6 +35,7 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   const cartao = page.getByRole('region', { name: 'Missões do paciente' })
   await expect(cartao).toContainText('saem deste plano')
   await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
   const endereco = await cartao.getByLabel('Link do paciente').inputValue()
   expect(endereco).toContain('#/missoes/')

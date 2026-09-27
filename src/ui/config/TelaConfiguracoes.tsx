@@ -9,6 +9,8 @@ import {
   restaurarBackup,
   type Perfil,
 } from '@/domain/perfil.ts'
+import { apagarAcompanhamentosDaNuvem } from '@/domain/fonteSupabase.ts'
+import { obterSupabase } from '../estado/supabase.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -73,6 +75,18 @@ export function TelaConfiguracoes() {
     for (const chave of CHAVES_DE_DADOS) guardado?.removeItem(chave)
     setConfirmandoApagar(false)
     setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
+
+    // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente
+    // vivo no servidor — e a política de privacidade promete o contrário.
+    const cliente = obterSupabase()
+    if (!cliente) return
+    void apagarAcompanhamentosDaNuvem(cliente).then((erro) => {
+      setMensagem(
+        erro
+          ? `Apagado deste aparelho, mas a nuvem recusou: ${erro}. Os acompanhamentos ainda estão lá.`
+          : 'Tudo apagado, aqui e na nuvem. Recarregue a página.',
+      )
+    })
   }
 
   return (
