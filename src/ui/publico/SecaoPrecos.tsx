@@ -2,7 +2,7 @@ import NumberFlow from '@number-flow/react'
 import { BadgeCheck, CalendarClock, CloudUpload, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useRef, useState, type ReactNode } from 'react'
-import { descontoAnualPct, mensalizadoDoAnual, PLANOS, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
+import { descontoAnualPct, mensalizadoDoAnual, PLANOS, VAGAS_PRECO_FUNDADOR, type IdPlano, type PlanoAssinatura } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
 import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
 import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
@@ -12,9 +12,11 @@ interface SecaoPrecosProps {
 }
 
 const ICONES: Readonly<Record<IdPlano, readonly ReactNode[]>> = {
-  estudante: [<CalendarClock key="a" className="size-5" />, <CloudUpload key="b" className="size-5" />, <Users key="c" className="size-5" />],
-  profissional: [<CloudUpload key="a" className="size-5" />, <CalendarClock key="b" className="size-5" />, <BadgeCheck key="c" className="size-5" />],
-  clinica: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CalendarClock key="c" className="size-5" />],
+  free: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CalendarClock key="c" className="size-5" />],
+  estudante: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CalendarClock key="c" className="size-5" />],
+  solo: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CloudUpload key="c" className="size-5" />],
+  pro: [<Users key="a" className="size-5" />, <BadgeCheck key="b" className="size-5" />, <CloudUpload key="c" className="size-5" />],
+  clinica: [<Users key="a" className="size-5" />, <Users key="b" className="size-5" />, <BadgeCheck key="c" className="size-5" />],
 }
 
 const entrada = {
@@ -65,8 +67,11 @@ function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar
 }
 
 function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssinatura; readonly anual: boolean; readonly aoEscolher: () => void }) {
-  const valor = anual ? mensalizadoDoAnual(plano) : plano.mensal
+  const temAnual = plano.anual > 0
+  const valor = anual && temAnual ? mensalizadoDoAnual(plano) : plano.mensal
   const gratis = plano.mensal === 0
+  const casas = Number.isInteger(valor) ? 0 : 2
+  const limite = plano.limitePacientesAtivos
 
   return (
     <div
@@ -87,13 +92,27 @@ function CartaoPlano({ plano, anual, aoEscolher }: { readonly plano: PlanoAssina
         ) : (
           <>
             <span className="numeros font-titulo text-xl font-semibold text-foreground">R$</span>
-            <NumberFlow value={valor} locales="pt-BR" format={{ maximumFractionDigits: 2 }} className="numeros font-titulo text-4xl font-bold text-foreground" />
+            <NumberFlow
+              value={valor}
+              locales="pt-BR"
+              format={{ minimumFractionDigits: casas, maximumFractionDigits: casas }}
+              className="numeros font-titulo text-4xl font-bold text-foreground"
+            />
             <span className="text-sm text-muted-foreground">/mês</span>
           </>
         )}
       </div>
       <p className="mt-1 h-4 text-xs text-muted-foreground">
-        {gratis ? 'Para sempre, sem cartão.' : anual ? `R$ ${plano.anual.toLocaleString('pt-BR')} cobrados uma vez por ano.` : 'Cancele quando quiser.'}
+        {gratis
+          ? 'Para sempre, sem cartão.'
+          : anual && temAnual
+            ? `R$ ${plano.anual.toLocaleString('pt-BR')} cobrados uma vez por ano.`
+            : anual
+              ? 'Este plano é só no mensal.'
+              : 'Cancele quando quiser.'}
+      </p>
+      <p className="mt-2 text-xs font-medium text-foreground">
+        {limite === null ? 'Pacientes ativos ilimitados' : `Até ${limite} ${limite === 1 ? 'paciente ativo' : 'pacientes ativos'}`}
       </p>
 
       <div className="mt-5">
@@ -146,11 +165,11 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
     <div ref={secao} className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-foreground sm:text-5xl">
-          Um preço que cabe em quem está{' '}
-          <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">começando</span>
+          Grátis na faculdade, barato ao se{' '}
+          <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
         </TimelineContent>
         <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
-          O plano do estágio continua de graça, para sempre. Você paga só quando precisar dos dados fora deste computador.
+          Você paga por paciente ativo — quem teve plano ou missão nos últimos 30 dias. Quem parou de atender não conta, e você sobe de plano só quando crescer.
         </TimelineContent>
       </div>
 
@@ -158,7 +177,7 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         <Chave anual={anual} aoTrocar={setAnual} />
       </TimelineContent>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PLANOS.map((plano, i) => (
           <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada} className="h-full">
             <CartaoPlano plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
@@ -167,7 +186,8 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
-        Os planos pagos ainda não estão no ar: nenhuma cobrança é feita e nada é bloqueado hoje. Criar a conta agora garante o preço de lançamento.
+        Os planos pagos ainda não estão no ar: nenhuma cobrança é feita e nada é bloqueado hoje. Preço de fundador para as {VAGAS_PRECO_FUNDADOR} primeiras
+        assinaturas — quem entra nessa faixa fica nela para sempre, mesmo quando o preço subir.
       </p>
     </div>
   )

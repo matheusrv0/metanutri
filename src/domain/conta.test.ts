@@ -1,8 +1,11 @@
 import {
   descontoAnualPct,
+  ehPacienteAtivo,
+  estadoDoLimite,
   LIMITES_ATIVOS,
   mensalizadoDoAnual,
   nomeSugerido,
+  pacientesAtivos,
   planoPorId,
   PLANOS,
   SENHA_MINIMA,
@@ -16,28 +19,50 @@ describe('Planos de assinatura', () => {
     expect(PLANOS.filter((p) => p.destaque)).toHaveLength(1)
   })
 
-  it('o plano principal respeita o teto de R$ 20 combinado na entrevista', () => {
-    const destaque = PLANOS.find((p) => p.destaque)
-    expect(destaque?.mensal).toBeLessThanOrEqual(20)
+  it('tem os cinco planos do plano de negócio, com os preços aprovados', () => {
+    expect(PLANOS.map((p) => p.id)).toEqual(['free', 'estudante', 'solo', 'pro', 'clinica'])
+    expect(planoPorId('solo')?.mensal).toBe(34.9)
+    expect(planoPorId('solo')?.anual).toBe(299)
+    expect(planoPorId('pro')?.mensal).toBe(64.9)
+    expect(planoPorId('pro')?.anual).toBe(599)
+    expect(planoPorId('clinica')?.mensal).toBe(149)
+  })
+
+  it('o destaque é o Solo, que é quem o plano de negócio quer vender', () => {
+    expect(PLANOS.find((p) => p.destaque)?.id).toBe('solo')
+  })
+
+  it('cada plano diz quantos pacientes ativos aceita', () => {
+    expect(planoPorId('free')?.limitePacientesAtivos).toBe(2)
+    expect(planoPorId('estudante')?.limitePacientesAtivos).toBe(10)
+    expect(planoPorId('solo')?.limitePacientesAtivos).toBe(25)
+    expect(planoPorId('pro')?.limitePacientesAtivos).toBeNull()
+  })
+
+  it('só o Free carrega a marca no PDF, e só o Estudante exige comprovante', () => {
+    expect(PLANOS.filter((p) => p.marcaNoPdf).map((p) => p.id)).toEqual(['free'])
+    expect(PLANOS.filter((p) => p.exigeComprovante).map((p) => p.id)).toEqual(['estudante'])
   })
 
   it('o anual é sempre mais barato que doze meses do mensal', () => {
-    for (const plano of PLANOS.filter((p) => p.mensal > 0)) {
+    for (const plano of PLANOS.filter((p) => p.mensal > 0 && p.anual > 0)) {
       expect(plano.anual).toBeLessThan(plano.mensal * 12)
     }
   })
 
   it('calcula o mês equivalente do plano anual', () => {
-    const profissional = planoPorId('profissional')
-    if (!profissional) throw new Error('O plano profissional precisa existir.')
-    expect(mensalizadoDoAnual(profissional)).toBeCloseTo(15.17, 2)
+    const solo = planoPorId('solo')
+    if (!solo) throw new Error('O plano Solo precisa existir.')
+    expect(mensalizadoDoAnual(solo)).toBeCloseTo(24.92, 2)
   })
 
-  it('calcula o desconto do anual, e zero quando não há', () => {
-    const profissional = planoPorId('profissional')
+  it('calcula o desconto do anual, e zero quando o plano não tem anual', () => {
+    const solo = planoPorId('solo')
+    const clinica = planoPorId('clinica')
     const estudante = planoPorId('estudante')
-    if (!profissional || !estudante) throw new Error('Os dois planos precisam existir.')
-    expect(descontoAnualPct(profissional)).toBe(20)
+    if (!solo || !clinica || !estudante) throw new Error('Os três planos precisam existir.')
+    expect(descontoAnualPct(solo)).toBe(29)
+    expect(descontoAnualPct(clinica)).toBe(0)
     expect(descontoAnualPct(estudante)).toBe(0)
   })
 
@@ -48,6 +73,58 @@ describe('Planos de assinatura', () => {
 
   it('enquanto não há cobrança, nenhum limite é aplicado', () => {
     expect(LIMITES_ATIVOS).toBe(false)
+  })
+})
+
+describe('Paciente ativo, que é a unidade de cobrança', () => {
+  const agora = new Date('2026-09-26T12:00:00Z')
+
+  it('conta quem teve plano ou missão dentro dos 30 dias', () => {
+    expect(ehPacienteAtivo('2026-09-25T12:00:00Z', agora)).toBe(true)
+    expect(ehPacienteAtivo('2026-08-28T12:00:00Z', agora)).toBe(true)
+  })
+
+  it('não conta quem passou dos 30 dias', () => {
+    expect(ehPacienteAtivo('2026-08-26T11:00:00Z', agora)).toBe(false)
+  })
+
+  it('paciente que nunca teve atividade não conta', () => {
+    expect(ehPacienteAtivo(null, agora)).toBe(false)
+    expect(ehPacienteAtivo(undefined, agora)).toBe(false)
+  })
+
+  it('data quebrada não conta e não estoura', () => {
+    expect(ehPacienteAtivo('nem data isso é', agora)).toBe(false)
+  })
+
+  it('data no futuro não conta: é sujeira, não atividade', () => {
+    expect(ehPacienteAtivo('2026-10-01T12:00:00Z', agora)).toBe(false)
+  })
+
+  it('soma só os ativos da lista', () => {
+    const datas = ['2026-09-20T12:00:00Z', '2026-01-01T12:00:00Z', null, '2026-09-26T09:00:00Z']
+    expect(pacientesAtivos(datas, agora)).toBe(2)
+  })
+})
+
+describe('Limite do plano', () => {
+  it('avisa quantos ainda cabem', () => {
+    const free = planoPorId('free')
+    if (!free) throw new Error('O plano Free precisa existir.')
+    expect(estadoDoLimite(free, 1)).toEqual({ ativos: 1, limite: 2, excedeu: false, restantes: 1 })
+  })
+
+  it('marca que excedeu quando passa do limite', () => {
+    const free = planoPorId('free')
+    if (!free) throw new Error('O plano Free precisa existir.')
+    expect(estadoDoLimite(free, 3).excedeu).toBe(true)
+    expect(estadoDoLimite(free, 3).restantes).toBe(0)
+  })
+
+  it('plano ilimitado nunca excede', () => {
+    const pro = planoPorId('pro')
+    if (!pro) throw new Error('O plano Pro precisa existir.')
+    expect(estadoDoLimite(pro, 900)).toEqual({ ativos: 900, limite: null, excedeu: false, restantes: null })
   })
 })
 

@@ -1,7 +1,7 @@
 // Conta e assinatura. O sistema funciona inteiro sem conta: ela serve para levar
 // os dados para outro aparelho e, no futuro, para cobrar.
 
-export type IdPlano = 'estudante' | 'profissional' | 'clinica'
+export type IdPlano = 'free' | 'estudante' | 'solo' | 'pro' | 'clinica'
 
 export interface PlanoAssinatura {
   readonly id: IdPlano
@@ -9,10 +9,16 @@ export interface PlanoAssinatura {
   readonly resumo: string
   /** Em reais, por mês. Zero é grátis. */
   readonly mensal: number
-  /** Em reais, no ano inteiro. */
+  /** Em reais, no ano inteiro. Zero quando o plano não tem opção anual. */
   readonly anual: number
   readonly destaque: boolean
   readonly acaoTexto: string
+  /** Quantos pacientes ativos cabem no plano. `null` é ilimitado. */
+  readonly limitePacientesAtivos: number | null
+  /** Só entra com comprovante de matrícula. */
+  readonly exigeComprovante: boolean
+  /** O PDF sai com a marca do MetaNutri em vez da marca de quem atende. */
+  readonly marcaNoPdf: boolean
   /** O que muda de verdade neste plano. */
   readonly recursos: readonly string[]
   /** Frase que abre a lista do que vem junto. */
@@ -20,47 +26,131 @@ export interface PlanoAssinatura {
 }
 
 /**
- * Preços propostos a partir da entrevista (teto de R$ 20 no plano principal).
- * Enquanto não houver cobrança, nada aqui bloqueia o uso — ver `LIMITES_ATIVOS`.
+ * Planos aprovados em 26/09/2026 (`docs/plano-negocio.md`). A cobrança é por
+ * paciente ativo, não por plano montado — ver `pacientesAtivos`.
+ *
+ * Nota do plano, ainda sem resposta: o plano Estudante dá 10 pacientes, mas
+ * estudante de nutrição não pode atender paciente (Lei 8.234/1991). Enquanto a
+ * decisão não vier, o limite existe mas nada é bloqueado (`LIMITES_ATIVOS`).
  */
 export const PLANOS: readonly PlanoAssinatura[] = [
   {
-    id: 'estudante',
-    nome: 'Estudante',
-    resumo: 'Para quem está no estágio e monta plano no próprio computador.',
+    id: 'free',
+    nome: 'Free',
+    resumo: 'Para conhecer o sistema com um caso real, sem cartão.',
     mensal: 0,
     anual: 0,
     destaque: false,
     acaoTexto: 'Começar agora',
-    recursos: ['Planos e pacientes ilimitados', 'Tudo salvo neste navegador', 'Funciona sem internet'],
-    inclui: ['Já vem com:', 'Adequação de micronutrientes', 'Exportar Word e PDF', 'Cadastro de produto por código de barras'],
+    limitePacientesAtivos: 2,
+    exigeComprovante: false,
+    marcaNoPdf: true,
+    recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona sem internet'],
+    inclui: ['Já vem com:', 'Adequação de micronutrientes', 'Missões diárias do paciente', 'Exportar Word e PDF'],
   },
   {
-    id: 'profissional',
-    nome: 'Profissional',
-    resumo: 'Para quem atende de verdade e precisa dos dados em qualquer aparelho.',
-    mensal: 19,
-    anual: 182,
+    id: 'estudante',
+    nome: 'Estudante',
+    resumo: 'Para o estágio, enquanto a faculdade não acaba.',
+    mensal: 0,
+    anual: 0,
+    destaque: false,
+    acaoTexto: 'Enviar comprovante',
+    limitePacientesAtivos: 10,
+    exigeComprovante: true,
+    marcaNoPdf: false,
+    recursos: ['10 pacientes ativos', 'Sem marca no PDF', 'Grátis até a formatura'],
+    inclui: ['Tudo do Free, mais:', 'Documento no modelo do estágio', 'Cadastro de produto por código de barras'],
+  },
+  {
+    id: 'solo',
+    nome: 'Solo',
+    resumo: 'Para quem acabou de se formar e está montando a clientela.',
+    mensal: 34.9,
+    anual: 299,
     destaque: true,
     acaoTexto: 'Assinar',
-    recursos: ['Conta com dados na nuvem', 'Abre no computador e no celular', 'Backup automático'],
-    inclui: ['Tudo do Estudante, mais:', 'Link do plano para o paciente', 'Sua marca nos documentos', 'Histórico de evolução'],
+    limitePacientesAtivos: 25,
+    exigeComprovante: false,
+    marcaNoPdf: false,
+    recursos: ['25 pacientes ativos', 'Seu logo nos documentos', 'Dados em qualquer aparelho'],
+    inclui: ['Tudo do Estudante, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
+  },
+  {
+    id: 'pro',
+    nome: 'Pro',
+    resumo: 'Para nutricionista estabelecido, com agenda cheia.',
+    mensal: 64.9,
+    anual: 599,
+    destaque: false,
+    acaoTexto: 'Assinar',
+    limitePacientesAtivos: null,
+    exigeComprovante: false,
+    marcaNoPdf: false,
+    recursos: ['Pacientes ilimitados', 'Painel de micros completo', 'Dados em qualquer aparelho'],
+    inclui: ['Tudo do Solo, mais:', 'Relatório de adesão por paciente', 'Modelos próprios de documento'],
   },
   {
     id: 'clinica',
     nome: 'Clínica',
-    resumo: 'Para consultório com mais de um nutricionista e preceptoria.',
-    mensal: 49,
-    anual: 470,
+    resumo: 'Para consultório com mais de um nutricionista.',
+    mensal: 149,
+    anual: 0,
     destaque: false,
     acaoTexto: 'Falar com a gente',
-    recursos: ['Até 5 profissionais', 'Preceptor revisa e aprova', 'Relatório por profissional'],
-    inclui: ['Tudo do Profissional, mais:', 'Pastas por equipe', 'Modelos compartilhados', 'Suporte por WhatsApp'],
+    limitePacientesAtivos: null,
+    exigeComprovante: false,
+    marcaNoPdf: false,
+    recursos: ['Até 4 nutricionistas', 'Pacientes compartilhados', 'Painel do gestor'],
+    inclui: ['Tudo do Pro, mais:', 'R$ 35 por nutricionista extra', 'Preceptor revisa e aprova', 'Suporte por WhatsApp'],
   },
 ]
 
+/** Plano de quem cria conta sem comprovar nada. */
+export const PLANO_PADRAO: IdPlano = 'free'
+
+/** Quantas assinaturas travam o preço de fundador para sempre. */
+export const VAGAS_PRECO_FUNDADOR = 200
+
+/** Dias sem plano nem missão até o paciente deixar de contar como ativo. */
+export const DIAS_PACIENTE_ATIVO = 30
+
 /** Nenhum limite é aplicado hoje: sem cobrança, cobrar limite seria mentira. */
 export const LIMITES_ATIVOS = false
+
+const DIA_EM_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Paciente ativo é quem teve plano ou missão nos últimos 30 dias — é assim que o
+ * plano de negócio cobra. Data inválida ou ausente conta como inativo.
+ */
+export function ehPacienteAtivo(ultimaAtividade: string | null | undefined, agora: Date = new Date()): boolean {
+  if (!ultimaAtividade) return false
+  const quando = new Date(ultimaAtividade).getTime()
+  if (Number.isNaN(quando)) return false
+  const dias = (agora.getTime() - quando) / DIA_EM_MS
+  return dias >= 0 && dias <= DIAS_PACIENTE_ATIVO
+}
+
+/** Quantos dos pacientes contam para o limite do plano agora. */
+export function pacientesAtivos(ultimasAtividades: readonly (string | null | undefined)[], agora: Date = new Date()): number {
+  return ultimasAtividades.filter((data) => ehPacienteAtivo(data, agora)).length
+}
+
+export interface EstadoDoLimite {
+  readonly ativos: number
+  readonly limite: number | null
+  readonly excedeu: boolean
+  /** Quantos ainda cabem. `null` quando o plano é ilimitado. */
+  readonly restantes: number | null
+}
+
+/** Compara os pacientes ativos com o limite do plano. Não bloqueia nada: só informa. */
+export function estadoDoLimite(plano: PlanoAssinatura, ativos: number): EstadoDoLimite {
+  const limite = plano.limitePacientesAtivos
+  if (limite === null) return { ativos, limite: null, excedeu: false, restantes: null }
+  return { ativos, limite, excedeu: ativos > limite, restantes: Math.max(0, limite - ativos) }
+}
 
 export const planoPorId = (id: IdPlano): PlanoAssinatura | null => PLANOS.find((p) => p.id === id) ?? null
 

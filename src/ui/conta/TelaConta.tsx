@@ -86,7 +86,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
             <BadgeCheck className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-heading">{plano?.nome ?? 'Estudante'}</p>
+            <p className="font-medium text-heading">{plano?.nome ?? PLANOS[0]?.nome ?? 'Free'}</p>
             <p className="text-sm text-muted-foreground">{plano?.resumo ?? PLANOS[0]?.resumo}</p>
           </div>
           <span className="numeros font-titulo text-xl font-bold text-heading">{(plano?.mensal ?? 0) === 0 ? 'Grátis' : `R$ ${plano?.mensal}/mês`}</span>

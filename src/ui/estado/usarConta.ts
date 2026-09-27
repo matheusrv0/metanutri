@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { nomeSugerido, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import { nomeSugerido, planoPorId, PLANO_PADRAO, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
 interface Resultado {
@@ -45,7 +45,9 @@ export function useConta(): ValorConta {
       if (!usuario?.email) return null
       const meta = usuario.user_metadata ?? {}
       const nome = typeof meta['nome'] === 'string' && meta['nome'].trim() ? (meta['nome'] as string) : nomeSugerido(usuario.email)
-      const plano = typeof meta['plano'] === 'string' ? (meta['plano'] as IdPlano) : 'estudante'
+      // Plano gravado por uma versão anterior pode não existir mais; cai no padrão em vez de virar plano fantasma.
+      const salvo = typeof meta['plano'] === 'string' ? (meta['plano'] as IdPlano) : null
+      const plano = salvo && planoPorId(salvo) ? salvo : PLANO_PADRAO
       return { id: usuario.id, email: usuario.email, nome, plano }
     }
 
@@ -80,7 +82,7 @@ export function useConta(): ValorConta {
     const { data, error } = await cliente.auth.signUp({
       email: limpo,
       password: senha,
-      options: { data: { nome: nomeSugerido(limpo), plano: 'estudante' } },
+      options: { data: { nome: nomeSugerido(limpo), plano: PLANO_PADRAO } },
     })
     if (error) return { ok: false, erro: traduzir(error.message) }
     // Sem sessão na resposta: o projeto exige confirmar o e-mail antes de entrar.
