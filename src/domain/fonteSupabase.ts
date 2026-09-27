@@ -51,6 +51,9 @@ export function daLinha(linha: unknown): Acompanhamento | null {
     criadoEm: typeof o['criado_em'] === 'string' ? o['criado_em'] : new Date().toISOString(),
     missoes: ehListaDeMissoes(o['missoes']) ? o['missoes'] : [],
     marcacoes: ehListaDeMarcacoes(o['marcacoes']) ? o['marcacoes'] : [],
+    // Na dúvida, avisa. Linha antiga sem a coluna vira link de estudante e mostra o
+    // aviso — errar para o lado de avisar demais é o lado certo aqui.
+    usoNaoComercial: o['uso_nao_comercial'] !== false,
   }
 }
 
@@ -65,6 +68,7 @@ function paraLinha(a: Acompanhamento, nutricionistaId: string): Record<string, u
     criado_em: a.criadoEm,
     missoes: a.missoes,
     marcacoes: a.marcacoes,
+    uso_nao_comercial: a.usoNaoComercial,
   }
 }
 

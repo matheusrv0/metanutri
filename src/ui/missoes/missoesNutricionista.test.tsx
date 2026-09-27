@@ -235,3 +235,86 @@ describe('Tela de adesão', () => {
     expect(abrir).toHaveBeenCalledWith('caso-42')
   })
 })
+
+describe('Conta de estudante: uso não comercial', () => {
+  const gerar = async (usuario: ReturnType<typeof userEvent.setup>) => {
+    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
+  }
+
+  it('avisa que a conta de estágio é de uso não comercial', () => {
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+    expect(screen.getByText(/até 3 links, de uso não comercial/i)).toBeInTheDocument()
+  })
+
+  it('o link gerado por estudante fica marcado como não comercial', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await gerar(usuario)
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
+  })
+
+  it('link de conta paga não sai marcado', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="solo" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await gerar(usuario)
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(false)
+  })
+
+  it('no quarto paciente, o estudante não consegue mais gerar', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    for (const caso of ['a', 'b', 'c']) repo.salvar(acompanhamentoDe(caso, `Paciente ${caso}`))
+
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c4" pacienteId={null} nome="Quarto" missoes={MISSOES} plano="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    expect(screen.queryByRole('button', { name: /Gerar link das missões/ })).not.toBeInTheDocument()
+    expect(screen.getByText(/já\s+estão em uso/i)).toBeInTheDocument()
+  })
+
+  it('com três links, o plano Pro continua gerando', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    for (const caso of ['a', 'b', 'c']) repo.salvar(acompanhamentoDe(caso, `Paciente ${caso}`))
+
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c4" pacienteId={null} nome="Quarto" missoes={MISSOES} plano="pro" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    expect(screen.getByRole('button', { name: /Gerar link das missões/ })).toBeInTheDocument()
+  })
+
+  it('regerar o link de um paciente que já tem não esbarra no limite', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    for (const caso of ['a', 'b']) repo.salvar(acompanhamentoDe(caso, `Paciente ${caso}`))
+    repo.salvar(acompanhamentoDe('c3', 'Terceiro'))
+
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c3" pacienteId={null} nome="Terceiro" missoes={MISSOES} plano="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    expect(screen.getByRole('button', { name: /Gerar link novo/ })).toBeInTheDocument()
+  })
+})

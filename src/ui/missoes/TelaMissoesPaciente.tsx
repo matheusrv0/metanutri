@@ -1,7 +1,7 @@
 // A tela que o paciente abre pelo link, no aparelho dele. Sem conta, sem menu e sem
 // nada para aprender: a lista do dia e um toque para marcar. É a Fase 1 do
 // `docs/plano-negocio.md`, e a métrica do produto nasce aqui.
-import { Check, CircleAlert, Link2Off } from 'lucide-react'
+import { Check, CircleAlert, GraduationCap, Link2Off } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   diaLocal,
@@ -118,6 +118,16 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
 
   return (
     <Moldura>
+      {acompanhamento.usoNaoComercial ? (
+        <aside className="mb-5 flex items-start gap-3 rounded-2xl border border-stateinfo/40 bg-lightinfo p-4">
+          <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
+          <p className="text-sm text-infotext">
+            Este acompanhamento é de <strong>estágio de nutrição</strong>, feito por estudante sob supervisão. Não substitui consulta com nutricionista
+            e não é atendimento profissional.
+          </p>
+        </aside>
+      ) : null}
+
       <header className="mb-6">
         <p className="text-sm text-muted-foreground">{dataPorExtenso(hoje)}</p>
         <h1 className="mt-1 font-titulo text-2xl font-bold text-heading">

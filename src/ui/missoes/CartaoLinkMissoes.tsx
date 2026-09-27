@@ -15,6 +15,7 @@ import {
 } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import type { Missao } from '@/domain/missoes.ts'
+import { planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
 import { useAcompanhamentos } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -25,12 +26,15 @@ interface CartaoLinkMissoesProps {
   readonly pacienteId: string | null
   readonly nome: string
   readonly missoes: readonly Missao[]
+  /** Plano da conta: decide quantos links cabem e se o link sai marcado. */
+  readonly plano?: IdPlano
   /** Injetável no teste; por padrão é o dia de hoje no fuso de quem olha. */
   readonly hoje?: string
 }
 
-export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = diaLocal() }: CartaoLinkMissoesProps) {
-  const { repositorio, salvar } = useAcompanhamentos()
+export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = PLANO_PADRAO, hoje = diaLocal() }: CartaoLinkMissoesProps) {
+  const { repositorio, salvar, acompanhamentos } = useAcompanhamentos()
+  const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
   const [copiado, setCopiado] = useState(false)
   const [pedindoConsentimento, setPedindoConsentimento] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
@@ -38,10 +42,18 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = di
   // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
   // dois acompanhamentos para o mesmo plano fariam a tela mostrar o link velho.
   const gerar = () => {
-    salvar(acompanhamento ? regerarLink(acompanhamento, { nome, missoes }) : criarAcompanhamento({ casoId, pacienteId, nome, missoes }))
+    salvar(
+      acompanhamento
+        ? regerarLink(acompanhamento, { nome, missoes })
+        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: planoAtual?.usoNaoComercial ?? false }),
+    )
     setCopiado(false)
     setPedindoConsentimento(false)
   }
+
+  // Regerar não conta: já existe link para este plano. O limite vale para o link novo.
+  const outrosLinks = acompanhamentos.filter((a) => a.casoId !== casoId).length
+  const cabeMaisUm = planoAtual !== null && podeGerarLink(planoAtual, outrosLinks)
 
   const copiar = async (endereco: string) => {
     try {
@@ -98,10 +110,26 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, hoje = di
             <p className="mt-3 text-sm text-foreground">
               {missoes.length} {missoes.length === 1 ? 'missão sai' : 'missões saem'} deste plano.
             </p>
-            <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
-              <Link2 className="size-4" aria-hidden="true" />
-              Gerar link das missões
-            </Button>
+
+            {cabeMaisUm ? (
+              <>
+                <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
+                  <Link2 className="size-4" aria-hidden="true" />
+                  Gerar link das missões
+                </Button>
+                {planoAtual?.usoNaoComercial ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Conta de estudante: até {planoAtual.limiteLinksPaciente} links, de uso não comercial. A tela do paciente avisa que o
+                    acompanhamento é de estágio.
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
+                Seu plano permite {planoAtual?.limiteLinksPaciente} {planoAtual?.limiteLinksPaciente === 1 ? 'link' : 'links'} de missões, e eles já
+                estão em uso. Apague um acompanhamento em Adesão ou mude de plano para gerar outro.
+              </p>
+            )}
           </>
         )}
       </section>

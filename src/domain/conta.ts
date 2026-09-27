@@ -15,6 +15,17 @@ export interface PlanoAssinatura {
   readonly acaoTexto: string
   /** Quantos pacientes ativos cabem no plano. `null` é ilimitado. */
   readonly limitePacientesAtivos: number | null
+  /**
+   * Quantos links de missões podem existir ao mesmo tempo. Separado do limite de
+   * pacientes porque o link alcança uma pessoa de verdade, fora do sistema.
+   */
+  readonly limiteLinksPaciente: number | null
+  /**
+   * Conta de estudante: pode usar, mas não para atender comercialmente. O PDF sai
+   * marcado e a tela do paciente avisa — é o modelo do WebDiet, e o que a Lei
+   * 8.234/1991 pede de quem ainda não tem CRN.
+   */
+  readonly usoNaoComercial: boolean
   /** Só entra com comprovante de matrícula. */
   readonly exigeComprovante: boolean
   /** O PDF sai com a marca do MetaNutri em vez da marca de quem atende. */
@@ -26,12 +37,13 @@ export interface PlanoAssinatura {
 }
 
 /**
- * Planos aprovados em 26/09/2026 (`docs/plano-negocio.md`). A cobrança é por
- * paciente ativo, não por plano montado — ver `pacientesAtivos`.
+ * Planos aprovados em 26/09/2026 e revistos em 27/09 (`docs/plano-negocio.md`).
+ * A cobrança é por paciente ativo, não por plano montado — ver `pacientesAtivos`.
  *
- * Nota do plano, ainda sem resposta: o plano Estudante dá 10 pacientes, mas
- * estudante de nutrição não pode atender paciente (Lei 8.234/1991). Enquanto a
- * decisão não vier, o limite existe mas nada é bloqueado (`LIMITES_ATIVOS`).
+ * O plano Estudante segue o modelo do WebDiet, decidido em 27/09: a pessoa usa o
+ * sistema de verdade, mas a conta é de **uso não comercial** — no máximo 3 links de
+ * missões, marca no PDF e aviso na tela do paciente. É o que concilia o estágio real
+ * com a Lei 8.234/1991, que reserva a prescrição a quem tem CRN.
  */
 export const PLANOS: readonly PlanoAssinatura[] = [
   {
@@ -43,6 +55,8 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     destaque: false,
     acaoTexto: 'Começar agora',
     limitePacientesAtivos: 2,
+    limiteLinksPaciente: 2,
+    usoNaoComercial: false,
     exigeComprovante: false,
     marcaNoPdf: true,
     recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona sem internet'],
@@ -51,15 +65,17 @@ export const PLANOS: readonly PlanoAssinatura[] = [
   {
     id: 'estudante',
     nome: 'Estudante',
-    resumo: 'Para o estágio, enquanto a faculdade não acaba.',
+    resumo: 'Para o estágio, enquanto a faculdade não acaba. Uso não comercial.',
     mensal: 0,
     anual: 0,
     destaque: false,
     acaoTexto: 'Enviar comprovante',
     limitePacientesAtivos: 10,
+    limiteLinksPaciente: 3,
+    usoNaoComercial: true,
     exigeComprovante: true,
-    marcaNoPdf: false,
-    recursos: ['10 pacientes ativos', 'Sem marca no PDF', 'Grátis até a formatura'],
+    marcaNoPdf: true,
+    recursos: ['10 pacientes ativos', 'Até 3 links de missões', 'Grátis até a formatura'],
     inclui: ['Tudo do Free, mais:', 'Documento no modelo do estágio', 'Cadastro de produto por código de barras'],
   },
   {
@@ -71,6 +87,8 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     destaque: true,
     acaoTexto: 'Assinar',
     limitePacientesAtivos: 25,
+    limiteLinksPaciente: 25,
+    usoNaoComercial: false,
     exigeComprovante: false,
     marcaNoPdf: false,
     recursos: ['25 pacientes ativos', 'Seu logo nos documentos', 'Dados em qualquer aparelho'],
@@ -85,6 +103,8 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     destaque: false,
     acaoTexto: 'Assinar',
     limitePacientesAtivos: null,
+    limiteLinksPaciente: null,
+    usoNaoComercial: false,
     exigeComprovante: false,
     marcaNoPdf: false,
     recursos: ['Pacientes ilimitados', 'Painel de micros completo', 'Dados em qualquer aparelho'],
@@ -99,6 +119,8 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     destaque: false,
     acaoTexto: 'Falar com a gente',
     limitePacientesAtivos: null,
+    limiteLinksPaciente: null,
+    usoNaoComercial: false,
     exigeComprovante: false,
     marcaNoPdf: false,
     recursos: ['Até 4 nutricionistas', 'Pacientes compartilhados', 'Painel do gestor'],
@@ -135,6 +157,15 @@ export function ehPacienteAtivo(ultimaAtividade: string | null | undefined, agor
 /** Quantos dos pacientes contam para o limite do plano agora. */
 export function pacientesAtivos(ultimasAtividades: readonly (string | null | undefined)[], agora: Date = new Date()): number {
   return ultimasAtividades.filter((data) => ehPacienteAtivo(data, agora)).length
+}
+
+/**
+ * Pode gerar mais um link de missões? Esta trava vale mesmo com `LIMITES_ATIVOS`
+ * desligado: as outras são comerciais, esta existe porque o link alcança um paciente
+ * de verdade e o plano Estudante é de quem ainda não tem CRN.
+ */
+export function podeGerarLink(plano: PlanoAssinatura, linksExistentes: number): boolean {
+  return plano.limiteLinksPaciente === null || linksExistentes < plano.limiteLinksPaciente
 }
 
 export interface EstadoDoLimite {

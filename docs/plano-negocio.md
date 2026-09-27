@@ -24,9 +24,12 @@ R$ 4.800 de receita mensal.
 O plano de estudante mantém o MetaNutri empatado com a concorrência; o que coloca o
 produto na frente são as missões diárias e o painel de micros.
 
-- **Estudante: grátis e em modo treino.** Estudante não atende paciente sozinho, então
-  usa pacientes fictícios, sem link externo. O modo treino gira em torno da prévia das
-  missões e do painel de micros, para o aluno se formar conhecendo o diferencial.
+- **Estudante: grátis, em conta de uso não comercial.** *Revisto em 27/09, depois desta
+  versão do plano:* em vez de pacientes fictícios sem link externo, o modelo passa a ser
+  o do WebDiet — a estudante usa o sistema de verdade e pode gerar **até 3 links** de
+  missões, mas a conta é de uso não comercial: o PDF sai marcado e a tela do paciente
+  avisa que é acompanhamento de estágio, não atendimento profissional. O estágio real
+  acontece sob supervisão da preceptora, e o aluno se forma conhecendo o diferencial.
 - **Link de paciente real só com CRN informado**, em qualquer plano, inclusive o Free.
   No começo, CRN autodeclarado com termo de responsabilidade.
 - **O dinheiro vem do recém-formado, no plano Solo**, com a adesão do paciente como
@@ -87,15 +90,17 @@ Público em ordem de prioridade:
 | Plano | Para quem | Preço | Limite |
 |---|---|---|---|
 | Free | Qualquer um | R$ 0 | 2 pacientes ativos, marca MetaNutri no PDF |
-| Estudante | Com comprovante de matrícula | R$ 0 | Modo treino: até 10 pacientes fictícios, sem link externo, com prévia das missões e painel de micros |
+| Estudante | Com comprovante de matrícula | R$ 0 | Uso não comercial: 10 pacientes, até 3 links de missões, marca no PDF e aviso na tela do paciente |
 | Solo | Recém-formado | R$ 34,90/mês ou R$ 299/ano | 25 pacientes ativos, logo próprio |
 | Pro | Nutricionista estabelecido | R$ 64,90/mês ou R$ 599/ano | Pacientes ilimitados, painel de micros completo |
 | Clínica | 2+ profissionais | R$ 149/mês (até 4 nutris, +R$ 35 por nutri extra) | Painel do gestor, pacientes compartilhados |
 
 Quatro regras importam mais que os números:
 
-**Link de paciente real só com CRN** — sem CRN informado, a conta funciona em modo
-treino, em qualquer plano.
+**Link de paciente marcado quando a conta é de estudante** — *revisto em 27/09:* em vez
+de exigir CRN, o caminho adotado é o do WebDiet, que não pede registro: a conta de
+estágio pode gerar até 3 links, e quem recebe o link vê que é acompanhamento de estágio.
+A trava de CRN fica como possibilidade futura, não como regra em vigor.
 
 **Cobrança por paciente ativo** — quem teve plano ou missão nos últimos 30 dias. O
 nutricionista sobe de plano conforme cresce, sem sentir que foi cobrado a mais.

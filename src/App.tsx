@@ -287,6 +287,7 @@ function Conteudo() {
                 pacienteId={registro.caso.pacienteId}
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
+                {...(conta.sessao ? { plano: conta.sessao.plano } : {})}
               />
             </div>
           ) : (

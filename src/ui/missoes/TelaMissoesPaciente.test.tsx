@@ -154,3 +154,21 @@ describe('Tela de missões do paciente', () => {
     expect(await screen.findByRole('button', { name: /litros de água/ })).toHaveAttribute('aria-pressed', 'false')
   })
 })
+
+describe('Aviso de conta de estágio na tela do paciente', () => {
+  it('link de estudante avisa que não é atendimento profissional', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ usoNaoComercial: true }))
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    expect(await screen.findByText(/estágio de nutrição/i)).toBeInTheDocument()
+    expect(screen.getByText(/Não substitui consulta com nutricionista/i)).toBeInTheDocument()
+  })
+
+  it('link de conta paga não mostra o aviso', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ usoNaoComercial: false }))
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    await screen.findByRole('heading', { name: /missões de hoje/i })
+    expect(screen.queryByText(/estágio de nutrição/i)).not.toBeInTheDocument()
+  })
+})

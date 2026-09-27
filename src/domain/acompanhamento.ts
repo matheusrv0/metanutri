@@ -27,6 +27,11 @@ export interface Acompanhamento {
    */
   readonly missoes: readonly Missao[]
   readonly marcacoes: readonly MarcacaoDia[]
+  /**
+   * Link criado por conta de estudante. A tela do paciente avisa, como o WebDiet faz:
+   * quem está do outro lado precisa saber que não é atendimento profissional.
+   */
+  readonly usoNaoComercial: boolean
 }
 
 /** Dias sem nenhuma marcação até o paciente contar como sumido. */
@@ -80,6 +85,7 @@ export interface DadosNovoAcompanhamento {
   readonly pacienteId: string | null
   readonly nome: string
   readonly missoes: readonly Missao[]
+  readonly usoNaoComercial?: boolean
 }
 
 export interface OpcoesAcompanhamento {
@@ -100,6 +106,7 @@ export function criarAcompanhamento(dados: DadosNovoAcompanhamento, opcoes: Opco
     criadoEm: agora(),
     missoes: dados.missoes,
     marcacoes: [],
+    usoNaoComercial: dados.usoNaoComercial ?? false,
   }
 }
 

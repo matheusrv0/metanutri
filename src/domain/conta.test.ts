@@ -6,6 +6,7 @@ import {
   mensalizadoDoAnual,
   nomeSugerido,
   pacientesAtivos,
+  podeGerarLink,
   planoPorId,
   PLANOS,
   SENHA_MINIMA,
@@ -39,8 +40,10 @@ describe('Planos de assinatura', () => {
     expect(planoPorId('pro')?.limitePacientesAtivos).toBeNull()
   })
 
-  it('só o Free carrega a marca no PDF, e só o Estudante exige comprovante', () => {
-    expect(PLANOS.filter((p) => p.marcaNoPdf).map((p) => p.id)).toEqual(['free'])
+  it('Free e Estudante carregam marca no PDF; só o Estudante exige comprovante', () => {
+    // O Estudante entrou na lista em 27/09: conta de estágio sai marcada, como no
+    // WebDiet, porque o documento não pode passar por atendimento profissional.
+    expect(PLANOS.filter((p) => p.marcaNoPdf).map((p) => p.id)).toEqual(['free', 'estudante'])
     expect(PLANOS.filter((p) => p.exigeComprovante).map((p) => p.id)).toEqual(['estudante'])
   })
 
@@ -160,5 +163,32 @@ describe('nomeSugerido', () => {
 
   it('e-mail sem nada aproveitável não vira nome vazio', () => {
     expect(nomeSugerido('@exemplo.com')).toBe('Você')
+  })
+})
+
+describe('Limite de links de missões (conta de estudante)', () => {
+  it('o plano Estudante gera no máximo 3 links', () => {
+    const estudante = planoPorId('estudante')
+    if (!estudante) throw new Error('O plano Estudante precisa existir.')
+
+    expect(estudante.limiteLinksPaciente).toBe(3)
+    expect(podeGerarLink(estudante, 2)).toBe(true)
+    expect(podeGerarLink(estudante, 3)).toBe(false)
+  })
+
+  it('só a conta de estudante é de uso não comercial', () => {
+    expect(PLANOS.filter((p) => p.usoNaoComercial).map((p) => p.id)).toEqual(['estudante'])
+  })
+
+  it('plano ilimitado nunca trava', () => {
+    const pro = planoPorId('pro')
+    if (!pro) throw new Error('O plano Pro precisa existir.')
+    expect(podeGerarLink(pro, 9999)).toBe(true)
+  })
+
+  it('o Free também tem teto de links, igual ao de pacientes', () => {
+    const free = planoPorId('free')
+    if (!free) throw new Error('O plano Free precisa existir.')
+    expect(podeGerarLink(free, 2)).toBe(false)
   })
 })

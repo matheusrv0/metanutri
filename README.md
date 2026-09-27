@@ -104,10 +104,10 @@ Para ligar:
 1. Crie um projeto em <https://supabase.com> (o plano gratuito serve)
 2. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
 3. `cp .env.example .env.local` e cole as duas
-4. Em **SQL Editor > New query**, cole e rode os dois arquivos de
-   [supabase/](supabase/), na ordem: `001-acompanhamentos.sql` (tabela das missões e
-   as duas funções que o paciente usa) e `002-copia-na-nuvem.sql` (cópia dos dados
-   para trocar de aparelho)
+4. Em **SQL Editor > New query**, cole e rode os arquivos de [supabase/](supabase/) na
+   ordem: `001-acompanhamentos.sql` (missões), `002-copia-na-nuvem.sql` (cópia dos
+   dados), `003-assinaturas.sql` (cobrança) e `004-uso-nao-comercial.sql` (aviso de
+   conta de estágio)
 5. Reinicie o `npm run dev`
 
 Com isso o link do paciente passa a abrir no celular dele. Sem o passo 4, a conta
