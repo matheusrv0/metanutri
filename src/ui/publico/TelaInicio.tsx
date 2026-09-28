@@ -1,274 +1,146 @@
-// Porta de entrada pública. Uma ação principal (começar grátis, em laranja), quatro
-// blocos e texto curto: o usuário achou a versão anterior cinza, longa e confusa.
-//
-// A tese continua a de 27/09: o diferencial é dizer o que comer. As imagens são
-// capturas do próprio MetaNutri com um caso de exemplo, geradas em 2x.
-import { ArrowRight, Barcode, Check, FileText, WifiOff, Zap } from 'lucide-react'
-import { LACUNAS_DA_BASE } from '@/domain/vitrine.ts'
-import { cn } from '@/lib/utils'
-import { GridPattern } from '@ds/componentes/efeitos/grid-pattern.tsx'
-import { TextHighlight } from '@ds/componentes/efeitos/text-highlight.tsx'
-import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { ArrowUpRight } from 'lucide-react'
+import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
+import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface TelaInicioProps {
-  readonly aoAbrirSistema: () => void
+  readonly aoComecar: () => void
   readonly aoVerPrecos: () => void
-  readonly aoVerExemplo: () => void
-  readonly aoVerAlimentos: () => void
 }
 
-/** Células cheias da grade: espalhadas, sem formar desenho. */
-const CELULAS = [
-  [3, 1], [9, 2], [2, 5], [11, 4], [6, 7], [14, 3],
-  [17, 6], [4, 9], [20, 1], [23, 5], [26, 8], [8, 10],
-] as const
+const BASE = import.meta.env.BASE_URL
+
+function rolarAte(id: string) {
+  globalThis.document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const PASSOS = [
-  ['Monte o plano', 'Digite “150 arroz” e tecle Enter. Calorias e nutrientes aparecem na hora.'],
-  ['Veja o que falta', 'Vitaminas e minerais abaixo do recomendado ficam marcados.'],
-  ['Complete com comida', 'O MetaNutri sugere o alimento e a quantidade certa.'],
+  { n: '01', titulo: 'Monte o plano', texto: 'Digite "150 arroz" e tecle Enter. O alimento entra na refeição.' },
+  { n: '02', titulo: 'Veja o que falta', texto: 'O botão Cobrir sugere o alimento e a quantidade para fechar a meta.' },
+  { n: '03', titulo: 'O paciente acompanha', texto: 'Ele marca pelo celular o que cumpriu. Você vê quem está sumindo.' },
 ] as const
 
-const EXTRAS = [
-  [Zap, 'Plano rápido para retorno, só com nome, idade e calorias'],
-  [Barcode, 'Produto de mercado pelo código de barras'],
-  [FileText, 'Plano em Word e PDF, pronto para entregar'],
-  [WifiOff, 'Funciona sem internet'],
-] as const
+const TITULO_SECAO = 'mt-4 text-[clamp(28px,3.4vw,36px)] font-bold leading-tight'
 
-/** Botão principal da área pública: laranja fechado, 5,18:1 com letra branca. */
-const botaoPrincipal =
-  'inline-flex min-h-11 items-center gap-2 rounded-full bg-acentofundo px-6 text-sm font-semibold text-textoacento shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-
-const botaoSecundario =
-  'inline-flex min-h-11 items-center gap-2 rounded-full border border-borderdefault bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-
-/** Imagem de produto: moldura, sombra e, quando a captura é cortada, degradê no fim. */
-function Captura({ src, alt, cortada = false, className }: { readonly src: string; readonly alt: string; readonly cortada?: boolean; readonly className?: string }) {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      className={cn(
-        'w-full rounded-2xl border border-border bg-card shadow-pop',
-        cortada ? '[mask-image:linear-gradient(to_bottom,#000_75%,transparent)]' : null,
-        className,
-      )}
-    />
-  )
-}
-
-function Recurso({
-  rotulo,
-  titulo,
-  texto,
-  itens,
-  invertida = false,
-  children,
-}: {
-  readonly rotulo: string
-  readonly titulo: string
-  readonly texto: string
-  readonly itens?: readonly string[]
-  readonly invertida?: boolean
-  readonly children: React.ReactNode
-}) {
-  return (
-    <section className="mx-auto grid max-w-[1080px] items-center gap-10 px-4 py-12 sm:px-8 md:grid-cols-2 md:gap-14 md:py-16">
-      <div className={cn('min-w-0', invertida ? 'md:order-2' : null)}>{children}</div>
-      <div className={cn('min-w-0', invertida ? 'md:order-1' : null)}>
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-acento">{rotulo}</p>
-        <h2 className="mt-2 font-titulo text-[clamp(22px,2.6vw,30px)] font-semibold leading-[1.2] tracking-[-0.3px] text-balance">{titulo}</h2>
-        <p className="mt-3 max-w-[44ch] text-[15px] leading-relaxed text-muted-foreground">{texto}</p>
-        {itens ? (
-          <ul className="mt-5 grid gap-2">
-            {itens.map((item) => (
-              <li key={item} className="flex items-start gap-2.5 text-sm">
-                <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-content-center rounded-full bg-acentoclaro">
-                  <Check className="size-3 text-acento" strokeWidth={3} />
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-    </section>
-  )
-}
-
-export function TelaInicio({ aoAbrirSistema, aoVerPrecos, aoVerExemplo, aoVerAlimentos }: TelaInicioProps) {
+/**
+ * Landing no estilo da referência Spora (mockup landing v2, spec estilo-spora).
+ * Foto só no topo (D-22); daqui para baixo, texto, números verdadeiros e telas reais.
+ */
+export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
   return (
     <>
-      {/* Herói: a frase, uma ação, e o produto logo abaixo. */}
-      <section className="relative isolate overflow-hidden bg-[image:var(--gradient-brand-soft)]">
-        <GridPattern squares={CELULAS} className="[mask-image:radial-gradient(120%_80%_at_50%_10%,#000_30%,transparent_75%)]" />
-
-        <div className="relative mx-auto grid max-w-[760px] justify-items-center gap-5 px-4 pb-10 pt-14 text-center sm:px-8 sm:pt-20">
-          <span className="inline-flex items-center gap-2 rounded-full bg-acentoclaro px-3 py-1 text-xs font-semibold text-acento">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-laranja" />
-            Grátis para começar
-          </span>
-
-          <h1 className="font-titulo text-[clamp(30px,4.6vw,50px)] font-semibold leading-[1.1] tracking-[-0.8px] text-balance">
-            Todo software diz que faltou cálcio. O MetaNutri diz <TextHighlight delay={0.45}>o que comer</TextHighlight>.
-          </h1>
-
-          <p className="max-w-[48ch] text-base leading-relaxed text-muted-foreground">
-            Veja o que falta no plano e receba sugestões de alimentos do dia a dia, com a quantidade certa em gramas e em medida
-            caseira.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={aoAbrirSistema} className={botaoPrincipal}>
-              Começar grátis
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </button>
-            <button type="button" onClick={aoVerExemplo} className={botaoSecundario}>
-              Ver um plano pronto
-            </button>
-          </div>
-
-          <p className="text-xs text-muted-foreground">Sem cartão · Sem instalar nada</p>
-        </div>
-
-        <div className="relative mx-auto max-w-[900px] px-4 pb-14 sm:px-8">
-          <Captura
-            src="imagens/adequacao.png"
-            alt="Tela de nutrientes do MetaNutri: cálcio, ferro e magnésio abaixo do recomendado, cada um com o botão Cobrir."
-            cortada
-          />
-        </div>
-      </section>
-
-      {/* Como funciona: três passos. O menu leva direto para cá. */}
-      <section id="como-funciona" className="scroll-mt-24 border-y border-bordersubtle bg-surfacebrandsoft">
-        <div className="mx-auto max-w-[1080px] px-4 py-12 sm:px-8">
-          <h2 className="text-center font-titulo text-[clamp(22px,2.6vw,30px)] font-semibold tracking-[-0.3px]">Como funciona</h2>
-          <ol className="mt-8 grid gap-6 md:grid-cols-3">
-            {PASSOS.map(([titulo, texto], i) => (
-              <li key={titulo} className="flex gap-4 rounded-2xl bg-card p-5 shadow-sm">
-                <span className="numeros grid size-9 shrink-0 place-content-center rounded-full bg-acentofundo text-sm font-bold text-textoacento">
-                  {i + 1}
-                </span>
-                <div>
-                  <h3 className="font-titulo text-base font-semibold">{titulo}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{texto}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <Recurso
-        rotulo="O diferencial"
-        titulo="Faltou cálcio? Aparece o que comer, e quanto."
-        texto="Outros programas só mostram que está faltando. O MetaNutri sugere até cinco alimentos de grupos diferentes, com a quantidade que resolve e as calorias que isso soma no dia."
-        itens={['Quantidade em gramas e em medida caseira', 'Alimentos do dia a dia, não de receita rara', 'Um clique coloca no plano']}
-      >
-        <Captura
-          src="imagens/cobrir.png"
-          alt="Sugestões para completar o cálcio: cada alimento com a quantidade, quanto da falta ele cobre e as calorias."
-          cortada
-          className="mx-auto max-w-[420px]"
-        />
-      </Recurso>
-
-      <Recurso
-        rotulo="Proteína, carboidrato e gordura"
-        titulo="Você vê se está na medida enquanto monta"
-        texto="Cada um mostra a faixa recomendada para a idade e avisa em palavras simples: “dentro da faixa”, “faltam 6 pontos”, “passou um pouco”."
-        invertida
-      >
-        <Captura src="imagens/macros.png" alt="Medidor de proteína, carboidrato e gordura com a faixa recomendada de cada um." className="mx-auto max-w-[340px]" />
-      </Recurso>
-
-      <Recurso
-        rotulo="Acompanhamento"
-        titulo="O paciente marca no celular o que fez no dia"
-        texto="O plano vira uma lista curta num link, sem baixar aplicativo. Você vê quem está seguindo e quem sumiu, antes da próxima consulta."
-      >
-        <div className="relative pb-14">
-          <Captura src="imagens/missoes-paciente.png" alt="Tela do paciente no celular com as tarefas do dia." className="mx-auto block max-w-[270px]" cortada />
-          <Captura
-            src="imagens/adesao.png"
-            alt="Lista de pacientes com dados de exemplo: um sumido, um em atenção e um em dia."
-            className="absolute bottom-0 left-0"
-          />
-        </div>
-        <p className="mt-3 text-center text-xs text-muted-foreground">Telas do MetaNutri com dados de exemplo.</p>
-      </Recurso>
-
-      {/* O resto do produto, em uma linha cada. */}
-      <section className="mx-auto max-w-[1080px] px-4 pb-12 sm:px-8">
-        <ul className="grid gap-3 rounded-2xl border border-bordersubtle bg-card p-6 sm:grid-cols-2">
-          {EXTRAS.map(([Icone, texto]) => (
-            <li key={texto} className="flex items-center gap-3 text-sm">
-              <span aria-hidden="true" className="grid size-9 shrink-0 place-content-center rounded-xl bg-acentoclaro text-acento">
-                <Icone className="size-4" />
-              </span>
-              {texto}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Honestidade da tabela: o que separa o produto dos outros. Curto. */}
-      <section className="border-y border-bordersubtle bg-surfacebrandsoft">
-        <div className="mx-auto grid max-w-[1080px] gap-8 px-4 py-12 sm:px-8 md:grid-cols-2 md:gap-14">
-          <div>
-            <h2 className="font-titulo text-[clamp(22px,2.6vw,30px)] font-semibold tracking-[-0.3px]">Sem número inventado</h2>
-            <p className="mt-3 max-w-[42ch] text-[15px] leading-relaxed text-muted-foreground">
-              A tabela brasileira de alimentos tem lacunas. Quando um nutriente não foi medido, o MetaNutri avisa, em vez de contar
-              como zero e fechar a conta errado.
-            </p>
-            <button
-              type="button"
-              onClick={aoVerAlimentos}
-              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-acento underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <section aria-labelledby="titulo-inicio" className="overflow-hidden px-4 pb-12 sm:px-8">
+        <div className="mx-auto max-w-[1216px]">
+          <div className="relative">
+            <p
+              aria-hidden="true"
+              className="pointer-events-none select-none text-center font-marca text-[clamp(88px,19vw,250px)] font-bold leading-none tracking-[-0.05em] text-card"
             >
-              Ver a tabela de alimentos
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </button>
+              metanutri
+            </p>
+            <img
+              src={`${BASE}imagens/pratos-heroi.webp`}
+              srcSet={`${BASE}imagens/pratos-heroi-800.webp 800w, ${BASE}imagens/pratos-heroi.webp 1600w`}
+              sizes="(max-width: 640px) 92vw, 900px"
+              width={1600}
+              height={712}
+              decoding="async"
+              alt="Três pratos vistos de cima: salada com grão-de-bico, tigela com tofu e legumes, prato com ovo e tomate."
+              className="relative mx-auto -mt-[clamp(56px,13vw,190px)] h-auto w-[92%] max-w-[900px]"
+            />
           </div>
-          <div>
-            {LACUNAS_DA_BASE.map((l) => (
-              <div key={l.rotulo} className="grid gap-1.5 border-b border-bordersubtle py-3.5 last:border-0">
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="numeros font-titulo text-2xl font-semibold">{l.valor}</span>
-                  <span className="max-w-[26ch] text-right text-sm text-muted-foreground">{l.rotulo}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-border">
-                  <div className="h-full rounded-full bg-laranja" style={{ width: `${l.proporcao}%` }} />
-                </div>
-              </div>
-            ))}
+
+          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.9fr_auto] lg:items-end">
+            <div>
+              <Button onClick={() => rolarAte('como-funciona')}>Ver como funciona</Button>
+              <h1 id="titulo-inicio" className="mt-4 text-[clamp(34px,5vw,52px)] font-bold leading-[1.02]">
+                Faltou cálcio?
+                <br />O MetaNutri diz
+                <br />o que comer.
+              </h1>
+            </div>
+            <p className="max-w-[42ch] text-sm leading-relaxed text-muted-foreground">
+              Monte o plano e veja o que falta de vitaminas e minerais. O MetaNutri sugere alimentos do dia a dia, com a quantidade em gramas e em medida
+              caseira.
+            </p>
+            <div className="grid grid-cols-2 gap-3 lg:w-[400px]">
+              <CartaoNumero valor="16" rotulo="nutrientes" apoio="conferidos em cada plano" aoClicar={() => rolarAte('o-diferencial')} />
+              <CartaoNumero valor="597" rotulo="alimentos" apoio="da tabela brasileira (TACO)" aoClicar={() => rolarAte('fontes')} />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Fechamento: a faixa teal, com a mesma ação do topo. */}
-      <section className="bg-surfacebrand text-textonbrand">
-        <div className="mx-auto grid max-w-[760px] justify-items-center gap-4 px-4 py-16 text-center sm:px-8">
-          <Logo variante="escuro" soSimbolo tamanho={40} />
-          <h2 className="font-titulo text-[clamp(22px,3vw,34px)] font-semibold tracking-[-0.3px] text-textonbrand text-balance">
+      <section aria-labelledby="titulo-problema" className="rounded-t-[36px] bg-card px-4 pb-20 pt-16 sm:px-14">
+        <div className="mx-auto max-w-[1216px]">
+          <RotuloSecao>O problema</RotuloSecao>
+          <h2 id="titulo-problema" className="ml-auto mt-4 max-w-[26ch] text-right text-[clamp(26px,3.4vw,36px)] font-semibold leading-tight">
+            Todo programa avisa que faltou ferro. <span className="text-muted-foreground">Nenhum diz o que pôr no prato para fechar a conta.</span>
+          </h2>
+          <p className="mt-4 text-right text-sm text-muted-foreground">O MetaNutri mostra o que falta e já sugere o alimento, com a quantidade.</p>
+
+          <div className="mt-14 grid gap-4 md:grid-cols-[1fr_1fr_1.3fr]">
+            <CartaoNumero tom="cinza" valor="5" rotulo="sugestões" apoio="de alimento para cada nutriente que falta" />
+            <CartaoNumero tom="cinza" valor="g + colher" rotulo="quantidade" apoio="em gramas e em medida caseira" />
+            <CartaoNumero tom="teal" valor="57%" rotulo="dos alimentos da TACO" apoio="não têm vitamina A medida. Aqui a falta de dado aparece, nunca vira zero." />
+          </div>
+
+          <div id="como-funciona" className="mt-28 scroll-mt-24">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <RotuloSecao>Como funciona</RotuloSecao>
+                <h2 className={`${TITULO_SECAO} max-w-[16ch]`}>Um plano completo em minutos</h2>
+              </div>
+              <p className="max-w-[34ch] text-sm text-muted-foreground">Três passos, sem planilha e sem conta de cabeça.</p>
+            </div>
+            <ol className="mt-9 grid gap-6 md:grid-cols-3">
+              {PASSOS.map((passo) => (
+                <li key={passo.n} className="border-t border-border pt-5">
+                  <span className="font-titulo text-sm font-bold text-acento">{passo.n}</span>
+                  <h3 className="mt-2 text-xl font-bold">{passo.titulo}</h3>
+                  <p className="mt-2 max-w-[30ch] text-sm leading-relaxed text-muted-foreground">{passo.texto}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div id="o-diferencial" className="mt-28 grid scroll-mt-24 items-center gap-8 rounded-[32px] bg-surfacerow p-6 sm:p-12 lg:grid-cols-[1fr_1.15fr]">
+            <div>
+              <RotuloSecao>O diferencial</RotuloSecao>
+              <h2 className={`${TITULO_SECAO} max-w-[14ch]`}>O diferencial, na tela de verdade</h2>
+              <p className="mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
+                Cálcio abaixo do recomendado? Um clique mostra o que comer e quanto. O paciente acompanha pelo celular.
+              </p>
+              <Button variant="laranja" className="mt-6" onClick={aoComecar}>
+                Começar grátis
+                <ArrowUpRight aria-hidden="true" />
+              </Button>
+            </div>
+            <div className="relative min-h-[400px]">
+              <figure className="absolute left-0 top-0 h-[370px] w-[min(300px,80%)] overflow-hidden rounded-[20px] bg-card px-4 pt-4 shadow-raised">
+                <img src={`${BASE}imagens/cobrir.png`} alt="Tela do botão Cobrir sugerindo rúcula, iogurte e sardinha para completar o cálcio." className="w-full" loading="lazy" />
+              </figure>
+              <figure className="absolute bottom-0 right-0 h-[280px] w-[min(240px,62%)] overflow-hidden rounded-[20px] border-[6px] border-card bg-surfacerow shadow-raised">
+                <img src={`${BASE}imagens/missoes-paciente.png`} alt="Tela de missões do paciente com 2 de 5 missões feitas no dia." className="w-full" loading="lazy" />
+              </figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="titulo-fecho" className="bg-surfacebrand px-4 py-14 sm:px-14">
+        <div className="mx-auto flex max-w-[1216px] flex-wrap items-center justify-between gap-6">
+          <h2 id="titulo-fecho" className="max-w-[18ch] text-[clamp(26px,3.2vw,34px)] font-bold leading-tight text-textonbrand">
             Monte o próximo plano em minutos
           </h2>
-          <p className="max-w-[44ch] text-[15px] text-textonbrandmuted">Grátis para começar. Veja os planos quando precisar de mais pacientes.</p>
-          <div className="mt-1 flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={aoAbrirSistema} className={botaoPrincipal}>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="laranja" onClick={aoComecar}>
               Começar grátis
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={aoVerPrecos}
-              className="inline-flex min-h-11 items-center rounded-full border border-borderonbrand px-6 text-sm font-semibold text-textonbrand transition-colors hover:bg-borderonbrand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-textonbrand"
-            >
+              <ArrowUpRight aria-hidden="true" />
+            </Button>
+            <Button variant="outline" className="border-borderonbrand bg-transparent text-textonbrand hover:border-textonbrand hover:text-textonbrand" onClick={aoVerPrecos}>
               Ver preços
-            </button>
+            </Button>
           </div>
         </div>
       </section>

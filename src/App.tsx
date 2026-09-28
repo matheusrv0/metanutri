@@ -103,10 +103,8 @@ function Conteudo() {
     return (
       <MolduraPublica atual="inicio" temSessao={conta.sessao !== null} aoIrPara={irPara}>
         <TelaInicio
-          aoAbrirSistema={() => navegar({ tela: 'painel' })}
+          aoComecar={() => navegar(conta.sessao ? { tela: 'painel' } : rotaCriarConta(null, 'mensal'))}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
-          aoVerExemplo={verExemplo}
-          aoVerAlimentos={() => navegar({ tela: 'alimentos' })}
         />
       </MolduraPublica>
     )

@@ -1,0 +1,49 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { TelaInicio } from './TelaInicio.tsx'
+
+const titulos = () => screen.getAllByRole('heading').map((h) => h.textContent ?? '')
+const posicao = (padrao: RegExp) => titulos().findIndex((t) => padrao.test(t))
+
+describe('TelaInicio', () => {
+  it('CA-112: topo, problema, como funciona, o diferencial e a faixa final, nesta ordem', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    const ordem = [/Faltou cálcio/, /Todo programa avisa/, /Um plano completo em minutos/, /O diferencial, na tela de verdade/, /Monte o próximo plano/].map(posicao)
+    expect(ordem.every((p) => p >= 0)).toBe(true)
+    expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)
+  })
+
+  it('CA-113: o título do topo é o combinado', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio?O MetaNutri dizo que comer.')
+  })
+
+  it('CA-114: só números verdadeiros', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    for (const numero of ['16', '597', '5', '57%']) expect(screen.getByText(numero)).toBeInTheDocument()
+  })
+
+  it('CA-115: o diferencial mostra telas reais do app', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    expect(screen.getByAltText(/botão Cobrir/)).toHaveAttribute('src', expect.stringContaining('imagens/cobrir.png'))
+    expect(screen.getByAltText(/missões do paciente/)).toHaveAttribute('src', expect.stringContaining('imagens/missoes-paciente.png'))
+  })
+
+  it('CA-117: Começar grátis e Ver preços chamam quem manda', async () => {
+    const aoComecar = vi.fn()
+    const aoVerPrecos = vi.fn()
+    render(<TelaInicio aoComecar={aoComecar} aoVerPrecos={aoVerPrecos} />)
+    const usuario = userEvent.setup()
+    for (const botao of screen.getAllByRole('button', { name: /Começar grátis/ })) await usuario.click(botao)
+    expect(aoComecar).toHaveBeenCalledTimes(2)
+    await usuario.click(screen.getByRole('button', { name: 'Ver preços' }))
+    expect(aoVerPrecos).toHaveBeenCalledOnce()
+  })
+
+  it('CA-119: a foto do topo tem o tamanho reservado', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    const foto = screen.getByAltText(/Três pratos/)
+    expect(foto).toHaveAttribute('width', '1600')
+    expect(foto).toHaveAttribute('height', '712')
+  })
+})
