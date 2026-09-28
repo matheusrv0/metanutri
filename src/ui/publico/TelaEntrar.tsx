@@ -47,7 +47,10 @@ export function TelaEntrar({ conta, aoEntrar, aoAbrirSistema }: TelaEntrarProps)
 
     setErro(null)
     setEnviando(true)
-    const resultado = modo === 'entrar' ? await conta.entrar(email, senha) : await conta.cadastrar(email, senha)
+    const resultado =
+      modo === 'entrar'
+        ? await conta.entrar(email, senha)
+        : await conta.cadastrar({ nome: nomeSugerido(email), email, senha, planoDesejado: 'free', versaoTermos: '' })
     setEnviando(false)
 
     if (!resultado.ok) {

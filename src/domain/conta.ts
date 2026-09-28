@@ -215,11 +215,11 @@ const SEGUINTE: Readonly<Record<IdPlano, IdPlano | null>> = { free: 'solo', estu
 /** O plano para onde o aviso de limite aponta (CA-177). */
 export const planoSeguinte = (plano: IdPlano): IdPlano | null => SEGUINTE[plano]
 
+/** Quem está conectado. O plano não mora aqui: vem da assinatura, que só o servidor grava. */
 export interface Sessao {
   readonly id: string
   readonly email: string
   readonly nome: string
-  readonly plano: IdPlano
 }
 
 export type ErroConta =

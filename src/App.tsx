@@ -33,6 +33,7 @@ import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaEntrar } from './ui/publico/TelaEntrar.tsx'
 import { TelaInicio } from './ui/publico/TelaInicio.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
+import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
@@ -50,6 +51,7 @@ function Conteudo() {
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const conta = useConta()
+  const { assinatura } = useAssinatura(conta.sessao !== null)
   const { fonte } = useAcompanhamentos()
 
   const recente = casos[0]
@@ -173,7 +175,7 @@ function Conteudo() {
       <Estrutura {...base} titulo="Adesão" subtitulo="Quem está sumindo">
         <TelaAdesao
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'plano' })}
-          {...(conta.sessao ? { plano: conta.sessao.plano } : {})}
+          {...(conta.sessao ? { plano: assinatura.plano } : {})}
         />
       </Estrutura>
     )
@@ -287,7 +289,7 @@ function Conteudo() {
                 pacienteId={registro.caso.pacienteId}
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
-                {...(conta.sessao ? { plano: conta.sessao.plano } : {})}
+                {...(conta.sessao ? { plano: assinatura.plano } : {})}
               />
             </div>
           ) : (

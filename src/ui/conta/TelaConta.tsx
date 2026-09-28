@@ -21,9 +21,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
   const [erroCobranca, setErroCobranca] = useState<string | null>(null)
   const { assinatura, carregando, assinar } = useAssinatura(conta.sessao !== null)
 
-  // O plano que vale é o da assinatura paga; o da sessão é só o que ficou gravado no
-  // cadastro. Sem isso, quem criasse a assinatura e não pagasse usaria o plano pago.
-  const plano = planoPorId(assinatura.plano) ?? (conta.sessao ? planoPorId(conta.sessao.plano) : null)
+  const plano = planoPorId(assinatura.plano)
 
   const irPagar = async (escolhido: IdPlano) => {
     setErroCobranca(null)
