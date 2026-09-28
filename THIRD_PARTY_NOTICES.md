@@ -59,3 +59,10 @@ offline. As fontes **Urbanist**, **Manrope** e **Inter** são distribuídas sob 
 A partir de 28/09/2026, a spec estilo-spora troca as fontes de título e de texto: **Urbanist** entra no lugar de
 Archivo (`--font-display`) e **Manrope** no lugar de Figtree (`--font-corpo`). Distribuídas sob a SIL Open Font
 License 1.1 e embutidas via `@fontsource-variable` para o app continuar funcionando offline.
+
+## University Domains List (domínios de faculdades)
+
+Base da lista de domínios de e-mail de faculdades brasileiras do plano Estudante
+(`src/data/dominios-faculdades-br.json` e `supabase/005-estudante.sql`), somada a um
+complemento revisado à mão. Gerada por `scripts/dominios-faculdades.mjs`.
+Fonte: https://github.com/Hipo/university-domains-list — Licença MIT, Copyright (c) 2016 Hipo.
