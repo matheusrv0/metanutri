@@ -6,8 +6,11 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
+import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
+import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Separator } from '@ds/componentes/display/separator.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
@@ -472,6 +475,23 @@ export function TelaDesignSystem() {
           <Separator />
 
           <EtapasDoCaso abaAtual={aba} aoEscolher={setAba} />
+        </Secao>
+
+        <Secao
+          nome="CartaoNumero · RotuloSecao · LinhaLista"
+          arquivo="display/"
+          descricao="Referência Spora: número grande, rótulo com ponto e linha cinza. Seta só onde leva a algum lugar"
+        >
+          <RotuloSecao>Como funciona</RotuloSecao>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <CartaoNumero valor="12" rotulo="Planos" apoio="7 mexidos em 14 dias" aoClicar={() => undefined} />
+            <CartaoNumero valor="9" rotulo="Dias trabalhados" apoio="nos últimos 14 dias" tom="cinza" />
+            <CartaoNumero valor="2" rotulo="Precisa de atenção" apoio="Coisas que atrapalham na entrega" tom="teal" aoClicar={() => undefined} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <LinhaLista titulo="Ana · reeducação" detalhe="Atendimento completo · há 2 horas" aoClicar={() => undefined} />
+            <LinhaLista titulo="1 plano sem nome" />
+          </div>
         </Secao>
 
         <Secao nome="CartaoDestaque" arquivo="nutricao/CartaoDestaque.tsx" descricao="Três tons; grafite é o herói, um por tela. Cor só no ocre de atenção">

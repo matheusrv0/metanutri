@@ -6,9 +6,9 @@
  * arquivo por arquivo, para o Vite separar melhor o pacote — mas componente novo
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
- * Os 25 componentes do sistema, na taxonomia do design system:
+ * Os 28 componentes do sistema, na taxonomia do design system:
  *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
- *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon
+ *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista
  *   overlay     Dialog · Sheet · DropdownMenu
  *   navigation  Tabs · ItemMenu · EtapasDoCaso
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
@@ -40,6 +40,9 @@ export { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, Ta
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './componentes/display/tooltip.tsx'
 export { Icon, type IconProps, type PastilhaIcone, type TamanhoIcone } from './componentes/display/Icon.tsx'
 export { Fontes, type ItemFonte } from './componentes/display/Fontes.tsx'
+export { CartaoNumero, type TomCartaoNumero } from './componentes/display/CartaoNumero.tsx'
+export { RotuloSecao } from './componentes/display/RotuloSecao.tsx'
+export { LinhaLista } from './componentes/display/LinhaLista.tsx'
 
 // overlay
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './componentes/overlay/dialog.tsx'
