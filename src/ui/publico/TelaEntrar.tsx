@@ -1,7 +1,7 @@
 import { CheckCircle2, Info, Loader2, TriangleAlert } from 'lucide-react'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useId, useState, type FormEvent } from 'react'
-import { MENSAGEM_ERRO, SENHA_MINIMA, validarCadastro, validarEntrada, type ErroConta } from '@/domain/conta.ts'
+import { MENSAGEM_ERRO, nomeSugerido, SENHA_MINIMA, validarCadastro, validarEntrada, type ErroConta } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
@@ -36,7 +36,10 @@ export function TelaEntrar({ conta, aoEntrar, aoAbrirSistema }: TelaEntrarProps)
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault()
     setAviso(null)
-    const problema = modo === 'entrar' ? validarEntrada(email, senha) : validarCadastro(email, senha, confirmacao)
+    const problema =
+      modo === 'entrar'
+        ? validarEntrada(email, senha)
+        : (validarCadastro({ nome: nomeSugerido(email), email, senha, aceitouTermos: true }) ?? (senha !== confirmacao ? 'senha-diferente' : null))
     if (problema) {
       setErro(problema)
       return

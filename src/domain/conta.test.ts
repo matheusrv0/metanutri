@@ -1,19 +1,24 @@
 import {
   comparativoDosPlanos,
   descontoAnualPct,
+  ehCiclo,
+  ehIdPlano,
   ehPacienteAtivo,
   estadoDoLimite,
   LIMITES_ATIVOS,
   mensalizadoDoAnual,
+  MENSAGEM_ERRO,
   nomeSugerido,
   pacientesAtivos,
-  podeGerarLink,
   planoPorId,
+  planoSeguinte,
+  podeGerarLink,
   PLANOS,
   PLANOS_COMPARADOS,
   SENHA_MINIMA,
   validarCadastro,
   validarEntrada,
+  valorNoCiclo,
 } from './conta.ts'
 
 describe('Planos de assinatura', () => {
@@ -42,11 +47,11 @@ describe('Planos de assinatura', () => {
     expect(planoPorId('pro')?.limitePacientesAtivos).toBeNull()
   })
 
-  it('Free e Estudante carregam marca no PDF; só o Estudante exige comprovante', () => {
+  it('Free e Estudante carregam marca no PDF; só o Estudante exige e-mail de faculdade', () => {
     // O Estudante entrou na lista em 27/09: conta de estágio sai marcada, como no
     // WebDiet, porque o documento não pode passar por atendimento profissional.
     expect(PLANOS.filter((p) => p.marcaNoPdf).map((p) => p.id)).toEqual(['free', 'estudante'])
-    expect(PLANOS.filter((p) => p.exigeComprovante).map((p) => p.id)).toEqual(['estudante'])
+    expect(PLANOS.filter((p) => p.exigeEmailDeFaculdade).map((p) => p.id)).toEqual(['estudante'])
   })
 
   it('o anual é sempre mais barato que doze meses do mensal', () => {
@@ -147,9 +152,13 @@ describe('Validação do formulário de conta', () => {
     expect(validarEntrada('maria@exemplo.com', '1234567')).toBe('senha-curta')
   })
 
-  it('no cadastro, cobra a confirmação igual', () => {
-    expect(validarCadastro('maria@exemplo.com', 'senhaforte1', 'senhaforte2')).toBe('senha-diferente')
-    expect(validarCadastro('maria@exemplo.com', 'senhaforte1', 'senhaforte1')).toBeNull()
+  it('CA-129: cadastro pede nome, e-mail válido, senha de 8 e o aceite dos termos', () => {
+    const certo = { nome: 'Maria', email: 'maria@exemplo.com', senha: 'senhaforte1', aceitouTermos: true }
+    expect(validarCadastro(certo)).toBeNull()
+    expect(validarCadastro({ ...certo, nome: '   ' })).toBe('nome-vazio')
+    expect(validarCadastro({ ...certo, email: 'maria' })).toBe('email-invalido')
+    expect(validarCadastro({ ...certo, senha: '1234567' })).toBe('senha-curta')
+    expect(validarCadastro({ ...certo, aceitouTermos: false })).toBe('termos')
   })
 
   it('espaço em volta do e-mail não invalida', () => {
@@ -237,5 +246,53 @@ describe('Comparativo da página de preços', () => {
 
   it('nenhuma linha fica sem rótulo', () => {
     for (const linha of linhas) expect(linha.rotulo.length).toBeGreaterThan(3)
+  })
+})
+
+describe('Ciclo de cobrança (CA-159)', () => {
+  it('reconhece só mensal e anual', () => {
+    expect(ehCiclo('anual')).toBe(true)
+    expect(ehCiclo('semestral')).toBe(false)
+    expect(ehCiclo(undefined)).toBe(false)
+  })
+
+  it('o que se paga de uma vez: o mês no mensal, o ano no anual', () => {
+    const solo = planoPorId('solo')
+    if (!solo) throw new Error('Solo sumiu')
+    expect(valorNoCiclo(solo, 'mensal')).toBe(34.9)
+    expect(valorNoCiclo(solo, 'anual')).toBe(299)
+  })
+
+  it('plano sem anual cobra o mensal mesmo no anual', () => {
+    const clinica = planoPorId('clinica')
+    if (!clinica) throw new Error('Clínica sumiu')
+    expect(valorNoCiclo(clinica, 'anual')).toBe(149)
+  })
+
+  it('reconhece id de plano e recusa o que não existe', () => {
+    expect(ehIdPlano('pro')).toBe(true)
+    expect(ehIdPlano('ouro')).toBe(false)
+  })
+})
+
+describe('Plano seguinte, para o aviso de limite (CA-177)', () => {
+  it.each([
+    ['free', 'solo'],
+    ['estudante', 'solo'],
+    ['solo', 'pro'],
+    ['pro', 'clinica'],
+    ['clinica', null],
+  ] as const)('%s sobe para %s', (atual, seguinte) => {
+    expect(planoSeguinte(atual)).toBe(seguinte)
+  })
+})
+
+describe('Mensagens de erro da conta', () => {
+  it('toda mensagem existe e é frase de verdade', () => {
+    for (const texto of Object.values(MENSAGEM_ERRO)) expect(texto.length).toBeGreaterThan(10)
+  })
+
+  it('CA-136: credencial errada não diz qual dos dois errou', () => {
+    expect(MENSAGEM_ERRO['credencial-invalida']).toBe('E-mail ou senha não conferem.')
   })
 })

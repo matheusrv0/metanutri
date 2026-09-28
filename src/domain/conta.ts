@@ -1,7 +1,12 @@
-// Conta e assinatura. O sistema funciona inteiro sem conta: ela serve para levar
-// os dados para outro aparelho e, no futuro, para cobrar.
+// Conta e assinatura. Com o servidor configurado, a conta é obrigatória (spec
+// estilo-spora, D-23); sem servidor, o app roda inteiro no modo local.
 
 export type IdPlano = 'free' | 'estudante' | 'solo' | 'pro' | 'clinica'
+
+/** Como a assinatura é cobrada. O anual cobra o ano inteiro de uma vez, a cada 12 meses (spec estilo-spora, D-26). */
+export type Ciclo = 'mensal' | 'anual'
+
+export const ehCiclo = (valor: unknown): valor is Ciclo => valor === 'mensal' || valor === 'anual'
 
 export interface PlanoAssinatura {
   readonly id: IdPlano
@@ -26,8 +31,8 @@ export interface PlanoAssinatura {
    * 8.234/1991 pede de quem ainda não tem CRN.
    */
   readonly usoNaoComercial: boolean
-  /** Só entra com comprovante de matrícula. */
-  readonly exigeComprovante: boolean
+  /** Só vale para conta criada com e-mail de faculdade (spec estilo-spora, D-28). */
+  readonly exigeEmailDeFaculdade: boolean
   /** O PDF sai com a marca do MetaNutri em vez da marca de quem atende. */
   readonly marcaNoPdf: boolean
   /** O que muda de verdade neste plano. */
@@ -43,7 +48,8 @@ export interface PlanoAssinatura {
  * O plano Estudante segue o modelo do WebDiet, decidido em 27/09: a pessoa usa o
  * sistema de verdade, mas a conta é de **uso não comercial** — no máximo 3 links de
  * missões, marca no PDF e aviso na tela do paciente. É o que concilia o estágio real
- * com a Lei 8.234/1991, que reserva a prescrição a quem tem CRN.
+ * com a Lei 8.234/1991, que reserva a prescrição a quem tem CRN. A conta entra pelo
+ * e-mail da faculdade, aprovada pelo servidor (spec estilo-spora, D-28).
  */
 export const PLANOS: readonly PlanoAssinatura[] = [
   {
@@ -57,7 +63,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limitePacientesAtivos: 2,
     limiteLinksPaciente: 2,
     usoNaoComercial: false,
-    exigeComprovante: false,
+    exigeEmailDeFaculdade: false,
     marcaNoPdf: true,
     recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona sem internet'],
     inclui: ['Já vem com:', 'Adequação de micronutrientes', 'Missões diárias do paciente', 'Exportar Word e PDF'],
@@ -69,11 +75,11 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     mensal: 0,
     anual: 0,
     destaque: false,
-    acaoTexto: 'Enviar comprovante',
+    acaoTexto: 'Usar o e-mail da faculdade',
     limitePacientesAtivos: 10,
     limiteLinksPaciente: 3,
     usoNaoComercial: true,
-    exigeComprovante: true,
+    exigeEmailDeFaculdade: true,
     marcaNoPdf: true,
     recursos: ['10 pacientes ativos', 'Até 3 links de missões', 'Grátis até a formatura'],
     inclui: ['Tudo do Free, mais:', 'Documento no modelo do estágio', 'Cadastro de produto por código de barras'],
@@ -89,7 +95,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limitePacientesAtivos: 25,
     limiteLinksPaciente: 25,
     usoNaoComercial: false,
-    exigeComprovante: false,
+    exigeEmailDeFaculdade: false,
     marcaNoPdf: false,
     recursos: ['25 pacientes ativos', 'Seu logo nos documentos', 'Dados em qualquer aparelho'],
     inclui: ['Tudo do Grátis, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
@@ -105,7 +111,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limitePacientesAtivos: null,
     limiteLinksPaciente: null,
     usoNaoComercial: false,
-    exigeComprovante: false,
+    exigeEmailDeFaculdade: false,
     marcaNoPdf: false,
     recursos: ['Pacientes ilimitados', 'Painel de micros completo', 'Dados em qualquer aparelho'],
     inclui: ['Tudo do Solo, mais:', 'Relatório de adesão por paciente', 'Modelos próprios de documento'],
@@ -121,12 +127,14 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limitePacientesAtivos: null,
     limiteLinksPaciente: null,
     usoNaoComercial: false,
-    exigeComprovante: false,
+    exigeEmailDeFaculdade: false,
     marcaNoPdf: false,
     recursos: ['Até 4 nutricionistas', 'Pacientes compartilhados', 'Painel do gestor'],
     inclui: ['Tudo do Pro, mais:', 'R$ 35 por nutricionista extra', 'Preceptor revisa e aprova', 'Suporte por WhatsApp'],
   },
 ]
+
+export const ehIdPlano = (valor: unknown): valor is IdPlano => typeof valor === 'string' && PLANOS.some((p) => p.id === valor)
 
 /** Plano de quem cria conta sem comprovar nada. */
 export const PLANO_PADRAO: IdPlano = 'free'
@@ -197,6 +205,16 @@ export function descontoAnualPct(plano: PlanoAssinatura): number {
   return Math.round(((doze - plano.anual) / doze) * 100)
 }
 
+/** O que se paga de uma vez no ciclo: o mês no mensal, o ano no anual. Sem anual, vale o mensal. */
+export function valorNoCiclo(plano: PlanoAssinatura, ciclo: Ciclo): number {
+  return ciclo === 'anual' && plano.anual > 0 ? plano.anual : plano.mensal
+}
+
+const SEGUINTE: Readonly<Record<IdPlano, IdPlano | null>> = { free: 'solo', estudante: 'solo', solo: 'pro', pro: 'clinica', clinica: null }
+
+/** O plano para onde o aviso de limite aponta (CA-177). */
+export const planoSeguinte = (plano: IdPlano): IdPlano | null => SEGUINTE[plano]
+
 export interface Sessao {
   readonly id: string
   readonly email: string
@@ -205,21 +223,31 @@ export interface Sessao {
 }
 
 export type ErroConta =
+  | 'nome-vazio'
   | 'email-invalido'
   | 'senha-curta'
   | 'senha-diferente'
+  | 'termos'
   | 'credencial-invalida'
   | 'email-em-uso'
+  | 'email-nao-confirmado'
+  | 'link-vencido'
+  | 'muitas-tentativas'
   | 'sem-servidor'
   | 'falha-rede'
 
 export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
+  'nome-vazio': 'Digite como quer ser chamada ou chamado.',
   'email-invalido': 'Digite um e-mail válido, como voce@exemplo.com.',
   'senha-curta': 'A senha precisa de pelo menos 8 caracteres.',
   'senha-diferente': 'As duas senhas não são iguais.',
+  termos: 'Para criar a conta, marque que leu e aceita os termos.',
   'credencial-invalida': 'E-mail ou senha não conferem.',
-  'email-em-uso': 'Já existe conta com este e-mail. Entre em vez de criar.',
-  'sem-servidor': 'A conta na nuvem ainda não foi configurada neste aparelho. O sistema funciona normalmente sem ela.',
+  'email-em-uso': 'Este e-mail já tem conta.',
+  'email-nao-confirmado': 'Falta confirmar o e-mail. Abra o link que mandamos para você.',
+  'link-vencido': 'Este link não vale mais. Peça outro.',
+  'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
+  'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
   'falha-rede': 'Não deu para falar com o servidor. Confira a internet e tente de novo.',
 }
 
@@ -233,10 +261,19 @@ export function validarEntrada(email: string, senha: string): ErroConta | null {
   return null
 }
 
-export function validarCadastro(email: string, senha: string, confirmacao: string): ErroConta | null {
-  const erro = validarEntrada(email, senha)
+export interface DadosDoFormulario {
+  readonly nome: string
+  readonly email: string
+  readonly senha: string
+  readonly aceitouTermos: boolean
+}
+
+/** Erros do formulário de cadastro antes de qualquer chamada de rede (CA-129, CA-134a). */
+export function validarCadastro(dados: DadosDoFormulario): ErroConta | null {
+  if (dados.nome.trim() === '') return 'nome-vazio'
+  const erro = validarEntrada(dados.email, dados.senha)
   if (erro) return erro
-  if (senha !== confirmacao) return 'senha-diferente'
+  if (!dados.aceitouTermos) return 'termos'
   return null
 }
 
