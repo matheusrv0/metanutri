@@ -45,6 +45,10 @@
   --gray-800: #3a3d43;
   --gray-900: #1f2226;
 
+  /* Mesa da referência Spora (28/09/2026): o cinza quente de fundo e das linhas
+   * dentro de cartão branco. Um fio mais quente que --gray-100. */
+  --mesa: #f1f0f0;
+
   /* Verde: a única cor viva do sistema, e só para "dentro da meta".
    * Não existe verde na interface — existe verde no estado do nutriente. */
   --green-100: #dcf3e7;
@@ -87,10 +91,12 @@
    * em painel de dado: ali o laranja-âmbar já significa "abaixo da meta". */
   --brand-accent: var(--orange-500);
 
-  --bg-page: var(--gray-100);
+  --bg-page: var(--mesa);
   --bg-canvas: var(--gray-200);
   --surface-card: var(--gray-0);
   --surface-sunken: var(--gray-50);
+  /* Linha de lista dentro de cartão branco (LinhaLista, seletor em pílula). */
+  --surface-row: var(--mesa);
   --surface-hover: var(--gray-100);
   --surface-inverse: var(--teal-900);
   /* O marca-texto ganha a cor da marca em tinta clara, com o teal por cima. */
@@ -174,6 +180,7 @@
   --bg-canvas: #0c1417;
   --surface-card: #192a2f;
   --surface-sunken: #142226;
+  --surface-row: #142226;
   --surface-hover: #1f353b;
   /* No escuro a ação principal é o marfim da marca, com o teal por cima. */
   --surface-inverse: var(--ivory);
@@ -317,8 +324,9 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-2xl: 28px;
+  --radius-3xl: 24px;
   --radius-pill: 999px;
-  --radius-card: var(--radius-lg);
+  --radius-card: var(--radius-3xl);
   --radius-input: var(--radius-md);
   --radius-button: var(--radius-pill);
   --radius-panel: var(--radius-2xl);

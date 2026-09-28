@@ -90,4 +90,11 @@ describe('componentes base do design system', () => {
     expect(screen.getByRole('dialog', { name: 'Excluir plano?' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
   })
+
+  it('CA-102: cartão padrão é branco e arredondado, sem fio', () => {
+    render(<Card>conteúdo</Card>)
+    const cartao = screen.getByText('conteúdo')
+    expect(cartao.className).toContain('rounded-3xl')
+    expect(cartao.className).not.toContain('border')
+  })
 })

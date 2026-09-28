@@ -3,19 +3,19 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@ds/lib/cn.ts'
 
 /*
- * Cartão: superfície branca, raio 16, fio de 1 px e sombra macia.
+ * Cartão da referência Spora: branco, raio 24, sem fio nem sombra sobre o cinza.
  *   default  o cartão de sempre
- *   sunken   painel interno cinza, sem fio nem sombra
- *   flat     sem sombra (dentro de outro cartão)
+ *   sunken   painel interno cinza (a linha da mesa), raio 20
+ *   flat     com fio fino, para quando está sobre outra superfície branca
  *   sheen    painel de vitrine, gradiente cinza e raio 28
  * `tight` aperta o respiro para listas densas.
  */
 export const cardVariants = cva('text-card-foreground flex flex-col min-w-0', {
   variants: {
     variant: {
-      default: 'bg-card border border-border rounded-lg shadow-card',
-      sunken: 'bg-surfacesunken rounded-md',
-      flat: 'bg-card border border-border rounded-lg',
+      default: 'bg-card rounded-3xl',
+      sunken: 'bg-surfacerow rounded-2xl',
+      flat: 'bg-card ring-1 ring-inset ring-border rounded-2xl',
       sheen: 'rounded-2xl bg-[image:var(--gradient-sheen)] shadow-[var(--shadow-inset-sheen)]',
     },
     tight: { true: 'gap-3 p-3.5', false: 'gap-4 p-5' },

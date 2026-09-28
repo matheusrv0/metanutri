@@ -9,4 +9,12 @@ test.describe('Fundação visual', () => {
     expect(await fonte('body')).toContain('Manrope')
     expect(await fonte('.font-marca')).toContain('Bricolage')
   })
+
+  test('CA-102: fundo cinza de superfície e cartão com raio de 24 px', async ({ page }) => {
+    await page.goto('/#/painel')
+    const fundo = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(fundo).toBe('rgb(241, 240, 240)')
+    const raio = await page.locator('[data-slot="card"]').first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius)
+    expect(raio).toBe('24px')
+  })
 })

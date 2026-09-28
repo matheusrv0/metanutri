@@ -97,6 +97,7 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-2xl: 28px;
+  --radius-3xl: 24px;
 
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
@@ -143,6 +144,7 @@
   /* Superfícies e acentos do design system, disponíveis como utilitário */
   --color-surfacecard: var(--surface-card);
   --color-surfacesunken: var(--surface-sunken);
+  --color-surfacerow: var(--surface-row);
   --color-surfaceaccent: var(--surface-accent);
   --color-surfaceaccentsoft: var(--surface-accent-soft);
   --color-surfaceinverse: var(--surface-inverse);
