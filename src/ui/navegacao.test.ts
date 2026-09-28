@@ -1,4 +1,4 @@
-import { ABAS, escreverRota, ETAPAS, lerRota, ROTA_INICIAL } from './navegacao.ts'
+import { ABAS, ehRotaLivre, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
 
 describe('navegação por endereço', () => {
   it.each([
@@ -34,5 +34,54 @@ describe('etapas do planejador', () => {
   it('cobrem todas as abas, na ordem, numeradas a partir de 1', () => {
     expect(ETAPAS.map((e) => e.aba)).toEqual(ABAS)
     expect(ETAPAS.map((e) => e.numero)).toEqual([1, 2, 3])
+  })
+})
+
+describe('rotas da conta e do pagamento (spec estilo-spora)', () => {
+  it.each([
+    ['#/precos', { tela: 'precos' }],
+    ['#/precos/pro', { tela: 'precos', destaque: 'pro' }],
+    ['#/precos/ouro', { tela: 'precos' }],
+    ['#/criar-conta', { tela: 'criar-conta' }],
+    ['#/criar-conta/free', { tela: 'criar-conta' }],
+    ['#/criar-conta/solo', { tela: 'criar-conta', plano: 'solo' }],
+    ['#/criar-conta/solo/anual', { tela: 'criar-conta', plano: 'solo', ciclo: 'anual' }],
+    ['#/criar-conta/estudante/anual', { tela: 'criar-conta', plano: 'estudante' }],
+    ['#/criar-conta/clinica', { tela: 'criar-conta' }],
+    ['#/confirmar-email', { tela: 'confirmar-email' }],
+    ['#/confirmar-email/vencido', { tela: 'confirmar-email', vencido: true }],
+    ['#/esqueci-senha', { tela: 'esqueci-senha' }],
+    ['#/nova-senha', { tela: 'nova-senha' }],
+    ['#/nova-senha/vencido', { tela: 'nova-senha', vencido: true }],
+    ['#/termos', { tela: 'termos' }],
+    ['#/privacidade', { tela: 'privacidade' }],
+    ['#/assinar/pro/anual', { tela: 'assinar', plano: 'pro', ciclo: 'anual' }],
+    ['#/assinar/solo', { tela: 'assinar', plano: 'solo', ciclo: 'mensal' }],
+    ['#/assinar/free/mensal', { tela: 'precos' }],
+    ['#/pagamento', { tela: 'pagamento' }],
+  ] as const)('"%s"', (hash, rota) => {
+    expect(lerRota(hash)).toEqual(rota)
+  })
+
+  it('toda rota nova sobrevive à ida e volta', () => {
+    const rotas: Rota[] = [
+      { tela: 'precos', destaque: 'solo' },
+      { tela: 'criar-conta', plano: 'pro', ciclo: 'anual' },
+      { tela: 'criar-conta', plano: 'estudante' },
+      { tela: 'confirmar-email', vencido: true },
+      { tela: 'nova-senha' },
+      { tela: 'assinar', plano: 'solo', ciclo: 'mensal' },
+      { tela: 'pagamento' },
+    ]
+    for (const rota of rotas) expect(lerRota(escreverRota(rota))).toEqual(rota)
+  })
+
+  it('CA-149: telas livres abrem sem sessão; checkout, pagamento e painel não', () => {
+    expect(ehRotaLivre({ tela: 'termos' })).toBe(true)
+    expect(ehRotaLivre({ tela: 'criar-conta' })).toBe(true)
+    expect(ehRotaLivre({ tela: 'missoes', token: 'x' })).toBe(true)
+    expect(ehRotaLivre({ tela: 'assinar', plano: 'solo', ciclo: 'mensal' })).toBe(false)
+    expect(ehRotaLivre({ tela: 'pagamento' })).toBe(false)
+    expect(ehRotaLivre({ tela: 'painel' })).toBe(false)
   })
 })

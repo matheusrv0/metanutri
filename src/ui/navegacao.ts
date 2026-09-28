@@ -1,17 +1,34 @@
-// Navegação por endereço (#/casos, #/caso/<id>/<aba>, #/fontes), sem biblioteca de rotas (PLAN R-8).
+// Navegação por endereço (#/casos, #/caso/<id>/<aba>, #/assinar/solo/anual), sem biblioteca de rotas (PLAN R-8).
+import { ehCiclo, ehIdPlano, type Ciclo, type IdPlano } from '@/domain/conta.ts'
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
-/** Telas públicas: quem ainda não trabalha no sistema, ou está entrando nele. */
-export const TELAS_PUBLICAS = ['inicio', 'precos', 'entrar'] as const
+/** Os planos que se paga pelo checkout. Clínica é conversa; Free e Estudante não pagam. */
+export type PlanoPago = 'solo' | 'pro'
+export const ehPlanoPago = (valor: unknown): valor is PlanoPago => valor === 'solo' || valor === 'pro'
+
+/** Telas que abrem sem sessão, mesmo com o servidor configurado (spec estilo-spora, CA-149). */
+export const TELAS_LIVRES = ['inicio', 'precos', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'nova-senha', 'termos', 'privacidade', 'missoes'] as const
+
+/** Telas fora da moldura do app (sem menu lateral). Checkout e volta do pagamento pedem sessão. */
+export const TELAS_PUBLICAS = [...TELAS_LIVRES, 'assinar', 'pagamento'] as const
 export type TelaPublica = (typeof TELAS_PUBLICAS)[number]
 
 export type Rota =
   | { readonly tela: 'inicio' }
   // Tela do paciente: abre pelo link, no aparelho dele, sem conta e sem menu.
   | { readonly tela: 'missoes'; readonly token: string }
-  | { readonly tela: 'precos' }
+  | { readonly tela: 'precos'; readonly destaque?: IdPlano }
   | { readonly tela: 'entrar' }
+  // Sem `plano`, é o Free. Sem `ciclo`, é o mensal.
+  | { readonly tela: 'criar-conta'; readonly plano?: IdPlano; readonly ciclo?: Ciclo }
+  | { readonly tela: 'confirmar-email'; readonly vencido?: true }
+  | { readonly tela: 'esqueci-senha' }
+  | { readonly tela: 'nova-senha'; readonly vencido?: true }
+  | { readonly tela: 'termos' }
+  | { readonly tela: 'privacidade' }
+  | { readonly tela: 'assinar'; readonly plano: PlanoPago; readonly ciclo: Ciclo }
+  | { readonly tela: 'pagamento' }
   | { readonly tela: 'conta' }
   | { readonly tela: 'painel' }
   | { readonly tela: 'casos' }
@@ -29,13 +46,27 @@ export const ABAS: readonly AbaPlanejador[] = ['caso', 'plano', 'adequacao']
 
 export const ROTA_INICIAL: Rota = { tela: 'painel' }
 
+/** A rota de Criar conta, sem gravar o que é padrão (Free, mensal). Ciclo só vale para plano pago. */
+export function rotaCriarConta(plano: IdPlano | null, ciclo: Ciclo): Rota {
+  if (plano === null || plano === 'free' || plano === 'clinica') return { tela: 'criar-conta' }
+  return ciclo === 'anual' && ehPlanoPago(plano) ? { tela: 'criar-conta', plano, ciclo } : { tela: 'criar-conta', plano }
+}
+
 export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   const [tela, id, aba] = partes
   if (tela === 'missoes' && id) return { tela: 'missoes', token: id }
   if (tela === 'inicio') return { tela: 'inicio' }
-  if (tela === 'precos') return { tela: 'precos' }
+  if (tela === 'precos') return ehIdPlano(id) ? { tela: 'precos', destaque: id } : { tela: 'precos' }
   if (tela === 'entrar') return { tela: 'entrar' }
+  if (tela === 'criar-conta') return rotaCriarConta(ehIdPlano(id) ? id : null, aba === 'anual' ? 'anual' : 'mensal')
+  if (tela === 'confirmar-email') return id === 'vencido' ? { tela: 'confirmar-email', vencido: true } : { tela: 'confirmar-email' }
+  if (tela === 'esqueci-senha') return { tela: 'esqueci-senha' }
+  if (tela === 'nova-senha') return id === 'vencido' ? { tela: 'nova-senha', vencido: true } : { tela: 'nova-senha' }
+  if (tela === 'termos') return { tela: 'termos' }
+  if (tela === 'privacidade') return { tela: 'privacidade' }
+  if (tela === 'assinar') return ehPlanoPago(id) ? { tela: 'assinar', plano: id, ciclo: ehCiclo(aba) ? aba : 'mensal' } : { tela: 'precos' }
+  if (tela === 'pagamento') return { tela: 'pagamento' }
   if (tela === 'conta') return { tela: 'conta' }
   if (tela === 'alimentos') return { tela: 'alimentos' }
   if (tela === 'produtos') return { tela: 'produtos' }
@@ -59,9 +90,25 @@ export function escreverRota(rota: Rota): string {
     case 'inicio':
       return '#/inicio'
     case 'precos':
-      return '#/precos'
+      return rota.destaque ? `#/precos/${rota.destaque}` : '#/precos'
     case 'entrar':
       return '#/entrar'
+    case 'criar-conta':
+      return rota.plano ? `#/criar-conta/${rota.plano}${rota.ciclo === 'anual' ? '/anual' : ''}` : '#/criar-conta'
+    case 'confirmar-email':
+      return rota.vencido ? '#/confirmar-email/vencido' : '#/confirmar-email'
+    case 'esqueci-senha':
+      return '#/esqueci-senha'
+    case 'nova-senha':
+      return rota.vencido ? '#/nova-senha/vencido' : '#/nova-senha'
+    case 'termos':
+      return '#/termos'
+    case 'privacidade':
+      return '#/privacidade'
+    case 'assinar':
+      return `#/assinar/${rota.plano}/${rota.ciclo}`
+    case 'pagamento':
+      return '#/pagamento'
     case 'conta':
       return '#/conta'
     case 'painel':
@@ -103,7 +150,12 @@ export const ETAPAS: readonly Etapa[] = [
   { aba: 'adequacao', numero: 3, rotulo: 'Adequação', descricao: 'Vitaminas e minerais' },
 ]
 
-/** A moldura da área pública é outra: sem menu lateral, com fundo escuro. */
+/** A moldura da área pública é outra: sem menu lateral. */
 export function ehTelaPublica(rota: Rota): boolean {
   return (TELAS_PUBLICAS as readonly string[]).includes(rota.tela)
+}
+
+/** Abre sem sessão mesmo com o servidor configurado (CA-149). */
+export function ehRotaLivre(rota: Rota): boolean {
+  return (TELAS_LIVRES as readonly string[]).includes(rota.tela)
 }
