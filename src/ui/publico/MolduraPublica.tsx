@@ -1,130 +1,152 @@
-import { ArrowRight } from 'lucide-react'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'painel'
+export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade'
 
 interface MolduraPublicaProps {
-  readonly atual: DestinoPublico
+  readonly atual: DestinoPublico | null
+  readonly temSessao: boolean
   readonly aoIrPara: (destino: DestinoPublico) => void
   readonly children: ReactNode
 }
 
-const LINKS: readonly { readonly destino: DestinoPublico; readonly texto: string; readonly ancora?: string }[] = [
-  { destino: 'inicio', texto: 'Como funciona', ancora: 'como-funciona' },
-  { destino: 'precos', texto: 'Preços' },
+const LINKS: readonly { readonly texto: string; readonly destino: DestinoPublico; readonly ancora?: string }[] = [
+  { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona' },
+  { texto: 'O diferencial', destino: 'inicio', ancora: 'o-diferencial' },
+  { texto: 'Preços', destino: 'precos' },
 ]
 
 /** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */
-function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
+export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
   aoIrPara(destino)
-  if (!ancora) return globalThis.scrollTo({ top: 0 })
+  if (!ancora) return globalThis.scrollTo?.({ top: 0 })
   globalThis.setTimeout(() => globalThis.document.getElementById(ancora)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
 }
 
+const LINK_RODAPE =
+  'rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
 /**
- * Moldura das telas públicas: barra flutuante em pílula sobre papel claro.
- * O fundo escuro saiu — a tela de trabalho e a pública agora vivem no mesmo papel,
- * e a grade de fundo é que separa a área de venda da de trabalho.
+ * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa
+ * cinza, em versalete, e o botão de começar em pílula de contorno.
  */
-export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProps) {
+export function MolduraPublica({ atual, temSessao, aoIrPara, children }: MolduraPublicaProps) {
+  const itemMenu =
+    'rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <div className="sticky top-[env(safe-area-inset-top,0px)] z-50 px-4 pt-3.5 sm:px-8">
-        <div className="mx-auto flex min-h-[62px] max-w-[1266px] flex-wrap items-center gap-x-4 rounded-3xl border border-border bg-card/85 px-4 py-2 shadow-card backdrop-blur-xl sm:rounded-full sm:px-5 sm:py-0">
+      <header className="sticky top-[env(safe-area-inset-top,0px)] z-50 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1216px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:px-8 sm:py-4">
           <button
             type="button"
-            onClick={() => aoIrPara('inicio')}
-            className="flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => irComAncora(aoIrPara, 'inicio')}
+            aria-label="MetaNutri, início"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Logo tamanho={28} />
           </button>
 
-          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-0.5 border-t border-border pt-1.5 sm:order-none sm:ml-auto sm:w-auto sm:border-0 sm:pt-0">
-            {LINKS.map((link) => (
-              <button
-                key={link.destino}
-                type="button"
-                onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)}
-                aria-current={atual === link.destino && !link.ancora ? 'page' : undefined}
-                className={cn(
-                  'rounded-full px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  atual === link.destino && !link.ancora ? 'bg-acentoclaro font-semibold text-acento' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                {link.texto}
-              </button>
-            ))}
+          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 sm:order-none sm:mx-auto sm:w-auto">
+            {LINKS.map((link) => {
+              const aqui = atual === link.destino && !link.ancora
+              return (
+                <button
+                  key={link.texto}
+                  type="button"
+                  onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)}
+                  aria-current={aqui ? 'page' : undefined}
+                  className={cn(itemMenu, aqui ? 'text-heading underline underline-offset-8' : 'text-foreground hover:bg-card')}
+                >
+                  {link.texto}
+                </button>
+              )
+            })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-1.5 sm:ml-0">
-            <button
-              type="button"
-              onClick={() => aoIrPara('entrar')}
-              className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:block"
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={() => aoIrPara('painel')}
-              className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-acentofundo px-4 text-sm font-semibold text-textoacento transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Começar grátis
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </button>
+          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+            {temSessao ? (
+              <Button onClick={() => aoIrPara('painel')}>Ir para o painel</Button>
+            ) : (
+              <>
+                <button type="button" onClick={() => aoIrPara('entrar')} className={cn(itemMenu, 'text-sm normal-case tracking-normal text-foreground hover:bg-card')}>
+                  Entrar
+                </button>
+                <Button variant="outline" className="border-heading bg-transparent text-heading" onClick={() => aoIrPara('criar-conta')}>
+                  Começar grátis
+                </Button>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </header>
 
       <main id="conteudo" className="flex-1">
         {children}
       </main>
 
-      <footer className="mt-0 border-t border-bordersubtle bg-surfacebrandsoft px-4 pb-8 pt-14 sm:px-8">
-        <div className="mx-auto grid max-w-[1266px] gap-9 md:grid-cols-[2fr_1fr_1fr]">
+      <footer className="bg-card px-4 pb-8 pt-14 sm:px-8">
+        <div className="mx-auto grid max-w-[1216px] gap-9 md:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-2.5">
-              <Logo tamanho={28} />
-            </div>
+            <Logo tamanho={28} />
             <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
               O programa de nutrição que mostra o que falta no plano e sugere o que comer. Funciona no navegador, até sem internet.
             </p>
           </div>
-          <div>
-            <h2 className="mb-3.5 text-[13px] font-semibold text-muted-foreground">Fontes dos dados</h2>
+          <section aria-labelledby="fontes">
+            <h2 id="fontes" className="mb-3.5 scroll-mt-24 text-sm font-semibold text-muted-foreground">
+              Fontes dos dados
+            </h2>
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
               <li>NEPA/UNICAMP. TACO, 4ª ed., 2011</li>
               <li>IBGE. POF 2008-2009</li>
               <li>NASEM. DRI, Apêndice J, 2019</li>
               <li>OMS, 2006 e 2007 · SISVAN, 2011</li>
             </ul>
-          </div>
+          </section>
           <div>
-            <h2 className="mb-3.5 text-[13px] font-semibold text-muted-foreground">Produto</h2>
+            <h2 className="mb-3.5 text-sm font-semibold text-muted-foreground">Produto</h2>
             <ul className="grid gap-2.5 text-sm">
               <li>
-                <button type="button" onClick={() => aoIrPara('precos')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => aoIrPara('precos')} className={LINK_RODAPE}>
                   Preços
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => aoIrPara('painel')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Começar grátis
+                <button type="button" onClick={() => aoIrPara(temSessao ? 'painel' : 'criar-conta')} className={LINK_RODAPE}>
+                  {temSessao ? 'Ir para o painel' : 'Começar grátis'}
+                </button>
+              </li>
+              {temSessao ? null : (
+                <li>
+                  <button type="button" onClick={() => aoIrPara('entrar')} className={LINK_RODAPE}>
+                    Entrar
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+          <div>
+            <h2 className="mb-3.5 text-sm font-semibold text-muted-foreground">Legal</h2>
+            <ul className="grid gap-2.5 text-sm">
+              <li>
+                <button type="button" onClick={() => aoIrPara('termos')} className={LINK_RODAPE}>
+                  Termos de uso
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => aoIrPara('entrar')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Entrar
+                <button type="button" onClick={() => aoIrPara('privacidade')} className={LINK_RODAPE}>
+                  Política de privacidade
                 </button>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-[1266px] gap-2 border-t border-border pt-6 text-[13px] text-muted-foreground">
-          <p>A prescrição de dieta é privativa de nutricionista com registro no CRN — Lei 8.234/1991.</p>
+        <div className="mx-auto mt-10 grid max-w-[1216px] gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
+          <p>A prescrição de dieta é privativa de nutricionista com registro no CRN (Lei 8.234/1991).</p>
           <p>Os cálculos ainda não foram conferidos por nutricionista.</p>
         </div>
       </footer>

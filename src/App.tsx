@@ -42,7 +42,7 @@ import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
-import { ETAPAS } from './ui/navegacao.ts'
+import { ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
 import { useRota } from './ui/usarRota.ts'
 
 function Conteudo() {
@@ -89,7 +89,7 @@ function Conteudo() {
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }
 
-  const irPara = (destino: DestinoPublico) => navegar({ tela: destino })
+  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
   // Escolher plano ainda não cobra: leva para a conta, que é o passo que existe.
   const escolherPlano = () => navegar({ tela: 'entrar' })
@@ -101,7 +101,7 @@ function Conteudo() {
 
   if (rota.tela === 'inicio') {
     return (
-      <MolduraPublica atual="inicio" aoIrPara={irPara}>
+      <MolduraPublica atual="inicio" temSessao={conta.sessao !== null} aoIrPara={irPara}>
         <TelaInicio
           aoAbrirSistema={() => navegar({ tela: 'painel' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
@@ -114,7 +114,7 @@ function Conteudo() {
 
   if (rota.tela === 'precos') {
     return (
-      <MolduraPublica atual="precos" aoIrPara={irPara}>
+      <MolduraPublica atual="precos" temSessao={conta.sessao !== null} aoIrPara={irPara}>
         <SecaoPrecos aoEscolher={escolherPlano} />
       </MolduraPublica>
     )
@@ -122,7 +122,7 @@ function Conteudo() {
 
   if (rota.tela === 'entrar') {
     return (
-      <MolduraPublica atual="entrar" aoIrPara={irPara}>
+      <MolduraPublica atual="entrar" temSessao={conta.sessao !== null} aoIrPara={irPara}>
         <TelaEntrar conta={conta} aoEntrar={() => navegar({ tela: 'painel' })} aoAbrirSistema={() => navegar({ tela: 'painel' })} />
       </MolduraPublica>
     )
