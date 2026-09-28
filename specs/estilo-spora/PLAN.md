@@ -22,6 +22,7 @@ O usuário vai mandar os dois valores abaixo. Quem orquestra a execução substi
 - Dependências novas permitidas: só `@fontsource-variable/urbanist` e `@fontsource-variable/manrope`. Nenhuma outra sem perguntar ao usuário.
 - Lint: nenhuma cor hexadecimal nem `font-family` em arquivo `.ts`/`.tsx` fora dos testes. Dentro de `design-system/componentes/{forms,display,navigation,nutricao}` e da vitrine, nenhum número em `px` num literal de string.
 - Import do design system pelo alias: `@ds/...`. Nunca caminho relativo para `design-system/`.
+- Escala de raio deste projeto (difere do Tailwind padrão): `rounded-lg` = 16 px, `rounded-xl` = 20 px, `rounded-3xl` = 24 px (Tarefa 2), `rounded-2xl` = 28 px. Linha de lista usa 16; aviso e painel interno, 20; cartão, 24.
 - Componentes funcionais, um por arquivo, export nomeado. `exactOptionalPropertyTypes` está ligado: prop opcional é `readonly x?: T | undefined`.
 - Texto de interface em português do Brasil, simples. Nunca a construção "de X a Y" ou "do X ao Y" como slogan. Nunca inventar número: todo número vem do sistema ou da TACO.
 - Laranja `#f26a2e` (`bg-laranja`) nunca carrega texto; texto ou botão laranja usa `--accent-strong`/`--accent-fill` (`text-acento`, `bg-acentofundo`). Laranja nunca entra em painel de dado.
@@ -346,8 +347,8 @@ export const cardVariants = cva('text-card-foreground flex flex-col min-w-0', {
   variants: {
     variant: {
       default: 'bg-card rounded-3xl',
-      sunken: 'bg-surfacerow rounded-2xl',
-      flat: 'bg-card ring-1 ring-inset ring-border rounded-2xl',
+      sunken: 'bg-surfacerow rounded-xl',
+      flat: 'bg-card ring-1 ring-inset ring-border rounded-xl',
       sheen: 'rounded-2xl bg-[image:var(--gradient-sheen)] shadow-[var(--shadow-inset-sheen)]',
     },
     tight: { true: 'gap-3 p-3.5', false: 'gap-4 p-5' },
@@ -561,7 +562,7 @@ interface LinhaListaProps {
 
 export function LinhaLista({ titulo, detalhe, inicio, fim, aoClicar, marcada = false, className }: LinhaListaProps) {
   const base = cn(
-    'flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surfacerow px-3.5 py-2.5 text-left',
+    'flex min-h-14 w-full items-center gap-3 rounded-lg bg-surfacerow px-3.5 py-2.5 text-left',
     marcada && 'bg-surfaceaccentsoft ring-1 ring-inset ring-primary/30',
     className,
   )
@@ -4048,7 +4049,7 @@ import { cn } from '@/lib/utils'
 export function AvisoFormulario({ tipo, children }: { readonly tipo: 'erro' | 'ok'; readonly children: ReactNode }) {
   const erro = tipo === 'erro'
   return (
-    <div role={erro ? 'alert' : 'status'} className={cn('flex items-start gap-2 rounded-2xl p-3 text-sm', erro ? 'bg-lighterror text-errortext' : 'bg-lightprimary text-primary')}>
+    <div role={erro ? 'alert' : 'status'} className={cn('flex items-start gap-2 rounded-xl p-3 text-sm', erro ? 'bg-lighterror text-errortext' : 'bg-lightprimary text-primary')}>
       {erro ? <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> : <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />}
       <div className="min-w-0">{children}</div>
     </div>
@@ -4062,7 +4063,7 @@ import { Info } from 'lucide-react'
 /** Sem as chaves do Supabase (desenvolvimento), não há conta: o app abre no modo local (CA-150). */
 export function AvisoSemServidor({ aoAbrirSistema }: { readonly aoAbrirSistema: () => void }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-surfacerow p-4 text-sm">
+    <div className="flex items-start gap-3 rounded-xl bg-surfacerow p-4 text-sm">
       <Info className="mt-0.5 size-4 shrink-0 text-secondary" aria-hidden="true" />
       <div>
         <p className="font-semibold text-heading">A conta na nuvem não está ligada neste MetaNutri.</p>
@@ -5545,7 +5546,7 @@ export function TelaCheckout({ plano, ciclo, email, assinaturaAtual, vagasRestan
             </div>
 
             {vagasRestantes === 0 ? null : (
-              <div className="flex items-start gap-3 rounded-2xl bg-acentoclaro p-4 text-sm">
+              <div className="flex items-start gap-3 rounded-xl bg-acentoclaro p-4 text-sm">
                 <span className="grid size-8 shrink-0 place-content-center rounded-full bg-acentofundo text-textoacento">
                   <Star className="size-4" aria-hidden="true" />
                 </span>
@@ -6374,7 +6375,7 @@ export function rotaDePlanos(atual: IdPlano): Rota {
         ) : null}
 
         {assinatura.plano === 'free' ? (
-          <p className="rounded-2xl bg-surfacerow p-4 text-sm text-foreground">
+          <p className="rounded-xl bg-surfacerow p-4 text-sm text-foreground">
             <strong className="font-semibold text-heading">Estudante de nutrição?</strong> O plano Estudante vale para conta criada com o e-mail da faculdade e é
             liberado sozinho quando o e-mail é confirmado.
           </p>
