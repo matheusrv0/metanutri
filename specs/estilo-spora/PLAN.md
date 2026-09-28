@@ -5546,6 +5546,12 @@ describe('TelaCheckout', () => {
     terminar(null)
     expect(aoPagar).toHaveBeenCalledTimes(1)
   })
+
+  it('quem tem Estudante ativa vê o aviso de que ele deixa de valer, e o botão de pagar continua', () => {
+    montar({ assinatura: { ...SEM_ASSINATURA, plano: 'estudante', planoPedido: 'estudante', status: 'ativa' } })
+    expect(screen.getByRole('status')).toHaveTextContent('Você está no plano Estudante. Ao assinar, ele deixa de valer, e até o pagamento confirmar vale o Free.')
+    expect(screen.getByRole('button', { name: 'Pagar com Mercado Pago' })).toBeInTheDocument()
+  })
 })
 ```
 
@@ -5596,6 +5602,9 @@ export function TelaCheckout({ plano, ciclo, email, assinaturaAtual, vagasRestan
   const total = valorNoCiclo(escolhido, ciclo)
   const desconto = descontoAnualPct(escolhido)
   const jaAssina = assinaturaAtual.status === 'ativa' && (assinaturaAtual.plano === 'solo' || assinaturaAtual.plano === 'pro')
+  // O servidor troca a linha para "pendente" assim que a assinatura é aberta: quem está
+  // no Estudante precisa saber, antes de pagar, que ele deixa de valer na hora (CB-controlador).
+  const estudanteAtivo = assinaturaAtual.status === 'ativa' && assinaturaAtual.plano === 'estudante'
 
   const pagar = async () => {
     if (pagandoRef.current) return
@@ -5611,11 +5620,16 @@ export function TelaCheckout({ plano, ciclo, email, assinaturaAtual, vagasRestan
   return (
     <div className="min-h-dvh bg-background px-4 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-[1100px]">
-        <button type="button" onClick={aoIrParaInicio} aria-label="MetaNutri, início" className="mb-6 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={aoIrParaInicio}
+          aria-label="MetaNutri, início"
+          className="mb-6 inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <Logo tamanho={26} />
         </button>
 
-        <div className="grid overflow-hidden rounded-[28px] bg-card lg:grid-cols-[1.25fr_0.9fr]">
+        <div className="grid overflow-hidden rounded-2xl bg-card lg:grid-cols-[1.25fr_0.9fr]">
           <main className="flex flex-col gap-5 p-6 sm:p-9">
             <ol aria-label="Etapas" className="flex gap-4 text-xs font-semibold text-muted-foreground">
               <li className="text-successtext">✓ Conta</li>
@@ -5721,9 +5735,14 @@ export function TelaCheckout({ plano, ciclo, email, assinaturaAtual, vagasRestan
                 </Button>
               </>
             ) : (
-              <Button variant="laranja" size="lg" block loading={pagando} onClick={() => void pagar()}>
-                Pagar com Mercado Pago
-              </Button>
+              <>
+                {estudanteAtivo ? (
+                  <AvisoFormulario tipo="ok">Você está no plano Estudante. Ao assinar, ele deixa de valer, e até o pagamento confirmar vale o Free.</AvisoFormulario>
+                ) : null}
+                <Button variant="laranja" size="lg" block loading={pagando} onClick={() => void pagar()}>
+                  Pagar com Mercado Pago
+                </Button>
+              </>
             )}
 
             {erro ? <AvisoFormulario tipo="erro">{erro}</AvisoFormulario> : null}
