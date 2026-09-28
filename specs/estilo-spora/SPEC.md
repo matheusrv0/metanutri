@@ -24,7 +24,7 @@ lugar certo, e o plano escolhido acompanha a pessoa até o pagamento.
 | D-25 | O plano escolhido em Preços acompanha a pessoa pelo cadastro até o checkout | Hoje ele se perde no caminho |
 | D-26 | Pagamento de Solo e Pro por assinatura no Mercado Pago, com cartão, em ciclo **mensal ou anual**. O anual cobra o valor do ano a cada 12 meses | Os preços anuais já estão na página de Preços, mas não dá para pagá-los |
 | D-27 | O plano só muda quando o servidor confirma o pagamento | Regra que já vale hoje (assinatura pendente não libera plano pago) |
-| D-28 | Estudante é aprovado **sozinho, pelo servidor**, quando confirma uma conta criada com e-mail de faculdade que está na lista pública de domínios de universidades. Vale 12 meses. A marca "uso não comercial" continua no PDF e na tela do paciente | Você pediu algo grátis e difícil de burlar, sem aprovar à mão. Sem comprovante e sem SheerID (pago) |
+| D-28 | Estudante é aprovado **sozinho, pelo servidor**, quando confirma uma conta **criada marcando o Estudante** com e-mail de faculdade — domínio exato da lista pública de universidades, um subdomínio dele, ou qualquer `.edu.br`. Quem cria a conta no Free com o mesmo e-mail continua no Free. Vale 12 meses. A marca "uso não comercial" continua no PDF e na tela do paciente | Você pediu algo grátis e difícil de burlar, sem aprovar à mão. Sem comprovante e sem SheerID (pago) |
 | D-31 | O MetaNutri tem **Termos de uso e Política de privacidade** escritos neste ciclo, e o cadastro pede aceite. O responsável é você, pessoa física, com o e-mail de contato do MetaNutri | Decisão sua de 28/09: sem advogado |
 | D-29 | A seta laranja em círculo só aparece em elemento que leva a algum lugar | Seta decorativa parece botão e confunde |
 | D-30 | Mudança entregue em ondas: Fundação, depois Onda 1 (site, conta e checkout), Onda 2 (área de trabalho) e Onda 3 (planejador). Cada onda é publicada e testada antes da próxima | Abordagem A, aprovada no brainstorming |
@@ -183,7 +183,7 @@ ganhar o plano de estágio na hora, sem esperar ninguém aprovar.
 
 - **CA-171** · Dado Criar conta com o Estudante marcado, então a tela pede o e-mail da faculdade e explica que o plano vale para conta criada com ele.
 - **CA-172** · Dado um e-mail cujo domínio não está na lista de faculdades, então, antes de criar a conta, a tela avisa e oferece duas saídas: usar outro e-mail ou criar a conta no Free.
-- **CA-173** · Dado a confirmação de um e-mail de faculdade da lista, então o servidor marca a conta como Estudante por 12 meses, sem ninguém aprovar à mão.
+- **CA-173** · Dado a confirmação de um e-mail de faculdade — domínio exato da lista, um subdomínio dele, ou qualquer `.edu.br` — de uma conta criada marcando o Estudante, então o servidor marca a conta como Estudante por 12 meses, sem ninguém aprovar à mão. Criada no Free, o mesmo e-mail não muda o plano sozinho.
 - **CA-174** · Dado um e-mail ainda não confirmado, então a conta não vira Estudante. Marcar Estudante na tela, sozinho, não muda plano nenhum.
 - **CA-175** · Dado os 12 meses vencidos, então a conta volta ao Free, e nada é apagado nem escondido.
 - **CA-176** · Dado alguém com sessão e e-mail que não é de faculdade, quando escolhe Estudante, então vê que o plano exige uma conta criada com o e-mail da faculdade.
@@ -321,7 +321,7 @@ que as tabelas sigam o estilo novo e continuem rápidas.
 1. **Supabase Auth:** cadastrar o endereço do site como endereço de volta permitido (confirmação e troca de senha).
 2. **Resend:** ligar como servidor de e-mail do Supabase e ajustar os textos dos e-mails de confirmação e de troca de senha. Até isso, o envio padrão do Supabase tem limite baixo por hora.
 3. **Mercado Pago:** criar a aplicação, guardar o token nas variáveis da função, publicar `assinar` e `webhook-mercadopago` e cadastrar o webhook.
-4. **SQL do Estudante:** rodar o arquivo novo, que guarda a lista de domínios de faculdade e aprova a conta sozinho na confirmação do e-mail.
+4. **SQL do Estudante:** rodar o arquivo novo, que guarda a lista de domínios de faculdade e aprova a conta sozinho na confirmação do e-mail. Antes de rodar, ligar Supabase > Authentication > Sign In / Providers > Email > "Confirm email": desligado, qualquer e-mail de faculdade digitado aprova o Estudante sem confirmar a caixa de entrada.
 5. **Contato e responsável:** me mandar o e-mail do MetaNutri (quando criar) e seu nome completo. Os dois aparecem nos termos, na política e no plano Clínica.
 
 ## 7. Riscos para você revisar
@@ -334,3 +334,4 @@ que as tabelas sigam o estilo novo e continuem rápidas.
 - **R-16** · A lista pública de domínios pode não ter a faculdade de alguém. Essa pessoa fica no Free até o domínio entrar na lista, e incluir um domínio é uma linha no SQL.
 - **R-17** · Quem se formou continua com o e-mail da faculdade por um tempo. O vencimento em 12 meses e a marca "uso não comercial" limitam esse uso.
 - **R-15** · Se a Manrope não tiver algarismos de largura fixa bons na tela, as colunas de número usam a Inter, que já está no projeto (CA-101).
+- **R-18** · O mesmo e-mail com apelido (ex.: maria+1@aluno.usp.br) cria várias contas Estudante. Decisão de produto: aceitar por enquanto.

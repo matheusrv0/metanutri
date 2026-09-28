@@ -32,4 +32,12 @@ describe('e-mail de faculdade (spec estilo-spora, D-28)', () => {
     expect(DOMINIOS_FACULDADE.size).toBeGreaterThan(190)
     for (const d of ['usp.br', 'ufrj.br', 'unicamp.br', 'unifesp.br', 'unip.br']) expect(DOMINIOS_FACULDADE.has(d)).toBe(true)
   })
+
+  it('funciona com a lista padrão, sem precisar passar uma lista', () => {
+    expect(ehEmailDeFaculdade('maria@aluno.unifesp.br')).toBe(true)
+  })
+
+  it('recusa e-mail sem parte local antes do @', () => {
+    expect(ehEmailDeFaculdade('@usp.br', lista)).toBe(false)
+  })
 })

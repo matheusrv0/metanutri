@@ -2,6 +2,12 @@
 -- GERADO por scripts/dominios-faculdades.mjs: não edite à mão, rode o script de novo.
 -- Rode no Supabase: SQL Editor > New query > cole tudo > Run. Pode rodar de novo sem estragar nada.
 --
+-- ############################################################################
+-- # PRÉ-REQUISITO: Supabase > Authentication > Sign In / Providers > Email > #
+-- # "Confirm email" LIGADO. Desligado, qualquer um que digitar um e-mail de  #
+-- # faculdade ganha o plano Estudante sem ter a caixa de entrada.           #
+-- ############################################################################
+--
 -- Como funciona: quem cria a conta marcando o Estudante grava "plano_desejado" no
 -- cadastro. Quando o e-mail é confirmado, o gatilho confere se o domínio é de
 -- faculdade e, se for, dá o plano Estudante por 12 meses. O navegador não consegue
@@ -9,9 +15,23 @@
 
 alter table public.assinaturas add column if not exists expira_em timestamptz;
 
-create table if not exists public.dominios_faculdade (dominio text primary key);
+create table if not exists public.dominios_faculdade (
+  dominio text primary key check (dominio ~ '^[a-z0-9-]+(\.[a-z0-9-]+)+$')
+);
 -- Ninguém lê nem escreve pelo navegador: só a função abaixo consulta.
 alter table public.dominios_faculdade enable row level security;
+
+-- Quem já rodou a versão anterior desta migração (sem o check acima): acrescenta
+-- a restrição agora. Em instalação nova a tabela já nasce com ela, e o nome da
+-- restrição abaixo é o mesmo que o Postgres dá automaticamente ao check da coluna
+-- — por isso o "duplicate_object" cobre os dois casos.
+do $$
+begin
+  alter table public.dominios_faculdade
+    add constraint dominios_faculdade_dominio_check check (dominio ~ '^[a-z0-9-]+(\.[a-z0-9-]+)+$');
+exception
+  when duplicate_object then null;
+end $$;
 
 create or replace function public.eh_email_de_faculdade(email text)
 returns boolean
@@ -20,18 +40,34 @@ stable
 security definer
 set search_path = public
 as $$
+  with normalizado as (
+    select lower(trim(email)) as endereco
+  ),
+  dominio as (
+    select split_part(endereco, '@', 2) as dom
+    from normalizado
+    -- Só um "@", com algo antes e depois: bate com dominioDoEmail do TypeScript.
+    where endereco ~ '^[^@]+@[^@]+$'
+  )
   select coalesce(
-    split_part(lower(trim(email)), '@', 2) like '%.edu.br'
-    or exists (
-      select 1 from public.dominios_faculdade d
-      where split_part(lower(trim(email)), '@', 2) = d.dominio
-         or split_part(lower(trim(email)), '@', 2) like ('%.' || d.dominio)
+    (
+      select
+        right(dom, 7) = '.edu.br'
+        or exists (
+          select 1 from public.dominios_faculdade d
+          where dom = d.dominio
+             or right(dom, length(d.dominio) + 1) = '.' || d.dominio
+        )
+      from dominio
     ),
     false
   );
 $$;
 
 revoke all on function public.eh_email_de_faculdade(text) from public;
+-- O Supabase concede execução a "anon" e "authenticated" por padrão; tira dos
+-- dois. Quem chama esta função é só o gatilho abaixo, como "security definer".
+revoke execute on function public.eh_email_de_faculdade(text) from anon, authenticated;
 
 create or replace function public.aprovar_estudante()
 returns trigger
@@ -49,7 +85,7 @@ begin
   values (new.id, 'estudante', 'ativa', now() + interval '12 months', now())
   on conflict (nutricionista_id) do update
     set plano = 'estudante', status = 'ativa', expira_em = excluded.expira_em, atualizado_em = now()
-    where public.assinaturas.status <> 'ativa';
+    where public.assinaturas.status <> 'ativa' and public.assinaturas.preapproval_id is null;
   return new;
 end;
 $$;
@@ -59,7 +95,8 @@ create trigger aprovar_estudante_ao_confirmar
   after insert or update of email_confirmed_at on auth.users
   for each row execute function public.aprovar_estudante();
 
--- Para aceitar uma faculdade que falta: insert into public.dominios_faculdade values ('dominio.br');
+-- Para aceitar uma faculdade que falta: acrescente o domínio em COMPLEMENTO, em
+-- scripts/dominios-faculdades.mjs, rode o script e rode este SQL de novo.
 insert into public.dominios_faculdade (dominio) values
   ('aluno.cruzeirodosul.edu.br'),
   ('aluno.ifsp.edu.br'),
@@ -261,3 +298,17 @@ insert into public.dominios_faculdade (dominio) values
   ('uva.br'),
   ('uvanet.br')
 on conflict (dominio) do nothing;
+
+-- Conferência (comentada: fica registrada aqui, mas não roda sozinha; copie e
+-- cole no SQL Editor depois de rodar o script acima).
+-- select
+--   public.eh_email_de_faculdade('maria@usp.br')          as usp,             -- true
+--   public.eh_email_de_faculdade('maria@aluno.ufrj.br')    as aluno_ufrj,      -- true
+--   public.eh_email_de_faculdade('joao@alguma.edu.br')     as edu_br,          -- true
+--   public.eh_email_de_faculdade('maria@falsausp.br')      as falsa_usp,       -- false
+--   public.eh_email_de_faculdade('maria@usp.br.golpe.com') as usp_golpe,       -- false
+--   public.eh_email_de_faculdade('maria@gmail.com')        as gmail;           -- false
+--
+-- Depois de um cadastro real marcando Estudante com e-mail de faculdade
+-- confirmado, confira a linha da pessoa em public.assinaturas: "plano" deve ser
+-- 'estudante', "status" 'ativa' e "expira_em" por volta de 12 meses à frente.

@@ -65,4 +65,28 @@ License 1.1 e embutidas via `@fontsource-variable` para o app continuar funciona
 Base da lista de domínios de e-mail de faculdades brasileiras do plano Estudante
 (`src/data/dominios-faculdades-br.json` e `supabase/005-estudante.sql`), somada a um
 complemento revisado à mão. Gerada por `scripts/dominios-faculdades.mjs`.
-Fonte: https://github.com/Hipo/university-domains-list — Licença MIT, Copyright (c) 2016 Hipo.
+Fonte: https://github.com/Hipo/university-domains-list
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2014-2025 Hipo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
