@@ -24,7 +24,8 @@ lugar certo, e o plano escolhido acompanha a pessoa até o pagamento.
 | D-25 | O plano escolhido em Preços acompanha a pessoa pelo cadastro até o checkout | Hoje ele se perde no caminho |
 | D-26 | Pagamento de Solo e Pro por assinatura no Mercado Pago, com cartão, em ciclo **mensal ou anual**. O anual cobra o valor do ano a cada 12 meses | Os preços anuais já estão na página de Preços, mas não dá para pagá-los |
 | D-27 | O plano só muda quando o servidor confirma o pagamento | Regra que já vale hoje (assinatura pendente não libera plano pago) |
-| D-28 | Estudante envia o comprovante de matrícula e **você aprova à mão**. Até a aprovação, vale o Free | O plano Estudante exige comprovante desde 27/09 |
+| D-28 | Estudante é aprovado **sozinho, pelo servidor**, quando confirma uma conta criada com e-mail de faculdade que está na lista pública de domínios de universidades. Vale 12 meses. A marca "uso não comercial" continua no PDF e na tela do paciente | Você pediu algo grátis e difícil de burlar, sem aprovar à mão. Sem comprovante e sem SheerID (pago) |
+| D-31 | O MetaNutri tem **Termos de uso e Política de privacidade** escritos neste ciclo, e o cadastro pede aceite. O responsável é você, pessoa física, com o e-mail de contato do MetaNutri | Decisão sua de 28/09: sem advogado |
 | D-29 | A seta laranja em círculo só aparece em elemento que leva a algum lugar | Seta decorativa parece botão e confunde |
 | D-30 | Mudança entregue em ondas: Fundação, depois Onda 1 (site, conta e checkout), Onda 2 (área de trabalho) e Onda 3 (planejador). Cada onda é publicada e testada antes da próxima | Abordagem A, aprovada no brainstorming |
 
@@ -35,7 +36,9 @@ lugar certo, e o plano escolhido acompanha a pessoa até o pagamento.
 - Landing nova e página de Preços no estilo novo.
 - Criar conta, entrar, confirmar e-mail, recuperar senha e trocar senha.
 - Conta obrigatória e conta dona dos dados do aparelho.
-- Checkout, volta do pagamento e pedido de Estudante.
+- Checkout e volta do pagamento.
+- Plano Estudante aprovado sozinho pelo e-mail da faculdade.
+- Termos de uso e Política de privacidade, com aceite no cadastro.
 - Painel, menu lateral e as telas da área de trabalho no estilo novo.
 - Tela de missões do paciente.
 - Planejador (etapas, refeições, resumo do dia, adequação e Cobrir).
@@ -43,7 +46,7 @@ lugar certo, e o plano escolhido acompanha a pessoa até o pagamento.
 
 **Escrito, mas ligado por você depois:** o código das mudanças no servidor que as telas
 usam. São três: o ciclo anual na função `assinar`, o endereço de volta do pagamento e o
-SQL do pedido de Estudante. Publicar e rodar fica com você (seção 6).
+SQL do Estudante (lista de domínios e aprovação automática). Publicar e rodar fica com você (seção 6).
 
 ## 3. Histórias e critérios de aceite
 
@@ -99,8 +102,8 @@ cada plano me leve ao próximo passo daquele plano, para não recomeçar a escol
 - **CA-122** · Dado um visitante sem sessão, quando clica no botão do Solo ou do Pro, então vai para Criar conta com esse plano e o ciclo (mensal ou anual) já marcados.
 - **CA-123** · Dado alguém com sessão, quando clica no botão do Solo ou do Pro, então vai direto para o checkout desse plano e desse ciclo.
 - **CA-124** · Dado o botão do Free, então leva para Criar conta sem sessão e para o painel com sessão.
-- **CA-125** · Dado o botão do Estudante, então leva para Criar conta sem sessão e para o envio de comprovante com sessão.
-- **CA-126** · Dado o botão do Clínica, então ele mostra o contato para combinar o plano, sem levar a cadastro nem pagamento.
+- **CA-125** · Dado o botão do Estudante, então leva para Criar conta com o Estudante marcado sem sessão, e para o aviso do CA-176 com sessão.
+- **CA-126** · Dado o botão do Clínica, então ele mostra o e-mail de contato do MetaNutri para combinar o plano, sem levar a cadastro nem pagamento.
 
 **US-1.3 · Criar conta (5 pts).** Como visitante, quero criar a conta sabendo o que vou
 levar, para seguir sem dúvida.
@@ -111,8 +114,9 @@ levar, para seguir sem dúvida.
 - **CA-130** · Dado um e-mail que já tem conta, quando a pessoa envia, então aparece "Este e-mail já tem conta" com o link "Entrar".
 - **CA-131** · Dado o servidor fora do ar ou sem internet, quando a pessoa envia, então aparece uma mensagem de falha de conexão, o formulário continua preenchido e o botão volta a funcionar.
 - **CA-132** · Dado um cadastro aceito que exige confirmar o e-mail, então a pessoa vê a tela "Confira seu e-mail".
-- **CA-133** · Dado um cadastro aceito que não exige confirmação, então a pessoa segue para o checkout se marcou Solo ou Pro, para o envio de comprovante se marcou Estudante e para o painel se marcou o Free.
+- **CA-133** · Dado um cadastro aceito que não exige confirmação, então a pessoa segue para o checkout se marcou Solo ou Pro, e para o painel se marcou Free ou Estudante.
 - **CA-134** · Dado o botão "Criar conta" já clicado, então ele fica desabilitado até a resposta, e um segundo clique não cria duas contas.
+- **CA-134a** · Dado a tela Criar conta, então ela tem a caixa "Li e aceito os Termos de uso e a Política de privacidade", com os dois links, e a conta só é criada com a caixa marcada.
 
 **US-1.4 · Entrar (3 pts).** Como nutricionista, quero entrar e cair onde eu estava
 indo, para não refazer o caminho.
@@ -143,7 +147,7 @@ esquecida sozinha, sem pedir ajuda a ninguém.
 só eu veja os meus pacientes neste aparelho, para cumprir o sigilo.
 
 - **CA-148** · Dado o servidor configurado e ninguém com sessão, quando alguém abre qualquer tela da área de trabalho, então vai para Entrar, e a tela pedida fica guardada para depois (CA-137).
-- **CA-149** · Dado o servidor configurado, então continuam abrindo sem sessão: landing, Preços, Criar conta, Entrar, Confirmar e-mail, Esqueci a senha, Nova senha e o link de missões do paciente.
+- **CA-149** · Dado o servidor configurado, então continuam abrindo sem sessão: landing, Preços, Criar conta, Entrar, Confirmar e-mail, Esqueci a senha, Nova senha, Termos de uso, Política de privacidade e o link de missões do paciente.
 - **CA-150** · Dado o servidor não configurado, então o app abre sem conta, no modo local, como hoje.
 - **CA-151** · Dado um aparelho com planos de antes desta mudança e sem dono, quando a primeira conta entra, então essa conta vira dona dos dados, e os planos aparecem.
 - **CA-152** · Dado um aparelho cujos dados têm dono, quando entra uma conta diferente, então nenhum plano ou paciente aparece antes de a pessoa escolher entre sair ou apagar os dados deste aparelho e continuar.
@@ -174,21 +178,30 @@ deu certo, para começar a usar o plano.
 - **CA-169** · Dado a volta com a assinatura cancelada, pausada ou inexistente, então aparece "Pagamento não concluído", avisando que nada foi cobrado, com o botão "Tentar de novo" que abre o checkout do mesmo plano.
 - **CA-170** · Dado a tela de volta sem internet, então ela avisa que não conseguiu conferir e oferece "Conferir de novo".
 
-**US-1.10 · Pedido de Estudante (5 pts).** Como estudante, quero enviar o comprovante
-pelo sistema, para usar o plano de estágio.
+**US-1.10 · Estudante pelo e-mail da faculdade (3 pts).** Como estudante, quero
+ganhar o plano de estágio na hora, sem esperar ninguém aprovar.
 
-- **CA-171** · Dado o envio de comprovante, então a tela explica o plano (grátis, uso não comercial, 10 pacientes ativos, até 3 links) e pede instituição, previsão de formatura e o arquivo.
-- **CA-172** · Dado um arquivo que não é PDF, JPG ou PNG, ou maior que 5 MB, então ele é recusado com o motivo, antes de enviar.
-- **CA-173** · Dado um pedido enviado, então a tela Conta e plano mostra "Comprovante em análise", e a conta continua no Free.
-- **CA-174** · Dado um pedido aprovado por você, então a conta passa a valer como Estudante, com os limites dele.
-- **CA-175** · Dado um pedido recusado por você, então a tela Conta e plano mostra "Comprovante não aceito" e permite enviar outro.
-- **CA-176** · Dado um pedido já em análise, então a tela não deixa enviar um segundo pedido.
+- **CA-171** · Dado Criar conta com o Estudante marcado, então a tela pede o e-mail da faculdade e explica que o plano vale para conta criada com ele.
+- **CA-172** · Dado um e-mail cujo domínio não está na lista de faculdades, então, antes de criar a conta, a tela avisa e oferece duas saídas: usar outro e-mail ou criar a conta no Free.
+- **CA-173** · Dado a confirmação de um e-mail de faculdade da lista, então o servidor marca a conta como Estudante por 12 meses, sem ninguém aprovar à mão.
+- **CA-174** · Dado um e-mail ainda não confirmado, então a conta não vira Estudante. Marcar Estudante na tela, sozinho, não muda plano nenhum.
+- **CA-175** · Dado os 12 meses vencidos, então a conta volta ao Free, e nada é apagado nem escondido.
+- **CA-176** · Dado alguém com sessão e e-mail que não é de faculdade, quando escolhe Estudante, então vê que o plano exige uma conta criada com o e-mail da faculdade.
 
 **US-1.11 · Limite leva a planos (2 pts).** Como nutricionista no Free, quero saber o
 que fazer quando o limite acabar, para não travar no atendimento.
 
 - **CA-177** · Dado um limite do plano atingido (pacientes ativos ou links), então a mensagem diz qual limite foi usado e tem "Ver planos", que abre Preços com o plano seguinte em destaque.
 - **CA-178** · Dado o CA-177, então nada do que já existe é apagado nem escondido. Só a ação nova fica bloqueada.
+
+**US-1.12 · Termos e privacidade (3 pts).** Como nutricionista, quero saber o que o
+MetaNutri faz com os meus dados e os dos meus pacientes antes de criar a conta.
+
+- **CA-220** · Dado as páginas Termos de uso e Política de privacidade, então elas abrem sem conta, pelo rodapé do site e pelos links do cadastro.
+- **CA-221** · Dado a Política de privacidade, então ela diz quem é o responsável, que dados o MetaNutri guarda, onde ficam (aparelho e nuvem), por quanto tempo, para quê, os direitos de quem usa e do paciente, e o e-mail de contato.
+- **CA-222** · Dado os Termos de uso, então eles dizem que quem prescreve é o nutricionista, não o sistema; que o nutricionista é o controlador dos dados do paciente e o MetaNutri é o operador; e as regras do plano Estudante (uso não comercial).
+- **CA-223** · Dado um cadastro aceito, então a conta guarda a data e a versão dos termos aceitos.
+- **CA-224** · Dado as duas páginas, então elas mostram a data da versão.
 
 ### Onda 2 · Área de trabalho
 
@@ -214,7 +227,7 @@ plano sem procurar.
 
 - **CA-189** · Dado a tela Conta e plano, então ela mostra nome, e-mail, o plano que vale agora, o estado da assinatura e, se houver, o preço de fundador.
 - **CA-190** · Dado "Mudar de plano", então abre Preços. Dado "Assinar" num plano pago, então abre o checkout desse plano (US-1.8).
-- **CA-191** · Dado um pedido de Estudante, então a tela mostra o estado dele (CA-173 a CA-175).
+- **CA-191** · Dado uma conta Estudante, então a tela mostra até quando o plano vale.
 
 **US-2.4 · As outras telas da área de trabalho (5 pts).** Como nutricionista, quero
 que Adesão, Pacientes, Planos, Configurações e Ajuda tenham a mesma cara do painel.
@@ -297,8 +310,9 @@ que as tabelas sigam o estilo novo e continuem rápidas.
 - Entrar com Google, verificação em duas etapas e troca de e-mail.
 - Cancelar a assinatura dentro do MetaNutri (cancela-se pelo Mercado Pago), cupom, nota fiscal, Pix ou boleto na assinatura.
 - Trocar de plano pago com assinatura ativa, e o cálculo proporcional que isso exigiria (CA-163).
-- Tela de administração para aprovar Estudante (você aprova no painel do Supabase).
-- Publicar termos de uso e política de privacidade (dependem do advogado).
+- Renovar o Estudante depois dos 12 meses (fica para o próximo ciclo; hoje ele volta ao Free).
+- Confirmar um e-mail de faculdade diferente do e-mail da conta.
+- Pedir novo aceite quando os termos mudarem.
 - Fotos no app, fotos por grupo de alimento e ilustrações de lista vazia.
 - Mudança de cálculo clínico. Nenhum número da adequação, energia ou macros muda de valor.
 
@@ -307,8 +321,8 @@ que as tabelas sigam o estilo novo e continuem rápidas.
 1. **Supabase Auth:** cadastrar o endereço do site como endereço de volta permitido (confirmação e troca de senha).
 2. **Resend:** ligar como servidor de e-mail do Supabase e ajustar os textos dos e-mails de confirmação e de troca de senha. Até isso, o envio padrão do Supabase tem limite baixo por hora.
 3. **Mercado Pago:** criar a aplicação, guardar o token nas variáveis da função, publicar `assinar` e `webhook-mercadopago` e cadastrar o webhook.
-4. **SQL do pedido de Estudante:** rodar o arquivo novo, que cria a tabela e o lugar dos arquivos.
-5. **Contato do plano Clínica:** me dizer qual e-mail ou WhatsApp aparece (CA-126).
+4. **SQL do Estudante:** rodar o arquivo novo, que guarda a lista de domínios de faculdade e aprova a conta sozinho na confirmação do e-mail.
+5. **Contato e responsável:** me mandar o e-mail do MetaNutri (quando criar) e seu nome completo. Os dois aparecem nos termos, na política e no plano Clínica.
 
 ## 7. Riscos para você revisar
 
@@ -316,5 +330,7 @@ que as tabelas sigam o estilo novo e continuem rápidas.
 - **R-11** · O Mercado Pago pode descartar a parte do endereço depois do `#` na volta do pagamento. A volta deve usar um endereço sem essa parte.
 - **R-12** · Assinatura anual pelo Mercado Pago (cobrança a cada 12 meses) precisa ser testada no ambiente de teste deles antes de abrir para clientes.
 - **R-13** · A conta obrigatória muda o uso offline: o primeiro acesso em cada aparelho precisa de internet (CA-155).
-- **R-14** · Cadastro sem aceite de termos: enquanto o texto não for revisado pelo advogado, o cadastro fica sem essa etapa.
+- **R-14** · Os termos e a política são escritos sem advogado, por decisão sua de 28/09. Se um dia houver questão jurídica, o texto é o primeiro ponto a revisar.
+- **R-16** · A lista pública de domínios pode não ter a faculdade de alguém. Essa pessoa fica no Free até o domínio entrar na lista, e incluir um domínio é uma linha no SQL.
+- **R-17** · Quem se formou continua com o e-mail da faculdade por um tempo. O vencimento em 12 meses e a marca "uso não comercial" limitam esse uso.
 - **R-15** · Se a Manrope não tiver algarismos de largura fixa bons na tela, as colunas de número usam a Inter, que já está no projeto (CA-101).
