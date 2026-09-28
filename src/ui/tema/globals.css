@@ -242,8 +242,7 @@
     @apply text-heading;
     font-family: var(--font-display);
     font-weight: var(--weight-semibold);
-    font-stretch: 92%;
-    letter-spacing: var(--traco-tight);
+    letter-spacing: var(--traco-display);
     text-wrap: balance;
   }
 
@@ -274,7 +273,6 @@
 @utility card-title {
   font-family: var(--font-display);
   font-weight: var(--weight-semibold);
-  font-stretch: 90%;
   letter-spacing: var(--traco-tight);
   @apply text-base text-heading;
 }
@@ -282,8 +280,7 @@
 /* Rótulo de seção: versalete condensado, onde o texto nomeia um dado. */
 @utility rotulo {
   font-family: var(--font-display);
-  font-weight: 650;
-  font-stretch: 80%;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-size: var(--fonte-2xs);

@@ -240,11 +240,11 @@
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */
 :root {
-  /* Fontes: o export pedia Urbanist + Plus Jakarta Sans pelo Google Fonts.
-   * Aqui valem as que o app já embute, porque ele roda offline e nenhuma
-   * dependência nova entrou. A troca está registrada em DESIGN.md. */
-  --font-corpo: 'Figtree Variable', 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  /* Fontes (spec estilo-spora, 28/09/2026): Urbanist nos títulos e números grandes,
+   * Manrope no texto. Embutidas pelo @fontsource porque o app roda offline.
+   * A Inter continua nas colunas de número (--font-data): algarismo tabular. */
+  --font-corpo: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   /* Só o nome da marca usa esta fonte (kit de 27/09/2026, peso 700). */
   --font-marca: 'Bricolage Grotesque Variable', var(--font-display);
   --font-data: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;

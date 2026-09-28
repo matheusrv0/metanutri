@@ -20,5 +20,8 @@ export default defineConfig({
     url: `http://localhost:${PORTA}`,
     reuseExistingServer: !process.env['CI'],
     timeout: 180_000,
+    // Sem servidor de conta nos testes de navegador: o app abre no modo local
+    // (SPEC CA-150), mesmo que exista um .env.local com as chaves nesta máquina.
+    env: { VITE_SUPABASE_URL: 'desligado', VITE_SUPABASE_ANON_KEY: 'desligado' },
   },
 })
