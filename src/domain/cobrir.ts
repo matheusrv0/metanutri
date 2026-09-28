@@ -57,11 +57,13 @@ const FARINHAS_CONSUMIDAS = new Set(['Farinha, de mandioca, torrada', 'Farinha, 
  */
 /**
  * Itens que a tabela traz mas quase ninguém põe no plano de rotina:
- * vísceras, miúdos, caça, frutos do mar de exceção e pratos regionais de véspera.
+ * vísceras, miúdos, caça, frutos do mar de exceção, pratos regionais de véspera e
+ * folhas e peixes que só uma região conhece (caruru, taioba, lambari). O usuário pediu
+ * sugestões da linguagem popular: arroz, feijão, leite, ovo, banana.
  * Não somem da lista; só perdem a frente para o que é de uso comum.
  */
 const POUCO_USUAL =
-  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a))($|[\s,])/i
+  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|linha(ç|c)a|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
 
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Alimento): boolean {

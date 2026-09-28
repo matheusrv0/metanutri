@@ -58,7 +58,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
 
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>De onde vêm os números</CardTitle>
+          <CardTitle>Fontes dos dados</CardTitle>
           <CardDescription>Cada cálculo mostra a fonte na própria tela. Aqui está a lista inteira, com os links.</CardDescription>
         </CardHeader>
         <ul className="flex flex-col">

@@ -135,8 +135,11 @@ texto corpo 12,7:1, texto secundário 6,6 a 7,8:1, link 7,3:1, foco 8,6:1.
 - **Dentro do dado, cor é estado, nunca enfeite.** Verde é dentro da meta; âmbar é
   abaixo; vermelhão é acima do limite; azul é referência. Se um elemento não fala de
   adequação, ele é neutro ou é marca — e marca é só teal na ação e laranja no grafismo.
-- **Laranja nunca carrega texto** (3,05:1 sobre branco) e nunca entra em painel de dado,
-  onde se confundiria com o âmbar de "abaixo da meta".
+- **O laranja claro da logo (`#f26a2e`) nunca carrega texto** (3,05:1 sobre branco). Para
+  texto e botão existe o **laranja fechado `--orange-700` `#c2410c`** (5,18:1 sobre branco e
+  com letra branca): é a ação principal da área pública ("Começar grátis") e os rótulos de
+  destaque. Nenhum dos dois entra em painel de dado, onde se confundiriam com o âmbar de
+  "abaixo da meta". Registrado em 28/09/2026, a pedido do usuário: "mais ênfase no laranja".
 - **A marca entra pela `Logo`**, e só por ela. O kit proíbe recolorir, esticar, sombrear
   ou usar o símbolo claro em fundo escuro; o componente é o único caminho justamente
   para isso não acontecer.

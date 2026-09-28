@@ -165,7 +165,15 @@ describe('sugerirParaCobrir', () => {
     const vazio = totais({ energia_kcal: 1600 })
     const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
     const com = sugerirParaCobrir('ferro_mg', vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, incluirIngredientes: true })
-    expect(com.sugestoes.map((s) => s.descricao)).toContain('Coentro, folhas desidratadas')
+    // Com a chave ligada, entra ao menos um item que o filtro de consumo barraria.
+    // (Coentro desidratado era o exemplo; desde 27/09 tempero perde a frente, e o teste
+    // passou a conferir a regra, não um alimento específico.)
+    const porDescricao = new Map(ALIMENTOS.map((a) => [a.descricao, a]))
+    const barrados = com.sugestoes.filter((s) => {
+      const a = porDescricao.get(s.descricao)
+      return a !== undefined && !ehSugerivel(a)
+    })
+    expect(barrados.length).toBeGreaterThan(0)
   })
 })
 
@@ -216,6 +224,14 @@ describe('uso comum nas sugestões', () => {
   it('sarapatel, fígado e caranguejo saem da frente', () => {
     expect(ehDeUsoComum({ descricao: 'Sarapatel' } as Alimento)).toBe(false)
     expect(ehDeUsoComum({ descricao: 'Fígado, bovino, grelhado' } as Alimento)).toBe(false)
+    // Pedido do usuário: nada de alimento que só uma região conhece.
+    expect(ehDeUsoComum({ descricao: 'Caruru, cru' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Lambari, congelado, frito' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Cereais, mistura para vitamina, trigo, cevada e aveia' } as Alimento)).toBe(false)
+    // Tempero e semente não viram sugestão de refeição: 100 g de manjericão não é prato.
+    expect(ehDeUsoComum({ descricao: 'Manjericão, cru' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Gergelim, semente' } as Alimento)).toBe(false)
+    expect(ehDeUsoComum({ descricao: 'Leite, de vaca, integral' } as Alimento)).toBe(true)
     expect(ehDeUsoComum({ descricao: 'Caranguejo, cozido' } as Alimento)).toBe(false)
     expect(ehDeUsoComum({ descricao: 'Feijão, carioca, cozido' } as Alimento)).toBe(true)
     expect(ehDeUsoComum({ descricao: 'Couve, manteiga, refogada' } as Alimento)).toBe(true)

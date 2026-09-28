@@ -70,6 +70,8 @@
   --teal-300: #7cc0cb;
   --teal-100: #e3eff1;
   --orange-500: #f26a2e;
+  /* Laranja fechado: mede 5,18:1 sobre branco. É o que pode carregar texto e encher botão. */
+  --orange-700: #c2410c;
   --orange-100: #fdece3;
   --ivory: #f6f2ea;
   --blue-100: #e6eef7;
@@ -140,6 +142,11 @@
   /* Faixas da marca na área pública (27/09/2026). A suave é o marfim do kit; a cheia
    * é o teal com marfim por cima. O texto secundário sobre teal é marfim puxado para
    * o teal, nunca cinza: mede 6,5:1. */
+  /* Laranja de ação: botão principal da área pública e rótulos de destaque. */
+  --accent-strong: var(--orange-700);
+  --accent-fill: var(--orange-700);
+  --text-on-accent-fill: #ffffff;
+  --accent-tint: var(--orange-100);
   --surface-brand: var(--teal-900);
   --surface-brand-soft: var(--ivory);
   --text-on-brand: var(--ivory);
@@ -213,6 +220,10 @@
   --gradient-sheen: linear-gradient(180deg, #1f353b 0%, #142226 100%);
   --gradient-ink: linear-gradient(135deg, #1a3a41 0%, #245560 100%);
 
+  --accent-strong: #f5935f;
+  --accent-fill: var(--orange-700);
+  --text-on-accent-fill: #ffffff;
+  --accent-tint: #44372f;
   --surface-brand: var(--teal-900);
   --surface-brand-soft: #142226;
   --text-on-brand: var(--ivory);

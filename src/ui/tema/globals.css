@@ -161,6 +161,10 @@
   --color-marca: var(--teal-900);
   --color-marfim: var(--ivory);
   --color-laranja: var(--orange-500);
+  --color-acento: var(--accent-strong);
+  --color-acentofundo: var(--accent-fill);
+  --color-textoacento: var(--text-on-accent-fill);
+  --color-acentoclaro: var(--accent-tint);
   --color-surfacebrand: var(--surface-brand);
   --color-surfacebrandsoft: var(--surface-brand-soft);
   --color-textonbrand: var(--text-on-brand);

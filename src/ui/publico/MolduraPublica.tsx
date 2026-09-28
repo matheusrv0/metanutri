@@ -11,10 +11,17 @@ interface MolduraPublicaProps {
   readonly children: ReactNode
 }
 
-const LINKS: readonly { readonly destino: DestinoPublico; readonly texto: string }[] = [
-  { destino: 'inicio', texto: 'Início' },
+const LINKS: readonly { readonly destino: DestinoPublico; readonly texto: string; readonly ancora?: string }[] = [
+  { destino: 'inicio', texto: 'Como funciona', ancora: 'como-funciona' },
   { destino: 'precos', texto: 'Preços' },
 ]
+
+/** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */
+function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
+  aoIrPara(destino)
+  if (!ancora) return globalThis.scrollTo({ top: 0 })
+  globalThis.setTimeout(() => globalThis.document.getElementById(ancora)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+}
 
 /**
  * Moldura das telas públicas: barra flutuante em pílula sobre papel claro.
@@ -39,11 +46,11 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
               <button
                 key={link.destino}
                 type="button"
-                onClick={() => aoIrPara(link.destino)}
-                aria-current={atual === link.destino ? 'page' : undefined}
+                onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)}
+                aria-current={atual === link.destino && !link.ancora ? 'page' : undefined}
                 className={cn(
                   'rounded-full px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  atual === link.destino ? 'bg-lightprimary font-semibold text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  atual === link.destino && !link.ancora ? 'bg-acentoclaro font-semibold text-acento' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
               >
                 {link.texto}
@@ -62,9 +69,9 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <button
               type="button"
               onClick={() => aoIrPara('painel')}
-              className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primaryemphasis focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-acentofundo px-4 text-sm font-semibold text-textoacento transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Abrir o sistema
+              Começar grátis
               <ArrowRight className="size-4" aria-hidden="true" />
             </button>
           </div>
@@ -82,11 +89,11 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
               <Logo tamanho={28} />
             </div>
             <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
-              Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente. Funciona no navegador, e a conta na nuvem é opcional.
+              O programa de nutrição que mostra o que falta no plano e sugere o que comer. Funciona no navegador, até sem internet.
             </p>
           </div>
           <div>
-            <h2 className="mb-3.5 text-[13px] font-semibold text-muted-foreground">De onde vêm os números</h2>
+            <h2 className="mb-3.5 text-[13px] font-semibold text-muted-foreground">Fontes dos dados</h2>
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
               <li>NEPA/UNICAMP. TACO, 4ª ed., 2011</li>
               <li>IBGE. POF 2008-2009</li>
@@ -104,7 +111,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
               </li>
               <li>
                 <button type="button" onClick={() => aoIrPara('painel')} className="rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Abrir o sistema
+                  Começar grátis
                 </button>
               </li>
               <li>
