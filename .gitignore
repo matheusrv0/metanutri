@@ -35,3 +35,6 @@ docs/modelos/
 
 # capturas de conferência ficam fora do repositório
 /*.png
+
+# mockups do brainstorming (visual companion)
+.superpowers/
