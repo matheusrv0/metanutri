@@ -53,7 +53,11 @@ Deno.serve(async (req: Request) => {
   const valor = anual ? escolhido.anual : escolhido.mensal
 
   // Quem já paga não assina de novo por aqui: nasceria uma segunda cobrança (spec CA-163).
-  const { data: atual } = await cliente.from('assinaturas').select('status, plano').eq('nutricionista_id', usuario.user.id).maybeSingle()
+  const { data: atual, error: erroAtual } = await cliente.from('assinaturas').select('status, plano').eq('nutricionista_id', usuario.user.id).maybeSingle()
+  if (erroAtual) {
+    console.error('Não consegui conferir a assinatura atual:', erroAtual)
+    return erro('Não consegui conferir sua assinatura agora. Tente de novo em alguns minutos.', 502)
+  }
   if (atual?.status === 'ativa' && (atual.plano === 'solo' || atual.plano === 'pro')) {
     return erro('Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.', 409)
   }
