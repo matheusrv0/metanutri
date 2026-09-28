@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { AnelProgresso } from '@ds/componentes/display/AnelProgresso.tsx'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
+import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 
 describe('CartaoNumero (CA-106, CA-107)', () => {
   it('sem destino não é botão e não tem seta', () => {
@@ -45,5 +47,46 @@ describe('LinhaLista', () => {
     render(<LinhaLista titulo="Ana · reeducação" detalhe="há 2 horas" aoClicar={aoClicar} />)
     await userEvent.setup().click(screen.getByRole('button', { name: /Ana · reeducação/ }))
     expect(aoClicar).toHaveBeenCalledOnce()
+  })
+})
+
+describe('SeletorSegmentado', () => {
+  it('marca a opção atual e avisa a escolha', async () => {
+    const aoEscolher = vi.fn()
+    render(
+      <SeletorSegmentado
+        rotulo="Período de cobrança"
+        opcoes={[
+          { valor: 'mensal', rotulo: 'Mensal' },
+          { valor: 'anual', rotulo: 'Anual' },
+        ]}
+        valor="mensal"
+        aoEscolher={aoEscolher}
+      />,
+    )
+    expect(screen.getByRole('radio', { name: 'Mensal' })).toHaveAttribute('aria-checked', 'true')
+    await userEvent.setup().click(screen.getByRole('radio', { name: 'Anual' }))
+    expect(aoEscolher).toHaveBeenCalledWith('anual')
+  })
+})
+
+describe('AnelProgresso', () => {
+  it('é uma barra de progresso com o valor escrito no meio', () => {
+    render(
+      <AnelProgresso valor={2} maximo={5} rotulo="Missões feitas hoje">
+        <span>2/5</span>
+      </AnelProgresso>,
+    )
+    const anel = screen.getByRole('progressbar', { name: 'Missões feitas hoje' })
+    expect(anel).toHaveAttribute('aria-valuenow', '2')
+    expect(anel).toHaveAttribute('aria-valuemax', '5')
+    expect(screen.getByText('2/5')).toBeInTheDocument()
+  })
+
+  it('não passa de 100% nem quebra com máximo zero', () => {
+    const { rerender } = render(<AnelProgresso valor={9} maximo={5} rotulo="x" />)
+    expect(screen.getByRole('progressbar').style.getPropertyValue('--anel-pct')).toBe('100%')
+    rerender(<AnelProgresso valor={1} maximo={0} rotulo="x" />)
+    expect(screen.getByRole('progressbar').style.getPropertyValue('--anel-pct')).toBe('0%')
   })
 })

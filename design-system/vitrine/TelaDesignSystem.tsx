@@ -3,6 +3,7 @@ import { Flame, FolderOpen, Download, Sparkles, Search, TriangleAlert, ArrowLeft
 import type { ResultadoMacro } from '@/domain/macros.ts'
 import { useTema } from '@/ui/tema/contextoTema.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
+import { AnelProgresso } from '@ds/componentes/display/AnelProgresso.tsx'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -26,6 +27,7 @@ import { Switch } from '@ds/componentes/forms/switch.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { ItemMenu } from '@ds/componentes/navigation/ItemMenu.tsx'
+import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
 import { BarraAdequacao } from '@ds/componentes/nutricao/BarraAdequacao.tsx'
 import { CartaoDestaque } from '@ds/componentes/nutricao/CartaoDestaque.tsx'
@@ -110,6 +112,7 @@ export function TelaDesignSystem() {
         <Secao nome="Button" arquivo="forms/button.tsx" descricao="Pílula. Ação principal é forest no claro, lime no escuro">
           <Linha estado="Variantes">
             <Button>Novo plano</Button>
+            <Button variant="laranja">Começar grátis</Button>
             <Button variant="accent">Cobrir</Button>
             <Button variant="secondary">Fonte</Button>
             <Button variant="outline">Ajustar</Button>
@@ -494,6 +497,18 @@ export function TelaDesignSystem() {
           </div>
         </Secao>
 
+        <Secao nome="SeletorSegmentado · AnelProgresso" arquivo="navigation/ · display/" descricao="Pílula de escolha e anel com o número escrito no meio">
+          <SeletorVitrine />
+          <div className="flex gap-4">
+            <AnelProgresso valor={2} maximo={5} rotulo="Missões feitas hoje">
+              <span className="font-titulo text-lg font-bold">2/5</span>
+            </AnelProgresso>
+            <AnelProgresso valor={95} maximo={100} rotulo="Energia do plano" tom="ok" grande>
+              <span className="font-titulo text-xl font-bold">95%</span>
+            </AnelProgresso>
+          </div>
+        </Secao>
+
         <Secao nome="CartaoDestaque" arquivo="nutricao/CartaoDestaque.tsx" descricao="Três tons; grafite é o herói, um por tela. Cor só no ocre de atenção">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <CartaoDestaque tom="grafite" rotulo="Energia do dia" valor="1.850" unidade="kcal" apoio="Mifflin-St Jeor, 1990" icone={Flame} />
@@ -529,5 +544,20 @@ export function TelaDesignSystem() {
         </Secao>
       </div>
     </TooltipProvider>
+  )
+}
+
+function SeletorVitrine() {
+  const [ciclo, setCiclo] = useState<'mensal' | 'anual'>('mensal')
+  return (
+    <SeletorSegmentado
+      rotulo="Período de cobrança"
+      opcoes={[
+        { valor: 'mensal', rotulo: 'Mensal' },
+        { valor: 'anual', rotulo: 'Anual' },
+      ]}
+      valor={ciclo}
+      aoEscolher={setCiclo}
+    />
   )
 }

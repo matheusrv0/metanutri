@@ -97,4 +97,11 @@ describe('componentes base do design system', () => {
     expect(cartao.className).toContain('rounded-3xl')
     expect(cartao.className).not.toContain('border')
   })
+
+  it('CA-108: variante laranja usa o acento da marca e o toque tem 44 px no celular', () => {
+    render(<Button variant="laranja">Começar grátis</Button>)
+    const botao = screen.getByRole('button', { name: 'Começar grátis' })
+    expect(botao.className).toContain('bg-acentofundo')
+    expect(botao.className).toContain('h-11')
+  })
 })

@@ -5,13 +5,13 @@ import { LoaderCircle } from 'lucide-react'
 import { cn } from '@ds/lib/cn.ts'
 
 /*
- * Botão pílula do sistema.
- *   default      forest (ação principal)        accent   lime (ação positiva: cobrir, adicionar)
- *   secondary    azul de nota                   soft     lime diluído
- *   outline      fio, fundo do cartão           ghost    sem moldura
- *   lightprimary tinta diluída                  link     só texto sublinhado
- *   destructive  vermelhão                      lighterror  vermelhão diluído
- * Estados: hover escurece · active encolhe 3% · focus anel lime · disabled 50% · loading roda.
+ * Botão pílula do sistema (referência Spora, 28/09/2026).
+ *   default      teal da marca (ação principal)   laranja   acento da marca (chamar para começar)
+ *   secondary    azul de nota                     soft      teal diluído
+ *   outline      fio, fundo do cartão              ghost   sem moldura
+ *   lightprimary tinta diluída                     link    só texto sublinhado
+ *   destructive  vermelhão                         lighterror vermelhão diluído
+ * No celular todo botão tem pelo menos 44 px de altura (spec estilo-spora, CA-108).
  */
 export const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium tracking-[0.01em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
@@ -19,6 +19,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primaryemphasis',
+        laranja: 'bg-acentofundo text-textoacento hover:brightness-110',
         accent: 'bg-surfaceaccent text-textonaccent hover:brightness-95',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondaryemphasis',
         destructive: 'bg-error text-white hover:bg-erroremphasis',
@@ -30,11 +31,11 @@ export const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-10 px-5 py-2',
-        sm: 'h-8 px-3.5 text-xs',
+        default: 'h-11 px-5 py-2 sm:h-10',
+        sm: 'h-11 px-3.5 text-xs sm:h-8',
         lg: 'h-12 px-7',
-        icon: 'h-10 w-10 px-0',
-        iconsm: 'h-8 w-8 px-0',
+        icon: 'size-11 px-0 sm:size-10',
+        iconsm: 'size-11 px-0 sm:size-8',
       },
       block: { true: 'w-full', false: '' },
     },

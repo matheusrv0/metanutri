@@ -45,6 +45,18 @@ significar alguma coisa.
 A assinatura do produto continua sendo a **notação**: nenhum número aparece sem dizer
 de onde veio, e falta de dado vira travessão ou hachura, nunca zero.
 
+## Estilo Spora (desde 28/09/2026)
+
+Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). Spec: `specs/estilo-spora/SPEC.md`.
+
+- **Mesa e cartão.** O fundo é a mesa cinza `--mesa` (#f1f0f0). Os blocos são cartões brancos com raio 24 (`rounded-3xl`), sem fio e sem sombra. Dentro do cartão branco, cada item de lista é uma linha cinza (`LinhaLista`, `bg-surfacerow`).
+- **Teal no lugar do preto.** O que a referência pinta de preto (botão principal, cartão de destaque, faixa final) aqui é o teal da marca.
+- **Laranja nos destaques, nunca no dado.** Botão de começar (`variant="laranja"`), seta de navegação e ponto do rótulo. Em painel de dado, nunca.
+- **Seta só onde leva a algum lugar.** Cartão de número parado não tem seta (`CartaoNumero` sem `aoClicar`).
+- **Foto só no topo da landing.** Uma composição de pratos recortada de fotos gratuitas, com crédito em `THIRD_PARTY_NOTICES.md`. Nenhuma outra foto no site nem no app.
+- **Componentes da referência:** `CartaoNumero`, `RotuloSecao`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
+- **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
+
 ## Colors
 
 Estratégia: **neutros com a marca na ação e o estado no dado.** Os neutros carregam a
@@ -155,14 +167,17 @@ texto corpo 12,7:1, texto secundário 6,6 a 7,8:1, link 7,3:1, foco 8,6:1.
 - **O nome da marca:** `--font-marca` — Bricolage Grotesque Variable, peso 700, tracking
   −0,035 em. Só na `Logo`; em mais nenhum lugar. Dependência aprovada pelo usuário em
   27/09/2026, embutida via `@fontsource` como as outras.
-- **Títulos e rótulos:** `--font-display` — Archivo Variable, eixo de largura 80% a 92%.
-- **Texto e campos:** `--font-corpo` — Figtree Variable.
+- **Títulos e números grandes:** `--font-display` — Urbanist Variable.
+- **Texto e campos:** `--font-corpo` — Manrope Variable.
 - **Números:** `--font-data` — Inter Variable, com `tabular-nums` no corpo inteiro.
 
-**Desvio consciente do export.** O export pedia Urbanist (texto) e Plus Jakarta Sans
-(números), carregadas do Google Fonts. Não entraram: o app é um PWA que precisa abrir
-sem internet, e adicioná-las seria dependência nova. As três fontes acima já estão
-embutidas via `@fontsource` e ocupam os mesmos três papéis.
+**Troca de 28/09/2026, para a referência Spora.** O export original pedia Urbanist
+(texto) e Plus Jakarta Sans (números); a decisão de 24/09/2026 trocou as duas por
+Archivo, Figtree e Inter para o app abrir sem internet sem puxar dependência nova. A
+referência Spora trouxe Urbanist de volta — agora nos títulos e nos números grandes —
+e Manrope no texto; as duas entraram como dependência nova aprovada pelo usuário,
+embutidas via `@fontsource` como as demais. O Inter das colunas de número não mudou.
+Plus Jakarta Sans nunca entrou.
 
 **Nomes de token renomeados.** A escala do export (`--text-*`, `--leading-*`,
 `--tracking-*`) usa exatamente os nomes do namespace do Tailwind v4. Mantê-los
@@ -174,12 +189,12 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
 
 | Papel | Regra |
 |---|---|
-| Número de destaque | Archivo 32 px, peso 700, tabular |
-| Título de página (h1) | Archivo 20 px, largura 92%, tracking −0.01em |
-| Título de bloco (`card-title`) | Archivo 16 px, peso 600 |
-| Rótulo de seção (`rotulo`) | Archivo 11 px (`text-2xs`), largura 80%, caixa alta, tracking 0.1em |
-| Texto e campos | Figtree 14 px (`text-sm`) |
-| Legenda | Figtree 12 px |
+| Número de destaque | Urbanist 32 px, peso 700, tabular |
+| Título de página (h1) | Urbanist 20 px, largura 92%, tracking −0.01em |
+| Título de bloco (`card-title`) | Urbanist 16 px, peso 600 |
+| Rótulo de seção (`rotulo`) | Urbanist 11 px (`text-2xs`), largura 80%, caixa alta, tracking 0.1em |
+| Texto e campos | Manrope 14 px (`text-sm`) |
+| Legenda | Manrope 12 px |
 
 ### Named Rules
 

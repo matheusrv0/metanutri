@@ -6,11 +6,11 @@
  * arquivo por arquivo, para o Vite separar melhor o pacote — mas componente novo
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
- * Os 28 componentes do sistema, na taxonomia do design system:
+ * Os 30 componentes do sistema, na taxonomia do design system:
  *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
- *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista
+ *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista · AnelProgresso
  *   overlay     Dialog · Sheet · DropdownMenu
- *   navigation  Tabs · ItemMenu · EtapasDoCaso
+ *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
  *
  * `efeitos/` fica de fora desta lista: são os efeitos de animação da área
@@ -43,6 +43,7 @@ export { Fontes, type ItemFonte } from './componentes/display/Fontes.tsx'
 export { CartaoNumero, type TomCartaoNumero } from './componentes/display/CartaoNumero.tsx'
 export { RotuloSecao } from './componentes/display/RotuloSecao.tsx'
 export { LinhaLista } from './componentes/display/LinhaLista.tsx'
+export { AnelProgresso, type TomAnel } from './componentes/display/AnelProgresso.tsx'
 
 // overlay
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './componentes/overlay/dialog.tsx'
@@ -53,6 +54,7 @@ export { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './componentes/navigation/tabs.tsx'
 export { ItemMenu } from './componentes/navigation/ItemMenu.tsx'
 export { EtapasDoCaso } from './componentes/navigation/EtapasDoCaso.tsx'
+export { SeletorSegmentado } from './componentes/navigation/SeletorSegmentado.tsx'
 
 // nutricao
 export { CartaoDestaque, type TomDestaque } from './componentes/nutricao/CartaoDestaque.tsx'
