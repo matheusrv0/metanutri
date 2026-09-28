@@ -10,9 +10,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const MP = 'https://api.mercadopago.com/preapproval'
 
 /** Os planos que podem ser assinados, com o preço que o servidor considera verdade. */
-const PLANOS: Record<string, { readonly nome: string; readonly mensal: number }> = {
-  solo: { nome: 'MetaNutri Solo', mensal: 34.9 },
-  pro: { nome: 'MetaNutri Pro', mensal: 64.9 },
+const PLANOS: Record<string, { readonly nome: string; readonly mensal: number; readonly anual: number }> = {
+  solo: { nome: 'MetaNutri Solo', mensal: 34.9, anual: 299 },
+  pro: { nome: 'MetaNutri Pro', mensal: 64.9, anual: 599 },
 }
 
 const cabecalhos = {
@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
   const { data: usuario, error: erroUsuario } = await cliente.auth.getUser(autorizacao.replace('Bearer ', ''))
   if (erroUsuario || !usuario.user?.email) return erro('Entre na sua conta antes de assinar.', 401)
 
-  let corpo: { plano?: string }
+  let corpo: { plano?: string; ciclo?: string }
   try {
     corpo = await req.json()
   } catch {
@@ -49,20 +49,31 @@ Deno.serve(async (req: Request) => {
   // O preço vem daqui, nunca do navegador: senão dá para assinar o Pro por R$ 1.
   const escolhido = PLANOS[corpo.plano ?? '']
   if (!escolhido) return erro('Plano desconhecido.', 400)
+  const anual = corpo.ciclo === 'anual'
+  const valor = anual ? escolhido.anual : escolhido.mensal
+
+  // Quem já paga não assina de novo por aqui: nasceria uma segunda cobrança (spec CA-163).
+  const { data: atual } = await cliente.from('assinaturas').select('status, plano').eq('nutricionista_id', usuario.user.id).maybeSingle()
+  if (atual?.status === 'ativa' && (atual.plano === 'solo' || atual.plano === 'pro')) {
+    return erro('Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.', 409)
+  }
+
+  // A volta vai sem `#`: o Mercado Pago pode descartar o que vem depois dele (spec R-11).
+  const volta = `${site.replace(/[?#].*$/, '')}?volta=pagamento`
 
   const resposta = await fetch(MP, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      reason: escolhido.nome,
+      reason: `${escolhido.nome} (${anual ? 'anual' : 'mensal'})`,
       external_reference: usuario.user.id,
       payer_email: usuario.user.email,
-      back_url: site,
+      back_url: volta,
       status: 'pending',
       auto_recurring: {
-        frequency: 1,
+        frequency: anual ? 12 : 1,
         frequency_type: 'months',
-        transaction_amount: escolhido.mensal,
+        transaction_amount: valor,
         currency_id: 'BRL',
       },
     }),
@@ -83,7 +94,9 @@ Deno.serve(async (req: Request) => {
       plano: corpo.plano,
       status: 'pendente',
       preapproval_id: dados.id,
-      valor_centavos: Math.round(escolhido.mensal * 100),
+      valor_centavos: Math.round(valor * 100),
+      // Assinatura paga não vence por data; quem vence é o Estudante.
+      expira_em: null,
       preco_travado: travado,
       atualizado_em: new Date().toISOString(),
     },
