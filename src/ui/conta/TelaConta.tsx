@@ -1,8 +1,9 @@
 import { BadgeCheck, CloudOff, CreditCard, LogIn, LogOut, Sparkles, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { podeAssinar, RECADO_STATUS } from '@/domain/assinatura.ts'
-import { planoPorId, PLANOS, type IdPlano } from '@/domain/conta.ts'
+import { RECADO_STATUS } from '@/domain/assinatura.ts'
+import { planoPorId, PLANOS } from '@/domain/conta.ts'
 import { useAssinatura } from '../estado/usarAssinatura.ts'
+import { ehPlanoPago, type PlanoPago } from '../navegacao.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -13,20 +14,15 @@ interface TelaContaProps {
   readonly aoEntrar: () => void
   readonly aoVerPrecos: () => void
   readonly aoIrParaConfig: () => void
+  readonly aoAssinar: (plano: PlanoPago) => void
 }
 
 /** Estado da conta: quem está conectado, qual plano e o que fazer sem conta. */
-export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: TelaContaProps) {
+export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssinar }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
-  const [erroCobranca, setErroCobranca] = useState<string | null>(null)
-  const { assinatura, carregando, assinar } = useAssinatura(conta.sessao !== null)
+  const { assinatura } = useAssinatura(conta.sessao !== null)
 
   const plano = planoPorId(assinatura.plano)
-
-  const irPagar = async (escolhido: IdPlano) => {
-    setErroCobranca(null)
-    setErroCobranca(await assinar(escolhido))
-  }
 
   const sair = async () => {
     setSaindo(true)
@@ -91,13 +87,6 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
           <CardDescription>{RECADO_STATUS[assinatura.status]}</CardDescription>
         </CardHeader>
 
-        {erroCobranca ? (
-          <Alert variant="error">
-            <CreditCard aria-hidden="true" />
-            <p>{erroCobranca}</p>
-          </Alert>
-        ) : null}
-
         <div className="flex flex-wrap items-center gap-3 border border-border p-4">
           <span aria-hidden="true" className="grid size-10 shrink-0 place-content-center rounded-md border border-primary/40 bg-lightprimary text-primary">
             <BadgeCheck className="size-5" />
@@ -116,12 +105,12 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig }: Tela
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" onClick={aoVerPrecos}>
             <Sparkles aria-hidden="true" />
-            Ver os planos
+            Mudar de plano
           </Button>
 
           {conta.sessao && assinatura.status !== 'ativa'
-            ? PLANOS.filter((p) => podeAssinar(p.id)).map((p) => (
-                <Button key={p.id} disabled={carregando} onClick={() => void irPagar(p.id)}>
+            ? PLANOS.filter((p) => ehPlanoPago(p.id)).map((p) => (
+                <Button key={p.id} onClick={() => ehPlanoPago(p.id) && aoAssinar(p.id)}>
                   <CreditCard aria-hidden="true" />
                   Assinar {p.nome} · R$ {p.mensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
                 </Button>

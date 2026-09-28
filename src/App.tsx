@@ -213,6 +213,7 @@ function Conteudo() {
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
+          aoAssinar={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
         />
       </Estrutura>
     )
