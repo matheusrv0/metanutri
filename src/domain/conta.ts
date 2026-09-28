@@ -252,6 +252,7 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+export const ehEmailValido = (email: string): boolean => EMAIL.test(email.trim())
 export const SENHA_MINIMA = 8
 
 /** Erros do formulário antes de qualquer chamada de rede. */
