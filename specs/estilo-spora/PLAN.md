@@ -5892,14 +5892,14 @@ interface TelaVoltaPagamentoProps {
   readonly aoTentarDeNovo: (plano: PlanoPago) => void
 }
 
-export const INTERVALO_MS = 10_000
-export const LIMITE_MS = 10 * 60_000
+const INTERVALO_MS = 10_000
+const LIMITE_MS = 10 * 60_000
 
 function Cartao({ selo, tom, titulo, children }: { readonly selo: ReactNode; readonly tom: 'ok' | 'analise' | 'erro' | 'neutro'; readonly titulo: string; readonly children: ReactNode }) {
   const cores = { ok: 'bg-lightsuccess text-successtext', analise: 'bg-lightwarning text-warningtext', erro: 'bg-lighterror text-errortext', neutro: 'bg-surfacerow text-muted-foreground' }
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
-      <div className="mx-auto flex max-w-[560px] flex-col gap-4 rounded-[28px] bg-card p-7 sm:p-10">
+      <div className="mx-auto flex max-w-[560px] flex-col gap-4 rounded-2xl bg-card p-7 sm:p-10">
         <Logo tamanho={24} />
         <span className={cn('grid size-12 place-content-center rounded-full [&_svg]:size-6', cores[tom])} aria-hidden="true">
           {selo}
