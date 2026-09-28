@@ -30,8 +30,13 @@ import { TelaAdesao } from './ui/missoes/TelaAdesao.tsx'
 import { TelaMissoesPaciente } from './ui/missoes/TelaMissoesPaciente.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
+import { TelaCheckout } from './ui/publico/TelaCheckout.tsx'
 import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
+import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
+import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
+import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
 import { TelaInicio } from './ui/publico/TelaInicio.tsx'
+import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
@@ -44,7 +49,7 @@ import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
-import { ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
+import { ETAPAS } from './ui/navegacao.ts'
 import { useRota } from './ui/usarRota.ts'
 
 function Conteudo() {
@@ -53,7 +58,8 @@ function Conteudo() {
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const conta = useConta()
-  const { assinatura } = useAssinatura(conta.sessao !== null)
+  const cobranca = useAssinatura(conta.sessao !== null)
+  const { assinatura } = cobranca
   const { fonte } = useAcompanhamentos()
 
   const recente = casos[0]
@@ -91,7 +97,8 @@ function Conteudo() {
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }
 
-  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
+  // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
+  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? { tela: 'painel' } : { tela: destino })
 
   // Escolher plano ainda não cobra: leva para a conta, que é o passo que existe.
   const escolherPlano = () => navegar({ tela: 'entrar' })
@@ -101,11 +108,13 @@ function Conteudo() {
     return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
   }
 
-  if (rota.tela === 'inicio') {
+  // Rota 'criar-conta' aberta direto pelo endereço: sem cadastro ainda, mostra a landing (Tarefa 18 substitui).
+  if (rota.tela === 'inicio' || rota.tela === 'criar-conta') {
     return (
       <MolduraPublica atual="inicio" temSessao={conta.sessao !== null} aoIrPara={irPara}>
         <TelaInicio
-          aoComecar={() => navegar(conta.sessao ? { tela: 'painel' } : rotaCriarConta(null, 'mensal'))}
+          // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
+          aoComecar={() => navegar({ tela: 'painel' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
         />
       </MolduraPublica>
@@ -125,11 +134,80 @@ function Conteudo() {
       <TelaEntrar
         conta={conta}
         aoEntrou={() => navegar(tirarDestino(armazenamentoLocal()) ?? { tela: 'painel' })}
-        aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
+        // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
+        aoCriarConta={() => navegar({ tela: 'painel' })}
         aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
         aoAbrirSistema={() => navegar({ tela: 'painel' })}
       />
+    )
+  }
+
+  if (rota.tela === 'confirmar-email') {
+    return (
+      <TelaConfirmarEmail
+        conta={conta}
+        email={null}
+        vencido={rota.vencido === true}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        aoEntrar={() => navegar({ tela: 'entrar' })}
+      />
+    )
+  }
+
+  if (rota.tela === 'esqueci-senha') {
+    return <TelaEsqueciSenha conta={conta} aoIrParaInicio={() => navegar({ tela: 'inicio' })} aoEntrar={() => navegar({ tela: 'entrar' })} />
+  }
+
+  if (rota.tela === 'nova-senha') {
+    return (
+      <TelaNovaSenha
+        conta={conta}
+        vencido={rota.vencido === true}
+        aoSenhaTrocada={() => navegar({ tela: 'painel' })}
+        aoPedirOutro={() => navegar({ tela: 'esqueci-senha' })}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+      />
+    )
+  }
+
+  if (rota.tela === 'assinar') {
+    return (
+      <TelaCheckout
+        plano={rota.plano}
+        ciclo={rota.ciclo}
+        email={conta.sessao?.email ?? ''}
+        assinaturaAtual={assinatura}
+        vagasRestantes={cobranca.vagasRestantes}
+        disponivel={conta.disponivel}
+        aoTrocar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
+        aoPagar={cobranca.assinar}
+        aoIrParaPainel={() => navegar({ tela: 'painel' })}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+      />
+    )
+  }
+
+  if (rota.tela === 'pagamento') {
+    return (
+      <TelaVoltaPagamento
+        assinatura={assinatura}
+        carregado={cobranca.carregado}
+        recarregar={cobranca.recarregar}
+        aoIrParaPainel={() => navegar({ tela: 'painel' })}
+        aoTentarDeNovo={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
+      />
+    )
+  }
+
+  if (rota.tela === 'termos' || rota.tela === 'privacidade') {
+    return (
+      <MolduraPublica atual={rota.tela} temSessao={conta.sessao !== null} aoIrPara={irPara}>
+        <div className="mx-auto max-w-[72ch] px-4 py-16">
+          <h1 className="text-4xl font-bold">{rota.tela === 'termos' ? 'Termos de uso' : 'Política de privacidade'}</h1>
+          <p className="text-muted-foreground">Este texto está sendo finalizado e entra no ar em breve.</p>
+        </div>
+      </MolduraPublica>
     )
   }
 
