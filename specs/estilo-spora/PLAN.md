@@ -2313,13 +2313,14 @@ Base de CA-130, CA-132, CA-139, CA-140 a CA-146, CA-174 e CA-223. Também fecha 
   - `interface Resultado { ok: boolean; erro: ErroConta | null; confirmarEmail?: boolean }`
   - `interface DadosCadastro { nome: string; email: string; senha: string; planoDesejado: IdPlano; versaoTermos: string }`
   - `interface ValorConta { sessao; carregando; disponivel; emRecuperacao: boolean; entrar(email, senha); cadastrar(dados: DadosCadastro); reenviarConfirmacao(email); pedirTrocaDeSenha(email); trocarSenha(senha); sair() }`. Todas as ações devolvem `Promise<Resultado>`, menos `sair`, que devolve `Promise<void>`.
-  - `traduzir(mensagem: string): ErroConta` e `enderecoDeVolta(motivo: 'confirmacao' | 'recuperacao'): string`
+  - `traduzir(mensagem: string): ErroConta` e `enderecoDeVolta(motivo: Exclude<TipoVolta, 'pagamento'>): string` (`TipoVolta` importado de `src/ui/voltaExterna.ts`).
 
 - [ ] **Passo 1: escrever os testes que falham**
 
 `src/ui/estado/usarConta.test.ts`:
 
 ```ts
+import { AuthRetryableFetchError } from '@supabase/supabase-js'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { traduzir, useConta } from './usarConta.ts'
 
@@ -2363,7 +2364,19 @@ describe('useConta', () => {
     expect(pedido.email).toBe('maria@usp.br')
     expect(pedido.options.data).toMatchObject({ nome: 'Maria', plano_desejado: 'estudante', termos_versao: '2026-09-28' })
     expect(pedido.options.data.plano).toBeUndefined()
-    expect(pedido.options.emailRedirectTo).toContain('?volta=confirmacao')
+    expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
+  })
+
+  it('cadastro sem versão dos termos não grava termos_versao nem termos_aceitos_em', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar({ ...dados, versaoTermos: '' })
+    })
+    const pedido = auth.signUp.mock.calls[0]?.[0]
+    expect(pedido.options.data.termos_versao).toBeUndefined()
+    expect(pedido.options.data.termos_aceitos_em).toBeUndefined()
   })
 
   it('CA-130: com confirmação ligada, e-mail repetido volta sem identidade e vira "já tem conta"', async () => {
@@ -2391,7 +2404,25 @@ describe('useConta', () => {
     await act(async () => {
       expect(await result.current.pedirTrocaDeSenha('ninguem@exemplo.com')).toEqual({ ok: true, erro: null })
     })
-    expect(auth.resetPasswordForEmail.mock.calls[0]?.[1].redirectTo).toContain('?volta=recuperacao')
+    expect(auth.resetPasswordForEmail.mock.calls[0]?.[1].redirectTo).toMatch(/\?volta=recuperacao$/)
+  })
+
+  it('CA-144: o limite de tentativas também vira resposta neutra, ele só dispara quando a conta existe', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: { message: 'email rate limit exceeded' } })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha('maria@usp.br')).toEqual({ ok: true, erro: null })
+    })
+  })
+
+  it('CA-144: só a falta de internet aparece, e é achada pelo tipo do erro (WebKit não fala "fetch")', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: new AuthRetryableFetchError('Load failed', 0) })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha('maria@usp.br')).toEqual({ ok: false, erro: 'falha-rede' })
+    })
   })
 
   it('CA-145: o link de troca de senha liga o modo de recuperação', async () => {
@@ -2411,6 +2442,39 @@ describe('useConta', () => {
       expect(await result.current.trocarSenha('novasenha1')).toEqual({ ok: true, erro: null })
     })
     expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('sair desliga o modo de recuperação', async () => {
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    expect(result.current.emRecuperacao).toBe(true)
+    await act(async () => {
+      await result.current.sair()
+    })
+    expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('o evento SIGNED_OUT também desliga o modo de recuperação', async () => {
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    expect(result.current.emRecuperacao).toBe(true)
+    act(() => avisar('SIGNED_OUT', null))
+    expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('reenviarConfirmacao chama auth.resend com o tipo signup, o e-mail sem espaços e volta para a confirmação', async () => {
+    auth.resend.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.reenviarConfirmacao(' maria@usp.br ')).toEqual({ ok: true, erro: null })
+    })
+    const pedido = auth.resend.mock.calls[0]?.[0]
+    expect(pedido.type).toBe('signup')
+    expect(pedido.email).toBe('maria@usp.br')
+    expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
   })
 })
 
@@ -2452,8 +2516,10 @@ export interface Sessao {
 - [ ] **Passo 4: `src/ui/estado/usarConta.ts` inteiro**
 
 ```ts
+import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { nomeSugerido, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import type { TipoVolta } from '../voltaExterna.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
 export interface Resultado {
@@ -2502,7 +2568,7 @@ export function traduzir(mensagem: string): ErroConta {
 }
 
 /** Para onde o e-mail do Supabase devolve a pessoa: o próprio site, com o motivo (spec R-10). */
-export function enderecoDeVolta(motivo: 'confirmacao' | 'recuperacao'): string {
+export function enderecoDeVolta(motivo: Exclude<TipoVolta, 'pagamento'>): string {
   const { origin, pathname } = globalThis.location
   return `${origin}${pathname}?volta=${motivo}`
 }
@@ -2538,6 +2604,8 @@ export function useConta(): ValorConta {
     const { data: inscricao } = cliente.auth.onAuthStateChange((evento, nova) => {
       if (!vivo) return
       if (evento === 'PASSWORD_RECOVERY') setEmRecuperacao(true)
+      // Sair no meio da troca de senha não deve deixar o modo de recuperação ligado.
+      if (evento === 'SIGNED_OUT') setEmRecuperacao(false)
       setSessao(montarSessao(nova?.user ?? null))
     })
 
@@ -2558,6 +2626,7 @@ export function useConta(): ValorConta {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const email = dados.email.trim()
+    const versaoTermos = dados.versaoTermos.trim()
     const { data, error } = await c.auth.signUp({
       email,
       password: dados.senha,
@@ -2566,8 +2635,9 @@ export function useConta(): ValorConta {
         data: {
           nome: dados.nome.trim() || nomeSugerido(email),
           plano_desejado: dados.planoDesejado,
-          termos_versao: dados.versaoTermos,
-          termos_aceitos_em: new Date().toISOString(),
+          // Sem versão (remendo do cadastro antigo, Tarefa 19 apaga), não grava aceite:
+          // não houve termos para aceitar, então não é para constar como se tivesse.
+          ...(versaoTermos ? { termos_versao: versaoTermos, termos_aceitos_em: new Date().toISOString() } : {}),
         },
       },
     })
@@ -2590,9 +2660,13 @@ export function useConta(): ValorConta {
     if (!c) return SEM_SERVIDOR
     const { error } = await c.auth.resetPasswordForEmail(email.trim(), { redirectTo: enderecoDeVolta('recuperacao') })
     if (!error) return OK
-    // CA-144: a tela diz a mesma coisa exista a conta ou não. Só rede e limite aparecem.
-    const erro = traduzir(error.message)
-    return erro === 'falha-rede' || erro === 'muitas-tentativas' ? { ok: false, erro } : OK
+    // CA-144: a tela diz a mesma coisa exista a conta ou não — até o limite de
+    // tentativas, que só dispara quando a conta existe de verdade, fica calado. Só a
+    // falta de internet aparece, e é achada pelo tipo do erro, não por palavra no
+    // texto: no WebKit (Safari e todo navegador de iPhone) a queda de rede chega como
+    // "Load failed", que não contém "fetch" nem "network".
+    if (isAuthRetryableFetchError(error) && error.status === 0) return { ok: false, erro: 'falha-rede' }
+    return OK
   }, [])
 
   const trocarSenha = useCallback(async (senha: string): Promise<Resultado> => {
@@ -2609,13 +2683,14 @@ export function useConta(): ValorConta {
     if (!c) return
     await c.auth.signOut()
     setSessao(null)
+    setEmRecuperacao(false)
   }, [])
 
   return { sessao, carregando, disponivel, emRecuperacao, entrar, cadastrar, reenviarConfirmacao, pedirTrocaDeSenha, trocarSenha, sair }
 }
 ```
 
-Atenção: `'Failed to fetch'` não contém `expired` nem `invalid`, então cai em `falha-rede`. A mensagem de link vencido do Supabase contém `expired`.
+Atenção: `'Failed to fetch'` não contém `expired` nem `invalid`, então cai em `falha-rede` (via `traduzir`, usado por `entrar`/`cadastrar`/`reenviarConfirmacao`/`trocarSenha`). A mensagem de link vencido do Supabase contém `expired`. Já `pedirTrocaDeSenha` não usa `traduzir`: ele precisa saber, sem ambiguidade, se o erro é queda de rede (para mostrar) ou outra coisa (para ficar calado, CA-144) — por isso usa `isAuthRetryableFetchError` do próprio pacote em vez de procurar palavras no texto, que falha no WebKit (`"Load failed"`).
 
 - [ ] **Passo 5: quem usava `sessao.plano`**
 

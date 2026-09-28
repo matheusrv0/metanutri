@@ -1,5 +1,7 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { nomeSugerido, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import type { TipoVolta } from '../voltaExterna.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
 export interface Resultado {
@@ -48,7 +50,7 @@ export function traduzir(mensagem: string): ErroConta {
 }
 
 /** Para onde o e-mail do Supabase devolve a pessoa: o próprio site, com o motivo (spec R-10). */
-export function enderecoDeVolta(motivo: 'confirmacao' | 'recuperacao'): string {
+export function enderecoDeVolta(motivo: Exclude<TipoVolta, 'pagamento'>): string {
   const { origin, pathname } = globalThis.location
   return `${origin}${pathname}?volta=${motivo}`
 }
@@ -84,6 +86,8 @@ export function useConta(): ValorConta {
     const { data: inscricao } = cliente.auth.onAuthStateChange((evento, nova) => {
       if (!vivo) return
       if (evento === 'PASSWORD_RECOVERY') setEmRecuperacao(true)
+      // Sair no meio da troca de senha não deve deixar o modo de recuperação ligado.
+      if (evento === 'SIGNED_OUT') setEmRecuperacao(false)
       setSessao(montarSessao(nova?.user ?? null))
     })
 
@@ -104,6 +108,7 @@ export function useConta(): ValorConta {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const email = dados.email.trim()
+    const versaoTermos = dados.versaoTermos.trim()
     const { data, error } = await c.auth.signUp({
       email,
       password: dados.senha,
@@ -112,8 +117,9 @@ export function useConta(): ValorConta {
         data: {
           nome: dados.nome.trim() || nomeSugerido(email),
           plano_desejado: dados.planoDesejado,
-          termos_versao: dados.versaoTermos,
-          termos_aceitos_em: new Date().toISOString(),
+          // Sem versão (remendo do cadastro antigo, Tarefa 19 apaga), não grava aceite:
+          // não houve termos para aceitar, então não é para constar como se tivesse.
+          ...(versaoTermos ? { termos_versao: versaoTermos, termos_aceitos_em: new Date().toISOString() } : {}),
         },
       },
     })
@@ -136,12 +142,12 @@ export function useConta(): ValorConta {
     if (!c) return SEM_SERVIDOR
     const { error } = await c.auth.resetPasswordForEmail(email.trim(), { redirectTo: enderecoDeVolta('recuperacao') })
     if (!error) return OK
-    // CA-144: a tela diz a mesma coisa exista a conta ou não. Só rede e limite aparecem.
-    // Não usa o catch-all de `traduzir` aqui: ele cairia em 'falha-rede' para qualquer
-    // mensagem desconhecida (ex.: "User not found"), o que revelaria a diferença.
-    const texto = error.message.toLowerCase()
-    if (texto.includes('rate limit') || texto.includes('security purposes') || texto.includes('too many')) return { ok: false, erro: 'muitas-tentativas' }
-    if (texto.includes('fetch') || texto.includes('network')) return { ok: false, erro: 'falha-rede' }
+    // CA-144: a tela diz a mesma coisa exista a conta ou não — até o limite de
+    // tentativas, que só dispara quando a conta existe de verdade, fica calado. Só a
+    // falta de internet aparece, e é achada pelo tipo do erro, não por palavra no
+    // texto: no WebKit (Safari e todo navegador de iPhone) a queda de rede chega como
+    // "Load failed", que não contém "fetch" nem "network".
+    if (isAuthRetryableFetchError(error) && error.status === 0) return { ok: false, erro: 'falha-rede' }
     return OK
   }, [])
 
@@ -159,6 +165,7 @@ export function useConta(): ValorConta {
     if (!c) return
     await c.auth.signOut()
     setSessao(null)
+    setEmRecuperacao(false)
   }, [])
 
   return { sessao, carregando, disponivel, emRecuperacao, entrar, cadastrar, reenviarConfirmacao, pedirTrocaDeSenha, trocarSenha, sair }

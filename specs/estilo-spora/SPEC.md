@@ -138,7 +138,7 @@ do cadastro, para não achar que deu erro.
 **US-1.6 · Recuperar a senha (3 pts).** Como nutricionista, quero trocar a senha
 esquecida sozinha, sem pedir ajuda a ninguém.
 
-- **CA-144** · Dado "Esqueci a senha", quando a pessoa informa o e-mail, então vê "Se existir conta com esse e-mail, o link chega em alguns minutos", exista a conta ou não.
+- **CA-144** · Dado "Esqueci a senha", quando a pessoa informa o e-mail, então vê "Se existir conta com esse e-mail, o link chega em alguns minutos", exista a conta ou não. Só a falta de internet aparece como erro.
 - **CA-145** · Dado o link de troca aberto, então a pessoa vê a tela Nova senha, com senha e repetição.
 - **CA-146** · Dado uma senha nova válida e igual à repetição, quando a pessoa salva, então a senha muda e ela vai para o painel com sessão.
 - **CA-147** · Dado um link de troca vencido, então aparece "Este link não vale mais" com o botão para pedir outro.

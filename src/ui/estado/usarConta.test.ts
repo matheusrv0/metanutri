@@ -1,3 +1,4 @@
+import { AuthRetryableFetchError } from '@supabase/supabase-js'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { traduzir, useConta } from './usarConta.ts'
 
@@ -41,7 +42,19 @@ describe('useConta', () => {
     expect(pedido.email).toBe('maria@usp.br')
     expect(pedido.options.data).toMatchObject({ nome: 'Maria', plano_desejado: 'estudante', termos_versao: '2026-09-28' })
     expect(pedido.options.data.plano).toBeUndefined()
-    expect(pedido.options.emailRedirectTo).toContain('?volta=confirmacao')
+    expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
+  })
+
+  it('cadastro sem versão dos termos não grava termos_versao nem termos_aceitos_em', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar({ ...dados, versaoTermos: '' })
+    })
+    const pedido = auth.signUp.mock.calls[0]?.[0]
+    expect(pedido.options.data.termos_versao).toBeUndefined()
+    expect(pedido.options.data.termos_aceitos_em).toBeUndefined()
   })
 
   it('CA-130: com confirmação ligada, e-mail repetido volta sem identidade e vira "já tem conta"', async () => {
@@ -69,7 +82,25 @@ describe('useConta', () => {
     await act(async () => {
       expect(await result.current.pedirTrocaDeSenha('ninguem@exemplo.com')).toEqual({ ok: true, erro: null })
     })
-    expect(auth.resetPasswordForEmail.mock.calls[0]?.[1].redirectTo).toContain('?volta=recuperacao')
+    expect(auth.resetPasswordForEmail.mock.calls[0]?.[1].redirectTo).toMatch(/\?volta=recuperacao$/)
+  })
+
+  it('CA-144: o limite de tentativas também vira resposta neutra, ele só dispara quando a conta existe', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: { message: 'email rate limit exceeded' } })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha('maria@usp.br')).toEqual({ ok: true, erro: null })
+    })
+  })
+
+  it('CA-144: só a falta de internet aparece, e é achada pelo tipo do erro (WebKit não fala "fetch")', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: new AuthRetryableFetchError('Load failed', 0) })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha('maria@usp.br')).toEqual({ ok: false, erro: 'falha-rede' })
+    })
   })
 
   it('CA-145: o link de troca de senha liga o modo de recuperação', async () => {
@@ -89,6 +120,39 @@ describe('useConta', () => {
       expect(await result.current.trocarSenha('novasenha1')).toEqual({ ok: true, erro: null })
     })
     expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('sair desliga o modo de recuperação', async () => {
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    expect(result.current.emRecuperacao).toBe(true)
+    await act(async () => {
+      await result.current.sair()
+    })
+    expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('o evento SIGNED_OUT também desliga o modo de recuperação', async () => {
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    expect(result.current.emRecuperacao).toBe(true)
+    act(() => avisar('SIGNED_OUT', null))
+    expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('reenviarConfirmacao chama auth.resend com o tipo signup, o e-mail sem espaços e volta para a confirmação', async () => {
+    auth.resend.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.reenviarConfirmacao(' maria@usp.br ')).toEqual({ ok: true, erro: null })
+    })
+    const pedido = auth.resend.mock.calls[0]?.[0]
+    expect(pedido.type).toBe('signup')
+    expect(pedido.email).toBe('maria@usp.br')
+    expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
   })
 })
 
