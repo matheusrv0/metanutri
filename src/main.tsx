@@ -9,7 +9,12 @@ import './ui/tema/globals.css'
 import { criarRepositorioProdutos, produtoComoAlimento } from './domain/produtos.ts'
 import { registrarProdutos } from './domain/tabelas.ts'
 import { App } from './App.tsx'
+import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { obterSupabase } from './ui/estado/supabase.ts'
+import { tirarDestino } from './ui/fluxoConta.ts'
+import { escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
+import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
 
 // Produtos cadastrados pelo rótulo entram na busca desde a primeira tela.
 try {
@@ -21,10 +26,27 @@ try {
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')
 
-createRoot(raiz).render(
-  <StrictMode>
-    <ProvedorTema>
-      <App />
-    </ProvedorTema>
-  </StrictMode>,
-)
+/*
+ * Volta do e-mail ou do pagamento (spec estilo-spora, R-10 e R-11). O Supabase lê o
+ * login que veio no endereço quando o cliente nasce; só depois de `getSession` dá
+ * para limpar o endereço e pôr a rota certa, sem perder a sessão.
+ */
+async function tratarVolta(): Promise<void> {
+  const volta = lerVolta(globalThis.location.search, globalThis.location.hash)
+  if (volta.tipo === null && !volta.linkVencido) return
+  await obterSupabase()
+    ?.auth.getSession()
+    .catch(() => undefined)
+  const guardado = volta.tipo === 'confirmacao' ? tirarDestino(armazenamentoLocal()) : null
+  globalThis.history.replaceState(null, '', `${globalThis.location.pathname}${escreverRota(destinoDaVolta(volta, guardado))}`)
+}
+
+void tratarVolta().finally(() => {
+  createRoot(raiz).render(
+    <StrictMode>
+      <ProvedorTema>
+        <App />
+      </ProvedorTema>
+    </StrictMode>,
+  )
+})
