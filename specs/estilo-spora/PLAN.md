@@ -6513,8 +6513,11 @@ O site já pede conta. Para os e-mails e o pagamento funcionarem de verdade:
    Em *Redirect URLs*, acrescente `https://matheusrv0.github.io/metanutri/**` e, para testar em casa, `http://localhost:5173/**`.
 2. **Resend.** Crie a conta e o domínio de envio, gere uma chave e ligue em *Supabase > Authentication > SMTP Settings*
    (host `smtp.resend.com`, porta 465, usuário `resend`, senha = a chave). Sem isso, o Supabase manda poucos e-mails por hora.
-3. **SQL do Estudante.** Rode `supabase/005-estudante.sql` no SQL Editor. Para aceitar uma faculdade que falta:
-   `insert into public.dominios_faculdade values ('dominio.br');`
+3. **SQL do Estudante.** Antes, confira em *Authentication > Sign In / Providers > Email* que **Confirm email** está LIGADO:
+   desligado, qualquer um que digitar um e-mail de faculdade ganha o Estudante sem ter a caixa de entrada.
+   Depois rode `supabase/005-estudante.sql` no SQL Editor e confira com as consultas que estão no fim do próprio arquivo
+   (e-mails de teste que devem dar verdadeiro e falso). Para aceitar uma faculdade que falta, acrescente o domínio em
+   `COMPLEMENTO`, no `scripts/dominios-faculdades.mjs`, rode o script e rode o SQL de novo.
 4. **Mercado Pago.** Crie a aplicação, guarde o token em *Edge Functions > Secrets* como `MERCADOPAGO_ACCESS_TOKEN`,
    o segredo do webhook como `MERCADOPAGO_WEBHOOK_SECRET` e `SITE_URL` = `https://matheusrv0.github.io/metanutri/`.
    Publique as duas funções (`supabase functions deploy assinar` e `supabase functions deploy webhook-mercadopago`)
