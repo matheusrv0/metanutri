@@ -3099,7 +3099,7 @@ const LINK_RODAPE =
  */
 export function MolduraPublica({ atual, temSessao, aoIrPara, children }: MolduraPublicaProps) {
   const itemMenu =
-    'rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+    'inline-flex items-center min-h-11 sm:min-h-9 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
