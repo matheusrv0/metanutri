@@ -30,10 +30,12 @@ import { TelaAdesao } from './ui/missoes/TelaAdesao.tsx'
 import { TelaMissoesPaciente } from './ui/missoes/TelaMissoesPaciente.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
-import { TelaEntrar } from './ui/publico/TelaEntrar.tsx'
+import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
 import { TelaInicio } from './ui/publico/TelaInicio.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
+import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { tirarDestino } from './ui/fluxoConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
@@ -120,9 +122,14 @@ function Conteudo() {
 
   if (rota.tela === 'entrar') {
     return (
-      <MolduraPublica atual="entrar" temSessao={conta.sessao !== null} aoIrPara={irPara}>
-        <TelaEntrar conta={conta} aoEntrar={() => navegar({ tela: 'painel' })} aoAbrirSistema={() => navegar({ tela: 'painel' })} />
-      </MolduraPublica>
+      <TelaEntrar
+        conta={conta}
+        aoEntrou={() => navegar(tirarDestino(armazenamentoLocal()) ?? { tela: 'painel' })}
+        aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
+        aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        aoAbrirSistema={() => navegar({ tela: 'painel' })}
+      />
     )
   }
 
