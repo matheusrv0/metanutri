@@ -14,8 +14,8 @@ export const cardVariants = cva('text-card-foreground flex flex-col min-w-0', {
   variants: {
     variant: {
       default: 'bg-card rounded-3xl',
-      sunken: 'bg-surfacerow rounded-2xl',
-      flat: 'bg-card ring-1 ring-inset ring-border rounded-2xl',
+      sunken: 'bg-surfacerow rounded-xl',
+      flat: 'bg-card ring-1 ring-inset ring-border rounded-xl',
       sheen: 'rounded-2xl bg-[image:var(--gradient-sheen)] shadow-[var(--shadow-inset-sheen)]',
     },
     tight: { true: 'gap-3 p-3.5', false: 'gap-4 p-5' },
