@@ -1,5 +1,6 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { Resultado } from '../../estado/usarConta.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaConfirmarEmail } from './TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './TelaEsqueciSenha.tsx'
@@ -20,6 +21,22 @@ describe('TelaConfirmarEmail', () => {
 
     for (let i = 0; i < 60; i++) act(() => vi.advanceTimersByTime(1000))
     expect(screen.getByRole('button', { name: 'Reenviar o link' })).toBeEnabled()
+  })
+
+  it('clique duplo em "Reenviar o link" só manda um pedido', async () => {
+    let resolver: (valor: Resultado) => void = () => {}
+    const promessa = new Promise<Resultado>((resolve) => {
+      resolver = resolve
+    })
+    const conta = contaFalsa({ reenviarConfirmacao: vi.fn(() => promessa) })
+    render(<TelaConfirmarEmail conta={conta} email="maria@exemplo.com" vencido={false} aoIrParaInicio={vi.fn()} aoEntrar={vi.fn()} />)
+    const usuario = userEvent.setup()
+
+    await usuario.dblClick(screen.getByRole('button', { name: 'Reenviar o link' }))
+    resolver({ ok: true, erro: null })
+    await waitFor(() => expect(screen.getByRole('button', { name: /Reenviar em 60 s/ })).toBeInTheDocument())
+
+    expect(conta.reenviarConfirmacao).toHaveBeenCalledTimes(1)
   })
 
   it('CA-143: link vencido pede outro', () => {

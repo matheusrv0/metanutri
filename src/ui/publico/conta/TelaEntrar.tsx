@@ -35,6 +35,8 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
   const [reenvio, setReenvio] = useState<Reenvio>('nada')
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
+  const [reenviando, setReenviando] = useState(false)
+  const reenviandoRef = useRef(false)
   const semInternet = globalThis.navigator?.onLine === false
 
   const enviar = async (evento: FormEvent) => {
@@ -60,7 +62,12 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
   }
 
   const reenviar = async () => {
+    if (reenviandoRef.current) return
+    reenviandoRef.current = true
+    setReenviando(true)
     const resultado = await conta.reenviarConfirmacao(email)
+    reenviandoRef.current = false
+    setReenviando(false)
     setReenvio(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
   }
 
@@ -100,7 +107,7 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
             {MENSAGEM_ERRO[erro]}
             {erro === 'email-nao-confirmado' ? (
               <div className="mt-2">
-                <Button size="sm" variant="outline" onClick={() => void reenviar()}>
+                <Button size="sm" variant="outline" loading={reenviando} onClick={() => void reenviar()}>
                   Reenviar o link
                 </Button>
               </div>

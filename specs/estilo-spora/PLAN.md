@@ -4715,6 +4715,8 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
   const [reenvio, setReenvio] = useState<Reenvio>('nada')
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
+  const [reenviando, setReenviando] = useState(false)
+  const reenviandoRef = useRef(false)
   const semInternet = globalThis.navigator?.onLine === false
 
   const enviar = async (evento: FormEvent) => {
@@ -4740,7 +4742,12 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
   }
 
   const reenviar = async () => {
+    if (reenviandoRef.current) return
+    reenviandoRef.current = true
+    setReenviando(true)
     const resultado = await conta.reenviarConfirmacao(email)
+    reenviandoRef.current = false
+    setReenviando(false)
     setReenvio(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
   }
 
@@ -4780,7 +4787,7 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
             {MENSAGEM_ERRO[erro]}
             {erro === 'email-nao-confirmado' ? (
               <div className="mt-2">
-                <Button size="sm" variant="outline" onClick={() => void reenviar()}>
+                <Button size="sm" variant="outline" loading={reenviando} onClick={() => void reenviar()}>
                   Reenviar o link
                 </Button>
               </div>
@@ -4963,7 +4970,7 @@ export const ehEmailValido = (email: string): boolean => EMAIL.test(email.trim()
 - [ ] **Passo 4: `TelaConfirmarEmail.tsx`**
 
 ```tsx
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { ehEmailValido, MENSAGEM_ERRO, type ErroConta } from '@/domain/conta.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
@@ -4989,6 +4996,8 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEn
   const [digitado, setDigitado] = useState(email ?? '')
   const [espera, setEspera] = useState(0)
   const [resultado, setResultado] = useState<'nada' | 'enviado' | ErroConta>('nada')
+  const [enviando, setEnviando] = useState(false)
+  const enviandoRef = useRef(false)
 
   useEffect(() => {
     if (espera <= 0) return
@@ -4997,11 +5006,16 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEn
   }, [espera])
 
   const reenviar = async () => {
+    if (enviandoRef.current) return
     if (!ehEmailValido(digitado)) {
       setResultado('email-invalido')
       return
     }
+    enviandoRef.current = true
+    setEnviando(true)
     const r = await conta.reenviarConfirmacao(digitado)
+    enviandoRef.current = false
+    setEnviando(false)
     setResultado(r.ok ? 'enviado' : (r.erro ?? 'falha-rede'))
     if (r.ok) setEspera(ESPERA_S)
   }
@@ -5028,10 +5042,10 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEn
       {resultado === 'enviado' ? <AvisoFormulario tipo="ok">Mandamos outro link para {digitado.trim()}.</AvisoFormulario> : null}
       {resultado !== 'nada' && resultado !== 'enviado' ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[resultado]}</AvisoFormulario> : null}
 
-      <Button variant={vencido ? 'default' : 'outline'} size="lg" block disabled={espera > 0} onClick={() => void reenviar()}>
+      <Button variant={vencido ? 'default' : 'outline'} size="lg" block disabled={espera > 0} loading={enviando} onClick={() => void reenviar()}>
         {rotuloBotao}
       </Button>
-      <button type="button" onClick={aoEntrar} className="self-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline">
+      <button type="button" onClick={aoEntrar} className="inline-flex min-h-11 items-center self-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline">
         Já confirmei, quero entrar
       </button>
     </MolduraConta>
