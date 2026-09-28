@@ -3366,6 +3366,9 @@ fotos, recortadas em círculo. Licença Unsplash (uso livre, inclusive comercial
 ```tsx
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
+import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
 const titulos = () => screen.getAllByRole('heading').map((h) => h.textContent ?? '')
@@ -3381,12 +3384,15 @@ describe('TelaInicio', () => {
 
   it('CA-113: o título do topo é o combinado', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio?O MetaNutri dizo que comer.')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio? O MetaNutri diz o que comer.')
   })
 
-  it('CA-114: só números verdadeiros', () => {
+  it('CA-114: só números verdadeiros, calculados do sistema e da TACO', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    for (const numero of ['16', '597', '5', '57%']) expect(screen.getByText(numero)).toBeInTheDocument()
+    const numeros = [String(MICRONUTRIENTES_ADEQUACAO.length), String(ALIMENTOS.length), String(coberturaDeCalcio().length), `${pctAlimentosSemVitaminaA()}%`]
+    // Prende o dado de hoje: se algum desses números mudar sem querer, o teste avisa.
+    expect(numeros).toEqual(['16', '597', '5', '57%'])
+    for (const numero of numeros) expect(screen.getByText(numero)).toBeInTheDocument()
   })
 
   it('CA-115: o diferencial mostra telas reais do app', () => {
@@ -3455,6 +3461,9 @@ Esperado: FAIL (a landing antiga não tem esses títulos nem a prop `aoComecar`)
 
 ```tsx
 import { ArrowUpRight } from 'lucide-react'
+import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
+import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -3510,8 +3519,8 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
             <div>
               <Button onClick={() => rolarAte('como-funciona')}>Ver como funciona</Button>
               <h1 id="titulo-inicio" className="mt-4 text-[clamp(34px,5vw,52px)] font-bold leading-[1.02]">
-                Faltou cálcio?
-                <br />O MetaNutri diz
+                Faltou cálcio?{' '}
+                <br />O MetaNutri diz{' '}
                 <br />o que comer.
               </h1>
             </div>
@@ -3520,8 +3529,13 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
               caseira.
             </p>
             <div className="grid grid-cols-2 gap-3 lg:w-[400px]">
-              <CartaoNumero valor="16" rotulo="nutrientes" apoio="conferidos em cada plano" aoClicar={() => rolarAte('o-diferencial')} />
-              <CartaoNumero valor="597" rotulo="alimentos" apoio="da tabela brasileira (TACO)" aoClicar={() => rolarAte('fontes')} />
+              <CartaoNumero
+                valor={String(MICRONUTRIENTES_ADEQUACAO.length)}
+                rotulo="nutrientes"
+                apoio="conferidos em cada plano"
+                aoClicar={() => rolarAte('o-diferencial')}
+              />
+              <CartaoNumero valor={String(ALIMENTOS.length)} rotulo="alimentos" apoio="da tabela brasileira (TACO)" aoClicar={() => rolarAte('fontes')} />
             </div>
           </div>
         </div>
@@ -3536,9 +3550,14 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
           <p className="mt-4 text-right text-sm text-muted-foreground">O MetaNutri mostra o que falta e já sugere o alimento, com a quantidade.</p>
 
           <div className="mt-14 grid gap-4 md:grid-cols-[1fr_1fr_1.3fr]">
-            <CartaoNumero tom="cinza" valor="5" rotulo="sugestões" apoio="de alimento para cada nutriente que falta" />
+            <CartaoNumero tom="cinza" valor={String(coberturaDeCalcio().length)} rotulo="sugestões" apoio="de alimento para cada nutriente que falta" />
             <CartaoNumero tom="cinza" valor="g + colher" rotulo="quantidade" apoio="em gramas e em medida caseira" />
-            <CartaoNumero tom="teal" valor="57%" rotulo="dos alimentos da TACO" apoio="não têm vitamina A medida. Aqui a falta de dado aparece, nunca vira zero." />
+            <CartaoNumero
+              tom="teal"
+              valor={`${pctAlimentosSemVitaminaA()}%`}
+              rotulo="dos alimentos da TACO"
+              apoio="não têm vitamina A medida. Aqui a falta de dado aparece, nunca vira zero."
+            />
           </div>
 
           <div id="como-funciona" className="mt-28 scroll-mt-24">
@@ -3560,7 +3579,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
             </ol>
           </div>
 
-          <div id="o-diferencial" className="mt-28 grid scroll-mt-24 items-center gap-8 rounded-[32px] bg-surfacerow p-6 sm:p-12 lg:grid-cols-[1fr_1.15fr]">
+          <div id="o-diferencial" className="mt-28 grid scroll-mt-24 items-center gap-8 rounded-2xl bg-surfacerow p-6 sm:p-12 lg:grid-cols-[1fr_1.15fr]">
             <div>
               <RotuloSecao>O diferencial</RotuloSecao>
               <h2 className={`${TITULO_SECAO} max-w-[14ch]`}>O diferencial, na tela de verdade</h2>
@@ -3573,10 +3592,10 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
               </Button>
             </div>
             <div className="relative min-h-[400px]">
-              <figure className="absolute left-0 top-0 h-[370px] w-[min(300px,80%)] overflow-hidden rounded-[20px] bg-card px-4 pt-4 shadow-raised">
+              <figure className="absolute left-0 top-0 h-[370px] w-[min(300px,80%)] overflow-hidden rounded-xl bg-card px-4 pt-4 shadow-raised">
                 <img src={`${BASE}imagens/cobrir.png`} alt="Tela do botão Cobrir sugerindo rúcula, iogurte e sardinha para completar o cálcio." className="w-full" loading="lazy" />
               </figure>
-              <figure className="absolute bottom-0 right-0 h-[280px] w-[min(240px,62%)] overflow-hidden rounded-[20px] border-[6px] border-card bg-surfacerow shadow-raised">
+              <figure className="absolute bottom-0 right-0 h-[280px] w-[min(240px,62%)] overflow-hidden rounded-xl border-[6px] border-card bg-surfacerow shadow-raised">
                 <img src={`${BASE}imagens/missoes-paciente.png`} alt="Tela de missões do paciente com 2 de 5 missões feitas no dia." className="w-full" loading="lazy" />
               </figure>
             </div>

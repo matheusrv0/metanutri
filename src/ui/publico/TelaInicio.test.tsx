@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
+import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
 const titulos = () => screen.getAllByRole('heading').map((h) => h.textContent ?? '')
@@ -15,12 +18,15 @@ describe('TelaInicio', () => {
 
   it('CA-113: o título do topo é o combinado', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio?O MetaNutri dizo que comer.')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio? O MetaNutri diz o que comer.')
   })
 
-  it('CA-114: só números verdadeiros', () => {
+  it('CA-114: só números verdadeiros, calculados do sistema e da TACO', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    for (const numero of ['16', '597', '5', '57%']) expect(screen.getByText(numero)).toBeInTheDocument()
+    const numeros = [String(MICRONUTRIENTES_ADEQUACAO.length), String(ALIMENTOS.length), String(coberturaDeCalcio().length), `${pctAlimentosSemVitaminaA()}%`]
+    // Prende o dado de hoje: se algum desses números mudar sem querer, o teste avisa.
+    expect(numeros).toEqual(['16', '597', '5', '57%'])
+    for (const numero of numeros) expect(screen.getByText(numero)).toBeInTheDocument()
   })
 
   it('CA-115: o diferencial mostra telas reais do app', () => {

@@ -17,6 +17,11 @@ const semNutriente = (chave: (typeof NUTRIENTES_CONFERIDOS)[number]) =>
 
 const formatar = (n: number) => `${n.toFixed(1).replace('.', ',')}%`
 
+/** Percentual (inteiro) dos alimentos da TACO sem vitamina A medida (spec estilo-spora, CA-114). */
+export function pctAlimentosSemVitaminaA(): number {
+  return Math.round(pct(semNutriente('vitamina_a_rae_mcg')))
+}
+
 /**
  * Medido na tabela em uso, não escrito à mão: se a base mudar, a página muda junto.
  * É a informação mais desconfortável do produto e por isso fica em destaque.
