@@ -36,7 +36,7 @@ export function CampoSenha({ id, rotulo, valor, aoMudar, novaSenha, invalido = f
           onClick={() => setVisivel((v) => !v)}
           aria-label={visivel ? 'Esconder a senha' : 'Mostrar a senha'}
           aria-pressed={visivel}
-          className="absolute right-1 top-1/2 grid size-10 -translate-y-1/2 place-content-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-content-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10"
         >
           {visivel ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
         </button>

@@ -17,9 +17,14 @@ interface MolduraContaProps {
 export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, children }: MolduraContaProps) {
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
-      <div className="mx-auto grid max-w-[1000px] overflow-hidden rounded-[28px] bg-card lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="mx-auto grid max-w-[1000px] overflow-hidden rounded-2xl bg-card lg:grid-cols-[1.05fr_0.95fr]">
         <main className="flex flex-col gap-4 p-6 sm:p-10">
-          <button type="button" onClick={aoIrParaInicio} aria-label="MetaNutri, início" className="w-fit rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button
+            type="button"
+            onClick={aoIrParaInicio}
+            aria-label="MetaNutri, início"
+            className="inline-flex min-h-11 w-fit items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <Logo tamanho={24} />
           </button>
           {passo ? (

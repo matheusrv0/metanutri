@@ -3995,9 +3995,14 @@ interface MolduraContaProps {
 export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, children }: MolduraContaProps) {
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
-      <div className="mx-auto grid max-w-[1000px] overflow-hidden rounded-[28px] bg-card lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="mx-auto grid max-w-[1000px] overflow-hidden rounded-2xl bg-card lg:grid-cols-[1.05fr_0.95fr]">
         <main className="flex flex-col gap-4 p-6 sm:p-10">
-          <button type="button" onClick={aoIrParaInicio} aria-label="MetaNutri, início" className="w-fit rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button
+            type="button"
+            onClick={aoIrParaInicio}
+            aria-label="MetaNutri, início"
+            className="inline-flex min-h-11 w-fit items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <Logo tamanho={24} />
           </button>
           {passo ? (
@@ -4065,7 +4070,11 @@ export function LadoDoPlano({ plano, ciclo, aoTrocarPlano }: LadoDoPlanoProps) {
         </ul>
       </div>
       {aoTrocarPlano ? (
-        <button type="button" onClick={aoTrocarPlano} className="w-fit rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={aoTrocarPlano}
+          className="inline-flex min-h-11 w-fit items-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           Trocar de plano
         </button>
       ) : (
@@ -4117,7 +4126,7 @@ export function CampoSenha({ id, rotulo, valor, aoMudar, novaSenha, invalido = f
           onClick={() => setVisivel((v) => !v)}
           aria-label={visivel ? 'Esconder a senha' : 'Mostrar a senha'}
           aria-pressed={visivel}
-          className="absolute right-1 top-1/2 grid size-10 -translate-y-1/2 place-content-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-content-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10"
         >
           {visivel ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
         </button>
@@ -4162,7 +4171,11 @@ export function AvisoSemServidor({ aoAbrirSistema }: { readonly aoAbrirSistema: 
       <div>
         <p className="font-semibold text-heading">A conta na nuvem não está ligada neste MetaNutri.</p>
         <p className="mt-1 text-muted-foreground">Neste modo, tudo fica salvo neste navegador e não precisa de conta.</p>
-        <button type="button" onClick={aoAbrirSistema} className="mt-2 rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={aoAbrirSistema}
+          className="mt-2 inline-flex min-h-11 items-center rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           Abrir o sistema
         </button>
       </div>

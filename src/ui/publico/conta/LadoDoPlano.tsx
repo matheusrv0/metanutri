@@ -40,7 +40,11 @@ export function LadoDoPlano({ plano, ciclo, aoTrocarPlano }: LadoDoPlanoProps) {
         </ul>
       </div>
       {aoTrocarPlano ? (
-        <button type="button" onClick={aoTrocarPlano} className="w-fit rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={aoTrocarPlano}
+          className="inline-flex min-h-11 w-fit items-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           Trocar de plano
         </button>
       ) : (

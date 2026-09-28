@@ -8,7 +8,11 @@ export function AvisoSemServidor({ aoAbrirSistema }: { readonly aoAbrirSistema: 
       <div>
         <p className="font-semibold text-heading">A conta na nuvem não está ligada neste MetaNutri.</p>
         <p className="mt-1 text-muted-foreground">Neste modo, tudo fica salvo neste navegador e não precisa de conta.</p>
-        <button type="button" onClick={aoAbrirSistema} className="mt-2 rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={aoAbrirSistema}
+          className="mt-2 inline-flex min-h-11 items-center rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           Abrir o sistema
         </button>
       </div>
