@@ -103,7 +103,7 @@ export function caminhoDoComprovante(usuarioId: string, nomeDoArquivo: string, a
   const extensao = ponto > 0 ? nomeDoArquivo.slice(ponto + 1).toLowerCase() : ''
   const seguro = base
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
