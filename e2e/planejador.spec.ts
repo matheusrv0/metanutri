@@ -240,6 +240,10 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   await expect(almoco).not.toContainText('kcal')
 
   // Regressão: a janela fixa do Radix cortava a folha numa página só. Com as duas opções, o PDF tem mais de uma.
+  // No papel a janela fica no canto da folha, sem o deslocamento de centralização (senão o topo e a esquerda somem).
+  const caixa = await janela.boundingBox()
+  expect(caixa?.x).toBeGreaterThanOrEqual(0)
+  expect(caixa?.y).toBeGreaterThanOrEqual(0)
   const pdf = await page.pdf({ format: 'A4' })
   const paginas = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length
   expect(paginas).toBeGreaterThan(1)

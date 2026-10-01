@@ -344,6 +344,8 @@
      então ela sai do posicionamento para a folha correr por várias páginas. */
   body > [role='dialog']:has(.area-impressao) {
     position: static !important;
+    --tw-translate-x: 0 !important;
+    --tw-translate-y: 0 !important;
     translate: none !important;
     transform: none !important;
     display: block !important;
