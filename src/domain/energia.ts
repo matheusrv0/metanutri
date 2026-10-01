@@ -95,6 +95,22 @@ const ROTULO_IMC: Readonly<Record<ClasseImcPreGestacional, string>> = {
   obesidade: 'obesidade',
 }
 
+/** Nome de cada dado que falta, como aparece na tela. */
+const NOMES_CAMPO: Readonly<Record<string, string>> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
+
+/** "peso e estatura", "sexo, peso e estatura". */
+function juntar(itens: readonly string[]): string {
+  if (itens.length <= 1) return itens.join('')
+  return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`
+}
+
+/** CA-230: o que falta para calcular a meta do modo rápido; `null` quando não falta nada (o problema é outro, CB-56). */
+function motivoDaMetaRapida(caso: Caso): string | null {
+  const { faltando } = validarCaso({ ...caso, modo: 'completo' })
+  if (faltando.length === 0) return null
+  return `Informe ${juntar(faltando.map((c) => NOMES_CAMPO[c] ?? c))} para calcular a meta.`
+}
+
 export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEnergia {
   if (!(opcoes.fator > 0) || opcoes.fator > 3) throw new RangeError(`Fator de atividade inválido: ${opcoes.fator}.`)
   const formula = opcoes.formula ?? 'mifflin'
@@ -112,26 +128,30 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
   const validacao = validarCaso(caso)
   const { sexo, idadeAnos, pesoKg, estaturaCm, condicao } = caso
 
-  // Prescrição rápida: a meta digitada é o gasto do dia; nenhuma fórmula é aplicada.
+  // Prescrição rápida: a meta digitada vale mais; sem ela, a meta sai do mesmo cálculo do atendimento completo (D-32).
   if (caso.modo === 'rapido' && manual === null) {
     const meta = caso.metaEnergiaKcal
-    return {
-      metodo: null,
-      tmb: null,
-      fator: opcoes.fator,
-      categoriaAtividade: null,
-      adicionais: [],
-      get: meta,
-      getManual: meta !== null,
-      fonte: null,
-      avisos,
-      motivoSemCalculo: meta === null ? 'Informe a meta de energia para acompanhar quanto o plano já cobre.' : null,
+    if (meta !== null) {
+      return {
+        metodo: null,
+        tmb: null,
+        fator: opcoes.fator,
+        categoriaAtividade: null,
+        adicionais: [],
+        get: meta,
+        getManual: true,
+        fonte: null,
+        avisos,
+        motivoSemCalculo: null,
+      }
     }
+    const calculada = calcularEnergia({ ...caso, modo: 'completo' }, opcoes)
+    if (calculada.get !== null) return calculada
+    return { ...calculada, motivoSemCalculo: motivoDaMetaRapida(caso) ?? calculada.motivoSemCalculo }
   }
 
   if (!validacao.podeCalcular || sexo === null || idadeAnos === null || pesoKg === null || estaturaCm === null) {
-    const nomes: Record<string, string> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
-    const faltando = validacao.faltando.map((c) => nomes[c] ?? c)
+    const faltando = validacao.faltando.map((c) => NOMES_CAMPO[c] ?? c)
     const motivo = faltando.length
       ? `Informe ${faltando.join(', ')} para calcular a energia.`
       : 'Corrija os campos inválidos do caso para calcular a energia.'
@@ -220,4 +240,17 @@ export function percentualDoGasto(
   if (get === null || get <= 0) return null
   const pct = Math.round((kcalPlano / get) * 100 * 1e6) / 1e6
   return { pct, estado: pct < limites.min ? 'abaixo' : pct > limites.max ? 'acima' : 'dentro' }
+}
+
+/** Como está a meta de energia da prescrição rápida (CA-226 a CA-230). */
+export type EstadoMeta =
+  | { readonly tipo: 'calculada'; readonly kcal: number }
+  | { readonly tipo: 'digitada'; readonly kcal: number; readonly calculada: number | null }
+  | { readonly tipo: 'sem-calculo'; readonly motivo: string }
+
+export function estadoDaMeta(caso: Caso): EstadoMeta {
+  const semMeta = calcularEnergia({ ...caso, modo: 'rapido', metaEnergiaKcal: null }, { fator: caso.energia.fator, formula: caso.energia.formula })
+  if (caso.metaEnergiaKcal !== null) return { tipo: 'digitada', kcal: caso.metaEnergiaKcal, calculada: semMeta.get }
+  if (semMeta.get !== null) return { tipo: 'calculada', kcal: semMeta.get }
+  return { tipo: 'sem-calculo', motivo: semMeta.motivoSemCalculo ?? '' }
 }

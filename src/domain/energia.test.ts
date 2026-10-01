@@ -1,5 +1,5 @@
 import { criarCasoVazio } from './caso.ts'
-import { calcularEnergia, categoriaDoFator, NIVEIS_ATIVIDADE, percentualDoGasto } from './energia.ts'
+import { calcularEnergia, categoriaDoFator, estadoDaMeta, NIVEIS_ATIVIDADE, percentualDoGasto } from './energia.ts'
 import type { Caso } from './tipos.ts'
 
 const caso = (p: Partial<Caso>): Caso => ({ ...criarCasoVazio('c'), ...p })
@@ -207,5 +207,76 @@ describe('percentualDoGasto (CA-10)', () => {
 
   it('sem GET não há percentual', () => {
     expect(percentualDoGasto(1800, null)).toBeNull()
+  })
+})
+
+describe('prescrição rápida: meta calculada (CA-226 a CA-230, CB-56)', () => {
+  // 10×62 + 6,25×163 − 5×28 − 161 = 1337,75
+  const rapida = (p: Partial<Caso> = {}) => caso({ modo: 'rapido', sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 163, ...p })
+
+  it('CA-226: sem meta digitada, calcula como o atendimento completo', () => {
+    const r = calcularEnergia(rapida(), { fator: 1.55 })
+    expect(r.get).toBeCloseTo(1337.75 * 1.55, 6)
+    expect(r.getManual).toBe(false)
+    expect(r.metodo).toBe('mifflin')
+    expect(r.tmb).toBeCloseTo(1337.75, 6)
+    expect(r.motivoSemCalculo).toBeNull()
+    expect(r.get).toBe(calcularEnergia(rapida({ modo: 'completo' }), { fator: 1.55 }).get)
+  })
+
+  it('CA-227: fator e peso mudam a meta calculada', () => {
+    expect(calcularEnergia(rapida(), { fator: 1.2 }).get).toBeCloseTo(1337.75 * 1.2, 6)
+    expect(calcularEnergia(rapida({ pesoKg: 70 }), { fator: 1.55 }).get).toBeCloseTo(1417.75 * 1.55, 6)
+  })
+
+  it('CA-228: o número digitado vale mais que o calculado', () => {
+    const r = calcularEnergia(rapida({ metaEnergiaKcal: 1800 }), { fator: 1.9 })
+    expect(r.get).toBe(1800)
+    expect(r.getManual).toBe(true)
+    expect(r.metodo).toBeNull()
+    expect(r.motivoSemCalculo).toBeNull()
+  })
+
+  it('CA-230: sem peso ou estatura, diz o que falta', () => {
+    expect(calcularEnergia(rapida({ pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
+      'Informe peso e estatura para calcular a meta.',
+    )
+    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).motivoSemCalculo).toBe('Informe peso para calcular a meta.')
+    expect(calcularEnergia(rapida({ sexo: null, pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
+      'Informe sexo, peso e estatura para calcular a meta.',
+    )
+    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).get).toBeNull()
+  })
+
+  it('CB-56: dado que o cálculo não aceita dá o mesmo motivo do atendimento completo', () => {
+    const r = calcularEnergia(rapida({ idadeAnos: 0 }), { fator: 1.2 })
+    const completo = calcularEnergia(rapida({ idadeAnos: 0, modo: 'completo' }), { fator: 1.2 })
+    expect(r.get).toBeNull()
+    expect(r.motivoSemCalculo).toBe(completo.motivoSemCalculo)
+    expect(r.motivoSemCalculo).not.toBeNull()
+  })
+})
+
+describe('estadoDaMeta (CA-226 a CA-230)', () => {
+  const rapida = (p: Partial<Caso> = {}) =>
+    caso({ modo: 'rapido', sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 163, energia: { fator: 1.55, formula: 'mifflin', getManual: null }, ...p })
+
+  it('calculada quando há dados e nada foi digitado', () => {
+    expect(estadoDaMeta(rapida())).toEqual({ tipo: 'calculada', kcal: expect.closeTo(2073.5125, 6) })
+  })
+
+  it('digitada, lembrando quanto daria a calculada', () => {
+    expect(estadoDaMeta(rapida({ metaEnergiaKcal: 1800 }))).toEqual({ tipo: 'digitada', kcal: 1800, calculada: expect.closeTo(2073.5125, 6) })
+  })
+
+  it('digitada sem dados para calcular', () => {
+    expect(estadoDaMeta(rapida({ metaEnergiaKcal: 1800, pesoKg: null }))).toEqual({ tipo: 'digitada', kcal: 1800, calculada: null })
+  })
+
+  it('sem cálculo, com o motivo', () => {
+    expect(estadoDaMeta(rapida({ pesoKg: null, estaturaCm: null }))).toEqual({
+      tipo: 'sem-calculo',
+      motivo: 'Informe peso e estatura para calcular a meta.',
+    })
   })
 })
