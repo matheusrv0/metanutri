@@ -143,7 +143,6 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
             />
           </Secao>
         ) : null}
-
       </div>
 
       <div className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-4">
