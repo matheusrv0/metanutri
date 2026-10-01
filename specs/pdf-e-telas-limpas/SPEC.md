@@ -99,7 +99,7 @@ Como nutricionista, quero montar o plano vendo só os campos que valem para o ca
 
 **Tabela de alimentos**
 
-- **CA-340** · Dado a Tabela de alimentos, então busca, grupo, ordem e completude do dado ficam numa linha só, com grupo, ordem e completude como listas de escolha. No celular, empilham.
+- **CA-340** · Dado a Tabela de alimentos, então busca, grupo, ordem e completude do dado ficam numa linha só quando cabem, com grupo, ordem e completude como listas de escolha. Quando não cabem (por exemplo, no notebook com a ficha do alimento aberta ao lado), a linha quebra, e a busca nunca fica mais estreita que 14 rem. No celular, empilham.
 - **CA-341** · Dado a lista, então cada linha mostra o nome, o grupo em texto apagado ao lado e as quilocalorias; dado parcial e dado mínimo viram uma marca pequena (uma para cada), explicada numa legenda acima da lista e lida por leitor de tela.
 
 ## 4. Casos de borda
