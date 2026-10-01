@@ -69,6 +69,7 @@ export const CHAVES_DE_DADOS = [
   'metanutri:perfil',
   'metanutri:sugestoes-ocultas',
   'metanutri:acompanhamentos',
+  'metanutri:sugestoes-por-refeicao',
 ] as const
 
 export interface Backup {
