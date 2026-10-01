@@ -103,8 +103,6 @@ function Conteudo() {
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
   // Quem assina os planos: a conta, ou Configurações quando não há servidor (spec ajustes-de-uso, D-37).
   const quemAssina = assinaturaDoPlano({ servidor: conta.disponivel, perfilConta: perfil, nomeDaSessao: sessao?.nome ?? '', perfilLocal: lerPerfil(arm) })
-  // CA-287: a folha da dieta sai com o nome e o CRN da conta de nutricionista.
-  const responsavel = conta.disponivel ? quemAssina.linhaNutricionista : null
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -528,7 +526,7 @@ function Conteudo() {
             : undefined
         }
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} responsavel={responsavel} assinatura={quemAssina} />}
+        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
