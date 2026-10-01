@@ -25,6 +25,12 @@ describe('App: estrutura', () => {
     window.location.hash = ''
   })
 
+  it('CA-322: #/fontes abre a página de fontes, sem conta', () => {
+    window.location.hash = '#/fontes'
+    renderizar()
+    expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
+  })
+
   it('abre no Painel, sem item de caso enquanto não há planos', () => {
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()

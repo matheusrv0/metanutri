@@ -21,7 +21,7 @@ describe('TelaInicio', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio? O MetaNutri diz o que comer.')
   })
 
-  it('CA-114: só números verdadeiros, calculados do sistema e da TACO', () => {
+  it('CA-114: só números verdadeiros, calculados do sistema e da base', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
     const numeros = [String(MICRONUTRIENTES_ADEQUACAO.length), String(ALIMENTOS.length), String(coberturaDeCalcio().length), `${pctAlimentosSemVitaminaA()}%`]
     // Prende o dado de hoje: se algum desses números mudar sem querer, o teste avisa.
@@ -51,5 +51,12 @@ describe('TelaInicio', () => {
     const foto = screen.getByAltText(/Três pratos/)
     expect(foto).toHaveAttribute('width', '1600')
     expect(foto).toHaveAttribute('height', '712')
+  })
+
+  it('CA-321: a área pública fala em Base MetaNutri, não nas tabelas de origem', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    expect(screen.getByText('da Base MetaNutri')).toBeInTheDocument()
+    expect(screen.getByText('dos alimentos da base')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/TACO|POF|IBGE/)
   })
 })

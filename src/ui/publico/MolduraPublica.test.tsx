@@ -44,5 +44,8 @@ describe('MolduraPublica', () => {
     expect(aoIrPara).toHaveBeenCalledWith('termos')
     expect(rodape.getByRole('button', { name: 'Política de privacidade' })).toBeInTheDocument()
     expect(rodape.getByRole('heading', { name: 'Fontes dos dados' })).toHaveAttribute('id', 'fontes')
+    expect(rodape.queryByText(/TACO|POF|IBGE|NEPA|UNICAMP/)).not.toBeInTheDocument()
+    await userEvent.setup().click(rodape.getByRole('button', { name: 'Base MetaNutri' }))
+    expect(aoIrPara).toHaveBeenCalledWith('fontes')
   })
 })

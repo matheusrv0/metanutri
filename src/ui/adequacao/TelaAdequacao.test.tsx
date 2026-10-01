@@ -64,7 +64,8 @@ describe('Etapa 3: adequação', () => {
     expect(ferro.getAllByText(/mg$/).length).toBeGreaterThan(0)
     expect(ferro.getByText(/% \(meta/)).toBeInTheDocument()
     expect(ferro.getByText(/Abaixo da meta|Adequado|Acima do limite superior/)).toBeInTheDocument()
-    expect(screen.getByText(/^Composição: /)).toBeInTheDocument()
+    expect(screen.getByText(/^Composição: Base MetaNutri/)).toBeInTheDocument()
+    expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
     expect(screen.getByText(/^Referências de ingestão: /)).toBeInTheDocument()
   })
 

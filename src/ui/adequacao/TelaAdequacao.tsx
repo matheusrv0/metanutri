@@ -2,7 +2,8 @@ import { TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
-import { ALIMENTOS, buscarAlimento, FONTE_ALIMENTOS } from '@/domain/tabelas.ts'
+import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
+import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -25,6 +26,7 @@ interface TelaAdequacaoProps {
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAlterarPlano: (novo: Plano) => void
   readonly gerarId?: GerarId
+  readonly aoAbrirFontes?: (() => void) | undefined
 }
 
 const VARIANTE: Record<EstadoAdequacao, 'lightSuccess' | 'lightWarning' | 'lightError'> = {
@@ -114,7 +116,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
 }
 
 /** Etapa 3: adequação de micronutrientes e ação "cobrir" (CA-25 a CA-40). */
-export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao }: TelaAdequacaoProps) {
+export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao, aoAbrirFontes }: TelaAdequacaoProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const prefs = caso.adequacao
 
@@ -209,7 +211,17 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
               Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
               <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
             </p>
-            <p className="mt-2">{`Composição: ${FONTE_ALIMENTOS.nome}`}</p>
+            <p className="mt-2">
+              {`Composição: ${NOME_DA_BASE}`}
+              {aoAbrirFontes ? (
+                <>
+                  {' · '}
+                  <button type="button" onClick={aoAbrirFontes} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    Fontes da base
+                  </button>
+                </>
+              ) : null}
+            </p>
             <p>{`Referências de ingestão: ${resultado.fonte}`}</p>
             {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
           </TableFootnotes>

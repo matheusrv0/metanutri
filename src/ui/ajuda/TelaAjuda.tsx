@@ -1,8 +1,9 @@
 import { ExternalLink } from 'lucide-react'
+import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 
 interface TelaAjudaProps {
-  readonly aoIrPara: (tela: 'painel' | 'pacientes' | 'casos' | 'produtos' | 'config') => void
+  readonly aoIrPara: (tela: 'painel' | 'pacientes' | 'casos' | 'produtos' | 'config' | 'fontes') => void
 }
 
 const PASSOS = [
@@ -14,8 +15,6 @@ const PASSOS = [
 ]
 
 const REFERENCIAS = [
-  { assunto: 'Composição dos alimentos', fonte: 'NEPA/UNICAMP. TACO, 4ª edição, 2011', url: 'https://www.cfn.org.br/wp-content/uploads/2017/03/taco_4_edicao_ampliada_e_revisada.pdf' },
-  { assunto: 'Medidas caseiras', fonte: 'IBGE. POF 2008-2009, medidas referidas', url: 'https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html' },
   { assunto: 'Referências de ingestão', fonte: 'NASEM. DRI, Apêndice J, 2019', url: 'https://www.ncbi.nlm.nih.gov/books/NBK545442/' },
   { assunto: 'Energia', fonte: 'NASEM. DRI for Energy, 2023 · Mifflin-St Jeor, 1990 · Harris-Benedict, 1918', url: 'https://www.ncbi.nlm.nih.gov/books/NBK591034/' },
   { assunto: 'Crescimento', fonte: 'OMS. Child Growth Standards 2006 e Growth Reference 5-19, 2007', url: 'https://www.who.int/tools/growth-reference-data-for-5to19-years' },
@@ -61,6 +60,19 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
           <CardTitle>Fontes dos dados</CardTitle>
           <CardDescription>Cada cálculo mostra a fonte na própria tela. Aqui está a lista inteira, com os links.</CardDescription>
         </CardHeader>
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border py-2">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-heading">Composição e medidas caseiras dos alimentos</p>
+            <p className="text-xs text-muted-foreground">{NOME_DA_BASE}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => aoIrPara('fontes')}
+            className="inline-flex min-h-11 items-center rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Fontes da base
+          </button>
+        </div>
         <ul className="flex flex-col">
           {REFERENCIAS.map((r) => (
             <li key={r.assunto} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border py-2 last:border-0">

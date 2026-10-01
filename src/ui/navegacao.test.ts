@@ -96,3 +96,12 @@ describe('rotas da conta e do pagamento (spec estilo-spora)', () => {
     expect(ehTelaPublica({ tela: 'aprovacoes' })).toBe(false)
   })
 })
+
+describe('Fontes da base (CA-322)', () => {
+  it('#/fontes é uma página pública que abre sem conta', () => {
+    expect(lerRota('#/fontes')).toEqual({ tela: 'fontes' })
+    expect(escreverRota({ tela: 'fontes' })).toBe('#/fontes')
+    expect(ehRotaLivre({ tela: 'fontes' })).toBe(true)
+    expect(ehTelaPublica({ tela: 'fontes' })).toBe(true)
+  })
+})

@@ -8,7 +8,7 @@ export type PlanoPago = 'solo' | 'pro'
 export const ehPlanoPago = (valor: unknown): valor is PlanoPago => valor === 'solo' || valor === 'pro'
 
 /** Telas que abrem sem sessão, mesmo com o servidor configurado (spec estilo-spora, CA-149). */
-export const TELAS_LIVRES = ['inicio', 'precos', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'nova-senha', 'termos', 'privacidade', 'missoes'] as const
+export const TELAS_LIVRES = ['inicio', 'precos', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'nova-senha', 'termos', 'privacidade', 'fontes', 'missoes'] as const
 
 /** Telas fora da moldura do app (sem menu lateral). Checkout e volta do pagamento pedem sessão. */
 export const TELAS_PUBLICAS = [...TELAS_LIVRES, 'assinar', 'pagamento', 'comprovar-matricula'] as const
@@ -27,6 +27,7 @@ export type Rota =
   | { readonly tela: 'nova-senha'; readonly vencido?: true }
   | { readonly tela: 'termos' }
   | { readonly tela: 'privacidade' }
+  | { readonly tela: 'fontes' }
   | { readonly tela: 'assinar'; readonly plano: PlanoPago; readonly ciclo: Ciclo }
   | { readonly tela: 'pagamento' }
   | { readonly tela: 'comprovar-matricula' }
@@ -67,6 +68,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'nova-senha') return id === 'vencido' ? { tela: 'nova-senha', vencido: true } : { tela: 'nova-senha' }
   if (tela === 'termos') return { tela: 'termos' }
   if (tela === 'privacidade') return { tela: 'privacidade' }
+  if (tela === 'fontes') return { tela: 'fontes' }
   if (tela === 'assinar') return ehPlanoPago(id) ? { tela: 'assinar', plano: id, ciclo: ehCiclo(aba) ? aba : 'mensal' } : { tela: 'precos' }
   if (tela === 'pagamento') return { tela: 'pagamento' }
   if (tela === 'conta') return { tela: 'conta' }
@@ -109,6 +111,8 @@ export function escreverRota(rota: Rota): string {
       return '#/termos'
     case 'privacidade':
       return '#/privacidade'
+    case 'fontes':
+      return '#/fontes'
     case 'assinar':
       return `#/assinar/${rota.plano}/${rota.ciclo}`
     case 'pagamento':

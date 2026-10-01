@@ -60,7 +60,7 @@ export function adequacaoDoExemplo(): readonly BarraDaVitrine[] {
   return [
     { nome: 'Ferro', detalhe: '16,6 de 18 mg', pct: 92, fonte: 'RDA' },
     { nome: 'Cálcio', detalhe: '680 de 1.000 mg', pct: 68, fonte: 'RDA' },
-    { nome: 'Vitamina D', detalhe: 'não existe na TACO', pct: null, fonte: 'RDA' },
+    { nome: 'Vitamina D', detalhe: 'não existe na base', pct: null, fonte: 'RDA' },
   ]
 }
 

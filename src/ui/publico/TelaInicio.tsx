@@ -1,5 +1,6 @@
 import { ArrowUpRight } from 'lucide-react'
 import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
+import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
@@ -73,7 +74,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
                 apoio="conferidos em cada plano"
                 aoClicar={() => rolarAte('o-diferencial')}
               />
-              <CartaoNumero valor={String(ALIMENTOS.length)} rotulo="alimentos" apoio="da tabela brasileira (TACO)" aoClicar={() => rolarAte('fontes')} />
+              <CartaoNumero valor={String(ALIMENTOS.length)} rotulo="alimentos" apoio={`da ${NOME_DA_BASE}`} aoClicar={() => rolarAte('fontes')} />
             </div>
           </div>
         </div>
@@ -93,7 +94,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
             <CartaoNumero
               tom="teal"
               valor={`${pctAlimentosSemVitaminaA()}%`}
-              rotulo="dos alimentos da TACO"
+              rotulo="dos alimentos da base"
               apoio="não têm vitamina A medida. Aqui a falta de dado aparece, nunca vira zero."
             />
           </div>

@@ -1,5 +1,6 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { NOME_DA_BASE } from './domain/baseMetanutri.ts'
 import { calcularEnergia } from './domain/energia.ts'
 import { apagarDadosDoAparelho, registrarDono, situacaoAoEntrar } from './domain/donoDosDados.ts'
 import { CONTATO_EMAIL } from './domain/legal.ts'
@@ -55,6 +56,7 @@ import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
 import { TelaInicio } from './ui/publico/TelaInicio.tsx'
 import { TelaPrivacidade } from './ui/publico/TelaPrivacidade.tsx'
+import { TelaFontes } from './ui/publico/TelaFontes.tsx'
 import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
@@ -350,10 +352,10 @@ function Conteudo() {
     )
   }
 
-  if (rota.tela === 'termos' || rota.tela === 'privacidade') {
+  if (rota.tela === 'termos' || rota.tela === 'privacidade' || rota.tela === 'fontes') {
     return (
       <MolduraPublica atual={rota.tela} temSessao={sessao !== null} aoIrPara={irPara}>
-        {rota.tela === 'termos' ? <TelaTermos /> : <TelaPrivacidade />}
+        {rota.tela === 'termos' ? <TelaTermos /> : rota.tela === 'privacidade' ? <TelaPrivacidade /> : <TelaFontes />}
       </MolduraPublica>
     )
   }
@@ -448,7 +450,7 @@ function Conteudo() {
 
   if (rota.tela === 'alimentos') {
     return (
-      <Estrutura {...base} titulo="Tabela de alimentos" subtitulo="TACO 4ª edição">
+      <Estrutura {...base} titulo="Tabela de alimentos" subtitulo={NOME_DA_BASE}>
         <TelaAlimentos />
       </Estrutura>
     )
@@ -571,6 +573,7 @@ function Conteudo() {
                 restricoes={restricoesDoPaciente}
                 aoAlterarCaso={alterarCaso}
                 aoAlterarPlano={alterarPlano}
+                aoAbrirFontes={() => navegar({ tela: 'fontes' })}
               />
             </div>
           )}

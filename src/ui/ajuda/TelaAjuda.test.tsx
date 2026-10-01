@@ -11,11 +11,15 @@ describe('Ajuda', () => {
     expect(passos.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('lista as fontes com link', () => {
-    render(<TelaAjuda aoIrPara={vi.fn()} />)
-    expect(screen.getByText(/TACO, 4ª edição, 2011/)).toBeInTheDocument()
+  it('lista as fontes com link, e a base de alimentos leva para Fontes da base', async () => {
+    const aoIrPara = vi.fn()
+    render(<TelaAjuda aoIrPara={aoIrPara} />)
+    expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
+    expect(screen.getByText('Base MetaNutri')).toBeInTheDocument()
     expect(screen.getByText(/Open Food Facts/)).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /Abrir/ }).length).toBeGreaterThan(5)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Fontes da base' }))
+    expect(aoIrPara).toHaveBeenCalledWith('fontes')
   })
 
   it('diz o que a base não tem e o limite legal', () => {

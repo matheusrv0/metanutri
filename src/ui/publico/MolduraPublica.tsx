@@ -1,9 +1,10 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import type { ReactNode } from 'react'
+import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { cn } from '@/lib/utils'
 
-export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade'
+export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade' | 'fontes'
 
 interface MolduraPublicaProps {
   readonly atual: DestinoPublico | null
@@ -100,8 +101,11 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
               Fontes dos dados
             </h2>
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
-              <li>NEPA/UNICAMP. TACO, 4ª ed., 2011</li>
-              <li>IBGE. POF 2008-2009</li>
+              <li>
+                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE}>
+                  {NOME_DA_BASE}
+                </button>
+              </li>
               <li>NASEM. DRI, Apêndice J, 2019</li>
               <li>OMS, 2006 e 2007 · SISVAN, 2011</li>
             </ul>
