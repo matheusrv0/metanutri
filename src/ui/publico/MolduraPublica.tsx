@@ -101,9 +101,10 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
               Fontes dos dados
             </h2>
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
-              <li>
+              <li className="flex flex-wrap items-center gap-x-1">
+                <span>{`${NOME_DA_BASE} ·`}</span>
                 <button type="button" onClick={() => aoIrPara('fontes')} className={`${LINK_RODAPE} inline-flex min-h-11 items-center`}>
-                  {NOME_DA_BASE}
+                  Fontes da base
                 </button>
               </li>
               <li>NASEM. DRI, Apêndice J, 2019</li>
