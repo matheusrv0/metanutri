@@ -35,7 +35,13 @@ describe('SQL da verificação (spec conta-e-verificacao)', () => {
   })
 
   it('CB-63: o webhook só atualiza a linha da mesma assinatura do Mercado Pago', () => {
-    expect(webhook).toContain(".update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id)")
+    expect(webhook).toContain(".update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id).select('nutricionista_id')")
+  })
+
+  it('CB-63: pagamento ativo que não acha a linha deixa rastro no registro e responde 200', () => {
+    expect(webhook).toMatch(/status === 'ativa' && \(!linhas \|\| linhas\.length === 0\)/)
+    expect(webhook).toContain("console.error('Pagamento ativo sem assinatura com este preapproval_id; conferir à mão:', id, dono)")
+    expect(webhook.split("conferir à mão:', id, dono)")[1]).toMatch(/^\s*}\s*\n\s*return ok\(\)/)
   })
 
   it('a previsão de formatura compara com o mês de agora no fuso do Brasil', () => {

@@ -17,7 +17,7 @@ interface AbaEstudantesProps {
 const OUTRO = 'Outro motivo'
 const CONFERIR = ['Nome igual ao da conta', 'Curso de Nutrição', 'Semestre atual', 'Mesma instituição do e-mail']
 
-/** Motivo e erro ficam presos ao pedido em que nasceram: trocar de pedido não os leva junto. */
+/** Motivo e erro ficam presos ao pedido em que nasceram: trocar de pedido não os leva junto (só o erro de um pedido que saiu da fila continua à vista, CB-61). */
 interface Recusa {
   readonly pedido: string
   readonly motivo: string | null
@@ -48,14 +48,28 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
 
   const aberto = pedidos.find((p) => p.id === abertoId) ?? pedidos[0] ?? null
 
+  // O erro aparece no pedido em que nasceu. Se esse pedido saiu da fila (CB-61: outro
+  // administrador decidiu antes), o aviso fica até abrir outro pedido ou decidir de novo.
+  const erro =
+    erroDoPedido && (erroDoPedido.pedido === aberto?.id || !pedidos.some((p) => p.id === erroDoPedido.pedido)) ? erroDoPedido.texto : null
+  const aviso = erro ? (
+    <p role="alert" className="rounded-xl bg-lighterror p-3 text-sm text-errortext">
+      {erro}
+    </p>
+  ) : null
+
   if (!aberto) {
-    return <p className="rounded-3xl bg-card p-6 text-sm text-muted-foreground">Nenhum comprovante esperando você.</p>
+    return (
+      <div className="flex flex-col gap-3">
+        {aviso}
+        <p className="rounded-3xl bg-card p-6 text-sm text-muted-foreground">Nenhum comprovante esperando você.</p>
+      </div>
+    )
   }
 
   const pedidoAberto = aberto.id
   const motivo = recusa?.pedido === pedidoAberto ? recusa.motivo : null
   const outro = recusa?.pedido === pedidoAberto ? recusa.outro : ''
-  const erro = erroDoPedido?.pedido === pedidoAberto ? erroDoPedido.texto : null
 
   const escolherMotivo = (m: string) => setRecusa({ pedido: pedidoAberto, motivo: m, outro })
   const escreverOutro = (texto: string) => setRecusa({ pedido: pedidoAberto, motivo, outro: texto })
@@ -185,11 +199,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
           {motivo === OUTRO ? <Input aria-label="Motivo" value={outro} onChange={(e) => escreverOutro(e.target.value)} maxLength={200} /> : null}
         </fieldset>
 
-        {erro ? (
-          <p role="alert" className="rounded-xl bg-lighterror p-3 text-sm text-errortext">
-            {erro}
-          </p>
-        ) : null}
+        {aviso}
 
         <div className="flex justify-end gap-2.5">
           <Button variant="lighterror" onClick={() => void decidir(false)} disabled={decidindo}>

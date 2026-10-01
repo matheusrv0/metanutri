@@ -89,7 +89,14 @@ Deno.serve(async (req: Request) => {
 
   // Só a linha desta assinatura: a notificação de um checkout abandonado (ou de uma
   // assinatura antiga) não pode mexer no plano Estudante aprovado depois (CB-63).
-  await cliente.from('assinaturas').update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id)
+  const { data: linhas, error } = await cliente.from('assinaturas').update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id).select('nutricionista_id')
+  if (error) {
+    console.error('Não consegui atualizar a assinatura:', error)
+  } else if (status === 'ativa' && (!linhas || linhas.length === 0)) {
+    // Risco aceito: link de checkout antigo pago depois de outra mudança (ex.: Estudante aprovado).
+    // A cobrança existe no Mercado Pago, mas nenhuma linha mudou: fica o rastro para conferir.
+    console.error('Pagamento ativo sem assinatura com este preapproval_id; conferir à mão:', id, dono)
+  }
 
   return ok()
 })

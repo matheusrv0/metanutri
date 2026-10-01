@@ -9,7 +9,7 @@ import { obterSupabase } from './supabase.ts'
 export interface ValorPerfilConta {
   readonly perfil: PerfilConta | null
   readonly ehAdmin: boolean
-  /** A primeira resposta chegou (ou não há sessão, ou não há servidor). */
+  /** A primeira resposta desta conta chegou (ou não há sessão, ou não há servidor). Releituras não voltam a falso. */
   readonly carregado: boolean
   /** A leitura falhou: não dá para afirmar que a conta não tem perfil. */
   readonly falhou: boolean
@@ -20,7 +20,8 @@ export interface ValorPerfilConta {
 }
 
 interface Carga {
-  readonly chave: string
+  /** De quem é esta leitura: a de outra conta nunca aparece. */
+  readonly usuario: string
   readonly perfil: PerfilConta | null
   readonly ehAdmin: boolean
   readonly falhou: boolean
@@ -34,9 +35,10 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
   const [carga, setCarga] = useState<Carga | null>(null)
   const [versao, setVersao] = useState(0)
 
-  // A chave junta conta e versão: trocar de conta ou recarregar descarta a carga velha no render.
+  // A chave junta conta e versão e dispara a releitura. Enquanto relê a mesma conta, a última
+  // leitura dela continua valendo (sem voltar a "carregando"); trocar de conta a descarta no render.
   const chave = usuarioId ? `${usuarioId}:${versao}` : 'sem-sessao'
-  const atual = carga?.chave === chave ? carga : null
+  const atual = usuarioId !== null && carga?.usuario === usuarioId ? carga : null
   const carregado = usuarioId === null || cliente === null || atual !== null
 
   const recarregar = useCallback(() => setVersao((v) => v + 1), [])
@@ -47,7 +49,7 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
     // O administrador lê todos os perfis (RLS): sem o filtro, viriam várias linhas.
     void Promise.all([cliente.from('perfis').select(COLUNAS).eq('id', usuarioId).maybeSingle(), cliente.rpc('eh_admin')]).then(([perfil, admin]) => {
       if (!vivo) return
-      setCarga({ chave, perfil: daLinhaPerfil(perfil.data), ehAdmin: admin.data === true, falhou: perfil.error !== null })
+      setCarga({ usuario: usuarioId, perfil: daLinhaPerfil(perfil.data), ehAdmin: admin.data === true, falhou: perfil.error !== null })
     })
     return () => {
       vivo = false

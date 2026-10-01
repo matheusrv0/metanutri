@@ -7,6 +7,8 @@ const banco = vi.hoisted(() => ({
   rpcErro: null as unknown,
   chamadas: [] as { funcao: string; args: unknown }[],
   filtro: null as unknown,
+  /** Segura a resposta do perfil até o teste soltar. */
+  espera: null as Promise<void> | null,
 }))
 
 const cliente = {
@@ -14,7 +16,12 @@ const cliente = {
     select: () => ({
       eq: (_coluna: string, valor: unknown) => {
         banco.filtro = valor
-        return { maybeSingle: async () => banco.perfil }
+        return {
+          maybeSingle: async () => {
+            if (banco.espera) await banco.espera
+            return banco.perfil
+          },
+        }
       },
     }),
   }),
@@ -34,6 +41,7 @@ describe('usePerfilConta', () => {
     banco.rpcErro = null
     banco.chamadas = []
     banco.filtro = null
+    banco.espera = null
   })
 
   it('lê o próprio perfil, filtrando pelo id da sessão', async () => {
@@ -75,6 +83,43 @@ describe('usePerfilConta', () => {
     })
     expect(erro).toBeNull()
     expect(banco.chamadas).toContainEqual({ funcao: 'me_formei', args: { p_regiao: 6, p_numero: '23891' } })
+  })
+
+  it('releitura da mesma conta não volta a "carregando": o perfil anterior fica até o novo chegar', async () => {
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.perfil?.crn).toEqual({ regiao: 6, numero: '12345' })
+
+    let soltar: () => void = () => undefined
+    banco.espera = new Promise<void>((r) => (soltar = r))
+    banco.perfil = { data: { nome: 'Ana', situacao: 'nutricionista', crn_regiao: 6, crn_numero: '23891', crn_status: 'em_conferencia', crn_declarado_em: '2026-10-01T12:00:00Z', crn_decidido_em: null }, error: null }
+    await act(async () => {
+      expect(await result.current.meFormei({ regiao: 6, numero: '23891' })).toBeNull()
+    })
+    // A versão subiu e a releitura está no ar: nada pisca.
+    expect(result.current.carregado).toBe(true)
+    expect(result.current.perfil?.crn).toEqual({ regiao: 6, numero: '12345' })
+    expect(result.current.falhou).toBe(false)
+
+    await act(async () => soltar())
+    await waitFor(() => expect(result.current.perfil?.crn).toEqual({ regiao: 6, numero: '23891' }))
+    expect(result.current.carregado).toBe(true)
+  })
+
+  it('trocar de conta volta a "carregando" e não mostra o perfil da conta anterior', async () => {
+    const { result, rerender } = renderHook(({ id }: { id: string }) => usePerfilConta(id), { initialProps: { id: 'u1' } })
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.perfil).not.toBeNull()
+
+    let soltar: () => void = () => undefined
+    banco.espera = new Promise<void>((r) => (soltar = r))
+    rerender({ id: 'u2' })
+    expect(result.current.carregado).toBe(false)
+    expect(result.current.perfil).toBeNull()
+
+    await act(async () => soltar())
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(banco.filtro).toBe('u2')
   })
 
   it('erro explicado pelo banco aparece como veio; o resto vira falha de rede', async () => {
