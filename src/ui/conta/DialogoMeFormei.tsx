@@ -20,6 +20,8 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
   const [numero, setNumero] = useState('')
   const [declarou, setDeclarou] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [crnInvalido, setCrnInvalido] = useState(false)
+  const [declaracaoInvalida, setDeclaracaoInvalida] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
 
@@ -27,9 +29,14 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
     if (enviandoRef.current) return
     const problema = validarCrn(regiao, numero) ?? (declarou ? null : 'declaracao-crn')
     if (problema || regiao === null) {
-      setErro(MENSAGEM_ERRO_SITUACAO[problema ?? 'crn-regiao'])
+      const problemaFinal = problema ?? 'crn-regiao'
+      setErro(MENSAGEM_ERRO_SITUACAO[problemaFinal])
+      setCrnInvalido(problemaFinal === 'crn-regiao' || problemaFinal === 'crn-numero')
+      setDeclaracaoInvalida(problemaFinal === 'declaracao-crn')
       return
     }
+    setCrnInvalido(false)
+    setDeclaracaoInvalida(false)
     enviandoRef.current = true
     setEnviando(true)
     const falha = await meFormei({ regiao, numero: normalizarNumeroCrn(numero) })
@@ -58,9 +65,9 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
               setRegiao(crn.regiao)
               setNumero(crn.numero)
             }}
-            invalido={erro !== null && !declarou}
+            invalido={crnInvalido}
           />
-          <CaixaDeclaracao id={`${id}-declara`} marcada={declarou} aoMudar={setDeclarou}>
+          <CaixaDeclaracao id={`${id}-declara`} marcada={declarou} aoMudar={setDeclarou} invalido={declaracaoInvalida}>
             Declaro que este CRN é meu e está ativo.
           </CaixaDeclaracao>
           <div className="flex items-start gap-2 rounded-xl bg-lightwarning p-3 text-sm text-warningtext">

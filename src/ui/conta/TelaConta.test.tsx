@@ -113,6 +113,26 @@ describe('TelaConta', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('CRN inválido marca o campo do CRN, não a declaração', async () => {
+    const { usuario } = montar(estudante, aprovado)
+    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
+    await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '12a45')
+    await usuario.click(screen.getByRole('checkbox', { name: 'Declaro que este CRN é meu e está ativo.' }))
+    await usuario.click(screen.getByRole('button', { name: 'Mudar para nutricionista' }))
+    expect(screen.getByRole('textbox', { name: 'Número do CRN' })).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('declaração desmarcada marca a declaração, não o CRN válido', async () => {
+    const { usuario } = montar(estudante, aprovado)
+    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
+    await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '23891')
+    await usuario.click(screen.getByRole('button', { name: 'Mudar para nutricionista' }))
+    expect(screen.getByRole('textbox', { name: 'Número do CRN' })).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.getByRole('checkbox', { name: 'Declaro que este CRN é meu e está ativo.' })).toHaveAttribute('aria-invalid', 'true')
+  })
+
   it('foco 3: clique duplo em "Mudar para nutricionista" chama uma vez', async () => {
     let terminar: (v: string | null) => void = () => undefined
     const meFormei = vi.fn(() => new Promise<string | null>((r) => (terminar = r)))
