@@ -1,5 +1,5 @@
 import { Barcode, ClipboardList, FolderOpen, Plus, Sparkles, TriangleAlert, UserRound } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { atividadePorDia, resumirAtividade } from '@/domain/atividade.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
@@ -19,12 +19,14 @@ interface TelaPainelProps {
   readonly aoIrPara: (tela: 'pacientes' | 'casos' | 'produtos') => void
   /** Cria e abre um plano de demonstração; só aparece enquanto não há plano nenhum. */
   readonly aoVerExemplo: () => void
+  /** Aviso da conta no topo (estudante ou CRN), montado pelo App. */
+  readonly aviso?: ReactNode
 }
 
 const DIAS_NO_GRAFICO = 14
 
 /** Primeira tela do dia: o que precisa de atenção, onde você parou e o que fazer agora. */
-export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }: TelaPainelProps) {
+export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: TelaPainelProps) {
   const { casos, avisoArmazenamento } = useCasos()
   const { pacientes } = usePacientes()
 
@@ -44,6 +46,7 @@ export function TelaPainel({ aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo }
 
   return (
     <div className="flex flex-col gap-6">
+      {aviso}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <CartaoDestaque
           rotulo="Planos"

@@ -20,10 +20,12 @@ import { DialogoImprimir } from './DialogoImprimir.tsx'
 interface MenuExportarProps {
   readonly caso: Caso
   readonly plano: Plano
+  /** Motivo para não exportar (CRN não encontrado depois do prazo, CA-290). */
+  readonly bloqueio?: string | null | undefined
 }
 
 /** CA-44 a CA-48: baixar os dois documentos Word e copiar a tabela de adequação. */
-export function MenuExportar({ caso, plano }: MenuExportarProps) {
+export function MenuExportar({ caso, plano, bloqueio }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
   // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas.
@@ -64,12 +66,18 @@ export function MenuExportar({ caso, plano }: MenuExportarProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <p role="status" className="hidden text-xs text-muted-foreground sm:block">
-        {mensagem}
-      </p>
+      {bloqueio ? (
+        <p role="status" className="max-w-56 text-xs text-warningtext">
+          {bloqueio}
+        </p>
+      ) : (
+        <p role="status" className="hidden text-xs text-muted-foreground sm:block">
+          {mensagem}
+        </p>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm">
+          <Button size="sm" disabled={Boolean(bloqueio)}>
             <Download aria-hidden="true" />
             Exportar
           </Button>

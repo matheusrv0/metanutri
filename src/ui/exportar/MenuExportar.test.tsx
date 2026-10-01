@@ -79,3 +79,9 @@ describe('Exportar', () => {
     expect(nomeDeArquivo('João / Ação 3', 'memorial')).toBe('Joao-Acao-3-memorial.docx')
   })
 })
+
+it('CA-290: com bloqueio, o botão fica desligado e o motivo aparece', () => {
+  render(<MenuExportar caso={criarCasoVazio('c1')} plano={criarPlanoPadrao(() => 'r')} bloqueio="Exportar está bloqueado até você corrigir o CRN, no painel." />)
+  expect(screen.getByRole('button', { name: /Exportar/ })).toBeDisabled()
+  expect(screen.getByText('Exportar está bloqueado até você corrigir o CRN, no painel.')).toBeInTheDocument()
+})
