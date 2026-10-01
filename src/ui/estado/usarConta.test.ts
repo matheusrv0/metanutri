@@ -22,7 +22,15 @@ const { auth, avisar } = vi.hoisted(() => {
 
 vi.mock('./supabase.ts', () => ({ obterSupabase: () => ({ auth }), supabaseConfigurado: () => true }))
 
-const dados = { nome: 'Maria', email: ' maria@usp.br ', senha: 'senhaforte1', planoDesejado: 'estudante', versaoTermos: '2026-09-28' } as const
+const dados = {
+  nome: 'Maria',
+  email: ' maria@usp.br ',
+  senha: 'senhaforte1',
+  planoDesejado: 'estudante',
+  versaoTermos: '2026-09-28',
+  situacao: 'nutricionista',
+  crn: { regiao: 6, numero: '12345' },
+} as const
 
 describe('useConta', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -140,6 +148,29 @@ describe('useConta', () => {
     expect(result.current.emRecuperacao).toBe(true)
     act(() => avisar('SIGNED_OUT', null))
     expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('CA-269: grava a situação e o CRN nos metadados do cadastro', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar(dados)
+    })
+    const pedido = auth.signUp.mock.calls[0]?.[0]
+    expect(pedido.options.data).toMatchObject({ situacao: 'nutricionista', crn_regiao: 6, crn_numero: '12345' })
+  })
+
+  it('CA-269: estudante não leva CRN', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar({ ...dados, situacao: 'estudante', crn: null })
+    })
+    const pedido = auth.signUp.mock.calls[0]?.[0]
+    expect(pedido.options.data.situacao).toBe('estudante')
+    expect(pedido.options.data.crn_regiao).toBeUndefined()
   })
 
   it('reenviarConfirmacao chama auth.resend com o tipo signup, o e-mail sem espaços e volta para a confirmação', async () => {

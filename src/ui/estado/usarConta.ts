@@ -1,6 +1,7 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { nomeSugerido, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import type { Crn, Situacao } from '@/domain/situacao.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
@@ -18,6 +19,10 @@ export interface DadosCadastro {
   /** O que a pessoa marcou. Não dá plano: quem dá é o servidor (spec estilo-spora, CA-174). */
   readonly planoDesejado: IdPlano
   readonly versaoTermos: string
+  /** O "Você é" do cadastro. O servidor cria o perfil com isto (spec conta-e-verificacao, CA-269). */
+  readonly situacao: Situacao
+  /** Só para nutricionista. */
+  readonly crn: Crn | null
 }
 
 export interface ValorConta {
@@ -117,6 +122,8 @@ export function useConta(): ValorConta {
         data: {
           nome: dados.nome.trim() || nomeSugerido(email),
           plano_desejado: dados.planoDesejado,
+          situacao: dados.situacao,
+          ...(dados.situacao === 'nutricionista' && dados.crn ? { crn_regiao: dados.crn.regiao, crn_numero: dados.crn.numero } : {}),
           // Sem versão (remendo do cadastro antigo, Tarefa 19 apaga), não grava aceite:
           // não houve termos para aceitar, então não é para constar como se tivesse.
           ...(versaoTermos ? { termos_versao: versaoTermos, termos_aceitos_em: new Date().toISOString() } : {}),
