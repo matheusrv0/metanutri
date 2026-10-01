@@ -1,6 +1,6 @@
 # SPEC — Dieta em PDF com design próprio, telas mais limpas e Base MetaNutri
 
-Status: **aguardando sua aprovação**. Escrita em 01/10/2026, a partir do protótipo "PDF e telas
+Status: **aprovada** em 01/10/2026. Escrita em 01/10/2026, a partir do protótipo "PDF e telas
 limpas" (`https://claude.ai/code/artifact/2b7bb911-197d-4ab4-8120-e7e88f51c1b9`), aprovado no
 mesmo dia depois de uma rodada no PDF ("muita informação e letra muito pequena").
 
