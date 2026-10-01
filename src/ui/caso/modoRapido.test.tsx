@@ -89,6 +89,8 @@ describe('Meta de energia no modo rápido (CA-225 a CA-230, CA-232, CA-233)', ()
     expect(meta()).toHaveValue('')
     expect(meta()).toHaveAttribute('placeholder', '2.074')
     expect(screen.getByText('calculada')).toBeInTheDocument()
+    // item 5: o número calculado também chega a quem usa leitor de tela
+    expect(meta()).toHaveAccessibleDescription(/Calculada: 2\.074 kcal/)
   })
 
   it('CA-227: trocar o nível ou o peso muda a meta na hora', async () => {

@@ -127,6 +127,12 @@ describe('Resumo do dia', () => {
 })
 
 describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
+  it('item 9: modo rápido sem dados para calcular não diz "Meta calculada"', () => {
+    montar({ modo: 'rapido' })
+    expect(resumo().getByText('Meta de energia')).toBeInTheDocument()
+    expect(resumo().queryByText('Meta calculada')).not.toBeInTheDocument()
+  })
+
   it('mostra a meta calculada e o fator', () => {
     montar({ ...adulta, modo: 'rapido' })
     expect(resumo().getByText('Meta calculada')).toBeInTheDocument()

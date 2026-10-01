@@ -1,5 +1,5 @@
 import { Ruler, UserRound } from 'lucide-react'
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { mostraCamposDeEstagio, mostraReceitas, type AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { validarCaso } from '@/domain/caso.ts'
@@ -43,8 +43,17 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
   const { erros } = validacao
   const situacao = assinatura?.situacao ?? null
-  const camposDeEstagio = mostraCamposDeEstagio(situacao, caso)
-  const comReceitas = mostraReceitas(situacao, caso)
+
+  // Quais campos aparecem se decide quando o plano abre (ou a situação muda), não a cada tecla:
+  // senão apagar todo o texto de Receitas, por exemplo, faria o campo sumir no meio da edição.
+  const [visibilidade, setVisibilidade] = useState(() => ({ id: caso.id, situacao, estagio: mostraCamposDeEstagio(situacao, caso), receitas: mostraReceitas(situacao, caso) }))
+  let atual = visibilidade
+  if (visibilidade.id !== caso.id || visibilidade.situacao !== situacao) {
+    atual = { id: caso.id, situacao, estagio: mostraCamposDeEstagio(situacao, caso), receitas: mostraReceitas(situacao, caso) }
+    setVisibilidade(atual)
+  }
+  const camposDeEstagio = atual.estagio
+  const comReceitas = atual.receitas
 
   const numero = (campo: keyof Caso) => (valor: number | null) => aoAlterar({ [campo]: valor } as Partial<Caso>)
 
@@ -118,7 +127,9 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
                 <strong className="font-semibold text-heading">{assinatura.linhaNutricionista ?? 'nome e CRN não informados'}</strong>
                 <span className="block text-xs text-muted-foreground">
                   {assinatura.linhaNutricionista === null
-                    ? 'Preencha em Configurações › Quem assina.'
+                    ? assinatura.origem === 'conta'
+                      ? 'Confira nome e CRN em Conta e plano.'
+                      : 'Preencha em Configurações › Quem assina.'
                     : assinatura.origem === 'conta'
                       ? 'Vem do seu cadastro.'
                       : 'Vem de Configurações › Quem assina.'}
@@ -278,7 +289,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
               <CardTitle>Sem avaliação neste plano</CardTitle>
             </div>
             <p className="text-sm text-muted-foreground">
-              Esta é uma prescrição rápida: nenhuma medida foi coletada, e o documento exportado diz isso.
+              Esta é uma prescrição rápida: sem avaliação antropométrica, e o documento exportado diz isso.
             </p>
             <Button variant="lightprimary" className="self-start" onClick={() => aoAlterar({ modo: 'completo' })}>
               Virar atendimento completo

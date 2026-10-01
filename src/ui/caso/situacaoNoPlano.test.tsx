@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
@@ -50,6 +51,12 @@ describe('Identificação pela situação (CA-251, CB-51, CB-69)', () => {
     expect(screen.getByText('nome e CRN não informados')).toBeInTheDocument()
     expect(screen.getByText('Preencha em Configurações › Quem assina.')).toBeInTheDocument()
   })
+
+  it('item 8: conta sem nome e CRN manda conferir em Conta e plano, não em Configurações', () => {
+    montar({ ...ANA, origem: 'conta', linhaNutricionista: null })
+    expect(screen.getByText('Confira nome e CRN em Conta e plano.')).toBeInTheDocument()
+    expect(screen.queryByText(/Quem assina/)).not.toBeInTheDocument()
+  })
 })
 
 describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
@@ -63,6 +70,19 @@ describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
     montar(ANA, { receitas: 'Cuscuz com ovo.' })
     expect(screen.getByRole('heading', { name: 'Orientações e receitas' })).toBeInTheDocument()
     expect(screen.getByLabelText('Receitas')).toHaveValue('Cuscuz com ovo.')
+  })
+
+  it('item 6: apagar o texto das receitas não faz o campo sumir no meio da edição', async () => {
+    montar(ANA, { receitas: 'Cuscuz com ovo.' })
+    await userEvent.setup().clear(screen.getByLabelText('Receitas'))
+    expect(screen.getByLabelText('Receitas')).toHaveValue('')
+  })
+
+  it('item 6: apagar o estagiário de um plano antigo também mantém os campos', async () => {
+    montar(ANA, { estagiario: 'Júlia Martins' })
+    await userEvent.setup().clear(screen.getByLabelText('Estagiário(a)'))
+    expect(screen.getByLabelText('Estagiário(a)')).toHaveValue('')
+    expect(screen.queryByText(/Assina este plano:/)).not.toBeInTheDocument()
   })
 
   it('CA-236: estudante continua com o campo Receitas', () => {

@@ -126,8 +126,8 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
         children: [
           titulo('ACONSELHAMENTO NUTRICIONAL'),
           cabecalho,
-          subtitulo('ANTROPOMETRIA'),
-          tabela(linhasAntropometria),
+          // Prescrição rápida não tem avaliação: o documento não traz IMC nem diagnóstico (D-33, CA-233).
+          ...(caso.modo === 'rapido' ? [] : [subtitulo('ANTROPOMETRIA'), tabela(linhasAntropometria)]),
           subtitulo('PLANO ALIMENTAR'),
           ...refeicoes,
           subtitulo('ORIENTAÇÕES NUTRICIONAIS'),

@@ -66,7 +66,9 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
     caso.modo === 'rapido'
       ? energia.getManual
         ? 'Meta definida por você'
-        : 'Meta calculada'
+        : energia.get === null
+          ? 'Meta de energia'
+          : 'Meta calculada'
       : energia.getManual
         ? 'GET definido manualmente'
         : 'GET calculado'

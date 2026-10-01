@@ -12,6 +12,14 @@ interface CampoMetaEnergiaProps {
 
 const kcal = (valor: number) => formatarNumero(valor, 0)
 
+/** Vai na descrição do campo (aria-describedby): o número calculado não pode ficar só no placeholder. */
+function dicaDaMeta(estado: ReturnType<typeof estadoDaMeta>): string | undefined {
+  if (estado.tipo === 'calculada') return `Calculada: ${kcal(estado.kcal)} kcal. Trocar o nível de atividade muda a meta na hora.`
+  if (estado.tipo === 'digitada' && estado.calculada !== null) return `Vale o seu número. Apague o campo para voltar à calculada (${kcal(estado.calculada)} kcal).`
+  if (estado.tipo === 'sem-calculo') return estado.motivo
+  return undefined
+}
+
 /**
  * CA-226 a CA-230: a meta calculada aparece como texto-guia do campo, com o selo;
  * o número digitado vale mais. O calculado nunca vira o valor do campo: se virasse,
@@ -29,6 +37,7 @@ export function CampoMetaEnergia({ caso, aoMudar, erro }: CampoMetaEnergiaProps)
             aoMudar={aoMudar}
             sufixo="kcal"
             erro={erro}
+            dica={dicaDaMeta(estado)}
             placeholder={estado.tipo === 'calculada' ? kcal(estado.kcal) : 'Digite a meta'}
           />
         </div>
@@ -43,10 +52,6 @@ export function CampoMetaEnergia({ caso, aoMudar, erro }: CampoMetaEnergiaProps)
           </Badge>
         ) : null}
       </div>
-      {estado.tipo === 'digitada' && estado.calculada !== null ? (
-        <p className="text-xs text-muted-foreground">{`Vale o seu número. Apague o campo para voltar à calculada (${kcal(estado.calculada)} kcal).`}</p>
-      ) : null}
-      {estado.tipo === 'sem-calculo' ? <p className="text-xs text-warningtext">{estado.motivo}</p> : null}
     </div>
   )
 }

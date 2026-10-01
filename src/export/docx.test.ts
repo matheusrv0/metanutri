@@ -122,6 +122,17 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(texto).not.toMatch(/undefined|null|NaN/)
   })
 
+  it('item 2: modo rápido sai sem o bloco de antropometria, mas com peso e estatura no cabeçalho', async () => {
+    const { caso, plano } = montarCaso({ modo: 'rapido', pesoKg: 70, estaturaCm: 165 })
+    const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).not.toContain('ANTROPOMETRIA')
+    expect(texto).not.toContain('IMC')
+    expect(texto).toContain('Peso: 70,0 kg')
+    expect(texto).toContain('Estatura: 165 cm')
+    expect(texto).toContain('PLANO ALIMENTAR')
+  })
+
   it('CA-235: sem receitas, nem o título sai', async () => {
     const { caso, plano } = montarCaso()
     const doc = criarAconselhamento({
