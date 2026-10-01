@@ -33,7 +33,7 @@ export const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrim
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <X className="size-5" aria-hidden="true" />
           <span className="sr-only">Fechar</span>
         </DialogPrimitive.Close>

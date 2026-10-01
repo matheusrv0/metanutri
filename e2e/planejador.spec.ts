@@ -229,6 +229,7 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   // CA-317: marcar muda a prévia na hora.
   await janela.getByRole('switch', { name: 'Trocas' }).click()
   await expect(janela.getByRole('heading', { name: 'Trocas' })).toBeVisible()
+  await janela.getByRole('switch', { name: 'Lista de compras' }).click()
 
   // CA-311: no papel, corpo com 10 pt ou mais e refeição com 14 pt ou mais (1 pt = 4/3 px).
   await page.emulateMedia({ media: 'print' })
@@ -237,6 +238,13 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   expect(await tamanho(almoco.getByRole('heading', { name: 'Almoço' }))).toBeGreaterThanOrEqual(18.66)
   expect(await tamanho(almoco.getByRole('listitem').first())).toBeGreaterThanOrEqual(13.33)
   await expect(almoco).not.toContainText('kcal')
+
+  // Regressão: a janela fixa do Radix cortava a folha numa página só. Com as duas opções, o PDF tem mais de uma.
+  const pdf = await page.pdf({ format: 'A4' })
+  const paginas = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length
+  expect(paginas).toBeGreaterThan(1)
+  await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await expect(janela).toContainText('Composição dos alimentos: Base MetaNutri.')
   await page.emulateMedia({ media: 'screen' })
 })
 

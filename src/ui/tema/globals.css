@@ -340,6 +340,17 @@
     display: none !important;
   }
 
+  /* A janela do Radix é fixed e centralizada: o Chrome não pagina elemento fixo,
+     então ela sai do posicionamento para a folha correr por várias páginas. */
+  body > [role='dialog']:has(.area-impressao) {
+    position: static !important;
+    translate: none !important;
+    transform: none !important;
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
   /* As caixas cinza das opções e a régua da marca também vão para o papel. */
   .folha-dieta {
     max-width: none;
