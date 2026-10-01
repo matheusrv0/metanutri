@@ -33,7 +33,7 @@ interface FolhaDietaProps {
 }
 
 /** Colunas da quantidade e do alimento: a medida mais longa ("2 colheres de servir e meia · 150 g") cabe numa linha. */
-const COLUNAS = 'grid grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)] gap-4'
+const COLUNAS = 'grid grid-cols-1 gap-x-4 sm:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)]'
 
 /** "6 colheres de sopa · 150 g"; sem medida caseira, só o peso (CA-309). */
 function Quantidade({ item }: { readonly item: ItemPlano }) {
@@ -131,7 +131,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const receitas = caso.receitas.trim()
 
   return (
-    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-10 text-sm leading-relaxed text-foreground">
+    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
       <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
 
       <header className="flex flex-wrap items-end justify-between gap-6">
@@ -183,9 +183,9 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
         })}
       </div>
 
-      <div className="fim-da-folha flex flex-col gap-5 break-inside-avoid">
+      <div className="fim-da-folha flex flex-col gap-5">
         {lembretes.length > 0 ? (
-          <section aria-label="No dia a dia" className="flex flex-col gap-2">
+          <section aria-label="No dia a dia" className="flex break-inside-avoid flex-col gap-2">
             <h3 className="font-titulo text-lg font-bold text-heading">No dia a dia</h3>
             <ul className="flex flex-col gap-1.5">
               {lembretes.map((m) => (
@@ -212,11 +212,14 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           </section>
         ) : null}
 
-        <Assinaturas assinatura={quem} />
+        {/* Assinatura e linha final andam juntas e não ficam sozinhas no topo de uma página. */}
+        <div className="fecho-da-folha flex break-before-avoid break-inside-avoid flex-col gap-5">
+          <Assinaturas assinatura={quem} />
 
-        <p className="text-xs text-muted-foreground">
-          {`${caso.modo === 'rapido' ? 'Plano montado em prescrição rápida, sem avaliação antropométrica. ' : ''}A prescrição é responsabilidade do nutricionista. Composição dos alimentos: ${NOME_DA_BASE}.`}
-        </p>
+          <p className="text-xs text-muted-foreground">
+            {`${caso.modo === 'rapido' ? 'Plano montado em prescrição rápida, sem avaliação antropométrica. ' : ''}A prescrição é responsabilidade do nutricionista. Composição dos alimentos: ${NOME_DA_BASE}.`}
+          </p>
+        </div>
       </div>
 
       {compras.length > 0 || trocas.length > 0 ? (
@@ -226,7 +229,10 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <h3 className="font-titulo text-lg font-bold text-heading">Lista de compras</h3>
               <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
                 {compras.map((c) => (
-                  <li key={c.descricao} className="numeros border-b border-dotted border-border">{`${c.descricao} — ${formatarNumero(c.gramas, 0)} g`}</li>
+                  <li key={c.descricao} className="border-b border-dotted border-border">
+                    {`${c.descricao} — `}
+                    <span className="numeros">{`${formatarNumero(c.gramas, 0)} g`}</span>
+                  </li>
                 ))}
               </ul>
             </section>
@@ -235,7 +241,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           {trocas.length > 0 ? (
             <section aria-label="Trocas" className="flex flex-col gap-2">
               <h3 className="font-titulo text-lg font-bold text-heading">Trocas</h3>
-              <p className="text-muted-foreground">Mesma energia e mesmo tipo de alimento. Pode trocar sem perguntar.</p>
+              <p className="text-muted-foreground">Mesmo tipo de alimento, na quantidade certa. Pode trocar sem perguntar.</p>
               <ul aria-label="Trocas" className="flex flex-col">
                 {trocas.map((g) => (
                   <li key={g.alimentoId} className={`${COLUNAS} break-inside-avoid border-t border-border py-2`}>

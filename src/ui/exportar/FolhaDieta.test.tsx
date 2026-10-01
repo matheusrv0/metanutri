@@ -89,6 +89,12 @@ describe('Folha da dieta (US-B1)', () => {
     expect(container.textContent).not.toMatch(/kcal/)
   })
 
+  it('CA-311: lista de compras e trocas também não falam de energia', () => {
+    const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
+    expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/energia|kcal/i)
+  })
+
   it('CA-312: "No dia a dia" traz só o que não é horário de refeição', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
     expect(screen.getByRole('heading', { name: 'No dia a dia' })).toBeInTheDocument()
@@ -137,7 +143,10 @@ describe('Folha da dieta (US-B1)', () => {
   it('CA-315: refeição e fim da folha não se partem entre páginas', () => {
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
     for (const secao of screen.getAllByRole('region', { name: /^\d{2}:\d{2} / })) expect(secao).toHaveClass('break-inside-avoid')
-    expect(container.querySelector('.fim-da-folha')).toHaveClass('break-inside-avoid')
+    // O bloco do fim pode correr por páginas (orientação longa); só a assinatura com a linha final não se parte.
+    expect(container.querySelector('.fim-da-folha')).not.toHaveClass('break-inside-avoid')
+    expect(container.querySelector('.fecho-da-folha')).toHaveClass('break-inside-avoid', 'break-before-avoid')
+    expect(container.querySelector('.fecho-da-folha')).toContainElement(screen.getByRole('group', { name: 'Assinaturas' }))
   })
 
   it('CA-316: a regra da linha fina vem com o nome do plano e quem assina', () => {
@@ -155,7 +164,7 @@ describe('Folha da dieta (US-B1)', () => {
 
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
     expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
-    expect(screen.getByText('Arroz, tipo 1, cozido — 150 g')).toBeInTheDocument()
+    expect(screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === 'Arroz, tipo 1, cozido — 150 g')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
     expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')
     for (const linha of within(screen.getByRole('list', { name: 'Trocas' })).getAllByRole('listitem')) {
