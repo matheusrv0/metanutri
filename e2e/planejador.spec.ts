@@ -164,6 +164,26 @@ test('diálogo de sugestões cabe na tela de 400 px', async ({ page }) => {
   }
 })
 
+test('no celular, as sugestões ficam numa faixa só que rola para o lado', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+
+  await page.setViewportSize({ width: 400, height: 800 })
+  const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
+  const sugestoes = almoco.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / })
+  const primeira = await sugestoes.first().boundingBox()
+  const ultima = await sugestoes.last().boundingBox()
+  expect(ultima?.y).toBe(primeira?.y)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(400)
+
+  // A última sugestão continua ao alcance: rola a faixa e entra no plano.
+  await sugestoes.last().click()
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Almoço' }).getByRole('listitem')).toHaveCount(1)
+})
+
 test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, context }) => {
   await abrirLimpo(page)
   await page.getByRole('button', { name: 'Entendi' }).click()

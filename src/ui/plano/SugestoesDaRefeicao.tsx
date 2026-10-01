@@ -37,14 +37,15 @@ export function SugestoesDaRefeicao({ tipo, sugestoes, aoEscolher, aoEditar }: S
         <p className="rotulo">{titulo}</p>
         {editar}
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      {/* No celular, uma faixa só que rola para o lado: quebrar linha empurrava o plano para baixo. */}
+      <div className="-m-1 flex gap-1.5 overflow-x-auto p-1 sm:m-0 sm:flex-wrap sm:overflow-visible sm:p-0">
         {prontas.map((s, i) => (
           <button
             key={`${s.alimentoId}-${i}`}
             type="button"
             onClick={() => aoEscolher(s.alimentoId, s.gramas)}
             aria-label={`Adicionar ${s.alimento.descricao}, ${formatarNumero(s.gramas, 0)} g`}
-            className="inline-flex min-h-11 max-w-64 items-center gap-1 rounded-full border border-border px-3 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 max-w-64 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="size-3 shrink-0 text-primary" aria-hidden="true" />
             <span className="min-w-0 truncate">{s.alimento.descricao}</span>
