@@ -103,30 +103,29 @@ describe('App: estrutura', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 
-  it('ponte provisória: #/esqueci-senha mostra a tela de recuperação', () => {
+  it('sem servidor: #/esqueci-senha mostra a tela de recuperação', () => {
     window.location.hash = '#/esqueci-senha'
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Esqueci a senha' })).toBeInTheDocument()
   })
 
-  it('ponte provisória: #/termos mostra o aviso de texto em finalização', () => {
-    window.location.hash = '#/termos'
-    renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Este texto está sendo finalizado/)).toBeInTheDocument()
-  })
-
-  it('ponte provisória: "Começar grátis" na landing leva ao painel, sem conta', async () => {
+  it('sem servidor: "Começar grátis" leva ao cadastro, que oferece abrir o sistema (CA-150)', async () => {
     window.location.hash = '#/inicio'
     renderizar()
     const [botao] = screen.getAllByRole('button', { name: 'Começar grátis' })
     if (!botao) throw new Error('botão ausente')
     await userEvent.setup().click(botao)
-    expect(window.location.hash).toBe('#/painel')
-    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/criar-conta')
+    expect(screen.getByRole('button', { name: 'Abrir o sistema' })).toBeInTheDocument()
   })
 
-  it('ponte provisória: #/assinar/solo/mensal mostra o checkout', () => {
+  it('sem servidor: #/termos mostra o aviso de texto em preparação', () => {
+    window.location.hash = '#/termos'
+    renderizar()
+    expect(screen.getByText('Este texto está sendo finalizado e entra no ar em breve.')).toBeInTheDocument()
+  })
+
+  it('sem servidor: #/assinar/solo/mensal mostra o checkout', () => {
     window.location.hash = '#/assinar/solo/mensal'
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Revise sua assinatura' })).toBeInTheDocument()

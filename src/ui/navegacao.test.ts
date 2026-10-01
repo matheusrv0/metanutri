@@ -1,4 +1,4 @@
-import { ABAS, ehRotaLivre, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
+import { ABAS, ehRotaLivre, ehTelaPublica, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
 
 describe('navegação por endereço', () => {
   it.each([
@@ -85,5 +85,14 @@ describe('rotas da conta e do pagamento (spec estilo-spora)', () => {
     expect(ehRotaLivre({ tela: 'assinar', plano: 'solo', ciclo: 'mensal' })).toBe(false)
     expect(ehRotaLivre({ tela: 'pagamento' })).toBe(false)
     expect(ehRotaLivre({ tela: 'painel' })).toBe(false)
+  })
+
+  it('lê e escreve as rotas da verificação', () => {
+    for (const rota of [{ tela: 'comprovar-matricula' }, { tela: 'aprovacoes' }] as const) {
+      expect(lerRota(escreverRota(rota))).toEqual(rota)
+    }
+    expect(ehTelaPublica({ tela: 'comprovar-matricula' })).toBe(true)
+    expect(ehRotaLivre({ tela: 'comprovar-matricula' })).toBe(false)
+    expect(ehTelaPublica({ tela: 'aprovacoes' })).toBe(false)
   })
 })

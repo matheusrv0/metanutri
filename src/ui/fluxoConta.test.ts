@@ -37,10 +37,16 @@ describe('para onde vai o botão de cada plano', () => {
 })
 
 describe('depois do cadastro (CA-133)', () => {
-  it('plano pago vai pagar; Free, Estudante ou nenhum vão para o painel', () => {
-    expect(destinoDepoisDoCadastro('solo', 'anual')).toEqual({ tela: 'assinar', plano: 'solo', ciclo: 'anual' })
-    expect(destinoDepoisDoCadastro('estudante', 'mensal')).toEqual({ tela: 'painel' })
-    expect(destinoDepoisDoCadastro(null, 'mensal')).toEqual({ tela: 'painel' })
+  it('plano pago vai pagar; Free ou nenhum vão para o painel', () => {
+    expect(destinoDepoisDoCadastro('solo', 'anual', 'nutricionista')).toEqual({ tela: 'assinar', plano: 'solo', ciclo: 'anual' })
+    expect(destinoDepoisDoCadastro(null, 'mensal', 'nutricionista')).toEqual({ tela: 'painel' })
+  })
+
+  it('CA-270: estudante vai para o comprovante; nutricionista segue o plano', () => {
+    expect(destinoDepoisDoCadastro('estudante', 'mensal', 'estudante')).toEqual({ tela: 'comprovar-matricula' })
+    expect(destinoDepoisDoCadastro(null, 'mensal', 'estudante')).toEqual({ tela: 'comprovar-matricula' })
+    expect(destinoDepoisDoCadastro('solo', 'anual', 'nutricionista')).toEqual({ tela: 'assinar', plano: 'solo', ciclo: 'anual' })
+    expect(destinoDepoisDoCadastro(null, 'mensal', 'nutricionista')).toEqual({ tela: 'painel' })
   })
 })
 

@@ -2,6 +2,7 @@
 // (spec estilo-spora, CA-117 e CA-122 a CA-133). Regras puras: a tela só navega.
 import { planoSeguinte, type Ciclo, type IdPlano } from '@/domain/conta.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
+import type { Situacao } from '@/domain/situacao.ts'
 import { ehPlanoPago, escreverRota, lerRota, rotaCriarConta, type Rota } from './navegacao.ts'
 
 /** O destino do botão de um plano. `null` no Clínica: ele mostra o contato em vez de navegar. */
@@ -12,8 +13,9 @@ export function destinoDoPlano(plano: IdPlano, ciclo: Ciclo, temSessao: boolean)
   return temSessao ? { tela: 'painel' } : rotaCriarConta(null, 'mensal')
 }
 
-/** Depois do cadastro (ou da confirmação do e-mail): quem escolheu plano pago vai pagar. */
-export function destinoDepoisDoCadastro(plano: IdPlano | null, ciclo: Ciclo): Rota {
+/** Depois do cadastro (ou da confirmação do e-mail): estudante vai comprovar; plano pago vai pagar (CA-270). */
+export function destinoDepoisDoCadastro(plano: IdPlano | null, ciclo: Ciclo, situacao: Situacao): Rota {
+  if (situacao === 'estudante') return { tela: 'comprovar-matricula' }
   return plano !== null && ehPlanoPago(plano) ? { tela: 'assinar', plano, ciclo } : { tela: 'painel' }
 }
 

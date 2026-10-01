@@ -1,11 +1,16 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { calcularEnergia } from './domain/energia.ts'
+import { apagarDadosDoAparelho, registrarDono, situacaoAoEntrar } from './domain/donoDosDados.ts'
 import { CONTATO_EMAIL } from './domain/legal.ts'
 import { criarExemplo } from './domain/exemplo.ts'
 import { missoesDoPlano } from './domain/missoes.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
+import { avisoDoEstudante } from './domain/pedidoEstudante.ts'
+import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situacao.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
+import { TelaAprovacoes } from './ui/aprovacoes/TelaAprovacoes.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
@@ -17,9 +22,14 @@ import { ProvedorAcompanhamentos } from './ui/estado/ProvedorAcompanhamentos.tsx
 import { useAcompanhamentos } from './ui/estado/contextoAcompanhamentos.ts'
 import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
 import { usePacientes } from './ui/estado/contextoPacientes.ts'
+import { useAprovacoes } from './ui/estado/usarAprovacoes.ts'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
+import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
+import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { TelaPlano } from './ui/plano/TelaPlano.tsx'
 import { TelaPainel } from './ui/painel/TelaPainel.tsx'
+import { AvisoCrn } from './ui/painel/AvisoCrn.tsx'
+import { AvisoDoEstudante } from './ui/painel/AvisoEstudante.tsx'
 import { TelaPaciente } from './ui/pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './ui/pacientes/TelaPacientes.tsx'
 import { TelaAjuda } from './ui/ajuda/TelaAjuda.tsx'
@@ -32,16 +42,22 @@ import { TelaMissoesPaciente } from './ui/missoes/TelaMissoesPaciente.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaCheckout } from './ui/publico/TelaCheckout.tsx'
+import { TelaComprovarMatricula } from './ui/publico/conta/TelaComprovarMatricula.tsx'
+import { TelaCompletarCadastro } from './ui/publico/conta/TelaCompletarCadastro.tsx'
+import { TelaCriarConta } from './ui/publico/conta/TelaCriarConta.tsx'
 import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
+import { TelaOutraConta } from './ui/publico/conta/TelaOutraConta.tsx'
 import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
 import { TelaInicio } from './ui/publico/TelaInicio.tsx'
+import { TelaPrivacidade } from './ui/publico/TelaPrivacidade.tsx'
+import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
-import { tirarDestino } from './ui/fluxoConta.ts'
+import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './ui/fluxoConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
 import { FaixaResumo } from './ui/resumo/FaixaResumo.tsx'
@@ -50,7 +66,8 @@ import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
-import { ETAPAS } from './ui/navegacao.ts'
+import { ehRotaLivre, ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
+import { Redirecionar } from './ui/Redirecionar.tsx'
 import { useRota } from './ui/usarRota.ts'
 
 function Conteudo() {
@@ -62,6 +79,25 @@ function Conteudo() {
   const cobranca = useAssinatura(conta.sessao !== null)
   const { assinatura } = cobranca
   const { fonte } = useAcompanhamentos()
+
+  const [emailPendente, setEmailPendente] = useState<string | null>(null)
+  const arm = armazenamentoLocal()
+  const sessao = conta.sessao
+
+  // Dono dos dados do aparelho (spec estilo-spora, D-24): quem entra primeiro adota;
+  // outra conta não vê nada até escolher (CA-151 e CA-152).
+  const situacaoDoAparelho = sessao ? situacaoAoEntrar(arm, sessao.id) : 'mesmo'
+  useEffect(() => {
+    if (sessao && situacaoDoAparelho === 'adotar') registrarDono(armazenamentoLocal(), sessao.id)
+  }, [sessao, situacaoDoAparelho])
+
+  // Situação, pedido de estudante e filas do administrador (spec conta-e-verificacao).
+  const perfilConta = usePerfilConta(sessao?.id ?? null)
+  const { perfil } = perfilConta
+  const pedidoEstudante = usePedidoEstudante(perfil?.situacao === 'estudante' && sessao ? sessao.id : null)
+  const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
+  const agora = new Date()
+  const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -98,34 +134,82 @@ function Conteudo() {
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }
 
-  // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
-  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? { tela: 'painel' } : { tela: destino })
-
-  // Escolher plano ainda não cobra: leva para a conta, que é o passo que existe.
-  const escolherPlano = () => navegar({ tela: 'entrar' })
+  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
   // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
   if (rota.tela === 'missoes') {
     return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
   }
 
-  // Rota 'criar-conta' aberta direto pelo endereço: sem cadastro ainda, mostra a landing (Tarefa 18 substitui).
-  if (rota.tela === 'inicio' || rota.tela === 'criar-conta') {
-    return (
-      <MolduraPublica atual="inicio" temSessao={conta.sessao !== null} aoIrPara={irPara}>
-        <TelaInicio
-          // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
-          aoComecar={() => navegar({ tela: 'painel' })}
-          aoVerPrecos={() => navegar({ tela: 'precos' })}
+  // Portão da conta (CA-148): com servidor, tela de trabalho pede sessão. O login
+  // aparece no lugar da tela pedida, e ela abre sozinha quando a sessão chega (CA-137).
+  if (conta.disponivel && !ehRotaLivre(rota)) {
+    if (conta.carregando) {
+      return (
+        <div role="status" className="grid min-h-dvh place-content-center bg-background text-sm text-muted-foreground">
+          Carregando…
+        </div>
+      )
+    }
+    if (!sessao) {
+      return (
+        <TelaEntrar
+          conta={conta}
+          pedidoPorTela
+          aoEntrou={() => undefined}
+          aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
+          aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
+          aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+          aoAbrirSistema={() => navegar({ tela: 'painel' })}
         />
+      )
+    }
+    if (situacaoDoAparelho === 'conflito') {
+      return (
+        <TelaOutraConta
+          email={sessao.email}
+          aoSair={() => void conta.sair().then(() => navegar({ tela: 'inicio' }))}
+          aoApagar={() => {
+            apagarDadosDoAparelho(arm)
+            registrarDono(arm, sessao.id)
+            // Os provedores leram os dados antigos ao montar: recarregar é o jeito seguro de esquecê-los.
+            globalThis.location.reload()
+          }}
+        />
+      )
+    }
+
+    // CB-68: conta sem situação completa o cadastro antes de qualquer tela de trabalho.
+    if (perfilConta.carregado && !perfilConta.falhou && perfil === null && !perfilConta.ehAdmin) {
+      return (
+        <TelaCompletarCadastro
+          email={sessao.email}
+          informarSituacao={perfilConta.informarSituacao}
+          aoSair={() => void conta.sair().then(() => navegar({ tela: 'inicio' }))}
+        />
+      )
+    }
+  }
+
+  if (rota.tela === 'inicio') {
+    return (
+      <MolduraPublica atual="inicio" temSessao={sessao !== null} aoIrPara={irPara}>
+        <TelaInicio aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))} aoVerPrecos={() => navegar({ tela: 'precos' })} />
       </MolduraPublica>
     )
   }
 
   if (rota.tela === 'precos') {
     return (
-      <MolduraPublica atual="precos" temSessao={conta.sessao !== null} aoIrPara={irPara}>
-        <SecaoPrecos contato={CONTATO_EMAIL} aoEscolher={() => escolherPlano()} />
+      <MolduraPublica atual="precos" temSessao={sessao !== null} aoIrPara={irPara}>
+        <SecaoPrecos
+          contato={CONTATO_EMAIL}
+          {...(rota.destaque ? { destaque: rota.destaque } : {})}
+          aoEscolher={(plano, ciclo) => {
+            const destino = destinoDoPlano(plano, ciclo, sessao !== null)
+            if (destino) navegar(destino)
+          }}
+        />
       </MolduraPublica>
     )
   }
@@ -135,9 +219,32 @@ function Conteudo() {
       <TelaEntrar
         conta={conta}
         aoEntrou={() => navegar(tirarDestino(armazenamentoLocal()) ?? { tela: 'painel' })}
-        // Ponte até a tela de cadastro (Tarefa 18): sem conta, como antes.
-        aoCriarConta={() => navegar({ tela: 'painel' })}
+        aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
         aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        aoAbrirSistema={() => navegar({ tela: 'painel' })}
+      />
+    )
+  }
+
+  if (rota.tela === 'criar-conta') {
+    const ciclo = rota.ciclo ?? 'mensal'
+    return (
+      <TelaCriarConta
+        conta={conta}
+        plano={rota.plano ?? null}
+        ciclo={ciclo}
+        contato={CONTATO_EMAIL}
+        aoCriada={(criada) => {
+          const destino = destinoDepoisDoCadastro(criada.plano, ciclo, criada.situacao)
+          if (!criada.confirmarEmail) return navegar(destino)
+          // O link do e-mail pode ser aberto em outra aba: o destino fica no aparelho.
+          guardarDestino(arm, destino)
+          setEmailPendente(criada.email)
+          navegar({ tela: 'confirmar-email' })
+        }}
+        aoEntrar={() => navegar({ tela: 'entrar' })}
+        aoTrocarPlano={() => navegar({ tela: 'precos' })}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
         aoAbrirSistema={() => navegar({ tela: 'painel' })}
       />
@@ -148,7 +255,7 @@ function Conteudo() {
     return (
       <TelaConfirmarEmail
         conta={conta}
-        email={null}
+        email={emailPendente}
         vencido={rota.vencido === true}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
         aoEntrar={() => navegar({ tela: 'entrar' })}
@@ -172,12 +279,26 @@ function Conteudo() {
     )
   }
 
+  if (rota.tela === 'comprovar-matricula') {
+    if (perfilConta.carregado && perfil?.situacao !== 'estudante') return <Redirecionar para={{ tela: 'painel' }} navegar={navegar} />
+    return (
+      <TelaComprovarMatricula
+        email={sessao?.email ?? ''}
+        pedido={pedidoEstudante.pedido}
+        enviar={pedidoEstudante.enviar}
+        aoEnviado={() => navegar({ tela: 'painel' })}
+        aoDepois={() => navegar({ tela: 'painel' })}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+      />
+    )
+  }
+
   if (rota.tela === 'assinar') {
     return (
       <TelaCheckout
         plano={rota.plano}
         ciclo={rota.ciclo}
-        email={conta.sessao?.email ?? ''}
+        email={sessao?.email ?? ''}
         assinaturaAtual={assinatura}
         vagasRestantes={cobranca.vagasRestantes}
         disponivel={conta.disponivel}
@@ -203,17 +324,22 @@ function Conteudo() {
 
   if (rota.tela === 'termos' || rota.tela === 'privacidade') {
     return (
-      <MolduraPublica atual={rota.tela} temSessao={conta.sessao !== null} aoIrPara={irPara}>
-        <div className="mx-auto max-w-[72ch] px-4 py-16">
-          <h1 className="text-4xl font-bold">{rota.tela === 'termos' ? 'Termos de uso' : 'Política de privacidade'}</h1>
-          <p className="text-muted-foreground">Este texto está sendo finalizado e entra no ar em breve.</p>
-        </div>
+      <MolduraPublica atual={rota.tela} temSessao={sessao !== null} aoIrPara={irPara}>
+        {rota.tela === 'termos' ? <TelaTermos /> : <TelaPrivacidade />}
       </MolduraPublica>
     )
   }
 
-  const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso } as const
+  const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso, aprovacoesPendentes: perfilConta.ehAdmin ? aprovacoes.pendentes.total : null } as const
   const irParaCasos = { rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }
+
+  const aviso = perfil?.situacao === 'estudante' && pedidoEstudante.carregado ? avisoDoEstudante(pedidoEstudante.pedido, assinatura) : null
+  const avisoDaConta =
+    perfil?.situacao === 'nutricionista' ? (
+      <AvisoCrn perfil={perfil} agora={agora} aoCorrigir={perfilConta.corrigirCrn} />
+    ) : aviso ? (
+      <AvisoDoEstudante aviso={aviso} aoEnviar={() => navegar({ tela: 'comprovar-matricula' })} aoFechar={(id) => void pedidoEstudante.fecharAviso(id)} />
+    ) : null
 
   if (rota.tela === 'painel') {
     return (
@@ -223,6 +349,7 @@ function Conteudo() {
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
           aoIrPara={(tela) => navegar({ tela })}
           aoVerExemplo={verExemplo}
+          aviso={avisoDaConta}
         />
       </Estrutura>
     )
@@ -259,7 +386,8 @@ function Conteudo() {
       <Estrutura {...base} titulo="Adesão" subtitulo="Quem está sumindo">
         <TelaAdesao
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'plano' })}
-          {...(conta.sessao ? { plano: assinatura.plano } : {})}
+          aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+          {...(sessao ? { plano: assinatura.plano } : {})}
         />
       </Estrutura>
     )
@@ -269,6 +397,15 @@ function Conteudo() {
     return (
       <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'aprovacoes') {
+    if (!perfilConta.ehAdmin) return <Redirecionar para={{ tela: 'painel' }} navegar={navegar} />
+    return (
+      <Estrutura {...base} titulo="Aprovações" subtitulo="Só você vê esta tela">
+        <TelaAprovacoes aprovacoes={aprovacoes} />
       </Estrutura>
     )
   }
@@ -294,15 +431,19 @@ function Conteudo() {
       <Estrutura {...base} titulo="Conta e plano" subtitulo="Acesso e assinatura">
         <TelaConta
           conta={conta}
+          perfil={perfil}
+          pedido={pedidoEstudante.pedido}
+          meFormei={perfilConta.meFormei}
+          aoMudouSituacao={() => {
+            perfilConta.recarregar()
+            pedidoEstudante.recarregar()
+            cobranca.recarregar()
+          }}
+          aoSaiu={() => navegar({ tela: 'inicio' })}
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
           aoAssinar={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
-          perfil={null}
-          pedido={null}
-          meFormei={async () => null}
-          aoMudouSituacao={() => undefined}
-          aoSaiu={() => navegar({ tela: 'inicio' })}
         />
       </Estrutura>
     )
@@ -355,7 +496,7 @@ function Conteudo() {
             : undefined
         }
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} />}
+        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} />}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
@@ -379,7 +520,8 @@ function Conteudo() {
                 pacienteId={registro.caso.pacienteId}
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
-                {...(conta.sessao ? { plano: assinatura.plano } : {})}
+                aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+                {...(sessao ? { plano: assinatura.plano } : {})}
               />
             </div>
           ) : (
