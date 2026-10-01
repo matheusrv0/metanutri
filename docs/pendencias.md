@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 30/09/2026.
+Atualizado em 01/10/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -174,9 +174,18 @@ Não foi corrigido: é funcionalidade nova e o congelamento de 27/09 vale. Mas �
 ferramenta de saúde, e um freio de quantidade implausível (alerta acima de, digamos,
 2.000 g ou 5.000 kcal num item) é conserto, não feature — decisão sua.
 
+### 9. A lista padrão de sugestões precisa de uma nutricionista
+
+Desde 01/10 cada refeição sugere alimentos de uma lista padrão (spec `ajustes-de-uso`,
+seção 3.1), que a pessoa pode editar. A lista foi montada por mim, com alimentos comuns
+no Nordeste (R-20). Antes de publicar, uma nutricionista precisa olhar alimento e porção.
+Dois itens já leem estranho na tela, porque a medida mostrada sai da conversão de sempre
+do app: o tomate (80 g) aparece como "5 fatias e meia" e o iogurte (200 g) como "1 copo
+americano e meio".
+
 ## Já feito, só para você não procurar
 
-Frequentes, duplicar plano, ficha de paciente, evolução do peso, leitura de código de
+Sugestões por refeição (no lugar dos frequentes), duplicar plano, ficha de paciente, evolução do peso, leitura de código de
 barras, backup, offline (PWA), tema claro e escuro, celular, impressão, dois modos de
 uso, e o fluxo de publicação no GitHub Pages esperando um clique seu.
 

@@ -104,6 +104,45 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await expect(page.getByRole('row').filter({ hasText: 'Ferro' }).first()).toBeVisible()
 })
 
+test('prescrição rápida: meta calculada e sugestões por refeição', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+
+  await page.getByRole('radio', { name: 'Feminino' }).click()
+  await preencher(page, 'Idade', '28')
+  await preencher(page, 'Peso', '62')
+  await preencher(page, 'Estatura', '163')
+  await page.getByRole('radio', { name: 'Moderadamente ativo (1,55)' }).click()
+
+  // CA-226: a meta sai pronta, e o Resumo do dia usa ela
+  await expect(page.getByLabel('Meta de energia')).toHaveAttribute('placeholder', '2.074')
+  const resumo = page.getByRole('region', { name: 'Resumo do dia' })
+  await expect(resumo).toContainText('Meta calculada')
+  await expect(resumo).toContainText('2.074 kcal')
+
+  // CA-237 e CA-238: a sugestão entra com um clique
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
+  await almoco.getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' }).click()
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Almoço' }).getByRole('listitem')).toHaveCount(1)
+
+  // CA-241 e CA-243: tirar uma sugestão vale depois de recarregar
+  await almoco.getByRole('button', { name: 'Editar sugestões para o almoço' }).click()
+  const dialogo = page.getByRole('dialog', { name: 'Sugestões para o almoço' })
+  await dialogo.getByRole('button', { name: 'Tirar Tomate, com semente, cru' }).click()
+  await dialogo.getByRole('button', { name: 'Salvar' }).click()
+  await expect(dialogo).toBeHidden()
+  await expect(almoco.getByRole('button', { name: 'Adicionar Tomate, com semente, cru, 80 g' })).toHaveCount(0)
+
+  await page.reload()
+  const almocoDepois = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
+  await expect(almocoDepois.getByRole('button', { name: 'Adicionar Feijão, carioca, cozido, 140 g' })).toBeVisible()
+  await expect(almocoDepois.getByRole('button', { name: 'Adicionar Tomate, com semente, cru, 80 g' })).toHaveCount(0)
+})
+
 test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, context }) => {
   await abrirLimpo(page)
   await page.getByRole('button', { name: 'Entendi' }).click()
