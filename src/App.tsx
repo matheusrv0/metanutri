@@ -464,7 +464,7 @@ function Conteudo() {
   if (rota.tela === 'alimentos') {
     return (
       <Estrutura {...base} titulo="Tabela de alimentos" subtitulo={NOME_DA_BASE}>
-        <TelaAlimentos />
+        <TelaAlimentos aoAbrirFontes={() => navegar({ tela: 'fontes' })} />
       </Estrutura>
     )
   }

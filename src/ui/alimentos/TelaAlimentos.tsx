@@ -1,7 +1,8 @@
-import { ChevronRight, Search, X } from 'lucide-react'
+import { ChevronRight, CircleDashed, Contrast, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { categoriasDoCatalogo, composicaoDe, filtrarCatalogo, resumoDoCatalogo, type OrdemCatalogo } from '@/domain/catalogo.ts'
 import { medidasDoAlimento } from '@/domain/busca.ts'
+import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { completudeDe, explicarCompletude, type NivelCompletude } from '@/domain/completude.ts'
 import type { Alimento } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
+import { Label } from '@ds/componentes/forms/label.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 
@@ -23,6 +25,9 @@ const NIVEIS: readonly { readonly valor: NivelCompletude; readonly rotulo: strin
   { valor: 'parcial', rotulo: 'Dado parcial' },
   { valor: 'minimo', rotulo: 'Dado mínimo' },
 ]
+
+/** As listas de escolha usam o select do navegador, como o paciente da etapa 1 (Decisão 5). */
+const SELECT = 'h-11 w-full rounded-md border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const SELO: Readonly<Record<NivelCompletude, string>> = {
   completo: 'bg-lightprimary text-primary',
@@ -47,7 +52,12 @@ const LARGO = '(min-width: 1280px)'
  * digitando dentro de uma refeição: não havia como olhar o que existe, nem ver
  * a composição completa de um alimento sem pô-lo num plano.
  */
-export function TelaAlimentos() {
+interface TelaAlimentosProps {
+  /** Abre a página Fontes da base (CA-323). */
+  readonly aoAbrirFontes?: (() => void) | undefined
+}
+
+export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
   const [termo, setTermo] = useState('')
   const [categoria, setCategoria] = useState<string | null>(null)
   const [nivel, setNivel] = useState<NivelCompletude | null>(null)
@@ -79,92 +89,71 @@ export function TelaAlimentos() {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="flex flex-col gap-5">
         <Card className="gap-4">
-          <CardHeader>
-            <CardTitle>Tabela de composição</CardTitle>
-            <CardDescription>
-              {`Os ${resumo.total} alimentos da TACO 4ª edição, com os 20 nutrientes que o sistema confere. Valores por 100 g.`}
-            </CardDescription>
-          </CardHeader>
+          <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+            {`${NOME_DA_BASE} · ${resumo.total} alimentos · valores por 100 g`}
+            {aoAbrirFontes ? (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  onClick={aoAbrirFontes}
+                  className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Fontes da base
+                </button>
+              </>
+            ) : null}
+          </p>
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input
-              type="search"
-              value={termo}
-              onChange={(e) => mudarFiltro(() => setTermo(e.target.value))}
-              placeholder="Buscar por nome: arroz integral, queijo minas…"
-              aria-label="Buscar alimento na tabela"
-              className="rounded-full pl-10"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => mudarFiltro(() => setCategoria(null))}
-              aria-pressed={categoria === null}
-              className={cn(
-                'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                categoria === null ? 'border-primary bg-lightprimary text-primary' : 'border-border text-muted-foreground hover:border-borderdefault hover:text-foreground',
-              )}
-            >
-              {`Todas · ${resumo.total}`}
-            </button>
-            {categorias.map((c) => (
-              <button
-                key={c.nome}
-                type="button"
-                onClick={() => mudarFiltro(() => setCategoria(c.nome))}
-                aria-pressed={categoria === c.nome}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  categoria === c.nome ? 'border-primary bg-lightprimary text-primary' : 'border-border text-muted-foreground hover:border-borderdefault hover:text-foreground',
-                )}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="relative min-w-0 lg:flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input
+                type="search"
+                value={termo}
+                onChange={(e) => mudarFiltro(() => setTermo(e.target.value))}
+                placeholder="Buscar por nome: arroz integral, queijo minas…"
+                aria-label="Buscar alimento na tabela"
+                className="h-11 rounded-full pl-10"
+              />
+            </div>
+            <div className="flex flex-col gap-1 lg:w-52">
+              <Label htmlFor="filtro-grupo">Grupo</Label>
+              <select id="filtro-grupo" value={categoria ?? ''} onChange={(e) => mudarFiltro(() => setCategoria(e.target.value || null))} className={SELECT}>
+                <option value="">{`Todos · ${resumo.total}`}</option>
+                {categorias.map((c) => (
+                  <option key={c.nome} value={c.nome}>{`${c.nome} · ${c.quantos}`}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1 lg:w-40">
+              <Label htmlFor="filtro-ordem">Ordem</Label>
+              <select id="filtro-ordem" value={ordem} onChange={(e) => setOrdem(e.target.value as OrdemCatalogo)} className={SELECT}>
+                {ORDENS.map((o) => (
+                  <option key={o.valor} value={o.valor}>
+                    {o.rotulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1 lg:w-44">
+              <Label htmlFor="filtro-completude">Completude do dado</Label>
+              <select
+                id="filtro-completude"
+                value={nivel ?? ''}
+                onChange={(e) => mudarFiltro(() => setNivel(e.target.value === '' ? null : (e.target.value as NivelCompletude)))}
+                className={SELECT}
               >
-                {`${c.nome} · ${c.quantos}`}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rotulo">Ordenar</span>
-              {ORDENS.map((o) => (
-                <button
-                  key={o.valor}
-                  type="button"
-                  onClick={() => setOrdem(o.valor)}
-                  aria-pressed={ordem === o.valor}
-                  className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    ordem === o.valor ? 'bg-muted font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {o.rotulo}
-                </button>
-              ))}
+                <option value="">Todos</option>
+                {NIVEIS.map((n) => (
+                  <option key={n.valor} value={n.valor}>
+                    {n.rotulo}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rotulo">Dado</span>
-              {NIVEIS.map((n) => (
-                <button
-                  key={n.valor}
-                  type="button"
-                  onClick={() => mudarFiltro(() => setNivel(nivel === n.valor ? null : n.valor))}
-                  aria-pressed={nivel === n.valor}
-                  className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    nivel === n.valor ? 'bg-muted font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {n.rotulo}
-                </button>
-              ))}
-            </div>
-
             {temFiltro ? (
-              <Button variant="ghost" size="sm" className="ml-auto" onClick={limpar}>
+              <Button variant="ghost" size="sm" className="self-start lg:self-end" onClick={limpar}>
                 <X aria-hidden="true" />
                 Limpar filtros
               </Button>
@@ -173,11 +162,20 @@ export function TelaAlimentos() {
         </Card>
 
         <Card className="gap-0 p-0">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
             <p className="text-sm font-medium">
               {lista.length === 0 ? 'Nenhum alimento' : `${lista.length} ${lista.length === 1 ? 'alimento' : 'alimentos'}`}
             </p>
-            <p className="rotulo">por 100 g</p>
+            <ul aria-label="Legenda" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <li className="inline-flex items-center gap-1">
+                <Contrast className="size-3.5 text-warningtext" aria-hidden="true" />
+                dado parcial
+              </li>
+              <li className="inline-flex items-center gap-1">
+                <CircleDashed className="size-3.5 text-errortext" aria-hidden="true" />
+                dado mínimo
+              </li>
+            </ul>
           </div>
 
           {lista.length === 0 ? (
@@ -203,16 +201,14 @@ export function TelaAlimentos() {
                         aberto?.id === a.id ? 'bg-lightprimary' : 'hover:bg-muted',
                       )}
                     >
-                      <div className="min-w-0 flex-1">
-                        {/* Nome da TACO é longo ("Arroz, integral, cozido"): duas linhas antes de cortar. */}
-                        <p className="line-clamp-2 text-sm">{a.descricao}</p>
-                        <p className="truncate text-xs text-muted-foreground">{a.categoria}</p>
-                      </div>
-                      {c.nivel !== 'completo' ? (
-                        <span className={cn('hidden shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline', SELO[c.nivel])}>
-                          {ROTULO_NIVEL[c.nivel]}
+                      <p className="min-w-0 flex-1 text-sm">
+                        <span className="line-clamp-2">
+                          {a.descricao} <span className="text-xs text-muted-foreground">{a.categoria}</span>
                         </span>
-                      ) : null}
+                      </p>
+                      {c.nivel === 'parcial' ? <Contrast className="size-3.5 shrink-0 text-warningtext" aria-hidden="true" /> : null}
+                      {c.nivel === 'minimo' ? <CircleDashed className="size-3.5 shrink-0 text-errortext" aria-hidden="true" /> : null}
+                      {c.nivel !== 'completo' ? <span className="sr-only">{`, ${ROTULO_NIVEL[c.nivel]}`}</span> : null}
                       <span
                         className="numeros w-16 shrink-0 text-right text-sm font-medium sm:w-20"
                         title={kcal === null ? 'A tabela de composição não traz energia para este alimento.' : undefined}
@@ -304,7 +300,7 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
 
       {medidas.length > 0 ? (
         <div className="border-t border-border pt-4">
-          <p className="rotulo mb-2">Medidas caseiras · POF/IBGE</p>
+          <p className="rotulo mb-2">Medidas caseiras</p>
           <ul className="flex flex-wrap gap-1.5">
             {medidas.slice(0, 6).map((m) => (
               <li key={m.nome} className="numeros rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
@@ -322,7 +318,7 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
             <li key={l.chave} className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-0">
               <span className="text-sm">{l.nome}</span>
               {l.valor === null ? (
-                <span className="text-xs text-muted-foreground" title="Não analisado pela TACO">
+                <span className="text-xs text-muted-foreground" title="Não analisado">
                   não analisado
                 </span>
               ) : (
@@ -336,8 +332,8 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Fonte: NEPA/UNICAMP. TACO, 4ª edição, 2011. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de
-        medição, não ausência do nutriente.
+        Fonte: {NOME_DA_BASE}. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de medição, não ausência do
+        nutriente.
       </p>
     </>
   )
