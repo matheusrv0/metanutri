@@ -55,6 +55,15 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     expect(janela().getAllByText('Ana Souza · CRN-6 12345').length).toBeGreaterThan(0)
   })
 
+  it('clicar no texto da opção alterna o switch', async () => {
+    abrir()
+    const usuario = userEvent.setup()
+    const textoCompras = janela().getByText('Os alimentos do dia com as quantidades.')
+    expect(janela().getByRole('switch', { name: 'Lista de compras' })).toHaveAttribute('aria-checked', 'false')
+    await usuario.click(textoCompras)
+    expect(janela().getByRole('switch', { name: 'Lista de compras' })).toHaveAttribute('aria-checked', 'true')
+  })
+
   it('o menu Exportar leva a assinatura até a folha de imprimir', async () => {
     render(<MenuExportar caso={caso} plano={plano()} assinatura={ANA} />)
     const usuario = userEvent.setup()
