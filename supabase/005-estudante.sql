@@ -1,17 +1,11 @@
--- MetaNutri — plano Estudante aprovado sozinho pelo e-mail da faculdade (spec estilo-spora, D-28).
+-- MetaNutri — lista de domínios de faculdade (spec conta-e-verificacao, D-41).
 -- GERADO por scripts/dominios-faculdades.mjs: não edite à mão, rode o script de novo.
 -- Rode no Supabase: SQL Editor > New query > cole tudo > Run. Pode rodar de novo sem estragar nada.
+-- Rode ANTES do 006-verificacao.sql, que usa a função eh_email_de_faculdade.
 --
--- ############################################################################
--- # PRÉ-REQUISITO: Supabase > Authentication > Sign In / Providers > Email > #
--- # "Confirm email" LIGADO. Desligado, qualquer um que digitar um e-mail de  #
--- # faculdade ganha o plano Estudante sem ter a caixa de entrada.           #
--- ############################################################################
---
--- Como funciona: quem cria a conta marcando o Estudante grava "plano_desejado" no
--- cadastro. Quando o e-mail é confirmado, o gatilho confere se o domínio é de
--- faculdade e, se for, dá o plano Estudante por 12 meses. O navegador não consegue
--- se dar o plano: ele não escreve em "assinaturas" (RLS, 003-assinaturas.sql).
+-- Até 30/09/2026 este arquivo dava o plano Estudante sozinho quando o e-mail era
+-- confirmado. Agora quem aprova é o administrador, olhando o comprovante: por isso
+-- o gatilho antigo é apagado aqui, caso alguém tenha rodado a versão anterior.
 
 alter table public.assinaturas add column if not exists expira_em timestamptz;
 
@@ -66,34 +60,11 @@ $$;
 
 revoke all on function public.eh_email_de_faculdade(text) from public;
 -- O Supabase concede execução a "anon" e "authenticated" por padrão; tira dos
--- dois. Quem chama esta função é só o gatilho abaixo, como "security definer".
+-- dois. Quem chama esta função é a enviar_pedido_estudante (006), como "security definer".
 revoke execute on function public.eh_email_de_faculdade(text) from anon, authenticated;
 
-create or replace function public.aprovar_estudante()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if new.email_confirmed_at is null then return new; end if;
-  if tg_op = 'UPDATE' and old.email_confirmed_at is not null then return new; end if;
-  if coalesce(new.raw_user_meta_data ->> 'plano_desejado', '') <> 'estudante' then return new; end if;
-  if not public.eh_email_de_faculdade(new.email) then return new; end if;
-
-  insert into public.assinaturas (nutricionista_id, plano, status, expira_em, atualizado_em)
-  values (new.id, 'estudante', 'ativa', now() + interval '12 months', now())
-  on conflict (nutricionista_id) do update
-    set plano = 'estudante', status = 'ativa', expira_em = excluded.expira_em, atualizado_em = now()
-    where public.assinaturas.status <> 'ativa' and public.assinaturas.preapproval_id is null;
-  return new;
-end;
-$$;
-
 drop trigger if exists aprovar_estudante_ao_confirmar on auth.users;
-create trigger aprovar_estudante_ao_confirmar
-  after insert or update of email_confirmed_at on auth.users
-  for each row execute function public.aprovar_estudante();
+drop function if exists public.aprovar_estudante();
 
 -- Para aceitar uma faculdade que falta: acrescente o domínio em COMPLEMENTO, em
 -- scripts/dominios-faculdades.mjs, rode o script e rode este SQL de novo.
