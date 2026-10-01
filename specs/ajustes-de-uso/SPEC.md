@@ -1,6 +1,6 @@
 # SPEC — Ajustes de uso no planejador: meta de energia, sugestões por refeição e plano assinado pelo cadastro
 
-Status: **aguardando sua aprovação**. Escrita em 30/09/2026, refeita em 01/10/2026 depois do protótipo aprovado.
+Status: **aprovada** em 01/10/2026. Escrita em 30/09/2026, refeita em 01/10/2026 depois do protótipo aprovado.
 
 **Fontes:** feedback de uma usuária real (estudante de nutrição em estágio, que usa o WebDiet),
 repassado por você em 30/09/2026; a conversa do mesmo dia; e o protótipo "Planejador com
@@ -74,7 +74,7 @@ trocar essa lista, para montar o plano sem buscar arroz e feijão toda vez.
 - **CA-241** · Dado o link "Editar" ao lado das sugestões, então abre "Sugestões para o almoço" (ou o tipo daquela refeição) com a lista: nome, medida caseira e gramas de cada uma, um botão para tirar, e um jeito de mudar a ordem.
 - **CA-242** · Dado o campo de acrescentar da edição, quando a pessoa escreve como na busca do plano ("1 concha feijão preto" ou "150 arroz integral") e clica em "Adicionar", então o alimento entra no fim da lista com essa porção. Sem medida reconhecida, a porção fica em gramas; alimento que não existe na base não entra, e a tela diz isso.
 - **CA-243** · Dado "Salvar", então a lista nova vale para todas as refeições daquele tipo, em todos os planos deste aparelho. "Voltar à lista padrão" troca a lista pela padrão (seção 3.1). Fechar sem salvar não muda nada.
-- **CA-306** · Dado uma lista sem nenhum alimento, então a refeição não mostra o rótulo de sugestões, só a busca.
+- **CA-306** · Dado uma lista sem nenhum alimento, então a refeição não mostra o rótulo nem as sugestões, só a busca e o link "Editar sugestões", para a pessoa poder montar a lista de novo.
 - **CA-307** · Dado texto digitado no campo de adicionar do plano, então as sugestões somem e a busca aparece, como hoje.
 
 #### 3.1 Lista padrão de sugestões
@@ -85,7 +85,7 @@ revisadas por uma nutricionista antes de publicar** (R-20).
 | Tipo | Alimento | Porção |
 |---|---|---|
 | Desjejum | Cuscuz, de milho, cozido com sal | 1 pedaço (135 g) |
-| Desjejum | Ovo, de galinha, inteiro, cozido | 1 unidade (45 g) |
+| Desjejum | Ovo, de galinha, inteiro, cozido/10minutos | 1 unidade (45 g) |
 | Desjejum | Pão, trigo, francês | 1 unidade (50 g) |
 | Desjejum | Tapioca, com manteiga | 1 unidade (50 g) |
 | Desjejum | Café, infusão 10% | 1 xícara de café (50 g) |
@@ -102,7 +102,7 @@ revisadas por uma nutricionista antes de publicar** (R-20).
 | Almoço | Alface, crespa, crua | 1 prato de sobremesa (30 g) |
 | Almoço | Tomate, com semente, cru | 1 porção (80 g) |
 | Jantar | Cuscuz, de milho, cozido com sal | 1 pedaço (135 g) |
-| Jantar | Ovo, de galinha, inteiro, cozido | 1 unidade (45 g) |
+| Jantar | Ovo, de galinha, inteiro, cozido/10minutos | 1 unidade (45 g) |
 | Jantar | Frango, peito, sem pele, grelhado | 1 filé (100 g) |
 | Jantar | Arroz, tipo 1, cozido | 4 colheres de sopa (100 g) |
 | Jantar | Feijão, carioca, cozido | 1 concha (140 g) |
