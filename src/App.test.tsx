@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App.tsx'
+import { PERFIL_VAZIO } from './domain/perfil.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
@@ -129,5 +130,48 @@ describe('App: estrutura', () => {
     window.location.hash = '#/assinar/solo/mensal'
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Revise sua assinatura' })).toBeInTheDocument()
+  })
+})
+
+describe('App: quem assina, sem servidor (CA-251, CA-253, CB-54)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    localStorage.setItem(CHAVE_AVISO_VISTO, '1')
+    window.location.hash = ''
+  })
+
+  const guardarPerfil = (perfil: Partial<typeof PERFIL_VAZIO>) => localStorage.setItem('metanutri:perfil', JSON.stringify({ ...PERFIL_VAZIO, ...perfil }))
+
+  const novoPlano = async () => {
+    renderizar()
+    const usuario = userEvent.setup()
+    await usuario.click(menuFixo().getByRole('button', { name: 'Novo plano' }))
+    await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
+  }
+
+  it('CA-253: estudante começa o plano com estagiário e preceptor preenchidos', async () => {
+    guardarPerfil({ nome: 'Júlia Martins', tipo: 'estudante', responsavel: 'Carla Mendes' })
+    await novoPlano()
+    expect(screen.getByLabelText('Estagiário(a)')).toHaveValue('Júlia Martins')
+    expect(screen.getByLabelText('Preceptor(a)')).toHaveValue('Carla Mendes')
+  })
+
+  it('CA-253: mudar Quem assina depois não muda o plano que já existe', async () => {
+    guardarPerfil({ nome: 'Júlia Martins', tipo: 'estudante' })
+    await novoPlano()
+    const endereco = window.location.hash
+    guardarPerfil({ nome: 'Outra Pessoa', tipo: 'estudante' })
+    cleanup()
+    window.location.hash = endereco
+    renderizar()
+    expect(screen.getByLabelText('Estagiário(a)')).toHaveValue('Júlia Martins')
+  })
+
+  it('CA-251 e CB-54: nutricionista em Configurações assina o plano sem digitar', async () => {
+    guardarPerfil({ nome: 'Ana Souza', tipo: 'profissional', crn: 'CRN-6 12345' })
+    await novoPlano()
+    expect(screen.queryByLabelText('Estagiário(a)')).not.toBeInTheDocument()
+    expect(screen.getByText('Ana Souza · CRN-6 12345')).toBeInTheDocument()
+    expect(screen.getByText('Vem de Configurações › Quem assina.')).toBeInTheDocument()
   })
 })

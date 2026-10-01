@@ -7,7 +7,9 @@ import { criarExemplo } from './domain/exemplo.ts'
 import { missoesDoPlano } from './domain/missoes.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
 import { avisoDoEstudante } from './domain/pedidoEstudante.ts'
-import { exportacaoBloqueada, formatarCrn, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situacao.ts'
+import { assinaturaDoPlano, camposDeEstagioIniciais } from './domain/assinaturaDoPlano.ts'
+import { lerPerfil } from './domain/perfil.ts'
+import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situacao.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { TelaAprovacoes } from './ui/aprovacoes/TelaAprovacoes.tsx'
@@ -99,8 +101,10 @@ function Conteudo() {
   const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
   const agora = new Date()
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
+  // Quem assina os planos: a conta, ou Configurações quando não há servidor (spec ajustes-de-uso, D-37).
+  const quemAssina = assinaturaDoPlano({ servidor: conta.disponivel, perfilConta: perfil, nomeDaSessao: sessao?.nome ?? '', perfilLocal: lerPerfil(arm) })
   // CA-287: a folha da dieta sai com o nome e o CRN da conta de nutricionista.
-  const responsavel = perfil?.situacao === 'nutricionista' && perfil.crn ? `${perfil.nome || (sessao?.nome ?? '')} · ${formatarCrn(perfil.crn)}` : null
+  const responsavel = conta.disponivel ? quemAssina.linhaNutricionista : null
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -118,6 +122,8 @@ function Conteudo() {
         ...criado.caso,
         modo,
         pacienteId,
+        // CA-253: plano de estudante nasce com estagiário e preceptor.
+        ...camposDeEstagioIniciais(quemAssina),
         // O plano já nasce com o que a ficha do paciente sabe.
         nome: paciente?.nome ?? criado.caso.nome,
         sexo: paciente?.sexo ?? criado.caso.sexo,
@@ -522,7 +528,7 @@ function Conteudo() {
             : undefined
         }
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} responsavel={responsavel} />}
+        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} responsavel={responsavel} assinatura={quemAssina} />}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
@@ -531,6 +537,7 @@ function Conteudo() {
             <TelaCaso
               caso={registro.caso}
               aoAlterar={alterarCaso}
+              assinatura={quemAssina}
               pacientes={pacientes.map((p) => ({ id: p.id, nome: p.nome }))}
               aoVincularPaciente={(pacienteId) => alterarCaso({ pacienteId })}
               lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}

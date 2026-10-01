@@ -1,6 +1,7 @@
-import { Ruler } from 'lucide-react'
+import { Ruler, UserRound } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
+import { mostraCamposDeEstagio, mostraReceitas, type AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { validarCaso } from '@/domain/caso.ts'
 import type { Caso, CondicaoFisiologica, Objetivo, Sexo } from '@/domain/tipos.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -24,6 +25,8 @@ interface TelaCasoProps {
   readonly aoVincularPaciente?: (pacienteId: string | null) => void
   /** Painéis extras da coluna da direita (ex.: Resumo do dia). */
   readonly lateral?: ReactNode
+  /** Quem assina e a situação (US-A2, US-A4); sem ela, o plano fica como era (CB-69). */
+  readonly assinatura?: AssinaturaDoPlano | null | undefined
 }
 
 type TipoCondicao = CondicaoFisiologica['tipo']
@@ -35,10 +38,13 @@ const CONDICOES: readonly { readonly valor: TipoCondicao; readonly rotulo: strin
 ]
 
 /** Etapa 1: dados do caso e avaliação antropométrica (CA-01 a CA-05). */
-export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularPaciente }: TelaCasoProps) {
+export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [], aoVincularPaciente }: TelaCasoProps) {
   const validacao = useMemo(() => validarCaso(caso), [caso])
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
   const { erros } = validacao
+  const situacao = assinatura?.situacao ?? null
+  const camposDeEstagio = mostraCamposDeEstagio(situacao, caso)
+  const comReceitas = mostraReceitas(situacao, caso)
 
   const numero = (campo: keyof Caso) => (valor: number | null) => aoAlterar({ [campo]: valor } as Partial<Caso>)
 
@@ -88,9 +94,38 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
             <CampoTexto rotulo="Diagnóstico clínico" valor={caso.diagnosticoClinico} aoMudar={(v) => aoAlterar({ diagnosticoClinico: v })} />
             <CampoTexto rotulo="Data da consulta" tipo="date" valor={caso.dataConsulta ?? ''} aoMudar={(v) => aoAlterar({ dataConsulta: v || null })} />
             <CampoTexto rotulo="Ocupação" valor={caso.ocupacao} aoMudar={(v) => aoAlterar({ ocupacao: v })} />
-            <CampoTexto rotulo="Estagiário(a)" valor={caso.estagiario} aoMudar={(v) => aoAlterar({ estagiario: v })} />
-            <CampoTexto rotulo="Preceptor(a)" valor={caso.preceptor} aoMudar={(v) => aoAlterar({ preceptor: v })} />
+            {camposDeEstagio ? (
+              <>
+                <CampoTexto rotulo="Estagiário(a)" valor={caso.estagiario} aoMudar={(v) => aoAlterar({ estagiario: v })} />
+                <CampoTexto rotulo="Preceptor(a)" valor={caso.preceptor} aoMudar={(v) => aoAlterar({ preceptor: v })} />
+              </>
+            ) : null}
           </div>
+
+          {camposDeEstagio && situacao === 'estudante' && assinatura ? (
+            <p className="text-xs text-muted-foreground">
+              {assinatura.origem === 'conta'
+                ? 'Em plano novo, Estagiário(a) vem do nome da sua conta e Preceptor(a) de Configurações › Quem assina. Dá para trocar neste plano.'
+                : 'Em plano novo, Estagiário(a) e Preceptor(a) vêm de Configurações › Quem assina. Dá para trocar neste plano.'}
+            </p>
+          ) : null}
+
+          {camposDeEstagio || !assinatura ? null : (
+            <div className="flex items-center gap-3 rounded-lg bg-lightprimary px-4 py-3">
+              <UserRound className="size-5 shrink-0 text-primary" aria-hidden="true" />
+              <p className="text-sm text-foreground">
+                Assina este plano:{' '}
+                <strong className="font-semibold text-heading">{assinatura.linhaNutricionista ?? 'nome e CRN não informados'}</strong>
+                <span className="block text-xs text-muted-foreground">
+                  {assinatura.linhaNutricionista === null
+                    ? 'Preencha em Configurações › Quem assina.'
+                    : assinatura.origem === 'conta'
+                      ? 'Vem do seu cadastro.'
+                      : 'Vem de Configurações › Quem assina.'}
+                </span>
+              </p>
+            </div>
+          )}
         </Card>
 
         <Card>
@@ -208,17 +243,19 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
 
         <Card>
           <CardHeader>
-            <CardTitle>Orientações e receitas</CardTitle>
+            <CardTitle>{comReceitas ? 'Orientações e receitas' : 'Orientações'}</CardTitle>
             <CardDescription>Entram no documento de aconselhamento exportado.</CardDescription>
           </CardHeader>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="orientacoes">Orientações nutricionais</Label>
             <Textarea id="orientacoes" rows={4} value={caso.orientacoes} onChange={(e) => aoAlterar({ orientacoes: e.target.value })} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="receitas">Receitas</Label>
-            <Textarea id="receitas" rows={4} value={caso.receitas} onChange={(e) => aoAlterar({ receitas: e.target.value })} />
-          </div>
+          {comReceitas ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="receitas">Receitas</Label>
+              <Textarea id="receitas" rows={4} value={caso.receitas} onChange={(e) => aoAlterar({ receitas: e.target.value })} />
+            </div>
+          ) : null}
         </Card>
 
         <Card>
