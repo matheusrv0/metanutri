@@ -41,7 +41,7 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: Tela
   const numeros = [
     { valor: atividade.total, rotulo: atividade.total === 1 ? 'plano' : 'planos', apoio: `mexidos em ${DIAS} dias` },
     { valor: pacientes.length, rotulo: pacientes.length === 1 ? 'paciente' : 'pacientes', apoio: 'com ficha' },
-    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `trabalhados em ${DIAS}` },
+    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `trabalhados em ${DIAS} dias` },
   ]
 
   return (
@@ -54,7 +54,7 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: Tela
             <div key={n.apoio} className={`flex min-w-0 flex-col gap-0.5 px-3 sm:px-6 ${i > 0 ? 'border-l border-border' : ''}`}>
               <span className="numeros font-titulo text-2xl font-bold leading-tight text-heading sm:text-3xl">{n.valor}</span>
               <span className="text-sm font-semibold text-heading">{n.rotulo}</span>
-              <span className="hidden text-xs text-muted-foreground sm:block">{n.apoio}</span>
+              <span className="text-xs text-muted-foreground">{n.apoio}</span>
             </div>
           ))}
         </Card>

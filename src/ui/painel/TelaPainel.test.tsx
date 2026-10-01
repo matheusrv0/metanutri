@@ -66,6 +66,9 @@ describe('Painel', () => {
       expect(faixa.getByText('dia')).toBeInTheDocument()
       expect(faixa.getAllByText('2')).toHaveLength(1)
       expect(faixa.getAllByText('1')).toHaveLength(2)
+      // Também no celular e no leitor de tela: o apoio diz "em 14 dias" e não fica escondido.
+      const apoio = faixa.getByText('trabalhados em 14 dias')
+      expect(apoio.className).not.toMatch(/\bhidden\b|sr-only/)
     } finally {
       vi.useRealTimers()
     }
