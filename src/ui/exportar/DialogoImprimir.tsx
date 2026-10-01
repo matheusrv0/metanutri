@@ -25,13 +25,11 @@ function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; r
   const id = useId()
   return (
     <div className="flex items-start gap-3 rounded-lg bg-surfacerow px-4 py-3">
-      <Switch id={id} checked={marcado} onCheckedChange={aoMudar} aria-describedby={`${id}-texto`} className="mt-0.5" />
-      <div className="flex min-h-11 flex-1 cursor-pointer flex-col gap-0.5" onClick={() => aoMudar(!marcado)}>
-        <Label htmlFor={id}>{titulo}</Label>
-        <p id={`${id}-texto`} className="text-xs text-muted-foreground">
-          {texto}
-        </p>
-      </div>
+      <Switch id={id} checked={marcado} onCheckedChange={aoMudar} aria-labelledby={`${id}-titulo`} aria-describedby={`${id}-texto`} className="mt-0.5" />
+      <Label htmlFor={id} className="min-h-11 flex-1 cursor-pointer flex-col items-start gap-0.5 font-normal leading-normal">
+        <span id={`${id}-titulo`} className="text-sm font-semibold text-heading">{titulo}</span>
+        <span id={`${id}-texto`} className="text-xs text-muted-foreground">{texto}</span>
+      </Label>
     </div>
   )
 }

@@ -55,13 +55,49 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     expect(janela().getAllByText('Ana Souza · CRN-6 12345').length).toBeGreaterThan(0)
   })
 
-  it('clicar no texto da opção alterna o switch', async () => {
+  it('clicar no título ou texto da opção alterna o switch uma única vez', async () => {
     abrir()
     const usuario = userEvent.setup()
+
+    // Testa "Lista de compras"
+    const switchCompras = janela().getByRole('switch', { name: 'Lista de compras' })
+    const tituloCompras = janela().getByText('Lista de compras')
     const textoCompras = janela().getByText('Os alimentos do dia com as quantidades.')
-    expect(janela().getByRole('switch', { name: 'Lista de compras' })).toHaveAttribute('aria-checked', 'false')
+
+    // Estado inicial: false
+    expect(switchCompras).toHaveAttribute('aria-checked', 'false')
+
+    // Clique no título: false → true
+    await usuario.click(tituloCompras)
+    expect(switchCompras).toHaveAttribute('aria-checked', 'true')
+
+    // Clique no texto de apoio: true → false
     await usuario.click(textoCompras)
-    expect(janela().getByRole('switch', { name: 'Lista de compras' })).toHaveAttribute('aria-checked', 'true')
+    expect(switchCompras).toHaveAttribute('aria-checked', 'false')
+
+    // Clique no próprio switch: false → true
+    await usuario.click(switchCompras)
+    expect(switchCompras).toHaveAttribute('aria-checked', 'true')
+
+    // Testa "Trocas" também
+    const switchTrocas = janela().getByRole('switch', { name: 'Trocas' })
+    const tituloTrocas = janela().getByText('Trocas')
+    const textoTrocas = janela().getByText('Até 2 opções para cada alimento do plano.')
+
+    // Estado inicial: false
+    expect(switchTrocas).toHaveAttribute('aria-checked', 'false')
+
+    // Clique no título: false → true
+    await usuario.click(tituloTrocas)
+    expect(switchTrocas).toHaveAttribute('aria-checked', 'true')
+
+    // Clique no texto de apoio: true → false
+    await usuario.click(textoTrocas)
+    expect(switchTrocas).toHaveAttribute('aria-checked', 'false')
+
+    // Clique no próprio switch: false → true
+    await usuario.click(switchTrocas)
+    expect(switchTrocas).toHaveAttribute('aria-checked', 'true')
   })
 
   it('o menu Exportar leva a assinatura até a folha de imprimir', async () => {
