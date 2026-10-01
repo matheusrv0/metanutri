@@ -80,6 +80,17 @@ describe('Etapa 2: plano alimentar', () => {
     expect(screen.getByRole('combobox', { name: 'Adicionar alimento em Substituto 1 de Almoço' })).toBeInTheDocument()
   })
 
+  it('CA-335: as três abas ficam no tablist e a aba Principal conta os alimentos', async () => {
+    const usuario = montar()
+    const abas = within(screen.getByRole('tablist', { name: 'Opções de Almoço' }))
+    expect(abas.getAllByRole('tab')).toHaveLength(3)
+    expect(abas.getByRole('tab', { name: 'Principal' })).toBeInTheDocument()
+    await usuario.type(entradaDoAlmoco(), 'arroz integral{Enter}')
+    expect(abas.getByRole('tab', { name: 'Principal (1)' })).toBeInTheDocument()
+    expect(abas.getByRole('tab', { name: 'Substituto 1' })).toBeInTheDocument()
+    expect(abas.getByRole('tab', { name: 'Substituto 2' })).toBeInTheDocument()
+  })
+
   it('CA-15 e CA-16: busca por partes do nome e Enter adiciona o primeiro resultado', async () => {
     const usuario = montar()
     await usuario.type(entradaDoAlmoco(), '150 arroz int')
