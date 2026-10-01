@@ -101,6 +101,50 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(texto).toContain('Nome: ')
     expect(texto).toContain('Sexo: M( ) F( )')
   })
+
+  it('CA-252: nutricionista sai com a linha do cadastro e uma assinatura só', async () => {
+    const { caso, plano } = montarCaso({ estagiario: '', preceptor: '' })
+    const doc = criarAconselhamento({
+      caso,
+      plano,
+      antropometria: avaliarAntropometria(caso),
+      buscar: buscarAlimento,
+      nutricionista: 'Ana Souza · CRN-6 12345',
+      comReceitas: false,
+    })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toContain('Nutricionista: Ana Souza · CRN-6 12345')
+    expect(texto).toContain('Nutricionista: ____')
+    expect(texto).not.toContain('Estagiário(a)')
+    expect(texto).not.toContain('Preceptor(a)')
+    expect(texto).toContain('ASSINATURA')
+    expect(texto).not.toContain('ASSINATURAS')
+    expect(texto).not.toMatch(/undefined|null|NaN/)
+  })
+
+  it('CA-235: sem receitas, nem o título sai', async () => {
+    const { caso, plano } = montarCaso()
+    const doc = criarAconselhamento({
+      caso,
+      plano,
+      antropometria: avaliarAntropometria(caso),
+      buscar: buscarAlimento,
+      receitas: 'Não deveria sair.',
+      comReceitas: false,
+    })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).not.toContain('RECEITAS SAUDÁVEIS')
+    expect(texto).not.toContain('Não deveria sair.')
+  })
+
+  it('CA-236: sem as opções novas, o Word de estágio sai como antes', async () => {
+    const { caso, plano } = montarCaso()
+    const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento, receitas: 'Salada.' })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toContain('RECEITAS SAUDÁVEIS')
+    expect(texto).toContain('Estagiário(a): Estagiária Exemplo')
+    expect(texto).toContain('ASSINATURAS')
+  })
 })
 
 describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {

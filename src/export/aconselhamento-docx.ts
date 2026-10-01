@@ -14,6 +14,10 @@ export interface DadosAconselhamento {
   readonly buscar: BuscarAlimento
   readonly orientacoes?: string
   readonly receitas?: string
+  /** CA-252: "Nome · CRN-6 12345" da nutricionista. Com texto (mesmo vazio), troca estagiário e preceptor por ela e deixa uma assinatura só. */
+  readonly nutricionista?: string | null | undefined
+  /** CA-235: `false` tira as receitas, título incluído. */
+  readonly comReceitas?: boolean | undefined
 }
 
 const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
@@ -45,6 +49,7 @@ function blocoTexto(conteudo: string | undefined): Paragraph[] {
 
 export function criarAconselhamento(dados: DadosAconselhamento): Document {
   const { caso, plano, antropometria, buscar } = dados
+  const nutricionista = dados.nutricionista ?? null
   const marcaSexo = `M(${caso.sexo === 'M' ? 'X' : ' '}) F(${caso.sexo === 'F' ? 'X' : ' '})`
   const idade = caso.idadeAnos === null ? '' : `${caso.idadeAnos} anos${caso.idadeMesesAdicionais ? ` e ${caso.idadeMesesAdicionais} meses` : ''}`
 
@@ -56,7 +61,9 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
       celulaRotulo('Estatura:', caso.estaturaCm === null ? '' : `${formatarNumeroDocx(caso.estaturaCm, 0)} cm`),
       celulaRotulo('Ocupação:', caso.ocupacao, 2),
     ]),
-    linha([celulaRotulo('Estagiário(a):', caso.estagiario, 2), celulaRotulo('Preceptor(a):', caso.preceptor, 2)]),
+    nutricionista === null
+      ? linha([celulaRotulo('Estagiário(a):', caso.estagiario, 2), celulaRotulo('Preceptor(a):', caso.preceptor, 2)])
+      : linha([celulaRotulo('Nutricionista:', nutricionista, 4)]),
   ])
 
   const a = antropometria
@@ -98,6 +105,18 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
     new Paragraph({ text: '' }),
   ])
 
+  const receitas = dados.comReceitas === false ? [] : [subtitulo('RECEITAS SAUDÁVEIS'), ...blocoTexto(dados.receitas)]
+  const data = new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Data: ____/____/________')] })
+  const assinaturas =
+    nutricionista === null
+      ? [
+          subtitulo('ASSINATURAS'),
+          new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Preceptor(a): ______________________________')] }),
+          new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Estagiário(a): ______________________________')] }),
+          data,
+        ]
+      : [subtitulo('ASSINATURA'), new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Nutricionista: ______________________________')] }), data]
+
   return new Document({
     creator: 'MetaNutri',
     title: 'Aconselhamento Nutricional',
@@ -113,12 +132,8 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
           ...refeicoes,
           subtitulo('ORIENTAÇÕES NUTRICIONAIS'),
           ...blocoTexto(dados.orientacoes),
-          subtitulo('RECEITAS SAUDÁVEIS'),
-          ...blocoTexto(dados.receitas),
-          subtitulo('ASSINATURAS'),
-          new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Preceptor(a): ______________________________')] }),
-          new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Estagiário(a): ______________________________')] }),
-          new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Data: ____/____/________')] }),
+          ...receitas,
+          ...assinaturas,
         ],
       },
     ],

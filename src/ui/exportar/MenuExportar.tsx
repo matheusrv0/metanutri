@@ -1,5 +1,6 @@
 import { ClipboardCopy, Download, FileText, Printer } from 'lucide-react'
 import { useState } from 'react'
+import { mostraReceitas, nutricionistaDoWord, type AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
@@ -24,10 +25,12 @@ interface MenuExportarProps {
   readonly bloqueio?: string | null | undefined
   /** "Nome · CRN-x n" da conta de nutricionista, para a folha da dieta (CA-287). */
   readonly responsavel?: string | null | undefined
+  /** Quem assina e a situação: o Word de nutricionista sai sem receitas e com uma assinatura só (CA-235, CA-252). */
+  readonly assinatura?: AssinaturaDoPlano | null | undefined
 }
 
 /** CA-44 a CA-48: baixar os dois documentos Word e copiar a tabela de adequação. */
-export function MenuExportar({ caso, plano, bloqueio, responsavel }: MenuExportarProps) {
+export function MenuExportar({ caso, plano, bloqueio, responsavel, assinatura }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
   // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas.
@@ -41,6 +44,8 @@ export function MenuExportar({ caso, plano, bloqueio, responsavel }: MenuExporta
       buscar: buscarAlimento,
       orientacoes: caso.orientacoes,
       receitas: caso.receitas,
+      nutricionista: nutricionistaDoWord(assinatura ?? null, caso),
+      comReceitas: mostraReceitas(assinatura?.situacao ?? null, caso),
     })
     baixarBlob(await gerarBlob(documento), nomeDeArquivo(caso.nome, 'aconselhamento'))
     setMensagem('Aconselhamento baixado.')
