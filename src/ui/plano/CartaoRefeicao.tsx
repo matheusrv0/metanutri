@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
+import { DialogoSugestoes } from './DialogoSugestoes.tsx'
 import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
@@ -29,6 +30,8 @@ interface CartaoRefeicaoProps {
   readonly tipo: TipoRefeicao
   /** A lista de sugestões que vale para esse tipo (CA-237). */
   readonly sugestoes: readonly SugestaoAlimento[]
+  /** Grava a lista do tipo; `false` quando o aparelho não guardou (CB-70). */
+  readonly aoSalvarSugestoes: (lista: readonly SugestaoAlimento[]) => boolean
   /** Conteúdo extra no fim de uma opção de substituto (calculadora de equivalência). */
   readonly extraDaOpcao?: (opcao: OpcaoId) => ReactNode
 }
@@ -44,10 +47,12 @@ export function CartaoRefeicao({
   aoRemoverItem,
   tipo,
   sugestoes,
+  aoSalvarSugestoes,
   extraDaOpcao,
 }: CartaoRefeicaoProps) {
   const [opcaoAtiva, setOpcaoAtiva] = useState<OpcaoId>('principal')
   const [itemParaSubstituir, setItemParaSubstituir] = useState<ItemPlano | null>(null)
+  const [editandoSugestoes, setEditandoSugestoes] = useState(false)
   // O domínio recusa nome vazio e horário inválido; o texto fica local até ficar válido.
   const [nomeTexto, setNomeTexto] = useState(refeicao.nome)
   const [nomeConhecido, setNomeConhecido] = useState(refeicao.nome)
@@ -127,6 +132,7 @@ export function CartaoRefeicao({
             <SugestoesDaRefeicao
               tipo={tipo}
               sugestoes={sugestoes}
+              aoEditar={() => setEditandoSugestoes(true)}
               aoEscolher={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
             />
           }
@@ -159,6 +165,10 @@ export function CartaoRefeicao({
 
         {extraDaOpcao?.(opcaoAtiva)}
       </div>
+
+      {editandoSugestoes ? (
+        <DialogoSugestoes tipo={tipo} lista={sugestoes} aoSalvar={aoSalvarSugestoes} aoFechar={() => setEditandoSugestoes(false)} />
+      ) : null}
 
       <DialogoSubstituto
         item={itemParaSubstituir}

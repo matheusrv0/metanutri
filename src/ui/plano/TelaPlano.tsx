@@ -48,6 +48,7 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
             refeicao={refeicao}
             tipo={tipo}
             sugestoes={sugestoes.listas[tipo]}
+            aoSalvarSugestoes={(lista) => sugestoes.salvar(tipo, lista)}
             aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
             aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
             aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}

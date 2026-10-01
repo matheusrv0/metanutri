@@ -186,4 +186,25 @@ describe('Sugestões por refeição (US-A3)', () => {
     await usuario.type(horario, '19:30')
     expect(painel('Nova refeição').getByText('Sugestões para o jantar')).toBeInTheDocument()
   })
+
+  it('CA-243: salvar vale para todas as refeições do tipo e fica no aparelho', async () => {
+    const usuario = montar()
+    await usuario.click(painel('Lanche da manhã').getByRole('button', { name: 'Editar sugestões para o lanche' }))
+    const dialogo = within(screen.getByRole('dialog', { name: 'Sugestões para o lanche' }))
+    await usuario.click(dialogo.getByRole('button', { name: 'Tirar Banana, prata, crua' }))
+    await usuario.click(dialogo.getByRole('button', { name: 'Salvar' }))
+
+    expect(painel('Lanche da manhã').queryByRole('button', { name: 'Adicionar Banana, prata, crua, 75 g' })).not.toBeInTheDocument()
+    expect(painel('Lanche da tarde').queryByRole('button', { name: 'Adicionar Banana, prata, crua, 75 g' })).not.toBeInTheDocument()
+    expect(painel('Ceia').getByRole('button', { name: 'Adicionar Banana, prata, crua, 75 g' })).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('metanutri:sugestoes-por-refeicao') ?? '{}').lanche).toHaveLength(5)
+  })
+
+  it('CA-306: com a lista vazia, sobra o link para montar a lista de novo', async () => {
+    localStorage.setItem('metanutri:sugestoes-por-refeicao', JSON.stringify({ almoco: [] }))
+    const usuario = montar()
+    expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
+    await usuario.click(painel('Almoço').getByRole('button', { name: 'Editar sugestões para o almoço' }))
+    expect(screen.getByRole('dialog', { name: 'Sugestões para o almoço' })).toBeInTheDocument()
+  })
 })
