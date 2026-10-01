@@ -373,9 +373,22 @@ function Conteudo() {
 
   if (rota.tela === 'painel') {
     return (
-      <Estrutura {...base} titulo="Painel" subtitulo="Seu dia no MetaNutri">
+      <Estrutura
+        {...base}
+        titulo="Painel"
+        acoes={
+          <EscolherModo
+            aoEscolher={(modo) => novoCaso(modo)}
+            gatilho={
+              <Button size="sm">
+                <Plus aria-hidden="true" />
+                Novo plano
+              </Button>
+            }
+          />
+        }
+      >
         <TelaPainel
-          aoNovoPlano={(modo) => novoCaso(modo)}
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
           aoIrPara={(tela) => navegar({ tela })}
           aoVerExemplo={verExemplo}

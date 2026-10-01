@@ -34,25 +34,58 @@ function montar(comDados: boolean) {
     casos.criar('')
     pacientes.criar('Maria')
   }
-  const aoNovoPlano = vi.fn()
   const aoAbrirPlano = vi.fn()
   const aoIrPara = vi.fn()
   const aoVerExemplo = vi.fn()
   render(
     <ProvedorCasos repositorio={casos}>
       <ProvedorPacientes repositorio={pacientes}>
-        <TelaPainel aoNovoPlano={aoNovoPlano} aoAbrirPlano={aoAbrirPlano} aoIrPara={aoIrPara} aoVerExemplo={aoVerExemplo} />
+        <TelaPainel aoAbrirPlano={aoAbrirPlano} aoIrPara={aoIrPara} aoVerExemplo={aoVerExemplo} />
       </ProvedorPacientes>
     </ProvedorCasos>,
   )
-  return { aoNovoPlano, aoAbrirPlano, aoIrPara, aoVerExemplo, usuario: userEvent.setup(), casos }
+  return { aoAbrirPlano, aoIrPara, aoVerExemplo, usuario: userEvent.setup(), casos }
 }
 
 describe('Painel', () => {
-  it('sem dados, mostra o caminho para começar', () => {
+  it('CA-327: sem plano, "Onde você parou" diz que não há nada e oferece o exemplo', () => {
     montar(false)
-    expect(screen.getByText('Nenhum plano ainda. Comece pelo botão acima.')).toBeInTheDocument()
+    expect(screen.getByText('Nenhum plano ainda.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver um plano de exemplo' })).toBeInTheDocument()
     expect(screen.getByText('Nenhum paciente cadastrado')).toBeInTheDocument()
+  })
+
+  it('CA-325: três números numa faixa, contados nos últimos 14 dias', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'))
+    try {
+      montar(true)
+      const faixa = within(screen.getByRole('region', { name: 'Seus números' }))
+      expect(faixa.getByText('planos')).toBeInTheDocument()
+      expect(faixa.getByText('paciente')).toBeInTheDocument()
+      expect(faixa.getByText('dia')).toBeInTheDocument()
+      expect(faixa.getAllByText('2')).toHaveLength(1)
+      expect(faixa.getAllByText('1')).toHaveLength(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('CA-326: "Onde você parou" abre o plano recente', async () => {
+    const { aoAbrirPlano, usuario } = montar(true)
+    const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
+    expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()
+    expect(recentes.getByText(/Prescrição rápida/)).toBeInTheDocument()
+    await usuario.click(recentes.getAllByRole('button', { name: 'Abrir' })[0] as HTMLElement)
+    expect(aoAbrirPlano).toHaveBeenCalled()
+  })
+
+  it('CA-328: sem os cartões grandes, o gráfico e os atalhos que repetem o menu', () => {
+    montar(true)
+    expect(screen.queryByRole('button', { name: 'Pacientes' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cadastrar produto' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Últimos 14 dias/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Começar agora')).not.toBeInTheDocument()
   })
 
   it('sem nenhum plano, oferece o exemplo; com plano, some', async () => {
@@ -65,30 +98,26 @@ describe('Painel', () => {
     expect(screen.queryByRole('button', { name: 'Ver um plano de exemplo' })).not.toBeInTheDocument()
   })
 
-  it('conta pacientes e planos, e abre o plano recente', async () => {
-    const { aoAbrirPlano, usuario } = montar(true)
-    const numeros = screen.getAllByRole('button').map((b) => b.textContent)
-    // O cartão traz número, rótulo e uma linha de apoio; basta o começo bater.
-    expect(numeros.some((t) => t?.startsWith('2Planos'))).toBe(true)
-    expect(numeros.some((t) => t?.startsWith('1Pacientes'))).toBe(true)
-
-    const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
-    expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()
-    expect(recentes.getByText(/Prescrição rápida/)).toBeInTheDocument()
-    await usuario.click(recentes.getAllByRole('button', { name: 'Abrir' })[0] as HTMLElement)
-    expect(aoAbrirPlano).toHaveBeenCalled()
-  })
-
   it('aponta plano sem nome e plano sem paciente', () => {
     montar(true)
     expect(screen.getByText('1 plano sem nome')).toBeInTheDocument()
     expect(screen.getByText('2 planos sem paciente vinculado')).toBeInTheDocument()
   })
 
-  it('o botão de novo plano pergunta o modo', async () => {
-    const { aoNovoPlano, usuario } = montar(false)
-    await usuario.click(screen.getByRole('button', { name: 'Novo plano' }))
-    await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
-    expect(aoNovoPlano).toHaveBeenCalledWith('rapido')
+  it('CA-326: com plano nomeado, vinculado e paciente cadastrado, aparece "Tudo em dia."', () => {
+    const armazenamento = new MemoriaFalsa()
+    const casos = criarRepositorio(armazenamento, { agora: relogio() })
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    const paciente = pacientes.criar('Maria')
+    const plano = casos.criar('Maria, retorno')
+    casos.salvar({ ...plano, caso: { ...plano.caso, pacienteId: paciente.id } })
+    render(
+      <ProvedorCasos repositorio={casos}>
+        <ProvedorPacientes repositorio={pacientes}>
+          <TelaPainel aoAbrirPlano={vi.fn()} aoIrPara={vi.fn()} aoVerExemplo={vi.fn()} />
+        </ProvedorPacientes>
+      </ProvedorCasos>,
+    )
+    expect(screen.getByText('Tudo em dia.')).toBeInTheDocument()
   })
 })

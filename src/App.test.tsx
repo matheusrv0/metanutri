@@ -37,7 +37,17 @@ describe('App: estrutura', () => {
     expect(menuFixo().getByRole('button', { name: /Painel/ })).toHaveAttribute('aria-current', 'page')
     expect(menuFixo().queryByRole('button', { name: /Continuar plano|Plano aberto/ })).not.toBeInTheDocument()
     expect(document.title).toBe('Painel · MetaNutri')
-    expect(screen.getByText('Nenhum plano ainda. Comece pelo botão acima.')).toBeInTheDocument()
+    expect(screen.getByText('Nenhum plano ainda.')).toBeInTheDocument()
+  })
+
+  it('CA-324: o botão Novo plano do Painel fica no topo e pergunta o modo', async () => {
+    renderizar()
+    const usuario = userEvent.setup()
+    const doTopo = screen.getAllByRole('button', { name: 'Novo plano' }).find((b) => !b.closest('nav'))
+    expect(doTopo).toBeDefined()
+    await usuario.click(doTopo as HTMLElement)
+    await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
+    expect(window.location.hash).toMatch(/^#\/caso\/.+\/caso$/)
   })
 
   it('Novo plano cria o caso e abre a etapa 1, com trilha de volta', async () => {
