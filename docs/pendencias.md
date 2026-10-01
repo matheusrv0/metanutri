@@ -201,4 +201,5 @@ uso, e o fluxo de publicação no GitHub Pages esperando um clique seu.
 
 Desde 26/09: missões diárias, link do paciente, tela de Adesão com quem está sumindo,
 os cinco planos novos e a contagem de paciente ativo.
+
 Desde 01/10 (parte 5): PDF da dieta com design próprio, lista de compras e trocas opcionais, Base MetaNutri com a página Fontes da base, Painel, planejador e Tabela de alimentos mais limpos.
