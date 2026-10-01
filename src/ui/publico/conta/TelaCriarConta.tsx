@@ -151,7 +151,7 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
             {erroConta === 'email-em-uso' ? (
               <>
                 {' '}
-                <button type="button" onClick={aoEntrar} className="font-semibold underline underline-offset-4">
+                <button type="button" onClick={aoEntrar} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
                   Entrar
                 </button>
               </>
