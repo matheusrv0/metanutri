@@ -9,6 +9,7 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
@@ -73,6 +74,8 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
         ? 'GET definido manualmente'
         : 'GET calculado'
 
+  const mostraCalculo = (caso.modo === 'completo' || !energia.getManual) && (energia.tmb !== null || energia.get !== null)
+
   return (
     <section aria-label="Resumo do dia" className="flex flex-col gap-4">
       <Card className="gap-4">
@@ -133,44 +136,44 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           ) : null}
         </div>
 
-        {(caso.modo === 'completo' || !energia.getManual) && (energia.tmb !== null || energia.get !== null) ? (
-          <dl className="flex flex-col gap-1.5 border-t border-border pt-3 text-sm">
-            {energia.tmb !== null ? (
-              <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">TMB</dt>
-                <dd className="numeros font-medium text-heading">{`${formatarNumero(energia.tmb, 0)} kcal`}</dd>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Fator de atividade</dt>
-              <dd className="numeros font-medium text-heading">
-                {`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${energia.categoriaAtividade}` : ''}`}
-              </dd>
-            </div>
-            {energia.adicionais.map((a) => (
-              <div key={a.descricao} className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">{a.descricao}</dt>
-                <dd className="numeros font-medium text-heading">{`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`}</dd>
-              </div>
-            ))}
-            {energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
-          </dl>
-        ) : null}
-      </Card>
-
-      <Card className="gap-4">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle>Macronutrientes</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => setEditandoMetas(true)}>
-            <SlidersHorizontal aria-hidden="true" />
-            Metas
-          </Button>
-        </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 border-t border-border pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="rotulo">Macronutrientes</p>
+            <Button variant="ghost" size="sm" onClick={() => setEditandoMetas(true)}>
+              <SlidersHorizontal aria-hidden="true" />
+              Metas
+            </Button>
+          </div>
           <MedidorMacro nome="Proteína" macro={macros.proteina} meta={descreverMeta(macros.proteina)} />
           <MedidorMacro nome="Carboidrato" macro={macros.carboidrato} meta={descreverMeta(macros.carboidrato)} />
           <MedidorMacro nome="Gordura" macro={macros.gordura} meta={descreverMeta(macros.gordura)} />
         </div>
+
+        {mostraCalculo ? (
+          <Recolhivel titulo="Ver cálculo">
+            <dl className="flex flex-col gap-1.5 text-sm">
+              {energia.tmb !== null ? (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-muted-foreground">TMB</dt>
+                  <dd className="numeros font-medium text-heading">{`${formatarNumero(energia.tmb, 0)} kcal`}</dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">Fator de atividade</dt>
+                <dd className="numeros font-medium text-heading">
+                  {`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${energia.categoriaAtividade}` : ''}`}
+                </dd>
+              </div>
+              {energia.adicionais.map((a) => (
+                <div key={a.descricao} className="flex justify-between gap-2">
+                  <dt className="text-muted-foreground">{a.descricao}</dt>
+                  <dd className="numeros font-medium text-heading">{`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`}</dd>
+                </div>
+              ))}
+              {energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
+            </dl>
+          </Recolhivel>
+        ) : null}
       </Card>
 
       <DialogoMetas

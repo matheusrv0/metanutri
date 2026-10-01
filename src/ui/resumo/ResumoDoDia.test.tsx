@@ -126,6 +126,24 @@ describe('Resumo do dia', () => {
   })
 })
 
+describe('Resumo do dia num cartão só (CA-333)', () => {
+  it('energia e macronutrientes no mesmo cartão, e a conta recolhida em "Ver cálculo"', async () => {
+    const usuario = montar(adulta)
+    const cartao = screen.getByText('Resumo do dia').closest('[data-slot="card"]')
+    expect(cartao).not.toBeNull()
+    expect(within(cartao as HTMLElement).getByText('Macronutrientes')).toBeInTheDocument()
+    expect(within(cartao as HTMLElement).getByRole('button', { name: 'Metas' })).toBeInTheDocument()
+
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    const conteudo = document.getElementById(verCalculo.getAttribute('aria-controls') ?? '')
+    expect(verCalculo).toHaveAttribute('aria-expanded', 'false')
+    expect(conteudo).toHaveAttribute('hidden')
+    await usuario.click(verCalculo)
+    expect(conteudo).not.toHaveAttribute('hidden')
+    expect(within(conteudo as HTMLElement).getByText('TMB')).toBeInTheDocument()
+  })
+})
+
 describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
   it('item 9: modo rápido sem dados para calcular não diz "Meta calculada"', () => {
     montar({ modo: 'rapido' })
