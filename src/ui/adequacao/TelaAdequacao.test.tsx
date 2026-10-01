@@ -63,8 +63,8 @@ describe('Etapa 3: adequação', () => {
     expect(screen.getByRole('columnheader', { name: 'Nutriente' })).toBeInTheDocument()
     const ferro = linhaDe('Ferro')
     expect(ferro.getAllByText(/mg$/).length).toBeGreaterThan(0)
-    expect(ferro.getByText(/% \(meta/)).toBeInTheDocument()
-    expect(ferro.getByText(/Abaixo da meta|Adequado|Acima do limite superior/)).toBeInTheDocument()
+    expect(ferro.getByText(/^\d+%( abaixo| · acima do limite)?$/)).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Estado' })).not.toBeInTheDocument()
     expect(screen.getByText(/^Composição: Base MetaNutri/)).toBeInTheDocument()
     expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Fontes da base' }).className).toContain('min-h-11')
@@ -78,7 +78,7 @@ describe('Etapa 3: adequação', () => {
 
     await usuario.click(screen.getByRole('radio', { name: 'Coletivo (EAR, 50%)' }))
     expect(linhaDe('Ferro').getByText('ear')).toBeInTheDocument()
-    expect(linhaDe('Ferro').getByText(/meta 50%/)).toBeInTheDocument()
+    expect(screen.getByText(/meta de 50% da referência/)).toBeInTheDocument()
   })
 
   it('CA-28: preset personalizado aceita referência e mínimo próprios', async () => {
@@ -88,7 +88,7 @@ describe('Etapa 3: adequação', () => {
     const minimo = screen.getByLabelText('Mínimo da meta')
     await usuario.clear(minimo)
     await usuario.type(minimo, '70')
-    expect(linhaDe('Ferro').getByText(/meta 70%/)).toBeInTheDocument()
+    expect(screen.getByText(/meta de 70% da referência/)).toBeInTheDocument()
   })
 
   it('CA-29: nutriente sem RDA nem EAR mostra referência AI', () => {
@@ -106,7 +106,7 @@ describe('Etapa 3: adequação', () => {
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
     const usuario = montar()
-    expect(linhaDe('Ferro').getByText(/^0% \(meta/)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText('0% abaixo')).toBeInTheDocument()
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     expect(gaveta.getByText(/Faltam .* mg para a meta/)).toBeInTheDocument()
   })
@@ -123,13 +123,13 @@ describe('Etapa 3: adequação', () => {
 
   it('CA-38: escolher a refeição e confirmar adiciona o alimento e recalcula', async () => {
     const usuario = montar(adulta, planoComArroz())
-    const antes = linhaDe('Ferro').getByText(/% \(meta/).textContent
+    const antes = linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(linhaDe('Ferro').getByText(/% \(meta/).textContent).not.toBe(antes)
+    expect(linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent).not.toBe(antes)
   })
 
   it('sugestão escondida não volta a aparecer, em nenhum plano', async () => {
@@ -155,4 +155,30 @@ describe('Etapa 3: adequação', () => {
       .map((li) => li.textContent)
     expect(depois).not.toEqual(antes)
   })
-})
+
+  it('CA-337: a referência fica no topo da tabela e a meta aparece uma vez, no subtítulo', () => {
+    montar(adulta, planoComArroz())
+    const cartao = screen.getByRole('table').closest('[data-slot="card"]') as HTMLElement
+    expect(within(cartao).getByRole('radiogroup', { name: 'Tipo de referência' })).toBeInTheDocument()
+    expect(within(cartao).getByText('mulheres de 19 a 30 anos · meta de 90% da referência')).toBeInTheDocument()
+    expect(screen.queryByText(/\(meta \d+%\)/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Referência da adequação')).not.toBeInTheDocument()
+  })
+
+  it('CA-338 e CA-339: colunas novas, referência como publicada e o tipo ao lado', () => {
+    montar(adulta, planoComArroz())
+    const cabecalhos = screen.getAllByRole('columnheader').map((c) => c.textContent)
+    expect(cabecalhos).toEqual(['Nutriente', 'No plano', 'Referência', 'Adequação', 'Ações'])
+    expect(linhaDe('Ferro').getByText('18 mg')).toBeInTheDocument()
+    expect(linhaDe('Cálcio').getByText('1.000 mg')).toBeInTheDocument()
+    expect(linhaDe('Ferro').getAllByText(/^\d+(,\d)? mg$|^< 0,1 mg$/)).toHaveLength(2)
+  })
+
+  it('CB-75: em Personalizado, os campos aparecem logo abaixo do seletor', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const seletor = screen.getByRole('radiogroup', { name: 'Tipo de referência' })
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    expect(seletor.compareDocumentPosition(minimo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(minimo.compareDocumentPosition(screen.getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })})

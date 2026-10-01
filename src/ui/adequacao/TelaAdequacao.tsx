@@ -6,13 +6,14 @@ import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
+import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
-import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
@@ -29,25 +30,26 @@ interface TelaAdequacaoProps {
   readonly aoAbrirFontes?: (() => void) | undefined
 }
 
-const VARIANTE: Record<EstadoAdequacao, 'lightSuccess' | 'lightWarning' | 'lightError'> = {
-  adequado: 'lightSuccess',
-  abaixo: 'lightWarning',
-  'acima-limite': 'lightError',
-}
-
-/* A barra carrega o mesmo estado do selo: cor sempre significa alguma coisa. */
+/* A barra carrega o estado da linha: cor sempre significa alguma coisa. */
 const VARIANTE_BARRA: Record<EstadoAdequacao, 'success' | 'warning' | 'error'> = {
   adequado: 'success',
   abaixo: 'warning',
   'acima-limite': 'error',
 }
 
-const ROTULO_ESTADO: Record<EstadoAdequacao, string> = {
-  adequado: 'Adequado',
-  abaixo: 'Abaixo da meta',
-  'acima-limite': 'Acima do limite superior',
+/* O texto da adequação leva a mesma cor da barra: abaixo em âmbar, dentro em verde, acima do limite em vermelho. */
+const COR_TEXTO: Record<EstadoAdequacao, string> = {
+  adequado: 'text-successtext',
+  abaixo: 'text-warningtext',
+  'acima-limite': 'text-errortext',
 }
 
+function textoDaAdequacao(linha: LinhaAdequacao): string {
+  const pct = `${formatarNumero(linha.adequacaoPct, 0)}%`
+  if (linha.estado === 'abaixo') return `${pct} abaixo`
+  if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
+  return pct
+}
 const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly rotulo: string }[] = [
   { valor: 'individual', rotulo: 'Individual (RDA, 90%)' },
   { valor: 'coletivo', rotulo: 'Coletivo (EAR, 50%)' },
@@ -83,7 +85,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         ) : null}
       </TableCell>
       <TableCell className="numeros whitespace-nowrap">
-        {`${formatarNumero(linha.total, 2)} ${linha.unidade}`}
+        {`${quantidadeNoPlano(linha.total)} ${linha.unidade}`}
         {linha.semDado > 0 ? (
           <abbr
             title={`${linha.semDado} ${linha.semDado === 1 ? 'alimento do plano não tem' : 'alimentos do plano não têm'} este nutriente na tabela: total possivelmente subestimado.`}
@@ -94,15 +96,12 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         ) : null}
       </TableCell>
       <TableCell className="numeros whitespace-nowrap">
-        {`${formatarNumero(linha.referencia.valor, 2)} ${linha.unidade}`}
-        <span className="block text-xs uppercase text-muted-foreground">{linha.referencia.tipo}</span>
+        {`${valorDeReferencia(linha.referencia.valor)} ${linha.unidade}`}
+        <span className="ml-1.5 text-xs uppercase text-muted-foreground">{linha.referencia.tipo}</span>
       </TableCell>
-      <TableCell className="min-w-28">
+      <TableCell className="min-w-36">
         <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
-        <span className="numeros mt-1 block whitespace-nowrap text-xs text-muted-foreground">{`${formatarNumero(linha.adequacaoPct, 0)}% (meta ${formatarNumero(linha.metaPct, 0)}%)`}</span>
-      </TableCell>
-      <TableCell>
-        <Badge variant={VARIANTE[linha.estado]}>{ROTULO_ESTADO[linha.estado]}</Badge>
+        <span className={`numeros mt-1 block whitespace-nowrap text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </TableCell>
       <TableCell>
         {linha.estado === 'abaixo' ? (
@@ -132,14 +131,20 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
   const nomeAlimento = (id: number) => ALIMENTOS.find((a) => a.id === id)?.descricao ?? ''
 
+  const metaPct = resultado.linhas[0]?.metaPct ?? null
+  const subtitulo = [resultado.estagio ? descreverEstagio(resultado.estagio) : null, metaPct === null ? null : `meta de ${formatarNumero(metaPct, 0)}% da referência`]
+    .filter((p): p is string => p !== null)
+    .join(' · ')
+
   return (
     <div className="flex flex-col gap-6">
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>Referência da adequação</CardTitle>
-          <CardDescription>Individual usa a RDA; coletivo usa a EAR. Nutrientes sem esses valores usam a AI.</CardDescription>
+          <CardTitle>Micronutrientes</CardTitle>
+          {subtitulo ? <CardDescription>{subtitulo}</CardDescription> : null}
         </CardHeader>
-        <GrupoOpcoes rotulo="Tipo de referência" opcoes={TIPO_PRESET} valor={prefs.preset.tipo} aoEscolher={trocarPreset} />
+
+        <SeletorSegmentado rotulo="Tipo de referência" opcoes={TIPO_PRESET} valor={prefs.preset.tipo} aoEscolher={trocarPreset} className="max-w-full overflow-x-auto" />
 
         {prefs.preset.tipo === 'personalizado' ? (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -162,72 +167,65 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
             />
           </div>
         ) : null}
+
+        {resultado.motivoSemCalculo ? (
+          <Alert variant="warning">
+            <TriangleAlert aria-hidden="true" />
+            <p>{resultado.motivoSemCalculo}</p>
+          </Alert>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nutriente</TableHead>
+                    <TableHead>No plano</TableHead>
+                    <TableHead>Referência</TableHead>
+                    <TableHead>Adequação</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Ações</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resultado.linhas.map((linha) => (
+                    <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <TableFootnotes>
+              <p>
+                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
+                Total possivelmente subestimado: algum alimento do plano não tem esse nutriente na tabela de composição. Falta de dado nunca entra como zero.
+              </p>
+              <p className="mt-1">
+                <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
+                O limite superior da tabela não vale para a forma do nutriente presente nos alimentos; o texto completo aparece ao passar o cursor.
+              </p>
+              <p className="mt-1">
+                Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
+                <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
+              </p>
+              <p className="mt-2 flex flex-wrap items-center gap-x-1">
+                {`Composição: ${NOME_DA_BASE}`}
+                {aoAbrirFontes ? (
+                  <>
+                    {' · '}
+                    <button type="button" onClick={aoAbrirFontes} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      Fontes da base
+                    </button>
+                  </>
+                ) : null}
+              </p>
+              <p>{`Referências de ingestão: ${resultado.fonte}`}</p>
+              {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
+            </TableFootnotes>
+          </>
+        )}
       </Card>
-
-      {resultado.motivoSemCalculo ? (
-        <Alert variant="warning">
-          <TriangleAlert aria-hidden="true" />
-          <p>{resultado.motivoSemCalculo}</p>
-        </Alert>
-      ) : (
-        <Card className="gap-4">
-          <CardHeader>
-            <CardTitle>Micronutrientes</CardTitle>
-            <CardDescription>{resultado.estagio ? `Estágio de vida: ${descreverEstagio(resultado.estagio)}` : ''}</CardDescription>
-          </CardHeader>
-
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nutriente</TableHead>
-                  <TableHead>No plano</TableHead>
-                  <TableHead>Referência</TableHead>
-                  <TableHead>Adequação</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {resultado.linhas.map((linha) => (
-                  <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <TableFootnotes>
-            <p>
-              <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-              Total possivelmente subestimado: algum alimento do plano não tem esse nutriente na tabela de composição. Falta de dado nunca entra como zero.
-            </p>
-            <p className="mt-1">
-              <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
-              O limite superior da tabela não vale para a forma do nutriente presente nos alimentos; o texto completo aparece ao passar o cursor.
-            </p>
-            <p className="mt-1">
-              Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
-              <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
-            </p>
-            <p className="mt-2 flex flex-wrap items-center gap-x-1">
-              {`Composição: ${NOME_DA_BASE}`}
-              {aoAbrirFontes ? (
-                <>
-                  {' · '}
-                  <button type="button" onClick={aoAbrirFontes} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    Fontes da base
-                  </button>
-                </>
-              ) : null}
-            </p>
-            <p>{`Referências de ingestão: ${resultado.fonte}`}</p>
-            {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
-          </TableFootnotes>
-        </Card>
-      )}
-
       <GavetaCobrir
         chave={cobrindo}
         rotulo={rotuloCobrindo}
