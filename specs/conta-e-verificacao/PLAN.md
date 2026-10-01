@@ -5398,6 +5398,30 @@ Esta etapa não roda sozinha: precisa do usuário.
 3. Com `npm run dev` e o `.env.local` preenchido pelo usuário, criar duas contas de teste: uma de nutricionista (Gmail do MetaNutri com `+teste` no e-mail) e uma de estudante (só se o usuário tiver um e-mail `.edu.br` para emprestar). Conferir: e-mail de confirmação chega; estudante cai em Comprovar matrícula; o pedido aparece em Aprovações; aprovar dá o plano Estudante com a validade certa; "Me formei" leva ao CRN em conferência; "Não encontrado" mostra o aviso com o prazo.
 4. Publicar só quando `RESPONSAVEL` e `CONTATO_EMAIL` tiverem valor (a trava do Passo 4 garante): `git push`, `gh workflow run publicar.yml --ref main` e acompanhar até ficar verde.
 
+
+---
+
+### Tarefa 14: Correções da revisão final (01/10/2026)
+
+A revisão da branch inteira aprovou com correções. Decisões no ledger (`Ruling (final …)`). Cobre CA-287 (estreitado à folha da dieta), CA-289 em Conta e plano, CB-63, CB-66, CA-304, CA-305 e os itens triados.
+
+**Arquivos:** `src/App.tsx`, `src/AppConta.test.tsx`, `src/ui/estado/usarAprovacoes.ts` (+ teste), `supabase/006-verificacao.sql`, `src/data/sqlVerificacao.test.ts`, `supabase/functions/webhook-mercadopago/index.ts`, `src/ui/exportar/MenuExportar.tsx`, o diálogo de imprimir e `src/ui/exportar/FolhaDieta.tsx` (+ testes), `src/ui/conta/TelaConta.tsx` (+ teste), `src/ui/conta/CartaoSituacao.tsx`, `src/ui/fluxoConta.ts` (+ teste), `src/ui/aprovacoes/AbaEstudantes.tsx` (+ teste), `src/ui/publico/TelaTermos.tsx`, `src/ui/publico/SecaoPrecos.tsx` (+ testes que dependam do texto), `README.md`.
+
+1. **Portão espera o perfil.** No `App.tsx`, dentro do portão (servidor configurado, rota não livre, com sessão), depois da checagem de outra conta: enquanto `!perfilConta.carregado`, mostrar o mesmo "Carregando…" do `conta.carregando`. Teste no `AppConta.test.tsx`: com o perfil ainda carregando e `#/aprovacoes`, aparece "Carregando…" e o endereço continua `#/aprovacoes`.
+2. **CB-66.** Em `usarAprovacoes.ts`, quando a leitura de `pedidos_em_analise` ou de `crn_para_conferir` voltar com erro, manter as listas da última leitura boa e só preencher `erro`. Teste: depois de uma leitura boa com 1 pedido, a próxima leitura falha, a lista continua com 1 pedido e `erro` aparece.
+3. **CB-63.** No `006-verificacao.sql`, `decidir_pedido`: o `on conflict … do update` passa a `set plano = 'estudante', status = 'ativa', expira_em = excluded.expira_em, preapproval_id = null, atualizado_em = now() where not (public.assinaturas.status = 'ativa' and public.assinaturas.plano in ('solo', 'pro', 'clinica'))`. Ajustar o teste do CB-63 em `sqlVerificacao.test.ts` para esse texto. No webhook (`supabase/functions/webhook-mercadopago/index.ts`), o `update` passa a filtrar também por `.eq('preapproval_id', id)`, para uma notificação de checkout abandonado não mexer no plano Estudante.
+4. **CA-287 (folha da dieta).** `MenuExportar` ganha a prop `responsavel?: string | null | undefined` e a repassa até a `FolhaDieta`, que, quando ela vem, usa esse texto no lugar de `linhaDeResponsabilidade(perfil)`. O `App` passa `` `${perfil.nome || sessao.nome} · ${formatarCrn(perfil.crn)}` `` quando a situação é nutricionista com CRN, e nada nos outros casos. O texto do `CartaoSituacao` para nutricionista vira "Você já pode usar tudo. Seu nome e CRN saem na folha da dieta.". Teste na `FolhaDieta` (ou no `MenuExportar`) mostrando a linha nova.
+5. **CA-289 em Conta e plano.** `TelaConta` ganha a prop `corrigirCrn: (crn: Crn) => Promise<string | null>` e mostra `<AvisoCrn>` acima do cartão da situação quando o perfil é de nutricionista. O `App` passa `perfilConta.corrigirCrn`. Teste em `TelaConta.test.tsx`.
+6. **CA-304 e CA-305.** `destinoDoPlano('estudante', ciclo, true)` passa a `{ tela: 'comprovar-matricula' }` (ajustar o teste). Na rota `comprovar-matricula` do `App`, com o perfil carregado e situação nutricionista, mostrar uma `MolduraConta` com o título "Esta conta é de nutricionista", o subtítulo "O plano Estudante é para quem cria a conta como estudante, com o e-mail da faculdade." e o botão "Ir para o painel"; sem perfil (modo local ou administrador), continua indo para o painel. `CartaoSituacao` ganha `aoEnviarComprovante: () => void` e, para estudante sem pedido ou com pedido recusado, mostra o botão "Enviar comprovante"; `TelaConta` repassa e o `App` navega para `comprovar-matricula`. Testes nos dois.
+7. **Comprovar matrícula espera o pedido.** Na rota `comprovar-matricula`, enquanto `!pedidoEstudante.carregado`, mostrar "Carregando…", para o preenchimento depois da recusa (CA-281) funcionar ao recarregar a página.
+8. **Caixas do "Confira no comprovante".** Em `AbaEstudantes.tsx`, as caixas zeram ao trocar de pedido (`key` pelo `aberto.id` no bloco delas), e o erro e o motivo escolhido ficam presos ao pedido em que nasceram (guardar junto o id do pedido e só mostrar quando for o pedido aberto). Teste: marcar uma caixa, abrir outro pedido, a caixa está desmarcada.
+9. **Criar conta reinicia ao trocar de endereço.** No `App`, `<TelaCriarConta key={escreverRota(rota)} …>`.
+10. **Promessa falsa sobre o PDF.** Em `TelaTermos.tsx` e na nota do Estudante em `SecaoPrecos.tsx`, tirar "o PDF sai marcado e"; fica "a tela do paciente avisa que não é atendimento profissional.". Ajustar testes que conferem esse texto.
+11. **Mês da formatura no fuso do Brasil.** Em `enviar_pedido_estudante`, comparar com `date_trunc('month', now() at time zone 'America/Sao_Paulo')`.
+12. **README.** Na seção "Ligar conta, e-mail, verificação e pagamento", acrescentar o caminho de projeto novo: `.env.local` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (nunca a `service_role` no navegador), os SQL na ordem 001 a 006, publicar as funções (`npx supabase functions deploy assinar --project-ref …` e `webhook-mercadopago --no-verify-jwt`) com o segredo `SITE_URL`, e testar o Mercado Pago no ambiente de teste antes de abrir. Corrigir a frase "Funciona sem conta" (só vale sem servidor) e a da limpeza dos comprovantes (acontece quando o administrador abre o app).
+
+Rode `npm run check` e `npx playwright test`. Commit: `fix(conta): correções da revisão final`. A republicação da função do webhook fica com o orquestrador, depois do commit.
+
 ---
 
 ## Cobertura da spec
@@ -5427,3 +5451,5 @@ Esta etapa não roda sozinha: precisa do usuário.
 | CB-66 | 9 |
 | CB-67 | — (zero contas em 30/09; nada a migrar) |
 | CB-68 | 1, 5, 12 |
+| CA-304, CA-305 | 14 |
+| Correções da revisão final (CB-63, CB-66, CA-287, CA-289) | 14 |

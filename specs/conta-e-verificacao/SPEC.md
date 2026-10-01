@@ -83,11 +83,12 @@ Os CA-128 e CA-130 a CA-134 da `estilo-spora` continuam valendo. Os CA-127 e CA-
 - **CA-283** · Dado um nutricionista, então o cartão mostra o CRN, a data da declaração e o selo (CRN em conferência, Conferido ou Não encontrado), sem nenhum botão para trocar de situação.
 - **CA-284** · Dado qualquer conta, então o cartão do plano mostra o nome, o valor e, no Estudante, até quando vale.
 - **CA-285** · Dado um plano Estudante vencido, então a conta volta ao Free, e o painel pede um comprovante novo pelo mesmo caminho do CA-279.
+- **CA-304** · Dado uma estudante sem pedido ou com o pedido recusado, então Conta e plano mostra o botão "Enviar comprovante", que leva a Comprovar matrícula (ajuste de 01/10/2026).
 
 ### US-B6 · Me formei (2 pts)
 
 - **CA-286** · Dado "Me formei", então abre uma janela que pede o CRN e a declaração, e avisa que o plano Estudante termina e que os planos alimentares e os pacientes continuam salvos.
-- **CA-287** · Dado a confirmação, então a situação passa a Nutricionista com o CRN em conferência, o plano Estudante termina (a conta vai para o Free), e os documentos passam a sair com o nome e o CRN.
+- **CA-287** · Dado a confirmação, então a situação passa a Nutricionista com o CRN em conferência, o plano Estudante termina (a conta vai para o Free), e a folha da dieta (imprimir e PDF) passa a sair com o nome e o CRN. O documento em Word segue na parte 4 do lançamento (ajuste de 01/10/2026).
 - **CA-288** · Dado "Cancelar" ou fechar a janela, então nada muda.
 
 ### US-B7 · CRN não encontrado (2 pts)
@@ -99,6 +100,7 @@ Os CA-128 e CA-130 a CA-134 da `estilo-spora` continuam valendo. Os CA-127 e CA-
 
 - **CA-291** · Dado um administrador, então o menu tem "Aprovações" com o total pendente, e a tela tem duas abas, Estudantes e CRN, cada uma com o seu total pendente.
 - **CA-292** · Dado quem não é administrador, então o menu não tem "Aprovações", e o endereço da tela leva ao painel.
+- **CA-305** · Dado alguém com sessão que clica no botão do plano Estudante em Preços, então a estudante vai para Comprovar matrícula, e o nutricionista vê "Esta conta é de nutricionista" com a explicação de que o plano Estudante é para conta criada como estudante, com o e-mail da faculdade (ajuste de 01/10/2026).
 - **CA-293** · Dado a aba Estudantes, então ela lista os pedidos em análise, do mais antigo para o mais novo, e o pedido aberto mostra nome, e-mail com o selo "E-mail da faculdade confirmado", instituição, curso, matrícula, período, previsão de formatura, data de envio, o comprovante (que abre em tamanho real) e a lista do que conferir.
 - **CA-294** · Dado "Aprovar", então o plano Estudante fica ativo com a validade da D-42, o pedido sai da lista e a pessoa passa a ver o aviso de aprovado.
 - **CA-295** · Dado "Recusar", então é preciso escolher um motivo (ilegível, sem o seu nome, não mostra o semestre atual, outro curso, ou outro motivo escrito), e esse motivo aparece para a pessoa.
@@ -148,4 +150,4 @@ Os CA-128 e CA-130 a CA-134 da `estilo-spora` continuam valendo. Os CA-127 e CA-
 - **R-23** · O Gmail como remetente tem limite de cerca de 500 e-mails por dia e pode cair no spam. Trocar pelo domínio quando você comprar.
 - **R-24** · O bloqueio de exportação do CA-290 acontece no navegador, porque o PDF é gerado no aparelho. Alguém com conhecimento técnico consegue contornar.
 - **R-25** · A aprovação manual depende de você. Se passar de 2 dias úteis, a estudante fica esperando sem aviso por e-mail.
-- **R-26** · A limpeza dos 30 dias depende de uma tarefa agendada no servidor. Se ela parar, os arquivos ficam além do prazo prometido na Política.
+- **R-26** · A limpeza dos 30 dias acontece quando o administrador abre o app (decisão de 01/10/2026, sem tarefa agendada no servidor). Se ele ficar semanas sem abrir, os arquivos ficam além do prazo prometido na Política.
