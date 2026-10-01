@@ -17,6 +17,17 @@ interface AbaEstudantesProps {
 const OUTRO = 'Outro motivo'
 const CONFERIR = ['Nome igual ao da conta', 'Curso de Nutrição', 'Semestre atual', 'Mesma instituição do e-mail']
 
+/** Motivo e erro ficam presos ao pedido em que nasceram: trocar de pedido não os leva junto. */
+interface Recusa {
+  readonly pedido: string
+  readonly motivo: string | null
+  readonly outro: string
+}
+interface Erro {
+  readonly pedido: string
+  readonly texto: string
+}
+
 function Dado({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
   return (
     <div>
@@ -30,9 +41,8 @@ function Dado({ rotulo, valor }: { readonly rotulo: string; readonly valor: stri
 export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaEstudantesProps) {
   const id = useId()
   const [abertoId, setAbertoId] = useState<string | null>(null)
-  const [motivo, setMotivo] = useState<string | null>(null)
-  const [outro, setOutro] = useState('')
-  const [erro, setErro] = useState<string | null>(null)
+  const [recusa, setRecusa] = useState<Recusa | null>(null)
+  const [erroDoPedido, setErroDoPedido] = useState<Erro | null>(null)
   const [decidindo, setDecidindo] = useState(false)
   const decidindoRef = useRef(false)
 
@@ -42,26 +52,34 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
     return <p className="rounded-3xl bg-card p-6 text-sm text-muted-foreground">Nenhum comprovante esperando você.</p>
   }
 
+  const pedidoAberto = aberto.id
+  const motivo = recusa?.pedido === pedidoAberto ? recusa.motivo : null
+  const outro = recusa?.pedido === pedidoAberto ? recusa.outro : ''
+  const erro = erroDoPedido?.pedido === pedidoAberto ? erroDoPedido.texto : null
+
+  const escolherMotivo = (m: string) => setRecusa({ pedido: pedidoAberto, motivo: m, outro })
+  const escreverOutro = (texto: string) => setRecusa({ pedido: pedidoAberto, motivo, outro: texto })
+  const avisar = (pedido: string, texto: string | null) => setErroDoPedido(texto === null ? null : { pedido, texto })
+
   const escolher = (pedidoId: string) => {
     setAbertoId(pedidoId)
-    setMotivo(null)
-    setOutro('')
-    setErro(null)
+    setRecusa(null)
+    setErroDoPedido(null)
   }
 
   const decidir = async (aprovar: boolean) => {
     if (decidindoRef.current) return
     const texto = motivo === OUTRO ? outro.trim() : motivo
     if (!aprovar && !texto) {
-      setErro('Escolha o motivo da recusa.')
+      avisar(pedidoAberto, 'Escolha o motivo da recusa.')
       return
     }
     decidindoRef.current = true
     setDecidindo(true)
-    const falha = await decidirPedido(aberto.id, aprovar, aprovar ? null : texto)
+    const falha = await decidirPedido(pedidoAberto, aprovar, aprovar ? null : texto)
     decidindoRef.current = false
     setDecidindo(false)
-    setErro(falha)
+    avisar(pedidoAberto, falha)
     if (!falha) escolher('')
   }
 
@@ -69,7 +87,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
     if (!aberto.arquivo) return
     const url = await abrirComprovante(aberto.arquivo)
     if (url) globalThis.open(url, '_blank', 'noopener,noreferrer')
-    else setErro('Não deu para abrir o comprovante agora. Tente de novo.')
+    else avisar(pedidoAberto, 'Não deu para abrir o comprovante agora. Tente de novo.')
   }
 
   return (
@@ -122,7 +140,8 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
               <Dado rotulo="Previsão de formatura" valor={formatarMesAno(aberto.formatura)} />
               <Dado rotulo="Enviado em" valor={formatarDataLonga(aberto.enviadoEm)} />
             </dl>
-            <fieldset className="flex flex-col gap-2 border-t border-border pt-3.5">
+            {/* A chave zera as caixas quando outro pedido abre. */}
+            <fieldset key={pedidoAberto} className="flex flex-col gap-2 border-t border-border pt-3.5">
               <legend className="rotulo pb-2">Confira no comprovante</legend>
               {CONFERIR.map((item) => (
                 <label key={item} className="flex items-center gap-2.5 text-sm">
@@ -158,12 +177,12 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
                   motivo === m ? 'border-primary bg-lightprimary text-primary' : 'border-borderdefault bg-card text-foreground',
                 )}
               >
-                <input type="radio" name={`${id}-motivo`} value={m} checked={motivo === m} onChange={() => setMotivo(m)} className="sr-only" />
+                <input type="radio" name={`${id}-motivo`} value={m} checked={motivo === m} onChange={() => escolherMotivo(m)} className="sr-only" />
                 {m}
               </label>
             ))}
           </div>
-          {motivo === OUTRO ? <Input aria-label="Motivo" value={outro} onChange={(e) => setOutro(e.target.value)} maxLength={200} /> : null}
+          {motivo === OUTRO ? <Input aria-label="Motivo" value={outro} onChange={(e) => escreverOutro(e.target.value)} maxLength={200} /> : null}
         </fieldset>
 
         {erro ? (

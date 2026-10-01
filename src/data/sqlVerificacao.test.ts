@@ -1,5 +1,6 @@
 import sql005 from '../../supabase/005-estudante.sql?raw'
 import sql from '../../supabase/006-verificacao.sql?raw'
+import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
 
 const corpoDa = (nome: string) => sql.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
 
@@ -25,8 +26,20 @@ describe('SQL da verificação (spec conta-e-verificacao)', () => {
     expect(sql).toContain("('comprovantes', 'comprovantes', false, 5242880, array['application/pdf', 'image/jpeg', 'image/png'])")
   })
 
-  it('CB-63: aprovar não passa por cima de assinatura paga', () => {
-    expect(corpoDa('decidir_pedido')).toContain('where public.assinaturas.preapproval_id is null')
+  it('CB-63: aprovar não passa por cima de assinatura paga ativa e limpa o preapproval_id velho', () => {
+    const corpo = corpoDa('decidir_pedido')
+    expect(corpo).toMatch(
+      /set plano = 'estudante', status = 'ativa', expira_em = excluded\.expira_em, preapproval_id = null, atualizado_em = now\(\)\s+where not \(public\.assinaturas\.status = 'ativa' and public\.assinaturas\.plano in \('solo', 'pro', 'clinica'\)\);/,
+    )
+    expect(corpo).not.toContain('where public.assinaturas.preapproval_id is null')
+  })
+
+  it('CB-63: o webhook só atualiza a linha da mesma assinatura do Mercado Pago', () => {
+    expect(webhook).toContain(".update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id)")
+  })
+
+  it('a previsão de formatura compara com o mês de agora no fuso do Brasil', () => {
+    expect(corpoDa('enviar_pedido_estudante')).toContain("date_trunc('month', p_formatura) < date_trunc('month', now() at time zone 'America/Sao_Paulo')")
   })
 
   it('D-42: a validade é 12 meses ou o fim do mês da formatura, o que vier antes', () => {

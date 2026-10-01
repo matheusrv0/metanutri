@@ -43,7 +43,7 @@ export function TelaTermos() {
       <p>
         Para estudante de Nutrição, com conta criada com o e-mail da faculdade e comprovante de matrícula aprovado pelo MetaNutri. Vale 12 meses ou até a
         formatura prevista, o que vier antes, e renova com um comprovante novo. É de uso não comercial: serve para o estágio, sob supervisão, não para
-        atender por conta própria. O PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
+        atender por conta própria. A tela do paciente avisa que não é atendimento profissional.
       </p>
 
       <h2>Nutricionista e CRN</h2>

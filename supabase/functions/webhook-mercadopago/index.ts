@@ -87,7 +87,9 @@ Deno.serve(async (req: Request) => {
   const mudanca: Record<string, string> = { status, atualizado_em: new Date().toISOString() }
   if (status !== 'ativa') mudanca['plano'] = 'free'
 
-  await cliente.from('assinaturas').update(mudanca).eq('nutricionista_id', dono)
+  // Só a linha desta assinatura: a notificação de um checkout abandonado (ou de uma
+  // assinatura antiga) não pode mexer no plano Estudante aprovado depois (CB-63).
+  await cliente.from('assinaturas').update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id)
 
   return ok()
 })

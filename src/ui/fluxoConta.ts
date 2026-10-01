@@ -9,7 +9,8 @@ import { ehPlanoPago, escreverRota, lerRota, rotaCriarConta, type Rota } from '.
 export function destinoDoPlano(plano: IdPlano, ciclo: Ciclo, temSessao: boolean): Rota | null {
   if (plano === 'clinica') return null
   if (ehPlanoPago(plano)) return temSessao ? { tela: 'assinar', plano, ciclo } : rotaCriarConta(plano, ciclo)
-  if (plano === 'estudante') return temSessao ? { tela: 'conta' } : rotaCriarConta('estudante', 'mensal')
+  // CA-305: com sessão, Comprovar matrícula; a conta de nutricionista vê lá por que não serve.
+  if (plano === 'estudante') return temSessao ? { tela: 'comprovar-matricula' } : rotaCriarConta('estudante', 'mensal')
   return temSessao ? { tela: 'painel' } : rotaCriarConta(null, 'mensal')
 }
 

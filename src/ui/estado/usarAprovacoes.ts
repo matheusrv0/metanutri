@@ -47,12 +47,13 @@ export function useAprovacoes(ativo: boolean): ValorAprovacoes {
     let vivo = true
     void Promise.all([cliente.rpc('pedidos_em_analise'), cliente.rpc('crn_para_conferir')]).then(([pedidos, crns]) => {
       if (!vivo) return
-      setCarga({
+      // CB-66: leitura com erro não esvazia a fila; fica a última lista boa, com o aviso.
+      setCarga((anterior) => ({
         versao,
-        pedidos: lista(pedidos.data, daLinhaPedidoParaAprovar),
-        crns: lista(crns.data, daLinhaCrnParaConferir),
+        pedidos: pedidos.error ? (anterior?.pedidos ?? []) : lista(pedidos.data, daLinhaPedidoParaAprovar),
+        crns: crns.error ? (anterior?.crns ?? []) : lista(crns.data, daLinhaCrnParaConferir),
         erro: pedidos.error || crns.error ? mensagemDoBanco(pedidos.error ?? crns.error) : null,
-      })
+      }))
     })
     return () => {
       vivo = false

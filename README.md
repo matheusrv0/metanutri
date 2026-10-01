@@ -92,7 +92,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   do paciente, backup em arquivo e **cópia na nuvem** (enviar deste aparelho, trazer
   para este aparelho). A cópia não é automática de propósito: cada botão sobrescreve
   um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
-- **Conta e plano** — entrar, sair e ver a assinatura. Funciona sem conta; veja abaixo.
+- **Conta e plano** — entrar, sair e ver a assinatura. Só funciona sem conta quando o
+  Supabase não está configurado (modo local); com ele, a conta é obrigatória. Veja abaixo.
 
 ## Conta na nuvem (opcional em desenvolvimento)
 
@@ -115,7 +116,34 @@ Adesão já mostra quantos ativos você tem contra o limite do plano.
 
 ## Ligar conta, e-mail, verificação e pagamento
 
-O site exige conta. Para funcionar de verdade, nesta ordem:
+O site exige conta. Se o projeto do Supabase ainda não existe, comece por **Projeto novo**,
+logo abaixo; depois siga a lista seguinte.
+
+### Projeto novo
+
+1. Crie o projeto em <https://supabase.com> (o plano gratuito serve). Em **Project Settings > API**,
+   copie a *Project URL* e a chave *anon public*.
+2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. Reinicie o
+   `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
+   ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
+3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 006:
+   `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
+   `005-estudante.sql` e `006-verificacao.sql`.
+4. Publique as duas funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
+   na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
+   ```bash
+   npx supabase secrets set SITE_URL=https://matheusrv0.github.io/metanutri/ --project-ref <ref>
+   npx supabase functions deploy assinar --project-ref <ref>
+   npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref <ref>
+   ```
+   O `--no-verify-jwt` é obrigatório na segunda: quem chama é o Mercado Pago, que não tem conta no Supabase.
+5. Siga a lista abaixo (no passo 4 dela, os SQL já rodaram; no passo 5, as funções já estão publicadas).
+6. **Teste o Mercado Pago no ambiente de teste antes de abrir para o público**: use as credenciais de teste
+   e um usuário de teste do Mercado Pago, e só depois troque para as credenciais de produção.
+
+### Projeto já ligado
+
+Para funcionar de verdade, nesta ordem:
 
 1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://matheusrv0.github.io/metanutri/`.
    Em *Redirect URLs*: `https://matheusrv0.github.io/metanutri/**` e `http://localhost:5173/**`.
@@ -125,7 +153,8 @@ O site exige conta. Para funcionar de verdade, nesta ordem:
    porta 465, usuário e remetente = o Gmail, senha = a senha de app). Sem SMTP próprio o Supabase só manda
    e-mail para a equipe do projeto, no máximo 2 por hora.
 4. **SQL.** No SQL Editor, rode `supabase/005-estudante.sql` e depois `supabase/006-verificacao.sql`. Para se
-   marcar como administrador, rode a linha comentada no fim do 006 com o seu e-mail.
+   marcar como administrador, rode a linha comentada no fim do 006 com o seu e-mail. O 006 pode rodar de novo
+   quando mudar: ele refaz as funções sem apagar dados.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). As
    funções `assinar` e `webhook-mercadopago` já estão publicadas. Cadastre o webhook apontando para
@@ -133,8 +162,9 @@ O site exige conta. Para funcionar de verdade, nesta ordem:
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
    barra a publicação (`scripts/conferir-publicacao.mjs`).
 
-Comprovantes de estudante ficam no balde privado `comprovantes` e são apagados 30 dias depois da decisão, quando
-o administrador abre a tela Aprovações.
+Comprovantes de estudante ficam no balde privado `comprovantes`. A limpeza dos que passaram de 30 dias depois
+da decisão acontece quando o administrador abre o app (qualquer tela, com a conta de administrador); não há
+tarefa agendada no servidor, então, se ele ficar semanas sem abrir, o arquivo dura mais que o prazo.
 
 ## A marca
 

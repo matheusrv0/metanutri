@@ -10,6 +10,8 @@ interface DialogoImprimirProps {
   readonly plano: Plano
   /** Restrições da ficha do paciente; a lista de trocas as respeita. */
   readonly restricoes?: string | undefined
+  /** Linha de responsabilidade da conta de nutricionista (CA-287). */
+  readonly responsavel?: string | null | undefined
   readonly aoFechar: () => void
 }
 
@@ -17,7 +19,7 @@ interface DialogoImprimirProps {
  * Pré-visualização da dieta antes de imprimir.
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo, sem depender de biblioteca.
  */
-export function DialogoImprimir({ aberto, caso, plano, restricoes, aoFechar }: DialogoImprimirProps) {
+export function DialogoImprimir({ aberto, caso, plano, restricoes, responsavel, aoFechar }: DialogoImprimirProps) {
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
@@ -27,7 +29,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, aoFechar }: D
         </DialogHeader>
 
         <div className="area-impressao border border-border print:border-0">
-          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} />
+          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} responsavel={responsavel} />
         </div>
 
         <DialogFooter className="print:hidden">

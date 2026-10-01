@@ -10,6 +10,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import type { ValorConta } from '../estado/usarConta.ts'
+import { AvisoCrn } from '../painel/AvisoCrn.tsx'
 import { CartaoSituacao } from './CartaoSituacao.tsx'
 import { DialogoMeFormei } from './DialogoMeFormei.tsx'
 
@@ -25,11 +26,28 @@ interface TelaContaProps {
   readonly meFormei: (crn: Crn) => Promise<string | null>
   /** Avisa o App para reler o perfil e a assinatura depois do "Me formei". */
   readonly aoMudouSituacao: () => void
+  /** CA-289: corrigir o CRN não encontrado também daqui. */
+  readonly corrigirCrn: (crn: Crn) => Promise<string | null>
+  /** CA-304: estudante sem pedido ou recusada vai para Comprovar matrícula. */
+  readonly aoEnviarComprovante: () => void
   readonly aoSaiu: () => void
 }
 
 /** Estado da conta: quem está conectado, qual plano e o que fazer sem conta. */
-export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssinar, perfil, pedido, meFormei, aoMudouSituacao, aoSaiu }: TelaContaProps) {
+export function TelaConta({
+  conta,
+  aoEntrar,
+  aoVerPrecos,
+  aoIrParaConfig,
+  aoAssinar,
+  perfil,
+  pedido,
+  meFormei,
+  aoMudouSituacao,
+  corrigirCrn,
+  aoEnviarComprovante,
+  aoSaiu,
+}: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
   const { assinatura, recarregar } = useAssinatura(conta.sessao !== null)
   const [formando, setFormando] = useState(false)
@@ -94,7 +112,9 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssi
         )}
       </Card>
 
-      {perfil ? <CartaoSituacao perfil={perfil} pedido={pedido} aoMeFormei={() => setFormando(true)} /> : null}
+      {perfil?.situacao === 'nutricionista' ? <AvisoCrn perfil={perfil} agora={new Date()} aoCorrigir={corrigirCrn} /> : null}
+
+      {perfil ? <CartaoSituacao perfil={perfil} pedido={pedido} aoMeFormei={() => setFormando(true)} aoEnviarComprovante={aoEnviarComprovante} /> : null}
 
       <Card className="gap-4">
         <CardHeader>

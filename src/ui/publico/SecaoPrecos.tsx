@@ -177,7 +177,7 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
       <p className="min-w-0 flex-1 text-sm text-foreground">
         <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
         Aprovado, o Grátis sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses
-        ou até a formatura. Conta de estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
+        ou até a formatura. Conta de estágio é de uso não comercial: a tela do paciente avisa que não é atendimento profissional.
       </p>
       <Button variant="outline" size="sm" onClick={aoEscolher}>
         {estudante.acaoTexto}

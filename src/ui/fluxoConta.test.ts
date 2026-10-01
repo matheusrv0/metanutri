@@ -26,9 +26,9 @@ describe('para onde vai o botão de cada plano', () => {
     expect(destinoDoPlano('pro', 'anual', true)).toEqual({ tela: 'assinar', plano: 'pro', ciclo: 'anual' })
   })
 
-  it('CA-125: Estudante sem sessão cria conta; com sessão vai para Conta e plano', () => {
+  it('CA-125 e CA-305: Estudante sem sessão cria conta; com sessão vai para Comprovar matrícula', () => {
     expect(destinoDoPlano('estudante', 'anual', false)).toEqual({ tela: 'criar-conta', plano: 'estudante' })
-    expect(destinoDoPlano('estudante', 'mensal', true)).toEqual({ tela: 'conta' })
+    expect(destinoDoPlano('estudante', 'mensal', true)).toEqual({ tela: 'comprovar-matricula' })
   })
 
   it('CA-126: Clínica não navega (a tela mostra o contato)', () => {

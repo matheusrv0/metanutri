@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Assinatura } from '@/domain/assinatura.ts'
 import type { PedidoEstudante } from '@/domain/pedidoEstudante.ts'
-import type { PerfilConta } from '@/domain/situacao.ts'
+import type { Crn, PerfilConta } from '@/domain/situacao.ts'
 import { contaFalsa } from '../publico/conta/contaFalsa.test-utils.ts'
 import { TelaConta } from './TelaConta.tsx'
 
@@ -41,6 +41,8 @@ function montar(perfil: PerfilConta | null, pedido: PedidoEstudante | null = nul
     pedido,
     meFormei,
     aoMudouSituacao: vi.fn(),
+    corrigirCrn: vi.fn<(crn: Crn) => Promise<string | null>>(async () => null),
+    aoEnviarComprovante: vi.fn(),
     aoEntrar: vi.fn(),
     aoVerPrecos: vi.fn(),
     aoIrParaConfig: vi.fn(),
@@ -82,6 +84,49 @@ describe('TelaConta', () => {
     expect(screen.getByText('CRN-6 12345')).toBeInTheDocument()
     expect(screen.getByText('CRN em conferência')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Me formei' })).not.toBeInTheDocument()
+  })
+
+  it('CA-289: CRN não encontrado aparece em Conta e plano, com o prazo e a correção', async () => {
+    const { usuario, corrigirCrn } = montar({ ...nutri, statusCrn: 'nao_encontrado', crnDecididoEm: new Date().toISOString() })
+    const aviso = screen.getByRole('region', { name: 'CRN' })
+    expect(aviso).toHaveTextContent('Não encontramos seu CRN no conselho')
+    expect(aviso).toHaveTextContent('7 dias para corrigir')
+    const numero = within(aviso).getByRole('textbox', { name: 'Número do CRN' })
+    await usuario.clear(numero)
+    await usuario.type(numero, '54321')
+    await usuario.click(within(aviso).getByRole('button', { name: 'Corrigir CRN' }))
+    expect(corrigirCrn).toHaveBeenCalledWith({ regiao: 6, numero: '54321' })
+  })
+
+  it('CA-289: CRN em conferência não mostra o aviso de correção', () => {
+    montar(nutri)
+    expect(screen.queryByText('Não encontramos seu CRN no conselho')).not.toBeInTheDocument()
+  })
+
+  it('CA-287: o cartão do nutricionista diz que nome e CRN saem na folha da dieta', () => {
+    montar(nutri)
+    expect(screen.getByText('Você já pode usar tudo. Seu nome e CRN saem na folha da dieta.')).toBeInTheDocument()
+  })
+
+  it('CA-304: estudante sem pedido ou recusada vê "Enviar comprovante", que leva a Comprovar matrícula', async () => {
+    const { usuario, aoEnviarComprovante } = montar(estudante, null)
+    await usuario.click(screen.getByRole('button', { name: 'Enviar comprovante' }))
+    expect(aoEnviarComprovante).toHaveBeenCalledOnce()
+  })
+
+  it('CA-304: pedido recusado também mostra "Enviar comprovante"', () => {
+    montar(estudante, { ...aprovado, status: 'recusado', motivo: 'Ilegível', decididoEm: '2026-10-01T12:00:00Z' })
+    expect(screen.getByRole('button', { name: 'Enviar comprovante' })).toBeInTheDocument()
+  })
+
+  it('CA-304: pedido aprovado não mostra "Enviar comprovante"', () => {
+    montar(estudante, aprovado)
+    expect(screen.queryByRole('button', { name: 'Enviar comprovante' })).not.toBeInTheDocument()
+  })
+
+  it('CA-304: pedido em análise não mostra "Enviar comprovante"', () => {
+    montar(estudante, { ...aprovado, status: 'em_analise', decididoEm: null })
+    expect(screen.queryByRole('button', { name: 'Enviar comprovante' })).not.toBeInTheDocument()
   })
 
   it('CA-284: no Estudante, mostra até quando vale', () => {

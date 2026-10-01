@@ -76,6 +76,19 @@ describe('useAprovacoes', () => {
     await waitFor(() => expect(result.current.pedidos).toHaveLength(0))
   })
 
+  it('CB-66: leitura que falha mantém a última lista boa e só avisa', async () => {
+    const { result } = renderHook(() => useAprovacoes(true))
+    await waitFor(() => expect(result.current.pedidos).toHaveLength(1))
+    expect(result.current.erro).toBeNull()
+
+    banco.respostas['pedidos_em_analise'] = { data: null, error: { message: 'Failed to fetch', code: '' } }
+    act(() => result.current.recarregar())
+    await waitFor(() => expect(result.current.erro).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.'))
+    expect(result.current.pedidos).toHaveLength(1)
+    expect(result.current.pedidos[0]?.id).toBe('p1')
+    expect(result.current.pendentes.total).toBe(1)
+  })
+
   it('abre o comprovante por endereço temporário', async () => {
     const { result } = renderHook(() => useAprovacoes(true))
     await waitFor(() => expect(result.current.carregado).toBe(true))

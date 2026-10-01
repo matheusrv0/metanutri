@@ -102,6 +102,32 @@ describe('TelaAprovacoes', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Este pedido já foi decidido.')
   })
 
+  it('as caixas do "Confira no comprovante" zeram ao abrir outro pedido', async () => {
+    render(<TelaAprovacoes aprovacoes={aprovacoes()} />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('checkbox', { name: 'Semestre atual' }))
+    expect(screen.getByRole('checkbox', { name: 'Semestre atual' })).toBeChecked()
+    await usuario.click(screen.getByRole('button', { name: /Júlia Martins/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Júlia Martins' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Semestre atual' })).not.toBeChecked()
+  })
+
+  it('o motivo e o erro ficam no pedido em que nasceram, mesmo quando a fila muda sozinha', async () => {
+    const valor = aprovacoes({ decidirPedido: vi.fn(async () => 'Não deu para falar com o servidor. Confira a internet e tente de novo.') })
+    const { rerender } = render(<TelaAprovacoes aprovacoes={valor} />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('radio', { name: 'Ilegível' }))
+    await usuario.click(screen.getByRole('button', { name: 'Recusar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não deu para falar com o servidor.')
+
+    // Outro administrador decidiu o pedido p1: a fila recarregada abre o p2.
+    const [, segundo] = valor.pedidos
+    rerender(<TelaAprovacoes aprovacoes={{ ...valor, pedidos: segundo ? [segundo] : [] }} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Júlia Martins' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Ilegível' })).not.toBeChecked()
+  })
+
   it('CA-296: aba CRN com o link do CFN e as duas decisões', async () => {
     const valor = aprovacoes()
     render(<TelaAprovacoes aprovacoes={valor} />)

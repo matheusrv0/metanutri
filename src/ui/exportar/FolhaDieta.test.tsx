@@ -74,6 +74,29 @@ describe('Folha da dieta', () => {
     expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
   })
 
+  it('CA-287: com a conta de nutricionista, a folha sai com o nome e o CRN dela no lugar do perfil local', () => {
+    localStorage.setItem('metanutri:perfil', JSON.stringify({ nome: 'Perfil Local', tipo: 'estudante' }))
+    try {
+      const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+      expect(screen.getByText(/Perfil Local · documento de estudo/)).toBeInTheDocument()
+      unmount()
+
+      render(<FolhaDieta caso={caso} plano={planoCheio()} responsavel="Ana Souza · CRN-6 12345" />)
+      expect(screen.getByText(/Ana Souza · CRN-6 12345/)).toBeInTheDocument()
+      expect(screen.queryByText(/Perfil Local/)).not.toBeInTheDocument()
+    } finally {
+      localStorage.removeItem('metanutri:perfil')
+    }
+  })
+
+  it('CA-287: o menu Exportar leva o nome e o CRN da conta até a folha de imprimir', async () => {
+    render(<MenuExportar caso={caso} plano={planoCheio()} responsavel="Ana Souza · CRN-6 12345" />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
+    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Dieta para imprimir/ }))
+    expect(within(screen.getByRole('dialog', { name: 'Dieta para imprimir' })).getByText(/Ana Souza · CRN-6 12345/)).toBeInTheDocument()
+  })
+
   it('o menu Exportar abre a folha e oferece imprimir', async () => {
     render(<MenuExportar caso={caso} plano={planoCheio()} />)
     const usuario = userEvent.setup()

@@ -33,6 +33,8 @@ describe('documentos legais', () => {
     expect(texto).toContain('controlador')
     expect(texto).toContain('operador')
     expect(texto).toContain('uso não comercial')
+    expect(texto).toContain('A tela do paciente avisa que não é atendimento profissional.')
+    expect(texto).not.toContain('PDF sai marcado')
     expect(texto).toContain('comprovante de matrícula')
     expect(texto).toContain('7 dias')
   })

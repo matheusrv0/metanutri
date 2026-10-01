@@ -51,6 +51,8 @@ describe('SecaoPrecos', () => {
     const aoEscolher = vi.fn()
     render(<SecaoPrecos aoEscolher={aoEscolher} contato="contato@exemplo.com" />)
     expect(screen.getAllByText(/comprovante de matrícula/).length).toBeGreaterThan(0)
+    expect(document.body.textContent).toContain('uso não comercial: a tela do paciente avisa que não é atendimento profissional.')
+    expect(document.body.textContent).not.toContain('PDF sai marcado')
     await userEvent.setup().click(primeiro('Usar o e-mail da faculdade'))
     expect(aoEscolher).toHaveBeenCalledWith('estudante', 'mensal')
   })

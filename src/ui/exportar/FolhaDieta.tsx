@@ -16,6 +16,8 @@ interface FolhaDietaProps {
   readonly plano: Plano
   /** Restrições da ficha do paciente, para não sugerir troca proibida. */
   readonly restricoes?: string | undefined
+  /** "Nome · CRN-x n" da conta de nutricionista; quando vem, substitui a linha do perfil local (CA-287). */
+  readonly responsavel?: string | null | undefined
 }
 
 const NOME_OPCAO: Record<OpcaoId, string> = { principal: 'Principal', substituto1: 'Substituto 1', substituto2: 'Substituto 2' }
@@ -33,7 +35,7 @@ function descrever(item: ItemPlano): string {
  * Folha da dieta para o paciente: só o que ele precisa ler.
  * Some da tela na impressão tudo que é interface; o navegador salva em PDF.
  */
-export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
+export function FolhaDieta({ caso, plano, restricoes, responsavel }: FolhaDietaProps) {
   const totais = totaisDoPlano(plano, buscarAlimento)
   const energia = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula, getManual: caso.energia.getManual })
   const kcal = totais.nutrientes.energia_kcal.total
@@ -176,7 +178,7 @@ export function FolhaDieta({ caso, plano, restricoes }: FolhaDietaProps) {
           {[
             caso.estagiario.trim() && `Elaborado por ${caso.estagiario.trim()}`,
             caso.preceptor.trim() && `Responsável: ${caso.preceptor.trim()}`,
-            perfil.nome.trim() && linhaDeResponsabilidade(perfil),
+            responsavel || (perfil.nome.trim() && linhaDeResponsabilidade(perfil)),
             perfil.instituicao.trim() || null,
           ]
             .filter(Boolean)

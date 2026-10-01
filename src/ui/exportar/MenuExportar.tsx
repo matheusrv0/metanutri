@@ -22,10 +22,12 @@ interface MenuExportarProps {
   readonly plano: Plano
   /** Motivo para não exportar (CRN não encontrado depois do prazo, CA-290). */
   readonly bloqueio?: string | null | undefined
+  /** "Nome · CRN-x n" da conta de nutricionista, para a folha da dieta (CA-287). */
+  readonly responsavel?: string | null | undefined
 }
 
 /** CA-44 a CA-48: baixar os dois documentos Word e copiar a tabela de adequação. */
-export function MenuExportar({ caso, plano, bloqueio }: MenuExportarProps) {
+export function MenuExportar({ caso, plano, bloqueio, responsavel }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
   // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas.
@@ -102,7 +104,7 @@ export function MenuExportar({ caso, plano, bloqueio }: MenuExportarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} restricoes={restricoes} aoFechar={() => setImprimindo(false)} />
+      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} restricoes={restricoes} responsavel={responsavel} aoFechar={() => setImprimindo(false)} />
     </div>
   )
 }

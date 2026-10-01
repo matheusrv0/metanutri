@@ -7,7 +7,7 @@ import { criarExemplo } from './domain/exemplo.ts'
 import { missoesDoPlano } from './domain/missoes.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
 import { avisoDoEstudante } from './domain/pedidoEstudante.ts'
-import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situacao.ts'
+import { exportacaoBloqueada, formatarCrn, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situacao.ts'
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { TelaAprovacoes } from './ui/aprovacoes/TelaAprovacoes.tsx'
@@ -44,6 +44,7 @@ import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaCheckout } from './ui/publico/TelaCheckout.tsx'
 import { TelaComprovarMatricula } from './ui/publico/conta/TelaComprovarMatricula.tsx'
 import { TelaCompletarCadastro } from './ui/publico/conta/TelaCompletarCadastro.tsx'
+import { MolduraConta } from './ui/publico/conta/MolduraConta.tsx'
 import { TelaCriarConta } from './ui/publico/conta/TelaCriarConta.tsx'
 import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
 import { TelaOutraConta } from './ui/publico/conta/TelaOutraConta.tsx'
@@ -66,7 +67,7 @@ import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
-import { ehRotaLivre, ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
+import { ehRotaLivre, escreverRota, ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
 import { Redirecionar } from './ui/Redirecionar.tsx'
 import { useRota } from './ui/usarRota.ts'
 
@@ -98,6 +99,8 @@ function Conteudo() {
   const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
   const agora = new Date()
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
+  // CA-287: a folha da dieta sai com o nome e o CRN da conta de nutricionista.
+  const responsavel = perfil?.situacao === 'nutricionista' && perfil.crn ? `${perfil.nome || (sessao?.nome ?? '')} · ${formatarCrn(perfil.crn)}` : null
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -141,16 +144,16 @@ function Conteudo() {
     return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
   }
 
+  const telaCarregando = (
+    <div role="status" className="grid min-h-dvh place-content-center bg-background text-sm text-muted-foreground">
+      Carregando…
+    </div>
+  )
+
   // Portão da conta (CA-148): com servidor, tela de trabalho pede sessão. O login
   // aparece no lugar da tela pedida, e ela abre sozinha quando a sessão chega (CA-137).
   if (conta.disponivel && !ehRotaLivre(rota)) {
-    if (conta.carregando) {
-      return (
-        <div role="status" className="grid min-h-dvh place-content-center bg-background text-sm text-muted-foreground">
-          Carregando…
-        </div>
-      )
-    }
+    if (conta.carregando) return telaCarregando
     if (!sessao) {
       return (
         <TelaEntrar
@@ -178,6 +181,9 @@ function Conteudo() {
         />
       )
     }
+
+    // Sem o perfil, nenhuma tela decide nada: Aprovações mandaria o administrador para o painel.
+    if (!perfilConta.carregado) return telaCarregando
 
     // CB-68: conta sem situação completa o cadastro antes de qualquer tela de trabalho.
     if (perfilConta.carregado && !perfilConta.falhou && perfil === null && !perfilConta.ehAdmin) {
@@ -231,6 +237,8 @@ function Conteudo() {
     const ciclo = rota.ciclo ?? 'mensal'
     return (
       <TelaCriarConta
+        // Trocar de endereço (outro plano) recomeça o formulário.
+        key={escreverRota(rota)}
         conta={conta}
         plano={rota.plano ?? null}
         ciclo={ciclo}
@@ -280,7 +288,23 @@ function Conteudo() {
   }
 
   if (rota.tela === 'comprovar-matricula') {
+    // CA-305: o botão do Estudante, numa conta de nutricionista, explica por que não serve.
+    if (perfil?.situacao === 'nutricionista') {
+      return (
+        <MolduraConta
+          titulo="Esta conta é de nutricionista"
+          subtitulo="O plano Estudante é para quem cria a conta como estudante, com o e-mail da faculdade."
+          aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        >
+          <Button size="lg" block onClick={() => navegar({ tela: 'painel' })}>
+            Ir para o painel
+          </Button>
+        </MolduraConta>
+      )
+    }
     if (perfilConta.carregado && perfil?.situacao !== 'estudante') return <Redirecionar para={{ tela: 'painel' }} navegar={navegar} />
+    // O formulário nasce com os dados do pedido recusado (CA-281): só monta quando ele chegou.
+    if (!pedidoEstudante.carregado) return telaCarregando
     return (
       <TelaComprovarMatricula
         email={sessao?.email ?? ''}
@@ -434,6 +458,8 @@ function Conteudo() {
           perfil={perfil}
           pedido={pedidoEstudante.pedido}
           meFormei={perfilConta.meFormei}
+          corrigirCrn={perfilConta.corrigirCrn}
+          aoEnviarComprovante={() => navegar({ tela: 'comprovar-matricula' })}
           aoMudouSituacao={() => {
             perfilConta.recarregar()
             pedidoEstudante.recarregar()
@@ -496,7 +522,7 @@ function Conteudo() {
             : undefined
         }
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} />}
+        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} responsavel={responsavel} />}
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />

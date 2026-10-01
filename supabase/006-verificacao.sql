@@ -243,7 +243,8 @@ begin
      or not exists (select 1 from storage.objects where bucket_id = 'comprovantes' and name = p_arquivo) then
     raise exception 'O comprovante não chegou. Escolha o arquivo e envie de novo.' using errcode = '22023';
   end if;
-  if p_formatura is null or date_trunc('month', p_formatura) < date_trunc('month', now()) then
+  -- O mês de agora é o do Brasil: em UTC, a virada do mês chega 3 horas antes.
+  if p_formatura is null or date_trunc('month', p_formatura) < date_trunc('month', now() at time zone 'America/Sao_Paulo') then
     raise exception 'A previsão de formatura precisa ser deste mês em diante.' using errcode = '22023';
   end if;
   insert into public.pedidos_estudante (usuario, instituicao, matricula, periodo, formatura, arquivo)
@@ -321,9 +322,12 @@ begin
     v_expira := least(now() + interval '12 months', (v_formatura + interval '1 month')::timestamptz - interval '1 second');
     insert into public.assinaturas (nutricionista_id, plano, status, expira_em, atualizado_em)
     values (v_usuario, 'estudante', 'ativa', v_expira, now())
+    -- CB-63: só a assinatura paga ATIVA fica como está. Checkout abandonado, cancelado
+    -- ou Estudante antigo viram o Estudante novo, sem o preapproval_id velho (o webhook
+    -- só mexe na linha com o mesmo preapproval_id).
     on conflict (nutricionista_id) do update
-      set plano = 'estudante', status = 'ativa', expira_em = excluded.expira_em, atualizado_em = now()
-      where public.assinaturas.preapproval_id is null;
+      set plano = 'estudante', status = 'ativa', expira_em = excluded.expira_em, preapproval_id = null, atualizado_em = now()
+      where not (public.assinaturas.status = 'ativa' and public.assinaturas.plano in ('solo', 'pro', 'clinica'));
   end if;
 end;
 $$;
