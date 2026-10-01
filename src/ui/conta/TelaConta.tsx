@@ -2,12 +2,16 @@ import { BadgeCheck, CloudOff, CreditCard, LogIn, LogOut, Sparkles, UserRound } 
 import { useState } from 'react'
 import { RECADO_STATUS } from '@/domain/assinatura.ts'
 import { planoPorId, PLANOS } from '@/domain/conta.ts'
+import { formatarDataLonga, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
+import type { Crn, PerfilConta } from '@/domain/situacao.ts'
 import { useAssinatura } from '../estado/usarAssinatura.ts'
 import { ehPlanoPago, type PlanoPago } from '../navegacao.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import type { ValorConta } from '../estado/usarConta.ts'
+import { CartaoSituacao } from './CartaoSituacao.tsx'
+import { DialogoMeFormei } from './DialogoMeFormei.tsx'
 
 interface TelaContaProps {
   readonly conta: ValorConta
@@ -15,12 +19,20 @@ interface TelaContaProps {
   readonly aoVerPrecos: () => void
   readonly aoIrParaConfig: () => void
   readonly aoAssinar: (plano: PlanoPago) => void
+  /** Situação e CRN (spec conta-e-verificacao). Nulo no modo local, sem servidor. */
+  readonly perfil: PerfilConta | null
+  readonly pedido: PedidoEstudante | null
+  readonly meFormei: (crn: Crn) => Promise<string | null>
+  /** Avisa o App para reler o perfil e a assinatura depois do "Me formei". */
+  readonly aoMudouSituacao: () => void
+  readonly aoSaiu: () => void
 }
 
 /** Estado da conta: quem está conectado, qual plano e o que fazer sem conta. */
-export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssinar }: TelaContaProps) {
+export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssinar, perfil, pedido, meFormei, aoMudouSituacao, aoSaiu }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
-  const { assinatura } = useAssinatura(conta.sessao !== null)
+  const { assinatura, recarregar } = useAssinatura(conta.sessao !== null)
+  const [formando, setFormando] = useState(false)
 
   const plano = planoPorId(assinatura.plano)
 
@@ -28,6 +40,7 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssi
     setSaindo(true)
     await conta.sair()
     setSaindo(false)
+    aoSaiu()
   }
 
   return (
@@ -81,6 +94,8 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssi
         )}
       </Card>
 
+      {perfil ? <CartaoSituacao perfil={perfil} pedido={pedido} aoMeFormei={() => setFormando(true)} /> : null}
+
       <Card className="gap-4">
         <CardHeader>
           <CardTitle>Seu plano</CardTitle>
@@ -97,6 +112,10 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssi
           </div>
           <span className="numeros font-titulo text-xl font-bold text-heading">{(plano?.mensal ?? 0) === 0 ? 'Grátis' : `R$ ${plano?.mensal}/mês`}</span>
         </div>
+
+        {assinatura.plano === 'estudante' && assinatura.expiraEm ? (
+          <p className="text-sm text-muted-foreground">{`Vale até ${formatarDataLonga(assinatura.expiraEm)}.`}</p>
+        ) : null}
 
         {assinatura.precoTravado ? (
           <p className="text-xs text-muted-foreground">Você entrou no preço de fundador: ele não sobe quando o preço subir.</p>
@@ -122,6 +141,17 @@ export function TelaConta({ conta, aoEntrar, aoVerPrecos, aoIrParaConfig, aoAssi
           <p className="text-xs text-muted-foreground">O pagamento acontece no Mercado Pago. Nenhum dado de cartão passa pelo MetaNutri.</p>
         ) : null}
       </Card>
+
+      <DialogoMeFormei
+        aberto={formando}
+        aoFechar={() => setFormando(false)}
+        meFormei={meFormei}
+        aoFormado={() => {
+          setFormando(false)
+          recarregar()
+          aoMudouSituacao()
+        }}
+      />
     </div>
   )
 }

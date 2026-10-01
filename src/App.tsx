@@ -297,6 +297,11 @@ function Conteudo() {
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
           aoAssinar={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
+          perfil={null}
+          pedido={null}
+          meFormei={async () => null}
+          aoMudouSituacao={() => undefined}
+          aoSaiu={() => navegar({ tela: 'inicio' })}
         />
       </Estrutura>
     )

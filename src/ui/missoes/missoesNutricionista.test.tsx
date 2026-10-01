@@ -288,7 +288,7 @@ describe('Conta de estudante: uso não comercial', () => {
     )
 
     expect(screen.queryByRole('button', { name: /Gerar link das missões/ })).not.toBeInTheDocument()
-    expect(screen.getByText(/já\s+estão em uso/i)).toBeInTheDocument()
+    expect(screen.getByText(/links de missões do seu plano/i)).toBeInTheDocument()
   })
 
   it('com três links, o plano Pro continua gerando', () => {

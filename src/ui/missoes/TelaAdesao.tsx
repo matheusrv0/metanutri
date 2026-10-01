@@ -22,12 +22,14 @@ interface TelaAdesaoProps {
   /** Plano da conta, para comparar os pacientes ativos com o limite. */
   readonly plano?: IdPlano
   readonly hoje?: string
+  /** Leva a Preços quando o limite de pacientes ativos acaba (CA-177). */
+  readonly aoVerPlanos?: (() => void) | undefined
 }
 
 /** Sumindo primeiro: é quem precisa de telefonema hoje. */
 const URGENCIA: Readonly<Record<EstadoAcompanhamento, number>> = { sumindo: 0, atencao: 1, 'nao-comecou': 2, 'em-dia': 3 }
 
-export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal() }: TelaAdesaoProps) {
+export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal(), aoVerPlanos }: TelaAdesaoProps) {
   const { acompanhamentos } = useAcompanhamentos()
 
   const comEstado = acompanhamentos
@@ -75,6 +77,11 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal
           <p className="mt-1 text-xs text-muted-foreground">
             {limite.limite === null ? 'Seu plano não tem limite.' : limite.excedeu ? 'Acima do seu plano.' : `Cabem mais ${limite.restantes}.`}
           </p>
+          {limite.excedeu && aoVerPlanos ? (
+            <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
+              Ver planos
+            </Button>
+          ) : null}
         </div>
       </section>
 

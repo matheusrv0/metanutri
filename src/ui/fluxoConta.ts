@@ -1,6 +1,6 @@
 // Para onde cada botão de plano leva e para onde a pessoa vai depois do cadastro
 // (spec estilo-spora, CA-117 e CA-122 a CA-133). Regras puras: a tela só navega.
-import type { Ciclo, IdPlano } from '@/domain/conta.ts'
+import { planoSeguinte, type Ciclo, type IdPlano } from '@/domain/conta.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { ehPlanoPago, escreverRota, lerRota, rotaCriarConta, type Rota } from './navegacao.ts'
 
@@ -40,4 +40,10 @@ export function tirarDestino(arm: Armazenamento | null): Rota | null {
   } catch {
     return null
   }
+}
+
+/** Do aviso de limite para Preços, com o plano seguinte em destaque (CA-177). */
+export function rotaDePlanos(atual: IdPlano): Rota {
+  const seguinte = planoSeguinte(atual)
+  return seguinte ? { tela: 'precos', destaque: seguinte } : { tela: 'precos' }
 }

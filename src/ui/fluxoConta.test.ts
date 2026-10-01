@@ -1,5 +1,5 @@
 import type { Armazenamento } from '@/domain/persistencia.ts'
-import { CHAVE_DESTINO, destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './fluxoConta.ts'
+import { CHAVE_DESTINO, destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './fluxoConta.ts'
 
 function memoria(): Armazenamento & { readonly dados: Map<string, string> } {
   const dados = new Map<string, string>()
@@ -56,5 +56,13 @@ describe('destino guardado para depois da confirmação', () => {
   it('sem armazenamento não quebra', () => {
     guardarDestino(null, { tela: 'painel' })
     expect(tirarDestino(null)).toBeNull()
+  })
+})
+
+describe('limite leva a Preços (CA-177)', () => {
+  it('abre Preços com o plano seguinte em destaque', () => {
+    expect(rotaDePlanos('free')).toEqual({ tela: 'precos', destaque: 'solo' })
+    expect(rotaDePlanos('solo')).toEqual({ tela: 'precos', destaque: 'pro' })
+    expect(rotaDePlanos('clinica')).toEqual({ tela: 'precos' })
   })
 })

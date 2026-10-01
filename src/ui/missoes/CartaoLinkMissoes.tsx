@@ -30,9 +30,11 @@ interface CartaoLinkMissoesProps {
   readonly plano?: IdPlano
   /** Injetável no teste; por padrão é o dia de hoje no fuso de quem olha. */
   readonly hoje?: string
+  /** Leva a Preços quando o limite de links acaba (CA-177). */
+  readonly aoVerPlanos?: (() => void) | undefined
 }
 
-export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = PLANO_PADRAO, hoje = diaLocal() }: CartaoLinkMissoesProps) {
+export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = PLANO_PADRAO, hoje = diaLocal(), aoVerPlanos }: CartaoLinkMissoesProps) {
   const { repositorio, salvar, acompanhamentos } = useAcompanhamentos()
   const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
   const [copiado, setCopiado] = useState(false)
@@ -125,10 +127,17 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = P
                 ) : null}
               </>
             ) : (
-              <p className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
-                Seu plano permite {planoAtual?.limiteLinksPaciente} {planoAtual?.limiteLinksPaciente === 1 ? 'link' : 'links'} de missões, e eles já
-                estão em uso. Apague um acompanhamento em Adesão ou mude de plano para gerar outro.
-              </p>
+              <div className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
+                <p>
+                  Você usou {planoAtual?.limiteLinksPaciente} de {planoAtual?.limiteLinksPaciente} links de missões do seu plano. Apague um acompanhamento em
+                  Adesão ou mude de plano para gerar outro.
+                </p>
+                {aoVerPlanos ? (
+                  <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
+                    Ver planos
+                  </Button>
+                ) : null}
+              </div>
             )}
           </>
         )}
