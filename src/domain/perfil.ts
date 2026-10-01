@@ -46,7 +46,24 @@ export function lerPerfil(armazenamento: Armazenamento | null): Perfil {
   if (!armazenamento) return PERFIL_VAZIO
   try {
     const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE) ?? 'null')
-    return bruto && typeof bruto === 'object' ? { ...PERFIL_VAZIO, ...(bruto as Partial<Perfil>) } : PERFIL_VAZIO
+    if (!bruto || typeof bruto !== 'object') return PERFIL_VAZIO
+    const o = bruto as Record<string, unknown>
+    const texto = (campo: Exclude<keyof Perfil, 'tipo' | 'logo'>): string => {
+      const valor = o[campo]
+      return typeof valor === 'string' ? valor : PERFIL_VAZIO[campo]
+    }
+    const tipo = o['tipo']
+    const logo = o['logo']
+    return {
+      nome: texto('nome'),
+      tipo: tipo === 'estudante' || tipo === 'profissional' ? tipo : PERFIL_VAZIO.tipo,
+      crn: texto('crn'),
+      instituicao: texto('instituicao'),
+      responsavel: texto('responsavel'),
+      telefone: texto('telefone'),
+      email: texto('email'),
+      logo: typeof logo === 'string' ? logo : null,
+    }
   } catch {
     return PERFIL_VAZIO
   }
@@ -70,6 +87,7 @@ export const CHAVES_DE_DADOS = [
   'metanutri:sugestoes-ocultas',
   'metanutri:acompanhamentos',
   'metanutri:sugestoes-por-refeicao',
+  'metanutri:perfil-conta',
 ] as const
 
 export interface Backup {

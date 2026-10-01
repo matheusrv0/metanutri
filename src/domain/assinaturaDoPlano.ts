@@ -30,7 +30,8 @@ export function assinaturaDoPlano({ servidor, perfilConta, nomeDaSessao, perfilL
     const situacao = perfilConta?.situacao ?? null
     const nome = perfilConta?.nome.trim() || nomeDaSessao.trim()
     const crn = situacao === 'nutricionista' ? (perfilConta?.crn ?? null) : null
-    return { situacao, linhaNutricionista: crn ? `${nome} · ${formatarCrn(crn)}` : null, origem: 'conta', nome, responsavelTecnico }
+    const linha = crn ? [nome, formatarCrn(crn)].filter(Boolean).join(' · ') : null
+    return { situacao, linhaNutricionista: linha, origem: 'conta', nome, responsavelTecnico }
   }
   const situacao: Situacao = perfilLocal.tipo === 'profissional' ? 'nutricionista' : 'estudante'
   const nome = perfilLocal.nome.trim()

@@ -42,6 +42,7 @@ describe('usePerfilConta', () => {
     banco.chamadas = []
     banco.filtro = null
     banco.espera = null
+    localStorage.clear()
   })
 
   it('lê o próprio perfil, filtrando pelo id da sessão', async () => {
@@ -66,6 +67,35 @@ describe('usePerfilConta', () => {
     const { result } = renderHook(() => usePerfilConta('u1'))
     await waitFor(() => expect(result.current.carregado).toBe(true))
     expect(result.current.falhou).toBe(true)
+  })
+
+  it('item 3a: leitura com sucesso guarda a linha no aparelho', async () => {
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    const guardado = JSON.parse(localStorage.getItem('metanutri:perfil-conta') ?? 'null') as { usuario: string; linha: { nome: string } }
+    expect(guardado.usuario).toBe('u1')
+    expect(guardado.linha.nome).toBe('Ana')
+  })
+
+  it('item 3b: leitura que falha, na mesma conta, devolve o perfil guardado', async () => {
+    const linha = { nome: 'Ana', situacao: 'nutricionista', crn_regiao: 6, crn_numero: '12345', crn_status: 'verificado', crn_declarado_em: null, crn_decidido_em: null }
+    localStorage.setItem('metanutri:perfil-conta', JSON.stringify({ usuario: 'u1', linha }))
+    banco.perfil = { data: null, error: { message: 'Failed to fetch', code: '' } }
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.falhou).toBe(true)
+    expect(result.current.perfil?.situacao).toBe('nutricionista')
+    expect(result.current.perfil?.crn).toEqual({ regiao: 6, numero: '12345' })
+  })
+
+  it('item 3c: leitura que falha, com o guardado de outra conta, devolve nulo', async () => {
+    const linha = { nome: 'Outra', situacao: 'nutricionista', crn_regiao: 3, crn_numero: '99', crn_status: null, crn_declarado_em: null, crn_decidido_em: null }
+    localStorage.setItem('metanutri:perfil-conta', JSON.stringify({ usuario: 'u2', linha }))
+    banco.perfil = { data: null, error: { message: 'Failed to fetch', code: '' } }
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.falhou).toBe(true)
+    expect(result.current.perfil).toBeNull()
   })
 
   it('sabe quem é administrador', async () => {

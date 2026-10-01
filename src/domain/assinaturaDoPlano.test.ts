@@ -34,6 +34,11 @@ describe('assinaturaDoPlano (D-37)', () => {
     })
   })
 
+  it('item 12: conta nutricionista sem nome e sem sessão não começa a linha com separador', () => {
+    const r = assinaturaDoPlano({ servidor: true, perfilConta: { ...ANA, nome: '' }, nomeDaSessao: '', perfilLocal: local() })
+    expect(r.linhaNutricionista).toBe('CRN-6 12345')
+  })
+
   it('conta sem nome no perfil usa o nome da sessão', () => {
     const r = assinaturaDoPlano({ servidor: true, perfilConta: { ...ANA, nome: '' }, nomeDaSessao: 'Ana S.', perfilLocal: local() })
     expect(r.linhaNutricionista).toBe('Ana S. · CRN-6 12345')
