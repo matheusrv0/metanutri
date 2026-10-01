@@ -48,8 +48,28 @@ describe('Etapa 2: plano alimentar', () => {
     await usuario.click(screen.getByRole('button', { name: 'Adicionar refeição' }))
     expect(screen.getByRole('textbox', { name: 'Nome da refeição Nova refeição' })).toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Remover refeição Nova refeição' }))
+    await usuario.click(screen.getByRole('button', { name: 'Mais ações de Nova refeição' }))
+    await usuario.click(screen.getByRole('menuitem', { name: 'Remover refeição' }))
     expect(screen.queryByRole('textbox', { name: 'Nome da refeição Nova refeição' })).not.toBeInTheDocument()
+  })
+
+  it('CA-334: o topo da refeição traz as kcal da opção aberta, e a linha de total some', () => {
+    montar()
+    expect(screen.queryByText('Total desta opção')).not.toBeInTheDocument()
+    const almoco = screen.getByRole('tablist', { name: 'Opções de Almoço' }).closest('[data-slot="card"]')
+    expect(almoco).not.toBeNull()
+    expect(within(almoco as HTMLElement).getByText('0 kcal')).toBeInTheDocument()
+    expect(within(almoco as HTMLElement).queryByRole('button', { name: /^Remover refeição/ })).not.toBeInTheDocument()
+  })
+
+  it('CA-336: as sugestões ficam numa linha só, com Editar no fim', () => {
+    montar()
+    const sugestoes = screen.getAllByRole('region', { name: /^Sugestões para / })[0] as HTMLElement
+    const botoes = within(sugestoes).getAllByRole('button')
+    expect(botoes.at(-1)).toHaveAccessibleName(/^Editar sugestões para /)
+    const faixa = within(sugestoes).getAllByRole('button', { name: /^Adicionar / })[0]?.parentElement
+    expect(faixa?.className).toContain('overflow-x-auto')
+    expect(faixa?.className).not.toContain('flex-wrap')
   })
 
   it('CA-14: cada refeição tem Principal, Substituto 1 e Substituto 2', async () => {
@@ -114,11 +134,11 @@ describe('Etapa 2: plano alimentar', () => {
     const campo = screen.getByLabelText(/^Gramas de Banana/)
     await usuario.clear(campo)
     await usuario.type(campo, '0')
-    expect(almoco().getAllByText('0 kcal').length).toBe(2)
+    expect(almoco().getAllByText('0 kcal').length).toBe(1)
 
     await usuario.clear(campo)
     await usuario.type(campo, '-5')
-    expect(almoco().getAllByText('0 kcal').length).toBe(2)
+    expect(almoco().getAllByText('0 kcal').length).toBe(1)
   })
 
   it('CA-19: remover um alimento tira a linha', async () => {
@@ -132,11 +152,11 @@ describe('Etapa 2: plano alimentar', () => {
 describe('Sugestões por refeição (US-A3)', () => {
   it('CA-237: cada refeição mostra as sugestões do seu tipo, com nome e gramas', () => {
     montar()
-    expect(painel('Almoço').getByText('Sugestões para o almoço')).toBeInTheDocument()
+    expect(painel('Almoço').getByRole('region', { name: 'Sugestões para o almoço' })).toBeInTheDocument()
     expect(painel('Almoço').getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' })).toBeInTheDocument()
     expect(painel('Desjejum').getByRole('button', { name: 'Adicionar Cuscuz, de milho, cozido com sal, 135 g' })).toBeInTheDocument()
-    expect(painel('Lanche da manhã').getByText('Sugestões para o lanche')).toBeInTheDocument()
-    expect(painel('Ceia').getByText('Sugestões para a ceia')).toBeInTheDocument()
+    expect(painel('Lanche da manhã').getByRole('region', { name: 'Sugestões para o lanche' })).toBeInTheDocument()
+    expect(painel('Ceia').getByRole('region', { name: 'Sugestões para a ceia' })).toBeInTheDocument()
     expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
   })
 
@@ -154,13 +174,13 @@ describe('Sugestões por refeição (US-A3)', () => {
   it('CA-307: digitar no campo esconde as sugestões', async () => {
     const usuario = montar()
     await usuario.type(entradaDoAlmoco(), 'arr')
-    expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
+    expect(painel('Almoço').queryByRole('region', { name: 'Sugestões para o almoço' })).not.toBeInTheDocument()
   })
 
   it('CA-306: lista vazia não mostra o rótulo nem as sugestões', () => {
     localStorage.setItem('metanutri:sugestoes-por-refeicao', JSON.stringify({ almoco: [] }))
     montar()
-    expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
+    expect(painel('Almoço').queryByRole('region', { name: 'Sugestões para o almoço' })).not.toBeInTheDocument()
     expect(painel('Almoço').queryByRole('button', { name: /^Adicionar / })).not.toBeInTheDocument()
     expect(entradaDoAlmoco()).toBeInTheDocument()
   })
@@ -177,14 +197,14 @@ describe('Sugestões por refeição (US-A3)', () => {
     const nome = screen.getByRole('textbox', { name: 'Nome da refeição Lanche da tarde' })
     await usuario.clear(nome)
     await usuario.type(nome, 'Jantar cedo')
-    expect(painel('Jantar cedo').getByText('Sugestões para o jantar')).toBeInTheDocument()
+    expect(painel('Jantar cedo').getByRole('region', { name: 'Sugestões para o jantar' })).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Adicionar refeição' }))
-    expect(painel('Nova refeição').getByText('Sugestões para o lanche')).toBeInTheDocument() // 10:00
+    expect(painel('Nova refeição').getByRole('region', { name: 'Sugestões para o lanche' })).toBeInTheDocument() // 10:00
     const horario = screen.getByLabelText('Horário de Nova refeição')
     await usuario.clear(horario)
     await usuario.type(horario, '19:30')
-    expect(painel('Nova refeição').getByText('Sugestões para o jantar')).toBeInTheDocument()
+    expect(painel('Nova refeição').getByRole('region', { name: 'Sugestões para o jantar' })).toBeInTheDocument()
   })
 
   it('CA-243: salvar vale para todas as refeições do tipo e fica no aparelho', async () => {

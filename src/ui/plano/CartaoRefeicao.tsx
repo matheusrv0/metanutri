@@ -1,4 +1,4 @@
-import { Clock, Trash } from 'lucide-react'
+import { Clock, MoreHorizontal, Trash } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { SugestaoAlimento, TipoRefeicao } from '@/domain/sugestoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ds/componentes/overlay/dropdown-menu.tsx'
 import { DialogoSugestoes } from './DialogoSugestoes.tsx'
 import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
@@ -36,7 +37,7 @@ interface CartaoRefeicaoProps {
   readonly extraDaOpcao?: (opcao: OpcaoId) => ReactNode
 }
 
-/** CA-13 e CA-14: refeição com nome, horário e três opções em abas. */
+/** CA-13, CA-14 e CA-334: refeição com horário, nome, kcal da opção aberta e três opções. */
 export function CartaoRefeicao({
   refeicao,
   aoRenomear,
@@ -71,8 +72,8 @@ export function CartaoRefeicao({
 
   return (
     <Card className="gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-32 shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-28 shrink-0">
           <Clock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             type="time"
@@ -94,14 +95,25 @@ export function CartaoRefeicao({
             if (e.target.value.trim() !== '') aoRenomear(e.target.value)
           }}
           onBlur={() => setNomeTexto(refeicao.nome)}
-          className="min-w-40 flex-1"
+          className="min-w-32 flex-1 font-semibold"
         />
-        <Button variant="ghost" size="icon" className="ml-auto" onClick={aoRemover} aria-label={`Remover refeição ${refeicao.nome}`}>
-          <Trash aria-hidden="true" />
-        </Button>
+        <span className="numeros ml-auto shrink-0 text-sm font-semibold text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={`Mais ações de ${refeicao.nome}`}>
+              <MoreHorizontal aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={aoRemover}>
+              <Trash aria-hidden="true" />
+              Remover refeição
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="flex flex-wrap border-b border-borderdefault">
+      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-surfacerow p-1">
         {OPCOES_ORDEM.map((o) => {
           const ativa = o === opcaoAtiva
           const quantos = refeicao.opcoes[o].length
@@ -113,8 +125,8 @@ export function CartaoRefeicao({
               aria-selected={ativa}
               onClick={() => setOpcaoAtiva(o)}
               className={cn(
-                '-mb-px flex-1 border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                ativa ? 'border-surfaceinverse font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+                'inline-flex min-h-11 shrink-0 items-center rounded-full px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9',
+                ativa ? 'bg-card text-heading shadow-xs' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {ROTULO_OPCAO[o]}
@@ -157,11 +169,6 @@ export function CartaoRefeicao({
         {opcaoAtiva === 'principal' ? null : (
           <p className="text-xs text-muted-foreground">Os substitutos não entram na soma do dia nem na adequação.</p>
         )}
-
-        <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-          <span className="text-sm text-muted-foreground">Total desta opção</span>
-          <span className="numeros text-sm font-semibold text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
-        </div>
 
         {extraDaOpcao?.(opcaoAtiva)}
       </div>

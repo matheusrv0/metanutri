@@ -32,13 +32,10 @@ export function SugestoesDaRefeicao({ tipo, sugestoes, aoEscolher, aoEditar }: S
   if (prontas.length === 0) return editar
 
   return (
-    <section aria-label={titulo} className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <p className="rotulo">{titulo}</p>
-        {editar}
-      </div>
-      {/* No celular, uma faixa só que rola para o lado: quebrar linha empurrava o plano para baixo. */}
-      <div className="-m-1 flex gap-1.5 overflow-x-auto p-1 sm:m-0 sm:flex-wrap sm:overflow-visible sm:p-0">
+    <section aria-label={titulo} className="flex min-w-0 items-center gap-2">
+      <p className="rotulo hidden shrink-0 sm:block">Sugestões</p>
+      {/* Uma faixa só, que rola para o lado em qualquer largura (CA-336): quebrar linha empurrava o plano para baixo. */}
+      <div className="-my-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-1">
         {prontas.map((s, i) => (
           <button
             key={`${s.alimentoId}-${i}`}
@@ -53,6 +50,7 @@ export function SugestoesDaRefeicao({ tipo, sugestoes, aoEscolher, aoEditar }: S
           </button>
         ))}
       </div>
+      {editar ? <div className="shrink-0">{editar}</div> : null}
     </section>
   )
 }
