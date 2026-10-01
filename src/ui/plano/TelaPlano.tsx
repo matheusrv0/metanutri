@@ -10,8 +10,10 @@ import {
   renomearRefeicao,
   type GerarId,
 } from '@/domain/plano.ts'
+import { tipoDaRefeicao } from '@/domain/sugestoes.ts'
 import type { OpcaoId, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { useSugestoes } from '../estado/usarSugestoes.ts'
 import { DialogoModelos } from '../modelos/DialogoModelos.tsx'
 import { CartaoRefeicao } from './CartaoRefeicao.tsx'
 
@@ -28,6 +30,7 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 /** Etapa 2: refeições do dia com entrada rápida de alimentos (CA-12 a CA-21). */
 export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOpcao }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
+  const sugestoes = useSugestoes()
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
@@ -37,19 +40,24 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
         </Button>
       </div>
 
-      {plano.refeicoes.map((refeicao) => (
-        <CartaoRefeicao
-          key={refeicao.id}
-          refeicao={refeicao}
-          aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
-          aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
-          aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
-          aoAdicionarItem={(opcao, alimentoId, gramas) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas }, gerarId))}
-          aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
-          aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
-          {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
-        />
-      ))}
+      {plano.refeicoes.map((refeicao) => {
+        const tipo = tipoDaRefeicao(refeicao.nome, refeicao.horario)
+        return (
+          <CartaoRefeicao
+            key={refeicao.id}
+            refeicao={refeicao}
+            tipo={tipo}
+            sugestoes={sugestoes.listas[tipo]}
+            aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
+            aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
+            aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
+            aoAdicionarItem={(opcao, alimentoId, gramas) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas }, gerarId))}
+            aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
+            aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
+            {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
+          />
+        )
+      })}
 
       <Button
         variant="lightprimary"

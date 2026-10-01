@@ -1,5 +1,6 @@
 import { Clock, Trash } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import type { SugestaoAlimento, TipoRefeicao } from '@/domain/sugestoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
 import type { ItemPlano, OpcaoId, Refeicao } from '@/domain/tipos.ts'
@@ -11,6 +12,7 @@ import { Input } from '@ds/componentes/forms/input.tsx'
 import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
+import { SugestoesDaRefeicao } from './SugestoesDaRefeicao.tsx'
 
 const ROTULO_OPCAO: Record<OpcaoId, string> = { principal: 'Principal', substituto1: 'Substituto 1', substituto2: 'Substituto 2' }
 const OPCOES_ORDEM: readonly OpcaoId[] = ['principal', 'substituto1', 'substituto2']
@@ -23,6 +25,10 @@ interface CartaoRefeicaoProps {
   readonly aoAdicionarItem: (opcao: OpcaoId, alimentoId: number, gramas: number) => void
   readonly aoMudarGramas: (opcao: OpcaoId, itemId: string, gramas: number) => void
   readonly aoRemoverItem: (opcao: OpcaoId, itemId: string) => void
+  /** Tipo da refeição, pelo nome ou pelo horário (CA-239, CA-240). */
+  readonly tipo: TipoRefeicao
+  /** A lista de sugestões que vale para esse tipo (CA-237). */
+  readonly sugestoes: readonly SugestaoAlimento[]
   /** Conteúdo extra no fim de uma opção de substituto (calculadora de equivalência). */
   readonly extraDaOpcao?: (opcao: OpcaoId) => ReactNode
 }
@@ -36,6 +42,8 @@ export function CartaoRefeicao({
   aoAdicionarItem,
   aoMudarGramas,
   aoRemoverItem,
+  tipo,
+  sugestoes,
   extraDaOpcao,
 }: CartaoRefeicaoProps) {
   const [opcaoAtiva, setOpcaoAtiva] = useState<OpcaoId>('principal')
@@ -115,7 +123,13 @@ export function CartaoRefeicao({
         <EntradaRapida
           rotulo={`Adicionar alimento em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`}
           aoAdicionar={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
-          comAtalhos
+          quandoVazio={
+            <SugestoesDaRefeicao
+              tipo={tipo}
+              sugestoes={sugestoes}
+              aoEscolher={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
+            />
+          }
         />
 
         {itens.length === 0 ? (

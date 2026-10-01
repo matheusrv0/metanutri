@@ -1,19 +1,17 @@
 import { Plus, Search } from 'lucide-react'
-import { useId, useMemo, useState, type KeyboardEvent } from 'react'
+import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { buscarAlimentos, GRAMAS_PADRAO, type ResultadoBusca } from '@/domain/busca.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
-import { criarRepositorioFrequentes } from '@/domain/frequentes.ts'
-import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
+import { alimentosComProdutos } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '@ds/componentes/forms/input.tsx'
-import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 
 interface EntradaRapidaProps {
   readonly rotulo: string
   readonly aoAdicionar: (alimentoId: number, gramas: number) => void
-  /** Mostra os alimentos mais usados como atalho e conta os usos. Só faz sentido ao montar a refeição. */
-  readonly comAtalhos?: boolean
+  /** Aparece embaixo do campo enquanto ele está vazio, como as sugestões da refeição (CA-307). */
+  readonly quandoVazio?: ReactNode
 }
 
 // Alimento sem energia na tabela mostra travessão, nunca zero (princípio do produto).
@@ -38,39 +36,20 @@ function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['al
 }
 
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
-export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: EntradaRapidaProps) {
+export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapidaProps) {
   const [texto, setTexto] = useState('')
   const [selecionado, setSelecionado] = useState(0)
-  const [usos, setUsos] = useState(0)
   const idLista = useId()
-  const frequentes = useMemo(() => criarRepositorioFrequentes(armazenamentoLocal()), [])
 
   const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos()), [texto])
   const escolhido = resultados[Math.min(selecionado, resultados.length - 1)]
   const semResultado = texto.trim() !== '' && resultados.length === 0
 
-  // Atalho do dia a dia: os alimentos que você mais usa, na porção de sempre.
-  const atalhos = useMemo(() => {
-    void usos
-    if (!comAtalhos || texto.trim() !== '') return []
-    return frequentes
-      .maisUsados()
-      .map((f) => ({ ...f, alimento: buscarAlimento(f.alimentoId) }))
-      .filter((f): f is { alimentoId: number; gramas: number; alimento: NonNullable<ReturnType<typeof buscarAlimento>> } => f.alimento !== undefined)
-  }, [comAtalhos, frequentes, texto, usos])
-
-  const registrar = (alimentoId: number, gramas: number) => {
-    aoAdicionar(alimentoId, gramas)
-    if (!comAtalhos) return
-    frequentes.registrar(alimentoId, gramas)
-    setUsos((n) => n + 1)
-  }
-
   const adicionar = (r: ResultadoBusca | undefined) => {
     if (!r) return
     // CB-07: medida que não existe para o alimento não vira grama inventada.
     if (r.gramas === null) return
-    registrar(r.alimento.id, r.gramas)
+    aoAdicionar(r.alimento.id, r.gramas)
     setTexto('')
     setSelecionado(0)
   }
@@ -112,24 +91,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, comAtalhos = false }: Entra
         />
       </div>
 
-      {atalhos.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rotulo shrink-0">Você usa muito</span>
-          {atalhos.map((f) => (
-            <button
-              key={f.alimentoId}
-              type="button"
-              onClick={() => registrar(f.alimentoId, f.gramas)}
-              title={`Adicionar ${formatarNumero(f.gramas, 0)} g de ${f.alimento.descricao}`}
-              className="flex max-w-56 items-center gap-1 border border-border px-2 py-1 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Plus className="size-3 shrink-0 text-primary" aria-hidden="true" />
-              <span className="min-w-0 truncate">{f.alimento.descricao}</span>
-              <span className="numeros shrink-0 text-muted-foreground">{`${formatarNumero(f.gramas, 0)} g`}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {texto.trim() === '' ? quandoVazio : null}
 
       {aviso ? <p className="text-xs text-warningtext">{aviso}</p> : null}
       {semResultado && !aviso ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}

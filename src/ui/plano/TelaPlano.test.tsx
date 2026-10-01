@@ -21,6 +21,9 @@ const montar = (inicial?: Plano) => {
 const entradaDoAlmoco = () => screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
 const opcoesVisiveis = () => screen.queryAllByRole('option')
 const almoco = () => within(screen.getByRole('tabpanel', { name: 'Principal de Almoço' }))
+const painel = (nome: string) => within(screen.getByRole('tabpanel', { name: `Principal de ${nome}` }))
+
+beforeEach(() => localStorage.clear())
 
 describe('Etapa 2: plano alimentar', () => {
   it('CA-12: começa com as seis refeições padrão, com horário', () => {
@@ -123,5 +126,64 @@ describe('Etapa 2: plano alimentar', () => {
     await usuario.type(entradaDoAlmoco(), 'banana prata{Enter}')
     await usuario.click(screen.getByRole('button', { name: /^Remover Banana/ }))
     expect(almoco().getByText('Nenhum alimento nesta opção.')).toBeInTheDocument()
+  })
+})
+
+describe('Sugestões por refeição (US-A3)', () => {
+  it('CA-237: cada refeição mostra as sugestões do seu tipo, com nome e gramas', () => {
+    montar()
+    expect(painel('Almoço').getByText('Sugestões para o almoço')).toBeInTheDocument()
+    expect(painel('Almoço').getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' })).toBeInTheDocument()
+    expect(painel('Desjejum').getByRole('button', { name: 'Adicionar Cuscuz, de milho, cozido com sal, 135 g' })).toBeInTheDocument()
+    expect(painel('Lanche da manhã').getByText('Sugestões para o lanche')).toBeInTheDocument()
+    expect(painel('Ceia').getByText('Sugestões para a ceia')).toBeInTheDocument()
+    expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
+  })
+
+  it('CA-238: clicar na sugestão põe o alimento na porção mostrada, na opção aberta', async () => {
+    const usuario = montar()
+    await usuario.click(painel('Almoço').getByRole('button', { name: 'Adicionar Feijão, carioca, cozido, 140 g' }))
+    expect(painel('Almoço').getByLabelText(/^Gramas de Feijão, carioca/)).toHaveValue('140')
+
+    await usuario.click(within(screen.getByRole('tablist', { name: 'Opções de Almoço' })).getByRole('tab', { name: 'Substituto 1' }))
+    const substituto = within(screen.getByRole('tabpanel', { name: 'Substituto 1 de Almoço' }))
+    await usuario.click(substituto.getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' }))
+    expect(substituto.getByLabelText(/^Gramas de Arroz, tipo 1/)).toHaveValue('100')
+  })
+
+  it('CA-307: digitar no campo esconde as sugestões', async () => {
+    const usuario = montar()
+    await usuario.type(entradaDoAlmoco(), 'arr')
+    expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
+  })
+
+  it('CA-306: lista vazia não mostra o rótulo nem as sugestões', () => {
+    localStorage.setItem('metanutri:sugestoes-por-refeicao', JSON.stringify({ almoco: [] }))
+    montar()
+    expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
+    expect(painel('Almoço').queryByRole('button', { name: /^Adicionar / })).not.toBeInTheDocument()
+    expect(entradaDoAlmoco()).toBeInTheDocument()
+  })
+
+  it('CB-55: o histórico do antigo "Você usa muito" não volta', () => {
+    localStorage.setItem('metanutri:frequentes', JSON.stringify({ 3: { vezes: 9, ultimoUso: '2026-09-01T00:00:00.000Z', gramas: 150 } }))
+    montar()
+    expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
+    expect(painel('Almoço').queryByRole('button', { name: /, 150 g$/ })).not.toBeInTheDocument()
+  })
+
+  it('Foco de revisão 2: renomear ou mudar o horário troca as sugestões na hora', async () => {
+    const usuario = montar()
+    const nome = screen.getByRole('textbox', { name: 'Nome da refeição Lanche da tarde' })
+    await usuario.clear(nome)
+    await usuario.type(nome, 'Jantar cedo')
+    expect(painel('Jantar cedo').getByText('Sugestões para o jantar')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Adicionar refeição' }))
+    expect(painel('Nova refeição').getByText('Sugestões para o lanche')).toBeInTheDocument() // 10:00
+    const horario = screen.getByLabelText('Horário de Nova refeição')
+    await usuario.clear(horario)
+    await usuario.type(horario, '19:30')
+    expect(painel('Nova refeição').getByText('Sugestões para o jantar')).toBeInTheDocument()
   })
 })

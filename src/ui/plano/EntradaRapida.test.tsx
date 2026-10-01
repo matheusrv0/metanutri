@@ -10,49 +10,33 @@ beforeEach(() => {
 })
 
 const montar = () => {
-  render(<EntradaRapida rotulo="Adicionar alimento" aoAdicionar={(alimentoId, gramas) => adicionados.push({ alimentoId, gramas })} comAtalhos />)
+  render(<EntradaRapida rotulo="Adicionar alimento" aoAdicionar={(alimentoId, gramas) => adicionados.push({ alimentoId, gramas })} />)
   return userEvent.setup()
 }
 
-describe('Alimentos usados com frequência', () => {
-  it('sem comAtalhos, nada é lembrado (é o caso da janela de substituto)', async () => {
-    render(<EntradaRapida rotulo="Escolher substituto" aoAdicionar={(alimentoId, gramas) => adicionados.push({ alimentoId, gramas })} />)
+describe('Conteúdo com o campo vazio (CA-307)', () => {
+  it('aparece com o campo vazio e some enquanto se digita', async () => {
+    render(
+      <EntradaRapida
+        rotulo="Adicionar alimento"
+        aoAdicionar={(alimentoId, gramas) => adicionados.push({ alimentoId, gramas })}
+        quandoVazio={<p>Sugestões de teste</p>}
+      />,
+    )
     const usuario = userEvent.setup()
-    await usuario.type(screen.getByRole('combobox', { name: 'Escolher substituto' }), '150 arroz integral{Enter}')
-    expect(adicionados).toHaveLength(1)
-    expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
-  })
-
-  it('não mostra atalho nenhum antes do primeiro uso', () => {
-    montar()
-    expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
-  })
-
-  it('o alimento adicionado vira atalho com a mesma porção', async () => {
-    const usuario = montar()
     const campo = screen.getByRole('combobox', { name: 'Adicionar alimento' })
-    await usuario.type(campo, '150 arroz integral')
-    await usuario.keyboard('{Enter}')
-
-    expect(adicionados).toHaveLength(1)
-    expect(adicionados[0]?.gramas).toBe(150)
-
-    expect(screen.getByText('Você usa muito')).toBeInTheDocument()
-    const atalho = screen.getByRole('button', { name: /150 g$/ })
-    await usuario.click(atalho)
-
-    expect(adicionados).toHaveLength(2)
-    expect(adicionados[1]).toEqual(adicionados[0])
+    expect(screen.getByText('Sugestões de teste')).toBeInTheDocument()
+    await usuario.type(campo, 'arroz')
+    expect(screen.queryByText('Sugestões de teste')).not.toBeInTheDocument()
+    await usuario.clear(campo)
+    expect(screen.getByText('Sugestões de teste')).toBeInTheDocument()
   })
 
-  it('o atalho some enquanto você está digitando uma busca', async () => {
+  it('CB-55: adicionar pela busca não grava mais histórico no aparelho', async () => {
     const usuario = montar()
-    const campo = screen.getByRole('combobox', { name: 'Adicionar alimento' })
-    await usuario.type(campo, '150 arroz integral')
-    await usuario.keyboard('{Enter}')
-    expect(screen.getByText('Você usa muito')).toBeInTheDocument()
-
-    await usuario.type(campo, 'feijão')
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), '150 arroz integral{Enter}')
+    expect(adicionados).toHaveLength(1)
+    expect(localStorage.getItem('metanutri:frequentes')).toBeNull()
     expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()
   })
 })
