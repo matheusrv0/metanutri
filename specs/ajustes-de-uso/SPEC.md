@@ -1,6 +1,13 @@
 # SPEC — Ajustes de uso: meta de energia, sugestões por refeição e perfil do cadastro
 
-Status: **aguardando sua aprovação**. Escrita em 30/09/2026.
+Status: **em revisão**, volta a você na parte 4 do lançamento. Escrita em 30/09/2026.
+
+> **Mudou em 30/09/2026, depois da primeira versão:** a US-A4 (situação e CRN no cadastro) e a
+> US-A5 (conta obrigatória) passaram para `specs/conta-e-verificacao/SPEC.md`. A parte 4 vai
+> rever esta spec com o que você pediu depois: sugestões que a pessoa personaliza (a lista
+> padrão vira ponto de partida), "Base MetaNutri" no lugar dos nomes das fontes nas telas
+> (com uma página de fontes, que a licença da TACO exige) e o leite integral, que não tem kcal
+> na base.
 
 **Fontes:** feedback de uma usuária real (estudante de nutrição em estágio, que usa o
 WebDiet), repassado por você em 30/09/2026, e a conversa de brainstorming do mesmo dia.
