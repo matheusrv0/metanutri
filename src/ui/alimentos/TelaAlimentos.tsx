@@ -92,8 +92,8 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
           <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
             {`${NOME_DA_BASE} · ${resumo.total} alimentos · valores por 100 g`}
             {aoAbrirFontes ? (
-              <>
-                {' · '}
+              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                <span aria-hidden="true">·</span>
                 <button
                   type="button"
                   onClick={aoAbrirFontes}
@@ -101,12 +101,12 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
                 >
                   Fontes da base
                 </button>
-              </>
+              </span>
             ) : null}
           </p>
 
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="relative min-w-0 lg:flex-1">
+          <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+            <div className="relative min-w-0 lg:min-w-56 lg:flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 type="search"
