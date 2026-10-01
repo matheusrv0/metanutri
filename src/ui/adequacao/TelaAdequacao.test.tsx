@@ -29,6 +29,7 @@ function Anfitriao({ inicial, planoInicial }: { readonly inicial?: Partial<Caso>
       aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
       aoAlterarPlano={setPlano}
       gerarId={ids}
+      aoAbrirFontes={() => undefined}
     />
   )
 }
@@ -66,6 +67,7 @@ describe('Etapa 3: adequação', () => {
     expect(ferro.getByText(/Abaixo da meta|Adequado|Acima do limite superior/)).toBeInTheDocument()
     expect(screen.getByText(/^Composição: Base MetaNutri/)).toBeInTheDocument()
     expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Fontes da base' }).className).toContain('min-h-11')
     expect(screen.getByText(/^Referências de ingestão: /)).toBeInTheDocument()
   })
 

@@ -211,12 +211,12 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
               Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
               <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
             </p>
-            <p className="mt-2">
+            <p className="mt-2 flex flex-wrap items-center gap-x-1">
               {`Composição: ${NOME_DA_BASE}`}
               {aoAbrirFontes ? (
                 <>
                   {' · '}
-                  <button type="button" onClick={aoAbrirFontes} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button type="button" onClick={aoAbrirFontes} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     Fontes da base
                   </button>
                 </>

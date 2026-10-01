@@ -102,7 +102,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             </h2>
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
               <li>
-                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE}>
+                <button type="button" onClick={() => aoIrPara('fontes')} className={`${LINK_RODAPE} inline-flex min-h-11 items-center`}>
                   {NOME_DA_BASE}
                 </button>
               </li>
