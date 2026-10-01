@@ -183,6 +183,16 @@ Dois itens já leem estranho na tela, porque a medida mostrada sai da conversão
 do app: o tomate (80 g) aparece como "5 fatias e meia" e o iogurte (200 g) como "1 copo
 americano e meio".
 
+### 10. O PDF da dieta precisa de uma impressão de verdade
+
+A folha nova foi conferida na tela e no teste. Falta imprimir uma vez em papel, ou salvar
+em PDF pelo Chrome, e olhar três coisas: as caixas cinza das opções saem no papel, nenhuma
+refeição fica cortada entre duas páginas, e a linha fina do topo aparece da segunda página
+em diante. No Firefox e no Safari essa linha pode não aparecer (R-28); o resto sai igual.
+
+Os nomes dos alimentos no PDF continuam os da base ("Arroz, tipo 1, cozido"). Nomes mais
+simples ficaram de fora desta parte (D-50) porque exigem revisar alimento por alimento.
+
 ## Já feito, só para você não procurar
 
 Sugestões por refeição (no lugar dos frequentes), duplicar plano, ficha de paciente, evolução do peso, leitura de código de
@@ -191,3 +201,4 @@ uso, e o fluxo de publicação no GitHub Pages esperando um clique seu.
 
 Desde 26/09: missões diárias, link do paciente, tela de Adesão com quem está sumindo,
 os cinco planos novos e a contagem de paciente ativo.
+Desde 01/10 (parte 5): PDF da dieta com design próprio, lista de compras e trocas opcionais, Base MetaNutri com a página Fontes da base, Painel, planejador e Tabela de alimentos mais limpos.

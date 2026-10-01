@@ -212,3 +212,51 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
 
   await context.setOffline(false)
 })
+
+test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / }).first().click()
+
+  await page.getByRole('button', { name: 'Exportar' }).click()
+  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+  const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
+  await expect(janela.getByRole('heading', { name: 'Lista de compras' })).toHaveCount(0)
+
+  // CA-317: marcar muda a prévia na hora.
+  await janela.getByRole('switch', { name: 'Trocas' }).click()
+  await expect(janela.getByRole('heading', { name: 'Trocas' })).toBeVisible()
+
+  // CA-311: no papel, corpo com 10 pt ou mais e refeição com 14 pt ou mais (1 pt = 4/3 px).
+  await page.emulateMedia({ media: 'print' })
+  const almoco = janela.getByRole('region', { name: '12:00 Almoço' })
+  const tamanho = async (alvo: ReturnType<typeof page.locator>) => Number.parseFloat(await alvo.evaluate((el) => getComputedStyle(el).fontSize))
+  expect(await tamanho(almoco.getByRole('heading', { name: 'Almoço' }))).toBeGreaterThanOrEqual(18.66)
+  expect(await tamanho(almoco.getByRole('listitem').first())).toBeGreaterThanOrEqual(13.33)
+  await expect(almoco).not.toContainText('kcal')
+  await page.emulateMedia({ media: 'screen' })
+})
+
+test('Painel: três números e o Novo plano no topo', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await expect(page.getByRole('region', { name: 'Seus números' })).toBeVisible()
+  await expect(page.getByText('Nenhum plano ainda.')).toBeVisible()
+  await expect(page.getByText('Começar agora')).toHaveCount(0)
+})
+
+test('CA-336: em tela larga as sugestões também ficam numa linha só', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  const sugestoes = page.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / })
+  const primeira = await sugestoes.first().boundingBox()
+  const ultima = await sugestoes.last().boundingBox()
+  expect(ultima?.y).toBe(primeira?.y)
+})

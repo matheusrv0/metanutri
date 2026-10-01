@@ -24,3 +24,10 @@ test.describe('Landing (spec estilo-spora)', () => {
     await expect(page.getByRole('heading', { name: 'Fontes dos dados' })).toBeInViewport()
   })
 })
+
+test('CA-322: Fontes da base abre sem conta e cita as três fontes', async ({ page }) => {
+  await page.goto('/#/fontes')
+  await expect(page.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('link')).toHaveCount(3)
+  await expect(page.getByText(/Tabela Brasileira de Composição de Alimentos \(TACO\)/)).toBeVisible()
+})
