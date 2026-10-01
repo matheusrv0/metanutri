@@ -1,22 +1,21 @@
 import { render, screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
-import { ALIMENTOS } from '@/domain/tabelas.ts'
-import { trocasDoAlimento } from '@/domain/trocas.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { FolhaDieta } from './FolhaDieta.tsx'
-import { MenuExportar } from './MenuExportar.tsx'
 
 let n = 0
 const ids = () => `id${++n}`
 
-/** O alimento que o plano de teste usa no almoço. */
 const ARROZ = 3
+const BATATA = 91
+const MACARRAO_CRU = 40
 
 const caso: Caso = {
   ...criarCasoVazio('c1'),
   nome: 'Maria, 28 anos',
+  dataConsulta: '2026-09-15',
   sexo: 'F',
   idadeAnos: 28,
   pesoKg: 60,
@@ -24,119 +23,156 @@ const caso: Caso = {
   orientacoes: 'Beber 2 litros de água por dia.',
 }
 
+const ANA: AssinaturaDoPlano = { situacao: 'nutricionista', linhaNutricionista: 'Ana Souza · CRN-6 12345', origem: 'conta', nome: 'Ana Souza', responsavelTecnico: '' }
+
 function planoCheio(): Plano {
-  const plano = criarPlanoPadrao(ids)
+  let plano = criarPlanoPadrao(ids)
   const almoco = plano.refeicoes[2]
-  if (!almoco) throw new Error('sem almoço')
-  const comPrincipal = adicionarItem(plano, almoco.id, 'principal', { alimentoId: ARROZ, gramas: 150 }, ids)
-  return adicionarItem(comPrincipal, almoco.id, 'substituto1', { alimentoId: 91, gramas: 120 }, ids)
+  const jantar = plano.refeicoes[4]
+  if (!almoco || !jantar) throw new Error('plano padrão mudou')
+  plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: ARROZ, gramas: 150 }, ids)
+  plano = adicionarItem(plano, almoco.id, 'substituto1', { alimentoId: BATATA, gramas: 120 }, ids)
+  plano = adicionarItem(plano, jantar.id, 'principal', { alimentoId: MACARRAO_CRU, gramas: 80 }, ids)
+  return plano
 }
 
-describe('Folha da dieta', () => {
-  it('lista refeições por horário com alimento, medida caseira e gramas', () => {
+const refeicao = (nome: RegExp) => within(screen.getByRole('region', { name: nome }))
+
+beforeEach(() => localStorage.clear())
+
+describe('Folha da dieta (US-B1)', () => {
+  it('CA-308: cabeçalho com título, nome do plano e data por extenso', () => {
+    render(<FolhaDieta caso={caso} plano={planoCheio()} assinatura={ANA} />)
+    expect(screen.getByRole('heading', { name: 'Plano alimentar' })).toBeInTheDocument()
+    expect(screen.getByText('Maria, 28 anos · 15 de setembro de 2026')).toBeInTheDocument()
+  })
+
+  it('Foco de revisão 2: sem nome e sem data, nada de separador solto', () => {
+    render(<FolhaDieta caso={{ ...caso, nome: '', dataConsulta: null }} plano={planoCheio()} />)
+    expect(screen.getByText('Sem nome')).toBeInTheDocument()
+  })
+
+  it('CA-309: medida caseira em destaque, peso ao lado e o alimento', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByRole('heading', { name: /12:00\s*Almoço/ })).toBeInTheDocument()
-    expect(screen.getAllByText(/Arroz, tipo 1, cozido —/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/150 g/).length).toBeGreaterThan(0)
+    const almoco = refeicao(/^12:00 Almoço$/)
+    expect(almoco.getByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
+    expect(almoco.getByText('6 colheres de sopa')).toBeInTheDocument()
+    expect(almoco.getByText(/· 150 g/)).toBeInTheDocument()
+    expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+
+    const jantar = refeicao(/^19:00 Jantar$/)
+    expect(jantar.getByText('80 g')).toBeInTheDocument()
+    expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
   })
 
-  it('mostra o substituto junto da refeição', () => {
+  it('CA-310: substituto vira "Opção 2"; substituto vazio não aparece', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByText('Substituto 1')).toBeInTheDocument()
-    expect(screen.getByText(/Batata, inglesa, cozida —/)).toBeInTheDocument()
+    const almoco = refeicao(/^12:00 Almoço$/)
+    expect(almoco.getByText('Opção 2')).toBeInTheDocument()
+    expect(almoco.getByText('Batata, inglesa, cozida')).toBeInTheDocument()
+    expect(almoco.queryByText('Opção 3')).not.toBeInTheDocument()
   })
 
-  it('traz orientações e a frase de responsabilidade', () => {
+  it('Foco de revisão 5: refeição só com substituto mostra a opção e não diz que está vazia', () => {
+    let plano = criarPlanoPadrao(ids)
+    const ceia = plano.refeicoes[5]
+    if (!ceia) throw new Error('sem ceia')
+    plano = adicionarItem(plano, ceia.id, 'substituto1', { alimentoId: BATATA, gramas: 120 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} />)
+    const regiao = refeicao(/^21:00 Ceia$/)
+    expect(regiao.getByText('Opção 2')).toBeInTheDocument()
+    expect(regiao.queryByText('Sem alimentos nesta refeição.')).not.toBeInTheDocument()
+  })
+
+  it('CA-311: a folha não fala de energia', () => {
+    const { container } = render(<FolhaDieta caso={{ ...caso, modo: 'rapido', metaEnergiaKcal: 1800 }} plano={planoCheio()} />)
+    expect(container.textContent).not.toMatch(/kcal/)
+  })
+
+  it('CA-312: "No dia a dia" traz só o que não é horário de refeição', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByText('Beber 2 litros de água por dia.')).toBeInTheDocument()
-    expect(screen.getByText(/prescrição é responsabilidade do nutricionista/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'No dia a dia' })).toBeInTheDocument()
+    // "litros de água" aparece também nas orientações do caso; aqui só a seção dos lembretes.
+    const lembretes = within(screen.getByRole('region', { name: 'No dia a dia' }))
+    expect(lembretes.getByText(/litros de água/)).toBeInTheDocument()
+    expect(screen.queryByText(/por volta das/)).not.toBeInTheDocument()
   })
 
-  it('no modo rápido, a folha avisa que não houve avaliação', () => {
-    render(<FolhaDieta caso={{ ...caso, modo: 'rapido', metaEnergiaKcal: 1800 }} plano={planoCheio()} />)
-    expect(screen.getByText(/sem avaliação antropométrica/)).toBeInTheDocument()
-    expect(screen.getByText('1.800 kcal')).toBeInTheDocument()
+  it('CA-313: nutricionista assina sozinha, com a linha da conta no topo e no fim', () => {
+    render(<FolhaDieta caso={caso} plano={planoCheio()} assinatura={ANA} />)
+    expect(screen.getAllByText('Ana Souza · CRN-6 12345')).toHaveLength(2)
+    expect(within(screen.getByRole('group', { name: 'Assinaturas' })).getByText('Nutricionista')).toBeInTheDocument()
   })
 
-  it('traz missões do dia e lista de compras', () => {
+  it('CA-313: estágio sai com os dois nomes e duas assinaturas; sem ninguém, uma linha "Assinatura"', () => {
+    const { unmount } = render(<FolhaDieta caso={{ ...caso, estagiario: 'Júlia Martins', preceptor: 'Carla Mendes' }} plano={planoCheio()} />)
+    const assinaturas = within(screen.getByRole('group', { name: 'Assinaturas' }))
+    expect(assinaturas.getByText('Estagiário(a)')).toBeInTheDocument()
+    expect(assinaturas.getByText('Preceptor(a)')).toBeInTheDocument()
+    expect(screen.getAllByText('Júlia Martins').length).toBeGreaterThanOrEqual(2)
+    unmount()
+
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByRole('heading', { name: 'Missões do dia' })).toBeInTheDocument()
-    expect(screen.getByText(/Almoço por volta das 12:00/)).toBeInTheDocument()
-    expect(screen.getAllByText(/litros de água/).length).toBeGreaterThan(0)
-    expect(screen.getByRole('heading', { name: 'Lista de compras do dia' })).toBeInTheDocument()
-    expect(screen.getByText(/Arroz, tipo 1, cozido — 150 g/)).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Assinaturas' })).getByText('Assinatura')).toBeInTheDocument()
   })
 
-  it('campo vazio não vira texto solto na folha', () => {
-    render(<FolhaDieta caso={{ ...caso, orientacoes: '', receitas: '' }} plano={criarPlanoPadrao(ids)} />)
-    expect(screen.queryByText('Orientações')).not.toBeInTheDocument()
-    expect(screen.queryByText('Receitas')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
+  it('CA-314: lembretes, orientações e assinatura nessa ordem, e a linha da base no fim', () => {
+    render(<FolhaDieta caso={{ ...caso, receitas: 'Cuscuz com ovo.' }} plano={planoCheio()} assinatura={ANA} />)
+    const antes = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+    const lembretes = screen.getByRole('heading', { name: 'No dia a dia' })
+    const orientacoes = screen.getByRole('heading', { name: 'Orientações' })
+    const receitas = screen.getByRole('heading', { name: 'Receitas' })
+    const assinaturas = screen.getByRole('group', { name: 'Assinaturas' })
+    expect(antes(lembretes, orientacoes)).toBe(true)
+    expect(antes(orientacoes, receitas)).toBe(true)
+    expect(antes(receitas, assinaturas)).toBe(true)
+    expect(screen.getByText(/A prescrição é responsabilidade do nutricionista\. Composição dos alimentos: Base MetaNutri\./)).toBeInTheDocument()
   })
 
-  it('CA-287: com a conta de nutricionista, a folha sai com o nome e o CRN dela no lugar do perfil local', () => {
-    localStorage.setItem('metanutri:perfil', JSON.stringify({ nome: 'Perfil Local', tipo: 'estudante' }))
-    try {
-      const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-      expect(screen.getByText(/Perfil Local · documento de estudo/)).toBeInTheDocument()
-      unmount()
-
-      render(<FolhaDieta caso={caso} plano={planoCheio()} responsavel="Ana Souza · CRN-6 12345" />)
-      expect(screen.getByText(/Ana Souza · CRN-6 12345/)).toBeInTheDocument()
-      expect(screen.queryByText(/Perfil Local/)).not.toBeInTheDocument()
-    } finally {
-      localStorage.removeItem('metanutri:perfil')
-    }
+  it('CA-314: em prescrição rápida, a linha final diz que não houve avaliação', () => {
+    render(<FolhaDieta caso={{ ...caso, modo: 'rapido' }} plano={planoCheio()} />)
+    expect(screen.getByText(/^Plano montado em prescrição rápida, sem avaliação antropométrica\./)).toBeInTheDocument()
   })
 
-  it('CA-287: o menu Exportar leva o nome e o CRN da conta até a folha de imprimir', async () => {
-    render(<MenuExportar caso={caso} plano={planoCheio()} responsavel="Ana Souza · CRN-6 12345" />)
-    const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
-    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Dieta para imprimir/ }))
-    expect(within(screen.getByRole('dialog', { name: 'Dieta para imprimir' })).getByText(/Ana Souza · CRN-6 12345/)).toBeInTheDocument()
-  })
-
-  it('o menu Exportar abre a folha e oferece imprimir', async () => {
-    render(<MenuExportar caso={caso} plano={planoCheio()} />)
-    const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
-    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Dieta para imprimir/ }))
-
-    const janela = within(screen.getByRole('dialog', { name: 'Dieta para imprimir' }))
-    expect(janela.getAllByText(/Arroz, tipo 1, cozido —/).length).toBeGreaterThan(0)
-    expect(janela.getByRole('button', { name: /Imprimir ou salvar em PDF/ })).toBeInTheDocument()
-  })
-})
-
-describe('Lista de trocas', () => {
-  it('sai na folha, com alimento e porção equivalente', () => {
-    render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByRole('heading', { name: 'Trocas possíveis' })).toBeInTheDocument()
-    expect(screen.getByText(/Mesma energia, mesmo grupo/)).toBeInTheDocument()
-  })
-
-  it('não oferece doce nem ultraprocessado no lugar da comida do plano', () => {
+  it('CA-315: refeição e fim da folha não se partem entre páginas', () => {
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    const secao = [...container.querySelectorAll('section')].find((s) => s.textContent?.includes('Trocas possíveis'))
-    const texto = secao?.textContent?.toLowerCase() ?? ''
-    for (const proibido of ['biscoito', 'chocolate', 'salsicha', 'refrigerante']) {
-      expect(texto).not.toContain(proibido)
+    for (const secao of screen.getAllByRole('region', { name: /^\d{2}:\d{2} / })) expect(secao).toHaveClass('break-inside-avoid')
+    expect(container.querySelector('.fim-da-folha')).toHaveClass('break-inside-avoid')
+  })
+
+  it('CA-316: a regra da linha fina vem com o nome do plano e quem assina', () => {
+    const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} assinatura={ANA} />)
+    const css = container.querySelector('style')?.textContent ?? ''
+    expect(css).toContain('Plano alimentar · Maria, 28 anos')
+    expect(css).toContain('Ana Souza · CRN-6 12345')
+  })
+
+  it('CA-318 e CA-319: lista de compras e trocas só quando marcadas, numa página nova, com até 2 trocas', () => {
+    const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+    expect(screen.queryByRole('heading', { name: 'Lista de compras' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Trocas' })).not.toBeInTheDocument()
+    unmount()
+
+    const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
+    expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
+    expect(screen.getByText('Arroz, tipo 1, cozido — 150 g')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
+    expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')
+    for (const linha of within(screen.getByRole('list', { name: 'Trocas' })).getAllByRole('listitem')) {
+      expect(linha.querySelectorAll('.troca').length).toBeLessThanOrEqual(2)
     }
   })
 
-  it('a restrição do paciente não aparece entre as trocas', () => {
-    const trocas = trocasDoAlimento({ alimentoId: ARROZ, gramas: 150 }, { alimentos: ALIMENTOS })
-    const primeira = trocas[0]
-    expect(primeira).toBeDefined()
-    // Primeira palavra do nome, que é como o paciente escreveria a restrição.
-    const termo = (primeira?.descricao.split(',')[0] ?? '').toLowerCase()
+  it('as trocas não oferecem doce nem ultraprocessado', () => {
+    render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: false, trocas: true }} />)
+    const texto = (screen.getByRole('list', { name: 'Trocas' }).textContent ?? '').toLowerCase()
+    for (const proibido of ['biscoito', 'chocolate', 'salsicha', 'refrigerante']) expect(texto).not.toContain(proibido)
+  })
 
-    const restrito = trocasDoAlimento({ alimentoId: ARROZ, gramas: 150 }, { alimentos: ALIMENTOS, restricoes: [termo] })
-    expect(restrito.every((t) => !t.descricao.toLowerCase().startsWith(termo))).toBe(true)
-
-    const folha = render(<FolhaDieta caso={caso} plano={planoCheio()} restricoes={termo} />)
-    const secao = [...folha.container.querySelectorAll('section')].find((s) => s.textContent?.includes('Trocas possíveis'))
-    expect(secao).toBeDefined()
+  it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
+    render(<FolhaDieta caso={{ ...caso, orientacoes: '' }} plano={criarPlanoPadrao(ids)} />)
+    expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
+    expect(screen.queryByRole('heading', { name: 'Orientações' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
   })
 })

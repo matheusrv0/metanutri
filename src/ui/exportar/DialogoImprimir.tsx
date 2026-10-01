@@ -19,7 +19,7 @@ interface DialogoImprimirProps {
  * Pré-visualização da dieta antes de imprimir.
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo, sem depender de biblioteca.
  */
-export function DialogoImprimir({ aberto, caso, plano, restricoes, responsavel, aoFechar }: DialogoImprimirProps) {
+export function DialogoImprimir({ aberto, caso, plano, restricoes, aoFechar }: DialogoImprimirProps) {
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
@@ -29,7 +29,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, responsavel, 
         </DialogHeader>
 
         <div className="area-impressao border border-border print:border-0">
-          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} responsavel={responsavel} />
+          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} />
         </div>
 
         <DialogFooter className="print:hidden">
