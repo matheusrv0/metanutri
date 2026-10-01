@@ -38,3 +38,6 @@ docs/modelos/
 
 # mockups do brainstorming (visual companion)
 .superpowers/
+
+# Cache do Supabase CLI
+supabase/.temp/
