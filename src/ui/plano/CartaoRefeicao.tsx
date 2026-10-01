@@ -97,20 +97,22 @@ export function CartaoRefeicao({
           onBlur={() => setNomeTexto(refeicao.nome)}
           className="min-w-32 flex-1 font-semibold"
         />
-        <span className="numeros ml-auto shrink-0 text-sm font-semibold text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={`Mais ações de ${refeicao.nome}`}>
-              <MoreHorizontal aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={aoRemover}>
-              <Trash aria-hidden="true" />
-              Remover refeição
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <span className="numeros text-sm font-semibold text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`Mais ações de ${refeicao.nome}`}>
+                <MoreHorizontal aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={aoRemover}>
+                <Trash aria-hidden="true" />
+                Remover refeição
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-surfacerow p-1">
