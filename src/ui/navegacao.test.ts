@@ -9,6 +9,7 @@ describe('navegação por endereço', () => {
     ['#/caso/abc-123/plano', { tela: 'planejador', casoId: 'abc-123', aba: 'plano' }],
     ['#/caso/abc-123/adequacao', { tela: 'planejador', casoId: 'abc-123', aba: 'adequacao' }],
     ['#/caso/abc-123/qualquer', { tela: 'planejador', casoId: 'abc-123', aba: 'caso' }],
+    ['#/aprovacoes', { tela: 'aprovacoes' }],
     ['#/missoes/abc123xyz', { tela: 'missoes', token: 'abc123xyz' }],
     ['#/inexistente', ROTA_INICIAL],
     ['#/caso', ROTA_INICIAL],
@@ -72,6 +73,7 @@ describe('rotas da conta e do pagamento (spec estilo-spora)', () => {
       { tela: 'nova-senha' },
       { tela: 'assinar', plano: 'solo', ciclo: 'mensal' },
       { tela: 'pagamento' },
+      { tela: 'aprovacoes' },
     ]
     for (const rota of rotas) expect(lerRota(escreverRota(rota))).toEqual(rota)
   })

@@ -9,6 +9,7 @@ import {
   ListChecks,
   Plus,
   Settings,
+  ShieldCheck,
   TriangleAlert,
   UserCircle,
   UserRound,
@@ -34,6 +35,8 @@ interface MenuLateralProps {
   readonly navegar: (rota: Rota) => void
   readonly aoNovoCaso: (modo: ModoPlano) => void
   readonly aoEscolher?: () => void
+  /** Pendências do administrador. Nulo ou ausente: a conta não é administradora e o item não aparece (CA-292). */
+  readonly aprovacoesPendentes?: number | null | undefined
 }
 
 function Secao({ titulo, children }: { readonly titulo: string; readonly children: ReactNode }) {
@@ -49,7 +52,7 @@ function Secao({ titulo, children }: { readonly titulo: string; readonly childre
  * Lombada da publicação: capa com o nome, índice em duas seções e, no pé,
  * onde os dados ficam e a aparência.
  */
-export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }: MenuLateralProps) {
+export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, aprovacoesPendentes }: MenuLateralProps) {
   const { casos, avisoArmazenamento } = useCasos()
   const ir = (r: Rota) => {
     navegar(r)
@@ -124,6 +127,22 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher }
           <ItemMenu icone={<Settings aria-hidden="true" />} rotulo="Configurações" ativo={rota.tela === 'config'} aoClicar={() => ir({ tela: 'config' })} />
           <ItemMenu icone={<CircleHelp aria-hidden="true" />} rotulo="Ajuda" ativo={rota.tela === 'ajuda'} aoClicar={() => ir({ tela: 'ajuda' })} />
         </Secao>
+
+        {aprovacoesPendentes !== null && aprovacoesPendentes !== undefined ? (
+          <Secao titulo="Administração">
+            <ItemMenu
+              icone={<ShieldCheck aria-hidden="true" />}
+              rotulo="Aprovações"
+              ativo={rota.tela === 'aprovacoes'}
+              aoClicar={() => ir({ tela: 'aprovacoes' })}
+              extra={
+                aprovacoesPendentes > 0 ? (
+                  <span className="numeros rounded-full border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">{aprovacoesPendentes}</span>
+                ) : null
+              }
+            />
+          </Secao>
+        ) : null}
 
       </div>
 

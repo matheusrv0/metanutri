@@ -16,10 +16,12 @@ interface EstruturaProps {
   readonly trilha?: readonly PassoTrilha[] | undefined
   readonly acoes?: ReactNode
   readonly children: ReactNode
+  /** Pendências do administrador. Nulo ou ausente: a conta não é administradora e o item não aparece (CA-292). */
+  readonly aprovacoesPendentes?: number | null | undefined
 }
 
 /** Layout do MaterialM: menu lateral fixo de 270 px (gaveta abaixo de 1280 px), cabeçalho e conteúdo em até 1400 px. */
-export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtitulo, trilha, acoes, children }: EstruturaProps) {
+export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtitulo, trilha, acoes, children, aprovacoesPendentes }: EstruturaProps) {
   const [menuAberto, setMenuAberto] = useState(false)
 
   useEffect(() => {
@@ -42,14 +44,14 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtit
       </a>
 
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] xl:block">
-        <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} />
+        <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} aprovacoesPendentes={aprovacoesPendentes} />
       </aside>
 
       <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
         <SheetContent side="left" className="w-[280px] border-none p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navegação principal do MetaNutri</SheetDescription>
-          <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} aoEscolher={fecharMenu} />
+          <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} aoEscolher={fecharMenu} aprovacoesPendentes={aprovacoesPendentes} />
         </SheetContent>
       </Sheet>
 
