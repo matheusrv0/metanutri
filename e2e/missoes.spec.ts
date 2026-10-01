@@ -18,7 +18,7 @@ const montarPlanoComAlmoco = async (pagina: Page) => {
   await pagina.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
   await pagina.getByLabel('Nome do plano').fill('Ana, 30 anos')
   await pagina.getByRole('radio', { name: 'Feminino' }).click()
-  await pagina.getByLabel('Idade').fill('30')
+  await pagina.getByLabel('Idade', { exact: true }).fill('30')
 
   await pagina.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
   const entradaAlmoco = pagina.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })

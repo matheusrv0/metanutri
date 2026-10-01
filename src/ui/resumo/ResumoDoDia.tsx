@@ -12,7 +12,7 @@ import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
-import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { CampoMetaEnergia } from '../caso/CampoMetaEnergia.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
 import { MedidorMacro } from '@ds/componentes/nutricao/MedidorMacro.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
@@ -62,6 +62,14 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
   const kcalPlano = totais.nutrientes.energia_kcal.total
   const doGet = percentualDoGasto(kcalPlano, energia.get)
   const ehAdulto = (caso.idadeAnos ?? 0) >= 19 && caso.condicao.tipo === 'nenhuma'
+  const rotuloEnergia =
+    caso.modo === 'rapido'
+      ? energia.getManual
+        ? 'Meta definida por você'
+        : 'Meta calculada'
+      : energia.getManual
+        ? 'GET definido manualmente'
+        : 'GET calculado'
 
   return (
     <section aria-label="Resumo do dia" className="flex flex-col gap-4">
@@ -80,13 +88,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
         {ajustando ? (
           caso.modo === 'rapido' ? (
             <div className="flex flex-col gap-3 border border-border bg-muted p-4">
-              <CampoNumero
-                rotulo="Meta de energia"
-                valor={caso.metaEnergiaKcal}
-                aoMudar={(v) => aoAlterar({ metaEnergiaKcal: v })}
-                sufixo="kcal"
-                dica="Na prescrição rápida, a meta substitui o cálculo por fórmula."
-              />
+              <CampoMetaEnergia caso={caso} aoMudar={(v) => aoAlterar({ metaEnergiaKcal: v })} />
             </div>
           ) : (
             <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} />
@@ -113,7 +115,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
             <span className="numeros text-2xl font-bold text-heading">{`${formatarNumero(kcalPlano, 0)} kcal`}</span>
           </div>
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm text-muted-foreground">{energia.getManual ? 'GET definido manualmente' : 'GET calculado'}</span>
+            <span className="text-sm text-muted-foreground">{rotuloEnergia}</span>
             <span className="numeros text-base font-semibold text-heading">{energia.get === null ? '—' : `${formatarNumero(energia.get, 0)} kcal`}</span>
           </div>
           {doGet ? (
@@ -129,7 +131,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           ) : null}
         </div>
 
-        {caso.modo === 'completo' && (energia.tmb !== null || energia.get !== null) ? (
+        {(caso.modo === 'completo' || !energia.getManual) && (energia.tmb !== null || energia.get !== null) ? (
           <dl className="flex flex-col gap-1.5 border-t border-border pt-3 text-sm">
             {energia.tmb !== null ? (
               <div className="flex justify-between gap-2">

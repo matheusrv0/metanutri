@@ -125,3 +125,19 @@ describe('Resumo do dia', () => {
     expect(resumo().getByText('—')).toBeInTheDocument()
   })
 })
+
+describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
+  it('mostra a meta calculada e o fator', () => {
+    montar({ ...adulta, modo: 'rapido' })
+    expect(resumo().getByText('Meta calculada')).toBeInTheDocument()
+    expect(resumo().getByText('1.596 kcal')).toBeInTheDocument()
+    expect(resumo().getByText('Fator de atividade')).toBeInTheDocument()
+  })
+
+  it('a meta digitada aparece como definida por você', () => {
+    montar({ ...adulta, modo: 'rapido', metaEnergiaKcal: 1800 })
+    expect(resumo().getByText('Meta definida por você')).toBeInTheDocument()
+    expect(resumo().getByText('1.800 kcal')).toBeInTheDocument()
+    expect(resumo().queryByText('Fator de atividade')).not.toBeInTheDocument()
+  })
+})

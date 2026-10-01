@@ -1,7 +1,7 @@
-import { NIVEIS_ATIVIDADE } from '@/domain/energia.ts'
 import type { Caso, FormulaTmb } from '@/domain/tipos.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
+import { CampoNivelAtividade } from '../caso/CampoNivelAtividade.tsx'
 
 interface AjusteEnergiaProps {
   readonly caso: Caso
@@ -14,7 +14,6 @@ interface AjusteEnergiaProps {
 export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergiaProps) {
   const { energia } = caso
   const alterarEnergia = (mudanca: Partial<Caso['energia']>) => aoAlterar({ energia: { ...energia, ...mudanca } })
-  const nivelAtual = NIVEIS_ATIVIDADE.find((n) => n.fator === energia.fator)
 
   return (
     <div className="flex flex-col gap-4 border border-border bg-muted p-4">
@@ -30,15 +29,7 @@ export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergia
         />
       ) : null}
 
-      <GrupoOpcoes
-        rotulo="Nível de atividade"
-        opcoes={NIVEIS_ATIVIDADE.map((n) => ({ valor: n.id, rotulo: `${n.rotulo} (${String(n.fator).replace('.', ',')})` }))}
-        valor={nivelAtual?.id ?? null}
-        aoEscolher={(id) => {
-          const nivel = NIVEIS_ATIVIDADE.find((n) => n.id === id)
-          if (nivel) alterarEnergia({ fator: nivel.fator })
-        }}
-      />
+      <CampoNivelAtividade fator={energia.fator} aoEscolher={(fator) => alterarEnergia({ fator })} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoNumero

@@ -9,6 +9,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { CartaoComposicao } from './CartaoComposicao.tsx'
+import { CampoMetaEnergia } from './CampoMetaEnergia.tsx'
+import { CampoNivelAtividade } from './CampoNivelAtividade.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -96,7 +98,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
             <CardTitle>{rapido ? 'Pessoa e meta' : 'Pessoa e medidas'}</CardTitle>
             <CardDescription>
               {rapido
-                ? 'Sexo e idade escolhem as referências de micronutrientes. Peso e estatura são opcionais aqui.'
+                ? 'Com peso e estatura, a meta sai pronta. Sexo e idade escolhem as referências de micronutrientes.'
                 : 'Base da antropometria e do gasto energético. Pode usar vírgula, como 68,5.'}
             </CardDescription>
           </CardHeader>
@@ -129,18 +131,16 @@ export function TelaCaso({ caso, aoAlterar, lateral, pacientes = [], aoVincularP
               dica="Usado nas curvas da OMS até 19 anos."
               erro={erros.idadeMesesAdicionais}
             />
-            {rapido ? (
-              <CampoNumero
-                rotulo="Meta de energia"
-                valor={caso.metaEnergiaKcal}
-                aoMudar={numero('metaEnergiaKcal')}
-                sufixo="kcal"
-                dica="É o gasto do dia que o plano vai perseguir."
-                erro={erros.metaEnergiaKcal}
-              />
-            ) : null}
             <CampoNumero rotulo="Peso" valor={caso.pesoKg} aoMudar={numero('pesoKg')} sufixo="kg" erro={erros.pesoKg} />
             <CampoNumero rotulo="Estatura" valor={caso.estaturaCm} aoMudar={numero('estaturaCm')} sufixo="cm" erro={erros.estaturaCm} />
+            <div className="sm:col-span-2">
+              <CampoNivelAtividade fator={caso.energia.fator} aoEscolher={(fator) => aoAlterar({ energia: { ...caso.energia, fator } })} />
+            </div>
+            {rapido ? (
+              <div className="sm:col-span-2">
+                <CampoMetaEnergia caso={caso} aoMudar={numero('metaEnergiaKcal')} erro={erros.metaEnergiaKcal} />
+              </div>
+            ) : null}
             {rapido ? (
               <Alert variant="info" className="sm:col-span-2">
                 <Ruler aria-hidden="true" />

@@ -66,3 +66,87 @@ describe('Prescrição rápida', () => {
     expect(within(screen.getByRole('region', { name: 'Avaliação antropométrica' })).getByText(/Informe peso, estatura/)).toBeInTheDocument()
   })
 })
+
+describe('Meta de energia no modo rápido (CA-225 a CA-230, CA-232, CA-233)', () => {
+  const comMedidas: Partial<Caso> = { ...rapido, pesoKg: 62, estaturaCm: 163, energia: { fator: 1.55, formula: 'mifflin', getManual: null } }
+  const meta = () => screen.getByLabelText('Meta de energia')
+
+  it('CA-225: o nível de atividade vem logo depois de peso e estatura, com o fator de cada um', () => {
+    montar(rapido)
+    const grupo = screen.getByRole('radiogroup', { name: 'Nível de atividade' })
+    expect(within(grupo).getAllByRole('radio').map((r) => r.textContent)).toEqual([
+      'Sedentário (1,2)',
+      'Pouco ativo (1,37)',
+      'Moderadamente ativo (1,55)',
+      'Muito ativo (1,7)',
+      'Extremamente ativo (1,9)',
+    ])
+    expect(screen.getByLabelText('Estatura').compareDocumentPosition(grupo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('CA-226: com sexo, idade, peso e estatura, a meta aparece calculada', () => {
+    montar(comMedidas)
+    expect(meta()).toHaveValue('')
+    expect(meta()).toHaveAttribute('placeholder', '2.074')
+    expect(screen.getByText('calculada')).toBeInTheDocument()
+  })
+
+  it('CA-227: trocar o nível ou o peso muda a meta na hora', async () => {
+    const usuario = montar(comMedidas)
+    await usuario.click(screen.getByRole('radio', { name: 'Sedentário (1,2)' }))
+    expect(meta()).toHaveAttribute('placeholder', '1.605')
+    await usuario.clear(screen.getByLabelText('Peso'))
+    await usuario.type(screen.getByLabelText('Peso'), '70')
+    expect(meta()).toHaveAttribute('placeholder', '1.701')
+  })
+
+  it('CA-228: o número digitado vale mais, e mudar o nível não o altera', async () => {
+    const usuario = montar(comMedidas)
+    await usuario.type(meta(), '1800')
+    expect(screen.getByText('definida por você')).toBeInTheDocument()
+    expect(screen.getByText('Vale o seu número. Apague o campo para voltar à calculada (2.074 kcal).')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('radio', { name: 'Muito ativo (1,7)' }))
+    expect(meta()).toHaveValue('1800')
+  })
+
+  it('CA-229: apagar a meta digitada volta à calculada', async () => {
+    const usuario = montar({ ...comMedidas, metaEnergiaKcal: 1800 })
+    await usuario.clear(meta())
+    expect(meta()).toHaveValue('')
+    expect(meta()).toHaveAttribute('placeholder', '2.074')
+    expect(screen.getByText('calculada')).toBeInTheDocument()
+  })
+
+  it('CA-230: sem peso ou estatura, o nível continua e a tela diz o que falta', () => {
+    montar(rapido)
+    expect(screen.getByRole('radiogroup', { name: 'Nível de atividade' })).toBeInTheDocument()
+    expect(screen.getByText('Informe peso e estatura para calcular a meta.')).toBeInTheDocument()
+    expect(meta()).toHaveAttribute('placeholder', 'Digite a meta')
+  })
+
+  it('CA-232: fator próprio não marca nenhuma opção e aparece escrito', async () => {
+    const usuario = montar({ ...rapido, energia: { fator: 1.45, formula: 'mifflin', getManual: null } })
+    const niveis = within(screen.getByRole('radiogroup', { name: 'Nível de atividade' }))
+    expect(niveis.getAllByRole('radio').filter((r) => r.getAttribute('aria-checked') === 'true')).toHaveLength(0)
+    expect(screen.getByText('Fator próprio: 1,45')).toBeInTheDocument()
+    await usuario.click(niveis.getByRole('radio', { name: 'Pouco ativo (1,37)' }))
+    expect(niveis.getByRole('radio', { name: 'Pouco ativo (1,37)' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByText('Fator próprio: 1,45')).not.toBeInTheDocument()
+  })
+
+  it('CA-233: com peso e estatura, o modo rápido continua sem IMC', () => {
+    montar(comMedidas)
+    expect(screen.queryByText(/kg\/m²/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Avaliação antropométrica' })).not.toBeInTheDocument()
+  })
+
+  it('Foco de revisão 1: vírgula sem decimal fica, e apagar tudo não devolve número ao campo', async () => {
+    const usuario = montar(comMedidas)
+    await usuario.type(meta(), '1800,')
+    expect(meta()).toHaveValue('1800,')
+    await usuario.clear(meta())
+    expect(meta()).toHaveValue('')
+    await usuario.type(meta(), '2')
+    expect(meta()).toHaveValue('2')
+  })
+})

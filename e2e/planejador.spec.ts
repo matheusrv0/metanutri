@@ -9,7 +9,7 @@ const abrirLimpo = async (pagina: Page) => {
 }
 
 const preencher = async (pagina: Page, rotulo: string | RegExp, valor: string) => {
-  const campo = pagina.getByLabel(rotulo)
+  const campo = pagina.getByLabel(rotulo, typeof rotulo === 'string' ? { exact: true } : {})
   await campo.fill(valor)
 }
 
@@ -120,7 +120,7 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
   await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
   await page.getByLabel('Peso').fill('60')
   await page.getByLabel('Estatura').fill('165')
-  await page.getByLabel('Idade').fill('28')
+  await page.getByLabel('Idade', { exact: true }).fill('28')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await expect(page.getByRole('region', { name: 'Avaliação antropométrica' })).toContainText('22,0 kg/m²')
 
