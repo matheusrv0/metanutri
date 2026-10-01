@@ -119,7 +119,7 @@ Os CA-128 e CA-130 a CA-134 da `estilo-spora` continuam valendo. Os CA-127 e CA-
 
 ## 4. Casos de borda
 
-- **CB-60** · Faculdade cujo domínio não está na lista: a pessoa não consegue criar a conta de estudante, e a tela oferece criar no Free e o e-mail de contato para pedir a inclusão do domínio.
+- **CB-60** · Faculdade cujo domínio não está na lista: a pessoa não consegue criar a conta de estudante, e a tela mostra o e-mail de contato para pedir a inclusão do domínio. Criar como estudante no Free não é oferecido, porque essa conta nunca poderia ser aprovada.
 - **CB-61** · Dois administradores decidem o mesmo pedido ao mesmo tempo: vale a primeira decisão, e o segundo vê que o pedido já foi decidido.
 - **CB-62** · Comprovante que não abre: o administrador recusa com "Ilegível".
 - **CB-63** · Estudante com assinatura paga ativa (Solo ou Pro): a aprovação registra a matrícula verificada, mas não troca o plano pago.
@@ -127,6 +127,7 @@ Os CA-128 e CA-130 a CA-134 da `estilo-spora` continuam valendo. Os CA-127 e CA-
 - **CB-65** · CRN corrigido depois do bloqueio do CA-290: volta para "em conferência" e exportar volta a funcionar.
 - **CB-66** · Administrador sem internet: a ação avisa que não foi salva, e o pedido continua na lista.
 - **CB-67** · Contas anteriores a esta mudança: em 30/09/2026 o servidor tem zero contas, então não há migração.
+- **CB-68** · Conta sem situação (criada pelo painel do Supabase, como a do administrador): ao entrar, a pessoa vê "Complete seu cadastro", com os mesmos campos de situação do cadastro, antes de qualquer tela de trabalho. O administrador não passa por essa tela.
 
 ## 5. Fora de escopo, explicitamente
 
