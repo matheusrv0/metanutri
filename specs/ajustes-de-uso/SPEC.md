@@ -1,50 +1,42 @@
-# SPEC — Ajustes de uso: meta de energia, sugestões por refeição e perfil do cadastro
+# SPEC — Ajustes de uso no planejador: meta de energia, sugestões por refeição e plano assinado pelo cadastro
 
-Status: **em revisão**, volta a você na parte 4 do lançamento. Escrita em 30/09/2026.
+Status: **aguardando sua aprovação**. Escrita em 30/09/2026, refeita em 01/10/2026 depois do protótipo aprovado.
 
-> **Mudou em 30/09/2026, depois da primeira versão:** a US-A4 (situação e CRN no cadastro) e a
-> US-A5 (conta obrigatória) passaram para `specs/conta-e-verificacao/SPEC.md`. A parte 4 vai
-> rever esta spec com o que você pediu depois: sugestões que a pessoa personaliza (a lista
-> padrão vira ponto de partida), "Base MetaNutri" no lugar dos nomes das fontes nas telas
-> (com uma página de fontes, que a licença da TACO exige) e o leite integral, que não tem kcal
-> na base.
+**Fontes:** feedback de uma usuária real (estudante de nutrição em estágio, que usa o WebDiet),
+repassado por você em 30/09/2026; a conversa do mesmo dia; e o protótipo "Planejador com
+cadastro" (7 telas), aprovado em 01/10/2026.
 
-**Fontes:** feedback de uma usuária real (estudante de nutrição em estágio, que usa o
-WebDiet), repassado por você em 30/09/2026, e a conversa de brainstorming do mesmo dia.
+**Objetivo:** o planejador preenche sozinho o que já sabe (meta de energia, quem assina,
+alimentos de todo dia) e tira do caminho o que só serve ao estágio de uma faculdade.
 
-**Objetivo:** tirar do caminho o que só serve ao estágio de uma faculdade, fazer o
-sistema preencher sozinho o que já sabe (meta de energia, quem assina, alimentos de
-todo dia) e terminar a conta obrigatória da Onda 1 do estilo-spora.
+**O que saiu daqui:** a situação e o CRN no cadastro (antiga US-A4) e a conta obrigatória (antiga
+US-A5) foram para `specs/conta-e-verificacao/SPEC.md` e já estão prontos. Os critérios CA-244 a
+CA-250 e CA-254 a CA-257 desta spec não existem mais; a folha da dieta assinada pelo cadastro é
+o CA-287 de lá.
 
 ## 1. Decisões
 
 | # | Decisão | Motivo |
 |---|---|---|
-| D-32 | O **nível de atividade** fica logo abaixo de peso e estatura, nos dois modos. No modo rápido, a meta de energia é calculada sozinha quando há dados, e o número digitado pela pessoa vale mais que o calculado | Pedido da usuária. O CA-63 da prescrição rápida ("Estimar pelo peso") ficou pela metade: peso e estatura aparecem, mas nada é calculado |
-| D-33 | O IMC e as classificações continuam só no atendimento completo | Decisão sua de 30/09. O modo rápido não classifica ninguém |
-| D-34 | **Receitas só para estudante.** Quem é nutricionista não vê o campo, e ele não sai nos documentos | O MetaNutri não é só para o estágio de uma faculdade. Receitas vêm do modelo de documento do estágio |
-| D-35 | Cada refeição mostra **sugestões de alimentos** por tipo de refeição: começa com uma lista pronta e, com o uso, os mais usados pela pessoa naquele tipo de refeição passam à frente | Pedido da usuária: "cuscuz no café da manhã, arroz e feijão no almoço" |
-| D-36 | A **situação** (estudante ou nutricionista), o nome e o CRN vêm do **cadastro da conta**. Configurações › Quem assina mostra esses dados da conta e grava as mudanças nela | Decisão sua de 30/09: a pessoa cria a conta para acessar, então não deve preencher isso de novo em cada plano |
-| D-37 | CRN **obrigatório** para nutricionista, com o formato conferido e a pessoa declarando que o registro é dela. Não há consulta ao conselho | Decisão sua de 30/09. O CFN não tem API oficial: a Consulta Nacional de Nutricionistas (cnn.cfn.org.br) só pode ser usada por um endereço interno da página, que pode mudar sem aviso, e o CRN-4 nem aparece lá hoje |
-| D-38 | A Onda 1 do estilo-spora termina agora, **com a conta obrigatória** e o fim da ponte provisória de 28/09. Ficam para depois só os termos: a Tarefa 21, o aceite no cadastro e o e-mail do plano Clínica | Decisão sua de 30/09: "o termo a gente resolve depois". O risco está em R-19 |
+| D-32 | O **nível de atividade** fica logo abaixo de peso e estatura, nos dois modos. No modo rápido, a meta de energia é calculada sozinha quando há dados, e o número digitado pela pessoa vale mais que o calculado | Pedido da usuária. O CA-63 da prescrição rápida ("Estimar pelo peso") ficou pela metade |
+| D-33 | O IMC e as classificações continuam só no atendimento completo | Decisão sua de 30/09 |
+| D-34 | **Receitas só para estudante.** Quem é nutricionista não vê o campo, e ele não sai nos documentos | O MetaNutri não é só para o estágio de uma faculdade |
+| D-35 | Cada refeição mostra **sugestões de alimentos** do seu tipo (desjejum, lanche, almoço, jantar, ceia). Começam com uma lista padrão e **a pessoa edita**: tira, acrescenta, muda a ordem ou volta à lista padrão. **Não aprendem sozinhas com o uso**; substituem o atalho "Você usa muito" | Pedido da usuária ("cuscuz no café, arroz e feijão no almoço") e decisão sua de 01/10: a lista editada é mais previsível |
+| D-36 | O **leite integral sai da lista padrão** (desjejum e ceia): a base não tem a energia dele. Quem quiser acrescenta pela edição, e ele aparece com "— kcal" | Decisão sua de 01/10 |
+| D-37 | A **situação** que decide o que o plano mostra vem da conta (perfil no servidor). No modo local, sem servidor, vem de Configurações › Quem assina | A conta e verificação já guarda a situação no servidor |
+| D-38 | Para nutricionista, a Identificação do plano não pede estagiário nem preceptor, e o **Word** sai com "Nutricionista: Nome · CRN" e uma assinatura só. Para estudante, os dois campos já vêm preenchidos | Pedido da usuária: "não precisa preencher esses dados, já vai ser informado no cadastro" |
 
-**Esta spec altera critérios de specs anteriores:**
-- `prescricao-rapida-e-base` · **CA-61** passa a incluir o nível de atividade entre os campos do modo rápido, e **CA-63** é substituído pelos CA-226 a CA-230.
-- `estilo-spora` · **CA-127** e **CA-129** ganham a situação e o CRN (CA-244 a CA-247). **CA-134a**, **CA-126** e **CA-220 a CA-224** ficam suspensos até a Tarefa 21 (D-38).
+**Esta spec altera critérios de specs anteriores:** `prescricao-rapida-e-base` · **CA-61** passa a
+incluir o nível de atividade entre os campos do modo rápido, e **CA-63** é substituído pelos CA-226 a CA-230.
 
 ## 2. Escopo
 
-**Entra:**
-- Nível de atividade junto de peso e estatura, e meta de energia calculada no modo rápido.
-- Campo Receitas só para estudante, na tela e nos documentos.
-- Sugestões de alimentos por tipo de refeição, com lista inicial e aprendizado pelo uso.
-- Situação, nome e CRN pedidos no cadastro e usados no plano e nos documentos.
-- Tarefas 16, 18, 24, 25 e 26 do PLAN estilo-spora (Preços, Criar conta, montagem com conta obrigatória, conta e plano, e2e e publicação).
+**Entra:** nível de atividade e meta calculada; receitas só para estudante; sugestões por tipo de
+refeição, editáveis; plano e Word assinados pela situação da conta.
 
 ## 3. Histórias e critérios de aceite
 
-Pessoas: **nutricionista** (conta com situação Nutricionista), **estudante** (conta com
-situação Estudante) e **visitante** (ainda sem conta).
+Pessoas: **nutricionista** (situação Nutricionista) e **estudante** (situação Estudante).
 
 ### US-A1 · Meta de energia junto do peso e da altura (3 pts)
 
@@ -70,32 +62,33 @@ ter só o que eu uso.
 - **CA-235** · Dado a situação Nutricionista, então a folha da dieta (imprimir e PDF) e o Word de aconselhamento saem sem a parte de receitas, inclusive sem o título "Receitas saudáveis".
 - **CA-236** · Dado a situação Estudante, então o campo Receitas e as receitas nos documentos continuam como hoje.
 
-### US-A3 · Sugestões de alimentos por refeição (3 pts)
+### US-A3 · Sugestões de alimentos por refeição, editáveis (3 pts)
 
-Como nutricionista, quero que cada refeição já sugira os alimentos de sempre, para
-montar o plano sem buscar arroz e feijão toda vez.
+Como nutricionista, quero que cada refeição já sugira os alimentos de sempre, e poder
+trocar essa lista, para montar o plano sem buscar arroz e feijão toda vez.
 
-- **CA-237** · Dado uma refeição com o campo de adicionar vazio e sem histórico de uso naquele tipo de refeição, então aparecem as sugestões da lista inicial daquele tipo (seção 3.1), com o rótulo "Sugestões para o almoço" (ou desjejum, lanche, jantar, ceia) e, em cada uma, o nome do alimento e a porção em gramas.
+- **CA-237** · Dado uma refeição com o campo de adicionar vazio, então aparecem as sugestões do tipo daquela refeição, com o rótulo "Sugestões para o almoço" (ou desjejum, lanche, jantar, ceia) e, em cada uma, o nome do alimento e a porção em gramas. O atalho "Você usa muito" deixa de existir.
 - **CA-238** · Dado uma sugestão, quando a pessoa clica nela, então o alimento entra na porção mostrada, na opção (principal, substituto 1 ou substituto 2) daquele campo.
 - **CA-239** · Dado o nome da refeição, então o tipo é reconhecido pelo nome, sem diferenciar maiúscula e acento: "desjejum" ou "café da manhã" → desjejum; nome que contém "lanche" ou "colação" → lanche; "almoço" → almoço; "jantar" ou "janta" → jantar; "ceia" → ceia.
 - **CA-240** · Dado um nome que não bate com nenhum tipo (ex.: "Pré-treino"), então o tipo vem do horário: 04:00–08:59 desjejum · 09:00–10:59 lanche · 11:00–14:59 almoço · 15:00–17:59 lanche · 18:00–20:59 jantar · 21:00–03:59 ceia.
-- **CA-241** · Dado alimentos que a pessoa já adicionou em refeições de um tipo, então eles aparecem primeiro nas sugestões daquele tipo, do mais usado para o menos usado (no empate, o usado mais recentemente), na última porção usada. A lista inicial completa até 6 sugestões, sem repetir alimento.
-- **CA-242** · Dado um alimento adicionado ao almoço, então ele conta só para as sugestões do almoço, e não para as do desjejum.
-- **CA-243** · Dado texto digitado no campo, então as sugestões somem e a busca aparece, como hoje.
+- **CA-241** · Dado o link "Editar" ao lado das sugestões, então abre "Sugestões para o almoço" (ou o tipo daquela refeição) com a lista: nome, medida caseira e gramas de cada uma, um botão para tirar, e um jeito de mudar a ordem.
+- **CA-242** · Dado o campo de acrescentar da edição, quando a pessoa escreve como na busca do plano ("1 concha feijão preto" ou "150 arroz integral") e clica em "Adicionar", então o alimento entra no fim da lista com essa porção. Sem medida reconhecida, a porção fica em gramas; alimento que não existe na base não entra, e a tela diz isso.
+- **CA-243** · Dado "Salvar", então a lista nova vale para todas as refeições daquele tipo, em todos os planos deste aparelho. "Voltar à lista padrão" troca a lista pela padrão (seção 3.1). Fechar sem salvar não muda nada.
+- **CA-306** · Dado uma lista sem nenhum alimento, então a refeição não mostra o rótulo de sugestões, só a busca.
+- **CA-307** · Dado texto digitado no campo de adicionar do plano, então as sugestões somem e a busca aparece, como hoje.
 
-#### 3.1 Lista inicial de sugestões
+#### 3.1 Lista padrão de sugestões
 
-Porções da POF 2008-2009 (IBGE), já presentes na base. **A lista e as porções precisam
-ser revisadas por uma nutricionista antes de publicar** (R-20).
+Porções das medidas caseiras que o MetaNutri já usa. **A lista e as porções precisam ser
+revisadas por uma nutricionista antes de publicar** (R-20).
 
-| Tipo | Alimento (TACO) | Porção |
+| Tipo | Alimento | Porção |
 |---|---|---|
 | Desjejum | Cuscuz, de milho, cozido com sal | 1 pedaço (135 g) |
 | Desjejum | Ovo, de galinha, inteiro, cozido | 1 unidade (45 g) |
 | Desjejum | Pão, trigo, francês | 1 unidade (50 g) |
 | Desjejum | Tapioca, com manteiga | 1 unidade (50 g) |
 | Desjejum | Café, infusão 10% | 1 xícara de café (50 g) |
-| Desjejum | Leite, de vaca, integral | 1 copo americano (150 g) |
 | Lanche | Banana, prata, crua | 1 unidade (75 g) |
 | Lanche | Maçã, Fuji, com casca, crua | 1 unidade (150 g) |
 | Lanche | Mamão, Papaia, cru | 1 fatia (170 g) |
@@ -114,69 +107,45 @@ ser revisadas por uma nutricionista antes de publicar** (R-20).
 | Jantar | Arroz, tipo 1, cozido | 4 colheres de sopa (100 g) |
 | Jantar | Feijão, carioca, cozido | 1 concha (140 g) |
 | Jantar | Batata, doce, cozida | 1 pedaço (70 g) |
-| Ceia | Leite, de vaca, integral | 1 copo americano (150 g) |
 | Ceia | Iogurte, natural | 1 pote (200 g) |
 | Ceia | Banana, prata, crua | 1 unidade (75 g) |
 | Ceia | Mamão, Papaia, cru | 1 fatia (170 g) |
 | Ceia | Aveia, flocos, crua | 1 colher de sopa (15 g) |
 
-### US-A4 · Estudante ou nutricionista, vindo do cadastro (5 pts)
+### US-A4 · Plano e Word assinados pela situação da conta (3 pts)
 
-Como nutricionista, quero informar nome e CRN uma vez, no cadastro, para o plano e os
-documentos já saírem assinados sem eu digitar de novo.
+Como nutricionista, quero que o plano e o Word já saiam com o meu nome e CRN, para não
+digitar de novo o que informei no cadastro.
 
-- **CA-244** · Dado a tela Criar conta, então ela pede também "Você é", com as opções Estudante e Nutricionista. Sem escolha, a conta não é criada e o erro aparece ao lado do campo (complementa o CA-129).
-- **CA-245** · Dado a tela Criar conta com o plano Estudante marcado, então "Você é" já vem em Estudante e não pode ser trocado.
-- **CA-246** · Dado "Nutricionista" escolhido, então aparecem o CRN (região, de CRN-1 a CRN-11, e número) e a caixa "Declaro que este registro é meu e está ativo". Os dois são obrigatórios.
-- **CA-247** · Dado um CRN sem região, com região fora de 1 a 11, sem número, ou com número que tenha algo além de algarismos e de um P final (inscrição provisória), quando a pessoa envia, então o erro aparece ao lado do campo e nada vai para o servidor. O mesmo vale para a caixa de declaração desmarcada.
-- **CA-248** · Dado um cadastro aceito, então a conta guarda a situação e, para nutricionista, o CRN e a data da declaração.
-- **CA-249** · Dado uma sessão, então Configurações › Quem assina mostra o nome, a situação e o CRN da conta. Editar esses três ali grava na conta, com a mesma validação do cadastro. Instituição, responsável técnico, telefone, e-mail de contato e logo continuam guardados no aparelho, como hoje.
-- **CA-250** · Dado alguém que troca a situação de Estudante para Nutricionista em Configurações, então o CRN e a declaração passam a ser pedidos, e o plano de assinatura não muda sozinho.
-- **CA-251** · Dado a situação Nutricionista, então a Identificação do plano não tem Estagiário(a) nem Preceptor(a), e a folha da dieta sai com "Nome · CRN-6 12345" como responsável, sem ninguém digitar.
+- **CA-251** · Dado a situação Nutricionista, então a Identificação do plano não tem Estagiário(a) nem Preceptor(a), e mostra "Assina este plano: Nome · CRN-6 12345", que vem do cadastro.
 - **CA-252** · Dado a situação Nutricionista, então o Word de aconselhamento traz "Nutricionista: Nome · CRN-6 12345" no lugar das linhas de estagiário e preceptor, e uma assinatura só, "Nutricionista", no lugar das duas.
 - **CA-253** · Dado a situação Estudante, quando a pessoa cria um plano novo, então Estagiário(a) já vem com o nome da conta e Preceptor(a) com o responsável técnico de Quem assina. Os dois podem ser trocados naquele plano, e planos já existentes não mudam.
-
-### US-A5 · Conta obrigatória, sem os termos por enquanto (5 pts)
-
-Como nutricionista, quero criar a conta e entrar de verdade, para meus dados e meu plano
-ficarem presos a mim.
-
-- **CA-254** · Dado as tarefas 16, 18, 24, 25 e 26 do PLAN estilo-spora, então os critérios delas valem como escritos, com as exceções dos CA-255 a CA-257.
-- **CA-255** · Dado o servidor configurado e alguém sem sessão, quando clica em "Começar grátis" ou "Criar conta", então vai para a tela Criar conta, e não direto para o painel. A ponte provisória de 28/09 deixa de existir.
-- **CA-256** · Dado a tela Criar conta, então ela ainda não tem a caixa de aceite dos termos (CA-134a suspenso), e a conta não grava aceite (CA-223 suspenso).
-- **CA-257** · Dado os links de Termos de uso e Política de privacidade, e o botão do plano Clínica, então continuam como hoje: as páginas dizem "em preparação" e o Clínica não mostra e-mail (CA-126 e CA-220 a CA-224 suspensos).
 
 ## 4. Casos de borda
 
 - **CB-50** · Nutricionista abre um plano que já tem receitas escritas: o campo Receitas aparece com o texto, e as receitas saem nos documentos. Nenhum texto some.
-- **CB-51** · Nutricionista abre um plano antigo com estagiário ou preceptor preenchidos: os campos aparecem com o texto, e o documento sai como sairia antes.
-- **CB-52** · Conta criada antes desta mudança, sem situação: o plano funciona como hoje (campos de estagiário e preceptor visíveis), e Configurações › Quem assina pede para completar a situação.
-- **CB-53** · Editar Quem assina sem internet ou com o servidor fora: aparece o aviso, o que foi digitado continua na tela e nada muda na conta.
-- **CB-54** · Servidor não configurado (desenvolvimento): Quem assina fica só no aparelho, como hoje, e a situação vem dali.
-- **CB-55** · Histórico do atalho "Você usa muito" gravado antes desta mudança (sem tipo de refeição): não entra nas sugestões por refeição.
+- **CB-51** · Nutricionista abre um plano antigo com estagiário ou preceptor preenchidos: os campos aparecem com o texto, e o Word sai como sairia antes.
+- **CB-54** · Servidor não configurado (desenvolvimento): a situação vem de Configurações › Quem assina (Estudante ou Nutricionista), como hoje.
+- **CB-55** · Histórico do atalho "Você usa muito" gravado antes desta mudança: é ignorado e não volta.
 - **CB-56** · Idade, condição ou dado fora do que o cálculo aceita no modo rápido (ex.: menos de 1 ano): a meta não é calculada, e aparece o mesmo motivo que o atendimento completo mostraria.
-- **CB-57** · Alimento da lista inicial que não existir mais na base: a sugestão some, sem erro, e as outras continuam.
-- **CB-58** · A mesma conta editando Quem assina em dois aparelhos: vale a última gravação.
-- **CB-59** · Clique duplo em "Criar conta" com os campos novos: continua valendo o CA-134 (uma conta só).
+- **CB-57** · Alimento de uma lista de sugestões que não existir mais na base: a sugestão some, sem erro, e as outras continuam.
+- **CB-69** · Conta sem situação (administrador): o plano se comporta como hoje (campos de estagiário e preceptor visíveis).
+- **CB-70** · Sem espaço para gravar no aparelho: a edição das sugestões avisa que não foi salva, e a lista volta ao que era.
 
 ## 5. Fora de escopo, explicitamente
 
-- Conferir o CRN no conselho (CFN ou regionais).
+- Sugestões que aprendem com o uso (D-35).
+- Levar as listas de sugestões para a nuvem ou para outro aparelho.
 - Mostrar o IMC no modo rápido.
-- Levar instituição, responsável técnico, telefone e logo para a conta.
-- Editar ou esconder itens da lista inicial de sugestões pela tela.
-- Termos de uso, Política de privacidade, aceite no cadastro e o e-mail do Clínica (Tarefa 21).
+- "Base MetaNutri" no lugar dos nomes das fontes, PDF com design próprio e telas mais limpas (parte 5 do lançamento).
 - Qualquer mudança de cálculo clínico: a meta calculada é o mesmo número que o atendimento completo já mostra hoje.
 
 ## 6. O que fica com você
 
-1. **Revisão das sugestões:** mostrar a tabela da seção 3.1 a uma nutricionista (a usuária que deu o feedback é a candidata natural) e me devolver o que trocar.
-2. **Servidor:** os itens da seção 6 da SPEC estilo-spora continuam valendo para a conta funcionar de verdade (endereço de volta no Supabase, e-mail, SQL do Estudante).
-3. **Termos:** seu nome completo e o e-mail do MetaNutri, quando decidir, para a Tarefa 21.
+1. **Revisão da lista padrão:** mostrar a tabela da seção 3.1 a uma nutricionista (a usuária que deu o feedback é a candidata natural) e me devolver o que trocar.
 
 ## 7. Riscos para você revisar
 
-- **R-19** · Com a conta obrigatória e sem política de privacidade publicada, pessoas vão criar conta e guardar dados sem ter lido o que o MetaNutri faz com eles. Pela LGPD, o ideal é publicar a política antes ou junto. A alternativa é manter a ponte provisória até a Tarefa 21.
-- **R-20** · A lista inicial de sugestões foi montada por mim, com alimentos comuns no Nordeste. Sem revisão de uma nutricionista, pode sugerir porção ou alimento que ela não prescreveria.
-- **R-21** · O CRN não é conferido. Alguém pode se declarar nutricionista sem ser. Hoje isso quase não traz vantagem (quem se declara nutricionista paga o plano igual), mas a declaração guardada com data é o registro de quem mentiu.
-- **R-22** · Dados em dois lugares (nome, situação e CRN na conta; o resto de Quem assina no aparelho). Num aparelho novo, a pessoa precisa preencher de novo o responsável técnico e a logo.
+- **R-20** · A lista padrão foi montada por mim, com alimentos comuns no Nordeste. Sem revisão de uma nutricionista, pode sugerir porção ou alimento que ela não prescreveria.
+- **R-22** · As listas de sugestões ficam no aparelho, como os planos. Em outro aparelho, a pessoa começa da lista padrão.
+- **R-27** · A meta calculada no modo rápido usa a mesma fórmula do atendimento completo (Mifflin-St Jeor para adulto). Quem prescreve continua conferindo o número.
