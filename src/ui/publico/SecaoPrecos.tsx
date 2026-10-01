@@ -19,16 +19,22 @@ import {
   PLANOS,
   PLANOS_COMPARADOS,
   VAGAS_PRECO_FUNDADOR,
+  type Ciclo,
   type IdPlano,
   type PlanoAssinatura,
   type ValorComparativo,
 } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
 import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
 
 interface SecaoPrecosProps {
-  readonly aoEscolher: (plano: IdPlano) => void
+  readonly aoEscolher: (plano: IdPlano, ciclo: Ciclo) => void
+  /** Nulo até o e-mail do MetaNutri existir: o Clínica diz "Contato em breve." */
+  readonly contato: string | null
+  /** Plano em destaque vindo do aviso de limite (CA-177). Sem ele, vale o destaque do próprio plano. */
+  readonly destaque?: IdPlano | undefined
 }
 
 const entrada = {
@@ -80,7 +86,19 @@ function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar
 }
 
 /** O preço de uma coluna, com a ação embaixo. É a única parte que muda com a chave. */
-function Preco({ plano, anual, aoEscolher }: { readonly plano: PlanoAssinatura; readonly anual: boolean; readonly aoEscolher: () => void }) {
+function Preco({
+  plano,
+  anual,
+  destacado,
+  contato,
+  aoEscolher,
+}: {
+  readonly plano: PlanoAssinatura
+  readonly anual: boolean
+  readonly destacado: boolean
+  readonly contato: string | null
+  readonly aoEscolher: () => void
+}) {
   const temAnual = plano.anual > 0
   const valor = anual && temAnual ? mensalizadoDoAnual(plano) : plano.mensal
   const casas = Number.isInteger(valor) ? 0 : 2
@@ -98,18 +116,31 @@ function Preco({ plano, anual, aoEscolher }: { readonly plano: PlanoAssinatura; 
         {gratis ? 'Para sempre, sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} uma vez por ano.` : anual ? 'Só no mensal.' : 'Cancele quando quiser.'}
       </p>
 
-      <OriginButton
-        onClick={aoEscolher}
-        tom={plano.destaque ? 'verde' : 'contorno'}
-        className={cn(
-          'w-full',
-          plano.destaque
-            ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis'
-            : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
-        )}
-      >
-        {plano.acaoTexto}
-      </OriginButton>
+      {plano.id === 'clinica' ? (
+        <p className="text-center text-xs text-muted-foreground">
+          {contato ? (
+            <>
+              Combinado por conversa:
+              <br />
+              <strong className="select-all text-sm text-heading">{contato}</strong>
+            </>
+          ) : (
+            'Contato em breve.'
+          )}
+        </p>
+      ) : (
+        <OriginButton
+          onClick={aoEscolher}
+          tom={destacado ? 'verde' : 'contorno'}
+          aria-label={`${plano.acaoTexto} ${plano.nome}`}
+          className={cn(
+            'w-full',
+            destacado ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis' : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
+          )}
+        >
+          {plano.acaoTexto}
+        </OriginButton>
+      )}
     </div>
   )
 }
@@ -135,30 +166,35 @@ function Celula({ valor }: { readonly valor: ValorComparativo }) {
   return <span className="numeros text-sm font-semibold text-heading">{valor}</span>
 }
 
-/** A nota do plano Estudante, que não merece uma coluna: é o Grátis com comprovante. */
-function NotaEstudante() {
+/** A nota do plano Estudante, que não merece uma coluna: é o Grátis com e-mail de faculdade. */
+function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
   const estudante = planoPorId('estudante')
   if (!estudante) return null
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
+    <div className="flex flex-wrap items-start gap-3 rounded-3xl bg-card p-5">
       <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
-      <p className="text-sm text-foreground">
-        <strong className="font-semibold text-infotext">Estudante de nutrição:</strong> envie o comprovante de matrícula e o Grátis sobe para{' '}
-        <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, até a formatura. Conta de
-        estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
+      <p className="min-w-0 flex-1 text-sm text-foreground">
+        <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
+        Aprovado, o Grátis sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses
+        ou até a formatura. Conta de estágio é de uso não comercial: o PDF sai marcado e a tela do paciente avisa que não é atendimento profissional.
       </p>
+      <Button variant="outline" size="sm" onClick={aoEscolher}>
+        {estudante.acaoTexto}
+      </Button>
     </div>
   )
 }
 
-export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
+export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps) {
   const [anual, setAnual] = useState(false)
   const secao = useRef<HTMLDivElement>(null)
   const linhas = comparativoDosPlanos()
+  const ciclo: Ciclo = anual ? 'anual' : 'mensal'
+  const estaEmDestaque = (p: PlanoAssinatura) => (destaque ? p.id === destaque : p.destaque)
 
   return (
-    <div ref={secao} className="bg-[image:var(--gradient-brand-soft)] px-4 py-16 sm:px-8">
+    <div ref={secao} className="bg-background px-4 py-16 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
@@ -184,17 +220,17 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
                 <th
                   key={plano.id}
                   scope="col"
-                  className={cn('rounded-t-2xl px-4 pb-5 pt-6 align-top', plano.destaque ? 'bg-card' : 'bg-surfacesunken')}
+                  className={cn('rounded-t-2xl px-4 pb-5 pt-6 align-top', estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken')}
                 >
                   <span className="flex flex-col items-center gap-1">
                     <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
-                    {plano.destaque ? (
+                    {estaEmDestaque(plano) ? (
                       <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span>
                     ) : (
                       <span className="h-[1.125rem]" />
                     )}
                     <span className="mt-3 w-full font-normal">
-                      <Preco plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
+                      <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
                     </span>
                   </span>
                 </th>
@@ -217,7 +253,7 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
                       key={plano?.id ?? coluna}
                       className={cn(
                         'px-4 py-3.5 text-center align-middle',
-                        plano?.destaque ? 'bg-card' : 'bg-surfacesunken',
+                        plano && estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken',
                         ultima ? 'rounded-b-2xl' : null,
                       )}
                     >
@@ -231,7 +267,7 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
         </table>
 
         <div className="mt-6">
-          <NotaEstudante />
+          <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
         </div>
       </TimelineContent>
 
@@ -241,15 +277,15 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
           <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada}>
             <section
               aria-label={`Plano ${plano.nome}`}
-              className={cn('rounded-2xl border p-5', plano.destaque ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+              className={cn('rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
             >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h3>
-                {plano.destaque ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span> : null}
+                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span> : null}
               </div>
 
               <div className="mt-4">
-                <Preco plano={plano} anual={anual} aoEscolher={() => aoEscolher(plano.id)} />
+                <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
               </div>
 
               <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
@@ -270,12 +306,12 @@ export function SecaoPrecos({ aoEscolher }: SecaoPrecosProps) {
           </TimelineContent>
         ))}
 
-        <NotaEstudante />
+        <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
-        Os planos pagos ainda não estão no ar: nenhuma cobrança é feita e nada é bloqueado hoje. Preço de fundador para as {VAGAS_PRECO_FUNDADOR} primeiras
-        assinaturas — quem entra nessa faixa fica nela para sempre, mesmo quando o preço subir.
+        Preço de fundador para as {VAGAS_PRECO_FUNDADOR} primeiras assinaturas: quem entra nessa faixa fica nela, mesmo quando o preço subir. O
+        pagamento é pelo Mercado Pago, com cartão.
       </p>
       </div>
     </div>

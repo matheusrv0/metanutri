@@ -1,5 +1,6 @@
 import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
 import { calcularEnergia } from './domain/energia.ts'
+import { CONTATO_EMAIL } from './domain/legal.ts'
 import { criarExemplo } from './domain/exemplo.ts'
 import { missoesDoPlano } from './domain/missoes.ts'
 import { idadeDe, listaDeRestricoes } from './domain/pacientes.ts'
@@ -124,7 +125,7 @@ function Conteudo() {
   if (rota.tela === 'precos') {
     return (
       <MolduraPublica atual="precos" temSessao={conta.sessao !== null} aoIrPara={irPara}>
-        <SecaoPrecos aoEscolher={escolherPlano} />
+        <SecaoPrecos contato={CONTATO_EMAIL} aoEscolher={() => escolherPlano()} />
       </MolduraPublica>
     )
   }
