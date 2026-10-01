@@ -84,6 +84,31 @@ describe('Editar sugestões (CA-241 a CA-243, CB-70)', () => {
     expect(ordem()).toHaveLength(6)
   })
 
+  it('item 4: depois de Descer ou Subir, o foco volta ao botão do item que se moveu', async () => {
+    const { usuario } = montar()
+    await usuario.click(screen.getByRole('button', { name: 'Descer Arroz, tipo 1, cozido' }))
+    expect(screen.getByRole('button', { name: 'Descer Arroz, tipo 1, cozido' })).toHaveFocus()
+  })
+
+  it('item 4: chegando à primeira posição, o foco vai para a outra seta do mesmo item', async () => {
+    const { usuario } = montar()
+    await usuario.click(screen.getByRole('button', { name: 'Subir Feijão, carioca, cozido' }))
+    // Feijão chegou à primeira posição: Subir ficou desabilitado, o foco vai para Descer
+    expect(screen.getByRole('button', { name: 'Descer Feijão, carioca, cozido' })).toHaveFocus()
+  })
+
+  it('item 4: lista guardada com alimento repetido entra sem o repetido', () => {
+    montar([{ alimentoId: 3, gramas: 100 }, { alimentoId: 3, gramas: 50 }])
+    expect(ordem()).toEqual(['Arroz, tipo 1, cozido'])
+  })
+
+  it('item 10: alimento que já está na lista diz isso na prévia', async () => {
+    const { usuario } = montar()
+    await usuario.type(campo(), 'arroz tipo 1 cozido')
+    expect(screen.getByText('Já está na lista: Arroz, tipo 1, cozido')).toBeInTheDocument()
+    expect(screen.queryByText(/^Vai entrar/)).not.toBeInTheDocument()
+  })
+
   it('CA-243: Salvar entrega a lista nova e fecha', async () => {
     const { usuario, aoSalvar, aoFechar } = montar()
     await usuario.click(screen.getByRole('button', { name: 'Tirar Alface, crespa, crua' }))
@@ -114,5 +139,14 @@ describe('Editar sugestões (CA-241 a CA-243, CB-70)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
     expect(screen.getByText('Não deu para salvar neste aparelho. As sugestões continuam como estavam.')).toBeInTheDocument()
     expect(aoFechar).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para salvar')
+  })
+
+  it('item 11: mexer na lista depois do aviso faz o aviso sumir', async () => {
+    const { usuario } = montar(SUGESTOES_PADRAO.almoco, false)
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    expect(screen.getByText(/Não deu para salvar/)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Tirar Alface, crespa, crua' }))
+    expect(screen.queryByText(/Não deu para salvar/)).not.toBeInTheDocument()
   })
 })

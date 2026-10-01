@@ -143,6 +143,27 @@ test('prescrição rápida: meta calculada e sugestões por refeição', async (
   await expect(almocoDepois.getByRole('button', { name: 'Adicionar Tomate, com semente, cru, 80 g' })).toHaveCount(0)
 })
 
+test('diálogo de sugestões cabe na tela de 400 px', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
+
+  await page.setViewportSize({ width: 400, height: 800 })
+  await almoco.getByRole('button', { name: 'Editar sugestões para o almoço' }).click()
+  const dialogo = page.getByRole('dialog', { name: 'Sugestões para o almoço' })
+  for (const botao of [
+    dialogo.getByRole('button', { name: 'Tirar Carne, bovina, patinho, sem gordura, grelhado' }),
+    dialogo.getByRole('button', { name: 'Adicionar' }),
+  ]) {
+    const caixa = await botao.boundingBox()
+    expect(caixa).not.toBeNull()
+    expect((caixa?.x ?? 0) + (caixa?.width ?? 0)).toBeLessThanOrEqual(400)
+  }
+})
+
 test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, context }) => {
   await abrirLimpo(page)
   await page.getByRole('button', { name: 'Entendi' }).click()
