@@ -8,17 +8,28 @@ import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 interface LinhaProps {
   readonly rotulo: string
   readonly valor: string
+  readonly classe?: string | undefined
   readonly detalhe?: string | undefined
 }
 
-function Linha({ rotulo, valor, detalhe }: LinhaProps) {
+function Linha({ rotulo, valor, classe, detalhe }: LinhaProps) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-border pb-3 last:border-0 last:pb-0">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="text-sm text-muted-foreground">{rotulo}</span>
-        <span className="numeros text-base font-semibold text-heading">{valor}</span>
+        <span className="text-right">
+          <span className="numeros text-base font-semibold text-heading">{valor}</span>
+          {classe ? (
+            <>
+              <span aria-hidden="true" className="text-muted-foreground">
+                {' · '}
+              </span>
+              <span className="text-sm text-foreground">{classe}</span>
+            </>
+          ) : null}
+        </span>
       </div>
-      {detalhe ? <span className="text-sm text-foreground">{detalhe}</span> : null}
+      {detalhe ? <span className="text-xs text-muted-foreground">{detalhe}</span> : null}
     </div>
   )
 }
@@ -65,7 +76,7 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
           <Linha
             rotulo={`IMC (referência de ${imc.referencia})`}
             valor={`${formatarNumero(imc.valor, 1)} kg/m²`}
-            detalhe={imc.grau ? `${imc.classe} — ${imc.grau}` : imc.classe}
+            classe={imc.grau ? `${imc.classe} — ${imc.grau}` : imc.classe}
           />
         ) : null}
 
@@ -73,7 +84,8 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
           <Linha
             rotulo="IMC-para-idade"
             valor={`escore-z ${formatarNumero(imcIdade.z, 2)}`}
-            detalhe={`${imcIdade.classe} — IMC ${formatarNumero(imcIdade.valorImc, 1)} kg/m² aos ${imcIdade.mesesReferencia} meses`}
+            classe={imcIdade.classe}
+            detalhe={`IMC ${formatarNumero(imcIdade.valorImc, 1)} kg/m² aos ${imcIdade.mesesReferencia} meses`}
           />
         ) : null}
 
@@ -81,7 +93,7 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
           <Linha
             rotulo="Estatura-para-idade"
             valor={`escore-z ${formatarNumero(estaturaIdade.z, 2)}`}
-            detalhe={estaturaIdade.classe}
+            classe={estaturaIdade.classe}
           />
         ) : null}
 
@@ -89,7 +101,8 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
           <Linha
             rotulo="IMC pré-gestacional"
             valor={`${formatarNumero(gestacao.imcPreGestacional, 1)} kg/m²`}
-            detalhe={`${gestacao.rotulo} — ganho recomendado de ${formatarNumero(gestacao.ganhoRecomendadoKg.min, 1)} a ${formatarNumero(
+            classe={gestacao.rotulo}
+            detalhe={`ganho recomendado de ${formatarNumero(gestacao.ganhoRecomendadoKg.min, 1)} a ${formatarNumero(
               gestacao.ganhoRecomendadoKg.max,
               1,
             )} kg até 40 semanas; ganho atual de ${formatarNumero(gestacao.ganhoAtualKg, 1)} kg`}

@@ -97,9 +97,11 @@ describe('Etapa 1: dados do caso', () => {
     expect(screen.getByLabelText('Tempo pós-parto')).toBeInTheDocument()
   })
 
-  it('CB-02a: gestante com sexo masculino é recusada com explicação', async () => {
-    const usuario = montar({ ...adulta, sexo: 'M' })
+  it('CB-74: gestante marcada e sexo trocado para masculino mantém a condição, com o erro', async () => {
+    const usuario = montar(adulta)
     await usuario.click(screen.getByRole('radio', { name: 'Gestante' }))
+    await usuario.click(screen.getByRole('radio', { name: 'Masculino' }))
+    expect(screen.getByRole('radiogroup', { name: 'Condição' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('só pode ser marcada para o sexo feminino')
   })
 

@@ -25,7 +25,7 @@ o projeto já tinha equivalente, ele foi mantido e estendido, não duplicado.
 | Grupo | Componentes |
 |---|---|
 | `forms/` | Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes |
-| `display/` | Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · Fontes\* |
+| `display/` | Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · Fontes\* · Recolhivel\* |
 | `overlay/` | Dialog · Sheet · DropdownMenu |
 | `navigation/` | Tabs · ItemMenu · EtapasDoCaso |
 | `nutricao/` | CartaoDestaque · BarraAdequacao · MedidorMacro |
@@ -35,6 +35,7 @@ Para que serve cada um, quando usar e a API de verdade: [componentes/LEIA-ME.md]
 `forms/CampoTexto.tsx` é arquivo de apoio do `CampoNumero`, não um dos 25.
 
 \* `Fontes` nasceu depois, em 24/09/2026, para recolher as citações de procedência.
+\* `Recolhivel` nasceu em 01/10/2026, para recolher o que é opcional nas telas de trabalho.
 
 Os de `nutricao/` e alguns de `forms/` e `navigation/` conhecem o domínio (importam
 `@/domain/...`). Isso é de propósito: este design system é do MetaNutri, não um pacote

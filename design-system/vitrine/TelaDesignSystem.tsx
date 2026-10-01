@@ -9,6 +9,7 @@ import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
@@ -392,6 +393,19 @@ export function TelaDesignSystem() {
                 { rotulo: 'Energia', texto: 'NASEM. Dietary Reference Intakes for Energy. Washington (DC); 2023.' },
               ]}
             />
+          </Linha>
+        </Secao>
+
+        <Secao nome="Recolhivel" arquivo="display/Recolhivel.tsx" descricao="O que é opcional fica numa linha que abre com um clique">
+          <Linha estado="Fechado, com resumo">
+            <Recolhivel titulo="Composição corporal" resumo="Dobras ou bioimpedância. Opcional." className="w-full">
+              <p className="text-sm text-muted-foreground">Os campos de dobras e de bioimpedância.</p>
+            </Recolhivel>
+          </Linha>
+          <Linha estado="Aberto">
+            <Recolhivel titulo="Ver cálculo" abertoInicial className="w-full">
+              <p className="numeros text-sm text-muted-foreground">TMB 1.330 kcal · fator 1,2</p>
+            </Recolhivel>
           </Linha>
         </Secao>
 

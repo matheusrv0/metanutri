@@ -264,6 +264,17 @@ esconder informação obrigatória só no hover.
 O botão expõe `aria-expanded` e `aria-controls`; os ícones são decorativos
 (`aria-hidden`). *Nasceu depois do export, em 24/09/2026.*
 
+### Recolhivel
+Linha cinza que abre e fecha. Guarda o que é opcional (composição corporal, observações) e o
+detalhe que só interessa às vezes (a conta da energia). O conteúdo fica no DOM; quem chama
+decide se começa aberto, e deve abrir quando já há dado dentro.
+
+```tsx
+<Recolhivel titulo="Composição corporal" resumo="Dobras ou bioimpedância. Opcional." abertoInicial={temDado}>
+  <CamposComposicao caso={caso} aoAlterar={aoAlterar} />
+</Recolhivel>
+```
+
 ---
 
 ## overlay/

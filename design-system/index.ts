@@ -40,6 +40,7 @@ export { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, Ta
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './componentes/display/tooltip.tsx'
 export { Icon, type IconProps, type PastilhaIcone, type TamanhoIcone } from './componentes/display/Icon.tsx'
 export { Fontes, type ItemFonte } from './componentes/display/Fontes.tsx'
+export { Recolhivel } from './componentes/display/Recolhivel.tsx'
 export { CartaoNumero, type TomCartaoNumero } from './componentes/display/CartaoNumero.tsx'
 export { RotuloSecao } from './componentes/display/RotuloSecao.tsx'
 export { LinhaLista } from './componentes/display/LinhaLista.tsx'

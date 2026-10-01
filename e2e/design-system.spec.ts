@@ -15,6 +15,7 @@ const SECOES = [
   'Table',
   'Tooltip · Icon',
   'Fontes',
+  'Recolhivel',
   'Dialog · Sheet · DropdownMenu',
   'Tabs · ItemMenu · EtapasDoCaso',
   'CartaoDestaque',

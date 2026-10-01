@@ -2,12 +2,11 @@ import { PROTOCOLOS, calcularComposicao, completarBioimpedancia, type ProtocoloD
 import type { Caso } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 
-interface CartaoComposicaoProps {
+interface CamposComposicaoProps {
   readonly caso: Caso
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
 }
@@ -21,8 +20,8 @@ const NOME_DOBRA: Record<string, string> = {
   coxa: 'Coxa',
 }
 
-/** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. */
-export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
+/** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
+export function CamposComposicao({ caso, aoAlterar }: CamposComposicaoProps) {
   const { composicao } = caso
   const protocolo = PROTOCOLOS.find((p) => p.id === composicao.protocolo) ?? PROTOCOLOS[0]
   const usadas = caso.sexo && protocolo ? protocolo.necessarias(caso.sexo) : []
@@ -44,12 +43,7 @@ export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
     aoAlterar({ composicao: { ...composicao, bioimpedancia: { ...composicao.bioimpedancia, ...mudanca } } })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Composição corporal</CardTitle>
-        <CardDescription>Opcional. Preencha dobras, bioimpedância ou as duas; o resultado aparece com a equação usada.</CardDescription>
-      </CardHeader>
-
+    <div className="flex flex-col gap-4">
       <GrupoOpcoes<ProtocoloDobras>
         rotulo="Protocolo de dobras"
         opcoes={PROTOCOLOS.map((p) => ({ valor: p.id, rotulo: p.nome }))}
@@ -103,6 +97,6 @@ export function CartaoComposicao({ caso, aoAlterar }: CartaoComposicaoProps) {
           </p>
         ) : null}
       </div>
-    </Card>
+    </div>
   )
 }
