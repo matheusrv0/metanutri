@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 26/09/2026.
+Atualizado em 30/09/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -23,6 +23,13 @@ Atualizado em 26/09/2026.
 > as missões diárias com link do paciente, a tela de Adesão, os cinco planos novos e a
 > contagem de paciente ativo. O que **não** saiu: o meio de pagamento e a sincronização
 > na nuvem, os dois travados no mesmo lugar — o projeto do Supabase ainda não existe.
+>
+> **Atualizado em 30/09:** a conta obrigatória e a verificação de estudante e
+> nutricionista (spec `conta-e-verificacao`, D-39 a D-47) estão prontas no código, com
+> e2e cobrindo os caminhos sem servidor e a trava de publicação enquanto os Termos não
+> têm responsável e contato. Falta você seguir os passos 1 a 6 do README ("Ligar conta,
+> e-mail, verificação e pagamento") e revisar a lista de sugestões (parte 4 do
+> lançamento).
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e

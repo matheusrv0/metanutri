@@ -94,33 +94,12 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
 - **Conta e plano** — entrar, sair e ver a assinatura. Funciona sem conta; veja abaixo.
 
-## Conta na nuvem (opcional)
+## Conta na nuvem (opcional em desenvolvimento)
 
-O sistema roda inteiro sem conta: tudo fica no navegador. A conta serve para usar em
-mais de um aparelho e, no futuro, para cobrar.
-
-Para ligar:
-
-1. Crie um projeto em <https://supabase.com> (o plano gratuito serve)
-2. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
-3. `cp .env.example .env.local` e cole as duas
-4. Em **SQL Editor > New query**, cole e rode os arquivos de [supabase/](supabase/) na
-   ordem: `001-acompanhamentos.sql` (missões), `002-copia-na-nuvem.sql` (cópia dos
-   dados), `003-assinaturas.sql` (cobrança) e `004-uso-nao-comercial.sql` (aviso de
-   conta de estágio)
-5. Reinicie o `npm run dev`
-
-Com isso o link do paciente passa a abrir no celular dele. Sem o passo 4, a conta
-funciona mas as missões continuam só neste navegador.
-
-Por que duas funções em vez de acesso direto à tabela: o paciente não tem conta, e
-uma política de RLS não consegue conferir um token que o próprio visitante afirma ter
-— liberar leitura anônima vazaria os pacientes de todo mundo. As funções recebem o
-token e trabalham numa linha só.
-
-Sem isso, a tela de conta explica o que falta e o app segue normal. **Nunca** coloque
-a chave `service_role` no `.env.local`: ela dá acesso total ao banco e iria para o
-navegador de quem abrir o site.
+Sem o Supabase configurado, o app abre sem conta, inteiro no navegador — é o modo
+local. Com o Supabase configurado, a conta passa a ser obrigatória: a situação de cada
+uma (estudante ou nutricionista) é comprovada, o paciente pode abrir o link das missões
+em outro aparelho e dá para cobrar.
 
 ### Preços
 
@@ -134,49 +113,28 @@ dias (`ehPacienteAtivo`). **Nada é cobrado nem bloqueado hoje**: sem meio de pa
 aplicar limite seria mentira (a constante `LIMITES_ATIVOS` registra isso). A tela de
 Adesão já mostra quantos ativos você tem contra o limite do plano.
 
-## Cobrança (Mercado Pago)
+## Ligar conta, e-mail, verificação e pagamento
 
-O código está pronto; falta configurar. O pagamento acontece **no Mercado Pago**:
-nenhum dado de cartão passa pelo MetaNutri.
+O site exige conta. Para funcionar de verdade, nesta ordem:
 
-Por que existe servidor aqui: o access token do Mercado Pago dá poder de cobrar em
-nome do dono da conta. Se ele fosse para o navegador, qualquer pessoa que abrisse o
-site emitiria cobrança. Por isso ele vive só nas Edge Functions.
+1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://matheusrv0.github.io/metanutri/`.
+   Em *Redirect URLs*: `https://matheusrv0.github.io/metanutri/**` e `http://localhost:5173/**`.
+2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8.
+3. **E-mail (SMTP).** Até ter domínio, os e-mails saem pelo Gmail do MetaNutri: ligue a verificação em duas
+   etapas, crie uma *Senha de app* e preencha *Authentication > Emails > SMTP Settings* (host `smtp.gmail.com`,
+   porta 465, usuário e remetente = o Gmail, senha = a senha de app). Sem SMTP próprio o Supabase só manda
+   e-mail para a equipe do projeto, no máximo 2 por hora.
+4. **SQL.** No SQL Editor, rode `supabase/005-estudante.sql` e depois `supabase/006-verificacao.sql`. Para se
+   marcar como administrador, rode a linha comentada no fim do 006 com o seu e-mail.
+5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
+   como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). As
+   funções `assinar` e `webhook-mercadopago` já estão publicadas. Cadastre o webhook apontando para
+   `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`, evento Assinaturas.
+6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
+   barra a publicação (`scripts/conferir-publicacao.mjs`).
 
-1. Rode `supabase/003-assinaturas.sql` no SQL Editor
-2. Em <https://www.mercadopago.com.br/developers/panel> crie uma aplicação para o
-   MetaNutri e copie o **access token de produção**
-3. Instale a CLI e entre:
-   ```bash
-   npm i -g supabase
-   supabase login
-   supabase link --project-ref qmpljfjbdcrdbqutuvmg
-   ```
-4. Guarde o token no servidor (ele nunca entra no repositório):
-   ```bash
-   supabase secrets set MERCADOPAGO_ACCESS_TOKEN=APP_USR-...
-   supabase secrets set SITE_URL=https://matheusrv0.github.io/metanutri/
-   ```
-5. Publique as duas funções:
-   ```bash
-   supabase functions deploy assinar
-   supabase functions deploy webhook-mercadopago --no-verify-jwt
-   ```
-   O `--no-verify-jwt` é obrigatório na segunda: quem chama é o Mercado Pago, que não
-   tem conta no seu Supabase.
-6. No painel do Mercado Pago, cadastre o webhook apontando para
-   `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
-   evento **Assinaturas**. Copie a chave secreta que ele mostra e guarde:
-   ```bash
-   supabase secrets set MERCADOPAGO_WEBHOOK_SECRET=...
-   ```
-
-Sem o passo 6 o sistema funciona, mas ninguém sai de "pendente": é a notificação do
-Mercado Pago que confirma o pagamento. E sem o segredo, a função aceita notificação de
-qualquer um — inclusive de alguém dizendo que pagou.
-
-**Teste antes de valer dinheiro:** use as credenciais de teste e um usuário de teste
-do Mercado Pago. Assinatura pendente não libera plano pago, de propósito.
+Comprovantes de estudante ficam no balde privado `comprovantes` e são apagados 30 dias depois da decisão, quando
+o administrador abre a tela Aprovações.
 
 ## A marca
 
