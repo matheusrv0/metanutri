@@ -43,7 +43,7 @@ describe('App: estrutura', () => {
   it('CA-324: o botão Novo plano do Painel fica no topo e pergunta o modo', async () => {
     renderizar()
     const usuario = userEvent.setup()
-    const doTopo = screen.getAllByRole('button', { name: 'Novo plano' }).find((b) => !b.closest('nav'))
+    const doTopo = screen.getAllByRole('button', { name: 'Novo plano' }).find((b) => b.closest('header') !== null)
     expect(doTopo).toBeDefined()
     await usuario.click(doTopo as HTMLElement)
     await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
