@@ -32,3 +32,13 @@ export function dataCompleta(iso: string | null | undefined): string {
   const data = lerData(iso)
   return data ? COMPLETA.format(data) : ''
 }
+
+const MES = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
+
+/** "2026-10-01" → "1º de outubro de 2026" (CA-308). Entrada inválida ou vazia devolve vazio. */
+export function dataPorExtenso(iso: string | null | undefined): string {
+  const data = lerData(iso)
+  if (!data) return ''
+  const dia = data.getUTCDate()
+  return `${dia === 1 ? '1º' : dia} de ${MES.format(data)} de ${data.getUTCFullYear()}`
+}

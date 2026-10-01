@@ -1,4 +1,4 @@
-import { dataCompleta, dataCurta } from './formatarData.ts'
+import { dataCompleta, dataCurta, dataPorExtenso } from './formatarData.ts'
 
 describe('Formatação de data em pt-BR', () => {
   it('data de calendário vira dia/mês e dia/mês/ano', () => {
@@ -27,5 +27,18 @@ describe('Formatação de data em pt-BR', () => {
   it('mês inválido não vira data de outro mês', () => {
     // 2026-13-01 não existe; o Date do JavaScript "corrigiria" para janeiro do ano seguinte.
     expect(dataCompleta('2026-13-01')).toBe('')
+  })
+})
+
+describe('dataPorExtenso (CA-308)', () => {
+  it.each([
+    ['2026-10-01', '1º de outubro de 2026'],
+    ['2026-09-15', '15 de setembro de 2026'],
+    ['2026-12-31T10:00:00.000Z', '31 de dezembro de 2026'],
+    ['', ''],
+    [null, ''],
+    ['2026-02-30', ''],
+  ])('%s vira "%s"', (iso, texto) => {
+    expect(dataPorExtenso(iso)).toBe(texto)
   })
 })
