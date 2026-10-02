@@ -8,7 +8,7 @@
  *
  * Os 30 componentes do sistema, na taxonomia do design system:
  *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
- *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista · AnelProgresso
+ *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista · AnelProgresso · GraficoBarras
  *   overlay     Dialog · Sheet · DropdownMenu
  *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
@@ -41,6 +41,7 @@ export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './comp
 export { Icon, type IconProps, type PastilhaIcone, type TamanhoIcone } from './componentes/display/Icon.tsx'
 export { Fontes, type ItemFonte } from './componentes/display/Fontes.tsx'
 export { Recolhivel } from './componentes/display/Recolhivel.tsx'
+export { GraficoBarras, type BarraDoGrafico } from './componentes/display/GraficoBarras.tsx'
 export { CartaoNumero, type TomCartaoNumero } from './componentes/display/CartaoNumero.tsx'
 export { RotuloSecao } from './componentes/display/RotuloSecao.tsx'
 export { LinhaLista } from './componentes/display/LinhaLista.tsx'

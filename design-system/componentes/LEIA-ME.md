@@ -275,6 +275,22 @@ decide se começa aberto, e deve abrir quando já há dado dentro.
 </Recolhivel>
 ```
 
+### GraficoBarras
+Barras verticais de uma série só, com o eixo de marcas à esquerda. A barra em destaque é
+cheia e tem o valor escrito; as outras são mais claras. Passar o mouse ou chegar pelo
+teclado mostra a dica, que também é o que o leitor de tela lê. Sempre na cor da ação,
+nunca no laranja. *Nasceu no painel do dono (spec painel-do-dono).*
+
+```tsx
+<GraficoBarras
+  descricao="Receita por mês"
+  marcas={[{ valor: 0, rotulo: '0' }, { valor: 50000, rotulo: '500' }]}
+  barras={[{ chave: '2026-10', rotulo: 'out', valor: 41230, dica: 'out · R$ 412,30', destaque: true, valorEscrito: 'R$ 412,30' }]}
+/>
+```
+
+O `CartaoNumero` ganhou `extra`: o que vai entre o valor e o rótulo (a barra das vagas de fundador).
+
 ---
 
 ## overlay/

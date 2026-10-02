@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ds/c
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
+import { GraficoBarras } from '@ds/componentes/display/GraficoBarras.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
@@ -407,6 +408,24 @@ export function TelaDesignSystem() {
               <p className="numeros text-sm text-muted-foreground">TMB 1.330 kcal · fator 1,2</p>
             </Recolhivel>
           </Linha>
+        </Secao>
+
+        <Secao nome="GraficoBarras" arquivo="display/GraficoBarras.tsx" descricao="Uma série, a barra em destaque escrita e a dica no mouse ou no teclado">
+          <GraficoBarras
+            descricao="Receita por mês"
+            marcas={[
+              { valor: 0, rotulo: '0' },
+              { valor: 50000, rotulo: '500' },
+              { valor: 100000, rotulo: '1.000' },
+              { valor: 150000, rotulo: '1.500' },
+            ]}
+            barras={[
+              { chave: 'jul', rotulo: 'jul', valor: 67130, dica: 'jul · R$ 671,30' },
+              { chave: 'ago', rotulo: 'ago', valor: 84275, dica: 'ago · R$ 842,75' },
+              { chave: 'set', rotulo: 'set', valor: 102645, dica: 'set · R$ 1.026,45' },
+              { chave: 'out', rotulo: 'out', valor: 123585, dica: 'out · R$ 1.235,85', destaque: true, valorEscrito: 'R$ 1.235,85' },
+            ]}
+          />
         </Secao>
 
         <Secao nome="Dialog · Sheet · DropdownMenu" arquivo="overlay/" descricao="Camadas flutuantes: véu, sombra pop e Esc para fechar">

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@ds/lib/cn.ts'
 
@@ -13,6 +14,8 @@ interface CartaoNumeroProps {
   readonly rotulo: string
   readonly apoio?: string | undefined
   readonly tom?: TomCartaoNumero | undefined
+  /** Entre o valor e o rótulo: uma barra de progresso, por exemplo. */
+  readonly extra?: ReactNode | undefined
   readonly aoClicar?: (() => void) | undefined
   readonly className?: string | undefined
 }
@@ -29,10 +32,13 @@ const APOIO: Readonly<Record<TomCartaoNumero, string>> = {
   teal: 'text-textonbrandmuted',
 }
 
-export function CartaoNumero({ valor, rotulo, apoio, tom = 'branco', aoClicar, className }: CartaoNumeroProps) {
+export function CartaoNumero({ valor, rotulo, apoio, tom = 'branco', extra, aoClicar, className }: CartaoNumeroProps) {
   const conteudo = (
     <>
-      <span className="font-titulo text-4xl font-bold leading-none tracking-tight">{valor}</span>
+      <span className="flex flex-col gap-3">
+        <span className="font-titulo text-4xl font-bold leading-none tracking-tight">{valor}</span>
+        {extra ? <span className="block">{extra}</span> : null}
+      </span>
       <span className="mt-6 flex items-end justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-sm font-semibold">{rotulo}</span>

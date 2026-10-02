@@ -7,6 +7,15 @@ import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 
 describe('CartaoNumero (CA-106, CA-107)', () => {
+  it('o encaixe extra aparece entre o valor e o rótulo', () => {
+    render(<CartaoNumero valor="25 de 200" rotulo="Preço de fundador" extra={<span>barra</span>} />)
+    const valor = screen.getByText('25 de 200')
+    const extra = screen.getByText('barra')
+    const rotulo = screen.getByText('Preço de fundador')
+    expect(valor.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(extra.compareDocumentPosition(rotulo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('sem destino não é botão e não tem seta', () => {
     const { container } = render(<CartaoNumero valor="9" rotulo="Dias trabalhados" />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
