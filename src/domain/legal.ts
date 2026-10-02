@@ -4,7 +4,7 @@
 // (scripts/conferir-publicacao.mjs, Tarefa 13). Ninguém inventa esses valores.
 
 /** Pessoa física responsável pelo MetaNutri e encarregada dos dados pessoais. */
-export const RESPONSAVEL: string | null = null
+export const RESPONSAVEL: string | null = 'Matheus Rondon'
 
 /** Canal de contato do MetaNutri: titular de dados, plano Clínica, faculdade que falta e suporte. */
 export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'

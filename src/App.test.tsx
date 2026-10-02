@@ -136,10 +136,13 @@ describe('App: estrutura', () => {
     expect(screen.getByRole('button', { name: 'Abrir o sistema' })).toBeInTheDocument()
   })
 
-  it('sem servidor: #/termos mostra o aviso de texto em preparação', () => {
+  // O aviso "em preparação" (sem responsável ou contato) é testado em ui/publico/legal.test.tsx.
+  it('sem servidor: #/termos abre os Termos de uso com responsável e contato', () => {
     window.location.hash = '#/termos'
     renderizar()
-    expect(screen.getByText('Este texto está sendo finalizado e entra no ar em breve.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
+    expect(screen.queryByText('Este texto está sendo finalizado e entra no ar em breve.')).not.toBeInTheDocument()
+    expect(screen.getByText(/É oferecido por Matheus Rondon\./)).toBeInTheDocument()
   })
 
   it('sem servidor: #/assinar/solo/mensal mostra o checkout', () => {
