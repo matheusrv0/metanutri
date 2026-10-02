@@ -49,7 +49,7 @@ Pessoas: **assinante** (nutricionista com conta), **dono**.
 - **CA-372** · Dado o banco autorizando, então a tela mostra "Assinatura ativa", com o plano, o ciclo, o e-mail que recebe o recibo e a data da próxima cobrança, e o botão "Ir para o painel". O plano pago já vale no app.
 - **CA-373** · Dado o banco recusando, então a tela continua no checkout com a mensagem do motivo em português (por exemplo "O banco recusou este cartão. Confira os dados ou use outro cartão. Nada foi cobrado."), os campos voltam a funcionar e o código de segurança é apagado.
 - **CA-374** · Dado o servidor fora ou sem internet, então aparece "Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos." e o formulário volta a funcionar.
-- **CA-375** · Dado o preço, então o valor cobrado vem sempre do servidor, nunca do navegador; o navegador manda só plano, ciclo e o código de uso único do cartão.
+- **CA-375** · Dado o preço, então o valor cobrado vem sempre do servidor, nunca do navegador; o navegador manda plano, ciclo, o código de uso único do cartão e, só para mostrar em Conta e plano (D-70), a bandeira e os 4 últimos números. O número inteiro do cartão nunca sai dos campos seguros.
 
 ### US-B2 · Conta e plano (5 pts)
 
