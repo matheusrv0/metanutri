@@ -18,6 +18,19 @@ describe('banco: o cartão da assinatura (spec checkout-proprio, 008)', () => {
   it('D-70: nenhuma política nem permissão nova: quem escreve continua sendo só o servidor', () => {
     expect(sql).not.toMatch(/create policy|grant /i)
   })
+
+  it('C1: a trava contra dois pedidos ao mesmo tempo é uma linha por conta, que só o servidor vê', () => {
+    expect(sql).toContain('create table if not exists public.assinando_agora (')
+    expect(sql).toContain('nutricionista_id uuid primary key references auth.users (id) on delete cascade,')
+    expect(sql).toContain('desde timestamptz not null default now()')
+    expect(sql).toContain('alter table public.assinando_agora enable row level security;')
+    expect(sql).toContain('revoke all on public.assinando_agora from anon, authenticated;')
+    expect(sql).not.toMatch(/revoke[^;]*service_role/i)
+  })
+
+  it('C1: a conferência depois de rodar também mostra a trava', () => {
+    expect(sql).toMatch(/^-- select .*'public\.assinando_agora'/m)
+  })
 })
 
 describe('função assinar (spec checkout-proprio)', () => {
@@ -77,6 +90,61 @@ describe('função assinar (spec checkout-proprio)', () => {
 
   it('nenhum registro leva o código do cartão nem o corpo do pedido', () => {
     for (const linha of registros(assinar)) expect(linha).not.toMatch(/cartaoToken|card_token_id|corpo/)
+  })
+
+  describe('C1: dois pedidos ao mesmo tempo (duas abas) não criam duas assinaturas', () => {
+    const reservar = assinar.indexOf(".from('assinando_agora').insert({ nutricionista_id: uid })")
+    const lerAtual = assinar.indexOf(".from('assinaturas').select('status, plano, preapproval_id, cartao_final')")
+    const postar = assinar.indexOf('await fetch(MP, {')
+    const tentar = assinar.indexOf('try {', reservar)
+    const soltar = assinar.indexOf('} finally {', reservar)
+
+    it('a reserva vem depois de validar o corpo e antes de ler a assinatura e de chamar a operadora', () => {
+      expect(reservar).toBeGreaterThan(assinar.indexOf("return erro('Faltam os dados do cartão. Confira e tente de novo.', 400)"))
+      expect(reservar).toBeGreaterThan(-1)
+      expect(lerAtual).toBeGreaterThan(reservar)
+      expect(postar).toBeGreaterThan(reservar)
+    })
+
+    it('a reserva vencida (função que morreu no meio, mais de 5 minutos) sai antes de reservar', () => {
+      const vencida = assinar.indexOf(".from('assinando_agora').delete().eq('nutricionista_id', uid).lt('desde',")
+      expect(vencida).toBeGreaterThan(-1)
+      expect(vencida).toBeLessThan(reservar)
+      expect(assinar).toContain('5 * 60_000')
+    })
+
+    it('outro pedido já reservado (23505) leva 409; outra falha ao reservar, 502', () => {
+      const depois = assinar.slice(reservar, tentar)
+      expect(depois).toContain("if (erroReserva.code === '23505') return erro('Já estamos confirmando uma assinatura desta conta. Confira em Conta e plano em um minuto.', 409)")
+      expect(depois).toContain('return erro(SEM_COBRANCA, 502)')
+    })
+
+    it('o try começa logo depois da reserva e cobre a leitura, os 409, o POST, a gravação e a compensação; o finally solta a reserva', () => {
+      expect(tentar).toBeGreaterThan(reservar)
+      expect(tentar).toBeLessThan(lerAtual)
+      expect(soltar).toBeGreaterThan(assinar.indexOf('CANCELAMENTO FALHOU'))
+      expect(soltar).toBeGreaterThan(assinar.indexOf("onConflict: 'nutricionista_id'"))
+      expect(assinar.slice(soltar, soltar + 300)).toContain(".from('assinando_agora').delete().eq('nutricionista_id', uid)")
+    })
+
+    it('a assinar usa o cliente com a chave de serviço, que passa pela trava sem política', () => {
+      expect(assinar).toContain('const cliente = createClient(urlSupabase, servico)')
+    })
+  })
+
+  it('C1: assinatura ativa do Clínica também bloqueia assinar de novo', () => {
+    expect(assinar).toContain("atual?.status === 'ativa' && (atual.plano === 'solo' || atual.plano === 'pro' || atual.plano === 'clinica')")
+  })
+
+  it('C1: o POST da operadora tem prazo de 30 s, bem antes de a reserva vencer', () => {
+    const post = assinar.slice(assinar.indexOf('await fetch(MP, {'), assinar.indexOf('body: JSON.stringify({', assinar.indexOf('await fetch(MP, {')))
+    expect(post).toContain('signal: AbortSignal.timeout(30_000),')
+  })
+
+  it('o plano só vale se for chave da própria tabela: "constructor" ou "toString" não sobem pelo protótipo', () => {
+    expect(assinar).toContain('const escolhido = Object.hasOwn(PLANOS, plano) ? PLANOS[plano] : undefined')
+    expect(assinar).not.toMatch(/const escolhido = PLANOS\[plano\]\s*$/m)
+    expect(assinar).toContain("if (!escolhido) return erro('Plano desconhecido.', 400)")
   })
 })
 
