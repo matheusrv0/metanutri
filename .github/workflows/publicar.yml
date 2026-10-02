@@ -37,6 +37,10 @@ jobs:
           # do site de qualquer jeito — é assim que o Supabase foi desenhado.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # A chave PÚBLICA do pagamento (D-72) abre os campos seguros do cartão. É variável,
+          # não segredo: vai no JavaScript do site de qualquer jeito. Sem ela, o checkout
+          # publicado diz "O pagamento não está disponível agora."
+          VITE_MERCADOPAGO_PUBLIC_KEY: ${{ vars.VITE_MERCADOPAGO_PUBLIC_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

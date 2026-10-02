@@ -124,7 +124,7 @@ logo abaixo; depois siga a lista seguinte.
 
 1. Crie o projeto em <https://supabase.com> (o plano gratuito serve). Em **Project Settings > API**,
    copie a *Project URL* e a chave *anon public*.
-2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. Reinicie o
+2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, para o checkout, `VITE_MERCADOPAGO_PUBLIC_KEY` (a Public Key do Mercado Pago). Reinicie o
    `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 008:
@@ -180,6 +180,14 @@ Para funcionar de verdade, nesta ordem:
    evento Assinaturas.
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
    barra a publicação (`scripts/conferir-publicacao.mjs`).
+7. **Chave pública do pagamento.** No Mercado Pago, em *Suas integrações > a aplicação > Credenciais*, copie a
+   **Public Key** do mesmo ambiente do token do passo 5 (a de teste enquanto o token for o de teste). Guarde como
+   variável do GitHub, que o build publicado lê (`.github/workflows/publicar.yml`):
+   ```bash
+   gh variable set VITE_MERCADOPAGO_PUBLIC_KEY --body "<a Public Key>"
+   ```
+   Ela é pública de propósito: vai no navegador, para os campos seguros do cartão. Sem ela, o checkout publicado diz
+   "O pagamento não está disponível agora." Para testar na sua máquina, ponha a mesma chave no `.env.local`.
 
 Comprovantes de estudante ficam no balde privado `comprovantes`. A limpeza dos que passaram de 30 dias depois
 da decisão acontece quando o administrador abre o app (qualquer tela, com a conta de administrador); não há

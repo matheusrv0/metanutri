@@ -1,3 +1,4 @@
+import publicar from '../../.github/workflows/publicar.yml?raw'
 import assinar from '../../supabase/functions/assinar/index.ts?raw'
 import gerenciar from '../../supabase/functions/gerenciar-assinatura/index.ts?raw'
 import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
@@ -191,5 +192,11 @@ describe('função gerenciar-assinatura (spec checkout-proprio)', () => {
 
   it('nenhum registro leva o código do cartão nem o corpo do pedido', () => {
     for (const linha of registros(gerenciar)) expect(linha).not.toMatch(/cartaoToken|card_token_id|corpo/)
+  })
+})
+
+describe('o site publicado (D-72)', () => {
+  it('a chave pública do pagamento vem de uma variável do GitHub', () => {
+    expect(publicar).toContain('VITE_MERCADOPAGO_PUBLIC_KEY: ${{ vars.VITE_MERCADOPAGO_PUBLIC_KEY }}')
   })
 })
