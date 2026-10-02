@@ -94,6 +94,7 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
 - **Conta e plano** — entrar, sair e ver a assinatura. Só funciona sem conta quando o
   Supabase não está configurado (modo local); com ele, a conta é obrigatória. Veja abaixo.
+- **Negócio** (só para o administrador): receita por mês, assinaturas por plano, quem chegou nos últimos 30 dias e a lista de contas. Precisa do `007-painel-do-dono.sql`.
 
 ## Conta na nuvem (opcional em desenvolvimento)
 

@@ -1,6 +1,6 @@
 # SPEC — Painel do dono (tela Negócio)
 
-Status: **aguardando aprovação**. Escrita em 02/10/2026, a partir do protótipo "Painel do dono
+Status: **aprovada** em 02/10/2026. Escrita em 02/10/2026, a partir do protótipo "Painel do dono
 MetaNutri" (`https://claude.ai/code/artifact/350562ab-0dae-4401-84b3-e08e1f6f7a6a`), aprovado
 no mesmo dia ("aprovo").
 

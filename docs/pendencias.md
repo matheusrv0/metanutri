@@ -30,6 +30,10 @@ Atualizado em 01/10/2026.
 > têm responsável e contato. Falta você seguir os passos 1 a 6 do README ("Ligar conta,
 > e-mail, verificação e pagamento") e revisar a lista de sugestões (parte 4 do
 > lançamento).
+>
+> **Atualizado em 02/10:** a tela **Negócio** (spec `painel-do-dono`) mostra receita, assinaturas por plano,
+> quem chegou nos últimos 30 dias e a lista de contas, só para o administrador. Falta rodar o
+> `supabase/007-painel-do-dono.sql`; o histórico de receita começa no dia em que ele rodar.
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
