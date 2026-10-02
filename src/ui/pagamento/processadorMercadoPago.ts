@@ -55,30 +55,38 @@ export function carregarSdk(tempoLimiteMs = 20_000): Promise<ConstrutorDoSdk> {
   const pronto = construtorGlobal()
   if (pronto) return Promise.resolve(pronto)
   if (carregando) return carregando
-  carregando = new Promise<ConstrutorDoSdk>((resolver, rejeitar) => {
+  const minha: Promise<ConstrutorDoSdk> = new Promise<ConstrutorDoSdk>((resolver, rejeitar) => {
     const script = document.createElement('script')
-    const falhar = () => {
+    const encerrar = () => {
       clearTimeout(relogio)
+      script.removeEventListener('error', falhar)
+      script.removeEventListener('load', aoCarregar)
+    }
+    // Um erro tardio de um script que já saiu não pode apagar a tentativa seguinte: só zera se ainda é a minha.
+    const falhar = () => {
+      encerrar()
       script.remove()
-      carregando = null
+      if (carregando === minha) carregando = null
       rejeitar(new Error('O script dos campos seguros não carregou.'))
     }
-    const relogio = setTimeout(falhar, tempoLimiteMs)
-    script.src = URL_DO_SDK
-    script.async = true
-    script.addEventListener('error', falhar)
-    script.addEventListener('load', () => {
+    const aoCarregar = () => {
       const construtor = construtorGlobal()
       if (!construtor) {
         falhar()
         return
       }
-      clearTimeout(relogio)
+      encerrar()
       resolver(construtor)
-    })
+    }
+    const relogio = setTimeout(falhar, tempoLimiteMs)
+    script.src = URL_DO_SDK
+    script.async = true
+    script.addEventListener('error', falhar)
+    script.addEventListener('load', aoCarregar)
     document.head.append(script)
   })
-  return carregando
+  carregando = minha
+  return minha
 }
 
 /** Só para os testes: esquece o script e as instâncias. */
@@ -115,6 +123,8 @@ export function lerMetodoDoCartao(resposta: unknown, bin: string): InfoDoCartao 
  * O que o SDK v2 devolve de verdade (conferido no navegador em 02/10/2026): uma lista de
  * `{ cause, message, field }` sem `code`. O campo vira o código da documentação que o
  * `campoDoErroDoToken` (domain/cartao.ts) já conhece.
+ * Conferidos no navegador: cardNumber, expirationDate/Month/Year e securityCode.
+ * NÃO conferidos (o SDK não valida nome nem CPF): cardholderName e identificationNumber.
  */
 const CODIGO_DO_CAMPO: Readonly<Record<string, string>> = {
   cardNumber: 'E301',
@@ -139,7 +149,7 @@ export function codigosDoErro(erro: unknown): string[] {
     const codigo = o['code']
     const campo = o['field']
     if (typeof codigo === 'string' || typeof codigo === 'number') codigos.push(String(codigo))
-    else if (typeof campo === 'string' && campo in CODIGO_DO_CAMPO) codigos.push(CODIGO_DO_CAMPO[campo] ?? '')
+    else if (typeof campo === 'string' && Object.hasOwn(CODIGO_DO_CAMPO, campo)) codigos.push(CODIGO_DO_CAMPO[campo] ?? '')
     if (typeof o['cause'] === 'object') visitar(o['cause'])
   }
   visitar(erro)
@@ -163,7 +173,9 @@ interface OpcoesDoProcessador {
 export function criarProcessadorMercadoPago(chave: string, opcoes: OpcoesDoProcessador = {}): ProcessadorCartao {
   const carregar = opcoes.carregar ?? (() => carregarSdk())
   const tempoLimiteMs = opcoes.tempoLimiteMs ?? 20_000
-  const campos: Partial<Record<CampoSeguro, CampoDoSdk>> = {}
+  const campos: { [K in CampoSeguro]?: CampoDoSdk | undefined } = {}
+  /** Encerra a montagem que ainda espera os campos (desmontar usa). */
+  let encerrarMontagem: (() => void) | null = null
   let sdk: InstanciaDoSdk | null = null
   let montagem: MontagemDosCampos | null = null
   let avisar: (evento: EventoDosCampos) => void = () => undefined
@@ -182,6 +194,9 @@ export function criarProcessadorMercadoPago(chave: string, opcoes: OpcoesDoProce
     }
     if (bin === binAtual || !sdk) return
     binAtual = bin
+    // Bandeira e tamanho do código do cartão anterior não valem para este (CA-375).
+    cartao = null
+    ajusteDoCodigo = null
     try {
       const resposta = await sdk.getPaymentMethods({ bin })
       if (!vivo || bin !== binAtual) return
@@ -239,9 +254,11 @@ export function criarProcessadorMercadoPago(chave: string, opcoes: OpcoesDoProce
           if (terminou) return
           terminou = true
           clearTimeout(relogio)
+          encerrarMontagem = null
           if (falha) rejeitar(falha)
           else resolver()
         }
+        encerrarMontagem = () => fim(null)
         const relogio = setTimeout(() => fim(new Error('Os campos seguros não ficaram prontos.')), tempoLimiteMs)
         try {
           for (const campo of CAMPOS) {
@@ -300,15 +317,21 @@ export function criarProcessadorMercadoPago(chave: string, opcoes: OpcoesDoProce
       iframe?.focus()
     },
 
+    /**
+     * Se a montagem ainda esperava os campos, ela RESOLVE em silêncio (nunca rejeita depois de
+     * desmontar) e o relógio do tempo limite é apagado. Quem chama (Tarefa 8) deve checar se
+     * ainda está montado antes de usar o resultado.
+     */
     desmontar() {
       vivo = false
+      encerrarMontagem?.()
       for (const campo of CAMPOS) {
         try {
           campos[campo]?.unmount()
         } catch {
           // o iframe já tinha saído
         }
-        Reflect.deleteProperty(campos, campo)
+        campos[campo] = undefined
       }
     },
   }

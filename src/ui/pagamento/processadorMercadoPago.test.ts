@@ -370,3 +370,57 @@ describe('a chave pública (D-72, CB-89)', () => {
     expect(chavePublicaDoPagamento()).toBeNull()
   })
 })
+
+describe('correções da rodada 1 (Tarefa 7)', () => {
+  it('CA-375: trocar de cartão limpa a bandeira; busca que falha não deixa a do cartão anterior', async () => {
+    const { processador, eventos } = await abrirPronto()
+    naTela('cardNumber').emitir('binChange', { bin: '54808328' })
+    await vi.waitFor(() => expect(eventos).toHaveLength(1))
+    sdk.metodos = async () => {
+      throw new Error('rede')
+    }
+    naTela('cardNumber').emitir('binChange', { bin: '50677667' })
+    await vi.waitFor(() => expect(eventos).toHaveLength(2))
+    const dados = await processador.gerarToken({ nome: 'APRO', cpf: '12345678909' })
+    expect(dados.bandeira).not.toBe('Mastercard')
+  })
+
+  it('CA-375: busca que nunca responde também não deixa a bandeira anterior', async () => {
+    const { processador, eventos } = await abrirPronto()
+    naTela('cardNumber').emitir('binChange', { bin: '54808328' })
+    await vi.waitFor(() => expect(eventos).toHaveLength(1))
+    sdk.metodos = () => new Promise<unknown>(() => undefined)
+    naTela('cardNumber').emitir('binChange', { bin: '50677667' })
+    const dados = await processador.gerarToken({ nome: 'APRO', cpf: '12345678909' })
+    expect(dados.bandeira).not.toBe('Mastercard')
+  })
+
+  it('desmontar com a montagem pendente a resolve em silêncio e não deixa o tempo limite rejeitar depois', async () => {
+    vi.useFakeTimers()
+    const processador = criarProcessadorMercadoPago('APP_USR-chave-de-teste', { carregar, tempoLimiteMs: 1000 })
+    const montagem = processador.montar(MONTAGEM, () => undefined)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(sdk.campos).toHaveLength(3)
+    processador.desmontar()
+    await expect(montagem).resolves.toBeUndefined()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('campo com nome de propriedade do Object não vira código', () => {
+    expect(codigosDoErro([{ field: 'constructor' }, { field: 'toString' }, { field: 'cardNumber' }])).toEqual(['E301'])
+  })
+
+  it('CB-88: erro tardio do script que já saiu não apaga a tentativa em andamento', async () => {
+    vi.useFakeTimers()
+    const primeira = carregarSdk(1000)
+    const tag = document.querySelector(`script[src="${URL_DO_SDK}"]`)
+    vi.advanceTimersByTime(1000)
+    await expect(primeira).rejects.toThrow()
+    const segunda = carregarSdk(1000)
+    segunda.catch(() => undefined)
+    tag?.dispatchEvent(new Event('error'))
+    expect(carregarSdk(1000)).toBe(segunda)
+    expect(document.querySelectorAll(`script[src="${URL_DO_SDK}"]`)).toHaveLength(1)
+  })
+})
