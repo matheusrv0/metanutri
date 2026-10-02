@@ -85,9 +85,9 @@ no `DESIGN.md`, para a próxima tela sair igual.
 que o MetaNutri faz de diferente, para decidir se crio conta.
 
 - **CA-112** · Dado a landing, então ela mostra, nesta ordem: o topo, o problema, três números, como funciona, o produto, a faixa final e o rodapé, como no mockup landing v2.
-- **CA-113** · Dado o topo, então ele mostra a composição de pratos, o nome MetaNutri grande e apagado atrás, o título "Faltou cálcio? O MetaNutri diz o que comer.", a descrição e dois cartões de número: 16 nutrientes e 597 alimentos.
+- **CA-113** · Dado o topo, então ele mostra a composição de pratos (sem o nome MetaNutri grande atrás, retirado a seu pedido em 02/10/2026), o título "Faltou cálcio? O MetaNutri diz o que comer.", a descrição e dois cartões de número: 16 nutrientes e 597 alimentos.
 - **CA-114** · Dado qualquer número da landing, então ele é verdadeiro e vem do sistema ou da TACO: 16 nutrientes na adequação, 597 alimentos, até 5 sugestões por nutriente, 57% dos alimentos sem vitamina A medida.
-- **CA-115** · Dado a seção do produto, então ela mostra recortes de telas reais do MetaNutri (Cobrir e missões do paciente), gerados do próprio app.
+- **CA-115** · Dado a seção do produto, então ela mostra recortes de telas reais do MetaNutri (Cobrir e missões do paciente), gerados do próprio app por `scripts/capturas-landing.mjs`, com margem e sem texto cortado, no tema da página (claro ou escuro). Ajuste de 02/10/2026: os recortes antigos colavam o texto na borda.
 - **CA-116** · Dado o menu do topo, quando o visitante clica em "Como funciona", "O diferencial" ou "Preços", então a página rola até a seção ou abre Preços. O botão "Ver como funciona" do topo rola até Como funciona.
 - **CA-116a** · Dado os cartões de número do topo, então o de 16 nutrientes leva até O diferencial e o de 597 alimentos leva até "Fontes dos dados", no rodapé.
 - **CA-117** · Dado um visitante sem sessão, quando clica em "Começar grátis" (topo, produto ou faixa final), então vai para Criar conta com o Free marcado.

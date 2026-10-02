@@ -35,24 +35,16 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
     <>
       <section aria-labelledby="titulo-inicio" className="overflow-hidden px-4 pb-12 sm:px-8">
         <div className="mx-auto max-w-[1216px]">
-          <div className="relative">
-            <p
-              aria-hidden="true"
-              className="pointer-events-none select-none text-center font-marca text-[clamp(88px,19vw,250px)] font-bold leading-none tracking-[-0.05em] text-card"
-            >
-              metanutri
-            </p>
-            <img
-              src={`${BASE}imagens/pratos-heroi.webp`}
-              srcSet={`${BASE}imagens/pratos-heroi-800.webp 800w, ${BASE}imagens/pratos-heroi.webp 1600w`}
-              sizes="(max-width: 640px) 92vw, 900px"
-              width={1600}
-              height={712}
-              decoding="async"
-              alt="Três pratos vistos de cima: salada com grão-de-bico, tigela com tofu e legumes, prato com ovo e tomate."
-              className="relative mx-auto -mt-[clamp(56px,13vw,190px)] h-auto w-[92%] max-w-[900px]"
-            />
-          </div>
+          <img
+            src={`${BASE}imagens/pratos-heroi.webp`}
+            srcSet={`${BASE}imagens/pratos-heroi-800.webp 800w, ${BASE}imagens/pratos-heroi.webp 1600w`}
+            sizes="(max-width: 640px) 92vw, 900px"
+            width={1600}
+            height={712}
+            decoding="async"
+            alt="Três pratos vistos de cima: salada com grão-de-bico, tigela com tofu e legumes, prato com ovo e tomate."
+            className="mx-auto mt-4 h-auto w-[92%] max-w-[900px]"
+          />
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.9fr_auto] lg:items-end">
             <div>
@@ -130,12 +122,33 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
                 <ArrowUpRight aria-hidden="true" />
               </Button>
             </div>
-            <div className="relative min-h-[400px]">
-              <figure className="absolute left-0 top-0 h-[370px] w-[min(300px,80%)] overflow-hidden rounded-xl bg-card px-4 pt-4 shadow-raised">
-                <img src={`${BASE}imagens/cobrir.png`} alt="Tela do botão Cobrir sugerindo rúcula, iogurte e sardinha para completar o cálcio." className="w-full" loading="lazy" />
+            {/* Capturas geradas do próprio app (scripts/capturas-landing.mjs), uma por tema: só a do tema da página carrega. */}
+            <div className="relative h-[440px] sm:h-[460px]">
+              <figure className="absolute left-0 top-0 w-[min(300px,78%)] overflow-hidden rounded-2xl bg-card shadow-raised ring-1 ring-border">
+                {(['claro', 'escuro'] as const).map((tema) => (
+                  <img
+                    key={tema}
+                    src={`${BASE}imagens/cobrir-${tema}.png`}
+                    width={448}
+                    height={585}
+                    alt="Tela do botão Cobrir sugerindo rúcula e iogurte para completar o cálcio."
+                    className={tema === 'claro' ? 'block h-auto w-full dark:hidden' : 'hidden h-auto w-full dark:block'}
+                    loading="lazy"
+                  />
+                ))}
               </figure>
-              <figure className="absolute bottom-0 right-0 h-[280px] w-[min(240px,62%)] overflow-hidden rounded-xl border-[6px] border-card bg-surfacerow shadow-raised">
-                <img src={`${BASE}imagens/missoes-paciente.png`} alt="Tela de missões do paciente com 2 de 5 missões feitas no dia." className="w-full" loading="lazy" />
+              <figure className="absolute bottom-0 right-0 w-[min(230px,58%)] overflow-hidden rounded-[28px] border-[6px] border-card bg-card shadow-raised">
+                {(['claro', 'escuro'] as const).map((tema) => (
+                  <img
+                    key={tema}
+                    src={`${BASE}imagens/missoes-${tema}.png`}
+                    width={390}
+                    height={539}
+                    alt="Tela de missões do paciente com 2 missões feitas no dia."
+                    className={tema === 'claro' ? 'block h-auto w-full dark:hidden' : 'hidden h-auto w-full dark:block'}
+                    loading="lazy"
+                  />
+                ))}
               </figure>
             </div>
           </div>

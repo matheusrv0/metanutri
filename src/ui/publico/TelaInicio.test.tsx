@@ -29,10 +29,24 @@ describe('TelaInicio', () => {
     for (const numero of numeros) expect(screen.getByText(numero)).toBeInTheDocument()
   })
 
-  it('CA-115: o diferencial mostra telas reais do app', () => {
+  it('CA-115: o diferencial mostra telas reais do app, uma captura por tema, só a do tema visível', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    expect(screen.getByAltText(/botão Cobrir/)).toHaveAttribute('src', expect.stringContaining('imagens/cobrir.png'))
-    expect(screen.getByAltText(/missões do paciente/)).toHaveAttribute('src', expect.stringContaining('imagens/missoes-paciente.png'))
+    for (const [alt, nome] of [
+      [/botão Cobrir/, 'cobrir'],
+      [/missões do paciente/, 'missoes'],
+    ] as const) {
+      const [claro, escuro] = screen.getAllByAltText(alt)
+      expect(claro).toHaveAttribute('src', expect.stringContaining(`imagens/${nome}-claro.png`))
+      expect(claro?.className).toContain('dark:hidden')
+      expect(escuro).toHaveAttribute('src', expect.stringContaining(`imagens/${nome}-escuro.png`))
+      expect(escuro?.className).toMatch(/(^| )hidden .*dark:block/)
+    }
+  })
+
+  it('CA-113: o topo não tem mais o nome grande atrás dos pratos', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    expect(screen.queryByText('metanutri')).not.toBeInTheDocument()
+    expect(screen.getByAltText(/Três pratos/)).toBeInTheDocument()
   })
 
   it('CA-117: Começar grátis e Ver preços chamam quem manda', async () => {
