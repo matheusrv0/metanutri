@@ -16,7 +16,13 @@ describe('SQL do painel do dono (spec painel-do-dono)', () => {
 
   it('D-58: o histórico não tem política nenhuma: o gatilho escreve e as funções leem', () => {
     expect(sql).toContain('alter table public.assinaturas_historico enable row level security;')
+    expect(sql).toContain('revoke all on public.assinaturas_historico from anon, authenticated;')
     expect(sql).not.toMatch(/create policy "[^"]+" on public\.assinaturas_historico/)
+  })
+
+  it('I1: as contas têm ordem estável, para a leitura em páginas não repetir nem perder linha', () => {
+    expect(corpoDa('painel_contas')).toContain('order by u.created_at desc, u.id;')
+    expect(corpoDa('painel_historico_assinaturas')).toContain('order by h.quando asc, h.id asc;')
   })
 
   it('D-58: o gatilho grava só quando muda o que conta para a receita', () => {

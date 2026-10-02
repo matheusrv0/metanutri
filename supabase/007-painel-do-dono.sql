@@ -32,6 +32,7 @@ create table if not exists public.assinaturas_historico (
 );
 create index if not exists assinaturas_historico_por_conta on public.assinaturas_historico (nutricionista_id, quando);
 alter table public.assinaturas_historico enable row level security;
+revoke all on public.assinaturas_historico from anon, authenticated;
 -- Sem política nenhuma, de propósito: o gatilho escreve e as funções do painel leem.
 
 create or replace function public.registrar_mudanca_de_assinatura()
@@ -121,7 +122,7 @@ begin
       from auth.users u
       left join public.perfis f on f.id = u.id
       left join public.assinaturas a on a.nutricionista_id = u.id
-     order by u.created_at desc;
+     order by u.created_at desc, u.id;
 end;
 $$;
 
@@ -172,3 +173,6 @@ grant execute on function public.painel_uso() to authenticated;
 -- select plano, ciclo, count(*) from public.assinaturas group by 1, 2; -- pagas com mensal/anual; Estudante sem ciclo
 -- select * from public.painel_uso();                               -- tem que dar "Só o administrador vê estes números.":
 --                                                                     no SQL Editor você não é uma conta do app
+-- Conta logada que NÃO é administradora (troque o uuid por um de auth.users que não esteja em administradores):
+-- begin; set local role authenticated; select set_config('request.jwt.claims', '{"sub":"<uuid>","role":"authenticated"}', true); select * from public.painel_uso(); rollback;
+--   tem que dar "Só o administrador vê estes números."; com o uuid do administrador, devolve uma linha.
