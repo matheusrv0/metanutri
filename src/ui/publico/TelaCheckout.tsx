@@ -36,8 +36,11 @@ interface TelaCheckoutProps {
 
 const PAGOS: readonly PlanoPago[] = ['solo', 'pro']
 
+/** Ref estável: o título da tela de resultado recebe o foco uma vez, quando aparece (leitor de tela). */
+const focarAoAparecer = (el: HTMLElement | null) => el?.focus()
+
 /** O topo do checkout: a marca, "Pagamento protegido" e o andamento com os pontos da logo. */
-function Moldura({ passo, aoIrParaInicio, children }: { readonly passo: 'pagamento' | 'pronto'; readonly aoIrParaInicio: () => void; readonly children: ReactNode }) {
+function Moldura({ passo, aoIrParaInicio, travado = false, children }: { readonly passo: 'pagamento' | 'pronto'; readonly aoIrParaInicio: () => void; readonly travado?: boolean; readonly children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-background px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto flex max-w-[1180px] flex-col gap-5">
@@ -45,6 +48,7 @@ function Moldura({ passo, aoIrParaInicio, children }: { readonly passo: 'pagamen
           <button
             type="button"
             onClick={aoIrParaInicio}
+            disabled={travado}
             aria-label="MetaNutri, início"
             className="inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -76,6 +80,9 @@ function LinhaDoResumo({ icone, rotulo, valor }: { readonly icone: NomeIconeMarc
 }
 
 interface Concluida {
+  /** O que foi enviado: a tela de resultado não segue as props, que podem mudar durante o envio. */
+  readonly plano: PlanoPago
+  readonly ciclo: Ciclo
   readonly ativa: boolean
   readonly proximaCobranca: string
 }
@@ -113,7 +120,7 @@ export function TelaCheckout({
   const desconto = descontoAnualPct(escolhido)
   const prevista = proximaCobrancaPrevista(ciclo, agora)
   // CB-91: quem já paga não vê formulário. A cancelada no prazo pode assinar de novo (CA-380).
-  const jaAssina = assinaturaAtual.status === 'ativa' && (assinaturaAtual.plano === 'solo' || assinaturaAtual.plano === 'pro')
+  const jaAssina = assinaturaAtual.status === 'ativa' && (assinaturaAtual.plano === 'solo' || assinaturaAtual.plano === 'pro' || assinaturaAtual.plano === 'clinica')
   const estudanteAtivo = assinaturaAtual.status === 'ativa' && assinaturaAtual.plano === 'estudante'
 
   const assinar = async () => {
@@ -131,12 +138,14 @@ export function TelaCheckout({
     // CA-371: daqui até a resposta, um pedido só, mesmo com clique duplo.
     enviandoRef.current = true
     setEnviando(true)
+    // Plano e ciclo de agora: ficam travados até a resposta, mas o resultado usa estes valores.
+    const enviado = { plano, ciclo, prevista }
     const gerado = await formulario.gerar()
-    const resultado: ResultadoDaAssinatura = gerado.ok ? await aoAssinar(plano, ciclo, gerado.dados) : { ok: false, erro: gerado.erro }
+    const resultado: ResultadoDaAssinatura = gerado.ok ? await aoAssinar(enviado.plano, enviado.ciclo, gerado.dados) : { ok: false, erro: gerado.erro }
     enviandoRef.current = false
     setEnviando(false)
     if (resultado.ok) {
-      setConcluida({ ativa: resultado.ativa, proximaCobranca: resultado.proximaCobranca ?? prevista })
+      setConcluida({ plano: enviado.plano, ciclo: enviado.ciclo, ativa: resultado.ativa, proximaCobranca: resultado.proximaCobranca ?? enviado.prevista })
       return
     }
     setErro(resultado.erro)
@@ -151,8 +160,8 @@ export function TelaCheckout({
           {concluida.ativa ? (
             <>
               <Logo soSimbolo tamanho={92} />
-              <h1 className="font-titulo text-3xl font-bold text-heading">Assinatura ativa</h1>
-              <p className="text-sm text-muted-foreground">{fraseDaAssinaturaAtiva(plano, ciclo, email, concluida.proximaCobranca)}</p>
+              <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold text-heading focus:outline-none">Assinatura ativa</h1>
+              <p className="text-sm text-muted-foreground">{fraseDaAssinaturaAtiva(concluida.plano, concluida.ciclo, email, concluida.proximaCobranca)}</p>
               <Button size="lg" block onClick={aoIrParaPainel}>
                 Ir para o painel
                 <IconeMarca nome="seta" />
@@ -163,7 +172,7 @@ export function TelaCheckout({
               <span aria-hidden="true" className="grid size-12 place-content-center rounded-full bg-lightwarning text-warningtext [&_svg]:size-6">
                 <IconeMarca nome="calendario" />
               </span>
-              <h1 className="font-titulo text-3xl font-bold text-heading">Pagamento em análise</h1>
+              <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold text-heading focus:outline-none">Pagamento em análise</h1>
               <p className="text-sm text-muted-foreground">O banco ainda está confirmando o cartão. Até lá, vale o Free. Assim que confirmar, o plano libera sozinho.</p>
               <Button variant="outline" size="lg" block onClick={aoIrParaPainel}>
                 Ir para o painel
@@ -199,6 +208,7 @@ export function TelaCheckout({
           checked={aceite}
           disabled={enviando}
           aria-invalid={erroAceite || undefined}
+          aria-describedby={erroAceite ? `${id}-aceite-erro` : undefined}
           onChange={(e) => {
             setAceite(e.target.checked)
             setErroAceite(false)
@@ -213,7 +223,11 @@ export function TelaCheckout({
           .
         </span>
       </label>
-      {erroAceite ? <AvisoPagamento tipo="erro">{ACEITE_FALTANDO}</AvisoPagamento> : null}
+      {erroAceite ? (
+        <div id={`${id}-aceite-erro`}>
+          <AvisoPagamento tipo="erro">{ACEITE_FALTANDO}</AvisoPagamento>
+        </div>
+      ) : null}
       {erro ? <AvisoPagamento tipo="erro">{erro}</AvisoPagamento> : null}
       <Button type="submit" variant="laranja" size="lg" block disabled={!pronto || enviando} aria-busy={enviando || undefined}>
         {enviando ? (
@@ -232,7 +246,7 @@ export function TelaCheckout({
   )
 
   return (
-    <Moldura passo="pagamento" aoIrParaInicio={aoIrParaInicio}>
+    <Moldura passo="pagamento" aoIrParaInicio={aoIrParaInicio} travado={enviando}>
       <form
         noValidate
         onSubmit={(e) => {
@@ -242,6 +256,7 @@ export function TelaCheckout({
         className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)]"
       >
         <main className="flex min-w-0 flex-col gap-7 rounded-2xl bg-card p-5 sm:p-8">
+          <fieldset disabled={enviando} className="contents">
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h1 className="font-titulo text-3xl font-bold leading-tight text-heading">Assine o MetaNutri</h1>
@@ -287,6 +302,7 @@ export function TelaCheckout({
               })}
             </div>
           </div>
+          </fieldset>
 
           {disponivel && !jaAssina && criarProcessador ? (
             <section aria-labelledby={`${id}-cartao`} className="flex flex-col gap-3.5">

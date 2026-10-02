@@ -32,6 +32,7 @@ export interface ValorAssinatura {
 
 export const SEM_NUVEM = 'A conta na nuvem não está configurada neste MetaNutri.'
 export const PEDIDO_EM_ANDAMENTO = 'Espere terminar o pedido anterior.'
+export const SESSAO_TERMINOU = 'Sua sessão terminou. Entre de novo na sua conta e tente outra vez.'
 
 /** O que deu errado: `status` nulo é rede ou servidor fora (CA-374). */
 interface Falha {
@@ -67,8 +68,12 @@ async function lerFalha(erro: unknown): Promise<Falha> {
 function mensagemDaFalha(falha: Falha): string {
   if (falha.status === null) return SERVIDOR_FORA
   if (falha.status === 402) return mensagemDaRecusa(falha.codigo)
+  if (falha.status === 401 && falha.erro === null) return SESSAO_TERMINOU
   return falha.erro ?? SERVIDOR_FORA
 }
+
+/** Sem resposta, erro de servidor ou conflito: o servidor pode ter mudado algo, então a tela lê de novo. A recusa (402) não muda nada. */
+const ehAmbigua = (falha: Falha): boolean => falha.status === null || falha.status >= 500 || falha.status === 409
 
 async function chamar<T>(nome: string, corpo: Record<string, unknown>): Promise<{ readonly dados: T | null; readonly falha: Falha | null }> {
   const cliente = obterSupabase()
@@ -146,7 +151,11 @@ export function useAssinatura(temSessao: boolean): ValorAssinatura {
     (plano: PlanoPago, ciclo: Ciclo, cartao: DadosDoCartao) =>
       umPorVez<ResultadoDaAssinatura>({ ok: false, erro: PEDIDO_EM_ANDAMENTO }, async () => {
         const { dados, falha } = await chamar<{ readonly status?: unknown; readonly proximaCobranca?: unknown }>('assinar', { plano, ciclo, ...doCartao(cartao) })
-        if (falha) return { ok: false, erro: mensagemDaFalha(falha) }
+        if (falha) {
+          // A resposta pode ter se perdido depois de o servidor cobrar: lê de novo para o app não ficar no Free.
+          if (ehAmbigua(falha)) recarregar()
+          return { ok: false, erro: mensagemDaFalha(falha) }
+        }
         // CA-372: o plano pago já vale no app, lido do servidor.
         recarregar()
         const proxima = dados?.proximaCobranca

@@ -330,6 +330,8 @@ function Conteudo() {
   }
 
   if (rota.tela === 'assinar') {
+    // Quem já assina não pode ver o formulário (nem carregar o script do cartão) antes de a assinatura chegar.
+    if (!cobranca.carregado) return telaCarregando
     return (
       <TelaCheckout
         plano={rota.plano}

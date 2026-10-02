@@ -254,11 +254,60 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     semIconeDeBiblioteca()
     expect(container.textContent).not.toMatch(/[✓✔★☆]|\p{Extended_Pictographic}/u)
     const andamento = screen.getByRole('list', { name: 'Andamento' })
-    expect(andamento).toHaveTextContent('ContaPlanoPagamentoPronto')
+    expect(andamento).toHaveTextContent(/Conta.*concluído.*Plano.*concluído.*PagamentoPronto/)
     expect(within(andamento).getByText('Pagamento').closest('li')).toHaveAttribute('aria-current', 'step')
     await preencherTudo(usuario, falso)
     await usuario.click(botaoAssinar())
     await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })
     semIconeDeBiblioteca()
+  })
+
+  it('CA-375: durante o envio, plano e ciclo travam e o resultado mostra o que foi enviado, mesmo se as props mudarem', async () => {
+    let terminar: (resultado: ResultadoDaAssinatura) => void = () => undefined
+    const { usuario, falso, rerender, aoTrocar, aoAssinar, aoIrParaPainel, aoIrParaInicio } = await montar({
+      aoAssinar: () =>
+        new Promise<ResultadoDaAssinatura>((resolver) => {
+          terminar = resolver
+        }),
+    })
+    await preencherTudo(usuario, falso)
+    await usuario.click(botaoAssinar())
+    await screen.findByRole('button', { name: 'Confirmando com o banco…' })
+    expect(screen.getByRole('radio', { name: /Anual/ })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /Pro/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'MetaNutri, início' })).toBeDisabled()
+    rerender(
+      <TelaCheckout
+        plano="pro"
+        ciclo="anual"
+        email="maria@exemplo.com"
+        assinaturaAtual={SEM_ASSINATURA}
+        vagasRestantes={186}
+        disponivel
+        criarProcessador={falso.criar}
+        aoTrocar={aoTrocar}
+        aoAssinar={aoAssinar}
+        aoIrParaPainel={aoIrParaPainel}
+        aoIrParaInicio={aoIrParaInicio}
+        agora={AGORA}
+      />,
+    )
+    await act(async () => terminar(ATIVA))
+    const titulo = await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })
+    expect(screen.getByText(/Plano Solo, mensal\./)).toBeInTheDocument()
+    expect(titulo).toHaveFocus()
+  })
+
+  it('CA-370: a mensagem da autorização fica ligada à caixa', async () => {
+    const { usuario } = await montar()
+    await usuario.click(botaoAssinar())
+    const caixa = screen.getByRole('checkbox', { name: /Autorizo a cobrança/ })
+    expect(caixa).toHaveAccessibleDescription('Marque a autorização da cobrança para assinar.')
+  })
+
+  it('quem tem o plano Clínica ativo também não vê o formulário', async () => {
+    const { falso } = await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'clinica', planoPedido: 'clinica', status: 'ativa' } })
+    expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
+    expect(falso.criados).toBe(0)
   })
 })

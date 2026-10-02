@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { CONFIRA_O_CARTAO, mensagemDaRecusa, SERVIDOR_FORA } from '@/domain/cartao.ts'
-import { PEDIDO_EM_ANDAMENTO, useAssinatura, type ResultadoDaAssinatura, type ResultadoDaMudanca } from './usarAssinatura.ts'
+import { PEDIDO_EM_ANDAMENTO, SESSAO_TERMINOU, useAssinatura, type ResultadoDaAssinatura, type ResultadoDaMudanca } from './usarAssinatura.ts'
 
 const { cliente } = vi.hoisted(() => {
   const cliente = {
@@ -196,6 +196,36 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await act(async () => {
       terminar({ data: { status: 'cancelada', expiraEm: null }, error: null })
       await primeiro
+    })
+  })
+
+  it('resposta perdida ou erro de servidor ao assinar: a assinatura é lida de novo; recusa (402) não', async () => {
+    const { result } = await aberto()
+    let antes = cliente.leituras
+    cliente.invocar.mockResolvedValueOnce(respondeu(502, { erro: 'x' }))
+    await act(async () => {
+      await result.current.assinar('solo', 'mensal', CARTAO)
+    })
+    await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
+    antes = cliente.leituras
+    cliente.invocar.mockResolvedValueOnce({ data: null, error: new Error('Failed to fetch') })
+    await act(async () => {
+      await result.current.assinar('solo', 'mensal', CARTAO)
+    })
+    await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
+    antes = cliente.leituras
+    cliente.invocar.mockResolvedValueOnce(respondeu(402, { erro: 'x', codigo: 'cc_rejected_other_reason' }))
+    await act(async () => {
+      await result.current.assinar('solo', 'mensal', CARTAO)
+    })
+    expect(cliente.leituras).toBe(antes)
+  })
+
+  it('sessão vencida (401 sem frase) pede para entrar de novo', async () => {
+    cliente.invocar.mockResolvedValue(respondeu(401, {}))
+    const { result } = await aberto()
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: SESSAO_TERMINOU })
     })
   })
 })

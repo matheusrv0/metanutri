@@ -37,6 +37,7 @@ export function AndamentoCheckout({ atual }: { readonly atual: 'pagamento' | 'pr
                 )}
               />
               <span className={cn('text-xs font-semibold', agora ? 'text-heading' : 'text-muted-foreground')}>{passo.rotulo}</span>
+              {feito ? <span className="sr-only">concluído</span> : null}
             </li>
           </Fragment>
         )
