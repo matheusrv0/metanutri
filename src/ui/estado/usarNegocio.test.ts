@@ -4,11 +4,13 @@ import { FALHA_AO_LER_NEGOCIO, useNegocio } from './usarNegocio.ts'
 const banco = vi.hoisted(() => ({
   respostas: {} as Record<string, { data: unknown; error: unknown }>,
   chamadas: [] as string[],
+  pendente: undefined as Promise<{ data: unknown; error: unknown }> | undefined,
 }))
 
 const cliente = {
   rpc: async (funcao: string) => {
     banco.chamadas.push(funcao)
+    if (funcao === 'painel_contas' && banco.pendente) return banco.pendente
     return banco.respostas[funcao] ?? { data: null, error: null }
   },
 }
@@ -43,6 +45,7 @@ describe('useNegocio', () => {
       painel_uso: { data: [{ links_30_dias: 3, copias_30_dias: 2 }], error: null },
     }
     banco.chamadas = []
+    banco.pendente = undefined
   })
 
   it('CA-363: lê contas, histórico e uso ao abrir e guarda a hora da leitura', async () => {
@@ -95,9 +98,16 @@ describe('useNegocio', () => {
     const { result } = renderHook(() => useNegocio(true))
     await waitFor(() => expect(result.current.dados).not.toBeNull())
     banco.chamadas = []
-    act(() => {
-      result.current.atualizar()
-      result.current.atualizar()
+    let soltar: (resposta: { data: unknown; error: unknown }) => void = () => {}
+    banco.pendente = new Promise((resolve) => {
+      soltar = resolve
+    })
+    act(() => result.current.atualizar())
+    expect(result.current.carregando).toBe(true)
+    act(() => result.current.atualizar())
+    await act(async () => {
+      soltar({ data: [linhaConta], error: null })
+      await banco.pendente
     })
     await waitFor(() => expect(result.current.carregando).toBe(false))
     expect(banco.chamadas.filter((c) => c === 'painel_contas')).toHaveLength(1)
