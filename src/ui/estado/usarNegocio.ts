@@ -37,6 +37,25 @@ interface Leitura {
 const lista = <T,>(dados: unknown, ler: (linha: unknown) => T | null): T[] =>
   Array.isArray(dados) ? dados.map(ler).filter((x): x is T => x !== null) : []
 
+/** O PostgREST devolve no máximo 1000 linhas por chamada: as listas são lidas em páginas desse tamanho. */
+const TAMANHO_DA_PAGINA = 1000
+
+type ClienteSupabase = NonNullable<ReturnType<typeof obterSupabase>>
+type Erro = { readonly message?: string; readonly code?: string }
+type Pagina = { readonly data: unknown; readonly error: Erro | null }
+
+/** Lê a lista inteira, página a página; erro em qualquer página falha a leitura toda. */
+async function lerTudo(cliente: ClienteSupabase, funcao: 'painel_contas' | 'painel_historico_assinaturas'): Promise<Pagina> {
+  const linhas: unknown[] = []
+  for (let de = 0; ; de += TAMANHO_DA_PAGINA) {
+    const pagina: Pagina = await cliente.rpc(funcao).range(de, de + TAMANHO_DA_PAGINA - 1)
+    if (pagina.error) return pagina
+    const recebidas = Array.isArray(pagina.data) ? pagina.data : []
+    linhas.push(...recebidas)
+    if (recebidas.length < TAMANHO_DA_PAGINA) return { data: linhas, error: null }
+  }
+}
+
 /** CA-344: a recusa do banco tem a própria frase; o resto é rede ou servidor fora (CB-78). */
 const mensagem = (erro: { readonly message?: string; readonly code?: string }): string =>
   erro.code === '42501' && erro.message ? erro.message : FALHA_AO_LER_NEGOCIO
@@ -50,7 +69,7 @@ export function useNegocio(ativo: boolean): ValorNegocio {
     if (!cliente || !ativo) return
     let vivo = true
     const falhou = (erro: string) => setLeitura((anterior) => ({ pedido, dados: anterior?.dados ?? null, erro }))
-    void Promise.all([cliente.rpc('painel_contas'), cliente.rpc('painel_historico_assinaturas'), cliente.rpc('painel_uso')]).then(
+    void Promise.all([lerTudo(cliente, 'painel_contas'), lerTudo(cliente, 'painel_historico_assinaturas'), cliente.rpc('painel_uso')]).then(
       ([contas, historico, uso]) => {
         if (!vivo) return
         const erro = contas.error ?? historico.error ?? uso.error

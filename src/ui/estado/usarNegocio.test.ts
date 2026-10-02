@@ -4,14 +4,28 @@ import { FALHA_AO_LER_NEGOCIO, useNegocio } from './usarNegocio.ts'
 const banco = vi.hoisted(() => ({
   respostas: {} as Record<string, { data: unknown; error: unknown }>,
   chamadas: [] as string[],
+  faixas: [] as string[],
   pendente: undefined as Promise<{ data: unknown; error: unknown }> | undefined,
 }))
 
+type Resposta = { data: unknown; error: unknown }
+
+const responder = async (funcao: string, faixa?: readonly [number, number]): Promise<Resposta> => {
+  if (faixa) banco.faixas.push(`${funcao}:${faixa[0]}-${faixa[1]}`)
+  if (funcao === 'painel_contas' && banco.pendente) return banco.pendente
+  const resposta = banco.respostas[funcao] ?? { data: null, error: null }
+  if (faixa && Array.isArray(resposta.data)) return { ...resposta, data: resposta.data.slice(faixa[0], faixa[1] + 1) }
+  return resposta
+}
+
+// O rpc do Supabase serve para await direto (painel_uso) e para .range(de, ate) (as listas).
 const cliente = {
-  rpc: async (funcao: string) => {
+  rpc: (funcao: string) => {
     banco.chamadas.push(funcao)
-    if (funcao === 'painel_contas' && banco.pendente) return banco.pendente
-    return banco.respostas[funcao] ?? { data: null, error: null }
+    return {
+      range: (de: number, ate: number) => responder(funcao, [de, ate]),
+      then: (ok: (r: Resposta) => unknown, falha?: (e: unknown) => unknown) => responder(funcao).then(ok, falha),
+    }
   },
 }
 
@@ -45,6 +59,7 @@ describe('useNegocio', () => {
       painel_uso: { data: [{ links_30_dias: 3, copias_30_dias: 2 }], error: null },
     }
     banco.chamadas = []
+    banco.faixas = []
     banco.pendente = undefined
   })
 
@@ -111,6 +126,29 @@ describe('useNegocio', () => {
     })
     await waitFor(() => expect(result.current.carregando).toBe(false))
     expect(banco.chamadas.filter((c) => c === 'painel_contas')).toHaveLength(1)
+  })
+
+  it('I1: lê as contas em páginas de 1000 até vir uma página incompleta', async () => {
+    banco.respostas['painel_contas'] = {
+      data: Array.from({ length: 1001 }, (_, i) => ({ ...linhaConta, id: `u${i}` })),
+      error: null,
+    }
+    const { result } = renderHook(() => useNegocio(true))
+    await waitFor(() => expect(result.current.dados).not.toBeNull())
+    expect(result.current.dados?.contas).toHaveLength(1001)
+    expect(banco.faixas.filter((f) => f.startsWith('painel_contas'))).toEqual(['painel_contas:0-999', 'painel_contas:1000-1999'])
+  })
+
+  it('I1: lê o histórico em páginas de 1000 até vir uma página incompleta', async () => {
+    const mudanca = { nutricionista_id: 'u1', plano: 'pro', status: 'ativa', ciclo: 'mensal', valor_centavos: 6490, preco_travado: true, quando: '2026-09-21T12:00:00Z' }
+    banco.respostas['painel_historico_assinaturas'] = { data: Array.from({ length: 1001 }, () => mudanca), error: null }
+    const { result } = renderHook(() => useNegocio(true))
+    await waitFor(() => expect(result.current.dados).not.toBeNull())
+    expect(result.current.dados?.historico).toHaveLength(1001)
+    expect(banco.faixas.filter((f) => f.startsWith('painel_historico'))).toEqual([
+      'painel_historico_assinaturas:0-999',
+      'painel_historico_assinaturas:1000-1999',
+    ])
   })
 
   it('leitura boa depois de uma falha limpa o aviso', async () => {
