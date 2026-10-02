@@ -126,9 +126,9 @@ logo abaixo; depois siga a lista seguinte.
 2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. Reinicie o
    `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
-3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 006:
+3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 007:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
-   `005-estudante.sql` e `006-verificacao.sql`.
+   `005-estudante.sql`, `006-verificacao.sql` e `007-painel-do-dono.sql`.
 4. Publique as duas funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -157,6 +157,8 @@ Para funcionar de verdade, nesta ordem:
 4. **SQL.** No SQL Editor, rode `supabase/005-estudante.sql` e depois `supabase/006-verificacao.sql`. Para se
    marcar como administrador, rode a linha comentada no fim do 006 com o seu e-mail. O 006 pode rodar de novo
    quando mudar: ele refaz as funções sem apagar dados.
+   Depois rode `supabase/007-painel-do-dono.sql`: ele guarda o ciclo e o histórico das assinaturas e cria as
+   leituras da tela Negócio. O histórico começa no dia em que ele rodar; também pode rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). As
    funções `assinar` e `webhook-mercadopago` já estão publicadas. Cadastre o webhook apontando para
