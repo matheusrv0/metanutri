@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
+import { VERSAO_TERMOS } from '@/domain/legal.ts'
 import type { ValorConta } from '../../estado/usarConta.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaCriarConta } from './TelaCriarConta.tsx'
@@ -74,7 +75,7 @@ describe('TelaCriarConta', () => {
     await comoNutricionista(usuario)
     await usuario.click(botaoCriar())
     expect(conta.cadastrar).toHaveBeenCalledWith(
-      expect.objectContaining({ situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, planoDesejado: 'free', versaoTermos: '2026-10-02' }),
+      expect.objectContaining({ situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, planoDesejado: 'free', versaoTermos: VERSAO_TERMOS }),
     )
     expect(aoCriada).toHaveBeenCalledWith({ email: 'ana@gmail.com', plano: 'free', situacao: 'nutricionista', confirmarEmail: true })
   })

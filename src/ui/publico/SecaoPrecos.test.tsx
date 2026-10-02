@@ -74,4 +74,10 @@ describe('SecaoPrecos', () => {
     const doPro = cabecalhos.find((c) => c.textContent?.includes('Pro'))
     expect(doPro?.textContent).toContain('Mais escolhido')
   })
+
+  it('CA-381: a nota de pagamento fala de cartão de crédito no site e não cita o processador', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
+    expect(screen.getByText(/O pagamento é com cartão de crédito, aqui mesmo no site, e você cancela quando quiser em Conta e plano\./)).toBeInTheDocument()
+  })
 })

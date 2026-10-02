@@ -39,3 +39,13 @@ test('CA-367: o checkout não cita o processador e, sem conta na nuvem, não car
   expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
   await expect(page.locator('script[src*="mercadopago"]')).toHaveCount(0)
 })
+
+test('CA-381: Preços e Termos não citam o processador', async ({ page }) => {
+  await page.goto('/#/precos')
+  await expect(page.getByRole('radiogroup', { name: 'Período de cobrança' }).first()).toBeVisible()
+  expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
+
+  await page.goto('/#/termos')
+  await expect(page.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeVisible()
+  expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
+})

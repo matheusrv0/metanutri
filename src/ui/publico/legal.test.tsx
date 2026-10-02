@@ -68,4 +68,22 @@ describe('documentos legais', () => {
     expect(texto).toContain('são enviados pelo Resend')
     expect(texto).not.toContain('Gmail')
   })
+
+  it('CA-381: os termos dizem cartão de crédito, renovação sozinha e cancelamento em Conta e plano, sem citar o processador', () => {
+    render(<TelaTermos />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('Solo e Pro são assinaturas pagas com cartão de crédito')
+    expect(texto).toContain('renovam sozinhas')
+    expect(texto).toContain('Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago')
+    expect(texto).not.toMatch(/mercado ?pago/i)
+  })
+
+  it('CA-382: a política diz quem processa o cartão, que ele vai direto e criptografado, e o pouco que o MetaNutri guarda', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('O pagamento é processado pelo Mercado Pago.')
+    expect(texto).toContain('vão direto do seu navegador para ele, criptografados, sem passar pelo MetaNutri')
+    expect(texto).toContain('O MetaNutri guarda só a bandeira, os 4 últimos números do cartão e a data da próxima cobrança')
+    expect(texto).not.toContain('Nenhum dado de cartão passa pelo MetaNutri')
+  })
 })

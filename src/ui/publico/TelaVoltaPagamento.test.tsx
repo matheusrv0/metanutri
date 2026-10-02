@@ -68,4 +68,22 @@ describe('TelaVoltaPagamento', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Conferir de novo' }))
     expect(recarregar).toHaveBeenCalled()
   })
+
+  it('CA-381 e CA-383: nenhum estado cita o processador nem usa ícone de biblioteca', () => {
+    const estados: [Assinatura, boolean][] = [
+      [SEM_ASSINATURA, false],
+      [assinatura({ plano: 'solo', planoPedido: 'solo', status: 'ativa' }), true],
+      [assinatura({ planoPedido: 'solo', status: 'pendente' }), true],
+      [assinatura({ planoPedido: 'pro', status: 'cancelada' }), true],
+    ]
+    for (const [a, carregado] of estados) {
+      const { container, unmount } = montar(a, carregado)
+      expect(container.textContent).not.toMatch(/mercado ?pago/i)
+      expect(container.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+      unmount()
+    }
+    Object.defineProperty(globalThis.navigator, 'onLine', { value: false, configurable: true })
+    const { container } = montar(assinatura({ planoPedido: 'solo', status: 'pendente' }))
+    expect(container.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+  })
 })

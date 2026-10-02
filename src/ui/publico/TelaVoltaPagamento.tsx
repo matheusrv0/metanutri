@@ -1,4 +1,5 @@
-import { Check, Clock, WifiOff, X } from 'lucide-react'
+import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
+import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { useEffect, useState, type ReactNode } from 'react'
 import { respostaDaVolta, type Assinatura } from '@/domain/assinatura.ts'
 import { planoPorId } from '@/domain/conta.ts'
@@ -34,7 +35,7 @@ function Cartao({ selo, tom, titulo, children }: { readonly selo: ReactNode; rea
   )
 }
 
-/** A volta do Mercado Pago (spec estilo-spora, US-1.9). O plano só muda com a confirmação do servidor. */
+/** A volta do pagamento (spec estilo-spora, US-1.9), para os links de antes do checkout próprio. O plano só muda com a confirmação do servidor. Nenhum texto cita o processador (CA-381) e os ícones são os da marca (CA-383). */
 export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrParaPainel, aoTentarDeNovo }: TelaVoltaPagamentoProps) {
   const [inicio, setInicio] = useState(() => Date.now())
   const [esgotou, setEsgotou] = useState(false)
@@ -59,7 +60,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
 
   if (semInternet) {
     return (
-      <Cartao selo={<WifiOff />} tom="neutro" titulo="Não consegui conferir">
+      <Cartao selo={<IconeMarca nome="alerta" />} tom="neutro" titulo="Não consegui conferir">
         <p className="text-sm text-muted-foreground">Parece que você está sem internet. Assim que voltar, confira de novo.</p>
         <Button size="lg" block onClick={conferirDeNovo}>
           Conferir de novo
@@ -70,7 +71,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
 
   if (!carregado) {
     return (
-      <Cartao selo={<Clock />} tom="neutro" titulo="Conferindo o pagamento…">
+      <Cartao selo={<PontosDaMarca pulsando />} tom="neutro" titulo="Conferindo o pagamento…">
         <p role="status" className="text-sm text-muted-foreground">
           Um instante.
         </p>
@@ -80,7 +81,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
 
   if (resposta === 'ativa') {
     return (
-      <Cartao selo={<Check />} tom="ok" titulo="Assinatura ativa">
+      <Cartao selo={<IconeMarca nome="check" destaque />} tom="ok" titulo="Assinatura ativa">
         <p className="text-sm text-muted-foreground">Seu plano agora é o {planoPorId(assinatura.plano)?.nome}. Já dá para usar tudo o que ele inclui.</p>
         <Button size="lg" block onClick={aoIrParaPainel}>
           Ir para o painel
@@ -91,7 +92,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
 
   if (resposta === 'analise') {
     return (
-      <Cartao selo={<Clock />} tom="analise" titulo="Pagamento em análise">
+      <Cartao selo={<IconeMarca nome="calendario" />} tom="analise" titulo="Pagamento em análise">
         <p className="text-sm text-muted-foreground">Alguns pagamentos levam uns minutos para confirmar. Até lá, vale o Free. Esta tela confere sozinha.</p>
         {esgotou ? (
           <Button size="lg" block onClick={conferirDeNovo}>
@@ -106,7 +107,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
   }
 
   return (
-    <Cartao selo={<X />} tom="erro" titulo="Pagamento não concluído">
+    <Cartao selo={<IconeMarca nome="fechar" />} tom="erro" titulo="Pagamento não concluído">
       <p className="text-sm text-muted-foreground">Nada foi cobrado. Você pode tentar de novo.</p>
       <Button size="lg" block onClick={() => aoTentarDeNovo(ehPlanoPago(assinatura.planoPedido) ? assinatura.planoPedido : 'solo')}>
         Tentar de novo

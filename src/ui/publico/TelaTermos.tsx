@@ -33,10 +33,13 @@ export function TelaTermos() {
 
       <h2>Planos e pagamento</h2>
       <ul>
-        <li>Solo e Pro são assinaturas no Mercado Pago, pagas com cartão, no ciclo mensal ou anual, e renovam sozinhas.</li>
-        <li>Para cancelar, cancele a assinatura no Mercado Pago. O plano pago vale até o fim do período já pago.</li>
+        <li>Solo e Pro são assinaturas pagas com cartão de crédito, no ciclo mensal ou anual, e renovam sozinhas até você cancelar.</li>
+        <li>Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago; depois a conta volta para o Free, sem perder nada.</li>
         <li>Quem entrou no preço de fundador mantém esse preço enquanto a assinatura estiver ativa.</li>
-        <li>O plano só muda quando o pagamento é confirmado.</li>
+        <li>
+          O plano pago começa quando o banco autoriza o cartão. Se as cobranças forem recusadas também nas novas tentativas, a assinatura é cancelada
+          e a conta volta para o Free.
+        </li>
       </ul>
 
       <h2>Plano Estudante</h2>
