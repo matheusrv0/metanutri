@@ -16,6 +16,7 @@ const SECOES = [
   'Tooltip · Icon',
   'Fontes',
   'Recolhivel',
+  'IconeMarca · PontosDaMarca',
   'Dialog · Sheet · DropdownMenu',
   'Tabs · ItemMenu · EtapasDoCaso',
   'CartaoDestaque',

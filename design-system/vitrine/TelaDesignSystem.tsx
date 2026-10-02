@@ -11,6 +11,8 @@ import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { GraficoBarras } from '@ds/componentes/display/GraficoBarras.tsx'
+import { IconeMarca, NOMES_ICONE_MARCA } from '@ds/componentes/display/IconeMarca.tsx'
+import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
@@ -426,6 +428,25 @@ export function TelaDesignSystem() {
               { chave: 'out', rotulo: 'out', valor: 123585, dica: 'out · R$ 1.235,85', destaque: true, valorEscrito: 'R$ 1.235,85' },
             ]}
           />
+        </Secao>
+        <Secao nome="IconeMarca · PontosDaMarca" arquivo="display/" descricao="Traço arredondado e um ponto, como a logo; só no checkout, em Conta e plano e na volta do pagamento">
+          <Linha estado="Os nove ícones">
+            {NOMES_ICONE_MARCA.map((nome) => (
+              <span key={nome} className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                <IconeMarca nome={nome} className="size-7 text-heading" />
+                {nome}
+              </span>
+            ))}
+          </Linha>
+          <Linha estado="Ponto em destaque">
+            <IconeMarca nome="check" destaque className="size-7 text-heading" />
+            <IconeMarca nome="seta" destaque className="size-7 text-heading" />
+            <IconeMarca nome="cadeado" destaque className="size-7 text-heading" />
+          </Linha>
+          <Linha estado="Pontos da marca: parados e pulsando">
+            <PontosDaMarca className="text-heading" />
+            <PontosDaMarca pulsando className="text-heading" />
+          </Linha>
         </Secao>
 
         <Secao nome="Dialog · Sheet · DropdownMenu" arquivo="overlay/" descricao="Camadas flutuantes: véu, sombra pop e Esc para fechar">

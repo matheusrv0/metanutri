@@ -229,7 +229,7 @@ Bolha no hover e no foco: explica a fonte de um número ou uma marca de notaçã
 ```
 
 ### Icon
-Ícone do sistema. Lucide é o único conjunto. O que o componente acrescenta são as regras
+Ícone do sistema. Lucide é o conjunto do app; o checkout, Conta e plano e a volta do pagamento usam o `IconeMarca`. O que o componente acrescenta são as regras
 do design system: traço 1,75, três tamanhos e a pastilha redonda.
 
 O glifo entra como **componente importado**, não como nome em texto — é o que mantém o
@@ -290,6 +290,34 @@ nunca no laranja. *Nasceu no painel do dono (spec painel-do-dono).*
 ```
 
 O `CartaoNumero` ganhou `extra`: o que vai entre o valor e o rótulo (a barra das vagas de fundador).
+
+### IconeMarca
+Os ícones da marca, no traço da logo: linha arredondada de 1,8 e um ponto. Só no checkout, em
+Conta e plano e na volta do pagamento, onde ícone de biblioteca não entra (spec checkout-proprio,
+D-73 e CA-383); o resto do app continua no `Icon` (Lucide). A cor é a do texto; `destaque`
+pinta o ponto principal de laranja, como a última bolinha da logo (grafismo, nunca texto). Sem
+`titulo`, é decorativo e fica escondido do leitor de tela. *Nasceu no checkout próprio.*
+
+```tsx
+<IconeMarca nome="cadeado" className="size-4" />
+<IconeMarca nome="check" destaque />
+<IconeMarca nome="alerta" titulo="Atenção" />
+```
+
+Nomes: `cadeado` · `cartao` · `calendario` · `check` · `alerta` · `fechar` · `recibo` · `seta` · `estrela`.
+O `DialogContent` aceita `iconeFechar={<IconeMarca nome="fechar" />}` no lugar do X do Lucide.
+
+### PontosDaMarca
+Os quatro pontos da logo, do menor ao maior, o último laranja. Com `pulsando`, dizem "esperando"
+no lugar da roda do `Button` (que é do Lucide): o botão fica `disabled` e `aria-busy`, com os
+pontos dentro. Só pulsam com movimento liberado.
+
+```tsx
+<Button disabled aria-busy>
+  <PontosDaMarca pulsando />
+  Confirmando com o banco…
+</Button>
+```
 
 ---
 

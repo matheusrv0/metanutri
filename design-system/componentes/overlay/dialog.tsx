@@ -18,29 +18,33 @@ export const DialogOverlay = React.forwardRef<React.ElementRef<typeof DialogPrim
 )
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-export const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(
-  ({ className, children, ...props }, ref) => (
-    <DialogPrimitive.Portal>
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          // overscroll-contain: rolar até o fim do diálogo não arrasta a página de trás junto.
-          'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overscroll-contain rounded-xl border border-border bg-card p-6 text-card-foreground shadow-pop',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <X className="size-5" aria-hidden="true" />
-          <span className="sr-only">Fechar</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </DialogPrimitive.Portal>
-  ),
-)
+export const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** O desenho do botão de fechar. Sem ele, o X do Lucide; nas telas da spec checkout-proprio, o da marca (CA-383). */
+    readonly iconeFechar?: React.ReactNode
+  }
+>(({ className, children, iconeFechar, ...props }, ref) => (
+  <DialogPrimitive.Portal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        // overscroll-contain: rolar até o fim do diálogo não arrasta a página de trás junto.
+        'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overscroll-contain rounded-xl border border-border bg-card p-6 text-card-foreground shadow-pop',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {iconeFechar ?? <X className="size-5" aria-hidden="true" />}
+        <span className="sr-only">Fechar</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPrimitive.Portal>
+))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

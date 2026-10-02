@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@ds/lib/cn.ts'
 
 /*
- * Ícone do sistema. Lucide é o único conjunto; o que este componente acrescenta
+ * Ícone do sistema, no Lucide (o checkout e Conta e plano usam o IconeMarca); o que este componente acrescenta
  * são as regras do design system: traço 1,75, três tamanhos (16 em linha, 18 no
  * menu, 20 em cabeçalho) e a pastilha redonda em que o ícone costuma sentar.
  *
