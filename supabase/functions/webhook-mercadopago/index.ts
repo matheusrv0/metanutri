@@ -81,11 +81,11 @@ Deno.serve(async (req: Request) => {
   const cliente = createClient(urlSupabase, servico)
   const status = traduzirStatus(String(assinatura.status ?? ''))
 
-  // Assinatura ativa mantém o plano que a pessoa escolheu ao assinar; qualquer
-  // outro estado derruba para o Free. Montado explicitamente: `undefined` dentro do
-  // update some no JSON e o efeito vira acidente de serialização.
-  const mudanca: Record<string, string> = { status, atualizado_em: new Date().toISOString() }
-  if (status !== 'ativa') mudanca['plano'] = 'free'
+  // Só o status muda; o plano escolhido ao assinar continua na linha. O app só libera
+  // plano pago com status ativa (D-27), e o "Tentar de novo" reabre esse plano (CA-169).
+  // Gravar Free aqui fazia um aviso de "pendente" antes da autorização deixar quem
+  // pagou no Free para sempre: a autorização mudava só o status.
+  const mudanca = { status, atualizado_em: new Date().toISOString() }
 
   // Só a linha desta assinatura: a notificação de um checkout abandonado (ou de uma
   // assinatura antiga) não pode mexer no plano Estudante aprovado depois (CB-63).

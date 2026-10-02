@@ -44,6 +44,14 @@ describe('SQL da verificação (spec conta-e-verificacao)', () => {
     expect(webhook.split("conferir à mão:', id, dono)")[1]).toMatch(/^\s*}\s*\n\s*return ok\(\)/)
   })
 
+  it('D-27 e CA-169: o webhook só grava o status; o plano pedido continua na linha', () => {
+    // Um aviso de "pendente" antes da autorização não pode deixar quem pagou no Free,
+    // e o "Tentar de novo" reabre o plano que está na linha.
+    expect(webhook).toContain('const mudanca = { status, atualizado_em: new Date().toISOString() }')
+    expect(webhook).not.toMatch(/mudanca\[['"]plano['"]\]/)
+    expect(webhook).not.toMatch(/plano:\s*'free'/)
+  })
+
   it('a previsão de formatura compara com o mês de agora no fuso do Brasil', () => {
     expect(corpoDa('enviar_pedido_estudante')).toContain("date_trunc('month', p_formatura) < date_trunc('month', now() at time zone 'America/Sao_Paulo')")
   })
