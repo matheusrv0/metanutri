@@ -82,8 +82,8 @@ export function GavetaCobrir({
 
   return (
     <Sheet open={chave !== null} onOpenChange={(v) => !v && aoFechar()}>
-      <SheetContent side="right" className="flex w-full flex-col gap-4 overflow-y-auto sm:max-w-md">
-        <SheetTitle>{`Cobrir ${rotulo}`}</SheetTitle>
+      <SheetContent side="right" className="flex w-full flex-col gap-4 overflow-y-auto p-6 sm:max-w-md">
+        <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
           {resultado
             ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${

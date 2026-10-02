@@ -42,9 +42,16 @@ describe('Tela de missões do paciente', () => {
     const { fonte } = fonteFalsa(acompanhamento())
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByText(/Suas missões de hoje, Ana/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
     expect(screen.getAllByRole('button')).toHaveLength(3)
     expect(screen.getByText('Beber cerca de 2,1 litros de água')).toBeInTheDocument()
+  })
+
+  it('nome com vírgula ("Ana, 30 anos") vira só "Ana", sem a vírgula', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ nome: 'Ana, 30 anos' }))
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
   })
 
   it('mostra de onde cada missão veio, para a pessoa entender o porquê', async () => {

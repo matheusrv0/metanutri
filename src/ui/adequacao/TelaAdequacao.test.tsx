@@ -58,6 +58,14 @@ const abrirCobrir = async (usuario: ReturnType<typeof userEvent.setup>, nutrient
 }
 
 describe('Etapa 3: adequação', () => {
+  it('a gaveta do Cobrir tem margem interna e o título não fica embaixo do fechar', async () => {
+    montar(adulta, planoComArroz())
+    await abrirCobrir(userEvent.setup(), 'Cálcio')
+    const gaveta = screen.getByRole('dialog')
+    expect(gaveta.className).toContain('p-6')
+    expect(within(gaveta).getByRole('heading', { name: 'Cobrir Cálcio' }).className).toContain('pr-10')
+  })
+
   it('CA-25 e CA-33: lista os micronutrientes com total, referência, adequação, estado e fontes', () => {
     montar(adulta, planoComArroz())
     expect(screen.getByRole('columnheader', { name: 'Nutriente' })).toBeInTheDocument()

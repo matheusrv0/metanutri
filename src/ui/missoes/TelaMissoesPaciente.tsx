@@ -115,7 +115,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   const progresso = progressoDoDia(acompanhamento, hoje)
   const naSemana = diasMarcadosNaSemana(acompanhamento, hoje)
   const tudoFeito = progresso.total > 0 && progresso.feitas === progresso.total
-  const primeiroNome = acompanhamento.nome.split(' ')[0] || 'Olá'
+  // "Ana, 30 anos" vira "Ana": o nome do plano costuma vir com vírgula e idade.
+  const primeiroNome = acompanhamento.nome.trim().split(/[\s,;]+/)[0] || 'Olá'
 
   return (
     <Moldura>
