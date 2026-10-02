@@ -60,7 +60,11 @@ export type ResultadoDoCartao = { readonly ok: true; readonly dados: DadosDoCart
 export interface ControleDoCartao {
   /** CA-370: mostra os erros embaixo de cada campo e põe o foco no primeiro. Diz se está tudo certo. */
   conferir(): boolean
-  /** Troca o cartão pelo código de uso único (CB-90: um novo a cada envio). */
+  /**
+   * Troca o cartão pelo código de uso único (CB-90: um novo a cada envio). Quem chama não
+   * pode sobrepor chamadas: cada uma gera um código novo, e o clique duplo é barrado por
+   * quem usa o formulário.
+   */
   gerar(): Promise<ResultadoDoCartao>
   /** CA-373: depois de uma recusa, apaga o código de segurança. */
   limparCodigo(): void

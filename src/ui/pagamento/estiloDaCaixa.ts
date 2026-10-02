@@ -8,4 +8,6 @@ export const CAIXA =
 export const CAIXA_FOCO_DENTRO = 'focus-within:bg-card focus-within:ring-2 focus-within:ring-primary'
 /** O foco dos campos nossos: o Input já traz um anel, e aqui ele vira o da caixa. */
 export const CAIXA_FOCO_INPUT = 'placeholder:text-textsubtle focus-visible:border-0 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-primary'
-export const CAIXA_ERRO = 'bg-lighterror ring-1 ring-error'
+/** O erro vence o foco (protótipo v2): as variantes de foco repetem o vermelho e o tailwind-merge descarta as do foco normal. */
+export const CAIXA_ERRO =
+  'bg-lighterror ring-1 ring-error focus-within:bg-lighterror focus-within:ring-1 focus-within:ring-error focus-visible:bg-lighterror focus-visible:ring-1 focus-visible:ring-error'

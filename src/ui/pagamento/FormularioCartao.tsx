@@ -47,6 +47,10 @@ const semErro = (erros: Erros, campo: CampoDoCartao): Erros => {
 const descrito = (id: string, erro: string | undefined, temDica = false): string | undefined => (erro ? `${id}-erro` : temDica ? `${id}-dica` : undefined)
 
 interface FormularioCartaoProps {
+  /**
+   * Precisa ser um valor estável (a mesma função a cada render). Uma identidade nova remonta
+   * os campos seguros sem zerar o estado do formulário; para zerar tudo, troque a `key`.
+   */
   readonly criarProcessador: CriarProcessador
   /** CA-371: enquanto o banco responde, os campos não mexem. */
   readonly travado: boolean
@@ -115,11 +119,22 @@ export const FormularioCartao = forwardRef<ControleDoCartao, FormularioCartaoPro
     aoMudarPronto(pronto)
   }, [pronto, aoMudarPronto])
 
+  // CA-370: campo nosso desabilitado (formulário travado) não aceita foco; guarda para depois.
+  const focoPendente = useRef<'nome' | 'cpf' | null>(null)
   const focar = useCallback((campo: CampoDoCartao) => {
-    if (campo === 'nome') refNome.current?.focus()
-    else if (campo === 'cpf') refCpf.current?.focus()
-    else processador.current?.focar(campo)
+    if (campo === 'nome' || campo === 'cpf') {
+      const alvo = campo === 'nome' ? refNome.current : refCpf.current
+      alvo?.focus()
+      focoPendente.current = alvo && document.activeElement !== alvo ? campo : null
+    } else processador.current?.focar(campo)
   }, [])
+
+  useEffect(() => {
+    if (travado || focoPendente.current === null) return
+    const alvo = focoPendente.current === 'nome' ? refNome.current : refCpf.current
+    focoPendente.current = null
+    alvo?.focus()
+  }, [travado])
 
   useImperativeHandle(
     ref,

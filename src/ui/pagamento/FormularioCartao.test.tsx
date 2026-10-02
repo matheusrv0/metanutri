@@ -136,6 +136,33 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     expect(falso.focos.at(-1)).toBe('numero')
   })
 
+  it('CA-368: o campo com erro continua vermelho quando recebe o foco do conferir', async () => {
+    const { usuario } = await montar()
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    const seguro = screen.getByRole('group', { name: 'Número do cartão' })
+    for (const classe of ['bg-lighterror', 'ring-error', 'focus-within:bg-lighterror', 'focus-within:ring-error']) expect(seguro).toHaveClass(classe)
+    for (const classe of ['focus-within:bg-card', 'focus-within:ring-primary']) expect(seguro).not.toHaveClass(classe)
+    for (const classe of ['bg-lighterror', 'ring-error', 'focus-visible:bg-lighterror', 'focus-visible:ring-error']) expect(nome()).toHaveClass(classe)
+    for (const classe of ['focus-visible:bg-card', 'focus-visible:ring-primary']) expect(nome()).not.toHaveClass(classe)
+  })
+
+  it.each([
+    ['221', 'nome'],
+    ['214', 'cpf'],
+  ] as const)('CA-370: erro %s do gerador com o formulário travado devolve o foco ao campo quando destravar', async (codigo, campo) => {
+    const falso = processadorFalso()
+    const { usuario, rerender } = await montar(falso)
+    falso.respostaDoToken = () => Promise.reject(new ErroDoCartao([codigo]))
+    falso.preencher()
+    await usuario.type(nome(), 'APRO')
+    await usuario.type(cpf(), '12345678909')
+    rerender(<Bancada falso={falso} travado />)
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('Confira os dados do cartão e tente de novo. Nada foi cobrado.')
+    rerender(<Bancada falso={falso} travado={false} />)
+    expect(campo === 'nome' ? nome() : cpf()).toHaveFocus()
+  })
+
   it('CA-371: travado, os campos nossos não mexem e os seguros não recebem clique', async () => {
     await montar(processadorFalso(), true)
     expect(nome()).toBeDisabled()
