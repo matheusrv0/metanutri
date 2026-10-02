@@ -21,7 +21,7 @@ export function TelaNegocio({ negocio }: { readonly negocio: ValorNegocio }) {
       resumo,
       barras: receitaPorMes(dados.historico, resumo.receitaCentavos, dados.lidoEm),
       linhas: assinaturasPorPlano(dados.contas),
-      situacoes: situacoesDeAssinatura(dados.contas, dados.lidoEm),
+      situacoes: situacoesDeAssinatura(dados.contas, dados.historico, dados.lidoEm),
       funil: funilDe30Dias(dados.contas, dados.lidoEm),
     }
   }, [dados])

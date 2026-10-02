@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { conta } from '@/domain/negocio.test-utils.ts'
 import { FALHA_AO_LER_NEGOCIO } from '../estado/usarNegocio.ts'
 import { dadosFalsos, negocioFalso } from './negocioFalso.test-utils.ts'
+import { NumerosDoNegocio } from './NumerosDoNegocio.tsx'
 import { TelaNegocio, URL_MERCADO_PAGO } from './TelaNegocio.tsx'
 
 const espacos = (s: string | null | undefined) => (s ?? '').replace(/\s/g, ' ')
@@ -109,5 +110,15 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
     // Lido em 30/11: as contas de setembro já não são novas.
     render(<TelaNegocio negocio={negocioFalso({ dados: dadosFalsos({ lidoEm: new Date('2026-11-30T15:00:00Z') }) })} />)
     expect(within(screen.getByRole('region', { name: 'Resumo do negócio' })).getByText('+0 em 30 dias')).toBeInTheDocument()
+  })
+
+  it('M5: "vaga" no singular quando sobra uma só, "vagas" em zero e em dois ou mais', () => {
+    const resumo = { receitaCentavos: 0, diferenca30DiasCentavos: 0, assinaturasAtivas: 0, parteQuePaga: null, contas: 0, contasNovas30Dias: 0, fundadorVagas: 200 }
+    const { rerender } = render(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 199 }} />)
+    expect(screen.getByText('1 vaga com preço travado para sempre')).toBeInTheDocument()
+    rerender(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 200 }} />)
+    expect(screen.getByText('0 vagas com preço travado para sempre')).toBeInTheDocument()
+    rerender(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 198 }} />)
+    expect(screen.getByText('2 vagas com preço travado para sempre')).toBeInTheDocument()
   })
 })

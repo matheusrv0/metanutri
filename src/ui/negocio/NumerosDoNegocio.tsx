@@ -15,7 +15,7 @@ export function NumerosDoNegocio({ resumo }: { readonly resumo: ResumoDoNegocio 
       <CartaoNumero
         valor={usadas}
         rotulo="Preço de fundador"
-        apoio={`${inteiro(sobram)} vagas com preço travado para sempre`}
+        apoio={`${inteiro(sobram)} ${sobram === 1 ? 'vaga' : 'vagas'} com preço travado para sempre`}
         extra={<Progress value={(resumo.fundadorUsadas / resumo.fundadorVagas) * 100} aria-label={`${usadas} vagas usadas`} />}
       />
     </section>

@@ -152,6 +152,16 @@ describe('resumo do negócio (CA-346 a CA-349, D-57)', () => {
     expect(resumo.fundadorVagas).toBe(200)
   })
 
+  it('M3: vagas de fundador seguem o servidor: toda assinatura ativa com preço travado', () => {
+    // Igual a vagas_de_fundador_usadas() do 003: status ativa e preco_travado, seja qual for o plano.
+    const contas = [
+      conta('a', { assinatura: paga('solo', 'mensal', 3490) }),
+      conta('b', { assinatura: paga('solo', 'mensal', 0, { plano: 'free', ciclo: null }) }),
+      conta('c', { assinatura: paga('pro', 'mensal', 6490, { status: 'pausada' }) }),
+    ]
+    expect(resumirNegocio(contas, [], AGORA).fundadorUsadas).toBe(2)
+  })
+
   it('sem conta nenhuma, a parte que paga é nula, não NaN', () => {
     expect(resumirNegocio([], [], AGORA).parteQuePaga).toBeNull()
   })
@@ -198,6 +208,24 @@ describe('receita por mês (CA-350)', () => {
       ['2026-10', 3490],
     ])
   })
+
+  it('CB-85: mudança à 00h de 01/10 em Brasília (03h UTC) já é de outubro e não conta para setembro', () => {
+    const barras = receitaPorMes([mudanca('a', '2026-08-10T12:00:00Z'), mudanca('b', '2026-10-01T03:00:00Z')], 6980, AGORA)
+    expect(barras.map((b) => [b.chave, b.centavos])).toEqual([
+      ['2026-08', 3490],
+      ['2026-09', 3490],
+      ['2026-10', 6980],
+    ])
+  })
+
+  it('CB-85: a virada de dezembro para janeiro também é no horário de Brasília', () => {
+    // 2027-01-01 02h UTC é 31/12/2026 23h em Brasília: conta para dezembro.
+    const barras = receitaPorMes([mudanca('a', '2027-01-01T02:00:00Z')], 3490, new Date('2027-01-15T15:00:00Z'))
+    expect(barras.map((b) => [b.chave, b.mes, b.centavos])).toEqual([
+      ['2026-12', 'dez', 3490],
+      ['2027-01', 'jan', 3490],
+    ])
+  })
 })
 
 describe('assinaturas por plano (CA-352, CA-353)', () => {
@@ -229,7 +257,29 @@ describe('assinaturas por plano (CA-352, CA-353)', () => {
       conta('c', { assinatura: paga('solo', 'mensal', 3490, { status: 'cancelada', atualizadaEm: '2026-09-25T12:00:00Z' }) }),
       conta('d', { assinatura: paga('solo', 'mensal', 3490, { status: 'cancelada', atualizadaEm: '2026-08-01T12:00:00Z' }) }),
     ]
-    expect(situacoesDeAssinatura(contas, AGORA)).toEqual({ pendentes: 1, pausadas: 1, canceladas30Dias: 1 })
+    // Sem linha no histórico (assinatura de antes do 007), vale a atualizadaEm.
+    expect(situacoesDeAssinatura(contas, [], AGORA)).toEqual({ pendentes: 1, pausadas: 1, canceladas30Dias: 1 })
+  })
+
+  it('M1: a cancelada conta pela mudança do histórico, não pela atualizadaEm que o webhook regrava', () => {
+    const cancelada = (atualizadaEm: string) => paga('solo', 'mensal', 3490, { status: 'cancelada', atualizadaEm })
+    const contas = [
+      conta('a', { assinatura: cancelada('2026-09-30T12:00:00Z') }), // webhook avisou ontem, mas cancelou em agosto
+      conta('b', { assinatura: cancelada('2026-08-01T12:00:00Z') }), // cancelou há uma semana
+      conta('c', { assinatura: cancelada('2026-09-30T12:00:00Z') }), // cancelou, voltou e cancelou de novo há dias
+    ]
+    const sair = { status: 'cancelada' as const, plano: 'free' as const, ciclo: null }
+    const historico = [
+      mudanca('a', '2026-07-01T12:00:00Z'),
+      mudanca('a', '2026-08-05T12:00:00Z', sair),
+      mudanca('b', '2026-08-01T12:00:00Z'),
+      mudanca('b', '2026-09-25T12:00:00Z', sair),
+      mudanca('c', '2026-07-01T12:00:00Z'),
+      mudanca('c', '2026-07-10T12:00:00Z', sair),
+      mudanca('c', '2026-08-01T12:00:00Z'),
+      mudanca('c', '2026-09-28T12:00:00Z', sair),
+    ]
+    expect(situacoesDeAssinatura(contas, historico, AGORA).canceladas30Dias).toBe(2)
   })
 })
 
@@ -288,6 +338,13 @@ describe('lista de contas (CA-356, CA-360, CA-361)', () => {
     expect(filtrarContas(contas, 'todas', 'JULIA').visiveis.map((c) => c.id)).toEqual(['1'])
     expect(filtrarContas(contas, 'todas', ' gmail ').visiveis.map((c) => c.id)).toEqual(['2', '3'])
     expect(filtrarContas(contas, 'estudantes', 'souza')).toEqual({ visiveis: [], totalDoGrupo: 1 })
+  })
+
+  it('M4: a busca não casa pedaços que atravessam o nome e o e-mail', () => {
+    const outras = [conta('9', { nome: 'Maria Silva', email: 'ana@exemplo.com' })]
+    expect(filtrarContas(outras, 'todas', 'silva ana').visiveis).toEqual([])
+    expect(filtrarContas(outras, 'todas', 'silva').visiveis).toHaveLength(1)
+    expect(filtrarContas(outras, 'todas', 'ana@').visiveis).toHaveLength(1)
   })
 })
 

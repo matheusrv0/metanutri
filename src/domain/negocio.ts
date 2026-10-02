@@ -192,7 +192,8 @@ export function resumirNegocio(contas: readonly ContaNoPainel[], historico: read
     parteQuePaga: contas.length === 0 ? null : pagas.length / contas.length,
     contas: contas.length,
     contasNovas30Dias: contas.filter((c) => instante(c.criadaEm) > ha30Dias(agora)).length,
-    fundadorUsadas: pagas.filter((c) => c.assinatura?.precoTravado === true).length,
+    // Igual a vagas_de_fundador_usadas() (003): toda assinatura ativa com preço travado.
+    fundadorUsadas: contas.filter((c) => c.assinatura?.status === 'ativa' && c.assinatura.precoTravado).length,
     fundadorVagas: VAGAS_PRECO_FUNDADOR,
   }
 }
@@ -269,8 +270,26 @@ export interface SituacoesDeAssinatura {
   readonly canceladas30Dias: number
 }
 
-/** CA-353. A cancelada conta pela data da última mudança da assinatura. */
-export function situacoesDeAssinatura(contas: readonly ContaNoPainel[], agora: Date): SituacoesDeAssinatura {
+/**
+ * Quando a conta passou para `cancelada`: a primeira linha cancelada depois da última linha não cancelada
+ * do histórico. Sem essa linha (assinatura de antes do 007), nulo.
+ */
+function canceladaEm(historico: readonly MudancaDeAssinatura[], id: string): number | null {
+  const linhas = historico.filter((m) => m.conta === id).sort((x, y) => instante(x.quando) - instante(y.quando))
+  let ultimaNaoCancelada = -1
+  linhas.forEach((m, i) => {
+    if (m.status !== 'cancelada') ultimaNaoCancelada = i
+  })
+  const virada = linhas[ultimaNaoCancelada + 1]
+  return virada?.status === 'cancelada' ? instante(virada.quando) : null
+}
+
+/** CA-353. A cancelada conta pela mudança do histórico que a cancelou; sem histórico, pela atualizadaEm. */
+export function situacoesDeAssinatura(
+  contas: readonly ContaNoPainel[],
+  historico: readonly MudancaDeAssinatura[],
+  agora: Date,
+): SituacoesDeAssinatura {
   let pendentes = 0
   let pausadas = 0
   let canceladas30Dias = 0
@@ -279,7 +298,7 @@ export function situacoesDeAssinatura(contas: readonly ContaNoPainel[], agora: D
     if (!a) continue
     if (a.status === 'pendente') pendentes += 1
     else if (a.status === 'pausada') pausadas += 1
-    else if (a.status === 'cancelada' && instante(a.atualizadaEm) > ha30Dias(agora)) canceladas30Dias += 1
+    else if (a.status === 'cancelada' && (canceladaEm(historico, c.id) ?? instante(a.atualizadaEm)) > ha30Dias(agora)) canceladas30Dias += 1
   }
   return { pendentes, pausadas, canceladas30Dias }
 }
@@ -329,7 +348,7 @@ export function filtrarContas(
 ): { readonly visiveis: readonly ContaNoPainel[]; readonly totalDoGrupo: number } {
   const doGrupo = contas.filter((c) => noGrupo(c, grupo)).sort((x, y) => instante(y.criadaEm) - instante(x.criadaEm))
   const termo = semAcento(busca.trim())
-  const visiveis = termo === '' ? doGrupo : doGrupo.filter((c) => semAcento(`${c.nome} ${c.email}`).includes(termo))
+  const visiveis = termo === '' ? doGrupo : doGrupo.filter((c) => semAcento(c.nome).includes(termo) || semAcento(c.email).includes(termo))
   return { visiveis, totalDoGrupo: doGrupo.length }
 }
 
