@@ -111,7 +111,22 @@ export function lerMetodoDoCartao(resposta: unknown, bin: string): InfoDoCartao 
   return metodo && bandeira ? { bandeira, tipo: texto(metodo['payment_type_id']), bin } : null
 }
 
-/** Os códigos do erro do gerador do código do cartão, em qualquer dos formatos conhecidos. */
+/**
+ * O que o SDK v2 devolve de verdade (conferido no navegador em 02/10/2026): uma lista de
+ * `{ cause, message, field }` sem `code`. O campo vira o código da documentação que o
+ * `campoDoErroDoToken` (domain/cartao.ts) já conhece.
+ */
+const CODIGO_DO_CAMPO: Readonly<Record<string, string>> = {
+  cardNumber: 'E301',
+  expirationDate: '208',
+  expirationMonth: '208',
+  expirationYear: '208',
+  securityCode: 'E302',
+  cardholderName: '221',
+  identificationNumber: '214',
+}
+
+/** Os códigos do erro do gerador do código do cartão, em qualquer dos formatos conhecidos, sem repetir. */
 export function codigosDoErro(erro: unknown): string[] {
   const codigos: string[] = []
   const visitar = (valor: unknown): void => {
@@ -122,11 +137,13 @@ export function codigosDoErro(erro: unknown): string[] {
     const o = objeto(valor)
     if (!o) return
     const codigo = o['code']
+    const campo = o['field']
     if (typeof codigo === 'string' || typeof codigo === 'number') codigos.push(String(codigo))
-    if (o['cause'] !== undefined) visitar(o['cause'])
+    else if (typeof campo === 'string' && campo in CODIGO_DO_CAMPO) codigos.push(CODIGO_DO_CAMPO[campo] ?? '')
+    if (typeof o['cause'] === 'object') visitar(o['cause'])
   }
   visitar(erro)
-  return codigos
+  return [...new Set(codigos.filter((codigo) => codigo !== ''))]
 }
 
 const TIPO_NO_SDK: Readonly<Record<CampoSeguro, 'cardNumber' | 'expirationDate' | 'securityCode'>> = {

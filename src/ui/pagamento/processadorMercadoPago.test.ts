@@ -307,6 +307,15 @@ describe('o código de uso único do cartão (D-66, CB-90)', () => {
     expect(falha).toBeInstanceOf(ErroDoCartao)
     expect((falha as ErroDoCartao).codigos).toEqual(['205'])
     expect(codigosDoErro({ cause: [{ code: 'E301' }] })).toEqual(['E301'])
+    // O formato de verdade do SDK v2 (conferido no navegador): sem `code`, com `field` e `cause` em texto.
+    expect(
+      codigosDoErro([
+        { cause: 'invalid_value', message: 'cardNumber is empty.', field: 'cardNumber' },
+        { cause: 'invalid_length', message: 'cardNumber should be of length between 8 and 19.', field: 'cardNumber' },
+        { cause: 'invalid_value', message: 'expirationMonth is empty.', field: 'expirationMonth' },
+        { cause: 'invalid_value', message: 'securityCode is empty.', field: 'securityCode' },
+      ]),
+    ).toEqual(['E301', '208', 'E302'])
     expect(codigosDoErro({ message: 'Error trying to create cardToken: The iFrame does not have a window' })).toEqual([])
     expect(codigosDoErro(null)).toEqual([])
   })
