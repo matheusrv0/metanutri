@@ -127,9 +127,9 @@ logo abaixo; depois siga a lista seguinte.
 2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`. Reinicie o
    `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
-3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 007:
+3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 008:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
-   `005-estudante.sql`, `006-verificacao.sql` e `007-painel-do-dono.sql`.
+   `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql` e `008-cartao-da-assinatura.sql`.
 4. Publique as duas funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -163,6 +163,9 @@ Para funcionar de verdade, nesta ordem:
    Logo depois de rodar o 007, publique de novo a função `assinar`
    (`npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg`): ela passa a gravar o ciclo.
    Nunca publique antes do 007: a coluna ainda não existiria e o checkout falharia.
+   Depois rode `supabase/008-cartao-da-assinatura.sql`: ele guarda a bandeira, os 4 últimos números do cartão e a
+   data da próxima cobrança (spec checkout-proprio). Rode **antes** de publicar as funções do passo 5; também pode
+   rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). A
    `webhook-mercadopago` já está publicada; a `assinar` é publicada de novo no passo 4. Cadastre o webhook apontando para
