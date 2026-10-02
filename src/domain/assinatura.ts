@@ -1,25 +1,50 @@
 // O lado do navegador da assinatura. Aqui não existe preço nem cobrança: quem
 // decide valor é o servidor (`supabase/functions/assinar`), porque preço que vem do
 // navegador é preço que o cliente escolhe.
-import { ehIdPlano, type IdPlano } from './conta.ts'
+import { ehCiclo, ehIdPlano, type Ciclo, type IdPlano } from './conta.ts'
 
 export type StatusAssinatura = 'ativa' | 'pendente' | 'pausada' | 'cancelada' | 'vencida' | 'sem-assinatura'
 
 export interface Assinatura {
-  /** O plano que vale agora. Só assinatura ativa e dentro do prazo dá plano pago. */
+  /** O plano que vale agora. Só assinatura ativa e dentro do prazo, ou paga cancelada ainda no período pago, dá plano pago. */
   readonly plano: IdPlano
-  /** O plano gravado na linha, valendo ou não: é o que o "Tentar de novo" reabre. */
+  /** O plano gravado na linha, valendo ou não: é o que o "Assinar de novo" reabre. */
   readonly planoPedido: IdPlano
   readonly status: StatusAssinatura
   readonly precoTravado: boolean
-  /** Até quando vale (plano Estudante). `null` quando não vence. */
+  /** Até quando vale: o Estudante, e a paga cancelada (o fim do período pago, CA-378). `null` quando não vence. */
   readonly expiraEm: string | null
+  /** Mensal ou anual, na assinatura paga. `null` no Free, no Estudante e nas linhas de antes do 007. */
+  readonly ciclo: Ciclo | null
+  /** O valor de cada cobrança, em centavos. Zero quando não há. */
+  readonly valorCentavos: number
+  /** D-70: a bandeira e os 4 últimos números do cartão que paga. `null` nas linhas de antes do 008. */
+  readonly cartaoBandeira: string | null
+  readonly cartaoFinal: string | null
+  /** Quando cai a próxima cobrança da assinatura paga. */
+  readonly proximaCobranca: string | null
 }
 
-export const SEM_ASSINATURA: Assinatura = { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null }
+export const SEM_ASSINATURA: Assinatura = {
+  plano: 'free',
+  planoPedido: 'free',
+  status: 'sem-assinatura',
+  precoTravado: false,
+  expiraEm: null,
+  ciclo: null,
+  valorCentavos: 0,
+  cartaoBandeira: null,
+  cartaoFinal: null,
+  proximaCobranca: null,
+}
 
 /** O que o banco grava. `vencida` não está aqui: ela é calculada pela data. */
 const STATUS_DO_BANCO: readonly StatusAssinatura[] = ['ativa', 'pendente', 'pausada', 'cancelada', 'sem-assinatura']
+
+/** Os planos que se paga: só eles têm período pago a respeitar depois de cancelar. */
+const PAGOS: readonly IdPlano[] = ['solo', 'pro', 'clinica']
+
+const dataOuNulo = (valor: unknown): string | null => (typeof valor === 'string' && !Number.isNaN(new Date(valor).getTime()) ? valor : null)
 
 /** Linha do banco → assinatura. O que não reconhece vira "sem assinatura", nunca plano pago. */
 export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Assinatura {
@@ -29,25 +54,44 @@ export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Ass
   const lido =
     typeof o['status'] === 'string' && (STATUS_DO_BANCO as readonly string[]).includes(o['status']) ? (o['status'] as StatusAssinatura) : 'sem-assinatura'
   const planoPedido: IdPlano = ehIdPlano(o['plano']) ? o['plano'] : 'free'
-  const bruto = o['expira_em']
-  const expiraEm = typeof bruto === 'string' && !Number.isNaN(new Date(bruto).getTime()) ? bruto : null
+  const expiraEm = dataOuNulo(o['expira_em'])
+  const vence = expiraEm === null ? null : new Date(expiraEm).getTime()
   // O Estudante vale 12 meses. Passou do prazo, volta ao Free sem apagar nada (CA-175).
-  const status: StatusAssinatura = lido === 'ativa' && expiraEm !== null && new Date(expiraEm).getTime() < agora.getTime() ? 'vencida' : lido
+  const status: StatusAssinatura = lido === 'ativa' && vence !== null && vence < agora.getTime() ? 'vencida' : lido
+  // CA-378: a paga cancelada continua valendo até o fim do período pago. Sem data à frente
+  // (a operadora cancelou sozinha depois das cobranças recusadas, CB-94), volta ao Free na hora.
+  const canceladaValendo = status === 'cancelada' && PAGOS.includes(planoPedido) && vence !== null && vence > agora.getTime()
+
+  const bandeira = o['cartao_bandeira']
+  const final = o['cartao_final']
+  const valor = o['valor_centavos']
 
   return {
-    // Só assinatura ativa dá plano pago. Pendente, cancelada ou vencida volta para o
-    // Free: senão, criar a assinatura e não pagar liberaria o produto inteiro.
-    plano: status === 'ativa' ? planoPedido : 'free',
+    // Só assinatura ativa (ou paga cancelada no prazo) dá plano pago. Pendente, pausada ou
+    // vencida volta para o Free: senão, criar a assinatura e não pagar liberaria tudo.
+    plano: status === 'ativa' || canceladaValendo ? planoPedido : 'free',
     planoPedido,
     status,
     precoTravado: o['preco_travado'] === true,
     expiraEm,
+    ciclo: ehCiclo(o['ciclo']) ? o['ciclo'] : null,
+    valorCentavos: typeof valor === 'number' && Number.isFinite(valor) && valor > 0 ? valor : 0,
+    cartaoBandeira: typeof bandeira === 'string' && bandeira.trim() !== '' ? bandeira.trim() : null,
+    cartaoFinal: typeof final === 'string' && /^\d{4}$/.test(final) ? final : null,
+    proximaCobranca: dataOuNulo(o['proxima_cobranca']),
   }
 }
 
+/** CA-378: cancelada, mas ainda dentro do período pago (o plano pago ainda vale). */
+export const canceladaNoPrazo = (a: Assinatura): boolean => a.status === 'cancelada' && a.plano !== 'free'
+
+/** CA-376 e CA-378: a assinatura paga que Conta e plano mostra com o cartão ou com o "vale até". */
+export const temAssinaturaPaga = (a: Assinatura): boolean => (a.status === 'ativa' || canceladaNoPrazo(a)) && PAGOS.includes(a.plano)
+
+/** CA-381: nenhum recado cita o processador de pagamento. */
 export const RECADO_STATUS: Readonly<Record<StatusAssinatura, string>> = {
   ativa: 'Sua assinatura está em dia.',
-  pendente: 'Falta concluir o pagamento no Mercado Pago. Até lá, vale o plano Free.',
+  pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o plano Free.',
   pausada: 'Sua assinatura está pausada. Enquanto isso, vale o plano Free.',
   cancelada: 'Sua assinatura foi cancelada. Você continua com o plano Free.',
   vencida: 'O prazo do seu plano acabou. Você continua no Free, sem perder nada.',
@@ -61,7 +105,7 @@ export function podeAssinar(plano: IdPlano): boolean {
   return ASSINAVEIS.includes(plano)
 }
 
-/** O que a tela de volta do Mercado Pago mostra (CA-166 a CA-169). */
+/** O que a tela de volta do pagamento mostra (CA-166 a CA-169), para os links antigos. */
 export type RespostaDaVolta = 'ativa' | 'analise' | 'nao-concluido'
 
 export function respostaDaVolta(assinatura: Assinatura): RespostaDaVolta {

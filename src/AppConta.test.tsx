@@ -12,7 +12,7 @@ const estado = vi.hoisted(() => ({ conta: null as unknown }))
 vi.mock('./ui/estado/usarConta.ts', () => ({ useConta: () => estado.conta }))
 vi.mock('./ui/estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({
-    assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null },
+    assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null },
     carregado: true,
     carregando: false,
     vagasRestantes: 186,

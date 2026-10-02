@@ -1,13 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Assinatura } from '@/domain/assinatura.ts'
+import { SEM_ASSINATURA, type Assinatura } from '@/domain/assinatura.ts'
 import type { PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import type { Crn, PerfilConta } from '@/domain/situacao.ts'
 import { contaFalsa } from '../publico/conta/contaFalsa.test-utils.ts'
 import { TelaConta } from './TelaConta.tsx'
 
 const estado = vi.hoisted(() => ({
-  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null } as Assinatura,
+  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null } as Assinatura,
 }))
 vi.mock('../estado/usarAssinatura.ts', () => ({ useAssinatura: () => ({ assinatura: estado.assinatura, recarregar: vi.fn() }) }))
 
@@ -55,7 +55,7 @@ function montar(perfil: PerfilConta | null, pedido: PedidoEstudante | null = nul
 
 describe('TelaConta', () => {
   afterEach(() => {
-    estado.assinatura = { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null }
+    estado.assinatura = SEM_ASSINATURA
   })
 
   it('CA-156: sair leva para fora da área de trabalho', async () => {
@@ -130,7 +130,7 @@ describe('TelaConta', () => {
   })
 
   it('CA-284: no Estudante, mostra até quando vale', () => {
-    estado.assinatura = { plano: 'estudante', planoPedido: 'estudante', status: 'ativa', precoTravado: false, expiraEm: '2027-07-31T23:59:59Z' }
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'estudante', planoPedido: 'estudante', status: 'ativa', expiraEm: '2027-07-31T23:59:59Z' }
     montar(estudante, aprovado)
     expect(screen.getByText('Vale até 31 de julho de 2027.')).toBeInTheDocument()
   })

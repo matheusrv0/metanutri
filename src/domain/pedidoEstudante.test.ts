@@ -27,7 +27,7 @@ const pedido: PedidoEstudante = {
   avisoFechado: false,
 }
 
-const estudanteAtiva: Assinatura = { plano: 'estudante', planoPedido: 'estudante', status: 'ativa', precoTravado: false, expiraEm: '2027-07-31T23:59:59Z' }
+const estudanteAtiva: Assinatura = { ...SEM_ASSINATURA, plano: 'estudante', planoPedido: 'estudante', status: 'ativa', expiraEm: '2027-07-31T23:59:59Z' }
 
 describe('validarPedido (CA-271 e CA-272)', () => {
   it('aceita o pedido completo', () => {

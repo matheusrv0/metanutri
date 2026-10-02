@@ -1,15 +1,15 @@
-import { daLinhaAssinatura, podeAssinar, RECADO_STATUS, respostaDaVolta, SEM_ASSINATURA } from './assinatura.ts'
+import { canceladaNoPrazo, daLinhaAssinatura, podeAssinar, RECADO_STATUS, respostaDaVolta, SEM_ASSINATURA, temAssinaturaPaga } from './assinatura.ts'
 
 describe('Ler a assinatura do banco', () => {
   it('assinatura ativa dá o plano pago', () => {
-    expect(daLinhaAssinatura({ plano: 'pro', status: 'ativa' })).toEqual({ plano: 'pro', planoPedido: 'pro', status: 'ativa', precoTravado: false, expiraEm: null })
+    expect(daLinhaAssinatura({ plano: 'pro', status: 'ativa' })).toEqual({ ...SEM_ASSINATURA, plano: 'pro', planoPedido: 'pro', status: 'ativa' })
   })
 
   it('assinatura pendente NÃO dá plano pago: criar e não pagar não libera nada', () => {
     expect(daLinhaAssinatura({ plano: 'pro', status: 'pendente' }).plano).toBe('free')
   })
 
-  it.each(['pausada', 'cancelada'])('assinatura %s volta para o Free', (status) => {
+  it.each(['pausada', 'cancelada'])('assinatura %s, sem data, volta para o Free', (status) => {
     expect(daLinhaAssinatura({ plano: 'solo', status }).plano).toBe('free')
   })
 
@@ -30,6 +30,74 @@ describe('Ler a assinatura do banco', () => {
   it('guarda o preço travado de fundador', () => {
     expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', preco_travado: true }).precoTravado).toBe(true)
     expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', preco_travado: 'sim' }).precoTravado).toBe(false)
+  })
+})
+
+describe('O cartão e a próxima cobrança (D-70)', () => {
+  it('lê o ciclo, o valor, a bandeira, o final e a próxima cobrança', () => {
+    const a = daLinhaAssinatura({
+      plano: 'solo',
+      status: 'ativa',
+      ciclo: 'mensal',
+      valor_centavos: 3490,
+      cartao_bandeira: ' Mastercard ',
+      cartao_final: '6351',
+      proxima_cobranca: '2026-11-02T15:00:00+00:00',
+    })
+    expect(a).toMatchObject({ ciclo: 'mensal', valorCentavos: 3490, cartaoBandeira: 'Mastercard', cartaoFinal: '6351', proximaCobranca: '2026-11-02T15:00:00+00:00' })
+  })
+
+  it('foco 4: linha de antes do 008 (e do 007) lê nulos, sem quebrar', () => {
+    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', valor_centavos: 3490 })).toMatchObject({
+      plano: 'solo',
+      ciclo: null,
+      cartaoBandeira: null,
+      cartaoFinal: null,
+      proximaCobranca: null,
+    })
+  })
+
+  it('final que não tem 4 números, ciclo e valor estranhos e data quebrada viram nulo ou zero', () => {
+    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', cartao_final: '635', ciclo: 'semanal', valor_centavos: -1, proxima_cobranca: 'logo' })).toMatchObject({
+      cartaoFinal: null,
+      ciclo: null,
+      valorCentavos: 0,
+      proximaCobranca: null,
+    })
+  })
+})
+
+describe('Cancelada vale até o fim do período pago (CA-378, CB-94)', () => {
+  const agora = new Date('2026-10-20T15:00:00Z')
+
+  it('CA-378: cancelada com expira_em à frente continua no plano pago, marcada como cancelada', () => {
+    const a = daLinhaAssinatura({ plano: 'solo', status: 'cancelada', expira_em: '2026-11-02T02:59:59.000Z' }, agora)
+    expect(a).toMatchObject({ plano: 'solo', planoPedido: 'solo', status: 'cancelada' })
+    expect(canceladaNoPrazo(a)).toBe(true)
+    expect(temAssinaturaPaga(a)).toBe(true)
+  })
+
+  it('CA-378 e foco 1: vale até 23h59min59s de 1/11 em Brasília e volta ao Free no primeiro segundo de 2/11', () => {
+    const linha = { plano: 'solo', status: 'cancelada', expira_em: '2026-11-02T02:59:59.000Z' }
+    expect(daLinhaAssinatura(linha, new Date('2026-11-02T02:59:58Z')).plano).toBe('solo')
+    expect(daLinhaAssinatura(linha, new Date('2026-11-02T03:00:00Z')).plano).toBe('free')
+  })
+
+  it('CB-94: cancelada sem data (a operadora cancelou sozinha) volta ao Free na hora', () => {
+    const a = daLinhaAssinatura({ plano: 'pro', status: 'cancelada', expira_em: null }, agora)
+    expect(a.plano).toBe('free')
+    expect(canceladaNoPrazo(a)).toBe(false)
+    expect(temAssinaturaPaga(a)).toBe(false)
+  })
+
+  it('só plano pago tem período a respeitar: Estudante cancelado não volta por engano', () => {
+    expect(daLinhaAssinatura({ plano: 'estudante', status: 'cancelada', expira_em: '2027-01-01T00:00:00Z' }, agora).plano).toBe('free')
+  })
+
+  it('ativa paga é assinatura paga; Estudante e pendente não', () => {
+    expect(temAssinaturaPaga(daLinhaAssinatura({ plano: 'pro', status: 'ativa' }, agora))).toBe(true)
+    expect(temAssinaturaPaga(daLinhaAssinatura({ plano: 'estudante', status: 'ativa', expira_em: '2027-07-31T23:59:59Z' }, agora))).toBe(false)
+    expect(temAssinaturaPaga(daLinhaAssinatura({ plano: 'solo', status: 'pendente' }, agora))).toBe(false)
   })
 })
 
@@ -56,6 +124,10 @@ describe('Recado de cada estado', () => {
 
   it('pendente explica que ainda não vale', () => {
     expect(RECADO_STATUS.pendente).toContain('Free')
+  })
+
+  it('CA-381: nenhum recado cita o processador de pagamento', () => {
+    for (const frase of Object.values(RECADO_STATUS)) expect(frase).not.toMatch(/mercado ?pago/i)
   })
 })
 
