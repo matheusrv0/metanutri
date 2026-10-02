@@ -1,12 +1,25 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { useAssinatura } from './usarAssinatura.ts'
+import { CONFIRA_O_CARTAO, mensagemDaRecusa, SERVIDOR_FORA } from '@/domain/cartao.ts'
+import { PEDIDO_EM_ANDAMENTO, useAssinatura, type ResultadoDaAssinatura, type ResultadoDaMudanca } from './usarAssinatura.ts'
 
 const { cliente } = vi.hoisted(() => {
   const cliente = {
     linha: null as unknown,
     usadas: 14 as unknown,
+    leituras: 0,
+    colunas: [] as string[],
     invocar: vi.fn(),
-    from: () => ({ select: () => ({ maybeSingle: async () => ({ data: cliente.linha }) }) }),
+    from: () => ({
+      select: (colunas: string) => {
+        cliente.colunas.push(colunas)
+        return {
+          maybeSingle: async () => {
+            cliente.leituras += 1
+            return { data: cliente.linha }
+          },
+        }
+      },
+    }),
     rpc: async () => ({ data: cliente.usadas }),
     functions: { invoke: (...args: unknown[]) => cliente.invocar(...args) },
   }
@@ -15,10 +28,23 @@ const { cliente } = vi.hoisted(() => {
 
 vi.mock('./supabase.ts', () => ({ obterSupabase: () => cliente }))
 
-describe('useAssinatura', () => {
+const CARTAO = { token: 'tok_teste_1', bandeira: 'Mastercard', final: '6351' }
+
+/** Erro de função com corpo, como o supabase-js entrega (a resposta fica em `context`). */
+const respondeu = (status: number, corpo: unknown) => ({ data: null, error: { context: { status, json: async () => corpo } } })
+
+async function aberto() {
+  const hook = renderHook(() => useAssinatura(true))
+  await waitFor(() => expect(hook.result.current.carregado).toBe(true))
+  return hook
+}
+
+describe('useAssinatura (spec checkout-proprio)', () => {
   beforeEach(() => {
     cliente.linha = null
     cliente.usadas = 14
+    cliente.leituras = 0
+    cliente.colunas = []
     cliente.invocar.mockReset()
   })
 
@@ -28,12 +54,13 @@ describe('useAssinatura', () => {
     expect(result.current.assinatura.plano).toBe('free')
   })
 
-  it('com sessão, lê a assinatura e só então marca carregado', async () => {
-    cliente.linha = { plano: 'solo', status: 'ativa', preco_travado: true }
+  it('com sessão, lê a linha inteira (o 008 pode ainda não ter rodado) e só então marca carregado', async () => {
+    cliente.linha = { plano: 'solo', status: 'ativa', preco_travado: true, cartao_bandeira: 'Mastercard', cartao_final: '6351' }
     const { result } = renderHook(() => useAssinatura(true))
     expect(result.current.carregado).toBe(false)
     await waitFor(() => expect(result.current.carregado).toBe(true))
-    expect(result.current.assinatura.plano).toBe('solo')
+    expect(result.current.assinatura).toMatchObject({ plano: 'solo', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' })
+    expect(cliente.colunas).toEqual(['*'])
   })
 
   it('CA-160: conta quantas vagas de fundador sobram', async () => {
@@ -43,27 +70,132 @@ describe('useAssinatura', () => {
 
   it('CA-160: sem resposta do servidor, a contagem fica nula', async () => {
     cliente.usadas = null
-    const { result } = renderHook(() => useAssinatura(true))
-    await waitFor(() => expect(result.current.carregado).toBe(true))
+    const { result } = await aberto()
     expect(result.current.vagasRestantes).toBeNull()
   })
 
-  it('CA-161: manda plano e ciclo ao servidor, nunca o preço', async () => {
-    cliente.invocar.mockResolvedValue({ data: { pagamento: 'https://mp.exemplo/pagar' }, error: null })
-    const ir = vi.fn()
-    const { result } = renderHook(() => useAssinatura(true, ir))
+  it('CA-375: manda plano, ciclo e o código do cartão ao servidor, nunca o preço', async () => {
+    cliente.invocar.mockResolvedValue({ data: { status: 'ativa', proximaCobranca: '2026-11-02T15:00:00.000Z', cartao: { bandeira: 'Mastercard', final: '6351' } }, error: null })
+    const { result } = await aberto()
+    let resposta: ResultadoDaAssinatura | null = null
     await act(async () => {
-      expect(await result.current.assinar('pro', 'anual')).toBeNull()
+      resposta = await result.current.assinar('pro', 'anual', CARTAO)
     })
-    expect(cliente.invocar).toHaveBeenCalledWith('assinar', { body: { plano: 'pro', ciclo: 'anual' } })
-    expect(ir).toHaveBeenCalledWith('https://mp.exemplo/pagar')
+    expect(cliente.invocar).toHaveBeenCalledWith('assinar', {
+      body: { plano: 'pro', ciclo: 'anual', card_token_id: 'tok_teste_1', cartao: { bandeira: 'Mastercard', final: '6351' } },
+    })
+    expect(resposta).toEqual({ ok: true, ativa: true, proximaCobranca: '2026-11-02T15:00:00.000Z' })
   })
 
-  it('CA-162: erro do servidor volta como mensagem, sem sair da tela', async () => {
-    cliente.invocar.mockResolvedValue({ data: null, error: new Error('falhou') })
-    const { result } = renderHook(() => useAssinatura(true))
+  it('CA-372: autorizada, a assinatura é lida de novo e o plano pago já vale no app', async () => {
+    cliente.invocar.mockImplementation(async () => {
+      cliente.linha = { plano: 'solo', status: 'ativa' }
+      return { data: { status: 'ativa', proximaCobranca: null }, error: null }
+    })
+    const { result } = await aberto()
+    expect(result.current.assinatura.plano).toBe('free')
     await act(async () => {
-      expect(await result.current.assinar('solo', 'mensal')).toMatch(/servidor de cobrança/)
+      await result.current.assinar('solo', 'mensal', CARTAO)
+    })
+    await waitFor(() => expect(result.current.assinatura.plano).toBe('solo'))
+  })
+
+  it('o banco ainda confirmando volta como pedido aceito, mas não ativo', async () => {
+    cliente.invocar.mockResolvedValue({ data: { status: 'pendente', proximaCobranca: '2026-11-02T15:00:00.000Z' }, error: null })
+    const { result } = await aberto()
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: true, ativa: false, proximaCobranca: '2026-11-02T15:00:00.000Z' })
+    })
+  })
+
+  it('CA-373: a recusa do banco volta com o motivo em português', async () => {
+    cliente.invocar.mockResolvedValue(respondeu(402, { erro: 'O banco recusou este cartão.', codigo: 'cc_rejected_insufficient_amount' }))
+    const { result } = await aberto()
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: mensagemDaRecusa('cc_rejected_insufficient_amount') })
+    })
+  })
+
+  it('CB-90: código do cartão vencido ou usado pede para conferir o cartão de novo', async () => {
+    cliente.invocar.mockResolvedValue(respondeu(402, { erro: 'x', codigo: 'token-invalido' }))
+    const { result } = await aberto()
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: CONFIRA_O_CARTAO })
+    })
+  })
+
+  it('CA-374: sem resposta do servidor (rede), a frase de servidor fora', async () => {
+    const { result } = await aberto()
+    cliente.invocar.mockResolvedValueOnce({ data: null, error: new Error('Failed to fetch') })
+    cliente.invocar.mockRejectedValueOnce(new Error('caiu'))
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: SERVIDOR_FORA })
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: SERVIDOR_FORA })
+    })
+  })
+
+  it('CB-91: a frase do servidor passa como veio quando não é recusa de cartão', async () => {
+    cliente.invocar.mockResolvedValue(respondeu(409, { erro: 'Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.' }))
+    const { result } = await aberto()
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: 'Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.' })
+    })
+  })
+
+  it('CA-378: cancelar pede ao servidor e lê a assinatura de novo', async () => {
+    cliente.invocar.mockResolvedValue({ data: { status: 'cancelada', expiraEm: '2026-11-02T02:59:59.000Z' }, error: null })
+    const { result } = await aberto()
+    const antes = cliente.leituras
+    await act(async () => {
+      expect(await result.current.cancelar()).toEqual({ ok: true })
+    })
+    expect(cliente.invocar).toHaveBeenCalledWith('gerenciar-assinatura', { body: { acao: 'cancelar' } })
+    await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
+  })
+
+  it('CB-93: cancelamento que falha também lê a assinatura de novo, para a tela mostrar o que o servidor tem', async () => {
+    cliente.invocar.mockResolvedValue({ data: null, error: new Error('Failed to fetch') })
+    const { result } = await aberto()
+    const antes = cliente.leituras
+    await act(async () => {
+      expect(await result.current.cancelar()).toEqual({ ok: false, erro: SERVIDOR_FORA })
+    })
+    await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
+  })
+
+  it('CA-379: trocar o cartão manda o código novo; a recusa volta em português', async () => {
+    const { result } = await aberto()
+    cliente.invocar.mockResolvedValueOnce({ data: { cartao: { bandeira: 'Mastercard', final: '6351' } }, error: null })
+    cliente.invocar.mockResolvedValueOnce(respondeu(402, { erro: 'x', codigo: 'cc_rejected_bad_filled_security_code' }))
+    await act(async () => {
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: true })
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: mensagemDaRecusa('cc_rejected_bad_filled_security_code') })
+    })
+    expect(cliente.invocar).toHaveBeenCalledWith('gerenciar-assinatura', {
+      body: { acao: 'trocar_cartao', card_token_id: 'tok_teste_1', cartao: { bandeira: 'Mastercard', final: '6351' } },
+    })
+  })
+
+  it('CB-92 e foco 5: dois pedidos ao mesmo tempo viram um só', async () => {
+    let terminar: (valor: unknown) => void = () => undefined
+    cliente.invocar.mockImplementation(
+      () =>
+        new Promise((resolver) => {
+          terminar = resolver
+        }),
+    )
+    const { result } = await aberto()
+    let primeiro: Promise<ResultadoDaMudanca> = Promise.resolve({ ok: true })
+    let segundo: ResultadoDaMudanca | null = null
+    await act(async () => {
+      primeiro = result.current.cancelar()
+      segundo = await result.current.trocarCartao(CARTAO)
+    })
+    expect(segundo).toEqual({ ok: false, erro: PEDIDO_EM_ANDAMENTO })
+    expect(cliente.invocar).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      terminar({ data: { status: 'cancelada', expiraEm: null }, error: null })
+      await primeiro
     })
   })
 })

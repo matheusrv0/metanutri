@@ -64,6 +64,7 @@ import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { useConta } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
+import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './ui/fluxoConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
@@ -338,7 +339,8 @@ function Conteudo() {
         vagasRestantes={cobranca.vagasRestantes}
         disponivel={conta.disponivel}
         aoTrocar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
-        aoPagar={cobranca.assinar}
+        criarProcessador={processadorDoSite()}
+        aoAssinar={cobranca.assinar}
         aoIrParaPainel={() => navegar({ tela: 'painel' })}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
       />

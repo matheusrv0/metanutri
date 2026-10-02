@@ -17,6 +17,8 @@ vi.mock('./ui/estado/usarAssinatura.ts', () => ({
     carregando: false,
     vagasRestantes: 186,
     assinar: vi.fn(),
+    cancelar: vi.fn(),
+    trocarCartao: vi.fn(),
     recarregar: vi.fn(),
   }),
 }))
@@ -144,7 +146,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
     estado.conta = comSessao('conta-1')
     rerender(tela())
-    expect(screen.getByRole('heading', { level: 1, name: 'Revise sua assinatura' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeInTheDocument()
   })
 
   it('CB-49: o link do paciente abre sem pedir entrada', () => {

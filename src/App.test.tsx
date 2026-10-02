@@ -148,7 +148,7 @@ describe('App: estrutura', () => {
   it('sem servidor: #/assinar/solo/mensal mostra o checkout', () => {
     window.location.hash = '#/assinar/solo/mensal'
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Revise sua assinatura' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeInTheDocument()
   })
 })
 
