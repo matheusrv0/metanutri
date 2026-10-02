@@ -10,8 +10,8 @@ export const RESPONSAVEL: string | null = 'Matheus Rondon'
 export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
 
 /** Muda quando o texto dos termos ou da política mudar. Vai gravada no cadastro (CA-223). */
-export const VERSAO_TERMOS = '2026-09-30'
-export const DATA_TERMOS = '30 de setembro de 2026'
+export const VERSAO_TERMOS = '2026-10-02'
+export const DATA_TERMOS = '2 de outubro de 2026'
 
 /** Em quantos dias os dados somem depois do pedido de exclusão. */
 export const PRAZO_EXCLUSAO_DIAS = 90

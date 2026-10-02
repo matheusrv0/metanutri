@@ -20,7 +20,10 @@ export function TelaPrivacidade() {
 
       <h2>Que dados guardamos e para quê</h2>
       <ul>
-        <li>Nome, e-mail e senha de quem usa: para criar e manter a conta. A senha é guardada cifrada.</li>
+        <li>
+          Nome, e-mail e senha de quem usa: para criar e manter a conta. A senha é guardada cifrada. O nome, o e-mail, a situação e o plano
+          também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.
+        </li>
         <li>Situação (estudante ou nutricionista) e, para nutricionista, o CRN declarado: para conferir no conselho que a conta é de nutricionista.</li>
         <li>
           Para o plano Estudante: instituição, matrícula, período, previsão de formatura e o comprovante de matrícula. O comprovante fica numa área
@@ -43,7 +46,7 @@ export function TelaPrivacidade() {
           servidores podem ficar fora do Brasil.
         </li>
         <li>O pagamento acontece no Mercado Pago. Nenhum dado de cartão passa pelo MetaNutri.</li>
-        <li>Os e-mails de confirmação e de troca de senha são enviados pelo Gmail do MetaNutri (Google).</li>
+        <li>Os e-mails de confirmação e de troca de senha são enviados pelo Resend, com o endereço do MetaNutri.</li>
       </ul>
       <p>Não vendemos dados, não usamos para publicidade e não treinamos modelos de inteligência artificial com eles.</p>
 

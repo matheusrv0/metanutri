@@ -74,7 +74,7 @@ describe('TelaCriarConta', () => {
     await comoNutricionista(usuario)
     await usuario.click(botaoCriar())
     expect(conta.cadastrar).toHaveBeenCalledWith(
-      expect.objectContaining({ situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, planoDesejado: 'free', versaoTermos: '2026-09-30' }),
+      expect.objectContaining({ situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, planoDesejado: 'free', versaoTermos: '2026-10-02' }),
     )
     expect(aoCriada).toHaveBeenCalledWith({ email: 'ana@gmail.com', plano: 'free', situacao: 'nutricionista', confirmarEmail: true })
   })

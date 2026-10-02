@@ -12,8 +12,8 @@ vi.mock('@/domain/legal.ts', () => ({
   get CONTATO_EMAIL() {
     return legal.CONTATO_EMAIL
   },
-  DATA_TERMOS: '30 de setembro de 2026',
-  VERSAO_TERMOS: '2026-09-30',
+  DATA_TERMOS: '2 de outubro de 2026',
+  VERSAO_TERMOS: '2026-10-02',
   PRAZO_EXCLUSAO_DIAS: 90,
   PRAZO_INCIDENTE_HORAS: 72,
 }))
@@ -27,7 +27,7 @@ describe('documentos legais', () => {
   it('CA-222 e CA-224: termos dizem quem prescreve, quem é controlador e operador, e a data', () => {
     render(<TelaTermos />)
     expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Versão de 30 de setembro de 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Versão de 2 de outubro de 2026/)).toBeInTheDocument()
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('quem prescreve é o nutricionista')
     expect(texto).toContain('controlador')
@@ -49,7 +49,7 @@ describe('documentos legais', () => {
     expect(texto).toContain('neste aparelho')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
-    expect(texto).toContain('30 de setembro de 2026')
+    expect(texto).toContain('2 de outubro de 2026')
   })
 
   it('D-46: sem responsável ou contato, os dois mostram que estão em preparação', () => {
@@ -57,5 +57,13 @@ describe('documentos legais', () => {
     render(<TelaPrivacidade />)
     expect(screen.getByText('Este texto está sendo finalizado e entra no ar em breve.')).toBeInTheDocument()
     expect(document.body.textContent).not.toContain('art. 18')
+  })
+
+  it('CA-365: a política diz que o responsável acompanha contas e assinaturas e que os e-mails saem pelo Resend', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas')
+    expect(texto).toContain('são enviados pelo Resend')
+    expect(texto).not.toContain('Gmail')
   })
 })
