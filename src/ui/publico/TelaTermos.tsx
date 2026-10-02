@@ -37,8 +37,8 @@ export function TelaTermos() {
         <li>Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago; depois a conta volta para o Free, sem perder nada.</li>
         <li>Quem entrou no preço de fundador mantém esse preço enquanto a assinatura estiver ativa.</li>
         <li>
-          O plano pago começa quando o banco autoriza o cartão. Se as cobranças forem recusadas também nas novas tentativas, a assinatura é cancelada
-          e a conta volta para o Free.
+          O plano pago começa quando o banco autoriza o cartão. Se as cobranças continuarem sendo recusadas, a assinatura é cancelada e a conta
+          volta para o Free.
         </li>
       </ul>
 

@@ -78,12 +78,28 @@ describe('documentos legais', () => {
     expect(texto).not.toMatch(/mercado ?pago/i)
   })
 
+  it('os termos não prometem prazo para o cancelamento por cobrança recusada', () => {
+    render(<TelaTermos />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('Se as cobranças continuarem sendo recusadas, a assinatura é cancelada e a conta volta para o Free.')
+    expect(texto).not.toContain('novas tentativas')
+    expect(texto).not.toMatch(/\d+ dias?[^.]*recusad|recusad[^.]*\d+ dias?/)
+  })
+
   it('CA-382: a política diz quem processa o cartão, que ele vai direto e criptografado, e o pouco que o MetaNutri guarda', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('O pagamento é processado pelo Mercado Pago.')
     expect(texto).toContain('vão direto do seu navegador para ele, criptografados, sem passar pelo MetaNutri')
-    expect(texto).toContain('O MetaNutri guarda só a bandeira, os 4 últimos números do cartão e a data da próxima cobrança')
+    expect(texto).toContain('Do cartão, o MetaNutri guarda só a bandeira, os 4 últimos números e a data da próxima cobrança')
     expect(texto).not.toContain('Nenhum dado de cartão passa pelo MetaNutri')
+  })
+
+  it('M1 (LGPD): a política diz que o nome impresso no cartão e o CPF do titular também vão para o Mercado Pago', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain(
+      'Os dados do cartão (número, validade e código), o nome impresso no cartão e o CPF do titular vão direto do seu navegador para ele, criptografados, sem passar pelo MetaNutri.',
+    )
   })
 })

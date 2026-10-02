@@ -98,6 +98,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Assinar** — o checkout do site: Solo ou Pro, mensal ou anual, com cartão de crédito, sem sair do MetaNutri. O
   número do cartão vai direto para a operadora de pagamento, em campos seguros. Precisa do
   `008-cartao-da-assinatura.sql`, das três funções e da chave pública (passos 4, 5 e 7 de "Projeto já ligado").
+  **Está em modo teste** (credenciais de teste do Mercado Pago: ninguém paga de verdade) até o teste de ponta a ponta
+  passar; o que falta antes da produção está em [docs/pendencias.md](docs/pendencias.md).
 - **Negócio** (só para o administrador): receita por mês, assinaturas por plano, quem chegou nos últimos 30 dias e a lista de contas. Precisa do `007-painel-do-dono.sql`.
 
 ## Conta na nuvem (opcional em desenvolvimento)
@@ -169,8 +171,8 @@ Para funcionar de verdade, nesta ordem:
    (`npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg`): ela passa a gravar o ciclo.
    Nunca publique antes do 007: a coluna ainda não existiria e o checkout falharia.
    Depois rode `supabase/008-cartao-da-assinatura.sql`: ele guarda a bandeira, os 4 últimos números do cartão e a
-   data da próxima cobrança (spec checkout-proprio). Rode **antes** de publicar as funções do passo 5; também pode
-   rodar de novo.
+   data da próxima cobrança, e cria a trava que impede duas abas de assinarem ao mesmo tempo (spec checkout-proprio).
+   Rode **antes** de publicar as funções do passo 5; também pode rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008` rodado, publique as três funções desta versão e, logo em seguida, o site: a `assinar` nova não serve ao

@@ -46,9 +46,10 @@ export function TelaPrivacidade() {
           servidores podem ficar fora do Brasil.
         </li>
         <li>
-          O pagamento é processado pelo Mercado Pago. Os dados do cartão (número, validade e código) vão direto do seu navegador para ele,
-          criptografados, sem passar pelo MetaNutri. O MetaNutri guarda só a bandeira, os 4 últimos números do cartão e a data da próxima
-          cobrança, para mostrar em Conta e plano. Para os campos do cartão terem a letra do site, eles buscam a fonte no Google Fonts.
+          O pagamento é processado pelo Mercado Pago. Os dados do cartão (número, validade e código), o nome impresso no cartão e o CPF do
+          titular vão direto do seu navegador para ele, criptografados, sem passar pelo MetaNutri. Do cartão, o MetaNutri guarda só a bandeira,
+          os 4 últimos números e a data da próxima cobrança, para mostrar em Conta e plano. Para os campos do cartão terem a letra do site, eles
+          buscam a fonte no Google Fonts.
         </li>
         <li>Os e-mails de confirmação e de troca de senha são enviados pelo Resend, com o endereço do MetaNutri.</li>
       </ul>

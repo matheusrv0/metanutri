@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 01/10/2026.
+Atualizado em 02/10/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -37,12 +37,39 @@ Atualizado em 01/10/2026.
 >
 > **Atualizado em 02/10:** o **checkout próprio** (spec `checkout-proprio`) leva o pagamento para dentro do site:
 > cartão de crédito em campos seguros, assinatura já autorizada, e cancelar e trocar o cartão em Conta e plano. Fica
-> em modo teste até o teste de ponta a ponta com o comprador de teste passar. Falta rodar o
-> `supabase/008-cartao-da-assinatura.sql` e publicar as três funções; a chave pública de teste já está na variável
-> `VITE_MERCADOPAGO_PUBLIC_KEY` do GitHub. Quem tem assinatura pendente ou pausada do cartão novo não consegue assinar
-> de novo (a função recusa com 409): cancela em Conta e plano e volta para o Free na hora, sem período pago. Fora deste
-> trabalho: o aviso de cada cobrança recusada (hoje o plano cai quando a operadora cancela a assinatura, depois das
-> novas tentativas).
+> em modo teste até o teste de ponta a ponta com o comprador de teste passar; a chave pública de teste já está na
+> variável `VITE_MERCADOPAGO_PUBLIC_KEY` do GitHub. Quem tem assinatura pendente ou pausada do cartão novo não consegue
+> assinar de novo (a função recusa com 409): cancela em Conta e plano e volta para o Free na hora, sem período pago.
+>
+> **A ordem para pôr no ar** (comandos no README, "Projeto já ligado"):
+>
+> 1. rodar o `supabase/008-cartao-da-assinatura.sql` (as colunas do cartão e a trava contra duas abas assinando juntas);
+> 2. juntar o ramo na `main`;
+> 3. publicar as três funções: `gerenciar-assinatura`, `assinar` e `webhook-mercadopago --no-verify-jwt`;
+> 4. publicar o site. Entre o passo 3 e o 4, o checkout que está no ar fica fora (a `assinar` nova não serve ao site
+>    antigo); como tudo está em modo teste, ninguém paga.
+>
+> Só depois do teste de ponta a ponta no sandbox, troque o token do servidor (`MERCADOPAGO_ACCESS_TOKEN`) e a chave
+> pública (`VITE_MERCADOPAGO_PUBLIC_KEY`) pelos de produção.
+>
+> **Premissa do D-68 corrigida.** Pela documentação do Mercado Pago (assinaturas com pagamento autorizado), uma
+> parcela recusada não cancela a assinatura: ela só é cancelada depois de 3 parcelas recusadas (≈3 meses no mensal,
+> ≈3 anos no anual). Até existir o corte na primeira falha, quem tem cartão sem saldo pode ficar com o plano pago
+> esse tempo.
+>
+> **Antes da produção:**
+>
+> - tratar o tópico `subscription_authorized_payment` no webhook: renovar a `proxima_cobranca`, cortar o plano na
+>   primeira falha e cadastrar o tópico no webhook do Mercado Pago;
+> - só dar período pago no cancelamento se ao menos uma parcela foi cobrada (hoje, cancelar na primeira hora, antes
+>   da 1ª cobrança, dá um período sem pagar);
+> - rede de segurança para a assinatura órfã quando a resposta do POST da `assinar` se perde (ela existe na operadora
+>   e não aqui);
+> - resposta 2xx com status cancelada ou pausada tratada como recusa;
+> - fonte com fallback dentro dos campos seguros;
+> - testes de comportamento das três funções (hoje os testes só leem o código delas);
+> - conferir no sandbox os tópicos que chegam, os payloads de recusa e de erro do token, o `summarized` da assinatura
+>   e a troca de cartão.
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
