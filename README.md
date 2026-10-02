@@ -148,10 +148,12 @@ Para funcionar de verdade, nesta ordem:
 1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://matheusrv0.github.io/metanutri/`.
    Em *Redirect URLs*: `https://matheusrv0.github.io/metanutri/**` e `http://localhost:5173/**`.
 2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8.
-3. **E-mail (SMTP).** Até ter domínio, os e-mails saem pelo Gmail do MetaNutri: ligue a verificação em duas
-   etapas, crie uma *Senha de app* e preencha *Authentication > Emails > SMTP Settings* (host `smtp.gmail.com`,
-   porta 465, usuário e remetente = o Gmail, senha = a senha de app). Sem SMTP próprio o Supabase só manda
-   e-mail para a equipe do projeto, no máximo 2 por hora.
+3. **E-mail (SMTP).** Os e-mails saem pelo Resend, com o domínio `metanutri.com.br`. No Resend, em *Domains*,
+   adicione o domínio, copie os registros de DNS para a zona do domínio no Registro.br e espere a verificação; em
+   *API Keys*, crie uma chave com *Sending access*. Depois preencha *Authentication > Emails > SMTP Settings*
+   (host `smtp.resend.com`, porta 465, usuário `resend`, senha = a chave do Resend, remetente
+   `nao-responda@metanutri.com.br`, nome `MetaNutri`). Sem SMTP próprio o Supabase só manda e-mail para a equipe
+   do projeto, no máximo 2 por hora; sem domínio verificado o Resend só manda para o dono da conta.
 4. **SQL.** No SQL Editor, rode `supabase/005-estudante.sql` e depois `supabase/006-verificacao.sql`. Para se
    marcar como administrador, rode a linha comentada no fim do 006 com o seu e-mail. O 006 pode rodar de novo
    quando mudar: ele refaz as funções sem apagar dados.
