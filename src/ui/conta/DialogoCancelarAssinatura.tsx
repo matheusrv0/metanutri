@@ -55,7 +55,11 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, aoFech
     <Dialog open={aberto} onOpenChange={(abrir) => (abrir ? undefined : fechar())}>
       <DialogContent
         iconeFechar={<IconeMarca nome="fechar" />}
+        // Cada abertura começa sem o erro de antes, e o fechamento (por qualquer motivo, inclusive
+        // `aberto` virar false porque a linha mudou) o apaga. Os dois são avisos do diálogo, não efeitos.
+        onOpenAutoFocus={() => setErro(null)}
         onCloseAutoFocus={(e) => {
+          setErro(null)
           // Cancelada: o foco já foi para o aviso, e o botão que abriu a confirmação sumiu.
           if (canceladaRef.current) {
             canceladaRef.current = false

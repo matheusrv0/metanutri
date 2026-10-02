@@ -8,18 +8,26 @@ const { cliente } = vi.hoisted(() => {
     usadas: 14 as unknown,
     leituras: 0,
     rejeitar: false,
+    /** O supabase-js não rejeita em erro de banco ou de rede: resolve com `{ data: null, error }`. */
+    erroDoBanco: null as { readonly message: string } | null,
     espera: Promise.resolve() as Promise<unknown>,
     colunas: [] as string[],
+    filtros: [] as [string, unknown][],
     invocar: vi.fn(),
     from: () => ({
       select: (colunas: string) => {
         cliente.colunas.push(colunas)
         return {
-          maybeSingle: async () => {
-            cliente.leituras += 1
-            await cliente.espera
-            if (cliente.rejeitar) throw new Error('rede caiu')
-            return { data: cliente.linha }
+          eq: (coluna: string, valor: unknown) => {
+            cliente.filtros.push([coluna, valor])
+            return {
+              maybeSingle: async () => {
+                cliente.leituras += 1
+                await cliente.espera
+                if (cliente.rejeitar) throw new Error('rede caiu')
+                return cliente.erroDoBanco ? { data: null, error: cliente.erroDoBanco } : { data: cliente.linha, error: null }
+              },
+            }
           },
         }
       },
@@ -49,8 +57,10 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     cliente.usadas = 14
     cliente.leituras = 0
     cliente.rejeitar = false
+    cliente.erroDoBanco = null
     cliente.espera = Promise.resolve()
     cliente.colunas = []
+    cliente.filtros = []
     cliente.invocar.mockReset()
   })
 
@@ -67,6 +77,11 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await waitFor(() => expect(result.current.carregado).toBe(true))
     expect(result.current.assinatura).toMatchObject({ plano: 'solo', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' })
     expect(cliente.colunas).toEqual(['*'])
+  })
+
+  it('M7: a leitura filtra pela conta de quem está entrando, não depende só do RLS', async () => {
+    await aberto()
+    expect(cliente.filtros).toEqual([['nutricionista_id', 'u1']])
   })
 
   it('CA-160: conta quantas vagas de fundador sobram', async () => {
@@ -289,6 +304,34 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     expect(result.current.carregando).toBe(false)
     expect(result.current.assinatura.plano).toBe('free')
     expect(erro).toHaveBeenCalledWith(expect.stringContaining('rede caiu'))
+    erro.mockRestore()
+  })
+
+  it('I1: a releitura que volta com erro do banco (sem rejeitar) mantém o plano pago, não vira Free', async () => {
+    cliente.linha = { plano: 'pro', status: 'ativa' }
+    const { result } = await aberto()
+    expect(result.current.assinatura.plano).toBe('pro')
+    const erro = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const antes = cliente.leituras
+    cliente.erroDoBanco = { message: 'banco fora' }
+    act(() => result.current.recarregar())
+    await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    expect(result.current.assinatura.plano).toBe('pro')
+    expect(result.current.carregado).toBe(true)
+    expect(erro).toHaveBeenCalledWith('Não consegui ler a assinatura: banco fora')
+    erro.mockRestore()
+  })
+
+  it('I1: a primeira leitura que volta com erro do banco fica carregada, no Free, e registra só a mensagem', async () => {
+    cliente.linha = { plano: 'pro', status: 'ativa' }
+    cliente.erroDoBanco = { message: 'banco fora' }
+    const erro = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { result } = renderHook(() => useAssinatura('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.carregando).toBe(false)
+    expect(result.current.assinatura.plano).toBe('free')
+    expect(erro).toHaveBeenCalledWith('Não consegui ler a assinatura: banco fora')
     erro.mockRestore()
   })
 })

@@ -8,6 +8,7 @@ import {
   errosDoCartao,
   mascararCpf,
   MENSAGEM_DO_CAMPO,
+  nomeDoTitular,
   ORDEM_DOS_CAMPOS,
   soDigitos,
   USE_CREDITO,
@@ -151,7 +152,7 @@ export const FormularioCartao = forwardRef<ControleDoCartao, FormularioCartaoPro
         const atual = processador.current
         if (!atual) return { ok: false, erro: CAMPOS_NAO_CARREGARAM }
         try {
-          return { ok: true, dados: await atual.gerarToken({ nome: nome.trim(), cpf: soDigitos(cpf) }) }
+          return { ok: true, dados: await atual.gerarToken({ nome: nomeDoTitular(nome), cpf: soDigitos(cpf) }) }
         } catch (falha) {
           const campo = falha instanceof ErroDoCartao ? campoDoErroDoToken(falha.codigos) : null
           if (campo) {

@@ -45,9 +45,16 @@ export function cpfValido(texto: string): boolean {
 
 const NOME = /^\p{L}[\p{L} .'-]*$/u
 
+/**
+ * O nome como é conferido e como vai para a operadora: sem espaço nas pontas e com o acento
+ * junto da letra. "José" colado com o acento separado ("e" + acento) vira um caractere só;
+ * sem isso, o acento solto não é letra e o nome seria barrado.
+ */
+export const nomeDoTitular = (texto: string): string => texto.normalize('NFC').trim()
+
 /** Como está impresso: só letras, espaço, ponto, apóstrofo e hífen. "APRO" (do cartão de teste) serve. */
 export const nomeValido = (texto: string): boolean => {
-  const limpo = texto.trim()
+  const limpo = nomeDoTitular(texto)
   return limpo.length >= 2 && NOME.test(limpo)
 }
 

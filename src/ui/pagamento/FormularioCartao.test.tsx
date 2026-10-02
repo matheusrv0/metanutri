@@ -124,6 +124,17 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     expect(falso.tokens).toEqual([{ nome: 'APRO', cpf: '12345678909' }])
   })
 
+  it('nome colado com o acento separado ("Jose" + acento) passa e vai para a operadora como "José"', async () => {
+    const { falso, usuario } = await montar()
+    falso.preencher()
+    await usuario.click(nome())
+    await usuario.paste('José Lima')
+    await usuario.type(cpf(), '12345678909')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    expect(await screen.findByText(CARTAO_APROVADO.token)).toBeInTheDocument()
+    expect(falso.tokens).toEqual([{ nome: 'José Lima', cpf: '12345678909' }])
+  })
+
   it('CA-370: o erro do gerador aponta o campo e põe o foco nele', async () => {
     const { falso, usuario } = await montar()
     falso.respostaDoToken = () => Promise.reject(new ErroDoCartao(['E301']))

@@ -118,21 +118,26 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
   useEffect(() => {
     if (!cliente || usuarioId === null) return
     let vivo = true
+    const falhou = (mensagem: string) => {
+      // Só a mensagem, nunca o objeto inteiro. Sem isto, `carregando` ficaria preso e o checkout, na espera.
+      console.error(`Não consegui ler a assinatura: ${mensagem}`)
+      // Primeira leitura do usuário: Free, já carregado. Releitura: fica o que já havia.
+      if (vivo) setCarga((antes) => (antes?.usuario === usuarioId ? { ...antes, chave } : { usuario: usuarioId, chave, assinatura: SEM_ASSINATURA }))
+    }
     // A linha inteira: se o 008 ainda não rodou no banco, as colunas do cartão só faltam, e nada quebra.
+    // O filtro pela conta não deixa a leitura depender só do RLS.
     void cliente
       .from('assinaturas')
       .select('*')
+      .eq('nutricionista_id', usuarioId)
       .maybeSingle()
       .then(
-        ({ data }) => {
+        ({ data, error }) => {
+          // O supabase-js não rejeita em erro de banco ou de rede: resolve com `error`. Sem isto, quem paga viraria Free.
+          if (error) return falhou(error.message)
           if (vivo) setCarga({ usuario: usuarioId, chave, assinatura: daLinhaAssinatura(data) })
         },
-          (erro: unknown) => {
-          // Só a mensagem, nunca o objeto inteiro. Sem isto, `carregando` ficaria preso e o checkout, na espera.
-          console.error(`Não consegui ler a assinatura: ${erro instanceof Error ? erro.message : 'erro desconhecido'}`)
-          // Primeira leitura do usuário: Free, já carregado. Releitura: fica o que já havia.
-        if (vivo) setCarga((antes) => (antes?.usuario === usuarioId ? { ...antes, chave } : { usuario: usuarioId, chave, assinatura: SEM_ASSINATURA }))
-        },
+        (erro: unknown) => falhou(erro instanceof Error ? erro.message : 'erro desconhecido'),
       )
     return () => {
       vivo = false

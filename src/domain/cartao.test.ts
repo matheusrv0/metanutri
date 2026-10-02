@@ -9,6 +9,7 @@ import {
   FALHA_DESCONHECIDA,
   mascararCpf,
   mensagemDaRecusa,
+  nomeDoTitular,
   nomeValido,
   PAGAMENTO_INDISPONIVEL,
   RECUSA_PADRAO,
@@ -43,6 +44,14 @@ describe('nome impresso no cartão', () => {
 
   it.each(['A', '', '   ', 'Ana 2', '.Ana'])('"%s" não serve', (nome) => {
     expect(nomeValido(nome)).toBe(false)
+  })
+
+  it('"José" colado com o acento separado (e + acento) serve, e vai para a operadora com o acento junto', () => {
+    const decomposto = 'José'
+    expect(decomposto).not.toBe('José')
+    expect(nomeValido(decomposto)).toBe(true)
+    expect(nomeValido('Maria José da Conceição')).toBe(true)
+    expect(nomeDoTitular(`  ${decomposto} `)).toBe('José')
   })
 })
 

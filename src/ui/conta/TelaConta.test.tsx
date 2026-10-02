@@ -93,7 +93,14 @@ function montar(
 }
 
 describe('TelaConta', () => {
+  // As datas de PAGA (próxima cobrança em 2/11/2026) só aparecem enquanto estão à frente (M2): o relógio fica um mês antes.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-02T15:00:00.000Z'))
+  })
+
   afterEach(() => {
+    vi.useRealTimers()
     estado.assinatura = SEM_ASSINATURA
     estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true }))
     estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true }))
@@ -440,6 +447,36 @@ describe('TelaConta', () => {
     estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' }
     rerender(<TelaConta {...props} />)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('o erro de um cancelamento não reaparece na próxima confirmação, nem quando ela fechou porque a linha mudou', async () => {
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Nada mudou.' }))
+    estado.assinatura = PAGA
+    const { usuario, rerender, props } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(await within(screen.getByRole('dialog')).findByRole('alert')).toHaveTextContent('Nada mudou.')
+    // A linha muda com a confirmação aberta: ela fecha sozinha, sem passar por "Manter assinatura".
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' }
+    rerender(<TelaConta {...props} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await act(async () => {})
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    expect(within(janela).queryByRole('alert')).not.toBeInTheDocument()
+    expect(janela).not.toHaveTextContent('Nada mudou.')
+  })
+
+  it('o erro de um cancelamento some ao fechar com "Manter assinatura" e abrir de novo', async () => {
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Nada mudou.' }))
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(await within(screen.getByRole('dialog')).findByRole('alert')).toHaveTextContent('Nada mudou.')
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Manter assinatura' }))
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(within(screen.getByRole('dialog')).queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('pendente do fluxo novo não oferece "Assinar Solo/Pro" (o servidor recusaria)', () => {

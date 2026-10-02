@@ -29,18 +29,25 @@ export function linhaDoCartao(a: Assinatura): string | null {
   return a.cartaoFinal ? `${a.cartaoBandeira ?? 'Cartão'} final ${a.cartaoFinal}` : null
 }
 
-/** CA-376 e CA-378: a próxima cobrança da ativa, ou até quando vale a cancelada. */
-export function linhaDaCobranca(a: Assinatura): string | null {
-  if (canceladaNoPrazo(a) && a.expiraEm) return `Cancelada, vale até ${formatarDataLonga(a.expiraEm)}`
+/** A data gravada só aparece na tela enquanto está à frente: a próxima cobrança gravada pode ficar velha. */
+const aindaVem = (data: string, agora: Date): boolean => Date.parse(data) > agora.getTime()
+
+/**
+ * CA-376 e CA-378: a próxima cobrança da ativa, ou até quando vale a cancelada. Data que já
+ * passou não aparece (M2): a ativa fica só com o valor; a cancelada, sem linha.
+ */
+export function linhaDaCobranca(a: Assinatura, agora: Date = new Date()): string | null {
+  if (canceladaNoPrazo(a) && a.expiraEm) return aindaVem(a.expiraEm, agora) ? `Cancelada, vale até ${formatarDataLonga(a.expiraEm)}` : null
   if (a.status !== 'ativa' || !a.proximaCobranca) return null
-  const valor = a.valorCentavos > 0 ? `, ${emReais(a.valorCentavos / 100)}` : ''
-  return `Próxima cobrança em ${formatarDataLonga(a.proximaCobranca)}${valor}`
+  const reais = a.valorCentavos > 0 ? emReais(a.valorCentavos / 100) : null
+  if (!aindaVem(a.proximaCobranca, agora)) return reais ? `Próxima cobrança de ${reais}` : null
+  return `Próxima cobrança em ${formatarDataLonga(a.proximaCobranca)}${reais ? `, ${reais}` : ''}`
 }
 
-/** CA-377: a data, por extenso, até quando o plano vale se cancelar agora. Nula sem a próxima cobrança gravada. */
-export function valeAteSeCancelar(a: Assinatura): string | null {
+/** CA-377: a data, por extenso, até quando o plano vale se cancelar agora. Nula sem a próxima cobrança gravada ou se essa data já passou (M2). */
+export function valeAteSeCancelar(a: Assinatura, agora: Date = new Date()): string | null {
   const fim = a.proximaCobranca ? fimDoPeriodoPago(a.proximaCobranca) : null
-  return fim ? formatarDataLonga(fim) : null
+  return fim && aindaVem(fim, agora) ? formatarDataLonga(fim) : null
 }
 
 /** CA-366: a próxima cobrança, antes de assinar; o servidor confirma depois. */
