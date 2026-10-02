@@ -7,7 +7,7 @@
 export const RESPONSAVEL: string | null = null
 
 /** Canal de contato do MetaNutri: titular de dados, plano Clínica, faculdade que falta e suporte. */
-export const CONTATO_EMAIL: string | null = null
+export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
 
 /** Muda quando o texto dos termos ou da política mudar. Vai gravada no cadastro (CA-223). */
 export const VERSAO_TERMOS = '2026-09-30'
