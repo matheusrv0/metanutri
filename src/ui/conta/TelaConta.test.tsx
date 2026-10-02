@@ -1,15 +1,47 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SEM_ASSINATURA, type Assinatura } from '@/domain/assinatura.ts'
+import { RECUSA_PADRAO } from '@/domain/cartao.ts'
 import type { PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import type { Crn, PerfilConta } from '@/domain/situacao.ts'
+import type { ResultadoDaMudanca } from '../estado/usarAssinatura.ts'
+import { CARTAO_APROVADO, processadorFalso, type ProcessadorFalso } from '../pagamento/processadorFalso.test-utils.ts'
 import { contaFalsa } from '../publico/conta/contaFalsa.test-utils.ts'
 import { TelaConta } from './TelaConta.tsx'
 
 const estado = vi.hoisted(() => ({
-  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null } as Assinatura,
+  assinatura: {
+    plano: 'free',
+    planoPedido: 'free',
+    status: 'sem-assinatura',
+    precoTravado: false,
+    expiraEm: null,
+    ciclo: null,
+    valorCentavos: 0,
+    cartaoBandeira: null,
+    cartaoFinal: null,
+    proximaCobranca: null,
+  } as Assinatura,
+  cancelar: vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true })),
+  trocarCartao: vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true })),
 }))
-vi.mock('../estado/usarAssinatura.ts', () => ({ useAssinatura: () => ({ assinatura: estado.assinatura, recarregar: vi.fn() }) }))
+vi.mock('../estado/usarAssinatura.ts', () => ({
+  useAssinatura: () => ({ assinatura: estado.assinatura, recarregar: vi.fn(), cancelar: estado.cancelar, trocarCartao: estado.trocarCartao }),
+}))
+
+const PAGA: Assinatura = {
+  ...SEM_ASSINATURA,
+  plano: 'solo',
+  planoPedido: 'solo',
+  status: 'ativa',
+  ciclo: 'mensal',
+  valorCentavos: 3490,
+  precoTravado: true,
+  cartaoBandeira: 'Mastercard',
+  cartaoFinal: '6351',
+  proximaCobranca: '2026-11-02T15:00:00.000Z',
+}
+const CANCELADA_NO_PRAZO: Assinatura = { ...PAGA, status: 'cancelada', expiraEm: '2026-11-02T02:59:59.000Z' }
 
 const estudante: PerfilConta = { nome: 'Júlia', situacao: 'estudante', crn: null, statusCrn: null, crnDeclaradoEm: null, crnDecididoEm: null }
 const nutri: PerfilConta = {
@@ -33,7 +65,12 @@ const aprovado: PedidoEstudante = {
   avisoFechado: false,
 }
 
-function montar(perfil: PerfilConta | null, pedido: PedidoEstudante | null = null, meFormei = vi.fn(async () => null as string | null)) {
+function montar(
+  perfil: PerfilConta | null,
+  pedido: PedidoEstudante | null = null,
+  meFormei = vi.fn(async () => null as string | null),
+  falso: ProcessadorFalso | null = processadorFalso(),
+) {
   const conta = contaFalsa({ sessao: { id: 'u1', email: 'julia@ufrn.edu.br', nome: 'Júlia' } })
   const props = {
     conta,
@@ -47,15 +84,18 @@ function montar(perfil: PerfilConta | null, pedido: PedidoEstudante | null = nul
     aoVerPrecos: vi.fn(),
     aoIrParaConfig: vi.fn(),
     aoAssinar: vi.fn(),
+    criarProcessador: falso ? falso.criar : null,
     aoSaiu: vi.fn(),
   }
-  render(<TelaConta {...props} />)
-  return { ...props, usuario: userEvent.setup() }
+  const tela = render(<TelaConta {...props} />)
+  return { ...props, ...tela, falso, usuario: userEvent.setup() }
 }
 
 describe('TelaConta', () => {
   afterEach(() => {
     estado.assinatura = SEM_ASSINATURA
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true }))
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true }))
   })
 
   it('CA-156: sair leva para fora da área de trabalho', async () => {
@@ -189,5 +229,168 @@ describe('TelaConta', () => {
     await usuario.dblClick(screen.getByRole('button', { name: 'Mudar para nutricionista' }))
     terminar(null)
     expect(meFormei).toHaveBeenCalledTimes(1)
+  })
+
+  it('CA-376: assinatura paga ativa mostra plano e ciclo, o selo, o cartão, a próxima cobrança e os dois botões', () => {
+    estado.assinatura = PAGA
+    montar(nutri)
+    expect(screen.getByText('Solo, mensal')).toBeInTheDocument()
+    expect(screen.getByText('Ativa')).toBeInTheDocument()
+    expect(screen.getByText('Mastercard final 6351')).toBeInTheDocument()
+    expect(screen.getByText('Próxima cobrança em 2 de novembro de 2026, R$ 34,90')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trocar cartão' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar assinatura' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Assinar/ })).not.toBeInTheDocument()
+  })
+
+  it('CA-377: cancelar abre a confirmação com até quando vale, e "Manter assinatura" é o padrão', async () => {
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    expect(janela).toHaveTextContent('O plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.')
+    await waitFor(() => expect(within(janela).getByRole('button', { name: 'Manter assinatura' })).toHaveFocus())
+    await usuario.click(within(janela).getByRole('button', { name: 'Manter assinatura' }))
+    expect(estado.cancelar).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('CA-378: confirmar o cancelamento pede ao servidor uma vez e fecha a confirmação', async () => {
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(estado.cancelar).toHaveBeenCalledOnce()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('CA-378 e CA-380: cancelada no prazo diz até quando vale e oferece assinar de novo, no mesmo plano e ciclo', async () => {
+    estado.assinatura = CANCELADA_NO_PRAZO
+    const { usuario, aoAssinar } = montar(nutri)
+    expect(screen.getByText('Cancelada, vale até 1 de novembro de 2026')).toBeInTheDocument()
+    expect(screen.getByText('Cancelada')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Assinar de novo' }))
+    expect(aoAssinar).toHaveBeenCalledWith('solo', 'mensal')
+  })
+
+  it('CA-380: cancelada fora do prazo, já no Free, também oferece assinar de novo', async () => {
+    estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'pro', status: 'cancelada', ciclo: 'anual', expiraEm: '2026-09-01T02:59:59.000Z' }
+    const { usuario, aoAssinar } = montar(nutri)
+    expect(screen.getByText('Sua assinatura foi cancelada. Você continua com o plano Free.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Assinar de novo' }))
+    expect(aoAssinar).toHaveBeenCalledWith('pro', 'anual')
+  })
+
+  it('CB-92 e foco 5: clique duplo em "Cancelar assinatura" da confirmação pede uma vez só', async () => {
+    let terminar: (resultado: ResultadoDaMudanca) => void = () => undefined
+    estado.cancelar = vi.fn(
+      () =>
+        new Promise<ResultadoDaMudanca>((resolver) => {
+          terminar = resolver
+        }),
+    )
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.dblClick(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(estado.cancelar).toHaveBeenCalledTimes(1)
+    await act(async () => terminar({ ok: true }))
+  })
+
+  it('cancelamento que falha mostra a mensagem dentro da confirmação, que continua aberta', async () => {
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.' }))
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog')
+    await usuario.click(within(janela).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(await within(janela).findByRole('alert')).toHaveTextContent('Nada mudou')
+  })
+
+  it('foco 4: assinatura de antes do 008, sem cartão nem próxima cobrança: o plano aparece e a confirmação fala do fim do período, sem data', async () => {
+    estado.assinatura = { ...PAGA, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null }
+    const { usuario } = montar(nutri)
+    expect(screen.getByText('Solo, mensal')).toBeInTheDocument()
+    expect(screen.queryByText(/final \d{4}/)).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('O plano Solo continua até o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.')
+  })
+
+  it('CA-379: Trocar cartão abre o mesmo formulário do checkout; autorizado, fecha e avisa', async () => {
+    estado.assinatura = PAGA
+    const { usuario, falso } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    expect(within(janela).getByRole('group', { name: 'Número do cartão' })).toBeInTheDocument()
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(estado.trocarCartao).toHaveBeenCalledWith(CARTAO_APROVADO)
+    expect(screen.getByText('Cartão trocado. As próximas cobranças vão para ele.')).toBeInTheDocument()
+  })
+
+  it('CA-379: recusado, o cartão antigo continua, a mensagem aparece e o código é apagado', async () => {
+    estado.assinatura = PAGA
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: RECUSA_PADRAO }))
+    const { usuario, falso } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    expect(await within(janela).findByText(`${RECUSA_PADRAO} O cartão antigo continua valendo.`)).toBeInTheDocument()
+    expect(falso?.limpezas).toBe(1)
+    expect(screen.getByRole('dialog', { name: 'Trocar cartão' })).toBeInTheDocument()
+  })
+
+  it('sem a chave pública do pagamento, não há "Trocar cartão"; cancelar continua', () => {
+    estado.assinatura = PAGA
+    montar(nutri, null, undefined, null)
+    expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar assinatura' })).toBeInTheDocument()
+  })
+
+  it('pendente do fluxo novo (com cartão): oferece "Cancelar assinatura", sem "Trocar cartão"', async () => {
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' }
+    const { usuario } = montar(nutri)
+    expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    expect(janela).toHaveTextContent('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
+    expect(janela).not.toHaveTextContent('período já pago')
+  })
+
+  it('pausada do fluxo novo também oferece "Cancelar assinatura"', () => {
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'pro', status: 'pausada', ciclo: 'anual', cartaoBandeira: 'Visa', cartaoFinal: '1111' }
+    montar(nutri)
+    expect(screen.getByRole('button', { name: 'Cancelar assinatura' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
+  })
+
+  it('pendente do fluxo antigo (sem cartão) não mostra "Cancelar assinatura"', () => {
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal' }
+    montar(nutri)
+    expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).not.toBeInTheDocument()
+  })
+
+  it('CA-381: Conta e plano não cita o processador', () => {
+    montar(nutri)
+    expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
+    expect(screen.getByText('O pagamento é com cartão de crédito, aqui mesmo no site. O MetaNutri não vê nem guarda o número do cartão.')).toBeInTheDocument()
+  })
+
+  it('CA-383: nenhum ícone de biblioteca em Conta e plano, nem na confirmação', async () => {
+    estado.assinatura = PAGA
+    const { usuario } = montar({ ...nutri, statusCrn: 'nao_encontrado', crnDecididoEm: new Date().toISOString() })
+    expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
   })
 })

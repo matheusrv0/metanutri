@@ -516,7 +516,8 @@ function Conteudo() {
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
-          aoAssinar={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
+          aoAssinar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
+          criarProcessador={processadorDoSite()}
         />
       </Estrutura>
     )

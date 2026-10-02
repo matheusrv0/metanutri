@@ -1,6 +1,7 @@
-import { TriangleAlert } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { diasParaCorrigir, exportacaoBloqueada, MENSAGEM_ERRO_SITUACAO, normalizarNumeroCrn, validarCrn, type Crn, type PerfilConta } from '@/domain/situacao.ts'
+import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
+import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { CampoCrn } from '../publico/conta/CampoCrn.tsx'
 
@@ -42,7 +43,7 @@ export function AvisoCrn({ perfil, agora, aoCorrigir }: AvisoCrnProps) {
     <section aria-label="CRN" className="flex flex-col gap-4 rounded-3xl bg-card p-5">
       <div className="flex items-start gap-3.5">
         <span className="grid size-10 shrink-0 place-content-center rounded-md bg-lighterror text-errortext">
-          <TriangleAlert className="size-5" aria-hidden="true" />
+          <IconeMarca nome="alerta" />
         </span>
         <div className="min-w-0">
           <p className="font-titulo text-base font-semibold text-heading">Não encontramos seu CRN no conselho</p>
@@ -66,7 +67,8 @@ export function AvisoCrn({ perfil, agora, aoCorrigir }: AvisoCrnProps) {
             invalido={erro !== null}
           />
         </div>
-        <Button onClick={() => void corrigir()} loading={enviando}>
+        <Button onClick={() => void corrigir()} disabled={enviando} aria-busy={enviando || undefined}>
+          {enviando ? <PontosDaMarca pulsando /> : null}
           Corrigir CRN
         </Button>
       </div>

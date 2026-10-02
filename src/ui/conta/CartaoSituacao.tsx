@@ -1,4 +1,3 @@
-import { BadgeCheck, GraduationCap } from 'lucide-react'
 import { formatarDataLonga, formatarMesAno, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import { formatarCrn, type PerfilConta, type StatusCrn } from '@/domain/situacao.ts'
 import { Badge } from '@ds/componentes/display/badge.tsx'
@@ -44,10 +43,7 @@ export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante
     return (
       <Card className="gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <BadgeCheck className="size-5 text-primary" aria-hidden="true" />
-            <CardTitle>Nutricionista</CardTitle>
-          </div>
+          <CardTitle>Nutricionista</CardTitle>
           <Badge variant={selo.variante}>{selo.texto}</Badge>
         </div>
         <dl className="grid grid-cols-2 gap-x-5 gap-y-3.5">
@@ -63,10 +59,7 @@ export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante
   return (
     <Card className="gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <GraduationCap className="size-5 text-primary" aria-hidden="true" />
-          <CardTitle>Estudante de Nutrição</CardTitle>
-        </div>
+        <CardTitle>Estudante de Nutrição</CardTitle>
         <Badge variant={selo.variante}>{selo.texto}</Badge>
       </div>
       {pedido ? (

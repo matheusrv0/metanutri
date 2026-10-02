@@ -1,6 +1,7 @@
-import { TriangleAlert } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { MENSAGEM_ERRO_SITUACAO, normalizarNumeroCrn, validarCrn, type Crn } from '@/domain/situacao.ts'
+import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
+import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { CaixaDeclaracao } from '../publico/conta/CaixaDeclaracao.tsx'
@@ -51,7 +52,7 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
 
   return (
     <Dialog open={aberto} onOpenChange={(abrir) => (abrir ? undefined : aoFechar())}>
-      <DialogContent>
+      <DialogContent iconeFechar={<IconeMarca nome="fechar" />}>
         <DialogHeader>
           <DialogTitle>Me formei</DialogTitle>
           <DialogDescription>Informe seu CRN para a conta passar a ser de nutricionista.</DialogDescription>
@@ -71,7 +72,7 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
             Declaro que este CRN é meu e está ativo.
           </CaixaDeclaracao>
           <div className="flex items-start gap-2 rounded-xl bg-lightwarning p-3 text-sm text-warningtext">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <IconeMarca nome="alerta" className="mt-0.5 size-4" />
             <p>O plano Estudante termina agora e a conta vai para o Free. Seus planos alimentares e pacientes continuam salvos.</p>
           </div>
           {erro ? (
@@ -84,7 +85,8 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
           <Button variant="outline" onClick={aoFechar}>
             Cancelar
           </Button>
-          <Button onClick={() => void confirmar()} loading={enviando}>
+          <Button onClick={() => void confirmar()} disabled={enviando} aria-busy={enviando || undefined}>
+            {enviando ? <PontosDaMarca pulsando /> : null}
             Mudar para nutricionista
           </Button>
         </DialogFooter>
