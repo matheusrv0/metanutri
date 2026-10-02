@@ -271,6 +271,19 @@ Entrada de 40 px, raio 12, sufixo de unidade dentro do campo, rótulo acima ou o
 para leitor de tela quando a coluna já nomeia o dado. Foco põe borda forte e anel;
 `aria-invalid` troca a borda para a cor de erro.
 
+No formulário do cartão (checkout e Trocar cartão; spec checkout-proprio, D-73) os cinco
+campos usam a caixa do protótipo v2: 48 px, raio 12, fundo `--surface-sunken` e sem fio; no
+foco, fundo de cartão e anel de 2 px por dentro; com erro, fundo e anel de erro. Três deles
+são campos seguros da operadora (iframes): a cor do texto, a do placeholder e o tamanho da
+letra vão para dentro deles lidos dos tokens do tema na hora em que o formulário abre.
+
+### Ícones da marca
+
+O app usa o Lucide pelo `Icon`. O checkout, Conta e plano e a volta do pagamento usam só o
+`IconeMarca` (traço arredondado de 1,8 e um ponto, como a logo; o ponto principal pode ser
+laranja) e os `PontosDaMarca` no lugar da roda de carregamento (spec checkout-proprio, D-73 e
+CA-383). Nenhum emoji nem símbolo de texto como ícone nessas telas.
+
 ## Motion
 
 Rápido e quieto. Cor em 150 ms (`--dur-fast`), layout em 200 a 320 ms, medidores animam

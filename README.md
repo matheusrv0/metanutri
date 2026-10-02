@@ -92,8 +92,12 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   do paciente, backup em arquivo e **cópia na nuvem** (enviar deste aparelho, trazer
   para este aparelho). A cópia não é automática de propósito: cada botão sobrescreve
   um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
-- **Conta e plano** — entrar, sair e ver a assinatura. Só funciona sem conta quando o
-  Supabase não está configurado (modo local); com ele, a conta é obrigatória. Veja abaixo.
+- **Conta e plano** — entrar, sair, ver a assinatura, o cartão que paga e a próxima cobrança, trocar o cartão e
+  cancelar. Só funciona sem conta quando o Supabase não está configurado (modo local); com ele, a conta é obrigatória.
+  Veja abaixo.
+- **Assinar** — o checkout do site: Solo ou Pro, mensal ou anual, com cartão de crédito, sem sair do MetaNutri. O
+  número do cartão vai direto para a operadora de pagamento, em campos seguros. Precisa do
+  `008-cartao-da-assinatura.sql`, das três funções e da chave pública (passos 4, 5 e 7 de "Projeto já ligado").
 - **Negócio** (só para o administrador): receita por mês, assinaturas por plano, quem chegou nos últimos 30 dias e a lista de contas. Precisa do `007-painel-do-dono.sql`.
 
 ## Conta na nuvem (opcional em desenvolvimento)

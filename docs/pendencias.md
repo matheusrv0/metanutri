@@ -34,6 +34,15 @@ Atualizado em 01/10/2026.
 > **Atualizado em 02/10:** a tela **Negócio** (spec `painel-do-dono`) mostra receita, assinaturas por plano,
 > quem chegou nos últimos 30 dias e a lista de contas, só para o administrador. Falta rodar o
 > `supabase/007-painel-do-dono.sql`; o histórico de receita começa no dia em que ele rodar.
+>
+> **Atualizado em 02/10:** o **checkout próprio** (spec `checkout-proprio`) leva o pagamento para dentro do site:
+> cartão de crédito em campos seguros, assinatura já autorizada, e cancelar e trocar o cartão em Conta e plano. Fica
+> em modo teste até o teste de ponta a ponta com o comprador de teste passar. Falta rodar o
+> `supabase/008-cartao-da-assinatura.sql` e publicar as três funções; a chave pública de teste já está na variável
+> `VITE_MERCADOPAGO_PUBLIC_KEY` do GitHub. Quem tem assinatura pendente ou pausada do cartão novo não consegue assinar
+> de novo (a função recusa com 409): cancela em Conta e plano e volta para o Free na hora, sem período pago. Fora deste
+> trabalho: o aviso de cada cobrança recusada (hoje o plano cai quando a operadora cancela a assinatura, depois das
+> novas tentativas).
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
