@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { canceladaNoPrazo, temAssinaturaPaga } from '@/domain/assinatura.ts'
+import { useRef, useState } from 'react'
+import { canceladaNoPrazo, temAssinaturaPaga, type StatusAssinatura } from '@/domain/assinatura.ts'
 import { emReais, linhaDaCobranca, linhaDoCartao, nomeComCiclo, recadoDaAssinatura } from '@/domain/assinaturaTextos.ts'
 import { planoPorId, PLANOS, type Ciclo } from '@/domain/conta.ts'
 import { formatarDataLonga, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
@@ -28,6 +28,8 @@ interface TelaContaProps {
   readonly aoIrParaConfig: () => void
   /** Leva ao checkout. O "Assinar de novo" reabre o plano e o ciclo de antes (CA-380). */
   readonly aoAssinar: (plano: PlanoPago, ciclo: Ciclo) => void
+  /** Depois de cancelar ou trocar o cartão: o App relê a sua cópia da assinatura (CA-380). */
+  readonly aoMudouAssinatura: () => void
   /** Os campos seguros do cartão, para "Trocar cartão"; nulo quando o site não tem a chave pública. */
   readonly criarProcessador: CriarProcessador | null
   /** Situação e CRN (spec conta-e-verificacao). Nulo no modo local, sem servidor. */
@@ -50,6 +52,7 @@ export function TelaConta({
   aoVerPrecos,
   aoIrParaConfig,
   aoAssinar,
+  aoMudouAssinatura,
   criarProcessador,
   perfil,
   pedido,
@@ -62,9 +65,11 @@ export function TelaConta({
   const [saindo, setSaindo] = useState(false)
   const { assinatura, recarregar, cancelar, trocarCartao } = useAssinatura(conta.sessao?.id ?? null)
   const [formando, setFormando] = useState(false)
-  const [cancelando, setCancelando] = useState(false)
+  // O status de quando a confirmação abriu: se a linha mudar com ela aberta, o texto ficaria errado, então ela fecha.
+  const [cancelando, setCancelando] = useState<StatusAssinatura | null>(null)
   const [trocando, setTrocando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
+  const refAviso = useRef<HTMLDivElement>(null)
 
   const plano = planoPorId(assinatura.plano)
   const paga = temAssinaturaPaga(assinatura)
@@ -188,7 +193,11 @@ export function TelaConta({
           <p className="text-xs text-muted-foreground">Você entrou no preço de fundador: ele não sobe quando o preço subir.</p>
         ) : null}
 
-        {aviso ? <AvisoPagamento tipo="ok">{aviso}</AvisoPagamento> : null}
+        {aviso ? (
+          <div tabIndex={-1} ref={refAviso} className="outline-none">
+            <AvisoPagamento tipo="ok">{aviso}</AvisoPagamento>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap gap-3">
           {(paga && !noPrazo) || travadaNova ? (
@@ -208,7 +217,7 @@ export function TelaConta({
                 variant="outline"
                 onClick={() => {
                   setAviso(null)
-                  setCancelando(true)
+                  setCancelando(assinatura.status)
                 }}
               >
                 Cancelar assinatura
@@ -222,7 +231,7 @@ export function TelaConta({
             Mudar de plano
           </Button>
 
-          {conta.sessao && assinatura.status !== 'ativa' && assinatura.status !== 'cancelada'
+          {conta.sessao && !travadaNova && assinatura.status !== 'ativa' && assinatura.status !== 'cancelada'
             ? PLANOS.filter((p) => ehPlanoPago(p.id)).map((p) => (
                 <Button key={p.id} onClick={() => ehPlanoPago(p.id) && aoAssinar(p.id, 'mensal')}>
                   Assinar {p.nome} · {emReais(p.mensal)}/mês
@@ -247,7 +256,18 @@ export function TelaConta({
         }}
       />
 
-      <DialogoCancelarAssinatura aberto={cancelando} assinatura={assinatura} cancelar={cancelar} aoFechar={() => setCancelando(false)} aoCancelada={() => setCancelando(false)} />
+      <DialogoCancelarAssinatura
+        aberto={cancelando === assinatura.status && ((paga && !noPrazo) || travadaNova)}
+        assinatura={assinatura}
+        cancelar={cancelar}
+        aoFechar={() => setCancelando(null)}
+        aoDevolverFoco={() => refAviso.current?.focus()}
+        aoCancelada={() => {
+          setCancelando(null)
+          setAviso('Assinatura cancelada.')
+          aoMudouAssinatura()
+        }}
+      />
 
       {criarProcessador ? (
         <DialogoTrocarCartao
@@ -258,6 +278,7 @@ export function TelaConta({
           aoTrocado={() => {
             setTrocando(false)
             setAviso('Cartão trocado. As próximas cobranças vão para ele.')
+            aoMudouAssinatura()
           }}
         />
       ) : null}

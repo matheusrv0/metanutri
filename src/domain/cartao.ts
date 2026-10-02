@@ -88,6 +88,9 @@ export const PAGAMENTO_INDISPONIVEL = 'O pagamento não está disponível agora.
 /** CA-374. */
 export const SERVIDOR_FORA = 'Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 /** CA-373. */
+/** Só depois de uma recusa do banco ao cartão novo: sem resposta ou erro de servidor, o cartão novo pode ter sido aceito. */
+export const CARTAO_ANTIGO = 'O cartão antigo continua valendo.'
+
 export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou use outro cartão. Nada foi cobrado.'
 /** CB-90 e erro do gerador do código do cartão. */
 export const CONFIRA_O_CARTAO = 'Confira os dados do cartão e tente de novo. Nada foi cobrado.'

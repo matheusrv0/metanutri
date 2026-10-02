@@ -5,7 +5,7 @@
 // para a tela mostrar o que o servidor gravou (CA-372, CB-93).
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { daLinhaAssinatura, SEM_ASSINATURA, type Assinatura } from '@/domain/assinatura.ts'
-import { mensagemDaRecusa, SERVIDOR_FORA, type DadosDoCartao } from '@/domain/cartao.ts'
+import { CARTAO_ANTIGO, mensagemDaRecusa, SERVIDOR_FORA, type DadosDoCartao } from '@/domain/cartao.ts'
 import { VAGAS_PRECO_FUNDADOR, type Ciclo } from '@/domain/conta.ts'
 import type { PlanoPago } from '../navegacao.ts'
 import { obterSupabase } from './supabase.ts'
@@ -196,7 +196,7 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
       umPorVez<ResultadoDaMudanca>({ ok: false, erro: PEDIDO_EM_ANDAMENTO }, async () => {
         const { falha } = await chamar('gerenciar-assinatura', { acao: 'trocar_cartao', ...doCartao(cartao) })
         recarregar()
-        return falha ? { ok: false, erro: mensagemDaFalha(falha) } : { ok: true }
+        return falha ? { ok: false, erro: falha.status === 402 ? `${mensagemDaFalha(falha)} ${CARTAO_ANTIGO}` : mensagemDaFalha(falha) } : { ok: true }
       }),
     [umPorVez, recarregar],
   )

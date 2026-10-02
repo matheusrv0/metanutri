@@ -517,6 +517,7 @@ function Conteudo() {
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
           aoAssinar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
+          aoMudouAssinatura={() => cobranca.recarregar()}
           criarProcessador={processadorDoSite()}
         />
       </Estrutura>

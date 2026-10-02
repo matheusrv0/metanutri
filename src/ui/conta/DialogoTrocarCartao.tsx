@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { DadosDoCartao } from '@/domain/cartao.ts'
+import { CARTAO_ANTIGO, type DadosDoCartao } from '@/domain/cartao.ts'
 import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -33,7 +33,7 @@ export function DialogoTrocarCartao({ aberto, criarProcessador, trocarCartao, ao
     setEnviando(true)
     setErro(null)
     const gerado = await formulario.gerar()
-    const resultado: ResultadoDaMudanca = gerado.ok ? await trocarCartao(gerado.dados) : { ok: false, erro: gerado.erro }
+    const resultado: ResultadoDaMudanca = gerado.ok ? await trocarCartao(gerado.dados) : { ok: false, erro: `${gerado.erro} ${CARTAO_ANTIGO}` }
     enviandoRef.current = false
     setEnviando(false)
     if (resultado.ok) {
@@ -66,7 +66,7 @@ export function DialogoTrocarCartao({ aberto, criarProcessador, trocarCartao, ao
             <DialogDescription>As próximas cobranças vão para o cartão novo. Nada é cobrado agora.</DialogDescription>
           </DialogHeader>
           <FormularioCartao ref={controle} criarProcessador={criarProcessador} travado={enviando} aoMudarPronto={setPronto} />
-          {erro ? <AvisoPagamento tipo="erro">{`${erro} O cartão antigo continua valendo.`}</AvisoPagamento> : null}
+          {erro ? <AvisoPagamento tipo="erro">{erro}</AvisoPagamento> : null}
           <DialogFooter>
             <Button variant="outline" onClick={fechar} disabled={enviando}>
               Voltar

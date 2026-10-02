@@ -15,13 +15,16 @@ interface DialogoCancelarAssinaturaProps {
   readonly cancelar: () => Promise<ResultadoDaMudanca>
   readonly aoFechar: () => void
   readonly aoCancelada: () => void
+  /** Depois de cancelar, o botão que abriu a confirmação some: quem chama leva o foco para outro lugar. */
+  readonly aoDevolverFoco: () => void
 }
 
 /** CA-377 e CA-378: a confirmação diz até quando o plano vale; "Manter assinatura" vem primeiro e recebe o foco. */
-export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, aoFechar, aoCancelada }: DialogoCancelarAssinaturaProps) {
+export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, aoFechar, aoCancelada, aoDevolverFoco }: DialogoCancelarAssinaturaProps) {
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
+  const canceladaRef = useRef(false)
   const ativa = assinatura.status === 'ativa'
   const nome = planoPorId(ativa ? assinatura.plano : assinatura.planoPedido)?.nome ?? 'pago'
   const ate = valeAteSeCancelar(assinatura)
@@ -35,7 +38,10 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, aoFech
     const resultado = await cancelar()
     enviandoRef.current = false
     setEnviando(false)
-    if (resultado.ok) aoCancelada()
+    if (resultado.ok) {
+      canceladaRef.current = true
+      aoCancelada()
+    }
     else setErro(resultado.erro)
   }
 
@@ -47,7 +53,17 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, aoFech
 
   return (
     <Dialog open={aberto} onOpenChange={(abrir) => (abrir ? undefined : fechar())}>
-      <DialogContent iconeFechar={<IconeMarca nome="fechar" />}>
+      <DialogContent
+        iconeFechar={<IconeMarca nome="fechar" />}
+        onCloseAutoFocus={(e) => {
+          // Cancelada: o foco já foi para o aviso, e o botão que abriu a confirmação sumiu.
+          if (canceladaRef.current) {
+            canceladaRef.current = false
+            e.preventDefault()
+            aoDevolverFoco()
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Cancelar a assinatura?</DialogTitle>
           <DialogDescription>

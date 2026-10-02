@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ProcessadorFalso } from './ui/pagamento/processadorFalso.test-utils.ts'
 import { App } from './App.tsx'
@@ -11,7 +11,13 @@ import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 const estado = vi.hoisted(() => ({ conta: null as unknown }))
 
 vi.mock('./ui/estado/usarConta.ts', () => ({ useConta: () => estado.conta }))
-const cobranca = vi.hoisted(() => ({ carregado: true, assinar: vi.fn() }))
+const cobranca = vi.hoisted(() => ({
+  carregado: true,
+  assinar: vi.fn(),
+  recarregar: vi.fn(),
+  cancelar: vi.fn(async () => ({ ok: true as const })),
+  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null } as unknown,
+}))
 const processador = vi.hoisted(() => ({ falso: null as unknown as ProcessadorFalso }))
 vi.mock('./ui/pagamento/processadorMercadoPago.ts', async () => {
   const { processadorFalso } = await import('./ui/pagamento/processadorFalso.test-utils.ts')
@@ -20,14 +26,14 @@ vi.mock('./ui/pagamento/processadorMercadoPago.ts', async () => {
 })
 vi.mock('./ui/estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({
-    assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null },
+    assinatura: cobranca.assinatura,
     carregado: cobranca.carregado,
     carregando: false,
     vagasRestantes: 186,
     assinar: cobranca.assinar,
-    cancelar: vi.fn(),
+    cancelar: cobranca.cancelar,
     trocarCartao: vi.fn(),
-    recarregar: vi.fn(),
+    recarregar: cobranca.recarregar,
   }),
 }))
 
@@ -89,6 +95,9 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     estado.conta = contaFalsa()
     cobranca.carregado = true
     cobranca.assinar = vi.fn()
+    cobranca.recarregar = vi.fn()
+    cobranca.cancelar = vi.fn(async () => ({ ok: true as const }))
+    cobranca.assinatura = { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null }
     processador.falso.criados = 0
     verificacao.perfil = { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null }
     verificacao.ehAdmin = false
@@ -368,5 +377,28 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     render(tela())
     expect(screen.getByRole('heading', { level: 1, name: 'Conta e plano' })).toBeInTheDocument()
     expect(screen.getByText('Não encontramos seu CRN no conselho')).toBeInTheDocument()
+  })
+
+  it('CA-380: depois de cancelar em Conta e plano, o App relê a assinatura (o "Assinar de novo" não usa a ativa antiga)', async () => {
+    cobranca.assinatura = {
+      plano: 'solo',
+      planoPedido: 'solo',
+      status: 'ativa',
+      precoTravado: false,
+      expiraEm: null,
+      ciclo: 'mensal',
+      valorCentavos: 3490,
+      cartaoBandeira: 'Mastercard',
+      cartaoFinal: '6351',
+      proximaCobranca: '2026-11-02T15:00:00.000Z',
+    }
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/conta'
+    render(tela())
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(cobranca.cancelar).toHaveBeenCalledOnce()
+    await waitFor(() => expect(cobranca.recarregar).toHaveBeenCalled())
   })
 })

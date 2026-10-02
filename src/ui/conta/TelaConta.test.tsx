@@ -84,11 +84,12 @@ function montar(
     aoVerPrecos: vi.fn(),
     aoIrParaConfig: vi.fn(),
     aoAssinar: vi.fn(),
+    aoMudouAssinatura: vi.fn(),
     criarProcessador: falso ? falso.criar : null,
     aoSaiu: vi.fn(),
   }
   const tela = render(<TelaConta {...props} />)
-  return { ...props, ...tela, falso, usuario: userEvent.setup() }
+  return { ...props, ...tela, props, falso, usuario: userEvent.setup() }
 }
 
 describe('TelaConta', () => {
@@ -336,7 +337,7 @@ describe('TelaConta', () => {
 
   it('CA-379: recusado, o cartão antigo continua, a mensagem aparece e o código é apagado', async () => {
     estado.assinatura = PAGA
-    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: RECUSA_PADRAO }))
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: `${RECUSA_PADRAO} O cartão antigo continua valendo.` }))
     const { usuario, falso } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
     const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
@@ -348,6 +349,103 @@ describe('TelaConta', () => {
     expect(await within(janela).findByText(`${RECUSA_PADRAO} O cartão antigo continua valendo.`)).toBeInTheDocument()
     expect(falso?.limpezas).toBe(1)
     expect(screen.getByRole('dialog', { name: 'Trocar cartão' })).toBeInTheDocument()
+  })
+
+  it('erro de servidor ao trocar o cartão: a frase vem como está, sem prometer o cartão antigo', async () => {
+    estado.assinatura = PAGA
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança.' }))
+    const { usuario, falso } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    expect(await within(janela).findByText('Não consegui falar com o servidor de cobrança.')).toBeInTheDocument()
+    expect(janela).not.toHaveTextContent('cartão antigo')
+  })
+
+  it('falha ao gerar o código do cartão: o cartão antigo continua valendo', async () => {
+    estado.assinatura = PAGA
+    const { usuario, falso } = montar(nutri)
+    if (falso) falso.respostaDoToken = () => Promise.reject(new Error('x'))
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    expect(await within(janela).findByText(/O cartão antigo continua valendo\./)).toBeInTheDocument()
+    expect(estado.trocarCartao).not.toHaveBeenCalled()
+  })
+
+  it('CB-92: clique duplo em "Salvar cartão" troca uma vez só', async () => {
+    estado.assinatura = PAGA
+    let terminar: (resultado: ResultadoDaMudanca) => void = () => undefined
+    estado.trocarCartao = vi.fn(() => new Promise<ResultadoDaMudanca>((resolver) => (terminar = resolver)))
+    const { usuario, falso } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.dblClick(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    await waitFor(() => expect(estado.trocarCartao).toHaveBeenCalled())
+    expect(estado.trocarCartao).toHaveBeenCalledTimes(1)
+    await act(async () => terminar({ ok: true }))
+  })
+
+  it('CA-380: depois de cancelar, avisa o App para reler a assinatura, mostra o aviso e leva o foco a ele', async () => {
+    estado.assinatura = PAGA
+    const { usuario, aoMudouAssinatura } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(aoMudouAssinatura).toHaveBeenCalledOnce()
+    const aviso = screen.getByText('Assinatura cancelada.')
+    await waitFor(() => expect(aviso.closest('[tabindex="-1"]')).toHaveFocus())
+  })
+
+  it('CA-379: depois de trocar o cartão, avisa o App para reler a assinatura', async () => {
+    estado.assinatura = PAGA
+    const { usuario, falso, aoMudouAssinatura } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
+    const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
+    await act(async () => {})
+    falso?.preencher()
+    await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
+    await waitFor(() => expect(aoMudouAssinatura).toHaveBeenCalledOnce())
+  })
+
+  it('cancelamento que falha não avisa o App', async () => {
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Nada mudou.' }))
+    estado.assinatura = PAGA
+    const { usuario, aoMudouAssinatura } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Nada mudou')
+    expect(aoMudouAssinatura).not.toHaveBeenCalled()
+  })
+
+  it('a confirmação não troca de texto: se a assinatura deixa de ser ativa com ela aberta, ela fecha', async () => {
+    estado.assinatura = PAGA
+    const { usuario, rerender, props } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('o fim do período já pago')
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' }
+    rerender(<TelaConta {...props} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('pendente do fluxo novo não oferece "Assinar Solo/Pro" (o servidor recusaria)', () => {
+    estado.assinatura = { ...SEM_ASSINATURA, plano: 'free', planoPedido: 'solo', status: 'pendente', ciclo: 'mensal', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' }
+    montar(nutri)
+    expect(screen.queryByRole('button', { name: /^Assinar/ })).not.toBeInTheDocument()
   })
 
   it('sem a chave pública do pagamento, não há "Trocar cartão"; cancelar continua', () => {

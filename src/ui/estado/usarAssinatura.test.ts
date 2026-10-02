@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { CONFIRA_O_CARTAO, mensagemDaRecusa, SERVIDOR_FORA } from '@/domain/cartao.ts'
+import { CARTAO_ANTIGO, CONFIRA_O_CARTAO, mensagemDaRecusa, SERVIDOR_FORA } from '@/domain/cartao.ts'
 import { PEDIDO_EM_ANDAMENTO, SESSAO_TERMINOU, useAssinatura, type ResultadoDaAssinatura, type ResultadoDaMudanca } from './usarAssinatura.ts'
 
 const { cliente } = vi.hoisted(() => {
@@ -169,13 +169,21 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
   })
 
+  it('CA-379: erro de servidor ao trocar o cartão não promete o cartão antigo (o processador pode ter aceitado o novo)', async () => {
+    const { result } = await aberto()
+    cliente.invocar.mockResolvedValueOnce(respondeu(500, { erro: 'Falha no servidor.', codigo: 'x' }))
+    await act(async () => {
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: 'Falha no servidor.' })
+    })
+  })
+
   it('CA-379: trocar o cartão manda o código novo; a recusa volta em português', async () => {
     const { result } = await aberto()
     cliente.invocar.mockResolvedValueOnce({ data: { cartao: { bandeira: 'Mastercard', final: '6351' } }, error: null })
     cliente.invocar.mockResolvedValueOnce(respondeu(402, { erro: 'x', codigo: 'cc_rejected_bad_filled_security_code' }))
     await act(async () => {
       expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: true })
-      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: mensagemDaRecusa('cc_rejected_bad_filled_security_code') })
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: `${mensagemDaRecusa('cc_rejected_bad_filled_security_code')} ${CARTAO_ANTIGO}` })
     })
     expect(cliente.invocar).toHaveBeenCalledWith('gerenciar-assinatura', {
       body: { acao: 'trocar_cartao', card_token_id: 'tok_teste_1', cartao: { bandeira: 'Mastercard', final: '6351' } },
