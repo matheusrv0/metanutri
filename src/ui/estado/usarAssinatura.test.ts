@@ -7,6 +7,7 @@ const { cliente } = vi.hoisted(() => {
     linha: null as unknown,
     usadas: 14 as unknown,
     leituras: 0,
+    espera: Promise.resolve() as Promise<unknown>,
     colunas: [] as string[],
     invocar: vi.fn(),
     from: () => ({
@@ -15,6 +16,7 @@ const { cliente } = vi.hoisted(() => {
         return {
           maybeSingle: async () => {
             cliente.leituras += 1
+            await cliente.espera
             return { data: cliente.linha }
           },
         }
@@ -44,6 +46,7 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     cliente.linha = null
     cliente.usadas = 14
     cliente.leituras = 0
+    cliente.espera = Promise.resolve()
     cliente.colunas = []
     cliente.invocar.mockReset()
   })
@@ -227,5 +230,24 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await act(async () => {
       expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: SESSAO_TERMINOU })
     })
+  })
+
+  it('reler a assinatura não derruba carregado: segue true, com os dados antigos, e carregando fica true até a leitura chegar', async () => {
+    cliente.linha = { plano: 'solo', status: 'ativa' }
+    const { result } = await aberto()
+    expect(result.current.assinatura.plano).toBe('solo')
+    let liberar: () => void = () => undefined
+    cliente.espera = new Promise<void>((resolver) => {
+      liberar = resolver
+    })
+    cliente.linha = { plano: 'pro', status: 'ativa' }
+    act(() => result.current.recarregar())
+    expect(result.current.carregado).toBe(true)
+    expect(result.current.carregando).toBe(true)
+    expect(result.current.assinatura.plano).toBe('solo')
+    await act(async () => liberar())
+    await waitFor(() => expect(result.current.assinatura.plano).toBe('pro'))
+    expect(result.current.carregando).toBe(false)
+    expect(result.current.carregado).toBe(true)
   })
 })

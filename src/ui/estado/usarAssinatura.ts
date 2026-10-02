@@ -18,9 +18,9 @@ export type ResultadoDaMudanca = { readonly ok: true } | { readonly ok: false; r
 
 export interface ValorAssinatura {
   readonly assinatura: Assinatura
-  /** A primeira resposta do servidor chegou (ou não há sessão, ou não há servidor). */
+  /** A primeira leitura desta sessão chegou (ou não há sessão, ou não há servidor). Reler depois não a derruba. */
   readonly carregado: boolean
-  /** Um pedido de assinar, cancelar ou trocar o cartão está em andamento. */
+  /** Um pedido de assinar, cancelar ou trocar o cartão, ou uma releitura da assinatura, está em andamento. */
   readonly carregando: boolean
   /** Vagas de preço de fundador que sobram. `null` quando o servidor não respondeu (CA-160). */
   readonly vagasRestantes: number | null
@@ -94,16 +94,21 @@ export function useAssinatura(temSessao: boolean): ValorAssinatura {
   // Guardar a chave junto com o resultado deixa "sem assinatura" ser derivado do
   // render. Se o efeito tivesse que zerar o estado ao sair da conta, seria um
   // setState dentro de efeito, que dispara renderização em cascata.
-  const [carga, setCarga] = useState<{ readonly chave: string; readonly assinatura: Assinatura } | null>(null)
+  // `sessao` diz de que sessão é a leitura; `chave` (com a versão) diz qual leitura chegou.
+  const [carga, setCarga] = useState<{ readonly sessao: string; readonly chave: string; readonly assinatura: Assinatura } | null>(null)
   const [usadas, setUsadas] = useState<number | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [versao, setVersao] = useState(0)
   const [cliente] = useState(() => obterSupabase())
   const ocupado = useRef(false)
 
+  const sessao = temSessao ? 'com-sessao' : 'sem-sessao'
   const chave = temSessao ? `com-sessao:${versao}` : 'sem-sessao'
-  const assinatura = carga?.chave === chave ? carga.assinatura : SEM_ASSINATURA
-  const carregado = !temSessao || cliente === null || carga?.chave === chave
+  // Reler (versão nova) não esconde nem zera o que já foi lido: a tela segue com os dados
+  // anteriores até os novos chegarem. `carregado` é só a primeira leitura da sessão.
+  const assinatura = carga?.sessao === sessao ? carga.assinatura : SEM_ASSINATURA
+  const carregado = !temSessao || cliente === null || carga?.sessao === sessao
+  const lendo = temSessao && cliente !== null && carga?.chave !== chave
 
   const recarregar = useCallback(() => setVersao((v) => v + 1), [])
 
@@ -116,12 +121,12 @@ export function useAssinatura(temSessao: boolean): ValorAssinatura {
       .select('*')
       .maybeSingle()
       .then(({ data }) => {
-        if (vivo) setCarga({ chave, assinatura: daLinhaAssinatura(data) })
+        if (vivo) setCarga({ sessao, chave, assinatura: daLinhaAssinatura(data) })
       })
     return () => {
       vivo = false
     }
-  }, [cliente, temSessao, chave])
+  }, [cliente, temSessao, sessao, chave])
 
   useEffect(() => {
     if (!cliente) return
@@ -186,5 +191,5 @@ export function useAssinatura(temSessao: boolean): ValorAssinatura {
   )
 
   const vagasRestantes = usadas === null ? null : Math.max(0, VAGAS_PRECO_FUNDADOR - usadas)
-  return { assinatura, carregado, carregando, vagasRestantes, assinar, cancelar, trocarCartao, recarregar }
+  return { assinatura, carregado, carregando: carregando || lendo, vagasRestantes, assinar, cancelar, trocarCartao, recarregar }
 }

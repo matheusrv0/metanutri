@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ProcessadorFalso } from './ui/pagamento/processadorFalso.test-utils.ts'
 import { App } from './App.tsx'
 import { CHAVE_DONO } from './domain/donoDosDados.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
@@ -10,13 +11,20 @@ import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 const estado = vi.hoisted(() => ({ conta: null as unknown }))
 
 vi.mock('./ui/estado/usarConta.ts', () => ({ useConta: () => estado.conta }))
+const cobranca = vi.hoisted(() => ({ carregado: true, assinar: vi.fn() }))
+const processador = vi.hoisted(() => ({ falso: null as unknown as ProcessadorFalso }))
+vi.mock('./ui/pagamento/processadorMercadoPago.ts', async () => {
+  const { processadorFalso } = await import('./ui/pagamento/processadorFalso.test-utils.ts')
+  processador.falso = processadorFalso()
+  return { processadorDoSite: () => processador.falso.criar }
+})
 vi.mock('./ui/estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({
     assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null },
-    carregado: true,
+    carregado: cobranca.carregado,
     carregando: false,
     vagasRestantes: 186,
-    assinar: vi.fn(),
+    assinar: cobranca.assinar,
     cancelar: vi.fn(),
     trocarCartao: vi.fn(),
     recarregar: vi.fn(),
@@ -79,6 +87,9 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     localStorage.setItem(CHAVE_AVISO_VISTO, '1')
     window.location.hash = ''
     estado.conta = contaFalsa()
+    cobranca.carregado = true
+    cobranca.assinar = vi.fn()
+    processador.falso.criados = 0
     verificacao.perfil = { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null }
     verificacao.ehAdmin = false
     verificacao.carregado = true
@@ -147,6 +158,30 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     estado.conta = comSessao('conta-1')
     rerender(tela())
     expect(screen.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeInTheDocument()
+  })
+
+  it('checkout: espera a assinatura chegar, abre o formulário e a tela de resultado fica depois de assinar', async () => {
+    window.location.hash = '#/assinar/solo/mensal'
+    estado.conta = comSessao('conta-1')
+    cobranca.carregado = false
+    cobranca.assinar = vi.fn(async () => ({ ok: true as const, ativa: true, proximaCobranca: '2026-11-02T15:00:00.000Z' }))
+    const { rerender } = render(tela())
+    expect(screen.getByText('Carregando…')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Número do cartão' })).not.toBeInTheDocument()
+    expect(processador.falso.criados).toBe(0)
+
+    cobranca.carregado = true
+    rerender(tela())
+    await act(async () => {})
+    expect(screen.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeInTheDocument()
+    const usuario = userEvent.setup()
+    processador.falso.preencher()
+    await usuario.type(screen.getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+    await usuario.type(screen.getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+    await usuario.click(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }))
+    await usuario.click(screen.getByRole('button', { name: /^Assinar por/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })).toBeInTheDocument()
+    expect(cobranca.assinar).toHaveBeenCalledOnce()
   })
 
   it('CB-49: o link do paciente abre sem pedir entrada', () => {

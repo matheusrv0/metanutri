@@ -353,7 +353,7 @@ function Conteudo() {
     return (
       <TelaVoltaPagamento
         assinatura={assinatura}
-        carregado={cobranca.carregado}
+        carregado={cobranca.carregado && !cobranca.carregando}
         recarregar={cobranca.recarregar}
         aoIrParaPainel={() => navegar({ tela: 'painel' })}
         aoTentarDeNovo={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
