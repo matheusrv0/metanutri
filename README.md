@@ -160,9 +160,12 @@ Para funcionar de verdade, nesta ordem:
    quando mudar: ele refaz as funções sem apagar dados.
    Depois rode `supabase/007-painel-do-dono.sql`: ele guarda o ciclo e o histórico das assinaturas e cria as
    leituras da tela Negócio. O histórico começa no dia em que ele rodar; também pode rodar de novo.
+   Logo depois de rodar o 007, publique de novo a função `assinar`
+   (`npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg`): ela passa a gravar o ciclo.
+   Nunca publique antes do 007: a coluna ainda não existiria e o checkout falharia.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
-   como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). As
-   funções `assinar` e `webhook-mercadopago` já estão publicadas. Cadastre o webhook apontando para
+   como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). A
+   `webhook-mercadopago` já está publicada; a `assinar` é publicada de novo no passo 4. Cadastre o webhook apontando para
    `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`, evento Assinaturas.
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
    barra a publicação (`scripts/conferir-publicacao.mjs`).
