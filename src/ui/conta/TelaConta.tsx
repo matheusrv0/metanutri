@@ -49,7 +49,7 @@ export function TelaConta({
   aoSaiu,
 }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
-  const { assinatura, recarregar } = useAssinatura(conta.sessao !== null)
+  const { assinatura, recarregar } = useAssinatura(conta.sessao?.id ?? null)
   const [formando, setFormando] = useState(false)
 
   const plano = planoPorId(assinatura.plano)

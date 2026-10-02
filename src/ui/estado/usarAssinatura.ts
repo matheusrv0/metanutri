@@ -90,43 +90,54 @@ async function chamar<T>(nome: string, corpo: Record<string, unknown>): Promise<
 /** D-70: o navegador manda o código do cartão e, para mostrar em Conta e plano, a bandeira e o final. */
 const doCartao = (cartao: DadosDoCartao) => ({ card_token_id: cartao.token, cartao: { bandeira: cartao.bandeira, final: cartao.final } })
 
-export function useAssinatura(temSessao: boolean): ValorAssinatura {
+/** `usuarioId` é o id de quem está na conta (nulo sem sessão): os dados lidos seguem o usuário, não só a sessão. */
+export function useAssinatura(usuarioId: string | null): ValorAssinatura {
   // Guardar a chave junto com o resultado deixa "sem assinatura" ser derivado do
   // render. Se o efeito tivesse que zerar o estado ao sair da conta, seria um
   // setState dentro de efeito, que dispara renderização em cascata.
-  // `sessao` diz de que sessão é a leitura; `chave` (com a versão) diz qual leitura chegou.
-  const [carga, setCarga] = useState<{ readonly sessao: string; readonly chave: string; readonly assinatura: Assinatura } | null>(null)
+  // `usuario` diz de quem é a leitura; `chave` (com a versão) diz qual leitura chegou.
+  const [carga, setCarga] = useState<{ readonly usuario: string; readonly chave: string; readonly assinatura: Assinatura } | null>(null)
   const [usadas, setUsadas] = useState<number | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [versao, setVersao] = useState(0)
   const [cliente] = useState(() => obterSupabase())
   const ocupado = useRef(false)
 
-  const sessao = temSessao ? 'com-sessao' : 'sem-sessao'
-  const chave = temSessao ? `com-sessao:${versao}` : 'sem-sessao'
+  const temSessao = usuarioId !== null
+  const chave = `${usuarioId ?? ''}:${versao}`
   // Reler (versão nova) não esconde nem zera o que já foi lido: a tela segue com os dados
   // anteriores até os novos chegarem. `carregado` é só a primeira leitura da sessão.
-  const assinatura = carga?.sessao === sessao ? carga.assinatura : SEM_ASSINATURA
-  const carregado = !temSessao || cliente === null || carga?.sessao === sessao
+  // Outro usuário (mesmo sem um render deslogado no meio) começa do vazio e não carregado.
+  const daqui = usuarioId !== null && carga?.usuario === usuarioId
+  const assinatura = daqui && carga ? carga.assinatura : SEM_ASSINATURA
+  const carregado = !temSessao || cliente === null || daqui
   const lendo = temSessao && cliente !== null && carga?.chave !== chave
 
   const recarregar = useCallback(() => setVersao((v) => v + 1), [])
 
   useEffect(() => {
-    if (!cliente || !temSessao) return
+    if (!cliente || usuarioId === null) return
     let vivo = true
     // A linha inteira: se o 008 ainda não rodou no banco, as colunas do cartão só faltam, e nada quebra.
     void cliente
       .from('assinaturas')
       .select('*')
       .maybeSingle()
-      .then(({ data }) => {
-        if (vivo) setCarga({ sessao, chave, assinatura: daLinhaAssinatura(data) })
-      })
+      .then(
+        ({ data }) => {
+          if (vivo) setCarga({ usuario: usuarioId, chave, assinatura: daLinhaAssinatura(data) })
+        },
+          (erro: unknown) => {
+          // Só a mensagem, nunca o objeto inteiro. Sem isto, `carregando` ficaria preso e o checkout, na espera.
+          console.error(`Não consegui ler a assinatura: ${erro instanceof Error ? erro.message : 'erro desconhecido'}`)
+          // Primeira leitura do usuário: Free, já carregado. Releitura: fica o que já havia.
+        if (vivo) setCarga((antes) => (antes?.usuario === usuarioId ? { ...antes, chave } : { usuario: usuarioId, chave, assinatura: SEM_ASSINATURA }))
+        },
+      )
     return () => {
       vivo = false
     }
-  }, [cliente, temSessao, sessao, chave])
+  }, [cliente, usuarioId, chave])
 
   useEffect(() => {
     if (!cliente) return

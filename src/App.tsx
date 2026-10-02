@@ -85,7 +85,7 @@ function Conteudo() {
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const conta = useConta()
-  const cobranca = useAssinatura(conta.sessao !== null)
+  const cobranca = useAssinatura(conta.sessao?.id ?? null)
   const { assinatura } = cobranca
   const { fonte } = useAcompanhamentos()
 

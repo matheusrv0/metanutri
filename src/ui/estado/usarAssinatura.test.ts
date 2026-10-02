@@ -7,6 +7,7 @@ const { cliente } = vi.hoisted(() => {
     linha: null as unknown,
     usadas: 14 as unknown,
     leituras: 0,
+    rejeitar: false,
     espera: Promise.resolve() as Promise<unknown>,
     colunas: [] as string[],
     invocar: vi.fn(),
@@ -17,6 +18,7 @@ const { cliente } = vi.hoisted(() => {
           maybeSingle: async () => {
             cliente.leituras += 1
             await cliente.espera
+            if (cliente.rejeitar) throw new Error('rede caiu')
             return { data: cliente.linha }
           },
         }
@@ -36,7 +38,7 @@ const CARTAO = { token: 'tok_teste_1', bandeira: 'Mastercard', final: '6351' }
 const respondeu = (status: number, corpo: unknown) => ({ data: null, error: { context: { status, json: async () => corpo } } })
 
 async function aberto() {
-  const hook = renderHook(() => useAssinatura(true))
+  const hook = renderHook(() => useAssinatura('u1'))
   await waitFor(() => expect(hook.result.current.carregado).toBe(true))
   return hook
 }
@@ -46,20 +48,21 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     cliente.linha = null
     cliente.usadas = 14
     cliente.leituras = 0
+    cliente.rejeitar = false
     cliente.espera = Promise.resolve()
     cliente.colunas = []
     cliente.invocar.mockReset()
   })
 
   it('sem sessão já está carregado, no Free', () => {
-    const { result } = renderHook(() => useAssinatura(false))
+    const { result } = renderHook(() => useAssinatura(null))
     expect(result.current.carregado).toBe(true)
     expect(result.current.assinatura.plano).toBe('free')
   })
 
   it('com sessão, lê a linha inteira (o 008 pode ainda não ter rodado) e só então marca carregado', async () => {
     cliente.linha = { plano: 'solo', status: 'ativa', preco_travado: true, cartao_bandeira: 'Mastercard', cartao_final: '6351' }
-    const { result } = renderHook(() => useAssinatura(true))
+    const { result } = renderHook(() => useAssinatura('u1'))
     expect(result.current.carregado).toBe(false)
     await waitFor(() => expect(result.current.carregado).toBe(true))
     expect(result.current.assinatura).toMatchObject({ plano: 'solo', cartaoBandeira: 'Mastercard', cartaoFinal: '6351' })
@@ -67,7 +70,7 @@ describe('useAssinatura (spec checkout-proprio)', () => {
   })
 
   it('CA-160: conta quantas vagas de fundador sobram', async () => {
-    const { result } = renderHook(() => useAssinatura(true))
+    const { result } = renderHook(() => useAssinatura('u1'))
     await waitFor(() => expect(result.current.vagasRestantes).toBe(186))
   })
 
@@ -249,5 +252,35 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await waitFor(() => expect(result.current.assinatura.plano).toBe('pro'))
     expect(result.current.carregando).toBe(false)
     expect(result.current.carregado).toBe(true)
+  })
+
+  it('outro usuário nunca vê os dados do anterior: vazio e não carregado até a leitura dele chegar', async () => {
+    cliente.linha = { plano: 'solo', status: 'ativa' }
+    let id = 'u1'
+    const { result, rerender } = renderHook(() => useAssinatura(id))
+    await waitFor(() => expect(result.current.assinatura.plano).toBe('solo'))
+    let liberar: () => void = () => undefined
+    cliente.espera = new Promise<void>((resolver) => {
+      liberar = resolver
+    })
+    cliente.linha = { plano: 'pro', status: 'ativa' }
+    id = 'u2'
+    rerender()
+    expect(result.current.carregado).toBe(false)
+    expect(result.current.assinatura.plano).toBe('free')
+    await act(async () => liberar())
+    await waitFor(() => expect(result.current.assinatura.plano).toBe('pro'))
+    expect(result.current.carregado).toBe(true)
+  })
+
+  it('leitura que falha não trava: carregando volta a false, e a primeira leitura vira Free já carregado', async () => {
+    cliente.rejeitar = true
+    const erro = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { result } = renderHook(() => useAssinatura('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.carregando).toBe(false)
+    expect(result.current.assinatura.plano).toBe('free')
+    expect(erro).toHaveBeenCalledWith(expect.stringContaining('rede caiu'))
+    erro.mockRestore()
   })
 })
