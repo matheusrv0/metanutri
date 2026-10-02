@@ -130,14 +130,15 @@ logo abaixo; depois siga a lista seguinte.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 008:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql` e `008-cartao-da-assinatura.sql`.
-4. Publique as duas funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
+4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
    npx supabase secrets set SITE_URL=https://metanutri.com.br/ --project-ref <ref>
+   npx supabase functions deploy gerenciar-assinatura --project-ref <ref>
    npx supabase functions deploy assinar --project-ref <ref>
    npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref <ref>
    ```
-   O `--no-verify-jwt` é obrigatório na segunda: quem chama é o Mercado Pago, que não tem conta no Supabase.
+   O `--no-verify-jwt` é obrigatório na última: quem chama é o Mercado Pago, que não tem conta no Supabase.
 5. Siga a lista abaixo (no passo 4 dela, os SQL já rodaram; no passo 5, as funções já estão publicadas).
 6. **Teste o Mercado Pago no ambiente de teste antes de abrir para o público**: use as credenciais de teste
    e um usuário de teste do Mercado Pago, e só depois troque para as credenciais de produção.
@@ -167,9 +168,16 @@ Para funcionar de verdade, nesta ordem:
    data da próxima cobrança (spec checkout-proprio). Rode **antes** de publicar as funções do passo 5; também pode
    rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
-   como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). A
-   `webhook-mercadopago` já está publicada; a `assinar` é publicada de novo no passo 4. Cadastre o webhook apontando para
-   `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`, evento Assinaturas.
+   como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
+   `008` rodado, publique as três funções desta versão e, logo em seguida, o site: a `assinar` nova não serve ao
+   site antigo, que não manda o cartão.
+   ```bash
+   npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+   Cadastre o webhook apontando para `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
+   evento Assinaturas.
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
    barra a publicação (`scripts/conferir-publicacao.mjs`).
 

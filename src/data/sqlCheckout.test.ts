@@ -1,4 +1,5 @@
 import assinar from '../../supabase/functions/assinar/index.ts?raw'
+import gerenciar from '../../supabase/functions/gerenciar-assinatura/index.ts?raw'
 import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
 
 /** As linhas que escrevem no registro da função. */
@@ -88,5 +89,55 @@ describe('webhook (spec checkout-proprio)', () => {
   it('traduz o estado pelo módulo comum, que aceita "cancelled" e "canceled"', () => {
     expect(webhook).toContain("from '../_shared/cobranca.ts'")
     expect(webhook).not.toContain('function traduzirStatus')
+  })
+})
+
+describe('função gerenciar-assinatura (spec checkout-proprio)', () => {
+  it('exige a sessão de quem pede e só mexe em assinatura paga', () => {
+    expect(gerenciar).toContain("return erro('Entre na sua conta antes de mudar a assinatura.', 401)")
+    expect(gerenciar).toContain("return erro('Esta conta não tem assinatura paga.', 409)")
+  })
+
+  it('CB-93: assinatura já cancelada aqui não chama a operadora de novo', () => {
+    expect(gerenciar).toContain("if (linha.status === 'cancelada') return responder({ status: 'cancelada', expiraEm: linha.expira_em ?? null })")
+  })
+
+  it('CB-93: só cancela lá o que ainda não está cancelado lá', () => {
+    expect(gerenciar).toContain("if (traduzirStatus(lida.dados?.['status']) !== 'cancelada') {")
+  })
+
+  it('CA-378: cancela lá com "cancelled" e, se a operadora recusar a palavra, com "canceled"', () => {
+    expect(gerenciar).toContain("let feito = await operadora('PUT', { status: 'cancelled' })")
+    expect(gerenciar).toContain("if (feito && !feito.ok && feito.status < 500) feito = await operadora('PUT', { status: 'canceled' })")
+  })
+
+  it('CA-378 e CB-94: grava cancelada com o fim do período pago; sem data de cobrança à frente, Free na hora', () => {
+    expect(gerenciar).toContain("const proxima = dataDepoisDe(lida.dados?.['next_payment_date'], agora) ?? dataDepoisDe(linha.proxima_cobranca, agora)")
+    expect(gerenciar).toContain('const expiraEm = proxima ? fimDoPeriodoPago(proxima) : null')
+    expect(gerenciar).toContain("update({ status: 'cancelada', expira_em: expiraEm, atualizado_em: new Date(agora).toISOString() })")
+  })
+
+  it('CA-379: troca o cartão lá antes de gravar a bandeira e o final aqui; recusa vira 402 e o cartão antigo fica', () => {
+    const troca = gerenciar.split("if (corpo.acao === 'trocar_cartao') {")[1] ?? ''
+    const naOperadora = troca.indexOf("operadora('PUT', { card_token_id: cartaoToken })")
+    expect(naOperadora).toBeGreaterThan(-1)
+    expect(naOperadora).toBeLessThan(troca.indexOf('cartao_bandeira: cartao.bandeira'))
+    expect(troca).toContain('return erro(RECUSA_DO_CARTAO_NOVO, 402, codigo)')
+  })
+
+  it('CA-379: 401 ou 403 da operadora é a nossa credencial, não o cartão: vira 502, nunca 402', () => {
+    const troca = gerenciar.split("if (corpo.acao === 'trocar_cartao') {")[1] ?? ''
+    const credencial = troca.indexOf('if (feito.status === 401 || feito.status === 403) {')
+    expect(credencial).toBeGreaterThan(-1)
+    expect(credencial).toBeLessThan(troca.indexOf('return erro(RECUSA_DO_CARTAO_NOVO, 402, codigo)'))
+    expect(troca.slice(credencial, credencial + 300)).toContain('return erro(FORA, 502)')
+  })
+
+  it('só mexe na linha da mesma assinatura da operadora', () => {
+    expect(gerenciar.match(/\.eq\('nutricionista_id', dono\)\.eq\('preapproval_id', id\)/g)).toHaveLength(2)
+  })
+
+  it('nenhum registro leva o código do cartão nem o corpo do pedido', () => {
+    for (const linha of registros(gerenciar)) expect(linha).not.toMatch(/cartaoToken|card_token_id|corpo/)
   })
 })
