@@ -99,6 +99,7 @@ Deno.serve(async (req: Request) => {
       status: 'pendente',
       preapproval_id: dados.id,
       valor_centavos: Math.round(valor * 100),
+      ciclo: anual ? 'anual' : 'mensal',
       // Assinatura paga não vence por data; quem vence é o Estudante.
       expira_em: null,
       preco_travado: travado,

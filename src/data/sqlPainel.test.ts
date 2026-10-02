@@ -1,4 +1,5 @@
 import sql from '../../supabase/007-painel-do-dono.sql?raw'
+import assinar from '../../supabase/functions/assinar/index.ts?raw'
 
 const corpoDa = (nome: string) => sql.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
 
@@ -28,5 +29,9 @@ describe('SQL do painel do dono (spec painel-do-dono)', () => {
 
   it('D-59: as assinaturas antigas ganham o ciclo pelo preço do anual', () => {
     expect(sql).toContain("set ciclo = case when valor_centavos in (29900, 59900) then 'anual' else 'mensal' end")
+  })
+
+  it('D-59: a função assinar grava o ciclo escolhido', () => {
+    expect(assinar).toContain("ciclo: anual ? 'anual' : 'mensal',")
   })
 })
