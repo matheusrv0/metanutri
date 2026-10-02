@@ -9,12 +9,11 @@
 //
 // Deno / Supabase Edge Functions. Não faz parte do build do app.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { CABECALHOS, codigoDaRecusa, dataDepoisDe, fimDoPeriodoPago, lerCartao, responder, traduzirStatus } from '../_shared/cobranca.ts'
+import { CABECALHOS, codigoDaRecusa, dataDepoisDe, fimDoPeriodoPago, lerCartao, RECUSA_PADRAO, responder, traduzirStatus, UM_DIA_MS } from '../_shared/cobranca.ts'
 
 const MP = 'https://api.mercadopago.com/preapproval'
 /** A operadora não respondeu: nada mudou lá nem aqui. */
 const FORA = 'Não consegui falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.'
-const RECUSA_DO_CARTAO_NOVO = 'O banco recusou este cartão. Confira os dados ou use outro cartão. Nada foi cobrado.'
 const PAGOS = ['solo', 'pro', 'clinica']
 
 const erro = (mensagem: string, status: number, codigo?: string) => responder(codigo ? { erro: mensagem, codigo } : { erro: mensagem }, status)
@@ -41,12 +40,14 @@ Deno.serve(async (req: Request) => {
   if (erroUsuario || !usuario.user) return erro('Entre na sua conta antes de mudar a assinatura.', 401)
   const dono = usuario.user.id
 
-  let corpo: { acao?: unknown; card_token_id?: unknown; cartao?: unknown }
+  let lido: unknown
   try {
-    corpo = await req.json()
+    lido = await req.json()
   } catch {
     return erro('Corpo da requisição inválido.', 400)
   }
+  if (typeof lido !== 'object' || lido === null || Array.isArray(lido)) return erro('Corpo da requisição inválido.', 400)
+  const corpo = lido as { acao?: unknown; card_token_id?: unknown; cartao?: unknown }
 
   const { data: linha, error: erroLinha } = await cliente
     .from('assinaturas')
@@ -66,6 +67,7 @@ Deno.serve(async (req: Request) => {
         method: metodo,
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         ...(envio ? { body: JSON.stringify(envio) } : {}),
+        signal: AbortSignal.timeout(10_000),
       })
       return { ok: resposta.ok, status: resposta.status, dados: await resposta.json().catch(() => null) }
     } catch {
@@ -83,24 +85,38 @@ Deno.serve(async (req: Request) => {
       return erro(FORA, 502)
     }
 
-    if (traduzirStatus(lida.dados?.['status']) !== 'cancelada') {
+    const jaCanceladaLa = traduzirStatus(lida.dados?.['status']) === 'cancelada'
+    if (!jaCanceladaLa) {
       let feito = await operadora('PUT', { status: 'cancelled' })
       // A documentação em português escreve "canceled"; se a API recusar uma grafia, tenta a outra.
       if (feito && !feito.ok && feito.status < 500) feito = await operadora('PUT', { status: 'canceled' })
       if (!feito?.ok) {
-        console.error('A operadora não cancelou:', feito?.status ?? 'sem resposta', codigoDaRecusa(feito?.dados), id)
-        return erro(FORA, 502)
+        // CB-93: a resposta pode ter se perdido com o cancelamento já feito lá; confere antes de desistir.
+        const conferida = await operadora('GET')
+        if (traduzirStatus(conferida?.dados?.['status']) !== 'cancelada') {
+          console.error('A operadora não cancelou:', feito?.status ?? 'sem resposta', codigoDaRecusa(feito?.dados), id)
+          return erro(FORA, 502)
+        }
       }
     }
 
-    // O fim do período pago sai da próxima cobrança: a da operadora, se vier, senão a gravada aqui.
+    // Só quem estava ativa pagou um período; pendente e pausada voltam ao Free na hora.
+    // O fim do período sai da próxima cobrança: a da operadora, se vier (e se ela ainda não
+    // tinha cancelado, quando a data dela já é outra coisa), senão a gravada aqui. Como na
+    // assinar e no webhook, a data só conta se passar de amanhã.
     const agora = Date.now()
-    const proxima = dataDepoisDe(lida.dados?.['next_payment_date'], agora) ?? dataDepoisDe(linha.proxima_cobranca, agora)
-    // Sem data de cobrança à frente, não há período pago a respeitar: volta ao Free na hora (CB-94).
+    const limite = agora + UM_DIA_MS
+    const proxima = linha.status !== 'ativa' ? null :
+      jaCanceladaLa ? dataDepoisDe(linha.proxima_cobranca, limite) :
+      dataDepoisDe(lida.dados?.['next_payment_date'], limite) ?? dataDepoisDe(linha.proxima_cobranca, limite)
+    // Sem período pago a respeitar, volta ao Free na hora (CB-94).
     const expiraEm = proxima ? fimDoPeriodoPago(proxima) : null
-    const { error: erroGravar } = await cliente.from('assinaturas').update({ status: 'cancelada', expira_em: expiraEm, atualizado_em: new Date(agora).toISOString() }).eq('nutricionista_id', dono).eq('preapproval_id', id)
+    const gravar = () => cliente.from('assinaturas').update({ status: 'cancelada', expira_em: expiraEm, atualizado_em: new Date(agora).toISOString() }).eq('nutricionista_id', dono).eq('preapproval_id', id)
+    let { error: erroGravar } = await gravar()
+    if (erroGravar) ({ error: erroGravar } = await gravar())
     if (erroGravar) {
-      // Pedir de novo resolve: lá já está cancelada, e esta função só grava aqui.
+      // Pedir de novo não resolve se o webhook gravar antes: ele marca cancelada sem o período pago.
+      // O registro abaixo permite acertar expira_em à mão.
       console.error('Cancelada na operadora, mas não gravada aqui:', id, erroGravar.message)
       return erro('A assinatura foi cancelada, mas não consegui mostrar aqui. Abra Conta e plano de novo em alguns minutos.', 502)
     }
@@ -126,7 +142,7 @@ Deno.serve(async (req: Request) => {
     if (!feito.ok) {
       const codigo = codigoDaRecusa(feito.dados)
       console.error('A operadora recusou o cartão novo:', feito.status, codigo, id)
-      return erro(RECUSA_DO_CARTAO_NOVO, 402, codigo)
+      return erro(RECUSA_PADRAO, 402, codigo)
     }
 
     const { error: erroGravar } = await cliente.from('assinaturas').update({ cartao_bandeira: cartao.bandeira, cartao_final: cartao.final, atualizado_em: new Date().toISOString() }).eq('nutricionista_id', dono).eq('preapproval_id', id)

@@ -103,7 +103,8 @@ describe('função gerenciar-assinatura (spec checkout-proprio)', () => {
   })
 
   it('CB-93: só cancela lá o que ainda não está cancelado lá', () => {
-    expect(gerenciar).toContain("if (traduzirStatus(lida.dados?.['status']) !== 'cancelada') {")
+    expect(gerenciar).toContain("const jaCanceladaLa = traduzirStatus(lida.dados?.['status']) === 'cancelada'")
+    expect(gerenciar).toContain('if (!jaCanceladaLa) {')
   })
 
   it('CA-378: cancela lá com "cancelled" e, se a operadora recusar a palavra, com "canceled"', () => {
@@ -112,7 +113,7 @@ describe('função gerenciar-assinatura (spec checkout-proprio)', () => {
   })
 
   it('CA-378 e CB-94: grava cancelada com o fim do período pago; sem data de cobrança à frente, Free na hora', () => {
-    expect(gerenciar).toContain("const proxima = dataDepoisDe(lida.dados?.['next_payment_date'], agora) ?? dataDepoisDe(linha.proxima_cobranca, agora)")
+    expect(gerenciar).toContain("dataDepoisDe(lida.dados?.['next_payment_date'], limite) ?? dataDepoisDe(linha.proxima_cobranca, limite)")
     expect(gerenciar).toContain('const expiraEm = proxima ? fimDoPeriodoPago(proxima) : null')
     expect(gerenciar).toContain("update({ status: 'cancelada', expira_em: expiraEm, atualizado_em: new Date(agora).toISOString() })")
   })
@@ -122,15 +123,66 @@ describe('função gerenciar-assinatura (spec checkout-proprio)', () => {
     const naOperadora = troca.indexOf("operadora('PUT', { card_token_id: cartaoToken })")
     expect(naOperadora).toBeGreaterThan(-1)
     expect(naOperadora).toBeLessThan(troca.indexOf('cartao_bandeira: cartao.bandeira'))
-    expect(troca).toContain('return erro(RECUSA_DO_CARTAO_NOVO, 402, codigo)')
+    expect(troca).toContain('return erro(RECUSA_PADRAO, 402, codigo)')
   })
 
   it('CA-379: 401 ou 403 da operadora é a nossa credencial, não o cartão: vira 502, nunca 402', () => {
     const troca = gerenciar.split("if (corpo.acao === 'trocar_cartao') {")[1] ?? ''
     const credencial = troca.indexOf('if (feito.status === 401 || feito.status === 403) {')
     expect(credencial).toBeGreaterThan(-1)
-    expect(credencial).toBeLessThan(troca.indexOf('return erro(RECUSA_DO_CARTAO_NOVO, 402, codigo)'))
+    expect(credencial).toBeLessThan(troca.indexOf('return erro(RECUSA_PADRAO, 402, codigo)'))
     expect(troca.slice(credencial, credencial + 300)).toContain('return erro(FORA, 502)')
+  })
+
+  it('só quem estava ativa ganha período pago ao cancelar; pendente e pausada voltam ao Free na hora', () => {
+    expect(gerenciar).toContain("const proxima = linha.status !== 'ativa' ? null :")
+  })
+
+  it('a próxima cobrança só conta se passar de amanhã, como na assinar e no webhook', () => {
+    expect(gerenciar).toContain('const limite = agora + UM_DIA_MS')
+    expect(gerenciar).toContain('UM_DIA_MS')
+  })
+
+  it('se a operadora já dizia cancelada, o fim do período vem só da cobrança gravada aqui', () => {
+    expect(gerenciar).toContain("jaCanceladaLa ? dataDepoisDe(linha.proxima_cobranca, limite) :")
+  })
+
+  it('CB-93: a operadora tem prazo, e o cancelamento perdido é conferido com outra leitura antes do 502', () => {
+    expect(gerenciar).toContain('signal: AbortSignal.timeout(10_000)')
+    const cancelar = gerenciar.split("if (corpo.acao === 'cancelar') {")[1]?.split("if (corpo.acao === 'trocar_cartao') {")[0] ?? ''
+    const put = cancelar.indexOf("if (!feito?.ok) {")
+    const conferencia = cancelar.indexOf("const conferida = await operadora('GET')")
+    const fora = cancelar.indexOf("console.error('A operadora não cancelou:'")
+    expect(put).toBeGreaterThan(-1)
+    expect(conferencia).toBeGreaterThan(put)
+    expect(fora).toBeGreaterThan(conferencia)
+    expect(cancelar).toContain("traduzirStatus(conferida?.dados?.['status']) !== 'cancelada'")
+    expect(cancelar.slice(fora, fora + 300)).toContain('return erro(FORA, 502)')
+  })
+
+  it('CB-93: a gravação que falha é tentada de novo antes do 502', () => {
+    expect(gerenciar).toContain('if (erroGravar) ({ error: erroGravar } = await gravar())')
+    expect(gerenciar).toContain("console.error('Cancelada na operadora, mas não gravada aqui:'")
+  })
+
+  it('cancelar: sem leitura da operadora não há cancelamento, só 502', () => {
+    const cancelar = gerenciar.split("if (corpo.acao === 'cancelar') {")[1] ?? ''
+    const guarda = cancelar.indexOf('if (!lida?.ok) {')
+    expect(guarda).toBeGreaterThan(-1)
+    expect(guarda).toBeLessThan(cancelar.indexOf("operadora('PUT'"))
+    expect(cancelar.slice(guarda, guarda + 250)).toContain('return erro(FORA, 502)')
+  })
+
+  it('trocar cartão: só assinatura ativa (409) e operadora fora (>= 500) vira 502', () => {
+    const troca = gerenciar.split("if (corpo.acao === 'trocar_cartao') {")[1] ?? ''
+    expect(troca).toContain("if (linha.status !== 'ativa') return erro('Só dá para trocar o cartão de uma assinatura ativa.', 409)")
+    const cinco = troca.indexOf('if (!feito || feito.status >= 500) {')
+    expect(cinco).toBeGreaterThan(-1)
+    expect(troca.slice(cinco, cinco + 250)).toContain('return erro(FORA, 502)')
+  })
+
+  it('corpo que não é objeto é pedido inválido, não erro do servidor', () => {
+    expect(gerenciar).toContain("if (typeof lido !== 'object' || lido === null || Array.isArray(lido)) return erro('Corpo da requisição inválido.', 400)")
   })
 
   it('só mexe na linha da mesma assinatura da operadora', () => {
