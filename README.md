@@ -133,7 +133,7 @@ logo abaixo; depois siga a lista seguinte.
 4. Publique as duas funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
-   npx supabase secrets set SITE_URL=https://matheusrv0.github.io/metanutri/ --project-ref <ref>
+   npx supabase secrets set SITE_URL=https://metanutri.com.br/ --project-ref <ref>
    npx supabase functions deploy assinar --project-ref <ref>
    npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref <ref>
    ```
@@ -146,8 +146,8 @@ logo abaixo; depois siga a lista seguinte.
 
 Para funcionar de verdade, nesta ordem:
 
-1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://matheusrv0.github.io/metanutri/`.
-   Em *Redirect URLs*: `https://matheusrv0.github.io/metanutri/**` e `http://localhost:5173/**`.
+1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://metanutri.com.br/`.
+   Em *Redirect URLs*: `https://metanutri.com.br/**`, `https://matheusrv0.github.io/metanutri/**` (o endereço antigo, que redireciona) e `http://localhost:5173/**`.
 2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8.
 3. **E-mail (SMTP).** Os e-mails saem pelo Resend, com o domínio `metanutri.com.br`. No Resend, em *Domains*,
    adicione o domínio, copie os registros de DNS para a zona do domínio no Registro.br e espere a verificação; em
@@ -253,6 +253,16 @@ arquivo serve. Já existe um fluxo pronto para o GitHub Pages:
 2. Em **Actions > Publicar no GitHub Pages**, clique em **Run workflow**.
 
 Ele só roda quando você manda — nada é publicado sozinho.
+
+O endereço é **https://metanutri.com.br/** (domínio próprio, registrado no Registro.br). O DNS do
+domínio aponta para o GitHub Pages: quatro registros A no domínio (`185.199.108.153`, `185.199.109.153`,
+`185.199.110.153` e `185.199.111.153`) e `www` como CNAME para `matheusrv0.github.io`. O domínio está em
+**Settings > Pages > Custom domain**, com **Enforce HTTPS** ligado. O endereço antigo
+(`matheusrv0.github.io/metanutri/`) redireciona para o novo.
+
+Os planos e as fichas ficam no navegador, presos ao endereço do site. Quem usava o endereço antigo leva
+os dados com **Configurações > Baixar backup** (ou **Enviar** a cópia na nuvem) e traz no endereço novo
+com **Restaurar backup** (ou **Trazer**).
 
 ## O que ainda depende de você
 

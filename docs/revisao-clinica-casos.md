@@ -8,7 +8,7 @@ ela calcularia na mão.
 ninguém com formação conferiu o resultado. É a única pendência da lista que não é
 decisão de produto nem código — é segurança.
 
-**Como entregar:** mande o endereço <https://matheusrv0.github.io/metanutri/> e este
+**Como entregar:** mande o endereço <https://metanutri.com.br/> e este
 arquivo. Peça para ela anotar na coluna "bate?" e devolver.
 
 ## Os seis casos

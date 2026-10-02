@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
   const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')
   const urlSupabase = Deno.env.get('SUPABASE_URL')
   const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const site = Deno.env.get('SITE_URL') ?? 'https://matheusrv0.github.io/metanutri/'
+  const site = Deno.env.get('SITE_URL') ?? 'https://metanutri.com.br/'
   if (!token || !urlSupabase || !servico) return erro('A função não está configurada no servidor.', 500)
 
   // Quem está pedindo? O token do usuário vem no cabeçalho; sem ele, ninguém assina.
