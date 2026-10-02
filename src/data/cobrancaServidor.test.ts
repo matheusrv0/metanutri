@@ -76,6 +76,13 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
     expect(codigoDaRecusa('texto solto')).toBe('falha')
   })
 
+  it('credencial do servidor inválida não vira "confira o cartão": só o código do cartão é token-invalido', () => {
+    expect(codigoDaRecusa({ message: 'invalid access token', status: 401 })).not.toBe('token-invalido')
+    expect(codigoDaRecusa({ message: 'invalid_token', status: 401 })).not.toBe('token-invalido')
+    expect(codigoDaRecusa({ message: 'Card token service not found' })).toBe('token-invalido')
+    expect(codigoDaRecusa({ message: 'card_token_id is invalid' })).toBe('token-invalido')
+  })
+
   it('responde JSON com o cabeçalho que o navegador exige do supabase-js', async () => {
     const resposta = responder({ erro: 'x' }, 402)
     expect(resposta.status).toBe(402)

@@ -96,7 +96,7 @@ export function codigoDaRecusa(corpo: unknown): string {
   const tudo = textos.join(' ')
   const doBanco = /cc_rejected_[a-z_]+/i.exec(tudo)
   if (doBanco) return doBanco[0].toLowerCase()
-  if (/token/i.test(tudo)) return 'token-invalido'
+  if (/card[\s_-]*token/i.test(tudo)) return 'token-invalido'
   if (/CC_VAL_\d+|rejected|declined|card/i.test(tudo)) return 'recusado'
   return 'falha'
 }

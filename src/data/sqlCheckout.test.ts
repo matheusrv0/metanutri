@@ -56,6 +56,23 @@ describe('função assinar (spec checkout-proprio)', () => {
     expect(assinar).toMatch(/if \(erroGravar\) \{[\s\S]*?body: JSON\.stringify\(\{ status: 'cancelled' \}\)[\s\S]*?return erro\(SEM_COBRANCA, 502\)/)
   })
 
+  it('o cancelamento de compensação é conferido: tenta "canceled" se "cancelled" for rejeitado e grita se falhar', () => {
+    expect(assinar).toContain('CANCELAMENTO FALHOU')
+    expect(assinar).toContain("body: JSON.stringify({ status: 'canceled' })")
+    expect(assinar).toContain('if (!cancelou?.ok) console.error(')
+    expect(assinar).not.toMatch(/\.catch\(\(\) => undefined\)/)
+  })
+
+  it('não assina em dobro: pendente ou pausada do fluxo do cartão também dá 409', () => {
+    expect(assinar).toContain("select('status, plano, preapproval_id, cartao_final')")
+    expect(assinar).toMatch(/\(atual\.status === 'pendente' \|\| atual\.status === 'pausada'\) && atual\.preapproval_id && atual\.cartao_final !== null/)
+    expect(assinar).toContain("return erro('Você já tem uma assinatura em andamento. Confira em Conta e plano.', 409)")
+  })
+
+  it('credencial do servidor recusada (401/403) é falha de cobrança, nunca recusa do cartão', () => {
+    expect(assinar).toContain('if (resposta.status === 401 || resposta.status === 403) return erro(SEM_COBRANCA, 502)')
+  })
+
   it('nenhum registro leva o código do cartão nem o corpo do pedido', () => {
     for (const linha of registros(assinar)) expect(linha).not.toMatch(/cartaoToken|card_token_id|corpo/)
   })

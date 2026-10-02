@@ -69,13 +69,18 @@ Deno.serve(async (req: Request) => {
 
   // Quem já paga não assina de novo por aqui: nasceria uma segunda cobrança (CB-91, CA-163).
   // A cancelada, mesmo dentro do prazo, pode assinar de novo (CA-380).
-  const { data: atual, error: erroAtual } = await cliente.from('assinaturas').select('status, plano').eq('nutricionista_id', usuario.user.id).maybeSingle()
+  const { data: atual, error: erroAtual } = await cliente.from('assinaturas').select('status, plano, preapproval_id, cartao_final').eq('nutricionista_id', usuario.user.id).maybeSingle()
   if (erroAtual) {
     console.error('Não consegui conferir a assinatura atual:', erroAtual.message)
     return erro('Não consegui conferir sua assinatura agora. Tente de novo em alguns minutos.', 502)
   }
   if (atual?.status === 'ativa' && (atual.plano === 'solo' || atual.plano === 'pro')) {
     return erro('Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.', 409)
+  }
+  // Pendente ou pausada do fluxo do cartão (tem preapproval_id e cartao_final) também existe na operadora:
+  // assinar de novo criaria uma segunda e deixaria a primeira cobrando sem ninguém ver.
+  if (atual && (atual.status === 'pendente' || atual.status === 'pausada') && atual.preapproval_id && atual.cartao_final !== null) {
+    return erro('Você já tem uma assinatura em andamento. Confira em Conta e plano.', 409)
   }
 
   const agora = new Date()
@@ -111,6 +116,8 @@ Deno.serve(async (req: Request) => {
     const codigo = codigoDaRecusa(dados)
     const motivo = typeof dados?.['message'] === 'string' ? String(dados['message']).slice(0, 200) : ''
     console.error('Mercado Pago recusou a assinatura:', resposta.status, codigo, motivo)
+    // 401/403: a credencial do servidor, não o cartão da pessoa; é falha nossa, nunca recusa (402).
+    if (resposta.status === 401 || resposta.status === 403) return erro(SEM_COBRANCA, 502)
     if (resposta.status >= 500) return erro(SEM_COBRANCA, 502)
     return erro(RECUSA_PADRAO, 402, codigo)
   }
@@ -149,7 +156,13 @@ Deno.serve(async (req: Request) => {
   if (erroGravar) {
     // A assinatura existe lá, mas não aqui: cancela lá para ninguém pagar sem ter o plano.
     console.error('Assinatura criada e não gravada; cancelando no Mercado Pago:', id, erroGravar.message)
-    await fetch(`${MP}/${id}`, { method: 'PUT', headers: cabecalhosMp, body: JSON.stringify({ status: 'cancelled' }) }).catch(() => undefined)
+    const pedido = { method: 'PUT', headers: cabecalhosMp }
+    let cancelou = await fetch(`${MP}/${id}`, { ...pedido, body: JSON.stringify({ status: 'cancelled' }) }).catch(() => null)
+    // A documentação em português escreve "canceled": se a operadora rejeitar uma grafia, tenta a outra.
+    if (cancelou && cancelou.status >= 400 && cancelou.status < 500) {
+      cancelou = await fetch(`${MP}/${id}`, { ...pedido, body: JSON.stringify({ status: 'canceled' }) }).catch(() => null)
+    }
+    if (!cancelou?.ok) console.error('CANCELAMENTO FALHOU: assinatura ficou ativa na operadora sem plano aqui; cancelar à mão:', id, cancelou?.status ?? 'sem resposta')
     return erro(SEM_COBRANCA, 502)
   }
 
