@@ -62,7 +62,9 @@ describe('documentos legais', () => {
   it('CA-365: a política diz que o responsável acompanha contas e assinaturas e que os e-mails saem pelo Resend', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
-    expect(texto).toContain('também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas')
+    expect(texto).toContain(
+      'O nome, o e-mail, a situação, o plano e as datas de criação da conta e do último login também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.',
+    )
     expect(texto).toContain('são enviados pelo Resend')
     expect(texto).not.toContain('Gmail')
   })

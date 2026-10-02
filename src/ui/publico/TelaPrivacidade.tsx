@@ -21,8 +21,8 @@ export function TelaPrivacidade() {
       <h2>Que dados guardamos e para quê</h2>
       <ul>
         <li>
-          Nome, e-mail e senha de quem usa: para criar e manter a conta. A senha é guardada cifrada. O nome, o e-mail, a situação e o plano
-          também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.
+          Nome, e-mail e senha de quem usa: para criar e manter a conta. A senha é guardada cifrada. O nome, o e-mail, a situação, o plano e as datas de
+          criação da conta e do último login também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.
         </li>
         <li>Situação (estudante ou nutricionista) e, para nutricionista, o CRN declarado: para conferir no conselho que a conta é de nutricionista.</li>
         <li>

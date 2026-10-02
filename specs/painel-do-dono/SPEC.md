@@ -93,7 +93,7 @@ Como dono, quero achar uma pessoa e ver em que pé ela está.
 
 ### US-B7 · A política diz o que a tela faz (1 pt)
 
-- **CA-365** · Dado a Política de privacidade, então o item de nome, e-mail e senha diz que eles também servem para o responsável pelo MetaNutri acompanhar contas e assinaturas; o item de e-mails diz que eles são enviados pelo Resend; e a data dos termos é 2 de outubro de 2026.
+- **CA-365** · Dado a Política de privacidade, então o item de nome, e-mail e senha diz que eles, a situação, o plano e as datas de criação da conta e do último login também servem para o responsável pelo MetaNutri acompanhar contas e assinaturas; o item de e-mails diz que eles são enviados pelo Resend; e a data dos termos é 2 de outubro de 2026.
 
 ## 4. Casos de borda
 
@@ -127,4 +127,4 @@ Como dono, quero achar uma pessoa e ver em que pé ela está.
 - **R-30** · O histórico começa quando o `007` rodar. Até lá, nada é guardado; quanto antes ele rodar, mais completo fica o gráfico.
 - **R-31** · A política foi escrita sem advogado (R-14). O D-64 só acrescenta uma finalidade e corrige um fato; a revisão jurídica continua pendente.
 - **R-32** · A lista traz todas as contas de uma vez. Até alguns milhares é rápido; acima disso vai precisar de páginas.
-- **R-33** · A função `assinar` precisa ser publicada de novo para gravar o ciclo. Até isso, as assinaturas novas são marcadas pelo valor, como as antigas (D-59).
+- **R-33** · A função `assinar` precisa ser publicada de novo logo depois do `007`, nunca antes. Entre os dois, quem assinar de novo numa linha antiga mantém o ciclo velho.
