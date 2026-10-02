@@ -1,4 +1,4 @@
-import { ArrowRight, FolderOpen, Plus } from 'lucide-react'
+import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NOME_DA_BASE } from './domain/baseMetanutri.ts'
 import { calcularEnergia } from './domain/energia.ts'
@@ -14,6 +14,8 @@ import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situa
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { TelaAprovacoes } from './ui/aprovacoes/TelaAprovacoes.tsx'
+import { horaEmBrasilia } from './domain/negocioTextos.ts'
+import { TelaNegocio } from './ui/negocio/TelaNegocio.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
 import { TelaCasos } from './ui/casos/TelaCasos.tsx'
@@ -26,6 +28,7 @@ import { useAcompanhamentos } from './ui/estado/contextoAcompanhamentos.ts'
 import { ProvedorPacientes } from './ui/estado/ProvedorPacientes.tsx'
 import { usePacientes } from './ui/estado/contextoPacientes.ts'
 import { useAprovacoes } from './ui/estado/usarAprovacoes.ts'
+import { useNegocio } from './ui/estado/usarNegocio.ts'
 import { useCasoAberto } from './ui/estado/usarCasoAberto.ts'
 import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
 import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
@@ -101,6 +104,8 @@ function Conteudo() {
   const { perfil } = perfilConta
   const pedidoEstudante = usePedidoEstudante(perfil?.situacao === 'estudante' && sessao ? sessao.id : null)
   const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
+  // Só lê com a tela aberta: são as contas inteiras, não precisa a cada abertura do app.
+  const negocio = useNegocio(perfilConta.ehAdmin && rota.tela === 'negocio')
   const agora = new Date()
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
   // Quem assina os planos: a conta, ou Configurações quando não há servidor (spec ajustes-de-uso, D-37).
@@ -440,6 +445,25 @@ function Conteudo() {
     return (
       <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'negocio') {
+    if (!perfilConta.ehAdmin) return <Redirecionar para={{ tela: 'painel' }} navegar={navegar} />
+    return (
+      <Estrutura
+        {...base}
+        titulo="Negócio"
+        subtitulo={negocio.dados ? `Lido às ${horaEmBrasilia(negocio.dados.lidoEm)}` : 'Só você vê esta tela'}
+        acoes={
+          <Button variant="outline" loading={negocio.carregando} onClick={negocio.atualizar}>
+            <RefreshCw aria-hidden="true" />
+            Atualizar
+          </Button>
+        }
+      >
+        <TelaNegocio negocio={negocio} />
       </Estrutura>
     )
   }

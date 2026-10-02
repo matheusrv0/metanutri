@@ -10,6 +10,7 @@ describe('navegação por endereço', () => {
     ['#/caso/abc-123/adequacao', { tela: 'planejador', casoId: 'abc-123', aba: 'adequacao' }],
     ['#/caso/abc-123/qualquer', { tela: 'planejador', casoId: 'abc-123', aba: 'caso' }],
     ['#/aprovacoes', { tela: 'aprovacoes' }],
+    ['#/negocio', { tela: 'negocio' }],
     ['#/missoes/abc123xyz', { tela: 'missoes', token: 'abc123xyz' }],
     ['#/inexistente', ROTA_INICIAL],
     ['#/caso', ROTA_INICIAL],
@@ -94,6 +95,12 @@ describe('rotas da conta e do pagamento (spec estilo-spora)', () => {
     expect(ehTelaPublica({ tela: 'comprovar-matricula' })).toBe(true)
     expect(ehRotaLivre({ tela: 'comprovar-matricula' })).toBe(false)
     expect(ehTelaPublica({ tela: 'aprovacoes' })).toBe(false)
+  })
+
+  it('CA-342: a tela Negócio tem endereço próprio e não é pública', () => {
+    expect(escreverRota({ tela: 'negocio' })).toBe('#/negocio')
+    expect(lerRota(escreverRota({ tela: 'negocio' }))).toEqual({ tela: 'negocio' })
+    expect(ehTelaPublica({ tela: 'negocio' })).toBe(false)
   })
 })
 

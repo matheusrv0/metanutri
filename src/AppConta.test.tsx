@@ -58,6 +58,12 @@ vi.mock('./ui/estado/usarAprovacoes.ts', () => ({
   }),
 }))
 
+const negocio = vi.hoisted(() => ({ dados: null as unknown, atualizar: vi.fn() }))
+vi.mock('./ui/estado/usarNegocio.ts', () => ({
+  FALHA_AO_LER_NEGOCIO: 'Não consegui ler os números agora. Confira a internet e toque em Atualizar.',
+  useNegocio: () => ({ dados: negocio.dados, carregando: false, erro: null, atualizar: negocio.atualizar }),
+}))
+
 const comSessao = (id: string): ValorConta => contaFalsa({ sessao: { id, email: `${id}@exemplo.com`, nome: 'Maria' } })
 const tela = () => (
   <ProvedorTema>
@@ -76,6 +82,8 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     verificacao.carregado = true
     verificacao.pedido = null
     verificacao.pedidoCarregado = true
+    negocio.dados = null
+    negocio.atualizar = vi.fn()
   })
 
   it('CA-148 e CA-137: tela de trabalho sem sessão mostra Entrar, e abre sozinha quando a sessão chega', () => {
@@ -187,6 +195,36 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     window.location.hash = '#/painel'
     render(tela())
     expect(screen.getByText('Envie seu comprovante de matrícula')).toBeInTheDocument()
+  })
+
+  it('CA-342: administrador vê Negócio antes de Aprovações e abre a tela', () => {
+    verificacao.ehAdmin = true
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/negocio'
+    render(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Negócio' })).toBeInTheDocument()
+    const nomes = screen.getAllByRole('button', { name: /^(Negócio|Aprovações)/ }).map((b) => b.textContent ?? '')
+    expect(nomes[0]).toMatch(/^Negócio/)
+    expect(nomes[1]).toMatch(/^Aprovações/)
+  })
+
+  it('CA-343 e CB-87: quem não é administrador não vê Negócio e cai no painel', () => {
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/negocio'
+    render(tela())
+    expect(screen.queryByRole('button', { name: /^Negócio/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+  })
+
+  it('CA-363: a hora da leitura no subtítulo e o botão Atualizar', async () => {
+    verificacao.ehAdmin = true
+    negocio.dados = { contas: [], historico: [], uso: { links30Dias: 0, copias30Dias: 0 }, lidoEm: new Date('2026-10-02T17:32:00Z') }
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/negocio'
+    render(tela())
+    expect(screen.getByText('Lido às 14:32')).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Atualizar' }))
+    expect(negocio.atualizar).toHaveBeenCalledOnce()
   })
 
   it('CA-292: quem não é administrador não vê Aprovações e cai no painel', () => {

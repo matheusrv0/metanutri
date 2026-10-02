@@ -1,6 +1,7 @@
 import {
   Barcode,
   BookOpen,
+  ChartLine,
   CircleHelp,
   ClipboardList,
   FolderOpen,
@@ -130,6 +131,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
 
         {aprovacoesPendentes !== null && aprovacoesPendentes !== undefined ? (
           <Secao titulo="Administração">
+            <ItemMenu icone={<ChartLine aria-hidden="true" />} rotulo="Negócio" ativo={rota.tela === 'negocio'} aoClicar={() => ir({ tela: 'negocio' })} />
             <ItemMenu
               icone={<ShieldCheck aria-hidden="true" />}
               rotulo="Aprovações"
