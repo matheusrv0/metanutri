@@ -7,16 +7,9 @@
 //   2. Devolver erro por bobagem. Se responder != 200, o Mercado Pago reenvia; o
 //      que não entendemos é ignorado com 200 para não virar fila infinita.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { dataDepoisDe, traduzirStatus, UM_DIA_MS } from '../_shared/cobranca.ts'
 
 const ok = () => new Response('ok', { status: 200 })
-
-/** Estado do Mercado Pago → o que o MetaNutri entende. */
-function traduzirStatus(status: string): 'ativa' | 'pausada' | 'cancelada' | 'pendente' {
-  if (status === 'authorized') return 'ativa'
-  if (status === 'paused') return 'pausada'
-  if (status === 'cancelled') return 'cancelada'
-  return 'pendente'
-}
 
 /** Confere a assinatura do cabeçalho (x-signature) conforme o manifesto do Mercado Pago. */
 async function assinaturaConfere(req: Request, id: string, segredo: string): Promise<boolean> {
@@ -79,13 +72,19 @@ Deno.serve(async (req: Request) => {
   if (typeof dono !== 'string' || !dono) return ok()
 
   const cliente = createClient(urlSupabase, servico)
-  const status = traduzirStatus(String(assinatura.status ?? ''))
+  const status = traduzirStatus(assinatura.status)
 
   // Só o status muda; o plano escolhido ao assinar continua na linha. O app só libera
   // plano pago com status ativa (D-27), e o "Tentar de novo" reabre esse plano (CA-169).
   // Gravar Free aqui fazia um aviso de "pendente" antes da autorização deixar quem
   // pagou no Free para sempre: a autorização mudava só o status.
   const mudanca = { status, atualizado_em: new Date().toISOString() }
+  // D-70: a próxima cobrança vem junto quando a API informa uma data à frente. A de hoje
+  // (a primeira cobrança, ainda por cair) não conta. O expira_em fica como está neste aviso, porque
+  // a cancelada pela pessoa guarda o fim do período pago que a gerenciar-assinatura
+  // gravou (CA-378), e a cancelada pela operadora não tem período a respeitar (CB-94).
+  const proxima = status === 'ativa' ? dataDepoisDe(assinatura.next_payment_date, Date.now() + UM_DIA_MS) : null
+  if (proxima) Object.assign(mudanca, { proxima_cobranca: proxima })
 
   // Só a linha desta assinatura: a notificação de um checkout abandonado (ou de uma
   // assinatura antiga) não pode mexer no plano Estudante aprovado depois (CB-63).

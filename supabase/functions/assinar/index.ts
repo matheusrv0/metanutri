@@ -1,11 +1,27 @@
-// Cria a assinatura no Mercado Pago e devolve o link de pagamento.
+// Assina com o cartão, dentro do site (spec checkout-proprio, D-65 a D-68).
 //
-// Isto roda no servidor porque precisa do access token do Mercado Pago, que dá
-// poder de cobrar em nome do dono da conta. Se ele fosse para o navegador,
-// qualquer pessoa que abrisse o site conseguiria emitir cobrança.
+// O navegador manda só o plano, o ciclo e o código de uso único do cartão, mais a
+// bandeira e os 4 últimos números para mostrar em Conta e plano (D-70). O número do
+// cartão nunca passa por aqui: os campos seguros mandam direto para o Mercado Pago, que
+// devolve o código. O preço sai da tabela abaixo, nunca do navegador (CA-375).
+//
+// Isto roda no servidor porque precisa do access token do Mercado Pago, que dá poder de
+// cobrar em nome do dono da conta.
 //
 // Deno / Supabase Edge Functions. Não faz parte do build do app.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  CABECALHOS,
+  codigoDaRecusa,
+  dataDepoisDe,
+  lerCartao,
+  previsaoDaProximaCobranca,
+  RECUSA_PADRAO,
+  responder,
+  SEM_COBRANCA,
+  traduzirStatus,
+  UM_DIA_MS,
+} from '../_shared/cobranca.ts'
 
 const MP = 'https://api.mercadopago.com/preapproval'
 
@@ -15,22 +31,16 @@ const PLANOS: Record<string, { readonly nome: string; readonly mensal: number; r
   pro: { nome: 'MetaNutri Pro', mensal: 64.9, anual: 599 },
 }
 
-const cabecalhos = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
-  'Content-Type': 'application/json',
-}
-
-const erro = (mensagem: string, status: number) => new Response(JSON.stringify({ erro: mensagem }), { status, headers: cabecalhos })
+const erro = (mensagem: string, status: number, codigo?: string) => responder(codigo ? { erro: mensagem, codigo } : { erro: mensagem }, status)
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhos })
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })
   if (req.method !== 'POST') return erro('Use POST.', 405)
 
   const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')
   const urlSupabase = Deno.env.get('SUPABASE_URL')
   const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const site = Deno.env.get('SITE_URL') ?? 'https://metanutri.com.br/'
+  const site = (Deno.env.get('SITE_URL') ?? 'https://metanutri.com.br/').replace(/[?#].*$/, '')
   if (!token || !urlSupabase || !servico) return erro('A função não está configurada no servidor.', 500)
 
   // Quem está pedindo? O token do usuário vem no cabeçalho; sem ele, ninguém assina.
@@ -39,7 +49,7 @@ Deno.serve(async (req: Request) => {
   const { data: usuario, error: erroUsuario } = await cliente.auth.getUser(autorizacao.replace('Bearer ', ''))
   if (erroUsuario || !usuario.user?.email) return erro('Entre na sua conta antes de assinar.', 401)
 
-  let corpo: { plano?: string; ciclo?: string }
+  let corpo: { plano?: unknown; ciclo?: unknown; card_token_id?: unknown; cartao?: unknown }
   try {
     corpo = await req.json()
   } catch {
@@ -47,66 +57,101 @@ Deno.serve(async (req: Request) => {
   }
 
   // O preço vem daqui, nunca do navegador: senão dá para assinar o Pro por R$ 1.
-  const escolhido = PLANOS[corpo.plano ?? '']
+  const plano = typeof corpo.plano === 'string' ? corpo.plano : ''
+  const escolhido = PLANOS[plano]
   if (!escolhido) return erro('Plano desconhecido.', 400)
   const anual = corpo.ciclo === 'anual'
   const valor = anual ? escolhido.anual : escolhido.mensal
 
-  // Quem já paga não assina de novo por aqui: nasceria uma segunda cobrança (spec CA-163).
+  const cartaoToken = typeof corpo.card_token_id === 'string' && /^[A-Za-z0-9_-]{8,200}$/.test(corpo.card_token_id) ? corpo.card_token_id : null
+  const cartao = lerCartao(corpo.cartao)
+  if (!cartaoToken || !cartao) return erro('Faltam os dados do cartão. Confira e tente de novo.', 400)
+
+  // Quem já paga não assina de novo por aqui: nasceria uma segunda cobrança (CB-91, CA-163).
+  // A cancelada, mesmo dentro do prazo, pode assinar de novo (CA-380).
   const { data: atual, error: erroAtual } = await cliente.from('assinaturas').select('status, plano').eq('nutricionista_id', usuario.user.id).maybeSingle()
   if (erroAtual) {
-    console.error('Não consegui conferir a assinatura atual:', erroAtual)
+    console.error('Não consegui conferir a assinatura atual:', erroAtual.message)
     return erro('Não consegui conferir sua assinatura agora. Tente de novo em alguns minutos.', 502)
   }
   if (atual?.status === 'ativa' && (atual.plano === 'solo' || atual.plano === 'pro')) {
     return erro('Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.', 409)
   }
 
-  // A volta vai sem `#`: o Mercado Pago pode descartar o que vem depois dele (spec R-11).
-  const volta = `${site.replace(/[?#].*$/, '')}?volta=pagamento`
-
-  const resposta = await fetch(MP, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      reason: `${escolhido.nome} (${anual ? 'anual' : 'mensal'})`,
-      external_reference: usuario.user.id,
-      payer_email: usuario.user.email,
-      back_url: volta,
-      status: 'pending',
-      auto_recurring: {
-        frequency: anual ? 12 : 1,
-        frequency_type: 'months',
-        transaction_amount: valor,
-        currency_id: 'BRL',
-      },
-    }),
-  })
-
-  const dados = await resposta.json().catch(() => null)
-  if (!resposta.ok || !dados?.init_point) {
-    console.error('Mercado Pago recusou:', resposta.status, dados)
-    return erro('O Mercado Pago não aceitou a assinatura agora. Tente de novo em alguns minutos.', 502)
+  const agora = new Date()
+  const cabecalhosMp = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+  let resposta: Response
+  try {
+    resposta = await fetch(MP, {
+      method: 'POST',
+      headers: cabecalhosMp,
+      body: JSON.stringify({
+        reason: `${escolhido.nome} (${anual ? 'anual' : 'mensal'})`,
+        external_reference: usuario.user.id,
+        payer_email: usuario.user.email,
+        card_token_id: cartaoToken,
+        // Criada já autorizada: o banco confere o cartão agora e a primeira cobrança cai em até uma hora (D-68).
+        status: 'authorized',
+        back_url: site,
+        auto_recurring: {
+          frequency: anual ? 12 : 1,
+          frequency_type: 'months',
+          transaction_amount: valor,
+          currency_id: 'BRL',
+        },
+      }),
+    })
+  } catch (falha) {
+    console.error('Sem resposta do Mercado Pago ao assinar:', falha instanceof Error ? falha.message : 'erro de rede')
+    return erro(SEM_COBRANCA, 502)
   }
+
+  const dados: Record<string, unknown> | null = await resposta.json().catch(() => null)
+  if (!resposta.ok) {
+    const codigo = codigoDaRecusa(dados)
+    const motivo = typeof dados?.['message'] === 'string' ? String(dados['message']).slice(0, 200) : ''
+    console.error('Mercado Pago recusou a assinatura:', resposta.status, codigo, motivo)
+    if (resposta.status >= 500) return erro(SEM_COBRANCA, 502)
+    return erro(RECUSA_PADRAO, 402, codigo)
+  }
+
+  const id = typeof dados?.['id'] === 'string' ? dados['id'] : null
+  if (!id) {
+    console.error('Mercado Pago respondeu sem o id da assinatura:', resposta.status)
+    return erro(SEM_COBRANCA, 502)
+  }
+  const status = traduzirStatus(dados?.['status'])
+  // A data de hoje é a primeira cobrança, ainda por cair: a próxima é a do ciclo seguinte.
+  const proxima = dataDepoisDe(dados?.['next_payment_date'], agora.getTime() + UM_DIA_MS) ?? previsaoDaProximaCobranca(agora, anual ? 'anual' : 'mensal')
 
   const vagas = await cliente.rpc('vagas_de_fundador_usadas')
   const travado = typeof vagas.data === 'number' && vagas.data < 200
 
-  await cliente.from('assinaturas').upsert(
+  const { error: erroGravar } = await cliente.from('assinaturas').upsert(
     {
       nutricionista_id: usuario.user.id,
-      plano: corpo.plano,
-      status: 'pendente',
-      preapproval_id: dados.id,
+      plano,
+      status,
+      preapproval_id: id,
       valor_centavos: Math.round(valor * 100),
       ciclo: anual ? 'anual' : 'mensal',
-      // Assinatura paga não vence por data; quem vence é o Estudante.
+      // Assinatura paga não vence por data; quem vence é o Estudante e a cancelada (CA-378).
       expira_em: null,
       preco_travado: travado,
-      atualizado_em: new Date().toISOString(),
+      cartao_bandeira: cartao.bandeira,
+      cartao_final: cartao.final,
+      proxima_cobranca: proxima,
+      atualizado_em: agora.toISOString(),
     },
     { onConflict: 'nutricionista_id' },
   )
 
-  return new Response(JSON.stringify({ pagamento: dados.init_point }), { headers: cabecalhos })
+  if (erroGravar) {
+    // A assinatura existe lá, mas não aqui: cancela lá para ninguém pagar sem ter o plano.
+    console.error('Assinatura criada e não gravada; cancelando no Mercado Pago:', id, erroGravar.message)
+    await fetch(`${MP}/${id}`, { method: 'PUT', headers: cabecalhosMp, body: JSON.stringify({ status: 'cancelled' }) }).catch(() => undefined)
+    return erro(SEM_COBRANCA, 502)
+  }
+
+  return responder({ status, proximaCobranca: proxima, cartao })
 })
