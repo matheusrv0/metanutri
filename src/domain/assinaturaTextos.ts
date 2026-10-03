@@ -53,14 +53,12 @@ export function valeAteSeCancelar(a: Assinatura, agora: Date = new Date()): stri
 /** CA-366: a próxima cobrança, antes de assinar; o servidor confirma depois. */
 export const proximaCobrancaPrevista = (ciclo: Ciclo, agora: Date): string => previsaoDaProximaCobranca(agora, ciclo)
 
-/** Embaixo do total, no cartão do resumo: "Depois, R$ 34,90 todo dia 2. Cancele quando quiser." */
+/** Embaixo do total, no cartão do resumo: "Depois, R$ 34,90 todo dia 2, a partir de 2 de novembro. Cancele quando quiser." */
 export function depoisDeHoje(valor: number, ciclo: Ciclo, proximaCobranca: string): string {
   const data = new Date(proximaCobranca)
-  const quando = ciclo === 'anual' ? `todo ano, em ${DIA_E_MES.format(data)}` : `todo dia ${DIA.format(data)}`
+  const quando = ciclo === 'anual' ? `todo ano, em ${DIA_E_MES.format(data)}` : `todo dia ${DIA.format(data)}, a partir de ${DIA_E_MES.format(data)}`
   return `Depois, ${emReais(valor)} ${quando}. Cancele quando quiser.`
 }
 
-/** CA-372: a frase da assinatura ativa. */
-export function fraseDaAssinaturaAtiva(plano: IdPlano, ciclo: Ciclo, email: string, proximaCobranca: string): string {
-  return `Plano ${nomeComCiclo(plano, ciclo)}. O recibo vai para ${email} e a próxima cobrança é em ${formatarDataLonga(proximaCobranca)}.`
-}
+/** CA-372: o valor no recibo da assinatura ativa: "R$ 34,90 por mês". */
+export const valorDoRecibo = (valor: number, ciclo: Ciclo): string => `${emReais(valor)} por ${ciclo === 'anual' ? 'ano' : 'mês'}`

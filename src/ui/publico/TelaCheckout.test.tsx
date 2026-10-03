@@ -36,6 +36,7 @@ async function montar(sobre: Sobre = {}) {
     aoTrocar: vi.fn(),
     aoAssinar: vi.fn(sobre.aoAssinar ?? (async () => ATIVA)),
     aoIrParaPainel: vi.fn(),
+    aoIrParaConta: vi.fn(),
     aoIrParaInicio: vi.fn(),
     agora: AGORA,
   }
@@ -67,9 +68,10 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(screen.getByRole('textbox', { name: 'Nome impresso no cartão' })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'CPF do titular' })).toBeInTheDocument()
     const resumo = screen.getByRole('region', { name: 'Resumo' })
-    for (const texto of ['Você paga hoje', 'R$ 34,90', 'Solo, mensal', 'Próxima cobrança', '2 de novembro de 2026', 'Recibo para', 'maria@exemplo.com', 'Depois, R$ 34,90 todo dia 2. Cancele quando quiser.']) {
+    for (const texto of ['Você paga hoje', 'R$ 34,90', 'Solo, mensal', 'Depois, R$ 34,90 todo dia 2, a partir de 2 de novembro. Cancele quando quiser.']) {
       expect(resumo).toHaveTextContent(texto)
     }
+    for (const texto of ['Recibo para', 'Próxima cobrança', 'maria@exemplo.com']) expect(resumo).not.toHaveTextContent(texto)
     expect(screen.getByRole('checkbox', { name: 'Autorizo a cobrança de R$ 34,90 todo mês neste cartão até eu cancelar, e li os Termos de uso.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '#/termos')
     expect(botaoAssinar()).toHaveAccessibleName('Assinar por R$ 34,90/mês')
@@ -81,7 +83,6 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(screen.getByRole('checkbox', { name: /R\$ 299,00 todo ano neste cartão/ })).toBeInTheDocument()
     const resumo = screen.getByRole('region', { name: 'Resumo' })
     expect(resumo).toHaveTextContent('Solo, anual')
-    expect(resumo).toHaveTextContent('2 de outubro de 2027')
     expect(resumo).toHaveTextContent('Depois, R$ 299,00 todo ano, em 2 de outubro. Cancele quando quiser.')
     expect(screen.getByText(/Sai R\$ 24,92 por mês/)).toBeInTheDocument()
     expect(screen.getByText('−29%')).toBeInTheDocument()
@@ -95,18 +96,24 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(aoTrocar).toHaveBeenCalledWith('pro', 'mensal')
   })
 
-  it('CA-160: o preço de fundador, com a contagem; some quando acabam as vagas', async () => {
+  it('CA-160 e D-74: o aviso de fundador sem contagem; sem número também aparece; some quando acabam as vagas', async () => {
     const { unmount } = await montar({ vagas: 186 })
-    expect(screen.getByText(/Restam 186 de 200 vagas/)).toBeInTheDocument()
+    const resumo = screen.getByRole('region', { name: 'Resumo' })
+    expect(resumo).toHaveTextContent('Preço de fundador: esse valor não sobe.')
+    expect(resumo).not.toHaveTextContent('Restam')
     unmount()
+    const { unmount: desmontar } = await montar({ vagas: null })
+    expect(screen.getByRole('region', { name: 'Resumo' })).toHaveTextContent('Preço de fundador: esse valor não sobe.')
+    expect(screen.getByRole('region', { name: 'Resumo' })).not.toHaveTextContent(/Restam|\d+ de 200/)
+    desmontar()
     await montar({ vagas: 0 })
     expect(screen.queryByText(/Preço de fundador/)).not.toBeInTheDocument()
   })
 
-  it('CA-367: nada cita o processador, e o aviso de segurança fala da operadora e do cartão', async () => {
+  it('CA-367: nada cita o processador, e o aviso de segurança é uma linha', async () => {
     await montar()
     expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
-    expect(screen.getByText('O número do cartão vai criptografado direto para a operadora de pagamento. O MetaNutri não vê nem guarda o cartão.')).toBeInTheDocument()
+    expect(screen.getByText('O MetaNutri não vê nem guarda o número do cartão.')).toBeInTheDocument()
     expect(screen.getByText('Pagamento protegido')).toBeInTheDocument()
   })
 
@@ -160,15 +167,30 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     await act(async () => terminar(ATIVA))
   })
 
-  it('CA-372: banco autorizou: "Assinatura ativa" com plano, ciclo, e-mail e próxima cobrança, e o painel', async () => {
-    const { usuario, falso, aoIrParaPainel } = await montar()
+  it('CA-372 e D-74: banco autorizou: selo, título, recibo, recursos, painel, Conta e plano e o e-mail', async () => {
+    const { usuario, falso, aoIrParaPainel, aoIrParaConta } = await montar()
     await preencherTudo(usuario, falso)
     await usuario.click(botaoAssinar())
-    expect(await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })).toBeInTheDocument()
-    expect(screen.getByText('Plano Solo, mensal. O recibo vai para maria@exemplo.com e a próxima cobrança é em 2 de novembro de 2026.')).toBeInTheDocument()
+    const titulo = await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })
+    expect(titulo).toHaveFocus()
+    expect(screen.getByText('Pagamento aprovado')).toBeInTheDocument()
+    expect(screen.getByText('O plano Solo já está valendo na sua conta.')).toBeInTheDocument()
+    const recibo = screen.getByText('Plano', { selector: 'dt' }).closest('dl')
+    if (!recibo) throw new Error('recibo não encontrado')
+    for (const rotulo of ['Plano', 'Valor', 'Cartão', 'Próxima cobrança']) expect(within(recibo).getByText(rotulo, { selector: 'dt' })).toBeInTheDocument()
+    expect(recibo).toHaveTextContent('Solo, mensal')
+    expect(recibo).toHaveTextContent('R$ 34,90 por mês')
+    expect(recibo).toHaveTextContent(`${CARTAO_APROVADO.bandeira} final ${CARTAO_APROVADO.final}`)
+    expect(recibo).toHaveTextContent('Próxima cobrança')
+    expect(recibo).toHaveTextContent('2 de novembro de 2026')
+    expect(screen.getByText('Liberado agora')).toBeInTheDocument()
+    expect(screen.getByText('25 pacientes ativos')).toBeInTheDocument()
+    expect(screen.getByText('O recibo vai para maria@exemplo.com.')).toBeInTheDocument()
     expect(within(screen.getByRole('list', { name: 'Andamento' })).getByText('Pronto').closest('li')).toHaveAttribute('aria-current', 'step')
     await usuario.click(screen.getByRole('button', { name: 'Ir para o painel' }))
     expect(aoIrParaPainel).toHaveBeenCalledOnce()
+    await usuario.click(screen.getByRole('button', { name: 'Ver Conta e plano' }))
+    expect(aoIrParaConta).toHaveBeenCalledOnce()
   })
 
   it('banco ainda confirmando: "Pagamento em análise", e vale o Free até lá', async () => {
@@ -264,7 +286,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
 
   it('CA-375: durante o envio, plano e ciclo travam e o resultado mostra o que foi enviado, mesmo se as props mudarem', async () => {
     let terminar: (resultado: ResultadoDaAssinatura) => void = () => undefined
-    const { usuario, falso, rerender, aoTrocar, aoAssinar, aoIrParaPainel, aoIrParaInicio } = await montar({
+    const { usuario, falso, rerender, aoTrocar, aoAssinar, aoIrParaPainel, aoIrParaConta, aoIrParaInicio } = await montar({
       aoAssinar: () =>
         new Promise<ResultadoDaAssinatura>((resolver) => {
           terminar = resolver
@@ -288,13 +310,15 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
         aoTrocar={aoTrocar}
         aoAssinar={aoAssinar}
         aoIrParaPainel={aoIrParaPainel}
+        aoIrParaConta={aoIrParaConta}
         aoIrParaInicio={aoIrParaInicio}
         agora={AGORA}
       />,
     )
     await act(async () => terminar(ATIVA))
     const titulo = await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })
-    expect(screen.getByText(/Plano Solo, mensal\./)).toBeInTheDocument()
+    expect(screen.getByText('O plano Solo já está valendo na sua conta.')).toBeInTheDocument()
+    expect(screen.getByText('R$ 34,90 por mês')).toBeInTheDocument()
     expect(titulo).toHaveFocus()
   })
 

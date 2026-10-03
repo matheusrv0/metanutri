@@ -1,11 +1,11 @@
 import { useId, useRef, useState, type ReactNode } from 'react'
 import type { Assinatura } from '@/domain/assinatura.ts'
-import { depoisDeHoje, emReais, fraseDaAssinaturaAtiva, nomeComCiclo, proximaCobrancaPrevista } from '@/domain/assinaturaTextos.ts'
+import { depoisDeHoje, emReais, nomeComCiclo, proximaCobrancaPrevista, valorDoRecibo } from '@/domain/assinaturaTextos.ts'
 import { ACEITE_FALTANDO, PAGAMENTO_INDISPONIVEL, type DadosDoCartao } from '@/domain/cartao.ts'
-import { descontoAnualPct, mensalizadoDoAnual, planoPorId, VAGAS_PRECO_FUNDADOR, valorNoCiclo, type Ciclo } from '@/domain/conta.ts'
+import { descontoAnualPct, mensalizadoDoAnual, planoPorId, valorNoCiclo, type Ciclo } from '@/domain/conta.ts'
 import { formatarDataLonga } from '@/domain/pedidoEstudante.ts'
 import { cn } from '@/lib/utils'
-import { IconeMarca, type NomeIconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
+import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -29,6 +29,7 @@ interface TelaCheckoutProps {
   readonly aoTrocar: (plano: PlanoPago, ciclo: Ciclo) => void
   readonly aoAssinar: (plano: PlanoPago, ciclo: Ciclo, cartao: DadosDoCartao) => Promise<ResultadoDaAssinatura>
   readonly aoIrParaPainel: () => void
+  readonly aoIrParaConta: () => void
   readonly aoIrParaInicio: () => void
   /** Hoje, para a próxima cobrança prevista; os testes fixam a data. */
   readonly agora?: Date | undefined
@@ -66,15 +67,12 @@ function Moldura({ passo, aoIrParaInicio, travado = false, children }: { readonl
   )
 }
 
-/** Uma linha do cartão do resumo: ícone, rótulo e valor. */
-function LinhaDoResumo({ icone, rotulo, valor }: { readonly icone: NomeIconeMarca; readonly rotulo: string; readonly valor: string }) {
+/** Uma linha do recibo da assinatura ativa: rótulo à esquerda, valor em negrito à direita. */
+function LinhaDoRecibo({ rotulo, children }: { readonly rotulo: string; readonly children: ReactNode }) {
   return (
-    <div className="flex justify-between gap-3">
-      <dt className="inline-flex items-center gap-2 text-textoninverse/75">
-        <IconeMarca nome={icone} className="size-4" />
-        {rotulo}
-      </dt>
-      <dd className="min-w-0 text-right font-bold [overflow-wrap:anywhere]">{valor}</dd>
+    <div className="flex items-center justify-between gap-3 py-3 text-sm">
+      <dt className="text-muted-foreground">{rotulo}</dt>
+      <dd className="inline-flex min-w-0 items-center gap-2 text-right font-bold text-heading [overflow-wrap:anywhere]">{children}</dd>
     </div>
   )
 }
@@ -83,6 +81,9 @@ interface Concluida {
   /** O que foi enviado: a tela de resultado não segue as props, que podem mudar durante o envio. */
   readonly plano: PlanoPago
   readonly ciclo: Ciclo
+  /** O valor cobrado e o cartão usado, como foram enviados. */
+  readonly valor: number
+  readonly cartao: { readonly bandeira: string; readonly final: string }
   readonly ativa: boolean
   readonly proximaCobranca: string
 }
@@ -99,6 +100,7 @@ export function TelaCheckout({
   aoTrocar,
   aoAssinar,
   aoIrParaPainel,
+  aoIrParaConta,
   aoIrParaInicio,
   agora = new Date(),
 }: TelaCheckoutProps) {
@@ -139,13 +141,21 @@ export function TelaCheckout({
     enviandoRef.current = true
     setEnviando(true)
     // Plano e ciclo de agora: ficam travados até a resposta, mas o resultado usa estes valores.
-    const enviado = { plano, ciclo, prevista }
+    const enviado = { plano, ciclo, prevista, valor: total }
     const gerado = await formulario.gerar()
     const resultado: ResultadoDaAssinatura = gerado.ok ? await aoAssinar(enviado.plano, enviado.ciclo, gerado.dados) : { ok: false, erro: gerado.erro }
     enviandoRef.current = false
     setEnviando(false)
     if (resultado.ok) {
-      setConcluida({ plano: enviado.plano, ciclo: enviado.ciclo, ativa: resultado.ativa, proximaCobranca: resultado.proximaCobranca ?? enviado.prevista })
+      setConcluida({
+        plano: enviado.plano,
+        ciclo: enviado.ciclo,
+        valor: enviado.valor,
+        // Resultado ok só existe se o cartão foi gerado; o recibo mostra a bandeira e o final enviados.
+        cartao: gerado.ok ? { bandeira: gerado.dados.bandeira, final: gerado.dados.final } : { bandeira: 'Cartão', final: '' },
+        ativa: resultado.ativa,
+        proximaCobranca: resultado.proximaCobranca ?? enviado.prevista,
+      })
       return
     }
     setErro(resultado.erro)
@@ -159,13 +169,41 @@ export function TelaCheckout({
         <section className="mx-auto flex w-full max-w-xl flex-col items-start gap-4 rounded-2xl bg-card p-7 sm:p-10">
           {concluida.ativa ? (
             <>
-              <Logo soSimbolo tamanho={92} />
-              <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold text-heading focus:outline-none">Assinatura ativa</h1>
-              <p className="text-sm text-muted-foreground">{fraseDaAssinaturaAtiva(concluida.plano, concluida.ciclo, email, concluida.proximaCobranca)}</p>
+              <Logo soSimbolo tamanho={64} />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-lightsuccess px-2.5 py-0.5 text-xs font-bold text-successtext">
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+                Pagamento aprovado
+              </span>
+              <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold leading-tight text-heading focus:outline-none">Assinatura ativa</h1>
+              <p className="text-sm text-muted-foreground">{`O plano ${planoPorId(concluida.plano)?.nome ?? ''} já está valendo na sua conta.`}</p>
+              <dl className="flex w-full flex-col divide-y divide-border rounded-2xl bg-surfacesunken px-4 py-1.5">
+                <LinhaDoRecibo rotulo="Plano">{nomeComCiclo(concluida.plano, concluida.ciclo)}</LinhaDoRecibo>
+                <LinhaDoRecibo rotulo="Valor">{valorDoRecibo(concluida.valor, concluida.ciclo)}</LinhaDoRecibo>
+                <LinhaDoRecibo rotulo="Cartão">
+                  <span aria-hidden="true" className="aspect-[1.586] w-[30px] shrink-0 rounded-[4px] bg-[image:var(--gradient-ink)]" />
+                  {`${concluida.cartao.bandeira} final ${concluida.cartao.final}`}
+                </LinhaDoRecibo>
+                <LinhaDoRecibo rotulo="Próxima cobrança">{formatarDataLonga(concluida.proximaCobranca)}</LinhaDoRecibo>
+              </dl>
+              <div className="flex w-full flex-col gap-2">
+                <p className="font-titulo text-2xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Liberado agora</p>
+                <ul className="flex flex-wrap gap-2">
+                  {(planoPorId(concluida.plano)?.recursos ?? []).map((recurso) => (
+                    <li key={recurso} className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-xs font-semibold text-heading ring-1 ring-inset ring-border">
+                      <IconeMarca nome="check" className="size-4 text-primary" />
+                      {recurso}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <Button size="lg" block onClick={aoIrParaPainel}>
                 Ir para o painel
                 <IconeMarca nome="seta" />
               </Button>
+              <Button variant="link" className="inline-flex min-h-11 items-center self-center" onClick={aoIrParaConta}>
+                Ver Conta e plano
+              </Button>
+              <p className="w-full text-center text-xs text-muted-foreground [overflow-wrap:anywhere]">{`O recibo vai para ${email}.`}</p>
             </>
           ) : (
             <>
@@ -315,23 +353,23 @@ export function TelaCheckout({
         </main>
 
         <section aria-label="Resumo" className="flex min-w-0 flex-col gap-4 rounded-2xl bg-surfaceinverse p-5 text-textoninverse sm:p-7 lg:sticky lg:top-4">
-          <p className="font-titulo text-2xs font-bold uppercase tracking-[0.12em] text-textoninverse/75">Você paga hoje</p>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <p className="font-titulo text-2xs font-bold uppercase tracking-[0.12em] text-textoninverse/75">Você paga hoje</p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-textoninverse/15 px-2.5 py-1 text-xs font-bold">
+              <IconeMarca nome="check" className="size-3.5" />
+              {nomeComCiclo(plano, ciclo)}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 border-b border-textoninverse/20 pb-4">
             <p className="font-titulo text-5xl font-bold leading-none tracking-tight">{emReais(total)}</p>
             <p className="text-sm text-textoninverse/75">{depoisDeHoje(total, ciclo, prevista)}</p>
           </div>
-          <dl className="flex flex-col gap-2.5 border-y border-textoninverse/20 py-4 text-sm">
-            <LinhaDoResumo icone="check" rotulo="Plano" valor={nomeComCiclo(plano, ciclo)} />
-            <LinhaDoResumo icone="calendario" rotulo="Próxima cobrança" valor={formatarDataLonga(prevista)} />
-            <LinhaDoResumo icone="recibo" rotulo="Recibo para" valor={email} />
-          </dl>
 
           {vagasRestantes === 0 ? null : (
             <p className="flex items-start gap-2.5 text-sm">
               <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full bg-laranja" />
               <span>
-                <strong>Preço de fundador.</strong> Enquanto a assinatura estiver ativa, esse valor não sobe.
-                {vagasRestantes !== null ? ` Restam ${vagasRestantes} de ${VAGAS_PRECO_FUNDADOR} vagas.` : ''}
+                <strong>Preço de fundador:</strong> esse valor não sobe.
               </span>
             </p>
           )}
@@ -340,7 +378,7 @@ export function TelaCheckout({
 
           <p className="flex items-start gap-2.5 text-xs leading-relaxed text-textoninverse/75">
             <IconeMarca nome="cadeado" className="mt-0.5 size-4" />
-            O número do cartão vai criptografado direto para a operadora de pagamento. O MetaNutri não vê nem guarda o cartão.
+            O MetaNutri não vê nem guarda o número do cartão.
           </p>
         </section>
       </form>

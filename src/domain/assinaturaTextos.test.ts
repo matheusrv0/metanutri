@@ -2,12 +2,12 @@ import { SEM_ASSINATURA, type Assinatura } from './assinatura.ts'
 import {
   depoisDeHoje,
   emReais,
-  fraseDaAssinaturaAtiva,
   linhaDaCobranca,
   linhaDoCartao,
   nomeComCiclo,
   proximaCobrancaPrevista,
   recadoDaAssinatura,
+  valorDoRecibo,
   valeAteSeCancelar,
 } from './assinaturaTextos.ts'
 
@@ -89,13 +89,12 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
 
   it('CA-366: a próxima cobrança prevista e o que vem depois de hoje', () => {
     expect(proximaCobrancaPrevista('mensal', new Date('2026-10-02T15:00:00Z'))).toBe('2026-11-02T15:00:00.000Z')
-    expect(depoisDeHoje(34.9, 'mensal', '2026-11-02T15:00:00.000Z')).toBe('Depois, R$ 34,90 todo dia 2. Cancele quando quiser.')
+    expect(depoisDeHoje(34.9, 'mensal', '2026-11-02T15:00:00.000Z')).toBe('Depois, R$ 34,90 todo dia 2, a partir de 2 de novembro. Cancele quando quiser.')
     expect(depoisDeHoje(299, 'anual', '2027-10-02T15:00:00.000Z')).toBe('Depois, R$ 299,00 todo ano, em 2 de outubro. Cancele quando quiser.')
   })
 
-  it('CA-372: a frase da assinatura ativa', () => {
-    expect(fraseDaAssinaturaAtiva('solo', 'mensal', 'maria@exemplo.com', '2026-11-02T15:00:00.000Z')).toBe(
-      'Plano Solo, mensal. O recibo vai para maria@exemplo.com e a próxima cobrança é em 2 de novembro de 2026.',
-    )
+  it('CA-372: o valor do recibo, por mês ou por ano', () => {
+    expect(valorDoRecibo(34.9, 'mensal')).toBe('R$ 34,90 por mês')
+    expect(valorDoRecibo(299, 'anual')).toBe('R$ 299,00 por ano')
   })
 })

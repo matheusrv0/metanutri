@@ -344,6 +344,7 @@ function Conteudo() {
         criarProcessador={processadorDoSite()}
         aoAssinar={cobranca.assinar}
         aoIrParaPainel={() => navegar({ tela: 'painel' })}
+        aoIrParaConta={() => navegar({ tela: 'conta' })}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
       />
     )
