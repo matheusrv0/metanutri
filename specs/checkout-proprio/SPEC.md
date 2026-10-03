@@ -11,7 +11,8 @@ o teste de ponta a ponta passar.
 **Objetivo:** a pessoa assina, troca o cartão e cancela sem sair do MetaNutri e sem ver outra marca; o número do
 cartão nunca passa pelo servidor do MetaNutri.
 
-Substitui o fluxo de ida e volta ao Mercado Pago da `estilo-spora` (CA-161, CA-165 a CA-169).
+Substitui o fluxo de ida e volta ao Mercado Pago da `estilo-spora` (CA-161, CA-165 a CA-169) e, no checkout, a contagem
+de vagas do CA-160 (D-74).
 
 ## 1. Decisões
 
@@ -25,6 +26,7 @@ Substitui o fluxo de ida e volta ao Mercado Pago da `estilo-spora` (CA-161, CA-1
 | D-70 | O MetaNutri guarda **a bandeira e os 4 últimos números** do cartão, e a data da próxima cobrança, para mostrar em Conta e plano. Nada mais do cartão | É o mínimo para a pessoa reconhecer qual cartão está pagando |
 | D-71 | O nome do processador **só aparece na Política de privacidade**, que precisa dizer quem processa o cartão (LGPD). Checkout, Conta, Preços, Termos e telas de aviso não o citam | Pedido seu, dentro do que a lei exige |
 | D-72 | A chave pública do processador fica numa variável do site (`VITE_MERCADOPAGO_PUBLIC_KEY`), uma de teste e outra de produção, sempre do mesmo ambiente do token do servidor | A chave pública vai no navegador; o token continua só no servidor |
+| D-74 | O resumo do checkout fica **enxuto**: o plano vira uma etiqueta, a próxima cobrança entra na frase do total, o e-mail do recibo sai do resumo e o aviso de fundador fica **sem a contagem de vagas**. A tela "Assinatura ativa" ganha **recibo organizado** (plano, valor, cartão, próxima cobrança), o que o plano liberou e o atalho para Conta e plano | Pedido seu de 02/10, depois do teste no sandbox: "esse card ficou com muita informação, sem necessidade de mostrar 200 de 200" e "dá para melhorar a tela de pronto"; protótipo "Confirmação da assinatura" aprovado no mesmo dia |
 | D-73 | Checkout, Conta e plano e a tela de volta do pagamento ganham **visual novo** (protótipo v2) e **ícones próprios** desenhados no traço da logo (linha com pontos), só onde ajudam a entender. **Nenhum emoji e nenhum ícone de biblioteca pronta** nessas telas | Pedido seu de 02/10: "dê uma repaginada, evite emojis e ícones padrões", escolhido o alcance "checkout e Conta" e os ícones próprios |
 
 ## 2. Escopo
@@ -40,13 +42,13 @@ Pessoas: **assinante** (nutricionista com conta), **dono**.
 
 ### US-B1 · Assinar no site (8 pts)
 
-- **CA-366** · Dado o checkout, então ele mostra o seletor Mensal/Anual, os planos Solo e Pro, o formulário "Cartão de crédito" (número do cartão, validade, código de segurança, nome impresso no cartão, CPF do titular), o resumo (plano, cobrança, conta, próxima cobrança, total hoje), a caixa "Autorizo a cobrança de R$ X todo mês (ou todo ano) neste cartão até eu cancelar, e li os Termos de uso" e o botão "Assinar por R$ X/mês" (ou "/ano").
-- **CA-367** · Dado o checkout, então nenhum texto, imagem ou endereço visível da página cita o processador de pagamento, e o aviso de segurança diz que o número do cartão vai criptografado para a operadora de pagamento e que o MetaNutri não vê nem guarda o cartão.
+- **CA-366** · Dado o checkout, então ele mostra o seletor Mensal/Anual, os planos Solo e Pro, o formulário "Cartão de crédito" (número do cartão, validade, código de segurança, nome impresso no cartão, CPF do titular), o resumo enxuto (D-74: "Você paga hoje" com o plano e o ciclo numa etiqueta, o total de hoje, a frase "Depois, R$ X todo dia D, a partir de {data}. Cancele quando quiser." — ou "todo ano, em {dia e mês}" no anual —, o aviso "Preço de fundador: esse valor não sobe." sem contagem de vagas, que some quando as vagas acabam), a caixa "Autorizo a cobrança de R$ X todo mês (ou todo ano) neste cartão até eu cancelar, e li os Termos de uso" e o botão "Assinar por R$ X/mês" (ou "/ano").
+- **CA-367** · Dado o checkout, então nenhum texto, imagem ou endereço visível da página cita o processador de pagamento, e o aviso de segurança diz que o MetaNutri não vê nem guarda o número do cartão (D-74; antes era a frase longa da criptografia).
 - **CA-368** · Dado os campos do cartão, então os cinco (os três seguros, o nome e o CPF) têm a mesma caixa do protótipo v2 (48 px de altura, canto 12, o fundo e o foco do protótipo) e a cor do texto do site, nos temas claro e escuro.
 - **CA-369** · Dado os primeiros números do cartão, então a bandeira aparece no campo (por exemplo "Mastercard"); dado um cartão de débito ou pré-pago, então aparece "Use um cartão de crédito." e o botão fica parado.
 - **CA-370** · Dado o envio com campo vazio ou inválido (número, validade, código, nome, CPF com dígito errado) ou sem a caixa de autorização marcada, então o erro aparece embaixo do campo, nada é enviado e o foco vai para o primeiro campo com erro.
 - **CA-371** · Dado tudo válido, quando a pessoa clica em Assinar, então o botão mostra "Confirmando com o banco…", os campos travam, e só um pedido é feito mesmo com clique duplo.
-- **CA-372** · Dado o banco autorizando, então a tela mostra "Assinatura ativa", com o plano, o ciclo, o e-mail que recebe o recibo e a data da próxima cobrança, e o botão "Ir para o painel". O plano pago já vale no app.
+- **CA-372** · Dado o banco autorizando, então a tela mostra o selo "Pagamento aprovado", "Assinatura ativa", "O plano {nome} já está valendo na sua conta.", o recibo (plano e ciclo, valor por mês ou por ano, bandeira e 4 últimos números do cartão, próxima cobrança), "Liberado agora" com os recursos do plano, o botão "Ir para o painel", o atalho "Ver Conta e plano" e "O recibo vai para {e-mail}" (D-74). O plano pago já vale no app.
 - **CA-373** · Dado o banco recusando, então a tela continua no checkout com a mensagem do motivo em português (por exemplo "O banco recusou este cartão. Confira os dados ou use outro cartão. Nada foi cobrado."), os campos voltam a funcionar e o código de segurança é apagado.
 - **CA-374** · Dado o servidor fora ou sem internet, então aparece "Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos." e o formulário volta a funcionar.
 - **CA-375** · Dado o preço, então o valor cobrado vem sempre do servidor, nunca do navegador; o navegador manda plano, ciclo, o código de uso único do cartão e, só para mostrar em Conta e plano (D-70), a bandeira e os 4 últimos números. O número inteiro do cartão nunca sai dos campos seguros.
