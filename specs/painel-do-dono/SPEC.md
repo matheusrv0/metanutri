@@ -52,11 +52,11 @@ Como dono, quero abrir o painel pelo menu, sem que mais ninguém consiga.
 
 Como dono, quero ver a saúde do negócio num relance.
 
-- **CA-345** · Dado a tela, então o topo mostra quatro cartões, nesta ordem: **Receita por mês** (o cartão de destaque, em teal), **Assinaturas ativas**, **Contas** e **Preço de fundador**.
+- **CA-345** · Dado a tela, então o topo mostra três cartões, nesta ordem: **Receita por mês** (o cartão de destaque, em teal), **Assinaturas ativas** e **Contas**, sem buraco na grade. ~~Eram quatro, com **Preço de fundador** no fim.~~ (D-78 da `limpeza-visual`: o cartão de fundador saiu.)
 - **CA-346** · Dado o cartão Receita por mês, então ele mostra a soma do D-57 em reais ("R$ 1.235,85") e, embaixo, a diferença para a receita de 30 dias antes ("+R$ 209,40 em 30 dias", "−R$ 34,90 em 30 dias" ou "Igual a 30 dias atrás").
 - **CA-347** · Dado o cartão Assinaturas ativas, então ele mostra quantas assinaturas pagas estão ativas e, embaixo, a parte das contas que pagam, arredondada ("8% das contas pagam").
 - **CA-348** · Dado o cartão Contas, então ele mostra quantas contas existem e, embaixo, quantas foram criadas nos últimos 30 dias ("+41 em 30 dias").
-- **CA-349** · Dado o cartão Preço de fundador, então ele mostra quantas das 200 vagas foram usadas ("25 de 200", contando as assinaturas ativas com preço travado), uma barra com essa parte preenchida e, embaixo, quantas sobram ("175 vagas com preço travado para sempre").
+- ~~**CA-349** · Dado o cartão Preço de fundador, então ele mostra quantas das 200 vagas foram usadas ("25 de 200", contando as assinaturas ativas com preço travado), uma barra com essa parte preenchida e, embaixo, quantas sobram ("175 vagas com preço travado para sempre").~~ **Substituído pelo D-78 da `limpeza-visual` (05/10/2026): não existe preço de fundador.**
 
 ### US-B3 · Receita ao longo do tempo (2 pts)
 

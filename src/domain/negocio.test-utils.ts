@@ -11,7 +11,7 @@ export function paga(
   valorCentavos: number,
   sobre: Partial<AssinaturaNoPainel> = {},
 ): AssinaturaNoPainel {
-  return { plano, status: 'ativa', ciclo, valorCentavos, precoTravado: true, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00Z', ...sobre }
+  return { plano, status: 'ativa', ciclo, valorCentavos, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00Z', ...sobre }
 }
 
 /** Nutricionista com CRN-6 conferido, criada em 20/09, e-mail confirmado, entrou hoje. */
@@ -32,7 +32,7 @@ export function conta(id: string, sobre: Partial<ContaNoPainel> = {}): ContaNoPa
   }
 }
 
-/** Solo mensal ativo, com preço de fundador. */
+/** Solo mensal ativo. */
 export function mudanca(id: string, quando: string, sobre: Partial<MudancaDeAssinatura> = {}): MudancaDeAssinatura {
-  return { conta: id, plano: 'solo', status: 'ativa', ciclo: 'mensal', valorCentavos: 3490, precoTravado: true, quando, ...sobre }
+  return { conta: id, plano: 'solo', status: 'ativa', ciclo: 'mensal', valorCentavos: 3490, quando, ...sobre }
 }

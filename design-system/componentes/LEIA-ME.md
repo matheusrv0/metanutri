@@ -289,7 +289,7 @@ nunca no laranja. *Nasceu no painel do dono (spec painel-do-dono).*
 />
 ```
 
-O `CartaoNumero` ganhou `extra`: o que vai entre o valor e o rótulo (a barra das vagas de fundador).
+O `CartaoNumero` ganhou `extra`: o que vai entre o valor e o rótulo (uma barra de progresso, por exemplo).
 
 ### IconeMarca
 Os ícones da marca, no traço da logo: linha arredondada de 1,8 e um ponto. Só no checkout, em

@@ -162,7 +162,7 @@ antes de pagar, para não ter surpresa.
 - **CA-157** · Dado o checkout de Solo ou Pro, então ele mostra o passo "2 de 3", a chave mensal/anual, os dois planos pagos para escolher, o que o plano inclui e um resumo com plano, ciclo, conta e total de hoje.
 - **CA-158** · Dado a troca de ciclo ou de plano no checkout, então o total e o resumo mudam na hora, sem sair da tela.
 - **CA-159** · Dado o ciclo anual, então o checkout mostra o valor do ano, quanto sai por mês e o desconto sobre 12 meses do mensal.
-- **CA-160** · Dado vagas de preço de fundador sobrando, então aparece o aviso de fundador com quantas vagas restam. Se a contagem não chegar do servidor, o aviso aparece sem o número.
+- ~~**CA-160** · Dado vagas de preço de fundador sobrando, então aparece o aviso de fundador com quantas vagas restam. Se a contagem não chegar do servidor, o aviso aparece sem o número.~~ **Substituído pelo D-78 da `limpeza-visual` (05/10/2026): não existe preço de fundador.**
 - **CA-161** · Dado "Pagar com Mercado Pago", então a pessoa é levada ao Mercado Pago com o plano e o ciclo escolhidos, e o valor vem do servidor, nunca da tela.
 - **CA-162** · Dado uma falha ao falar com o servidor de cobrança, então aparece a mensagem de erro no checkout, nada é cobrado e o botão volta a funcionar.
 - **CA-163** · Dado alguém com assinatura ativa, quando abre o checkout, então vê o plano atual e o aviso de que a troca de plano pago ainda não é feita pelo site, e o botão de pagar não aparece. Assim não nasce uma segunda cobrança.
@@ -225,7 +225,7 @@ começar um plano em um clique.
 **US-2.3 · Conta e plano (3 pts).** Como nutricionista, quero ver meu plano e mudar de
 plano sem procurar.
 
-- **CA-189** · Dado a tela Conta e plano, então ela mostra nome, e-mail, o plano que vale agora, o estado da assinatura e, se houver, o preço de fundador.
+- **CA-189** · Dado a tela Conta e plano, então ela mostra nome, e-mail, o plano que vale agora e o estado da assinatura. ~~E, se houver, o preço de fundador.~~ (D-78 da `limpeza-visual`: não existe preço de fundador.)
 - **CA-190** · Dado "Mudar de plano", então abre Preços. Dado "Assinar" num plano pago, então abre o checkout desse plano (US-1.8).
 - **CA-191** · Dado uma conta Estudante, então a tela mostra até quando o plano vale.
 

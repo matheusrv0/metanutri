@@ -27,9 +27,10 @@ describe('Ler a assinatura do banco', () => {
     expect(daLinhaAssinatura({})).toEqual(SEM_ASSINATURA)
   })
 
-  it('guarda o preço travado de fundador', () => {
-    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', preco_travado: true }).precoTravado).toBe(true)
-    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', preco_travado: 'sim' }).precoTravado).toBe(false)
+  it('CA-388: a coluna antiga de preço travado é ignorada: não existe preço de fundador', () => {
+    const lida = daLinhaAssinatura({ plano: 'solo', status: 'ativa', preco_travado: true })
+    expect(lida).toEqual({ ...SEM_ASSINATURA, plano: 'solo', planoPedido: 'solo', status: 'ativa' })
+    expect(Object.keys(lida)).not.toContain('precoTravado')
   })
 })
 

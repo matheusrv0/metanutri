@@ -16,7 +16,7 @@ const cobranca = vi.hoisted(() => ({
   assinar: vi.fn(),
   recarregar: vi.fn(),
   cancelar: vi.fn(async () => ({ ok: true as const })),
-  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null } as unknown,
+  assinatura: { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null } as unknown,
 }))
 const processador = vi.hoisted(() => ({ falso: null as unknown as ProcessadorFalso }))
 vi.mock('./ui/pagamento/processadorMercadoPago.ts', async () => {
@@ -29,7 +29,6 @@ vi.mock('./ui/estado/usarAssinatura.ts', () => ({
     assinatura: cobranca.assinatura,
     carregado: cobranca.carregado,
     carregando: false,
-    vagasRestantes: 186,
     assinar: cobranca.assinar,
     cancelar: cobranca.cancelar,
     trocarCartao: vi.fn(),
@@ -97,7 +96,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     cobranca.assinar = vi.fn()
     cobranca.recarregar = vi.fn()
     cobranca.cancelar = vi.fn(async () => ({ ok: true as const }))
-    cobranca.assinatura = { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', precoTravado: false, expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null }
+    cobranca.assinatura = { plano: 'free', planoPedido: 'free', status: 'sem-assinatura', expiraEm: null, ciclo: null, valorCentavos: 0, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null }
     processador.falso.criados = 0
     verificacao.perfil = { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null }
     verificacao.ehAdmin = false
@@ -385,7 +384,6 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
       plano: 'solo',
       planoPedido: 'solo',
       status: 'ativa',
-      precoTravado: false,
       expiraEm: null,
       ciclo: 'mensal',
       valorCentavos: 3490,

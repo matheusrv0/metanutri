@@ -53,6 +53,12 @@ describe('função assinar (spec checkout-proprio)', () => {
     expect(assinar).toContain('return responder({ status, proximaCobranca: proxima, cartao })')
   })
 
+  it('CA-388: não existe preço de fundador: a função não conta vagas nem grava preço travado', () => {
+    expect(assinar).not.toContain('vagas_de_fundador_usadas')
+    expect(assinar).not.toContain('preco_travado')
+    expect(assinar).not.toMatch(/fundador/i)
+  })
+
   it('CB-95: a assinatura paga não vence por data, então substitui o Estudante na hora em que o banco autoriza', () => {
     expect(assinar).toContain('expira_em: null,')
     expect(assinar).toContain("onConflict: 'nutricionista_id'")

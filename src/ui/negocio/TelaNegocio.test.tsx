@@ -8,17 +8,19 @@ import { TelaNegocio, URL_MERCADO_PAGO } from './TelaNegocio.tsx'
 const espacos = (s: string | null | undefined) => (s ?? '').replace(/\s/g, ' ')
 
 describe('TelaNegocio (spec painel-do-dono)', () => {
-  it('CA-345: quatro cartões, nesta ordem, com a receita em destaque', () => {
+  it('CA-345 e CA-388: três cartões, nesta ordem, com a receita em destaque e nenhum de preço de fundador', () => {
     render(<TelaNegocio negocio={negocioFalso()} />)
     const resumo = screen.getByRole('region', { name: 'Resumo do negócio' })
     const texto = resumo.textContent ?? ''
-    const posicoes = ['Receita por mês', 'Assinaturas ativas', 'Contas', 'Preço de fundador'].map((r) => texto.indexOf(r))
+    expect(resumo.children).toHaveLength(3)
+    expect(texto).not.toMatch(/fundador|vagas?|travado/i)
+    const posicoes = ['Receita por mês', 'Assinaturas ativas', 'Contas'].map((r) => texto.indexOf(r))
     expect(posicoes.every((p) => p >= 0)).toBe(true)
     expect([...posicoes].sort((x, y) => x - y)).toEqual(posicoes)
     expect(within(resumo).getByText(/^R\$\s89,82$/).closest('div')?.className).toContain('bg-surfacebrand')
   })
 
-  it('CA-346 a CA-349: os números de cada cartão', () => {
+  it('CA-346 a CA-348: os números de cada cartão', () => {
     render(<TelaNegocio negocio={negocioFalso()} />)
     const resumo = within(screen.getByRole('region', { name: 'Resumo do negócio' }))
     expect(resumo.getByText(/^\+R\$\s24,92 em 30 dias$/)).toBeInTheDocument()
@@ -26,9 +28,7 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
     expect(resumo.getByText('50% das contas pagam')).toBeInTheDocument()
     expect(resumo.getByText('4')).toBeInTheDocument()
     expect(resumo.getByText('+4 em 30 dias')).toBeInTheDocument()
-    expect(resumo.getByText('2 de 200')).toBeInTheDocument()
-    expect(resumo.getByText('198 vagas com preço travado para sempre')).toBeInTheDocument()
-    expect(resumo.getByRole('progressbar', { name: '2 de 200 vagas usadas' })).toBeInTheDocument()
+    expect(resumo.queryByRole('progressbar')).toBeNull()
   })
 
   it('CA-350 e CA-351: uma barra por mês desde o histórico, com a dica, e só a do mês atual escrita', () => {
@@ -112,13 +112,13 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
     expect(within(screen.getByRole('region', { name: 'Resumo do negócio' })).getByText('+0 em 30 dias')).toBeInTheDocument()
   })
 
-  it('M5: "vaga" no singular quando sobra uma só, "vagas" em zero e em dois ou mais', () => {
-    const resumo = { receitaCentavos: 0, diferenca30DiasCentavos: 0, assinaturasAtivas: 0, parteQuePaga: null, contas: 0, contasNovas30Dias: 0, fundadorVagas: 200 }
-    const { rerender } = render(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 199 }} />)
-    expect(screen.getByText('1 vaga com preço travado para sempre')).toBeInTheDocument()
-    rerender(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 200 }} />)
-    expect(screen.getByText('0 vagas com preço travado para sempre')).toBeInTheDocument()
-    rerender(<NumerosDoNegocio resumo={{ ...resumo, fundadorUsadas: 198 }} />)
-    expect(screen.getByText('2 vagas com preço travado para sempre')).toBeInTheDocument()
+  it('CA-345: sem o cartão de fundador, a grade não deixa buraco: a receita ocupa a linha inteira em duas colunas', () => {
+    const resumo = { receitaCentavos: 0, diferenca30DiasCentavos: 0, assinaturasAtivas: 0, parteQuePaga: null, contas: 0, contasNovas30Dias: 0 }
+    render(<NumerosDoNegocio resumo={resumo} />)
+    const grade = screen.getByRole('region', { name: 'Resumo do negócio' })
+    expect(grade.className).toContain('sm:grid-cols-2')
+    expect(grade.className).toContain('xl:grid-cols-3')
+    expect(grade.firstElementChild?.className).toContain('sm:col-span-2')
+    expect(grade.firstElementChild?.className).toContain('xl:col-span-1')
   })
 })

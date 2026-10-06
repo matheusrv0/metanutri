@@ -11,7 +11,6 @@ export interface Assinatura {
   /** O plano gravado na linha, valendo ou não: é o que o "Assinar de novo" reabre. */
   readonly planoPedido: IdPlano
   readonly status: StatusAssinatura
-  readonly precoTravado: boolean
   /** Até quando vale: o Estudante, e a paga cancelada (o fim do período pago, CA-378). `null` quando não vence. */
   readonly expiraEm: string | null
   /** Mensal ou anual, na assinatura paga. `null` no Free, no Estudante e nas linhas de antes do 007. */
@@ -29,7 +28,6 @@ export const SEM_ASSINATURA: Assinatura = {
   plano: 'free',
   planoPedido: 'free',
   status: 'sem-assinatura',
-  precoTravado: false,
   expiraEm: null,
   ciclo: null,
   valorCentavos: 0,
@@ -72,7 +70,6 @@ export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Ass
     plano: status === 'ativa' || canceladaValendo ? planoPedido : 'free',
     planoPedido,
     status,
-    precoTravado: o['preco_travado'] === true,
     expiraEm,
     ciclo: ehCiclo(o['ciclo']) ? o['ciclo'] : null,
     valorCentavos: typeof valor === 'number' && Number.isFinite(valor) && valor > 0 ? valor : 0,

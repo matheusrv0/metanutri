@@ -149,9 +149,6 @@ Deno.serve(async (req: Request) => {
     // A data de hoje é a primeira cobrança, ainda por cair: a próxima é a do ciclo seguinte.
     const proxima = dataDepoisDe(dados?.['next_payment_date'], agora.getTime() + UM_DIA_MS) ?? previsaoDaProximaCobranca(agora, anual ? 'anual' : 'mensal')
 
-    const vagas = await cliente.rpc('vagas_de_fundador_usadas')
-    const travado = typeof vagas.data === 'number' && vagas.data < 200
-
     const { error: erroGravar } = await cliente.from('assinaturas').upsert(
       {
         nutricionista_id: uid,
@@ -162,7 +159,6 @@ Deno.serve(async (req: Request) => {
         ciclo: anual ? 'anual' : 'mensal',
         // Assinatura paga não vence por data; quem vence é o Estudante e a cancelada (CA-378).
         expira_em: null,
-        preco_travado: travado,
         cartao_bandeira: cartao.bandeira,
         cartao_final: cartao.final,
         proxima_cobranca: proxima,

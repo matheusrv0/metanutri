@@ -189,10 +189,6 @@ export function TelaConta({
           <p className="text-sm text-muted-foreground">{`Vale até ${formatarDataLonga(assinatura.expiraEm)}.`}</p>
         ) : null}
 
-        {assinatura.precoTravado ? (
-          <p className="text-xs text-muted-foreground">Você entrou no preço de fundador: ele não sobe quando o preço subir.</p>
-        ) : null}
-
         {aviso ? (
           <div tabIndex={-1} ref={refAviso} className="outline-none">
             <AvisoPagamento tipo="ok">{aviso}</AvisoPagamento>

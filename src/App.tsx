@@ -336,7 +336,6 @@ function Conteudo() {
         ciclo={rota.ciclo}
         email={sessao?.email ?? ''}
         assinaturaAtual={assinatura}
-        vagasRestantes={cobranca.vagasRestantes}
         disponivel={conta.disponivel}
         aoTrocar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
         criarProcessador={processadorDoSite()}

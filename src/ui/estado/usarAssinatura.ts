@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { daLinhaAssinatura, SEM_ASSINATURA, type Assinatura } from '@/domain/assinatura.ts'
 import { CARTAO_ANTIGO, mensagemDaRecusa, SERVIDOR_FORA, type DadosDoCartao } from '@/domain/cartao.ts'
-import { VAGAS_PRECO_FUNDADOR, type Ciclo } from '@/domain/conta.ts'
+import type { Ciclo } from '@/domain/conta.ts'
 import type { PlanoPago } from '../navegacao.ts'
 import { obterSupabase } from './supabase.ts'
 
@@ -22,8 +22,6 @@ export interface ValorAssinatura {
   readonly carregado: boolean
   /** Um pedido de assinar, cancelar ou trocar o cartão, ou uma releitura da assinatura, está em andamento. */
   readonly carregando: boolean
-  /** Vagas de preço de fundador que sobram. `null` quando o servidor não respondeu (CA-160). */
-  readonly vagasRestantes: number | null
   readonly assinar: (plano: PlanoPago, ciclo: Ciclo, cartao: DadosDoCartao) => Promise<ResultadoDaAssinatura>
   readonly cancelar: () => Promise<ResultadoDaMudanca>
   readonly trocarCartao: (cartao: DadosDoCartao) => Promise<ResultadoDaMudanca>
@@ -97,7 +95,6 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
   // setState dentro de efeito, que dispara renderização em cascata.
   // `usuario` diz de quem é a leitura; `chave` (com a versão) diz qual leitura chegou.
   const [carga, setCarga] = useState<{ readonly usuario: string; readonly chave: string; readonly assinatura: Assinatura } | null>(null)
-  const [usadas, setUsadas] = useState<number | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [versao, setVersao] = useState(0)
   const [cliente] = useState(() => obterSupabase())
@@ -143,17 +140,6 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
       vivo = false
     }
   }, [cliente, usuarioId, chave])
-
-  useEffect(() => {
-    if (!cliente) return
-    let vivo = true
-    void cliente.rpc('vagas_de_fundador_usadas').then(({ data }) => {
-      if (vivo) setUsadas(typeof data === 'number' ? data : null)
-    })
-    return () => {
-      vivo = false
-    }
-  }, [cliente])
 
   /** Um pedido por vez: o segundo, enquanto o primeiro corre, nem sai (CA-371, CB-92). */
   const umPorVez = useCallback(async <T>(ocupadoAgora: T, fazer: () => Promise<T>): Promise<T> => {
@@ -206,6 +192,5 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
     [umPorVez, recarregar],
   )
 
-  const vagasRestantes = usadas === null ? null : Math.max(0, VAGAS_PRECO_FUNDADOR - usadas)
-  return { assinatura, carregado, carregando: carregando || lendo, vagasRestantes, assinar, cancelar, trocarCartao, recarregar }
+  return { assinatura, carregado, carregando: carregando || lendo, assinar, cancelar, trocarCartao, recarregar }
 }

@@ -139,9 +139,6 @@ export const ehIdPlano = (valor: unknown): valor is IdPlano => typeof valor === 
 /** Plano de quem cria conta sem comprovar nada. */
 export const PLANO_PADRAO: IdPlano = 'free'
 
-/** Quantas assinaturas travam o preço de fundador para sempre. */
-export const VAGAS_PRECO_FUNDADOR = 200
-
 /** Dias sem plano nem missão até o paciente deixar de contar como ativo. */
 export const DIAS_PACIENTE_ATIVO = 30
 

@@ -8,10 +8,10 @@ import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.
 
 describe('CartaoNumero (CA-106, CA-107)', () => {
   it('o encaixe extra aparece entre o valor e o rótulo', () => {
-    render(<CartaoNumero valor="25 de 200" rotulo="Preço de fundador" extra={<span>barra</span>} />)
-    const valor = screen.getByText('25 de 200')
+    render(<CartaoNumero valor="18 de 25" rotulo="Pacientes ativos" extra={<span>barra</span>} />)
+    const valor = screen.getByText('18 de 25')
     const extra = screen.getByText('barra')
-    const rotulo = screen.getByText('Preço de fundador')
+    const rotulo = screen.getByText('Pacientes ativos')
     expect(valor.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(extra.compareDocumentPosition(rotulo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

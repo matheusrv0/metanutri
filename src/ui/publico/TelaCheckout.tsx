@@ -22,7 +22,6 @@ interface TelaCheckoutProps {
   readonly ciclo: Ciclo
   readonly email: string
   readonly assinaturaAtual: Assinatura
-  readonly vagasRestantes: number | null
   readonly disponivel: boolean
   /** Os campos seguros do cartão; nulo quando o site não tem a chave pública (CB-89). */
   readonly criarProcessador: CriarProcessador | null
@@ -94,7 +93,6 @@ export function TelaCheckout({
   ciclo,
   email,
   assinaturaAtual,
-  vagasRestantes,
   disponivel,
   criarProcessador,
   aoTrocar,
@@ -364,15 +362,6 @@ export function TelaCheckout({
             <p className="font-titulo text-5xl font-bold leading-none tracking-tight">{emReais(total)}</p>
             <p className="text-sm text-textoninverse/75">{depoisDeHoje(total, ciclo, prevista)}</p>
           </div>
-
-          {vagasRestantes === 0 ? null : (
-            <p className="flex items-start gap-2.5 text-sm">
-              <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full bg-laranja" />
-              <span>
-                <strong>Preço de fundador:</strong> esse valor não sobe.
-              </span>
-            </p>
-          )}
 
           {acoes}
 

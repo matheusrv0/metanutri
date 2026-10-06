@@ -18,7 +18,6 @@ const PAGA: Assinatura = {
   status: 'ativa',
   ciclo: 'mensal',
   valorCentavos: 3490,
-  precoTravado: true,
   cartaoBandeira: 'Mastercard',
   cartaoFinal: '6351',
   proximaCobranca: '2026-11-02T15:00:00.000Z',

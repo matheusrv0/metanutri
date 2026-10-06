@@ -48,7 +48,7 @@ describe('leitura das linhas do banco', () => {
       crnRegiao: 6,
       crnStatus: 'conferido',
       pedidoStatus: null,
-      assinatura: { plano: 'pro', status: 'ativa', ciclo: 'anual', valorCentavos: 59900, precoTravado: true, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00+00:00' },
+      assinatura: { plano: 'pro', status: 'ativa', ciclo: 'anual', valorCentavos: 59900, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00+00:00' },
     })
   })
 
@@ -74,7 +74,7 @@ describe('leitura das linhas do banco', () => {
   it('lê uma mudança do histórico e o uso', () => {
     expect(
       daLinhaMudanca({ nutricionista_id: 'u1', plano: 'free', status: 'cancelada', ciclo: null, valor_centavos: 3490, preco_travado: false, quando: '2026-09-30T12:00:00+00:00' }),
-    ).toEqual({ conta: 'u1', plano: 'free', status: 'cancelada', ciclo: null, valorCentavos: 3490, precoTravado: false, quando: '2026-09-30T12:00:00+00:00' })
+    ).toEqual({ conta: 'u1', plano: 'free', status: 'cancelada', ciclo: null, valorCentavos: 3490, quando: '2026-09-30T12:00:00+00:00' })
     expect(daLinhaMudanca({ plano: 'solo', status: 'ativa' })).toBeNull()
     expect(daLinhaUso([{ links_30_dias: 58, copias_30_dias: 112 }])).toEqual({ links30Dias: 58, copias30Dias: 112 })
     expect(daLinhaUso(null)).toEqual({ links30Dias: 0, copias30Dias: 0 })
@@ -104,7 +104,7 @@ describe('ciclo da assinatura (D-59)', () => {
   })
 })
 
-describe('resumo do negócio (CA-346 a CA-349, D-57)', () => {
+describe('resumo do negócio (CA-346 a CA-348, D-57)', () => {
   it('soma só plano pago ativo, com o anual dividido por 12', () => {
     const contas = [
       conta('a', { assinatura: paga('solo', 'mensal', 3490) }),
@@ -114,7 +114,7 @@ describe('resumo do negócio (CA-346 a CA-349, D-57)', () => {
         situacao: 'estudante',
         crnRegiao: null,
         crnStatus: null,
-        assinatura: { plano: 'estudante', status: 'ativa', ciclo: null, valorCentavos: 0, precoTravado: false, expiraEm: '2027-07-01T00:00:00Z', atualizadaEm: '2026-09-01T00:00:00Z' },
+        assinatura: { plano: 'estudante', status: 'ativa', ciclo: null, valorCentavos: 0, expiraEm: '2027-07-01T00:00:00Z', atualizadaEm: '2026-09-01T00:00:00Z' },
       }),
       conta('e'),
     ]
@@ -141,25 +141,9 @@ describe('resumo do negócio (CA-346 a CA-349, D-57)', () => {
     expect(resumirNegocio(contas, [], AGORA).contasNovas30Dias).toBe(1)
   })
 
-  it('CA-349: vagas de fundador contam só pagas ativas com preço travado, de 200', () => {
-    const contas = [
-      conta('a', { assinatura: paga('solo', 'mensal', 3490) }),
-      conta('b', { assinatura: paga('pro', 'mensal', 6490, { precoTravado: false }) }),
-      conta('c', { assinatura: paga('pro', 'mensal', 6490, { status: 'cancelada' }) }),
-    ]
-    const resumo = resumirNegocio(contas, [], AGORA)
-    expect(resumo.fundadorUsadas).toBe(1)
-    expect(resumo.fundadorVagas).toBe(200)
-  })
-
-  it('M3: vagas de fundador seguem o servidor: toda assinatura ativa com preço travado', () => {
-    // Igual a vagas_de_fundador_usadas() do 003: status ativa e preco_travado, seja qual for o plano.
-    const contas = [
-      conta('a', { assinatura: paga('solo', 'mensal', 3490) }),
-      conta('b', { assinatura: paga('solo', 'mensal', 0, { plano: 'free', ciclo: null }) }),
-      conta('c', { assinatura: paga('pro', 'mensal', 6490, { status: 'pausada' }) }),
-    ]
-    expect(resumirNegocio(contas, [], AGORA).fundadorUsadas).toBe(2)
+  it('CA-388: o resumo não conta vagas de fundador', () => {
+    const resumo = resumirNegocio([conta('a', { assinatura: paga('solo', 'mensal', 3490) })], [], AGORA)
+    expect(Object.keys(resumo).sort()).toEqual(['assinaturasAtivas', 'contas', 'contasNovas30Dias', 'diferenca30DiasCentavos', 'parteQuePaga', 'receitaCentavos'])
   })
 
   it('sem conta nenhuma, a parte que paga é nula, não NaN', () => {

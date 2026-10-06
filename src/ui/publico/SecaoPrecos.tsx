@@ -18,7 +18,6 @@ import {
   planoPorId,
   PLANOS,
   PLANOS_COMPARADOS,
-  VAGAS_PRECO_FUNDADOR,
   type Ciclo,
   type IdPlano,
   type PlanoAssinatura,
@@ -310,8 +309,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
-        Preço de fundador para as {VAGAS_PRECO_FUNDADOR} primeiras assinaturas: quem entra nessa faixa fica nela, mesmo quando o preço subir. O
-        pagamento é com cartão de crédito, aqui mesmo no site, e você cancela quando quiser em Conta e plano.
+        O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e plano.
       </p>
       </div>
     </div>

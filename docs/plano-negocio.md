@@ -127,6 +127,10 @@ nutricionista sobe de plano conforme cresce, sem sentir que foi cobrado a mais.
 primeiros". Barato demais atrai quem dá mais trabalho e paga menos, e trava o aumento
 depois.
 
+> **Substituído em 05/10/2026** (D-78 da `specs/limpeza-visual/SPEC.md`): não existe
+> preço de fundador. O preço muda quando o dono mudar, e nenhuma tela, nem os Termos,
+> promete preço travado.
+
 **Empurrar o anual desde o começo** — resolve caixa e cancelamento de uma vez só.
 
 ## Dinheiro
@@ -188,7 +192,7 @@ completos, o principal diferencial não funciona.
 |---|---|
 | Base de alimentos sem micros completos (a TACO tem lacunas) | Resolver antes de vender o painel de micros — é o bloqueador |
 | Concorrente copiar as missões diárias | Chegar primeiro e virar referência no assunto adesão |
-| Preço baixo demais mata a margem | Preço de fundador com prazo, não preço baixo eterno |
+| Preço baixo demais mata a margem | O dono revê o preço quando quiser; sem preço de fundador (D-78, 05/10/2026) |
 | Suporte comendo o tempo do dev solo | Documentação e vídeos curtos desde o primeiro cliente |
 | Falta de tempo (dev sozinho) | Fase 1 deliberadamente pequena |
 

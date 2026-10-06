@@ -98,14 +98,14 @@ describe('selos da lista (CA-357, CA-358)', () => {
       aviso: { texto: 'Pagamento pendente', tom: 'aviso' },
     })
     // O webhook troca o plano para free quando a assinatura não está ativa.
-    const pendenteFree = { plano: 'free', status: 'pendente', ciclo: null, valorCentavos: 3490, precoTravado: false, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00Z' } as const
+    const pendenteFree = { plano: 'free', status: 'pendente', ciclo: null, valorCentavos: 3490, expiraEm: null, atualizadaEm: '2026-09-21T12:00:00Z' } as const
     expect(textoDoPlano(conta('b', { assinatura: pendenteFree }), AGORA)).toEqual({ texto: 'Free', tom: null, aviso: { texto: 'Pagamento pendente', tom: 'aviso' } })
     expect(textoDoPlano(conta('c', { assinatura: paga('pro', 'mensal', 6490, { status: 'pausada' }) }), AGORA).aviso).toEqual({ texto: 'Pausada', tom: 'aviso' })
   })
 
   it('Estudante dentro do prazo; o resto é Free', () => {
     const estudante = (expiraEm: string | null) =>
-      conta('e', { assinatura: { plano: 'estudante', status: 'ativa', ciclo: null, valorCentavos: 0, precoTravado: false, expiraEm, atualizadaEm: '2026-09-01T00:00:00Z' } })
+      conta('e', { assinatura: { plano: 'estudante', status: 'ativa', ciclo: null, valorCentavos: 0, expiraEm, atualizadaEm: '2026-09-01T00:00:00Z' } })
     expect(textoDoPlano(estudante('2027-07-01T00:00:00Z'), AGORA)).toEqual({ texto: 'Estudante', tom: null, aviso: null })
     expect(textoDoPlano(estudante('2026-09-01T00:00:00Z'), AGORA).texto).toBe('Free')
     expect(textoDoPlano(conta('f'), AGORA)).toEqual({ texto: 'Free', tom: null, aviso: null })

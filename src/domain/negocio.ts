@@ -2,7 +2,7 @@
 // banco devolve para o administrador. Tudo aqui é puro; a tela só mostra.
 // Dinheiro em centavos, sem arredondar: o anual dividido por 12 tem fração, e quem
 // arredonda é o texto (negocioTextos.ts).
-import { VAGAS_PRECO_FUNDADOR, ehCiclo, ehIdPlano, planoPorId, type Ciclo, type IdPlano } from './conta.ts'
+import { ehCiclo, ehIdPlano, planoPorId, type Ciclo, type IdPlano } from './conta.ts'
 import type { StatusCrn } from './situacao.ts'
 
 export type StatusAssinatura = 'ativa' | 'pendente' | 'pausada' | 'cancelada'
@@ -27,7 +27,6 @@ export interface AssinaturaNoPainel {
   /** Nulo em plano que não é pago (Estudante, Free). */
   readonly ciclo: Ciclo | null
   readonly valorCentavos: number
-  readonly precoTravado: boolean
   readonly expiraEm: string | null
   readonly atualizadaEm: string
 }
@@ -54,7 +53,6 @@ export interface MudancaDeAssinatura {
   readonly status: StatusAssinatura
   readonly ciclo: Ciclo | null
   readonly valorCentavos: number
-  readonly precoTravado: boolean
   readonly quando: string
 }
 
@@ -109,7 +107,6 @@ export function daLinhaContaNoPainel(linha: unknown): ContaNoPainel | null {
             status: status as StatusAssinatura,
             ciclo: cicloDe(plano, o['ciclo'], valorCentavos),
             valorCentavos,
-            precoTravado: o['preco_travado'] === true,
             expiraEm: textoOuNulo(o['expira_em']),
             atualizadaEm: txt(o['assinatura_atualizada_em']),
           }
@@ -132,7 +129,6 @@ export function daLinhaMudanca(linha: unknown): MudancaDeAssinatura | null {
     status: status as StatusAssinatura,
     ciclo: cicloDe(plano, o['ciclo'], valorCentavos),
     valorCentavos,
-    precoTravado: o['preco_travado'] === true,
     quando,
   }
 }
@@ -177,11 +173,9 @@ export interface ResumoDoNegocio {
   readonly parteQuePaga: number | null
   readonly contas: number
   readonly contasNovas30Dias: number
-  readonly fundadorUsadas: number
-  readonly fundadorVagas: number
 }
 
-/** CA-346 a CA-349. A receita de agora vem das assinaturas; a de 30 dias antes, do histórico. */
+/** CA-346 a CA-348. A receita de agora vem das assinaturas; a de 30 dias antes, do histórico. */
 export function resumirNegocio(contas: readonly ContaNoPainel[], historico: readonly MudancaDeAssinatura[], agora: Date): ResumoDoNegocio {
   const receita = contas.reduce((soma, c) => soma + rendaMensal(c.assinatura), 0)
   const pagas = contas.filter((c) => ehPaga(c.assinatura))
@@ -192,9 +186,6 @@ export function resumirNegocio(contas: readonly ContaNoPainel[], historico: read
     parteQuePaga: contas.length === 0 ? null : pagas.length / contas.length,
     contas: contas.length,
     contasNovas30Dias: contas.filter((c) => instante(c.criadaEm) > ha30Dias(agora)).length,
-    // Igual a vagas_de_fundador_usadas() (003): toda assinatura ativa com preço travado.
-    fundadorUsadas: contas.filter((c) => c.assinatura?.status === 'ativa' && c.assinatura.precoTravado).length,
-    fundadorVagas: VAGAS_PRECO_FUNDADOR,
   }
 }
 

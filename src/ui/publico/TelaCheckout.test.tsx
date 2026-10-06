@@ -15,7 +15,6 @@ const ATIVA: ResultadoDaAssinatura = { ok: true, ativa: true, proximaCobranca: '
 interface Sobre {
   readonly plano?: PlanoPago
   readonly ciclo?: Ciclo
-  readonly vagas?: number | null
   readonly assinatura?: Assinatura
   readonly disponivel?: boolean
   readonly semChave?: boolean
@@ -30,7 +29,6 @@ async function montar(sobre: Sobre = {}) {
     ciclo: sobre.ciclo ?? ('mensal' as const),
     email: 'maria@exemplo.com',
     assinaturaAtual: sobre.assinatura ?? SEM_ASSINATURA,
-    vagasRestantes: sobre.vagas === undefined ? 186 : sobre.vagas,
     disponivel: sobre.disponivel ?? true,
     criarProcessador: sobre.semChave ? null : falso.criar,
     aoTrocar: vi.fn(),
@@ -96,18 +94,10 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(aoTrocar).toHaveBeenCalledWith('pro', 'mensal')
   })
 
-  it('CA-160 e D-74: o aviso de fundador sem contagem; sem número também aparece; some quando acabam as vagas', async () => {
-    const { unmount } = await montar({ vagas: 186 })
+  it('CA-388: o resumo não fala em preço de fundador, em vagas nem em preço que não sobe', async () => {
+    await montar()
     const resumo = screen.getByRole('region', { name: 'Resumo' })
-    expect(resumo).toHaveTextContent('Preço de fundador: esse valor não sobe.')
-    expect(resumo).not.toHaveTextContent('Restam')
-    unmount()
-    const { unmount: desmontar } = await montar({ vagas: null })
-    expect(screen.getByRole('region', { name: 'Resumo' })).toHaveTextContent('Preço de fundador: esse valor não sobe.')
-    expect(screen.getByRole('region', { name: 'Resumo' })).not.toHaveTextContent(/Restam|\d+ de 200/)
-    desmontar()
-    await montar({ vagas: 0 })
-    expect(screen.queryByText(/Preço de fundador/)).not.toBeInTheDocument()
+    expect(resumo).not.toHaveTextContent(/fundador|vagas?|não sobe/i)
   })
 
   it('CA-367: nada cita o processador, e o aviso de segurança é uma linha', async () => {
@@ -304,7 +294,6 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
         ciclo="anual"
         email="maria@exemplo.com"
         assinaturaAtual={SEM_ASSINATURA}
-        vagasRestantes={186}
         disponivel
         criarProcessador={falso.criar}
         aoTrocar={aoTrocar}

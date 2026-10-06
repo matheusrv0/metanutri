@@ -12,8 +12,8 @@ vi.mock('@/domain/legal.ts', () => ({
   get CONTATO_EMAIL() {
     return legal.CONTATO_EMAIL
   },
-  DATA_TERMOS: '2 de outubro de 2026',
-  VERSAO_TERMOS: '2026-10-02',
+  DATA_TERMOS: '5 de outubro de 2026',
+  VERSAO_TERMOS: '2026-10-05',
   PRAZO_EXCLUSAO_DIAS: 90,
   PRAZO_INCIDENTE_HORAS: 72,
 }))
@@ -27,7 +27,7 @@ describe('documentos legais', () => {
   it('CA-222 e CA-224: termos dizem quem prescreve, quem é controlador e operador, e a data', () => {
     render(<TelaTermos />)
     expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Versão de 2 de outubro de 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Versão de 5 de outubro de 2026/)).toBeInTheDocument()
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('quem prescreve é o nutricionista')
     expect(texto).toContain('controlador')
@@ -49,7 +49,7 @@ describe('documentos legais', () => {
     expect(texto).toContain('neste aparelho')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
-    expect(texto).toContain('2 de outubro de 2026')
+    expect(texto).toContain('5 de outubro de 2026')
   })
 
   it('D-46: sem responsável ou contato, os dois mostram que estão em preparação', () => {
@@ -76,6 +76,12 @@ describe('documentos legais', () => {
     expect(texto).toContain('renovam sozinhas')
     expect(texto).toContain('Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago')
     expect(texto).not.toMatch(/mercado ?pago/i)
+  })
+
+  it('CA-391: os termos não prometem preço de fundador nem preço fixo para sempre', () => {
+    render(<TelaTermos />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).not.toMatch(/fundador|preço travado|mantém esse preço|não sobe|para sempre/i)
   })
 
   it('os termos não prometem prazo para o cancelamento por cobrança recusada', () => {

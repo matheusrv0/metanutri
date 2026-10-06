@@ -5,7 +5,6 @@ import { PEDIDO_EM_ANDAMENTO, SESSAO_TERMINOU, useAssinatura, type ResultadoDaAs
 const { cliente } = vi.hoisted(() => {
   const cliente = {
     linha: null as unknown,
-    usadas: 14 as unknown,
     leituras: 0,
     rejeitar: false,
     /** O supabase-js não rejeita em erro de banco ou de rede: resolve com `{ data: null, error }`. */
@@ -32,7 +31,7 @@ const { cliente } = vi.hoisted(() => {
         }
       },
     }),
-    rpc: async () => ({ data: cliente.usadas }),
+    rpc: vi.fn(async () => ({ data: 14 })),
     functions: { invoke: (...args: unknown[]) => cliente.invocar(...args) },
   }
   return { cliente }
@@ -54,7 +53,7 @@ async function aberto() {
 describe('useAssinatura (spec checkout-proprio)', () => {
   beforeEach(() => {
     cliente.linha = null
-    cliente.usadas = 14
+    cliente.rpc.mockClear()
     cliente.leituras = 0
     cliente.rejeitar = false
     cliente.erroDoBanco = null
@@ -71,7 +70,7 @@ describe('useAssinatura (spec checkout-proprio)', () => {
   })
 
   it('com sessão, lê a linha inteira (o 008 pode ainda não ter rodado) e só então marca carregado', async () => {
-    cliente.linha = { plano: 'solo', status: 'ativa', preco_travado: true, cartao_bandeira: 'Mastercard', cartao_final: '6351' }
+    cliente.linha = { plano: 'solo', status: 'ativa', cartao_bandeira: 'Mastercard', cartao_final: '6351' }
     const { result } = renderHook(() => useAssinatura('u1'))
     expect(result.current.carregado).toBe(false)
     await waitFor(() => expect(result.current.carregado).toBe(true))
@@ -84,15 +83,10 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     expect(cliente.filtros).toEqual([['nutricionista_id', 'u1']])
   })
 
-  it('CA-160: conta quantas vagas de fundador sobram', async () => {
-    const { result } = renderHook(() => useAssinatura('u1'))
-    await waitFor(() => expect(result.current.vagasRestantes).toBe(186))
-  })
-
-  it('CA-160: sem resposta do servidor, a contagem fica nula', async () => {
-    cliente.usadas = null
+  it('CA-388: não pergunta ao servidor pelas vagas de fundador nem devolve contagem de vagas', async () => {
     const { result } = await aberto()
-    expect(result.current.vagasRestantes).toBeNull()
+    expect(cliente.rpc).not.toHaveBeenCalled()
+    expect(Object.keys(result.current)).not.toContain('vagasRestantes')
   })
 
   it('CA-375: manda plano, ciclo e o código do cartão ao servidor, nunca o preço', async () => {
