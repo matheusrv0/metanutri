@@ -112,7 +112,8 @@ function Preco({
       </div>
 
       <p className="h-8 text-xs text-muted-foreground">
-        {gratis ? 'Para sempre, sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} uma vez por ano.` : anual ? 'Só no mensal.' : 'Cancele quando quiser.'}
+        {/* D-79: o "cancela quando quiser" fica uma vez, na nota de baixo; no mensal a linha fica vazia e só segura o alinhamento. */}
+        {gratis ? 'Sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} uma vez por ano.` : anual ? 'Só no mensal.' : null}
       </p>
 
       {plano.id === 'clinica' ? (
@@ -175,7 +176,7 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
       <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm text-foreground">
         <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
-        Aprovado, o Grátis sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses
+        Aprovado, o Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses
         ou até a formatura. Conta de estágio é de uso não comercial: a tela do paciente avisa que não é atendimento profissional.
       </p>
       <Button variant="outline" size="sm" onClick={aoEscolher}>
@@ -200,7 +201,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
           Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
         </TimelineContent>
         <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
-          Você paga por paciente ativo — quem teve plano ou missão nos últimos 30 dias. Quem parou de atender não conta, e você sobe de plano só quando crescer.
+          O plano depende de quantos pacientes ativos você atende. Quem parou de vir não entra na conta.
         </TimelineContent>
       </div>
 
@@ -224,7 +225,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
                   <span className="flex flex-col items-center gap-1">
                     <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
                     {estaEmDestaque(plano) ? (
-                      <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span>
+                      <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span>
                     ) : (
                       <span className="h-[1.125rem]" />
                     )}
@@ -280,7 +281,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
             >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h3>
-                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Mais escolhido</span> : null}
+                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
               </div>
 
               <div className="mt-4">
@@ -293,7 +294,10 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
                   if (valor === false) return null
                   return (
                     <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
-                      <dt className="text-sm text-foreground">{linha.rotulo}</dt>
+                      <dt className="text-sm text-foreground">
+                        {linha.rotulo}
+                        {linha.detalhe ? <span className="mt-0.5 block text-xs text-muted-foreground">{linha.detalhe}</span> : null}
+                      </dt>
                       <dd className="shrink-0 text-sm font-semibold text-heading">
                         {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
                       </dd>

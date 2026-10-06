@@ -187,7 +187,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     await usuario.type(screen.getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
     await usuario.type(screen.getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
     await usuario.click(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }))
-    await usuario.click(screen.getByRole('button', { name: /^Assinar por/ }))
+    await usuario.click(screen.getByRole('button', { name: 'Assinar' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Assinatura ativa' })).toBeInTheDocument()
     expect(cobranca.assinar).toHaveBeenCalledOnce()
   })

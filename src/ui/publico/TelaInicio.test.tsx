@@ -11,7 +11,7 @@ const posicao = (padrao: RegExp) => titulos().findIndex((t) => padrao.test(t))
 describe('TelaInicio', () => {
   it('CA-112: topo, problema, como funciona, o diferencial e a faixa final, nesta ordem', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    const ordem = [/Faltou cálcio/, /Todo programa avisa/, /Um plano completo em minutos/, /O diferencial, na tela de verdade/, /Monte o próximo plano/].map(posicao)
+    const ordem = [/Faltou cálcio/, /Todo programa avisa/, /^Como funciona$/, /^O Cobrir e as missões do paciente$/, /Monte o próximo plano/].map(posicao)
     expect(ordem.every((p) => p >= 0)).toBe(true)
     expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)
   })
@@ -65,6 +65,24 @@ describe('TelaInicio', () => {
     const foto = screen.getByAltText(/Três pratos/)
     expect(foto).toHaveAttribute('width', '1600')
     expect(foto).toHaveAttribute('height', '712')
+  })
+
+  it('D-79: cada informação aparece uma vez, sem frase de efeito nem pergunta retórica fora do título', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    const texto = document.body.textContent ?? ''
+    const vezes = (trecho: string) => texto.split(trecho).length - 1
+    expect(vezes('em gramas e em medida caseira')).toBe(1)
+    expect(vezes('em minutos')).toBe(1)
+    expect(vezes('?')).toBe(1)
+    expect(texto).not.toMatch(/de verdade|sem planilha|conta de cabeça|nunca vira zero/)
+    expect(texto).not.toContain('O MetaNutri mostra o que falta e já sugere o alimento')
+  })
+
+  it('D-79: os textos da landing', () => {
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    expect(screen.getByText('Monte o plano e veja o que falta de vitaminas e minerais. O MetaNutri sugere alimentos do dia a dia para cobrir a diferença.')).toBeInTheDocument()
+    expect(screen.getByText('não têm vitamina A medida. O MetaNutri avisa quando o dado falta, em vez de contar zero.')).toBeInTheDocument()
+    expect(screen.getByText('No exemplo, faltou cálcio no plano e o Cobrir sugeriu rúcula e iogurte.')).toBeInTheDocument()
   })
 
   it('CA-321: a área pública fala em Base MetaNutri, não nas tabelas de origem', () => {

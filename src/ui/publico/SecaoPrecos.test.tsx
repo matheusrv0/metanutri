@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SecaoPrecos } from './SecaoPrecos.tsx'
 
@@ -68,11 +68,42 @@ describe('SecaoPrecos', () => {
     expect(screen.getAllByText('Contato em breve.').length).toBeGreaterThan(0)
   })
 
-  it('CA-177: o destaque vindo do aviso de limite troca o "Mais escolhido"', () => {
+  it('CA-177: o destaque vindo do aviso de limite troca o "Recomendado"', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" destaque="pro" />)
     const cabecalhos = screen.getAllByRole('columnheader')
     const doPro = cabecalhos.find((c) => c.textContent?.includes('Pro'))
-    expect(doPro?.textContent).toContain('Mais escolhido')
+    expect(doPro?.textContent).toContain('Recomendado')
+  })
+
+  it('D-79: o selo do destaque não inventa métrica de uso', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(document.body.textContent).not.toContain('Mais escolhido')
+    expect(screen.getAllByText('Recomendado').length).toBeGreaterThan(0)
+  })
+
+  it('D-79: o texto de cima diz do que depende o plano, sem repetir a definição que está na linha da tabela', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(screen.getByText('O plano depende de quantos pacientes ativos você atende. Quem parou de vir não entra na conta.')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Quem teve plano ou missão nos últimos 30 dias.')).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('—')
+  })
+
+  it('D-79: no celular, a lista de cada plano também explica o que é paciente ativo', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(within(screen.getByRole('region', { name: 'Plano Free' })).getByText('Quem teve plano ou missão nos últimos 30 dias.')).toBeInTheDocument()
+  })
+
+  it('D-79: "cancela quando quiser" aparece uma vez, na nota de baixo; o Free não promete "para sempre"', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const texto = document.body.textContent ?? ''
+    expect(texto.match(/cancel/gi)).toHaveLength(1)
+    expect(texto).not.toMatch(/para sempre/i)
+    expect(screen.getAllByText('Sem cartão.').length).toBeGreaterThan(0)
+  })
+
+  it('D-79: a nota do Estudante chama o plano grátis pelo nome da coluna, Free', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(document.body.textContent).toContain('Aprovado, o Free sobe para')
   })
 
   it('CA-381: a nota de pagamento fala de cartão de crédito no site e não cita o processador', () => {

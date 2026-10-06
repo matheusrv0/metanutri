@@ -37,10 +37,10 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     expect(nomeComCiclo('pro', null)).toBe('Pro')
   })
 
-  it('CA-376: a bandeira, o final, e a próxima cobrança com o valor', () => {
+  it('CA-376 e CA-389: a bandeira e o final (para o mini cartão), a próxima cobrança com o valor, e nenhum recado', () => {
     expect(linhaDoCartao(PAGA)).toBe('Mastercard final 6351')
     expect(linhaDaCobranca(PAGA, AGORA)).toBe('Próxima cobrança em 2 de novembro de 2026, R$ 34,90')
-    expect(recadoDaAssinatura(PAGA)).toBe('Sua assinatura está em dia.')
+    expect(recadoDaAssinatura(PAGA)).toBeNull()
   })
 
   it('foco 4: sem o cartão gravado (antes do 008), sem a linha do cartão, sem a da cobrança e sem data para o cancelamento', () => {
@@ -80,16 +80,24 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     expect(valeAteSeCancelar({ ...PAGA, proximaCobranca: '2999-01-02T15:00:00.000Z' })).toBe('1 de janeiro de 2999')
   })
 
-  it('CA-378: a cancelada no prazo diz até quando vale', () => {
+  it('CA-378 e CA-390: a cancelada no prazo diz uma vez até quando vale e o que vem depois; o "cancelada" fica só no selo', () => {
     const cancelada: Assinatura = { ...PAGA, status: 'cancelada', expiraEm: '2026-11-02T02:59:59.000Z' }
-    expect(linhaDaCobranca(cancelada, AGORA)).toBe('Cancelada, vale até 1 de novembro de 2026')
-    expect(recadoDaAssinatura(cancelada)).toBe('A assinatura foi cancelada e não cobra mais. O plano pago vale até o fim do período já pago.')
+    expect(linhaDaCobranca(cancelada, AGORA)).toBe('Vale até 1 de novembro de 2026. Depois, a conta volta ao Free.')
+    expect(recadoDaAssinatura(cancelada)).toBeNull()
   })
 
-  it('CA-366: a próxima cobrança prevista e o que vem depois de hoje', () => {
+  it('D-79: o recado de "Seu plano" só existe quando acrescenta algo ao que o cartão do plano já mostra', () => {
+    expect(recadoDaAssinatura(SEM_ASSINATURA)).toBeNull()
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'pro', status: 'cancelada' })).toBeNull()
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'pendente' })).toBe('O banco ainda está confirmando o pagamento. Até lá, vale o Free.')
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'pausada' })).toBe('A assinatura está pausada. Até ela voltar, vale o Free.')
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'estudante', status: 'vencida' })).toBe('Seu plano venceu e a conta voltou ao Free.')
+  })
+
+  it('CA-366 e D-79: a próxima cobrança prevista e o que vem depois de hoje, sem repetir o valor que está logo acima', () => {
     expect(proximaCobrancaPrevista('mensal', new Date('2026-10-02T15:00:00Z'))).toBe('2026-11-02T15:00:00.000Z')
-    expect(depoisDeHoje(34.9, 'mensal', '2026-11-02T15:00:00.000Z')).toBe('Depois, R$ 34,90 todo dia 2, a partir de 2 de novembro. Cancele quando quiser.')
-    expect(depoisDeHoje(299, 'anual', '2027-10-02T15:00:00.000Z')).toBe('Depois, R$ 299,00 todo ano, em 2 de outubro. Cancele quando quiser.')
+    expect(depoisDeHoje('mensal', '2026-11-02T15:00:00.000Z')).toBe('Depois, o mesmo valor todo dia 2, a partir de 2 de novembro. Cancele quando quiser.')
+    expect(depoisDeHoje('anual', '2027-10-02T15:00:00.000Z')).toBe('Depois, o mesmo valor todo ano, em 2 de outubro. Cancele quando quiser.')
   })
 
   it('CA-372: o valor do recibo, por mês ou por ano', () => {

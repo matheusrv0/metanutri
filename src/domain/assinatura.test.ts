@@ -119,8 +119,15 @@ describe('Quais planos têm botão de assinar', () => {
 })
 
 describe('Recado de cada estado', () => {
-  it('todo estado tem uma frase, e nenhuma some', () => {
-    for (const frase of Object.values(RECADO_STATUS)) expect(frase.length).toBeGreaterThan(10)
+  it('D-79: só pendente, pausada e vencida têm recado; nos outros, o selo e o cartão do plano já dizem tudo', () => {
+    expect(RECADO_STATUS).toEqual({
+      ativa: null,
+      pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o Free.',
+      pausada: 'A assinatura está pausada. Até ela voltar, vale o Free.',
+      cancelada: null,
+      vencida: 'Seu plano venceu e a conta voltou ao Free.',
+      'sem-assinatura': null,
+    })
   })
 
   it('pendente explica que ainda não vale', () => {
@@ -128,7 +135,7 @@ describe('Recado de cada estado', () => {
   })
 
   it('CA-381: nenhum recado cita o processador de pagamento', () => {
-    for (const frase of Object.values(RECADO_STATUS)) expect(frase).not.toMatch(/mercado ?pago/i)
+    for (const frase of Object.values(RECADO_STATUS)) expect(frase ?? '').not.toMatch(/mercado ?pago/i)
   })
 })
 

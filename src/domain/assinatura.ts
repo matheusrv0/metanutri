@@ -85,14 +85,18 @@ export const canceladaNoPrazo = (a: Assinatura): boolean => a.status === 'cancel
 /** CA-376 e CA-378: a assinatura paga que Conta e plano mostra com o cartão ou com o "vale até". */
 export const temAssinaturaPaga = (a: Assinatura): boolean => (a.status === 'ativa' || canceladaNoPrazo(a)) && PAGOS.includes(a.plano)
 
-/** CA-381: nenhum recado cita o processador de pagamento. */
-export const RECADO_STATUS: Readonly<Record<StatusAssinatura, string>> = {
-  ativa: 'Sua assinatura está em dia.',
-  pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o plano Free.',
-  pausada: 'Sua assinatura está pausada. Enquanto isso, vale o plano Free.',
-  cancelada: 'Sua assinatura foi cancelada. Você continua com o plano Free.',
-  vencida: 'O prazo do seu plano acabou. Você continua no Free, sem perder nada.',
-  'sem-assinatura': 'Você está no plano Free.',
+/**
+ * O recado embaixo de "Seu plano". D-79: só aparece quando acrescenta algo ao cartão do
+ * plano, que já mostra o nome, o selo e as datas; nulo é sem recado. CA-381: nenhum recado
+ * cita o processador de pagamento.
+ */
+export const RECADO_STATUS: Readonly<Record<StatusAssinatura, string | null>> = {
+  ativa: null,
+  pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o Free.',
+  pausada: 'A assinatura está pausada. Até ela voltar, vale o Free.',
+  cancelada: null,
+  vencida: 'Seu plano venceu e a conta voltou ao Free.',
+  'sem-assinatura': null,
 }
 
 /** Planos que dá para assinar sozinho; Clínica é conversa, não botão. */

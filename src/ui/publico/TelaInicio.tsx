@@ -55,8 +55,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
               </h1>
             </div>
             <p className="max-w-[42ch] text-sm leading-relaxed text-muted-foreground">
-              Monte o plano e veja o que falta de vitaminas e minerais. O MetaNutri sugere alimentos do dia a dia, com a quantidade em gramas e em medida
-              caseira.
+              Monte o plano e veja o que falta de vitaminas e minerais. O MetaNutri sugere alimentos do dia a dia para cobrir a diferença.
             </p>
             <div className="grid grid-cols-2 gap-3 lg:w-[400px]">
               <CartaoNumero
@@ -76,7 +75,6 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
           <h2 id="titulo-problema" className="ml-auto max-w-[26ch] text-right text-[clamp(26px,3.4vw,36px)] font-semibold leading-tight">
             Todo programa avisa que faltou ferro. <span className="text-muted-foreground">Nenhum diz o que pôr no prato para fechar a conta.</span>
           </h2>
-          <p className="mt-4 text-right text-sm text-muted-foreground">O MetaNutri mostra o que falta e já sugere o alimento, com a quantidade.</p>
 
           <div className="mt-14 grid gap-4 md:grid-cols-[1fr_1fr_1.3fr]">
             <CartaoNumero tom="cinza" valor={String(coberturaDeCalcio().length)} rotulo="sugestões" apoio="de alimento para cada nutriente que falta" />
@@ -85,15 +83,12 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
               tom="teal"
               valor={`${pctAlimentosSemVitaminaA()}%`}
               rotulo="dos alimentos da base"
-              apoio="não têm vitamina A medida. Aqui a falta de dado aparece, nunca vira zero."
+              apoio="não têm vitamina A medida. O MetaNutri avisa quando o dado falta, em vez de contar zero."
             />
           </div>
 
           <div id="como-funciona" className="mt-28 scroll-mt-24">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 className={`${TITULO_SECAO} max-w-[16ch]`}>Um plano completo em minutos</h2>
-              <p className="max-w-[34ch] text-sm text-muted-foreground">Três passos, sem planilha e sem conta de cabeça.</p>
-            </div>
+            <h2 className={TITULO_SECAO}>Como funciona</h2>
             <ol className="mt-9 grid gap-6 md:grid-cols-3">
               {PASSOS.map((passo) => (
                 <li key={passo.n} className="border-t border-border pt-5">
@@ -107,10 +102,8 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
 
           <div id="o-diferencial" className="mt-28 grid scroll-mt-24 items-center gap-8 rounded-2xl bg-surfacerow p-6 sm:p-12 lg:grid-cols-[1fr_1.15fr]">
             <div>
-              <h2 className={`${TITULO_SECAO} max-w-[14ch]`}>O diferencial, na tela de verdade</h2>
-              <p className="mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
-                Cálcio abaixo do recomendado? Um clique mostra o que comer e quanto. O paciente acompanha pelo celular.
-              </p>
+              <h2 className={`${TITULO_SECAO} max-w-[18ch]`}>O Cobrir e as missões do paciente</h2>
+              <p className="mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground">No exemplo, faltou cálcio no plano e o Cobrir sugeriu rúcula e iogurte.</p>
               <Button variant="laranja" className="mt-6" onClick={aoComecar}>
                 Começar grátis
                 <ArrowUpRight aria-hidden="true" />

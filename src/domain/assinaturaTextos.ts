@@ -19,12 +19,10 @@ export function nomeComCiclo(plano: IdPlano, ciclo: Ciclo | null): string {
   return ciclo ? `${nome}, ${ciclo}` : nome
 }
 
-/** O recado embaixo de "Seu plano". A cancelada no prazo tem o seu (CA-378). */
-export function recadoDaAssinatura(a: Assinatura): string {
-  return canceladaNoPrazo(a) ? 'A assinatura foi cancelada e não cobra mais. O plano pago vale até o fim do período já pago.' : RECADO_STATUS[a.status]
-}
+/** O recado embaixo de "Seu plano", ou nulo quando o cartão do plano já diz tudo (D-79). */
+export const recadoDaAssinatura = (a: Assinatura): string | null => RECADO_STATUS[a.status]
 
-/** CA-376: "Mastercard final 6351". Sem o cartão gravado (antes do 008), nulo. */
+/** CA-376: "Mastercard final 6351", o nome do mini cartão para o leitor de tela (CA-389). Sem o cartão gravado (antes do 008), nulo. */
 export function linhaDoCartao(a: Assinatura): string | null {
   return a.cartaoFinal ? `${a.cartaoBandeira ?? 'Cartão'} final ${a.cartaoFinal}` : null
 }
@@ -37,7 +35,8 @@ const aindaVem = (data: string, agora: Date): boolean => Date.parse(data) > agor
  * passou não aparece (M2): a ativa fica só com o valor; a cancelada, sem linha.
  */
 export function linhaDaCobranca(a: Assinatura, agora: Date = new Date()): string | null {
-  if (canceladaNoPrazo(a) && a.expiraEm) return aindaVem(a.expiraEm, agora) ? `Cancelada, vale até ${formatarDataLonga(a.expiraEm)}` : null
+  // CA-390: "cancelada" já está no selo; a linha diz só até quando vale e o que vem depois.
+  if (canceladaNoPrazo(a) && a.expiraEm) return aindaVem(a.expiraEm, agora) ? `Vale até ${formatarDataLonga(a.expiraEm)}. Depois, a conta volta ao Free.` : null
   if (a.status !== 'ativa' || !a.proximaCobranca) return null
   const reais = a.valorCentavos > 0 ? emReais(a.valorCentavos / 100) : null
   if (!aindaVem(a.proximaCobranca, agora)) return reais ? `Próxima cobrança de ${reais}` : null
@@ -53,11 +52,14 @@ export function valeAteSeCancelar(a: Assinatura, agora: Date = new Date()): stri
 /** CA-366: a próxima cobrança, antes de assinar; o servidor confirma depois. */
 export const proximaCobrancaPrevista = (ciclo: Ciclo, agora: Date): string => previsaoDaProximaCobranca(agora, ciclo)
 
-/** Embaixo do total, no cartão do resumo: "Depois, R$ 34,90 todo dia 2, a partir de 2 de novembro. Cancele quando quiser." */
-export function depoisDeHoje(valor: number, ciclo: Ciclo, proximaCobranca: string): string {
+/**
+ * Embaixo do total, no cartão do resumo: "Depois, o mesmo valor todo dia 2, a partir de 2 de
+ * novembro. Cancele quando quiser." O valor está logo acima, no total: não se repete (D-79).
+ */
+export function depoisDeHoje(ciclo: Ciclo, proximaCobranca: string): string {
   const data = new Date(proximaCobranca)
   const quando = ciclo === 'anual' ? `todo ano, em ${DIA_E_MES.format(data)}` : `todo dia ${DIA.format(data)}, a partir de ${DIA_E_MES.format(data)}`
-  return `Depois, ${emReais(valor)} ${quando}. Cancele quando quiser.`
+  return `Depois, o mesmo valor ${quando}. Cancele quando quiser.`
 }
 
 /** CA-372: o valor no recibo da assinatura ativa: "R$ 34,90 por mês". */

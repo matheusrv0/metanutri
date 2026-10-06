@@ -242,11 +242,49 @@ describe('TelaConta', () => {
     montar(nutri)
     expect(screen.getByText('Solo, mensal')).toBeInTheDocument()
     expect(screen.getByText('Ativa')).toBeInTheDocument()
-    expect(screen.getByText('Mastercard final 6351')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Mastercard final 6351' })).toBeInTheDocument()
     expect(screen.getByText('Próxima cobrança em 2 de novembro de 2026, R$ 34,90')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Trocar cartão' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar assinatura' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Assinar/ })).not.toBeInTheDocument()
+  })
+
+  it('CA-389: na ativa, plano, selo, cartão e próxima cobrança aparecem uma vez cada; o mini cartão não se repete em texto', () => {
+    estado.assinatura = PAGA
+    const { container } = montar(nutri)
+    const texto = container.textContent ?? ''
+    const vezes = (padrao: RegExp) => texto.match(new RegExp(padrao.source, 'g'))?.length ?? 0
+    expect(vezes(/Solo, mensal/)).toBe(1)
+    expect(vezes(/Ativa/)).toBe(1)
+    expect(vezes(/Mastercard/)).toBe(1)
+    expect(vezes(/6351/)).toBe(1)
+    expect(vezes(/2 de novembro de 2026/)).toBe(1)
+    expect(screen.queryByText('Mastercard final 6351')).not.toBeInTheDocument()
+    expect(texto).not.toContain('em dia')
+  })
+
+  it('D-79: logado, "Sua conta" não repete que está conectado: o nome e o e-mail já mostram', () => {
+    montar(nutri)
+    expect(screen.getByText('julia@ufrn.edu.br')).toBeInTheDocument()
+    expect(screen.queryByText(/Conectado/)).not.toBeInTheDocument()
+  })
+
+  it('D-79: pendente, pausada e vencida explicam por que vale o Free; sem assinatura, nenhum recado', () => {
+    estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'solo', status: 'pendente', ciclo: 'mensal' }
+    const { unmount } = montar(nutri)
+    expect(screen.getByText('O banco ainda está confirmando o pagamento. Até lá, vale o Free.')).toBeInTheDocument()
+    unmount()
+    estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'pro', status: 'pausada', ciclo: 'anual' }
+    const { unmount: desmontar } = montar(nutri)
+    expect(screen.getByText('A assinatura está pausada. Até ela voltar, vale o Free.')).toBeInTheDocument()
+    desmontar()
+    estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'estudante', status: 'vencida' }
+    const { unmount: fechar } = montar(estudante, aprovado)
+    expect(screen.getByText('Seu plano venceu e a conta voltou ao Free.')).toBeInTheDocument()
+    fechar()
+    estado.assinatura = SEM_ASSINATURA
+    montar(nutri)
+    expect(screen.queryByText('Você está no plano Free.')).not.toBeInTheDocument()
   })
 
   it('CA-377: cancelar abre a confirmação com até quando vale, e "Manter assinatura" é o padrão', async () => {
@@ -270,11 +308,14 @@ describe('TelaConta', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('CA-378 e CA-380: cancelada no prazo diz até quando vale e oferece assinar de novo, no mesmo plano e ciclo', async () => {
+  it('CA-378, CA-380 e CA-390: cancelada no prazo diz uma vez até quando vale e oferece assinar de novo, no mesmo plano e ciclo', async () => {
     estado.assinatura = CANCELADA_NO_PRAZO
-    const { usuario, aoAssinar } = montar(nutri)
-    expect(screen.getByText('Cancelada, vale até 1 de novembro de 2026')).toBeInTheDocument()
+    const { usuario, aoAssinar, container } = montar(nutri)
+    expect(screen.getByText('Vale até 1 de novembro de 2026. Depois, a conta volta ao Free.')).toBeInTheDocument()
     expect(screen.getByText('Cancelada')).toBeInTheDocument()
+    const texto = container.textContent ?? ''
+    expect(texto.match(/cancelad/gi)).toHaveLength(1)
+    expect(texto.match(/1 de novembro de 2026/g)).toHaveLength(1)
     expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Assinar de novo' }))
@@ -284,7 +325,7 @@ describe('TelaConta', () => {
   it('CA-380: cancelada fora do prazo, já no Free, também oferece assinar de novo', async () => {
     estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'pro', status: 'cancelada', ciclo: 'anual', expiraEm: '2026-09-01T02:59:59.000Z' }
     const { usuario, aoAssinar } = montar(nutri)
-    expect(screen.getByText('Sua assinatura foi cancelada. Você continua com o plano Free.')).toBeInTheDocument()
+    expect(screen.queryByText(/foi cancelada/)).not.toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Assinar de novo' }))
     expect(aoAssinar).toHaveBeenCalledWith('pro', 'anual')
   })
@@ -337,7 +378,7 @@ describe('TelaConta', () => {
     await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(estado.trocarCartao).toHaveBeenCalledWith(CARTAO_APROVADO)
-    expect(screen.getByText('Cartão trocado. As próximas cobranças vão para ele.')).toBeInTheDocument()
+    expect(screen.getByText('Cartão trocado.')).toBeInTheDocument()
   })
 
   it('CA-379: recusado, o cartão antigo continua, a mensagem aparece e o código é apagado', async () => {
@@ -410,7 +451,7 @@ describe('TelaConta', () => {
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(aoMudouAssinatura).toHaveBeenCalledOnce()
-    const aviso = screen.getByText('Assinatura cancelada.')
+    const aviso = screen.getByText('Pronto. Não haverá novas cobranças.')
     await waitFor(() => expect(aviso.closest('[tabindex="-1"]')).toHaveFocus())
   })
 
@@ -516,7 +557,7 @@ describe('TelaConta', () => {
   it('CA-381: Conta e plano não cita o processador', () => {
     montar(nutri)
     expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
-    expect(screen.getByText('O pagamento é com cartão de crédito, aqui mesmo no site. O MetaNutri não vê nem guarda o número do cartão.')).toBeInTheDocument()
+    expect(screen.getByText('O pagamento é com cartão de crédito, aqui no site.')).toBeInTheDocument()
   })
 
   it('CA-383: nenhum ícone de biblioteca em Conta e plano, nem na confirmação', async () => {

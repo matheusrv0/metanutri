@@ -78,8 +78,8 @@ export function TelaConta({
   const planoDeNovo = conta.sessao && assinatura.status === 'cancelada' && ehPlanoPago(assinatura.planoPedido) ? assinatura.planoPedido : null
   // Pendente ou pausada do fluxo novo (tem cartão gravado): só dá para cancelar, e vira Free na hora.
   const travadaNova = (assinatura.status === 'pendente' || assinatura.status === 'pausada') && ehPlanoPago(assinatura.planoPedido) && assinatura.cartaoFinal !== null
-  const linhaCartao = linhaDoCartao(assinatura)
   const linhaCobranca = linhaDaCobranca(assinatura)
+  const recado = recadoDaAssinatura(assinatura)
   const inicial = (conta.sessao?.nome.trim()[0] ?? conta.sessao?.email[0] ?? '?').toUpperCase()
 
   const sair = async () => {
@@ -94,9 +94,8 @@ export function TelaConta({
       <Card className="gap-4">
         <CardHeader>
           <CardTitle>Sua conta</CardTitle>
-          <CardDescription>
-            {conta.sessao ? 'Conectado. Seus dados podem ser levados para outro aparelho.' : 'O MetaNutri funciona sem conta. Ela serve para usar em mais de um aparelho.'}
-          </CardDescription>
+          {/* D-79: logado, o nome e o e-mail logo abaixo já dizem que está conectado. */}
+          {conta.sessao ? null : <CardDescription>O MetaNutri funciona sem conta. Ela serve para usar em mais de um aparelho.</CardDescription>}
         </CardHeader>
 
         {conta.carregando ? (
@@ -143,12 +142,13 @@ export function TelaConta({
       <Card className="gap-4">
         <CardHeader>
           <CardTitle>Seu plano</CardTitle>
-          <CardDescription>{recadoDaAssinatura(assinatura)}</CardDescription>
+          {recado ? <CardDescription>{recado}</CardDescription> : null}
         </CardHeader>
 
         {paga ? (
           <div className="grid items-center gap-4 rounded-3xl bg-surfacerow p-4 sm:grid-cols-[auto_minmax(0,1fr)]">
-            <MiniCartao bandeira={assinatura.cartaoBandeira} final={assinatura.cartaoFinal} />
+            {/* CA-389: o mini cartão já mostra a bandeira e o final; o texto ao lado não repete. */}
+            <MiniCartao bandeira={assinatura.cartaoBandeira} final={assinatura.cartaoFinal} nome={linhaDoCartao(assinatura)} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
                 <p className="font-titulo text-xl font-bold text-heading">{nomeComCiclo(assinatura.plano, assinatura.ciclo)}</p>
@@ -157,12 +157,6 @@ export function TelaConta({
                 </Badge>
               </div>
               <div className="mt-1.5 flex flex-col gap-1.5 text-sm text-muted-foreground">
-                {linhaCartao ? (
-                  <span className="inline-flex items-center gap-2">
-                    <IconeMarca nome="cartao" className="size-4" />
-                    {linhaCartao}
-                  </span>
-                ) : null}
                 {linhaCobranca ? (
                   <span className="inline-flex items-center gap-2">
                     <IconeMarca nome="calendario" className="size-4" />
@@ -237,7 +231,7 @@ export function TelaConta({
         </div>
 
         {conta.sessao && !paga && assinatura.status !== 'ativa' ? (
-          <p className="text-xs text-muted-foreground">O pagamento é com cartão de crédito, aqui mesmo no site. O MetaNutri não vê nem guarda o número do cartão.</p>
+          <p className="text-xs text-muted-foreground">O pagamento é com cartão de crédito, aqui no site.</p>
         ) : null}
       </Card>
 
@@ -260,7 +254,7 @@ export function TelaConta({
         aoDevolverFoco={() => refAviso.current?.focus()}
         aoCancelada={() => {
           setCancelando(null)
-          setAviso('Assinatura cancelada.')
+          setAviso('Pronto. Não haverá novas cobranças.')
           aoMudouAssinatura()
         }}
       />
@@ -273,7 +267,7 @@ export function TelaConta({
           aoFechar={() => setTrocando(false)}
           aoTrocado={() => {
             setTrocando(false)
-            setAviso('Cartão trocado. As próximas cobranças vão para ele.')
+            setAviso('Cartão trocado.')
             aoMudouAssinatura()
           }}
         />

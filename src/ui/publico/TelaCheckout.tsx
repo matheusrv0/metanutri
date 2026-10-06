@@ -173,7 +173,6 @@ export function TelaCheckout({
                 Pagamento aprovado
               </span>
               <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold leading-tight text-heading focus:outline-none">Assinatura ativa</h1>
-              <p className="text-sm text-muted-foreground">{`O plano ${planoPorId(concluida.plano)?.nome ?? ''} já está valendo na sua conta.`}</p>
               <dl className="flex w-full flex-col divide-y divide-border rounded-2xl bg-surfacesunken px-4 py-1.5">
                 <LinhaDoRecibo rotulo="Plano">{nomeComCiclo(concluida.plano, concluida.ciclo)}</LinhaDoRecibo>
                 <LinhaDoRecibo rotulo="Valor">{valorDoRecibo(concluida.valor, concluida.ciclo)}</LinhaDoRecibo>
@@ -225,7 +224,7 @@ export function TelaCheckout({
   ) : jaAssina ? (
     <>
       <AvisoPagamento tipo="ok">
-        Você já tem uma assinatura ativa: {planoPorId(assinaturaAtual.plano)?.nome}. A troca de plano pago ainda não é feita pelo site.
+        {`Você já assina o plano ${planoPorId(assinaturaAtual.plano)?.nome ?? ''}. A troca de plano pago ainda não é feita pelo site.`}
       </AvisoPagamento>
       <Button variant="outline" size="lg" block onClick={aoIrParaPainel}>
         Ir para o painel
@@ -273,7 +272,7 @@ export function TelaCheckout({
           </>
         ) : (
           <>
-            {`Assinar por ${emReais(total)}${ciclo === 'anual' ? '/ano' : '/mês'}`}
+            Assinar
             <IconeMarca nome="seta" />
           </>
         )}
@@ -360,7 +359,7 @@ export function TelaCheckout({
           </div>
           <div className="flex flex-col gap-1 border-b border-textoninverse/20 pb-4">
             <p className="font-titulo text-5xl font-bold leading-none tracking-tight">{emReais(total)}</p>
-            <p className="text-sm text-textoninverse/75">{depoisDeHoje(total, ciclo, prevista)}</p>
+            <p className="text-sm text-textoninverse/75">{depoisDeHoje(ciclo, prevista)}</p>
           </div>
 
           {acoes}
