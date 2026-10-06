@@ -20,6 +20,20 @@ const COMPLEMENTO = [
   'unicsul.br', 'unaerp.br', 'unifor.br', 'unicap.br', 'ucsal.br',
   // Ânima Educação (UNA, São Judas, Anhembi Morumbi, UniBH e outras): o e-mail de aluno é o RA @ulife.com.br.
   'ulife.com.br',
+  // Pesquisa de 06/10/2026 (fonte oficial por domínio; os .edu.br já passam sozinhos).
+  // Federais e CEFETs fora do .edu.br.
+  'ufrr.br', 'cefetmg.br', 'cefet-rj.br',
+  // Estaduais e municipais.
+  'uems.br', 'unicentro.br', 'unemat.br', 'ueg.br', 'uemg.br', 'uepa.br', 'unitins.br', 'aluno.cps.sp.gov.br',
+  'famerp.br', 'furb.br', 'fmabc.br', 'fmj.br', 'famema.br', 'unifacef.com.br',
+  // Grupos particulares com e-mail de aluno próprio: Ser Educacional (matrícula@sempre….com.br), Uninter (RU@alunouninter.com),
+  // Unicesumar (RA@aluno.unicesumar.com.br).
+  'sempreuninassau.com.br', 'sempreuninabuco.com.br', 'sempreunama.com.br', 'sempreuniveritas.com.br', 'sempreuninorte.com.br',
+  'alunouninter.com', 'aluno.unicesumar.com.br',
+  // Particulares e comunitárias (site oficial no domínio; algumas com e-mail de aluno confirmado).
+  'saocamilo-sp.br', 'univates.br', 'feevale.br', 'unesc.net', 'ucs.br', 'upf.br', 'univille.br', 'unipar.br', 'uninga.br',
+  'unifil.br', 'uniamerica.br', 'unibave.net', 'unifsa.com.br', 'fainor.com.br', 'uninorte.com.br', 'fae.br', 'unipac.br',
+  'uniso.br', 'metodista.br', 'unisantanna.br', 'unisanta.br', 'unisalesiano.com.br', 'catolicasc.org.br',
 ]
 
 // Domínios genéricos demais para entrar na lista: se a fonte pública ou o

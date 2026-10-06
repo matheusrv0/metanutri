@@ -41,6 +41,28 @@ describe('e-mail de faculdade (spec estilo-spora, D-28)', () => {
     expect(ehEmailDeFaculdade('12823210957@ulife.com.br')).toBe(true)
   })
 
+  it('aceita os e-mails de aluno dos grupos que usam domínio próprio (pesquisa de 06/10/2026)', () => {
+    for (const email of [
+      '01234567@sempreuninassau.com.br',
+      '01234567@sempreunama.com.br',
+      '1234567@alunouninter.com',
+      'ra123@aluno.unicesumar.com.br',
+      'maria@academicos.uems.br',
+      'maria.123@discente.uemg.br',
+      'maria@aluno.uepa.br',
+      'maria@aluno.cps.sp.gov.br',
+      'maria@aluno.saocamilo-sp.br',
+      'maria@universo.univates.br',
+    ]) {
+      expect(ehEmailDeFaculdade(email), email).toBe(true)
+    }
+  })
+
+  it('não aceita o resto do governo só porque o Centro Paula Souza entrou', () => {
+    expect(ehEmailDeFaculdade('servidor@cps.sp.gov.br')).toBe(false)
+    expect(ehEmailDeFaculdade('maria@sp.gov.br')).toBe(false)
+  })
+
   it('recusa e-mail sem parte local antes do @', () => {
     expect(ehEmailDeFaculdade('@usp.br', lista)).toBe(false)
   })
