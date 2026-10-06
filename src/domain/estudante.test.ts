@@ -37,6 +37,10 @@ describe('e-mail de faculdade (spec estilo-spora, D-28)', () => {
     expect(ehEmailDeFaculdade('maria@aluno.unifesp.br')).toBe(true)
   })
 
+  it('aceita o e-mail de aluno da Ânima (RA@ulife.com.br), pedido da primeira estudante em 06/10/2026', () => {
+    expect(ehEmailDeFaculdade('12823210957@ulife.com.br')).toBe(true)
+  })
+
   it('recusa e-mail sem parte local antes do @', () => {
     expect(ehEmailDeFaculdade('@usp.br', lista)).toBe(false)
   })

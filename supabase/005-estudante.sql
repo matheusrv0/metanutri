@@ -186,6 +186,7 @@ insert into public.dominios_faculdade (dominio) values
   ('ufvjm.edu.br'),
   ('ugf.br'),
   ('ulbra.br'),
+  ('ulife.com.br'),
   ('umc.br'),
   ('unaerp.br'),
   ('unama.br'),

@@ -18,6 +18,8 @@ const COMPLEMENTO = [
   'uece.br', 'uefs.br', 'uneb.br', 'upe.br', 'uenf.br', 'unip.br', 'mackenzie.br', 'pucsp.br', 'pucrs.br',
   'pucpr.br', 'pucminas.br', 'unisinos.br', 'ulbra.br', 'univali.br', 'unisul.br', 'fmu.br', 'usjt.br',
   'unicsul.br', 'unaerp.br', 'unifor.br', 'unicap.br', 'ucsal.br',
+  // Ânima Educação (UNA, São Judas, Anhembi Morumbi, UniBH e outras): o e-mail de aluno é o RA @ulife.com.br.
+  'ulife.com.br',
 ]
 
 // Domínios genéricos demais para entrar na lista: se a fonte pública ou o
