@@ -83,7 +83,7 @@ tamanho conta. Importar por caminho relativo (`../../design-system/...`) é erro
   do kit para o arquivo correspondente do projeto.
 - `_runtime/` — o CSS e o pacote JavaScript do export, congelados, só para essas páginas
   renderizarem. **Não é código do projeto e não deve ser importado.** O CSS aqui é o
-  original (Urbanist pelo Google Fonts, sem tema escuro); o CSS de verdade é
+  original (fonte pelo Google Fonts, sem tema escuro; o app usa só Manrope); o CSS de verdade é
   `tokens/tokens.css`.
 
 As páginas de `componentes/` e `ui-kit/` montam React, Babel e Lucide da internet

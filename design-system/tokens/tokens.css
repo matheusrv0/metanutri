@@ -247,14 +247,15 @@
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */
 :root {
-  /* Fontes (spec estilo-spora, 28/09/2026): Urbanist nos títulos e números grandes,
-   * Manrope no texto. Embutidas pelo @fontsource porque o app roda offline.
-   * A Inter continua nas colunas de número (--font-data): algarismo tabular. */
+  /* Fontes (spec limpeza-visual, 05/10/2026): Manrope em tudo, a pedido do dono.
+   * Títulos (--font-display) e números (--font-data) apontam para a mesma Manrope do
+   * texto; o número usa algarismo tabular (utilidade `numeros`). Só o nome da marca,
+   * dentro da Logo, usa outra fonte. Embutida pelo @fontsource porque o app roda offline. */
   --font-corpo: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-corpo);
   /* Só o nome da marca usa esta fonte (kit de 27/09/2026, peso 700). */
   --font-marca: 'Bricolage Grotesque Variable', var(--font-display);
-  --font-data: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-data: var(--font-corpo);
 
   /* Texto sobre --gradient-ink. Não vira de tema: aquele cartão é grafite nos
    * dois. (--text-on-inverse vira, porque no escuro a ação fica clara.) */
@@ -293,7 +294,7 @@
   --traco-caps: 0.06em;
 
   /* Papéis de texto */
-  --type-display: var(--weight-light) var(--fonte-5xl) / var(--altura-tight) var(--font-display);
+  --type-display: var(--weight-semibold) var(--fonte-5xl) / var(--altura-tight) var(--font-display);
   --type-page-title: var(--weight-semibold) var(--fonte-xl) / var(--altura-snug) var(--font-display);
   --type-card-title: var(--weight-semibold) var(--fonte-base) / var(--altura-snug) var(--font-display);
   --type-body: var(--weight-regular) var(--fonte-md) / var(--altura-normal) var(--font-corpo);

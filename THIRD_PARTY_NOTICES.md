@@ -51,14 +51,14 @@ financeiro de terceiros, usadas só como referência de linguagem visual. **Elas
 a marca, nem o texto, nem as telas de lá aparecem no MetaNutri, e os arquivos não estão neste repositório.
 
 Os ícones são do conjunto **Lucide** (licença ISC, © Lucide Contributors), embutidos via `lucide-react` para funcionar
-offline. As fontes **Urbanist**, **Manrope** e **Inter** são distribuídas sob a SIL Open Font License 1.1 e embutidas via
+offline. As fontes **Manrope** e **Bricolage Grotesque** são distribuídas sob a SIL Open Font License 1.1 e embutidas via
 `@fontsource`.
 
-## Fontes Urbanist e Manrope (fundação visual do estilo Spora)
+## Fonte Manrope (todo o site)
 
-A partir de 28/09/2026, a spec estilo-spora troca as fontes de título e de texto: **Urbanist** entra no lugar de
-Archivo (`--font-display`) e **Manrope** no lugar de Figtree (`--font-corpo`). Distribuídas sob a SIL Open Font
-License 1.1 e embutidas via `@fontsource-variable` para o app continuar funcionando offline.
+A partir de 05/10/2026, a spec limpeza-visual usa **Manrope** em títulos, texto e números (antes, Urbanist nos títulos
+e Inter nos números; as duas saíram do projeto). Distribuída sob a SIL Open Font License 1.1 e embutida via
+`@fontsource-variable` para o app continuar funcionando offline.
 
 ## University Domains List (domínios de faculdades)
 

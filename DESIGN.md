@@ -167,9 +167,10 @@ texto corpo 12,7:1, texto secundário 6,6 a 7,8:1, link 7,3:1, foco 8,6:1.
 - **O nome da marca:** `--font-marca` — Bricolage Grotesque Variable, peso 700, tracking
   −0,035 em. Só na `Logo`; em mais nenhum lugar. Dependência aprovada pelo usuário em
   27/09/2026, embutida via `@fontsource` como as outras.
-- **Títulos e números grandes:** `--font-display` — Urbanist Variable.
-- **Texto e campos:** `--font-corpo` — Manrope Variable.
-- **Números:** `--font-data` — Inter Variable, com `tabular-nums` no corpo inteiro.
+- **Manrope em tudo (05/10/2026):** títulos (`--font-display`), texto e campos
+  (`--font-corpo`) e números (`--font-data`) usam Manrope Variable; os dois primeiros
+  papéis apontam para `--font-corpo`. A Bricolage fica só na palavra da marca, dentro da
+  `Logo`. O número usa `tabular-nums` no corpo inteiro (a Manrope tem `tnum`).
 
 **Troca de 28/09/2026, para a referência Spora.** O export original pedia Urbanist
 (texto) e Plus Jakarta Sans (números); a decisão de 24/09/2026 trocou as duas por
@@ -178,6 +179,12 @@ referência Spora trouxe Urbanist de volta — agora nos títulos e nos números
 e Manrope no texto; as duas entraram como dependência nova aprovada pelo usuário,
 embutidas via `@fontsource` como as demais. O Inter das colunas de número não mudou.
 Plus Jakarta Sans nunca entrou.
+
+**Troca de 05/10/2026, pedido do dono (D-75, spec limpeza-visual).** "Utilize a fonte
+Manrope": o site inteiro passou a Manrope, e Urbanist e Inter saíram (imports e os dois
+pacotes `@fontsource-variable`). Com a Manrope, que é mais larga e mais pesada que a
+Urbanist, os títulos subiram para semibold (o `--type-display` deixou de ser light) e o
+tracking dos títulos ficou entre −0.02em e −0.01em.
 
 **Nomes de token renomeados.** A escala do export (`--text-*`, `--leading-*`,
 `--tracking-*`) usa exatamente os nomes do namespace do Tailwind v4. Mantê-los
@@ -189,10 +196,10 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
 
 | Papel | Regra |
 |---|---|
-| Número de destaque | Urbanist 32 px, peso 700, tabular |
-| Título de página (h1) | Urbanist 20 px, largura 92%, tracking −0.01em |
-| Título de bloco (`card-title`) | Urbanist 16 px, peso 600 |
-| Rótulo de seção (`rotulo`) | Urbanist 11 px (`text-2xs`), largura 80%, caixa alta, tracking 0.1em |
+| Número de destaque | Manrope 32 px, peso 700, tabular |
+| Título de página (h1) | Manrope 20 px, peso 600, tracking −0.02em |
+| Título de bloco (`card-title`) | Manrope 16 px, peso 600, tracking −0.01em |
+| Rótulo de seção (`rotulo`) | Manrope 11 px (`text-2xs`), peso 700, caixa alta, tracking 0.1em |
 | Texto e campos | Manrope 14 px (`text-sm`) |
 | Legenda | Manrope 12 px |
 
