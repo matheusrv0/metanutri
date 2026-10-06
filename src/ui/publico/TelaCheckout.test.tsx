@@ -51,7 +51,7 @@ async function preencherTudo(usuario: UserEvent, falso: ProcessadorFalso) {
   await usuario.click(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }))
 }
 
-const botaoAssinar = () => screen.getByRole('button', { name: 'Assinar' })
+const botaoAssinar = () => screen.getByRole('button', { name: /^Assinar por/ })
 const semIconeDeBiblioteca = () => expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
 
 describe('TelaCheckout (spec checkout-proprio)', () => {
@@ -69,17 +69,17 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     for (const texto of ['Você paga hoje', 'R$ 34,90', 'Solo, mensal', 'Depois, o mesmo valor todo dia 2, a partir de 2 de novembro. Cancele quando quiser.']) {
       expect(resumo).toHaveTextContent(texto)
     }
-    // D-79: no resumo, o valor aparece no total e na autorização da cobrança; nem a frase de baixo nem o botão o repetem.
-    expect(resumo.textContent?.match(/R\$\s34,90/g)).toHaveLength(2)
+    // D-79: no resumo, o valor aparece no total, na autorização e no botão (protótipo aprovado); a frase de baixo não o repete.
+    expect(resumo.textContent?.match(/R\$\s34,90/g)).toHaveLength(3)
     for (const texto of ['Recibo para', 'Próxima cobrança', 'maria@exemplo.com']) expect(resumo).not.toHaveTextContent(texto)
     expect(screen.getByRole('checkbox', { name: 'Autorizo a cobrança de R$ 34,90 todo mês neste cartão até eu cancelar, e li os Termos de uso.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '#/termos')
-    expect(botaoAssinar()).toHaveAccessibleName('Assinar')
+    expect(botaoAssinar()).toHaveAccessibleName('Assinar por R$ 34,90/mês')
   })
 
   it('CA-366: no anual, o ano inteiro, quanto sai por mês, o desconto e a cobrança de um ano depois', async () => {
     await montar({ ciclo: 'anual' })
-    expect(botaoAssinar()).toHaveAccessibleName('Assinar')
+    expect(botaoAssinar()).toHaveAccessibleName('Assinar por R$ 299,00/ano')
     expect(screen.getByRole('checkbox', { name: /R\$ 299,00 todo ano neste cartão/ })).toBeInTheDocument()
     const resumo = screen.getByRole('region', { name: 'Resumo' })
     expect(resumo).toHaveTextContent('Solo, anual')
@@ -236,14 +236,14 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     const { falso } = await montar({ semChave: true })
     expect(screen.getByText('O pagamento não está disponível agora.')).toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Número do cartão' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Assinar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })
 
   it('CB-91 e CA-163: quem já assina vê o aviso de hoje e não há formulário', async () => {
     const { falso } = await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'solo', planoPedido: 'solo', status: 'ativa' } })
     expect(screen.getByText('Você já assina o plano Solo. A troca de plano pago ainda não é feita pelo site.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Assinar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })
 
@@ -323,7 +323,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
 
   it('quem tem o plano Clínica ativo também não vê o formulário', async () => {
     const { falso } = await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'clinica', planoPedido: 'clinica', status: 'ativa' } })
-    expect(screen.queryByRole('button', { name: 'Assinar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })
 })

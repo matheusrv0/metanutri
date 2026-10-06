@@ -272,7 +272,7 @@ export function TelaCheckout({
           </>
         ) : (
           <>
-            Assinar
+            {`Assinar por ${emReais(total)}${ciclo === 'anual' ? '/ano' : '/mês'}`}
             <IconeMarca nome="seta" />
           </>
         )}
