@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { assinaturasPorPlano, funilDe30Dias, receitaPorMes, resumirNegocio, situacoesDeAssinatura } from '@/domain/negocio.ts'
+import { horaEmBrasilia } from '@/domain/negocioTextos.ts'
 import type { ValorNegocio } from '../estado/usarNegocio.ts'
 import { AssinaturasPorPlano } from './AssinaturasPorPlano.tsx'
 import { ListaDeContas } from './ListaDeContas.tsx'
@@ -40,7 +41,11 @@ export function TelaNegocio({ negocio }: { readonly negocio: ValorNegocio }) {
       ) : null}
       {dados && calculado ? (
         <>
-          <NumerosDoNegocio resumo={calculado.resumo} />
+          {/* CA-363: a hora da leitura é dado; sem o subtítulo do cabeçalho (D-77), ela fica aqui, junto dos números. */}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted-foreground">{`Números lidos às ${horaEmBrasilia(dados.lidoEm)}.`}</p>
+            <NumerosDoNegocio resumo={calculado.resumo} />
+          </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
             <ReceitaPorMes barras={calculado.barras} />
             <AssinaturasPorPlano linhas={calculado.linhas} situacoes={calculado.situacoes} />

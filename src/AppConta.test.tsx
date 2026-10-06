@@ -261,7 +261,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
   })
 
-  it('CA-363 / CA-386: o botão Atualizar e nenhum subtítulo no cabeçalho', async () => {
+  it('CA-363 / CA-386: a hora da leitura no corpo da tela, o botão Atualizar e nenhum subtítulo no cabeçalho', async () => {
     verificacao.ehAdmin = true
     negocio.dados = { contas: [], historico: [], uso: { links30Dias: 0, copias30Dias: 0 }, lidoEm: new Date('2026-10-02T17:32:00Z') }
     estado.conta = comSessao('conta-1')
@@ -269,6 +269,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     render(tela())
     expect(screen.queryByText('Lido às 14:32')).not.toBeInTheDocument()
     expect(screen.queryByText('Só você vê esta tela')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByText('Números lidos às 14:32.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Atualizar' }))
     expect(negocio.atualizar).toHaveBeenCalledOnce()
   })

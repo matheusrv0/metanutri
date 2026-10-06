@@ -79,9 +79,20 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
     expect(espacos(cartao.textContent)).toContain('Contas que atualizaram a cópia na nuvem em 30 dias112')
   })
 
-  it('primeira leitura em andamento: avisa que está lendo', () => {
+  it('CA-363: a hora da leitura aparece no corpo da tela, perto dos números, em texto pequeno e sem caixa alta', () => {
+    render(<TelaNegocio negocio={negocioFalso()} />)
+    const hora = screen.getByText('Números lidos às 12:00.')
+    expect(hora.className).toContain('text-xs')
+    expect(hora.className).toContain('text-muted-foreground')
+    expect(hora.className).not.toMatch(/uppercase|rotulo/)
+    const resumo = screen.getByRole('region', { name: 'Resumo do negócio' })
+    expect(hora.compareDocumentPosition(resumo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('primeira leitura em andamento: avisa que está lendo, sem hora de leitura', () => {
     render(<TelaNegocio negocio={negocioFalso({ dados: null, carregando: true })} />)
     expect(screen.getByRole('status')).toHaveTextContent('Lendo os números…')
+    expect(screen.queryByText(/Números lidos às/)).toBeNull()
   })
 
   it('CB-78: sem números e com erro, só o aviso', () => {

@@ -88,7 +88,7 @@ Como dono, quero achar uma pessoa e ver em que pé ela está.
 
 ### US-B6 · Leitura e falha (1 pt)
 
-- **CA-363** · Dado a tela aberta, então os números são lidos ao abrir, o subtítulo diz a hora da leitura ("Lido às 14:32") e o botão "Atualizar" lê de novo.
+- **CA-363** · Dado a tela aberta, então os números são lidos ao abrir, a hora da leitura aparece no corpo da tela, em texto pequeno logo acima dos números ("Números lidos às 14:32."), e o botão "Atualizar" lê de novo. (D-77 da `limpeza-visual`: antes a hora ficava no subtítulo do cabeçalho, que saiu.)
 - **CA-364** · Dado o rodapé, então ele diz "Planos e pacientes ficam no aparelho de cada nutricionista e não aparecem aqui." e tem o link "Abrir o Mercado Pago" para taxas, estornos e repasses, abrindo em outra aba.
 
 ### US-B7 · A política diz o que a tela faz (1 pt)
