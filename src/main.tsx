@@ -1,8 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@fontsource-variable/urbanist'
 import '@fontsource-variable/manrope'
-import '@fontsource-variable/inter'
 // Só o nome da marca usa esta (kit de 27/09/2026); embutida, como as outras, porque o app roda offline.
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'

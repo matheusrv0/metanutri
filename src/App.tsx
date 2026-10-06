@@ -1,6 +1,5 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { NOME_DA_BASE } from './domain/baseMetanutri.ts'
 import { calcularEnergia } from './domain/energia.ts'
 import { apagarDadosDoAparelho, registrarDono, situacaoAoEntrar } from './domain/donoDosDados.ts'
 import { CONTATO_EMAIL } from './domain/legal.ts'
@@ -14,7 +13,6 @@ import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from './domain/situa
 import type { ModoPlano } from './domain/tipos.ts'
 import { TelaAdequacao } from './ui/adequacao/TelaAdequacao.tsx'
 import { TelaAprovacoes } from './ui/aprovacoes/TelaAprovacoes.tsx'
-import { horaEmBrasilia } from './domain/negocioTextos.ts'
 import { TelaNegocio } from './ui/negocio/TelaNegocio.tsx'
 import { EscolherModo } from './ui/caso/EscolherModo.tsx'
 import { TelaCaso } from './ui/caso/TelaCaso.tsx'
@@ -410,7 +408,7 @@ function Conteudo() {
 
   if (rota.tela === 'pacientes') {
     return (
-      <Estrutura {...base} titulo="Pacientes" subtitulo="Quem você atende">
+      <Estrutura {...base} titulo="Pacientes">
         <TelaPacientes aoAbrir={(id) => navegar({ tela: 'paciente', pacienteId: id })} />
       </Estrutura>
     )
@@ -436,7 +434,7 @@ function Conteudo() {
 
   if (rota.tela === 'adesao') {
     return (
-      <Estrutura {...base} titulo="Adesão" subtitulo="Quem está sumindo">
+      <Estrutura {...base} titulo="Adesão">
         <TelaAdesao
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'plano' })}
           aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
@@ -448,7 +446,7 @@ function Conteudo() {
 
   if (rota.tela === 'ajuda') {
     return (
-      <Estrutura {...base} titulo="Ajuda" subtitulo="Primeiros passos e fontes">
+      <Estrutura {...base} titulo="Ajuda">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
       </Estrutura>
     )
@@ -460,7 +458,6 @@ function Conteudo() {
       <Estrutura
         {...base}
         titulo="Negócio"
-        subtitulo={negocio.dados ? `Lido às ${horaEmBrasilia(negocio.dados.lidoEm)}` : 'Só você vê esta tela'}
         acoes={
           <Button variant="outline" loading={negocio.carregando} onClick={negocio.atualizar}>
             <RefreshCw aria-hidden="true" />
@@ -476,7 +473,7 @@ function Conteudo() {
   if (rota.tela === 'aprovacoes') {
     if (!perfilConta.ehAdmin) return <Redirecionar para={{ tela: 'painel' }} navegar={navegar} />
     return (
-      <Estrutura {...base} titulo="Aprovações" subtitulo="Só você vê esta tela">
+      <Estrutura {...base} titulo="Aprovações">
         <TelaAprovacoes aprovacoes={aprovacoes} />
       </Estrutura>
     )
@@ -484,7 +481,7 @@ function Conteudo() {
 
   if (rota.tela === 'designsystem') {
     return (
-      <Estrutura {...base} titulo="Design system" subtitulo="A biblioteca inteira, nos dois temas">
+      <Estrutura {...base} titulo="Design system">
         <TelaDesignSystem />
       </Estrutura>
     )
@@ -492,7 +489,7 @@ function Conteudo() {
 
   if (rota.tela === 'alimentos') {
     return (
-      <Estrutura {...base} titulo="Tabela de alimentos" subtitulo={NOME_DA_BASE}>
+      <Estrutura {...base} titulo="Tabela de alimentos">
         <TelaAlimentos aoAbrirFontes={() => navegar({ tela: 'fontes' })} />
       </Estrutura>
     )
@@ -500,7 +497,7 @@ function Conteudo() {
 
   if (rota.tela === 'conta') {
     return (
-      <Estrutura {...base} titulo="Conta e plano" subtitulo="Acesso e assinatura">
+      <Estrutura {...base} titulo="Conta e plano">
         <TelaConta
           conta={conta}
           perfil={perfil}
@@ -527,7 +524,7 @@ function Conteudo() {
 
   if (rota.tela === 'config') {
     return (
-      <Estrutura {...base} titulo="Configurações" subtitulo="Perfil, marca e seus dados">
+      <Estrutura {...base} titulo="Configurações">
         <TelaConfiguracoes />
       </Estrutura>
     )
@@ -535,7 +532,7 @@ function Conteudo() {
 
   if (rota.tela === 'produtos') {
     return (
-      <Estrutura {...base} titulo="Meus produtos" subtitulo="Cadastrados pelo rótulo">
+      <Estrutura {...base} titulo="Meus produtos">
         <TelaProdutos />
       </Estrutura>
     )
@@ -560,17 +557,11 @@ function Conteudo() {
     const restricoesDoPaciente = pacienteDoPlano ? listaDeRestricoes(pacienteDoPlano.restricoes) : []
 
     const indice = ETAPAS.findIndex((e) => e.aba === rota.aba)
-    const etapa = ETAPAS[indice]
     const proxima = ETAPAS[indice + 1]
     return (
       <Estrutura
         {...base}
         titulo={registro.caso.nome || 'Plano sem nome'}
-        subtitulo={
-          etapa
-            ? `${registro.caso.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · Etapa ${etapa.numero} de ${ETAPAS.length}: ${etapa.rotulo}`
-            : undefined
-        }
         trilha={[irParaCasos]}
         acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
       >
@@ -639,7 +630,6 @@ function Conteudo() {
     <Estrutura
       {...base}
       titulo="Planos"
-      subtitulo="Salvos neste aparelho"
       acoes={
         <EscolherModo
           aoEscolher={novoCaso}

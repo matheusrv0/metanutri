@@ -57,7 +57,6 @@ describe('App: estrutura', () => {
     await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
 
     expect(window.location.hash).toMatch(/^#\/caso\/.+\/caso$/)
-    expect(screen.getByText(/Etapa 1 de 3: Dados e medidas/)).toBeInTheDocument()
     const etapas = within(screen.getByRole('navigation', { name: 'Etapas do plano' }))
     expect(etapas.getByRole('button', { name: /Dados e medidas/ })).toHaveAttribute('aria-current', 'step')
     expect(menuFixo().getByRole('button', { name: /Plano aberto/ })).toHaveAttribute('aria-current', 'page')
@@ -76,7 +75,8 @@ describe('App: estrutura', () => {
     await usuario.click(menuFixo().getByRole('button', { name: 'Novo plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Atendimento completo/ }))
     await usuario.click(screen.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }))
-    expect(screen.getByText(/Etapa 2 de 3: Plano alimentar/)).toBeInTheDocument()
+    const etapas = within(screen.getByRole('navigation', { name: 'Etapas do plano' }))
+    expect(etapas.getByRole('button', { name: /Plano alimentar/ })).toHaveAttribute('aria-current', 'step')
   })
 
   it('endereço de caso inexistente oferece volta para Planos', async () => {

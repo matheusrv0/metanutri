@@ -25,7 +25,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   // Criar caso e preencher a etapa 1
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
-  await expect(page.getByText(/Etapa 1 de 3: Dados e medidas/)).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Dados e medidas/ })).toHaveAttribute('aria-current', 'step')
 
   await preencher(page, 'Nome do plano', 'Maria, 28 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
@@ -42,7 +42,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
 
   // CA-13 e CA-16: montar o plano com a entrada rápida
   await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
-  await expect(page.getByText('Etapa 2 de 3: Plano alimentar')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Plano alimentar/ })).toHaveAttribute('aria-current', 'step')
 
   const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')

@@ -12,7 +12,6 @@ interface EstruturaProps {
   readonly casoAtual: CasoAtual | null
   readonly aoNovoCaso: (modo: ModoPlano) => void
   readonly titulo: string
-  readonly subtitulo?: string | undefined
   readonly trilha?: readonly PassoTrilha[] | undefined
   readonly acoes?: ReactNode
   readonly children: ReactNode
@@ -21,7 +20,7 @@ interface EstruturaProps {
 }
 
 /** Layout do MaterialM: menu lateral fixo de 270 px (gaveta abaixo de 1280 px), cabeçalho e conteúdo em até 1400 px. */
-export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtitulo, trilha, acoes, children, aprovacoesPendentes }: EstruturaProps) {
+export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha, acoes, children, aprovacoesPendentes }: EstruturaProps) {
   const [menuAberto, setMenuAberto] = useState(false)
 
   useEffect(() => {
@@ -56,7 +55,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, subtit
       </Sheet>
 
       <div className="xl:pl-[264px]">
-        <Cabecalho titulo={titulo} subtitulo={subtitulo} trilha={trilha} acoes={acoes} aoAbrirMenu={() => setMenuAberto(true)} />
+        <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} aoAbrirMenu={() => setMenuAberto(true)} />
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
           {children}
         </main>
