@@ -51,10 +51,11 @@ Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). 
 
 - **Mesa e cartão.** O fundo é a mesa cinza `--mesa` (#f1f0f0). Os blocos são cartões brancos com raio 24 (`rounded-3xl`), sem fio e sem sombra. Dentro do cartão branco, cada item de lista é uma linha cinza (`LinhaLista`, `bg-surfacerow`).
 - **Teal no lugar do preto.** O que a referência pinta de preto (botão principal, cartão de destaque, faixa final) aqui é o teal da marca.
-- **Laranja nos destaques, nunca no dado.** Botão de começar (`variant="laranja"`), seta de navegação e ponto do rótulo. Em painel de dado, nunca.
+- **Laranja nos destaques, nunca no dado.** Botão de começar (`variant="laranja"`) e seta de navegação. Em painel de dado, nunca.
 - **Seta só onde leva a algum lugar.** Cartão de número parado não tem seta (`CartaoNumero` sem `aoClicar`).
 - **Foto só no topo da landing.** Uma composição de pratos recortada de fotos gratuitas, com crédito em `THIRD_PARTY_NOTICES.md`. Nenhuma outra foto no site nem no app.
-- **Componentes da referência:** `CartaoNumero`, `RotuloSecao`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
+- **Componentes da referência:** `CartaoNumero`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
+- **Sem taglines** (D-77 da `limpeza-visual`, 05/10/2026). Nenhum rótulo decorativo em caixa alta acima de título ou de seção, nenhum subtítulo no cabeçalho e nada embaixo da logo do menu. O rótulo em caixa alta (`rotulo`) só nomeia o dado logo abaixo dele, como "Você paga hoje" sobre o total; cabeçalho de tabela, rótulo de campo e grupo do menu também ficam.
 - **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
 
 ## Colors
@@ -199,7 +200,7 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
 | Número de destaque | Manrope 32 px, peso 700, tabular |
 | Título de página (h1) | Manrope 20 px, peso 600, tracking −0.02em |
 | Título de bloco (`card-title`) | Manrope 16 px, peso 600, tracking −0.01em |
-| Rótulo de seção (`rotulo`) | Manrope 11 px (`text-2xs`), peso 700, caixa alta, tracking 0.1em |
+| Rótulo de dado (`rotulo`) | Manrope 11 px (`text-2xs`), peso 700, caixa alta, tracking 0.1em. Só sobre o dado que ele nomeia, nunca como tagline (D-77) |
 | Texto e campos | Manrope 14 px (`text-sm`) |
 | Legenda | Manrope 12 px |
 

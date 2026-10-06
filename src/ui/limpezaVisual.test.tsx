@@ -101,7 +101,25 @@ const TELAS: readonly (readonly [string, () => Promise<void> | void])[] = [
   ['painel do dono', () => void render(<TelaNegocio negocio={negocioFalso()} />)],
 ]
 
+/**
+ * D-77: o rótulo em caixa alta só fica quando nomeia o dado logo abaixo dele ("Você paga
+ * hoje" sobre o total, "Liberado agora" sobre a lista do plano) ou o dado do cartão
+ * desenhado ("Titular", "Validade"). Rótulo que anuncia seção ou título é tagline e sai.
+ */
+const ROTULOS_DE_DADO = ['Você paga hoje', 'Liberado agora', 'Titular', 'Validade']
+
+const rotulosEmCaixaAlta = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[class*="uppercase"], .rotulo')).map((el) => el.textContent?.trim() ?? '')
+
 describe('limpeza visual (spec limpeza-visual)', () => {
+  it.each(TELAS.filter(([nome]) => ['landing', 'Preços', 'checkout', 'Conta e plano'].includes(nome)))(
+    'CA-387: %s não tem rótulo decorativo em caixa alta acima de título ou de seção',
+    async (_nome, montar) => {
+      await montar()
+      for (const rotulo of rotulosEmCaixaAlta()) expect(ROTULOS_DE_DADO).toContain(rotulo)
+    },
+  )
+
   it.each(TELAS)('CA-388: %s não fala em preço de fundador, vagas de fundador nem preço que não sobe', async (_nome, montar) => {
     await montar()
     expect(document.body.textContent).not.toMatch(/fundador|vagas?\b|preço travado|não sobe/i)

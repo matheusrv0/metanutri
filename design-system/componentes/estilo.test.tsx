@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { AnelProgresso } from '@ds/componentes/display/AnelProgresso.tsx'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
-import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 
 describe('CartaoNumero (CA-106, CA-107)', () => {
@@ -34,14 +33,6 @@ describe('CartaoNumero (CA-106, CA-107)', () => {
   it('o tom teal usa a superfície da marca', () => {
     const { container } = render(<CartaoNumero valor="2" rotulo="Precisa de atenção" tom="teal" />)
     expect(container.firstElementChild?.className).toContain('bg-surfacebrand')
-  })
-})
-
-describe('RotuloSecao', () => {
-  it('mostra o texto, com o ponto laranja escondido do leitor de tela', () => {
-    const { container } = render(<RotuloSecao>Como funciona</RotuloSecao>)
-    expect(screen.getByText('Como funciona')).toBeInTheDocument()
-    expect(container.querySelector('[aria-hidden="true"]')?.className).toContain('bg-laranja')
   })
 })
 

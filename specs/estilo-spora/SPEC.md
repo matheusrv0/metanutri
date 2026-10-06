@@ -68,7 +68,7 @@ MetaNutri tenha uma cara só, para confiar que é um produto sério.
 **US-F2 · Componentes base (8 pts).** Como nutricionista, quero que botões, cartões e
 listas se comportem igual em toda tela, para não reaprender cada uma.
 
-- **CA-106** · Dado o design system, então existem estes componentes, cada um com exemplo na vitrine: cartão de número (valor grande, rótulo e seta opcional), rótulo de seção com ponto laranja, botão em pílula (teal, laranja e contorno), linha de lista em cinza, seletor segmentado em pílula e anel de progresso.
+- **CA-106** · Dado o design system, então existem estes componentes, cada um com exemplo na vitrine: cartão de número (valor grande, rótulo e seta opcional), ~~rótulo de seção com ponto laranja~~ (saiu com o D-77 da `limpeza-visual`: sem taglines), botão em pílula (teal, laranja e contorno), linha de lista em cinza, seletor segmentado em pílula e anel de progresso.
 - **CA-107** · Dado um cartão de número sem destino, então ele não mostra seta. Dado um cartão com destino, então a seta aparece, e o cartão inteiro é clicável e alcançável pelo teclado.
 - **CA-108** · Dado qualquer botão ou item clicável, então a área de toque tem pelo menos 44 × 44 px no celular e o foco do teclado aparece.
 - **CA-109** · Dado o sistema com "reduzir movimento" ligado, então nenhuma transição passa de 150 ms e nada se move sozinho.

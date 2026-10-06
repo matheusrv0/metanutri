@@ -6,9 +6,9 @@
  * arquivo por arquivo, para o Vite separar melhor o pacote — mas componente novo
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
- * Os 32 componentes do sistema, na taxonomia do design system:
+ * Os 31 componentes do sistema, na taxonomia do design system:
  *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
- *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · RotuloSecao · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca
+ *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca
  *   overlay     Dialog · Sheet · DropdownMenu
  *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
@@ -43,7 +43,6 @@ export { Fontes, type ItemFonte } from './componentes/display/Fontes.tsx'
 export { Recolhivel } from './componentes/display/Recolhivel.tsx'
 export { GraficoBarras, type BarraDoGrafico } from './componentes/display/GraficoBarras.tsx'
 export { CartaoNumero, type TomCartaoNumero } from './componentes/display/CartaoNumero.tsx'
-export { RotuloSecao } from './componentes/display/RotuloSecao.tsx'
 export { LinhaLista } from './componentes/display/LinhaLista.tsx'
 export { AnelProgresso, type TomAnel } from './componentes/display/AnelProgresso.tsx'
 export { IconeMarca, NOMES_ICONE_MARCA, type NomeIconeMarca } from './componentes/display/IconeMarca.tsx'

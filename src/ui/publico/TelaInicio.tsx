@@ -4,7 +4,6 @@ import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
-import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface TelaInicioProps {
@@ -24,7 +23,7 @@ const PASSOS = [
   { n: '03', titulo: 'O paciente acompanha', texto: 'Ele marca pelo celular o que cumpriu. Você vê quem está sumindo.' },
 ] as const
 
-const TITULO_SECAO = 'mt-4 text-[clamp(28px,3.4vw,36px)] font-bold leading-tight'
+const TITULO_SECAO = 'text-[clamp(28px,3.4vw,36px)] font-bold leading-tight'
 
 /**
  * Landing no estilo da referência Spora (mockup landing v2, spec estilo-spora).
@@ -74,8 +73,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
 
       <section aria-labelledby="titulo-problema" className="rounded-t-[36px] bg-card px-4 pb-20 pt-16 sm:px-14">
         <div className="mx-auto max-w-[1216px]">
-          <RotuloSecao>O problema</RotuloSecao>
-          <h2 id="titulo-problema" className="ml-auto mt-4 max-w-[26ch] text-right text-[clamp(26px,3.4vw,36px)] font-semibold leading-tight">
+          <h2 id="titulo-problema" className="ml-auto max-w-[26ch] text-right text-[clamp(26px,3.4vw,36px)] font-semibold leading-tight">
             Todo programa avisa que faltou ferro. <span className="text-muted-foreground">Nenhum diz o que pôr no prato para fechar a conta.</span>
           </h2>
           <p className="mt-4 text-right text-sm text-muted-foreground">O MetaNutri mostra o que falta e já sugere o alimento, com a quantidade.</p>
@@ -93,10 +91,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
 
           <div id="como-funciona" className="mt-28 scroll-mt-24">
             <div className="flex flex-wrap items-end justify-between gap-6">
-              <div>
-                <RotuloSecao>Como funciona</RotuloSecao>
-                <h2 className={`${TITULO_SECAO} max-w-[16ch]`}>Um plano completo em minutos</h2>
-              </div>
+              <h2 className={`${TITULO_SECAO} max-w-[16ch]`}>Um plano completo em minutos</h2>
               <p className="max-w-[34ch] text-sm text-muted-foreground">Três passos, sem planilha e sem conta de cabeça.</p>
             </div>
             <ol className="mt-9 grid gap-6 md:grid-cols-3">
@@ -112,7 +107,6 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
 
           <div id="o-diferencial" className="mt-28 grid scroll-mt-24 items-center gap-8 rounded-2xl bg-surfacerow p-6 sm:p-12 lg:grid-cols-[1fr_1.15fr]">
             <div>
-              <RotuloSecao>O diferencial</RotuloSecao>
               <h2 className={`${TITULO_SECAO} max-w-[14ch]`}>O diferencial, na tela de verdade</h2>
               <p className="mt-4 max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
                 Cálcio abaixo do recomendado? Um clique mostra o que comer e quanto. O paciente acompanha pelo celular.

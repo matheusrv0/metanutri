@@ -15,7 +15,6 @@ import { IconeMarca, NOMES_ICONE_MARCA } from '@ds/componentes/display/IconeMarc
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
-import { RotuloSecao } from '@ds/componentes/display/RotuloSecao.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Separator } from '@ds/componentes/display/separator.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
@@ -535,11 +534,10 @@ export function TelaDesignSystem() {
         </Secao>
 
         <Secao
-          nome="CartaoNumero · RotuloSecao · LinhaLista"
+          nome="CartaoNumero · LinhaLista"
           arquivo="display/"
-          descricao="Referência Spora: número grande, rótulo com ponto e linha cinza. Seta só onde leva a algum lugar"
+          descricao="Referência Spora: número grande e linha cinza. Seta só onde leva a algum lugar"
         >
-          <RotuloSecao>Como funciona</RotuloSecao>
           <div className="grid gap-3 sm:grid-cols-3">
             <CartaoNumero valor="12" rotulo="Planos" apoio="7 mexidos em 14 dias" aoClicar={() => undefined} />
             <CartaoNumero valor="9" rotulo="Dias trabalhados" apoio="nos últimos 14 dias" tom="cinza" />
