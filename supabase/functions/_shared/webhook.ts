@@ -21,9 +21,10 @@ import {
   previsaoDaProximaCobranca,
   traduzirStatus,
   UM_DIA_MS,
+  type StatusDaAssinatura,
 } from './cobranca.ts'
 import { cancelarNaOperadora, tentarCancelarNaOperadora } from './operadora.ts'
-import type { AvisoAnotado, BancoDaCobranca, FalhaDoBanco, LinhaDaAssinatura, MudancaDaAssinatura, Operadora, Registro } from './portas.ts'
+import type { AvisoAnotado, BancoDaCobranca, FalhaDoBanco, LinhaDaAssinatura, MudancaDaAssinatura, NovaAssinatura, Operadora, Registro } from './portas.ts'
 
 export interface AvisoRecebido {
   /** O corpo já lido como JSON; nulo se não era JSON. */
@@ -203,24 +204,36 @@ async function anotar(deps: DependenciasDoWebhook, anotado: AvisoAnotado): Promi
   }
 }
 
-/** O aviso da assinatura: grava o status que a operadora diz, ou adota a assinatura sem dono (D-85). */
-async function tratarAssinatura(id: string, deps: DependenciasDoWebhook): Promise<Feito> {
+/** A assinatura lida na operadora, com a conta dela; ou, quando não deu para ler, o que responder. */
+type AssinaturaLida =
+  | { readonly lida: true; readonly assinatura: Readonly<Record<string, unknown>>; readonly dono: string; readonly status: StatusDaAssinatura }
+  | { readonly lida: false; readonly feito: Feito }
+
+/** Lê a assinatura na operadora. Rede, 5xx, 429, a nossa credencial recusada e corpo ilegível são passageiros (500). */
+async function lerAssinatura(id: string, deps: DependenciasDoWebhook): Promise<AssinaturaLida> {
   const lida = await deps.operadora('GET', `/preapproval/${encodeURIComponent(id)}`)
-  if (!lida) return feito('falha: operadora fora', 500)
+  if (!lida) return { lida: false, feito: feito('falha: operadora fora', 500) }
   const passageira = falhaPassageira(lida.status)
-  if (passageira) return passageira
-  if (!lida.ok) return feito('ignorado: assinatura não existe na operadora')
+  if (passageira) return { lida: false, feito: passageira }
+  if (!lida.ok) return { lida: false, feito: feito('ignorado: assinatura não existe na operadora') }
   const assinatura = lida.dados
   // Um 2xx sem corpo legível é leitura que falhou, não "não existe": o aviso volta.
-  if (!assinatura) return feito('falha: resposta ilegível', 500)
+  if (!assinatura) return { lida: false, feito: feito('falha: resposta ilegível', 500) }
   const dono = textoCurto(assinatura['external_reference'])
-  if (!dono) return feito('ignorado: assinatura sem conta')
-  const status = traduzirStatus(assinatura['status'])
+  if (!dono) return { lida: false, feito: feito('ignorado: assinatura sem conta') }
+  return { lida: true, assinatura, dono, status: traduzirStatus(assinatura['status']) }
+}
+
+/** O aviso da assinatura: grava o status que a operadora diz, ou adota a assinatura sem dono (D-85). */
+async function tratarAssinatura(id: string, deps: DependenciasDoWebhook): Promise<Feito> {
+  const lida = await lerAssinatura(id, deps)
+  if (!lida.lida) return lida.feito
+  const { assinatura, dono, status } = lida
 
   // A operadora é lida antes da linha de propósito: quem lê "cancelled" lá lê a linha depois, e por isso já vê a anotação da recusa (R12).
   const { linha, falha } = await deps.banco.lerDaOperadora(id)
   if (falha) return falhaNoBanco(deps, falha, 'ler a assinatura do aviso')
-  if (!linha) return status === 'ativa' ? adotar(id, dono, assinatura, deps) : feito(`ignorado: assinatura ${status} sem linha`)
+  if (!linha) return status === 'ativa' ? (await adotar(id, dono, assinatura, deps)).feito : feito(`ignorado: assinatura ${status} sem linha`)
   if (linha.nutricionista_id !== dono) {
     deps.log('Aviso de assinatura com outra conta na linha; conferir à mão:', id)
     return feito('ignorado: conta não confere')
@@ -255,24 +268,44 @@ async function cancelarSobra(id: string, motivo: string, deps: DependenciasDoWeb
 }
 
 /**
+ * CB-111: a conta da assinatura não existe aqui. O 23503 (chave estrangeira) vem da conta apagada; o
+ * 22P02 (texto que não é uuid), de um código de conta que não é de ninguém. Tentar de novo não muda isso.
+ */
+const CONTA_QUE_NAO_EXISTE: readonly string[] = ['23503', '22P02']
+const contaNaoExiste = (falha: FalhaDoBanco): boolean => falha.codigo !== null && CONTA_QUE_NAO_EXISTE.includes(falha.codigo)
+
+/** CB-111: sem conta para dar o plano, a assinatura sai da operadora, como a sobra. */
+async function cancelarSemConta(id: string, deps: DependenciasDoWebhook): Promise<Feito> {
+  deps.log('Assinatura autorizada de uma conta que não existe aqui; cancelando na operadora:', id)
+  return cancelarSobra(id, 'sobra', deps)
+}
+
+/** O que a adoção fez e, quando adotou, a linha que gravou. */
+interface Adocao {
+  readonly feito: Feito
+  readonly adotada: LinhaDaAssinatura | null
+}
+const semAdotar = (resultado: Feito): Adocao => ({ feito: resultado, adotada: null })
+
+/**
  * D-85 (CA-400 e CA-401): a assinatura autorizada que não tem linha aqui (a resposta da assinar se
  * perdeu). Se a conta já paga outra, esta é a sobra. Se não, a pessoa ganha o plano que está pagando,
- * achado pelo valor e pela frequência (R-39).
+ * achado pelo valor e pela frequência (R-39). A conta que não existe aqui também cancela (CB-111).
  */
-async function adotar(id: string, dono: string, assinatura: Readonly<Record<string, unknown>>, deps: DependenciasDoWebhook): Promise<Feito> {
+async function adotar(id: string, dono: string, assinatura: Readonly<Record<string, unknown>>, deps: DependenciasDoWebhook): Promise<Adocao> {
   const { linha: atual, falha } = await deps.banco.lerDaConta(dono)
-  if (falha) return falhaNoBanco(deps, falha, 'ler a conta da assinatura sem dono')
-  if (atual && atual.status === 'ativa' && PAGOS.includes(atual.plano) && atual.preapproval_id !== id) return cancelarSobra(id, 'sobra', deps)
+  if (falha) return semAdotar(contaNaoExiste(falha) ? await cancelarSemConta(id, deps) : falhaNoBanco(deps, falha, 'ler a conta da assinatura sem dono'))
+  if (atual && atual.status === 'ativa' && PAGOS.includes(atual.plano) && atual.preapproval_id !== id) return semAdotar(await cancelarSobra(id, 'sobra', deps))
 
   const recorrencia = objeto(assinatura['auto_recurring'])
   const achado = planoPeloValor(recorrencia?.['transaction_amount'], recorrencia?.['frequency'], recorrencia?.['frequency_type'])
-  if (!achado) return cancelarSobra(id, 'valor desconhecido', deps)
+  if (!achado) return semAdotar(await cancelarSobra(id, 'valor desconhecido', deps))
 
   const agora = deps.agora()
   // O cartão que a pessoa digitou fica na reserva quando a resposta da operadora se perde (009).
   const reserva = await deps.banco.lerReserva(dono)
   const proxima = dataDepoisDe(assinatura['next_payment_date'], agora.getTime() + UM_DIA_MS) ?? previsaoDaProximaCobranca(agora, achado.ciclo)
-  const naoGravou = await deps.banco.gravar({
+  const nova: NovaAssinatura = {
     nutricionista_id: dono,
     plano: achado.plano,
     status: 'ativa',
@@ -287,10 +320,11 @@ async function adotar(id: string, dono: string, assinatura: Readonly<Record<stri
     encerrada_por: null,
     encerrada_em: null,
     atualizado_em: agora.toISOString(),
-  })
-  if (naoGravou) return falhaNoBanco(deps, naoGravou, 'adotar a assinatura sem dono')
+  }
+  const naoGravou = await deps.banco.gravar(nova)
+  if (naoGravou) return semAdotar(contaNaoExiste(naoGravou) ? await cancelarSemConta(id, deps) : falhaNoBanco(deps, naoGravou, 'adotar a assinatura sem dono'))
   deps.log('Assinatura sem dono adotada:', id)
-  return feito(`adotada: ${achado.plano} ${achado.ciclo}`)
+  return { feito: feito(`adotada: ${achado.plano} ${achado.ciclo}`), adotada: nova }
 }
 
 /** D-83: paga é pagamento aprovado; recusada é pagamento recusado ou a operadora tentando de novo depois de uma recusa. */
@@ -333,7 +367,7 @@ async function tratarMensalidade(id: string, deps: DependenciasDoWebhook): Promi
  * novo e a cobrança passou antes de o corte pegar.
  */
 async function registrarPaga(preapprovalId: string, linha: LinhaDaAssinatura | null, quando: string, agora: Date, deps: DependenciasDoWebhook): Promise<Feito> {
-  if (!linha) return feito('ignorado: mensalidade paga sem linha')
+  if (!linha) return pagaSemLinha(preapprovalId, quando, agora, deps)
   const anotada = dataOuNula(linha.ultima_cobranca_paga)
   const maisNova = anotada === null || Date.parse(quando) > Date.parse(anotada)
   const ativa = linha.status === 'ativa'
@@ -366,6 +400,28 @@ async function registrarPaga(preapprovalId: string, linha: LinhaDaAssinatura | n
   if (linha.status !== 'cancelada') return feito('mensalidade paga')
   deps.log('Mensalidade paga numa assinatura já cancelada; conferir se cabe devolver:', preapprovalId)
   return feito('mensalidade paga (assinatura já cancelada)')
+}
+
+/**
+ * CB-110 (D-85): a mensalidade paga de uma assinatura que não tem linha aqui (a resposta da assinar se
+ * perdeu e o aviso da assinatura ainda não veio). Lê a assinatura na operadora e, valendo, segue o
+ * caminho do aviso da assinatura: adota (e grava a paga na linha adotada, como numa linha que já
+ * existia) ou cancela a sobra. A leitura que falha volta, como no aviso da assinatura.
+ */
+async function pagaSemLinha(preapprovalId: string, quando: string, agora: Date, deps: DependenciasDoWebhook): Promise<Feito> {
+  const ignorada = feito('ignorado: mensalidade paga sem linha')
+  const lida = await lerAssinatura(preapprovalId, deps)
+  if (!lida.lida) return lida.feito.status === 500 ? lida.feito : ignorada
+  if (lida.status !== 'ativa') return ignorada
+  const { feito: adocao, adotada } = await adotar(preapprovalId, lida.dono, lida.assinatura, deps)
+  if (!adotada) {
+    // A mensalidade foi paga numa assinatura que acabou de sair da operadora: o dono vê se cabe devolver.
+    if (adocao.status === 200) deps.log('Mensalidade paga numa assinatura sem linha, cancelada agora; conferir se cabe devolver:', preapprovalId)
+    return adocao
+  }
+  // Se gravar a paga falhar, o aviso volta e, na volta, acha a linha adotada.
+  const paga = await registrarPaga(preapprovalId, adotada, quando, agora, deps)
+  return paga.status === 200 ? feito(`${adocao.resultado}; ${paga.resultado}`) : paga
 }
 
 const comMotivo = (texto: string, motivo: string | null): string => (motivo ? `${texto} (${motivo})` : texto)

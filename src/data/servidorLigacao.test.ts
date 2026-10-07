@@ -101,8 +101,16 @@ describe('o banco de verdade (bancoSupabase.ts)', () => {
   it('CA-398: os avisos velhos saem pela data de chegada', () => {
     expect(bancoSupabase).toContain(".from('avisos_da_operadora').delete().lt('recebido_em', data)")
   })
-  it('o código vazio do erro (falha de rede) vira nulo; só o 23505 decide alguma coisa', () => {
+  it('o código vazio do erro (falha de rede) vira nulo; só o 23505 (reserva) e o 23503 e o 22P02 (conta que não existe, CB-111) decidem alguma coisa', () => {
     expect(bancoSupabase).toContain('codigo: erro.code || null')
+  })
+  it('CB-111: ler a conta e gravar a assinatura devolvem o erro do banco com o código do Postgres', () => {
+    const lerDaConta = bancoSupabase.split('async lerDaConta(')[1]?.split('async lerDaOperadora(')[0] ?? ''
+    expect(lerDaConta).toContain("eq('nutricionista_id', conta)")
+    expect(lerDaConta).toContain('falha: falhaDe(error)')
+    const gravar = bancoSupabase.split('async gravar(')[1]?.split('async mudar(')[0] ?? ''
+    expect(gravar).toContain('return falhaDe(error)')
+    expect(bancoSupabase).toContain('erro ? { mensagem: erro.message, codigo: erro.code || null } : null')
   })
   it('lê as colunas do 009', () => {
     for (const coluna of ['ultima_cobranca_paga', 'encerrada_por', 'encerrada_em', 'ciclo', 'cartao_final']) expect(bancoSupabase).toContain(coluna)

@@ -629,6 +629,48 @@ describe('a assinatura sem dono (D-85)', () => {
     expect(naoCancelou.c.assinaturas.has('u1')).toBe(false)
   })
 
+  it.each<[string, Parameters<Cenario['falhar']>[0], string, string]>([
+    ['a conta não existe mais: a gravação falha com 23503 (chave estrangeira)', 'gravar', '23503', 'insert or update on table "assinaturas" violates foreign key constraint'],
+    ['o código da conta não é um uuid: a leitura da conta falha com 22P02', 'lerDaConta', '22P02', 'invalid input syntax for type uuid'],
+    ['o código da conta não é um uuid: a gravação falha com 22P02', 'gravar', '22P02', 'invalid input syntax for type uuid'],
+  ])('CB-111: %s; a assinatura é cancelada lá e o registro anota a sobra, com 200', async (_caso, consulta, codigo, mensagem) => {
+    const c = cenario([], { [PRE]: [responde(200, AUTORIZADA)], [PUT]: [responde(200)] })
+    c.falhar(consulta, Number.POSITIVE_INFINITY, { mensagem, codigo })
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(200)
+    expect(c.avisos[0]?.resultado).toBe('cancelada: sobra')
+    expect(c.pedidos.filter((p) => p.metodo === 'PUT')).toEqual([{ metodo: 'PUT', caminho: '/preapproval/pre1', corpo: { status: 'cancelled' } }])
+    expect(c.assinaturas.size).toBe(0)
+    expect(c.log).toHaveBeenCalledWith(expect.stringContaining('conta que não existe'), 'pre1')
+
+    // Na volta do mesmo aviso, a operadora já diz cancelada: nada a cancelar de novo.
+    const volta = cenario([], { [PRE]: [responde(200, { ...AUTORIZADA, status: 'cancelled' })], [PUT]: [responde(200)] })
+    volta.falhar(consulta, Number.POSITIVE_INFINITY, { mensagem, codigo })
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(volta))).toBe(200)
+    expect(volta.avisos[0]?.resultado).toBe('ignorado: assinatura cancelada sem linha')
+  })
+
+  it('CB-111: o cancelamento lá que não pega responde 500 para o aviso voltar', async () => {
+    const c = cenario([], { [PRE]: [responde(200, AUTORIZADA)], [PUT]: [responde(500)] })
+    c.falhar('gravar', Number.POSITIVE_INFINITY, { mensagem: 'violates foreign key constraint', codigo: '23503' })
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(500)
+    expect(c.avisos[0]?.resultado).toBe('falha: sobra não cancelada')
+    expect(c.log).toHaveBeenCalledWith(expect.stringContaining('CANCELAMENTO FALHOU'), 'pre1')
+  })
+
+  it.each<[Parameters<Cenario['falhar']>[0], string | null]>([
+    ['lerDaConta', null],
+    ['lerDaConta', '08006'],
+    ['gravar', null],
+    ['gravar', '23505'],
+    ['gravar', '23514'],
+  ])('CB-111: as outras falhas do banco na adoção (%s, código %s) continuam passageiras: 500, sem cancelar nada', async (consulta, codigo) => {
+    const c = cenario([], { [PRE]: [responde(200, AUTORIZADA)], [PUT]: [responde(200)] })
+    c.falhar(consulta, Number.POSITIVE_INFINITY, { mensagem: 'banco fora', codigo })
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(500)
+    expect(c.avisos[0]?.resultado).toBe('falha: banco')
+    expect(c.pedidos.filter((p) => p.metodo === 'PUT')).toEqual([])
+  })
+
   it('assinatura sem linha que não está ativa não é adotada', async () => {
     for (const [palavra, status] of [
       ['pending', 'pendente'],
@@ -807,12 +849,118 @@ describe('a mensalidade paga (subscription_authorized_payment)', () => {
     }
   })
 
-  it('paga sem linha: ignorada (a adoção vem pelo aviso da assinatura)', async () => {
-    const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], { [AP]: [responde(200, PAGA)] })
+  it('CB-110 (D-85): paga sem linha, a assinatura autorizada lá e a conta sem outra paga: adota e grava a paga na linha adotada', async () => {
+    const c = cenario([{ nutricionista_id: 'u1', plano: 'estudante', status: 'ativa', expira_em: '2027-07-31T23:59:59.000Z' }], {
+      [AP]: [responde(200, PAGA)],
+      [PRE]: [responde(200, { ...AUTORIZADA, next_payment_date: '2026-12-06T13:00:00.000Z' })],
+    })
+    c.comReserva('u1')
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos[0]?.resultado).toBe('adotada: solo mensal; mensalidade paga')
+    expect(c.assinaturas.get('u1')).toMatchObject({
+      plano: 'solo',
+      status: 'ativa',
+      ciclo: 'mensal',
+      preapproval_id: 'pre1',
+      expira_em: null,
+      cartao_bandeira: 'Mastercard',
+      cartao_final: '6351',
+      ultima_cobranca_paga: '2026-11-06T13:00:00.000Z',
+      proxima_cobranca: '2026-12-06T13:00:00.000Z',
+      atualizado_em: NO_DIA.toISOString(),
+    })
+    expect(daLinhaAssinatura(c.assinaturas.get('u1'), NO_DIA).plano).toBe('solo')
+    expect(c.ordem).toEqual([AP, 'lerDaOperadora', PRE, 'lerDaConta', 'lerReserva', 'gravar', PRE, 'mudar', 'anotarAviso', 'apagarAvisosAntesDe'])
+    expect(puts(c)).toEqual([])
+
+    // O aviso da assinatura que chegar depois acha a linha e não muda o que a paga gravou.
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), depsNoDia(c))).toBe(200)
+    expect(c.avisos[1]?.resultado).toBe('assinatura ativa')
+    expect(c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: '2026-11-06T13:00:00.000Z', proxima_cobranca: '2026-12-06T13:00:00.000Z' })
+  })
+
+  it('CB-110 (D-85): paga sem linha, a assinatura autorizada lá e a conta já paga outra: a sobra é cancelada lá; a linha de quem paga não muda', async () => {
+    const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], {
+      [AP]: [responde(200, PAGA)],
+      [PRE]: [responde(200, AUTORIZADA)],
+      [PUT]: [responde(200)],
+    })
     expect(status).toBe(200)
-    expect(resultado).toBe('ignorado: mensalidade paga sem linha')
-    expect(c.ordem).toEqual([AP, 'lerDaOperadora', 'anotarAviso', 'apagarAvisosAntesDe'])
+    expect(resultado).toBe('cancelada: sobra')
+    expect(puts(c)).toEqual([{ metodo: 'PUT', caminho: '/preapproval/pre1', corpo: { status: 'cancelled' } }])
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', preapproval_id: 'preNovo', ultima_cobranca_paga: null })
+    for (const consulta of ['gravar', 'mudar']) expect(c.ordem).not.toContain(consulta)
+    // A mensalidade foi paga numa assinatura que sobrou: o registro da função leva só o id, para o dono ver se cabe devolver.
+    expect(c.log).toHaveBeenCalledWith(expect.stringContaining('conferir se cabe devolver'), 'pre1')
+  })
+
+  it('CB-110: paga sem linha e a sobra que não cancela lá responde 500 para o aviso voltar', async () => {
+    const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], {
+      [AP]: [responde(200, PAGA)],
+      [PRE]: [responde(200, AUTORIZADA)],
+      [PUT]: [responde(500)],
+    })
+    expect(status).toBe(500)
+    expect(resultado).toBe('falha: sobra não cancelada')
     expect(c.assinaturas.get('u1')).toMatchObject({ preapproval_id: 'preNovo', ultima_cobranca_paga: null })
+  })
+
+  it('CB-110: paga sem linha e a assinatura lá sem valer (cancelada, pausada, pendente), sem conta ou que não existe: ignorada, sem PUT', async () => {
+    const leituras: readonly RespostaDaOperadora[] = [
+      responde(200, { ...AUTORIZADA, status: 'cancelled' }),
+      responde(200, { ...AUTORIZADA, status: 'paused' }),
+      responde(200, { ...AUTORIZADA, status: 'pending' }),
+      responde(200, { ...AUTORIZADA, external_reference: undefined }),
+      responde(404),
+    ]
+    for (const leitura of leituras) {
+      const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], {
+        [AP]: [responde(200, PAGA)],
+        [PRE]: [leitura],
+        [PUT]: [responde(200)],
+      })
+      expect(status).toBe(200)
+      expect(resultado).toBe('ignorado: mensalidade paga sem linha')
+      expect(c.ordem).toEqual([AP, 'lerDaOperadora', PRE, 'anotarAviso', 'apagarAvisosAntesDe'])
+      expect(c.assinaturas.get('u1')).toMatchObject({ preapproval_id: 'preNovo', ultima_cobranca_paga: null })
+    }
+  })
+
+  it('CB-110: paga sem linha e a leitura da assinatura falha: 500, como no aviso da assinatura; nada gravado nem cancelado', async () => {
+    const casos: readonly [RespostaDaOperadora | null, string][] = [
+      [null, 'falha: operadora fora'],
+      [responde(503), 'falha: operadora fora'],
+      [responde(429), 'falha: operadora fora'],
+      [responde(401), 'falha: credencial recusada'],
+      [responde(200, null), 'falha: resposta ilegível'],
+    ]
+    for (const [leitura, esperado] of casos) {
+      const { c, status, resultado } = await avisoDaMensalidade([], { [AP]: [responde(200, PAGA)], [PRE]: [leitura], [PUT]: [responde(200)] })
+      expect(status, esperado).toBe(500)
+      expect(resultado).toBe(esperado)
+      expect(c.ordem).toEqual([AP, 'lerDaOperadora', PRE, 'anotarAviso', 'apagarAvisosAntesDe'])
+      expect(c.assinaturas.has('u1')).toBe(false)
+    }
+  })
+
+  it('CB-110 e CB-111: a mensalidade paga sem linha de uma conta que não existe mais também cancela a assinatura lá', async () => {
+    const c = cenario([], { [AP]: [responde(200, PAGA)], [PRE]: [responde(200, AUTORIZADA)], [PUT]: [responde(200)] })
+    c.falhar('gravar', Number.POSITIVE_INFINITY, { mensagem: 'violates foreign key constraint', codigo: '23503' })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos[0]?.resultado).toBe('cancelada: sobra')
+    expect(puts(c)).toEqual([{ metodo: 'PUT', caminho: '/preapproval/pre1', corpo: { status: 'cancelled' } }])
+    expect(c.assinaturas.size).toBe(0)
+  })
+
+  it('CB-110: a paga que não grava na linha adotada responde 500; na volta, a linha já existe e a paga entra como numa linha comum', async () => {
+    const c = cenario([], { [AP]: [responde(200, PAGA)], [PRE]: [responde(200, { ...AUTORIZADA, next_payment_date: '2026-12-06T13:00:00.000Z' })] })
+    c.falhar('mudar', 1)
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(500)
+    expect(c.assinaturas.get('u1')).toMatchObject({ preapproval_id: 'pre1', status: 'ativa', ultima_cobranca_paga: null })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos.map((a) => a.resultado)).toEqual(['falha: banco', 'mensalidade paga'])
+    expect(c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: '2026-11-06T13:00:00.000Z', proxima_cobranca: '2026-12-06T13:00:00.000Z' })
+    expect(c.ordem.filter((o) => o === 'gravar')).toHaveLength(1)
   })
 
   it('falha do banco ao ler ou gravar a paga responde 500; linha que mudou no meio também', async () => {
