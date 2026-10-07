@@ -91,6 +91,8 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
   const assinaturas = new Map<string, LinhaGuardada>(linhas.map((l) => [l.nutricionista_id, linhaDe(l)]))
   const reservas = new Map<string, { readonly desde: string } & CartaoDaReserva>()
   const avisos: AvisoAnotado[] = []
+  /** A hora de cada aviso no registro (o banco grava recebido_em = now()) e se a assinatura dele conferiu. */
+  const horasDosAvisos: { readonly quando: Date; readonly conferido: boolean }[] = []
   const apagadosAntesDe: string[] = []
   const tentativas: TentativaGuardada[] = []
   const chamadas: ChamadaGuardada[] = []
@@ -149,13 +151,21 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
     },
     async anotarAviso(aviso) {
       const falha = consultar('anotarAviso')
-      if (!falha) avisos.push(aviso)
+      if (!falha) {
+        avisos.push(aviso)
+        horasDosAvisos.push({ quando: AGORA, conferido: aviso.assinatura_confere === true })
+      }
       return falha
     },
     async apagarAvisosAntesDe(data) {
       const falha = consultar('apagarAvisosAntesDe')
       if (!falha) apagadosAntesDe.push(data)
       return falha
+    },
+    async contarAvisosNaoConferidos(desde) {
+      const falha = consultar('contarAvisosNaoConferidos')
+      if (falha) throw new Error(falha.mensagem)
+      return horasDosAvisos.filter((a) => !a.conferido && a.quando.getTime() > desde.getTime()).length
     },
     async contarRecusas(conta, agora) {
       const falha = consultar('contarRecusas')
@@ -214,7 +224,7 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
     log,
     /** As dependências de assinar e gerenciar-assinatura; o webhook acrescenta `segredo`. */
     deps: { operadora, banco, agora, log },
-    /** A consulta falha `vezes` vezes (padrão: sempre). Em `contarRecusas` e `anotarChamada` a falha vira uma rejeição. */
+    /** A consulta falha `vezes` vezes (padrão: sempre). Nas contagens (`contarRecusas`, `anotarChamada` e `contarAvisosNaoConferidos`) a falha vira uma rejeição. */
     falhar: (nome: keyof BancoDaCobranca, vezes = Number.POSITIVE_INFINITY, falha: FalhaDoBanco = { mensagem: 'banco fora', codigo: null }) => {
       falhas.set(nome, { restam: vezes, falha })
     },
@@ -229,6 +239,10 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
     /** `n` chamadas à operadora do passado, como se a conta já tivesse pedido antes. */
     semearChamadas: (conta: string, tipo: TipoDeChamada, n: number, quando: Date) => {
       for (let i = 0; i < n; i++) chamadas.push({ conta, tipo, quando })
+    },
+    /** `n` avisos já no registro, chegados em `quando`; `conferido` diz se a assinatura deles conferiu. Não entram em `avisos`. */
+    semearAvisos: (n: number, quando: Date, conferido = false) => {
+      for (let i = 0; i < n; i++) horasDosAvisos.push({ quando, conferido })
     },
   }
 }

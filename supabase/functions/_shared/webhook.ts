@@ -1,12 +1,13 @@
 // Recebe os avisos da operadora de pagamento (spec checkout-proprio; spec cobranca-em-producao, D-80,
-// D-83 a D-85 e D-102). Puro: a operadora, o banco, o segredo, o relógio e o registro chegam de fora
+// D-83 a D-85 e D-102; spec seguranca-lote-2, D-109). Puro: a operadora, o banco, o segredo, o relógio e o registro chegam de fora
 // (src/data/servidorWebhook.test.ts).
 //
 // Três regras que este arquivo não quebra:
 //   1. Não confiar no corpo do aviso. Sem o segredo, nada é processado; com ele, o código do recurso
 //      precisa ter o formato esperado e a assinatura do cabeçalho precisa conferir. O estado verdadeiro
 //      é lido na API da operadora.
-//   2. Cada aviso fica anotado, sem dado pessoal, com o que foi feito (D-84).
+//   2. Cada aviso fica anotado, sem dado pessoal, com o que foi feito (D-84). Os que não foram conferidos
+//      (sem segredo, sem id, recurso inválido ou assinatura que não confere), até 100 por hora (D-109).
 //   3. 200 quer dizer "entendido" (feito ou ignorado de propósito). 500 é falha passageira (sem o
 //      segredo, operadora fora, banco fora, cancelamento que não pegou): a operadora manda de novo, e
 //      refazer não muda nada que já foi feito.
@@ -38,7 +39,7 @@ export interface AvisoRecebido {
 
 export interface DependenciasDoWebhook {
   readonly operadora: Operadora
-  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'lerDaOperadora' | 'gravar' | 'mudar' | 'lerReserva' | 'anotarAviso' | 'apagarAvisosAntesDe'>
+  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'lerDaOperadora' | 'gravar' | 'mudar' | 'lerReserva' | 'anotarAviso' | 'apagarAvisosAntesDe' | 'contarAvisosNaoConferidos'>
   /** Nulo (ou vazio) quando a função está sem o segredo: nada é processado, o registro anota "sem segredo" e a resposta é 500, para o aviso voltar quando o segredo for posto (CA-436). */
   readonly segredo: string | null
   readonly agora: () => Date
@@ -48,6 +49,9 @@ export interface DependenciasDoWebhook {
 export type StatusDoAviso = 200 | 500
 /** D-84: o registro guarda 90 dias. */
 export const GUARDA_DOS_AVISOS_MS = 90 * UM_DIA_MS
+/** D-109 (CA-450): o registro guarda no máximo este tanto de avisos não conferidos por hora. */
+export const AVISOS_NAO_CONFERIDOS_POR_HORA = 100
+const UMA_HORA_MS = 60 * 60 * 1000
 /** CA-437: o código do recurso aceito (letras e números, até 64). Nada fora disso chega à operadora nem ao registro. */
 const RECURSO_VALIDO = /^[A-Za-z0-9]{1,64}$/
 /** D-84: os tópicos que a operadora manda. Sem a assinatura do aviso conferida, só estes vão para o registro. */
@@ -181,15 +185,31 @@ export async function tratarAviso(aviso: AvisoRecebido, deps: DependenciasDoWebh
     resultado = feito('falha: erro inesperado', 500)
   }
 
-  await anotar(deps, {
+  const anotado: AvisoAnotado = {
     // D-84: o registro não guarda texto livre de quem chama. Sem a assinatura conferida, o tópico só vai
     // se for um dos conhecidos; o código do recurso só vai no formato aceito (CA-437).
     topico: confere ? cortar(topico, 80) : TOPICOS_CONHECIDOS.includes(topico) ? topico : 'desconhecido',
     recurso_id: id !== null && RECURSO_VALIDO.test(id) ? id : null,
     assinatura_confere: confere,
     resultado: cortar(resultado.resultado, 200),
-  })
+  }
+  // D-109 (CA-450): o conferido sempre vai para o registro; o não conferido, só enquanto couber na hora.
+  // A resposta não muda.
+  if (confere === true || (await cabeNaoConferido(deps))) await anotar(deps, anotado)
   return resultado.status
+}
+
+/** D-109 (CA-450): ainda cabe um aviso não conferido no registro desta hora? Sem conseguir contar, não anota. */
+async function cabeNaoConferido(deps: DependenciasDoWebhook): Promise<boolean> {
+  try {
+    const anotados = await deps.banco.contarAvisosNaoConferidos(new Date(deps.agora().getTime() - UMA_HORA_MS))
+    if (anotados < AVISOS_NAO_CONFERIDOS_POR_HORA) return true
+    deps.log('Avisos não conferidos demais na última hora; este não foi anotado.')
+    return false
+  } catch (erro) {
+    deps.log('Não consegui contar os avisos não conferidos; este não foi anotado:', mensagemDe(erro))
+    return false
+  }
 }
 
 /** CA-398: anota o aviso e apaga os de mais de 90 dias. Falha aqui só vai para o registro da função: a resposta não muda. */

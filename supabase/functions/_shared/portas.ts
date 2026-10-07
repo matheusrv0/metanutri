@@ -102,7 +102,7 @@ export interface RecusasContadas {
 }
 
 /**
- * As consultas das três funções. Nenhuma lança, exceto as contagens (`contarRecusas` e `anotarChamada`):
+ * As consultas das três funções. Nenhuma lança, exceto as contagens (`contarRecusas`, `anotarChamada` e `contarAvisosNaoConferidos`):
  * sem elas, o portão responde 502 e não deixa passar. Nas outras, a falha volta no resultado, como no
  * supabase-js, ou só vai para o registro (anotar e apagar tentativas, apagar chamadas).
  */
@@ -125,6 +125,8 @@ export interface BancoDaCobranca {
   anotarAviso(aviso: AvisoAnotado): Promise<FalhaDoBanco | null>
   /** Apaga do registro os avisos recebidos antes de `data` (CA-398). */
   apagarAvisosAntesDe(data: string): Promise<FalhaDoBanco | null>
+  /** D-109: quantos avisos sem a assinatura conferida (nula ou falsa) foram anotados depois de `desde`. Sem conseguir contar, rejeita: o aviso é respondido como sempre e só não é anotado (o erro vai para o registro da função). */
+  contarAvisosNaoConferidos(desde: Date): Promise<number>
   /** Conta as recusas de cartão desta conta e do site, olhando para trás a partir de `agora`. Se não conseguir contar, rejeita (o portão responde 502 e não deixa passar). */
   contarRecusas(conta: string, agora: Date): Promise<RecusasContadas>
   /** Anota que a conta tentou um cartão; `recusada` falso é um sucesso e zera as seguidas. Não rejeita: falha só vai para o registro. */

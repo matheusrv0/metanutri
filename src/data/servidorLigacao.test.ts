@@ -189,6 +189,19 @@ describe('o banco de verdade (bancoSupabase.ts)', () => {
     })
   })
 
+  describe('os avisos não conferidos (D-109)', () => {
+    it('CA-450: conta os avisos com a assinatura nula ou falsa, pela data de chegada, numa janela estrita', () => {
+      expect(bancoSupabase).toContain(
+        ".from('avisos_da_operadora').select('id', { count: 'exact', head: true }).not('assinatura_confere', 'is', true).gt('recebido_em', desde.toISOString())",
+      )
+    })
+    it('sem conseguir contar, rejeita (o aviso não conferido não é anotado)', () => {
+      const contar = bancoSupabase.split('async contarAvisosNaoConferidos(')[1]?.split('async anotarChamada(')[0] ?? ''
+      expect(contar).toContain('return numeroDa(contagem)')
+      expect(contar).not.toContain('catch')
+    })
+  })
+
   it('quem pede vem do token da sessão; sem token, ninguém', () => {
     expect(bancoSupabase).toContain('cliente.auth.getUser(jwt)')
     expect(bancoSupabase).toContain('if (!jwt) return null')

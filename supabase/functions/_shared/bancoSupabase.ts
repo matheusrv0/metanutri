@@ -26,10 +26,10 @@ interface ResultadoDaConsulta {
 /** A mensagem do erro; vazia (a contagem por HEAD volta sem corpo), o status HTTP. */
 const erroDa = (consulta: ResultadoDaConsulta): string => consulta.error?.message || `HTTP ${consulta.status}`
 
-/** O número da contagem; sem ele (erro do banco ou da rede), rejeita: o portão responde 502 e não deixa passar (R5). */
+/** O número da contagem; sem ele (erro do banco ou da rede), rejeita. Quem chama decide: o portão responde 502 (R5); o aviso não é anotado (D-109). */
 function numeroDa(contagem: ResultadoDaConsulta & { readonly count: number | null }): number {
   if (contagem.error) throw new Error(erroDa(contagem))
-  if (typeof contagem.count !== 'number') throw new Error('A contagem das tentativas veio sem número.')
+  if (typeof contagem.count !== 'number') throw new Error('A contagem veio sem número.')
   return contagem.count
 }
 
@@ -77,6 +77,11 @@ export function criarBanco(cliente: SupabaseClient, log: Registro): BancoDaCobra
     async apagarAvisosAntesDe(data) {
       const { error } = await cliente.from('avisos_da_operadora').delete().lt('recebido_em', data)
       return falhaDe(error)
+    },
+    // D-109: os avisos sem a assinatura conferida (nula ou falsa) que chegaram depois de `desde`.
+    async contarAvisosNaoConferidos(desde) {
+      const contagem = await cliente.from('avisos_da_operadora').select('id', { count: 'exact', head: true }).not('assinatura_confere', 'is', true).gt('recebido_em', desde.toISOString())
+      return numeroDa(contagem)
     },
     // D-108 e CB-115: contar e anotar são um passo só, na função do banco (011), com a conta e o tipo
     // travados: dois pedidos ao mesmo tempo não passam juntos do limite. Sem resposta sim ou não, rejeita.

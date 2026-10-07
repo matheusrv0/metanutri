@@ -5,6 +5,7 @@ import { UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
 import type { LinhaDaAssinatura, Operadora, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
 import {
   assinaturaConfere,
+  AVISOS_NAO_CONFERIDOS_POR_HORA,
   GUARDA_DOS_AVISOS_MS,
   manifestoDoAviso,
   situacaoDaMensalidade,
@@ -136,7 +137,7 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
       const c = cenario([{ ...LINHA, status: 'pendente' }], { [PRE]: [responde(200, AUTORIZADA)] })
       expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c, segredo))).toBe(500)
       expect(c.pedidos).toEqual([])
-      expect(c.ordem).toEqual(['anotarAviso', 'apagarAvisosAntesDe'])
+      expect(c.ordem).toEqual(['contarAvisosNaoConferidos', 'anotarAviso', 'apagarAvisosAntesDe'])
       expect(c.assinaturas.get('u1')?.status).toBe('pendente')
       expect(c.avisos).toEqual([{ topico: ASSINATURA, recurso_id: 'pre1', assinatura_confere: null, resultado: 'sem segredo' }])
       expect(c.log).toHaveBeenCalled()
@@ -156,7 +157,7 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
       const c = cenario([{ ...LINHA, status: 'pendente' }], { [PRE]: [responde(200, AUTORIZADA)] })
       expect(await tratarAviso(aviso(ASSINATURA, 'pre1', { xSignature: ruim }), deps(c))).toBe(200)
       expect(c.pedidos).toEqual([])
-      expect(c.ordem).toEqual(['anotarAviso', 'apagarAvisosAntesDe'])
+      expect(c.ordem).toEqual(['contarAvisosNaoConferidos', 'anotarAviso', 'apagarAvisosAntesDe'])
       for (const consulta of NADA_MUDA) expect(c.ordem).not.toContain(consulta)
       expect(c.assinaturas.get('u1')?.status).toBe('pendente')
       expect(c.avisos).toEqual([{ topico: ASSINATURA, recurso_id: 'pre1', assinatura_confere: false, resultado: 'assinatura não confere' }])
@@ -1368,5 +1369,87 @@ describe('a recusa e o aviso de "cancelada" da operadora que se cruzam (D-80, CA
     expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
     expect(c.avisos.map((a) => a.resultado)).toEqual(['falha: recusa sem cancelar', 'assinatura cancelada (recusa)', 'sem mudança: já cancelada'])
     expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
+  })
+})
+
+describe('o registro guarda até 100 avisos não conferidos por hora (D-109)', () => {
+  const RUIM = { xSignature: 'ts=1,v1=00' }
+  const haMinutos = (minutos: number) => new Date(AGORA.getTime() - minutos * 60_000)
+
+  it('CA-450: com 100 não conferidos na última hora, o próximo recebe a mesma resposta e não é anotado', async () => {
+    const c = cenario()
+    c.semearAvisos(100, haMinutos(30))
+    expect(await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))).toBe(200)
+    expect(c.avisos).toEqual([])
+    expect(c.apagadosAntesDe).toEqual([])
+    expect(c.ordem).toEqual(['contarAvisosNaoConferidos'])
+    expect(c.pedidos).toEqual([])
+    expect(AVISOS_NAO_CONFERIDOS_POR_HORA).toBe(100)
+    expect(c.log).toHaveBeenCalledWith('Avisos não conferidos demais na última hora; este não foi anotado.')
+  })
+
+  it('CA-450: vale também para o aviso sem id e para o recurso inválido (200, sem anotar)', async () => {
+    for (const recebido of [aviso(ASSINATURA, null), aviso(ASSINATURA, 'pre-1')]) {
+      const c = cenario()
+      c.semearAvisos(100, haMinutos(30))
+      expect(await tratarAviso(recebido, deps(c))).toBe(200)
+      expect(c.avisos).toEqual([])
+      expect(c.pedidos).toEqual([])
+    }
+  })
+
+  it('Foco: sem o segredo e com o registro da hora cheio, a resposta continua 500, para o aviso voltar, e nada é anotado', async () => {
+    const c = cenario([{ ...LINHA, status: 'pendente' }], { [PRE]: [responde(200, AUTORIZADA)] })
+    c.semearAvisos(100, haMinutos(30))
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c, null))).toBe(500)
+    expect(c.avisos).toEqual([])
+    expect(c.pedidos).toEqual([])
+    expect(c.assinaturas.get('u1')?.status).toBe('pendente')
+  })
+
+  it('CB-113: com 99 na última hora, o centésimo ainda é anotado', async () => {
+    const c = cenario()
+    c.semearAvisos(99, haMinutos(30))
+    expect(await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))).toBe(200)
+    expect(c.avisos).toEqual([{ topico: 'payment', recurso_id: 'pay1', assinatura_confere: false, resultado: 'assinatura não confere' }])
+    expect(c.ordem).toEqual(['contarAvisosNaoConferidos', 'anotarAviso', 'apagarAvisosAntesDe'])
+  })
+
+  it('CB-113: a janela é estrita: os de exatamente 1 h atrás já não contam', async () => {
+    const c = cenario()
+    c.semearAvisos(100, haMinutos(60))
+    expect(await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))).toBe(200)
+    expect(c.avisos).toHaveLength(1)
+  })
+
+  it('CA-450: o aviso conferido é anotado mesmo depois dos 100, sem contar', async () => {
+    const c = cenario()
+    c.semearAvisos(100, haMinutos(30))
+    expect(await tratarAviso(aviso('payment', '999'), deps(c))).toBe(200)
+    expect(c.avisos).toEqual([{ topico: 'payment', recurso_id: '999', assinatura_confere: true, resultado: 'ignorado: pagamento' }])
+    expect(c.ordem).toEqual(['anotarAviso', 'apagarAvisosAntesDe'])
+  })
+
+  it('CA-450: os conferidos não entram na conta dos 100', async () => {
+    const c = cenario()
+    c.semearAvisos(150, haMinutos(30), true)
+    c.semearAvisos(99, haMinutos(30))
+    expect(await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))).toBe(200)
+    expect(c.avisos).toHaveLength(1)
+  })
+
+  it('CA-450: sem conseguir contar, não anota; a resposta é a mesma e o registro da função diz por quê', async () => {
+    const c = cenario()
+    c.falhar('contarAvisosNaoConferidos')
+    expect(await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))).toBe(200)
+    expect(c.avisos).toEqual([])
+    expect(c.log).toHaveBeenCalledWith('Não consegui contar os avisos não conferidos; este não foi anotado:', 'banco fora')
+  })
+
+  it('CA-450: a contagem olha a última hora pelo relógio da função', async () => {
+    const c = cenario()
+    const contar = vi.spyOn(c.banco, 'contarAvisosNaoConferidos')
+    await tratarAviso(aviso('payment', 'pay1', RUIM), deps(c))
+    expect(contar).toHaveBeenCalledWith(new Date(AGORA.getTime() - 60 * 60_000))
   })
 })
