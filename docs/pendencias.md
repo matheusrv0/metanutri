@@ -41,16 +41,7 @@ Atualizado em 07/10/2026.
 > variável `VITE_MERCADOPAGO_PUBLIC_KEY` do GitHub. Quem tem assinatura pendente ou pausada do cartão novo não consegue
 > assinar de novo (a função recusa com 409): cancela em Conta e plano e volta para o Free na hora, sem período pago.
 >
-> **A ordem para pôr no ar** (comandos no README, "Projeto já ligado"):
->
-> 1. rodar o `supabase/008-cartao-da-assinatura.sql` (as colunas do cartão e a trava contra duas abas assinando juntas);
-> 2. juntar o ramo na `main`;
-> 3. publicar as três funções: `gerenciar-assinatura`, `assinar` e `webhook-mercadopago --no-verify-jwt`;
-> 4. publicar o site. Entre o passo 3 e o 4, o checkout que está no ar fica fora (a `assinar` nova não serve ao site
->    antigo); como tudo está em modo teste, ninguém paga.
->
-> Só depois do teste de ponta a ponta no sandbox, troque o token do servidor (`MERCADOPAGO_ACCESS_TOKEN`) e a chave
-> pública (`VITE_MERCADOPAGO_PUBLIC_KEY`) pelos de produção.
+> O `008` já foi rodado e publicado em 02/10.
 >
 > **Atualizado em 07/10:** a **cobrança está pronta para produção** no código (spec `cobranca-em-producao`, D-80 a
 > D-88, D-101 e D-102). O que entrou:
@@ -78,14 +69,18 @@ Atualizado em 07/10/2026.
 > **A troca para produção (com você; spec, seção 5):**
 >
 > 1. ativar as credenciais de produção do app MetaNutri no Mercado Pago;
-> 2. cadastrar o webhook de produção com os tópicos `subscription_preapproval`, `subscription_authorized_payment` e
+> 2. conferir que nenhuma assinatura ativa do banco foi criada com as credenciais de teste:
+>    `select nutricionista_id, plano, status from public.assinaturas where status = 'ativa' and preapproval_id is not null;`
+>    — se aparecer alguma (são as contas de teste), cancelar pelo site antes da troca; depois dela, a assinatura de
+>    teste não é mais achada e o plano ficaria preso;
+> 3. cadastrar o webhook de produção com os tópicos `subscription_preapproval`, `subscription_authorized_payment` e
 >    `payments`, e colar no Supabase o token (`MERCADOPAGO_ACCESS_TOKEN`) e o segredo do webhook
 >    (`MERCADOPAGO_WEBHOOK_SECRET`) de produção, nunca no chat;
-> 3. mandar a chave pública de produção (pode ir no chat) para trocar a variável `VITE_MERCADOPAGO_PUBLIC_KEY` do
+> 4. mandar a chave pública de produção (pode ir no chat) para trocar a variável `VITE_MERCADOPAGO_PUBLIC_KEY` do
 >    GitHub e publicar;
-> 4. fazer a primeira assinatura de verdade com o próprio cartão e cancelar; conferir que os avisos aparecem em
->    `avisos_da_operadora` com `assinatura_confere` verdadeiro. Se nada aparecer, é o R-37 (o painel não manda os
->    avisos de assinatura).
+> 5. fazer a primeira assinatura de verdade com o próprio cartão e cancelar; conferir que os avisos aparecem em
+>    `avisos_da_operadora` com `assinatura_confere` verdadeiro. Se nada aparecer, é o risco
+>    (R-37: o painel pode não mandar os avisos de assinatura; ver a spec).
 >
 > **Conferir na primeira compra real:**
 >

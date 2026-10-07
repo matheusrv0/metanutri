@@ -1,9 +1,9 @@
--- MetaNutri — cobrança pronta para produção (spec cobranca-em-producao, D-80 a D-85, D-101 e D-102).
+-- MetaNutri — cobrança pronta para produção (spec cobranca-em-producao, D-80 a D-85 e D-101).
 -- Rode no Supabase: SQL Editor > New query > cole tudo > Run. Pode rodar de novo: nada é apagado.
 --
 -- Rode ANTES de publicar as funções assinar, gerenciar-assinatura e webhook-mercadopago desta
--- versão: elas leem e gravam estas colunas e o registro de avisos e a tabela de tentativas de cartão. Publicadas antes, toda
--- assinatura falha e é cancelada na operadora na mesma hora.
+-- versão: elas leem e gravam estas colunas, o registro de avisos e a tabela de tentativas de cartão.
+-- Publicadas antes dele, assinar e cancelar falham com erro, sem cobrar.
 --
 -- Nenhuma política nova: o navegador continua lendo só a própria assinatura ("dono le a
 -- assinatura", do 003). A reserva (008) e o registro de avisos, nem isso: só o servidor, com a
@@ -36,9 +36,9 @@ create index if not exists avisos_da_operadora_por_data on public.avisos_da_oper
 alter table public.avisos_da_operadora enable row level security;
 revoke all on public.avisos_da_operadora from anon, authenticated;
 
--- Tentativas de cartão (D-101, CA-433 e CA-434): quantas vezes cada conta tentou e quantas o banco
--- recusou, para barrar quem testa cartões em fila. Sem IP e sem dado do cartão. As funções apagam
--- as de mais de 7 dias a cada tentativa anotada.
+-- Tentativas de cartão (CA-433 e CA-434): quantas vezes cada conta tentou um cartão e quantas o banco
+-- recusou, para o limite de tentativas (D-101). Sem endereço de internet. As funções apagam as de
+-- mais de 7 dias a cada tentativa anotada.
 create table if not exists public.tentativas_de_cartao (
   id bigint generated always as identity primary key,
   nutricionista_id uuid not null references auth.users (id) on delete cascade,
