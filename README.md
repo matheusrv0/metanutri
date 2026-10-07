@@ -203,8 +203,9 @@ Para funcionar de verdade, nesta ordem:
    Cadastre o webhook apontando para `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
    com os tópicos `subscription_preapproval` (a assinatura), `subscription_authorized_payment` (cada mensalidade) e
    `payments`, e guarde o segredo dele em `MERCADOPAGO_WEBHOOK_SECRET`. Cada aviso que chega fica 90 dias em
-   *Table Editor > avisos_da_operadora*, com o resultado; os que não conferem, até 100 por hora (D-109). Sem o segredo, nenhum aviso é processado: a função
-   responde erro, o Mercado Pago tenta de novo depois, e o registro anota `sem segredo`.
+   *Table Editor > avisos_da_operadora*, com o resultado; os que não conferem, até 100 por hora (D-109).
+   Sem o segredo, nenhum aviso é processado: a função responde erro, o Mercado Pago tenta de novo depois, e o
+   registro anota `sem segredo`.
    No modo teste o Mercado Pago não manda aviso nenhum: a primeira conferência é na primeira compra em produção.
    A primeira mensalidade recusada encerra a assinatura e a conta volta ao Free na hora (D-80).
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions

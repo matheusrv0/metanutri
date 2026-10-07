@@ -1,5 +1,8 @@
 -- MetaNutri — segurança, lote 2 (spec seguranca-lote-2, D-107 a D-112).
--- Rode no Supabase: SQL Editor > New query > cole tudo > Run. Pode rodar de novo: nenhum dado é apagado.
+-- Rode, na pasta do projeto e com a main atualizada, o comando abaixo:
+--   npx supabase db query --linked --project-ref qmpljfjbdcrdbqutuvmg -f supabase/011-seguranca-lote-2.sql
+-- (Alternativa: SQL Editor > New query > cole tudo > Run; as consultas de conferência no fim valem do mesmo jeito.)
+-- Pode rodar de novo: nenhum dado é apagado.
 -- Rode DEPOIS do 001 ao 010. Se rodar o 003, o 006 ou o 010 de novo, rode este logo depois.
 --
 -- Rode ANTES de publicar as funções assinar, gerenciar-assinatura e webhook-mercadopago desta versão:
@@ -14,9 +17,9 @@
 -- ---------- Tamanho do que a conta guarda na nuvem (D-107, CA-445 e CA-446) ----------
 
 -- O app reconhece cada trava pelo nome para dizer o motivo na tela (TRAVAS_DE_TAMANHO, em
--- src/ui/estado/mensagemDoBanco.ts). O tamanho é o que o banco guarda (pg_column_size, o valor
--- armazenado em bytes, que pode ser menor que o JSON em texto quando o Postgres o comprime), e o
--- limite exato passa (CB-113). Recusada, a gravação inteira é desfeita: a cópia anterior fica (CB-112).
+-- src/ui/estado/mensagemDoBanco.ts). O tamanho é conferido sobre o valor jsonb na hora de gravar
+-- (pg_column_size), antes de o Postgres comprimir; por isso o limite vale para o dado como ele chega,
+-- e não para o espaço no disco. O limite exato passa (CB-113). Recusada, a gravação inteira é desfeita: a cópia anterior fica (CB-112).
 alter table public.copias drop constraint if exists copias_dados_tamanho;
 alter table public.copias add constraint copias_dados_tamanho check (pg_column_size(dados) <= 5242880);
 

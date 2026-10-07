@@ -105,13 +105,13 @@ Atualizado em 07/10/2026.
 >
 > **A ordem para pôr no ar (você roda; os comandos estão prontos):**
 >
-> 1. rodar o SQL no banco de produção (as funções novas anotam cada chamada na tabela dele; publicadas antes, assinar,
->    trocar o cartão, conferir e cancelar falham sem cobrar):
+> 1. juntar o ramo na `main` (feito pelo assistente; não publica nada sozinho, a publicação do site é manual);
+> 2. você roda o `011` na `main`, na pasta do projeto (as funções novas anotam cada chamada na tabela dele; publicadas
+>    antes, assinar, trocar o cartão, conferir e cancelar falham sem cobrar):
 >    `npx supabase db query --linked --project-ref qmpljfjbdcrdbqutuvmg -f supabase/011-seguranca-lote-2.sql`
-> 2. conferir com as consultas do fim do `011`: seis travas `_tamanho`, a função das vagas sem existir e a tabela
+> 3. conferir com as consultas do fim do `011`: seis travas `_tamanho`, a função das vagas sem existir e a tabela
 >    `chamadas_da_cobranca` com RLS;
-> 3. juntar o ramo na `main`;
-> 4. publicar as três funções:
+> 4. publicar as três funções (`--no-verify-jwt` só no `webhook-mercadopago`):
 >    `npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg`,
 >    `npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg` e
 >    `npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg`;
