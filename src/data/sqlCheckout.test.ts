@@ -273,4 +273,10 @@ describe('o site publicado (D-72)', () => {
   it('a chave pública do pagamento vem de uma variável do GitHub', () => {
     expect(publicar).toContain('VITE_MERCADOPAGO_PUBLIC_KEY: ${{ vars.VITE_MERCADOPAGO_PUBLIC_KEY }}')
   })
+
+  it('CA-432: cada ação do GitHub está fixada pelo commit, com a versão num comentário (D-100)', () => {
+    const acoes = publicar.split('\n').filter((linha) => /^\s*(- )?uses:/.test(linha))
+    expect(acoes).toHaveLength(5)
+    for (const linha of acoes) expect(linha).toMatch(/uses: [\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+$/)
+  })
 })
