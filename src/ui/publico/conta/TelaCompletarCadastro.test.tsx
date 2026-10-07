@@ -25,4 +25,15 @@ describe('TelaCompletarCadastro (CB-68)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Sua situação já está registrada.')
   })
+
+  it('CA-423: "Sair" também pergunta se o computador é compartilhado', async () => {
+    const aoSair = vi.fn()
+    render(<TelaCompletarCadastro email="ana@gmail.com" informarSituacao={vi.fn(async () => null)} aoSair={aoSair} />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Sair' }))
+    expect(aoSair).not.toHaveBeenCalled()
+    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
+    expect(aoSair).toHaveBeenCalledExactlyOnceWith(true)
+  })
 })

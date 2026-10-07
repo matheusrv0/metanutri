@@ -1,8 +1,10 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import { apagarDadosDoAparelho } from '@/domain/donoDosDados.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
+import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
 export interface Resultado {
@@ -50,7 +52,8 @@ export interface ValorConta {
   /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
   readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
   readonly trocarSenha: (senha: string) => Promise<Resultado>
-  readonly sair: () => Promise<void>
+  /** D-96: com `apagarDoAparelho`, apaga antes os pacientes e planos guardados neste navegador. */
+  readonly sair: (opcoes?: { readonly apagarDoAparelho?: boolean }) => Promise<void>
 }
 
 const SEM_SERVIDOR: Resultado = { ok: false, erro: 'sem-servidor' }
@@ -208,7 +211,9 @@ export function useConta(): ValorConta {
     return OK
   }, [])
 
-  const sair = useCallback(async () => {
+  const sair = useCallback(async (opcoes: { readonly apagarDoAparelho?: boolean } = {}) => {
+    // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador compartilhado.
+    if (opcoes.apagarDoAparelho) apagarDadosDoAparelho(armazenamentoLocal())
     const c = obterSupabase()
     if (!c) return
     await c.auth.signOut()

@@ -18,6 +18,7 @@ import { AvisoCrn } from '../painel/AvisoCrn.tsx'
 import { CartaoSituacao } from './CartaoSituacao.tsx'
 import { DialogoCancelarAssinatura } from './DialogoCancelarAssinatura.tsx'
 import { DialogoMeFormei } from './DialogoMeFormei.tsx'
+import { DialogoSair } from './DialogoSair.tsx'
 import { DialogoTrocarCartao } from './DialogoTrocarCartao.tsx'
 import { MiniCartao } from './MiniCartao.tsx'
 
@@ -42,7 +43,8 @@ interface TelaContaProps {
   readonly corrigirCrn: (crn: Crn) => Promise<string | null>
   /** CA-304: estudante sem pedido ou recusada vai para Comprovar matrícula. */
   readonly aoEnviarComprovante: () => void
-  readonly aoSaiu: () => void
+  /** Depois de sair. `apagou`: os dados deste navegador foram apagados (D-96). */
+  readonly aoSaiu: (apagou: boolean) => void
 }
 
 /** Estado da conta: quem está conectado, qual plano, o cartão que paga e o que fazer sem conta (spec checkout-proprio, US-B2). */
@@ -63,6 +65,7 @@ export function TelaConta({
   aoSaiu,
 }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
+  const [perguntandoSair, setPerguntandoSair] = useState(false)
   const { assinatura, recarregar, cancelar, trocarCartao } = useAssinatura(conta.sessao?.id ?? null)
   const [formando, setFormando] = useState(false)
   // O status de quando a confirmação abriu: se a linha mudar com ela aberta, o texto ficaria errado, então ela fecha.
@@ -82,11 +85,12 @@ export function TelaConta({
   const recado = recadoDaAssinatura(assinatura)
   const inicial = (conta.sessao?.nome.trim()[0] ?? conta.sessao?.email[0] ?? '?').toUpperCase()
 
-  const sair = async () => {
+  const sair = async (apagarDoAparelho: boolean) => {
     setSaindo(true)
-    await conta.sair()
+    await conta.sair({ apagarDoAparelho })
     setSaindo(false)
-    aoSaiu()
+    setPerguntandoSair(false)
+    aoSaiu(apagarDoAparelho)
   }
 
   return (
@@ -109,7 +113,7 @@ export function TelaConta({
               <p className="font-titulo text-lg font-semibold text-heading">{conta.sessao.nome}</p>
               <p className="truncate text-sm text-muted-foreground">{conta.sessao.email}</p>
             </div>
-            <Button variant="outline" onClick={() => void sair()} disabled={saindo}>
+            <Button variant="outline" onClick={() => setPerguntandoSair(true)} disabled={saindo}>
               {saindo ? 'Saindo…' : 'Sair'}
             </Button>
           </div>
@@ -234,6 +238,8 @@ export function TelaConta({
           <p className="text-xs text-muted-foreground">O pagamento é com cartão de crédito, aqui no site.</p>
         ) : null}
       </Card>
+
+      <DialogoSair aberto={perguntandoSair} saindo={saindo} aoFechar={() => setPerguntandoSair(false)} aoSair={(apagar) => void sair(apagar)} />
 
       <DialogoMeFormei
         aberto={formando}

@@ -187,6 +187,13 @@ function Conteudo() {
 
   const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
+  // D-96: depois de apagar os dados do aparelho, os provedores ainda guardam em memória o que leram
+  // ao montar. Recarregar é o jeito seguro de esquecer (como em "Apagar os dados deste aparelho e continuar").
+  const depoisDeSair = (apagou: boolean) => {
+    navegar({ tela: 'inicio' })
+    if (apagou) globalThis.location.reload()
+  }
+
   // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
   if (rota.tela === 'missoes') {
     return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
@@ -246,7 +253,7 @@ function Conteudo() {
         <TelaCompletarCadastro
           email={sessao.email}
           informarSituacao={perfilConta.informarSituacao}
-          aoSair={() => void conta.sair().then(() => navegar({ tela: 'inicio' }))}
+          aoSair={(apagarDoAparelho) => void conta.sair({ apagarDoAparelho }).then(() => depoisDeSair(apagarDoAparelho))}
         />
       )
     }
@@ -583,7 +590,7 @@ function Conteudo() {
             pedidoEstudante.recarregar()
             cobranca.recarregar()
           }}
-          aoSaiu={() => navegar({ tela: 'inicio' })}
+          aoSaiu={depoisDeSair}
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}

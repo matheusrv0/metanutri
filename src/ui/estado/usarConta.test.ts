@@ -142,6 +142,39 @@ describe('useConta', () => {
     expect(result.current.emRecuperacao).toBe(false)
   })
 
+  describe('sair (D-96)', () => {
+    beforeEach(() => {
+      localStorage.clear()
+      localStorage.setItem('metanutri:casos', '["c1"]')
+      localStorage.setItem('metanutri:caso:c1', '{"nome":"Ana"}')
+      localStorage.setItem('metanutri:pacientes', '[{"id":"p1"}]')
+      localStorage.setItem('metanutri:dono', 'u1')
+      localStorage.setItem('metanutri:tema', 'escuro')
+    })
+
+    it('CA-423: sair e apagar remove os pacientes e planos deste navegador e sai', async () => {
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        await result.current.sair({ apagarDoAparelho: true })
+      })
+      for (const chave of ['metanutri:casos', 'metanutri:caso:c1', 'metanutri:pacientes', 'metanutri:dono']) expect(localStorage.getItem(chave), chave).toBeNull()
+      expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
+      expect(auth.signOut).toHaveBeenCalledOnce()
+    })
+
+    it('CA-423: só sair mantém os dados deste navegador', async () => {
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        await result.current.sair({ apagarDoAparelho: false })
+      })
+      expect(localStorage.getItem('metanutri:caso:c1')).toBe('{"nome":"Ana"}')
+      expect(localStorage.getItem('metanutri:dono')).toBe('u1')
+      expect(auth.signOut).toHaveBeenCalledOnce()
+    })
+  })
+
   it('o evento SIGNED_OUT também desliga o modo de recuperação', async () => {
     const { result } = renderHook(() => useConta())
     await waitFor(() => expect(result.current.carregando).toBe(false))

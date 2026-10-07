@@ -104,11 +104,22 @@ describe('TelaConta', () => {
     estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true }))
   })
 
-  it('CA-156: sair leva para fora da área de trabalho', async () => {
+  it('CA-156 e CA-423: "Sair" pergunta antes; "Só sair" sai sem apagar e leva para fora da área de trabalho', async () => {
     const { usuario, conta, aoSaiu } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
-    expect(conta.sair).toHaveBeenCalledOnce()
-    expect(aoSaiu).toHaveBeenCalledOnce()
+    expect(conta.sair).not.toHaveBeenCalled()
+    await usuario.click(within(screen.getByRole('dialog', { name: 'Sair da conta' })).getByRole('button', { name: 'Só sair' }))
+    expect(conta.sair).toHaveBeenCalledExactlyOnceWith({ apagarDoAparelho: false })
+    expect(aoSaiu).toHaveBeenCalledExactlyOnceWith(false)
+  })
+
+  it('CA-423: "Sair e apagar os dados deste aparelho", confirmado, apaga e sai', async () => {
+    const { usuario, conta, aoSaiu } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Sair' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
+    expect(conta.sair).toHaveBeenCalledExactlyOnceWith({ apagarDoAparelho: true })
+    expect(aoSaiu).toHaveBeenCalledExactlyOnceWith(true)
   })
 
   it('CA-282: estudante vê instituição, formatura, matrícula, selo e "Me formei"', () => {
