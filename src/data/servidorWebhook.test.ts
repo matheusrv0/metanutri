@@ -238,20 +238,20 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
     }
   })
 
-  it('CA-437: código de recurso fora do formato (letras e números, até 64): 200, "recurso inválido", sem chamar a operadora', async () => {
+  it('CA-437 e D-84: código de recurso fora do formato (letras e números, até 64): 200, "recurso inválido", sem chamar a operadora e sem o código no registro', async () => {
     const invalidos = ['pre-1', '../preapproval/x', 'pre1?x=1', 'pre1/../x', 'pré1', ' pre1', 'pre1 ', 'pre_1', 'a'.repeat(65)]
     for (const id of invalidos) {
       // Assinado de verdade com este id: a conferência do formato vem antes da assinatura e vale sozinha.
       const c = cenario([], { [`GET /preapproval/${encodeURIComponent(id)}`]: [responde(200, AUTORIZADA)] })
       expect(await tratarAviso(aviso(ASSINATURA, id), deps(c))).toBe(200)
       expect(c.pedidos).toEqual([])
-      expect(c.avisos).toEqual([{ topico: ASSINATURA, recurso_id: id, assinatura_confere: null, resultado: 'recurso inválido' }])
+      expect(c.avisos).toEqual([{ topico: ASSINATURA, recurso_id: null, assinatura_confere: null, resultado: 'recurso inválido' }])
     }
     for (const numero of [1.5, -5, 1e21]) {
       const c = cenario()
       expect(await tratarAviso(aviso(ASSINATURA, null, { corpo: { type: ASSINATURA, data: { id: numero } } }), deps(c))).toBe(200)
       expect(c.pedidos).toEqual([])
-      expect(c.avisos[0]).toMatchObject({ recurso_id: String(numero), assinatura_confere: null, resultado: 'recurso inválido' })
+      expect(c.avisos[0]).toMatchObject({ recurso_id: null, assinatura_confere: null, resultado: 'recurso inválido' })
     }
   })
 
@@ -280,6 +280,32 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
     }
   })
 
+  it('D-84: sem a assinatura conferida, o registro guarda o tópico só se for um dos conhecidos; senão, "desconhecido"', async () => {
+    const RUIM = { xSignature: 'ts=1,v1=00' }
+    const conhecidos = ['subscription_preapproval', 'subscription_authorized_payment', 'payment', 'payments']
+    for (const topico of conhecidos) {
+      const c = cenario()
+      expect(await tratarAviso(aviso(topico, 'pay1', RUIM), deps(c))).toBe(200)
+      expect(c.avisos[0], topico).toMatchObject({ topico, assinatura_confere: false, resultado: 'assinatura não confere' })
+    }
+    for (const topico of ['subscription_preapproval_plan', 'qualquer texto de quem chama', 'Payment', '']) {
+      const c = cenario()
+      expect(await tratarAviso(aviso(topico, 'pay1', RUIM), deps(c))).toBe(200)
+      expect(c.avisos[0], topico).toMatchObject({ topico: 'desconhecido', recurso_id: 'pay1', assinatura_confere: false, resultado: 'assinatura não confere' })
+    }
+    // Nas conferências antes da assinatura (sem segredo, sem id, recurso inválido) também não deu para conferir.
+    const casos: readonly [AvisoRecebido, string | null][] = [
+      [aviso('texto livre', 'pay1'), null],
+      [aviso('texto livre', null), SEGREDO],
+      [aviso('texto livre', 'pay-1'), SEGREDO],
+    ]
+    for (const [recebido, segredo] of casos) {
+      const c = cenario()
+      await tratarAviso(recebido, deps(c, segredo))
+      expect(c.avisos[0]).toMatchObject({ topico: 'desconhecido', assinatura_confere: null })
+    }
+  })
+
   it('o registro corta o texto no tamanho da tabela', async () => {
     const longo = cenario()
     await tratarAviso(aviso('t'.repeat(120), 'pay1'), deps(longo))
@@ -289,9 +315,10 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
     await tratarAviso(aviso('t'.repeat(300), 'pay1'), deps(muitoLongo))
     expect(muitoLongo.avisos[0]?.resultado).toHaveLength(200)
 
+    // O código com mais de 64 caracteres é inválido (CA-437): nem chega ao registro (D-84).
     const idLongo = cenario()
     await tratarAviso(aviso('payment', 'a'.repeat(100)), deps(idLongo))
-    expect(idLongo.avisos[0]?.recurso_id).toHaveLength(80)
+    expect(idLongo.avisos[0]).toMatchObject({ recurso_id: null, resultado: 'recurso inválido' })
 
     // O corte conta caracteres, como o char_length do Postgres: um emoji na divisa não é partido ao meio.
     const emoji = cenario()

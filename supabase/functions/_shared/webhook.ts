@@ -48,8 +48,10 @@ export interface DependenciasDoWebhook {
 export type StatusDoAviso = 200 | 500
 /** D-84: o registro guarda 90 dias. */
 export const GUARDA_DOS_AVISOS_MS = 90 * UM_DIA_MS
-/** CA-437: o código do recurso aceito (letras e números, até 64). Nada fora disso chega à operadora. */
+/** CA-437: o código do recurso aceito (letras e números, até 64). Nada fora disso chega à operadora nem ao registro. */
 const RECURSO_VALIDO = /^[A-Za-z0-9]{1,64}$/
+/** D-84: os tópicos que a operadora manda. Sem a assinatura do aviso conferida, só estes vão para o registro. */
+const TOPICOS_CONHECIDOS: readonly string[] = ['subscription_preapproval', 'subscription_authorized_payment', 'payment', 'payments']
 
 interface Feito {
   readonly status: StatusDoAviso
@@ -180,8 +182,10 @@ export async function tratarAviso(aviso: AvisoRecebido, deps: DependenciasDoWebh
   }
 
   await anotar(deps, {
-    topico: cortar(topico, 80),
-    recurso_id: id === null ? null : cortar(id, 80),
+    // D-84: o registro não guarda texto livre de quem chama. Sem a assinatura conferida, o tópico só vai
+    // se for um dos conhecidos; o código do recurso só vai no formato aceito (CA-437).
+    topico: confere ? cortar(topico, 80) : TOPICOS_CONHECIDOS.includes(topico) ? topico : 'desconhecido',
+    recurso_id: id !== null && RECURSO_VALIDO.test(id) ? id : null,
     assinatura_confere: confere,
     resultado: cortar(resultado.resultado, 200),
   })
