@@ -32,6 +32,7 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, previa
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
   const canceladaRef = useRef(false)
+  const manterRef = useRef<HTMLButtonElement>(null)
   const [conferencia, setConferencia] = useState<Conferencia>(CONFERINDO)
   /** Só vale a resposta do último pedido de prévia (fechar e abrir de novo, ou "Tentar de novo"). Lido só em manipulador e em .then. */
   const pedidoRef = useRef(0)
@@ -111,13 +112,21 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, previa
         </DialogHeader>
         {precisaConferir && conferencia.fase === 'conferindo' ? <PontosDaMarca pulsando className="self-start" /> : null}
         {precisaConferir && conferencia.fase === 'falhou' ? (
-          <Button variant="outline" size="sm" className="self-start" onClick={conferir}>
+          <Button
+            variant="outline"
+            className="self-start"
+            onClick={() => {
+              // O botão some ao tentar de novo: o foco vai para um controle que continua na janela.
+              manterRef.current?.focus()
+              conferir()
+            }}
+          >
             Tentar de novo
           </Button>
         ) : null}
         {erro ? <AvisoPagamento tipo="erro">{erro}</AvisoPagamento> : null}
         <DialogFooter>
-          <Button onClick={fechar} disabled={enviando}>
+          <Button ref={manterRef} onClick={fechar} disabled={enviando}>
             Manter assinatura
           </Button>
           <Button variant="lighterror" onClick={() => void confirmar()} disabled={enviando || !pronta} aria-busy={enviando || undefined}>

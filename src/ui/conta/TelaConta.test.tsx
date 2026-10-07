@@ -462,6 +462,22 @@ describe('TelaConta', () => {
     expect(estado.cancelar).not.toHaveBeenCalled()
   })
 
+  it('CA-397: ao tentar de novo, o foco fica em "Manter assinatura"', async () => {
+    estado.previa = vi.fn(async (): Promise<ResultadoDaPrevia> => ({ ok: false, erro: SERVIDOR_FORA }))
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    await usuario.click(await within(janela).findByRole('button', { name: 'Tentar de novo' }))
+    expect(within(janela).getByRole('button', { name: 'Manter assinatura' })).toHaveFocus()
+  })
+
+  it('CA-393: a data da recusa é a de Brasília (01h UTC de 7/11 ainda é 6/11)', () => {
+    estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'recusa', encerradaEm: '2026-11-07T01:00:00.000Z' }
+    montar(nutri)
+    expect(screen.getByText('O banco recusou a cobrança de 6 de novembro de 2026. A assinatura foi encerrada e a conta voltou ao Free.')).toBeInTheDocument()
+  })
+
   it('uma prévia atrasada da abertura anterior não troca o texto da nova', async () => {
     let primeira: (r: ResultadoDaPrevia) => void = () => undefined
     estado.previa = vi
