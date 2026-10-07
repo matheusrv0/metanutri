@@ -69,8 +69,8 @@ Atualizado em 07/10/2026.
 > **A troca para produção (com você; spec, seção 5):**
 >
 > 1. ativar as credenciais de produção do app MetaNutri no Mercado Pago;
-> 2. conferir que nenhuma assinatura ativa do banco foi criada com as credenciais de teste:
->    `select nutricionista_id, plano, status from public.assinaturas where status = 'ativa' and preapproval_id is not null;`
+> 2. conferir que nenhuma assinatura em aberto do banco foi criada com as credenciais de teste:
+>    `select nutricionista_id, plano, status from public.assinaturas where status <> 'cancelada' and preapproval_id is not null;`
 >    — se aparecer alguma (são as contas de teste), cancelar pelo site antes da troca; depois dela, a assinatura de
 >    teste não é mais achada e o plano ficaria preso;
 > 3. cadastrar o webhook de produção com os tópicos `subscription_preapproval`, `subscription_authorized_payment` e
