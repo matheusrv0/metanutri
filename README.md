@@ -133,9 +133,10 @@ logo abaixo; depois siga a lista seguinte.
 2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, para o checkout, `VITE_MERCADOPAGO_PUBLIC_KEY` (a Public Key do Mercado Pago). Reinicie o
    `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
-3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem, de 001 a 008:
+3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
-   `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql` e `008-cartao-da-assinatura.sql`.
+   `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql` e
+   `010-seguranca-lote-1.sql`.
 4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -173,6 +174,10 @@ Para funcionar de verdade, nesta ordem:
    Depois rode `supabase/008-cartao-da-assinatura.sql`: ele guarda a bandeira, os 4 últimos números do cartão e a
    data da próxima cobrança, e cria a trava que impede duas abas de assinarem ao mesmo tempo (spec checkout-proprio).
    Rode **antes** de publicar as funções do passo 5; também pode rodar de novo.
+   Depois rode `supabase/010-seguranca-lote-1.sql` (spec seguranca-lote-1): o banco passa a garantir o aviso de uso
+   não comercial e o limite de links do plano, recusa token e marcações fora do padrão, aceita comprovante só de
+   estudante (até 3 arquivos) e deixa as funções da verificação só para quem está logado. Também pode rodar de novo;
+   se rodar o 006 de novo, rode o 010 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008` rodado, publique as três funções desta versão e, logo em seguida, o site: a `assinar` nova não serve ao
