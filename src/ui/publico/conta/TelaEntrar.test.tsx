@@ -1,11 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Resultado, ValorConta } from '../../estado/usarConta.ts'
+import type { ValorConta } from '../../estado/usarConta.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaEntrar } from './TelaEntrar.tsx'
 
 function montar(conta: ValorConta = contaFalsa()) {
-  const props = { conta, aoEntrou: vi.fn(), aoCriarConta: vi.fn(), aoEsqueci: vi.fn(), aoIrParaInicio: vi.fn(), aoAbrirSistema: vi.fn() }
+  const props = { conta, aoEntrou: vi.fn(), aoCriarConta: vi.fn(), aoEsqueci: vi.fn(), aoConfirmarEmail: vi.fn(), aoIrParaInicio: vi.fn(), aoAbrirSistema: vi.fn() }
   render(<TelaEntrar {...props} />)
   return { ...props, usuario: userEvent.setup() }
 }
@@ -44,32 +44,18 @@ describe('TelaEntrar', () => {
     expect(aoEntrou).not.toHaveBeenCalled()
   })
 
-  it('CA-139: e-mail sem confirmar oferece reenviar o link', async () => {
+  it('CA-411: e-mail sem confirmar pede a confirmação e leva à tela do código com o e-mail', async () => {
     const conta = contaFalsa({ entrar: vi.fn(async () => ({ ok: false, erro: 'email-nao-confirmado' as const })) })
-    const { usuario } = montar(conta)
-    await entrar(usuario)
-    await usuario.click(screen.getByRole('button', { name: 'Reenviar o link' }))
-    expect(conta.reenviarConfirmacao).toHaveBeenCalledWith('maria@exemplo.com')
-    expect(screen.getByRole('status')).toHaveTextContent('Mandamos outro link para maria@exemplo.com.')
-  })
-
-  it('clique duplo em "Reenviar o link" só manda um pedido', async () => {
-    let resolver: (valor: Resultado) => void = () => {}
-    const promessa = new Promise<Resultado>((resolve) => {
-      resolver = resolve
-    })
-    const conta = contaFalsa({
-      entrar: vi.fn(async () => ({ ok: false, erro: 'email-nao-confirmado' as const })),
-      reenviarConfirmacao: vi.fn(() => promessa),
-    })
-    const { usuario } = montar(conta)
-    await entrar(usuario)
-
-    await usuario.dblClick(screen.getByRole('button', { name: 'Reenviar o link' }))
-    resolver({ ok: true, erro: null })
-    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
-
-    expect(conta.reenviarConfirmacao).toHaveBeenCalledTimes(1)
+    const { usuario, aoConfirmarEmail, aoEntrou } = montar(conta)
+    await usuario.type(screen.getByLabelText('E-mail'), ' maria@exemplo.com ')
+    await usuario.type(screen.getByLabelText('Senha'), 'senhaforte1')
+    await usuario.click(screen.getByRole('button', { name: 'Entrar' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Confirme seu e-mail antes de entrar.')
+    expect(screen.queryByRole('button', { name: 'Reenviar o link' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Digitar o código' }))
+    expect(aoConfirmarEmail).toHaveBeenCalledWith('maria@exemplo.com')
+    expect(conta.reenviarConfirmacao).not.toHaveBeenCalled()
+    expect(aoEntrou).not.toHaveBeenCalled()
   })
 
   it('CA-155: sem internet, avisa que o primeiro acesso precisa de internet', () => {

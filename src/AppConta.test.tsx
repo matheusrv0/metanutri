@@ -5,6 +5,7 @@ import { App } from './App.tsx'
 import { CHAVE_DONO } from './domain/donoDosDados.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import type { ValorConta } from './ui/estado/usarConta.ts'
+import { CHAVE_DESTINO } from './ui/fluxoConta.ts'
 import { contaFalsa } from './ui/publico/conta/contaFalsa.test-utils.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
@@ -400,5 +401,95 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
     expect(cobranca.cancelar).toHaveBeenCalledOnce()
     await waitFor(() => expect(cobranca.recarregar).toHaveBeenCalled())
+  })
+
+  describe('confirmar o e-mail e trocar a senha por código (spec confirmacao-por-codigo)', () => {
+    const digitar = async (usuario: ReturnType<typeof userEvent.setup>, rotulo: string, texto: string) => usuario.type(screen.getByLabelText(rotulo), texto)
+
+    it('CA-411: entrar sem ter confirmado leva à tela do código com o e-mail preenchido', async () => {
+      estado.conta = contaFalsa({ entrar: vi.fn(async () => ({ ok: false, erro: 'email-nao-confirmado' as const })) })
+      window.location.hash = '#/entrar'
+      render(tela())
+      const usuario = userEvent.setup()
+      await digitar(usuario, 'E-mail', 'julia@ufrn.edu.br')
+      await digitar(usuario, 'Senha', 'senhaforte1')
+      await usuario.click(screen.getByRole('button', { name: 'Entrar' }))
+      await usuario.click(screen.getByRole('button', { name: 'Digitar o código' }))
+      expect(window.location.hash).toBe('#/confirmar-email')
+      expect(screen.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeInTheDocument()
+      expect(screen.getByText(/julia@ufrn\.edu\.br/)).toBeInTheDocument()
+      expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument()
+    })
+
+    it('CA-407: depois do cadastro de estudante, o código certo leva a comprovar a matrícula', async () => {
+      verificacao.perfil = { nome: 'Júlia', situacao: 'estudante', crn: null, statusCrn: null, crnDeclaradoEm: null, crnDecididoEm: null }
+      const confirmarCodigo = vi.fn(async () => {
+        estado.conta = { ...(estado.conta as ValorConta), sessao: { id: 'conta-1', email: 'julia@ufrn.edu.br', nome: 'Júlia' } }
+        return { ok: true, erro: null, situacao: 'estudante', planoDesejado: 'estudante' } as const
+      })
+      estado.conta = contaFalsa({ confirmarCodigo })
+      localStorage.setItem(CHAVE_DESTINO, '#/comprovar-matricula')
+      window.location.hash = '#/confirmar-email'
+      render(tela())
+      const usuario = userEvent.setup()
+      await digitar(usuario, 'E-mail', 'julia@ufrn.edu.br')
+      await digitar(usuario, 'Código de 6 dígitos', '123456')
+      await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+      expect(confirmarCodigo).toHaveBeenCalledWith('julia@ufrn.edu.br', '123456')
+      expect(window.location.hash).toBe('#/comprovar-matricula')
+      expect(localStorage.getItem(CHAVE_DESTINO)).toBeNull()
+    })
+
+    it('CA-407: sem o destino guardado neste aparelho, segue pelo que a pessoa marcou no cadastro', async () => {
+      estado.conta = contaFalsa({ confirmarCodigo: vi.fn(async () => ({ ok: true, erro: null, situacao: 'estudante', planoDesejado: 'estudante' }) as const) })
+      window.location.hash = '#/confirmar-email'
+      render(tela())
+      const usuario = userEvent.setup()
+      await digitar(usuario, 'E-mail', 'julia@ufrn.edu.br')
+      await digitar(usuario, 'Código de 6 dígitos', '123456')
+      await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+      expect(window.location.hash).toBe('#/comprovar-matricula')
+    })
+
+    it('CA-407: nutricionista vai para o painel', async () => {
+      estado.conta = contaFalsa({ confirmarCodigo: vi.fn(async () => ({ ok: true, erro: null, situacao: 'nutricionista', planoDesejado: 'free' }) as const) })
+      window.location.hash = '#/confirmar-email'
+      render(tela())
+      const usuario = userEvent.setup()
+      await digitar(usuario, 'E-mail', 'maria@exemplo.com')
+      await digitar(usuario, 'Código de 6 dígitos', '123456')
+      await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+      expect(window.location.hash).toBe('#/painel')
+    })
+
+    it('CA-412: "Esqueci a senha" manda o código e abre a tela do código com o e-mail', async () => {
+      window.location.hash = '#/esqueci-senha'
+      render(tela())
+      const usuario = userEvent.setup()
+      await digitar(usuario, 'E-mail', 'maria@exemplo.com')
+      await usuario.click(screen.getByRole('button', { name: 'Mandar o código' }))
+      expect(window.location.hash).toBe('#/esqueci-senha/codigo')
+      expect(screen.getByRole('heading', { level: 1, name: 'Crie uma senha nova' })).toBeInTheDocument()
+      expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()
+
+      await digitar(usuario, 'Código de 6 dígitos', '123456')
+      await digitar(usuario, 'Senha nova', 'novasenha1')
+      await digitar(usuario, 'Repita a senha', 'novasenha1')
+      await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+      const conta = estado.conta as ValorConta
+      expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+      expect(conta.trocarSenha).toHaveBeenCalledWith('novasenha1')
+      expect(window.location.hash).toBe('#/painel')
+    })
+
+    it('CA-414: o link antigo vencido continua abrindo a tela de link vencido', () => {
+      window.location.hash = '#/confirmar-email/vencido'
+      const { unmount } = render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+      unmount()
+      window.location.hash = '#/nova-senha/vencido'
+      render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+    })
   })
 })

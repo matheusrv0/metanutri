@@ -15,28 +15,25 @@ interface TelaEntrarProps {
   readonly aoEntrou: () => void
   readonly aoCriarConta: () => void
   readonly aoEsqueci: () => void
+  /** Conta sem e-mail confirmado: vai para a tela do código, com o e-mail (spec confirmacao-por-codigo, CA-411). */
+  readonly aoConfirmarEmail: (email: string) => void
   readonly aoIrParaInicio: () => void
   readonly aoAbrirSistema: () => void
   /** Veio de uma tela que pede sessão (CA-148): o subtítulo diz isso. */
   readonly pedidoPorTela?: boolean | undefined
 }
 
-type Reenvio = 'nada' | 'enviado' | ErroConta
-
 const BOTAO_TEXTO =
   'inline-flex min-h-11 items-center rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 /** Entrar (spec estilo-spora, US-1.4; mockup conta e checkout v1). */
-export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaInicio, aoAbrirSistema, pedidoPorTela = false }: TelaEntrarProps) {
+export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirmarEmail, aoIrParaInicio, aoAbrirSistema, pedidoPorTela = false }: TelaEntrarProps) {
   const id = useId()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<ErroConta | null>(null)
-  const [reenvio, setReenvio] = useState<Reenvio>('nada')
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
-  const [reenviando, setReenviando] = useState(false)
-  const reenviandoRef = useRef(false)
   const semInternet = globalThis.navigator?.onLine === false
 
   const enviar = async (evento: FormEvent) => {
@@ -48,7 +45,6 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
       return
     }
     setErro(null)
-    setReenvio('nada')
     enviandoRef.current = true
     setEnviando(true)
     const resultado = await conta.entrar(email, senha)
@@ -59,16 +55,6 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
       return
     }
     aoEntrou()
-  }
-
-  const reenviar = async () => {
-    if (reenviandoRef.current) return
-    reenviandoRef.current = true
-    setReenviando(true)
-    const resultado = await conta.reenviarConfirmacao(email)
-    reenviandoRef.current = false
-    setReenviando(false)
-    setReenvio(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
   }
 
   return (
@@ -107,16 +93,13 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoIrParaI
             {MENSAGEM_ERRO[erro]}
             {erro === 'email-nao-confirmado' ? (
               <div className="mt-2">
-                <Button size="sm" variant="outline" loading={reenviando} onClick={() => void reenviar()}>
-                  Reenviar o link
+                <Button size="sm" variant="outline" onClick={() => aoConfirmarEmail(email.trim())}>
+                  Digitar o código
                 </Button>
               </div>
             ) : null}
           </AvisoFormulario>
         ) : null}
-
-        {reenvio === 'enviado' ? <AvisoFormulario tipo="ok">Mandamos outro link para {email.trim()}.</AvisoFormulario> : null}
-        {reenvio !== 'nada' && reenvio !== 'enviado' ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[reenvio]}</AvisoFormulario> : null}
 
         <Button type="submit" size="lg" block loading={enviando} disabled={!conta.disponivel}>
           Entrar

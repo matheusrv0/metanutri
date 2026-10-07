@@ -1,4 +1,4 @@
-import { AuthRetryableFetchError } from '@supabase/supabase-js'
+import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { traduzir, useConta } from './usarConta.ts'
 
@@ -15,6 +15,7 @@ const { auth, avisar } = vi.hoisted(() => {
     resend: vi.fn(),
     resetPasswordForEmail: vi.fn(),
     updateUser: vi.fn(),
+    verifyOtp: vi.fn(),
     signOut: vi.fn(),
   }
   return { auth, avisar: (evento: string, sessao: unknown) => ouvinte?.(evento, sessao) }
@@ -185,6 +186,79 @@ describe('useConta', () => {
     expect(pedido.email).toBe('maria@usp.br')
     expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
   })
+
+  it('CA-407: o código certo confirma a conta e devolve o que a pessoa marcou no cadastro', async () => {
+    auth.verifyOtp.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'maria@usp.br', user_metadata: { situacao: 'estudante', plano_desejado: 'estudante' } }, session: {} },
+      error: null,
+    })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.confirmarCodigo(' maria@usp.br ', '123456')).toEqual({ ok: true, erro: null, situacao: 'estudante', planoDesejado: 'estudante' })
+    })
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ email: 'maria@usp.br', token: '123456', type: 'email' })
+  })
+
+  it('CB-100: o código colado com espaço ou traço vai só com os dígitos', async () => {
+    auth.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.confirmarCodigo('maria@usp.br', '123 456')
+      await result.current.conferirCodigoDeSenha('maria@usp.br', '654-321')
+    })
+    expect(auth.verifyOtp.mock.calls[0]?.[0].token).toBe('123456')
+    expect(auth.verifyOtp.mock.calls[1]?.[0].token).toBe('654321')
+  })
+
+  it('CA-408: código errado ou vencido (otp_expired) vira "codigo-invalido"', async () => {
+    auth.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: new AuthApiError('Token has expired or is invalid', 403, 'otp_expired') })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.confirmarCodigo('maria@usp.br', '000000')).toEqual({ ok: false, erro: 'codigo-invalido' })
+      expect(await result.current.conferirCodigoDeSenha('maria@usp.br', '000000')).toEqual({ ok: false, erro: 'codigo-invalido' })
+    })
+  })
+
+  it('CB-102: sem internet ao confirmar, a falha de rede de sempre', async () => {
+    auth.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: new AuthRetryableFetchError('Load failed', 0) })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.confirmarCodigo('maria@usp.br', '123456')).toEqual({ ok: false, erro: 'falha-rede' })
+    })
+  })
+
+  it('CA-412: o código da troca de senha é conferido como recuperação e liga o modo de recuperação', async () => {
+    auth.verifyOtp.mockImplementation(async () => {
+      avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } })
+      return { data: { user: { id: 'u1', email: 'maria@usp.br' }, session: {} }, error: null }
+    })
+    auth.updateUser.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.conferirCodigoDeSenha(' maria@usp.br ', '123456')).toEqual({ ok: true, erro: null })
+    })
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ email: 'maria@usp.br', token: '123456', type: 'recovery' })
+    expect(result.current.emRecuperacao).toBe(true)
+    await act(async () => {
+      expect(await result.current.trocarSenha('novasenha1')).toEqual({ ok: true, erro: null })
+    })
+    expect(auth.updateUser).toHaveBeenCalledWith({ password: 'novasenha1' })
+    expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  it('CA-411: entrar sem confirmar é achado também pelo código do erro', async () => {
+    auth.signInWithPassword.mockResolvedValue({ error: new AuthApiError('Email not confirmed', 400, 'email_not_confirmed') })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.entrar('maria@usp.br', 'senhaforte1')).toEqual({ ok: false, erro: 'email-nao-confirmado' })
+    })
+  })
 })
 
 describe('traduzir as mensagens do Supabase', () => {
@@ -196,7 +270,15 @@ describe('traduzir as mensagens do Supabase', () => {
     ['email rate limit exceeded', 'muitas-tentativas'],
     ['For security purposes, you can only request this after 45 seconds.', 'muitas-tentativas'],
     ['Failed to fetch', 'falha-rede'],
+    ['Token has expired or is invalid', 'codigo-invalido'],
   ] as const)('"%s" vira %s', (mensagem, erro) => {
     expect(traduzir(mensagem)).toBe(erro)
+  })
+
+  it.each([
+    ['email_not_confirmed', 'email-nao-confirmado'],
+    ['otp_expired', 'codigo-invalido'],
+  ] as const)('o código "%s" vira %s, qualquer que seja o texto', (codigo, erro) => {
+    expect(traduzir('mensagem em outro formato', codigo)).toBe(erro)
   })
 })

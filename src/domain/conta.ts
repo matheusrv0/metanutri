@@ -228,6 +228,8 @@ export type ErroConta =
   | 'credencial-invalida'
   | 'email-em-uso'
   | 'email-nao-confirmado'
+  | 'codigo-incompleto'
+  | 'codigo-invalido'
   | 'link-vencido'
   | 'muitas-tentativas'
   | 'sem-servidor'
@@ -241,7 +243,9 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   termos: 'Para criar a conta, marque que leu e aceita os termos.',
   'credencial-invalida': 'E-mail ou senha não conferem.',
   'email-em-uso': 'Este e-mail já tem conta.',
-  'email-nao-confirmado': 'Falta confirmar o e-mail. Abra o link que mandamos para você.',
+  'email-nao-confirmado': 'Confirme seu e-mail antes de entrar.',
+  'codigo-incompleto': 'Digite os 6 dígitos do código.',
+  'codigo-invalido': 'Código errado ou vencido. Confira o último e-mail ou peça outro.',
   'link-vencido': 'Este link não vale mais. Peça outro.',
   'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
   'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
@@ -251,6 +255,21 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 export const ehEmailValido = (email: string): boolean => EMAIL.test(email.trim())
 export const SENHA_MINIMA = 8
+
+/*
+ * O código que chega por e-mail para confirmar a conta e trocar a senha (spec
+ * confirmacao-por-codigo, D-89 e D-90). A tela fala em 6 dígitos, o padrão do projeto;
+ * o Supabase deixa configurar de 6 a 10, e aceitar até 10 evita travar se mudarem lá.
+ */
+export const CODIGO_MINIMO = 6
+export const CODIGO_MAXIMO = 10
+
+/** "123 456" ou "123-456" colados viram "123456": só os dígitos contam (CB-100). */
+export function soDigitos(texto: string): string {
+  return texto.replace(/\D/g, '').slice(0, CODIGO_MAXIMO)
+}
+
+export const codigoCompleto = (codigo: string): boolean => soDigitos(codigo).length >= CODIGO_MINIMO
 
 /** Erros do formulário antes de qualquer chamada de rede. */
 export function validarEntrada(email: string, senha: string): ErroConta | null {

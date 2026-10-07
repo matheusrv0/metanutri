@@ -14,7 +14,11 @@ interface TelaNovaSenhaProps {
   readonly aoIrParaInicio: () => void
 }
 
-/** Senha nova, depois do link do e-mail (spec estilo-spora, CA-145 a CA-147). */
+/**
+ * Senha nova, depois do link do e-mail (spec estilo-spora, CA-145 a CA-147). O e-mail
+ * agora traz código (TelaCodigoSenha); esta tela fica para o link antigo (spec
+ * confirmacao-por-codigo, CA-414).
+ */
 export function TelaNovaSenha({ conta, vencido, aoSenhaTrocada, aoPedirOutro, aoIrParaInicio }: TelaNovaSenhaProps) {
   const id = useId()
   const [senha, setSenha] = useState('')
@@ -26,9 +30,9 @@ export function TelaNovaSenha({ conta, vencido, aoSenhaTrocada, aoPedirOutro, ao
 
   if (!podeTrocar) {
     return (
-      <MolduraConta titulo="Este link não vale mais" subtitulo="O link de troca de senha venceu ou já foi usado. Peça outro, ele chega em alguns minutos." aoIrParaInicio={aoIrParaInicio}>
+      <MolduraConta titulo="Este link não vale mais" subtitulo="O link de troca de senha venceu ou já foi usado." aoIrParaInicio={aoIrParaInicio}>
         <Button size="lg" block onClick={aoPedirOutro}>
-          Pedir outro link
+          Pedir um código
         </Button>
       </MolduraConta>
     )

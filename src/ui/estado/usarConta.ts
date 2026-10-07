@@ -1,7 +1,7 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
-import { nomeSugerido, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
-import type { Crn, Situacao } from '@/domain/situacao.ts'
+import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
+import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
@@ -10,6 +10,15 @@ export interface Resultado {
   readonly erro: ErroConta | null
   /** Cadastro com confirmação por e-mail pendente. */
   readonly confirmarEmail?: boolean
+}
+
+/**
+ * A conta confirmada pelo código, com o que a pessoa marcou no cadastro: é por isso
+ * que ela segue para o lugar certo mesmo noutro aparelho (spec confirmacao-por-codigo, CA-407).
+ */
+export interface ResultadoConfirmacao extends Resultado {
+  readonly situacao?: Situacao
+  readonly planoDesejado?: IdPlano
 }
 
 export interface DadosCadastro {
@@ -30,12 +39,16 @@ export interface ValorConta {
   readonly carregando: boolean
   /** Falso quando o projeto não tem chaves do Supabase: o app roda no modo local. */
   readonly disponivel: boolean
-  /** Chegou pelo link de troca de senha e ainda não trocou. */
+  /** Chegou pelo link ou pelo código de troca de senha e ainda não trocou. */
   readonly emRecuperacao: boolean
   readonly entrar: (email: string, senha: string) => Promise<Resultado>
   readonly cadastrar: (dados: DadosCadastro) => Promise<Resultado>
   readonly reenviarConfirmacao: (email: string) => Promise<Resultado>
+  /** Confirma a conta com o código do e-mail; dando certo, a pessoa já entra (CA-407). */
+  readonly confirmarCodigo: (email: string, codigo: string) => Promise<ResultadoConfirmacao>
   readonly pedirTrocaDeSenha: (email: string) => Promise<Resultado>
+  /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
+  readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
   readonly trocarSenha: (senha: string) => Promise<Resultado>
   readonly sair: () => Promise<void>
 }
@@ -43,12 +56,19 @@ export interface ValorConta {
 const SEM_SERVIDOR: Resultado = { ok: false, erro: 'sem-servidor' }
 const OK: Resultado = { ok: true, erro: null }
 
-/** As mensagens do Supabase, em inglês, viram os erros que a tela sabe explicar. */
-export function traduzir(mensagem: string): ErroConta {
+/**
+ * As mensagens do Supabase, em inglês, viram os erros que a tela sabe explicar. O
+ * código do erro, quando vem, vale mais que o texto: o texto muda de versão para versão.
+ */
+export function traduzir(mensagem: string, codigo?: string): ErroConta {
+  if (codigo === 'email_not_confirmed') return 'email-nao-confirmado'
+  // O Supabase usa o mesmo código para o código digitado errado e para o vencido.
+  if (codigo === 'otp_expired') return 'codigo-invalido'
   const texto = mensagem.toLowerCase()
   if (texto.includes('already registered') || texto.includes('already been registered')) return 'email-em-uso'
   if (texto.includes('invalid login') || texto.includes('invalid credentials')) return 'credencial-invalida'
   if (texto.includes('not confirmed')) return 'email-nao-confirmado'
+  if (texto.includes('token has expired or is invalid')) return 'codigo-invalido'
   if (texto.includes('expired')) return 'link-vencido'
   if (texto.includes('rate limit') || texto.includes('security purposes') || texto.includes('too many')) return 'muitas-tentativas'
   return 'falha-rede'
@@ -106,7 +126,7 @@ export function useConta(): ValorConta {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const { error } = await c.auth.signInWithPassword({ email: email.trim(), password: senha })
-    return error ? { ok: false, erro: traduzir(error.message) } : OK
+    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
   }, [])
 
   const cadastrar = useCallback(async (dados: DadosCadastro): Promise<Resultado> => {
@@ -130,7 +150,7 @@ export function useConta(): ValorConta {
         },
       },
     })
-    if (error) return { ok: false, erro: traduzir(error.message) }
+    if (error) return { ok: false, erro: traduzir(error.message, error.code) }
     // Com confirmação ligada, o Supabase não conta que o e-mail já existe (para não
     // revelar quem tem conta): devolve um usuário sem identidade. É o mesmo aviso.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: false, erro: 'email-em-uso' }
@@ -141,7 +161,20 @@ export function useConta(): ValorConta {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const { error } = await c.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: enderecoDeVolta('confirmacao') } })
-    return error ? { ok: false, erro: traduzir(error.message) } : OK
+    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
+  }, [])
+
+  const confirmarCodigo = useCallback(async (email: string, codigo: string): Promise<ResultadoConfirmacao> => {
+    const c = obterSupabase()
+    if (!c) return SEM_SERVIDOR
+    // O e-mail de confirmação não traz link que confirme ao ser aberto: o antivírus do
+    // Microsoft 365 abre todo link sozinho (spec confirmacao-por-codigo, D-89).
+    const { data, error } = await c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'email' })
+    if (error) return { ok: false, erro: traduzir(error.message, error.code) }
+    const meta = data.user?.user_metadata ?? {}
+    const situacao: unknown = meta['situacao']
+    const plano: unknown = meta['plano_desejado']
+    return { ...OK, ...(ehSituacao(situacao) ? { situacao } : {}), ...(ehIdPlano(plano) ? { planoDesejado: plano } : {}) }
   }, [])
 
   const pedirTrocaDeSenha = useCallback(async (email: string): Promise<Resultado> => {
@@ -158,11 +191,19 @@ export function useConta(): ValorConta {
     return OK
   }, [])
 
+  const conferirCodigoDeSenha = useCallback(async (email: string, codigo: string): Promise<Resultado> => {
+    const c = obterSupabase()
+    if (!c) return SEM_SERVIDOR
+    // Dando certo, o Supabase avisa PASSWORD_RECOVERY, como no link: o modo de recuperação liga sozinho.
+    const { error } = await c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'recovery' })
+    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
+  }, [])
+
   const trocarSenha = useCallback(async (senha: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const { error } = await c.auth.updateUser({ password: senha })
-    if (error) return { ok: false, erro: traduzir(error.message) }
+    if (error) return { ok: false, erro: traduzir(error.message, error.code) }
     setEmRecuperacao(false)
     return OK
   }, [])
@@ -175,5 +216,18 @@ export function useConta(): ValorConta {
     setEmRecuperacao(false)
   }, [])
 
-  return { sessao, carregando, disponivel, emRecuperacao, entrar, cadastrar, reenviarConfirmacao, pedirTrocaDeSenha, trocarSenha, sair }
+  return {
+    sessao,
+    carregando,
+    disponivel,
+    emRecuperacao,
+    entrar,
+    cadastrar,
+    reenviarConfirmacao,
+    confirmarCodigo,
+    pedirTrocaDeSenha,
+    conferirCodigoDeSenha,
+    trocarSenha,
+    sair,
+  }
 }

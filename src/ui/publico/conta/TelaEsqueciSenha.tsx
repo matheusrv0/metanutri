@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useId, useRef, useState, type FormEvent } from 'react'
 import { ehEmailValido, MENSAGEM_ERRO, type ErroConta } from '@/domain/conta.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
@@ -9,40 +9,60 @@ import { MolduraConta } from './MolduraConta.tsx'
 
 interface TelaEsqueciSenhaProps {
   readonly conta: ValorConta
+  /** O código foi pedido: segue para a tela que pede o código e a senha nova (CA-412). */
+  readonly aoEnviado: (email: string) => void
   readonly aoIrParaInicio: () => void
   readonly aoEntrar: () => void
 }
 
-/** Pedir o link de troca de senha (spec estilo-spora, CA-144). */
-export function TelaEsqueciSenha({ conta, aoIrParaInicio, aoEntrar }: TelaEsqueciSenhaProps) {
+/** Pedir o código de troca de senha (spec confirmacao-por-codigo, D-90; spec estilo-spora, CA-144). */
+export function TelaEsqueciSenha({ conta, aoEnviado, aoIrParaInicio, aoEntrar }: TelaEsqueciSenhaProps) {
   const id = useId()
   const [email, setEmail] = useState('')
-  const [estado, setEstado] = useState<'nada' | 'enviado' | ErroConta>('nada')
+  const [erro, setErro] = useState<ErroConta | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const enviandoRef = useRef(false)
 
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault()
+    if (enviandoRef.current) return
     if (!ehEmailValido(email)) {
-      setEstado('email-invalido')
+      setErro('email-invalido')
       return
     }
+    setErro(null)
+    enviandoRef.current = true
     setEnviando(true)
+    // CA-144: a resposta é a mesma exista a conta ou não; só a falta de internet volta como erro.
     const resultado = await conta.pedirTrocaDeSenha(email)
+    enviandoRef.current = false
     setEnviando(false)
-    setEstado(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
+    if (!resultado.ok) {
+      setErro(resultado.erro ?? 'falha-rede')
+      return
+    }
+    aoEnviado(email.trim())
   }
 
   return (
-    <MolduraConta titulo="Esqueci a senha" subtitulo="Digite o e-mail da conta. Mandamos um link para criar uma senha nova." aoIrParaInicio={aoIrParaInicio}>
+    <MolduraConta titulo="Esqueci a senha" subtitulo="Digite o e-mail da conta. Mandamos um código para criar uma senha nova." aoIrParaInicio={aoIrParaInicio}>
       <form onSubmit={(e) => void enviar(e)} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-email`}>E-mail</Label>
-          <Input id={`${id}-email`} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" />
+          <Input
+            id={`${id}-email`}
+            type="email"
+            autoComplete="email"
+            spellCheck={false}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="voce@exemplo.com"
+            aria-invalid={erro === 'email-invalido'}
+          />
         </div>
-        {estado === 'enviado' ? <AvisoFormulario tipo="ok">Se existir conta com esse e-mail, o link chega em alguns minutos. Olhe também o spam.</AvisoFormulario> : null}
-        {estado !== 'nada' && estado !== 'enviado' ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[estado]}</AvisoFormulario> : null}
+        {erro ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[erro]}</AvisoFormulario> : null}
         <Button type="submit" size="lg" block loading={enviando}>
-          Mandar o link
+          Mandar o código
         </Button>
         <button type="button" onClick={aoEntrar} className="inline-flex min-h-11 items-center self-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline">
           Lembrei, quero entrar

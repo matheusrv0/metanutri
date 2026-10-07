@@ -52,6 +52,7 @@ import { MolduraConta } from './ui/publico/conta/MolduraConta.tsx'
 import { TelaCriarConta } from './ui/publico/conta/TelaCriarConta.tsx'
 import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
 import { TelaOutraConta } from './ui/publico/conta/TelaOutraConta.tsx'
+import { TelaCodigoSenha } from './ui/publico/conta/TelaCodigoSenha.tsx'
 import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
@@ -60,7 +61,7 @@ import { TelaPrivacidade } from './ui/publico/TelaPrivacidade.tsx'
 import { TelaFontes } from './ui/publico/TelaFontes.tsx'
 import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
-import { useConta } from './ui/estado/usarConta.ts'
+import { useConta, type ResultadoConfirmacao } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
@@ -87,9 +88,25 @@ function Conteudo() {
   const { assinatura } = cobranca
   const { fonte } = useAcompanhamentos()
 
+  // O e-mail que a tela do código mostra: o do cadastro, o de quem tentou entrar sem
+  // confirmar ou o de "Esqueci a senha". Só em memória: aberta depois, a tela pede (CA-410).
   const [emailPendente, setEmailPendente] = useState<string | null>(null)
   const arm = armazenamentoLocal()
   const sessao = conta.sessao
+
+  const irParaCodigo = (email: string) => {
+    setEmailPendente(email)
+    navegar({ tela: 'confirmar-email' })
+  }
+
+  // CA-407: segue para onde iria depois do cadastro. O destino guardado no cadastro vem
+  // primeiro (sabe o ciclo do plano pago); sem ele, vale o que a pessoa marcou.
+  const aoEmailConfirmado = (confirmado: ResultadoConfirmacao) => {
+    const guardado = tirarDestino(armazenamentoLocal())
+    const marcado = confirmado.situacao ? destinoDepoisDoCadastro(confirmado.planoDesejado ?? null, 'mensal', confirmado.situacao) : null
+    setEmailPendente(null)
+    navegar(guardado ?? marcado ?? { tela: 'painel' })
+  }
 
   // Dono dos dados do aparelho (spec estilo-spora, D-24): quem entra primeiro adota;
   // outra conta não vê nada até escolher (CA-151 e CA-152).
@@ -172,6 +189,7 @@ function Conteudo() {
           aoEntrou={() => undefined}
           aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
           aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
+          aoConfirmarEmail={irParaCodigo}
           aoIrParaInicio={() => navegar({ tela: 'inicio' })}
           aoAbrirSistema={() => navegar({ tela: 'painel' })}
         />
@@ -237,6 +255,7 @@ function Conteudo() {
         aoEntrou={() => navegar(tirarDestino(armazenamentoLocal()) ?? { tela: 'painel' })}
         aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
         aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
+        aoConfirmarEmail={irParaCodigo}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
         aoAbrirSistema={() => navegar({ tela: 'painel' })}
       />
@@ -256,10 +275,9 @@ function Conteudo() {
         aoCriada={(criada) => {
           const destino = destinoDepoisDoCadastro(criada.plano, ciclo, criada.situacao)
           if (!criada.confirmarEmail) return navegar(destino)
-          // O link do e-mail pode ser aberto em outra aba: o destino fica no aparelho.
+          // O destino fica no aparelho: o código pode ser digitado depois, e o link antigo abre em outra aba.
           guardarDestino(arm, destino)
-          setEmailPendente(criada.email)
-          navegar({ tela: 'confirmar-email' })
+          irParaCodigo(criada.email)
         }}
         aoEntrar={() => navegar({ tela: 'entrar' })}
         aoTrocarPlano={() => navegar({ tela: 'precos' })}
@@ -276,13 +294,37 @@ function Conteudo() {
         email={emailPendente}
         vencido={rota.vencido === true}
         aoIrParaInicio={() => navegar({ tela: 'inicio' })}
-        aoEntrar={() => navegar({ tela: 'entrar' })}
+        aoConfirmado={aoEmailConfirmado}
+      />
+    )
+  }
+
+  if (rota.tela === 'esqueci-senha' && rota.codigo) {
+    return (
+      <TelaCodigoSenha
+        conta={conta}
+        email={emailPendente}
+        aoSenhaTrocada={() => {
+          setEmailPendente(null)
+          navegar({ tela: 'painel' })
+        }}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
       />
     )
   }
 
   if (rota.tela === 'esqueci-senha') {
-    return <TelaEsqueciSenha conta={conta} aoIrParaInicio={() => navegar({ tela: 'inicio' })} aoEntrar={() => navegar({ tela: 'entrar' })} />
+    return (
+      <TelaEsqueciSenha
+        conta={conta}
+        aoEnviado={(email) => {
+          setEmailPendente(email)
+          navegar({ tela: 'esqueci-senha', codigo: true })
+        }}
+        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        aoEntrar={() => navegar({ tela: 'entrar' })}
+      />
+    )
   }
 
   if (rota.tela === 'nova-senha') {

@@ -23,7 +23,8 @@ export type Rota =
   // Sem `plano`, é o Free. Sem `ciclo`, é o mensal.
   | { readonly tela: 'criar-conta'; readonly plano?: IdPlano; readonly ciclo?: Ciclo }
   | { readonly tela: 'confirmar-email'; readonly vencido?: true }
-  | { readonly tela: 'esqueci-senha' }
+  // `codigo`: o segundo passo, que pede o código do e-mail e a senha nova (spec confirmacao-por-codigo, CA-412).
+  | { readonly tela: 'esqueci-senha'; readonly codigo?: true }
   | { readonly tela: 'nova-senha'; readonly vencido?: true }
   | { readonly tela: 'termos' }
   | { readonly tela: 'privacidade' }
@@ -65,7 +66,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'entrar') return { tela: 'entrar' }
   if (tela === 'criar-conta') return rotaCriarConta(ehIdPlano(id) ? id : null, aba === 'anual' ? 'anual' : 'mensal')
   if (tela === 'confirmar-email') return id === 'vencido' ? { tela: 'confirmar-email', vencido: true } : { tela: 'confirmar-email' }
-  if (tela === 'esqueci-senha') return { tela: 'esqueci-senha' }
+  if (tela === 'esqueci-senha') return id === 'codigo' ? { tela: 'esqueci-senha', codigo: true } : { tela: 'esqueci-senha' }
   if (tela === 'nova-senha') return id === 'vencido' ? { tela: 'nova-senha', vencido: true } : { tela: 'nova-senha' }
   if (tela === 'termos') return { tela: 'termos' }
   if (tela === 'privacidade') return { tela: 'privacidade' }
@@ -106,7 +107,7 @@ export function escreverRota(rota: Rota): string {
     case 'confirmar-email':
       return rota.vencido ? '#/confirmar-email/vencido' : '#/confirmar-email'
     case 'esqueci-senha':
-      return '#/esqueci-senha'
+      return rota.codigo ? '#/esqueci-senha/codigo' : '#/esqueci-senha'
     case 'nova-senha':
       return rota.vencido ? '#/nova-senha/vencido' : '#/nova-senha'
     case 'termos':

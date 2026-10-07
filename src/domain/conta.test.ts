@@ -1,4 +1,5 @@
 import {
+  codigoCompleto,
   comparativoDosPlanos,
   descontoAnualPct,
   ehCiclo,
@@ -16,6 +17,7 @@ import {
   PLANOS,
   PLANOS_COMPARADOS,
   SENHA_MINIMA,
+  soDigitos,
   validarCadastro,
   validarEntrada,
   valorNoCiclo,
@@ -294,5 +296,32 @@ describe('Mensagens de erro da conta', () => {
 
   it('CA-136: credencial errada não diz qual dos dois errou', () => {
     expect(MENSAGEM_ERRO['credencial-invalida']).toBe('E-mail ou senha não conferem.')
+  })
+})
+
+describe('Código do e-mail (spec confirmacao-por-codigo)', () => {
+  it('CA-408: código errado ou vencido diz o que fazer', () => {
+    expect(MENSAGEM_ERRO['codigo-invalido']).toBe('Código errado ou vencido. Confira o último e-mail ou peça outro.')
+  })
+
+  it('CA-411: entrar sem confirmar pede a confirmação', () => {
+    expect(MENSAGEM_ERRO['email-nao-confirmado']).toBe('Confirme seu e-mail antes de entrar.')
+  })
+
+  it.each([
+    ['123456', '123456'],
+    ['123 456', '123456'],
+    ['123-456', '123456'],
+    [' 12 34 56 ', '123456'],
+    ['abc', ''],
+    ['12345678901234', '1234567890'],
+  ])('CB-100: "%s" vira "%s": só os dígitos contam', (colado, digitos) => {
+    expect(soDigitos(colado)).toBe(digitos)
+  })
+
+  it('o código tem de 6 a 10 dígitos: o tamanho é configurável no projeto do Supabase', () => {
+    expect(codigoCompleto('12345')).toBe(false)
+    expect(codigoCompleto('123 456')).toBe(true)
+    expect(codigoCompleto('12345678')).toBe(true)
   })
 })

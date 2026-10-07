@@ -32,7 +32,27 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     await expect(page.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
   })
 
-  for (const rota of ['/#/criar-conta', '/#/criar-conta/estudante', '/#/criar-conta/solo', '/#/entrar', '/#/termos', '/#/privacidade']) {
+  test('CA-406 e CB-100: a tela do código pede só números, com teclado numérico, e o código colado conta só os dígitos', async ({ page }) => {
+    await page.goto('/#/confirmar-email')
+    await expect(page.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeVisible()
+    const campo = page.getByLabel('Código de 6 dígitos')
+    await expect(campo).toHaveAttribute('inputmode', 'numeric')
+    await campo.fill('123-456')
+    await expect(campo).toHaveValue('123456')
+    await expect(page.getByRole('button', { name: 'Confirmar' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Já confirmei, quero entrar' })).toHaveCount(0)
+  })
+
+  test('CA-412: a troca de senha pede o e-mail, o código e a senha nova duas vezes', async ({ page }) => {
+    await page.goto('/#/esqueci-senha/codigo')
+    await expect(page.getByRole('heading', { level: 1, name: 'Crie uma senha nova' })).toBeVisible()
+    await expect(page.getByLabel('E-mail')).toBeVisible()
+    await expect(page.getByLabel('Código de 6 dígitos')).toBeVisible()
+    await expect(page.getByLabel('Senha nova')).toBeVisible()
+    await expect(page.getByLabel('Repita a senha')).toBeVisible()
+  })
+
+  for (const rota of ['/#/criar-conta', '/#/criar-conta/estudante', '/#/criar-conta/solo', '/#/entrar', '/#/termos', '/#/privacidade', '/#/confirmar-email', '/#/esqueci-senha/codigo']) {
     test(`CB-48: ${rota} cabe em 360 px sem rolagem para o lado`, async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 740 })
       await page.goto(rota)
