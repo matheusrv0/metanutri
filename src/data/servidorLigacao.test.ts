@@ -13,10 +13,11 @@ import nucleoGerenciar from '../../supabase/functions/_shared/gerenciarAssinatur
 import operadora from '../../supabase/functions/_shared/operadora.ts?raw'
 import portas from '../../supabase/functions/_shared/portas.ts?raw'
 import tentativas from '../../supabase/functions/_shared/tentativas.ts?raw'
+import chamadas from '../../supabase/functions/_shared/chamadas.ts?raw'
 import nucleoWebhook from '../../supabase/functions/_shared/webhook.ts?raw'
 
 const INDICES = { assinar: assinarIndex, 'gerenciar-assinatura': gerenciarIndex, 'webhook-mercadopago': webhookIndex }
-const NUCLEOS = { assinar: nucleoAssinar, gerenciarAssinatura: nucleoGerenciar, webhook: nucleoWebhook, operadora, portas, cobranca, tentativas, corpo: corpoDoPedido }
+const NUCLEOS = { assinar: nucleoAssinar, gerenciarAssinatura: nucleoGerenciar, webhook: nucleoWebhook, operadora, portas, cobranca, tentativas, corpo: corpoDoPedido, chamadas }
 const registros = (codigo: string) => codigo.split('\n').filter((linha) => linha.includes('console.'))
 
 describe('as funções são só ligação (D-88)', () => {
@@ -167,6 +168,24 @@ describe('o banco de verdade (bancoSupabase.ts)', () => {
       const apagar = bancoSupabase.split('async apagarTentativasAntesDe(')[1] ?? ''
       expect(apagar).toContain('catch')
       expect(apagar.split('export async function quemPede')[0]).not.toContain('throw')
+    })
+  })
+
+  describe('as chamadas à cobrança (D-108)', () => {
+    it('CB-115: contar e anotar são um passo só, na função do banco (011)', () => {
+      expect(bancoSupabase).toContain("cliente.rpc('anotar_chamada_da_cobranca', { p_conta: conta, p_tipo: tipo, p_limite: limite, p_desde: desde.toISOString() })")
+    })
+    it('CB-114: sem a resposta sim ou não do banco, rejeita (a função responde 502 e não chama a operadora)', () => {
+      const anotar = bancoSupabase.split('async anotarChamada(')[1]?.split('async apagarChamadasAntesDe(')[0] ?? ''
+      expect(anotar).toContain('if (error) throw new Error(')
+      expect(anotar).toContain("if (typeof data !== 'boolean') throw new Error(")
+      expect(anotar).not.toContain('catch')
+    })
+    it('as chamadas antigas saem pela data, e a falha só vai para o registro', () => {
+      expect(bancoSupabase).toContain(".from('chamadas_da_cobranca').delete().lt('quando', data.toISOString())")
+      const apagar = bancoSupabase.split('async apagarChamadasAntesDe(')[1]?.split('// As janelas são estritas')[0] ?? ''
+      expect(apagar).toContain('catch')
+      expect(apagar).not.toContain('throw')
     })
   })
 

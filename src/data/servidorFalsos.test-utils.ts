@@ -10,6 +10,7 @@ import type {
   Operadora,
   Registro,
   RespostaDaOperadora,
+  TipoDeChamada,
 } from '../../supabase/functions/_shared/portas.ts'
 
 /** 6/10/2026, 12h em Brasília. */
@@ -40,6 +41,13 @@ export interface TentativaGuardada {
   readonly conta: string
   readonly quando: Date
   readonly recusada: boolean
+}
+
+/** Uma chamada à operadora anotada (a tabela chamadas_da_cobranca). */
+export interface ChamadaGuardada {
+  readonly conta: string
+  readonly tipo: TipoDeChamada
+  readonly quando: Date
 }
 
 type LinhaParcial = Partial<LinhaDaAssinatura> & { readonly nutricionista_id: string }
@@ -85,6 +93,7 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
   const avisos: AvisoAnotado[] = []
   const apagadosAntesDe: string[] = []
   const tentativas: TentativaGuardada[] = []
+  const chamadas: ChamadaGuardada[] = []
   const falhas = new Map<keyof BancoDaCobranca, { restam: number; readonly falha: FalhaDoBanco }>()
   /** Anota a consulta e diz se ela deve falhar desta vez. */
   const consultar = (nome: keyof BancoDaCobranca): FalhaDoBanco | null => {
@@ -173,6 +182,20 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
       const ficam = tentativas.filter((t) => t.quando.getTime() >= data.getTime())
       tentativas.splice(0, tentativas.length, ...ficam)
     },
+    async anotarChamada(conta, tipo, limite, desde) {
+      const falha = consultar('anotarChamada')
+      if (falha) throw new Error(falha.mensagem)
+      // A mesma janela estrita do banco: só conta o que é mais novo que `desde`. Contar e anotar sem pausa no meio.
+      const naJanela = chamadas.filter((ch) => ch.conta === conta && ch.tipo === tipo && ch.quando.getTime() > desde.getTime()).length
+      if (naJanela >= limite) return false
+      chamadas.push({ conta, tipo, quando: AGORA })
+      return true
+    },
+    async apagarChamadasAntesDe(data) {
+      if (consultar('apagarChamadasAntesDe')) return
+      const ficam = chamadas.filter((ch) => ch.quando.getTime() >= data.getTime())
+      chamadas.splice(0, chamadas.length, ...ficam)
+    },
   }
 
   const log = vi.fn<Registro>()
@@ -186,11 +209,12 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
     avisos,
     apagadosAntesDe,
     tentativas,
+    chamadas,
     ordem,
     log,
     /** As dependências de assinar e gerenciar-assinatura; o webhook acrescenta `segredo`. */
     deps: { operadora, banco, agora, log },
-    /** A consulta falha `vezes` vezes (padrão: sempre). Em `contarRecusas` a falha vira uma rejeição. */
+    /** A consulta falha `vezes` vezes (padrão: sempre). Em `contarRecusas` e `anotarChamada` a falha vira uma rejeição. */
     falhar: (nome: keyof BancoDaCobranca, vezes = Number.POSITIVE_INFINITY, falha: FalhaDoBanco = { mensagem: 'banco fora', codigo: null }) => {
       falhas.set(nome, { restam: vezes, falha })
     },
@@ -201,6 +225,10 @@ export function cenario(linhas: readonly LinhaParcial[] = [], rotas: Readonly<Re
     /** Tentativas de cartão do passado, como se a conta já tivesse tentado antes. */
     semearTentativas: (conta: string, passadas: readonly { readonly quando: Date; readonly recusada: boolean }[]) => {
       for (const p of passadas) tentativas.push({ conta, quando: p.quando, recusada: p.recusada })
+    },
+    /** `n` chamadas à operadora do passado, como se a conta já tivesse pedido antes. */
+    semearChamadas: (conta: string, tipo: TipoDeChamada, n: number, quando: Date) => {
+      for (let i = 0; i < n; i++) chamadas.push({ conta, tipo, quando })
     },
   }
 }

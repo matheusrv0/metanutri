@@ -16,6 +16,8 @@ const CONTA = { id: 'u1', email: 'ana@exemplo.com' }
 const ATIVA = { nutricionista_id: 'u1', plano: 'solo', status: 'ativa', ciclo: 'mensal', preapproval_id: 'pre-1', cartao_final: '6351', proxima_cobranca: '2026-11-06T15:00:00.000Z' }
 const GET = 'GET /preapproval/pre-1'
 const PUT = 'PUT /preapproval/pre-1'
+/** D-108: a chamada anotada (e as antigas apagadas) logo antes de cada pedido à operadora. */
+const CHAMADA = ['anotarChamada', 'apagarChamadasAntesDe'] as const
 const COBRADA = { status: 'authorized', summarized: { charged_quantity: 1 }, next_payment_date: '2026-11-06T15:00:00.000Z' }
 const SEM_COBRANCA_AINDA = { status: 'authorized', summarized: { charged_quantity: 0 }, next_payment_date: '2026-11-06T15:00:00.000Z' }
 /** A véspera de 6/11, 23h59min59s em Brasília (CA-378). */
@@ -145,7 +147,7 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
   it('CA-396: prévia com cobrança: até quando vale', async () => {
     const c = cenario([ATIVA], { [GET]: [responde(200, COBRADA)] })
     expect(await gerenciarAssinatura(PREVIA, c.deps)).toEqual({ status: 200, corpo: { cobrada: true, expiraEm: VALE_ATE } })
-    expect(c.ordem).toEqual(['lerDaConta', GET])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET])
   })
 
   it('a prévia com a operadora já dizendo cancelada usa a data gravada aqui, como o cancelamento', async () => {
@@ -187,14 +189,14 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
   it.each([PREVIA, CANCELAR])('a leitura 2xx com corpo que não se lê não vale: 502, nada pedido nem gravado (%#)', async (pedido) => {
     const c = cenario([ATIVA], { [GET]: [responde(200, null)], [PUT]: [responde(200)] })
     expect(await gerenciarAssinatura(pedido, c.deps)).toEqual(FALHOU)
-    expect(c.ordem).toEqual(['lerDaConta', GET])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET])
     expect(c.assinaturas.get('u1')).toEqual(linhaDe(ATIVA))
   })
 
   it.each([null, responde(500), responde(401)])('CA-397: prévia sem resposta da operadora (ou 5xx, ou 401): 502, nada muda (%#)', async (resposta) => {
     const c = cenario([ATIVA], { [GET]: [resposta] })
     expect(await gerenciarAssinatura(PREVIA, c.deps)).toEqual(FALHOU)
-    expect(c.ordem).toEqual(['lerDaConta', GET])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET])
     expect(c.assinaturas.get('u1')).toEqual(linhaDe(ATIVA))
   })
 
@@ -220,7 +222,7 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
   it('CA-396 e CA-378: cancelar com cobrança: vale até a véspera da próxima', async () => {
     const c = cenario([ATIVA], { [GET]: [responde(200, COBRADA)], [PUT]: [responde(200)] })
     expect(await gerenciarAssinatura(CANCELAR, c.deps)).toEqual({ status: 200, corpo: { status: 'cancelada', expiraEm: VALE_ATE } })
-    expect(c.ordem).toEqual(['lerDaConta', GET, PUT, 'mudar'])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET, PUT, 'mudar'])
     expect(c.assinaturas.get('u1')).toMatchObject({ status: 'cancelada', expira_em: VALE_ATE, encerrada_por: 'pessoa', encerrada_em: AGORA.toISOString() })
   })
 
@@ -242,14 +244,14 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
   it.each([null, responde(500), responde(401)])('sem leitura da operadora não há cancelamento: 502 e nada gravado (%#)', async (leitura) => {
     const c = cenario([ATIVA], { [GET]: [leitura], [PUT]: [responde(200)] })
     expect(await gerenciarAssinatura(CANCELAR, c.deps)).toEqual(FALHOU)
-    expect(c.ordem).toEqual(['lerDaConta', GET])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET])
     expect(c.assinaturas.get('u1')).toEqual(linhaDe(ATIVA))
   })
 
   it('CB-93: o PUT sem resposta, mas a leitura diz cancelada: grava', async () => {
     const c = cenario([ATIVA], { [PUT]: [null], [GET]: [responde(200, COBRADA), responde(200, { status: 'cancelled' })] })
     expect(await gerenciarAssinatura(CANCELAR, c.deps)).toEqual({ status: 200, corpo: { status: 'cancelada', expiraEm: VALE_ATE } })
-    expect(c.ordem).toEqual(['lerDaConta', GET, PUT, GET, 'mudar'])
+    expect(c.ordem).toEqual(['lerDaConta', ...CHAMADA, GET, PUT, GET, 'mudar'])
     expect(c.assinaturas.get('u1')).toMatchObject({ status: 'cancelada', expira_em: VALE_ATE, encerrada_por: 'pessoa' })
   })
 
@@ -493,10 +495,10 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
   it('R4: o sucesso é anotado depois de gravar o cartão; a recusa, sem gravar nada', async () => {
     const trocou = cenario([ATIVA], { [PUT]: [responde(200)] })
     await gerenciarAssinatura(TROCAR, trocou.deps)
-    expect(trocou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', PUT, 'mudar', 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
+    expect(trocou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', ...CHAMADA, PUT, 'mudar', 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
     const recusou = cenario([ATIVA], { [PUT]: [RECUSA_DO_BANCO] })
     await gerenciarAssinatura(TROCAR, recusou.deps)
-    expect(recusou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', PUT, 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
+    expect(recusou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', ...CHAMADA, PUT, 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
   })
 
   it('R4: trocado lá e não gravado aqui (200) também zera as seguidas', async () => {

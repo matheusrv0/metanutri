@@ -128,7 +128,7 @@ describe('assinar: o núcleo da função (spec checkout-proprio e cobranca-em-pr
     expect(c.reservas.has('u1')).toBe(true)
   })
 
-  it('C1: a reserva vencida sai antes de reservar; a ordem é soltar a vencida, reservar, ler, pedir, gravar e soltar', async () => {
+  it('C1: a reserva vencida sai antes de reservar; a ordem é soltar a vencida, reservar, ler, anotar a chamada (D-108), pedir, gravar e soltar', async () => {
     const c = cenario([], { [POST]: [responde(201, CRIADA)] })
     c.comReserva('u1', '2026-10-06T14:54:00.000Z')
     expect(await assinar(PEDIDO, c.deps)).toEqual(ASSINOU)
@@ -137,6 +137,8 @@ describe('assinar: o núcleo da função (spec checkout-proprio e cobranca-em-pr
       'soltarReservaVencida',
       'reservar',
       'lerDaConta',
+      'anotarChamada',
+      'apagarChamadasAntesDe',
       'POST /preapproval',
       'gravar',
       'anotarTentativa',

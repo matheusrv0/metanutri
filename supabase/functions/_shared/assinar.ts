@@ -1,5 +1,5 @@
 // Assina com o cartão, dentro do site (spec checkout-proprio, D-65 a D-68; spec
-// cobranca-em-producao, D-85, D-86 e D-101). Puro: a operadora, o banco, o relógio e o registro chegam
+// cobranca-em-producao, D-85, D-86 e D-101; spec seguranca-lote-2, D-108). Puro: a operadora, o banco, o relógio e o registro chegam
 // de fora (o index.ts liga os de verdade; src/data/servidorAssinar.test.ts, os de mentira).
 //
 // O preço sai de PLANOS_DO_SERVIDOR, nunca do navegador (CA-375). O número do cartão nunca passa por
@@ -21,6 +21,7 @@ import {
   UM_DIA_MS,
   type CicloDaAssinatura,
 } from './cobranca.ts'
+import { conferirChamadas, type BancoDasChamadas } from './chamadas.ts'
 import { cancelarNaOperadora } from './operadora.ts'
 import { respostaDeErro as erro, type BancoDaCobranca, type ContaQuePede, type Operadora, type Registro, type RespostaDaFuncao } from './portas.ts'
 import { anotarTentativaDeCartao, conferirTentativas, ehRecusaDoCartao, type BancoDasTentativas } from './tentativas.ts'
@@ -44,7 +45,7 @@ export interface PedidoDeAssinatura {
 
 export interface DependenciasDeAssinar {
   readonly operadora: Operadora
-  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'gravar' | 'soltarReservaVencida' | 'reservar' | 'soltarReserva'> & BancoDasTentativas
+  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'gravar' | 'soltarReservaVencida' | 'reservar' | 'soltarReserva'> & BancoDasTentativas & BancoDasChamadas
   readonly agora: () => Date
   readonly log: Registro
 }
@@ -144,6 +145,11 @@ export async function assinar(pedido: PedidoDeAssinatura, deps: DependenciasDeAs
     if (atual?.status === 'ativa' && PAGOS.includes(atual.plano)) return erro(JA_ASSINA, 409)
     // Pendente ou pausada do fluxo do cartão também existe na operadora: assinar de novo criaria uma segunda.
     if (atual && (atual.status === 'pendente' || atual.status === 'pausada') && atual.preapproval_id && atual.cartao_final !== null) return erro(ANDAMENTO_NA_CONTA, 409)
+
+    // D-108 (CA-448): até 10 pedidos com cartão por hora na conta, somando a troca de cartão. Contado aqui,
+    // logo antes da operadora e com a conta já reservada: o que parou antes (400, 409, D-101) não conta.
+    const barrado = await conferirChamadas(deps.banco, uid, 'cartao', inicio, deps.log, SEM_COBRANCA)
+    if (barrado) return barrado
 
     const frequencia = FREQUENCIA[ciclo]
     const resposta = await deps.operadora('POST', '/preapproval', {

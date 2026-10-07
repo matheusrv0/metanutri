@@ -33,7 +33,7 @@ function numeroDa(contagem: ResultadoDaConsulta & { readonly count: number | nul
   return contagem.count
 }
 
-/** `log` é o registro da função: só as tentativas, que não podem rejeitar, escrevem nele. */
+/** `log` é o registro da função: só o que não pode rejeitar (anotar e apagar tentativas, apagar chamadas) escreve nele. */
 export function criarBanco(cliente: SupabaseClient, log: Registro): BancoDaCobranca {
   return {
     async lerDaConta(conta) {
@@ -77,6 +77,22 @@ export function criarBanco(cliente: SupabaseClient, log: Registro): BancoDaCobra
     async apagarAvisosAntesDe(data) {
       const { error } = await cliente.from('avisos_da_operadora').delete().lt('recebido_em', data)
       return falhaDe(error)
+    },
+    // D-108 e CB-115: contar e anotar são um passo só, na função do banco (011), com a conta e o tipo
+    // travados: dois pedidos ao mesmo tempo não passam juntos do limite. Sem resposta sim ou não, rejeita.
+    async anotarChamada(conta, tipo, limite, desde) {
+      const { data, error } = await cliente.rpc('anotar_chamada_da_cobranca', { p_conta: conta, p_tipo: tipo, p_limite: limite, p_desde: desde.toISOString() })
+      if (error) throw new Error(error.message || 'A contagem das chamadas falhou.')
+      if (typeof data !== 'boolean') throw new Error('A contagem das chamadas veio sem resposta.')
+      return data
+    },
+    async apagarChamadasAntesDe(data) {
+      try {
+        const { error } = await cliente.from('chamadas_da_cobranca').delete().lt('quando', data.toISOString())
+        if (error) log('Não consegui apagar as chamadas antigas à operadora:', error.message)
+      } catch (erro) {
+        log('Não consegui apagar as chamadas antigas à operadora:', mensagemDe(erro))
+      }
     },
     // As janelas são estritas (quando > agora − 24 h; quando > agora − 1 h), como no banco de mentira.
     // As seguidas comparam no próprio banco com a hora do último sucesso como ela veio, sem perder os

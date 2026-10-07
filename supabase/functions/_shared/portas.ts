@@ -21,6 +21,9 @@ export interface FalhaDoBanco {
 
 export type EncerradaPor = 'pessoa' | 'recusa' | 'operadora'
 
+/** D-108: os dois limites de chamadas à operadora por conta. 'cartao': assinar e trocar o cartão; 'conferir': a prévia e o cancelamento. */
+export type TipoDeChamada = 'cartao' | 'conferir'
+
 /** A linha de public.assinaturas, só com as colunas que os núcleos leem. */
 export interface LinhaDaAssinatura {
   readonly nutricionista_id: string
@@ -99,9 +102,9 @@ export interface RecusasContadas {
 }
 
 /**
- * As consultas das três funções. Nenhuma lança, exceto `contarRecusas`: sem a contagem, o portão
- * responde 502 e não deixa passar. Nas outras, a falha volta no resultado, como no supabase-js, ou só
- * vai para o registro (anotar e apagar tentativas).
+ * As consultas das três funções. Nenhuma lança, exceto as contagens (`contarRecusas` e `anotarChamada`):
+ * sem elas, o portão responde 502 e não deixa passar. Nas outras, a falha volta no resultado, como no
+ * supabase-js, ou só vai para o registro (anotar e apagar tentativas, apagar chamadas).
  */
 export interface BancoDaCobranca {
   /** A linha da conta (uma por conta). */
@@ -128,6 +131,14 @@ export interface BancoDaCobranca {
   anotarTentativa(conta: string, recusada: boolean): Promise<void>
   /** Apaga as tentativas feitas antes de `data` (retenção de 7 dias). Não rejeita. */
   apagarTentativasAntesDe(data: Date): Promise<void>
+  /**
+   * D-108 e CB-115: anota uma chamada deste tipo para a conta, só se ela ainda couber (menos de `limite`
+   * anotadas depois de `desde`). Verdadeiro: anotou, e a operadora pode ser chamada; falso: cheio, e nada
+   * foi anotado. Contar e anotar são um passo só no banco. Sem resposta, rejeita (CB-114).
+   */
+  anotarChamada(conta: string, tipo: TipoDeChamada, limite: number, desde: Date): Promise<boolean>
+  /** Apaga as chamadas anotadas antes de `data` (retenção de 2 dias). Não rejeita: a falha só vai para o registro. */
+  apagarChamadasAntesDe(data: Date): Promise<void>
 }
 
 /** Quem pede, lido do token da sessão. */

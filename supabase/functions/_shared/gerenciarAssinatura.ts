@@ -5,8 +5,10 @@
 // D-81: só ganha "vale até o fim do período" quem já teve ao menos uma mensalidade cobrada. A prévia
 // (que a janela de cancelar mostra) e o cancelamento usam a mesma conta, desfechoDoCancelamento.
 // D-101 e CB-109: só a troca de cartão reserva a conta e passa pelo portão das tentativas; a prévia e
-// o cancelamento, não.
+// o cancelamento, não. D-108: as três ações passam pelo limite de chamadas logo antes de chamar a
+// operadora: a troca como pedido com cartão; a prévia e o cancelamento como conferir.
 import { EM_ANDAMENTO, RESERVA_VENCE_MS } from './assinar.ts'
+import { conferirChamadas, type BancoDasChamadas } from './chamadas.ts'
 import {
   codigoDaRecusa,
   dataDepoisDe,
@@ -47,7 +49,7 @@ export interface PedidoDeGerenciar {
 
 export interface DependenciasDeGerenciar {
   readonly operadora: Operadora
-  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'mudar' | 'soltarReservaVencida' | 'reservar' | 'soltarReserva'> & BancoDasTentativas
+  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'mudar' | 'soltarReservaVencida' | 'reservar' | 'soltarReserva'> & BancoDasTentativas & BancoDasChamadas
   readonly agora: () => Date
   readonly log: Registro
 }
@@ -105,6 +107,9 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
       return { status: 200, corpo: { cobrada: dataOuNula(linha.expira_em) !== null || pagaAnotadaAqui(linha), expiraEm: linha.expira_em } }
     }
     if (linha.status !== 'ativa') return { status: 200, corpo: { cobrada: false, expiraEm: null } }
+    // D-108 (CA-449): até 20 conferências e cancelamentos por hora na conta, contados só quando a operadora seria chamada.
+    const barrado = await conferirChamadas(deps.banco, dono, 'conferir', agora, deps.log, FORA)
+    if (barrado) return barrado
     const lida = await deps.operadora('GET', caminho)
     // Um 2xx com o corpo que não se lê não diz se houve cobrança: conta como leitura que falhou.
     if (!lida?.ok || !lida.dados) {
@@ -118,6 +123,9 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
   if (corpo['acao'] === 'cancelar') {
     // CB-93: a resposta do cancelamento se perdeu e a pessoa pediu de novo; nada a fazer lá.
     if (linha.status === 'cancelada') return { status: 200, corpo: { status: 'cancelada', expiraEm: linha.expira_em } }
+    // D-108 (CA-449): soma com a prévia no mesmo limite.
+    const barrado = await conferirChamadas(deps.banco, dono, 'conferir', agora, deps.log, FORA)
+    if (barrado) return barrado
     const lida = await deps.operadora('GET', caminho)
     if (!lida?.ok || !lida.dados) {
       deps.log('Não consegui ler a assinatura na operadora:', motivoDaLeitura(lida), id)
@@ -184,6 +192,9 @@ async function trocarCartao(dono: string, id: string, cartaoToken: string, carta
   // contar, o 502 diz "Nada mudou", como as outras falhas daqui.
   const portao = await conferirTentativas(deps.banco, dono, agora, deps.log, FORA)
   if (!portao.passa) return portao.resposta
+  // D-108 (CA-448): a troca soma com a assinar no limite de pedidos com cartão; a conta já está reservada.
+  const barrado = await conferirChamadas(deps.banco, dono, 'cartao', agora, deps.log, FORA)
+  if (barrado) return barrado
 
   const feito = await deps.operadora('PUT', `/preapproval/${encodeURIComponent(id)}`, { card_token_id: cartaoToken })
   // Sem resposta, erro do lado dela, a nossa credencial recusada ou excesso de pedidos (R8): falha
