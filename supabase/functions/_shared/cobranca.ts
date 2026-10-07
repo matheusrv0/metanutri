@@ -106,9 +106,12 @@ export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou 
 /** CA-374: a operadora não respondeu. */
 export const SEM_COBRANCA = 'Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 
-/** O supabase-js manda `apikey` e `x-client-info` em todo pedido: sem eles aqui, o navegador barra antes. */
+/**
+ * D-97: o navegador só deixa o site do MetaNutri chamar as funções. O supabase-js manda
+ * `apikey` e `x-client-info` em todo pedido: sem eles aqui, o navegador barra antes.
+ */
 export const CABECALHOS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://metanutri.com.br',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/json',
 } as const

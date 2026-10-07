@@ -10,6 +10,9 @@ import {
   traduzirStatus,
   UM_DIA_MS,
 } from '../../supabase/functions/_shared/cobranca.ts'
+import assinar from '../../supabase/functions/assinar/index.ts?raw'
+import gerenciar from '../../supabase/functions/gerenciar-assinatura/index.ts?raw'
+import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
 
 describe('cobrança no servidor: o que as três funções fazem igual (spec checkout-proprio)', () => {
   it('traduz o estado da operadora, com "cancelled" e com "canceled"', () => {
@@ -88,5 +91,19 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
     expect(resposta.status).toBe(402)
     expect(await resposta.json()).toEqual({ erro: 'x' })
     expect(CABECALHOS['Access-Control-Allow-Headers']).toBe('authorization, x-client-info, apikey, content-type')
+  })
+
+  it('CA-425: o navegador só recebe permissão quando a chamada vem de https://metanutri.com.br', () => {
+    expect(CABECALHOS['Access-Control-Allow-Origin']).toBe('https://metanutri.com.br')
+    expect(responder({ ok: true }).headers.get('Access-Control-Allow-Origin')).toBe('https://metanutri.com.br')
+    for (const codigo of [assinar, gerenciar]) {
+      expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })")
+      expect(codigo).not.toContain("'*'")
+    }
+  })
+
+  it('CA-425: o webhook é chamado de servidor para servidor e não abre CORS', () => {
+    expect(webhook).not.toContain('Access-Control')
+    expect(webhook).not.toContain('CABECALHOS')
   })
 })
