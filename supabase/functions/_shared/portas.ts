@@ -73,7 +73,7 @@ export interface MudancaDaAssinatura {
 export interface AvisoAnotado {
   readonly topico: string
   readonly recurso_id: string | null
-  /** Nulo: a função está sem o segredo do aviso e não conferiu. */
+  /** Nulo quando não deu para conferir (sem segredo, sem id ou recurso inválido). */
   readonly assinatura_confere: boolean | null
   readonly resultado: string
 }

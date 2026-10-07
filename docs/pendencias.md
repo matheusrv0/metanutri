@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 02/10/2026.
+Atualizado em 07/10/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -52,24 +52,50 @@ Atualizado em 02/10/2026.
 > Só depois do teste de ponta a ponta no sandbox, troque o token do servidor (`MERCADOPAGO_ACCESS_TOKEN`) e a chave
 > pública (`VITE_MERCADOPAGO_PUBLIC_KEY`) pelos de produção.
 >
-> **Premissa do D-68 corrigida.** Pela documentação do Mercado Pago (assinaturas com pagamento autorizado), uma
-> parcela recusada não cancela a assinatura: ela só é cancelada depois de 3 parcelas recusadas (≈3 meses no mensal,
-> ≈3 anos no anual). Até existir o corte na primeira falha, quem tem cartão sem saldo pode ficar com o plano pago
-> esse tempo.
+> **Atualizado em 07/10:** a **cobrança está pronta para produção** no código (spec `cobranca-em-producao`, D-80 a
+> D-88, D-101 e D-102). O que entrou:
 >
-> **Antes da produção:**
+> - a primeira mensalidade recusada encerra a assinatura na operadora, e a conta volta ao Free na hora;
+> - cancelar antes de alguma mensalidade paga volta ao Free na hora, e a janela de cancelar diz isso antes, lido na
+>   operadora;
+> - cada aviso do Mercado Pago fica anotado por 90 dias em `avisos_da_operadora`, sem dado pessoal;
+> - a assinatura criada lá cuja resposta se perdeu é achada (pela busca, na hora, ou pelo aviso, depois) e vale para
+>   quem paga; se a conta já paga outra, a que sobrou é cancelada;
+> - depois de 5 cartões recusados em 24 horas na mesma conta, ou 30 em 1 hora no site inteiro, assinar e trocar
+>   cartão param de tentar até passar o prazo (sem guardar endereço de internet);
+> - o aviso do Mercado Pago só é processado com o segredo configurado e com o código do recurso no formato esperado;
+> - as três funções têm testes que executam a lógica, com a operadora e o banco simulados.
 >
-> - tratar o tópico `subscription_authorized_payment` no webhook: renovar a `proxima_cobranca`, cortar o plano na
->   primeira falha e cadastrar o tópico no webhook do Mercado Pago;
-> - só dar período pago no cancelamento se ao menos uma parcela foi cobrada (hoje, cancelar na primeira hora, antes
->   da 1ª cobrança, dá um período sem pagar);
-> - rede de segurança para a assinatura órfã quando a resposta do POST da `assinar` se perde (ela existe na operadora
->   e não aqui);
-> - resposta 2xx com status cancelada ou pausada tratada como recusa;
-> - fonte com fallback dentro dos campos seguros;
-> - testes de comportamento das três funções (hoje os testes só leem o código delas);
-> - conferir no sandbox os tópicos que chegam, os payloads de recusa e de erro do token, o `summarized` da assinatura
->   e a troca de cartão.
+> **A ordem para pôr no ar** (comandos no README, "Projeto já ligado"):
+>
+> 1. rodar o `supabase/009-cobranca-em-producao.sql` (as funções novas leem as colunas dele; publicadas antes, toda
+>    assinatura falha);
+> 2. conferir que o `MERCADOPAGO_WEBHOOK_SECRET` existe no Supabase, em *Edge Functions > Secrets*;
+> 3. juntar o ramo na `main`;
+> 4. publicar as três funções: `gerenciar-assinatura`, `assinar` e `webhook-mercadopago --no-verify-jwt`;
+> 5. publicar o site. Nunca o site antes das funções.
+>
+> **A troca para produção (com você; spec, seção 5):**
+>
+> 1. ativar as credenciais de produção do app MetaNutri no Mercado Pago;
+> 2. cadastrar o webhook de produção com os tópicos `subscription_preapproval`, `subscription_authorized_payment` e
+>    `payments`, e colar no Supabase o token (`MERCADOPAGO_ACCESS_TOKEN`) e o segredo do webhook
+>    (`MERCADOPAGO_WEBHOOK_SECRET`) de produção, nunca no chat;
+> 3. mandar a chave pública de produção (pode ir no chat) para trocar a variável `VITE_MERCADOPAGO_PUBLIC_KEY` do
+>    GitHub e publicar;
+> 4. fazer a primeira assinatura de verdade com o próprio cartão e cancelar; conferir que os avisos aparecem em
+>    `avisos_da_operadora` com `assinatura_confere` verdadeiro. Se nada aparecer, é o R-37 (o painel não manda os
+>    avisos de assinatura).
+>
+> **Conferir na primeira compra real:**
+>
+> - o classificador de recusa conta como recusa de cartão alguns códigos que podem ser erro de configuração
+>   (`CC_VAL_*`); conferir com as respostas reais;
+> - a fonte dos campos do cartão: no site publicado, a letra digitada no campo do número começa pela Manrope; se os
+>   campos não montarem com a lista nova, voltar para só `Manrope` (D-87).
+>
+> Fica para depois: avisar a pessoa por e-mail quando a cobrança for recusada (hoje Conta e plano avisa); a limpeza
+> do registro de avisos acontece quando chega um aviso, então meses sem nenhum deixam os velhos lá mais tempo.
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e

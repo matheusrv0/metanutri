@@ -59,6 +59,10 @@ describe('banco: cobrança em produção (spec cobranca-em-producao, 009)', () =
     expect(sql).toContain('create index if not exists tentativas_de_cartao_por_data on public.tentativas_de_cartao (quando);')
   })
 
+  it('D-101: as tentativas de cartão não guardam endereço, e-mail nem dado do cartão', () => {
+    expect(tentativas).not.toMatch(/(^|[^a-z])ip([^a-z]|$)|email|cpf|nome|numero|payer/i)
+  })
+
   it('tentativas de cartão: só o servidor mexe', () => {
     expect(sql).toContain('alter table public.tentativas_de_cartao enable row level security;')
     expect(sql).toContain('revoke all on public.tentativas_de_cartao from anon, authenticated;')

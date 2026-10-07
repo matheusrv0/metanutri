@@ -1,8 +1,8 @@
--- MetaNutri — cobrança pronta para produção (spec cobranca-em-producao, D-80 a D-85).
+-- MetaNutri — cobrança pronta para produção (spec cobranca-em-producao, D-80 a D-85, D-101 e D-102).
 -- Rode no Supabase: SQL Editor > New query > cole tudo > Run. Pode rodar de novo: nada é apagado.
 --
 -- Rode ANTES de publicar as funções assinar, gerenciar-assinatura e webhook-mercadopago desta
--- versão: elas leem e gravam estas colunas e o registro de avisos. Publicadas antes, toda
+-- versão: elas leem e gravam estas colunas e o registro de avisos e a tabela de tentativas de cartão. Publicadas antes, toda
 -- assinatura falha e é cancelada na operadora na mesma hora.
 --
 -- Nenhuma política nova: o navegador continua lendo só a própria assinatura ("dono le a
@@ -28,7 +28,7 @@ create table if not exists public.avisos_da_operadora (
   recebido_em timestamptz not null default now(),
   topico text not null check (char_length(topico) <= 80),
   recurso_id text check (char_length(recurso_id) <= 80),
-  -- Nulo: a função está sem o segredo do aviso e não conferiu.
+  -- Nulo quando não deu para conferir (sem segredo, sem id ou recurso inválido).
   assinatura_confere boolean,
   resultado text not null check (char_length(resultado) <= 200)
 );
@@ -57,6 +57,8 @@ revoke all on public.tentativas_de_cartao from anon, authenticated;
 -- -- três linhas: timestamp with time zone, text e timestamp with time zone
 -- select relname, relrowsecurity from pg_class where oid = 'public.avisos_da_operadora'::regclass;
 -- -- uma linha: avisos_da_operadora, true (o registro existe e só o servidor mexe nele)
+-- select relname, relrowsecurity from pg_class where oid = 'public.tentativas_de_cartao'::regclass;
+-- -- uma linha: tentativas_de_cartao, true (as tentativas de cartão, também só do servidor)
 --
 -- Depois da primeira compra em produção (D-84), os últimos avisos:
 -- select recebido_em, topico, recurso_id, assinatura_confere, resultado

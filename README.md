@@ -97,7 +97,7 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   Veja abaixo.
 - **Assinar** — o checkout do site: Solo ou Pro, mensal ou anual, com cartão de crédito, sem sair do MetaNutri. O
   número do cartão vai direto para a operadora de pagamento, em campos seguros. Precisa do
-  `008-cartao-da-assinatura.sql`, das três funções e da chave pública (passos 4, 5 e 7 de "Projeto já ligado").
+  `008-cartao-da-assinatura.sql`, do `009-cobranca-em-producao.sql`, das três funções e da chave pública (passos 4, 5 e 7 de "Projeto já ligado").
   **Está em modo teste** (credenciais de teste do Mercado Pago: ninguém paga de verdade) até o teste de ponta a ponta
   passar; o que falta antes da produção está em [docs/pendencias.md](docs/pendencias.md).
 - **Negócio** (só para o administrador): receita por mês, assinaturas por plano, quem chegou nos últimos 30 dias e a lista de contas. Precisa do `007-painel-do-dono.sql`.
@@ -184,15 +184,22 @@ Para funcionar de verdade, nesta ordem:
    se rodar o 006 de novo, rode o 010 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
-   `008` rodado, publique as três funções desta versão e, logo em seguida, o site: a `assinar` nova não serve ao
-   site antigo, que não manda o cartão.
+   `008` e o `009` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
+   `webhook-mercadopago` nova só processa aviso com ele), publique as três funções desta versão e, logo em seguida,
+   o site (nunca o site antes: a `assinar` nova não serve ao site antigo, que não manda o cartão, e a janela de
+   cancelar nova pergunta à `gerenciar-assinatura` se já houve cobrança, e a versão antiga não sabe responder):
    ```bash
    npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg
    npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
    npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
    ```
    Cadastre o webhook apontando para `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
-   evento Assinaturas.
+   com os tópicos `subscription_preapproval` (a assinatura), `subscription_authorized_payment` (cada mensalidade) e
+   `payments`, e guarde o segredo dele em `MERCADOPAGO_WEBHOOK_SECRET`. Cada aviso que chega fica 90 dias em
+   *Table Editor > avisos_da_operadora*, com o resultado. Sem o segredo, nenhum aviso é processado: a função
+   responde erro, o Mercado Pago tenta de novo depois, e o registro anota `sem segredo`.
+   No modo teste o Mercado Pago não manda aviso nenhum: a primeira conferência é na primeira compra em produção.
+   A primeira mensalidade recusada encerra a assinatura e a conta volta ao Free na hora (D-80).
 6. **Termos.** Preencha `RESPONSAVEL` e `CONTATO_EMAIL` em `src/domain/legal.ts`. Sem os dois, o GitHub Actions
    barra a publicação (`scripts/conferir-publicacao.mjs`).
 7. **Chave pública do pagamento.** No Mercado Pago, em *Suas integrações > a aplicação > Credenciais*, copie a
