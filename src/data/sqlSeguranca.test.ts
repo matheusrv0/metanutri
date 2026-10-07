@@ -1,19 +1,24 @@
 import { gerarToken } from '@/domain/acompanhamento.ts'
 import { PLANOS } from '@/domain/conta.ts'
+import { LIMITE_DE_COMPROVANTES } from '@/domain/pedidoEstudante.ts'
 import sql006 from '../../supabase/006-verificacao.sql?raw'
 import sql from '../../supabase/010-seguranca-lote-1.sql?raw'
 
 const corpoDa = (nome: string) => sql.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
 
 /** As funções que o 006 cria, com os tipos dos parâmetros, para conferir a assinatura de cada revoke. */
-const FUNCOES_006 = [...sql006.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)/g)].map(([, nome = '', parametros = '']) => ({
+const FUNCOES_006 = [...sql006.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)\s+returns (\w+)/g)].map(([, nome = '', parametros = '', retorno = '']) => ({
   nome,
+  gatilho: retorno === 'trigger',
   tipos: parametros
     .split(',')
     .map((p) => p.trim())
     .filter(Boolean)
     .map((p) => p.split(/\s+/).slice(1).join(' ')),
 }))
+
+/** As chamáveis: função de gatilho não é chamada direto e fica com as permissões de hoje. */
+const RPCS_006 = FUNCOES_006.filter((f) => !f.gatilho)
 
 /** As que o app chama logado (src/ui/estado), mais eh_admin, que as políticas de leitura usam. */
 const CHAMADAS_PELO_APP = [
@@ -77,15 +82,15 @@ describe('banco: segurança, lote 1 (010)', () => {
       expect(corpo).toMatch(/if v_links >= v_limite then\s+raise exception 'Você chegou ao limite de links do seu plano\.' using errcode = 'P0001';/)
     })
 
-    it('a função do gatilho não fica com o visitante sem conta', () => {
-      expect(sql).toContain('revoke execute on function public.conferir_link_do_paciente() from public, anon;')
+    it('a função do gatilho fica com as permissões padrão: nenhum revoke nem grant nela', () => {
+      expect(sql).not.toMatch(/(revoke|grant)[^;]*function public\.conferir_link_do_paciente\(/)
     })
   })
 
-  it('CA-426: marcações com mais de 64 KB ou mais de 400 itens são recusadas, depois de conferir que é lista', () => {
+  it('CA-426: marcações com mais de 1 MB ou mais de 1500 itens são recusadas, depois de conferir que é lista', () => {
     const corpo = corpoDa('marcar_missoes')
     const tipo = corpo.indexOf("if jsonb_typeof(p_marcacoes) is distinct from 'array' then")
-    const tamanho = corpo.indexOf('if pg_column_size(p_marcacoes) > 65536 or jsonb_array_length(p_marcacoes) > 400 then')
+    const tamanho = corpo.indexOf('if pg_column_size(p_marcacoes) > 1048576 or jsonb_array_length(p_marcacoes) > 1500 then')
     expect(tipo).toBeGreaterThan(-1)
     expect(tamanho).toBeGreaterThan(tipo)
     expect(tamanho).toBeLessThan(corpo.indexOf('update public.acompanhamentos'))
@@ -100,11 +105,15 @@ describe('banco: segurança, lote 1 (010)', () => {
     for (let i = 0; i < 50; i++) expect(gerarToken()).toMatch(/^[a-z0-9]{12,64}$/)
   })
 
-  describe('CA-428: só estudante envia comprovante, até 3 arquivos', () => {
-    it('a política de envio exige a pasta da pessoa, conta de estudante e menos de 3 arquivos', () => {
+  describe('CA-428: só estudante envia comprovante, até 10 arquivos', () => {
+    it('a política de envio exige a pasta da pessoa, conta de estudante e menos de 10 arquivos', () => {
       expect(sql).toMatch(
-        /create policy "estudante envia o proprio comprovante" on storage\.objects\s+for insert to authenticated\s+with check \(\s+bucket_id = 'comprovantes'\s+and \(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text\s+and exists \(select 1 from public\.perfis where id = auth\.uid\(\) and situacao = 'estudante'\)\s+and public\.comprovantes_da_conta\(\) < 3\s+\);/,
+        /create policy "estudante envia o proprio comprovante" on storage\.objects\s+for insert to authenticated\s+with check \(\s+bucket_id = 'comprovantes'\s+and \(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text\s+and exists \(select 1 from public\.perfis where id = auth\.uid\(\) and situacao = 'estudante'\)\s+and public\.comprovantes_da_conta\(\) < 10\s+\);/,
       )
+    })
+
+    it('o limite do banco é o mesmo que a tela usa para explicar a recusa', () => {
+      expect(sql).toContain(`and public.comprovantes_da_conta() < ${LIMITE_DE_COMPROVANTES}`)
     })
 
     it('a contagem é só da pasta de quem pede', () => {
@@ -118,19 +127,26 @@ describe('banco: segurança, lote 1 (010)', () => {
     })
   })
 
-  describe('CA-429: nenhuma função do 006 é executável sem login', () => {
-    it('acha as 14 funções do 006', () => {
+  describe('CA-429: nenhuma função chamável do 006 é executável sem login', () => {
+    it('acha as 14 funções do 006, e só criar_perfil é de gatilho', () => {
       expect(FUNCOES_006.map((f) => f.nome)).toHaveLength(14)
+      expect(FUNCOES_006.filter((f) => f.gatilho).map((f) => f.nome)).toEqual(['criar_perfil'])
     })
 
     it('cada uma perde a execução de public e anon, com a assinatura certa', () => {
-      for (const { nome, tipos } of FUNCOES_006) {
+      for (const { nome, tipos } of RPCS_006) {
         expect(sql, nome).toContain(`revoke execute on function public.${nome}(${tipos.join(', ')}) from public, anon;`)
       }
     })
 
+    it('a função de gatilho do cadastro fica como está: nenhum revoke nem grant nela', () => {
+      for (const { nome } of FUNCOES_006.filter((f) => f.gatilho)) {
+        expect(sql, nome).not.toMatch(new RegExp(`(revoke|grant)[^;]*function public\\.${nome}\\(`))
+      }
+    })
+
     it('as que o app chama logado continuam com authenticated; as outras, não', () => {
-      for (const { nome, tipos } of FUNCOES_006) {
+      for (const { nome, tipos } of RPCS_006) {
         const concessao = `grant execute on function public.${nome}(${tipos.join(', ')}) to authenticated;`
         if (CHAMADAS_PELO_APP.includes(nome)) expect(sql, nome).toContain(concessao)
         else expect(sql, nome).not.toContain(concessao)

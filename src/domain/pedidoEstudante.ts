@@ -43,6 +43,10 @@ export const ARQUIVO_MAXIMO_BYTES = 5 * 1024 * 1024
 export const TIPOS_DE_ARQUIVO: readonly string[] = ['application/pdf', 'image/jpeg', 'image/png']
 export const ACEITA_ARQUIVO = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png'
 
+/** CA-428: quantos arquivos cada conta pode ter no balde. A política de envio do 010 usa o mesmo número. */
+export const LIMITE_DE_COMPROVANTES = 10
+export const MENSAGEM_COMPROVANTES_DEMAIS = 'Você já enviou comprovantes demais. Fale com a gente pelo e-mail de contato.'
+
 export interface DadosPedido {
   readonly instituicao: string
   readonly matricula: string

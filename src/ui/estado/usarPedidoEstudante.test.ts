@@ -1,10 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { MENSAGEM_COMPROVANTES_DEMAIS } from '@/domain/pedidoEstudante.ts'
 import { usePedidoEstudante } from './usarPedidoEstudante.ts'
 
 const banco = vi.hoisted(() => ({
   linha: { data: null as unknown, error: null as unknown },
   upload: { error: null as unknown },
   rpc: { error: null as unknown },
+  contagem: { data: 0 as unknown, error: null as unknown },
   enviados: [] as string[],
   removidos: [] as string[][],
   chamadas: [] as { funcao: string; args: unknown }[],
@@ -30,7 +32,7 @@ const cliente = {
   },
   rpc: async (funcao: string, args: unknown) => {
     banco.chamadas.push({ funcao, args })
-    return banco.rpc
+    return funcao === 'comprovantes_da_conta' ? banco.contagem : banco.rpc
   },
 }
 
@@ -44,6 +46,7 @@ describe('usePedidoEstudante', () => {
     banco.linha = { data: null, error: null }
     banco.upload = { error: null }
     banco.rpc = { error: null }
+    banco.contagem = { data: 0, error: null }
     banco.enviados = []
     banco.removidos = []
     banco.chamadas = []
@@ -92,6 +95,38 @@ describe('usePedidoEstudante', () => {
     })
     expect(erro).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.')
     expect(banco.chamadas.some((c) => c.funcao === 'enviar_pedido_estudante')).toBe(false)
+  })
+
+  it('CA-428: o armazenamento recusou e a conta já tem 10 arquivos: a tela diz isso, sem pedido', async () => {
+    banco.upload = { error: { message: 'new row violates row-level security policy', statusCode: '403' } }
+    banco.contagem = { data: 10, error: null }
+    const { result } = renderHook(() => usePedidoEstudante('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    let erro: string | null = null
+    await act(async () => {
+      erro = await result.current.enviar(dados, arquivo)
+    })
+    expect(erro).toBe('Você já enviou comprovantes demais. Fale com a gente pelo e-mail de contato.')
+    expect(erro).toBe(MENSAGEM_COMPROVANTES_DEMAIS)
+    expect(banco.chamadas.some((c) => c.funcao === 'enviar_pedido_estudante')).toBe(false)
+  })
+
+  it('CA-428: recusa com menos de 10 arquivos, ou sem conseguir contar, fica com a mensagem de falha', async () => {
+    banco.upload = { error: { message: 'new row violates row-level security policy', statusCode: '403' } }
+    banco.contagem = { data: 9, error: null }
+    const { result } = renderHook(() => usePedidoEstudante('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    let erro: string | null = null
+    await act(async () => {
+      erro = await result.current.enviar(dados, arquivo)
+    })
+    expect(erro).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.')
+
+    banco.contagem = { data: null, error: { message: 'Failed to fetch' } }
+    await act(async () => {
+      erro = await result.current.enviar(dados, arquivo)
+    })
+    expect(erro).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.')
   })
 
   it('CA-280: fechar o aviso chama o banco', async () => {

@@ -176,7 +176,7 @@ Para funcionar de verdade, nesta ordem:
    Rode **antes** de publicar as funções do passo 5; também pode rodar de novo.
    Depois rode `supabase/010-seguranca-lote-1.sql` (spec seguranca-lote-1): o banco passa a garantir o aviso de uso
    não comercial e o limite de links do plano, recusa token e marcações fora do padrão, aceita comprovante só de
-   estudante (até 3 arquivos) e deixa as funções da verificação só para quem está logado. Também pode rodar de novo;
+   estudante (até 10 arquivos) e deixa as funções da verificação só para quem está logado. Também pode rodar de novo;
    se rodar o 006 de novo, rode o 010 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o

@@ -62,8 +62,6 @@ begin
 end;
 $$;
 
-revoke execute on function public.conferir_link_do_paciente() from public, anon;
-
 drop trigger if exists conferir_link_do_paciente on public.acompanhamentos;
 create trigger conferir_link_do_paciente
   before insert or update on public.acompanhamentos
@@ -84,7 +82,7 @@ end $$;
 
 -- ---------- Marcações do paciente (CA-426) ----------
 
--- A mesma função do 001, com um teto: uma marcação por dia, e no máximo 64 KB no total.
+-- A mesma função do 001, com um teto bem acima do uso real (uma marcação por dia): 1500 itens ou 1 MB.
 create or replace function public.marcar_missoes(p_token text, p_marcacoes jsonb)
 returns void
 language plpgsql
@@ -96,7 +94,7 @@ begin
     raise exception 'marcacoes precisa ser uma lista';
   end if;
 
-  if pg_column_size(p_marcacoes) > 65536 or jsonb_array_length(p_marcacoes) > 400 then
+  if pg_column_size(p_marcacoes) > 1048576 or jsonb_array_length(p_marcacoes) > 1500 then
     raise exception 'Este link já guarda marcações demais.' using errcode = '22023';
   end if;
 
@@ -107,7 +105,7 @@ end;
 $$;
 
 
--- ---------- Comprovantes: só estudante, até 3 arquivos (CA-428) ----------
+-- ---------- Comprovantes: só estudante, até 10 arquivos (CA-428) ----------
 
 -- Quantos arquivos a pessoa já tem no balde. A contagem fica numa função porque uma
 -- política de storage.objects que lê storage.objects pode cair em recursão.
@@ -132,7 +130,7 @@ create policy "estudante envia o proprio comprovante" on storage.objects
     bucket_id = 'comprovantes'
     and (storage.foldername(name))[1] = auth.uid()::text
     and exists (select 1 from public.perfis where id = auth.uid() and situacao = 'estudante')
-    and public.comprovantes_da_conta() < 3
+    and public.comprovantes_da_conta() < 10
   );
 
 
@@ -140,10 +138,10 @@ create policy "estudante envia o proprio comprovante" on storage.objects
 
 -- Sai de public e de anon. Fica com authenticated o que o app chama logado; eh_admin também
 -- porque as políticas de leitura do 006 a usam. crn_valido só é chamada por dentro das
--- outras, e criar_perfil é o gatilho do cadastro: nenhuma das duas fica com ninguém.
+-- outras e não fica com ninguém. criar_perfil, o gatilho do cadastro, fica como está:
+-- função de gatilho não é chamada direto.
 revoke execute on function public.eh_admin() from public, anon;
 revoke execute on function public.crn_valido(integer, text) from public, anon;
-revoke execute on function public.criar_perfil() from public, anon;
 revoke execute on function public.informar_situacao(text, integer, text) from public, anon;
 revoke execute on function public.me_formei(integer, text) from public, anon;
 revoke execute on function public.corrigir_crn(integer, text) from public, anon;
@@ -157,7 +155,6 @@ revoke execute on function public.comprovantes_para_apagar() from public, anon;
 revoke execute on function public.marcar_comprovantes_apagados(text[]) from public, anon;
 
 revoke execute on function public.crn_valido(integer, text) from authenticated;
-revoke execute on function public.criar_perfil() from authenticated;
 
 grant execute on function public.eh_admin() to authenticated;
 grant execute on function public.informar_situacao(text, integer, text) to authenticated;
@@ -175,10 +172,10 @@ grant execute on function public.marcar_comprovantes_apagados(text[]) to authent
 -- Conferência depois de rodar (copie para uma consulta nova):
 -- select p.proname, has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as logado
 --   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
---  where n.nspname = 'public' and p.proname in ('eh_admin', 'crn_valido', 'criar_perfil', 'informar_situacao', 'me_formei', 'corrigir_crn',
+--  where n.nspname = 'public' and p.proname in ('eh_admin', 'crn_valido', 'informar_situacao', 'me_formei', 'corrigir_crn',
 --        'enviar_pedido_estudante', 'fechar_aviso_estudante', 'pedidos_em_analise', 'decidir_pedido', 'crn_para_conferir', 'decidir_crn',
 --        'comprovantes_para_apagar', 'marcar_comprovantes_apagados');
--- -- 14 linhas, anon false em todas; logado false só em crn_valido e criar_perfil
+-- -- 13 linhas, anon false em todas; logado false só em crn_valido
 -- select tgname from pg_trigger where tgrelid = 'public.acompanhamentos'::regclass and not tgisinternal;
 -- -- conferir_link_do_paciente
 -- select conname from pg_constraint where conrelid = 'public.acompanhamentos'::regclass and conname = 'acompanhamentos_token_formato';
