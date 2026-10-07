@@ -1,4 +1,4 @@
-import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
+import { COPIA_GRANDE_DEMAIS, FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, SEM_CONTA, type ClienteCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 
@@ -10,7 +10,13 @@ interface Chamada {
 }
 
 function clienteFalso(
-  opcoes: { readonly usuario?: string | null; readonly linha?: unknown; readonly erro?: string | { readonly message: string; readonly code: string } } = {},
+  opcoes: {
+    readonly usuario?: string | null
+    readonly linha?: unknown
+    readonly erro?: string | { readonly message: string; readonly code: string }
+    /** O status HTTP da gravação (R-41: o servidor pode recusar antes do banco). */
+    readonly status?: number
+  } = {},
 ) {
   const chamadas: Chamada[] = []
   const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
@@ -19,7 +25,7 @@ function clienteFalso(
     from: () => ({
       upsert: (linha) => {
         chamadas.push({ tipo: 'upsert', parametros: linha })
-        return Promise.resolve({ data: null, error: erro })
+        return Promise.resolve({ data: null, error: erro, ...(opcoes.status === undefined ? {} : { status: opcoes.status }) })
       },
       delete: () => ({
         eq: (coluna, valor) => {
@@ -137,5 +143,30 @@ describe('Erros do banco na cópia (D-98)', () => {
     const erro = { code: '42501', message: 'new row violates row-level security policy for table "copias"' }
     expect((await enviarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
     expect((await baixarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente)).erro).toBe(FALHA_DE_REDE)
+  })
+})
+
+describe('A cópia grande demais (D-107)', () => {
+  const RECUSA_DA_TRAVA = { code: '23514', message: 'new row for relation "copias" violates check constraint "copias_dados_tamanho"' }
+
+  it('CA-445: o banco recusa a cópia acima de 5 MB e a tela recebe a frase de tamanho', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-1', erro: RECUSA_DA_TRAVA })
+    expect(await enviarCopia(cliente, BACKUP, 'Mac')).toEqual({ ok: null, erro: COPIA_GRANDE_DEMAIS })
+  })
+
+  it('CA-445 e R-41: o servidor que recusa o pedido grande antes do banco (413) mostra a mesma frase', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'Payload Too Large', status: 413 })
+    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(COPIA_GRANDE_DEMAIS)
+  })
+
+  it('outro status sem trava conhecida continua com a mensagem de falha', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'Bad Gateway', status: 502 })
+    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
+  })
+
+  it('CB-112: a cópia recusada não apaga a anterior: um pedido só de gravar, nenhum de apagar', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-1', erro: RECUSA_DA_TRAVA })
+    await enviarCopia(cliente, BACKUP, 'Mac')
+    expect(chamadas.map((c) => c.tipo)).toEqual(['upsert'])
   })
 })

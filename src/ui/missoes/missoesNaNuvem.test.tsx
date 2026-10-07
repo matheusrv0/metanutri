@@ -8,7 +8,7 @@ import type { Missao } from '@/domain/missoes.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { criarRepositorioAcompanhamentos, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { ProvedorAcompanhamentos } from '@/ui/estado/ProvedorAcompanhamentos.tsx'
-import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
+import { FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { TelaAdesao } from './TelaAdesao.tsx'
 
@@ -27,6 +27,8 @@ const nuvem = vi.hoisted(() => ({
   linhas: [] as Record<string, unknown>[],
   limite: null as number | null,
   falha: { select: false, upsert: false, delete: false },
+  /** O banco recusa a gravação do link pela trava de tamanho (011). */
+  grandeDemais: false,
   chamadas: [] as string[],
   /** Pedidos que só respondem quando o teste soltar: é assim que se testa a corrida. */
   segurar: { select: false, upsert: false } as Record<'select' | 'upsert', boolean>,
@@ -39,6 +41,10 @@ interface RespostaFalsa {
 }
 
 const SEM_INTERNET: RespostaFalsa = { data: null, error: { message: 'TypeError: Failed to fetch' } }
+const GRANDE_DEMAIS: RespostaFalsa = {
+  data: null,
+  error: { code: '23514', message: 'new row for relation "acompanhamentos" violates check constraint "acompanhamentos_missoes_tamanho"' },
+}
 
 /** Responde agora, ou quando o teste soltar. `fazer` roda na hora da resposta. */
 function responder(tipo: Segurado, fazer: () => RespostaFalsa): Promise<RespostaFalsa> {
@@ -71,6 +77,7 @@ function clienteDaNuvem(): ClienteMissoes {
         return comSelect(
           responder('upsert', () => {
             if (nuvem.falha.upsert) return SEM_INTERNET
+            if (nuvem.grandeDemais) return GRANDE_DEMAIS
             const i = nuvem.linhas.findIndex((l) => l['id'] === linha['id'])
             if (i === -1) {
               if (nuvem.limite !== null && nuvem.linhas.length >= nuvem.limite) {
@@ -90,6 +97,7 @@ function clienteDaNuvem(): ClienteMissoes {
           return comSelect(
             responder('upsert', () => {
               if (nuvem.falha.upsert) return SEM_INTERNET
+              if (nuvem.grandeDemais) return GRANDE_DEMAIS
               const i = nuvem.linhas.findIndex((l) => l[coluna] === valor)
               if (i === -1) return { data: [], error: null }
               nuvem.linhas[i] = { ...nuvem.linhas[i], ...campos }
@@ -212,6 +220,7 @@ beforeEach(() => {
   nuvem.linhas = []
   nuvem.limite = null
   nuvem.falha = { select: false, upsert: false, delete: false }
+  nuvem.grandeDemais = false
   nuvem.chamadas = []
   nuvem.segurar = { select: false, upsert: false }
   nuvem.soltar = []
@@ -857,5 +866,42 @@ describe('Gravação do link e leitura em andamento', () => {
 
     await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
     expect(repo.porCaso('c1')?.token).toBe(novo)
+  })
+})
+
+describe('O link grande demais (D-107)', () => {
+  it('CA-446: a tela diz que o link ficou grande demais, sem oferecer mandar o mesmo de novo', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    nuvem.grandeDemais = true
+    cartao(repo)
+
+    await gerarLink(usuario)
+
+    expect(await screen.findByText(LINK_GRANDE_DEMAIS)).toBeInTheDocument()
+    expect(screen.queryByText(NAO_SALVOU)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+    expect(nuvem.linhas).toEqual([])
+    expect(repo.porCaso('c1')).not.toBeNull()
+  })
+
+  it('Foco: o link grande demais fica pendente; ao voltar para a aba, a leitura manda de novo e a frase de tamanho continua', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    nuvem.grandeDemais = true
+    cartao(repo)
+    await gerarLink(usuario)
+    expect(await screen.findByText(LINK_GRANDE_DEMAIS)).toBeInTheDocument()
+
+    nuvem.chamadas = []
+    act(() => {
+      fireEvent(document, new Event('visibilitychange'))
+    })
+    await waitFor(() => expect(nuvem.chamadas).toContain('criar-se-faltar'))
+    await assentar()
+
+    expect(screen.getByText(LINK_GRANDE_DEMAIS)).toBeInTheDocument()
+    expect(screen.queryByText(NAO_SALVOU)).not.toBeInTheDocument()
+    expect(nuvem.linhas).toEqual([])
   })
 })

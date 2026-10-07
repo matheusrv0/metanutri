@@ -3,12 +3,14 @@
 // Não é sincronização automática, e isso é decisão, não preguiça: mesclar dois
 // aparelhos por conta própria é como se perde plano de paciente. Aqui quem manda é
 // o botão, e a tela sempre diz o que vai ser sobrescrito.
-import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
+import { COPIA_GRANDE_DEMAIS, FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Backup } from './perfil.ts'
 
 interface Resposta<T> {
   readonly data: T | null
   readonly error: { readonly message: string; readonly code?: string } | null
+  /** O status HTTP. O servidor pode recusar a cópia grande antes de ela chegar ao banco (413). */
+  readonly status?: number
 }
 
 /** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
@@ -62,11 +64,13 @@ export async function enviarCopia(cliente: ClienteCopia, backup: Backup, aparelh
   if (usuario === null) return { ok: null, erro: SEM_CONTA }
 
   const agora = new Date().toISOString()
-  const { error } = await cliente
+  const { error, status } = await cliente
     .from(TABELA)
     .upsert({ nutricionista_id: usuario, dados: backup, aparelho, atualizado_em: agora }, { onConflict: 'nutricionista_id' })
 
-  return error ? { ok: null, erro: traduzido(error) } : { ok: agora, erro: null }
+  if (!error) return { ok: agora, erro: null }
+  // R-41: o servidor pode recusar o pedido grande antes de ele chegar ao banco; a frase é a mesma da trava (CA-445).
+  return { ok: null, erro: status === 413 ? COPIA_GRANDE_DEMAIS : traduzido(error) }
 }
 
 export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<CopiaGuardada>> {

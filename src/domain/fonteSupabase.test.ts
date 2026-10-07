@@ -1,4 +1,4 @@
-import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
+import { FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { criarAcompanhamento, type Acompanhamento } from './acompanhamento.ts'
 import {
   apagarAcompanhamentosDaNuvem,
@@ -342,6 +342,16 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
   it('CA-442: outro P0001 do banco não é confundido com o limite', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: { code: 'P0001', message: 'Entre na sua conta.' } })
     expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: 'Entre na sua conta.' })
+  })
+
+  it('CA-446: o banco recusa o link grande demais, por qualquer das cinco travas; a tela recebe a frase de tamanho', async () => {
+    const travas = ['acompanhamentos_missoes_tamanho', 'acompanhamentos_marcacoes_tamanho', 'acompanhamentos_nome_tamanho', 'acompanhamentos_caso_id_tamanho', 'acompanhamentos_paciente_id_tamanho']
+    for (const trava of travas) {
+      const erro = { code: '23514', message: `new row for relation "acompanhamentos" violates check constraint "${trava}"` }
+      expect(await salvarLinkNaNuvem(clienteFalso({ usuario: 'user-99', erro }).cliente, acompanhamento(), NOVO), trava).toEqual({ tipo: 'falhou', motivo: LINK_GRANDE_DEMAIS })
+      expect(await salvarLinkNaNuvem(clienteFalso({ usuario: 'user-99', erro }).cliente, acompanhamento(), JA_ESTEVE), trava).toEqual({ tipo: 'falhou', motivo: LINK_GRANDE_DEMAIS })
+      expect(await subirAcompanhamento(clienteFalso({ usuario: 'user-99', erro }).cliente, acompanhamento()), trava).toBe(LINK_GRANDE_DEMAIS)
+    }
   })
 
   it('CA-430 / CA-439: a nuvem recusa: devolve a falha traduzida, nunca o texto técnico', async () => {

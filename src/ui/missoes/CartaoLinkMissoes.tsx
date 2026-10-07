@@ -19,6 +19,7 @@ import type { Missao } from '@/domain/missoes.ts'
 import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
 import type { Situacao } from '@/domain/situacao.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
+import { LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
@@ -82,10 +83,15 @@ export function CartaoLinkMissoes({
     )
   }
 
-  // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443).
+  // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443). O grande demais (CA-446) não
+  // oferece mandar de novo: o mesmo link seria recusado de novo; a frase diz o que fazer.
   const motivo = noLimite ? LIMITE_DE_LINKS : acompanhamento ? foraDaNuvem.get(acompanhamento.id) : undefined
   const avisoDaNuvem =
-    motivo === undefined ? null : motivo === LIMITE_DE_LINKS ? (
+    motivo === undefined ? null : motivo === LINK_GRANDE_DEMAIS ? (
+      <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
+        <p>{LINK_GRANDE_DEMAIS}</p>
+      </div>
+    ) : motivo === LIMITE_DE_LINKS ? (
       <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
         <p>{LIMITE_DE_LINKS}</p>
         {aoVerPlanos ? (
