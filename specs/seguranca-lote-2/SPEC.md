@@ -1,6 +1,6 @@
 # SPEC — Segurança, lote 2
 
-Status: **rascunho para o dono aprovar**, 07/10/2026. Vem da auditoria de segurança de 07/10/2026 (Fase 1 do pacote
+Status: **aprovado pelo dono** em 07/10/2026, com o teto de 1000 links (R-40) aceito. Vem da auditoria de segurança de 07/10/2026 (Fase 1 do pacote
 "Blindagem"), que não achou falha crítica nem alta. Este lote põe limites no servidor: quanto cada conta grava e
 quantas vezes chama a cobrança. Em 07/10/2026 não havia nenhuma cópia na nuvem nem nenhum link gravado em produção,
 então nenhum limite novo recusa dado que já existe.
