@@ -30,7 +30,7 @@ pedir o plano Estudante em nome dela. O mesmo antivírus gasta o link de "Esquec
 - **CA-410** · Dado alguém que abre a tela do código depois (sem o e-mail do cadastro na memória), então a tela pede o e-mail e o código.
 - **CA-411** · Dado quem tenta entrar com e-mail ainda não confirmado, então aparece "Confirme seu e-mail antes de entrar." e um botão que leva à tela do código com o e-mail preenchido.
 - **CA-412** · Dado "Esqueci a senha", quando a pessoa informa o e-mail, então vai para a tela que pede o código e a senha nova (duas vezes, com as mesmas regras do cadastro); código certo troca a senha e a pessoa entra; código errado mostra a mesma mensagem do CA-408.
-- **CA-413** · Dado o repositório, então `supabase/emails/confirmar-conta.html` e `supabase/emails/trocar-senha.html` têm o código (`{{ .Token }}`), o assunto sugerido no comentário do topo, nenhum `{{ .ConfirmationURL }}`, e um texto que diz o que fazer se a pessoa não pediu.
+- **CA-413** · Dado o repositório, então `supabase/emails/confirmar-conta.html`, `supabase/emails/trocar-senha.html`, `supabase/emails/trocar-email.html` e `supabase/emails/confirmar-acao.html` têm o código (`{{ .Token }}`), o assunto sugerido no comentário do topo, nenhum `{{ .ConfirmationURL }}`, e um texto que diz o que fazer se a pessoa não pediu.
 - **CA-414** · Dado um link antigo de confirmação ou de troca de senha (mandado antes desta mudança), então ele continua funcionando como hoje (a tela de link vencido continua).
 
 ## 3. Casos de borda
@@ -46,6 +46,12 @@ pedir o plano Estudante em nome dela. O mesmo antivírus gasta o link de "Esquec
 
 ## 5. O que fica com o dono
 
-1. No Supabase, *Authentication › Emails* (modelos): colar `supabase/emails/confirmar-conta.html` em **Confirm sign up** e
-   `supabase/emails/trocar-senha.html` em **Reset password**, com os assuntos sugeridos.
-2. Conferir em *Authentication › Emails › SMTP* que o remetente é "MetaNutri" `<nao-responda@metanutri.com.br>`.
+1. No Supabase, *Authentication › Emails* (modelos), colar cada arquivo com o assunto sugerido no comentário do topo,
+   para que nenhum modelo mande link de confirmação:
+   - `supabase/emails/confirmar-conta.html` em **Confirm sign up**;
+   - `supabase/emails/trocar-senha.html` em **Reset password**;
+   - `supabase/emails/trocar-email.html` em **Change email address**;
+   - `supabase/emails/confirmar-acao.html` em **Reauthentication**, **Magic link** e **Invite**.
+2. Manter ligado **Secure email change** (*Authentication*, nas opções do provedor **Email**): a troca de e-mail pede o código nos
+   dois endereços, o antigo e o novo.
+3. Conferir em *Authentication › Emails › SMTP* que o remetente é "MetaNutri" `<nao-responda@metanutri.com.br>`.
