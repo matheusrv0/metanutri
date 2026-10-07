@@ -1,5 +1,5 @@
 import sql from '../../supabase/007-painel-do-dono.sql?raw'
-import assinar from '../../supabase/functions/assinar/index.ts?raw'
+import nucleoAssinar from '../../supabase/functions/_shared/assinar.ts?raw'
 
 const corpoDa = (nome: string) => sql.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
 
@@ -38,6 +38,8 @@ describe('SQL do painel do dono (spec painel-do-dono)', () => {
   })
 
   it('D-59: a função assinar grava o ciclo escolhido', () => {
-    expect(assinar).toContain("ciclo: anual ? 'anual' : 'mensal',")
+    // A decisão mora no núcleo (D-88); servidorAssinar.test.ts confere o ciclo gravado ("Pro anual").
+    expect(nucleoAssinar).toContain("const ciclo: CicloDaAssinatura = corpo['ciclo'] === 'anual' ? 'anual' : 'mensal'")
+    expect(nucleoAssinar).toMatch(/banco\.gravar\(\{[^}]*\n\s+ciclo,\n/)
   })
 })

@@ -1,6 +1,8 @@
 import sql005 from '../../supabase/005-estudante.sql?raw'
 import sql from '../../supabase/006-verificacao.sql?raw'
-import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
+import bancoSupabase from '../../supabase/functions/_shared/bancoSupabase.ts?raw'
+import portas from '../../supabase/functions/_shared/portas.ts?raw'
+import nucleoWebhook from '../../supabase/functions/_shared/webhook.ts?raw'
 
 const corpoDa = (nome: string) => sql.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
 
@@ -34,22 +36,19 @@ describe('SQL da verificação (spec conta-e-verificacao)', () => {
     expect(corpo).not.toContain('where public.assinaturas.preapproval_id is null')
   })
 
+  // O webhook virou ligação fina (D-88). A assinatura que não acha a linha deixou de ser só um rastro no
+  // registro: é adotada ou cancelada como sobra (D-85), como servidorWebhook.test.ts testa.
   it('CB-63: o webhook só atualiza a linha da mesma assinatura do Mercado Pago', () => {
-    expect(webhook).toContain(".update(mudanca).eq('nutricionista_id', dono).eq('preapproval_id', id).select('nutricionista_id')")
-  })
-
-  it('CB-63: pagamento ativo que não acha a linha deixa rastro no registro e responde 200', () => {
-    expect(webhook).toMatch(/status === 'ativa' && \(!linhas \|\| linhas\.length === 0\)/)
-    expect(webhook).toContain("console.error('Pagamento ativo sem assinatura com este preapproval_id; conferir à mão:', id, dono)")
-    expect(webhook.split("conferir à mão:', id, dono)")[1]).toMatch(/^\s*}\s*\n\s*return ok\(\)/)
+    expect(bancoSupabase).toContain(".update(mudanca).eq('nutricionista_id', conta).eq('preapproval_id', preapprovalId).select('nutricionista_id')")
   })
 
   it('D-27 e CA-169: o webhook só grava o status; o plano pedido continua na linha', () => {
     // Um aviso de "pendente" antes da autorização não pode deixar quem pagou no Free,
     // e o "Tentar de novo" reabre o plano que está na linha.
-    expect(webhook).toContain('const mudanca = { status, atualizado_em: new Date().toISOString() }')
-    expect(webhook).not.toMatch(/mudanca\[['"]plano['"]\]/)
-    expect(webhook).not.toMatch(/plano:\s*'free'/)
+    const mudanca = portas.split('export interface MudancaDaAssinatura {')[1]?.split('\n}')[0] ?? ''
+    expect(mudanca).toContain('readonly status?: StatusDaAssinatura')
+    expect(mudanca).not.toMatch(/\bplano\b/)
+    expect(nucleoWebhook).not.toMatch(/plano:\s*'free'/)
   })
 
   it('a previsão de formatura compara com o mês de agora no fuso do Brasil', () => {
