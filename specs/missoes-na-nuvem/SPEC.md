@@ -30,3 +30,4 @@ chegaria à nutricionista. O lado do paciente já usa a nuvem (`missoes_por_toke
 - **CB-105** · O mesmo link mudado em dois aparelhos da nutricionista: vale o que está na nuvem.
 - **CB-106** · Sem internet ao abrir Adesão: mostra a cópia do aparelho e avisa que não conseguiu atualizar.
 - **CB-107** · Link apagado em outro aparelho não volta: some deste também na próxima leitura.
+- **CB-108** · Mudança de link que não chegou à nuvem fica pendente: a leitura não a desfaz e tenta de novo (as marcações do paciente continuam vindo da nuvem; se o link foi apagado em outro aparelho, vale o CB-107).
