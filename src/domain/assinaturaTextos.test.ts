@@ -1,3 +1,4 @@
+import { MUITAS_CHAMADAS } from '../../supabase/functions/_shared/chamadas.ts'
 import { SEM_ASSINATURA, type Assinatura } from './assinatura.ts'
 import {
   CONFERINDO_COBRANCA,
@@ -5,6 +6,7 @@ import {
   emReais,
   linhaDaCobranca,
   linhaDoCartao,
+  MUITAS_TENTATIVAS_SEGUIDAS,
   nomeComCiclo,
   PREVIA_FALHOU,
   proximaCobrancaPrevista,
@@ -136,6 +138,7 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     const textos = [
       CONFERINDO_COBRANCA,
       PREVIA_FALHOU,
+      MUITAS_TENTATIVAS_SEGUIDAS,
       recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'recusa', encerradaEm: '2026-11-06T13:00:00.000Z' }) ?? '',
       textoDoCancelamento(PAGA, { cobrada: false, expiraEm: null }),
       textoDoCancelamento(PAGA, { cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' }),
@@ -143,5 +146,10 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
       textoDoCancelamento({ ...PAGA, status: 'pendente' }, null),
     ]
     for (const t of textos) expect(t).not.toMatch(/mercado ?pago/i)
+  })
+
+  it('CA-448 e CA-449: a frase do limite de pedidos é a mesma que o servidor manda no 429', () => {
+    expect(MUITAS_TENTATIVAS_SEGUIDAS).toBe(MUITAS_CHAMADAS)
+    expect(MUITAS_TENTATIVAS_SEGUIDAS).toBe('Muitas tentativas seguidas. Espere uma hora e tente de novo.')
   })
 })

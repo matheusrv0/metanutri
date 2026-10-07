@@ -4,7 +4,7 @@ import { SEM_ASSINATURA, type Assinatura } from '@/domain/assinatura.ts'
 import { RECUSA_PADRAO, SERVIDOR_FORA } from '@/domain/cartao.ts'
 import type { PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import type { Crn, PerfilConta } from '@/domain/situacao.ts'
-import { CONFERINDO_COBRANCA } from '@/domain/assinaturaTextos.ts'
+import { CONFERINDO_COBRANCA, MUITAS_TENTATIVAS_SEGUIDAS } from '@/domain/assinaturaTextos.ts'
 import type { ResultadoDaMudanca, ResultadoDaPrevia } from '../estado/usarAssinatura.ts'
 import { CARTAO_APROVADO, processadorFalso, type ProcessadorFalso } from '../pagamento/processadorFalso.test-utils.ts'
 import { contaFalsa } from '../publico/conta/contaFalsa.test-utils.ts'
@@ -470,6 +470,37 @@ describe('TelaConta', () => {
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
     await usuario.click(await within(janela).findByRole('button', { name: 'Tentar de novo' }))
     expect(within(janela).getByRole('button', { name: 'Manter assinatura' })).toHaveFocus()
+  })
+
+  it('CA-449: com pedidos demais na última hora, a janela mostra a frase do servidor no lugar da falha de conferência e continua sem deixar confirmar', async () => {
+    estado.previa = vi.fn(async (): Promise<ResultadoDaPrevia> => ({ ok: false, erro: MUITAS_TENTATIVAS_SEGUIDAS }))
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    expect(await within(janela).findByText('Muitas tentativas seguidas. Espere uma hora e tente de novo.')).toBeInTheDocument()
+    expect(within(janela).queryByText('Não consegui conferir se já houve cobrança.')).not.toBeInTheDocument()
+    expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeDisabled()
+    // Tentar de novo agora daria a mesma resposta: o botão não aparece.
+    expect(within(janela).queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+    expect(estado.cancelar).not.toHaveBeenCalled()
+  })
+
+  it('Foco: fechar a janela depois do limite e abrir de novo pergunta de novo ao servidor e volta ao normal quando ele responde', async () => {
+    estado.previa = vi.fn(async (): Promise<ResultadoDaPrevia> => ({ ok: false, erro: MUITAS_TENTATIVAS_SEGUIDAS }))
+    estado.assinatura = PAGA
+    const { usuario } = montar(nutri)
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
+    const primeira = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
+    expect(await within(primeira).findByText(MUITAS_TENTATIVAS_SEGUIDAS)).toBeInTheDocument()
+    await usuario.click(within(primeira).getByRole('button', { name: 'Manter assinatura' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    estado.previa.mockResolvedValueOnce({ ok: true, cobrada: false, expiraEm: null })
+    const janela = await abrirCancelamento(usuario)
+    expect(janela).toHaveTextContent('Ainda não houve cobrança.')
+    expect(janela).not.toHaveTextContent(MUITAS_TENTATIVAS_SEGUIDAS)
+    expect(estado.previa).toHaveBeenCalledTimes(2)
   })
 
   it('CA-393: a data da recusa é a de Brasília (01h UTC de 7/11 ainda é 6/11)', () => {

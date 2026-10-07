@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { CARTAO_ANTIGO, CONFIRA_O_CARTAO, mensagemDaRecusa, SERVIDOR_FORA } from '@/domain/cartao.ts'
+import { MUITAS_TENTATIVAS_SEGUIDAS } from '@/domain/assinaturaTextos.ts'
 import { PEDIDO_EM_ANDAMENTO, SESSAO_TERMINOU, useAssinatura, type ResultadoDaAssinatura, type ResultadoDaMudanca } from './usarAssinatura.ts'
 
 const { cliente } = vi.hoisted(() => {
@@ -215,6 +216,32 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     cliente.invocar.mockResolvedValueOnce(respondeu(429, { erro: frase, codigo: 'muitas-tentativas' }))
     await act(async () => {
       expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: frase })
+    })
+  })
+
+  it('CA-448: o 429 de pedidos com cartão demais mostra a frase do servidor, ao assinar e ao trocar o cartão', async () => {
+    const { result } = await aberto()
+    const limite = { erro: MUITAS_TENTATIVAS_SEGUIDAS, codigo: 'muitas-chamadas' }
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, limite))
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: 'Muitas tentativas seguidas. Espere uma hora e tente de novo.' })
+    })
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, limite))
+    await act(async () => {
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: 'Muitas tentativas seguidas. Espere uma hora e tente de novo.' })
+    })
+  })
+
+  it('CA-449: o mesmo 429 na prévia e no cancelamento volta com a frase do servidor', async () => {
+    const { result } = await aberto()
+    const limite = { erro: MUITAS_TENTATIVAS_SEGUIDAS, codigo: 'muitas-chamadas' }
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, limite))
+    await act(async () => {
+      expect(await result.current.previaDoCancelamento()).toEqual({ ok: false, erro: MUITAS_TENTATIVAS_SEGUIDAS })
+    })
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, limite))
+    await act(async () => {
+      expect(await result.current.cancelar()).toEqual({ ok: false, erro: MUITAS_TENTATIVAS_SEGUIDAS })
     })
   })
 

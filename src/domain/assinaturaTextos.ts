@@ -2,6 +2,7 @@
 // As duas contas de data vêm do mesmo arquivo que as funções do servidor usam, para a
 // tela dizer a mesma data que a função grava (decisão 13 do plano).
 import { previsaoDaProximaCobranca } from '../../supabase/functions/_shared/cobranca.ts'
+import { MUITAS_CHAMADAS } from '../../supabase/functions/_shared/chamadas.ts'
 import { canceladaNoPrazo, RECADO_STATUS, type Assinatura } from './assinatura.ts'
 import { planoPorId, type Ciclo, type IdPlano } from './conta.ts'
 import { formatarDataLonga } from './pedidoEstudante.ts'
@@ -27,6 +28,8 @@ export interface PreviaDoCancelamento {
 
 export const CONFERINDO_COBRANCA = 'Conferindo se já houve cobrança…'
 export const PREVIA_FALHOU = 'Não consegui conferir se já houve cobrança.'
+/** D-108 (CA-448 e CA-449): a frase do limite de pedidos seguidos, a mesma que o servidor manda no 429. */
+export const MUITAS_TENTATIVAS_SEGUIDAS = MUITAS_CHAMADAS
 
 /** O recado embaixo de "Seu plano", ou nulo quando o cartão do plano já diz tudo (D-79). CA-393: a recusa diz o dia. */
 export function recadoDaAssinatura(a: Assinatura): string | null {

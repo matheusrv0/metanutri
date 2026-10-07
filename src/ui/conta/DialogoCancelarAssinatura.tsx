@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Assinatura } from '@/domain/assinatura.ts'
-import { CONFERINDO_COBRANCA, PREVIA_FALHOU, textoDoCancelamento, type PreviaDoCancelamento } from '@/domain/assinaturaTextos.ts'
+import { CONFERINDO_COBRANCA, MUITAS_TENTATIVAS_SEGUIDAS, PREVIA_FALHOU, textoDoCancelamento, type PreviaDoCancelamento } from '@/domain/assinaturaTextos.ts'
 import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -20,12 +20,20 @@ interface DialogoCancelarAssinaturaProps {
   readonly aoDevolverFoco: () => void
 }
 
-type Conferencia = { readonly fase: 'conferindo' } | { readonly fase: 'falhou' } | { readonly fase: 'pronta'; readonly previa: PreviaDoCancelamento }
+type Conferencia =
+  | { readonly fase: 'conferindo' }
+  | { readonly fase: 'falhou' }
+  | { readonly fase: 'esperar' }
+  | { readonly fase: 'pronta'; readonly previa: PreviaDoCancelamento }
 const CONFERINDO: Conferencia = { fase: 'conferindo' }
+const FALHOU: Conferencia = { fase: 'falhou' }
+/** D-108 (CA-449): pedidos demais na última hora. Tentar de novo agora daria a mesma resposta. */
+const ESPERAR: Conferencia = { fase: 'esperar' }
 
 /**
  * CA-377 e CA-395 a CA-397 (D-81): ao abrir, pergunta ao servidor se já houve cobrança e diz o
  * que acontece; "Cancelar assinatura" só libera com a resposta. "Manter assinatura" vem primeiro e recebe o foco.
+ * CA-449: com pedidos demais na última hora, diz para esperar, sem "Tentar de novo", e não deixa confirmar.
  */
 export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, previa, aoFechar, aoCancelada, aoDevolverFoco }: DialogoCancelarAssinaturaProps) {
   const [erro, setErro] = useState<string | null>(null)
@@ -45,10 +53,12 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, previa
     setConferencia(CONFERINDO)
     void previa().then(
       (r) => {
-        if (pedidoRef.current === meu) setConferencia(r.ok ? { fase: 'pronta', previa: { cobrada: r.cobrada, expiraEm: r.expiraEm } } : { fase: 'falhou' })
+        if (pedidoRef.current !== meu) return
+        if (r.ok) setConferencia({ fase: 'pronta', previa: { cobrada: r.cobrada, expiraEm: r.expiraEm } })
+        else setConferencia(r.erro === MUITAS_TENTATIVAS_SEGUIDAS ? ESPERAR : FALHOU)
       },
       () => {
-        if (pedidoRef.current === meu) setConferencia({ fase: 'falhou' })
+        if (pedidoRef.current === meu) setConferencia(FALHOU)
       },
     )
   }
@@ -60,7 +70,9 @@ export function DialogoCancelarAssinatura({ aberto, assinatura, cancelar, previa
       ? textoDoCancelamento(assinatura, conferencia.previa)
       : conferencia.fase === 'falhou'
         ? PREVIA_FALHOU
-        : CONFERINDO_COBRANCA
+        : conferencia.fase === 'esperar'
+          ? MUITAS_TENTATIVAS_SEGUIDAS
+          : CONFERINDO_COBRANCA
 
   const confirmar = async () => {
     // CB-92: o segundo clique não sai. D-81: sem a prévia, também não.
