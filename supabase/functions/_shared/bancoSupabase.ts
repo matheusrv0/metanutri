@@ -4,21 +4,31 @@
 // (src/data/servidorFalsos.test-utils.ts), e src/data/servidorLigacao.test.ts confere o texto.
 //
 // O supabase-js devolve o erro do banco (e o da rede) no resultado, sem lançar: é o que a porta pede.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// A versão é fixa (a mesma dos três index.ts): o comportamento acima foi conferido nela.
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
 import { UM_DIA_MS } from './cobranca.ts'
 import type { BancoDaCobranca, ContaQuePede, FalhaDoBanco, LinhaDaAssinatura, Registro } from './portas.ts'
 
 const COLUNAS = 'nutricionista_id, plano, status, ciclo, preapproval_id, cartao_final, proxima_cobranca, expira_em, ultima_cobranca_paga, encerrada_por, encerrada_em'
 const UMA_HORA_MS = 60 * 60 * 1000
 
+/** O código vazio (o supabase-js manda '' na falha de rede) vira nulo. */
 const falhaDe = (erro: { readonly message: string; readonly code?: string } | null): FalhaDoBanco | null =>
-  erro ? { mensagem: erro.message, codigo: erro.code ?? null } : null
+  erro ? { mensagem: erro.message, codigo: erro.code || null } : null
 
 const mensagemDe = (erro: unknown): string => (erro instanceof Error ? erro.message : String(erro))
 
+interface ResultadoDaConsulta {
+  readonly error: { readonly message: string } | null
+  readonly status: number
+}
+
+/** A mensagem do erro; vazia (a contagem por HEAD volta sem corpo), o status HTTP. */
+const erroDa = (consulta: ResultadoDaConsulta): string => consulta.error?.message || `HTTP ${consulta.status}`
+
 /** O número da contagem; sem ele (erro do banco ou da rede), rejeita: o portão responde 502 e não deixa passar (R5). */
-function numeroDa(contagem: { readonly count: number | null; readonly error: { readonly message: string } | null }): number {
-  if (contagem.error) throw new Error(contagem.error.message)
+function numeroDa(contagem: ResultadoDaConsulta & { readonly count: number | null }): number {
+  if (contagem.error) throw new Error(erroDa(contagem))
   if (typeof contagem.count !== 'number') throw new Error('A contagem das tentativas veio sem número.')
   return contagem.count
 }
@@ -83,7 +93,7 @@ export function criarBanco(cliente: SupabaseClient, log: Registro): BancoDaCobra
       ])
       const daConta = numeroDa(contaEm24h)
       const doSite = numeroDa(siteEm1h)
-      if (sucesso.error) throw new Error(sucesso.error.message)
+      if (sucesso.error) throw new Error(erroDa(sucesso))
       const quando: unknown = (sucesso.data as { readonly quando?: unknown } | null)?.quando
       const ultimoSucesso = typeof quando === 'string' ? quando : null
       const seguidas = await (ultimoSucesso ? daConta24h().gt('quando', ultimoSucesso) : daConta24h())

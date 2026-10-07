@@ -334,6 +334,8 @@ describe('o aviso da assinatura (subscription_preapproval)', () => {
     )
     expect(status).toBe(200)
     expect(c.assinaturas.get('u1')).toMatchObject({
+      // D-27: a autorização muda o status; o plano escolhido continua.
+      plano: 'solo',
       status: 'ativa',
       proxima_cobranca: '2026-11-06T15:00:00.000Z',
       expira_em: '2027-01-01T00:00:00.000Z',
@@ -359,7 +361,7 @@ describe('o aviso da assinatura (subscription_preapproval)', () => {
     }
   })
 
-  it('pausada vira pausada; cancelada pela operadora vira cancelada, encerrada pela operadora, sem período (CB-94)', async () => {
+  it('pausada vira pausada; cancelada pela operadora vira cancelada, encerrada pela operadora, sem período (CB-94); pendente não tira o plano (D-27)', async () => {
     const pausada = await avisoDaAssinatura([LINHA], { ...AUTORIZADA, status: 'paused' })
     expect(pausada.resultado).toBe('assinatura pausada')
     expect(pausada.c.assinaturas.get('u1')).toMatchObject({ status: 'pausada', encerrada_por: null, expira_em: null, proxima_cobranca: null })
@@ -377,9 +379,10 @@ describe('o aviso da assinatura (subscription_preapproval)', () => {
       })
     }
 
+    // D-27 e CA-169: o aviso de "pendente" muda só o status; o plano escolhido continua na linha.
     const pendente = await avisoDaAssinatura([LINHA], { ...AUTORIZADA, status: 'pending' })
     expect(pendente.resultado).toBe('assinatura pendente')
-    expect(pendente.c.assinaturas.get('u1')).toMatchObject({ status: 'pendente', encerrada_por: null })
+    expect(pendente.c.assinaturas.get('u1')).toMatchObject({ plano: 'solo', ciclo: 'mensal', status: 'pendente', encerrada_por: null })
   })
 
   it('CB-94: a cancelada pela operadora numa linha ativa com data de fim deixa o expira_em como está', async () => {

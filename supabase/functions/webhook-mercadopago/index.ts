@@ -1,13 +1,17 @@
 // Recebe os avisos da operadora de pagamento (spec cobranca-em-producao, D-83 e D-84). A decisão mora
 // em ../_shared/webhook.ts, que o Vitest executa; aqui só se liga o ambiente. Publicada com
 // --no-verify-jwt: quem chama é a operadora, que não tem conta no Supabase.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
 import { criarBanco } from '../_shared/bancoSupabase.ts'
 import { criarOperadora } from '../_shared/operadora.ts'
 import { tratarAviso } from '../_shared/webhook.ts'
 
-/** A operadora espera a resposta por 22 s. Com até quatro pedidos a ela por aviso, 4 s cada cabe. */
-const PRAZO_DO_AVISO_MS = 4_000
+/**
+ * A operadora espera a resposta por 22 s. Um aviso faz até cinco pedidos a ela (a mensalidade recusada
+ * sem linha: ler a mensalidade, ler a assinatura, cancelar com as duas palavras e conferir). Com 3,5 s
+ * cada, são 17,5 s no pior caso, e sobra tempo para o banco e para a função acordar.
+ */
+const PRAZO_DO_AVISO_MS = 3_500
 
 Deno.serve(async (req: Request) => {
   const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')

@@ -29,10 +29,31 @@ describe('as funções são só ligação (D-88)', () => {
     expect(codigo).not.toMatch(/Deno\.|esm\.sh|console\.|Date\.now\(\)|new Date\(\)/)
   })
 
-  it('prazos: criar a assinatura espera 30 s; gerenciar, 10 s; o aviso, 4 s por pedido (a operadora espera a resposta por 22 s)', () => {
+  it('o supabase-js tem a versão fixa nas três funções e no banco: o comportamento foi conferido nela', () => {
+    for (const codigo of [...Object.values(INDICES), bancoSupabase]) {
+      expect(codigo.match(/https:\/\/esm\.sh\/[^'"]+/g)).toEqual(['https://esm.sh/@supabase/supabase-js@2.117.2'])
+    }
+  })
+
+  it('prazos: criar a assinatura espera 30 s; gerenciar, 10 s; o aviso, 3,5 s por pedido (até cinco pedidos; a operadora espera a resposta por 22 s)', () => {
     expect(assinarIndex).toContain('prazoDoPostMs: 30_000')
     expect(gerenciarIndex).toContain('prazoMs: 10_000')
-    expect(webhookIndex).toContain('const PRAZO_DO_AVISO_MS = 4_000')
+    expect(webhookIndex).toContain('const PRAZO_DO_AVISO_MS = 3_500')
+    expect(webhookIndex).toContain('Um aviso faz até cinco pedidos a ela')
+  })
+
+  it.each([
+    ['assinar', assinarIndex, 'ao assinar', 'SEM_COBRANCA'],
+    ['gerenciar-assinatura', gerenciarIndex, 'ao mudar a assinatura', 'FORA'],
+  ])('%s: falha inesperada responde 500 com os cabeçalhos do site e a frase de falha da função; o registro leva só a mensagem', (_, codigo, onde, frase) => {
+    const tentar = codigo.indexOf('\n  try {\n')
+    const pegar = codigo.indexOf('\n  } catch (erro) {\n')
+    expect(tentar).toBeGreaterThan(codigo.indexOf("if (req.method !== 'POST')"))
+    expect(tentar).toBeLessThan(codigo.indexOf("Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')"))
+    expect(pegar).toBeGreaterThan(codigo.indexOf('return responder(resposta.corpo, resposta.status)'))
+    const depois = codigo.slice(pegar)
+    expect(depois).toContain(`console.error('Falha inesperada ${onde}:', erro instanceof Error ? erro.message : 'erro desconhecido')`)
+    expect(depois).toContain(`return responder({ erro: ${frase} }, 500)`)
   })
 
   it('o aviso lê o data.id e o type da URL e os dois cabeçalhos da assinatura', () => {
@@ -80,6 +101,9 @@ describe('o banco de verdade (bancoSupabase.ts)', () => {
   it('CA-398: os avisos velhos saem pela data de chegada', () => {
     expect(bancoSupabase).toContain(".from('avisos_da_operadora').delete().lt('recebido_em', data)")
   })
+  it('o código vazio do erro (falha de rede) vira nulo; só o 23505 decide alguma coisa', () => {
+    expect(bancoSupabase).toContain('codigo: erro.code || null')
+  })
   it('lê as colunas do 009', () => {
     for (const coluna of ['ultima_cobranca_paga', 'encerrada_por', 'encerrada_em', 'ciclo', 'cartao_final']) expect(bancoSupabase).toContain(coluna)
   })
@@ -100,6 +124,11 @@ describe('o banco de verdade (bancoSupabase.ts)', () => {
       const contar = bancoSupabase.split('async contarRecusas(')[1]?.split('async anotarTentativa(')[0] ?? ''
       expect(contar).toContain('throw new Error(')
       expect(contar).not.toContain('catch')
+    })
+    it('a contagem que falha sem mensagem (HEAD não tem corpo) leva o status HTTP para o registro', () => {
+      expect(bancoSupabase).toContain('consulta.error?.message || `HTTP ${consulta.status}`')
+      expect(bancoSupabase).toContain('if (contagem.error) throw new Error(erroDa(contagem))')
+      expect(bancoSupabase).toContain('if (sucesso.error) throw new Error(erroDa(sucesso))')
     })
     it('R4: anota a tentativa com a hora do banco; a falha só vai para o registro', () => {
       expect(bancoSupabase).toContain(".from('tentativas_de_cartao').insert({ nutricionista_id: conta, recusada })")
