@@ -2,7 +2,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRef, useState } from 'react'
 import { FormularioCartao } from './FormularioCartao.tsx'
-import { ErroDoCartao, type ControleDoCartao } from './processadorCartao.ts'
+import { ErroDoCartao, FONTE_DOS_CAMPOS, type ControleDoCartao } from './processadorCartao.ts'
 import { CARTAO_APROVADO, processadorFalso, type ProcessadorFalso } from './processadorFalso.test-utils.ts'
 
 /** Uma tela mínima que usa o formulário como o checkout usa: conferir, gerar e limpar pelo ref. */
@@ -53,9 +53,9 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     expect(screen.getByText('Os 3 números do verso')).toBeInTheDocument()
   })
 
-  it('CA-368: os campos seguros recebem a fonte do site e ocupam a caixa, que é a mesma dos campos nossos', async () => {
+  it('CA-368, CA-404: os campos seguros recebem a fonte do site e ocupam a caixa, que é a mesma dos campos nossos', async () => {
     const { falso } = await montar()
-    expect(falso.montagem?.estilo).toMatchObject({ fontFamily: 'Manrope', height: '100%', padding: '0' })
+    expect(falso.montagem?.estilo).toMatchObject({ fontFamily: FONTE_DOS_CAMPOS, height: '100%', padding: '0' })
     const seguro = screen.getByRole('group', { name: 'Número do cartão' })
     for (const classe of ['h-12', 'rounded-md', 'bg-surfacesunken', 'focus-within:ring-primary']) expect(seguro).toHaveClass(classe)
     for (const classe of ['h-12', 'rounded-md', 'bg-surfacesunken', 'focus-visible:ring-primary']) expect(nome()).toHaveClass(classe)

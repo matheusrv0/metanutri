@@ -70,8 +70,11 @@ export interface ControleDoCartao {
   limparCodigo(): void
 }
 
-/** R-34: a letra do site dentro dos campos seguros. Se a operadora não aceitar, sai a do sistema. */
-export const FONTE_DOS_CAMPOS = 'Manrope'
+/**
+ * R-34 e D-87: a letra do site dentro dos campos seguros. A Manrope vem do `customFonts`. Se ela não
+ * carregar, vale a do sistema (a mesma lista da `--font-corpo`), nunca a serifada do navegador.
+ */
+export const FONTE_DOS_CAMPOS = "Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
 export const URL_DA_FONTE = 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&display=swap'
 
 /**

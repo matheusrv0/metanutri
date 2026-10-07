@@ -9,7 +9,7 @@ describe('o estilo dos campos seguros (CA-368)', () => {
       color: '#1c222a',
       placeholderColor: '#a3a5ab',
       fontSize: '14px',
-      fontFamily: 'Manrope',
+      fontFamily: FONTE_DOS_CAMPOS,
       height: '100%',
       padding: '0',
     })
@@ -29,5 +29,13 @@ describe('ErroDoCartao', () => {
     const erro = new ErroDoCartao(['205', 'E301'])
     expect(erro).toBeInstanceOf(Error)
     expect(erro.codigos).toEqual(['205', 'E301'])
+  })
+})
+
+describe('CA-404: Manrope primeiro e a fonte do sistema como reserva, nunca a serifada do navegador', () => {
+  it('CA-404: Manrope primeiro e a fonte do sistema como reserva, nunca a serifada do navegador', () => {
+    expect(FONTE_DOS_CAMPOS.split(',')[0]).toBe('Manrope')
+    expect(FONTE_DOS_CAMPOS).toContain('system-ui')
+    expect(FONTE_DOS_CAMPOS.trim().endsWith('sans-serif')).toBe(true)
   })
 })
