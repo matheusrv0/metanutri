@@ -1,3 +1,4 @@
+import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { criarAcompanhamento, type Acompanhamento } from './acompanhamento.ts'
 import { apagarAcompanhamentosDaNuvem, daLinha, fonteSupabase, type ClienteMissoes } from './fonteSupabase.ts'
 import type { Missao } from './missoes.ts'
@@ -28,9 +29,12 @@ interface Chamada {
   readonly parametros: Record<string, unknown>
 }
 
-function clienteFalso(opcoes: { readonly usuario?: string | null; readonly dados?: unknown; readonly erro?: string } = {}) {
+type ErroFalso = string | { readonly message: string; readonly code: string }
+
+function clienteFalso(opcoes: { readonly usuario?: string | null; readonly dados?: unknown; readonly erro?: ErroFalso } = {}) {
   const chamadas: Chamada[] = []
-  const resposta = { data: opcoes.dados ?? null, error: opcoes.erro ? { message: opcoes.erro } : null }
+  const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
+  const resposta = { data: opcoes.dados ?? null, error: erro }
 
   const cliente: ClienteMissoes = {
     rpc: (nome, parametros) => {
@@ -109,7 +113,7 @@ describe('Buscar pelo token', () => {
     const a = await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).porToken('kf3mq9zt7bnd')
 
     expect(a).toBeNull()
-    expect(avisos).toEqual(['sem internet'])
+    expect(avisos).toEqual([FALHA_DE_REDE])
   })
 })
 
@@ -139,7 +143,33 @@ describe('Salvar', () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: 'deu ruim' })
     await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
 
-    expect(avisos).toEqual(['deu ruim'])
+    expect(avisos).toEqual([FALHA_DE_REDE])
+  })
+
+  it('CA-422: link além do limite do plano: a tela recebe a frase do banco', async () => {
+    const avisos: string[] = []
+    const erro = { code: 'P0001', message: 'Você chegou ao limite de links do seu plano.' }
+    const { cliente } = clienteFalso({ usuario: 'user-99', erro })
+    await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
+
+    expect(avisos).toEqual(['Você chegou ao limite de links do seu plano.'])
+  })
+
+  it('CA-430: erro técnico do banco ao salvar não chega cru à tela', async () => {
+    const avisos: string[] = []
+    const erro = { code: '42501', message: 'new row violates row-level security policy for table "acompanhamentos"' }
+    const { cliente } = clienteFalso({ usuario: 'user-99', erro })
+    await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
+
+    expect(avisos).toEqual([FALHA_DE_REDE])
+  })
+
+  it('CA-430: falha do paciente ao marcar também chega traduzida', async () => {
+    const avisos: string[] = []
+    const { cliente } = clienteFalso({ usuario: null, erro: { code: '22023', message: 'cannot get array length of a scalar' } })
+    await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
+
+    expect(avisos).toEqual([FALHA_DE_REDE])
   })
 
   it('esta fonte se declara como nuvem, e a tela usa isso na mensagem de erro', () => {
@@ -161,8 +191,8 @@ describe('Apagar os dados da nuvem', () => {
     expect(chamadas).toHaveLength(0)
   })
 
-  it('devolve o erro em vez de dizer que apagou', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-99', erro: 'sem permissão' })
-    expect(await apagarAcompanhamentosDaNuvem(cliente)).toBe('sem permissão')
+  it('CA-430: devolve o erro traduzido em vez de dizer que apagou', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-99', erro: { code: '42501', message: 'permission denied for table acompanhamentos' } })
+    expect(await apagarAcompanhamentosDaNuvem(cliente)).toBe(FALHA_DE_REDE)
   })
 })

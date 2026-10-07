@@ -5,8 +5,14 @@ export const FALHA_DE_REDE = 'Não deu para falar com o servidor. Confira a inte
 
 const EXPLICADOS: readonly string[] = ['P0001', '22023', '42501']
 
+/**
+ * As frases do MetaNutri terminam em ponto; as do próprio Postgres, não (é a regra de estilo
+ * dele). É o que separa "Entre na sua conta." da recusa do RLS, que chega com o mesmo 42501.
+ */
+const ehFraseDoMetaNutri = (texto: string): boolean => texto.trim().endsWith('.')
+
 export function mensagemDoBanco(erro: { readonly message?: string; readonly code?: string } | null): string | null {
   if (!erro) return null
-  if (erro.code && EXPLICADOS.includes(erro.code) && erro.message) return erro.message
+  if (erro.code && EXPLICADOS.includes(erro.code) && erro.message && ehFraseDoMetaNutri(erro.message)) return erro.message
   return FALHA_DE_REDE
 }

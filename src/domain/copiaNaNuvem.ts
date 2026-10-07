@@ -3,17 +3,22 @@
 // Não é sincronização automática, e isso é decisão, não preguiça: mesclar dois
 // aparelhos por conta própria é como se perde plano de paciente. Aqui quem manda é
 // o botão, e a tela sempre diz o que vai ser sobrescrito.
+import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Backup } from './perfil.ts'
 
 interface Resposta<T> {
   readonly data: T | null
-  readonly error: { readonly message: string } | null
+  readonly error: { readonly message: string; readonly code?: string } | null
 }
+
+/** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
+const traduzido = (erro: { readonly message: string; readonly code?: string }): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
 
 export interface ClienteCopia {
   from(tabela: string): {
     upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string }): PromiseLike<Resposta<unknown>>
     select(colunas: string): { eq(coluna: string, valor: string): { maybeSingle(): PromiseLike<Resposta<unknown>> } }
+    delete(): { eq(coluna: string, valor: string): PromiseLike<Resposta<unknown>> }
   }
   auth: {
     getSession(): PromiseLike<{ data: { session: { user: { id: string } } | null } }>
@@ -61,7 +66,7 @@ export async function enviarCopia(cliente: ClienteCopia, backup: Backup, aparelh
     .from(TABELA)
     .upsert({ nutricionista_id: usuario, dados: backup, aparelho, atualizado_em: agora }, { onConflict: 'nutricionista_id' })
 
-  return error ? { ok: null, erro: error.message } : { ok: agora, erro: null }
+  return error ? { ok: null, erro: traduzido(error) } : { ok: agora, erro: null }
 }
 
 export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<CopiaGuardada>> {
@@ -70,7 +75,7 @@ export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<Copi
   if (usuario === null) return { ok: null, erro: SEM_CONTA }
 
   const { data: linha, error } = await cliente.from(TABELA).select('dados, aparelho, atualizado_em').eq('nutricionista_id', usuario).maybeSingle()
-  if (error) return { ok: null, erro: error.message }
+  if (error) return { ok: null, erro: traduzido(error) }
   if (linha === null) return { ok: null, erro: 'Ainda não existe cópia na nuvem desta conta.' }
 
   const o = linha as Record<string, unknown>
@@ -84,4 +89,17 @@ export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<Copi
     },
     erro: null,
   }
+}
+
+/**
+ * D-94: "Apagar tudo" leva também a cópia completa da conta. Devolve a mensagem de erro já
+ * traduzida, ou nulo quando deu certo (ou quando não há conta, e portanto nada a apagar).
+ */
+export async function apagarCopiaDaNuvem(cliente: ClienteCopia): Promise<string | null> {
+  const { data } = await cliente.auth.getSession()
+  const usuario = data.session?.user.id ?? null
+  if (usuario === null) return null
+
+  const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
+  return error ? traduzido(error) : null
 }

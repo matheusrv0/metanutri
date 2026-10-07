@@ -11,7 +11,7 @@ import {
   type Perfil,
 } from '@/domain/perfil.ts'
 import { apagarAcompanhamentosDaNuvem } from '@/domain/fonteSupabase.ts'
-import { apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
+import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
 import { CloudDownload, CloudUpload } from 'lucide-react'
 import { obterSupabase } from '../estado/supabase.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
@@ -27,6 +27,19 @@ function armazenamento() {
   } catch {
     return null
   }
+}
+
+/**
+ * CA-420: o que "Apagar tudo" conseguiu apagar da nuvem. Só diz "na nuvem" quando as duas partes
+ * saíram; se uma falhou, diz qual ficou. Os erros já chegam traduzidos (D-98).
+ */
+function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string | null): string {
+  if (erroAcompanhamentos && erroCopia) {
+    return `Apagado só deste aparelho. Os acompanhamentos e a cópia completa não foram apagados da nuvem. ${erroAcompanhamentos}`
+  }
+  if (erroAcompanhamentos) return `Apagado deste aparelho e a cópia completa da nuvem. Os acompanhamentos não foram apagados. ${erroAcompanhamentos}`
+  if (erroCopia) return `Apagado deste aparelho e os acompanhamentos da nuvem. A cópia completa não foi apagada. ${erroCopia}`
+  return 'Tudo apagado, aqui e na nuvem. Recarregue a página.'
 }
 
 /** Perfil, marca nos documentos e o que fazer com os dados guardados neste aparelho. */
@@ -112,18 +125,16 @@ export function TelaConfiguracoes() {
     // de "apagar tudo", com nome e medida de paciente dentro.
     for (const chave of expandirChaves(guardado, [...CHAVES_DE_DADOS])) guardado?.removeItem(chave)
     setConfirmandoApagar(false)
-    setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
 
     // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente
-    // vivo no servidor — e a política de privacidade promete o contrário.
+    // vivo no servidor — e a política de privacidade promete o contrário. D-94: lá ficam
+    // os acompanhamentos e a cópia completa, e as duas partes saem.
     const cliente = obterSupabase()
-    if (!cliente) return
-    void apagarAcompanhamentosDaNuvem(cliente).then((erro) => {
-      setMensagem(
-        erro
-          ? `Apagado deste aparelho, mas a nuvem recusou: ${erro}. Os acompanhamentos ainda estão lá.`
-          : 'Tudo apagado, aqui e na nuvem. Recarregue a página.',
-      )
+    const copia = clienteCopia()
+    if (!cliente || !copia) return setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
+    setMensagem('Apagado deste aparelho. Apagando da nuvem…')
+    void Promise.all([apagarAcompanhamentosDaNuvem(cliente), apagarCopiaDaNuvem(copia)]).then(([erroAcompanhamentos, erroCopia]) => {
+      setMensagem(mensagemDeApagar(erroAcompanhamentos, erroCopia))
     })
   }
 

@@ -5,14 +5,18 @@
 //   - o paciente, sem conta, que só pode ler e marcar pelo token (funções RPC);
 //   - o nutricionista, logado, que grava a linha inteira (tabela com RLS).
 // Ver `supabase/001-acompanhamentos.sql`.
+import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import type { Missao } from './missoes.ts'
 import type { FonteAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface Resposta<T> {
   readonly data: T | null
-  readonly error: { readonly message: string } | null
+  readonly error: { readonly message: string; readonly code?: string } | null
 }
+
+/** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
+const traduzido = (erro: { readonly message: string; readonly code?: string }): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
 
 /** O pedaço do cliente Supabase que este arquivo usa — o resto não interessa aqui. */
 export interface ClienteMissoes {
@@ -87,7 +91,7 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       if (!token) return null
       const { data, error } = await cliente.rpc('missoes_por_token', { p_token: token })
       if (error) {
-        avisar(error.message)
+        avisar(traduzido(error))
         return null
       }
       // A função devolve uma tabela: vem lista, mesmo com uma linha só.
@@ -102,12 +106,12 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       // Sem sessão é o paciente marcando: só as marcações, só na linha do token dele.
       if (usuario === null) {
         const { error } = await cliente.rpc('marcar_missoes', { p_token: acompanhamento.token, p_marcacoes: acompanhamento.marcacoes })
-        if (error) avisar(error.message)
+        if (error) avisar(traduzido(error))
         return acompanhamento
       }
 
       const { error } = await cliente.from(TABELA).upsert(paraLinha(acompanhamento, usuario), { onConflict: 'id' })
-      if (error) avisar(error.message)
+      if (error) avisar(traduzido(error))
       return acompanhamento
     },
   }
@@ -116,7 +120,7 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
 /**
  * Apaga da nuvem tudo que é deste nutricionista. É o que a LGPD chama de direito à
  * eliminação, e o que a tela de Configurações precisa para não prometer o que não faz.
- * Devolve a mensagem de erro, ou nulo quando deu certo.
+ * Devolve a mensagem de erro já traduzida, ou nulo quando deu certo.
  */
 export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<string | null> {
   const { data } = await cliente.auth.getSession()
@@ -124,5 +128,5 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Pro
   if (usuario === null) return null
 
   const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
-  return error ? error.message : null
+  return error ? traduzido(error) : null
 }

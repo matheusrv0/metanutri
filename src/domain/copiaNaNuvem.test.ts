@@ -1,16 +1,19 @@
-import { apelidoDoAparelho, baixarCopia, enviarCopia, SEM_CONTA, type ClienteCopia } from './copiaNaNuvem.ts'
+import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
+import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, SEM_CONTA, type ClienteCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 
 const BACKUP: Backup = { formato: 1, geradoEm: '2026-09-27T00:00:00.000Z', dados: { 'metanutri:casos': '["id1"]' } }
 
 interface Chamada {
-  readonly tipo: 'upsert' | 'select'
+  readonly tipo: 'upsert' | 'select' | 'delete'
   readonly parametros: Record<string, unknown>
 }
 
-function clienteFalso(opcoes: { readonly usuario?: string | null; readonly linha?: unknown; readonly erro?: string } = {}) {
+function clienteFalso(
+  opcoes: { readonly usuario?: string | null; readonly linha?: unknown; readonly erro?: string | { readonly message: string; readonly code: string } } = {},
+) {
   const chamadas: Chamada[] = []
-  const erro = opcoes.erro ? { message: opcoes.erro } : null
+  const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
 
   const cliente: ClienteCopia = {
     from: () => ({
@@ -18,6 +21,12 @@ function clienteFalso(opcoes: { readonly usuario?: string | null; readonly linha
         chamadas.push({ tipo: 'upsert', parametros: linha })
         return Promise.resolve({ data: null, error: erro })
       },
+      delete: () => ({
+        eq: (coluna, valor) => {
+          chamadas.push({ tipo: 'delete', parametros: { [coluna]: valor } })
+          return Promise.resolve({ data: null, error: erro })
+        },
+      }),
       select: () => ({
         eq: (coluna, valor) => ({
           maybeSingle: () => {
@@ -57,7 +66,7 @@ describe('Enviar a cópia', () => {
 
   it('erro do banco volta como erro, não como sucesso', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'sem rede' })
-    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe('sem rede')
+    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
   })
 })
 
@@ -101,5 +110,32 @@ describe('Apelido do aparelho', () => {
     ['coisa desconhecida', 'Este aparelho'],
   ])('%s', (agente, esperado) => {
     expect(apelidoDoAparelho(agente)).toBe(esperado)
+  })
+})
+
+describe('Apagar a cópia da nuvem (D-94)', () => {
+  it('CA-420: apaga só a cópia de quem está logado', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-1' })
+    expect(await apagarCopiaDaNuvem(cliente)).toBeNull()
+    expect(chamadas).toEqual([{ tipo: 'delete', parametros: { nutricionista_id: 'user-1' } }])
+  })
+
+  it('sem sessão não apaga nada de ninguém', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: null })
+    expect(await apagarCopiaDaNuvem(cliente)).toBeNull()
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('CA-430: a recusa do banco volta traduzida, não como texto técnico', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-1', erro: { code: '42501', message: 'permission denied for table copias' } })
+    expect(await apagarCopiaDaNuvem(cliente)).toBe(FALHA_DE_REDE)
+  })
+})
+
+describe('Erros do banco na cópia (D-98)', () => {
+  it('CA-430: erro técnico ao enviar ou trazer vira a mensagem traduzida', async () => {
+    const erro = { code: '42501', message: 'new row violates row-level security policy for table "copias"' }
+    expect((await enviarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
+    expect((await baixarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente)).erro).toBe(FALHA_DE_REDE)
   })
 })
