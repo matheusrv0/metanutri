@@ -16,15 +16,16 @@ pedir o plano Estudante em nome dela. O mesmo antivírus gasta o link de "Esquec
 
 | # | Decisão |
 |---|---|
-| D-89 | A conta é confirmada por um **código de 6 dígitos** que chega por e-mail e é digitado no site. O e-mail não traz link que confirme a conta ao ser aberto |
+| D-89 | A conta é confirmada por um **código** ~~de 6 dígitos~~ (8 dígitos, D-106) que chega por e-mail e é digitado no site. O e-mail não traz link que confirme a conta ao ser aberto |
 | D-90 | "Esqueci a senha" também usa **código**: a pessoa digita o código e a senha nova na mesma tela |
 | D-91 | Os dois e-mails (confirmar e trocar senha) ficam **em português, com a marca do MetaNutri**, com o código em destaque e sem link de ação. Os modelos ficam no repositório (`supabase/emails/`) para o dono colar no painel do Supabase |
 | D-92 | Quem tenta entrar sem ter confirmado vê "Confirme seu e-mail antes de entrar." e vai para a tela do código, com o e-mail já preenchido |
 | D-93 | **Até confirmar, a pessoa fica na tela do código.** A logo não leva para fora, as outras telas do site levam de volta para ela, e o e-mail pendente fica guardado no aparelho, então fechar e abrir o site também volta para ela. As saídas são "Errei o e-mail" (volta ao cadastro) e os links de Termos e Política. Pedido do dono em 06/10/2026, depois do teste: "não deixe sair da tela de código sem colocar o código" |
+| D-106 | **O código tem 8 dígitos**, como está no painel do Supabase (*Email OTP length* = 8, conferido em 07/10/2026). A tela diz "8 dígitos" e só chama o servidor com os 8. Se o painel mudar, a tela muda junto. Decisão do dono em 07/10/2026, na auditoria de segurança: 8 dígitos são 100 vezes mais difíceis de adivinhar que 6 |
 
 ## 2. Critérios de aceite
 
-- **CA-406** · Dado o cadastro feito, então a tela "Confira seu e-mail" pede o código de 6 dígitos (campo só de números, com o teclado numérico no celular) e tem o botão "Confirmar"; não existe mais "Já confirmei, quero entrar".
+- **CA-406** · Dado o cadastro feito, então a tela "Confira seu e-mail" pede o "Código de 8 dígitos" (campo só de números, com o teclado numérico no celular) e tem o botão "Confirmar"; não existe mais "Já confirmei, quero entrar". Com menos de 8 dígitos, a tela diz "Digite os 8 dígitos do código." sem chamar o servidor (D-106).
 - **CA-407** · Dado o código certo, então a conta é confirmada, a pessoa já entra e segue para onde iria depois do cadastro (estudante: comprovar a matrícula; nutricionista: o painel).
 - **CA-408** · Dado um código errado ou vencido, então aparece "Código errado ou vencido. Confira o último e-mail ou peça outro." e nada mais muda.
 - **CA-409** · Dado "Reenviar o código", então um código novo é enviado e o botão espera 60 segundos para poder ser usado de novo (como hoje).
@@ -41,7 +42,7 @@ pedir o plano Estudante em nome dela. O mesmo antivírus gasta o link de "Esquec
 
 ## 3. Casos de borda
 
-- **CB-100** · O código é colado com espaços ou traço ("123 456", "123-456"): só os dígitos contam.
+- **CB-100** · O código é colado com espaços ou traço ("1234 5678", "1234-5678"): só os dígitos contam.
 - **CB-101** · Clique duplo em "Confirmar": um pedido só.
 - **CB-102** · Sem internet ao confirmar: a mensagem de falha de rede de sempre, e o código digitado continua no campo.
 - **CB-103** · O e-mail pendente guardado no aparelho vale 24 horas; depois disso é esquecido, para um aparelho compartilhado não ficar preso na tela de outra pessoa.
