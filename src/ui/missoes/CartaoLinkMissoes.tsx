@@ -1,7 +1,7 @@
 // O lado do nutricionista: gerar o link do paciente e ver se ele está marcando.
 // Fica junto do plano, porque é do plano que as missões saem.
 import { Check, Copy, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   criarAcompanhamento,
   regerarLink,
@@ -14,13 +14,17 @@ import {
   type Acompanhamento,
 } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
+import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
 import type { Situacao } from '@/domain/situacao.ts'
-import { useAcompanhamentos } from '@/ui/estado/contextoAcompanhamentos.ts'
+import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
+
+/** CA-439: a cópia do aparelho ficou, mas o paciente ainda não abre o link. */
+const NAO_SALVOU = 'Não consegui salvar o link na nuvem. O paciente ainda não consegue abrir. Tente de novo.'
 
 interface CartaoLinkMissoesProps {
   readonly casoId: string
@@ -47,25 +51,59 @@ export function CartaoLinkMissoes({
   hoje = diaLocal(),
   aoVerPlanos,
 }: CartaoLinkMissoesProps) {
-  const { repositorio, salvar, acompanhamentos } = useAcompanhamentos()
+  const { repositorio, salvar, acompanhamentos, foraDaNuvem } = useAcompanhamentos()
+  useLerDaNuvemAoAbrir()
   const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
   const naoComercial = linkDeUsoNaoComercial(planoAtual, situacao)
   const [copiado, setCopiado] = useState(false)
   const [pedindoConsentimento, setPedindoConsentimento] = useState(false)
+  // CA-442: a nuvem recusou pelo limite do plano e o aparelho voltou ao que era.
+  const [noLimite, setNoLimite] = useState(false)
+  const [salvando, setSalvando] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
+
+  const gravar = async (novo: Acompanhamento) => {
+    setSalvando(true)
+    const motivo = await salvar(novo)
+    setNoLimite(motivo === LIMITE_DE_LINKS)
+    setSalvando(false)
+  }
 
   // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
   // dois acompanhamentos para o mesmo plano fariam a tela mostrar o link velho.
   // CA-421: o aviso, uma vez no link, não sai; e entra no link antigo de conta de estudante.
   const gerar = () => {
-    salvar(
+    setCopiado(false)
+    setPedindoConsentimento(false)
+    void gravar(
       acompanhamento
         ? { ...regerarLink(acompanhamento, { nome, missoes }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
         : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: naoComercial }),
     )
-    setCopiado(false)
-    setPedindoConsentimento(false)
   }
+
+  // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443).
+  const motivo = noLimite ? LIMITE_DE_LINKS : acompanhamento ? foraDaNuvem.get(acompanhamento.id) : undefined
+  const avisoDaNuvem =
+    motivo === undefined ? null : motivo === LIMITE_DE_LINKS ? (
+      <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
+        <p>{LIMITE_DE_LINKS}</p>
+        {aoVerPlanos ? (
+          <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
+            Ver planos
+          </Button>
+        ) : null}
+      </div>
+    ) : (
+      <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
+        <p>{NAO_SALVOU}</p>
+        {acompanhamento ? (
+          <Button size="sm" variant="outline" className="mt-2" loading={salvando} onClick={() => void gravar(acompanhamento)}>
+            Tentar de novo
+          </Button>
+        ) : null}
+      </div>
+    )
 
   // Regerar não conta: já existe link para este plano. O limite vale para o link novo.
   const outrosLinks = acompanhamentos.filter((a) => a.casoId !== casoId).length
@@ -155,23 +193,39 @@ export function CartaoLinkMissoes({
             )}
           </>
         )}
+        {avisoDaNuvem}
       </section>
     )
   }
 
-  return <PainelDoLink acompanhamento={acompanhamento} hoje={hoje} copiado={copiado} aoCopiar={copiar} aoGerarNovo={gerar} />
+  return (
+    <PainelDoLink
+      acompanhamento={acompanhamento}
+      hoje={hoje}
+      copiado={copiado}
+      gerando={salvando}
+      aviso={avisoDaNuvem}
+      aoCopiar={copiar}
+      aoGerarNovo={gerar}
+    />
+  )
 }
 
 function PainelDoLink({
   acompanhamento,
   hoje,
   copiado,
+  gerando,
+  aviso,
   aoCopiar,
   aoGerarNovo,
 }: {
   readonly acompanhamento: Acompanhamento
   readonly hoje: string
   readonly copiado: boolean
+  readonly gerando: boolean
+  /** O link ainda não chegou à nuvem (CA-439, CA-442). */
+  readonly aviso: ReactNode
   readonly aoCopiar: (endereco: string) => void
   readonly aoGerarNovo: () => void
 }) {
@@ -209,6 +263,8 @@ function PainelDoLink({
         </div>
       </dl>
 
+      {aviso}
+
       <div className="mt-4">
         <label htmlFor="endereco-missoes" className="text-xs font-medium text-muted-foreground">
           Link do paciente
@@ -229,7 +285,7 @@ function PainelDoLink({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button type="button" variant="ghost" onClick={aoGerarNovo}>
+        <Button type="button" variant="ghost" disabled={gerando} onClick={aoGerarNovo}>
           <RefreshCw className="size-4" aria-hidden="true" />
           Gerar link novo
         </Button>

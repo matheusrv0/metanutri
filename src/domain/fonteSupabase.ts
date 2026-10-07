@@ -22,7 +22,8 @@ const traduzido = (erro: { readonly message: string; readonly code?: string }): 
 export interface ClienteMissoes {
   rpc(nome: string, parametros: Record<string, unknown>): PromiseLike<Resposta<unknown>>
   from(tabela: string): {
-    upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string }): PromiseLike<Resposta<unknown>>
+    select(colunas: string): { eq(coluna: string, valor: string): PromiseLike<Resposta<unknown>> }
+    upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string; ignoreDuplicates?: boolean }): PromiseLike<Resposta<unknown>>
     delete(): { eq(coluna: string, valor: string): PromiseLike<Resposta<unknown>> }
   }
   auth: {
@@ -129,4 +130,99 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Pro
 
   const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
   return error ? traduzido(error) : null
+}
+
+// ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
+
+/** A frase que o banco levanta quando o plano não comporta mais um link (supabase/010). */
+export const LIMITE_DE_LINKS = 'Você chegou ao limite de links do seu plano.'
+
+/** CA-439: a nuvem que não responde neste tempo conta como falha, em vez de prender a tela. */
+export const PRAZO_DA_NUVEM_MS = 15_000
+
+/** Corre a ida à nuvem contra o relógio. Exceção e demora viram a falha de rede de sempre. */
+async function comPrazo<T>(ida: () => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
+  let relogio: ReturnType<typeof setTimeout> | undefined
+  const esgotou = new Promise<T>((resolver) => {
+    relogio = setTimeout(() => resolver(falhou(FALHA_DE_REDE)), PRAZO_DA_NUVEM_MS)
+  })
+  try {
+    return await Promise.race([ida().catch(() => falhou(FALHA_DE_REDE)), esgotou])
+  } finally {
+    clearTimeout(relogio)
+  }
+}
+
+const mensagem = (texto: string): string => texto
+
+async function usuarioDaSessao(cliente: ClienteMissoes): Promise<string | null> {
+  const { data } = await cliente.auth.getSession()
+  return data.session?.user.id ?? null
+}
+
+export type LeituraDaNuvem =
+  | { readonly tipo: 'sem-conta' }
+  | { readonly tipo: 'lida'; readonly itens: readonly Acompanhamento[] }
+  | { readonly tipo: 'falhou'; readonly mensagem: string }
+
+/**
+ * D-104: os links da conta, com o que o paciente marcou no celular dele. Filtra pelo dono
+ * além do RLS: uma política mais larga no futuro não pode trazer paciente de outra conta.
+ */
+export async function listarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<LeituraDaNuvem> {
+  return comPrazo<LeituraDaNuvem>(
+    async () => {
+      const usuario = await usuarioDaSessao(cliente)
+      if (usuario === null) return { tipo: 'sem-conta' }
+      const { data, error } = await cliente.from(TABELA).select('*').eq('nutricionista_id', usuario)
+      if (error) return { tipo: 'falhou', mensagem: traduzido(error) }
+      const linhas: readonly unknown[] = Array.isArray(data) ? data : []
+      return { tipo: 'lida', itens: linhas.map(daLinha).filter((a): a is Acompanhamento => a !== null) }
+    },
+    (texto) => ({ tipo: 'falhou', mensagem: texto }),
+  )
+}
+
+/** Cria a linha só se ela ainda não existe: o que já está na nuvem nunca é sobrescrito. */
+async function criarSeFaltar(cliente: ClienteMissoes, a: Acompanhamento, usuario: string): Promise<string | null> {
+  const { error } = await cliente.from(TABELA).upsert(paraLinha(a, usuario), { onConflict: 'id', ignoreDuplicates: true })
+  return error ? traduzido(error) : null
+}
+
+/**
+ * D-105: sobe um link que só existe neste aparelho, com as marcações feitas aqui. Se a
+ * linha já estiver na nuvem, nada muda (CB-105). Devolve o motivo, se não subiu.
+ */
+export async function subirAcompanhamento(cliente: ClienteMissoes, a: Acompanhamento): Promise<string | null> {
+  return comPrazo<string | null>(async () => {
+    const usuario = await usuarioDaSessao(cliente)
+    return usuario === null ? null : criarSeFaltar(cliente, a, usuario)
+  }, mensagem)
+}
+
+/**
+ * D-103: criar, gerar de novo ou mudar o link. Em dois passos, para não apagar o que o
+ * paciente marcou no celular depois que esta tela leu a nuvem: primeiro cria a linha se
+ * faltar (com as marcações daqui); depois atualiza o resto, sem tocar nas marcações.
+ */
+export async function salvarLinkNaNuvem(cliente: ClienteMissoes, a: Acompanhamento): Promise<string | null> {
+  return comPrazo<string | null>(async () => {
+    const usuario = await usuarioDaSessao(cliente)
+    if (usuario === null) return null
+    const criado = await criarSeFaltar(cliente, a, usuario)
+    if (criado !== null) return criado
+    const semMarcacoes = Object.fromEntries(Object.entries(paraLinha(a, usuario)).filter(([coluna]) => coluna !== 'marcacoes'))
+    const { error } = await cliente.from(TABELA).upsert(semMarcacoes, { onConflict: 'id' })
+    return error ? traduzido(error) : null
+  }, mensagem)
+}
+
+/** CA-440: tira um link da nuvem. Devolve o erro traduzido, ou nulo quando deu certo. */
+export async function removerAcompanhamentoDaNuvem(cliente: ClienteMissoes, id: string): Promise<string | null> {
+  return comPrazo<string | null>(async () => {
+    const usuario = await usuarioDaSessao(cliente)
+    if (usuario === null) return null
+    const { error } = await cliente.from(TABELA).delete().eq('id', id)
+    return error ? traduzido(error) : null
+  }, mensagem)
 }

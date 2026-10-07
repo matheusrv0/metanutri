@@ -10,7 +10,7 @@ import {
   restaurarBackup,
   type Perfil,
 } from '@/domain/perfil.ts'
-import { apagarAcompanhamentosDaNuvem } from '@/domain/fonteSupabase.ts'
+import { apagarAcompanhamentosDaNuvem, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
 import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
 import { CloudDownload, CloudUpload } from 'lucide-react'
 import { obterSupabase } from '../estado/supabase.ts'
@@ -129,7 +129,8 @@ export function TelaConfiguracoes() {
     // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente
     // vivo no servidor — e a política de privacidade promete o contrário. D-94: lá ficam
     // os acompanhamentos e a cópia completa, e as duas partes saem.
-    const cliente = obterSupabase()
+    // Mesmo TS2589 de `clienteCopia`: a porta das missões é pequena, o tipo do cliente não.
+    const cliente = obterSupabase() as unknown as ClienteMissoes | null
     const copia = clienteCopia()
     if (!cliente || !copia) return setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
     setMensagem('Apagado deste aparelho. Apagando da nuvem…')

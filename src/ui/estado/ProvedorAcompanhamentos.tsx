@@ -1,10 +1,21 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
-import { fonteSupabase } from '@/domain/fonteSupabase.ts'
+import {
+  fonteSupabase,
+  listarAcompanhamentosDaNuvem,
+  removerAcompanhamentoDaNuvem,
+  salvarLinkNaNuvem,
+  subirAcompanhamento,
+  LIMITE_DE_LINKS,
+  type ClienteMissoes,
+} from '@/domain/fonteSupabase.ts'
 import { criarRepositorioAcompanhamentos, fonteLocal, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
+
+/** CB-106: a leitura da nuvem falhou e a tela segue com a cópia do aparelho. */
+const SEM_ATUALIZAR = 'Não consegui atualizar com a nuvem. Mostrando a cópia deste aparelho.'
 
 function armazenamentoDoNavegador(): Armazenamento | null {
   try {
@@ -16,13 +27,47 @@ function armazenamentoDoNavegador(): Armazenamento | null {
 
 /**
  * Compartilha os acompanhamentos entre a tela do nutricionista e o link do paciente.
- * Quando o Supabase entrar, é aqui que `fonte` troca de implementação — e só aqui.
+ *
+ * Com conta (spec missoes-na-nuvem), o link vive na nuvem e o aparelho guarda uma cópia
+ * para abrir sem internet. Sem servidor, tudo fica só no aparelho, como antes (CA-444).
  */
 export function ProvedorAcompanhamentos({ children, repositorio }: { readonly children: ReactNode; readonly repositorio?: RepositorioAcompanhamentos }) {
   const [repo] = useState<RepositorioAcompanhamentos>(() => repositorio ?? criarRepositorioAcompanhamentos(armazenamentoDoNavegador()))
+  // O tipo do cliente do Supabase é fundo demais para o TypeScript casar com a interface
+  // pequena da porta (TS2589), como em Configurações. A forma em tempo de execução é a mesma.
+  const [cliente] = useState(() => obterSupabase() as unknown as ClienteMissoes | null)
   const [versao, setVersao] = useState(0)
+  const [avisoNuvem, setAvisoNuvem] = useState<string | null>(null)
+  const [foraDaNuvem, setForaDaNuvem] = useState<ReadonlyMap<string, string>>(() => new Map())
+  // Links mexidos aqui durante uma leitura da nuvem, ou com gravação ainda a caminho: a
+  // resposta da leitura, mais velha, não passa por cima deles.
+  const mexidos = useRef(new Set<string>())
+  const aCaminho = useRef(new Map<string, number>())
+  // Abrir o plano e Adesão juntos (ou voltar para a aba) não faz duas leituras ao mesmo tempo.
+  const lendo = useRef<Promise<void> | null>(null)
 
   const atualizar = useCallback(() => setVersao((v) => v + 1), [])
+
+  const comecarAMexer = useCallback((id: string) => {
+    aCaminho.current.set(id, (aCaminho.current.get(id) ?? 0) + 1)
+    mexidos.current.add(id)
+  }, [])
+
+  const terminarDeMexer = useCallback((id: string) => {
+    const restantes = (aCaminho.current.get(id) ?? 1) - 1
+    if (restantes > 0) aCaminho.current.set(id, restantes)
+    else aCaminho.current.delete(id)
+  }, [])
+
+  const marcarForaDaNuvem = useCallback((id: string, motivo: string | null) => {
+    setForaDaNuvem((atual) => {
+      if (motivo === null && !atual.has(id)) return atual
+      const novo = new Map(atual)
+      if (motivo === null) novo.delete(id)
+      else novo.set(id, motivo)
+      return novo
+    })
+  }, [])
 
   // Se o paciente marcar numa aba e o nutricionista estiver com outra aberta, a lista se refaz.
   useEffect(() => {
@@ -35,30 +80,102 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
   }, [atualizar])
 
   const salvar = useCallback(
-    (acompanhamento: Acompanhamento) => {
-      const salvo = repo.salvar(acompanhamento)
+    async (acompanhamento: Acompanhamento) => {
+      const anterior = repo.porId(acompanhamento.id)
+      // A cópia do aparelho vem primeiro: é ela que fica se a nuvem não responder (CA-439).
+      repo.salvar(acompanhamento)
       atualizar()
-      return salvo
+      if (!cliente) return null
+
+      comecarAMexer(acompanhamento.id)
+      try {
+        const motivo = await salvarLinkNaNuvem(cliente, acompanhamento)
+        if (motivo === LIMITE_DE_LINKS) {
+          // CA-442: nada fica pela metade. O aparelho volta ao que era antes.
+          if (anterior) repo.salvar(anterior)
+          else repo.remover(acompanhamento.id)
+          atualizar()
+        }
+        marcarForaDaNuvem(acompanhamento.id, motivo === LIMITE_DE_LINKS && anterior === null ? null : motivo)
+        return motivo
+      } finally {
+        terminarDeMexer(acompanhamento.id)
+      }
     },
-    [repo, atualizar],
+    [repo, cliente, atualizar, marcarForaDaNuvem, comecarAMexer, terminarDeMexer],
   )
 
   const remover = useCallback(
-    (id: string) => {
+    async (id: string) => {
+      // CA-440: a nuvem primeiro. Se ela falhar, o link continua nos dois lugares.
+      if (cliente) {
+        comecarAMexer(id)
+        try {
+          const motivo = await removerAcompanhamentoDaNuvem(cliente, id)
+          if (motivo !== null) return motivo
+        } finally {
+          terminarDeMexer(id)
+        }
+      }
       repo.remover(id)
+      marcarForaDaNuvem(id, null)
       atualizar()
+      return null
     },
-    [repo, atualizar],
+    [repo, cliente, atualizar, marcarForaDaNuvem, comecarAMexer, terminarDeMexer],
   )
 
+  const lerDaNuvem = useCallback((): Promise<void> => {
+    if (!cliente) return Promise.resolve()
+    if (lendo.current) return lendo.current
+
+    const ler = async () => {
+      mexidos.current = new Set(aCaminho.current.keys())
+      const leitura = await listarAcompanhamentosDaNuvem(cliente)
+      if (leitura.tipo === 'sem-conta') return
+      if (leitura.tipo === 'falhou') {
+        setAvisoNuvem(SEM_ATUALIZAR)
+        return
+      }
+      setAvisoNuvem(null)
+
+      // CB-105: o mesmo link nos dois lugares: vale o que está na nuvem.
+      const naNuvem = new Set(leitura.itens.map((a) => a.id))
+      for (const a of leitura.itens) if (!mexidos.current.has(a.id)) repo.salvar(a)
+      atualizar()
+
+      // D-105: o que só existe neste aparelho sobe. O que não sobe fica marcado com o motivo (CA-443).
+      const motivos = new Map<string, string>()
+      for (const a of repo.listar()) {
+        // Removido ou mexido enquanto os outros subiam: quem mexeu cuida da nuvem.
+        if (naNuvem.has(a.id) || mexidos.current.has(a.id) || repo.porId(a.id) === null) continue
+        const motivo = await subirAcompanhamento(cliente, a)
+        if (motivo !== null) motivos.set(a.id, motivo)
+      }
+      const mexidosNaLeitura = [...mexidos.current]
+      setForaDaNuvem((atual) => {
+        const novo = new Map(motivos)
+        for (const id of mexidosNaLeitura) {
+          const motivo = atual.get(id)
+          if (motivo !== undefined) novo.set(id, motivo)
+        }
+        return novo
+      })
+    }
+
+    const leitura = ler().finally(() => {
+      lendo.current = null
+    })
+    lendo.current = leitura
+    return leitura
+  }, [cliente, repo, atualizar])
+
   /**
-   * Com as chaves do Supabase configuradas, o link do paciente passa a abrir no
-   * aparelho dele. Sem elas, tudo continua neste navegador. A cópia local é mantida
-   * nos dois casos: é ela que faz o app funcionar offline.
+   * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua
+   * neste navegador. A cópia local é mantida nos dois casos: é ela que faz o app funcionar offline.
    */
   const fonte = useMemo(() => {
     const local = fonteLocal(repo)
-    const cliente = obterSupabase()
     const remota = cliente ? fonteSupabase(cliente) : null
 
     return {
@@ -71,7 +188,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
         return salvo
       },
     }
-  }, [repo, atualizar])
+  }, [repo, cliente, atualizar])
 
   const valor = useMemo<ValorAcompanhamentos>(
     () => ({
@@ -81,10 +198,13 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
       avisoArmazenamento: repo.aviso,
       salvar,
       remover,
+      lerDaNuvem,
+      avisoNuvem,
+      foraDaNuvem,
     }),
     // versao força recalcular a lista depois de cada mudança
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [repo, fonte, salvar, remover, versao],
+    [repo, fonte, salvar, remover, lerDaNuvem, avisoNuvem, foraDaNuvem, versao],
   )
 
   return <ContextoAcompanhamentos.Provider value={valor}>{children}</ContextoAcompanhamentos.Provider>
