@@ -42,7 +42,7 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 - **CA-399** · Dado um aviso com assinatura digital que não confere, então nada muda nas assinaturas e o registro mostra "assinatura não confere".
 - **CA-400** · Dado o aviso de uma assinatura autorizada que não tem linha aqui, e a conta sem outra assinatura paga ativa, então a assinatura é adotada: a linha ganha o plano e o ciclo (achados pelo valor e pela frequência), o cartão e a próxima cobrança, e o plano pago passa a valer.
 - **CA-401** · Dado o mesmo caso com a conta já tendo outra assinatura paga ativa, então a assinatura que sobrou é cancelada na operadora e o registro anota "cancelada: sobra".
-- **CA-402** · Dado que a `assinar` não recebe resposta da operadora ao pedir a assinatura, então ela procura na operadora uma assinatura desta conta criada há poucos minutos; achando, segue como se a resposta tivesse chegado; não achando, responde que não conseguiu falar com o servidor de cobrança (CA-374).
+- **CA-402** · Dado que a `assinar` não recebe resposta da operadora ao pedir a assinatura, então ela procura na operadora uma assinatura desta conta criada há poucos minutos; achando, segue como se a resposta tivesse chegado; não achando, responde que não conseguiu falar com o servidor de cobrança (CA-374). Uma assinatura achada já cancelada não conta como achada.
 - **CA-403** · Dado que a operadora responde com sucesso mas a assinatura veio cancelada ou pausada, então a `assinar` responde como recusa (402) e não grava assinatura ativa.
 
 ### US-C3 · Qualidade

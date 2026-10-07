@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { ANDAMENTO_NA_CONTA, assinar, EM_ANDAMENTO, JA_ASSINA, type PedidoDeAssinatura } from '../../supabase/functions/_shared/assinar.ts'
 import { RECUSA_PADRAO, SEM_COBRANCA, UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
-import type { RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
+import type { RecusasContadas, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
 import { AGORA, CARTAO, cenario, responde } from './servidorFalsos.test-utils.ts'
 
 const TOKEN = 'tok_teste_12345'
@@ -104,6 +104,7 @@ describe('assinar: o núcleo da função (spec checkout-proprio e cobranca-em-pr
     const c = cenario([{ ...linha, cartao_final: '1111' }], { [POST]: [responde(201, CRIADA)] })
     expect(await assinar(PEDIDO, c.deps)).toEqual({ status: 409, corpo: { erro: ANDAMENTO_NA_CONTA } })
     expect(c.pedidos).toEqual([])
+    expect(c.reservas.size).toBe(0)
     const antigo = cenario([{ ...linha, cartao_final: null }], { [POST]: [responde(201, CRIADA)] })
     expect(await assinar(PEDIDO, antigo.deps)).toEqual(ASSINOU)
   })
@@ -214,6 +215,30 @@ describe('assinar: o núcleo da função (spec checkout-proprio e cobranca-em-pr
     const c = cenario([], { [POST]: [null], [BUSCA]: [busca] })
     expect(await assinar(PEDIDO, c.deps)).toEqual(FORA)
     expect(c.assinaturas.size).toBe(0)
+  })
+
+  it('CA-402: achar só uma assinatura já cancelada conta como "não achou": 502, a reserva fica e nada é anotado', async () => {
+    const c = cenario([], { [POST]: [null], [BUSCA]: [responde(200, { results: [{ ...ACHADA, status: 'cancelled' }] })] })
+    expect(await assinar(PEDIDO, c.deps)).toEqual(FORA)
+    expect(c.assinaturas.size).toBe(0)
+    expect(c.reservas.has('u1')).toBe(true)
+    expect(c.tentativas).toEqual([])
+  })
+
+  it.each([
+    ['de outra conta', { ...ACHADA, external_reference: 'u2' }],
+    ['com outro valor', { ...ACHADA, auto_recurring: { transaction_amount: 64.9, frequency: 1 } }],
+    ['com o mesmo valor em outra frequência', { ...ACHADA, auto_recurring: { transaction_amount: 34.9, frequency: 12 } }],
+    ['nascida 1 ms antes da folga de 2 min', { ...ACHADA, date_created: '2026-10-06T14:57:59.999Z' }],
+  ])('CB-99: sozinha, a assinatura %s não confere: 502', async (_caso, item) => {
+    const c = cenario([], { [POST]: [null], [BUSCA]: [responde(200, { results: [item] })] })
+    expect(await assinar(PEDIDO, c.deps)).toEqual(FORA)
+    expect(c.assinaturas.size).toBe(0)
+  })
+
+  it('D-85: a nascida exatamente 2 min antes do começo do pedido ainda confere', async () => {
+    const c = cenario([], { [POST]: [null], [BUSCA]: [responde(200, { results: [{ ...ACHADA, date_created: '2026-10-06T14:58:00.000Z' }] })] })
+    expect(await assinar(PEDIDO, c.deps)).toEqual(ASSINOU)
   })
 
   it('entre as que conferem, vale a mais nova que não está cancelada', async () => {
@@ -344,6 +369,18 @@ describe('assinar: o limite de tentativas com cartão recusado (D-101)', () => {
     expect(await assinar(PEDIDO, c.deps)).toEqual(FORA)
     expect(c.ordem).toEqual(['contarRecusas'])
     expect(c.log).toHaveBeenCalledWith('Não consegui contar as tentativas de cartão:', 'banco fora')
+  })
+
+  it.each<[keyof RecusasContadas, number]>([
+    ['daConta24h', Number.NaN],
+    ['seguidasDaConta', Number.NaN],
+    ['doSite1h', Number.POSITIVE_INFINITY],
+  ])('R5: contagem fora do formato (%s = %s) também fecha: 502 sem reservar nem chamar a operadora', async (campo, valor) => {
+    const c = cenario([], { [POST]: [responde(201, CRIADA)] })
+    const contarRecusas = async (): Promise<RecusasContadas> => ({ daConta24h: 0, seguidasDaConta: 0, doSite1h: 0, [campo]: valor })
+    expect(await assinar(PEDIDO, { ...c.deps, banco: { ...c.banco, contarRecusas } })).toEqual(FORA)
+    expect(c.pedidos).toEqual([])
+    expect(c.reservas.size).toBe(0)
   })
 
   it.each<[string, Rotas, number, readonly boolean[]]>([

@@ -22,15 +22,8 @@ import {
   type CicloDaAssinatura,
 } from './cobranca.ts'
 import { cancelarNaOperadora } from './operadora.ts'
-import {
-  respostaDeErro as erro,
-  type BancoDaCobranca,
-  type ContaQuePede,
-  type Operadora,
-  type RecusasContadas,
-  type Registro,
-  type RespostaDaFuncao,
-} from './portas.ts'
+import { respostaDeErro as erro, type BancoDaCobranca, type ContaQuePede, type Operadora, type Registro, type RespostaDaFuncao } from './portas.ts'
+import { anotarTentativaDeCartao, conferirTentativas, ehRecusaDoCartao, type BancoDasTentativas } from './tentativas.ts'
 
 /** A reserva de uma função que morreu no meio vence em 5 minutos (008). */
 export const RESERVA_VENCE_MS = 5 * 60_000
@@ -40,15 +33,6 @@ export const EM_ANDAMENTO = 'Já estamos confirmando uma assinatura desta conta.
 export const JA_ASSINA = 'Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.'
 export const ANDAMENTO_NA_CONTA = 'Você já tem uma assinatura em andamento. Confira em Conta e plano.'
 
-/** D-101 (CA-433, CA-434): a resposta do portão fechado. */
-export const MUITAS_TENTATIVAS = 'Muitas tentativas com cartão recusado. Tente de novo amanhã.'
-/** CA-433: com tantas recusas da conta nas últimas 24 h, o portão fecha. */
-export const RECUSAS_DA_CONTA_24H = 5
-/** CA-434: com tantas recusas do site inteiro na última hora, o portão fecha para todas as contas. */
-export const RECUSAS_DO_SITE_1H = 30
-/** R7: as tentativas anotadas ficam 7 dias. */
-export const TENTATIVAS_FICAM_MS = 7 * UM_DIA_MS
-
 export interface PedidoDeAssinatura {
   /** Quem pede, lido do token da sessão; nulo sem sessão. */
   readonly conta: ContaQuePede | null
@@ -57,9 +41,6 @@ export interface PedidoDeAssinatura {
   /** Para onde a operadora devolveria a pessoa (back_url). */
   readonly site: string
 }
-
-/** O que o portão das tentativas de cartão usa do banco (D-101). */
-export type BancoDasTentativas = Pick<BancoDaCobranca, 'contarRecusas' | 'anotarTentativa' | 'apagarTentativasAntesDe'>
 
 export interface DependenciasDeAssinar {
   readonly operadora: Operadora
@@ -82,56 +63,17 @@ export interface AlvoDaBusca {
   readonly desde: number
 }
 
-/** O portão aberto diz quantas recusas seguidas a conta já tinha (CA-435); o fechado, o que responder. */
-export type PortaoDasTentativas =
-  | { readonly passa: true; readonly seguidas: number }
-  | { readonly passa: false; readonly resposta: RespostaDaFuncao }
-
-const mensagemDe = (falha: unknown): string => (falha instanceof Error ? falha.message : String(falha))
-
-/**
- * D-101 (CA-433, CA-434): antes de chamar a operadora com um cartão, conta as recusas. Com 5 da conta
- * em 24 h, ou 30 do site inteiro na última hora, fecha sem chamar a operadora. Sem conseguir contar,
- * também fecha (R5): responde 502 e não deixa passar.
- */
-export async function conferirTentativas(banco: BancoDasTentativas, conta: string, agora: Date, log: Registro): Promise<PortaoDasTentativas> {
-  let contadas: RecusasContadas
-  try {
-    contadas = await banco.contarRecusas(conta, agora)
-  } catch (falha) {
-    log('Não consegui contar as tentativas de cartão:', mensagemDe(falha))
-    return { passa: false, resposta: erro(SEM_COBRANCA, 502) }
-  }
-  if (contadas.daConta24h >= RECUSAS_DA_CONTA_24H || contadas.doSite1h >= RECUSAS_DO_SITE_1H) {
-    log('Muitas recusas de cartão; a operadora não foi chamada. Da conta em 24 h:', contadas.daConta24h, 'do site em 1 h:', contadas.doSite1h)
-    return { passa: false, resposta: erro(MUITAS_TENTATIVAS, 429, 'muitas-tentativas') }
-  }
-  return { passa: true, seguidas: contadas.seguidasDaConta }
-}
-
-/** R4: só a recusa do cartão conta (o código do banco ou "recusado"); token vencido e outra falha, não. */
-export const ehRecusaDoCartao = (codigo: string): boolean => codigo === 'recusado' || codigo.startsWith('cc_rejected_')
-
-/** R4 e R7: anota a tentativa e apaga as de mais de 7 dias. A falha só vai para o registro. */
-export async function anotarTentativaDeCartao(banco: BancoDasTentativas, conta: string, recusada: boolean, agora: Date, log: Registro): Promise<void> {
-  try {
-    await banco.anotarTentativa(conta, recusada)
-    await banco.apagarTentativasAntesDe(new Date(agora.getTime() - TENTATIVAS_FICAM_MS))
-  } catch (falha) {
-    log('Não consegui anotar a tentativa de cartão:', mensagemDe(falha))
-  }
-}
-
 /**
  * D-85 e CB-99: a assinatura que este pedido acabou de criar, pela busca da operadora. A busca não
  * filtra pela conta: filtra pelo e-mail, e cada resultado é conferido (a conta, o valor, a frequência
- * e a hora em que nasceu). Entre as que conferem, vale a mais nova que não está cancelada.
+ * e a hora em que nasceu). A já cancelada não conta como achada (CA-402): sem a resposta do pedido, não
+ * se sabe se foi o cartão. Entre as que conferem, vale a mais nova.
  */
 export async function procurarAssinaturaRecente(operadora: Operadora, alvo: AlvoDaBusca): Promise<AssinaturaNaOperadora | null> {
   const busca = await operadora('GET', `/preapproval/search?payer_email=${encodeURIComponent(alvo.email)}&limit=50`)
   const resultados = busca?.ok ? busca.dados?.['results'] : undefined
   const lista: readonly unknown[] = Array.isArray(resultados) ? resultados : []
-  const conferem: { readonly achada: AssinaturaNaOperadora; readonly nasceu: number; readonly cancelada: boolean }[] = []
+  const conferem: { readonly achada: AssinaturaNaOperadora; readonly nasceu: number }[] = []
   for (const item of lista) {
     const dados = objeto(item)
     if (!dados) continue
@@ -142,10 +84,10 @@ export async function procurarAssinaturaRecente(operadora: Operadora, alvo: Alvo
     const nasceu = typeof criada === 'string' ? Date.parse(criada) : Number.NaN
     if (typeof id !== 'string' || dados['external_reference'] !== alvo.conta) continue
     if (recorrencia?.['frequency'] !== alvo.frequencia || typeof valor !== 'number' || Math.round(valor * 100) !== Math.round(alvo.valor * 100)) continue
-    if (!(nasceu >= alvo.desde)) continue
-    conferem.push({ achada: { id, dados }, nasceu, cancelada: traduzirStatus(dados['status']) === 'cancelada' })
+    if (!(nasceu >= alvo.desde) || traduzirStatus(dados['status']) === 'cancelada') continue
+    conferem.push({ achada: { id, dados }, nasceu })
   }
-  conferem.sort((a, b) => Number(a.cancelada) - Number(b.cancelada) || b.nasceu - a.nasceu)
+  conferem.sort((a, b) => b.nasceu - a.nasceu)
   return conferem[0]?.achada ?? null
 }
 
