@@ -8,6 +8,7 @@ import webhookIndex from '../../supabase/functions/webhook-mercadopago/index.ts?
 import bancoSupabase from '../../supabase/functions/_shared/bancoSupabase.ts?raw'
 import nucleoAssinar from '../../supabase/functions/_shared/assinar.ts?raw'
 import cobranca from '../../supabase/functions/_shared/cobranca.ts?raw'
+import corpoDoPedido from '../../supabase/functions/_shared/corpo.ts?raw'
 import nucleoGerenciar from '../../supabase/functions/_shared/gerenciarAssinatura.ts?raw'
 import operadora from '../../supabase/functions/_shared/operadora.ts?raw'
 import portas from '../../supabase/functions/_shared/portas.ts?raw'
@@ -15,7 +16,7 @@ import tentativas from '../../supabase/functions/_shared/tentativas.ts?raw'
 import nucleoWebhook from '../../supabase/functions/_shared/webhook.ts?raw'
 
 const INDICES = { assinar: assinarIndex, 'gerenciar-assinatura': gerenciarIndex, 'webhook-mercadopago': webhookIndex }
-const NUCLEOS = { assinar: nucleoAssinar, gerenciarAssinatura: nucleoGerenciar, webhook: nucleoWebhook, operadora, portas, cobranca, tentativas }
+const NUCLEOS = { assinar: nucleoAssinar, gerenciarAssinatura: nucleoGerenciar, webhook: nucleoWebhook, operadora, portas, cobranca, tentativas, corpo: corpoDoPedido }
 const registros = (codigo: string) => codigo.split('\n').filter((linha) => linha.includes('console.'))
 
 describe('as funções são só ligação (D-88)', () => {
@@ -77,6 +78,23 @@ describe('as funções são só ligação (D-88)', () => {
 
   it('R6: nenhuma função lê o IP de quem pede', () => {
     for (const codigo of [...Object.values(INDICES), bancoSupabase]) expect(codigo).not.toMatch(/x-forwarded-for|\bip\b/i)
+  })
+
+  it.each(Object.entries(INDICES))('CA-451: %s lê o corpo com o teto de 64 KB antes de qualquer outra coisa, sem o req.json()', (_, codigo) => {
+    const ler = codigo.indexOf('const lido = await lerCorpo(req)')
+    expect(ler).toBeGreaterThan(-1)
+    expect(codigo).toContain("from '../_shared/corpo.ts'")
+    expect(codigo).not.toContain('req.json(')
+    expect(ler).toBeLessThan(codigo.indexOf("Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')"))
+    expect(ler).toBeLessThan(codigo.indexOf('createClient(urlSupabase, servico)'))
+    expect(codigo).toContain('corpo: lido.json,')
+  })
+
+  it('CA-451: acima de 64 KB, assinar e gerenciar respondem 413 com os cabeçalhos do site; o aviso responde 413 sem anotar nada', () => {
+    for (const codigo of [assinarIndex, gerenciarIndex]) expect(codigo).toContain('if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413)')
+    const grande = webhookIndex.indexOf("if (lido.grande) return new Response('grande demais', { status: 413 })")
+    expect(grande).toBeGreaterThan(-1)
+    expect(grande).toBeLessThan(webhookIndex.indexOf('await tratarAviso('))
   })
 
   it('CA-425: assinar e gerenciar respondem ao pré-voo do navegador só com os cabeçalhos do site', () => {

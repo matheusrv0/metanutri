@@ -3,6 +3,7 @@
 // --no-verify-jwt: quem chama é a operadora, que não tem conta no Supabase.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
 import { criarBanco } from '../_shared/bancoSupabase.ts'
+import { lerCorpo } from '../_shared/corpo.ts'
 import { criarOperadora } from '../_shared/operadora.ts'
 import { tratarAviso } from '../_shared/webhook.ts'
 
@@ -14,6 +15,9 @@ import { tratarAviso } from '../_shared/webhook.ts'
 const PRAZO_DO_AVISO_MS = 3_500
 
 Deno.serve(async (req: Request) => {
+  // D-110 (CA-451): acima de 64 KB, recusa sem ler o resto e sem processar nada, nem o registro de avisos.
+  const lido = await lerCorpo(req)
+  if (lido.grande) return new Response('grande demais', { status: 413 })
   const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')
   const urlSupabase = Deno.env.get('SUPABASE_URL')
   const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -23,10 +27,9 @@ Deno.serve(async (req: Request) => {
     return new Response('sem configuração', { status: 500 })
   }
   const url = new URL(req.url)
-  const lido: unknown = await req.json().catch(() => null)
   const status = await tratarAviso(
     {
-      corpo: lido,
+      corpo: lido.json,
       idNaUrl: url.searchParams.get('data.id'),
       tipoNaUrl: url.searchParams.get('type'),
       xSignature: req.headers.get('x-signature'),
