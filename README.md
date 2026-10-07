@@ -135,8 +135,8 @@ logo abaixo; depois siga a lista seguinte.
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
-   `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql` e
-   `010-seguranca-lote-1.sql`.
+   `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
+   `009-cobranca-em-producao.sql` e `010-seguranca-lote-1.sql`.
 4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -174,6 +174,10 @@ Para funcionar de verdade, nesta ordem:
    Depois rode `supabase/008-cartao-da-assinatura.sql`: ele guarda a bandeira, os 4 últimos números do cartão e a
    data da próxima cobrança, e cria a trava que impede duas abas de assinarem ao mesmo tempo (spec checkout-proprio).
    Rode **antes** de publicar as funções do passo 5; também pode rodar de novo.
+   Depois rode `supabase/009-cobranca-em-producao.sql`: ele guarda a data da última mensalidade paga, quem encerrou a
+   assinatura e quando, o cartão do pedido em andamento, as tentativas de cartão por conta e o registro dos avisos do
+   Mercado Pago (spec cobranca-em-producao). Rode **antes** de publicar as funções do passo 5: elas leem estas colunas,
+   e publicadas antes toda assinatura falha. Também pode rodar de novo.
    Depois rode `supabase/010-seguranca-lote-1.sql` (spec seguranca-lote-1): o banco passa a garantir o aviso de uso
    não comercial e o limite de links do plano, recusa token e marcações fora do padrão, aceita comprovante só de
    estudante (até 10 arquivos) e deixa as funções da verificação só para quem está logado. Também pode rodar de novo;
