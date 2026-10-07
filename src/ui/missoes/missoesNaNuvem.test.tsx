@@ -231,6 +231,45 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     expect(screen.queryByLabelText('Link do paciente')).not.toBeInTheDocument()
   })
 
+  it('CB-107: o link que chegou à nuvem fica marcado no aparelho', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    cartao(repo)
+
+    await gerarLink(usuario)
+
+    const id = repo.porCaso('c1')?.id ?? ''
+    await waitFor(() => expect(repo.estaNaNuvem(id)).toBe(true))
+  })
+
+  it('CB-107: o link que a nuvem recusou não fica marcado: ele ainda vai subir', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    nuvem.falha.upsert = true
+    cartao(repo)
+
+    await gerarLink(usuario)
+
+    expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
+    expect(repo.estaNaNuvem(repo.porCaso('c1')?.id ?? '')).toBe(false)
+  })
+
+  it('CB-107: gerar de novo sem internet não tira a marca de um link que já estava na nuvem', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const antigo = acompanhamentoDe('c1', 'Ana')
+    repo.salvar(antigo, { naNuvem: true })
+    nuvem.linhas = [linhaDe(antigo)]
+    cartao(repo)
+    await waitFor(() => expect(nuvem.chamadas).toContain('select'))
+
+    nuvem.falha.upsert = true
+    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+
+    expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
+    expect(repo.estaNaNuvem(antigo.id)).toBe(true)
+  })
+
   it('CA-444: sem servidor, o link é gerado só no aparelho, como antes', async () => {
     nuvem.ligada = false
     const usuario = userEvent.setup()
@@ -420,6 +459,75 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     })
     expect(screen.queryByText(/nuvem/)).not.toBeInTheDocument()
     expect(nuvem.chamadas).toEqual([])
+  })
+
+  it('CB-107: link apagado em outro aparelho não volta: some deste também', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const ana = acompanhamentoDe('c1', 'Ana')
+    repo.salvar(ana, { naNuvem: true })
+    nuvem.linhas = []
+    adesao(repo)
+
+    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(repo.listar()).toEqual([])
+    expect(nuvem.linhas).toEqual([])
+    expect(nuvem.chamadas).not.toContain('criar-se-faltar')
+  })
+
+  it('CB-107: "Apagar tudo" em outro aparelho: sai o que já esteve na nuvem, sobe só o que nunca esteve', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const ana = acompanhamentoDe('c1', 'Ana')
+    const bia = acompanhamentoDe('c2', 'Bia')
+    const caio = acompanhamentoDe('c3', 'Caio')
+    repo.salvar(ana, { naNuvem: true })
+    repo.salvar(bia, { naNuvem: true })
+    repo.salvar(caio)
+    nuvem.linhas = []
+    adesao(repo)
+
+    await waitFor(() => expect(repo.listar().map((a) => a.nome)).toEqual(['Caio']))
+    await waitFor(() => expect(nuvem.linhas.map((l) => l['id'])).toEqual([caio.id]))
+    expect(screen.queryByText('Ana')).not.toBeInTheDocument()
+    expect(screen.queryByText('Bia')).not.toBeInTheDocument()
+  })
+
+  it('CB-107: o link lido da nuvem fica marcado; se depois sumir de lá, sai daqui', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const ana = acompanhamentoDe('c1', 'Ana')
+    nuvem.linhas = [linhaDe(ana)]
+    adesao(repo)
+    expect(await screen.findByText('Ana')).toBeInTheDocument()
+    expect(repo.estaNaNuvem(ana.id)).toBe(true)
+
+    nuvem.linhas = []
+    act(() => {
+      fireEvent(document, new Event('visibilitychange'))
+    })
+
+    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(nuvem.linhas).toEqual([])
+  })
+
+  it('CB-107: o link que sobe (D-105) passa a ficar marcado', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const ana = acompanhamentoDe('c1', 'Ana')
+    repo.salvar(ana)
+    adesao(repo)
+
+    await waitFor(() => expect(repo.estaNaNuvem(ana.id)).toBe(true))
+    expect(nuvem.linhas).toHaveLength(1)
+  })
+
+  it('CB-107: o link que não subiu continua sem a marca, e tenta de novo na próxima leitura', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const ana = acompanhamentoDe('c1', 'Ana')
+    repo.salvar(ana)
+    nuvem.limite = 0
+    adesao(repo)
+
+    expect(await screen.findByText(`Ainda não está na nuvem. ${LIMITE}`)).toBeInTheDocument()
+    expect(repo.estaNaNuvem(ana.id)).toBe(false)
+    expect(repo.listar()).toHaveLength(1)
   })
 
   it('a falha de rede da nuvem chega traduzida, nunca o texto técnico', async () => {

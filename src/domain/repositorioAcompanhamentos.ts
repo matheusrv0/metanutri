@@ -10,7 +10,19 @@ const FORMATO = 1
 interface ArquivoSalvo {
   readonly formato: number
   readonly itens: readonly Acompanhamento[]
+  /**
+   * Ids dos links que já estiveram na nuvem (spec missoes-na-nuvem, CB-107). O que já esteve
+   * e sumiu de lá foi apagado em outro aparelho. Arquivo antigo, sem o campo: nenhum esteve.
+   */
+  readonly naNuvem?: readonly string[]
 }
+
+interface Guardado {
+  readonly itens: readonly Acompanhamento[]
+  readonly naNuvem: ReadonlySet<string>
+}
+
+const VAZIO: Guardado = { itens: [], naNuvem: new Set() }
 
 function ehAcompanhamento(v: unknown): v is Acompanhamento {
   if (typeof v !== 'object' || v === null) return false
@@ -28,7 +40,7 @@ function ehAcompanhamento(v: unknown): v is Acompanhamento {
 
 export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | null) {
   // Espelho em memória: é a única fonte quando o navegador bloqueia o armazenamento.
-  let memoria: Acompanhamento[] = []
+  let memoria: Guardado = VAZIO
   let persistente = false
   let aviso: string | null = null
 
@@ -44,26 +56,31 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
     }
   }
 
-  const ler = (): Acompanhamento[] => {
+  const lerTudo = (): Guardado => {
     if (!persistente || !armazenamento) return memoria
     try {
       const bruto = armazenamento.getItem(CHAVE)
-      if (bruto === null) return []
+      if (bruto === null) return VAZIO
       const v: unknown = JSON.parse(bruto)
-      if (typeof v !== 'object' || v === null) return []
+      if (typeof v !== 'object' || v === null) return VAZIO
       const arquivo = v as Partial<ArquivoSalvo>
-      if (arquivo.formato !== FORMATO || !Array.isArray(arquivo.itens)) return []
-      return arquivo.itens.filter(ehAcompanhamento)
+      if (arquivo.formato !== FORMATO || !Array.isArray(arquivo.itens)) return VAZIO
+      const naNuvem = Array.isArray(arquivo.naNuvem) ? arquivo.naNuvem.filter((id): id is string => typeof id === 'string') : []
+      return { itens: arquivo.itens.filter(ehAcompanhamento), naNuvem: new Set(naNuvem) }
     } catch {
       return memoria
     }
   }
 
-  const gravar = (itens: readonly Acompanhamento[]) => {
-    memoria = [...itens]
+  const ler = (): readonly Acompanhamento[] => lerTudo().itens
+
+  const gravar = (itens: readonly Acompanhamento[], naNuvem: ReadonlySet<string>) => {
+    // A marca só vive enquanto o link existe: remover leva a marca junto.
+    const marcados = [...naNuvem].filter((id) => itens.some((a) => a.id === id))
+    memoria = { itens: [...itens], naNuvem: new Set(marcados) }
     if (!persistente || !armazenamento) return
     try {
-      armazenamento.setItem(CHAVE, JSON.stringify({ formato: FORMATO, itens } satisfies ArquivoSalvo))
+      armazenamento.setItem(CHAVE, JSON.stringify({ formato: FORMATO, itens, naNuvem: marcados } satisfies ArquivoSalvo))
     } catch {
       persistente = false
       aviso = 'O armazenamento do navegador está cheio: as marcações a partir de agora não serão salvas.'
@@ -94,16 +111,32 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       return ler().find((a) => a.casoId === casoId) ?? null
     },
 
-    salvar(acompanhamento: Acompanhamento): Acompanhamento {
-      const itens = ler()
+    /**
+     * Grava a cópia do aparelho. `naNuvem` diz se o link está na nuvem (CB-107); sem ele, a
+     * marca que já existia fica como estava (gerar de novo sem internet não tira a marca).
+     */
+    salvar(acompanhamento: Acompanhamento, opcoes: { readonly naNuvem?: boolean } = {}): Acompanhamento {
+      const { itens, naNuvem } = lerTudo()
       const i = itens.findIndex((a) => a.id === acompanhamento.id)
-      if (i === -1) gravar([...itens, acompanhamento])
-      else gravar(itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a)))
+      const novos = i === -1 ? [...itens, acompanhamento] : itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a))
+      const marcados = new Set(naNuvem)
+      if (opcoes.naNuvem === true) marcados.add(acompanhamento.id)
+      if (opcoes.naNuvem === false) marcados.delete(acompanhamento.id)
+      gravar(novos, marcados)
       return acompanhamento
     },
 
+    /** Já esteve na nuvem? Se sim e sumiu de lá, foi apagado em outro aparelho (CB-107). */
+    estaNaNuvem(id: string): boolean {
+      return lerTudo().naNuvem.has(id)
+    },
+
     remover(id: string): void {
-      gravar(ler().filter((a) => a.id !== id))
+      const { itens, naNuvem } = lerTudo()
+      gravar(
+        itens.filter((a) => a.id !== id),
+        naNuvem,
+      )
     },
   }
 }

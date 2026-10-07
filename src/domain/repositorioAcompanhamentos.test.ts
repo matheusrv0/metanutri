@@ -123,6 +123,57 @@ describe('Repositório de acompanhamentos', () => {
   })
 })
 
+describe('CB-107: o aparelho lembra quais links já estiveram na nuvem', () => {
+  it('o link marcado continua marcado depois de fechar e abrir', () => {
+    const armazenamento = memoria()
+    const a = criarRepositorioAcompanhamentos(armazenamento).salvar(novo(), { naNuvem: true })
+    expect(criarRepositorioAcompanhamentos(armazenamento).estaNaNuvem(a.id)).toBe(true)
+  })
+
+  it('link novo, criado só aqui, não está marcado', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = repo.salvar(novo())
+    expect(repo.estaNaNuvem(a.id)).toBe(false)
+  })
+
+  it('gravar de novo sem dizer nada não apaga a marca', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = repo.salvar(novo(), { naNuvem: true })
+    repo.salvar(marcarMissao(a, '2026-09-21', 'agua', true))
+    expect(repo.estaNaNuvem(a.id)).toBe(true)
+  })
+
+  it('remover leva a marca junto: o mesmo id, se voltar, começa sem ela', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = repo.salvar(novo(), { naNuvem: true })
+    repo.remover(a.id)
+    repo.salvar(a)
+    expect(repo.estaNaNuvem(a.id)).toBe(false)
+  })
+
+  it('dado antigo, sem a marca, conta como nunca esteve na nuvem', () => {
+    const armazenamento = memoria()
+    const a = novo()
+    armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [a] }))
+    const repo = criarRepositorioAcompanhamentos(armazenamento)
+    expect(repo.porId(a.id)?.id).toBe(a.id)
+    expect(repo.estaNaNuvem(a.id)).toBe(false)
+  })
+
+  it('a marca não entra no acompanhamento que as telas recebem', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = novo()
+    repo.salvar(a, { naNuvem: true })
+    expect(repo.listar()).toEqual([a])
+  })
+
+  it('sem armazenamento, a marca vale enquanto a página estiver aberta', () => {
+    const repo = criarRepositorioAcompanhamentos(null)
+    const a = repo.salvar(novo(), { naNuvem: true })
+    expect(repo.estaNaNuvem(a.id)).toBe(true)
+  })
+})
+
 describe('Fonte local, a costura do servidor', () => {
   it('responde o que está neste navegador e avisa que não é nuvem', async () => {
     const repo = criarRepositorioAcompanhamentos(memoria())

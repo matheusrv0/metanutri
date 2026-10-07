@@ -59,6 +59,15 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     else aCaminho.current.delete(id)
   }, [])
 
+  /** CB-107: o link chegou à nuvem. Marca a cópia que está no aparelho agora, sem trocá-la. */
+  const marcarQueEstaNaNuvem = useCallback(
+    (id: string) => {
+      const atual = repo.porId(id)
+      if (atual) repo.salvar(atual, { naNuvem: true })
+    },
+    [repo],
+  )
+
   const marcarForaDaNuvem = useCallback((id: string, motivo: string | null) => {
     setForaDaNuvem((atual) => {
       if (motivo === null && !atual.has(id)) return atual
@@ -96,13 +105,14 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
           else repo.remover(acompanhamento.id)
           atualizar()
         }
+        if (motivo === null) marcarQueEstaNaNuvem(acompanhamento.id)
         marcarForaDaNuvem(acompanhamento.id, motivo === LIMITE_DE_LINKS && anterior === null ? null : motivo)
         return motivo
       } finally {
         terminarDeMexer(acompanhamento.id)
       }
     },
-    [repo, cliente, atualizar, marcarForaDaNuvem, comecarAMexer, terminarDeMexer],
+    [repo, cliente, atualizar, marcarForaDaNuvem, marcarQueEstaNaNuvem, comecarAMexer, terminarDeMexer],
   )
 
   const remover = useCallback(
@@ -141,16 +151,21 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
 
       // CB-105: o mesmo link nos dois lugares: vale o que está na nuvem.
       const naNuvem = new Set(leitura.itens.map((a) => a.id))
-      for (const a of leitura.itens) if (!mexidos.current.has(a.id)) repo.salvar(a)
+      for (const a of leitura.itens) if (!mexidos.current.has(a.id)) repo.salvar(a, { naNuvem: true })
+
+      // CB-107: já esteve na nuvem e sumiu de lá: foi apagado em outro aparelho. Sai daqui também.
+      const soAqui = repo.listar().filter((a) => !naNuvem.has(a.id) && !mexidos.current.has(a.id))
+      for (const a of soAqui) if (repo.estaNaNuvem(a.id)) repo.remover(a.id)
       atualizar()
 
-      // D-105: o que só existe neste aparelho sobe. O que não sobe fica marcado com o motivo (CA-443).
+      // D-105: sobe só o que nunca esteve na nuvem. O que não sobe fica marcado com o motivo (CA-443).
       const motivos = new Map<string, string>()
-      for (const a of repo.listar()) {
+      for (const a of soAqui) {
         // Removido ou mexido enquanto os outros subiam: quem mexeu cuida da nuvem.
-        if (naNuvem.has(a.id) || mexidos.current.has(a.id) || repo.porId(a.id) === null) continue
+        if (mexidos.current.has(a.id) || repo.porId(a.id) === null) continue
         const motivo = await subirAcompanhamento(cliente, a)
-        if (motivo !== null) motivos.set(a.id, motivo)
+        if (motivo === null) marcarQueEstaNaNuvem(a.id)
+        else motivos.set(a.id, motivo)
       }
       const mexidosNaLeitura = [...mexidos.current]
       setForaDaNuvem((atual) => {
@@ -168,7 +183,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     })
     lendo.current = leitura
     return leitura
-  }, [cliente, repo, atualizar])
+  }, [cliente, repo, atualizar, marcarQueEstaNaNuvem])
 
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua
