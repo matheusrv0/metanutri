@@ -1,6 +1,7 @@
 // O que as funções de cobrança (assinar, gerenciar-assinatura e webhook-mercadopago)
 // fazem igual: traduzir o estado da operadora, ler o cartão que o navegador manda,
-// calcular as datas e entender a recusa (spec checkout-proprio).
+// calcular as datas, entender a recusa (spec checkout-proprio), guardar a tabela de preços
+// e fazer as leituras de dado de fora (spec cobranca-em-producao).
 //
 // Tudo aqui é puro, sem Deno e sem rede, para o Vitest conferir direto
 // (src/data/cobrancaServidor.test.ts). O navegador importa as duas contas de data, para a
@@ -31,6 +32,58 @@ export function lerCartao(valor: unknown): CartaoInformado | null {
   if (limpa.length < 1 || limpa.length > 40 || !/^[\p{L}\p{N} .&-]+$/u.test(limpa)) return null
   if (!/^\d{4}$/.test(final)) return null
   return { bandeira: limpa, final }
+}
+
+/** O valor, se for um objeto JSON (não lista); senão nulo. Tudo o que vem da operadora passa por aqui. */
+export const objeto = (valor: unknown): Readonly<Record<string, unknown>> | null =>
+  typeof valor === 'object' && valor !== null && !Array.isArray(valor) ? (valor as Record<string, unknown>) : null
+
+/** A data em ISO, se for data de verdade; senão nulo. */
+export function dataOuNula(valor: unknown): string | null {
+  if (typeof valor !== 'string') return null
+  const ms = Date.parse(valor)
+  return Number.isNaN(ms) ? null : new Date(ms).toISOString()
+}
+
+/** O código de uso único do cartão, se tiver o formato que a operadora usa. */
+export const tokenDoCartao = (valor: unknown): string | null => (typeof valor === 'string' && /^[A-Za-z0-9_-]{8,200}$/.test(valor) ? valor : null)
+
+export type PlanoAssinavel = 'solo' | 'pro'
+export type CicloDaAssinatura = 'mensal' | 'anual'
+export const ehCicloDaAssinatura = (valor: unknown): valor is CicloDaAssinatura => valor === 'mensal' || valor === 'anual'
+
+/**
+ * Os planos que se assina pelo site, com o preço que o servidor considera verdade (CA-375). Igual à
+ * página de Preços (src/domain/conta.ts): um teste confere.
+ */
+export const PLANOS_DO_SERVIDOR: Readonly<Record<PlanoAssinavel, { readonly nome: string; readonly mensal: number; readonly anual: number }>> = {
+  solo: { nome: 'MetaNutri Solo', mensal: 34.9, anual: 299 },
+  pro: { nome: 'MetaNutri Pro', mensal: 64.9, anual: 599 },
+}
+
+/** O plano, só se for chave da própria tabela: "constructor" ou "toString" não sobem pelo protótipo. */
+export const planoAssinavel = (valor: unknown): PlanoAssinavel | null =>
+  typeof valor === 'string' && Object.hasOwn(PLANOS_DO_SERVIDOR, valor) ? (valor as PlanoAssinavel) : null
+
+/** A frequência, em meses, que a operadora usa para cada ciclo. */
+export const FREQUENCIA: Readonly<Record<CicloDaAssinatura, 1 | 12>> = { mensal: 1, anual: 12 }
+
+/** Os planos que se paga: com um deles ativo, a conta já tem assinatura paga. */
+export const PAGOS: readonly string[] = ['solo', 'pro', 'clinica']
+
+/**
+ * D-85 e R-39: o plano e o ciclo de uma assinatura pelo valor e pela frequência. Só acha se um único
+ * plano da tabela tiver esse valor nesse ciclo; nenhum ou mais de um é nulo (não adota por palpite).
+ */
+export function planoPeloValor(valor: unknown, frequencia: unknown, tipoDaFrequencia: unknown): { readonly plano: PlanoAssinavel; readonly ciclo: CicloDaAssinatura } | null {
+  if (typeof valor !== 'number' || !Number.isFinite(valor)) return null
+  if (tipoDaFrequencia !== undefined && tipoDaFrequencia !== 'months') return null
+  const ciclo: CicloDaAssinatura | null = frequencia === 1 ? 'mensal' : frequencia === 12 ? 'anual' : null
+  if (!ciclo) return null
+  const centavos = Math.round(valor * 100)
+  const achados = (Object.keys(PLANOS_DO_SERVIDOR) as PlanoAssinavel[]).filter((p) => Math.round(PLANOS_DO_SERVIDOR[p][ciclo] * 100) === centavos)
+  const [plano] = achados
+  return achados.length === 1 && plano ? { plano, ciclo } : null
 }
 
 export const UM_DIA_MS = 24 * 60 * 60 * 1000

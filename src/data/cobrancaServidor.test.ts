@@ -3,13 +3,20 @@ import {
   CABECALHOS,
   codigoDaRecusa,
   dataDepoisDe,
+  dataOuNula,
   fimDoPeriodoPago,
   lerCartao,
+  objeto,
+  planoAssinavel,
+  planoPeloValor,
+  PLANOS_DO_SERVIDOR,
   previsaoDaProximaCobranca,
   responder,
+  tokenDoCartao,
   traduzirStatus,
   UM_DIA_MS,
 } from '../../supabase/functions/_shared/cobranca.ts'
+import { PLANOS } from '@/domain/conta.ts'
 import assinar from '../../supabase/functions/assinar/index.ts?raw'
 import gerenciar from '../../supabase/functions/gerenciar-assinatura/index.ts?raw'
 import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
@@ -105,5 +112,56 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
   it('CA-425: o webhook é chamado de servidor para servidor e não abre CORS', () => {
     expect(webhook).not.toContain('Access-Control')
     expect(webhook).not.toContain('CABECALHOS')
+  })
+})
+
+describe('a tabela de preços do servidor (spec cobranca-em-producao)', () => {
+  it('CA-375: o servidor cobra o mesmo preço que a página de Preços mostra', () => {
+    for (const id of ['solo', 'pro'] as const) {
+      const daTela = PLANOS.find((p) => p.id === id)
+      expect(PLANOS_DO_SERVIDOR[id].mensal).toBe(daTela?.mensal)
+      expect(PLANOS_DO_SERVIDOR[id].anual).toBe(daTela?.anual)
+    }
+  })
+
+  it('o plano só vale se for chave da própria tabela', () => {
+    expect(planoAssinavel('solo')).toBe('solo')
+    expect(planoAssinavel('constructor')).toBeNull()
+    expect(planoAssinavel('clinica')).toBeNull()
+    expect(planoAssinavel(1)).toBeNull()
+  })
+
+  it('D-85: acha o plano e o ciclo pelo valor e pela frequência', () => {
+    expect(planoPeloValor(34.9, 1, 'months')).toEqual({ plano: 'solo', ciclo: 'mensal' })
+    expect(planoPeloValor(299, 12, 'months')).toEqual({ plano: 'solo', ciclo: 'anual' })
+    expect(planoPeloValor(64.9, 1, 'months')).toEqual({ plano: 'pro', ciclo: 'mensal' })
+    expect(planoPeloValor(599, 12, undefined)).toEqual({ plano: 'pro', ciclo: 'anual' })
+    expect(planoPeloValor(34.900000000001, 1, 'months')).toEqual({ plano: 'solo', ciclo: 'mensal' })
+  })
+
+  it('D-85: valor ou frequência sem plano não adivinha', () => {
+    expect(planoPeloValor(34.9, 12, 'months')).toBeNull()
+    expect(planoPeloValor(10, 1, 'months')).toBeNull()
+    expect(planoPeloValor('34.9', 1, 'months')).toBeNull()
+    expect(planoPeloValor(34.9, 1, 'days')).toBeNull()
+    expect(planoPeloValor(34.9, 3, 'months')).toBeNull()
+  })
+
+  it('R-39: nenhum par de planos tem o mesmo valor no mesmo ciclo (senão a adoção não acharia o plano)', () => {
+    for (const ciclo of ['mensal', 'anual'] as const) {
+      const valores = Object.values(PLANOS_DO_SERVIDOR).map((p) => Math.round(p[ciclo] * 100))
+      expect(new Set(valores).size).toBe(valores.length)
+    }
+  })
+
+  it('lê o que vem de fora sem confiar no formato', () => {
+    expect(objeto({ a: 1 })).toEqual({ a: 1 })
+    expect(objeto([1])).toBeNull()
+    expect(objeto(null)).toBeNull()
+    expect(dataOuNula('2026-11-06T13:00:00Z')).toBe('2026-11-06T13:00:00.000Z')
+    expect(dataOuNula('ontem')).toBeNull()
+    expect(tokenDoCartao('tok_teste_12345')).toBe('tok_teste_12345')
+    expect(tokenDoCartao('curto')).toBeNull()
+    expect(tokenDoCartao('tem espaço e é longo')).toBeNull()
   })
 })
