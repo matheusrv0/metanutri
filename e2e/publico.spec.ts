@@ -49,3 +49,20 @@ test('CA-381: Preços e Termos não citam o processador', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeVisible()
   expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
 })
+
+test('CA-431: aberto dentro da moldura de outro site, só aparece o aviso com o link', async ({ page, baseURL }) => {
+  await page.setContent(`<iframe title="outro site" src="${baseURL ?? ''}/#/inicio" style="width: 800px; height: 600px"></iframe>`)
+  const moldura = page.frameLocator('iframe[title="outro site"]')
+  await expect(moldura.getByText('Abra o MetaNutri direto no navegador.')).toBeVisible()
+  const link = moldura.getByRole('link', { name: 'metanutri.com.br' })
+  await expect(link).toHaveAttribute('href', 'https://metanutri.com.br/')
+  await expect(link).toHaveAttribute('target', '_top')
+  await expect(moldura.getByRole('heading')).toHaveCount(0)
+  await expect(moldura.getByRole('button')).toHaveCount(0)
+})
+
+test('CA-431: aberto direto, o site abre normalmente', async ({ page }) => {
+  await page.goto('/#/inicio')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(page.getByText('Abra o MetaNutri direto no navegador.')).toHaveCount(0)
+})

@@ -7,7 +7,9 @@ import './ui/tema/globals.css'
 import { criarRepositorioProdutos, produtoComoAlimento } from './domain/produtos.ts'
 import { registrarProdutos } from './domain/tabelas.ts'
 import { App } from './App.tsx'
+import { AvisoMoldura } from './ui/AvisoMoldura.tsx'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { estaEmMoldura } from './ui/moldura.ts'
 import { obterSupabase } from './ui/estado/supabase.ts'
 import { tirarDestino } from './ui/fluxoConta.ts'
 import { escreverRota } from './ui/navegacao.ts'
@@ -39,12 +41,23 @@ async function tratarVolta(): Promise<void> {
   globalThis.history.replaceState(null, '', `${globalThis.location.pathname}${escreverRota(destinoDaVolta(volta, guardado))}`)
 }
 
-void tratarVolta().finally(() => {
+// D-99: aberto dentro de outro site, não monta o app: só o aviso com o link para abrir direto.
+if (estaEmMoldura(globalThis)) {
   createRoot(raiz).render(
     <StrictMode>
       <ProvedorTema>
-        <App />
+        <AvisoMoldura />
       </ProvedorTema>
     </StrictMode>,
   )
-})
+} else {
+  void tratarVolta().finally(() => {
+    createRoot(raiz).render(
+      <StrictMode>
+        <ProvedorTema>
+          <App />
+        </ProvedorTema>
+      </StrictMode>,
+    )
+  })
+}
