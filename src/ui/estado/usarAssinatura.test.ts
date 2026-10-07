@@ -168,6 +168,56 @@ describe('useAssinatura (spec checkout-proprio)', () => {
     await waitFor(() => expect(cliente.leituras).toBeGreaterThan(antes))
   })
 
+  it('CA-395 e CA-396: a prévia pergunta ao servidor e devolve se já houve cobrança e até quando vale', async () => {
+    cliente.invocar.mockResolvedValue({ data: { cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' }, error: null })
+    const { result } = await aberto()
+    let resposta: unknown
+    await act(async () => {
+      resposta = await result.current.previaDoCancelamento()
+    })
+    expect(cliente.invocar).toHaveBeenCalledWith('gerenciar-assinatura', { body: { acao: 'previa' } })
+    expect(resposta).toEqual({ ok: true, cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' })
+  })
+
+  it('a prévia não relê a assinatura', async () => {
+    cliente.invocar.mockResolvedValue({ data: { cobrada: false, expiraEm: null }, error: null })
+    const { result } = await aberto()
+    const antes = cliente.leituras
+    await act(async () => {
+      expect(await result.current.previaDoCancelamento()).toEqual({ ok: true, cobrada: false, expiraEm: null })
+    })
+    expect(cliente.leituras).toBe(antes)
+  })
+
+  it('CA-397: sem resposta ou resposta fora do formato, a prévia falha', async () => {
+    const { result } = await aberto()
+    cliente.invocar.mockResolvedValueOnce({ data: null, error: new Error('Failed to fetch') })
+    await act(async () => {
+      expect(await result.current.previaDoCancelamento()).toEqual({ ok: false, erro: SERVIDOR_FORA })
+    })
+    cliente.invocar.mockResolvedValueOnce({ data: { cobrada: 'sim', expiraEm: null }, error: null })
+    await act(async () => {
+      expect(await result.current.previaDoCancelamento()).toMatchObject({ ok: false })
+    })
+    cliente.invocar.mockResolvedValueOnce({ data: { cobrada: true }, error: null })
+    await act(async () => {
+      expect(await result.current.previaDoCancelamento()).toMatchObject({ ok: false })
+    })
+  })
+
+  it('CA-433: o 429 de cartão recusado em excesso mostra a frase do servidor, ao assinar e ao trocar o cartão', async () => {
+    const frase = 'Muitas tentativas com cartão recusado. Tente de novo amanhã.'
+    const { result } = await aberto()
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, { erro: frase, codigo: 'muitas-tentativas' }))
+    await act(async () => {
+      expect(await result.current.assinar('solo', 'mensal', CARTAO)).toEqual({ ok: false, erro: frase })
+    })
+    cliente.invocar.mockResolvedValueOnce(respondeu(429, { erro: frase, codigo: 'muitas-tentativas' }))
+    await act(async () => {
+      expect(await result.current.trocarCartao(CARTAO)).toEqual({ ok: false, erro: frase })
+    })
+  })
+
   it('CB-93: cancelamento que falha também lê a assinatura de novo, para a tela mostrar o que o servidor tem', async () => {
     cliente.invocar.mockResolvedValue({ data: null, error: new Error('Failed to fetch') })
     const { result } = await aberto()

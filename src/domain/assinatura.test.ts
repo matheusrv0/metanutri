@@ -168,3 +168,34 @@ describe('Resposta da volta do pagamento (CA-166 a CA-169)', () => {
     expect(respostaDaVolta({ ...SEM_ASSINATURA, status })).toBe(resposta)
   })
 })
+
+describe('A recusa e a última mensalidade (D-80, D-83)', () => {
+  it('D-83 e D-80: lê a última mensalidade paga, quem encerrou e quando', () => {
+    const a = daLinhaAssinatura({
+      plano: 'solo',
+      status: 'cancelada',
+      ultima_cobranca_paga: '2026-10-02T13:00:00.000Z',
+      encerrada_por: 'recusa',
+      encerrada_em: '2026-11-02T13:00:00.000Z',
+    })
+    expect(a).toMatchObject({ ultimaCobrancaPaga: '2026-10-02T13:00:00.000Z', encerradaPor: 'recusa', encerradaEm: '2026-11-02T13:00:00.000Z' })
+  })
+
+  it('quem encerrou desconhecido e data quebrada viram nulo', () => {
+    const a = daLinhaAssinatura({ plano: 'solo', status: 'cancelada', encerrada_por: 'banco', encerrada_em: 'ontem' })
+    expect(a.encerradaPor).toBeNull()
+    expect(a.encerradaEm).toBeNull()
+  })
+
+  it('linha de antes do 009 lê nulos, sem quebrar', () => {
+    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa' })).toMatchObject({ ultimaCobrancaPaga: null, encerradaPor: null, encerradaEm: null })
+  })
+
+  it('CA-392: cancelada por recusa, sem data, vale o Free na hora', () => {
+    expect(daLinhaAssinatura({ plano: 'solo', status: 'cancelada', expira_em: null, encerrada_por: 'recusa' }).plano).toBe('free')
+  })
+
+  it('R12: a marca da recusa que sobrou numa linha ativa não tira o plano pago', () => {
+    expect(daLinhaAssinatura({ plano: 'solo', status: 'ativa', encerrada_por: 'recusa' }).plano).toBe('solo')
+  })
+})

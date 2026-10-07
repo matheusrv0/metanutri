@@ -24,7 +24,7 @@ const PAGA: Assinatura = {
 }
 
 vi.mock('./estado/usarAssinatura.ts', () => ({
-  useAssinatura: () => ({ assinatura: PAGA, recarregar: vi.fn(), cancelar: vi.fn(), trocarCartao: vi.fn() }),
+  useAssinatura: () => ({ assinatura: PAGA, recarregar: vi.fn(), cancelar: vi.fn(), previaDoCancelamento: vi.fn(), trocarCartao: vi.fn() }),
 }))
 
 // O NumberFlow de verdade quebra no jsdom ao atualizar; aqui basta o número escrito.

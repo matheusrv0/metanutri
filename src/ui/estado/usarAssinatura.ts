@@ -14,6 +14,10 @@ export type ResultadoDaAssinatura =
   | { readonly ok: true; readonly ativa: boolean; readonly proximaCobranca: string | null }
   | { readonly ok: false; readonly erro: string }
 
+export type ResultadoDaPrevia =
+  | { readonly ok: true; readonly cobrada: boolean; readonly expiraEm: string | null }
+  | { readonly ok: false; readonly erro: string }
+
 export type ResultadoDaMudanca = { readonly ok: true } | { readonly ok: false; readonly erro: string }
 
 export interface ValorAssinatura {
@@ -24,6 +28,8 @@ export interface ValorAssinatura {
   readonly carregando: boolean
   readonly assinar: (plano: PlanoPago, ciclo: Ciclo, cartao: DadosDoCartao) => Promise<ResultadoDaAssinatura>
   readonly cancelar: () => Promise<ResultadoDaMudanca>
+  /** D-81: pergunta ao servidor se já houve cobrança, antes de confirmar o cancelamento. */
+  readonly previaDoCancelamento: () => Promise<ResultadoDaPrevia>
   readonly trocarCartao: (cartao: DadosDoCartao) => Promise<ResultadoDaMudanca>
   readonly recarregar: () => void
 }
@@ -182,6 +188,16 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
     [umPorVez, recarregar],
   )
 
+  /** D-81: só leitura. Não entra na fila de um pedido por vez e não relê a assinatura. */
+  const previaDoCancelamento = useCallback(async (): Promise<ResultadoDaPrevia> => {
+    const { dados, falha } = await chamar<{ readonly cobrada?: unknown; readonly expiraEm?: unknown }>('gerenciar-assinatura', { acao: 'previa' })
+    if (falha) return { ok: false, erro: mensagemDaFalha(falha) }
+    const cobrada = dados?.cobrada
+    const expiraEm = dados?.expiraEm
+    if (typeof cobrada !== 'boolean' || (expiraEm !== null && typeof expiraEm !== 'string')) return { ok: false, erro: SERVIDOR_FORA }
+    return { ok: true, cobrada, expiraEm }
+  }, [])
+
   const trocarCartao = useCallback(
     (cartao: DadosDoCartao) =>
       umPorVez<ResultadoDaMudanca>({ ok: false, erro: PEDIDO_EM_ANDAMENTO }, async () => {
@@ -192,5 +208,5 @@ export function useAssinatura(usuarioId: string | null): ValorAssinatura {
     [umPorVez, recarregar],
   )
 
-  return { assinatura, carregado, carregando: carregando || lendo, assinar, cancelar, trocarCartao, recarregar }
+  return { assinatura, carregado, carregando: carregando || lendo, assinar, cancelar, previaDoCancelamento, trocarCartao, recarregar }
 }

@@ -66,7 +66,7 @@ export function TelaConta({
 }: TelaContaProps) {
   const [saindo, setSaindo] = useState(false)
   const [perguntandoSair, setPerguntandoSair] = useState(false)
-  const { assinatura, recarregar, cancelar, trocarCartao } = useAssinatura(conta.sessao?.id ?? null)
+  const { assinatura, recarregar, cancelar, previaDoCancelamento, trocarCartao } = useAssinatura(conta.sessao?.id ?? null)
   const [formando, setFormando] = useState(false)
   // O status de quando a confirmação abriu: se a linha mudar com ela aberta, o texto ficaria errado, então ela fecha.
   const [cancelando, setCancelando] = useState<StatusAssinatura | null>(null)
@@ -256,6 +256,7 @@ export function TelaConta({
         aberto={cancelando === assinatura.status && ((paga && !noPrazo) || travadaNova)}
         assinatura={assinatura}
         cancelar={cancelar}
+        previa={previaDoCancelamento}
         aoFechar={() => setCancelando(null)}
         aoDevolverFoco={() => refAviso.current?.focus()}
         aoCancelada={() => {

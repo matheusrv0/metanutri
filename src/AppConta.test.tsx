@@ -33,6 +33,7 @@ vi.mock('./ui/estado/usarAssinatura.ts', () => ({
     carregando: false,
     assinar: cobranca.assinar,
     cancelar: cobranca.cancelar,
+    previaDoCancelamento: vi.fn(async () => ({ ok: true as const, cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' })),
     trocarCartao: vi.fn(),
     recarregar: cobranca.recarregar,
   }),
@@ -399,7 +400,9 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     render(tela())
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
-    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar assinatura' }))
+    const janela = screen.getByRole('dialog')
+    await waitFor(() => expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeEnabled())
+    await usuario.click(within(janela).getByRole('button', { name: 'Cancelar assinatura' }))
     expect(cobranca.cancelar).toHaveBeenCalledOnce()
     await waitFor(() => expect(cobranca.recarregar).toHaveBeenCalled())
   })

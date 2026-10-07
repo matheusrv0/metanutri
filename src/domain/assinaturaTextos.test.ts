@@ -1,14 +1,16 @@
 import { SEM_ASSINATURA, type Assinatura } from './assinatura.ts'
 import {
+  CONFERINDO_COBRANCA,
   depoisDeHoje,
   emReais,
   linhaDaCobranca,
   linhaDoCartao,
   nomeComCiclo,
+  PREVIA_FALHOU,
   proximaCobrancaPrevista,
   recadoDaAssinatura,
+  textoDoCancelamento,
   valorDoRecibo,
-  valeAteSeCancelar,
 } from './assinaturaTextos.ts'
 
 const PAGA: Assinatura = {
@@ -43,15 +45,10 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     expect(recadoDaAssinatura(PAGA)).toBeNull()
   })
 
-  it('foco 4: sem o cartão gravado (antes do 008), sem a linha do cartão, sem a da cobrança e sem data para o cancelamento', () => {
+  it('foco 4: sem o cartão gravado (antes do 008), sem a linha do cartão, sem a da cobrança', () => {
     const antiga: Assinatura = { ...PAGA, cartaoBandeira: null, cartaoFinal: null, proximaCobranca: null }
     expect(linhaDoCartao(antiga)).toBeNull()
     expect(linhaDaCobranca(antiga, AGORA)).toBeNull()
-    expect(valeAteSeCancelar(antiga, AGORA)).toBeNull()
-  })
-
-  it('CA-377: se cancelar agora, vale até a véspera da próxima cobrança', () => {
-    expect(valeAteSeCancelar(PAGA, AGORA)).toBe('1 de novembro de 2026')
   })
 
   it('M2: a próxima cobrança gravada que já passou não aparece: a linha fica só com o valor', () => {
@@ -61,13 +58,6 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     expect(linhaDaCobranca({ ...PAGA, valorCentavos: 0 }, depois)).toBeNull()
   })
 
-  it('M2: se cancelar agora, o "vale até" que já passou vira nulo (a confirmação fala do fim do período, sem data)', () => {
-    // O fim do período de PAGA é 1/11 às 23h59min59s em Brasília (02h59min59s UTC de 2/11).
-    expect(valeAteSeCancelar(PAGA, new Date('2026-11-02T02:59:58.000Z'))).toBe('1 de novembro de 2026')
-    expect(valeAteSeCancelar(PAGA, new Date('2026-11-02T02:59:59.000Z'))).toBeNull()
-    expect(valeAteSeCancelar(PAGA, new Date('2026-12-01T00:00:00.000Z'))).toBeNull()
-  })
-
   it('M2: a cancelada com o "vale até" já passado não mostra a data', () => {
     const cancelada: Assinatura = { ...PAGA, status: 'cancelada', expiraEm: '2026-11-02T02:59:59.000Z' }
     expect(linhaDaCobranca(cancelada, new Date('2026-11-02T03:00:00.000Z'))).toBeNull()
@@ -75,9 +65,7 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
 
   it('M2: sem "agora", vale o relógio de agora', () => {
     expect(linhaDaCobranca({ ...PAGA, proximaCobranca: '2000-01-02T15:00:00.000Z' })).toBe('Próxima cobrança de R$ 34,90')
-    expect(valeAteSeCancelar({ ...PAGA, proximaCobranca: '2000-01-02T15:00:00.000Z' })).toBeNull()
     expect(linhaDaCobranca({ ...PAGA, proximaCobranca: '2999-01-02T15:00:00.000Z' })).toBe('Próxima cobrança em 2 de janeiro de 2999, R$ 34,90')
-    expect(valeAteSeCancelar({ ...PAGA, proximaCobranca: '2999-01-02T15:00:00.000Z' })).toBe('1 de janeiro de 2999')
   })
 
   it('CA-378 e CA-390: a cancelada no prazo diz uma vez até quando vale e o que vem depois; o "cancelada" fica só no selo', () => {
@@ -103,5 +91,57 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
   it('CA-372: o valor do recibo, por mês ou por ano', () => {
     expect(valorDoRecibo(34.9, 'mensal')).toBe('R$ 34,90 por mês')
     expect(valorDoRecibo(299, 'anual')).toBe('R$ 299,00 por ano')
+  })
+
+  it('CA-393: o recado da recusa diz o dia da cobrança recusada', () => {
+    const recusada: Assinatura = { ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'recusa', encerradaEm: '2026-11-06T13:00:00.000Z' }
+    expect(recadoDaAssinatura(recusada)).toBe('O banco recusou a cobrança de 6 de novembro de 2026. A assinatura foi encerrada e a conta voltou ao Free.')
+  })
+
+  it('CA-393: sem a data, o recado sem data', () => {
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'recusa' })).toBe(
+      'O banco recusou a cobrança. A assinatura foi encerrada e a conta voltou ao Free.',
+    )
+  })
+
+  it('a cancelada pela pessoa ou pela operadora não ganha recado (D-79)', () => {
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'pessoa' })).toBeNull()
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'operadora' })).toBeNull()
+  })
+
+  it('R12: a marca da recusa numa linha ativa não vira recado', () => {
+    expect(recadoDaAssinatura({ ...PAGA, encerradaPor: 'recusa', encerradaEm: '2026-11-06T13:00:00.000Z' })).toBeNull()
+  })
+
+  it('CA-395: sem cobrança ainda, nada é cobrado e a conta volta ao Free na hora', () => {
+    expect(textoDoCancelamento(PAGA, { cobrada: false, expiraEm: null })).toBe('Ainda não houve cobrança. Cancelando agora, nada é cobrado e a conta volta ao Free na hora.')
+  })
+
+  it('CA-396: com cobrança, até quando vale', () => {
+    expect(textoDoCancelamento(PAGA, { cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' })).toBe(
+      'O plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.',
+    )
+  })
+
+  it('cobrada sem data à frente: Free na hora', () => {
+    expect(textoDoCancelamento(PAGA, { cobrada: true, expiraEm: null })).toBe('Cancelando agora, a conta volta ao Free na hora e nada mais é cobrado.')
+  })
+
+  it('pendente e pausada: o texto de sempre, sem prévia', () => {
+    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pendente' }, null)).toBe('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
+    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pausada' }, null)).toBe('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
+  })
+
+  it('CA-381: nenhum texto da recusa ou do cancelamento cita o processador', () => {
+    const textos = [
+      CONFERINDO_COBRANCA,
+      PREVIA_FALHOU,
+      recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'cancelada', encerradaPor: 'recusa', encerradaEm: '2026-11-06T13:00:00.000Z' }) ?? '',
+      textoDoCancelamento(PAGA, { cobrada: false, expiraEm: null }),
+      textoDoCancelamento(PAGA, { cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' }),
+      textoDoCancelamento(PAGA, { cobrada: true, expiraEm: null }),
+      textoDoCancelamento({ ...PAGA, status: 'pendente' }, null),
+    ]
+    for (const t of textos) expect(t).not.toMatch(/mercado ?pago/i)
   })
 })

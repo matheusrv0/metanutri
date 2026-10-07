@@ -3,6 +3,8 @@
 // navegador é preço que o cliente escolhe.
 import { ehCiclo, ehIdPlano, type Ciclo, type IdPlano } from './conta.ts'
 
+export type EncerradaPor = 'pessoa' | 'recusa' | 'operadora'
+
 export type StatusAssinatura = 'ativa' | 'pendente' | 'pausada' | 'cancelada' | 'vencida' | 'sem-assinatura'
 
 export interface Assinatura {
@@ -22,6 +24,12 @@ export interface Assinatura {
   readonly cartaoFinal: string | null
   /** Quando cai a próxima cobrança da assinatura paga. */
   readonly proximaCobranca: string | null
+  /** D-83: quando caiu a última mensalidade paga; nulo antes da primeira e nas linhas de antes do 009. */
+  readonly ultimaCobrancaPaga: string | null
+  /** Quem encerrou a cancelada: a pessoa, o banco ao recusar (D-80) ou a operadora sozinha. */
+  readonly encerradaPor: EncerradaPor | null
+  /** Quando: na recusa, o dia da cobrança recusada (CA-393). */
+  readonly encerradaEm: string | null
 }
 
 export const SEM_ASSINATURA: Assinatura = {
@@ -34,10 +42,15 @@ export const SEM_ASSINATURA: Assinatura = {
   cartaoBandeira: null,
   cartaoFinal: null,
   proximaCobranca: null,
+  ultimaCobrancaPaga: null,
+  encerradaPor: null,
+  encerradaEm: null,
 }
 
 /** O que o banco grava. `vencida` não está aqui: ela é calculada pela data. */
 const STATUS_DO_BANCO: readonly StatusAssinatura[] = ['ativa', 'pendente', 'pausada', 'cancelada', 'sem-assinatura']
+
+const ENCERRAMENTOS: readonly EncerradaPor[] = ['pessoa', 'recusa', 'operadora']
 
 /** Os planos que se paga: só eles têm período pago a respeitar depois de cancelar. */
 const PAGOS: readonly IdPlano[] = ['solo', 'pro', 'clinica']
@@ -57,12 +70,14 @@ export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Ass
   // O Estudante vale 12 meses. Passou do prazo, volta ao Free sem apagar nada (CA-175).
   const status: StatusAssinatura = lido === 'ativa' && vence !== null && vence < agora.getTime() ? 'vencida' : lido
   // CA-378: a paga cancelada continua valendo até o fim do período pago. Sem data à frente
-  // (a operadora cancelou sozinha depois das cobranças recusadas, CB-94), volta ao Free na hora.
+  // volta ao Free na hora: seja a operadora cancelando sozinha (CB-94), a recusa do banco (D-80)
+  // ou o cancelamento antes da primeira cobrança (D-81).
   const canceladaValendo = status === 'cancelada' && PAGOS.includes(planoPedido) && vence !== null && vence > agora.getTime()
 
   const bandeira = o['cartao_bandeira']
   const final = o['cartao_final']
   const valor = o['valor_centavos']
+  const por = o['encerrada_por']
 
   return {
     // Só assinatura ativa (ou paga cancelada no prazo) dá plano pago. Pendente, pausada ou
@@ -76,6 +91,9 @@ export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Ass
     cartaoBandeira: typeof bandeira === 'string' && bandeira.trim() !== '' ? bandeira.trim() : null,
     cartaoFinal: typeof final === 'string' && /^\d{4}$/.test(final) ? final : null,
     proximaCobranca: dataOuNulo(o['proxima_cobranca']),
+    ultimaCobrancaPaga: dataOuNulo(o['ultima_cobranca_paga']),
+    encerradaPor: typeof por === 'string' && (ENCERRAMENTOS as readonly string[]).includes(por) ? (por as EncerradaPor) : null,
+    encerradaEm: dataOuNulo(o['encerrada_em']),
   }
 }
 
