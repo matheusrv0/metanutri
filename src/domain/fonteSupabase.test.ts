@@ -329,6 +329,11 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
     expect(chamadas.map((c) => c.tipo)).toEqual(['upsert', 'update'])
   })
 
+  it('resposta da atualização que não é lista é falha, não "sumiu"', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-99', dadosPor: { update: { nada: true } } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), JA_ESTEVE)).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+  })
+
   it('CA-422 / CA-442: passar do limite do plano devolve a frase do limite', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: LIMITE })
     expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: LIMITE_DE_LINKS })

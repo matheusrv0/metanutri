@@ -123,13 +123,20 @@ vi.mock('@/ui/estado/supabase.ts', () => ({
   supabaseConfigurado: () => nuvem.ligada,
 }))
 
-/** Solta o pedido segurado mais antigo e deixa a tela reagir. */
-async function soltarUm() {
-  const proximo = nuvem.soltar.shift()
+/** Solta o pedido segurado mais antigo (ou o mais novo, quando a rede entrega fora de ordem). */
+async function soltarUm(qual: 'mais-antigo' | 'mais-novo' = 'mais-antigo') {
+  const proximo = qual === 'mais-antigo' ? nuvem.soltar.shift() : nuvem.soltar.pop()
   if (!proximo) throw new Error('Nenhum pedido segurado para soltar.')
   await act(async () => {
     proximo()
     await Promise.resolve()
+  })
+}
+
+/** Deixa as promessas e os efeitos assentarem antes de olhar a fila de pedidos. */
+async function assentar() {
+  await act(async () => {
+    await new Promise((resolver) => setTimeout(resolver, 20))
   })
 }
 
@@ -740,14 +747,14 @@ describe('Corridas entre a leitura e o que a nutricionista faz', () => {
     cartao(repo)
     await waitFor(() => expect(nuvem.soltar).toHaveLength(1))
 
-    // A leitura já tirou a foto (token antigo). A nutricionista gera o link novo, que grava.
+    // A leitura já tirou a foto (token antigo). A nutricionista gera o link novo; a gravação
+    // espera a leitura terminar, e a resposta velha não passa por cima do link novo.
     await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
     const novo = repo.porCaso('c1')?.token
-    await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
 
     await soltarUm()
 
-    await waitFor(() => expect(nuvem.soltar).toHaveLength(0))
+    await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
     expect(repo.porCaso('c1')?.token).toBe(novo)
     expect((screen.getByLabelText('Link do paciente') as HTMLInputElement).value).toContain(`#/missoes/${novo}`)
   })
@@ -804,5 +811,51 @@ describe('Corridas entre a leitura e o que a nutricionista faz', () => {
 
     expect(await within(linhaDoPaciente('Ana')).findByText('Em dia')).toBeInTheDocument()
     expect(nuvem.chamadas.filter((c) => c === 'select')).toHaveLength(1)
+  })
+})
+
+describe('Gravação do link e leitura em andamento', () => {
+  it('o link criado que chega à nuvem depois de o aparelho ser apagado sai de lá de novo', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    cartao(repo)
+    await waitFor(() => expect(nuvem.chamadas).toContain('select'))
+    await assentar()
+
+    nuvem.segurar.upsert = true
+    await gerarLink(usuario)
+    await waitFor(() => expect(nuvem.soltar).toHaveLength(1))
+    // "Apagar tudo" enquanto a gravação estava a caminho.
+    repo.remover(repo.porCaso('c1')?.id ?? '')
+    await soltarUm()
+
+    await waitFor(() => expect(nuvem.chamadas).toContain('apagar'))
+    expect(nuvem.linhas).toEqual([])
+  })
+
+  it('CB-108: a nova tentativa da leitura e um link gerado agora não chegam fora de ordem', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const antigo = acompanhamentoDe('c1', 'Ana')
+    nuvem.linhas = [linhaDe(antigo)]
+    // Mudança pendente deste aparelho: token que ainda não chegou à nuvem.
+    repo.salvar({ ...antigo, token: 'pendente2345abc' }, { naNuvem: true, pendente: true })
+    nuvem.segurar.upsert = true
+    cartao(repo)
+    // A leitura manda de novo a mudança pendente; o pedido está a caminho.
+    await waitFor(() => expect(nuvem.soltar).toHaveLength(1))
+
+    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    const novo = repo.porCaso('c1')?.token
+    await assentar()
+
+    // A rede entrega primeiro o pedido mais novo que estiver a caminho.
+    while (nuvem.soltar.length > 0) {
+      await soltarUm('mais-novo')
+      await assentar()
+    }
+
+    await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
+    expect(repo.porCaso('c1')?.token).toBe(novo)
   })
 })

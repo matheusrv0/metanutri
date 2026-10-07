@@ -1,5 +1,6 @@
 // Perfil de quem usa: nome, registro e o que sai nos documentos.
 import type { Armazenamento } from './persistencia.ts'
+import { CHAVE_ACOMPANHAMENTOS, semMudancasPendentes } from './repositorioAcompanhamentos.ts'
 
 const CHAVE = 'metanutri:perfil'
 
@@ -149,7 +150,7 @@ export function restaurarBackup(armazenamento: Armazenamento | null, texto: stri
     let restaurados = 0
     for (const [chave, valor] of Object.entries(backup.dados)) {
       if (!chave.startsWith('metanutri:') || typeof valor !== 'string') continue
-      armazenamento?.setItem(chave, valor)
+      armazenamento?.setItem(chave, chave === CHAVE_ACOMPANHAMENTOS ? semMudancasPendentes(valor) : valor)
       restaurados += 1
     }
     return { restaurados, erro: null }

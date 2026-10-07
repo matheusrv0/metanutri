@@ -99,8 +99,16 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
 
       comecarAMexer(id)
       try {
+        // A leitura pode estar mandando de novo uma mudança pendente deste link: esta, mais
+        // nova, sai depois dela, para as duas não chegarem fora de ordem (CB-108).
+        await lendo.current?.catch(() => undefined)
         const resultado = await salvarLinkNaNuvem(cliente, acompanhamento, { jaEsteveNaNuvem: repo.estaNaNuvem(id) })
         if (resultado.tipo === 'salvo') {
+          // O aparelho foi apagado (Apagar tudo) enquanto o link subia: ele sai da nuvem de novo.
+          if (repo.porId(id) === null) {
+            await removerAcompanhamentoDaNuvem(cliente, id)
+            return null
+          }
           marcarNoAparelho(id, { naNuvem: true, pendente: false })
           marcarForaDaNuvem(id, null)
           return null

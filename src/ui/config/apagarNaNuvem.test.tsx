@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
+import { PRAZO_DA_NUVEM_MS } from '@/domain/fonteSupabase.ts'
 import userEvent from '@testing-library/user-event'
 import { FALHA_DE_REDE } from '../estado/mensagemDoBanco.ts'
 import { TelaConfiguracoes } from './TelaConfiguracoes.tsx'
@@ -9,6 +10,8 @@ const nuvem = vi.hoisted(() => ({
   erros: {} as Record<string, { readonly message: string; readonly code: string } | null>,
   apagados: [] as string[],
   semSessao: false,
+  /** A nuvem que nunca responde, ou que estoura no meio. */
+  apagar: 'responde' as 'responde' | 'pendura' | 'estoura',
 }))
 
 vi.mock('../estado/supabase.ts', () => ({
@@ -17,6 +20,8 @@ vi.mock('../estado/supabase.ts', () => ({
       delete: () => ({
         eq: (coluna: string, valor: string) => {
           nuvem.apagados.push(`${tabela}:${coluna}=${valor}`)
+          if (nuvem.apagar === 'pendura') return new Promise(() => undefined)
+          if (nuvem.apagar === 'estoura') return Promise.reject(new TypeError('Failed to fetch'))
           return Promise.resolve({ data: null, error: nuvem.erros[tabela] ?? null })
         },
       }),
@@ -35,10 +40,10 @@ vi.mock('../estado/supabase.ts', () => ({
 
 const RLS: Erro = { code: '42501', message: 'new row violates row-level security policy for table "copias"' }
 
-async function apagarTudo() {
+async function apagarTudo(opcoes: Parameters<typeof userEvent.setup>[0] = {}) {
   localStorage.setItem('metanutri:casos', '["a"]')
   render(<TelaConfiguracoes />)
-  const usuario = userEvent.setup()
+  const usuario = userEvent.setup(opcoes)
   await usuario.click(screen.getByRole('button', { name: 'Apagar todos os dados deste aparelho' }))
   await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
 }
@@ -49,6 +54,31 @@ describe('Apagar tudo com a nuvem ligada (D-94)', () => {
     nuvem.erros = {}
     nuvem.apagados = []
     nuvem.semSessao = false
+    nuvem.apagar = 'responde'
+  })
+
+  it('a nuvem que estoura no meio: a mensagem diz que não apagou, em vez de ficar em "Apagando da nuvem…"', async () => {
+    nuvem.apagar = 'estoura'
+    await apagarTudo()
+    expect(await screen.findByText(/Apagado só deste aparelho/)).toBeInTheDocument()
+    expect(screen.queryByText(/Apagando da nuvem/)).not.toBeInTheDocument()
+  })
+
+  it('a nuvem que não responde: depois do prazo, a mensagem diz que não apagou', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      nuvem.apagar = 'pendura'
+      await apagarTudo({ advanceTimers: vi.advanceTimersByTime })
+      expect(screen.getByText(/Apagando da nuvem/)).toBeInTheDocument()
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(PRAZO_DA_NUVEM_MS)
+      })
+
+      expect(screen.getByText(/Apagado só deste aparelho/)).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('CA-420: sessão vencida sem internet: diz que a nuvem não foi apagada, em vez de "tudo apagado"', async () => {

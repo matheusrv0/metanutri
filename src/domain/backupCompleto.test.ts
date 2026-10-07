@@ -1,8 +1,10 @@
 // Regressão: o backup salvava só o índice dos planos, e restaurar em outro
 // aparelho dava zero planos. O "apagar tudo" tinha o espelho do mesmo defeito:
 // deixava os planos, com nome e medida de paciente, no navegador.
+import { criarAcompanhamento } from './acompanhamento.ts'
 import { CHAVES_DE_DADOS, expandirChaves, montarBackup, restaurarBackup } from './perfil.ts'
 import { criarRepositorio, type Armazenamento } from './persistencia.ts'
+import { criarRepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 function memoria(): Armazenamento {
   const d = new Map<string, string>()
@@ -74,5 +76,29 @@ describe('Apagar tudo não deixa plano para trás', () => {
     const guardado = memoria()
     guardado.setItem('metanutri:casos', 'isso não é json')
     expect(expandirChaves(guardado, ['metanutri:casos'])).toEqual(['metanutri:casos'])
+  })
+})
+
+describe('CB-108: restaurar um backup não traz mudança pendente de link', () => {
+  it('o link volta, a marca de que esteve na nuvem também, e a mudança pendente não: vale a nuvem', () => {
+    const origem = memoria()
+    const a = criarAcompanhamento({ casoId: 'caso-1', pacienteId: null, nome: 'Ana', missoes: [] }, { gerarId: () => 'ac-1' })
+    criarRepositorioAcompanhamentos(origem).salvar(a, { naNuvem: true, pendente: true })
+    const backup = montarBackup(origem, [...CHAVES_DE_DADOS], '2026-10-07T00:00:00.000Z')
+
+    const destino = memoria()
+    expect(restaurarBackup(destino, JSON.stringify(backup)).erro).toBeNull()
+
+    const repo = criarRepositorioAcompanhamentos(destino)
+    expect(repo.porId('ac-1')?.nome).toBe('Ana')
+    expect(repo.estaNaNuvem('ac-1')).toBe(true)
+    expect(repo.estaPendente('ac-1')).toBe(false)
+  })
+
+  it('backup com os links quebrados é restaurado como veio: o repositório já ignora o que não entende', () => {
+    const destino = memoria()
+    const backup = { formato: 1, geradoEm: '2026-10-07T00:00:00.000Z', dados: { 'metanutri:acompanhamentos': '{isso não é json' } }
+    expect(restaurarBackup(destino, JSON.stringify(backup)).erro).toBeNull()
+    expect(destino.getItem('metanutri:acompanhamentos')).toBe('{isso não é json')
   })
 })

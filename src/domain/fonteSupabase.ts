@@ -256,6 +256,8 @@ export async function salvarLinkNaNuvem(
       const semMarcacoes = Object.fromEntries(Object.entries(linha).filter(([coluna]) => coluna !== 'marcacoes'))
       const atualizado = await comSinal(cliente.from(TABELA).update(semMarcacoes).eq('id', a.id).select('id'), sinal)
       if (atualizado.error) return { tipo: 'falhou', motivo: motivoDoErro(atualizado.error) }
+      // Só uma lista vazia diz que a linha sumiu; resposta sem lista não diz nada, é falha.
+      if (!Array.isArray(atualizado.data)) return { tipo: 'falhou', motivo: FALHA_DE_REDE }
       return tocouAlgumaLinha(atualizado.data) ? { tipo: 'salvo' } : { tipo: 'sumiu' }
     },
     (motivo) => ({ tipo: 'falhou', motivo }),

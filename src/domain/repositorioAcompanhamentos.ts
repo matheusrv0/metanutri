@@ -173,6 +173,24 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
 
 export type RepositorioAcompanhamentos = ReturnType<typeof criarRepositorioAcompanhamentos>
 
+/** A chave onde a cópia do aparelho fica (o backup leva e traz esta chave). */
+export const CHAVE_ACOMPANHAMENTOS = CHAVE
+
+/**
+ * CB-108: o que vem de um backup (arquivo ou "Trazer da nuvem") chega sem mudança pendente.
+ * A mudança guardada no backup é velha: depois de restaurar, vale a nuvem. Texto que não dá
+ * para ler volta como veio; o repositório já ignora o que não entende.
+ */
+export function semMudancasPendentes(guardado: string): string {
+  try {
+    const v: unknown = JSON.parse(guardado)
+    if (typeof v !== 'object' || v === null || !('pendentes' in v)) return guardado
+    return JSON.stringify(Object.fromEntries(Object.entries(v).filter(([campo]) => campo !== 'pendentes')))
+  } catch {
+    return guardado
+  }
+}
+
 /**
  * A costura com o servidor. O link do paciente abre no aparelho **dele**, onde não
  * existe nada guardado — então essa busca é a única parte que precisa de rede de

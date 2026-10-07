@@ -10,7 +10,8 @@ import {
   restaurarBackup,
   type Perfil,
 } from '@/domain/perfil.ts'
-import { apagarAcompanhamentosDaNuvem, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
+import { apagarAcompanhamentosDaNuvem, PRAZO_DA_NUVEM_MS, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
+import { FALHA_DE_REDE } from '../estado/mensagemDoBanco.ts'
 import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
 import { CloudDownload, CloudUpload } from 'lucide-react'
 import { obterSupabase } from '../estado/supabase.ts'
@@ -33,6 +34,18 @@ function armazenamento() {
  * CA-420: o que "Apagar tudo" conseguiu apagar da nuvem. Só diz "na nuvem" quando as duas partes
  * saíram; se uma falhou, diz qual ficou. Os erros já chegam traduzidos (D-98).
  */
+/**
+ * A parte da nuvem em "Apagar tudo" que estoura ou não responde no prazo conta como não
+ * apagada: a mensagem nunca fica presa em "Apagando da nuvem…" nem diz que apagou.
+ */
+function comPrazoDeApagar(apagando: Promise<string | null>): Promise<string | null> {
+  let relogio: ReturnType<typeof setTimeout> | undefined
+  const esgotou = new Promise<string>((resolver) => {
+    relogio = setTimeout(() => resolver(FALHA_DE_REDE), PRAZO_DA_NUVEM_MS)
+  })
+  return Promise.race([apagando.catch(() => FALHA_DE_REDE), esgotou]).finally(() => clearTimeout(relogio))
+}
+
 function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string | null): string {
   if (erroAcompanhamentos && erroCopia) {
     return `Apagado só deste aparelho. Os acompanhamentos e a cópia completa não foram apagados da nuvem. ${erroAcompanhamentos}`
@@ -134,9 +147,11 @@ export function TelaConfiguracoes() {
     const copia = clienteCopia()
     if (!cliente || !copia) return setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
     setMensagem('Apagado deste aparelho. Apagando da nuvem…')
-    void Promise.all([apagarAcompanhamentosDaNuvem(cliente), apagarCopiaDaNuvem(copia)]).then(([erroAcompanhamentos, erroCopia]) => {
-      setMensagem(mensagemDeApagar(erroAcompanhamentos, erroCopia))
-    })
+    void Promise.all([comPrazoDeApagar(apagarAcompanhamentosDaNuvem(cliente)), comPrazoDeApagar(apagarCopiaDaNuvem(copia))]).then(
+      ([erroAcompanhamentos, erroCopia]) => {
+        setMensagem(mensagemDeApagar(erroAcompanhamentos, erroCopia))
+      },
+    )
   }
 
   return (
