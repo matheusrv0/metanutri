@@ -1,0 +1,41 @@
+<!-- Assunto: Código para trocar seu e-mail do MetaNutri -->
+<!-- Supabase: Authentication › Emails › Change email address, com Secure email change ligado. Sem link de ação: o antivírus do Microsoft 365 abre todo link que chega (spec confirmacao-por-codigo, D-89). -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<title>Código para trocar seu e-mail do MetaNutri</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f6f2ea;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f2ea" style="background-color:#f6f2ea;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:480px; background-color:#ffffff; border:1px solid #e5e5e7; border-radius:12px;">
+        <tr>
+          <td style="padding:28px 32px 0 32px; font-family:Arial, Helvetica, sans-serif; font-size:20px; line-height:28px; font-weight:bold; color:#0e3b43;">MetaNutri</td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 0 32px; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#1c222a;">Pediram para trocar o e-mail da sua conta de {{ .Email }} para {{ .NewEmail }}. Use este código para confirmar.</td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr>
+                <td align="center" bgcolor="#e3eff1" style="padding:12px 20px 12px 28px; background-color:#e3eff1; border-radius:8px; font-family:'Courier New', Courier, monospace; font-size:32px; line-height:40px; font-weight:bold; letter-spacing:8px; color:#0e3b43;">{{ .Token }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 28px 32px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:20px; color:#585b62;">Se não foi você, ignore este e-mail e troque sua senha.</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
