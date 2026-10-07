@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { RECUSA_PADRAO, SEM_COBRANCA, UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
+import { RECUSA_PADRAO, UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
 import {
   desfechoDoCancelamento,
   FORA,
@@ -41,6 +41,15 @@ const recusas = (n: number, horas: number) => Array.from({ length: n }, () => ({
 type Rotas = Readonly<Record<string, readonly (RespostaDaOperadora | null)[]>>
 type Linha = Parameters<typeof linhaDe>[0]
 
+/** A linha como viria de uma leitura sem a coluna `ultima_cobranca_paga` (o campo some, não é nulo). */
+const semUltimaPaga = (parcial: Linha) => {
+  const linha = linhaDe(parcial)
+  Reflect.deleteProperty(linha, 'ultima_cobranca_paga')
+  return linha
+}
+const CANCELADA_COM_PERIODO = { ...ATIVA, status: 'cancelada', expira_em: VALE_ATE, encerrada_por: 'pessoa' }
+const ENCERRADA_POR_RECUSA = { ...ATIVA, status: 'cancelada', expira_em: null, encerrada_por: 'recusa', ultima_cobranca_paga: '2026-09-06T15:00:00.000Z' }
+
 describe('desfechoDoCancelamento: o que cancelar agora faz (D-81)', () => {
   it.each<[string, Readonly<Record<string, unknown>> | null, Linha, Desfecho]>([
     ['nenhuma cobrança ainda', SEM_COBRANCA_AINDA, ATIVA, { cobrada: false, expiraEm: null }],
@@ -75,6 +84,11 @@ describe('desfechoDoCancelamento: o que cancelar agora faz (D-81)', () => {
   it('já cancelada lá: a data da operadora não vale, só a gravada aqui', () => {
     const daOperadora = { status: 'cancelled', summarized: { charged_quantity: 1 }, next_payment_date: '2026-12-06T15:00:00.000Z' }
     expect(desfechoDoCancelamento(linhaDe(ATIVA), daOperadora, true, AGORA)).toEqual({ cobrada: true, expiraEm: VALE_ATE })
+  })
+
+  it('a linha sem o campo da última paga (ausente, não nulo) ou com uma data que não se lê não conta como cobrada', () => {
+    expect(desfechoDoCancelamento(semUltimaPaga(ATIVA), SEM_COBRANCA_AINDA, false, AGORA)).toEqual({ cobrada: false, expiraEm: null })
+    expect(desfechoDoCancelamento(linhaDe({ ...ATIVA, ultima_cobranca_paga: 'ontem' }), SEM_COBRANCA_AINDA, false, AGORA)).toEqual({ cobrada: false, expiraEm: null })
   })
 })
 
@@ -138,16 +152,42 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
     expect(await gerenciarAssinatura(PREVIA, c.deps)).toEqual({ status: 200, corpo: { cobrada: true, expiraEm: VALE_ATE } })
   })
 
-  it.each([
-    ['sem cobrança ainda', SEM_COBRANCA_AINDA],
-    ['com cobrança', COBRADA],
-    ['já cancelada lá', { status: 'cancelled', summarized: { charged_quantity: 1 }, next_payment_date: '2026-12-06T15:00:00.000Z' }],
-  ])('D-81: a prévia diz o mesmo fim que o cancelamento grava (%s)', async (_caso, daOperadora) => {
-    const previa = cenario([ATIVA], { [GET]: [responde(200, daOperadora)] })
+  it.each<[string, Linha, Readonly<Record<string, unknown>>]>([
+    ['sem cobrança ainda', ATIVA, SEM_COBRANCA_AINDA],
+    ['com cobrança', ATIVA, COBRADA],
+    ['já cancelada lá', ATIVA, { status: 'cancelled', summarized: { charged_quantity: 1 }, next_payment_date: '2026-12-06T15:00:00.000Z' }],
+    ['já cancelada aqui, com período (CB-93)', CANCELADA_COM_PERIODO, COBRADA],
+    ['encerrada por recusa (D-80), sem período', ENCERRADA_POR_RECUSA, COBRADA],
+  ])('D-81 e R11: a prévia diz o mesmo fim que o cancelamento devolve e grava (%s)', async (_caso, linha, daOperadora) => {
+    const previa = cenario([linha], { [GET]: [responde(200, daOperadora)] })
     const disse = await gerenciarAssinatura(PREVIA, previa.deps)
-    const cancelou = cenario([ATIVA], { [GET]: [responde(200, daOperadora)], [PUT]: [responde(200)] })
+    expect(disse.status).toBe(200)
+    const cancelou = cenario([linha], { [GET]: [responde(200, daOperadora)], [PUT]: [responde(200)] })
     expect(await gerenciarAssinatura(CANCELAR, cancelou.deps)).toEqual({ status: 200, corpo: { status: 'cancelada', expiraEm: disse.corpo['expiraEm'] } })
     expect(cancelou.assinaturas.get('u1')?.expira_em).toBe(disse.corpo['expiraEm'])
+  })
+
+  it.each<[string, Linha, Desfecho]>([
+    ['com período (CB-93)', CANCELADA_COM_PERIODO, { cobrada: true, expiraEm: VALE_ATE }],
+    ['encerrada por recusa depois de uma paga (D-80)', ENCERRADA_POR_RECUSA, { cobrada: true, expiraEm: null }],
+    ['sem período e sem mensalidade paga', { ...ATIVA, status: 'cancelada' }, { cobrada: false, expiraEm: null }],
+  ])('R11: a prévia de uma já cancelada aqui repete o cancelamento, sem perguntar à operadora (%s)', async (_caso, linha, esperado) => {
+    const c = cenario([linha], { [GET]: [responde(200, COBRADA)] })
+    expect(await gerenciarAssinatura(PREVIA, c.deps)).toEqual({ status: 200, corpo: esperado })
+    expect(c.pedidos).toEqual([])
+  })
+
+  it('R11: a prévia de uma já cancelada sem o campo da última paga não conta como cobrada', async () => {
+    const c = cenario([ATIVA])
+    c.assinaturas.set('u1', semUltimaPaga({ ...ATIVA, status: 'cancelada' }))
+    expect(await gerenciarAssinatura(PREVIA, c.deps)).toEqual({ status: 200, corpo: { cobrada: false, expiraEm: null } })
+  })
+
+  it.each([PREVIA, CANCELAR])('a leitura 2xx com corpo que não se lê não vale: 502, nada pedido nem gravado (%#)', async (pedido) => {
+    const c = cenario([ATIVA], { [GET]: [responde(200, null)], [PUT]: [responde(200)] })
+    expect(await gerenciarAssinatura(pedido, c.deps)).toEqual(FALHOU)
+    expect(c.ordem).toEqual(['lerDaConta', GET])
+    expect(c.assinaturas.get('u1')).toEqual(linhaDe(ATIVA))
   })
 
   it.each([null, responde(500), responde(401)])('CA-397: prévia sem resposta da operadora (ou 5xx, ou 401): 502, nada muda (%#)', async (resposta) => {
@@ -212,16 +252,23 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
     expect(c.assinaturas.get('u1')).toMatchObject({ status: 'cancelada', expira_em: VALE_ATE, encerrada_por: 'pessoa' })
   })
 
-  it.each<[string, Rotas]>([
-    ['PUT recusado e a leitura diz autorizada', { [PUT]: [responde(400)], [GET]: [responde(200, COBRADA)] }],
-    ['PUT sem resposta e a leitura diz autorizada', { [PUT]: [null], [GET]: [responde(200, COBRADA)] }],
-    ['PUT com erro do lado dela e a conferência sem resposta', { [PUT]: [responde(503)], [GET]: [responde(200, COBRADA), null] }],
-  ])('a operadora não cancela (%s): 502, nada gravado', async (_caso, rotas) => {
+  it.each<[string, Rotas, number | string]>([
+    [
+      'PUT recusado e a leitura diz autorizada',
+      { [PUT]: [responde(400, { message: 'cc_rejected_other_reason', detalhe: 'corpo-da-operadora' }), responde(422, { message: 'corpo-da-operadora' })], [GET]: [responde(200, COBRADA)] },
+      422,
+    ],
+    ['PUT sem resposta e a leitura diz autorizada', { [PUT]: [null], [GET]: [responde(200, COBRADA)] }, 'sem resposta'],
+    ['PUT com erro do lado dela e a conferência sem resposta', { [PUT]: [responde(503, { message: 'corpo-da-operadora' })], [GET]: [responde(200, COBRADA), null] }, 503],
+  ])('a operadora não cancela (%s): 502, nada gravado; o registro leva o último status do pedido, sem o corpo', async (_caso, rotas, status) => {
     const c = cenario([ATIVA], rotas)
     expect(await gerenciarAssinatura(CANCELAR, c.deps)).toEqual(FALHOU)
     expect(c.ordem).not.toContain('mudar')
     expect(c.assinaturas.get('u1')).toEqual(linhaDe(ATIVA))
-    expect(c.log).toHaveBeenCalledWith('A operadora não cancelou:', 'pre-1')
+    expect(c.log).toHaveBeenCalledWith('A operadora não cancelou:', status, 'pre-1')
+    const registros = JSON.stringify(c.log.mock.calls)
+    expect(registros).not.toContain('corpo-da-operadora')
+    expect(registros).not.toContain('cc_rejected')
   })
 
   it('a operadora já dizia cancelada: não pede de novo; o fim sai da data gravada aqui', async () => {
@@ -256,12 +303,30 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
     expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', cartao_bandeira: 'Visa', cartao_final: '5682', atualizado_em: AGORA.toISOString() })
   })
 
-  it('CA-379: o cartão trocado lá e não gravado aqui ainda responde 200; só o registro anota', async () => {
+  it('CA-379: a gravação do cartão que falha é tentada de novo uma vez', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    c.falhar('mudar', 1)
+    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(TROCOU)
+    expect(c.ordem.filter((o) => o === 'mudar')).toHaveLength(2)
+    expect(c.assinaturas.get('u1')).toMatchObject({ cartao_bandeira: 'Visa', cartao_final: '5682' })
+    expect(c.log).not.toHaveBeenCalled()
+  })
+
+  it('CA-379: o cartão trocado lá e não gravado aqui (duas vezes) ainda responde 200; só o registro anota', async () => {
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     c.falhar('mudar')
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(TROCOU)
+    expect(c.ordem.filter((o) => o === 'mudar')).toHaveLength(2)
     expect(c.assinaturas.get('u1')?.cartao_final).toBe('6351')
     expect(c.log).toHaveBeenCalledWith('Cartão trocado na operadora, mas não gravado aqui:', 'pre-1', 'banco fora')
+  })
+
+  it('CA-379: o cartão trocado lá sem nenhuma linha mudada aqui responde 200 e o registro anota, sem tentar de novo', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    const mudar = vi.fn(async () => ({ linhas: 0, falha: null }))
+    expect(await gerenciarAssinatura(TROCAR, { ...c.deps, banco: { ...c.banco, mudar } })).toEqual(TROCOU)
+    expect(mudar).toHaveBeenCalledTimes(1)
+    expect(c.log).toHaveBeenCalledWith('Cartão trocado na operadora, mas nenhuma linha mudou aqui:', 'pre-1')
   })
 
   it('CA-379: recusa do cartão novo vira 402 com o código; o antigo fica', async () => {
@@ -356,10 +421,10 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(TROCOU)
   })
 
-  it('R5: sem conseguir contar as tentativas, responde 502 sem chamar a operadora', async () => {
+  it('R5: sem conseguir contar as tentativas, responde 502 com "Nada mudou" sem chamar a operadora', async () => {
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     c.falhar('contarRecusas')
-    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual({ status: 502, corpo: { erro: SEM_COBRANCA } })
+    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(FALHOU)
     expect(c.ordem).toEqual(['lerDaConta', 'contarRecusas'])
     expect(c.log).toHaveBeenCalledWith('Não consegui contar as tentativas de cartão:', 'banco fora')
   })
@@ -371,7 +436,7 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
   ])('R5: contagem fora do formato (%s = %s) também fecha: 502 sem chamar a operadora', async (campo, valor) => {
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     const contarRecusas = async (): Promise<RecusasContadas> => ({ daConta24h: 0, seguidasDaConta: 0, doSite1h: 0, [campo]: valor })
-    expect(await gerenciarAssinatura(TROCAR, { ...c.deps, banco: { ...c.banco, contarRecusas } })).toEqual({ status: 502, corpo: { erro: SEM_COBRANCA } })
+    expect(await gerenciarAssinatura(TROCAR, { ...c.deps, banco: { ...c.banco, contarRecusas } })).toEqual(FALHOU)
     expect(c.pedidos).toEqual([])
   })
 

@@ -18,8 +18,17 @@ import {
   traduzirStatus,
   UM_DIA_MS,
 } from './cobranca.ts'
-import { cancelarNaOperadora } from './operadora.ts'
-import { respostaDeErro as erro, type BancoDaCobranca, type ContaQuePede, type LinhaDaAssinatura, type Operadora, type Registro, type RespostaDaFuncao } from './portas.ts'
+import { tentarCancelarNaOperadora } from './operadora.ts'
+import {
+  respostaDeErro as erro,
+  type BancoDaCobranca,
+  type ContaQuePede,
+  type LinhaDaAssinatura,
+  type Operadora,
+  type Registro,
+  type RespostaDaFuncao,
+  type RespostaDaOperadora,
+} from './portas.ts'
 import { anotarTentativaDeCartao, conferirTentativas, ehRecusaDoCartao, type BancoDasTentativas } from './tentativas.ts'
 
 /** A operadora não respondeu: nada mudou lá nem aqui. */
@@ -58,12 +67,18 @@ export function desfechoDoCancelamento(linha: LinhaDaAssinatura, daOperadora: Re
   if (linha.status !== 'ativa') return { cobrada: false, expiraEm: null }
   const resumo = objeto(daOperadora?.['summarized'])
   const quantas = resumo?.['charged_quantity']
-  const cobrada = (typeof quantas === 'number' && quantas >= 1) || dataOuNula(resumo?.['last_charged_date']) !== null || linha.ultima_cobranca_paga !== null
+  const cobrada = (typeof quantas === 'number' && quantas >= 1) || dataOuNula(resumo?.['last_charged_date']) !== null || pagaAnotadaAqui(linha)
   if (!cobrada) return { cobrada: false, expiraEm: null }
   const limite = agora.getTime() + UM_DIA_MS
   const proxima = (jaCanceladaLa ? null : dataDepoisDe(daOperadora?.['next_payment_date'], limite)) ?? dataDepoisDe(linha.proxima_cobranca, limite)
   return { cobrada: true, expiraEm: proxima ? fimDoPeriodoPago(proxima) : null }
 }
+
+/** D-83: o aviso de uma mensalidade paga já foi anotado aqui. Só uma data de verdade conta (campo ausente ou texto solto, não). */
+const pagaAnotadaAqui = (linha: LinhaDaAssinatura): boolean => dataOuNula(linha.ultima_cobranca_paga) !== null
+
+/** O que registrar de uma leitura na operadora que não valeu: o status, "sem resposta" ou "corpo ilegível". Nunca o corpo. */
+const motivoDaLeitura = (lida: RespostaDaOperadora | null): number | string => (!lida ? 'sem resposta' : lida.ok ? 'corpo ilegível' : lida.status)
 
 export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: DependenciasDeGerenciar): Promise<RespostaDaFuncao> {
   if (!pedido.conta) return erro('Entre na sua conta antes de mudar a assinatura.', 401)
@@ -82,13 +97,18 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
   const agora = deps.agora()
 
   if (corpo['acao'] === 'previa') {
+    // R11 (CB-93): já cancelada aqui, a prévia repete o que o cancelamento devolveria, sem perguntar lá.
+    if (linha.status === 'cancelada') {
+      return { status: 200, corpo: { cobrada: dataOuNula(linha.expira_em) !== null || pagaAnotadaAqui(linha), expiraEm: linha.expira_em } }
+    }
     if (linha.status !== 'ativa') return { status: 200, corpo: { cobrada: false, expiraEm: null } }
     const lida = await deps.operadora('GET', caminho)
-    if (!lida?.ok) {
-      deps.log('Não consegui ler a assinatura na operadora para a prévia:', lida?.status ?? 'sem resposta', id)
+    // Um 2xx com o corpo que não se lê não diz se houve cobrança: conta como leitura que falhou.
+    if (!lida?.ok || !lida.dados) {
+      deps.log('Não consegui ler a assinatura na operadora para a prévia:', motivoDaLeitura(lida), id)
       return erro(FORA, 502)
     }
-    const jaCanceladaLa = traduzirStatus(lida.dados?.['status']) === 'cancelada'
+    const jaCanceladaLa = traduzirStatus(lida.dados['status']) === 'cancelada'
     return { status: 200, corpo: { ...desfechoDoCancelamento(linha, lida.dados, jaCanceladaLa, agora) } }
   }
 
@@ -96,14 +116,17 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
     // CB-93: a resposta do cancelamento se perdeu e a pessoa pediu de novo; nada a fazer lá.
     if (linha.status === 'cancelada') return { status: 200, corpo: { status: 'cancelada', expiraEm: linha.expira_em } }
     const lida = await deps.operadora('GET', caminho)
-    if (!lida?.ok) {
-      deps.log('Não consegui ler a assinatura na operadora:', lida?.status ?? 'sem resposta', id)
+    if (!lida?.ok || !lida.dados) {
+      deps.log('Não consegui ler a assinatura na operadora:', motivoDaLeitura(lida), id)
       return erro(FORA, 502)
     }
-    const jaCanceladaLa = traduzirStatus(lida.dados?.['status']) === 'cancelada'
-    if (!jaCanceladaLa && !(await cancelarNaOperadora(deps.operadora, id))) {
-      deps.log('A operadora não cancelou:', id)
-      return erro(FORA, 502)
+    const jaCanceladaLa = traduzirStatus(lida.dados['status']) === 'cancelada'
+    if (!jaCanceladaLa) {
+      const cancelamento = await tentarCancelarNaOperadora(deps.operadora, id)
+      if (!cancelamento.cancelada) {
+        deps.log('A operadora não cancelou:', cancelamento.ultimoStatus ?? 'sem resposta', id)
+        return erro(FORA, 502)
+      }
     }
     const { expiraEm } = desfechoDoCancelamento(linha, lida.dados, jaCanceladaLa, agora)
     const mudanca = { status: 'cancelada', expira_em: expiraEm, encerrada_por: 'pessoa', encerrada_em: agora.toISOString(), atualizado_em: agora.toISOString() } as const
@@ -123,7 +146,8 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
     const cartao = lerCartao(corpo['cartao'])
     if (!cartaoToken || !cartao) return erro('Faltam os dados do cartão. Confira e tente de novo.', 400)
     // D-101 (CA-433, CA-434): quem testa cartão roubado pela troca também não chega à operadora.
-    const portao = await conferirTentativas(deps.banco, dono, agora, deps.log)
+    // Sem conseguir contar, o 502 diz "Nada mudou", como as outras falhas daqui.
+    const portao = await conferirTentativas(deps.banco, dono, agora, deps.log, FORA)
     if (!portao.passa) return portao.resposta
 
     const feito = await deps.operadora('PUT', caminho, { card_token_id: cartaoToken })
@@ -142,9 +166,13 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
       // CA-435: da segunda recusa seguida em diante, sem o motivo do banco.
       return erro(RECUSA_PADRAO, 402, portao.seguidas >= 1 ? 'recusado' : codigo)
     }
-    const { falha: naoGravou } = await deps.banco.mudar(dono, id, { cartao_bandeira: cartao.bandeira, cartao_final: cartao.final, atualizado_em: agora.toISOString() })
+    const troca = { cartao_bandeira: cartao.bandeira, cartao_final: cartao.final, atualizado_em: agora.toISOString() }
+    let gravou = await deps.banco.mudar(dono, id, troca)
+    if (gravou.falha) gravou = await deps.banco.mudar(dono, id, troca)
     // O cartão já foi trocado lá: se a gravação falhar, só a tela mostra o antigo até a próxima troca.
-    if (naoGravou) deps.log('Cartão trocado na operadora, mas não gravado aqui:', id, naoGravou.mensagem)
+    if (gravou.falha) deps.log('Cartão trocado na operadora, mas não gravado aqui:', id, gravou.falha.mensagem)
+    // Nenhuma linha com esta assinatura (outra entrou no lugar entre ler e gravar): tentar de novo não muda isso.
+    else if (gravou.linhas === 0) deps.log('Cartão trocado na operadora, mas nenhuma linha mudou aqui:', id)
     // R4: o cartão novo valeu lá, então zera as recusas seguidas, mesmo sem gravar aqui.
     await anotarTentativaDeCartao(deps.banco, dono, false, agora, deps.log)
     return { status: 200, corpo: { cartao } }

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { cancelarNaOperadora, criarOperadora } from '../../supabase/functions/_shared/operadora.ts'
+import { cancelarNaOperadora, criarOperadora, tentarCancelarNaOperadora } from '../../supabase/functions/_shared/operadora.ts'
 import { AGORA, cenario, responde } from './servidorFalsos.test-utils.ts'
 
 describe('a operadora de verdade (fetch padrão, D-88)', () => {
@@ -66,6 +66,18 @@ describe('cancelar na operadora (o mesmo nas três funções)', () => {
     const c = cenario()
     await cancelarNaOperadora(c.operadora, '../v1/payments')
     expect(c.pedidos[0]?.caminho).toBe('/preapproval/..%2Fv1%2Fpayments')
+  })
+
+  it.each<[string, Parameters<typeof cenario>[1], { readonly cancelada: boolean; readonly ultimoStatus: number | null }]>([
+    ['aceito de primeira', { [PUT]: [responde(200)] }, { cancelada: true, ultimoStatus: 200 }],
+    ['as duas palavras recusadas: o status da segunda', { [PUT]: [responde(400), responde(422)], [GET]: [responde(200, { status: 'authorized' })] }, { cancelada: false, ultimoStatus: 422 }],
+    ['a nossa credencial', { [PUT]: [responde(401)], [GET]: [responde(401)] }, { cancelada: false, ultimoStatus: 401 }],
+    ['erro do lado dela', { [PUT]: [responde(503)], [GET]: [null] }, { cancelada: false, ultimoStatus: 503 }],
+    ['sem resposta', {}, { cancelada: false, ultimoStatus: null }],
+    ['sem resposta, mas a leitura diz cancelada (CB-93)', { [GET]: [responde(200, { status: 'cancelled' })] }, { cancelada: true, ultimoStatus: null }],
+  ])('o resultado com o status do último pedido de cancelar, só o número (%s)', async (_caso, rotas, esperado) => {
+    const c = cenario([], rotas)
+    expect(await tentarCancelarNaOperadora(c.operadora, 'pre-1')).toEqual(esperado)
   })
 })
 

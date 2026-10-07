@@ -30,17 +30,30 @@ export function criarOperadora(token: string, prazos: PrazosDaOperadora, buscar:
   }
 }
 
+export interface CancelamentoNaOperadora {
+  /** A assinatura ficou cancelada lá. */
+  readonly cancelada: boolean
+  /** O status HTTP do último pedido de cancelar (PUT); nulo sem resposta. Só o número vai para o registro, nunca o corpo. */
+  readonly ultimoStatus: number | null
+}
+
 /**
- * Cancela a assinatura na operadora e diz se ela ficou cancelada lá. Pede com "cancelled". Se a
- * operadora recusar a palavra (4xx que não é a nossa credencial), pede com "canceled", como a
- * documentação em português escreve. Sem sucesso, lê de novo: a resposta pode ter se perdido com o
- * cancelamento feito (CB-93).
+ * Cancela a assinatura na operadora e diz se ela ficou cancelada lá, com o status do último pedido.
+ * Pede com "cancelled". Se a operadora recusar a palavra (4xx que não é a nossa credencial), pede com
+ * "canceled", como a documentação em português escreve. Sem sucesso, lê de novo: a resposta pode ter
+ * se perdido com o cancelamento feito (CB-93).
  */
-export async function cancelarNaOperadora(operadora: Operadora, id: string): Promise<boolean> {
+export async function tentarCancelarNaOperadora(operadora: Operadora, id: string): Promise<CancelamentoNaOperadora> {
   const caminho = `/preapproval/${encodeURIComponent(id)}`
   let feito = await operadora('PUT', caminho, { status: 'cancelled' })
   if (feito && !feito.ok && feito.status < 500 && feito.status !== 401 && feito.status !== 403) feito = await operadora('PUT', caminho, { status: 'canceled' })
-  if (feito?.ok) return true
+  const ultimoStatus = feito?.status ?? null
+  if (feito?.ok) return { cancelada: true, ultimoStatus }
   const conferida = await operadora('GET', caminho)
-  return conferida?.ok === true && traduzirStatus(conferida.dados?.['status']) === 'cancelada'
+  return { cancelada: conferida?.ok === true && traduzirStatus(conferida.dados?.['status']) === 'cancelada', ultimoStatus }
+}
+
+/** O mesmo, só dizendo se ficou cancelada lá. */
+export async function cancelarNaOperadora(operadora: Operadora, id: string): Promise<boolean> {
+  return (await tentarCancelarNaOperadora(operadora, id)).cancelada
 }

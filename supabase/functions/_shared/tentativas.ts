@@ -27,19 +27,20 @@ const mensagemDe = (falha: unknown): string => (falha instanceof Error ? falha.m
  * D-101 (CA-433, CA-434): antes de chamar a operadora com um cartão, conta as recusas. Com 5 da conta
  * em 24 h, ou 30 do site inteiro na última hora, fecha sem chamar a operadora. Sem conseguir contar,
  * ou com uma contagem que não é número, também fecha (R5): responde 502 e não deixa passar.
+ * `semContagem` é a frase desse 502: na assinar, "Nada foi cobrado"; na troca de cartão, "Nada mudou".
  */
-export async function conferirTentativas(banco: BancoDasTentativas, conta: string, agora: Date, log: Registro): Promise<PortaoDasTentativas> {
+export async function conferirTentativas(banco: BancoDasTentativas, conta: string, agora: Date, log: Registro, semContagem = SEM_COBRANCA): Promise<PortaoDasTentativas> {
   let contadas: RecusasContadas
   try {
     contadas = await banco.contarRecusas(conta, agora)
   } catch (falha) {
     log('Não consegui contar as tentativas de cartão:', mensagemDe(falha))
-    return { passa: false, resposta: erro(SEM_COBRANCA, 502) }
+    return { passa: false, resposta: erro(semContagem, 502) }
   }
   const { daConta24h, seguidasDaConta, doSite1h } = contadas
   if (![daConta24h, seguidasDaConta, doSite1h].every(Number.isFinite)) {
     log('A contagem das tentativas de cartão veio fora do formato:', daConta24h, seguidasDaConta, doSite1h)
-    return { passa: false, resposta: erro(SEM_COBRANCA, 502) }
+    return { passa: false, resposta: erro(semContagem, 502) }
   }
   if (daConta24h >= RECUSAS_DA_CONTA_24H || doSite1h >= RECUSAS_DO_SITE_1H) {
     log('Muitas recusas de cartão; a operadora não foi chamada. Da conta em 24 h:', daConta24h, 'do site em 1 h:', doSite1h)
