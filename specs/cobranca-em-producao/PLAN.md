@@ -2,6 +2,8 @@
 
 > **Para agentes:** SUB-SKILL OBRIGATÓRIA: use `superpowers:subagent-driven-development` (recomendado) ou `superpowers:executing-plans` para executar este plano tarefa por tarefa. Os passos usam caixa (`- [ ]`) para acompanhar.
 
+> **Emenda de 07/10/2026 (vale por cima das tarefas):** leia a seção "Emenda de 07/10/2026" no fim deste plano antes de executar as Tarefas 1, 3, 4 e 5. Ela acrescenta D-101 e D-102 (CA-433 a CA-437) e muda o comportamento "sem segredo" do aviso.
+
 **Objetivo:** ninguém usa plano pago sem pagar, ninguém paga sem ter o plano, e o dono consegue ver se os avisos do Mercado Pago estão chegando antes de trocar as credenciais de teste pelas de produção.
 
 **Arquitetura:** a lógica das três funções sai do `index.ts` e vai para núcleos puros em `supabase/functions/_shared/`: `assinar.ts`, `gerenciarAssinatura.ts` e `webhook.ts`. Cada núcleo recebe de fora tudo o que depende do ambiente (D-88):
@@ -3035,3 +3037,22 @@ Mensagem: `docs: cobrança pronta para produção registrada`
 16. **D-87:** a operadora pode não aceitar a lista de fontes. A conferência no navegador decide (Tarefa 9); a volta é uma linha.
 17. **Não há conferência do Deno nesta máquina.** Os `index.ts` e o `bancoSupabase.ts` só são executados de verdade na publicação.
 
+
+## Emenda de 07/10/2026 (D-101, D-102; CA-433 a CA-437)
+
+Vem da revisão de segurança de 06/10/2026. Onde esta seção contradiz uma tarefa acima, vale esta seção.
+
+**Tarefa 1 ()** ganha a tabela  (, , , , ), com índices por (, ) e por (, ), RLS ligado e , como a . Linhas com mais de 7 dias podem ser apagadas pelas próprias funções, como o registro de avisos.
+
+**Tarefa 2** acrescenta ao  duas operações:  →  e ; o banco de mentira as implementa em memória. O IP vem do cabeçalho  (primeiro valor) na ligação fina (Tarefa 7); nulo quando faltar (aí só vale o limite da conta).
+
+**Tarefa 3 () e Tarefa 4 ():**
+- antes de chamar a operadora com um cartão, contam as recusas das últimas 24 h; com 5 ou mais da conta, ou 10 ou mais do IP, respondem 429  sem chamar a operadora (CA-433, CA-434);
+- depois da resposta da operadora, anotam a tentativa ( = foi 402 por cartão; falha de rede ou 5xx não conta como recusa);
+- numa recusa em que a conta já tinha ao menos uma recusa seguida antes (sem sucesso no meio), o  devolvido é  e a mensagem é a padrão (CA-435).
+- O navegador mostra a mensagem do servidor para 429 ( já mostra o  de respostas que não são 402; conferir e testar).
+Testes por CA-433, CA-434 e CA-435 nos dois núcleos.
+
+**Tarefa 5 (aviso):**
+- **sem segredo configurado, nada é processado**: responde 200 e anota  (CA-436). Isto substitui o teste "sem segredo configurado, processa e anota que não conferiu" e a decisão 14 da lista de riscos;
+- o código do recurso (o  da URL ou do corpo) precisa casar com ; fora disso, 200 e , sem chamar a operadora (CA-437).
