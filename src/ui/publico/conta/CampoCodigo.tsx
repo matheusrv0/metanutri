@@ -1,4 +1,4 @@
-import { soDigitos } from '@/domain/conta.ts'
+import { DIGITOS_DO_CODIGO, soDigitos } from '@/domain/conta.ts'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 
@@ -10,14 +10,14 @@ interface CampoCodigoProps {
 }
 
 /**
- * O código que chega por e-mail (spec confirmacao-por-codigo, CA-406). Só aceita
- * dígitos e não tem `maxLength`: colar "123 456" cortaria o último número antes de
+ * O código que chega por e-mail (spec confirmacao-por-codigo, CA-406 e D-106). Só aceita
+ * dígitos e não tem `maxLength`: colar "1234 5678" cortaria o último número antes de
  * o espaço sair (CB-100). O teclado numérico vem do `inputMode`.
  */
 export function CampoCodigo({ id, valor, aoMudar, invalido = false }: CampoCodigoProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Código de 6 dígitos</Label>
+      <Label htmlFor={id}>Código de {DIGITOS_DO_CODIGO} dígitos</Label>
       <Input
         id={id}
         inputMode="numeric"

@@ -2,6 +2,7 @@ import {
   codigoCompleto,
   comparativoDosPlanos,
   descontoAnualPct,
+  DIGITOS_DO_CODIGO,
   ehCiclo,
   ehIdPlano,
   ehPacienteAtivo,
@@ -322,19 +323,20 @@ describe('Código do e-mail (spec confirmacao-por-codigo)', () => {
   })
 
   it.each([
-    ['123456', '123456'],
-    ['123 456', '123456'],
-    ['123-456', '123456'],
-    [' 12 34 56 ', '123456'],
+    ['12345678', '12345678'],
+    ['1234 5678', '12345678'],
+    ['1234-5678', '12345678'],
+    [' 12 34 56 78 ', '12345678'],
     ['abc', ''],
-    ['12345678901234', '1234567890'],
-  ])('CB-100: "%s" vira "%s": só os dígitos contam', (colado, digitos) => {
+    ['123456789', '12345678'],
+  ])('CB-100: "%s" vira "%s": só os dígitos contam, até 8', (colado, digitos) => {
     expect(soDigitos(colado)).toBe(digitos)
   })
 
-  it('o código tem de 6 a 10 dígitos: o tamanho é configurável no projeto do Supabase', () => {
-    expect(codigoCompleto('12345')).toBe(false)
-    expect(codigoCompleto('123 456')).toBe(true)
-    expect(codigoCompleto('12345678')).toBe(true)
+  it('D-106: o código tem 8 dígitos, como no painel do Supabase', () => {
+    expect(DIGITOS_DO_CODIGO).toBe(8)
+    expect(codigoCompleto('1234567')).toBe(false)
+    expect(codigoCompleto('1234 5678')).toBe(true)
+    expect(MENSAGEM_ERRO['codigo-incompleto']).toBe('Digite os 8 dígitos do código.')
   })
 })

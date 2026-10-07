@@ -25,7 +25,7 @@ interface TelaConfirmarEmailProps {
 type Aviso = 'nada' | 'enviado' | ErroConta
 
 /**
- * Confirmar o e-mail com o código de 6 dígitos (spec confirmacao-por-codigo, CA-406 a
+ * Confirmar o e-mail com o código de 8 dígitos (spec confirmacao-por-codigo, CA-406 a
  * CA-410). O e-mail não traz link: o antivírus do Microsoft 365 abre todo link sozinho e
  * confirmava a conta sem a dona da caixa.
  */

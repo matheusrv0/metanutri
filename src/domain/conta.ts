@@ -244,6 +244,13 @@ export type ErroConta =
   | 'sem-servidor'
   | 'falha-rede'
 
+/*
+ * O código que chega por e-mail para confirmar a conta e trocar a senha (spec
+ * confirmacao-por-codigo, D-89, D-90 e D-106). Precisa bater com o "Email OTP length" do
+ * painel do Supabase: se mudar lá, muda aqui.
+ */
+export const DIGITOS_DO_CODIGO = 8
+
 export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'nome-vazio': 'Digite como quer ser chamada ou chamado.',
   'email-invalido': 'Digite um e-mail válido, como voce@exemplo.com.',
@@ -253,7 +260,7 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'credencial-invalida': 'E-mail ou senha não conferem.',
   'email-em-uso': 'Este e-mail já tem conta.',
   'email-nao-confirmado': 'Confirme seu e-mail antes de entrar.',
-  'codigo-incompleto': 'Digite os 6 dígitos do código.',
+  'codigo-incompleto': `Digite os ${DIGITOS_DO_CODIGO} dígitos do código.`,
   'codigo-invalido': 'Código errado ou vencido. Confira o último e-mail ou peça outro.',
   'link-vencido': 'Este link não vale mais. Peça outro.',
   'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
@@ -265,20 +272,12 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 export const ehEmailValido = (email: string): boolean => EMAIL.test(email.trim())
 export const SENHA_MINIMA = 8
 
-/*
- * O código que chega por e-mail para confirmar a conta e trocar a senha (spec
- * confirmacao-por-codigo, D-89 e D-90). A tela fala em 6 dígitos, o padrão do projeto;
- * o Supabase deixa configurar de 6 a 10, e aceitar até 10 evita travar se mudarem lá.
- */
-export const CODIGO_MINIMO = 6
-export const CODIGO_MAXIMO = 10
-
-/** "123 456" ou "123-456" colados viram "123456": só os dígitos contam (CB-100). */
+/** "1234 5678" ou "1234-5678" colados viram "12345678": só os dígitos contam (CB-100). */
 export function soDigitos(texto: string): string {
-  return texto.replace(/\D/g, '').slice(0, CODIGO_MAXIMO)
+  return texto.replace(/\D/g, '').slice(0, DIGITOS_DO_CODIGO)
 }
 
-export const codigoCompleto = (codigo: string): boolean => soDigitos(codigo).length >= CODIGO_MINIMO
+export const codigoCompleto = (codigo: string): boolean => soDigitos(codigo).length === DIGITOS_DO_CODIGO
 
 /** Erros do formulário antes de qualquer chamada de rede. */
 export function validarEntrada(email: string, senha: string): ErroConta | null {

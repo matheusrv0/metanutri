@@ -7,7 +7,7 @@ import { TelaConfirmarEmail } from './TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './TelaNovaSenha.tsx'
 
-const campoCodigo = () => screen.getByLabelText('Código de 6 dígitos')
+const campoCodigo = () => screen.getByLabelText('Código de 8 dígitos')
 
 /** Um pedido que só termina quando o teste manda: serve para o clique duplo. */
 function pedidoPendurado() {
@@ -33,7 +33,7 @@ function montarConfirmar(sobre: { conta?: ValorConta; email?: string | null; ven
 describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
   afterEach(() => vi.useRealTimers())
 
-  it('CA-406: pede o código de 6 dígitos, só números, com o teclado numérico, e não oferece entrar sem confirmar', () => {
+  it('CA-406: pede o código de 8 dígitos, só números, com o teclado numérico, e não oferece entrar sem confirmar', () => {
     montarConfirmar()
     expect(screen.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeInTheDocument()
     expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()
@@ -55,9 +55,9 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const conta = contaFalsa({ confirmarCodigo: vi.fn(async () => confirmado) })
     const { aoConfirmado } = montarConfirmar({ conta })
     const usuario = userEvent.setup()
-    await usuario.type(campoCodigo(), '123456')
+    await usuario.type(campoCodigo(), '12345678')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
-    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
     expect(aoConfirmado).toHaveBeenCalledWith(confirmado)
   })
 
@@ -65,10 +65,10 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const conta = contaFalsa({ confirmarCodigo: vi.fn(async () => ({ ok: false, erro: 'codigo-invalido' as const })) })
     const { aoConfirmado } = montarConfirmar({ conta })
     const usuario = userEvent.setup()
-    await usuario.type(campoCodigo(), '000000')
+    await usuario.type(campoCodigo(), '00000000')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Código errado ou vencido. Confira o último e-mail ou peça outro.')
-    expect(campoCodigo()).toHaveValue('000000')
+    expect(campoCodigo()).toHaveValue('00000000')
     expect(campoCodigo()).toHaveAttribute('aria-invalid', 'true')
     expect(aoConfirmado).not.toHaveBeenCalled()
     expect(conta.reenviarConfirmacao).not.toHaveBeenCalled()
@@ -78,9 +78,9 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const conta = contaFalsa()
     montarConfirmar({ conta })
     const usuario = userEvent.setup()
-    await usuario.type(campoCodigo(), '12345')
+    await usuario.type(campoCodigo(), '1234567')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Digite os 6 dígitos do código.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Digite os 8 dígitos do código.')
     expect(conta.confirmarCodigo).not.toHaveBeenCalled()
   })
 
@@ -116,26 +116,26 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const { aoConfirmado } = montarConfirmar({ conta, email: null })
     const usuario = userEvent.setup()
     await usuario.type(screen.getByLabelText('E-mail'), 'maria')
-    await usuario.type(campoCodigo(), '123456')
+    await usuario.type(campoCodigo(), '12345678')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Digite um e-mail válido')
     expect(conta.confirmarCodigo).not.toHaveBeenCalled()
 
     await usuario.type(screen.getByLabelText('E-mail'), '@exemplo.com')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
-    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
     expect(aoConfirmado).toHaveBeenCalledOnce()
   })
 
-  it.each(['123 456', '123-456'])('CB-100: o código colado como "%s" conta só os dígitos', async (colado) => {
+  it.each(['1234 5678', '1234-5678'])('CB-100: o código colado como "%s" conta só os dígitos', async (colado) => {
     const conta = contaFalsa()
     montarConfirmar({ conta })
     const usuario = userEvent.setup()
     await usuario.click(campoCodigo())
     await usuario.paste(colado)
-    expect(campoCodigo()).toHaveValue('123456')
+    expect(campoCodigo()).toHaveValue('12345678')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
-    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
   })
 
   it('CB-101: clique duplo em "Confirmar" faz um pedido só', async () => {
@@ -143,7 +143,7 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const conta = contaFalsa({ confirmarCodigo: vi.fn(() => promessa) })
     const { aoConfirmado } = montarConfirmar({ conta })
     const usuario = userEvent.setup()
-    await usuario.type(campoCodigo(), '123456')
+    await usuario.type(campoCodigo(), '12345678')
 
     await usuario.dblClick(screen.getByRole('button', { name: 'Confirmar' }))
     resolver({ ok: true, erro: null })
@@ -156,10 +156,10 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
     const conta = contaFalsa({ confirmarCodigo: vi.fn(async () => ({ ok: false, erro: 'falha-rede' as const })) })
     montarConfirmar({ conta })
     const usuario = userEvent.setup()
-    await usuario.type(campoCodigo(), '123456')
+    await usuario.type(campoCodigo(), '12345678')
     await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Não deu para falar com o servidor. Confira a internet e tente de novo.')
-    expect(campoCodigo()).toHaveValue('123456')
+    expect(campoCodigo()).toHaveValue('12345678')
   })
 
   it('CA-143 e CA-414: link antigo vencido continua com a tela própria e pede um código', async () => {
@@ -246,15 +246,15 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Crie uma senha nova' })).toBeInTheDocument()
     expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()
     expect(campoCodigo()).toHaveAttribute('inputmode', 'numeric')
-    await preencherSenha(usuario, '123 456', 'novasenha1')
-    expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+    await preencherSenha(usuario, '1234 5678', 'novasenha1')
+    expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
     expect(conta.trocarSenha).toHaveBeenCalledWith('novasenha1')
     expect(aoSenhaTrocada).toHaveBeenCalledOnce()
   })
 
   it('CA-412: as mesmas regras de senha do cadastro, antes de gastar o código', async () => {
     const { usuario, conta } = montarCodigoSenha()
-    await preencherSenha(usuario, '123456', 'curta')
+    await preencherSenha(usuario, '12345678', 'curta')
     expect(screen.getByRole('alert')).toHaveTextContent('A senha precisa de pelo menos 8 caracteres.')
     await usuario.clear(screen.getByLabelText('Senha nova'))
     await usuario.type(screen.getByLabelText('Senha nova'), 'novasenha1')
@@ -268,7 +268,7 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
   it('CA-412 e CA-408: código errado mostra a mesma mensagem e a senha não muda', async () => {
     const conta = contaFalsa({ conferirCodigoDeSenha: vi.fn(async () => ({ ok: false, erro: 'codigo-invalido' as const })) })
     const { usuario, aoSenhaTrocada } = montarCodigoSenha({ conta })
-    await preencherSenha(usuario, '000000', 'novasenha1')
+    await preencherSenha(usuario, '00000000', 'novasenha1')
     expect(screen.getByRole('alert')).toHaveTextContent('Código errado ou vencido. Confira o último e-mail ou peça outro.')
     expect(conta.trocarSenha).not.toHaveBeenCalled()
     expect(aoSenhaTrocada).not.toHaveBeenCalled()
@@ -278,7 +278,7 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
     const trocarSenha = vi.fn<ValorConta['trocarSenha']>().mockResolvedValueOnce({ ok: false, erro: 'falha-rede' }).mockResolvedValueOnce({ ok: true, erro: null })
     const conta = contaFalsa({ trocarSenha })
     const { usuario, aoSenhaTrocada } = montarCodigoSenha({ conta })
-    await preencherSenha(usuario, '123456', 'novasenha1')
+    await preencherSenha(usuario, '12345678', 'novasenha1')
     expect(screen.getByRole('alert')).toHaveTextContent('Não deu para falar com o servidor.')
     await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
     expect(conta.conferirCodigoDeSenha).toHaveBeenCalledTimes(1)
@@ -290,7 +290,7 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
     const { promessa, resolver } = pedidoPendurado()
     const conta = contaFalsa({ conferirCodigoDeSenha: vi.fn(() => promessa) })
     const { usuario, aoSenhaTrocada } = montarCodigoSenha({ conta })
-    await usuario.type(campoCodigo(), '123456')
+    await usuario.type(campoCodigo(), '12345678')
     await usuario.type(screen.getByLabelText('Senha nova'), 'novasenha1')
     await usuario.type(screen.getByLabelText('Repita a senha'), 'novasenha1')
     await usuario.dblClick(screen.getByRole('button', { name: 'Salvar a senha' }))
@@ -302,16 +302,16 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
   it('CB-102: sem internet, a falha de rede de sempre e o código continua no campo', async () => {
     const conta = contaFalsa({ conferirCodigoDeSenha: vi.fn(async () => ({ ok: false, erro: 'falha-rede' as const })) })
     const { usuario } = montarCodigoSenha({ conta })
-    await preencherSenha(usuario, '123456', 'novasenha1')
+    await preencherSenha(usuario, '12345678', 'novasenha1')
     expect(screen.getByRole('alert')).toHaveTextContent('Não deu para falar com o servidor.')
-    expect(campoCodigo()).toHaveValue('123456')
+    expect(campoCodigo()).toHaveValue('12345678')
   })
 
   it('aberta depois, sem o e-mail na memória, pede o e-mail', async () => {
     const { usuario, conta } = montarCodigoSenha({ email: null })
     await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
-    await preencherSenha(usuario, '123456', 'novasenha1')
-    expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '123456')
+    await preencherSenha(usuario, '12345678', 'novasenha1')
+    expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
   })
 
   it('"Reenviar o código" pede outro e espera 60 segundos', async () => {
