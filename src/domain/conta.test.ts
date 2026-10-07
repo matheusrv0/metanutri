@@ -7,6 +7,7 @@ import {
   ehPacienteAtivo,
   estadoDoLimite,
   LIMITES_ATIVOS,
+  linkDeUsoNaoComercial,
   mensalizadoDoAnual,
   MENSAGEM_ERRO,
   nomeSugerido,
@@ -191,6 +192,18 @@ describe('Limite de links de missões (conta de estudante)', () => {
 
   it('só a conta de estudante é de uso não comercial', () => {
     expect(PLANOS.filter((p) => p.usoNaoComercial).map((p) => p.id)).toEqual(['estudante'])
+  })
+
+  it('CA-421: conta de estudante gera link com o aviso, aprovada ou não; nutricionista só no plano Estudante', () => {
+    const free = planoPorId('free')
+    const estudante = planoPorId('estudante')
+    const solo = planoPorId('solo')
+    expect(linkDeUsoNaoComercial(free, 'estudante')).toBe(true)
+    expect(linkDeUsoNaoComercial(estudante, 'estudante')).toBe(true)
+    expect(linkDeUsoNaoComercial(solo, 'estudante')).toBe(true)
+    expect(linkDeUsoNaoComercial(free, 'nutricionista')).toBe(false)
+    expect(linkDeUsoNaoComercial(solo, null)).toBe(false)
+    expect(linkDeUsoNaoComercial(estudante, null)).toBe(true)
   })
 
   it('plano ilimitado nunca trava', () => {

@@ -264,6 +264,49 @@ describe('Conta de estudante: uso não comercial', () => {
     expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
   })
 
+  it('CA-421: conta de estudante ainda no Free gera o link com o aviso e diz isso antes', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="free" situacao="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    expect(screen.getByText(/até 2 links, de uso não comercial/i)).toBeInTheDocument()
+    await gerar(usuario)
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
+  })
+
+  it('CA-421: gerar de novo o link antigo de uma conta de estudante põe o aviso', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    repo.salvar(acompanhamentoDe('c1', 'Ana'))
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(false)
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="free" situacao="estudante" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
+  })
+
+  it('CA-421: conta de nutricionista no Free não sai marcada', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="free" situacao="nutricionista" hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    expect(screen.queryByText(/uso não comercial/i)).not.toBeInTheDocument()
+    await gerar(usuario)
+    expect(repo.porCaso('c1')?.usoNaoComercial).toBe(false)
+  })
+
   it('link de conta paga não sai marcado', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())

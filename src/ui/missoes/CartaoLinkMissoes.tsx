@@ -15,7 +15,8 @@ import {
 } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import type { Missao } from '@/domain/missoes.ts'
-import { planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
+import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
+import type { Situacao } from '@/domain/situacao.ts'
 import { useAcompanhamentos } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -26,28 +27,41 @@ interface CartaoLinkMissoesProps {
   readonly pacienteId: string | null
   readonly nome: string
   readonly missoes: readonly Missao[]
-  /** Plano da conta: decide quantos links cabem e se o link sai marcado. */
+  /** Plano da conta: decide quantos links cabem. */
   readonly plano?: IdPlano
+  /** Situação da conta: estudante, aprovada ou não, gera o link com o aviso de uso não comercial (D-95). */
+  readonly situacao?: Situacao | null
   /** Injetável no teste; por padrão é o dia de hoje no fuso de quem olha. */
   readonly hoje?: string
   /** Leva a Preços quando o limite de links acaba (CA-177). */
   readonly aoVerPlanos?: (() => void) | undefined
 }
 
-export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = PLANO_PADRAO, hoje = diaLocal(), aoVerPlanos }: CartaoLinkMissoesProps) {
+export function CartaoLinkMissoes({
+  casoId,
+  pacienteId,
+  nome,
+  missoes,
+  plano = PLANO_PADRAO,
+  situacao = null,
+  hoje = diaLocal(),
+  aoVerPlanos,
+}: CartaoLinkMissoesProps) {
   const { repositorio, salvar, acompanhamentos } = useAcompanhamentos()
   const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
+  const naoComercial = linkDeUsoNaoComercial(planoAtual, situacao)
   const [copiado, setCopiado] = useState(false)
   const [pedindoConsentimento, setPedindoConsentimento] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
 
   // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
   // dois acompanhamentos para o mesmo plano fariam a tela mostrar o link velho.
+  // CA-421: o aviso, uma vez no link, não sai; e entra no link antigo de conta de estudante.
   const gerar = () => {
     salvar(
       acompanhamento
-        ? regerarLink(acompanhamento, { nome, missoes })
-        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: planoAtual?.usoNaoComercial ?? false }),
+        ? { ...regerarLink(acompanhamento, { nome, missoes }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
+        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: naoComercial }),
     )
     setCopiado(false)
     setPedindoConsentimento(false)
@@ -119,7 +133,7 @@ export function CartaoLinkMissoes({ casoId, pacienteId, nome, missoes, plano = P
                   <Link2 className="size-4" aria-hidden="true" />
                   Gerar link das missões
                 </Button>
-                {planoAtual?.usoNaoComercial ? (
+                {naoComercial ? (
                   <p className="mt-3 text-xs text-muted-foreground">
                     Conta de estudante: até {planoAtual.limiteLinksPaciente} links, de uso não comercial. A tela do paciente avisa que o
                     acompanhamento é de estágio.

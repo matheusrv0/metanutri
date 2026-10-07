@@ -1,5 +1,6 @@
 // Conta e assinatura. Com o servidor configurado, a conta é obrigatória (spec
 // estilo-spora, D-23); sem servidor, o app roda inteiro no modo local.
+import type { Situacao } from './situacao.ts'
 
 export type IdPlano = 'free' | 'estudante' | 'solo' | 'pro' | 'clinica'
 
@@ -171,6 +172,14 @@ export function pacientesAtivos(ultimasAtividades: readonly (string | null | und
  */
 export function podeGerarLink(plano: PlanoAssinatura, linksExistentes: number): boolean {
   return plano.limiteLinksPaciente === null || linksExistentes < plano.limiteLinksPaciente
+}
+
+/**
+ * O link sai com o aviso de uso não comercial? Conta de estudante, aprovada ou não, sempre;
+ * e quem está no plano Estudante. O banco garante o mesmo (spec seguranca-lote-1, D-95).
+ */
+export function linkDeUsoNaoComercial(plano: PlanoAssinatura | null, situacao: Situacao | null): boolean {
+  return situacao === 'estudante' || plano?.usoNaoComercial === true
 }
 
 export interface EstadoDoLimite {

@@ -662,6 +662,7 @@ function Conteudo() {
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
                 aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+                situacao={perfil?.situacao ?? null}
                 {...(sessao ? { plano: assinatura.plano } : {})}
               />
             </div>
