@@ -2,7 +2,7 @@
 
 > **Para agentes:** SUB-SKILL OBRIGATÓRIA: use `superpowers:subagent-driven-development` (recomendado) ou `superpowers:executing-plans` para executar este plano tarefa por tarefa. Os passos usam caixa (`- [ ]`) para acompanhar.
 
-> **Emenda de 07/10/2026 (vale por cima das tarefas):** leia a seção "Emenda de 07/10/2026" no fim deste plano antes de executar as Tarefas 1, 3, 4 e 5. Ela acrescenta D-101 e D-102 (CA-433 a CA-437) e muda o comportamento "sem segredo" do aviso.
+> **Emenda de 07/10/2026 (vale por cima das tarefas):** leia as seções "Emenda de 07/10/2026" e "Decisões da varredura de 07/10/2026" no fim deste plano antes de executar qualquer tarefa (elas mexem nas Tarefas 1 a 10). Ela acrescenta D-101 e D-102 (CA-433 a CA-437) e muda o comportamento "sem segredo" do aviso.
 
 **Objetivo:** ninguém usa plano pago sem pagar, ninguém paga sem ter o plano, e o dono consegue ver se os avisos do Mercado Pago estão chegando antes de trocar as credenciais de teste pelas de produção.
 
@@ -3057,3 +3057,15 @@ Testes por CA-433, CA-434 e CA-435 nos dois núcleos.
 **Tarefa 5 (aviso):**
 - **sem segredo configurado, nada é processado**: responde 200 e anota `resultado: 'sem segredo'` (CA-436). Isto substitui o teste "sem segredo configurado, processa e anota que não conferiu" e a decisão 14 da lista de riscos;
 - o código do recurso (o `data.id` da URL ou do corpo) precisa casar com `/^[A-Za-z0-9]{1,64}$/`; fora disso, 200 e `resultado: 'recurso inválido'`, sem chamar a operadora (CA-437).
+
+## Decisões da varredura de 07/10/2026 (valem por cima da Emenda e das tarefas)
+
+- **R1 · Sem segredo:** o aviso responde **500**, anota `resultado: 'sem segredo'` e não processa nada (a operadora reenvia e nada se perde quando o segredo for posto). Substitui o "200" da Emenda e a decisão 14.
+- **R2 · Ordem das conferências no aviso:** sem segredo → sem id (`'ignorado: sem id'`) → recurso inválido (`/^[A-Za-z0-9]{1,64}$/`) → assinatura do aviso → tópico. `assinatura_confere` fica nulo nos três primeiros.
+- **R3 · Testes do aviso:** ids alfanuméricos em todos os testes do servidor (`pre1`, `prePaga`, `preNovo`…); o padrão de `deps` passa a ter o `SEGREDO`; o auxiliar `aviso()` assina o manifesto com `createHmac` de `node:crypto`, e os vetores fixos continuam como âncora do formato.
+- **R4 · O que conta como recusa:** só 402 com `cc_rejected_*` ou `recusado` (inclui a resposta 2xx com assinatura cancelada/pausada do D-86) anota `recusada = true`; sucesso anota `recusada = false` (zera as seguidas); rede, 5xx, 401, 403, 429, `token-invalido` e `falha` não anotam nada; falha ao anotar só vai para o `log`.
+- **R5 · Onde fica o portão:** na `assinar`, depois de validar o corpo e antes da reserva; na `gerenciar`, só em `trocar_cartao`, depois de validar o cartão. Falha ao contar → 502 `SEM_COBRANCA` (não deixa passar). As "seguidas" também olham só as últimas 24 h.
+- **R6 · Sem IP:** nada de IP. A tabela `tentativas_de_cartao` fica sem a coluna `ip`; o portão usa o limite da conta (5 em 24 h) e um **limite do site inteiro** (30 recusas na última hora, somando todas as contas) — CA-434 novo. `contarRecusas(conta, agora)` → `{ daConta24h: number; seguidasDaConta: number; doSite1h: number }`. A ligação fina não lê `x-forwarded-for`. Índices por (`nutricionista_id`, `quando`) e por (`quando`).
+- **R7 · Retenção:** `apagarTentativasAntesDe(data)` entra no `BancoDaCobranca` e é chamada a cada anotação (agora − 7 dias); o `bancoSupabase.ts` (Tarefa 7) implementa as três operações novas, com testes de texto como os outros.
+- **R8 · 429 da operadora em `trocar_cartao`:** responde 502 (`FORA`), como a `assinar`; nunca 402.
+- **R9 · Correções de texto:** o comentário do `portas.ts` sem a palavra "console."; no `gerenciar-assinatura/index.ts`, a linha `if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })` fica literalmente (o teste CA-425 da `main` lê esse arquivo), e `corpo` e o `log` ficam em linhas separadas; no README (Tarefa 1), o `009-cobranca-em-producao.sql` entra entre o 008 e o 010 da lista "na ordem"; Tarefa 10 cita D-101/D-102 e CA-433 a CA-437 na cobertura (o grep passa a `CA-(39[2-9]|40[0-5]|43[3-7])|CB-(9[6-9])`), tira o risco 14 e a frase "sem o segredo, a coluna fica vazia"; Tarefa 3, teste 24, usa cenários separados (um por caso) e soma os registros; Tarefa 4, na tabela do `desfechoDoCancelamento`, `ATIVA` passa por `linhaDe(...)`; Tarefa 8 abre a janela de cancelar com `findBy`/`abrirCancelamento` nos três testes que hoje esperam o texto logo ao abrir, e ganha o teste de 429 no `usarAssinatura`.

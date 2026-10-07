@@ -22,7 +22,7 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 | D-86 | Uma resposta de sucesso da operadora que traga a assinatura **cancelada ou pausada** ao assinar conta como recusa (nada gravado como ativa) | A resposta pode ser 2xx sem a assinatura estar valendo |
 | D-87 | A letra dentro dos campos seguros do cartão ganha **fonte reserva** (Manrope, depois a do sistema), se o processador aceitar | Sem a Manrope carregada, o campo cai na fonte padrão do navegador (serifada) |
 | D-88 | As três funções do servidor (`assinar`, `gerenciar-assinatura`, `webhook-mercadopago`) ganham **testes que executam a lógica de verdade**, com a operadora e o banco simulados | Hoje os testes só leem o texto do código; o caminho do dinheiro precisa ser exercitado |
-| D-101 | **Limite de tentativas com cartão recusado** (emenda de 07/10/2026, da revisão de segurança de 06/10): depois de 5 recusas em 24 horas na mesma conta, ou 10 vindas do mesmo endereço de internet, assinar e trocar cartão param de chamar a operadora até passar o prazo. A partir da segunda recusa seguida, a mensagem é a genérica, sem o motivo do banco | Sem limite, alguém usa o checkout para testar cartões roubados, e a operadora pode bloquear a conta do dono |
+| D-101 | **Limite de tentativas com cartão recusado** (emenda de 07/10/2026, da revisão de segurança de 06/10): depois de 5 recusas em 24 horas na mesma conta, ou 30 recusas em 1 hora somando todas as contas, assinar e trocar cartão param de chamar a operadora até passar o prazo. Nenhum endereço de internet é guardado (o cabeçalho pode ser forjado e guardar IP é dado pessoal). A partir da segunda recusa seguida, a mensagem é a genérica, sem o motivo do banco | Sem limite, alguém usa o checkout para testar cartões roubados, e a operadora pode bloquear a conta do dono |
 | D-102 | **O aviso só é processado com o segredo configurado** e com o código do recurso no formato esperado (letras e números, até 64) (emenda de 07/10/2026) | Sem o segredo, qualquer um faria a função chamar a operadora com o token do dono |
 
 ## 2. Critérios de aceite
@@ -50,7 +50,7 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 - **CA-404** · Dado os campos seguros do cartão, então a fonte pedida é a Manrope com a fonte do sistema como reserva.
 - **CA-405** · Dado cada uma das três funções, então há testes que executam o caminho de sucesso, de recusa e de falha de rede com a operadora e o banco simulados.
 - **CA-433** · Dado 5 recusas de cartão em 24 horas na mesma conta (somando assinar e trocar cartão), quando ela tenta de novo, então a função responde "Muitas tentativas com cartão recusado. Tente de novo amanhã." (429) sem chamar a operadora.
-- **CA-434** · Dado 10 recusas em 24 horas vindas do mesmo endereço de internet, então a mesma resposta do CA-433 vale para qualquer conta desse endereço.
+- **CA-434** · Dado 30 recusas de cartão na última hora, somando todas as contas, então a mesma resposta do CA-433 vale para qualquer conta até a contagem da última hora cair abaixo de 30.
 - **CA-435** · Dado a segunda recusa seguida na mesma conta, então a resposta usa a mensagem genérica de recusa, sem o código detalhado do banco.
 - **CA-436** · Dado que o segredo do aviso não está configurado no servidor, então nenhum aviso é processado e o registro anota "sem segredo".
 - **CA-437** · Dado um aviso com código de recurso fora do formato (letras e números, até 64), então nada é processado e o registro anota "recurso inválido".
