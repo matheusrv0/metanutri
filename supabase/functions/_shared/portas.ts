@@ -95,7 +95,11 @@ export interface RecusasContadas {
   readonly doSite1h: number
 }
 
-/** As consultas das três funções. Nenhuma lança: a falha volta no resultado, como no supabase-js. */
+/**
+ * As consultas das três funções. Nenhuma lança, exceto `contarRecusas`: sem a contagem, o portão
+ * responde 502 e não deixa passar. Nas outras, a falha volta no resultado, como no supabase-js, ou só
+ * vai para o registro (anotar e apagar tentativas).
+ */
 export interface BancoDaCobranca {
   /** A linha da conta (uma por conta). */
   lerDaConta(conta: string): Promise<LeituraDaLinha>

@@ -90,6 +90,27 @@ describe('as tentativas de cartão no banco de mentira (R4, R6, R7)', () => {
     expect(await c.banco.contarRecusas('c2', AGORA)).toEqual({ daConta24h: 2, seguidasDaConta: 2, doSite1h: 2 })
   })
 
+  it('as janelas são estritas: a recusa de exatamente 24 h (ou 1 h) atrás já saiu; a de 23,99 h (ou 0,99 h) ainda conta', async () => {
+    const conta = cenario()
+    conta.semearTentativas('c1', [
+      { quando: antes(24), recusada: true },
+      { quando: antes(23.99), recusada: true },
+    ])
+    expect(await conta.banco.contarRecusas('c1', AGORA)).toEqual({ daConta24h: 1, seguidasDaConta: 1, doSite1h: 0 })
+    const site = cenario()
+    site.semearTentativas('c2', [
+      { quando: antes(1), recusada: true },
+      { quando: antes(0.99), recusada: true },
+    ])
+    expect((await site.banco.contarRecusas('c2', AGORA)).doSite1h).toBe(1)
+  })
+
+  it('falhar("contarRecusas") faz a contagem rejeitar (o portão responde 502)', async () => {
+    const c = cenario()
+    c.falhar('contarRecusas')
+    await expect(c.banco.contarRecusas('c1', AGORA)).rejects.toThrow('banco fora')
+  })
+
   it('anota a tentativa e apaga as antigas', async () => {
     const c = cenario()
     c.semearTentativas('c1', [{ quando: antes(24 * 8), recusada: true }])
