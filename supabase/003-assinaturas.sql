@@ -28,16 +28,5 @@ drop policy if exists "dono le a assinatura" on public.assinaturas;
 create policy "dono le a assinatura" on public.assinaturas
   for select to authenticated using (auth.uid() = nutricionista_id);
 
--- Quantas assinaturas pagas já existem, para saber se as vagas de fundador acabaram.
--- Conta sem expor quem é quem.
-create or replace function public.vagas_de_fundador_usadas()
-returns integer
-language sql
-security definer
-set search_path = public
-as $$
-  select count(*)::integer from public.assinaturas where status = 'ativa' and preco_travado;
-$$;
-
-revoke all on function public.vagas_de_fundador_usadas() from public;
-grant execute on function public.vagas_de_fundador_usadas() to anon, authenticated;
+-- A função que contava as vagas de fundador saiu (D-112 da spec seguranca-lote-2): não existe mais
+-- preço de fundador (D-78). O 011 a apaga de quem já tinha rodado este arquivo.
