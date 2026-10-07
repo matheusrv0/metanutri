@@ -61,6 +61,9 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 - **CB-97** · O aviso de mensalidade paga chega depois de a pessoa cancelar: a linha continua cancelada, só a data da última mensalidade paga é gravada.
 - **CB-98** · O aviso de mensalidade recusada chega para uma assinatura que a pessoa já trocou por outra (cartão novo ou assinatura nova): só a assinatura daquele aviso é afetada.
 - **CB-99** · A busca da operadora não aceita filtrar pela conta: a `assinar` busca pelo e-mail e confere a conta em cada resultado.
+- **CB-109** · Dois pedidos de trocar cartão da mesma conta ao mesmo tempo: só um chega à operadora; o outro recebe a mesma resposta de "espere terminar" da `assinar`.
+- **CB-110** · O aviso de uma mensalidade paga chega para uma assinatura que não tem linha aqui: o servidor confere a assinatura na operadora e, se ela estiver valendo, segue como no D-85 (adota ou cancela a sobra).
+- **CB-111** · O aviso de uma assinatura autorizada aponta para uma conta que não existe mais (ou para um código de conta inválido): a assinatura é cancelada na operadora e o registro anota a sobra, em vez de o aviso falhar sem parar.
 
 ## 4. Fora de escopo
 
