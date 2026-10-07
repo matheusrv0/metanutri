@@ -33,6 +33,8 @@ export interface LinhaDaAssinatura {
   readonly expira_em: string | null
   readonly ultima_cobranca_paga: string | null
   readonly encerrada_por: string | null
+  /** Quando foi encerrada; na recusa, o dia da cobrança recusada (CA-393). */
+  readonly encerrada_em: string | null
 }
 
 /** A assinatura nova, gravada por cima da linha da conta (upsert). Zera o que era da anterior (D-81). */
@@ -59,8 +61,9 @@ export interface MudancaDaAssinatura {
   readonly proxima_cobranca?: string
   readonly expira_em?: string | null
   readonly ultima_cobranca_paga?: string
-  readonly encerrada_por?: EncerradaPor
-  readonly encerrada_em?: string
+  /** Nulo apaga a anotação da recusa que sobrou (R12): a mensalidade passou antes de o corte pegar. */
+  readonly encerrada_por?: EncerradaPor | null
+  readonly encerrada_em?: string | null
   readonly cartao_bandeira?: string
   readonly cartao_final?: string
   readonly atualizado_em: string

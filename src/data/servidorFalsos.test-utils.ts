@@ -32,7 +32,6 @@ export interface PedidoFeito {
 export type LinhaGuardada = LinhaDaAssinatura & {
   readonly valor_centavos?: number
   readonly cartao_bandeira?: string | null
-  readonly encerrada_em?: string | null
   readonly atualizado_em?: string
 }
 
@@ -55,6 +54,7 @@ export const linhaDe = (parcial: LinhaParcial): LinhaGuardada => ({
   expira_em: null,
   ultima_cobranca_paga: null,
   encerrada_por: null,
+  encerrada_em: null,
   ...parcial,
 })
 
