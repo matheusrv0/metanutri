@@ -3042,17 +3042,18 @@ Mensagem: `docs: cobrança pronta para produção registrada`
 
 Vem da revisão de segurança de 06/10/2026. Onde esta seção contradiz uma tarefa acima, vale esta seção.
 
-**Tarefa 1 ()** ganha a tabela  (, , , , ), com índices por (, ) e por (, ), RLS ligado e , como a . Linhas com mais de 7 dias podem ser apagadas pelas próprias funções, como o registro de avisos.
+**Tarefa 1 (`009`)** ganha a tabela `tentativas_de_cartao` (`id bigint generated always as identity primary key`, `nutricionista_id uuid not null references auth.users (id) on delete cascade`, `ip text`, `quando timestamptz not null default now()`, `recusada boolean not null`), com índices por (`nutricionista_id`, `quando`) e por (`ip`, `quando`), RLS ligado e `revoke all … from anon, authenticated`, como a `assinando_agora`. Linhas com mais de 7 dias podem ser apagadas pelas próprias funções, como o registro de avisos.
 
-**Tarefa 2** acrescenta ao  duas operações:  →  e ; o banco de mentira as implementa em memória. O IP vem do cabeçalho  (primeiro valor) na ligação fina (Tarefa 7); nulo quando faltar (aí só vale o limite da conta).
+**Tarefa 2** acrescenta ao `BancoDaCobranca` duas operações: `contarRecusas(conta, ip, desde)` → `{ daConta: number; doIp: number; seguidasDaConta: number }` e `anotarTentativa(conta, ip, recusada)`; o banco de mentira as implementa em memória. O IP vem do cabeçalho `x-forwarded-for` (primeiro valor) na ligação fina (Tarefa 7); nulo quando faltar (aí só vale o limite da conta).
 
-**Tarefa 3 () e Tarefa 4 ():**
-- antes de chamar a operadora com um cartão, contam as recusas das últimas 24 h; com 5 ou mais da conta, ou 10 ou mais do IP, respondem 429  sem chamar a operadora (CA-433, CA-434);
-- depois da resposta da operadora, anotam a tentativa ( = foi 402 por cartão; falha de rede ou 5xx não conta como recusa);
-- numa recusa em que a conta já tinha ao menos uma recusa seguida antes (sem sucesso no meio), o  devolvido é  e a mensagem é a padrão (CA-435).
-- O navegador mostra a mensagem do servidor para 429 ( já mostra o  de respostas que não são 402; conferir e testar).
+**Tarefa 3 (`assinar`) e Tarefa 4 (`trocar_cartao`):**
+- antes de chamar a operadora com um cartão, contam as recusas das últimas 24 h; com 5 ou mais da conta, ou 10 ou mais do IP, respondem 429 `{ erro: 'Muitas tentativas com cartão recusado. Tente de novo amanhã.', codigo: 'muitas-tentativas' }` sem chamar a operadora (CA-433, CA-434);
+- depois da resposta da operadora, anotam a tentativa (`recusada` = foi 402 por cartão; falha de rede ou 5xx não conta como recusa);
+- numa recusa em que a conta já tinha ao menos uma recusa seguida antes (sem sucesso no meio), o `codigo` devolvido é `recusado` e a mensagem é a padrão (CA-435);
+- o navegador mostra a mensagem do servidor para 429 (`usarAssinatura` já mostra o `erro` de respostas que não são 402; conferir e testar).
+
 Testes por CA-433, CA-434 e CA-435 nos dois núcleos.
 
 **Tarefa 5 (aviso):**
-- **sem segredo configurado, nada é processado**: responde 200 e anota  (CA-436). Isto substitui o teste "sem segredo configurado, processa e anota que não conferiu" e a decisão 14 da lista de riscos;
-- o código do recurso (o  da URL ou do corpo) precisa casar com ; fora disso, 200 e , sem chamar a operadora (CA-437).
+- **sem segredo configurado, nada é processado**: responde 200 e anota `resultado: 'sem segredo'` (CA-436). Isto substitui o teste "sem segredo configurado, processa e anota que não conferiu" e a decisão 14 da lista de riscos;
+- o código do recurso (o `data.id` da URL ou do corpo) precisa casar com `/^[A-Za-z0-9]{1,64}$/`; fora disso, 200 e `resultado: 'recurso inválido'`, sem chamar a operadora (CA-437).
