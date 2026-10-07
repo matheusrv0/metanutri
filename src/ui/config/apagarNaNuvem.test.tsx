@@ -8,6 +8,7 @@ type Erro = { readonly message: string; readonly code: string } | null
 const nuvem = vi.hoisted(() => ({
   erros: {} as Record<string, { readonly message: string; readonly code: string } | null>,
   apagados: [] as string[],
+  semSessao: false,
 }))
 
 vi.mock('../estado/supabase.ts', () => ({
@@ -21,7 +22,14 @@ vi.mock('../estado/supabase.ts', () => ({
       }),
       upsert: () => Promise.resolve({ data: null, error: nuvem.erros[tabela] ?? null }),
     }),
-    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'u1' } } } }) },
+    auth: {
+      getSession: () =>
+        Promise.resolve(
+          nuvem.semSessao
+            ? { data: { session: null }, error: { message: 'Invalid Refresh Token: Refresh Token Not Found' } }
+            : { data: { session: { user: { id: 'u1' } } }, error: null },
+        ),
+    },
   }),
 }))
 
@@ -40,6 +48,15 @@ describe('Apagar tudo com a nuvem ligada (D-94)', () => {
     localStorage.clear()
     nuvem.erros = {}
     nuvem.apagados = []
+    nuvem.semSessao = false
+  })
+
+  it('CA-420: sessão vencida sem internet: diz que a nuvem não foi apagada, em vez de "tudo apagado"', async () => {
+    nuvem.semSessao = true
+    await apagarTudo()
+    const aviso = await screen.findByText(/Apagado só deste aparelho/)
+    expect(aviso).toHaveTextContent(`Apagado só deste aparelho. Os acompanhamentos e a cópia completa não foram apagados da nuvem. ${FALHA_DE_REDE}`)
+    expect(nuvem.apagados).toEqual([])
   })
 
   it('CA-420: apaga os acompanhamentos e a cópia completa da conta, e só então diz "na nuvem"', async () => {

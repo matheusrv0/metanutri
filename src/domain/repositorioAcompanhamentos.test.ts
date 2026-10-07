@@ -174,6 +174,39 @@ describe('CB-107: o aparelho lembra quais links já estiveram na nuvem', () => {
   })
 })
 
+describe('CB-108: o aparelho lembra a mudança que não chegou à nuvem', () => {
+  it('a marca de pendente continua depois de fechar e abrir', () => {
+    const armazenamento = memoria()
+    const a = criarRepositorioAcompanhamentos(armazenamento).salvar(novo(), { pendente: true })
+    expect(criarRepositorioAcompanhamentos(armazenamento).estaPendente(a.id)).toBe(true)
+  })
+
+  it('gravar de novo sem dizer nada não tira a marca; dizer que não está pendente tira', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = repo.salvar(novo(), { pendente: true })
+    repo.salvar(marcarMissao(a, '2026-09-21', 'agua', true))
+    expect(repo.estaPendente(a.id)).toBe(true)
+    repo.salvar(a, { pendente: false, naNuvem: true })
+    expect(repo.estaPendente(a.id)).toBe(false)
+    expect(repo.estaNaNuvem(a.id)).toBe(true)
+  })
+
+  it('remover leva a marca junto', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const a = repo.salvar(novo(), { pendente: true })
+    repo.remover(a.id)
+    repo.salvar(a)
+    expect(repo.estaPendente(a.id)).toBe(false)
+  })
+
+  it('dado antigo, sem a marca, não tem nada pendente', () => {
+    const armazenamento = memoria()
+    const a = novo()
+    armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [a] }))
+    expect(criarRepositorioAcompanhamentos(armazenamento).estaPendente(a.id)).toBe(false)
+  })
+})
+
 describe('Fonte local, a costura do servidor', () => {
   it('responde o que está neste navegador e avisa que não é nuvem', async () => {
     const repo = criarRepositorioAcompanhamentos(memoria())

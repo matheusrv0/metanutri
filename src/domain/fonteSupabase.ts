@@ -2,32 +2,41 @@
 // link do paciente abrir no aparelho dele. Nenhuma tela muda por causa deste arquivo.
 //
 // Duas pessoas diferentes chegam aqui:
-//   - o paciente, sem conta, que só pode ler e marcar pelo token (funções RPC);
-//   - o nutricionista, logado, que grava a linha inteira (tabela com RLS).
+//   - o paciente, que só lê e marca pelo token (funções RPC), com conta ou sem;
+//   - o nutricionista, logado, que grava o link pelas funções do fim do arquivo (tabela com RLS).
 // Ver `supabase/001-acompanhamentos.sql`.
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import type { Missao } from './missoes.ts'
 import type { FonteAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
+interface ErroDoBanco {
+  readonly message: string
+  readonly code?: string
+}
+
 interface Resposta<T> {
   readonly data: T | null
-  readonly error: { readonly message: string; readonly code?: string } | null
+  readonly error: ErroDoBanco | null
 }
 
 /** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
-const traduzido = (erro: { readonly message: string; readonly code?: string }): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
+const traduzido = (erro: ErroDoBanco): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
+
+/** Um pedido ao banco. O do cliente de verdade aceita um sinal para desistir dele (CA-439). */
+type Pedido = PromiseLike<Resposta<unknown>> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta<unknown>> }
 
 /** O pedaço do cliente Supabase que este arquivo usa — o resto não interessa aqui. */
 export interface ClienteMissoes {
-  rpc(nome: string, parametros: Record<string, unknown>): PromiseLike<Resposta<unknown>>
+  rpc(nome: string, parametros: Record<string, unknown>): Pedido
   from(tabela: string): {
-    select(colunas: string): { eq(coluna: string, valor: string): PromiseLike<Resposta<unknown>> }
-    upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string; ignoreDuplicates?: boolean }): PromiseLike<Resposta<unknown>>
-    delete(): { eq(coluna: string, valor: string): PromiseLike<Resposta<unknown>> }
+    select(colunas: string): { eq(coluna: string, valor: string): Pedido }
+    upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string; ignoreDuplicates?: boolean }): Pedido & { select(colunas: string): Pedido }
+    update(campos: Record<string, unknown>): { eq(coluna: string, valor: string): { select(colunas: string): Pedido } }
+    delete(): { eq(coluna: string, valor: string): Pedido }
   }
   auth: {
-    getSession(): PromiseLike<{ data: { session: { user: { id: string } } | null } }>
+    getSession(): PromiseLike<{ data: { session: { user: { id: string } } | null }; error?: { readonly message: string } | null }>
   }
 }
 
@@ -100,22 +109,27 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       return daLinha(linha)
     },
 
+    /**
+     * A tela do paciente grava só as marcações, pela função, com conta ou sem. Gravar a
+     * linha inteira daqui deixaria uma aba velha (ou a nutricionista testando o link no
+     * próprio aparelho) desfazer o token novo e as missões do link.
+     */
     async salvar(acompanhamento) {
-      const { data } = await cliente.auth.getSession()
-      const usuario = data.session?.user.id ?? null
-
-      // Sem sessão é o paciente marcando: só as marcações, só na linha do token dele.
-      if (usuario === null) {
-        const { error } = await cliente.rpc('marcar_missoes', { p_token: acompanhamento.token, p_marcacoes: acompanhamento.marcacoes })
-        if (error) avisar(traduzido(error))
-        return acompanhamento
-      }
-
-      const { error } = await cliente.from(TABELA).upsert(paraLinha(acompanhamento, usuario), { onConflict: 'id' })
+      const { error } = await cliente.rpc('marcar_missoes', { p_token: acompanhamento.token, p_marcacoes: acompanhamento.marcacoes })
       if (error) avisar(traduzido(error))
       return acompanhamento
     },
   }
+}
+
+/**
+ * O dono da sessão. Servidor ligado e sem sessão (ou com a sessão falhando, como o token
+ * vencido sem internet) é nulo, e quem chama trata como falha: nunca como "deu certo".
+ */
+async function usuarioDaSessao(cliente: { readonly auth: ClienteMissoes['auth'] }): Promise<string | null> {
+  const { data, error } = await cliente.auth.getSession()
+  if (error) return null
+  return data.session?.user.id ?? null
 }
 
 /**
@@ -124,9 +138,8 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
  * Devolve a mensagem de erro já traduzida, ou nulo quando deu certo.
  */
 export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<string | null> {
-  const { data } = await cliente.auth.getSession()
-  const usuario = data.session?.user.id ?? null
-  if (usuario === null) return null
+  const usuario = await usuarioDaSessao(cliente)
+  if (usuario === null) return FALHA_DE_REDE
 
   const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
   return error ? traduzido(error) : null
@@ -134,95 +147,127 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Pro
 
 // ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
 
-/** A frase que o banco levanta quando o plano não comporta mais um link (supabase/010). */
+/**
+ * A frase que o banco levanta quando o plano não comporta mais um link (supabase/010,
+ * `errcode 'P0001'`). É a única cópia dela no app: o cliente e os testes usam esta.
+ */
 export const LIMITE_DE_LINKS = 'Você chegou ao limite de links do seu plano.'
+
+/** O P0001 é de qualquer `raise exception`: o limite é o P0001 com esta frase. */
+const ehLimiteDeLinks = (erro: ErroDoBanco): boolean => erro.code === 'P0001' && erro.message === LIMITE_DE_LINKS
+
+/** O motivo que a tela mostra para um erro do banco ao gravar o link. */
+const motivoDoErro = (erro: ErroDoBanco): string => (ehLimiteDeLinks(erro) ? LIMITE_DE_LINKS : traduzido(erro))
 
 /** CA-439: a nuvem que não responde neste tempo conta como falha, em vez de prender a tela. */
 export const PRAZO_DA_NUVEM_MS = 15_000
 
-/** Corre a ida à nuvem contra o relógio. Exceção e demora viram a falha de rede de sempre. */
-async function comPrazo<T>(ida: () => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
+/**
+ * Corre a ida à nuvem contra o relógio. Exceção e demora viram a falha de rede de sempre,
+ * e na demora o pedido é cancelado, para não chegar ao banco depois que a tela desistiu.
+ */
+async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
+  const controle = new AbortController()
   let relogio: ReturnType<typeof setTimeout> | undefined
   const esgotou = new Promise<T>((resolver) => {
-    relogio = setTimeout(() => resolver(falhou(FALHA_DE_REDE)), PRAZO_DA_NUVEM_MS)
+    relogio = setTimeout(() => {
+      controle.abort()
+      resolver(falhou(FALHA_DE_REDE))
+    }, PRAZO_DA_NUVEM_MS)
   })
   try {
-    return await Promise.race([ida().catch(() => falhou(FALHA_DE_REDE)), esgotou])
+    return await Promise.race([ida(controle.signal).catch(() => falhou(FALHA_DE_REDE)), esgotou])
   } finally {
     clearTimeout(relogio)
   }
 }
 
+/** Liga o sinal de desistir ao pedido, quando o cliente sabe desistir. */
+const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta<unknown>> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
+
 const mensagem = (texto: string): string => texto
 
-async function usuarioDaSessao(cliente: ClienteMissoes): Promise<string | null> {
-  const { data } = await cliente.auth.getSession()
-  return data.session?.user.id ?? null
-}
+/** O pedido devolveu ao menos uma linha (`.select('id')` depois de gravar). */
+const tocouAlgumaLinha = (data: unknown): boolean => Array.isArray(data) && data.length > 0
 
-export type LeituraDaNuvem =
-  | { readonly tipo: 'sem-conta' }
-  | { readonly tipo: 'lida'; readonly itens: readonly Acompanhamento[] }
-  | { readonly tipo: 'falhou'; readonly mensagem: string }
+export type LeituraDaNuvem = { readonly tipo: 'lida'; readonly itens: readonly Acompanhamento[] } | { readonly tipo: 'falhou'; readonly mensagem: string }
 
 /**
  * D-104: os links da conta, com o que o paciente marcou no celular dele. Filtra pelo dono
  * além do RLS: uma política mais larga no futuro não pode trazer paciente de outra conta.
+ * Qualquer coisa que não seja uma lista é falha: lista vazia faria o aparelho apagar links (CB-107).
  */
 export async function listarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<LeituraDaNuvem> {
   return comPrazo<LeituraDaNuvem>(
-    async () => {
+    async (sinal) => {
       const usuario = await usuarioDaSessao(cliente)
-      if (usuario === null) return { tipo: 'sem-conta' }
-      const { data, error } = await cliente.from(TABELA).select('*').eq('nutricionista_id', usuario)
+      if (usuario === null) return { tipo: 'falhou', mensagem: FALHA_DE_REDE }
+      const { data, error } = await comSinal(cliente.from(TABELA).select('*').eq('nutricionista_id', usuario), sinal)
       if (error) return { tipo: 'falhou', mensagem: traduzido(error) }
-      const linhas: readonly unknown[] = Array.isArray(data) ? data : []
+      if (!Array.isArray(data)) return { tipo: 'falhou', mensagem: FALHA_DE_REDE }
+      const linhas: readonly unknown[] = data
       return { tipo: 'lida', itens: linhas.map(daLinha).filter((a): a is Acompanhamento => a !== null) }
     },
     (texto) => ({ tipo: 'falhou', mensagem: texto }),
   )
 }
 
-/** Cria a linha só se ela ainda não existe: o que já está na nuvem nunca é sobrescrito. */
-async function criarSeFaltar(cliente: ClienteMissoes, a: Acompanhamento, usuario: string): Promise<string | null> {
-  const { error } = await cliente.from(TABELA).upsert(paraLinha(a, usuario), { onConflict: 'id', ignoreDuplicates: true })
-  return error ? traduzido(error) : null
-}
-
 /**
- * D-105: sobe um link que só existe neste aparelho, com as marcações feitas aqui. Se a
- * linha já estiver na nuvem, nada muda (CB-105). Devolve o motivo, se não subiu.
+ * D-105: sobe um link que só existe neste aparelho, com as marcações feitas aqui. Só cria:
+ * se a linha já estiver na nuvem, nada muda (CB-105). Devolve o motivo, se não subiu.
  */
 export async function subirAcompanhamento(cliente: ClienteMissoes, a: Acompanhamento): Promise<string | null> {
-  return comPrazo<string | null>(async () => {
+  return comPrazo<string | null>(async (sinal) => {
     const usuario = await usuarioDaSessao(cliente)
-    return usuario === null ? null : criarSeFaltar(cliente, a, usuario)
+    if (usuario === null) return FALHA_DE_REDE
+    const { error } = await comSinal(cliente.from(TABELA).upsert(paraLinha(a, usuario), { onConflict: 'id', ignoreDuplicates: true }), sinal)
+    return error ? motivoDoErro(error) : null
   }, mensagem)
 }
 
+/** O que aconteceu ao gravar o link. `sumiu`: a linha não está mais na nuvem (CB-107). */
+export type ResultadoDoLink = { readonly tipo: 'salvo' } | { readonly tipo: 'sumiu' } | { readonly tipo: 'falhou'; readonly motivo: string }
+
 /**
- * D-103: criar, gerar de novo ou mudar o link. Em dois passos, para não apagar o que o
- * paciente marcou no celular depois que esta tela leu a nuvem: primeiro cria a linha se
- * faltar (com as marcações daqui); depois atualiza o resto, sem tocar nas marcações.
+ * D-103: criar, gerar de novo ou mudar o link.
+ *
+ * Link que nunca esteve na nuvem: cria a linha se faltar (com as marcações daqui); se
+ * acabou de criar, pronto. Se já existia, ou se o link já esteve na nuvem, atualiza o resto
+ * pelo id, sem tocar nas marcações que o paciente fez no celular. A atualização nunca
+ * recria: linha apagada em outro aparelho volta como `sumiu`, não como link de novo (CB-107).
  */
-export async function salvarLinkNaNuvem(cliente: ClienteMissoes, a: Acompanhamento): Promise<string | null> {
-  return comPrazo<string | null>(async () => {
-    const usuario = await usuarioDaSessao(cliente)
-    if (usuario === null) return null
-    const criado = await criarSeFaltar(cliente, a, usuario)
-    if (criado !== null) return criado
-    const semMarcacoes = Object.fromEntries(Object.entries(paraLinha(a, usuario)).filter(([coluna]) => coluna !== 'marcacoes'))
-    const { error } = await cliente.from(TABELA).upsert(semMarcacoes, { onConflict: 'id' })
-    return error ? traduzido(error) : null
-  }, mensagem)
+export async function salvarLinkNaNuvem(
+  cliente: ClienteMissoes,
+  a: Acompanhamento,
+  opcoes: { readonly jaEsteveNaNuvem: boolean },
+): Promise<ResultadoDoLink> {
+  return comPrazo<ResultadoDoLink>(
+    async (sinal) => {
+      const usuario = await usuarioDaSessao(cliente)
+      if (usuario === null) return { tipo: 'falhou', motivo: FALHA_DE_REDE }
+      const linha = paraLinha(a, usuario)
+
+      if (!opcoes.jaEsteveNaNuvem) {
+        const criado = await comSinal(cliente.from(TABELA).upsert(linha, { onConflict: 'id', ignoreDuplicates: true }).select('id'), sinal)
+        if (criado.error) return { tipo: 'falhou', motivo: motivoDoErro(criado.error) }
+        if (tocouAlgumaLinha(criado.data)) return { tipo: 'salvo' }
+      }
+
+      const semMarcacoes = Object.fromEntries(Object.entries(linha).filter(([coluna]) => coluna !== 'marcacoes'))
+      const atualizado = await comSinal(cliente.from(TABELA).update(semMarcacoes).eq('id', a.id).select('id'), sinal)
+      if (atualizado.error) return { tipo: 'falhou', motivo: motivoDoErro(atualizado.error) }
+      return tocouAlgumaLinha(atualizado.data) ? { tipo: 'salvo' } : { tipo: 'sumiu' }
+    },
+    (motivo) => ({ tipo: 'falhou', motivo }),
+  )
 }
 
 /** CA-440: tira um link da nuvem. Devolve o erro traduzido, ou nulo quando deu certo. */
 export async function removerAcompanhamentoDaNuvem(cliente: ClienteMissoes, id: string): Promise<string | null> {
-  return comPrazo<string | null>(async () => {
+  return comPrazo<string | null>(async (sinal) => {
     const usuario = await usuarioDaSessao(cliente)
-    if (usuario === null) return null
-    const { error } = await cliente.from(TABELA).delete().eq('id', id)
+    if (usuario === null) return FALHA_DE_REDE
+    const { error } = await comSinal(cliente.from(TABELA).delete().eq('id', id), sinal)
     return error ? traduzido(error) : null
   }, mensagem)
 }

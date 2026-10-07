@@ -34,53 +34,91 @@ function acompanhamento(): Acompanhamento {
   )
 }
 
+type Tipo = 'rpc' | 'upsert' | 'update' | 'delete' | 'select'
+
 interface Chamada {
-  readonly tipo: 'rpc' | 'upsert' | 'delete' | 'select'
+  readonly tipo: Tipo
   readonly nome: string
   readonly parametros: Record<string, unknown>
   readonly opcoes?: Record<string, unknown>
 }
 
 type ErroFalso = string | { readonly message: string; readonly code: string }
+interface RespostaFalsa {
+  readonly data: unknown
+  readonly error: { readonly message: string; readonly code?: string } | null
+}
 
-function clienteFalso(
-  opcoes: { readonly usuario?: string | null; readonly dados?: unknown; readonly erro?: ErroFalso; readonly semResposta?: boolean } = {},
-) {
+interface OpcoesDoFalso {
+  readonly usuario?: string | null
+  /** getSession que falha (token vencido sem internet): sessão nula e erro. */
+  readonly sessaoComErro?: boolean
+  readonly dados?: unknown
+  /** Dados por tipo de pedido, quando cada um precisa responder uma coisa. */
+  readonly dadosPor?: Partial<Record<Tipo, unknown>>
+  readonly erro?: ErroFalso
+  readonly semResposta?: boolean
+}
+
+function clienteFalso(opcoes: OpcoesDoFalso = {}) {
   const chamadas: Chamada[] = []
+  const sinais: AbortSignal[] = []
   const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
-  const resposta = { data: opcoes.dados ?? null, error: erro }
-  // A nuvem que não responde: a promessa nunca termina.
-  const responder = () => (opcoes.semResposta ? new Promise<typeof resposta>(() => undefined) : Promise.resolve(resposta))
+
+  // Um pedido do cliente: é uma promessa, aceita `.select()` e guarda o sinal de desistir.
+  const pedido = (tipo: Tipo) => {
+    const resposta: RespostaFalsa = { data: opcoes.dadosPor?.[tipo] ?? opcoes.dados ?? null, error: erro }
+    // A nuvem que não responde: a promessa nunca termina.
+    const promessa = opcoes.semResposta ? new Promise<RespostaFalsa>(() => undefined) : Promise.resolve(resposta)
+    const comSinal = Object.assign(promessa, {
+      abortSignal: (sinal: AbortSignal) => {
+        sinais.push(sinal)
+        return promessa
+      },
+    })
+    return Object.assign(comSinal, { select: () => comSinal })
+  }
 
   const cliente: ClienteMissoes = {
     rpc: (nome, parametros) => {
       chamadas.push({ tipo: 'rpc', nome, parametros })
-      return responder()
+      return pedido('rpc')
     },
     from: (tabela) => ({
       select: (colunas) => ({
         eq: (coluna, valor) => {
           chamadas.push({ tipo: 'select', nome: tabela, parametros: { [coluna]: valor }, opcoes: { colunas } })
-          return responder()
+          return pedido('select')
         },
       }),
       upsert: (linha, opcoesDoUpsert) => {
         chamadas.push({ tipo: 'upsert', nome: tabela, parametros: linha, opcoes: { ...opcoesDoUpsert } })
-        return responder()
+        return pedido('upsert')
       },
+      update: (campos) => ({
+        eq: (coluna, valor) => {
+          chamadas.push({ tipo: 'update', nome: tabela, parametros: campos, opcoes: { [coluna]: valor } })
+          return pedido('update')
+        },
+      }),
       delete: () => ({
         eq: (coluna, valor) => {
           chamadas.push({ tipo: 'delete', nome: tabela, parametros: { [coluna]: valor } })
-          return responder()
+          return pedido('delete')
         },
       }),
     }),
     auth: {
-      getSession: () => Promise.resolve({ data: { session: opcoes.usuario === undefined ? null : opcoes.usuario === null ? null : { user: { id: opcoes.usuario } } } }),
+      getSession: () =>
+        Promise.resolve(
+          opcoes.sessaoComErro
+            ? { data: { session: null }, error: { message: 'Invalid Refresh Token: Refresh Token Not Found' } }
+            : { data: { session: opcoes.usuario === undefined || opcoes.usuario === null ? null : { user: { id: opcoes.usuario } } }, error: null },
+        ),
     },
   }
 
-  return { cliente, chamadas }
+  return { cliente, chamadas, sinais }
 }
 
 describe('Ler a linha do banco', () => {
@@ -139,7 +177,7 @@ describe('Buscar pelo token', () => {
   })
 })
 
-describe('Salvar', () => {
+describe('Salvar pela tela do paciente', () => {
   it('paciente sem conta grava só as marcações, pela função', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: null })
     await fonteSupabase(cliente).salvar(acompanhamento())
@@ -150,37 +188,19 @@ describe('Salvar', () => {
     expect(Object.keys(chamadas[0]?.parametros ?? {})).toEqual(['p_token', 'p_marcacoes'])
   })
 
-  it('nutricionista logado grava a linha inteira, com o dono', async () => {
+  it('logado, a tela do paciente também grava só as marcações: nunca a linha inteira', async () => {
+    // A nutricionista testando o link no próprio aparelho, ou uma aba velha, não pode
+    // desfazer o token novo nem as missões do link.
     const { cliente, chamadas } = clienteFalso({ usuario: 'user-99' })
     await fonteSupabase(cliente).salvar(acompanhamento())
 
-    expect(chamadas[0]?.tipo).toBe('upsert')
-    expect(chamadas[0]?.nome).toBe('acompanhamentos')
-    expect(chamadas[0]?.parametros['nutricionista_id']).toBe('user-99')
-    expect(chamadas[0]?.parametros['caso_id']).toBe('caso-1')
+    expect(chamadas).toHaveLength(1)
+    expect(chamadas[0]).toMatchObject({ tipo: 'rpc', nome: 'marcar_missoes' })
   })
 
   it('falha ao salvar avisa a tela', async () => {
     const avisos: string[] = []
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: 'deu ruim' })
-    await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
-
-    expect(avisos).toEqual([FALHA_DE_REDE])
-  })
-
-  it('CA-422: link além do limite do plano: a tela recebe a frase do banco', async () => {
-    const avisos: string[] = []
-    const erro = { code: 'P0001', message: 'Você chegou ao limite de links do seu plano.' }
-    const { cliente } = clienteFalso({ usuario: 'user-99', erro })
-    await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
-
-    expect(avisos).toEqual(['Você chegou ao limite de links do seu plano.'])
-  })
-
-  it('CA-430: erro técnico do banco ao salvar não chega cru à tela', async () => {
-    const avisos: string[] = []
-    const erro = { code: '42501', message: 'new row violates row-level security policy for table "acompanhamentos"' }
-    const { cliente } = clienteFalso({ usuario: 'user-99', erro })
     await fonteSupabase(cliente, { aoFalhar: (m) => avisos.push(m) }).salvar(acompanhamento())
 
     expect(avisos).toEqual([FALHA_DE_REDE])
@@ -207,9 +227,15 @@ describe('Apagar os dados da nuvem', () => {
     expect(chamadas[0]).toEqual({ tipo: 'delete', nome: 'acompanhamentos', parametros: { nutricionista_id: 'user-99' } })
   })
 
-  it('sem sessão não apaga nada de ninguém', async () => {
+  it('sem sessão não apaga nada de ninguém e não diz que apagou', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: null })
-    expect(await apagarAcompanhamentosDaNuvem(cliente)).toBeNull()
+    expect(await apagarAcompanhamentosDaNuvem(cliente)).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('sessão que falha (token vencido sem internet) também não diz que apagou', async () => {
+    const { cliente, chamadas } = clienteFalso({ sessaoComErro: true })
+    expect(await apagarAcompanhamentosDaNuvem(cliente)).toBe(FALHA_DE_REDE)
     expect(chamadas).toHaveLength(0)
   })
 
@@ -220,7 +246,9 @@ describe('Apagar os dados da nuvem', () => {
 })
 
 describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nuvem)', () => {
-  const LIMITE = { code: 'P0001', message: 'Você chegou ao limite de links do seu plano.' }
+  const LIMITE = { code: 'P0001', message: LIMITE_DE_LINKS }
+  const NOVO = { jaEsteveNaNuvem: false }
+  const JA_ESTEVE = { jaEsteveNaNuvem: true }
 
   it('CA-441: lê os links da conta, com o que o paciente marcou no celular dele', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dados: [LINHA] })
@@ -237,9 +265,15 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
     expect(leitura.tipo === 'lida' ? leitura.itens.map((a) => a.id) : null).toEqual(['ac-1'])
   })
 
-  it('CA-444: sem sessão não lê nada de ninguém', async () => {
+  it('servidor ligado e sem sessão: a leitura falha, em vez de parecer uma conta vazia', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: null, dados: [LINHA] })
-    expect(await listarAcompanhamentosDaNuvem(cliente)).toEqual({ tipo: 'sem-conta' })
+    expect(await listarAcompanhamentosDaNuvem(cliente)).toEqual({ tipo: 'falhou', mensagem: FALHA_DE_REDE })
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('sessão que falha (token vencido sem internet): a leitura falha', async () => {
+    const { cliente, chamadas } = clienteFalso({ sessaoComErro: true, dados: [LINHA] })
+    expect(await listarAcompanhamentosDaNuvem(cliente)).toEqual({ tipo: 'falhou', mensagem: FALHA_DE_REDE })
     expect(chamadas).toHaveLength(0)
   })
 
@@ -248,49 +282,83 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
     expect(await listarAcompanhamentosDaNuvem(cliente)).toEqual({ tipo: 'falhou', mensagem: FALHA_DE_REDE })
   })
 
-  it('CA-438: criar o link grava a linha inteira, com o dono', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99' })
-    expect(await salvarLinkNaNuvem(cliente, acompanhamento())).toBeNull()
+  it('resposta que não é lista, mesmo sem erro, conta como falha e não como conta vazia', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-99', dados: { nada: true } })
+    expect(await listarAcompanhamentosDaNuvem(cliente)).toEqual({ tipo: 'falhou', mensagem: FALHA_DE_REDE })
+  })
 
+  it('CA-438: criar o link grava a linha inteira, com o dono, e para aí quando acabou de criar', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { upsert: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'salvo' })
+
+    expect(chamadas).toHaveLength(1)
     const primeira = chamadas[0]
     expect(primeira?.tipo).toBe('upsert')
     expect(primeira?.nome).toBe('acompanhamentos')
+    expect(primeira?.opcoes).toEqual({ onConflict: 'id', ignoreDuplicates: true })
     expect(primeira?.parametros['nutricionista_id']).toBe('user-99')
     expect(primeira?.parametros['token']).toBe(acompanhamento().token)
     expect(primeira?.parametros['marcacoes']).toEqual([])
   })
 
-  it('CB-105: gravar de novo um link que já está na nuvem não apaga o que o paciente marcou lá', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99' })
-    await salvarLinkNaNuvem(cliente, acompanhamento())
+  it('CB-105: a linha já existia: atualiza o resto pelo id, sem as marcações do paciente', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { upsert: [], update: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'salvo' })
 
-    // Primeiro só cria se faltar (com as marcações deste aparelho); depois atualiza o resto, sem as marcações.
-    expect(chamadas).toHaveLength(2)
-    expect(chamadas[0]?.opcoes).toEqual({ onConflict: 'id', ignoreDuplicates: true })
-    expect(chamadas[1]?.tipo).toBe('upsert')
-    expect(chamadas[1]?.opcoes).toEqual({ onConflict: 'id' })
+    expect(chamadas.map((c) => c.tipo)).toEqual(['upsert', 'update'])
+    expect(chamadas[1]?.opcoes).toEqual({ id: 'ac-1' })
     expect(chamadas[1]?.parametros).not.toHaveProperty('marcacoes')
     expect(chamadas[1]?.parametros['token']).toBe(acompanhamento().token)
   })
 
-  it('CA-442: passar do limite do plano devolve a frase do banco', async () => {
+  it('CB-107: link que já esteve na nuvem só é atualizado, nunca recriado', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { update: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), JA_ESTEVE)).toEqual({ tipo: 'salvo' })
+    expect(chamadas.map((c) => c.tipo)).toEqual(['update'])
+  })
+
+  it('CB-107: a linha sumiu da nuvem (apagada em outro aparelho): diz que sumiu e não recria', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { update: [] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), JA_ESTEVE)).toEqual({ tipo: 'sumiu' })
+    expect(chamadas.map((c) => c.tipo)).toEqual(['update'])
+  })
+
+  it('CB-107: apagada entre os dois passos: a atualização não recria a linha', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { upsert: [], update: [] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'sumiu' })
+    expect(chamadas.map((c) => c.tipo)).toEqual(['upsert', 'update'])
+  })
+
+  it('CA-422 / CA-442: passar do limite do plano devolve a frase do limite', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: LIMITE })
-    expect(await salvarLinkNaNuvem(cliente, acompanhamento())).toBe(LIMITE_DE_LINKS)
-    expect(LIMITE_DE_LINKS).toBe('Você chegou ao limite de links do seu plano.')
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: LIMITE_DE_LINKS })
   })
 
-  it('CA-439: a nuvem recusa: devolve a falha traduzida', async () => {
+  it('CA-442: outro P0001 do banco não é confundido com o limite', async () => {
+    const { cliente } = clienteFalso({ usuario: 'user-99', erro: { code: 'P0001', message: 'Entre na sua conta.' } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: 'Entre na sua conta.' })
+  })
+
+  it('CA-430 / CA-439: a nuvem recusa: devolve a falha traduzida, nunca o texto técnico', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: { code: '42501', message: 'new row violates row-level security policy' } })
-    expect(await salvarLinkNaNuvem(cliente, acompanhamento())).toBe(FALHA_DE_REDE)
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
   })
 
-  it('CA-439: a nuvem que não responde vira falha, em vez de esperar para sempre', async () => {
+  it('CA-439: servidor ligado e sem sessão: salvar falha, sem pedido nenhum', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: null })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('CA-439: a nuvem que não responde vira falha e o pedido é cancelado, para não chegar depois', async () => {
     vi.useFakeTimers()
     try {
-      const { cliente } = clienteFalso({ usuario: 'user-99', semResposta: true })
-      const salvando = salvarLinkNaNuvem(cliente, acompanhamento())
+      const { cliente, sinais } = clienteFalso({ usuario: 'user-99', semResposta: true })
+      const salvando = salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)
       await vi.advanceTimersByTimeAsync(PRAZO_DA_NUVEM_MS)
-      expect(await salvando).toBe(FALHA_DE_REDE)
+      expect(await salvando).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+      expect(sinais.length).toBeGreaterThan(0)
+      expect(sinais.every((s) => s.aborted)).toBe(true)
     } finally {
       vi.useRealTimers()
     }
@@ -311,6 +379,12 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
     expect(await subirAcompanhamento(cliente, acompanhamento())).toBe(LIMITE_DE_LINKS)
   })
 
+  it('CA-443: servidor ligado e sem sessão: não sobe e diz por quê', async () => {
+    const { cliente, chamadas } = clienteFalso({ sessaoComErro: true })
+    expect(await subirAcompanhamento(cliente, acompanhamento())).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
+  })
+
   it('CA-440: remover apaga só aquele link', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: 'user-99' })
     expect(await removerAcompanhamentoDaNuvem(cliente, 'ac-1')).toBeNull()
@@ -320,5 +394,11 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
   it('CA-440: falha ao remover devolve o erro traduzido', async () => {
     const { cliente } = clienteFalso({ usuario: 'user-99', erro: 'Failed to fetch' })
     expect(await removerAcompanhamentoDaNuvem(cliente, 'ac-1')).toBe(FALHA_DE_REDE)
+  })
+
+  it('CA-440: servidor ligado e sem sessão: remover falha em vez de dizer que removeu', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: null })
+    expect(await removerAcompanhamentoDaNuvem(cliente, 'ac-1')).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
   })
 })

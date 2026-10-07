@@ -98,7 +98,8 @@ export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<Copi
 export async function apagarCopiaDaNuvem(cliente: ClienteCopia): Promise<string | null> {
   const { data } = await cliente.auth.getSession()
   const usuario = data.session?.user.id ?? null
-  if (usuario === null) return null
+  // Servidor ligado e sem sessão (token vencido sem internet): nada foi apagado, e a tela precisa saber.
+  if (usuario === null) return FALHA_DE_REDE
 
   const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
   return error ? traduzido(error) : null

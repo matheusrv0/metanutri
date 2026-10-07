@@ -10,7 +10,7 @@ import {
   LIMITE_DE_LINKS,
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
-import { criarRepositorioAcompanhamentos, fonteLocal, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, fonteLocal, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
 
@@ -59,11 +59,11 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     else aCaminho.current.delete(id)
   }, [])
 
-  /** CB-107: o link chegou à nuvem. Marca a cópia que está no aparelho agora, sem trocá-la. */
-  const marcarQueEstaNaNuvem = useCallback(
-    (id: string) => {
+  /** Muda só as marcas da cópia que está no aparelho agora, sem trocá-la (CB-107, CB-108). */
+  const marcarNoAparelho = useCallback(
+    (id: string, marcas: MarcasDoLink) => {
       const atual = repo.porId(id)
-      if (atual) repo.salvar(atual, { naNuvem: true })
+      if (atual) repo.salvar(atual, marcas)
     },
     [repo],
   )
@@ -90,29 +90,45 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
 
   const salvar = useCallback(
     async (acompanhamento: Acompanhamento) => {
-      const anterior = repo.porId(acompanhamento.id)
+      const { id } = acompanhamento
+      const anterior = repo.porId(id)
       // A cópia do aparelho vem primeiro: é ela que fica se a nuvem não responder (CA-439).
       repo.salvar(acompanhamento)
       atualizar()
       if (!cliente) return null
 
-      comecarAMexer(acompanhamento.id)
+      comecarAMexer(id)
       try {
-        const motivo = await salvarLinkNaNuvem(cliente, acompanhamento)
-        if (motivo === LIMITE_DE_LINKS) {
+        const resultado = await salvarLinkNaNuvem(cliente, acompanhamento, { jaEsteveNaNuvem: repo.estaNaNuvem(id) })
+        if (resultado.tipo === 'salvo') {
+          marcarNoAparelho(id, { naNuvem: true, pendente: false })
+          marcarForaDaNuvem(id, null)
+          return null
+        }
+        if (resultado.tipo === 'sumiu') {
+          // CB-107: apagado em outro aparelho. Não volta: sai daqui também.
+          repo.remover(id)
+          marcarForaDaNuvem(id, null)
+          atualizar()
+          return null
+        }
+        if (resultado.motivo === LIMITE_DE_LINKS) {
           // CA-442: nada fica pela metade. O aparelho volta ao que era antes.
           if (anterior) repo.salvar(anterior)
-          else repo.remover(acompanhamento.id)
+          else repo.remover(id)
           atualizar()
+          marcarForaDaNuvem(id, anterior ? resultado.motivo : null)
+          return resultado.motivo
         }
-        if (motivo === null) marcarQueEstaNaNuvem(acompanhamento.id)
-        marcarForaDaNuvem(acompanhamento.id, motivo === LIMITE_DE_LINKS && anterior === null ? null : motivo)
-        return motivo
+        // CB-108: a mudança fica pendente. A leitura não a desfaz e tenta de novo.
+        marcarNoAparelho(id, { pendente: true })
+        marcarForaDaNuvem(id, resultado.motivo)
+        return resultado.motivo
       } finally {
-        terminarDeMexer(acompanhamento.id)
+        terminarDeMexer(id)
       }
     },
-    [repo, cliente, atualizar, marcarForaDaNuvem, marcarQueEstaNaNuvem, comecarAMexer, terminarDeMexer],
+    [repo, cliente, atualizar, marcarForaDaNuvem, marcarNoAparelho, comecarAMexer, terminarDeMexer],
   )
 
   const remover = useCallback(
@@ -121,6 +137,8 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
       if (cliente) {
         comecarAMexer(id)
         try {
+          // Uma leitura subindo este link agora chegaria depois da remoção e o traria de volta.
+          await lendo.current?.catch(() => undefined)
           const motivo = await removerAcompanhamentoDaNuvem(cliente, id)
           if (motivo !== null) return motivo
         } finally {
@@ -141,32 +159,59 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
 
     const ler = async () => {
       mexidos.current = new Set(aCaminho.current.keys())
+      const intocado = (id: string) => !mexidos.current.has(id)
       const leitura = await listarAcompanhamentosDaNuvem(cliente)
-      if (leitura.tipo === 'sem-conta') return
       if (leitura.tipo === 'falhou') {
+        // CB-106. E sem saber o que está na nuvem, nada sai do aparelho.
         setAvisoNuvem(SEM_ATUALIZAR)
         return
       }
       setAvisoNuvem(null)
 
-      // CB-105: o mesmo link nos dois lugares: vale o que está na nuvem.
       const naNuvem = new Set(leitura.itens.map((a) => a.id))
-      for (const a of leitura.itens) if (!mexidos.current.has(a.id)) repo.salvar(a, { naNuvem: true })
+      for (const daNuvem of leitura.itens) {
+        if (!intocado(daNuvem.id)) continue
+        const local = repo.porId(daNuvem.id)
+        // CB-108: mudança daqui pendente não é desfeita; só as marcações do paciente vêm de lá.
+        if (local && repo.estaPendente(daNuvem.id)) repo.salvar({ ...local, marcacoes: daNuvem.marcacoes }, { naNuvem: true })
+        // CB-105: o mesmo link nos dois lugares: vale o que está na nuvem.
+        else repo.salvar(daNuvem, { naNuvem: true })
+      }
 
-      // CB-107: já esteve na nuvem e sumiu de lá: foi apagado em outro aparelho. Sai daqui também.
-      const soAqui = repo.listar().filter((a) => !naNuvem.has(a.id) && !mexidos.current.has(a.id))
-      for (const a of soAqui) if (repo.estaNaNuvem(a.id)) repo.remover(a.id)
+      // CB-107: já esteve na nuvem e sumiu de lá: foi apagado em outro aparelho. Sai daqui
+      // também, mesmo com mudança pendente.
+      for (const a of repo.listar()) if (!naNuvem.has(a.id) && intocado(a.id) && repo.estaNaNuvem(a.id)) repo.remover(a.id)
       atualizar()
 
-      // D-105: sobe só o que nunca esteve na nuvem. O que não sobe fica marcado com o motivo (CA-443).
+      // D-105 e CB-108: sobe o que nunca esteve na nuvem e manda de novo o que ficou pendente.
+      // O que não vai fica marcado com o motivo (CA-443).
       const motivos = new Map<string, string>()
-      for (const a of soAqui) {
+      const paraMandar = repo.listar().filter((a) => !naNuvem.has(a.id) || repo.estaPendente(a.id))
+      for (const { id } of paraMandar) {
+        const atual = repo.porId(id)
         // Removido ou mexido enquanto os outros subiam: quem mexeu cuida da nuvem.
-        if (mexidos.current.has(a.id) || repo.porId(a.id) === null) continue
-        const motivo = await subirAcompanhamento(cliente, a)
-        if (motivo === null) marcarQueEstaNaNuvem(a.id)
-        else motivos.set(a.id, motivo)
+        if (atual === null || !intocado(id)) continue
+        let motivo: string | null = null
+        if (repo.estaPendente(id)) {
+          const resultado = await salvarLinkNaNuvem(cliente, atual, { jaEsteveNaNuvem: repo.estaNaNuvem(id) })
+          if (resultado.tipo === 'sumiu') {
+            repo.remover(id)
+            continue
+          }
+          if (resultado.tipo === 'falhou') motivo = resultado.motivo
+        } else {
+          motivo = await subirAcompanhamento(cliente, atual)
+        }
+        if (motivo !== null) {
+          motivos.set(id, motivo)
+          continue
+        }
+        // O aparelho foi apagado (Apagar tudo) enquanto a linha subia: ela sai da nuvem de novo.
+        if (repo.porId(id) === null) await removerAcompanhamentoDaNuvem(cliente, id)
+        else if (intocado(id)) marcarNoAparelho(id, { naNuvem: true, pendente: false })
       }
+      atualizar()
+
       const mexidosNaLeitura = [...mexidos.current]
       setForaDaNuvem((atual) => {
         const novo = new Map(motivos)
@@ -183,7 +228,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     })
     lendo.current = leitura
     return leitura
-  }, [cliente, repo, atualizar, marcarQueEstaNaNuvem])
+  }, [cliente, repo, atualizar, marcarNoAparelho])
 
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua

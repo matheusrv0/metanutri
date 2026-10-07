@@ -15,14 +15,38 @@ interface ArquivoSalvo {
    * e sumiu de lá foi apagado em outro aparelho. Arquivo antigo, sem o campo: nenhum esteve.
    */
   readonly naNuvem?: readonly string[]
+  /**
+   * Ids dos links com mudança daqui que ainda não chegou à nuvem (CB-108): a leitura não a
+   * desfaz e tenta de novo. Arquivo antigo, sem o campo: nada pendente.
+   */
+  readonly pendentes?: readonly string[]
 }
 
 interface Guardado {
   readonly itens: readonly Acompanhamento[]
   readonly naNuvem: ReadonlySet<string>
+  readonly pendentes: ReadonlySet<string>
 }
 
-const VAZIO: Guardado = { itens: [], naNuvem: new Set() }
+const VAZIO: Guardado = { itens: [], naNuvem: new Set(), pendentes: new Set() }
+
+/** As marcas que a cópia do aparelho guarda ao lado de cada link. */
+export interface MarcasDoLink {
+  /** Está (ou já esteve) na nuvem (CB-107). */
+  readonly naNuvem?: boolean
+  /** Tem mudança daqui que ainda não chegou à nuvem (CB-108). */
+  readonly pendente?: boolean
+}
+
+const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((id): id is string => typeof id === 'string') : [])
+
+/** Liga ou desliga a marca; `undefined` deixa como estava. */
+function marcar(conjunto: ReadonlySet<string>, id: string, valor: boolean | undefined): Set<string> {
+  const novo = new Set(conjunto)
+  if (valor === true) novo.add(id)
+  if (valor === false) novo.delete(id)
+  return novo
+}
 
 function ehAcompanhamento(v: unknown): v is Acompanhamento {
   if (typeof v !== 'object' || v === null) return false
@@ -65,8 +89,7 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       if (typeof v !== 'object' || v === null) return VAZIO
       const arquivo = v as Partial<ArquivoSalvo>
       if (arquivo.formato !== FORMATO || !Array.isArray(arquivo.itens)) return VAZIO
-      const naNuvem = Array.isArray(arquivo.naNuvem) ? arquivo.naNuvem.filter((id): id is string => typeof id === 'string') : []
-      return { itens: arquivo.itens.filter(ehAcompanhamento), naNuvem: new Set(naNuvem) }
+      return { itens: arquivo.itens.filter(ehAcompanhamento), naNuvem: new Set(ids(arquivo.naNuvem)), pendentes: new Set(ids(arquivo.pendentes)) }
     } catch {
       return memoria
     }
@@ -74,13 +97,18 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
 
   const ler = (): readonly Acompanhamento[] => lerTudo().itens
 
-  const gravar = (itens: readonly Acompanhamento[], naNuvem: ReadonlySet<string>) => {
-    // A marca só vive enquanto o link existe: remover leva a marca junto.
-    const marcados = [...naNuvem].filter((id) => itens.some((a) => a.id === id))
-    memoria = { itens: [...itens], naNuvem: new Set(marcados) }
+  const gravar = ({ itens, naNuvem, pendentes }: Guardado) => {
+    // As marcas só vivem enquanto o link existe: remover leva as marcas junto.
+    const existe = (id: string) => itens.some((a) => a.id === id)
+    const marcadosNaNuvem = [...naNuvem].filter(existe)
+    const marcadosPendentes = [...pendentes].filter(existe)
+    memoria = { itens: [...itens], naNuvem: new Set(marcadosNaNuvem), pendentes: new Set(marcadosPendentes) }
     if (!persistente || !armazenamento) return
     try {
-      armazenamento.setItem(CHAVE, JSON.stringify({ formato: FORMATO, itens, naNuvem: marcados } satisfies ArquivoSalvo))
+      armazenamento.setItem(
+        CHAVE,
+        JSON.stringify({ formato: FORMATO, itens, naNuvem: marcadosNaNuvem, pendentes: marcadosPendentes } satisfies ArquivoSalvo),
+      )
     } catch {
       persistente = false
       aviso = 'O armazenamento do navegador está cheio: as marcações a partir de agora não serão salvas.'
@@ -112,17 +140,17 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
     },
 
     /**
-     * Grava a cópia do aparelho. `naNuvem` diz se o link está na nuvem (CB-107); sem ele, a
-     * marca que já existia fica como estava (gerar de novo sem internet não tira a marca).
+     * Grava a cópia do aparelho. As marcas só mudam quando ditas: sem elas, ficam como
+     * estavam (gerar de novo sem internet não tira a marca de que o link está na nuvem).
      */
-    salvar(acompanhamento: Acompanhamento, opcoes: { readonly naNuvem?: boolean } = {}): Acompanhamento {
-      const { itens, naNuvem } = lerTudo()
-      const i = itens.findIndex((a) => a.id === acompanhamento.id)
-      const novos = i === -1 ? [...itens, acompanhamento] : itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a))
-      const marcados = new Set(naNuvem)
-      if (opcoes.naNuvem === true) marcados.add(acompanhamento.id)
-      if (opcoes.naNuvem === false) marcados.delete(acompanhamento.id)
-      gravar(novos, marcados)
+    salvar(acompanhamento: Acompanhamento, marcas: MarcasDoLink = {}): Acompanhamento {
+      const atual = lerTudo()
+      const i = atual.itens.findIndex((a) => a.id === acompanhamento.id)
+      gravar({
+        itens: i === -1 ? [...atual.itens, acompanhamento] : atual.itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a)),
+        naNuvem: marcar(atual.naNuvem, acompanhamento.id, marcas.naNuvem),
+        pendentes: marcar(atual.pendentes, acompanhamento.id, marcas.pendente),
+      })
       return acompanhamento
     },
 
@@ -131,12 +159,14 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       return lerTudo().naNuvem.has(id)
     },
 
+    /** Tem mudança daqui que ainda não chegou à nuvem (CB-108)? */
+    estaPendente(id: string): boolean {
+      return lerTudo().pendentes.has(id)
+    },
+
     remover(id: string): void {
-      const { itens, naNuvem } = lerTudo()
-      gravar(
-        itens.filter((a) => a.id !== id),
-        naNuvem,
-      )
+      const atual = lerTudo()
+      gravar({ ...atual, itens: atual.itens.filter((a) => a.id !== id) })
     },
   }
 }

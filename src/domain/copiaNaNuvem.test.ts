@@ -120,9 +120,9 @@ describe('Apagar a cópia da nuvem (D-94)', () => {
     expect(chamadas).toEqual([{ tipo: 'delete', parametros: { nutricionista_id: 'user-1' } }])
   })
 
-  it('sem sessão não apaga nada de ninguém', async () => {
+  it('sem sessão não apaga nada de ninguém e não diz que apagou', async () => {
     const { cliente, chamadas } = clienteFalso({ usuario: null })
-    expect(await apagarCopiaDaNuvem(cliente)).toBeNull()
+    expect(await apagarCopiaDaNuvem(cliente)).toBe(FALHA_DE_REDE)
     expect(chamadas).toHaveLength(0)
   })
 

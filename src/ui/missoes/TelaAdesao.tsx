@@ -31,7 +31,7 @@ interface TelaAdesaoProps {
 const URGENCIA: Readonly<Record<EstadoAcompanhamento, number>> = { sumindo: 0, atencao: 1, 'nao-comecou': 2, 'em-dia': 3 }
 
 export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal(), aoVerPlanos }: TelaAdesaoProps) {
-  const { acompanhamentos, avisoNuvem, foraDaNuvem, remover } = useAcompanhamentos()
+  const { acompanhamentos, avisoNuvem, foraDaNuvem, remover, lerDaNuvem } = useAcompanhamentos()
   // D-104: as marcações do paciente vêm da nuvem, ao abrir e ao voltar para a aba.
   useLerDaNuvemAoAbrir()
 
@@ -109,6 +109,7 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal
               foraDaNuvem={foraDaNuvem.get(acompanhamento.id)}
               aoAbrirPlano={aoAbrirPlano}
               aoRemover={() => remover(acompanhamento.id)}
+              aoTentarDeNovo={lerDaNuvem}
             />
           </li>
         ))}
@@ -124,6 +125,7 @@ function LinhaPaciente({
   foraDaNuvem,
   aoAbrirPlano,
   aoRemover,
+  aoTentarDeNovo,
 }: {
   readonly acompanhamento: Acompanhamento
   readonly estado: EstadoAcompanhamento
@@ -133,12 +135,21 @@ function LinhaPaciente({
   readonly aoAbrirPlano: (casoId: string) => void
   /** Devolve o motivo quando a nuvem não removeu (CA-440). */
   readonly aoRemover: () => Promise<string | null>
+  /** Lê a nuvem de novo: sobe o que não subiu e manda o que ficou pendente (CA-443, CB-108). */
+  readonly aoTentarDeNovo: () => Promise<void>
 }) {
   const naSemana = diasMarcadosNaSemana(acompanhamento, hoje)
   const ultima = ultimaMarcacao(acompanhamento)
   const [confirmando, setConfirmando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
   const [falhou, setFalhou] = useState(false)
+  const [tentando, setTentando] = useState(false)
+
+  const tentarDeNovo = async () => {
+    setTentando(true)
+    await aoTentarDeNovo()
+    setTentando(false)
+  }
 
   const remover = async () => {
     setRemovendo(true)
@@ -163,7 +174,14 @@ function LinhaPaciente({
           <p className="mt-1 text-xs text-muted-foreground">
             {naSemana} de {DIAS_NA_SEMANA_PARA_EM_DIA} dias na semana · {ultima ? `última marcação em ${dataCompleta(ultima)}` : 'nunca marcou'}
           </p>
-          {foraDaNuvem ? <p className="mt-1 text-xs text-warningtext">{`Ainda não está na nuvem. ${foraDaNuvem}`}</p> : null}
+          {foraDaNuvem ? (
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-xs text-warningtext">{`Ainda não está na nuvem. ${foraDaNuvem}`}</p>
+              <Button type="button" size="sm" variant="outline" loading={tentando} onClick={() => void tentarDeNovo()}>
+                Tentar de novo
+              </Button>
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="ghost" onClick={() => setConfirmando(true)} disabled={confirmando}>
