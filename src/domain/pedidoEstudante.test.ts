@@ -1,4 +1,5 @@
 import { SEM_ASSINATURA, type Assinatura } from './assinatura.ts'
+import sql011 from '../../supabase/011-seguranca-lote-2.sql?raw'
 import {
   ARQUIVO_MAXIMO_BYTES,
   avisoDoEstudante,
@@ -6,7 +7,11 @@ import {
   daLinhaPedido,
   formatarDataLonga,
   formatarMesAno,
+  MENSAGEM_COMPROVANTES_DEMAIS,
+  MENSAGEM_EMAIL_DA_FACULDADE,
+  MENSAGEM_SO_ESTUDANTE,
   mesAtual,
+  recusaDoComprovante,
   validarPedido,
   type PedidoEstudante,
 } from './pedidoEstudante.ts'
@@ -108,5 +113,27 @@ describe('avisoDoEstudante (CA-279 e CA-285)', () => {
   it('plano Estudante vencido pede renovação', () => {
     const vencida: Assinatura = { ...estudanteAtiva, plano: 'free', status: 'vencida' }
     expect(avisoDoEstudante({ ...pedido, status: 'aprovado', avisoFechado: true }, vencida)).toEqual({ tipo: 'renovar' })
+  })
+})
+
+describe('recusaDoComprovante (D-111, CA-452 e CA-428)', () => {
+  it('CA-452: sem e-mail de faculdade confirmado, a frase pede para confirmar', () => {
+    expect(recusaDoComprovante('sem-email-de-faculdade')).toBe('Confirme o e-mail da faculdade antes de enviar o comprovante.')
+    expect(MENSAGEM_EMAIL_DA_FACULDADE).toBe('Confirme o e-mail da faculdade antes de enviar o comprovante.')
+  })
+
+  it('CA-428 e D-111: 10 arquivos e conta que não é de estudante têm a frase própria', () => {
+    expect(recusaDoComprovante('demais')).toBe(MENSAGEM_COMPROVANTES_DEMAIS)
+    expect(recusaDoComprovante('nao-estudante')).toBe(MENSAGEM_SO_ESTUDANTE)
+    expect(MENSAGEM_SO_ESTUDANTE).toBe('Só conta de estudante envia comprovante de matrícula.')
+  })
+
+  it('"ok", resposta desconhecida ou nenhuma resposta não recusam: o armazenamento decide', () => {
+    for (const situacao of ['ok', 'outra', '', null, undefined, 1]) expect(recusaDoComprovante(situacao)).toBeNull()
+  })
+
+  it('as respostas são exatamente as que o banco devolve (011)', () => {
+    const corpo = sql011.split('create or replace function public.conferir_envio_de_comprovante(')[1]?.split('$$;')[0] ?? ''
+    expect([...corpo.matchAll(/return '([a-z-]+)';/g)].map((m) => m[1])).toEqual(['nao-estudante', 'sem-email-de-faculdade', 'demais', 'ok'])
   })
 })

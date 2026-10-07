@@ -43,9 +43,30 @@ export const ARQUIVO_MAXIMO_BYTES = 5 * 1024 * 1024
 export const TIPOS_DE_ARQUIVO: readonly string[] = ['application/pdf', 'image/jpeg', 'image/png']
 export const ACEITA_ARQUIVO = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png'
 
-/** CA-428: quantos arquivos cada conta pode ter no balde. A política de envio do 010 usa o mesmo número. */
+/** CA-428: quantos arquivos cada conta pode ter no balde. A conferência do 011, que a política de envio usa, tem o mesmo número. */
 export const LIMITE_DE_COMPROVANTES = 10
 export const MENSAGEM_COMPROVANTES_DEMAIS = 'Você já enviou comprovantes demais. Fale com a gente pelo e-mail de contato.'
+/** D-111 (CA-452): a mesma frase que enviar_pedido_estudante (006) usa. */
+export const MENSAGEM_EMAIL_DA_FACULDADE = 'Confirme o e-mail da faculdade antes de enviar o comprovante.'
+/** A mesma frase que enviar_pedido_estudante (006) usa para quem não é estudante. */
+export const MENSAGEM_SO_ESTUDANTE = 'Só conta de estudante envia comprovante de matrícula.'
+
+/**
+ * D-111 e CA-428: o motivo da recusa, pela resposta de conferir_envio_de_comprovante (011). "ok",
+ * resposta desconhecida ou nenhuma resposta é nulo: o envio segue, e o armazenamento decide.
+ */
+export function recusaDoComprovante(situacao: unknown): string | null {
+  switch (situacao) {
+    case 'nao-estudante':
+      return MENSAGEM_SO_ESTUDANTE
+    case 'sem-email-de-faculdade':
+      return MENSAGEM_EMAIL_DA_FACULDADE
+    case 'demais':
+      return MENSAGEM_COMPROVANTES_DEMAIS
+    default:
+      return null
+  }
+}
 
 export interface DadosPedido {
   readonly instituicao: string

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
-import type { PedidoEstudante } from '@/domain/pedidoEstudante.ts'
+import { MENSAGEM_EMAIL_DA_FACULDADE, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import { TelaComprovarMatricula } from './TelaComprovarMatricula.tsx'
 
 const hoje = new Date('2026-09-30T15:00:00Z')
@@ -93,6 +93,15 @@ describe('TelaComprovarMatricula', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Confira a internet')
     expect(screen.getByLabelText('Instituição')).toHaveValue('UFRN')
     expect(screen.getByRole('button', { name: 'Enviar para análise' })).toBeEnabled()
+  })
+
+  it('CA-452: sem e-mail de faculdade confirmado, a tela diz o motivo e não sai da página', async () => {
+    const enviar = vi.fn(async () => MENSAGEM_EMAIL_DA_FACULDADE as string | null)
+    const { usuario, aoEnviado } = montar(null, enviar)
+    await preencher(usuario)
+    await usuario.click(screen.getByRole('button', { name: 'Enviar para análise' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Confirme o e-mail da faculdade antes de enviar o comprovante.')
+    expect(aoEnviado).not.toHaveBeenCalled()
   })
 
   it('CA-281: depois da recusa, abre com os dados anteriores, menos o arquivo', () => {

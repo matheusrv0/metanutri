@@ -2,7 +2,7 @@
 // O arquivo vai primeiro para o balde privado; o pedido só nasce se o banco
 // aceitar. Se o banco recusar, o arquivo enviado é apagado (foco de revisão 2).
 import { useCallback, useEffect, useState } from 'react'
-import { caminhoDoComprovante, daLinhaPedido, LIMITE_DE_COMPROVANTES, MENSAGEM_COMPROVANTES_DEMAIS, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
+import { caminhoDoComprovante, daLinhaPedido, recusaDoComprovante, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import { FALHA_DE_REDE, mensagemDoBanco } from './mensagemDoBanco.ts'
 import { obterSupabase } from './supabase.ts'
 
@@ -57,14 +57,24 @@ export function usePedidoEstudante(usuarioId: string | null): ValorPedidoEstudan
     async (dados: DadosEnvioPedido, arquivo: File): Promise<string | null> => {
       const c = obterSupabase()
       if (!c || !usuarioId) return FALHA_DE_REDE
+      // D-111 (CA-452) e CA-428: a mesma conferência que a política de envio usa (supabase/011) diz, antes
+      // de subir o arquivo, se ele seria recusado e por quê. Sem resposta dela, o envio segue: quem decide
+      // é o armazenamento.
+      const motivoDaRecusa = async (): Promise<string | null> => {
+        try {
+          const { data } = await c.rpc('conferir_envio_de_comprovante')
+          return recusaDoComprovante(data)
+        } catch {
+          return null
+        }
+      }
+      const antes = await motivoDaRecusa()
+      if (antes) return antes
+
       const caminho = caminhoDoComprovante(usuarioId, arquivo.name, new Date())
       const envio = await c.storage.from('comprovantes').upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
-      if (envio.error) {
-        // CA-428: a política de envio recusa quando a conta já tem o limite de arquivos. A mesma
-        // contagem que ela usa diz se foi isso; qualquer outra falha fica com a mensagem de rede.
-        const { data: arquivos } = await c.rpc('comprovantes_da_conta')
-        return typeof arquivos === 'number' && arquivos >= LIMITE_DE_COMPROVANTES ? MENSAGEM_COMPROVANTES_DEMAIS : FALHA_DE_REDE
-      }
+      // Dois envios ao mesmo tempo podem passar juntos pela conferência (R-42): na recusa, ela diz o motivo de novo.
+      if (envio.error) return (await motivoDaRecusa()) ?? FALHA_DE_REDE
 
       const { error } = await c.rpc('enviar_pedido_estudante', {
         p_instituicao: dados.instituicao.trim(),
