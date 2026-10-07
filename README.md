@@ -137,7 +137,7 @@ logo abaixo; depois siga a lista seguinte.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
-   `009-cobranca-em-producao.sql` e `010-seguranca-lote-1.sql`.
+   `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql` e `011-seguranca-lote-2.sql`.
 4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -183,9 +183,15 @@ Para funcionar de verdade, nesta ordem:
    não comercial e o limite de links do plano, recusa token e marcações fora do padrão, aceita comprovante só de
    estudante (até 10 arquivos) e deixa as funções da verificação só para quem está logado. Também pode rodar de novo;
    se rodar o 006 de novo, rode o 010 logo depois.
+   Depois rode `supabase/011-seguranca-lote-2.sql` (spec seguranca-lote-2): o banco passa a limitar o tamanho da cópia
+   na nuvem e de cada link, põe o teto de 1000 links por conta, conta as chamadas de cada conta à cobrança, aceita
+   comprovante só de estudante com e-mail de faculdade confirmado e apaga a função antiga das vagas de fundador. Rode
+   **antes** de publicar as funções do passo 5: elas anotam cada chamada à cobrança na tabela nova, e publicadas antes
+   assinar, trocar o cartão, conferir e cancelar falham sem cobrar. Também pode rodar de novo; se rodar o 003, o 006
+   ou o 010 de novo, rode o 011 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
-   `008` e o `009` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
+   `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
    `webhook-mercadopago` nova só processa aviso com ele), publique as três funções desta versão e, logo em seguida,
    o site (nunca o site antes: a `assinar` nova não serve ao site antigo, que não manda o cartão, e a janela de
    cancelar nova pergunta à `gerenciar-assinatura` se já houve cobrança, e a versão antiga não sabe responder):
@@ -197,7 +203,7 @@ Para funcionar de verdade, nesta ordem:
    Cadastre o webhook apontando para `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`,
    com os tópicos `subscription_preapproval` (a assinatura), `subscription_authorized_payment` (cada mensalidade) e
    `payments`, e guarde o segredo dele em `MERCADOPAGO_WEBHOOK_SECRET`. Cada aviso que chega fica 90 dias em
-   *Table Editor > avisos_da_operadora*, com o resultado. Sem o segredo, nenhum aviso é processado: a função
+   *Table Editor > avisos_da_operadora*, com o resultado; os que não conferem, até 100 por hora (D-109). Sem o segredo, nenhum aviso é processado: a função
    responde erro, o Mercado Pago tenta de novo depois, e o registro anota `sem segredo`.
    No modo teste o Mercado Pago não manda aviso nenhum: a primeira conferência é na primeira compra em produção.
    A primeira mensalidade recusada encerra a assinatura e a conta volta ao Free na hora (D-80).

@@ -39,7 +39,7 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 ### US-C2 · Avisos e assinatura sem dono
 
 - **CA-398** · Dado qualquer aviso recebido pelo servidor, então ele fica no registro com a hora, o tipo, o código do recurso, se a assinatura digital conferiu e o resultado; avisos com mais de 90 dias somem.
-- **CA-399** · Dado um aviso com assinatura digital que não confere, então nada muda nas assinaturas e o registro mostra "assinatura não confere".
+- **CA-399** · Dado um aviso com assinatura digital que não confere, então nada muda nas assinaturas e o registro mostra "assinatura não confere". Até 100 avisos não conferidos por hora (D-109 da `seguranca-lote-2`); acima disso, a resposta é a mesma e o aviso não é anotado.
 - **CA-400** · Dado o aviso de uma assinatura autorizada que não tem linha aqui, e a conta sem outra assinatura paga ativa, então a assinatura é adotada: a linha ganha o plano e o ciclo (achados pelo valor e pela frequência), o cartão e a próxima cobrança, e o plano pago passa a valer.
 - **CA-401** · Dado o mesmo caso com a conta já tendo outra assinatura paga ativa, então a assinatura que sobrou é cancelada na operadora e o registro anota "cancelada: sobra".
 - **CA-402** · Dado que a `assinar` não recebe resposta da operadora ao pedir a assinatura, então ela procura na operadora uma assinatura desta conta criada há poucos minutos; achando, segue como se a resposta tivesse chegado; não achando, responde que não conseguiu falar com o servidor de cobrança (CA-374). Uma assinatura achada já cancelada não conta como achada.
@@ -52,8 +52,8 @@ Mercado Pago estão chegando, antes de trocar as credenciais de teste pelas de p
 - **CA-433** · Dado 5 recusas de cartão em 24 horas na mesma conta (somando assinar e trocar cartão), quando ela tenta de novo, então a função responde "Muitas tentativas com cartão recusado. Tente de novo amanhã." (429) sem chamar a operadora.
 - **CA-434** · Dado 30 recusas de cartão na última hora, somando todas as contas, então a mesma resposta do CA-433 vale para qualquer conta até a contagem da última hora cair abaixo de 30.
 - **CA-435** · Dado a segunda recusa seguida na mesma conta, então a resposta usa a mensagem genérica de recusa, sem o código detalhado do banco.
-- **CA-436** · Dado que o segredo do aviso não está configurado no servidor, então nenhum aviso é processado e o registro anota "sem segredo".
-- **CA-437** · Dado um aviso com código de recurso fora do formato (letras e números, até 64), então nada é processado e o registro anota "recurso inválido".
+- **CA-436** · Dado que o segredo do aviso não está configurado no servidor, então nenhum aviso é processado e o registro anota "sem segredo". Até 100 avisos não conferidos por hora (D-109 da `seguranca-lote-2`); acima disso, a resposta é a mesma e o aviso não é anotado.
+- **CA-437** · Dado um aviso com código de recurso fora do formato (letras e números, até 64), então nada é processado e o registro anota "recurso inválido". Até 100 avisos não conferidos por hora (D-109 da `seguranca-lote-2`); acima disso, a resposta é a mesma e o aviso não é anotado.
 
 ## 3. Casos de borda
 

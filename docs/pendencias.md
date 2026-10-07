@@ -91,6 +91,38 @@ Atualizado em 07/10/2026.
 >
 > Fica para depois: avisar a pessoa por e-mail quando a cobrança for recusada (hoje Conta e plano avisa); a limpeza
 > do registro de avisos acontece quando chega um aviso, então meses sem nenhum deixam os velhos lá mais tempo.
+>
+> **Atualizado em 07/10 (segurança, lote 2):** o servidor passa a limitar quanto cada conta guarda e quantas vezes ela
+> chama a cobrança (spec `seguranca-lote-2`, D-107 a D-112):
+>
+> - a cópia na nuvem vai até 5 MB; cada link, missões até 256 KB, marcações até 1 MB, nome até 120 caracteres e
+>   códigos de caso e de paciente até 64; cada conta guarda no máximo 1000 links, em qualquer plano;
+> - cada conta faz até 10 pedidos com cartão por hora (assinar e trocar o cartão) e até 20 de conferir ou cancelar;
+> - o registro de avisos guarda até 100 avisos não conferidos por hora; os conferidos sempre entram;
+> - as três funções de cobrança recusam pedido acima de 64 KB;
+> - só estudante com e-mail de faculdade confirmado envia comprovante, e a tela diz o motivo antes de enviar;
+> - a função antiga das vagas de fundador sai do banco.
+>
+> **A ordem para pôr no ar (você roda; os comandos estão prontos):**
+>
+> 1. rodar o SQL no banco de produção (as funções novas anotam cada chamada na tabela dele; publicadas antes, assinar,
+>    trocar o cartão, conferir e cancelar falham sem cobrar):
+>    `npx supabase db query --linked --project-ref qmpljfjbdcrdbqutuvmg -f supabase/011-seguranca-lote-2.sql`
+> 2. conferir com as consultas do fim do `011`: seis travas `_tamanho`, a função das vagas sem existir e a tabela
+>    `chamadas_da_cobranca` com RLS;
+> 3. juntar o ramo na `main`;
+> 4. publicar as três funções:
+>    `npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg`,
+>    `npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg` e
+>    `npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg`;
+> 5. publicar o site: `gh workflow run publicar.yml --ref main`.
+>
+> **Conferir depois de no ar:**
+>
+> - R-41: na primeira cópia grande de verdade, conferir que a tela mostra a frase de 5 MB; se o Supabase recusar com
+>   outro código, a tela mostra a falha de rede (Decisão 5 do plano).
+>
+> Fica para depois (spec, seção 4): captcha no cadastro e no login (lote 3) e a regra de conteúdo do navegador (CSP).
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
