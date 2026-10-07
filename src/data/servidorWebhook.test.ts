@@ -1,16 +1,19 @@
 // @vitest-environment node
 import { createHmac } from 'node:crypto'
+import { daLinhaAssinatura } from '@/domain/assinatura.ts'
 import { UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
-import type { LinhaDaAssinatura, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
+import type { LinhaDaAssinatura, Operadora, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
 import {
   assinaturaConfere,
   GUARDA_DOS_AVISOS_MS,
   manifestoDoAviso,
+  situacaoDaMensalidade,
   tratarAviso,
   type AvisoRecebido,
   type DependenciasDoWebhook,
+  type StatusDoAviso,
 } from '../../supabase/functions/_shared/webhook.ts'
-import { AGORA, cenario, responde, type Cenario } from './servidorFalsos.test-utils.ts'
+import { AGORA, cenario, linhaDe, responde, type Cenario } from './servidorFalsos.test-utils.ts'
 
 const SEGREDO = 'segredo-de-teste'
 /** Calculados fora do código: HMAC-SHA256 com `openssl dgst -sha256 -hmac segredo-de-teste`, conferidos com node:crypto. São a âncora do formato. */
@@ -95,6 +98,29 @@ describe('a assinatura do aviso (CA-399)', () => {
 
   it('sem segredo, nunca confere', async () => {
     expect(await assinaturaConfere(`ts=1700000000,v1=${ASSINADO.comRequestId}`, 'req-1', '2c938084726fca48', '')).toBe(false)
+    expect(await assinaturaConfere(`ts=1700000000,v1=${ASSINADO.comRequestId}`, 'req-1', '2c938084726fca48', ' \n')).toBe(false)
+  })
+
+  it('o segredo colado com espaço ou quebra de linha nas pontas ainda confere', async () => {
+    for (const segredo of [`${SEGREDO}\n`, `${SEGREDO}\r\n`, ` ${SEGREDO} `]) {
+      expect(await assinaturaConfere(`ts=1700000000,v1=${ASSINADO.comRequestId}`, 'req-1', '2c938084726fca48', segredo)).toBe(true)
+    }
+  })
+
+  it('o cabeçalho vale em qualquer ordem, com os nomes em maiúsculas e com partes a mais', async () => {
+    const v1 = `v1=${ASSINADO.comRequestId}`
+    const aceitos = [
+      `${v1},ts=1700000000`,
+      `TS=1700000000,V1=${ASSINADO.comRequestId}`,
+      `Ts=1700000000, V1=${ASSINADO.comRequestId}`,
+      `ts=1700000000,${v1},v2=abc`,
+      `foo=bar,ts=1700000000,${v1}`,
+      `ts=1700000000,,sem-igual,${v1}`,
+    ]
+    for (const cabecalho of aceitos) expect(await assinaturaConfere(cabecalho, 'req-1', '2c938084726fca48', SEGREDO), cabecalho).toBe(true)
+    // A parte a mais não substitui as que contam.
+    expect(await assinaturaConfere(`ts=1700000000,v2=${ASSINADO.comRequestId}`, 'req-1', '2c938084726fca48', SEGREDO)).toBe(false)
+    expect(await assinaturaConfere(`t=1700000000,${v1}`, 'req-1', '2c938084726fca48', SEGREDO)).toBe(false)
   })
 
   it('R3: o auxiliar dos testes assina igual aos vetores fixos', () => {
@@ -150,7 +176,7 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
     expect(outroNoCorpo.avisos[0]).toMatchObject({ recurso_id: 'pre1', assinatura_confere: true })
     expect(outroNoCorpo.pedidos.map((p) => p.caminho)).toEqual(['/preapproval/pre1'])
 
-    const soCorpo = cenario()
+    const soCorpo = cenario([], { 'GET /authorized_payments/123456789': [responde(404)] })
     const doCorpo = aviso('subscription_authorized_payment', null, {
       corpo: { type: 'subscription_authorized_payment', data: { id: 123456789 } },
       xRequestId: 'req-2',
@@ -158,6 +184,15 @@ describe('tratarAviso: o que se faz com cada aviso (D-84, D-102)', () => {
     })
     expect(await tratarAviso(doCorpo, deps(soCorpo))).toBe(200)
     expect(soCorpo.avisos[0]).toMatchObject({ topico: 'subscription_authorized_payment', recurso_id: '123456789', assinatura_confere: true })
+    expect(soCorpo.pedidos.map((p) => p.caminho)).toEqual(['/authorized_payments/123456789'])
+  })
+
+  it('o segredo configurado com espaço ou quebra de linha no fim ainda confere o aviso', async () => {
+    for (const segredo of [`${SEGREDO}\n`, ` ${SEGREDO} `]) {
+      const c = cenario([], { [PRE]: [responde(404)] })
+      expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c, segredo))).toBe(200)
+      expect(c.avisos[0]).toMatchObject({ assinatura_confere: true, resultado: 'ignorado: assinatura não existe na operadora' })
+    }
   })
 
   it('CA-399: sem x-request-id, o manifesto sai sem essa parte e confere', async () => {
@@ -345,6 +380,37 @@ describe('o aviso da assinatura (subscription_preapproval)', () => {
     const pendente = await avisoDaAssinatura([LINHA], { ...AUTORIZADA, status: 'pending' })
     expect(pendente.resultado).toBe('assinatura pendente')
     expect(pendente.c.assinaturas.get('u1')).toMatchObject({ status: 'pendente', encerrada_por: null })
+  })
+
+  it('CB-94: a cancelada pela operadora numa linha ativa com data de fim deixa o expira_em como está', async () => {
+    const { c, resultado } = await avisoDaAssinatura([{ ...LINHA, expira_em: '2027-01-01T00:00:00.000Z' }], { ...AUTORIZADA, status: 'cancelled' })
+    expect(resultado).toBe('assinatura cancelada')
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'cancelada', encerrada_por: 'operadora', expira_em: '2027-01-01T00:00:00.000Z' })
+  })
+
+  it('a linha que mudou entre ler e gravar (0 linhas): 500, e na volta do aviso a assinatura é adotada ou cancelada como sobra', async () => {
+    const casos: readonly [LinhaParcial, string, string][] = [
+      [{ nutricionista_id: 'u1', plano: 'pro', status: 'ativa', preapproval_id: 'preNovo' }, 'cancelada: sobra', 'preNovo'],
+      [{ nutricionista_id: 'u1', plano: 'free', status: 'pendente' }, 'adotada: solo mensal', 'pre1'],
+    ]
+    for (const [novaLinha, depois, assinaturaQueFica] of casos) {
+      const c = cenario([{ ...LINHA, status: 'pendente' }], { [PRE]: [responde(200, AUTORIZADA)], [PUT]: [responde(200)] })
+      // Entre a leitura e a gravação, a linha da conta deixou de ter esta assinatura (a pessoa assinou de novo).
+      const banco: DependenciasDoWebhook['banco'] = {
+        ...c.banco,
+        mudar: async (conta, id, mudanca) => {
+          c.assinaturas.set('u1', linhaDe(novaLinha))
+          return c.banco.mudar(conta, id, mudanca)
+        },
+      }
+      expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), { ...deps(c), banco })).toBe(500)
+      expect(c.avisos[0]?.resultado).toBe('falha: linha mudou')
+      expect(c.log).toHaveBeenCalledWith(expect.any(String), 'pre1')
+
+      expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(200)
+      expect(c.avisos[1]?.resultado).toBe(depois)
+      expect(c.assinaturas.get('u1')?.preapproval_id).toBe(assinaturaQueFica)
+    }
   })
 
   it('cancelada é final: aviso de "autorizada" atrasado não devolve o plano nem troca quem encerrou', async () => {
@@ -586,5 +652,444 @@ describe('a assinatura sem dono (D-85)', () => {
     const texto = JSON.stringify(registros)
     expect(texto).not.toContain('ana@exemplo.com')
     expect(texto).not.toContain('authorized')
+  })
+})
+
+const MENSALIDADE = 'subscription_authorized_payment'
+const AP = 'GET /authorized_payments/777'
+const PAGA = {
+  id: 777,
+  preapproval_id: 'pre1',
+  status: 'processed',
+  debit_date: '2026-11-06T13:00:00.000Z',
+  payment: { id: 1, status: 'approved', status_detail: 'accredited' },
+}
+const RECUSADA = { ...PAGA, status: 'recycling', retry_attempt: 1, payment: { id: 2, status: 'rejected', status_detail: 'cc_rejected_insufficient_amount' } }
+/** Um mês depois de AGORA, uma hora depois da cobrança de 6/11. */
+const NO_DIA = new Date('2026-11-06T14:00:00.000Z')
+const ATIVA_PRE1 = { nutricionista_id: 'u1', plano: 'solo', status: 'ativa', ciclo: 'mensal', preapproval_id: 'pre1', proxima_cobranca: '2026-11-06T15:00:00.000Z' }
+const depsNoDia = (c: Cenario): DependenciasDoWebhook => ({ ...deps(c), agora: () => NO_DIA })
+const CORTADA = 'cortada: recusa (cc_rejected_insufficient_amount)'
+/** O que a linha cortada por recusa guarda (CA-392). */
+const CORTADA_NA_LINHA = { status: 'cancelada', expira_em: null, encerrada_por: 'recusa', encerrada_em: '2026-11-06T13:00:00.000Z' }
+
+/** O aviso da mensalidade 777 no dia da cobrança. */
+async function avisoDaMensalidade(linhas: readonly LinhaParcial[], rotas: Rotas) {
+  const c = cenario(linhas, rotas)
+  const status = await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))
+  return { c, status, resultado: c.avisos[0]?.resultado }
+}
+
+const puts = (c: Cenario) => c.pedidos.filter((p) => p.metodo === 'PUT')
+
+describe('situacaoDaMensalidade (D-83)', () => {
+  it.each([
+    ['processed', 'approved', 'paga'],
+    ['processed', 'rejected', 'recusada'],
+    ['recycling', 'rejected', 'recusada'],
+    ['recycling', undefined, 'recusada'],
+    ['scheduled', undefined, 'outra'],
+    ['processed', 'in_process', 'outra'],
+  ] as const)('%s / %s: %s', (status, doPagamento, situacao) => {
+    expect(situacaoDaMensalidade(status, doPagamento)).toBe(situacao)
+  })
+})
+
+describe('a mensalidade paga (subscription_authorized_payment)', () => {
+  it('CA-394: mensalidade paga grava a data dela e a próxima cobrança da operadora', async () => {
+    const { c, status, resultado } = await avisoDaMensalidade([ATIVA_PRE1], {
+      [AP]: [responde(200, PAGA)],
+      [PRE]: [responde(200, { status: 'authorized', next_payment_date: '2026-12-06T13:00:00.000Z' })],
+    })
+    expect(status).toBe(200)
+    expect(c.assinaturas.get('u1')).toMatchObject({
+      status: 'ativa',
+      ultima_cobranca_paga: '2026-11-06T13:00:00.000Z',
+      proxima_cobranca: '2026-12-06T13:00:00.000Z',
+      atualizado_em: NO_DIA.toISOString(),
+    })
+    expect(resultado).toBe('mensalidade paga')
+    expect(c.ordem).toEqual([AP, 'lerDaOperadora', PRE, 'mudar', 'anotarAviso', 'apagarAvisosAntesDe'])
+    expect(puts(c)).toEqual([])
+    expect(daLinhaAssinatura(c.assinaturas.get('u1'), NO_DIA).plano).toBe('solo')
+    expect(c.avisos[0]).toEqual({ topico: MENSALIDADE, recurso_id: '777', assinatura_confere: true, resultado: 'mensalidade paga' })
+  })
+
+  it('CA-394: sem a leitura da assinatura, a próxima é a prevista a partir do dia da cobrança', async () => {
+    const leituras: readonly (RespostaDaOperadora | null)[] = [
+      null,
+      responde(500),
+      responde(404),
+      responde(200, null),
+      responde(200, { status: 'authorized' }),
+      // A data de hoje (a cobrança que acabou de cair) não serve: só a que passa de amanhã.
+      responde(200, { status: 'authorized', next_payment_date: '2026-11-06T13:00:00.000Z' }),
+    ]
+    for (const leitura of leituras) {
+      const { c, resultado } = await avisoDaMensalidade([ATIVA_PRE1], { [AP]: [responde(200, PAGA)], [PRE]: [leitura] })
+      expect(resultado).toBe('mensalidade paga')
+      expect(c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: '2026-11-06T13:00:00.000Z', proxima_cobranca: '2026-12-06T13:00:00.000Z' })
+    }
+
+    const anual = await avisoDaMensalidade([{ ...ATIVA_PRE1, ciclo: 'anual' }], { [AP]: [responde(200, PAGA)] })
+    expect(anual.c.assinaturas.get('u1')?.proxima_cobranca).toBe('2027-11-06T13:00:00.000Z')
+
+    // Sem ciclo conhecido, não há previsão: só a data da paga.
+    const semCiclo = await avisoDaMensalidade([{ ...ATIVA_PRE1, ciclo: null }], { [AP]: [responde(200, PAGA)] })
+    expect(semCiclo.c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: '2026-11-06T13:00:00.000Z', proxima_cobranca: '2026-11-06T15:00:00.000Z' })
+  })
+
+  it('mensalidade paga mais velha que a anotada não volta a data', async () => {
+    const anotada = { ...ATIVA_PRE1, ultima_cobranca_paga: '2026-12-06T13:00:00.000Z', proxima_cobranca: '2027-01-06T13:00:00.000Z' }
+    const comLeitura = await avisoDaMensalidade([anotada], {
+      [AP]: [responde(200, PAGA)],
+      [PRE]: [responde(200, { status: 'authorized', next_payment_date: '2027-01-06T13:00:00.000Z' })],
+    })
+    expect(comLeitura.resultado).toBe('mensalidade paga')
+    expect(comLeitura.c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: '2026-12-06T13:00:00.000Z', proxima_cobranca: '2027-01-06T13:00:00.000Z' })
+
+    // Sem a leitura, a previsão a partir da paga velha (ou da mesma) não entra: nada a gravar.
+    for (const linha of [anotada, { ...anotada, ultima_cobranca_paga: '2026-11-06T13:00:00.000Z' }]) {
+      const semLeitura = await avisoDaMensalidade([linha], { [AP]: [responde(200, PAGA)] })
+      expect(semLeitura.resultado).toBe('sem mudança: mensalidade já anotada')
+      expect(semLeitura.c.ordem).not.toContain('mudar')
+      expect(semLeitura.c.assinaturas.get('u1')).toMatchObject({ ultima_cobranca_paga: linha.ultima_cobranca_paga, proxima_cobranca: '2027-01-06T13:00:00.000Z' })
+    }
+  })
+
+  it('a data anotada que não é data não impede gravar a da paga', async () => {
+    const { c } = await avisoDaMensalidade([{ ...ATIVA_PRE1, ultima_cobranca_paga: 'ontem' }], { [AP]: [responde(200, PAGA)] })
+    expect(c.assinaturas.get('u1')?.ultima_cobranca_paga).toBe('2026-11-06T13:00:00.000Z')
+  })
+
+  it('sem debit_date que seja data, a paga vale como de agora', async () => {
+    const { c } = await avisoDaMensalidade([{ ...ATIVA_PRE1, status: 'pendente' }], { [AP]: [responde(200, { ...PAGA, debit_date: 'ontem' })] })
+    expect(c.assinaturas.get('u1')?.ultima_cobranca_paga).toBe(NO_DIA.toISOString())
+  })
+
+  it('CB-97: paga depois de a pessoa cancelar: a linha continua cancelada, só a data da última paga é gravada', async () => {
+    const cancelada = { ...ATIVA_PRE1, status: 'cancelada', encerrada_por: 'pessoa', expira_em: null }
+    const c = cenario([cancelada], { [AP]: [responde(200, PAGA)], [PRE]: [responde(200, { status: 'cancelled', next_payment_date: '2026-12-06T13:00:00.000Z' })] })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.assinaturas.get('u1')).toMatchObject({
+      status: 'cancelada',
+      expira_em: null,
+      encerrada_por: 'pessoa',
+      ultima_cobranca_paga: '2026-11-06T13:00:00.000Z',
+      proxima_cobranca: '2026-11-06T15:00:00.000Z',
+    })
+    expect(c.pedidos.map((p) => `${p.metodo} ${p.caminho}`)).toEqual([AP])
+    expect(c.avisos[0]?.resultado).toBe('mensalidade paga')
+
+    // O mesmo aviso de novo: nada a gravar.
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos[1]?.resultado).toBe('sem mudança: mensalidade já anotada')
+    expect(c.ordem.filter((o) => o === 'mudar')).toHaveLength(1)
+
+    // Pendente ou pausada também: só a data (o status vem pelo aviso da assinatura).
+    for (const status of ['pendente', 'pausada']) {
+      const outra = await avisoDaMensalidade([{ ...ATIVA_PRE1, status }], { [AP]: [responde(200, PAGA)] })
+      expect(outra.c.assinaturas.get('u1')).toMatchObject({ status, ultima_cobranca_paga: '2026-11-06T13:00:00.000Z', proxima_cobranca: '2026-11-06T15:00:00.000Z' })
+      expect(outra.c.pedidos).toHaveLength(1)
+    }
+  })
+
+  it('paga sem linha: ignorada (a adoção vem pelo aviso da assinatura)', async () => {
+    const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], { [AP]: [responde(200, PAGA)] })
+    expect(status).toBe(200)
+    expect(resultado).toBe('ignorado: mensalidade paga sem linha')
+    expect(c.ordem).toEqual([AP, 'lerDaOperadora', 'anotarAviso', 'apagarAvisosAntesDe'])
+    expect(c.assinaturas.get('u1')).toMatchObject({ preapproval_id: 'preNovo', ultima_cobranca_paga: null })
+  })
+
+  it('falha do banco ao ler ou gravar a paga responde 500; linha que mudou no meio também', async () => {
+    for (const consulta of ['lerDaOperadora', 'mudar'] as const) {
+      const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, PAGA)] })
+      c.falhar(consulta)
+      expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c)), consulta).toBe(500)
+      expect(c.avisos[0]?.resultado, consulta).toBe('falha: banco')
+    }
+
+    const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, PAGA)] })
+    const banco: DependenciasDoWebhook['banco'] = { ...c.banco, mudar: () => Promise.resolve({ linhas: 0, falha: null }) }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), banco })).toBe(500)
+    expect(c.avisos[0]?.resultado).toBe('falha: linha mudou')
+  })
+})
+
+describe('a mensalidade recusada (D-80)', () => {
+  it('CA-392 e CA-405: mensalidade recusada cancela lá e, só depois, aqui: cancelada, sem período, encerrada por recusa no dia da cobrança', async () => {
+    const c = cenario([{ ...ATIVA_PRE1, expira_em: '2026-12-01T02:59:59.000Z' }], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)] })
+    const linhaNoCancelamento: unknown[] = []
+    const operadora: Operadora = (metodo, caminho, corpo) => {
+      if (metodo === 'PUT') linhaNoCancelamento.push(c.assinaturas.get('u1'))
+      return c.operadora(metodo, caminho, corpo)
+    }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), operadora })).toBe(200)
+    // Antes de cancelar lá, a linha só ganha quem está encerrando; o plano pago continua até a operadora parar.
+    expect(c.ordem).toEqual([AP, 'lerDaOperadora', 'mudar', PUT, 'mudar', 'anotarAviso', 'apagarAvisosAntesDe'])
+    expect(linhaNoCancelamento).toEqual([expect.objectContaining({ status: 'ativa', encerrada_por: 'recusa', expira_em: '2026-12-01T02:59:59.000Z' })])
+    expect(daLinhaAssinatura(linhaNoCancelamento[0], NO_DIA).plano).toBe('solo')
+    expect(puts(c)).toEqual([{ metodo: 'PUT', caminho: '/preapproval/pre1', corpo: { status: 'cancelled' } }])
+    expect(c.assinaturas.get('u1')).toMatchObject({ ...CORTADA_NA_LINHA, atualizado_em: NO_DIA.toISOString() })
+    expect(daLinhaAssinatura(c.assinaturas.get('u1'), NO_DIA).plano).toBe('free')
+    expect(c.avisos[0]?.resultado).toBe(CORTADA)
+  })
+
+  it('sem motivo nem dia da cobrança: encerrada agora, e o resultado sem parênteses', async () => {
+    const { c, resultado } = await avisoDaMensalidade([ATIVA_PRE1], {
+      [AP]: [responde(200, { ...RECUSADA, debit_date: null, payment: { id: 2, status: 'rejected' } })],
+      [PUT]: [responde(200)],
+    })
+    expect(resultado).toBe('cortada: recusa')
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'cancelada', encerrada_por: 'recusa', encerrada_em: NO_DIA.toISOString() })
+  })
+
+  it('pendente com a primeira mensalidade recusada também é cortada', async () => {
+    const primeira = { ...RECUSADA, status: 'processed', retry_attempt: 0 }
+    for (const status of ['pendente', 'pausada']) {
+      const { c, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, status, proxima_cobranca: null }], { [AP]: [responde(200, primeira)], [PUT]: [responde(200)] })
+      expect(resultado).toBe(CORTADA)
+      expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
+      expect(puts(c)).toHaveLength(1)
+    }
+  })
+
+  it('CB-96: o mesmo aviso de recusa de novo não muda nada nem cancela de novo', async () => {
+    const outraTentativa = { ...RECUSADA, retry_attempt: 2, debit_date: '2026-11-08T13:00:00.000Z' }
+    const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA), responde(200, RECUSADA), responde(200, outraTentativa)], [PUT]: [responde(200)] })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    const depois = { ...depsNoDia(c), agora: () => new Date('2026-11-08T14:00:00.000Z') }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depois)).toBe(200)
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depois)).toBe(200)
+    expect(c.avisos.map((a) => a.resultado)).toEqual([CORTADA, 'sem mudança: já cancelada', 'sem mudança: já cancelada'])
+    expect(puts(c)).toHaveLength(1)
+    expect(c.ordem.filter((o) => o === 'mudar')).toHaveLength(2)
+    expect(c.assinaturas.get('u1')).toMatchObject({ ...CORTADA_NA_LINHA, atualizado_em: NO_DIA.toISOString() })
+  })
+
+  it('CB-96: recusa de uma assinatura que a pessoa já cancelou (no período pago): nada muda', async () => {
+    const pelaPessoa = { ...ATIVA_PRE1, status: 'cancelada', encerrada_por: 'pessoa', expira_em: '2026-12-06T02:59:59.000Z' }
+    const { c, resultado } = await avisoDaMensalidade([pelaPessoa], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)] })
+    expect(resultado).toBe('sem mudança: já cancelada')
+    expect(puts(c)).toEqual([])
+    expect(c.assinaturas.get('u1')).toMatchObject({ encerrada_por: 'pessoa', expira_em: '2026-12-06T02:59:59.000Z' })
+  })
+
+  it('CB-98: recusa de uma assinatura que a pessoa já trocou por outra: só aquela é afetada, e só lá', async () => {
+    const { c, status, resultado } = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)] })
+    expect(status).toBe(200)
+    expect(resultado).toBe('cancelada: recusa sem linha')
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', preapproval_id: 'preNovo', encerrada_por: null })
+    expect(puts(c)).toEqual([{ metodo: 'PUT', caminho: '/preapproval/pre1', corpo: { status: 'cancelled' } }])
+    expect(c.ordem).not.toContain('mudar')
+
+    const naoCancelou = await avisoDaMensalidade([{ ...ATIVA_PRE1, preapproval_id: 'preNovo' }], { [AP]: [responde(200, RECUSADA)] })
+    expect(naoCancelou.status).toBe(500)
+    expect(naoCancelou.resultado).toBe('falha: recusa sem cancelar')
+  })
+
+  it('D-80: o cancelamento lá não pega: 500, a conta continua no plano pago e o aviso volta', async () => {
+    for (const recusaDoPut of [null, responde(500), responde(401)]) {
+      const { c, status, resultado } = await avisoDaMensalidade([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [recusaDoPut] })
+      expect(status).toBe(500)
+      expect(resultado).toBe('falha: recusa sem cancelar')
+      // Só fica anotado quem está encerrando (para o aviso de "cancelada" que chegar depois); o status não muda.
+      expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', expira_em: null, proxima_cobranca: '2026-11-06T15:00:00.000Z', encerrada_por: 'recusa' })
+      expect(daLinhaAssinatura(c.assinaturas.get('u1'), NO_DIA).plano).toBe('solo')
+      expect(c.log).toHaveBeenCalledWith(expect.stringContaining('CANCELAMENTO FALHOU'), 'pre1', recusaDoPut?.status ?? null)
+    }
+  })
+
+  it('D-80: a operadora tentou de novo e a mensalidade passou antes de o corte pegar: a conta segue no plano', async () => {
+    const c = cenario([ATIVA_PRE1], {
+      [AP]: [responde(200, RECUSADA), responde(200, { ...PAGA, debit_date: '2026-11-07T13:00:00.000Z' })],
+      [PRE]: [null, responde(200, { status: 'authorized', next_payment_date: '2026-12-06T13:00:00.000Z' })],
+    })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(500)
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos.map((a) => a.resultado)).toEqual(['falha: recusa sem cancelar', 'mensalidade paga'])
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', ultima_cobranca_paga: '2026-11-07T13:00:00.000Z', proxima_cobranca: '2026-12-06T13:00:00.000Z' })
+    expect(daLinhaAssinatura(c.assinaturas.get('u1'), NO_DIA).plano).toBe('solo')
+  })
+
+  it('D-80: o banco falha antes de cancelar lá: 500 e nada sai para a operadora; na volta, corta', async () => {
+    for (const consulta of ['lerDaOperadora', 'mudar'] as const) {
+      const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)] })
+      c.falhar(consulta, 1)
+      expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c)), consulta).toBe(500)
+      expect(c.avisos[0]?.resultado, consulta).toBe('falha: banco')
+      expect(puts(c), consulta).toEqual([])
+      expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c)), consulta).toBe(200)
+      expect(c.avisos[1]?.resultado, consulta).toBe(CORTADA)
+      expect(c.assinaturas.get('u1'), consulta).toMatchObject(CORTADA_NA_LINHA)
+    }
+  })
+
+  it('D-80: cancelou lá e o banco falhou: 500; na volta do aviso, termina sem erro', async () => {
+    const c = cenario([ATIVA_PRE1], {
+      [AP]: [responde(200, RECUSADA)],
+      [PUT]: [responde(200), responde(400)],
+      [PRE]: [responde(200, { ...AUTORIZADA, status: 'cancelled' })],
+    })
+    let falhasQueRestam = 1
+    // Só a gravação do corte (a que muda o status) falha, uma vez.
+    const banco: DependenciasDoWebhook['banco'] = {
+      ...c.banco,
+      mudar: (conta, id, mudanca) =>
+        mudanca.status === 'cancelada' && falhasQueRestam-- > 0
+          ? Promise.resolve({ linhas: 0, falha: { mensagem: 'banco fora', codigo: null } })
+          : c.banco.mudar(conta, id, mudanca),
+    }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), banco })).toBe(500)
+    expect(c.assinaturas.get('u1')?.status).toBe('ativa')
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), banco })).toBe(200)
+    expect(c.avisos.map((a) => a.resultado)).toEqual(['falha: banco', CORTADA])
+    expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
+    // Na volta, o PUT é recusado (já cancelada lá), a leitura confirma e o corte é gravado.
+    expect(puts(c).map((p) => p.corpo)).toEqual([{ status: 'cancelled' }, { status: 'cancelled' }, { status: 'canceled' }])
+  })
+
+  it('a linha que mudou entre ler e gravar (0 linhas): 500, e na volta vale o CB-98', async () => {
+    const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)] })
+    const banco: DependenciasDoWebhook['banco'] = {
+      ...c.banco,
+      mudar: async (conta, id, mudanca) => {
+        c.assinaturas.set('u1', linhaDe({ ...ATIVA_PRE1, preapproval_id: 'preNovo' }))
+        return c.banco.mudar(conta, id, mudanca)
+      },
+    }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), banco })).toBe(500)
+    expect(c.avisos[0]?.resultado).toBe('falha: linha mudou')
+    expect(puts(c)).toEqual([])
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos[1]?.resultado).toBe('cancelada: recusa sem linha')
+    expect(c.assinaturas.get('u1')).toMatchObject({ status: 'ativa', preapproval_id: 'preNovo', encerrada_por: null })
+  })
+
+  it('CA-405: mensalidade sem resposta da operadora responde 500; 404 é ignorado com 200', async () => {
+    const casos: readonly [RespostaDaOperadora | null, number, string][] = [
+      [null, 500, 'falha: operadora fora'],
+      [responde(500), 500, 'falha: operadora fora'],
+      [responde(503, null), 500, 'falha: operadora fora'],
+      [responde(429), 500, 'falha: operadora fora'],
+      [responde(401), 500, 'falha: credencial recusada'],
+      [responde(403), 500, 'falha: credencial recusada'],
+      [responde(404), 200, 'ignorado: mensalidade não existe na operadora'],
+      [responde(400, { message: 'invalid id' }), 200, 'ignorado: mensalidade não existe na operadora'],
+      [responde(200, null), 500, 'falha: resposta ilegível'],
+    ]
+    for (const [resposta, esperado, resultado] of casos) {
+      const c = cenario([ATIVA_PRE1], { [AP]: [resposta], [PUT]: [responde(200)] })
+      expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c)), resultado).toBe(esperado)
+      expect(c.avisos[0]?.resultado).toBe(resultado)
+      expect(c.ordem).toEqual([AP, 'anotarAviso', 'apagarAvisosAntesDe'])
+      expect(c.assinaturas.get('u1')?.status).toBe('ativa')
+    }
+  })
+
+  it('mensalidade agendada ou em análise é anotada e não muda nada', async () => {
+    const casos: readonly [Readonly<Record<string, unknown>>, string][] = [
+      [{ ...PAGA, status: 'scheduled', payment: undefined }, 'ignorado: mensalidade scheduled/?'],
+      [{ ...PAGA, payment: { id: 1, status: 'in_process' } }, 'ignorado: mensalidade processed/in_process'],
+      [{ ...PAGA, status: 'pending', payment: { status: 'pending' } }, 'ignorado: mensalidade pending/pending'],
+      [{ ...PAGA, status: { x: 1 }, payment: null }, 'ignorado: mensalidade ?/?'],
+    ]
+    for (const [mensalidade, resultado] of casos) {
+      const { c, status, resultado: anotado } = await avisoDaMensalidade([ATIVA_PRE1], { [AP]: [responde(200, mensalidade)], [PUT]: [responde(200)] })
+      expect(status).toBe(200)
+      expect(anotado).toBe(resultado)
+      expect(c.ordem).toEqual([AP, 'anotarAviso', 'apagarAvisosAntesDe'])
+    }
+  })
+
+  it('mensalidade sem preapproval_id é ignorada', async () => {
+    for (const preapproval_id of [undefined, '', '  ', 42]) {
+      const { c, status, resultado } = await avisoDaMensalidade([ATIVA_PRE1], { [AP]: [responde(200, { ...RECUSADA, preapproval_id })], [PUT]: [responde(200)] })
+      expect(status).toBe(200)
+      expect(resultado).toBe('ignorado: mensalidade sem assinatura')
+      expect(c.ordem).toEqual([AP, 'anotarAviso', 'apagarAvisosAntesDe'])
+    }
+  })
+
+  it('o registro da função nunca leva o corpo da operadora', async () => {
+    const naoCancelou = await avisoDaMensalidade([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(500)] })
+    const texto = JSON.stringify(naoCancelou.c.log.mock.calls)
+    expect(naoCancelou.c.log).toHaveBeenCalled()
+    expect(texto).not.toContain('cc_rejected')
+    expect(texto).not.toContain('recycling')
+  })
+})
+
+/** Uma promessa e quem a cumpre: põe dois avisos em paralelo na ordem que o teste escolhe. */
+function sinal() {
+  let cumprir: () => void = () => undefined
+  const pronto = new Promise<void>((resolver) => {
+    cumprir = () => resolver()
+  })
+  return { pronto, cumprir: () => cumprir() }
+}
+
+describe('a recusa e o aviso de "cancelada" da operadora que se cruzam (D-80, CA-393)', () => {
+  const CANCELADA_LA = responde(200, { ...AUTORIZADA, status: 'cancelled' })
+
+  it('o aviso de "cancelada" lê a linha antes de o corte gravar e grava depois dele: quem encerrou continua sendo a recusa', async () => {
+    const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)], [PRE]: [CANCELADA_LA] })
+    const outroAvisoLeu = sinal()
+    const corteTerminou = sinal()
+    // O outro aviso (o da assinatura) chega à gravação e espera o corte terminar para gravar.
+    const bancoDoOutroAviso: DependenciasDoWebhook['banco'] = {
+      ...c.banco,
+      mudar: async (conta, id, mudanca) => {
+        outroAvisoLeu.cumprir()
+        await corteTerminou.pronto
+        return c.banco.mudar(conta, id, mudanca)
+      },
+    }
+    const outros: Promise<StatusDoAviso>[] = []
+    // Assim que a operadora cancela, ela manda o aviso da assinatura, tratado em paralelo.
+    const operadora: Operadora = async (metodo, caminho, corpo) => {
+      const resposta = await c.operadora(metodo, caminho, corpo)
+      if (metodo === 'PUT' && outros.length === 0) {
+        const outro = tratarAviso(aviso(ASSINATURA, 'pre1'), { ...deps(c), banco: bancoDoOutroAviso })
+        outros.push(outro)
+        await Promise.race([outroAvisoLeu.pronto, outro])
+      }
+      return resposta
+    }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), operadora })).toBe(200)
+    corteTerminou.cumprir()
+    expect(await Promise.all(outros)).toEqual([200])
+    expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
+    expect(c.avisos.map((a) => a.resultado)).toEqual([CORTADA, 'assinatura cancelada (recusa)'])
+  })
+
+  it('o aviso de "cancelada" grava inteiro antes de o corte gravar: quem encerrou continua sendo a recusa', async () => {
+    const c = cenario([ATIVA_PRE1], { [AP]: [responde(200, RECUSADA)], [PUT]: [responde(200)], [PRE]: [CANCELADA_LA] })
+    const operadora: Operadora = async (metodo, caminho, corpo) => {
+      const resposta = await c.operadora(metodo, caminho, corpo)
+      if (metodo === 'PUT') expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(200)
+      return resposta
+    }
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), { ...depsNoDia(c), operadora })).toBe(200)
+    expect(c.assinaturas.get('u1')).toMatchObject({ ...CORTADA_NA_LINHA, atualizado_em: NO_DIA.toISOString() })
+    expect(c.avisos.map((a) => a.resultado)).toEqual(['assinatura cancelada (recusa)', CORTADA])
+  })
+
+  it('a resposta do cancelamento se perdeu (500 aqui) e o aviso de "cancelada" chega antes da volta: encerrada por recusa, sem período', async () => {
+    const c = cenario([{ ...ATIVA_PRE1, expira_em: '2026-12-01T02:59:59.000Z' }], {
+      [AP]: [responde(200, RECUSADA)],
+      [PUT]: [null],
+      // A confirmação do corte também se perde; a leitura do aviso da assinatura, não.
+      [PRE]: [null, CANCELADA_LA],
+    })
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(500)
+    expect(await tratarAviso(aviso(ASSINATURA, 'pre1'), deps(c))).toBe(200)
+    expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
+    expect(daLinhaAssinatura(c.assinaturas.get('u1'), AGORA).plano).toBe('free')
+    // A volta do aviso da mensalidade não muda nada.
+    expect(await tratarAviso(aviso(MENSALIDADE, '777'), depsNoDia(c))).toBe(200)
+    expect(c.avisos.map((a) => a.resultado)).toEqual(['falha: recusa sem cancelar', 'assinatura cancelada (recusa)', 'sem mudança: já cancelada'])
+    expect(c.assinaturas.get('u1')).toMatchObject(CORTADA_NA_LINHA)
   })
 })

@@ -10,9 +10,20 @@
 //   3. 200 quer dizer "entendido" (feito ou ignorado de propósito). 500 é falha passageira (sem o
 //      segredo, operadora fora, banco fora, cancelamento que não pegou): a operadora manda de novo, e
 //      refazer não muda nada que já foi feito.
-import { dataDepoisDe, objeto, PAGOS, planoPeloValor, PLANOS_DO_SERVIDOR, previsaoDaProximaCobranca, traduzirStatus, UM_DIA_MS } from './cobranca.ts'
-import { cancelarNaOperadora } from './operadora.ts'
-import type { AvisoAnotado, BancoDaCobranca, FalhaDoBanco, MudancaDaAssinatura, Operadora, Registro } from './portas.ts'
+import {
+  dataDepoisDe,
+  dataOuNula,
+  ehCicloDaAssinatura,
+  objeto,
+  PAGOS,
+  planoPeloValor,
+  PLANOS_DO_SERVIDOR,
+  previsaoDaProximaCobranca,
+  traduzirStatus,
+  UM_DIA_MS,
+} from './cobranca.ts'
+import { cancelarNaOperadora, tentarCancelarNaOperadora } from './operadora.ts'
+import type { AvisoAnotado, BancoDaCobranca, FalhaDoBanco, LinhaDaAssinatura, MudancaDaAssinatura, Operadora, Registro } from './portas.ts'
 
 export interface AvisoRecebido {
   /** O corpo já lido como JSON; nulo se não era JSON. */
@@ -63,19 +74,24 @@ function mesmoTexto(a: string, b: string): boolean {
   return diferenca === 0
 }
 
-/** CA-399: confere o x-signature (`ts=…,v1=…`), que é o HMAC-SHA256 do manifesto com o segredo, em hexadecimal. */
+/**
+ * CA-399: confere o x-signature (`ts=…,v1=…`), que é o HMAC-SHA256 do manifesto com o segredo, em hexadecimal.
+ * As partes valem em qualquer ordem e com o nome em maiúsculas; parte desconhecida fica de lado. Quem
+ * decide é o HMAC. O segredo é aparado: colado com uma quebra de linha no fim, ainda vale.
+ */
 export async function assinaturaConfere(cabecalho: string | null, requestId: string | null, id: string, segredo: string): Promise<boolean> {
-  if (segredo === '') return false
+  const chaveDoSegredo = segredo.trim()
+  if (chaveDoSegredo === '') return false
   const partes = new Map<string, string>()
   for (const parte of (cabecalho ?? '').split(',')) {
     const igual = parte.indexOf('=')
-    if (igual > 0) partes.set(parte.slice(0, igual).trim(), parte.slice(igual + 1).trim())
+    if (igual > 0) partes.set(parte.slice(0, igual).trim().toLowerCase(), parte.slice(igual + 1).trim())
   }
   const ts = partes.get('ts')
   const v1 = partes.get('v1')
   if (!ts || !v1) return false
   const texto = new TextEncoder()
-  const chave = await crypto.subtle.importKey('raw', texto.encode(segredo), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const chave = await crypto.subtle.importKey('raw', texto.encode(chaveDoSegredo), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const assinado = new Uint8Array(await crypto.subtle.sign('HMAC', chave, texto.encode(manifestoDoAviso(id, textoCurto(requestId), ts))))
   const esperado = Array.from(assinado, (b) => b.toString(16).padStart(2, '0')).join('')
   return mesmoTexto(esperado, v1.toLowerCase())
@@ -105,10 +121,25 @@ function falhaNoBanco(deps: DependenciasDoWebhook, falha: FalhaDoBanco, onde: st
   return feito('falha: banco', 500)
 }
 
+/**
+ * Muda a linha desta conta com esta assinatura. Nulo quando mudou; senão, o que responder. Nenhuma linha
+ * mudada quer dizer que a linha deixou de ter esta assinatura entre ler e gravar (a pessoa assinou de
+ * novo): o aviso volta e, na volta, é tratado com a linha nova (adoção, sobra ou CB-98).
+ */
+async function mudarLinha(deps: DependenciasDoWebhook, conta: string, id: string, mudanca: MudancaDaAssinatura, onde: string): Promise<Feito | null> {
+  const { linhas, falha } = await deps.banco.mudar(conta, id, mudanca)
+  if (falha) return falhaNoBanco(deps, falha, onde)
+  if (linhas > 0) return null
+  deps.log(`A linha mudou antes de ${onde}; o aviso volta:`, id)
+  return feito('falha: linha mudou', 500)
+}
+
 async function porTopico(topico: string, id: string, deps: DependenciasDoWebhook): Promise<Feito> {
   switch (topico) {
     case 'subscription_preapproval':
       return tratarAssinatura(id, deps)
+    case 'subscription_authorized_payment':
+      return tratarMensalidade(id, deps)
     case 'payment':
       // Pagamento avulso não é usado pelo MetaNutri: só fica anotado.
       return feito('ignorado: pagamento')
@@ -125,7 +156,8 @@ export async function tratarAviso(aviso: AvisoRecebido, deps: DependenciasDoWebh
   const corpo = objeto(aviso.corpo)
   const topico = textoCurto(corpo?.['type']) ?? textoCurto(aviso.tipoNaUrl) ?? ''
   const id = idDoAviso(aviso, corpo)
-  const segredo = presente(deps.segredo) ? deps.segredo : null
+  // Aparado: o segredo colado no painel com uma quebra de linha no fim ainda confere.
+  const segredo = presente(deps.segredo) ? deps.segredo.trim() : null
   let confere: boolean | null = null
   let resultado: Feito
   try {
@@ -198,16 +230,20 @@ async function tratarAssinatura(id: string, deps: DependenciasDoWebhook): Promis
   const agora = deps.agora()
   // A data de hoje (a primeira cobrança, ainda por cair) não conta: só a que passa de amanhã.
   const proxima = status === 'ativa' ? dataDepoisDe(assinatura['next_payment_date'], agora.getTime() + UM_DIA_MS) : null
+  // D-80: o corte por recusa anota "recusa" na linha antes de pedir o cancelamento lá. A cancelada que
+  // chega com essa anotação é esse corte: quem encerrou e quando ficam como o corte gravou (CA-393).
+  const pelaRecusa = status === 'cancelada' && linha.encerrada_por === 'recusa'
   const mudanca: MudancaDaAssinatura = {
     status,
     atualizado_em: agora.toISOString(),
     ...(proxima ? { proxima_cobranca: proxima } : {}),
-    // CB-94: a cancelada pela operadora não tem período a respeitar. O expira_em fica como está (nulo na paga).
-    ...(status === 'cancelada' ? { encerrada_por: 'operadora' as const, encerrada_em: agora.toISOString() } : {}),
+    // CA-392: a cortada por recusa não tem período a respeitar.
+    ...(pelaRecusa ? { expira_em: null } : {}),
+    // CB-94: a cancelada pela operadora também não. O expira_em fica como está (nulo na paga).
+    ...(status === 'cancelada' && !pelaRecusa ? { encerrada_por: 'operadora' as const, encerrada_em: agora.toISOString() } : {}),
   }
-  const { falha: naoMudou } = await deps.banco.mudar(dono, id, mudanca)
-  if (naoMudou) return falhaNoBanco(deps, naoMudou, 'gravar o status da assinatura')
-  return feito(`assinatura ${status}`)
+  const naoMudou = await mudarLinha(deps, dono, id, mudanca, 'gravar o status da assinatura')
+  return naoMudou ?? feito(pelaRecusa ? 'assinatura cancelada (recusa)' : `assinatura ${status}`)
 }
 
 /** A assinatura que sobrou (ou que não dá para adotar) sai da operadora, para ninguém pagar sem ter o plano. */
@@ -254,4 +290,117 @@ async function adotar(id: string, dono: string, assinatura: Readonly<Record<stri
   if (naoGravou) return falhaNoBanco(deps, naoGravou, 'adotar a assinatura sem dono')
   deps.log('Assinatura sem dono adotada:', id)
   return feito(`adotada: ${achado.plano} ${achado.ciclo}`)
+}
+
+/** D-83: paga é pagamento aprovado; recusada é pagamento recusado ou a operadora tentando de novo depois de uma recusa. */
+export function situacaoDaMensalidade(status: unknown, statusDoPagamento: unknown): 'paga' | 'recusada' | 'outra' {
+  if (statusDoPagamento === 'approved') return 'paga'
+  if (statusDoPagamento === 'rejected' || status === 'recycling') return 'recusada'
+  return 'outra'
+}
+
+/** O aviso de cada mensalidade (D-83): paga marca a data; recusada encerra a assinatura (D-80). */
+async function tratarMensalidade(id: string, deps: DependenciasDoWebhook): Promise<Feito> {
+  const lida = await deps.operadora('GET', `/authorized_payments/${encodeURIComponent(id)}`)
+  if (!lida) return feito('falha: operadora fora', 500)
+  const passageira = falhaPassageira(lida.status)
+  if (passageira) return passageira
+  if (!lida.ok) return feito('ignorado: mensalidade não existe na operadora')
+  const mensalidade = lida.dados
+  // Um 2xx sem corpo legível é leitura que falhou, não "não existe": o aviso volta.
+  if (!mensalidade) return feito('falha: resposta ilegível', 500)
+  const preapprovalId = textoCurto(mensalidade['preapproval_id'])
+  if (!preapprovalId) return feito('ignorado: mensalidade sem assinatura')
+  const pagamento = objeto(mensalidade['payment'])
+  const situacao = situacaoDaMensalidade(mensalidade['status'], pagamento?.['status'])
+  if (situacao === 'outra') return feito(`ignorado: mensalidade ${textoCurto(mensalidade['status']) ?? '?'}/${textoCurto(pagamento?.['status']) ?? '?'}`)
+
+  const agora = deps.agora()
+  // O dia da cobrança: o que a operadora diz, ou agora se ela não disser.
+  const quando = dataOuNula(mensalidade['debit_date']) ?? agora.toISOString()
+  const { linha, falha } = await deps.banco.lerDaOperadora(preapprovalId)
+  if (falha) return falhaNoBanco(deps, falha, 'ler a assinatura da mensalidade')
+  return situacao === 'paga'
+    ? registrarPaga(preapprovalId, linha, quando, agora, deps)
+    : cortarPorRecusa(preapprovalId, linha, quando, textoCurto(pagamento?.['status_detail']), agora, deps)
+}
+
+/** CA-394: a paga marca a data e, na ativa, a próxima cobrança. CB-97: na que não está ativa, só a data. */
+async function registrarPaga(preapprovalId: string, linha: LinhaDaAssinatura | null, quando: string, agora: Date, deps: DependenciasDoWebhook): Promise<Feito> {
+  if (!linha) return feito('ignorado: mensalidade paga sem linha')
+  const anotada = dataOuNula(linha.ultima_cobranca_paga)
+  const maisNova = anotada === null || Date.parse(quando) > Date.parse(anotada)
+  let proxima: string | null = null
+  if (linha.status === 'ativa') {
+    const assinatura = await deps.operadora('GET', `/preapproval/${encodeURIComponent(preapprovalId)}`)
+    // A data de hoje (a cobrança que acabou de cair) não conta: só a que passa de amanhã.
+    const daOperadora = assinatura?.ok ? dataDepoisDe(assinatura.dados?.['next_payment_date'], agora.getTime() + UM_DIA_MS) : null
+    // A prevista só sai da mensalidade mais nova: uma paga velha que chega atrasada não volta a data.
+    const prevista =
+      maisNova && ehCicloDaAssinatura(linha.ciclo) ? dataDepoisDe(previsaoDaProximaCobranca(new Date(quando), linha.ciclo), agora.getTime()) : null
+    proxima = daOperadora ?? prevista
+  }
+  if (!maisNova && !proxima) return feito('sem mudança: mensalidade já anotada')
+  const naoMudou = await mudarLinha(
+    deps,
+    linha.nutricionista_id,
+    preapprovalId,
+    {
+      atualizado_em: agora.toISOString(),
+      ...(maisNova ? { ultima_cobranca_paga: quando } : {}),
+      ...(proxima ? { proxima_cobranca: proxima } : {}),
+    },
+    'gravar a mensalidade paga',
+  )
+  return naoMudou ?? feito('mensalidade paga')
+}
+
+/**
+ * D-80 e CA-392: a primeira recusa encerra a assinatura na operadora e, só depois, aqui. A conta volta ao
+ * Free na hora.
+ *
+ * A ordem, em três passos:
+ *   1. anota na linha quem está encerrando (`recusa`) e quando, sem mexer no status: a conta continua no
+ *      plano pago;
+ *   2. cancela lá. Se não pegar, para aqui e o aviso volta. Cortar só aqui deixaria a operadora cobrando
+ *      de novo quem já está no Free, e se ela tentar de novo e a cobrança passar, a conta segue no plano;
+ *   3. grava o corte: cancelada, sem período.
+ * O passo 1 vem antes porque, assim que cancela lá, a operadora manda o aviso de "cancelada", que pode
+ * chegar antes do passo 3. Esse aviso lê a anotação e não troca a recusa por "operadora" (tratarAssinatura).
+ */
+async function cortarPorRecusa(
+  preapprovalId: string,
+  linha: LinhaDaAssinatura | null,
+  quando: string,
+  motivo: string | null,
+  agora: Date,
+  deps: DependenciasDoWebhook,
+): Promise<Feito> {
+  // CB-96: o mesmo aviso de novo (ou outra recusa da mesma assinatura) não muda nada nem cancela de novo.
+  if (linha?.status === 'cancelada') return feito('sem mudança: já cancelada')
+  if (linha) {
+    const naoAnotou = await mudarLinha(
+      deps,
+      linha.nutricionista_id,
+      preapprovalId,
+      { encerrada_por: 'recusa', encerrada_em: quando, atualizado_em: agora.toISOString() },
+      'anotar a recusa',
+    )
+    if (naoAnotou) return naoAnotou
+  }
+  const cancelamento = await tentarCancelarNaOperadora(deps.operadora, preapprovalId)
+  if (!cancelamento.cancelada) {
+    deps.log('CANCELAMENTO FALHOU: mensalidade recusada e a assinatura continua na operadora; o aviso volta:', preapprovalId, cancelamento.ultimoStatus)
+    return feito('falha: recusa sem cancelar', 500)
+  }
+  // CB-98: sem linha com esta assinatura (a pessoa já tem outra), só ela é afetada, e só lá.
+  if (!linha) return feito('cancelada: recusa sem linha')
+  const naoMudou = await mudarLinha(
+    deps,
+    linha.nutricionista_id,
+    preapprovalId,
+    { status: 'cancelada', expira_em: null, encerrada_por: 'recusa', encerrada_em: quando, atualizado_em: agora.toISOString() },
+    'gravar o corte por recusa',
+  )
+  return naoMudou ?? feito(`cortada: recusa${motivo ? ` (${motivo})` : ''}`)
 }
