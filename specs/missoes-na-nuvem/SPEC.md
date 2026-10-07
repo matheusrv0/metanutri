@@ -13,7 +13,7 @@ chegaria à nutricionista. O lado do paciente já usa a nuvem (`missoes_por_toke
 |---|---|
 | D-103 | Com conta, criar, gerar de novo ou mudar o link grava o acompanhamento **na nuvem e no aparelho**; remover apaga **nos dois**. Sem servidor (desenvolvimento), continua só no aparelho |
 | D-104 | A tela de Adesão (e o cartão do link no plano) **lê os links da conta na nuvem** ao abrir e ao voltar para a aba: as marcações do paciente vêm de lá. A cópia do aparelho continua para abrir sem internet |
-| D-105 | Links que só existem neste aparelho (criados antes desta correção) **sobem sozinhos** para a nuvem na primeira leitura com conta |
+| D-105 | Links que só existem neste aparelho (criados antes desta correção) **sobem sozinhos** para a nuvem na primeira leitura com conta. A cópia do aparelho guarda se o link **já esteve na nuvem**: o que já esteve e sumiu de lá foi apagado em outro aparelho, então sai deste também e nunca sobe de novo. Só sobe o que nunca esteve (dado antigo, sem essa marca, conta como nunca esteve) |
 
 ## 2. Critérios de aceite
 
@@ -29,3 +29,4 @@ chegaria à nutricionista. O lado do paciente já usa a nuvem (`missoes_por_toke
 
 - **CB-105** · O mesmo link mudado em dois aparelhos da nutricionista: vale o que está na nuvem.
 - **CB-106** · Sem internet ao abrir Adesão: mostra a cópia do aparelho e avisa que não conseguiu atualizar.
+- **CB-107** · Link apagado em outro aparelho não volta: some deste também na próxima leitura.
