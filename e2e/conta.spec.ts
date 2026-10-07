@@ -43,6 +43,37 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     await expect(page.getByRole('button', { name: 'Já confirmei, quero entrar' })).toHaveCount(0)
   })
 
+  test.describe('até confirmar, a pessoa fica na tela do código (D-93)', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript(() => {
+        if (!localStorage.getItem('metanutri:email-pendente')) localStorage.setItem('metanutri:email-pendente', JSON.stringify({ email: 'maria@exemplo.com', em: Date.now() }))
+      })
+    })
+
+    test('CA-415 e CA-417: ao abrir o site, cai na tela do código, sem logo-link e com "Errei o e-mail"', async ({ page }) => {
+      await page.goto('/#/inicio')
+      await expect(page.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeVisible()
+      await expect(page.getByText(/maria@exemplo\.com/)).toBeVisible()
+      await expect(page.getByRole('button', { name: 'MetaNutri, início' })).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Errei o e-mail' })).toBeVisible()
+    })
+
+    test('CA-416: Entrar volta para a tela do código; Termos continua abrindo', async ({ page }) => {
+      await page.goto('/#/entrar')
+      await expect(page.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeVisible()
+      await page.goto('/#/termos')
+      await expect(page.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeVisible()
+    })
+
+    test('CA-418: "Errei o e-mail" leva ao cadastro vazio e o site volta ao normal', async ({ page }) => {
+      await page.goto('/#/confirmar-email')
+      await page.getByRole('button', { name: 'Errei o e-mail' }).click()
+      await expect(page).toHaveURL(/#\/criar-conta$/)
+      await expect(page.getByLabel('E-mail')).toHaveValue('')
+      await expect(page.getByLabel('Nome completo')).toHaveValue('')
+    })
+  })
+
   test('CA-412: a troca de senha pede o e-mail, o código e a senha nova duas vezes', async ({ page }) => {
     await page.goto('/#/esqueci-senha/codigo')
     await expect(page.getByRole('heading', { level: 1, name: 'Crie uma senha nova' })).toBeVisible()

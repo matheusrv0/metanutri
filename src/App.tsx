@@ -65,6 +65,7 @@ import { useConta, type ResultadoConfirmacao } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './ui/fluxoConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
 import { TelaProdutos } from './ui/produtos/TelaProdutos.tsx'
@@ -74,9 +75,11 @@ import { MenuExportar } from './ui/exportar/MenuExportar.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { Estrutura } from './ui/layout/Estrutura.tsx'
 import type { CasoAtual } from './ui/layout/MenuLateral.tsx'
-import { ehRotaLivre, escreverRota, ETAPAS, rotaCriarConta } from './ui/navegacao.ts'
+import { ehRotaLivre, escreverRota, ETAPAS, rotaCriarConta, type Rota } from './ui/navegacao.ts'
 import { Redirecionar } from './ui/Redirecionar.tsx'
 import { useRota } from './ui/usarRota.ts'
+
+const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
 
 function Conteudo() {
   const [rota, navegar] = useRota()
@@ -94,9 +97,26 @@ function Conteudo() {
   const arm = armazenamentoLocal()
   const sessao = conta.sessao
 
+  // Cadastro feito e código ainda não digitado (D-93): a pessoa fica na tela do código. Vem do aparelho,
+  // para fechar e abrir o site também voltar para ela (CA-417); passa de 24 h, é esquecido (CB-103).
+  const [travado, setTravado] = useState<string | null>(() => lerEmailPendente(armazenamentoLocal(), new Date()))
+  // CB-104: com sessão aberta, o pendente não prende ninguém.
+  if (sessao && travado !== null) setTravado(null)
+  useEffect(() => {
+    if (sessao) esquecerEmailPendente(armazenamentoLocal())
+  }, [sessao])
+  const pendente = sessao ? null : travado
+
   const irParaCodigo = (email: string) => {
     setEmailPendente(email)
+    setTravado(email)
+    guardarEmailPendente(armazenamentoLocal(), email, new Date())
     navegar({ tela: 'confirmar-email' })
+  }
+
+  const esquecerPendente = () => {
+    setTravado(null)
+    esquecerEmailPendente(armazenamentoLocal())
   }
 
   // CA-407: segue para onde iria depois do cadastro. O destino guardado no cadastro vem
@@ -105,6 +125,7 @@ function Conteudo() {
     const guardado = tirarDestino(armazenamentoLocal())
     const marcado = confirmado.situacao ? destinoDepoisDoCadastro(confirmado.planoDesejado ?? null, 'mensal', confirmado.situacao) : null
     setEmailPendente(null)
+    esquecerPendente()
     navegar(guardado ?? marcado ?? { tela: 'painel' })
   }
 
@@ -176,6 +197,12 @@ function Conteudo() {
       Carregando…
     </div>
   )
+
+  // CA-416: com o e-mail pendente, o resto do site leva de volta para a tela do código.
+  if (pendente !== null && rota.tela !== 'confirmar-email' && rota.tela !== 'termos' && rota.tela !== 'privacidade') {
+    if (conta.disponivel && conta.carregando) return telaCarregando
+    if (!sessao) return <Redirecionar para={ROTA_CODIGO} navegar={navegar} />
+  }
 
   // Portão da conta (CA-148): com servidor, tela de trabalho pede sessão. O login
   // aparece no lugar da tela pedida, e ela abre sozinha quando a sessão chega (CA-137).
@@ -288,12 +315,17 @@ function Conteudo() {
   }
 
   if (rota.tela === 'confirmar-email') {
+    const errarEmail = () => {
+      esquecerPendente()
+      setEmailPendente(null)
+      navegar(rotaCriarConta(null, 'mensal'))
+    }
     return (
       <TelaConfirmarEmail
         conta={conta}
-        email={emailPendente}
+        email={pendente ?? emailPendente}
         vencido={rota.vencido === true}
-        aoIrParaInicio={() => navegar({ tela: 'inicio' })}
+        {...(pendente === null ? { aoIrParaInicio: () => navegar({ tela: 'inicio' }) } : { aoErreiOEmail: errarEmail })}
         aoConfirmado={aoEmailConfirmado}
       />
     )

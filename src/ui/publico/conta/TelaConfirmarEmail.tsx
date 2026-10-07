@@ -15,7 +15,10 @@ interface TelaConfirmarEmailProps {
   readonly email: string | null
   /** Chegou por um link antigo de confirmação, que venceu ou já foi usado (CA-414). */
   readonly vencido: boolean
-  readonly aoIrParaInicio: () => void
+  /** Sem ele, a logo não leva a lugar nenhum: o e-mail está pendente e a pessoa fica aqui (D-93). */
+  readonly aoIrParaInicio?: (() => void) | undefined
+  /** Só com o e-mail pendente: esquece o e-mail e volta ao cadastro (CA-418). */
+  readonly aoErreiOEmail?: (() => void) | undefined
   readonly aoConfirmado: (resultado: ResultadoConfirmacao) => void
 }
 
@@ -26,7 +29,7 @@ type Aviso = 'nada' | 'enviado' | ErroConta
  * CA-410). O e-mail não traz link: o antivírus do Microsoft 365 abre todo link sozinho e
  * confirmava a conta sem a dona da caixa.
  */
-export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoConfirmado }: TelaConfirmarEmailProps) {
+export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoErreiOEmail, aoConfirmado }: TelaConfirmarEmailProps) {
   const id = useId()
   const [digitado, setDigitado] = useState(email ?? '')
   const [codigo, setCodigo] = useState('')
@@ -106,6 +109,11 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoCo
         </Button>
       </form>
       <BotaoReenviar rotulo={vencido ? 'Pedir um código' : 'Reenviar o código'} aoReenviar={reenviar} />
+      {aoErreiOEmail ? (
+        <Button variant="link" size="lg" block onClick={aoErreiOEmail}>
+          Errei o e-mail
+        </Button>
+      ) : null}
     </MolduraConta>
   )
 }

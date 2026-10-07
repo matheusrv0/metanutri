@@ -5,6 +5,7 @@ import { App } from './App.tsx'
 import { CHAVE_DONO } from './domain/donoDosDados.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import type { ValorConta } from './ui/estado/usarConta.ts'
+import { CHAVE_EMAIL_PENDENTE, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { CHAVE_DESTINO } from './ui/fluxoConta.ts'
 import { contaFalsa } from './ui/publico/conta/contaFalsa.test-utils.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
@@ -480,6 +481,114 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
       expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '123456')
       expect(conta.trocarSenha).toHaveBeenCalledWith('novasenha1')
       expect(window.location.hash).toBe('#/painel')
+    })
+
+    describe('até confirmar, a pessoa fica na tela do código (D-93)', () => {
+      const guardar = () => guardarEmailPendente(localStorage, 'maria@exemplo.com', new Date())
+
+      it('CA-415: com o e-mail pendente, a logo não é link e só há Confirmar, Reenviar e "Errei o e-mail"', () => {
+        guardar()
+        window.location.hash = '#/confirmar-email'
+        render(tela())
+        expect(screen.queryByRole('button', { name: 'MetaNutri, início' })).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Reenviar o código' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Errei o e-mail' })).toBeInTheDocument()
+        expect(screen.getAllByRole('button')).toHaveLength(3)
+        expect(screen.queryByRole('link')).not.toBeInTheDocument()
+      })
+
+      it.each(['#/inicio', '#/precos', '#/entrar', '#/criar-conta', '#/painel', '#/esqueci-senha', '#/nova-senha/vencido'])(
+        'CA-416: com o e-mail pendente, %s volta para a tela do código com o e-mail preenchido',
+        async (hash) => {
+          guardar()
+          window.location.hash = hash
+          render(tela())
+          expect(await screen.findByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeInTheDocument()
+          expect(window.location.hash).toBe('#/confirmar-email')
+          expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()
+        },
+      )
+
+      it('CA-416: Termos de uso e Política de privacidade continuam abrindo', () => {
+        guardar()
+        window.location.hash = '#/termos'
+        const { unmount } = render(tela())
+        expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
+        unmount()
+        window.location.hash = '#/privacidade'
+        render(tela())
+        expect(screen.getByRole('heading', { level: 1, name: 'Política de privacidade' })).toBeInTheDocument()
+      })
+
+      it('CA-417: o cadastro guarda o e-mail no aparelho; abrir o site de novo cai na tela do código', async () => {
+        window.location.hash = '#/criar-conta'
+        const primeiro = render(tela())
+        const usuario = userEvent.setup()
+        await usuario.type(screen.getByLabelText('Nome completo'), 'Maria Souza')
+        await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
+        await usuario.type(screen.getByLabelText('Senha'), 'senhaforte1')
+        await usuario.click(screen.getByRole('checkbox', { name: /Li e aceito/ }))
+        await usuario.click(screen.getByRole('radio', { name: /Nutricionista/ }))
+        await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
+        await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '12345')
+        await usuario.click(screen.getByRole('checkbox', { name: 'Declaro que este CRN é meu e está ativo.' }))
+        await usuario.click(screen.getByRole('button', { name: /^Criar conta/ }))
+        expect(lerEmailPendente(localStorage, new Date())).toBe('maria@exemplo.com')
+        primeiro.unmount()
+
+        window.location.hash = '#/inicio'
+        render(tela())
+        expect(await screen.findByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeInTheDocument()
+        expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()
+      })
+
+      it('CA-418: "Errei o e-mail" esquece o pendente e abre Criar conta com os campos vazios', async () => {
+        guardar()
+        window.location.hash = '#/confirmar-email'
+        render(tela())
+        await userEvent.setup().click(screen.getByRole('button', { name: 'Errei o e-mail' }))
+        expect(window.location.hash).toBe('#/criar-conta')
+        expect(screen.getByLabelText('E-mail')).toHaveValue('')
+        expect(screen.getByLabelText('Nome completo')).toHaveValue('')
+        expect(localStorage.getItem(CHAVE_EMAIL_PENDENTE)).toBeNull()
+      })
+
+      it('CA-419: o código certo esquece o pendente', async () => {
+        guardar()
+        estado.conta = contaFalsa({ confirmarCodigo: vi.fn(async () => ({ ok: true, erro: null, situacao: 'nutricionista', planoDesejado: 'free' }) as const) })
+        window.location.hash = '#/confirmar-email'
+        render(tela())
+        const usuario = userEvent.setup()
+        await digitar(usuario, 'Código de 6 dígitos', '123456')
+        await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+        expect(localStorage.getItem(CHAVE_EMAIL_PENDENTE)).toBeNull()
+        expect(window.location.hash).toBe('#/painel')
+      })
+
+      it('CB-103: pendente de mais de 24 horas é esquecido e o site abre normal', () => {
+        guardarEmailPendente(localStorage, 'maria@exemplo.com', new Date(Date.now() - 25 * 3_600_000))
+        window.location.hash = '#/entrar'
+        render(tela())
+        expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+        expect(localStorage.getItem(CHAVE_EMAIL_PENDENTE)).toBeNull()
+      })
+
+      it('CB-104: com uma sessão aberta, o pendente não prende ninguém e é esquecido', async () => {
+        guardar()
+        estado.conta = comSessao('conta-1')
+        window.location.hash = '#/painel'
+        render(tela())
+        expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+        await waitFor(() => expect(localStorage.getItem(CHAVE_EMAIL_PENDENTE)).toBeNull())
+      })
+
+      it('CA-410: sem pendente, a tela do código aberta depois mantém a logo e não oferece "Errei o e-mail"', () => {
+        window.location.hash = '#/confirmar-email'
+        render(tela())
+        expect(screen.getByRole('button', { name: 'MetaNutri, início' })).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Errei o e-mail' })).not.toBeInTheDocument()
+      })
     })
 
     it('CA-414: o link antigo vencido continua abrindo a tela de link vencido', () => {
