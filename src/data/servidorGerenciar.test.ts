@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { EM_ANDAMENTO } from '../../supabase/functions/_shared/assinar.ts'
 import { RECUSA_PADRAO, UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
 import {
   desfechoDoCancelamento,
@@ -8,8 +9,8 @@ import {
   type Desfecho,
   type PedidoDeGerenciar,
 } from '../../supabase/functions/_shared/gerenciarAssinatura.ts'
-import type { RecusasContadas, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
-import { AGORA, cenario, linhaDe, responde } from './servidorFalsos.test-utils.ts'
+import type { Operadora, RecusasContadas, RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
+import { AGORA, cenario, linhaDe, responde, type Cenario } from './servidorFalsos.test-utils.ts'
 
 const CONTA = { id: 'u1', email: 'ana@exemplo.com' }
 const ATIVA = { nutricionista_id: 'u1', plano: 'solo', status: 'ativa', ciclo: 'mensal', preapproval_id: 'pre-1', cartao_final: '6351', proxima_cobranca: '2026-11-06T15:00:00.000Z' }
@@ -295,6 +296,14 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
     expect(sempre.log).toHaveBeenCalledWith('Cancelada na operadora, mas não gravada aqui:', 'pre-1', 'banco fora')
   })
 
+  it('cancelada lá sem nenhuma linha mudada aqui (outra assinatura entrou no lugar): 502 com a frase própria e o registro anota, sem tentar de novo', async () => {
+    const c = cenario([ATIVA], { [GET]: [responde(200, COBRADA)], [PUT]: [responde(200)] })
+    const mudar = vi.fn(async () => ({ linhas: 0, falha: null }))
+    expect(await gerenciarAssinatura(CANCELAR, { ...c.deps, banco: { ...c.banco, mudar } })).toEqual({ status: 502, corpo: { erro: GRAVADA_LA_SO } })
+    expect(mudar).toHaveBeenCalledTimes(1)
+    expect(c.log).toHaveBeenCalledWith('Cancelada na operadora, mas nenhuma linha mudou aqui:', 'pre-1')
+  })
+
   it('CA-379: trocar cartão manda o código novo lá antes de gravar a bandeira e o final aqui', async () => {
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(TROCOU)
@@ -395,7 +404,7 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     c.semearTentativas('u1', [...recusas(3, 23), { quando: antes(10), recusada: false }, ...recusas(2, 1)])
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(MUITAS)
-    expect(c.ordem).toEqual(['lerDaConta', 'contarRecusas'])
+    expect(c.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', 'soltarReserva'])
     expect(c.pedidos).toEqual([])
     expect(c.tentativas).toHaveLength(6)
     expect(c.assinaturas.get('u1')?.cartao_final).toBe('6351')
@@ -425,7 +434,7 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
     const c = cenario([ATIVA], { [PUT]: [responde(200)] })
     c.falhar('contarRecusas')
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(FALHOU)
-    expect(c.ordem).toEqual(['lerDaConta', 'contarRecusas'])
+    expect(c.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', 'soltarReserva'])
     expect(c.log).toHaveBeenCalledWith('Não consegui contar as tentativas de cartão:', 'banco fora')
   })
 
@@ -484,10 +493,10 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
   it('R4: o sucesso é anotado depois de gravar o cartão; a recusa, sem gravar nada', async () => {
     const trocou = cenario([ATIVA], { [PUT]: [responde(200)] })
     await gerenciarAssinatura(TROCAR, trocou.deps)
-    expect(trocou.ordem).toEqual(['lerDaConta', 'contarRecusas', PUT, 'mudar', 'anotarTentativa', 'apagarTentativasAntesDe'])
+    expect(trocou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', PUT, 'mudar', 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
     const recusou = cenario([ATIVA], { [PUT]: [RECUSA_DO_BANCO] })
     await gerenciarAssinatura(TROCAR, recusou.deps)
-    expect(recusou.ordem).toEqual(['lerDaConta', 'contarRecusas', PUT, 'anotarTentativa', 'apagarTentativasAntesDe'])
+    expect(recusou.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', PUT, 'anotarTentativa', 'apagarTentativasAntesDe', 'soltarReserva'])
   })
 
   it('R4: trocado lá e não gravado aqui (200) também zera as seguidas', async () => {
@@ -540,5 +549,133 @@ describe('trocar cartão: o limite de tentativas com cartão recusado (D-101)', 
     const c = cenario([ATIVA], { [PUT]: [responde(400, { message: 'Invalid card_token_id' })] })
     c.semearTentativas('u1', recusas(1, 2))
     expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual({ status: 402, corpo: { erro: RECUSA_PADRAO, codigo: 'token-invalido' } })
+  })
+})
+
+describe('trocar cartão: um pedido por vez por conta (CB-109, D-101)', () => {
+  const EM_ANDAMENTO_409 = { status: 409, corpo: { erro: EM_ANDAMENTO } }
+  /** A operadora do cenário, anotando o que a reserva da conta guardava em cada pedido. */
+  const espiarReserva = (c: Cenario) => {
+    const reservaNoPedido: unknown[] = []
+    const operadora: Operadora = (metodo, caminho, corpo) => {
+      reservaNoPedido.push(c.reservas.get('u1') ?? null)
+      return c.operadora(metodo, caminho, corpo)
+    }
+    return { operadora, reservaNoPedido }
+  }
+  const RESERVADA = expect.objectContaining({ desde: AGORA.toISOString() })
+
+  it('CB-109 e D-101: duas trocas ao mesmo tempo: um só PUT chega à operadora; a outra leva o 409 da assinar', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    const respostas = await Promise.all([gerenciarAssinatura(TROCAR, c.deps), gerenciarAssinatura(TROCAR, c.deps)])
+    expect(c.pedidos.filter((p) => p.metodo === 'PUT')).toHaveLength(1)
+    expect(respostas).toContainEqual(TROCOU)
+    expect(respostas).toContainEqual(EM_ANDAMENTO_409)
+    expect(c.reservas.size).toBe(0)
+  })
+
+  it('CB-109 e D-101: duas trocas ao mesmo tempo com cartão recusado: uma só recusa chega à operadora e é anotada', async () => {
+    const c = cenario([ATIVA], { [PUT]: [RECUSA_DO_BANCO] })
+    const respostas = await Promise.all([gerenciarAssinatura(TROCAR, c.deps), gerenciarAssinatura(TROCAR, c.deps)])
+    expect(c.pedidos).toHaveLength(1)
+    expect(respostas.map((r) => r.status).sort()).toEqual([402, 409])
+    expect(c.tentativas.filter((t) => t.recusada)).toHaveLength(1)
+    expect(c.reservas.size).toBe(0)
+  })
+
+  it.each<[string, RespostaDaOperadora | null, number]>([
+    ['sucesso', responde(200), 200],
+    ['recusa', RECUSA_DO_BANCO, 402],
+    ['falha de rede', null, 502],
+    ['erro do lado dela', responde(503), 502],
+  ])('CB-109 e D-101: a conta fica reservada durante o pedido à operadora e livre depois (%s)', async (_caso, resposta, status) => {
+    const c = cenario([ATIVA], { [PUT]: [resposta] })
+    const { operadora, reservaNoPedido } = espiarReserva(c)
+    expect((await gerenciarAssinatura(TROCAR, { ...c.deps, operadora })).status).toBe(status)
+    expect(reservaNoPedido).toEqual([RESERVADA])
+    expect(c.reservas.size).toBe(0)
+    expect(c.ordem.slice(0, 4)).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas'])
+    expect(c.ordem.at(-1)).toBe('soltarReserva')
+  })
+
+  it('CB-109 e D-101: a reserva é solta mesmo quando o pedido à operadora lança', async () => {
+    const c = cenario([ATIVA])
+    const reservaNoPedido: unknown[] = []
+    const operadora: Operadora = () => {
+      reservaNoPedido.push(c.reservas.get('u1') ?? null)
+      return Promise.reject(new Error('quebrou'))
+    }
+    await expect(gerenciarAssinatura(TROCAR, { ...c.deps, operadora })).rejects.toThrow('quebrou')
+    expect(reservaNoPedido).toEqual([RESERVADA])
+    expect(c.reservas.size).toBe(0)
+  })
+
+  it('CB-109 e D-101: o portão fechado e a contagem que falha também soltam a reserva', async () => {
+    const fechado = cenario([ATIVA], { [PUT]: [responde(200)] })
+    fechado.semearTentativas('u1', recusas(5, 1))
+    expect(await gerenciarAssinatura(TROCAR, fechado.deps)).toEqual(MUITAS)
+    const semContagem = cenario([ATIVA], { [PUT]: [responde(200)] })
+    semContagem.falhar('contarRecusas')
+    expect(await gerenciarAssinatura(TROCAR, semContagem.deps)).toEqual(FALHOU)
+    for (const c of [fechado, semContagem]) {
+      expect(c.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar', 'contarRecusas', 'soltarReserva'])
+      expect(c.reservas.size).toBe(0)
+      expect(c.pedidos).toEqual([])
+    }
+  })
+
+  it('CB-109: com outro pedido da conta em andamento, 409 sem contar nem chamar a operadora; a reserva do outro fica', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    c.comReserva('u1')
+    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(EM_ANDAMENTO_409)
+    expect(c.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar'])
+    expect(c.pedidos).toEqual([])
+    expect(c.reservas.has('u1')).toBe(true)
+  })
+
+  it('CB-109: a reserva de uma função que morreu no meio (mais de 5 min) sai antes; a mais nova, não', async () => {
+    const vencida = cenario([ATIVA], { [PUT]: [responde(200)] })
+    vencida.comReserva('u1', new Date(AGORA.getTime() - 5 * 60_000 - 1).toISOString())
+    expect(await gerenciarAssinatura(TROCAR, vencida.deps)).toEqual(TROCOU)
+    expect(vencida.reservas.size).toBe(0)
+
+    const recente = cenario([ATIVA], { [PUT]: [responde(200)] })
+    recente.comReserva('u1', new Date(AGORA.getTime() - 5 * 60_000 + 1).toISOString())
+    expect(await gerenciarAssinatura(TROCAR, recente.deps)).toEqual(EM_ANDAMENTO_409)
+    expect(recente.pedidos).toEqual([])
+  })
+
+  it('CB-109: a reserva guarda o cartão novo da troca, como a da assinar guarda o do pedido', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    const { operadora, reservaNoPedido } = espiarReserva(c)
+    await gerenciarAssinatura(TROCAR, { ...c.deps, operadora })
+    expect(reservaNoPedido).toEqual([expect.objectContaining({ cartao_bandeira: 'Visa', cartao_final: '5682' })])
+  })
+
+  it('CB-109: reservar que falha (sem ser a reserva de outro pedido): 502 "Nada mudou", sem contar nem chamar a operadora', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    c.falhar('reservar')
+    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(FALHOU)
+    expect(c.ordem).toEqual(['lerDaConta', 'soltarReservaVencida', 'reservar'])
+    expect(c.log).toHaveBeenCalledWith('Não consegui reservar a troca de cartão:', 'banco fora')
+  })
+
+  it('CB-109: apagar a reserva vencida e soltar a reserva no fim, quando falham, só vão para o registro', async () => {
+    const c = cenario([ATIVA], { [PUT]: [responde(200)] })
+    c.falhar('soltarReservaVencida')
+    c.falhar('soltarReserva')
+    expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual(TROCOU)
+    expect(c.log).toHaveBeenCalledWith('Não consegui apagar a reserva vencida:', 'banco fora')
+    expect(c.log).toHaveBeenCalledWith('Não consegui soltar a reserva da troca de cartão (ela vence em 5 minutos):', 'banco fora')
+  })
+
+  it.each<[string, PedidoDeGerenciar, Rotas]>([
+    ['prévia', PREVIA, { [GET]: [responde(200, COBRADA)] }],
+    ['cancelar', CANCELAR, { [GET]: [responde(200, COBRADA)], [PUT]: [responde(200)] }],
+  ])('CB-109: %s não usa a reserva (segue mesmo com outro pedido em andamento)', async (_caso, pedido, rotas) => {
+    const c = cenario([ATIVA], rotas)
+    c.comReserva('u1')
+    expect((await gerenciarAssinatura(pedido, c.deps)).status).toBe(200)
+    for (const consulta of ['soltarReservaVencida', 'reservar', 'soltarReserva']) expect(c.ordem).not.toContain(consulta)
   })
 })

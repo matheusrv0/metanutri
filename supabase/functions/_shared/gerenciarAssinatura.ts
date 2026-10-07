@@ -4,7 +4,9 @@
 //
 // D-81: só ganha "vale até o fim do período" quem já teve ao menos uma mensalidade cobrada. A prévia
 // (que a janela de cancelar mostra) e o cancelamento usam a mesma conta, desfechoDoCancelamento.
-// D-101: só a troca de cartão passa pelo portão das tentativas; a prévia e o cancelamento, não.
+// D-101 e CB-109: só a troca de cartão reserva a conta e passa pelo portão das tentativas; a prévia e
+// o cancelamento, não.
+import { EM_ANDAMENTO, RESERVA_VENCE_MS } from './assinar.ts'
 import {
   codigoDaRecusa,
   dataDepoisDe,
@@ -17,6 +19,7 @@ import {
   tokenDoCartao,
   traduzirStatus,
   UM_DIA_MS,
+  type CartaoInformado,
 } from './cobranca.ts'
 import { tentarCancelarNaOperadora } from './operadora.ts'
 import {
@@ -44,7 +47,7 @@ export interface PedidoDeGerenciar {
 
 export interface DependenciasDeGerenciar {
   readonly operadora: Operadora
-  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'mudar'> & BancoDasTentativas
+  readonly banco: Pick<BancoDaCobranca, 'lerDaConta' | 'mudar' | 'soltarReservaVencida' | 'reservar' | 'soltarReserva'> & BancoDasTentativas
   readonly agora: () => Date
   readonly log: Registro
 }
@@ -137,6 +140,13 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
       deps.log('Cancelada na operadora, mas não gravada aqui:', id, gravou.falha.mensagem)
       return erro(GRAVADA_LA_SO, 502)
     }
+    if (gravou.linhas === 0) {
+      // Nenhuma linha com esta assinatura (outra entrou no lugar entre ler e gravar): tentar de novo não
+      // muda isso, e "cancelada" não descreve a conta. Como na troca de cartão, fica no registro; a
+      // resposta é a da cancelada lá e não gravada aqui, e a tela relê o que o servidor tem.
+      deps.log('Cancelada na operadora, mas nenhuma linha mudou aqui:', id)
+      return erro(GRAVADA_LA_SO, 502)
+    }
     return { status: 200, corpo: { status: 'cancelada', expiraEm } }
   }
 
@@ -145,38 +155,60 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
     const cartaoToken = tokenDoCartao(corpo['card_token_id'])
     const cartao = lerCartao(corpo['cartao'])
     if (!cartaoToken || !cartao) return erro('Faltam os dados do cartão. Confira e tente de novo.', 400)
-    // D-101 (CA-433, CA-434): quem testa cartão roubado pela troca também não chega à operadora.
-    // Sem conseguir contar, o 502 diz "Nada mudou", como as outras falhas daqui.
-    const portao = await conferirTentativas(deps.banco, dono, agora, deps.log, FORA)
-    if (!portao.passa) return portao.resposta
-
-    const feito = await deps.operadora('PUT', caminho, { card_token_id: cartaoToken })
-    // Sem resposta, erro do lado dela, a nossa credencial recusada ou excesso de pedidos (R8): falha
-    // nossa, nunca recusa do cartão. Não é anotada (R4).
-    if (!feito || feito.status >= 500 || feito.status === 401 || feito.status === 403 || feito.status === 429) {
-      deps.log('A operadora não respondeu à troca de cartão:', feito?.status ?? 'sem resposta', id)
+    // CB-109: uma troca por conta de cada vez, para o portão contar cada recusa antes do pedido
+    // seguinte. A reserva da assinar (uma linha por conta) deixa um só pedido seguir; a de uma função
+    // que morreu no meio vence em 5 minutos. Ela guarda o cartão novo: a adoção do D-85 só lê o cartão
+    // da reserva numa conta sem assinatura paga ativa, e a troca só chega aqui com uma ativa.
+    const vencida = await deps.banco.soltarReservaVencida(dono, new Date(agora.getTime() - RESERVA_VENCE_MS).toISOString())
+    if (vencida) deps.log('Não consegui apagar a reserva vencida:', vencida.mensagem)
+    const reserva = await deps.banco.reservar(dono, cartao)
+    if (reserva) {
+      if (reserva.codigo === '23505') return erro(EM_ANDAMENTO, 409)
+      deps.log('Não consegui reservar a troca de cartão:', reserva.mensagem)
       return erro(FORA, 502)
     }
-    if (!feito.ok) {
-      const codigo = codigoDaRecusa(feito.dados)
-      deps.log('A operadora recusou o cartão novo:', feito.status, codigo, id)
-      // R4: só a recusa do cartão é anotada; token vencido e outra falha, não.
-      if (!ehRecusaDoCartao(codigo)) return erro(RECUSA_PADRAO, 402, codigo)
-      await anotarTentativaDeCartao(deps.banco, dono, true, agora, deps.log)
-      // CA-435: da segunda recusa seguida em diante, sem o motivo do banco.
-      return erro(RECUSA_PADRAO, 402, portao.seguidas >= 1 ? 'recusado' : codigo)
+    try {
+      return await trocarCartao(dono, id, cartaoToken, cartao, agora, deps)
+    } finally {
+      const naoSoltou = await deps.banco.soltarReserva(dono)
+      if (naoSoltou) deps.log('Não consegui soltar a reserva da troca de cartão (ela vence em 5 minutos):', naoSoltou.mensagem)
     }
-    const troca = { cartao_bandeira: cartao.bandeira, cartao_final: cartao.final, atualizado_em: agora.toISOString() }
-    let gravou = await deps.banco.mudar(dono, id, troca)
-    if (gravou.falha) gravou = await deps.banco.mudar(dono, id, troca)
-    // O cartão já foi trocado lá: se a gravação falhar, só a tela mostra o antigo até a próxima troca.
-    if (gravou.falha) deps.log('Cartão trocado na operadora, mas não gravado aqui:', id, gravou.falha.mensagem)
-    // Nenhuma linha com esta assinatura (outra entrou no lugar entre ler e gravar): tentar de novo não muda isso.
-    else if (gravou.linhas === 0) deps.log('Cartão trocado na operadora, mas nenhuma linha mudou aqui:', id)
-    // R4: o cartão novo valeu lá, então zera as recusas seguidas, mesmo sem gravar aqui.
-    await anotarTentativaDeCartao(deps.banco, dono, false, agora, deps.log)
-    return { status: 200, corpo: { cartao } }
   }
 
   return erro('Ação desconhecida.', 400)
+}
+
+/** CA-379 e D-101: o portão das tentativas e a troca na operadora, com a conta já reservada (CB-109). */
+async function trocarCartao(dono: string, id: string, cartaoToken: string, cartao: CartaoInformado, agora: Date, deps: DependenciasDeGerenciar): Promise<RespostaDaFuncao> {
+  // D-101 (CA-433, CA-434): com recusas demais, a troca também não chega à operadora. Sem conseguir
+  // contar, o 502 diz "Nada mudou", como as outras falhas daqui.
+  const portao = await conferirTentativas(deps.banco, dono, agora, deps.log, FORA)
+  if (!portao.passa) return portao.resposta
+
+  const feito = await deps.operadora('PUT', `/preapproval/${encodeURIComponent(id)}`, { card_token_id: cartaoToken })
+  // Sem resposta, erro do lado dela, a nossa credencial recusada ou excesso de pedidos (R8): falha
+  // nossa, nunca recusa do cartão. Não é anotada (R4).
+  if (!feito || feito.status >= 500 || feito.status === 401 || feito.status === 403 || feito.status === 429) {
+    deps.log('A operadora não respondeu à troca de cartão:', feito?.status ?? 'sem resposta', id)
+    return erro(FORA, 502)
+  }
+  if (!feito.ok) {
+    const codigo = codigoDaRecusa(feito.dados)
+    deps.log('A operadora recusou o cartão novo:', feito.status, codigo, id)
+    // R4: só a recusa do cartão é anotada; token vencido e outra falha, não.
+    if (!ehRecusaDoCartao(codigo)) return erro(RECUSA_PADRAO, 402, codigo)
+    await anotarTentativaDeCartao(deps.banco, dono, true, agora, deps.log)
+    // CA-435: da segunda recusa seguida em diante, sem o motivo do banco.
+    return erro(RECUSA_PADRAO, 402, portao.seguidas >= 1 ? 'recusado' : codigo)
+  }
+  const troca = { cartao_bandeira: cartao.bandeira, cartao_final: cartao.final, atualizado_em: agora.toISOString() }
+  let gravou = await deps.banco.mudar(dono, id, troca)
+  if (gravou.falha) gravou = await deps.banco.mudar(dono, id, troca)
+  // O cartão já foi trocado lá: se a gravação falhar, só a tela mostra o antigo até a próxima troca.
+  if (gravou.falha) deps.log('Cartão trocado na operadora, mas não gravado aqui:', id, gravou.falha.mensagem)
+  // Nenhuma linha com esta assinatura (outra entrou no lugar entre ler e gravar): tentar de novo não muda isso.
+  else if (gravou.linhas === 0) deps.log('Cartão trocado na operadora, mas nenhuma linha mudou aqui:', id)
+  // R4: o cartão novo valeu lá, então zera as recusas seguidas, mesmo sem gravar aqui.
+  await anotarTentativaDeCartao(deps.banco, dono, false, agora, deps.log)
+  return { status: 200, corpo: { cartao } }
 }
