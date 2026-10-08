@@ -3,6 +3,7 @@ import { crnDe, MENSAGEM_ERRO_SITUACAO, SITUACAO_VAZIA, validarSituacao, type Da
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { DialogoSair } from '../../conta/DialogoSair.tsx'
 import type { ValorPerfilConta } from '../../estado/usarPerfilConta.ts'
+import { useSaida } from '../../estado/usarSaida.ts'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { CamposSituacao } from './CamposSituacao.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
@@ -10,19 +11,20 @@ import { MolduraConta } from './MolduraConta.tsx'
 interface TelaCompletarCadastroProps {
   readonly email: string
   readonly informarSituacao: ValorPerfilConta['informarSituacao']
-  /** D-96: sai depois de perguntar se o computador é compartilhado. */
-  readonly aoSair: (apagarDoAparelho: boolean) => void
+  /** Sai da conta e apaga a cópia de trabalho deste navegador (spec dados-na-nuvem, D-131). */
+  readonly sair: () => Promise<void>
+  readonly aoSaiu: () => void
 }
 
 /** CB-68: conta sem situação (criada pelo painel do Supabase) informa uma vez, antes de usar. */
-export function TelaCompletarCadastro({ email, informarSituacao, aoSair }: TelaCompletarCadastroProps) {
+export function TelaCompletarCadastro({ email, informarSituacao, sair, aoSaiu }: TelaCompletarCadastroProps) {
   const id = useId()
   const [dados, setDados] = useState<DadosSituacao>(SITUACAO_VAZIA)
   const [erro, setErro] = useState<ErroSituacao | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
-  const [perguntandoSair, setPerguntandoSair] = useState(false)
-  const [saindo, setSaindo] = useState(false)
+  // D-131: só "Sair"; a pergunta (CA-479) só quando há mudança que não chegou à nuvem.
+  const saida = useSaida({ sair }, aoSaiu)
   const enviandoRef = useRef(false)
 
   const enviar = async (evento: FormEvent) => {
@@ -44,7 +46,7 @@ export function TelaCompletarCadastro({ email, informarSituacao, aoSair }: TelaC
     <MolduraConta
       titulo="Complete seu cadastro"
       subtitulo={`Falta dizer quem você é para usar o MetaNutri com ${email}.`}
-      aoIrParaInicio={() => setPerguntandoSair(true)}
+      aoIrParaInicio={() => void saida.pedirSair()}
     >
       <form onSubmit={(e) => void enviar(e)} noValidate className="flex flex-col gap-4">
         <CamposSituacao id={id} valor={dados} aoMudar={setDados} erro={erro} />
@@ -55,21 +57,14 @@ export function TelaCompletarCadastro({ email, informarSituacao, aoSair }: TelaC
         </Button>
         <button
           type="button"
-          onClick={() => setPerguntandoSair(true)}
+          onClick={() => void saida.pedirSair()}
+          disabled={saida.saindo}
           className="inline-flex min-h-11 items-center self-center text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           Sair
         </button>
       </form>
-      <DialogoSair
-        aberto={perguntandoSair}
-        saindo={saindo}
-        aoFechar={() => setPerguntandoSair(false)}
-        aoSair={(apagar) => {
-          setSaindo(true)
-          aoSair(apagar)
-        }}
-      />
+      <DialogoSair aberto={saida.perguntando} saindo={saida.saindo} aoFicar={saida.ficar} aoSairMesmoAssim={() => void saida.sairMesmoAssim()} />
     </MolduraConta>
   )
 }

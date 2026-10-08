@@ -142,7 +142,7 @@ describe('useConta', () => {
     expect(result.current.emRecuperacao).toBe(false)
   })
 
-  describe('sair (D-96, D-124)', () => {
+  describe('sair (spec dados-na-nuvem, D-131)', () => {
     const comSessao = () =>
       auth.getSession.mockResolvedValueOnce({ data: { session: { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } } } } as never)
 
@@ -151,43 +151,45 @@ describe('useConta', () => {
       localStorage.setItem('metanutri:conta:u1:casos', '["c1"]')
       localStorage.setItem('metanutri:conta:u1:caso:c1', '{"nome":"Ana"}')
       localStorage.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"}]')
+      localStorage.setItem('metanutri:conta:u1:nuvem', '{"versao":null,"mudancas":0,"salvas":0,"itens":0}')
       localStorage.setItem('metanutri:conta:u2:pacientes', '[{"id":"p2"}]')
       localStorage.setItem('metanutri:dono', 'u2')
       localStorage.setItem('metanutri:tema', 'escuro')
     })
 
-    it('CA-469: sair e apagar leva só os dados da conta que sai; os de outra conta e o tema ficam', async () => {
+    it('CA-478: sair, sem pergunta, apaga a cópia de trabalho da conta que sai; os dados de outra conta e o tema ficam', async () => {
       comSessao()
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
       await act(async () => {
-        await result.current.sair({ apagarDoAparelho: true })
+        await result.current.sair()
       })
-      for (const chave of ['metanutri:conta:u1:casos', 'metanutri:conta:u1:caso:c1', 'metanutri:conta:u1:pacientes']) expect(localStorage.getItem(chave), chave).toBeNull()
+      expect(Object.keys(localStorage).filter((chave) => chave.startsWith('metanutri:conta:u1:'))).toEqual([])
       expect(localStorage.getItem('metanutri:conta:u2:pacientes')).toBe('[{"id":"p2"}]')
       expect(localStorage.getItem('metanutri:dono')).toBe('u2')
       expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
       expect(auth.signOut).toHaveBeenCalledOnce()
     })
 
-    it('CA-423: só sair mantém os dados deste navegador', async () => {
+    it('CA-478: a conta que sai é dona dos dados de antes: eles saem junto', async () => {
+      localStorage.setItem('metanutri:dono', 'u1')
+      localStorage.setItem('metanutri:pacientes', '[{"id":"antigo"}]')
       comSessao()
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
       await act(async () => {
-        await result.current.sair({ apagarDoAparelho: false })
+        await result.current.sair()
       })
-      expect(localStorage.getItem('metanutri:conta:u1:caso:c1')).toBe('{"nome":"Ana"}')
-      expect(localStorage.getItem('metanutri:dono')).toBe('u2')
-      expect(auth.signOut).toHaveBeenCalledOnce()
+      expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
+      expect(localStorage.getItem('metanutri:dono')).toBeNull()
     })
 
-    it('DP-10: sem sessão, sair e apagar não apaga nada', async () => {
+    it('DP-10: sem sessão, sair não apaga nada', async () => {
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.carregando).toBe(false))
       const antes = JSON.stringify({ ...localStorage })
       await act(async () => {
-        await result.current.sair({ apagarDoAparelho: true })
+        await result.current.sair()
       })
       expect(JSON.stringify({ ...localStorage })).toBe(antes)
     })

@@ -1,67 +1,41 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DialogoSair } from './DialogoSair.tsx'
 
 function montar(saindo = false) {
-  const aoSair = vi.fn()
-  const aoFechar = vi.fn()
-  render(<DialogoSair aberto saindo={saindo} aoFechar={aoFechar} aoSair={aoSair} />)
-  return { aoSair, aoFechar, usuario: userEvent.setup() }
+  const aoFicar = vi.fn()
+  const aoSairMesmoAssim = vi.fn()
+  render(<DialogoSair aberto saindo={saindo} aoFicar={aoFicar} aoSairMesmoAssim={aoSairMesmoAssim} />)
+  return { aoFicar, aoSairMesmoAssim, usuario: userEvent.setup() }
 }
 
-describe('DialogoSair (D-96)', () => {
-  it('CA-423: pergunta se o computador é compartilhado, com "Só sair" e "Sair e apagar os meus dados deste aparelho"', () => {
+describe('DialogoSair (spec dados-na-nuvem, D-131)', () => {
+  it('CA-479: avisa que as mudanças que não foram para a nuvem se perdem, com "Ficar" e "Sair mesmo assim"', () => {
     montar()
-    const janela = screen.getByRole('dialog', { name: 'Sair da conta' })
-    expect(janela).toHaveTextContent('Outras pessoas usam este computador? Apague os seus pacientes e planos guardados neste navegador.')
-    expect(screen.getByRole('button', { name: 'Só sair' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
+    const janela = screen.getByRole('dialog')
+    expect(janela).toHaveTextContent('Há mudanças que ainda não foram salvas na nuvem. Se sair agora, elas se perdem.')
+    expect(screen.getByRole('button', { name: 'Ficar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sair mesmo assim' })).toBeInTheDocument()
+    expect(janela).not.toHaveTextContent(/apagar|Só sair/i)
   })
 
-  it('CA-423: o foco começa em "Só sair", a opção que não perde nada', () => {
+  it('CA-479: o foco começa em "Ficar", a escolha que não perde nada', () => {
     montar()
-    expect(screen.getByRole('button', { name: 'Só sair' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Ficar' })).toHaveFocus()
   })
 
-  it('CA-423: "Só sair" sai sem apagar', async () => {
-    const { aoSair, usuario } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Só sair' }))
-    expect(aoSair).toHaveBeenCalledExactlyOnceWith(false)
-  })
-
-  it('CA-424: escolher apagar avisa que o que não foi para a nuvem se perde e pede confirmação', async () => {
-    const { aoSair, usuario } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
-    expect(aoSair).not.toHaveBeenCalled()
-
-    const janela = screen.getByRole('dialog', { name: 'Apagar os seus dados deste aparelho?' })
-    expect(janela).toHaveTextContent('O que você não enviou para a nuvem em Configurações se perde.')
-    expect(screen.getByRole('button', { name: 'Voltar' })).toHaveFocus()
-
-    await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
-    expect(aoSair).toHaveBeenCalledExactlyOnceWith(true)
-  })
-
-  it('CA-424: o segundo clique de um duplo clique em "Sair e apagar" não confirma', async () => {
-    const { aoSair, usuario } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
-    // No navegador, o segundo clique cai no botão que acabou de aparecer no mesmo lugar, com detail 2.
-    fireEvent.click(screen.getByRole('button', { name: 'Apagar e sair' }), { detail: 2 })
-    expect(aoSair).not.toHaveBeenCalled()
-  })
-
-  it('CA-424: "Voltar" volta à pergunta sem apagar nada', async () => {
-    const { aoSair, usuario } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
-    await usuario.click(screen.getByRole('button', { name: 'Voltar' }))
-    expect(screen.getByRole('dialog', { name: 'Sair da conta' })).toBeInTheDocument()
-    expect(aoSair).not.toHaveBeenCalled()
+  it('CA-479: "Ficar" fecha sem sair; "Sair mesmo assim" sai', async () => {
+    const { aoFicar, aoSairMesmoAssim, usuario } = montar()
+    await usuario.click(screen.getByRole('button', { name: 'Ficar' }))
+    expect(aoFicar).toHaveBeenCalledOnce()
+    expect(aoSairMesmoAssim).not.toHaveBeenCalled()
+    await usuario.click(screen.getByRole('button', { name: 'Sair mesmo assim' }))
+    expect(aoSairMesmoAssim).toHaveBeenCalledOnce()
   })
 
   it('enquanto sai, os botões não aceitam outro clique', () => {
     montar(true)
-    expect(screen.getByRole('button', { name: /Só sair/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Ficar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Sair mesmo assim/ })).toBeDisabled()
   })
 })

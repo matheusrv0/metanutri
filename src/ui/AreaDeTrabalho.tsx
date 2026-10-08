@@ -62,8 +62,8 @@ interface AreaDeTrabalhoProps {
   readonly pedidoEstudante: ValorPedidoEstudante
   readonly aprovacoes: ValorAprovacoes
   readonly negocio: ValorNegocio
-  /** Depois de sair da conta (D-96); `apagou` diz se os dados dela neste aparelho foram apagados. */
-  readonly depoisDeSair: (apagou: boolean) => void
+  /** Depois de sair da conta; a cópia de trabalho do navegador já foi apagada (spec dados-na-nuvem, D-131). */
+  readonly depoisDeSair: () => void
 }
 
 /**

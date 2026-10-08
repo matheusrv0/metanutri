@@ -5,6 +5,7 @@ import { planoPorId, PLANOS, type Ciclo } from '@/domain/conta.ts'
 import { formatarDataLonga, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import type { Crn, PerfilConta } from '@/domain/situacao.ts'
 import { useAssinatura } from '../estado/usarAssinatura.ts'
+import { useSaida } from '../estado/usarSaida.ts'
 import { ehPlanoPago, type PlanoPago } from '../navegacao.ts'
 import { AvisoPagamento } from '../pagamento/AvisoPagamento.tsx'
 import type { CriarProcessador } from '../pagamento/processadorCartao.ts'
@@ -43,8 +44,8 @@ interface TelaContaProps {
   readonly corrigirCrn: (crn: Crn) => Promise<string | null>
   /** CA-304: estudante sem pedido ou recusada vai para Comprovar matrícula. */
   readonly aoEnviarComprovante: () => void
-  /** Depois de sair. `apagou`: os dados deste navegador foram apagados (D-96). */
-  readonly aoSaiu: (apagou: boolean) => void
+  /** Depois de sair; a cópia de trabalho deste navegador já foi apagada (spec dados-na-nuvem, D-131). */
+  readonly aoSaiu: () => void
 }
 
 /** Estado da conta: quem está conectado, qual plano, o cartão que paga e o que fazer sem conta (spec checkout-proprio, US-B2). */
@@ -64,8 +65,8 @@ export function TelaConta({
   aoEnviarComprovante,
   aoSaiu,
 }: TelaContaProps) {
-  const [saindo, setSaindo] = useState(false)
-  const [perguntandoSair, setPerguntandoSair] = useState(false)
+  // D-131: só "Sair"; a pergunta (CA-479) só quando há mudança que não chegou à nuvem.
+  const saida = useSaida(conta, aoSaiu)
   const { assinatura, recarregar, cancelar, previaDoCancelamento, trocarCartao } = useAssinatura(conta.sessao?.id ?? null)
   const [formando, setFormando] = useState(false)
   // O status de quando a confirmação abriu: se a linha mudar com ela aberta, o texto ficaria errado, então ela fecha.
@@ -84,14 +85,6 @@ export function TelaConta({
   const linhaCobranca = linhaDaCobranca(assinatura)
   const recado = recadoDaAssinatura(assinatura)
   const inicial = (conta.sessao?.nome.trim()[0] ?? conta.sessao?.email[0] ?? '?').toUpperCase()
-
-  const sair = async (apagarDoAparelho: boolean) => {
-    setSaindo(true)
-    await conta.sair({ apagarDoAparelho })
-    setSaindo(false)
-    setPerguntandoSair(false)
-    aoSaiu(apagarDoAparelho)
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,8 +106,8 @@ export function TelaConta({
               <p className="font-titulo text-lg font-semibold text-heading">{conta.sessao.nome}</p>
               <p className="truncate text-sm text-muted-foreground">{conta.sessao.email}</p>
             </div>
-            <Button variant="outline" onClick={() => setPerguntandoSair(true)} disabled={saindo}>
-              {saindo ? 'Saindo…' : 'Sair'}
+            <Button variant="outline" onClick={() => void saida.pedirSair()} disabled={saida.saindo}>
+              {saida.saindo ? 'Saindo…' : 'Sair'}
             </Button>
           </div>
         ) : conta.disponivel ? (
@@ -239,7 +232,7 @@ export function TelaConta({
         ) : null}
       </Card>
 
-      <DialogoSair aberto={perguntandoSair} saindo={saindo} aoFechar={() => setPerguntandoSair(false)} aoSair={(apagar) => void sair(apagar)} />
+      <DialogoSair aberto={saida.perguntando} saindo={saida.saindo} aoFicar={saida.ficar} aoSairMesmoAssim={() => void saida.sairMesmoAssim()} />
 
       <DialogoMeFormei
         aberto={formando}

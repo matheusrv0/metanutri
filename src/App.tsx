@@ -112,11 +112,12 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
 
   const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
-  // D-96: sem sessão, a área de trabalho e os dados da conta saem da tela. Depois de apagar,
-  // recarregar também descarta o que ainda estava a caminho (uma leitura da nuvem, por exemplo).
-  const depoisDeSair = (apagou: boolean) => {
+  // D-96: sem sessão, a área de trabalho e os dados da conta saem da tela. Sair apaga a cópia de
+  // trabalho (spec dados-na-nuvem, D-131); recarregar também descarta o que ainda estava a caminho
+  // (uma leitura da nuvem, por exemplo).
+  const depoisDeSair = () => {
     navegar({ tela: 'inicio' })
-    if (apagou) globalThis.location.reload()
+    globalThis.location.reload()
   }
 
   // A área de trabalho e o link do paciente leem os dados da conta e remontam quando ela muda
@@ -182,7 +183,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
         <TelaCompletarCadastro
           email={sessao.email}
           informarSituacao={perfilConta.informarSituacao}
-          aoSair={(apagarDoAparelho) => void conta.sair({ apagarDoAparelho }).then(() => depoisDeSair(apagarDoAparelho))}
+          sair={conta.sair}
+          aoSaiu={depoisDeSair}
         />
       )
     }

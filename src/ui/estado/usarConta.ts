@@ -56,8 +56,11 @@ export interface ValorConta {
   /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
   readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
   readonly trocarSenha: (senha: string) => Promise<Resultado>
-  /** D-96: com `apagarDoAparelho`, apaga antes os dados desta conta guardados neste navegador; os de outras contas ficam (D-124). */
-  readonly sair: (opcoes?: { readonly apagarDoAparelho?: boolean }) => Promise<void>
+  /**
+   * D-131 (spec dados-na-nuvem): sai e apaga a cópia de trabalho desta conta neste navegador; os dados
+   * dela estão na nuvem. Os de outras contas ficam (D-124). Quem chama para a nuvem antes (DP-11).
+   */
+  readonly sair: () => Promise<void>
 }
 
 const SEM_SERVIDOR: Resultado = { ok: false, erro: 'sem-servidor' }
@@ -242,10 +245,11 @@ export function useConta(): ValorConta {
 
   const usuarioId = sessao?.id ?? null
   const sair = useCallback(
-    async (opcoes: { readonly apagarDoAparelho?: boolean } = {}) => {
-      // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador compartilhado.
-      // Só o espaço de quem sai (D-124); sem sessão, não há conta saindo (DP-10).
-      if (opcoes.apagarDoAparelho && usuarioId !== null) apagarDadosDaConta(armazenamentoLocal(), usuarioId)
+    async () => {
+      // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador (D-131).
+      // Só o espaço de quem sai, e os dados de antes de que ela é dona (D-124); sem sessão, não há
+      // conta saindo (DP-10).
+      if (usuarioId !== null) apagarDadosDaConta(armazenamentoLocal(), usuarioId)
       const c = obterSupabase()
       if (!c) return
       await c.auth.signOut()

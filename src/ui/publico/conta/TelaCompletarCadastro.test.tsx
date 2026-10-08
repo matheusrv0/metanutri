@@ -5,7 +5,7 @@ import { TelaCompletarCadastro } from './TelaCompletarCadastro.tsx'
 describe('TelaCompletarCadastro (CB-68)', () => {
   it('pede a situação e grava pelo servidor', async () => {
     const informarSituacao = vi.fn(async () => null)
-    render(<TelaCompletarCadastro email="ana@gmail.com" informarSituacao={informarSituacao} aoSair={vi.fn()} />)
+    render(<TelaCompletarCadastro email="ana@gmail.com" informarSituacao={informarSituacao} sair={vi.fn(async () => undefined)} aoSaiu={vi.fn()} />)
     const usuario = userEvent.setup()
     expect(screen.getByRole('heading', { level: 1, name: 'Complete seu cadastro' })).toBeInTheDocument()
     await usuario.click(screen.getByRole('radio', { name: /Nutricionista/ }))
@@ -18,7 +18,7 @@ describe('TelaCompletarCadastro (CB-68)', () => {
 
   it('mostra o erro que o servidor devolve', async () => {
     const informarSituacao = vi.fn(async () => 'Sua situação já está registrada.')
-    render(<TelaCompletarCadastro email="julia@ufrn.edu.br" informarSituacao={informarSituacao} aoSair={vi.fn()} />)
+    render(<TelaCompletarCadastro email="julia@ufrn.edu.br" informarSituacao={informarSituacao} sair={vi.fn(async () => undefined)} aoSaiu={vi.fn()} />)
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('radio', { name: /Estudante de Nutrição/ }))
     await usuario.click(screen.getByRole('checkbox', { name: 'Declaro ter matrícula ativa no curso de Nutrição.' }))
@@ -26,14 +26,13 @@ describe('TelaCompletarCadastro (CB-68)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Sua situação já está registrada.')
   })
 
-  it('CA-423: "Sair" também pergunta se o computador é compartilhado', async () => {
-    const aoSair = vi.fn()
-    render(<TelaCompletarCadastro email="ana@gmail.com" informarSituacao={vi.fn(async () => null)} aoSair={aoSair} />)
-    const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Sair' }))
-    expect(aoSair).not.toHaveBeenCalled()
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
-    await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
-    expect(aoSair).toHaveBeenCalledExactlyOnceWith(true)
+  it('CA-478: "Sair" sai sem perguntar sobre apagar', async () => {
+    const sair = vi.fn(async () => undefined)
+    const aoSaiu = vi.fn()
+    render(<TelaCompletarCadastro email="ana@gmail.com" informarSituacao={vi.fn(async () => null)} sair={sair} aoSaiu={aoSaiu} />)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sair' }))
+    expect(sair).toHaveBeenCalledOnce()
+    expect(aoSaiu).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

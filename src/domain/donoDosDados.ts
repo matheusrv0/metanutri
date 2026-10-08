@@ -337,7 +337,7 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
 }
 
 /**
- * D-124: "Sair e apagar os meus dados deste aparelho" leva só o espaço da conta que sai. Se ela é a
+ * D-124 e D-131 (spec dados-na-nuvem): sair leva só o espaço da conta que sai. Se ela é a
  * dona dos dados sem prefixo, eles vão junto, e ela deixa de ser dona.
  */
 export function apagarDadosDaConta(base: ArmazenamentoListavel | null, usuarioId: string): void {
