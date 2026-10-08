@@ -83,6 +83,24 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     await expect(page.getByLabel('Repita a senha')).toBeVisible()
   })
 
+  test('CA-463: sem a chave pública, as telas de conta não pedem o script da verificação', async ({ page }) => {
+    const doCloudflare: string[] = []
+    page.on('request', (pedido) => {
+      if (pedido.url().includes('challenges.cloudflare.com')) doCloudflare.push(pedido.url())
+    })
+    for (const [rota, titulo] of [
+      ['/#/entrar', 'Entrar'],
+      ['/#/criar-conta', 'Crie sua conta'],
+      ['/#/esqueci-senha', 'Esqueci a senha'],
+      ['/#/esqueci-senha/codigo', 'Crie uma senha nova'],
+      ['/#/confirmar-email', 'Confira seu e-mail'],
+    ] as const) {
+      await page.goto(rota)
+      await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible()
+    }
+    expect(doCloudflare).toEqual([])
+  })
+
   for (const rota of ['/#/criar-conta', '/#/criar-conta/estudante', '/#/criar-conta/solo', '/#/entrar', '/#/termos', '/#/privacidade', '/#/confirmar-email', '/#/esqueci-senha/codigo']) {
     test(`CB-48: ${rota} cabe em 360 px sem rolagem para o lado`, async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 740 })

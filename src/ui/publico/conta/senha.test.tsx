@@ -6,6 +6,7 @@ import { TelaCodigoSenha } from './TelaCodigoSenha.tsx'
 import { TelaConfirmarEmail } from './TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './TelaNovaSenha.tsx'
+import { ligarTurnstileFalso } from './turnstileFalso.test-utils.ts'
 
 const campoCodigo = () => screen.getByLabelText('Código de 8 dígitos')
 
@@ -348,5 +349,148 @@ describe('TelaNovaSenha (link antigo)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
     expect(conta.trocarSenha).toHaveBeenCalledWith('novasenha1')
     expect(aoSenhaTrocada).toHaveBeenCalledOnce()
+  })
+})
+
+describe('TelaEsqueciSenha com a verificação contra robôs (spec seguranca-lote-3)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-456: "Mandar o código" leva a verificação, com a ação de recuperar, logo acima do botão', async () => {
+    const falso = ligarTurnstileFalso()
+    const conta = contaFalsa()
+    const aoEnviado = vi.fn()
+    render(<TelaEsqueciSenha conta={conta} aoEnviado={aoEnviado} aoIrParaInicio={vi.fn()} aoEntrar={vi.fn()} />)
+    await falso.pronto()
+    expect(falso.ativo().opcoes.action).toBe('recuperar')
+    expect(falso.ativo().alvo.nextElementSibling).toBe(screen.getByRole('button', { name: 'Mandar o código' }))
+    falso.aprovar('tok-senha')
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
+    await usuario.click(screen.getByRole('button', { name: 'Mandar o código' }))
+    expect(conta.pedirTrocaDeSenha).toHaveBeenCalledWith('maria@exemplo.com', 'tok-senha')
+    expect(aoEnviado).toHaveBeenCalledWith('maria@exemplo.com')
+  })
+
+  it('CA-460: o servidor recusa a verificação: a tela pede para tentar de novo e fica onde está', async () => {
+    const falso = ligarTurnstileFalso()
+    const conta = contaFalsa({ pedirTrocaDeSenha: vi.fn(async () => ({ ok: false, erro: 'verificacao-recusada' as const })) })
+    const aoEnviado = vi.fn()
+    render(<TelaEsqueciSenha conta={conta} aoEnviado={aoEnviado} aoIrParaInicio={vi.fn()} aoEntrar={vi.fn()} />)
+    await falso.pronto()
+    falso.aprovar('tok-senha')
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
+    await usuario.click(screen.getByRole('button', { name: 'Mandar o código' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para confirmar que é você. Tente de novo.')
+    expect(falso.api.reset).toHaveBeenCalledWith('widget-1')
+    expect(aoEnviado).not.toHaveBeenCalled()
+  })
+
+  it('CA-461: sem o script, "Mandar o código" segue sem a verificação; se o servidor exigir, a tela diz que a verificação não carregou', async () => {
+    const falso = ligarTurnstileFalso({ carregado: false })
+    const conta = contaFalsa({ pedirTrocaDeSenha: vi.fn(async () => ({ ok: false, erro: 'verificacao-nao-carregou' as const })) })
+    const aoEnviado = vi.fn()
+    render(<TelaEsqueciSenha conta={conta} aoEnviado={aoEnviado} aoIrParaInicio={vi.fn()} aoEntrar={vi.fn()} />)
+    await falso.falharScript()
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
+    await usuario.click(screen.getByRole('button', { name: 'Mandar o código' }))
+    expect(conta.pedirTrocaDeSenha).toHaveBeenCalledWith('maria@exemplo.com')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
+    )
+    expect(aoEnviado).not.toHaveBeenCalled()
+  })
+})
+
+describe('TelaConfirmarEmail com a verificação contra robôs (spec seguranca-lote-3)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-457: "Reenviar o código" leva a verificação; "Confirmar" não usa nem gasta a verificação', async () => {
+    const falso = ligarTurnstileFalso()
+    const conta = contaFalsa()
+    montarConfirmar({ conta })
+    await falso.pronto()
+    expect(falso.ativo().opcoes.action).toBe('reenviar')
+    falso.aprovar('tok-1')
+    const usuario = userEvent.setup()
+    await usuario.type(campoCodigo(), '12345678')
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(conta.confirmarCodigo).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
+    expect(falso.api.reset).not.toHaveBeenCalled()
+    await usuario.click(screen.getByRole('button', { name: 'Reenviar o código' }))
+    expect(conta.reenviarConfirmacao).toHaveBeenCalledWith('maria@exemplo.com', 'tok-1')
+    expect(falso.api.reset).toHaveBeenCalledWith('widget-1')
+  })
+
+  it('CA-458: reenviar antes de a verificação terminar pede para esperar, e o botão não entra na espera de 60 s', async () => {
+    const falso = ligarTurnstileFalso()
+    const conta = contaFalsa()
+    montarConfirmar({ conta })
+    await falso.pronto()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Reenviar o código' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Espere a verificação de segurança terminar.')
+    expect(conta.reenviarConfirmacao).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Reenviar o código' })).toBeEnabled()
+  })
+
+  it('CA-461: sem o script, "Reenviar o código" segue sem a verificação; se o servidor exigir, a tela diz que a verificação não carregou', async () => {
+    const falso = ligarTurnstileFalso({ carregado: false })
+    const conta = contaFalsa({ reenviarConfirmacao: vi.fn(async () => ({ ok: false, erro: 'verificacao-nao-carregou' as const })) })
+    montarConfirmar({ conta })
+    await falso.falharScript()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Reenviar o código' }))
+    expect(conta.reenviarConfirmacao).toHaveBeenCalledWith('maria@exemplo.com')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
+    )
+  })
+
+  it('CA-462: a verificação fica logo acima de "Reenviar o código"', async () => {
+    const falso = ligarTurnstileFalso()
+    montarConfirmar()
+    await falso.pronto()
+    expect(falso.ativo().alvo.nextElementSibling).toBe(screen.getByRole('button', { name: 'Reenviar o código' }))
+  })
+
+  it('CB-117: clique duplo em "Reenviar o código" manda um pedido só e gasta uma verificação só', async () => {
+    const falso = ligarTurnstileFalso()
+    const { promessa, resolver } = pedidoPendurado()
+    const conta = contaFalsa({ reenviarConfirmacao: vi.fn(() => promessa) })
+    montarConfirmar({ conta })
+    await falso.pronto()
+    falso.aprovar('tok-1')
+    await userEvent.setup().dblClick(screen.getByRole('button', { name: 'Reenviar o código' }))
+    resolver({ ok: true, erro: null })
+    await waitFor(() => expect(screen.getByRole('button', { name: /Reenviar em 60 s/ })).toBeInTheDocument())
+    expect(conta.reenviarConfirmacao).toHaveBeenCalledTimes(1)
+    expect(falso.api.reset).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('TelaCodigoSenha com a verificação contra robôs (spec seguranca-lote-3)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-457: "Reenviar o código" pede outro código com a verificação; "Salvar a senha" não usa', async () => {
+    const falso = ligarTurnstileFalso()
+    const { usuario, conta } = montarCodigoSenha()
+    await falso.pronto()
+    expect(falso.ativo().opcoes.action).toBe('reenviar')
+    expect(falso.ativo().alvo.nextElementSibling).toBe(screen.getByRole('button', { name: 'Reenviar o código' }))
+    falso.aprovar('tok-2')
+    await preencherSenha(usuario, '12345678', 'novasenha1')
+    expect(conta.conferirCodigoDeSenha).toHaveBeenCalledWith('maria@exemplo.com', '12345678')
+    expect(falso.api.reset).not.toHaveBeenCalled()
+    await usuario.click(screen.getByRole('button', { name: 'Reenviar o código' }))
+    expect(conta.pedirTrocaDeSenha).toHaveBeenCalledWith('maria@exemplo.com', 'tok-2')
   })
 })

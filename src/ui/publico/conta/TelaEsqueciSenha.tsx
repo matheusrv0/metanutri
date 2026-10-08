@@ -6,6 +6,8 @@ import { Label } from '@ds/componentes/forms/label.tsx'
 import type { ValorConta } from '../../estado/usarConta.ts'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
+import { useVerificacao } from './usarVerificacao.ts'
+import { VerificacaoContraRobos } from './VerificacaoContraRobos.tsx'
 
 interface TelaEsqueciSenhaProps {
   readonly conta: ValorConta
@@ -22,6 +24,7 @@ export function TelaEsqueciSenha({ conta, aoEnviado, aoIrParaInicio, aoEntrar }:
   const [erro, setErro] = useState<ErroConta | null>(null)
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
+  const verificacao = useVerificacao('recuperar')
 
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault()
@@ -30,11 +33,17 @@ export function TelaEsqueciSenha({ conta, aoEnviado, aoIrParaInicio, aoEntrar }:
       setErro('email-invalido')
       return
     }
+    // D-113: a verificação contra robôs vai junto. Ainda conferindo, nada sai (CA-458); sem o script, segue sem ela (D-119).
+    const pedido = verificacao.tomar()
+    if (!pedido.ok) {
+      setErro(pedido.erro)
+      return
+    }
     setErro(null)
     enviandoRef.current = true
     setEnviando(true)
-    // CA-144: a resposta é a mesma exista a conta ou não; só a falta de internet volta como erro.
-    const resultado = await conta.pedirTrocaDeSenha(email)
+    // CA-144: a resposta é a mesma exista a conta ou não; só a falta de internet e a recusa da verificação voltam como erro.
+    const resultado = await conta.pedirTrocaDeSenha(email, ...pedido.extra)
     enviandoRef.current = false
     setEnviando(false)
     if (!resultado.ok) {
@@ -61,9 +70,11 @@ export function TelaEsqueciSenha({ conta, aoEnviado, aoIrParaInicio, aoEntrar }:
           />
         </div>
         {erro ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[erro]}</AvisoFormulario> : null}
-        <Button type="submit" size="lg" block loading={enviando}>
-          Mandar o código
-        </Button>
+        <VerificacaoContraRobos verificacao={verificacao}>
+          <Button type="submit" size="lg" block loading={enviando}>
+            Mandar o código
+          </Button>
+        </VerificacaoContraRobos>
         <button type="button" onClick={aoEntrar} className="inline-flex min-h-11 items-center self-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline">
           Lembrei, quero entrar
         </button>

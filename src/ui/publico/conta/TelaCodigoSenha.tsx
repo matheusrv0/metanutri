@@ -9,6 +9,8 @@ import { BotaoReenviar } from './BotaoReenviar.tsx'
 import { CampoCodigo } from './CampoCodigo.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
+import { useVerificacao } from './usarVerificacao.ts'
+import { VerificacaoContraRobos } from './VerificacaoContraRobos.tsx'
 
 interface TelaCodigoSenhaProps {
   readonly conta: ValorConta
@@ -33,6 +35,8 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
   // O código vale uma vez: aceito ele e recusada a senha (sem internet, por exemplo), a
   // nova tentativa só grava a senha, com a sessão de recuperação que o código abriu.
   const codigoAceitoRef = useRef(false)
+  // D-113: só o reenvio leva a verificação; conferir o código e gravar a senha não usam (CA-457).
+  const verificacao = useVerificacao('reenviar')
 
   const validar = (): ErroConta | null => {
     if (!ehEmailValido(digitado)) return 'email-invalido'
@@ -77,7 +81,12 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
       setAviso('email-invalido')
       return false
     }
-    const resultado = await conta.pedirTrocaDeSenha(digitado)
+    const pedido = verificacao.tomar()
+    if (!pedido.ok) {
+      setAviso(pedido.erro)
+      return false
+    }
+    const resultado = await conta.pedirTrocaDeSenha(digitado, ...pedido.extra)
     setAviso(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
     return resultado.ok
   }
@@ -125,7 +134,9 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
           Salvar a senha
         </Button>
       </form>
-      <BotaoReenviar rotulo="Reenviar o código" aoReenviar={reenviar} />
+      <VerificacaoContraRobos verificacao={verificacao}>
+        <BotaoReenviar rotulo="Reenviar o código" aoReenviar={reenviar} />
+      </VerificacaoContraRobos>
     </MolduraConta>
   )
 }

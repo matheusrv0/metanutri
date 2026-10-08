@@ -8,6 +8,8 @@ import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { BotaoReenviar } from './BotaoReenviar.tsx'
 import { CampoCodigo } from './CampoCodigo.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
+import { useVerificacao } from './usarVerificacao.ts'
+import { VerificacaoContraRobos } from './VerificacaoContraRobos.tsx'
 
 interface TelaConfirmarEmailProps {
   readonly conta: ValorConta
@@ -37,6 +39,8 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEr
   const [confirmando, setConfirmando] = useState(false)
   // Trava de verdade contra o clique duplo (CB-101): o estado só muda no próximo render.
   const confirmandoRef = useRef(false)
+  // D-113: só o reenvio leva a verificação; confirmar o código não usa (CA-457).
+  const verificacao = useVerificacao('reenviar')
 
   const confirmar = async (evento: FormEvent) => {
     evento.preventDefault()
@@ -68,7 +72,12 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEr
       setAviso('email-invalido')
       return false
     }
-    const resultado = await conta.reenviarConfirmacao(digitado)
+    const pedido = verificacao.tomar()
+    if (!pedido.ok) {
+      setAviso(pedido.erro)
+      return false
+    }
+    const resultado = await conta.reenviarConfirmacao(digitado, ...pedido.extra)
     setAviso(resultado.ok ? 'enviado' : (resultado.erro ?? 'falha-rede'))
     return resultado.ok
   }
@@ -108,7 +117,9 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEr
           Confirmar
         </Button>
       </form>
-      <BotaoReenviar rotulo={vencido ? 'Pedir um código' : 'Reenviar o código'} aoReenviar={reenviar} />
+      <VerificacaoContraRobos verificacao={verificacao}>
+        <BotaoReenviar rotulo={vencido ? 'Pedir um código' : 'Reenviar o código'} aoReenviar={reenviar} />
+      </VerificacaoContraRobos>
       {aoErreiOEmail ? (
         <Button variant="link" size="lg" block onClick={aoErreiOEmail}>
           Errei o e-mail
