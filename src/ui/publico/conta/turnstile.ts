@@ -31,7 +31,13 @@ export interface OpcoesDoWidget {
   readonly callback: (token: string) => void
   readonly 'expired-callback': () => void
   readonly 'error-callback': (codigo: string) => void
+  /** D-119: o desafio que pediu um clique não foi resolvido a tempo. */
+  readonly 'timeout-callback': () => void
+  /** D-119: o navegador não roda o Turnstile. */
+  readonly 'unsupported-callback': () => void
   readonly 'before-interactive-callback': () => void
+  /** O desafio que pediu um clique fechou (com ou sem o token). */
+  readonly 'after-interactive-callback': () => void
 }
 
 /** O pedaço do Turnstile que o MetaNutri usa. */
