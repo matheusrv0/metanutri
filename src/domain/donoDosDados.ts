@@ -6,7 +6,7 @@
 // sem prefixo, os de antes desta mudança (D-123).
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVES_DE_DADOS, expandirChaves } from './perfil.ts'
-import type { ArmazenamentoListavel } from './persistencia.ts'
+import type { Armazenamento, ArmazenamentoListavel } from './persistencia.ts'
 
 export const CHAVE_DONO = 'metanutri:dono'
 
@@ -33,18 +33,162 @@ function chavesSemConta(base: ArmazenamentoListavel): string[] {
   return [...todas].filter((chave) => base.getItem(chave) !== null)
 }
 
-/** `nada`: não havia dado sem conta. `conflito`: a conta já tem outro valor numa das chaves (DP-5). */
-export type ResultadoMigracao = 'nada' | 'movido' | 'conflito' | 'falhou'
+// ---------- Juntar o que já está na conta com o que veio de fora (D-127) ----------
+
+/** JSON que não dá para ler volta `undefined`: quem chama trata como valor ilegível. */
+function lerJson(texto: string): unknown {
+  try {
+    return JSON.parse(texto) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+type Id = string | number
+const idDe = (item: unknown): Id | null => {
+  if (typeof item !== 'object' || item === null) return null
+  const id = (item as Record<string, unknown>)['id']
+  return typeof id === 'string' || typeof id === 'number' ? id : null
+}
+
+/** Listas com id (pacientes, produtos, modelos): no mesmo id, fica o da conta. */
+function juntarPorId(daConta: unknown, deFora: unknown): { readonly lista: unknown[] } | { readonly ilegivel: 'conta' | 'fora' } {
+  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
+  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
+  const naConta = new Set(daConta.map(idDe))
+  return { lista: [...daConta, ...deFora.filter((item) => idDe(item) !== null && !naConta.has(idDe(item)))] }
+}
+
+/** Listas simples (índice de planos, sugestões ocultas): a ordem da conta, depois o que faltava. */
+function uniao(daConta: unknown, deFora: unknown): { readonly lista: unknown[] } | { readonly ilegivel: 'conta' | 'fora' } {
+  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
+  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
+  return { lista: [...daConta, ...deFora.filter((v) => !daConta.includes(v))] }
+}
+
+const textos = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+
+/** O arquivo dos acompanhamentos: os itens juntam por id, e cada item leva as próprias marcas. */
+function juntarAcompanhamentos(daConta: unknown, deFora: unknown): { readonly valor: unknown } | { readonly ilegivel: 'conta' | 'fora' } {
+  const arquivo = (v: unknown) => (typeof v === 'object' && v !== null && Array.isArray((v as Record<string, unknown>)['itens']) ? (v as Record<string, unknown>) : null)
+  const conta = arquivo(daConta)
+  const fora = arquivo(deFora)
+  if (!conta) return { ilegivel: 'conta' }
+  if (!fora) return { ilegivel: 'fora' }
+  const itensDaConta = conta['itens'] as unknown[]
+  const naConta = new Set(itensDaConta.map(idDe))
+  const trazidos = (fora['itens'] as unknown[]).filter((item) => idDe(item) !== null && !naConta.has(idDe(item)))
+  const idsTrazidos = new Set(trazidos.map(idDe))
+  const marcas = (campo: string) => [...new Set([...textos(conta[campo]), ...textos(fora[campo]).filter((id) => idsTrazidos.has(id))])]
+  return { valor: { ...conta, itens: [...itensDaConta, ...trazidos], naNuvem: marcas('naNuvem'), pendentes: marcas('pendentes') } }
+}
+
+/**
+ * O valor que fica na conta quando ela e o aparelho têm valores diferentes na mesma chave
+ * (D-127). Configurações e o que não se sabe juntar ficam com o valor da conta. Valor de fora
+ * que o app não lê fica de fora; valor da conta ilegível dá lugar ao de fora.
+ */
+function juntar(chave: string, daConta: string, deFora: string): string {
+  const conta = lerJson(daConta)
+  const fora = lerJson(deFora)
+  const resultado =
+    chave === 'metanutri:casos' || chave === 'metanutri:sugestoes-ocultas'
+      ? uniao(conta, fora)
+      : chave === 'metanutri:pacientes' || chave === 'metanutri:produtos' || chave === 'metanutri:modelos'
+        ? juntarPorId(conta, fora)
+        : chave === 'metanutri:acompanhamentos'
+          ? juntarAcompanhamentos(conta, fora)
+          : null
+  if (resultado === null) return daConta
+  if ('ilegivel' in resultado) return resultado.ilegivel === 'conta' ? deFora : daConta
+  return JSON.stringify('lista' in resultado ? resultado.lista : resultado.valor)
+}
+
+/** Um plano como o repositório grava (`persistencia.ts`): o caso, com id, e quando foi salvo. */
+function lerPlano(texto: string): (Record<string, unknown> & { readonly caso: Record<string, unknown>; readonly atualizadoEm: string }) | null {
+  const v = lerJson(texto)
+  if (typeof v !== 'object' || v === null) return null
+  const o = v as Record<string, unknown>
+  const caso = o['caso']
+  if (typeof caso !== 'object' || caso === null || typeof (caso as Record<string, unknown>)['id'] !== 'string' || typeof o['atualizadoEm'] !== 'string') {
+    return null
+  }
+  return { ...o, caso: caso as Record<string, unknown>, atualizadoEm: o['atualizadoEm'] }
+}
+
+/** Põe o plano no índice da conta, se ainda não estiver: plano fora do índice não aparece. */
+function incluirNoIndice(destino: Armazenamento, id: string): void {
+  const indice = textos(lerJson(destino.getItem('metanutri:casos') ?? '[]'))
+  if (!indice.includes(id)) destino.setItem('metanutri:casos', JSON.stringify([...indice, id]))
+}
+
+/** Grava na conta e só então tira do aparelho. Devolve se a chave saiu do aparelho. */
+function gravarETirar(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, valor: string): boolean {
+  if (destino.getItem(chave) !== valor) destino.setItem(chave, valor)
+  if (destino.getItem(chave) !== valor) return false
+  base.removeItem(chave)
+  return true
+}
+
+function moverDado(base: ArmazenamentoListavel, destino: Armazenamento, chave: string): void {
+  const deFora = base.getItem(chave)
+  if (deFora === null) return
+  const daConta = destino.getItem(chave)
+  gravarETirar(base, destino, chave, daConta === null || daConta === deFora ? deFora : juntar(chave, daConta, deFora))
+}
+
+/**
+ * Dois planos diferentes com o mesmo id ficam os dois (D-127): o mais novo pelo `atualizadoEm`
+ * fica com o id; o outro ganha id novo e entra no índice. A cópia com id novo é gravada antes de
+ * mexer no id antigo: fechar no meio deixa, no pior caso, uma cópia a mais (DP-17), nunca menos.
+ */
+function moverPlano(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, gerarId: () => string): void {
+  const deFora = base.getItem(chave)
+  if (deFora === null) return
+  const daConta = destino.getItem(chave)
+  if (daConta === null || daConta === deFora) {
+    gravarETirar(base, destino, chave, deFora)
+    return
+  }
+  const planoDeFora = lerPlano(deFora)
+  const planoDaConta = lerPlano(daConta)
+  if (planoDeFora === null) {
+    base.removeItem(chave)
+    return
+  }
+  if (planoDaConta === null) {
+    gravarETirar(base, destino, chave, deFora)
+    return
+  }
+  const deForaMaisNovo = planoDeFora.atualizadoEm > planoDaConta.atualizadoEm
+  const maisVelho = deForaMaisNovo ? planoDaConta : planoDeFora
+  const novoId = gerarId()
+  destino.setItem(`${PREFIXO_CASO}${novoId}`, JSON.stringify({ ...maisVelho, caso: { ...maisVelho.caso, id: novoId } }))
+  incluirNoIndice(destino, novoId)
+  if (deForaMaisNovo) gravarETirar(base, destino, chave, deFora)
+  else base.removeItem(chave)
+  incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
+}
+
+/** `nada`: não havia dado sem conta. `falhou`: sobrou dado sem prefixo, que volta a ser tentado na próxima entrada. */
+export type ResultadoMigracao = 'nada' | 'movido' | 'falhou'
+
+export interface OpcoesMigracao {
+  /** Id novo para o plano que perde o seu num conflito; o app gera ids de plano assim. */
+  readonly gerarId?: () => string
+}
 
 /**
  * D-123: os dados sem prefixo vão para o espaço de quem é dono deles. Sem dono, a conta que
  * entra vira dona (CA-468). Com dono, vão para ele, mesmo que outra conta esteja entrando.
  *
  * Chave por chave (DP-4): copia, confere e só então apaga a original. Nenhuma chave some dos
- * dois lugares ao mesmo tempo, e rodar de novo termina o que ficou pela metade.
+ * dois lugares ao mesmo tempo, e rodar de novo termina o que ficou pela metade. Valor que já
+ * existe na conta é juntado, nunca escondido (D-127, CA-472).
  */
-export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioId: string): ResultadoMigracao {
+export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioId: string, opcoes: OpcoesMigracao = {}): ResultadoMigracao {
   if (!base) return 'nada'
+  const gerarId = opcoes.gerarId ?? (() => globalThis.crypto.randomUUID())
   try {
     const chaves = chavesSemConta(base)
     if (chaves.length === 0) return 'nada'
@@ -56,21 +200,11 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
     if (donoAtual === null) base.setItem(CHAVE_DONO, dono)
     const destino = armazenamentoDaConta(base, dono)
 
-    // DP-5: valor diferente já na conta é conflito, e nada se move. Valor igual é cópia interrompida.
-    const conflito = chaves.some((chave) => {
-      const naConta = destino.getItem(chave)
-      return naConta !== null && naConta !== base.getItem(chave)
-    })
-    if (conflito) return 'conflito'
-
     for (const chave of chaves) {
-      const valor = base.getItem(chave)
-      if (valor === null) continue
-      if (destino.getItem(chave) === null) destino.setItem(chave, valor)
-      if (destino.getItem(chave) !== valor) return 'falhou'
-      base.removeItem(chave)
+      if (chave.startsWith(PREFIXO_CASO)) moverPlano(base, destino, chave, gerarId)
+      else moverDado(base, destino, chave)
     }
-    return 'movido'
+    return chavesSemConta(base).length === 0 ? 'movido' : 'falhou'
   } catch {
     // Aparelho cheio ou bloqueado: o que não foi movido continua onde estava.
     return 'falhou'

@@ -651,6 +651,19 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
   })
 
+  it('CA-472: o que uma aba antiga gravou depois da migração aparece na próxima entrada, junto com o que a conta tinha', () => {
+    localStorage.setItem(CHAVE_DONO, 'conta-a')
+    guardarPacientes('metanutri:conta:conta-a:pacientes', paciente('ana', 'Ana Lima'))
+    // A aba antiga, ainda na versão anterior, gravou sem prefixo.
+    guardarPacientes('metanutri:pacientes', paciente('ana', 'Ana Lima'), paciente('bia', 'Bia Souza'))
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/pacientes'
+    render(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+    expect(screen.getByText('Bia Souza')).toBeInTheDocument()
+    expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
+  })
+
   it('CA-468: dados sem dono passam a ser da primeira conta que entra', () => {
     guardarPacientes('metanutri:pacientes', paciente('ana', 'Ana Lima'))
     estado.conta = comSessao('conta-b')
