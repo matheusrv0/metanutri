@@ -1,7 +1,7 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
 import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
-import { apagarDadosDoAparelho } from '@/domain/donoDosDados.ts'
+import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
@@ -56,7 +56,7 @@ export interface ValorConta {
   /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
   readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
   readonly trocarSenha: (senha: string) => Promise<Resultado>
-  /** D-96: com `apagarDoAparelho`, apaga antes os pacientes e planos guardados neste navegador. */
+  /** D-96: com `apagarDoAparelho`, apaga antes os dados desta conta guardados neste navegador; os de outras contas ficam (D-124). */
   readonly sair: (opcoes?: { readonly apagarDoAparelho?: boolean }) => Promise<void>
 }
 
@@ -240,15 +240,20 @@ export function useConta(): ValorConta {
     return OK
   }, [])
 
-  const sair = useCallback(async (opcoes: { readonly apagarDoAparelho?: boolean } = {}) => {
-    // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador compartilhado.
-    if (opcoes.apagarDoAparelho) apagarDadosDoAparelho(armazenamentoLocal())
-    const c = obterSupabase()
-    if (!c) return
-    await c.auth.signOut()
-    setSessao(null)
-    setEmRecuperacao(false)
-  }, [])
+  const usuarioId = sessao?.id ?? null
+  const sair = useCallback(
+    async (opcoes: { readonly apagarDoAparelho?: boolean } = {}) => {
+      // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador compartilhado.
+      // Só o espaço de quem sai (D-124); sem sessão, não há conta saindo (DP-10).
+      if (opcoes.apagarDoAparelho && usuarioId !== null) apagarDadosDaConta(armazenamentoLocal(), usuarioId)
+      const c = obterSupabase()
+      if (!c) return
+      await c.auth.signOut()
+      setSessao(null)
+      setEmRecuperacao(false)
+    },
+    [usuarioId],
+  )
 
   return {
     sessao,
