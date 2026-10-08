@@ -43,8 +43,21 @@ interface ConteudoProps {
   readonly usuarioId: string | null
 }
 
+const ROTA_PAINEL: Rota = { tela: 'painel' }
+
 function Conteudo({ conta, usuarioId }: ConteudoProps) {
   const [rota, navegar] = useRota()
+
+  // DP-15: a conta trocou direto (A → B, sem passar por Entrar) numa tela de trabalho. O endereço
+  // pode ser de um plano ou paciente da conta anterior: a conta nova vai para o painel, uma vez.
+  const [contaNaTela, setContaNaTela] = useState(usuarioId)
+  const [enderecoDaTroca, setEnderecoDaTroca] = useState<string | null>(null)
+  if (usuarioId !== contaNaTela) {
+    setContaNaTela(usuarioId)
+    setEnderecoDaTroca(contaNaTela !== null && usuarioId !== null && !ehRotaLivre(rota) ? escreverRota(rota) : null)
+  }
+  if (enderecoDaTroca !== null && rota.tela === 'painel') setEnderecoDaTroca(null)
+  const trocouDeContaAqui = enderecoDaTroca !== null && enderecoDaTroca === escreverRota(rota)
   const cobranca = useAssinatura(conta.sessao?.id ?? null)
   const { assinatura } = cobranca
 
@@ -358,6 +371,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
       </MolduraPublica>
     )
   }
+
+  if (trocouDeContaAqui) return <Redirecionar para={ROTA_PAINEL} navegar={navegar} />
 
   return areaDeTrabalho
 }

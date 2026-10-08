@@ -36,7 +36,11 @@ export function armazenamentoDaConta(base: ArmazenamentoListavel, usuarioId: str
   const chaveOriginal = (chaveDoAparelho: string): string | null =>
     chaveDoAparelho.startsWith(prefixo) ? `${PREFIXO}${chaveDoAparelho.slice(prefixo.length)}` : null
 
-  /** As chaves desta conta, com o nome original, na ordem do aparelho. */
+  /**
+   * As chaves desta conta, com o nome original, na ordem do aparelho. Percorre o aparelho inteiro
+   * a cada chamada, e `key(i)` chama de novo: listar tudo por índice custa n² leituras. Serve para
+   * migrar e apagar, que são raros; o dia a dia (e o backup) lê e grava por chave, sem listar.
+   */
   const minhas = (): string[] => {
     const lista: string[] = []
     for (let i = 0; i < base.length; i += 1) {

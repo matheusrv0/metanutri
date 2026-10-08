@@ -15,6 +15,9 @@ interface ProvedorArmazenamentoProps {
  * nada: quem lê dados ao montar fica dentro de ProvedoresDeDados, que remonta (CB-120).
  */
 export function ProvedorArmazenamento({ usuarioId, children }: ProvedorArmazenamentoProps) {
+  // A migração e a troca do que fica em memória rodam aqui, no render, antes de qualquer filho ler
+  // dado. O React pode chamar isto mais de uma vez para a mesma conta (StrictMode, render
+  // descartado): as duas coisas precisam continuar idempotentes.
   const { armazenamento, migracao } = useMemo(() => {
     const dados = armazenamentoDaSessao(armazenamentoLocal(), usuarioId)
     trocarDadosEmMemoria(dados.armazenamento)

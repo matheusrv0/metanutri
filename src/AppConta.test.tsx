@@ -747,9 +747,41 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     for (const r of observador.takeRecords()) for (const no of r.addedNodes) vistos.push(no.textContent ?? '')
     observador.disconnect()
 
-    expect(screen.getByText('Bia Souza')).toBeInTheDocument()
+    // DP-15: a troca direta leva ao painel da conta nova.
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
     expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
     expect(vistos.some((texto) => texto.includes('Ana Lima'))).toBe(false)
+  })
+
+  it('DP-15: trocar de conta direto com um plano de A aberto leva ao painel, e o endereço não fica com o plano de A', async () => {
+    const plano = JSON.stringify({ formato: 1, versao: 1, atualizadoEm: '2026-10-07T10:00:00.000Z', caso: { id: 'x', nome: 'Plano da Ana' }, plano: { refeicoes: [] } })
+    localStorage.setItem('metanutri:conta:conta-a:casos', '["x"]')
+    localStorage.setItem('metanutri:conta:conta-a:caso:x', plano)
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/caso/x/caso'
+    const { rerender } = render(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Plano da Ana' })).toBeInTheDocument()
+
+    estado.conta = comSessao('conta-b')
+    rerender(tela())
+    await waitFor(() => expect(window.location.hash).toBe('#/painel'))
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+
+    // Voltar ao endereço depois não leva de novo ao painel: B só não tem esse plano.
+    irPara('#/caso/x/caso')
+    expect(screen.getByRole('heading', { level: 1, name: 'Plano não encontrado' })).toBeInTheDocument()
+  })
+
+  it('DP-15: sair e entrar com outra conta não muda o caminho de quem entrou', () => {
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/pacientes'
+    const { rerender } = render(tela())
+    estado.conta = contaFalsa()
+    rerender(tela())
+    estado.conta = comSessao('conta-b')
+    rerender(tela())
+    expect(window.location.hash).toBe('#/pacientes')
+    expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 
   it('CA-473: sem espaço no meio da migração, a conta vê os planos que foram e a tela avisa do resto', () => {
