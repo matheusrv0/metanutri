@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** em execução (rodada final da revisão, 08/10/2026)
+**Status:** concluído, com a rodada final da revisão (08/10/2026)
 
 ## Abordagem
 
@@ -100,25 +100,25 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ### Rodada final (revisão de 08/10/2026)
 
-- [ ] **T17** — Spec e plano: CB-127; nota do CA-445 (lote 2) e do D-124 (`dados-por-conta`); CA-420, CA-423, CA-424 e
+- [x] **T17** — Spec e plano: CB-127; nota do CA-445 (lote 2) e do D-124 (`dados-por-conta`); CA-420, CA-423, CA-424 e
   CA-470 marcados como substituídos pelo D-131; DP-20 a DP-27.
-- [ ] **T18** — C1: conferir a nuvem depois de abrir (DP-20).
+- [x] **T18** — C1: conferir a nuvem depois de abrir (DP-20).
   - Cobre: CB-127
   - Feito quando: teste da aba esquecida (A aberto, B edita P e salva, A volta e edita outro campo de P: a edição de B
     continua) e da tela "Atualizando…".
-- [ ] **T19** — I1: o id novo de produto fica acima também dos ids de marcas e lápides, na junção e no repositório (DP-21).
+- [x] **T19** — I1: o id novo de produto fica acima também dos ids de marcas e lápides, na junção e no repositório (DP-21).
   - Feito quando: nuvem 900000/900001 + lápide 900002 e daqui 900000/900001 próprios → nenhum produto some.
-- [ ] **T20** — I2: pendência desde o início com dados que nunca subiram; Sair pergunta antes de abrir e com migração
+- [x] **T20** — I2: pendência desde o início com dados que nunca subiram; Sair pergunta antes de abrir e com migração
   incompleta; o dado sem prefixo não movido fica; clique duplo em "Sair mesmo assim" (DP-22).
-- [ ] **T21** — I2b: navegador cheio (DP-23).
+- [x] **T21** — I2b: navegador cheio (DP-23).
   - Feito quando: aplicar que estoura → trava "sem espaço", a cópia juntada sobe da memória e a cópia de trabalho não
     fica em dia; aplicar remove antes de gravar; o contador vai antes do dado.
-- [ ] **T22** — I3: prazo pelo tamanho, pedido cancelado e versão conferida antes de reenviar (DP-24).
-- [ ] **T23** — I4: "Sair" nas telas antes de abrir; abertura única e protegida (DP-25).
-- [ ] **T24** — I5: textos, aviso único da nuvem e versão dos termos (DP-26).
-- [ ] **T25** — Menores (DP-27): conta que saiu; cópia vazia reabre; esconder e fechar a aba; restaurar só chaves de dados;
+- [x] **T22** — I3: prazo pelo tamanho, pedido cancelado e versão conferida antes de reenviar (DP-24).
+- [x] **T23** — I4: "Sair" nas telas antes de abrir; abertura única e protegida (DP-25).
+- [x] **T24** — I5: textos, aviso único da nuvem e versão dos termos (DP-26).
+- [x] **T25** — Menores (DP-27): conta que saiu; cópia vazia reabre; esconder e fechar a aba; restaurar só chaves de dados;
   sair sem internet; uma aba envia por vez; outra aba refaz produtos, modelos, busca e perfil; status; trava de tamanho.
-- [ ] **T26** — Validação: os quatro portões verdes e o relatório com a "Rodada final".
+- [x] **T26** — Validação: os quatro portões verdes e o relatório com a "Rodada final".
 
 ## Mapa de cobertura
 
@@ -138,7 +138,7 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | CB-124 | T5, T11 | `sincronia.test.ts` e `provedoresPorConta.test.tsx` "CB-124: …" |
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
 | CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
-| CB-127 | T18 | `sincronia.test.ts` "CB-127: …"; `AppNuvem.test.tsx` "CB-127: …" |
+| CB-127 | T18 | `sincronia.test.ts`, `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
 
 ## Decisões do plano
 
@@ -257,8 +257,8 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ## Validação
 
-- [x] `npm run check` (lint + typecheck + testes): 156 arquivos, 2612 testes; o único aviso do lint é de antes
-  (`MolduraPublica.tsx`)
+- [x] `npm run check` (lint + typecheck + testes): 158 arquivos, 2659 testes depois da rodada final (156 e 2612 antes
+  dela); o único aviso do lint é de antes (`MolduraPublica.tsx`)
 - [x] `npx playwright test`: 41
 - [x] `npm run build`
 - [x] `node scripts/conferir-publicacao.mjs`
