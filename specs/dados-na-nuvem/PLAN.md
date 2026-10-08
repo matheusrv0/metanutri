@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** concluído, com a rodada de fechamento da revisão (08/10/2026)
+**Status:** em execução (ajustes antes do merge, 08/10/2026)
 
 ## Abordagem
 
@@ -136,6 +136,17 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - [x] **T31** — Política: o dado de antes que ainda não foi para a conta fica até a próxima entrada (DP-30).
 - [x] **T32** — Validação e relatório ("Rodada de fechamento").
 
+### Ajustes antes do merge (08/10/2026)
+
+- [ ] **T33** — Plano: DP-31.
+- [ ] **T34** — Voltar para a aba no meio da conferência de 60 s faz uma conferência nova, com capa (DP-31).
+  - Cobre: CB-127
+  - Feito quando: a versão lida pela de 60 s antes de B salvar não basta: a aba mostra o nome de B depois da capa.
+- [ ] **T35** — Abertura sem linha na nuvem com a cópia daqui parcial não sobe nada e trava sem espaço (DP-31).
+- [ ] **T36** — A aba travada sem internet que acha tudo salvo por outra aba destrava e confere (DP-31).
+- [ ] **T37** — Comentários da trava entre abas e do aviso de sair citam o DP-30.
+- [ ] **T38** — Validação, com as sondas do revisor.
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -264,6 +275,12 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   navegador perguntar se pode sair. A Política diz que os dados de antes que ainda não foram para a conta ficam neste
   navegador até a próxima entrada; a versão dos termos continua `2026-10-08.2`, porque essa versão ainda não foi
   publicada (ninguém aceitou o texto anterior a esta mudança com ela).
+
+- **DP-31 · Ajustes antes do merge.** (a) A conferência com capa (a pessoa voltou para a aba) nunca aproveita uma
+  conferência de 60 s já a caminho: entra na fila depois dela e lê a versão de novo; só outra com capa é dividida, e
+  a capa só sai quando a última termina. (b) Abrir sem linha na nuvem com a cópia daqui marcada parcial não sobe a
+  cópia: trava sem espaço. (c) Uma aba travada sem internet cujo salvar acha tudo já salvo (outra aba mandou) não
+  fica presa: com internet, destrava e confere; sem, tenta de novo em 15 s.
 
 ## Riscos
 
