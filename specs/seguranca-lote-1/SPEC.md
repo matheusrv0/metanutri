@@ -18,11 +18,11 @@ de prioridade média e baixa que não dependem do painel.
 
 ## 2. Critérios de aceite
 
-- **CA-420** · Dado "Apagar tudo" com conta, então somem os acompanhamentos e a cópia completa da nuvem; se uma das duas falhar, a mensagem diz o que ficou e nada diz "tudo apagado".
+- **CA-420** · ~~Dado "Apagar tudo" com conta, então somem os acompanhamentos e a cópia completa da nuvem; se uma das duas falhar, a mensagem diz o que ficou e nada diz "tudo apagado".~~ **Substituído pelo D-131** (`specs/dados-na-nuvem/SPEC.md`, 08/10/2026): só existe "Sair", que apaga a cópia de trabalho do navegador; os dados ficam na nuvem. "Apagar tudo" saiu de Configurações.
 - **CA-421** · Dado uma conta de estudante (aprovada ou não), quando ela cria ou altera um link de paciente, então o link fica com o aviso de uso não comercial, mesmo que o pedido tente gravar sem.
 - **CA-422** · Dado uma conta no limite de links do plano que vale para ela (Free 2, Estudante 3, Solo 25; Pro e Clínica sem limite), quando tenta criar mais um, então o banco recusa com uma mensagem que a tela traduz ("Você chegou ao limite de links do seu plano.").
-- **CA-423** · Dado o botão "Sair", então abre a janela com "Sair e apagar os dados deste aparelho" e "Só sair"; apagar remove os pacientes e planos guardados neste navegador e sai.
-- **CA-424** · Dado mudança ainda não enviada para a nuvem, quando a pessoa escolhe apagar, então a janela avisa que essa mudança se perde e pede confirmação.
+- **CA-423** · ~~Dado o botão "Sair", então abre a janela com "Sair e apagar os dados deste aparelho" e "Só sair"; apagar remove os pacientes e planos guardados neste navegador e sai.~~ **Substituído pelo D-131** (`specs/dados-na-nuvem/SPEC.md`, 08/10/2026): só existe "Sair", que apaga a cópia de trabalho do navegador; os dados ficam na nuvem.
+- **CA-424** · ~~Dado mudança ainda não enviada para a nuvem, quando a pessoa escolhe apagar, então a janela avisa que essa mudança se perde e pede confirmação.~~ **Substituído pelo D-131** (`specs/dados-na-nuvem/SPEC.md`, 08/10/2026): só existe "Sair", que apaga a cópia de trabalho do navegador; os dados ficam na nuvem. O aviso da mudança que se perde é o CA-479.
 - **CA-425** · Dado uma chamada às funções do servidor vinda de outro endereço que não `https://metanutri.com.br`, então o navegador não recebe permissão (o cabeçalho de origem não é `*`).
 - **CA-426** · Dado marcações de missão com mais de 1 MB ou mais de 1500 itens, então o banco recusa.
 - **CA-427** · Dado um link de paciente com token fora de 12 a 64 letras minúsculas e números, então o banco recusa.

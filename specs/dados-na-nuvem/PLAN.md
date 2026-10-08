@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
-**Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126)
-**Status:** concluído (08/10/2026)
+**Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
+**Status:** em execução (rodada final da revisão, 08/10/2026)
 
 ## Abordagem
 
@@ -98,6 +98,28 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - [x] **T16** — README: Configurações sem a cópia manual, os dados na nuvem, o Sair e o endereço novo.
   - Feito quando: o README não fala mais em enviar e trazer a cópia nem em "tudo só neste navegador" com conta.
 
+### Rodada final (revisão de 08/10/2026)
+
+- [ ] **T17** — Spec e plano: CB-127; nota do CA-445 (lote 2) e do D-124 (`dados-por-conta`); CA-420, CA-423, CA-424 e
+  CA-470 marcados como substituídos pelo D-131; DP-20 a DP-27.
+- [ ] **T18** — C1: conferir a nuvem depois de abrir (DP-20).
+  - Cobre: CB-127
+  - Feito quando: teste da aba esquecida (A aberto, B edita P e salva, A volta e edita outro campo de P: a edição de B
+    continua) e da tela "Atualizando…".
+- [ ] **T19** — I1: o id novo de produto fica acima também dos ids de marcas e lápides, na junção e no repositório (DP-21).
+  - Feito quando: nuvem 900000/900001 + lápide 900002 e daqui 900000/900001 próprios → nenhum produto some.
+- [ ] **T20** — I2: pendência desde o início com dados que nunca subiram; Sair pergunta antes de abrir e com migração
+  incompleta; o dado sem prefixo não movido fica; clique duplo em "Sair mesmo assim" (DP-22).
+- [ ] **T21** — I2b: navegador cheio (DP-23).
+  - Feito quando: aplicar que estoura → trava "sem espaço", a cópia juntada sobe da memória e a cópia de trabalho não
+    fica em dia; aplicar remove antes de gravar; o contador vai antes do dado.
+- [ ] **T22** — I3: prazo pelo tamanho, pedido cancelado e versão conferida antes de reenviar (DP-24).
+- [ ] **T23** — I4: "Sair" nas telas antes de abrir; abertura única e protegida (DP-25).
+- [ ] **T24** — I5: textos, aviso único da nuvem e versão dos termos (DP-26).
+- [ ] **T25** — Menores (DP-27): conta que saiu; cópia vazia reabre; esconder e fechar a aba; restaurar só chaves de dados;
+  sair sem internet; uma aba envia por vez; outra aba refaz produtos, modelos, busca e perfil; status; trava de tamanho.
+- [ ] **T26** — Validação: os quatro portões verdes e o relatório com a "Rodada final".
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -116,6 +138,7 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | CB-124 | T5, T11 | `sincronia.test.ts` e `provedoresPorConta.test.tsx` "CB-124: …" |
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
 | CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
+| CB-127 | T18 | `sincronia.test.ts` "CB-127: …"; `AppNuvem.test.tsx` "CB-127: …" |
 
 ## Decisões do plano
 
@@ -180,10 +203,39 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - **DP-19 · Versão do plano.** O plano que a nuvem traz por cima de outro daqui ganha a versão maior + 1, para o aviso de
   "mudou em outra aba" (CB-08) continuar valendo.
 
+- **DP-20 · Conferir a nuvem depois de abrir (C1, CB-127).** Quando a aba volta a ficar visível ou a janela volta ao foco,
+  a área fica coberta por "Atualizando…" enquanto o motor lê só o `atualizado_em`; a cada 60 s sem pendência, confere sem
+  cobrir. Se a nuvem mudou: sem pendência, a cópia da nuvem vale (remonta); com pendência, salva, e a conferência de
+  versão junta. Sem isso, uma aba esquecida aberta mandava o plano inteiro velho por cima da edição do outro aparelho.
+- **DP-21 · Id de produto nunca reaproveitado (I1).** O id novo fica acima do maior id da lista e dos ids que aparecem em
+  marcas e lápides, dos dois lados na junção e no repositório.
+- **DP-22 · Dado que nunca subiu conta como pendência (I2).** Dados sem histórico neste navegador, dados levados pela
+  migração e migração incompleta contam como pendentes desde o início; antes de abrir, Sair pergunta (CA-479). Sair não
+  apaga os dados sem prefixo que ainda não foram para a conta: eles ficam, com o dono marcado (refina o D-124). "Sair
+  mesmo assim" ignora o segundo clique de um duplo clique.
+- **DP-23 · Navegador cheio (I2b).** O contador da mudança é gravado antes do dado (a pendência fica guardada); aplicar
+  remove as chaves velhas antes de gravar as novas; se não couber, a área trava com "O navegador está sem espaço para
+  seus dados. Feche outras abas do MetaNutri e recarregue a página.", a cópia juntada sobe da memória (nunca a parcial
+  daqui), nada mais é enviado, e a cópia de trabalho nunca é dada como em dia.
+- **DP-24 · Prazo (I3).** 15 s mais 1 s a cada 50 KB da cópia (na leitura, pelo tamanho da última); o pedido que estoura é
+  cancelado (`abortSignal`); depois de uma falha, antes de reenviar, o motor confere a versão.
+- **DP-25 · Telas antes de abrir (I4).** "Sem internet…" e "formato" têm "Sair" (com a pergunta do CA-479 quando há dado
+  que não subiu); a abertura é uma só por vez, e uma exceção vira "sem conexão" com nova tentativa.
+- **DP-26 · Textos (I5).** Os textos da revisão, exatos; com conta, excluir um plano diz que some de todos os aparelhos.
+  Quem já usava vê uma vez "Seus planos e pacientes agora ficam salvos na nuvem, presos à sua conta. Assim você abre tudo
+  em qualquer aparelho." (guardado na conta; quem é novo não vê, porque o aviso de primeiro acesso já diz). A versão dos
+  termos passa a `2026-10-08.2` (o texto mudou de novo no mesmo dia; a data mostrada continua "8 de outubro de 2026").
+- **DP-27 · Menores.** A cópia de quem saiu não sobe; cópia sem itens e sem lápide por cima de nuvem com itens reabre
+  ("Carregando seus dados…") em vez de ficar em "Salvando…"; ao esconder ou fechar a aba, o pendente é mandado, e o
+  `beforeunload` avisa; restaurar backup aceita só as chaves de dados e os planos, e diz que vale para todos os aparelhos
+  da conta; sair sem internet apaga a sessão local mesmo assim; uma aba envia por vez (`navigator.locks`, quando existe);
+  produtos, modelos, busca e perfil se refazem quando outra aba grava; o estado anuncia só "Salvo"; a trava de tamanho
+  só reenvia quando a cópia diminui.
+
 ## Riscos
 
-- **R1** — Remontar a área num conflito fecha diálogo e formulário abertos. Só acontece com dois aparelhos salvando ao
-  mesmo tempo; o que já foi gravado fica.
+- **R1** — Remontar a área quando a nuvem traz mudança (conflito ou conferência, DP-20) fecha diálogo e formulário
+  abertos. Só acontece quando outro aparelho salvou; o que já foi gravado fica.
 - **R2** — Relógio errado num aparelho decide errado a "mudança mais nova".
 - **R3** — O navegador guarda uns 5 MB: perto do limite da nuvem, o armazenamento do navegador pode encher antes
   (o aviso de armazenamento cheio de hoje continua).
@@ -196,11 +248,8 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ## Divergências para o dono decidir
 
-- **V1** — O cartão do Free diz "Funciona sem internet" e o rodapé das páginas públicas diz "Funciona no navegador,
-  até sem internet."; com o D-130, com conta, sem internet a área de trabalho trava. O D-134 só tirou "Dados em
-  qualquer aparelho" dos planos, então os dois textos ficaram como estavam.
-- **V2** — Entrar sem internet diz "O primeiro acesso em cada aparelho precisa de internet."; agora toda entrada precisa
-  (CA-484).
+- ~~**V1** — "Funciona sem internet" no Free e no rodapé público.~~ Resolvido na rodada final (DP-26).
+- ~~**V2** — "O primeiro acesso em cada aparelho precisa de internet." no Entrar.~~ Resolvido na rodada final (DP-26).
 - **V3** — `PRODUCT.md` ("funciona offline") e `AGENTS.md` ("a conta na nuvem é opcional", "funciona offline") são
   documentos do dono e não mudaram.
 - **V4** — CB-123 diz "trava como no D-130 até a pessoa reduzir os dados"; a trava ganhou "Reduzir os dados" (DP-9),

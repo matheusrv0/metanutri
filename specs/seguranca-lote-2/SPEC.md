@@ -18,7 +18,7 @@ então nenhum limite novo recusa dado que já existe.
 
 ## 2. Critérios de aceite
 
-- **CA-445** · Dado uma cópia completa com mais de 5 MB, quando a conta tenta enviar para a nuvem, então o banco recusa e a tela diz "A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho."
+- **CA-445** · Dado uma cópia completa com mais de 5 MB, quando a conta tenta enviar para a nuvem, então o banco recusa e a tela diz "A cópia passou de 5 MB, o máximo da nuvem. ~~Seus dados continuam neste aparelho.~~ Apague o que não precisa para voltar a salvar." *(Texto trocado em 08/10/2026 pela spec `dados-na-nuvem`: os dados ficam na nuvem, e a cópia passa a ir sozinha; o que resolve é reduzir os dados, CB-123.)*
 - **CA-446** · Dado um link com missões acima de 256 KB, marcações acima de 1 MB, nome acima de 120 caracteres ou código de caso ou de paciente acima de 64, quando a conta salva, então o banco recusa e a tela diz "Este link ficou grande demais. Tire algumas missões e tente de novo."
 - **CA-447** · Dado uma conta com 1000 links, quando ela cria mais um, então o banco recusa e a tela diz "Você chegou ao limite de links do seu plano." (a mensagem que o CA-422 já usa).
 - **CA-448** · Dado 10 pedidos com cartão na última hora na mesma conta (assinar e trocar cartão, qualquer resultado), quando ela tenta de novo, então a função responde "Muitas tentativas seguidas. Espere uma hora e tente de novo." (429) sem chamar a operadora.

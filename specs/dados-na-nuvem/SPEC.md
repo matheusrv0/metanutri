@@ -35,10 +35,11 @@ aparelho.
 
 ## 3. Casos de borda
 
-- **CB-123** · Cópia acima de 5 MB (limite do lote 2): a tela mostra a frase do CA-445 e trava como no D-130 até a pessoa reduzir os dados.
+- **CB-123** · Cópia acima de 5 MB (limite do lote 2): a tela mostra a frase do CA-445 e trava como no D-130 até a pessoa reduzir os dados. *(A trava tem "Reduzir os dados", que tira a capa para a pessoa apagar o que não precisa; crescer de novo trava de novo. Plano, DP-9.)*
 - **CB-124** · Duas abas da mesma conta abertas: as mudanças de uma aparecem na outra sem apagar nada.
 - **CB-125** · A sessão vence no meio do uso: o que faltava salvar não se perde; a pessoa entra de novo e continua.
 - **CB-126** · O link do paciente (sem conta) continua funcionando como hoje.
+- **CB-127** · Uma aba esquecida aberta enquanto outro aparelho muda um plano: quando a pessoa volta a ela e edita outro campo do mesmo plano, a mudança do outro aparelho continua. A aba confere a nuvem antes de deixar editar ("Atualizando…"). *(Acrescentado em 08/10/2026, na revisão final.)*
 
 ## 4. Fora de escopo
 

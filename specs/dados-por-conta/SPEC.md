@@ -19,6 +19,8 @@ conta entra, o site trava na tela "Este aparelho tem dados de outra conta" e ofe
 | D-126 | **O que é do aparelho continua do aparelho:** o tema claro ou escuro e o e-mail esperando confirmação |
 | D-127 | **Conflito na migração não esconde nada.** Quando um dado de antes já existe na conta com outro valor, os dois são juntados: planos diferentes ficam os dois (o mais novo pelo `atualizadoEm` fica com o id; o outro ganha id novo e entra no índice); o mesmo paciente fica com a versão mais nova pelo `atualizadoEm` (sem data, a da conta); produtos e modelos diferentes com o mesmo id ficam os dois (o de fora ganha id novo); o mesmo link de acompanhamento fica com o da conta, a menos que só o de fora tenha mudança que ainda não foi para a nuvem; configurações ficam com o valor da conta; nenhum dado é escondido. Acrescentada em 08/10/2026, na revisão final, e refinada no mesmo dia (pacientes pela data; produtos e modelos com id novo) |
 
+> **Nota de 08/10/2026 (spec `dados-na-nuvem`):** o D-124 foi refinado pelo D-131 e pelo DP-22 daquela spec: só existe "Sair", que apaga o espaço da conta no navegador; os dados sem prefixo que ainda não foram levados para a conta ficam, com o dono marcado, até a próxima entrada dele.
+
 ## 2. Critérios de aceite
 
 - **CA-465** · Dado a conta A com pacientes neste aparelho, quando a conta B entra, então B não vê nenhum dado de A e a tela "Este aparelho tem dados de outra conta" não aparece.
@@ -26,7 +28,7 @@ conta entra, o site trava na tela "Este aparelho tem dados de outra conta" e ofe
 - **CA-467** · Dado um aparelho com dados de antes desta mudança, quando a conta dona deles entra, então ela vê tudo como antes: nada some.
 - **CA-468** · Dado um aparelho com dados sem dono, quando uma conta entra, então esses dados passam a ser dela.
 - **CA-469** · Dado A e B com dados no aparelho, quando A sai escolhendo "Sair e apagar os meus dados deste aparelho", então somem só os dados de A, e os de B continuam.
-- **CA-470** · Dado o backup (exportar e importar) e a cópia na nuvem, então eles leem e gravam só os dados da conta que está dentro.
+- **CA-470** · Dado o backup (exportar e importar) ~~e a cópia na nuvem~~, então eles leem e gravam só os dados da conta que está dentro. A parte da cópia na nuvem foi **substituída pelo D-131** (`specs/dados-na-nuvem/SPEC.md`, 08/10/2026): os botões de enviar e trazer saíram, e a nuvem é a fonte dos dados da conta.
 - **CA-471** · Dado o tema escolhido, então ele continua o mesmo para qualquer conta neste aparelho.
 - **CA-472** · Dado uma aba antiga do site que grava depois da migração, quando a conta entra de novo, então a edição feita naquela aba aparece (D-127).
 - **CA-473** · Dado o navegador sem espaço no meio da migração, então a conta vê exatamente o que já foi movido, com os planos no índice, e a tela avisa: "Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do MetaNutri e recarregue a página."
