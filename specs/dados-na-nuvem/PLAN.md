@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** concluído, com a rodada final da revisão (08/10/2026)
+**Status:** em execução (rodada de fechamento da revisão, 08/10/2026)
 
 ## Abordagem
 
@@ -120,6 +120,22 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   sair sem internet; uma aba envia por vez; outra aba refaz produtos, modelos, busca e perfil; status; trava de tamanho.
 - [x] **T26** — Validação: os quatro portões verdes e o relatório com a "Rodada final".
 
+### Rodada de fechamento (revisão de 08/10/2026)
+
+- [ ] **T27** — Plano: DP-28 a DP-30.
+- [ ] **T28** — C1 pelo caminho sem internet (DP-28): a trava que sai sem nada pendente entra direto em "Atualizando…" e
+  confere; travada, a conferência de 60 s continua marcada, e a de quem voltou para a aba fica para quando destravar;
+  foco e visibilidade juntos fazem uma conferência só; a versão tem prazo fixo de 15 s.
+  - Cobre: CB-127
+  - Feito quando: A fica mais de 60 s sem internet, B renomeia P e salva, A volta: vê o nome de B antes de editar, e a
+    edição de A noutro campo de P deixa o nome de B na nuvem.
+- [ ] **T29** — Cópia parcial dividida entre abas (DP-29).
+  - Feito quando: duas abas no mesmo navegador cheio: a outra aba não sobe a cópia parcial, nem ao fechar; a nuvem
+    fica com os 32 pacientes; recarregar com espaço deixa a cópia inteira e em dia.
+- [ ] **T30** — Trava entre abas com prazo e aviso de fechar sem a trava de espaço (DP-30).
+- [ ] **T31** — Política: o dado de antes que ainda não foi para a conta fica até a próxima entrada (DP-30).
+- [ ] **T32** — Validação e relatório ("Rodada de fechamento").
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -231,6 +247,23 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   da conta; sair sem internet apaga a sessão local mesmo assim; uma aba envia por vez (`navigator.locks`, quando existe);
   produtos, modelos, busca e perfil se refazem quando outra aba grava; o estado anuncia só "Salvo"; a trava de tamanho
   só reenvia quando a cópia diminui.
+
+- **DP-28 · Conferir ao destravar (C1 pelo caminho sem internet).** Quando a trava de rede sai sem nada pendente (o
+  evento `online` ou a tentativa de 15 s), a capa "Atualizando…" entra no mesmo instante e a aba confere a nuvem antes
+  de deixar editar. Travada, a conferência de 60 s não é feita, mas continua marcada; quem volta para a aba (foco ou
+  visibilidade) com a área travada tem a conferência guardada para quando a trava sair, mesmo que saia por um salvar.
+  Foco e visibilidade juntos dividem a mesma conferência, e a capa só sai quando ela termina. A leitura da versão tem
+  prazo fixo de 15 s (é um pedido pequeno).
+- **DP-29 · A cópia parcial é do navegador, não da aba.** Quando a cópia de trabalho não cabe, `metanutri:nuvem` ganha
+  `parcial: true`, que toda aba confere antes de montar ou mandar uma cópia (e trava com a mensagem de espaço,
+  inclusive ao fechar a aba); a marca só sai numa abertura que coube inteira. Enquanto a cópia daqui está parcial, a
+  versão guardada não anda (a cópia juntada sobe com a versão da nuvem que ela juntou): um envio perdido de qualquer
+  aba recebe "mudou" e junta, em vez de passar por cima.
+- **DP-30 · Menores do fechamento.** A trava entre abas espera 20 s; sem ela, a ida segue e o motor confere a versão
+  antes de mandar (uma aba congelada não prende as outras). A trava de espaço, que pede para recarregar, não faz o
+  navegador perguntar se pode sair. A Política diz que os dados de antes que ainda não foram para a conta ficam neste
+  navegador até a próxima entrada; a versão dos termos continua `2026-10-08.2`, porque essa versão ainda não foi
+  publicada (ninguém aceitou o texto anterior a esta mudança com ela).
 
 ## Riscos
 
