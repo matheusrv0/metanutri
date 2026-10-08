@@ -21,7 +21,7 @@ export function ProvedoresDeDados({ usuarioId, children }: ProvedoresDeDadosProp
     <Fragment key={usuarioId ?? 'aparelho'}>
       <ProvedorCasos>
         <ProvedorPacientes>
-          <ProvedorAcompanhamentos>{children}</ProvedorAcompanhamentos>
+          <ProvedorAcompanhamentos usuarioId={usuarioId}>{children}</ProvedorAcompanhamentos>
         </ProvedorPacientes>
       </ProvedorCasos>
     </Fragment>

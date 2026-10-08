@@ -417,3 +417,23 @@ describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nu
     expect(chamadas).toHaveLength(0)
   })
 })
+
+describe('a conta esperada (spec dados-por-conta, CA-474)', () => {
+  // A sessão virou a conta B enquanto o aparelho trabalhava pela conta A.
+  const daOutraConta = () => clienteFalso({ usuario: 'conta-b', dados: [LINHA] })
+
+  it('CA-474: listar, subir, salvar e remover não pedem nada quando a sessão é de outra conta', async () => {
+    const { cliente, chamadas } = daOutraConta()
+    expect(await listarAcompanhamentosDaNuvem(cliente, 'conta-a')).toEqual({ tipo: 'falhou', mensagem: FALHA_DE_REDE })
+    expect(await subirAcompanhamento(cliente, acompanhamento(), 'conta-a')).toBe(FALHA_DE_REDE)
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), { jaEsteveNaNuvem: false, esperado: 'conta-a' })).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+    expect(await removerAcompanhamentoDaNuvem(cliente, 'ac-1', 'conta-a')).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('com a sessão da conta esperada, segue como sempre', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-a' })
+    expect(await subirAcompanhamento(cliente, acompanhamento(), 'conta-a')).toBeNull()
+    expect(chamadas[0]?.parametros['nutricionista_id']).toBe('conta-a')
+  })
+})

@@ -24,7 +24,14 @@ const SEM_ATUALIZAR = 'Não consegui atualizar com a nuvem. Mostrando a cópia d
  * Com conta (spec missoes-na-nuvem), o link vive na nuvem e o aparelho guarda uma cópia
  * para abrir sem internet. Sem servidor, tudo fica só no aparelho, como antes (CA-444).
  */
-export function ProvedorAcompanhamentos({ children, repositorio }: { readonly children: ReactNode; readonly repositorio?: RepositorioAcompanhamentos }) {
+interface ProvedorAcompanhamentosProps {
+  readonly children: ReactNode
+  readonly repositorio?: RepositorioAcompanhamentos
+  /** A conta destes dados (spec dados-por-conta): a nuvem só é usada com a sessão dela (CA-474). */
+  readonly usuarioId?: string | null
+}
+
+export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = null }: ProvedorAcompanhamentosProps) {
   // A cópia da conta que entrou (spec dados-por-conta, D-120).
   const armazenamento = useArmazenamento()
   const [repo] = useState<RepositorioAcompanhamentos>(() => repositorio ?? criarRepositorioAcompanhamentos(armazenamento))
@@ -40,6 +47,15 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
   const aCaminho = useRef(new Map<string, number>())
   // Abrir o plano e Adesão juntos (ou voltar para a aba) não faz duas leituras ao mesmo tempo.
   const lendo = useRef<Promise<void> | null>(null)
+  // CA-474: trocar de conta desmonta este provedor. O que ainda estava a caminho da nuvem
+  // confere esta marca depois de cada espera e não grava nem envia mais nada.
+  const ativo = useRef(true)
+  useEffect(() => {
+    ativo.current = true
+    return () => {
+      ativo.current = false
+    }
+  }, [])
 
   const atualizar = useCallback(() => setVersao((v) => v + 1), [])
 
@@ -97,11 +113,13 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
         // A leitura pode estar mandando de novo uma mudança pendente deste link: esta, mais
         // nova, sai depois dela, para as duas não chegarem fora de ordem (CB-108).
         await lendo.current?.catch(() => undefined)
-        const resultado = await salvarLinkNaNuvem(cliente, acompanhamento, { jaEsteveNaNuvem: repo.estaNaNuvem(id) })
+        if (!ativo.current) return null
+        const resultado = await salvarLinkNaNuvem(cliente, acompanhamento, { jaEsteveNaNuvem: repo.estaNaNuvem(id), esperado: usuarioId })
+        if (!ativo.current) return null
         if (resultado.tipo === 'salvo') {
           // O aparelho foi apagado (Apagar tudo) enquanto o link subia: ele sai da nuvem de novo.
           if (repo.porId(id) === null) {
-            await removerAcompanhamentoDaNuvem(cliente, id)
+            await removerAcompanhamentoDaNuvem(cliente, id, usuarioId)
             return null
           }
           marcarNoAparelho(id, { naNuvem: true, pendente: false })
@@ -131,7 +149,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
         terminarDeMexer(id)
       }
     },
-    [repo, cliente, atualizar, marcarForaDaNuvem, marcarNoAparelho, comecarAMexer, terminarDeMexer],
+    [repo, cliente, usuarioId, atualizar, marcarForaDaNuvem, marcarNoAparelho, comecarAMexer, terminarDeMexer],
   )
 
   const remover = useCallback(
@@ -142,7 +160,9 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
         try {
           // Uma leitura subindo este link agora chegaria depois da remoção e o traria de volta.
           await lendo.current?.catch(() => undefined)
-          const motivo = await removerAcompanhamentoDaNuvem(cliente, id)
+          if (!ativo.current) return null
+          const motivo = await removerAcompanhamentoDaNuvem(cliente, id, usuarioId)
+          if (!ativo.current) return null
           if (motivo !== null) return motivo
         } finally {
           terminarDeMexer(id)
@@ -153,7 +173,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
       atualizar()
       return null
     },
-    [repo, cliente, atualizar, marcarForaDaNuvem, comecarAMexer, terminarDeMexer],
+    [repo, cliente, usuarioId, atualizar, marcarForaDaNuvem, comecarAMexer, terminarDeMexer],
   )
 
   const lerDaNuvem = useCallback((): Promise<void> => {
@@ -163,7 +183,8 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     const ler = async () => {
       mexidos.current = new Set(aCaminho.current.keys())
       const intocado = (id: string) => !mexidos.current.has(id)
-      const leitura = await listarAcompanhamentosDaNuvem(cliente)
+      const leitura = await listarAcompanhamentosDaNuvem(cliente, usuarioId)
+      if (!ativo.current) return
       if (leitura.tipo === 'falhou') {
         // CB-106. E sem saber o que está na nuvem, nada sai do aparelho.
         setAvisoNuvem(SEM_ATUALIZAR)
@@ -191,28 +212,32 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
       const motivos = new Map<string, string>()
       const paraMandar = repo.listar().filter((a) => !naNuvem.has(a.id) || repo.estaPendente(a.id))
       for (const { id } of paraMandar) {
+        if (!ativo.current) return
         const atual = repo.porId(id)
         // Removido ou mexido enquanto os outros subiam: quem mexeu cuida da nuvem.
         if (atual === null || !intocado(id)) continue
         let motivo: string | null = null
         if (repo.estaPendente(id)) {
-          const resultado = await salvarLinkNaNuvem(cliente, atual, { jaEsteveNaNuvem: repo.estaNaNuvem(id) })
+          const resultado = await salvarLinkNaNuvem(cliente, atual, { jaEsteveNaNuvem: repo.estaNaNuvem(id), esperado: usuarioId })
+          if (!ativo.current) return
           if (resultado.tipo === 'sumiu') {
             repo.remover(id)
             continue
           }
           if (resultado.tipo === 'falhou') motivo = resultado.motivo
         } else {
-          motivo = await subirAcompanhamento(cliente, atual)
+          motivo = await subirAcompanhamento(cliente, atual, usuarioId)
+          if (!ativo.current) return
         }
         if (motivo !== null) {
           motivos.set(id, motivo)
           continue
         }
         // O aparelho foi apagado (Apagar tudo) enquanto a linha subia: ela sai da nuvem de novo.
-        if (repo.porId(id) === null) await removerAcompanhamentoDaNuvem(cliente, id)
+        if (repo.porId(id) === null) await removerAcompanhamentoDaNuvem(cliente, id, usuarioId)
         else if (intocado(id)) marcarNoAparelho(id, { naNuvem: true, pendente: false })
       }
+      if (!ativo.current) return
       atualizar()
 
       const mexidosNaLeitura = [...mexidos.current]
@@ -231,7 +256,7 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
     })
     lendo.current = leitura
     return leitura
-  }, [cliente, repo, atualizar, marcarNoAparelho])
+  }, [cliente, repo, usuarioId, atualizar, marcarNoAparelho])
 
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua

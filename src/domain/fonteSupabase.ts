@@ -148,6 +148,17 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Pro
 // ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
 
 /**
+ * O dono da sessão, desde que seja a conta para a qual o aparelho está trabalhando (spec
+ * dados-por-conta, CA-474). A sessão que trocou de conta no meio de uma leitura é nula, e nada é
+ * pedido: o link de uma conta nunca vai para a outra. Sem conta esperada, vale a da sessão.
+ */
+async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] }, esperado: string | null | undefined): Promise<string | null> {
+  const usuario = await usuarioDaSessao(cliente)
+  if (usuario === null) return null
+  return esperado === undefined || esperado === null || esperado === usuario ? usuario : null
+}
+
+/**
  * A frase que o banco levanta quando o plano não comporta mais um link (supabase/010,
  * `errcode 'P0001'`). É a única cópia dela no app: o cliente e os testes usam esta.
  */
@@ -197,10 +208,10 @@ export type LeituraDaNuvem = { readonly tipo: 'lida'; readonly itens: readonly A
  * além do RLS: uma política mais larga no futuro não pode trazer paciente de outra conta.
  * Qualquer coisa que não seja uma lista é falha: lista vazia faria o aparelho apagar links (CB-107).
  */
-export async function listarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<LeituraDaNuvem> {
+export async function listarAcompanhamentosDaNuvem(cliente: ClienteMissoes, esperado?: string | null): Promise<LeituraDaNuvem> {
   return comPrazo<LeituraDaNuvem>(
     async (sinal) => {
-      const usuario = await usuarioDaSessao(cliente)
+      const usuario = await usuarioEsperado(cliente, esperado)
       if (usuario === null) return { tipo: 'falhou', mensagem: FALHA_DE_REDE }
       const { data, error } = await comSinal(cliente.from(TABELA).select('*').eq('nutricionista_id', usuario), sinal)
       if (error) return { tipo: 'falhou', mensagem: traduzido(error) }
@@ -216,9 +227,9 @@ export async function listarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Pro
  * D-105: sobe um link que só existe neste aparelho, com as marcações feitas aqui. Só cria:
  * se a linha já estiver na nuvem, nada muda (CB-105). Devolve o motivo, se não subiu.
  */
-export async function subirAcompanhamento(cliente: ClienteMissoes, a: Acompanhamento): Promise<string | null> {
+export async function subirAcompanhamento(cliente: ClienteMissoes, a: Acompanhamento, esperado?: string | null): Promise<string | null> {
   return comPrazo<string | null>(async (sinal) => {
-    const usuario = await usuarioDaSessao(cliente)
+    const usuario = await usuarioEsperado(cliente, esperado)
     if (usuario === null) return FALHA_DE_REDE
     const { error } = await comSinal(cliente.from(TABELA).upsert(paraLinha(a, usuario), { onConflict: 'id', ignoreDuplicates: true }), sinal)
     return error ? motivoDoErro(error) : null
@@ -239,11 +250,11 @@ export type ResultadoDoLink = { readonly tipo: 'salvo' } | { readonly tipo: 'sum
 export async function salvarLinkNaNuvem(
   cliente: ClienteMissoes,
   a: Acompanhamento,
-  opcoes: { readonly jaEsteveNaNuvem: boolean },
+  opcoes: { readonly jaEsteveNaNuvem: boolean; readonly esperado?: string | null },
 ): Promise<ResultadoDoLink> {
   return comPrazo<ResultadoDoLink>(
     async (sinal) => {
-      const usuario = await usuarioDaSessao(cliente)
+      const usuario = await usuarioEsperado(cliente, opcoes.esperado)
       if (usuario === null) return { tipo: 'falhou', motivo: FALHA_DE_REDE }
       const linha = paraLinha(a, usuario)
 
@@ -265,9 +276,9 @@ export async function salvarLinkNaNuvem(
 }
 
 /** CA-440: tira um link da nuvem. Devolve o erro traduzido, ou nulo quando deu certo. */
-export async function removerAcompanhamentoDaNuvem(cliente: ClienteMissoes, id: string): Promise<string | null> {
+export async function removerAcompanhamentoDaNuvem(cliente: ClienteMissoes, id: string, esperado?: string | null): Promise<string | null> {
   return comPrazo<string | null>(async (sinal) => {
-    const usuario = await usuarioDaSessao(cliente)
+    const usuario = await usuarioEsperado(cliente, esperado)
     if (usuario === null) return FALHA_DE_REDE
     const { error } = await comSinal(cliente.from(TABELA).delete().eq('id', id), sinal)
     return error ? traduzido(error) : null
