@@ -27,7 +27,15 @@ export const CONFERIR_A_CADA_MS = 60_000
 const VOLTAS = 5
 
 export type FaseDaNuvem = 'abrindo' | 'sem-conexao' | 'formato-desconhecido' | 'pronta'
-export type TravaDaNuvem = 'sem-internet' | 'grande-demais'
+/** D-130 (rede), CB-123 (tamanho) e DP-23 (o navegador não tem espaço para a cópia de trabalho). */
+export type TravaDaNuvem = 'sem-internet' | 'grande-demais' | 'sem-espaco'
+
+/** Uma cópia a caminho da nuvem, até qual mudança daqui ela leva e se levava uma mudança só lembrada em memória. */
+interface Envio {
+  readonly copia: Backup
+  readonly ate: number
+  readonly lembrada: boolean
+}
 
 export interface EstadoDaNuvem {
   /** `pronta` depois de a cópia da nuvem chegar; antes, a área de trabalho espera (CA-484). */
@@ -95,9 +103,10 @@ export function contarMudanca(armazenamento: Armazenamento): void {
 }
 
 /**
- * O ponto único por onde passa toda gravação de dado da conta (DP-2): grava, marca o item que
- * mudou (ou a lápide do que saiu), conta a mudança e avisa. `contou` é falso quando o navegador
- * não deixou guardar a marca: o motor lembra da mudança em memória.
+ * O ponto único por onde passa toda gravação de dado da conta (DP-2): conta a mudança, grava, marca o
+ * item que mudou (ou a lápide do que saiu) e avisa. A conta vem antes do dado (DP-23): com o navegador
+ * cheio, a pendência fica guardada mesmo que a marca não caiba. `contou` é falso quando nem a conta
+ * coube: o motor lembra da mudança em memória.
  */
 export function observarMudancas(conta: ArmazenamentoDaConta, aoMudar: (contou: boolean) => void, agora: () => string = () => new Date().toISOString()): ArmazenamentoDaConta {
   const ler = (chave: string): string | null => {
@@ -107,30 +116,31 @@ export function observarMudancas(conta: ArmazenamentoDaConta, aoMudar: (contou: 
       return null
     }
   }
-  const registrar = (chave: string, antes: string | null, depois: string | null) => {
-    if (antes === depois || !ehChaveDaNuvem(chave)) return
+  const gravar = (chave: string, depois: string | null, fazer: () => void) => {
+    const antes = ler(chave)
+    if (antes === depois || !ehChaveDaNuvem(chave)) {
+      fazer()
+      return
+    }
     let contou = true
     try {
-      registrarMudanca(conta, chave, antes, depois, agora())
       contarMudanca(conta)
     } catch {
       contou = false
+    }
+    fazer()
+    try {
+      registrarMudanca(conta, chave, antes, depois, agora())
+    } catch {
+      // sem espaço para a marca: a mudança já está contada e sobe; só a hora dela fica de fora
     }
     aoMudar(contou)
   }
   return {
     usuarioId: conta.usuarioId,
     getItem: (chave) => conta.getItem(chave),
-    setItem: (chave, valor) => {
-      const antes = ler(chave)
-      conta.setItem(chave, valor)
-      registrar(chave, antes, valor)
-    },
-    removeItem: (chave) => {
-      const antes = ler(chave)
-      conta.removeItem(chave)
-      registrar(chave, antes, null)
-    },
+    setItem: (chave, valor) => gravar(chave, valor, () => conta.setItem(chave, valor)),
+    removeItem: (chave) => gravar(chave, null, () => conta.removeItem(chave)),
     get length() {
       return conta.length
     },
@@ -275,18 +285,34 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     return vez
   }
 
-  /** Escreve na cópia de trabalho o que veio da nuvem. Se algo mudou, a área de trabalho remonta. */
-  const aplicar = (copia: Backup): void => {
+  // DP-23: a cópia que veio da nuvem não coube no navegador. A cópia daqui deixou de ser completa: nada
+  // que saia dela vai para a nuvem até a página ser recarregada, e ela nunca é dada como em dia.
+  let localParcial = false
+
+  const semEspaco = (): void => {
+    localParcial = true
+    pararDeEsperar()
+    const s = situacao()
+    gravarSituacao({ ...s, mudancas: Math.max(s.mudancas, s.salvas + 1) })
+    definir({ trava: 'sem-espaco', reduzindo: false, pendente: true })
+  }
+
+  /** Escreve na cópia de trabalho o que veio da nuvem; se algo mudou, a área remonta. Falso quando não coube. */
+  const aplicar = (copia: Backup): boolean => {
     let mudou: boolean
+    let coube = true
     try {
       mudou = aplicarCopia(armazenamento, copia)
     } catch {
-      // sem espaço no navegador: o que coube fica; a próxima abertura tenta de novo
       mudou = true
+      coube = false
     }
-    if (!mudou) return
-    opcoes.aoTrazer?.()
-    definir({ geracao: estado.geracao + 1 })
+    if (mudou) {
+      opcoes.aoTrazer?.()
+      definir({ geracao: estado.geracao + 1 })
+    }
+    if (!coube) semEspaco()
+    return coube
   }
 
   const agendarSalvar = (): void => {
@@ -344,13 +370,13 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     const local = montarCopia(armazenamento, agora())
     // Sem mudança pendente, a cópia daqui é a da última vez que esteve em dia: vale a da nuvem (DP-6).
     const emDia = anterior !== null && !sujo && !semRegistro && anterior.mudancas <= anterior.salvas
-    let subir: boolean
+    // A cópia que sobe sai da memória: se a juntada não couber aqui, a daqui fica parcial (DP-23).
+    let subir: Backup | null = null
     if (leitura.copia === null) {
       // D-133: sem cópia na nuvem, o que está aqui sobe como está.
-      subir = Object.keys(local.dados).length > 0
+      if (Object.keys(local.dados).length > 0) subir = local
     } else if (emDia) {
       if (anterior.versao !== leitura.versao) aplicar(semPendencias(leitura.copia))
-      subir = false
     } else {
       // D-133 e CB-125: o que ficou aqui sem subir é juntado ao que está na nuvem, item por item. Sem
       // marca nem data que decida (configurações de antes), fica o lado usado por último (DP-3).
@@ -358,24 +384,31 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       const desempate = momentoDaCopia(local) > daNuvemDesde ? 'daqui' : 'nuvem'
       const junta = juntarCopias(local, semPendencias(leitura.copia), agora(), desempate)
       aplicar(junta)
-      subir = !copiasIguais(junta, leitura.copia)
+      if (!copiasIguais(junta, leitura.copia)) subir = junta
     }
     sujo = false
     naoConfirmado = false
     const atual = situacao()
     const itens = leitura.copia === null ? 0 : itensDaCopia(leitura.copia)
-    if (subir) gravarSituacao({ versao: leitura.versao, itens, mudancas: Math.max(atual.mudancas, atual.salvas + 1), salvas: atual.salvas })
-    else {
+    const mudancas = Math.max(atual.mudancas, atual.salvas + 1)
+    if (subir !== null) gravarSituacao({ versao: leitura.versao, itens, mudancas, salvas: atual.salvas })
+    else if (!localParcial) {
       semRegistro = false
       gravarSituacao({ versao: leitura.versao, itens, mudancas: atual.mudancas, salvas: atual.mudancas })
     }
     definir({ fase: 'pronta', pendente: temPendencia() })
     agendarConferencia()
-    if (temPendencia()) void salvarAgora()
+    if (subir !== null) await rodadaDeSalvar({ copia: subir, ate: mudancas, lembrada: false })
+    else if (temPendencia() && !localParcial) await rodadaDeSalvar()
   }
 
   /** CB-123 e D-130: a cópia não foi. Grande demais trava a área; rede, também, e tenta de novo. */
   const naoFoi = (motivo: 'rede' | 'grande', tamanho: number): false => {
+    // Sem espaço aqui, a capa continua a do espaço: não há o que tentar de novo desta cópia (DP-23).
+    if (localParcial) {
+      definir({ salvando: false, pendente: true, trava: 'sem-espaco' })
+      return false
+    }
     if (motivo === 'grande') {
       const cresceu = ultimaRecusada === null || tamanho > ultimaRecusada
       ultimaRecusada = tamanho
@@ -387,17 +420,30 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     return false
   }
 
-  const rodadaDeSalvar = async (): Promise<boolean> => {
+  /**
+   * Manda uma cópia. Sem `inicial`, monta a daqui; com ele (a cópia juntada ao abrir), manda a que está
+   * em memória. Quando outro aparelho salvou antes, junta e manda a juntada, da memória (DP-23).
+   */
+  const rodadaDeSalvar = async (inicial?: Envio): Promise<boolean> => {
     const minha = epoca
     definir({ salvando: true, pendente: true })
+    let envio: Envio | null = inicial ?? null
     for (let volta = 0; volta < VOLTAS; volta += 1) {
       const antes = situacao()
-      const ate = antes.mudancas
-      const lembrada = semRegistro
-      semRegistro = false
-      const copia = montarCopia(armazenamento, agora())
+      if (envio === null) {
+        // Da cópia daqui, parcial, nada sai (DP-23).
+        if (localParcial) {
+          definir({ salvando: false })
+          return false
+        }
+        const lembrada = semRegistro
+        semRegistro = false
+        envio = { copia: montarCopia(armazenamento, agora()), ate: antes.mudancas, lembrada }
+      }
+      const { copia } = envio
       // DP-11: cópia sem item e sem lápide, quando a nuvem tinha itens, é o espaço apagado por fora.
       if (antes.itens > 0 && copiaSemItens(copia)) {
+        semRegistro ||= envio.lembrada
         definir({ salvando: false })
         return false
       }
@@ -407,19 +453,23 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
 
       if (resultado.tipo === 'gravada') {
         const depois = situacao()
-        gravarSituacao({ ...depois, versao: resultado.versao, salvas: Math.max(depois.salvas, ate), itens: itensDaCopia(copia) })
+        gravarSituacao({ ...depois, versao: resultado.versao, salvas: localParcial ? depois.salvas : Math.max(depois.salvas, envio.ate), itens: itensDaCopia(copia) })
         ultimaRecusada = null
         pararDeTentar()
+        if (localParcial) {
+          definir({ salvando: false, pendente: true })
+          return false
+        }
         const resta = temPendencia()
         definir({ salvando: false, pendente: resta, trava: null, reduzindo: false })
         if (resta) agendarSalvar()
         return !resta
       }
 
-      semRegistro ||= lembrada
+      semRegistro ||= envio.lembrada
       if (resultado.tipo === 'falhou') return naoFoi(resultado.motivo, tamanho)
 
-      // D-132: outro aparelho salvou antes. Lê, junta item por item, grava aqui e manda de novo.
+      // D-132: outro aparelho salvou antes. Lê, junta item por item, grava aqui e manda a juntada.
       const leitura = await lerCopia(cliente, usuarioId, prazoMs)
       if (minha !== epoca || parada) return false
       if (leitura.tipo === 'falhou') return naoFoi('rede', tamanho)
@@ -427,8 +477,14 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
         gravarSituacao({ ...situacao(), versao: null })
         continue
       }
-      aplicar(juntarCopias(montarCopia(armazenamento, agora()), semPendencias(leitura.copia), agora()))
+      // A daqui completa é relida (pode ter mudado durante a ida); a parcial, nunca (DP-23).
+      const ate = localParcial ? envio.ate : situacao().mudancas
+      const lembrada = semRegistro
+      semRegistro = false
+      const junta = juntarCopias(localParcial ? copia : montarCopia(armazenamento, agora()), semPendencias(leitura.copia), agora())
+      if (!localParcial) aplicar(junta)
       gravarSituacao({ ...situacao(), versao: leitura.versao, itens: itensDaCopia(leitura.copia) })
+      envio = { copia: junta, ate, lembrada }
     }
     definir({ salvando: false })
     agendarSalvar()
@@ -438,7 +494,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   function salvarAgora(): Promise<boolean> {
     pararDeEsperar()
     return exclusivo(async () => {
-      if (parada || estado.fase !== 'pronta') return false
+      if (parada || estado.fase !== 'pronta' || localParcial) return false
       if (!temPendencia()) {
         definir({ pendente: false })
         return true
@@ -462,7 +518,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       gravarSituacao({ ...situacao(), versao: null })
       return
     }
-    aplicar(semPendencias(leitura.copia))
+    if (!aplicar(semPendencias(leitura.copia))) return
     const atual = situacao()
     gravarSituacao({ ...atual, versao: leitura.versao, itens: itensDaCopia(leitura.copia), salvas: atual.mudancas })
   }
@@ -520,7 +576,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (parada) return
       if (!contou) semRegistro = true
       definir({ pendente: true })
-      if (!ligada || estado.fase !== 'pronta' || estado.trava === 'sem-internet') return
+      if (!ligada || estado.fase !== 'pronta' || estado.trava === 'sem-internet' || localParcial) return
       agendarSalvar()
     },
 

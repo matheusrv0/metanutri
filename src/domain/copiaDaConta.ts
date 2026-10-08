@@ -159,8 +159,9 @@ export function montarCopia(armazenamento: Armazenamento | null, agora: string):
 }
 
 /**
- * Escreve a cópia na cópia de trabalho: grava o que mudou e tira o que ela não tem (só entre as chaves
- * da nuvem; o resto do aparelho fica). Os planos vão antes do índice. Diz se algo mudou.
+ * Escreve a cópia na cópia de trabalho: tira o que ela não tem e grava o que mudou (só entre as chaves
+ * da nuvem; o resto do aparelho fica). Os planos vão antes do índice. Diz se algo mudou. Sem espaço,
+ * a exceção sobe: o valor de antes de cada chave não gravada continua lá.
  */
 export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): boolean {
   const atual = montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados
@@ -168,14 +169,15 @@ export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): boole
     .filter(([chave]) => ehChaveDaNuvem(chave))
     .sort(([a], [b]) => Number(a === INDICE) - Number(b === INDICE))
   let mudou = false
-  for (const [chave, valor] of entradas) {
-    if (atual[chave] === valor) continue
-    armazenamento.setItem(chave, valor)
-    mudou = true
-  }
+  // As que saem vão antes (DP-23): o espaço delas fica livre para as que entram.
   for (const chave of Object.keys(atual)) {
     if (chave in copia.dados) continue
     armazenamento.removeItem(chave)
+    mudou = true
+  }
+  for (const [chave, valor] of entradas) {
+    if (atual[chave] === valor) continue
+    armazenamento.setItem(chave, valor)
     mudou = true
   }
   return mudou

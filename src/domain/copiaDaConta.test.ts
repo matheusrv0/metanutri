@@ -113,6 +113,26 @@ describe('montar e aplicar a cópia de trabalho', () => {
     expect(aplicarCopia(arm, nova)).toBe(false)
   })
 
+  it('DP-23: aplicar tira as chaves velhas antes de gravar as novas (o espaço liberado é usado)', () => {
+    const ordem: string[] = []
+    const arm = new Memoria()
+    arm.setItem('metanutri:casos', '["p1"]')
+    arm.setItem('metanutri:caso:p1', plano('p1', 'Velho'))
+    const espiao: Armazenamento = {
+      getItem: (k) => arm.getItem(k),
+      setItem: (k, v) => {
+        ordem.push(`gravar ${k}`)
+        arm.setItem(k, v)
+      },
+      removeItem: (k) => {
+        ordem.push(`tirar ${k}`)
+        arm.removeItem(k)
+      },
+    }
+    aplicarCopia(espiao, copia({ 'metanutri:casos': '["p2"]', 'metanutri:caso:p2': plano('p2', 'Novo') }))
+    expect(ordem).toEqual(['tirar metanutri:caso:p1', 'gravar metanutri:caso:p2', 'gravar metanutri:casos'])
+  })
+
   it('DP-15: a cópia que vem da nuvem não traz a marca de link pendente', () => {
     const arquivo = JSON.stringify({ formato: 1, itens: [], naNuvem: ['l1'], pendentes: ['l1'] })
     const limpo = semPendencias(copia({ 'metanutri:acompanhamentos': arquivo }))

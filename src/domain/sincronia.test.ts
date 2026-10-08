@@ -11,6 +11,10 @@ import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ESPERA_
 /** Um navegador: o armazenamento do aparelho, com as chaves listáveis como o `localStorage`. */
 class Navegador implements ArmazenamentoListavel {
   readonly dados = new Map<string, string>()
+  /** Quanto cabe, somando chaves e valores, como o `localStorage`; `null` sem limite. */
+  limite: number | null = null
+  /** As chaves na ordem em que foram gravadas. */
+  readonly gravadas: string[] = []
   get length() {
     return this.dados.size
   }
@@ -21,7 +25,12 @@ class Navegador implements ArmazenamentoListavel {
     return this.dados.get(k) ?? null
   }
   setItem(k: string, v: string) {
+    if (this.limite !== null) {
+      const ocupado = [...this.dados].reduce((total, [chave, valor]) => total + (chave === k ? 0 : chave.length + valor.length), 0)
+      if (ocupado + k.length + v.length > this.limite) throw new DOMException('cheio', 'QuotaExceededError')
+    }
     this.dados.set(k, v)
+    this.gravadas.push(k)
   }
   removeItem(k: string) {
     this.dados.delete(k)
@@ -479,6 +488,42 @@ describe('dados de antes e sessão que vence (D-133)', () => {
     await ligar(deNovo)
     expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia'])
     expect(deNovo.sincronia.estado).toMatchObject({ fase: 'pronta', pendente: false, trava: null })
+  })
+})
+
+describe('navegador sem espaço (DP-23)', () => {
+  const SEM_ESPACO_PACIENTES = Array.from({ length: 30 }, (_, i) => ({ id: `p${i}`, nome: `Paciente ${i} com nome comprido`, atualizadoEm: '2026-10-07T10:00:00.000Z' }))
+
+  it('DP-23: a mudança é contada antes de o dado ser gravado (a pendência fica guardada)', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    a.navegador.gravadas.length = 0
+    a.pacientes.criar('Ana')
+    expect(a.navegador.gravadas).toEqual(['metanutri:conta:conta-a:nuvem', 'metanutri:conta:conta-a:pacientes', 'metanutri:conta:conta-a:mudancas'])
+  })
+
+  it('DP-23: a cópia juntada não cabe aqui: a área trava sem espaço, a cópia inteira sobe da memória e a daqui não fica em dia', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', { formato: 1, geradoEm: '', dados: { 'metanutri:pacientes': JSON.stringify(SEM_ESPACO_PACIENTES) } }, '2026-10-07T10:00:00.000Z')
+    const navegador = new Navegador()
+    navegador.setItem('metanutri:conta:conta-a:pacientes', JSON.stringify([{ id: 'ana', nome: 'Ana daqui', atualizadoEm: '2026-10-08T10:00:00.000Z' }]))
+    navegador.limite = 1500
+    const a = abrirAparelho(nuvem, navegador)
+    await ligar(a)
+    expect(a.sincronia.estado).toMatchObject({ fase: 'pronta', trava: 'sem-espaco', pendente: true })
+    // A nuvem ficou com tudo: o que estava aqui e o que estava lá.
+    expect(pacientesNaNuvem(nuvem)).toHaveLength(31)
+    expect(pacientesNaNuvem(nuvem)).toContain('Ana daqui')
+    const situacao = lerSituacao(armazenamentoDaConta(navegador, 'conta-a'))
+    expect(situacao === null || situacao.mudancas > situacao.salvas).toBe(true)
+
+    // Travado sem espaço, nada mais vai para a nuvem.
+    const pedidos = nuvem.pedidos.length
+    a.sincronia.mudou()
+    await salvar()
+    expect(await a.sincronia.salvarAgora()).toBe(false)
+    expect(nuvem.pedidos.length).toBe(pedidos)
   })
 })
 

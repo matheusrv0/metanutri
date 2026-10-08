@@ -80,4 +80,11 @@ describe('trava da nuvem (spec dados-na-nuvem)', () => {
     expect(screen.getByRole('dialog', { name: 'Atualizando…' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Novo plano' })).not.toBeInTheDocument()
   })
+
+  it('DP-23: sem espaço no navegador, a área fica coberta pela frase do espaço', () => {
+    montar({ trava: 'sem-espaco', pendente: true })
+    expect(screen.getByRole('dialog')).toHaveTextContent('O navegador está sem espaço para seus dados. Feche outras abas do MetaNutri e recarregue a página.')
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reduzir os dados' })).not.toBeInTheDocument()
+  })
 })
