@@ -150,8 +150,8 @@ só eu veja os meus pacientes neste aparelho, para cumprir o sigilo.
 - **CA-149** · Dado o servidor configurado, então continuam abrindo sem sessão: landing, Preços, Criar conta, Entrar, Confirmar e-mail, Esqueci a senha, Nova senha, Termos de uso, Política de privacidade e o link de missões do paciente.
 - **CA-150** · Dado o servidor não configurado, então o app abre sem conta, no modo local, como hoje.
 - **CA-151** · Dado um aparelho com planos de antes desta mudança e sem dono, quando a primeira conta entra, então essa conta vira dona dos dados, e os planos aparecem.
-- **CA-152** · Dado um aparelho cujos dados têm dono, quando entra uma conta diferente, então nenhum plano ou paciente aparece antes de a pessoa escolher entre sair ou apagar os dados deste aparelho e continuar.
-- **CA-153** · Dado "Apagar os dados deste aparelho e continuar", então a tela explica o que vai ser apagado e pede confirmação antes de apagar.
+- **CA-152** · ~~Dado um aparelho cujos dados têm dono, quando entra uma conta diferente, então nenhum plano ou paciente aparece antes de a pessoa escolher entre sair ou apagar os dados deste aparelho e continuar.~~ **Substituído pelo D-122** (`specs/dados-por-conta/SPEC.md`, 07/10/2026): cada conta tem os próprios dados no aparelho, e a tela "Este aparelho tem dados de outra conta" deixou de existir.
+- **CA-153** · ~~Dado "Apagar os dados deste aparelho e continuar", então a tela explica o que vai ser apagado e pede confirmação antes de apagar.~~ **Substituído pelo D-122** (`specs/dados-por-conta/SPEC.md`, 07/10/2026), junto com o CA-152.
 - **CA-154** · Dado alguém com sessão e sem internet, quando abre o app, então ele abre normalmente com os dados do aparelho.
 - **CA-155** · Dado alguém que nunca entrou neste aparelho e está sem internet, quando abre o app, então vê que precisa de internet no primeiro acesso.
 - **CA-156** · Dado "Sair", então a sessão acaba, a pessoa vai para a landing e os dados continuam no aparelho para quando ela voltar.

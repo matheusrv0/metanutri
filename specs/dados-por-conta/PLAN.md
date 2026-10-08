@@ -1,7 +1,7 @@
 # PLAN — Dados por conta no aparelho
 
 **Spec de origem:** `./SPEC.md` (commit c8720d1, D-120 a D-126, CA-465 a CA-471, CB-120 a CB-122)
-**Status:** em execução
+**Status:** concluído (07/10/2026)
 
 ## Abordagem
 
@@ -43,56 +43,56 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 
 ## Tarefas
 
-- [ ] **T1** — Adaptador `armazenamentoDaConta(base, usuarioId)`: `getItem`/`setItem`/`removeItem` com prefixo;
+- [x] **T1** — Adaptador `armazenamentoDaConta(base, usuarioId)`: `getItem`/`setItem`/`removeItem` com prefixo;
   `length`/`key(i)` listam só as chaves da conta, sem o prefixo; `clear()` apaga só as da conta; `chaveOriginal()`
   traduz a chave de um evento `storage`.
   - Depende de: —
   - Cobre: base de D-120, D-125
   - Feito quando: testes de prefixo, listagem, isolamento entre duas contas, `removeItem`/`clear` só da conta,
     chaves do aparelho e da sessão intocadas, backup com nomes originais.
-- [ ] **T2** — `migrarDadosSemConta(base, usuarioId)` e `apagarDadosDaConta(base, usuarioId)` em `donoDosDados.ts`
+- [x] **T2** — `migrarDadosSemConta(base, usuarioId)` e `apagarDadosDaConta(base, usuarioId)` em `donoDosDados.ts`
   (as funções antigas ficam até a T6, que tira o último uso).
   - Depende de: T1
   - Cobre: CA-467, CA-468, CA-469, CB-121 (domínio)
   - Feito quando: testes da migração com dono = quem entra, dono = outra conta, sem dono, cru e da conta juntos
     (conflito), cópia interrompida, rodar duas vezes, armazenamento que falha; apagar só a conta que sai.
-- [ ] **T3** — Contexto `useArmazenamento()`, `armazenamentoDaSessao()` e `ProvedorArmazenamento`: sem sessão ou sem
+- [x] **T3** — Contexto `useArmazenamento()`, `armazenamentoDaSessao()` e `ProvedorArmazenamento`: sem sessão ou sem
   servidor, o armazenamento do aparelho; com sessão, migra e devolve o da conta; registra os produtos da conta na busca e
   esquece os ocultos em memória da anterior. Os ocultos (e a GavetaCobrir, único
   uso) já passam a receber o armazenamento aqui, porque o teste da troca em memória usa a função nova.
   - Depende de: T2
   - Cobre: CB-121 (sessão), base de CB-120
   - Feito quando: testes da escolha (com e sem sessão, sem servidor, navegador bloqueado) e dos produtos por conta.
-- [ ] **T4** — Todo leitor de dado da pessoa usa `useArmazenamento()`: os três provedores (com o evento `storage`
+- [x] **T4** — Todo leitor de dado da pessoa usa `useArmazenamento()`: os três provedores (com o evento `storage`
   traduzido), DialogoModelos, Configurações (backup, nuvem, apagar), AvisoPrimeiroAcesso,
   sugestões, impressão, folha da dieta, produtos, perfil da conta.
   - Depende de: T3
   - Cobre: CA-470, CB-122 (aviso por conta)
   - Feito quando: teste de Configurações com duas contas (baixar, restaurar, enviar e trazer da nuvem só da conta
     que está dentro) e do aviso de primeiro acesso por conta; o resto da suíte continua verde (sem provedor = aparelho).
-- [ ] **T5** — `sair({ apagarDoAparelho: true })` apaga só os dados da conta da sessão.
+- [x] **T5** — `sair({ apagarDoAparelho: true })` apaga só os dados da conta da sessão.
   - Depende de: T2
   - Cobre: CA-469
   - Feito quando: teste do gancho com A e B no aparelho: só A some; tema e dados de B ficam; "Só sair" não apaga nada.
-- [ ] **T6** — `App`: `useConta` uma vez, em `App`; `ProvedorArmazenamento` com o id da conta por fora dos
+- [x] **T6** — `App`: `useConta` uma vez, em `App`; `ProvedorArmazenamento` com o id da conta por fora dos
   provedores; `main.tsx` deixa de registrar produtos na abertura (passa a ser do provedor, junto com a conta; antes
   da T6 ninguém mais os registraria); sai `situacaoAoEntrar`/`registrarDono`/`apagarDadosDoAparelho`, a tela `TelaOutraConta` e os testes
   CA-151 a CA-153 (trocados pelos novos).
   - Depende de: T3, T4, T5
   - Cobre: CA-465, CA-466, CA-467, CA-468, CA-471, CB-120, CB-122
   - Feito quando: testes do `App` com a troca de conta na mesma aba e a tela de outra conta ausente.
-- [ ] **T6b** — Só a área de trabalho remonta (DP-11): `ProvedorArmazenamento` só dá o contexto; `ProvedoresDeDados`
+- [x] **T6b** — Só a área de trabalho remonta (DP-11): `ProvedorArmazenamento` só dá o contexto; `ProvedoresDeDados`
   (com a `key`) envolve os três provedores e a nova `AreaDeTrabalho`, que recebe do `App` as rotas de trabalho e o
   link do paciente. Achado na revisão da T6: com tudo remontando, a sessão de recuperação que chega depois do código
   recomeçava a tela da troca de senha e perdia o erro e o código já aceito.
   - Depende de: T6
   - Cobre: CB-120 (troca direta de conta), DP-11
   - Feito quando: teste do `App` com a sessão chegando no meio da troca de senha, e com a troca direta de A para B.
-- [ ] **T7** — Termos sem "precisa sair ou apagar os dados do aparelho".
+- [x] **T7** — Termos sem "precisa sair ou apagar os dados do aparelho".
   - Depende de: T6
   - Cobre: D-122 (texto)
   - Feito quando: a frase sai e os testes de Termos continuam verdes.
-- [ ] **T8** — Notas nas specs `estilo-spora` (CA-152/CA-153 → D-122) e `seguranca-lote-1` (D-96 → D-124).
+- [x] **T8** — Notas nas specs `estilo-spora` (CA-152/CA-153 → D-122) e `seguranca-lote-1` (D-96 → D-124).
   - Depende de: T6
   - Feito quando: as duas notas no lugar.
 
@@ -160,8 +160,8 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 
 ## Validação
 
-- [ ] `npm run check` (lint + typecheck + testes)
-- [ ] `npx playwright test`
-- [ ] `npm run build`
-- [ ] Cada CA e CB com teste que cita o ID
-- [ ] Divergências spec × código listadas no relatório
+- [x] `npm run check` (lint + typecheck + testes)
+- [x] `npx playwright test`
+- [x] `npm run build`
+- [x] Cada CA e CB com teste que cita o ID
+- [x] Divergências spec × código listadas no relatório

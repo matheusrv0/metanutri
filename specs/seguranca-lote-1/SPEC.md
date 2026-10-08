@@ -10,7 +10,7 @@ de prioridade média e baixa que não dependem do painel.
 |---|---|
 | D-94 | **"Apagar tudo" apaga também a cópia completa na nuvem.** A mensagem só diz "na nuvem" quando as duas partes foram apagadas |
 | D-95 | **O servidor garante o aviso de uso não comercial e o limite de links por plano.** Conta de estudante sempre gera link com o aviso, tenha ou não o plano Estudante aprovado; e o banco recusa link além do limite do plano que vale para a conta. O navegador continua avisando antes, como hoje |
-| D-96 | **Sair da conta pergunta se o computador é compartilhado.** "Sair e apagar os dados deste aparelho" apaga pacientes e planos guardados no navegador; "Só sair" mantém. Quando houver mudança que ainda não foi para a nuvem, a janela avisa antes de apagar |
+| D-96 | **Sair da conta pergunta se o computador é compartilhado.** "Sair e apagar os dados deste aparelho" apaga pacientes e planos guardados no navegador; "Só sair" mantém. Quando houver mudança que ainda não foi para a nuvem, a janela avisa antes de apagar. **Refinado pelo D-124** (`specs/dados-por-conta/SPEC.md`, 07/10/2026): apaga só os dados da conta que está saindo; os de outras contas continuam |
 | D-97 | **Endurecimento do servidor:** as funções do servidor só aceitam chamadas vindas de `https://metanutri.com.br`; o banco recusa marcações de missão grandes demais, token de link fora do padrão e envio de comprovante por quem não é estudante (no máximo 10 arquivos por conta); funções internas deixam de ser chamáveis sem login |
 | D-98 | **Erros do banco não aparecem crus na tela**: passam pela tradução de mensagens que o resto do app já usa |
 | D-99 | **O site não abre dentro de outro site** (moldura/iframe): se for aberto assim, mostra só um aviso com o link para abrir direto |
