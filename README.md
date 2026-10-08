@@ -228,12 +228,18 @@ Para funcionar de verdade, nesta ordem:
    gh variable set VITE_TURNSTILE_SITE_KEY --body "<a Site Key>"
    ```
    A **Secret Key** nunca vai para o repositório nem para o chat: só para o painel do Supabase. **Ordem para ligar
-   (D-116):** primeiro publique o site com a Site Key; só depois, em *Supabase > Authentication > Attack Protection*,
-   ligue *Enable Captcha protection*, escolha *Turnstile*, cole a Secret Key e salve. Nunca o contrário: com o
-   captcha ligado e o site antigo, ninguém entra nem se cadastra. Para conferir, crie uma conta de teste no site
-   publicado. Se o script do Cloudflare não carregar (rede, bloqueador), o site tenta mesmo assim, sem a verificação
-   (D-119): com o captcha ligado, o Supabase recusa e a tela diz "A verificação de segurança não carregou".
-   **Se o Cloudflare cair (R-43):** desligue o captcha no mesmo painel; o login volta na hora, sem publicar o site
+   (D-116):** primeiro publique o site com a Site Key. Logo depois de publicar, recarregue o site (Ctrl+Shift+R no
+   computador) e confira na Política de privacidade que está escrito "Versão de 7 de outubro de 2026". Se não estiver,
+   espere a publicação terminar e recarregue de novo. Espere 1 ou 2 dias depois de publicar: quem já visitou o site
+   guarda a versão antiga até recarregar a página; com o captcha ligado, essa versão antiga não consegue entrar. Só
+   então, em *Supabase > Authentication > Attack Protection*, ligue *Enable Captcha protection*, escolha
+   *Turnstile*, cole a Secret Key e salve. Nunca o contrário: com o captcha ligado e o site antigo, ninguém entra nem
+   se cadastra. Para conferir, crie uma conta de teste no site publicado. Se o script do Cloudflare não carregar
+   (rede, bloqueador), o site tenta mesmo assim, sem a verificação (D-119): com o captcha ligado, o Supabase recusa e
+   a tela diz "A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a
+   página." Se o Cloudflare carregar mas não responder em 30 segundos, o site também segue sem a verificação. Se
+   alguém disser que aparece "Não deu para falar com o servidor" ou que o código não chega, peça para recarregar a
+   página. **Se o Cloudflare cair (R-43):** desligue o captcha no mesmo painel; o login volta na hora, sem publicar o site
    de novo. Quando o Cloudflare voltar, ligue o captcha outra vez. Com o captcha ligado, o `npm run dev` só entra na
    conta com a mesma Site Key no `.env.local`.
 

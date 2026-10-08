@@ -122,24 +122,33 @@ Atualizado em 07/10/2026.
 > - R-41: na primeira cópia grande de verdade, conferir que a tela mostra a frase de 5 MB; se o Supabase recusar com
 >   outro código, a tela mostra a falha de rede (Decisão 5 do plano).
 >
->
 > **Atualizado em 07/10 (segurança, lote 3):** cadastro, Entrar, "Esqueci a senha" e "Reenviar o código" passam a
 > levar a verificação contra robôs do Cloudflare Turnstile, conferida pelo Supabase (spec `seguranca-lote-3`, D-113 a
 > D-119). Ela fica escondida e só aparece, logo acima do botão, quando o Cloudflare pede um clique. Confirmar o código
 > de 8 dígitos não usa verificação. Se o script do Cloudflare não carregar, o site tenta mesmo assim, sem a
-> verificação; com o captcha ligado, a tela diz que a verificação não carregou. A Política de privacidade cita o
+> verificação; com o captcha ligado, a tela diz que a verificação não carregou. Se o Cloudflare carregar mas não
+> responder em 30 segundos, o site também segue sem a verificação. A Política de privacidade cita o
 > Turnstile, e a versão dos termos passa a ser `2026-10-07`.
 >
 > **A ordem para pôr no ar (você roda; nunca ligue o captcha antes do site novo, D-116):**
 >
 > 1. juntar o ramo na `main` (feito pelo assistente; não publica nada sozinho);
-> 2. conferir que a variável existe: `gh variable list` mostra `VITE_TURNSTILE_SITE_KEY`;
+> 2. conferir que a variável já existe (criada em 07/10/2026): `gh variable list` mostra `VITE_TURNSTILE_SITE_KEY`;
 > 3. publicar o site: `gh workflow run publicar.yml --ref main`, e esperar terminar
->    (`gh run list --workflow publicar.yml --limit 1` mostra `completed` e `success`);
+>    (`gh run list --workflow publicar.yml --limit 1` mostra `completed` e `success`). Depois, recarregue o site
+>    (Ctrl+Shift+R no computador) e confira na Política de privacidade que está escrito "Versão de 7 de outubro de
+>    2026". Se não estiver, espere a publicação terminar e recarregue de novo;
 > 4. no site publicado, entrar com a sua conta: com o captcha ainda desligado no Supabase, tudo funciona como antes;
-> 5. no Supabase, em *Authentication > Attack Protection*: ligar *Enable Captcha protection*, escolher *Turnstile*,
+> 5. esperar 1 ou 2 dias depois de publicar. Quem já visitou o site guarda a versão antiga até recarregar a página;
+>    com o captcha ligado, essa versão antiga não consegue entrar;
+> 6. no Supabase, em *Authentication > Attack Protection*: ligar *Enable Captcha protection*, escolher *Turnstile*,
 >    colar a **Secret Key** (só ali, nunca no chat) e salvar;
-> 6. conferir: criar uma conta de teste com outro e-mail, sair, entrar de novo e pedir "Esqueci a senha".
+> 7. conferir: criar uma conta de teste com outro e-mail, sair, entrar de novo e pedir "Esqueci a senha". Se, depois
+>    de ligar o captcha, aparecer "A verificação de segurança não carregou" ou "Não deu para confirmar que é você",
+>    desligue o captcha na hora no mesmo painel e mande a mensagem ao assistente.
+>
+> Se alguém disser que aparece "Não deu para falar com o servidor" ou que o código não chega, peça para recarregar a
+> página.
 >
 > **Se o Cloudflare cair (R-43, D-119):** desligar o captcha no mesmo painel (*Authentication > Attack Protection*).
 > O login volta na hora, sem publicar o site de novo: sem o script, o site já manda os pedidos sem a verificação, e o
