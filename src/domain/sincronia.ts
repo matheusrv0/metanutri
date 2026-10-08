@@ -357,7 +357,28 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     else agendarTentativa()
   }
 
-  const abrir = (): Promise<void> => exclusivo(abrirAgora)
+  // DP-25: uma abertura por vez; pedir de novo no meio devolve a mesma.
+  let abrindo: Promise<void> | null = null
+  const abrir = (): Promise<void> => {
+    if (abrindo !== null) return abrindo
+    const esta = exclusivo(abrirProtegido).finally(() => {
+      if (abrindo === esta) abrindo = null
+    })
+    abrindo = esta
+    return esta
+  }
+
+  /** DP-25: um erro qualquer na abertura vira "sem conexão", com nova tentativa. */
+  async function abrirProtegido(): Promise<void> {
+    const minha = epoca
+    try {
+      await abrirAgora()
+    } catch {
+      if (minha !== epoca || parada || estado.fase === 'pronta') return
+      definir({ fase: 'sem-conexao' })
+      agendarTentativa()
+    }
+  }
 
   async function abrirAgora(): Promise<void> {
     if (parada || estado.fase === 'pronta') return

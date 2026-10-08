@@ -23,7 +23,7 @@ export function PortaoDaNuvem({ areaDoNutricionista, conta, aoSaiu, children }: 
   const nuvem = useNuvem()
   if (nuvem === null || !areaDoNutricionista) return <>{children}</>
   const { fase, trava, reduzindo, conferindo } = nuvem.estado
-  if (fase !== 'pronta') return <TelaAbrindoDados fase={fase} />
+  if (fase !== 'pronta') return <TelaAbrindoDados fase={fase} conta={conta} aoSaiu={aoSaiu} />
   // CB-123: reduzindo, a capa sai e a frase do CA-445 fica no alto da área (Estrutura).
   const capa = trava === 'grande-demais' && reduzindo ? null : trava
   return (

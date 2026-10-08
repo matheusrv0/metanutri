@@ -87,4 +87,25 @@ describe('trava da nuvem (spec dados-na-nuvem)', () => {
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Reduzir os dados' })).not.toBeInTheDocument()
   })
+
+  it('DP-25: sem internet antes de abrir, a tela tem "Sair"; com dado que nunca subiu, pergunta antes', async () => {
+    const { usuario, conta } = montar({ fase: 'sem-conexao', pendente: true })
+    expect(screen.getByText('Sem internet. Conecte-se para abrir seus dados.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Sair' }))
+    expect(await screen.findByText('Se sair agora, elas se perdem.')).toBeInTheDocument()
+    expect(conta.sair).not.toHaveBeenCalled()
+  })
+
+  it('DP-25: com a cópia num formato desconhecido e nada pendente, "Sair" sai', async () => {
+    const { usuario, conta, aoSaiu } = montar({ fase: 'formato-desconhecido' })
+    await usuario.click(screen.getByRole('button', { name: 'Sair' }))
+    await waitFor(() => expect(aoSaiu).toHaveBeenCalledOnce())
+    expect(conta.sair).toHaveBeenCalledOnce()
+  })
+
+  it('"Carregando seus dados…" não tem botão', () => {
+    montar({ fase: 'abrindo' })
+    expect(screen.getByText('Carregando seus dados…')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
 })

@@ -1,4 +1,8 @@
 import type { FaseDaNuvem } from '@/domain/sincronia.ts'
+import { Button } from '@ds/componentes/forms/button.tsx'
+import { DialogoSair } from '../conta/DialogoSair.tsx'
+import type { ValorConta } from '../estado/usarConta.ts'
+import { useSaida } from '../estado/usarSaida.ts'
 
 const TEXTOS: Readonly<Record<Exclude<FaseDaNuvem, 'pronta'>, string>> = {
   abrindo: 'Carregando seus dados…',
@@ -10,13 +14,29 @@ const TEXTOS: Readonly<Record<Exclude<FaseDaNuvem, 'pronta'>, string>> = {
 
 interface TelaAbrindoDadosProps {
   readonly fase: Exclude<FaseDaNuvem, 'pronta'>
+  /** Para o "Sair" das telas que não abriram (DP-25). */
+  readonly conta: Pick<ValorConta, 'sair'>
+  readonly aoSaiu: () => void
 }
 
-/** O que aparece no lugar da área de trabalho enquanto os dados da nuvem não chegaram (spec dados-na-nuvem). */
-export function TelaAbrindoDados({ fase }: TelaAbrindoDadosProps) {
+/**
+ * O que aparece no lugar da área de trabalho enquanto os dados da nuvem não chegaram (spec dados-na-nuvem).
+ * Sem internet ou com a cópia num formato desconhecido, dá para sair (DP-25); com dado que nunca subiu,
+ * a saída pergunta antes (CA-479).
+ */
+export function TelaAbrindoDados({ fase, conta, aoSaiu }: TelaAbrindoDadosProps) {
+  const saida = useSaida(conta, aoSaiu)
   return (
-    <div role={fase === 'abrindo' ? 'status' : 'alert'} className="grid min-h-dvh place-content-center bg-background px-6 text-center text-sm text-muted-foreground">
-      {TEXTOS[fase]}
+    <div className="grid min-h-dvh place-content-center justify-items-center gap-4 bg-background px-6 text-center text-sm text-muted-foreground">
+      <p role={fase === 'abrindo' ? 'status' : 'alert'}>{TEXTOS[fase]}</p>
+      {fase === 'abrindo' ? null : (
+        <>
+          <Button variant="outline" onClick={() => void saida.pedirSair()} disabled={saida.saindo}>
+            {saida.saindo ? 'Saindo…' : 'Sair'}
+          </Button>
+          <DialogoSair aberto={saida.perguntando} saindo={saida.saindo} aoFicar={saida.ficar} aoSairMesmoAssim={() => void saida.sairMesmoAssim()} />
+        </>
+      )}
     </div>
   )
 }

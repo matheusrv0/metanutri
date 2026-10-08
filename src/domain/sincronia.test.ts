@@ -15,6 +15,8 @@ class Navegador implements ArmazenamentoListavel {
   limite: number | null = null
   /** As chaves na ordem em que foram gravadas. */
   readonly gravadas: string[] = []
+  /** Enquanto verdadeiro, ler qualquer chave falha (navegador que bloqueia o armazenamento no meio). */
+  falharLeitura = false
   get length() {
     return this.dados.size
   }
@@ -22,6 +24,7 @@ class Navegador implements ArmazenamentoListavel {
     return [...this.dados.keys()][i] ?? null
   }
   getItem(k: string) {
+    if (this.falharLeitura) throw new DOMException('bloqueado', 'SecurityError')
     return this.dados.get(k) ?? null
   }
   setItem(k: string, v: string) {
@@ -242,6 +245,31 @@ describe('sem internet (D-130)', () => {
     await vi.advanceTimersByTimeAsync(0)
     expect(a.sincronia.estado.fase).toBe('pronta')
     expect(nomesDosPacientes(a)).toEqual(['Ana'])
+  })
+
+  it('DP-25: um erro qualquer na abertura vira "sem conexão" e a abertura tenta de novo', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    const a = abrirAparelho(nuvem, navegador)
+    navegador.falharLeitura = true
+    await ligar(a)
+    expect(a.sincronia.estado.fase).toBe('sem-conexao')
+    navegador.falharLeitura = false
+    await vi.advanceTimersByTimeAsync(INTERVALO_DE_TENTATIVA_MS)
+    expect(a.sincronia.estado.fase).toBe('pronta')
+  })
+
+  it('DP-25: duas aberturas pedidas juntas são uma só', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.segurar = true
+    const a = abrirAparelho(nuvem)
+    a.sincronia.ligar()
+    a.sincronia.conectou()
+    a.sincronia.conectou()
+    nuvem.soltar()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(a.sincronia.estado.fase).toBe('pronta')
+    expect(nuvem.pedidos).toEqual(['select'])
   })
 
   it('a cópia num formato que este MetaNutri não entende não é sobrescrita', async () => {
