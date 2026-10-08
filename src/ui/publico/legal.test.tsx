@@ -52,6 +52,13 @@ describe('documentos legais', () => {
     expect(texto).toContain('7 de outubro de 2026')
   })
 
+  it('D-122 (spec dados-por-conta): outra conta no mesmo aparelho não vê os seus dados, e os termos não mandam sair nem apagar', () => {
+    render(<TelaTermos />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('Se outra conta entrar no mesmo aparelho, ela não vê os seus dados.')
+    expect(texto).not.toContain('precisa sair ou apagar')
+  })
+
   it('D-46: sem responsável ou contato, os dois mostram que estão em preparação', () => {
     legal.RESPONSAVEL = null
     render(<TelaPrivacidade />)

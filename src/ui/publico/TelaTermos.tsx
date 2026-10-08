@@ -28,7 +28,7 @@ export function TelaTermos() {
       <ul>
         <li>Cada conta é de uma pessoa. Não compartilhe a senha.</li>
         <li>Os planos ficam salvos no aparelho. Guarde o backup, em Configurações, para não depender de um só aparelho.</li>
-        <li>Se outra conta entrar no mesmo aparelho, ela não vê os seus dados: precisa sair ou apagar os dados do aparelho.</li>
+        <li>Se outra conta entrar no mesmo aparelho, ela não vê os seus dados.</li>
       </ul>
 
       <h2>Planos e pagamento</h2>
