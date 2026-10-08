@@ -1,109 +1,107 @@
-import { COPIA_GRANDE_DEMAIS, FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
-import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, SEM_CONTA, type ClienteCopia } from './copiaNaNuvem.ts'
+import { apelidoDoAparelho, gravarCopia, lerCopia } from './copiaNaNuvem.ts'
+import { nuvemFalsa } from './nuvemFalsa.test-utils.ts'
 import type { Backup } from './perfil.ts'
 
-const BACKUP: Backup = { formato: 1, geradoEm: '2026-09-27T00:00:00.000Z', dados: { 'metanutri:casos': '["id1"]' } }
+const copia = (pacientes: string): Backup => ({ formato: 1, geradoEm: '2026-10-08T10:00:00.000Z', dados: { 'metanutri:pacientes': pacientes } })
+const AGORA = '2026-10-08T10:00:00.000Z'
+const DEPOIS = '2026-10-08T10:05:00.000Z'
 
-interface Chamada {
-  readonly tipo: 'upsert' | 'select' | 'delete'
-  readonly parametros: Record<string, unknown>
-}
-
-function clienteFalso(
-  opcoes: {
-    readonly usuario?: string | null
-    readonly linha?: unknown
-    readonly erro?: string | { readonly message: string; readonly code: string }
-    /** O status HTTP da gravação (R-41: o servidor pode recusar antes do banco). */
-    readonly status?: number
-  } = {},
-) {
-  const chamadas: Chamada[] = []
-  const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
-
-  const cliente: ClienteCopia = {
-    from: () => ({
-      upsert: (linha) => {
-        chamadas.push({ tipo: 'upsert', parametros: linha })
-        return Promise.resolve({ data: null, error: erro, ...(opcoes.status === undefined ? {} : { status: opcoes.status }) })
-      },
-      delete: () => ({
-        eq: (coluna, valor) => {
-          chamadas.push({ tipo: 'delete', parametros: { [coluna]: valor } })
-          return Promise.resolve({ data: null, error: erro })
-        },
-      }),
-      select: () => ({
-        eq: (coluna, valor) => ({
-          maybeSingle: () => {
-            chamadas.push({ tipo: 'select', parametros: { [coluna]: valor } })
-            return Promise.resolve({ data: opcoes.linha ?? null, error: erro })
-          },
-        }),
-      }),
-    }),
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: opcoes.usuario ? { user: { id: opcoes.usuario } } : null } }),
-    },
-  }
-
-  return { cliente, chamadas }
-}
-
-describe('Enviar a cópia', () => {
-  it('grava o backup na linha do usuário', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'user-1' })
-    const { ok, erro } = await enviarCopia(cliente, BACKUP, 'Windows')
-
-    expect(erro).toBeNull()
-    expect(ok).toMatch(/^\d{4}-\d{2}-\d{2}T/)
-    expect(chamadas[0]?.parametros['nutricionista_id']).toBe('user-1')
-    expect(chamadas[0]?.parametros['aparelho']).toBe('Windows')
+describe('ler a cópia da conta (spec dados-na-nuvem)', () => {
+  it('traz a cópia e a versão da linha da conta', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', copia('[{"id":"ana"}]'), AGORA)
+    const leitura = await lerCopia(nuvem.cliente, 'conta-a')
+    expect(leitura).toEqual({ tipo: 'lida', copia: copia('[{"id":"ana"}]'), versao: '2026-10-08T10:00:00.000+00:00' })
   })
 
-  it('sem conta, não tenta gravar e explica o que fazer', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: null })
-    const { ok, erro } = await enviarCopia(cliente, BACKUP, 'Windows')
-
-    expect(ok).toBeNull()
-    expect(erro).toBe(SEM_CONTA)
-    expect(chamadas).toHaveLength(0)
+  it('sem linha na nuvem, não há cópia nem versão', async () => {
+    expect(await lerCopia(nuvemFalsa().cliente, 'conta-a')).toEqual({ tipo: 'lida', copia: null, versao: null })
   })
 
-  it('erro do banco volta como erro, não como sucesso', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'sem rede' })
-    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
+  it('CA-484: sem internet, a leitura falha por rede', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.semInternet = true
+    expect(await lerCopia(nuvem.cliente, 'conta-a')).toEqual({ tipo: 'falhou', motivo: 'rede' })
+  })
+
+  it('CA-474: com a sessão de outra conta (ou sem sessão), não pede nada', async () => {
+    const nuvem = nuvemFalsa({ usuario: 'conta-b' })
+    expect(await lerCopia(nuvem.cliente, 'conta-a')).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.usuario = null
+    expect(await lerCopia(nuvem.cliente, 'conta-a')).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    expect(nuvem.pedidos).toEqual([])
+  })
+
+  it('cópia num formato que este MetaNutri não entende não vira cópia vazia', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', { formato: 2, dados: {} }, AGORA)
+    expect(await lerCopia(nuvem.cliente, 'conta-a')).toEqual({ tipo: 'falhou', motivo: 'formato' })
+  })
+
+  it('a nuvem que não responde no prazo conta como falha de rede', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.segurar = true
+    expect(await lerCopia(nuvem.cliente, 'conta-a', 10)).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.soltar()
   })
 })
 
-describe('Baixar a cópia', () => {
-  it('devolve o backup, de que aparelho veio e quando', async () => {
-    const linha = { dados: BACKUP, aparelho: 'Celular Android', atualizado_em: '2026-09-26T10:00:00.000Z' }
-    const { cliente } = clienteFalso({ usuario: 'user-1', linha })
-    const { ok, erro } = await baixarCopia(cliente)
+describe('gravar a cópia com conferência de versão (D-132)', () => {
+  const pedido = (versao: string | null, pacientes = '[{"id":"ana"}]') => ({ copia: copia(pacientes), versao, aparelho: 'Windows', esperado: 'conta-a', agora: DEPOIS })
 
-    expect(erro).toBeNull()
-    expect(ok?.backup.dados).toEqual(BACKUP.dados)
-    expect(ok?.aparelho).toBe('Celular Android')
-    expect(ok?.atualizadoEm).toBe('2026-09-26T10:00:00.000Z')
+  it('sem linha na nuvem, cria a linha da conta', async () => {
+    const nuvem = nuvemFalsa()
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'gravada', versao: '2026-10-08T10:05:00.000+00:00' })
+    expect(nuvem.linhas.get('conta-a')).toMatchObject({ dados: copia('[{"id":"ana"}]'), aparelho: 'Windows' })
+    expect(nuvem.pedidos).toEqual(['insert'])
   })
 
-  it('conta sem cópia nenhuma diz isso, em vez de devolver vazio', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', linha: null })
-    expect((await baixarCopia(cliente)).erro).toContain('Ainda não existe cópia')
+  it('com a versão que está na nuvem, atualiza e devolve a versão nova', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', copia('[]'), AGORA)
+    expect(await gravarCopia(nuvem.cliente, pedido('2026-10-08T10:00:00.000+00:00'))).toEqual({ tipo: 'gravada', versao: '2026-10-08T10:05:00.000+00:00' })
+    expect(nuvem.linhas.get('conta-a')?.dados).toEqual(copia('[{"id":"ana"}]'))
+    expect(nuvem.pedidos).toEqual(['update'])
   })
 
-  it('cópia num formato estranho não vira restauração pela metade', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', linha: { dados: { formato: 99 } } })
-    const { ok, erro } = await baixarCopia(cliente)
-
-    expect(ok).toBeNull()
-    expect(erro).toContain('formato')
+  it('CA-480: outro aparelho salvou depois da versão conhecida: nada é sobrescrito e a resposta é "mudou"', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', copia('[{"id":"bia"}]'), '2026-10-08T10:03:00.000Z')
+    expect(await gravarCopia(nuvem.cliente, pedido('2026-10-08T10:00:00.000+00:00'))).toEqual({ tipo: 'mudou' })
+    expect(nuvem.linhas.get('conta-a')?.dados).toEqual(copia('[{"id":"bia"}]'))
   })
 
-  it('sem conta, avisa', async () => {
-    const { cliente } = clienteFalso({ usuario: null })
-    expect((await baixarCopia(cliente)).erro).toBe(SEM_CONTA)
+  it('CA-480: outro aparelho criou a linha antes: "mudou", sem sobrescrever', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar('conta-a', copia('[{"id":"bia"}]'), AGORA)
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'mudou' })
+    expect(nuvem.linhas.get('conta-a')?.dados).toEqual(copia('[{"id":"bia"}]'))
+  })
+
+  it('CB-123: a cópia acima da trava de tamanho é recusada como grande, pelo banco ou pelo servidor (413)', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.limite = 50
+    expect(await gravarCopia(nuvem.cliente, pedido(null, JSON.stringify([{ id: 'x'.repeat(100) }])))).toEqual({ tipo: 'falhou', motivo: 'grande' })
+    nuvem.limite = null
+    nuvem.recusar413 = true
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'falhou', motivo: 'grande' })
+    expect(nuvem.linhas.size).toBe(0)
+  })
+
+  it('CA-477: sem internet, sem sessão, com a sessão de outra conta ou sem resposta no prazo, falha por rede', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.semInternet = true
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.semInternet = false
+    nuvem.usuario = null
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.usuario = 'conta-b'
+    expect(await gravarCopia(nuvem.cliente, pedido(null))).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.usuario = 'conta-a'
+    nuvem.segurar = true
+    expect(await gravarCopia(nuvem.cliente, pedido(null), 10)).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    nuvem.soltar()
+    expect(nuvem.linhas.has('conta-b')).toBe(false)
   })
 })
 
@@ -116,73 +114,5 @@ describe('Apelido do aparelho', () => {
     ['coisa desconhecida', 'Este aparelho'],
   ])('%s', (agente, esperado) => {
     expect(apelidoDoAparelho(agente)).toBe(esperado)
-  })
-})
-
-describe('Apagar a cópia da nuvem (D-94)', () => {
-  it('CA-420: apaga só a cópia de quem está logado', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'user-1' })
-    expect(await apagarCopiaDaNuvem(cliente)).toBeNull()
-    expect(chamadas).toEqual([{ tipo: 'delete', parametros: { nutricionista_id: 'user-1' } }])
-  })
-
-  it('sem sessão não apaga nada de ninguém e não diz que apagou', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: null })
-    expect(await apagarCopiaDaNuvem(cliente)).toBe(FALHA_DE_REDE)
-    expect(chamadas).toHaveLength(0)
-  })
-
-  it('CA-430: a recusa do banco volta traduzida, não como texto técnico', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', erro: { code: '42501', message: 'permission denied for table copias' } })
-    expect(await apagarCopiaDaNuvem(cliente)).toBe(FALHA_DE_REDE)
-  })
-})
-
-describe('Erros do banco na cópia (D-98)', () => {
-  it('CA-430: erro técnico ao enviar ou trazer vira a mensagem traduzida', async () => {
-    const erro = { code: '42501', message: 'new row violates row-level security policy for table "copias"' }
-    expect((await enviarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
-    expect((await baixarCopia(clienteFalso({ usuario: 'user-1', erro }).cliente)).erro).toBe(FALHA_DE_REDE)
-  })
-})
-
-describe('A cópia grande demais (D-107)', () => {
-  const RECUSA_DA_TRAVA = { code: '23514', message: 'new row for relation "copias" violates check constraint "copias_dados_tamanho"' }
-
-  it('CA-445: o banco recusa a cópia acima de 5 MB e a tela recebe a frase de tamanho', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', erro: RECUSA_DA_TRAVA })
-    expect(await enviarCopia(cliente, BACKUP, 'Mac')).toEqual({ ok: null, erro: COPIA_GRANDE_DEMAIS })
-  })
-
-  it('CA-445 e R-41: o servidor que recusa o pedido grande antes do banco (413) mostra a mesma frase', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'Payload Too Large', status: 413 })
-    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(COPIA_GRANDE_DEMAIS)
-  })
-
-  it('outro status sem trava conhecida continua com a mensagem de falha', async () => {
-    const { cliente } = clienteFalso({ usuario: 'user-1', erro: 'Bad Gateway', status: 502 })
-    expect((await enviarCopia(cliente, BACKUP, 'Mac')).erro).toBe(FALHA_DE_REDE)
-  })
-
-  it('CB-112: a cópia recusada não apaga a anterior: um pedido só de gravar, nenhum de apagar', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'user-1', erro: RECUSA_DA_TRAVA })
-    await enviarCopia(cliente, BACKUP, 'Mac')
-    expect(chamadas.map((c) => c.tipo)).toEqual(['upsert'])
-  })
-})
-
-describe('a conta esperada (spec dados-por-conta, DP-19 e CA-474)', () => {
-  it('CA-474: enviar, trazer e apagar a cópia não pedem nada quando a sessão é de outra conta', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-b', linha: { dados: BACKUP, aparelho: 'Windows', atualizado_em: '2026-10-08' } })
-    expect(await enviarCopia(cliente, BACKUP, 'Windows', 'conta-a')).toEqual({ ok: null, erro: FALHA_DE_REDE })
-    expect(await baixarCopia(cliente, 'conta-a')).toEqual({ ok: null, erro: FALHA_DE_REDE })
-    expect(await apagarCopiaDaNuvem(cliente, 'conta-a')).toBe(FALHA_DE_REDE)
-    expect(chamadas).toHaveLength(0)
-  })
-
-  it('com a sessão da conta esperada, segue como sempre', async () => {
-    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-a' })
-    expect((await enviarCopia(cliente, BACKUP, 'Windows', 'conta-a')).erro).toBeNull()
-    expect(chamadas[0]?.parametros['nutricionista_id']).toBe('conta-a')
   })
 })
