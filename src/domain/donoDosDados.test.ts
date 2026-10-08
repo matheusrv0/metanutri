@@ -152,6 +152,29 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     expect(JSON.parse(contaA.getItem('metanutri:casos') ?? '[]')).toEqual(['x', 'outro'])
   })
 
+  it('DP-21: no conflito em que o plano da conta é mais novo, ele também fica no índice da conta', () => {
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      // O plano da conta existe, mas o índice dela não o lista.
+      'metanutri:conta:conta-a:caso:x': planoGuardado('x', 'Da conta, mais novo', '2026-10-08T09:00:00.000Z'),
+      'metanutri:caso:x': planoGuardado('x', 'De fora, mais velho', '2026-10-01T09:00:00.000Z'),
+    })
+    migrarDadosSemConta(arm, 'conta-a', { gerarId: () => 'outro' })
+    const contaA = armazenamentoDaConta(arm, 'conta-a')
+    expect([...(JSON.parse(contaA.getItem('metanutri:casos') ?? '[]') as string[])].sort()).toEqual(['outro', 'x'])
+  })
+
+  it('DP-21: plano de fora que não entra no índice não é movido, e o da conta fica como estava', () => {
+    const daConta = 'não dá para ler'
+    const deFora = planoGuardado('x', 'De fora', '2026-10-08T09:00:00.000Z')
+    const arm = memoria({ [CHAVE_DONO]: 'conta-a', 'metanutri:conta:conta-a:caso:x': daConta, 'metanutri:caso:x': deFora })
+    recusar(arm, (chave) => chave === 'metanutri:conta:conta-a:casos')
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('incompleto')
+    const contaA = armazenamentoDaConta(arm, 'conta-a')
+    expect(contaA.getItem('metanutri:caso:x')).toBe(daConta)
+    expect(arm.dados.get('metanutri:caso:x')).toBe(deFora)
+  })
+
   it('D-127: uma chave em conflito não impede as outras de se moverem', () => {
     const arm = memoria({
       [CHAVE_DONO]: 'conta-a',

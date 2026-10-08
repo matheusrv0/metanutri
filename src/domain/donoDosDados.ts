@@ -230,22 +230,13 @@ function gravarETirar(base: ArmazenamentoListavel, destino: Armazenamento, chave
 }
 
 /**
- * Move um plano e o põe no índice da conta na hora (CA-473): plano fora do índice não aparece.
- * Se o índice não couber, o plano volta para onde estava e fica para a próxima entrada.
+ * Move um plano, com o id dele no índice da conta antes (DP-21, CA-473): plano fora do índice não
+ * aparece. Se o índice não couber, nada é movido; se o plano não couber, o índice aponta para um
+ * plano que a lista ignora até ele chegar, na próxima entrada. Nenhum plano movido fica fora do índice.
  */
 function gravarPlanoETirar(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, valor: string): boolean {
-  const original = base.getItem(chave)
-  const jaNaConta = destino.getItem(chave)
-  if (!gravarETirar(base, destino, chave, valor)) return false
-  try {
-    incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
-    return true
-  } catch (erro) {
-    if (!ehQuotaExcedida(erro)) throw erro
-    if (jaNaConta === null) destino.removeItem(chave)
-    if (original !== null) base.setItem(chave, original)
-    return false
-  }
+  incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
+  return gravarETirar(base, destino, chave, valor)
 }
 
 function moverDado(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, gerarId: () => string): void {
@@ -278,6 +269,8 @@ function moverPlano(base: ArmazenamentoListavel, destino: Armazenamento, chave: 
     gravarPlanoETirar(base, destino, chave, deFora)
     return
   }
+  // DP-21: o id que fica na conta entra no índice antes de tudo, seja qual for o mais novo.
+  incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
   const deForaMaisNovo = planoDeFora.atualizadoEm > planoDaConta.atualizadoEm
   const maisVelho = deForaMaisNovo ? planoDaConta : planoDeFora
   const chaveNova = `${PREFIXO_CASO}${gerarId()}`
