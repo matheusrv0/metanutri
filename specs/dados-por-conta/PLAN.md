@@ -116,6 +116,9 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 - [x] **T14** — Textos do D-124 (Configurações, Sair, Política, Sugestões), sem contar que outra conta usa o aparelho.
 - [x] **T15** — Troca direta de conta numa tela de trabalho vai para o painel (DP-15); comentários sobre o `useMemo`
   idempotente e o custo de listar por índice.
+- [x] **T16** — Versão dos termos e da política `2026-10-08` ("8 de outubro de 2026"): a Política mudou na T14 e o ramo
+  sai nesse dia. O passo do lote 3 no README e nas pendências, que confere "Versão de 7 de outubro de 2026", fica como
+  registro daquele lote.
 
 ## Mapa de cobertura
 
@@ -171,8 +174,9 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 - **DP-8 · "Apagar todos os dados deste aparelho" (Configurações) apaga só os da conta que está dentro** (D-121:
   trocar de conta não apaga nada de outra). O texto do botão continua o mesmo; fica para o dono decidir se muda.
 - **DP-9 · Termos.** "Se outra conta entrar no mesmo aparelho, ela não vê os seus dados: precisa sair ou apagar os
-  dados do aparelho." perde a segunda parte, que deixou de ser verdade (D-122). Só sai texto; nada novo é escrito. A
-  versão dos termos já é de hoje (2026-10-07) e não muda.
+  dados do aparelho." perde a segunda parte, que deixou de ser verdade (D-122). Só sai texto; nada novo é escrito.
+  Como a rodada final (T14) também muda a Política e o ramo sai em 08/10/2026, a versão dos termos e da política passa
+  a ser `2026-10-08` ("Versão de 8 de outubro de 2026", T16).
 - **DP-10 · "Sair e apagar" sem sessão não apaga nada:** não há conta saindo.
 - **DP-11 · As telas de conta ficam fora da parte remontada.** A troca de senha por código confere o código (a sessão
   de recuperação chega aqui) e só depois grava a senha; remontando junto, a tela perdia o erro da gravação e o código já
