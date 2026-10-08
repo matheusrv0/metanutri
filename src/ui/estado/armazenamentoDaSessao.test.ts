@@ -27,6 +27,23 @@ describe('armazenamento da sessão (spec dados-por-conta)', () => {
     expect(localStorage.getItem(CHAVE_DONO)).toBe('conta-a')
   })
 
+  it('DP-18: o aviso do armazenamento cheio é só do dono do que sobrou', () => {
+    localStorage.setItem(CHAVE_DONO, 'conta-a')
+    localStorage.setItem('metanutri:caso:y', '{"caso":{"id":"y"},"atualizadoEm":"2026-10-08"}')
+    const gravar = Storage.prototype.setItem
+    const cheio = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, chave: string, valor: string) {
+      if (chave === 'metanutri:conta:conta-a:caso:y') throw new DOMException('cheio', 'QuotaExceededError')
+      gravar.call(this, chave, valor)
+    })
+    try {
+      // O que não coube é de A: B entra e não vê aviso nenhum; A entra e vê.
+      expect(armazenamentoDaSessao(localStorage, 'conta-b').migracao).toBe('nada')
+      expect(armazenamentoDaSessao(localStorage, 'conta-a').migracao).toBe('incompleto')
+    } finally {
+      cheio.mockRestore()
+    }
+  })
+
   it('CB-121: navegador que não deixa guardar nada: sem armazenamento e sem erro', () => {
     expect(armazenamentoDaSessao(null, 'conta-a')).toEqual({ armazenamento: null, migracao: 'nada' })
     expect(armazenamentoDaSessao(null, null)).toEqual({ armazenamento: null, migracao: 'nada' })
