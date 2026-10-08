@@ -9,6 +9,8 @@ import { AvisoSemServidor } from './AvisoSemServidor.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
 import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
+import { useVerificacao } from './usarVerificacao.ts'
+import { VerificacaoContraRobos } from './VerificacaoContraRobos.tsx'
 
 interface TelaEntrarProps {
   readonly conta: ValorConta
@@ -34,6 +36,7 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
   const [erro, setErro] = useState<ErroConta | null>(null)
   const [enviando, setEnviando] = useState(false)
   const enviandoRef = useRef(false)
+  const verificacao = useVerificacao('login')
   const semInternet = globalThis.navigator?.onLine === false
 
   const enviar = async (evento: FormEvent) => {
@@ -44,10 +47,16 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
       setErro(problema)
       return
     }
+    // D-113: a verificação contra robôs vai junto. Ainda conferindo, nada sai (CA-458); sem o script, segue sem ela (D-119).
+    const pedido = verificacao.tomar()
+    if (!pedido.ok) {
+      setErro(pedido.erro)
+      return
+    }
     setErro(null)
     enviandoRef.current = true
     setEnviando(true)
-    const resultado = await conta.entrar(email, senha)
+    const resultado = await conta.entrar(email, senha, ...pedido.extra)
     enviandoRef.current = false
     setEnviando(false)
     if (!resultado.ok) {
@@ -101,9 +110,11 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
           </AvisoFormulario>
         ) : null}
 
-        <Button type="submit" size="lg" block loading={enviando} disabled={!conta.disponivel}>
-          Entrar
-        </Button>
+        <VerificacaoContraRobos verificacao={verificacao}>
+          <Button type="submit" size="lg" block loading={enviando} disabled={!conta.disponivel}>
+            Entrar
+          </Button>
+        </VerificacaoContraRobos>
 
         <p className="text-center text-sm text-muted-foreground">
           Ainda não tem conta?{' '}

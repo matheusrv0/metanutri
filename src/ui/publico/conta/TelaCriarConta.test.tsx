@@ -4,6 +4,7 @@ import { VERSAO_TERMOS } from '@/domain/legal.ts'
 import type { ValorConta } from '../../estado/usarConta.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaCriarConta } from './TelaCriarConta.tsx'
+import { ligarTurnstileFalso } from './turnstileFalso.test-utils.ts'
 
 function montar(sobre: { conta?: ValorConta; plano?: 'solo' | 'estudante' | null; contato?: string | null } = {}) {
   const conta = sobre.conta ?? contaFalsa()
@@ -139,5 +140,58 @@ describe('TelaCriarConta', () => {
     expect(screen.getByRole('img', { name: 'Passo 1 de 3' })).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Trocar de plano' }))
     expect(aoTrocarPlano).toHaveBeenCalledOnce()
+  })
+})
+
+describe('TelaCriarConta com a verificação contra robôs (spec seguranca-lote-3)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-454: "Criar conta" leva a verificação, com a ação de cadastro, e a verificação se renova', async () => {
+    const falso = ligarTurnstileFalso()
+    const { usuario, conta, aoCriada } = montar()
+    await falso.pronto()
+    expect(falso.ativo().opcoes.action).toBe('signup')
+    falso.aprovar('tok-cadastro')
+    await preencherBase(usuario)
+    await comoNutricionista(usuario)
+    await usuario.click(botaoCriar())
+    expect(conta.cadastrar).toHaveBeenCalledWith(expect.objectContaining({ situacao: 'nutricionista', versaoTermos: VERSAO_TERMOS }), 'tok-cadastro')
+    expect(falso.api.reset).toHaveBeenCalledWith('widget-1')
+    expect(aoCriada).toHaveBeenCalledOnce()
+  })
+
+  it('CA-458: antes de a verificação terminar, "Criar conta" pede para esperar e não cria nada', async () => {
+    const falso = ligarTurnstileFalso()
+    const { usuario, conta } = montar()
+    await falso.pronto()
+    await preencherBase(usuario)
+    await comoNutricionista(usuario)
+    await usuario.click(botaoCriar())
+    expect(screen.getByRole('alert')).toHaveTextContent('Espere a verificação de segurança terminar.')
+    expect(conta.cadastrar).not.toHaveBeenCalled()
+  })
+
+  it('CA-462: a verificação fica logo acima do botão de criar a conta', async () => {
+    const falso = ligarTurnstileFalso()
+    montar()
+    await falso.pronto()
+    expect(falso.ativo().alvo.nextElementSibling).toBe(botaoCriar())
+  })
+
+  it('Foco: clicar com o formulário incompleto não gasta a verificação; a tentativa certa leva a mesma', async () => {
+    const falso = ligarTurnstileFalso()
+    const { usuario, conta } = montar()
+    await falso.pronto()
+    falso.aprovar('tok-cadastro')
+    await preencherBase(usuario)
+    await usuario.click(botaoCriar())
+    expect(screen.getByRole('alert')).toHaveTextContent('Escolha se você é nutricionista ou estudante de Nutrição.')
+    expect(falso.api.reset).not.toHaveBeenCalled()
+    await comoNutricionista(usuario)
+    await usuario.click(botaoCriar())
+    expect(conta.cadastrar).toHaveBeenCalledWith(expect.objectContaining({ situacao: 'nutricionista' }), 'tok-cadastro')
   })
 })

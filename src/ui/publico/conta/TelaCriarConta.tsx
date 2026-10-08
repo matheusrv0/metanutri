@@ -14,6 +14,8 @@ import { CampoSenha } from './CampoSenha.tsx'
 import { CamposSituacao } from './CamposSituacao.tsx'
 import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
+import { useVerificacao } from './usarVerificacao.ts'
+import { VerificacaoContraRobos } from './VerificacaoContraRobos.tsx'
 
 export interface ContaCriada {
   readonly email: string
@@ -51,6 +53,7 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
   const [enviando, setEnviando] = useState(false)
   // Trava de verdade contra o clique duplo (CA-134): o estado só muda no próximo render.
   const enviandoRef = useRef(false)
+  const verificacao = useVerificacao('signup')
 
   const pago = plano !== null && ehPlanoPago(plano)
   const estudante = situacao.situacao === 'estudante'
@@ -69,18 +72,27 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
     setErroConta(problemaConta)
     setErroSituacao(problemaSituacao)
     if (problemaConta || problemaSituacao || situacao.situacao === null) return
+    // D-113: a verificação contra robôs vai junto. Ainda conferindo, nada sai (CA-458); sem o script, segue sem ela (D-119).
+    const pedido = verificacao.tomar()
+    if (!pedido.ok) {
+      setErroConta(pedido.erro)
+      return
+    }
 
     enviandoRef.current = true
     setEnviando(true)
-    const resultado = await conta.cadastrar({
-      nome,
-      email,
-      senha,
-      planoDesejado: plano ?? 'free',
-      versaoTermos: VERSAO_TERMOS,
-      situacao: situacao.situacao,
-      crn: crnDe(situacao),
-    })
+    const resultado = await conta.cadastrar(
+      {
+        nome,
+        email,
+        senha,
+        planoDesejado: plano ?? 'free',
+        versaoTermos: VERSAO_TERMOS,
+        situacao: situacao.situacao,
+        crn: crnDe(situacao),
+      },
+      ...pedido.extra,
+    )
     enviandoRef.current = false
     setEnviando(false)
     if (!resultado.ok) {
@@ -159,9 +171,11 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
           </AvisoFormulario>
         ) : null}
 
-        <Button type="submit" size="lg" block loading={enviando} disabled={!conta.disponivel}>
-          {pago || estudante ? 'Criar conta e continuar' : 'Criar conta'}
-        </Button>
+        <VerificacaoContraRobos verificacao={verificacao}>
+          <Button type="submit" size="lg" block loading={enviando} disabled={!conta.disponivel}>
+            {pago || estudante ? 'Criar conta e continuar' : 'Criar conta'}
+          </Button>
+        </VerificacaoContraRobos>
 
         <p className="text-center text-sm text-muted-foreground">
           Já tem conta?{' '}
