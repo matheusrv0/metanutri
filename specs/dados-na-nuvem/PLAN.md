@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** em execução (ajustes antes do merge, 08/10/2026)
+**Status:** concluído, com os ajustes antes do merge (08/10/2026)
 
 ## Abordagem
 
@@ -138,14 +138,14 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ### Ajustes antes do merge (08/10/2026)
 
-- [ ] **T33** — Plano: DP-31.
-- [ ] **T34** — Voltar para a aba no meio da conferência de 60 s faz uma conferência nova, com capa (DP-31).
+- [x] **T33** — Plano: DP-31.
+- [x] **T34** — Voltar para a aba no meio da conferência de 60 s faz uma conferência nova, com capa (DP-31).
   - Cobre: CB-127
   - Feito quando: a versão lida pela de 60 s antes de B salvar não basta: a aba mostra o nome de B depois da capa.
-- [ ] **T35** — Abertura sem linha na nuvem com a cópia daqui parcial não sobe nada e trava sem espaço (DP-31).
-- [ ] **T36** — A aba travada sem internet que acha tudo salvo por outra aba destrava e confere (DP-31).
-- [ ] **T37** — Comentários da trava entre abas e do aviso de sair citam o DP-30.
-- [ ] **T38** — Validação, com as sondas do revisor.
+- [x] **T35** — Abertura sem linha na nuvem com a cópia daqui parcial não sobe nada e trava sem espaço (DP-31).
+- [x] **T36** — A aba travada sem internet que acha tudo salvo por outra aba destrava e confere (DP-31).
+- [x] **T37** — Comentários da trava entre abas e do aviso de sair citam o DP-30.
+- [x] **T38** — Validação, com as sondas do revisor.
 
 ## Mapa de cobertura
 
@@ -165,7 +165,7 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | CB-124 | T5, T11 | `sincronia.test.ts` e `provedoresPorConta.test.tsx` "CB-124: …" |
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
 | CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
-| CB-127 | T18, T28 | `sincronia.test.ts` (dois: aba esquecida e sem internet), `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
+| CB-127 | T18, T28, T34 | `sincronia.test.ts` (dois: aba esquecida e sem internet; mais o DP-31 da conferência com capa), `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
 
 ## Decisões do plano
 
@@ -307,8 +307,9 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ## Validação
 
-- [x] `npm run check` (lint + typecheck + testes): 160 arquivos, 2671 testes depois da rodada de fechamento (158 e 2659
-  na rodada final; 156 e 2612 antes dela); o único aviso do lint é de antes (`MolduraPublica.tsx`)
+- [x] `npm run check` (lint + typecheck + testes): 160 arquivos, 2674 testes depois dos ajustes antes do merge (2671 na
+  rodada de fechamento, 2659 na final, 2612 antes dela); o único aviso do lint é de antes (`MolduraPublica.tsx`)
+- [x] Sondas 1 e 2 do revisor (`vt-rev3`, fora do repositório) passam
 - [x] `npx playwright test`: 41
 - [x] `npm run build`
 - [x] `node scripts/conferir-publicacao.mjs`
