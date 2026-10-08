@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { chaveDoEvento } from '@/domain/armazenamentoDaConta.ts'
 import { criarRepositorioPacientes, type RepositorioPacientes } from '@/domain/pacientes.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
 import { ContextoPacientes, type ValorPacientes } from './contextoPacientes.ts'
@@ -9,6 +10,16 @@ export function ProvedorPacientes({ children, repositorio }: { readonly children
   const [repo] = useState<RepositorioPacientes>(() => repositorio ?? criarRepositorioPacientes(armazenamento))
   const [versao, setVersao] = useState(0)
   const atualizar = useCallback(() => setVersao((v) => v + 1), [])
+
+  // CB-124 (spec dados-na-nuvem): outra aba da mesma conta gravou pacientes; a lista se refaz, como a dos planos.
+  useEffect(() => {
+    const aoMudar = (e: StorageEvent) => {
+      if (e.key !== null && chaveDoEvento(armazenamento, e.key) !== 'metanutri:pacientes') return
+      atualizar()
+    }
+    window.addEventListener('storage', aoMudar)
+    return () => window.removeEventListener('storage', aoMudar)
+  }, [atualizar, armazenamento])
 
   const valor = useMemo<ValorPacientes>(
     () => ({ repositorio: repo, pacientes: repo.listar(), atualizar }),

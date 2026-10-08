@@ -89,4 +89,17 @@ describe('provedores leem os dados da conta (spec dados-por-conta, D-120)', () =
     outraAbaGravou('metanutri:conta:conta-a:acompanhamentos')
     expect(screen.getByText('acompanhamentos: 1')).toBeInTheDocument()
   })
+
+  it('CB-124 (spec dados-na-nuvem): a outra aba da mesma conta grava um paciente e a lista desta se refaz; a de outra conta, não', () => {
+    render(naConta('conta-a', <Resumo />))
+    expect(screen.getByText('pacientes: 1')).toBeInTheDocument()
+
+    localStorage.setItem('metanutri:conta:conta-b:pacientes', JSON.stringify([{ id: 'bia', nome: 'Bia' }, { id: 'caio', nome: 'Caio' }]))
+    outraAbaGravou('metanutri:conta:conta-b:pacientes')
+    expect(screen.getByText('pacientes: 1')).toBeInTheDocument()
+
+    localStorage.setItem('metanutri:conta:conta-a:pacientes', JSON.stringify([{ id: 'ana', nome: 'Ana' }, { id: 'davi', nome: 'Davi' }]))
+    outraAbaGravou('metanutri:conta:conta-a:pacientes')
+    expect(screen.getByText('pacientes: 2')).toBeInTheDocument()
+  })
 })
