@@ -98,7 +98,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     marcaNoPdf: false,
-    recursos: ['25 pacientes ativos', 'Seu logo nos documentos', 'Dados em qualquer aparelho'],
+    recursos: ['25 pacientes ativos', 'Seu logo nos documentos'],
     inclui: ['Tudo do Grátis, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
   },
   {
@@ -114,7 +114,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     marcaNoPdf: false,
-    recursos: ['Pacientes ilimitados', 'Painel de micros completo', 'Dados em qualquer aparelho'],
+    recursos: ['Pacientes ilimitados', 'Painel de micros completo'],
     inclui: ['Tudo do Solo, mais:', 'Relatório de adesão por paciente', 'Modelos próprios de documento'],
   },
   {
@@ -368,10 +368,6 @@ export function comparativoDosPlanos(): readonly LinhaComparativo[] {
       rotulo: 'Seu logo nos documentos',
       detalhe: 'Sem ele, o PDF sai com a marca do MetaNutri.',
       valores: porPlano((p) => !p.marcaNoPdf),
-    },
-    {
-      rotulo: 'Dados em qualquer aparelho',
-      valores: porPlano((p) => p.mensal > 0),
     },
     {
       rotulo: 'Quem está sumindo, no painel de adesão',

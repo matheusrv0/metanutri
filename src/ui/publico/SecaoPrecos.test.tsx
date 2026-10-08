@@ -32,6 +32,11 @@ const primeiro = (nome: string) => {
 }
 
 describe('SecaoPrecos', () => {
+  it('CA-483 (spec dados-na-nuvem): a página de preços não oferece "Dados em qualquer aparelho"', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(document.body.textContent).not.toContain('Dados em qualquer aparelho')
+  })
+
   it('CA-121: mantém a chave mensal/anual e a comparação', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
     expect(screen.getByRole('radiogroup', { name: 'Período de cobrança' })).toBeInTheDocument()

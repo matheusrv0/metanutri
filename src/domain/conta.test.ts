@@ -255,6 +255,11 @@ describe('Comparativo da página de preços', () => {
     expect(missoes?.valores).toEqual([true, true, true, true])
   })
 
+  it('CA-483 (spec dados-na-nuvem): "Dados em qualquer aparelho" não está na comparação nem nos recursos de nenhum plano', () => {
+    expect(linhas.map((l) => l.rotulo)).not.toContain('Dados em qualquer aparelho')
+    for (const plano of PLANOS) expect([...plano.recursos, ...plano.inclui], plano.id).not.toContain('Dados em qualquer aparelho')
+  })
+
   it('só a Clínica tem mais de um nutricionista', () => {
     const equipe = linhas.find((l) => l.rotulo.startsWith('Mais de um nutricionista'))
     expect(equipe?.valores).toEqual([false, false, false, 'Até 4'])
