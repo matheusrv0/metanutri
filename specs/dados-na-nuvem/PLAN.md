@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126)
-**Status:** em execução
+**Status:** concluído (08/10/2026)
 
 ## Abordagem
 
@@ -45,57 +45,57 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ## Tarefas
 
-- [ ] **T1** — Este plano.
-- [ ] **T2** — Configurações sem os botões de apagar e da cópia na nuvem; backup em arquivo fica.
+- [x] **T1** — Este plano.
+- [x] **T2** — Configurações sem os botões de apagar e da cópia na nuvem; backup em arquivo fica.
   - Depende de: —
   - Cobre: CA-482
   - Feito quando: teste do CA-482 (nenhum dos quatro botões; baixar e restaurar continuam) e os de backup verdes.
-- [ ] **T3** — `copiaNaNuvem.ts`: `lerCopia` e `gravarCopia` (insert sem linha; update com conferência; 0 linhas ou
+- [x] **T3** — `copiaNaNuvem.ts`: `lerCopia` e `gravarCopia` (insert sem linha; update com conferência; 0 linhas ou
   23505 = "mudou"; 413 ou trava de tamanho = "grande"; resto, sessão de outra conta e prazo = "rede").
   - Depende de: T2 (tira o último uso das funções antigas)
   - Cobre: base de D-129, D-132, CB-123
   - Feito quando: testes com a nuvem falsa para cada resultado.
-- [ ] **T4** — `copiaDaConta.ts`: montar a cópia (chaves do backup, aviso de primeiro acesso e marcas), aplicar na cópia
+- [x] **T4** — `copiaDaConta.ts`: montar a cópia (chaves do backup, aviso de primeiro acesso e marcas), aplicar na cópia
   de trabalho, registrar mudança (marca e lápide) e juntar duas cópias (DP-3, DP-4, DP-21), podando lápides de 90 dias.
   - Depende de: —
   - Cobre: CA-480, CA-481 (domínio)
   - Feito quando: testes de itens diferentes, mesmo item (mais novo vence), excluído não volta, mudado depois volta,
     produto com id repetido, sem marcas (dados de antes), lápide velha.
-- [ ] **T5** — `sincronia.ts`: observador, abertura, espera de 2 s, salvar com conferência, conflito, travas, `conectou`,
+- [x] **T5** — `sincronia.ts`: observador, abertura, espera de 2 s, salvar com conferência, conflito, travas, `conectou`,
   `desconectou`, `reduzir`, `parar` e o aviso às outras abas.
   - Depende de: T3, T4
   - Cobre: CA-475 a CA-481, CA-484, CB-123 a CB-125 (motor)
   - Feito quando: um teste por critério, com relógio e nuvem falsos.
-- [ ] **T6** — `DialogContent` com `semFechar` (sem o X).
+- [x] **T6** — `DialogContent` com `semFechar` (sem o X).
   - Feito quando: teste do componente e LEIA-ME.
-- [ ] **T7** — `ProvedorNuvem` e portão: o motor por conta, o armazenamento observado na árvore, "Carregando seus
+- [x] **T7** — `ProvedorNuvem` e portão: o motor por conta, o armazenamento observado na árvore, "Carregando seus
   dados…", a tela do CA-484, a remontagem pela geração; `App` ligado. O link do paciente não espera.
   - Depende de: T5
   - Cobre: CA-475, CA-481, CA-484, CB-126 (telas)
   - Feito quando: testes do `App` com a nuvem falsa; os testes de antes verdes (sem cliente = modo de hoje).
-- [ ] **T8** — "Salvo" / "Salvando…" na barra da área de trabalho.
+- [x] **T8** — "Salvo" / "Salvando…" na barra da área de trabalho.
   - Depende de: T7
   - Cobre: CA-476
   - Feito quando: teste do `App`: muda, espera, a nuvem tem a mudança e a barra diz "Salvo".
-- [ ] **T9** — Só "Sair" (D-131): `sair()` sempre apaga a cópia de trabalho; `useSaida` salva o pendente antes e só
+- [x] **T9** — Só "Sair" (D-131): `sair()` sempre apaga a cópia de trabalho; `useSaida` salva o pendente antes e só
   pergunta (CA-479) se não der; TelaConta e Complete seu cadastro sem a pergunta de apagar.
   - Depende de: T7
   - Cobre: CA-478, CA-479
   - Feito quando: testes do gancho, do diálogo e das telas.
-- [ ] **T10** — Trava: capa do D-130 (sem internet) e do CB-123 (tamanho, com "Reduzir os dados"), com "Sair".
+- [x] **T10** — Trava: capa do D-130 (sem internet) e do CB-123 (tamanho, com "Reduzir os dados"), com "Sair".
   - Depende de: T6, T9
   - Cobre: CA-477, CB-123 (telas), CA-479 (pela trava)
   - Feito quando: testes da trava e do `App` (cai a internet, volta, destrava sozinha).
-- [ ] **T11** — Pacientes se refazem com o evento `storage` (outra aba).
+- [x] **T11** — Pacientes se refazem com o evento `storage` (outra aba).
   - Cobre: CB-124 (tela)
-- [ ] **T12** — Preços sem "Dados em qualquer aparelho".
+- [x] **T12** — Preços sem "Dados em qualquer aparelho".
   - Cobre: CA-483
-- [ ] **T13** — Textos do D-128 (DP-16): Política, Termos, aviso de primeiro acesso, menu, Ajuda, cadastro, Negócio.
-- [ ] **T14** — Validação: `npm run check`, `npx playwright test`, `npm run build`, `node scripts/conferir-publicacao.mjs`.
-- [ ] **T15** — Revisão: na primeira junção, o empate sem marca fica com o lado usado por último (DP-3).
+- [x] **T13** — Textos do D-128 (DP-16): Política, Termos, aviso de primeiro acesso, menu, Ajuda, cadastro, Negócio.
+- [x] **T14** — Validação: `npm run check`, `npx playwright test`, `npm run build`, `node scripts/conferir-publicacao.mjs`.
+- [x] **T15** — Revisão: na primeira junção, o empate sem marca fica com o lado usado por último (DP-3).
   - Cobre: CA-481
   - Feito quando: teste da cópia mandada à mão antes das configurações daqui e da cópia mais nova que elas.
-- [ ] **T16** — README: Configurações sem a cópia manual, os dados na nuvem, o Sair e o endereço novo.
+- [x] **T16** — README: Configurações sem a cópia manual, os dados na nuvem, o Sair e o endereço novo.
   - Feito quando: o README não fala mais em enviar e trazer a cópia nem em "tudo só neste navegador" com conta.
 
 ## Mapa de cobertura
@@ -104,18 +104,18 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 |---|---|---|
 | CA-475 | T5, T7 | `sincronia.test.ts` "CA-475: …"; `AppNuvem.test.tsx` "CA-475: …" |
 | CA-476 | T5, T8 | `sincronia.test.ts` "CA-476: …"; `AppNuvem.test.tsx` "CA-476: …" |
-| CA-477 | T5, T10 | `sincronia.test.ts` "CA-477: …"; `AppNuvem.test.tsx` "CA-477: …" |
-| CA-478 | T9 | `usarConta.test.ts` "CA-478: …"; `usarSaida.test.tsx` "CA-478: …"; `TelaConta.test.tsx` "CA-478: …" |
-| CA-479 | T9, T10 | `usarSaida.test.tsx` "CA-479: …"; `DialogoSair.test.tsx` "CA-479: …"; `TravaDaNuvem.test.tsx` "CA-479: …" |
-| CA-480 | T4, T5 | `copiaDaConta.test.ts` "CA-480: …"; `sincronia.test.ts` "CA-480: …" |
-| CA-481 | T4, T5, T7 | `copiaDaConta.test.ts` "CA-481: …"; `sincronia.test.ts` "CA-481: …"; `AppNuvem.test.tsx` "CA-481: …" |
+| CA-477 | T3, T5, T10 | `copiaNaNuvem.test.ts`, `sincronia.test.ts`, `TravaDaNuvem.test.tsx` e `AppNuvem.test.tsx` "CA-477: …" |
+| CA-478 | T9 | `usarConta.test.ts`, `usarSaida.test.tsx`, `TelaConta.test.tsx` e `TelaCompletarCadastro.test.tsx` "CA-478: …" |
+| CA-479 | T9, T10 | `DialogoSair.test.tsx`, `usarSaida.test.tsx` e `TravaDaNuvem.test.tsx` "CA-479: …" |
+| CA-480 | T3, T4, T5 | `copiaNaNuvem.test.ts`, `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-480: …" |
+| CA-481 | T4, T5, T7, T15 | `copiaDaConta.test.ts` (dois), `sincronia.test.ts` (cinco) e `AppNuvem.test.tsx` "CA-481: …" |
 | CA-482 | T2 | `configuracoes.test.tsx` "CA-482: …" |
-| CA-483 | T12 | `conta.test.ts` "CA-483: …"; `SecaoPrecos.test.tsx` "CA-483: …" |
-| CA-484 | T5, T7 | `sincronia.test.ts` "CA-484: …"; `AppNuvem.test.tsx` "CA-484: …" |
-| CB-123 | T3, T5, T10 | `copiaNaNuvem.test.ts` "CB-123: …"; `sincronia.test.ts` "CB-123: …"; `TravaDaNuvem.test.tsx` "CB-123: …" |
-| CB-124 | T5, T11 | `sincronia.test.ts` "CB-124: …"; `provedoresPorConta.test.tsx` "CB-124: …" |
+| CA-483 | T12 | `conta.test.ts` e `SecaoPrecos.test.tsx` "CA-483: …" |
+| CA-484 | T3, T5, T7 | `copiaNaNuvem.test.ts`, `sincronia.test.ts` e `AppNuvem.test.tsx` "CA-484: …" |
+| CB-123 | T3, T5, T10 | `copiaNaNuvem.test.ts`, `sincronia.test.ts`, `TravaDaNuvem.test.tsx` e `AppNuvem.test.tsx` "CB-123: …" |
+| CB-124 | T5, T11 | `sincronia.test.ts` e `provedoresPorConta.test.tsx` "CB-124: …" |
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
-| CB-126 | T7 | `AppNuvem.test.tsx` "CB-126: …" |
+| CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
 
 ## Decisões do plano
 
@@ -194,11 +194,24 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   um item excluído no outro.
 - **R7** — `apagarAcompanhamentosDaNuvem` fica sem uso (saiu com o "Apagar tudo"); fica para a exclusão de conta.
 
+## Divergências para o dono decidir
+
+- **V1** — O cartão do Free diz "Funciona sem internet" e o rodapé das páginas públicas diz "Funciona no navegador,
+  até sem internet."; com o D-130, com conta, sem internet a área de trabalho trava. O D-134 só tirou "Dados em
+  qualquer aparelho" dos planos, então os dois textos ficaram como estavam.
+- **V2** — Entrar sem internet diz "O primeiro acesso em cada aparelho precisa de internet."; agora toda entrada precisa
+  (CA-484).
+- **V3** — `PRODUCT.md` ("funciona offline") e `AGENTS.md` ("a conta na nuvem é opcional", "funciona offline") são
+  documentos do dono e não mudaram.
+- **V4** — CB-123 diz "trava como no D-130 até a pessoa reduzir os dados"; a trava ganhou "Reduzir os dados" (DP-9),
+  porque sem ele não há como reduzir.
+
 ## Validação
 
-- [ ] `npm run check` (lint + typecheck + testes)
-- [ ] `npx playwright test`
-- [ ] `npm run build`
-- [ ] `node scripts/conferir-publicacao.mjs`
-- [ ] Cada CA e CB com teste que cita o ID
-- [ ] Divergências spec × código listadas no relatório
+- [x] `npm run check` (lint + typecheck + testes): 156 arquivos, 2612 testes; o único aviso do lint é de antes
+  (`MolduraPublica.tsx`)
+- [x] `npx playwright test`: 41
+- [x] `npm run build`
+- [x] `node scripts/conferir-publicacao.mjs`
+- [x] Cada CA e CB com teste que cita o ID
+- [x] Divergências spec × código listadas (acima e no relatório)
