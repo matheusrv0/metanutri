@@ -11,10 +11,11 @@ com o nome original. Tudo o que lê ou grava dado da pessoa passa a receber esse
 então backup, cópia na nuvem e repositórios seguem usando os nomes de sempre (`metanutri:casos`…) sem saber da conta.
 Ao entrar, os dados de antes desta mudança (chaves sem prefixo) vão para o espaço de quem é dono deles (D-123).
 
-A árvore inteira que mostra dado (provedores e telas) é remontada quando a conta muda, com o armazenamento escolhido
-no mesmo render em que a sessão chega: não existe um quadro com a conta anterior (CB-120). A alternativa óbvia, trocar
-o repositório dentro dos provedores sem remontar, deixaria estado antigo em telas que guardam cópia local (formulários,
-modelos, produtos, sugestões), e cada uma teria de ser lembrada.
+A parte que mostra dado (provedores, área de trabalho e link do paciente) é remontada quando a conta muda, com o
+armazenamento escolhido no mesmo render em que a sessão chega: não existe um quadro com a conta anterior (CB-120). A
+alternativa óbvia, trocar o repositório dentro dos provedores sem remontar, deixaria estado antigo em telas que guardam
+cópia local (formulários, modelos, produtos, sugestões, o plano aberto), e cada uma teria de ser lembrada. As telas de
+conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a sessão chega no meio do fluxo delas (DP-11).
 
 ## Arquivos
 
@@ -26,7 +27,9 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
 | `src/ui/estado/armazenamentoLocal.ts` | alterar | devolve o tipo listável |
 | `src/ui/estado/contextoArmazenamento.ts` | criar | contexto + `useArmazenamento()` (sem provedor: o do aparelho, como hoje) |
 | `src/ui/estado/armazenamentoDaSessao.ts` (+ teste) | criar | escolhe o armazenamento da sessão e troca o que fica em memória (produtos, ocultos) |
-| `src/ui/estado/ProvedorArmazenamento.tsx` | criar | dá o armazenamento à árvore e a remonta quando a conta muda |
+| `src/ui/estado/ProvedorArmazenamento.tsx` (+ teste) | criar | dá à árvore o armazenamento da sessão, sem remontar nada |
+| `src/ui/estado/ProvedoresDeDados.tsx` | criar | os três provedores de dados, remontados quando a conta muda (T6b) |
+| `src/ui/AreaDeTrabalho.tsx` | criar | as telas que mostram dado da conta saem do `App` para dentro dos provedores de dados (T6b) |
 | `src/ui/estado/ProvedorCasos.tsx`, `ProvedorPacientes.tsx`, `ProvedorAcompanhamentos.tsx` | alterar | leem do contexto; o aviso de outra aba entende a chave com prefixo |
 | `src/ui/estado/ocultosGlobais.ts`, `src/ui/adequacao/GavetaCobrir.tsx` | alterar | recebem o armazenamento; a memória de reserva esquece a conta anterior |
 | `src/ui/modelos/DialogoModelos.tsx`, `src/ui/config/TelaConfiguracoes.tsx`, `src/ui/casos/AvisoPrimeiroAcesso.tsx`, `src/ui/estado/usarSugestoes.ts`, `src/ui/exportar/DialogoImprimir.tsx`, `src/ui/exportar/FolhaDieta.tsx`, `src/ui/produtos/TelaProdutos.tsx`, `src/ui/estado/usarPerfilConta.ts` | alterar | leem o armazenamento do contexto |
@@ -55,7 +58,7 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
     (conflito), cópia interrompida, rodar duas vezes, armazenamento que falha; apagar só a conta que sai.
 - [ ] **T3** — Contexto `useArmazenamento()`, `armazenamentoDaSessao()` e `ProvedorArmazenamento`: sem sessão ou sem
   servidor, o armazenamento do aparelho; com sessão, migra e devolve o da conta; registra os produtos da conta na busca e
-  esquece os ocultos em memória da anterior; remonta os filhos quando a conta muda. Os ocultos (e a GavetaCobrir, único
+  esquece os ocultos em memória da anterior. Os ocultos (e a GavetaCobrir, único
   uso) já passam a receber o armazenamento aqui, porque o teste da troca em memória usa a função nova.
   - Depende de: T2
   - Cobre: CB-121 (sessão), base de CB-120
@@ -78,6 +81,13 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
   - Depende de: T3, T4, T5
   - Cobre: CA-465, CA-466, CA-467, CA-468, CA-471, CB-120, CB-122
   - Feito quando: testes do `App` com a troca de conta na mesma aba e a tela de outra conta ausente.
+- [ ] **T6b** — Só a área de trabalho remonta (DP-11): `ProvedorArmazenamento` só dá o contexto; `ProvedoresDeDados`
+  (com a `key`) envolve os três provedores e a nova `AreaDeTrabalho`, que recebe do `App` as rotas de trabalho e o
+  link do paciente. Achado na revisão da T6: com tudo remontando, a sessão de recuperação que chega depois do código
+  recomeçava a tela da troca de senha e perdia o erro e o código já aceito.
+  - Depende de: T6
+  - Cobre: CB-120 (troca direta de conta), DP-11
+  - Feito quando: teste do `App` com a sessão chegando no meio da troca de senha, e com a troca direta de A para B.
 - [ ] **T7** — Termos sem "precisa sair ou apagar os dados do aparelho".
   - Depende de: T6
   - Cobre: D-122 (texto)
@@ -97,7 +107,7 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
 | CA-469 | T2, T5 | `donoDosDados.test.ts` "CA-469: …"; `usarConta.test.ts` "CA-469: …" |
 | CA-470 | T1, T4 | `armazenamentoDaConta.test.ts` "CA-470: …"; `dadosPorConta.test.tsx` "CA-470: …" |
 | CA-471 | T6 | `AppConta.test.tsx` "CA-471: …" |
-| CB-120 | T3, T6 | `AppConta.test.tsx` "CB-120: …" |
+| CB-120 | T3, T6, T6b | `AppConta.test.tsx` "CB-120: …" (duas); `ProvedorArmazenamento.test.tsx` "CB-120: …" |
 | CB-121 | T2, T3 | `donoDosDados.test.ts` "CB-121: …"; `armazenamentoDaSessao.test.ts` "CB-121: …" |
 | CB-122 | T4, T6 | `dadosPorConta.test.tsx` "CB-122: …"; `AppConta.test.tsx` "CB-122: …" |
 
@@ -126,14 +136,18 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
   continua lá: se uma aba ainda na versão anterior do site (o app é PWA) gravar chaves sem prefixo depois, elas vão
   para o dono, e não para a próxima conta que entrar. Sai só quando o dono escolhe "Sair e apagar os dados deste
   aparelho", junto com os dados dele.
-- **DP-7 · A árvore de dados é remontada a cada conta** (`key` com o id). Produtos registrados na busca e sugestões
-  ocultas em memória (estado de módulo) trocam no mesmo render.
+- **DP-7 · Os dados e a área de trabalho são remontados a cada conta** (`key` com o id). Produtos registrados na
+  busca e sugestões ocultas em memória (estado de módulo) trocam no mesmo render.
 - **DP-8 · "Apagar todos os dados deste aparelho" (Configurações) apaga só os da conta que está dentro** (D-121:
   trocar de conta não apaga nada de outra). O texto do botão continua o mesmo; fica para o dono decidir se muda.
 - **DP-9 · Termos.** "Se outra conta entrar no mesmo aparelho, ela não vê os seus dados: precisa sair ou apagar os
   dados do aparelho." perde a segunda parte, que deixou de ser verdade (D-122). Só sai texto; nada novo é escrito. A
   versão dos termos já é de hoje (2026-10-07) e não muda.
 - **DP-10 · "Sair e apagar" sem sessão não apaga nada:** não há conta saindo.
+- **DP-11 · As telas de conta ficam fora da parte remontada.** A troca de senha por código confere o código (a sessão
+  de recuperação chega aqui) e só depois grava a senha; remontando junto, a tela perdia o erro da gravação e o código já
+  aceito, e a nova tentativa caía em "código inválido". Com servidor de conta e sem sessão, a área de trabalho só monta
+  para o link do paciente (com os dados do aparelho, DP-3); nas telas de trabalho o portão mostra Entrar antes.
 
 ## Riscos
 

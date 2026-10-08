@@ -4,7 +4,7 @@ import type { ProcessadorFalso } from './ui/pagamento/processadorFalso.test-util
 import { App } from './App.tsx'
 import { CHAVE_DONO } from './domain/donoDosDados.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
-import type { ValorConta } from './ui/estado/usarConta.ts'
+import type { Resultado, ValorConta } from './ui/estado/usarConta.ts'
 import { CHAVE_EMAIL_PENDENTE, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { CHAVE_DESTINO } from './ui/fluxoConta.ts'
 import { contaFalsa } from './ui/publico/conta/contaFalsa.test-utils.ts'
@@ -716,6 +716,29 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     expect(screen.queryByText('Bia Souza')).not.toBeInTheDocument()
   })
 
+  it('CB-120: a sessão trocada direto de A para B (em outra aba) também não mostra nada de A', () => {
+    guardarPacientes('metanutri:conta:conta-a:pacientes', paciente('ana', 'Ana Lima'))
+    guardarPacientes('metanutri:conta:conta-b:pacientes', paciente('bia', 'Bia Souza'))
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/pacientes'
+    const { rerender } = render(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+
+    const vistos: string[] = []
+    const observador = new MutationObserver((registros) => {
+      for (const r of registros) for (const no of r.addedNodes) vistos.push(no.textContent ?? '')
+    })
+    observador.observe(document.body, { childList: true, subtree: true })
+    estado.conta = comSessao('conta-b')
+    rerender(tela())
+    for (const r of observador.takeRecords()) for (const no of r.addedNodes) vistos.push(no.textContent ?? '')
+    observador.disconnect()
+
+    expect(screen.getByText('Bia Souza')).toBeInTheDocument()
+    expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
+    expect(vistos.some((texto) => texto.includes('Ana Lima'))).toBe(false)
+  })
+
   it('CB-121: navegador que não deixa guardar nada: o site abre como hoje', () => {
     const bloqueado = vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
       throw new DOMException('bloqueado', 'SecurityError')
@@ -731,6 +754,46 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     } finally {
       bloqueado.mockRestore()
     }
+  })
+
+  it('DP-11: a sessão de recuperação que chega no meio da troca de senha não recomeça a tela do código', async () => {
+    let responder: (resultado: Resultado) => void = () => undefined
+    const trocarSenha = vi.fn(
+      () =>
+        new Promise<Resultado>((resolver) => {
+          responder = resolver
+        }),
+    )
+    const conferirCodigoDeSenha = vi.fn(async () => {
+      // Conferido o código, o Supabase abre a sessão de recuperação da conta.
+      estado.conta = { ...(estado.conta as ValorConta), sessao: { id: 'conta-a', email: 'maria@exemplo.com', nome: 'Maria' }, emRecuperacao: true }
+      return { ok: true, erro: null } as const
+    })
+    estado.conta = contaFalsa({ trocarSenha, conferirCodigoDeSenha })
+    window.location.hash = '#/esqueci-senha'
+    const { rerender } = render(tela())
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByLabelText('E-mail'), 'maria@exemplo.com')
+    await usuario.click(screen.getByRole('button', { name: 'Mandar o código' }))
+    await usuario.type(screen.getByLabelText('Código de 8 dígitos'), '12345678')
+    await usuario.type(screen.getByLabelText('Senha nova'), 'novasenha1')
+    await usuario.type(screen.getByLabelText('Repita a senha'), 'novasenha1')
+    await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+    await waitFor(() => expect(trocarSenha).toHaveBeenCalledOnce())
+
+    // A sessão chegou enquanto a senha nova ia para o servidor, e o servidor recusou.
+    rerender(tela())
+    await act(async () => responder({ ok: false, erro: 'falha-rede' }))
+    expect(screen.getByText('Não deu para falar com o servidor. Confira a internet e tente de novo.')).toBeInTheDocument()
+    expect(screen.getByText(/Se existir conta com maria@exemplo\.com/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Senha nova')).toHaveValue('novasenha1')
+
+    // A nova tentativa só grava a senha: o código já foi aceito.
+    await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+    await act(async () => responder({ ok: true, erro: null }))
+    expect(conferirCodigoDeSenha).toHaveBeenCalledOnce()
+    expect(trocarSenha).toHaveBeenCalledTimes(2)
+    expect(window.location.hash).toBe('#/painel')
   })
 
   it('CB-122: a conta que nunca usou o aparelho começa vazia, sem erro, e vê o aviso de primeiro acesso', () => {

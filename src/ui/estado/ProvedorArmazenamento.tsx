@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { armazenamentoDaSessao, trocarDadosEmMemoria } from './armazenamentoDaSessao.ts'
 import { ContextoArmazenamento } from './contextoArmazenamento.ts'
@@ -10,9 +10,9 @@ interface ProvedorArmazenamentoProps {
 }
 
 /**
- * Dá à árvore o armazenamento da conta que entrou (D-120) e a remonta quando a conta muda.
- * Os provedores e as telas leem os dados ao montar: com a remontagem no mesmo render em que a
- * sessão chega, nada da conta anterior aparece, nem por um instante (CB-120).
+ * Dá à árvore o armazenamento da conta que entrou (D-120), já com os dados antigos levados
+ * para o dono (D-123), e troca no mesmo render o que fica em memória (DP-7). Não remonta
+ * nada: quem lê dados ao montar fica dentro de ProvedoresDeDados, que remonta (CB-120).
  */
 export function ProvedorArmazenamento({ usuarioId, children }: ProvedorArmazenamentoProps) {
   const armazenamento = useMemo(() => {
@@ -21,9 +21,5 @@ export function ProvedorArmazenamento({ usuarioId, children }: ProvedorArmazenam
     return arm
   }, [usuarioId])
 
-  return (
-    <ContextoArmazenamento.Provider value={armazenamento}>
-      <Fragment key={usuarioId ?? 'aparelho'}>{children}</Fragment>
-    </ContextoArmazenamento.Provider>
-  )
+  return <ContextoArmazenamento.Provider value={armazenamento}>{children}</ContextoArmazenamento.Provider>
 }
