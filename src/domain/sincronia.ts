@@ -303,7 +303,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     pararDeEsperar()
     const s = situacao()
     gravarSituacao({ ...s, mudancas: Math.max(s.mudancas, s.salvas + 1) })
-    definir({ trava: 'sem-espaco', reduzindo: false, pendente: true })
+    definir({ trava: 'sem-espaco', reduzindo: false, pendente: true, conferindo: false })
   }
 
   /** Escreve na cópia de trabalho o que veio da nuvem; se algo mudou, a área remonta. Falso quando não coube. */
@@ -357,7 +357,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     }
     if (estado.trava !== 'sem-internet') return
     if (temPendencia()) void salvarAgora()
-    else if (conectado()) definir({ trava: null })
+    else if (conectado()) destravarConferindo()
     else agendarTentativa()
   }
 
@@ -502,7 +502,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       // novo, confere a versão; se mudou, junta em vez de mandar por cima.
       let outroSalvou = false
       if (conferirAntes) {
-        const versao = await lerVersao(cliente, usuarioId, prazoDeLeitura())
+        const versao = await lerVersao(cliente, usuarioId, prazoMs)
         if (minha !== epoca || parada) return false
         if (versao.tipo === 'falhou') {
           semRegistro ||= envio.lembrada
@@ -569,6 +569,11 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     const resta = temPendencia()
     definir({ salvando: false, pendente: resta, trava: null, reduzindo: false })
     if (resta) agendarSalvar()
+    // DP-28: a pessoa voltou para a aba com a área travada; a conferência que ficou para depois vem agora.
+    else if (conferirAoDestravar) {
+      conferirAoDestravar = false
+      void conferir(true)
+    }
     return !resta
   }
 
@@ -588,9 +593,18 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
 
   /** DP-20: outro aparelho salvou desde a última vez? Lê só a versão; se mudou, traz a cópia da nuvem. */
   const conferirAgora = async (): Promise<void> => {
+    try {
+      await conferirSemProteger()
+    } catch {
+      // uma conferência que falha não trava nada: a próxima (ou o salvar) tenta de novo
+    }
+  }
+
+  const conferirSemProteger = async (): Promise<void> => {
     const minha = epoca
     if (parada || estado.fase !== 'pronta' || estado.trava !== null || temPendencia()) return
-    const versao = await lerVersao(cliente, usuarioId, prazoDeLeitura())
+    // A versão é um pedido pequeno: prazo fixo, sem crescer com o tamanho da cópia (DP-28).
+    const versao = await lerVersao(cliente, usuarioId, prazoMs)
     if (minha !== epoca || parada || versao.tipo === 'falhou' || versao.versao === situacao().versao) return
     const leitura = await lerCopia(cliente, usuarioId, prazoDeLeitura())
     // Mudou algo aqui enquanto lia: quem junta é o salvar, com a conferência de versão.
@@ -604,21 +618,41 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     gravarSituacao({ ...atual, versao: leitura.versao, itens: itensDaCopia(leitura.copia), salvas: atual.mudancas })
   }
 
-  async function conferir(prender: boolean): Promise<void> {
-    if (parada || !ligada || estado.fase !== 'pronta' || estado.trava !== null) return
+  // DP-28: a conferência em curso (foco e visibilidade juntos fazem uma só) e a que ficou para quando a
+  // área destravar.
+  let conferencia: Promise<void> | null = null
+  let conferirAoDestravar = false
+
+  function conferir(prender: boolean): Promise<void> {
+    if (parada || !ligada || estado.fase !== 'pronta') return Promise.resolve()
+    if (estado.trava !== null) {
+      // Travada, não confere agora: a de 60 s continua marcada, e a de quem voltou para a aba fica para depois.
+      if (prender) conferirAoDestravar = true
+      agendarConferencia()
+      return Promise.resolve()
+    }
     // Com mudança daqui, o salvar confere a versão e junta (D-132).
     if (temPendencia()) {
       void salvarAgora()
-      return
+      return Promise.resolve()
     }
+    if (prender && !estado.conferindo) definir({ conferindo: true })
+    if (conferencia !== null) return conferencia
     pararDeConferir()
-    if (prender) definir({ conferindo: true })
-    try {
-      await exclusivo(conferirAgora)
-    } finally {
-      if (prender) definir({ conferindo: false })
+    const esta = exclusivo(conferirAgora).finally(() => {
+      if (conferencia === esta) conferencia = null
+      definir({ conferindo: false })
       agendarConferencia()
-    }
+    })
+    conferencia = esta
+    return esta
+  }
+
+  /** DP-28: a trava saiu sem nada pendente: a capa "Atualizando…" entra no mesmo instante, e a aba confere. */
+  const destravarConferindo = (): void => {
+    conferirAoDestravar = false
+    definir({ trava: null, conferindo: true })
+    void conferir(true)
   }
 
   const desligar = (): void => {
@@ -673,7 +707,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       }
       if (estado.trava !== 'sem-internet') return
       if (temPendencia()) void salvarAgora()
-      else definir({ trava: null })
+      else destravarConferindo()
     },
 
     desconectou() {

@@ -384,6 +384,110 @@ describe('conferir a nuvem depois de abrir (DP-20)', () => {
   }
   const planoNaNuvem = (nuvem: NuvemFalsa, id: string) => JSON.parse(copiaNaNuvem(nuvem).dados[`metanutri:caso:${id}`] ?? '{}') as { caso: { nome: string; pesoKg: number | null } }
 
+  it('CB-127: a aba que ficou sem internet mais de 60 s confere a nuvem ao voltar, antes de deixar editar', async () => {
+    const rede = { ligada: true }
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem, new Navegador(), { conectado: () => rede.ligada })
+    await ligar(a)
+    const id = a.planos.criar('Plano da Ana').caso.id
+    await salvar()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+
+    rede.ligada = false
+    a.sincronia.desconectou()
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS + 1000)
+    vi.setSystemTime(new Date('2026-10-08T13:00:00.000Z'))
+    b.planos.renomear(id, 'Plano da Ana Souza')
+    await salvar()
+
+    rede.ligada = true
+    a.sincronia.conectou()
+    // A trava sai e a capa "Atualizando…" entra no mesmo instante: não há janela para editar.
+    expect(a.sincronia.estado).toMatchObject({ trava: null, conferindo: true })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(a.sincronia.estado.conferindo).toBe(false)
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano da Ana Souza')
+
+    vi.setSystemTime(new Date('2026-10-08T13:10:00.000Z'))
+    const p = a.planos.obter(id)
+    if (!p) throw new Error('plano ausente')
+    a.planos.salvar({ caso: { ...p.caso, pesoKg: 70 }, plano: p.plano })
+    await salvar()
+    expect(planoNaNuvem(nuvem, id).caso).toMatchObject({ nome: 'Plano da Ana Souza', pesoKg: 70 })
+  })
+
+  it('DP-28: com a área travada, a conferência de 60 s continua marcada e volta a valer quando a trava sai', async () => {
+    const rede = { ligada: true }
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem, new Navegador(), { conectado: () => rede.ligada })
+    await ligar(a)
+    const id = a.planos.criar('Plano da Ana').caso.id
+    await salvar()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+
+    rede.ligada = false
+    a.sincronia.desconectou()
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS + 1000)
+    // A tentativa de 15 s acha a internet de volta e nada pendente: destrava sem o evento "online".
+    rede.ligada = true
+    await vi.advanceTimersByTimeAsync(INTERVALO_DE_TENTATIVA_MS)
+    expect(a.sincronia.estado.trava).toBeNull()
+
+    // Depois de destravar, outro aparelho muda o plano: a conferência de 60 s ainda vale.
+    b.planos.renomear(id, 'Plano novo')
+    await salvar()
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano da Ana')
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano novo')
+    expect(nuvem.linhas.size).toBe(1)
+  })
+
+  it('DP-28: voltar para a aba com a área travada confere quando a trava sai, mesmo saindo por um salvar', async () => {
+    const { nuvem, a } = await doisComUmPlano()
+    nuvem.semInternet = true
+    a.pacientes.criar('Ana')
+    await salvar()
+    expect(a.sincronia.estado.trava).toBe('sem-internet')
+    await a.sincronia.conferir(true)
+    expect(a.sincronia.estado.conferindo).toBe(false)
+
+    nuvem.semInternet = false
+    const antes = nuvem.pedidos.length
+    a.sincronia.conectou()
+    await vi.advanceTimersByTimeAsync(0)
+    // Salvou (confere a versão, porque a última falhou, e grava) e então conferiu a nuvem (só a versão).
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select', 'update', 'select'])
+    expect(a.sincronia.estado).toMatchObject({ trava: null, conferindo: false, pendente: false })
+  })
+
+  it('DP-28: foco e visibilidade juntos fazem uma conferência só, e a capa fica até ela terminar', async () => {
+    const { nuvem, a } = await doisComUmPlano()
+    nuvem.segurar = true
+    const antes = nuvem.pedidos.length
+    const primeira = a.sincronia.conferir(true)
+    const segunda = a.sincronia.conferir(true)
+    expect(a.sincronia.estado.conferindo).toBe(true)
+    nuvem.soltar()
+    await Promise.all([primeira, segunda])
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select'])
+    expect(a.sincronia.estado.conferindo).toBe(false)
+  })
+
+  it('DP-28: a conferência da versão desiste em 15 s, mesmo com uma cópia grande', async () => {
+    const nuvem = nuvemFalsa()
+    const grande = Array.from({ length: 4000 }, (_, i) => ({ id: `p${i}`, nome: `Paciente ${i} com um nome comprido de propósito`, atualizadoEm: '2026-10-07T10:00:00.000Z' }))
+    nuvem.guardar('conta-a', { formato: 1, geradoEm: '', dados: { 'metanutri:pacientes': JSON.stringify(grande) } }, '2026-10-07T10:00:00.000Z')
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    nuvem.perderResposta = true
+    const conferindo = a.sincronia.conferir(true)
+    await vi.advanceTimersByTimeAsync(15_100)
+    await conferindo
+    expect(a.sincronia.estado.conferindo).toBe(false)
+  })
+
   it('CB-127: a aba esquecida aberta confere a nuvem ao voltar e a edição do outro aparelho continua', async () => {
     const { nuvem, a, b, id } = await doisComUmPlano()
     vi.setSystemTime(new Date('2026-10-08T13:00:00.000Z'))
