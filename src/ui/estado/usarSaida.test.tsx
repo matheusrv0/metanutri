@@ -4,7 +4,7 @@ import type { EstadoDaNuvem } from '@/domain/sincronia.ts'
 import { ContextoNuvem, type ValorNuvem } from './contextoNuvem.ts'
 import { useSaida } from './usarSaida.ts'
 
-const PRONTA: EstadoDaNuvem = { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0 }
+const PRONTA: EstadoDaNuvem = { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false }
 
 function nuvemFalsa(estado: Partial<EstadoDaNuvem>, salvou = true) {
   const ordem: string[] = []

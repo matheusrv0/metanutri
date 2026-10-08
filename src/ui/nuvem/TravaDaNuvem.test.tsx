@@ -6,7 +6,7 @@ import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { PortaoDaNuvem } from './PortaoDaNuvem.tsx'
 
 const SEM_INTERNET = 'Sem internet. Suas últimas mudanças ainda não foram salvas na nuvem. Conecte-se para continuar.'
-const PRONTA: EstadoDaNuvem = { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0 }
+const PRONTA: EstadoDaNuvem = { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false }
 
 function montar(estado: Partial<EstadoDaNuvem>, areaDoNutricionista = true) {
   const nuvem: ValorNuvem = { estado: { ...PRONTA, ...estado }, salvarAgora: vi.fn(async () => false), reduzir: vi.fn(), parar: vi.fn() }
@@ -73,5 +73,11 @@ describe('trava da nuvem (spec dados-na-nuvem)', () => {
     montar({ trava: 'sem-internet', pendente: true }, false)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Novo plano' })).toBeInTheDocument()
+  })
+
+  it('CB-127: enquanto confere a nuvem ao voltar, a área fica coberta por "Atualizando…" e não deixa editar', () => {
+    montar({ conferindo: true })
+    expect(screen.getByRole('dialog', { name: 'Atualizando…' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Novo plano' })).not.toBeInTheDocument()
   })
 })

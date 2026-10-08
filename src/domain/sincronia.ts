@@ -10,7 +10,7 @@
 // Não sabe nada de React: a árvore liga, desliga e escuta o estado (`ProvedorNuvem`).
 import type { ArmazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
-import { gravarCopia, lerCopia, type ClienteDaCopia } from './copiaNaNuvem.ts'
+import { gravarCopia, lerCopia, lerVersao, type ClienteDaCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 
@@ -21,6 +21,8 @@ export const CHAVE_NUVEM = 'metanutri:nuvem'
 export const ESPERA_PARA_SALVAR_MS = 2000
 /** DP-8: travado, tenta de novo a cada tanto, mesmo sem o evento `online`. */
 export const INTERVALO_DE_TENTATIVA_MS = 15_000
+/** DP-20: sem nada pendente, de quanto em quanto tempo a aba confere se outro aparelho salvou. */
+export const CONFERIR_A_CADA_MS = 60_000
 /** DP-5: voltas de "outro aparelho salvou antes" numa gravação, antes de deixar para a próxima mudança. */
 const VOLTAS = 5
 
@@ -39,6 +41,8 @@ export interface EstadoDaNuvem {
   readonly reduzindo: boolean
   /** Sobe quando a nuvem trouxe mudança para a cópia de trabalho: a área de trabalho remonta (DP-18). */
   readonly geracao: number
+  /** CB-127: conferindo a nuvem ao voltar para a aba; a área espera, coberta por "Atualizando…" (DP-20). */
+  readonly conferindo: boolean
 }
 
 /** O que fica no navegador sobre a nuvem (DP-2). As abas da mesma conta dividem. */
@@ -184,6 +188,11 @@ export interface Sincronia {
   conectou(): void
   /** O navegador perdeu a internet: trava (CA-477). */
   desconectou(): void
+  /**
+   * CB-127: confere se outro aparelho salvou desde a última vez e, se sim, traz (DP-20). `prender` cobre a
+   * área enquanto confere (ao voltar para a aba); sem ele, confere sem cobrir (a cada 60 s).
+   */
+  conferir(prender: boolean): Promise<void>
   /** CB-123: tira a capa da trava de tamanho para a pessoa reduzir os dados (DP-9). */
   reduzir(): void
   /** A conta vai sair: nada mais vai para a nuvem, e as outras abas ficam sabendo (DP-11). */
@@ -209,7 +218,9 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   let semRegistro = false
   let cancelarSalvar: (() => void) | null = null
   let cancelarTentativa: (() => void) | null = null
-  let rodada: Promise<boolean> | null = null
+  let cancelarConferencia: (() => void) | null = null
+  // Uma ida à nuvem por vez nesta aba: abrir, salvar e conferir não se cruzam.
+  let fila: Promise<unknown> = Promise.resolve()
   // CB-123: o tamanho da última cópia recusada; maior que ela, trava de novo (DP-9).
   let ultimaRecusada: number | null = null
 
@@ -226,7 +237,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     return semRegistro || s.mudancas > s.salvas
   }
 
-  let estado: EstadoDaNuvem = { fase: 'abrindo', pendente: temPendencia(), salvando: false, trava: null, reduzindo: false, geracao: 0 }
+  let estado: EstadoDaNuvem = { fase: 'abrindo', pendente: temPendencia(), salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false }
   const definir = (mudanca: Partial<EstadoDaNuvem>): void => {
     const novo = { ...estado, ...mudanca }
     if ((Object.keys(novo) as (keyof EstadoDaNuvem)[]).every((campo) => novo[campo] === estado[campo])) return
@@ -241,6 +252,17 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   const pararDeTentar = (): void => {
     cancelarTentativa?.()
     cancelarTentativa = null
+  }
+  const pararDeConferir = (): void => {
+    cancelarConferencia?.()
+    cancelarConferencia = null
+  }
+
+  /** Põe a ida à nuvem na fila desta aba: espera a anterior terminar, dê certo ou não. */
+  const exclusivo = <T,>(fazer: () => Promise<T>): Promise<T> => {
+    const vez = fila.then(fazer, fazer)
+    fila = vez.catch(() => undefined)
+    return vez
   }
 
   /** Escreve na cópia de trabalho o que veio da nuvem. Se algo mudou, a área de trabalho remonta. */
@@ -273,6 +295,15 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     })
   }
 
+  const agendarConferencia = (): void => {
+    pararDeConferir()
+    if (parada || !ligada) return
+    cancelarConferencia = relogio.depois(CONFERIR_A_CADA_MS, () => {
+      cancelarConferencia = null
+      void conferir(false)
+    })
+  }
+
   const tentarDeNovo = (): void => {
     if (parada || !ligada) return
     if (estado.fase !== 'pronta') {
@@ -285,7 +316,10 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     else agendarTentativa()
   }
 
-  const abrir = async (): Promise<void> => {
+  const abrir = (): Promise<void> => exclusivo(abrirAgora)
+
+  async function abrirAgora(): Promise<void> {
+    if (parada || estado.fase === 'pronta') return
     const minha = epoca
     pararDeTentar()
     const leitura = await lerCopia(cliente, usuarioId, prazoMs)
@@ -325,6 +359,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       gravarSituacao({ versao: leitura.versao, itens, mudancas: atual.mudancas, salvas: atual.mudancas })
     }
     definir({ fase: 'pronta', pendente: temPendencia() })
+    agendarConferencia()
     if (temPendencia()) void salvarAgora()
   }
 
@@ -389,20 +424,52 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     return false
   }
 
-  const salvarAgora = async (): Promise<boolean> => {
+  function salvarAgora(): Promise<boolean> {
     pararDeEsperar()
-    while (rodada !== null) await rodada
-    if (parada || estado.fase !== 'pronta') return false
-    if (!temPendencia()) {
-      definir({ pendente: false })
-      return true
+    return exclusivo(async () => {
+      if (parada || estado.fase !== 'pronta') return false
+      if (!temPendencia()) {
+        definir({ pendente: false })
+        return true
+      }
+      const salvou = await rodadaDeSalvar()
+      agendarConferencia()
+      return salvou
+    })
+  }
+
+  /** DP-20: outro aparelho salvou desde a última vez? Lê só a versão; se mudou, traz a cópia da nuvem. */
+  const conferirAgora = async (): Promise<void> => {
+    const minha = epoca
+    if (parada || estado.fase !== 'pronta' || estado.trava !== null || temPendencia()) return
+    const versao = await lerVersao(cliente, usuarioId, prazoMs)
+    if (minha !== epoca || parada || versao.tipo === 'falhou' || versao.versao === situacao().versao) return
+    const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+    // Mudou algo aqui enquanto lia: quem junta é o salvar, com a conferência de versão.
+    if (minha !== epoca || parada || leitura.tipo === 'falhou' || temPendencia()) return
+    if (leitura.copia === null) {
+      gravarSituacao({ ...situacao(), versao: null })
+      return
     }
-    const esta = rodadaDeSalvar()
-    rodada = esta
+    aplicar(semPendencias(leitura.copia))
+    const atual = situacao()
+    gravarSituacao({ ...atual, versao: leitura.versao, itens: itensDaCopia(leitura.copia), salvas: atual.mudancas })
+  }
+
+  async function conferir(prender: boolean): Promise<void> {
+    if (parada || !ligada || estado.fase !== 'pronta' || estado.trava !== null) return
+    // Com mudança daqui, o salvar confere a versão e junta (D-132).
+    if (temPendencia()) {
+      void salvarAgora()
+      return
+    }
+    pararDeConferir()
+    if (prender) definir({ conferindo: true })
     try {
-      return await esta
+      await exclusivo(conferirAgora)
     } finally {
-      if (rodada === esta) rodada = null
+      if (prender) definir({ conferindo: false })
+      agendarConferencia()
     }
   }
 
@@ -411,8 +478,8 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     epoca += 1
     pararDeEsperar()
     pararDeTentar()
-    rodada = null
-    definir({ salvando: false })
+    pararDeConferir()
+    definir({ salvando: false, conferindo: false })
   }
 
   return {
@@ -433,6 +500,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (estado.fase !== 'pronta') void abrir()
       else if (estado.trava === 'sem-internet') agendarTentativa()
       else if (temPendencia()) agendarSalvar()
+      else agendarConferencia()
     },
 
     desligar,
@@ -446,6 +514,8 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     },
 
     salvarAgora,
+
+    conferir,
 
     conectou() {
       if (parada || !ligada) return

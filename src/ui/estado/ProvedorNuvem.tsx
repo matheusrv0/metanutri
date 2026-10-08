@@ -64,13 +64,22 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
         if (saiuDaConta(evento.newValue)) sincronia.saiuEmOutraAba()
       } else if (chave !== null && ehChaveDaNuvem(chave)) sincronia.mudou()
     }
+    // CB-127: a pessoa voltou para esta aba; antes de deixar editar, confere se outro aparelho salvou (DP-20).
+    const aoVoltar = () => void sincronia.conferir(true)
+    const aoMudarVisibilidade = () => {
+      if (document.visibilityState === 'visible') aoVoltar()
+    }
     window.addEventListener('online', aoConectar)
     window.addEventListener('offline', aoDesconectar)
     window.addEventListener('storage', aoMudarEmOutraAba)
+    window.addEventListener('focus', aoVoltar)
+    document.addEventListener('visibilitychange', aoMudarVisibilidade)
     return () => {
       window.removeEventListener('online', aoConectar)
       window.removeEventListener('offline', aoDesconectar)
       window.removeEventListener('storage', aoMudarEmOutraAba)
+      window.removeEventListener('focus', aoVoltar)
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade)
       sincronia.desligar()
     }
   }, [sincronia, conta])

@@ -120,6 +120,26 @@ export function lerCopia(cliente: ClienteDaCopia, esperado: string, prazoMs = PR
   )
 }
 
+export type LeituraDaVersao = { readonly tipo: 'lida'; readonly versao: string | null } | { readonly tipo: 'falhou' }
+
+const FALHA_DA_VERSAO: LeituraDaVersao = { tipo: 'falhou' }
+
+/** Só a versão da linha (DP-20): conferir se outro aparelho salvou custa um pedido pequeno. */
+export function lerVersao(cliente: ClienteDaCopia, esperado: string, prazoMs = PRAZO_DA_NUVEM_MS): Promise<LeituraDaVersao> {
+  return comPrazo(
+    async (): Promise<LeituraDaVersao> => {
+      if (!(await sessaoDa(cliente, esperado))) return FALHA_DA_VERSAO
+      const resposta = await cliente.from(TABELA).select('atualizado_em').eq('nutricionista_id', esperado).maybeSingle()
+      if (resposta.error) return FALHA_DA_VERSAO
+      if (resposta.data === null) return { tipo: 'lida', versao: null }
+      const versao = (resposta.data as Record<string, unknown>)['atualizado_em']
+      return typeof versao === 'string' ? { tipo: 'lida', versao } : FALHA_DA_VERSAO
+    },
+    prazoMs,
+    FALHA_DA_VERSAO,
+  )
+}
+
 export function gravarCopia(cliente: ClienteDaCopia, pedido: PedidoDeGravar, prazoMs = PRAZO_DA_NUVEM_MS): Promise<Gravacao> {
   return comPrazo(
     async (): Promise<Gravacao> => {

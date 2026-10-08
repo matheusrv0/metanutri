@@ -6,7 +6,7 @@ import { criarRepositorioPacientes } from './pacientes.ts'
 import { gravarPerfil, lerPerfil, PERFIL_VAZIO, type Backup } from './perfil.ts'
 import { criarRepositorio, type ArmazenamentoListavel } from './persistencia.ts'
 import { criarRepositorioProdutos } from './produtos.ts'
-import { CHAVE_NUVEM, contarMudanca, criarSincronia, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
+import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
 
 /** Um navegador: o armazenamento do aparelho, com as chaves listáveis como o `localStorage`. */
 class Navegador implements ArmazenamentoListavel {
@@ -308,6 +308,71 @@ describe('dois aparelhos ao mesmo tempo (D-132)', () => {
     expect(nomesDosPacientes(aba1)).toEqual(['Ana', 'Bia'])
     expect(aba1.sincronia.estado.pendente).toBe(false)
     expect(aba2.sincronia.estado.pendente).toBe(false)
+  })
+})
+
+describe('conferir a nuvem depois de abrir (DP-20)', () => {
+  async function doisComUmPlano() {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    const criado = a.planos.criar('Plano da Ana')
+    await salvar()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    return { nuvem, a, b, id: criado.caso.id }
+  }
+  const planoNaNuvem = (nuvem: NuvemFalsa, id: string) => JSON.parse(copiaNaNuvem(nuvem).dados[`metanutri:caso:${id}`] ?? '{}') as { caso: { nome: string; pesoKg: number | null } }
+
+  it('CB-127: a aba esquecida aberta confere a nuvem ao voltar e a edição do outro aparelho continua', async () => {
+    const { nuvem, a, b, id } = await doisComUmPlano()
+    vi.setSystemTime(new Date('2026-10-08T13:00:00.000Z'))
+    b.planos.renomear(id, 'Plano da Ana Souza')
+    await salvar()
+
+    // A pessoa volta para a aba de A: antes de deixar editar, a aba confere a nuvem.
+    const conferindo = a.sincronia.conferir(true)
+    expect(a.sincronia.estado.conferindo).toBe(true)
+    await conferindo
+    expect(a.sincronia.estado.conferindo).toBe(false)
+    vi.setSystemTime(new Date('2026-10-08T13:05:00.000Z'))
+    const naAbaDeA = a.planos.obter(id)
+    if (!naAbaDeA) throw new Error('plano ausente')
+    a.planos.salvar({ caso: { ...naAbaDeA.caso, pesoKg: 70 }, plano: naAbaDeA.plano })
+    await salvar()
+
+    expect(planoNaNuvem(nuvem, id).caso).toMatchObject({ nome: 'Plano da Ana Souza', pesoKg: 70 })
+  })
+
+  it('DP-20: sem nada pendente, a cada 60 s a aba confere a nuvem sozinha e traz o que mudou', async () => {
+    const { nuvem, a, b, id } = await doisComUmPlano()
+    b.planos.renomear(id, 'Plano novo')
+    await salvar()
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano da Ana')
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano novo')
+    expect(a.sincronia.estado.pendente).toBe(false)
+    expect(planoNaNuvem(nuvem, id).caso.nome).toBe('Plano novo')
+  })
+
+  it('DP-20: a nuvem igual à última vista não traz nada (só a versão é lida)', async () => {
+    const { nuvem, a } = await doisComUmPlano()
+    const antes = nuvem.pedidos.length
+    const geracao = a.sincronia.estado.geracao
+    await a.sincronia.conferir(true)
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select'])
+    expect(a.sincronia.estado.geracao).toBe(geracao)
+  })
+
+  it('DP-20: com mudança pendente, conferir salva, e a conferência de versão junta', async () => {
+    const { nuvem, a, b, id } = await doisComUmPlano()
+    b.pacientes.criar('Bia')
+    await salvar()
+    a.pacientes.criar('Ana')
+    await a.sincronia.conferir(true)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia'])
+    expect(planoNaNuvem(nuvem, id).caso.nome).toBe('Plano da Ana')
   })
 })
 

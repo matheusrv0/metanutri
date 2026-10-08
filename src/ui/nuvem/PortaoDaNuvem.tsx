@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useNuvem } from '../estado/contextoNuvem.ts'
 import type { ValorConta } from '../estado/usarConta.ts'
 import { TelaAbrindoDados } from './TelaAbrindoDados.tsx'
+import { TelaAtualizando } from './TelaAtualizando.tsx'
 import { TravaDaNuvem } from './TravaDaNuvem.tsx'
 
 interface PortaoDaNuvemProps {
@@ -21,7 +22,7 @@ interface PortaoDaNuvemProps {
 export function PortaoDaNuvem({ areaDoNutricionista, conta, aoSaiu, children }: PortaoDaNuvemProps) {
   const nuvem = useNuvem()
   if (nuvem === null || !areaDoNutricionista) return <>{children}</>
-  const { fase, trava, reduzindo } = nuvem.estado
+  const { fase, trava, reduzindo, conferindo } = nuvem.estado
   if (fase !== 'pronta') return <TelaAbrindoDados fase={fase} />
   // CB-123: reduzindo, a capa sai e a frase do CA-445 fica no alto da área (Estrutura).
   const capa = trava === 'grande-demais' && reduzindo ? null : trava
@@ -29,6 +30,8 @@ export function PortaoDaNuvem({ areaDoNutricionista, conta, aoSaiu, children }: 
     <>
       {children}
       {capa !== null ? <TravaDaNuvem trava={capa} conta={conta} aoSaiu={aoSaiu} aoReduzir={nuvem.reduzir} /> : null}
+      {/* CB-127: ao voltar para a aba, a área espera a conferência da nuvem antes de deixar editar (DP-20). */}
+      {capa === null && conferindo ? <TelaAtualizando /> : null}
     </>
   )
 }

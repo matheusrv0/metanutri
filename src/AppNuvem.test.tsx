@@ -143,6 +143,22 @@ describe('o link do paciente (CB-126)', () => {
   })
 })
 
+describe('aba esquecida aberta (CB-127)', () => {
+  it('CB-127: a janela volta ao foco, a aba confere a nuvem e mostra o que outro aparelho salvou', async () => {
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima')]) }), '2026-10-07T00:00:00.000Z')
+    render(tela())
+    expect(await screen.findByText('Ana Lima')).toBeInTheDocument()
+
+    // Outro aparelho salvou depois: a linha da nuvem tem versão nova.
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima'), paciente('bia', 'Bia Souza')]) }), '2026-10-08T00:00:00.000Z')
+    act(() => {
+      window.dispatchEvent(new Event('focus'))
+    })
+    expect(await screen.findByText('Bia Souza')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Atualizando…' })).not.toBeInTheDocument())
+  })
+})
+
 describe('textos do D-128', () => {
   it('D-128: com a conta na nuvem, o menu não diz que os planos ficam só neste aparelho', async () => {
     render(tela())

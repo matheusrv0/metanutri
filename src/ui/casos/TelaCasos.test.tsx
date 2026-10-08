@@ -133,7 +133,7 @@ describe('Tela Planos', () => {
 })
 
 const NUVEM_PRONTA: ValorNuvem = {
-  estado: { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0 },
+  estado: { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false },
   salvarAgora: async () => true,
   reduzir: () => undefined,
   parar: () => undefined,
