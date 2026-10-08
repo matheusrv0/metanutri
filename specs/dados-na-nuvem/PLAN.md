@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** em execução (rodada de fechamento da revisão, 08/10/2026)
+**Status:** concluído, com a rodada de fechamento da revisão (08/10/2026)
 
 ## Abordagem
 
@@ -122,19 +122,19 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ### Rodada de fechamento (revisão de 08/10/2026)
 
-- [ ] **T27** — Plano: DP-28 a DP-30.
-- [ ] **T28** — C1 pelo caminho sem internet (DP-28): a trava que sai sem nada pendente entra direto em "Atualizando…" e
+- [x] **T27** — Plano: DP-28 a DP-30.
+- [x] **T28** — C1 pelo caminho sem internet (DP-28): a trava que sai sem nada pendente entra direto em "Atualizando…" e
   confere; travada, a conferência de 60 s continua marcada, e a de quem voltou para a aba fica para quando destravar;
   foco e visibilidade juntos fazem uma conferência só; a versão tem prazo fixo de 15 s.
   - Cobre: CB-127
   - Feito quando: A fica mais de 60 s sem internet, B renomeia P e salva, A volta: vê o nome de B antes de editar, e a
     edição de A noutro campo de P deixa o nome de B na nuvem.
-- [ ] **T29** — Cópia parcial dividida entre abas (DP-29).
+- [x] **T29** — Cópia parcial dividida entre abas (DP-29).
   - Feito quando: duas abas no mesmo navegador cheio: a outra aba não sobe a cópia parcial, nem ao fechar; a nuvem
     fica com os 32 pacientes; recarregar com espaço deixa a cópia inteira e em dia.
-- [ ] **T30** — Trava entre abas com prazo e aviso de fechar sem a trava de espaço (DP-30).
-- [ ] **T31** — Política: o dado de antes que ainda não foi para a conta fica até a próxima entrada (DP-30).
-- [ ] **T32** — Validação e relatório ("Rodada de fechamento").
+- [x] **T30** — Trava entre abas com prazo e aviso de fechar sem a trava de espaço (DP-30).
+- [x] **T31** — Política: o dado de antes que ainda não foi para a conta fica até a próxima entrada (DP-30).
+- [x] **T32** — Validação e relatório ("Rodada de fechamento").
 
 ## Mapa de cobertura
 
@@ -154,7 +154,7 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | CB-124 | T5, T11 | `sincronia.test.ts` e `provedoresPorConta.test.tsx` "CB-124: …" |
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
 | CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
-| CB-127 | T18 | `sincronia.test.ts`, `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
+| CB-127 | T18, T28 | `sincronia.test.ts` (dois: aba esquecida e sem internet), `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
 
 ## Decisões do plano
 
@@ -290,8 +290,8 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 
 ## Validação
 
-- [x] `npm run check` (lint + typecheck + testes): 158 arquivos, 2659 testes depois da rodada final (156 e 2612 antes
-  dela); o único aviso do lint é de antes (`MolduraPublica.tsx`)
+- [x] `npm run check` (lint + typecheck + testes): 160 arquivos, 2671 testes depois da rodada de fechamento (158 e 2659
+  na rodada final; 156 e 2612 antes dela); o único aviso do lint é de antes (`MolduraPublica.tsx`)
 - [x] `npx playwright test`: 41
 - [x] `npm run build`
 - [x] `node scripts/conferir-publicacao.mjs`
