@@ -1,7 +1,7 @@
 # PLAN — Dados por conta no aparelho
 
 **Spec de origem:** `./SPEC.md` (commit c8720d1, D-120 a D-126, CA-465 a CA-471, CB-120 a CB-122)
-**Status:** concluído, com a rodada final da revisão (08/10/2026, D-127, CA-472 a CA-474)
+**Status:** em execução: rodada de fechamento da revisão (08/10/2026)
 
 ## Abordagem
 
@@ -117,8 +117,19 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 - [x] **T15** — Troca direta de conta numa tela de trabalho vai para o painel (DP-15); comentários sobre o `useMemo`
   idempotente e o custo de listar por índice.
 - [x] **T16** — Versão dos termos e da política `2026-10-08` ("8 de outubro de 2026"): a Política mudou na T14 e o ramo
-  sai nesse dia. O passo do lote 3 no README e nas pendências, que confere "Versão de 7 de outubro de 2026", fica como
-  registro daquele lote.
+  sai nesse dia. O passo do lote 3 nas pendências, que confere "Versão de 7 de outubro de 2026", fica como registro
+  daquele lote; no README ele deixa de fixar uma data (T22).
+
+### Rodada de fechamento (revisão de 08/10/2026)
+
+- [x] **T17** — Spec e plano: D-127 refinada; DP-5, DP-16 e R4 revistos; DP-18 a DP-21.
+- [ ] **T18** — Junção por id sem apagar o que perde (D-127, DP-16, DP-20): pacientes pela data; produtos e modelos com
+  id novo; acompanhamentos pendentes de fora.
+  - Feito quando: a edição de paciente da aba antiga aparece (CA-472); produto e modelo diferentes no mesmo id ficam os dois.
+- [ ] **T19** — O plano entra no índice antes de ser movido; no conflito em que o da conta é mais novo, o id dele também (DP-21).
+- [ ] **T20** — O aviso do CA-473 só para o dono do que sobrou (DP-18).
+- [ ] **T21** — Configurações com a conta esperada nas chamadas da nuvem (DP-19, CA-474).
+- [ ] **T22** — README sem fixar a data da versão; comentário do DP-8 em Configurações trocado pelo DP-14.
 
 ## Mapa de cobertura
 
@@ -160,8 +171,11 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   Valor igual nos dois lados é cópia interrompida e segue. Com valor diferente: o índice `metanutri:casos` junta os ids
   (a ordem da conta primeiro, depois os de fora que faltam); um plano `metanutri:caso:<id>` diferente fica nos dois
   (o mais novo pelo `atualizadoEm` fica com o id; o outro ganha id novo, `crypto.randomUUID()` como o app já gera, e entra
-  no índice); listas com id (pacientes, produtos, modelos e os itens dos acompanhamentos, com as marcas de nuvem e de
-  pendente de cada item) juntam por id, e no mesmo id fica o da conta; configurações (perfil, impressão, perfil da conta,
+  no índice); listas com id juntam por id (refinado na T18): no mesmo paciente fica o mais novo pelo `atualizadoEm`
+  (sem data, ou na mesma data, o da conta); produto ou modelo diferente com o mesmo id fica nos dois, o da conta no id e o
+  de fora com id novo (produto: acima do maior id, como o repositório gera; modelo: `crypto.randomUUID()`); o mesmo link
+  de acompanhamento fica com o da conta, salvo quando só o de fora está pendente de nuvem (DP-20), e cada item leva as
+  próprias marcas; configurações (perfil, impressão, perfil da conta,
   sugestões por refeição, aviso de primeiro acesso, `frequentes`) ficam com o valor da conta e a cópia crua sai;
   sugestões ocultas viram a união. Valor cru que o app não consegue ler fica fora (a conta mantém o dela); valor da conta
   ilegível dá lugar ao cru.
@@ -196,11 +210,22 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   servidor de conta, segue o caminho de hoje (as chaves de dados sem prefixo).
 - **DP-15 · Trocar de conta direto (A → B na mesma aba) numa tela de trabalho leva ao painel**, em vez de deixar no
   endereço o plano ou o paciente de A.
-- **DP-16 · Produtos com o mesmo id ficam com o da conta.** Os ids de produto são sequenciais (a partir de 900000):
-  um produto criado por uma aba antiga depois da migração pode repetir o id de outro da conta e, pela regra do mesmo id,
-  fica de fora. Trocar o id quebraria os planos que apontam para ele (R4).
+- **DP-16 · Produto diferente com o mesmo id fica nos dois** (substitui "fica o da conta"): o da conta continua no id
+  e o de fora ganha id novo, acima do maior id da lista, como o repositório de produtos gera. Nenhum produto some. As
+  referências dos planos não são remapeadas, porque não dá para saber qual produto o plano de uma aba antiga quis dizer
+  (R4).
 - **DP-17 · Fechar o navegador no meio de um conflito de plano pode deixar uma cópia a mais** do plano mais velho (com
   outro id). Nunca perde dado.
+- **DP-18 · O aviso do CA-473 é só do dono dos dados que sobraram.** Se o que não coube é de outra conta (o dono é
+  outro), quem entrou não vê aviso nenhum: para ela, nada ficou para trás.
+- **DP-19 · Configurações também usa a conta esperada na nuvem** (CA-474): enviar e trazer a cópia, e apagar a cópia e
+  os acompanhamentos, só pedem algo com a sessão da conta que está dentro.
+- **DP-20 · Acompanhamentos: no mesmo link, fica o da conta, salvo quando só o de fora está pendente de nuvem.** Dar id
+  novo a um link duplicaria o token que o paciente tem na mão. A nuvem é a fonte desses links e, na próxima leitura, vale
+  o que está nela (CB-105); a única cópia que pode existir só no aparelho é a mudança pendente, e ela é a que fica.
+- **DP-21 · O plano entra no índice da conta antes de ser movido** (substitui "depois", da T11). Se o índice não couber,
+  nada é movido; se o plano não couber, o índice aponta para um plano que ainda não chegou e que a lista ignora até a
+  próxima entrada. Assim nenhum plano movido fica fora do índice.
 
 ## Riscos
 
@@ -210,7 +235,9 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   saiu (a página recarrega logo em seguida). Já acontecia com as chaves sem prefixo.
 - **R3** — `localStorage` cheio no meio da migração → move o que couber (DP-12), mostra o aviso do CA-473 e tenta o
   resto na próxima entrada; a conta vê exatamente o que foi movido, com os planos no índice.
-- **R4** — Produto de aba antiga com o mesmo id de outro da conta fica de fora (DP-16).
+- **R4** — Um plano criado numa aba antiga, usando um produto criado nessa mesma aba antiga, continua apontando para o
+  produto da conta com aquele id (o produto da aba antiga ganha id novo e fica na lista, DP-16). Os números do plano
+  podem sair do produto errado até a pessoa trocar o alimento.
 
 ## Validação
 
