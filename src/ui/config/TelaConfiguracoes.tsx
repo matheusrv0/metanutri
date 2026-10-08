@@ -53,7 +53,7 @@ function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string 
 
 /**
  * Perfil, marca nos documentos e o que fazer com os dados guardados neste aparelho. Tudo aqui é
- * da conta que está dentro: backup, cópia na nuvem e apagar (spec dados-por-conta, D-125 e DP-8).
+ * da conta que está dentro: backup, cópia na nuvem e apagar (spec dados-por-conta, D-125, DP-14 e DP-19).
  */
 export function TelaConfiguracoes() {
   const armazenamento = useArmazenamento()

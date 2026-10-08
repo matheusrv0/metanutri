@@ -229,7 +229,8 @@ Para funcionar de verdade, nesta ordem:
    ```
    A **Secret Key** nunca vai para o repositório nem para o chat: só para o painel do Supabase. **Ordem para ligar
    (D-116):** primeiro publique o site com a Site Key. Logo depois de publicar, recarregue o site (Ctrl+Shift+R no
-   computador) e confira na Política de privacidade que está escrito "Versão de 7 de outubro de 2026". Se não estiver,
+   computador) e confira na Política de privacidade que a "Versão de …" é a data de `DATA_TERMOS`, em
+   `src/domain/legal.ts` (a versão que acabou de ser publicada). Se não for,
    espere a publicação terminar e recarregue de novo. Espere 1 ou 2 dias depois de publicar: quem já visitou o site
    guarda a versão antiga até recarregar a página; com o captcha ligado, essa versão antiga não consegue entrar. Só
    então, em *Supabase > Authentication > Attack Protection*, ligue *Enable Captcha protection*, escolha

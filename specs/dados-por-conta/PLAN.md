@@ -1,7 +1,7 @@
 # PLAN — Dados por conta no aparelho
 
 **Spec de origem:** `./SPEC.md` (commit c8720d1, D-120 a D-126, CA-465 a CA-471, CB-120 a CB-122)
-**Status:** em execução: rodada de fechamento da revisão (08/10/2026)
+**Status:** concluído, com a rodada de fechamento da revisão (08/10/2026)
 
 ## Abordagem
 
@@ -123,13 +123,13 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 ### Rodada de fechamento (revisão de 08/10/2026)
 
 - [x] **T17** — Spec e plano: D-127 refinada; DP-5, DP-16 e R4 revistos; DP-18 a DP-21.
-- [ ] **T18** — Junção por id sem apagar o que perde (D-127, DP-16, DP-20): pacientes pela data; produtos e modelos com
+- [x] **T18** — Junção por id sem apagar o que perde (D-127, DP-16, DP-20): pacientes pela data; produtos e modelos com
   id novo; acompanhamentos pendentes de fora.
   - Feito quando: a edição de paciente da aba antiga aparece (CA-472); produto e modelo diferentes no mesmo id ficam os dois.
-- [ ] **T19** — O plano entra no índice antes de ser movido; no conflito em que o da conta é mais novo, o id dele também (DP-21).
-- [ ] **T20** — O aviso do CA-473 só para o dono do que sobrou (DP-18).
-- [ ] **T21** — Configurações com a conta esperada nas chamadas da nuvem (DP-19, CA-474).
-- [ ] **T22** — README sem fixar a data da versão; comentário do DP-8 em Configurações trocado pelo DP-14.
+- [x] **T19** — O plano entra no índice antes de ser movido; no conflito em que o da conta é mais novo, o id dele também (DP-21).
+- [x] **T20** — O aviso do CA-473 só para o dono do que sobrou (DP-18).
+- [x] **T21** — Configurações com a conta esperada nas chamadas da nuvem (DP-19, CA-474).
+- [x] **T22** — README sem fixar a data da versão; comentário do DP-8 em Configurações trocado pelo DP-14.
 
 ## Mapa de cobertura
 
