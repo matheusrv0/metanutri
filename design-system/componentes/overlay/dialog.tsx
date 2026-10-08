@@ -23,8 +23,10 @@ export const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     /** O desenho do botão de fechar. Sem ele, o X do Lucide; nas telas da spec checkout-proprio, o da marca (CA-383). */
     readonly iconeFechar?: React.ReactNode
+    /** Sem o botão de fechar: o diálogo só sai pelo que está nele (a trava da nuvem, spec dados-na-nuvem). */
+    readonly semFechar?: boolean
   }
->(({ className, children, iconeFechar, ...props }, ref) => (
+>(({ className, children, iconeFechar, semFechar = false, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -38,10 +40,12 @@ export const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        {iconeFechar ?? <X className="size-5" aria-hidden="true" />}
-        <span className="sr-only">Fechar</span>
-      </DialogPrimitive.Close>
+      {semFechar ? null : (
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {iconeFechar ?? <X className="size-5" aria-hidden="true" />}
+          <span className="sr-only">Fechar</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
 ))

@@ -305,7 +305,8 @@ pinta o ponto principal de laranja, como a última bolinha da logo (grafismo, nu
 ```
 
 Nomes: `cadeado` · `cartao` · `calendario` · `check` · `alerta` · `fechar` · `recibo` · `seta` · `estrela`.
-O `DialogContent` aceita `iconeFechar={<IconeMarca nome="fechar" />}` no lugar do X do Lucide.
+O `DialogContent` aceita `iconeFechar={<IconeMarca nome="fechar" />}` no lugar do X do Lucide, e
+`semFechar` para não ter o botão de fechar (o diálogo só sai pelos botões dele, como a trava da nuvem).
 
 ### PontosDaMarca
 Os quatro pontos da logo, do menor ao maior, o último laranja. Com `pulsando`, dizem "esperando"

@@ -91,6 +91,19 @@ describe('componentes base do design system', () => {
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
   })
 
+  it('diálogo com semFechar não tem o botão Fechar (a trava da nuvem, spec dados-na-nuvem)', () => {
+    render(
+      <Dialog open>
+        <DialogContent semFechar>
+          <DialogTitle>Sem internet.</DialogTitle>
+          <DialogDescription>Conecte-se para continuar.</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    )
+    expect(screen.getByRole('dialog', { name: 'Sem internet.' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Fechar' })).not.toBeInTheDocument()
+  })
+
   it('CA-102: cartão padrão é branco e arredondado, sem fio', () => {
     render(<Card>conteúdo</Card>)
     const cartao = screen.getByText('conteúdo')
