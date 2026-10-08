@@ -772,6 +772,48 @@ describe('navegador sem espaço com duas abas (DP-29)', () => {
   })
 })
 
+describe('a outra aba salvou o que faltava (DP-31)', () => {
+  it('DP-31: a aba travada sem internet que acha tudo salvo pela outra aba não fica presa: destrava e confere', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    // A trava entre abas: uma ida à nuvem por vez, nas duas abas.
+    let fila: Promise<unknown> = Promise.resolve()
+    const trancar = <T,>(fazer: (comTrava: boolean) => Promise<T>): Promise<T> => {
+      const vez = fila.then(() => fazer(true))
+      fila = vez.then(
+        () => undefined,
+        () => undefined,
+      )
+      return vez
+    }
+    const a = abrirAparelho(nuvem, navegador, { trancar })
+    await ligar(a)
+    a.planos.criar('Plano da Ana')
+    await salvar()
+    const b = abrirAparelho(nuvem, navegador, { trancar })
+    await ligar(b)
+
+    // O servidor não responde (o navegador continua dizendo que tem internet: nenhum evento "online").
+    nuvem.semInternet = true
+    a.planos.criar('Outro plano')
+    b.sincronia.mudou()
+    await salvar()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(a.sincronia.estado.trava).toBe('sem-internet')
+    expect(b.sincronia.estado.trava).toBe('sem-internet')
+
+    // A rede volta, devagar: A ainda está mandando quando a tentativa de B chega, e manda tudo.
+    nuvem.semInternet = false
+    nuvem.segurar = true
+    await vi.advanceTimersByTimeAsync(INTERVALO_DE_TENTATIVA_MS)
+    nuvem.soltar()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(a.sincronia.estado.trava).toBeNull()
+    await vi.advanceTimersByTimeAsync(10 * CONFERIR_A_CADA_MS)
+    expect(b.sincronia.estado).toMatchObject({ trava: null, pendente: false })
+  })
+})
+
 describe('abrir com a cópia daqui parcial (DP-31)', () => {
   it('DP-31: sem linha na nuvem e com a cópia daqui marcada parcial, nada sobe: a área trava sem espaço', async () => {
     const nuvem = nuvemFalsa()

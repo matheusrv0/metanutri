@@ -619,6 +619,12 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (parada || estado.fase !== 'pronta' || conferirParcial()) return false
       if (!temPendencia()) {
         definir({ pendente: false })
+        // DP-31: travada sem internet e nada mais a mandar (outra aba mandou): não fica presa. Com internet,
+        // destrava e confere; sem, tenta de novo daqui a pouco.
+        if (estado.trava === 'sem-internet') {
+          if (conectado()) destravarConferindo()
+          else agendarTentativa()
+        }
         return true
       }
       const salvou = await rodadaDeSalvar()
