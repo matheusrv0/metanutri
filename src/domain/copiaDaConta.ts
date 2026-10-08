@@ -298,6 +298,7 @@ function separarProdutos(daqui: Item[], nuvem: readonly Item[], marcas: Map<stri
 
 /** Junta uma lista com id. O arquivo dos links leva as marcas dele (DP-15). */
 function juntarLista(juncao: Juncao, chave: string, lista: Lista, daquiTexto: string | undefined, nuvemTexto: string | undefined, trocas: Map<number, number>, marcasDaqui: Map<string, string>): string | undefined {
+  if (daquiTexto === undefined && nuvemTexto === undefined) return undefined
   const daqui = daquiTexto === undefined ? [] : itensDe(chave, daquiTexto)
   const nuvem = nuvemTexto === undefined ? [] : itensDe(chave, nuvemTexto)
   // Lado que não dá para ler fica de fora: vale o outro, como na migração (D-127).

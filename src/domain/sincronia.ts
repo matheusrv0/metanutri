@@ -1,0 +1,477 @@
+// O motor que mantém os dados da conta na nuvem (spec dados-na-nuvem, D-128 a D-133).
+//
+// A linha da conta em `copias` é a fonte da verdade; o espaço da conta no navegador é a cópia de
+// trabalho. Ao entrar, o motor traz a cópia da nuvem (e junta com o que já estava aqui, D-133). Toda
+// mudança passa pelo observador (`observarMudancas`), que marca o item e avisa o motor; 2 s depois
+// da última, a cópia inteira vai para a nuvem com conferência de versão. Se outro aparelho salvou
+// antes, o motor lê, junta item por item, grava aqui e manda de novo (D-132). Sem internet, trava
+// (D-130); quando ela volta, o que faltava sobe e destrava.
+//
+// Não sabe nada de React: a árvore liga, desliga e escuta o estado (`ProvedorNuvem`).
+import type { ArmazenamentoDaConta } from './armazenamentoDaConta.ts'
+import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { gravarCopia, lerCopia, type ClienteDaCopia } from './copiaNaNuvem.ts'
+import type { Backup } from './perfil.ts'
+import type { Armazenamento } from './persistencia.ts'
+
+/** Só do navegador, nunca na cópia: a versão da nuvem que ele conhece e os contadores de mudanças (DP-2). */
+export const CHAVE_NUVEM = 'metanutri:nuvem'
+
+/** D-129: salva esta espera depois da última mudança (DP-7). */
+export const ESPERA_PARA_SALVAR_MS = 2000
+/** DP-8: travado, tenta de novo a cada tanto, mesmo sem o evento `online`. */
+export const INTERVALO_DE_TENTATIVA_MS = 15_000
+/** DP-5: voltas de "outro aparelho salvou antes" numa gravação, antes de deixar para a próxima mudança. */
+const VOLTAS = 5
+
+export type FaseDaNuvem = 'abrindo' | 'sem-conexao' | 'formato-desconhecido' | 'pronta'
+export type TravaDaNuvem = 'sem-internet' | 'grande-demais'
+
+export interface EstadoDaNuvem {
+  /** `pronta` depois de a cópia da nuvem chegar; antes, a área de trabalho espera (CA-484). */
+  readonly fase: FaseDaNuvem
+  /** Há mudança daqui que ainda não está na nuvem. */
+  readonly pendente: boolean
+  readonly salvando: boolean
+  /** D-130 e CB-123: a área de trabalho fica coberta. */
+  readonly trava: TravaDaNuvem | null
+  /** CB-123: a pessoa tirou a capa da trava de tamanho para reduzir os dados (DP-9). */
+  readonly reduzindo: boolean
+  /** Sobe quando a nuvem trouxe mudança para a cópia de trabalho: a área de trabalho remonta (DP-18). */
+  readonly geracao: number
+}
+
+/** O que fica no navegador sobre a nuvem (DP-2). As abas da mesma conta dividem. */
+export interface Situacao {
+  readonly versao: string | null
+  /** Quantas mudanças daqui já houve; `salvas`, até qual delas a nuvem tem. */
+  readonly mudancas: number
+  readonly salvas: number
+  /** Quantos itens a cópia da nuvem tinha da última vez (DP-11). */
+  readonly itens: number
+  /** A conta saiu nesta aba: as outras param antes de o espaço sumir (DP-11). */
+  readonly saiu?: true
+}
+
+const SITUACAO_INICIAL: Situacao = { versao: null, mudancas: 0, salvas: 0, itens: 0 }
+
+export function lerSituacao(armazenamento: Armazenamento): Situacao | null {
+  try {
+    const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE_NUVEM) ?? 'null')
+    if (typeof bruto !== 'object' || bruto === null) return null
+    const o = bruto as Record<string, unknown>
+    const numero = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+    return {
+      versao: typeof o['versao'] === 'string' ? o['versao'] : null,
+      mudancas: numero(o['mudancas']),
+      salvas: numero(o['salvas']),
+      itens: numero(o['itens']),
+      ...(o['saiu'] === true ? { saiu: true as const } : {}),
+    }
+  } catch {
+    return null
+  }
+}
+
+/** O valor novo da chave da nuvem, vindo do evento `storage` de outra aba: a conta saiu lá? */
+export function saiuDaConta(valor: string | null): boolean {
+  if (valor === null) return true
+  try {
+    const bruto: unknown = JSON.parse(valor)
+    return typeof bruto === 'object' && bruto !== null && (bruto as Record<string, unknown>)['saiu'] === true
+  } catch {
+    return false
+  }
+}
+
+/** Soma uma mudança no contador do navegador (DP-2). */
+export function contarMudanca(armazenamento: Armazenamento): void {
+  const atual = lerSituacao(armazenamento) ?? SITUACAO_INICIAL
+  armazenamento.setItem(CHAVE_NUVEM, JSON.stringify({ ...atual, mudancas: atual.mudancas + 1 }))
+}
+
+/**
+ * O ponto único por onde passa toda gravação de dado da conta (DP-2): grava, marca o item que
+ * mudou (ou a lápide do que saiu), conta a mudança e avisa. `contou` é falso quando o navegador
+ * não deixou guardar a marca: o motor lembra da mudança em memória.
+ */
+export function observarMudancas(conta: ArmazenamentoDaConta, aoMudar: (contou: boolean) => void, agora: () => string = () => new Date().toISOString()): ArmazenamentoDaConta {
+  const ler = (chave: string): string | null => {
+    try {
+      return conta.getItem(chave)
+    } catch {
+      return null
+    }
+  }
+  const registrar = (chave: string, antes: string | null, depois: string | null) => {
+    if (antes === depois || !ehChaveDaNuvem(chave)) return
+    let contou = true
+    try {
+      registrarMudanca(conta, chave, antes, depois, agora())
+      contarMudanca(conta)
+    } catch {
+      contou = false
+    }
+    aoMudar(contou)
+  }
+  return {
+    usuarioId: conta.usuarioId,
+    getItem: (chave) => conta.getItem(chave),
+    setItem: (chave, valor) => {
+      const antes = ler(chave)
+      conta.setItem(chave, valor)
+      registrar(chave, antes, valor)
+    },
+    removeItem: (chave) => {
+      const antes = ler(chave)
+      conta.removeItem(chave)
+      registrar(chave, antes, null)
+    },
+    get length() {
+      return conta.length
+    },
+    key: (indice) => conta.key(indice),
+    clear: () => conta.clear(),
+    chaveOriginal: (chave) => conta.chaveOriginal(chave),
+  }
+}
+
+/** Esperar e desistir de esperar. Nos testes, o relógio falso do Vitest. */
+export interface Relogio {
+  depois(ms: number, fazer: () => void): () => void
+}
+
+const relogioDoNavegador: Relogio = {
+  depois(ms, fazer) {
+    const id = setTimeout(fazer, ms)
+    return () => clearTimeout(id)
+  },
+}
+
+export interface OpcoesSincronia {
+  readonly cliente: ClienteDaCopia
+  /** O espaço da conta, sem o observador: o que o motor grava não conta como mudança da pessoa. */
+  readonly armazenamento: Armazenamento
+  readonly usuarioId: string
+  /** O nome curto do aparelho, gravado na linha. */
+  readonly aparelho: string
+  /** Dados de antes chegaram agora ao espaço da conta (a migração da spec dados-por-conta): junta ao abrir. */
+  readonly sujo?: boolean
+  readonly agora?: () => string
+  readonly relogio?: Relogio
+  /** O navegador diz que tem internet (`navigator.onLine`). */
+  readonly conectado?: () => boolean
+  readonly prazoMs?: number
+  /** A nuvem mudou a cópia de trabalho (o que fica em memória troca junto, DP-18). */
+  readonly aoTrazer?: () => void
+}
+
+export interface Sincronia {
+  readonly estado: EstadoDaNuvem
+  assinar(ouvinte: () => void): () => void
+  /** Começa (abre a cópia, se ainda não abriu). A árvore liga ao montar. */
+  ligar(): void
+  /** Para os relógios e ignora o que estava a caminho. Ligar de novo continua de onde estava. */
+  desligar(): void
+  /** Uma mudança na cópia de trabalho (daqui ou de outra aba). */
+  mudou(contou?: boolean): void
+  /** Manda agora o que falta. Verdadeiro quando, no fim, a nuvem tem tudo. */
+  salvarAgora(): Promise<boolean>
+  /** O navegador voltou a ter internet. */
+  conectou(): void
+  /** O navegador perdeu a internet: trava (CA-477). */
+  desconectou(): void
+  /** CB-123: tira a capa da trava de tamanho para a pessoa reduzir os dados (DP-9). */
+  reduzir(): void
+  /** A conta vai sair: nada mais vai para a nuvem, e as outras abas ficam sabendo (DP-11). */
+  parar(): void
+  /** A conta saiu em outra aba: para sem mandar mais nada. */
+  saiuEmOutraAba(): void
+}
+
+export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
+  const { cliente, armazenamento, usuarioId, aparelho } = opcoes
+  const agora = opcoes.agora ?? (() => new Date().toISOString())
+  const relogio = opcoes.relogio ?? relogioDoNavegador
+  const conectado = opcoes.conectado ?? (() => true)
+  const prazoMs = opcoes.prazoMs
+
+  const ouvintes = new Set<() => void>()
+  // Sobe a cada desligar: o que estava a caminho confere e, se mudou, não grava nem envia nada.
+  let epoca = 0
+  let ligada = false
+  let parada = false
+  let sujo = opcoes.sujo === true
+  // Mudança que não coube no contador do navegador (armazenamento cheio): fica lembrada aqui.
+  let semRegistro = false
+  let cancelarSalvar: (() => void) | null = null
+  let cancelarTentativa: (() => void) | null = null
+  let rodada: Promise<boolean> | null = null
+  // CB-123: o tamanho da última cópia recusada; maior que ela, trava de novo (DP-9).
+  let ultimaRecusada: number | null = null
+
+  const situacao = (): Situacao => lerSituacao(armazenamento) ?? SITUACAO_INICIAL
+  const gravarSituacao = (nova: Situacao): void => {
+    try {
+      armazenamento.setItem(CHAVE_NUVEM, JSON.stringify(nova))
+    } catch {
+      // sem espaço: a versão fica em memória até a próxima gravação que couber
+    }
+  }
+  const temPendencia = (): boolean => {
+    const s = situacao()
+    return semRegistro || s.mudancas > s.salvas
+  }
+
+  let estado: EstadoDaNuvem = { fase: 'abrindo', pendente: temPendencia(), salvando: false, trava: null, reduzindo: false, geracao: 0 }
+  const definir = (mudanca: Partial<EstadoDaNuvem>): void => {
+    const novo = { ...estado, ...mudanca }
+    if ((Object.keys(novo) as (keyof EstadoDaNuvem)[]).every((campo) => novo[campo] === estado[campo])) return
+    estado = novo
+    for (const ouvir of [...ouvintes]) ouvir()
+  }
+
+  const pararDeEsperar = (): void => {
+    cancelarSalvar?.()
+    cancelarSalvar = null
+  }
+  const pararDeTentar = (): void => {
+    cancelarTentativa?.()
+    cancelarTentativa = null
+  }
+
+  /** Escreve na cópia de trabalho o que veio da nuvem. Se algo mudou, a área de trabalho remonta. */
+  const aplicar = (copia: Backup): void => {
+    let mudou: boolean
+    try {
+      mudou = aplicarCopia(armazenamento, copia)
+    } catch {
+      // sem espaço no navegador: o que coube fica; a próxima abertura tenta de novo
+      mudou = true
+    }
+    if (!mudou) return
+    opcoes.aoTrazer?.()
+    definir({ geracao: estado.geracao + 1 })
+  }
+
+  const agendarSalvar = (): void => {
+    pararDeEsperar()
+    cancelarSalvar = relogio.depois(ESPERA_PARA_SALVAR_MS, () => {
+      cancelarSalvar = null
+      void salvarAgora()
+    })
+  }
+
+  const agendarTentativa = (): void => {
+    pararDeTentar()
+    cancelarTentativa = relogio.depois(INTERVALO_DE_TENTATIVA_MS, () => {
+      cancelarTentativa = null
+      tentarDeNovo()
+    })
+  }
+
+  const tentarDeNovo = (): void => {
+    if (parada || !ligada) return
+    if (estado.fase !== 'pronta') {
+      void abrir()
+      return
+    }
+    if (estado.trava !== 'sem-internet') return
+    if (temPendencia()) void salvarAgora()
+    else if (conectado()) definir({ trava: null })
+    else agendarTentativa()
+  }
+
+  const abrir = async (): Promise<void> => {
+    const minha = epoca
+    pararDeTentar()
+    const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+    if (minha !== epoca || parada) return
+    if (leitura.tipo === 'falhou') {
+      definir({ fase: leitura.motivo === 'formato' ? 'formato-desconhecido' : 'sem-conexao' })
+      agendarTentativa()
+      return
+    }
+
+    const anterior = lerSituacao(armazenamento)
+    const local = montarCopia(armazenamento, agora())
+    // Sem mudança pendente, a cópia daqui é a da última vez que esteve em dia: vale a da nuvem (DP-6).
+    const emDia = anterior !== null && !sujo && !semRegistro && anterior.mudancas <= anterior.salvas
+    let subir: boolean
+    if (leitura.copia === null) {
+      // D-133: sem cópia na nuvem, o que está aqui sobe como está.
+      subir = Object.keys(local.dados).length > 0
+    } else if (emDia) {
+      if (anterior.versao !== leitura.versao) aplicar(semPendencias(leitura.copia))
+      subir = false
+    } else {
+      // D-133 e CB-125: o que ficou aqui sem subir é juntado ao que está na nuvem, item por item.
+      const junta = juntarCopias(local, semPendencias(leitura.copia), agora())
+      aplicar(junta)
+      subir = !copiasIguais(junta, leitura.copia)
+    }
+    sujo = false
+    const atual = situacao()
+    const itens = leitura.copia === null ? 0 : itensDaCopia(leitura.copia)
+    if (subir) gravarSituacao({ versao: leitura.versao, itens, mudancas: Math.max(atual.mudancas, atual.salvas + 1), salvas: atual.salvas })
+    else {
+      semRegistro = false
+      gravarSituacao({ versao: leitura.versao, itens, mudancas: atual.mudancas, salvas: atual.mudancas })
+    }
+    definir({ fase: 'pronta', pendente: temPendencia() })
+    if (temPendencia()) void salvarAgora()
+  }
+
+  /** CB-123 e D-130: a cópia não foi. Grande demais trava a área; rede, também, e tenta de novo. */
+  const naoFoi = (motivo: 'rede' | 'grande', tamanho: number): false => {
+    if (motivo === 'grande') {
+      const cresceu = ultimaRecusada === null || tamanho > ultimaRecusada
+      ultimaRecusada = tamanho
+      definir({ salvando: false, pendente: true, trava: 'grande-demais', reduzindo: estado.trava === 'grande-demais' && estado.reduzindo && !cresceu })
+      return false
+    }
+    definir({ salvando: false, pendente: true, trava: 'sem-internet', reduzindo: false })
+    agendarTentativa()
+    return false
+  }
+
+  const rodadaDeSalvar = async (): Promise<boolean> => {
+    const minha = epoca
+    definir({ salvando: true, pendente: true })
+    for (let volta = 0; volta < VOLTAS; volta += 1) {
+      const antes = situacao()
+      const ate = antes.mudancas
+      const lembrada = semRegistro
+      semRegistro = false
+      const copia = montarCopia(armazenamento, agora())
+      // DP-11: cópia sem item e sem lápide, quando a nuvem tinha itens, é o espaço apagado por fora.
+      if (antes.itens > 0 && copiaSemItens(copia)) {
+        definir({ salvando: false })
+        return false
+      }
+      const tamanho = JSON.stringify(copia).length
+      const resultado = await gravarCopia(cliente, { copia, versao: antes.versao, aparelho, esperado: usuarioId, agora: agora() }, prazoMs)
+      if (minha !== epoca || parada) return false
+
+      if (resultado.tipo === 'gravada') {
+        const depois = situacao()
+        gravarSituacao({ ...depois, versao: resultado.versao, salvas: Math.max(depois.salvas, ate), itens: itensDaCopia(copia) })
+        ultimaRecusada = null
+        pararDeTentar()
+        const resta = temPendencia()
+        definir({ salvando: false, pendente: resta, trava: null, reduzindo: false })
+        if (resta) agendarSalvar()
+        return !resta
+      }
+
+      semRegistro ||= lembrada
+      if (resultado.tipo === 'falhou') return naoFoi(resultado.motivo, tamanho)
+
+      // D-132: outro aparelho salvou antes. Lê, junta item por item, grava aqui e manda de novo.
+      const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+      if (minha !== epoca || parada) return false
+      if (leitura.tipo === 'falhou') return naoFoi('rede', tamanho)
+      if (leitura.copia === null) {
+        gravarSituacao({ ...situacao(), versao: null })
+        continue
+      }
+      aplicar(juntarCopias(montarCopia(armazenamento, agora()), semPendencias(leitura.copia), agora()))
+      gravarSituacao({ ...situacao(), versao: leitura.versao, itens: itensDaCopia(leitura.copia) })
+    }
+    definir({ salvando: false })
+    agendarSalvar()
+    return false
+  }
+
+  const salvarAgora = async (): Promise<boolean> => {
+    pararDeEsperar()
+    while (rodada !== null) await rodada
+    if (parada || estado.fase !== 'pronta') return false
+    if (!temPendencia()) {
+      definir({ pendente: false })
+      return true
+    }
+    const esta = rodadaDeSalvar()
+    rodada = esta
+    try {
+      return await esta
+    } finally {
+      if (rodada === esta) rodada = null
+    }
+  }
+
+  const desligar = (): void => {
+    ligada = false
+    epoca += 1
+    pararDeEsperar()
+    pararDeTentar()
+    rodada = null
+    definir({ salvando: false })
+  }
+
+  return {
+    get estado() {
+      return estado
+    },
+
+    assinar(ouvinte) {
+      ouvintes.add(ouvinte)
+      return () => {
+        ouvintes.delete(ouvinte)
+      }
+    },
+
+    ligar() {
+      if (parada || ligada) return
+      ligada = true
+      if (estado.fase !== 'pronta') void abrir()
+      else if (estado.trava === 'sem-internet') agendarTentativa()
+      else if (temPendencia()) agendarSalvar()
+    },
+
+    desligar,
+
+    mudou(contou = true) {
+      if (parada) return
+      if (!contou) semRegistro = true
+      definir({ pendente: true })
+      if (!ligada || estado.fase !== 'pronta' || estado.trava === 'sem-internet') return
+      agendarSalvar()
+    },
+
+    salvarAgora,
+
+    conectou() {
+      if (parada || !ligada) return
+      if (estado.fase !== 'pronta') {
+        void abrir()
+        return
+      }
+      if (estado.trava !== 'sem-internet') return
+      if (temPendencia()) void salvarAgora()
+      else definir({ trava: null })
+    },
+
+    desconectou() {
+      if (parada || !ligada || estado.fase !== 'pronta') return
+      pararDeEsperar()
+      definir({ trava: 'sem-internet', reduzindo: false })
+      agendarTentativa()
+    },
+
+    reduzir() {
+      if (estado.trava === 'grande-demais') definir({ reduzindo: true })
+    },
+
+    parar() {
+      gravarSituacao({ ...situacao(), saiu: true })
+      parada = true
+      desligar()
+    },
+
+    saiuEmOutraAba() {
+      parada = true
+      desligar()
+    },
+  }
+}

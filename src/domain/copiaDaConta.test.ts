@@ -291,6 +291,13 @@ describe('juntar a cópia daqui com a da nuvem (D-132, D-133)', () => {
     expect(nomes(juntarCopias(daNuvem, daqui, AGORA), 'metanutri:pacientes')).toEqual(['Bia'])
   })
 
+  it('juntar não cria chave que nenhum dos lados tinha: a cópia junta igual à da nuvem não sobe de novo', () => {
+    const daNuvem = copia({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1) }) })
+    const junta = juntarCopias(copia({}), daNuvem, AGORA)
+    expect(Object.keys(junta.dados).sort()).toEqual([CHAVE_MUDANCAS, 'metanutri:pacientes'])
+    expect(copiasIguais(junta, daNuvem)).toBe(true)
+  })
+
   it('lápide com mais de 90 dias sai da cópia junta', () => {
     const daqui = copia({ 'metanutri:pacientes': '[]', [CHAVE_MUDANCAS]: mudancas({}, { 'pacientes/velho': '2026-06-01T00:00:00.000Z', 'pacientes/novo': T(1) }) })
     const junta = juntarCopias(daqui, copia({}), AGORA)
