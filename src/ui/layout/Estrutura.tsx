@@ -5,6 +5,8 @@ import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { useMigracaoIncompleta } from '../estado/contextoArmazenamento.ts'
+import { useNuvem } from '../estado/contextoNuvem.ts'
+import { COPIA_GRANDE_DEMAIS } from '../estado/mensagemDoBanco.ts'
 import { SituacaoDaNuvem } from '../nuvem/SituacaoDaNuvem.tsx'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
@@ -28,6 +30,9 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
   const [menuAberto, setMenuAberto] = useState(false)
   // CA-473: parte dos dados de antes não coube na conta; o resto aparece quando houver espaço.
   const migracaoIncompleta = useMigracaoIncompleta()
+  // CB-123: a pessoa tirou a capa da trava de tamanho para reduzir os dados; a frase fica aqui até caber (DP-9).
+  const nuvem = useNuvem()
+  const reduzindo = nuvem !== null && nuvem.estado.trava === 'grande-demais' && nuvem.estado.reduzindo
 
   useEffect(() => {
     document.title = `${titulo} · MetaNutri`
@@ -70,6 +75,12 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
                 Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do
                 MetaNutri e recarregue a página.
               </p>
+            </Alert>
+          ) : null}
+          {reduzindo ? (
+            <Alert variant="warning" className="mb-6">
+              <TriangleAlert aria-hidden="true" />
+              <p>{COPIA_GRANDE_DEMAIS}</p>
             </Alert>
           ) : null}
           {children}

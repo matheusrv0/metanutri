@@ -124,7 +124,7 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   // (spec dados-por-conta, CB-120). As telas de conta, aqui fora, não remontam (DP-11). A área do
   // nutricionista espera os dados chegarem da nuvem; o link do paciente, não (spec dados-na-nuvem, CB-126).
   const areaDeTrabalho = (
-    <PortaoDaNuvem areaDoNutricionista={rota.tela !== 'missoes'}>
+    <PortaoDaNuvem areaDoNutricionista={rota.tela !== 'missoes'} conta={conta} aoSaiu={depoisDeSair}>
       <ProvedoresDeDados usuarioId={usuarioId}>
         <AreaDeTrabalho
           rota={rota}

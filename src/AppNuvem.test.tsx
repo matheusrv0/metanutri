@@ -169,3 +169,53 @@ describe('salvar sozinho (D-129)', () => {
     expect(screen.queryByText('Salvando…')).not.toBeInTheDocument()
   })
 })
+
+describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
+  const SEM_INTERNET = 'Sem internet. Suas últimas mudanças ainda não foram salvas na nuvem. Conecte-se para continuar.'
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('CA-477: cai a internet: a área fica coberta e não deixa editar; volta: o que faltava é salvo e a área destrava sozinha', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    render(tela())
+    expect(await screen.findByText('Salvo')).toBeInTheDocument()
+
+    nuvem.semInternet = true
+    act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
+    await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
+    act(() => {
+      window.dispatchEvent(new Event('offline'))
+    })
+    expect(screen.getByRole('dialog')).toHaveTextContent(SEM_INTERNET)
+    // O campo do paciente continua na tela, atrás da capa, mas fora do alcance.
+    expect(screen.queryByRole('textbox', { name: 'Nome' })).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Nome', hidden: true })).toBeInTheDocument()
+
+    nuvem.semInternet = false
+    act(() => {
+      window.dispatchEvent(new Event('online'))
+    })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(pacientesNaNuvem(nuvem)).toEqual([''])
+    expect(screen.getByText('Salvo')).toBeInTheDocument()
+  })
+
+  it('CB-123: a cópia passa do limite: a frase do CA-445 cobre a área; "Reduzir os dados" deixa a frase no alto da tela', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    render(tela())
+    expect(await screen.findByText('Salvo')).toBeInTheDocument()
+
+    nuvem.limite = 10
+    act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
+    await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
+    const trava = screen.getByRole('dialog')
+    expect(trava).toHaveTextContent('A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.')
+
+    act(() => screen.getByRole('button', { name: 'Reduzir os dados' }).click())
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByText('A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.')).toBeInTheDocument()
+    expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
+  })
+})
