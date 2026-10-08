@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
+import { useNuvem } from './contextoNuvem.ts'
 import { ProvedorAcompanhamentos } from './ProvedorAcompanhamentos.tsx'
 import { ProvedorCasos } from './ProvedorCasos.tsx'
 import { ProvedorPacientes } from './ProvedorPacientes.tsx'
@@ -17,8 +18,11 @@ interface ProvedoresDeDadosProps {
  * no meio de um fluxo, como o código da troca de senha, não as recomeça (DP-11).
  */
 export function ProvedoresDeDados({ usuarioId, children }: ProvedoresDeDadosProps) {
+  // Quando a nuvem traz mudança para a cópia de trabalho (outro aparelho salvou antes), tudo aqui
+  // dentro remonta e lê de novo (spec dados-na-nuvem, DP-18).
+  const geracao = useNuvem()?.estado.geracao ?? 0
   return (
-    <Fragment key={usuarioId ?? 'aparelho'}>
+    <Fragment key={`${usuarioId ?? 'aparelho'}:${geracao}`}>
       <ProvedorCasos>
         <ProvedorPacientes>
           <ProvedorAcompanhamentos usuarioId={usuarioId}>{children}</ProvedorAcompanhamentos>

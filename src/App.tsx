@@ -5,6 +5,7 @@ import { AreaDeTrabalho } from './ui/AreaDeTrabalho.tsx'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
 import { ProvedorArmazenamento } from './ui/estado/ProvedorArmazenamento.tsx'
 import { ProvedoresDeDados } from './ui/estado/ProvedoresDeDados.tsx'
+import { ProvedorNuvem } from './ui/estado/ProvedorNuvem.tsx'
 import { useAprovacoes } from './ui/estado/usarAprovacoes.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { useConta, type ResultadoConfirmacao, type ValorConta } from './ui/estado/usarConta.ts'
@@ -14,6 +15,7 @@ import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './ui/fluxoConta.ts'
 import { ehRotaLivre, escreverRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
@@ -118,21 +120,24 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   }
 
   // A área de trabalho e o link do paciente leem os dados da conta e remontam quando ela muda
-  // (spec dados-por-conta, CB-120). As telas de conta, aqui fora, não remontam (DP-11).
+  // (spec dados-por-conta, CB-120). As telas de conta, aqui fora, não remontam (DP-11). A área do
+  // nutricionista espera os dados chegarem da nuvem; o link do paciente, não (spec dados-na-nuvem, CB-126).
   const areaDeTrabalho = (
-    <ProvedoresDeDados usuarioId={usuarioId}>
-      <AreaDeTrabalho
-        rota={rota}
-        navegar={navegar}
-        conta={conta}
-        cobranca={cobranca}
-        perfilConta={perfilConta}
-        pedidoEstudante={pedidoEstudante}
-        aprovacoes={aprovacoes}
-        negocio={negocio}
-        depoisDeSair={depoisDeSair}
-      />
-    </ProvedoresDeDados>
+    <PortaoDaNuvem areaDoNutricionista={rota.tela !== 'missoes'}>
+      <ProvedoresDeDados usuarioId={usuarioId}>
+        <AreaDeTrabalho
+          rota={rota}
+          navegar={navegar}
+          conta={conta}
+          cobranca={cobranca}
+          perfilConta={perfilConta}
+          pedidoEstudante={pedidoEstudante}
+          aprovacoes={aprovacoes}
+          negocio={negocio}
+          depoisDeSair={depoisDeSair}
+        />
+      </ProvedoresDeDados>
+    </PortaoDaNuvem>
   )
 
   // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
@@ -379,12 +384,15 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
 
 export function App() {
   const conta = useConta()
-  // Cada conta tem os próprios dados no aparelho (spec dados-por-conta, D-120). Sem servidor de conta,
-  // ou sem sessão, valem os do aparelho, como antes (CA-150, DP-3).
+  // Cada conta tem os próprios dados no aparelho (spec dados-por-conta, D-120), e a nuvem é a fonte
+  // deles (spec dados-na-nuvem, D-128). Sem servidor de conta, ou sem sessão, valem os do aparelho,
+  // como antes (CA-150, DP-3, DP-14).
   const usuarioId = conta.disponivel ? (conta.sessao?.id ?? null) : null
   return (
     <ProvedorArmazenamento usuarioId={usuarioId}>
-      <Conteudo conta={conta} usuarioId={usuarioId} />
+      <ProvedorNuvem usuarioId={usuarioId}>
+        <Conteudo conta={conta} usuarioId={usuarioId} />
+      </ProvedorNuvem>
     </ProvedorArmazenamento>
   )
 }

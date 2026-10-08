@@ -13,6 +13,8 @@ import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 const estado = vi.hoisted(() => ({ conta: null as unknown }))
 
 vi.mock('./ui/estado/usarConta.ts', () => ({ useConta: () => estado.conta }))
+// Sem o cliente da nuvem: estes testes são do portão e dos dados por conta; os da nuvem estão em AppNuvem.test.tsx.
+vi.mock('./ui/estado/supabase.ts', () => ({ obterSupabase: () => null, supabaseConfigurado: () => true }))
 const cobranca = vi.hoisted(() => ({
   carregado: true,
   assinar: vi.fn(),
