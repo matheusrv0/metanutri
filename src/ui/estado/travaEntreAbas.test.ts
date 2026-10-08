@@ -19,7 +19,7 @@ function travasFalsas(): Travas & { pedidos: number; soltar(): void } {
   return travas
 }
 
-describe('trava entre abas (spec dados-na-nuvem, DP-28)', () => {
+describe('trava entre abas (spec dados-na-nuvem, DP-30)', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 

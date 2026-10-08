@@ -1,4 +1,4 @@
-/** DP-28: quanto uma aba espera a trava antes de seguir sem ela. */
+/** DP-30: quanto uma aba espera a trava antes de seguir sem ela. */
 export const PRAZO_DA_TRAVA_MS = 20_000
 
 /** O pedaço do `navigator.locks` que a trava usa. */
@@ -9,7 +9,7 @@ export interface Travas {
 type Trancar = <T>(fazer: (comTrava: boolean) => Promise<T>) => Promise<T>
 
 /**
- * Spec dados-na-nuvem, DP-27 e DP-28: com `navigator.locks`, uma aba da conta vai à nuvem por vez. Uma aba
+ * Spec dados-na-nuvem, DP-27 e DP-30: com `navigator.locks`, uma aba da conta vai à nuvem por vez. Uma aba
  * congelada não prende as outras: sem a trava em 20 s, a ida segue sem ela, e o motor confere a versão
  * antes de mandar (`comTrava` falso). Sem `navigator.locks`, cada aba segue na própria fila.
  */

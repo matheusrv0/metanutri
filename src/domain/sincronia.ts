@@ -304,7 +304,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   /** Põe a ida à nuvem na fila desta aba (e na trava entre abas, quando há): espera a anterior terminar. */
   const trancar = opcoes.trancar ?? (<T,>(fazer: (comTrava: boolean) => Promise<T>): Promise<T> => fazer(true))
   const exclusivo = <T,>(fazer: () => Promise<T>): Promise<T> => {
-    // DP-28: a trava entre abas não veio a tempo e a ida segue sem ela: confere a versão antes de mandar.
+    // DP-30: a trava entre abas não veio a tempo e a ida segue sem ela: confere a versão antes de mandar.
     const naVez = () =>
       trancar((comTrava) => {
         if (!comTrava) conferirAntes = true

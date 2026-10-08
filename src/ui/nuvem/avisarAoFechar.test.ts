@@ -3,7 +3,7 @@ import { avisarAoFechar } from './avisarAoFechar.ts'
 
 const PRONTA: EstadoDaNuvem = { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false }
 
-describe('avisar ao fechar a aba (spec dados-na-nuvem, DP-27 e DP-28)', () => {
+describe('avisar ao fechar a aba (spec dados-na-nuvem, DP-27 e DP-30)', () => {
   it('avisa quando há mudança que não chegou à nuvem', () => {
     expect(avisarAoFechar({ ...PRONTA, pendente: true })).toBe(true)
     expect(avisarAoFechar({ ...PRONTA, salvando: true })).toBe(true)
