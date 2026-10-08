@@ -94,7 +94,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
 - **Conta e plano** — entrar, sair, ver a assinatura, o cartão que paga e a próxima cobrança, trocar o cartão e
   cancelar. Só funciona sem conta quando o Supabase não está configurado (modo local); com ele, a conta é obrigatória.
-  Veja abaixo.
+  Criar conta, entrar e pedir código levam uma verificação contra robôs, escondida até o Cloudflare pedir um clique
+  (passo 8 de "Projeto já ligado"). Veja abaixo.
 - **Assinar** — o checkout do site: Solo ou Pro, mensal ou anual, com cartão de crédito, sem sair do MetaNutri. O
   número do cartão vai direto para a operadora de pagamento, em campos seguros. Precisa do
   `008-cartao-da-assinatura.sql`, do `009-cobranca-em-producao.sql`, das três funções e da chave pública
@@ -131,7 +132,7 @@ logo abaixo; depois siga a lista seguinte.
 
 1. Crie o projeto em <https://supabase.com> (o plano gratuito serve). Em **Project Settings > API**,
    copie a *Project URL* e a chave *anon public*.
-2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e, para o checkout, `VITE_MERCADOPAGO_PUBLIC_KEY` (a Public Key do Mercado Pago). Reinicie o
+2. `cp .env.example .env.local` e preencha `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, para o checkout, `VITE_MERCADOPAGO_PUBLIC_KEY` (a Public Key do Mercado Pago) e, para a verificação contra robôs, `VITE_TURNSTILE_SITE_KEY` (a Site Key do Turnstile, passo 8 de "Projeto já ligado"). Reinicie o
    `npm run dev`. **Nunca** use a chave `service_role` no `.env.local` nem em nada que vá para o navegador:
    ela dá acesso total ao banco. Ela só existe dentro das funções do Supabase.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
@@ -218,6 +219,23 @@ Para funcionar de verdade, nesta ordem:
    ```
    Ela é pública de propósito: vai no navegador, para os campos seguros do cartão. Sem ela, o checkout publicado diz
    "O pagamento não está disponível agora." Para testar na sua máquina, ponha a mesma chave no `.env.local`.
+8. **Verificação contra robôs (spec seguranca-lote-3).** Cadastro, Entrar, "Esqueci a senha" e "Reenviar o código"
+   levam uma verificação do Cloudflare Turnstile, que o Supabase confere no servidor. Ela fica escondida e só
+   aparece, logo acima do botão, quando o Cloudflare pede um clique. No Cloudflare, em *Turnstile*, o widget
+   "MetaNutri" (modo *Managed*) tem os domínios `metanutri.com.br`, `localhost` e `127.0.0.1`. A **Site Key** é
+   pública e vai como variável do GitHub, que o build publicado lê:
+   ```bash
+   gh variable set VITE_TURNSTILE_SITE_KEY --body "<a Site Key>"
+   ```
+   A **Secret Key** nunca vai para o repositório nem para o chat: só para o painel do Supabase. **Ordem para ligar
+   (D-116):** primeiro publique o site com a Site Key; só depois, em *Supabase > Authentication > Attack Protection*,
+   ligue *Enable Captcha protection*, escolha *Turnstile*, cole a Secret Key e salve. Nunca o contrário: com o
+   captcha ligado e o site antigo, ninguém entra nem se cadastra. Para conferir, crie uma conta de teste no site
+   publicado. Se o script do Cloudflare não carregar (rede, bloqueador), o site tenta mesmo assim, sem a verificação
+   (D-119): com o captcha ligado, o Supabase recusa e a tela diz "A verificação de segurança não carregou".
+   **Se o Cloudflare cair (R-43):** desligue o captcha no mesmo painel; o login volta na hora, sem publicar o site
+   de novo. Quando o Cloudflare voltar, ligue o captcha outra vez. Com o captcha ligado, o `npm run dev` só entra na
+   conta com a mesma Site Key no `.env.local`.
 
 Comprovantes de estudante ficam no balde privado `comprovantes`. A limpeza dos que passaram de 30 dias depois
 da decisão acontece quando o administrador abre o app (qualquer tela, com a conta de administrador); não há

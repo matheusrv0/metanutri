@@ -122,7 +122,34 @@ Atualizado em 07/10/2026.
 > - R-41: na primeira cópia grande de verdade, conferir que a tela mostra a frase de 5 MB; se o Supabase recusar com
 >   outro código, a tela mostra a falha de rede (Decisão 5 do plano).
 >
-> Fica para depois (spec, seção 4): captcha no cadastro e no login (lote 3) e a regra de conteúdo do navegador (CSP).
+>
+> **Atualizado em 07/10 (segurança, lote 3):** cadastro, Entrar, "Esqueci a senha" e "Reenviar o código" passam a
+> levar a verificação contra robôs do Cloudflare Turnstile, conferida pelo Supabase (spec `seguranca-lote-3`, D-113 a
+> D-119). Ela fica escondida e só aparece, logo acima do botão, quando o Cloudflare pede um clique. Confirmar o código
+> de 8 dígitos não usa verificação. Se o script do Cloudflare não carregar, o site tenta mesmo assim, sem a
+> verificação; com o captcha ligado, a tela diz que a verificação não carregou. A Política de privacidade cita o
+> Turnstile, e a versão dos termos passa a ser `2026-10-07`.
+>
+> **A ordem para pôr no ar (você roda; nunca ligue o captcha antes do site novo, D-116):**
+>
+> 1. juntar o ramo na `main` (feito pelo assistente; não publica nada sozinho);
+> 2. conferir que a variável existe: `gh variable list` mostra `VITE_TURNSTILE_SITE_KEY`;
+> 3. publicar o site: `gh workflow run publicar.yml --ref main`, e esperar terminar
+>    (`gh run list --workflow publicar.yml --limit 1` mostra `completed` e `success`);
+> 4. no site publicado, entrar com a sua conta: com o captcha ainda desligado no Supabase, tudo funciona como antes;
+> 5. no Supabase, em *Authentication > Attack Protection*: ligar *Enable Captcha protection*, escolher *Turnstile*,
+>    colar a **Secret Key** (só ali, nunca no chat) e salvar;
+> 6. conferir: criar uma conta de teste com outro e-mail, sair, entrar de novo e pedir "Esqueci a senha".
+>
+> **Se o Cloudflare cair (R-43, D-119):** desligar o captcha no mesmo painel (*Authentication > Attack Protection*).
+> O login volta na hora, sem publicar o site de novo: sem o script, o site já manda os pedidos sem a verificação, e o
+> Supabase, com o captcha desligado, aceita. Quando o Cloudflare voltar, ligar o captcha outra vez.
+>
+> **Se a publicação não for em 07/10:** a versão dos termos (`VERSAO_TERMOS` e `DATA_TERMOS` em
+> `src/domain/legal.ts`, e o teste em `src/domain/legal.test.ts`) deve ser a do dia em que o site vai ao ar (D-118).
+>
+> Fica para depois (spec, seção 4): verificação em outras ações e a regra de conteúdo do navegador (CSP), que terá
+> de liberar o Cloudflare.
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
