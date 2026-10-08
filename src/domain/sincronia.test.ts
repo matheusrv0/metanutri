@@ -772,6 +772,21 @@ describe('navegador sem espaço com duas abas (DP-29)', () => {
   })
 })
 
+describe('abrir com a cópia daqui parcial (DP-31)', () => {
+  it('DP-31: sem linha na nuvem e com a cópia daqui marcada parcial, nada sobe: a área trava sem espaço', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    navegador.setItem('metanutri:conta:conta-a:pacientes', JSON.stringify([{ id: 'ana', nome: 'Ana', atualizadoEm: '2026-10-08T10:00:00.000Z' }]))
+    navegador.setItem('metanutri:conta:conta-a:nuvem', JSON.stringify({ versao: null, mudancas: 2, salvas: 1, itens: 0, parcial: true }))
+    const a = abrirAparelho(nuvem, navegador)
+    await ligar(a)
+    expect(a.sincronia.estado).toMatchObject({ fase: 'pronta', trava: 'sem-espaco', pendente: true })
+    expect(nuvem.linhas.has('conta-a')).toBe(false)
+    expect(nuvem.pedidos).toEqual(['select'])
+    expect(lerSituacao(armazenamentoDaConta(navegador, 'conta-a'))?.parcial).toBe(true)
+  })
+})
+
 describe('navegador sem espaço (DP-23)', () => {
   const SEM_ESPACO_PACIENTES = Array.from({ length: 30 }, (_, i) => ({ id: `p${i}`, nome: `Paciente ${i} com nome comprido`, atualizadoEm: '2026-10-07T10:00:00.000Z' }))
 

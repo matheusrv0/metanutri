@@ -435,8 +435,9 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     // A cópia que sobe sai da memória: se a juntada não couber aqui, a daqui fica parcial (DP-23).
     let subir: Backup | null = null
     if (leitura.copia === null) {
-      // D-133: sem cópia na nuvem, o que está aqui sobe como está.
-      if (Object.keys(local.dados).length > 0) subir = local
+      // D-133: sem cópia na nuvem, o que está aqui sobe como está; parcial, não sobe e trava (DP-31).
+      if (anterior?.parcial === true) semEspaco()
+      else if (Object.keys(local.dados).length > 0) subir = local
     } else if (emDia) {
       if (anterior.versao !== leitura.versao) aplicar(semPendencias(leitura.copia))
     } else {
