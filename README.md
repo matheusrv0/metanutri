@@ -89,11 +89,15 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   em Word no modelo do estágio, memorial de cálculo em Word e a tabela de adequação
   copiada para colar no Word.
 - **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
-  do paciente, backup em arquivo e **cópia na nuvem** (enviar deste aparelho, trazer
-  para este aparelho). A cópia não é automática de propósito: cada botão sobrescreve
-  um lado, e você escolhe qual — mesclar dois aparelhos sozinho é como se perde plano.
+  do paciente e backup em arquivo.
+- **Dados na nuvem** — com conta, planos, pacientes, produtos, modelos e configurações ficam
+  na nuvem, presos à conta, e vão para lá sozinhos poucos segundos depois de cada mudança
+  ("Salvo" / "Salvando…" no alto da tela). Dois aparelhos ao mesmo tempo se juntam item por
+  item, e o que foi excluído num não volta pelo outro. Sem internet, a área de trabalho
+  trava até a conexão voltar. Ver `specs/dados-na-nuvem/`.
 - **Conta e plano** — entrar, sair, ver a assinatura, o cartão que paga e a próxima cobrança, trocar o cartão e
-  cancelar. Só funciona sem conta quando o Supabase não está configurado (modo local); com ele, a conta é obrigatória.
+  cancelar. Sair apaga a cópia de trabalho do navegador. Só funciona sem conta quando o Supabase não está
+  configurado (modo local); com ele, a conta é obrigatória.
   Criar conta, entrar e pedir código levam uma verificação contra robôs, escondida até o Cloudflare pedir um clique
   (passo 8 de "Projeto já ligado"). Veja abaixo.
 - **Assinar** — o checkout do site: Solo ou Pro, mensal ou anual, com cartão de crédito, sem sair do MetaNutri. O
@@ -284,8 +288,8 @@ dentro do sistema, em **Ajuda**.
   nunca zero.
 - Os cálculos ainda não foram conferidos por nutricionista.
 - A prescrição de dieta é privativa de nutricionista com registro no CRN (Lei 8.234/1991).
-- Tudo fica guardado só neste navegador. Faça backup em Configurações antes de trocar
-  de aparelho.
+- Com conta, os dados ficam na nuvem, presos à conta; sem internet, o MetaNutri não deixa
+  editar até a conexão voltar. No modo local (sem Supabase), tudo fica só no navegador.
 
 ## Como o código está organizado
 
@@ -334,9 +338,8 @@ domínio aponta para o GitHub Pages: quatro registros A no domínio (`185.199.10
 **Settings > Pages > Custom domain**, com **Enforce HTTPS** ligado. O endereço antigo
 (`matheusrv0.github.io/metanutri/`) redireciona para o novo.
 
-Os planos e as fichas ficam no navegador, presos ao endereço do site. Quem usava o endereço antigo leva
-os dados com **Configurações > Baixar backup** (ou **Enviar** a cópia na nuvem) e traz no endereço novo
-com **Restaurar backup** (ou **Trazer**).
+Os planos e as fichas ficam na nuvem, presos à conta: no endereço novo, basta entrar. O que ficou só no
+navegador do endereço antigo vai com **Configurações > Baixar backup** e volta com **Restaurar backup**.
 
 ## O que ainda depende de você
 

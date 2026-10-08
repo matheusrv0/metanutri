@@ -40,6 +40,7 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | `src/ui/nuvem/TravaDaNuvem.tsx` (+ teste) | criar | a capa do D-130 e do CB-123, com "Sair" |
 | `src/ui/estado/ProvedorPacientes.tsx` | alterar | a lista se refaz quando outra aba grava (CB-124) |
 | `src/domain/conta.ts` (+ teste), `src/ui/publico/SecaoPrecos.test.tsx` | alterar | "Dados em qualquer aparelho" sai (D-134) |
+| `README.md` | alterar | a cópia manual e o "tudo só neste navegador" deixaram de ser verdade (T16) |
 | `src/ui/publico/TelaPrivacidade.tsx`, `src/ui/publico/TelaTermos.tsx`, `src/ui/casos/AvisoPrimeiroAcesso.tsx`, `src/ui/layout/MenuLateral.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `src/ui/publico/conta/LadoDoPlano.tsx`, `src/ui/negocio/TelaNegocio.tsx` (+ testes) | alterar | textos verdadeiros para o D-128 (DP-16) |
 
 ## Tarefas
@@ -94,6 +95,8 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - [ ] **T15** — Revisão: na primeira junção, o empate sem marca fica com o lado usado por último (DP-3).
   - Cobre: CA-481
   - Feito quando: teste da cópia mandada à mão antes das configurações daqui e da cópia mais nova que elas.
+- [ ] **T16** — README: Configurações sem a cópia manual, os dados na nuvem, o Sair e o endereço novo.
+  - Feito quando: o README não fala mais em enviar e trazer a cópia nem em "tudo só neste navegador" com conta.
 
 ## Mapa de cobertura
 
