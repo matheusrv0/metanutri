@@ -9,6 +9,7 @@ import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { lerOcultosGlobais, ocultarGlobalmente } from '../estado/ocultosGlobais.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -57,6 +58,7 @@ export function GavetaCobrir({
   const [refeicaoId, setRefeicaoId] = useState(plano.refeicoes[0]?.id ?? '')
   const [opcao] = useState<OpcaoId>('principal')
   const [versaoOcultos, setVersaoOcultos] = useState(0)
+  const armazenamento = useArmazenamento()
 
   const resultado = useMemo(
     () =>
@@ -68,15 +70,15 @@ export function GavetaCobrir({
             porcaoMaximaG: prefs.porcaoMaximaG,
             incluirIngredientes: prefs.incluirIngredientes,
             // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
-            ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais()]),
+            ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais(armazenamento)]),
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos],
+    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento],
   )
 
   const ocultar = (alimentoId: number) => {
-    ocultarGlobalmente(alimentoId)
+    ocultarGlobalmente(armazenamento, alimentoId)
     setVersaoOcultos((v) => v + 1)
   }
 

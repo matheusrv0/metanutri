@@ -55,12 +55,13 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
     (conflito), cópia interrompida, rodar duas vezes, armazenamento que falha; apagar só a conta que sai.
 - [ ] **T3** — Contexto `useArmazenamento()`, `armazenamentoDaSessao()` e `ProvedorArmazenamento`: sem sessão ou sem
   servidor, o armazenamento do aparelho; com sessão, migra e devolve o da conta; registra os produtos da conta na busca e
-  esquece os ocultos em memória da anterior; remonta os filhos quando a conta muda.
+  esquece os ocultos em memória da anterior; remonta os filhos quando a conta muda. Os ocultos (e a GavetaCobrir, único
+  uso) já passam a receber o armazenamento aqui, porque o teste da troca em memória usa a função nova.
   - Depende de: T2
   - Cobre: CB-121 (sessão), base de CB-120
   - Feito quando: testes da escolha (com e sem sessão, sem servidor, navegador bloqueado) e dos produtos por conta.
 - [ ] **T4** — Todo leitor de dado da pessoa usa `useArmazenamento()`: os três provedores (com o evento `storage`
-  traduzido), ocultos e GavetaCobrir, DialogoModelos, Configurações (backup, nuvem, apagar), AvisoPrimeiroAcesso,
+  traduzido), DialogoModelos, Configurações (backup, nuvem, apagar), AvisoPrimeiroAcesso,
   sugestões, impressão, folha da dieta, produtos, perfil da conta; `main.tsx` deixa de registrar produtos.
   - Depende de: T3
   - Cobre: CA-470, CB-122 (aviso por conta)
