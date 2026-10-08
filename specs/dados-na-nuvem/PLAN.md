@@ -91,6 +91,9 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   - Cobre: CA-483
 - [ ] **T13** — Textos do D-128 (DP-16): Política, Termos, aviso de primeiro acesso, menu, Ajuda, cadastro, Negócio.
 - [ ] **T14** — Validação: `npm run check`, `npx playwright test`, `npm run build`, `node scripts/conferir-publicacao.mjs`.
+- [ ] **T15** — Revisão: na primeira junção, o empate sem marca fica com o lado usado por último (DP-3).
+  - Cobre: CA-481
+  - Feito quando: teste da cópia mandada à mão antes das configurações daqui e da cópia mais nova que elas.
 
 ## Mapa de cobertura
 
@@ -125,9 +128,11 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - **DP-3 · Junção item por item (D-132, D-133).** Planos, pacientes, produtos, modelos e links juntam por id; o resto,
   chave por chave. Vence a hora de mudança mais nova (a marca; sem marca, a data do item: `atualizadoEm` ou `criadoEm`;
   sem nada, vazio). Mesmo valor nos dois lados não é conflito. Empate com valor diferente: vence a nuvem (a D-127 deu o
-  empate à conta). A lápide igual ou mais nova que a última mudança do item o apaga; o item mudado depois da exclusão
-  volta (a mudança mais nova vence). Lápides com mais de 90 dias saem da cópia. O índice dos planos é refeito com os
-  planos que ficaram.
+  empate à conta), salvo ao abrir com dados que ainda não subiram: aí fica o lado usado por último (a data mais nova da
+  cópia daqui contra a da cópia da nuvem e a hora em que ela foi gravada), para a cópia mandada à mão há dias não passar
+  por cima das configurações de hoje (achado na revisão, T15). A lápide igual ou mais nova que a última mudança do item o
+  apaga; o item mudado depois da exclusão volta (a mudança mais nova vence). Lápides com mais de 90 dias saem da cópia. O
+  índice dos planos é refeito com os planos que ficaram.
 - **DP-4 · Produto com o mesmo id e `criadoEm` diferente são dois produtos** (cada aparelho dá o próximo número): os dois
   ficam, o da nuvem no id e o daqui com id novo acima do maior; planos, modelos e sugestões que vieram daqui passam a
   apontar para o id novo.

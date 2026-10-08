@@ -9,7 +9,7 @@
 //
 // Não sabe nada de React: a árvore liga, desliga e escuta o estado (`ProvedorNuvem`).
 import type { ArmazenamentoDaConta } from './armazenamentoDaConta.ts'
-import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
 import { gravarCopia, lerCopia, type ClienteDaCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -135,6 +135,9 @@ export function observarMudancas(conta: ArmazenamentoDaConta, aoMudar: (contou: 
     chaveOriginal: (chave) => conta.chaveOriginal(chave),
   }
 }
+
+/** A versão da nuvem (`+00:00`) no mesmo formato das datas do aparelho (`Z`), para comparar. */
+const comoDataDoAparelho = (data: string | null): string => (data === null || Number.isNaN(Date.parse(data)) ? '' : new Date(data).toISOString())
 
 /** Esperar e desistir de esperar. Nos testes, o relógio falso do Vitest. */
 export interface Relogio {
@@ -305,8 +308,11 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (anterior.versao !== leitura.versao) aplicar(semPendencias(leitura.copia))
       subir = false
     } else {
-      // D-133 e CB-125: o que ficou aqui sem subir é juntado ao que está na nuvem, item por item.
-      const junta = juntarCopias(local, semPendencias(leitura.copia), agora())
+      // D-133 e CB-125: o que ficou aqui sem subir é juntado ao que está na nuvem, item por item. Sem
+      // marca nem data que decida (configurações de antes), fica o lado usado por último (DP-3).
+      const daNuvemDesde = [momentoDaCopia(leitura.copia), comoDataDoAparelho(leitura.versao)].sort().at(-1) ?? ''
+      const desempate = momentoDaCopia(local) > daNuvemDesde ? 'daqui' : 'nuvem'
+      const junta = juntarCopias(local, semPendencias(leitura.copia), agora(), desempate)
       aplicar(junta)
       subir = !copiasIguais(junta, leitura.copia)
     }

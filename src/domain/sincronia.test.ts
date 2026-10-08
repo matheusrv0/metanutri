@@ -342,6 +342,32 @@ describe('dados de antes e sessão que vence (D-133)', () => {
     expect(a.sincronia.estado.pendente).toBe(false)
   })
 
+  it('CA-481: a cópia na nuvem, mandada à mão antes de os dados daqui mudarem, não passa por cima das configurações daqui', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar(
+      'conta-a',
+      { formato: 1, geradoEm: '', dados: { 'metanutri:perfil': JSON.stringify({ ...PERFIL_VAZIO, nome: 'Maria (antes)' }) } },
+      '2026-10-01T10:00:00.000Z',
+    )
+    // Daqui: o perfil de hoje e um paciente salvo depois da cópia que está na nuvem.
+    const a = abrirAparelho(nuvem, navegadorDeAntes())
+    await ligar(a)
+    expect(lerPerfil(a.observado).nome).toBe('Maria')
+    expect(JSON.parse(copiaNaNuvem(nuvem).dados['metanutri:perfil'] ?? '{}').nome).toBe('Maria')
+  })
+
+  it('CA-481: a cópia na nuvem mais nova que os dados daqui vence o empate das configurações', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.guardar(
+      'conta-a',
+      { formato: 1, geradoEm: '', dados: { 'metanutri:perfil': JSON.stringify({ ...PERFIL_VAZIO, nome: 'Maria (outro aparelho)' }) } },
+      '2026-10-08T09:00:00.000Z',
+    )
+    const a = abrirAparelho(nuvem, navegadorDeAntes())
+    await ligar(a)
+    expect(lerPerfil(a.observado).nome).toBe('Maria (outro aparelho)')
+  })
+
   it('CA-481: dados levados agora pela migração contam como mudança, mesmo com a cópia de trabalho já em dia', async () => {
     const nuvem = nuvemFalsa()
     const a = abrirAparelho(nuvem)

@@ -208,6 +208,9 @@ export function copiasIguais(a: Backup, b: Backup): boolean {
 
 type Lado = 'daqui' | 'nuvem' | 'igual'
 
+/** Quem fica no empate de valores diferentes sem marca nem data que decida (DP-3). */
+export type Desempate = 'daqui' | 'nuvem'
+
 interface Escolha {
   readonly valor: string
   readonly lado: Lado
@@ -220,12 +223,14 @@ interface Juncao {
   readonly lapides: ReadonlyMap<string, string>
   /** As referências que ficaram na cópia junta. */
   readonly presentes: Set<string>
+  readonly desempate: Desempate
 }
 
 /**
  * O valor que fica para uma referência: o lado com a mudança mais nova (a marca; sem marca, a data do
  * item; sem nada, vazio). Mesmo valor dos dois lados não é conflito; empate com valor diferente fica
- * com a nuvem. A lápide igual ou mais nova que a mudança que venceu apaga o item (`null`).
+ * com o lado do desempate (a nuvem, salvo na primeira junção, DP-3). A lápide igual ou mais nova que
+ * a mudança que venceu apaga o item (`null`).
  */
 function escolher(juncao: Juncao, ref: string, daqui: string | undefined, nuvem: string | undefined, tempoDe: (valor: string) => string | null): Escolha | null {
   const tempo = (valor: string, marcas: Mudancas): string => marcas.alterados[ref] ?? tempoDe(valor) ?? ''
@@ -244,8 +249,9 @@ function escolher(juncao: Juncao, ref: string, daqui: string | undefined, nuvem:
   } else {
     const tDaqui = tempo(daqui, juncao.daqui)
     const tNuvem = tempo(nuvem, juncao.nuvem)
-    escolha = tDaqui > tNuvem ? { valor: daqui, lado: 'daqui' } : { valor: nuvem, lado: 'nuvem' }
-    quando = tDaqui > tNuvem ? tDaqui : tNuvem
+    const ficaDaqui = tDaqui > tNuvem || (tDaqui === tNuvem && juncao.desempate === 'daqui')
+    escolha = ficaDaqui ? { valor: daqui, lado: 'daqui' } : { valor: nuvem, lado: 'nuvem' }
+    quando = ficaDaqui ? tDaqui : tNuvem
   }
   const lapide = juncao.lapides.get(ref)
   if (lapide !== undefined && lapide >= quando) return null
@@ -353,6 +359,21 @@ function juntarLista(juncao: Juncao, chave: string, lista: Lista, daquiTexto: st
   })
 }
 
+/**
+ * A data mais nova que a cópia carrega: marcas, lápides e as datas dos planos e dos itens. Na primeira
+ * junção (dados de antes, sem marcas), diz qual lado foi usado por último e fica com o empate (DP-3).
+ */
+export function momentoDaCopia(copia: Backup): string {
+  const marcas = lerMudancas(copia.dados[CHAVE_MUDANCAS] ?? null)
+  const datas = [...Object.values(marcas.alterados), ...Object.values(marcas.excluidos)]
+  for (const [chave, valor] of Object.entries(copia.dados)) {
+    if (chave.startsWith(PREFIXO_PLANO)) datas.push(tempoDoPlano(valor) ?? '')
+    const lista = LISTAS[chave]
+    if (lista !== undefined) for (const item of itensDe(chave, valor) ?? []) datas.push(lista.tempo(item) ?? '')
+  }
+  return datas.reduce((maior, data) => (data > maior ? data : maior), '')
+}
+
 const idsDoIndice = (texto: string | undefined): string[] => {
   const v = lerJson(texto)
   return Array.isArray(v) ? v.filter((id): id is string => typeof id === 'string') : []
@@ -377,13 +398,13 @@ function planoComVersaoMaior(daNuvem: string, daqui: string): string {
  * item fica com a mudança mais nova, e o excluído não volta. Serve também para os dados de antes desta
  * mudança, que não têm marcas (D-133): aí vale a data de cada item.
  */
-export function juntarCopias(daqui: Backup, nuvem: Backup, agora: string): Backup {
+export function juntarCopias(daqui: Backup, nuvem: Backup, agora: string, desempate: Desempate = 'nuvem'): Backup {
   const marcasDaqui = lerMudancas(daqui.dados[CHAVE_MUDANCAS] ?? null)
   const marcasDaNuvem = lerMudancas(nuvem.dados[CHAVE_MUDANCAS] ?? null)
   const lapides = new Map(Object.entries(marcasDaqui.excluidos))
   for (const [ref, quando] of Object.entries(marcasDaNuvem.excluidos)) if ((lapides.get(ref) ?? '') < quando) lapides.set(ref, quando)
   const marcasDosProdutos = new Map(Object.entries(marcasDaqui.alterados))
-  const juncao: Juncao = { daqui: marcasDaqui, nuvem: marcasDaNuvem, lapides, presentes: new Set() }
+  const juncao: Juncao = { daqui: marcasDaqui, nuvem: marcasDaNuvem, lapides, presentes: new Set(), desempate }
   const dados: Record<string, string> = {}
   const trocas = new Map<number, number>()
 

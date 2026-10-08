@@ -1,4 +1,4 @@
-import { aplicarCopia, CHAVE_MUDANCAS, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { aplicarCopia, CHAVE_MUDANCAS, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
 import type { Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 
@@ -223,6 +223,24 @@ describe('juntar a cópia daqui com a da nuvem (D-132, D-133)', () => {
     expect(junta.dados['metanutri:impressao']).toBe('{"daNuvem":true}')
     // Nenhuma das duas tinha marcas: a cópia junta não ganha a chave delas.
     expect(junta.dados[CHAVE_MUDANCAS]).toBeUndefined()
+  })
+
+  it('CA-481: sem marcas, o empate fica com o lado escolhido para desempatar (o mais recente, DP-3)', () => {
+    const daqui = copia({ 'metanutri:perfil': '{"nome":"Perfil de hoje"}', 'metanutri:produtos': JSON.stringify([{ ...produto(900000, 'Iogurte natural'), porcaoG: 170 }]) })
+    const daNuvem = copia({ 'metanutri:perfil': '{"nome":"Perfil de antes"}', 'metanutri:produtos': JSON.stringify([produto(900000, 'Iogurte')]) })
+    const junta = juntarCopias(daqui, daNuvem, AGORA, 'daqui')
+    expect(junta.dados['metanutri:perfil']).toBe('{"nome":"Perfil de hoje"}')
+    expect(nomes(junta, 'metanutri:produtos')).toEqual(['Iogurte natural'])
+  })
+
+  it('o momento de uma cópia é a data mais nova que ela tem: marcas, planos e itens', () => {
+    expect(momentoDaCopia(copia({}))).toBe('')
+    const c = copia({
+      'metanutri:caso:p1': plano('p1', 'Ana', T(3)),
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana', T(5))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'chave/metanutri:perfil': T(4) }, { 'pacientes/bia': T(6) }),
+    })
+    expect(momentoDaCopia(c)).toBe(T(6))
   })
 
   it('DP-4: produto com o mesmo id e criação diferente são dois produtos; o daqui ganha id novo e os planos daqui o seguem', () => {
