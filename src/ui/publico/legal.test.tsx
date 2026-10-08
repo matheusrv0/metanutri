@@ -52,6 +52,14 @@ describe('documentos legais', () => {
     expect(texto).toContain('7 de outubro de 2026')
   })
 
+  it('D-124 (spec dados-por-conta): a política diz que os dados ficam separados por conta e como apagar os seus', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('Os planos e as fichas de paciente ficam salvos neste aparelho, no navegador de quem usa, separados por conta.')
+    expect(texto).toContain('Os seus dados neste aparelho somem quando você usa "Apagar tudo", em Configurações, ou "Sair e apagar".')
+    expect(texto).not.toContain('O que está neste aparelho some')
+  })
+
   it('D-122 (spec dados-por-conta): outra conta no mesmo aparelho não vê os seus dados, e os termos não mandam sair nem apagar', () => {
     render(<TelaTermos />)
     const texto = document.body.textContent ?? ''

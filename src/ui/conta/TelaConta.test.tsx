@@ -130,10 +130,10 @@ describe('TelaConta', () => {
     expect(aoSaiu).toHaveBeenCalledExactlyOnceWith(false)
   })
 
-  it('CA-423: "Sair e apagar os dados deste aparelho", confirmado, apaga e sai', async () => {
+  it('CA-423: "Sair e apagar os meus dados deste aparelho", confirmado, apaga e sai', async () => {
     const { usuario, conta, aoSaiu } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
     await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
     expect(conta.sair).toHaveBeenCalledExactlyOnceWith({ apagarDoAparelho: true })
     expect(aoSaiu).toHaveBeenCalledExactlyOnceWith(true)

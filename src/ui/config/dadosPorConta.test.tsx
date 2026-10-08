@@ -104,7 +104,7 @@ describe('backup e cópia na nuvem só da conta que está dentro (spec dados-por
     localStorage.setItem('metanutri:conta:conta-a:frequentes', '{}')
     render(naConta('conta-a', <TelaConfiguracoes />))
     const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Apagar todos os dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Apagar todos os seus dados deste aparelho' }))
     await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
     await waitFor(() => expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).toBeNull())
     expect(Object.keys(localStorage).filter((c) => c.startsWith('metanutri:conta:conta-a:'))).toEqual([])

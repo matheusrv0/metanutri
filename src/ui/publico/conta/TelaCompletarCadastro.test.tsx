@@ -32,7 +32,7 @@ describe('TelaCompletarCadastro (CB-68)', () => {
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
     expect(aoSair).not.toHaveBeenCalled()
-    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sair e apagar os meus dados deste aparelho' }))
     await usuario.click(screen.getByRole('button', { name: 'Apagar e sair' }))
     expect(aoSair).toHaveBeenCalledExactlyOnceWith(true)
   })

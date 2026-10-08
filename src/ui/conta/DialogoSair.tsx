@@ -30,7 +30,7 @@ export function DialogoSair({ aberto, saindo = false, aoFechar, aoSair }: Dialog
         {confirmando ? (
           <Fragment key="confirmar">
             <DialogHeader>
-              <DialogTitle>Apagar os dados deste aparelho?</DialogTitle>
+              <DialogTitle>Apagar os seus dados deste aparelho?</DialogTitle>
               <DialogDescription>O que você não enviou para a nuvem em Configurações se perde.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -54,7 +54,7 @@ export function DialogoSair({ aberto, saindo = false, aoFechar, aoSair }: Dialog
           <Fragment key="escolher">
             <DialogHeader>
               <DialogTitle>Sair da conta</DialogTitle>
-              <DialogDescription>Outras pessoas usam este computador? Apague os pacientes e planos guardados neste navegador.</DialogDescription>
+              <DialogDescription>Outras pessoas usam este computador? Apague os seus pacientes e planos guardados neste navegador.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button onClick={() => aoSair(false)} disabled={saindo} aria-busy={saindo || undefined}>
@@ -62,7 +62,7 @@ export function DialogoSair({ aberto, saindo = false, aoFechar, aoSair }: Dialog
                 Só sair
               </Button>
               <Button variant="lighterror" className={QUEBRA} onClick={() => setConfirmando(true)} disabled={saindo}>
-                Sair e apagar os dados deste aparelho
+                Sair e apagar os meus dados deste aparelho
               </Button>
             </DialogFooter>
           </Fragment>

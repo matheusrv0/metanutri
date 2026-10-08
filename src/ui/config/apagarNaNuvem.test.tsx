@@ -44,7 +44,7 @@ async function apagarTudo(opcoes: Parameters<typeof userEvent.setup>[0] = {}) {
   localStorage.setItem('metanutri:casos', '["a"]')
   render(<TelaConfiguracoes />)
   const usuario = userEvent.setup(opcoes)
-  await usuario.click(screen.getByRole('button', { name: 'Apagar todos os dados deste aparelho' }))
+  await usuario.click(screen.getByRole('button', { name: 'Apagar todos os seus dados deste aparelho' }))
   await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
 }
 

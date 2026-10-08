@@ -18,6 +18,7 @@ describe('Editar sugestões (CA-241 a CA-243, CB-70)', () => {
   it('CA-241: lista nome, medida caseira e gramas de cada sugestão', () => {
     montar()
     expect(screen.getByRole('dialog', { name: 'Sugestões para o almoço' })).toBeInTheDocument()
+    expect(screen.getByText('Valem para todas as refeições deste tipo, em todos os seus planos.')).toBeInTheDocument()
     expect(ordem()).toEqual([
       'Arroz, tipo 1, cozido',
       'Feijão, carioca, cozido',

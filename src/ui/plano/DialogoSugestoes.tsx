@@ -101,7 +101,7 @@ export function DialogoSugestoes({ tipo, lista, aoSalvar, aoFechar }: DialogoSug
       <DialogContent className="max-h-[90vh] grid-cols-[minmax(0,1fr)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{`Sugestões para ${NOME_DO_TIPO[tipo]}`}</DialogTitle>
-          <DialogDescription>Valem para todas as refeições deste tipo, em todos os planos deste aparelho.</DialogDescription>
+          <DialogDescription>Valem para todas as refeições deste tipo, em todos os seus planos.</DialogDescription>
         </DialogHeader>
 
         {rascunho.length === 0 ? (

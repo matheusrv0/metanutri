@@ -150,7 +150,7 @@ export function TelaConfiguracoes() {
     // Mesmo TS2589 de `clienteCopia`: a porta das missões é pequena, o tipo do cliente não.
     const cliente = obterSupabase() as unknown as ClienteMissoes | null
     const copia = clienteCopia()
-    if (!cliente || !copia) return setMensagem('Tudo apagado deste aparelho. Recarregue a página.')
+    if (!cliente || !copia) return setMensagem('Seus dados foram apagados deste aparelho. Recarregue a página.')
     setMensagem('Apagado deste aparelho. Apagando da nuvem…')
     void Promise.all([comPrazoDeApagar(apagarAcompanhamentosDaNuvem(cliente)), comPrazoDeApagar(apagarCopiaDaNuvem(copia))]).then(
       ([erroAcompanhamentos, erroCopia]) => {
@@ -282,7 +282,7 @@ export function TelaConfiguracoes() {
           ) : (
             <Button variant="outline" onClick={() => setConfirmandoApagar(true)}>
               <Trash aria-hidden="true" />
-              Apagar todos os dados deste aparelho
+              Apagar todos os seus dados deste aparelho
             </Button>
           )}
         </div>
