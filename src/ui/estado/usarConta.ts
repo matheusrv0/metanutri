@@ -43,12 +43,16 @@ export interface ValorConta {
   readonly disponivel: boolean
   /** Chegou pelo link ou pelo código de troca de senha e ainda não trocou. */
   readonly emRecuperacao: boolean
-  readonly entrar: (email: string, senha: string) => Promise<Resultado>
-  readonly cadastrar: (dados: DadosCadastro) => Promise<Resultado>
-  readonly reenviarConfirmacao: (email: string) => Promise<Resultado>
+  /*
+   * D-113: entrar, cadastrar, reenviar e pedir a troca de senha levam o token da verificação contra
+   * robôs (`captchaToken`). Sem ele, o pedido sai igual ao de antes (CA-463). Confirmar o código não leva (CA-457).
+   */
+  readonly entrar: (email: string, senha: string, captchaToken?: string) => Promise<Resultado>
+  readonly cadastrar: (dados: DadosCadastro, captchaToken?: string) => Promise<Resultado>
+  readonly reenviarConfirmacao: (email: string, captchaToken?: string) => Promise<Resultado>
   /** Confirma a conta com o código do e-mail; dando certo, a pessoa já entra (CA-407). */
   readonly confirmarCodigo: (email: string, codigo: string) => Promise<ResultadoConfirmacao>
-  readonly pedirTrocaDeSenha: (email: string) => Promise<Resultado>
+  readonly pedirTrocaDeSenha: (email: string, captchaToken?: string) => Promise<Resultado>
   /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
   readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
   readonly trocarSenha: (senha: string) => Promise<Resultado>
@@ -59,15 +63,31 @@ export interface ValorConta {
 const SEM_SERVIDOR: Resultado = { ok: false, erro: 'sem-servidor' }
 const OK: Resultado = { ok: true, erro: null }
 
+/** D-113: o token da verificação vai só quando existe; sem ele, o pedido sai igual ao de antes (CA-463). */
+const comVerificacao = (captchaToken: string | undefined): { readonly captchaToken?: string } => (captchaToken ? { captchaToken } : {})
+
+/**
+ * O erro de um pedido que leva a verificação. A recusa dela diz coisas diferentes: com o token, a
+ * verificação foi feita e o servidor não aceitou (CA-460); sem o token, o script do Cloudflare não
+ * carregou e o pedido seguiu mesmo assim (D-119), mas o captcha está ligado no Supabase (CA-461).
+ */
+function erroDoPedido(erro: { readonly message: string; readonly code?: string | undefined }, captchaToken: string | undefined): ErroConta {
+  const traduzido = traduzir(erro.message, erro.code)
+  return traduzido === 'verificacao-recusada' && !captchaToken ? 'verificacao-nao-carregou' : traduzido
+}
+
 /**
  * As mensagens do Supabase, em inglês, viram os erros que a tela sabe explicar. O
  * código do erro, quando vem, vale mais que o texto: o texto muda de versão para versão.
  */
 export function traduzir(mensagem: string, codigo?: string): ErroConta {
   if (codigo === 'email_not_confirmed') return 'email-nao-confirmado'
+  // CA-460: o servidor recusou a verificação contra robôs (vencida, já usada ou falsa).
+  if (codigo === 'captcha_failed') return 'verificacao-recusada'
   // O Supabase usa o mesmo código para o código digitado errado e para o vencido.
   if (codigo === 'otp_expired') return 'codigo-invalido'
   const texto = mensagem.toLowerCase()
+  if (texto.includes('captcha')) return 'verificacao-recusada'
   if (texto.includes('already registered') || texto.includes('already been registered')) return 'email-em-uso'
   if (texto.includes('invalid login') || texto.includes('invalid credentials')) return 'credencial-invalida'
   if (texto.includes('not confirmed')) return 'email-nao-confirmado'
@@ -125,14 +145,14 @@ export function useConta(): ValorConta {
     }
   }, [cliente])
 
-  const entrar = useCallback(async (email: string, senha: string): Promise<Resultado> => {
+  const entrar = useCallback(async (email: string, senha: string, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
-    const { error } = await c.auth.signInWithPassword({ email: email.trim(), password: senha })
-    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
+    const { error } = await c.auth.signInWithPassword({ email: email.trim(), password: senha, ...(captchaToken ? { options: { captchaToken } } : {}) })
+    return error ? { ok: false, erro: erroDoPedido(error, captchaToken) } : OK
   }, [])
 
-  const cadastrar = useCallback(async (dados: DadosCadastro): Promise<Resultado> => {
+  const cadastrar = useCallback(async (dados: DadosCadastro, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
     const email = dados.email.trim()
@@ -151,20 +171,25 @@ export function useConta(): ValorConta {
           // não houve termos para aceitar, então não é para constar como se tivesse.
           ...(versaoTermos ? { termos_versao: versaoTermos, termos_aceitos_em: new Date().toISOString() } : {}),
         },
+        ...comVerificacao(captchaToken),
       },
     })
-    if (error) return { ok: false, erro: traduzir(error.message, error.code) }
+    if (error) return { ok: false, erro: erroDoPedido(error, captchaToken) }
     // Com confirmação ligada, o Supabase não conta que o e-mail já existe (para não
     // revelar quem tem conta): devolve um usuário sem identidade. É o mesmo aviso.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return { ok: false, erro: 'email-em-uso' }
     return { ok: true, erro: null, confirmarEmail: data.session === null }
   }, [])
 
-  const reenviarConfirmacao = useCallback(async (email: string): Promise<Resultado> => {
+  const reenviarConfirmacao = useCallback(async (email: string, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
-    const { error } = await c.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: enderecoDeVolta('confirmacao') } })
-    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
+    const { error } = await c.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: { emailRedirectTo: enderecoDeVolta('confirmacao'), ...comVerificacao(captchaToken) },
+    })
+    return error ? { ok: false, erro: erroDoPedido(error, captchaToken) } : OK
   }, [])
 
   const confirmarCodigo = useCallback(async (email: string, codigo: string): Promise<ResultadoConfirmacao> => {
@@ -180,11 +205,15 @@ export function useConta(): ValorConta {
     return { ...OK, ...(ehSituacao(situacao) ? { situacao } : {}), ...(ehIdPlano(plano) ? { planoDesejado: plano } : {}) }
   }, [])
 
-  const pedirTrocaDeSenha = useCallback(async (email: string): Promise<Resultado> => {
+  const pedirTrocaDeSenha = useCallback(async (email: string, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
-    const { error } = await c.auth.resetPasswordForEmail(email.trim(), { redirectTo: enderecoDeVolta('recuperacao') })
+    const { error } = await c.auth.resetPasswordForEmail(email.trim(), { redirectTo: enderecoDeVolta('recuperacao'), ...comVerificacao(captchaToken) })
     if (!error) return OK
+    // CA-460 e CA-461: a recusa da verificação aparece. Ela não diz se a conta existe: o servidor confere a
+    // verificação antes de procurar a conta, então a resposta é a mesma para quem tem e quem não tem (CA-144).
+    const recusa = erroDoPedido(error, captchaToken)
+    if (recusa === 'verificacao-recusada' || recusa === 'verificacao-nao-carregou') return { ok: false, erro: recusa }
     // CA-144: a tela diz a mesma coisa exista a conta ou não — até o limite de
     // tentativas, que só dispara quando a conta existe de verdade, fica calado. Só a
     // falta de internet aparece, e é achada pelo tipo do erro, não por palavra no

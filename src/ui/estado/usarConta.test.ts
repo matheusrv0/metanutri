@@ -294,6 +294,117 @@ describe('useConta', () => {
   })
 })
 
+describe('useConta com a verificação contra robôs (spec seguranca-lote-3)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('CA-454: o cadastro leva a verificação junto com o resto do pedido', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar(dados, 'tok-cadastro')
+    })
+    const pedido = auth.signUp.mock.calls[0]?.[0]
+    expect(pedido.options.captchaToken).toBe('tok-cadastro')
+    expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
+    expect(pedido.options.data).toMatchObject({ nome: 'Maria', situacao: 'nutricionista', termos_versao: '2026-09-28' })
+  })
+
+  it('CA-455: entrar leva a verificação', async () => {
+    auth.signInWithPassword.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.entrar(' maria@usp.br ', 'senhaforte1', 'tok-entrar')).toEqual({ ok: true, erro: null })
+    })
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'maria@usp.br', password: 'senhaforte1', options: { captchaToken: 'tok-entrar' } })
+  })
+
+  it('CA-456: pedir o código da troca de senha leva a verificação', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha(' maria@usp.br ', 'tok-senha')).toEqual({ ok: true, erro: null })
+    })
+    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('maria@usp.br', { redirectTo: expect.stringMatching(/\?volta=recuperacao$/), captchaToken: 'tok-senha' })
+  })
+
+  it('CA-457: reenviar o código leva a verificação; confirmar o código não', async () => {
+    auth.resend.mockResolvedValue({ error: null })
+    auth.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.reenviarConfirmacao('maria@usp.br', 'tok-reenviar')
+      await result.current.confirmarCodigo('maria@usp.br', '12345678')
+    })
+    expect(auth.resend).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'maria@usp.br',
+      options: { emailRedirectTo: expect.stringMatching(/\?volta=confirmacao$/), captchaToken: 'tok-reenviar' },
+    })
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ email: 'maria@usp.br', token: '12345678', type: 'email' })
+  })
+
+  it('CA-460: a recusa da verificação num pedido que foi com o token volta como "verificacao-recusada" em entrar, cadastrar e reenviar', async () => {
+    const recusa = new AuthApiError('captcha protection: request disallowed (invalid-input-response)', 400, 'captcha_failed')
+    auth.signInWithPassword.mockResolvedValue({ error: recusa })
+    auth.signUp.mockResolvedValue({ data: { user: null, session: null }, error: recusa })
+    auth.resend.mockResolvedValue({ error: recusa })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.entrar('maria@usp.br', 'senhaforte1', 'tok')).toEqual({ ok: false, erro: 'verificacao-recusada' })
+      expect(await result.current.cadastrar(dados, 'tok')).toEqual({ ok: false, erro: 'verificacao-recusada' })
+      expect(await result.current.reenviarConfirmacao('maria@usp.br', 'tok')).toEqual({ ok: false, erro: 'verificacao-recusada' })
+    })
+  })
+
+  it('CA-461: a recusa da verificação num pedido que foi sem o token (o script não carregou, D-119) volta como "verificacao-nao-carregou"', async () => {
+    const recusa = new AuthApiError('captcha protection: request disallowed (no captcha response (captcha_token) found in request)', 400, 'captcha_failed')
+    auth.signInWithPassword.mockResolvedValue({ error: recusa })
+    auth.signUp.mockResolvedValue({ data: { user: null, session: null }, error: recusa })
+    auth.resend.mockResolvedValue({ error: recusa })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.entrar('maria@usp.br', 'senhaforte1')).toEqual({ ok: false, erro: 'verificacao-nao-carregou' })
+      expect(await result.current.cadastrar(dados)).toEqual({ ok: false, erro: 'verificacao-nao-carregou' })
+      expect(await result.current.reenviarConfirmacao('maria@usp.br')).toEqual({ ok: false, erro: 'verificacao-nao-carregou' })
+    })
+  })
+
+  it('CA-460, CA-461 e CA-144: na troca de senha, a recusa da verificação aparece, com e sem o token (o servidor a confere antes de procurar a conta)', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: new AuthApiError('captcha protection: request disallowed (timeout-or-duplicate)', 400, 'captcha_failed') })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      expect(await result.current.pedirTrocaDeSenha('ninguem@exemplo.com', 'tok')).toEqual({ ok: false, erro: 'verificacao-recusada' })
+      expect(await result.current.pedirTrocaDeSenha('ninguem@exemplo.com')).toEqual({ ok: false, erro: 'verificacao-nao-carregou' })
+    })
+  })
+
+  it('CA-463: sem verificação, os quatro pedidos saem como antes, sem o campo do token', async () => {
+    auth.signInWithPassword.mockResolvedValue({ error: null })
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    auth.resend.mockResolvedValue({ error: null })
+    auth.resetPasswordForEmail.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.entrar('maria@usp.br', 'senhaforte1')
+      await result.current.cadastrar(dados)
+      await result.current.reenviarConfirmacao('maria@usp.br')
+      await result.current.pedirTrocaDeSenha('maria@usp.br')
+    })
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'maria@usp.br', password: 'senhaforte1' })
+    expect(auth.signUp.mock.calls[0]?.[0].options).not.toHaveProperty('captchaToken')
+    expect(auth.resend).toHaveBeenCalledWith({ type: 'signup', email: 'maria@usp.br', options: { emailRedirectTo: expect.stringMatching(/\?volta=confirmacao$/) } })
+    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('maria@usp.br', { redirectTo: expect.stringMatching(/\?volta=recuperacao$/) })
+  })
+})
+
 describe('traduzir as mensagens do Supabase', () => {
   it.each([
     ['User already registered', 'email-em-uso'],
@@ -304,6 +415,7 @@ describe('traduzir as mensagens do Supabase', () => {
     ['For security purposes, you can only request this after 45 seconds.', 'muitas-tentativas'],
     ['Failed to fetch', 'falha-rede'],
     ['Token has expired or is invalid', 'codigo-invalido'],
+    ['captcha protection: request disallowed (timeout-or-duplicate)', 'verificacao-recusada'],
   ] as const)('"%s" vira %s', (mensagem, erro) => {
     expect(traduzir(mensagem)).toBe(erro)
   })
@@ -311,6 +423,7 @@ describe('traduzir as mensagens do Supabase', () => {
   it.each([
     ['email_not_confirmed', 'email-nao-confirmado'],
     ['otp_expired', 'codigo-invalido'],
+    ['captcha_failed', 'verificacao-recusada'],
   ] as const)('o código "%s" vira %s, qualquer que seja o texto', (codigo, erro) => {
     expect(traduzir('mensagem em outro formato', codigo)).toBe(erro)
   })
