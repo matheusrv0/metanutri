@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { armazenamentoDaSessao, trocarDadosEmMemoria } from './armazenamentoDaSessao.ts'
-import { ContextoArmazenamento } from './contextoArmazenamento.ts'
+import { ContextoArmazenamento, ContextoMigracao } from './contextoArmazenamento.ts'
 
 interface ProvedorArmazenamentoProps {
   /** A conta que está dentro; `null` sem sessão ou sem servidor de conta. */
@@ -15,11 +15,15 @@ interface ProvedorArmazenamentoProps {
  * nada: quem lê dados ao montar fica dentro de ProvedoresDeDados, que remonta (CB-120).
  */
 export function ProvedorArmazenamento({ usuarioId, children }: ProvedorArmazenamentoProps) {
-  const armazenamento = useMemo(() => {
-    const arm = armazenamentoDaSessao(armazenamentoLocal(), usuarioId)
-    trocarDadosEmMemoria(arm)
-    return arm
+  const { armazenamento, migracao } = useMemo(() => {
+    const dados = armazenamentoDaSessao(armazenamentoLocal(), usuarioId)
+    trocarDadosEmMemoria(dados.armazenamento)
+    return dados
   }, [usuarioId])
 
-  return <ContextoArmazenamento.Provider value={armazenamento}>{children}</ContextoArmazenamento.Provider>
+  return (
+    <ContextoArmazenamento.Provider value={armazenamento}>
+      <ContextoMigracao.Provider value={migracao}>{children}</ContextoMigracao.Provider>
+    </ContextoArmazenamento.Provider>
+  )
 }

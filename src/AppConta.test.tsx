@@ -752,6 +752,35 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     expect(vistos.some((texto) => texto.includes('Ana Lima'))).toBe(false)
   })
 
+  it('CA-473: sem espaço no meio da migração, a conta vê os planos que foram e a tela avisa do resto', () => {
+    const plano = (id: string, nome: string) =>
+      JSON.stringify({ formato: 1, versao: 1, atualizadoEm: '2026-10-07T10:00:00.000Z', caso: { id, nome }, plano: { refeicoes: [] } })
+    localStorage.setItem(CHAVE_DONO, 'conta-a')
+    localStorage.setItem('metanutri:casos', '["x","y"]')
+    localStorage.setItem('metanutri:caso:x', plano('x', 'Plano que coube'))
+    localStorage.setItem('metanutri:caso:y', plano('y', 'Plano que não coube'))
+    const gravar = Storage.prototype.setItem
+    const cheio = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, chave: string, valor: string) {
+      if (chave === 'metanutri:conta:conta-a:caso:y') throw new DOMException('cheio', 'QuotaExceededError')
+      gravar.call(this, chave, valor)
+    })
+    try {
+      estado.conta = comSessao('conta-a')
+      window.location.hash = '#/casos'
+      render(tela())
+      expect(screen.getByRole('heading', { name: 'Plano que coube' })).toBeInTheDocument()
+      expect(screen.queryByText('Plano que não coube')).not.toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do MetaNutri e recarregue a página.',
+        ),
+      ).toBeInTheDocument()
+      expect(localStorage.getItem('metanutri:caso:y')).toBe(plano('y', 'Plano que não coube'))
+    } finally {
+      cheio.mockRestore()
+    }
+  })
+
   it('CB-121: navegador que não deixa guardar nada: o site abre como hoje', () => {
     const bloqueado = vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
       throw new DOMException('bloqueado', 'SecurityError')

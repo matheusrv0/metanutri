@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { ResultadoMigracao } from '@/domain/donoDosDados.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 
@@ -12,4 +13,12 @@ export const ContextoArmazenamento = createContext<Armazenamento | null | undefi
 export function useArmazenamento(): Armazenamento | null {
   const valor = useContext(ContextoArmazenamento)
   return valor === undefined ? armazenamentoLocal() : valor
+}
+
+/** Como foi levar para a conta os dados de antes desta mudança (D-123). */
+export const ContextoMigracao = createContext<ResultadoMigracao>('nada')
+
+/** CA-473: sobrou dado de antes que o armazenamento cheio não deixou mover. */
+export function useMigracaoIncompleta(): boolean {
+  return useContext(ContextoMigracao) === 'incompleto'
 }

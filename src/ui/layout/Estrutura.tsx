@@ -1,7 +1,10 @@
+import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
+import { Alert } from '@ds/componentes/display/alert.tsx'
 import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
+import { useMigracaoIncompleta } from '../estado/contextoArmazenamento.ts'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
 import { MenuLateral, type CasoAtual } from './MenuLateral.tsx'
@@ -22,6 +25,8 @@ interface EstruturaProps {
 /** Layout do MaterialM: menu lateral fixo de 270 px (gaveta abaixo de 1280 px), cabeçalho e conteúdo em até 1400 px. */
 export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha, acoes, children, aprovacoesPendentes }: EstruturaProps) {
   const [menuAberto, setMenuAberto] = useState(false)
+  // CA-473: parte dos dados de antes não coube na conta; o resto aparece quando houver espaço.
+  const migracaoIncompleta = useMigracaoIncompleta()
 
   useEffect(() => {
     document.title = `${titulo} · MetaNutri`
@@ -57,6 +62,15 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
       <div className="xl:pl-[264px]">
         <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} aoAbrirMenu={() => setMenuAberto(true)} />
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
+          {migracaoIncompleta ? (
+            <Alert variant="warning" className="mb-6">
+              <TriangleAlert aria-hidden="true" />
+              <p>
+                Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do
+                MetaNutri e recarregue a página.
+              </p>
+            </Alert>
+          ) : null}
           {children}
         </main>
       </div>

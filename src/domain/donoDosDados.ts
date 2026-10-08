@@ -6,7 +6,7 @@
 // sem prefixo, os de antes desta mudança (D-123).
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVES_DE_DADOS, expandirChaves } from './perfil.ts'
-import type { Armazenamento, ArmazenamentoListavel } from './persistencia.ts'
+import { ehQuotaExcedida, type Armazenamento, type ArmazenamentoListavel } from './persistencia.ts'
 
 export const CHAVE_DONO = 'metanutri:dono'
 
@@ -122,12 +122,54 @@ function incluirNoIndice(destino: Armazenamento, id: string): void {
   if (!indice.includes(id)) destino.setItem('metanutri:casos', JSON.stringify([...indice, id]))
 }
 
-/** Grava na conta e só então tira do aparelho. Devolve se a chave saiu do aparelho. */
+/**
+ * Grava na conta e só então tira do aparelho (DP-4). Sem espaço (DP-12), na mesma tarefa
+ * síncrona: o valor fica em memória, a chave sem prefixo sai e a com prefixo é gravada; se ainda
+ * assim não couber, a sem prefixo volta (cabe: o espaço dela acabou de ser liberado). Devolve se
+ * a chave saiu do aparelho.
+ */
 function gravarETirar(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, valor: string): boolean {
-  if (destino.getItem(chave) !== valor) destino.setItem(chave, valor)
-  if (destino.getItem(chave) !== valor) return false
+  const original = base.getItem(chave)
+  if (destino.getItem(chave) !== valor) {
+    try {
+      destino.setItem(chave, valor)
+    } catch (erro) {
+      if (!ehQuotaExcedida(erro) || original === null) throw erro
+      base.removeItem(chave)
+      try {
+        destino.setItem(chave, valor)
+      } catch (deNovo) {
+        base.setItem(chave, original)
+        if (ehQuotaExcedida(deNovo)) return false
+        throw deNovo
+      }
+    }
+  }
+  if (destino.getItem(chave) !== valor) {
+    if (original !== null && base.getItem(chave) === null) base.setItem(chave, original)
+    return false
+  }
   base.removeItem(chave)
   return true
+}
+
+/**
+ * Move um plano e o põe no índice da conta na hora (CA-473): plano fora do índice não aparece.
+ * Se o índice não couber, o plano volta para onde estava e fica para a próxima entrada.
+ */
+function gravarPlanoETirar(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, valor: string): boolean {
+  const original = base.getItem(chave)
+  const jaNaConta = destino.getItem(chave)
+  if (!gravarETirar(base, destino, chave, valor)) return false
+  try {
+    incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
+    return true
+  } catch (erro) {
+    if (!ehQuotaExcedida(erro)) throw erro
+    if (jaNaConta === null) destino.removeItem(chave)
+    if (original !== null) base.setItem(chave, original)
+    return false
+  }
 }
 
 function moverDado(base: ArmazenamentoListavel, destino: Armazenamento, chave: string): void {
@@ -147,7 +189,7 @@ function moverPlano(base: ArmazenamentoListavel, destino: Armazenamento, chave: 
   if (deFora === null) return
   const daConta = destino.getItem(chave)
   if (daConta === null || daConta === deFora) {
-    gravarETirar(base, destino, chave, deFora)
+    gravarPlanoETirar(base, destino, chave, deFora)
     return
   }
   const planoDeFora = lerPlano(deFora)
@@ -157,21 +199,30 @@ function moverPlano(base: ArmazenamentoListavel, destino: Armazenamento, chave: 
     return
   }
   if (planoDaConta === null) {
-    gravarETirar(base, destino, chave, deFora)
+    gravarPlanoETirar(base, destino, chave, deFora)
     return
   }
   const deForaMaisNovo = planoDeFora.atualizadoEm > planoDaConta.atualizadoEm
   const maisVelho = deForaMaisNovo ? planoDaConta : planoDeFora
-  const novoId = gerarId()
-  destino.setItem(`${PREFIXO_CASO}${novoId}`, JSON.stringify({ ...maisVelho, caso: { ...maisVelho.caso, id: novoId } }))
-  incluirNoIndice(destino, novoId)
-  if (deForaMaisNovo) gravarETirar(base, destino, chave, deFora)
+  const chaveNova = `${PREFIXO_CASO}${gerarId()}`
+  destino.setItem(chaveNova, JSON.stringify({ ...maisVelho, caso: { ...maisVelho.caso, id: chaveNova.slice(PREFIXO_CASO.length) } }))
+  try {
+    incluirNoIndice(destino, chaveNova.slice(PREFIXO_CASO.length))
+  } catch (erro) {
+    // Sem índice a cópia não apareceria: sai, e o conflito fica para a próxima entrada.
+    destino.removeItem(chaveNova)
+    throw erro
+  }
+  if (deForaMaisNovo) gravarPlanoETirar(base, destino, chave, deFora)
   else base.removeItem(chave)
-  incluirNoIndice(destino, chave.slice(PREFIXO_CASO.length))
 }
 
-/** `nada`: não havia dado sem conta. `falhou`: sobrou dado sem prefixo, que volta a ser tentado na próxima entrada. */
-export type ResultadoMigracao = 'nada' | 'movido' | 'falhou'
+/**
+ * `nada`: não havia dado sem conta. `incompleto`: o armazenamento encheu e sobrou dado sem
+ * prefixo, que volta a ser tentado na próxima entrada (CA-473). `falhou`: o navegador não deixou
+ * mexer no armazenamento.
+ */
+export type ResultadoMigracao = 'nada' | 'movido' | 'incompleto' | 'falhou'
 
 export interface OpcoesMigracao {
   /** Id novo para o plano que perde o seu num conflito; o app gera ids de plano assim. */
@@ -200,14 +251,19 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
     if (donoAtual === null) base.setItem(CHAVE_DONO, dono)
     const destino = armazenamentoDaConta(base, dono)
 
+    // Uma chave que não coube não para as outras (CA-473).
     for (const chave of chaves) {
-      if (chave.startsWith(PREFIXO_CASO)) moverPlano(base, destino, chave, gerarId)
-      else moverDado(base, destino, chave)
+      try {
+        if (chave.startsWith(PREFIXO_CASO)) moverPlano(base, destino, chave, gerarId)
+        else moverDado(base, destino, chave)
+      } catch (erro) {
+        if (!ehQuotaExcedida(erro)) throw erro
+      }
     }
-    return chavesSemConta(base).length === 0 ? 'movido' : 'falhou'
-  } catch {
-    // Aparelho cheio ou bloqueado: o que não foi movido continua onde estava.
-    return 'falhou'
+    return chavesSemConta(base).length === 0 ? 'movido' : 'incompleto'
+  } catch (erro) {
+    // O que não foi movido continua onde estava.
+    return ehQuotaExcedida(erro) ? 'incompleto' : 'falhou'
   }
 }
 

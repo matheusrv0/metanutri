@@ -1,19 +1,25 @@
 // Qual armazenamento a árvore de dados usa, conforme a sessão (spec dados-por-conta).
 import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
-import { migrarDadosSemConta } from '@/domain/donoDosDados.ts'
+import { migrarDadosSemConta, type ResultadoMigracao } from '@/domain/donoDosDados.ts'
 import type { Armazenamento, ArmazenamentoListavel } from '@/domain/persistencia.ts'
 import { criarRepositorioProdutos, produtoComoAlimento } from '@/domain/produtos.ts'
 import { registrarProdutos } from '@/domain/tabelas.ts'
 import { esquecerOcultosEmMemoria } from './ocultosGlobais.ts'
 
+export interface DadosDaSessao {
+  readonly armazenamento: Armazenamento | null
+  /** Como foi levar os dados de antes para a conta; `incompleto` pede o aviso do CA-473. */
+  readonly migracao: ResultadoMigracao
+}
+
 /**
  * Com sessão, o espaço da conta (D-120), depois de levar para o dono os dados de antes desta
  * mudança (D-123). Sem sessão ou sem servidor de conta, o aparelho, sem prefixo, como antes (DP-3).
  */
-export function armazenamentoDaSessao(base: ArmazenamentoListavel | null, usuarioId: string | null): Armazenamento | null {
-  if (usuarioId === null || base === null) return base
-  migrarDadosSemConta(base, usuarioId)
-  return armazenamentoDaConta(base, usuarioId)
+export function armazenamentoDaSessao(base: ArmazenamentoListavel | null, usuarioId: string | null): DadosDaSessao {
+  if (usuarioId === null || base === null) return { armazenamento: base, migracao: 'nada' }
+  const migracao = migrarDadosSemConta(base, usuarioId)
+  return { armazenamento: armazenamentoDaConta(base, usuarioId), migracao }
 }
 
 /**

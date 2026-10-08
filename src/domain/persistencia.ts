@@ -63,7 +63,8 @@ function ehCasoSalvo(v: unknown): v is CasoSalvo & { formato: number } {
   )
 }
 
-function ehQuotaExcedida(erro: unknown): boolean {
+/** O navegador recusou gravar porque o armazenamento encheu. */
+export function ehQuotaExcedida(erro: unknown): boolean {
   return erro instanceof DOMException && (erro.name === 'QuotaExceededError' || erro.name === 'NS_ERROR_DOM_QUOTA_REACHED')
 }
 

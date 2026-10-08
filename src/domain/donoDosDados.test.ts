@@ -39,6 +39,29 @@ const planoGuardado = (id: string, nome: string, atualizadoEm: string) =>
 
 const nomeDoPlano = (texto: string | null): string => (JSON.parse(texto ?? '{}') as { caso?: { nome?: string } }).caso?.nome ?? ''
 
+const cheio = () => new DOMException('cheio', 'QuotaExceededError')
+
+/** O navegador recusa gravar estas chaves, como faz quando o armazenamento enche. */
+function recusar(arm: ReturnType<typeof memoria>, recusada: (chave: string) => boolean): void {
+  const setItem = arm.setItem
+  arm.setItem = (c, v) => {
+    if (recusada(c)) throw cheio()
+    setItem(c, v)
+  }
+}
+
+/** O armazenamento só cabe o que já tem e mais `folga` caracteres (chaves e valores), como o `localStorage`. */
+function limitar(arm: ReturnType<typeof memoria>, folga: number): void {
+  const tamanho = () => [...arm.dados].reduce((total, [c, v]) => total + c.length + v.length, 0)
+  const limite = tamanho() + folga
+  const setItem = arm.setItem
+  arm.setItem = (c, v) => {
+    const atual = arm.dados.get(c)
+    if (tamanho() - (atual === undefined ? 0 : c.length + atual.length) + c.length + v.length > limite) throw cheio()
+    setItem(c, v)
+  }
+}
+
 const semPrefixo = (arm: ReturnType<typeof memoria>) => [...arm.dados.keys()].filter((c) => !c.startsWith('metanutri:conta:'))
 
 describe('dados de antes da mudança vão para a conta dona (spec dados-por-conta, D-123)', () => {
@@ -224,13 +247,67 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
       if (cheio && c.startsWith('metanutri:conta:') && (gravadas += 1) > 1) throw new DOMException('cheio', 'QuotaExceededError')
       setItem(c, v)
     }
-    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('falhou')
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('incompleto')
     const contaA = armazenamentoDaConta(arm, 'conta-a')
     for (const [chave, valor] of Object.entries(DADOS_ANTIGOS)) expect(contaA.getItem(chave) ?? arm.dados.get(chave), chave).toBe(valor)
 
     cheio = false
     expect(migrarDadosSemConta(arm, 'conta-a')).toBe('movido')
     for (const [chave, valor] of Object.entries(DADOS_ANTIGOS)) expect(contaA.getItem(chave), chave).toBe(valor)
+  })
+
+  it('CA-473: sem espaço no meio, a conta vê exatamente o que foi movido, com os planos no índice', () => {
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:casos': '["x","y"]',
+      'metanutri:caso:x': planoGuardado('x', 'Plano X', '2026-10-07T10:00:00.000Z'),
+      'metanutri:caso:y': planoGuardado('y', 'Plano Y', '2026-10-07T10:00:00.000Z'),
+      'metanutri:pacientes': '[{"id":"ana"}]',
+    })
+    // O plano y não cabe de jeito nenhum, nem depois de liberar o espaço dele.
+    recusar(arm, (chave) => chave === 'metanutri:conta:conta-a:caso:y')
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('incompleto')
+
+    const contaA = armazenamentoDaConta(arm, 'conta-a')
+    expect(JSON.parse(contaA.getItem('metanutri:casos') ?? '[]')).toContain('x')
+    expect(nomeDoPlano(contaA.getItem('metanutri:caso:x'))).toBe('Plano X')
+    expect(contaA.getItem('metanutri:pacientes')).toBe('[{"id":"ana"}]')
+    // O que não coube continua inteiro, sem prefixo, para a próxima entrada.
+    expect(nomeDoPlano(arm.dados.get('metanutri:caso:y') ?? null)).toBe('Plano Y')
+    expect(contaA.getItem('metanutri:caso:y')).toBeNull()
+  })
+
+  it('CA-473: cada plano movido entra no índice da conta na hora, sem esperar o índice de fora', () => {
+    // Sem o índice de fora (ou antes de ele chegar), o plano movido já aparece na conta.
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:caso:x': planoGuardado('x', 'Plano X', '2026-10-07T10:00:00.000Z'),
+      'metanutri:pacientes': '[{"id":"ana"}]',
+    })
+    recusar(arm, (chave) => chave === 'metanutri:conta:conta-a:pacientes')
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('incompleto')
+    const contaA = armazenamentoDaConta(arm, 'conta-a')
+    expect(JSON.parse(contaA.getItem('metanutri:casos') ?? '[]')).toEqual(['x'])
+    expect(arm.dados.get('metanutri:pacientes')).toBe('[{"id":"ana"}]')
+  })
+
+  it('CA-473: perto do limite, a migração libera a chave antiga e avança', () => {
+    const grande = 'x'.repeat(400)
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:casos': '["x","y"]',
+      'metanutri:caso:x': planoGuardado('x', `Plano X ${grande}`, '2026-10-07T10:00:00.000Z'),
+      'metanutri:caso:y': planoGuardado('y', `Plano Y ${grande}`, '2026-10-07T10:00:00.000Z'),
+      'metanutri:perfil': `{"nome":"${grande}"}`,
+    })
+    // Cabem só 150 caracteres a mais: copiar antes de apagar estoura em toda chave grande.
+    limitar(arm, 150)
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('movido')
+    const contaA = armazenamentoDaConta(arm, 'conta-a')
+    expect(nomeDoPlano(contaA.getItem('metanutri:caso:x'))).toContain('Plano X')
+    expect(nomeDoPlano(contaA.getItem('metanutri:caso:y'))).toContain('Plano Y')
+    expect(JSON.parse(contaA.getItem('metanutri:casos') ?? '[]')).toEqual(['x', 'y'])
+    expect(semPrefixo(arm)).toEqual([CHAVE_DONO])
   })
 
   it('migração: planos fora do índice e a chave antiga dos frequentes também são da pessoa', () => {

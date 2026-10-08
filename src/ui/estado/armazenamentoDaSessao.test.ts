@@ -11,14 +11,16 @@ describe('armazenamento da sessão (spec dados-por-conta)', () => {
 
   it('DP-3: sem sessão (ou sem servidor), os dados ficam no aparelho, sem prefixo, como hoje', () => {
     localStorage.setItem('metanutri:casos', '["x"]')
-    const arm = armazenamentoDaSessao(localStorage, null)
+    const { armazenamento: arm, migracao } = armazenamentoDaSessao(localStorage, null)
     expect(arm).toBe(localStorage)
     expect(arm?.getItem('metanutri:casos')).toBe('["x"]')
+    expect(migracao).toBe('nada')
   })
 
   it('com sessão, leva os dados antigos para a conta e devolve o espaço dela', () => {
     localStorage.setItem('metanutri:casos', '["x"]')
-    const arm = armazenamentoDaSessao(localStorage, 'conta-a')
+    const { armazenamento: arm, migracao } = armazenamentoDaSessao(localStorage, 'conta-a')
+    expect(migracao).toBe('movido')
     expect(arm?.getItem('metanutri:casos')).toBe('["x"]')
     expect(localStorage.getItem('metanutri:casos')).toBeNull()
     expect(localStorage.getItem('metanutri:conta:conta-a:casos')).toBe('["x"]')
@@ -26,8 +28,8 @@ describe('armazenamento da sessão (spec dados-por-conta)', () => {
   })
 
   it('CB-121: navegador que não deixa guardar nada: sem armazenamento e sem erro', () => {
-    expect(armazenamentoDaSessao(null, 'conta-a')).toBeNull()
-    expect(armazenamentoDaSessao(null, null)).toBeNull()
+    expect(armazenamentoDaSessao(null, 'conta-a')).toEqual({ armazenamento: null, migracao: 'nada' })
+    expect(armazenamentoDaSessao(null, null)).toEqual({ armazenamento: null, migracao: 'nada' })
     expect(() => trocarDadosEmMemoria(null)).not.toThrow()
   })
 
@@ -36,12 +38,12 @@ describe('armazenamento da sessão (spec dados-por-conta)', () => {
     localStorage.setItem('metanutri:conta:conta-b:produtos', JSON.stringify([produto(900_002, 'Barra da Bia')]))
     const descricoes = () => alimentosComProdutos().filter((a) => a.categoria === 'Meus produtos').map((a) => a.descricao)
 
-    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, 'conta-a'))
+    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, 'conta-a').armazenamento)
     expect(descricoes()).toEqual(['Iogurte da Ana'])
-    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, 'conta-b'))
+    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, 'conta-b').armazenamento)
     expect(descricoes()).toEqual(['Barra da Bia'])
     expect(buscarAlimento(900_001)).toBeUndefined()
-    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, null))
+    trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, null).armazenamento)
     expect(descricoes()).toEqual([])
   })
 
