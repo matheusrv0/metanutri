@@ -6,7 +6,7 @@
 // item por item, e a mudança mais nova de cada item vence (D-132, D-133, DP-3).
 import { CHAVES_DE_DADOS, montarBackup, type Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
-import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
+import { idsDeProdutoEm, PRIMEIRO_ID_PRODUTO } from './produtos.ts'
 import { CHAVE_ACOMPANHAMENTOS, semMudancasPendentes } from './repositorioAcompanhamentos.ts'
 
 /** As marcas de mudança e as lápides, dentro da cópia. */
@@ -280,11 +280,13 @@ function comAlimentosTrocados(chave: string, escolha: Escolha, trocas: ReadonlyM
 /**
  * DP-4: o id de produto é o próximo número de cada aparelho, então o mesmo id com criação diferente é
  * outro produto. O daqui ganha id novo acima do maior, e a marca dele vai junto. Devolve as trocas.
+ * O maior conta também os ids das marcas e lápides dos dois lados (DP-21): o id novo nunca cai num
+ * produto excluído, que levaria a lápide dele e sumiria.
  */
-function separarProdutos(daqui: Item[], nuvem: readonly Item[], marcas: Map<string, string>): Map<number, number> {
+function separarProdutos(daqui: Item[], nuvem: readonly Item[], marcas: Map<string, string>, referencias: Iterable<string>): Map<number, number> {
   const naNuvem = porId(nuvem)
   const usados = [...daqui, ...nuvem].map((p) => p['id']).filter((id): id is number => typeof id === 'number')
-  let maior = Math.max(PRIMEIRO_ID_PRODUTO - 1, ...usados)
+  let maior = Math.max(PRIMEIRO_ID_PRODUTO - 1, ...usados, ...idsDeProdutoEm(referencias))
   const trocas = new Map<number, number>()
   daqui.forEach((produto, i) => {
     const id = produto['id']
@@ -311,7 +313,10 @@ function juntarLista(juncao: Juncao, chave: string, lista: Lista, daquiTexto: st
   if (daqui === null) return nuvemTexto ?? daquiTexto
   if (nuvem === null) return daquiTexto
 
-  if (chave === 'metanutri:produtos') for (const [de, para] of separarProdutos(daqui, nuvem, marcasDaqui)) trocas.set(de, para)
+  if (chave === 'metanutri:produtos') {
+    const referencias = [...marcasDaqui.keys(), ...Object.keys(juncao.nuvem.alterados), ...juncao.lapides.keys()]
+    for (const [de, para] of separarProdutos(daqui, nuvem, marcasDaqui, referencias)) trocas.set(de, para)
+  }
   const juncaoDaLista: Juncao = { ...juncao, daqui: { ...juncao.daqui, alterados: Object.fromEntries(marcasDaqui) } }
 
   const deDaqui = porId(daqui)

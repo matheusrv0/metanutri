@@ -8,6 +8,35 @@ const CHAVE = 'metanutri:produtos'
 /** Ids de produto começam acima da TACO, para nunca colidir com a tabela. */
 export const PRIMEIRO_ID_PRODUTO = 900_000
 
+/** As marcas de mudança e as lápides da cópia na nuvem (a mesma chave de `copiaDaConta.ts`). */
+const CHAVE_MARCAS = 'metanutri:mudancas'
+
+/** Os ids de produto citados em referências de marca ou lápide (`produtos/<id>`). */
+export function idsDeProdutoEm(referencias: Iterable<string>): number[] {
+  const ids: number[] = []
+  for (const ref of referencias) {
+    const achado = /^produtos\/(\d+)$/.exec(ref)
+    if (achado?.[1] !== undefined) ids.push(Number(achado[1]))
+  }
+  return ids
+}
+
+/**
+ * Spec dados-na-nuvem, DP-21: um id de produto excluído (com lápide) ou marcado nunca é reaproveitado,
+ * senão o produto novo herdaria a lápide do velho na próxima junção e sumiria.
+ */
+function idsMarcados(armazenamento: Armazenamento | null): number[] {
+  try {
+    const marcas: unknown = JSON.parse(armazenamento?.getItem(CHAVE_MARCAS) ?? 'null')
+    if (typeof marcas !== 'object' || marcas === null) return []
+    const { alterados, excluidos } = marcas as Record<string, unknown>
+    const refs = [alterados, excluidos].flatMap((grupo) => (typeof grupo === 'object' && grupo !== null ? Object.keys(grupo) : []))
+    return idsDeProdutoEm(refs)
+  } catch {
+    return []
+  }
+}
+
 /** Campos que a rotulagem brasileira obriga (RDC 429/2020 e IN 75/2020). */
 export const CAMPOS_ROTULO: readonly { readonly chave: ChaveNutrienteAlimento; readonly rotulo: string; readonly unidade: string }[] = [
   { chave: 'energia_kcal', rotulo: 'Valor energético', unidade: 'kcal' },
@@ -155,7 +184,7 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
 
     salvar(dados) {
       const lista = ler()
-      const id = dados.id ?? Math.max(PRIMEIRO_ID_PRODUTO - 1, ...lista.map((p) => p.id)) + 1
+      const id = dados.id ?? Math.max(PRIMEIRO_ID_PRODUTO - 1, ...lista.map((p) => p.id), ...idsMarcados(armazenamento)) + 1
       const anterior = lista.find((p) => p.id === id)
       const produto: Produto = {
         id,

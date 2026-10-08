@@ -243,6 +243,22 @@ describe('juntar a cópia daqui com a da nuvem (D-132, D-133)', () => {
     expect(momentoDaCopia(c)).toBe(T(6))
   })
 
+  it('DP-21: o id novo do produto daqui nunca cai num id com lápide ou marca: nenhum produto some', () => {
+    const daqui = copia({
+      'metanutri:produtos': JSON.stringify([produto(900000, 'Granola daqui', T(4)), produto(900001, 'Pão daqui', T(4))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'produtos/900000': T(4), 'produtos/900001': T(4) }),
+    })
+    const daNuvem = copia({
+      'metanutri:produtos': JSON.stringify([produto(900000, 'Iogurte', T(3)), produto(900001, 'Queijo', T(3))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'produtos/900000': T(3), 'produtos/900001': T(3) }, { 'produtos/900002': T(5) }),
+    })
+    const junta = juntarCopias(daqui, daNuvem, AGORA)
+    const produtos = lista(junta, 'metanutri:produtos') as { id: number; nome: string }[]
+    expect(produtos.map((p) => p.nome).sort()).toEqual(['Granola daqui', 'Iogurte', 'Pão daqui', 'Queijo'])
+    expect(produtos.map((p) => p.id)).not.toContain(900002)
+    expect(lerMudancas(junta.dados[CHAVE_MUDANCAS] ?? null).excluidos).toEqual({ 'produtos/900002': T(5) })
+  })
+
   it('DP-4: produto com o mesmo id e criação diferente são dois produtos; o daqui ganha id novo e os planos daqui o seguem', () => {
     const item = (alimentoId: number) => ({ id: 'i1', alimentoId, gramas: 100 })
     const planoCom = (id: string, alimentoId: number, atualizadoEm: string) =>
