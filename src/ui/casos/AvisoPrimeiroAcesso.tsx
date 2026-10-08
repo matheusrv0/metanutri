@@ -1,13 +1,16 @@
 import { BookOpen, HardDrive, Stethoscope } from 'lucide-react'
 import { useState } from 'react'
+import type { Armazenamento } from '@/domain/persistencia.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
+/** Por conta: quem nunca usou o aparelho vê o aviso, mesmo que outra conta já tenha visto (CB-122). */
 export const CHAVE_AVISO_VISTO = 'metanutri:aviso-inicial-visto'
 
-function jaViu(): boolean {
+function jaViu(armazenamento: Armazenamento | null): boolean {
   try {
-    return globalThis.localStorage?.getItem(CHAVE_AVISO_VISTO) === '1'
+    return armazenamento?.getItem(CHAVE_AVISO_VISTO) === '1'
   } catch {
     return false
   }
@@ -21,12 +24,13 @@ const PONTOS = [
 
 /** CA-51: aviso mostrado no primeiro acesso, até a pessoa confirmar que leu. */
 export function AvisoPrimeiroAcesso() {
-  const [aberto, setAberto] = useState(() => !jaViu())
+  const armazenamento = useArmazenamento()
+  const [aberto, setAberto] = useState(() => !jaViu(armazenamento))
 
   const confirmar = () => {
     setAberto(false)
     try {
-      globalThis.localStorage?.setItem(CHAVE_AVISO_VISTO, '1')
+      armazenamento?.setItem(CHAVE_AVISO_VISTO, '1')
     } catch {
       // armazenamento bloqueado: o aviso volta na próxima visita, o que é aceitável
     }

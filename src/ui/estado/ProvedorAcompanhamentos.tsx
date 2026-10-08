@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Acompanhamento } from '@/domain/acompanhamento.ts'
-import type { Armazenamento } from '@/domain/persistencia.ts'
+import { chaveDoEvento } from '@/domain/armazenamentoDaConta.ts'
 import {
   fonteSupabase,
   listarAcompanhamentosDaNuvem,
@@ -11,19 +11,12 @@ import {
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
 import { criarRepositorioAcompanhamentos, fonteLocal, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { useArmazenamento } from './contextoArmazenamento.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
 
 /** CB-106: a leitura da nuvem falhou e a tela segue com a cópia do aparelho. */
 const SEM_ATUALIZAR = 'Não consegui atualizar com a nuvem. Mostrando a cópia deste aparelho.'
-
-function armazenamentoDoNavegador(): Armazenamento | null {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
 
 /**
  * Compartilha os acompanhamentos entre a tela do nutricionista e o link do paciente.
@@ -32,7 +25,9 @@ function armazenamentoDoNavegador(): Armazenamento | null {
  * para abrir sem internet. Sem servidor, tudo fica só no aparelho, como antes (CA-444).
  */
 export function ProvedorAcompanhamentos({ children, repositorio }: { readonly children: ReactNode; readonly repositorio?: RepositorioAcompanhamentos }) {
-  const [repo] = useState<RepositorioAcompanhamentos>(() => repositorio ?? criarRepositorioAcompanhamentos(armazenamentoDoNavegador()))
+  // A cópia da conta que entrou (spec dados-por-conta, D-120).
+  const armazenamento = useArmazenamento()
+  const [repo] = useState<RepositorioAcompanhamentos>(() => repositorio ?? criarRepositorioAcompanhamentos(armazenamento))
   // O tipo do cliente do Supabase é fundo demais para o TypeScript casar com a interface
   // pequena da porta (TS2589), como em Configurações. A forma em tempo de execução é a mesma.
   const [cliente] = useState(() => obterSupabase() as unknown as ClienteMissoes | null)
@@ -81,12 +76,12 @@ export function ProvedorAcompanhamentos({ children, repositorio }: { readonly ch
   // Se o paciente marcar numa aba e o nutricionista estiver com outra aberta, a lista se refaz.
   useEffect(() => {
     const aoMudar = (e: StorageEvent) => {
-      if (e.key !== null && e.key !== 'metanutri:acompanhamentos') return
+      if (e.key !== null && chaveDoEvento(armazenamento, e.key) !== 'metanutri:acompanhamentos') return
       atualizar()
     }
     window.addEventListener('storage', aoMudar)
     return () => window.removeEventListener('storage', aoMudar)
-  }, [atualizar])
+  }, [atualizar, armazenamento])
 
   const salvar = useCallback(
     async (acompanhamento: Acompanhamento) => {

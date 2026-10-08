@@ -7,7 +7,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
-import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { FolhaDieta } from './FolhaDieta.tsx'
 
 interface DialogoImprimirProps {
@@ -39,13 +39,14 @@ function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; r
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo.
  */
 export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, aoFechar }: DialogoImprimirProps) {
-  const [opcoes, setOpcoes] = useState<OpcoesImpressao>(() => lerOpcoesImpressao(armazenamentoLocal()))
+  const armazenamento = useArmazenamento()
+  const [opcoes, setOpcoes] = useState<OpcoesImpressao>(() => lerOpcoesImpressao(armazenamento))
 
   const mudar = (mudanca: Partial<OpcoesImpressao>) => {
     const novas = { ...opcoes, ...mudanca }
     setOpcoes(novas)
     // CA-320 e CB-72: sem armazenamento, vale só para esta impressão.
-    gravarOpcoesImpressao(armazenamentoLocal(), novas)
+    gravarOpcoesImpressao(armazenamento, novas)
   }
 
   return (

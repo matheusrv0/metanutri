@@ -6,6 +6,7 @@ import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
 interface DialogoModelosProps {
   readonly aberto: boolean
@@ -15,20 +16,13 @@ interface DialogoModelosProps {
   readonly aoFechar: () => void
 }
 
-function armazenamento() {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
-
 const contarItens = (m: ModeloPlano) =>
   m.plano.refeicoes.reduce((total, r) => total + r.opcoes.principal.length + r.opcoes.substituto1.length + r.opcoes.substituto2.length, 0)
 
 /** Modelos de plano: salvar o de hoje e começar o próximo a partir dele. */
 export function DialogoModelos({ aberto, plano, aoUsar, aoFechar }: DialogoModelosProps) {
-  const repositorio = useMemo(() => criarRepositorioModelos(armazenamento()), [])
+  const armazenamento = useArmazenamento()
+  const repositorio = useMemo(() => criarRepositorioModelos(armazenamento), [armazenamento])
   const [versao, setVersao] = useState(0)
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')

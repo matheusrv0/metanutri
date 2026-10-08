@@ -2,8 +2,9 @@
 // mudar a situação passa pelas funções do banco, que conferem cada pedido (spec
 // conta-e-verificacao, D-40).
 import { useCallback, useEffect, useState } from 'react'
+import type { Armazenamento } from '@/domain/persistencia.ts'
 import { daLinhaPerfil, type Crn, type PerfilConta, type Situacao } from '@/domain/situacao.ts'
-import { armazenamentoLocal } from './armazenamentoLocal.ts'
+import { useArmazenamento } from './contextoArmazenamento.ts'
 import { mensagemDoBanco } from './mensagemDoBanco.ts'
 import { obterSupabase } from './supabase.ts'
 
@@ -32,9 +33,9 @@ const COLUNAS = 'nome, situacao, crn_regiao, crn_numero, crn_status, crn_declara
 const CHAVE_GUARDADA = 'metanutri:perfil-conta'
 
 /** A última linha de perfil lida com sucesso, por conta: é o que vale quando a internet cai. */
-function lerGuardada(usuarioId: string): unknown {
+function lerGuardada(armazenamento: Armazenamento | null, usuarioId: string): unknown {
   try {
-    const bruto: unknown = JSON.parse(armazenamentoLocal()?.getItem(CHAVE_GUARDADA) ?? 'null')
+    const bruto: unknown = JSON.parse(armazenamento?.getItem(CHAVE_GUARDADA) ?? 'null')
     if (typeof bruto !== 'object' || bruto === null) return null
     const o = bruto as Record<string, unknown>
     return o['usuario'] === usuarioId ? o['linha'] : null
@@ -43,9 +44,9 @@ function lerGuardada(usuarioId: string): unknown {
   }
 }
 
-function guardar(usuarioId: string, linha: unknown): void {
+function guardar(armazenamento: Armazenamento | null, usuarioId: string, linha: unknown): void {
   try {
-    armazenamentoLocal()?.setItem(CHAVE_GUARDADA, JSON.stringify({ usuario: usuarioId, linha: linha ?? null }))
+    armazenamento?.setItem(CHAVE_GUARDADA, JSON.stringify({ usuario: usuarioId, linha: linha ?? null }))
   } catch {
     // sem espaço no aparelho: a próxima leitura com sucesso tenta de novo
   }
@@ -55,6 +56,8 @@ const SEM_SERVIDOR = 'A conta na nuvem não está configurada neste MetaNutri.'
 
 export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
   const [cliente] = useState(() => obterSupabase())
+  // A cópia guardada fica no espaço da conta (spec dados-por-conta, D-120).
+  const armazenamento = useArmazenamento()
   const [carga, setCarga] = useState<Carga | null>(null)
   const [versao, setVersao] = useState(0)
 
@@ -73,10 +76,10 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
     void Promise.all([cliente.from('perfis').select(COLUNAS).eq('id', usuarioId).maybeSingle(), cliente.rpc('eh_admin')]).then(([perfil, admin]) => {
       if (!vivo) return
       const falhou = perfil.error !== null
-      if (!falhou) guardar(usuarioId, perfil.data)
+      if (!falhou) guardar(armazenamento, usuarioId, perfil.data)
       setCarga({
         usuario: usuarioId,
-        perfil: daLinhaPerfil(falhou ? lerGuardada(usuarioId) : perfil.data),
+        perfil: daLinhaPerfil(falhou ? lerGuardada(armazenamento, usuarioId) : perfil.data),
         ehAdmin: admin.data === true,
         falhou,
       })
@@ -84,7 +87,7 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
     return () => {
       vivo = false
     }
-  }, [cliente, usuarioId, chave])
+  }, [cliente, usuarioId, chave, armazenamento])
 
   const chamar = useCallback(async (funcao: string, argumentos: Record<string, unknown>): Promise<string | null> => {
     const c = obterSupabase()

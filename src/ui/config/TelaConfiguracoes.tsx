@@ -21,14 +21,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { baixarBlob } from '../exportar/baixar.ts'
-
-function armazenamento() {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
 /**
  * CA-420: o que "Apagar tudo" conseguiu apagar da nuvem. Só diz "na nuvem" quando as duas partes
@@ -55,9 +48,13 @@ function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string 
   return 'Tudo apagado, aqui e na nuvem. Recarregue a página.'
 }
 
-/** Perfil, marca nos documentos e o que fazer com os dados guardados neste aparelho. */
+/**
+ * Perfil, marca nos documentos e o que fazer com os dados guardados neste aparelho. Tudo aqui é
+ * da conta que está dentro: backup, cópia na nuvem e apagar (spec dados-por-conta, D-125 e DP-8).
+ */
 export function TelaConfiguracoes() {
-  const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento()))
+  const armazenamento = useArmazenamento()
+  const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento))
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [confirmandoApagar, setConfirmandoApagar] = useState(false)
   const arquivoRef = useRef<HTMLInputElement | null>(null)
@@ -65,7 +62,7 @@ export function TelaConfiguracoes() {
   const alterar = (mudanca: Partial<Perfil>) => {
     const novo = { ...perfil, ...mudanca }
     setPerfil(novo)
-    gravarPerfil(armazenamento(), novo)
+    gravarPerfil(armazenamento, novo)
   }
 
   const escolherLogo = (arquivo: File | undefined) => {
@@ -83,7 +80,7 @@ export function TelaConfiguracoes() {
   }
 
   const exportarTudo = () => {
-    const backup = montarBackup(armazenamento(), [...CHAVES_DE_DADOS], new Date().toISOString())
+    const backup = montarBackup(armazenamento, [...CHAVES_DE_DADOS], new Date().toISOString())
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     baixarBlob(blob, `metanutri-backup-${new Date().toISOString().slice(0, 10)}.json`.replace('.docx', ''))
     setMensagem('Backup salvo. Guarde esse arquivo: é a cópia de tudo que está aqui.')
@@ -93,7 +90,7 @@ export function TelaConfiguracoes() {
     if (!arquivo) return
     const leitor = new FileReader()
     leitor.onload = () => {
-      const { restaurados, erro } = restaurarBackup(armazenamento(), String(leitor.result ?? ''))
+      const { restaurados, erro } = restaurarBackup(armazenamento, String(leitor.result ?? ''))
       setMensagem(erro ?? `${restaurados} ${restaurados === 1 ? 'conjunto restaurado' : 'conjuntos restaurados'}. Recarregue a página para ver.`)
     }
     leitor.readAsText(arquivo)
@@ -110,7 +107,7 @@ export function TelaConfiguracoes() {
     const cliente = clienteCopia()
     if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
     setNaNuvem(true)
-    const backup = montarBackup(armazenamento(), [...CHAVES_DE_DADOS], new Date().toISOString())
+    const backup = montarBackup(armazenamento, [...CHAVES_DE_DADOS], new Date().toISOString())
     void enviarCopia(cliente, backup, apelidoDoAparelho(globalThis.navigator.userAgent)).then(({ erro }) => {
       setNaNuvem(false)
       setMensagem(erro ?? `Cópia enviada. Ela substitui a anterior da sua conta: ${Object.keys(backup.dados).length} conjuntos de dados.`)
@@ -124,7 +121,7 @@ export function TelaConfiguracoes() {
     void baixarCopia(cliente).then(({ ok, erro }) => {
       setNaNuvem(false)
       if (!ok) return setMensagem(erro)
-      const { restaurados, erro: erroRestauro } = restaurarBackup(armazenamento(), JSON.stringify(ok.backup))
+      const { restaurados, erro: erroRestauro } = restaurarBackup(armazenamento, JSON.stringify(ok.backup))
       setMensagem(
         erroRestauro ??
           `${restaurados} ${restaurados === 1 ? 'conjunto veio' : 'conjuntos vieram'} da nuvem (${ok.aparelho}). Recarregue a página para ver.`,
@@ -133,10 +130,9 @@ export function TelaConfiguracoes() {
   }
 
   const apagarTudo = () => {
-    const guardado = armazenamento()
     // Expandido: sem isso os planos (metanutri:caso:<id>) ficavam no aparelho depois
-    // de "apagar tudo", com nome e medida de paciente dentro.
-    for (const chave of expandirChaves(guardado, [...CHAVES_DE_DADOS])) guardado?.removeItem(chave)
+    // de "apagar tudo", com nome e medida de paciente dentro. Só os da conta que está dentro (DP-8).
+    for (const chave of expandirChaves(armazenamento, [...CHAVES_DE_DADOS])) armazenamento?.removeItem(chave)
     setConfirmandoApagar(false)
 
     // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente

@@ -62,7 +62,7 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
   - Feito quando: testes da escolha (com e sem sessão, sem servidor, navegador bloqueado) e dos produtos por conta.
 - [ ] **T4** — Todo leitor de dado da pessoa usa `useArmazenamento()`: os três provedores (com o evento `storage`
   traduzido), DialogoModelos, Configurações (backup, nuvem, apagar), AvisoPrimeiroAcesso,
-  sugestões, impressão, folha da dieta, produtos, perfil da conta; `main.tsx` deixa de registrar produtos.
+  sugestões, impressão, folha da dieta, produtos, perfil da conta.
   - Depende de: T3
   - Cobre: CA-470, CB-122 (aviso por conta)
   - Feito quando: teste de Configurações com duas contas (baixar, restaurar, enviar e trazer da nuvem só da conta
@@ -72,7 +72,8 @@ modelos, produtos, sugestões), e cada uma teria de ser lembrada.
   - Cobre: CA-469
   - Feito quando: teste do gancho com A e B no aparelho: só A some; tema e dados de B ficam; "Só sair" não apaga nada.
 - [ ] **T6** — `App`: `useConta` uma vez, em `App`; `ProvedorArmazenamento` com o id da conta por fora dos
-  provedores; sai `situacaoAoEntrar`/`registrarDono`/`apagarDadosDoAparelho`, a tela `TelaOutraConta` e os testes
+  provedores; `main.tsx` deixa de registrar produtos na abertura (passa a ser do provedor, junto com a conta; antes
+  da T6 ninguém mais os registraria); sai `situacaoAoEntrar`/`registrarDono`/`apagarDadosDoAparelho`, a tela `TelaOutraConta` e os testes
   CA-151 a CA-153 (trocados pelos novos).
   - Depende de: T3, T4, T5
   - Cobre: CA-465, CA-466, CA-467, CA-468, CA-471, CB-120, CB-122

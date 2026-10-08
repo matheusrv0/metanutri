@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { criarRepositorioSugestoes, type ListasDeSugestoes, type SugestaoAlimento, type TipoRefeicao } from '@/domain/sugestoes.ts'
-import { armazenamentoLocal } from './armazenamentoLocal.ts'
+import { useArmazenamento } from './contextoArmazenamento.ts'
 
 export interface ValorSugestoes {
   readonly listas: ListasDeSugestoes
@@ -8,9 +8,10 @@ export interface ValorSugestoes {
   readonly salvar: (tipo: TipoRefeicao, lista: readonly SugestaoAlimento[]) => boolean
 }
 
-/** As listas de sugestões deste aparelho, lidas uma vez e relidas a cada gravação (CA-243). */
+/** As listas de sugestões da conta, lidas uma vez e relidas a cada gravação (CA-243). */
 export function useSugestoes(): ValorSugestoes {
-  const repositorio = useMemo(() => criarRepositorioSugestoes(armazenamentoLocal()), [])
+  const armazenamento = useArmazenamento()
+  const repositorio = useMemo(() => criarRepositorioSugestoes(armazenamento), [armazenamento])
   const [listas, setListas] = useState<ListasDeSugestoes>(() => repositorio.ler())
 
   const salvar = (tipo: TipoRefeicao, lista: readonly SugestaoAlimento[]) => {

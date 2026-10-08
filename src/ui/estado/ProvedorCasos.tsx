@@ -1,20 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { criarRepositorio, type Armazenamento, type CasoSalvo, type RepositorioCasos } from '@/domain/persistencia.ts'
+import { chaveDoEvento } from '@/domain/armazenamentoDaConta.ts'
+import { criarRepositorio, type CasoSalvo, type RepositorioCasos } from '@/domain/persistencia.ts'
+import { useArmazenamento } from './contextoArmazenamento.ts'
 import { ContextoCasos, type ValorCasos } from './contextoCasos.ts'
 
-function armazenamentoDoNavegador(): Armazenamento | null {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
-
-const ehChaveDeCaso = (chave: string | null) => chave === null || chave === 'metanutri:casos' || chave.startsWith('metanutri:caso:')
+const ehChaveDeCaso = (chave: string) => chave === 'metanutri:casos' || chave.startsWith('metanutri:caso:')
 
 /** Compartilha o repositório de casos entre a tela Casos e o Planejador. */
 export function ProvedorCasos({ children, repositorio }: { readonly children: ReactNode; readonly repositorio?: RepositorioCasos }) {
-  const [repo] = useState<RepositorioCasos>(() => repositorio ?? criarRepositorio(armazenamentoDoNavegador()))
+  // Os planos da conta que entrou (spec dados-por-conta, D-120); a árvore remonta quando ela muda.
+  const armazenamento = useArmazenamento()
+  const [repo] = useState<RepositorioCasos>(() => repositorio ?? criarRepositorio(armazenamento))
   const [versaoLista, setVersaoLista] = useState(0)
   const [mudouEmOutraAba, setMudouEmOutraAba] = useState(false)
 
@@ -24,13 +20,17 @@ export function ProvedorCasos({ children, repositorio }: { readonly children: Re
   // CB-08: o navegador avisa as outras abas quando uma delas grava; a lista se refaz sozinha.
   useEffect(() => {
     const aoMudar = (e: StorageEvent) => {
-      if (!ehChaveDeCaso(e.key)) return
+      // Chave nula: a outra aba limpou tudo. As das outras contas não mudam nada aqui.
+      if (e.key !== null) {
+        const chave = chaveDoEvento(armazenamento, e.key)
+        if (chave === null || !ehChaveDeCaso(chave)) return
+      }
       setMudouEmOutraAba(true)
       atualizar()
     }
     window.addEventListener('storage', aoMudar)
     return () => window.removeEventListener('storage', aoMudar)
-  }, [atualizar])
+  }, [atualizar, armazenamento])
 
   const salvar = useCallback(
     (registro: Pick<CasoSalvo, 'caso' | 'plano'>) => {

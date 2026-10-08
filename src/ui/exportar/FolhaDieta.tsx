@@ -18,7 +18,7 @@ import { trocasDoPlano } from '@/domain/trocas.ts'
 import type { Caso, ItemPlano, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
-import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { regraDaLinhaFina } from './linhaFina.ts'
 
 interface FolhaDietaProps {
@@ -124,7 +124,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const trocas = opcoes.trocas
     ? trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') })
     : []
-  const perfil = lerPerfil(armazenamentoLocal())
+  const perfil = lerPerfil(useArmazenamento())
   const nome = caso.nome.trim() || 'Sem nome'
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()

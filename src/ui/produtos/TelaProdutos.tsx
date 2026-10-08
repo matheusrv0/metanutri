@@ -8,12 +8,13 @@ import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
-import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { DialogoProduto } from './DialogoProduto.tsx'
 
 /** Meus produtos: o que vem de rótulo e não existe na tabela de composição. */
 export function TelaProdutos() {
-  const repositorio = useMemo(() => criarRepositorioProdutos(armazenamentoLocal()), [])
+  const armazenamento = useArmazenamento()
+  const repositorio = useMemo(() => criarRepositorioProdutos(armazenamento), [armazenamento])
   const [versao, setVersao] = useState(0)
   const [busca, setBusca] = useState('')
   const [editando, setEditando] = useState<Produto | 'novo' | null>(null)

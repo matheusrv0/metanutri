@@ -1,18 +1,12 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { criarRepositorioPacientes, type RepositorioPacientes } from '@/domain/pacientes.ts'
-import type { Armazenamento } from '@/domain/persistencia.ts'
+import { useArmazenamento } from './contextoArmazenamento.ts'
 import { ContextoPacientes, type ValorPacientes } from './contextoPacientes.ts'
 
-function armazenamentoDoNavegador(): Armazenamento | null {
-  try {
-    return globalThis.localStorage ?? null
-  } catch {
-    return null
-  }
-}
-
 export function ProvedorPacientes({ children, repositorio }: { readonly children: ReactNode; readonly repositorio?: RepositorioPacientes }) {
-  const [repo] = useState<RepositorioPacientes>(() => repositorio ?? criarRepositorioPacientes(armazenamentoDoNavegador()))
+  // Os pacientes da conta que entrou (spec dados-por-conta, D-120).
+  const armazenamento = useArmazenamento()
+  const [repo] = useState<RepositorioPacientes>(() => repositorio ?? criarRepositorioPacientes(armazenamento))
   const [versao, setVersao] = useState(0)
   const atualizar = useCallback(() => setVersao((v) => v + 1), [])
 
