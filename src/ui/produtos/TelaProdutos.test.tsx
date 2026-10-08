@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarRepositorioProdutos, porCem, produtoComoAlimento, validarProduto, type Produto } from '@/domain/produtos.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
@@ -124,5 +124,14 @@ describe('Produto pelo rótulo', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(janela.getByText(/Faltam \d+ campos do rótulo/)).toBeInTheDocument()
+  })
+
+  it('CB-124 (spec dados-na-nuvem): outra aba grava um produto e a lista desta se refaz', () => {
+    localStorage.clear()
+    render(<TelaProdutos />)
+    expect(screen.queryByText('Iogurte natural')).not.toBeInTheDocument()
+    localStorage.setItem('metanutri:produtos', JSON.stringify([iogurte]))
+    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: 'metanutri:produtos' })))
+    expect(screen.getByText('Iogurte natural')).toBeInTheDocument()
   })
 })

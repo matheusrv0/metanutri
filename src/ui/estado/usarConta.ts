@@ -252,7 +252,21 @@ export function useConta(): ValorConta {
       if (usuarioId !== null) apagarDadosDaConta(armazenamentoLocal(), usuarioId)
       const c = obterSupabase()
       if (!c) return
-      await c.auth.signOut()
+      // DP-27: sem internet, o servidor não confirma; a sessão deste navegador sai mesmo assim.
+      let falhou: boolean
+      try {
+        const resposta = await c.auth.signOut()
+        falhou = resposta?.error != null
+      } catch {
+        falhou = true
+      }
+      if (falhou) {
+        try {
+          await c.auth.signOut({ scope: 'local' })
+        } catch {
+          // a sessão local sai sem rede; se nem isso der, a página recarrega logo depois
+        }
+      }
       setSessao(null)
       setEmRecuperacao(false)
     },

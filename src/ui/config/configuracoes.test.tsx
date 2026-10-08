@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CHAVES_DE_DADOS, linhaDeResponsabilidade, montarBackup, PERFIL_VAZIO, restaurarBackup } from '@/domain/perfil.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
@@ -80,5 +80,31 @@ describe('Configurações', () => {
   it('D-128: Configurações não diz mais que os dados ficam só neste aparelho', () => {
     render(<TelaConfiguracoes />)
     expect(document.body.textContent).not.toMatch(/Fica só neste aparelho|Tudo fica neste navegador/)
+  })
+
+  it('CB-124 (spec dados-na-nuvem): outra aba grava o perfil e o campo desta se refaz', () => {
+    render(<TelaConfiguracoes />)
+    localStorage.setItem('metanutri:perfil', JSON.stringify({ ...PERFIL_VAZIO, nome: 'Maria de outra aba' }))
+    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: 'metanutri:perfil' })))
+    expect(screen.getByLabelText('Seu nome')).toHaveValue('Maria de outra aba')
+  })
+
+  it('DP-27: restaurar o backup aceita só as chaves de dados e os planos', () => {
+    const destino = new MemoriaFalsa()
+    const texto = JSON.stringify({
+      formato: 1,
+      geradoEm: '2026-10-08T00:00:00.000Z',
+      dados: {
+        'metanutri:pacientes': '[]',
+        'metanutri:caso:x': '{}',
+        'metanutri:dono': 'outra-conta',
+        'metanutri:nuvem': '{}',
+        'metanutri:mudancas': '{}',
+        'metanutri:conta:b:pacientes': '[]',
+        'metanutri:tema': 'escuro',
+      },
+    })
+    expect(restaurarBackup(destino, texto)).toEqual({ restaurados: 2, erro: null })
+    expect([...destino.dados.keys()].sort()).toEqual(['metanutri:caso:x', 'metanutri:pacientes'])
   })
 })

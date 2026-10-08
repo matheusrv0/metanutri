@@ -1,6 +1,7 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { CHAVE_MUDANCAS } from '@/domain/copiaDaConta.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
 import { nuvemFalsa, type NuvemFalsa } from '@/domain/nuvemFalsa.test-utils.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
 import { useNuvem } from './contextoNuvem.ts'
@@ -59,6 +60,32 @@ describe('ProvedorNuvem (spec dados-na-nuvem)', () => {
     act(() => screen.getByRole('button', { name: 'gravar' }).click())
     expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).toBe('[{"id":"ana","nome":"Ana"}]')
     expect(JSON.parse(localStorage.getItem(`metanutri:conta:conta-a:${CHAVE_MUDANCAS.slice('metanutri:'.length)}`) ?? '{}').alterados).toHaveProperty('pacientes/ana')
+  })
+
+  it('DP-27: ao esconder ou fechar a aba, o que falta vai na hora, e fechar com pendência avisa', async () => {
+    const nuvem = estado.nuvem as NuvemFalsa
+    render(arvore('conta-a'))
+    await screen.findByText('nuvem: pronta')
+    const naoAvisa = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(naoAvisa)
+    expect(naoAvisa.defaultPrevented).toBe(false)
+
+    act(() => screen.getByRole('button', { name: 'gravar' }).click())
+    const avisa = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(avisa)
+    expect(avisa.defaultPrevented).toBe(true)
+
+    act(() => void window.dispatchEvent(new Event('pagehide')))
+    await waitFor(() => expect(nuvem.linhas.has('conta-a')).toBe(true))
+  })
+
+  it('CB-124: outra aba grava os produtos e a busca daqui passa a conhecer o produto novo', async () => {
+    render(arvore('conta-a'))
+    await screen.findByText('nuvem: pronta')
+    const produto = { id: 900123, nome: 'Granola da outra aba', marca: '', codigoBarras: '', porcaoG: 40, medidaCaseira: '', porPorcao: {}, criadoEm: '2026-10-08' }
+    localStorage.setItem('metanutri:conta:conta-a:produtos', JSON.stringify([produto]))
+    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: 'metanutri:conta:conta-a:produtos' })))
+    expect(buscarAlimento(900123)?.descricao).toBe('Granola da outra aba')
   })
 
   it('DP-14: sem o cliente da nuvem, nada muda', () => {

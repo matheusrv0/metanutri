@@ -70,23 +70,41 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       const chave = conta.chaveOriginal(evento.key)
       if (chave === CHAVE_NUVEM) {
         if (saiuDaConta(evento.newValue)) sincronia.saiuEmOutraAba()
-      } else if (chave !== null && ehChaveDaNuvem(chave)) sincronia.mudou()
+      } else if (chave !== null && ehChaveDaNuvem(chave)) {
+        sincronia.mudou()
+        // CB-124: os produtos da outra aba entram na busca daqui.
+        if (chave === 'metanutri:produtos') trocarDadosEmMemoria(conta)
+      }
+    }
+    // DP-27: ao esconder ou fechar a aba, o que falta vai na hora; fechar com pendência avisa.
+    const aoSairDaAba = () => {
+      if (sincronia.estado.pendente) void sincronia.salvarAgora()
+    }
+    const aoFechar = (evento: BeforeUnloadEvent) => {
+      if (!sincronia.estado.pendente) return
+      evento.preventDefault()
+      evento.returnValue = ''
     }
     // CB-127: a pessoa voltou para esta aba; antes de deixar editar, confere se outro aparelho salvou (DP-20).
     const aoVoltar = () => void sincronia.conferir(true)
     const aoMudarVisibilidade = () => {
       if (document.visibilityState === 'visible') aoVoltar()
+      else aoSairDaAba()
     }
     window.addEventListener('online', aoConectar)
     window.addEventListener('offline', aoDesconectar)
     window.addEventListener('storage', aoMudarEmOutraAba)
     window.addEventListener('focus', aoVoltar)
+    window.addEventListener('pagehide', aoSairDaAba)
+    window.addEventListener('beforeunload', aoFechar)
     document.addEventListener('visibilitychange', aoMudarVisibilidade)
     return () => {
       window.removeEventListener('online', aoConectar)
       window.removeEventListener('offline', aoDesconectar)
       window.removeEventListener('storage', aoMudarEmOutraAba)
       window.removeEventListener('focus', aoVoltar)
+      window.removeEventListener('pagehide', aoSairDaAba)
+      window.removeEventListener('beforeunload', aoFechar)
       document.removeEventListener('visibilitychange', aoMudarVisibilidade)
       sincronia.desligar()
     }

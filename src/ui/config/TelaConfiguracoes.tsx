@@ -1,5 +1,5 @@
 import { Download, Image, ShieldCheck, Upload } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { CHAVES_DE_DADOS, gravarPerfil, lerPerfil, linhaDeResponsabilidade, montarBackup, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -8,6 +8,8 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { baixarBlob } from '../exportar/baixar.ts'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useNuvem } from '../estado/contextoNuvem.ts'
+import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 
 /**
  * Perfil, marca nos documentos e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
@@ -20,6 +22,10 @@ export function TelaConfiguracoes() {
   const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento))
   const [mensagem, setMensagem] = useState<string | null>(null)
   const arquivoRef = useRef<HTMLInputElement | null>(null)
+  const naNuvem = useNuvem() !== null
+  // CB-124: outra aba da conta gravou o perfil; os campos se refazem.
+  const relerPerfil = useCallback(() => setPerfil(lerPerfil(armazenamento)), [armazenamento])
+  useOutraAbaGravou('metanutri:perfil', relerPerfil)
 
   const alterar = (mudanca: Partial<Perfil>) => {
     const novo = { ...perfil, ...mudanca }
@@ -53,7 +59,9 @@ export function TelaConfiguracoes() {
     const leitor = new FileReader()
     leitor.onload = () => {
       const { restaurados, erro } = restaurarBackup(armazenamento, String(leitor.result ?? ''))
-      setMensagem(erro ?? `${restaurados} ${restaurados === 1 ? 'conjunto restaurado' : 'conjuntos restaurados'}. Recarregue a página para ver.`)
+      // Com a nuvem, o que foi restaurado sobe e vale para a conta toda (spec dados-na-nuvem, DP-27).
+      const vale = naNuvem ? ' Vale para todos os aparelhos da sua conta.' : ''
+      setMensagem(erro ?? `${restaurados} ${restaurados === 1 ? 'conjunto restaurado' : 'conjuntos restaurados'}.${vale} Recarregue a página para ver.`)
     }
     leitor.readAsText(arquivo)
   }

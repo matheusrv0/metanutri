@@ -1,5 +1,5 @@
 import { Barcode, Pencil, Plus, Trash } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { criarRepositorioProdutos, produtoComoAlimento, type Produto } from '@/domain/produtos.ts'
 import { registrarProdutos } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -9,6 +9,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 import { DialogoProduto } from './DialogoProduto.tsx'
 
 /** Meus produtos: o que vem de rótulo e não existe na tabela de composição. */
@@ -28,7 +29,9 @@ export function TelaProdutos() {
     return repositorio.listar().filter((p) => (termo === '' ? true : `${p.nome} ${p.marca}`.toLowerCase().includes(termo)))
   }, [repositorio, versao, busca])
 
-  const atualizar = () => setVersao((v) => v + 1)
+  const atualizar = useCallback(() => setVersao((v) => v + 1), [])
+  // CB-124: outra aba da conta gravou produtos; a lista se refaz.
+  useOutraAbaGravou('metanutri:produtos', atualizar)
 
   const excluir = () => {
     if (!excluindo) return

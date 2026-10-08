@@ -185,6 +185,19 @@ describe('useConta', () => {
       expect(Object.keys(localStorage).filter((chave) => chave.startsWith('metanutri:conta:u1:'))).toEqual([])
     })
 
+    it('DP-27: sem internet, o servidor não confirma a saída e a sessão deste navegador é apagada mesmo assim', async () => {
+      comSessao()
+      auth.signOut.mockResolvedValueOnce({ error: { message: 'Failed to fetch' } } as never)
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      await act(async () => {
+        await result.current.sair()
+      })
+      expect(auth.signOut).toHaveBeenCalledTimes(2)
+      expect(auth.signOut).toHaveBeenLastCalledWith({ scope: 'local' })
+      expect(result.current.sessao).toBeNull()
+    })
+
     it('DP-10: sem sessão, sair não apaga nada', async () => {
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.carregando).toBe(false))

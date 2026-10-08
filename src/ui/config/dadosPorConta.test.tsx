@@ -5,6 +5,7 @@ import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
 import type { Backup } from '@/domain/perfil.ts'
 import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { ContextoArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { TelaConfiguracoes } from './TelaConfiguracoes.tsx'
 
 const nuvem = vi.hoisted(() => ({ baixado: null as Blob | null }))
@@ -58,6 +59,21 @@ describe('backup só da conta que está dentro (spec dados-por-conta, D-125)', (
     expect(localStorage.getItem('metanutri:conta:conta-b:modelos')).toBe('[{"id":"m1"}]')
     expect(localStorage.getItem('metanutri:conta:conta-a:modelos')).toBeNull()
     expect(localStorage.getItem('metanutri:modelos')).toBeNull()
+  })
+
+  it('DP-27 (spec dados-na-nuvem): com a nuvem, restaurar diz que vale para todos os aparelhos da conta', async () => {
+    const nuvem: ValorNuvem = {
+      estado: { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false },
+      salvarAgora: async () => true,
+      reduzir: () => undefined,
+      parar: () => undefined,
+    }
+    const { container } = render(<ContextoNuvem.Provider value={nuvem}>{naConta('conta-b', <TelaConfiguracoes />)}</ContextoNuvem.Provider>)
+    const arquivo = new File([JSON.stringify(backup({ 'metanutri:modelos': '[{"id":"m1"}]' }))], 'backup.json', { type: 'application/json' })
+    const entrada = container.querySelector<HTMLInputElement>('input[accept="application/json"]')
+    if (!entrada) throw new Error('campo do arquivo ausente')
+    await userEvent.setup().upload(entrada, arquivo)
+    expect(await screen.findByText('1 conjunto restaurado. Vale para todos os aparelhos da sua conta. Recarregue a página para ver.')).toBeInTheDocument()
   })
 
   it('o perfil digitado em Configurações fica na conta', async () => {

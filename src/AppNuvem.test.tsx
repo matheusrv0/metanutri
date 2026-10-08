@@ -180,10 +180,12 @@ describe('salvar sozinho (D-129)', () => {
 
     act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
     expect(screen.getByRole('heading', { level: 1, name: 'Paciente sem nome' })).toBeInTheDocument()
-    expect(screen.getByText('Salvando…')).toBeInTheDocument()
+    // DP-27: "Salvando…" aparece, mas o leitor de tela só anuncia o "Salvo".
+    expect(screen.getByText('Salvando…')).toHaveAttribute('aria-hidden', 'true')
 
     await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
-    expect(screen.getByText('Salvo')).toBeInTheDocument()
+    expect(screen.getByText('Salvo')).not.toHaveAttribute('aria-hidden')
+    expect(screen.getByRole('status')).toHaveTextContent('Salvo')
     expect(pacientesNaNuvem(nuvem)).toEqual([''])
   })
 

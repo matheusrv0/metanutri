@@ -149,7 +149,10 @@ export function restaurarBackup(armazenamento: Armazenamento | null, texto: stri
     }
     let restaurados = 0
     for (const [chave, valor] of Object.entries(backup.dados)) {
-      if (!chave.startsWith('metanutri:') || typeof valor !== 'string') continue
+      // Só as chaves de dados e os planos (spec dados-na-nuvem, DP-27): dono, marcas da nuvem, outras contas e
+      // o que é do aparelho, vindos num arquivo, não passam.
+      const ehDado = (CHAVES_DE_DADOS as readonly string[]).includes(chave) || chave.startsWith('metanutri:caso:')
+      if (!ehDado || typeof valor !== 'string') continue
       armazenamento?.setItem(chave, chave === CHAVE_ACOMPANHAMENTOS ? semMudancasPendentes(valor) : valor)
       restaurados += 1
     }

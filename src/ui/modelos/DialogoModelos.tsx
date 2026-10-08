@@ -1,5 +1,5 @@
 import { BookmarkPlus, LayoutTemplate, Trash } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { clonarPlano, criarRepositorioModelos, type ModeloPlano } from '@/domain/modelos.ts'
 import type { Plano } from '@/domain/tipos.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
@@ -7,6 +7,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 
 interface DialogoModelosProps {
   readonly aberto: boolean
@@ -32,6 +33,9 @@ export function DialogoModelos({ aberto, plano, aoUsar, aoFechar }: DialogoModel
     void versao
     return repositorio.listar()
   }, [repositorio, versao])
+  // CB-124: outra aba da conta gravou modelos; a lista se refaz.
+  const reler = useCallback(() => setVersao((v) => v + 1), [])
+  useOutraAbaGravou('metanutri:modelos', reler)
 
   const salvar = () => {
     if (nome.trim() === '') return
