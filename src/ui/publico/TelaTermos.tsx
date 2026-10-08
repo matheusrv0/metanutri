@@ -27,7 +27,7 @@ export function TelaTermos() {
       <h2>Conta</h2>
       <ul>
         <li>Cada conta é de uma pessoa. Não compartilhe a senha.</li>
-        <li>Os planos ficam salvos no aparelho. Guarde o backup, em Configurações, para não depender de um só aparelho.</li>
+        <li>Os planos ficam na nuvem, presos à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.</li>
         <li>Se outra conta entrar no mesmo aparelho, ela não vê os seus dados.</li>
       </ul>
 

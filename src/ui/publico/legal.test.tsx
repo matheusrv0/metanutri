@@ -46,18 +46,26 @@ describe('documentos legais', () => {
     expect(texto).toContain('Fulana de Tal')
     expect(texto).toContain('contato@exemplo.com')
     expect(texto).toContain('art. 18')
-    expect(texto).toContain('neste aparelho')
+    expect(texto).toContain('presos à conta')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
     expect(texto).toContain('8 de outubro de 2026')
   })
 
-  it('D-124 (spec dados-por-conta): a política diz que os dados ficam separados por conta e como apagar os seus', () => {
+  it('D-128 e D-131 (spec dados-na-nuvem): a política diz que os dados ficam na nuvem, presos à conta, e que a cópia do navegador sai ao sair', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
-    expect(texto).toContain('Os planos e as fichas de paciente ficam salvos neste aparelho, no navegador de quem usa, separados por conta.')
-    expect(texto).toContain('Os seus dados neste aparelho somem quando você usa "Apagar tudo", em Configurações, ou "Sair e apagar".')
-    expect(texto).not.toContain('O que está neste aparelho some')
+    expect(texto).toContain('Os planos, as fichas de paciente e as configurações ficam na nuvem, presos à conta.')
+    expect(texto).toContain('Enquanto a pessoa está dentro, o navegador guarda uma cópia de trabalho; ao sair da conta, ela é apagada.')
+    expect(texto).toContain('A cópia de trabalho no navegador some quando você sai da conta.')
+    expect(texto).not.toMatch(/Apagar tudo|Sair e apagar|ficam salvos neste aparelho|cópia na nuvem/)
+  })
+
+  it('D-128 (spec dados-na-nuvem): os termos dizem que os planos ficam na nuvem e que sem internet não dá para editar', () => {
+    render(<TelaTermos />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('Os planos ficam na nuvem, presos à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.')
+    expect(texto).not.toContain('Os planos ficam salvos no aparelho')
   })
 
   it('D-122 (spec dados-por-conta): outra conta no mesmo aparelho não vê os seus dados, e os termos não mandam sair nem apagar', () => {

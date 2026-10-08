@@ -55,7 +55,7 @@ export function TelaNegocio({ negocio }: { readonly negocio: ValorNegocio }) {
         </>
       ) : null}
       <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-1 text-sm text-muted-foreground">
-        <span>Planos e pacientes ficam no aparelho de cada nutricionista e não aparecem aqui.</span>
+        <span>Planos e pacientes são de cada nutricionista e não aparecem aqui.</span>
         <span>
           Taxas, estornos e repasses:{' '}
           <a

@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { TelaAjuda } from './TelaAjuda.tsx'
+
+const NUVEM_PRONTA: ValorNuvem = {
+  estado: { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0 },
+  salvarAgora: async () => true,
+  reduzir: () => undefined,
+  parar: () => undefined,
+}
 
 describe('Ajuda', () => {
   it('mostra os cinco primeiros passos em ordem', () => {
@@ -33,5 +41,15 @@ describe('Ajuda', () => {
     render(<TelaAjuda aoIrPara={aoIrPara} />)
     await userEvent.setup().click(screen.getAllByRole('button', { name: 'Ir' })[0] as HTMLElement)
     expect(aoIrPara).toHaveBeenCalledWith('pacientes')
+  })
+
+  it('D-128 (spec dados-na-nuvem): com a conta na nuvem, a Ajuda não diz que tudo fica só neste navegador', () => {
+    render(
+      <ContextoNuvem.Provider value={NUVEM_PRONTA}>
+        <TelaAjuda aoIrPara={vi.fn()} />
+      </ContextoNuvem.Provider>,
+    )
+    expect(screen.getByText('Os dados ficam na nuvem, presos à sua conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.')).toBeInTheDocument()
+    expect(screen.queryByText(/só neste navegador/)).not.toBeInTheDocument()
   })
 })

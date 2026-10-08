@@ -11,6 +11,12 @@ describe('peças das telas de conta', () => {
     expect(screen.getByText('2 pacientes ativos')).toBeInTheDocument()
   })
 
+  it('D-128 (spec dados-na-nuvem): o lado do plano diz que os planos ficam na nuvem, presos à conta', () => {
+    render(<LadoDoPlano plano={null} ciclo="mensal" />)
+    expect(screen.getByText('Seus planos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(screen.queryByText('Seus planos ficam salvos no aparelho e funcionam sem internet depois do primeiro acesso.')).not.toBeInTheDocument()
+  })
+
   it('com o Solo anual, mostra o preço do ano e o link para trocar', async () => {
     const aoTrocarPlano = vi.fn()
     render(<LadoDoPlano plano="solo" ciclo="anual" aoTrocarPlano={aoTrocarPlano} />)

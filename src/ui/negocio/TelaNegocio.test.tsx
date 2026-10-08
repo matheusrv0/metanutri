@@ -110,7 +110,7 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
 
   it('CA-364: o rodapé diz o que não aparece e leva ao Mercado Pago em outra aba', () => {
     render(<TelaNegocio negocio={negocioFalso()} />)
-    expect(screen.getByText('Planos e pacientes ficam no aparelho de cada nutricionista e não aparecem aqui.')).toBeInTheDocument()
+    expect(screen.getByText('Planos e pacientes são de cada nutricionista e não aparecem aqui.')).toBeInTheDocument()
     const link = screen.getByRole('link', { name: 'Abrir o Mercado Pago' })
     expect(link).toHaveAttribute('href', URL_MERCADO_PAGO)
     expect(link).toHaveAttribute('target', '_blank')

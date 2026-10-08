@@ -40,9 +40,12 @@ export function TelaPrivacidade() {
 
       <h2>Onde os dados ficam</h2>
       <ul>
-        <li>Os planos e as fichas de paciente ficam salvos neste aparelho, no navegador de quem usa, separados por conta.</li>
         <li>
-          A conta, a assinatura, a cópia na nuvem e as missões do link do paciente ficam na Supabase, que hospeda o banco de dados do MetaNutri. Os
+          Os planos, as fichas de paciente e as configurações ficam na nuvem, presos à conta. Enquanto a pessoa está dentro, o navegador guarda uma
+          cópia de trabalho; ao sair da conta, ela é apagada.
+        </li>
+        <li>
+          A conta, a assinatura, os dados da conta e as missões do link do paciente ficam na Supabase, que hospeda o banco de dados do MetaNutri. Os
           servidores podem ficar fora do Brasil.
         </li>
         <li>
@@ -59,7 +62,7 @@ export function TelaPrivacidade() {
       <h2>Por quanto tempo</h2>
       <p>
         Enquanto a conta existir. Depois do pedido de exclusão, os dados na nuvem são apagados em até {PRAZO_EXCLUSAO_DIAS} dias, salvo obrigação legal de
-        guardar. Os seus dados neste aparelho somem quando você usa "Apagar tudo", em Configurações, ou "Sair e apagar".
+        guardar. A cópia de trabalho no navegador some quando você sai da conta.
       </p>
 
       <h2>Seus direitos</h2>

@@ -48,7 +48,7 @@ export function LadoDoPlano({ plano, ciclo, aoTrocarPlano }: LadoDoPlanoProps) {
           Trocar de plano
         </button>
       ) : (
-        <p className="text-xs text-muted-foreground">Seus planos ficam salvos no aparelho e funcionam sem internet depois do primeiro acesso.</p>
+        <p className="text-xs text-muted-foreground">Seus planos ficam salvos na nuvem, presos à sua conta.</p>
       )}
     </>
   )

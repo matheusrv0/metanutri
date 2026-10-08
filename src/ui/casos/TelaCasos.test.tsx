@@ -1,6 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
+import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
 import { AvisoPrimeiroAcesso, CHAVE_AVISO_VISTO } from './AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './TelaCasos.tsx'
@@ -131,6 +132,13 @@ describe('Tela Planos', () => {
   })
 })
 
+const NUVEM_PRONTA: ValorNuvem = {
+  estado: { fase: 'pronta', pendente: false, salvando: false, trava: null, reduzindo: false, geracao: 0 },
+  salvarAgora: async () => true,
+  reduzir: () => undefined,
+  parar: () => undefined,
+}
+
 describe('Aviso de primeiro acesso', () => {
   beforeEach(() => localStorage.clear())
 
@@ -148,5 +156,16 @@ describe('Aviso de primeiro acesso', () => {
     unmount()
     render(<AvisoPrimeiroAcesso />)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('D-128 (spec dados-na-nuvem): com a conta na nuvem, o aviso diz que os casos ficam na nuvem, presos à conta', () => {
+    render(
+      <ContextoNuvem.Provider value={NUVEM_PRONTA}>
+        <AvisoPrimeiroAcesso />
+      </ContextoNuvem.Provider>,
+    )
+    const aviso = screen.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })
+    expect(within(aviso).getByText('Os casos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(within(aviso).queryByText(/só neste aparelho|Nada é enviado/)).not.toBeInTheDocument()
   })
 })

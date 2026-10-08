@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { useNuvem } from '../estado/contextoNuvem.ts'
 
 interface TelaAjudaProps {
   readonly aoIrPara: (tela: 'painel' | 'pacientes' | 'casos' | 'produtos' | 'config' | 'fontes') => void
@@ -26,6 +27,8 @@ const REFERENCIAS = [
 
 /** Primeiros passos e de onde vem cada número. */
 export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
+  // Com conta, os dados ficam na nuvem (spec dados-na-nuvem, D-128); no modo local, só no navegador.
+  const nuvem = useNuvem()
   return (
     <div className="flex flex-col gap-6">
       <Card className="gap-4">
@@ -104,7 +107,11 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
           <li>Açúcares e gordura saturada só existem em produto que você cadastra pelo rótulo.</li>
           <li>Os números de energia, dobras e ganho de peso ainda não foram conferidos por nutricionista.</li>
           <li>A prescrição de dieta é privativa de nutricionista com registro no CRN, pela Lei 8.234/1991.</li>
-          <li>Tudo fica guardado só neste navegador. Faça backup em Configurações antes de trocar de aparelho.</li>
+          <li>
+            {nuvem === null
+              ? 'Tudo fica guardado só neste navegador. Faça backup em Configurações antes de trocar de aparelho.'
+              : 'Os dados ficam na nuvem, presos à sua conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.'}
+          </li>
         </ul>
         <button
           type="button"

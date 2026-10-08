@@ -143,6 +143,14 @@ describe('o link do paciente (CB-126)', () => {
   })
 })
 
+describe('textos do D-128', () => {
+  it('D-128: com a conta na nuvem, o menu não diz que os planos ficam só neste aparelho', async () => {
+    render(tela())
+    await screen.findByText('Salvo')
+    expect(screen.queryByText('Planos salvos só neste aparelho')).not.toBeInTheDocument()
+  })
+})
+
 describe('salvar sozinho (D-129)', () => {
   afterEach(() => {
     vi.useRealTimers()

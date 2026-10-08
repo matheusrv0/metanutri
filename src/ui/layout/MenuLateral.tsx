@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCasos } from '../estado/contextoCasos.ts'
+import { useNuvem } from '../estado/contextoNuvem.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import type { Rota } from '../navegacao.ts'
@@ -55,6 +56,8 @@ function Secao({ titulo, children }: { readonly titulo: string; readonly childre
  */
 export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, aprovacoesPendentes }: MenuLateralProps) {
   const { casos, avisoArmazenamento } = useCasos()
+  // Com conta, os planos estão na nuvem (spec dados-na-nuvem, D-128): a linha "só neste aparelho" é do modo local.
+  const naNuvem = useNuvem() !== null
   const ir = (r: Rota) => {
     navegar(r)
     aoEscolher?.()
@@ -152,7 +155,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             {avisoArmazenamento}
           </p>
-        ) : (
+        ) : naNuvem ? null : (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <HardDrive className="size-4 shrink-0" aria-hidden="true" />
             Planos salvos só neste aparelho
