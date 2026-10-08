@@ -181,6 +181,8 @@ export interface OpcoesSincronia {
   readonly prazoMs?: number
   /** A nuvem mudou a cópia de trabalho (o que fica em memória troca junto, DP-18). */
   readonly aoTrazer?: () => void
+  /** DP-27: a trava entre abas da mesma conta (`navigator.locks`), para uma aba ir à nuvem por vez. */
+  readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T>
 }
 
 export interface Sincronia {
@@ -283,9 +285,11 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     cancelarConferencia = null
   }
 
-  /** Põe a ida à nuvem na fila desta aba: espera a anterior terminar, dê certo ou não. */
+  /** Põe a ida à nuvem na fila desta aba (e na trava entre abas, quando há): espera a anterior terminar. */
+  const trancar = opcoes.trancar ?? (<T,>(fazer: () => Promise<T>): Promise<T> => fazer())
   const exclusivo = <T,>(fazer: () => Promise<T>): Promise<T> => {
-    const vez = fila.then(fazer, fazer)
+    const naVez = () => trancar(fazer)
+    const vez = fila.then(naVez, naVez)
     fila = vez.catch(() => undefined)
     return vez
   }
@@ -419,11 +423,12 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     const atual = situacao()
     const itens = leitura.copia === null ? 0 : itensDaCopia(leitura.copia)
     const mudancas = Math.max(atual.mudancas, atual.salvas + 1)
+    // Cada ramo grava a situação inteira de novo: a marca de saída de uma sessão anterior não fica (DP-27).
     if (subir !== null) gravarSituacao({ versao: leitura.versao, itens, mudancas, salvas: atual.salvas })
     else if (!localParcial) {
       semRegistro = false
       gravarSituacao({ versao: leitura.versao, itens, mudancas: atual.mudancas, salvas: atual.mudancas })
-    }
+    } else gravarSituacao({ versao: atual.versao, itens: atual.itens, mudancas: atual.mudancas, salvas: atual.salvas })
     definir({ fase: 'pronta', pendente: temPendencia() })
     agendarConferencia()
     if (subir !== null) await rodadaDeSalvar({ copia: subir, ate: mudancas, lembrada: false })
@@ -458,6 +463,12 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     let envio: Envio | null = inicial ?? null
     for (let volta = 0; volta < VOLTAS; volta += 1) {
       const antes = situacao()
+      // DP-27: a conta saiu em outra aba (a marca chegou antes do aviso): nada daqui sobe.
+      if (antes.saiu === true) {
+        parada = true
+        definir({ salvando: false })
+        return false
+      }
       if (envio === null) {
         // Da cópia daqui, parcial, nada sai (DP-23).
         if (localParcial) {
@@ -469,13 +480,23 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
         envio = { copia: montarCopia(armazenamento, agora()), ate: antes.mudancas, lembrada }
       }
       const { copia } = envio
-      // DP-11: cópia sem item e sem lápide, quando a nuvem tinha itens, é o espaço apagado por fora.
+      // DP-11: cópia sem item e sem lápide, quando a nuvem tinha itens, é o espaço apagado por fora. Em vez
+      // de ficar em "Salvando…", abre de novo: a cópia da nuvem volta para cá (DP-27).
       if (antes.itens > 0 && copiaSemItens(copia)) {
         semRegistro ||= envio.lembrada
-        definir({ salvando: false })
+        definir({ salvando: false, fase: 'abrindo' })
+        void abrir()
         return false
       }
       const tamanho = JSON.stringify(copia).length
+      // DP-27: com a trava de tamanho, só vale mandar de novo quando a cópia diminui; crescer trava de novo.
+      if (estado.trava === 'grande-demais' && ultimaRecusada !== null && tamanho >= ultimaRecusada) {
+        semRegistro ||= envio.lembrada
+        const cresceu = tamanho > ultimaRecusada
+        ultimaRecusada = tamanho
+        definir({ salvando: false, pendente: true, reduzindo: estado.reduzindo && !cresceu })
+        return false
+      }
 
       // DP-24: depois de uma falha no meio do caminho, a gravação pode ter chegado. Antes de mandar de
       // novo, confere a versão; se mudou, junta em vez de mandar por cima.

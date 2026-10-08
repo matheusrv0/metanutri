@@ -55,7 +55,11 @@ let gerado = 0
 const gerarId = () => `id-${(gerado += 1)}`
 
 /** Abre o MetaNutri num navegador: o motor da conta e os repositórios por cima do armazenamento observado. */
-function abrirAparelho(nuvem: NuvemFalsa, navegador = new Navegador(), opcoes: { readonly sujo?: boolean; readonly conectado?: () => boolean } = {}): Aparelho {
+function abrirAparelho(
+  nuvem: NuvemFalsa,
+  navegador = new Navegador(),
+  opcoes: { readonly sujo?: boolean; readonly conectado?: () => boolean; readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T> } = {},
+): Aparelho {
   const conta = armazenamentoDaConta(navegador, 'conta-a')
   const trazidas = { vezes: 0 }
   const sincronia = criarSincronia({
@@ -596,9 +600,12 @@ describe('cópia grande demais (CB-123)', () => {
     await salvar()
     expect(a.sincronia.estado).toMatchObject({ trava: 'grande-demais', reduzindo: true })
 
+    // DP-27: crescendo, nem é mandada: a trava volta sem ir à nuvem.
+    const pedidos = nuvem.pedidos.length
     a.pacientes.criar('Fabio com um nome bem comprido para crescer a cópia')
     await salvar()
     expect(a.sincronia.estado).toMatchObject({ trava: 'grande-demais', reduzindo: false })
+    expect(nuvem.pedidos.length).toBe(pedidos)
 
     a.sincronia.reduzir()
     for (const p of a.pacientes.listar().slice(0, 4)) a.pacientes.excluir(p.id)
@@ -649,6 +656,52 @@ describe('sair (D-131)', () => {
     contarMudanca(armazenamentoDaConta(navegador, 'conta-a'))
     a.sincronia.mudou()
     await salvar()
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
+    // Em vez de ficar em "Salvando…", abre de novo: a cópia da nuvem volta para cá.
+    await vi.advanceTimersByTimeAsync(0)
+    expect(a.sincronia.estado).toMatchObject({ fase: 'pronta', pendente: false, salvando: false })
+    expect(nomesDosPacientes(a)).toEqual(['Ana'])
+  })
+
+  it('DP-27: a conta saiu em outra aba (a marca chegou antes do aviso): nada desta aba vai para a nuvem', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    const chave = 'metanutri:conta:conta-a:nuvem'
+    a.navegador.setItem(chave, JSON.stringify({ ...JSON.parse(a.navegador.getItem(chave) ?? '{}'), saiu: true }))
+    await salvar()
+    expect(nuvem.linhas.has('conta-a')).toBe(false)
+  })
+})
+
+describe('marca de saída que ficou (DP-27)', () => {
+  it('a marca de saída de uma sessão anterior (que não chegou a ser apagada) não impede a próxima de salvar', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    navegador.setItem('metanutri:conta:conta-a:nuvem', JSON.stringify({ versao: null, mudancas: 0, salvas: 0, itens: 0, saiu: true }))
+    const a = abrirAparelho(nuvem, navegador)
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    await salvar()
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
+  })
+})
+
+describe('uma aba envia por vez (DP-27)', () => {
+  it('toda ida à nuvem passa pela trava entre abas, quando o navegador tem uma', async () => {
+    const nuvem = nuvemFalsa()
+    const trancadas: string[] = []
+    const trancar = <T,>(fazer: () => Promise<T>): Promise<T> => {
+      trancadas.push('vez')
+      return fazer()
+    }
+    const a = abrirAparelho(nuvem, new Navegador(), { trancar })
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    await salvar()
+    await a.sincronia.conferir(false)
+    expect(trancadas).toHaveLength(3)
     expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
   })
 })

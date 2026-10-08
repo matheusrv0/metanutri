@@ -16,6 +16,13 @@ interface ProvedorNuvemProps {
 
 const semAssinatura = () => () => undefined
 
+/** DP-27: com `navigator.locks`, uma aba da conta vai à nuvem por vez; sem ele, cada aba na sua fila. */
+function travaEntreAbas(usuarioId: string): { readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T> } {
+  const travas = globalThis.navigator?.locks
+  if (travas === undefined) return {}
+  return { trancar: <T,>(fazer: () => Promise<T>): Promise<T> => travas.request(`metanutri:nuvem:${usuarioId}`, fazer) }
+}
+
 /**
  * Os dados da conta na nuvem (spec dados-na-nuvem, D-128): liga o motor de sincronia da conta que
  * entrou e dá à árvore o espaço da conta observado, por onde toda gravação passa (DP-2). Fica dentro
@@ -42,6 +49,7 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       conectado: () => globalThis.navigator.onLine !== false,
       // DP-18: a nuvem trouxe mudança: os produtos da busca e a reserva das sugestões ocultas trocam junto.
       aoTrazer: () => trocarDadosEmMemoria(conta),
+      ...travaEntreAbas(usuarioId),
     })
   }, [cliente, conta, usuarioId, migracao])
 
