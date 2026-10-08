@@ -4,8 +4,6 @@ import '@fontsource-variable/manrope'
 // Só o nome da marca usa esta (kit de 27/09/2026); embutida, como as outras, porque o app roda offline.
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
-import { criarRepositorioProdutos, produtoComoAlimento } from './domain/produtos.ts'
-import { registrarProdutos } from './domain/tabelas.ts'
 import { App } from './App.tsx'
 import { AvisoMoldura } from './ui/AvisoMoldura.tsx'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
@@ -15,13 +13,6 @@ import { tirarDestino } from './ui/fluxoConta.ts'
 import { escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
-
-// Produtos cadastrados pelo rótulo entram na busca desde a primeira tela.
-try {
-  registrarProdutos(criarRepositorioProdutos(globalThis.localStorage ?? null).listar().map(produtoComoAlimento))
-} catch {
-  // navegador sem armazenamento: o app segue só com a tabela
-}
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')

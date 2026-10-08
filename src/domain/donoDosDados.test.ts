@@ -1,14 +1,6 @@
 import { CHAVE_AVISO_VISTO } from '@/ui/casos/AvisoPrimeiroAcesso.tsx'
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
-import {
-  CHAVE_DONO,
-  OUTRAS_CHAVES_DA_PESSOA,
-  apagarDadosDaConta,
-  apagarDadosDoAparelho,
-  migrarDadosSemConta,
-  registrarDono,
-  situacaoAoEntrar,
-} from './donoDosDados.ts'
+import { CHAVE_DONO, OUTRAS_CHAVES_DA_PESSOA, apagarDadosDaConta, migrarDadosSemConta } from './donoDosDados.ts'
 import type { ArmazenamentoListavel } from './persistencia.ts'
 
 function memoria(inicial: Record<string, string> = {}): ArmazenamentoListavel & { readonly dados: Map<string, string> } {
@@ -24,40 +16,6 @@ function memoria(inicial: Record<string, string> = {}): ArmazenamentoListavel & 
     removeItem: (c) => void dados.delete(c),
   }
 }
-
-describe('dono dos dados do aparelho (spec estilo-spora, D-24)', () => {
-  it('CA-151: aparelho sem dono é adotado pela primeira conta', () => {
-    const arm = memoria({ 'metanutri:casos': '["a"]' })
-    expect(situacaoAoEntrar(arm, 'conta-1')).toBe('adotar')
-    registrarDono(arm, 'conta-1')
-    expect(arm.dados.get(CHAVE_DONO)).toBe('conta-1')
-    expect(situacaoAoEntrar(arm, 'conta-1')).toBe('mesmo')
-  })
-
-  it('CA-152: outra conta no mesmo aparelho é conflito', () => {
-    const arm = memoria({ [CHAVE_DONO]: 'conta-1' })
-    expect(situacaoAoEntrar(arm, 'conta-2')).toBe('conflito')
-  })
-
-  it('CA-153: apagar leva planos, pacientes, acompanhamentos e o dono', () => {
-    const arm = memoria({
-      [CHAVE_DONO]: 'conta-1',
-      'metanutri:casos': '["x"]',
-      'metanutri:caso:x': '{}',
-      'metanutri:pacientes': '[]',
-      'metanutri:acompanhamentos': '[]',
-      'metanutri:tema': 'escuro',
-    })
-    apagarDadosDoAparelho(arm)
-    expect([...arm.dados.keys()]).toEqual(['metanutri:tema'])
-  })
-
-  it('sem armazenamento, ninguém briga e nada quebra', () => {
-    expect(situacaoAoEntrar(null, 'conta-1')).toBe('adotar')
-    registrarDono(null, 'conta-1')
-    apagarDadosDoAparelho(null)
-  })
-})
 
 /** Um aparelho com os dados de antes desta mudança, sem prefixo, e o que é do aparelho. */
 const DADOS_ANTIGOS = {

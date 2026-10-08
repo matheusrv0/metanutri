@@ -1,11 +1,12 @@
 // De quem são os dados guardados neste aparelho.
 //
-// Antes (spec estilo-spora, D-24), o aparelho tinha um conjunto só de dados, com um dono.
-// Agora cada conta tem o seu espaço (spec dados-por-conta, D-120), e o dono marca a quem
-// pertencem os dados sem prefixo, os de antes desta mudança (D-123).
+// Antes (spec estilo-spora, D-24), o aparelho tinha um conjunto só de dados, com um dono, e
+// outra conta caía na tela "Este aparelho tem dados de outra conta". Agora cada conta tem o
+// seu espaço (spec dados-por-conta, D-120 e D-122), e o dono marca a quem pertencem os dados
+// sem prefixo, os de antes desta mudança (D-123).
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVES_DE_DADOS, expandirChaves } from './perfil.ts'
-import type { Armazenamento, ArmazenamentoListavel } from './persistencia.ts'
+import type { ArmazenamentoListavel } from './persistencia.ts'
 
 export const CHAVE_DONO = 'metanutri:dono'
 
@@ -16,38 +17,6 @@ export const CHAVE_DONO = 'metanutri:dono'
 export const OUTRAS_CHAVES_DA_PESSOA = ['metanutri:aviso-inicial-visto', 'metanutri:frequentes'] as const
 
 const PREFIXO_CASO = 'metanutri:caso:'
-
-export type SituacaoAoEntrar = 'mesmo' | 'adotar' | 'conflito'
-
-function lerDono(arm: Armazenamento | null): string | null {
-  try {
-    return arm?.getItem(CHAVE_DONO) ?? null
-  } catch {
-    return null
-  }
-}
-
-/** Aparelho sem dono é adotado (inclusive dados de antes da conta existir, CA-151). */
-export function situacaoAoEntrar(arm: Armazenamento | null, usuarioId: string): SituacaoAoEntrar {
-  const dono = lerDono(arm)
-  if (dono === null) return 'adotar'
-  return dono === usuarioId ? 'mesmo' : 'conflito'
-}
-
-export function registrarDono(arm: Armazenamento | null, usuarioId: string): void {
-  try {
-    arm?.setItem(CHAVE_DONO, usuarioId)
-  } catch {
-    // sem armazenamento: não há dado para proteger
-  }
-}
-
-/** Apaga tudo o que o MetaNutri guarda de paciente neste aparelho, e o dono (CA-153). */
-export function apagarDadosDoAparelho(arm: Armazenamento | null): void {
-  if (!arm) return
-  for (const chave of expandirChaves(arm, [...CHAVES_DE_DADOS])) arm.removeItem(chave)
-  arm.removeItem(CHAVE_DONO)
-}
 
 /**
  * As chaves sem prefixo de conta que guardam dado da pessoa e existem no aparelho. Os planos

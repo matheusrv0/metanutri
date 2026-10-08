@@ -134,34 +134,6 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 
-  it('CA-151: a primeira conta adota os dados do aparelho', () => {
-    localStorage.setItem('metanutri:casos', '[]')
-    estado.conta = comSessao('conta-1')
-    window.location.hash = '#/painel'
-    render(tela())
-    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
-    expect(localStorage.getItem(CHAVE_DONO)).toBe('conta-1')
-  })
-
-  it('CA-152 e CA-153: outra conta não vê nada, e apagar pede confirmação antes', async () => {
-    localStorage.setItem(CHAVE_DONO, 'conta-1')
-    localStorage.setItem('metanutri:casos', '["x"]')
-    localStorage.setItem('metanutri:caso:x', '{}')
-    estado.conta = comSessao('conta-2')
-    window.location.hash = '#/painel'
-    render(tela())
-    expect(screen.getByRole('heading', { level: 1, name: 'Este aparelho tem dados de outra conta' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { level: 1, name: 'Painel' })).not.toBeInTheDocument()
-
-    const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Apagar os dados deste aparelho e continuar' }))
-    expect(localStorage.getItem('metanutri:casos')).toBe('["x"]')
-    await usuario.click(screen.getByRole('button', { name: 'Apagar e continuar' }))
-    expect(localStorage.getItem('metanutri:casos')).toBeNull()
-    expect(localStorage.getItem('metanutri:caso:x')).toBeNull()
-    expect(localStorage.getItem(CHAVE_DONO)).toBe('conta-2')
-  })
-
   it('CA-164: checkout sem sessão pede para entrar; com sessão, abre', () => {
     window.location.hash = '#/assinar/solo/anual'
     const { rerender } = render(tela())
@@ -603,5 +575,176 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
       render(tela())
       expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
     })
+  })
+})
+
+const paciente = (id: string, nome: string) => ({ id, nome, criadoEm: '2026-10-01T00:00:00.000Z', atualizadoEm: '2026-10-01T00:00:00.000Z' })
+const guardarPacientes = (chave: string, ...lista: ReturnType<typeof paciente>[]) => localStorage.setItem(chave, JSON.stringify(lista))
+const irPara = (hash: string) =>
+  act(() => {
+    window.location.hash = hash
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  })
+const menuFixo = () => {
+  const menu = screen.getAllByRole('navigation', { name: 'Menu principal' })[0]
+  if (!menu) throw new Error('menu ausente')
+  return within(menu)
+}
+
+describe('dados por conta no aparelho (spec dados-por-conta)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    window.location.hash = ''
+    estado.conta = contaFalsa()
+    verificacao.perfil = { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null }
+    verificacao.ehAdmin = false
+    verificacao.carregado = true
+    // As duas contas já viram o aviso de primeiro acesso, menos no teste do CB-122.
+    localStorage.setItem('metanutri:conta:conta-a:aviso-inicial-visto', '1')
+    localStorage.setItem('metanutri:conta:conta-b:aviso-inicial-visto', '1')
+  })
+
+  it('CA-465: B entra num aparelho com pacientes de A, não vê nenhum e não cai na tela de outra conta', () => {
+    guardarPacientes('metanutri:conta:conta-a:pacientes', paciente('ana', 'Ana Lima'))
+    estado.conta = comSessao('conta-b')
+    window.location.hash = '#/pacientes'
+    render(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nenhum paciente ainda' })).toBeInTheDocument()
+    expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
+    expect(screen.queryByText('Este aparelho tem dados de outra conta')).not.toBeInTheDocument()
+  })
+
+  it('CA-466: B cria um paciente; A entra de novo e vê os próprios dados, como deixou, e nada de B', async () => {
+    guardarPacientes('metanutri:conta:conta-a:pacientes', paciente('ana', 'Ana Lima'))
+    estado.conta = comSessao('conta-b')
+    window.location.hash = '#/pacientes'
+    const { rerender } = render(tela())
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Novo paciente' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Paciente sem nome' })).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('metanutri:conta:conta-b:pacientes') ?? '[]')).toHaveLength(1)
+
+    estado.conta = contaFalsa()
+    rerender(tela())
+    irPara('#/pacientes')
+    estado.conta = comSessao('conta-a')
+    rerender(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+    expect(screen.queryByText('Paciente sem nome')).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('metanutri:conta:conta-a:pacientes') ?? '[]')).toEqual([paciente('ana', 'Ana Lima')])
+  })
+
+  it('CA-467: os dados de antes da mudança continuam com a conta dona; outra conta que entra antes não os vê', () => {
+    localStorage.setItem(CHAVE_DONO, 'conta-a')
+    guardarPacientes('metanutri:pacientes', paciente('ana', 'Ana Lima'))
+    localStorage.setItem(CHAVE_AVISO_VISTO, '1')
+    estado.conta = comSessao('conta-b')
+    window.location.hash = '#/pacientes'
+    const { rerender } = render(tela())
+    expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
+
+    estado.conta = contaFalsa()
+    rerender(tela())
+    estado.conta = comSessao('conta-a')
+    rerender(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+    expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
+  })
+
+  it('CA-468: dados sem dono passam a ser da primeira conta que entra', () => {
+    guardarPacientes('metanutri:pacientes', paciente('ana', 'Ana Lima'))
+    estado.conta = comSessao('conta-b')
+    window.location.hash = '#/pacientes'
+    render(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+    expect(localStorage.getItem(CHAVE_DONO)).toBe('conta-b')
+    expect(JSON.parse(localStorage.getItem('metanutri:conta:conta-b:pacientes') ?? '[]')).toEqual([paciente('ana', 'Ana Lima')])
+  })
+
+  it('CA-471: o tema escolhido vale para qualquer conta neste aparelho', async () => {
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/painel'
+    const { rerender } = render(tela())
+    await userEvent.setup().click(within(menuFixo().getByRole('radiogroup', { name: 'Aparência' })).getByRole('radio', { name: 'Escuro' }))
+    expect(document.documentElement).toHaveClass('dark')
+
+    estado.conta = contaFalsa()
+    rerender(tela())
+    estado.conta = comSessao('conta-b')
+    rerender(tela())
+    expect(document.documentElement).toHaveClass('dark')
+    expect(within(menuFixo().getByRole('radiogroup', { name: 'Aparência' })).getByRole('radio', { name: 'Escuro' })).toHaveAttribute('aria-checked', 'true')
+    expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
+    expect(Object.keys(localStorage).filter((c) => c.endsWith(':tema'))).toEqual(['metanutri:tema'])
+  })
+
+  it('CB-120: A sai e B entra na mesma aba: nada de A aparece, nem por um instante; A volta e vê o que é seu', () => {
+    guardarPacientes('metanutri:conta:conta-a:pacientes', paciente('ana', 'Ana Lima'))
+    guardarPacientes('metanutri:conta:conta-b:pacientes', paciente('bia', 'Bia Souza'))
+    estado.conta = comSessao('conta-a')
+    window.location.hash = '#/pacientes'
+    const { rerender } = render(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+
+    // Tudo o que entra na tela daqui em diante fica anotado, mesmo o que sai logo depois.
+    const vistos: string[] = []
+    const anotar = (registros: MutationRecord[]) => {
+      for (const r of registros) {
+        if (r.type === 'characterData') vistos.push(r.target.textContent ?? '')
+        for (const no of r.addedNodes) vistos.push(no.textContent ?? '')
+      }
+    }
+    const observador = new MutationObserver(anotar)
+    observador.observe(document.body, { childList: true, subtree: true, characterData: true })
+
+    estado.conta = contaFalsa()
+    rerender(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    estado.conta = comSessao('conta-b')
+    rerender(tela())
+    expect(screen.getByText('Bia Souza')).toBeInTheDocument()
+    anotar(observador.takeRecords())
+    observador.disconnect()
+    expect(vistos.some((texto) => texto.includes('Ana Lima'))).toBe(false)
+    expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
+
+    estado.conta = contaFalsa()
+    rerender(tela())
+    estado.conta = comSessao('conta-a')
+    rerender(tela())
+    expect(screen.getByText('Ana Lima')).toBeInTheDocument()
+    expect(screen.queryByText('Bia Souza')).not.toBeInTheDocument()
+  })
+
+  it('CB-121: navegador que não deixa guardar nada: o site abre como hoje', () => {
+    const bloqueado = vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('bloqueado', 'SecurityError')
+    })
+    try {
+      estado.conta = comSessao('conta-a')
+      window.location.hash = '#/pacientes'
+      render(tela())
+      // Sem guardar nada, o aviso de primeiro acesso aparece a cada abertura, como já acontecia.
+      expect(screen.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: 'Pacientes', hidden: true })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Nenhum paciente ainda', hidden: true })).toBeInTheDocument()
+    } finally {
+      bloqueado.mockRestore()
+    }
+  })
+
+  it('CB-122: a conta que nunca usou o aparelho começa vazia, sem erro, e vê o aviso de primeiro acesso', () => {
+    localStorage.removeItem('metanutri:conta:conta-b:aviso-inicial-visto')
+    // A usou o aparelho antes desta mudança e já viu o aviso.
+    localStorage.setItem(CHAVE_DONO, 'conta-a')
+    localStorage.setItem(CHAVE_AVISO_VISTO, '1')
+    localStorage.setItem('metanutri:casos', '["x"]')
+    guardarPacientes('metanutri:pacientes', paciente('ana', 'Ana Lima'))
+    estado.conta = comSessao('conta-b')
+    window.location.hash = '#/painel'
+    render(tela())
+    expect(screen.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })).toBeInTheDocument()
+    expect(screen.getByText('Nenhum plano ainda.')).toBeInTheDocument()
+    expect(screen.queryByText('Ana Lima')).not.toBeInTheDocument()
   })
 })

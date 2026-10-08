@@ -1,7 +1,6 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { calcularEnergia } from './domain/energia.ts'
-import { apagarDadosDoAparelho, registrarDono, situacaoAoEntrar } from './domain/donoDosDados.ts'
 import { CONTATO_EMAIL } from './domain/legal.ts'
 import { criarExemplo } from './domain/exemplo.ts'
 import { missoesDoPlano } from './domain/missoes.ts'
@@ -51,7 +50,6 @@ import { TelaCompletarCadastro } from './ui/publico/conta/TelaCompletarCadastro.
 import { MolduraConta } from './ui/publico/conta/MolduraConta.tsx'
 import { TelaCriarConta } from './ui/publico/conta/TelaCriarConta.tsx'
 import { TelaEntrar } from './ui/publico/conta/TelaEntrar.tsx'
-import { TelaOutraConta } from './ui/publico/conta/TelaOutraConta.tsx'
 import { TelaCodigoSenha } from './ui/publico/conta/TelaCodigoSenha.tsx'
 import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
@@ -61,10 +59,12 @@ import { TelaPrivacidade } from './ui/publico/TelaPrivacidade.tsx'
 import { TelaFontes } from './ui/publico/TelaFontes.tsx'
 import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
-import { useConta, type ResultadoConfirmacao } from './ui/estado/usarConta.ts'
+import { useConta, type ResultadoConfirmacao, type ValorConta } from './ui/estado/usarConta.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { useArmazenamento } from './ui/estado/contextoArmazenamento.ts'
+import { ProvedorArmazenamento } from './ui/estado/ProvedorArmazenamento.tsx'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './ui/fluxoConta.ts'
 import { TelaConfiguracoes } from './ui/config/TelaConfiguracoes.tsx'
@@ -81,12 +81,11 @@ import { useRota } from './ui/usarRota.ts'
 
 const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
 
-function Conteudo() {
+function Conteudo({ conta }: { readonly conta: ValorConta }) {
   const [rota, navegar] = useRota()
   const { casos, repositorio, atualizar } = useCasos()
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
-  const conta = useConta()
   const cobranca = useAssinatura(conta.sessao?.id ?? null)
   const { assinatura } = cobranca
   const { fonte } = useAcompanhamentos()
@@ -94,7 +93,9 @@ function Conteudo() {
   // O e-mail que a tela do código mostra: o do cadastro, o de quem tentou entrar sem
   // confirmar ou o de "Esqueci a senha". Só em memória: aberta depois, a tela pede (CA-410).
   const [emailPendente, setEmailPendente] = useState<string | null>(null)
-  const arm = armazenamentoLocal()
+  // O e-mail e o destino pendentes são do aparelho (D-126); o perfil local é da conta que entrou (D-120).
+  const aparelho = armazenamentoLocal()
+  const dadosDaConta = useArmazenamento()
   const sessao = conta.sessao
 
   // Cadastro feito e código ainda não digitado (D-93): a pessoa fica na tela do código. Vem do aparelho,
@@ -129,13 +130,6 @@ function Conteudo() {
     navegar(guardado ?? marcado ?? { tela: 'painel' })
   }
 
-  // Dono dos dados do aparelho (spec estilo-spora, D-24): quem entra primeiro adota;
-  // outra conta não vê nada até escolher (CA-151 e CA-152).
-  const situacaoDoAparelho = sessao ? situacaoAoEntrar(arm, sessao.id) : 'mesmo'
-  useEffect(() => {
-    if (sessao && situacaoDoAparelho === 'adotar') registrarDono(armazenamentoLocal(), sessao.id)
-  }, [sessao, situacaoDoAparelho])
-
   // Situação, pedido de estudante e filas do administrador (spec conta-e-verificacao).
   const perfilConta = usePerfilConta(sessao?.id ?? null)
   const { perfil } = perfilConta
@@ -146,7 +140,7 @@ function Conteudo() {
   const agora = new Date()
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
   // Quem assina os planos: a conta, ou Configurações quando não há servidor (spec ajustes-de-uso, D-37).
-  const quemAssina = assinaturaDoPlano({ servidor: conta.disponivel, perfilConta: perfil, nomeDaSessao: sessao?.nome ?? '', perfilLocal: lerPerfil(arm) })
+  const quemAssina = assinaturaDoPlano({ servidor: conta.disponivel, perfilConta: perfil, nomeDaSessao: sessao?.nome ?? '', perfilLocal: lerPerfil(dadosDaConta) })
 
   const recente = casos[0]
   const casoAtual: CasoAtual | null = registro
@@ -187,8 +181,8 @@ function Conteudo() {
 
   const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
-  // D-96: depois de apagar os dados do aparelho, os provedores ainda guardam em memória o que leram
-  // ao montar. Recarregar é o jeito seguro de esquecer (como em "Apagar os dados deste aparelho e continuar").
+  // D-96: sair já remonta a árvore de dados (ProvedorArmazenamento). Depois de apagar, recarregar
+  // também descarta o que ainda estava a caminho (uma leitura da nuvem, por exemplo).
   const depoisDeSair = (apagou: boolean) => {
     navegar({ tela: 'inicio' })
     if (apagou) globalThis.location.reload()
@@ -229,21 +223,6 @@ function Conteudo() {
         />
       )
     }
-    if (situacaoDoAparelho === 'conflito') {
-      return (
-        <TelaOutraConta
-          email={sessao.email}
-          aoSair={() => void conta.sair().then(() => navegar({ tela: 'inicio' }))}
-          aoApagar={() => {
-            apagarDadosDoAparelho(arm)
-            registrarDono(arm, sessao.id)
-            // Os provedores leram os dados antigos ao montar: recarregar é o jeito seguro de esquecê-los.
-            globalThis.location.reload()
-          }}
-        />
-      )
-    }
-
     // Sem o perfil, nenhuma tela decide nada: Aprovações mandaria o administrador para o painel.
     if (!perfilConta.carregado) return telaCarregando
 
@@ -310,7 +289,7 @@ function Conteudo() {
           const destino = destinoDepoisDoCadastro(criada.plano, ciclo, criada.situacao)
           if (!criada.confirmarEmail) return navegar(destino)
           // O destino fica no aparelho: o código pode ser digitado depois, e o link antigo abre em outra aba.
-          guardarDestino(arm, destino)
+          guardarDestino(aparelho, destino)
           irParaCodigo(criada.email)
         }}
         aoEntrar={() => navegar({ tela: 'entrar' })}
@@ -729,13 +708,19 @@ function Conteudo() {
 }
 
 export function App() {
+  const conta = useConta()
+  // Cada conta tem os próprios dados no aparelho (spec dados-por-conta, D-120). Sem servidor de conta,
+  // ou sem sessão, valem os do aparelho, como antes (CA-150, DP-3). Trocar de conta remonta a árvore.
+  const usuarioId = conta.disponivel ? (conta.sessao?.id ?? null) : null
   return (
-    <ProvedorCasos>
-      <ProvedorPacientes>
-        <ProvedorAcompanhamentos>
-          <Conteudo />
-        </ProvedorAcompanhamentos>
-      </ProvedorPacientes>
-    </ProvedorCasos>
+    <ProvedorArmazenamento usuarioId={usuarioId}>
+      <ProvedorCasos>
+        <ProvedorPacientes>
+          <ProvedorAcompanhamentos>
+            <Conteudo conta={conta} />
+          </ProvedorAcompanhamentos>
+        </ProvedorPacientes>
+      </ProvedorCasos>
+    </ProvedorArmazenamento>
   )
 }
