@@ -5,6 +5,7 @@ import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { useMigracaoIncompleta } from '../estado/contextoArmazenamento.ts'
+import { SituacaoDaNuvem } from '../nuvem/SituacaoDaNuvem.tsx'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
 import { MenuLateral, type CasoAtual } from './MenuLateral.tsx'
@@ -60,7 +61,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
       </Sheet>
 
       <div className="xl:pl-[264px]">
-        <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} aoAbrirMenu={() => setMenuAberto(true)} />
+        <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} situacao={<SituacaoDaNuvem />} aoAbrirMenu={() => setMenuAberto(true)} />
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
           {migracaoIncompleta ? (
             <Alert variant="warning" className="mb-6">

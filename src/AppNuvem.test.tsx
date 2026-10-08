@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { App } from './App.tsx'
+import { ESPERA_PARA_SALVAR_MS } from './domain/sincronia.ts'
 import { nuvemFalsa, type NuvemFalsa } from './domain/nuvemFalsa.test-utils.ts'
 import type { Backup } from './domain/perfil.ts'
 import type { ValorConta } from './ui/estado/usarConta.ts'
@@ -139,5 +140,32 @@ describe('o link do paciente (CB-126)', () => {
     expect(screen.queryByText('Carregando seus dados…')).not.toBeInTheDocument()
     nuvem.soltar()
     expect(await screen.findByRole('heading', { level: 1, name: /Ana/ })).toBeInTheDocument()
+  })
+})
+
+describe('salvar sozinho (D-129)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('CA-476: uma mudança vai para a nuvem em poucos segundos e a barra mostra "Salvo"', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    render(tela())
+    expect(await screen.findByText('Salvo')).toBeInTheDocument()
+
+    act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
+    expect(screen.getByRole('heading', { level: 1, name: 'Paciente sem nome' })).toBeInTheDocument()
+    expect(screen.getByText('Salvando…')).toBeInTheDocument()
+
+    await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
+    expect(screen.getByText('Salvo')).toBeInTheDocument()
+    expect(pacientesNaNuvem(nuvem)).toEqual([''])
+  })
+
+  it('DP-14: sem nuvem, a barra não mostra estado de salvar', () => {
+    estado.nuvem = null
+    render(tela())
+    expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
+    expect(screen.queryByText('Salvando…')).not.toBeInTheDocument()
   })
 })
