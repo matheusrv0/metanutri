@@ -1,0 +1,196 @@
+# PLAN — Dados na nuvem, presos à conta
+
+**Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126)
+**Status:** em execução
+
+## Abordagem
+
+A linha da conta em `copias` vira a fonte da verdade, e o espaço da conta no navegador (spec `dados-por-conta`) vira a
+cópia de trabalho. Um motor de sincronia, sem React (`src/domain/sincronia.ts`), abre a cópia da nuvem ao entrar, salva
+sozinho 2 s depois da última mudança com conferência de versão (`update … where atualizado_em = <a que eu conheço>`) e,
+quando outro aparelho salvou antes, lê, junta item por item e salva de novo. O único ponto por onde passa toda gravação
+de dado da conta é o adaptador com prefixo: ele é embrulhado por um observador que marca a hora de cada item mudado e
+registra cada exclusão (lápide), dentro da própria cópia (`metanutri:mudancas`). Assim nenhum repositório muda, e o
+backup restaurado, os links e as configurações entram pelo mesmo caminho.
+
+A alternativa óbvia, uma tabela por tipo de dado com sincronização por linha, pede SQL novo, RLS nova e reescrever
+todos os repositórios; a cópia inteira com junção por item cumpre a spec com a tabela que já existe (sem SQL novo). A
+área de trabalho só aparece depois da abertura; sem internet ela fica coberta por uma trava (diálogo modal da
+biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local continua como hoje (e o e2e também).
+
+## Arquivos
+
+| Arquivo | Ação | Motivo |
+|---|---|---|
+| `src/ui/config/TelaConfiguracoes.tsx` (+ testes) | alterar | some a cópia na nuvem e o "Apagar tudo" (CA-482); textos que diziam "só neste aparelho" |
+| `src/ui/config/apagarNaNuvem.test.tsx` | apagar | testava o "Apagar tudo", que saiu |
+| `src/domain/copiaNaNuvem.ts` (+ teste) | reescrever | ler a cópia e gravar com conferência de versão; saem enviar, trazer e apagar |
+| `src/domain/nuvemFalsa.test-utils.ts` | criar | a tabela `copias` de mentira, para o domínio e as telas |
+| `src/domain/copiaDaConta.ts` (+ teste) | criar | montar, aplicar e juntar cópias; marcas de mudança e lápides |
+| `src/domain/sincronia.ts` (+ teste) | criar | o motor: abrir, observar, salvar, conflito, travas, parar |
+| `design-system/componentes/overlay/dialog.tsx`, `design-system/componentes/LEIA-ME.md` | alterar | `semFechar` no `DialogContent`, para a trava |
+| `src/ui/estado/contextoNuvem.ts`, `src/ui/estado/ProvedorNuvem.tsx` (+ teste) | criar | o motor na árvore, com o armazenamento observado |
+| `src/ui/nuvem/PortaoDaNuvem.tsx`, `src/ui/nuvem/TelaAbrindoDados.tsx` | criar | "Carregando seus dados…" e o CA-484 antes da área de trabalho |
+| `src/ui/estado/ProvedoresDeDados.tsx` | alterar | remonta quando a nuvem traz mudança (geração) |
+| `src/App.tsx`, `src/AppConta.test.tsx`, `src/AppNuvem.test.tsx` | alterar/criar | `ProvedorNuvem` e o portão; testes de ponta a ponta com a nuvem falsa |
+| `src/ui/nuvem/SituacaoDaNuvem.tsx`, `src/ui/layout/Cabecalho.tsx`, `src/ui/layout/Estrutura.tsx` | criar/alterar | "Salvo" / "Salvando…" (CA-476) e o aviso do CA-445 ao reduzir |
+| `src/ui/estado/usarConta.ts` (+ teste) | alterar | `sair()` sempre apaga a cópia de trabalho da conta (D-131) |
+| `src/ui/estado/usarSaida.ts` (+ teste), `src/ui/conta/DialogoSair.tsx` (+ teste) | criar/reescrever | Sair sem pergunta; CA-479 só com mudança que não foi |
+| `src/ui/conta/TelaConta.tsx` (+ teste), `src/ui/publico/conta/TelaCompletarCadastro.tsx` (+ teste), `src/ui/AreaDeTrabalho.tsx` | alterar | usam a saída nova |
+| `src/ui/nuvem/TravaDaNuvem.tsx` (+ teste) | criar | a capa do D-130 e do CB-123, com "Sair" |
+| `src/ui/estado/ProvedorPacientes.tsx` | alterar | a lista se refaz quando outra aba grava (CB-124) |
+| `src/domain/conta.ts` (+ teste), `src/ui/publico/SecaoPrecos.test.tsx` | alterar | "Dados em qualquer aparelho" sai (D-134) |
+| `src/ui/publico/TelaPrivacidade.tsx`, `src/ui/publico/TelaTermos.tsx`, `src/ui/casos/AvisoPrimeiroAcesso.tsx`, `src/ui/layout/MenuLateral.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `src/ui/publico/conta/LadoDoPlano.tsx`, `src/ui/negocio/TelaNegocio.tsx` (+ testes) | alterar | textos verdadeiros para o D-128 (DP-16) |
+
+## Tarefas
+
+- [ ] **T1** — Este plano.
+- [ ] **T2** — Configurações sem os botões de apagar e da cópia na nuvem; backup em arquivo fica.
+  - Depende de: —
+  - Cobre: CA-482
+  - Feito quando: teste do CA-482 (nenhum dos quatro botões; baixar e restaurar continuam) e os de backup verdes.
+- [ ] **T3** — `copiaNaNuvem.ts`: `lerCopia` e `gravarCopia` (insert sem linha; update com conferência; 0 linhas ou
+  23505 = "mudou"; 413 ou trava de tamanho = "grande"; resto, sessão de outra conta e prazo = "rede").
+  - Depende de: T2 (tira o último uso das funções antigas)
+  - Cobre: base de D-129, D-132, CB-123
+  - Feito quando: testes com a nuvem falsa para cada resultado.
+- [ ] **T4** — `copiaDaConta.ts`: montar a cópia (chaves do backup, aviso de primeiro acesso e marcas), aplicar na cópia
+  de trabalho, registrar mudança (marca e lápide) e juntar duas cópias (DP-3, DP-4, DP-21), podando lápides de 90 dias.
+  - Depende de: —
+  - Cobre: CA-480, CA-481 (domínio)
+  - Feito quando: testes de itens diferentes, mesmo item (mais novo vence), excluído não volta, mudado depois volta,
+    produto com id repetido, sem marcas (dados de antes), lápide velha.
+- [ ] **T5** — `sincronia.ts`: observador, abertura, espera de 2 s, salvar com conferência, conflito, travas, `conectou`,
+  `desconectou`, `reduzir`, `parar` e o aviso às outras abas.
+  - Depende de: T3, T4
+  - Cobre: CA-475 a CA-481, CA-484, CB-123 a CB-125 (motor)
+  - Feito quando: um teste por critério, com relógio e nuvem falsos.
+- [ ] **T6** — `DialogContent` com `semFechar` (sem o X).
+  - Feito quando: teste do componente e LEIA-ME.
+- [ ] **T7** — `ProvedorNuvem` e portão: o motor por conta, o armazenamento observado na árvore, "Carregando seus
+  dados…", a tela do CA-484, a remontagem pela geração; `App` ligado. O link do paciente não espera.
+  - Depende de: T5
+  - Cobre: CA-475, CA-481, CA-484, CB-126 (telas)
+  - Feito quando: testes do `App` com a nuvem falsa; os testes de antes verdes (sem cliente = modo de hoje).
+- [ ] **T8** — "Salvo" / "Salvando…" na barra da área de trabalho.
+  - Depende de: T7
+  - Cobre: CA-476
+  - Feito quando: teste do `App`: muda, espera, a nuvem tem a mudança e a barra diz "Salvo".
+- [ ] **T9** — Só "Sair" (D-131): `sair()` sempre apaga a cópia de trabalho; `useSaida` salva o pendente antes e só
+  pergunta (CA-479) se não der; TelaConta e Complete seu cadastro sem a pergunta de apagar.
+  - Depende de: T7
+  - Cobre: CA-478, CA-479
+  - Feito quando: testes do gancho, do diálogo e das telas.
+- [ ] **T10** — Trava: capa do D-130 (sem internet) e do CB-123 (tamanho, com "Reduzir os dados"), com "Sair".
+  - Depende de: T6, T9
+  - Cobre: CA-477, CB-123 (telas), CA-479 (pela trava)
+  - Feito quando: testes da trava e do `App` (cai a internet, volta, destrava sozinha).
+- [ ] **T11** — Pacientes se refazem com o evento `storage` (outra aba).
+  - Cobre: CB-124 (tela)
+- [ ] **T12** — Preços sem "Dados em qualquer aparelho".
+  - Cobre: CA-483
+- [ ] **T13** — Textos do D-128 (DP-16): Política, Termos, aviso de primeiro acesso, menu, Ajuda, cadastro, Negócio.
+- [ ] **T14** — Validação: `npm run check`, `npx playwright test`, `npm run build`, `node scripts/conferir-publicacao.mjs`.
+
+## Mapa de cobertura
+
+| Critério | Tarefa | Teste |
+|---|---|---|
+| CA-475 | T5, T7 | `sincronia.test.ts` "CA-475: …"; `AppNuvem.test.tsx` "CA-475: …" |
+| CA-476 | T5, T8 | `sincronia.test.ts` "CA-476: …"; `AppNuvem.test.tsx` "CA-476: …" |
+| CA-477 | T5, T10 | `sincronia.test.ts` "CA-477: …"; `AppNuvem.test.tsx` "CA-477: …" |
+| CA-478 | T9 | `usarConta.test.ts` "CA-478: …"; `usarSaida.test.tsx` "CA-478: …"; `TelaConta.test.tsx` "CA-478: …" |
+| CA-479 | T9, T10 | `usarSaida.test.tsx` "CA-479: …"; `DialogoSair.test.tsx` "CA-479: …"; `TravaDaNuvem.test.tsx` "CA-479: …" |
+| CA-480 | T4, T5 | `copiaDaConta.test.ts` "CA-480: …"; `sincronia.test.ts` "CA-480: …" |
+| CA-481 | T4, T5, T7 | `copiaDaConta.test.ts` "CA-481: …"; `sincronia.test.ts` "CA-481: …"; `AppNuvem.test.tsx` "CA-481: …" |
+| CA-482 | T2 | `configuracoes.test.tsx` "CA-482: …" |
+| CA-483 | T12 | `conta.test.ts` "CA-483: …"; `SecaoPrecos.test.tsx` "CA-483: …" |
+| CA-484 | T5, T7 | `sincronia.test.ts` "CA-484: …"; `AppNuvem.test.tsx` "CA-484: …" |
+| CB-123 | T3, T5, T10 | `copiaNaNuvem.test.ts` "CB-123: …"; `sincronia.test.ts` "CB-123: …"; `TravaDaNuvem.test.tsx` "CB-123: …" |
+| CB-124 | T5, T11 | `sincronia.test.ts` "CB-124: …"; `provedoresPorConta.test.tsx` "CB-124: …" |
+| CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
+| CB-126 | T7 | `AppNuvem.test.tsx` "CB-126: …" |
+
+## Decisões do plano
+
+- **DP-1 · A linha de `copias` é a fonte da verdade; o espaço da conta no navegador é a cópia de trabalho.** A cópia
+  continua no formato do backup (formato 1), com duas chaves a mais: `metanutri:aviso-inicial-visto` (o aviso de
+  primeiro acesso não volta a cada entrada) e `metanutri:mudancas` (marcas e lápides). Sem SQL novo: a tabela, a trava
+  de 5 MB e as políticas de ler, inserir e atualizar já existem.
+- **DP-2 · O ponto único é o adaptador da conta, embrulhado por um observador.** Toda gravação que muda um valor da
+  cópia marca a hora de cada item mudado (`planos/<id>`, `pacientes/<id>`, `produtos/<id>`, `modelos/<id>`,
+  `acompanhamentos/<id>`, `chave/<nome>`) ou registra a lápide de cada item que sumiu, e soma 1 em `metanutri:nuvem`
+  (só do navegador: a versão conhecida da nuvem e os contadores de mudanças e de salvas, que as abas da mesma conta
+  dividem). O que o próprio motor grava (a cópia que veio da nuvem) e a migração de antes não passam pelo observador.
+- **DP-3 · Junção item por item (D-132, D-133).** Planos, pacientes, produtos, modelos e links juntam por id; o resto,
+  chave por chave. Vence a hora de mudança mais nova (a marca; sem marca, a data do item: `atualizadoEm` ou `criadoEm`;
+  sem nada, vazio). Mesmo valor nos dois lados não é conflito. Empate com valor diferente: vence a nuvem (a D-127 deu o
+  empate à conta). A lápide igual ou mais nova que a última mudança do item o apaga; o item mudado depois da exclusão
+  volta (a mudança mais nova vence). Lápides com mais de 90 dias saem da cópia. O índice dos planos é refeito com os
+  planos que ficaram.
+- **DP-4 · Produto com o mesmo id e `criadoEm` diferente são dois produtos** (cada aparelho dá o próximo número): os dois
+  ficam, o da nuvem no id e o daqui com id novo acima do maior; planos, modelos e sugestões que vieram daqui passam a
+  apontar para o id novo.
+- **DP-5 · Salvar com conferência.** `update … where nutricionista_id = <conta> and atualizado_em = <versão conhecida>`.
+  Nenhuma linha = outro aparelho salvou antes: lê, junta, grava na cópia de trabalho, remonta a área de trabalho e salva
+  de novo (até 5 voltas; depois, tenta na próxima mudança). Sem linha na nuvem, `insert`; se outro aparelho criou antes
+  (23505), a mesma volta. `atualizado_em` é escrito pelo aparelho e serve só de versão.
+- **DP-6 · Abertura.** Com a cópia de trabalho sem mudança pendente, vale a da nuvem (substitui). Com mudança pendente,
+  sem histórico neste navegador (dados de antes, D-133) ou com dados levados pela migração da `dados-por-conta`, as duas
+  são juntadas e o resultado sobe. Sem linha na nuvem, o que está aqui sobe como está.
+- **DP-7 · Tempo.** Salva 2 s depois da última mudança. Pedido que não responde em 15 s conta como falha de rede (a
+  conferência de versão resolve o pedido que chegou depois).
+- **DP-8 · Trava de rede.** Falha de rede, sessão ausente ou erro do servidor que não seja o tamanho travam com a frase
+  do D-130; o motor tenta de novo no `online` e a cada 15 s, e destrava ao salvar. O evento `offline` trava mesmo sem
+  pendência (CA-477); no `online` sem pendência, destrava.
+- **DP-9 · CB-123 sem beco sem saída.** Travar a área sem deixar reduzir faria a pessoa perder o que não subiu ao sair
+  (e dados de antes acima de 5 MB nunca subiriam). A trava de tamanho tem "Reduzir os dados": a capa sai, a frase do
+  CA-445 fica no alto da área de trabalho, e cada tentativa recusada com a cópia maior que a última recusada trava de
+  novo. Só reduzir não trava; a primeira cópia aceita destrava.
+- **DP-10 · As travas têm "Sair".** Com a área coberta, é o único caminho até o CA-479.
+- **DP-11 · Sair (D-131).** Com mudança pendente e sem trava, tenta salvar na hora e sai; só pergunta (CA-479) quando
+  não deu. Antes de apagar, o motor para e marca em `metanutri:nuvem` que a conta saiu: as outras abas da conta param
+  antes de ver o espaço sumir. Defesa a mais: o motor nunca envia uma cópia sem dado e sem lápide (seria a cópia apagada
+  por fora, não pela pessoa). Depois de sair, a página recarrega, como no "Sair e apagar" de antes.
+- **DP-12 · O que não espera a nuvem.** O link do paciente não espera a abertura nem trava (CB-126); as telas públicas e
+  as de conta também não.
+- **DP-13 · Espaços de outras contas guardados antes desta mudança ficam** até a dona entrar (aí sobem e saem no Sair):
+  sem a sessão dela não dá para enviar, e apagar perderia dado (D-133).
+- **DP-14 · Sem servidor de conta, ou sem o cliente do Supabase, tudo como hoje**: sem nuvem, sem trava, sem estado na
+  barra, e Configurações também sem os botões que saíram.
+- **DP-15 · Links de acompanhamento.** A tabela própria continua sendo a fonte deles; na cópia, a junção os trata como
+  lista por id, e a marca "pendente" que vem da nuvem não é trazida (como no restaurar backup, CB-108).
+- **DP-16 · Textos.** Mudam os que diziam que os dados ficam só no aparelho: Política (onde ficam, o que some ao sair),
+  Termos, aviso de primeiro acesso, rodapé do menu, Ajuda, lado do plano no cadastro e rodapé do Negócio. O aviso, o
+  menu e a Ajuda continuam com o texto de hoje no modo local. A versão dos termos fica `2026-10-08` (a mudança é do mesmo
+  dia).
+- **DP-17 · Barra.** "Salvando…" enquanto há mudança que ainda não foi (esperando os 2 s ou indo); "Salvo" quando não há;
+  nada com a área travada.
+- **DP-18 · Remontar.** Quando a nuvem traz mudança para a cópia de trabalho de uma área aberta (conflito), a área de
+  trabalho remonta (`key` com uma geração) e os produtos da busca são registrados de novo. A outra aba da mesma conta
+  vê pelo evento `storage`, como hoje (planos, links e, agora, pacientes).
+- **DP-19 · Versão do plano.** O plano que a nuvem traz por cima de outro daqui ganha a versão maior + 1, para o aviso de
+  "mudou em outra aba" (CB-08) continuar valendo.
+
+## Riscos
+
+- **R1** — Remontar a área num conflito fecha diálogo e formulário abertos. Só acontece com dois aparelhos salvando ao
+  mesmo tempo; o que já foi gravado fica.
+- **R2** — Relógio errado num aparelho decide errado a "mudança mais nova".
+- **R3** — O navegador guarda uns 5 MB: perto do limite da nuvem, o armazenamento do navegador pode encher antes
+  (o aviso de armazenamento cheio de hoje continua).
+- **R4** — Restaurar um backup antigo marca os itens restaurados com a hora de agora: eles vencem a nuvem.
+- **R5** — Linha apagada na nuvem por fora (exclusão da conta por e-mail) com uma sessão ainda aberta: a cópia de
+  trabalho sobe de novo. Ao excluir uma conta, encerrar as sessões dela.
+- **R6** — Lápide dura 90 dias: um aparelho com mudança pendente que ficou mais que isso sem abrir pode trazer de volta
+  um item excluído no outro.
+- **R7** — `apagarAcompanhamentosDaNuvem` fica sem uso (saiu com o "Apagar tudo"); fica para a exclusão de conta.
+
+## Validação
+
+- [ ] `npm run check` (lint + typecheck + testes)
+- [ ] `npx playwright test`
+- [ ] `npm run build`
+- [ ] `node scripts/conferir-publicacao.mjs`
+- [ ] Cada CA e CB com teste que cita o ID
+- [ ] Divergências spec × código listadas no relatório
