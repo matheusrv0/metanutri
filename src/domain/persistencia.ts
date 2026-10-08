@@ -11,6 +11,12 @@ export interface Armazenamento {
   removeItem(chave: string): void
 }
 
+/** O armazenamento que também lista as próprias chaves, como o `localStorage`. */
+export interface ArmazenamentoListavel extends Armazenamento {
+  readonly length: number
+  key(indice: number): string | null
+}
+
 export interface CasoSalvo {
   readonly caso: Caso
   readonly plano: Plano
