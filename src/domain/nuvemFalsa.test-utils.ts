@@ -37,6 +37,10 @@ export interface NuvemFalsa {
   recusar413: boolean
   /** Enquanto verdadeiro, as respostas esperam `soltar()`. */
   segurar: boolean
+  /** Enquanto verdadeiro, o pedido chega ao banco, mas a resposta se perde no caminho (nunca volta). */
+  perderResposta: boolean
+  /** Os sinais de desistir que vieram com os pedidos. */
+  readonly sinais: AbortSignal[]
   soltar(): void
   /** Os pedidos feitos à tabela `copias`, na ordem: "select", "insert", "update". */
   readonly pedidos: Operacao[]
@@ -98,11 +102,16 @@ class Consulta implements PromiseLike<Resposta> {
     this.unico = true
     return this
   }
-  abortSignal(): this {
+  abortSignal(sinal: AbortSignal): this {
+    this.nuvem.sinais.push(sinal)
     return this
   }
 
   then<A = Resposta, B = never>(aoCumprir?: ((v: Resposta) => A | PromiseLike<A>) | null, aoFalhar?: ((e: unknown) => B | PromiseLike<B>) | null): PromiseLike<A | B> {
+    if (this.nuvem.perderResposta) {
+      this.executar()
+      return new Promise<Resposta>(() => undefined).then(aoCumprir, aoFalhar)
+    }
     return this.esperar()
       .then(() => this.executar())
       .then(aoCumprir, aoFalhar)
@@ -189,6 +198,8 @@ export function nuvemFalsa(inicio: { readonly usuario?: string | null } = {}): N
     limite: null,
     recusar413: false,
     segurar: false,
+    perderResposta: false,
+    sinais: [],
     soltar() {
       nuvem.segurar = false
       liberar?.()

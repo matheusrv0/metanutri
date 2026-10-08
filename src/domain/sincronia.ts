@@ -10,7 +10,7 @@
 // Não sabe nada de React: a árvore liga, desliga e escuta o estado (`ProvedorNuvem`).
 import type { ArmazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
-import { gravarCopia, lerCopia, lerVersao, type ClienteDaCopia } from './copiaNaNuvem.ts'
+import { gravarCopia, lerCopia, lerVersao, prazoParaTamanho, type ClienteDaCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 
@@ -233,6 +233,11 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   let fila: Promise<unknown> = Promise.resolve()
   // CB-123: o tamanho da última cópia recusada; maior que ela, trava de novo (DP-9).
   let ultimaRecusada: number | null = null
+  // DP-24: uma gravação falhou no caminho; antes da próxima, confere se ela chegou.
+  let conferirAntes = false
+  // DP-24: o tamanho da última cópia vista, para o prazo da leitura.
+  let ultimoTamanho = 0
+  const prazoDeLeitura = (): number => prazoMs ?? prazoParaTamanho(ultimoTamanho)
 
   const situacao = (): Situacao => lerSituacao(armazenamento) ?? SITUACAO_INICIAL
   const gravarSituacao = (nova: Situacao): void => {
@@ -247,7 +252,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   let naoConfirmado = sujo || (lerSituacao(armazenamento) === null && temDadosAqui())
   function temDadosAqui(): boolean {
     try {
-      return Object.keys(montarCopia(armazenamento, '').dados).length > 0
+      return Object.keys(montarCopia(armazenamento, agora()).dados).length > 0
     } catch {
       return false
     }
@@ -358,8 +363,10 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     if (parada || estado.fase === 'pronta') return
     const minha = epoca
     pararDeTentar()
-    const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+    ultimoTamanho = Math.max(ultimoTamanho, JSON.stringify(montarCopia(armazenamento, agora())).length)
+    const leitura = await lerCopia(cliente, usuarioId, prazoDeLeitura())
     if (minha !== epoca || parada) return
+    if (leitura.tipo === 'lida' && leitura.copia !== null) ultimoTamanho = JSON.stringify(leitura.copia).length
     if (leitura.tipo === 'falhou') {
       definir({ fase: leitura.motivo === 'formato' ? 'formato-desconhecido' : 'sem-conexao' })
       agendarTentativa()
@@ -448,35 +455,48 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
         return false
       }
       const tamanho = JSON.stringify(copia).length
-      const resultado = await gravarCopia(cliente, { copia, versao: antes.versao, aparelho, esperado: usuarioId, agora: agora() }, prazoMs)
-      if (minha !== epoca || parada) return false
 
-      if (resultado.tipo === 'gravada') {
-        const depois = situacao()
-        gravarSituacao({ ...depois, versao: resultado.versao, salvas: localParcial ? depois.salvas : Math.max(depois.salvas, envio.ate), itens: itensDaCopia(copia) })
-        ultimaRecusada = null
-        pararDeTentar()
-        if (localParcial) {
-          definir({ salvando: false, pendente: true })
-          return false
+      // DP-24: depois de uma falha no meio do caminho, a gravação pode ter chegado. Antes de mandar de
+      // novo, confere a versão; se mudou, junta em vez de mandar por cima.
+      let outroSalvou = false
+      if (conferirAntes) {
+        const versao = await lerVersao(cliente, usuarioId, prazoDeLeitura())
+        if (minha !== epoca || parada) return false
+        if (versao.tipo === 'falhou') {
+          semRegistro ||= envio.lembrada
+          return naoFoi('rede', tamanho)
         }
-        const resta = temPendencia()
-        definir({ salvando: false, pendente: resta, trava: null, reduzindo: false })
-        if (resta) agendarSalvar()
-        return !resta
+        conferirAntes = false
+        outroSalvou = versao.versao !== antes.versao
       }
 
-      semRegistro ||= envio.lembrada
-      if (resultado.tipo === 'falhou') return naoFoi(resultado.motivo, tamanho)
+      if (!outroSalvou) {
+        const resultado = await gravarCopia(cliente, { copia, versao: antes.versao, aparelho, esperado: usuarioId, agora: agora() }, prazoMs)
+        if (minha !== epoca || parada) return false
+
+        if (resultado.tipo === 'gravada') {
+          const depois = situacao()
+          gravarSituacao({ ...depois, versao: resultado.versao, salvas: localParcial ? depois.salvas : Math.max(depois.salvas, envio.ate), itens: itensDaCopia(copia) })
+          ultimoTamanho = tamanho
+          return terminou()
+        }
+
+        semRegistro ||= envio.lembrada
+        if (resultado.tipo === 'falhou') {
+          conferirAntes = resultado.motivo === 'rede'
+          return naoFoi(resultado.motivo, tamanho)
+        }
+      } else semRegistro ||= envio.lembrada
 
       // D-132: outro aparelho salvou antes. Lê, junta item por item, grava aqui e manda a juntada.
-      const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+      const leitura = await lerCopia(cliente, usuarioId, prazoDeLeitura())
       if (minha !== epoca || parada) return false
       if (leitura.tipo === 'falhou') return naoFoi('rede', tamanho)
       if (leitura.copia === null) {
         gravarSituacao({ ...situacao(), versao: null })
         continue
       }
+      ultimoTamanho = JSON.stringify(leitura.copia).length
       // A daqui completa é relida (pode ter mudado durante a ida); a parcial, nunca (DP-23).
       const ate = localParcial ? envio.ate : situacao().mudancas
       const lembrada = semRegistro
@@ -484,11 +504,30 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       const junta = juntarCopias(localParcial ? copia : montarCopia(armazenamento, agora()), semPendencias(leitura.copia), agora())
       if (!localParcial) aplicar(junta)
       gravarSituacao({ ...situacao(), versao: leitura.versao, itens: itensDaCopia(leitura.copia) })
+      // A juntada é igual à da nuvem: nada a mandar (o que parecia perdido tinha chegado).
+      if (copiasIguais(junta, leitura.copia)) {
+        if (!localParcial) gravarSituacao({ ...situacao(), salvas: Math.max(situacao().salvas, ate) })
+        return terminou()
+      }
       envio = { copia: junta, ate, lembrada }
     }
     definir({ salvando: false })
     agendarSalvar()
     return false
+  }
+
+  /** A nuvem tem a cópia: destrava; se mudou algo aqui no meio, manda de novo daqui a pouco. */
+  const terminou = (): boolean => {
+    ultimaRecusada = null
+    pararDeTentar()
+    if (localParcial) {
+      definir({ salvando: false, pendente: true, trava: 'sem-espaco' })
+      return false
+    }
+    const resta = temPendencia()
+    definir({ salvando: false, pendente: resta, trava: null, reduzindo: false })
+    if (resta) agendarSalvar()
+    return !resta
   }
 
   function salvarAgora(): Promise<boolean> {
@@ -509,9 +548,9 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   const conferirAgora = async (): Promise<void> => {
     const minha = epoca
     if (parada || estado.fase !== 'pronta' || estado.trava !== null || temPendencia()) return
-    const versao = await lerVersao(cliente, usuarioId, prazoMs)
+    const versao = await lerVersao(cliente, usuarioId, prazoDeLeitura())
     if (minha !== epoca || parada || versao.tipo === 'falhou' || versao.versao === situacao().versao) return
-    const leitura = await lerCopia(cliente, usuarioId, prazoMs)
+    const leitura = await lerCopia(cliente, usuarioId, prazoDeLeitura())
     // Mudou algo aqui enquanto lia: quem junta é o salvar, com a conferência de versão.
     if (minha !== epoca || parada || leitura.tipo === 'falhou' || temPendencia()) return
     if (leitura.copia === null) {

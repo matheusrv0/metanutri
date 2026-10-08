@@ -209,6 +209,25 @@ describe('sem internet (D-130)', () => {
     expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
   })
 
+  it('DP-24: a gravação chegou, mas a resposta se perdeu: antes de mandar de novo, confere a versão e não grava outra vez', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    nuvem.perderResposta = true
+    a.pacientes.criar('Ana')
+    await salvar()
+    await vi.advanceTimersByTimeAsync(16_000)
+    expect(a.sincronia.estado.trava).toBe('sem-internet')
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
+
+    nuvem.perderResposta = false
+    const antes = nuvem.pedidos.length
+    a.sincronia.conectou()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select', 'select'])
+    expect(a.sincronia.estado).toMatchObject({ trava: null, pendente: false })
+  })
+
   it('CA-484: a entrada não consegue trazer a cópia: fica sem conexão e tenta de novo quando a internet volta', async () => {
     const nuvem = nuvemFalsa()
     nuvem.guardar('conta-a', { formato: 1, geradoEm: '', dados: { 'metanutri:pacientes': '[{"id":"ana","nome":"Ana"}]' } }, '2026-10-08T11:00:00.000Z')
@@ -399,6 +418,10 @@ describe('dados de antes e sessão que vence (D-133)', () => {
     expect(abrirAparelho(nuvem, navegadorDeAntes()).sincronia.estado.pendente).toBe(true)
     expect(abrirAparelho(nuvem, new Navegador(), { sujo: true }).sincronia.estado.pendente).toBe(true)
     expect(abrirAparelho(nuvem, new Navegador()).sincronia.estado.pendente).toBe(false)
+    // Com marcas e sem a situação da nuvem (o navegador perdeu só essa chave): também conta.
+    const comMarcas = navegadorDeAntes()
+    comMarcas.setItem('metanutri:conta:conta-a:mudancas', JSON.stringify({ alterados: { 'pacientes/ana': '2026-10-07T10:00:00.000Z' }, excluidos: {} }))
+    expect(abrirAparelho(nuvem, comMarcas).sincronia.estado.pendente).toBe(true)
   })
 
   it('DP-22: a cópia de trabalho já em dia não conta como pendente antes de abrir', async () => {

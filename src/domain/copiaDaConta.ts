@@ -142,7 +142,11 @@ export function registrarMudanca(armazenamento: Armazenamento, chave: string, an
 
 // ---------- A cópia ----------
 
-const limiteDasLapides = (agora: string): string => new Date(Date.parse(agora) - DIAS_DAS_LAPIDES * 24 * 60 * 60 * 1000).toISOString()
+/** A lápide mais velha que fica. Sem uma data que se leia, nenhuma sai. */
+const limiteDasLapides = (agora: string): string => {
+  const instante = Date.parse(agora)
+  return Number.isNaN(instante) ? '' : new Date(instante - DIAS_DAS_LAPIDES * 24 * 60 * 60 * 1000).toISOString()
+}
 
 const recentes = (excluidos: Readonly<Record<string, string>>, agora: string): Record<string, string> => {
   const limite = limiteDasLapides(agora)

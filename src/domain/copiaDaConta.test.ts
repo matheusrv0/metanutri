@@ -90,6 +90,12 @@ describe('montar e aplicar a cópia de trabalho', () => {
     expect(c.formato).toBe(1)
   })
 
+  it('montar a cópia sem uma data que se leia não quebra: nenhuma lápide sai', () => {
+    const arm = new Memoria()
+    arm.setItem(CHAVE_MUDANCAS, mudancas({}, { 'pacientes/velho': '2026-01-01T00:00:00.000Z' }))
+    expect(lerMudancas(montarCopia(arm, '').dados[CHAVE_MUDANCAS] ?? null).excluidos).toEqual({ 'pacientes/velho': '2026-01-01T00:00:00.000Z' })
+  })
+
   it('lápides com mais de 90 dias saem da cópia (DP-3)', () => {
     const arm = new Memoria()
     arm.setItem(CHAVE_MUDANCAS, mudancas({}, { 'pacientes/velho': '2026-07-01T00:00:00.000Z', 'pacientes/novo': '2026-09-01T00:00:00.000Z' }))

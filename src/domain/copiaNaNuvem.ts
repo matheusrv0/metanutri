@@ -17,12 +17,15 @@ interface Resposta {
   readonly status?: number
 }
 
+/** Um pedido ao banco. O do cliente de verdade aceita um sinal para desistir dele (DP-24). */
+type Pedido = PromiseLike<Resposta> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta> }
+
 /** O pedaço do cliente do Supabase que a cópia usa. */
 export interface ClienteDaCopia {
   from(tabela: string): {
-    select(colunas: string): { eq(coluna: string, valor: string): { maybeSingle(): PromiseLike<Resposta> } }
-    insert(linha: Record<string, unknown>): { select(colunas: string): PromiseLike<Resposta> }
-    update(campos: Record<string, unknown>): { eq(coluna: string, valor: string): { eq(coluna: string, valor: string): { select(colunas: string): PromiseLike<Resposta> } } }
+    select(colunas: string): { eq(coluna: string, valor: string): { maybeSingle(): Pedido } }
+    insert(linha: Record<string, unknown>): { select(colunas: string): Pedido }
+    update(campos: Record<string, unknown>): { eq(coluna: string, valor: string): { eq(coluna: string, valor: string): { select(colunas: string): Pedido } } }
   }
   auth: {
     getSession(): PromiseLike<{ data: { session: { user: { id: string } } | null } }>
@@ -73,21 +76,34 @@ async function sessaoDa(cliente: ClienteDaCopia, esperado: string): Promise<bool
   return data.session?.user.id === esperado
 }
 
+/** DP-24: 15 s mais 1 s a cada 50 KB da cópia. A cópia de 5 MB tem quase dois minutos. */
+export function prazoParaTamanho(tamanho: number): number {
+  return PRAZO_DA_NUVEM_MS + 1000 * Math.ceil(Math.max(0, tamanho) / 50_000)
+}
+
 /**
- * Corre a ida à nuvem contra o relógio (DP-7). Exceção e demora viram a falha de rede. O pedido que
- * chegar depois é resolvido pela conferência de versão: a próxima gravação vê "mudou" e junta.
+ * Corre a ida à nuvem contra o relógio (DP-7, DP-24). Exceção e demora viram a falha de rede, e na
+ * demora o pedido é cancelado. O que chegar ao banco mesmo assim é resolvido pela conferência de
+ * versão: o motor confere antes de mandar de novo.
  */
-async function comPrazo<T>(ida: () => Promise<T>, prazoMs: number, naFalha: T): Promise<T> {
+async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, prazoMs: number, naFalha: T): Promise<T> {
+  const controle = new AbortController()
   let relogio: ReturnType<typeof setTimeout> | undefined
   const esgotou = new Promise<T>((resolver) => {
-    relogio = setTimeout(() => resolver(naFalha), prazoMs)
+    relogio = setTimeout(() => {
+      controle.abort()
+      resolver(naFalha)
+    }, prazoMs)
   })
   try {
-    return await Promise.race([ida().catch(() => naFalha), esgotou])
+    return await Promise.race([ida(controle.signal).catch(() => naFalha), esgotou])
   } finally {
     clearTimeout(relogio)
   }
 }
+
+/** Liga o sinal de desistir ao pedido, quando o cliente sabe desistir. */
+const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
 
 const versaoDa = (linhas: unknown, reserva: string): string => {
   const primeira: unknown = Array.isArray(linhas) ? linhas[0] : linhas
@@ -104,9 +120,9 @@ const FALHA_DE_GRAVACAO: Gravacao = { tipo: 'falhou', motivo: 'rede' }
 
 export function lerCopia(cliente: ClienteDaCopia, esperado: string, prazoMs = PRAZO_DA_NUVEM_MS): Promise<Leitura> {
   return comPrazo(
-    async () => {
+    async (sinal) => {
       if (!(await sessaoDa(cliente, esperado))) return FALHA_DE_LEITURA
-      const resposta = await cliente.from(TABELA).select('dados, atualizado_em').eq('nutricionista_id', esperado).maybeSingle()
+      const resposta = await comSinal(cliente.from(TABELA).select('dados, atualizado_em').eq('nutricionista_id', esperado).maybeSingle(), sinal)
       if (resposta.error) return FALHA_DE_LEITURA
       if (resposta.data === null) return { tipo: 'lida', copia: null, versao: null }
       const linha = resposta.data as Record<string, unknown>
@@ -127,9 +143,9 @@ const FALHA_DA_VERSAO: LeituraDaVersao = { tipo: 'falhou' }
 /** Só a versão da linha (DP-20): conferir se outro aparelho salvou custa um pedido pequeno. */
 export function lerVersao(cliente: ClienteDaCopia, esperado: string, prazoMs = PRAZO_DA_NUVEM_MS): Promise<LeituraDaVersao> {
   return comPrazo(
-    async (): Promise<LeituraDaVersao> => {
+    async (sinal): Promise<LeituraDaVersao> => {
       if (!(await sessaoDa(cliente, esperado))) return FALHA_DA_VERSAO
-      const resposta = await cliente.from(TABELA).select('atualizado_em').eq('nutricionista_id', esperado).maybeSingle()
+      const resposta = await comSinal(cliente.from(TABELA).select('atualizado_em').eq('nutricionista_id', esperado).maybeSingle(), sinal)
       if (resposta.error) return FALHA_DA_VERSAO
       if (resposta.data === null) return { tipo: 'lida', versao: null }
       const versao = (resposta.data as Record<string, unknown>)['atualizado_em']
@@ -140,25 +156,29 @@ export function lerVersao(cliente: ClienteDaCopia, esperado: string, prazoMs = P
   )
 }
 
-export function gravarCopia(cliente: ClienteDaCopia, pedido: PedidoDeGravar, prazoMs = PRAZO_DA_NUVEM_MS): Promise<Gravacao> {
+/** Sem prazo dado, o da cópia pelo tamanho dela (DP-24). */
+export function gravarCopia(cliente: ClienteDaCopia, pedido: PedidoDeGravar, prazoMs = prazoParaTamanho(JSON.stringify(pedido.copia).length)): Promise<Gravacao> {
   return comPrazo(
-    async (): Promise<Gravacao> => {
+    async (sinal): Promise<Gravacao> => {
       const { copia, versao, aparelho, esperado, agora } = pedido
       if (!(await sessaoDa(cliente, esperado))) return FALHA_DE_GRAVACAO
       const campos = { dados: copia, aparelho, atualizado_em: agora }
 
       if (versao === null) {
-        const resposta = await cliente
-          .from(TABELA)
-          .insert({ nutricionista_id: esperado, ...campos })
-          .select('atualizado_em')
+        const resposta = await comSinal(
+          cliente
+            .from(TABELA)
+            .insert({ nutricionista_id: esperado, ...campos })
+            .select('atualizado_em'),
+          sinal,
+        )
         // A linha nasceu em outro aparelho depois da última leitura daqui.
         if (resposta.error?.code === '23505') return { tipo: 'mudou' }
         if (resposta.error || resposta.status === 413) return { tipo: 'falhou', motivo: motivoDa(resposta) }
         return { tipo: 'gravada', versao: versaoDa(resposta.data, agora) }
       }
 
-      const resposta = await cliente.from(TABELA).update(campos).eq('nutricionista_id', esperado).eq('atualizado_em', versao).select('atualizado_em')
+      const resposta = await comSinal(cliente.from(TABELA).update(campos).eq('nutricionista_id', esperado).eq('atualizado_em', versao).select('atualizado_em'), sinal)
       if (resposta.error || resposta.status === 413) return { tipo: 'falhou', motivo: motivoDa(resposta) }
       if (!Array.isArray(resposta.data)) return FALHA_DE_GRAVACAO
       if (resposta.data.length === 0) return { tipo: 'mudou' }

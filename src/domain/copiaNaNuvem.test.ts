@@ -1,4 +1,4 @@
-import { apelidoDoAparelho, gravarCopia, lerCopia } from './copiaNaNuvem.ts'
+import { apelidoDoAparelho, gravarCopia, lerCopia, lerVersao, prazoParaTamanho } from './copiaNaNuvem.ts'
 import { nuvemFalsa } from './nuvemFalsa.test-utils.ts'
 import type { Backup } from './perfil.ts'
 
@@ -102,6 +102,26 @@ describe('gravar a cópia com conferência de versão (D-132)', () => {
     expect(await gravarCopia(nuvem.cliente, pedido(null), 10)).toEqual({ tipo: 'falhou', motivo: 'rede' })
     nuvem.soltar()
     expect(nuvem.linhas.has('conta-b')).toBe(false)
+  })
+})
+
+describe('prazo e desistência (DP-24)', () => {
+  it('o prazo é 15 s mais 1 s a cada 50 KB da cópia', () => {
+    expect(prazoParaTamanho(0)).toBe(15_000)
+    expect(prazoParaTamanho(50_000)).toBe(16_000)
+    expect(prazoParaTamanho(50_001)).toBe(17_000)
+    expect(prazoParaTamanho(5_000_000)).toBe(115_000)
+  })
+
+  it('o pedido que estoura o prazo é cancelado, na gravação e na leitura', async () => {
+    const nuvem = nuvemFalsa()
+    nuvem.perderResposta = true
+    expect(await gravarCopia(nuvem.cliente, { copia: copia('[]'), versao: null, aparelho: 'Windows', esperado: 'conta-a', agora: AGORA }, 10)).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    expect(nuvem.sinais.at(-1)?.aborted).toBe(true)
+    expect(await lerVersao(nuvem.cliente, 'conta-a', 10)).toEqual({ tipo: 'falhou' })
+    expect(nuvem.sinais.at(-1)?.aborted).toBe(true)
+    expect(await lerCopia(nuvem.cliente, 'conta-a', 10)).toEqual({ tipo: 'falhou', motivo: 'rede' })
+    expect(nuvem.sinais.at(-1)?.aborted).toBe(true)
   })
 })
 
