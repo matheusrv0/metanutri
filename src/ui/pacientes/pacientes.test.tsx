@@ -109,4 +109,9 @@ describe('Pacientes', () => {
     await userEvent.setup().click(lista.getByRole('button', { name: 'Abrir' }))
     expect(aoAbrirPlano).toHaveBeenCalledWith(plano.caso.id)
   })
+
+  it('DP-26 (spec dados-na-nuvem): o paciente que não existe mais pode ter sido excluído em outra aba ou em outro aparelho', () => {
+    montar(<TelaPaciente pacienteId="nao-existe" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />)
+    expect(screen.getByText('Este paciente não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.')).toBeInTheDocument()
+  })
 })

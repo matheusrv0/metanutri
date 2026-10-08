@@ -1,11 +1,12 @@
 import { Trash } from 'lucide-react'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { useNuvem } from '../estado/contextoNuvem.ts'
 
 interface DialogoExcluirProps {
   /** Nome do que vai ser excluído; `null` mantém a janela fechada. */
   readonly nome: string | null
-  /** O que some e o que isso afeta. Sem informar, fala do plano alimentar. */
+  /** O que some e o que isso afeta. Sem informar, fala do plano alimentar (da conta, com a nuvem; do aparelho, sem). */
   readonly descricao?: string
   /** Texto do botão que confirma. Sem informar, "Excluir plano". */
   readonly acao?: string
@@ -14,19 +15,17 @@ interface DialogoExcluirProps {
 }
 
 /** CA-50: excluir sempre pede confirmação. Serve a plano e a produto. */
-export function DialogoExcluir({
-  nome,
-  descricao = 'O plano alimentar será apagado deste aparelho. Não dá para desfazer.',
-  acao = 'Excluir plano',
-  aoConfirmar,
-  aoFechar,
-}: DialogoExcluirProps) {
+export function DialogoExcluir({ nome, descricao, acao = 'Excluir plano', aoConfirmar, aoFechar }: DialogoExcluirProps) {
+  // Com a conta na nuvem, o plano some de todos os aparelhos (spec dados-na-nuvem, DP-26).
+  const naNuvem = useNuvem() !== null
+  const texto =
+    descricao ?? (naNuvem ? 'O plano alimentar será apagado da sua conta, em todos os aparelhos. Não dá para desfazer.' : 'O plano alimentar será apagado deste aparelho. Não dá para desfazer.')
   return (
     <Dialog open={nome !== null} onOpenChange={(aberto) => !aberto && aoFechar()}>
       <DialogContent role="alertdialog">
         <DialogHeader>
           <DialogTitle>Excluir “{nome}”?</DialogTitle>
-          <DialogDescription>{descricao}</DialogDescription>
+          <DialogDescription>{texto}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="ghost" onClick={aoFechar} autoFocus>

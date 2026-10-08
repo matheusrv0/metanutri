@@ -83,6 +83,7 @@ describe('App: estrutura', () => {
     window.location.hash = '#/caso/nao-existe/plano'
     renderizar()
     expect(screen.getByRole('heading', { level: 1, name: 'Plano não encontrado' })).toBeInTheDocument()
+    expect(screen.getByText('Este plano não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Voltar para Planos' }))
     expect(window.location.hash).toBe('#/casos')
   })

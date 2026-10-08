@@ -47,7 +47,7 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
   if (!paciente) {
     return (
       <Card className="items-start gap-4">
-        <p>Este paciente não existe mais neste aparelho.</p>
+        <p>Este paciente não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.</p>
         <Button variant="lightprimary" onClick={aoVoltar}>
           Voltar para Pacientes
         </Button>

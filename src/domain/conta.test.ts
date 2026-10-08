@@ -255,6 +255,11 @@ describe('Comparativo da página de preços', () => {
     expect(missoes?.valores).toEqual([true, true, true, true])
   })
 
+  it('DP-26 (spec dados-na-nuvem): nenhum plano promete uso sem internet; o Free diz que funciona no navegador', () => {
+    for (const plano of PLANOS) expect([...plano.recursos, ...plano.inclui].join(' '), plano.id).not.toMatch(/sem internet/i)
+    expect(planoPorId('free')?.recursos).toContain('Funciona no navegador, sem instalar nada')
+  })
+
   it('CA-483 (spec dados-na-nuvem): "Dados em qualquer aparelho" não está na comparação nem nos recursos de nenhum plano', () => {
     expect(linhas.map((l) => l.rotulo)).not.toContain('Dados em qualquer aparelho')
     for (const plano of PLANOS) expect([...plano.recursos, ...plano.inclui], plano.id).not.toContain('Dados em qualquer aparelho')

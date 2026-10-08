@@ -66,7 +66,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     marcaNoPdf: true,
-    recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona sem internet'],
+    recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona no navegador, sem instalar nada'],
     inclui: ['Já vem com:', 'Adequação de micronutrientes', 'Missões diárias do paciente', 'Exportar Word e PDF'],
   },
   {

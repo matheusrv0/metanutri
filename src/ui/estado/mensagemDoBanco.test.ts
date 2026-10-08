@@ -36,7 +36,7 @@ describe('mensagemDoBanco (D-98)', () => {
 describe('as travas de tamanho (D-107)', () => {
   it('CA-445: a cópia acima de 5 MB chega com a frase da cópia', () => {
     expect(mensagemDoBanco(recusaDaTrava('copias', 'copias_dados_tamanho'))).toBe(COPIA_GRANDE_DEMAIS)
-    expect(COPIA_GRANDE_DEMAIS).toBe('A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.')
+    expect(COPIA_GRANDE_DEMAIS).toBe('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')
   })
 
   it('CA-446: cada trava de tamanho do link chega com a frase do link', () => {

@@ -68,6 +68,7 @@ let nuvem: NuvemFalsa
 beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('metanutri:conta:conta-a:aviso-inicial-visto', '1')
+  localStorage.setItem('metanutri:conta:conta-a:aviso-nuvem-visto', '1')
   window.location.hash = '#/pacientes'
   nuvem = nuvemFalsa()
   estado.nuvem = nuvem
@@ -235,11 +236,11 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
     await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
     const trava = screen.getByRole('dialog')
-    expect(trava).toHaveTextContent('A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.')
+    expect(trava).toHaveTextContent('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')
 
     act(() => screen.getByRole('button', { name: 'Reduzir os dados' }).click())
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(screen.getByText('A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.')).toBeInTheDocument()
+    expect(screen.getByText('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')).toBeInTheDocument()
     expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
   })
 })

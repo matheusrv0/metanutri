@@ -93,7 +93,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
           <div>
             <Logo tamanho={28} />
             <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
-              O programa de nutrição que mostra o que falta no plano e sugere o que comer. Funciona no navegador, até sem internet.
+              O programa de nutrição que mostra o que falta no plano e sugere o que comer. Funciona no navegador, sem instalar nada.
             </p>
           </div>
           <section aria-labelledby="fontes">

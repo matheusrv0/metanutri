@@ -74,7 +74,7 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
       lado={<LadoDoPlano plano={null} ciclo="mensal" />}
     >
       {conta.disponivel ? null : <AvisoSemServidor aoAbrirSistema={aoAbrirSistema} />}
-      {semInternet ? <AvisoFormulario tipo="erro">Você está sem internet. O primeiro acesso em cada aparelho precisa de internet.</AvisoFormulario> : null}
+      {semInternet ? <AvisoFormulario tipo="erro">Você está sem internet. Conecte-se para entrar e abrir seus dados.</AvisoFormulario> : null}
 
       <form onSubmit={(e) => void enviar(e)} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

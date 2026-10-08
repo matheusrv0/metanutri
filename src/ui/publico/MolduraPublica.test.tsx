@@ -52,4 +52,11 @@ describe('MolduraPublica', () => {
     await usuario.click(botaoBase)
     expect(aoIrPara).toHaveBeenCalledWith('fontes')
   })
+
+  it('DP-26 (spec dados-na-nuvem): o rodapé não promete uso sem internet', () => {
+    montar(false, vi.fn())
+    const rodape = within(screen.getByRole('contentinfo'))
+    expect(rodape.getByText(/Funciona no navegador, sem instalar nada\./)).toBeInTheDocument()
+    expect(rodape.queryByText(/sem internet/)).not.toBeInTheDocument()
+  })
 })

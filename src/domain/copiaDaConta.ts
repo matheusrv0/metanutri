@@ -12,12 +12,14 @@ import { CHAVE_ACOMPANHAMENTOS, semMudancasPendentes } from './repositorioAcompa
 /** As marcas de mudança e as lápides, dentro da cópia. */
 export const CHAVE_MUDANCAS = 'metanutri:mudancas'
 const CHAVE_AVISO = 'metanutri:aviso-inicial-visto'
+/** O aviso único de que os dados agora ficam na nuvem (DP-26; a mesma de `ui/nuvem/chavesDosAvisos.ts`). */
+const CHAVE_AVISO_NUVEM = 'metanutri:aviso-nuvem-visto'
 const INDICE = 'metanutri:casos'
 const PREFIXO_PLANO = 'metanutri:caso:'
 const OCULTOS = 'metanutri:sugestoes-ocultas'
 
-/** O que vai para a nuvem: o backup, o aviso de primeiro acesso (não volta a cada entrada) e as marcas. */
-export const CHAVES_DA_NUVEM: readonly string[] = [...CHAVES_DE_DADOS, CHAVE_AVISO, CHAVE_MUDANCAS]
+/** O que vai para a nuvem: o backup, os avisos já vistos (não voltam a cada entrada) e as marcas. */
+export const CHAVES_DA_NUVEM: readonly string[] = [...CHAVES_DE_DADOS, CHAVE_AVISO, CHAVE_AVISO_NUVEM, CHAVE_MUDANCAS]
 
 /** Lápide com mais que isto sai da cópia (DP-3, R6). */
 export const DIAS_DAS_LAPIDES = 90

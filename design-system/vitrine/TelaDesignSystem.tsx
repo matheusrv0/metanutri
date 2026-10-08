@@ -457,7 +457,7 @@ export function TelaDesignSystem() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Excluir este plano?</DialogTitle>
-                  <DialogDescription>Ele sai deste aparelho e não volta. Faça backup antes, em Configurações.</DialogDescription>
+                  <DialogDescription>Ele sai da sua conta, em todos os aparelhos, e não volta.</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <Button variant="ghost">Cancelar</Button>
@@ -564,7 +564,7 @@ export function TelaDesignSystem() {
         <Secao nome="CartaoDestaque" arquivo="nutricao/CartaoDestaque.tsx" descricao="Três tons; grafite é o herói, um por tela. Cor só no ocre de atenção">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <CartaoDestaque tom="grafite" rotulo="Energia do dia" valor="1.850" unidade="kcal" apoio="Mifflin-St Jeor, 1990" icone={Flame} />
-            <CartaoDestaque tom="branco" rotulo="Planos salvos" valor="12" apoio="Neste aparelho" icone={FolderOpen} />
+            <CartaoDestaque tom="branco" rotulo="Planos salvos" valor="12" apoio="Na sua conta" icone={FolderOpen} />
             <CartaoDestaque tom="branco" rotulo="Adequação" valor="82" unidade="%" apoio="18 de 22 nutrientes" icone={Sparkles} aoClicar={() => undefined} />
             <CartaoDestaque tom="branco" rotulo="Alimentos" valor="597" apoio="TACO 4ª edição" icone={BookOpen} />
             <CartaoDestaque tom="ocre" rotulo="Precisa de atenção" valor="3" apoio="Abaixo da meta" icone={TriangleAlert} />

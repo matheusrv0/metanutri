@@ -5,6 +5,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { useNuvem } from '../estado/contextoNuvem.ts'
+import { CHAVE_AVISO_NUVEM } from '../nuvem/chavesDosAvisos.ts'
 
 /** Por conta: quem nunca usou o aparelho vê o aviso, mesmo que outra conta já tenha visto (CB-122). */
 export const CHAVE_AVISO_VISTO = 'metanutri:aviso-inicial-visto'
@@ -32,12 +33,15 @@ const ONDE_FICAM = {
 export function AvisoPrimeiroAcesso() {
   const armazenamento = useArmazenamento()
   const [aberto, setAberto] = useState(() => !jaViu(armazenamento))
-  const pontos = [...PONTOS, useNuvem() === null ? ONDE_FICAM.aparelho : ONDE_FICAM.nuvem]
+  const naNuvem = useNuvem() !== null
+  const pontos = [...PONTOS, naNuvem ? ONDE_FICAM.nuvem : ONDE_FICAM.aparelho]
 
   const confirmar = () => {
     setAberto(false)
     try {
       armazenamento?.setItem(CHAVE_AVISO_VISTO, '1')
+      // Quem é novo e já leu que os casos ficam na nuvem não precisa do aviso de quem já usava (DP-26).
+      if (naNuvem) armazenamento?.setItem(CHAVE_AVISO_NUVEM, '1')
     } catch {
       // armazenamento bloqueado: o aviso volta na próxima visita, o que é aceitável
     }

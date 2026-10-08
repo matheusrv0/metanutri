@@ -302,7 +302,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
       return (
         <Estrutura {...base} titulo="Plano não encontrado" trilha={[irParaCasos]}>
           <Card className="items-start gap-4">
-            <p>Este plano não existe mais neste aparelho. Ele pode ter sido excluído em outra aba.</p>
+            <p>Este plano não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.</p>
             <Button variant="lightprimary" onClick={() => navegar({ tela: 'casos' })}>
               <FolderOpen aria-hidden="true" />
               Voltar para Planos

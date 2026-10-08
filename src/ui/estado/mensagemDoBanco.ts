@@ -4,8 +4,8 @@
 // tamanho (D-107): o banco recusa pelo nome da trava, e a tela diz o motivo.
 export const FALHA_DE_REDE = 'Não deu para falar com o servidor. Confira a internet e tente de novo.'
 
-/** D-107 (CA-445): a cópia completa passou do tamanho que a nuvem guarda. */
-export const COPIA_GRANDE_DEMAIS = 'A cópia passou de 5 MB, o máximo da nuvem. Seus dados continuam neste aparelho.'
+/** D-107 (CA-445): a cópia completa passou do tamanho que a nuvem guarda. Texto da spec dados-na-nuvem (CB-123). */
+export const COPIA_GRANDE_DEMAIS = 'A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.'
 /** D-107 (CA-446): o link passou de um dos tamanhos que a nuvem guarda. */
 export const LINK_GRANDE_DEMAIS = 'Este link ficou grande demais. Tire algumas missões e tente de novo.'
 

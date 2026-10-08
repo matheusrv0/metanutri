@@ -60,10 +60,10 @@ describe('TelaEntrar', () => {
     expect(aoEntrou).not.toHaveBeenCalled()
   })
 
-  it('CA-155: sem internet, avisa que o primeiro acesso precisa de internet', () => {
+  it('CA-155 e DP-26: sem internet, avisa que é preciso se conectar para entrar e abrir os dados', () => {
     Object.defineProperty(globalThis.navigator, 'onLine', { value: false, configurable: true })
     montar()
-    expect(screen.getByRole('alert')).toHaveTextContent('O primeiro acesso em cada aparelho precisa de internet.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Você está sem internet. Conecte-se para entrar e abrir seus dados.')
   })
 })
 

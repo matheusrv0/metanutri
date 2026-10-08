@@ -7,6 +7,7 @@ import type { ModoPlano } from '@/domain/tipos.ts'
 import { useMigracaoIncompleta } from '../estado/contextoArmazenamento.ts'
 import { useNuvem } from '../estado/contextoNuvem.ts'
 import { COPIA_GRANDE_DEMAIS } from '../estado/mensagemDoBanco.ts'
+import { AvisoNuvem } from '../nuvem/AvisoNuvem.tsx'
 import { SituacaoDaNuvem } from '../nuvem/SituacaoDaNuvem.tsx'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
@@ -89,6 +90,8 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
 
       {/* Boas-vindas só aqui dentro: quem está na página pública ainda não entrou no sistema. */}
       <AvisoPrimeiroAcesso />
+      {/* Quem já usava fica sabendo, uma vez, que os dados agora ficam na nuvem (spec dados-na-nuvem, DP-26). */}
+      <AvisoNuvem />
     </div>
   )
 }
