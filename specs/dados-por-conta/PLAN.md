@@ -1,7 +1,7 @@
 # PLAN — Dados por conta no aparelho
 
 **Spec de origem:** `./SPEC.md` (commit c8720d1, D-120 a D-126, CA-465 a CA-471, CB-120 a CB-122)
-**Status:** concluído (07/10/2026)
+**Status:** em execução: rodada final da revisão (08/10/2026, D-127, CA-472 a CA-474)
 
 ## Abordagem
 
@@ -96,6 +96,27 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   - Depende de: T6
   - Feito quando: as duas notas no lugar.
 
+### Rodada final (revisão de 08/10/2026)
+
+- [x] **T9** — Spec e plano: D-127, CA-472 a CA-474, textos do D-124; DP-5, R1 e R3 revistos; DP-12 a DP-17.
+- [ ] **T10** — Conflito junta, nunca esconde (D-127, DP-5): `donoDosDados.ts` resolve chave por chave e nunca sai cedo.
+  - Cobre: CA-472
+  - Feito quando: teste da aba antiga que grava depois da migração e de "uma chave em conflito não impede as outras";
+    sai o teste que travava o comportamento antigo.
+- [ ] **T11** — Espaço cheio (DP-12): cada plano movido entra no índice na hora; `QuotaExceededError` libera a chave
+  crua e tenta de novo na mesma tarefa; o resultado sobe pelo contexto e a área de trabalho mostra o aviso do CA-473.
+  - Cobre: CA-473
+  - Feito quando: falha no meio → a conta vê os planos movidos (com índice) e o aviso; perto do limite → avança.
+- [ ] **T12** — Nuvem por conta (DP-13): as funções da nuvem recebem a conta esperada; o provedor confere se ainda está
+  montado depois de cada espera.
+  - Cobre: CA-474
+  - Feito quando: a leitura começa como A, a sessão vira B no meio: nenhum envio como B e nada gravado no espaço de A.
+- [ ] **T13** — "Apagar tudo" de Configurações com conta usa `apagarDadosDaConta` (DP-14); sem servidor, como hoje.
+  - Feito quando: planos fora do índice, aviso de primeiro acesso e `frequentes` somem.
+- [ ] **T14** — Textos do D-124 (Configurações, Sair, Política, Sugestões), sem contar que outra conta usa o aparelho.
+- [ ] **T15** — Troca direta de conta numa tela de trabalho vai para o painel (DP-15); comentários sobre o `useMemo`
+  idempotente e o custo de listar por índice.
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -110,6 +131,9 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 | CB-120 | T3, T6, T6b | `AppConta.test.tsx` "CB-120: …" (duas); `ProvedorArmazenamento.test.tsx` "CB-120: …" |
 | CB-121 | T2, T3 | `donoDosDados.test.ts` "CB-121: …"; `armazenamentoDaSessao.test.ts` "CB-121: …" |
 | CB-122 | T4, T6 | `dadosPorConta.test.tsx` "CB-122: …"; `AppConta.test.tsx` "CB-122: …" |
+| CA-472 | T10 | `donoDosDados.test.ts` "CA-472: …"; `AppConta.test.tsx` "CA-472: …" |
+| CA-473 | T11 | `donoDosDados.test.ts` "CA-473: …"; `AppConta.test.tsx` "CA-473: …" |
+| CA-474 | T12 | `nuvemPorConta.test.tsx` "CA-474: …"; `fonteSupabase.test.ts` "CA-474: …" |
 
 ## Decisões do plano
 
@@ -129,9 +153,15 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   apaga a crua. Em nenhum momento a chave some dos dois lugares ao mesmo tempo, então fechar o navegador no
   meio não perde nada, e a próxima entrada termina o serviço. Copiar tudo antes dobraria o espaço ocupado de uma vez: com
   logo e muitos planos, o `localStorage` (cerca de 5 MB) estoura no meio e nada é movido.
-- **DP-5 · Conflito: nada se move.** Se alguma chave crua já existe na conta com valor diferente, a migração não
-  mexe em nada (não junta, não sobrescreve): a conta fica com o que já tinha e o cru fica guardado, escondido. Valor
-  igual nos dois lados é cópia interrompida, e a migração segue.
+- **DP-5 · Conflito: junta chave por chave, nunca esconde (D-127; substitui o "nada se move" da primeira rodada).**
+  Valor igual nos dois lados é cópia interrompida e segue. Com valor diferente: o índice `metanutri:casos` junta os ids
+  (a ordem da conta primeiro, depois os de fora que faltam); um plano `metanutri:caso:<id>` diferente fica nos dois
+  (o mais novo pelo `atualizadoEm` fica com o id; o outro ganha id novo, `crypto.randomUUID()` como o app já gera, e entra
+  no índice); listas com id (pacientes, produtos, modelos e os itens dos acompanhamentos, com as marcas de nuvem e de
+  pendente de cada item) juntam por id, e no mesmo id fica o da conta; configurações (perfil, impressão, perfil da conta,
+  sugestões por refeição, aviso de primeiro acesso, `frequentes`) ficam com o valor da conta e a cópia crua sai;
+  sugestões ocultas viram a união. Valor cru que o app não consegue ler fica fora (a conta mantém o dela); valor da conta
+  ilegível dá lugar ao cru.
 - **DP-6 · `metanutri:dono` fica depois da migração** (o pedido dizia apagar). É gravado antes da primeira cópia e
   continua lá: se uma aba ainda na versão anterior do site (o app é PWA) gravar chaves sem prefixo depois, elas vão
   para o dono, e não para a próxima conta que entrar. Sai só quando o dono escolhe "Sair e apagar os dados deste
@@ -149,14 +179,34 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
   aceito, e a nova tentativa caía em "código inválido". Com servidor de conta e sem sessão, a área de trabalho só monta
   para o link do paciente (com os dados do aparelho, DP-3); nas telas de trabalho o portão mostra Entrar antes.
 
+- **DP-12 · Espaço cheio (CA-473).** Cada chave: se gravar com prefixo estourar (`QuotaExceededError`), na mesma
+  tarefa síncrona o valor fica em memória, a chave crua sai e a com prefixo é gravada; se ainda assim falhar, a crua é
+  regravada (cabe, porque o espaço acabou de ser liberado). Cada plano movido entra no índice da conta na hora. A migração
+  não para na primeira falha; sobrando chave crua, o resultado é `incompleto`, sobe pelo contexto e a área de trabalho
+  mostra o aviso do CA-473.
+- **DP-13 · Nuvem por conta (CA-474).** As funções da nuvem recebem a conta esperada e falham (sem pedir nada) quando a
+  sessão é de outra; o provedor de acompanhamentos tem uma marca de "montado" que cai ao desmontar e é conferida depois
+  de cada espera, antes de gravar no aparelho ou enviar.
+- **DP-14 · "Apagar todos os seus dados deste aparelho" (Configurações), com conta, apaga o espaço inteiro da conta**,
+  igual ao "Sair e apagar" (planos fora do índice, aviso de primeiro acesso, `frequentes`). Substitui o DP-8. Sem
+  servidor de conta, segue o caminho de hoje (as chaves de dados sem prefixo).
+- **DP-15 · Trocar de conta direto (A → B na mesma aba) numa tela de trabalho leva ao painel**, em vez de deixar no
+  endereço o plano ou o paciente de A.
+- **DP-16 · Produtos com o mesmo id ficam com o da conta.** Os ids de produto são sequenciais (a partir de 900000):
+  um produto criado por uma aba antiga depois da migração pode repetir o id de outro da conta e, pela regra do mesmo id,
+  fica de fora. Trocar o id quebraria os planos que apontam para ele (R4).
+- **DP-17 · Fechar o navegador no meio de um conflito de plano pode deixar uma cópia a mais** do plano mais velho (com
+  outro id). Nunca perde dado.
+
 ## Riscos
 
-- **R1** — Aba aberta com a versão anterior grava chaves sem prefixo depois da migração → vão para o dono (DP-6); se
-  colidirem com o que a conta já tem, ficam guardadas e escondidas (DP-5), sem perda.
+- **R1** — Aba aberta com a versão anterior grava chaves sem prefixo depois da migração → na próxima entrada vão para
+  o dono (DP-6) e são juntadas ao que a conta já tem (DP-5, CA-472).
 - **R2** — Leitura da nuvem em andamento que termina depois de "Sair e apagar" grava de volta no espaço da conta que
   saiu (a página recarrega logo em seguida). Já acontecia com as chaves sem prefixo.
-- **R3** — `localStorage` cheio no meio da migração → parte fica sem prefixo e volta a tentar na próxima entrada; a
-  conta vê só o que já foi movido até lá.
+- **R3** — `localStorage` cheio no meio da migração → move o que couber (DP-12), mostra o aviso do CA-473 e tenta o
+  resto na próxima entrada; a conta vê exatamente o que foi movido, com os planos no índice.
+- **R4** — Produto de aba antiga com o mesmo id de outro da conta fica de fora (DP-16).
 
 ## Validação
 

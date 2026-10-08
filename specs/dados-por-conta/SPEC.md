@@ -14,9 +14,10 @@ conta entra, o site trava na tela "Este aparelho tem dados de outra conta" e ofe
 | D-121 | **Trocar de conta não apaga nada.** Os dados da conta que saiu ficam guardados e escondidos, e voltam quando ela entrar de novo |
 | D-122 | **A tela "Este aparelho tem dados de outra conta" deixa de existir.** Substitui o CA-152 e o CA-153 da `estilo-spora` |
 | D-123 | **Os dados que já estão no aparelho continuam com quem é dono deles hoje.** Dados sem dono (de antes da conta obrigatória) vão para a primeira conta que entrar, como já acontece (CA-151) |
-| D-124 | **"Sair e apagar os dados deste aparelho" apaga só os dados da conta que está saindo.** Os de outras contas continuam |
+| D-124 | **"Sair e apagar os meus dados deste aparelho" apaga só os dados da conta que está saindo.** Os de outras contas continuam. O mesmo vale para "Apagar todos os seus dados deste aparelho", em Configurações. Os textos falam dos dados de quem está dentro e não contam que outra conta usa o aparelho: "Outras pessoas usam este computador? Apague os seus pacientes e planos guardados neste navegador.", "Apagar os seus dados deste aparelho?" e "Seus dados foram apagados deste aparelho. Recarregue a página." |
 | D-125 | **Exportar e importar o backup e a cópia na nuvem valem só para a conta que está dentro** |
 | D-126 | **O que é do aparelho continua do aparelho:** o tema claro ou escuro e o e-mail esperando confirmação |
+| D-127 | **Conflito na migração não esconde nada.** Quando um dado de antes já existe na conta com outro valor, os dois são juntados: listas com id juntam por id; planos diferentes ficam os dois (o mais novo pelo `atualizadoEm` fica com o id; o outro ganha id novo e entra no índice); configurações ficam com o valor da conta; nenhum dado é escondido. Acrescentada em 08/10/2026, na revisão final |
 
 ## 2. Critérios de aceite
 
@@ -24,9 +25,12 @@ conta entra, o site trava na tela "Este aparelho tem dados de outra conta" e ofe
 - **CA-466** · Dado que B criou um paciente neste aparelho, quando A entra de novo, então A vê os próprios dados, como deixou, e nenhum dado de B.
 - **CA-467** · Dado um aparelho com dados de antes desta mudança, quando a conta dona deles entra, então ela vê tudo como antes: nada some.
 - **CA-468** · Dado um aparelho com dados sem dono, quando uma conta entra, então esses dados passam a ser dela.
-- **CA-469** · Dado A e B com dados no aparelho, quando A sai escolhendo "Sair e apagar os dados deste aparelho", então somem só os dados de A, e os de B continuam.
+- **CA-469** · Dado A e B com dados no aparelho, quando A sai escolhendo "Sair e apagar os meus dados deste aparelho", então somem só os dados de A, e os de B continuam.
 - **CA-470** · Dado o backup (exportar e importar) e a cópia na nuvem, então eles leem e gravam só os dados da conta que está dentro.
 - **CA-471** · Dado o tema escolhido, então ele continua o mesmo para qualquer conta neste aparelho.
+- **CA-472** · Dado uma aba antiga do site que grava depois da migração, quando a conta entra de novo, então a edição feita naquela aba aparece (D-127).
+- **CA-473** · Dado o navegador sem espaço no meio da migração, então a conta vê exatamente o que já foi movido, com os planos no índice, e a tela avisa: "Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do MetaNutri e recarregue a página."
+- **CA-474** · Dado uma leitura da nuvem em andamento, quando a conta troca, então nenhum dado de uma conta é gravado ou enviado na outra.
 
 ## 3. Casos de borda
 
