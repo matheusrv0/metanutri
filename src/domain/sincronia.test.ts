@@ -6,7 +6,7 @@ import { criarRepositorioPacientes } from './pacientes.ts'
 import { gravarPerfil, lerPerfil, PERFIL_VAZIO, type Backup } from './perfil.ts'
 import { criarRepositorio, type ArmazenamentoListavel } from './persistencia.ts'
 import { criarRepositorioProdutos } from './produtos.ts'
-import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
+import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ficouParcial, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
 
 /** Um navegador: o armazenamento do aparelho, com as chaves listáveis como o `localStorage`. */
 class Navegador implements ArmazenamentoListavel {
@@ -647,6 +647,57 @@ describe('dados de antes e sessão que vence (D-133)', () => {
     await ligar(deNovo)
     expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia'])
     expect(deNovo.sincronia.estado).toMatchObject({ fase: 'pronta', pendente: false, trava: null })
+  })
+})
+
+describe('navegador sem espaço com duas abas (DP-29)', () => {
+  it('DP-29: a outra aba da mesma conta não sobe a cópia parcial, nem ao fechar, e a nuvem fica inteira', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    const a = abrirAparelho(nuvem, navegador)
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    await salvar()
+    const b = abrirAparelho(nuvem, navegador)
+    await ligar(b)
+
+    // Outro aparelho acrescenta 30 pacientes.
+    const c = abrirAparelho(nuvem)
+    await ligar(c)
+    vi.setSystemTime(new Date('2026-10-08T12:10:00.000Z'))
+    for (let i = 0; i < 30; i += 1) c.pacientes.criar(`Paciente ${i} com um nome bem comprido para ocupar espaço`)
+    await salvar()
+    expect(pacientesNaNuvem(nuvem)).toHaveLength(31)
+
+    // O navegador de A e B fica quase cheio; A muda algo, junta com a nuvem e a juntada não cabe aqui.
+    navegador.limite = [...navegador.dados].reduce((total, [k, v]) => total + k.length + v.length, 0) + 600
+    vi.setSystemTime(new Date('2026-10-08T12:20:00.000Z'))
+    a.pacientes.criar('Bia')
+    await salvar()
+    expect(a.sincronia.estado.trava).toBe('sem-espaco')
+    expect(pacientesNaNuvem(nuvem)).toHaveLength(32)
+
+    // B ouve as gravações de A e tenta salvar; depois a aba de B fecha (salvar na hora).
+    b.sincronia.mudou()
+    await salvar()
+    expect(await b.sincronia.salvarAgora()).toBe(false)
+    expect(pacientesNaNuvem(nuvem)).toHaveLength(32)
+    expect(b.sincronia.estado.trava).toBe('sem-espaco')
+    const situacao = lerSituacao(armazenamentoDaConta(navegador, 'conta-a'))
+    expect(situacao?.parcial).toBe(true)
+    expect(ficouParcial(navegador.getItem('metanutri:conta:conta-a:nuvem'))).toBe(true)
+    expect(ficouParcial(null)).toBe(false)
+    expect(situacao !== null && situacao.mudancas > situacao.salvas).toBe(true)
+
+    // Recarregada com espaço, a cópia daqui volta a ficar inteira e em dia.
+    navegador.limite = null
+    a.sincronia.desligar()
+    b.sincronia.desligar()
+    const deNovo = abrirAparelho(nuvem, navegador)
+    await ligar(deNovo)
+    expect(deNovo.sincronia.estado).toMatchObject({ fase: 'pronta', trava: null, pendente: false })
+    expect(lerSituacao(armazenamentoDaConta(navegador, 'conta-a'))?.parcial).toBeUndefined()
+    expect(nomesDosPacientes(deNovo)).toHaveLength(32)
   })
 })
 

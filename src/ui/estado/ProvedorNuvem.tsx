@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState, useSyncExternalStore, type Re
 import { ehArmazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
 import { ehChaveDaNuvem } from '@/domain/copiaDaConta.ts'
 import { apelidoDoAparelho, type ClienteDaCopia } from '@/domain/copiaNaNuvem.ts'
-import { CHAVE_NUVEM, criarSincronia, observarMudancas, saiuDaConta } from '@/domain/sincronia.ts'
+import { CHAVE_NUVEM, criarSincronia, ficouParcial, observarMudancas, saiuDaConta } from '@/domain/sincronia.ts'
 import { trocarDadosEmMemoria } from './armazenamentoDaSessao.ts'
 import { ContextoArmazenamento, ContextoMigracao, useArmazenamento } from './contextoArmazenamento.ts'
 import { ContextoNuvem, type ValorNuvem } from './contextoNuvem.ts'
@@ -70,6 +70,8 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       const chave = conta.chaveOriginal(evento.key)
       if (chave === CHAVE_NUVEM) {
         if (saiuDaConta(evento.newValue)) sincronia.saiuEmOutraAba()
+        // DP-29: a cópia daqui não coube em outra aba: esta trava também, sem mandar nada.
+        else if (ficouParcial(evento.newValue)) sincronia.mudou()
       } else if (chave !== null && ehChaveDaNuvem(chave)) {
         sincronia.mudou()
         // CB-124: os produtos da outra aba entram na busca daqui.
