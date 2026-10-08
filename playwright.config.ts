@@ -22,6 +22,8 @@ export default defineConfig({
     timeout: 180_000,
     // Sem servidor de conta nos testes de navegador: o app abre no modo local
     // (SPEC CA-150), mesmo que exista um .env.local com as chaves nesta máquina.
-    env: { VITE_SUPABASE_URL: 'desligado', VITE_SUPABASE_ANON_KEY: 'desligado' },
+    // Sem a verificação contra robôs também (spec seguranca-lote-3, CA-463 e R-45):
+    // o script do Cloudflare nunca carrega aqui.
+    env: { VITE_SUPABASE_URL: 'desligado', VITE_SUPABASE_ANON_KEY: 'desligado', VITE_TURNSTILE_SITE_KEY: 'desligado' },
   },
 })

@@ -59,5 +59,8 @@ export default defineConfig({
     // disputa entre workers, não por lentidão de código: sozinhos rodam em ~1 s.
     testTimeout: 20000,
     css: false,
+    // CA-463: os testes começam sem a verificação contra robôs, mesmo com a chave no .env.local desta
+    // máquina. O teste que precisa dela liga a chave sozinho (vi.stubEnv).
+    env: { VITE_TURNSTILE_SITE_KEY: 'desligado' },
   },
 })
