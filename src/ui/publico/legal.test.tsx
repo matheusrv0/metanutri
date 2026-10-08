@@ -58,6 +58,8 @@ describe('documentos legais', () => {
     expect(texto).toContain('Os planos, as fichas de paciente e as configurações ficam na nuvem, presos à conta.')
     expect(texto).toContain('Enquanto a pessoa está dentro, o navegador guarda uma cópia de trabalho; ao sair da conta, ela é apagada.')
     expect(texto).toContain('A cópia de trabalho no navegador some quando você sai da conta.')
+    // DP-22 e DP-30: o dado de antes que ainda não foi para a conta não some ao sair.
+    expect(texto).toContain('Dados de antes que ainda não foram para a conta ficam neste navegador até a próxima entrada, quando vão para ela.')
     expect(texto).not.toMatch(/Apagar tudo|Sair e apagar|ficam salvos neste aparelho|cópia na nuvem/)
   })
 

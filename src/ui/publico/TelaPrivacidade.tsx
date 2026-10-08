@@ -42,7 +42,8 @@ export function TelaPrivacidade() {
       <ul>
         <li>
           Os planos, as fichas de paciente e as configurações ficam na nuvem, presos à conta. Enquanto a pessoa está dentro, o navegador guarda uma
-          cópia de trabalho; ao sair da conta, ela é apagada.
+          cópia de trabalho; ao sair da conta, ela é apagada. Dados de antes que ainda não foram para a conta ficam neste navegador até a próxima
+          entrada, quando vão para ela.
         </li>
         <li>
           A conta, a assinatura, os dados da conta e as missões do link do paciente ficam na Supabase, que hospeda o banco de dados do MetaNutri. Os
