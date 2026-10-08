@@ -19,6 +19,7 @@ reenvio do código. Conferir o código de 8 dígitos não exige verificação, e
 | D-116 | **Ordem para ligar:** primeiro o site com a verificação vai ao ar (enquanto o captcha está desligado no Supabase, ele ignora a verificação). Só depois o dono liga o captcha no painel, com a chave secreta. Nunca o contrário: com o captcha ligado e o site antigo, ninguém entra |
 | D-117 | **A chave pública da verificação vem do GitHub** (variável `VITE_TURNSTILE_SITE_KEY`), como a do pagamento. Sem ela, no computador de desenvolvimento e nos testes, a verificação não aparece e os pedidos seguem como hoje |
 | D-118 | **A Política de privacidade ganha um item:** o Cloudflare Turnstile recebe dados técnicos do navegador para separar pessoas de robôs nas telas de conta. A data da versão dos termos muda para a da publicação |
+| D-119 | **Se o script do Cloudflare não carregar, o site tenta mesmo assim.** O pedido segue sem a verificação. Com o captcha ligado no Supabase, a tela avisa que a verificação não carregou. Se o Cloudflare cair, basta o dono desligar o captcha no painel do Supabase para o login voltar na hora, sem publicar o site de novo. Decisão do dono em 07/10/2026 |
 
 ## 2. Critérios de aceite
 
@@ -29,7 +30,7 @@ reenvio do código. Conferir o código de 8 dígitos não exige verificação, e
 - **CA-458** · Dado que a verificação ainda não terminou, quando a pessoa clica no botão, então a tela diz "Espere a verificação de segurança terminar." e nada é enviado.
 - **CA-459** · Dado um pedido feito, certo ou errado, então a verificação se renova, e a tentativa seguinte leva uma verificação nova.
 - **CA-460** · Dado que o servidor recusa a verificação, então a tela diz "Não deu para confirmar que é você. Tente de novo." e a verificação se renova.
-- **CA-461** · Dado que o script da verificação não carrega (rede ou bloqueador), então a tela diz "A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página." e o botão não envia.
+- **CA-461** · Dado que o script da verificação não carrega (rede ou bloqueador), quando a pessoa clica no botão, então o pedido segue sem a verificação (D-119). Se o servidor exigir a verificação, a tela diz "A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página."
 - **CA-462** · Dado que o Cloudflare pede um clique, então a verificação aparece logo acima do botão, em português e no tema do site.
 - **CA-463** · Dado o site sem a chave pública (`VITE_TURNSTILE_SITE_KEY` vazia), então nenhuma verificação aparece e os pedidos seguem como hoje.
 - **CA-464** · Dado a Política de privacidade, então ela diz que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta, para separar pessoas de robôs.
@@ -59,6 +60,6 @@ reenvio do código. Conferir o código de 8 dígitos não exige verificação, e
 
 ## 6. Riscos para revisar
 
-- **R-43** · A verificação usa um script do Cloudflare, carregado só nas telas de conta. Se o Cloudflare cair, ninguém entra nem se cadastra até ele voltar (ou até o dono desligar o captcha no painel).
+- **R-43** · A verificação usa um script do Cloudflare, carregado só nas telas de conta. Se o Cloudflare cair, ninguém entra nem se cadastra até ele voltar ou até o dono desligar o captcha no painel do Supabase, que basta sozinho (D-119).
 - **R-44** · Alguns bloqueadores de anúncio barram o script. A tela avisa (CA-461), mas a pessoa precisa desativar o bloqueador.
 - **R-45** · Os testes automáticos do site não passam pela verificação real: usam a chave de teste do Cloudflare, que sempre aprova. A verificação de verdade só é conferida no site publicado (passo 4 da seção 5).
