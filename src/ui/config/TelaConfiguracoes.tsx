@@ -21,6 +21,9 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { baixarBlob } from '../exportar/baixar.ts'
+import { ehArmazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
+import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
+import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
 /**
@@ -130,9 +133,15 @@ export function TelaConfiguracoes() {
   }
 
   const apagarTudo = () => {
-    // Expandido: sem isso os planos (metanutri:caso:<id>) ficavam no aparelho depois
-    // de "apagar tudo", com nome e medida de paciente dentro. Só os da conta que está dentro (DP-8).
-    for (const chave of expandirChaves(armazenamento, [...CHAVES_DE_DADOS])) armazenamento?.removeItem(chave)
+    if (armazenamento !== null && ehArmazenamentoDaConta(armazenamento)) {
+      // DP-14: com conta, o mesmo de "Sair e apagar": o espaço inteiro da conta que está dentro
+      // (planos fora do índice e aviso de primeiro acesso também), e só ele (D-124).
+      apagarDadosDaConta(armazenamentoLocal(), armazenamento.usuarioId)
+    } else {
+      // Sem servidor de conta, como antes. Expandido: sem isso os planos (metanutri:caso:<id>)
+      // ficavam no aparelho depois de "apagar tudo", com nome e medida de paciente dentro.
+      for (const chave of expandirChaves(armazenamento, [...CHAVES_DE_DADOS])) armazenamento?.removeItem(chave)
+    }
     setConfirmandoApagar(false)
 
     // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente

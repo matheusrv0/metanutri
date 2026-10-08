@@ -97,13 +97,17 @@ describe('backup e cópia na nuvem só da conta que está dentro (spec dados-por
     expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
   })
 
-  it('DP-8: "Apagar todos os dados deste aparelho" leva só os da conta que está dentro', async () => {
+  it('DP-14: "Apagar tudo" leva o espaço inteiro da conta que está dentro, e só ele', async () => {
+    // Plano fora do índice, aviso de primeiro acesso e a chave antiga dos frequentes também são da conta.
+    localStorage.setItem('metanutri:conta:conta-a:caso:solto', '{"nome":"Plano fora do índice"}')
+    localStorage.setItem('metanutri:conta:conta-a:aviso-inicial-visto', '1')
+    localStorage.setItem('metanutri:conta:conta-a:frequentes', '{}')
     render(naConta('conta-a', <TelaConfiguracoes />))
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Apagar todos os dados deste aparelho' }))
     await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
     await waitFor(() => expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).toBeNull())
-    expect(localStorage.getItem('metanutri:conta:conta-a:caso:x')).toBeNull()
+    expect(Object.keys(localStorage).filter((c) => c.startsWith('metanutri:conta:conta-a:'))).toEqual([])
     expect(localStorage.getItem('metanutri:conta:conta-b:pacientes')).toBe('[{"id":"bia"}]')
     expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
   })
