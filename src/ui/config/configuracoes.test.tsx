@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CHAVES_DE_DADOS, linhaDeResponsabilidade, montarBackup, PERFIL_VAZIO, restaurarBackup } from '@/domain/perfil.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
+import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
+import { ContextoArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { TelaConfiguracoes } from './TelaConfiguracoes.tsx'
 
 class MemoriaFalsa implements Armazenamento {
@@ -58,14 +60,25 @@ describe('Configurações', () => {
     expect(JSON.parse(localStorage.getItem('metanutri:perfil') ?? '{}').nome).toBe('Ana Souza')
   })
 
-  it('apagar tudo pede confirmação antes', async () => {
-    localStorage.setItem('metanutri:casos', '["a"]')
+  it('CA-482: sem os botões de apagar dados do aparelho nem os de enviar e trazer a cópia na nuvem; o backup em arquivo continua', () => {
+    for (const armazenamento of [undefined, armazenamentoDaConta(localStorage, 'conta-a')]) {
+      const { unmount } = render(
+        <ContextoArmazenamento.Provider value={armazenamento}>
+          <TelaConfiguracoes />
+        </ContextoArmazenamento.Provider>,
+      )
+      for (const nome of [/Apagar todos/, /Apagar tudo/, /Enviar deste aparelho/, /Trazer para este aparelho/]) {
+        expect(screen.queryByRole('button', { name: nome })).not.toBeInTheDocument()
+      }
+      expect(screen.queryByText('Cópia na nuvem')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Baixar backup' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Restaurar backup' })).toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('D-128: Configurações não diz mais que os dados ficam só neste aparelho', () => {
     render(<TelaConfiguracoes />)
-    const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('button', { name: 'Apagar todos os seus dados deste aparelho' }))
-    expect(localStorage.getItem('metanutri:casos')).toBe('["a"]')
-    await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
-    expect(localStorage.getItem('metanutri:casos')).toBeNull()
-    expect(screen.getByText('Seus dados foram apagados deste aparelho. Recarregue a página.')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Fica só neste aparelho|Tudo fica neste navegador/)
   })
 })

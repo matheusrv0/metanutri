@@ -1,67 +1,24 @@
-import { Download, Image, ShieldCheck, Trash, Upload } from 'lucide-react'
+import { Download, Image, ShieldCheck, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
-import {
-  CHAVES_DE_DADOS,
-  expandirChaves,
-  gravarPerfil,
-  lerPerfil,
-  linhaDeResponsabilidade,
-  montarBackup,
-  restaurarBackup,
-  type Perfil,
-} from '@/domain/perfil.ts'
-import { apagarAcompanhamentosDaNuvem, PRAZO_DA_NUVEM_MS, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
-import { FALHA_DE_REDE } from '../estado/mensagemDoBanco.ts'
-import { apagarCopiaDaNuvem, apelidoDoAparelho, baixarCopia, enviarCopia, type ClienteCopia } from '@/domain/copiaNaNuvem.ts'
-import { CloudDownload, CloudUpload } from 'lucide-react'
-import { obterSupabase } from '../estado/supabase.ts'
+import { CHAVES_DE_DADOS, gravarPerfil, lerPerfil, linhaDeResponsabilidade, montarBackup, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { baixarBlob } from '../exportar/baixar.ts'
-import { ehArmazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
-import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
-import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
 /**
- * CA-420: o que "Apagar tudo" conseguiu apagar da nuvem. Só diz "na nuvem" quando as duas partes
- * saíram; se uma falhou, diz qual ficou. Os erros já chegam traduzidos (D-98).
- */
-/**
- * A parte da nuvem em "Apagar tudo" que estoura ou não responde no prazo conta como não
- * apagada: a mensagem nunca fica presa em "Apagando da nuvem…" nem diz que apagou.
- */
-function comPrazoDeApagar(apagando: Promise<string | null>): Promise<string | null> {
-  let relogio: ReturnType<typeof setTimeout> | undefined
-  const esgotou = new Promise<string>((resolver) => {
-    relogio = setTimeout(() => resolver(FALHA_DE_REDE), PRAZO_DA_NUVEM_MS)
-  })
-  return Promise.race([apagando.catch(() => FALHA_DE_REDE), esgotou]).finally(() => clearTimeout(relogio))
-}
-
-function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string | null): string {
-  if (erroAcompanhamentos && erroCopia) {
-    return `Apagado só deste aparelho. Os acompanhamentos e a cópia completa não foram apagados da nuvem. ${erroAcompanhamentos}`
-  }
-  if (erroAcompanhamentos) return `Apagado deste aparelho e a cópia completa da nuvem. Os acompanhamentos não foram apagados. ${erroAcompanhamentos}`
-  if (erroCopia) return `Apagado deste aparelho e os acompanhamentos da nuvem. A cópia completa não foi apagada. ${erroCopia}`
-  return 'Tudo apagado, aqui e na nuvem. Recarregue a página.'
-}
-
-/**
- * Perfil, marca nos documentos e o que fazer com os dados guardados neste aparelho. Tudo aqui é
- * da conta que está dentro: backup, cópia na nuvem e apagar (spec dados-por-conta, D-125, DP-14 e DP-19).
+ * Perfil, marca nos documentos e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
+ * Os dados vão para a nuvem sozinhos (spec dados-na-nuvem, D-129): os botões de enviar e trazer a cópia e o
+ * "Apagar todos os seus dados deste aparelho" saíram (D-131, CA-482). O backup restaurado entra na cópia de
+ * trabalho e sobe como qualquer mudança.
  */
 export function TelaConfiguracoes() {
   const armazenamento = useArmazenamento()
-  // A conta destes dados: a nuvem só é usada com a sessão dela (DP-19, CA-474). Sem conta, nenhuma.
-  const contaEsperada = armazenamento !== null && ehArmazenamentoDaConta(armazenamento) ? armazenamento.usuarioId : null
   const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento))
   const [mensagem, setMensagem] = useState<string | null>(null)
-  const [confirmandoApagar, setConfirmandoApagar] = useState(false)
   const arquivoRef = useRef<HTMLInputElement | null>(null)
 
   const alterar = (mudanca: Partial<Perfil>) => {
@@ -99,66 +56,6 @@ export function TelaConfiguracoes() {
       setMensagem(erro ?? `${restaurados} ${restaurados === 1 ? 'conjunto restaurado' : 'conjuntos restaurados'}. Recarregue a página para ver.`)
     }
     leitor.readAsText(arquivo)
-  }
-
-  const [naNuvem, setNaNuvem] = useState(false)
-
-  // O tipo do cliente do Supabase é fundo demais para o TypeScript casar com a
-  // interface pequena que este módulo pede (TS2589). A forma em tempo de execução é
-  // a mesma; o contrato de verdade está em `ClienteCopia`.
-  const clienteCopia = (): ClienteCopia | null => obterSupabase() as unknown as ClienteCopia | null
-
-  const enviarParaNuvem = () => {
-    const cliente = clienteCopia()
-    if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
-    setNaNuvem(true)
-    const backup = montarBackup(armazenamento, [...CHAVES_DE_DADOS], new Date().toISOString())
-    void enviarCopia(cliente, backup, apelidoDoAparelho(globalThis.navigator.userAgent), contaEsperada).then(({ erro }) => {
-      setNaNuvem(false)
-      setMensagem(erro ?? `Cópia enviada. Ela substitui a anterior da sua conta: ${Object.keys(backup.dados).length} conjuntos de dados.`)
-    })
-  }
-
-  const trazerDaNuvem = () => {
-    const cliente = clienteCopia()
-    if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
-    setNaNuvem(true)
-    void baixarCopia(cliente, contaEsperada).then(({ ok, erro }) => {
-      setNaNuvem(false)
-      if (!ok) return setMensagem(erro)
-      const { restaurados, erro: erroRestauro } = restaurarBackup(armazenamento, JSON.stringify(ok.backup))
-      setMensagem(
-        erroRestauro ??
-          `${restaurados} ${restaurados === 1 ? 'conjunto veio' : 'conjuntos vieram'} da nuvem (${ok.aparelho}). Recarregue a página para ver.`,
-      )
-    })
-  }
-
-  const apagarTudo = () => {
-    if (armazenamento !== null && ehArmazenamentoDaConta(armazenamento)) {
-      // DP-14: com conta, o mesmo de "Sair e apagar": o espaço inteiro da conta que está dentro
-      // (planos fora do índice e aviso de primeiro acesso também), e só ele (D-124).
-      apagarDadosDaConta(armazenamentoLocal(), armazenamento.usuarioId)
-    } else {
-      // Sem servidor de conta, como antes. Expandido: sem isso os planos (metanutri:caso:<id>)
-      // ficavam no aparelho depois de "apagar tudo", com nome e medida de paciente dentro.
-      for (const chave of expandirChaves(armazenamento, [...CHAVES_DE_DADOS])) armazenamento?.removeItem(chave)
-    }
-    setConfirmandoApagar(false)
-
-    // Se a nuvem estiver ligada, apagar só o navegador deixaria o dado do paciente
-    // vivo no servidor — e a política de privacidade promete o contrário. D-94: lá ficam
-    // os acompanhamentos e a cópia completa, e as duas partes saem.
-    // Mesmo TS2589 de `clienteCopia`: a porta das missões é pequena, o tipo do cliente não.
-    const cliente = obterSupabase() as unknown as ClienteMissoes | null
-    const copia = clienteCopia()
-    if (!cliente || !copia) return setMensagem('Seus dados foram apagados deste aparelho. Recarregue a página.')
-    setMensagem('Apagado deste aparelho. Apagando da nuvem…')
-    void Promise.all([comPrazoDeApagar(apagarAcompanhamentosDaNuvem(cliente, contaEsperada)), comPrazoDeApagar(apagarCopiaDaNuvem(copia, contaEsperada))]).then(
-      ([erroAcompanhamentos, erroCopia]) => {
-        setMensagem(mensagemDeApagar(erroAcompanhamentos, erroCopia))
-      },
-    )
   }
 
   return (
@@ -208,7 +105,7 @@ export function TelaConfiguracoes() {
       <Card>
         <CardHeader>
           <CardTitle>Marca</CardTitle>
-          <CardDescription>A logo aparece no alto da folha da dieta. Fica só neste aparelho.</CardDescription>
+          <CardDescription>A logo aparece no alto da folha da dieta.</CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-center gap-4">
           {perfil.logo ? (
@@ -233,31 +130,7 @@ export function TelaConfiguracoes() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Cópia na nuvem</CardTitle>
-          <CardDescription>
-            Para trocar de aparelho sem passar arquivo. Precisa de conta. Não é automático de propósito: cada botão sobrescreve um lado, e você escolhe qual.
-          </CardDescription>
-        </CardHeader>
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={enviarParaNuvem} disabled={naNuvem}>
-            <CloudUpload aria-hidden="true" />
-            Enviar deste aparelho
-          </Button>
-          <Button variant="outline" onClick={trazerDaNuvem} disabled={naNuvem}>
-            <CloudDownload aria-hidden="true" />
-            Trazer para este aparelho
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          <strong>Enviar</strong> substitui a cópia da nuvem pelo que está aqui. <strong>Trazer</strong> escreve por cima do que está neste aparelho. Na dúvida,
-          baixe o backup em arquivo antes.
-        </p>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Seus dados</CardTitle>
-          <CardDescription>Tudo fica neste navegador. Backup é a única forma de levar para outro aparelho.</CardDescription>
         </CardHeader>
         <div className="flex flex-wrap gap-3">
           <Button onClick={exportarTudo}>
@@ -269,24 +142,6 @@ export function TelaConfiguracoes() {
             Restaurar backup
           </Button>
           <input ref={arquivoRef} type="file" accept="application/json" className="sr-only" onChange={(e) => importar(e.target.files?.[0])} />
-        </div>
-        <div className="border-t border-border pt-4">
-          {confirmandoApagar ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="destructive" onClick={apagarTudo}>
-                <Trash aria-hidden="true" />
-                Apagar tudo mesmo
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirmandoApagar(false)}>
-                Cancelar
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" onClick={() => setConfirmandoApagar(true)}>
-              <Trash aria-hidden="true" />
-              Apagar todos os seus dados deste aparelho
-            </Button>
-          )}
         </div>
       </Card>
     </div>
