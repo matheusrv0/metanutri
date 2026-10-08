@@ -58,10 +58,17 @@ export function apelidoDoAparelho(agente: string): string {
   return 'Este aparelho'
 }
 
-export async function enviarCopia(cliente: ClienteCopia, backup: Backup, aparelho: string): Promise<Resultado<string>> {
+/**
+ * A sessão é de outra conta que não a esperada (spec dados-por-conta, DP-19 e CA-474): a cópia de
+ * uma conta nunca vai para a outra, nem a de outra vem para esta. Sem conta esperada, vale a da sessão.
+ */
+const deOutraConta = (usuario: string, esperado: string | null | undefined): boolean => esperado !== undefined && esperado !== null && usuario !== esperado
+
+export async function enviarCopia(cliente: ClienteCopia, backup: Backup, aparelho: string, esperado?: string | null): Promise<Resultado<string>> {
   const { data } = await cliente.auth.getSession()
   const usuario = data.session?.user.id ?? null
   if (usuario === null) return { ok: null, erro: SEM_CONTA }
+  if (deOutraConta(usuario, esperado)) return { ok: null, erro: FALHA_DE_REDE }
 
   const agora = new Date().toISOString()
   const { error, status } = await cliente
@@ -73,10 +80,11 @@ export async function enviarCopia(cliente: ClienteCopia, backup: Backup, aparelh
   return { ok: null, erro: status === 413 ? COPIA_GRANDE_DEMAIS : traduzido(error) }
 }
 
-export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<CopiaGuardada>> {
+export async function baixarCopia(cliente: ClienteCopia, esperado?: string | null): Promise<Resultado<CopiaGuardada>> {
   const { data } = await cliente.auth.getSession()
   const usuario = data.session?.user.id ?? null
   if (usuario === null) return { ok: null, erro: SEM_CONTA }
+  if (deOutraConta(usuario, esperado)) return { ok: null, erro: FALHA_DE_REDE }
 
   const { data: linha, error } = await cliente.from(TABELA).select('dados, aparelho, atualizado_em').eq('nutricionista_id', usuario).maybeSingle()
   if (error) return { ok: null, erro: traduzido(error) }
@@ -99,11 +107,12 @@ export async function baixarCopia(cliente: ClienteCopia): Promise<Resultado<Copi
  * D-94: "Apagar tudo" leva também a cópia completa da conta. Devolve a mensagem de erro já
  * traduzida, ou nulo quando deu certo (ou quando não há conta, e portanto nada a apagar).
  */
-export async function apagarCopiaDaNuvem(cliente: ClienteCopia): Promise<string | null> {
+export async function apagarCopiaDaNuvem(cliente: ClienteCopia, esperado?: string | null): Promise<string | null> {
   const { data } = await cliente.auth.getSession()
   const usuario = data.session?.user.id ?? null
-  // Servidor ligado e sem sessão (token vencido sem internet): nada foi apagado, e a tela precisa saber.
-  if (usuario === null) return FALHA_DE_REDE
+  // Servidor ligado e sem sessão (token vencido sem internet), ou sessão de outra conta: nada foi
+  // apagado, e a tela precisa saber.
+  if (usuario === null || deOutraConta(usuario, esperado)) return FALHA_DE_REDE
 
   const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
   return error ? traduzido(error) : null

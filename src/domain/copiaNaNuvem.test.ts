@@ -170,3 +170,19 @@ describe('A cópia grande demais (D-107)', () => {
     expect(chamadas.map((c) => c.tipo)).toEqual(['upsert'])
   })
 })
+
+describe('a conta esperada (spec dados-por-conta, DP-19 e CA-474)', () => {
+  it('CA-474: enviar, trazer e apagar a cópia não pedem nada quando a sessão é de outra conta', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-b', linha: { dados: BACKUP, aparelho: 'Windows', atualizado_em: '2026-10-08' } })
+    expect(await enviarCopia(cliente, BACKUP, 'Windows', 'conta-a')).toEqual({ ok: null, erro: FALHA_DE_REDE })
+    expect(await baixarCopia(cliente, 'conta-a')).toEqual({ ok: null, erro: FALHA_DE_REDE })
+    expect(await apagarCopiaDaNuvem(cliente, 'conta-a')).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
+  })
+
+  it('com a sessão da conta esperada, segue como sempre', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-a' })
+    expect((await enviarCopia(cliente, BACKUP, 'Windows', 'conta-a')).erro).toBeNull()
+    expect(chamadas[0]?.parametros['nutricionista_id']).toBe('conta-a')
+  })
+})

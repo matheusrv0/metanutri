@@ -11,6 +11,10 @@ const nuvem = vi.hoisted(() => ({
   enviada: null as unknown,
   guardada: null as unknown,
   baixado: null as Blob | null,
+  /** De quem é a sessão. */
+  usuario: 'conta-a',
+  /** Quantos pedidos de apagar chegaram à nuvem. */
+  apagados: 0,
 }))
 
 vi.mock('../exportar/baixar.ts', () => ({
@@ -29,9 +33,14 @@ vi.mock('../estado/supabase.ts', () => ({
       select: () => ({
         eq: () => ({ maybeSingle: () => Promise.resolve({ data: { dados: nuvem.guardada, aparelho: 'Windows', atualizado_em: '2026-10-07' }, error: null }) }),
       }),
-      delete: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
+      delete: () => ({
+        eq: () => {
+          nuvem.apagados += 1
+          return Promise.resolve({ data: null, error: null })
+        },
+      }),
     }),
-    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'conta-a' } } }, error: null }) },
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: nuvem.usuario } } }, error: null }) },
   }),
 }))
 
@@ -56,6 +65,8 @@ describe('backup e cópia na nuvem só da conta que está dentro (spec dados-por
     nuvem.enviada = null
     nuvem.guardada = null
     nuvem.baixado = null
+    nuvem.usuario = 'conta-a'
+    nuvem.apagados = 0
     doisNoAparelho()
   })
 
@@ -110,6 +121,27 @@ describe('backup e cópia na nuvem só da conta que está dentro (spec dados-por
     expect(Object.keys(localStorage).filter((c) => c.startsWith('metanutri:conta:conta-a:'))).toEqual([])
     expect(localStorage.getItem('metanutri:conta:conta-b:pacientes')).toBe('[{"id":"bia"}]')
     expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
+  })
+
+  it('DP-19 e CA-474: com a sessão já de outra conta, Configurações não envia, não traz e não apaga nada na nuvem', async () => {
+    nuvem.usuario = 'conta-b'
+    nuvem.guardada = backup({ 'metanutri:pacientes': '[{"id":"de-b"}]' })
+    render(naConta('conta-a', <TelaConfiguracoes />))
+    const usuario = userEvent.setup()
+    const falha = 'Não deu para falar com o servidor. Confira a internet e tente de novo.'
+
+    await usuario.click(screen.getByRole('button', { name: 'Enviar deste aparelho' }))
+    expect(await screen.findByText(falha)).toBeInTheDocument()
+    expect(nuvem.enviada).toBeNull()
+
+    await usuario.click(screen.getByRole('button', { name: 'Trazer para este aparelho' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Trazer para este aparelho' })).toBeEnabled())
+    expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).toBe('[{"id":"ana"}]')
+
+    await usuario.click(screen.getByRole('button', { name: 'Apagar todos os seus dados deste aparelho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Apagar tudo mesmo' }))
+    expect(await screen.findByText(/Apagado só deste aparelho/)).toBeInTheDocument()
+    expect(nuvem.apagados).toBe(0)
   })
 
   it('o perfil digitado em Configurações fica na conta', async () => {

@@ -437,3 +437,11 @@ describe('a conta esperada (spec dados-por-conta, CA-474)', () => {
     expect(chamadas[0]?.parametros['nutricionista_id']).toBe('conta-a')
   })
 })
+
+describe('apagar os acompanhamentos com a conta esperada (spec dados-por-conta, DP-19)', () => {
+  it('CA-474: com a sessão de outra conta, não apaga nada e não diz que apagou', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'conta-b' })
+    expect(await apagarAcompanhamentosDaNuvem(cliente, 'conta-a')).toBe(FALHA_DE_REDE)
+    expect(chamadas).toHaveLength(0)
+  })
+})

@@ -57,6 +57,8 @@ function mensagemDeApagar(erroAcompanhamentos: string | null, erroCopia: string 
  */
 export function TelaConfiguracoes() {
   const armazenamento = useArmazenamento()
+  // A conta destes dados: a nuvem só é usada com a sessão dela (DP-19, CA-474). Sem conta, nenhuma.
+  const contaEsperada = armazenamento !== null && ehArmazenamentoDaConta(armazenamento) ? armazenamento.usuarioId : null
   const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento))
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [confirmandoApagar, setConfirmandoApagar] = useState(false)
@@ -111,7 +113,7 @@ export function TelaConfiguracoes() {
     if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
     setNaNuvem(true)
     const backup = montarBackup(armazenamento, [...CHAVES_DE_DADOS], new Date().toISOString())
-    void enviarCopia(cliente, backup, apelidoDoAparelho(globalThis.navigator.userAgent)).then(({ erro }) => {
+    void enviarCopia(cliente, backup, apelidoDoAparelho(globalThis.navigator.userAgent), contaEsperada).then(({ erro }) => {
       setNaNuvem(false)
       setMensagem(erro ?? `Cópia enviada. Ela substitui a anterior da sua conta: ${Object.keys(backup.dados).length} conjuntos de dados.`)
     })
@@ -121,7 +123,7 @@ export function TelaConfiguracoes() {
     const cliente = clienteCopia()
     if (!cliente) return setMensagem('A conta na nuvem não está configurada neste MetaNutri.')
     setNaNuvem(true)
-    void baixarCopia(cliente).then(({ ok, erro }) => {
+    void baixarCopia(cliente, contaEsperada).then(({ ok, erro }) => {
       setNaNuvem(false)
       if (!ok) return setMensagem(erro)
       const { restaurados, erro: erroRestauro } = restaurarBackup(armazenamento, JSON.stringify(ok.backup))
@@ -152,7 +154,7 @@ export function TelaConfiguracoes() {
     const copia = clienteCopia()
     if (!cliente || !copia) return setMensagem('Seus dados foram apagados deste aparelho. Recarregue a página.')
     setMensagem('Apagado deste aparelho. Apagando da nuvem…')
-    void Promise.all([comPrazoDeApagar(apagarAcompanhamentosDaNuvem(cliente)), comPrazoDeApagar(apagarCopiaDaNuvem(copia))]).then(
+    void Promise.all([comPrazoDeApagar(apagarAcompanhamentosDaNuvem(cliente, contaEsperada)), comPrazoDeApagar(apagarCopiaDaNuvem(copia, contaEsperada))]).then(
       ([erroAcompanhamentos, erroCopia]) => {
         setMensagem(mensagemDeApagar(erroAcompanhamentos, erroCopia))
       },

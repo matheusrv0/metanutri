@@ -133,21 +133,6 @@ async function usuarioDaSessao(cliente: { readonly auth: ClienteMissoes['auth'] 
 }
 
 /**
- * Apaga da nuvem tudo que é deste nutricionista. É o que a LGPD chama de direito à
- * eliminação, e o que a tela de Configurações precisa para não prometer o que não faz.
- * Devolve a mensagem de erro já traduzida, ou nulo quando deu certo.
- */
-export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes): Promise<string | null> {
-  const usuario = await usuarioDaSessao(cliente)
-  if (usuario === null) return FALHA_DE_REDE
-
-  const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
-  return error ? traduzido(error) : null
-}
-
-// ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
-
-/**
  * O dono da sessão, desde que seja a conta para a qual o aparelho está trabalhando (spec
  * dados-por-conta, CA-474). A sessão que trocou de conta no meio de uma leitura é nula, e nada é
  * pedido: o link de uma conta nunca vai para a outra. Sem conta esperada, vale a da sessão.
@@ -157,6 +142,21 @@ async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] 
   if (usuario === null) return null
   return esperado === undefined || esperado === null || esperado === usuario ? usuario : null
 }
+
+/**
+ * Apaga da nuvem tudo que é deste nutricionista. É o que a LGPD chama de direito à
+ * eliminação, e o que a tela de Configurações precisa para não prometer o que não faz.
+ * Devolve a mensagem de erro já traduzida, ou nulo quando deu certo.
+ */
+export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes, esperado?: string | null): Promise<string | null> {
+  const usuario = await usuarioEsperado(cliente, esperado)
+  if (usuario === null) return FALHA_DE_REDE
+
+  const { error } = await cliente.from(TABELA).delete().eq('nutricionista_id', usuario)
+  return error ? traduzido(error) : null
+}
+
+// ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
 
 /**
  * A frase que o banco levanta quando o plano não comporta mais um link (supabase/010,
