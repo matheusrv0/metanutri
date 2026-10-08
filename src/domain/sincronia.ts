@@ -654,8 +654,8 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   }
 
   // DP-28: a conferência em curso (foco e visibilidade juntos fazem uma só) e a que ficou para quando a
-  // área destravar.
-  let conferencia: Promise<void> | null = null
+  // área destravar. DP-31: a com capa não aproveita uma de 60 s já a caminho, que pode ter lido a versão antes.
+  let conferencia: { readonly promessa: Promise<void>; readonly comCapa: boolean } | null = null
   let conferirAoDestravar = false
 
   function conferir(prender: boolean): Promise<void> {
@@ -672,14 +672,18 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       return Promise.resolve()
     }
     if (prender && !estado.conferindo) definir({ conferindo: true })
-    if (conferencia !== null) return conferencia
+    if (conferencia !== null && (conferencia.comCapa || !prender)) return conferencia.promessa
     pararDeConferir()
+    // Com uma de 60 s a caminho, esta entra na fila depois dela e lê a versão de novo (DP-31).
     const esta = exclusivo(conferirAgora).finally(() => {
-      if (conferencia === esta) conferencia = null
-      definir({ conferindo: false })
+      // Só a última tira a capa: a de 60 s que termina antes não a derruba.
+      if (conferencia?.promessa === esta) {
+        conferencia = null
+        definir({ conferindo: false })
+      }
       agendarConferencia()
     })
-    conferencia = esta
+    conferencia = { promessa: esta, comCapa: prender }
     return esta
   }
 

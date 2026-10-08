@@ -1,5 +1,6 @@
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVE_MUDANCAS, lerMudancas } from './copiaDaConta.ts'
+import type { ClienteDaCopia } from './copiaNaNuvem.ts'
 import { criarRepositorioModelos } from './modelos.ts'
 import { nuvemFalsa, type NuvemFalsa } from './nuvemFalsa.test-utils.ts'
 import { criarRepositorioPacientes } from './pacientes.ts'
@@ -58,7 +59,12 @@ const gerarId = () => `id-${(gerado += 1)}`
 function abrirAparelho(
   nuvem: NuvemFalsa,
   navegador = new Navegador(),
-  opcoes: { readonly sujo?: boolean; readonly conectado?: () => boolean; readonly trancar?: <T>(fazer: (comTrava: boolean) => Promise<T>) => Promise<T> } = {},
+  opcoes: {
+    readonly sujo?: boolean
+    readonly conectado?: () => boolean
+    readonly trancar?: <T>(fazer: (comTrava: boolean) => Promise<T>) => Promise<T>
+    readonly cliente?: ClienteDaCopia
+  } = {},
 ): Aparelho {
   const conta = armazenamentoDaConta(navegador, 'conta-a')
   const trazidas = { vezes: 0 }
@@ -97,6 +103,45 @@ const pacientesNaNuvem = (nuvem: NuvemFalsa): string[] =>
   (JSON.parse(copiaNaNuvem(nuvem).dados['metanutri:pacientes'] ?? '[]') as { nome: string }[]).map((p) => p.nome).sort()
 
 const salvar = () => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS)
+
+/**
+ * O cliente da nuvem falsa com um portão na leitura da versão: armado, a próxima leitura da versão chega
+ * ao banco na hora, mas a resposta só volta quando o portão abre (a versão lida fica velha no caminho).
+ */
+function clienteComPortao(nuvem: NuvemFalsa): { readonly cliente: ClienteDaCopia; readonly portao: { armado: boolean; abrir: () => void } } {
+  const portao = { armado: false, abrir: (): void => undefined }
+  const cliente: ClienteDaCopia = {
+    auth: nuvem.cliente.auth,
+    from(tabela) {
+      const consulta = nuvem.cliente.from(tabela)
+      return {
+        insert: (linha) => consulta.insert(linha),
+        update: (campos) => consulta.update(campos),
+        select: (colunas) => {
+          const filtrada = consulta.select()
+          return {
+            eq: (coluna, valor) => {
+              filtrada.eq(coluna, valor)
+              return {
+                maybeSingle: () => {
+                  filtrada.maybeSingle()
+                  if (colunas !== 'atualizado_em' || !portao.armado) return filtrada
+                  portao.armado = false
+                  const lida = Promise.resolve(filtrada)
+                  const aberto = new Promise<void>((abrir) => {
+                    portao.abrir = abrir
+                  })
+                  return Promise.all([lida, aberto]).then(([resposta]) => resposta)
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  }
+  return { cliente, portao }
+}
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -460,6 +505,32 @@ describe('conferir a nuvem depois de abrir (DP-20)', () => {
     // Salvou (confere a versão, porque a última falhou, e grava) e então conferiu a nuvem (só a versão).
     expect(nuvem.pedidos.slice(antes)).toEqual(['select', 'update', 'select'])
     expect(a.sincronia.estado).toMatchObject({ trava: null, conferindo: false, pendente: false })
+  })
+
+  it('DP-31: voltar para a aba no meio da conferência de 60 s faz uma conferência nova, com capa, e a mudança de B aparece', async () => {
+    const nuvem = nuvemFalsa()
+    const { cliente, portao } = clienteComPortao(nuvem)
+    const a = abrirAparelho(nuvem, new Navegador(), { cliente })
+    await ligar(a)
+    const id = a.planos.criar('Plano da Ana').caso.id
+    await salvar()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+
+    // A conferência de 60 s de A lê a versão; a resposta fica no caminho.
+    portao.armado = true
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    vi.setSystemTime(new Date('2026-10-08T13:00:00.000Z'))
+    b.planos.renomear(id, 'Plano da Ana Souza')
+    await salvar()
+
+    // A pessoa volta para A: a capa entra e espera uma conferência que lê a versão depois do salvar de B.
+    const voltou = a.sincronia.conferir(true)
+    expect(a.sincronia.estado.conferindo).toBe(true)
+    portao.abrir()
+    await voltou
+    expect(a.sincronia.estado.conferindo).toBe(false)
+    expect(a.planos.obter(id)?.caso.nome).toBe('Plano da Ana Souza')
   })
 
   it('DP-28: foco e visibilidade juntos fazem uma conferência só, e a capa fica até ela terminar', async () => {
