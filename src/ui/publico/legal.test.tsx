@@ -12,8 +12,8 @@ vi.mock('@/domain/legal.ts', () => ({
   get CONTATO_EMAIL() {
     return legal.CONTATO_EMAIL
   },
-  DATA_TERMOS: '5 de outubro de 2026',
-  VERSAO_TERMOS: '2026-10-05',
+  DATA_TERMOS: '7 de outubro de 2026',
+  VERSAO_TERMOS: '2026-10-07',
   PRAZO_EXCLUSAO_DIAS: 90,
   PRAZO_INCIDENTE_HORAS: 72,
 }))
@@ -27,7 +27,7 @@ describe('documentos legais', () => {
   it('CA-222 e CA-224: termos dizem quem prescreve, quem é controlador e operador, e a data', () => {
     render(<TelaTermos />)
     expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Versão de 5 de outubro de 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Versão de 7 de outubro de 2026/)).toBeInTheDocument()
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('quem prescreve é o nutricionista')
     expect(texto).toContain('controlador')
@@ -49,7 +49,7 @@ describe('documentos legais', () => {
     expect(texto).toContain('neste aparelho')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
-    expect(texto).toContain('5 de outubro de 2026')
+    expect(texto).toContain('7 de outubro de 2026')
   })
 
   it('D-46: sem responsável ou contato, os dois mostram que estão em preparação', () => {
@@ -106,6 +106,14 @@ describe('documentos legais', () => {
     const texto = document.body.textContent ?? ''
     expect(texto).toContain(
       'Os dados do cartão (número, validade e código), o nome impresso no cartão e o CPF do titular vão direto do seu navegador para ele, criptografados, sem passar pelo MetaNutri.',
+    )
+  })
+
+  it('CA-464: a política diz, em "Onde os dados ficam", que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta', () => {
+    render(<TelaPrivacidade />)
+    const lista = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
+    expect(lista).toHaveTextContent(
+      'Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
     )
   })
 })
