@@ -385,6 +385,21 @@ describe('dados de antes e sessão que vence (D-133)', () => {
     return navegador
   }
 
+  it('DP-22: antes de abrir, o dado que nunca chegou à nuvem já conta como pendente', () => {
+    const nuvem = nuvemFalsa()
+    expect(abrirAparelho(nuvem, navegadorDeAntes()).sincronia.estado.pendente).toBe(true)
+    expect(abrirAparelho(nuvem, new Navegador(), { sujo: true }).sincronia.estado.pendente).toBe(true)
+    expect(abrirAparelho(nuvem, new Navegador()).sincronia.estado.pendente).toBe(false)
+  })
+
+  it('DP-22: a cópia de trabalho já em dia não conta como pendente antes de abrir', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem, navegadorDeAntes())
+    await ligar(a)
+    a.sincronia.desligar()
+    expect(abrirAparelho(nuvem, a.navegador).sincronia.estado.pendente).toBe(false)
+  })
+
   it('CA-481: sem cópia na nuvem, o que estava no navegador sobe como está', async () => {
     const nuvem = nuvemFalsa()
     const a = abrirAparelho(nuvem, navegadorDeAntes())

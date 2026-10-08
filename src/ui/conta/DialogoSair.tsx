@@ -28,7 +28,13 @@ export function DialogoSair({ aberto, saindo = false, aoFicar, aoSairMesmoAssim 
           <Button variant="outline" autoFocus onClick={aoFicar} disabled={saindo}>
             Ficar
           </Button>
-          <Button variant="destructive" onClick={aoSairMesmoAssim} disabled={saindo} aria-busy={saindo || undefined}>
+          <Button
+            variant="destructive"
+            // O segundo clique de um duplo clique em "Sair" cai neste botão, que aparece no mesmo lugar: não conta.
+            onClick={(evento) => (evento.detail > 1 ? undefined : aoSairMesmoAssim())}
+            disabled={saindo}
+            aria-busy={saindo || undefined}
+          >
             {saindo ? <PontosDaMarca pulsando /> : null}
             Sair mesmo assim
           </Button>

@@ -458,14 +458,22 @@ describe('sair e apagar só leva a conta que sai (spec dados-por-conta, D-124)',
     for (const [chave, valor] of Object.entries(DO_APARELHO)) expect(arm.dados.get(chave), chave).toBe(valor)
   })
 
-  it('CA-469: o dono que sai leva junto o que ficou sem prefixo, e deixa de ser dono', () => {
+  it('DP-22 (spec dados-na-nuvem): o que ficou sem prefixo ainda não foi para a conta nem para a nuvem: fica, com o dono', () => {
     const arm = doisDonos()
     arm.setItem(CHAVE_DONO, 'conta-a')
     arm.setItem('metanutri:pacientes', '[{"id":"velha"}]')
     apagarDadosDaConta(arm, 'conta-a')
-    expect(arm.dados.has('metanutri:pacientes')).toBe(false)
-    expect(arm.dados.has(CHAVE_DONO)).toBe(false)
+    expect(armazenamentoDaConta(arm, 'conta-a').length).toBe(0)
+    expect(arm.dados.get('metanutri:pacientes')).toBe('[{"id":"velha"}]')
+    expect(arm.dados.get(CHAVE_DONO)).toBe('conta-a')
     expect(arm.dados.get('metanutri:tema')).toBe('escuro')
+  })
+
+  it('DP-22: sem nada sem prefixo, o dono que sai deixa de ser dono', () => {
+    const arm = doisDonos()
+    arm.setItem(CHAVE_DONO, 'conta-a')
+    apagarDadosDaConta(arm, 'conta-a')
+    expect(arm.dados.has(CHAVE_DONO)).toBe(false)
   })
 
   it('CA-469: o que ficou sem prefixo de outro dono continua', () => {

@@ -337,16 +337,16 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
 }
 
 /**
- * D-124 e D-131 (spec dados-na-nuvem): sair leva só o espaço da conta que sai. Se ela é a
- * dona dos dados sem prefixo, eles vão junto, e ela deixa de ser dona.
+ * D-124 e D-131 (spec dados-na-nuvem): sair leva só o espaço da conta que sai. Os dados sem prefixo
+ * que ainda não foram levados para a conta (migração incompleta, aba antiga) não estão na nuvem: ficam,
+ * com o dono marcado, e vão para a conta na próxima entrada dele (DP-22). Sem nada sem prefixo, a
+ * conta deixa de ser dona.
  */
 export function apagarDadosDaConta(base: ArmazenamentoListavel | null, usuarioId: string): void {
   if (!base) return
   try {
     armazenamentoDaConta(base, usuarioId).clear()
-    if (base.getItem(CHAVE_DONO) !== usuarioId) return
-    for (const chave of chavesSemConta(base)) base.removeItem(chave)
-    base.removeItem(CHAVE_DONO)
+    if (base.getItem(CHAVE_DONO) === usuarioId && chavesSemConta(base).length === 0) base.removeItem(CHAVE_DONO)
   } catch {
     // sem armazenamento: não há o que apagar
   }

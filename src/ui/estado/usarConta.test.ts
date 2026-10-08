@@ -171,7 +171,7 @@ describe('useConta', () => {
       expect(auth.signOut).toHaveBeenCalledOnce()
     })
 
-    it('CA-478: a conta que sai é dona dos dados de antes: eles saem junto', async () => {
+    it('DP-22: os dados de antes que ainda não foram para a conta ficam, com o dono, para a próxima entrada', async () => {
       localStorage.setItem('metanutri:dono', 'u1')
       localStorage.setItem('metanutri:pacientes', '[{"id":"antigo"}]')
       comSessao()
@@ -180,8 +180,9 @@ describe('useConta', () => {
       await act(async () => {
         await result.current.sair()
       })
-      expect(localStorage.getItem('metanutri:pacientes')).toBeNull()
-      expect(localStorage.getItem('metanutri:dono')).toBeNull()
+      expect(localStorage.getItem('metanutri:pacientes')).toBe('[{"id":"antigo"}]')
+      expect(localStorage.getItem('metanutri:dono')).toBe('u1')
+      expect(Object.keys(localStorage).filter((chave) => chave.startsWith('metanutri:conta:u1:'))).toEqual([])
     })
 
     it('DP-10: sem sessão, sair não apaga nada', async () => {

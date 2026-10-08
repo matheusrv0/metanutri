@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import type { EstadoDaNuvem } from '@/domain/sincronia.ts'
+import type { ResultadoMigracao } from '@/domain/donoDosDados.ts'
+import { ContextoMigracao } from './contextoArmazenamento.ts'
 import { ContextoNuvem, type ValorNuvem } from './contextoNuvem.ts'
 import { useSaida } from './usarSaida.ts'
 
@@ -22,7 +24,7 @@ function nuvemFalsa(estado: Partial<EstadoDaNuvem>, salvou = true) {
   return { valor, ordem }
 }
 
-function montar(nuvem: ValorNuvem | null) {
+function montar(nuvem: ValorNuvem | null, migracao: ResultadoMigracao = 'nada') {
   const ordem: string[] = []
   const sair = vi.fn(async () => {
     ordem.push('sair')
@@ -30,7 +32,11 @@ function montar(nuvem: ValorNuvem | null) {
   const aoSaiu = vi.fn(() => {
     ordem.push('saiu')
   })
-  const envolver = ({ children }: { children: ReactNode }) => <ContextoNuvem.Provider value={nuvem}>{children}</ContextoNuvem.Provider>
+  const envolver = ({ children }: { children: ReactNode }) => (
+    <ContextoMigracao.Provider value={migracao}>
+      <ContextoNuvem.Provider value={nuvem}>{children}</ContextoNuvem.Provider>
+    </ContextoMigracao.Provider>
+  )
   const { result } = renderHook(() => useSaida({ sair }, aoSaiu), { wrapper: envolver })
   return { result, sair, aoSaiu, ordem }
 }
@@ -84,5 +90,30 @@ describe('useSaida (spec dados-na-nuvem, D-131)', () => {
     expect(nuvem.valor.parar).toHaveBeenCalledOnce()
     expect(sair).toHaveBeenCalledOnce()
     expect(aoSaiu).toHaveBeenCalledOnce()
+  })
+
+  it('DP-22: antes de abrir, com dado que nunca chegou à nuvem, Sair pergunta sem tentar salvar', async () => {
+    const nuvem = nuvemFalsa({ fase: 'abrindo', pendente: true })
+    const { result, sair } = montar(nuvem.valor)
+    await act(() => result.current.pedirSair())
+    expect(nuvem.valor.salvarAgora).not.toHaveBeenCalled()
+    expect(result.current.perguntando).toBe(true)
+    expect(sair).not.toHaveBeenCalled()
+  })
+
+  it('DP-22: com a migração incompleta (dado de antes que não coube), Sair pergunta', async () => {
+    const nuvem = nuvemFalsa({})
+    const { result, sair } = montar(nuvem.valor, 'incompleto')
+    await act(() => result.current.pedirSair())
+    expect(result.current.perguntando).toBe(true)
+    expect(sair).not.toHaveBeenCalled()
+  })
+
+  it('DP-22: "Sair mesmo assim" chamado duas vezes sai uma vez só', async () => {
+    const nuvem = nuvemFalsa({ pendente: true, trava: 'sem-internet' })
+    const { result, sair } = montar(nuvem.valor)
+    await act(() => result.current.pedirSair())
+    await act(() => Promise.all([result.current.sairMesmoAssim(), result.current.sairMesmoAssim()]))
+    expect(sair).toHaveBeenCalledOnce()
   })
 })

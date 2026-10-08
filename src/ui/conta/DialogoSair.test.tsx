@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DialogoSair } from './DialogoSair.tsx'
 
@@ -37,5 +37,11 @@ describe('DialogoSair (spec dados-na-nuvem, D-131)', () => {
     montar(true)
     expect(screen.getByRole('button', { name: 'Ficar' })).toBeDisabled()
     expect(screen.getByRole('button', { name: /Sair mesmo assim/ })).toBeDisabled()
+  })
+
+  it('DP-22: o segundo clique de um duplo clique em "Sair mesmo assim" não conta de novo', () => {
+    const { aoSairMesmoAssim } = montar()
+    fireEvent.click(screen.getByRole('button', { name: 'Sair mesmo assim' }), { detail: 2 })
+    expect(aoSairMesmoAssim).not.toHaveBeenCalled()
   })
 })

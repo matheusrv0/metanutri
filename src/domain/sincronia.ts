@@ -232,9 +232,19 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       // sem espaço: a versão fica em memória até a próxima gravação que couber
     }
   }
+  // DP-22: dado que nunca chegou à nuvem (sem histórico neste navegador, ou trazido agora pela migração)
+  // conta como pendente desde o começo, até a abertura juntar e subir.
+  let naoConfirmado = sujo || (lerSituacao(armazenamento) === null && temDadosAqui())
+  function temDadosAqui(): boolean {
+    try {
+      return Object.keys(montarCopia(armazenamento, '').dados).length > 0
+    } catch {
+      return false
+    }
+  }
   const temPendencia = (): boolean => {
     const s = situacao()
-    return semRegistro || s.mudancas > s.salvas
+    return semRegistro || naoConfirmado || s.mudancas > s.salvas
   }
 
   let estado: EstadoDaNuvem = { fase: 'abrindo', pendente: temPendencia(), salvando: false, trava: null, reduzindo: false, geracao: 0, conferindo: false }
@@ -351,6 +361,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       subir = !copiasIguais(junta, leitura.copia)
     }
     sujo = false
+    naoConfirmado = false
     const atual = situacao()
     const itens = leitura.copia === null ? 0 : itensDaCopia(leitura.copia)
     if (subir) gravarSituacao({ versao: leitura.versao, itens, mudancas: Math.max(atual.mudancas, atual.salvas + 1), salvas: atual.salvas })
