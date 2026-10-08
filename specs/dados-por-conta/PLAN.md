@@ -1,7 +1,7 @@
 # PLAN — Dados por conta no aparelho
 
 **Spec de origem:** `./SPEC.md` (commit c8720d1, D-120 a D-126, CA-465 a CA-471, CB-120 a CB-122)
-**Status:** em execução: rodada final da revisão (08/10/2026, D-127, CA-472 a CA-474)
+**Status:** concluído, com a rodada final da revisão (08/10/2026, D-127, CA-472 a CA-474)
 
 ## Abordagem
 
@@ -99,22 +99,22 @@ conta (Entrar, código, troca de senha) ficam fora da parte remontada, porque a 
 ### Rodada final (revisão de 08/10/2026)
 
 - [x] **T9** — Spec e plano: D-127, CA-472 a CA-474, textos do D-124; DP-5, R1 e R3 revistos; DP-12 a DP-17.
-- [ ] **T10** — Conflito junta, nunca esconde (D-127, DP-5): `donoDosDados.ts` resolve chave por chave e nunca sai cedo.
+- [x] **T10** — Conflito junta, nunca esconde (D-127, DP-5): `donoDosDados.ts` resolve chave por chave e nunca sai cedo.
   - Cobre: CA-472
   - Feito quando: teste da aba antiga que grava depois da migração e de "uma chave em conflito não impede as outras";
     sai o teste que travava o comportamento antigo.
-- [ ] **T11** — Espaço cheio (DP-12): cada plano movido entra no índice na hora; `QuotaExceededError` libera a chave
+- [x] **T11** — Espaço cheio (DP-12): cada plano movido entra no índice na hora; `QuotaExceededError` libera a chave
   crua e tenta de novo na mesma tarefa; o resultado sobe pelo contexto e a área de trabalho mostra o aviso do CA-473.
   - Cobre: CA-473
   - Feito quando: falha no meio → a conta vê os planos movidos (com índice) e o aviso; perto do limite → avança.
-- [ ] **T12** — Nuvem por conta (DP-13): as funções da nuvem recebem a conta esperada; o provedor confere se ainda está
+- [x] **T12** — Nuvem por conta (DP-13): as funções da nuvem recebem a conta esperada; o provedor confere se ainda está
   montado depois de cada espera.
   - Cobre: CA-474
   - Feito quando: a leitura começa como A, a sessão vira B no meio: nenhum envio como B e nada gravado no espaço de A.
-- [ ] **T13** — "Apagar tudo" de Configurações com conta usa `apagarDadosDaConta` (DP-14); sem servidor, como hoje.
+- [x] **T13** — "Apagar tudo" de Configurações com conta usa `apagarDadosDaConta` (DP-14); sem servidor, como hoje.
   - Feito quando: planos fora do índice, aviso de primeiro acesso e `frequentes` somem.
-- [ ] **T14** — Textos do D-124 (Configurações, Sair, Política, Sugestões), sem contar que outra conta usa o aparelho.
-- [ ] **T15** — Troca direta de conta numa tela de trabalho vai para o painel (DP-15); comentários sobre o `useMemo`
+- [x] **T14** — Textos do D-124 (Configurações, Sair, Política, Sugestões), sem contar que outra conta usa o aparelho.
+- [x] **T15** — Troca direta de conta numa tela de trabalho vai para o painel (DP-15); comentários sobre o `useMemo`
   idempotente e o custo de listar por índice.
 
 ## Mapa de cobertura
