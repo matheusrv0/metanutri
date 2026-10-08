@@ -6,6 +6,7 @@
 // sem prefixo, os de antes desta mudança (D-123).
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVES_DE_DADOS, expandirChaves } from './perfil.ts'
+import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
 import { ehQuotaExcedida, type Armazenamento, type ArmazenamentoListavel } from './persistencia.ts'
 
 export const CHAVE_DONO = 'metanutri:dono'
@@ -51,36 +52,102 @@ const idDe = (item: unknown): Id | null => {
   return typeof id === 'string' || typeof id === 'number' ? id : null
 }
 
-/** Listas com id (pacientes, produtos, modelos): no mesmo id, fica o da conta. */
-function juntarPorId(daConta: unknown, deFora: unknown): { readonly lista: unknown[] } | { readonly ilegivel: 'conta' | 'fora' } {
-  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
-  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
-  const naConta = new Set(daConta.map(idDe))
-  return { lista: [...daConta, ...deFora.filter((item) => idDe(item) !== null && !naConta.has(idDe(item)))] }
+type Juntado = { readonly valor: unknown } | { readonly ilegivel: 'conta' | 'fora' }
+
+const comId = (lista: readonly unknown[]): unknown[] => lista.filter((item) => idDe(item) !== null)
+
+const atualizadoEm = (item: unknown): string | null => {
+  const v = typeof item === 'object' && item !== null ? (item as Record<string, unknown>)['atualizadoEm'] : undefined
+  return typeof v === 'string' ? v : null
 }
 
-/** Listas simples (índice de planos, sugestões ocultas): a ordem da conta, depois o que faltava. */
-function uniao(daConta: unknown, deFora: unknown): { readonly lista: unknown[] } | { readonly ilegivel: 'conta' | 'fora' } {
+/** Pacientes: o mesmo paciente fica com a versão mais nova pelo `atualizadoEm`; sem data, ou na mesma data, a da conta. */
+function juntarPacientes(daConta: unknown, deFora: unknown): Juntado {
   if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
   if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
-  return { lista: [...daConta, ...deFora.filter((v) => !daConta.includes(v))] }
+  const deForaPorId = new Map(comId(deFora).map((item) => [idDe(item), item]))
+  const juntados = daConta.map((item) => {
+    const outro = deForaPorId.get(idDe(item))
+    if (outro === undefined) return item
+    const naConta = atualizadoEm(item)
+    const foraDela = atualizadoEm(outro)
+    return naConta !== null && foraDela !== null && foraDela > naConta ? outro : item
+  })
+  const naConta = new Set(daConta.map(idDe))
+  return { valor: [...juntados, ...comId(deFora).filter((item) => !naConta.has(idDe(item)))] }
+}
+
+/**
+ * Produtos e modelos: nada some (DP-16). Os de fora que faltam entram como estão; o de fora com o
+ * mesmo id e outro conteúdo entra com id novo, e o da conta continua no id dele.
+ */
+function juntarComIdNovo(daConta: unknown, deFora: unknown, idNovo: (usados: ReadonlySet<Id>) => Id): Juntado {
+  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
+  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
+  const naConta = new Map(comId(daConta).map((item) => [idDe(item), JSON.stringify(item)]))
+  const usados = new Set<Id>([...comId(daConta), ...comId(deFora)].map((item) => idDe(item) ?? ''))
+  const faltavam = comId(deFora).filter((item) => !naConta.has(idDe(item)))
+  const renomeados = comId(deFora)
+    .filter((item) => naConta.has(idDe(item)) && naConta.get(idDe(item)) !== JSON.stringify(item))
+    .map((item) => {
+      const id = idNovo(usados)
+      usados.add(id)
+      return { ...(item as Record<string, unknown>), id }
+    })
+  return { valor: [...daConta, ...faltavam, ...renomeados] }
+}
+
+/** O id de produto que o repositório daria agora: acima do maior em uso (`produtos.ts`). */
+const proximoIdDeProduto = (usados: ReadonlySet<Id>): number =>
+  Math.max(PRIMEIRO_ID_PRODUTO - 1, ...[...usados].filter((id): id is number => typeof id === 'number')) + 1
+
+/** Listas simples (índice de planos, sugestões ocultas): a ordem da conta, depois o que faltava. */
+function uniao(daConta: unknown, deFora: unknown): Juntado {
+  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
+  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
+  return { valor: [...daConta, ...deFora.filter((v) => !daConta.includes(v))] }
 }
 
 const textos = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 
-/** O arquivo dos acompanhamentos: os itens juntam por id, e cada item leva as próprias marcas. */
-function juntarAcompanhamentos(daConta: unknown, deFora: unknown): { readonly valor: unknown } | { readonly ilegivel: 'conta' | 'fora' } {
+/**
+ * O arquivo dos acompanhamentos: os itens juntam por id e cada item leva as marcas do lado que
+ * ficou. No mesmo link fica o da conta, salvo quando só o de fora tem mudança pendente de nuvem
+ * (DP-20): dar id novo a um link duplicaria o token que o paciente tem.
+ */
+function juntarAcompanhamentos(daConta: unknown, deFora: unknown): Juntado {
   const arquivo = (v: unknown) => (typeof v === 'object' && v !== null && Array.isArray((v as Record<string, unknown>)['itens']) ? (v as Record<string, unknown>) : null)
   const conta = arquivo(daConta)
   const fora = arquivo(deFora)
   if (!conta) return { ilegivel: 'conta' }
   if (!fora) return { ilegivel: 'fora' }
-  const itensDaConta = conta['itens'] as unknown[]
-  const naConta = new Set(itensDaConta.map(idDe))
-  const trazidos = (fora['itens'] as unknown[]).filter((item) => idDe(item) !== null && !naConta.has(idDe(item)))
-  const idsTrazidos = new Set(trazidos.map(idDe))
-  const marcas = (campo: string) => [...new Set([...textos(conta[campo]), ...textos(fora[campo]).filter((id) => idsTrazidos.has(id))])]
-  return { valor: { ...conta, itens: [...itensDaConta, ...trazidos], naNuvem: marcas('naNuvem'), pendentes: marcas('pendentes') } }
+  const marcasDe = (o: Record<string, unknown>, campo: string) => new Set(textos(o[campo]))
+  const pendentesConta = marcasDe(conta, 'pendentes')
+  const pendentesFora = marcasDe(fora, 'pendentes')
+  const itensFora = comId(fora['itens'] as unknown[])
+  const foraPorId = new Map(itensFora.map((item) => [idDe(item), item]))
+  const lado = new Map<Id, 'conta' | 'fora'>()
+
+  const itens = (conta['itens'] as unknown[]).map((item) => {
+    const id = idDe(item)
+    const outro = foraPorId.get(id)
+    if (id === null) return item
+    if (outro !== undefined && typeof id === 'string' && pendentesFora.has(id) && !pendentesConta.has(id)) {
+      lado.set(id, 'fora')
+      return outro
+    }
+    lado.set(id, 'conta')
+    return item
+  })
+  const trazidos = itensFora.filter((item) => !lado.has(idDe(item) ?? ''))
+  for (const item of trazidos) lado.set(idDe(item) ?? '', 'fora')
+
+  const marcas = (campo: string) => {
+    const naConta = marcasDe(conta, campo)
+    const deFora = marcasDe(fora, campo)
+    return [...lado].filter(([id, de]) => typeof id === 'string' && (de === 'conta' ? naConta : deFora).has(id)).map(([id]) => id)
+  }
+  return { valor: { ...conta, itens: [...itens, ...trazidos], naNuvem: marcas('naNuvem'), pendentes: marcas('pendentes') } }
 }
 
 /**
@@ -88,20 +155,29 @@ function juntarAcompanhamentos(daConta: unknown, deFora: unknown): { readonly va
  * (D-127). Configurações e o que não se sabe juntar ficam com o valor da conta. Valor de fora
  * que o app não lê fica de fora; valor da conta ilegível dá lugar ao de fora.
  */
-function juntar(chave: string, daConta: string, deFora: string): string {
+function juntar(chave: string, daConta: string, deFora: string, gerarId: () => string): string {
   const conta = lerJson(daConta)
   const fora = lerJson(deFora)
+  const idDeModelo = (usados: ReadonlySet<Id>): string => {
+    let id = gerarId()
+    while (usados.has(id)) id = gerarId()
+    return id
+  }
   const resultado =
     chave === 'metanutri:casos' || chave === 'metanutri:sugestoes-ocultas'
       ? uniao(conta, fora)
-      : chave === 'metanutri:pacientes' || chave === 'metanutri:produtos' || chave === 'metanutri:modelos'
-        ? juntarPorId(conta, fora)
-        : chave === 'metanutri:acompanhamentos'
-          ? juntarAcompanhamentos(conta, fora)
-          : null
+      : chave === 'metanutri:pacientes'
+        ? juntarPacientes(conta, fora)
+        : chave === 'metanutri:produtos'
+          ? juntarComIdNovo(conta, fora, proximoIdDeProduto)
+          : chave === 'metanutri:modelos'
+            ? juntarComIdNovo(conta, fora, idDeModelo)
+            : chave === 'metanutri:acompanhamentos'
+              ? juntarAcompanhamentos(conta, fora)
+              : null
   if (resultado === null) return daConta
   if ('ilegivel' in resultado) return resultado.ilegivel === 'conta' ? deFora : daConta
-  return JSON.stringify('lista' in resultado ? resultado.lista : resultado.valor)
+  return JSON.stringify(resultado.valor)
 }
 
 /** Um plano como o repositório grava (`persistencia.ts`): o caso, com id, e quando foi salvo. */
@@ -172,11 +248,11 @@ function gravarPlanoETirar(base: ArmazenamentoListavel, destino: Armazenamento, 
   }
 }
 
-function moverDado(base: ArmazenamentoListavel, destino: Armazenamento, chave: string): void {
+function moverDado(base: ArmazenamentoListavel, destino: Armazenamento, chave: string, gerarId: () => string): void {
   const deFora = base.getItem(chave)
   if (deFora === null) return
   const daConta = destino.getItem(chave)
-  gravarETirar(base, destino, chave, daConta === null || daConta === deFora ? deFora : juntar(chave, daConta, deFora))
+  gravarETirar(base, destino, chave, daConta === null || daConta === deFora ? deFora : juntar(chave, daConta, deFora, gerarId))
 }
 
 /**
@@ -225,7 +301,7 @@ function moverPlano(base: ArmazenamentoListavel, destino: Armazenamento, chave: 
 export type ResultadoMigracao = 'nada' | 'movido' | 'incompleto' | 'falhou'
 
 export interface OpcoesMigracao {
-  /** Id novo para o plano que perde o seu num conflito; o app gera ids de plano assim. */
+  /** Id novo para o plano ou o modelo que perde o seu num conflito; o app gera esses ids assim. */
   readonly gerarId?: () => string
 }
 
@@ -255,7 +331,7 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
     for (const chave of chaves) {
       try {
         if (chave.startsWith(PREFIXO_CASO)) moverPlano(base, destino, chave, gerarId)
-        else moverDado(base, destino, chave)
+        else moverDado(base, destino, chave, gerarId)
       } catch (erro) {
         if (!ehQuotaExcedida(erro)) throw erro
       }

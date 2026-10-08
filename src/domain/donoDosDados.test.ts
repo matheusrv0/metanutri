@@ -111,11 +111,14 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
       [CHAVE_DONO]: 'conta-a',
       'metanutri:conta:conta-a:casos': '["x"]',
       'metanutri:conta:conta-a:caso:x': planoGuardado('x', 'Plano da Ana', '2026-10-07T10:00:00.000Z'),
-      'metanutri:conta:conta-a:pacientes': JSON.stringify([{ id: 'ana', nome: 'Ana' }]),
+      'metanutri:conta:conta-a:pacientes': JSON.stringify([{ id: 'ana', nome: 'Ana', atualizadoEm: '2026-10-07T10:00:00.000Z' }]),
       'metanutri:casos': '["x","y"]',
       'metanutri:caso:x': planoGuardado('x', 'Plano da Ana, editado na aba antiga', '2026-10-07T12:00:00.000Z'),
       'metanutri:caso:y': planoGuardado('y', 'Plano novo da aba antiga', '2026-10-07T12:30:00.000Z'),
-      'metanutri:pacientes': JSON.stringify([{ id: 'ana', nome: 'Ana (aba antiga)' }, { id: 'bia', nome: 'Bia' }]),
+      'metanutri:pacientes': JSON.stringify([
+        { id: 'ana', nome: 'Ana, editada na aba antiga', atualizadoEm: '2026-10-07T12:00:00.000Z' },
+        { id: 'bia', nome: 'Bia', atualizadoEm: '2026-10-07T12:00:00.000Z' },
+      ]),
     })
     expect(migrarDadosSemConta(arm, 'conta-a', { gerarId: () => 'copia' })).toBe('movido')
 
@@ -127,10 +130,10 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     expect(nomeDoPlano(contaA.getItem('metanutri:caso:copia'))).toBe('Plano da Ana')
     expect(JSON.parse(contaA.getItem('metanutri:caso:copia') ?? '{}').caso.id).toBe('copia')
     expect(nomeDoPlano(contaA.getItem('metanutri:caso:y'))).toBe('Plano novo da aba antiga')
-    // Mesmo id fica o da conta; o paciente novo entra.
+    // A edição do paciente na aba antiga é mais nova e aparece; o paciente novo entra.
     expect(JSON.parse(contaA.getItem('metanutri:pacientes') ?? '[]')).toEqual([
-      { id: 'ana', nome: 'Ana' },
-      { id: 'bia', nome: 'Bia' },
+      { id: 'ana', nome: 'Ana, editada na aba antiga', atualizadoEm: '2026-10-07T12:00:00.000Z' },
+      { id: 'bia', nome: 'Bia', atualizadoEm: '2026-10-07T12:00:00.000Z' },
     ])
     expect(semPrefixo(arm)).toEqual([CHAVE_DONO])
   })
@@ -189,7 +192,7 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     const arm = memoria({
       [CHAVE_DONO]: 'conta-a',
       'metanutri:conta:conta-a:acompanhamentos': JSON.stringify({ formato: 1, itens: [link('l1', 'Da conta')], naNuvem: ['l1'], pendentes: [] }),
-      'metanutri:acompanhamentos': JSON.stringify({ formato: 1, itens: [link('l1', 'De fora'), link('l2', 'Novo')], naNuvem: ['l1', 'l2'], pendentes: ['l1', 'l2'] }),
+      'metanutri:acompanhamentos': JSON.stringify({ formato: 1, itens: [link('l1', 'De fora'), link('l2', 'Novo')], naNuvem: ['l1', 'l2'], pendentes: ['l2'] }),
     })
     migrarDadosSemConta(arm, 'conta-a')
     const juntado = JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:acompanhamentos') ?? '{}')
@@ -197,6 +200,71 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     expect(juntado.naNuvem).toEqual(['l1', 'l2'])
     expect(juntado.pendentes).toEqual(['l2'])
     expect(juntado.formato).toBe(1)
+  })
+
+  it('DP-20: o mesmo link, pendente de nuvem só do lado de fora, fica com o de fora e com as marcas dele', () => {
+    const link = (id: string, nome: string) => ({ id, token: `t-${id}`, casoId: 'x', pacienteId: null, nome, criadoEm: '2026-10-07', missoes: [], marcacoes: [], usoNaoComercial: false })
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:acompanhamentos': JSON.stringify({ formato: 1, itens: [link('l1', 'Da conta')], naNuvem: ['l1'], pendentes: [] }),
+      'metanutri:acompanhamentos': JSON.stringify({ formato: 1, itens: [link('l1', 'Mudado na aba antiga')], naNuvem: ['l1'], pendentes: ['l1'] }),
+    })
+    migrarDadosSemConta(arm, 'conta-a')
+    const juntado = JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:acompanhamentos') ?? '{}')
+    expect(juntado.itens.map((a: { nome: string }) => a.nome)).toEqual(['Mudado na aba antiga'])
+    expect(juntado.naNuvem).toEqual(['l1'])
+    expect(juntado.pendentes).toEqual(['l1'])
+  })
+
+  it('D-127: o mesmo paciente fica com a versão mais nova; sem data, ou na mesma data, com a da conta', () => {
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:pacientes': JSON.stringify([
+        { id: 'ana', nome: 'Ana da conta, mais nova', atualizadoEm: '2026-10-08T09:00:00.000Z' },
+        { id: 'bia', nome: 'Bia da conta, sem data' },
+        { id: 'caio', nome: 'Caio da conta', atualizadoEm: '2026-10-07T09:00:00.000Z' },
+      ]),
+      'metanutri:pacientes': JSON.stringify([
+        { id: 'ana', nome: 'Ana de fora', atualizadoEm: '2026-10-01T09:00:00.000Z' },
+        { id: 'bia', nome: 'Bia de fora', atualizadoEm: '2026-10-09T09:00:00.000Z' },
+        { id: 'caio', nome: 'Caio de fora', atualizadoEm: '2026-10-07T09:00:00.000Z' },
+      ]),
+    })
+    migrarDadosSemConta(arm, 'conta-a')
+    const nomes = (JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:pacientes') ?? '[]') as { nome: string }[]).map((p) => p.nome)
+    expect(nomes).toEqual(['Ana da conta, mais nova', 'Bia da conta, sem data', 'Caio da conta'])
+  })
+
+  it('DP-16: produto diferente com o mesmo id fica nos dois; o de fora ganha id acima do maior, como o repositório gera', () => {
+    const produto = (id: number, nome: string) => ({ id, codigoBarras: '', nome, marca: '', porcaoG: 100, medidaCaseira: '', porPorcao: {}, criadoEm: '2026-10-07' })
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:produtos': JSON.stringify([produto(900000, 'Iogurte da conta'), produto(900001, 'Pão igual')]),
+      'metanutri:produtos': JSON.stringify([produto(900000, 'Barra da aba antiga'), produto(900001, 'Pão igual'), produto(900003, 'Granola')]),
+    })
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('movido')
+    const lista = JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:produtos') ?? '[]') as { id: number; nome: string }[]
+    expect(lista.map((p) => [p.id, p.nome])).toEqual([
+      [900000, 'Iogurte da conta'],
+      [900001, 'Pão igual'],
+      [900003, 'Granola'],
+      [900004, 'Barra da aba antiga'],
+    ])
+  })
+
+  it('D-127: modelo diferente com o mesmo id fica nos dois, com id novo para o de fora', () => {
+    const modelo = (id: string, nome: string) => ({ id, nome, descricao: '', plano: { refeicoes: [] }, criadoEm: '2026-10-07' })
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:modelos': JSON.stringify([modelo('m1', 'Gestante')]),
+      'metanutri:modelos': JSON.stringify([modelo('m1', 'Gestante, mudado na aba antiga')]),
+    })
+    migrarDadosSemConta(arm, 'conta-a', { gerarId: () => 'm-novo' })
+    const lista = JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:modelos') ?? '[]') as { id: string; nome: string }[]
+    expect(lista.map((m) => [m.id, m.nome])).toEqual([
+      ['m1', 'Gestante'],
+      ['m-novo', 'Gestante, mudado na aba antiga'],
+    ])
   })
 
   it('D-127: valor de fora que o app não lê sai, e a conta fica com o dela; valor da conta ilegível dá lugar ao de fora', () => {
