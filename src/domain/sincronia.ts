@@ -198,7 +198,7 @@ export interface OpcoesSincronia {
   /** A nuvem mudou a cópia de trabalho (o que fica em memória troca junto, DP-18). */
   readonly aoTrazer?: () => void
   /** DP-27: a trava entre abas da mesma conta (`navigator.locks`), para uma aba ir à nuvem por vez. */
-  readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T>
+  readonly trancar?: <T>(fazer: (comTrava: boolean) => Promise<T>) => Promise<T>
 }
 
 export interface Sincronia {
@@ -302,9 +302,14 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   }
 
   /** Põe a ida à nuvem na fila desta aba (e na trava entre abas, quando há): espera a anterior terminar. */
-  const trancar = opcoes.trancar ?? (<T,>(fazer: () => Promise<T>): Promise<T> => fazer())
+  const trancar = opcoes.trancar ?? (<T,>(fazer: (comTrava: boolean) => Promise<T>): Promise<T> => fazer(true))
   const exclusivo = <T,>(fazer: () => Promise<T>): Promise<T> => {
-    const naVez = () => trancar(fazer)
+    // DP-28: a trava entre abas não veio a tempo e a ida segue sem ela: confere a versão antes de mandar.
+    const naVez = () =>
+      trancar((comTrava) => {
+        if (!comTrava) conferirAntes = true
+        return fazer()
+      })
     const vez = fila.then(naVez, naVez)
     fila = vez.catch(() => undefined)
     return vez

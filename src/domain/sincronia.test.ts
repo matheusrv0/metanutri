@@ -58,7 +58,7 @@ const gerarId = () => `id-${(gerado += 1)}`
 function abrirAparelho(
   nuvem: NuvemFalsa,
   navegador = new Navegador(),
-  opcoes: { readonly sujo?: boolean; readonly conectado?: () => boolean; readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T> } = {},
+  opcoes: { readonly sujo?: boolean; readonly conectado?: () => boolean; readonly trancar?: <T>(fazer: (comTrava: boolean) => Promise<T>) => Promise<T> } = {},
 ): Aparelho {
   const conta = armazenamentoDaConta(navegador, 'conta-a')
   const trazidas = { vezes: 0 }
@@ -844,12 +844,24 @@ describe('marca de saída que ficou (DP-27)', () => {
 })
 
 describe('uma aba envia por vez (DP-27)', () => {
+  it('DP-30: sem a trava entre abas a tempo, a ida segue e confere a versão antes de mandar', async () => {
+    const nuvem = nuvemFalsa()
+    const semTrava = <T,>(fazer: (comTrava: boolean) => Promise<T>): Promise<T> => fazer(false)
+    const a = abrirAparelho(nuvem, new Navegador(), { trancar: semTrava })
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    const antes = nuvem.pedidos.length
+    await salvar()
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select', 'insert'])
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
+  })
+
   it('toda ida à nuvem passa pela trava entre abas, quando o navegador tem uma', async () => {
     const nuvem = nuvemFalsa()
     const trancadas: string[] = []
-    const trancar = <T,>(fazer: () => Promise<T>): Promise<T> => {
+    const trancar = <T,>(fazer: (comTrava: boolean) => Promise<T>): Promise<T> => {
       trancadas.push('vez')
-      return fazer()
+      return fazer(true)
     }
     const a = abrirAparelho(nuvem, new Navegador(), { trancar })
     await ligar(a)

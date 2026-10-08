@@ -6,7 +6,9 @@ import { CHAVE_NUVEM, criarSincronia, ficouParcial, observarMudancas, saiuDaCont
 import { trocarDadosEmMemoria } from './armazenamentoDaSessao.ts'
 import { ContextoArmazenamento, ContextoMigracao, useArmazenamento } from './contextoArmazenamento.ts'
 import { ContextoNuvem, type ValorNuvem } from './contextoNuvem.ts'
+import { avisarAoFechar } from '../nuvem/avisarAoFechar.ts'
 import { obterSupabase } from './supabase.ts'
+import { travaEntreAbas } from './travaEntreAbas.ts'
 
 interface ProvedorNuvemProps {
   /** A conta que está dentro; `null` sem sessão ou sem servidor de conta. */
@@ -15,13 +17,6 @@ interface ProvedorNuvemProps {
 }
 
 const semAssinatura = () => () => undefined
-
-/** DP-27: com `navigator.locks`, uma aba da conta vai à nuvem por vez; sem ele, cada aba na sua fila. */
-function travaEntreAbas(usuarioId: string): { readonly trancar?: <T>(fazer: () => Promise<T>) => Promise<T> } {
-  const travas = globalThis.navigator?.locks
-  if (travas === undefined) return {}
-  return { trancar: <T,>(fazer: () => Promise<T>): Promise<T> => travas.request(`metanutri:nuvem:${usuarioId}`, fazer) }
-}
 
 /**
  * Os dados da conta na nuvem (spec dados-na-nuvem, D-128): liga o motor de sincronia da conta que
@@ -49,7 +44,7 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       conectado: () => globalThis.navigator.onLine !== false,
       // DP-18: a nuvem trouxe mudança: os produtos da busca e a reserva das sugestões ocultas trocam junto.
       aoTrazer: () => trocarDadosEmMemoria(conta),
-      ...travaEntreAbas(usuarioId),
+      ...travaEntreAbas(globalThis.navigator?.locks, usuarioId),
     })
   }, [cliente, conta, usuarioId, migracao])
 
@@ -83,7 +78,7 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       if (sincronia.estado.pendente) void sincronia.salvarAgora()
     }
     const aoFechar = (evento: BeforeUnloadEvent) => {
-      if (!sincronia.estado.pendente) return
+      if (!avisarAoFechar(sincronia.estado)) return
       evento.preventDefault()
       evento.returnValue = ''
     }
