@@ -2,6 +2,10 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { criarExemplo } from '@/domain/exemplo.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { TelaAdequacao } from './TelaAdequacao.tsx'
@@ -22,10 +26,12 @@ function Anfitriao({
   inicial,
   planoInicial,
   restricoes = [],
+  gasto = 1800,
 }: {
   readonly inicial?: Partial<Caso>
   readonly planoInicial?: Plano
   readonly restricoes?: readonly string[]
+  readonly gasto?: number | null
 }) {
   const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...inicial })
   const [plano, setPlano] = useState<Plano>(planoInicial ?? criarPlanoPadrao(ids))
@@ -33,7 +39,7 @@ function Anfitriao({
     <TelaAdequacao
       caso={caso}
       plano={plano}
-      gastoEnergetico={1800}
+      gastoEnergetico={gasto}
       restricoes={restricoes}
       aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
       aoAlterarPlano={setPlano}
@@ -62,7 +68,7 @@ const primeiraSugestao = (gaveta: ReturnType<typeof within>) => {
 }
 
 const abrirCobrir = async (usuario: ReturnType<typeof userEvent.setup>, nutriente: string) => {
-  await usuario.click(linhaDe(nutriente).getByRole('button', { name: 'Cobrir' }))
+  await usuario.click(linhaDe(nutriente).getByRole('button', { name: `Cobrir ${nutriente}` }))
   return within(screen.getByRole('dialog'))
 }
 
@@ -118,7 +124,7 @@ describe('Etapa 3: adequação', () => {
     const marcas = screen.getAllByTitle(/total possivelmente subestimado/)
     expect(marcas.length).toBeGreaterThan(0)
     expect(marcas[0]).toHaveTextContent("†")
-    expect(screen.getByText(/Falta de dado nunca entra como zero/)).toBeInTheDocument()
+    expect(screen.getByText(/falta de dado nunca entra como zero/i)).toBeInTheDocument()
   })
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
@@ -213,4 +219,278 @@ describe('Etapa 3: adequação', () => {
     const minimo = screen.getByLabelText('Mínimo da meta')
     expect(seletor.compareDocumentPosition(minimo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(minimo.compareDocumentPosition(screen.getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })})
+  })
+})
+
+/** O dia do plano de exemplo: 5 abaixo da meta e 11 na meta. */
+const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+
+/** Linhas de dado que o leitor de tela enxerga (fora do grupo recolhido). */
+const linhasVisiveis = () =>
+  screen
+    .getAllByRole('row')
+    .filter((r) => within(r).queryAllByRole('cell').length === 5)
+    .map((r) => r.textContent ?? '')
+
+describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
+  it('CA-690: à vista só abaixo da meta e acima do limite; os na meta abrem num botão', async () => {
+    const usuario = montar(adulta, exemplo())
+    const visiveis = linhasVisiveis()
+    expect(visiveis.length).toBeGreaterThan(0)
+    for (const texto of visiveis) expect(texto).toMatch(/abaixo|acima do limite/)
+
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const n = Number(botao.textContent?.match(/\d+/)?.[0])
+    expect(visiveis.length + n).toBe(16)
+    expect(botao).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById(botao.getAttribute('aria-controls') ?? '')).toHaveAttribute('hidden')
+
+    await usuario.click(botao)
+    expect(botao).toHaveAttribute('aria-expanded', 'true')
+    expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
+    expect(linhasVisiveis()).toHaveLength(16)
+    // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
+    const ordem = linhasVisiveis()
+    expect(ordem.findIndex((t) => t.startsWith('Cálcio'))).toBeLessThan(ordem.findIndex((t) => t.startsWith('Ferro')))
+  })
+
+  it('CA-691: Cobrir com fundo teal claro, só em linha abaixo da meta', async () => {
+    const usuario = montar(adulta, exemplo())
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    const cobrir = screen.getAllByRole('button', { name: /^Cobrir / })
+    expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo') && !t.startsWith('Sódio')).length)
+    for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
+  })
+
+  it('CA-693: notas em uma frase cada, sem repetir o seletor', () => {
+    montar(adulta, exemplo())
+    expect(screen.getByText('Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.')).toBeInTheDocument()
+    expect(screen.getByText('O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.')).toBeInTheDocument()
+    expect(screen.getByText('AI: usada quando o nutriente não tem RDA nem EAR.')).toBeInTheDocument()
+    expect(screen.queryByText(/RDA no preset individual/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/passar o cursor/)).not.toBeInTheDocument()
+  })
+
+  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece os 16', () => {
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
+    expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver os 16 na meta' })).toBeInTheDocument()
+  })
+
+  it('CB-204: grupo aberto continua aberto depois de um Cobrir', async () => {
+    const usuario = montar(adulta, exemplo())
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    const gaveta = await abrirCobrir(usuario, 'Ferro')
+    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+  })
+})
+
+describe('Etapa 3 no celular (CA-692)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const itemDe = (nome: string) => {
+    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith(nome))
+    if (!item) throw new Error(`${nome} não está na lista`)
+    return within(item)
+  }
+
+  it('CA-692: lista sem tabela, com o estado, a barra, quanto tem de quanto precisa e o Cobrir', () => {
+    montar(adulta, exemplo())
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    const ferro = itemDe('Ferro')
+    expect(ferro.getByText(/^\d+% abaixo$/)).toHaveClass('text-warningtext')
+    expect(ferro.getByRole('progressbar')).toBeInTheDocument()
+    expect(ferro.getByText(/^[\d.,]+ mg de 18 mg$/)).toHaveTextContent(/^[\d.,]+ mg†? de 18 mg rda$/)
+    // O nome diz o nutriente: a lista do celular não tem cabeçalho de coluna (CA-700).
+    const cobrir = ferro.getByRole('button', { name: 'Cobrir Ferro' })
+    expect(cobrir.className).toContain('h-11')
+    expect(cobrir.className).toContain('bg-lightprimary')
+  })
+
+  it('CA-692: o recolhimento vale igual, e Cobrir abre a gaveta', async () => {
+    const usuario = montar(adulta, exemplo())
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const naMeta = document.getElementById(botao.getAttribute('aria-controls') ?? '')
+    expect(naMeta).toHaveAttribute('hidden')
+    await usuario.click(botao)
+    expect(naMeta).not.toHaveAttribute('hidden')
+    expect(within(naMeta as HTMLElement).queryAllByRole('button', { name: /^Cobrir/ })).toHaveLength(0)
+
+    await usuario.click(itemDe('Cálcio').getByRole('button', { name: 'Cobrir Cálcio' }))
+    expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Cobrir Cálcio' })).toBeInTheDocument()
+  })
+})
+
+describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
+  it('CA-694: plano acima do gasto diz quanto passou, sem número negativo', async () => {
+    // O dia do exemplo tem cerca de 1.675 kcal; com gasto de 1.600, passou.
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={1600} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/O plano já passou \d+ kcal do gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.queryByText(/Cabem -/)).not.toBeInTheDocument()
+  })
+
+  it('CA-694: plano abaixo do gasto continua dizendo quanto cabe', async () => {
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={2000} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/Cabem \d+ kcal até o gasto energético\./)).toBeInTheDocument()
+  })
+})
+
+describe('Tabela e lista arredondam na direção do estado (CA-696)', () => {
+  const calcioDoExemplo = (plano: Plano) => {
+    const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
+    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
+    if (!linha) throw new Error('sem cálcio')
+    expect(linha.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
+    return Math.floor(linha.adequacaoPct)
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-696: na tabela, abaixo da meta arredonda para baixo', () => {
+    const plano = exemplo()
+    const esperado = calcioDoExemplo(plano)
+    montar(adulta, plano)
+    expect(linhaDe('Cálcio').getByText(`${esperado}% abaixo`)).toBeInTheDocument()
+  })
+
+  it('CA-696: na lista do celular, também', () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    const plano = exemplo()
+    const esperado = calcioDoExemplo(plano)
+    montar(adulta, plano)
+    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith('Cálcio'))
+    if (!item) throw new Error('cálcio fora da lista')
+    expect(within(item).getByText(`${esperado}% abaixo`)).toBeInTheDocument()
+  })
+})
+
+describe('Mínimo da meta dentro do que o cálculo aceita (CA-698)', () => {
+  it('CA-698: acima de 1000% o número não vale, e a tela não cai', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '10000')
+    expect(screen.getByText(/meta de 1\.000% da referência/)).toBeInTheDocument()
+    expect(screen.getByRole('table')).toBeInTheDocument()
+  })
+})
+
+describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-697: na tabela, o sódio abaixo da meta fica à vista, com o estado e sem Cobrir', () => {
+    montar(adulta, exemplo())
+    const sodio = linhaDe('Sódio')
+    expect(sodio.getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(sodio.getByText('1.500 mg')).toBeInTheDocument()
+    expect(sodio.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('CA-697: na lista do celular, também', () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    montar(adulta, exemplo())
+    const sodio = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith('Sódio'))
+    if (!sodio) throw new Error('sódio fora da lista')
+    expect(within(sodio).getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
+  })
+})
+
+describe('Notas lidas com o símbolo (CA-700)', () => {
+  it('CA-700: o † e o ‡ das notas não ficam escondidos do leitor de tela', () => {
+    montar(adulta, exemplo())
+    const adaga = screen.getByText(/^Total possivelmente subestimado:/).previousElementSibling
+    const duplaAdaga = screen.getByText(/^O limite superior da tabela/).previousElementSibling
+    expect(adaga).toHaveTextContent('†')
+    expect(adaga).not.toHaveAttribute('aria-hidden')
+    expect(duplaAdaga).toHaveTextContent('‡')
+    expect(duplaAdaga).not.toHaveAttribute('aria-hidden')
+  })
+})
+
+describe('Chegar pelo "Ver todos" (CA-701)', () => {
+  it('CA-701: com focarTitulo, a tela abre com o foco no título "Micronutrientes" e avisa que focou', () => {
+    const aoFocarTitulo = vi.fn()
+    render(
+      <TelaAdequacao
+        caso={{ ...criarCasoVazio('c1'), ...adulta }}
+        plano={exemplo()}
+        gastoEnergetico={1800}
+        aoAlterarCaso={() => undefined}
+        aoAlterarPlano={() => undefined}
+        focarTitulo
+        aoFocarTitulo={aoFocarTitulo}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Micronutrientes' })).toHaveFocus()
+    expect(aoFocarTitulo).toHaveBeenCalledOnce()
+  })
+
+  it('CA-701: sem focarTitulo, o foco não muda', () => {
+    montar(adulta, exemplo())
+    expect(screen.getByRole('heading', { name: 'Micronutrientes' })).not.toHaveFocus()
+  })
+})
+
+describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
+  it('CA-694: sem gasto calculado, a gaveta não fala de kcal', async () => {
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={null} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    const descricao = gaveta.getByText(/para a meta\.$/)
+    expect(descricao.textContent).not.toMatch(/kcal/)
+  })
+
+  it('CA-694: passar 0,4 kcal do gasto sai "Cabem 0 kcal", nunca "-0"', async () => {
+    const plano = exemplo()
+    const kcal = totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total
+    render(<Anfitriao inicial={adulta} planoInicial={plano} gasto={kcal - 0.4} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/Cabem 0 kcal até o gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.queryByText(/-0/)).not.toBeInTheDocument()
+  })
+
+  it('CA-690: o recolhido fecha quando a tela abre de novo', async () => {
+    const plano = exemplo()
+    const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+    unmount()
+
+    render(<Anfitriao inicial={adulta} planoInicial={plano} />)
+    expect(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  })
+})

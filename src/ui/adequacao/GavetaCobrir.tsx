@@ -39,6 +39,15 @@ function descreverAvisos(s: Sugestao): readonly string[] {
   )
 }
 
+/** Quanto cabe até o gasto; com o plano acima dele, quanto já passou, sem número negativo (CA-694). */
+function fraseDoGasto(kcalDisponiveis: number | null): string {
+  if (kcalDisponiveis === null) return ''
+  const kcal = Math.round(kcalDisponiveis)
+  return kcal < 0
+    ? ` O plano já passou ${formatarNumero(-kcal, 0)} kcal do gasto energético.`
+    : ` Cabem ${formatarNumero(Math.max(kcal, 0), 0)} kcal até o gasto energético.`
+}
+
 /** CA-34 a CA-40: sugestões de alimentos para cobrir a falta de um micronutriente. */
 export function GavetaCobrir({
   chave,
@@ -90,11 +99,7 @@ export function GavetaCobrir({
       <SheetContent side="right" className="flex w-full flex-col gap-4 overflow-y-auto p-6 sm:max-w-md">
         <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
-          {resultado
-            ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${
-                resultado.kcalDisponiveis === null ? '' : ` Cabem ${formatarNumero(resultado.kcalDisponiveis, 0)} kcal até o gasto energético.`
-              }`
-            : ''}
+          {resultado ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
         </SheetDescription>
 
         <div className="flex flex-col gap-3 border border-border bg-muted p-4">

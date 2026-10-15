@@ -1,6 +1,6 @@
-import { TriangleAlert } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { ChevronDown, TriangleAlert } from 'lucide-react'
+import { useEffect, useId, useMemo, useState } from 'react'
+import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
@@ -8,6 +8,7 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -16,7 +17,13 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
+import { useMediaQuery } from '../estado/usarMediaQuery.ts'
+import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
+import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
+import { MarcaLimite } from './MarcaLimite.tsx'
+import { MarcaSemDado } from './MarcaSemDado.tsx'
+import { podeCobrir } from './podeCobrir.ts'
 
 interface TelaAdequacaoProps {
   readonly caso: Caso
@@ -28,28 +35,11 @@ interface TelaAdequacaoProps {
   readonly aoAlterarPlano: (novo: Plano) => void
   readonly gerarId?: GerarId
   readonly aoAbrirFontes?: (() => void) | undefined
+  /** Chegou pelo "Ver todos" do cartão da etapa 2: abre no topo, com o foco no título (CA-701). */
+  readonly focarTitulo?: boolean | undefined
+  readonly aoFocarTitulo?: (() => void) | undefined
 }
 
-/* A barra carrega o estado da linha: cor sempre significa alguma coisa. */
-const VARIANTE_BARRA: Record<EstadoAdequacao, 'success' | 'warning' | 'error'> = {
-  adequado: 'success',
-  abaixo: 'warning',
-  'acima-limite': 'error',
-}
-
-/* O texto da adequação leva a mesma cor da barra: abaixo em âmbar, dentro em verde, acima do limite em vermelho. */
-const COR_TEXTO: Record<EstadoAdequacao, string> = {
-  adequado: 'text-successtext',
-  abaixo: 'text-warningtext',
-  'acima-limite': 'text-errortext',
-}
-
-function textoDaAdequacao(linha: LinhaAdequacao): string {
-  const pct = `${formatarNumero(linha.adequacaoPct, 0)}%`
-  if (linha.estado === 'abaixo') return `${pct} abaixo`
-  if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
-  return pct
-}
 const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly rotulo: string }[] = [
   { valor: 'individual', rotulo: 'Individual (RDA, 90%)' },
   { valor: 'coletivo', rotulo: 'Coletivo (EAR, 50%)' },
@@ -57,6 +47,12 @@ const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly 
 ]
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
+
+/** O maior mínimo que `calcularAdequacao` aceita no preset personalizado (`adequacao.ts`). */
+const MINIMO_MAXIMO_PCT = 1000
+
+/** Abaixo de 640 px a tabela vira lista: a tabela rolava para o lado e escondia o Cobrir (D-207). */
+const CELULAR = '(max-width: 639px)'
 
 /** "feminino-19-30" vira "mulheres de 19 a 30 anos"; "gestante-19-30" vira "gestantes de 19 a 30 anos". */
 function descreverEstagio(estagio: { readonly idadeMin: number; readonly idadeMax: number | null; readonly sexo: string | null; readonly gestante: boolean; readonly lactante: boolean }): string {
@@ -78,22 +74,11 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
     <TableRow>
       <TableCell>
         <span className="font-medium text-heading">{linha.rotulo}</span>
-        {linha.notaLimite ? (
-          <abbr title={linha.notaLimite} className="ml-0.5 cursor-help align-super text-[10px] font-semibold text-muted-foreground no-underline">
-            ‡
-          </abbr>
-        ) : null}
+        <MarcaLimite nota={linha.notaLimite} />
       </TableCell>
       <TableCell className="numeros whitespace-nowrap">
         {`${quantidadeNoPlano(linha.total)} ${linha.unidade}`}
-        {linha.semDado > 0 ? (
-          <abbr
-            title={`${linha.semDado} ${linha.semDado === 1 ? 'alimento do plano não tem' : 'alimentos do plano não têm'} este nutriente na tabela: total possivelmente subestimado.`}
-            className="ml-0.5 cursor-help align-super text-[10px] font-semibold text-warningtext no-underline"
-          >
-            †
-          </abbr>
-        ) : null}
+        <MarcaSemDado semDado={linha.semDado} />
       </TableCell>
       <TableCell className="numeros whitespace-nowrap">
         {`${valorDeReferencia(linha.referencia.valor)} ${linha.unidade}`}
@@ -104,8 +89,8 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         <span className={`numeros mt-1 block whitespace-nowrap text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </TableCell>
       <TableCell>
-        {linha.estado === 'abaixo' ? (
-          <Button size="sm" variant="outline" onClick={aoCobrir} className="text-primary">
+        {podeCobrir(linha) ? (
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
             Cobrir
           </Button>
         ) : null}
@@ -115,8 +100,31 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
 }
 
 /** Etapa 3: adequação de micronutrientes e ação "cobrir" (CA-25 a CA-40). */
-export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao, aoAbrirFontes }: TelaAdequacaoProps) {
+export function TelaAdequacao({
+  caso,
+  plano,
+  gastoEnergetico,
+  restricoes = [],
+  aoAlterarCaso,
+  aoAlterarPlano,
+  gerarId = idPadrao,
+  aoAbrirFontes,
+  focarTitulo = false,
+  aoFocarTitulo,
+}: TelaAdequacaoProps) {
+  const idTitulo = useId()
+  // O cartão da etapa 2 fica depois das refeições: sem isto, a pessoa cairia no fim da etapa 3.
+  useEffect(() => {
+    if (!focarTitulo) return
+    globalThis.scrollTo({ top: 0 })
+    document.getElementById(idTitulo)?.focus({ preventScroll: true })
+    aoFocarTitulo?.()
+  }, [focarTitulo, idTitulo, aoFocarTitulo])
+
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
+  const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
+  const idNaMeta = useId()
+  const celular = useMediaQuery(CELULAR)
   const prefs = caso.adequacao
 
   const totais = useMemo(() => totaisDoPlano(plano, buscarAlimento), [plano])
@@ -129,6 +137,16 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
   }
 
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
+  // O que pede ação fica à vista, na ordem de sempre; o que está na meta fica recolhido (D-205).
+  const pedemAcao = resultado.linhas.filter((l) => l.estado !== 'adequado')
+  const naMeta = resultado.linhas.filter((l) => l.estado === 'adequado')
+  const rotuloNaMeta = `${mostrarNaMeta ? 'Esconder' : 'Ver'} os ${naMeta.length} na meta`
+  const botaoNaMeta = (
+    <Button variant="ghost" size="sm" aria-expanded={mostrarNaMeta} aria-controls={idNaMeta} onClick={() => setMostrarNaMeta((v) => !v)}>
+      <ChevronDown className={cn('transition-transform', mostrarNaMeta && 'rotate-180')} aria-hidden="true" />
+      {rotuloNaMeta}
+    </Button>
+  )
   const nomeAlimento = (id: number) => ALIMENTOS.find((a) => a.id === id)?.descricao ?? ''
 
   const metaPct = resultado.linhas[0]?.metaPct ?? null
@@ -140,7 +158,9 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
     <div className="flex flex-col gap-6">
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>Micronutrientes</CardTitle>
+          <CardTitle id={idTitulo} tabIndex={-1} className="outline-none">
+            Micronutrientes
+          </CardTitle>
           {subtitulo ? <CardDescription>{subtitulo}</CardDescription> : null}
         </CardHeader>
 
@@ -161,7 +181,11 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
               rotulo="Mínimo da meta"
               valor={prefs.preset.tipo === 'personalizado' ? prefs.preset.minimoPct : 90}
               aoMudar={(v) =>
-                v !== null && v > 0 && aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
+                // Acima de 1000% o cálculo da adequação recusa o número: ele não vale, e a tela não cai (CA-698).
+                v !== null &&
+                v > 0 &&
+                v <= MINIMO_MAXIMO_PCT &&
+                aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
               }
               sufixo="%"
             />
@@ -175,6 +199,24 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
           </Alert>
         ) : (
           <>
+            {celular ? (
+              <div className="flex flex-col">
+                {pedemAcao.length === 0 ? <p className="py-3 text-sm text-muted-foreground">Nenhum nutriente abaixo da meta.</p> : null}
+                {pedemAcao.length > 0 ? (
+                  <ul aria-label="Fora da meta" className="flex flex-col">
+                    {pedemAcao.map((linha) => (
+                      <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                    ))}
+                  </ul>
+                ) : null}
+                {naMeta.length > 0 ? <div className="pt-2">{botaoNaMeta}</div> : null}
+                <ul id={idNaMeta} hidden={!mostrarNaMeta} aria-label="Na meta" className="flex flex-col">
+                  {naMeta.map((linha) => (
+                    <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                  ))}
+                </ul>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -189,26 +231,43 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resultado.linhas.map((linha) => (
+                  {pedemAcao.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-muted-foreground">
+                        Nenhum nutriente abaixo da meta.
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                  {pedemAcao.map((linha) => (
+                    <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                  ))}
+                  {naMeta.length > 0 ? (
+                    <TableRow className="[&:has(td)]:hover:bg-transparent">
+                      <TableCell colSpan={5} className="py-2">
+                        {botaoNaMeta}
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </TableBody>
+                <TableBody id={idNaMeta} hidden={!mostrarNaMeta}>
+                  {naMeta.map((linha) => (
                     <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
                   ))}
                 </TableBody>
               </Table>
             </div>
+            )}
 
             <TableFootnotes>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-                Total possivelmente subestimado: algum alimento do plano não tem esse nutriente na tabela de composição. Falta de dado nunca entra como zero.
+                <span>Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.</span>
               </p>
-              <p className="mt-1">
+              <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
-                O limite superior da tabela não vale para a forma do nutriente presente nos alimentos; o texto completo aparece ao passar o cursor.
+                <span>O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.</span>
               </p>
-              <p className="mt-1">
-                Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
-                <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
-              </p>
+              <p>AI: usada quando o nutriente não tem RDA nem EAR.</p>
               <p className="mt-2 flex flex-wrap items-center gap-x-1">
                 {`Composição: ${NOME_DA_BASE}`}
                 {aoAbrirFontes ? (

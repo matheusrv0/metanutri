@@ -588,9 +588,9 @@ export function TelaDesignSystem() {
 
         <Secao nome="MedidorMacro" arquivo="nutricao/MedidorMacro.tsx" descricao="A faixa recomendada, o marcador do plano e a frase da distância">
           <div className="flex flex-col gap-4">
-            <MedidorMacro nome="Proteína" macro={MACRO_DENTRO} meta="Meta: 10 a 35% (faixa da idade)" />
-            <MedidorMacro nome="Carboidrato" macro={MACRO_ABAIXO} meta="Meta: 10 a 35% (faixa da idade)" />
-            <MedidorMacro nome="Gordura" macro={MACRO_ACIMA} meta="Meta: 10 a 35% (faixa da idade)" />
+            <MedidorMacro nome="Proteína" macro={MACRO_DENTRO} meta="10 a 35%" comGPorKg />
+            <MedidorMacro nome="Carboidrato" macro={MACRO_ABAIXO} meta="10 a 35%" />
+            <MedidorMacro nome="Gordura" macro={MACRO_ACIMA} meta="10 a 35% · sua meta" />
             <MedidorMacro nome="Fibra — sem meta" macro={MACRO_SEM_META} meta={null} />
           </div>
         </Secao>

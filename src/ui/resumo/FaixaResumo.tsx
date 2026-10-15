@@ -1,5 +1,6 @@
 import { Settings2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { calcularEnergia, percentualDoGasto } from '@/domain/energia.ts'
 import { calcularMacros, type EstadoFaixa } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -48,7 +49,7 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
   const macro = (nome: string, m: (typeof macros)['proteina']) => (
     <Celula
       rotulo={nome}
-      valor={`${formatarNumero(m.gramas, 0)} g${m.pctKcal === null ? '' : ` · ${formatarNumero(m.pctKcal, 0)}%`}`}
+      valor={`${formatarNumero(m.gramas, 0)} g${m.pctKcal === null ? '' : ` · ${formatarNumero(arredondarNoEstado(m.pctKcal, m.meta?.tipo === 'pct' ? m.estado : null), 0)}%`}`}
       {...(m.estado ? { cor: COR[m.estado] } : {})}
     />
   )
@@ -60,7 +61,7 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
         <Celula rotulo={energia.getManual ? 'GET manual' : 'GET calculado'} valor={energia.get === null ? '—' : `${formatarNumero(energia.get, 0)} kcal`} />
         <Celula
           rotulo="Do gasto"
-          valor={doGet ? `${formatarNumero(doGet.pct, 0)}%` : '—'}
+          valor={doGet ? `${formatarNumero(arredondarNoEstado(doGet.pct, doGet.estado), 0)}%` : '—'}
           {...(doGet ? { cor: COR[doGet.estado] } : {})}
         />
         {macro('Proteína', macros.proteina)}

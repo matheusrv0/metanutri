@@ -264,7 +264,7 @@ refeição em que estou mexendo.
 energia e os macros fecham.
 
 - **CA-205** · Dado o resumo do dia, então a energia aparece num anel com o percentual do gasto energético, as kcal do plano e o gasto calculado. A cor do anel segue os três estados de hoje: abaixo de 90%, entre 90% e 110% e acima de 110%.
-- **CA-206** · Dado os macros, então cada um mostra gramas, percentual e g/kg (quando há peso), numa barra com a faixa da meta marcada e um ponto na posição atual.
+- **CA-206** · Dado os macros, então cada um mostra gramas, percentual ~~e g/kg (quando há peso)~~, numa barra com a faixa da meta marcada e um ponto na posição atual. **Substituído em parte pelo D-201** (`specs/painel-lateral-enxuto/SPEC.md`, 15/10/2026): o g/kg fica na linha só da proteína (ou do macro com meta em g/kg); o de carboidrato e gordura vai para "Ver cálculo".
 - **CA-207** · Dado o resumo, então ele termina com o botão "Próxima etapa" quando existe próxima etapa.
 
 **US-3.4 · Adequação (5 pts).** Como nutricionista, quero ver o que falta de cada

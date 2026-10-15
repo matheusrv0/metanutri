@@ -39,7 +39,7 @@ describe('GavetaCobrir', () => {
     const { rerender } = render(tela(['abacaxi']))
     const linhaFerro = screen.getByText('Ferro').closest('tr')
     if (!linhaFerro) throw new Error('sem a linha do ferro')
-    await userEvent.setup().click(within(linhaFerro).getByRole('button', { name: 'Cobrir' }))
+    await userEvent.setup().click(within(linhaFerro).getByRole('button', { name: 'Cobrir Ferro' }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     const calculos = vi.mocked(sugerirParaCobrir).mock.calls.length

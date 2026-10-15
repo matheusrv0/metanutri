@@ -76,7 +76,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await page.getByRole('button', { name: /Próxima etapa: Adequação/ }).click()
   const linhaFerro = page.getByRole('row').filter({ hasText: 'Ferro' }).first()
   const adequacaoAntes = await linhaFerro.textContent()
-  await linhaFerro.getByRole('button', { name: 'Cobrir' }).click()
+  await linhaFerro.getByRole('button', { name: 'Cobrir Ferro', exact: true }).click()
 
   const gaveta = page.getByRole('dialog')
   await expect(gaveta).toContainText('para a meta')
@@ -271,4 +271,93 @@ test('CA-336: em tela larga as sugestões também ficam numa linha só', async (
   const primeira = await sugestoes.first().boundingBox()
   const ultima = await sugestoes.last().boundingBox()
   expect(ultima?.y).toBe(primeira?.y)
+})
+
+test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685, CA-686, CA-688, CA-689)', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+
+  const micros = page.getByRole('region', { name: 'Micronutrientes' })
+  await expect(micros).toContainText(/\d+ para cobrir\./)
+  await expect(micros.getByRole('button', { name: 'Cobrir Sódio' })).toHaveCount(0)
+  const linhas = micros.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem')
+  const antes = await linhas.allTextContents()
+  await linhas.first().getByRole('button', { name: /^Cobrir / }).click()
+
+  const gaveta = page.getByRole('dialog')
+  await expect(gaveta).toContainText('para a meta')
+  await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem').first().getByRole('button', { name: 'Adicionar' }).click()
+  await expect(gaveta).toBeHidden()
+  await expect.poll(() => linhas.allTextContents()).not.toEqual(antes)
+
+  await micros.getByRole('button', { name: 'Ver todos' }).click()
+  const etapas = page.getByRole('navigation', { name: 'Etapas do plano' })
+  await expect(etapas.getByRole('button', { name: /Adequação/ })).toHaveAttribute('aria-current', 'step')
+  // CA-701: a etapa 3 abre no topo, com o foco no título.
+  await expect(page.getByRole('heading', { name: 'Micronutrientes' })).toBeFocused()
+
+  await etapas.getByRole('button', { name: /Dados e medidas/ }).click()
+  await expect(page.getByRole('region', { name: 'Resumo do dia' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Micronutrientes' })).toHaveCount(0)
+})
+
+test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o Cobrir à vista', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+  const largura = () => page.evaluate(() => document.documentElement.scrollWidth)
+
+  await expect(page.getByRole('region', { name: 'Micronutrientes' })).toBeVisible()
+  expect(await largura()).toBeLessThanOrEqual(360)
+
+  // CA-701: no celular o cartão fica depois das refeições; "Ver todos" leva ao topo da etapa 3.
+  await page.getByRole('region', { name: 'Micronutrientes' }).getByRole('button', { name: 'Ver todos' }).click()
+  await expect(page.getByRole('heading', { name: 'Micronutrientes' })).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  const ferro = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Ferro' })
+  const cobrir = ferro.getByRole('button', { name: 'Cobrir Ferro', exact: true })
+  await expect(cobrir).toBeVisible()
+  const caixa = await cobrir.boundingBox()
+  expect((caixa?.x ?? 0) + (caixa?.width ?? 0)).toBeLessThanOrEqual(360)
+  expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+  expect(await largura()).toBeLessThanOrEqual(360)
+})
+
+test('CA-704: o recolhido da etapa 3 é de cada plano, também pelo voltar do navegador', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+  await expect(page).toHaveURL(/#\/caso\/[^/]+\/plano$/)
+  const planoA = decodeURIComponent(page.url().split('#/caso/')[1]?.split('/')[0] ?? '')
+
+  // Plano B: uma cópia do exemplo, com os mesmos nutrientes na meta.
+  await page.evaluate(() => {
+    location.hash = '#/casos'
+  })
+  await page.getByRole('button', { name: /^Mais ações para Exemplo/ }).click()
+  await page.getByRole('menuitem', { name: 'Duplicar' }).click()
+  await page.getByRole('button', { name: /^Abrir .*\(cópia\)$/ }).click()
+  await expect(page).toHaveURL(/#\/caso\/[^/]+\/caso$/)
+  const planoB = decodeURIComponent(page.url().split('#/caso/')[1]?.split('/')[0] ?? '')
+  expect(planoB).not.toBe(planoA)
+
+  const irPara = (id: string) =>
+    page.evaluate((hash) => {
+      location.hash = hash
+    }, `#/caso/${encodeURIComponent(id)}/adequacao`)
+
+  await irPara(planoA)
+  await page.getByRole('button', { name: /^Ver os \d+ na meta$/ }).click()
+  await expect(page.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+
+  await irPara(planoB)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('(cópia)')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+
+  // Voltar pelo navegador leva ao plano A, que abre fechado também.
+  await page.goBack()
+  await expect(page.getByRole('heading', { level: 1 })).not.toContainText('(cópia)')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
 })
