@@ -230,7 +230,7 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
   `registrarMudanca` em `src/domain/copiaDaConta.ts`; teste em `copiaDaConta.test.ts`. Cobre CA-609, CA-610.
 - [x] **T61** — Documento: a lápide que não coube (navegador cheio) pode fazer o item apagado voltar pelo DP-40; o
   comentário do "sem espaço" em `src/domain/sincronia.ts` e o R8.
-- [ ] **T62** — Documento: salvar o roteiro sem mudar nada não solta o valor retido; o R8 e a nota de publicação
+- [x] **T62** — Documento: salvar o roteiro sem mudar nada não solta o valor retido; o R8 e a nota de publicação
   (`docs/pendencias.md`) dizem para mudar alguma coisa naquele aparelho.## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -476,6 +476,8 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
     meio tempo fica sem eles até a volta, e um aparelho com o valor mais velho fica com ele retido, só para si (DP-39).
   - Se o aparelho com o valor mais novo nunca mais abrir (ou sair da conta antes), o valor mais novo se perde: a nuvem
     só guarda a marca dele, e os aparelhos com o valor mais velho o mantêm retido, sem subir, até alguém editar.
+    *(Rodada 4)* Para recuperar nesse caso, mude alguma coisa no roteiro (ou no modelo) no aparelho que ficou com ele:
+    salvar sem mudar nada não solta o valor retido, porque o texto igual não conta como mudança.
   - "Sair" numa aba antiga apaga a cópia de trabalho deste navegador, inclusive o que ainda não voltou para a nuvem.
   - As lápides vencem em 90 dias (CB-172).
   - *(Rodada 4)* Com o navegador quase cheio, a lápide de uma exclusão pode não caber (a gravação da marca falha e é

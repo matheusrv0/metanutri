@@ -187,7 +187,8 @@ Atualizado em 15/10/2026.
 >    devolve sozinho quando abre; um aparelho com uma versão mais velha a guarda só para si, sem subir (spec
 >    `dados-na-nuvem`, D-170 a D-173). O risco que sobra (R8): se o aparelho com a versão mais nova do roteiro ou de um
 >    modelo não for aberto de novo, essa versão se perde. Por isso, abra também o aparelho em que você mexeu por
->    último no roteiro e nos modelos. Fechar as abas antigas acaba com esse vai e volta. Daqui para a frente, a versão
+>    último no roteiro e nos modelos. Se ela se perdeu e só um aparelho ficou com uma versão mais velha, mude alguma
+>    coisa no roteiro (ou no modelo) nesse aparelho: salvar sem mudar nada não faz ela voltar para a nuvem. Fechar as abas antigas acaba com esse vai e volta. Daqui para a frente, a versão
 >    nova mostra "Há uma versão nova do MetaNutri." com "Atualizar" (D-172);
 > 4. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
 >
