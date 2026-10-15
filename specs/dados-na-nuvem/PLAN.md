@@ -212,7 +212,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
 - [x] **T53** — Listas item por item (DP-40): o item mais velho fica retido e não sobe na lista; o item que falta numa
   lista que a cópia traz, sem lápide e com marca na cópia, fica aqui como a chave que falta. O teste `soUmMaisNovo`
   muda. Cobre CA-604.
-- [ ] **T54** — Junção (DP-41): `juntarCopias` não leva o valor só daqui que é mais velho que a marca da nuvem, e
+- [x] **T54** — Junção (DP-41): `juntarCopias` não leva o valor só daqui que é mais velho que a marca da nuvem, e
   guarda as marcas dos valores que faltam (sem lápide). Cobre CA-607 e a corrida da revisão.
 - [ ] **T55** — Fluxo normal: teste do relógio atrasado (CA-608), sem mudar código.
 - [ ] **T56** — O teste de navegador do CA-603 leva o ID no nome (`e2e/csp.spec.ts`).

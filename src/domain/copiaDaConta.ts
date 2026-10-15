@@ -502,6 +502,10 @@ function escolher(juncao: Juncao, ref: string, daqui: string | undefined, nuvem:
   if (daqui === undefined && nuvem === undefined) return null
   if (nuvem === undefined || daqui === nuvem) {
     if (daqui === undefined) return null
+    // D-173 e DP-41: só daqui, e a nuvem conhece uma mudança mais nova dele (sem lápide): o valor daqui é mais velho e
+    // não entra na cópia juntada; aplicada aqui, ela o deixa retido. A marca da nuvem continua na cópia juntada.
+    const marcaDaNuvem = juncao.nuvem.alterados[ref]
+    if (nuvem === undefined && marcaDaNuvem !== undefined && tempo(daqui, juncao.daqui) < marcaDaNuvem) return null
     escolha = { valor: daqui, lado: nuvem === undefined ? 'daqui' : 'igual' }
     quando = tempo(daqui, juncao.daqui)
     const naNuvem = nuvem === undefined ? '' : tempo(nuvem, juncao.nuvem)
@@ -706,10 +710,15 @@ export function juntarCopias(daqui: Backup, nuvem: Backup, agora: string, desemp
     if (escolha !== null) dados[chave] = comAlimentosTrocados(chave, escolha, trocas)
   }
 
-  // As marcas da cópia junta: a hora mais nova de cada item que ficou e as lápides recentes do que saiu.
+  // As marcas da cópia junta: a hora mais nova de cada referência, menos a das que saíram por lápide, e as lápides
+  // recentes do que saiu. A marca de um valor que falta sem lápide fica (DP-41): a nuvem continua sabendo da mudança
+  // mais nova dele, e nenhum aparelho sobe um valor mais velho (D-173). No fluxo normal não existe marca assim.
   const alterados = new Map<string, string>()
   for (const marcas of [juncaoComProdutos.daqui.alterados, marcasDaNuvem.alterados]) {
-    for (const [ref, quando] of Object.entries(marcas)) if (juncao.presentes.has(ref) && (alterados.get(ref) ?? '') < quando) alterados.set(ref, quando)
+    for (const [ref, quando] of Object.entries(marcas)) {
+      const saiuPorLapide = lapides.has(ref) && !juncao.presentes.has(ref)
+      if (!saiuPorLapide && (alterados.get(ref) ?? '') < quando) alterados.set(ref, quando)
+    }
   }
   const limite = limiteDasLapides(agora)
   const excluidos = [...lapides].filter(([ref, quando]) => !juncao.presentes.has(ref) && quando >= limite)

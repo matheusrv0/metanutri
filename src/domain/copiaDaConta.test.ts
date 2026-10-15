@@ -778,6 +778,32 @@ describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nu
       expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
     })
 
+    it('CA-607: N2 com o "a" novo e N3 com o "b" novo, e a aba antiga salva sem os modelos: depois que os dois abrem, a nuvem fica com os dois', () => {
+      const marcasDe = (c: Backup) => lerMudancas(c.dados[CHAVE_MUDANCAS] ?? null).alterados
+      // A nuvem tinha a1 e b1. N2 troca o "a" (5h) e sobe; N3 ainda está com a1 e b1.
+      const n2 = comModelos([modelo('a', 'Ferro NOVO', T(5)), modelo('b', 'Zinco velho', T(1))], { 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(1) })
+      const n3 = comModelos([modelo('a', 'Ferro velho', T(1)), modelo('b', 'Zinco velho', T(1))], { 'modelos-suplemento/a': T(1), 'modelos-suplemento/b': T(1) })
+      const c2 = montarCopia(n2, T(5))
+      // A aba antiga salva sem os modelos, com as marcas que veio de c2.
+      const c3 = copia({ 'metanutri:pacientes': pacientes(), [CHAVE_MUDANCAS]: JSON.stringify({ alterados: marcasDe(c2), excluidos: {} }) })
+      // N3 troca o "b" (6h) e, ao salvar, junta com c3: o "a" velho dele não entra, e a marca das 5h fica.
+      gravar(n3, MODELOS, JSON.stringify([modelo('a', 'Ferro velho', T(1)), modelo('b', 'Zinco NOVO', T(6))]), T(6))
+      const c4 = juntarCopias(montarCopia(n3, T(6)), c3, T(6))
+      expect(nomes(c4, MODELOS)).toEqual(['Zinco NOVO'])
+      expect(marcasDe(c4)).toMatchObject({ 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(6) })
+      aplicarCopia(n3, c4)
+      expect(nomesAqui(n3)).toEqual(['Ferro velho', 'Zinco NOVO'])
+
+      // N2 abre e aplica c4: devolve o "a" novo, junto do "b" novo de N3.
+      expect(aplicarCopia(n2, c4).mantidas).toEqual([MODELOS])
+      const c5 = montarCopia(n2, T(7))
+      expect(nomes(c5, MODELOS).sort()).toEqual(['Ferro NOVO', 'Zinco NOVO'])
+      aplicarCopia(n3, c5)
+      expect(nomesAqui(n3)).toEqual(['Ferro NOVO', 'Zinco NOVO'])
+      const novo = new Memoria()
+      aplicarCopia(novo, c5)
+      expect(nomesAqui(novo)).toEqual(['Ferro NOVO', 'Zinco NOVO'])
+    })
     it('CA-604: o item que falta numa lista da cópia, sem marca nem lápide, segue a cópia (fluxo de antes)', () => {
       const arm = comModelos([modelo('a', 'Ferro', T(2)), modelo('b', 'Zinco', T(2))], { 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(2) })
       const semOA = copia({ 'metanutri:pacientes': pacientes(), [MODELOS]: JSON.stringify([modelo('b', 'Zinco', T(2))]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'modelos-suplemento/b': T(2) }) })
