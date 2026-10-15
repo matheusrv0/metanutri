@@ -1,0 +1,68 @@
+# Supabase LOCAL só para os testes de ataque (spec seguranca-lote-4, D-136 e CB-129).
+# Fica fora de supabase/ de propósito: os comandos de publicação em produção leem aquela pasta, e esta
+# configuração não pode mudar nada lá. Quem usa este arquivo é scripts/testes-de-ataque.mjs, sempre com
+# `--workdir testes/supabase-local`. Nenhum projeto remoto é ligado a esta pasta.
+#
+# Portas próprias (5542x), para não brigar com outro Supabase local da máquina. Só sobem o banco, o
+# login, a API de tabelas, o armazenamento e a porta de entrada (kong); o resto fica desligado.
+
+project_id = "metanutri-ataques"
+
+[api]
+enabled = true
+port = 55421
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 55422
+shadow_port = 55420
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+# As migrações do projeto (supabase/001 a 011) entram pelo script, na ordem, como em produção.
+enabled = false
+
+[db.seed]
+enabled = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[local_smtp]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.s3_protocol]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:4173"
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
