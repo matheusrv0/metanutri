@@ -38,6 +38,31 @@ const SEM_PX_SOLTO = [
   },
 ]
 
+/*
+ * Sem HTML cru na página (spec seguranca-lote-4, CA-485, DP-CSP-8). A CSP libera o script do antifraude do Mercado
+ * Pago com um nonce fixo e público; ele só vira brecha se o código puser HTML cru na página. Estas regras barram os
+ * caminhos para isso em src/ e design-system/ (os testes ficam de fora). Texto vai por JSX ou textContent.
+ */
+const MENSAGEM_HTML_CRU =
+  'HTML cru na página. Use JSX ou textContent: a CSP tem um nonce fixo para o antifraude do pagamento, e HTML cru o tornaria uma brecha (spec seguranca-lote-4, DP-CSP-8).'
+
+const SEM_HTML_CRU_PROPRIEDADES = [
+  ...['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'createContextualFragment', 'setHTMLUnsafe', 'srcdoc'].map((property) => ({
+    property,
+    message: MENSAGEM_HTML_CRU,
+  })),
+  ...['write', 'writeln'].map((property) => ({ object: 'document', property, message: MENSAGEM_HTML_CRU })),
+]
+
+const SEM_HTML_CRU_SINTAXE = [
+  { selector: 'JSXAttribute[name.name=/^(dangerouslySetInnerHTML|srcdoc|srcDoc)$/]', message: MENSAGEM_HTML_CRU },
+  { selector: 'Property[key.name=/^(dangerouslySetInnerHTML|srcdoc|srcDoc)$/]', message: MENSAGEM_HTML_CRU },
+  { selector: "CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^srcdoc$/i]", message: MENSAGEM_HTML_CRU },
+  { selector: "CallExpression[callee.property.name=/^(write|writeln)$/][callee.object.property.name='document']", message: MENSAGEM_HTML_CRU },
+]
+
+const ARQUIVOS_DE_TESTE = ['**/*.test.{ts,tsx}']
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules', 'dados-brutos', 'design-system/referencia'] },
   {
@@ -60,13 +85,23 @@ export default tseslint.config(
     },
   },
   {
+    // DP-CSP-8: nada de HTML cru no código do site nem da biblioteca.
+    files: ['src/**/*.{ts,tsx}', 'design-system/**/*.{ts,tsx}'],
+    ignores: ARQUIVOS_DE_TESTE,
+    rules: {
+      'no-restricted-properties': ['error', ...SEM_HTML_CRU_PROPRIEDADES],
+      'no-restricted-syntax': ['error', ...SEM_VALOR_SOLTO, ...SEM_HTML_CRU_SINTAXE],
+    },
+  },
+  {
     // Dentro da biblioteca a régua é mais curta: nem px solto passa.
     // `overlay/` fica fora porque a gaveta precisa de limite de viewport
     // (max-w-[300px], env(safe-area-inset-bottom)), e `efeitos/` porque são
     // componentes de animação de terceiros (21st.dev), não do sistema.
+    // A régua de HTML cru (DP-CSP-8) vai junto, porque esta lista substitui a de cima.
     files: ['design-system/componentes/{forms,display,navigation,nutricao}/**/*.tsx', 'design-system/vitrine/**/*.tsx'],
     rules: {
-      'no-restricted-syntax': ['error', ...SEM_VALOR_SOLTO, ...SEM_PX_SOLTO],
+      'no-restricted-syntax': ['error', ...SEM_VALOR_SOLTO, ...SEM_PX_SOLTO, ...SEM_HTML_CRU_SINTAXE],
     },
   },
   {
