@@ -197,6 +197,28 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - [x] **T50** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
   `node scripts/conferir-publicacao.mjs`, `npm run test:csp` e as simulações do revisor.
 
+### Rodada 3 da integração (15/10/2026)
+
+Revisão focada da rodada anterior (`scratchpad/novidades/re-revisao-final.md`, reprodução `reabrir.mts`) e decisão
+do coordenador (`rodada3-decisao.md`): o valor mais velho ainda voltava para a nuvem dentro da lista inteira e depois
+de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não dependem das outras; T57 e T58 no fim.
+
+- [x] **T51** — Spec e plano: D-173, CA-604 a CA-609, CB-172; DP-39 a DP-41; R8 reescrito; o DP-35 deixa de dizer que
+  cobria os dois roteiros; o mapa do CA-603 aponta o teste de navegador.
+- [ ] **T52** — Valor retido (DP-39): `src/domain/copiaDaConta.ts` (`CHAVE_RETIDOS`; `planejarAplicacao` devolve os
+  retidos; `aplicarCopia` e `chavesMantidas` os leem; `montarCopia` não leva o valor retido;
+  `registrarMudanca` solta o retido que a pessoa edita). Testes em `copiaDaConta.test.ts` e `sincronia.test.ts`.
+  Cobre CA-605, CA-606, CA-609.
+- [ ] **T53** — Listas item por item (DP-40): o item mais velho fica retido e não sobe na lista; o item que falta numa
+  lista que a cópia traz, sem lápide e com marca na cópia, fica aqui como a chave que falta. O teste `soUmMaisNovo`
+  muda. Cobre CA-604.
+- [ ] **T54** — Junção (DP-41): `juntarCopias` não leva o valor só daqui que é mais velho que a marca da nuvem, e
+  guarda as marcas dos valores que faltam (sem lápide). Cobre CA-607 e a corrida da revisão.
+- [ ] **T55** — Fluxo normal: teste do relógio atrasado (CA-608), sem mudar código.
+- [ ] **T56** — O teste de navegador do CA-603 leva o ID no nome (`e2e/csp.spec.ts`).
+- [ ] **T57** — Nota de publicação e relatório: o risco que sobra (R8).
+- [ ] **T58** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
+  `conferir-publicacao`, `npm run test:csp` e as simulações `reabrir.mts`, `r8.mts` e `ordem.mts`.
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -229,7 +251,14 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 | CA-600 | T46 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-600: …" |
 | CA-601 | T47 | `repositorioAcompanhamentos.test.ts` e `missoesNaNuvem.test.tsx` "CA-601: …" |
 | CA-602 | T48 | `aplicativo.test.tsx` "CA-602: …" |
-| CA-603 | T48 | `aplicativo.test.tsx` "CA-603: …", `e2e/csp.spec.ts` (CA-486) e `npm run test:csp` |
+| CA-603 | T48, T56 | `e2e/csp.spec.ts` "CA-486 e CA-603: …" e `npm run test:csp` |
+| CA-604 | T53 | `copiaDaConta.test.ts` "CA-604: …" |
+| CA-605 | T52 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-605: …" |
+| CA-606 | T52 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-606: …" |
+| CA-607 | T54 | `copiaDaConta.test.ts` "CA-607: …" |
+| CA-608 | T55 | `copiaDaConta.test.ts` "CA-608: …" |
+| CA-609 | T52 | `copiaDaConta.test.ts` "CA-609: …" |
+| CB-172 | — | risco aceito, anotado no R8 (sem teste: depende de 90 dias) |
 
 ## Decisões do plano
 
@@ -371,8 +400,9 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - **DP-35 · Só sobe o valor daqui mais novo (D-170, CA-599, revisão final).** A chave que a cópia não traz e fica aqui
   entra em `mantidas` (e sobe) só quando a marca daqui é igual ou mais nova que a marca que a cópia traz dela (sem marca
   na cópia, conta como mais nova). Mais velha, a chave fica aqui sem subir e assume a marca da cópia: outro aparelho tem
-  o valor mais novo e o devolve, e a próxima cópia traz esse valor para cá. Nas listas, vale item por item: a lista sobe
-  quando algum item que ficou é igual ou mais novo que a marca da cópia.
+  o valor mais novo e o devolve, e a próxima cópia traz esse valor para cá. *(Rodada 3: isso não bastava. Ao recarregar,
+  o valor velho com a marca da cópia contava como igual e subia; e a lista subia inteira com o item velho. O DP-39 e o
+  DP-40 fecham os dois caminhos.)*
 - **DP-36 · Aba nova devolve sem esperar edição (CA-600, revisão final).** A aba antiga deste navegador não tira as chaves
   novas do armazenamento (ela não as conhece), mas grava na situação a versão que mandou. Por isso: ao abrir em dia, com
   a mesma versão da nuvem, o motor confere (sem gravar nada, `chavesMantidas`) se ficaria alguma chave daqui que a cópia
@@ -391,7 +421,25 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
   assumindo sozinho; o que muda é que, quando ele assume, o app chama `onNeedReload` em vez de recarregar, e a área de
   trabalho mostra a barra (um `Alert` no fluxo do conteúdo, como os outros avisos da área). "Atualizar" recarrega. O
   registro continua esperando o `load` da página, como o script de antes. Sem script na página: a CSP continua igual.
-
+- **DP-39 · Valor retido (D-173, CA-605, CA-606, CA-609, rodada 3).** Ao aplicar uma cópia que não traz um valor daqui e
+  sabe de uma mudança mais nova dele (a marca da cópia é mais nova que a hora do valor daqui), o valor fica aqui, mas
+  retido: a referência vai para `metanutri:retidos` (só deste navegador, fora da cópia da nuvem), a marca local passa a
+  ser a da cópia, e `montarCopia` não leva o valor retido (a chave inteira sai da cópia que sobe; na lista, sai só o
+  item). Assim a nuvem continua sabendo da mudança mais nova, e quem a tem a devolve: a regra do D-170 faz o aparelho
+  com a marca igual devolver o valor. O retido nunca conta como "mantido" (nem ao recarregar, abrir outra aba ou
+  conferir de novo). A lista de retidos é refeita a cada cópia aplicada: o valor que chega solta o retido. A edição da
+  pessoa também solta (`registrarMudanca` tira a referência), e a edição sobe como qualquer outra.
+- **DP-40 · Listas item por item (CA-604, rodada 3).** O item mais velho fica retido como no DP-39; a lista sobe com os
+  outros, sem ele. Para o aparelho com o item novo não perder o item quando aplica essa lista, a aplicação trata o
+  item que falta numa lista que a cópia traz como trata a chave que falta, mas só quando a cópia tem a marca dele e não
+  tem a lápide (ou quando ele está retido aqui): no fluxo normal, item que some de uma lista sempre deixa lápide, e a
+  marca sem valor só aparece por causa de uma aba antiga ou de um item retido. Sem marca na cópia, a lista da cópia vale,
+  como antes.
+- **DP-41 · Junção (CA-607, rodada 3).** Na junção, o valor que só este aparelho tem e é mais velho que a marca que a
+  nuvem traz dele não entra na cópia juntada (fica retido quando ela é aplicada aqui). As marcas da cópia juntada passam
+  a ser as dos dois lados (a mais nova de cada referência), menos as referências que saíram por lápide: a marca de um
+  valor que falta continua na nuvem, para nenhum outro aparelho subir um valor mais velho. No fluxo normal não existe
+  marca sem valor e sem lápide, então nada muda.
 ## Riscos
 
 - **R1** — Remontar a área quando a nuvem traz mudança (conflito ou conferência, DP-20) fecha diálogo e formulário
@@ -405,17 +453,16 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - **R6** — Lápide dura 90 dias: um aparelho com mudança pendente que ficou mais que isso sem abrir pode trazer de volta
   um item excluído no outro.
 - **R7** — `apagarAcompanhamentosDaNuvem` fica sem uso (saiu com o "Apagar tudo"); fica para a exclusão de conta.
-- **R8** — *(15/10/2026)* Enquanto uma aba da versão antiga ficar aberta, cada salvar dela tira as chaves novas da nuvem
-  e um aparelho novo as devolve (DP-32). Um terceiro aparelho que abrir nesse meio tempo fica alguns segundos sem elas.
-  Se dois aparelhos novos tiverem versões diferentes do roteiro nessa hora, a junção fica com a mais nova; mas o
-  aparelho que só aplicar a cópia já devolvida pelo outro (sem ter passado pela da versão antiga) fica com a dele. Some
-  quando a aba velha é fechada ou recarregada: o aplicativo se atualiza sozinho (`registerType: 'autoUpdate'`), mas a
-  aba que já estava aberta continua com o código velho até lá. Por isso a nota de publicação pede para fechar as abas.
-  *(Revisão final:)* o caso dos dois roteiros diferentes ficou coberto pelo DP-35 (só o mais novo sobe); daqui para a
-  frente, o aviso de versão nova (D-172) faz a aba velha recarregar logo. Nesta publicação, as abas abertas antes dela
-  ainda não têm o aviso. "Sair" numa aba antiga apaga a cópia de trabalho deste navegador, inclusive as chaves novas que
-  ainda não voltaram para a nuvem: por isso a nota de publicação diz para não usar "Sair" numa aba antiga.
-
+- **R8** — *(15/10/2026, reescrito na rodada 3)* O que sobra depois do D-170 a D-173:
+  - Enquanto uma aba da versão antiga ficar aberta, cada salvar dela tira o roteiro e os modelos de suplemento da nuvem,
+    e o aparelho que tem o valor mais novo os devolve ao abrir ou conferir (DP-32, DP-36). Um aparelho que abrir nesse
+    meio tempo fica sem eles até a volta, e um aparelho com o valor mais velho fica com ele retido, só para si (DP-39).
+  - Se o aparelho com o valor mais novo nunca mais abrir (ou sair da conta antes), o valor mais novo se perde: a nuvem
+    só guarda a marca dele, e os aparelhos com o valor mais velho o mantêm retido, sem subir, até alguém editar.
+  - "Sair" numa aba antiga apaga a cópia de trabalho deste navegador, inclusive o que ainda não voltou para a nuvem.
+  - As lápides vencem em 90 dias (CB-172).
+  - O aviso de versão nova (D-172) só vale a partir desta publicação: as abas abertas antes dela ainda não o têm. Por
+    isso a nota de publicação manda fechar as abas e recarregar uma vez.
 ## Divergências para o dono decidir
 
 - ~~**V1** — "Funciona sem internet" no Free e no rodapé público.~~ Resolvido na rodada final (DP-26).

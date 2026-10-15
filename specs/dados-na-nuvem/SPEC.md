@@ -13,6 +13,10 @@ em outro. Vale para todas as contas, desde a publicação das novidades.
 **Revisão final de 15/10/2026:** o D-170 ganha a regra da hora (só volta para a nuvem o valor daqui que é o mais novo),
 e entram D-172 (aviso de versão nova), CA-598 a CA-603.
 
+**Rodada 3 de 15/10/2026:** a revisão focada achou dois caminhos em que o valor mais velho ainda voltava para a nuvem
+(a lista inteira subindo com um item velho, e o roteiro velho subindo depois de recarregar). Entram D-173, CA-604 a
+CA-609 e CB-172.
+
 **Hoje:** os dados (planos, pacientes, produtos, modelos, perfil, acompanhamentos) ficam no navegador, separados por conta
 (spec `dados-por-conta`), com uma cópia na nuvem enviada à mão em Configurações. Sair pergunta se apaga os dados do
 aparelho.
@@ -31,6 +35,7 @@ aparelho.
 | D-170 | **Uma versão antiga do site não apaga o que não conhece.** Uma aba aberta antes de uma atualização (ou o aplicativo instalado que ainda não se atualizou) salva a cópia sem os dados que ela não conhece, como o roteiro de anamnese e os modelos de suplemento. O aparelho que conhece esses dados não os apaga ao receber essa cópia: eles ficam e voltam sozinhos para a nuvem. Só uma exclusão de verdade, feita por uma versão que conhece o dado, apaga em todos os aparelhos. *(15/10/2026)* **Revisão final:** só volta para a nuvem o valor daqui que é igual ou mais novo que a última mudança que a cópia conhece; o valor daqui mais velho fica aqui, sem subir, porque outro aparelho tem o mais novo e o devolve. Uma aba nova devolve as chaves logo ao abrir, sem esperar uma edição |
 | D-171 | **Salvar um item não mexe nos outros.** Criar, editar ou apagar um paciente, um link, um produto, um modelo de plano ou um modelo de suplemento conta como mudança só daquele item. Os outros continuam com a hora da última mudança de verdade, para um aparelho desatualizado não passar por cima de uma edição feita em outro. *(15/10/2026)* |
 | D-172 | **Versão nova do site avisa, sem recarregar sozinha.** Quando uma versão nova do MetaNutri passa a valer no navegador, a área de trabalho mostra no topo, no fluxo da página (sem cobrir nada), "Há uma versão nova do MetaNutri." com "Atualizar", que recarrega a página. Nada recarrega sozinho, para não perder o que a pessoa está digitando. Assim uma aba aberta antes de uma publicação não fica dias com a versão velha. *(revisão final de 15/10/2026)* |
+| D-173 | **Um aparelho nunca sobe um valor mais velho que a última mudança que a nuvem conhece dele.** Quando a cópia da nuvem não traz um valor (a chave inteira, ou um item de uma lista) e sabe de uma mudança mais nova dele, o valor mais velho deste aparelho fica só aqui, retido: não volta para a nuvem nem quando o aparelho salva outra coisa, recarrega ou abre outra aba, e a nuvem continua sabendo da mudança mais nova, para o aparelho que a tem devolvê-la. O valor retido sai dessa situação quando o valor mais novo chega ou quando a pessoa edita o valor aqui (aí a edição dela é a mais nova e sobe como qualquer edição). Com todos os aparelhos na mesma versão nada muda: o que a cópia traz é o que vale aqui, mesmo que a hora deste aparelho seja mais nova (um relógio atrasado não faz perder edição). *(rodada 3, 15/10/2026)* |
 
 ## 2. Critérios de aceite
 
@@ -56,6 +61,12 @@ aparelho.
 - **CA-601** · Dado um link igual no aparelho e na nuvem, quando a lista de links vem da nuvem, então o link do aparelho não é regravado nem conta como mudado. *(revisão final de 15/10/2026)*
 - **CA-602** · Dado o site aberto na área de trabalho, quando uma versão nova do aplicativo passa a valer, então aparece no topo "Há uma versão nova do MetaNutri." com "Atualizar"; a página não recarrega sozinha, e "Atualizar" recarrega. *(revisão final de 15/10/2026)*
 - **CA-603** · Dado o aviso de versão nova, então o site continua sem script escrito dentro da página e o aplicativo continua instalando e ligando o service worker sem violar a regra de conteúdo (CSP). *(revisão final de 15/10/2026)*
+- **CA-604** · Dado o aparelho N2 que editou o modelo de suplemento "a" e fechou, e a cópia de uma versão antiga sem os modelos, quando o aparelho N1 (com o "a" velho e o "b" igual) aplica essa cópia, então o "a" velho não volta para a nuvem, N2 continua com o "a" novo e um aparelho novo recebe o "a" novo. *(rodada 3)*
+- **CA-605** · Dado o aparelho N1 com o roteiro mais velho que a cópia sem o roteiro conhece, quando N1 aplica a cópia, recarrega, abre uma aba nova e confere de novo, então nada disso faz o roteiro velho subir, e no fim N2 e um aparelho novo ficam com o roteiro novo. *(rodada 3)*
+- **CA-606** · Dado N1 com o roteiro velho retido, quando a pessoa edita um paciente em N1 e a cópia sobe, então o roteiro velho não vai junto; depois que N2 abre, a nuvem volta a ter o roteiro novo, e o paciente editado em N1 também fica. *(rodada 3)*
+- **CA-607** · Dado N2 com o modelo "a" novo e N3 com o modelo "b" novo, e a cópia de uma versão antiga sem os modelos, quando os dois abrem, então a nuvem fica com o "a" e o "b" novos. *(rodada 3)*
+- **CA-608** · Dado todos os aparelhos na mesma versão e um aparelho X com o relógio atrasado, quando X edita depois de N2 (com uma hora menor) e N2 aplica a cópia, então N2 fica com a edição de X. *(rodada 3)*
+- **CA-609** · Dado N1 com o roteiro velho retido, quando a pessoa edita o roteiro em N1, então a edição dela sobe como qualquer edição. *(rodada 3)*
 
 ## 3. Casos de borda
 
@@ -66,6 +77,7 @@ aparelho.
 - **CB-127** · Uma aba esquecida aberta enquanto outro aparelho muda um plano: quando a pessoa volta a ela e edita outro campo do mesmo plano, a mudança do outro aparelho continua. A aba confere a nuvem antes de deixar editar ("Atualizando…"). *(Acrescentado em 08/10/2026, na revisão final.)*
 - **CB-170** · Plano que some da cópia da nuvem: foi excluído em outro aparelho (toda versão com a nuvem conhece os planos), então sai daqui, como antes do D-170. *(15/10/2026)*
 - **CB-171** · Lista (por exemplo, os modelos de suplemento) que some da cópia com só parte dos itens excluídos de verdade: os excluídos saem; os outros ficam e voltam para a nuvem. *(15/10/2026)*
+- **CB-172** · As lápides vencem em 90 dias: um aparelho fechado por mais de 90 dias pode trazer de volta uma chave ou um item (que não seja plano) que outro aparelho apagou. *(rodada 3)*
 
 ## 4. Fora de escopo
 
