@@ -82,7 +82,7 @@ export const FORMA_DE_INGREDIENTE = new RegExp(
     '^polvilho',
     '^milho, (amido|fubá)',
     '^soja, farinha',
-    '^(feijão|lentilha|grão-de-bico|guandu|arroz|macarrão|lasanha|carne|frango|porco|peru|ovo|salmão|atum|pescada|merluza|sardinha|abadejo|cação|camarão|batata|mandioca|cará|inhame|vagem|taioba|jiló|quiabo|caruru|pequi|fruta-pão|abóbora, (cabotian|moranga)),.*cru(a|s|as)?$',
+    '^(feijão|lentilha|grão-de-bico|guandu|arroz|macarrão|lasanha|carne|frango|porco|peru|ovo|salmão|atum|pescada|merluza|sardinha|abadejo|cação|camarão|batata|mandioca|cará|abóbora, (cabotian|moranga)),.*cru(a|s|as)?$',
     '^dourada de água doce, fresca',
     '^(alho|alfavaca|manjeric[ãa]o|salsa|cebolinha|coentro),',
     '^lim[ãa]o, [^,]+, cru',

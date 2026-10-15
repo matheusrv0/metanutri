@@ -70,13 +70,12 @@ const CATEGORIAS_SO_COZIDAS = new Set([
   'Cereais e derivados',
 ])
 /**
- * Verduras e frutas que se comem cozidas (spec sugestoes-com-criterio, D-199a). As primeiras a base também traz
- * cozidas, e a mandioca crua é tóxica; inhame, vagem, taioba, fruta-pão, jiló, broto, caruru, quiabo e pequi só
- * existem crus, e a nutricionista põe pela busca. Das abóboras, só as que têm a versão cozida (cabotian e moranga):
- * a menina e a pescoço só existem cruas e ficam.
+ * Verduras que se comem cozidas e que a base também traz cozidas (spec sugestoes-com-criterio, D-199a, esclarecido
+ * na re-revisão): o cru só sai quando existe a versão cozida do mesmo alimento. A mandioca crua, além disso, é tóxica.
+ * O que a base só traz cru (inhame, vagem, taioba, jiló, quiabo, abóbora menina e pescoço…) fica, e a folha impressa
+ * marca "(peso cru)". Um teste confere que cada item daqui tem a versão cozida na base.
  */
-const VERDURA_SO_COZIDA =
-  /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora, (cabotian|moranga)|Berinjela|Chuchu|P(ã|a)o, de queijo|Inhame|Vagem|Taioba|Fruta-p(ã|a)o|Jil(ó|o)|Feij(ã|a)o, broto|Caruru|Quiabo|Pequi),/i
+const VERDURA_SO_COZIDA = /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora, (cabotian|moranga)|Berinjela|Chuchu|P(ã|a)o, de queijo),/i
 /** Peixe "fresco" sem preparo no nome é peixe cru ("Dourada de água doce, fresca"). */
 const PEIXE_FRESCO = /(^|[\s,])fresc[oa]$/i
 const CRU_CONSUMIDO = /^Aveia,/

@@ -154,16 +154,6 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Cará, cru', 'cru'],
     ['Abóbora, cabotian, crua', 'cru'],
     ['Abóbora, moranga, crua', 'cru'],
-    // Revisão D-199a: comem-se cozidos, mesmo sem versão cozida na base.
-    ['Inhame, cru', 'cru'],
-    ['Vagem, crua', 'cru'],
-    ['Taioba, crua', 'cru'],
-    ['Fruta-pão, crua', 'cru'],
-    ['Jiló, cru', 'cru'],
-    ['Feijão, broto, cru', 'cru'],
-    ['Caruru, cru', 'cru'],
-    ['Quiabo, cru', 'cru'],
-    ['Pequi, cru', 'cru'],
     ['Dourada de água doce, fresca', 'cru'],
     ['Berinjela, crua', 'cru'],
     ['Chuchu, cru', 'cru'],
@@ -213,6 +203,16 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     'Abobrinha, italiana, crua',
     'Abóbora, menina brasileira, crua',
     'Abóbora, pescoço, crua',
+    // Re-revisão D-199a: a base só os traz crus, e a folha marca "(peso cru)".
+    'Inhame, cru',
+    'Vagem, crua',
+    'Taioba, crua',
+    'Fruta-pão, crua',
+    'Jiló, cru',
+    'Feijão, broto, cru',
+    'Caruru, cru',
+    'Quiabo, cru',
+    'Pequi, cru',
     'Maxixe, cru',
     'Mostarda, folha, crua',
     'Salmão, sem pele, fresco, grelhado',
@@ -228,6 +228,19 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toBeNull()
     expect(ehPrescritivel(a)).toBe(true)
+  })
+
+  it('CA-670: verdura ou fruta crua só sai quando a base tem a versão cozida do mesmo alimento', () => {
+    const verdurasEFrutasCruasQueSaem = ALIMENTOS.filter(
+      (a) => (a.categoria.startsWith('Verduras') || a.categoria.startsWith('Frutas')) && regraQueExclui(a)?.id === 'cru',
+    )
+    expect(verdurasEFrutasCruasQueSaem.length).toBeGreaterThan(0)
+    for (const cru of verdurasEFrutasCruasQueSaem) {
+      // "Batata, inglesa, crua" → "batata, inglesa,": a versão cozida tem o mesmo começo e outro preparo.
+      const comeco = cru.descricao.trim().replace(/[^,]+$/, '').toLowerCase()
+      const cozida = ALIMENTOS.find((b) => b.id !== cru.id && b.descricao.trim().toLowerCase().startsWith(comeco) && b.preparo !== 'cru')
+      expect(cozida?.descricao, cru.descricao).toBeDefined()
+    }
   })
 
   it('CA-664: os motivos, na ordem e com o título do Apêndice A', () => {
@@ -268,10 +281,10 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       miscelanea: 1,
       po: 5,
       farinha: 12,
-      cru: 106,
+      cru: 97,
       tempero: 14,
     })
-    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(307)
+    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(298)
     expect(ALIMENTOS).toHaveLength(597)
   })
 
@@ -299,7 +312,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       po: [27, 114, 456, 459, 583],
       farinha: [32, 33, 34, 35, 42, 43, 121, 123, 124, 146, 581, 592],
       cru: [
-        2, 4, 6, 19, 38, 40, 41, 44, 65, 67, 87, 89, 92, 96, 103, 104, 113, 125, 126, 127, 130, 141, 147, 156, 162, 196, 241, 275, 278, 279,
+        2, 4, 6, 19, 38, 40, 41, 44, 65, 67, 87, 89, 92, 96, 103, 113, 130, 141, 275, 278, 279,
         283, 285, 288, 291, 292, 295, 296, 298, 302, 304, 307, 310, 312, 314, 316, 321, 322, 327, 329, 330, 333, 334, 336, 341, 343, 345, 348,
         350, 352, 354, 355, 357, 360, 362, 364, 366, 367, 369, 372, 373, 375, 376, 379, 380, 382, 391, 394, 397, 399, 400, 402, 405, 407, 409,
         412, 414, 426, 427, 431, 433, 436, 441, 485, 489, 557, 562, 564, 566, 568, 570, 572, 574, 575, 576, 578, 585,
