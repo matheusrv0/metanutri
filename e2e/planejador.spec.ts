@@ -304,6 +304,35 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   await expect(page.getByRole('region', { name: 'Micronutrientes' })).toHaveCount(0)
 })
 
+test('CA-714: o sódio abaixo da meta não tem Cobrir em lugar nenhum', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+  const cobrirSodio = page.getByRole('button', { name: /Cobrir Sódio/ })
+
+  // Etapa 2: o cartão não lista o sódio abaixo da meta.
+  const micros = page.getByRole('region', { name: 'Micronutrientes' })
+  await expect(micros).toContainText(/\d+ para cobrir\./)
+  await expect(micros.getByRole('listitem').filter({ hasText: 'Sódio' })).toHaveCount(0)
+  await expect(cobrirSodio).toHaveCount(0)
+
+  // Etapa 3, tela larga: a linha do sódio fica à vista, com o estado, sem Cobrir; o ferro, abaixo também, tem.
+  await micros.getByRole('button', { name: 'Ver todos' }).click()
+  const linhaSodio = page.getByRole('row').filter({ hasText: 'Sódio' })
+  await expect(linhaSodio).toContainText(/\d+% abaixo/)
+  await expect(linhaSodio.getByRole('button')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
+  await expect(cobrirSodio).toHaveCount(0)
+
+  // Celular: a lista também.
+  await page.setViewportSize({ width: 390, height: 844 })
+  const itemSodio = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Sódio' })
+  await expect(itemSodio).toContainText(/\d+% abaixo/)
+  await expect(itemSodio.getByRole('button')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
+  await expect(cobrirSodio).toHaveCount(0)
+})
+
 test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o Cobrir à vista', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 })
   await abrirLimpo(page)

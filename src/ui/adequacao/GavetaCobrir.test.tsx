@@ -1,9 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
-import { sugerirParaCobrir } from '@/domain/cobrir.ts'
+import { SODIO_NAO_SE_COBRE, sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso } from '@/domain/tipos.ts'
+import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { TelaAdequacao } from './TelaAdequacao.tsx'
 
 // Espia o cálculo de verdade, para contar quantas vezes a gaveta recalcula as sugestões.
@@ -50,5 +54,32 @@ describe('GavetaCobrir', () => {
     // Restrição diferente recalcula.
     rerender(tela(['banana']))
     expect(vi.mocked(sugerirParaCobrir).mock.calls.length).toBeGreaterThan(calculos)
+  })
+})
+
+describe('Gaveta aberta para o sódio (CA-714)', () => {
+  it('CA-714: se a gaveta chegar a abrir para o sódio, não lista sugestão e mostra a mensagem do domínio', () => {
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const adequacao = calcularAdequacao(totais, caso, caso.adequacao.preset)
+    expect(adequacao.linhas.find((l) => l.chave === 'sodio_mg')?.estado).toBe('abaixo')
+
+    render(
+      <GavetaCobrir
+        chave="sodio_mg"
+        rotulo="Sódio"
+        caso={caso}
+        plano={plano}
+        totais={totais}
+        adequacao={adequacao}
+        gastoEnergetico={1800}
+        aoAlterarCaso={nada}
+        aoAdicionar={nada}
+        aoFechar={nada}
+      />,
+    )
+    const gaveta = within(screen.getByRole('dialog'))
+    expect(gaveta.getByText(SODIO_NAO_SE_COBRE)).toBeInTheDocument()
+    expect(within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).queryAllByRole('listitem')).toHaveLength(0)
+    expect(gaveta.queryByRole('button', { name: 'Adicionar' })).not.toBeInTheDocument()
   })
 })
