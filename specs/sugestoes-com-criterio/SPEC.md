@@ -1,7 +1,13 @@
 # SPEC — Sugestões com critério: o MetaNutri só propõe o que se prescreve
 
-Status: **pedida pelo dono em 15/10/2026; aprovação pelas telas antes de publicar.** A estudante de nutrição revisa o
-Apêndice A antes da publicação.
+Status: **pedida pelo dono em 15/10/2026; aprovação pelas telas antes de publicar.** A estudante de nutrição revisa os
+Apêndices A e C antes da publicação.
+
+**Rodada de revisão (15/10/2026, à tarde).** A revisão da frente achou furos de classificação (fruta "calda" sem o "em",
+pó doce e sal com a chave ligada, pó fortificado, pratos com charque ou miúdos) e testes que conferiam a regra com ela
+mesma. O coordenador decidiu ainda: versão crua de alimento que se come cozido não é proposta, troca de ovo e de verdura
+cozida respeita a forma, porção máxima por grupo calórico no cobrir, e os itens "talvez rígidos demais" ficam fora mas
+vão para o Apêndice C. As mudanças estão nas decisões e critérios marcados com *(revisão)* e na seção 7.
 
 **Fonte:** a conversa de 15/10/2026: "Você tem que ter a consciência do que você está sugerindo nas coisas do MetaNutri.
 Não é para sugerir tudo só por cobrir os macros e micros. (...) você está numa plataforma de dieta, de prescrições, e eu
@@ -18,7 +24,7 @@ CA-83), `ajustes-de-uso` (D-35, D-36, listas por refeição) e `pdf-e-telas-limp
 | Trocas da folha do paciente | `src/domain/trocas.ts` | até 3 trocas por alimento do plano (2 na folha) | passa pela regra |
 | Sugestões por refeição | `src/domain/sugestoes.ts` (`SUGESTOES_PADRAO`) | lista fixa escrita à mão (D-36) | não muda; um teste garante que todo item passa na regra |
 | Plano de exemplo | `src/domain/exemplo.ts` | um dia montado como uma nutricionista montaria | não muda (D-196) |
-| Vitrine da página inicial | `src/domain/vitrine.ts` | 5 itens fixos de cálcio | conferido: todos passam na regra |
+| Vitrine da página inicial | `src/domain/vitrine.ts` | 5 itens fixos de cálcio | texto fixo de propaganda; os 5 são alimentos de rotina, mas não é o que o cobrir devolve hoje (fora de escopo) |
 | Missões e lista de compras | `missoes.ts`, folha do paciente | derivam do plano | não propõem alimento novo |
 | Busca, entrada rápida, substituto e edição das listas | `busca.ts`, `DialogoSubstituto`, `DialogoSugestoes` | escolha da nutricionista | nunca filtrados (D-190) |
 
@@ -31,14 +37,15 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | # | Decisão | Substitui |
 |---|---|---|
 | D-190 | **Uma regra só, "prescritível"**, em `src/domain/prescritivel.ts`, decide o que o MetaNutri pode propor sozinho. Vale para o cobrir e para as trocas, e confere as listas fixas. A escolha manual nunca passa por ela: pela busca, qualquer alimento da base entra no plano | O filtro `ehSugerivel` do cobrir |
-| D-191 | **Três níveis.** *Nunca*: bebida alcoólica, em nenhum modo. *Fora da rotina*: refrigerante, isotônico ou bebida adoçada; doce, açúcar ou fruta em calda; óleo ou gordura de adição; embutido, carne processada ou curada; fritura; ultraprocessado, salgadinho ou petisco em conserva. *Forma de ingrediente*: o que já era o CA-36a, mais fécula e polvilho, tempero, molho, suco concentrado e a versão crua de tubérculo, abóbora, berinjela, chuchu e massa de pão de queijo. A chave "Incluir ingredientes e alimentos crus" libera só o terceiro nível, como o nome dela já diz | CA-36a, que excluía só a forma de ingrediente |
+| D-191 | **Três níveis.** *Nunca*: bebida alcoólica e, *(revisão)*, sal, shoyu, tempero pronto e fermento, em nenhum modo. *Fora da rotina*: refrigerante, isotônico ou bebida adoçada (inclui capuccino em pó); doce, açúcar ou fruta em calda, com ou sem o "em" no nome (inclui gelatina em pó); óleo ou gordura de adição; embutido, carne processada ou curada; *(revisão)* prato com embutido, toucinho, carne curada ou miúdos; fritura; ultraprocessado, salgadinho ou petisco em conserva (inclui, *(revisão)*, pó e farinha fortificados: mingau tradicional, creme de milho e farinha de arroz enriquecida). *Forma de ingrediente*: o que já era o CA-36a, mais fécula e polvilho, tempero, molho, suco concentrado e a versão crua do que se come cozido (D-199a). A chave "Incluir ingredientes e alimentos crus" libera só o terceiro nível, como o nome dela já diz | CA-36a, que excluía só a forma de ingrediente (o CA-36a ganhou nota de substituído) |
 | D-192 | **Casos de borda** decididos com o bom senso clínico da seção 2.1. Cada alimento fora da regra está no Apêndice A com o nível e o motivo | A exceção da farinha láctea no CA-36a |
-| D-193 | **O cobrir não usa café nem chá como fonte.** Os dois continuam prescritíveis (aparecem na lista do desjejum e nas trocas de bebida), mas infusão sem caloria passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá valores de B1 e B2 que não se sustentam (3 mg de tiamina em 100 ml de chá preto) | — |
-| D-194 | **Trocas.** Nenhuma troca oferecida é item fora da regra, de nenhum nível; a chave do cobrir não vale aqui. Item fora da rotina posto à mão no plano ganha trocas só entre os prescritíveis do mesmo grupo e com o mesmo macro dominante (ovo frito troca por ovo cozido; batata frita por batata cozida). Se não sobra nenhum (margarina, doce de leite), ele fica sem trocas. Bebida alcoólica no plano nunca ganha troca | O filtro `ehSugerivel` das trocas |
+| D-193 | **O cobrir não usa café nem chá como fonte**, em nenhuma forma (*(revisão)*: nem café em pó com a chave ligada; vale todo alimento cujo nome começa por "Café," ou "Chá,"). Os dois continuam prescritíveis (aparecem na lista do desjejum e nas trocas de bebida), mas infusão sem caloria passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá valores de B1 e B2 que não se sustentam (3 mg de tiamina em 100 ml de chá preto) | — |
+| D-194 | **Trocas.** Nenhuma troca oferecida é item fora da regra, de nenhum nível; a chave do cobrir não vale aqui. Item fora da rotina posto à mão no plano ganha trocas só entre os prescritíveis do mesmo grupo e com o mesmo macro dominante e, *(revisão)*, prefere o mesmo alimento em outro preparo: ovo frito troca por ovo cozido; batata frita por outra batata inglesa (a ordem por porção parecida escolhe entre cozida e sauté). Se não sobra nenhum (margarina, doce de leite), ele fica sem trocas. Bebida alcoólica no plano nunca ganha troca. *(revisão)* Ovo inteiro só troca por outra forma de ovo inteiro (nunca gema ou clara), e verdura cozida só troca por verdura cozida | O filtro `ehSugerivel` das trocas |
 | D-195 | **Quando nada de rotina cobre a falta**, o cobrir diz: "Nenhum alimento de rotina cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra." | "Nenhum alimento da base cobre ao menos 10% da falta em até {porção} g." |
-| D-196 | **O plano de exemplo, as listas por refeição e a vitrine não mudam.** O exemplo é um plano escrito à mão, como a nutricionista escreveria, e os 5 g de margarina no pão são prescrição comum. As listas e a vitrine já passam na regra | — |
-| D-197 | **A ordem do cobrir continua a mesma**: uso comum primeiro, depois menos kcal por parte da falta coberta, e um grupo por vez (CA-35, CA-36, CA-82). Jurubeba e jamelão, frutas que só uma região conhece, entram na lista de pouco usual | — |
-| D-198 | **A regra é por nome e categoria da TACO.** Alimento novo na base sem regra que o pegue entra como prescritível; um teste conta os excluídos por motivo e acusa qualquer mudança da base | — |
+| D-196 | **O plano de exemplo, as listas por refeição e a vitrine não mudam.** O exemplo é um plano escrito à mão, como a nutricionista escreveria, e os 5 g de margarina no pão são prescrição comum. *(revisão)* O "Macarrão, trigo, cru" do substituto 1 do almoço também fica: a TACO só traz o macarrão cru, e 90 g de macarrão seco é como a nutricionista escreve a porção. As listas passam na regra | — |
+| D-197 | **A ordem do cobrir continua a mesma**: uso comum primeiro, depois menos kcal por parte da falta coberta, e um grupo por vez (CA-35, CA-36, CA-82). Jurubeba e jamelão, frutas que só uma região conhece, entram na lista de pouco usual. *(revisão)* Saem dela "miolo de alcatra" (corte magro e comum, que o padrão "miolo" pegava) e linhaça (prescrição frequente). Entre os de uso comum, corte magro e ave sem pele vêm antes de corte gordo e ave com pele (D-199b) | — |
+| D-198 | **A regra é por nome e categoria da TACO.** Alimento novo na base sem regra que o pegue entra como prescritível; *(revisão)* um teste guarda a lista fixa de ids excluídos por motivo e acusa qualquer mudança da base. A descrição é limpa antes de comparar (espaço nas pontas e espaço repetido não contam) | — |
+| D-199 | *(revisão)* **a) Versão crua de alimento que se come cozido não é proposta**: inhame, vagem, taioba, fruta-pão, jiló, broto de feijão, caruru, quiabo e pequi (só existem crus na base); batata, batata-doce, batata-baroa, mandioca, cará, berinjela e chuchu crus; abóbora crua quando a base tem a mesma abóbora cozida (cabotian e moranga; a menina e a pescoço só existem cruas e ficam); peixe cru ou "fresco" sem preparo. **b) Porção máxima por grupo no cobrir** (seção 7.1), tirada das medidas caseiras da POF quando existem, e nunca acima da porção máxima que a pessoa escolheu. **c) Os itens "talvez rígidos demais"** (azeite, mel, chocolate meio amargo, leite fermentado, charque e carne seca, azeitona, ovo frito, feijoada) continuam fora por padrão e vão para o Apêndice C, como decisão do dono e da estudante | A tabela 2.1 nos itens marcados |
 
 ### 2.1 Casos de borda
 
@@ -55,7 +62,7 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | Cuscuz de milho e cuscuz paulista | prescritível | prato do dia a dia |
 | Tapioca com manteiga | prescritível | é a única tapioca da base e o jeito comum de comer; já está na lista do desjejum |
 | Pão de queijo | assado é prescritível; cru é forma de ingrediente | a massa crua não se come |
-| Feijoada, feijão tropeiro, virado à paulista e arroz carreteiro | fora da rotina (embutido ou carne curada) | levam linguiça, toucinho, bacon ou charque |
+| Feijoada, feijão tropeiro, virado à paulista, arroz carreteiro e, *(revisão)*, maniçoba, barreado, baião de dois, dobradinha e sarapatel | fora da rotina (prato com embutido, toucinho, carne curada ou miúdos) | levam linguiça, toucinho, bacon, paio, charque ou miúdos; a feijoada e o baião vão para o Apêndice C |
 | Charque e carne seca | fora da rotina (carne curada) | carne salgada; entra na conta de carne processada |
 | Bacalhau salgado refogado | prescritível | peixe dessalgado antes do preparo |
 | Sardinha e atum em óleo | prescritível | prescrição comum e barata; escorrer o óleo é orientação |
@@ -64,12 +71,12 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | Azeitona e tremoço em conserva | fora da rotina (petisco em conserva) | petisco salgado; a porção que cobriria um mineral (140 g de azeitona para o ferro) não é prescrição |
 | Palmito em conserva, milho e ervilha enlatados, seleta de legumes | prescritível | ingrediente de salada do dia a dia |
 | Granola | não existe na base | — |
-| Cereal matinal (com ou sem açúcar), mingau infantil, farinha láctea e mistura para vitamina | fora da rotina (ultraprocessado) | produto fortificado; aparecia como fonte de vitamina pelo enriquecimento |
+| Cereal matinal (com ou sem açúcar), mingau infantil, farinha láctea, mistura para vitamina e, *(revisão)*, mingau tradicional em pó, creme de milho em pó e farinha de arroz enriquecida | fora da rotina (ultraprocessado) | produto fortificado; aparecia como fonte de vitamina pelo enriquecimento. O creme de arroz em pó não é fortificado e segue como forma de ingrediente |
 | Biscoito cream cracker | prescritível | está nas listas de equivalentes de cereais |
 | Biscoito doce, recheado, wafer e maisena | fora da rotina (doce) | — |
 | Biscoito de polvilho | fora da rotina (salgadinho) | — |
 | Pipoca com óleo | prescritível | cereal integral, lanche comum |
-| Castanhas, amêndoa e amendoim torrados e salgados | prescritível | oleaginosa é prescrita; o sal é detalhe da compra |
+| Castanhas, amêndoa e amendoim torrados e salgados | prescritível; no cobrir, até 30 g *(revisão)* | oleaginosa é prescrita; o sal é detalhe da compra; 200 g de castanha não é porção |
 | Ovo frito, carne e frango à milanesa, peixe frito, bife à cavalo | fora da rotina (fritura) | existe a versão cozida, assada ou grelhada; o bife à cavalo leva ovo frito |
 | Omelete | prescritível | preparo comum do ovo |
 | Mel, melado, rapadura e chocolate meio amargo | fora da rotina (doce) | açúcar de adição ou doce |
@@ -79,17 +86,22 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | Limão inteiro cru | forma de ingrediente (tempero) | ninguém come 200 g de limão; o suco continua |
 | Alho, alfavaca, manjericão, salsa, cebolinha e coentro | forma de ingrediente (tempero) | 70 g de alfavaca não é porção |
 | Extrato, purê e molho de tomate, tucupi e cuxá | forma de ingrediente (molho) | base de preparo, não alimento do prato |
-| Batata, batata-doce, batata-baroa, mandioca, cará, abóbora, berinjela e chuchu crus | forma de ingrediente (cru) | a base tem a versão cozida; mandioca crua é tóxica |
-| Inhame, quiabo, jiló, vagem e maxixe | prescritível | só existem crus na base; sem eles o cobrir perderia verduras de uso comum |
-| Fígado, coração, língua, bucho, sarapatel e dobradinha | prescritível e pouco usual (vão para o fim da lista) | já era assim (CA-82) |
+| Batata, batata-doce, batata-baroa, mandioca, cará, berinjela, chuchu e abóbora cabotian e moranga crus | forma de ingrediente (cru) | a base tem a versão cozida; mandioca crua é tóxica |
+| *(revisão)* Inhame, vagem, taioba, fruta-pão, jiló, broto de feijão, caruru, quiabo e pequi crus | forma de ingrediente (cru) | comem-se cozidos; a taioba crua irrita a boca, o broto cru tem risco microbiológico. A nutricionista põe pela busca e ajusta o preparo |
+| *(revisão)* Abóbora menina e abóbora pescoço cruas, maxixe, mostarda e alho-poró crus | prescritível | só existem crus na base e a porção crua equivale à cozida; ficam no Apêndice C |
+| *(revisão)* Peixe cru ou "fresco" sem preparo (dourada de água doce, fresca) | forma de ingrediente (cru) | é peixe cru, mesmo sem a palavra no nome |
+| Fígado, coração, língua e bucho | prescritível e pouco usual (vão para o fim da lista) | já era assim (CA-82); sarapatel e dobradinha saíram (prato com miúdos) |
+| *(revisão)* Capuccino e gelatina em pó | fora da rotina (bebida adoçada e doce) | voltavam com a chave ligada como "ingrediente" |
+| *(revisão)* Sal, shoyu, tempero a base de sal e fermento | nunca | nem como ingrediente se prescrevem 200 g de shoyu |
+| *(revisão)* Queijos, pães e biscoitos, frutas muito calóricas, cortes gordos e aves com pele | prescritíveis; no cobrir, com porção máxima do grupo (seção 7.1) | a porção de 200 g não é realista para eles |
 
 ## 3. Critérios de aceite
 
 - **CA-650** · Dado o cobrir de qualquer nutriente, com a chave "Incluir ingredientes e alimentos crus" ligada ou desligada, então nenhuma bebida alcoólica aparece.
-- **CA-651** · Dado o cobrir com a chave desligada, então não aparece nenhum item fora da rotina: refrigerante, isotônico ou bebida adoçada; doce, açúcar ou fruta em calda; óleo ou gordura de adição; embutido, carne processada ou curada; fritura; ultraprocessado, salgadinho ou petisco em conserva.
+- **CA-651** · Dado o cobrir com a chave desligada, então não aparece nenhum item fora da rotina: refrigerante, isotônico ou bebida adoçada; doce, açúcar ou fruta em calda (*(revisão)* com ou sem o "em": "Ameixa, calda, enlatada"); óleo ou gordura de adição; embutido, carne processada ou curada; fritura; ultraprocessado, salgadinho ou petisco em conserva.
 - **CA-652** · Dado o cobrir com a chave ligada, então a forma de ingrediente volta a poder aparecer, e os itens fora da rotina e as bebidas alcoólicas continuam de fora.
-- **CA-653** · Dado o cobrir com a chave desligada, então também não aparece a forma de ingrediente nova: fécula e polvilho; batata, batata-doce, batata-baroa, mandioca, cará, abóbora, berinjela e chuchu crus; massa crua de pão de queijo; tempero e erva; limão inteiro cru; extrato, purê e molho de tomate; tucupi e cuxá; suco concentrado.
-- **CA-654** · Dado o cobrir, com a chave ligada ou desligada, então café e chás não aparecem como fonte.
+- **CA-653** · Dado o cobrir com a chave desligada, então também não aparece a forma de ingrediente nova: fécula e polvilho; batata, batata-doce, batata-baroa, mandioca, cará, abóbora, berinjela e chuchu crus; massa crua de pão de queijo; *(revisão)* a versão crua do D-199a; tempero e erva; limão inteiro cru; extrato, purê e molho de tomate; tucupi e cuxá; suco concentrado.
+- **CA-654** · Dado o cobrir, com a chave ligada ou desligada, então café e chás não aparecem como fonte, *(revisão)* em nenhuma forma (café em pó incluído).
 - **CA-655** · Dado as sugestões do cobrir, então a ordem continua: uso comum primeiro, depois menos kcal por parte da falta coberta, e grupos diferentes antes de repetir grupo.
 - **CA-656** · Dado um nutriente que só alimentos fora da regra cobririam dentro da porção máxima, então o cobrir mostra "Nenhum alimento de rotina cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra." em vez de uma lista vazia.
 - **CA-657** · Dado o plano de exemplo (Maria, 28 anos), quando o cobrir é pedido para cada um dos 16 micronutrientes, então nenhuma sugestão é item fora da regra; o mesmo vale para o plano vazio da mesma paciente, em que os 16 têm falta.
@@ -99,7 +111,20 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 - **CA-661** · Dado uma bebida alcoólica posta à mão no plano, então ela não ganha trocas.
 - **CA-662** · Dado as listas padrão de sugestões por refeição (D-36), então todos os itens delas passam na regra.
 - **CA-663** · Dado a busca de alimentos, então bebida alcoólica, doce e gordura continuam aparecendo: a escolha manual nunca é filtrada.
-- **CA-664** · Dado a regra, então cada alimento fora dela tem um nível e um motivo, e a contagem por motivo é a do Apêndice A: 293 dos 597 alimentos.
+- **CA-664** · Dado a regra, então cada alimento fora dela tem um nível e um motivo, e *(revisão)* a lista de ids por motivo é a do Apêndice A, guardada fixa no teste (não só a contagem).
+- **CA-665** *(revisão)* · Dado o cobrir com a chave ligada, então não aparecem café (em pó ou infusão), chá, capuccino, gelatina, sal, shoyu, tempero a base de sal nem fermento.
+- **CA-666** *(revisão)* · Dado pó ou farinha fortificados (mingau tradicional em pó, creme de milho em pó, farinha de arroz enriquecida), então ficam fora da rotina, como o mingau infantil: a chave não os traz.
+- **CA-667** *(revisão)* · Dado o cobrir dos 16 micronutrientes, no plano de exemplo e no plano vazio, com a chave ligada e desligada e com porção máxima de 50, 100 e 200 g, então nenhuma sugestão casa com o padrão fixo de texto do que nunca aparece (bebida alcoólica, refrigerante, isotônico, açúcar, calda, xarope, doce, fritura, margarina, óleo, manteiga, embutidos, sal, shoyu, fermento, café, chá, capuccino, gelatina, mingau e cereal fortificados); com a chave desligada, também não casa com o padrão de forma (pó, desidratado, farinha, fécula, polvilho e alimento cru que se come cozido). O padrão é escrito à mão no teste, sem usar a regra.
+- **CA-668** *(revisão)* · Dado as trocas de todos os alimentos da base, então nenhuma troca casa com os padrões fixos do CA-667 (os da chave desligada).
+- **CA-669** *(revisão)* · Dado maniçoba, barreado, baião de dois, dobradinha e sarapatel, então ficam fora da rotina, com o mesmo motivo da feijoada.
+- **CA-670** *(revisão)* · Dado a versão crua de alimento que se come cozido (D-199a), então ela não é proposta com a chave desligada; as abóboras menina e pescoço cruas continuam prescritíveis.
+- **CA-671** *(revisão)* · Dado um ovo inteiro no plano, então as trocas dele são só outras formas de ovo inteiro, nunca gema nem clara; dado uma verdura cozida, então as trocas são só verduras cozidas.
+- **CA-672** *(revisão)* · Dado um item fora da rotina posto à mão, então a primeira troca é o mesmo alimento em outro preparo quando ele existe e é prescritível (ovo frito → ovo cozido; batata frita → batata inglesa).
+- **CA-673** *(revisão)* · Dado o cobrir, então a porção sugerida de um alimento dos grupos da seção 7.1 não passa da porção máxima do grupo nem da porção máxima que a pessoa escolheu.
+- **CA-674** *(revisão)* · Dado o cobrir, entre os alimentos de uso comum, então corte magro e ave sem pele vêm antes de corte gordo e ave com pele.
+- **CA-675** *(revisão)* · Dado restrições do paciente, então elas filtram antes da escolha das 5 sugestões; se nada sobra, a gaveta mostra "Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra."
+- **CA-676** *(revisão)* · Dado "Carne, bovina, miolo de alcatra" e linhaça, então eles contam como uso comum.
+- **CA-677** *(revisão)* · Dado uma descrição com espaço nas pontas ou espaço repetido, então a regra a classifica igual à descrição limpa.
 
 ## 4. Casos de borda
 
@@ -110,7 +135,10 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | CB-192 | Porção máxima pequena (5 g) ou nutriente sem fonte de rotina | Mensagem do CA-656 |
 | CB-193 | Produto cadastrado pelo rótulo | Não entra no cobrir nem nas trocas, como já era (os dois usam só a base); na busca, aparece normalmente |
 | CB-194 | Alimento novo na base, sem regra que o pegue | Entra como prescritível; a contagem do CA-664 acusa a mudança |
-| CB-195 | Restrição do paciente ou alimento marcado "Nunca sugerir" | Continuam filtrando depois da regra, como antes (CA-40, CA-83); a gaveta pode mostrar menos de 5 |
+| CB-195 | Restrição do paciente ou alimento marcado "Nunca sugerir" | Continuam filtrando (CA-40, CA-83). *(revisão)* A restrição agora filtra antes do corte das 5 (CA-675), e a gaveta só mostra menos de 5 quando não há mais candidatos |
+| CB-197 | *(revisão)* Porção máxima escolhida menor que a do grupo | Vale a menor |
+| CB-198 | *(revisão)* Alimento de grupo com porção máxima baixa que não cobre 10% da falta | Sai da lista; se nada sobra, mensagem do CA-656 |
+| CB-199 | *(revisão)* Item fora da rotina posto à mão sem o mesmo alimento prescritível em outro preparo | Segue a ordem normal das trocas |
 | CB-196 | Plano em que nenhum alimento tem troca | A folha sai sem a seção de trocas, como já era |
 
 ## 5. Fora de escopo
@@ -118,8 +146,9 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 - A busca e a ordem dos resultados dela (escolha manual).
 - Tirar o botão cobrir do sódio. Subir sódio por alimento quase nunca é conduta, porque o sal de cozinha não entra no
   plano; fica para o dono decidir.
-- Porção máxima por alimento (200 g de alface ainda é uma sugestão possível).
-- Corrigir valores da TACO (B1 e B2 do chá, cobre do mamão formosa).
+- Porção máxima por alimento fora dos grupos da seção 7.1 (200 g de alface ainda é uma sugestão possível).
+- Corrigir valores da TACO (B1 e B2 do chá, cobre do mamão formosa, vitamina A do aipo; leite integral e UHT sem kcal, por isso o leite nunca entra no cobrir nem nas trocas).
+- *(revisão)* Trocas de laticínio que ficaram vazias (iogurte desnatado, amendoim) e a vitrine da página inicial, que não mostra o que o cobrir devolve hoje: ficaram para uma próxima rodada.
 - Mudar o plano de exemplo, as listas por refeição e a vitrine (D-196).
 - Layout da gaveta do cobrir, painel lateral e folha impressa: outras frentes cuidam deles. O texto da chave não muda.
 - Classificar produtos cadastrados pelo rótulo.
@@ -132,7 +161,40 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 3. **Menos variedade.** Em nutriente com poucas fontes de rotina, uma porção máxima baixa leva à mensagem do CA-656 mais
    cedo do que antes.
 
+## 7. Rodada de revisão (15/10/2026)
+
+| Achado da revisão | O que muda | Critério |
+|---|---|---|
+| C1 · "Ameixa, calda, enlatada" escapava | "calda" com ou sem o "em" é doce | CA-651 |
+| I1 · com a chave ligada voltavam café em pó, capuccino, gelatina, sal, shoyu, tempero e fermento | capuccino e gelatina são fora da rotina; sal, shoyu, tempero a base de sal e fermento são "nunca"; o cobrir não usa nada que comece por "Café," ou "Chá," | CA-654, CA-665 |
+| I2 · pó e farinha fortificados eram só "ingrediente" | mingau tradicional, creme de milho e farinha de arroz enriquecida são ultraprocessados | CA-666 |
+| I3 · os testes conferiam a regra com ela mesma | trava por padrão de texto escrito à mão e lista fixa de ids | CA-664, CA-667, CA-668 |
+| I4 · pratos com charque, toucinho ou miúdos ficavam dentro | maniçoba, barreado, baião de dois, dobradinha e sarapatel saem, com a feijoada; Apêndice C | CA-669 |
+| M1 · batata frita não trocava por batata | item fora da rotina prefere o mesmo alimento em outro preparo | CA-672 |
+| M3 · ovo inteiro trocava por gema; brócolis cozido por vagem crua | a troca respeita a forma do ovo e o preparo da verdura | CA-671 |
+| M4 · o CA-655 não tinha teste com o ID | teste próprio | CA-655 |
+| M5 · o CA-36a antigo não dizia que foi substituído | nota no `planejador-metanutri` | — |
+| M6 · regra sensível a espaço no nome | a descrição é limpa antes de comparar | CA-677 |
+| M7 · "miolo" pegava miolo de alcatra; linhaça ia para o fim | saem da lista de pouco usual | CA-676 |
+| M9 · a restrição do paciente filtrava depois do corte das 5 | filtra antes, com mensagem própria | CA-675 |
+| M10 · macarrão cru do exemplo sem justificativa | D-196 | — |
+| Decisões do coordenador (a), (b) e (c) | D-199 | CA-670, CA-673, CA-674 |
+
+### 7.1 Porção máxima por grupo no cobrir (D-199b)
+
+Vale a menor entre a porção do grupo e a porção máxima que a pessoa escolheu na gaveta (200 g por padrão).
+
+| Grupo | Como o sistema reconhece | Porção máxima | Medida caseira de referência (POF) |
+|---|---|---|---|
+| Oleaginosas e sementes | nome começa por castanha, amêndoa, noz, amendoim, gergelim, linhaça ou "Coco, cru" | 30 g | punhado de castanha 40 g; porção de noz 25 g; porção de linhaça 26 g |
+| Queijos (menos a ricota) | nome começa por "Queijo," | 50 g | porção de minas frescal 50 g; mozarela 45 g; requeijão 45 g; prato e parmesão 30 g. A ricota é magra (porção da POF de 100 g) e fica na porção padrão |
+| Pães, biscoitos e torradas | nome começa por pão, biscoito ou torrada | 50 g | pão francês: unidade 50 g; cream cracker: porção 32,5 g; torrada: porção 40 g |
+| Frutas secas e muito calóricas | categoria de frutas com mais de 200 kcal em 100 g (hoje macaúba, tamarindo e tucumã) | 30 g | tamarindo: porção 25 g |
+| Cortes gordos e aves com pele | nome com "com gordura", "com pele", costela, cupim, bisteca ou capa de contra-filé | 100 g | bife 100 g; pedaço de costela 40 g |
+
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
+
+*(revisão)* As tabelas abaixo são regeneradas a partir do código no fim da rodada de revisão (tarefa R14 do PLAN).
 
 293 dos 597 alimentos da base. "Antes" diz o que o filtro antigo fazia: *sugeria* (podia aparecer no cobrir e nas trocas)
 ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo que vale primeiro, na ordem: nunca, fora da rotina, forma
@@ -534,3 +596,44 @@ Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobr
 | Piridoxina (B6) | 1,17 mg | ~~Alfavaca, crua (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (25 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Paçoca, amendoim (100 g)~~ *doce* | Catalonha, crua (200 g); Pão, de soja (150 g); Banana, pacova, crua (200 g); Carne, bovina, costela, assada (200 g); Castanha-de-caju, torrada, salgada (200 g) |
 | Niacina (B3) | 13 mg | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica* | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); Feijão, rosinha, cozido (200 g) |
 | Fibra alimentar | 23 g | Jambo, cru (200 g); Jurubeba, crua (95 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) | Jambo, cru (200 g); Jiló, cru (200 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) |
+
+## Apêndice C — Para a revisão da estudante: o que ficou dentro e o que pode estar rígido demais
+
+O Apêndice A só mostra o que saiu. Aqui estão os casos discutíveis dos dois lados. Mudar um deles é mudar uma linha da
+regra e a lista fixa do teste.
+
+### C.1 Ficaram dentro (o sistema ainda propõe sozinho)
+
+| Id | Alimento | Por que revisar |
+|---|---|---|
+| 554, 531 | Vatapá; Camarão à baiana | levam dendê e leite de coco, que sozinhos são gordura de adição |
+| 537, 538, 556 | Estrogonofe de carne e de frango; Yakisoba | creme de leite; sódio do shoyu. Aparecem para ferro e sódio |
+| 131 | Mandioca, farofa, temperada | gordura do preparo; às vezes leva bacon |
+| 309 | Pescada, filé, molho escabeche | no escabeche clássico o peixe é frito antes |
+| 335, 342, 344, 347, 353, 361, 381, 429, 430 | Cortes com gordura, costela, cupim, bisteca | no cobrir, até 100 g e depois dos cortes magros (D-199b) |
+| 392, 396, 406, 411 | Frango com pele | no cobrir, até 100 g e depois do frango sem pele |
+| 486, 487 | Ovo, clara e gema cozidas | prescritíveis, mas não trocam por ovo inteiro (CA-671) |
+| 465, 468 | Queijo pasteurizado; Requeijão cremoso | ultraprocessados pela classificação NOVA; ficaram por uso comum |
+| 551, 140, 61, 13 | Tapioca com manteiga; Pão de queijo assado; Pipoca com óleo; Biscoito cream cracker | decisões da seção 2.1 |
+| 558, 587, 588 | Amendoim, amêndoa e castanha-de-caju torrados e salgados | no cobrir, até 30 g |
+| 277, 319, 138, 139 | Atum e sardinha em óleo; palmitos em conserva | sódio |
+| 471, 475, 476, 477 | Café e chás | o cobrir não usa como fonte, mas entram nas trocas de bebida (refrigerante troca por café) |
+| 66, 69 | Abóbora menina e abóbora pescoço cruas | só existem cruas na base (D-199a) |
+| 83, 134, 135 | Alho-poró, maxixe e mostarda crus | só existem crus; costumam ir cozidos |
+
+### C.2 Ficaram fora e podem estar rígidos demais (decisão do dono e da estudante)
+
+| Id | Alimento | Motivo hoje | Argumento para voltar |
+|---|---|---|---|
+| 260 | Azeite de oliva extra virgem | gordura de adição | prescrito com frequência; na folha fica sem trocas |
+| 507, 498 | Mel; Chocolate meio amargo | doce | às vezes se prescrevem em porção pequena |
+| 460 | Leite fermentado | bebida adoçada | probiótico, prescrito às vezes |
+| 25 | Cereal matinal de milho sem açúcar | ultraprocessado | lanche comum |
+| 338, 384 | Charque e carne seca cozidos | carne curada | base regional do Nordeste |
+| 520, 521, 586 | Azeitonas; Tremoço em conserva | petisco em conserva | em porção pequena, fonte de gordura boa |
+| 490 | Ovo frito | fritura | preparo comum do ovo |
+| 540, 527 | Feijoada; Baião de dois | prato com embutido | pratos do dia a dia em algumas regiões |
+| 528, 536, 543, 548 | Barreado; Dobradinha; Maniçoba; Sarapatel | prato com toucinho, charque ou miúdos | pratos regionais |
+| 121 | Farinha de mandioca crua (farinha d'água) | farinha | no Norte se come como está; a torrada ficou dentro |
+| 456, 459 | Leite em pó | pó | usado reconstituído |
+| 126, 127, 162 | Inhame, jiló e vagem crus | cru (D-199a) | a base não tem a versão cozida |

@@ -126,3 +126,32 @@ configuração na porta 4193) e `npm run build` verde.
 - Os testes do T4 falharam antes do código pelo motivo errado (o import do T3 ainda em andamento). O comportamento
   antigo que eles barram está medido: refrigerante trocava por cerveja, cerveja por café e margarina por margarina.
 - Os testes do T5 são trava do que já valia e passaram de primeira.
+
+## Rodada de revisão (15/10/2026, à tarde)
+
+Lê a seção 7 da SPEC. Mesmas regras: nota na spec primeiro, TDD, um commit por item, sem dependência nova.
+
+| Tarefa | Item | Altera | Verificação |
+|---|---|---|---|
+| R0 | nota da rodada (SPEC D-191, D-193, D-194, D-196 a D-199, CA-651 a CA-677, CB-195 a CB-199, seção 7, Apêndice C) e M5 | `specs/sugestoes-com-criterio/SPEC.md`, `PLAN.md`, `specs/planejador-metanutri/SPEC.md` | leitura |
+| R1 | C1: "calda" com ou sem "em" | `prescritivel.ts`, `prescritivel.test.ts` | `npx vitest run src/domain/prescritivel.test.ts` |
+| R2 | I1: capuccino, gelatina, sal, shoyu, tempero, fermento; café e chá em qualquer forma fora do cobrir | `prescritivel.ts`, `prescritivel.test.ts`, `cobrir.ts`, `cobrir.test.ts` | os dois testes |
+| R3 | I2: pó e farinha fortificados | `prescritivel.ts`, `prescritivel.test.ts` | idem |
+| R4 | I4: pratos com embutido, toucinho, carne curada ou miúdos | `prescritivel.ts`, `prescritivel.test.ts` | idem |
+| R5 | D-199a: versão crua do que se come cozido; peixe "fresco" | `prescritivel.ts`, `prescritivel.test.ts` | idem |
+| R6 | M6: descrição limpa antes de comparar | `prescritivel.ts`, `prescritivel.test.ts` | idem |
+| R7 | M7: miolo de alcatra e linhaça são de uso comum | `prescritivel.ts`, `prescritivel.test.ts` | idem |
+| R8 | I3: trava por padrão de texto (cobrir e trocas) e lista fixa de ids | `cobrir.test.ts`, `trocas.test.ts`, `prescritivel.test.ts` | os três testes |
+| R9 | M4: teste do CA-655 | `cobrir.test.ts` | `cobrir.test.ts` |
+| R10 | M3 e D-199a nas trocas: forma do ovo e verdura cozida | `trocas.ts`, `trocas.test.ts` | `trocas.test.ts` |
+| R11 | M1: item fora da rotina prefere o mesmo alimento | `trocas.ts`, `trocas.test.ts` | idem |
+| R12 | D-199b: porção máxima por grupo e corte magro primeiro | `cobrir.ts`, `cobrir.test.ts` | `cobrir.test.ts` |
+| R13 | M9: restrição antes do corte das 5 | `cobrir.ts`, `cobrir.test.ts`, `src/ui/adequacao/GavetaCobrir.tsx`, `TelaAdequacao.test.tsx` | `cobrir.test.ts`, `src/ui/adequacao` |
+| R14 | Apêndices A e B regenerados do código, validação, prints e relatório | `SPEC.md`, `PLAN.md` | `npm run check`, `npx playwright test` (porta própria), `npm run build` |
+
+Dependências: R8 vem depois de R1 a R7, porque guarda a lista final de ids. R10 e R11 dependem de R5 (a vagem crua sai
+da regra). Cada tarefa de R1 a R7 atualiza a contagem do CA-664 até o R8 trocá-la pela lista fixa.
+
+Fora desta rodada (a revisão listou, o coordenador não pediu): M2 (trocas de laticínio vazias) e M8 (vitrine).
+
+Única mudança de tela: a `GavetaCobrir` passa as restrições para o domínio em vez de filtrar a lista pronta (R13).
