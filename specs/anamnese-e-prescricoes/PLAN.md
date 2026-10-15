@@ -1,7 +1,7 @@
 # PLAN — Anamnese com roteiro, suplementos e pedido de exames
 
 **Spec de origem:** `./SPEC.md` (D-160 a D-169, CA-560 a CA-588, CB-160 a CB-169)
-**Status:** aprovado pelo dono em 14/10/2026 ("implemente as novidades")
+**Status:** aprovado pelo dono em 14/10/2026 ("implemente as novidades"); concluído em 15/10/2026
 
 ## Abordagem
 
@@ -55,7 +55,7 @@ mudar o que a dieta mostra, e passam a servir às três folhas. Quem assina a fo
 
 ## Tarefas
 
-- [ ] **T1** — `anamnese.ts`: tipos `PerguntaRoteiro`, `BlocoRoteiro`, `RoteiroAnamnese`, `RespostaAnamnese`;
+- [x] **T1** — `anamnese.ts`: tipos `PerguntaRoteiro`, `BlocoRoteiro`, `RoteiroAnamnese`, `RespostaAnamnese`;
   `BLOCOS_ANAMNESE` (ids e títulos fixos) e `ROTEIRO_PADRAO` (seção 2 da spec, ids estáveis); `lerRoteiro(arm)` e
   `gravarRoteiro(arm, roteiro): boolean` na chave `metanutri:roteiro-anamnese`, com normalização (CB-162) e texto vazio
   saindo (CB-161); `blocosDaFicha(roteiro, respostas)` (perguntas do roteiro com a resposta, respostas "fora do
@@ -64,58 +64,58 @@ mudar o que a dieta mostra, e passam a servir às três folhas. Quem assina a fo
   - Depende de: —
   - Cobre: D-160, D-161, D-163, CA-560 (domínio), CA-562, CA-566, CA-568, CB-161, CB-162
   - Feito quando: testes do padrão, da leitura estragada, do bloco que falta, da pergunta renomeada e tirada, da contagem.
-- [ ] **T2** — `suplementos.ts`: `Suplemento`, `criarSuplemento(id)`, `normalizarSuplementos(valor)`,
+- [x] **T2** — `suplementos.ts`: `Suplemento`, `criarSuplemento(id)`, `normalizarSuplementos(valor)`,
   `suplementosParaDocumento(lista)` (sem nome não sai, CA-578), `descreverSuplemento(s)` ("Dose: … · Horário: … · Por
   quanto tempo: …", só o preenchido), `ModeloSuplemento` e `criarRepositorioModelosSuplemento(arm)` com `listar` (por
   nome), `salvarDe(suplemento)` (mesmo nome troca, sem diferenciar maiúscula e acento), `excluir`.
   - Depende de: —
   - Cobre: D-166, CA-573 (domínio), CA-574 (ordem), CA-578
   - Feito quando: testes de cada função, do mesmo nome trocando, da leitura estragada e da ordem.
-- [ ] **T3** — `exames.ts`: `EXAMES` (seção 3, ids estáveis), `PedidoExames`, `PEDIDO_VAZIO`, `normalizarPedido(valor)`,
+- [x] **T3** — `exames.ts`: `EXAMES` (seção 3, ids estáveis), `PedidoExames`, `PEDIDO_VAZIO`, `normalizarPedido(valor)`,
   `linhasDoPedido(pedido)` (marcados na ordem da lista, depois as linhas de "Outros" sem as em branco), `pedidoVazio`.
   - Depende de: —
   - Cobre: D-169, CA-579 (lista), CA-580 (ordem), CA-581 (vazio), CB-169
   - Feito quando: testes da ordem, das linhas em branco, de id desconhecido e de dado estragado.
-- [ ] **T4** — `pacientes.ts`: campos `respostasAnamnese`, `suplementos` e `pedidoExames` no `Paciente`, vazios em
+- [x] **T4** — `pacientes.ts`: campos `respostasAnamnese`, `suplementos` e `pedidoExames` no `Paciente`, vazios em
   `criarPacienteVazio`; a leitura normaliza cada um (T1 a T3).
   - Depende de: T1, T2, T3
   - Cobre: CA-561 (data nova ao salvar), CA-585 (paciente novo), CA-588
   - Feito quando: testes de ficha antiga, de campo estragado, de salvar mudando o `atualizadoEm`.
-- [ ] **T5** — `documentoDoPaciente.ts`: `assinaturaDoDocumento(assinatura)` (nutricionista: nome e CRN; estudante: nome da
+- [x] **T5** — `documentoDoPaciente.ts`: `assinaturaDoDocumento(assinatura)` (nutricionista: nome e CRN; estudante: nome da
   conta e responsável técnico; sem situação: vazia), `ehProposta(assinatura)`, `propostaNaDieta(assinatura, caso)`,
   `FRASE_PROPOSTA`, `tituloDoDocumento(tipo, proposta)`, `dataDeHoje(agora)` (data local, AAAA-MM-DD).
   - Depende de: —
   - Cobre: D-167, CA-582, CA-583, CA-584 (domínio)
   - Feito quando: testes das três situações, de nome ou CRN faltando e da data local.
-- [ ] **T6** — Nuvem e backup: as duas chaves em `CHAVES_DE_DADOS`; `metanutri:modelos-suplemento` em `LISTAS` da cópia
+- [x] **T6** — Nuvem e backup: as duas chaves em `CHAVES_DE_DADOS`; `metanutri:modelos-suplemento` em `LISTAS` da cópia
   (tempo: `atualizadoEm` ou `criadoEm`); em `donoDosDados.ts`, a mesma junção dos modelos de plano.
   - Depende de: T1, T2
   - Cobre: CA-570, CA-575, CB-163
   - Feito quando: testes de marcar mudança por modelo, juntar dois aparelhos (os dois modelos ficam, o mais novo
     vence, o apagado não volta), roteiro mais novo vence, roteiro apagado, backup e restauração, migração.
-- [ ] **T7** — Tela da anamnese: `AnamneseDaFicha` (8 blocos em `Recolhivel`, resumo de respondidas, aberto quando tem
+- [x] **T7** — Tela da anamnese: `AnamneseDaFicha` (8 blocos em `Recolhivel`, resumo de respondidas, aberto quando tem
   resposta, "Fora do roteiro", último bloco "Observações" com "Anotações" e "Observações"), `DialogoRoteiro` (editar,
   acrescentar, tirar, voltar ao padrão, salvar, cancelar), `TelaPaciente` usando o cartão.
   - Depende de: T4
   - Cobre: CA-560, CA-561, CA-563, CA-564, CA-565, CA-566, CA-567, CA-568, CA-569
   - Feito quando: testes de tela de cada critério, inclusive "abrir a ficha não grava nada".
-- [ ] **T8** — Suplementos: `QuemAssina` e `LinhasDeAssinatura` saem de `FolhaDieta`; `FolhaDocumento`,
+- [x] **T8** — Suplementos: `QuemAssina` e `LinhasDeAssinatura` saem de `FolhaDieta`; `FolhaDocumento`,
   `DialogoDocumento`, `FolhaSuplementos`; `CartaoSuplementos`, `LinhaSuplemento`, `DialogoModelosSuplemento`;
   `TelaPaciente` recebe `assinatura` e a `AreaDeTrabalho` passa `quemAssina`; `.folha-documento` no CSS de impressão.
   - Depende de: T4, T5, T6
   - Cobre: CA-571, CA-572, CA-573, CA-574, CA-576, CA-578, CA-582, CA-583, CA-585 (tela)
   - Feito quando: testes de tela e da folha nas três situações; os testes da dieta continuam verdes.
-- [ ] **T9** — Pedido de exames: `CartaoExames` e `FolhaExames` na ficha.
+- [x] **T9** — Pedido de exames: `CartaoExames` e `FolhaExames` na ficha.
   - Depende de: T8
   - Cobre: CA-579, CA-580, CA-581, CA-582 (pedido)
   - Feito quando: testes de marcar, do campo livre, do botão desligado e da folha.
-- [ ] **T10** — Dieta e Word: `MenuExportar` acha os suplementos do paciente do plano e passa para a dieta e para o Word;
+- [x] **T10** — Dieta e Word: `MenuExportar` acha os suplementos do paciente do plano e passa para a dieta e para o Word;
   seção "Suplementos" na `FolhaDieta` depois de "Orientações"; "SUPLEMENTAÇÃO" no Word depois das orientações; frase de
   proposta em plano de estágio.
   - Depende de: T2, T5
   - Cobre: CA-577, CA-584, CB-166
   - Feito quando: testes da folha e do Word com e sem suplementos, com e sem estágio; o Word de sempre sai igual.
-- [ ] **T11** — Fechamento: CA-586 no teste de código malicioso do app; teste de navegador (roteiro, suplemento, pedido,
+- [x] **T11** — Fechamento: CA-586 no teste de código malicioso do app; teste de navegador (roteiro, suplemento, pedido,
   360 px sem rolar para o lado, CA-587); linha no README.
   - Depende de: T7, T8, T9, T10
   - Cobre: CA-586, CA-587
@@ -131,3 +131,24 @@ mudar o que a dieta mostra, e passam a servir às três folhas. Quem assina a fo
 - **Junção por ficha inteira (R-160).** Campo novo no paciente segue a regra de hoje.
 - **Frase de estágio pela situação da conta (D-167, R-161).** O plano de assinatura não muda as folhas.
 - **Folhas sem linha fina.** As folhas novas cabem numa página; não levam a linha fina do topo da dieta (CA-316).
+
+## Validação (15/10/2026)
+
+`npm run check` (lint, typecheck, 2.827 testes), `npx playwright test` (49, com os 3 novos) e `npm run build`
+verdes. Cada critério tem teste com o ID no nome:
+
+| Critérios | Onde |
+|---|---|
+| CA-560 a CA-569 | `src/domain/anamnese.test.ts`, `src/ui/pacientes/anamnese.test.tsx`, `e2e/anamnese-e-prescricoes.spec.ts` |
+| CA-570, CA-575, CB-163, CB-164 | `src/domain/copiaDaConta.test.ts`, `src/domain/donoDosDados.test.ts` |
+| CA-571 a CA-578, CA-582 a CA-585 | `src/domain/suplementos.test.ts`, `src/domain/documentoDoPaciente.test.ts`, `src/ui/pacientes/suplementos.test.tsx`, `src/ui/exportar/FolhaDieta.test.tsx`, `src/ui/exportar/MenuExportarAssinatura.test.tsx`, `src/export/docx.test.ts` |
+| CA-579 a CA-581, CB-169 | `src/domain/exames.test.ts`, `src/ui/pacientes/exames.test.tsx` |
+| CA-586 | `src/seguranca/xssApp.test.tsx` |
+| CA-587 | `e2e/anamnese-e-prescricoes.spec.ts` |
+| CA-588, CB-160 a CB-162, CB-165 a CB-168 | `src/domain/pacientes.test.ts`, `src/domain/anamnese.test.ts`, `src/domain/suplementos.test.ts`, `src/ui/pacientes/suplementos.test.tsx` |
+
+Divergências do pedido original, todas registradas como decisão: o texto livre não é "movido" (D-162); os blocos
+não são editáveis (D-160). Fora do PLAN, duas mudanças pequenas entraram com a tarefa que precisou delas:
+`limparRoteiro` em `anamnese.ts` (T7, para o roteiro sem armazenamento) e o cartão "Restrições e saúde" virou região
+com nome (T7, para os testes acharem o cartão). O aviso "Modelo salvo." é região viva sem o papel `status`, porque a
+barra da nuvem já é o status da ficha (um teste da `dados-na-nuvem` conta um só).
