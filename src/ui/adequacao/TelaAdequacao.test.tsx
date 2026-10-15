@@ -286,12 +286,24 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(screen.getByRole('button', { name: 'Ver os 16 na meta' })).toBeInTheDocument()
   })
 
-  it('CB-204: grupo aberto continua aberto depois de um Cobrir', async () => {
-    const usuario = montar(adulta, exemplo())
-    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
-    const gaveta = await abrirCobrir(usuario, 'Ferro')
+  it('CB-204: o nutriente que chega à meta passa para o grupo aberto, que continua aberto', async () => {
+    // Sugestão controlada: a porção de iogurte que leva só o cálcio à meta (não depende do que o Cobrir sugere hoje).
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, { ...criarCasoVazio('c1'), ...adulta }, 'calcio_mg', IOGURTE_DESNATADO, ids))
+    const usuario = montar(adulta, plano)
+    const ver = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const antes = Number(ver.textContent?.match(/(\d+)/)?.[1])
+    await usuario.click(ver)
+    const gaveta = await abrirCobrir(usuario, 'Cálcio')
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
-    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+
+    const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} na meta` })
+    expect(esconder).toHaveAttribute('aria-expanded', 'true')
+    const grupo = document.getElementById(esconder.getAttribute('aria-controls') ?? '')
+    if (!grupo) throw new Error('sem o grupo na meta')
+    const calcio = within(grupo).getByText('Cálcio').closest('tr')
+    if (!calcio) throw new Error('o cálcio não foi para o grupo na meta')
+    expect(within(calcio).queryByRole('button')).not.toBeInTheDocument()
   })
 })
 

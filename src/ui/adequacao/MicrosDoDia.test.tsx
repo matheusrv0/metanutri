@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -45,7 +46,17 @@ function planoCom(...itens: readonly (readonly [number, number])[]): Plano {
 const ARROZ = 3
 const SAL_GROSSO = 517
 
-function Anfitriao({ inicial, planoInicial, aoVerTodos }: { readonly inicial: Partial<Caso>; readonly planoInicial: Plano; readonly aoVerTodos: () => void }) {
+function Anfitriao({
+  inicial,
+  planoInicial,
+  aoVerTodos,
+  restricoes,
+}: {
+  readonly inicial: Partial<Caso>
+  readonly planoInicial: Plano
+  readonly aoVerTodos: () => void
+  readonly restricoes?: readonly string[]
+}) {
   const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...inicial })
   const [plano, setPlano] = useState<Plano>(planoInicial)
   return (
@@ -57,13 +68,14 @@ function Anfitriao({ inicial, planoInicial, aoVerTodos }: { readonly inicial: Pa
       aoAlterarPlano={setPlano}
       aoVerTodos={aoVerTodos}
       gerarId={ids}
+      {...(restricoes ? { restricoes } : {})}
     />
   )
 }
 
-const montar = (inicial: Partial<Caso> = adulta, planoInicial: Plano = planoCom([ARROZ, 200])) => {
+const montar = (inicial: Partial<Caso> = adulta, planoInicial: Plano = planoCom([ARROZ, 200]), restricoes?: readonly string[]) => {
   const aoVerTodos = vi.fn()
-  const { unmount } = render(<Anfitriao inicial={inicial} planoInicial={planoInicial} aoVerTodos={aoVerTodos} />)
+  const { unmount } = render(<Anfitriao inicial={inicial} planoInicial={planoInicial} aoVerTodos={aoVerTodos} {...(restricoes ? { restricoes } : {})} />)
   return { usuario: userEvent.setup(), aoVerTodos, desmontar: unmount }
 }
 
@@ -354,5 +366,29 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
     await cobrirEAdicionar(usuario, 'Ferro')
     expect(cartao().getByText(/^(Nada para cobrir|Todos os 16 na meta)\.$/)).toBeInTheDocument()
     await waitFor(() => expect(titulo()).toHaveFocus())
+  })
+})
+
+describe('Restrições do paciente no Cobrir do cartão (sugestoes-com-criterio, CA-675)', () => {
+  const nomesSugeridos = () =>
+    within(within(screen.getByRole('dialog')).getByRole('list', { name: 'Sugestões para cobrir' }))
+      .getAllByRole('listitem')
+      .map((li) => li.querySelector('p')?.textContent ?? '')
+
+  it('o cartão leva as restrições do paciente ao cálculo das sugestões, que tira o alimento restrito', async () => {
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    // Sem restrição: a primeira sugestão de verdade do ferro.
+    const sem = montar(adulta, plano)
+    await sem.usuario.click(cartao().getByRole('button', { name: 'Cobrir Ferro' }))
+    const [primeira] = nomesSugeridos()
+    if (!primeira) throw new Error('sem sugestão para o ferro')
+    sem.desmontar()
+
+    // Com a primeira restrita pelo nome, ela some, e a restrição chega inteira ao domínio.
+    const termo = primeira.split(',')[0]?.trim().toLowerCase() ?? ''
+    const com = montar(adulta, plano, [termo])
+    await com.usuario.click(cartao().getByRole('button', { name: 'Cobrir Ferro' }))
+    expect(vi.mocked(sugerirParaCobrir)).toHaveBeenLastCalledWith('ferro_mg', expect.anything(), expect.anything(), expect.objectContaining({ restricoes: [termo] }))
+    expect(nomesSugeridos()).not.toContain(primeira)
   })
 })
