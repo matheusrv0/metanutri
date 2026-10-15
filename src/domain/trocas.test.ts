@@ -144,6 +144,21 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
     expect(doBrocolis?.trocas.map((t) => t.descricao).join(' | ') ?? '').not.toMatch(/cru/i)
   })
 
+  it('CA-672: item fora da rotina troca primeiro pelo mesmo alimento em outro preparo', () => {
+    const ovoFrito = porDescricao('Ovo, de galinha, inteiro, frito')
+    expect(trocasDoAlimento({ alimentoId: ovoFrito.id, gramas: 50 }, opcoes)[0]?.descricao).toBe('Ovo, de galinha, inteiro, cozido/10minutos')
+
+    const batataFrita = porDescricao('Batata, inglesa, frita')
+    expect(trocasDoAlimento({ alimentoId: batataFrita.id, gramas: 100 }, opcoes)[0]?.descricao).toMatch(/^Batata, inglesa, /)
+  })
+
+  it('CB-199: sem o mesmo alimento em outro preparo, segue a ordem normal', () => {
+    const presunto = porDescricao('Presunto, sem capa de gordura')
+    const trocas = trocasDoAlimento({ alimentoId: presunto.id, gramas: 30 }, opcoes)
+    expect(trocas.length).toBeGreaterThan(0)
+    expect(trocas.every((t) => !t.descricao.startsWith('Presunto'))).toBe(true)
+  })
+
   it('CA-661: bebida alcoólica no plano não ganha troca', () => {
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cerveja, pilsen 2').id, gramas: 350 }, opcoes)).toEqual([])
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cana, aguardente 1').id, gramas: 50 }, opcoes)).toEqual([])

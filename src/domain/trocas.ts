@@ -71,6 +71,22 @@ const ehVerduraCozida = (a: Alimento): boolean => a.categoria.startsWith('Verdur
 const mesmaForma = (base: Alimento) => (a: Alimento): boolean =>
   formaDoOvo(a) === formaDoOvo(base) && (!ehVerduraCozida(base) || !ehCru(a))
 
+const partesDoNome = (descricao: string): string[] => descricao.split(',').map((p) => p.trim().toLowerCase())
+
+/**
+ * Quantas partes do nome, a contar do começo, a troca tem em comum com o original:
+ * "Batata, inglesa, frita" e "Batata, inglesa, cozida" têm 2; "Batata, doce, cozida" tem 1 (revisão M1).
+ */
+function partesEmComum(original: string): (descricao: string) => number {
+  const doOriginal = partesDoNome(original)
+  return (descricao) => {
+    const partes = partesDoNome(descricao)
+    let iguais = 0
+    while (iguais < partes.length && iguais < doOriginal.length && partes[iguais] === doOriginal[iguais]) iguais += 1
+    return iguais
+  }
+}
+
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
 const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? descricao).trim().toLowerCase()
 
@@ -105,7 +121,10 @@ export function trocasDoAlimento(
   const base = opcoes.alimentos.find((a) => a.id === original.alimentoId)
   const kcalBase = base ? kcalPorCem(base) : null
   if (!base || kcalBase === null || original.gramas <= 0) return []
-  if (regraQueExclui(base)?.nivel === 'nunca') return []
+  const regraDaBase = regraQueExclui(base)
+  if (regraDaBase?.nivel === 'nunca') return []
+  // Item fora da rotina posto à mão: o melhor conselho é o mesmo alimento em outro preparo (ovo frito → ovo cozido).
+  const parecidoComABase = regraDaBase?.nivel === 'fora-da-rotina' ? partesEmComum(base.descricao) : () => 0
 
   return opcoes.alimentos
     .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
@@ -122,6 +141,8 @@ export function trocasDoAlimento(
     // Porção que ninguém come na vida real não ajuda o paciente.
     .filter(({ gramas }) => gramas >= 5 && gramas <= 600)
     .sort((x, y) => {
+      const mesmoAlimento = parecidoComABase(y.a.descricao) - parecidoComABase(x.a.descricao)
+      if (mesmoAlimento !== 0) return mesmoAlimento
       const comum = Number(ehDeUsoComum(y.a)) - Number(ehDeUsoComum(x.a))
       if (comum !== 0) return comum
       // Depois do uso comum, quem tem medida caseira ganha: é o que o paciente entende.
