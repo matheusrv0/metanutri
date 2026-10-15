@@ -73,6 +73,9 @@ const LISTAS: Readonly<Record<string, Lista>> = {
   'metanutri:produtos': { nome: 'produtos', tempo: (i) => campo(i, 'atualizadoEm') ?? campo(i, 'criadoEm') },
   'metanutri:modelos': { nome: 'modelos', tempo: (i) => campo(i, 'criadoEm') },
   [CHAVE_ACOMPANHAMENTOS]: { nome: 'acompanhamentos', tempo: (i) => campo(i, 'criadoEm') },
+  // Spec anamnese-e-prescricoes, D-166: modelo por modelo, com lápide. O roteiro de anamnese não entra aqui:
+  // é uma chave inteira, e a edição mais nova vence (D-161).
+  'metanutri:modelos-suplemento': { nome: 'modelos-suplemento', tempo: (i) => campo(i, 'atualizadoEm') ?? campo(i, 'criadoEm') },
 }
 
 type Item = Record<string, unknown>

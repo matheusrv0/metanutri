@@ -1,5 +1,5 @@
 import { aplicarCopia, CHAVE_MUDANCAS, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
-import type { Backup } from './perfil.ts'
+import { CHAVES_DE_DADOS, montarBackup, restaurarBackup, type Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 
 class Memoria implements Armazenamento {
@@ -362,5 +362,66 @@ describe('juntar a cópia daqui com a da nuvem (D-132, D-133)', () => {
     const daqui = copia({ 'metanutri:pacientes': '[]', [CHAVE_MUDANCAS]: mudancas({}, { 'pacientes/velho': '2026-06-01T00:00:00.000Z', 'pacientes/novo': T(1) }) })
     const junta = juntarCopias(daqui, copia({}), AGORA)
     expect(lerMudancas(junta.dados[CHAVE_MUDANCAS] ?? null).excluidos).toEqual({ 'pacientes/novo': T(1) })
+  })
+})
+
+describe('roteiro de anamnese e modelos de suplemento na nuvem (spec anamnese-e-prescricoes, CA-570, CA-575)', () => {
+  const ROTEIRO = 'metanutri:roteiro-anamnese'
+  const MODELOS = 'metanutri:modelos-suplemento'
+  const roteiro = (texto: string) => JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'agua-dia', texto }] } })
+  const modeloSup = (id: string, nome: string, atualizadoEm = T(1)) => ({ id, nome, dose: '', horario: '', duracao: '', observacao: '', criadoEm: T(1), atualizadoEm })
+
+  it('as duas chaves são dado da conta: entram em CHAVES_DE_DADOS e na cópia', () => {
+    expect(CHAVES_DE_DADOS).toContain(ROTEIRO)
+    expect(CHAVES_DE_DADOS).toContain(MODELOS)
+    const arm = new Memoria()
+    arm.setItem(ROTEIRO, roteiro('Água?'))
+    arm.setItem(MODELOS, JSON.stringify([modeloSup('a', 'Ferro')]))
+    expect(Object.keys(montarCopia(arm, AGORA).dados).sort()).toEqual([MODELOS, ROTEIRO])
+    // E no backup de Configurações, que volta inteiro em outro aparelho.
+    const backup = montarBackup(arm, [...CHAVES_DE_DADOS], AGORA)
+    const outro = new Memoria()
+    expect(restaurarBackup(outro, JSON.stringify(backup))).toEqual({ restaurados: 2, erro: null })
+    expect(outro.getItem(ROTEIRO)).toBe(roteiro('Água?'))
+  })
+
+  it('cada modelo que entra ou muda ganha a hora; o apagado ganha a lápide; o roteiro marca a chave inteira', () => {
+    const arm = new Memoria()
+    registrarMudanca(arm, MODELOS, JSON.stringify([modeloSup('a', 'Ferro'), modeloSup('b', 'Zinco')]), JSON.stringify([modeloSup('a', 'Ferro quelato'), modeloSup('c', 'B12')]), T(2))
+    registrarMudanca(arm, ROTEIRO, null, roteiro('Água?'), T(3))
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({
+      alterados: { 'modelos-suplemento/a': T(2), 'modelos-suplemento/c': T(2), [`chave/${ROTEIRO}`]: T(3) },
+      excluidos: { 'modelos-suplemento/b': T(2) },
+    })
+  })
+
+  it('CA-575: dois aparelhos juntam modelo por modelo; o mais novo vence e o apagado não volta', () => {
+    const daqui = copia({
+      [MODELOS]: JSON.stringify([modeloSup('a', 'Ferro, daqui', T(3)), modeloSup('d', 'Magnésio')]),
+      [CHAVE_MUDANCAS]: mudancas({ 'modelos-suplemento/a': T(3), 'modelos-suplemento/d': T(1) }, { 'modelos-suplemento/c': T(4) }),
+    })
+    const daNuvem = copia({
+      [MODELOS]: JSON.stringify([modeloSup('a', 'Ferro, da nuvem', T(2)), modeloSup('b', 'Zinco'), modeloSup('c', 'B12')]),
+      [CHAVE_MUDANCAS]: mudancas({ 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(1), 'modelos-suplemento/c': T(1) }),
+    })
+    const junta = juntarCopias(daqui, daNuvem, AGORA)
+    expect(nomes(junta, MODELOS)).toEqual(['Ferro, daqui', 'Magnésio', 'Zinco'])
+    expect(lerMudancas(junta.dados[CHAVE_MUDANCAS] ?? null).excluidos).toEqual({ 'modelos-suplemento/c': T(4) })
+    expect(itensDaCopia(junta)).toBe(3)
+  })
+
+  it('CA-575: sem marcas (primeira junção), vale a data do próprio modelo', () => {
+    const daqui = copia({ [MODELOS]: JSON.stringify([modeloSup('a', 'Ferro, antigo', T(1))]) })
+    const daNuvem = copia({ [MODELOS]: JSON.stringify([modeloSup('a', 'Ferro, novo', T(5))]) })
+    expect(nomes(juntarCopias(daqui, daNuvem, AGORA, 'daqui'), MODELOS)).toEqual(['Ferro, novo'])
+  })
+
+  it('CA-570 e CB-163: o roteiro salvo por último vence, dos dois lados; apagado depois, sai', () => {
+    const daqui = (quando: string) => copia({ [ROTEIRO]: roteiro('Daqui'), [CHAVE_MUDANCAS]: mudancas({ [`chave/${ROTEIRO}`]: quando }) })
+    const daNuvem = (quando: string) => copia({ [ROTEIRO]: roteiro('Da nuvem'), [CHAVE_MUDANCAS]: mudancas({ [`chave/${ROTEIRO}`]: quando }) })
+    expect(juntarCopias(daqui(T(2)), daNuvem(T(3)), AGORA).dados[ROTEIRO]).toBe(roteiro('Da nuvem'))
+    expect(juntarCopias(daqui(T(4)), daNuvem(T(3)), AGORA).dados[ROTEIRO]).toBe(roteiro('Daqui'))
+    const apagadoAqui = copia({ [CHAVE_MUDANCAS]: mudancas({}, { [`chave/${ROTEIRO}`]: T(5) }) })
+    expect(juntarCopias(apagadoAqui, daNuvem(T(3)), AGORA).dados[ROTEIRO]).toBeUndefined()
   })
 })
