@@ -105,24 +105,24 @@ SPEC atualizados.
 | `src/domain/folhaDieta.ts` (+ teste) | alterar | compras com a quantidade da refeição (R6) |
 | `src/domain/missoes.ts`, `missoes.test.ts` | alterar | sai `listaDeCompras`, que ficou sem uso (R8) |
 
-- [ ] **R1** — `html { color-scheme: light !important }` na impressão (vence o estilo do `ProvedorTema`); o e2e do
+- [x] **R1** — `html { color-scheme: light !important }` na impressão (vence o estilo do `ProvedorTema`); o e2e do
   CA-621/622 confere o esquema do `html` com a mídia de impressão (CA-622).
-- [ ] **R2** — `quantidadeNaFolha(alimentoId, gramas, buscar)`: a medida do planejador (`medidaEquivalente`), o peso
+- [x] **R2** — `quantidadeNaFolha(alimentoId, gramas, buscar)`: a medida do planejador (`medidaEquivalente`), o peso
   ao lado quando a medida é vaga pela lista do D-189, a "ponta de faca" em até 3, dentro de 15% (CA-642); a folha
   mostra "medida · peso" com o peso em cinza (CA-629, CA-630, CA-641). *Testes:* os casos do plano de exemplo.
-- [ ] **R3** — rótulos "Opção 1" e "ou · Opção N" na folha e no link, só quando há mais de uma opção (CA-631, CA-632,
+- [x] **R3** — rótulos "Opção 1" e "ou · Opção N" na folha e no link, só quando há mais de uma opção (CA-631, CA-632,
   CA-645).
-- [ ] **R4** — nomes: "(peso cru)" (seção 2), os 4 nomes corrigidos (queijo processado, ovo, camarão grande, gelatina
+- [x] **R4** — nomes: "(peso cru)" (seção 2), os 4 nomes corrigidos (queijo processado, ovo, camarão grande, gelatina
   com sabor), "escorrido", açaí, empanados, pão de forma de glúten, gergelim e linhaça (CA-623 a CA-625).
-- [ ] **R5** — o tema claro de `tokens.css` passa a valer também em `.papel`, e a ponte do shadcn em `globals.css`
+- [x] **R5** — o tema claro de `tokens.css` passa a valer também em `.papel`, e a ponte do shadcn em `globals.css`
   também; as duas folhas usam a classe `papel`; sai a cópia à mão do tema claro (D-180).
-- [ ] **R6** — `comprasDaFolha` guarda o alimento de cada linha, e a lista de compras mostra a quantidade pela regra da
+- [x] **R6** — `comprasDaFolha` guarda o alimento de cada linha, e a lista de compras mostra a quantidade pela regra da
   refeição (CA-643).
-- [ ] **R7** — trocas: a quantidade pela regra da refeição; medida de pedaço com mais de 4 pedaços vira o peso
+- [x] **R7** — trocas: a quantidade pela regra da refeição; medida de pedaço com mais de 4 pedaços vira o peso
   (CA-644).
-- [ ] **R8** — sai `listaDeCompras` de `missoes.ts` e o teste dele.
-- [ ] **R9** — testes que faltavam: CA-639 para exames no e2e e CB-187 (nome de produto com código) na folha.
-- [ ] **R10** — prints de novo (inclusive com "Gráficos de fundo" ligado no tema escuro), `npm run check`,
+- [x] **R8** — sai `listaDeCompras` de `missoes.ts` e o teste dele.
+- [x] **R9** — testes que faltavam: CA-639 para exames no e2e e CB-187 (nome de produto com código) na folha.
+- [x] **R10** — prints de novo (inclusive com "Gráficos de fundo" ligado no tema escuro), `npm run check`,
   `npx playwright test` e `npm run build`, e a rodada no relatório.
 
 ## Riscos e decisões para revisar
