@@ -32,6 +32,10 @@ export function TelaPrivacidade() {
         <li>Plano assinado, data e versão dos termos aceitos: para cobrar certo e provar o aceite.</li>
         <li>Dados do paciente (nome, sexo, idade, medidas, restrições e condições clínicas): para calcular o plano alimentar.</li>
         <li>Missões marcadas pelo paciente e as datas: para mostrar a adesão ao nutricionista.</li>
+        <li>
+          O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista liga "Mostrar a dieta no
+          link": para o paciente ver a dieta no link dele.
+        </li>
       </ul>
       <p>
         Os dados de saúde são dados pessoais sensíveis. Eles são tratados para a tutela da saúde por profissional de saúde e com o consentimento do
@@ -46,8 +50,8 @@ export function TelaPrivacidade() {
           entrada, quando vão para ela.
         </li>
         <li>
-          A conta, a assinatura, os dados da conta e as missões do link do paciente ficam na Supabase, que hospeda o banco de dados do MetaNutri. Os
-          servidores podem ficar fora do Brasil.
+          A conta, a assinatura, os dados da conta e as missões e a dieta do link do paciente ficam na Supabase, que hospeda o banco de dados do
+          MetaNutri. Os servidores podem ficar fora do Brasil.
         </li>
         <li>
           O pagamento é processado pelo Mercado Pago. Os dados do cartão (número, validade e código), o nome impresso no cartão e o CPF do
@@ -74,8 +78,9 @@ export function TelaPrivacidade() {
 
       <h2>Segurança</h2>
       <p>
-        Acesso por senha, conexão cifrada e separação por conta no banco: um nutricionista não alcança os dados de outro. O link de missões usa um endereço
-        secreto e mostra só as missões daquele paciente. Se houver incidente de segurança, o nutricionista é avisado em até {PRAZO_INCIDENTE_HORAS} horas.
+        Acesso por senha, conexão cifrada e separação por conta no banco: um nutricionista não alcança os dados de outro. O link do paciente usa um
+        endereço secreto e mostra só as missões daquele paciente e, quando o nutricionista liga, a dieta dele. Se houver incidente de segurança, o
+        nutricionista é avisado em até {PRAZO_INCIDENTE_HORAS} horas.
       </p>
 
       <h2>Mudanças</h2>
