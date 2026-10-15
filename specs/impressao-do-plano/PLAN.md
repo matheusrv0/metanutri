@@ -12,7 +12,7 @@ de três camadas.
    spec), com a lista revisada à mão por id da base e as regras gerais sobre as partes do nome. Produto cadastrado
    ("Meus produtos", id a partir de `PRIMEIRO_ID_PRODUTO`) sai como foi escrito. `folhaDieta.ts` ganha a lista de
    compras da folha (agrupada pelo nome para o paciente, CB-181) e as opções de uma refeição que têm alimento; perde
-   `lembretesDoDia`, que só servia ao "No dia a dia".
+   `lembretesDoDia`, que só servia ao "No dia a dia" (sai junto com a seção, na T6).
 2. **Folha.** `FolhaDieta.tsx` passa a mostrar alimento e uma quantidade por linha, as opções separadas por "ou", e só
    o que a spec deixa ficar. `FolhaDocumento.tsx` perde a régua e a caixa da frase de estágio.
 3. **Papel.** Em `globals.css`, `.folha-dieta` e `.folha-documento` redeclaram os semânticos do tema claro e a ponte
@@ -59,15 +59,15 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   CA-625 (cru por grupo), CA-626 (produto igual ao escrito), CB-180, CB-182. *Depende de:* nada.
 - [ ] **T3** — `folhaDieta.ts`: `comprasDaFolha(plano, buscar)` → `{ nome, gramas }[]`, só a principal, somando por
   nome para o paciente, em ordem alfabética pt-BR (CA-628, CB-181); `opcoesDaRefeicao(refeicao)` → as listas de itens
-  com gramas > 0, na ordem principal, substituto 1, substituto 2, sem as vazias (CA-631, CA-632). Sai
-  `lembretesDoDia` e o teste dele (só servia ao "No dia a dia"). *Depende de:* T2.
+  com gramas > 0, na ordem principal, substituto 1, substituto 2, sem as vazias (CA-631, CA-632). *Depende de:* T2.
 - [ ] **T4** — `FolhaDieta.tsx`: cada linha mostra o nome para o paciente e uma quantidade (medida caseira; sem ela,
   gramas), alimento primeiro (CA-623, CA-626, CA-629, CA-630); trocas e lista de compras com o nome para o paciente
   (CA-628). *Testes:* os CA citados, na folha. *Depende de:* T2, T3.
 - [ ] **T5** — `FolhaDieta.tsx`: opções sem caixa, cada substituto depois de "ou" com fio fino; refeição só com
   substituto começa sem "ou" (CA-631, CA-632). *Depende de:* T3, T4.
 - [ ] **T6** — `FolhaDieta.tsx`: saem "No dia a dia", a régua do topo e a linha da base; a frase da prescrição rápida
-  fica, sozinha, depois da assinatura (CA-633, CA-634); horário em `text-heading`. `DialogoImprimir.tsx`: a frase nova
+  fica, sozinha, depois da assinatura (CA-633, CA-634); horário em `text-heading`. Sai `lembretesDoDia` de
+  `folhaDieta.ts` e o teste dele (só servia ao "No dia a dia"). `DialogoImprimir.tsx`: a frase nova
   (CA-635). `e2e/planejador.spec.ts`: sai a espera da linha da base. *Depende de:* T5.
 - [ ] **T7** — `globals.css`: escopo de papel claro em `.folha-dieta` e `.folha-documento` (semânticos claros e ponte
   do shadcn redeclarada; `color-scheme: light`), texto preto na impressão no mesmo escopo, e fundo branco na janela e

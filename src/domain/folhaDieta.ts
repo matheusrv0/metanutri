@@ -2,8 +2,9 @@
 // (spec pdf-e-telas-limpas, US-B1).
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import type { Missao } from './missoes.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
-import type { Caso } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
 
 export type AssinaturaDaFolha =
   | { readonly tipo: 'nutricionista'; readonly linha: string }
@@ -23,6 +24,35 @@ export function assinaturaDaFolha(assinatura: AssinaturaDoPlano | null, caso: Ca
 /** CA-312: no papel, só as missões que não repetem o horário das refeições. */
 export function lembretesDoDia(missoes: readonly Missao[]): readonly Missao[] {
   return missoes.filter((m) => !m.id.startsWith('refeicao-'))
+}
+
+/**
+ * As opções de uma refeição que têm alimento, na ordem principal, substituto 1, substituto 2 (spec
+ * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou".
+ */
+export function opcoesDaRefeicao(refeicao: Refeicao): readonly (readonly ItemPlano[])[] {
+  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0)).filter((itens) => itens.length > 0)
+}
+
+export interface CompraDaFolha {
+  readonly nome: string
+  readonly gramas: number
+}
+
+/**
+ * A lista de compras da folha: a principal do dia, somada pelo nome que o paciente lê, em ordem alfabética (spec
+ * impressao-do-plano, CA-628 e CB-181). Dois alimentos com o mesmo nome viram uma linha só.
+ */
+export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly CompraDaFolha[] {
+  const porNome = new Map<string, number>()
+  for (const refeicao of plano.refeicoes) {
+    for (const item of refeicao.opcoes.principal) {
+      if (item.gramas <= 0) continue
+      const nome = nomeParaPaciente(buscar(item.alimentoId))
+      porNome.set(nome, (porNome.get(nome) ?? 0) + item.gramas)
+    }
+  }
+  return [...porNome.entries()].map(([nome, gramas]) => ({ nome, gramas })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
 /** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */
