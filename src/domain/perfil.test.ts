@@ -15,4 +15,14 @@ describe('lerPerfil', () => {
     const perfil = lerPerfil(guardando('{"nome":"Ana","tipo":"outro","logo":3,"responsavel":"Dra. Bia"}'))
     expect(perfil).toEqual({ ...PERFIL_VAZIO, nome: 'Ana', responsavel: 'Dra. Bia' })
   })
+
+  it('CA-487: a logo só vale como imagem embutida, como a tela de Configurações grava', () => {
+    const logo = (valor: string) => lerPerfil(guardando(JSON.stringify({ nome: 'Ana', logo: valor }))).logo
+    expect(logo('data:image/png;base64,iVBORw0KGgo=')).toBe('data:image/png;base64,iVBORw0KGgo=')
+    expect(logo('data:image/svg+xml;base64,PHN2Zy8+')).toBe('data:image/svg+xml;base64,PHN2Zy8+')
+    expect(logo('javascript:alert(1)')).toBeNull()
+    expect(logo(' JavaScript:alert(1)')).toBeNull()
+    expect(logo('https://exemplo.com/logo.png')).toBeNull()
+    expect(logo('data:text/html;base64,PHNjcmlwdD4=')).toBeNull()
+  })
 })
