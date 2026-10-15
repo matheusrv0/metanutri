@@ -154,6 +154,10 @@ test('CA-486: o aplicativo instala (PWA): o navegador lê o manifest e o service
   await page.goto('/')
   const estado = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null)
   expect(['activating', 'activated']).toContain(estado)
+  // CA-603 (spec dados-na-nuvem): o registro vem do pacote (virtual:pwa-register); nenhum script escrito na página nem o
+  // registerSW.js que o plugin injetava.
+  expect(await page.locator('script:not([src])').count()).toBe(0)
+  expect(await page.locator('script[src*="registerSW"]').count()).toBe(0)
 
   const cdp = await page.context().newCDPSession(page)
   const manifesto = await cdp.send('Page.getAppManifest')

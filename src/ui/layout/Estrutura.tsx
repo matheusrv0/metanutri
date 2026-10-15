@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Alert } from '@ds/componentes/display/alert.tsx'
+import { AvisoVersaoNova } from '../aplicativo/AvisoVersaoNova.tsx'
 import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -69,6 +70,8 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
       <div className="xl:pl-[264px]">
         <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} situacao={<SituacaoDaNuvem />} aoAbrirMenu={() => setMenuAberto(true)} />
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
+          {/* D-172: a versão nova do MetaNutri passou a valer; recarrega só quando a pessoa pede. */}
+          <AvisoVersaoNova />
           {migracaoIncompleta ? (
             <Alert variant="warning" className="mb-6">
               <TriangleAlert aria-hidden="true" />

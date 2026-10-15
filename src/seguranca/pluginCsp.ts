@@ -33,7 +33,7 @@ export function pluginPoliticaDeConteudo(): Plugin {
       politica = textoDaPolitica(diretivasDaPolitica({ supabase: origemDoSupabase(endereco) }))
     },
     transformIndexHtml: {
-      // Depois dos outros plugins (o do PWA põe o manifest e o registerSW.js): a posição vem do charset, não da ordem.
+      // Depois dos outros plugins (o do PWA põe o manifest): a posição vem do charset, não da ordem.
       order: 'post',
       handler: (html) => injetarPolitica(html, politica),
     },

@@ -5,6 +5,8 @@ import '@fontsource-variable/manrope'
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
 import { App } from './App.tsx'
+import { registrarAplicativo } from './ui/aplicativo/registrarAplicativo.ts'
+import { avisarVersaoNova } from './ui/aplicativo/versaoNova.ts'
 import { AvisoMoldura } from './ui/AvisoMoldura.tsx'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
 import { estaEmMoldura } from './ui/moldura.ts'
@@ -13,6 +15,9 @@ import { tirarDestino } from './ui/fluxoConta.ts'
 import { escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
+
+// D-172: o service worker do aplicativo; a versão nova avisa na área de trabalho em vez de recarregar sozinha.
+registrarAplicativo(avisarVersaoNova)
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')
