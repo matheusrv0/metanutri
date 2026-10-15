@@ -115,6 +115,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
   }
 
+  // O WhatsApp sem telefone leva à ficha, com o cursor no campo (spec whatsapp-e-retorno, CA-505).
+  const cadastrarTelefone = (pacienteId: string) => navegar({ tela: 'paciente', pacienteId, campo: 'telefone' })
+
   // Primeiro acesso: um dia inteiro montado, para entender o sistema mexendo nele.
   const verExemplo = () => {
     const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), new Date().toISOString().slice(0, 10)))
@@ -349,6 +352,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
                 aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+                aoCadastrarTelefone={cadastrarTelefone}
                 situacao={perfil?.situacao ?? null}
                 {...(sessao ? { plano: assinatura.plano } : {})}
               />

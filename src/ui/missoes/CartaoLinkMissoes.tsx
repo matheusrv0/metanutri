@@ -18,8 +18,12 @@ import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
 import type { Situacao } from '@/domain/situacao.ts'
+import { textoDoLink } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
+import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
 import { LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
+import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
+import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
@@ -40,6 +44,8 @@ interface CartaoLinkMissoesProps {
   readonly hoje?: string
   /** Leva a Preços quando o limite de links acaba (CA-177). */
   readonly aoVerPlanos?: (() => void) | undefined
+  /** Abre a ficha com o cursor no Telefone, quando o WhatsApp não tem número (spec whatsapp-e-retorno, CA-505). */
+  readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
 }
 
 export function CartaoLinkMissoes({
@@ -51,8 +57,10 @@ export function CartaoLinkMissoes({
   situacao = null,
   hoje = diaLocal(),
   aoVerPlanos,
+  aoCadastrarTelefone,
 }: CartaoLinkMissoesProps) {
   const { repositorio, salvar, acompanhamentos, foraDaNuvem } = useAcompanhamentos()
+  const fichas = usePacientesOpcional()
   useLerDaNuvemAoAbrir()
   const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
   const naoComercial = linkDeUsoNaoComercial(planoAtual, situacao)
@@ -204,6 +212,10 @@ export function CartaoLinkMissoes({
     )
   }
 
+  // O telefone é o da ficha: a do plano ou, se o plano perdeu o vínculo, a do link (D-142).
+  const idDoPaciente = pacienteId ?? acompanhamento.pacienteId
+  const paciente = idDoPaciente ? (fichas?.pacientes.find((p) => p.id === idDoPaciente) ?? null) : null
+
   return (
     <PainelDoLink
       acompanhamento={acompanhamento}
@@ -211,8 +223,10 @@ export function CartaoLinkMissoes({
       copiado={copiado}
       gerando={salvando}
       aviso={avisoDaNuvem}
+      paciente={paciente}
       aoCopiar={copiar}
       aoGerarNovo={gerar}
+      aoCadastrarTelefone={aoCadastrarTelefone}
     />
   )
 }
@@ -223,8 +237,10 @@ function PainelDoLink({
   copiado,
   gerando,
   aviso,
+  paciente,
   aoCopiar,
   aoGerarNovo,
+  aoCadastrarTelefone,
 }: {
   readonly acompanhamento: Acompanhamento
   readonly hoje: string
@@ -232,8 +248,11 @@ function PainelDoLink({
   readonly gerando: boolean
   /** O link ainda não chegou à nuvem (CA-439, CA-442). */
   readonly aviso: ReactNode
+  /** A ficha de quem recebe o link pelo WhatsApp; nula sem paciente vinculado. */
+  readonly paciente: PacienteDoWhatsApp | null
   readonly aoCopiar: (endereco: string) => void
   readonly aoGerarNovo: () => void
+  readonly aoCadastrarTelefone: ((pacienteId: string) => void) | undefined
 }) {
   const endereco = enderecoDoPaciente(acompanhamento.token)
   const estado = estadoDoAcompanhamento(acompanhamento, hoje)
@@ -287,6 +306,7 @@ function PainelDoLink({
             {copiado ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
             {copiado ? 'Copiado' : 'Copiar'}
           </Button>
+          <BotaoWhatsApp paciente={paciente} texto={textoDoLink(paciente?.nome ?? '', endereco)} aoCadastrarTelefone={aoCadastrarTelefone} />
         </div>
       </div>
 
