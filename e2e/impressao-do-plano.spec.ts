@@ -101,6 +101,20 @@ test.describe('no tema escuro', () => {
     expect(cores.fundoDaFolha).toBe('rgb(255, 255, 255)')
     expect(cores.corDoHorario).toBe(cores.corDoTitulo)
     expect(cores.luzDoHorario).toBeLessThan(0.05)
+    // D-180: a folha usa o tema claro inteiro (o mesmo escopo de tokens.css), não uma cópia de parte dele.
+    // Cada semântico na folha tem o valor da primitiva que o tema claro usa (as primitivas não mudam de tema).
+    const tokens = await janela.locator('article').evaluate((el) => {
+      const folha = getComputedStyle(el)
+      const raiz = getComputedStyle(document.documentElement)
+      const pares = [
+        ['--surface-row', '--mesa'],
+        ['--ring', '--teal-500'],
+        ['--primary-foreground', '--ivory'],
+        ['--state-ok-bg', '--green-100'],
+      ]
+      return pares.map(([semantico = '', primitiva = '']) => folha.getPropertyValue(semantico).trim() === raiz.getPropertyValue(primitiva).trim())
+    })
+    expect(tokens).toEqual([true, true, true, true])
   })
 
   test('CA-621 e CA-622: no papel, letra preta e nenhum fundo escuro na folha nem em volta dela', async ({ page }) => {

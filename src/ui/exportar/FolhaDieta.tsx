@@ -112,7 +112,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const suplementosDaFolha = suplementosParaDocumento(suplementos)
 
   return (
-    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
+    <article className="folha-dieta papel mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
       <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
 
       <header className="flex flex-wrap items-end justify-between gap-6">

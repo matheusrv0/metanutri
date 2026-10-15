@@ -158,6 +158,8 @@ describe('Folha da dieta (US-B1)', () => {
     const horario = within(screen.getByRole('region', { name: /^12:00 Almoço$/ })).getByText('12:00')
     expect(horario).toHaveClass('text-heading')
     expect(horario).not.toHaveClass('text-primary')
+    // D-180: o papel usa o escopo claro de tokens.css.
+    expect(screen.getByRole('article')).toHaveClass('papel')
   })
 
   it('CA-313: nutricionista assina sozinha, com a linha da conta no topo e no fim', () => {

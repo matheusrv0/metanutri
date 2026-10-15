@@ -31,6 +31,8 @@ describe('Folhas curtas no papel', () => {
       <FolhaSuplementos paciente="Maria Silva" suplementos={[{ id: 's1', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '' }]} assinatura={JULIA} data="2026-10-15" />,
     )
     expect(container.querySelector('.border-laranja, .border-primary')).toBeNull()
+    // D-180: o papel usa o escopo claro de tokens.css.
+    expect(screen.getByRole('article')).toHaveClass('papel')
     const frase = screen.getByText('Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).')
     expect(frase).toHaveClass('font-semibold')
     expect(frase.className).not.toMatch(/\bbg-|rounded/)

@@ -30,7 +30,7 @@ export function FolhaDocumento({ titulo, paciente, data, assinatura, proposta, c
   const linhaFina = linhaFinaDoDocumento(titulo, paciente, assinatura)
 
   return (
-    <article aria-label={titulo} className="folha-documento mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm leading-relaxed text-foreground sm:p-10">
+    <article aria-label={titulo} className="folha-documento papel mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm leading-relaxed text-foreground sm:p-10">
       {/* Se passar de uma página, as seguintes trazem o título, o paciente e quem assina (como a dieta, CA-316). */}
       <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
 

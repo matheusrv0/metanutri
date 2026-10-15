@@ -83,8 +83,12 @@
   --blue-700: #1c4f7c;
 }
 
-/* ---------- Camada 2: semânticos, tema claro ---------- */
-:root {
+/* ---------- Camada 2: semânticos, tema claro ----------
+ * Também em .papel: as folhas do paciente são sempre claras, mesmo com o app no escuro (spec impressao-do-plano,
+ * D-180). Um escopo só: mudou o tema claro aqui, muda a folha junto.
+ */
+:root,
+.papel {
   --brand-primary: var(--teal-900);
   /* O laranja da marca é grafismo, nunca carrega texto: mede 3,05:1 sobre branco e
    * 3,99:1 sobre o teal — passa para ícone e traço, reprova para letra. E nunca entra
