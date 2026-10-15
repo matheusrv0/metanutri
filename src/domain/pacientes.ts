@@ -104,7 +104,10 @@ export interface RepositorioPacientes {
   readonly persistente: boolean
 }
 
-function ehPaciente(v: unknown): v is Paciente {
+/** A ficha como está guardada: uma versão mais velha (ou mais nova) pode ter deixado de fora algum campo. */
+type PacienteGuardado = Pick<Paciente, 'id' | 'nome'> & Partial<Paciente>
+
+function ehPaciente(v: unknown): v is PacienteGuardado {
   if (typeof v !== 'object' || v === null) return false
   const o = v as Record<string, unknown>
   return typeof o['id'] === 'string' && typeof o['nome'] === 'string'
@@ -121,31 +124,39 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
   const memoria = new Map<string, Paciente>()
   let persistente = armazenamento !== null
 
-  const ler = (): Paciente[] => {
+  // Completa campos que versões antigas não tinham. A consulta estragada vira "sem consulta" (CA-526);
+  // campo novo da anamnese e das prescrições estragado vira vazio (CA-588).
+  const completar = (p: PacienteGuardado): Paciente => {
+    const completo = { ...criarPacienteVazio(p.id, p.criadoEm ?? agora()), ...p }
+    return {
+      ...completo,
+      proximaConsulta: lerConsulta(completo.proximaConsulta) ? completo.proximaConsulta : null,
+      respostasAnamnese: normalizarRespostas(completo.respostasAnamnese),
+      suplementos: normalizarSuplementos(completo.suplementos),
+      pedidoExames: normalizarPedido(completo.pedidoExames),
+    }
+  }
+
+  /**
+   * As fichas como estão guardadas, sem completar nada. Quem grava troca só a ficha mexida e devolve as outras
+   * exatamente assim: completar todas mudaria o texto delas, e cada uma contaria como mudada agora na nuvem
+   * (spec dados-na-nuvem, D-171).
+   */
+  const lerGuardados = (): PacienteGuardado[] => {
     if (!persistente || !armazenamento) return [...memoria.values()]
     try {
       const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE) ?? '[]')
-      const lista = Array.isArray(bruto) ? bruto.filter(ehPaciente) : []
-      // Completa campos que versões antigas não tinham. A consulta estragada vira "sem consulta" (CA-526);
-      // campo novo da anamnese e das prescrições estragado vira vazio (CA-588).
-      return lista.map((p) => {
-        const completo = { ...criarPacienteVazio(p.id, p.criadoEm ?? agora()), ...p }
-        return {
-          ...completo,
-          proximaConsulta: lerConsulta(completo.proximaConsulta) ? completo.proximaConsulta : null,
-          respostasAnamnese: normalizarRespostas(completo.respostasAnamnese),
-          suplementos: normalizarSuplementos(completo.suplementos),
-          pedidoExames: normalizarPedido(completo.pedidoExames),
-        }
-      })
+      return Array.isArray(bruto) ? bruto.filter(ehPaciente) : []
     } catch {
       return [...memoria.values()]
     }
   }
 
-  const gravar = (lista: readonly Paciente[]) => {
+  const ler = (): Paciente[] => lerGuardados().map(completar)
+
+  const gravar = (lista: readonly PacienteGuardado[]) => {
     memoria.clear()
-    for (const p of lista) memoria.set(p.id, p)
+    for (const p of lista) memoria.set(p.id, completar(p))
     if (!persistente || !armazenamento) return
     try {
       armazenamento.setItem(CHAVE, JSON.stringify(lista))
@@ -169,18 +180,18 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
 
     criar(nome) {
       const paciente = { ...criarPacienteVazio(gerarId(), agora()), nome }
-      gravar([...ler(), paciente])
+      gravar([...lerGuardados(), paciente])
       return paciente
     },
 
     salvar(paciente) {
       const atualizado = { ...paciente, atualizadoEm: agora() }
-      gravar([...ler().filter((p) => p.id !== paciente.id), atualizado])
+      gravar([...lerGuardados().filter((p) => p.id !== paciente.id), atualizado])
       return atualizado
     },
 
     excluir(id) {
-      gravar(ler().filter((p) => p.id !== id))
+      gravar(lerGuardados().filter((p) => p.id !== id))
     },
   }
 }

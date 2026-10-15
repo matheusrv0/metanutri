@@ -93,17 +93,24 @@ export interface RepositorioModelosSuplemento {
   readonly persistente: boolean
 }
 
-function lerModelos(valor: unknown): ModeloSuplemento[] {
+/** Um modelo como está guardado: só o id é certo; campo de outra versão pode faltar ou sobrar. */
+type ModeloGuardado = Pick<ModeloSuplemento, 'id'> & Partial<ModeloSuplemento>
+
+/** Os modelos como estão guardados: os que têm id, sem completar nada. */
+function modelosGuardados(valor: unknown): ModeloGuardado[] {
   if (!Array.isArray(valor)) return []
   return valor.flatMap((item: unknown) => {
     if (typeof item !== 'object' || item === null) return []
     const o = item as Record<string, unknown>
     const id = o['id']
-    if (typeof id !== 'string' || id === '') return []
-    const criadoEm = textoDe(o, 'criadoEm')
-    // CA-589: campo que esta versão não conhece fica no modelo.
-    return [{ ...o, id, ...camposDe(o), criadoEm, atualizadoEm: textoDe(o, 'atualizadoEm') || criadoEm }]
+    return typeof id === 'string' && id !== '' ? [{ ...o, id } as ModeloGuardado] : []
   })
+}
+
+function completarModelo(o: ModeloGuardado): ModeloSuplemento {
+  const criadoEm = textoDe(o, 'criadoEm')
+  // CA-589: campo que esta versão não conhece fica no modelo.
+  return { ...o, ...camposDe(o), criadoEm, atualizadoEm: textoDe(o, 'atualizadoEm') || criadoEm }
 }
 
 export interface OpcoesModelosSuplemento {
@@ -117,17 +124,24 @@ export function criarRepositorioModelosSuplemento(armazenamento: Armazenamento |
   let memoria: ModeloSuplemento[] = []
   let persistente = armazenamento !== null
 
-  const ler = (): ModeloSuplemento[] => {
+  /**
+   * Os modelos como estão guardados. Quem grava troca só o modelo mexido e devolve os outros exatamente assim:
+   * completar todos mudaria o texto deles, e cada um contaria como mudado agora na nuvem (spec dados-na-nuvem,
+   * D-171).
+   */
+  const lerGuardados = (): ModeloGuardado[] => {
     if (!persistente || !armazenamento) return [...memoria]
     try {
-      return lerModelos(JSON.parse(armazenamento.getItem(CHAVE_MODELOS_SUPLEMENTO) ?? '[]'))
+      return modelosGuardados(JSON.parse(armazenamento.getItem(CHAVE_MODELOS_SUPLEMENTO) ?? '[]'))
     } catch {
       return [...memoria]
     }
   }
 
-  const gravar = (lista: readonly ModeloSuplemento[]) => {
-    memoria = [...lista]
+  const ler = (): ModeloSuplemento[] => lerGuardados().map(completarModelo)
+
+  const gravar = (lista: readonly ModeloGuardado[]) => {
+    memoria = lista.map(completarModelo)
     if (!persistente || !armazenamento) return
     try {
       armazenamento.setItem(CHAVE_MODELOS_SUPLEMENTO, JSON.stringify(lista))
@@ -154,12 +168,13 @@ export function criarRepositorioModelosSuplemento(armazenamento: Armazenamento |
       const campos: Campos = { ...soCampos(suplemento), nome }
       const igual = lista.find((m) => chaveDoNome(m.nome) === chaveDoNome(nome))
       const modelo: ModeloSuplemento = igual ? { ...igual, ...campos, atualizadoEm: quando } : { id: gerarId(), ...campos, criadoEm: quando, atualizadoEm: quando }
-      gravar(igual ? lista.map((m) => (m.id === igual.id ? modelo : m)) : [...lista, modelo])
+      const guardados = lerGuardados()
+      gravar(igual ? guardados.map((m) => (m.id === igual.id ? modelo : m)) : [...guardados, modelo])
       return { modelo, trocou: igual !== undefined }
     },
 
     excluir(id) {
-      gravar(ler().filter((m) => m.id !== id))
+      gravar(lerGuardados().filter((m) => m.id !== id))
     },
   }
 }

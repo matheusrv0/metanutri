@@ -1,3 +1,4 @@
+import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { criarRepositorioProdutos, idsDeProdutoEm } from './produtos.ts'
 
@@ -31,5 +32,29 @@ describe('id de produto (spec dados-na-nuvem, DP-21)', () => {
   it('sem marcas, o próximo id é o de sempre', () => {
     const arm = new Memoria()
     expect(criarRepositorioProdutos(arm).salvar({ nome: 'Granola', ...rotulo }).id).toBe(900000)
+  })
+})
+
+describe('D-171: salvar um produto não mexe nos outros (spec dados-na-nuvem)', () => {
+  it('CA-595: editar, criar e apagar um produto só marca ele; os outros ficam como estavam guardados', () => {
+    const arm = new Memoria()
+    const iogurte = { id: 900000, nome: 'Iogurte', codigoBarras: '', criadoEm: '2026-10-08', ...rotulo, campoDoFuturo: true }
+    const granola = { id: 900001, nome: 'Granola', codigoBarras: '', criadoEm: '2026-10-08', ...rotulo }
+    arm.setItem('metanutri:produtos', JSON.stringify([iogurte, granola]))
+    const observado: Armazenamento = {
+      getItem: (k) => arm.getItem(k),
+      setItem: (k, v) => {
+        const antes = arm.getItem(k)
+        arm.setItem(k, v)
+        registrarMudanca(arm, k, antes, v, '2026-10-15T12:00:00.000Z')
+      },
+      removeItem: (k) => arm.removeItem(k),
+    }
+    const repo = criarRepositorioProdutos(observado)
+    repo.salvar({ ...granola, nome: 'Granola caseira' })
+    repo.salvar({ nome: 'Pão', ...rotulo })
+    repo.excluir(900001)
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: { 'produtos/900002': '2026-10-15T12:00:00.000Z' }, excluidos: { 'produtos/900001': '2026-10-15T12:00:00.000Z' } })
+    expect((JSON.parse(arm.getItem('metanutri:produtos') ?? '[]') as { id: number }[]).find((p) => p.id === 900000)).toEqual(iogurte)
   })
 })

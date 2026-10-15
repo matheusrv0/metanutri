@@ -1,4 +1,5 @@
 import { aplicarCopia, CHAVE_MUDANCAS, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { criarRepositorioPacientes } from './pacientes.ts'
 import { CHAVES_DE_DADOS, montarBackup, restaurarBackup, type Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 
@@ -543,5 +544,53 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     const aplicada = aplicarCopia(arm, copia({ [CHAVE_MUDANCAS]: mudancas({}, { 'acompanhamentos/l1': T(5) }) }))
     expect(aplicada.mantidas).toEqual(['metanutri:acompanhamentos'])
     expect(JSON.parse(arm.getItem('metanutri:acompanhamentos') ?? '{}')).toEqual({ formato: 1, itens: [link('l2')], naNuvem: ['l2'], pendentes: [] })
+  })
+})
+
+describe('D-171: salvar um item não mexe nos outros', () => {
+  it('CA-594: a ficha da Ana editada em A continua quando B, desatualizado, salva a Bia', () => {
+    const fichaAntiga = (id: string, nome: string, atualizadoEm: string) => ({
+      id,
+      nome,
+      sexo: null,
+      nascimento: null,
+      telefone: '',
+      email: '',
+      objetivo: '',
+      restricoes: '',
+      condicoesClinicas: '',
+      medicamentos: '',
+      anamnese: '',
+      observacoes: '',
+      criadoEm: '2026-10-01T00:00:00.000Z',
+      atualizadoEm,
+    })
+    // O aparelho B guardou as duas fichas antes das novidades e ainda não trouxe a edição que A fez na Ana às 10:01.
+    const b = new Memoria()
+    b.setItem('metanutri:pacientes', JSON.stringify([fichaAntiga('ana', 'Ana', '2026-10-10T00:00:00.000Z'), fichaAntiga('bia', 'Bia', '2026-10-10T00:00:00.000Z')]))
+    const agora = () => '2026-10-16T10:05:00.000Z'
+    const observado: Armazenamento = {
+      getItem: (k) => b.getItem(k),
+      setItem: (k, v) => {
+        const antes = b.getItem(k)
+        b.setItem(k, v)
+        registrarMudanca(b, k, antes, v, agora())
+      },
+      removeItem: (k) => b.removeItem(k),
+    }
+    const repo = criarRepositorioPacientes(observado, { agora })
+    const bia = repo.obter('bia')
+    if (!bia) throw new Error('Bia sumiu')
+    repo.salvar({ ...bia, objetivo: 'Ganhar massa' })
+    expect(lerMudancas(b.getItem(CHAVE_MUDANCAS)).alterados).toEqual({ 'pacientes/bia': '2026-10-16T10:05:00.000Z' })
+
+    const daNuvem = copia({
+      'metanutri:pacientes': JSON.stringify([{ ...fichaAntiga('ana', 'Ana', '2026-10-16T10:01:00.000Z'), restricoes: 'lactose' }, fichaAntiga('bia', 'Bia', '2026-10-10T00:00:00.000Z')]),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': '2026-10-16T10:01:00.000Z' }),
+    })
+    const junta = juntarCopias(copia(Object.fromEntries(b.dados)), daNuvem, '2026-10-16T10:06:00.000Z')
+    const fichas = lista(junta, 'metanutri:pacientes') as { id: string; restricoes: string; objetivo: string }[]
+    expect(fichas.find((p) => p.id === 'ana')?.restricoes).toBe('lactose')
+    expect(fichas.find((p) => p.id === 'bia')?.objetivo).toBe('Ganhar massa')
   })
 })

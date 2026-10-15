@@ -1,3 +1,4 @@
+import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
 import { criarPacienteVazio, criarRepositorioPacientes } from './pacientes.ts'
 import type { Armazenamento } from './persistencia.ts'
 
@@ -97,5 +98,62 @@ describe('ficha do paciente com anamnese, suplementos e exames (spec anamnese-e-
     expect(lido?.respostasAnamnese).toHaveLength(1)
     expect(lido?.suplementos.map((s) => s.nome)).toEqual(['Ferro'])
     expect(lido?.pedidoExames.marcados).toEqual(['ferritina'])
+  })
+})
+
+describe('D-171: salvar um paciente não mexe nos outros (spec dados-na-nuvem)', () => {
+  /** O armazenamento como a conta o vê: cada gravação deixa as marcas de mudança (spec dados-na-nuvem, DP-2). */
+  const observado = (arm: Memoria, agora: () => string): Armazenamento => ({
+    getItem: (k) => arm.getItem(k),
+    setItem: (k, v) => {
+      const antes = arm.getItem(k)
+      arm.setItem(k, v)
+      registrarMudanca(arm, k, antes, v, agora())
+    },
+    removeItem: (k) => {
+      const antes = arm.getItem(k)
+      arm.removeItem(k)
+      registrarMudanca(arm, k, antes, null, agora())
+    },
+  })
+  /** Ficha guardada por uma versão de antes das novidades: sem consulta, anamnese, suplementos nem exames. */
+  const fichaAntiga = (id: string, nome: string) => ({
+    id,
+    nome,
+    sexo: null,
+    nascimento: null,
+    telefone: '',
+    email: '',
+    objetivo: '',
+    restricoes: '',
+    condicoesClinicas: '',
+    medicamentos: '',
+    anamnese: '',
+    observacoes: '',
+    criadoEm: '2026-10-01T00:00:00.000Z',
+    atualizadoEm: '2026-10-10T00:00:00.000Z',
+  })
+
+  it('CA-593: salvar, criar e apagar um paciente só marca ele; o outro fica exatamente como estava guardado', () => {
+    const arm = new Memoria()
+    arm.setItem('metanutri:pacientes', JSON.stringify([fichaAntiga('ana', 'Ana'), { ...fichaAntiga('bia', 'Bia'), campoDoFuturo: { x: 1 } }]))
+    const guardada = (id: string) => JSON.stringify((JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as { id: string }[]).find((p) => p.id === id))
+    const anaAntes = guardada('ana')
+    const agora = relogio()
+    const repo = criarRepositorioPacientes(observado(arm, agora), { agora, gerarId: () => 'caio' })
+
+    const bia = repo.obter('bia')
+    if (!bia) throw new Error('Bia sumiu')
+    repo.salvar({ ...bia, objetivo: 'Ganhar massa' })
+    expect(Object.keys(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados)).toEqual(['pacientes/bia'])
+    expect(guardada('ana')).toBe(anaAntes)
+    expect(JSON.parse(guardada('bia'))).toMatchObject({ objetivo: 'Ganhar massa', campoDoFuturo: { x: 1 } })
+
+    repo.criar('Caio')
+    repo.excluir('bia')
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: { 'pacientes/caio': expect.any(String) }, excluidos: { 'pacientes/bia': expect.any(String) } })
+    expect(guardada('ana')).toBe(anaAntes)
+    // A tela continua lendo a ficha completa.
+    expect(repo.obter('ana')).toMatchObject({ proximaConsulta: null, respostasAnamnese: [], suplementos: [] })
   })
 })

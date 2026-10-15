@@ -1,3 +1,4 @@
+import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
 import type { Armazenamento } from './persistencia.ts'
 import {
   CHAVE_MODELOS_SUPLEMENTO,
@@ -149,5 +150,33 @@ describe('modelos de suplemento (D-166, CA-573, CA-574)', () => {
     cheio.salvarDe(vitD)
     expect(cheio.persistente).toBe(false)
     expect(cheio.listar()).toHaveLength(1)
+  })
+})
+
+describe('D-171: salvar um modelo de suplemento não mexe nos outros (spec dados-na-nuvem)', () => {
+  it('CA-595: trocar, criar e apagar um modelo só marca ele; o guardado de outro jeito fica como estava', () => {
+    const arm = new Memoria()
+    // Um modelo guardado sem a data de alteração (a leitura completa com a de criação).
+    const semData = { id: 'a', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '', criadoEm: '2026-10-01T00:00:00.000Z' }
+    arm.setItem(CHAVE_MODELOS_SUPLEMENTO, JSON.stringify([semData, { ...semData, id: 'b', nome: 'Zinco', atualizadoEm: '2026-10-01T00:00:00.000Z' }]))
+    const agora = relogio()
+    const observado: Armazenamento = {
+      getItem: (k) => arm.getItem(k),
+      setItem: (k, v) => {
+        const antes = arm.getItem(k)
+        arm.setItem(k, v)
+        registrarMudanca(arm, k, antes, v, agora())
+      },
+      removeItem: (k) => arm.removeItem(k),
+    }
+    const repo = criarRepositorioModelosSuplemento(observado, { agora, gerarId: ids() })
+    repo.salvarDe({ ...vitD, nome: 'Zinco', dose: '1 cápsula' })
+    expect(Object.keys(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados)).toEqual(['modelos-suplemento/b'])
+    repo.salvarDe(vitD)
+    repo.excluir('b')
+    const marcas = lerMudancas(arm.getItem(CHAVE_MUDANCAS))
+    expect(Object.keys(marcas.alterados)).toHaveLength(1)
+    expect(Object.keys(marcas.excluidos)).toEqual(['modelos-suplemento/b'])
+    expect((JSON.parse(arm.getItem(CHAVE_MODELOS_SUPLEMENTO) ?? '[]') as unknown[])[0]).toEqual(semData)
   })
 })

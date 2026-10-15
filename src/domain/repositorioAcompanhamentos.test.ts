@@ -1,4 +1,5 @@
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from './acompanhamento.ts'
+import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
 import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -238,6 +239,35 @@ describe('A dieta do link no aparelho (spec dieta-no-link)', () => {
     const a = novo()
     armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [{ ...a, dieta: 'lixo' }] }))
     expect(criarRepositorioAcompanhamentos(armazenamento).porId(a.id)?.dieta).toBeNull()
+  })
+})
+
+describe('D-171: salvar um link não mexe nos outros (spec dados-na-nuvem)', () => {
+  it('CA-595: marcar e apagar um link só marca ele; o link de antes da dieta fica como estava guardado', () => {
+    const base = memoria()
+    const observado: Armazenamento = {
+      getItem: (c) => base.getItem(c),
+      setItem: (c, v) => {
+        const antes = base.getItem(c)
+        base.setItem(c, v)
+        registrarMudanca(base, c, antes, v, '2026-10-15T12:00:00.000Z')
+      },
+      removeItem: (c) => base.removeItem(c),
+    }
+    const antigo: Record<string, unknown> = { ...novo('caso-1', 'Ana') }
+    delete antigo['dieta']
+    const outro = novo('caso-2', 'Bia')
+    base.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [antigo, outro], naNuvem: [], pendentes: [] }))
+    const repo = criarRepositorioAcompanhamentos(observado)
+
+    repo.salvar(marcarMissao(outro, '2026-10-15', 'agua', true))
+    expect(Object.keys(lerMudancas(base.getItem(CHAVE_MUDANCAS)).alterados)).toEqual([`acompanhamentos/${outro.id}`])
+    repo.remover(outro.id)
+    expect(lerMudancas(base.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: {}, excluidos: { [`acompanhamentos/${outro.id}`]: '2026-10-15T12:00:00.000Z' } })
+    const guardado = JSON.parse(base.getItem('metanutri:acompanhamentos') ?? '{}') as { itens: unknown[] }
+    expect(guardado.itens).toEqual([antigo])
+    // A tela continua lendo o link antigo como link sem dieta (CB-150).
+    expect(repo.porId(String(antigo['id']))?.dieta).toBeNull()
   })
 })
 

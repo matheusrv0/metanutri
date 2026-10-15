@@ -87,7 +87,12 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
     }
   }
 
-  const lerTudo = (): Guardado => {
+  /**
+   * Os links como estão guardados, sem ler a dieta de cada um. Quem grava troca só o link mexido e devolve os
+   * outros exatamente assim: o link de antes da dieta, regravado com `dieta: null`, contaria como mudado agora
+   * na nuvem (spec dados-na-nuvem, D-171).
+   */
+  const lerGuardado = (): Guardado => {
     if (!persistente || !armazenamento) return memoria
     try {
       const bruto = armazenamento.getItem(CHAVE)
@@ -96,10 +101,15 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       if (typeof v !== 'object' || v === null) return VAZIO
       const arquivo = v as Partial<ArquivoSalvo>
       if (arquivo.formato !== FORMATO || !Array.isArray(arquivo.itens)) return VAZIO
-      return { itens: arquivo.itens.filter(ehAcompanhamento).map(comDietaLida), naNuvem: new Set(ids(arquivo.naNuvem)), pendentes: new Set(ids(arquivo.pendentes)) }
+      return { itens: arquivo.itens.filter(ehAcompanhamento), naNuvem: new Set(ids(arquivo.naNuvem)), pendentes: new Set(ids(arquivo.pendentes)) }
     } catch {
       return memoria
     }
+  }
+
+  const lerTudo = (): Guardado => {
+    const guardado = lerGuardado()
+    return { ...guardado, itens: guardado.itens.map(comDietaLida) }
   }
 
   const ler = (): readonly Acompanhamento[] => lerTudo().itens
@@ -109,7 +119,7 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
     const existe = (id: string) => itens.some((a) => a.id === id)
     const marcadosNaNuvem = [...naNuvem].filter(existe)
     const marcadosPendentes = [...pendentes].filter(existe)
-    memoria = { itens: [...itens], naNuvem: new Set(marcadosNaNuvem), pendentes: new Set(marcadosPendentes) }
+    memoria = { itens: itens.map(comDietaLida), naNuvem: new Set(marcadosNaNuvem), pendentes: new Set(marcadosPendentes) }
     if (!persistente || !armazenamento) return
     try {
       armazenamento.setItem(
@@ -151,7 +161,7 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
      * estavam (gerar de novo sem internet não tira a marca de que o link está na nuvem).
      */
     salvar(acompanhamento: Acompanhamento, marcas: MarcasDoLink = {}): Acompanhamento {
-      const atual = lerTudo()
+      const atual = lerGuardado()
       const i = atual.itens.findIndex((a) => a.id === acompanhamento.id)
       gravar({
         itens: i === -1 ? [...atual.itens, acompanhamento] : atual.itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a)),
@@ -172,7 +182,7 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
     },
 
     remover(id: string): void {
-      const atual = lerTudo()
+      const atual = lerGuardado()
       gravar({ ...atual, itens: atual.itens.filter((a) => a.id !== id) })
     },
   }

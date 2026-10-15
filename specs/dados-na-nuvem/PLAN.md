@@ -160,7 +160,7 @@ outra.
   - Cobre: CA-590, CA-591, CA-592, CB-170, CB-171
   - Feito quando: "uma cópia do app antigo não apaga o roteiro nem os modelos" no domínio, no motor aberto (conferir) e
     no motor que abre de novo; a exclusão de verdade (lápide da chave e lápide do item) continua valendo.
-- [ ] **T41** — Salvar um item não reescreve os outros (DP-33).
+- [x] **T41** — Salvar um item não reescreve os outros (DP-33).
   - Arquivos: `src/domain/pacientes.ts`, `src/domain/repositorioAcompanhamentos.ts`, `src/domain/suplementos.ts`, com os
     testes de cada um; `produtos.ts` e `modelos.ts` só conferidos, com teste.
   - Cobre: CA-593, CA-594, CA-595
