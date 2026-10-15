@@ -41,7 +41,8 @@ export function CaixaDietaNoLink({ marcada, aoMudar, ocupada = false, desatualiz
 
       {marcada && desatualizada && aoAtualizar ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-3">
-          <p className="min-w-0 flex-1 text-sm text-infotext">O plano mudou. O paciente ainda vê a dieta anterior.</p>
+          {/* No celular, a frase fica numa linha e o botão vai para baixo dela, em vez de espremer a frase. */}
+          <p className="min-w-48 flex-1 text-sm text-infotext">O plano mudou. O paciente ainda vê a dieta anterior.</p>
           <Button type="button" size="sm" variant="outline" loading={ocupada} onClick={aoAtualizar}>
             <RefreshCw aria-hidden="true" />
             Atualizar a dieta no link
