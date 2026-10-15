@@ -266,6 +266,14 @@ function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backu
 }
 
 /**
+ * DP-36: as chaves que ficariam aqui e voltariam para a nuvem se a cópia fosse aplicada, sem gravar nada. Com a
+ * mesma versão da nuvem, o motor só aplica quando há alguma (uma aba antiga deste navegador mandou sem elas).
+ */
+export function chavesMantidas(armazenamento: Armazenamento, copia: Backup): readonly string[] {
+  return planejarAplicacao(montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados, copia).mantidas
+}
+
+/**
  * Escreve a cópia na cópia de trabalho: tira o que ela não tem e grava o que mudou (só entre as chaves
  * da nuvem; o resto do aparelho fica). A chave daqui que a cópia não traz e sem lápide fica (D-170). Os
  * planos vão antes do índice. Sem espaço, a exceção sobe: o valor de antes de cada chave não gravada

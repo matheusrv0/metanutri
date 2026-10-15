@@ -9,7 +9,7 @@
 //
 // Não sabe nada de React: a árvore liga, desliga e escuta o estado (`ProvedorNuvem`).
 import type { ArmazenamentoDaConta } from './armazenamentoDaConta.ts'
-import { aplicarCopia, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { aplicarCopia, chavesMantidas, copiaSemItens, copiasIguais, ehChaveDaNuvem, itensDaCopia, juntarCopias, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
 import { gravarCopia, lerCopia, lerVersao, prazoParaTamanho, type ClienteDaCopia } from './copiaNaNuvem.ts'
 import type { Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -25,6 +25,11 @@ export const INTERVALO_DE_TENTATIVA_MS = 15_000
 export const CONFERIR_A_CADA_MS = 60_000
 /** DP-5: voltas de "outro aparelho salvou antes" numa gravação, antes de deixar para a próxima mudança. */
 const VOLTAS = 5
+/**
+ * DP-36: a marca desta versão do motor na situação. A versão de antes das novidades não a conhece e a perde ao gravar
+ * a situação: sem ela, foi uma aba antiga deste navegador que mandou a última cópia.
+ */
+export const MOTOR = 2
 
 export type FaseDaNuvem = 'abrindo' | 'sem-conexao' | 'formato-desconhecido' | 'pronta'
 /** D-130 (rede), CB-123 (tamanho) e DP-23 (o navegador não tem espaço para a cópia de trabalho). */
@@ -67,6 +72,8 @@ export interface Situacao {
   readonly saiu?: true
   /** DP-29: a cópia de trabalho deste navegador ficou parcial (não coube); nenhuma aba manda nada dela. */
   readonly parcial?: true
+  /** DP-36: a versão do motor que gravou a situação por último; ausente quando foi uma aba antiga. */
+  readonly motor?: number
 }
 
 const SITUACAO_INICIAL: Situacao = { versao: null, mudancas: 0, salvas: 0, itens: 0 }
@@ -84,6 +91,7 @@ export function lerSituacao(armazenamento: Armazenamento): Situacao | null {
       itens: numero(o['itens']),
       ...(o['saiu'] === true ? { saiu: true as const } : {}),
       ...(o['parcial'] === true ? { parcial: true as const } : {}),
+      ...(typeof o['motor'] === 'number' ? { motor: o['motor'] } : {}),
     }
   } catch {
     return null
@@ -260,7 +268,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   const situacao = (): Situacao => lerSituacao(armazenamento) ?? SITUACAO_INICIAL
   const gravarSituacao = (nova: Situacao): void => {
     try {
-      armazenamento.setItem(CHAVE_NUVEM, JSON.stringify(nova))
+      armazenamento.setItem(CHAVE_NUVEM, JSON.stringify({ ...nova, motor: MOTOR }))
     } catch {
       // sem espaço: a versão fica em memória até a próxima gravação que couber
     }
@@ -446,9 +454,12 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (anterior?.parcial === true) semEspaco()
       else if (Object.keys(local.dados).length > 0) subir = local
     } else if (emDia) {
-      // D-170 e CA-591: a chave que a cópia (de uma versão antiga) não trouxe ficou aqui e sobe nesta abertura.
-      if (anterior.versao !== leitura.versao) {
-        const aplicada = aplicar(semPendencias(leitura.copia))
+      // D-170, CA-591 e CA-600: a chave que a cópia (de uma versão antiga) não trouxe ficou aqui e sobe nesta
+      // abertura. Com a mesma versão, só aplica quando ficaria alguma: a aba antiga deste navegador mandou sem ela,
+      // mas não a tirou daqui (DP-36).
+      const copia = semPendencias(leitura.copia)
+      if (anterior.versao !== leitura.versao || chavesMantidas(armazenamento, copia).length > 0) {
+        const aplicada = aplicar(copia)
         if (aplicada.coube && aplicada.manteve) subir = montarCopia(armazenamento, agora())
       }
     } else {
@@ -658,12 +669,20 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     if (parada || estado.fase !== 'pronta' || estado.trava !== null || temPendencia() || temParcial()) return
     // A versão é um pedido pequeno: prazo fixo, sem crescer com o tamanho da cópia (DP-28).
     const versao = await lerVersao(cliente, usuarioId, prazoMs)
-    if (minha !== epoca || parada || versao.tipo === 'falhou' || versao.versao === situacao().versao) return
+    if (minha !== epoca || parada || versao.tipo === 'falhou') return
+    // DP-36: a mesma versão gravada por esta versão do motor: nada a trazer. Sem a marca do motor, foi uma aba antiga
+    // deste navegador que mandou a cópia: lê uma vez e confere se ela deixou de fora alguma chave daqui.
+    const mesmaVersao = versao.versao === situacao().versao
+    if (mesmaVersao && (situacao().motor ?? 0) >= MOTOR) return
     const leitura = await lerCopia(cliente, usuarioId, prazoDeLeitura())
     // Mudou algo aqui enquanto lia: quem junta é o salvar, com a conferência de versão.
     if (minha !== epoca || parada || leitura.tipo === 'falhou' || temPendencia()) return
     if (leitura.copia === null) {
       gravarSituacao({ ...situacao(), versao: null })
+      return
+    }
+    if (mesmaVersao && chavesMantidas(armazenamento, semPendencias(leitura.copia)).length === 0) {
+      gravarSituacao({ ...situacao(), versao: leitura.versao })
       return
     }
     const aplicada = aplicar(semPendencias(leitura.copia))

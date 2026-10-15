@@ -490,6 +490,50 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     expect(deNovo.sincronia.estado.pendente).toBe(false)
   })
 
+  /**
+   * A aba antiga no MESMO navegador: ela não tira as chaves novas do armazenamento (não as conhece), mas grava na
+   * situação a versão que mandou, sem a marca desta versão do motor (DP-36).
+   */
+  function abaAntigaSalva(nuvem: NuvemFalsa, navegador: Navegador, quando: string): void {
+    salvaPeloAppAntigo(nuvem, quando)
+    const conta = armazenamentoDaConta(navegador, 'conta-a')
+    const s = lerSituacao(conta)
+    const versao = nuvem.linhas.get('conta-a')?.atualizado_em ?? null
+    conta.setItem(CHAVE_NUVEM, JSON.stringify({ versao, mudancas: (s?.mudancas ?? 0) + 1, salvas: (s?.mudancas ?? 0) + 1, itens: s?.itens ?? 0 }))
+  }
+
+  it('CA-600: uma aba nova abre no navegador onde a aba antiga salvou e devolve o roteiro e os modelos sem esperar uma edição', async () => {
+    const { nuvem, a } = await aparelhoComRoteiro()
+    const roteiro = a.observado.getItem(CHAVE_ROTEIRO)
+    a.sincronia.desligar()
+    abaAntigaSalva(nuvem, a.navegador, '2026-10-08T12:00:30.000Z')
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBeUndefined()
+
+    const abaNova = abrirAparelho(nuvem, a.navegador)
+    await ligar(abaNova)
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBe(roteiro)
+    expect(modelosNaNuvem(nuvem)).toEqual(['Ferro'])
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia'])
+    expect(abaNova.sincronia.estado.pendente).toBe(false)
+  })
+
+  it('CA-600: a aba nova já aberta confere a nuvem depois de a aba antiga deste navegador salvar e devolve as chaves', async () => {
+    const { nuvem, a } = await aparelhoComRoteiro()
+    const roteiro = a.observado.getItem(CHAVE_ROTEIRO)
+    abaAntigaSalva(nuvem, a.navegador, '2026-10-08T12:00:30.000Z')
+
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    await salvar()
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBe(roteiro)
+    expect(modelosNaNuvem(nuvem)).toEqual(['Ferro'])
+    expect(a.sincronia.estado.pendente).toBe(false)
+
+    // Com a situação gravada de novo por esta versão, a próxima conferência só lê a versão.
+    const antes = nuvem.pedidos.length
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(nuvem.pedidos.slice(antes)).toEqual(['select'])
+  })
+
   it('CA-592: o roteiro e o modelo excluídos de verdade em outro aparelho saem daqui e não voltam, mesmo depois do app antigo', async () => {
     const { nuvem, a } = await aparelhoComRoteiro()
     const b = abrirAparelho(nuvem)

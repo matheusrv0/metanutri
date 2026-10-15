@@ -1,4 +1,4 @@
-import { aplicarCopia, CHAVE_MUDANCAS, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { aplicarCopia, CHAVE_MUDANCAS, chavesMantidas, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
 import { criarRepositorioPacientes } from './pacientes.ts'
 import { CHAVES_DE_DADOS, montarBackup, restaurarBackup, type Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -539,6 +539,14 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     expect(aplicarCopia(outro, soUmMaisNovo).mantidas).toEqual([MODELOS])
   })
 
+  it('CA-600: chavesMantidas diz quais chaves ficariam e subiriam, sem gravar nada', () => {
+    const arm = aparelhoNovo()
+    const antes = new Map(arm.dados)
+    const doAppAntigo = copia({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]), [CHAVE_MUDANCAS]: arm.getItem(CHAVE_MUDANCAS) ?? '' })
+    expect([...chavesMantidas(arm, doAppAntigo)].sort()).toEqual([MODELOS, ROTEIRO])
+    expect(arm.dados).toEqual(antes)
+    expect(chavesMantidas(arm, copia(Object.fromEntries(arm.dados)))).toEqual([])
+  })
   it('CA-592: a exclusão de verdade continua valendo: a lápide da chave tira o roteiro e as dos itens tiram os modelos', () => {
     const arm = aparelhoNovo()
     const comLapides = copia({

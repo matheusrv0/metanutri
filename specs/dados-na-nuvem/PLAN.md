@@ -178,7 +178,7 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
   vêm depois de `atualizadoEm`. Teste com a leitura da versão de antes (`pacientes.test.ts`). Cobre CA-598.
 - [x] **T45** — Só volta para a nuvem o valor daqui mais novo (DP-35): `src/domain/copiaDaConta.ts`; o teste do CA-590
   muda e entra o cenário do `r8.mts` (`copiaDaConta.test.ts`). Cobre CA-590, CA-599.
-- [ ] **T46** — Aba nova devolve sem esperar edição (DP-36): `src/domain/copiaDaConta.ts` (`chavesMantidas`, sem gravar
+- [x] **T46** — Aba nova devolve sem esperar edição (DP-36): `src/domain/copiaDaConta.ts` (`chavesMantidas`, sem gravar
   nada) e `src/domain/sincronia.ts` (abrir com a mesma versão; conferir depois de outra aba deste navegador salvar).
   Teste em `sincronia.test.ts`. Cobre CA-600.
 - [ ] **T47** — A leitura dos links da nuvem não regrava o link igual (DP-37): `src/domain/repositorioAcompanhamentos.ts`
@@ -375,8 +375,10 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - **DP-36 · Aba nova devolve sem esperar edição (CA-600, revisão final).** A aba antiga deste navegador não tira as chaves
   novas do armazenamento (ela não as conhece), mas grava na situação a versão que mandou. Por isso: ao abrir em dia, com
   a mesma versão da nuvem, o motor confere (sem gravar nada, `chavesMantidas`) se ficaria alguma chave daqui que a cópia
-  não traz; se sim, aplica e sobe. Ao conferir, quando a versão da nuvem é a mesma da situação mas não é a última que esta
-  aba viu (outra aba deste navegador mandou), lê a cópia uma vez e faz a mesma conferência.
+  não traz; se sim, aplica e sobe. Ao conferir, quando a versão da nuvem é a mesma da situação, o motor olha a marca `motor`
+  que esta versão grava na situação (`MOTOR = 2`): a aba antiga não a conhece e a perde ao gravar. Sem a marca, lê a cópia
+  uma vez e faz a mesma conferência; depois grava a situação de novo, com a marca, e as próximas conferências voltam a ler
+  só a versão.
 - **DP-37 · Link igual não é regravado (CA-601, revisão final).** Ao ler os links da nuvem, o link que já está igual aqui
   (comparando o que importa: id, token, plano, paciente, nome, criação, missões, marcações, aviso e a dieta já lida) não
   é regravado; só ganha a marca "está na nuvem", se faltar, sem mexer no texto do item (`marcar`). Antes, todo link era
