@@ -26,6 +26,19 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     },
   )
 
+  it.each(['Mingau tradicional, pó', 'Creme de milho, pó', 'Farinha, de arroz, enriquecida'])(
+    'CA-666: "%s" é fortificado: ultraprocessado, como o mingau infantil; a chave não o traz',
+    (d) => {
+      const a = porDescricao(d)
+      expect(regraQueExclui(a)).toMatchObject({ id: 'ultraprocessado', nivel: 'fora-da-rotina' })
+      expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+    },
+  )
+
+  it('CA-666: o creme de arroz em pó não é fortificado e segue como forma de ingrediente', () => {
+    expect(regraQueExclui(porDescricao('Creme de arroz, pó'))).toMatchObject({ id: 'po', nivel: 'ingrediente' })
+  })
+
   it.each([
     ['Capuccino, pó', 'bebida-adocada'],
     ['Gelatina, sabores variados, pó', 'doce'],
@@ -220,10 +233,10 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       gordura: 22,
       embutido: 24,
       fritura: 31,
-      ultraprocessado: 13,
+      ultraprocessado: 16,
       miscelanea: 1,
-      po: 7,
-      farinha: 13,
+      po: 5,
+      farinha: 12,
       cru: 98,
       tempero: 14,
     })

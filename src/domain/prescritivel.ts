@@ -48,8 +48,10 @@ const FRITO = palavra('frit(o|a|os|as)')
 const FRITURA_PELO_NOME = /(à|a) milanesa|empanad/i
 const SALGADO_DE_FRITAR = /^(Acaraj(é|e)|Bolinho de arroz|Coxinha|Pastel|Croquete|Bife (à|a) cavalo)/i
 
+// Pó e farinha fortificados entram aqui, não como ingrediente: apareciam como fonte de vitamina pelo
+// enriquecimento, que é o motivo de o mingau infantil sair (revisão I2).
 const ULTRAPROCESSADO =
-  /^(Caldo de (carne|galinha)|Macarr(ã|a)o, instant(â|a)neo|Cereal matinal|Cereais, (mingau|mistura para vitamina)|Farinha, l(á|a)ctea|Empada|Biscoito, polvilho|Azeitona|Tremo(ç|c)o, em conserva)/i
+  /^(Caldo de (carne|galinha)|Macarr(ã|a)o, instant(â|a)neo|Cereal matinal|Cereais, (mingau|mistura para vitamina)|Farinha, l(á|a)ctea|Empada|Biscoito, polvilho|Azeitona|Tremo(ç|c)o, em conserva|Mingau tradicional|Creme de milho)|enriquecid/i
 
 const PO = /(^|[\s,])pó($|[\s,])|desidratad/i
 const FARINHA = palavra('farinha|amido|fubá|fécula|polvilho')
