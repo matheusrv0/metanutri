@@ -58,7 +58,22 @@ describe('Cartão do link de missões', () => {
       </Anfitriao>,
     )
     expect(screen.getByText('2 missões saem deste plano.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Gerar link das missões/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gerar link do paciente/ })).toBeInTheDocument()
+  })
+
+  it('CA-553 (spec dieta-no-link): o cartão se chama "Link do paciente", o botão "Gerar link do paciente" e o campo "Endereço do link"', async () => {
+    const usuario = userEvent.setup()
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    expect(screen.getByRole('region', { name: 'Link do paciente' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Gerar link do paciente' }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
+    expect(screen.getByRole('heading', { name: 'Link do paciente' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Endereço do link' })).toBeInTheDocument()
+    expect(screen.queryByText(/Missões do paciente|link das missões/)).not.toBeInTheDocument()
   })
 
   it('gerar o link mostra o endereço do paciente e o estado inicial', async () => {
@@ -69,10 +84,10 @@ describe('Cartão do link de missões', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
 
-    const campo = screen.getByLabelText('Link do paciente') as HTMLInputElement
+    const campo = screen.getByLabelText('Endereço do link') as HTMLInputElement
     expect(campo.value).toContain('#/missoes/')
     expect(screen.getByText('Ainda não começou')).toBeInTheDocument()
   })
@@ -85,10 +100,10 @@ describe('Cartão do link de missões', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
 
     expect(screen.getByText(/o paciente autorizou\?/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Link do paciente')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Endereço do link')).not.toBeInTheDocument()
   })
 
   it('desistir da autorização não gera link nenhum', async () => {
@@ -100,11 +115,11 @@ describe('Cartão do link de missões', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
 
     expect(repo.listar()).toEqual([])
-    expect(screen.getByRole('button', { name: /Gerar link das missões/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gerar link do paciente/ })).toBeInTheDocument()
   })
 
   it('gerar link novo troca o token: o antigo para de valer', async () => {
@@ -116,12 +131,12 @@ describe('Cartão do link de missões', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
-    const primeiro = (screen.getByLabelText('Link do paciente') as HTMLInputElement).value
+    const primeiro = (screen.getByLabelText('Endereço do link') as HTMLInputElement).value
 
     await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
-    const segundo = (screen.getByLabelText('Link do paciente') as HTMLInputElement).value
+    const segundo = (screen.getByLabelText('Endereço do link') as HTMLInputElement).value
 
     expect(segundo).not.toBe(primeiro)
   })
@@ -239,7 +254,7 @@ describe('Tela de adesão', () => {
 
 describe('Conta de estudante: uso não comercial', () => {
   const gerar = async (usuario: ReturnType<typeof userEvent.setup>) => {
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
   }
 
@@ -331,7 +346,7 @@ describe('Conta de estudante: uso não comercial', () => {
       </Anfitriao>,
     )
 
-    expect(screen.queryByRole('button', { name: /Gerar link das missões/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Gerar link do paciente/ })).not.toBeInTheDocument()
     expect(screen.getByText(/links de missões do seu plano/i)).toBeInTheDocument()
   })
 
@@ -345,7 +360,7 @@ describe('Conta de estudante: uso não comercial', () => {
       </Anfitriao>,
     )
 
-    expect(screen.getByRole('button', { name: /Gerar link das missões/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gerar link do paciente/ })).toBeInTheDocument()
   })
 
   it('regerar o link de um paciente que já tem não esbarra no limite', () => {
@@ -383,14 +398,14 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
   const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar a dieta no link' })
 
   async function gerar(usuario: ReturnType<typeof userEvent.setup>) {
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
   }
 
   it('CA-539: sem link, a caixa "Mostrar a dieta no link" aparece marcada, acima do botão de gerar', () => {
     cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
     expect(caixa()).toBeChecked()
-    const botao = screen.getByRole('button', { name: /Gerar link das missões/ })
+    const botao = screen.getByRole('button', { name: /Gerar link do paciente/ })
     expect(caixa().compareDocumentPosition(botao) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
@@ -420,12 +435,12 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
   it('CA-542: a pergunta de autorização diz que o link mostra o plano alimentar só quando a dieta vai junto', async () => {
     const usuario = userEvent.setup()
     cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     expect(screen.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
     await usuario.click(caixa())
-    await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     expect(screen.queryByText(/plano alimentar a quem tiver o endereço/)).not.toBeInTheDocument()
   })
 

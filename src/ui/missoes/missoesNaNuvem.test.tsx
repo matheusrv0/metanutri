@@ -219,7 +219,7 @@ function adesao(repo: RepositorioAcompanhamentos) {
 }
 
 async function gerarLink(usuario: ReturnType<typeof userEvent.setup>) {
-  await usuario.click(screen.getByRole('button', { name: /Gerar link das missões/ }))
+  await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
   await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
 }
 
@@ -250,7 +250,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     expect(token).toBeTruthy()
     await waitFor(() => expect(nuvem.linhas).toHaveLength(1))
     expect(nuvem.linhas[0]).toMatchObject({ token, caso_id: 'c1', nutricionista_id: 'u1', nome: 'Ana' })
-    expect((screen.getByLabelText('Link do paciente') as HTMLInputElement).value).toContain(`#/missoes/${token}`)
+    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`#/missoes/${token}`)
   })
 
   it('CA-438: gerar de novo troca o token também na nuvem', async () => {
@@ -296,7 +296,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
 
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     expect(repo.porCaso('c1')).not.toBeNull()
-    expect(screen.getByLabelText('Link do paciente')).toBeInTheDocument()
+    expect(screen.getByLabelText('Endereço do link')).toBeInTheDocument()
 
     nuvem.falha.upsert = false
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
@@ -316,7 +316,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     expect(await screen.findByText(LIMITE)).toBeInTheDocument()
     expect(repo.listar()).toEqual([])
     expect(nuvem.linhas).toEqual([])
-    expect(screen.queryByLabelText('Link do paciente')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Endereço do link')).not.toBeInTheDocument()
   })
 
   it('CB-107: o link que chegou à nuvem fica marcado no aparelho', async () => {
@@ -367,7 +367,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     await gerarLink(usuario)
 
     expect(repo.porCaso('c1')).not.toBeNull()
-    expect(screen.getByLabelText('Link do paciente')).toBeInTheDocument()
+    expect(screen.getByLabelText('Endereço do link')).toBeInTheDocument()
     expect(screen.queryByText(NAO_SALVOU)).not.toBeInTheDocument()
     expect(nuvem.chamadas).toEqual([])
   })
@@ -505,7 +505,7 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     nuvem.linhas = [laNaNuvem]
     cartao(repo)
 
-    await waitFor(() => expect((screen.getByLabelText('Link do paciente') as HTMLInputElement).value).toContain('#/missoes/outrotokenxyz9'))
+    await waitFor(() => expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain('#/missoes/outrotokenxyz9'))
     expect(repo.porId(aqui.id)?.nome).toBe('Ana Souza')
     expect(nuvem.linhas).toEqual([laNaNuvem])
   })
@@ -777,7 +777,7 @@ describe('Corridas entre a leitura e o que a nutricionista faz', () => {
 
     await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
     expect(repo.porCaso('c1')?.token).toBe(novo)
-    expect((screen.getByLabelText('Link do paciente') as HTMLInputElement).value).toContain(`#/missoes/${novo}`)
+    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`#/missoes/${novo}`)
   })
 
   it('remover durante a subida de um link não o traz de volta', async () => {

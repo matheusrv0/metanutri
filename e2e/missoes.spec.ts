@@ -32,12 +32,12 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   await montarPlanoComAlmoco(page)
 
   // O nutricionista gera o link a partir do plano
-  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await expect(cartao).toContainText('saem deste plano')
-  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
-  const endereco = await cartao.getByLabel('Link do paciente').inputValue()
+  const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   expect(endereco).toContain('#/missoes/')
   await expect(cartao.getByText('Ainda não começou')).toBeVisible()
 
@@ -74,12 +74,12 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   await page.getByRole('button', { name: /Plano alimentar/ }).first().click()
 
   // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
-  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await expect(cartao.getByRole('checkbox', { name: 'Mostrar a dieta no link' })).toBeChecked()
-  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await expect(cartao.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeVisible()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
-  const endereco = await cartao.getByLabel('Link do paciente').inputValue()
+  const endereco = await cartao.getByLabel('Endereço do link').inputValue()
 
   // O paciente abre no celular: 360 px de largura
   await page.setViewportSize({ width: 360, height: 780 })

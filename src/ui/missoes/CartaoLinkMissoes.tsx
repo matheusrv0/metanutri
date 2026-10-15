@@ -164,7 +164,7 @@ export function CartaoLinkMissoes({
     return (
       <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">Monte o plano primeiro: as missões saem das refeições que você montar.</p>
       </section>
@@ -175,7 +175,7 @@ export function CartaoLinkMissoes({
     return (
       <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
 
         {pedindoConsentimento ? (
@@ -213,7 +213,7 @@ export function CartaoLinkMissoes({
                 {dieta ? <CaixaDietaNoLink marcada={mostrarDieta} aoMudar={setMostrarDieta} /> : null}
                 <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
                   <Link2 className="size-4" aria-hidden="true" />
-                  Gerar link das missões
+                  Gerar link do paciente
                 </Button>
                 {naoComercial ? (
                   <p className="mt-3 text-xs text-muted-foreground">
@@ -301,7 +301,7 @@ function PainelDoLink({
     <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
         <SeloEstado estado={estado} />
       </div>
@@ -329,7 +329,7 @@ function PainelDoLink({
 
       <div className="mt-4">
         <label htmlFor="endereco-missoes" className="text-xs font-medium text-muted-foreground">
-          Link do paciente
+          Endereço do link
         </label>
         <div className="mt-1 flex flex-wrap gap-2">
           <input

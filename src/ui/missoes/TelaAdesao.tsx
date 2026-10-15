@@ -61,7 +61,7 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal
         </span>
         <h2 className="font-titulo text-xl font-bold text-heading">Nenhum paciente acompanhando ainda</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Abra um plano e gere o link das missões. O paciente marca no celular o que fez no dia, e esta tela passa a mostrar quem está sumindo.
+          Abra um plano e gere o link do paciente. O paciente marca no celular o que fez no dia, e esta tela passa a mostrar quem está sumindo.
         </p>
         </div>
       </div>
