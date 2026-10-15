@@ -1,7 +1,8 @@
 # PLAN — Plano alimentar impresso limpo e fácil de ler
 
-**Spec de origem:** `./SPEC.md` (D-180 a D-188, CA-620 a CA-640, CB-180 a CB-188)
-**Status:** pedido pelo dono em 15/10/2026; aprovação pelas telas antes de publicar; T1 a T10 feitas em 15/10/2026
+**Spec de origem:** `./SPEC.md` (D-180 a D-189, CA-620 a CA-645, CB-180 a CB-189)
+**Status:** pedido pelo dono em 15/10/2026; aprovação pelas telas antes de publicar; T1 a T10 feitas em 15/10/2026;
+rodada da revisão (R1 a R10) no fim deste arquivo
 
 ## Abordagem
 
@@ -87,10 +88,47 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
 - [x] **T10** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
   `npm run check`, `npx playwright test` e `npm run build` verdes. *Depende de:* T9.
 
+## Rodada da revisão (15/10/2026)
+
+A revisão do coordenador ("com correções") pediu uma rodada. Cada item é um commit, em TDD, depois deste PLAN e da
+SPEC atualizados.
+
+| Arquivo | Ação | Motivo |
+|---|---|---|
+| `src/ui/tema/globals.css` | alterar | esquema claro na página impressa (R1); escopo de papel vindo de `tokens.css` (R5) |
+| `e2e/impressao-do-plano.spec.ts` | alterar | esquema da página na impressão (R1); exames no tema escuro (R9) |
+| `src/domain/quantidadeNaFolha.ts` (+ teste) | criar | a quantidade da folha: medida, peso nas medidas vagas, ponta de faca, troca (R2, R6, R7) |
+| `src/ui/exportar/FolhaDieta.tsx` (+ teste) | alterar | quantidade (R2), rótulos das opções (R3), compras e trocas (R6, R7), CB-187 (R9) |
+| `src/ui/missoes/MeuPlano.tsx`, `TelaMissoesPaciente.test.tsx` | alterar | rótulos das opções no link, só no desenho (R3) |
+| `src/domain/nomeParaPaciente.ts` (+ teste) | alterar | "(peso cru)", nomes corrigidos e consistência (R4) |
+| `design-system/tokens/tokens.css`, `src/ui/exportar/FolhaDocumento.tsx` | alterar | um escopo claro só, `.papel` (R5) |
+| `src/domain/folhaDieta.ts` (+ teste) | alterar | compras com a quantidade da refeição (R6) |
+| `src/domain/missoes.ts`, `missoes.test.ts` | alterar | sai `listaDeCompras`, que ficou sem uso (R8) |
+
+- [ ] **R1** — `html { color-scheme: light !important }` na impressão (vence o estilo do `ProvedorTema`); o e2e do
+  CA-621/622 confere o esquema do `html` com a mídia de impressão (CA-622).
+- [ ] **R2** — `quantidadeNaFolha(alimentoId, gramas, buscar)`: a medida do planejador (`medidaEquivalente`), o peso
+  ao lado quando a medida é vaga pela lista do D-189, a "ponta de faca" em até 3, dentro de 15% (CA-642); a folha
+  mostra "medida · peso" com o peso em cinza (CA-629, CA-630, CA-641). *Testes:* os casos do plano de exemplo.
+- [ ] **R3** — rótulos "Opção 1" e "ou · Opção N" na folha e no link, só quando há mais de uma opção (CA-631, CA-632,
+  CA-645).
+- [ ] **R4** — nomes: "(peso cru)" (seção 2), os 4 nomes corrigidos (queijo processado, ovo, camarão grande, gelatina
+  com sabor), "escorrido", açaí, empanados, pão de forma de glúten, gergelim e linhaça (CA-623 a CA-625).
+- [ ] **R5** — o tema claro de `tokens.css` passa a valer também em `.papel`, e a ponte do shadcn em `globals.css`
+  também; as duas folhas usam a classe `papel`; sai a cópia à mão do tema claro (D-180).
+- [ ] **R6** — `comprasDaFolha` guarda o alimento de cada linha, e a lista de compras mostra a quantidade pela regra da
+  refeição (CA-643).
+- [ ] **R7** — trocas: a quantidade pela regra da refeição; medida de pedaço com mais de 4 pedaços vira o peso
+  (CA-644).
+- [ ] **R8** — sai `listaDeCompras` de `missoes.ts` e o teste dele.
+- [ ] **R9** — testes que faltavam: CA-639 para exames no e2e e CB-187 (nome de produto com código) na folha.
+- [ ] **R10** — prints de novo (inclusive com "Gráficos de fundo" ligado no tema escuro), `npm run check`,
+  `npx playwright test` e `npm run build`, e a rodada no relatório.
+
 ## Riscos e decisões para revisar
 
 - **D-186 / R-180:** a regra da primeira página não abre na caixa de impressão de teste; o e2e confere as regras de
   página e o espaço, e o experimento com o cabeçalho ligado à força (PDF do Chromium 153) vai no relatório.
-- **D-183:** sem gramas na linha. Se o dono preferir gramas discretos ao lado, é uma linha de código e o CA-629 muda.
+- **D-183:** gramas só nas medidas vagas (D-189, decisão do coordenador na revisão de 15/10).
 - **Alimento primeiro na linha** (CA-629): a folha de antes punha a medida primeiro. O alimento primeiro responde
   "o que eu como" antes de "quanto".
