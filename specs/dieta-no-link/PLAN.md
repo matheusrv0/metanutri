@@ -1,7 +1,14 @@
 # PLAN — A dieta no celular do paciente
 
 **Spec de origem:** `./SPEC.md` (D-150 a D-158, CA-530 a CA-552, CB-150 a CB-159)
-**Status:** aprovado pelo dono em 14/10/2026 ("implemente as novidades")
+**Status:** aprovado pelo dono em 14/10/2026 ("implemente as novidades"); concluído em 14/10/2026. Falta o dono rodar o
+`supabase/012-dieta-no-link.sql` antes de publicar (D-156).
+
+**Validação (14/10/2026):** `npm run check` (lint, typecheck e 2814 testes), `npx playwright test` (47 testes, numa
+porta própria para não usar o servidor de outra cópia) e `npm run build`, tudo verde. O 012 rodou duas vezes num
+Postgres local da Supabase (anon lê a dieta pela função, marcar não toca nela, 300 KB recusados), e o código
+`PGRST204` do DP-154 foi conferido num PostgREST local sem a coluna. Os prints de 390 px acharam o aviso de plano
+mudado espremido no celular: corrigido no commit `fix(dieta-no-link)`.
 
 ## Abordagem
 
@@ -61,55 +68,55 @@ e cuida da caixa, do aviso de plano mudado e do botão de atualizar, num compone
 
 ## Tarefas
 
-- [ ] **T1** — `dietaDoLink.ts`: tipos `ItemDaDieta`, `RefeicaoDaDieta`, `DietaDoPlano` e `DietaDoLink`; `dietaDoPlano(caso,
+- [x] **T1** — `dietaDoLink.ts`: tipos `ItemDaDieta`, `RefeicaoDaDieta`, `DietaDoPlano` e `DietaDoLink`; `dietaDoPlano(caso,
   plano, buscar)`, `copiarDieta(dieta, dia)`, `dietaMudou(noLink, doPlano)`, `lerDieta(valor)` e `temDieta(dieta)`.
   - Depende de: —
   - Cobre: CA-531, CA-532, CA-533, CA-534 e CA-546 (domínio), D-155, CB-153, CB-155, CB-156, CB-159
   - Feito quando: testes com o plano padrão (arroz no almoço com batata de substituto, macarrão no jantar), refeição
     vazia, opção vazia, produto próprio, alimento removido, sem medida caseira, orientações com quebra de linha,
     comparação que ignora o dia, leitura de lixo e de campo a mais.
-- [ ] **T2** — `Acompanhamento.dieta: DietaDoLink | null`; `criarAcompanhamento` recebe a dieta (padrão nulo);
+- [x] **T2** — `Acompanhamento.dieta: DietaDoLink | null`; `criarAcompanhamento` recebe a dieta (padrão nulo);
   `regerarLink` troca a dieta quando ela vem e mantém quando não vem; o repositório lê o item antigo sem o campo como
   sem dieta e descarta dieta estragada.
   - Depende de: T1
   - Cobre: CB-150, CA-551, base de CA-540, CA-541, CA-547
   - Feito quando: testes do domínio e do repositório; teste da cópia da conta (mudar só a dieta gera a marca
     `acompanhamentos/<id>`); `npm run typecheck` verde.
-- [ ] **T3** — `supabase/012-dieta-no-link.sql` e o teste de texto.
+- [x] **T3** — `supabase/012-dieta-no-link.sql` e o teste de texto.
   - Depende de: —
   - Cobre: CA-550, CA-549 (lado do banco)
   - Feito quando: o teste confere coluna opcional, trava pelo nome com 262144, função refeita com a coluna, security
     definer, search_path, revoke e grant, `marcar_missoes` fora do arquivo, nada destrutivo e o recarregar do PostgREST.
-- [ ] **T4** — `fonteSupabase`: `daLinha` lê a dieta (`lerDieta`), a linha gravada leva a dieta (nula quando desligada),
+- [x] **T4** — `fonteSupabase`: `daLinha` lê a dieta (`lerDieta`), a linha gravada leva a dieta (nula quando desligada),
   e o pedido recusado com `PGRST204` por causa da coluna `dieta` vai de novo sem ela (criar, atualizar e subir).
   `mensagemDoBanco`: `acompanhamentos_dieta_tamanho` vira `DIETA_GRANDE_DEMAIS`.
   - Depende de: T2
   - Cobre: CA-548, CA-549, CB-151, CB-152 (frase), CB-158
   - Feito quando: testes da leitura com e sem a coluna, da gravação com dieta e com nulo, do pedido repetido sem a
     coluna (e só nesse erro), da marcação do paciente sem a dieta e da frase da trava.
-- [ ] **T5** — Tela do paciente: `MeuPlano` (refeições, "ou", orientações, receitas, "Atualizada em …") e o seletor em
+- [x] **T5** — Tela do paciente: `MeuPlano` (refeições, "ou", orientações, receitas, "Atualizada em …") e o seletor em
   `TelaMissoesPaciente`.
   - Depende de: T2
   - Cobre: CA-530, CA-531, CA-532, CA-533, CA-534, CA-536, CA-537, CA-538, CB-159 (tela); CA-535 fica para o e2e (T8)
   - Feito quando: testes da tela com dieta, sem dieta, com dieta vazia, com aviso de estágio e sem "kcal" no texto.
-- [ ] **T6** — Cartão do link: `CaixaDietaNoLink` e as ações em `CartaoLinkMissoes`; `AreaDeTrabalho` passa
+- [x] **T6** — Cartão do link: `CaixaDietaNoLink` e as ações em `CartaoLinkMissoes`; `AreaDeTrabalho` passa
   `dieta={dietaDoPlano(caso, plano)}`.
   - Depende de: T2, T4
   - Cobre: CA-539, CA-540, CA-541, CA-542, CA-543, CA-544, CA-545, CA-546 (tela), CA-547, CB-152 (cartão), CB-154
   - Feito quando: testes do cartão sem nuvem (caixa marcada por padrão, gerar com e sem, pergunta de autorização,
     ligar, desligar, aviso e atualizar, gerar link novo) e com a nuvem falsa (desligar grava a coluna vazia, falha de
     rede mantém a mudança, trava de tamanho sem "Tentar de novo").
-- [ ] **T7** — Política de privacidade, versão dos termos `2026-10-14` ("14 de outubro de 2026") e rascunho de
+- [x] **T7** — Política de privacidade, versão dos termos `2026-10-14` ("14 de outubro de 2026") e rascunho de
   consentimento.
   - Depende de: —
   - Cobre: CA-552, D-157
   - Feito quando: `legal.test.ts` e `legal.test.tsx` conferem a versão, a data e o item novo.
-- [ ] **T8** — e2e: gerar o link com a dieta (caixa marcada), abrir o link, escolher "Meu plano", ver o almoço com a
+- [x] **T8** — e2e: gerar o link com a dieta (caixa marcada), abrir o link, escolher "Meu plano", ver o almoço com a
   medida caseira, e conferir em 360 px que nada rola para o lado. README e pendências com o 012 e a ordem.
   - Depende de: T5, T6
   - Cobre: CA-535, CA-540 e CA-548 de ponta a ponta no modo sem servidor, D-156 (ordem)
   - Feito quando: `npx playwright test` verde.
-- [ ] **T9** — Validação e prints: `npm run check`, `npx playwright test`, `npm run build`; prints do cartão e do link do
+- [x] **T9** — Validação e prints: `npm run check`, `npx playwright test`, `npm run build`; prints do cartão e do link do
   paciente em 1280 px e 390 px na pasta de prints da frente; relatório. Nenhum arquivo do repositório.
   - Depende de: T1 a T8
 
