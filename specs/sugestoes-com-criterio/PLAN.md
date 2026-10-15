@@ -93,3 +93,36 @@ Depende de T2.
 - `trocas.ts` também é lido pela frente do PDF: a mudança fica no filtro dos pares e numa guarda no começo da função,
   sem mexer na forma do resultado.
 - A lista de excluídos depende do nome dos alimentos da TACO; a contagem do T2 trava qualquer mudança silenciosa.
+
+## Validação (15/10/2026)
+
+| Critério | Onde está o teste |
+|---|---|
+| CA-650 | `prescritivel.test.ts` (cerveja e aguardente, com e sem a chave); `cobrir.test.ts` "CA-650" |
+| CA-651 | `prescritivel.test.ts` (60 alimentos dos seis motivos); `cobrir.test.ts` "CA-651" |
+| CA-652 | `prescritivel.test.ts` (a chave libera só o nível ingrediente); `cobrir.test.ts` "CA-652" e CA-657 com a chave |
+| CA-653 | `prescritivel.test.ts` (36 alimentos de forma de ingrediente) |
+| CA-654 | `cobrir.test.ts` "CA-654"; o CA-657 confere que nenhuma infusão aparece |
+| CA-655 | `cobrir.test.ts`: CA-35, CA-36 e "uso comum" (já existiam e continuam verdes) |
+| CA-656 | `cobrir.test.ts`: só item fora da regra cobriria; porção máxima de 5 g |
+| CA-657 | `cobrir.test.ts`: exemplo e plano vazio, 16 micronutrientes, com e sem a chave; piridoxina sem cerveja |
+| CA-658 a CA-661 | `trocas.test.ts` |
+| CA-662 | `sugestoes.test.ts` |
+| CA-663 | `busca.test.ts` |
+| CA-664 | `prescritivel.test.ts` (títulos na ordem do Apêndice A e contagem de 293) |
+| CB-190, CB-193, CB-196 | Sem código novo: o plano salvo não é tocado; o cobrir e as trocas continuam lendo só a base |
+| CB-191 | CA-652 |
+| CB-192 | CA-656 com porção de 5 g |
+| CB-194 | Contagem do CA-664 |
+| CB-195 | `cobrir.test.ts` CA-40 e a gaveta, sem mudança |
+
+`npm run check` verde (187 arquivos, 3.196 testes), `npx playwright test` verde (55, numa cópia temporária da
+configuração na porta 4193) e `npm run build` verde.
+
+**Divergências do plano:**
+
+- O T4 (trocas) entrou antes do T3 (cobrir), para cada commit compilar sozinho: o T3 apaga `ehSugerivel`, que as
+  trocas usavam.
+- Os testes do T4 falharam antes do código pelo motivo errado (o import do T3 ainda em andamento). O comportamento
+  antigo que eles barram está medido: refrigerante trocava por cerveja, cerveja por café e margarina por margarina.
+- Os testes do T5 são trava do que já valia e passaram de primeira.
