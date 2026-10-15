@@ -125,6 +125,10 @@ SPEC atualizados.
 - [x] **R10** — prints de novo (inclusive com "Gráficos de fundo" ligado no tema escuro), `npm run check`,
   `npx playwright test` e `npm run build`, e a rodada no relatório.
 
+- [ ] **R11** — decisão do coordenador depois da rodada: a regra dos "mais de 4 pedaços vira o peso" (`quantidadeNaFolha`)
+  vale também na refeição e na lista de compras; sai o parâmetro de uso (refeição ou troca), que deixa de ter
+  diferença. Testes do domínio e da folha; prints `depois-plano-*` de novo (D-183, CA-641, CA-643, CA-644).
+
 ## Riscos e decisões para revisar
 
 - **D-186 / R-180:** a regra da primeira página não abre na caixa de impressão de teste; o e2e confere as regras de
