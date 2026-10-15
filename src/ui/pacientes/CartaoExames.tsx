@@ -15,6 +15,8 @@ interface CartaoExamesProps {
   readonly paciente: Paciente
   /** Quem assina a folha (D-167). */
   readonly assinatura: AssinaturaDoPlano | null
+  /** O exportar bloqueado pelo CRN (CA-290): a folha fica desligada com o mesmo aviso da dieta (CA-578, CA-581). */
+  readonly bloqueio: string | null
   readonly aoAlterar: (mudanca: Partial<Paciente>) => void
 }
 
@@ -22,7 +24,7 @@ interface CartaoExamesProps {
  * O pedido de exames do paciente (spec anamnese-e-prescricoes, US-AP3): dez exames para marcar, nenhum marcado
  * sozinho (D-164), o campo "Outros exames" e a folha para imprimir.
  */
-export function CartaoExames({ paciente, assinatura, aoAlterar }: CartaoExamesProps) {
+export function CartaoExames({ paciente, assinatura, bloqueio, aoAlterar }: CartaoExamesProps) {
   const [dataDaFolha, setDataDaFolha] = useState<string | null>(null)
   const id = useId()
   const pedido = paciente.pedidoExames
@@ -40,13 +42,19 @@ export function CartaoExames({ paciente, assinatura, aoAlterar }: CartaoExamesPr
               <Eraser aria-hidden="true" />
               Limpar pedido
             </Button>
-            <Button size="sm" variant="outline" disabled={vazio} aria-describedby={vazio ? `${id}-vazio` : undefined} onClick={() => setDataDaFolha(dataDeHoje())}>
+            <Button size="sm" variant="outline" disabled={vazio || bloqueio !== null} aria-describedby={bloqueio ? `${id}-bloqueio` : vazio ? `${id}-vazio` : undefined} onClick={() => setDataDaFolha(dataDeHoje())}>
               <Printer aria-hidden="true" />
               Imprimir pedido
             </Button>
           </div>
         </div>
       </CardHeader>
+
+      {bloqueio ? (
+        <p id={`${id}-bloqueio`} className="text-xs text-warningtext">
+          {bloqueio}
+        </p>
+      ) : null}
 
       <fieldset className="min-w-0">
         <legend className="sr-only">Exames</legend>

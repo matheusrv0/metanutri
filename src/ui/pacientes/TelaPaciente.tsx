@@ -23,13 +23,15 @@ interface TelaPacienteProps {
   readonly pacienteId: string
   /** Quem assina as folhas de suplementos e de exames (spec anamnese-e-prescricoes, D-167). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** O exportar bloqueado pelo CRN (CA-290): as folhas de suplementos e de exames ficam desligadas. */
+  readonly bloqueio?: string | null | undefined
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoNovoPlano: (pacienteId: string, modo: ModoPlano) => void
   readonly aoVoltar: () => void
 }
 
 /** Ficha do paciente: dados, restrições, anamnese, suplementos, exames, histórico de planos e evolução do peso. */
-export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
+export function TelaPaciente({ pacienteId, assinatura = null, bloqueio = null, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
@@ -130,9 +132,9 @@ export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNo
 
         <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} />
 
-        <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
+        <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
 
-        <CartaoExames key={paciente.id} paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
+        <CartaoExames key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>

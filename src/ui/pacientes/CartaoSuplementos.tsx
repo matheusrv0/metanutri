@@ -16,6 +16,8 @@ interface CartaoSuplementosProps {
   readonly paciente: Paciente
   /** Quem assina a folha (D-167). */
   readonly assinatura: AssinaturaDoPlano | null
+  /** O exportar bloqueado pelo CRN (CA-290): a folha fica desligada com o mesmo aviso da dieta (CA-578, CA-581). */
+  readonly bloqueio: string | null
   readonly aoAlterar: (mudanca: Partial<Paciente>) => void
 }
 
@@ -27,7 +29,7 @@ const novoId = () => globalThis.crypto.randomUUID()
  * Os suplementos do paciente (spec anamnese-e-prescricoes, US-AP2): digitados pelo nutricionista, nada sugerido
  * (D-164), com modelos da conta para reusar e a folha para imprimir.
  */
-export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSuplementosProps) {
+export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar }: CartaoSuplementosProps) {
   const armazenamento = useArmazenamento()
   const [janela, setJanela] = useState<Janela | null>(null)
   const [mensagem, setMensagem] = useState('')
@@ -57,13 +59,19 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
               <LayoutTemplate aria-hidden="true" />
               Modelos
             </Button>
-            <Button size="sm" variant="outline" disabled={semNome} aria-describedby={semNome ? motivo : undefined} onClick={() => setJanela({ tipo: 'imprimir', data: dataDeHoje() })}>
+            <Button size="sm" variant="outline" disabled={semNome || bloqueio !== null} aria-describedby={bloqueio ? `${id}-bloqueio` : semNome ? motivo : undefined} onClick={() => setJanela({ tipo: 'imprimir', data: dataDeHoje() })}>
               <Printer aria-hidden="true" />
               Imprimir
             </Button>
           </div>
         </div>
       </CardHeader>
+
+      {bloqueio ? (
+        <p id={`${id}-bloqueio`} className="text-xs text-warningtext">
+          {bloqueio}
+        </p>
+      ) : null}
 
       {lista.length === 0 ? (
         <p id={motivo} className="text-sm text-muted-foreground">

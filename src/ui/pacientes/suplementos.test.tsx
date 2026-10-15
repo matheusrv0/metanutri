@@ -6,6 +6,7 @@ import { dataDeHoje } from '@/domain/documentoDoPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { criarRepositorioPacientes, type Paciente } from '@/domain/pacientes.ts'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
+import { MOTIVO_EXPORTACAO_BLOQUEADA } from '@/domain/situacao.ts'
 import { CHAVE_MODELOS_SUPLEMENTO, criarRepositorioModelosSuplemento, type Suplemento } from '@/domain/suplementos.ts'
 import { ContextoArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
@@ -35,7 +36,7 @@ const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: nu
 
 const vitD: Suplemento = { id: 's1', nome: 'Vitamina D3', dose: '1 cápsula de 2.000 UI', horario: 'No almoço', duracao: '3 meses', observacao: 'Com uma refeição que tenha gordura' }
 
-function montar(ajuste: Partial<Paciente> = {}, assinatura: AssinaturaDoPlano | null = ANA, arm = new MemoriaFalsa()) {
+function montar(ajuste: Partial<Paciente> = {}, assinatura: AssinaturaDoPlano | null = ANA, arm = new MemoriaFalsa(), bloqueio: string | null = null) {
   const pacientes = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'p1' })
   const criado = pacientes.criar('Maria Silva')
   pacientes.salvar({ ...criado, ...ajuste })
@@ -44,7 +45,7 @@ function montar(ajuste: Partial<Paciente> = {}, assinatura: AssinaturaDoPlano | 
     <ContextoArmazenamento.Provider value={arm}>
       <ProvedorCasos repositorio={casos}>
         <ProvedorPacientes repositorio={pacientes}>
-          <TelaPaciente pacienteId="p1" assinatura={assinatura} aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
+          <TelaPaciente pacienteId="p1" assinatura={assinatura} bloqueio={bloqueio} aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
         </ProvedorPacientes>
       </ProvedorCasos>
     </ContextoArmazenamento.Provider>,
@@ -164,6 +165,16 @@ describe('Folha de suplementação (CA-576, CA-578, CA-582, CA-583)', () => {
     const observacao = within(janela.getByRole('article', { name: 'Suplementação' })).getByText(longa)
     expect(observacao).toHaveClass('whitespace-pre-wrap', 'break-words')
     expect(observacao).not.toHaveClass('truncate')
+  })
+
+  it('CA-578 e CA-581: com o exportar bloqueado pelo CRN, as duas folhas ficam desligadas com o aviso da dieta', () => {
+    montar({ suplementos: [vitD], pedidoExames: { marcados: ['tsh'], outros: '' } }, ANA, new MemoriaFalsa(), MOTIVO_EXPORTACAO_BLOQUEADA)
+    const imprimir = cartao().getByRole('button', { name: 'Imprimir' })
+    expect(imprimir).toBeDisabled()
+    expect(imprimir).toHaveAccessibleDescription(MOTIVO_EXPORTACAO_BLOQUEADA)
+    const pedido = within(screen.getByRole('region', { name: 'Pedido de exames' })).getByRole('button', { name: 'Imprimir pedido' })
+    expect(pedido).toBeDisabled()
+    expect(pedido).toHaveAccessibleDescription(MOTIVO_EXPORTACAO_BLOQUEADA)
   })
 
   it('CA-578: sem nenhum suplemento com nome, Imprimir fica desligado e o cartão diz o porquê', () => {
