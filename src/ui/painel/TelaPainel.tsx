@@ -1,6 +1,7 @@
 import { ClipboardList, Sparkles, TriangleAlert } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { atividadePorDia, resumirAtividade } from '@/domain/atividade.ts'
+import { agendaDaSemana, agoraEmBrasilia } from '@/domain/retorno.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -8,6 +9,7 @@ import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { HojeEEstaSemana } from './HojeEEstaSemana.tsx'
 
 interface TelaPainelProps {
   readonly aoAbrirPlano: (casoId: string) => void
@@ -16,12 +18,19 @@ interface TelaPainelProps {
   readonly aoVerExemplo: () => void
   /** Aviso da conta no topo (estudante ou CRN), montado pelo App. */
   readonly aviso?: ReactNode
+  /** Injetável no teste; o bloco "Hoje e esta semana" conta pelo dia de Brasília (spec whatsapp-e-retorno, D-144). */
+  readonly agora?: Date | undefined
+  /** Abre a ficha com o cursor no Telefone, quando o WhatsApp não tem número (CA-505). */
+  readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
 }
 
 const DIAS = 14
 
-/** Primeira tela do dia: onde você parou e o que está pendente (spec pdf-e-telas-limpas, US-B3). */
-export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: TelaPainelProps) {
+/**
+ * Primeira tela do dia: onde você parou e o que está pendente (spec pdf-e-telas-limpas, US-B3), e quem
+ * você atende esta semana (spec whatsapp-e-retorno, D-146).
+ */
+export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora = new Date(), aoCadastrarTelefone }: TelaPainelProps) {
   const { casos, avisoArmazenamento } = useCasos()
   const { pacientes } = usePacientes()
 
@@ -29,6 +38,8 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: Tela
   const semPaciente = useMemo(() => casos.filter((c) => c.pacienteId === null).length, [casos])
   const semNome = useMemo(() => casos.filter((c) => c.nome.trim() === '').length, [casos])
   const atividade = useMemo(() => resumirAtividade(atividadePorDia(casos, DIAS, new Date())), [casos])
+  const momento = agoraEmBrasilia(agora)
+  const agenda = agendaDaSemana(pacientes, momento)
 
   const pendencias = [
     semNome > 0 ? { texto: `${semNome} ${semNome === 1 ? 'plano sem nome' : 'planos sem nome'}`, acao: 'Ver', ir: () => aoIrPara('casos') } : null,
@@ -67,7 +78,7 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: Tela
         </Alert>
       ) : null}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
         <Card className="gap-4">
           <CardTitle>Onde você parou</CardTitle>
           {recentes.length === 0 ? (
@@ -98,27 +109,32 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso }: Tela
           )}
         </Card>
 
-        <Card className="gap-4">
-          <CardTitle>Precisa de atenção</CardTitle>
-          {pendencias.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Tudo em dia.</p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {pendencias.map((p) => (
-                <li key={p.texto}>
-                  <LinhaLista
-                    titulo={p.texto}
-                    fim={
-                      <Button size="sm" variant="ghost" onClick={p.ir}>
-                        {p.acao}
-                      </Button>
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <div className="flex min-w-0 flex-col gap-6">
+          {/* D-146: só existe quando há consulta ou aniversário nos 7 dias; sem caixa vazia. */}
+          {agenda.length > 0 ? <HojeEEstaSemana itens={agenda} hoje={momento.dia} aoCadastrarTelefone={aoCadastrarTelefone} /> : null}
+
+          <Card className="gap-4">
+            <CardTitle>Precisa de atenção</CardTitle>
+            {pendencias.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tudo em dia.</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {pendencias.map((p) => (
+                  <li key={p.texto}>
+                    <LinhaLista
+                      titulo={p.texto}
+                      fim={
+                        <Button size="sm" variant="ghost" onClick={p.ir}>
+                          {p.acao}
+                        </Button>
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   )

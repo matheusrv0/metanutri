@@ -163,6 +163,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoIrPara={(tela) => navegar({ tela })}
           aoVerExemplo={verExemplo}
           aviso={avisoDaConta}
+          aoCadastrarTelefone={cadastrarTelefone}
         />
       </Estrutura>
     )

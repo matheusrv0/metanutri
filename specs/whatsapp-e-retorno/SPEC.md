@@ -61,7 +61,7 @@ nenhuma tela usa os dois. Não existe data de retorno: o Painel não responde "q
 - **CA-518** · Dado nenhuma consulta e nenhum aniversário de hoje até daqui a 6 dias, então o Painel não mostra o bloco nem o título dele.
 - **CA-519** · Dado consultas de hoje e dos 6 dias seguintes, então o bloco "Hoje e esta semana" lista cada uma com o nome e o quando ("Hoje às 14:30", "Amanhã às 09:00", "Sexta, 16/10 às 10:00"), por dia e horário.
 - **CA-520** · Dado uma consulta daqui a 7 dias ou mais, ou uma que já passou (hoje com horário vencido, ou dia anterior), então ela não aparece; dado uma consulta de hoje sem horário, então ela aparece até o fim do dia.
-- **CA-521** · Dado um paciente da lista com link de missões, então a linha mostra o selo do estado, igual ao da Adesão, do link mais recente; sem link, sem selo.
+- **CA-521** · Dado uma consulta da lista, de paciente com link de missões, então a linha mostra o selo do estado, igual ao da Adesão, do link mais recente; sem link, sem selo. A linha do aniversário não leva selo: é parabéns, não cobrança.
 - **CA-522** · Dado um aniversário de hoje até daqui a 6 dias, então ele entra no mesmo bloco ("Aniversário hoje", "Aniversário sábado, 17/10"), mesmo sem consulta marcada.
 - **CA-523** · Dado 23h30 de 15/10 em Brasília (2h30 de 16/10 em UTC), então "hoje" é 15/10: a consulta de 15/10 sem horário aparece como "Hoje", e a de 16/10 como "Amanhã".
 
