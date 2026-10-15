@@ -157,4 +157,32 @@ test.describe('no tema escuro', () => {
     expect(cores).toEqual({ fundo: 'rgb(255, 255, 255)', titulo: 'rgb(0, 0, 0)', regua: false })
     await page.emulateMedia({ media: 'screen' })
   })
+
+  test('CA-639: a solicitação de exames também é papel claro, sem a régua de cor e sem moldura escura', async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+    await page.goto('/#/pacientes')
+    const boasVindas = page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })
+    if (await boasVindas.isVisible().catch(() => false)) await boasVindas.getByRole('button', { name: 'Entendi' }).click()
+    await page.getByRole('button', { name: 'Cadastrar paciente' }).click()
+    await page.getByLabel('Nome', { exact: true }).fill('Maria Silva')
+    const exames = page.getByRole('region', { name: 'Pedido de exames' })
+    await exames.getByRole('checkbox', { name: 'Ferritina' }).check()
+    await exames.getByRole('button', { name: 'Imprimir pedido' }).click()
+    const folha = page.getByRole('dialog', { name: 'Pedido de exames para imprimir' })
+    await expect(folha.getByRole('article')).toContainText('Ferritina')
+    await page.emulateMedia({ media: 'print', colorScheme: 'dark' })
+    const cores = await folha.evaluate((el) => {
+      const artigo = el.querySelector('article')
+      const titulo = artigo?.querySelector('h2')
+      return {
+        fundo: artigo ? getComputedStyle(artigo).backgroundColor : '',
+        titulo: titulo ? getComputedStyle(titulo).color : '',
+        regua: Boolean(artigo?.querySelector('.border-laranja')),
+        esquema: getComputedStyle(document.documentElement).colorScheme,
+      }
+    })
+    expect(cores).toEqual({ fundo: 'rgb(255, 255, 255)', titulo: 'rgb(0, 0, 0)', regua: false, esquema: 'light' })
+    await page.emulateMedia({ media: 'screen' })
+  })
 })

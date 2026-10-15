@@ -72,6 +72,24 @@ describe('Folha da dieta (US-B1)', () => {
     expect(jantar.getByText('Macarrão (peso cru)').closest('li')).toHaveTextContent(/^Macarrão \(peso cru\), 80 g$/)
   })
 
+  it('CB-187: nome de produto com código sai como texto, e nada executa', () => {
+    const codigo = '<img src=x onerror="window.__xssFolha=1">'
+    const produto = { ...ALIMENTOS[0], id: PRIMEIRO_ID_PRODUTO + 8, descricao: codigo, categoria: 'Meus produtos', base: null } as Alimento
+    registrarProdutos([produto])
+    try {
+      let plano = criarPlanoPadrao(ids)
+      const ceia = plano.refeicoes[5]
+      if (!ceia) throw new Error('sem ceia')
+      plano = adicionarItem(plano, ceia.id, 'principal', { alimentoId: produto.id, gramas: 30 }, ids)
+      const { container } = render(<FolhaDieta caso={caso} plano={plano} opcoes={{ listaDeCompras: true, trocas: false }} />)
+      expect(refeicao(/^21:00 Ceia$/).getByText(codigo)).toBeInTheDocument()
+      expect(container.querySelector('img[src="x"]')).toBeNull()
+      expect((window as unknown as { __xssFolha?: number }).__xssFolha).toBeUndefined()
+    } finally {
+      registrarProdutos([])
+    }
+  })
+
   it('CA-641 e CA-642: medida vaga com o peso discreto ao lado; margarina em ponta de faca', () => {
     let plano = planoCheio()
     const desjejum = plano.refeicoes[0]
