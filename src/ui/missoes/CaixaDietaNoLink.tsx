@@ -47,7 +47,7 @@ export function CaixaDietaNoLink({
             Mostrar a dieta no link
           </span>
           <span id={`${id}-texto`} className="text-xs text-muted-foreground">
-            Refeições em medida caseira, substitutos e orientações. Sem kcal.
+            Refeições em medida caseira, substitutos, orientações e receitas. Sem kcal.
           </span>
         </span>
       </label>

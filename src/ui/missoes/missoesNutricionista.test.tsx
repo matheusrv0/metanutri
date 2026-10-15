@@ -394,6 +394,11 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(caixa().compareDocumentPosition(botao) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('CA-553: a caixa diz o mesmo conteúdo que a Política: refeições, substitutos, orientações e receitas, sem kcal', () => {
+    cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
+    expect(caixa()).toHaveAccessibleDescription('Refeições em medida caseira, substitutos, orientações e receitas. Sem kcal.')
+  })
+
   it('CA-540: com a caixa marcada, o link nasce com a cópia da dieta de agora', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
