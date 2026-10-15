@@ -216,7 +216,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
   guarda as marcas dos valores que faltam (sem lápide). Cobre CA-607 e a corrida da revisão.
 - [x] **T55** — Fluxo normal: teste do relógio atrasado (CA-608), sem mudar código.
 - [x] **T56** — O teste de navegador do CA-603 leva o ID no nome (`e2e/csp.spec.ts`).
-- [ ] **T57** — Nota de publicação e relatório: o risco que sobra (R8).
+- [x] **T57** — Nota de publicação e relatório: o risco que sobra (R8).
 - [ ] **T58** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
   `conferir-publicacao`, `npm run test:csp` e as simulações `reabrir.mts`, `r8.mts` e `ordem.mts`.
 ## Mapa de cobertura

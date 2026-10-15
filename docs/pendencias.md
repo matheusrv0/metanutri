@@ -183,9 +183,12 @@ Atualizado em 15/10/2026.
 >    versão de antes guardada no navegador. Conferir que a ficha de um paciente mostra o cartão "Anamnese": aí a versão
 >    nova está valendo. **Não use "Sair" numa aba antiga** (sem o cartão "Anamnese"): ela apaga a cópia deste navegador,
 >    inclusive o roteiro e os modelos de suplemento que ainda não voltaram para a nuvem. Enquanto uma aba antiga ficar
->    aberta, cada salvar dela tira o roteiro e os modelos da nuvem e um aparelho novo os devolve sozinho (spec
->    `dados-na-nuvem`, D-170 e risco R8); fechar as abas acaba com esse vai e volta. Daqui para a frente, a versão nova
->    mostra "Há uma versão nova do MetaNutri." com "Atualizar" (D-172);
+>    aberta, cada salvar dela tira o roteiro e os modelos da nuvem, e o aparelho que tem a versão mais nova deles os
+>    devolve sozinho quando abre; um aparelho com uma versão mais velha a guarda só para si, sem subir (spec
+>    `dados-na-nuvem`, D-170 a D-173). O risco que sobra (R8): se o aparelho com a versão mais nova do roteiro ou de um
+>    modelo não for aberto de novo, essa versão se perde. Por isso, abra também o aparelho em que você mexeu por
+>    último no roteiro e nos modelos. Fechar as abas antigas acaba com esse vai e volta. Daqui para a frente, a versão
+>    nova mostra "Há uma versão nova do MetaNutri." com "Atualizar" (D-172);
 > 4. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
 >
 > Se o site for publicado antes do `012`, ele funciona, mas o link é salvo sem a dieta e o paciente vê só as missões.
