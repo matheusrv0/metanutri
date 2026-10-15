@@ -261,3 +261,19 @@ integração.
 | F6 | M4 · o foco usa a ordem de todos os que pedem Cobrir, não só dos 5 à vista (CA-713 completo) | `MicrosDoDia.tsx`, `TelaAdequacao.tsx`, `focoDoCobrir.ts` (+ testes) |
 | F7 | M5 · testes das emendas: CB-204 da etapa 3 com sugestão controlada; restrições do cartão chegam ao Cobrir; % do macro na faixa do topo (CA-712) e CA-711 em teste próprio | `TelaAdequacao.test.tsx`, `MicrosDoDia.test.tsx`, `FaixaResumo.test.tsx` |
 | F8 | M6 · a folha pede 4 trocas e mostra 2 depois do corte por nome (CB-188); as trocas estranhas vão para o Apêndice C da `sugestoes-com-criterio` | `src/domain/folhaDieta.ts` (+ teste), `src/ui/exportar/FolhaDieta.tsx`; spec `sugestoes-com-criterio` (Apêndice C) |
+
+### Validação da revisão final (15/10/2026)
+
+`npm run check` verde (195 arquivos, 3.380 testes; lint com 0 erros e o aviso antigo de `MolduraPublica.tsx`),
+`npx playwright test` verde (64, porta 4527, configuração temporária apagada), `npm run build`,
+`node scripts/conferir-publicacao.mjs` e `npm run test:csp` (3) verdes.
+
+| Item | Teste |
+|---|---|
+| F1 (I1, CA-625) | `nomeParaPaciente.test.ts` · "CA-625 (revisão final da integração)" com os 11 ids; o teste geral do CA-625 aceita "(peso cru)" só na fruta-pão e no pequi |
+| F6 (M4, CA-713) | `MicrosDoDia.test.tsx` · "o 6º que entra à vista recebe o foco"; `focoDoCobrir.test.ts` · "o 6º conta como próximo" e "continua abaixo mas saiu do cartão" |
+| F7 (M5) | `TelaAdequacao.test.tsx` · "CB-204" com sugestão controlada; `MicrosDoDia.test.tsx` · "Restrições do paciente no Cobrir do cartão"; `FaixaResumo.test.tsx` · "CA-711" e "CA-712" próprios |
+| F8 (M6, CB-188) | `folhaDieta.test.ts` · "mostra no máximo 2, contadas depois do corte" e "o arroz branco não fica com uma troca só" |
+
+**Divergências:** os testes do F1, do F6 e do F8 foram vistos falhando antes do código. Os do F7 são de reforço:
+passaram de primeira, porque o comportamento já estava certo; o que mudou foi que agora quebram se ele mudar.
