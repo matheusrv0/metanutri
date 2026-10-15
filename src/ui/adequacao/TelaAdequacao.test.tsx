@@ -57,7 +57,7 @@ const primeiraSugestao = (gaveta: ReturnType<typeof within>) => {
 }
 
 const abrirCobrir = async (usuario: ReturnType<typeof userEvent.setup>, nutriente: string) => {
-  await usuario.click(linhaDe(nutriente).getByRole('button', { name: 'Cobrir' }))
+  await usuario.click(linhaDe(nutriente).getByRole('button', { name: `Cobrir ${nutriente}` }))
   return within(screen.getByRole('dialog'))
 }
 
@@ -231,7 +231,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
   it('CA-691: Cobrir com fundo teal claro, só em linha abaixo da meta', async () => {
     const usuario = montar(adulta, exemplo())
     await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
-    const cobrir = screen.getAllByRole('button', { name: 'Cobrir' })
+    const cobrir = screen.getAllByRole('button', { name: /^Cobrir / })
     expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo') && !t.startsWith('Sódio')).length)
     for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
   })
@@ -288,7 +288,8 @@ describe('Etapa 3 no celular (CA-692)', () => {
     expect(ferro.getByText(/^\d+% abaixo$/)).toHaveClass('text-warningtext')
     expect(ferro.getByRole('progressbar')).toBeInTheDocument()
     expect(ferro.getByText(/^[\d.,]+ mg de 18 mg$/)).toHaveTextContent(/^[\d.,]+ mg†? de 18 mg rda$/)
-    const cobrir = ferro.getByRole('button', { name: 'Cobrir' })
+    // O nome diz o nutriente: a lista do celular não tem cabeçalho de coluna (CA-700).
+    const cobrir = ferro.getByRole('button', { name: 'Cobrir Ferro' })
     expect(cobrir.className).toContain('h-11')
     expect(cobrir.className).toContain('bg-lightprimary')
   })
@@ -300,9 +301,9 @@ describe('Etapa 3 no celular (CA-692)', () => {
     expect(naMeta).toHaveAttribute('hidden')
     await usuario.click(botao)
     expect(naMeta).not.toHaveAttribute('hidden')
-    expect(within(naMeta as HTMLElement).queryAllByRole('button', { name: 'Cobrir' })).toHaveLength(0)
+    expect(within(naMeta as HTMLElement).queryAllByRole('button', { name: /^Cobrir/ })).toHaveLength(0)
 
-    await usuario.click(itemDe('Cálcio').getByRole('button', { name: 'Cobrir' }))
+    await usuario.click(itemDe('Cálcio').getByRole('button', { name: 'Cobrir Cálcio' }))
     expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Cobrir Cálcio' })).toBeInTheDocument()
   })
 })

@@ -107,7 +107,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell>
         {podeCobrir(linha) ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
             Cobrir
           </Button>
         ) : null}
@@ -136,7 +136,7 @@ function ItemLista({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readon
           <span className="uppercase">{linha.referencia.tipo}</span>
         </span>
         {podeCobrir(linha) ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
             Cobrir
           </Button>
         ) : null}

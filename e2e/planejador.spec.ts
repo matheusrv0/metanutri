@@ -76,7 +76,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await page.getByRole('button', { name: /Próxima etapa: Adequação/ }).click()
   const linhaFerro = page.getByRole('row').filter({ hasText: 'Ferro' }).first()
   const adequacaoAntes = await linhaFerro.textContent()
-  await linhaFerro.getByRole('button', { name: 'Cobrir' }).click()
+  await linhaFerro.getByRole('button', { name: 'Cobrir Ferro', exact: true }).click()
 
   const gaveta = page.getByRole('dialog')
   await expect(gaveta).toContainText('para a meta')
@@ -312,7 +312,7 @@ test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o
 
   await page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Adequação/ }).click()
   const ferro = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Ferro' })
-  const cobrir = ferro.getByRole('button', { name: 'Cobrir' })
+  const cobrir = ferro.getByRole('button', { name: 'Cobrir Ferro', exact: true })
   await expect(cobrir).toBeVisible()
   const caixa = await cobrir.boundingBox()
   expect((caixa?.x ?? 0) + (caixa?.width ?? 0)).toBeLessThanOrEqual(360)
