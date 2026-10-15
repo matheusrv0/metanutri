@@ -363,7 +363,12 @@ function PainelDoLink({
             {copiado ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
             {copiado ? 'Copiado' : 'Copiar'}
           </Button>
-          <BotaoWhatsApp paciente={paciente} texto={textoDoLink(paciente?.nome ?? '', endereco)} aoCadastrarTelefone={aoCadastrarTelefone} />
+          {/* CA-596: o texto cita o plano alimentar quando o paciente vê a dieta no link (a mesma regra da tela dele). */}
+          <BotaoWhatsApp
+            paciente={paciente}
+            texto={textoDoLink(paciente?.nome ?? '', endereco, temDieta(acompanhamento.dieta))}
+            aoCadastrarTelefone={aoCadastrarTelefone}
+          />
         </div>
       </div>
 

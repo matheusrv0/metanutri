@@ -78,9 +78,11 @@ function saudacao(nome: string): string {
   return primeiro ? `Oi, ${primeiro}!` : 'Oi!'
 }
 
-/** No cartão do link, ao lado de "Copiar" (CA-508). */
-export function textoDoLink(nome: string, endereco: string): string {
-  return `${saudacao(nome)} Este é o link das suas missões:\n${endereco}\nAbra no celular e marque o que fizer a cada dia.`
+/** No cartão do link, ao lado de "Copiar" (CA-508). Com a dieta no link, cita também o plano alimentar (CA-596). */
+export function textoDoLink(nome: string, endereco: string, comDieta = false): string {
+  return comDieta
+    ? `${saudacao(nome)} Neste link estão suas missões e o seu plano alimentar:\n${endereco}\nAbra no celular, veja o plano e marque o que fizer a cada dia.`
+    : `${saudacao(nome)} Este é o link das suas missões:\n${endereco}\nAbra no celular e marque o que fizer a cada dia.`
 }
 
 const ABERTURA_DO_CONTATO = {

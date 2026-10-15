@@ -121,6 +121,26 @@ describe('WhatsApp no cartão do link (CA-508)', () => {
     expect(within(screen.getByRole('dialog')).getByText(/Este plano não tem paciente vinculado/)).toBeInTheDocument()
   })
 
+  it('CA-596: com a dieta no link, o texto pronto cita o plano alimentar; com a dieta desligada, só as missões', async () => {
+    const dieta = { refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: null, gramas: 80, alimento: 'Arroz' }]] }], orientacoes: '', receitas: '', copiadaEm: '2026-10-14' }
+    const usuario = userEvent.setup()
+    const textoDoCartao = async (comDieta: boolean) => {
+      const { unmount } = render(
+        <Anfitriao links={[{ ...link('c1', 'p1'), dieta: comDieta ? dieta : null }]} fichas={[{ id: 'p1', nome: 'Ana Souza', telefone: '(11) 98765-4321' }]}>
+          <CartaoLinkMissoes casoId="c1" pacienteId="p1" nome="Plano da Ana" missoes={MISSOES} hoje="2026-10-14" />
+        </Anfitriao>,
+      )
+      await usuario.click(screen.getByRole('button', { name: 'WhatsApp' }))
+      const texto = (within(screen.getByRole('dialog', { name: 'Enviar pelo WhatsApp' })).getByLabelText('Mensagem') as HTMLTextAreaElement).value
+      unmount()
+      return texto
+    }
+    expect(await textoDoCartao(true)).toContain('Neste link estão suas missões e o seu plano alimentar:')
+    const semDieta = await textoDoCartao(false)
+    expect(semDieta).toContain('Este é o link das suas missões:')
+    expect(semDieta).not.toContain('plano alimentar')
+  })
+
   it('antes de gerar o link, não há WhatsApp', () => {
     render(
       <Anfitriao links={[]} fichas={[{ id: 'p1', nome: 'Ana', telefone: '(11) 98765-4321' }]}>

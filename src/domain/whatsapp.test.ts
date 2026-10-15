@@ -97,6 +97,14 @@ describe('Os textos prontos (D-149)', () => {
     )
   })
 
+  it('CA-596: com a dieta no link, o texto cita as missões e o plano alimentar; sem ela, só as missões', () => {
+    expect(textoDoLink('Ana', 'https://metanutri.app/#/missoes/abc', true)).toBe(
+      'Oi, Ana! Neste link estão suas missões e o seu plano alimentar:\nhttps://metanutri.app/#/missoes/abc\nAbra no celular, veja o plano e marque o que fizer a cada dia.',
+    )
+    expect(textoDoLink('Ana', 'https://metanutri.app/#/missoes/abc', false)).toBe(textoDoLink('Ana', 'https://metanutri.app/#/missoes/abc'))
+    expect(textoDoLink('   ', 'https://metanutri.app/#/missoes/abc', true).startsWith('Oi! Neste link')).toBe(true)
+  })
+
   it('CA-509: o contato fala das missões, um texto para quem sumiu e outro para quem marca pouco', () => {
     expect(textoDeContato('Ana', 'sumindo')).toBe(
       'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.',

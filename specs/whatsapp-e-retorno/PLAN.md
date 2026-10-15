@@ -135,6 +135,14 @@ item, em TDD, um commit cada.
 ### R5 · No navegador (CA-527)
 - **Altera** `e2e/whatsapp-e-retorno.spec.ts`: a Adesão em 360 px; o nome novo do link "Abrir no WhatsApp".
 
+## Integração com as outras frentes (15/10/2026)
+
+- [x] **I1** · Com a dieta no link (spec `dieta-no-link`), `textoDoLink` recebe `comDieta` e o cartão passa
+  `temDieta(acompanhamento.dieta)`, a mesma regra da tela do paciente. Altera `src/domain/whatsapp.ts` e
+  `src/ui/missoes/CartaoLinkMissoes.tsx` (+ testes em `whatsapp.test.ts` e `whatsappNasMissoes.test.tsx`). Cobre CA-596.
+- [x] **I2** · O cartão se chama "Link do paciente" (D-159 da `dieta-no-link`): os testes procuram o nome novo, o botão
+  "Gerar link do paciente" e o campo "Endereço do link".
+
 ## Decisões para o dono revisar
 
 - **R-1 (D-144).** "Esta semana" são 7 dias corridos a partir de hoje, não a semana de segunda a domingo.
