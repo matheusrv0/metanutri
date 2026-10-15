@@ -170,7 +170,7 @@ function juntar(chave: string, daConta: string, deFora: string, gerarId: () => s
         ? juntarPacientes(conta, fora)
         : chave === 'metanutri:produtos'
           ? juntarComIdNovo(conta, fora, proximoIdDeProduto)
-          : chave === 'metanutri:modelos'
+          : chave === 'metanutri:modelos' || chave === 'metanutri:modelos-suplemento'
             ? juntarComIdNovo(conta, fora, idDeModelo)
             : chave === 'metanutri:acompanhamentos'
               ? juntarAcompanhamentos(conta, fora)

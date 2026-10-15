@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { mostraReceitas, nutricionistaDoWord, type AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
+import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { calcularMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -31,8 +32,11 @@ interface MenuExportarProps {
 export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
-  // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas.
-  const restricoes = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)?.restricoes
+  // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas e sem suplementos.
+  const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
+  const restricoes = paciente?.restricoes
+  // Spec anamnese-e-prescricoes, CA-577 e CB-166: os suplementos da ficha do paciente do plano.
+  const suplementos = paciente?.suplementos ?? []
 
   const baixarAconselhamento = async () => {
     const documento = criarAconselhamento({
@@ -44,6 +48,8 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
       receitas: caso.receitas,
       nutricionista: nutricionistaDoWord(assinatura ?? null, caso),
       comReceitas: mostraReceitas(assinatura?.situacao ?? null, caso),
+      suplementos,
+      propostaDeEstagio: propostaNaDieta(assinatura ?? null, caso),
     })
     baixarBlob(await gerarBlob(documento), nomeDeArquivo(caso.nome, 'aconselhamento'))
     setMensagem('Aconselhamento baixado.')
@@ -107,7 +113,15 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DialogoImprimir aberto={imprimindo} caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} aoFechar={() => setImprimindo(false)} />
+      <DialogoImprimir
+        aberto={imprimindo}
+        caso={caso}
+        plano={plano}
+        restricoes={restricoes}
+        assinatura={assinatura}
+        suplementos={suplementos}
+        aoFechar={() => setImprimindo(false)}
+      />
     </div>
   )
 }

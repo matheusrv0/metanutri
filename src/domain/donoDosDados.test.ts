@@ -290,6 +290,26 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     ])
   })
 
+  it('CA-575 (spec anamnese-e-prescricoes): modelos de suplemento juntam como os de plano, e o roteiro fica o da conta', () => {
+    const modelo = (id: string, nome: string) => ({ id, nome, dose: '', horario: '', duracao: '', observacao: '', criadoEm: '2026-10-14', atualizadoEm: '2026-10-14' })
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:modelos-suplemento': JSON.stringify([modelo('s1', 'Ferro')]),
+      'metanutri:modelos-suplemento': JSON.stringify([modelo('s1', 'Ferro, da aba antiga'), modelo('s2', 'Zinco')]),
+      'metanutri:conta:conta-a:roteiro-anamnese': '{"formato":1,"blocos":{"agua":[]}}',
+      'metanutri:roteiro-anamnese': '{"formato":1,"blocos":{}}',
+    })
+    migrarDadosSemConta(arm, 'conta-a', { gerarId: () => 's-novo' })
+    const conta = armazenamentoDaConta(arm, 'conta-a')
+    const lista = JSON.parse(conta.getItem('metanutri:modelos-suplemento') ?? '[]') as { id: string; nome: string }[]
+    expect(lista.map((m) => [m.id, m.nome])).toEqual([
+      ['s1', 'Ferro'],
+      ['s2', 'Zinco'],
+      ['s-novo', 'Ferro, da aba antiga'],
+    ])
+    expect(conta.getItem('metanutri:roteiro-anamnese')).toBe('{"formato":1,"blocos":{"agua":[]}}')
+  })
+
   it('D-127: valor de fora que o app não lê sai, e a conta fica com o dela; valor da conta ilegível dá lugar ao de fora', () => {
     const arm = memoria({
       [CHAVE_DONO]: 'conta-a',

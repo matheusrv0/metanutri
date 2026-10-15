@@ -75,7 +75,9 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   também onde você vê quantos pacientes ativos tem contra o limite do seu plano.
 - **Pacientes** — ficha com restrições, condições clínicas, medicamentos, anamnese,
   histórico de planos e evolução do peso. O plano nasce já sabendo o que a ficha sabe,
-  e o retorno começa duplicando o plano anterior.
+  e o retorno começa duplicando o plano anterior. A anamnese segue um roteiro de
+  perguntas que você edita; suplementos e pedido de exames saem em folhas para imprimir,
+  com a sua assinatura (na conta de estudante, como proposta do estágio).
 - **Tabela de alimentos** — os 597 da TACO navegáveis: busca, filtro por categoria e por
   completude do dado, ordenação, e a composição inteira de cada alimento com as medidas
   caseiras. "Não analisado" é falta de medição, não zero.

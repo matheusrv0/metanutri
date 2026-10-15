@@ -2,6 +2,7 @@ import { Printer } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { gravarOpcoesImpressao, lerOpcoesImpressao, type OpcoesImpressao } from '@/domain/folhaDieta.ts'
+import { suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
@@ -18,6 +19,8 @@ interface DialogoImprimirProps {
   readonly restricoes?: string | undefined
   /** Quem assina o plano (spec ajustes-de-uso). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** Os suplementos da ficha do paciente (spec anamnese-e-prescricoes, CA-577). */
+  readonly suplementos?: readonly Suplemento[] | undefined
   readonly aoFechar: () => void
 }
 
@@ -38,9 +41,12 @@ function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; r
  * Prévia da dieta antes de imprimir, com o que mais vai junto (CA-317).
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo.
  */
-export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, aoFechar }: DialogoImprimirProps) {
+export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, suplementos = [], aoFechar }: DialogoImprimirProps) {
   const armazenamento = useArmazenamento()
   const [opcoes, setOpcoes] = useState<OpcoesImpressao>(() => lerOpcoesImpressao(armazenamento))
+  // CA-577: com suplementos na ficha, a opção aparece ligada a cada impressão; sem eles, nem aparece.
+  const [comSuplementos, setComSuplementos] = useState(true)
+  const temSuplementos = suplementosParaDocumento(suplementos).length > 0
 
   const mudar = (mudanca: Partial<OpcoesImpressao>) => {
     const novas = { ...opcoes, ...mudanca }
@@ -60,10 +66,13 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, a
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
           <Opcao titulo="Lista de compras" texto="Os alimentos do dia com as quantidades." marcado={opcoes.listaDeCompras} aoMudar={(v) => mudar({ listaDeCompras: v })} />
           <Opcao titulo="Trocas" texto="Até 2 opções para cada alimento do plano." marcado={opcoes.trocas} aoMudar={(v) => mudar({ trocas: v })} />
+          {temSuplementos ? (
+            <Opcao titulo="Suplementos da ficha" texto="Os suplementos escritos na ficha do paciente." marcado={comSuplementos} aoMudar={setComSuplementos} />
+          ) : null}
         </div>
 
         <div className="area-impressao border border-border print:border-0">
-          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} />
+          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} suplementos={comSuplementos ? suplementos : []} />
         </div>
 
         <DialogFooter className="print:hidden">

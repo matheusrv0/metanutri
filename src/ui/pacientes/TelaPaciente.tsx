@@ -1,5 +1,6 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import { normalizarTelefone } from '@/domain/whatsapp.ts'
 import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
@@ -14,11 +15,18 @@ import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
+import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
+import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
 interface TelaPacienteProps {
   readonly pacienteId: string
+  /** Quem assina as folhas de suplementos e de exames (spec anamnese-e-prescricoes, D-167). */
+  readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** O exportar bloqueado pelo CRN (CA-290): as folhas de suplementos e de exames ficam desligadas. */
+  readonly bloqueio?: string | null | undefined
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoNovoPlano: (pacienteId: string, modo: ModoPlano) => void
   readonly aoVoltar: () => void
@@ -31,8 +39,20 @@ interface TelaPacienteProps {
 /** CA-516: o telefone preenchido que o WhatsApp não aceita ganha a dica. */
 const DICA_TELEFONE = 'Para o WhatsApp, use DDD e número do Brasil.'
 
-/** Ficha do paciente: dados, próxima consulta, restrições, histórico de planos e evolução do peso. */
-export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar, focar, agora = new Date() }: TelaPacienteProps) {
+/**
+ * Ficha do paciente: dados, próxima consulta, restrições, anamnese, suplementos, exames, histórico de planos e
+ * evolução do peso.
+ */
+export function TelaPaciente({
+  pacienteId,
+  assinatura = null,
+  bloqueio = null,
+  aoAbrirPlano,
+  aoNovoPlano,
+  aoVoltar,
+  focar,
+  agora = new Date(),
+}: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
@@ -112,9 +132,9 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar, 
 
         <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
 
-        <Card>
+        <Card role="region" aria-labelledby="titulo-saude">
           <CardHeader>
-            <CardTitle>Restrições e saúde</CardTitle>
+            <CardTitle id="titulo-saude">Restrições e saúde</CardTitle>
             <CardDescription>Uma por linha. O que estiver aqui some das sugestões de alimento.</CardDescription>
           </CardHeader>
           <div className="flex flex-col gap-1.5">
@@ -139,20 +159,11 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar, 
           </div>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Anamnese</CardTitle>
-            <CardDescription>Rotina, horários, preferências e aversões. É o que faz o plano colar na vida da pessoa.</CardDescription>
-          </CardHeader>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="anamnese">Anotações</Label>
-            <Textarea id="anamnese" rows={5} value={paciente.anamnese} onChange={(e) => alterar({ anamnese: e.target.value })} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="obs-paciente">Observações</Label>
-            <Textarea id="obs-paciente" rows={3} value={paciente.observacoes} onChange={(e) => alterar({ observacoes: e.target.value })} />
-          </div>
-        </Card>
+        <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} />
+
+        <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
+
+        <CartaoExames key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>
@@ -185,7 +196,8 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar, 
         </Card>
       </div>
 
-      <div className="flex flex-col gap-6">
+      {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Apagar paciente" fica por último. */}
+      <div className="order-first flex flex-col gap-6 xl:order-none">
         <Card className="gap-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

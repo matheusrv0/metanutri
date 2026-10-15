@@ -353,8 +353,9 @@
     max-width: none !important;
   }
 
-  /* As caixas cinza das opções e a régua da marca também vão para o papel. */
-  .folha-dieta {
+  /* As caixas cinza das opções e a régua da marca também vão para o papel (e nas folhas do paciente). */
+  .folha-dieta,
+  .folha-documento {
     max-width: none;
     padding: 0;
     -webkit-print-color-adjust: exact;

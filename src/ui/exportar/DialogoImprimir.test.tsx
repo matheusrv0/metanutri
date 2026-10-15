@@ -24,6 +24,25 @@ const janela = () => within(screen.getByRole('dialog', { name: 'Dieta para impri
 
 beforeEach(() => localStorage.clear())
 
+describe('Suplementos da ficha na janela de imprimir (spec anamnese-e-prescricoes, CA-577)', () => {
+  const vitD = { id: 's1', nome: 'Vitamina D3', dose: '1 cápsula', horario: '', duracao: '', observacao: '' }
+
+  it('CA-577: com suplementos, a opção "Suplementos da ficha" aparece ligada e tira a seção quando desligada', async () => {
+    render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} suplementos={[vitD]} aoFechar={vi.fn()} />)
+    const opcao = janela().getByRole('switch', { name: 'Suplementos da ficha' })
+    expect(opcao).toHaveAttribute('aria-checked', 'true')
+    expect(janela().getByRole('heading', { name: 'Suplementos' })).toBeInTheDocument()
+    await userEvent.setup().click(opcao)
+    expect(janela().queryByRole('heading', { name: 'Suplementos' })).not.toBeInTheDocument()
+  })
+
+  it('CA-577: sem suplemento com nome, a opção não aparece', () => {
+    render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} suplementos={[{ ...vitD, nome: '' }]} aoFechar={vi.fn()} />)
+    expect(janela().queryByRole('switch', { name: 'Suplementos da ficha' })).not.toBeInTheDocument()
+    expect(screen.getByText('As refeições, os lembretes, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.')).toBeInTheDocument()
+  })
+})
+
 describe('Janela de imprimir (CA-317, CA-320)', () => {
   it('CA-317: lista de compras e trocas começam desmarcadas e mudam a prévia na hora', async () => {
     abrir()

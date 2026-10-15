@@ -1,7 +1,10 @@
 // Paciente: a pessoa atendida. Um paciente tem vários planos ao longo do tempo.
 // Fica no mesmo armazenamento local dos planos; nada sai deste aparelho.
+import { normalizarRespostas, type RespostaAnamnese } from './anamnese.ts'
+import { normalizarPedido, PEDIDO_VAZIO, type PedidoExames } from './exames.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { lerConsulta } from './retorno.ts'
+import { normalizarSuplementos, type Suplemento } from './suplementos.ts'
 import type { Sexo } from './tipos.ts'
 
 const CHAVE = 'metanutri:pacientes'
@@ -19,7 +22,7 @@ export interface Paciente {
   readonly restricoes: string
   readonly condicoesClinicas: string
   readonly medicamentos: string
-  /** Rotina, preferências e aversões levantadas na anamnese. */
+  /** O texto livre da anamnese, de antes do roteiro. Aparece no bloco "Observações" (spec anamnese-e-prescricoes, D-162). */
   readonly anamnese: string
   readonly observacoes: string
   /**
@@ -27,6 +30,12 @@ export interface Paciente {
    * (spec whatsapp-e-retorno, D-143). Leia sempre por `lerConsulta`.
    */
   readonly proximaConsulta: string | null
+  /** As respostas do roteiro de anamnese (D-163). */
+  readonly respostasAnamnese: readonly RespostaAnamnese[]
+  /** Suplementos escritos pelo nutricionista (D-165). */
+  readonly suplementos: readonly Suplemento[]
+  /** O pedido de exames atual (D-169). */
+  readonly pedidoExames: PedidoExames
   readonly criadoEm: string
   readonly atualizadoEm: string
 }
@@ -52,6 +61,9 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     anamnese: '',
     observacoes: '',
     proximaConsulta: null,
+    respostasAnamnese: [],
+    suplementos: [],
+    pedidoExames: PEDIDO_VAZIO,
     criadoEm: agora,
     atualizadoEm: agora,
   }
@@ -114,10 +126,17 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
     try {
       const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE) ?? '[]')
       const lista = Array.isArray(bruto) ? bruto.filter(ehPaciente) : []
-      // Completa campos que versões antigas não tinham; a consulta estragada vira "sem consulta" (CA-526).
+      // Completa campos que versões antigas não tinham. A consulta estragada vira "sem consulta" (CA-526);
+      // campo novo da anamnese e das prescrições estragado vira vazio (CA-588).
       return lista.map((p) => {
         const completo = { ...criarPacienteVazio(p.id, p.criadoEm ?? agora()), ...p }
-        return lerConsulta(completo.proximaConsulta) ? completo : { ...completo, proximaConsulta: null }
+        return {
+          ...completo,
+          proximaConsulta: lerConsulta(completo.proximaConsulta) ? completo.proximaConsulta : null,
+          respostasAnamnese: normalizarRespostas(completo.respostasAnamnese),
+          suplementos: normalizarSuplementos(completo.suplementos),
+          pedidoExames: normalizarPedido(completo.pedidoExames),
+        }
       })
     } catch {
       return [...memoria.values()]

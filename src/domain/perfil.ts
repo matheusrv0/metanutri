@@ -96,6 +96,9 @@ export const CHAVES_DE_DADOS = [
   'metanutri:sugestoes-por-refeicao',
   'metanutri:perfil-conta',
   'metanutri:impressao',
+  // Spec anamnese-e-prescricoes: o roteiro de anamnese (D-161) e os modelos de suplemento (D-166) da conta.
+  'metanutri:roteiro-anamnese',
+  'metanutri:modelos-suplemento',
 ] as const
 
 export interface Backup {
