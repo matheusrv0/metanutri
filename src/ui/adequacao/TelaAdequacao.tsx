@@ -1,5 +1,5 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
@@ -19,6 +19,7 @@ import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
+import { chavesDosCobrir, destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
 import { MarcaLimite } from './MarcaLimite.tsx'
@@ -90,7 +91,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell>
         {podeCobrir(linha) ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`} data-cobrir={linha.chave}>
             Cobrir
           </Button>
         ) : null}
@@ -122,6 +123,15 @@ export function TelaAdequacao({
   }, [focarTitulo, idTitulo, aoFocarTitulo])
 
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
+  const tela = useRef<HTMLDivElement>(null)
+  // Qual Cobrir abriu a gaveta e a ordem dos Cobrir naquela hora, para devolver o foco ao fechar (D-212).
+  const abertura = useRef<{ readonly chave: string; readonly ordem: readonly string[] } | null>(null)
+  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
+    abertura.current = { chave, ordem: chavesDosCobrir(tela.current) }
+    setCobrindo(chave)
+  }
+  const focoAoFechar = () =>
+    abertura.current ? destinoDoFoco(tela.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
   const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
   const idNaMeta = useId()
   const celular = useMediaQuery(CELULAR)
@@ -155,7 +165,7 @@ export function TelaAdequacao({
     .join(' · ')
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={tela} className="flex flex-col gap-6">
       <Card className="gap-4">
         <CardHeader>
           <CardTitle id={idTitulo} tabIndex={-1} className="outline-none">
@@ -205,14 +215,14 @@ export function TelaAdequacao({
                 {pedemAcao.length > 0 ? (
                   <ul aria-label="Fora da meta" className="flex flex-col">
                     {pedemAcao.map((linha) => (
-                      <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                      <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => abrirCobrir(linha.chave)} />
                     ))}
                   </ul>
                 ) : null}
                 {naMeta.length > 0 ? <div className="pt-2">{botaoNaMeta}</div> : null}
                 <ul id={idNaMeta} hidden={!mostrarNaMeta} aria-label="Na meta" className="flex flex-col">
                   {naMeta.map((linha) => (
-                    <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                    <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => abrirCobrir(linha.chave)} />
                   ))}
                 </ul>
               </div>
@@ -239,7 +249,7 @@ export function TelaAdequacao({
                     </TableRow>
                   ) : null}
                   {pedemAcao.map((linha) => (
-                    <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                    <Linha key={linha.chave} linha={linha} aoCobrir={() => abrirCobrir(linha.chave)} />
                   ))}
                   {naMeta.length > 0 ? (
                     <TableRow className="[&:has(td)]:hover:bg-transparent">
@@ -251,7 +261,7 @@ export function TelaAdequacao({
                 </TableBody>
                 <TableBody id={idNaMeta} hidden={!mostrarNaMeta}>
                   {naMeta.map((linha) => (
-                    <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                    <Linha key={linha.chave} linha={linha} aoCobrir={() => abrirCobrir(linha.chave)} />
                   ))}
                 </TableBody>
               </Table>
@@ -296,6 +306,7 @@ export function TelaAdequacao({
         restricoes={restricoes}
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
+        focoAoFechar={focoAoFechar}
         aoAdicionar={(refeicaoId, opcao, alimentoId, gramas) => {
           aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas }, gerarId))
           setCobrindo(null)

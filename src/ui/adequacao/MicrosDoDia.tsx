@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
@@ -8,6 +8,7 @@ import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { chavesDosCobrir, destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
 import { podeCobrir } from './podeCobrir.ts'
@@ -37,6 +38,17 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const idMeta = useId()
+  const idTitulo = useId()
+  const secao = useRef<HTMLElement>(null)
+  // Qual Cobrir abriu a gaveta e a ordem dos Cobrir naquela hora, para devolver o foco ao fechar (D-212).
+  const abertura = useRef<{ readonly chave: string; readonly ordem: readonly string[] } | null>(null)
+
+  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
+    abertura.current = { chave, ordem: chavesDosCobrir(secao.current) }
+    setCobrindo(chave)
+  }
+  const focoAoFechar = () =>
+    abertura.current ? destinoDoFoco(secao.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
 
   const totais = useMemo(() => totaisDoPlano(plano, buscarAlimento), [plano])
   const resultado = useMemo(() => calcularAdequacao(totais, caso, caso.adequacao.preset), [totais, caso])
@@ -61,10 +73,12 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
         : 'Nada para cobrir.'
 
   return (
-    <section aria-label="Micronutrientes" className="flex flex-col">
+    <section ref={secao} aria-label="Micronutrientes" className="flex flex-col">
       <Card className="gap-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle>Micronutrientes</CardTitle>
+          <CardTitle id={idTitulo} tabIndex={-1} className="outline-none">
+            Micronutrientes
+          </CardTitle>
           {resultado.motivoSemCalculo ? null : (
             <Button variant="ghost" size="sm" onClick={aoVerTodos}>
               Ver todos
@@ -92,7 +106,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
                       <span className="numeros text-sm font-semibold text-warningtext">{`${formatarNumero(arredondarNoEstado(linha.adequacaoPct, 'abaixo', { min: linha.metaPct }), 0)}%`}</span>
                       <MarcaSemDado semDado={linha.semDado} />
                     </span>
-                    <Button size="sm" variant="lightprimary" onClick={() => setCobrindo(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`}>
+                    <Button size="sm" variant="lightprimary" onClick={() => abrirCobrir(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`} data-cobrir={linha.chave}>
                       Cobrir
                     </Button>
                   </li>
@@ -126,6 +140,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
         restricoes={restricoes}
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
+        focoAoFechar={focoAoFechar}
         aoAdicionar={(refeicaoId, opcao, alimentoId, gramas) => {
           aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas }, gerarId))
           setCobrindo(null)

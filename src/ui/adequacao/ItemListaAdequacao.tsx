@@ -32,7 +32,7 @@ export function ItemListaAdequacao({ linha, aoCobrir }: ItemListaAdequacaoProps)
           <span className="uppercase">{linha.referencia.tipo}</span>
         </span>
         {podeCobrir(linha) ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`} data-cobrir={linha.chave}>
             Cobrir
           </Button>
         ) : null}

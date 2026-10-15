@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
@@ -8,7 +8,16 @@ import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
+import { gavetaDeVerdade, gavetaSugere, IOGURTE_DESNATADO, sugestaoQueLevaAMeta } from './cobrirControlado.test-utils.ts'
 import { TelaAdequacao } from './TelaAdequacao.tsx'
+
+// O cálculo de verdade, salvo nos testes que dão à gaveta uma sugestão controlada.
+vi.mock('@/domain/cobrir.ts', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/domain/cobrir.ts')>()
+  return { ...real, sugerirParaCobrir: vi.fn(real.sugerirParaCobrir) }
+})
+
+afterEach(gavetaDeVerdade)
 
 let n = 0
 const ids = () => `id${++n}`
@@ -515,5 +524,31 @@ describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
 
     render(<Anfitriao inicial={adulta} planoInicial={plano} />)
     expect(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  })
+})
+
+describe('Foco depois do Cobrir na etapa 3 (D-212, CA-713)', () => {
+  const cobrirDaTela = () => screen.getAllByRole('button', { name: /^Cobrir / }).map((b) => b.getAttribute('aria-label') ?? '')
+
+  it('CA-713: a linha chega à meta e perde o Cobrir; o foco vai para o Cobrir do próximo', async () => {
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, { ...criarCasoVazio('c1'), ...adulta }, 'calcio_mg', IOGURTE_DESNATADO, ids))
+    const usuario = montar(adulta, plano)
+    const ordem = cobrirDaTela()
+    const proximo = ordem[ordem.indexOf('Cobrir Cálcio') + 1]
+    if (!proximo) throw new Error('o cálcio é o último da tabela')
+
+    await usuario.click(screen.getByRole('button', { name: 'Cobrir Cálcio' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar' }))
+    expect(screen.queryByRole('button', { name: 'Cobrir Cálcio' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: proximo })).toHaveFocus())
+  })
+
+  it('CA-713: fechar a gaveta sem adicionar devolve o foco ao Cobrir', async () => {
+    const usuario = montar(adulta, exemplo())
+    await usuario.click(screen.getByRole('button', { name: 'Cobrir Cálcio' }))
+    await usuario.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
   })
 })

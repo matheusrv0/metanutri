@@ -29,6 +29,11 @@ interface GavetaCobrirProps {
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number) => void
   readonly aoFechar: () => void
+  /**
+   * Para onde vai o foco quando a gaveta fecha (D-212). A gaveta abre por estado, sem gatilho próprio: sem isto o foco
+   * cairia no corpo da página.
+   */
+  readonly focoAoFechar?: () => HTMLElement | null
 }
 
 function descreverAvisos(s: Sugestao): readonly string[] {
@@ -61,6 +66,7 @@ export function GavetaCobrir({
   aoAlterarCaso,
   aoAdicionar,
   aoFechar,
+  focoAoFechar,
 }: GavetaCobrirProps) {
   const { adequacao: prefs } = caso
   const [refeicaoId, setRefeicaoId] = useState(plano.refeicoes[0]?.id ?? '')
@@ -96,7 +102,16 @@ export function GavetaCobrir({
 
   return (
     <Sheet open={chave !== null} onOpenChange={(v) => !v && aoFechar()}>
-      <SheetContent side="right" className="flex w-full flex-col gap-4 overflow-y-auto p-6 sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-4 overflow-y-auto p-6 sm:max-w-md"
+        onCloseAutoFocus={(evento) => {
+          const destino = focoAoFechar?.() ?? null
+          if (destino === null) return
+          evento.preventDefault()
+          destino.focus()
+        }}
+      >
         <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
           {resultado ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}

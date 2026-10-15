@@ -1,14 +1,22 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
-import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
-import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
+import type { Caso, Plano } from '@/domain/tipos.ts'
+import {
+  CENOURA_CRUA,
+  gavetaDeVerdade,
+  gavetaSugere,
+  IOGURTE_DESNATADO,
+  LENTILHA_COZIDA,
+  sugestaoQueLevaAMeta,
+  sugestaoQueNaoLevaAMeta,
+} from './cobrirControlado.test-utils.ts'
 import { MicrosDoDia } from './MicrosDoDia.tsx'
 
 // O cálculo de verdade, salvo nos testes que dão à gaveta uma sugestão controlada.
@@ -17,10 +25,7 @@ vi.mock('@/domain/cobrir.ts', async (importOriginal) => {
   return { ...real, sugerirParaCobrir: vi.fn(real.sugerirParaCobrir) }
 })
 
-afterEach(async () => {
-  const real = await vi.importActual<typeof import('@/domain/cobrir.ts')>('@/domain/cobrir.ts')
-  vi.mocked(sugerirParaCobrir).mockImplementation(real.sugerirParaCobrir)
-})
+afterEach(gavetaDeVerdade)
 
 let n = 0
 const ids = () => `id${++n}`
@@ -241,47 +246,11 @@ describe('Legenda do † no cartão (CA-699)', () => {
   })
 })
 
-const CENOURA_CRUA = 110
-
-/** Os nutrientes abaixo da meta, sem contar o sódio (que não se cobre), no plano dado. */
-function abaixoDaMeta(plano: Plano, caso: Caso): readonly ChaveNutrienteAlimento[] {
-  return calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
-    .linhas.filter((l) => l.estado === 'abaixo' && l.chave !== 'sodio_mg')
-    .map((l) => l.chave)
-}
-
-/**
- * Sugestão controlada (revisão da integração, item c): a menor porção do alimento, em passos de 5 g, que leva o
- * nutriente à meta; o teste não depende de qual alimento o Cobrir escolhe hoje. Confere que só esse nutriente sai
- * de "abaixo", para a contagem do cartão cair exatamente um.
- */
-function sugestaoQueLevaAMeta(plano: Plano, caso: Caso, chave: ChaveNutrienteAlimento, alimentoId: number): Sugestao {
-  const refeicao = plano.refeicoes[0]
-  const alimento = buscarAlimento(alimentoId)
-  if (!refeicao || !alimento) throw new Error('fixture sem refeição ou sem alimento')
-  const antes = abaixoDaMeta(plano, caso)
-  if (!antes.includes(chave)) throw new Error(`fixture: ${chave} já está na meta`)
-  for (let gramas = 5; gramas <= 300; gramas += 5) {
-    const depois = abaixoDaMeta(adicionarItem(plano, refeicao.id, 'principal', { alimentoId, gramas }, ids), caso)
-    if (depois.includes(chave)) continue
-    expect(depois).toEqual(antes.filter((c) => c !== chave))
-    const kcal = ((alimento.nutrientes.energia_kcal ?? 0) * gramas) / 100
-    return { alimentoId, descricao: alimento.descricao, gramas, coberturaPct: 100, parcial: false, kcalAdicionadas: kcal, avisos: [] }
-  }
-  throw new Error(`fixture: ${alimento.descricao} não leva ${chave} à meta em até 300 g`)
-}
-
-/** A gaveta passa a mostrar só a sugestão dada; o resto do resultado é o cálculo de verdade. */
-async function gavetaSugere(sugestao: Sugestao) {
-  const real = await vi.importActual<typeof import('@/domain/cobrir.ts')>('@/domain/cobrir.ts')
-  vi.mocked(sugerirParaCobrir).mockImplementation((...args) => ({ ...real.sugerirParaCobrir(...args), sugestoes: [sugestao] }))
-}
-
 describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
   it('CB-204: o nutriente que chega à meta depois do Cobrir sai do cartão', async () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'vitamina_a_rae_mcg', CENOURA_CRUA))
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'vitamina_a_rae_mcg', CENOURA_CRUA, ids))
     const { usuario } = montar(adulta, plano)
     const antes = Number(cartao().getByText(/para cobrir\.$/).textContent?.match(/^(\d+)/)?.[1])
     const vitaminaA = linhas().find((l) => l.textContent?.startsWith('Vitamina A'))
@@ -295,5 +264,73 @@ describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
 
     expect(linhas().some((l) => l.textContent?.startsWith('Vitamina A'))).toBe(false)
     expect(cartao().getByText(`${antes - 1} para cobrir.`)).toBeInTheDocument()
+  })
+})
+
+describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
+  const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+  const casoDe = (inicial: Partial<Caso>): Caso => ({ ...criarCasoVazio('c1'), ...inicial })
+  const cobrirDoCartao = () => cartao().getAllByRole('button', { name: /^Cobrir / }).map((b) => b.getAttribute('aria-label') ?? '')
+  const titulo = () => cartao().getByRole('heading', { name: 'Micronutrientes' })
+
+  /** Abre o Cobrir do nutriente no cartão e clica em "Adicionar" na sugestão (única) da gaveta. */
+  const cobrirEAdicionar = async (usuario: ReturnType<typeof userEvent.setup>, rotulo: string) => {
+    await usuario.click(cartao().getByRole('button', { name: `Cobrir ${rotulo}` }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  }
+
+  it('CA-713: o nutriente chega à meta e sai do cartão; o foco vai para o Cobrir do próximo', async () => {
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'calcio_mg', IOGURTE_DESNATADO, ids))
+    const { usuario } = montar(adulta, plano)
+    const ordem = cobrirDoCartao()
+    const proximo = ordem[ordem.indexOf('Cobrir Cálcio') + 1]
+    if (!proximo) throw new Error('o cálcio é o último do cartão')
+
+    await cobrirEAdicionar(usuario, 'Cálcio')
+    expect(cartao().queryByRole('button', { name: 'Cobrir Cálcio' })).not.toBeInTheDocument()
+    await waitFor(() => expect(cartao().getByRole('button', { name: proximo })).toHaveFocus())
+  })
+
+  it('CA-713: sem próximo, o foco vai para o título do cartão', async () => {
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'vitamina_a_rae_mcg', CENOURA_CRUA, ids))
+    const { usuario } = montar(adulta, plano)
+    expect(cobrirDoCartao().at(-1)).toBe('Cobrir Vitamina A (RAE)')
+
+    await cobrirEAdicionar(usuario, 'Vitamina A (RAE)')
+    expect(cartao().getAllByRole('button', { name: /^Cobrir / }).length).toBeGreaterThan(0)
+    await waitFor(() => expect(titulo()).toHaveFocus())
+  })
+
+  it('CA-713: o nutriente continua abaixo da meta, e o foco volta ao Cobrir dele', async () => {
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueNaoLevaAMeta(plano, casoDe(adulta), 'calcio_mg', IOGURTE_DESNATADO, 50, ids))
+    const { usuario } = montar(adulta, plano)
+
+    await cobrirEAdicionar(usuario, 'Cálcio')
+    await waitFor(() => expect(cartao().getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
+  })
+
+  it('CA-713: fechar a gaveta sem adicionar devolve o foco ao Cobrir', async () => {
+    const { usuario } = montar(adulta, exemplo())
+    await usuario.click(cartao().getByRole('button', { name: 'Cobrir Cálcio' }))
+    await usuario.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(cartao().getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
+  })
+
+  it('CB-211: o único do cartão chega à meta; o cartão diz "Nada para cobrir." e o foco vai para o título', async () => {
+    // Com a meta em 50%, no exemplo só o ferro fica abaixo (fora o sódio).
+    const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 50 } } }
+    const plano = exemplo()
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(inicial), 'ferro_mg', LENTILHA_COZIDA, ids))
+    const { usuario } = montar(inicial, plano)
+    expect(cobrirDoCartao()).toEqual(['Cobrir Ferro'])
+
+    await cobrirEAdicionar(usuario, 'Ferro')
+    expect(cartao().getByText(/^(Nada para cobrir|Todos os 16 na meta)\.$/)).toBeInTheDocument()
+    await waitFor(() => expect(titulo()).toHaveFocus())
   })
 })
