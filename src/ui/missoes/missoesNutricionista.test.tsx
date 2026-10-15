@@ -527,6 +527,19 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(screen.queryByRole('button', { name: 'Atualizar a dieta no link' })).not.toBeInTheDocument()
   })
 
+  it('CA-545: cópia guardada vazia (nada para o paciente ver): o aviso diz que o paciente ainda não vê a dieta', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: copiarDieta({ refeicoes: [], orientacoes: '', receitas: '' }, '2026-09-01') })
+    cartaoComDieta(repo)
+
+    expect(screen.getByText('O paciente ainda não vê a dieta.')).toBeInTheDocument()
+    expect(screen.queryByText(MUDOU)).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar a dieta no link' }))
+    expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
+    expect(screen.queryByText('O paciente ainda não vê a dieta.')).not.toBeInTheDocument()
+  })
+
   it('CA-545: link sem dieta não avisa que o plano mudou', () => {
     const repo = criarRepositorioAcompanhamentos(memoria())
     repo.salvar(acompanhamentoDe('c1', 'Ana'))

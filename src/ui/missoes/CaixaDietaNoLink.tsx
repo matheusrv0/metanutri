@@ -10,6 +10,8 @@ interface CaixaDietaNoLinkProps {
   readonly ocupada?: boolean
   /** O plano mudou, no que o paciente vê, desde a cópia que está no link (CA-545). */
   readonly desatualizada?: boolean
+  /** A cópia que está no link não tem nada para o paciente ver: não existe "dieta anterior" (CA-545). */
+  readonly copiaVazia?: boolean
   readonly aoAtualizar?: (() => void) | undefined
   /** CA-544: ligar a dieta num link que já existe espera a confirmação de autorização. */
   readonly pedindoAutorizacao?: boolean
@@ -23,6 +25,7 @@ export function CaixaDietaNoLink({
   aoMudar,
   ocupada = false,
   desatualizada = false,
+  copiaVazia = false,
   aoAtualizar,
   pedindoAutorizacao = false,
   aoAutorizar,
@@ -71,7 +74,9 @@ export function CaixaDietaNoLink({
       {marcada && desatualizada && aoAtualizar ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-3">
           {/* No celular, a frase fica numa linha e o botão vai para baixo dela, em vez de espremer a frase. */}
-          <p className="min-w-48 flex-1 text-sm text-infotext">O plano mudou. O paciente ainda vê a dieta anterior.</p>
+          <p className="min-w-48 flex-1 text-sm text-infotext">
+            {copiaVazia ? 'O paciente ainda não vê a dieta.' : 'O plano mudou. O paciente ainda vê a dieta anterior.'}
+          </p>
           <Button type="button" size="sm" variant="outline" loading={ocupada} onClick={aoAtualizar}>
             <RefreshCw aria-hidden="true" />
             Atualizar a dieta no link

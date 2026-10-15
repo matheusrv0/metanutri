@@ -13,7 +13,7 @@ import {
   EXPLICACAO_ESTADO,
   type Acompanhamento,
 } from '@/domain/acompanhamento.ts'
-import { copiarDieta, dietaMudou, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { copiarDieta, dietaMudou, temDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
@@ -256,6 +256,7 @@ export function CartaoLinkMissoes({
             aoMudar={mudarCaixa}
             ocupada={salvando}
             desatualizada={acompanhamento.dieta !== null && dietaMudou(acompanhamento.dieta, dieta)}
+            copiaVazia={!temDieta(acompanhamento.dieta)}
             aoAtualizar={atualizarDieta}
             pedindoAutorizacao={autorizandoDieta && acompanhamento.dieta === null}
             aoAutorizar={() => trocarDieta(true)}
