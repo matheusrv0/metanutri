@@ -111,6 +111,8 @@ test.describe('no tema escuro', () => {
     expect(cores.corDoHorario).toBe('rgb(0, 0, 0)')
     expect(cores.corDoTitulo).toBe('rgb(0, 0, 0)')
     expect(cores.menorFundo).toBeGreaterThan(0.85)
+    // Com "Gráficos de fundo" ligado, o esquema escuro da página pintava as margens de preto (revisão de 15/10).
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light')
     await page.emulateMedia({ media: 'screen' })
   })
 

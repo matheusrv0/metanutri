@@ -358,6 +358,13 @@
     --border-default: #666;
   }
 
+  /* O ProvedorTema grava color-scheme: dark no <html> (estilo inline). Com "Gráficos de fundo" ligado, o Chrome pinta
+     a página fora da folha com o fundo do esquema escuro: uma moldura preta em volta da folha (CA-622). O !important
+     vence o estilo inline. */
+  html {
+    color-scheme: light !important;
+  }
+
   body {
     background: #fff;
   }
