@@ -19,7 +19,7 @@ import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
-import { chavesDosCobrir, destinoDoFoco } from './focoDoCobrir.ts'
+import { destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
 import { MarcaLimite } from './MarcaLimite.tsx'
@@ -124,12 +124,8 @@ export function TelaAdequacao({
 
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const tela = useRef<HTMLDivElement>(null)
-  // Qual Cobrir abriu a gaveta e a ordem dos Cobrir naquela hora, para devolver o foco ao fechar (D-212).
+  // Qual Cobrir abriu a gaveta e a ordem de todos os que pedem Cobrir naquela hora, para devolver o foco ao fechar (D-212).
   const abertura = useRef<{ readonly chave: string; readonly ordem: readonly string[] } | null>(null)
-  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
-    abertura.current = { chave, ordem: chavesDosCobrir(tela.current) }
-    setCobrindo(chave)
-  }
   const focoAoFechar = () =>
     abertura.current ? destinoDoFoco(tela.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
   const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
@@ -150,6 +146,10 @@ export function TelaAdequacao({
   // O que pede ação fica à vista, na ordem de sempre; o que está na meta fica recolhido (D-205).
   const pedemAcao = resultado.linhas.filter((l) => l.estado !== 'adequado')
   const naMeta = resultado.linhas.filter((l) => l.estado === 'adequado')
+  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
+    abertura.current = { chave, ordem: pedemAcao.filter(podeCobrir).map((l) => l.chave) }
+    setCobrindo(chave)
+  }
   const rotuloNaMeta = `${mostrarNaMeta ? 'Esconder' : 'Ver'} os ${naMeta.length} na meta`
   const botaoNaMeta = (
     <Button variant="ghost" size="sm" aria-expanded={mostrarNaMeta} aria-controls={idNaMeta} onClick={() => setMostrarNaMeta((v) => !v)}>

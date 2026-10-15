@@ -8,15 +8,11 @@ function botoesCobrir(conteiner: ParentNode | null): readonly HTMLElement[] {
   return conteiner ? [...conteiner.querySelectorAll<HTMLElement>(`[${ATRIBUTO_COBRIR}]`)] : []
 }
 
-/** As chaves dos Cobrir dentro do contêiner, na ordem da tela. */
-export function chavesDosCobrir(conteiner: ParentNode | null): readonly string[] {
-  return botoesCobrir(conteiner).map((b) => b.getAttribute(ATRIBUTO_COBRIR) ?? '')
-}
-
 /**
- * O Cobrir que abriu a gaveta, se continua na tela. Se sumiu (o nutriente chegou à meta), o Cobrir do próximo que
- * estava abaixo dele quando a gaveta abriu; a lista se reordena com o plano novo, então vale a ordem da abertura. Sem
- * próximo, o título.
+ * O Cobrir que abriu a gaveta, se continua na tela. Se sumiu (o nutriente chegou à meta, ou continua abaixo mas saiu
+ * dos 5 do cartão), o Cobrir do próximo que estava abaixo dele quando a gaveta abriu. `ordemAoAbrir` traz todos os
+ * que pedem Cobrir, também os que não cabiam à vista: o 6º que entra no cartão conta. A lista se reordena com o plano
+ * novo, então vale a ordem da abertura. Sem próximo à vista, o título.
  */
 export function destinoDoFoco(conteiner: ParentNode | null, ordemAoAbrir: readonly string[], chave: string, titulo: HTMLElement | null): HTMLElement | null {
   const agora = new Map(botoesCobrir(conteiner).map((b) => [b.getAttribute(ATRIBUTO_COBRIR), b]))

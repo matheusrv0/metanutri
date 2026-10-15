@@ -9,6 +9,8 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
 
 export const CENOURA_CRUA = 110
+/** Quase só tiamina: leva a B1 à meta sem mexer nos outros. */
+export const CHA_PRETO = 477
 export const IOGURTE_DESNATADO = 449
 export const LENTILHA_COZIDA = 577
 

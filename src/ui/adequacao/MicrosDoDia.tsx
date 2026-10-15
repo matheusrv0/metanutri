@@ -8,7 +8,7 @@ import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { chavesDosCobrir, destinoDoFoco } from './focoDoCobrir.ts'
+import { destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
 import { podeCobrir } from './podeCobrir.ts'
@@ -40,13 +40,9 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
   const idMeta = useId()
   const idTitulo = useId()
   const secao = useRef<HTMLElement>(null)
-  // Qual Cobrir abriu a gaveta e a ordem dos Cobrir naquela hora, para devolver o foco ao fechar (D-212).
+  // Qual Cobrir abriu a gaveta e a ordem de todos os que pedem Cobrir naquela hora, também os que não cabem nos 5
+  // à vista: o 6º que entra no lugar do coberto recebe o foco (D-212, CA-713).
   const abertura = useRef<{ readonly chave: string; readonly ordem: readonly string[] } | null>(null)
-
-  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
-    abertura.current = { chave, ordem: chavesDosCobrir(secao.current) }
-    setCobrindo(chave)
-  }
   const focoAoFechar = () =>
     abertura.current ? destinoDoFoco(secao.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
 
@@ -62,6 +58,10 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
   const metaPct = resultado.linhas[0]?.metaPct ?? null
   const mostrados = [...paraCobrir.slice(0, MAXIMO), ...acima]
+  const abrirCobrir = (chave: ChaveNutrienteAlimento) => {
+    abertura.current = { chave, ordem: paraCobrir.map((l) => l.chave) }
+    setCobrindo(chave)
+  }
   // O † precisa de explicação à vista: o title do † não abre por toque nem por teclado (CA-699).
   const temMarca = mostrados.some((l) => l.semDado > 0)
 

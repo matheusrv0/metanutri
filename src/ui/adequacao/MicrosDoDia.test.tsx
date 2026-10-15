@@ -10,6 +10,7 @@ import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import {
   CENOURA_CRUA,
+  CHA_PRETO,
   gavetaDeVerdade,
   gavetaSugere,
   IOGURTE_DESNATADO,
@@ -319,6 +320,27 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
     await usuario.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await waitFor(() => expect(cartao().getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
+  })
+
+  it('CA-713: com mais de 5 para cobrir, o 6º que entra à vista recebe o foco quando o 5º chega à meta', async () => {
+    // Com a meta em 140%, no exemplo 9 ficam abaixo (fora o sódio): o cartão mostra 5.
+    const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 140 } } }
+    const plano = exemplo()
+    const caso = casoDe(inicial)
+    const ordem = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
+      .linhas.filter((l) => l.estado === 'abaixo' && l.chave !== 'sodio_mg')
+      .sort((a, b) => a.adequacaoPct - b.adequacaoPct)
+    const [quinto, sexto] = [ordem[4], ordem[5]]
+    if (!quinto || !sexto) throw new Error('fixture: menos de 6 para cobrir')
+    expect(quinto.chave).toBe('tiamina_mg')
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'tiamina_mg', CHA_PRETO, ids))
+    const { usuario } = montar(inicial, plano)
+    expect(cobrirDoCartao()).toHaveLength(5)
+    expect(cobrirDoCartao()).not.toContain(`Cobrir ${sexto.rotulo}`)
+
+    await cobrirEAdicionar(usuario, quinto.rotulo)
+    expect(cobrirDoCartao()).toContain(`Cobrir ${sexto.rotulo}`)
+    await waitFor(() => expect(cartao().getByRole('button', { name: `Cobrir ${sexto.rotulo}` })).toHaveFocus())
   })
 
   it('CB-211: o único do cartão chega à meta; o cartão diz "Nada para cobrir." e o foco vai para o título', async () => {
