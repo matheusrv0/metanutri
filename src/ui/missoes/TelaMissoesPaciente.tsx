@@ -19,7 +19,7 @@ import { temDieta } from '@/domain/dietaDoLink.ts'
 import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { cn } from '@/lib/utils'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
-import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
 import { MeuPlano } from './MeuPlano.tsx'
 
 type Parte = 'missoes' | 'plano'
@@ -29,6 +29,15 @@ const PARTES: readonly { readonly valor: Parte; readonly rotulo: string }[] = [
   { valor: 'missoes', rotulo: 'Missões' },
   { valor: 'plano', rotulo: 'Meu plano' },
 ]
+
+/*
+ * DP-157: as abas do design system (Tabs, do Radix: tablist, tab, tabpanel e setas do teclado) com cara de pílula só
+ * nesta tela. O trilho cinza ganha um fio para aparecer sobre a mesa cinza; a aba escolhida é a pílula branca. A régua
+ * por baixo da aba do Tabs some aqui. Toque de 44 px no celular.
+ */
+const TRILHO = 'grid w-full grid-cols-2 gap-1 rounded-full border border-borderdefault bg-surfacerow p-1'
+const ABA =
+  'h-11 rounded-full px-4 font-semibold sm:h-9 data-[state=active]:bg-card data-[state=active]:text-heading data-[state=active]:shadow-xs data-[state=active]:after:hidden'
 
 interface TelaMissoesPacienteProps {
   readonly token: string
@@ -135,6 +144,17 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   const primeiroNome = acompanhamento.nome.trim().split(/[\s,;]+/)[0] || 'Olá'
   // CA-536 e CB-159: link sem dieta, ou com a dieta vazia, é a tela de missões de sempre.
   const dieta = temDieta(acompanhamento.dieta) ? acompanhamento.dieta : null
+  const parteDasMissoes = (
+    <ParteDasMissoes
+      hoje={hoje}
+      primeiroNome={primeiroNome}
+      missoes={missoes}
+      progresso={progresso}
+      naSemana={naSemana}
+      tudoFeito={tudoFeito}
+      aoAlternar={alternar}
+    />
+  )
 
   return (
     <Moldura>
@@ -151,27 +171,23 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
       <Logo tamanho={22} className="mb-5" />
 
       {dieta ? (
-        <SeletorSegmentado
-          rotulo="O que ver"
-          opcoes={PARTES}
-          valor={parte}
-          aoEscolher={setParte}
-          className="mb-6 w-full [&>button]:flex-1 [&>button]:justify-center"
-        />
-      ) : null}
-
-      {dieta !== null && parte === 'plano' ? (
-        <MeuPlano dieta={dieta} primeiroNome={primeiroNome} />
+        <Tabs value={parte} onValueChange={(valor) => setParte(valor === 'plano' ? 'plano' : 'missoes')}>
+          <TabsList aria-label="O que ver" className={TRILHO}>
+            {PARTES.map((p) => (
+              <TabsTrigger key={p.valor} value={p.valor} className={ABA}>
+                {p.rotulo}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value="missoes" className="mt-6">
+            {parteDasMissoes}
+          </TabsContent>
+          <TabsContent value="plano" className="mt-6">
+            <MeuPlano dieta={dieta} primeiroNome={primeiroNome} />
+          </TabsContent>
+        </Tabs>
       ) : (
-        <ParteDasMissoes
-          hoje={hoje}
-          primeiroNome={primeiroNome}
-          missoes={missoes}
-          progresso={progresso}
-          naSemana={naSemana}
-          tudoFeito={tudoFeito}
-          aoAlternar={alternar}
-        />
+        parteDasMissoes
       )}
     </Moldura>
   )

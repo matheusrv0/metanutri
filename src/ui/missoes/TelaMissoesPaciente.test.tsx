@@ -207,19 +207,39 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const { fonte, salvos } = fonteFalsa(acompanhamento({ dieta: DIETA, ...parcial }))
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
-    await usuario.click(await screen.findByRole('radio', { name: 'Meu plano' }))
+    await usuario.click(await screen.findByRole('tab', { name: 'Meu plano' }))
     return { usuario, salvos }
   }
 
-  it('CA-530: com a dieta, o link mostra o seletor e abre em "Missões", com a tela de hoje', async () => {
+  it('CA-530: com a dieta, o link mostra as abas e abre em "Missões", com a tela de hoje dentro do painel da aba', async () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    const seletor = await screen.findByRole('radiogroup', { name: 'O que ver' })
-    expect(within(seletor).getByRole('radio', { name: 'Missões' })).toHaveAttribute('aria-checked', 'true')
-    expect(within(seletor).getByRole('radio', { name: 'Meu plano' })).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+    const abas = await screen.findByRole('tablist', { name: 'O que ver' })
+    const missoes = within(abas).getByRole('tab', { name: 'Missões' })
+    expect(missoes).toHaveAttribute('aria-selected', 'true')
+    expect(within(abas).getByRole('tab', { name: 'Meu plano' })).toHaveAttribute('aria-selected', 'false')
+    const painel = screen.getByRole('tabpanel', { name: 'Missões' })
+    expect(missoes).toHaveAttribute('aria-controls', painel.id)
+    expect(within(painel).getByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: '12:00 Almoço' })).not.toBeInTheDocument()
+  })
+
+  it('CA-530: com o foco numa aba, as setas do teclado passam para a outra', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    await usuario.click(await screen.findByRole('tab', { name: 'Missões' }))
+    await usuario.keyboard('{ArrowRight}')
+
+    const meuPlano = screen.getByRole('tab', { name: 'Meu plano' })
+    expect(meuPlano).toHaveFocus()
+    expect(meuPlano).toHaveAttribute('aria-selected', 'true')
+    expect(within(screen.getByRole('tabpanel', { name: 'Meu plano' })).getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
+
+    await usuario.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('CA-531: "Meu plano" mostra cada refeição com horário e nome, a medida caseira em destaque, o peso e o alimento', async () => {
@@ -299,7 +319,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
 
   it('voltar para "Missões" mostra as missões de novo, e marcar continua gravando só as marcações', async () => {
     const { usuario, salvos } = await abrirMeuPlano()
-    await usuario.click(screen.getByRole('radio', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
     await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
     expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
     expect(salvos[0]?.dieta).toEqual(DIETA)
@@ -309,7 +329,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: null }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
-    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     expect(screen.queryByText('Meu plano')).not.toBeInTheDocument()
   })
 
@@ -318,7 +338,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: vazia }))
     const { unmount } = render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     await screen.findByRole('heading', { name: /missões de hoje/ })
-    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     unmount()
 
     await abrirMeuPlano({ dieta: { ...vazia, orientacoes: 'Beber água.' } })

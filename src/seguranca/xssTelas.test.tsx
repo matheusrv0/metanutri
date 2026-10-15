@@ -144,7 +144,7 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     })
     const fonte: FonteAcompanhamentos = { naNuvem: true, porToken: () => Promise.resolve(acompanhamento), salvar: (a) => Promise.resolve(a) }
     render(<TelaMissoesPaciente token={acompanhamento.token} fonte={fonte} hoje="2026-10-14" />)
-    await userEvent.setup().click(await screen.findByRole('radio', { name: 'Meu plano' }))
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Meu plano' }))
     for (const parte of ['refeicao', 'medida', 'alimento', 'orientacoes', 'receitas']) cargaComoTexto(parte)
     conferirSemInjecao()
   })
