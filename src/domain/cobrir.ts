@@ -51,6 +51,8 @@ export interface ResultadoCobrir {
  */
 const CAFE_OU_CHA = /^(Café|Chá),/i
 
+export const SODIO_NAO_SE_COBRE = 'O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.'
+
 const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' ')
 
 const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
@@ -145,6 +147,8 @@ export function sugerirParaCobrir(
 
   const meta = (linha.referencia.valor * linha.metaPct) / 100
   const falta = Math.max(0, meta - linha.total)
+  // Subir sódio com alimento não é conduta: o sal de cozinha não entra no plano (spec sugestoes-com-criterio, D-199d).
+  if (chave === 'sodio_mg') return vazio(linha.unidade, falta, SODIO_NAO_SE_COBRE)
   if (falta === 0) return vazio(linha.unidade, 0, `${linha.rotulo} já atingiu a meta.`)
 
   const porcaoMaxima = opcoes.porcaoMaximaG ?? PORCAO_MAXIMA_PADRAO_G

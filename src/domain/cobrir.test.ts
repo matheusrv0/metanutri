@@ -373,6 +373,19 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     )
   })
 
+  it('CA-678: o sódio não se cobre com alimento, com qualquer chave e porção', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+    for (const incluirIngredientes of [false, true]) {
+      for (const porcaoMaximaG of [50, 200]) {
+        const r = sugerirParaCobrir('sodio_mg', vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, incluirIngredientes, porcaoMaximaG })
+        expect(r.falta).toBeGreaterThan(0)
+        expect(r.sugestoes).toEqual([])
+        expect(r.motivoSemSugestao).toBe('O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.')
+      }
+    }
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
