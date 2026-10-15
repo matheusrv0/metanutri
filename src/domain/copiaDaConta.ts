@@ -167,10 +167,16 @@ export function montarCopia(armazenamento: Armazenamento | null, agora: string):
   return { ...copia, dados: { ...copia.dados, [CHAVE_MUDANCAS]: JSON.stringify({ alterados: lidas.alterados, excluidos: recentes(lidas.excluidos, agora) }) } }
 }
 
+/** Uma referência da chave que ficou, com a hora do valor daqui (a marca; sem marca, a data do item). */
+interface RefMantida {
+  readonly ref: string
+  readonly tempo: string
+}
+
 /** O que ficou de uma chave daqui que a cópia não trouxe (D-170): o valor e as referências dele. */
 interface Mantida {
   readonly valor: string
-  readonly refs: readonly string[]
+  readonly refs: readonly RefMantida[]
 }
 
 /**
@@ -182,27 +188,34 @@ interface Mantida {
  */
 function manterSemLapide(chave: string, valor: string, lapides: Readonly<Record<string, string>>, marcas: Readonly<Record<string, string>>): Mantida | null {
   if (chave === INDICE || chave === CHAVE_MUDANCAS || chave.startsWith(PREFIXO_PLANO)) return null
-  const apagado = (ref: string, tempo: string | null): boolean => {
-    const lapide = lapides[ref]
-    return lapide !== undefined && lapide >= (marcas[ref] ?? tempo ?? '')
+  const tempoDe = (ref: string, doItem: string | null): string => marcas[ref] ?? doItem ?? ''
+  const apagado = (ref: RefMantida): boolean => {
+    const lapide = lapides[ref.ref]
+    return lapide !== undefined && lapide >= ref.tempo
   }
   const lista = LISTAS[chave]
   if (lista === undefined) {
     const ref = `chave/${chave}`
-    return apagado(ref, null) ? null : { valor, refs: [ref] }
+    const mantida = { ref, tempo: tempoDe(ref, null) }
+    return apagado(mantida) ? null : { valor, refs: [mantida] }
   }
   const itens = itensDe(chave, valor)
   if (itens === null) return null
-  const ficam = itens.filter((item) => !apagado(`${lista.nome}/${idDe(item) ?? ''}`, lista.tempo(item)))
+  const comRef = itens.map((item) => {
+    const ref = `${lista.nome}/${idDe(item) ?? ''}`
+    return { item, ref: { ref, tempo: tempoDe(ref, lista.tempo(item)) } }
+  })
+  const ficam = comRef.filter(({ ref }) => !apagado(ref))
   if (ficam.length === 0) return null
-  const refs = ficam.map((item) => `${lista.nome}/${idDe(item) ?? ''}`)
+  const refs = ficam.map(({ ref }) => ref)
   // Sem item a tirar, o texto fica exatamente o mesmo.
   if (ficam.length === itens.length) return { valor, refs }
-  if (chave !== CHAVE_ACOMPANHAMENTOS) return { valor: JSON.stringify(ficam), refs }
+  const itensQueFicam = ficam.map(({ item }) => item)
+  if (chave !== CHAVE_ACOMPANHAMENTOS) return { valor: JSON.stringify(itensQueFicam), refs }
   const arquivo = lerJson(valor) as Item
-  const ids = new Set(ficam.map((item) => idDe(item)))
+  const ids = new Set(itensQueFicam.map((item) => idDe(item)))
   const soDosQueFicam = (v: unknown): unknown => (Array.isArray(v) ? v.filter((id) => typeof id === 'string' && ids.has(id)) : v)
-  return { valor: JSON.stringify({ ...arquivo, itens: ficam, naNuvem: soDosQueFicam(arquivo['naNuvem']), pendentes: soDosQueFicam(arquivo['pendentes']) }), refs }
+  return { valor: JSON.stringify({ ...arquivo, itens: itensQueFicam, naNuvem: soDosQueFicam(arquivo['naNuvem']), pendentes: soDosQueFicam(arquivo['pendentes']) }), refs }
 }
 
 /** O que aplicar a cópia fez na cópia de trabalho. */
@@ -210,40 +223,57 @@ export interface Aplicacao {
   /** Algo mudou aqui. */
   readonly mudou: boolean
   /**
-   * D-170: as chaves daqui que a cópia não trazia e que ficaram, por não terem lápide (uma versão antiga do
-   * site salvou sem elas). Elas precisam voltar para a nuvem: quem aplica conta uma mudança.
+   * D-170: as chaves daqui que a cópia não trazia, que ficaram (sem lápide: uma versão antiga do site salvou
+   * sem elas) e que precisam voltar para a nuvem, porque o valor daqui é igual ou mais novo que a marca que a
+   * cópia traz delas (DP-35). Quem aplica conta uma mudança. A chave daqui mais velha também fica, mas não
+   * entra aqui: outro aparelho tem o valor mais novo e o devolve.
    */
   readonly mantidas: readonly string[]
 }
 
-/**
- * Escreve a cópia na cópia de trabalho: tira o que ela não tem e grava o que mudou (só entre as chaves
- * da nuvem; o resto do aparelho fica). A chave daqui que a cópia não traz e sem lápide fica (D-170), com a
- * marca daqui. Os planos vão antes do índice. Sem espaço, a exceção sobe: o valor de antes de cada chave
- * não gravada continua lá.
- */
-export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): Aplicacao {
-  const atual = montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados
+/** O que a cópia de trabalho deve ficar depois de aplicar a cópia, sem gravar nada. */
+function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backup): { readonly alvo: Record<string, string>; readonly mantidas: string[] } {
   const alvo: Record<string, string> = Object.fromEntries(Object.entries(copia.dados).filter(([chave]) => ehChaveDaNuvem(chave)))
   const daCopia = lerMudancas(alvo[CHAVE_MUDANCAS] ?? null)
   const marcasDaqui = lerMudancas(atual[CHAVE_MUDANCAS] ?? null).alterados
   const mantidas: string[] = []
   const alterados = new Map(Object.entries(daCopia.alterados))
+  let marcasMudaram = false
   for (const [chave, valor] of Object.entries(atual)) {
     if (chave in alvo) continue
     const mantida = manterSemLapide(chave, valor, daCopia.excluidos, marcasDaqui)
     if (mantida === null) continue
     alvo[chave] = mantida.valor
-    mantidas.push(chave)
-    // A marca é a do valor que ficou: a daqui. Sem marca daqui, a junção usa a data do item.
-    for (const ref of mantida.refs) {
+    let sobe = false
+    for (const { ref, tempo } of mantida.refs) {
+      const naCopia = daCopia.alterados[ref]
+      // DP-35: só o valor daqui igual ou mais novo que o que a cópia conhece volta para a nuvem, com a marca daqui.
+      // Mais velho, fica aqui com a marca da cópia, e o aparelho que tem o mais novo o devolve.
+      if (naCopia !== undefined && tempo < naCopia) continue
+      sobe = true
       const marca = marcasDaqui[ref]
-      if (marca === undefined) alterados.delete(ref)
-      else alterados.set(ref, marca)
+      if (marca !== undefined && marca !== naCopia) {
+        alterados.set(ref, marca)
+        marcasMudaram = true
+      }
     }
+    if (sobe) mantidas.push(chave)
   }
-  if (mantidas.length > 0) alvo[CHAVE_MUDANCAS] = JSON.stringify({ alterados: Object.fromEntries(alterados), excluidos: daCopia.excluidos })
+  if (marcasMudaram) {
+    alvo[CHAVE_MUDANCAS] = JSON.stringify({ alterados: Object.fromEntries(alterados), excluidos: daCopia.excluidos })
+  }
+  return { alvo, mantidas }
+}
 
+/**
+ * Escreve a cópia na cópia de trabalho: tira o que ela não tem e grava o que mudou (só entre as chaves
+ * da nuvem; o resto do aparelho fica). A chave daqui que a cópia não traz e sem lápide fica (D-170). Os
+ * planos vão antes do índice. Sem espaço, a exceção sobe: o valor de antes de cada chave não gravada
+ * continua lá.
+ */
+export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): Aplicacao {
+  const atual = montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados
+  const { alvo, mantidas } = planejarAplicacao(atual, copia)
   const entradas = Object.entries(alvo).sort(([a], [b]) => Number(a === INDICE) - Number(b === INDICE))
   let mudou = false
   // As que saem vão antes (DP-23): o espaço delas fica livre para as que entram.

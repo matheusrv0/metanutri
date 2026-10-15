@@ -468,10 +468,11 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
   it('CA-590: uma cópia do app antigo não apaga o roteiro nem os modelos, e eles voltam na próxima cópia', () => {
     const arm = aparelhoNovo()
     // A versão antiga não conhece as duas chaves: a cópia dela vem sem elas, com a mudança que ela fez (Bia) e as
-    // marcas que ela copiou da nuvem (a do roteiro, com outra hora).
+    // marcas que ela copiou da nuvem (as deste aparelho, que foi o último a mexer no roteiro e nos modelos; a do
+    // modelo "b" sem marca nenhuma).
     const doAppAntigo = copia({
       'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana'), paciente('bia', 'Bia', T(3))]),
-      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'pacientes/bia': T(3), [`chave/${ROTEIRO}`]: T(4) }),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'pacientes/bia': T(3), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/a': T(2) }),
     })
     const aplicada = aplicarCopia(arm, doAppAntigo)
     expect(aplicada.mudou).toBe(true)
@@ -479,7 +480,7 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     expect(arm.getItem(ROTEIRO)).toBe(roteiro)
     expect(nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Ferro', 'Zinco'])
     expect(nomes(copia({ p: arm.getItem('metanutri:pacientes') ?? '' }), 'p')).toEqual(['Ana', 'Bia'])
-    // A marca de cada chave mantida é a daqui: a hora do valor que ficou, não a que a cópia trouxe.
+    // A marca de cada chave mantida é a daqui: a hora do valor que ficou.
     expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados).toEqual({
       'pacientes/ana': T(1),
       'pacientes/bia': T(3),
@@ -490,6 +491,52 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     const proxima = montarCopia(arm, AGORA)
     expect(proxima.dados[ROTEIRO]).toBe(roteiro)
     expect(nomes(proxima, MODELOS)).toEqual(['Ferro', 'Zinco'])
+  })
+
+  it('CA-599: o roteiro daqui mais velho que a marca da cópia fica aqui sem subir; o aparelho com o mais novo o devolve', () => {
+    const rot = (texto: string) => JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'q', texto }] } })
+    const pacientes = JSON.stringify([paciente('ana', 'Ana')])
+    const aparelho = (texto: string, quando: string) => {
+      const arm = new Memoria()
+      arm.setItem('metanutri:pacientes', pacientes)
+      arm.setItem(ROTEIRO, rot(texto))
+      arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: quando }))
+      return arm
+    }
+    // N2 salvou o roteiro novo às 4h; N1 ainda está com o de 2h. A aba antiga salvou sem o roteiro, com a marca das 4h.
+    const n2 = aparelho('r2 novo', T(4))
+    const n1 = aparelho('r1 velho', T(2))
+    const v3 = copia({ 'metanutri:pacientes': pacientes, [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(4) }) })
+
+    const emN1 = aplicarCopia(n1, v3)
+    expect(emN1.mantidas).toEqual([])
+    expect(n1.getItem(ROTEIRO)).toBe(rot('r1 velho'))
+    expect(lerMudancas(n1.getItem(CHAVE_MUDANCAS)).alterados[`chave/${ROTEIRO}`]).toBe(T(4))
+
+    const emN2 = aplicarCopia(n2, v3)
+    expect(emN2.mantidas).toEqual([ROTEIRO])
+    const v4 = montarCopia(n2, T(6))
+    expect(v4.dados[ROTEIRO]).toBe(rot('r2 novo'))
+
+    // A cópia que N2 devolve chega a N1: fica o roteiro novo.
+    aplicarCopia(n1, v4)
+    expect(n1.getItem(ROTEIRO)).toBe(rot('r2 novo'))
+  })
+
+  it('CA-599: na lista, sobe quando um modelo que ficou é igual ou mais novo; todos mais velhos, fica sem subir', () => {
+    const arm = aparelhoNovo()
+    const maisNova = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]),
+      [ROTEIRO]: roteiro,
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(5) }),
+    })
+    expect(aplicarCopia(arm, maisNova).mantidas).toEqual([])
+    expect(nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Ferro', 'Zinco'])
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados['modelos-suplemento/a']).toBe(T(5))
+
+    const outro = aparelhoNovo()
+    const soUmMaisNovo = copia({ ...maisNova.dados, [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/a': T(5) }) })
+    expect(aplicarCopia(outro, soUmMaisNovo).mantidas).toEqual([MODELOS])
   })
 
   it('CA-592: a exclusão de verdade continua valendo: a lápide da chave tira o roteiro e as dos itens tiram os modelos', () => {
