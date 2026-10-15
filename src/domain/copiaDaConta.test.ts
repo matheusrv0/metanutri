@@ -740,6 +740,32 @@ describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nu
     aplicarCopia(n2, deN1)
     expect(textoDoRoteiro(n2.getItem(ROTEIRO))).toBe('r1 editado')
   })
+  it('CA-610: com o relógio de N1 atrasado, a edição da pessoa no roteiro retido fica depois da marca que substitui e sobe, mesmo numa junção', () => {
+    const n1 = aparelhoComRoteiro('r1 velho', T(2))
+    aplicarCopia(n1, v3())
+    // A pessoa edita às "3h" pelo relógio de N1, mas o roteiro retido guardava a marca das 4h.
+    gravar(n1, ROTEIRO, rot('r1 editado'), T(3))
+    expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
+    const marca = lerMudancas(n1.getItem(CHAVE_MUDANCAS)).alterados[ROT] ?? ''
+    expect(marca > T(4)).toBe(true)
+    expect(marca).toBe('2026-10-08T04:00:00.001Z')
+
+    // O salvar cai num conflito com outra cópia sem o roteiro (marca das 4h): a junção leva a edição, e ela não volta a
+    // ficar retida aqui.
+    const v3b = copia({ ...v3().dados, 'metanutri:pacientes': pacientes(paciente('ana', 'Ana'), paciente('bia', 'Bia', T(6))) })
+    const junta = juntarCopias(montarCopia(n1, T(7)), v3b, T(7))
+    expect(textoDoRoteiro(junta.dados[ROTEIRO])).toBe('r1 editado')
+    aplicarCopia(n1, junta)
+    expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
+    expect(textoDoRoteiro(montarCopia(n1, T(8)).dados[ROTEIRO])).toBe('r1 editado')
+  })
+
+  it('CA-610: com o relógio em dia, a marca da edição é a hora de agora', () => {
+    const n1 = aparelhoComRoteiro('r1 velho', T(2))
+    aplicarCopia(n1, v3())
+    gravar(n1, ROTEIRO, rot('r1 editado'), T(8))
+    expect(lerMudancas(n1.getItem(CHAVE_MUDANCAS)).alterados[ROT]).toBe(T(8))
+  })
   describe('listas, item por item (DP-40)', () => {
     const modelo = (id: string, nome: string, quando: string) => ({ id, nome, dose: '', horario: '', duracao: '', observacao: '', criadoEm: T(1), atualizadoEm: quando })
     const nomesAqui = (arm: Memoria) => nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '[]' }), MODELOS).sort()

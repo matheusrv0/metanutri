@@ -226,7 +226,7 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
 (`scratchpad/novidades/re-revisao-rodada3.md`, simulação `rodada3.mts`).
 
 - [x] **T59** — Spec e plano: CA-610; DP-42.
-- [ ] **T60** — A edição que solta o retido nunca fica mais velha que a marca que substitui (DP-42):
+- [x] **T60** — A edição que solta o retido nunca fica mais velha que a marca que substitui (DP-42):
   `registrarMudanca` em `src/domain/copiaDaConta.ts`; teste em `copiaDaConta.test.ts`. Cobre CA-609, CA-610.
 - [ ] **T61** — Documento: a lápide que não coube (navegador cheio) pode fazer o item apagado voltar pelo DP-40; o
   comentário do "sem espaço" em `src/domain/sincronia.ts` e o R8.

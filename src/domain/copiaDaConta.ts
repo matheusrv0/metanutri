@@ -141,6 +141,16 @@ function refsDaMudanca(chave: string, antes: string | null, depois: string | nul
 }
 
 /**
+ * DP-42 e CA-610: a hora da edição que solta um valor retido. Nunca mais velha que a marca que o retido guardava: com o
+ * relógio daqui atrás dela, fica 1 ms depois dela. Sem retido (ou sem uma data que se leia), a hora de agora.
+ */
+function horaDaEdicao(agora: string, retido: string | undefined): string {
+  if (retido === undefined || agora > retido) return agora
+  const instante = Date.parse(retido)
+  return Number.isNaN(instante) ? agora : new Date(instante + 1).toISOString()
+}
+
+/**
  * Guarda a hora de cada item que mudou ou entrou e a lápide de cada um que saiu (DP-2). O item que
  * volta perde a lápide. Quem chama grava `depois` no armazenamento; esta função só cuida das marcas.
  */
@@ -148,19 +158,19 @@ export function registrarMudanca(armazenamento: Armazenamento, chave: string, an
   const refs = refsDaMudanca(chave, antes, depois)
   if (refs.alterados.length === 0 && refs.excluidos.length === 0) return
   const atual = lerMudancas(armazenamento.getItem(CHAVE_MUDANCAS))
+  const retidos = lerRetidos(armazenamento.getItem(CHAVE_RETIDOS))
   const alterados = new Map(Object.entries(atual.alterados))
   const excluidos = new Map(Object.entries(atual.excluidos))
   for (const ref of refs.alterados) {
-    alterados.set(ref, agora)
+    alterados.set(ref, horaDaEdicao(agora, retidos[ref]))
     excluidos.delete(ref)
   }
   for (const ref of refs.excluidos) {
-    excluidos.set(ref, agora)
+    excluidos.set(ref, horaDaEdicao(agora, retidos[ref]))
     alterados.delete(ref)
   }
   armazenamento.setItem(CHAVE_MUDANCAS, JSON.stringify({ alterados: Object.fromEntries(alterados), excluidos: Object.fromEntries(excluidos) }))
   // DP-39 e CA-609: a pessoa mexeu no valor retido: a edição dela é a mais nova e sobe como qualquer outra.
-  const retidos = lerRetidos(armazenamento.getItem(CHAVE_RETIDOS))
   const soltos = [...refs.alterados, ...refs.excluidos].filter((ref) => ref in retidos)
   if (soltos.length > 0) gravarRetidos(armazenamento, Object.fromEntries(Object.entries(retidos).filter(([ref]) => !soltos.includes(ref))))
 }
