@@ -14,7 +14,7 @@ import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
 import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './ui/fluxoConta.ts'
-import { ehRotaLivre, escreverRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { ehEnderecoDaRaiz, ehRotaLivre, escreverRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
 import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
@@ -38,6 +38,7 @@ import { Redirecionar } from './ui/Redirecionar.tsx'
 import { useRota } from './ui/usarRota.ts'
 
 const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
+const ROTA_INICIO: Rota = { tela: 'inicio' }
 
 interface ConteudoProps {
   readonly conta: ValorConta
@@ -161,6 +162,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   if (conta.disponivel && !ehRotaLivre(rota)) {
     if (conta.carregando) return telaCarregando
     if (!sessao) {
+      // CA-730: o endereço do site sem caminho abre a landing; só a tela de trabalho pedida pelo endereço pede Entrar.
+      if (ehEnderecoDaRaiz(globalThis.location.hash)) return <Redirecionar para={ROTA_INICIO} navegar={navegar} />
       return (
         <TelaEntrar
           conta={conta}

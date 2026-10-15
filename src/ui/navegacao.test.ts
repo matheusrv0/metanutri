@@ -1,4 +1,4 @@
-import { ABAS, ehRotaLivre, ehTelaPublica, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
+import { ABAS, ehEnderecoDaRaiz, ehRotaLivre, ehTelaPublica, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
 
 describe('navegação por endereço', () => {
   it.each([
@@ -122,5 +122,15 @@ describe('Fontes da base (CA-322)', () => {
     expect(escreverRota({ tela: 'fontes' })).toBe('#/fontes')
     expect(ehRotaLivre({ tela: 'fontes' })).toBe(true)
     expect(ehTelaPublica({ tela: 'fontes' })).toBe(true)
+  })
+
+  it.each([
+    ['', true],
+    ['#', true],
+    ['#/', true],
+    ['#/inicio', false],
+    ['#/painel', false],
+  ])('CA-730: %j é o endereço do site sem caminho? %s', (hash, esperado) => {
+    expect(ehEnderecoDaRaiz(hash)).toBe(esperado)
   })
 })

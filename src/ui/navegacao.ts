@@ -173,6 +173,11 @@ export function ehTelaPublica(rota: Rota): boolean {
   return (TELAS_PUBLICAS as readonly string[]).includes(rota.tela)
 }
 
+/** O endereço do site sem caminho (sem hash, `#` ou `#/`): sem sessão, abre a landing (spec estilo-spora, CA-730). */
+export function ehEnderecoDaRaiz(hash: string): boolean {
+  return hash.replace(/^#\/?/, '') === ''
+}
+
 /** Abre sem sessão mesmo com o servidor configurado (CA-149). */
 export function ehRotaLivre(rota: Rota): boolean {
   return (TELAS_LIVRES as readonly string[]).includes(rota.tela)

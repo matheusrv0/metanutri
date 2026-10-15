@@ -123,6 +123,27 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 
+  it('CA-730: o endereço do site sem caminho, sem sessão, abre a landing e não Entrar', () => {
+    window.location.hash = ''
+    render(tela())
+    expect(screen.queryByRole('heading', { level: 1, name: 'Entrar' })).not.toBeInTheDocument()
+    expect(document.getElementById('titulo-inicio')).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/inicio')
+  })
+
+  it('CA-730: com sessão, o endereço do site sem caminho abre o painel', () => {
+    estado.conta = comSessao('conta-1')
+    window.location.hash = ''
+    render(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+  })
+
+  it('CA-730 e CA-148: o endereço do painel, sem sessão, continua pedindo Entrar', () => {
+    window.location.hash = '#/painel'
+    render(tela())
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+  })
+
   it('CA-149: termos abrem sem sessão', () => {
     window.location.hash = '#/termos'
     render(tela())
