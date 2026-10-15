@@ -228,8 +228,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                       {g.trocas.map((t) => (
                         <span key={t.alimentoId} className="troca">
                           {`${t.nome} · `}
-                          {/* CA-644: a regra da refeição; medida de pedaço com mais de 4 pedaços vira o peso. */}
-                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, buscarAlimento, 'troca')} />
+                          {/* CA-644: a mesma regra da refeição. */}
+                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, buscarAlimento)} />
                         </span>
                       ))}
                     </span>

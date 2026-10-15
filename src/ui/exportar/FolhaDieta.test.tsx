@@ -95,11 +95,14 @@ describe('Folha da dieta (US-B1)', () => {
     const desjejum = plano.refeicoes[0]
     if (!desjejum) throw new Error('sem desjejum')
     plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 263, gramas: 5 }, ids)
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 222, gramas: 130 }, ids)
     render(<FolhaDieta caso={caso} plano={plano} />)
-    // Fatia é medida vaga (D-189): o peso vem depois de " · ", em cinza. A medida é a do planejador.
-    const batata = refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li') as HTMLElement
-    expect(batata).toHaveTextContent(/^Batata inglesa cozida, 7 fatias e meia · 120 g$/)
-    expect(within(batata).getByText('· 120 g', { exact: false })).toHaveClass('text-muted-foreground')
+    // Fatia é medida vaga (D-189): até 4 pedaços, o peso vem depois de " · ", em cinza.
+    const maca = refeicao(/^06:00 Desjejum$/).getByText('Maçã Fuji com casca').closest('li') as HTMLElement
+    expect(maca).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia · 130 g$/)
+    expect(within(maca).getByText('· 130 g', { exact: false })).toHaveClass('text-muted-foreground')
+    // CA-644: mais de 4 pedaços (a batata daria "7 fatias e meia"), só o peso.
+    expect(refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li')).toHaveTextContent(/^Batata inglesa cozida, 120 g$/)
     expect(refeicao(/^06:00 Desjejum$/).getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
   })
 

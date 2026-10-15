@@ -1,8 +1,8 @@
 // A quantidade que a folha do paciente mostra (spec impressao-do-plano, D-183 e D-189).
 //
 // A medida é a mesma do planejador (`medidaEquivalente`), com duas regras só da folha: manteiga e margarina em "ponta
-// de faca" quando ela serve (CA-642), e, na troca, medida de pedaço com mais de 4 pedaços vira o peso (CA-644). O peso
-// vai ao lado, discreto, só quando a medida é vaga (D-189).
+// de faca" quando ela serve (CA-642), e medida de pedaço com mais de 4 pedaços vira o peso (CA-644). O peso vai ao
+// lado, discreto, só quando a medida é vaga (D-189). A refeição, a lista de compras e as trocas usam a mesma regra.
 import { medidaEquivalente, medidasDoAlimento } from './busca.ts'
 import type { BuscarAlimento } from './tipos.ts'
 
@@ -24,9 +24,9 @@ const UNIDADE_VAGA_EM = /^(Verduras|Carnes|Pescados)/
 const COLHERES = new Set(['colher de sopa', 'colher de servir', 'colher de sobremesa', 'concha', 'escumadeira'])
 const COLHER_VAGA_EM = /^(Frutas|Verduras|Carnes|Pescados)/
 
-/** Medidas de pedaço: na troca, mais de 4 não serve ("Omelete · 5 fatias"), e a folha mostra o peso (CA-644). */
+/** Medidas de pedaço: mais de 4 não serve ("Omelete · 5 fatias", "Banana · 5 fatias"), e a folha mostra o peso (CA-644). */
 const PEDACOS = new Set(['fatia', 'pedaço', 'rodela', 'gomo', 'banda', 'metade'])
-const MAXIMO_DE_PEDACOS_NA_TROCA = 4
+const MAXIMO_DE_PEDACOS = 4
 
 const PONTA_DE_FACA = 'ponta de faca'
 const MAXIMO_DE_PONTAS = 3
@@ -58,12 +58,12 @@ function emPontaDeFaca(alimentoId: number, gramas: number): string | null {
   return Math.abs(quantidade * ponta.gramas - gramas) / gramas <= ERRO_MAXIMO ? pontasDeFaca(quantidade) : null
 }
 
-/** A quantidade de um alimento na folha: na refeição (e na lista de compras) ou numa troca. */
-export function quantidadeNaFolha(alimentoId: number, gramas: number, buscar: BuscarAlimento, uso: 'refeicao' | 'troca' = 'refeicao'): QuantidadeNaFolha {
+/** A quantidade de um alimento na folha: na refeição, na lista de compras e nas trocas, pela mesma regra. */
+export function quantidadeNaFolha(alimentoId: number, gramas: number, buscar: BuscarAlimento): QuantidadeNaFolha {
   const ponta = emPontaDeFaca(alimentoId, gramas)
   if (ponta !== null) return { medida: ponta, gramas, comPeso: false }
   const medida = medidaEquivalente(alimentoId, gramas)
   if (!medida) return { medida: null, gramas, comPeso: false }
-  if (uso === 'troca' && PEDACOS.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS_NA_TROCA) return { medida: null, gramas, comPeso: false }
+  if (PEDACOS.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS) return { medida: null, gramas, comPeso: false }
   return { medida: medida.texto, gramas, comPeso: medidaVaga(medida.medida, buscar(alimentoId)?.categoria ?? '') }
 }

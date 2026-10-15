@@ -13,6 +13,7 @@ const OMELETE = 484
 const OVO_FRITO = 490
 const LARANJA_BAIA = 208
 const BANANA_PRATA = 182
+const BATATA_INGLESA_COZIDA = 91
 
 describe('quantidade na folha', () => {
   it('CA-641, CA-629 e CA-630: no plano de exemplo, o peso vai ao lado só das medidas vagas', () => {
@@ -21,7 +22,8 @@ describe('quantidade na folha', () => {
     const itens = plano.refeicoes.flatMap((r) => [...r.opcoes.principal, ...r.opcoes.substituto1, ...r.opcoes.substituto2])
     const linhas = Object.fromEntries(itens.map((i) => [nomeParaPaciente(buscarAlimento(i.alimentoId)), texto(quantidadeNaFolha(i.alimentoId, i.gramas, buscarAlimento))]))
     expect(linhas).toMatchObject({
-      'Banana prata': '5 fatias · 130 g',
+      // Mais de 4 pedaços: só o peso (CA-644).
+      'Banana prata': '130 g',
       'Maçã Fuji com casca': '3 fatias e meia · 130 g',
       'Filé de merluza assado': 'meia unidade · 100 g',
       'Peito de frango grelhado sem pele': '1 bife · 100 g',
@@ -51,14 +53,14 @@ describe('quantidade na folha', () => {
     expect(texto(quantidadeNaFolha(MARGARINA, 24, buscarAlimento))).toBe('3 colheres de chá')
   })
 
-  it('CA-644: na troca, medida de pedaço com mais de 4 pedaços vira o peso', () => {
-    expect(texto(quantidadeNaFolha(OMELETE, 50, buscarAlimento, 'troca'))).toBe('50 g')
-    expect(texto(quantidadeNaFolha(OVO_FRITO, 55, buscarAlimento, 'troca'))).toBe('55 g')
-    expect(texto(quantidadeNaFolha(LARANJA_BAIA, 117, buscarAlimento, 'troca'))).toBe('117 g')
-    // Na refeição, a medida do planejador continua, com o peso ao lado (D-189).
-    expect(texto(quantidadeNaFolha(BANANA_PRATA, 130, buscarAlimento))).toBe('5 fatias · 130 g')
-    // Até 4 pedaços a troca mantém a medida.
-    expect(texto(quantidadeNaFolha(BANANA_PRATA, 104, buscarAlimento, 'troca'))).toBe('4 fatias · 104 g')
+  it('CA-644: medida de pedaço com mais de 4 pedaços vira o peso, na refeição, na lista de compras e na troca', () => {
+    expect(texto(quantidadeNaFolha(OMELETE, 50, buscarAlimento))).toBe('50 g')
+    expect(texto(quantidadeNaFolha(OVO_FRITO, 55, buscarAlimento))).toBe('55 g')
+    expect(texto(quantidadeNaFolha(LARANJA_BAIA, 117, buscarAlimento))).toBe('117 g')
+    expect(texto(quantidadeNaFolha(BANANA_PRATA, 130, buscarAlimento))).toBe('130 g')
+    expect(texto(quantidadeNaFolha(BATATA_INGLESA_COZIDA, 120, buscarAlimento))).toBe('120 g')
+    // Até 4 pedaços, a medida com o peso ao lado (D-189).
+    expect(texto(quantidadeNaFolha(BANANA_PRATA, 104, buscarAlimento))).toBe('4 fatias · 104 g')
   })
 
   it('D-189: o que é vago depende da medida e do tipo de alimento', () => {
