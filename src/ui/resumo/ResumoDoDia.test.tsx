@@ -206,7 +206,7 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
 
   it('CA-681: no modo rápido, a frase diz "da meta"', () => {
     montar({ ...adulta, modo: 'rapido', metaEnergiaKcal: 1800 }, planoComArroz())
-    expect(resumo().getByText('20% da meta, abaixo de 90%')).toBeInTheDocument()
+    expect(resumo().getByText('21% da meta, abaixo de 90%')).toBeInTheDocument()
   })
 
   it('CB-207: meta digitada, "Ver cálculo" sem TMB e sem fator, só o que existe', () => {
@@ -230,6 +230,17 @@ describe('Arredondamento na direção do estado (CA-695)', () => {
 
     render(<Anfitriao inicial={comGet(kcal / 1.104)} plano={plano} />)
     expect(resumo().getByText('111% do GET, acima de 110%')).toBeInTheDocument()
+  })
+
+  it('CA-711: longe do limite, o % arredonda para o mais perto: 125,2% sai "125%" e 70,6% sai "71%"', () => {
+    const plano = planoComArroz()
+    const kcal = totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total
+    const { unmount } = render(<Anfitriao inicial={comGet(kcal / 1.252)} plano={plano} />)
+    expect(resumo().getByText('125% do GET, acima de 110%')).toBeInTheDocument()
+    unmount()
+
+    render(<Anfitriao inicial={comGet(kcal / 0.706)} plano={plano} />)
+    expect(resumo().getByText('71% do GET, abaixo de 90%')).toBeInTheDocument()
   })
 })
 

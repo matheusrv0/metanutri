@@ -231,12 +231,15 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
   })
 }
 
+/** A faixa padrão da energia do plano em % do GET (CA-10). */
+export const FAIXA_DO_GASTO_PADRAO: { readonly min: number; readonly max: number } = { min: 90, max: 110 }
+
 /** CA-10: kcal do plano como % do GET, com limites editáveis (padrão 90% a 110%). */
 export function percentualDoGasto(
   kcalPlano: number,
   get: number | null,
-  limites: { readonly min: number; readonly max: number } = { min: 90, max: 110 },
-): { readonly pct: number; readonly estado: 'abaixo' | 'dentro' | 'acima' } | null {
+  limites: { readonly min: number; readonly max: number } = FAIXA_DO_GASTO_PADRAO,
+):{ readonly pct: number; readonly estado: 'abaixo' | 'dentro' | 'acima' } | null {
   if (get === null || get <= 0) return null
   const pct = Math.round((kcalPlano / get) * 100 * 1e6) / 1e6
   return { pct, estado: pct < limites.min ? 'abaixo' : pct > limites.max ? 'acima' : 'dentro' }

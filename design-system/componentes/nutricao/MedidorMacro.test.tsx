@@ -58,11 +58,18 @@ describe('MedidorMacro enxuto (spec painel-lateral-enxuto)', () => {
   })
 })
 
-describe('MedidorMacro arredonda na direção do estado (CA-696)', () => {
-  it('CA-696: acima arredonda para cima e abaixo para baixo', () => {
+describe('MedidorMacro arredonda sem desmentir o estado (CA-696, CA-712)', () => {
+  it('CA-712: perto do limite, acima arredonda para cima e abaixo para baixo', () => {
     const { rerender } = render(<MedidorMacro nome="Gordura" macro={{ ...gorduraAcima, pctKcal: 35.4 }} meta="20 a 35%" />)
     expect(screen.getByText('82 g · 36%')).toBeInTheDocument()
     rerender(<MedidorMacro nome="Gordura" macro={{ ...gorduraAcima, pctKcal: 19.6, estado: 'abaixo' }} meta="20 a 35%" />)
     expect(screen.getByText('82 g · 19%')).toBeInTheDocument()
+  })
+
+  it('CA-712: longe do limite, arredonda para o mais perto', () => {
+    const { rerender } = render(<MedidorMacro nome="Gordura" macro={{ ...gorduraAcima, pctKcal: 40.2 }} meta="20 a 35%" />)
+    expect(screen.getByText('82 g · 40%')).toBeInTheDocument()
+    rerender(<MedidorMacro nome="Gordura" macro={{ ...gorduraAcima, pctKcal: 15.6, estado: 'abaixo' }} meta="20 a 35%" />)
+    expect(screen.getByText('82 g · 16%')).toBeInTheDocument()
   })
 })

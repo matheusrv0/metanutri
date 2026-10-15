@@ -33,7 +33,12 @@ describe('Faixa do topo da etapa 3 arredonda na direção do estado (CA-696)', (
     const { unmount } = render(<FaixaResumo caso={caso(kcal / 0.896)} plano={plano} aoAlterar={() => undefined} />)
     expect(doGasto().getByText('89%')).toBeInTheDocument()
     unmount()
-    render(<FaixaResumo caso={caso(kcal / 1.104)} plano={plano} aoAlterar={() => undefined} />)
+    const { unmount: desmontar } = render(<FaixaResumo caso={caso(kcal / 1.104)} plano={plano} aoAlterar={() => undefined} />)
     expect(doGasto().getByText('111%')).toBeInTheDocument()
+    desmontar()
+
+    // CA-711: longe do limite, o mais perto.
+    render(<FaixaResumo caso={caso(kcal / 1.252)} plano={plano} aoAlterar={() => undefined} />)
+    expect(doGasto().getByText('125%')).toBeInTheDocument()
   })
 })

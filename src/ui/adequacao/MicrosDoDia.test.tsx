@@ -148,19 +148,36 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
   })
 })
 
-describe('Cartão arredonda na direção do estado (CA-696)', () => {
-  it('CA-696: adequação abaixo da meta arredonda para baixo', () => {
-    const plano = criarExemplo(ids, '2026-10-15').plano
+describe('Cartão arredonda sem desmentir o estado (CA-696, CA-712)', () => {
+  const calcioDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
     const calcio = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
     if (!calcio) throw new Error('sem cálcio')
-    // Só prova alguma coisa se arredondar para o mais perto daria outro número.
+    // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
     expect(calcio.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
-
-    montar(adulta, plano)
+    return calcio.adequacaoPct
+  }
+  const pctDoCalcio = () => {
     const linha = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
     if (!linha) throw new Error('cálcio fora do cartão')
-    expect(within(linha).getByText(`${Math.floor(calcio.adequacaoPct)}%`)).toBeInTheDocument()
+    return within(linha)
+  }
+
+  it('CA-712: longe da meta, a adequação arredonda para o mais perto', () => {
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    const pct = calcioDoExemplo(plano)
+    expect(pct).toBeLessThan(89)
+    montar(adulta, plano)
+    expect(pctDoCalcio().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
+  })
+
+  it('CA-696 e CA-712: com a meta logo acima, a adequação arredonda para baixo', () => {
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    const pct = calcioDoExemplo(plano)
+    // Meta no inteiro logo acima: o mais perto daria o número da meta, em cor de abaixo.
+    const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } as const
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, plano)
+    expect(pctDoCalcio().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
   })
 })
 

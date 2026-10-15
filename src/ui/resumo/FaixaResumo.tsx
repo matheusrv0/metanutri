@@ -1,7 +1,7 @@
 import { Settings2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
-import { calcularEnergia, percentualDoGasto } from '@/domain/energia.ts'
+import { calcularEnergia, FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from '@/domain/energia.ts'
 import { calcularMacros, type EstadoFaixa } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -46,13 +46,17 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
   const doGet = percentualDoGasto(kcalPlano, energia.get)
   const ehAdulto = (caso.idadeAnos ?? 0) >= 19 && caso.condicao.tipo === 'nenhuma'
 
-  const macro = (nome: string, m: (typeof macros)['proteina']) => (
-    <Celula
-      rotulo={nome}
-      valor={`${formatarNumero(m.gramas, 0)} g${m.pctKcal === null ? '' : ` · ${formatarNumero(arredondarNoEstado(m.pctKcal, m.meta?.tipo === 'pct' ? m.estado : null), 0)}%`}`}
-      {...(m.estado ? { cor: COR[m.estado] } : {})}
-    />
-  )
+  const macro = (nome: string, m: (typeof macros)['proteina']) => {
+    // O % só carrega o estado quando a meta é em % (D-211).
+    const metaPct = m.meta?.tipo === 'pct' ? m.meta : null
+    return (
+      <Celula
+        rotulo={nome}
+        valor={`${formatarNumero(m.gramas, 0)} g${m.pctKcal === null ? '' : ` · ${formatarNumero(arredondarNoEstado(m.pctKcal, metaPct ? m.estado : null, metaPct), 0)}%`}`}
+        {...(m.estado ? { cor: COR[m.estado] } : {})}
+      />
+    )
+  }
 
   return (
     <section aria-label="Resumo do dia" className="flex flex-col border border-border bg-card">
@@ -61,7 +65,7 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
         <Celula rotulo={energia.getManual ? 'GET manual' : 'GET calculado'} valor={energia.get === null ? '—' : `${formatarNumero(energia.get, 0)} kcal`} />
         <Celula
           rotulo="Do gasto"
-          valor={doGet ? `${formatarNumero(arredondarNoEstado(doGet.pct, doGet.estado), 0)}%` : '—'}
+          valor={doGet ? `${formatarNumero(arredondarNoEstado(doGet.pct, doGet.estado, FAIXA_DO_GASTO_PADRAO), 0)}%` : '—'}
           {...(doGet ? { cor: COR[doGet.estado] } : {})}
         />
         {macro('Proteína', macros.proteina)}

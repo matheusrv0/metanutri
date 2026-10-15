@@ -18,8 +18,8 @@ export const COR_TEXTO: Record<EstadoAdequacao, string> = {
 
 /** "66% abaixo", "104%" ou "230% · acima do limite", na tabela e na lista do celular. */
 export function textoDaAdequacao(linha: LinhaAdequacao): string {
-  // Abaixo da meta arredonda para baixo: 89,6% nunca sai "90% abaixo" (D-209).
-  const pct = `${formatarNumero(arredondarNoEstado(linha.adequacaoPct, linha.estado === 'abaixo' ? 'abaixo' : 'dentro'), 0)}%`
+  // Abaixo da meta, 89,6% com meta de 90% nunca sai "90% abaixo"; longe da meta, o mais perto (D-211).
+  const pct = `${formatarNumero(arredondarNoEstado(linha.adequacaoPct, linha.estado === 'abaixo' ? 'abaixo' : 'dentro', { min: linha.metaPct }), 0)}%`
   if (linha.estado === 'abaixo') return `${pct} abaixo`
   if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
   return pct

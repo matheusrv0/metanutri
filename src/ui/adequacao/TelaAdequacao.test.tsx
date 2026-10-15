@@ -350,41 +350,64 @@ describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
   })
 })
 
-describe('Tabela e lista arredondam na direção do estado (CA-696)', () => {
+describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', () => {
   const calcioDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
     const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
     if (!linha) throw new Error('sem cálcio')
+    // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
     expect(linha.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
-    return Math.floor(linha.adequacaoPct)
+    expect(linha.adequacaoPct).toBeLessThan(89)
+    return linha.adequacaoPct
   }
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
+  // Meta no inteiro logo acima do cálcio: o mais perto daria o número da meta, em cor de abaixo.
+  const comMetaLogoAcima = (pct: number): Partial<Caso> => ({
+    ...adulta,
+    adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } },
   })
-
-  it('CA-696: na tabela, abaixo da meta arredonda para baixo', () => {
-    const plano = exemplo()
-    const esperado = calcioDoExemplo(plano)
-    montar(adulta, plano)
-    expect(linhaDe('Cálcio').getByText(`${esperado}% abaixo`)).toBeInTheDocument()
-  })
-
-  it('CA-696: na lista do celular, também', () => {
+  const itemDoCalcio = () => {
+    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith('Cálcio'))
+    if (!item) throw new Error('cálcio fora da lista')
+    return within(item)
+  }
+  const celular = () =>
     vi.stubGlobal('matchMedia', (consulta: string) => ({
       matches: consulta === '(max-width: 639px)',
       media: consulta,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }))
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-712: na tabela, longe da meta arredonda para o mais perto', () => {
     const plano = exemplo()
-    const esperado = calcioDoExemplo(plano)
+    const pct = calcioDoExemplo(plano)
     montar(adulta, plano)
-    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
-      .getAllByRole('listitem')
-      .find((i) => i.textContent?.startsWith('Cálcio'))
-    if (!item) throw new Error('cálcio fora da lista')
-    expect(within(item).getByText(`${esperado}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Cálcio').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+  })
+
+  it('CA-696 e CA-712: na tabela, com a meta logo acima, arredonda para baixo', () => {
+    const plano = exemplo()
+    const pct = calcioDoExemplo(plano)
+    montar(comMetaLogoAcima(pct), plano)
+    expect(linhaDe('Cálcio').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+  })
+
+  it('CA-696 e CA-712: na lista do celular, também', () => {
+    celular()
+    const plano = exemplo()
+    const pct = calcioDoExemplo(plano)
+    const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
+    expect(itemDoCalcio().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    unmount()
+
+    render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
+    expect(itemDoCalcio().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
   })
 })
 
