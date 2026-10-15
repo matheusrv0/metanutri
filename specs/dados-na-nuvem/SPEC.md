@@ -4,6 +4,12 @@ Status: **aprovada pelo dono** em 08/10/2026. Pedido: "nada deve ser salvo no ap
 prenda a conta, tem que existir apenas sair". Decisões dele no mesmo dia: "Dados em qualquer aparelho" sai da comparação
 de planos (vale para todos) e, sem internet, o site trava.
 
+**Nota de 15/10/2026 (integração das novidades):** entram D-170, D-171, CA-590 a CA-595, CB-170 e CB-171. A revisão das
+frentes `anamnese-e-prescricoes` e `whatsapp-e-retorno` achou dois problemas comuns: uma versão antiga do site apagava
+as chaves novas da conta (roteiro de anamnese e modelos de suplemento) em todos os aparelhos, e salvar um paciente
+remarcava todos os outros como mudados agora, o que deixava um aparelho desatualizado passar por cima de edições feitas
+em outro. Vale para todas as contas, desde a publicação das novidades.
+
 **Hoje:** os dados (planos, pacientes, produtos, modelos, perfil, acompanhamentos) ficam no navegador, separados por conta
 (spec `dados-por-conta`), com uma cópia na nuvem enviada à mão em Configurações. Sair pergunta se apaga os dados do
 aparelho.
@@ -19,6 +25,8 @@ aparelho.
 | D-132 | **Dois aparelhos ao mesmo tempo não se apagam.** Antes de salvar, o site confere se a nuvem mudou desde a última vez; se mudou, junta as duas versões item por item (a mudança mais nova de cada item vence) e só então salva. O que foi excluído num aparelho continua excluído no outro |
 | D-133 | **Na primeira entrada depois desta mudança**, o que já está no navegador vai para a nuvem: sem cópia na nuvem, sobe como está; com cópia na nuvem, as duas são juntadas como no D-132. Nada se perde |
 | D-134 | **"Dados em qualquer aparelho" sai da comparação de planos e da lista de recursos dos planos**, porque vale para todas as contas |
+| D-170 | **Uma versão antiga do site não apaga o que não conhece.** Uma aba aberta antes de uma atualização (ou o aplicativo instalado que ainda não se atualizou) salva a cópia sem os dados que ela não conhece, como o roteiro de anamnese e os modelos de suplemento. O aparelho que conhece esses dados não os apaga ao receber essa cópia: eles ficam e voltam sozinhos para a nuvem. Só uma exclusão de verdade, feita por uma versão que conhece o dado, apaga em todos os aparelhos. *(15/10/2026)* |
+| D-171 | **Salvar um item não mexe nos outros.** Criar, editar ou apagar um paciente, um link, um produto, um modelo de plano ou um modelo de suplemento conta como mudança só daquele item. Os outros continuam com a hora da última mudança de verdade, para um aparelho desatualizado não passar por cima de uma edição feita em outro. *(15/10/2026)* |
 
 ## 2. Critérios de aceite
 
@@ -32,6 +40,12 @@ aparelho.
 - **CA-482** · Dado Configurações, então não existem os botões de apagar dados do aparelho nem os de enviar e trazer a cópia na nuvem; exportar e importar o backup em arquivo continuam.
 - **CA-483** · Dado a página de preços, então "Dados em qualquer aparelho" não aparece na comparação nem nos recursos dos planos.
 - **CA-484** · Dado que a entrada não consegue trazer os dados da nuvem (sem internet), então a tela diz "Sem internet. Conecte-se para abrir seus dados." e tenta de novo quando a internet volta.
+- **CA-590** · Dado um aparelho aberto com o roteiro de anamnese e modelos de suplemento, quando chega da nuvem uma cópia salva por uma versão antiga do site (sem essas duas chaves), então o roteiro e os modelos continuam no aparelho e, em poucos segundos, voltam para a nuvem, junto com a mudança que a versão antiga fez. *(15/10/2026)*
+- **CA-591** · Dado o mesmo caso do CA-590 com o aparelho fechado, quando ele abre de novo, então o roteiro e os modelos continuam e voltam para a nuvem. *(15/10/2026)*
+- **CA-592** · Dado o roteiro ou um modelo de suplemento excluídos de verdade em outro aparelho, quando a cópia chega (mesmo que salva depois por uma versão antiga), então eles saem daqui também e não voltam para a nuvem. *(15/10/2026)*
+- **CA-593** · Dado dois pacientes guardados por uma versão anterior (sem os campos novos da ficha), quando um deles é salvo, então só ele conta como mudado; o outro fica exatamente como estava guardado. *(15/10/2026)*
+- **CA-594** · Dado a ficha da Ana editada no aparelho A e o aparelho B, desatualizado, salvando a ficha da Bia, quando as duas cópias se juntam, então a edição da Ana feita em A continua. *(15/10/2026)*
+- **CA-595** · Dado links, modelos de suplemento, produtos e modelos de plano guardados, quando um deles é salvo, criado ou apagado, então só ele conta como mudado. *(15/10/2026)*
 
 ## 3. Casos de borda
 
@@ -40,6 +54,8 @@ aparelho.
 - **CB-125** · A sessão vence no meio do uso: o que faltava salvar não se perde; a pessoa entra de novo e continua.
 - **CB-126** · O link do paciente (sem conta) continua funcionando como hoje.
 - **CB-127** · Uma aba esquecida aberta enquanto outro aparelho muda um plano: quando a pessoa volta a ela e edita outro campo do mesmo plano, a mudança do outro aparelho continua. A aba confere a nuvem antes de deixar editar ("Atualizando…"). *(Acrescentado em 08/10/2026, na revisão final.)*
+- **CB-170** · Plano que some da cópia da nuvem: foi excluído em outro aparelho (toda versão com a nuvem conhece os planos), então sai daqui, como antes do D-170. *(15/10/2026)*
+- **CB-171** · Lista (por exemplo, os modelos de suplemento) que some da cópia com só parte dos itens excluídos de verdade: os excluídos saem; os outros ficam e voltam para a nuvem. *(15/10/2026)*
 
 ## 4. Fora de escopo
 

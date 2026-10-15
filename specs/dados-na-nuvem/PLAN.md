@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** concluído, com os ajustes antes do merge (08/10/2026)
+**Status:** concluído, com os ajustes antes do merge (08/10/2026); rodada da integração das novidades em 15/10/2026 (T39 a T42)
 
 ## Abordagem
 
@@ -147,6 +147,27 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - [x] **T37** — Comentários da trava entre abas e do aviso de sair citam o DP-30.
 - [x] **T38** — Validação, com as sondas do revisor.
 
+### Rodada da integração das novidades (15/10/2026)
+
+Achados da revisão das frentes `anamnese-e-prescricoes` e `whatsapp-e-retorno`, comuns às três frentes (simulações do
+revisor `simular.mts` e `simular2.mts`, fora do repositório). Ordem: T39, T40, T41, T42; T40 e T41 não dependem uma da
+outra.
+
+- [x] **T39** — Spec e plano: D-170, D-171, CA-590 a CA-595, CB-170, CB-171; DP-32, DP-33; R8.
+- [ ] **T40** — Aplicar a cópia não apaga a chave que a cópia não traz sem lápide (DP-32).
+  - Arquivos: `src/domain/copiaDaConta.ts` (`aplicarCopia` devolve `{ mudou, mantidas }`) e `src/domain/sincronia.ts`
+    (a chave mantida conta como mudança e sobe), com os testes `copiaDaConta.test.ts` e `sincronia.test.ts`.
+  - Cobre: CA-590, CA-591, CA-592, CB-170, CB-171
+  - Feito quando: "uma cópia do app antigo não apaga o roteiro nem os modelos" no domínio, no motor aberto (conferir) e
+    no motor que abre de novo; a exclusão de verdade (lápide da chave e lápide do item) continua valendo.
+- [ ] **T41** — Salvar um item não reescreve os outros (DP-33).
+  - Arquivos: `src/domain/pacientes.ts`, `src/domain/repositorioAcompanhamentos.ts`, `src/domain/suplementos.ts`, com os
+    testes de cada um; `produtos.ts` e `modelos.ts` só conferidos, com teste.
+  - Cobre: CA-593, CA-594, CA-595
+  - Feito quando: "salvar um registro não marca os outros" em cada repositório e a junção da simulação do revisor (a
+    edição da Ana feita em A continua).
+- [ ] **T42** — Validação: `npm run check`, `npx playwright test`, `npm run build`, as duas simulações do revisor.
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -166,6 +187,14 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 | CB-125 | T5 | `sincronia.test.ts` "CB-125: …" |
 | CB-126 | T7, T10 | `AppNuvem.test.tsx` (dois) e `TravaDaNuvem.test.tsx` "CB-126: …" |
 | CB-127 | T18, T28, T34 | `sincronia.test.ts` (dois: aba esquecida e sem internet; mais o DP-31 da conferência com capa), `AppNuvem.test.tsx` e `TravaDaNuvem.test.tsx` "CB-127: …" |
+| CA-590 | T40 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-590: …" |
+| CA-591 | T40 | `sincronia.test.ts` "CA-591: …" |
+| CA-592 | T40 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-592: …" |
+| CA-593 | T41 | `pacientes.test.ts` "CA-593: …" |
+| CA-594 | T41 | `copiaDaConta.test.ts` "CA-594: …" |
+| CA-595 | T41 | `repositorioAcompanhamentos.test.ts`, `suplementos.test.ts`, `produtos.test.ts` e `modelos.test.ts` "CA-595: …" |
+| CB-170 | T40 | `copiaDaConta.test.ts` "CB-170: …" |
+| CB-171 | T40 | `copiaDaConta.test.ts` "CB-171: …" |
 
 ## Decisões do plano
 
@@ -282,6 +311,24 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
   cópia: trava sem espaço. (c) Uma aba travada sem internet cujo salvar acha tudo já salvo (outra aba mandou) não
   fica presa: com internet, destrava e confere; sem, tenta de novo em 15 s.
 
+- **DP-32 · A chave que falta na cópia (D-170, 15/10/2026).** Ao aplicar a cópia da nuvem (abrir sem nada pendente e
+  conferir), uma chave daqui que a cópia não traz só sai quando a cópia traz a lápide dela: `chave/<nome>` nas chaves
+  inteiras; nas listas, a lápide de cada item (com lápide igual ou mais nova que a hora do item, como na junção). Itens
+  com lápide saem; sobrando algum, a lista fica só com eles. Planos e o índice seguem a regra de antes (a cópia decide):
+  toda versão com a nuvem conhece os planos, e a lápide de plano vence em 90 dias, então manter um plano ausente traria
+  de volta um plano excluído há muito (CB-170). A chave mantida fica com a marca daqui (a hora do valor que ela tem, não a
+  da cópia), para a junção com outro aparelho continuar escolhendo a mudança mais nova. O motor conta uma mudança: ao
+  abrir, a cópia daqui sobe na mesma abertura; ao conferir, sobe 2 s depois, como uma edição. A junção (`juntarCopias`)
+  já mantinha o lado que tem a chave sem lápide; só a aplicação apagava. Hoje nenhuma tela apaga uma chave inteira que
+  não seja plano, então a lápide de chave só aparece por um caminho genérico (como o observador).
+- **DP-33 · Gravar só o item mexido (D-171, 15/10/2026).** Os repositórios de pacientes, links e modelos de suplemento
+  completam e normalizam o que leem (campos novos da ficha, a dieta do link, datas do modelo) e gravavam a lista inteira
+  já normalizada: o texto de todo item guardado por uma versão anterior mudava, e o observador marcava todos com a hora
+  de agora (a ficha velha de um aparelho desatualizado passava a vencer a edição de verdade feita em outro). Agora eles
+  leem a lista guardada como está, trocam só o item salvo (ou tiram o excluído) e gravam os outros exatamente como
+  estavam. O que é lido para a tela continua completo. Produtos e modelos de plano já gravavam o que leram, sem
+  completar nada; ganharam só o teste.
+
 ## Riscos
 
 - **R1** — Remontar a área quando a nuvem traz mudança (conflito ou conferência, DP-20) fecha diálogo e formulário
@@ -295,6 +342,12 @@ biblioteca, sem fechar). Sem servidor de conta, nada disso liga: o modo local co
 - **R6** — Lápide dura 90 dias: um aparelho com mudança pendente que ficou mais que isso sem abrir pode trazer de volta
   um item excluído no outro.
 - **R7** — `apagarAcompanhamentosDaNuvem` fica sem uso (saiu com o "Apagar tudo"); fica para a exclusão de conta.
+- **R8** — *(15/10/2026)* Enquanto uma aba da versão antiga ficar aberta, cada salvar dela tira as chaves novas da nuvem
+  e um aparelho novo as devolve (DP-32). Um terceiro aparelho que abrir nesse meio tempo fica alguns segundos sem elas.
+  Se dois aparelhos novos tiverem versões diferentes do roteiro nessa hora, a junção fica com a mais nova; mas o
+  aparelho que só aplicar a cópia já devolvida pelo outro (sem ter passado pela da versão antiga) fica com a dele. Some
+  quando a aba velha é fechada ou recarregada: o aplicativo se atualiza sozinho (`registerType: 'autoUpdate'`), mas a
+  aba que já estava aberta continua com o código velho até lá. Por isso a nota de publicação pede para fechar as abas.
 
 ## Divergências para o dono decidir
 
