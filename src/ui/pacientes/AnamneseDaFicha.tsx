@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react'
 import { useCallback, useId, useState } from 'react'
-import { blocosDaFicha, CHAVE_ROTEIRO, gravarRoteiro, lerRoteiro, limparRoteiro, responder, resumoDoBloco, type RoteiroAnamnese } from '@/domain/anamnese.ts'
+import { blocosDaFicha, CHAVE_ROTEIRO, dicaDaPergunta, gravarRoteiro, lerRoteiro, limparRoteiro, responder, resumoDoBloco, type RoteiroAnamnese } from '@/domain/anamnese.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -67,14 +67,21 @@ export function AnamneseDaFicha({ paciente, aoAlterar }: AnamneseDaFichaProps) {
           <Recolhivel key={bloco.id} titulo={bloco.titulo} resumo={resumoDoBloco(bloco)} abertoInicial={bloco.respondidas > 0}>
             {bloco.perguntas.map((pergunta) => {
               const campo = `${id}-${bloco.id}-${pergunta.id}`
+              const dica = dicaDaPergunta(pergunta.id)
               return (
                 <div key={pergunta.id} data-pergunta="" className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Label htmlFor={campo}>{pergunta.texto}</Label>
                     {pergunta.foraDoRoteiro ? <Badge variant="muted">Fora do roteiro</Badge> : null}
                   </div>
+                  {dica ? (
+                    <p id={`${campo}-dica`} className="text-xs text-muted-foreground">
+                      {dica}
+                    </p>
+                  ) : null}
                   <Textarea
                     id={campo}
+                    aria-describedby={dica ? `${campo}-dica` : undefined}
                     rows={2}
                     className="min-h-16"
                     value={pergunta.resposta}

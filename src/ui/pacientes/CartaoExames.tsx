@@ -78,7 +78,7 @@ export function CartaoExames({ paciente, assinatura, aoAlterar }: CartaoExamesPr
 
       {dataDaFolha !== null ? (
         <DialogoDocumento titulo="Pedido de exames para imprimir" aoFechar={() => setDataDaFolha(null)}>
-          <FolhaExames paciente={paciente.nome} pedido={pedido} assinatura={assinatura} data={dataDaFolha} />
+          <FolhaExames paciente={paciente.nome} nascimento={paciente.nascimento} pedido={pedido} assinatura={assinatura} data={dataDaFolha} />
         </DialogoDocumento>
       ) : null}
     </Card>

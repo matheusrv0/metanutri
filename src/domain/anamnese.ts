@@ -43,10 +43,17 @@ const p = (id: string, texto: string): PerguntaRoteiro => ({ id, texto })
 /** Seção 2 da spec. Os ids são estáveis: as respostas dos pacientes apontam para eles. */
 export const ROTEIRO_PADRAO: RoteiroAnamnese = {
   perguntas: {
-    objetivo: [p('queixa', 'Queixa principal'), p('historico-peso', 'Histórico do peso'), p('dietas', 'Dietas que já fez')],
+    objetivo: [
+      p('queixa', 'Queixa principal'),
+      p('historico-peso', 'Histórico do peso'),
+      p('dietas', 'Dietas que já fez'),
+      p('suplementos-uso', 'Suplementos que já usa'),
+      p('doencas-familia', 'Doenças na família'),
+    ],
     rotina: [
       p('rotina-trabalho', 'Rotina de trabalho ou estudo'),
       p('refeicoes-onde', 'Quem prepara as refeições e onde come'),
+      p('oleo-sal-acucar', 'Óleo, sal e açúcar por mês em casa'),
       p('sono-horario', 'Horário de dormir e de acordar'),
       p('sono-qualidade', 'Qualidade do sono'),
     ],
@@ -54,7 +61,12 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
     agua: [p('agua-dia', 'Quanta água bebe por dia'), p('outras-bebidas', 'Outras bebidas ao longo do dia')],
     'alcool-fumo': [p('alcool', 'Bebida alcoólica: o quê e quanto'), p('fumo', 'Fumo')],
     atividade: [p('atividade-tipo', 'Atividade que pratica'), p('atividade-frequencia', 'Frequência e duração'), p('atividade-horario', 'Horário')],
-    preferencias: [p('gosta', 'Alimentos de que gosta'), p('nao-gosta', 'Alimentos de que não gosta'), p('vontades', 'Vontade de doce ou salgado')],
+    preferencias: [
+      p('gosta', 'Alimentos de que gosta'),
+      p('nao-gosta', 'Alimentos de que não gosta'),
+      p('vontades', 'Vontade de doce ou salgado'),
+      p('apetite', 'Apetite e mastigação'),
+    ],
     recordatorio: [
       p('r24-acordar', 'Ao acordar'),
       p('r24-cafe', 'Café da manhã'),
@@ -67,6 +79,11 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
   },
   outros: {},
 }
+
+/** Dicas embaixo do rótulo, pelo id da pergunta (seção 2). Num `Map`, um id como "constructor" não acha nada. */
+const DICAS: ReadonlyMap<string, string> = new Map([['fezes', 'Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.']])
+
+export const dicaDaPergunta = (id: string): string | undefined => DICAS.get(id)
 
 /**
  * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão;

@@ -70,7 +70,13 @@ describe('Anamnese com roteiro na ficha (US-AP1)', () => {
     const salvo = pacientes.obter('p1')
     expect(salvo?.respostasAnamnese).toEqual([{ perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Cansaço' }])
     expect((salvo?.atualizadoEm ?? '') > antes).toBe(true)
-    expect(bloco('Objetivo e queixa')).toHaveTextContent('1 de 3 respondida')
+    expect(bloco('Objetivo e queixa')).toHaveTextContent('1 de 5 respondida')
+  })
+
+  it('seção 2: a consistência das fezes mostra a dica da escala de Bristol', async () => {
+    const { usuario } = montar()
+    await usuario.click(bloco('Intestino'))
+    expect(anamnese().getByLabelText('Consistência das fezes')).toHaveAccessibleDescription('Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.')
   })
 
   it('CA-562: o recordatório tem um campo de texto por refeição', async () => {

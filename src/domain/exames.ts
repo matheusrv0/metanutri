@@ -14,12 +14,17 @@ export const EXAMES: readonly Exame[] = [
   { id: 'ferritina', nome: 'Ferritina' },
   { id: 'vitamina-d', nome: 'Vitamina D (25-OH)' },
   { id: 'vitamina-b12', nome: 'Vitamina B12' },
+  { id: 'acido-folico', nome: 'Ácido fólico' },
   { id: 'glicemia', nome: 'Glicemia de jejum' },
+  { id: 'insulina', nome: 'Insulina de jejum' },
   { id: 'hba1c', nome: 'Hemoglobina glicada (HbA1c)' },
   { id: 'perfil-lipidico', nome: 'Perfil lipídico' },
   { id: 'tsh', nome: 'TSH' },
   { id: 'creatinina', nome: 'Creatinina' },
+  { id: 'ureia', nome: 'Ureia' },
+  { id: 'acido-urico', nome: 'Ácido úrico' },
   { id: 'tgo-tgp', nome: 'TGO e TGP' },
+  { id: 'albumina', nome: 'Albumina' },
 ]
 
 export interface PedidoExames {

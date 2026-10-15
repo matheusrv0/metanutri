@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { dataDeHoje } from '@/domain/documentoDoPaciente.ts'
+import { EXAMES } from '@/domain/exames.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { criarRepositorioPacientes, type Paciente } from '@/domain/pacientes.ts'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
@@ -52,21 +53,11 @@ function montar(ajuste: Partial<Paciente> = {}, assinatura: AssinaturaDoPlano | 
 const cartao = () => within(screen.getByRole('region', { name: 'Pedido de exames' }))
 
 describe('Pedido de exames na ficha (US-AP3)', () => {
-  it('CA-579 e CA-585: os 10 exames para marcar, nenhum marcado, e o campo Outros exames', () => {
+  it('CA-579 e CA-585: os 15 exames para marcar, nenhum marcado, e o campo Outros exames', () => {
     montar()
     const caixas = cartao().getAllByRole('checkbox')
-    expect(caixas.map((c) => c.getAttribute('aria-label') ?? (c.closest('label')?.textContent ?? ''))).toEqual([
-      'Hemograma completo',
-      'Ferritina',
-      'Vitamina D (25-OH)',
-      'Vitamina B12',
-      'Glicemia de jejum',
-      'Hemoglobina glicada (HbA1c)',
-      'Perfil lipídico',
-      'TSH',
-      'Creatinina',
-      'TGO e TGP',
-    ])
+    expect(caixas.map((c) => c.closest('label')?.textContent ?? '')).toEqual(EXAMES.map((e) => e.nome))
+    expect(caixas).toHaveLength(15)
     for (const c of caixas) expect(c).not.toBeChecked()
     expect(cartao().getByLabelText('Outros exames')).toHaveValue('')
   })
@@ -91,14 +82,21 @@ describe('Pedido de exames na ficha (US-AP3)', () => {
   })
 
   it('CA-580: a folha traz os marcados na ordem da lista, as linhas de Outros, a data e a assinatura com CRN', async () => {
-    const { usuario } = montar({ pedidoExames: { marcados: ['tsh', 'hemograma'], outros: 'Ácido fólico\n\nZinco sérico' } })
+    const { usuario } = montar({ nascimento: '1994-03-10', pedidoExames: { marcados: ['tsh', 'hemograma'], outros: 'Selênio\n\nZinco sérico' } })
     await usuario.click(cartao().getByRole('button', { name: 'Imprimir pedido' }))
     const janela = within(screen.getByRole('dialog', { name: 'Pedido de exames para imprimir' }))
     const folha = within(janela.getByRole('article', { name: 'Solicitação de exames' }))
     expect(folha.getByText(`Maria Silva · ${dataPorExtenso(dataDeHoje())}`)).toBeInTheDocument()
-    expect(folha.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Hemograma completo', 'TSH', 'Ácido fólico', 'Zinco sérico'])
+    expect(folha.getByText('Data de nascimento: 10/03/1994')).toBeInTheDocument()
+    expect(folha.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Hemograma completo', 'TSH', 'Selênio', 'Zinco sérico'])
     expect(folha.getAllByText('Ana Souza · CRN-6 12345')).toHaveLength(2)
     expect(janela.getByRole('button', { name: 'Imprimir ou salvar em PDF' })).toBeInTheDocument()
+  })
+
+  it('CA-580: sem data de nascimento na ficha, a folha não mostra a linha', async () => {
+    const { usuario } = montar({ pedidoExames: { marcados: ['tsh'], outros: '' } })
+    await usuario.click(cartao().getByRole('button', { name: 'Imprimir pedido' }))
+    expect(within(screen.getByRole('article', { name: 'Solicitação de exames' })).queryByText(/Data de nascimento/)).not.toBeInTheDocument()
   })
 
   it('CA-582: estudante: proposta de solicitação, com a frase e as duas assinaturas', async () => {

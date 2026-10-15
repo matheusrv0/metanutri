@@ -3,6 +3,7 @@ import {
   BLOCOS_ANAMNESE,
   blocosDaFicha,
   CHAVE_ROTEIRO,
+  dicaDaPergunta,
   gravarRoteiro,
   lerRoteiro,
   limparRoteiro,
@@ -49,10 +50,18 @@ describe('roteiro padrão (D-160, seção 2 da spec)', () => {
     expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
   })
 
+  it('seção 2: a consistência das fezes traz a dica da escala de Bristol; outra pergunta não tem dica', () => {
+    expect(dicaDaPergunta('fezes')).toBe('Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.')
+    expect(dicaDaPergunta('queixa')).toBeUndefined()
+    expect(dicaDaPergunta('constructor')).toBeUndefined()
+  })
+
   it('as perguntas padrão têm ids únicos e nenhuma repete o Objetivo da identificação', () => {
     const todas = BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id])
     expect(new Set(todas.map((p) => p.id)).size).toBe(todas.length)
-    expect(textos(ROTEIRO_PADRAO.perguntas.objetivo)).toEqual(['Queixa principal', 'Histórico do peso', 'Dietas que já fez'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.objetivo)).toEqual(['Queixa principal', 'Histórico do peso', 'Dietas que já fez', 'Suplementos que já usa', 'Doenças na família'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.rotina)).toContain('Óleo, sal e açúcar por mês em casa')
+    expect(textos(ROTEIRO_PADRAO.perguntas.preferencias)).toContain('Apetite e mastigação')
   })
 })
 
@@ -171,11 +180,11 @@ describe('respostas da ficha (D-163)', () => {
     const objetivo = blocos[0]
     expect(objetivo?.respondidas).toBe(1)
     expect(objetivo?.perguntas[0]).toEqual({ id: 'queixa', texto: 'Queixa principal', resposta: 'Dor', foraDoRoteiro: false })
-    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 3 respondida')
+    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 5 respondida')
     const agua = blocos[3]
     expect(agua ? resumoDoBloco(agua) : '').toBe('Sem respostas')
     const dois = blocosDaFicha(ROTEIRO_PADRAO, responder(respostas, { id: 'dietas', texto: 'Dietas que já fez' }, 'objetivo', 'Low carb'))[0]
-    expect(dois ? resumoDoBloco(dois) : '').toBe('2 de 3 respondidas')
+    expect(dois ? resumoDoBloco(dois) : '').toBe('2 de 5 respondidas')
   })
 
   it('CA-566: a pergunta renomeada mostra o texto novo com a resposta de antes', () => {
@@ -188,9 +197,9 @@ describe('respostas da ficha (D-163)', () => {
     const respostas = responder([], queixa, 'objetivo', 'Dor')
     const roteiro = tirarPergunta(ROTEIRO_PADRAO, 'objetivo', 'queixa')
     const objetivo = blocosDaFicha(roteiro, respostas)[0]
-    expect(objetivo?.perguntas.map((p) => p.texto)).toEqual(['Histórico do peso', 'Dietas que já fez', 'Queixa principal'])
+    expect(objetivo?.perguntas.map((p) => p.texto)).toEqual(['Histórico do peso', 'Dietas que já fez', 'Suplementos que já usa', 'Doenças na família', 'Queixa principal'])
     expect(objetivo?.perguntas.at(-1)).toEqual({ id: 'queixa', texto: 'Queixa principal', resposta: 'Dor', foraDoRoteiro: true })
-    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 3 respondida')
+    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 5 respondida')
   })
 
   it('CB-161: bloco sem pergunta some, a não ser que tenha resposta fora do roteiro', () => {

@@ -1,18 +1,23 @@
 import { EXAMES, linhasDoPedido, marcarExame, normalizarPedido, PEDIDO_VAZIO, pedidoVazio } from './exames.ts'
 
 describe('pedido de exames (D-169)', () => {
-  it('CA-579: os 10 exames da lista, nesta ordem, com ids únicos', () => {
+  it('CA-579: os 15 exames da lista (seção 3), nesta ordem, com ids únicos', () => {
     expect(EXAMES.map((e) => e.nome)).toEqual([
       'Hemograma completo',
       'Ferritina',
       'Vitamina D (25-OH)',
       'Vitamina B12',
+      'Ácido fólico',
       'Glicemia de jejum',
+      'Insulina de jejum',
       'Hemoglobina glicada (HbA1c)',
       'Perfil lipídico',
       'TSH',
       'Creatinina',
+      'Ureia',
+      'Ácido úrico',
       'TGO e TGP',
+      'Albumina',
     ])
     expect(new Set(EXAMES.map((e) => e.id)).size).toBe(EXAMES.length)
   })
