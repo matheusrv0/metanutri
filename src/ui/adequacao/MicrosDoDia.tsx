@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -8,6 +8,7 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
+import { MarcaSemDado } from './MarcaSemDado.tsx'
 
 interface MicrosDoDiaProps {
   readonly caso: Caso
@@ -26,18 +27,6 @@ interface MicrosDoDiaProps {
 const MAXIMO = 5
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
-
-function Marca({ linha }: { readonly linha: LinhaAdequacao }) {
-  if (linha.semDado === 0) return null
-  return (
-    <abbr
-      title={`${linha.semDado} ${linha.semDado === 1 ? 'alimento do plano não tem' : 'alimentos do plano não têm'} este nutriente na tabela: total possivelmente subestimado.`}
-      className="cursor-help align-super text-2xs font-semibold text-warningtext no-underline"
-    >
-      †
-    </abbr>
-  )
-}
 
 /**
  * O que falta de micronutriente, com o Cobrir, na coluna da etapa 2 (spec painel-lateral-enxuto, D-204).
@@ -85,7 +74,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
                     <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
                     <span className="flex items-baseline">
                       <span className="numeros text-sm font-semibold text-warningtext">{`${formatarNumero(linha.adequacaoPct, 0)}%`}</span>
-                      <Marca linha={linha} />
+                      <MarcaSemDado semDado={linha.semDado} />
                     </span>
                     <Button size="sm" variant="lightprimary" onClick={() => setCobrindo(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`}>
                       Cobrir

@@ -256,3 +256,50 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
   })
 })
+
+describe('Etapa 3 no celular (CA-692)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const itemDe = (nome: string) => {
+    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith(nome))
+    if (!item) throw new Error(`${nome} não está na lista`)
+    return within(item)
+  }
+
+  it('CA-692: lista sem tabela, com o estado, a barra, quanto tem de quanto precisa e o Cobrir', () => {
+    montar(adulta, exemplo())
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    const ferro = itemDe('Ferro')
+    expect(ferro.getByText(/^\d+% abaixo$/)).toHaveClass('text-warningtext')
+    expect(ferro.getByRole('progressbar')).toBeInTheDocument()
+    expect(ferro.getByText(/^[\d.,]+ mg de 18 mg$/)).toHaveTextContent(/^[\d.,]+ mg†? de 18 mg rda$/)
+    const cobrir = ferro.getByRole('button', { name: 'Cobrir' })
+    expect(cobrir.className).toContain('h-11')
+    expect(cobrir.className).toContain('bg-lightprimary')
+  })
+
+  it('CA-692: o recolhimento vale igual, e Cobrir abre a gaveta', async () => {
+    const usuario = montar(adulta, exemplo())
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const naMeta = document.getElementById(botao.getAttribute('aria-controls') ?? '')
+    expect(naMeta).toHaveAttribute('hidden')
+    await usuario.click(botao)
+    expect(naMeta).not.toHaveAttribute('hidden')
+    expect(within(naMeta as HTMLElement).queryAllByRole('button', { name: 'Cobrir' })).toHaveLength(0)
+
+    await usuario.click(itemDe('Cálcio').getByRole('button', { name: 'Cobrir' }))
+    expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Cobrir Cálcio' })).toBeInTheDocument()
+  })
+})
