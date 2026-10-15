@@ -135,6 +135,17 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
     }
   })
 
+  it('CA-671: pão de queijo, farinha, farofa, nhoque, fécula e polvilho não trocam com verdura', () => {
+    const NAO_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
+    const verduras = ALIMENTOS.filter((a) => a.categoria.startsWith('Verduras'))
+    for (const a of verduras) {
+      const base = NAO_VERDURA.test(a.descricao.trim())
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
+        expect(NAO_VERDURA.test(t.descricao.trim()), `${a.descricao} → ${t.descricao}`).toBe(base)
+      }
+    }
+  })
+
   it('CA-671: no plano de exemplo, o ovo não troca por gema e o brócolis não troca por verdura crua', () => {
     const { plano } = criarExemplo(contador(), '2026-10-15')
     const grupos = trocasDoPlano(plano, buscarAlimento, opcoes)

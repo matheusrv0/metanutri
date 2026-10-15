@@ -65,11 +65,18 @@ function formaDoOvo(a: Alimento): 'gema' | 'clara' | 'inteiro' | null {
 
 const ehCru = (a: Alimento): boolean => a.preparo === 'cru' || /(^|[\s,])cru(a|s|as)?($|[\s,])/i.test(a.descricao)
 
+/**
+ * A TACO põe pão de queijo, farinha de mandioca, farofa, nhoque, fécula e polvilho entre as verduras. Para a troca,
+ * eles não são verdura: couve refogada por pão de queijo não é troca (spec sugestoes-com-criterio, CA-671).
+ */
+const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
+const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(a.descricao.trim())
+
 /** Verdura cozida troca só por verdura cozida: brócolis cozido por vagem crua não é troca de prato. */
-const ehVerduraCozida = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !ehCru(a)
+const ehVerduraCozida = (a: Alimento): boolean => ehVerdura(a) && !ehCru(a)
 
 const mesmaForma = (base: Alimento) => (a: Alimento): boolean =>
-  formaDoOvo(a) === formaDoOvo(base) && (!ehVerduraCozida(base) || !ehCru(a))
+  formaDoOvo(a) === formaDoOvo(base) && ehVerdura(a) === ehVerdura(base) && (!ehVerduraCozida(base) || !ehCru(a))
 
 const partesDoNome = (descricao: string): string[] => descricao.split(',').map((p) => p.trim().toLowerCase())
 
