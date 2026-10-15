@@ -3,7 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { CHAVES_DE_DADOS, linhaDeResponsabilidade, montarBackup, PERFIL_VAZIO, restaurarBackup } from '@/domain/perfil.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
+import { criarCasoVazio } from '@/domain/caso.ts'
+import { criarPlanoPadrao } from '@/domain/plano.ts'
 import { ContextoArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { FolhaDieta } from '../exportar/FolhaDieta.tsx'
 import { TelaConfiguracoes } from './TelaConfiguracoes.tsx'
 
 class MemoriaFalsa implements Armazenamento {
@@ -47,6 +50,29 @@ describe('Configurações', () => {
   it('arquivo estranho é recusado com explicação', () => {
     expect(restaurarBackup(new MemoriaFalsa(), 'nada disso').erro).toContain('Não consegui ler o arquivo')
     expect(restaurarBackup(new MemoriaFalsa(), '{"formato":9}').erro).toContain('não é um backup do MetaNutri')
+  })
+
+  it('CA-487: a logo PNG escolhida em Configurações chega à folha da dieta', async () => {
+    // Um PNG de verdade, de 1 por 1 pixel.
+    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))
+    const tela = render(<TelaConfiguracoes />)
+    await userEvent.setup().upload(screen.getByLabelText('Escolher imagem'), new File([bytes], 'logo.png', { type: 'image/png' }))
+    expect(await screen.findByText('Logo guardada. Ela aparece na folha da dieta.')).toBeInTheDocument()
+    tela.unmount()
+
+    let n = 0
+    const { container } = render(<FolhaDieta caso={criarCasoVazio('c1')} plano={criarPlanoPadrao(() => `r${++n}`)} />)
+    const logo = container.querySelector('header img')
+    expect(logo?.getAttribute('src')).toMatch(/^data:image\/png;base64,iVBORw0KGgo/)
+  })
+
+  it('CA-487: arquivo que não é imagem não vira logo e a tela diz o que escolher', async () => {
+    render(<TelaConfiguracoes />)
+    // O seletor do sistema já filtra imagens; aqui o arquivo passa por ele, como num navegador que não filtra.
+    await userEvent.setup({ applyAccept: false }).upload(screen.getByLabelText('Escolher imagem'), new File(['<script>alert(1)</script>'], 'logo.html', { type: 'text/html' }))
+    expect(await screen.findByText('Escolha uma imagem PNG, JPG ou SVG.')).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('metanutri:perfil') ?? '{}').logo ?? null).toBeNull()
+    expect(screen.queryByRole('img', { name: 'Sua logo' })).not.toBeInTheDocument()
   })
 
   it('guarda o perfil ao digitar e mostra como sai no documento', async () => {

@@ -47,7 +47,7 @@ export function linhaDeResponsabilidade(perfil: Perfil): string {
  * A logo vale só como imagem embutida (`data:image/...;base64,`), que é o que Configurações grava.
  * Outro endereço, vindo de um backup ou de uma cópia mexida à mão, não vira `src` de imagem (CA-487).
  */
-const ehLogoEmbutida = (valor: string): boolean => /^data:image\/[a-z0-9.+-]+;base64,/i.test(valor)
+export const ehLogoEmbutida = (valor: string): boolean => /^data:image\/[a-z0-9.+-]+;base64,/i.test(valor)
 
 export function lerPerfil(armazenamento: Armazenamento | null): Perfil {
   if (!armazenamento) return PERFIL_VAZIO

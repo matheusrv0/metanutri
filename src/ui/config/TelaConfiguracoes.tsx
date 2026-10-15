@@ -1,6 +1,6 @@
 import { Download, Image, ShieldCheck, Upload } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
-import { CHAVES_DE_DADOS, gravarPerfil, lerPerfil, linhaDeResponsabilidade, montarBackup, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
+import { CHAVES_DE_DADOS, ehLogoEmbutida, gravarPerfil, lerPerfil, linhaDeResponsabilidade, montarBackup, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -41,7 +41,12 @@ export function TelaConfiguracoes() {
     }
     const leitor = new FileReader()
     leitor.onload = () => {
-      alterar({ logo: typeof leitor.result === 'string' ? leitor.result : null })
+      // CA-487: só imagem embutida vira logo, a mesma regra de lerPerfil; outro arquivo não é guardado.
+      if (typeof leitor.result !== 'string' || !ehLogoEmbutida(leitor.result)) {
+        setMensagem('Escolha uma imagem PNG, JPG ou SVG.')
+        return
+      }
+      alterar({ logo: leitor.result })
       setMensagem('Logo guardada. Ela aparece na folha da dieta.')
     }
     leitor.readAsDataURL(arquivo)
