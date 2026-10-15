@@ -40,9 +40,11 @@ const DOCE_NO_MEIO = /doce em (barra|pasta)|doce, casc(ã|a)o|(^|[\s,])(em )?cal
 
 const GORDURA = /^(Creme de leite|Maionese|Chantilly|Leite, de coco|Toucinho|Salada, de legumes, com maionese|Salpic(ã|a)o)/i
 
-const EMBUTIDO =
-  /^(Apresuntado|Mortadela|Presunto|Salame|Ling(ü|u)i(ç|c)a|Salsicha|Hamb(ú|u)rguer|Bacon|Paio|Feijoada|Feij(ã|a)o tropeiro|Virado (à|a) paulista|Arroz carreteiro)/i
+const EMBUTIDO = /^(Apresuntado|Mortadela|Presunto|Salame|Ling(ü|u)i(ç|c)a|Salsicha|Hamb(ú|u)rguer|Bacon|Paio)/i
 const CARNE_CURADA = /charque|Carne, bovina, seca/i
+/** Pratos que levam linguiça, toucinho, paio, charque ou miúdos: o mesmo critério da feijoada (revisão I4). */
+const PRATO_COM_EMBUTIDO =
+  /^(Feijoada|Feij(ã|a)o tropeiro|Virado (à|a) paulista|Arroz carreteiro|Mani(ç|c)oba|Barreado|Bai(ã|a)o de dois|Dobradinha|Sarapatel|Buchada)/i
 
 const FRITO = palavra('frit(o|a|os|as)')
 const FRITURA_PELO_NOME = /(à|a) milanesa|empanad/i
@@ -102,6 +104,12 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     titulo: 'Embutido, carne processada ou curada',
     casa: (a) =>
       EMBUTIDO.test(a.descricao) || CARNE_CURADA.test(a.descricao) || (a.categoria === 'Carnes e derivados' && /salgad[oa]/i.test(a.descricao)),
+  },
+  {
+    id: 'prato-com-embutido',
+    nivel: 'fora-da-rotina',
+    titulo: 'Prato com embutido, toucinho, carne curada ou miúdos',
+    casa: (a) => PRATO_COM_EMBUTIDO.test(a.descricao),
   },
   {
     id: 'fritura',

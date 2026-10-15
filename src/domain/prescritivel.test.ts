@@ -35,6 +35,22 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     },
   )
 
+  it.each([
+    'Feijoada',
+    'Feijão tropeiro mineiro',
+    'Virado à paulista',
+    'Arroz carreteiro',
+    'Maniçoba',
+    'Barreado',
+    'Baião de dois, arroz e feijão-de-corda',
+    'Dobradinha',
+    'Sarapatel',
+  ])('CA-669: "%s" é prato com embutido, toucinho, carne curada ou miúdos, como a feijoada', (d) => {
+    const a = porDescricao(d)
+    expect(regraQueExclui(a)).toMatchObject({ id: 'prato-com-embutido', nivel: 'fora-da-rotina' })
+    expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+  })
+
   it('CA-666: o creme de arroz em pó não é fortificado e segue como forma de ingrediente', () => {
     expect(regraQueExclui(porDescricao('Creme de arroz, pó'))).toMatchObject({ id: 'po', nivel: 'ingrediente' })
   })
@@ -88,9 +104,6 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Hambúrguer, bovino, grelhado', 'embutido'],
     ['Carne, bovina, charque, cozido', 'embutido'],
     ['Carne, bovina, seca, cozida', 'embutido'],
-    ['Feijoada', 'embutido'],
-    ['Feijão tropeiro mineiro', 'embutido'],
-    ['Arroz carreteiro', 'embutido'],
     ['Ovo, de galinha, inteiro, frito', 'fritura'],
     ['Frango, filé, à milanesa', 'fritura'],
     ['Batata, inglesa, frita', 'fritura'],
@@ -209,6 +222,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       ['doce', 'fora-da-rotina', 'Doce, açúcar ou fruta em calda'],
       ['gordura', 'fora-da-rotina', 'Óleo ou gordura de adição'],
       ['embutido', 'fora-da-rotina', 'Embutido, carne processada ou curada'],
+      ['prato-com-embutido', 'fora-da-rotina', 'Prato com embutido, toucinho, carne curada ou miúdos'],
       ['fritura', 'fora-da-rotina', 'Fritura ou salgado frito'],
       ['ultraprocessado', 'fora-da-rotina', 'Ultraprocessado, salgadinho ou petisco em conserva'],
       ['miscelanea', 'ingrediente', 'Ingrediente da categoria Miscelâneas (café em pó)'],
@@ -231,7 +245,8 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       'bebida-adocada': 11,
       doce: 52,
       gordura: 22,
-      embutido: 24,
+      embutido: 20,
+      'prato-com-embutido': 9,
       fritura: 31,
       ultraprocessado: 16,
       miscelanea: 1,
@@ -240,7 +255,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       cru: 98,
       tempero: 14,
     })
-    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(294)
+    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(299)
     expect(ALIMENTOS).toHaveLength(597)
   })
 
