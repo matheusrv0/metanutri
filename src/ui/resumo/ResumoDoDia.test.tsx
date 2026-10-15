@@ -135,8 +135,8 @@ describe('Resumo do dia', () => {
     await usuario.click(verCalculo)
     const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
     expect(conteudo.getByText('TMB')).toBeInTheDocument()
-    expect(conteudo.getByText('Carboidrato').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
-    expect(conteudo.getByText('Gordura').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
+    expect(conteudo.getByText('Carboidrato no plano').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
+    expect(conteudo.getByText('Gordura no plano').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
     expect(conteudo.getByText('Metas dos macronutrientes').nextElementSibling).toHaveTextContent('faixa da idade')
   })
 
@@ -214,7 +214,7 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
     const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
     const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
     expect(conteudo.queryByText('TMB')).not.toBeInTheDocument()
-    expect(conteudo.getByText('Carboidrato')).toBeInTheDocument()
+    expect(conteudo.getByText('Carboidrato no plano')).toBeInTheDocument()
   })
 })
 
@@ -230,5 +230,29 @@ describe('Arredondamento na direção do estado (CA-695)', () => {
 
     render(<Anfitriao inicial={comGet(kcal / 1.104)} plano={plano} />)
     expect(resumo().getByText('111% do GET, acima de 110%')).toBeInTheDocument()
+  })
+})
+
+describe('"Ver cálculo" em ordem (CA-702)', () => {
+  it('CA-702: a fonte da energia vem logo depois da energia, antes dos macros', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    await usuario.click(verCalculo)
+    const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
+    const fonte = conteudo.getByRole('button', { name: /fonte/i })
+    const fator = conteudo.getByText('Fator de atividade')
+    const carboidrato = conteudo.getByText('Carboidrato no plano')
+    const origem = conteudo.getByText('Metas dos macronutrientes')
+    expect(fator.compareDocumentPosition(fonte) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(fonte.compareDocumentPosition(carboidrato) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(carboidrato.compareDocumentPosition(origem) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('CA-702: o g/kg da proteína fica só na linha, sem repetir em "Ver cálculo"', () => {
+    montar(adulta, planoComArroz())
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
+    expect(conteudo.queryByText(/Proteína/)).not.toBeInTheDocument()
+    expect(resumo().getAllByText(/0,13 g\/kg/)).toHaveLength(1)
   })
 })

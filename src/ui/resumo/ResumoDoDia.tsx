@@ -18,6 +18,7 @@ import { CampoMetaEnergia } from '../caso/CampoMetaEnergia.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
 import { MedidorMacro } from '@ds/componentes/nutricao/MedidorMacro.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
+import { LinhaCalculo } from './LinhaCalculo.tsx'
 
 interface ResumoDoDiaProps {
   readonly caso: Caso
@@ -66,15 +67,6 @@ function origemDasMetas(macros: ResultadoMacros): string | null {
   return null
 }
 
-function LinhaCalculo({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
-  return (
-    <div className="flex justify-between gap-2">
-      <dt className="text-muted-foreground">{rotulo}</dt>
-      <dd className="numeros text-right font-medium text-heading">{valor}</dd>
-    </div>
-  )
-}
-
 /**
  * Painel lateral com energia do dia e macronutrientes do plano (CA-06 a CA-11, CA-22 a CA-24).
  * Cada fato aparece uma vez; o resto fica em "Ajustar" e em "Ver cálculo" (spec painel-lateral-enxuto).
@@ -106,7 +98,8 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
 
   const mostraCalculo = (!rapido || !energia.getManual) && (energia.tmb !== null || energia.get !== null)
   const origem = origemDasMetas(macros)
-  const gPorKg = (m: ResultadoMacro) => (m.gPorKg === null ? null : `${formatarNumero(m.gPorKg, 2)} g/kg`)
+  // Com meta em g/kg, o número já está na linha do macro: aqui não se repete (CA-702).
+  const gPorKg = (m: ResultadoMacro) => (m.gPorKg === null || m.meta?.tipo === 'g_kg' ? null : `${formatarNumero(m.gPorKg, 2)} g/kg`)
   const carboidratoGkg = gPorKg(macros.carboidrato)
   const gorduraGkg = gPorKg(macros.gordura)
   const temCalculo = mostraCalculo || carboidratoGkg !== null || gorduraGkg !== null || origem !== null
@@ -195,10 +188,11 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
                     <LinhaCalculo key={a.descricao} rotulo={a.descricao} valor={`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`} />
                   ))
                 : null}
-              {carboidratoGkg ? <LinhaCalculo rotulo="Carboidrato" valor={carboidratoGkg} /> : null}
-              {gorduraGkg ? <LinhaCalculo rotulo="Gordura" valor={gorduraGkg} /> : null}
+              {/* A fonte é da fórmula da energia: vem logo depois dela, antes dos macros (CA-702). */}
+              {mostraCalculo && energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pb-1" /> : null}
+              {carboidratoGkg ? <LinhaCalculo rotulo="Carboidrato no plano" valor={carboidratoGkg} /> : null}
+              {gorduraGkg ? <LinhaCalculo rotulo="Gordura no plano" valor={gorduraGkg} /> : null}
               {origem ? <LinhaCalculo rotulo="Metas dos macronutrientes" valor={origem} /> : null}
-              {mostraCalculo && energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
             </dl>
           </Recolhivel>
         ) : null}
