@@ -32,10 +32,16 @@ export function useAcompanhamentos(): ValorAcompanhamentos {
   return valor
 }
 
-/** D-104: a tela lê a nuvem ao abrir e ao voltar para a aba. */
+/** Para quem só enfeita a tela com os links e funciona sem eles (o selo do Painel, spec whatsapp-e-retorno). */
+export function useAcompanhamentosOpcional(): ValorAcompanhamentos | null {
+  return useContext(ContextoAcompanhamentos)
+}
+
+/** D-104: a tela lê a nuvem ao abrir e ao voltar para a aba. Fora do provedor, não faz nada. */
 export function useLerDaNuvemAoAbrir(): void {
-  const { lerDaNuvem } = useAcompanhamentos()
+  const lerDaNuvem = useAcompanhamentosOpcional()?.lerDaNuvem ?? null
   useEffect(() => {
+    if (lerDaNuvem === null) return
     void lerDaNuvem()
     const aoVoltar = () => {
       if (document.visibilityState === 'visible') void lerDaNuvem()

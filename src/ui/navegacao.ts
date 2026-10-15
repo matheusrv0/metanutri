@@ -38,7 +38,8 @@ export type Rota =
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
   | { readonly tela: 'pacientes' }
   | { readonly tela: 'adesao' }
-  | { readonly tela: 'paciente'; readonly pacienteId: string }
+  // `campo`: a ficha abre com o cursor nele (o WhatsApp sem telefone leva até lá; spec whatsapp-e-retorno, CA-517).
+  | { readonly tela: 'paciente'; readonly pacienteId: string; readonly campo?: 'telefone' }
   | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
   | { readonly tela: 'config' }
@@ -82,7 +83,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
-  if (tela === 'paciente' && id) return { tela: 'paciente', pacienteId: id }
+  if (tela === 'paciente' && id) return aba === 'telefone' ? { tela: 'paciente', pacienteId: id, campo: 'telefone' } : { tela: 'paciente', pacienteId: id }
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
   if (tela === 'negocio') return { tela: 'negocio' }
   if (tela === 'comprovar-matricula') return { tela: 'comprovar-matricula' }
@@ -133,7 +134,7 @@ export function escreverRota(rota: Rota): string {
     case 'adesao':
       return '#/adesao'
     case 'paciente':
-      return `#/paciente/${encodeURIComponent(rota.pacienteId)}`
+      return `#/paciente/${encodeURIComponent(rota.pacienteId)}${rota.campo ? `/${rota.campo}` : ''}`
     case 'alimentos':
       return '#/alimentos'
     case 'produtos':

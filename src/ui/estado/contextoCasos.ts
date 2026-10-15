@@ -18,6 +18,11 @@ export interface ValorCasos {
 
 export const ContextoCasos = createContext<ValorCasos | null>(null)
 
+/** Para quem só enfeita a tela com os planos e funciona sem eles (a Adesão acha o paciente do link pelo plano). */
+export function useCasosOpcional(): ValorCasos | null {
+  return useContext(ContextoCasos)
+}
+
 export function useCasos(): ValorCasos {
   const valor = useContext(ContextoCasos)
   if (!valor) throw new Error('useCasos precisa estar dentro de <ProvedorCasos>.')

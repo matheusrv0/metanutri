@@ -33,6 +33,14 @@ export function dataCompleta(iso: string | null | undefined): string {
   return data ? COMPLETA.format(data) : ''
 }
 
+const SEMANA = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
+
+/** "2026-10-16" → "sexta-feira" (spec whatsapp-e-retorno). Entrada inválida ou vazia devolve vazio. */
+export function diaDaSemana(iso: string | null | undefined): string {
+  const data = lerData(iso)
+  return data ? SEMANA.format(data) : ''
+}
+
 const MES = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
 
 /** "2026-10-01" → "1º de outubro de 2026" (CA-308). Entrada inválida ou vazia devolve vazio. */
