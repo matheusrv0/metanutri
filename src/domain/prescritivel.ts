@@ -26,10 +26,14 @@ const palavra = (termos: string) => new RegExp(`(^|[\\s,])(${termos})($|[\\s,])`
 
 const ALCOOL = palavra('cerveja|aguardente|cacha(ç|c)a|vinho|vodca|u(í|i)sque|licor|caipirinha')
 
-const BEBIDA_ADOCADA = /^(Refrigerante|Bebida isot(ô|o)nica|Bebida l(á|a)ctea|Cana, caldo|Leite, fermentado|Leite, de vaca, achocolatado)/i
+/** Nem como ingrediente alguém prescreve 200 g de shoyu (revisão I1). */
+const SAL_E_FERMENTO = /^(Sal,|Shoyu|Tempero a base de sal|Fermento)/i
+
+const BEBIDA_ADOCADA =
+  /^(Refrigerante|Bebida isot(ô|o)nica|Bebida l(á|a)ctea|Cana, caldo|Leite, fermentado|Leite, de vaca, achocolatado|Capuccino)/i
 
 const DOCE_PELO_NOME =
-  /^(Biscoito, doce|Bolo,|Iogurte, sabor|Leite, condensado|Curau|Canjica, com leite|Pa(ç|c)oca|P(é|e)-de-moleque|Cereal matinal, milho, a(ç|c)(ú|u)car)/i
+  /^(Biscoito, doce|Bolo,|Iogurte, sabor|Leite, condensado|Curau|Canjica, com leite|Pa(ç|c)oca|P(é|e)-de-moleque|Cereal matinal, milho, a(ç|c)(ú|u)car|Gelatina)/i
 // "Batata, doce" e "Polvilho, doce" não são doce: por isso o nome inteiro, não a palavra solta.
 // A calda vale com ou sem o "em": a TACO tem "Ameixa, calda, enlatada" (revisão C1).
 const DOCE_NO_MEIO = /doce em (barra|pasta)|doce, casc(ã|a)o|(^|[\s,])(em )?calda($|[\s,])|xarope|petit suisse/i
@@ -71,6 +75,7 @@ const MOLHO_OU_CONCENTRADO = /^Lim(ã|a)o, [^,]+, cru|^Tomate, (extrato|pur(ê|e
 /** Na ordem do Apêndice A. Quando mais de uma pega o alimento, vale a de nível mais grave. */
 export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
   { id: 'alcool', nivel: 'nunca', titulo: 'Bebida alcoólica', casa: (a) => ALCOOL.test(a.descricao) },
+  { id: 'sal-e-fermento', nivel: 'nunca', titulo: 'Sal, shoyu, tempero pronto ou fermento', casa: (a) => SAL_E_FERMENTO.test(a.descricao) },
   {
     id: 'bebida-adocada',
     nivel: 'fora-da-rotina',
@@ -108,7 +113,7 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     titulo: 'Ultraprocessado, salgadinho ou petisco em conserva',
     casa: (a) => ULTRAPROCESSADO.test(a.descricao),
   },
-  { id: 'miscelanea', nivel: 'ingrediente', titulo: 'Tempero, sal, fermento ou pó (Miscelâneas)', casa: (a) => a.categoria === 'Miscelâneas' },
+  { id: 'miscelanea', nivel: 'ingrediente', titulo: 'Ingrediente da categoria Miscelâneas (café em pó)', casa: (a) => a.categoria === 'Miscelâneas' },
   { id: 'po', nivel: 'ingrediente', titulo: 'Produto em pó ou desidratado', casa: (a) => PO.test(a.descricao) },
   {
     id: 'farinha',

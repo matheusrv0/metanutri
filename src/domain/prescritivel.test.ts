@@ -17,6 +17,24 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
   })
 
+  it.each(['Sal, grosso', 'Sal, dietético', 'Shoyu', 'Tempero a base de sal', 'Fermento em pó, químico', 'Fermento, biológico, levedura, tablete'])(
+    'CA-665: "%s" nunca é proposto, nem com a chave ligada',
+    (d) => {
+      const a = porDescricao(d)
+      expect(regraQueExclui(a)).toMatchObject({ id: 'sal-e-fermento', nivel: 'nunca' })
+      expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+    },
+  )
+
+  it.each([
+    ['Capuccino, pó', 'bebida-adocada'],
+    ['Gelatina, sabores variados, pó', 'doce'],
+  ])('CA-665: "%s" é fora da rotina (%s), não ingrediente: a chave não o traz', (d, id) => {
+    const a = porDescricao(d)
+    expect(regraQueExclui(a)).toMatchObject({ id, nivel: 'fora-da-rotina' })
+    expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+  })
+
   it.each([
     ['Refrigerante, tipo cola', 'bebida-adocada'],
     ['Refrigerante, tipo água tônica', 'bebida-adocada'],
@@ -89,8 +107,6 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
 
   it.each([
     ['Café, pó, torrado', 'miscelanea'],
-    ['Sal, grosso', 'miscelanea'],
-    ['Fermento, biológico, levedura, tablete', 'miscelanea'],
     ['Coentro, folhas desidratadas', 'po'],
     ['Leite, de vaca, desnatado, pó', 'po'],
     ['Farinha, de trigo', 'farinha'],
@@ -175,13 +191,14 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
   it('CA-664: os motivos, na ordem e com o título do Apêndice A', () => {
     expect(REGRAS_PRESCRICAO.map((r) => [r.id, r.nivel, r.titulo])).toEqual([
       ['alcool', 'nunca', 'Bebida alcoólica'],
+      ['sal-e-fermento', 'nunca', 'Sal, shoyu, tempero pronto ou fermento'],
       ['bebida-adocada', 'fora-da-rotina', 'Refrigerante, isotônico ou bebida adoçada'],
       ['doce', 'fora-da-rotina', 'Doce, açúcar ou fruta em calda'],
       ['gordura', 'fora-da-rotina', 'Óleo ou gordura de adição'],
       ['embutido', 'fora-da-rotina', 'Embutido, carne processada ou curada'],
       ['fritura', 'fora-da-rotina', 'Fritura ou salgado frito'],
       ['ultraprocessado', 'fora-da-rotina', 'Ultraprocessado, salgadinho ou petisco em conserva'],
-      ['miscelanea', 'ingrediente', 'Tempero, sal, fermento ou pó (Miscelâneas)'],
+      ['miscelanea', 'ingrediente', 'Ingrediente da categoria Miscelâneas (café em pó)'],
       ['po', 'ingrediente', 'Produto em pó ou desidratado'],
       ['farinha', 'ingrediente', 'Farinha, amido ou fécula de uso culinário'],
       ['cru', 'ingrediente', 'Versão crua de alimento que se come cozido'],
@@ -197,13 +214,14 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     }
     expect(contagem).toEqual({
       alcool: 2,
-      'bebida-adocada': 10,
-      doce: 51,
+      'sal-e-fermento': 6,
+      'bebida-adocada': 11,
+      doce: 52,
       gordura: 22,
       embutido: 24,
       fritura: 31,
       ultraprocessado: 13,
-      miscelanea: 9,
+      miscelanea: 1,
       po: 7,
       farinha: 13,
       cru: 98,

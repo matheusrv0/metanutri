@@ -46,8 +46,9 @@ export interface ResultadoCobrir {
 /**
  * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
  * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
+ * Vale em qualquer forma: o café em pó também não entra, nem com a chave ligada (revisão I1).
  */
-const INFUSAO = /^(Café|Chá), .*infusão/i
+const CAFE_OU_CHA = /^(Café|Chá),/i
 
 export interface OpcoesCobrir {
   readonly alimentos: readonly Alimento[]
@@ -116,7 +117,7 @@ export function sugerirParaCobrir(
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
-    if (INFUSAO.test(alimento.descricao)) continue
+    if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue

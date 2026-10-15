@@ -248,6 +248,26 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     }
   })
 
+  it('CA-654 e CA-665: com a chave ligada, café em pó, capuccino, gelatina, sal, shoyu, tempero e fermento não entram', () => {
+    const MISC = 'Miscelâneas'
+    const rico = (id: number, descricao: string) => comoNaTaco(alimento(id, descricao, { energia_kcal: 5, ferro_mg: 40 }), MISC)
+    const daCozinha = [
+      rico(30, 'Café, pó, torrado'),
+      rico(31, 'Capuccino, pó'),
+      rico(32, 'Gelatina, sabores variados, pó'),
+      rico(33, 'Sal, grosso'),
+      rico(34, 'Shoyu'),
+      rico(35, 'Tempero a base de sal'),
+      rico(36, 'Fermento, biológico, levedura, tablete'),
+    ]
+    const comChave = sugerirParaCobrir('ferro_mg', plano, adequacao, {
+      gastoEnergetico: 2000,
+      alimentos: [...daCozinha, ...BASE],
+      incluirIngredientes: true,
+    }).sugestoes.map((s) => s.descricao)
+    for (const a of daCozinha) expect(comChave).not.toContain(a.descricao)
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
@@ -289,6 +309,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
           const a = buscarAlimento(s.alimentoId)
           const nivel = a ? (regraQueExclui(a)?.nivel ?? 'prescritivel') : 'sem alimento'
           expect(['prescritivel', 'ingrediente'], `${chave}: ${s.descricao}`).toContain(nivel)
+          expect(s.descricao, chave).not.toMatch(/^(Café|Chá),/)
         }
       }
     })
