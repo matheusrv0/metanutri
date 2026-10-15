@@ -3,6 +3,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import { pluginPoliticaDeConteudo } from '../src/seguranca/pluginCsp.ts'
+import { PASTA_DA_BANCADA } from './ambiente.ts'
 
 export default defineConfig({
   root: fileURLToPath(new URL('./bancada', import.meta.url)),
@@ -13,7 +14,7 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('../src', import.meta.url)) },
   },
   build: {
-    outDir: fileURLToPath(new URL('../node_modules/.tmp/csp-bancada', import.meta.url)),
+    outDir: PASTA_DA_BANCADA,
     emptyOutDir: true,
   },
 })
