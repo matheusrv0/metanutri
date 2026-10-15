@@ -157,6 +157,15 @@ quem publica acerta no dia.
 ("links de missões do seu plano") e os nomes dos planos ("Até 3 links de missões") ficaram como estavam: não fazem parte
 do cartão renomeado.
 
+## Integração com as outras frentes (15/10/2026)
+
+- [x] **I1** · A versão dos termos passa a `2026-10-15` (a Política também cita a ficha da spec
+  `anamnese-e-prescricoes`, CA-597). Altera `src/domain/legal.ts` e os testes de `legal`. Cobre CA-552.
+- [x] **I2** · No cartão, as props `paciente` (WhatsApp) e `caixaDaDieta` convivem no `PainelDoLink`; o texto do
+  WhatsApp cita o plano alimentar quando o link tem a dieta (CA-596 da `whatsapp-e-retorno`).
+- [x] **I3** · A nota de publicação em `docs/pendencias.md` junta as três frentes: o `012` antes de publicar, depois
+  publicar, depois fechar todas as abas do MetaNutri.
+
 ## Riscos e decisões para o dono revisar
 
 - **R-150 (D-152)** · A caixa vem marcada por padrão: todo link novo leva o plano alimentar, que é dado de saúde. O

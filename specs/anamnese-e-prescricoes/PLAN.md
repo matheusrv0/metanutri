@@ -204,3 +204,15 @@ as regras de página e o alinhamento em `FolhaDocumento.test.tsx`; a opção da 
 suplemento malicioso no Word em `xssExportacao.test.ts`; a ordem no celular em `e2e/anamnese-e-prescricoes.spec.ts`.
 Fora da lista de arquivos: `src/domain/folhaDieta.ts` ganhou `assinaturaEmTexto`, a mesma conta da linha fina da
 dieta, agora usada também pelas folhas do paciente.
+
+## Integração com as outras frentes (15/10/2026)
+
+- [x] **I1** · Política de privacidade: um item curto em "Que dados guardamos e para quê" diz que a ficha também
+  guarda as respostas da anamnese, os suplementos e os pedidos de exame, como dado de saúde. Versão dos termos
+  `2026-10-15` (`src/domain/legal.ts`, com a dieta no link). Altera `src/ui/publico/TelaPrivacidade.tsx`,
+  `src/domain/legal.ts` e os testes `legal.test.ts` e `legal.test.tsx`. Cobre CA-597.
+- [x] **I2** · Os dois pontos comuns (versão antiga apagando chave nova; salvar um paciente remarcando todos) foram
+  resolvidos na spec `dados-na-nuvem` (D-170, D-171, T40 e T41).
+- [x] **I3** · Junção com `whatsapp-e-retorno`: a ficha tem `proximaConsulta` junto dos campos desta frente, e o
+  `ler()` mantém as duas regras (consulta estragada vira "sem consulta"; campo novo estragado vira vazio). Ordem dos
+  cartões: Identificação, Próxima consulta, Restrições e saúde, Anamnese, Suplementos, Exames, Apagar paciente.
