@@ -1,6 +1,7 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
+import { normalizarTelefone } from '@/domain/whatsapp.ts'
 import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
@@ -13,6 +14,7 @@ import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
 interface TelaPacienteProps {
@@ -20,10 +22,17 @@ interface TelaPacienteProps {
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoNovoPlano: (pacienteId: string, modo: ModoPlano) => void
   readonly aoVoltar: () => void
+  /** O campo que recebe o cursor ao abrir: o WhatsApp sem telefone leva até ele (spec whatsapp-e-retorno, CA-517). */
+  readonly focar?: 'telefone' | undefined
+  /** Injetável no teste; decide se a próxima consulta já passou. */
+  readonly agora?: Date | undefined
 }
 
-/** Ficha do paciente: dados, restrições, histórico de planos e evolução do peso. */
-export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
+/** CA-516: o telefone preenchido que o WhatsApp não aceita ganha a dica. */
+const DICA_TELEFONE = 'Para o WhatsApp, use DDD e número do Brasil.'
+
+/** Ficha do paciente: dados, próxima consulta, restrições, histórico de planos e evolução do peso. */
+export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar, focar, agora = new Date() }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
@@ -90,10 +99,18 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
               aoEscolher={(sexo) => alterar({ sexo })}
             />
             <CampoTexto rotulo="Objetivo" valor={paciente.objetivo} aoMudar={(v) => alterar({ objetivo: v })} placeholder="Emagrecimento, ganho de massa…" />
-            <CampoTexto rotulo="Telefone" valor={paciente.telefone} aoMudar={(v) => alterar({ telefone: v })} />
+            <CampoTexto
+              rotulo="Telefone"
+              valor={paciente.telefone}
+              aoMudar={(v) => alterar({ telefone: v })}
+              dica={paciente.telefone.trim() !== '' && normalizarTelefone(paciente.telefone) === null ? DICA_TELEFONE : undefined}
+              focar={focar === 'telefone'}
+            />
             <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(v) => alterar({ email: v })} />
           </div>
         </Card>
+
+        <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
 
         <Card>
           <CardHeader>

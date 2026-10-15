@@ -25,6 +25,15 @@ describe('navegação por endereço', () => {
     expect(lerRota(escreverRota(rota))).toEqual(rota)
   })
 
+  it('CA-517: a ficha com o cursor no Telefone tem endereço próprio; outro campo abre a ficha comum', () => {
+    const rota = { tela: 'paciente', pacienteId: 'p 1', campo: 'telefone' } as const
+    expect(escreverRota(rota)).toBe('#/paciente/p%201/telefone')
+    expect(lerRota(escreverRota(rota))).toEqual(rota)
+    expect(lerRota('#/paciente/p1')).toEqual({ tela: 'paciente', pacienteId: 'p1' })
+    expect(lerRota('#/paciente/p1/qualquer')).toEqual({ tela: 'paciente', pacienteId: 'p1' })
+    expect(escreverRota({ tela: 'paciente', pacienteId: 'p1' })).toBe('#/paciente/p1')
+  })
+
   it('ida e volta preserva a rota, inclusive id com caracteres especiais', () => {
     const rota = { tela: 'planejador', casoId: 'caso com espaço/barra', aba: 'adequacao' } as const
     expect(lerRota(escreverRota(rota))).toEqual(rota)

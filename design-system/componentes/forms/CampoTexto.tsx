@@ -9,16 +9,32 @@ interface CampoTextoProps {
   readonly erro?: string | undefined
   /** Explicação curta abaixo do campo (ex.: unidade ou exemplo). */
   readonly dica?: string | undefined
-  readonly tipo?: 'text' | 'date'
+  readonly tipo?: 'text' | 'date' | 'time'
   /** Teclado numérico no celular e vírgula aceita (CB-12). */
   readonly numerico?: boolean
   readonly sufixo?: string
   readonly placeholder?: string
   /** Mantém o rótulo só para leitores de tela (linhas de tabela onde a coluna já nomeia o campo). */
   readonly rotuloOculto?: boolean
+  readonly desativado?: boolean | undefined
+  /** Põe o cursor no campo ao abrir a tela (o endereço da ficha que leva ao Telefone, spec whatsapp-e-retorno). */
+  readonly focar?: boolean | undefined
 }
 
-export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', numerico = false, sufixo, placeholder, rotuloOculto = false }: CampoTextoProps) {
+export function CampoTexto({
+  rotulo,
+  valor,
+  aoMudar,
+  erro,
+  dica,
+  tipo = 'text',
+  numerico = false,
+  sufixo,
+  placeholder,
+  rotuloOculto = false,
+  desativado = false,
+  focar = false,
+}: CampoTextoProps) {
   const id = useId()
   const idErro = `${id}-erro`
   const idDica = `${id}-dica`
@@ -39,6 +55,8 @@ export function CampoTexto({ rotulo, valor, aoMudar, erro, dica, tipo = 'text', 
           aria-describedby={descricao || undefined}
           inputMode={numerico ? 'decimal' : undefined}
           placeholder={placeholder}
+          disabled={desativado}
+          autoFocus={focar}
           className={sufixo ? 'pr-9' : undefined}
         />
         {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}
