@@ -1,0 +1,502 @@
+# SPEC — Sugestões com critério: o MetaNutri só propõe o que se prescreve
+
+Status: **pedida pelo dono em 15/10/2026; aprovação pelas telas antes de publicar.** A estudante de nutrição revisa o
+Apêndice A antes da publicação.
+
+**Fonte:** a conversa de 15/10/2026: "Você tem que ter a consciência do que você está sugerindo nas coisas do MetaNutri.
+Não é para sugerir tudo só por cobrir os macros e micros. (...) você está numa plataforma de dieta, de prescrições, e eu
+vi que você colocou para sugerir cerveja Pilsen. Que não tem o menor sentido."
+
+**Specs lidas antes:** `planejador-metanutri` (CA-34 a CA-40, CA-36a, D-5, CB-06), `prescricao-rapida-e-base` (CA-82,
+CA-83), `ajustes-de-uso` (D-35, D-36, listas por refeição) e `pdf-e-telas-limpas` (trocas na folha do paciente).
+
+## 1. Onde o MetaNutri propõe alimento sozinho
+
+| Lugar | Código | O que propõe | Nesta spec |
+|---|---|---|---|
+| Cobrir | `src/domain/cobrir.ts` | até 5 alimentos da base para fechar a falta de um micronutriente | passa pela regra |
+| Trocas da folha do paciente | `src/domain/trocas.ts` | até 3 trocas por alimento do plano (2 na folha) | passa pela regra |
+| Sugestões por refeição | `src/domain/sugestoes.ts` (`SUGESTOES_PADRAO`) | lista fixa escrita à mão (D-36) | não muda; um teste garante que todo item passa na regra |
+| Plano de exemplo | `src/domain/exemplo.ts` | um dia montado como uma nutricionista montaria | não muda (D-196) |
+| Vitrine da página inicial | `src/domain/vitrine.ts` | 5 itens fixos de cálcio | conferido: todos passam na regra |
+| Missões e lista de compras | `missoes.ts`, folha do paciente | derivam do plano | não propõem alimento novo |
+| Busca, entrada rápida, substituto e edição das listas | `busca.ts`, `DialogoSubstituto`, `DialogoSugestoes` | escolha da nutricionista | nunca filtrados (D-190) |
+
+Hoje o cobrir só tira Miscelâneas, pó, farinha e a versão crua de carne, peixe, ovo, leguminosa e cereal (CA-36a). Com o
+plano de exemplo, ele sugeria "Cerveja, pilsen 2" para a piridoxina, "Bebida isotônica" para o ferro e "Caldo de carne,
+tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e ovo frito no lugar de ovo cozido.
+
+## 2. Decisões
+
+| # | Decisão | Substitui |
+|---|---|---|
+| D-190 | **Uma regra só, "prescritível"**, em `src/domain/prescritivel.ts`, decide o que o MetaNutri pode propor sozinho. Vale para o cobrir e para as trocas, e confere as listas fixas. A escolha manual nunca passa por ela: pela busca, qualquer alimento da base entra no plano | O filtro `ehSugerivel` do cobrir |
+| D-191 | **Três níveis.** *Nunca*: bebida alcoólica, em nenhum modo. *Fora da rotina*: refrigerante, isotônico ou bebida adoçada; doce, açúcar ou fruta em calda; óleo ou gordura de adição; embutido, carne processada ou curada; fritura; ultraprocessado, salgadinho ou petisco em conserva. *Forma de ingrediente*: o que já era o CA-36a, mais fécula e polvilho, tempero, molho, suco concentrado e a versão crua de tubérculo, abóbora, berinjela, chuchu e massa de pão de queijo. A chave "Incluir ingredientes e alimentos crus" libera só o terceiro nível, como o nome dela já diz | CA-36a, que excluía só a forma de ingrediente |
+| D-192 | **Casos de borda** decididos com o bom senso clínico da seção 2.1. Cada alimento fora da regra está no Apêndice A com o nível e o motivo | A exceção da farinha láctea no CA-36a |
+| D-193 | **O cobrir não usa café nem chá como fonte.** Os dois continuam prescritíveis (aparecem na lista do desjejum e nas trocas de bebida), mas infusão sem caloria passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá valores de B1 e B2 que não se sustentam (3 mg de tiamina em 100 ml de chá preto) | — |
+| D-194 | **Trocas.** Nenhuma troca oferecida é item fora da regra, de nenhum nível; a chave do cobrir não vale aqui. Item fora da rotina posto à mão no plano ganha trocas só entre os prescritíveis do mesmo grupo e com o mesmo macro dominante (ovo frito troca por ovo cozido; batata frita por batata cozida). Se não sobra nenhum (margarina, doce de leite), ele fica sem trocas. Bebida alcoólica no plano nunca ganha troca | O filtro `ehSugerivel` das trocas |
+| D-195 | **Quando nada de rotina cobre a falta**, o cobrir diz: "Nenhum alimento de rotina cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra." | "Nenhum alimento da base cobre ao menos 10% da falta em até {porção} g." |
+| D-196 | **O plano de exemplo, as listas por refeição e a vitrine não mudam.** O exemplo é um plano escrito à mão, como a nutricionista escreveria, e os 5 g de margarina no pão são prescrição comum. As listas e a vitrine já passam na regra | — |
+| D-197 | **A ordem do cobrir continua a mesma**: uso comum primeiro, depois menos kcal por parte da falta coberta, e um grupo por vez (CA-35, CA-36, CA-82). Jurubeba e jamelão, frutas que só uma região conhece, entram na lista de pouco usual | — |
+| D-198 | **A regra é por nome e categoria da TACO.** Alimento novo na base sem regra que o pegue entra como prescritível; um teste conta os excluídos por motivo e acusa qualquer mudança da base | — |
+
+### 2.1 Casos de borda
+
+| Alimento | Decisão | Por quê |
+|---|---|---|
+| Café e chás (infusão) | prescritível; o cobrir não usa como fonte | D-193 |
+| Água de coco | prescritível | bebida natural de rotina |
+| Suco natural de laranja, tangerina e limão | prescritível | é como se prescreve fruta em suco |
+| Suco concentrado envasado (caju, maracujá, uva) | forma de ingrediente | precisa diluir; 100 g de concentrado não é porção |
+| Caldo de cana | fora da rotina (bebida adoçada) | quase só sacarose, sem fibra |
+| Bebida láctea, leite fermentado e leite achocolatado | fora da rotina (bebida adoçada) | açúcar adicionado; leite e iogurte natural cobrem o mesmo |
+| Iogurte com sabor e petit suisse | fora da rotina (doce) | açúcar adicionado; o iogurte natural fica |
+| Requeijão cremoso e queijo pasteurizado | prescritível | uso comum no café da manhã, em porção pequena |
+| Cuscuz de milho e cuscuz paulista | prescritível | prato do dia a dia |
+| Tapioca com manteiga | prescritível | é a única tapioca da base e o jeito comum de comer; já está na lista do desjejum |
+| Pão de queijo | assado é prescritível; cru é forma de ingrediente | a massa crua não se come |
+| Feijoada, feijão tropeiro, virado à paulista e arroz carreteiro | fora da rotina (embutido ou carne curada) | levam linguiça, toucinho, bacon ou charque |
+| Charque e carne seca | fora da rotina (carne curada) | carne salgada; entra na conta de carne processada |
+| Bacalhau salgado refogado | prescritível | peixe dessalgado antes do preparo |
+| Sardinha e atum em óleo | prescritível | prescrição comum e barata; escorrer o óleo é orientação |
+| Azeite de oliva e os demais óleos | fora da rotina (gordura de adição) | entra à mão, em colher; nenhum motor automático sabe a porção de gordura de adição |
+| Salada de legumes com maionese e salpicão | fora da rotina (gordura de adição) | a salada no vapor cobre o mesmo |
+| Azeitona e tremoço em conserva | fora da rotina (petisco em conserva) | petisco salgado; a porção que cobriria um mineral (140 g de azeitona para o ferro) não é prescrição |
+| Palmito em conserva, milho e ervilha enlatados, seleta de legumes | prescritível | ingrediente de salada do dia a dia |
+| Granola | não existe na base | — |
+| Cereal matinal (com ou sem açúcar), mingau infantil, farinha láctea e mistura para vitamina | fora da rotina (ultraprocessado) | produto fortificado; aparecia como fonte de vitamina pelo enriquecimento |
+| Biscoito cream cracker | prescritível | está nas listas de equivalentes de cereais |
+| Biscoito doce, recheado, wafer e maisena | fora da rotina (doce) | — |
+| Biscoito de polvilho | fora da rotina (salgadinho) | — |
+| Pipoca com óleo | prescritível | cereal integral, lanche comum |
+| Castanhas, amêndoa e amendoim torrados e salgados | prescritível | oleaginosa é prescrita; o sal é detalhe da compra |
+| Ovo frito, carne e frango à milanesa, peixe frito, bife à cavalo | fora da rotina (fritura) | existe a versão cozida, assada ou grelhada; o bife à cavalo leva ovo frito |
+| Omelete | prescritível | preparo comum do ovo |
+| Mel, melado, rapadura e chocolate meio amargo | fora da rotina (doce) | açúcar de adição ou doce |
+| Hambúrguer bovino | fora da rotina (carne processada) | a TACO mede o hambúrguer industrializado |
+| Empada de frango | fora da rotina (ultraprocessado) | salgado pré-cozido |
+| Caldo de carne e de galinha em tablete, macarrão instantâneo | fora da rotina (ultraprocessado) | — |
+| Limão inteiro cru | forma de ingrediente (tempero) | ninguém come 200 g de limão; o suco continua |
+| Alho, alfavaca, manjericão, salsa, cebolinha e coentro | forma de ingrediente (tempero) | 70 g de alfavaca não é porção |
+| Extrato, purê e molho de tomate, tucupi e cuxá | forma de ingrediente (molho) | base de preparo, não alimento do prato |
+| Batata, batata-doce, batata-baroa, mandioca, cará, abóbora, berinjela e chuchu crus | forma de ingrediente (cru) | a base tem a versão cozida; mandioca crua é tóxica |
+| Inhame, quiabo, jiló, vagem e maxixe | prescritível | só existem crus na base; sem eles o cobrir perderia verduras de uso comum |
+| Fígado, coração, língua, bucho, sarapatel e dobradinha | prescritível e pouco usual (vão para o fim da lista) | já era assim (CA-82) |
+
+## 3. Critérios de aceite
+
+- **CA-650** · Dado o cobrir de qualquer nutriente, com a chave "Incluir ingredientes e alimentos crus" ligada ou desligada, então nenhuma bebida alcoólica aparece.
+- **CA-651** · Dado o cobrir com a chave desligada, então não aparece nenhum item fora da rotina: refrigerante, isotônico ou bebida adoçada; doce, açúcar ou fruta em calda; óleo ou gordura de adição; embutido, carne processada ou curada; fritura; ultraprocessado, salgadinho ou petisco em conserva.
+- **CA-652** · Dado o cobrir com a chave ligada, então a forma de ingrediente volta a poder aparecer, e os itens fora da rotina e as bebidas alcoólicas continuam de fora.
+- **CA-653** · Dado o cobrir com a chave desligada, então também não aparece a forma de ingrediente nova: fécula e polvilho; batata, batata-doce, batata-baroa, mandioca, cará, abóbora, berinjela e chuchu crus; massa crua de pão de queijo; tempero e erva; limão inteiro cru; extrato, purê e molho de tomate; tucupi e cuxá; suco concentrado.
+- **CA-654** · Dado o cobrir, com a chave ligada ou desligada, então café e chás não aparecem como fonte.
+- **CA-655** · Dado as sugestões do cobrir, então a ordem continua: uso comum primeiro, depois menos kcal por parte da falta coberta, e grupos diferentes antes de repetir grupo.
+- **CA-656** · Dado um nutriente que só alimentos fora da regra cobririam dentro da porção máxima, então o cobrir mostra "Nenhum alimento de rotina cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra." em vez de uma lista vazia.
+- **CA-657** · Dado o plano de exemplo (Maria, 28 anos), quando o cobrir é pedido para cada um dos 16 micronutrientes, então nenhuma sugestão é item fora da regra; o mesmo vale para o plano vazio da mesma paciente, em que os 16 têm falta.
+- **CA-658** · Dado a lista de trocas de qualquer alimento da base, então nenhuma troca oferecida é item fora da regra, de nenhum nível.
+- **CA-659** · Dado um item fora da rotina posto à mão no plano, então as trocas dele vêm só de alimentos prescritíveis do mesmo grupo e com o mesmo macro dominante (ovo frito troca por ovo cozido).
+- **CA-660** · Dado um item fora da regra sem nenhum par prescritível no grupo (margarina, doce de leite), então ele não ganha trocas, e os outros alimentos do plano continuam com as suas.
+- **CA-661** · Dado uma bebida alcoólica posta à mão no plano, então ela não ganha trocas.
+- **CA-662** · Dado as listas padrão de sugestões por refeição (D-36), então todos os itens delas passam na regra.
+- **CA-663** · Dado a busca de alimentos, então bebida alcoólica, doce e gordura continuam aparecendo: a escolha manual nunca é filtrada.
+- **CA-664** · Dado a regra, então cada alimento fora dela tem um nível e um motivo, e a contagem por motivo é a do Apêndice A: 293 dos 597 alimentos.
+
+## 4. Casos de borda
+
+| ID | Situação | Comportamento |
+|---|---|---|
+| CB-190 | Plano salvo antes com item agora fora da regra (cerveja, margarina) | O plano não muda; o item só deixa de ser sugerido e de ser oferecido como troca |
+| CB-191 | Caso salvo com a chave "Incluir ingredientes e alimentos crus" ligada | Continua ligada; libera só a forma de ingrediente |
+| CB-192 | Porção máxima pequena (5 g) ou nutriente sem fonte de rotina | Mensagem do CA-656 |
+| CB-193 | Produto cadastrado pelo rótulo | Não entra no cobrir nem nas trocas, como já era (os dois usam só a base); na busca, aparece normalmente |
+| CB-194 | Alimento novo na base, sem regra que o pegue | Entra como prescritível; a contagem do CA-664 acusa a mudança |
+| CB-195 | Restrição do paciente ou alimento marcado "Nunca sugerir" | Continuam filtrando depois da regra, como antes (CA-40, CA-83); a gaveta pode mostrar menos de 5 |
+| CB-196 | Plano em que nenhum alimento tem troca | A folha sai sem a seção de trocas, como já era |
+
+## 5. Fora de escopo
+
+- A busca e a ordem dos resultados dela (escolha manual).
+- Tirar o botão cobrir do sódio. Subir sódio por alimento quase nunca é conduta, porque o sal de cozinha não entra no
+  plano; fica para o dono decidir.
+- Porção máxima por alimento (200 g de alface ainda é uma sugestão possível).
+- Corrigir valores da TACO (B1 e B2 do chá, cobre do mamão formosa).
+- Mudar o plano de exemplo, as listas por refeição e a vitrine (D-196).
+- Layout da gaveta do cobrir, painel lateral e folha impressa: outras frentes cuidam deles. O texto da chave não muda.
+- Classificar produtos cadastrados pelo rótulo.
+
+## 6. Riscos
+
+1. **Nenhuma decisão foi conferida por nutricionista.** A estudante revisa o Apêndice A antes de publicar; mudar um item
+   é mudar uma linha da regra e a contagem do teste.
+2. **Regra por nome.** Um alimento novo na base com nome diferente escapa até alguém escrever a regra (CB-194).
+3. **Menos variedade.** Em nutriente com poucas fontes de rotina, uma porção máxima baixa leva à mensagem do CA-656 mais
+   cedo do que antes.
+
+## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
+
+293 dos 597 alimentos da base. "Antes" diz o que o filtro antigo fazia: *sugeria* (podia aparecer no cobrir e nas trocas)
+ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo que vale primeiro, na ordem: nunca, fora da rotina, forma
+de ingrediente. Todos continuam disponíveis pela busca.
+
+### Nível 1 — Nunca
+
+#### Bebida alcoólica (2)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 472 | Cana, aguardente 1 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 474 | Cerveja, pilsen 2 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+
+### Nível 2 — Fora da rotina
+
+#### Refrigerante, isotônico ou bebida adoçada (10)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 446 | Bebida láctea, pêssego | Leite e derivados | sugeria |
+| 455 | Leite, de vaca, achocolatado | Leite e derivados | sugeria |
+| 460 | Leite, fermentado | Leite e derivados | sugeria |
+| 470 | Bebida isotônica, sabores variados | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 473 | Cana, caldo de | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 479 | Refrigerante, tipo água tônica | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 480 | Refrigerante, tipo cola | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 481 | Refrigerante, tipo guaraná | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 482 | Refrigerante, tipo laranja | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 483 | Refrigerante, tipo limão | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+
+#### Doce, açúcar ou fruta em calda (50)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 8 | Biscoito, doce, maisena | Cereais e derivados | sugeria |
+| 9 | Biscoito, doce, recheado com chocolate | Cereais e derivados | sugeria |
+| 10 | Biscoito, doce, recheado com morango | Cereais e derivados | sugeria |
+| 11 | Biscoito, doce, wafer, recheado de chocolate | Cereais e derivados | sugeria |
+| 12 | Biscoito, doce, wafer, recheado de morango | Cereais e derivados | sugeria |
+| 14 | Bolo, mistura para | Cereais e derivados | sugeria |
+| 15 | Bolo, pronto, aipim | Cereais e derivados | sugeria |
+| 16 | Bolo, pronto, chocolate | Cereais e derivados | sugeria |
+| 17 | Bolo, pronto, coco | Cereais e derivados | sugeria |
+| 18 | Bolo, pronto, milho | Cereais e derivados | sugeria |
+| 20 | Canjica, com leite integral | Cereais e derivados | sugeria |
+| 26 | Cereal matinal, milho, açúcar | Cereais e derivados | sugeria |
+| 29 | Curau, milho verde | Cereais e derivados | sugeria |
+| 30 | Curau, milho verde, mistura para | Cereais e derivados | sugeria |
+| 167 | Açaí, polpa, com xarope de guaraná e glucose | Frutas e derivados | sugeria |
+| 173 | Ameixa, em calda, enlatada, drenada | Frutas e derivados | sugeria |
+| 176 | Banana, doce em barra | Frutas e derivados | sugeria |
+| 195 | Figo, enlatado, em calda | Frutas e derivados | sugeria |
+| 198 | Goiaba, doce em pasta | Frutas e derivados | sugeria |
+| 199 | Goiaba, doce, cascão | Frutas e derivados | sugeria |
+| 224 | Mamão, doce em calda, drenado | Frutas e derivados | sugeria |
+| 227 | Mamão verde, doce em calda, drenado | Frutas e derivados | sugeria |
+| 245 | Pêssego, enlatado, em calda | Frutas e derivados | sugeria |
+| 450 | Iogurte, sabor abacaxi | Leite e derivados | sugeria |
+| 451 | Iogurte, sabor morango | Leite e derivados | sugeria |
+| 452 | Iogurte, sabor pêssego | Leite e derivados | sugeria |
+| 453 | Leite, condensado | Leite e derivados | sugeria |
+| 466 | Queijo, petit suisse, morango | Leite e derivados | sugeria |
+| 491 | Achocolatado, pó | Produtos açucarados | já fora |
+| 492 | Açúcar, cristal | Produtos açucarados | sugeria |
+| 493 | Açúcar, mascavo | Produtos açucarados | sugeria |
+| 494 | Açúcar, refinado | Produtos açucarados | sugeria |
+| 495 | Chocolate, ao leite | Produtos açucarados | sugeria |
+| 496 | Chocolate, ao leite, com castanha do Pará | Produtos açucarados | sugeria |
+| 497 | Chocolate, ao leite, dietético | Produtos açucarados | sugeria |
+| 498 | Chocolate, meio amargo | Produtos açucarados | sugeria |
+| 499 | Cocada branca | Produtos açucarados | sugeria |
+| 500 | Doce, de abóbora, cremoso | Produtos açucarados | sugeria |
+| 501 | Doce, de leite, cremoso | Produtos açucarados | sugeria |
+| 502 | Geléia, mocotó, natural | Produtos açucarados | sugeria |
+| 503 | Glicose de milho | Produtos açucarados | sugeria |
+| 504 | Maria mole | Produtos açucarados | sugeria |
+| 505 | Maria mole, coco queimado | Produtos açucarados | sugeria |
+| 506 | Marmelada | Produtos açucarados | sugeria |
+| 507 | Mel, de abelha | Produtos açucarados | sugeria |
+| 508 | Melado | Produtos açucarados | sugeria |
+| 509 | Quindim | Produtos açucarados | sugeria |
+| 510 | Rapadura | Produtos açucarados | sugeria |
+| 579 | Paçoca, amendoim | Leguminosas e derivados | sugeria |
+| 580 | Pé-de-moleque, amendoim | Leguminosas e derivados | sugeria |
+
+#### Óleo ou gordura de adição (22)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 259 | Azeite, de dendê | Gorduras e óleos | sugeria |
+| 260 | Azeite, de oliva, extra virgem | Gorduras e óleos | sugeria |
+| 261 | Manteiga, com sal | Gorduras e óleos | sugeria |
+| 262 | Manteiga, sem sal | Gorduras e óleos | sugeria |
+| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | Gorduras e óleos | sugeria |
+| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | Gorduras e óleos | sugeria |
+| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | Gorduras e óleos | sugeria |
+| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | Gorduras e óleos | sugeria |
+| 267 | Óleo, de babaçu | Gorduras e óleos | sugeria |
+| 268 | Óleo, de canola | Gorduras e óleos | sugeria |
+| 269 | Óleo, de girassol | Gorduras e óleos | sugeria |
+| 270 | Óleo, de milho | Gorduras e óleos | sugeria |
+| 271 | Óleo, de pequi | Gorduras e óleos | sugeria |
+| 272 | Óleo, de soja | Gorduras e óleos | sugeria |
+| 444 | Toucinho, cru | Carnes e derivados | já fora |
+| 445 | Toucinho, frito | Carnes e derivados | sugeria |
+| 447 | Creme de Leite | Leite e derivados | sugeria |
+| 522 | Chantilly, spray, com gordura vegetal | Outros alimentos industrializados | sugeria |
+| 523 | Leite, de coco | Outros alimentos industrializados | sugeria |
+| 524 | Maionese, tradicional com ovos | Outros alimentos industrializados | sugeria |
+| 545 | Salada, de legumes, com maionese | Alimentos preparados | sugeria |
+| 547 | Salpicão, de frango | Alimentos preparados | sugeria |
+
+#### Embutido, carne processada ou curada (24)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 323 | Apresuntado | Carnes e derivados | sugeria |
+| 338 | Carne, bovina, charque, cozido | Carnes e derivados | sugeria |
+| 339 | Carne, bovina, charque, cru | Carnes e derivados | já fora |
+| 384 | Carne, bovina, seca, cozida | Carnes e derivados | sugeria |
+| 385 | Carne, bovina, seca, crua | Carnes e derivados | já fora |
+| 415 | Hambúrguer, bovino, cru | Carnes e derivados | já fora |
+| 416 | Hambúrguer, bovino, frito | Carnes e derivados | sugeria |
+| 417 | Hambúrguer, bovino, grelhado | Carnes e derivados | sugeria |
+| 418 | Lingüiça, frango, crua | Carnes e derivados | já fora |
+| 419 | Lingüiça, frango, frita | Carnes e derivados | sugeria |
+| 420 | Lingüiça, frango, grelhada | Carnes e derivados | sugeria |
+| 421 | Lingüiça, porco, crua | Carnes e derivados | já fora |
+| 422 | Lingüiça, porco, frita | Carnes e derivados | sugeria |
+| 423 | Lingüiça, porco, grelhada | Carnes e derivados | sugeria |
+| 424 | Mortadela | Carnes e derivados | sugeria |
+| 434 | Porco, orelha, salgada, crua | Carnes e derivados | já fora |
+| 437 | Porco, rabo, salgado, cru | Carnes e derivados | já fora |
+| 438 | Presunto, com capa de gordura | Carnes e derivados | sugeria |
+| 439 | Presunto, sem capa de gordura | Carnes e derivados | sugeria |
+| 443 | Salame | Carnes e derivados | sugeria |
+| 526 | Arroz carreteiro | Alimentos preparados | sugeria |
+| 539 | Feijão tropeiro mineiro | Alimentos preparados | sugeria |
+| 540 | Feijoada | Alimentos preparados | sugeria |
+| 555 | Virado à paulista | Alimentos preparados | sugeria |
+
+#### Fritura ou salgado frito (31)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 55 | Pastel, de carne, cru | Cereais e derivados | já fora |
+| 56 | Pastel, de carne, frito | Cereais e derivados | sugeria |
+| 57 | Pastel, de queijo, cru | Cereais e derivados | já fora |
+| 58 | Pastel, de queijo, frito | Cereais e derivados | sugeria |
+| 59 | Pastel, massa, crua | Cereais e derivados | já fora |
+| 60 | Pastel, massa, frita | Cereais e derivados | sugeria |
+| 90 | Batata, frita, tipo chips, industrializada | Verduras, hortaliças e derivados | sugeria |
+| 93 | Batata, inglesa, frita | Verduras, hortaliças e derivados | sugeria |
+| 132 | Mandioca, frita | Verduras, hortaliças e derivados | sugeria |
+| 281 | Cação, posta, com farinha de trigo, frita | Pescados e frutos do mar | sugeria |
+| 286 | Camarão, Sete Barbas, sem cabeça, com casca, frito | Pescados e frutos do mar | sugeria |
+| 297 | Lambari, congelado, frito | Pescados e frutos do mar | sugeria |
+| 299 | Manjuba, com farinha de trigo, frita | Pescados e frutos do mar | sugeria |
+| 300 | Manjuba, frita | Pescados e frutos do mar | sugeria |
+| 303 | Merluza, filé, frito | Pescados e frutos do mar | sugeria |
+| 305 | Pescada, branca, frita | Pescados e frutos do mar | sugeria |
+| 306 | Pescada, filé, com farinha de trigo, frito | Pescados e frutos do mar | sugeria |
+| 308 | Pescada, filé, frito | Pescados e frutos do mar | sugeria |
+| 320 | Sardinha, frita | Pescados e frutos do mar | sugeria |
+| 331 | Carne, bovina, almôndegas, fritas | Carnes e derivados | sugeria |
+| 340 | Carne, bovina, contra-filé, à milanesa | Carnes e derivados | sugeria |
+| 386 | Coxinha de frango, frita | Carnes e derivados | sugeria |
+| 387 | Croquete, de carne, cru | Carnes e derivados | já fora |
+| 388 | Croquete, de carne, frito | Carnes e derivados | sugeria |
+| 401 | Frango, filé, à milanesa | Carnes e derivados | sugeria |
+| 428 | Porco, bisteca, frita | Carnes e derivados | sugeria |
+| 442 | Quibe, frito | Carnes e derivados | sugeria |
+| 490 | Ovo, de galinha, inteiro, frito | Ovos e derivados | sugeria |
+| 525 | Acarajé | Alimentos preparados | sugeria |
+| 529 | Bife à cavalo, com contra filé | Alimentos preparados | sugeria |
+| 530 | Bolinho de arroz | Alimentos preparados | sugeria |
+
+#### Ultraprocessado, salgadinho ou petisco em conserva (13)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 23 | Cereais, mingau, milho, infantil | Cereais e derivados | sugeria |
+| 24 | Cereais, mistura para vitamina, trigo, cevada e aveia | Cereais e derivados | sugeria |
+| 25 | Cereal matinal, milho | Cereais e derivados | sugeria |
+| 36 | Farinha, láctea, de cereais | Cereais e derivados | sugeria |
+| 39 | Macarrão, instantâneo | Cereais e derivados | sugeria |
+| 99 | Biscoito, polvilho doce | Verduras, hortaliças e derivados | sugeria |
+| 324 | Caldo de carne, tablete | Carnes e derivados | sugeria |
+| 325 | Caldo de galinha, tablete | Carnes e derivados | sugeria |
+| 389 | Empada de frango, pré-cozida, assada | Carnes e derivados | sugeria |
+| 390 | Empada, de frango, pré-cozida | Carnes e derivados | sugeria |
+| 520 | Azeitona, preta, conserva | Outros alimentos industrializados | sugeria |
+| 521 | Azeitona, verde, conserva | Outros alimentos industrializados | sugeria |
+| 586 | Tremoço, em conserva | Leguminosas e derivados | sugeria |
+
+### Nível 3 — Forma de ingrediente (a chave do cobrir libera)
+
+#### Tempero, sal, fermento ou pó (Miscelâneas) (9)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 511 | Café, pó, torrado | Miscelâneas | já fora |
+| 512 | Capuccino, pó | Miscelâneas | já fora |
+| 513 | Fermento em pó, químico | Miscelâneas | já fora |
+| 514 | Fermento, biológico, levedura, tablete | Miscelâneas | já fora |
+| 515 | Gelatina, sabores variados, pó | Miscelâneas | já fora |
+| 516 | Sal, dietético | Miscelâneas | já fora |
+| 517 | Sal, grosso | Miscelâneas | já fora |
+| 518 | Shoyu | Miscelâneas | já fora |
+| 519 | Tempero a base de sal | Miscelâneas | já fora |
+
+#### Produto em pó ou desidratado (7)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 27 | Creme de arroz, pó | Cereais e derivados | já fora |
+| 28 | Creme de milho, pó | Cereais e derivados | já fora |
+| 46 | Mingau tradicional, pó | Cereais e derivados | já fora |
+| 114 | Coentro, folhas desidratadas | Verduras, hortaliças e derivados | já fora |
+| 456 | Leite, de vaca, desnatado, pó | Leite e derivados | já fora |
+| 459 | Leite, de vaca, integral, pó | Leite e derivados | já fora |
+| 583 | Soja, extrato solúvel, pó | Leguminosas e derivados | já fora |
+
+#### Farinha, amido ou fécula de uso culinário (13)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 31 | Farinha, de arroz, enriquecida | Cereais e derivados | já fora |
+| 32 | Farinha, de centeio, integral | Cereais e derivados | já fora |
+| 33 | Farinha, de milho, amarela | Cereais e derivados | já fora |
+| 34 | Farinha, de rosca | Cereais e derivados | já fora |
+| 35 | Farinha, de trigo | Cereais e derivados | já fora |
+| 42 | Milho, amido, cru | Cereais e derivados | já fora |
+| 43 | Milho, fubá, cru | Cereais e derivados | já fora |
+| 121 | Farinha, de mandioca, crua | Verduras, hortaliças e derivados | já fora |
+| 123 | Farinha, de puba | Verduras, hortaliças e derivados | já fora |
+| 124 | Fécula, de mandioca | Verduras, hortaliças e derivados | sugeria |
+| 146 | Polvilho, doce | Verduras, hortaliças e derivados | sugeria |
+| 581 | Soja, farinha | Leguminosas e derivados | já fora |
+| 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | já fora |
+
+#### Versão crua de alimento que se come cozido (98)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 2 | Arroz, integral, cru | Cereais e derivados | já fora |
+| 4 | Arroz, tipo 1, cru | Cereais e derivados | já fora |
+| 6 | Arroz, tipo 2, cru | Cereais e derivados | já fora |
+| 19 | Canjica, branca, crua | Cereais e derivados | já fora |
+| 38 | Lasanha, massa fresca, crua | Cereais e derivados | já fora |
+| 40 | Macarrão, trigo, cru | Cereais e derivados | já fora |
+| 41 | Macarrão, trigo, cru, com ovos | Cereais e derivados | já fora |
+| 44 | Milho, verde, cru | Cereais e derivados | já fora |
+| 65 | Abóbora, cabotian, crua | Verduras, hortaliças e derivados | sugeria |
+| 66 | Abóbora, menina brasileira, crua | Verduras, hortaliças e derivados | sugeria |
+| 67 | Abóbora, moranga, crua | Verduras, hortaliças e derivados | sugeria |
+| 69 | Abóbora, pescoço, crua | Verduras, hortaliças e derivados | sugeria |
+| 87 | Batata, baroa, crua | Verduras, hortaliças e derivados | sugeria |
+| 89 | Batata, doce, crua | Verduras, hortaliças e derivados | sugeria |
+| 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | sugeria |
+| 96 | Berinjela, crua | Verduras, hortaliças e derivados | sugeria |
+| 103 | Cará, cru | Verduras, hortaliças e derivados | sugeria |
+| 113 | Chuchu, cru | Verduras, hortaliças e derivados | sugeria |
+| 130 | Mandioca, crua | Verduras, hortaliças e derivados | sugeria |
+| 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | sugeria |
+| 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | já fora |
+| 278 | Atum, fresco, cru | Pescados e frutos do mar | já fora |
+| 279 | Bacalhau, salgado, cru | Pescados e frutos do mar | já fora |
+| 283 | Cação, posta, crua | Pescados e frutos do mar | já fora |
+| 285 | Camarão, Rio Grande, grande, cru | Pescados e frutos do mar | já fora |
+| 288 | Corimba, cru | Pescados e frutos do mar | já fora |
+| 291 | Corvina de água doce, crua | Pescados e frutos do mar | já fora |
+| 292 | Corvina do mar, crua | Pescados e frutos do mar | já fora |
+| 296 | Lambari, congelado, cru | Pescados e frutos do mar | já fora |
+| 298 | Lambari, fresco, cru | Pescados e frutos do mar | já fora |
+| 302 | Merluza, filé, cru | Pescados e frutos do mar | já fora |
+| 304 | Pescada, branca, crua | Pescados e frutos do mar | já fora |
+| 307 | Pescada, filé, cru | Pescados e frutos do mar | já fora |
+| 310 | Pescadinha, crua | Pescados e frutos do mar | já fora |
+| 312 | Pintado, cru | Pescados e frutos do mar | já fora |
+| 314 | Porquinho, cru | Pescados e frutos do mar | já fora |
+| 316 | Salmão, sem pele, fresco, cru | Pescados e frutos do mar | já fora |
+| 321 | Sardinha, inteira, crua | Pescados e frutos do mar | já fora |
+| 322 | Tucunaré, filé, congelado, cru | Pescados e frutos do mar | já fora |
+| 327 | Carne, bovina, acém, moído, cru | Carnes e derivados | já fora |
+| 329 | Carne, bovina, acém, sem gordura, cru | Carnes e derivados | já fora |
+| 330 | Carne, bovina, almôndegas, cruas | Carnes e derivados | sugeria |
+| 333 | Carne, bovina, bucho, cru | Carnes e derivados | já fora |
+| 334 | Carne, bovina, capa de contra-filé, com gordura, crua | Carnes e derivados | já fora |
+| 336 | Carne, bovina, capa de contra-filé, sem gordura, crua | Carnes e derivados | já fora |
+| 341 | Carne, bovina, contra-filé de costela, cru | Carnes e derivados | já fora |
+| 343 | Carne, bovina, contra-filé, com gordura, cru | Carnes e derivados | já fora |
+| 345 | Carne, bovina, contra-filé, sem gordura, cru | Carnes e derivados | já fora |
+| 348 | Carne, bovina, costela, crua | Carnes e derivados | já fora |
+| 350 | Carne, bovina, coxão duro, sem gordura, cru | Carnes e derivados | já fora |
+| 352 | Carne, bovina, coxão mole, sem gordura, cru | Carnes e derivados | já fora |
+| 354 | Carne, bovina, cupim, cru | Carnes e derivados | já fora |
+| 355 | Carne, bovina, fígado, cru | Carnes e derivados | já fora |
+| 357 | Carne, bovina, filé mingnon, sem gordura, cru | Carnes e derivados | já fora |
+| 360 | Carne, bovina, flanco, sem gordura, cru | Carnes e derivados | já fora |
+| 362 | Carne, bovina, fraldinha, com gordura, crua | Carnes e derivados | já fora |
+| 364 | Carne, bovina, lagarto, cru | Carnes e derivados | já fora |
+| 366 | Carne, bovina, língua, crua | Carnes e derivados | já fora |
+| 367 | Carne, bovina, maminha, crua | Carnes e derivados | já fora |
+| 369 | Carne, bovina, miolo de alcatra, sem gordura, cru | Carnes e derivados | já fora |
+| 372 | Carne, bovina, músculo, sem gordura, cru | Carnes e derivados | já fora |
+| 373 | Carne, bovina, paleta, com gordura, crua | Carnes e derivados | já fora |
+| 375 | Carne, bovina, paleta, sem gordura, crua | Carnes e derivados | já fora |
+| 376 | Carne, bovina, patinho, sem gordura, cru | Carnes e derivados | já fora |
+| 379 | Carne, bovina, peito, sem gordura, cru | Carnes e derivados | já fora |
+| 380 | Carne, bovina, picanha, com gordura, crua | Carnes e derivados | já fora |
+| 382 | Carne, bovina, picanha, sem gordura, crua | Carnes e derivados | já fora |
+| 391 | Frango, asa, com pele, crua | Carnes e derivados | já fora |
+| 394 | Frango, coração, cru | Carnes e derivados | já fora |
+| 397 | Frango, coxa, com pele, crua | Carnes e derivados | já fora |
+| 399 | Frango, coxa, sem pele, crua | Carnes e derivados | já fora |
+| 400 | Frango, fígado, cru | Carnes e derivados | já fora |
+| 402 | Frango, inteiro, com pele, cru | Carnes e derivados | já fora |
+| 405 | Frango, inteiro, sem pele, cru | Carnes e derivados | já fora |
+| 407 | Frango, peito, com pele, cru | Carnes e derivados | já fora |
+| 409 | Frango, peito, sem pele, cru | Carnes e derivados | já fora |
+| 412 | Frango, sobrecoxa, com pele, crua | Carnes e derivados | já fora |
+| 414 | Frango, sobrecoxa, sem pele, crua | Carnes e derivados | já fora |
+| 426 | Peru, congelado, cru | Carnes e derivados | já fora |
+| 427 | Porco, bisteca, crua | Carnes e derivados | já fora |
+| 431 | Porco, costela, crua | Carnes e derivados | já fora |
+| 433 | Porco, lombo, cru | Carnes e derivados | já fora |
+| 436 | Porco, pernil, cru | Carnes e derivados | já fora |
+| 441 | Quibe, cru | Carnes e derivados | já fora |
+| 485 | Ovo, de codorna, inteiro, cru | Ovos e derivados | já fora |
+| 489 | Ovo, de galinha, inteiro, cru | Ovos e derivados | já fora |
+| 557 | Amendoim, grão, cru | Leguminosas e derivados | já fora |
+| 562 | Feijão, carioca, cru | Leguminosas e derivados | já fora |
+| 564 | Feijão, fradinho, cru | Leguminosas e derivados | já fora |
+| 566 | Feijão, jalo, cru | Leguminosas e derivados | já fora |
+| 568 | Feijão, preto, cru | Leguminosas e derivados | já fora |
+| 570 | Feijão, rajado, cru | Leguminosas e derivados | já fora |
+| 572 | Feijão, rosinha, cru | Leguminosas e derivados | já fora |
+| 574 | Feijão, roxo, cru | Leguminosas e derivados | já fora |
+| 575 | Grão-de-bico, cru | Leguminosas e derivados | já fora |
+| 576 | Guandu, cru | Leguminosas e derivados | já fora |
+| 578 | Lentilha, crua | Leguminosas e derivados | já fora |
+| 585 | Tremoço, cru | Leguminosas e derivados | já fora |
+
+#### Tempero, molho ou concentrado (14)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 81 | Alfavaca, crua | Verduras, hortaliças e derivados | sugeria |
+| 82 | Alho, cru | Verduras, hortaliças e derivados | sugeria |
+| 108 | Cebolinha, crua | Verduras, hortaliças e derivados | sugeria |
+| 133 | Manjericão, cru | Verduras, hortaliças e derivados | sugeria |
+| 153 | Salsa, crua | Verduras, hortaliças e derivados | sugeria |
+| 158 | Tomate, extrato | Verduras, hortaliças e derivados | sugeria |
+| 159 | Tomate, molho industrializado | Verduras, hortaliças e derivados | sugeria |
+| 160 | Tomate, purê | Verduras, hortaliças e derivados | sugeria |
+| 188 | Caju, suco concentrado, envasado | Frutas e derivados | sugeria |
+| 220 | Limão, tahiti, cru | Frutas e derivados | sugeria |
+| 234 | Maracujá, suco concentrado, envasado | Frutas e derivados | sugeria |
+| 258 | Uva, suco concentrado, envasado | Frutas e derivados | sugeria |
+| 535 | Cuxá, molho | Alimentos preparados | sugeria |
+| 552 | Tucupi, com pimenta-de-cheiro | Alimentos preparados | sugeria |
+
+## Apêndice B — Sugestões do cobrir antes e depois
+
+Preenchido na validação (tarefa T6 do PLAN), com o plano de exemplo e com o plano vazio da mesma paciente.
