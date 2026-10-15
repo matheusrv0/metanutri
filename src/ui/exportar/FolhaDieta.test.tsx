@@ -214,6 +214,19 @@ describe('Folha da dieta (US-B1)', () => {
     }
   })
 
+  it('CB-188: a folha não troca um alimento por ele mesmo pelo nome do paciente', () => {
+    // Arroz tipo 1 do plano: o arroz tipo 2 também é "Arroz branco cozido" e não pode aparecer como troca dele.
+    render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: false, trocas: true }} />)
+    const linhas = within(screen.getByRole('list', { name: 'Trocas' })).getAllByRole('listitem')
+    expect(linhas.length).toBeGreaterThan(0)
+    for (const linha of linhas) {
+      const alimento = linha.querySelector('strong')?.textContent ?? ''
+      const trocas = [...linha.querySelectorAll('.troca')].map((t) => (t.textContent ?? '').split(' · ')[0])
+      expect(trocas, alimento).not.toContain(alimento)
+      expect(new Set(trocas).size, alimento).toBe(trocas.length)
+    }
+  })
+
   it('as trocas não oferecem doce nem ultraprocessado', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: false, trocas: true }} />)
     const texto = (screen.getByRole('list', { name: 'Trocas' }).textContent ?? '').toLowerCase()

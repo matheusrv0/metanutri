@@ -8,12 +8,14 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  trocasDaFolha,
 } from './folhaDieta.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
 import { buscarAlimento } from './tabelas.ts'
 import type { Caso, ItemPlano, Refeicao } from './tipos.ts'
+import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
 const ANA: AssinaturaDoPlano = { situacao: 'nutricionista', linhaNutricionista: 'Ana Souza · CRN-6 12345', origem: 'conta', nome: 'Ana Souza', responsavelTecnico: '' }
 const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: null, origem: 'conta', nome: 'Júlia Martins', responsavelTecnico: 'Carla Mendes' }
@@ -80,6 +82,28 @@ describe('comprasDaFolha (spec impressao-do-plano, CA-628 e CB-181)', () => {
     expect(comprasDaFolha(plano, buscarAlimento)).toEqual([
       { nome: 'Arroz branco cozido', gramas: 250 },
       { nome: 'Pão francês', gramas: 50 },
+    ])
+  })
+})
+
+describe('trocasDaFolha (spec impressao-do-plano, CB-188)', () => {
+  const troca = (alimentoId: number, gramas = 100): Troca => ({ alimentoId, descricao: '', gramas, medida: null })
+  const grupo = (alimentoId: number, trocas: Troca[]): GrupoDeTrocas => ({ alimentoId, descricao: '', gramas: 100, medida: null, categoria: '', trocas })
+  const ARROZ_1 = 3
+  const ARROZ_2 = 5
+  const POLENTA = 62
+  const MARGARINA_HIDROGENADA = 263
+  const MARGARINA_INTERESTERIFICADA = 265
+  const FEIJAO_PRETO = 567
+
+  it('não troca uma coisa por ela mesma, nem repete troca ou alimento do plano pelo nome', () => {
+    const grupos = [
+      grupo(ARROZ_1, [troca(ARROZ_2), troca(POLENTA), troca(POLENTA, 90)]),
+      grupo(ARROZ_2, [troca(FEIJAO_PRETO)]),
+      grupo(MARGARINA_HIDROGENADA, [troca(MARGARINA_INTERESTERIFICADA)]),
+    ]
+    expect(trocasDaFolha(grupos, buscarAlimento)).toEqual([
+      { alimentoId: ARROZ_1, nome: 'Arroz branco cozido', trocas: [{ ...troca(POLENTA), nome: 'Polenta pré-cozida' }] },
     ])
   })
 })

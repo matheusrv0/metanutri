@@ -4,6 +4,7 @@ import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
+import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
 export type AssinaturaDaFolha =
   | { readonly tipo: 'nutricionista'; readonly linha: string }
@@ -61,6 +62,39 @@ export function assinaturaEmTexto(assinatura: AssinaturaDaFolha): string {
 /** CA-316: o texto da linha fina do topo, da segunda página em diante. */
 export function linhaFinaDaFolha(caso: Caso, assinatura: AssinaturaDaFolha): { readonly esquerda: string; readonly direita: string } {
   return { esquerda: `Plano alimentar · ${caso.nome.trim() || 'Sem nome'}`, direita: assinaturaEmTexto(assinatura) }
+}
+
+export interface TrocasDaFolha {
+  /** O alimento do plano. */
+  readonly alimentoId: number
+  readonly nome: string
+  readonly trocas: readonly (Troca & { readonly nome: string })[]
+}
+
+/**
+ * As trocas como a folha mostra, pelo nome que o paciente lê (spec impressao-do-plano, CB-188): sai a troca com o mesmo
+ * nome do alimento do plano (arroz tipo 1 por tipo 2 seria "Arroz branco cozido" por "Arroz branco cozido"), a troca
+ * repetida pelo nome, o alimento do plano que fica sem troca e o alimento do plano repetido pelo nome.
+ */
+export function trocasDaFolha(grupos: readonly GrupoDeTrocas[], buscar: BuscarAlimento): readonly TrocasDaFolha[] {
+  const vistos = new Set<string>()
+  const folha: TrocasDaFolha[] = []
+  for (const grupo of grupos) {
+    const nome = nomeParaPaciente(buscar(grupo.alimentoId))
+    if (vistos.has(nome)) continue
+    const nomes = new Set([nome])
+    const trocas = grupo.trocas
+      .map((t) => ({ ...t, nome: nomeParaPaciente(buscar(t.alimentoId)) }))
+      .filter((t) => {
+        if (nomes.has(t.nome)) return false
+        nomes.add(t.nome)
+        return true
+      })
+    if (trocas.length === 0) continue
+    vistos.add(nome)
+    folha.push({ alimentoId: grupo.alimentoId, nome, trocas })
+  }
+  return folha
 }
 
 export interface OpcoesImpressao {

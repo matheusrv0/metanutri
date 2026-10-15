@@ -8,6 +8,7 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  trocasDaFolha,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
@@ -83,8 +84,9 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const quem = assinaturaDaFolha(assinatura, caso)
   const linhaFina = linhaFinaDaFolha(caso, quem)
   const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
+  // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
-    ? trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') })
+    ? trocasDaFolha(trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') }), buscarAlimento)
     : []
   const perfil = lerPerfil(useArmazenamento())
   const nome = caso.nome.trim() || 'Sem nome'
@@ -204,10 +206,10 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <ul aria-label="Trocas" className="flex flex-col">
                 {trocas.map((g) => (
                   <li key={g.alimentoId} className={`${COLUNAS_TROCAS} break-inside-avoid border-t border-border py-2`}>
-                    <strong className="font-bold text-heading">{nomeParaPaciente(buscarAlimento(g.alimentoId))}</strong>
+                    <strong className="font-bold text-heading">{g.nome}</strong>
                     <span className="flex flex-col">
                       {g.trocas.map((t) => (
-                        <span key={t.alimentoId} className="troca">{`${nomeParaPaciente(buscarAlimento(t.alimentoId))} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
+                        <span key={t.alimentoId} className="troca">{`${t.nome} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
                       ))}
                     </span>
                   </li>
