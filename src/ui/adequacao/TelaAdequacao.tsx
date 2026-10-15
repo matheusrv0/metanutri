@@ -1,7 +1,6 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
-import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
+import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
@@ -19,7 +18,9 @@ import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
+import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
+import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
 import { MarcaLimite } from './MarcaLimite.tsx'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
 import { podeCobrir } from './podeCobrir.ts'
@@ -39,27 +40,6 @@ interface TelaAdequacaoProps {
   readonly aoFocarTitulo?: (() => void) | undefined
 }
 
-/* A barra carrega o estado da linha: cor sempre significa alguma coisa. */
-const VARIANTE_BARRA: Record<EstadoAdequacao, 'success' | 'warning' | 'error'> = {
-  adequado: 'success',
-  abaixo: 'warning',
-  'acima-limite': 'error',
-}
-
-/* O texto da adequação leva a mesma cor da barra: abaixo em âmbar, dentro em verde, acima do limite em vermelho. */
-const COR_TEXTO: Record<EstadoAdequacao, string> = {
-  adequado: 'text-successtext',
-  abaixo: 'text-warningtext',
-  'acima-limite': 'text-errortext',
-}
-
-function textoDaAdequacao(linha: LinhaAdequacao): string {
-  // Abaixo da meta arredonda para baixo: 89,6% nunca sai "90% abaixo" (D-209).
-  const pct = `${formatarNumero(arredondarNoEstado(linha.adequacaoPct, linha.estado === 'abaixo' ? 'abaixo' : 'dentro'), 0)}%`
-  if (linha.estado === 'abaixo') return `${pct} abaixo`
-  if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
-  return pct
-}
 const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly rotulo: string }[] = [
   { valor: 'individual', rotulo: 'Individual (RDA, 90%)' },
   { valor: 'coletivo', rotulo: 'Coletivo (EAR, 50%)' },
@@ -116,35 +96,6 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         ) : null}
       </TableCell>
     </TableRow>
-  )
-}
-
-/** No celular, cada nutriente é um item: nome e estado, a barra, quanto tem de quanto precisa e o Cobrir (CA-692). */
-function ItemLista({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly aoCobrir: () => void }) {
-  return (
-    <li className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 text-sm font-medium text-heading">
-          {linha.rotulo}
-          <MarcaLimite nota={linha.notaLimite} />
-        </span>
-        <span className={`numeros shrink-0 text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
-      </div>
-      <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <span className="numeros text-xs text-muted-foreground">
-          {`${quantidadeNoPlano(linha.total)} ${linha.unidade}`}
-          <MarcaSemDado semDado={linha.semDado} />
-          {` de ${valorDeReferencia(linha.referencia.valor)} ${linha.unidade} `}
-          <span className="uppercase">{linha.referencia.tipo}</span>
-        </span>
-        {podeCobrir(linha) ? (
-          <Button size="sm" variant="lightprimary" onClick={aoCobrir} aria-label={`Cobrir ${linha.rotulo}`}>
-            Cobrir
-          </Button>
-        ) : null}
-      </div>
-    </li>
   )
 }
 
@@ -254,14 +205,14 @@ export function TelaAdequacao({
                 {pedemAcao.length > 0 ? (
                   <ul aria-label="Fora da meta" className="flex flex-col">
                     {pedemAcao.map((linha) => (
-                      <ItemLista key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                      <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
                     ))}
                   </ul>
                 ) : null}
                 {naMeta.length > 0 ? <div className="pt-2">{botaoNaMeta}</div> : null}
                 <ul id={idNaMeta} hidden={!mostrarNaMeta} aria-label="Na meta" className="flex flex-col">
                   {naMeta.map((linha) => (
-                    <ItemLista key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                    <ItemListaAdequacao key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
                   ))}
                 </ul>
               </div>
