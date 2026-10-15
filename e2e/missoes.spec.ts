@@ -63,9 +63,15 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   await expect(lista).toContainText('1 de 4 dias na semana')
 })
 
+/** CA-535 e CA-554: um endereço sem espaço, bem maior que a tela do celular. */
+const LINK_DO_DRIVE = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEf/view?usp=sharing&resourcekey=0-AbCdEfGhIjKlMnOpQrStUv'
+
 test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => {
   await abrirLimpo(page)
   await montarPlanoComAlmoco(page)
+  await page.getByRole('button', { name: /Dados e medidas/ }).first().click()
+  await page.getByLabel('Orientações nutricionais').fill(`Receitas da semana: ${LINK_DO_DRIVE}`)
+  await page.getByRole('button', { name: /Plano alimentar/ }).first().click()
 
   // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
   const cartao = page.getByRole('region', { name: 'Missões do paciente' })
@@ -90,7 +96,8 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   await expect(almoco).toContainText('Arroz, tipo 1, cozido')
   await expect(page.getByText(/kcal/)).toHaveCount(0)
 
-  // CA-535: cabe em 360 px, letra de 16 px nos alimentos e toque de 44 px no seletor
+  // CA-535: cabe em 360 px, mesmo com o link do Drive nas orientações; letra de 16 px nos alimentos e toque de 44 px no seletor
+  await expect(page.getByRole('region', { name: 'Orientações' })).toContainText(LINK_DO_DRIVE)
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
   const letra = await almoco.getByText('Arroz, tipo 1, cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))

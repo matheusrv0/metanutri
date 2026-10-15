@@ -30,12 +30,15 @@ function Itens({ itens }: { readonly itens: readonly ItemDaDieta[] }) {
       {itens.map((item, i) => (
         <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
           <Quantidade item={item} />
-          <span className="text-foreground">{item.alimento}</span>
+          <span className="text-foreground [overflow-wrap:anywhere]">{item.alimento}</span>
         </li>
       ))}
     </ul>
   )
 }
+
+// CA-554: os textos que vêm do nutricionista quebram em qualquer ponto ([overflow-wrap:anywhere]): um endereço
+// longo nas orientações não empurra a página do celular para o lado.
 
 /** CA-532: o "ou" entre as opções, com um fio de cada lado. */
 function Ou() {
@@ -55,7 +58,7 @@ function Texto({ titulo, texto }: { readonly titulo: string; readonly texto: str
       <h2 id={id} className="font-titulo text-lg font-semibold text-heading">
         {titulo}
       </h2>
-      <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-foreground">{texto}</p>
+      <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{texto}</p>
     </section>
   )
 }
@@ -64,13 +67,13 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
   const dia = dataPorExtenso(dieta.copiadaEm)
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="mb-3 font-titulo text-2xl font-bold text-heading">{`Seu plano alimentar, ${primeiroNome}`}</h1>
+      <h1 className="mb-3 font-titulo text-2xl font-bold text-heading [overflow-wrap:anywhere]">{`Seu plano alimentar, ${primeiroNome}`}</h1>
 
       {dieta.refeicoes.map((refeicao, i) => (
         <section key={`${i}-${refeicao.horario}`} aria-label={`${refeicao.horario} ${refeicao.nome}`} className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-3 flex flex-wrap items-baseline gap-x-3 font-titulo text-lg font-semibold text-heading">
             <span className="numeros font-bold text-primary">{refeicao.horario}</span>{' '}
-            <span>{refeicao.nome}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{refeicao.nome}</span>
           </h2>
           {refeicao.opcoes.map((itens, j) => (
             <div key={j}>

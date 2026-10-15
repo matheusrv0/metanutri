@@ -272,6 +272,21 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(document.body.textContent).not.toMatch(/kcal|prote[ií]na|carboidrato|gordura|lip[ií]dio|nutriente/i)
   })
 
+  it('CA-554: nome da refeição, alimento, orientações e receitas quebram em qualquer ponto (endereço longo não empurra a página)', async () => {
+    const longo = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/view?usp=sharing'
+    await abrirMeuPlano({
+      dieta: {
+        refeicoes: [{ horario: '12:00', nome: longo, opcoes: [[{ medida: null, gramas: 50, alimento: `${longo}#alimento` }]] }],
+        orientacoes: `${longo}#orientacoes`,
+        receitas: `${longo}#receitas`,
+        copiadaEm: '2026-10-14',
+      },
+    })
+    for (const texto of [longo, `${longo}#alimento`, `${longo}#orientacoes`, `${longo}#receitas`]) {
+      expect(screen.getByText(texto).className, texto).toContain('[overflow-wrap:anywhere]')
+    }
+  })
+
   it('CA-538: o fim da parte diz o dia da cópia por extenso', async () => {
     await abrirMeuPlano()
     expect(screen.getByText('Atualizada em 14 de outubro de 2026.')).toBeInTheDocument()
