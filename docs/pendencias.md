@@ -167,8 +167,8 @@ Atualizado em 15/10/2026.
 >
 > **Atualizado em 15/10 (as três novidades juntas):** além da dieta no link, entram o WhatsApp e o retorno marcado
 > (spec `whatsapp-e-retorno`) e a anamnese com roteiro, os suplementos e o pedido de exames (spec
-> `anamnese-e-prescricoes`). A Política cita também a anamnese, os suplementos e os exames da ficha, e a versão dos
-> termos passa a ser `2026-10-15`.
+> `anamnese-e-prescricoes`). A Política cita também a próxima consulta, a anamnese, os suplementos e os exames da
+> ficha, e a versão dos termos passa a ser `2026-10-15`.
 >
 > **Para pôr no ar (você roda, nesta ordem):**
 >
@@ -178,9 +178,14 @@ Atualizado em 15/10/2026.
 >    `missoes_por_token` terminando em `dieta jsonb`);
 > 2. publicar o site: `gh workflow run publicar.yml --ref main`, e esperar terminar
 >    (`gh run list --workflow publicar.yml --limit 1` mostra `completed` e `success`);
-> 3. fechar **todas** as abas do MetaNutri, em todos os aparelhos (e o aplicativo instalado), e abrir de novo. Uma aba
->    que ficou aberta com a versão de antes salva sem o roteiro e os modelos de suplemento; o aparelho novo devolve os
->    dois sozinho (spec `dados-na-nuvem`, D-170), mas fechar as abas evita o vai e volta;
+> 3. depois de publicar, em cada aparelho: fechar **todas** as abas do MetaNutri, abrir o site, esperar carregar e
+>    **recarregar uma vez** (no aplicativo instalado, abrir duas vezes), porque a primeira abertura ainda pode vir com a
+>    versão de antes guardada no navegador. Conferir que a ficha de um paciente mostra o cartão "Anamnese": aí a versão
+>    nova está valendo. **Não use "Sair" numa aba antiga** (sem o cartão "Anamnese"): ela apaga a cópia deste navegador,
+>    inclusive o roteiro e os modelos de suplemento que ainda não voltaram para a nuvem. Enquanto uma aba antiga ficar
+>    aberta, cada salvar dela tira o roteiro e os modelos da nuvem e um aparelho novo os devolve sozinho (spec
+>    `dados-na-nuvem`, D-170 e risco R8); fechar as abas acaba com esse vai e volta. Daqui para a frente, a versão nova
+>    mostra "Há uma versão nova do MetaNutri." com "Atualizar" (D-172);
 > 4. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
 >
 > Se o site for publicado antes do `012`, ele funciona, mas o link é salvo sem a dieta e o paciente vê só as missões.
