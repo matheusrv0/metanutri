@@ -674,3 +674,22 @@ regra e a lista fixa do teste.
 | 528, 536, 543, 548 | Barreado; Dobradinha; Maniçoba; Sarapatel | prato com toucinho, charque ou miúdos | pratos regionais |
 | 121 | Farinha de mandioca crua (farinha d'água) | farinha | no Norte se come como está; a torrada ficou dentro |
 | 456, 459 | Leite em pó | pó | usado reconstituído |
+
+### C.3 Trocas impressas que a parceira deve olhar (revisão final da integração, 15/10/2026)
+
+Todas passam na regra (são prescritíveis), mas não são a troca mais comum. Geradas com o código já junto: a folha pede
+4 trocas e mostra as 2 primeiras que sobram depois do corte por nome (CB-188 da `impressao-do-plano`). O nome e a
+quantidade são os que a folha imprime.
+
+| Alimento do plano (id) | Troca impressa (id) | Por que olhar |
+|---|---|---|
+| Peito de frango grelhado sem pele (410) | Quibe assado (440), 2 unidades e meia · 117 g | prato de carne moída com trigo no lugar de carne magra |
+| Peito de frango grelhado sem pele (410) | Peito de frango cozido sem pele (408), 1 bife · 98 g | "bife" como medida de frango cozido |
+| Aveia em flocos (7) | Pipoca com óleo de soja sem sal (61), 4 conchas e meia | pipoca no lugar de aveia; medida estranha |
+| Pão francês (53) | Torrada de pão francês (63), 7 unidades | quantidade alta de torradas |
+| Iogurte natural (448) e Queijo minas frescal (461) | Leite de cabra (454) | leite pouco comum, e líquido no lugar de queijo |
+| Brócolis cozido (100) | Palmito juçara em conserva (138) | conserva, com sódio |
+| Castanha-do-pará (589) | Castanha-de-caju torrada salgada (588) | com sal |
+| Arroz branco cozido (3) | Pamonha pré-cozida (47), 3 fatias · 112 g | entrou quando a folha passou a pedir 4 trocas; pamonha no lugar de arroz |
+| Maracujá (232) | Fruta-pão (peso cru) (196) | fruta que se come cozida no lugar de fruta crua |
+| Abacate (163), Polpa de açaí congelada (168) e Tucumã (253) | Pequi (peso cru) (241) | fruta que se come cozida, de uso regional |

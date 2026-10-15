@@ -74,10 +74,20 @@ export interface TrocasDaFolha {
   readonly trocas: readonly (Troca & { readonly nome: string })[]
 }
 
+/** No máximo 2 trocas por alimento na folha (spec pdf-e-telas-limpas, CA-319). */
+export const TROCAS_NA_FOLHA = 2
+
+/**
+ * Quantas trocas a folha pede a `trocas.ts`: mais do que mostra, porque o corte por nome (CB-188) pode tirar uma, e a
+ * vaga não deve ficar vazia (revisão final da integração: o arroz branco do exemplo imprimia só a polenta).
+ */
+export const TROCAS_PEDIDAS_PELA_FOLHA = 4
+
 /**
  * As trocas como a folha mostra, pelo nome que o paciente lê (spec impressao-do-plano, CB-188): sai a troca com o mesmo
  * nome do alimento do plano (arroz tipo 1 por tipo 2 seria "Arroz branco cozido" por "Arroz branco cozido"), a troca
- * repetida pelo nome, o alimento do plano que fica sem troca e o alimento do plano repetido pelo nome.
+ * repetida pelo nome, o alimento do plano que fica sem troca e o alimento do plano repetido pelo nome. Das que sobram,
+ * ficam as `TROCAS_NA_FOLHA` primeiras.
  */
 export function trocasDaFolha(grupos: readonly GrupoDeTrocas[], buscar: BuscarAlimento): readonly TrocasDaFolha[] {
   const vistos = new Set<string>()
@@ -93,6 +103,7 @@ export function trocasDaFolha(grupos: readonly GrupoDeTrocas[], buscar: BuscarAl
         nomes.add(t.nome)
         return true
       })
+      .slice(0, TROCAS_NA_FOLHA)
     if (trocas.length === 0) continue
     vistos.add(nome)
     folha.push({ alimentoId: grupo.alimentoId, nome, trocas })

@@ -8,14 +8,17 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  TROCAS_NA_FOLHA,
+  TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
 } from './folhaDieta.ts'
+import { criarExemplo } from './exemplo.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
-import { buscarAlimento } from './tabelas.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Caso, ItemPlano, Refeicao } from './tipos.ts'
-import type { GrupoDeTrocas, Troca } from './trocas.ts'
+import { trocasDoPlano, type GrupoDeTrocas, type Troca } from './trocas.ts'
 
 const ANA: AssinaturaDoPlano = { situacao: 'nutricionista', linhaNutricionista: 'Ana Souza · CRN-6 12345', origem: 'conta', nome: 'Ana Souza', responsavelTecnico: '' }
 const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: null, origem: 'conta', nome: 'Júlia Martins', responsavelTecnico: 'Carla Mendes' }
@@ -105,6 +108,23 @@ describe('trocasDaFolha (spec impressao-do-plano, CB-188)', () => {
     expect(trocasDaFolha(grupos, buscarAlimento)).toEqual([
       { alimentoId: ARROZ_1, nome: 'Arroz branco cozido', trocas: [{ ...troca(POLENTA), nome: 'Polenta pré-cozida' }] },
     ])
+  })
+
+  it('CB-188 (revisão final da integração): mostra no máximo 2, contadas depois do corte por nome', () => {
+    const PAMONHA = 47
+    const grupos = [grupo(ARROZ_1, [troca(ARROZ_2), troca(POLENTA), troca(PAMONHA), troca(FEIJAO_PRETO)])]
+    expect(trocasDaFolha(grupos, buscarAlimento)[0]?.trocas.map((t) => t.alimentoId)).toEqual([POLENTA, PAMONHA])
+    expect(TROCAS_NA_FOLHA).toBe(2)
+    expect(TROCAS_PEDIDAS_PELA_FOLHA).toBeGreaterThan(TROCAS_NA_FOLHA)
+  })
+
+  it('CB-188: no plano de exemplo, o arroz branco não fica com uma troca só', () => {
+    let n = 0
+    const { plano } = criarExemplo(() => `t${++n}`, '2026-10-15')
+    const grupos = trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: [] })
+    const folha = trocasDaFolha(grupos, buscarAlimento)
+    for (const g of folha) expect(g.trocas.length, g.nome).toBeLessThanOrEqual(TROCAS_NA_FOLHA)
+    expect(folha.find((g) => g.nome === 'Arroz branco cozido')?.trocas).toHaveLength(2)
   })
 })
 

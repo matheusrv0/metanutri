@@ -7,6 +7,7 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
@@ -102,7 +103,10 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
-    ? trocasDaFolha(trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') }), buscarAlimento)
+    ? trocasDaFolha(
+        trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: listaDeRestricoes(restricoes ?? '') }),
+        buscarAlimento,
+      )
     : []
   const perfil = lerPerfil(useArmazenamento())
   const nome = caso.nome.trim() || 'Sem nome'
