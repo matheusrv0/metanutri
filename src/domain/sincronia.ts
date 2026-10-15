@@ -336,12 +336,19 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     return true
   }
 
-  /** Escreve na cópia de trabalho o que veio da nuvem; se algo mudou, a área remonta. Falso quando não coube. */
-  const aplicar = (copia: Backup): boolean => {
+  /**
+   * Escreve na cópia de trabalho o que veio da nuvem; se algo mudou, a área remonta. `coube` é falso quando não
+   * coube. `manteve`: ficou aqui uma chave que a cópia não trazia, sem lápide (uma versão antiga do site salvou
+   * sem ela, D-170); ela precisa voltar para a nuvem.
+   */
+  const aplicar = (copia: Backup): { readonly coube: boolean; readonly manteve: boolean } => {
     let mudou: boolean
+    let manteve = false
     let coube = true
     try {
-      mudou = aplicarCopia(armazenamento, copia)
+      const aplicada = aplicarCopia(armazenamento, copia)
+      mudou = aplicada.mudou
+      manteve = aplicada.mantidas.length > 0
     } catch {
       mudou = true
       coube = false
@@ -351,7 +358,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       definir({ geracao: estado.geracao + 1 })
     }
     if (!coube) semEspaco()
-    return coube
+    return { coube, manteve }
   }
 
   const agendarSalvar = (): void => {
@@ -439,7 +446,11 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       if (anterior?.parcial === true) semEspaco()
       else if (Object.keys(local.dados).length > 0) subir = local
     } else if (emDia) {
-      if (anterior.versao !== leitura.versao) aplicar(semPendencias(leitura.copia))
+      // D-170 e CA-591: a chave que a cópia (de uma versão antiga) não trouxe ficou aqui e sobe nesta abertura.
+      if (anterior.versao !== leitura.versao) {
+        const aplicada = aplicar(semPendencias(leitura.copia))
+        if (aplicada.coube && aplicada.manteve) subir = montarCopia(armazenamento, agora())
+      }
     } else {
       // D-133 e CB-125: o que ficou aqui sem subir é juntado ao que está na nuvem, item por item. Sem
       // marca nem data que decida (configurações de antes), fica o lado usado por último (DP-3).
@@ -655,9 +666,21 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
       gravarSituacao({ ...situacao(), versao: null })
       return
     }
-    if (!aplicar(semPendencias(leitura.copia))) return
+    const aplicada = aplicar(semPendencias(leitura.copia))
+    if (!aplicada.coube) return
     const atual = situacao()
     gravarSituacao({ ...atual, versao: leitura.versao, itens: itensDaCopia(leitura.copia), salvas: atual.mudancas })
+    // D-170 e CA-590: a chave que a cópia (de uma versão antiga) não trouxe ficou aqui: conta como uma mudança
+    // daqui e sobe daqui a pouco, como uma edição.
+    if (aplicada.manteve) {
+      let contou = true
+      try {
+        contarMudanca(armazenamento)
+      } catch {
+        contou = false
+      }
+      houveMudanca(contou)
+    }
   }
 
   // DP-28: a conferência em curso (foco e visibilidade juntos fazem uma só) e a que ficou para quando a
@@ -701,6 +724,15 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
     void conferir(true)
   }
 
+  /** Uma mudança na cópia de trabalho: daqui, de outra aba ou a chave que ficou ao aplicar (D-170). */
+  function houveMudanca(contou = true): void {
+    if (parada) return
+    if (!contou) semRegistro = true
+    definir({ pendente: true })
+    if (!ligada || estado.fase !== 'pronta' || estado.trava === 'sem-internet' || conferirParcial()) return
+    agendarSalvar()
+  }
+
   const desligar = (): void => {
     ligada = false
     epoca += 1
@@ -733,13 +765,7 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
 
     desligar,
 
-    mudou(contou = true) {
-      if (parada) return
-      if (!contou) semRegistro = true
-      definir({ pendente: true })
-      if (!ligada || estado.fase !== 'pronta' || estado.trava === 'sem-internet' || conferirParcial()) return
-      agendarSalvar()
-    },
+    mudou: houveMudanca,
 
     salvarAgora,
 

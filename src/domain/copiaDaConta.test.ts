@@ -111,21 +111,26 @@ describe('montar e aplicar a cópia de trabalho', () => {
     expect(lerMudancas(montarCopia(arm, AGORA).dados[CHAVE_MUDANCAS] ?? null).excluidos).toEqual({ 'pacientes/novo': '2026-09-01T00:00:00.000Z' })
   })
 
-  it('aplicar escreve o que mudou, tira o que a cópia não tem e não mexe no resto', () => {
+  it('aplicar escreve o que mudou, tira o plano que a cópia não tem (CB-170) e a chave com lápide, e não mexe no resto', () => {
     const arm = new Memoria()
     arm.setItem('metanutri:casos', '["p1","p2"]')
     arm.setItem('metanutri:caso:p1', plano('p1', 'Ana'))
     arm.setItem('metanutri:caso:p2', plano('p2', 'Bia'))
     arm.setItem('metanutri:perfil', '{"nome":"Ana"}')
     arm.setItem('metanutri:frequentes', '{}')
-    const nova = copia({ 'metanutri:casos': '["p1"]', 'metanutri:caso:p1': plano('p1', 'Ana Souza'), 'metanutri:pacientes': '[]' })
-    expect(aplicarCopia(arm, nova)).toBe(true)
+    const nova = copia({
+      'metanutri:casos': '["p1"]',
+      'metanutri:caso:p1': plano('p1', 'Ana Souza'),
+      'metanutri:pacientes': '[]',
+      [CHAVE_MUDANCAS]: mudancas({}, { 'chave/metanutri:perfil': T(2) }),
+    })
+    expect(aplicarCopia(arm, nova)).toEqual({ mudou: true, mantidas: [] })
     expect(arm.getItem('metanutri:caso:p1')).toBe(plano('p1', 'Ana Souza'))
     expect(arm.getItem('metanutri:caso:p2')).toBeNull()
     expect(arm.getItem('metanutri:perfil')).toBeNull()
     expect(arm.getItem('metanutri:casos')).toBe('["p1"]')
     expect(arm.getItem('metanutri:frequentes')).toBe('{}')
-    expect(aplicarCopia(arm, nova)).toBe(false)
+    expect(aplicarCopia(arm, nova)).toEqual({ mudou: false, mantidas: [] })
   })
 
   it('DP-23: aplicar tira as chaves velhas antes de gravar as novas (o espaço liberado é usado)', () => {
@@ -440,5 +445,103 @@ describe('roteiro de anamnese e modelos de suplemento na nuvem (spec anamnese-e-
     expect(juntarCopias(daqui(T(4)), daNuvem(T(3)), AGORA).dados[ROTEIRO]).toBe(roteiro('Daqui'))
     const apagadoAqui = copia({ [CHAVE_MUDANCAS]: mudancas({}, { [`chave/${ROTEIRO}`]: T(5) }) })
     expect(juntarCopias(apagadoAqui, daNuvem(T(3)), AGORA).dados[ROTEIRO]).toBeUndefined()
+  })
+})
+
+describe('D-170: uma versão antiga do site não apaga o que não conhece', () => {
+  const ROTEIRO = 'metanutri:roteiro-anamnese'
+  const MODELOS = 'metanutri:modelos-suplemento'
+  const roteiro = JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'agua-dia', texto: 'Quanta água por dia?' }] } })
+  const modeloSup = (id: string, nome: string) => ({ id, nome, dose: '', horario: '', duracao: '', observacao: '', criadoEm: T(1), atualizadoEm: T(1) })
+
+  /** Um aparelho novo, em dia com a nuvem: roteiro e dois modelos, com as marcas deles. */
+  function aparelhoNovo(): Memoria {
+    const arm = new Memoria()
+    arm.setItem('metanutri:pacientes', JSON.stringify([paciente('ana', 'Ana')]))
+    arm.setItem(ROTEIRO, roteiro)
+    arm.setItem(MODELOS, JSON.stringify([modeloSup('a', 'Ferro'), modeloSup('b', 'Zinco')]))
+    arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(2) }))
+    return arm
+  }
+
+  it('CA-590: uma cópia do app antigo não apaga o roteiro nem os modelos, e eles voltam na próxima cópia', () => {
+    const arm = aparelhoNovo()
+    // A versão antiga não conhece as duas chaves: a cópia dela vem sem elas, com a mudança que ela fez (Bia) e as
+    // marcas que ela copiou da nuvem (a do roteiro, com outra hora).
+    const doAppAntigo = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana'), paciente('bia', 'Bia', T(3))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'pacientes/bia': T(3), [`chave/${ROTEIRO}`]: T(4) }),
+    })
+    const aplicada = aplicarCopia(arm, doAppAntigo)
+    expect(aplicada.mudou).toBe(true)
+    expect([...aplicada.mantidas].sort()).toEqual([MODELOS, ROTEIRO])
+    expect(arm.getItem(ROTEIRO)).toBe(roteiro)
+    expect(nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Ferro', 'Zinco'])
+    expect(nomes(copia({ p: arm.getItem('metanutri:pacientes') ?? '' }), 'p')).toEqual(['Ana', 'Bia'])
+    // A marca de cada chave mantida é a daqui: a hora do valor que ficou, não a que a cópia trouxe.
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados).toEqual({
+      'pacientes/ana': T(1),
+      'pacientes/bia': T(3),
+      [`chave/${ROTEIRO}`]: T(2),
+      'modelos-suplemento/a': T(2),
+      'modelos-suplemento/b': T(2),
+    })
+    const proxima = montarCopia(arm, AGORA)
+    expect(proxima.dados[ROTEIRO]).toBe(roteiro)
+    expect(nomes(proxima, MODELOS)).toEqual(['Ferro', 'Zinco'])
+  })
+
+  it('CA-592: a exclusão de verdade continua valendo: a lápide da chave tira o roteiro e as dos itens tiram os modelos', () => {
+    const arm = aparelhoNovo()
+    const comLapides = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1) }, { [`chave/${ROTEIRO}`]: T(5), 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(5) }),
+    })
+    expect(aplicarCopia(arm, comLapides)).toEqual({ mudou: true, mantidas: [] })
+    expect(arm.getItem(ROTEIRO)).toBeNull()
+    expect(arm.getItem(MODELOS)).toBeNull()
+    expect(arm.getItem(CHAVE_MUDANCAS)).toBe(comLapides.dados[CHAVE_MUDANCAS])
+  })
+
+  it('CA-592: a lápide mais velha que a mudança daqui não apaga (o valor foi gravado depois da exclusão)', () => {
+    const arm = aparelhoNovo()
+    const lapideVelha = copia({ [CHAVE_MUDANCAS]: mudancas({}, { [`chave/${ROTEIRO}`]: T(1) }) })
+    const aplicada = aplicarCopia(arm, lapideVelha)
+    expect(aplicada.mantidas).toContain(ROTEIRO)
+    expect(arm.getItem(ROTEIRO)).toBe(roteiro)
+  })
+
+  it('CB-171: na lista, só os itens com lápide saem; os outros ficam e voltam para a nuvem', () => {
+    const arm = aparelhoNovo()
+    const lapideDeUm = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]),
+      [ROTEIRO]: roteiro,
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2) }, { 'modelos-suplemento/a': T(5) }),
+    })
+    expect(aplicarCopia(arm, lapideDeUm)).toEqual({ mudou: true, mantidas: [MODELOS] })
+    expect(nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Zinco'])
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({
+      alterados: { 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/b': T(2) },
+      excluidos: { 'modelos-suplemento/a': T(5) },
+    })
+  })
+
+  it('CB-170: o plano e o índice que somem da cópia saem daqui, como antes', () => {
+    const arm = aparelhoNovo()
+    arm.setItem('metanutri:casos', '["p1"]')
+    arm.setItem('metanutri:caso:p1', plano('p1', 'Plano da Ana'))
+    const semPlanos = copia({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana')]), [ROTEIRO]: roteiro, [MODELOS]: arm.getItem(MODELOS) ?? '' })
+    expect(aplicarCopia(arm, semPlanos).mantidas).toEqual([])
+    expect(arm.getItem('metanutri:caso:p1')).toBeNull()
+    expect(arm.getItem('metanutri:casos')).toBeNull()
+  })
+
+  it('o arquivo dos links mantido tira só os links com lápide e as marcas deles', () => {
+    const arm = new Memoria()
+    const link = (id: string) => ({ id, token: `t-${id}`, casoId: 'p1', nome: id, criadoEm: T(1), missoes: [], marcacoes: [] })
+    arm.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [link('l1'), link('l2')], naNuvem: ['l1', 'l2'], pendentes: [] }))
+    const aplicada = aplicarCopia(arm, copia({ [CHAVE_MUDANCAS]: mudancas({}, { 'acompanhamentos/l1': T(5) }) }))
+    expect(aplicada.mantidas).toEqual(['metanutri:acompanhamentos'])
+    expect(JSON.parse(arm.getItem('metanutri:acompanhamentos') ?? '{}')).toEqual({ formato: 1, itens: [link('l2')], naNuvem: ['l2'], pendentes: [] })
   })
 })

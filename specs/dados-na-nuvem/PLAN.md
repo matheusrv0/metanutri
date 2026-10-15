@@ -154,7 +154,7 @@ revisor `simular.mts` e `simular2.mts`, fora do repositório). Ordem: T39, T40, 
 outra.
 
 - [x] **T39** — Spec e plano: D-170, D-171, CA-590 a CA-595, CB-170, CB-171; DP-32, DP-33; R8.
-- [ ] **T40** — Aplicar a cópia não apaga a chave que a cópia não traz sem lápide (DP-32).
+- [x] **T40** — Aplicar a cópia não apaga a chave que a cópia não traz sem lápide (DP-32).
   - Arquivos: `src/domain/copiaDaConta.ts` (`aplicarCopia` devolve `{ mudou, mantidas }`) e `src/domain/sincronia.ts`
     (a chave mantida conta como mudança e sobe), com os testes `copiaDaConta.test.ts` e `sincronia.test.ts`.
   - Cobre: CA-590, CA-591, CA-592, CB-170, CB-171

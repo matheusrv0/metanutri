@@ -1,3 +1,4 @@
+import { CHAVE_ROTEIRO, gravarRoteiro, ROTEIRO_PADRAO } from './anamnese.ts'
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVE_MUDANCAS, lerMudancas } from './copiaDaConta.ts'
 import type { ClienteDaCopia } from './copiaNaNuvem.ts'
@@ -8,6 +9,7 @@ import { gravarPerfil, lerPerfil, PERFIL_VAZIO, type Backup } from './perfil.ts'
 import { criarRepositorio, type ArmazenamentoListavel } from './persistencia.ts'
 import { criarRepositorioProdutos } from './produtos.ts'
 import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ficouParcial, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
+import { CHAVE_MODELOS_SUPLEMENTO, criarRepositorioModelosSuplemento, criarSuplemento } from './suplementos.ts'
 
 /** Um navegador: o armazenamento do aparelho, com as chaves listáveis como o `localStorage`. */
 class Navegador implements ArmazenamentoListavel {
@@ -413,6 +415,100 @@ describe('dois aparelhos ao mesmo tempo (D-132)', () => {
     expect(nomesDosPacientes(aba1)).toEqual(['Ana', 'Bia'])
     expect(aba1.sincronia.estado.pendente).toBe(false)
     expect(aba2.sincronia.estado.pendente).toBe(false)
+  })
+})
+
+describe('D-170: uma versão antiga do site não apaga o que não conhece', () => {
+  const MODELOS = CHAVE_MODELOS_SUPLEMENTO
+
+  /** A conta com roteiro, um modelo de suplemento e a Ana, já na nuvem. */
+  async function aparelhoComRoteiro() {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    gravarRoteiro(a.observado, ROTEIRO_PADRAO)
+    criarRepositorioModelosSuplemento(a.observado, { gerarId }).salvarDe({ ...criarSuplemento('s1'), nome: 'Ferro', dose: '30 mg' })
+    await salvar()
+    expect(Object.keys(copiaNaNuvem(nuvem).dados)).toEqual(expect.arrayContaining([CHAVE_ROTEIRO, MODELOS]))
+    return { nuvem, a }
+  }
+
+  /**
+   * Uma aba com o site de antes das novidades salva: a cópia dela vem sem as duas chaves que ela não conhece, com a
+   * Bia que ela criou e as marcas que ela copiou da nuvem.
+   */
+  function salvaPeloAppAntigo(nuvem: NuvemFalsa, quando: string): void {
+    const daNuvem = copiaNaNuvem(nuvem)
+    const dados = Object.fromEntries(Object.entries(daNuvem.dados).filter(([chave]) => chave !== CHAVE_ROTEIRO && chave !== MODELOS))
+    const pacientes = JSON.parse(dados['metanutri:pacientes'] ?? '[]') as unknown[]
+    dados['metanutri:pacientes'] = JSON.stringify([...pacientes, { id: 'bia-antiga', nome: 'Bia', atualizadoEm: quando }])
+    const marcas = lerMudancas(dados[CHAVE_MUDANCAS] ?? null)
+    dados[CHAVE_MUDANCAS] = JSON.stringify({ alterados: { ...marcas.alterados, 'pacientes/bia-antiga': quando }, excluidos: marcas.excluidos })
+    nuvem.guardar('conta-a', { ...daNuvem, dados }, quando)
+  }
+
+  const modelosNaNuvem = (nuvem: NuvemFalsa) => (JSON.parse(copiaNaNuvem(nuvem).dados[MODELOS] ?? '[]') as { nome: string }[]).map((m) => m.nome)
+
+  it('CA-590: com o aparelho aberto, a cópia do app antigo não apaga o roteiro nem os modelos, e eles voltam para a nuvem', async () => {
+    const { nuvem, a } = await aparelhoComRoteiro()
+    const roteiro = a.observado.getItem(CHAVE_ROTEIRO)
+    salvaPeloAppAntigo(nuvem, '2026-10-08T12:00:30.000Z')
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBeUndefined()
+
+    // A conferência de 60 s traz a cópia do app antigo: a Bia chega e o roteiro e o modelo ficam.
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(nomesDosPacientes(a)).toEqual(['Ana', 'Bia'])
+    expect(a.observado.getItem(CHAVE_ROTEIRO)).toBe(roteiro)
+    expect(a.sincronia.estado.pendente).toBe(true)
+
+    await salvar()
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBe(roteiro)
+    expect(modelosNaNuvem(nuvem)).toEqual(['Ferro'])
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia'])
+    expect(a.sincronia.estado.pendente).toBe(false)
+
+    // Outro aparelho novo que entra depois vê tudo.
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    expect(b.observado.getItem(CHAVE_ROTEIRO)).toBe(roteiro)
+    expect(nomesDosPacientes(b)).toEqual(['Ana', 'Bia'])
+  })
+
+  it('CA-591: o aparelho que estava fechado abre de novo, fica com o roteiro e os modelos e os devolve à nuvem', async () => {
+    const { nuvem, a } = await aparelhoComRoteiro()
+    const roteiro = a.observado.getItem(CHAVE_ROTEIRO)
+    a.sincronia.desligar()
+    salvaPeloAppAntigo(nuvem, '2026-10-08T12:00:30.000Z')
+
+    const deNovo = abrirAparelho(nuvem, a.navegador)
+    await ligar(deNovo)
+    expect(deNovo.observado.getItem(CHAVE_ROTEIRO)).toBe(roteiro)
+    expect(nomesDosPacientes(deNovo)).toEqual(['Ana', 'Bia'])
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBe(roteiro)
+    expect(modelosNaNuvem(nuvem)).toEqual(['Ferro'])
+    expect(deNovo.sincronia.estado.pendente).toBe(false)
+  })
+
+  it('CA-592: o roteiro e o modelo excluídos de verdade em outro aparelho saem daqui e não voltam, mesmo depois do app antigo', async () => {
+    const { nuvem, a } = await aparelhoComRoteiro()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    vi.setSystemTime(new Date('2026-10-08T12:01:00.000Z'))
+    const modelosDeB = criarRepositorioModelosSuplemento(b.observado, { gerarId })
+    for (const modelo of modelosDeB.listar()) modelosDeB.excluir(modelo.id)
+    b.observado.removeItem(CHAVE_ROTEIRO)
+    await salvar()
+    salvaPeloAppAntigo(nuvem, '2026-10-08T12:01:30.000Z')
+
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(a.observado.getItem(CHAVE_ROTEIRO)).toBeNull()
+    expect(criarRepositorioModelosSuplemento(a.observado).listar()).toEqual([])
+    expect(nomesDosPacientes(a)).toEqual(['Ana', 'Bia'])
+    expect(a.sincronia.estado.pendente).toBe(false)
+    await salvar()
+    expect(copiaNaNuvem(nuvem).dados[CHAVE_ROTEIRO]).toBeUndefined()
+    expect(modelosNaNuvem(nuvem)).toEqual([])
   })
 })
 
