@@ -104,6 +104,38 @@ test('CA-527: em 360 px, ficha, Painel e diálogo cabem sem rolar para o lado, c
   await alturaMinima(dialogo.getByRole('button', { name: 'Cancelar' }))
 })
 
+test('CA-527: em 360 px, a Adesão cabe sem rolar para o lado, com o retorno e o WhatsApp de 44 px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 })
+  await abrirLimpo(page)
+  // Uma paciente sumida (link de setembro, nada marcado) com retorno amanhã, gravada como o site grava.
+  await page.evaluate((amanha) => {
+    const nome = 'Ana Souza Albuquerque de Oliveira'
+    const criadoEm = '2026-09-01T12:00:00.000Z'
+    const ficha = { id: 'p-ana', nome, sexo: null, nascimento: null, telefone: '(11) 98765-4321', email: '', objetivo: '', restricoes: '', condicoesClinicas: '', medicamentos: '', anamnese: '', observacoes: '', proximaConsulta: `${amanha}T14:30`, criadoEm, atualizadoEm: criadoEm }
+    const missoes = [{ id: 'agua', texto: 'Beber cerca de 2 litros de água', origem: '35 ml por quilo' }]
+    const link = { id: 'ac-1', token: 'tokendeexemplo1', casoId: 'caso-1', pacienteId: 'p-ana', nome, criadoEm, missoes, marcacoes: [], usoNaoComercial: false }
+    localStorage.setItem('metanutri:pacientes', JSON.stringify([ficha]))
+    localStorage.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [link], naNuvem: [], pendentes: [] }))
+  }, amanhaEmBrasilia())
+  // Trocar só o "#" não recarrega o site: a recarga faz a tela ler o que foi gravado.
+  await page.goto('/#/adesao')
+  await page.reload()
+
+  const linha = page.getByRole('listitem').filter({ hasText: 'Ana Souza' })
+  await expect(linha).toContainText('Sumindo')
+  await expect(linha).toContainText('Retorno amanhã às 14:30')
+  const larguras = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, tela: window.innerWidth }))
+  expect(larguras.pagina).toBeLessThanOrEqual(larguras.tela)
+  const whatsapp = linha.getByRole('button', { name: 'WhatsApp' })
+  await expect.poll(async () => (await whatsapp.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+
+  await whatsapp.click()
+  const dialogo = page.getByRole('dialog', { name: 'Enviar pelo WhatsApp' })
+  await expect(dialogo.getByLabel('Mensagem')).toHaveValue(/Vi que faz alguns dias que você não marca as missões/)
+  const depois = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+  expect(depois).toBe(true)
+})
+
 test('CA-527: em 360 px, o cartão do link mostra o endereço inteiro na linha, com Copiar e WhatsApp embaixo', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await abrirLimpo(page)
