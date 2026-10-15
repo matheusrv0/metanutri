@@ -31,7 +31,7 @@ jantar, para a energia e a gordura passarem da faixa): `antes-plano-1280`, `ante
 | 6 | Percentual do gasto | "125% do GET" | **Fica**, numa frase só com o item 7 |
 | 7 | Selo do estado | "Acima de 110%" | **Sai como selo**: o limite entra na frase ("125% do GET, acima de 110%"). Era o mesmo fato dito três vezes (cor, número e selo) |
 | 8 | Rótulo da seção | "MACRONUTRIENTES" | **Sai**: os três nomes já dizem |
-| 9 | Divisória entre energia e macros | | **Sai**: as linhas já são separadas por fio |
+| 9 | Fio entre energia e macros | | **Fica**: é o mesmo fio que separa cada linha |
 | 10 | Botão "Metas" | | **Vai para dentro de "Ajustar"** ("Metas de macronutrientes") |
 | 11 | Nome do macro (×3) | "Proteína" | **Fica** |
 | 12 | Gramas com uma casa (×3) | "89,1 g" | **Fica sem casa**: "89 g" |

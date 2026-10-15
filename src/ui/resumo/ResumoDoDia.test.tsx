@@ -81,33 +81,66 @@ describe('Resumo do dia', () => {
     expect(resumo().getByText(/inativo/)).toBeInTheDocument()
   })
 
-  it('CA-10: mostra kcal do plano e a porcentagem do GET, com o estado', () => {
+  it('CA-10 e CA-681: kcal do plano, alvo e uma frase só com o % do GET e a faixa, sem selo', () => {
     montar(adulta, planoComArroz())
     expect(resumo().getByText('371 kcal')).toBeInTheDocument()
-    expect(resumo().getByText('23% do GET')).toBeInTheDocument()
-    expect(resumo().getByText('Abaixo de 90%')).toBeInTheDocument()
+    expect(resumo().getByText('GET calculado')).toBeInTheDocument()
+    expect(resumo().getByText('23% do GET, abaixo de 90%')).toHaveClass('text-warningtext')
+    expect(resumo().queryByText('Abaixo de 90%')).not.toBeInTheDocument()
+    expect(resumo().getByRole('progressbar')).toBeInTheDocument()
   })
 
-  it('CA-22 e CA-23: macros em gramas, % das kcal e g/kg, com o estado da faixa', () => {
+  it('CA-22, CA-23 e CA-682: macros em gramas e % sem casa, g/kg só na proteína, frase e meta curta', () => {
     montar(adulta, planoComArroz())
-    const proteina = resumo().getByText('Proteína').closest('div')?.parentElement
-    expect(proteina).toHaveTextContent('8 g · 8%')
-    expect(proteina).toHaveTextContent('0,13 g/kg')
-    expect(resumo().getAllByText(/Meta: .* \(faixa da idade\)/).length).toBe(3)
-    // O estado agora sai como frase do medidor: dentro, faltam X, quase lá, acima, passou de leve.
+    expect(resumo().getByText('8 g · 8% · 0,13 g/kg')).toBeInTheDocument()
+    expect(resumo().getAllByText(/^\d+ g · \d+%$/)).toHaveLength(2)
+    expect(resumo().getByText('10 a 35%')).toBeInTheDocument()
+    expect(resumo().getByText('45 a 65%')).toBeInTheDocument()
+    expect(resumo().getByText('20 a 35%')).toBeInTheDocument()
+    expect(resumo().queryByText(/Meta:/)).not.toBeInTheDocument()
+    // "faixa da idade" só dentro de "Ver cálculo".
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    const conteudo = document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement
+    expect(resumo().getAllByText(/faixa da idade/).every((el) => conteudo.contains(el))).toBe(true)
+    // O estado sai como frase do medidor: dentro, faltam X, quase lá, acima, passou de leve.
     expect(resumo().getAllByText(/Dentro da faixa|para a faixa|Quase lá|acima da faixa|Passou de leve/).length).toBe(3)
   })
 
-  it('CA-24: meta própria de proteína em g/kg passa a valer', async () => {
+  it('CA-24 e CA-683: "Ajustar" leva às metas dos macros, e a meta própria aparece como sua', async () => {
     const usuario = montar(adulta, planoComArroz())
-    await usuario.click(screen.getByRole('button', { name: 'Metas' }))
+    await abrirAjustes(usuario)
+    await usuario.click(resumo().getByRole('button', { name: 'Metas de macronutrientes' }))
     const janela = within(screen.getByRole('dialog', { name: 'Metas de macronutrientes' }))
     await usuario.click(janela.getByRole('radio', { name: 'g/kg de peso' }))
     await usuario.type(janela.getByLabelText('Proteína: mínimo'), '1,2')
     await usuario.type(janela.getByLabelText('Proteína: máximo'), '1,6')
     await usuario.click(janela.getByRole('button', { name: 'Salvar metas' }))
 
-    expect(resumo().getByText('Meta: 1,2 a 1,6 g/kg (sua meta)')).toBeInTheDocument()
+    expect(resumo().getByText('1,2 a 1,6 g/kg · sua meta')).toBeInTheDocument()
+    expect(resumo().getByText('faixa da idade e suas metas')).toBeInTheDocument()
+  })
+
+  it('CA-683: no modo rápido, "Ajustar" mostra a meta de energia e as metas dos macros', async () => {
+    const usuario = montar({ ...adulta, modo: 'rapido' })
+    await abrirAjustes(usuario)
+    expect(resumo().getByLabelText('Meta de energia')).toBeInTheDocument()
+    expect(resumo().getByRole('button', { name: 'Metas de macronutrientes' })).toBeInTheDocument()
+  })
+
+  it('CA-684: "Ver cálculo" traz carboidrato e gordura em g/kg e a origem das metas', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    await usuario.click(verCalculo)
+    const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
+    expect(conteudo.getByText('TMB')).toBeInTheDocument()
+    expect(conteudo.getByText('Carboidrato').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
+    expect(conteudo.getByText('Gordura').nextElementSibling?.textContent).toMatch(/^\d+,\d{2} g\/kg$/)
+    expect(conteudo.getByText('Metas dos macronutrientes').nextElementSibling).toHaveTextContent('faixa da idade')
+  })
+
+  it('CB-206: sem peso, nenhum g/kg', () => {
+    montar({ sexo: 'F', idadeAnos: 28, estaturaCm: 165 }, planoComArroz())
+    expect(resumo().queryByText(/g\/kg/)).not.toBeInTheDocument()
   })
 
   it('CA-11: mudar o fator não altera o plano', async () => {
@@ -126,13 +159,17 @@ describe('Resumo do dia', () => {
   })
 })
 
-describe('Resumo do dia num cartão só (CA-333)', () => {
-  it('energia e macronutrientes no mesmo cartão, e a conta recolhida em "Ver cálculo"', async () => {
+describe('Resumo do dia num cartão só (CA-333, CA-680)', () => {
+  it('energia e macronutrientes no mesmo cartão, um botão só, e a conta recolhida em "Ver cálculo"', async () => {
     const usuario = montar(adulta)
     const cartao = screen.getByText('Resumo do dia').closest('[data-slot="card"]')
     expect(cartao).not.toBeNull()
-    expect(within(cartao as HTMLElement).getByText('Macronutrientes')).toBeInTheDocument()
-    expect(within(cartao as HTMLElement).getByRole('button', { name: 'Metas' })).toBeInTheDocument()
+    const noCartao = within(cartao as HTMLElement)
+    expect(noCartao.getByText('Proteína')).toBeInTheDocument()
+    expect(noCartao.getAllByText('Gordura').length).toBeGreaterThan(0)
+    expect(noCartao.queryByText('Macronutrientes')).not.toBeInTheDocument()
+    expect(noCartao.queryByRole('button', { name: 'Metas' })).not.toBeInTheDocument()
+    expect(noCartao.getAllByRole('button').map((b) => b.textContent)).toEqual(['Ajustar', 'Ver cálculo'])
 
     const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
     const conteudo = document.getElementById(verCalculo.getAttribute('aria-controls') ?? '')
@@ -163,5 +200,18 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
     expect(resumo().getByText('Meta definida por você')).toBeInTheDocument()
     expect(resumo().getByText('1.800 kcal')).toBeInTheDocument()
     expect(resumo().queryByText('Fator de atividade')).not.toBeInTheDocument()
+  })
+
+  it('CA-681: no modo rápido, a frase diz "da meta"', () => {
+    montar({ ...adulta, modo: 'rapido', metaEnergiaKcal: 1800 }, planoComArroz())
+    expect(resumo().getByText('21% da meta, abaixo de 90%')).toBeInTheDocument()
+  })
+
+  it('CB-207: meta digitada, "Ver cálculo" sem TMB e sem fator, só o que existe', () => {
+    montar({ ...adulta, modo: 'rapido', metaEnergiaKcal: 1800 }, planoComArroz())
+    const verCalculo = resumo().getByRole('button', { name: 'Ver cálculo' })
+    const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
+    expect(conteudo.queryByText('TMB')).not.toBeInTheDocument()
+    expect(conteudo.getByText('Carboidrato')).toBeInTheDocument()
   })
 })

@@ -1,13 +1,13 @@
 import { Flame, Settings2, SlidersHorizontal, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { calcularEnergia, percentualDoGasto } from '@/domain/energia.ts'
-import { calcularMacros, type EstadoFaixa, type ResultadoMacro } from '@/domain/macros.ts'
+import { calcularMacros, type EstadoFaixa, type ResultadoMacro, type ResultadoMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { Alert } from '@ds/componentes/display/alert.tsx'
-import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -24,31 +24,60 @@ interface ResumoDoDiaProps {
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
 }
 
-const VARIANTE: Record<EstadoFaixa, 'lightSuccess' | 'lightWarning' | 'lightError'> = {
-  dentro: 'lightSuccess',
-  abaixo: 'lightWarning',
-  acima: 'lightError',
-}
-
-/* A barra carrega o mesmo estado do selo: cor sempre significa alguma coisa. */
+/* A barra e a frase carregam o mesmo estado: cor sempre significa alguma coisa. */
 const VARIANTE_BARRA: Record<EstadoFaixa, 'success' | 'warning' | 'error'> = {
   dentro: 'success',
   abaixo: 'warning',
   acima: 'error',
 }
 
+const COR_FRASE: Record<EstadoFaixa, string> = {
+  dentro: 'text-successtext',
+  abaixo: 'text-warningtext',
+  acima: 'text-errortext',
+}
 
+/* O limite vai na mesma frase do percentual: era um selo à parte (spec painel-lateral-enxuto, D-200). */
+const FAIXA_DO_GASTO: Record<EstadoFaixa, string> = {
+  dentro: 'entre 90% e 110%',
+  abaixo: 'abaixo de 90%',
+  acima: 'acima de 110%',
+}
+
+/** A meta curta, ao lado da frase do medidor: "10 a 35%" ou "1,2 a 1,6 g/kg · sua meta" (D-202). */
 function descreverMeta(macro: ResultadoMacro): string | null {
   if (!macro.meta) return null
   const ehPct = macro.meta.tipo === 'pct'
   const unidade = ehPct ? '%' : ' g/kg'
   const casas = ehPct ? 0 : 1
-  const origem = macro.origemMeta === 'usuario' ? 'sua meta' : 'faixa da idade'
-  return `Meta: ${formatarNumero(macro.meta.min, casas)} a ${formatarNumero(macro.meta.max, casas)}${unidade} (${origem})`
+  const faixa = `${formatarNumero(macro.meta.min, casas)} a ${formatarNumero(macro.meta.max, casas)}${unidade}`
+  return macro.origemMeta === 'usuario' ? `${faixa} · sua meta` : faixa
 }
 
+/** De onde vêm as metas dos três macros, dito uma vez em "Ver cálculo" (D-202). */
+function origemDasMetas(macros: ResultadoMacros): string | null {
+  const origens = new Set([macros.proteina, macros.carboidrato, macros.gordura].map((m) => m.origemMeta))
+  const daIdade = origens.has('amdr')
+  const suas = origens.has('usuario')
+  if (daIdade && suas) return 'faixa da idade e suas metas'
+  if (daIdade) return 'faixa da idade'
+  if (suas) return 'suas metas'
+  return null
+}
 
-/** Painel lateral com energia do dia e macronutrientes do plano (CA-06 a CA-11, CA-22 a CA-24). */
+function LinhaCalculo({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
+  return (
+    <div className="flex justify-between gap-2">
+      <dt className="text-muted-foreground">{rotulo}</dt>
+      <dd className="numeros text-right font-medium text-heading">{valor}</dd>
+    </div>
+  )
+}
+
+/**
+ * Painel lateral com energia do dia e macronutrientes do plano (CA-06 a CA-11, CA-22 a CA-24).
+ * Cada fato aparece uma vez; o resto fica em "Ajustar" e em "Ver cálculo" (spec painel-lateral-enxuto).
+ */
 export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
   const [ajustando, setAjustando] = useState(false)
   const [editandoMetas, setEditandoMetas] = useState(false)
@@ -60,21 +89,26 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
   )
   const macros = useMemo(() => calcularMacros(totais, caso, caso.metasMacros), [totais, caso])
 
+  const rapido = caso.modo === 'rapido'
   const kcalPlano = totais.nutrientes.energia_kcal.total
   const doGet = percentualDoGasto(kcalPlano, energia.get)
   const ehAdulto = (caso.idadeAnos ?? 0) >= 19 && caso.condicao.tipo === 'nenhuma'
-  const rotuloEnergia =
-    caso.modo === 'rapido'
-      ? energia.getManual
-        ? 'Meta definida por você'
-        : energia.get === null
-          ? 'Meta de energia'
-          : 'Meta calculada'
-      : energia.getManual
-        ? 'GET definido manualmente'
-        : 'GET calculado'
+  const rotuloEnergia = rapido
+    ? energia.getManual
+      ? 'Meta definida por você'
+      : energia.get === null
+        ? 'Meta de energia'
+        : 'Meta calculada'
+    : energia.getManual
+      ? 'GET definido manualmente'
+      : 'GET calculado'
 
-  const mostraCalculo = (caso.modo === 'completo' || !energia.getManual) && (energia.tmb !== null || energia.get !== null)
+  const mostraCalculo = (!rapido || !energia.getManual) && (energia.tmb !== null || energia.get !== null)
+  const origem = origemDasMetas(macros)
+  const gPorKg = (m: ResultadoMacro) => (m.gPorKg === null ? null : `${formatarNumero(m.gPorKg, 2)} g/kg`)
+  const carboidratoGkg = gPorKg(macros.carboidrato)
+  const gorduraGkg = gPorKg(macros.gordura)
+  const temCalculo = mostraCalculo || carboidratoGkg !== null || gorduraGkg !== null || origem !== null
 
   return (
     <section aria-label="Resumo do dia" className="flex flex-col gap-4">
@@ -91,13 +125,19 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
         </div>
 
         {ajustando ? (
-          caso.modo === 'rapido' ? (
-            <div className="flex flex-col gap-3 border border-border bg-muted p-4">
-              <CampoMetaEnergia caso={caso} aoMudar={(v) => aoAlterar({ metaEnergiaKcal: v })} />
-            </div>
-          ) : (
-            <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} />
-          )
+          <div className="flex flex-col gap-3">
+            {rapido ? (
+              <div className="flex flex-col gap-3 border border-border bg-muted p-4">
+                <CampoMetaEnergia caso={caso} aoMudar={(v) => aoAlterar({ metaEnergiaKcal: v })} />
+              </div>
+            ) : (
+              <AjusteEnergia caso={caso} aoAlterar={aoAlterar} mostrarFormula={ehAdulto} />
+            )}
+            <Button variant="outline" size="sm" className="self-start" onClick={() => setEditandoMetas(true)}>
+              <SlidersHorizontal aria-hidden="true" />
+              Metas de macronutrientes
+            </Button>
+          </div>
         ) : null}
 
         {energia.motivoSemCalculo ? (
@@ -125,52 +165,39 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           </div>
           {doGet ? (
             <>
-              <Progress value={doGet.pct} variant={VARIANTE_BARRA[doGet.estado]} />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">{`${formatarNumero(doGet.pct, 0)}% do GET`}</span>
-                <Badge variant={VARIANTE[doGet.estado]}>
-                  {doGet.estado === 'dentro' ? 'Entre 90% e 110%' : doGet.estado === 'abaixo' ? 'Abaixo de 90%' : 'Acima de 110%'}
-                </Badge>
-              </div>
+              <Progress value={doGet.pct} variant={VARIANTE_BARRA[doGet.estado]} aria-label="Energia do plano em relação ao alvo" />
+              <p className={cn('numeros text-xs font-medium', COR_FRASE[doGet.estado])}>
+                {`${formatarNumero(doGet.pct, 0)}% ${rapido ? 'da meta' : 'do GET'}, ${FAIXA_DO_GASTO[doGet.estado]}`}
+              </p>
             </>
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border pt-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="rotulo">Macronutrientes</p>
-            <Button variant="ghost" size="sm" onClick={() => setEditandoMetas(true)}>
-              <SlidersHorizontal aria-hidden="true" />
-              Metas
-            </Button>
-          </div>
+        <div className="flex flex-col gap-3.5 border-t border-border pt-4">
           <MedidorMacro nome="Proteína" macro={macros.proteina} meta={descreverMeta(macros.proteina)} comGPorKg />
           <MedidorMacro nome="Carboidrato" macro={macros.carboidrato} meta={descreverMeta(macros.carboidrato)} />
           <MedidorMacro nome="Gordura" macro={macros.gordura} meta={descreverMeta(macros.gordura)} />
         </div>
 
-        {mostraCalculo ? (
+        {temCalculo ? (
           <Recolhivel titulo="Ver cálculo">
             <dl className="flex flex-col gap-1.5 text-sm">
-              {energia.tmb !== null ? (
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">TMB</dt>
-                  <dd className="numeros font-medium text-heading">{`${formatarNumero(energia.tmb, 0)} kcal`}</dd>
-                </div>
+              {mostraCalculo && energia.tmb !== null ? <LinhaCalculo rotulo="TMB" valor={`${formatarNumero(energia.tmb, 0)} kcal`} /> : null}
+              {mostraCalculo ? (
+                <LinhaCalculo
+                  rotulo="Fator de atividade"
+                  valor={`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${energia.categoriaAtividade}` : ''}`}
+                />
               ) : null}
-              <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Fator de atividade</dt>
-                <dd className="numeros font-medium text-heading">
-                  {`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${energia.categoriaAtividade}` : ''}`}
-                </dd>
-              </div>
-              {energia.adicionais.map((a) => (
-                <div key={a.descricao} className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">{a.descricao}</dt>
-                  <dd className="numeros font-medium text-heading">{`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`}</dd>
-                </div>
-              ))}
-              {energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
+              {mostraCalculo
+                ? energia.adicionais.map((a) => (
+                    <LinhaCalculo key={a.descricao} rotulo={a.descricao} valor={`${a.kcal > 0 ? '+' : ''}${formatarNumero(a.kcal, 0)} kcal`} />
+                  ))
+                : null}
+              {carboidratoGkg ? <LinhaCalculo rotulo="Carboidrato" valor={carboidratoGkg} /> : null}
+              {gorduraGkg ? <LinhaCalculo rotulo="Gordura" valor={gorduraGkg} /> : null}
+              {origem ? <LinhaCalculo rotulo="Metas dos macronutrientes" valor={origem} /> : null}
+              {mostraCalculo && energia.fonte ? <Fontes itens={[{ texto: energia.fonte }]} className="pt-1" /> : null}
             </dl>
           </Recolhivel>
         ) : null}
