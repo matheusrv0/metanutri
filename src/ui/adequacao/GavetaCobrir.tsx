@@ -58,6 +58,8 @@ export function GavetaCobrir({
   const [opcao] = useState<OpcaoId>('principal')
   const [versaoOcultos, setVersaoOcultos] = useState(0)
   const armazenamento = useArmazenamento()
+  // As restrições chegam num array novo a cada renderização; o texto delas é a dependência estável (revisão N7).
+  const textoDasRestricoes = restricoes.join('\n')
 
   const resultado = useMemo(
     () =>
@@ -71,11 +73,11 @@ export function GavetaCobrir({
             // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
             ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais(armazenamento)]),
             // A restrição filtra antes da escolha das 5 (spec sugestoes-com-criterio, CA-675).
-            restricoes,
+            restricoes: textoDasRestricoes === '' ? [] : textoDasRestricoes.split('\n'),
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, restricoes],
+    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, textoDasRestricoes],
   )
 
   const ocultar = (alimentoId: number) => {
