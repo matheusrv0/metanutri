@@ -1,4 +1,4 @@
-import { aplicarCopia, CHAVE_MUDANCAS, chavesMantidas, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
+import { aplicarCopia, CHAVE_MUDANCAS, CHAVE_RETIDOS, chavesMantidas, copiaSemItens, copiasIguais, itensDaCopia, juntarCopias, lerMudancas, momentoDaCopia, montarCopia, registrarMudanca, semPendencias } from './copiaDaConta.ts'
 import { criarRepositorioPacientes } from './pacientes.ts'
 import { CHAVES_DE_DADOS, montarBackup, restaurarBackup, type Backup } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -647,5 +647,90 @@ describe('D-171: salvar um item não mexe nos outros', () => {
     const fichas = lista(junta, 'metanutri:pacientes') as { id: string; restricoes: string; objetivo: string }[]
     expect(fichas.find((p) => p.id === 'ana')?.restricoes).toBe('lactose')
     expect(fichas.find((p) => p.id === 'bia')?.objetivo).toBe('Ganhar massa')
+  })
+})
+describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nuvem conhece', () => {
+  const ROTEIRO = 'metanutri:roteiro-anamnese'
+  const rot = (texto: string) => JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'q', texto }] } })
+  const textoDoRoteiro = (valor: string | null | undefined) =>
+    valor === null || valor === undefined ? null : (JSON.parse(valor) as { blocos: { agua: { texto: string }[] } }).blocos.agua[0]?.texto
+  const pacientes = (...fichas: ReturnType<typeof paciente>[]) => JSON.stringify(fichas.length > 0 ? fichas : [paciente('ana', 'Ana')])
+  const ROT = `chave/${ROTEIRO}`
+
+  /** Um aparelho com o roteiro dado e a marca dele. */
+  function aparelhoComRoteiro(texto: string, quando: string): Memoria {
+    const arm = new Memoria()
+    arm.setItem('metanutri:pacientes', pacientes())
+    arm.setItem(ROTEIRO, rot(texto))
+    arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), [ROT]: quando }))
+    return arm
+  }
+
+  /** Grava como a conta grava: com as marcas do observador. */
+  const gravar = (arm: Memoria, chave: string, valor: string, quando: string) => {
+    const antes = arm.getItem(chave)
+    arm.setItem(chave, valor)
+    registrarMudanca(arm, chave, antes, valor, quando)
+  }
+
+  /** v3: a aba antiga salvou sem o roteiro, com a marca das 4h que veio da cópia de N2. */
+  const v3 = () => copia({ 'metanutri:pacientes': pacientes(), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [ROT]: T(4) }) })
+
+  it('CA-605: o roteiro retido não sobe ao aplicar de novo, recarregar, abrir outra aba ou receber outra cópia sem ele', () => {
+    const n1 = aparelhoComRoteiro('r1 velho', T(2))
+    expect(aplicarCopia(n1, v3()).mantidas).toEqual([])
+    expect(textoDoRoteiro(n1.getItem(ROTEIRO))).toBe('r1 velho')
+    expect(JSON.parse(n1.getItem(CHAVE_RETIDOS) ?? '{}')).toEqual({ [ROT]: T(4) })
+    // Recarregar ou abrir outra aba com a mesma versão: o motor pergunta antes de aplicar.
+    expect(chavesMantidas(n1, v3())).toEqual([])
+    expect(aplicarCopia(n1, v3()).mantidas).toEqual([])
+    // Outra cópia sem o roteiro (outra aba antiga salvou de novo).
+    const v3b = copia({ ...v3().dados, 'metanutri:pacientes': pacientes(paciente('ana', 'Ana'), paciente('bia', 'Bia', T(5))) })
+    expect(aplicarCopia(n1, v3b).mantidas).toEqual([])
+    // A cópia que N1 sobe não leva o roteiro velho, e a nuvem continua com a marca das 4h.
+    const deN1 = montarCopia(n1, T(6))
+    expect(deN1.dados[ROTEIRO]).toBeUndefined()
+    expect(lerMudancas(deN1.dados[CHAVE_MUDANCAS] ?? null).alterados[ROT]).toBe(T(4))
+
+    // N2, com o roteiro das 4h, aplica e devolve; N1 e um aparelho novo ficam com ele.
+    const n2 = aparelhoComRoteiro('r2 novo', T(4))
+    expect(aplicarCopia(n2, deN1).mantidas).toEqual([ROTEIRO])
+    const deN2 = montarCopia(n2, T(7))
+    expect(textoDoRoteiro(deN2.dados[ROTEIRO])).toBe('r2 novo')
+    aplicarCopia(n1, deN2)
+    expect(textoDoRoteiro(n1.getItem(ROTEIRO))).toBe('r2 novo')
+    expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
+    const novo = new Memoria()
+    aplicarCopia(novo, deN2)
+    expect(textoDoRoteiro(novo.getItem(ROTEIRO))).toBe('r2 novo')
+  })
+
+  it('CA-606: N1 edita um paciente com o roteiro retido: a cópia sobe sem o roteiro velho, e N2 o devolve', () => {
+    const n1 = aparelhoComRoteiro('r1 velho', T(2))
+    aplicarCopia(n1, v3())
+    gravar(n1, 'metanutri:pacientes', pacientes({ ...paciente('ana', 'Ana Souza', T(6)) }), T(6))
+    const deN1 = montarCopia(n1, T(6))
+    expect(deN1.dados[ROTEIRO]).toBeUndefined()
+    expect(lerMudancas(deN1.dados[CHAVE_MUDANCAS] ?? null).alterados).toMatchObject({ [ROT]: T(4), 'pacientes/ana': T(6) })
+
+    const n2 = aparelhoComRoteiro('r2 novo', T(4))
+    expect(aplicarCopia(n2, deN1).mantidas).toEqual([ROTEIRO])
+    const deN2 = montarCopia(n2, T(7))
+    expect(textoDoRoteiro(deN2.dados[ROTEIRO])).toBe('r2 novo')
+    expect(nomes(deN2, 'metanutri:pacientes')).toEqual(['Ana Souza'])
+  })
+
+  it('CA-609: a pessoa edita o roteiro retido em N1: a edição dela sobe como qualquer edição', () => {
+    const n1 = aparelhoComRoteiro('r1 velho', T(2))
+    aplicarCopia(n1, v3())
+    gravar(n1, ROTEIRO, rot('r1 editado'), T(8))
+    expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
+    const deN1 = montarCopia(n1, T(8))
+    expect(textoDoRoteiro(deN1.dados[ROTEIRO])).toBe('r1 editado')
+    expect(lerMudancas(deN1.dados[CHAVE_MUDANCAS] ?? null).alterados[ROT]).toBe(T(8))
+    // Com a marca mais nova, a edição dela vence o roteiro das 4h de N2.
+    const n2 = aparelhoComRoteiro('r2 novo', T(4))
+    aplicarCopia(n2, deN1)
+    expect(textoDoRoteiro(n2.getItem(ROTEIRO))).toBe('r1 editado')
   })
 })

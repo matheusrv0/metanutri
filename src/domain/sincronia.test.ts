@@ -534,6 +534,61 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     expect(nuvem.pedidos.slice(antes)).toEqual(['select'])
   })
 
+  it('CA-605 e CA-606: N1 com o roteiro velho reabre, abre outra aba e edita um paciente; o velho nunca sobe, e N2 devolve o novo', async () => {
+    const roteiroDe = (n: NuvemFalsa) => {
+      const valor = copiaNaNuvem(n).dados[CHAVE_ROTEIRO]
+      return valor === undefined ? null : (JSON.parse(valor) as { blocos: { agua: { texto: string }[] } }).blocos.agua[0]?.texto
+    }
+    const comPergunta = (texto: string) => ({ ...ROTEIRO_PADRAO, perguntas: { ...ROTEIRO_PADRAO.perguntas, agua: [{ id: 'agua-dia', texto }] } })
+    // N2 grava o r1; N1 entra e fica com ele; N1 fecha.
+    const nuvem = nuvemFalsa()
+    const n2 = abrirAparelho(nuvem)
+    await ligar(n2)
+    n2.pacientes.criar('Ana')
+    gravarRoteiro(n2.observado, comPergunta('r1 velho'))
+    await salvar()
+    const n1 = abrirAparelho(nuvem)
+    await ligar(n1)
+    n1.sincronia.desligar()
+    // N2 troca para o r2, sobe e fecha; a aba antiga salva sem o roteiro.
+    vi.setSystemTime(new Date('2026-10-08T12:01:00.000Z'))
+    gravarRoteiro(n2.observado, comPergunta('r2 novo'))
+    await salvar()
+    n2.sincronia.desligar()
+    salvaPeloAppAntigo(nuvem, '2026-10-08T12:01:30.000Z')
+
+    // N1 reabre (aplica), reabre de novo e abre outra aba: o r1 velho nunca sobe.
+    const n1b = abrirAparelho(nuvem, n1.navegador)
+    await ligar(n1b)
+    expect(roteiroDe(nuvem)).toBeNull()
+    n1b.sincronia.desligar()
+    const n1c = abrirAparelho(nuvem, n1.navegador)
+    await ligar(n1c)
+    await vi.advanceTimersByTimeAsync(CONFERIR_A_CADA_MS)
+    expect(roteiroDe(nuvem)).toBeNull()
+
+    // N1 edita um paciente: a cópia sobe, sem o roteiro velho.
+    vi.setSystemTime(new Date('2026-10-08T12:05:00.000Z'))
+    const ana = n1c.pacientes.listar().find((p) => p.nome === 'Ana')
+    if (!ana) throw new Error('Ana sumiu')
+    n1c.pacientes.salvar({ ...ana, objetivo: 'Ganhar massa' })
+    await salvar()
+    expect(roteiroDe(nuvem)).toBeNull()
+    n1c.sincronia.desligar()
+
+    // N2 abre: devolve o r2, e a edição da Ana feita em N1 fica.
+    const n2b = abrirAparelho(nuvem, n2.navegador)
+    await ligar(n2b)
+    expect(roteiroDe(nuvem)).toBe('r2 novo')
+    const anaNaNuvem = (JSON.parse(copiaNaNuvem(nuvem).dados['metanutri:pacientes'] ?? '[]') as { nome: string; objetivo: string }[]).find((p) => p.nome === 'Ana')
+    expect(anaNaNuvem?.objetivo).toBe('Ganhar massa')
+
+    // Um aparelho novo recebe o r2.
+    const novo = abrirAparelho(nuvem)
+    await ligar(novo)
+    expect(novo.observado.getItem(CHAVE_ROTEIRO)).toContain('r2 novo')
+  })
+
   it('CA-592: o roteiro e o modelo excluídos de verdade em outro aparelho saem daqui e não voltam, mesmo depois do app antigo', async () => {
     const { nuvem, a } = await aparelhoComRoteiro()
     const b = abrirAparelho(nuvem)

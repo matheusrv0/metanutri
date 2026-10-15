@@ -21,6 +21,22 @@ const OCULTOS = 'metanutri:sugestoes-ocultas'
 /** O que vai para a nuvem: o backup, os avisos já vistos (não voltam a cada entrada) e as marcas. */
 export const CHAVES_DA_NUVEM: readonly string[] = [...CHAVES_DE_DADOS, CHAVE_AVISO, CHAVE_AVISO_NUVEM, CHAVE_MUDANCAS]
 
+/**
+ * DP-39: os valores retidos deste navegador (referência → a marca mais nova que a nuvem conhece dela). O valor
+ * retido é mais velho que essa marca: fica aqui, mas não sobe (D-173). Fica fora da cópia da nuvem.
+ */
+export const CHAVE_RETIDOS = 'metanutri:retidos'
+
+export const lerRetidos = (texto: string | null): Record<string, string> => textos(lerJson(texto))
+
+/** Grava os retidos (sem nenhum, tira a chave). */
+function gravarRetidos(armazenamento: Armazenamento, retidos: Readonly<Record<string, string>>): void {
+  const texto = Object.keys(retidos).length === 0 ? null : JSON.stringify(retidos)
+  if (armazenamento.getItem(CHAVE_RETIDOS) === texto) return
+  if (texto === null) armazenamento.removeItem(CHAVE_RETIDOS)
+  else armazenamento.setItem(CHAVE_RETIDOS, texto)
+}
+
 /** Lápide com mais que isto sai da cópia (DP-3, R6). */
 export const DIAS_DAS_LAPIDES = 90
 
@@ -143,6 +159,10 @@ export function registrarMudanca(armazenamento: Armazenamento, chave: string, an
     alterados.delete(ref)
   }
   armazenamento.setItem(CHAVE_MUDANCAS, JSON.stringify({ alterados: Object.fromEntries(alterados), excluidos: Object.fromEntries(excluidos) }))
+  // DP-39 e CA-609: a pessoa mexeu no valor retido: a edição dela é a mais nova e sobe como qualquer outra.
+  const retidos = lerRetidos(armazenamento.getItem(CHAVE_RETIDOS))
+  const soltos = [...refs.alterados, ...refs.excluidos].filter((ref) => ref in retidos)
+  if (soltos.length > 0) gravarRetidos(armazenamento, Object.fromEntries(Object.entries(retidos).filter(([ref]) => !soltos.includes(ref))))
 }
 
 // ---------- A cópia ----------
@@ -158,13 +178,42 @@ const recentes = (excluidos: Readonly<Record<string, string>>, agora: string): R
   return Object.fromEntries(Object.entries(excluidos).filter(([, quando]) => quando >= limite))
 }
 
-/** A cópia de trabalho como vai para a nuvem, sem as lápides velhas. */
+/** A lista guardada sem os itens dados; o arquivo dos links leva as marcas dos que ficam. `null` quando não dá para ler. */
+function listaSem(chave: string, valor: string, ids: ReadonlySet<string>): string | null {
+  const itens = itensDe(chave, valor)
+  if (itens === null) return null
+  const ficam = itens.filter((item) => !ids.has(idDe(item) ?? ''))
+  if (ficam.length === itens.length) return valor
+  if (chave !== CHAVE_ACOMPANHAMENTOS) return JSON.stringify(ficam)
+  const arquivo = lerJson(valor) as Item
+  const soDosQueFicam = (v: unknown): unknown => (Array.isArray(v) ? v.filter((id) => typeof id === 'string' && !ids.has(id)) : v)
+  return JSON.stringify({ ...arquivo, itens: ficam, naNuvem: soDosQueFicam(arquivo['naNuvem']), pendentes: soDosQueFicam(arquivo['pendentes']) })
+}
+
+/** DP-39: a cópia que sobe sem os valores retidos (a chave inteira, ou só o item na lista). As marcas ficam. */
+function semRetidos(dados: Record<string, string>, retidos: Readonly<Record<string, string>>): Record<string, string> {
+  const refs = Object.keys(retidos)
+  if (refs.length === 0) return dados
+  const chavesRetidas = new Set(refs.filter((ref) => ref.startsWith('chave/')).map((ref) => ref.slice('chave/'.length)))
+  const saida: Record<string, string> = Object.fromEntries(Object.entries(dados).filter(([chave]) => !chavesRetidas.has(chave)))
+  for (const [chave, lista] of Object.entries(LISTAS)) {
+    const valor = saida[chave]
+    const ids = new Set(refs.filter((ref) => ref.startsWith(`${lista.nome}/`)).map((ref) => ref.slice(lista.nome.length + 1)))
+    if (valor === undefined || ids.size === 0) continue
+    const sem = listaSem(chave, valor, ids)
+    if (sem !== null) saida[chave] = sem
+  }
+  return saida
+}
+
+/** A cópia de trabalho como vai para a nuvem, sem as lápides velhas e sem os valores retidos (D-173). */
 export function montarCopia(armazenamento: Armazenamento | null, agora: string): Backup {
   const copia = montarBackup(armazenamento, CHAVES_DA_NUVEM, agora)
-  const marcas = copia.dados[CHAVE_MUDANCAS]
-  if (marcas === undefined) return copia
+  const dados = semRetidos(copia.dados, lerRetidos(armazenamento?.getItem(CHAVE_RETIDOS) ?? null))
+  const marcas = dados[CHAVE_MUDANCAS]
+  if (marcas === undefined) return { ...copia, dados }
   const lidas = lerMudancas(marcas)
-  return { ...copia, dados: { ...copia.dados, [CHAVE_MUDANCAS]: JSON.stringify({ alterados: lidas.alterados, excluidos: recentes(lidas.excluidos, agora) }) } }
+  return { ...copia, dados: { ...dados, [CHAVE_MUDANCAS]: JSON.stringify({ alterados: lidas.alterados, excluidos: recentes(lidas.excluidos, agora) }) } }
 }
 
 /** Uma referência da chave que ficou, com a hora do valor daqui (a marca; sem marca, a data do item). */
@@ -231,12 +280,23 @@ export interface Aplicacao {
   readonly mantidas: readonly string[]
 }
 
+/** O plano de uma aplicação: o que a cópia de trabalho fica, o que sobe de volta e o que fica retido. */
+interface Plano {
+  readonly alvo: Record<string, string>
+  readonly mantidas: string[]
+  readonly retidos: Record<string, string>
+}
+
+/** A marca mais nova entre as dadas (as que existem). */
+const maisNova = (...marcas: (string | undefined)[]): string | undefined => marcas.filter((m): m is string => m !== undefined).sort().at(-1)
+
 /** O que a cópia de trabalho deve ficar depois de aplicar a cópia, sem gravar nada. */
-function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backup): { readonly alvo: Record<string, string>; readonly mantidas: string[] } {
+function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backup, retidosAntes: Readonly<Record<string, string>>): Plano {
   const alvo: Record<string, string> = Object.fromEntries(Object.entries(copia.dados).filter(([chave]) => ehChaveDaNuvem(chave)))
   const daCopia = lerMudancas(alvo[CHAVE_MUDANCAS] ?? null)
   const marcasDaqui = lerMudancas(atual[CHAVE_MUDANCAS] ?? null).alterados
   const mantidas: string[] = []
+  const retidos: Record<string, string> = {}
   const alterados = new Map(Object.entries(daCopia.alterados))
   let marcasMudaram = false
   for (const [chave, valor] of Object.entries(atual)) {
@@ -247,9 +307,19 @@ function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backu
     let sobe = false
     for (const { ref, tempo } of mantida.refs) {
       const naCopia = daCopia.alterados[ref]
-      // DP-35: só o valor daqui igual ou mais novo que o que a cópia conhece volta para a nuvem, com a marca daqui.
-      // Mais velho, fica aqui com a marca da cópia, e o aparelho que tem o mais novo o devolve.
-      if (naCopia !== undefined && tempo < naCopia) continue
+      const jaRetido = retidosAntes[ref]
+      // D-173 e DP-39: o valor daqui mais velho que a marca que a cópia conhece fica aqui, retido: não sobe, nem ao
+      // aplicar de novo, e a marca é a mais nova que se conhece (a nuvem continua sabendo dela).
+      if (jaRetido !== undefined || (naCopia !== undefined && tempo < naCopia)) {
+        const marca = maisNova(naCopia, jaRetido) ?? tempo
+        retidos[ref] = marca
+        if (marca !== naCopia) {
+          alterados.set(ref, marca)
+          marcasMudaram = true
+        }
+        continue
+      }
+      // DP-35: o valor daqui igual ou mais novo volta para a nuvem, com a marca daqui.
       sobe = true
       const marca = marcasDaqui[ref]
       if (marca !== undefined && marca !== naCopia) {
@@ -262,26 +332,35 @@ function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backu
   if (marcasMudaram) {
     alvo[CHAVE_MUDANCAS] = JSON.stringify({ alterados: Object.fromEntries(alterados), excluidos: daCopia.excluidos })
   }
-  return { alvo, mantidas }
+  return { alvo, mantidas, retidos }
 }
+
+/** O que está aqui agora: as chaves da nuvem e os retidos. */
+const lerAqui = (armazenamento: Armazenamento) => ({
+  atual: montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados,
+  retidos: lerRetidos(armazenamento.getItem(CHAVE_RETIDOS)),
+})
 
 /**
  * DP-36: as chaves que ficariam aqui e voltariam para a nuvem se a cópia fosse aplicada, sem gravar nada. Com a
- * mesma versão da nuvem, o motor só aplica quando há alguma (uma aba antiga deste navegador mandou sem elas).
+ * mesma versão da nuvem, o motor só aplica quando há alguma (uma aba antiga deste navegador mandou sem elas). O
+ * valor retido nunca conta (D-173).
  */
 export function chavesMantidas(armazenamento: Armazenamento, copia: Backup): readonly string[] {
-  return planejarAplicacao(montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados, copia).mantidas
+  const { atual, retidos } = lerAqui(armazenamento)
+  return planejarAplicacao(atual, copia, retidos).mantidas
 }
 
 /**
  * Escreve a cópia na cópia de trabalho: tira o que ela não tem e grava o que mudou (só entre as chaves
- * da nuvem; o resto do aparelho fica). A chave daqui que a cópia não traz e sem lápide fica (D-170). Os
- * planos vão antes do índice. Sem espaço, a exceção sobe: o valor de antes de cada chave não gravada
- * continua lá.
+ * da nuvem; o resto do aparelho fica). A chave daqui que a cópia não traz e sem lápide fica (D-170); a mais
+ * velha que a marca da cópia fica retida (D-173). Os planos vão antes do índice. Sem espaço, a exceção sobe:
+ * o valor de antes de cada chave não gravada continua lá.
  */
 export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): Aplicacao {
-  const atual = montarBackup(armazenamento, CHAVES_DA_NUVEM, '').dados
-  const { alvo, mantidas } = planejarAplicacao(atual, copia)
+  const aqui = lerAqui(armazenamento)
+  const atual = aqui.atual
+  const { alvo, mantidas, retidos } = planejarAplicacao(atual, copia, aqui.retidos)
   const entradas = Object.entries(alvo).sort(([a], [b]) => Number(a === INDICE) - Number(b === INDICE))
   let mudou = false
   // As que saem vão antes (DP-23): o espaço delas fica livre para as que entram.
@@ -295,6 +374,8 @@ export function aplicarCopia(armazenamento: Armazenamento, copia: Backup): Aplic
     armazenamento.setItem(chave, valor)
     mudou = true
   }
+  // A lista é refeita a cada cópia: o valor que chegou solta o retido (DP-39).
+  gravarRetidos(armazenamento, retidos)
   return { mudou, mantidas }
 }
 

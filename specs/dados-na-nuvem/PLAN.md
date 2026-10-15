@@ -205,7 +205,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
 
 - [x] **T51** — Spec e plano: D-173, CA-604 a CA-609, CB-172; DP-39 a DP-41; R8 reescrito; o DP-35 deixa de dizer que
   cobria os dois roteiros; o mapa do CA-603 aponta o teste de navegador.
-- [ ] **T52** — Valor retido (DP-39): `src/domain/copiaDaConta.ts` (`CHAVE_RETIDOS`; `planejarAplicacao` devolve os
+- [x] **T52** — Valor retido (DP-39): `src/domain/copiaDaConta.ts` (`CHAVE_RETIDOS`; `planejarAplicacao` devolve os
   retidos; `aplicarCopia` e `chavesMantidas` os leem; `montarCopia` não leva o valor retido;
   `registrarMudanca` solta o retido que a pessoa edita). Testes em `copiaDaConta.test.ts` e `sincronia.test.ts`.
   Cobre CA-605, CA-606, CA-609.
