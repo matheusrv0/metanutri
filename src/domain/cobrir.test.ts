@@ -269,6 +269,22 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     for (const a of daCozinha) expect(comChave).not.toContain(a.descricao)
   })
 
+  it('CA-655: uso comum primeiro, depois menos kcal por falta coberta, e grupo novo antes de repetir grupo', () => {
+    const verdura = (id: number, kcal: number) => comoNaTaco(alimento(id, `Verdura ${id}`, { energia_kcal: kcal, ferro_mg: 40 }), 'Verduras')
+    const base = [
+      verdura(41, 10),
+      verdura(42, 11),
+      verdura(43, 12),
+      verdura(44, 13),
+      comoNaTaco(alimento(45, 'Lentilha, cozida', { energia_kcal: 50, ferro_mg: 40 }), 'Leguminosas e derivados'),
+      // O mais leve de todos, mas pouco usual: vai para o fim.
+      comoNaTaco(alimento(46, 'Carne, bovina, fígado, grelhado', { energia_kcal: 5, ferro_mg: 40 }), 'Carnes e derivados'),
+    ]
+    const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base }).sugestoes.map((s) => s.alimentoId)
+    // A quarta verdura perde a vaga para a lentilha e o fígado, que são de outros grupos.
+    expect(ordem).toEqual([41, 42, 43, 45, 46])
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
