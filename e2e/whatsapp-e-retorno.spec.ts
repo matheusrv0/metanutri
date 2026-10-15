@@ -79,9 +79,9 @@ test('CA-527: em 360 px, ficha, Painel e diálogo cabem sem rolar para o lado, c
     const larguras = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, tela: window.innerWidth }))
     expect(larguras.pagina).toBeLessThanOrEqual(larguras.tela)
   }
+  // O diálogo entra com escala de 0,95: a medida espera a animação acabar.
   const alturaMinima = async (alvo: ReturnType<Page['getByRole']>) => {
-    const caixa = await alvo.boundingBox()
-    expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+    await expect.poll(async () => (await alvo.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
   }
 
   // A ficha, com o cartão da próxima consulta.
@@ -102,4 +102,28 @@ test('CA-527: em 360 px, ficha, Painel e diálogo cabem sem rolar para o lado, c
   await semRolagemLateral()
   await alturaMinima(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' }))
   await alturaMinima(dialogo.getByRole('button', { name: 'Cancelar' }))
+})
+
+test('CA-527: em 360 px, o cartão do link mostra o endereço inteiro na linha, com Copiar e WhatsApp embaixo', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 })
+  await abrirLimpo(page)
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
+  await entradaAlmoco.fill('150 arroz tipo 1 cozido')
+  await expect(page.getByRole('option').first()).toBeVisible()
+  await entradaAlmoco.press('Enter')
+
+  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
+  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
+  const endereco = await cartao.getByLabel('Link do paciente').boundingBox()
+  const linha = await cartao.boundingBox()
+  expect(endereco?.width ?? 0).toBeGreaterThan((linha?.width ?? 0) * 0.8)
+  const whatsapp = await cartao.getByRole('button', { name: 'WhatsApp' }).boundingBox()
+  expect(whatsapp?.height ?? 0).toBeGreaterThanOrEqual(44)
+  const larguras = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, tela: window.innerWidth }))
+  expect(larguras.pagina).toBeLessThanOrEqual(larguras.tela)
 })

@@ -23,7 +23,8 @@ export function BotaoWhatsApp({ paciente, texto, aoCadastrarTelefone, rotuloComp
   return (
     <>
       {rotuloCompacto ? (
-        <Button size="iconsm" variant="ghost" onClick={() => setAberto(true)}>
+        // O título mostra no passar do mouse o que o ícone faz; o leitor de tela lê o texto escondido.
+        <Button size="iconsm" variant="ghost" title={rotuloCompacto} onClick={() => setAberto(true)}>
           <MessageCircle aria-hidden="true" />
           <span className="sr-only">{rotuloCompacto}</span>
         </Button>
