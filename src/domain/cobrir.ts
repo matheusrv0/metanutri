@@ -50,6 +50,42 @@ export interface ResultadoCobrir {
  */
 const CAFE_OU_CHA = /^(Café|Chá),/i
 
+const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' ')
+
+const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
+const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
+const CORTE_GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra/i
+
+/** Corte gordo ou ave com pele: vem depois do magro e tem porção menor no cobrir (D-199b). */
+const ehCorteGordo = (a: Alimento): boolean => a.categoria === 'Carnes e derivados' && CORTE_GORDO.test(nomeLimpo(a))
+
+export interface PorcaoDoGrupo {
+  readonly grupo: string
+  readonly gramas: number
+  readonly casa: (alimento: Alimento) => boolean
+}
+
+/**
+ * Porção máxima realista para grupos calóricos (spec sugestoes-com-criterio, D-199b e seção 7.1). Os números vêm das
+ * medidas caseiras da POF: 200 g de castanha não é porção, como cerveja não é prescrição.
+ */
+export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
+  { grupo: 'Oleaginosas e sementes', gramas: 30, casa: (a) => OLEAGINOSA.test(nomeLimpo(a)) },
+  { grupo: 'Queijos (menos a ricota)', gramas: 50, casa: (a) => /^Queijo,/i.test(nomeLimpo(a)) && !/ricota/i.test(a.descricao) },
+  { grupo: 'Pães, biscoitos e torradas', gramas: 50, casa: (a) => PAO_OU_BISCOITO.test(nomeLimpo(a)) },
+  {
+    grupo: 'Frutas secas e muito calóricas',
+    gramas: 30,
+    casa: (a) => a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200,
+  },
+  { grupo: 'Cortes gordos e aves com pele', gramas: 100, casa: ehCorteGordo },
+]
+
+/** A porção máxima do grupo do alimento; `null` quando ele não está em nenhum grupo da tabela. */
+export function porcaoMaximaDoGrupo(alimento: Alimento): number | null {
+  return PORCOES_POR_GRUPO.find((g) => g.casa(alimento))?.gramas ?? null
+}
+
 export interface OpcoesCobrir {
   readonly alimentos: readonly Alimento[]
   /** A chave "Incluir ingredientes e alimentos crus": libera só a forma de ingrediente (D-191). */
@@ -113,7 +149,7 @@ export function sugerirParaCobrir(
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
 
-  const candidatas: (Sugestao & { readonly comum: boolean })[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean; readonly magro: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
@@ -122,8 +158,10 @@ export function sugerirParaCobrir(
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
 
+    // Vale a menor entre a porção do grupo calórico e a que a pessoa escolheu (CB-197).
+    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaDoGrupo(alimento) ?? porcaoMaxima)
     const necessario = Math.ceil(((falta / porCem) * 100) / PASSO_PORCAO_G) * PASSO_PORCAO_G
-    const gramas = Math.min(necessario, porcaoMaxima)
+    const gramas = Math.min(necessario, porcaoDoAlimento)
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
 
@@ -141,11 +179,12 @@ export function sugerirParaCobrir(
 
     candidatas.push({
       comum: ehDeUsoComum(alimento),
+      magro: !ehCorteGordo(alimento),
       alimentoId: alimento.id,
       descricao: alimento.descricao,
       gramas,
       coberturaPct,
-      parcial: necessario > porcaoMaxima,
+      parcial: necessario > porcaoDoAlimento,
       kcalAdicionadas,
       avisos,
     })
@@ -155,8 +194,13 @@ export function sugerirParaCobrir(
   // no empate, a que cobre mais. Assim uma verdura rica vem antes de um doce que cobre tudo de uma vez.
   const kcalPorFaltaInteira = (s: Sugestao) => s.kcalAdicionadas / (s.coberturaPct / 100)
   // Alimento de uso comum vem primeiro: víscera e fruto do mar de exceção só aparecem se sobrar espaço.
+  // Depois, corte magro e ave sem pele antes de corte gordo e ave com pele (D-199b).
   candidatas.sort(
-    (a, b) => Number(b.comum) - Number(a.comum) || kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) || b.coberturaPct - a.coberturaPct,
+    (a, b) =>
+      Number(b.comum) - Number(a.comum) ||
+      Number(b.magro) - Number(a.magro) ||
+      kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) ||
+      b.coberturaPct - a.coberturaPct,
   )
 
   const sugestoes = variarPorGrupo(candidatas, opcoes.alimentos)

@@ -285,6 +285,78 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     expect(ordem).toEqual([41, 42, 43, 45, 46])
   })
 
+  describe('CA-673: porção máxima por grupo (seção 7.1)', () => {
+    const rico = (id: number, descricao: string, categoria: string, kcal = 300) =>
+      comoNaTaco(alimento(id, descricao, { energia_kcal: kcal, ferro_mg: 3 }), categoria)
+    const gramasDe = (a: Alimento, porcaoMaximaG?: number) =>
+      sugerirParaCobrir('ferro_mg', plano, adequacao, {
+        gastoEnergetico: 5000,
+        alimentos: [a],
+        ...(porcaoMaximaG === undefined ? {} : { porcaoMaximaG }),
+      }).sugestoes[0]?.gramas
+
+    it.each([
+      ['Castanha-de-caju, torrada, salgada', 'Nozes e sementes', 30],
+      ['Amendoim, torrado, salgado', 'Leguminosas e derivados', 30],
+      ['Queijo, mozarela', 'Leite e derivados', 50],
+      ['Pão, trigo, francês', 'Cereais e derivados', 50],
+      ['Biscoito, salgado, cream cracker', 'Cereais e derivados', 50],
+      ['Tamarindo, cru', 'Frutas e derivados', 30],
+      ['Carne, bovina, picanha, com gordura, grelhada', 'Carnes e derivados', 100],
+      ['Frango, coxa, com pele, assada', 'Carnes e derivados', 100],
+    ] as const)('"%s" (%s) não passa de %s g', (descricao, categoria, maximo) => {
+      // Falta de 6,2 mg com 3 mg em 100 g: precisaria de 210 g.
+      expect(gramasDe(rico(50, descricao, categoria))).toBe(maximo)
+    })
+
+    it('a ricota é magra e fica na porção padrão', () => {
+      expect(gramasDe(rico(51, 'Queijo, ricota', 'Leite e derivados', 140))).toBe(200)
+    })
+
+    it('fruta comum não tem porção de grupo', () => {
+      expect(gramasDe(rico(52, 'Banana, prata, crua', 'Frutas e derivados', 98))).toBe(200)
+    })
+
+    it('CB-197: vale a menor entre a porção do grupo e a escolhida', () => {
+      const castanha = comoNaTaco(alimento(53, 'Castanha-de-caju, torrada, salgada', { energia_kcal: 570, ferro_mg: 6 }), 'Nozes e sementes')
+      expect(gramasDe(castanha, 20)).toBe(20)
+      expect(gramasDe(castanha, 200)).toBe(30)
+    })
+
+    it('CB-198: o que não cobre 10% da falta na porção do grupo sai da lista', () => {
+      const fraco = comoNaTaco(alimento(54, 'Noz, crua', { energia_kcal: 620, ferro_mg: 1 }), 'Nozes e sementes')
+      // 30 g com 1 mg em 100 g = 0,3 mg, menos de 10% de 6,2 mg.
+      expect(gramasDe(fraco)).toBeUndefined()
+    })
+
+    it('com a base inteira, nenhuma sugestão dos grupos passa da porção do grupo', () => {
+      const vazio = totaisDeItens([], buscarAlimento)
+      const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS }).sugestoes) {
+          const nome = s.descricao.trim()
+          if (/^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(30)
+          if (/^Queijo,/.test(nome) && !/ricota/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
+          if (/^(Pão|Biscoito|Torrada)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
+          if (/com gordura|com pele|costela|cupim|bisteca/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(100)
+        }
+      }
+    })
+  })
+
+  it('CA-674: corte magro e ave sem pele vêm antes de corte gordo e ave com pele', () => {
+    const carne = (id: number, descricao: string, kcal: number) =>
+      comoNaTaco(alimento(id, descricao, { energia_kcal: kcal, ferro_mg: 40 }), 'Carnes e derivados')
+    const base = [
+      carne(60, 'Carne, bovina, picanha, com gordura, grelhada', 100),
+      carne(61, 'Frango, peito, com pele, assado', 110),
+      carne(62, 'Carne, bovina, patinho, sem gordura, grelhado', 200),
+      carne(63, 'Frango, peito, sem pele, grelhado', 210),
+    ]
+    const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base }).sugestoes.map((s) => s.alimentoId)
+    expect(ordem).toEqual([62, 63, 60, 61])
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
