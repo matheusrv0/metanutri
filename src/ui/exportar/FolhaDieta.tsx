@@ -38,8 +38,11 @@ interface FolhaDietaProps {
   readonly suplementos?: readonly Suplemento[] | undefined
 }
 
-/** Colunas do alimento e da quantidade: a medida mais longa ("2 colheres de servir e meia") cabe numa linha. */
-const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]'
+/**
+ * Colunas do alimento e da quantidade. A do alimento tem largura fixa, para a quantidade ficar perto do nome e
+ * alinhada entre as refeições; nome longo quebra a linha. No celular, a quantidade vai embaixo do nome.
+ */
+const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]'
 
 /** Nas trocas, o alimento do plano à esquerda e as trocas dele ao lado. */
 const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
@@ -55,7 +58,7 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
         <li key={item.id} className={COLUNAS}>
           <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
           <span className="sr-only">, </span>
-          <span>{quantidade(item)}</span>
+          <span className="text-muted-foreground sm:text-foreground">{quantidade(item)}</span>
         </li>
       ))}
     </ul>

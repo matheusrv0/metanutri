@@ -60,6 +60,9 @@ describe('Folha da dieta (US-B1)', () => {
     expect(almoco.getByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
     const arroz = almoco.getByText('Arroz branco cozido').closest('li')
     expect(arroz).toHaveTextContent(/^Arroz branco cozido, 6 colheres de sopa$/)
+    // A quantidade perto do nome: a coluna do alimento tem largura fixa. No celular, a quantidade embaixo, em cinza.
+    expect(arroz).toHaveClass('sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]')
+    expect(within(arroz as HTMLElement).getByText('6 colheres de sopa')).toHaveClass('text-muted-foreground', 'sm:text-foreground')
     expect(almoco.queryByText(/150 g/)).not.toBeInTheDocument()
     expect(almoco.queryByText(/Arroz, tipo 1/)).not.toBeInTheDocument()
 
