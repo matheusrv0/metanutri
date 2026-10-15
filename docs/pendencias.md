@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 14/10/2026.
+Atualizado em 15/10/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -165,18 +165,27 @@ Atualizado em 14/10/2026.
 > caixa "Mostrar a dieta no link" vem marcada (decisão a revisar, D-152). A Política de privacidade cita a dieta no
 > link, e a versão dos termos passa a ser `2026-10-14`.
 >
-> **A ordem para pôr no ar (você roda; o 012 vem antes do site):**
+> **Atualizado em 15/10 (as três novidades juntas):** além da dieta no link, entram o WhatsApp e o retorno marcado
+> (spec `whatsapp-e-retorno`) e a anamnese com roteiro, os suplementos e o pedido de exames (spec
+> `anamnese-e-prescricoes`). A Política cita também a anamnese, os suplementos e os exames da ficha, e a versão dos
+> termos passa a ser `2026-10-15`.
 >
-> 1. juntar o ramo na `main` (feito pelo assistente; não publica nada sozinho);
-> 2. rodar o `012` na `main`, na pasta do projeto:
+> **Para pôr no ar (você roda, nesta ordem):**
+>
+> 1. rodar o `012` **antes** de publicar, na `main`, na pasta do projeto:
 >    `npx supabase db query --linked --project-ref qmpljfjbdcrdbqutuvmg -f supabase/012-dieta-no-link.sql`
-> 3. conferir com as consultas do fim do `012`: a coluna `dieta` (jsonb, aceita vazio), a trava
->    `acompanhamentos_dieta_tamanho` e a função `missoes_por_token` terminando em `dieta jsonb`;
-> 4. publicar o site: `gh workflow run publicar.yml --ref main`. Se o site for antes do 012, ele funciona, mas o link é
->    salvo sem a dieta e o paciente vê só as missões;
-> 5. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
+>    (confira com as consultas do fim do arquivo: a coluna `dieta`, a trava `acompanhamentos_dieta_tamanho` e a função
+>    `missoes_por_token` terminando em `dieta jsonb`);
+> 2. publicar o site: `gh workflow run publicar.yml --ref main`, e esperar terminar
+>    (`gh run list --workflow publicar.yml --limit 1` mostra `completed` e `success`);
+> 3. fechar **todas** as abas do MetaNutri, em todos os aparelhos (e o aplicativo instalado), e abrir de novo. Uma aba
+>    que ficou aberta com a versão de antes salva sem o roteiro e os modelos de suplemento; o aparelho novo devolve os
+>    dois sozinho (spec `dados-na-nuvem`, D-170), mas fechar as abas evita o vai e volta;
+> 4. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
 >
-> **Se a publicação não for em 14/10:** a versão dos termos (`VERSAO_TERMOS` e `DATA_TERMOS` em
+> Se o site for publicado antes do `012`, ele funciona, mas o link é salvo sem a dieta e o paciente vê só as missões.
+>
+> **Se a publicação não for em 15/10:** a versão dos termos (`VERSAO_TERMOS` e `DATA_TERMOS` em
 > `src/domain/legal.ts`, e os testes em `src/domain/legal.test.ts` e `src/ui/publico/legal.test.tsx`) deve ser a do
 > dia em que o site vai ao ar.
 
