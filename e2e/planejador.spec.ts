@@ -294,6 +294,8 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   await micros.getByRole('button', { name: 'Ver todos' }).click()
   const etapas = page.getByRole('navigation', { name: 'Etapas do plano' })
   await expect(etapas.getByRole('button', { name: /Adequação/ })).toHaveAttribute('aria-current', 'step')
+  // CA-701: a etapa 3 abre no topo, com o foco no título.
+  await expect(page.getByRole('heading', { name: 'Micronutrientes' })).toBeFocused()
 
   await etapas.getByRole('button', { name: /Dados e medidas/ }).click()
   await expect(page.getByRole('region', { name: 'Resumo do dia' })).toBeVisible()
@@ -310,7 +312,10 @@ test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o
   await expect(page.getByRole('region', { name: 'Micronutrientes' })).toBeVisible()
   expect(await largura()).toBeLessThanOrEqual(360)
 
-  await page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Adequação/ }).click()
+  // CA-701: no celular o cartão fica depois das refeições; "Ver todos" leva ao topo da etapa 3.
+  await page.getByRole('region', { name: 'Micronutrientes' }).getByRole('button', { name: 'Ver todos' }).click()
+  await expect(page.getByRole('heading', { name: 'Micronutrientes' })).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
   const ferro = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Ferro' })
   const cobrir = ferro.getByRole('button', { name: 'Cobrir Ferro', exact: true })
   await expect(cobrir).toBeVisible()

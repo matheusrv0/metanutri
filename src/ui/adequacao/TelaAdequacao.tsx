@@ -1,5 +1,5 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
@@ -34,6 +34,9 @@ interface TelaAdequacaoProps {
   readonly aoAlterarPlano: (novo: Plano) => void
   readonly gerarId?: GerarId
   readonly aoAbrirFontes?: (() => void) | undefined
+  /** Chegou pelo "Ver todos" do cartão da etapa 2: abre no topo, com o foco no título (CA-701). */
+  readonly focarTitulo?: boolean | undefined
+  readonly aoFocarTitulo?: (() => void) | undefined
 }
 
 /* A barra carrega o estado da linha: cor sempre significa alguma coisa. */
@@ -146,7 +149,27 @@ function ItemLista({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readon
 }
 
 /** Etapa 3: adequação de micronutrientes e ação "cobrir" (CA-25 a CA-40). */
-export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao, aoAbrirFontes }: TelaAdequacaoProps) {
+export function TelaAdequacao({
+  caso,
+  plano,
+  gastoEnergetico,
+  restricoes = [],
+  aoAlterarCaso,
+  aoAlterarPlano,
+  gerarId = idPadrao,
+  aoAbrirFontes,
+  focarTitulo = false,
+  aoFocarTitulo,
+}: TelaAdequacaoProps) {
+  const idTitulo = useId()
+  // O cartão da etapa 2 fica depois das refeições: sem isto, a pessoa cairia no fim da etapa 3.
+  useEffect(() => {
+    if (!focarTitulo) return
+    globalThis.scrollTo({ top: 0 })
+    document.getElementById(idTitulo)?.focus({ preventScroll: true })
+    aoFocarTitulo?.()
+  }, [focarTitulo, idTitulo, aoFocarTitulo])
+
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
   const idNaMeta = useId()
@@ -184,7 +207,9 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
     <div className="flex flex-col gap-6">
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>Micronutrientes</CardTitle>
+          <CardTitle id={idTitulo} tabIndex={-1} className="outline-none">
+            Micronutrientes
+          </CardTitle>
           {subtitulo ? <CardDescription>{subtitulo}</CardDescription> : null}
         </CardHeader>
 

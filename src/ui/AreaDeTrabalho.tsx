@@ -1,4 +1,5 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
@@ -77,6 +78,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const { fonte } = useAcompanhamentos()
+  // "Ver todos" do cartão da etapa 2 leva ao título da etapa 3 (spec painel-lateral-enxuto, CA-701).
+  const [focarAdequacao, setFocarAdequacao] = useState(false)
   // O perfil de Configurações é da conta que entrou (D-120).
   const dadosDaConta = useArmazenamento()
   const sessao = conta.sessao
@@ -365,7 +368,10 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                     restricoes={restricoesDoPaciente}
                     aoAlterarCaso={alterarCaso}
                     aoAlterarPlano={alterarPlano}
-                    aoVerTodos={() => navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })}
+                    aoVerTodos={() => {
+                      setFocarAdequacao(true)
+                      navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })
+                    }}
                   />
                 </div>
               </div>
@@ -392,6 +398,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 aoAlterarCaso={alterarCaso}
                 aoAlterarPlano={alterarPlano}
                 aoAbrirFontes={() => navegar({ tela: 'fontes' })}
+                focarTitulo={focarAdequacao}
+                aoFocarTitulo={() => setFocarAdequacao(false)}
               />
             </div>
           )}

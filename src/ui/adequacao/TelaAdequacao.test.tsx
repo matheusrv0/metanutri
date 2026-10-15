@@ -415,3 +415,27 @@ describe('Notas lidas com o símbolo (CA-700)', () => {
     expect(duplaAdaga).not.toHaveAttribute('aria-hidden')
   })
 })
+
+describe('Chegar pelo "Ver todos" (CA-701)', () => {
+  it('CA-701: com focarTitulo, a tela abre com o foco no título "Micronutrientes" e avisa que focou', () => {
+    const aoFocarTitulo = vi.fn()
+    render(
+      <TelaAdequacao
+        caso={{ ...criarCasoVazio('c1'), ...adulta }}
+        plano={exemplo()}
+        gastoEnergetico={1800}
+        aoAlterarCaso={() => undefined}
+        aoAlterarPlano={() => undefined}
+        focarTitulo
+        aoFocarTitulo={aoFocarTitulo}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Micronutrientes' })).toHaveFocus()
+    expect(aoFocarTitulo).toHaveBeenCalledOnce()
+  })
+
+  it('CA-701: sem focarTitulo, o foco não muda', () => {
+    montar(adulta, exemplo())
+    expect(screen.getByRole('heading', { name: 'Micronutrientes' })).not.toHaveFocus()
+  })
+})
