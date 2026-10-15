@@ -40,4 +40,10 @@ describe('o site publicado (D-72)', () => {
     expect(acoes).toHaveLength(5)
     for (const linha of acoes) expect(linha).toMatch(/uses: [\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+$/)
   })
+
+  it('CA-491: a publicação para em alerta alto ou crítico dos pacotes, antes de construir o site (D-137)', () => {
+    const passo = publicar.indexOf('run: npm audit --omit=dev --audit-level=high')
+    expect(passo).toBeGreaterThan(-1)
+    expect(passo).toBeLessThan(publicar.indexOf('run: npm run build'))
+  })
 })

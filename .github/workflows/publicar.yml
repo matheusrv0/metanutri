@@ -30,6 +30,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      # D-137: alerta alto ou crítico no que vai para o site (sem as ferramentas de desenvolvimento) para a publicação.
+      - name: Conferir alertas de segurança dos pacotes
+        run: npm audit --omit=dev --audit-level=high
       - run: npm run build
         env:
           # Sem estas duas, o site publicado sai sem conta e sem nuvem: o link das
