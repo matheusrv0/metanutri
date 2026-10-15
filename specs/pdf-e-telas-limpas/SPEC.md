@@ -83,7 +83,7 @@ Como nutricionista, quero montar o plano vendo só os campos que valem para o ca
 - **CA-330** · Dado "Pessoa e medidas", então Sexo, Objetivo e Condição ficam na mesma linha, e Idade, Peso, Estatura e Cintura na linha de baixo, seguidos do nível de atividade. No modo rápido, Cintura não aparece e a meta de energia vem depois do nível de atividade.
 - **CA-331** · Dado o sexo masculino, então Condição não aparece. "Meses além dos anos" só aparece com idade abaixo de 19 anos, e "Circunferência da panturrilha" só com 60 anos ou mais.
 - **CA-332** · Dado o cartão de orientações, então "Composição corporal" e "Observações" aparecem recolhidos, numa linha que abre com um clique. Já abertos quando têm algum dado.
-- **CA-333** · Dado a coluna da direita, então "Avaliação antropométrica" mostra cada resultado numa linha ("IMC · 22,8 kg/m² · Eutrofia"), com as fontes recolhidas como hoje; e o "Resumo do dia" traz energia e macronutrientes no mesmo cartão, com "Ajustar" e "Metas". TMB, fator e adicionais ficam em "Ver cálculo", recolhido.
+- **CA-333** · Dado a coluna da direita, então "Avaliação antropométrica" mostra cada resultado numa linha ("IMC · 22,8 kg/m² · Eutrofia"), com as fontes recolhidas como hoje; e o "Resumo do dia" traz energia e macronutrientes no mesmo cartão, com "Ajustar" ~~e "Metas"~~. TMB, fator e adicionais ficam em "Ver cálculo", recolhido. **Substituído em parte pelo D-203** (`specs/painel-lateral-enxuto/SPEC.md`, 15/10/2026): "Metas" fica dentro de "Ajustar", como "Metas de macronutrientes".
 
 **Etapa 2 · Plano alimentar**
 
@@ -94,7 +94,7 @@ Como nutricionista, quero montar o plano vendo só os campos que valem para o ca
 **Etapa 3 · Adequação**
 
 - **CA-337** · Dado a tabela de micronutrientes, então a escolha da referência (Individual, Coletivo, Personalizado) fica no topo da tabela, e a meta aparece uma vez, no subtítulo ("meta de 90% da referência"), não mais em cada linha.
-- **CA-338** · Dado uma linha, então as colunas são Nutriente, No plano, Referência (com RDA, EAR ou AI ao lado), Adequação e a ação. A adequação junta a barra e o texto do estado ("66% abaixo", "104%", "acima do limite"); a coluna "Estado" deixa de existir.
+- **CA-338** · Dado uma linha, então as colunas são Nutriente, No plano, Referência (com RDA, EAR ou AI ao lado), Adequação e a ação. A adequação junta a barra e o texto do estado ("66% abaixo", "104%", "acima do limite"); a coluna "Estado" deixa de existir. **Revisto pelo D-205 e pelo D-207** (`specs/painel-lateral-enxuto/SPEC.md`, 15/10/2026): as colunas continuam na tela larga, mas os nutrientes na meta ficam recolhidos em "Ver os N na meta", e abaixo de 640 px a tabela vira uma lista com os mesmos dados de cada linha.
 - **CA-339** · Dado os números da tabela, então "No plano" sai com uma casa decimal abaixo de 100 e sem casa de 100 em diante ("8,7 mg", "656 mg"), e a referência sai como publicada, sem zeros à direita ("0,9 mg", "1.000 mg").
 
 **Tabela de alimentos**
