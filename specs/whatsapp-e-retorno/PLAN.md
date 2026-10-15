@@ -93,6 +93,46 @@ fluxo no navegador. **Nenhuma dependência nova**, **nenhuma chave nova no armaz
 (ficha, Painel com o bloco, Adesão, cartão do link e o diálogo), com dados de exemplo, num script fora do
 repositório.
 
+## Rodada da revisão (15/10/2026)
+
+A revisão de código pediu correções. A SPEC mudou primeiro (marcas "(revisão de 15/10)"); depois, uma tarefa por
+item, em TDD, um commit cada.
+
+### R1 · Uma regra só para o paciente de um link (D-147)
+- **Altera** `src/domain/retorno.ts`: `pacienteDoAcompanhamento` passa a dar o paciente do plano primeiro, e o do
+  link só quando o plano não tem paciente ou não existe. A Adesão e o selo do Painel usam essa função; o cartão
+  do link já seguia a regra.
+- **Altera** `src/domain/retorno.test.ts`, `src/ui/missoes/whatsappNasMissoes.test.tsx` e
+  `src/ui/painel/hojeEEstaSemana.test.tsx`: plano trocado de Ana para Bia → cartão, Adesão e Painel apontam para Bia.
+
+### R2 · Editar o dia não apaga o horário (CA-514, CA-515)
+- **Altera** `src/domain/retorno.ts`: ano antes de 1900 não é dia válido; `diaValido` passa a ser exportado.
+- **Altera** `src/ui/pacientes/CartaoProximaConsulta.tsx`: rascunho local do dia e do horário; `''` e valor
+  incompleto do campo do dia não gravam; só valor completo e válido grava; "Limpar" é o único jeito de tirar a
+  consulta; horário apagado grava quando o campo perde o foco; aviso "Essa consulta já passou."; o campo do dia
+  pede para conferir a data quando o ano não vale.
+- **Altera** `src/ui/pacientes/proximaConsulta.test.tsx`: sequência `''`, `'0002-10-16'`, `'2026-10-16'`.
+
+### R3 · O relógio: tolerância, o mesmo "hoje" e a hora que anda (D-144, D-145, CA-520, CA-529)
+- **Altera** `src/domain/retorno.ts`: `consultaPassou` com 1 hora de tolerância.
+- **Cria** `src/ui/estado/usarAgora.ts`: a hora de agora, refeita a cada minuto e ao voltar para a aba (assinatura
+  de evento e intervalo dentro de efeito; nada de mudar estado durante a renderização).
+- **Altera** `src/ui/painel/TelaPainel.tsx` e `src/ui/missoes/TelaAdesao.tsx`: usam `useAgora` quando o teste não
+  passa `agora`; a Adesão conta o estado pelo dia de Brasília.
+- **Altera** `src/ui/missoes/CartaoLinkMissoes.tsx`: o selo do cartão também pelo dia de Brasília.
+- **Altera** os testes de domínio e de tela correspondentes (`retorno.test.ts`, `hojeEEstaSemana.test.tsx`,
+  `whatsappNasMissoes.test.tsx`).
+
+### R4 · Textos (CA-503, CA-504, CA-510, CA-511, CB-142)
+- **Altera** `src/domain/whatsapp.ts` (+ teste): `toWellFormed` (com alternativa) antes de codificar; lembrete de
+  hoje com "é hoje às 14:30"; parabéns "adiantado" antes do dia.
+- **Altera** `src/ui/whatsapp/DialogoWhatsApp.tsx` (+ teste): "Para Ana Souza, (11) 98765-4321. Quem envia é
+  você."; "(abre em nova aba)" só para o leitor de tela.
+- **Altera** `src/ui/painel/HojeEEstaSemana.tsx`: passa o dia de hoje para os dois textos.
+
+### R5 · No navegador (CA-527)
+- **Altera** `e2e/whatsapp-e-retorno.spec.ts`: a Adesão em 360 px; o nome novo do link "Abrir no WhatsApp".
+
 ## Decisões para o dono revisar
 
 - **R-1 (D-144).** "Esta semana" são 7 dias corridos a partir de hoje, não a semana de segunda a domingo.
