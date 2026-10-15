@@ -1,4 +1,5 @@
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from './acompanhamento.ts'
+import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { criarRepositorioAcompanhamentos, fonteLocal } from './repositorioAcompanhamentos.ts'
@@ -204,6 +205,39 @@ describe('CB-108: o aparelho lembra a mudança que não chegou à nuvem', () => 
     const a = novo()
     armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [a] }))
     expect(criarRepositorioAcompanhamentos(armazenamento).estaPendente(a.id)).toBe(false)
+  })
+})
+
+describe('A dieta do link no aparelho (spec dieta-no-link)', () => {
+  const DIETA: DietaDoLink = {
+    refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: null, gramas: 80, alimento: 'Macarrão' }]] }],
+    orientacoes: 'Beber água.',
+    receitas: '',
+    copiadaEm: '2026-10-14',
+  }
+
+  it('guarda e lê a cópia da dieta junto com o link', () => {
+    const armazenamento = memoria()
+    const a = criarRepositorioAcompanhamentos(armazenamento).salvar({ ...novo(), dieta: DIETA })
+    expect(criarRepositorioAcompanhamentos(armazenamento).porId(a.id)?.dieta).toEqual(DIETA)
+  })
+
+  it('CB-150: link guardado antes desta versão, sem o campo, lê como link sem dieta', () => {
+    const armazenamento = memoria()
+    const a = novo()
+    const antigo: Record<string, unknown> = { ...a }
+    delete antigo['dieta']
+    armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [antigo] }))
+    const lido = criarRepositorioAcompanhamentos(armazenamento).porToken(a.token)
+    expect(lido?.id).toBe(a.id)
+    expect(lido?.dieta).toBeNull()
+  })
+
+  it('CB-153: dieta estragada no aparelho conta como sem dieta, e o link continua', () => {
+    const armazenamento = memoria()
+    const a = novo()
+    armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [{ ...a, dieta: 'lixo' }] }))
+    expect(criarRepositorioAcompanhamentos(armazenamento).porId(a.id)?.dieta).toBeNull()
   })
 })
 

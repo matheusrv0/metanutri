@@ -68,6 +68,8 @@ export function daLinha(linha: unknown): Acompanhamento | null {
     // Na dúvida, avisa. Linha antiga sem a coluna vira link de estudante e mostra o
     // aviso — errar para o lado de avisar demais é o lado certo aqui.
     usoNaoComercial: o['uso_nao_comercial'] !== false,
+    // A nuvem ainda não guarda a dieta: o link que vem de lá vem sem ela.
+    dieta: null,
   }
 }
 

@@ -2,6 +2,7 @@
 // que precisa cumprir. O plano vira missões (ver `missoes.ts`), o paciente marca o
 // que fez num link próprio, e daí sai a única métrica que diz se o produto funciona
 // — quem está marcando e quem está sumindo (`docs/plano-negocio.md`).
+import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 
 export interface MarcacaoDia {
@@ -32,6 +33,11 @@ export interface Acompanhamento {
    * quem está do outro lado precisa saber que não é atendimento profissional.
    */
   readonly usoNaoComercial: boolean
+  /**
+   * A cópia da dieta que o paciente vê em "Meu plano" (spec dieta-no-link). Congelada como as
+   * missões: muda só quando o nutricionista liga, desliga ou atualiza. Nula quando desligada.
+   */
+  readonly dieta: DietaDoLink | null
 }
 
 /** Dias sem nenhuma marcação até o paciente contar como sumido. */
@@ -86,6 +92,7 @@ export interface DadosNovoAcompanhamento {
   readonly nome: string
   readonly missoes: readonly Missao[]
   readonly usoNaoComercial?: boolean
+  readonly dieta?: DietaDoLink | null
 }
 
 export interface OpcoesAcompanhamento {
@@ -107,6 +114,7 @@ export function criarAcompanhamento(dados: DadosNovoAcompanhamento, opcoes: Opco
     missoes: dados.missoes,
     marcacoes: [],
     usoNaoComercial: dados.usoNaoComercial ?? false,
+    dieta: dados.dieta ?? null,
   }
 }
 
@@ -114,11 +122,12 @@ export function criarAcompanhamento(dados: DadosNovoAcompanhamento, opcoes: Opco
  * Gera um link novo para o mesmo acompanhamento: token novo (o antigo para de
  * valer) e missões atualizadas com o plano de agora. O histórico de marcações
  * continua, porque quem marcou marcou — e é dele que sai a adesão. Missão que
- * saiu do plano simplesmente não aparece mais na tela do paciente.
+ * saiu do plano simplesmente não aparece mais na tela do paciente. A dieta vem
+ * junto quando é dita (nula desliga); sem ela, fica a do link (CA-547).
  */
 export function regerarLink(
   acompanhamento: Acompanhamento,
-  dados: { readonly nome?: string; readonly missoes: readonly Missao[] },
+  dados: { readonly nome?: string; readonly missoes: readonly Missao[]; readonly dieta?: DietaDoLink | null },
   opcoes: Pick<OpcoesAcompanhamento, 'aleatorio'> = {},
 ): Acompanhamento {
   return {
@@ -126,6 +135,7 @@ export function regerarLink(
     token: gerarToken(opcoes.aleatorio),
     missoes: dados.missoes,
     nome: dados.nome?.trim() ?? acompanhamento.nome,
+    dieta: dados.dieta === undefined ? acompanhamento.dieta : dados.dieta,
   }
 }
 

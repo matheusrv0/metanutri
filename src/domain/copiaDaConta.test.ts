@@ -67,6 +67,15 @@ describe('marcar mudanças e exclusões (DP-2)', () => {
     })
   })
 
+  it('CA-551 (spec dieta-no-link): mudar só a dieta de um link marca aquele link como mudado', () => {
+    const arm = new Memoria()
+    const link = (dieta: unknown) => ({ id: 'l1', criadoEm: T(1), token: 'abcdefghijkm', dieta })
+    const arquivo = (itens: unknown[]) => JSON.stringify({ formato: 1, itens, naNuvem: ['l1'], pendentes: [] })
+    const dieta = { refeicoes: [], orientacoes: 'Beber água.', receitas: '', copiadaEm: '2026-10-14' }
+    registrarMudanca(arm, 'metanutri:acompanhamentos', arquivo([link(null), { id: 'l2', criadoEm: T(1) }]), arquivo([link(dieta), { id: 'l2', criadoEm: T(1) }]), T(6))
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: { 'acompanhamentos/l1': T(6) }, excluidos: {} })
+  })
+
   it('o que não vai para a nuvem não marca nada', () => {
     const arm = new Memoria()
     registrarMudanca(arm, 'metanutri:frequentes', null, '{}', AGORA)
