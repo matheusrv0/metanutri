@@ -60,12 +60,14 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     medicamentos: '',
     anamnese: '',
     observacoes: '',
+    criadoEm: agora,
+    atualizadoEm: agora,
+    // Os campos das novidades vêm depois das datas: a versão de antes lê `{ ...fichaVaziaDela, ...ficha }`, e o texto
+    // só sai igual com esta ordem; senão, uma aba antiga que salva uma ficha remarca todas (spec dados-na-nuvem, DP-34).
     proximaConsulta: null,
     respostasAnamnese: [],
     suplementos: [],
     pedidoExames: PEDIDO_VAZIO,
-    criadoEm: agora,
-    atualizadoEm: agora,
   }
 }
 

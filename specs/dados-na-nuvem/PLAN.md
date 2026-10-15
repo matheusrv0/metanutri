@@ -174,7 +174,7 @@ Revisão "com correções", sem nada crítico (simulações `ordem.mts` e `r8.mt
 T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 
 - [x] **T43** — Spec e plano: D-170 (regra da hora e aba nova), D-172, CA-598 a CA-603; DP-34 a DP-38; R8 revisto.
-- [ ] **T44** — Ordem dos campos da ficha (DP-34): em `criarPacienteVazio` (`src/domain/pacientes.ts`), os campos novos
+- [x] **T44** — Ordem dos campos da ficha (DP-34): em `criarPacienteVazio` (`src/domain/pacientes.ts`), os campos novos
   vêm depois de `atualizadoEm`. Teste com a leitura da versão de antes (`pacientes.test.ts`). Cobre CA-598.
 - [ ] **T45** — Só volta para a nuvem o valor daqui mais novo (DP-35): `src/domain/copiaDaConta.ts`; o teste do CA-590
   muda e entra o cenário do `r8.mts` (`copiaDaConta.test.ts`). Cobre CA-590, CA-599.

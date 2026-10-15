@@ -157,3 +157,45 @@ describe('D-171: salvar um paciente não mexe nos outros (spec dados-na-nuvem)',
     expect(repo.obter('ana')).toMatchObject({ proximaConsulta: null, respostasAnamnese: [], suplementos: [] })
   })
 })
+describe('CA-598: uma aba da versão de antes salva uma ficha sem remarcar as outras (spec dados-na-nuvem, DP-34)', () => {
+  /** A ficha vazia da versão de antes das novidades, na ordem dela. */
+  const vaziaDeAntes = (id: string, agora: string) => ({
+    id,
+    nome: '',
+    sexo: null,
+    nascimento: null,
+    telefone: '',
+    email: '',
+    objetivo: '',
+    restricoes: '',
+    condicoesClinicas: '',
+    medicamentos: '',
+    anamnese: '',
+    observacoes: '',
+    criadoEm: agora,
+    atualizadoEm: agora,
+  })
+
+  it('a leitura de antes devolve o mesmo texto, e salvar só a Bia marca só a Bia', () => {
+    const arm = new Memoria()
+    const agora = relogio()
+    const repo = criarRepositorioPacientes(arm, { agora, gerarId: (() => {
+      const ids = ['ana', 'bia']
+      return () => ids.shift() ?? 'x'
+    })() })
+    const ana = repo.criar('Ana')
+    repo.criar('Bia')
+    repo.salvar({ ...ana, restricoes: 'lactose', proximaConsulta: '2026-10-20T10:00', suplementos: [{ id: 's1', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '' }] })
+
+    const guardadas = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as { id: string; criadoEm: string }[]
+    for (const ficha of guardadas) expect(JSON.stringify({ ...vaziaDeAntes(ficha.id, ficha.criadoEm), ...ficha })).toBe(JSON.stringify(ficha))
+
+    // A aba antiga relê tudo daquele jeito, troca a Bia e grava a lista inteira.
+    const lidasDeAntes = guardadas.map((ficha) => ({ ...vaziaDeAntes(ficha.id, ficha.criadoEm), ...ficha }))
+    const antes = arm.getItem('metanutri:pacientes')
+    const depois = JSON.stringify(lidasDeAntes.map((ficha) => (ficha.id === 'bia' ? { ...ficha, objetivo: 'Ganhar massa', atualizadoEm: '2026-10-16T10:05:00.000Z' } : ficha)))
+    const marcas = new Memoria()
+    registrarMudanca(marcas, 'metanutri:pacientes', antes, depois, '2026-10-16T10:05:00.000Z')
+    expect(lerMudancas(marcas.getItem(CHAVE_MUDANCAS)).alterados).toEqual({ 'pacientes/bia': '2026-10-16T10:05:00.000Z' })
+  })
+})
