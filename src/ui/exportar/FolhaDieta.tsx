@@ -226,7 +226,11 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                     <strong className="font-bold text-heading">{g.nome}</strong>
                     <span className="flex flex-col">
                       {g.trocas.map((t) => (
-                        <span key={t.alimentoId} className="troca">{`${t.nome} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
+                        <span key={t.alimentoId} className="troca">
+                          {`${t.nome} · `}
+                          {/* CA-644: a regra da refeição; medida de pedaço com mais de 4 pedaços vira o peso. */}
+                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, buscarAlimento, 'troca')} />
+                        </span>
                       ))}
                     </span>
                   </li>

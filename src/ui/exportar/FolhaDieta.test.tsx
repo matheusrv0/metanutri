@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { criarExemplo } from '@/domain/exemplo.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import { PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
 import { ALIMENTOS, registrarProdutos } from '@/domain/tabelas.ts'
@@ -246,6 +247,16 @@ describe('Folha da dieta (US-B1)', () => {
       expect(trocas, alimento).not.toContain(alimento)
       expect(new Set(trocas).size, alimento).toBe(trocas.length)
     }
+  })
+
+  it('CA-644: na troca, medida de pedaço com mais de 4 pedaços vira o peso ("Omelete de queijo", não "5 fatias")', () => {
+    let n = 0
+    const { caso: exemplo, plano } = criarExemplo(() => `ex${++n}`, '2026-10-15')
+    render(<FolhaDieta caso={exemplo} plano={plano} opcoes={{ listaDeCompras: false, trocas: true }} />)
+    const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
+    expect(trocas.length).toBeGreaterThan(0)
+    for (const troca of trocas) expect(troca).not.toMatch(/\b([5-9]|\d{2,})( fatias| pedaços| rodelas| gomos)/)
+    expect(trocas.some((t) => /^Omelete de queijo · \d+ g$/.test(t))).toBe(true)
   })
 
   it('as trocas não oferecem doce nem ultraprocessado', () => {
