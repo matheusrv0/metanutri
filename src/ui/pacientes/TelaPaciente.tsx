@@ -15,6 +15,7 @@ import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
+import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
@@ -130,6 +131,8 @@ export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNo
         <AnamneseDaFicha paciente={paciente} aoAlterar={alterar} />
 
         <CartaoSuplementos paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
+
+        <CartaoExames paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>
