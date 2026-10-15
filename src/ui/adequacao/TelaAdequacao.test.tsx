@@ -19,14 +19,14 @@ function planoComArroz(): Plano {
   return adicionarItem(plano, almoco.id, 'principal', { alimentoId: 3, gramas: 200 }, ids)
 }
 
-function Anfitriao({ inicial, planoInicial }: { readonly inicial?: Partial<Caso>; readonly planoInicial?: Plano }) {
+function Anfitriao({ inicial, planoInicial, gasto = 1800 }: { readonly inicial?: Partial<Caso>; readonly planoInicial?: Plano; readonly gasto?: number }) {
   const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...inicial })
   const [plano, setPlano] = useState<Plano>(planoInicial ?? criarPlanoPadrao(ids))
   return (
     <TelaAdequacao
       caso={caso}
       plano={plano}
-      gastoEnergetico={1800}
+      gastoEnergetico={gasto}
       aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
       aoAlterarPlano={setPlano}
       gerarId={ids}
@@ -301,5 +301,21 @@ describe('Etapa 3 no celular (CA-692)', () => {
 
     await usuario.click(itemDe('Cálcio').getByRole('button', { name: 'Cobrir' }))
     expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Cobrir Cálcio' })).toBeInTheDocument()
+  })
+})
+
+describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
+  it('CA-694: plano acima do gasto diz quanto passou, sem número negativo', async () => {
+    // O dia do exemplo tem cerca de 1.675 kcal; com gasto de 1.600, passou.
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={1600} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/O plano já passou \d+ kcal do gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.queryByText(/Cabem -/)).not.toBeInTheDocument()
+  })
+
+  it('CA-694: plano abaixo do gasto continua dizendo quanto cabe', async () => {
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={2000} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/Cabem \d+ kcal até o gasto energético\./)).toBeInTheDocument()
   })
 })
