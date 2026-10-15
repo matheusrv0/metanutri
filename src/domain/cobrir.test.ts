@@ -1,6 +1,7 @@
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
+import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Totais } from './totais.ts'
@@ -291,28 +292,26 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       ['plano vazio', vazio],
     ] as const
 
-    it.each(cenarios)('%s: nenhuma sugestão fora da regra, nem infusão', (_nome, t) => {
-      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
-      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
-        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS }).sugestoes) {
-          const a = buscarAlimento(s.alimentoId)
-          expect(a ? regraQueExclui(a) : 'sem alimento', `${chave}: ${s.descricao}`).toBeNull()
-          expect(s.descricao, chave).not.toMatch(/infusão/)
-        }
-      }
-    })
+    // CA-657 e CA-667: trava por texto, escrita à mão no teste, sem usar a regra (revisão I3).
+    const variacoes = cenarios.flatMap(([nome, t]) =>
+      [false, true].flatMap((incluirIngredientes) => [50, 100, 200].map((porcaoMaximaG) => ({ nome, t, incluirIngredientes, porcaoMaximaG }))),
+    )
 
-    it.each(cenarios)('%s: com a chave ligada, só a forma de ingrediente volta', (_nome, t) => {
-      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
-      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
-        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS, incluirIngredientes: true }).sugestoes) {
-          const a = buscarAlimento(s.alimentoId)
-          const nivel = a ? (regraQueExclui(a)?.nivel ?? 'prescritivel') : 'sem alimento'
-          expect(['prescritivel', 'ingrediente'], `${chave}: ${s.descricao}`).toContain(nivel)
-          expect(s.descricao, chave).not.toMatch(/^(Café|Chá),/)
+    it.each(variacoes)(
+      '$nome, chave $incluirIngredientes, porção $porcaoMaximaG g: nada do que nunca aparece',
+      ({ t, incluirIngredientes, porcaoMaximaG }) => {
+        const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
+        for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+          const r = sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS, incluirIngredientes, porcaoMaximaG })
+          for (const s of r.sugestoes) {
+            const nome = s.descricao.trim()
+            expect(nome, chave).not.toMatch(NUNCA_APARECE)
+            expect(nome, chave).not.toMatch(CAFE_OU_CHA)
+            if (!incluirIngredientes) expect(nome, chave).not.toMatch(FORMA_DE_INGREDIENTE)
+          }
         }
-      }
-    })
+      },
+    )
 
     it('a piridoxina do exemplo não sugere mais cerveja', () => {
       const ad = calcularAdequacao(doExemplo, caso, caso.adequacao.preset)

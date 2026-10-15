@@ -141,7 +141,7 @@ Lê a seção 7 da SPEC. Mesmas regras: nota na spec primeiro, TDD, um commit po
 | R5 | D-199a: versão crua do que se come cozido; peixe "fresco" | `prescritivel.ts`, `prescritivel.test.ts` | idem |
 | R6 | M6: descrição limpa antes de comparar | `prescritivel.ts`, `prescritivel.test.ts` | idem |
 | R7 | M7: miolo de alcatra e linhaça são de uso comum | `prescritivel.ts`, `prescritivel.test.ts` | idem |
-| R8 | I3: trava por padrão de texto (cobrir e trocas) e lista fixa de ids | `cobrir.test.ts`, `trocas.test.ts`, `prescritivel.test.ts` | os três testes |
+| R8 | I3: trava por padrão de texto (cobrir e trocas) e lista fixa de ids | cria `src/domain/naoProposto.test-utils.ts` (os padrões, para os dois testes usarem o mesmo); altera `cobrir.test.ts`, `trocas.test.ts`, `prescritivel.test.ts` | os três testes |
 | R9 | M4: teste do CA-655 | `cobrir.test.ts` | `cobrir.test.ts` |
 | R10 | M3 e D-199a nas trocas: forma do ovo e verdura cozida | `trocas.ts`, `trocas.test.ts` | `trocas.test.ts` |
 | R11 | M1: item fora da rotina prefere o mesmo alimento | `trocas.ts`, `trocas.test.ts` | idem |

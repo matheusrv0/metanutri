@@ -1,6 +1,6 @@
 import { criarExemplo } from './exemplo.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
-import { regraQueExclui } from './prescritivel.ts'
+import { FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import { trocasDoAlimento, trocasDoPlano } from './trocas.ts'
 
@@ -82,11 +82,13 @@ describe('Trocas por grupo', () => {
 })
 
 describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
-  it('CA-658: nenhuma troca oferecida é item fora da regra, para nenhum alimento da base', () => {
+  it('CA-658 e CA-668: nenhuma troca casa com a trava por texto, para nenhum alimento da base', () => {
+    // Trava escrita à mão, sem usar a regra (revisão I3).
     for (const a of ALIMENTOS) {
       for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
-        const troca = buscarAlimento(t.alimentoId)
-        expect(troca ? regraQueExclui(troca) : 'sem alimento', `${a.descricao} → ${t.descricao}`).toBeNull()
+        const nome = t.descricao.trim()
+        expect(nome, `${a.descricao} → ${t.descricao}`).not.toMatch(NUNCA_APARECE)
+        expect(nome, `${a.descricao} → ${t.descricao}`).not.toMatch(FORMA_DE_INGREDIENTE)
       }
     }
   })
