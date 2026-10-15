@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { ResumoDoDia } from './ResumoDoDia.tsx'
 
@@ -204,7 +206,7 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
 
   it('CA-681: no modo rápido, a frase diz "da meta"', () => {
     montar({ ...adulta, modo: 'rapido', metaEnergiaKcal: 1800 }, planoComArroz())
-    expect(resumo().getByText('21% da meta, abaixo de 90%')).toBeInTheDocument()
+    expect(resumo().getByText('20% da meta, abaixo de 90%')).toBeInTheDocument()
   })
 
   it('CB-207: meta digitada, "Ver cálculo" sem TMB e sem fator, só o que existe', () => {
@@ -213,5 +215,20 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
     const conteudo = within(document.getElementById(verCalculo.getAttribute('aria-controls') ?? '') as HTMLElement)
     expect(conteudo.queryByText('TMB')).not.toBeInTheDocument()
     expect(conteudo.getByText('Carboidrato')).toBeInTheDocument()
+  })
+})
+
+describe('Arredondamento na direção do estado (CA-695)', () => {
+  const comGet = (get: number): Partial<Caso> => ({ ...adulta, energia: { ...criarCasoVazio('x').energia, getManual: get } })
+
+  it('CA-695: 89,6% do GET sai "89%, abaixo de 90%", e 110,4% sai "111%, acima de 110%"', () => {
+    const plano = planoComArroz()
+    const kcal = totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total
+    const { unmount } = render(<Anfitriao inicial={comGet(kcal / 0.896)} plano={plano} />)
+    expect(resumo().getByText('89% do GET, abaixo de 90%')).toBeInTheDocument()
+    unmount()
+
+    render(<Anfitriao inicial={comGet(kcal / 1.104)} plano={plano} />)
+    expect(resumo().getByText('111% do GET, acima de 110%')).toBeInTheDocument()
   })
 })

@@ -1,3 +1,4 @@
+import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import type { EstadoFaixa, ResultadoMacro } from '@/domain/macros.ts'
 import { medirMacro } from '@/domain/medidorMacro.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -34,8 +35,10 @@ const COR_FRASE: Readonly<Record<EstadoFaixa, string>> = {
 export function MedidorMacro({ nome, macro, meta, comGPorKg = false }: MedidorMacroProps) {
   const medidor = medirMacro(macro)
   const mostraGPorKg = macro.gPorKg !== null && (comGPorKg || macro.meta?.tipo === 'g_kg')
+  // O % só carrega o estado quando a meta é em %; aí ele arredonda na direção do estado (D-209).
+  const estadoDoPct = macro.meta?.tipo === 'pct' ? macro.estado : null
 
-  const valores = `${formatarNumero(macro.gramas, 0)} g${macro.pctKcal === null ? '' : ` · ${formatarNumero(macro.pctKcal, 0)}%`}${
+  const valores = `${formatarNumero(macro.gramas, 0)} g${macro.pctKcal === null ? '' : ` · ${formatarNumero(arredondarNoEstado(macro.pctKcal, estadoDoPct), 0)}%`}${
     mostraGPorKg && macro.gPorKg !== null ? ` · ${formatarNumero(macro.gPorKg, 2)} g/kg` : ''
   }`
 

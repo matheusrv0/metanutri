@@ -2,7 +2,10 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { MicrosDoDia } from './MicrosDoDia.tsx'
@@ -140,5 +143,21 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
     const marcas = cartao().getAllByTitle(/total possivelmente subestimado/)
     expect(marcas.length).toBeGreaterThan(0)
     for (const marca of marcas) expect(marca).toHaveTextContent('†')
+  })
+})
+
+describe('Cartão arredonda na direção do estado (CA-696)', () => {
+  it('CA-696: adequação abaixo da meta arredonda para baixo', () => {
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
+    const calcio = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
+    if (!calcio) throw new Error('sem cálcio')
+    // Só prova alguma coisa se arredondar para o mais perto daria outro número.
+    expect(calcio.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
+
+    montar(adulta, plano)
+    const linha = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
+    if (!linha) throw new Error('cálcio fora do cartão')
+    expect(within(linha).getByText(`${Math.floor(calcio.adequacaoPct)}%`)).toBeInTheDocument()
   })
 })

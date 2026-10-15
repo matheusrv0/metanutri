@@ -1,6 +1,7 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
@@ -49,7 +50,8 @@ const COR_TEXTO: Record<EstadoAdequacao, string> = {
 }
 
 function textoDaAdequacao(linha: LinhaAdequacao): string {
-  const pct = `${formatarNumero(linha.adequacaoPct, 0)}%`
+  // Abaixo da meta arredonda para baixo: 89,6% nunca sai "90% abaixo" (D-209).
+  const pct = `${formatarNumero(arredondarNoEstado(linha.adequacaoPct, linha.estado === 'abaixo' ? 'abaixo' : 'dentro'), 0)}%`
   if (linha.estado === 'abaixo') return `${pct} abaixo`
   if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
   return pct

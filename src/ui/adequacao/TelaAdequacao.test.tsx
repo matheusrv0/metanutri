@@ -2,7 +2,10 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { TelaAdequacao } from './TelaAdequacao.tsx'
@@ -317,5 +320,43 @@ describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
     render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={2000} />)
     const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
     expect(gaveta.getByText(/Cabem \d+ kcal até o gasto energético\./)).toBeInTheDocument()
+  })
+})
+
+describe('Tabela e lista arredondam na direção do estado (CA-696)', () => {
+  const calcioDoExemplo = (plano: Plano) => {
+    const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
+    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
+    if (!linha) throw new Error('sem cálcio')
+    expect(linha.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
+    return Math.floor(linha.adequacaoPct)
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-696: na tabela, abaixo da meta arredonda para baixo', () => {
+    const plano = exemplo()
+    const esperado = calcioDoExemplo(plano)
+    montar(adulta, plano)
+    expect(linhaDe('Cálcio').getByText(`${esperado}% abaixo`)).toBeInTheDocument()
+  })
+
+  it('CA-696: na lista do celular, também', () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    const plano = exemplo()
+    const esperado = calcioDoExemplo(plano)
+    montar(adulta, plano)
+    const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith('Cálcio'))
+    if (!item) throw new Error('cálcio fora da lista')
+    expect(within(item).getByText(`${esperado}% abaixo`)).toBeInTheDocument()
   })
 })

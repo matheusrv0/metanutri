@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -73,7 +74,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
                   <li key={linha.chave} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-0">
                     <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
                     <span className="flex items-baseline">
-                      <span className="numeros text-sm font-semibold text-warningtext">{`${formatarNumero(linha.adequacaoPct, 0)}%`}</span>
+                      <span className="numeros text-sm font-semibold text-warningtext">{`${formatarNumero(arredondarNoEstado(linha.adequacaoPct, 'abaixo'), 0)}%`}</span>
                       <MarcaSemDado semDado={linha.semDado} />
                     </span>
                     <Button size="sm" variant="lightprimary" onClick={() => setCobrindo(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`}>

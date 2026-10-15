@@ -1,5 +1,6 @@
 import { Flame, Settings2, SlidersHorizontal, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { calcularEnergia, percentualDoGasto } from '@/domain/energia.ts'
 import { calcularMacros, type EstadoFaixa, type ResultadoMacro, type ResultadoMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -167,7 +168,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
             <>
               <Progress value={doGet.pct} variant={VARIANTE_BARRA[doGet.estado]} aria-label="Energia do plano em relação ao alvo" />
               <p className={cn('numeros text-xs font-medium', COR_FRASE[doGet.estado])}>
-                {`${formatarNumero(doGet.pct, 0)}% ${rapido ? 'da meta' : 'do GET'}, ${FAIXA_DO_GASTO[doGet.estado]}`}
+                {`${formatarNumero(arredondarNoEstado(doGet.pct, doGet.estado), 0)}% ${rapido ? 'da meta' : 'do GET'}, ${FAIXA_DO_GASTO[doGet.estado]}`}
               </p>
             </>
           ) : null}
