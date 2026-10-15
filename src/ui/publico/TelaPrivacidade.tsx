@@ -32,8 +32,8 @@ export function TelaPrivacidade() {
         <li>Plano assinado, data e versão dos termos aceitos: para cobrar certo e provar o aceite.</li>
         <li>Dados do paciente (nome, sexo, idade, medidas, restrições e condições clínicas): para calcular o plano alimentar.</li>
         <li>
-          Na ficha do paciente, também as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista escreve: para o atendimento
-          e as folhas que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.
+          Na ficha do paciente, também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista
+          escreve: para o atendimento, os lembretes e as folhas que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.
         </li>
         <li>Missões marcadas pelo paciente e as datas: para mostrar a adesão ao nutricionista.</li>
         <li>

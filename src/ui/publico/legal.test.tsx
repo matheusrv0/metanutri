@@ -65,11 +65,11 @@ describe('documentos legais', () => {
     expect(seguranca).not.toHaveTextContent('mostra só as missões daquele paciente.')
   })
 
-  it('CA-597 (spec anamnese-e-prescricoes): a política diz que a ficha também guarda a anamnese, os suplementos e os pedidos de exame, como dado de saúde', () => {
+  it('CA-597 (spec anamnese-e-prescricoes): a política diz que a ficha também guarda a próxima consulta, a anamnese, os suplementos e os pedidos de exame, como dado de saúde', () => {
     render(<TelaPrivacidade />)
     const dados = screen.getByRole('heading', { name: 'Que dados guardamos e para quê' }).nextElementSibling
     expect(dados).toHaveTextContent(
-      'Na ficha do paciente, também as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista escreve: para o atendimento e as folhas que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
+      'Na ficha do paciente, também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista escreve: para o atendimento, os lembretes e as folhas que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
     )
   })
 

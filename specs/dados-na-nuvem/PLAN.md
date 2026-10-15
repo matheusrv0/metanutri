@@ -190,7 +190,7 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
   `src/vite-env.d.ts` (os tipos, `vite-plugin-pwa/vanillajs`); testes com o registro de mentira (`aplicativo.test.tsx`); o
   comentário de `src/seguranca/pluginCsp.ts` deixa de citar o `registerSW.js`. Cobre CA-602, CA-603 (com o `e2e/csp.spec.ts` e o
   `npm run test:csp`).
-- [ ] **T49** — Textos: a Política cita a data da próxima consulta (CA-597 da `anamnese-e-prescricoes`); o dia da cópia
+- [x] **T49** — Textos: a Política cita a data da próxima consulta (CA-597 da `anamnese-e-prescricoes`); o dia da cópia
   da dieta é o de Brasília (D-158 da `dieta-no-link`, comentário em `dietaDoLink.ts`); D-150 da `dieta-no-link` exclui os
   suplementos da ficha; a nota de publicação (`docs/pendencias.md`) manda recarregar e conferir a "Anamnese", cita o R8 e
   "não use Sair numa aba antiga".

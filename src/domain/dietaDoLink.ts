@@ -30,7 +30,10 @@ export interface DietaDoPlano {
 
 /** A cópia que mora no link. */
 export interface DietaDoLink extends DietaDoPlano {
-  /** O dia da cópia (AAAA-MM-DD, no fuso de quem copiou), para o paciente saber se é a da última consulta (D-158). */
+  /**
+   * O dia da cópia (AAAA-MM-DD), no dia de Brasília (o mesmo "hoje" do Painel, spec whatsapp-e-retorno, D-144), para o
+   * paciente saber se é a da última consulta (D-158).
+   */
   readonly copiadaEm: string
 }
 
