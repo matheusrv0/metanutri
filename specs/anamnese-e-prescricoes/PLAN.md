@@ -152,3 +152,46 @@ não são editáveis (D-160). Fora do PLAN, duas mudanças pequenas entraram com
 `limparRoteiro` em `anamnese.ts` (T7, para o roteiro sem armazenamento) e o cartão "Restrições e saúde" virou região
 com nome (T7, para os testes acharem o cartão). O aviso "Modelo salvo." é região viva sem o papel `status`, porque a
 barra da nuvem já é o status da ficha (um teste da `dados-na-nuvem` conta um só).
+
+## Rodada da revisão (15/10/2026)
+
+A revisão do coordenador pediu os ajustes abaixo; a SPEC mudou antes (nota no topo dela). Ficam de fora, para o
+coordenador resolver uma vez depois de juntar as três frentes: a versão antiga do app apagar chave nova pelo
+`aplicarCopia`, e salvar um paciente remarcar todos.
+
+| Arquivo | Ação | Tarefa |
+|---|---|---|
+| `src/domain/exames.ts`, `anamnese.ts`, `suplementos.ts` (+ testes) | alterar | T12, T13 |
+| `design-system/componentes/display/Recolhivel.tsx` | alterar: modo controlado opcional (`aberto`, `aoAlternar`), sem mudar quem não usa | T14 |
+| `src/ui/pacientes/TelaPaciente.tsx`, `AnamneseDaFicha.tsx` (+ testes) | alterar | T14, T17 |
+| `src/ui/pacientes/CartaoSuplementos.tsx`, `LinhaSuplemento.tsx`, `DialogoModelosSuplemento.tsx` (+ testes) | alterar | T15, T17 |
+| `src/ui/pacientes/CartaoExames.tsx` (+ testes) | alterar | T16, T17 |
+| `src/ui/AreaDeTrabalho.tsx` | alterar: passa o `bloqueio` à ficha | T17 |
+| `src/ui/exportar/FolhaDocumento.tsx`, `FolhaExames.tsx`, `QuemAssina.tsx`, `DialogoImprimir.tsx`, `FolhaDieta.tsx` (+ testes) | alterar | T18 |
+| `src/export/aconselhamento-docx.ts`, `src/seguranca/xssExportacao.test.ts` | alterar | T18 |
+| `e2e/anamnese-e-prescricoes.spec.ts` | alterar | T19 |
+
+- [ ] **T12** — Dado que esta versão não conhece fica guardado: `normalizarPedido` mantém id desconhecido;
+  `normalizarRespostas` mantém resposta de bloco desconhecido e campo a mais; suplemento e modelo mantêm campo a mais;
+  o roteiro mantém bloco desconhecido e o grava de volta. A tela e as folhas continuam mostrando só o que conhecem.
+  - Cobre: CA-589, CB-162. Feito quando: teste de ida e volta (ler, salvar, ler) para cada um.
+- [ ] **T13** — Conteúdo clínico: 4 perguntas novas no roteiro padrão, a dica de Bristol, 5 exames novos, a data de
+  nascimento na folha de exames.
+  - Cobre: seções 2 e 3, D-169, CA-579, CA-580. Feito quando: testes da lista, da dica e da folha com e sem nascimento.
+- [ ] **T14** — Ficha: blocos começam recolhidos, "Abrir tudo"/"Recolher tudo"; último bloco "Outras anotações" com
+  "Anamnese de antes" só quando tem texto; o roteiro é relido ao abrir "Editar roteiro"; abaixo de xl a coluna do
+  histórico vem antes dos cartões longos; os cartões com estado próprio levam a chave do paciente.
+  - Cobre: CA-563, CA-564, CA-565, CA-587. Feito quando: testes de tela de cada um.
+- [ ] **T15** — Suplementos: "Tirar" pede confirmação quando há algo preenchido; Observação em várias linhas;
+  "Modelo atualizado."; a janela dos modelos mostra a observação; o motivo do "Imprimir" desligado.
+  - Cobre: CA-571 a CA-574, CA-578. Feito quando: testes de tela de cada um.
+- [ ] **T16** — Exames: "Limpar pedido".
+  - Cobre: CA-579. Feito quando: teste de tela.
+- [ ] **T17** — Bloqueio do CRN: a ficha recebe o `bloqueio` e desliga as duas folhas com o mesmo aviso da dieta.
+  - Cobre: CA-578, CA-581. Feito quando: teste de tela das duas.
+- [ ] **T18** — Folhas e Word: assinatura junto do último item, linha fina com o paciente nas páginas seguintes, quem
+  assina à esquerda quando cai embaixo do título; dieta com a opção "Suplementos da ficha"; Word com " · " e com o teste
+  de código malicioso no suplemento.
+  - Cobre: CA-576, CA-577, CA-580, CA-586, CA-587. Feito quando: testes da folha, da janela de imprimir e do Word.
+- [ ] **T19** — Fechamento: testes de navegador atualizados, `npm run check`, `npx playwright test` (porta própria),
+  `npm run build`, prints novos.
