@@ -76,3 +76,13 @@ Supabase CLI por `npx` para CA-488 e CA-489. Nenhum pacote novo.
   são atacadas pelo núcleo puro, com o banco de mentira já existente (tarefa 5).
 - **DP-A6** · Códigos de saída do script: 0 passou; 1 algum ataque passou ou um teste falhou; 2 falta Docker,
   CLI ou imagem; 3 a URL não é local.
+- **DP-A7** · A trava da URL local mora num módulo puro (`testes/seguranca/local.ts`) para ser testada no
+  `npm run check` (`src/seguranca/trava.test.ts`, CB-129), sem rede, com a URL da produção entre as recusadas.
+
+## Execução (14/10/2026)
+
+- Tarefas 1 a 6 feitas, nesta ordem, cada uma no seu commit.
+- Dois testes do CA-487 acharam pontos a endurecer na tela e na impressão; cada um foi corrigido num commit
+  `fix` separado (a logo do perfil e a linha fina da folha impressa), com o teste do domínio junto.
+- Validação: `npm run check` verde, `npx playwright test` verde e `npm run test:seguranca` verde (127 ataques
+  barrados no Supabase local, que subiu e foi derrubado pelo script).
