@@ -45,6 +45,52 @@ const coresDaFolha = (janela: Locator) =>
     }
   })
 
+test('CA-636 e CA-637: a primeira página não tem margem em cima nem embaixo; o espaço de 14 mm vem da folha, em toda página', async ({ page }) => {
+  const janela = await abrirExemplo(page)
+  await page.emulateMedia({ media: 'print' })
+  const regras = await page.evaluate(() => {
+    const paginas: { seletor: string; topo: string; base: string; comClone: boolean }[] = []
+    const fontesDaMargem: string[] = []
+    const percorrer = (lista: CSSRuleList, comClone: boolean) => {
+      for (const regra of Array.from(lista)) {
+        if (regra instanceof CSSPageRule) {
+          paginas.push({ seletor: regra.selectorText, topo: regra.style.marginTop, base: regra.style.marginBottom, comClone })
+          for (const margem of Array.from(regra.cssRules)) if (margem instanceof CSSMarginRule) fontesDaMargem.push(`${margem.name} ${margem.style.fontFamily}`)
+        }
+        else if (regra instanceof CSSSupportsRule) percorrer(regra.cssRules, comClone || regra.conditionText.includes('box-decoration-break'))
+        else if (regra instanceof CSSGroupingRule) percorrer(regra.cssRules, comClone)
+      }
+    }
+    for (const folha of Array.from(document.styleSheets)) percorrer(folha.cssRules, false)
+    const area = document.querySelector('.area-impressao')
+    const artigo = area?.querySelector('article')
+    return {
+      suporta: CSS.supports('box-decoration-break', 'clone'),
+      primeiraSemTopo: paginas.some((p) => p.comClone && p.seletor === ':first' && p.topo === '0px'),
+      todasSemBase: paginas.some((p) => p.comClone && p.seletor === '' && p.base === '0px'),
+      fontesDaMargem,
+      quebra: area ? getComputedStyle(area).boxDecorationBreak : '',
+      espacoNoPe: area ? Number.parseFloat(getComputedStyle(area).paddingBottom) : 0,
+      espacoNoTopo: artigo ? Number.parseFloat(getComputedStyle(artigo).paddingTop) : 0,
+    }
+  })
+  // 14 mm = 52,9 px.
+  expect(regras).toMatchObject({ suporta: true, primeiraSemTopo: true, todasSemBase: true, quebra: 'clone' })
+  // A linha fina (CA-316) na fonte da folha.
+  expect(regras.fontesDaMargem).toEqual(expect.arrayContaining(['top-left var(--font-corpo)', 'top-right var(--font-corpo)']))
+  expect(regras.espacoNoPe).toBeCloseTo(52.9, 0)
+  expect(regras.espacoNoTopo).toBeCloseTo(52.9, 0)
+
+  // CA-638: com lista de compras e trocas, a folha continua correndo por mais de uma página.
+  await page.emulateMedia({ media: 'screen' })
+  await janela.getByRole('switch', { name: 'Trocas' }).click()
+  await janela.getByRole('switch', { name: 'Lista de compras' }).click()
+  await page.emulateMedia({ media: 'print' })
+  const pdf = await page.pdf({ format: 'A4', preferCSSPageSize: true })
+  expect((pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBeGreaterThan(1)
+  await page.emulateMedia({ media: 'screen' })
+})
+
 test.describe('no tema escuro', () => {
   test.use({ colorScheme: 'dark' })
 

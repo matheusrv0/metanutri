@@ -406,6 +406,42 @@
     color-scheme: light;
     background: #fff !important;
   }
+
+  /* Sem a data, o título e o endereço do navegador (spec impressao-do-plano, D-186, CA-636 e CA-637). O Chrome e o
+     Edge decidem pela primeira página se cabe o cabeçalho e o rodapé deles: sem margem em cima e embaixo nela, não
+     sai em página nenhuma. Os 14 mm vêm da folha: o topo, pelo espaço do começo da folha; o pé de cada página, por
+     um espaço que se repete em toda página (clone). Da segunda página em diante, a margem de cima continua, com a
+     linha fina (CA-316). Navegador sem clone (Safari) fica com as margens de cima, para nada encostar na borda. */
+  /* A margem da página não herda a fonte da folha: sem isto, a linha fina (CA-316) sai na fonte padrão. */
+  @page {
+    @top-left {
+      font-family: var(--font-corpo);
+    }
+    @top-right {
+      font-family: var(--font-corpo);
+    }
+  }
+
+  @supports (box-decoration-break: clone) {
+    @page {
+      margin-bottom: 0;
+    }
+
+    @page :first {
+      margin-top: 0;
+    }
+
+    .area-impressao {
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding-bottom: 14mm;
+    }
+
+    .folha-dieta,
+    .folha-documento {
+      padding-top: 14mm;
+    }
+  }
 }
 
 /* Halo do fundo da área pública (AuroraBackground). */

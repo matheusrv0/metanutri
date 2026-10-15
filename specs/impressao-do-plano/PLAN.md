@@ -43,7 +43,7 @@ no navegador, num e2e novo.
 | `src/ui/exportar/DialogoImprimir.tsx`, `DialogoImprimir.test.tsx` | alterar | a frase da janela (T6) |
 | `src/ui/tema/globals.css` | alterar | papel claro (T7) e regras de página (T8) |
 | `src/ui/exportar/FolhaDocumento.tsx`, `FolhaDocumento.test.tsx` | alterar | sem régua, frase de estágio sem caixa (T7) |
-| `src/ui/exportar/linhaFina.ts`, `linhaFina.test.ts` | alterar | a linha fina na fonte da folha (T8) |
+| `src/ui/exportar/linhaFina.ts` | alterar | aponta para a fonte das margens, que fica em `globals.css` (o lint barra `font-family` em código) (T8) |
 | `e2e/impressao-do-plano.spec.ts` | criar | papel claro no tema escuro e regras de página, no navegador (T7, T8) |
 | `e2e/planejador.spec.ts` | alterar | o teste do PDF esperava a linha da base, que sai (T6) |
 | `specs/pdf-e-telas-limpas/SPEC.md` | alterar | uma nota: D-50, CA-309, CA-310, CA-312 e CA-314 foram substituídos por esta spec (T9) |
@@ -76,8 +76,9 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   e na impressão; nenhum fundo escuro), `FolhaDocumento.test.tsx` (CA-640). *Depende de:* T6.
 - [ ] **T8** — `globals.css`: dentro de `@supports (box-decoration-break: clone)`, `@page { margin-bottom: 0 }`,
   `@page :first { margin-top: 0 }`, espaço de 14 mm no topo da folha e no pé de `.area-impressao` com `clone`
-  (CA-636, CA-637); `linhaFina.ts` com a fonte da folha (CA-637). *Testes:* e2e lê as regras de página no CSSOM e o
-  espaço calculado na impressão; o PDF com as duas opções marcadas tem mais de uma página (CA-638). *Depende de:* T7.
+  (CA-636, CA-637); as margens do `@page` com a fonte da folha, para a linha fina (CA-637). *Testes:* e2e lê as regras
+  de página e de margem no CSSOM e o espaço calculado na impressão; o PDF com as duas opções marcadas tem mais de uma
+  página (CA-638). *Depende de:* T7.
 - [ ] **T9** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
   `npm run check`, `npx playwright test` e `npm run build` verdes. *Depende de:* T8.
 

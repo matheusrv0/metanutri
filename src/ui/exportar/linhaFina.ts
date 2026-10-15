@@ -3,6 +3,7 @@
 // Dentro da string do CSS, \r, \n e \f são quebra de linha e acabariam a string antes da hora: viram espaço.
 const textoCss = (texto: string) => `"${texto.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n\f]+/g, ' ')}"`
 
+// A fonte das duas margens está em globals.css (spec impressao-do-plano, CA-637).
 export function regraDaLinhaFina(esquerda: string, direita: string): string {
   return [
     '@media print {',
