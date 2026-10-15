@@ -1,5 +1,6 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
@@ -14,17 +15,20 @@ import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
+import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
 interface TelaPacienteProps {
   readonly pacienteId: string
+  /** Quem assina as folhas de suplementos e de exames (spec anamnese-e-prescricoes, D-167). */
+  readonly assinatura?: AssinaturaDoPlano | null | undefined
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoNovoPlano: (pacienteId: string, modo: ModoPlano) => void
   readonly aoVoltar: () => void
 }
 
-/** Ficha do paciente: dados, restrições, histórico de planos e evolução do peso. */
-export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
+/** Ficha do paciente: dados, restrições, anamnese, suplementos, exames, histórico de planos e evolução do peso. */
+export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNovoPlano, aoVoltar }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
@@ -124,6 +128,8 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
         </Card>
 
         <AnamneseDaFicha paciente={paciente} aoAlterar={alterar} />
+
+        <CartaoSuplementos paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>

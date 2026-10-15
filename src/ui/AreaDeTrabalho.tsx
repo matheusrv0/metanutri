@@ -183,6 +183,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
       >
         <TelaPaciente
           pacienteId={rota.pacienteId}
+          assinatura={quemAssina}
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'caso' })}
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}

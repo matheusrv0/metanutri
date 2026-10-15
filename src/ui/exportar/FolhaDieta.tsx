@@ -6,7 +6,6 @@ import {
   lembretesDoDia,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
-  type AssinaturaDaFolha,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
@@ -19,7 +18,9 @@ import type { Caso, ItemPlano, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { LinhasDeAssinatura } from './LinhasDeAssinatura.tsx'
 import { regraDaLinhaFina } from './linhaFina.ts'
+import { QuemAssina } from './QuemAssina.tsx'
 
 interface FolhaDietaProps {
   readonly caso: Caso
@@ -58,57 +59,6 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
         </li>
       ))}
     </ul>
-  )
-}
-
-function QuemAssina({ assinatura }: { readonly assinatura: AssinaturaDaFolha }) {
-  if (assinatura.tipo === 'vazia') return null
-  if (assinatura.tipo === 'nutricionista') {
-    return (
-      <div className="text-right">
-        <p className="text-base font-semibold text-heading">{assinatura.linha || 'Nutricionista'}</p>
-        {assinatura.linha ? <p className="text-muted-foreground">Nutricionista</p> : null}
-      </div>
-    )
-  }
-  return (
-    <div className="text-right">
-      {assinatura.estagiario ? (
-        <p>
-          <span className="text-muted-foreground">Estagiário(a): </span>
-          <span className="font-semibold text-heading">{assinatura.estagiario}</span>
-        </p>
-      ) : null}
-      {assinatura.preceptor ? (
-        <p>
-          <span className="text-muted-foreground">Preceptor(a): </span>
-          <span className="font-semibold text-heading">{assinatura.preceptor}</span>
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function Assinaturas({ assinatura }: { readonly assinatura: AssinaturaDaFolha }) {
-  const linhas =
-    assinatura.tipo === 'nutricionista'
-      ? [{ nome: assinatura.linha, papel: 'Nutricionista' }]
-      : assinatura.tipo === 'estagio'
-        ? [
-            { nome: assinatura.estagiario, papel: 'Estagiário(a)' },
-            { nome: assinatura.preceptor, papel: 'Preceptor(a)' },
-          ]
-        : [{ nome: '', papel: 'Assinatura' }]
-  return (
-    <div role="group" aria-label="Assinaturas" className="grid gap-8 sm:grid-cols-2">
-      {linhas.map((l) => (
-        <div key={l.papel} className={`flex flex-col items-center gap-1 pt-10 ${linhas.length === 1 ? 'sm:col-start-2' : ''}`}>
-          <span aria-hidden="true" className="w-full border-b border-foreground" />
-          {l.nome ? <span className="font-semibold text-heading">{l.nome}</span> : null}
-          <span className="text-muted-foreground">{l.papel}</span>
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -214,7 +164,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
 
         {/* Assinatura e linha final andam juntas e não ficam sozinhas no topo de uma página. */}
         <div className="fecho-da-folha flex break-before-avoid break-inside-avoid flex-col gap-5">
-          <Assinaturas assinatura={quem} />
+          <LinhasDeAssinatura assinatura={quem} />
 
           <p className="text-xs text-muted-foreground">
             {`${caso.modo === 'rapido' ? 'Plano montado em prescrição rápida, sem avaliação antropométrica. ' : ''}A prescrição é responsabilidade do nutricionista. Composição dos alimentos: ${NOME_DA_BASE}.`}
