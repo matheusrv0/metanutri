@@ -99,9 +99,9 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
     expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('CA-688: "Ver os 16" leva à etapa 3', async () => {
+  it('CA-688: "Ver todos" leva à etapa 3', async () => {
     const { usuario, aoVerTodos } = montar()
-    await usuario.click(cartao().getByRole('button', { name: 'Ver os 16' }))
+    await usuario.click(cartao().getByRole('button', { name: 'Ver todos' }))
     expect(aoVerTodos).toHaveBeenCalledOnce()
   })
 

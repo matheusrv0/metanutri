@@ -290,7 +290,7 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   await expect(gaveta).toBeHidden()
   await expect.poll(() => linhas.allTextContents()).not.toEqual(antes)
 
-  await micros.getByRole('button', { name: 'Ver os 16' }).click()
+  await micros.getByRole('button', { name: 'Ver todos' }).click()
   const etapas = page.getByRole('navigation', { name: 'Etapas do plano' })
   await expect(etapas.getByRole('button', { name: /Adequação/ })).toHaveAttribute('aria-current', 'step')
 

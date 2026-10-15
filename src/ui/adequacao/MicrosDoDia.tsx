@@ -55,7 +55,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
           <CardTitle>Micronutrientes</CardTitle>
           {resultado.motivoSemCalculo ? null : (
             <Button variant="ghost" size="sm" onClick={aoVerTodos}>
-              {`Ver os ${total}`}
+              Ver todos
             </Button>
           )}
         </div>

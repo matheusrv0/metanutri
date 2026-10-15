@@ -59,7 +59,7 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 ### T3 · Cartão Micronutrientes
 1. `MicrosDoDia.test.tsx`: contagem e até 5 linhas do mais longe para o mais perto (CA-685, CB-203);
    Cobrir abre a gaveta com "Cobrir Ferro" e Adicionar põe o alimento e refaz o cartão (CA-686,
-   CB-204); acima do limite sem Cobrir (CA-687, com um plano de muito sal); "Ver os 16" chama
+   CB-204); acima do limite sem Cobrir (CA-687, com um plano de muito sal); "Ver todos" chama
    `aoVerTodos` (CA-688); plano vazio (CB-200); sem sexo e idade (CB-201); preset coletivo (CB-209);
    botão com a variante `lightprimary` (CA-691).
 2. Ver falhar. Criar o componente: `calcularAdequacao` + ordem por `adequacaoPct`, `GavetaCobrir` sem
@@ -68,7 +68,7 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 
 ### T4 · Cartão na coluna da etapa 2
 1. `e2e/planejador.spec.ts`, no fluxo principal: na etapa 2, o cartão "Micronutrientes" aparece com
-   "Cobrir" e "Ver os 16" leva à etapa 3; na etapa 1, o cartão não aparece (CA-689).
+   "Cobrir" e "Ver todos" leva à etapa 3; na etapa 1, o cartão não aparece (CA-689).
 2. Ver falhar. Em `AreaDeTrabalho.tsx`, a etapa 2 põe `ResumoDoDia` e `MicrosDoDia` numa coluna;
    o gasto energético é calculado uma vez e serve à etapa 2 e à 3.
 3. `npm run check` e `npx playwright test`. Commit `feat(planejador): micronutrientes na coluna da

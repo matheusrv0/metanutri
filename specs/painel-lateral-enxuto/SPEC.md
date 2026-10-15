@@ -87,7 +87,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 | D-201 | **Valores de relance sem casa decimal** (gramas e % das kcal). g/kg só na proteína (com duas casas, como a frase do medidor); carboidrato e gordura em g/kg vão para "Ver cálculo" | O CA-22 pede g/kg só da proteína. Substitui o CA-206 da `estilo-spora` para carboidrato e gordura |
 | D-202 | **Meta do macro curta** ("10 a 35%"), ao lado da frase. "sua meta" aparece quando a meta é sua; a origem padrão ("faixa da idade") vai para "Ver cálculo" | "Meta:" e "(faixa da idade)" se repetiam nas três linhas |
 | D-203 | **Um "Ajustar" para os alvos do dia**: energia, como hoje, e o botão "Metas de macronutrientes" | Dois botões soltos ("Ajustar" e "Metas") para a mesma ideia: mudar o alvo |
-| D-204 | **Cartão "Micronutrientes" na coluna da direita da etapa 2**, abaixo do Resumo do dia: quantos estão abaixo da meta, até 5 (os mais longe da meta primeiro), cada um com "Cobrir", os acima do limite sem Cobrir, e "Ver os 16" para a etapa 3. Não aparece na etapa 1 | O diferencial onde o plano é montado, ocupando o espaço vazio da coluna. **Para o dono decidir pelas telas** (é a única coisa que entra em vez de sair) |
+| D-204 | **Cartão "Micronutrientes" na coluna da direita da etapa 2**, abaixo do Resumo do dia: quantos estão abaixo da meta, até 5 (os mais longe da meta primeiro), cada um com "Cobrir", os acima do limite sem Cobrir, e "Ver todos" para a etapa 3 (o total já está na contagem, "5 de 16"). Não aparece na etapa 1 | O diferencial onde o plano é montado, ocupando o espaço vazio da coluna. **Para o dono decidir pelas telas** (é a única coisa que entra em vez de sair) |
 | D-205 | **Etapa 3 mostra primeiro o que pede ação**: abaixo da meta e acima do limite ficam à vista, na ordem de sempre; os na meta ficam recolhidos em "Ver os N na meta", fechado ao abrir a tela | De 16 linhas para as 5 que pedem alguma coisa, sem tirar nenhuma |
 | D-206 | **Cobrir com fundo teal claro** (`lightprimary`) na etapa 3 e no cartão novo, nunca laranja | Destaque da ação principal da tela. O laranja não entra em painel de dado (DESIGN.md) |
 | D-207 | **Etapa 3 vira lista abaixo de 640 px**: em cada nutriente, nome e % com o estado, a barra, "quanto tem de quanto precisa" com a referência e o Cobrir | Em 390 px a tabela rolava para o lado e escondia o Cobrir |
@@ -110,7 +110,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 - **CA-685** · Dado a etapa 2 com alimentos no plano, então a coluna da direita mostra, abaixo do Resumo do dia, o cartão "Micronutrientes" com "N de 16 abaixo da meta" e até 5 nutrientes abaixo da meta, do mais longe para o mais perto da meta, cada um com o nome, a adequação em % na cor de "abaixo" e o botão "Cobrir".
 - **CA-686** · Dado "Cobrir" no cartão, então abre a mesma gaveta do Cobrir da etapa 3 ("Cobrir Ferro", quanto falta e as sugestões). "Adicionar" põe o alimento na refeição escolhida, fecha a gaveta e o cartão se refaz com o plano novo.
 - **CA-687** · Dado um nutriente acima do limite superior, então ele aparece no cartão com a adequação e "acima do limite", na cor de acima, sem "Cobrir".
-- **CA-688** · Dado "Ver os 16" no cartão, então o planejador vai para a etapa 3, Adequação.
+- **CA-688** · Dado "Ver todos" no cartão, então o planejador vai para a etapa 3, Adequação.
 - **CA-689** · Dado a etapa 1, então a coluna da direita não mostra o cartão "Micronutrientes".
 
 ### Etapa 3, Adequação
