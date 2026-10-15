@@ -219,7 +219,19 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
 - [x] **T57** — Nota de publicação e relatório: o risco que sobra (R8).
 - [x] **T58** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
   `conferir-publicacao`, `npm run test:csp` e as simulações `reabrir.mts`, `r8.mts` e `ordem.mts`.
-## Mapa de cobertura
+
+### Rodada 4 da integração (15/10/2026)
+
+Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de documento
+(`scratchpad/novidades/re-revisao-rodada3.md`, simulação `rodada3.mts`).
+
+- [x] **T59** — Spec e plano: CA-610; DP-42.
+- [ ] **T60** — A edição que solta o retido nunca fica mais velha que a marca que substitui (DP-42):
+  `registrarMudanca` em `src/domain/copiaDaConta.ts`; teste em `copiaDaConta.test.ts`. Cobre CA-609, CA-610.
+- [ ] **T61** — Documento: a lápide que não coube (navegador cheio) pode fazer o item apagado voltar pelo DP-40; o
+  comentário do "sem espaço" em `src/domain/sincronia.ts` e o R8.
+- [ ] **T62** — Documento: salvar o roteiro sem mudar nada não solta o valor retido; o R8 e a nota de publicação
+  (`docs/pendencias.md`) dizem para mudar alguma coisa naquele aparelho.## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
 |---|---|---|
@@ -258,6 +270,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
 | CA-607 | T54 | `copiaDaConta.test.ts` "CA-607: …" |
 | CA-608 | T55 | `copiaDaConta.test.ts` "CA-608: …" |
 | CA-609 | T52 | `copiaDaConta.test.ts` "CA-609: …" |
+| CA-610 | T60 | `copiaDaConta.test.ts` "CA-610: …" |
 | CB-172 | — | risco aceito, anotado no R8 (sem teste: depende de 90 dias) |
 
 ## Decisões do plano
@@ -440,6 +453,10 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
   a ser as dos dois lados (a mais nova de cada referência), menos as referências que saíram por lápide: a marca de um
   valor que falta continua na nuvem, para nenhum outro aparelho subir um valor mais velho. No fluxo normal não existe
   marca sem valor e sem lápide, então nada muda.
+- **DP-42 · A edição que solta o retido (CA-609, CA-610, rodada 4).** Quando a pessoa mexe num valor retido, a marca
+  da edição (ou a lápide, se ela apagou) é a hora de agora ou, se o relógio daqui estiver atrás, 1 ms depois da marca
+  que o retido guardava, o que for maior. Assim a edição nunca é mais velha que a marca que substitui, e a junção de um
+  salvar com conflito não a deixa de fora nem a retém de novo (R2).
 ## Riscos
 
 - **R1** — Remontar a área quando a nuvem traz mudança (conflito ou conferência, DP-20) fecha diálogo e formulário

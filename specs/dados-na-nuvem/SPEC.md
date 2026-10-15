@@ -17,6 +17,8 @@ e entram D-172 (aviso de versão nova), CA-598 a CA-603.
 (a lista inteira subindo com um item velho, e o roteiro velho subindo depois de recarregar). Entram D-173, CA-604 a
 CA-609 e CB-172.
 
+**Rodada 4 de 15/10/2026:** entra o CA-610 (a edição da pessoa no valor retido vale mesmo com o relógio atrasado).
+
 **Hoje:** os dados (planos, pacientes, produtos, modelos, perfil, acompanhamentos) ficam no navegador, separados por conta
 (spec `dados-por-conta`), com uma cópia na nuvem enviada à mão em Configurações. Sair pergunta se apaga os dados do
 aparelho.
@@ -67,6 +69,7 @@ aparelho.
 - **CA-607** · Dado N2 com o modelo "a" novo e N3 com o modelo "b" novo, e a cópia de uma versão antiga sem os modelos, quando os dois abrem, então a nuvem fica com o "a" e o "b" novos. *(rodada 3)*
 - **CA-608** · Dado todos os aparelhos na mesma versão e um aparelho X com o relógio atrasado, quando X edita depois de N2 (com uma hora menor) e N2 aplica a cópia, então N2 fica com a edição de X. *(rodada 3)*
 - **CA-609** · Dado N1 com o roteiro velho retido, quando a pessoa edita o roteiro em N1, então a edição dela sobe como qualquer edição. *(rodada 3)*
+- **CA-610** · Dado N1 com o roteiro retido e o relógio atrasado (a hora de N1 é menor que a marca que o roteiro retido guarda), quando a pessoa edita o roteiro em N1 e o salvar cai numa junção, então a edição dela não volta a ficar retida: ela fica com uma hora logo depois da marca que substituiu e sobe. *(rodada 4)*
 
 ## 3. Casos de borda
 
