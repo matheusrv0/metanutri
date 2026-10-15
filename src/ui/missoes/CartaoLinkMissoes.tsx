@@ -71,6 +71,8 @@ export function CartaoLinkMissoes({
   const [salvando, setSalvando] = useState(false)
   // D-152: antes do primeiro link, a caixa vem marcada (decisão do dono, a revisar).
   const [mostrarDieta, setMostrarDieta] = useState(true)
+  // CA-544: ligar a dieta num link que já existe espera a confirmação de autorização.
+  const [autorizandoDieta, setAutorizandoDieta] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
   const dietaVai = dieta !== undefined && mostrarDieta
 
@@ -99,7 +101,14 @@ export function CartaoLinkMissoes({
   // CA-543, CA-544 e CA-545: ligar, desligar ou atualizar a dieta não troca o endereço nem as missões.
   const trocarDieta = (ligar: boolean) => {
     if (!acompanhamento) return
+    setAutorizandoDieta(false)
     void gravar({ ...acompanhamento, dieta: ligar && dieta ? copiarDieta(dieta, hoje) : null })
+  }
+
+  // CA-544: marcar a caixa num link sem dieta pergunta pela autorização; desmarcar grava na hora.
+  const mudarCaixa = (marcar: boolean) => {
+    if (marcar && acompanhamento?.dieta === null) setAutorizandoDieta(true)
+    else trocarDieta(marcar)
   }
 
   // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443). O grande demais (CA-446) e a dieta
@@ -237,10 +246,13 @@ export function CartaoLinkMissoes({
         dieta ? (
           <CaixaDietaNoLink
             marcada={acompanhamento.dieta !== null}
-            aoMudar={trocarDieta}
+            aoMudar={mudarCaixa}
             ocupada={salvando}
             desatualizada={acompanhamento.dieta !== null && dietaMudou(acompanhamento.dieta, dieta)}
             aoAtualizar={() => trocarDieta(true)}
+            pedindoAutorizacao={autorizandoDieta && acompanhamento.dieta === null}
+            aoAutorizar={() => trocarDieta(true)}
+            aoDesistir={() => setAutorizandoDieta(false)}
           />
         ) : null
       }

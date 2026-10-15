@@ -440,7 +440,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(caixa()).not.toBeChecked()
   })
 
-  it('CA-544: marcar copia a dieta de agora para o link, com o mesmo endereço', async () => {
+  it('CA-544: marcar a caixa num link sem dieta pede a autorização numa linha, e nada é gravado antes de confirmar', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const antes = repo.salvar(acompanhamentoDe('c1', 'Ana'))
@@ -449,8 +449,30 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(caixa()).not.toBeChecked()
     await usuario.click(caixa())
 
+    expect(screen.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço. O paciente autorizou?')).toBeInTheDocument()
+    expect(repo.porCaso('c1')?.dieta).toBeNull()
+    expect(caixa()).not.toBeChecked()
+
+    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar a dieta' }))
+
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
     expect(repo.porCaso('c1')?.token).toBe(antes.token)
+    expect(caixa()).toBeChecked()
+    expect(screen.queryByText(/O paciente autorizou\?/)).not.toBeInTheDocument()
+  })
+
+  it('CA-544: "Agora não" deixa o link sem dieta', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    repo.salvar(acompanhamentoDe('c1', 'Ana'))
+    cartaoComDieta(repo)
+
+    await usuario.click(caixa())
+    await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
+
+    expect(repo.porCaso('c1')?.dieta).toBeNull()
+    expect(caixa()).not.toBeChecked()
+    expect(screen.queryByText(/O paciente autorizou\?/)).not.toBeInTheDocument()
   })
 
   it('CA-545: plano mudado: o cartão avisa e "Atualizar a dieta no link" copia a de agora, sem trocar endereço nem missões', async () => {

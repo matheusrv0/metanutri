@@ -974,6 +974,7 @@ describe('A dieta no link, na nuvem (spec dieta-no-link)', () => {
 
     nuvem.falha.upsert = true
     await usuario.click(caixa())
+    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar a dieta' }))
 
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
