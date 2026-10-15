@@ -1,6 +1,7 @@
 // CA-316: a linha fina no topo das páginas, da segunda em diante, pelas margens do @page.
 // Chrome e Edge desenham; navegador que não conhece as margens do @page só não mostra (CB-77).
-const textoCss = (texto: string) => `"${texto.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`
+// Dentro da string do CSS, \r, \n e \f são quebra de linha e acabariam a string antes da hora: viram espaço.
+const textoCss = (texto: string) => `"${texto.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n\f]+/g, ' ')}"`
 
 export function regraDaLinhaFina(esquerda: string, direita: string): string {
   return [

@@ -14,4 +14,11 @@ describe('linha fina do topo (CA-316)', () => {
     expect(css).toContain('content: "Plano alimentar · Maria \\"Mari\\" \\\\ 2 fim"')
     expect(css).toContain('@top-right { content: ""')
   })
+
+  it('CA-487: o form feed, que o CSS lê como quebra de linha, também vira espaço', () => {
+    const css = regraDaLinhaFina('Maria\f} body { color: red } x {', 'Ana\f\r\nSouza')
+    expect(css).not.toContain('\f')
+    expect(css).toContain('content: "Maria } body { color: red } x {"; font-size: 9pt')
+    expect(css).toContain('content: "Ana Souza"; font-size: 9pt')
+  })
 })
