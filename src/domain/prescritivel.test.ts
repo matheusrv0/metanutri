@@ -1,3 +1,4 @@
+import { FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, ehPrescritivel, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
@@ -7,6 +8,32 @@ const porDescricao = (d: string): Alimento => {
   const a = ALIMENTOS.find((x) => x.descricao.trim() === d)
   if (!a) throw new Error(`Alimento "${d}" não existe na tabela.`)
   return a
+}
+
+// Lista revisada à mão contra o Apêndice A. Mudou a regra ou a base? Esta lista e o apêndice mudam juntos.
+const IDS_POR_MOTIVO: Readonly<Record<string, readonly number[]>> = {
+  alcool: [472, 474],
+  'sal-e-fermento': [513, 514, 516, 517, 518, 519],
+  'bebida-adocada': [446, 455, 460, 470, 473, 479, 480, 481, 482, 483, 512],
+  doce: [
+    8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 20, 26, 29, 30, 167, 171, 173, 176, 195, 198, 199, 224, 227, 245, 450, 451, 452, 453, 466,
+    491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 515, 579, 580,
+  ],
+  gordura: [259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 444, 445, 447, 522, 523, 524, 545, 547],
+  embutido: [323, 338, 339, 384, 385, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 434, 437, 438, 439, 443],
+  'prato-com-embutido': [526, 527, 528, 536, 539, 540, 543, 548, 555],
+  fritura: [55, 56, 57, 58, 59, 60, 90, 93, 132, 281, 286, 297, 299, 300, 303, 305, 306, 308, 320, 331, 340, 386, 387, 388, 401, 428, 442, 490, 525, 529, 530],
+  ultraprocessado: [23, 24, 25, 28, 31, 36, 39, 46, 99, 324, 325, 389, 390, 520, 521, 586],
+  miscelanea: [511],
+  po: [27, 114, 456, 459, 583],
+  farinha: [32, 33, 34, 35, 42, 43, 121, 123, 124, 146, 581, 592],
+  cru: [
+    2, 4, 6, 19, 38, 40, 41, 44, 65, 67, 87, 89, 92, 96, 103, 113, 130, 141, 275, 278, 279,
+    283, 285, 288, 291, 292, 295, 296, 298, 302, 304, 307, 310, 312, 314, 316, 321, 322, 327, 329, 330, 333, 334, 336, 341, 343, 345, 348,
+    350, 352, 354, 355, 357, 360, 362, 364, 366, 367, 369, 372, 373, 375, 376, 379, 380, 382, 391, 394, 397, 399, 400, 402, 405, 407, 409,
+    412, 414, 426, 427, 431, 433, 436, 441, 485, 489, 557, 562, 564, 566, 568, 570, 572, 574, 575, 576, 578, 585,
+  ],
+  tempero: [81, 82, 108, 133, 153, 158, 159, 160, 188, 220, 234, 258, 535, 552],
 }
 
 describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
@@ -294,31 +321,18 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       const regra = regraQueExclui(a)
       if (regra) (porMotivo[regra.id] ??= []).push(a.id)
     }
-    // Lista revisada à mão contra o Apêndice A. Mudou a regra ou a base? Esta lista e o apêndice mudam juntos.
-    expect(porMotivo).toEqual({
-      alcool: [472, 474],
-      'sal-e-fermento': [513, 514, 516, 517, 518, 519],
-      'bebida-adocada': [446, 455, 460, 470, 473, 479, 480, 481, 482, 483, 512],
-      doce: [
-        8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 20, 26, 29, 30, 167, 171, 173, 176, 195, 198, 199, 224, 227, 245, 450, 451, 452, 453, 466,
-        491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 515, 579, 580,
-      ],
-      gordura: [259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 444, 445, 447, 522, 523, 524, 545, 547],
-      embutido: [323, 338, 339, 384, 385, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 434, 437, 438, 439, 443],
-      'prato-com-embutido': [526, 527, 528, 536, 539, 540, 543, 548, 555],
-      fritura: [55, 56, 57, 58, 59, 60, 90, 93, 132, 281, 286, 297, 299, 300, 303, 305, 306, 308, 320, 331, 340, 386, 387, 388, 401, 428, 442, 490, 525, 529, 530],
-      ultraprocessado: [23, 24, 25, 28, 31, 36, 39, 46, 99, 324, 325, 389, 390, 520, 521, 586],
-      miscelanea: [511],
-      po: [27, 114, 456, 459, 583],
-      farinha: [32, 33, 34, 35, 42, 43, 121, 123, 124, 146, 581, 592],
-      cru: [
-        2, 4, 6, 19, 38, 40, 41, 44, 65, 67, 87, 89, 92, 96, 103, 113, 130, 141, 275, 278, 279,
-        283, 285, 288, 291, 292, 295, 296, 298, 302, 304, 307, 310, 312, 314, 316, 321, 322, 327, 329, 330, 333, 334, 336, 341, 343, 345, 348,
-        350, 352, 354, 355, 357, 360, 362, 364, 366, 367, 369, 372, 373, 375, 376, 379, 380, 382, 391, 394, 397, 399, 400, 402, 405, 407, 409,
-        412, 414, 426, 427, 431, 433, 436, 441, 485, 489, 557, 562, 564, 566, 568, 570, 572, 574, 575, 576, 578, 585,
-      ],
-      tempero: [81, 82, 108, 133, 153, 158, 159, 160, 188, 220, 234, 258, 535, 552],
-    })
+    expect(porMotivo).toEqual(IDS_POR_MOTIVO)
+  })
+
+  it('CA-667: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
+    const FORMA = new Set(['miscelanea', 'po', 'farinha', 'cru', 'tempero'])
+    for (const [motivo, ids] of Object.entries(IDS_POR_MOTIVO)) {
+      const trava = FORMA.has(motivo) ? FORMA_DE_INGREDIENTE : NUNCA_APARECE
+      for (const id of ids) {
+        const nome = (ALIMENTOS.find((a) => a.id === id)?.descricao ?? '').trim().replace(/\s+/g, ' ')
+        expect(nome, `${motivo} ${id}`).toMatch(trava)
+      }
+    }
   })
 
   it.each([
