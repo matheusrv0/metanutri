@@ -1,0 +1,253 @@
+// O nome do alimento que o paciente lê na folha (spec impressao-do-plano, D-181, D-182 e seção 2).
+//
+// O planejador, a busca, a tabela e o Word continuam com o nome da base ("Pão, trigo, francês"): é por ele que a
+// nutricionista escolhe. Na folha do paciente sai "Pão francês". A ordem das regras é a da spec: produto cadastrado
+// sai como foi escrito; depois vale a lista revisada à mão; depois a regra geral sobre as partes do nome.
+import { ALIMENTOS } from './tabelas.ts'
+import type { Alimento } from './tipos.ts'
+
+/**
+ * Os alimentos comuns cuja regra geral não sai natural, pelo id da base. Mudou a regra, confira esta lista: ela vale
+ * antes da regra geral.
+ */
+export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
+  3: 'Arroz branco cozido',
+  4: 'Arroz branco cru',
+  5: 'Arroz branco cozido',
+  6: 'Arroz branco cru',
+  7: 'Aveia em flocos',
+  8: 'Biscoito maisena',
+  9: 'Biscoito recheado de chocolate',
+  10: 'Biscoito recheado de morango',
+  11: 'Biscoito wafer de chocolate',
+  12: 'Biscoito wafer de morango',
+  13: 'Biscoito cream cracker',
+  14: 'Mistura para bolo',
+  15: 'Bolo de aipim',
+  16: 'Bolo de chocolate',
+  17: 'Bolo de coco',
+  18: 'Bolo de milho',
+  21: 'Flocos de milho com sal',
+  22: 'Flocos de milho sem sal',
+  23: 'Mingau de milho infantil',
+  24: 'Mistura de cereais para vitamina',
+  25: 'Cereal matinal de milho',
+  26: 'Cereal matinal de milho com açúcar',
+  29: 'Curau de milho verde',
+  30: 'Mistura para curau',
+  37: 'Massa de lasanha fresca cozida',
+  38: 'Massa de lasanha fresca crua',
+  40: 'Macarrão cru',
+  41: 'Macarrão com ovos cru',
+  42: 'Amido de milho',
+  43: 'Fubá',
+  47: 'Pamonha pré-cozida',
+  48: 'Pão de forma de aveia',
+  50: 'Pão de glúten',
+  51: 'Pão de forma de milho',
+  52: 'Pão de forma integral',
+  53: 'Pão francês',
+  54: 'Pão sovado',
+  63: 'Torrada de pão francês',
+  90: 'Batata frita de pacote',
+  99: 'Biscoito de polvilho doce',
+  114: 'Coentro desidratado',
+  119: 'Espinafre cru',
+  120: 'Espinafre refogado',
+  125: 'Broto de feijão',
+  131: 'Farofa de mandioca',
+  135: 'Folha de mostarda',
+  136: 'Nhoque de batata cozido',
+  157: 'Tomate',
+  171: 'Ameixa em calda',
+  173: 'Ameixa em calda escorrida',
+  176: 'Bananada',
+  184: 'Cajá-manga',
+  195: 'Figo em calda',
+  198: 'Goiabada',
+  199: 'Goiabada cascão',
+  224: 'Doce de mamão em calda',
+  227: 'Doce de mamão verde em calda',
+  245: 'Pêssego em calda',
+  277: 'Atum em óleo',
+  284: 'Camarão cozido',
+  285: 'Camarão cru',
+  286: 'Camarão frito com casca',
+  309: 'Filé de pescada ao escabeche',
+  319: 'Sardinha em óleo',
+  324: 'Caldo de carne em tablete',
+  325: 'Caldo de galinha em tablete',
+  389: 'Empada de frango assada',
+  418: 'Linguiça de frango crua',
+  419: 'Linguiça de frango frita',
+  420: 'Linguiça de frango grelhada',
+  421: 'Linguiça de porco crua',
+  422: 'Linguiça de porco frita',
+  423: 'Linguiça de porco grelhada',
+  446: 'Bebida láctea de pêssego',
+  447: 'Creme de leite',
+  455: 'Leite achocolatado',
+  456: 'Leite em pó desnatado',
+  457: 'Leite desnatado',
+  458: 'Leite integral',
+  459: 'Leite em pó integral',
+  463: 'Queijo muçarela',
+  466: 'Petit suisse de morango',
+  468: 'Requeijão cremoso',
+  469: 'Ricota',
+  472: 'Cachaça',
+  473: 'Caldo de cana',
+  475: 'Chá de erva-doce',
+  478: 'Água de coco',
+  479: 'Água tônica',
+  480: 'Refrigerante de cola',
+  481: 'Refrigerante de guaraná',
+  482: 'Refrigerante de laranja',
+  483: 'Refrigerante de limão',
+  485: 'Ovo de codorna',
+  486: 'Clara de ovo cozida',
+  487: 'Gema de ovo cozida',
+  488: 'Ovo cozido',
+  489: 'Ovo cru',
+  490: 'Ovo frito',
+  496: 'Chocolate ao leite com castanha-do-pará',
+  497: 'Chocolate ao leite diet',
+  502: 'Geleia de mocotó',
+  504: 'Maria-mole',
+  505: 'Maria-mole de coco queimado',
+  507: 'Mel',
+  512: 'Cappuccino em pó',
+  513: 'Fermento químico em pó',
+  514: 'Fermento biológico',
+  519: 'Tempero à base de sal',
+  522: 'Chantilly em spray',
+  524: 'Maionese',
+  527: 'Baião de dois',
+  529: 'Bife a cavalo',
+  542: 'Macarrão à bolonhesa',
+  557: 'Amendoim cru',
+  579: 'Paçoca de amendoim',
+  580: 'Pé de moleque',
+  582: 'Bebida de soja',
+  583: 'Extrato de soja em pó',
+  584: 'Tofu',
+  589: 'Castanha-do-pará',
+}
+
+// ---------- Regra geral (seção 2, item 3) ----------
+
+/** Parte inteira que é ficha técnica, não comida. */
+const RUIDO = /^(industrializad[oa]s?|envasad[oa]s?|drenad[oa]s?|com óleo hidrogenado|com óleo interesterificado|sabores variados)$/i
+const PREPARO = /^(crus?|cruas?|cozid[oa]s?|grelhad[oa]s?|assad[oa]s?|frit[oa]s?|refogad[oa]s?|torrad[oa]s?)$/i
+const CRU = /^(crus?|cruas?)$/i
+const CONGELADO = /^congelad[oa]s?$/i
+/** Como preparar: vai para o fim do nome. */
+const NOTA = /^(sem|com) (pele|gordura|casca|capa de gordura)$/i
+/** A parte do animal ou do alimento que vira o começo do nome: "Peito de frango", "Polpa de acerola". */
+const PARTES = new Set([
+  'filé',
+  'peito',
+  'coxa',
+  'sobrecoxa',
+  'asa',
+  'coração',
+  'fígado',
+  'posta',
+  'bisteca',
+  'costela',
+  'lombo',
+  'pernil',
+  'orelha',
+  'rabo',
+  'língua',
+  'polpa',
+  'suco',
+  'suco concentrado',
+  'extrato',
+  'purê',
+  'molho',
+  'salada',
+  'semente',
+  'farinha',
+  'massa',
+])
+/** Grupos em que "cru" não diz nada: come-se assim. */
+const GRUPOS_SEM_CRU = new Set(['Frutas e derivados', 'Nozes e sementes'])
+const GRUPO_VERDURAS = 'Verduras, hortaliças e derivados'
+const ORTOGRAFIA: readonly (readonly [RegExp, string])[] = [
+  [/Lingüiça/g, 'Linguiça'],
+  [/\bpêra\b/g, 'pera'],
+  [/\bPêra\b/g, 'Pera'],
+  [/mingnon/g, 'mignon'],
+  [/Geléia/g, 'Geleia'],
+  [/Atemóia/g, 'Atemoia'],
+  [/cabotian/g, 'cabotiá'],
+]
+
+/** Os ids da base: só neles valem a lista e as regras (produto cadastrado sai como foi escrito). */
+const IDS_DA_BASE = new Set(ALIMENTOS.map((a) => a.id))
+
+/** Bases que a tabela também tem preparadas: nelas, "cru" diz alguma coisa ("Cenoura crua" e "Cenoura cozida"). */
+const BASES_COM_PREPARO = new Set(ALIMENTOS.filter((a) => a.preparo !== null && a.preparo !== 'cru').map((a) => a.base))
+
+const maiuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const minuscula = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+
+/** Tira de uma parte o que é ficha técnica: teor de gordura, tempo de cozimento, concentração, número de amostra. */
+function limpar(parte: string): string {
+  return parte
+    .replace(/\s*\(\s*\d+\s*%[^)]*\)/g, '')
+    .replace(/\/\s*\d+\s*minutos/g, '')
+    .replace(/\binfusão\s+\d+\s*%/g, '')
+    .replace(/\s+industrializad[oa]s?\b/g, '')
+    .replace(/(?<!\btipo)\s+\d+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function pelaRegra(alimento: Alimento): string {
+  let texto = alimento.descricao.trim()
+  for (const [de, para] of ORTOGRAFIA) texto = texto.replace(de, para)
+  const [base = '', ...demais] = texto
+    .split(',')
+    .map(limpar)
+    .filter((p) => p !== '' && !RUIDO.test(p))
+  let resto = demais
+
+  const preparo = resto.find((p) => PREPARO.test(p)) ?? null
+  // Já preparado, o "congelado" de quando se comprou não muda nada.
+  if (preparo !== null && !CRU.test(preparo)) resto = resto.filter((p) => !CONGELADO.test(p))
+
+  let cabeca = base
+  let animal = minuscula(base)
+  // Carne bovina: o nome é o corte ("Patinho"); o que não é corte vira "de boi" ("Fígado de boi").
+  if (base === 'Carne' && resto[0] === 'bovina') {
+    resto = resto.slice(1)
+    animal = 'boi'
+    const corte = resto[0]
+    if (corte !== undefined && !PARTES.has(corte)) {
+      cabeca = corte === 'seca' ? 'Carne seca' : maiuscula(corte)
+      resto = resto.slice(1)
+    }
+  }
+  const parte = resto.find((p) => PARTES.has(p))
+  if (parte !== undefined) {
+    cabeca = `${maiuscula(parte)} de ${animal}`
+    resto = resto.filter((p) => p !== parte)
+  }
+
+  const tirarCru =
+    GRUPOS_SEM_CRU.has(alimento.categoria) || (alimento.categoria === GRUPO_VERDURAS && !BASES_COM_PREPARO.has(alimento.base))
+  const palavras = resto
+    .filter((p) => !NOTA.test(p) && !(tirarCru && CRU.test(p)))
+    .map((p) => (p === 'pó' ? 'em pó' : p === 'conserva' ? 'em conserva' : p))
+  const notas = resto.filter((p) => NOTA.test(p))
+  return maiuscula([cabeca, ...palavras, ...notas].join(' ').replace(/\s+/g, ' ').trim())
+}
+
+/** O nome na folha do paciente (CA-623 a CA-626). Sem alimento, "Alimento removido" (CB-180). */
+export function nomeParaPaciente(alimento: Alimento | undefined): string {
+  if (!alimento) return 'Alimento removido'
+  if (!IDS_DA_BASE.has(alimento.id)) return alimento.descricao.trim() || 'Alimento sem nome'
+  return NOMES_REVISADOS[alimento.id] ?? pelaRegra(alimento)
+}
