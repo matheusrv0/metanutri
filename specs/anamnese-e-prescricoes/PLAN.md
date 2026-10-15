@@ -82,10 +82,10 @@ mudar o que a dieta mostra, e passam a servir às três folhas. Quem assina a fo
   - Cobre: CA-561 (data nova ao salvar), CA-585 (paciente novo), CA-588
   - Feito quando: testes de ficha antiga, de campo estragado, de salvar mudando o `atualizadoEm`.
 - [ ] **T5** — `documentoDoPaciente.ts`: `assinaturaDoDocumento(assinatura)` (nutricionista: nome e CRN; estudante: nome da
-  conta e responsável técnico; sem situação: vazia), `ehProposta(assinatura)`, `FRASE_PROPOSTA`, `tituloDoDocumento(tipo,
-  proposta)`, `dataDeHoje(agora)` (data local, AAAA-MM-DD).
+  conta e responsável técnico; sem situação: vazia), `ehProposta(assinatura)`, `propostaNaDieta(assinatura, caso)`,
+  `FRASE_PROPOSTA`, `tituloDoDocumento(tipo, proposta)`, `dataDeHoje(agora)` (data local, AAAA-MM-DD).
   - Depende de: —
-  - Cobre: D-167, CA-582, CA-583 (domínio)
+  - Cobre: D-167, CA-582, CA-583, CA-584 (domínio)
   - Feito quando: testes das três situações, de nome ou CRN faltando e da data local.
 - [ ] **T6** — Nuvem e backup: as duas chaves em `CHAVES_DE_DADOS`; `metanutri:modelos-suplemento` em `LISTAS` da cópia
   (tempo: `atualizadoEm` ou `criadoEm`); em `donoDosDados.ts`, a mesma junção dos modelos de plano.
