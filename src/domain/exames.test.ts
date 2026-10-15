@@ -1,4 +1,4 @@
-import { EXAMES, linhasDoPedido, marcarExame, normalizarPedido, PEDIDO_VAZIO, pedidoVazio } from './exames.ts'
+import { EXAMES, limparPedido, linhasDoPedido, marcarExame, normalizarPedido, PEDIDO_VAZIO, pedidoVazio } from './exames.ts'
 
 describe('pedido de exames (D-169)', () => {
   it('CA-579: os 15 exames da lista (seção 3), nesta ordem, com ids únicos', () => {
@@ -38,6 +38,12 @@ describe('pedido de exames (D-169)', () => {
     const pedido = { marcados: ['tsh', 'hemograma', 'ferritina'], outros: 'Ácido fólico\n\n  \n Zinco sérico \r\n' }
     expect(linhasDoPedido(pedido)).toEqual(['Hemograma completo', 'Ferritina', 'TSH', 'Ácido fólico', 'Zinco sérico'])
     expect(pedidoVazio(pedido)).toBe(false)
+  })
+
+  it('CA-579: limpar o pedido desmarca tudo e esvazia Outros, mas guarda o exame que esta versão não conhece (CA-589)', () => {
+    const limpo = limparPedido({ marcados: ['tsh', 'exame-novo', 'ferritina'], outros: 'Selênio' })
+    expect(limpo).toEqual({ marcados: ['exame-novo'], outros: '' })
+    expect(pedidoVazio(limpo)).toBe(true)
   })
 
   it('CA-581: só linhas em branco em Outros conta como vazio', () => {

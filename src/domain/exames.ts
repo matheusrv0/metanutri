@@ -46,6 +46,11 @@ export function normalizarPedido(valor: unknown): PedidoExames {
   const lista = Array.isArray(o['marcados']) ? o['marcados'].filter((id): id is string => typeof id === 'string') : []
   return { ...o, marcados: [...new Set(lista)], outros: typeof o['outros'] === 'string' ? o['outros'] : '' }
 }
+const IDS: ReadonlySet<string> = new Set(EXAMES.map((e) => e.id))
+
+/** CA-579: "Limpar pedido" desmarca a lista e esvazia "Outros exames"; o exame que esta versão não conhece fica (CA-589). */
+export const limparPedido = (pedido: PedidoExames): PedidoExames => ({ ...pedido, marcados: pedido.marcados.filter((id) => !IDS.has(id)), outros: '' })
+
 export function marcarExame(pedido: PedidoExames, id: string, marcado: boolean): PedidoExames {
   const sem = pedido.marcados.filter((m) => m !== id)
   return { ...pedido, marcados: marcado ? [...sem, id] : sem }

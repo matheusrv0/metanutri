@@ -72,6 +72,15 @@ describe('Pedido de exames na ficha (US-AP3)', () => {
     expect(pacientes.obter('p1')?.pedidoExames.marcados).toEqual(['vitamina-b12'])
   })
 
+  it('CA-579: Limpar pedido desmarca tudo e esvazia Outros; sem nada no pedido, fica desligado', async () => {
+    const { pacientes, usuario } = montar({ pedidoExames: { marcados: ['tsh', 'ferritina'], outros: 'Selênio' } })
+    await usuario.click(cartao().getByRole('button', { name: 'Limpar pedido' }))
+    expect(pacientes.obter('p1')?.pedidoExames).toEqual({ marcados: [], outros: '' })
+    for (const caixa of cartao().getAllByRole('checkbox')) expect(caixa).not.toBeChecked()
+    expect(cartao().getByLabelText('Outros exames')).toHaveValue('')
+    expect(cartao().getByRole('button', { name: 'Limpar pedido' })).toBeDisabled()
+  })
+
   it('CA-581: sem nada marcado nem escrito, "Imprimir pedido" fica desligado e o cartão diz o porquê', async () => {
     const { usuario } = montar()
     expect(cartao().getByRole('button', { name: 'Imprimir pedido' })).toBeDisabled()

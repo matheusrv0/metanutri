@@ -1,8 +1,8 @@
-import { Printer } from 'lucide-react'
+import { Eraser, Printer } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { dataDeHoje } from '@/domain/documentoDoPaciente.ts'
-import { EXAMES, marcarExame, pedidoVazio } from '@/domain/exames.ts'
+import { EXAMES, limparPedido, marcarExame, pedidoVazio } from '@/domain/exames.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -34,10 +34,17 @@ export function CartaoExames({ paciente, assinatura, aoAlterar }: CartaoExamesPr
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle id={`${id}-titulo`}>Pedido de exames</CardTitle>
-          <Button size="sm" variant="outline" disabled={vazio} aria-describedby={vazio ? `${id}-vazio` : undefined} onClick={() => setDataDaFolha(dataDeHoje())}>
-            <Printer aria-hidden="true" />
-            Imprimir pedido
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {/* CA-579: começa um pedido novo. Sem nada no pedido, não há o que limpar. */}
+            <Button size="sm" variant="ghost" disabled={vazio} onClick={() => aoAlterar({ pedidoExames: limparPedido(pedido) })}>
+              <Eraser aria-hidden="true" />
+              Limpar pedido
+            </Button>
+            <Button size="sm" variant="outline" disabled={vazio} aria-describedby={vazio ? `${id}-vazio` : undefined} onClick={() => setDataDaFolha(dataDeHoje())}>
+              <Printer aria-hidden="true" />
+              Imprimir pedido
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
