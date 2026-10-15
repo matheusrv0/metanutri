@@ -30,7 +30,7 @@ export function FolhaDocumento({ titulo, paciente, data, assinatura, proposta, c
   const linhaFina = linhaFinaDoDocumento(titulo, paciente, assinatura)
 
   return (
-    <article aria-label={titulo} className="folha-documento mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm leading-relaxed text-foreground sm:p-10">
+    <article aria-label={titulo} className="folha-documento papel mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm leading-relaxed text-foreground sm:p-10">
       {/* Se passar de uma página, as seguintes trazem o título, o paciente e quem assina (como a dieta, CA-316). */}
       <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
 
@@ -44,13 +44,11 @@ export function FolhaDocumento({ titulo, paciente, data, assinatura, proposta, c
         </div>
         <QuemAssina assinatura={assinatura} />
       </header>
-      {/* A régua da marca, como na dieta: teal e, no fim, o laranja como grafismo (nunca carrega texto). */}
-      <div aria-hidden="true" className="-mt-2 flex">
-        <span className="flex-[86] border-t-[3px] border-primary" />
-        <span className="flex-[14] border-t-[3px] border-laranja" />
-      </div>
+      {/* Como na dieta (spec impressao-do-plano, CA-639): um fio fino no lugar da régua de cor. */}
+      <div aria-hidden="true" className="-mt-2 border-t border-border" />
 
-      {proposta ? <p className="rounded-lg bg-muted px-4 py-3 font-semibold text-heading">{FRASE_PROPOSTA}</p> : null}
+      {/* CA-640: a frase de estágio em negrito, sem caixa de fundo. */}
+      {proposta ? <p className="font-semibold text-heading">{FRASE_PROPOSTA}</p> : null}
 
       {children}
 

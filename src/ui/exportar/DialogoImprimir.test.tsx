@@ -39,7 +39,8 @@ describe('Suplementos da ficha na janela de imprimir (spec anamnese-e-prescricoe
   it('CA-577: sem suplemento com nome, a opção não aparece', () => {
     render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} suplementos={[{ ...vitD, nome: '' }]} aoFechar={vi.fn()} />)
     expect(janela().queryByRole('switch', { name: 'Suplementos da ficha' })).not.toBeInTheDocument()
-    expect(screen.getByText('As refeições, os lembretes, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.')).toBeInTheDocument()
+    // CA-635 (spec impressao-do-plano): os lembretes saíram da folha.
+    expect(screen.getByText('As refeições, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.')).toBeInTheDocument()
   })
 })
 

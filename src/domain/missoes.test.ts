@@ -1,4 +1,4 @@
-import { listaDeCompras, missoesDoPlano } from './missoes.ts'
+import { missoesDoPlano } from './missoes.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
 
 let n = 0
@@ -45,11 +45,5 @@ describe('missões do dia', () => {
 
   it('plano vazio não gera missão nenhuma', () => {
     expect(missoesDoPlano(criarPlanoPadrao(ids))).toEqual([])
-  })
-
-  it('a lista de compras soma o mesmo alimento em refeições diferentes', () => {
-    const compras = listaDeCompras(comAlimentos())
-    expect(compras.find((c) => c.descricao.startsWith('Arroz'))?.gramas).toBe(200)
-    expect(compras.find((c) => c.descricao.startsWith('Batata'))?.gramas).toBe(100)
   })
 })

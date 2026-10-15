@@ -26,6 +26,18 @@ describe('Folhas curtas no papel', () => {
     expect(regra).toContain('@page :first')
   })
 
+  it('CA-639 e CA-640 (spec impressao-do-plano): sem a régua de cor, e a frase de estágio em negrito, sem caixa', () => {
+    const { container } = render(
+      <FolhaSuplementos paciente="Maria Silva" suplementos={[{ id: 's1', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '' }]} assinatura={JULIA} data="2026-10-15" />,
+    )
+    expect(container.querySelector('.border-laranja, .border-primary')).toBeNull()
+    // D-180: o papel usa o escopo claro de tokens.css.
+    expect(screen.getByRole('article')).toHaveClass('papel')
+    const frase = screen.getByText('Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).')
+    expect(frase).toHaveClass('font-semibold')
+    expect(frase.className).not.toMatch(/\bbg-|rounded/)
+  })
+
   it('CA-587: quem assina fica à esquerda quando cai embaixo do título, e à direita a partir da tela média', () => {
     render(<FolhaExames paciente="Maria Silva" nascimento={null} pedido={{ marcados: ['tsh'], outros: '' }} assinatura={JULIA} data="2026-10-15" />)
     const topo = within(screen.getByRole('article')).getByText('Estagiário(a):').closest('div')

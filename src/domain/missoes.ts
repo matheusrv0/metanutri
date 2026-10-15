@@ -67,22 +67,3 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number 
 
   return missoes
 }
-
-export interface ItemCompra {
-  readonly descricao: string
-  readonly gramas: number
-}
-
-/** Lista de compras do dia: soma as quantidades por alimento do Principal. */
-export function listaDeCompras(plano: Plano): readonly ItemCompra[] {
-  const porAlimento = new Map<number, number>()
-  for (const refeicao of plano.refeicoes) {
-    for (const item of refeicao.opcoes.principal) {
-      if (item.gramas <= 0) continue
-      porAlimento.set(item.alimentoId, (porAlimento.get(item.alimentoId) ?? 0) + item.gramas)
-    }
-  }
-  return [...porAlimento.entries()]
-    .map(([id, gramas]) => ({ descricao: buscarAlimento(id)?.descricao ?? 'Alimento removido', gramas }))
-    .sort((a, b) => a.descricao.localeCompare(b.descricao, 'pt-BR'))
-}

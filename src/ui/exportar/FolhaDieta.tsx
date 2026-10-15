@@ -1,18 +1,20 @@
+import { Fragment } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
-import { medidaEquivalente } from '@/domain/busca.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
-  lembretesDoDia,
+  comprasDaFolha,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
+  opcoesDaRefeicao,
+  trocasDaFolha,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
+import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
+import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
@@ -37,32 +39,56 @@ interface FolhaDietaProps {
   readonly suplementos?: readonly Suplemento[] | undefined
 }
 
-/** Colunas da quantidade e do alimento: a medida mais longa ("2 colheres de servir e meia · 150 g") cabe numa linha. */
-const COLUNAS = 'grid grid-cols-1 gap-x-4 sm:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)]'
+/**
+ * Colunas do alimento e da quantidade. A do alimento tem largura fixa, para a quantidade ficar perto do nome e
+ * alinhada entre as refeições; nome longo quebra a linha. No celular, a quantidade vai embaixo do nome.
+ */
+const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]'
 
-/** "6 colheres de sopa · 150 g"; sem medida caseira, só o peso (CA-309). */
-function Quantidade({ item }: { readonly item: ItemPlano }) {
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
-  const gramas = `${formatarNumero(item.gramas, 0)} g`
-  if (!medida) return <strong className="font-bold text-heading">{gramas}</strong>
+/** Nas trocas, o alimento do plano à esquerda e as trocas dele ao lado. */
+const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
+
+/**
+ * Uma quantidade por linha (spec impressao-do-plano, D-183): a medida caseira; o peso discreto ao lado só quando a
+ * medida é vaga (D-189, CA-641); sem medida, o peso (CA-630).
+ */
+function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
+  const peso = `${formatarNumero(quantidade.gramas, 0)} g`
+  // No celular a quantidade vai embaixo do nome, em cinza; no papel e na tela larga, na cor do texto.
   return (
-    <span>
-      <strong className="font-bold text-heading">{medida.texto}</strong>
-      <span className="text-muted-foreground">{` · ${gramas}`}</span>
+    <span className="text-muted-foreground sm:text-foreground">
+      {quantidade.medida ?? peso}
+      {quantidade.medida !== null && quantidade.comPeso ? <span className="numeros text-muted-foreground">{` · ${peso}`}</span> : null}
     </span>
   )
 }
 
+/** O alimento primeiro, com o nome que o paciente entende (CA-623), e a quantidade ao lado. */
 function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
   return (
     <ul className="flex flex-col gap-1">
       {itens.map((item) => (
         <li key={item.id} className={COLUNAS}>
-          <Quantidade item={item} />
-          <span>{buscarAlimento(item.alimentoId)?.descricao ?? 'Alimento removido'}</span>
+          <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
+          <span className="sr-only">, </span>
+          <Quantidade quantidade={quantidadeNaFolha(item.alimentoId, item.gramas, buscarAlimento)} />
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * O rótulo de cada opção, quando a refeição tem mais de uma (spec impressao-do-plano, D-184): "Opção 1" pequeno em
+ * cima da primeira; "ou · Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
+ */
+function RotuloDaOpcao({ numero }: { readonly numero: number }) {
+  if (numero === 1) return <p className="text-sm font-semibold text-muted-foreground">Opção 1</p>
+  return (
+    <p className="flex items-center gap-3 pt-1 text-sm font-semibold text-muted-foreground">
+      <span>{`ou · Opção ${numero}`}</span>
+      <span aria-hidden="true" className="flex-1 border-t border-border" />
+    </p>
   )
 }
 
@@ -73,10 +99,10 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
 export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
   const linhaFina = linhaFinaDaFolha(caso, quem)
-  const lembretes = lembretesDoDia(missoesDoPlano(plano, { pesoKg: caso.pesoKg }))
-  const compras = opcoes.listaDeCompras ? listaDeCompras(plano) : []
+  const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
+  // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
-    ? trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') })
+    ? trocasDaFolha(trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') }), buscarAlimento)
     : []
   const perfil = lerPerfil(useArmazenamento())
   const nome = caso.nome.trim() || 'Sem nome'
@@ -86,7 +112,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const suplementosDaFolha = suplementosParaDocumento(suplementos)
 
   return (
-    <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
+    <article className="folha-dieta papel mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
       <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
 
       <header className="flex flex-wrap items-end justify-between gap-6">
@@ -99,60 +125,37 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
         </div>
         <QuemAssina assinatura={quem} />
       </header>
-      {/* A régua da marca: teal e, no fim, o laranja como grafismo (o laranja nunca carrega texto). */}
-      <div aria-hidden="true" className="-mt-2 flex">
-        <span className="flex-[86] border-t-[3px] border-primary" />
-        <span className="flex-[14] border-t-[3px] border-laranja" />
-      </div>
 
-      <div className="flex flex-col">
+      {/* Sem régua de cor no topo (spec impressao-do-plano, CA-633): um fio fino separa o topo das refeições. */}
+      <div className="-mt-2 flex flex-col border-t border-border">
         {plano.refeicoes.map((refeicao) => {
-          const principal = refeicao.opcoes.principal.filter((i) => i.gramas > 0)
-          const substitutos = (
-            [
-              ['Opção 2', refeicao.opcoes.substituto1.filter((i) => i.gramas > 0)],
-              ['Opção 3', refeicao.opcoes.substituto2.filter((i) => i.gramas > 0)],
-            ] as const
-          ).filter(([, itens]) => itens.length > 0)
-          const vazia = principal.length === 0 && substitutos.length === 0
+          const opcoesDaFolha = opcoesDaRefeicao(refeicao)
           return (
             <section
               key={refeicao.id}
               aria-label={`${refeicao.horario} ${refeicao.nome}`}
               className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-4 break-inside-avoid border-b border-border py-4 last:border-0"
             >
-              <span className="numeros text-xl font-bold leading-snug text-primary">{refeicao.horario}</span>
+              {/* CA-620: o horário na cor do nome da refeição; a cor de ação vira marfim no tema escuro. */}
+              <span className="numeros text-xl font-bold leading-snug text-heading">{refeicao.horario}</span>
               <div className="flex min-w-0 flex-col gap-2">
                 <h3 className="font-titulo text-xl font-bold leading-snug text-heading">{refeicao.nome}</h3>
-                {principal.length > 0 ? <Itens itens={principal} /> : null}
-                {substitutos.map(([rotulo, itens]) => (
-                  <div key={rotulo} className="-ml-3 flex flex-col gap-1 rounded-lg bg-muted px-3 py-2">
-                    <p className="font-bold text-muted-foreground">{rotulo}</p>
+                {/* CA-631 e CA-632: com mais de uma opção, cada uma com o rótulo, na ordem em que aparece; com uma só, nada. */}
+                {opcoesDaFolha.map((itens, i) => (
+                  <Fragment key={itens[0]?.id ?? i}>
+                    {opcoesDaFolha.length > 1 ? <RotuloDaOpcao numero={i + 1} /> : null}
                     <Itens itens={itens} />
-                  </div>
+                  </Fragment>
                 ))}
-                {vazia ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
+                {opcoesDaFolha.length === 0 ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
               </div>
             </section>
           )
         })}
       </div>
 
+      {/* CA-633: depois das refeições, só o que a nutricionista escreveu ou marcou, e a assinatura. */}
       <div className="fim-da-folha flex flex-col gap-5">
-        {lembretes.length > 0 ? (
-          <section aria-label="No dia a dia" className="flex break-inside-avoid flex-col gap-2">
-            <h3 className="font-titulo text-lg font-bold text-heading">No dia a dia</h3>
-            <ul className="flex flex-col gap-1.5">
-              {lembretes.map((m) => (
-                <li key={m.id} className="flex items-start gap-2.5">
-                  <span aria-hidden="true" className="mt-1 size-4 shrink-0 rounded border-[1.5px] border-foreground" />
-                  <span>{m.texto}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         {orientacoes ? (
           <section aria-label="Orientações" className="flex flex-col gap-1.5">
             <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
@@ -188,13 +191,11 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           </section>
         ) : null}
 
-        {/* Assinatura e linha final andam juntas e não ficam sozinhas no topo de uma página. */}
+        {/* A assinatura não fica sozinha no topo de uma página. Em prescrição rápida, a última linha diz que não houve
+            avaliação (CA-634; spec prescricao-rapida-e-base, princípio 4). */}
         <div className="fecho-da-folha flex break-before-avoid break-inside-avoid flex-col gap-5">
           <LinhasDeAssinatura assinatura={quem} />
-
-          <p className="text-xs text-muted-foreground">
-            {`${caso.modo === 'rapido' ? 'Plano montado em prescrição rápida, sem avaliação antropométrica. ' : ''}A prescrição é responsabilidade do nutricionista. Composição dos alimentos: ${NOME_DA_BASE}.`}
-          </p>
+          {caso.modo === 'rapido' ? <p className="text-xs text-muted-foreground">Plano montado em prescrição rápida, sem avaliação antropométrica.</p> : null}
         </div>
       </div>
 
@@ -205,9 +206,10 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <h3 className="font-titulo text-lg font-bold text-heading">Lista de compras</h3>
               <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
                 {compras.map((c) => (
-                  <li key={c.descricao} className="border-b border-dotted border-border">
-                    {`${c.descricao} — `}
-                    <span className="numeros">{`${formatarNumero(c.gramas, 0)} g`}</span>
+                  <li key={c.nome} className="border-b border-dotted border-border">
+                    {`${c.nome} — `}
+                    {/* CA-643: a quantidade do dia pela regra da refeição. */}
+                    <Quantidade quantidade={quantidadeNaFolha(c.alimentoId, c.gramas, buscarAlimento)} />
                   </li>
                 ))}
               </ul>
@@ -220,11 +222,15 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <p className="text-muted-foreground">Mesmo tipo de alimento, na quantidade certa. Pode trocar sem perguntar.</p>
               <ul aria-label="Trocas" className="flex flex-col">
                 {trocas.map((g) => (
-                  <li key={g.alimentoId} className={`${COLUNAS} break-inside-avoid border-t border-border py-2`}>
-                    <strong className="font-bold text-heading">{g.descricao}</strong>
+                  <li key={g.alimentoId} className={`${COLUNAS_TROCAS} break-inside-avoid border-t border-border py-2`}>
+                    <strong className="font-bold text-heading">{g.nome}</strong>
                     <span className="flex flex-col">
                       {g.trocas.map((t) => (
-                        <span key={t.alimentoId} className="troca">{`${t.descricao} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
+                        <span key={t.alimentoId} className="troca">
+                          {`${t.nome} · `}
+                          {/* CA-644: a mesma regra da refeição. */}
+                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, buscarAlimento)} />
+                        </span>
                       ))}
                     </span>
                   </li>

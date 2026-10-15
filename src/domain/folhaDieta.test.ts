@@ -2,16 +2,20 @@ import type { AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import { criarCasoVazio } from './caso.ts'
 import {
   assinaturaDaFolha,
+  comprasDaFolha,
   gravarOpcoesImpressao,
-  lembretesDoDia,
   lerOpcoesImpressao,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
+  opcoesDaRefeicao,
+  trocasDaFolha,
 } from './folhaDieta.ts'
-import type { Missao } from './missoes.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
-import type { Caso } from './tipos.ts'
+import { adicionarItem, criarPlanoPadrao } from './plano.ts'
+import { buscarAlimento } from './tabelas.ts'
+import type { Caso, ItemPlano, Refeicao } from './tipos.ts'
+import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
 const ANA: AssinaturaDoPlano = { situacao: 'nutricionista', linhaNutricionista: 'Ana Souza · CRN-6 12345', origem: 'conta', nome: 'Ana Souza', responsavelTecnico: '' }
 const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: null, origem: 'conta', nome: 'Júlia Martins', responsavelTecnico: 'Carla Mendes' }
@@ -58,15 +62,64 @@ describe('assinaturaDaFolha (CA-313)', () => {
   })
 })
 
-describe('lembretesDoDia (CA-312)', () => {
-  it('fica só com o que não repete o horário das refeições', () => {
-    const missoes: Missao[] = [
-      { id: 'refeicao-r1', texto: 'Desjejum por volta das 06:00', origem: 'Refeição do plano' },
-      { id: 'frutas', texto: 'Comer as 3 frutas do plano', origem: '' },
-      { id: 'refeicao-r2', texto: 'Almoço por volta das 12:00', origem: 'Refeição do plano' },
-      { id: 'agua', texto: 'Beber cerca de 2,2 litros de água', origem: '' },
+describe('comprasDaFolha (spec impressao-do-plano, CA-628 e CB-181)', () => {
+  const ARROZ_TIPO_1 = 3
+  const ARROZ_TIPO_2 = 5
+  const PAO_FRANCES = 53
+  const BANANA = 182
+
+  it('soma a principal pelo nome para o paciente, em ordem alfabética, e deixa os substitutos de fora', () => {
+    let n = 0
+    const ids = () => `i${++n}`
+    let plano = criarPlanoPadrao(ids)
+    const [desjejum, , almoco, , jantar] = plano.refeicoes
+    if (!desjejum || !almoco || !jantar) throw new Error('plano padrão mudou')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: PAO_FRANCES, gramas: 50 }, ids)
+    plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: ARROZ_TIPO_1, gramas: 150 }, ids)
+    plano = adicionarItem(plano, jantar.id, 'principal', { alimentoId: ARROZ_TIPO_2, gramas: 100 }, ids)
+    plano = adicionarItem(plano, almoco.id, 'substituto1', { alimentoId: BANANA, gramas: 80 }, ids)
+    plano = adicionarItem(plano, jantar.id, 'principal', { alimentoId: PAO_FRANCES, gramas: 0 }, ids)
+    expect(comprasDaFolha(plano, buscarAlimento)).toEqual([
+      { nome: 'Arroz branco cozido', gramas: 250, alimentoId: ARROZ_TIPO_1 },
+      { nome: 'Pão francês', gramas: 50, alimentoId: PAO_FRANCES },
+    ])
+  })
+})
+
+describe('trocasDaFolha (spec impressao-do-plano, CB-188)', () => {
+  const troca = (alimentoId: number, gramas = 100): Troca => ({ alimentoId, descricao: '', gramas, medida: null })
+  const grupo = (alimentoId: number, trocas: Troca[]): GrupoDeTrocas => ({ alimentoId, descricao: '', gramas: 100, medida: null, categoria: '', trocas })
+  const ARROZ_1 = 3
+  const ARROZ_2 = 5
+  const POLENTA = 62
+  const MARGARINA_HIDROGENADA = 263
+  const MARGARINA_INTERESTERIFICADA = 265
+  const FEIJAO_PRETO = 567
+
+  it('não troca uma coisa por ela mesma, nem repete troca ou alimento do plano pelo nome', () => {
+    const grupos = [
+      grupo(ARROZ_1, [troca(ARROZ_2), troca(POLENTA), troca(POLENTA, 90)]),
+      grupo(ARROZ_2, [troca(FEIJAO_PRETO)]),
+      grupo(MARGARINA_HIDROGENADA, [troca(MARGARINA_INTERESTERIFICADA)]),
     ]
-    expect(lembretesDoDia(missoes).map((m) => m.id)).toEqual(['frutas', 'agua'])
+    expect(trocasDaFolha(grupos, buscarAlimento)).toEqual([
+      { alimentoId: ARROZ_1, nome: 'Arroz branco cozido', trocas: [{ ...troca(POLENTA), nome: 'Polenta pré-cozida' }] },
+    ])
+  })
+})
+
+describe('opcoesDaRefeicao (spec impressao-do-plano, CA-631 e CA-632)', () => {
+  const item = (id: string, gramas: number): ItemPlano => ({ id, alimentoId: 3, gramas })
+  const refeicao = (opcoes: Refeicao['opcoes']): Refeicao => ({ id: 'r1', nome: 'Almoço', horario: '12:00', opcoes })
+
+  it('a principal e os substitutos que têm alimento, nessa ordem', () => {
+    const r = refeicao({ principal: [item('a', 100)], substituto1: [], substituto2: [item('b', 50), item('c', 0)] })
+    expect(opcoesDaRefeicao(r).map((itens) => itens.map((i) => i.id))).toEqual([['a'], ['b']])
+  })
+
+  it('refeição só com substituto começa por ele; refeição vazia não tem opção', () => {
+    expect(opcoesDaRefeicao(refeicao({ principal: [item('a', 0)], substituto1: [item('b', 30)], substituto2: [] })).map((itens) => itens.map((i) => i.id))).toEqual([['b']])
+    expect(opcoesDaRefeicao(refeicao({ principal: [], substituto1: [], substituto2: [] }))).toEqual([])
   })
 })
 

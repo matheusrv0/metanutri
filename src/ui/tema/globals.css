@@ -19,8 +19,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ---------- Os tokens do sistema no vocabulário do shadcn/ui ---------- */
-:root {
+/* ---------- Os tokens do sistema no vocabulário do shadcn/ui ----------
+ * Também em .papel: a ponte é calculada onde é declarada, então a folha do paciente a declara de novo para ler o
+ * tema claro de tokens.css (spec impressao-do-plano, D-180).
+ */
+:root,
+.papel {
   /* A ação principal é a superfície inversa: grafite no claro, clara no escuro. */
   --color-primary: var(--surface-inverse);
   --color-secondary: var(--blue-700);
@@ -309,6 +313,15 @@
   border-bottom: 1px solid var(--border-default);
 }
 
+/* ---------- O papel: as folhas do paciente são sempre claras ----------
+ * A prévia e o papel usam o tema claro, mesmo com o app no escuro (spec impressao-do-plano, D-180): o PDF de
+ * 15/10/2026 saiu do tema escuro com o horário em marfim e as opções em caixas quase pretas. As cores vêm do mesmo
+ * escopo do tema claro (`:root, .papel` em tokens.css e na ponte acima); aqui só o esquema de cores.
+ */
+.papel {
+  color-scheme: light;
+}
+
 /* ---------- Impressão: só a folha da dieta chega ao papel ---------- */
 @media print {
   @page {
@@ -325,6 +338,13 @@
     --text-subtle: #555;
     --border-subtle: #bbb;
     --border-default: #666;
+  }
+
+  /* O ProvedorTema grava color-scheme: dark no <html> (estilo inline). Com "Gráficos de fundo" ligado, o Chrome pinta
+     a página fora da folha com o fundo do esquema escuro: uma moldura preta em volta da folha (CA-622). O !important
+     vence o estilo inline. */
+  html {
+    color-scheme: light !important;
   }
 
   body {
@@ -353,13 +373,63 @@
     max-width: none !important;
   }
 
-  /* As caixas cinza das opções e a régua da marca também vão para o papel (e nas folhas do paciente). */
+  /* No papel, a letra é preta (CA-621). As marcas da lista de exames são fundo: vão para o papel mesmo sem
+     "Gráficos de fundo". */
   .folha-dieta,
   .folha-documento {
     max-width: none;
     padding: 0;
+    --text-strong: #000;
+    --text-body: #000;
+    --text-muted: #333;
+    --text-subtle: #555;
+    --border-subtle: #bbb;
+    --border-default: #666;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Com "Gráficos de fundo" ligado e o app no escuro, nada escuro em volta da folha (CA-622). */
+  body > [role='dialog']:has(.area-impressao),
+  .area-impressao {
+    color-scheme: light;
+    background: #fff !important;
+  }
+
+  /* Sem a data, o título e o endereço do navegador (spec impressao-do-plano, D-186, CA-636 e CA-637). O Chrome e o
+     Edge decidem pela primeira página se cabe o cabeçalho e o rodapé deles: sem margem em cima e embaixo nela, não
+     sai em página nenhuma. Os 14 mm vêm da folha: o topo, pelo espaço do começo da folha; o pé de cada página, por
+     um espaço que se repete em toda página (clone). Da segunda página em diante, a margem de cima continua, com a
+     linha fina (CA-316). Navegador sem clone (Safari) fica com as margens de cima, para nada encostar na borda. */
+  /* A margem da página não herda a fonte da folha: sem isto, a linha fina (CA-316) sai na fonte padrão. */
+  @page {
+    @top-left {
+      font-family: var(--font-corpo);
+    }
+    @top-right {
+      font-family: var(--font-corpo);
+    }
+  }
+
+  @supports (box-decoration-break: clone) {
+    @page {
+      margin-bottom: 0;
+    }
+
+    @page :first {
+      margin-top: 0;
+    }
+
+    .area-impressao {
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding-bottom: 14mm;
+    }
+
+    .folha-dieta,
+    .folha-documento {
+      padding-top: 14mm;
+    }
   }
 }
 
