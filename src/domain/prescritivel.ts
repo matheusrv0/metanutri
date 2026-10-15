@@ -196,6 +196,16 @@ export function ehPrescritivel(alimento: DadosDaRegra, opcoes: OpcoesPrescricao 
 const POUCO_USUAL =
   /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo(?! de alcatra)|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|jurubeba|jamel(ã|a)o|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
 
+const CORTE_GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra/i
+
+/**
+ * Corte gordo ou ave com pele: prescritível, mas vem depois do magro no cobrir e nas trocas, e tem porção menor no
+ * cobrir (spec sugestoes-com-criterio, D-199b e CA-679). Usado só para ordenar e limitar a porção.
+ */
+export function ehCorteGordo(alimento: Pick<Alimento, 'descricao' | 'categoria'>): boolean {
+  return alimento.categoria === 'Carnes e derivados' && CORTE_GORDO.test(alimento.descricao)
+}
+
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Pick<Alimento, 'descricao'>): boolean {
   return !POUCO_USUAL.test(alimento.descricao)

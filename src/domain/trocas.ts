@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehDeUsoComum, ehPrescritivel, regraQueExclui } from './prescritivel.ts'
+import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, regraQueExclui } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
@@ -143,6 +143,9 @@ export function trocasDoAlimento(
     .sort((x, y) => {
       const mesmoAlimento = parecidoComABase(y.a.descricao) - parecidoComABase(x.a.descricao)
       if (mesmoAlimento !== 0) return mesmoAlimento
+      // Corte magro e ave sem pele antes de corte gordo e ave com pele, como no cobrir (CA-679).
+      const magro = Number(ehCorteGordo(x.a)) - Number(ehCorteGordo(y.a))
+      if (magro !== 0) return magro
       const comum = Number(ehDeUsoComum(y.a)) - Number(ehDeUsoComum(x.a))
       if (comum !== 0) return comum
       // Depois do uso comum, quem tem medida caseira ganha: é o que o paciente entende.

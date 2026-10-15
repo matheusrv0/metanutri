@@ -1,7 +1,7 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
-import { ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
+import { ehCorteGordo, ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
@@ -57,10 +57,6 @@ const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' 
 
 const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
 const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
-const CORTE_GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra/i
-
-/** Corte gordo ou ave com pele: vem depois do magro e tem porção menor no cobrir (D-199b). */
-const ehCorteGordo = (a: Alimento): boolean => a.categoria === 'Carnes e derivados' && CORTE_GORDO.test(nomeLimpo(a))
 
 export interface PorcaoDoGrupo {
   readonly grupo: string

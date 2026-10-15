@@ -159,6 +159,23 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
     expect(trocas.every((t) => !t.descricao.startsWith('Presunto'))).toBe(true)
   })
 
+  it('CA-679: carne magra troca por carne magra antes de corte gordo ou ave com pele', () => {
+    const GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra/i
+    const patinho = trocasDoAlimento({ alimentoId: porDescricao('Carne, bovina, patinho, sem gordura, grelhado').id, gramas: 100 }, opcoes)
+    expect(patinho.length).toBeGreaterThan(0)
+    for (const t of patinho) expect(t.descricao).not.toMatch(GORDO)
+    // Em todas as carnes de rotina da base: depois do primeiro corte gordo, não aparece mais nenhum magro.
+    // (Item fora da rotina segue antes o CA-672: o mesmo alimento em outro preparo vem primeiro.)
+    const deRotina = (x: (typeof ALIMENTOS)[number]) => !NUNCA_APARECE.test(x.descricao) && !FORMA_DE_INGREDIENTE.test(x.descricao.trim())
+    for (const a of ALIMENTOS.filter((x) => x.categoria === 'Carnes e derivados' && deRotina(x))) {
+      const gordos = trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes).map((t) => GORDO.test(t.descricao))
+      const primeiroGordo = gordos.indexOf(true)
+      if (primeiroGordo >= 0) expect(gordos.slice(primeiroGordo), a.descricao).not.toContain(false)
+    }
+    const milanesa = trocasDoAlimento({ alimentoId: porDescricao('Frango, filé, à milanesa').id, gramas: 100 }, opcoes)
+    expect(milanesa[0]?.descricao).toMatch(/^Frango, .*sem pele/)
+  })
+
   it('CA-661: bebida alcoólica no plano não ganha troca', () => {
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cerveja, pilsen 2').id, gramas: 350 }, opcoes)).toEqual([])
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cana, aguardente 1').id, gramas: 50 }, opcoes)).toEqual([])
