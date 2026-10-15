@@ -1,6 +1,15 @@
-import { dataCompleta, dataCurta, dataPorExtenso } from './formatarData.ts'
+import { dataCompleta, dataCurta, dataPorExtenso, diaDaSemana } from './formatarData.ts'
 
 describe('Formatação de data em pt-BR', () => {
+  it('dia da semana por extenso, sem escorregar pelo fuso (spec whatsapp-e-retorno)', () => {
+    expect(diaDaSemana('2026-10-16')).toBe('sexta-feira')
+    expect(diaDaSemana('2026-10-17')).toBe('sábado')
+    expect(diaDaSemana('2026-10-18')).toBe('domingo')
+    expect(diaDaSemana('2026-10-19T23:59:00.000Z')).toBe('segunda-feira')
+    expect(diaDaSemana('2026-02-30')).toBe('')
+    expect(diaDaSemana(null)).toBe('')
+  })
+
   it('data de calendário vira dia/mês e dia/mês/ano', () => {
     expect(dataCurta('2026-09-12')).toBe('12/09')
     expect(dataCompleta('2026-09-12')).toBe('12/09/2026')

@@ -20,7 +20,10 @@ fluxo no navegador. **Nenhuma dependência nova**, **nenhuma chave nova no armaz
 ### T1 · Telefone e textos do WhatsApp (domínio)
 - **Cria** `src/domain/whatsapp.ts`: `normalizarTelefone` (D-141), `formatarTelefone`, `linkDoWhatsApp`
   (CB-141, CB-142), `primeiroNome` e os quatro textos: link, contato (sumindo e atenção), lembrete e parabéns.
-- **Cria** `src/domain/whatsapp.test.ts`: CA-500, CA-501, CA-502, CA-507, CB-140, CB-141, CB-142.
+- **Cria** `src/domain/whatsapp.test.ts`: CA-500, CA-501, CA-502, CA-507, CA-510 e CA-511 (os textos), CB-140,
+  CB-141, CB-142.
+- **Altera** `src/domain/formatarData.ts` (+ `formatarData.test.ts`): `diaDaSemana` ("2026-10-16" → "sexta-feira"),
+  que o lembrete e o bloco do Painel usam. Acrescentado antes do código, ao ver que os dois precisam dele.
 - Depende de: nada.
 
 ### T2 · Próxima consulta, fuso de Brasília e a agenda da semana (domínio)
