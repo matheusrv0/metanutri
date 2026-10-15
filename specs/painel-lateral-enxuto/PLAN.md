@@ -30,7 +30,8 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 | T4 | Cartão na coluna da etapa 2 | `src/ui/AreaDeTrabalho.tsx`, `e2e/planejador.spec.ts` | CA-685, CA-688, CA-689 | T3 |
 | T5 | Etapa 3: o que pede ação primeiro, Cobrir em destaque, notas curtas | `src/ui/adequacao/TelaAdequacao.tsx`, `TelaAdequacao.test.tsx` | CA-690, CA-691, CA-693, CB-202, CB-204 | — |
 | T6 | Etapa 3 em lista no celular | `src/ui/adequacao/TelaAdequacao.tsx`, `TelaAdequacao.test.tsx` | CA-692, CB-208 | T5 |
-| T7 | Validação | prints, relatório | todos | T1 a T6 |
+| T7 | Gaveta do Cobrir: o que passou do gasto (pedido do coordenador em 15/10) | `src/ui/adequacao/GavetaCobrir.tsx` (só o texto), `TelaAdequacao.test.tsx` | CA-694 | — |
+| T8 | Validação | prints, relatório | todos | T1 a T7 |
 
 ## Tarefas
 
@@ -90,7 +91,13 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
    saem de uma função só por grupo, para as duas formas usarem o mesmo dado.
 3. `npm run check`. Commit `feat(adequacao): adequação em lista no celular`.
 
-### T7 · Validação
+### T7 · Gaveta do Cobrir: o que passou do gasto
+1. Em `TelaAdequacao.test.tsx`, com o gasto abaixo das kcal do plano, a gaveta diz "O plano já passou
+   N kcal do gasto energético." e não diz "Cabem -"; com o gasto acima, continua "Cabem N kcal".
+2. Ver falhar. Mudar só a frase da descrição na `GavetaCobrir`; nada da lógica nem das sugestões.
+3. `npm run check`. Commit `fix(cobrir): gaveta diz quanto passou do gasto`.
+
+### T8 · Validação
 1. `npm run check`, `npx playwright test`, `npm run build`.
 2. Detector do impeccable nos arquivos mudados.
 3. Prints `depois-*` em 1280 e 390 com o mesmo roteiro dos `antes-*`.

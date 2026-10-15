@@ -68,7 +68,13 @@ some de vez: o que não fica na linha está em "Ajustar" ou em "Ver cálculo".
 Seis números (energia do plano, GET, % do gasto, proteína, carboidrato, gordura) e "Ajustar", uma
 vez cada, numa linha. **Fica como está:** não repete nada na mesma tela.
 
-### 1.4 O que a etapa 2 não mostra hoje
+### 1.4 Gaveta do Cobrir
+
+Pedido do coordenador em 15/10: com o plano acima do gasto energético, a gaveta diz "Cabem -55 kcal
+até o gasto energético". Número negativo de "cabem" não se lê. **Muda só o texto** (D-210); a lógica
+e as sugestões não mudam.
+
+### 1.5 O que a etapa 2 não mostra hoje
 
 Montando o plano, o nutricionista não vê nenhum micronutriente: o que falta e o Cobrir só aparecem
 na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais tempo.
@@ -87,6 +93,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 | D-207 | **Etapa 3 vira lista abaixo de 640 px**: em cada nutriente, nome e % com o estado, a barra, "quanto tem de quanto precisa" com a referência e o Cobrir | Em 390 px a tabela rolava para o lado e escondia o Cobrir |
 | D-208 | **Notas da tabela mais curtas**, com o mesmo conteúdo | Texto repetia o que o seletor e as marcas já dizem |
 | D-209 | **A ordem das telas no celular não muda**: o Resumo do dia continua depois das refeições | Pôr o resumo no topo empurraria as refeições, que são o trabalho da etapa 2. Nada flutua por cima do conteúdo |
+| D-210 | **Na gaveta do Cobrir, o que passou do gasto se diz como passou**: "O plano já passou 55 kcal do gasto energético." no lugar de "Cabem -55 kcal". Só o texto muda | Pedido do coordenador em 15/10/2026. Número negativo depois de "cabem" não se lê |
 
 ## 3. Critérios de aceite
 
@@ -111,6 +118,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 - **CA-690** · Dado a tabela, então ficam à vista, na ordem de sempre, os nutrientes abaixo da meta e os acima do limite. Os que estão na meta ficam recolhidos num botão "Ver os N na meta", fechado ao abrir a tela; aberto, eles aparecem na mesma tabela, com as mesmas colunas, e o botão vira "Esconder os N na meta".
 - **CA-691** · Dado um nutriente abaixo da meta, então a ação "Cobrir" tem fundo teal claro, na tabela e no cartão da etapa 2. Nutriente na meta ou acima do limite não tem Cobrir.
 - **CA-692** · Dado uma tela com menos de 640 px, então a adequação é uma lista sem rolagem para o lado: cada nutriente mostra o nome com as marcas, a adequação com o estado ("48% abaixo"), a barra, "8,7 mg de 18 mg" com o tipo da referência, e "Cobrir" com pelo menos 44 px quando está abaixo da meta. O recolhimento do CA-690 vale igual.
+- **CA-694** · Dado a gaveta do Cobrir com o plano acima do gasto energético, então a descrição diz "O plano já passou N kcal do gasto energético." (N positivo, sem casa decimal) no lugar de "Cabem -N kcal até o gasto energético.". Com o plano no gasto ou abaixo, continua "Cabem N kcal até o gasto energético.", e sem gasto calculado a frase não aparece, como hoje.
 - **CA-693** · Dado as notas da tabela, então elas dizem, uma vez cada e em uma frase cada: o que é o †, o que é o ‡, quando se usa a AI, a composição com "Fontes da base" e as referências de ingestão.
 
 ## 4. Casos de borda
@@ -128,7 +136,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 
 ## 5. Fora de escopo, explicitamente
 
-- Qualquer mudança de cálculo, de referência, de quais alimentos o Cobrir sugere (`cobrir.ts`, `trocas.ts`, `sugestoes.ts`, frente "sugestões com critério") e da lógica da gaveta do Cobrir.
+- Qualquer mudança de cálculo, de referência, de quais alimentos o Cobrir sugere (`cobrir.ts`, `trocas.ts`, `sugestoes.ts`, frente "sugestões com critério") e da lógica da gaveta do Cobrir. Na gaveta muda só a frase do CA-694.
 - O PDF e a impressão (frente "PDF do plano"), o Word e a cópia da tabela.
 - A faixa do topo da etapa 3 (item 1.3), a Avaliação antropométrica e o resto da etapa 1.
 - Resumo fixo na tela ao rolar, ou no topo da etapa 2 no celular (D-209).
