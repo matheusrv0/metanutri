@@ -402,3 +402,15 @@ describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
     expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
   })
 })
+
+describe('Notas lidas com o símbolo (CA-700)', () => {
+  it('CA-700: o † e o ‡ das notas não ficam escondidos do leitor de tela', () => {
+    montar(adulta, exemplo())
+    const adaga = screen.getByText(/^Total possivelmente subestimado:/).previousElementSibling
+    const duplaAdaga = screen.getByText(/^O limite superior da tabela/).previousElementSibling
+    expect(adaga).toHaveTextContent('†')
+    expect(adaga).not.toHaveAttribute('aria-hidden')
+    expect(duplaAdaga).toHaveTextContent('‡')
+    expect(duplaAdaga).not.toHaveAttribute('aria-hidden')
+  })
+})

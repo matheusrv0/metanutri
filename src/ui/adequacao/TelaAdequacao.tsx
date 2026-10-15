@@ -284,11 +284,11 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
 
             <TableFootnotes>
               <p>
-                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext" aria-hidden="true">†</span>
+                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
                 <span>Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.</span>
               </p>
               <p>
-                <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground" aria-hidden="true">‡</span>
+                <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
                 <span>O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.</span>
               </p>
               <p>AI: usada quando o nutriente não tem RDA nem EAR.</p>
