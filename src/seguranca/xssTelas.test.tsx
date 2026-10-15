@@ -129,6 +129,26 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     conferirSemInjecao()
   })
 
+  it('CA-487 (spec dieta-no-link): "Meu plano" no link do paciente: refeição, medida, alimento, orientações e receitas aparecem como texto', async () => {
+    const acompanhamento = criarAcompanhamento({
+      casoId: 'c1',
+      pacienteId: 'p1',
+      nome: 'Ana',
+      missoes: [{ id: 'agua', texto: 'Beber água', origem: 'Hábito' }],
+      dieta: {
+        refeicoes: [{ horario: '12:00', nome: malicioso('refeicao'), opcoes: [[{ medida: malicioso('medida'), gramas: 100, alimento: malicioso('alimento') }]] }],
+        orientacoes: malicioso('orientacoes'),
+        receitas: malicioso('receitas'),
+        copiadaEm: '2026-10-14',
+      },
+    })
+    const fonte: FonteAcompanhamentos = { naNuvem: true, porToken: () => Promise.resolve(acompanhamento), salvar: (a) => Promise.resolve(a) }
+    render(<TelaMissoesPaciente token={acompanhamento.token} fonte={fonte} hoje="2026-10-14" />)
+    await userEvent.setup().click(await screen.findByRole('radio', { name: 'Meu plano' }))
+    for (const parte of ['refeicao', 'medida', 'alimento', 'orientacoes', 'receitas']) cargaComoTexto(parte)
+    conferirSemInjecao()
+  })
+
   it('CA-487: nome da conta e pedido de estudante: nome, e-mail, instituição, matrícula e motivo aparecem como texto', async () => {
     const perfil: PerfilConta = { nome: malicioso('nome do perfil da conta'), situacao: 'estudante', crn: null, statusCrn: null, crnDeclaradoEm: null, crnDecididoEm: null }
     const pedido: PedidoEstudante = {

@@ -48,6 +48,7 @@ e cuida da caixa, do aviso de plano mudado e do botão de atualizar, num compone
 | `src/ui/estado/mensagemDoBanco.ts` (+ teste) | alterar | a trava `acompanhamentos_dieta_tamanho` (T4) |
 | `src/ui/missoes/MeuPlano.tsx` | criar | a parte "Meu plano" da tela do paciente (T5) |
 | `src/ui/missoes/TelaMissoesPaciente.tsx` (+ teste) | alterar | o seletor e as duas partes (T5) |
+| `src/seguranca/xssTelas.test.tsx` | alterar | o texto da dieta aparece como texto na tela pública (T5; acrescentado durante a T5) |
 | `src/ui/missoes/CaixaDietaNoLink.tsx` | criar | a caixa, o aviso de plano mudado e o botão de atualizar (T6) |
 | `src/ui/missoes/CartaoLinkMissoes.tsx` | alterar | usa a caixa; gerar, ligar, desligar e atualizar a dieta (T6) |
 | `src/ui/missoes/missoesNutricionista.test.tsx`, `missoesNaNuvem.test.tsx` | alterar | testes do cartão (T6) |
