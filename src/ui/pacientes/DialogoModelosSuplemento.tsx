@@ -36,7 +36,8 @@ export function DialogoModelosSuplemento({ aoUsar, aoFechar }: DialogoModelosSup
         {modelos.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum modelo ainda. Use “Salvar como modelo” num suplemento da lista.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          // min-w-0: dentro da grade da janela, a linha longa do detalhe não empurra os botões para fora da tela.
+          <ul className="flex min-w-0 flex-col gap-2">
             {modelos.map((m) => (
               <li key={m.id}>
                 <LinhaLista

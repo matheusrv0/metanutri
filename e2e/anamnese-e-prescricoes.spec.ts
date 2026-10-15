@@ -67,4 +67,17 @@ test('CA-587: em 360 px a ficha não rola para o lado e os alvos têm 44 px', as
       expect(caixa?.height ?? 0, `${nome}: ${await alvo.textContent()}`).toBeGreaterThanOrEqual(44)
     }
   }
+
+  // A janela dos modelos, com um modelo de detalhe longo: Usar e Apagar continuam dentro da tela.
+  const suplementos = page.getByRole('region', { name: 'Suplementos' })
+  await suplementos.getByLabel('Nome').fill('Vitamina D3')
+  await suplementos.getByLabel('Dose').fill('1 cápsula de 2.000 UI')
+  await suplementos.getByLabel('Horário').fill('No almoço, junto da comida')
+  await suplementos.getByRole('button', { name: 'Salvar como modelo' }).click()
+  await suplementos.getByRole('button', { name: 'Modelos' }).click()
+  const janela = page.getByRole('dialog', { name: 'Modelos de suplemento' })
+  for (const botao of [janela.getByRole('button', { name: 'Usar Vitamina D3' }), janela.getByRole('button', { name: 'Apagar o modelo Vitamina D3' })]) {
+    const caixa = await botao.boundingBox()
+    expect((caixa?.x ?? 999) + (caixa?.width ?? 0)).toBeLessThanOrEqual(360)
+  }
 })
