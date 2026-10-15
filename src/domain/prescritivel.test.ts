@@ -32,6 +32,8 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Biscoito, doce, recheado com chocolate', 'doce'],
     ['Bolo, pronto, chocolate', 'doce'],
     ['Pêssego, enlatado, em calda', 'doce'],
+    // Revisão C1: o nome não diz "em calda", e escapava.
+    ['Ameixa, calda, enlatada', 'doce'],
     ['Goiaba, doce em pasta', 'doce'],
     ['Açaí, polpa, com xarope de guaraná e glucose', 'doce'],
     ['Iogurte, sabor morango', 'doce'],
@@ -187,7 +189,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ])
   })
 
-  it('CA-664: a contagem por motivo é a do Apêndice A (293 de 597)', () => {
+  it('CA-664: a contagem por motivo é a do Apêndice A', () => {
     const contagem: Record<string, number> = {}
     for (const a of ALIMENTOS) {
       const regra = regraQueExclui(a)
@@ -196,7 +198,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(contagem).toEqual({
       alcool: 2,
       'bebida-adocada': 10,
-      doce: 50,
+      doce: 51,
       gordura: 22,
       embutido: 24,
       fritura: 31,
@@ -207,7 +209,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       cru: 98,
       tempero: 14,
     })
-    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(293)
+    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(294)
     expect(ALIMENTOS).toHaveLength(597)
   })
 

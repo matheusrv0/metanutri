@@ -31,7 +31,8 @@ const BEBIDA_ADOCADA = /^(Refrigerante|Bebida isot(ô|o)nica|Bebida l(á|a)ctea|
 const DOCE_PELO_NOME =
   /^(Biscoito, doce|Bolo,|Iogurte, sabor|Leite, condensado|Curau|Canjica, com leite|Pa(ç|c)oca|P(é|e)-de-moleque|Cereal matinal, milho, a(ç|c)(ú|u)car)/i
 // "Batata, doce" e "Polvilho, doce" não são doce: por isso o nome inteiro, não a palavra solta.
-const DOCE_NO_MEIO = /doce em (barra|pasta|calda)|doce, casc(ã|a)o|em calda|xarope|petit suisse/i
+// A calda vale com ou sem o "em": a TACO tem "Ameixa, calda, enlatada" (revisão C1).
+const DOCE_NO_MEIO = /doce em (barra|pasta)|doce, casc(ã|a)o|(^|[\s,])(em )?calda($|[\s,])|xarope|petit suisse/i
 
 const GORDURA = /^(Creme de leite|Maionese|Chantilly|Leite, de coco|Toucinho|Salada, de legumes, com maionese|Salpic(ã|a)o)/i
 
