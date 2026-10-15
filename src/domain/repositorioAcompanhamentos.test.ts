@@ -3,7 +3,7 @@ import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts
 import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 import type { Armazenamento } from './persistencia.ts'
-import { criarRepositorioAcompanhamentos, fonteLocal } from './repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, fonteLocal, mesmoLink } from './repositorioAcompanhamentos.ts'
 
 const MISSOES: readonly Missao[] = [{ id: 'agua', texto: 'Beber água', origem: 'Hábito' }]
 
@@ -239,6 +239,48 @@ describe('A dieta do link no aparelho (spec dieta-no-link)', () => {
     const a = novo()
     armazenamento.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [{ ...a, dieta: 'lixo' }] }))
     expect(criarRepositorioAcompanhamentos(armazenamento).porId(a.id)?.dieta).toBeNull()
+  })
+})
+
+describe('CA-601 (spec dados-na-nuvem): o link igual ao da nuvem não é regravado', () => {
+  it('mesmoLink compara o que importa: a ordem dos campos e a dieta ausente não contam', () => {
+    const a = novo('caso-1', 'Ana')
+    const semDieta: Record<string, unknown> = { ...a }
+    delete semDieta['dieta']
+    const lido = criarRepositorioAcompanhamentos(memoria())
+    lido.salvar(semDieta as unknown as Acompanhamento)
+    const daqui = lido.porId(a.id)
+    if (!daqui) throw new Error('link sumiu')
+    const naOrdemDaLinha: Acompanhamento = {
+      dieta: null,
+      usoNaoComercial: a.usoNaoComercial,
+      marcacoes: a.marcacoes,
+      missoes: a.missoes.map((m) => ({ origem: m.origem, texto: m.texto, id: m.id })),
+      criadoEm: a.criadoEm,
+      nome: a.nome,
+      pacienteId: a.pacienteId,
+      casoId: a.casoId,
+      token: a.token,
+      id: a.id,
+    }
+    expect(mesmoLink(daqui, naOrdemDaLinha)).toBe(true)
+    expect(mesmoLink(daqui, { ...naOrdemDaLinha, marcacoes: [{ dia: '2026-10-15', feitas: ['agua'] }] })).toBe(false)
+    expect(mesmoLink(daqui, { ...naOrdemDaLinha, token: 'outrotoken' })).toBe(false)
+  })
+
+  it('marcar muda só as marcas, sem regravar o link', () => {
+    const base = memoria()
+    const a = novo('caso-1', 'Ana')
+    const antigo: Record<string, unknown> = { ...a }
+    delete antigo['dieta']
+    base.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [antigo], naNuvem: [], pendentes: [a.id] }))
+    const repo = criarRepositorioAcompanhamentos(base)
+    repo.marcar(a.id, { naNuvem: true, pendente: false })
+    expect(JSON.parse(base.getItem('metanutri:acompanhamentos') ?? '{}')).toEqual({ formato: 1, itens: [antigo], naNuvem: [a.id], pendentes: [] })
+    expect(repo.estaNaNuvem(a.id)).toBe(true)
+    // Link que não existe: nada muda.
+    repo.marcar('outro', { naNuvem: true })
+    expect(repo.estaNaNuvem('outro')).toBe(false)
   })
 })
 

@@ -10,7 +10,7 @@ import {
   LIMITE_DE_LINKS,
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
-import { criarRepositorioAcompanhamentos, fonteLocal, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, fonteLocal, mesmoLink, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
@@ -72,10 +72,8 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
 
   /** Muda só as marcas da cópia que está no aparelho agora, sem trocá-la (CB-107, CB-108). */
   const marcarNoAparelho = useCallback(
-    (id: string, marcas: MarcasDoLink) => {
-      const atual = repo.porId(id)
-      if (atual) repo.salvar(atual, marcas)
-    },
+    // Só as marcas: o link fica com o texto que tinha e não conta como mudado na cópia da conta (CA-601).
+    (id: string, marcas: MarcasDoLink) => repo.marcar(id, marcas),
     [repo],
   )
 
@@ -196,8 +194,15 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
       for (const daNuvem of leitura.itens) {
         if (!intocado(daNuvem.id)) continue
         const local = repo.porId(daNuvem.id)
+        const pendente = local !== null && repo.estaPendente(daNuvem.id)
+        // CA-601 (spec dados-na-nuvem): o que já está igual aqui não é regravado, para não contar como mudado agora na
+        // cópia da conta; só ganha a marca de que está na nuvem, se faltar.
+        const igual = local !== null && (pendente ? mesmoLink(local, { ...local, marcacoes: daNuvem.marcacoes }) : mesmoLink(local, daNuvem))
+        if (igual) {
+          if (!repo.estaNaNuvem(daNuvem.id)) repo.marcar(daNuvem.id, { naNuvem: true })
+        }
         // CB-108: mudança daqui pendente não é desfeita; só as marcações do paciente vêm de lá.
-        if (local && repo.estaPendente(daNuvem.id)) repo.salvar({ ...local, marcacoes: daNuvem.marcacoes }, { naNuvem: true })
+        else if (local && pendente) repo.salvar({ ...local, marcacoes: daNuvem.marcacoes }, { naNuvem: true })
         // CB-105: o mesmo link nos dois lugares: vale o que está na nuvem.
         else repo.salvar(daNuvem, { naNuvem: true })
       }

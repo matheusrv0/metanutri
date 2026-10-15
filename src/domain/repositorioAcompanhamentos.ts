@@ -42,7 +42,7 @@ export interface MarcasDoLink {
 const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((id): id is string => typeof id === 'string') : [])
 
 /** Liga ou desliga a marca; `undefined` deixa como estava. */
-function marcar(conjunto: ReadonlySet<string>, id: string, valor: boolean | undefined): Set<string> {
+function comMarca(conjunto: ReadonlySet<string>, id: string, valor: boolean | undefined): Set<string> {
   const novo = new Set(conjunto)
   if (valor === true) novo.add(id)
   if (valor === false) novo.delete(id)
@@ -165,10 +165,20 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       const i = atual.itens.findIndex((a) => a.id === acompanhamento.id)
       gravar({
         itens: i === -1 ? [...atual.itens, acompanhamento] : atual.itens.map((a) => (a.id === acompanhamento.id ? acompanhamento : a)),
-        naNuvem: marcar(atual.naNuvem, acompanhamento.id, marcas.naNuvem),
-        pendentes: marcar(atual.pendentes, acompanhamento.id, marcas.pendente),
+        naNuvem: comMarca(atual.naNuvem, acompanhamento.id, marcas.naNuvem),
+        pendentes: comMarca(atual.pendentes, acompanhamento.id, marcas.pendente),
       })
       return acompanhamento
+    },
+
+    /**
+     * Muda só as marcas de um link que existe, sem regravar o link: o texto dele fica como estava guardado e ele não
+     * conta como mudado na nuvem da conta (spec dados-na-nuvem, CA-601). Link que não existe: nada muda.
+     */
+    marcar(id: string, marcas: MarcasDoLink): void {
+      const atual = lerGuardado()
+      if (!atual.itens.some((a) => a.id === id)) return
+      gravar({ itens: atual.itens, naNuvem: comMarca(atual.naNuvem, id, marcas.naNuvem), pendentes: comMarca(atual.pendentes, id, marcas.pendente) })
     },
 
     /** Já esteve na nuvem? Se sim e sumiu de lá, foi apagado em outro aparelho (CB-107). */
@@ -189,6 +199,24 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
 }
 
 export type RepositorioAcompanhamentos = ReturnType<typeof criarRepositorioAcompanhamentos>
+
+/** O valor em texto com as chaves de cada objeto em ordem: a ordem que o banco devolve não conta. */
+function canonico(valor: unknown): string {
+  if (Array.isArray(valor)) return `[${valor.map(canonico).join(',')}]`
+  if (typeof valor !== 'object' || valor === null) return JSON.stringify(valor) ?? 'null'
+  const campos = Object.entries(valor).sort(([a], [b]) => a.localeCompare(b))
+  return `{${campos.map(([nome, v]) => `${JSON.stringify(nome)}:${canonico(v)}`).join(',')}}`
+}
+
+/** O que importa num link, para comparar o daqui com o da nuvem (a dieta já lida dos dois lados). */
+const essencia = (a: Acompanhamento): string =>
+  canonico([a.id, a.token, a.casoId, a.pacienteId, a.nome, a.criadoEm, a.missoes, a.marcacoes, a.usoNaoComercial, lerDieta(a.dieta)])
+
+/**
+ * O mesmo link nos dois lados (spec dados-na-nuvem, CA-601, DP-37): então a leitura da nuvem não o regrava. A ordem
+ * dos campos e a dieta ausente (link de antes da dieta, banco sem o 012) não contam.
+ */
+export const mesmoLink = (a: Acompanhamento, b: Acompanhamento): boolean => essencia(a) === essencia(b)
 
 /** A chave onde a cópia do aparelho fica (o backup leva e traz esta chave). */
 export const CHAVE_ACOMPANHAMENTOS = CHAVE

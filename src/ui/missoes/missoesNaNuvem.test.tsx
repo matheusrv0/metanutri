@@ -437,6 +437,50 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     expect(repo.porId(ana.id)?.marcacoes).toEqual(SEMANA_EM_DIA)
   })
 
+  describe('CA-601 (spec dados-na-nuvem): o link igual ao da nuvem não é regravado', () => {
+    /** O armazenamento com o arquivo dos links de antes da dieta, que guarda cada gravação dele. */
+    function comLinkAntigo(ana: Acompanhamento, naNuvem: readonly string[]) {
+      const base = memoria()
+      const gravacoes: string[] = []
+      const antigo: Record<string, unknown> = { ...ana }
+      delete antigo['dieta']
+      base.setItem('metanutri:acompanhamentos', JSON.stringify({ formato: 1, itens: [antigo], naNuvem, pendentes: [] }))
+      const observado: Armazenamento = {
+        getItem: (c) => base.getItem(c),
+        setItem: (c, v) => {
+          if (c === 'metanutri:acompanhamentos') gravacoes.push(v)
+          base.setItem(c, v)
+        },
+        removeItem: (c) => base.removeItem(c),
+      }
+      return { repo: criarRepositorioAcompanhamentos(observado), gravacoes, antigo }
+    }
+
+    it('CA-601: link igual e já marcado na nuvem: a leitura não grava nada', async () => {
+      const ana = acompanhamentoDe('c1', 'Ana', SEMANA_EM_DIA)
+      const { repo, gravacoes } = comLinkAntigo(ana, [ana.id])
+      // O banco sem o 012 nem traz a coluna da dieta; os campos vêm na ordem da linha.
+      nuvem.linhas = [linhaDe(ana)]
+      adesao(repo)
+      expect(await within(linhaDoPaciente('Ana')).findByText('Em dia')).toBeInTheDocument()
+      await assentar()
+      expect(gravacoes).toEqual([])
+    })
+
+    it('CA-601: link igual, ainda sem a marca de nuvem: só a marca muda; o link fica com o texto de antes', async () => {
+      const ana = acompanhamentoDe('c1', 'Ana', SEMANA_EM_DIA)
+      const { repo, gravacoes, antigo } = comLinkAntigo(ana, [])
+      nuvem.linhas = [linhaDe(ana)]
+      adesao(repo)
+      expect(await within(linhaDoPaciente('Ana')).findByText('Em dia')).toBeInTheDocument()
+      await assentar()
+      expect(gravacoes.length).toBeGreaterThan(0)
+      const ultimo = JSON.parse(gravacoes.at(-1) ?? '{}') as { itens: unknown[]; naNuvem: string[] }
+      expect(ultimo.itens).toEqual([antigo])
+      expect(ultimo.naNuvem).toEqual([ana.id])
+    })
+  })
+
   it('CA-441: num aparelho novo, os links da conta aparecem', async () => {
     const repo = criarRepositorioAcompanhamentos(memoria())
     nuvem.linhas = [{ ...linhaDe(acompanhamentoDe('c1', 'Ana')), marcacoes: SEMANA_EM_DIA }]

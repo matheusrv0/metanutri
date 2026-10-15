@@ -181,7 +181,7 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - [x] **T46** — Aba nova devolve sem esperar edição (DP-36): `src/domain/copiaDaConta.ts` (`chavesMantidas`, sem gravar
   nada) e `src/domain/sincronia.ts` (abrir com a mesma versão; conferir depois de outra aba deste navegador salvar).
   Teste em `sincronia.test.ts`. Cobre CA-600.
-- [ ] **T47** — A leitura dos links da nuvem não regrava o link igual (DP-37): `src/domain/repositorioAcompanhamentos.ts`
+- [x] **T47** — A leitura dos links da nuvem não regrava o link igual (DP-37): `src/domain/repositorioAcompanhamentos.ts`
   (`marcar`, só as marcas; `mesmoLink`) e `src/ui/estado/ProvedorAcompanhamentos.tsx`; teste em
   `repositorioAcompanhamentos.test.ts` e no provedor. Cobre CA-601.
 - [ ] **T48** — Aviso de versão nova (DP-38): `vite.config.ts` sem mudar `registerType` nem `workbox`;
@@ -382,7 +382,8 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
 - **DP-37 · Link igual não é regravado (CA-601, revisão final).** Ao ler os links da nuvem, o link que já está igual aqui
   (comparando o que importa: id, token, plano, paciente, nome, criação, missões, marcações, aviso e a dieta já lida) não
   é regravado; só ganha a marca "está na nuvem", se faltar, sem mexer no texto do item (`marcar`). Antes, todo link era
-  regravado com a forma da linha do banco (a ordem dos campos e `dieta: null`), e contava como mudado agora.
+  regravado com a forma da linha do banco (a ordem dos campos e `dieta: null`), e contava como mudado agora. Pelo mesmo
+  motivo, marcar o link que subiu (`marcarNoAparelho`) passou a mudar só as marcas.
 - **DP-38 · Aviso de versão nova (D-172, CA-602, CA-603, revisão final).** O registro do service worker passa do
   `registerSW.js` que o plugin escrevia para o `virtual:pwa-register` dentro do pacote (o plugin deixa de injetar o
   script quando o app usa o módulo). `registerType: 'autoUpdate'` e `workbox` não mudam: o service worker novo continua
