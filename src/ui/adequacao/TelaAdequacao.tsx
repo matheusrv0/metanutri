@@ -64,6 +64,9 @@ const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly 
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
+/** O maior mínimo que `calcularAdequacao` aceita no preset personalizado (`adequacao.ts`). */
+const MINIMO_MAXIMO_PCT = 1000
+
 /** Abaixo de 640 px a tabela vira lista: a tabela rolava para o lado e escondia o Cobrir (D-207). */
 const CELULAR = '(max-width: 639px)'
 
@@ -201,7 +204,11 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
               rotulo="Mínimo da meta"
               valor={prefs.preset.tipo === 'personalizado' ? prefs.preset.minimoPct : 90}
               aoMudar={(v) =>
-                v !== null && v > 0 && aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
+                // Acima de 1000% o cálculo da adequação recusa o número: ele não vale, e a tela não cai (CA-698).
+                v !== null &&
+                v > 0 &&
+                v <= MINIMO_MAXIMO_PCT &&
+                aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
               }
               sufixo="%"
             />

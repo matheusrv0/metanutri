@@ -360,3 +360,15 @@ describe('Tabela e lista arredondam na direção do estado (CA-696)', () => {
     expect(within(item).getByText(`${esperado}% abaixo`)).toBeInTheDocument()
   })
 })
+
+describe('Mínimo da meta dentro do que o cálculo aceita (CA-698)', () => {
+  it('CA-698: acima de 1000% o número não vale, e a tela não cai', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '10000')
+    expect(screen.getByText(/meta de 1\.000% da referência/)).toBeInTheDocument()
+    expect(screen.getByRole('table')).toBeInTheDocument()
+  })
+})
