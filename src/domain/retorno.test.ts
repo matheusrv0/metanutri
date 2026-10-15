@@ -237,14 +237,18 @@ describe('O link de cada paciente (D-147)', () => {
     return criarAcompanhamento({ casoId, pacienteId, nome: 'x', missoes: [] }, { agora: () => criadoEm, gerarId: () => `ac-${n}`, aleatorio: (t) => new Uint8Array(t).fill(n) })
   }
 
-  it('o paciente do link é o do link; sem ele, o do plano', () => {
+  it('D-147: o paciente do plano primeiro; o do link só quando o plano não tem paciente ou não existe', () => {
     const casos = [
-      { id: 'c1', pacienteId: 'p1' },
+      { id: 'c1', pacienteId: 'p-bia' },
       { id: 'c2', pacienteId: 'p2' },
+      { id: 'c4', pacienteId: null },
     ]
-    expect(pacienteDoAcompanhamento(link('c1', 'p9', '2026-10-01T00:00:00.000Z'), casos)).toBe('p9')
+    // O plano foi trocado de Ana para Bia depois de gerar o link: vale Bia.
+    expect(pacienteDoAcompanhamento(link('c1', 'p-ana', '2026-10-01T00:00:00.000Z'), casos)).toBe('p-bia')
     expect(pacienteDoAcompanhamento(link('c2', null, '2026-10-01T00:00:00.000Z'), casos)).toBe('p2')
-    expect(pacienteDoAcompanhamento(link('c3', null, '2026-10-01T00:00:00.000Z'), casos)).toBeNull()
+    expect(pacienteDoAcompanhamento(link('c3', 'p7', '2026-10-01T00:00:00.000Z'), casos)).toBe('p7')
+    expect(pacienteDoAcompanhamento(link('c4', 'p8', '2026-10-01T00:00:00.000Z'), casos)).toBe('p8')
+    expect(pacienteDoAcompanhamento(link('c5', null, '2026-10-01T00:00:00.000Z'), casos)).toBeNull()
   })
 
   it('CB-145: com dois links, vale o criado por último', () => {

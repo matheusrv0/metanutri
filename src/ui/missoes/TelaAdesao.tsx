@@ -56,7 +56,7 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal
   // D-104: as marcações do paciente vêm da nuvem, ao abrir e ao voltar para a aba.
   useLerDaNuvemAoAbrir()
 
-  /** A ficha de quem marca: a do link ou, se o link nasceu antes do vínculo, a do plano (D-147). */
+  /** A ficha de quem marca: a do paciente do plano ou, se o plano não tem paciente, a gravada no link (D-147). */
   const fichaDe = (acompanhamento: Acompanhamento): Paciente | null => {
     const id = pacienteDoAcompanhamento(acompanhamento, planos?.casos ?? [])
     return id ? (fichas?.pacientes.find((p) => p.id === id) ?? null) : null

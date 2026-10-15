@@ -26,16 +26,28 @@ const AGORA = new Date('2026-10-14T13:00:00.000Z')
 const TELEFONE = '(11) 98765-4321'
 
 let n = 0
-function link(pacienteId: string, criadoEm: string, marcacoes: readonly string[] = []): Acompanhamento {
+function link(pacienteId: string, criadoEm: string, marcacoes: readonly string[] = [], casoId?: string): Acompanhamento {
   n += 1
   const base = criarAcompanhamento(
-    { casoId: `c${n}`, pacienteId, nome: 'x', missoes: [{ id: 'agua', texto: 'Água', origem: 'x' }] },
+    { casoId: casoId ?? `c${n}`, pacienteId, nome: 'x', missoes: [{ id: 'agua', texto: 'Água', origem: 'x' }] },
     { agora: () => criadoEm, gerarId: () => `ac-${n}`, aleatorio: (t) => new Uint8Array(t).fill(n) },
   )
   return { ...base, marcacoes: marcacoes.map((dia) => ({ dia, feitas: ['agua'] })) }
 }
 
-function Anfitriao({ fichas, links = [], acompanhamentos, children }: { readonly fichas: readonly Partial<Paciente>[]; readonly links?: readonly Acompanhamento[]; readonly acompanhamentos?: ValorAcompanhamentos; readonly children: ReactNode }) {
+function Anfitriao({
+  fichas,
+  links = [],
+  planos = [],
+  acompanhamentos,
+  children,
+}: {
+  readonly fichas: readonly Partial<Paciente>[]
+  readonly links?: readonly Acompanhamento[]
+  readonly planos?: readonly { readonly id: string; readonly pacienteId: string }[]
+  readonly acompanhamentos?: ValorAcompanhamentos
+  readonly children: ReactNode
+}) {
   const arm = memoria()
   const ids = fichas.map((f) => f.id ?? 'p1')
   const pacientes = criarRepositorioPacientes(arm, { gerarId: () => ids.shift() ?? 'px' })
@@ -45,8 +57,14 @@ function Anfitriao({ fichas, links = [], acompanhamentos, children }: { readonly
   }
   const repoLinks = criarRepositorioAcompanhamentos(arm)
   for (const l of links) repoLinks.salvar(l)
+  const idsDosPlanos = planos.map((p) => p.id)
+  const casos = criarRepositorio(arm, { gerarId: () => idsDosPlanos.shift() ?? 'cx' })
+  for (const plano of planos) {
+    const criado = casos.criar('Plano')
+    casos.salvar({ ...criado, caso: { ...criado.caso, pacienteId: plano.pacienteId } })
+  }
   const miolo = (
-    <ProvedorCasos repositorio={criarRepositorio(arm)}>
+    <ProvedorCasos repositorio={casos}>
       <ProvedorPacientes repositorio={pacientes}>{children}</ProvedorPacientes>
     </ProvedorCasos>
   )
@@ -131,6 +149,23 @@ describe('Painel: Hoje e esta semana', () => {
     )
     expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
     for (const rotulo of Object.values(ROTULO_ESTADO)) expect(linha('Bia Lima').queryByText(rotulo)).not.toBeInTheDocument()
+  })
+
+  it('D-147: plano trocado de Ana para Bia: o selo do link vai para a linha da Bia', () => {
+    render(
+      <Anfitriao
+        fichas={[
+          { id: 'p-ana', nome: 'Ana Souza', proximaConsulta: '2026-10-14T16:00' },
+          { id: 'p-bia', nome: 'Bia Lima', proximaConsulta: '2026-10-15T09:00' },
+        ]}
+        links={[link('p-ana', '2026-10-01T10:00:00.000Z', [], 'c-trocado')]}
+        planos={[{ id: 'c-trocado', pacienteId: 'p-bia' }]}
+      >
+        {painel()}
+      </Anfitriao>,
+    )
+    expect(linha('Bia Lima').getByText('Sumindo')).toBeInTheDocument()
+    for (const rotulo of Object.values(ROTULO_ESTADO)) expect(linha('Ana Souza').queryByText(rotulo)).not.toBeInTheDocument()
   })
 
   it('CA-510: o WhatsApp da consulta traz o lembrete com dia e horário', async () => {

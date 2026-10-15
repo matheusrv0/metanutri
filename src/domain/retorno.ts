@@ -146,12 +146,16 @@ export function agendaDaSemana(pacientes: readonly Paciente[], agora: Momento): 
   return itens.sort((a, b) => ordem(a).localeCompare(ordem(b)) || a.paciente.nome.localeCompare(b.paciente.nome, 'pt-BR'))
 }
 
-/** O paciente de um link: o do próprio link ou, se o link nasceu antes do vínculo, o do plano (D-147). */
+/**
+ * O paciente de um link, com uma regra só em todo lugar (D-147): o paciente do plano primeiro, porque o
+ * plano pode ter sido trocado de paciente depois de gerar o link; o gravado no link só vale quando o plano
+ * não tem paciente ou não existe mais. O cartão do link segue a mesma regra.
+ */
 export function pacienteDoAcompanhamento(
   acompanhamento: Acompanhamento,
   casos: readonly { readonly id: string; readonly pacienteId: string | null }[],
 ): string | null {
-  return acompanhamento.pacienteId ?? casos.find((c) => c.id === acompanhamento.casoId)?.pacienteId ?? null
+  return casos.find((c) => c.id === acompanhamento.casoId)?.pacienteId ?? acompanhamento.pacienteId ?? null
 }
 
 /** O link mais recente de cada paciente: é dele o estado que o Painel mostra (D-147, CB-145). */

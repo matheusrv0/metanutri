@@ -210,3 +210,27 @@ describe('WhatsApp e retorno na Adesão', () => {
     expect(aoCadastrarTelefone).toHaveBeenCalledWith('p9')
   })
 })
+
+describe('D-147: o plano trocado de Ana para Bia', () => {
+  const fichas = [
+    { id: 'p-ana', nome: 'Ana Souza', telefone: '(11) 98765-4321', proximaConsulta: '2026-10-16T14:30' },
+    { id: 'p-bia', nome: 'Bia Lima', telefone: '(21) 99876-5432', proximaConsulta: '2026-10-17T09:00' },
+  ]
+
+  it('o cartão e a Adesão apontam para Bia, a paciente do plano agora', async () => {
+    const usuario = userEvent.setup()
+    render(
+      <Anfitriao links={[link('c-trocado', 'p-ana', { nome: 'Plano trocado' })]} fichas={fichas} planos={[{ id: 'c-trocado', pacienteId: 'p-bia' }]}>
+        <CartaoLinkMissoes casoId="c-trocado" pacienteId="p-bia" nome="Plano trocado" missoes={MISSOES} hoje={HOJE} />
+        <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} />
+      </Anfitriao>,
+    )
+    await usuario.click(within(screen.getByRole('region', { name: 'Missões do paciente' })).getByRole('button', { name: 'WhatsApp' }))
+    expect(within(screen.getByRole('dialog')).getByText(/^Para Bia Lima, \(21\) 99876-5432\./)).toBeInTheDocument()
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+
+    expect(linha('Plano trocado').getByText('Retorno sábado, 17/10 às 09:00')).toBeInTheDocument()
+    await usuario.click(linha('Plano trocado').getByRole('button', { name: 'WhatsApp' }))
+    expect(within(screen.getByRole('dialog')).getByText(/^Para Bia Lima, \(21\) 99876-5432\./)).toBeInTheDocument()
+  })
+})
