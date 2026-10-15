@@ -99,23 +99,27 @@ describe('Folha da dieta (US-B1)', () => {
     }
   })
 
-  it('CA-631: o substituto vem depois de "ou", sem caixa e sem "Opção 2"; substituto vazio não aparece', () => {
-    let plano = planoCheio()
+  it('CA-631: "Opção 1" em cima da primeira e "ou · Opção 2" no fio, sem caixa; substituto vazio não aparece nem conta', () => {
+    // A batata vai no substituto 2, com o substituto 1 vazio: na folha ela é a "Opção 2" (a ordem em que aparece).
+    let plano = criarPlanoPadrao(ids)
     const almocoId = plano.refeicoes[2]?.id ?? ''
-    plano = adicionarItem(plano, almocoId, 'substituto2', { alimentoId: MACARRAO_CRU, gramas: 0 }, ids)
+    plano = adicionarItem(plano, almocoId, 'principal', { alimentoId: ARROZ, gramas: 150 }, ids)
+    plano = adicionarItem(plano, almocoId, 'substituto1', { alimentoId: MACARRAO_CRU, gramas: 0 }, ids)
+    plano = adicionarItem(plano, almocoId, 'substituto2', { alimentoId: BATATA, gramas: 120 }, ids)
     render(<FolhaDieta caso={caso} plano={plano} />)
     const regiao = screen.getByRole('region', { name: /^12:00 Almoço$/ })
     const almoco = within(regiao)
-    expect(almoco.queryByText(/Opção/)).not.toBeInTheDocument()
-    expect(almoco.getAllByText('ou')).toHaveLength(1)
+    expect(almoco.getAllByText(/Opção/).map((e) => e.textContent)).toEqual(['Opção 1', 'ou · Opção 2'])
     const [principal, substituto] = almoco.getAllByRole('list')
     expect(principal).toHaveTextContent('Arroz branco cozido')
     expect(substituto).toHaveTextContent('Batata inglesa cozida')
-    expect(Boolean(almoco.getByText('ou').compareDocumentPosition(substituto as Node) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
+    const antes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(antes(almoco.getByText('Opção 1'), principal as Node)).toBe(true)
+    expect(antes(almoco.getByText('ou · Opção 2'), substituto as Node)).toBe(true)
     expect(regiao.querySelector('[class*="bg-"], [class*="rounded"]')).toBeNull()
   })
 
-  it('CA-632: refeição só com substituto começa sem "ou" e não diz que está vazia', () => {
+  it('CA-632: refeição com uma opção só (aqui, só um substituto) vem sem rótulo, sem "ou" e não diz que está vazia', () => {
     let plano = criarPlanoPadrao(ids)
     const ceia = plano.refeicoes[5]
     if (!ceia) throw new Error('sem ceia')

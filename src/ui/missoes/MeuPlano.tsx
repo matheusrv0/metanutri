@@ -40,12 +40,17 @@ function Itens({ itens }: { readonly itens: readonly ItemDaDieta[] }) {
 // CA-554: os textos que vêm do nutricionista quebram em qualquer ponto ([overflow-wrap:anywhere]): um endereço
 // longo nas orientações não empurra a página do celular para o lado.
 
-/** CA-532: o "ou" entre as opções, com um fio de cada lado. */
-function Ou() {
+/**
+ * CA-532: o "ou" entre as opções, com um fio de cada lado. Spec impressao-do-plano, CA-645: com os rótulos da folha
+ * impressa, "Opção 1" em cima da primeira e "ou · Opção 2" entre elas, para o paciente ver que a refeição inteira é
+ * trocada. É só desenho: a cópia guardada no link não muda.
+ */
+function RotuloDaOpcao({ numero }: { readonly numero: number }) {
+  if (numero === 1) return <p className="mb-2 text-sm font-semibold text-muted-foreground">Opção 1</p>
   return (
     <p className="my-4 flex items-center gap-3 text-sm font-semibold text-muted-foreground">
       <span aria-hidden="true" className="h-px flex-1 bg-border" />
-      ou
+      <span>{`ou · Opção ${numero}`}</span>
       <span aria-hidden="true" className="h-px flex-1 bg-border" />
     </p>
   )
@@ -77,7 +82,7 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
           </h2>
           {refeicao.opcoes.map((itens, j) => (
             <div key={j}>
-              {j > 0 ? <Ou /> : null}
+              {refeicao.opcoes.length > 1 ? <RotuloDaOpcao numero={j + 1} /> : null}
               <Itens itens={itens} />
             </div>
           ))}

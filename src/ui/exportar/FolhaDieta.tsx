@@ -78,11 +78,15 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
   )
 }
 
-/** Entre duas opções da refeição: "ou" sobre um fio fino, sem caixa (spec impressao-do-plano, D-184). */
-function Ou() {
+/**
+ * O rótulo de cada opção, quando a refeição tem mais de uma (spec impressao-do-plano, D-184): "Opção 1" pequeno em
+ * cima da primeira; "ou · Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
+ */
+function RotuloDaOpcao({ numero }: { readonly numero: number }) {
+  if (numero === 1) return <p className="text-sm font-semibold text-muted-foreground">Opção 1</p>
   return (
     <p className="flex items-center gap-3 pt-1 text-sm font-semibold text-muted-foreground">
-      <span>ou</span>
+      <span>{`ou · Opção ${numero}`}</span>
       <span aria-hidden="true" className="flex-1 border-t border-border" />
     </p>
   )
@@ -136,10 +140,10 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <span className="numeros text-xl font-bold leading-snug text-heading">{refeicao.horario}</span>
               <div className="flex min-w-0 flex-col gap-2">
                 <h3 className="font-titulo text-xl font-bold leading-snug text-heading">{refeicao.nome}</h3>
-                {/* CA-631 e CA-632: a primeira opção com alimento vem sozinha; cada outra, depois de "ou". */}
+                {/* CA-631 e CA-632: com mais de uma opção, cada uma com o rótulo, na ordem em que aparece; com uma só, nada. */}
                 {opcoesDaFolha.map((itens, i) => (
                   <Fragment key={itens[0]?.id ?? i}>
-                    {i > 0 ? <Ou /> : null}
+                    {opcoesDaFolha.length > 1 ? <RotuloDaOpcao numero={i + 1} /> : null}
                     <Itens itens={itens} />
                   </Fragment>
                 ))}

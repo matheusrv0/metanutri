@@ -262,15 +262,20 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
   })
 
-  it('CA-532: as opções aparecem uma depois da outra, separadas por "ou"', async () => {
+  it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou · Opção N"', async () => {
     await abrirMeuPlano()
     const almoco = screen.getByRole('region', { name: '12:00 Almoço' })
-    expect(within(almoco).getAllByText('ou')).toHaveLength(2)
+    expect(within(almoco).getByText('Opção 1')).toBeInTheDocument()
+    expect(within(almoco).getAllByText(/^ou · Opção \d$/).map((e) => e.textContent)).toEqual(['ou · Opção 2', 'ou · Opção 3'])
     const texto = almoco.textContent ?? ''
-    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou'))
-    expect(texto.indexOf('ou')).toBeLessThan(texto.indexOf('Batata'))
-    expect(texto.lastIndexOf('ou')).toBeLessThan(texto.indexOf('Mandioca'))
-    expect(within(screen.getByRole('region', { name: '19:00 Jantar' })).queryByText('ou')).not.toBeInTheDocument()
+    expect(texto.indexOf('Opção 1')).toBeLessThan(texto.indexOf('Feijão'))
+    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou · Opção 2'))
+    expect(texto.indexOf('ou · Opção 2')).toBeLessThan(texto.indexOf('Batata'))
+    expect(texto.indexOf('ou · Opção 3')).toBeLessThan(texto.indexOf('Mandioca'))
+    // Uma opção só: sem rótulo e sem "ou".
+    const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
+    expect(jantar.queryByText(/Opção/)).not.toBeInTheDocument()
+    expect(jantar.queryByText(/^ou/)).not.toBeInTheDocument()
   })
 
   it('CA-533: orientações e receitas aparecem com as quebras de linha que o nutricionista escreveu', async () => {

@@ -30,7 +30,7 @@ horário, em medida caseira, com os substitutos como "ou", e as orientações. S
 
 - **CA-530** · Dado um link com a dieta, quando o paciente abre o link, então aparecem as abas "Missões" e "Meu plano", com "Missões" escolhida, e a tela de missões é a de hoje; com o foco numa aba, as setas do teclado passam para a outra.
 - **CA-531** · Dado "Meu plano" escolhido, então cada refeição aparece na ordem do plano, com o horário e o nome, e cada alimento com a medida caseira em destaque, o peso ao lado ("6 colheres de sopa · 150 g") e o nome do alimento.
-- **CA-532** · Dado uma refeição com substitutos, então as opções aparecem uma depois da outra, separadas por "ou", na ordem principal, substituto 1, substituto 2.
+- **CA-532** · Dado uma refeição com substitutos, então as opções aparecem uma depois da outra, separadas por "ou", na ordem principal, substituto 1, substituto 2. *(15/10/2026: com os rótulos "Opção 1" e "ou · Opção 2", como a folha impressa — spec `impressao-do-plano`, CA-645.)*
 - **CA-533** · Dado um plano com orientações e receitas, então elas aparecem em "Orientações" e "Receitas", com as quebras de linha que o nutricionista escreveu.
 - **CA-534** · "Meu plano" não mostra kcal, macro nem nutriente: a cópia não guarda esses dados, e o que chegar da nuvem além do formato da dieta é descartado.
 - **CA-535** · Dado um celular de 360 px de largura, então "Meu plano" cabe sem rolar para o lado, mesmo com um endereço longo (um link do Google Drive) nas orientações, os alimentos têm letra de 16 px ou mais e as abas têm alvos de toque de 44 px.
