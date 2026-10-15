@@ -1,5 +1,6 @@
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
+import { ehPrescritivel } from './prescritivel.ts'
 import {
   criarRepositorioSugestoes,
   NOME_DO_TIPO,
@@ -69,6 +70,16 @@ describe('lista padrão (seção 3.1, D-36)', () => {
     const leite = ALIMENTOS.find((a) => a.descricao === 'Leite, de vaca, integral')
     expect(leite).toBeDefined()
     for (const tipo of TIPOS_REFEICAO) expect(SUGESTOES_PADRAO[tipo].some((s) => s.alimentoId === leite?.id)).toBe(false)
+  })
+
+  it('CA-662: todo item das listas padrão passa na regra prescritível', () => {
+    for (const tipo of TIPOS_REFEICAO) {
+      for (const s of SUGESTOES_PADRAO[tipo]) {
+        const alimento = buscarAlimento(s.alimentoId)
+        expect(alimento, `${tipo}: ${s.alimentoId}`).toBeDefined()
+        if (alimento) expect(ehPrescritivel(alimento), `${tipo}: ${alimento.descricao}`).toBe(true)
+      }
+    }
   })
 
   it('o nome do tipo concorda em gênero', () => {

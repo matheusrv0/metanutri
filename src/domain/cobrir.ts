@@ -1,5 +1,8 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
+// O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
+import { ehCorteGordo, ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
+import { casaRestricao } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -41,56 +44,58 @@ export interface ResultadoCobrir {
   readonly motivoSemSugestao: string | null
 }
 
-const CATEGORIAS_SEM_VERSAO_CRUA = new Set([
-  'Carnes e derivados',
-  'Pescados e frutos do mar',
-  'Ovos e derivados',
-  'Leguminosas e derivados',
-  'Cereais e derivados',
-])
-const CRUS_CONSUMIDOS = /^Aveia\b/
-const FARINHAS_CONSUMIDAS = new Set(['Farinha, de mandioca, torrada', 'Farinha, láctea, de cereais'])
-
 /**
- * Indica se o alimento faz sentido como sugestão para comer (CA-36a).
- * Exclui itens que a tabela lista como ingrediente ou em forma não consumível.
+ * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
+ * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
+ * Vale em qualquer forma: o café em pó também não entra, nem com a chave ligada (revisão I1).
  */
-/**
- * Itens que a tabela traz mas quase ninguém põe no plano de rotina:
- * vísceras, miúdos, caça, frutos do mar de exceção, pratos regionais de véspera e
- * folhas e peixes que só uma região conhece (caruru, taioba, lambari). O usuário pediu
- * sugestões da linguagem popular: arroz, feijão, leite, ovo, banana.
- * Não somem da lista; só perdem a frente para o que é de uso comum.
- */
-const POUCO_USUAL =
-  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|linha(ç|c)a|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
+const CAFE_OU_CHA = /^(Café|Chá),/i
 
-/** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
-export function ehDeUsoComum(alimento: Alimento): boolean {
-  return !POUCO_USUAL.test(alimento.descricao)
+export const SODIO_NAO_SE_COBRE = 'O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.'
+
+const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' ')
+
+const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
+const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
+
+export interface PorcaoDoGrupo {
+  readonly grupo: string
+  readonly gramas: number
+  readonly casa: (alimento: Alimento) => boolean
 }
 
-export function ehSugerivel(alimento: Alimento): boolean {
-  const { descricao, categoria, preparo } = alimento
-  if (categoria === 'Miscelâneas') return false
-  if (/(^|[\s,])pó($|[\s,])|desidratad/i.test(descricao)) return false
-  // Sem \b: em JavaScript ele não reconhece letras acentuadas como parte da palavra ("fubá").
-  const ehFarinhaOuAmido =
-    /(^|[\s,])(farinha|amido|fubá)($|[\s,])/i.test(descricao) && !/(^|[\s,])com farinha($|[\s,])/i.test(descricao)
-  if (ehFarinhaOuAmido && !FARINHAS_CONSUMIDAS.has(descricao)) return false
-  if (preparo === 'cru' && CATEGORIAS_SEM_VERSAO_CRUA.has(categoria) && !CRUS_CONSUMIDOS.test(descricao)) return false
-  return true
+/**
+ * Porção máxima realista para grupos calóricos (spec sugestoes-com-criterio, D-199b e seção 7.1). Os números vêm das
+ * medidas caseiras da POF: 200 g de castanha não é porção, como cerveja não é prescrição.
+ */
+export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
+  { grupo: 'Oleaginosas e sementes', gramas: 30, casa: (a) => OLEAGINOSA.test(nomeLimpo(a)) },
+  { grupo: 'Queijos (menos a ricota)', gramas: 50, casa: (a) => /^Queijo,/i.test(nomeLimpo(a)) && !/ricota/i.test(a.descricao) },
+  { grupo: 'Pães, biscoitos e torradas', gramas: 50, casa: (a) => PAO_OU_BISCOITO.test(nomeLimpo(a)) },
+  {
+    grupo: 'Frutas secas e muito calóricas',
+    gramas: 30,
+    casa: (a) => a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200,
+  },
+  { grupo: 'Cortes gordos e aves com pele', gramas: 100, casa: ehCorteGordo },
+]
+
+/** A porção máxima do grupo do alimento; `null` quando ele não está em nenhum grupo da tabela. */
+export function porcaoMaximaDoGrupo(alimento: Alimento): number | null {
+  return PORCOES_POR_GRUPO.find((g) => g.casa(alimento))?.gramas ?? null
 }
 
 export interface OpcoesCobrir {
   readonly alimentos: readonly Alimento[]
-  /** Inclui ingredientes e formas não consumíveis nas sugestões (desliga o filtro do CA-36a). */
+  /** A chave "Incluir ingredientes e alimentos crus": libera só a forma de ingrediente (D-191). */
   readonly incluirIngredientes?: boolean
   /** GET do caso em kcal; `null` quando ainda não calculado. */
   readonly gastoEnergetico: number | null
   readonly porcaoMaximaG?: number
   /** Ids de alimentos que o usuário ocultou para este caso (CA-40). */
   readonly ocultos?: ReadonlySet<number>
+  /** O que o paciente não come; filtra antes da escolha das 5, para não deixar a gaveta vazia (CA-675). */
+  readonly restricoes?: readonly string[]
 }
 
 /**
@@ -138,25 +143,37 @@ export function sugerirParaCobrir(
 
   const meta = (linha.referencia.valor * linha.metaPct) / 100
   const falta = Math.max(0, meta - linha.total)
+  // Subir sódio com alimento não é conduta: o sal de cozinha não entra no plano (spec sugestoes-com-criterio, D-199d).
+  if (chave === 'sodio_mg') return vazio(linha.unidade, falta, SODIO_NAO_SE_COBRE)
   if (falta === 0) return vazio(linha.unidade, 0, `${linha.rotulo} já atingiu a meta.`)
 
   const porcaoMaxima = opcoes.porcaoMaximaG ?? PORCAO_MAXIMA_PADRAO_G
   if (!(porcaoMaxima > 0)) throw new RangeError(`Porção máxima inválida: ${porcaoMaxima} g.`)
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
+  const restricoes = opcoes.restricoes ?? []
+  let restricaoTirouAlguem = false
 
-  const candidatas: (Sugestao & { readonly comum: boolean })[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean; readonly magro: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
-    if (!opcoes.incluirIngredientes && !ehSugerivel(alimento)) continue
+    if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
+    if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
 
+    // Vale a menor entre a porção do grupo calórico e a que a pessoa escolheu (CB-197).
+    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaDoGrupo(alimento) ?? porcaoMaxima)
     const necessario = Math.ceil(((falta / porCem) * 100) / PASSO_PORCAO_G) * PASSO_PORCAO_G
-    const gramas = Math.min(necessario, porcaoMaxima)
+    const gramas = Math.min(necessario, porcaoDoAlimento)
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
+    // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
+    if (casaRestricao(alimento.descricao, restricoes)) {
+      restricaoTirouAlguem = true
+      continue
+    }
 
     const kcalAdicionadas = (kcalPorCem * gramas) / 100
     const avisos: AvisoSugestao[] = []
@@ -172,11 +189,12 @@ export function sugerirParaCobrir(
 
     candidatas.push({
       comum: ehDeUsoComum(alimento),
+      magro: !ehCorteGordo(alimento),
       alimentoId: alimento.id,
       descricao: alimento.descricao,
       gramas,
       coberturaPct,
-      parcial: necessario > porcaoMaxima,
+      parcial: necessario > porcaoDoAlimento,
       kcalAdicionadas,
       avisos,
     })
@@ -186,8 +204,13 @@ export function sugerirParaCobrir(
   // no empate, a que cobre mais. Assim uma verdura rica vem antes de um doce que cobre tudo de uma vez.
   const kcalPorFaltaInteira = (s: Sugestao) => s.kcalAdicionadas / (s.coberturaPct / 100)
   // Alimento de uso comum vem primeiro: víscera e fruto do mar de exceção só aparecem se sobrar espaço.
+  // Depois, corte magro e ave sem pele antes de corte gordo e ave com pele (D-199b).
   candidatas.sort(
-    (a, b) => Number(b.comum) - Number(a.comum) || kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) || b.coberturaPct - a.coberturaPct,
+    (a, b) =>
+      Number(b.comum) - Number(a.comum) ||
+      Number(b.magro) - Number(a.magro) ||
+      kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) ||
+      b.coberturaPct - a.coberturaPct,
   )
 
   const sugestoes = variarPorGrupo(candidatas, opcoes.alimentos)
@@ -197,9 +220,10 @@ export function sugerirParaCobrir(
     falta,
     kcalDisponiveis,
     sugestoes,
+    // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento da base cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g.`
+        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
         : null,
   }
 }

@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehDeUsoComum, ehSugerivel } from './cobrir.ts'
+import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, regraQueExclui } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
@@ -38,6 +38,7 @@ const kcalPorCem = (a: Alimento): number | null => {
 /**
  * A categoria da TACO é grossa: "Cereais e derivados" junta arroz e biscoito recheado.
  * Numa folha entregue ao paciente, isso é conselho ruim, então esses saem da lista.
+ * O que é prescritível decide a regra comum (prescritivel.ts); esta lista diz só o que não é troca justa.
  */
 const NAO_EQUIVALE =
   /(^|[\s,])(biscoito|bolo|torta|chocolate|bombom|brigadeiro|doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
@@ -52,6 +53,45 @@ function macroDominante(a: Alimento): Macro | null {
   const energias = (Object.keys(KCAL_POR_GRAMA) as Macro[]).map((m) => ({ m, kcal: (a.nutrientes[m] ?? 0) * KCAL_POR_GRAMA[m] }))
   const maior = energias.reduce((x, y) => (y.kcal > x.kcal ? y : x))
   return maior.kcal <= 0 ? null : maior.m
+}
+
+/** Ovo inteiro só troca por ovo inteiro: duas gemas não equivalem a um ovo (spec sugestoes-com-criterio, D-194). */
+function formaDoOvo(a: Alimento): 'gema' | 'clara' | 'inteiro' | null {
+  if (a.categoria !== 'Ovos e derivados') return null
+  if (/(^|[\s,])gema($|[\s,])/i.test(a.descricao)) return 'gema'
+  if (/(^|[\s,])clara($|[\s,])/i.test(a.descricao)) return 'clara'
+  return 'inteiro'
+}
+
+const ehCru = (a: Alimento): boolean => a.preparo === 'cru' || /(^|[\s,])cru(a|s|as)?($|[\s,])/i.test(a.descricao)
+
+/**
+ * A TACO põe pão de queijo, farinha de mandioca, farofa, nhoque, fécula e polvilho entre as verduras. Para a troca,
+ * eles não são verdura: couve refogada por pão de queijo não é troca (spec sugestoes-com-criterio, CA-671).
+ */
+const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
+const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(a.descricao.trim())
+
+/** Verdura cozida troca só por verdura cozida: brócolis cozido por vagem crua não é troca de prato. */
+const ehVerduraCozida = (a: Alimento): boolean => ehVerdura(a) && !ehCru(a)
+
+const mesmaForma = (base: Alimento) => (a: Alimento): boolean =>
+  formaDoOvo(a) === formaDoOvo(base) && ehVerdura(a) === ehVerdura(base) && (!ehVerduraCozida(base) || !ehCru(a))
+
+const partesDoNome = (descricao: string): string[] => descricao.split(',').map((p) => p.trim().toLowerCase())
+
+/**
+ * Quantas partes do nome, a contar do começo, a troca tem em comum com o original:
+ * "Batata, inglesa, frita" e "Batata, inglesa, cozida" têm 2; "Batata, doce, cozida" tem 1 (revisão M1).
+ */
+function partesEmComum(original: string): (descricao: string) => number {
+  const doOriginal = partesDoNome(original)
+  return (descricao) => {
+    const partes = partesDoNome(descricao)
+    let iguais = 0
+    while (iguais < partes.length && iguais < doOriginal.length && partes[iguais] === doOriginal[iguais]) iguais += 1
+    return iguais
+  }
 }
 
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
@@ -76,6 +116,8 @@ function variedade(baseDoOriginal: string) {
 /**
  * Trocas equivalentes em energia, dentro da mesma categoria da tabela.
  * Alimento sem energia na tabela fica de fora: não dá para dizer o que equivale.
+ * Só alimento prescritível é oferecido; item fora da rotina posto à mão troca por um prescritível (ovo frito
+ * por ovo cozido), e bebida alcoólica não ganha troca (spec sugestoes-com-criterio, D-194).
  */
 export function trocasDoAlimento(
   original: { readonly alimentoId: number; readonly gramas: number },
@@ -86,9 +128,14 @@ export function trocasDoAlimento(
   const base = opcoes.alimentos.find((a) => a.id === original.alimentoId)
   const kcalBase = base ? kcalPorCem(base) : null
   if (!base || kcalBase === null || original.gramas <= 0) return []
+  const regraDaBase = regraQueExclui(base)
+  if (regraDaBase?.nivel === 'nunca') return []
+  // Item fora da rotina posto à mão: o melhor conselho é o mesmo alimento em outro preparo (ovo frito → ovo cozido).
+  const parecidoComABase = regraDaBase?.nivel === 'fora-da-rotina' ? partesEmComum(base.descricao) : () => 0
 
   return opcoes.alimentos
-    .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehSugerivel(a) && ehTrocaRazoavel(a))
+    .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
+    .filter(mesmaForma(base))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
     .filter((a) => !casaRestricao(a.descricao, restricoes))
@@ -101,6 +148,11 @@ export function trocasDoAlimento(
     // Porção que ninguém come na vida real não ajuda o paciente.
     .filter(({ gramas }) => gramas >= 5 && gramas <= 600)
     .sort((x, y) => {
+      const mesmoAlimento = parecidoComABase(y.a.descricao) - parecidoComABase(x.a.descricao)
+      if (mesmoAlimento !== 0) return mesmoAlimento
+      // Corte magro e ave sem pele antes de corte gordo e ave com pele, como no cobrir (CA-679).
+      const magro = Number(ehCorteGordo(x.a)) - Number(ehCorteGordo(y.a))
+      if (magro !== 0) return magro
       const comum = Number(ehDeUsoComum(y.a)) - Number(ehDeUsoComum(x.a))
       if (comum !== 0) return comum
       // Depois do uso comum, quem tem medida caseira ganha: é o que o paciente entende.

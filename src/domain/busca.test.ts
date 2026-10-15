@@ -78,6 +78,15 @@ describe('buscarAlimentos', () => {
     expect(r.aviso).toMatch(/Nenhum alimento/)
   })
 
+  it.each([
+    ['350 cerveja', 'Cerveja, pilsen 2'],
+    ['30 doce de leite', 'Doce, de leite, cremoso'],
+    ['5 margarina', 'Margarina, com óleo hidrogenado, com sal (65% de lipídeos)'],
+  ])('CA-663: a busca não filtra o que o cobrir não propõe ("%s")', (texto, esperado) => {
+    const { resultados } = buscarAlimentos(texto, ALIMENTOS)
+    expect(resultados.map((r) => r.alimento.descricao)).toContain(esperado)
+  })
+
   it('texto vazio não busca', () => {
     expect(buscarAlimentos('   ', ALIMENTOS)).toEqual({ resultados: [], aviso: null })
     expect(buscarAlimentos('150', ALIMENTOS).resultados).toEqual([])
