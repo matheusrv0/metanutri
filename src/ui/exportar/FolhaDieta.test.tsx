@@ -68,7 +68,7 @@ describe('Folha da dieta (US-B1)', () => {
 
     // Sem medida caseira, o peso.
     const jantar = refeicao(/^19:00 Jantar$/)
-    expect(jantar.getByText('Macarrão cru').closest('li')).toHaveTextContent(/^Macarrão cru, 80 g$/)
+    expect(jantar.getByText('Macarrão (peso cru)').closest('li')).toHaveTextContent(/^Macarrão \(peso cru\), 80 g$/)
   })
 
   it('CA-641 e CA-642: medida vaga com o peso discreto ao lado; margarina em ponta de faca', () => {

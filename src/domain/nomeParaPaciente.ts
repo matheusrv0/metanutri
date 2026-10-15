@@ -12,9 +12,9 @@ import type { Alimento } from './tipos.ts'
  */
 export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   3: 'Arroz branco cozido',
-  4: 'Arroz branco cru',
+  4: 'Arroz branco (peso cru)',
   5: 'Arroz branco cozido',
-  6: 'Arroz branco cru',
+  6: 'Arroz branco (peso cru)',
   7: 'Aveia em flocos',
   8: 'Biscoito maisena',
   9: 'Biscoito recheado de chocolate',
@@ -36,14 +36,14 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   29: 'Curau de milho verde',
   30: 'Mistura para curau',
   37: 'Massa de lasanha fresca cozida',
-  38: 'Massa de lasanha fresca crua',
-  40: 'Macarrão cru',
-  41: 'Macarrão com ovos cru',
+  38: 'Massa de lasanha fresca (peso cru)',
+  40: 'Macarrão (peso cru)',
+  41: 'Macarrão com ovos (peso cru)',
   42: 'Amido de milho',
   43: 'Fubá',
   47: 'Pamonha pré-cozida',
   48: 'Pão de forma de aveia',
-  50: 'Pão de glúten',
+  50: 'Pão de forma de glúten',
   51: 'Pão de forma de milho',
   52: 'Pão de forma integral',
   53: 'Pão francês',
@@ -52,13 +52,14 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   90: 'Batata frita de pacote',
   99: 'Biscoito de polvilho doce',
   114: 'Coentro desidratado',
-  119: 'Espinafre cru',
+  119: 'Espinafre (peso cru)',
   120: 'Espinafre refogado',
   125: 'Broto de feijão',
   131: 'Farofa de mandioca',
-  135: 'Folha de mostarda',
+  135: 'Folha de mostarda (peso cru)',
   136: 'Nhoque de batata cozido',
   157: 'Tomate',
+  167: 'Açaí com xarope de guaraná',
   171: 'Ameixa em calda',
   173: 'Ameixa em calda escorrida',
   176: 'Bananada',
@@ -66,24 +67,28 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   195: 'Figo em calda',
   198: 'Goiabada',
   199: 'Goiabada cascão',
-  224: 'Doce de mamão em calda',
-  227: 'Doce de mamão verde em calda',
+  224: 'Doce de mamão em calda escorrido',
+  227: 'Doce de mamão verde em calda escorrido',
   245: 'Pêssego em calda',
   277: 'Atum em óleo',
-  284: 'Camarão cozido',
-  285: 'Camarão cru',
+  281: 'Posta de cação empanada frita',
+  284: 'Camarão grande cozido',
+  285: 'Camarão grande (peso cru)',
   286: 'Camarão frito com casca',
+  299: 'Manjuba empanada frita',
+  306: 'Filé de pescada empanado frito',
   309: 'Filé de pescada ao escabeche',
   319: 'Sardinha em óleo',
   324: 'Caldo de carne em tablete',
   325: 'Caldo de galinha em tablete',
   389: 'Empada de frango assada',
-  418: 'Linguiça de frango crua',
+  418: 'Linguiça de frango (peso cru)',
   419: 'Linguiça de frango frita',
   420: 'Linguiça de frango grelhada',
-  421: 'Linguiça de porco crua',
+  421: 'Linguiça de porco (peso cru)',
   422: 'Linguiça de porco frita',
   423: 'Linguiça de porco grelhada',
+  441: 'Quibe cru',
   446: 'Bebida láctea de pêssego',
   447: 'Creme de leite',
   455: 'Leite achocolatado',
@@ -92,6 +97,7 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   458: 'Leite integral',
   459: 'Leite em pó integral',
   463: 'Queijo muçarela',
+  465: 'Queijo processado',
   466: 'Petit suisse de morango',
   468: 'Requeijão cremoso',
   469: 'Ricota',
@@ -108,7 +114,7 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   486: 'Clara de ovo cozida',
   487: 'Gema de ovo cozida',
   488: 'Ovo cozido',
-  489: 'Ovo cru',
+  489: 'Ovo',
   490: 'Ovo frito',
   496: 'Chocolate ao leite com castanha-do-pará',
   497: 'Chocolate ao leite diet',
@@ -119,25 +125,30 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   512: 'Cappuccino em pó',
   513: 'Fermento químico em pó',
   514: 'Fermento biológico',
+  515: 'Gelatina com sabor em pó',
   519: 'Tempero à base de sal',
   522: 'Chantilly em spray',
   524: 'Maionese',
   527: 'Baião de dois',
   529: 'Bife a cavalo',
   542: 'Macarrão à bolonhesa',
-  557: 'Amendoim cru',
+  557: 'Amendoim (peso cru)',
   579: 'Paçoca de amendoim',
   580: 'Pé de moleque',
   582: 'Bebida de soja',
   583: 'Extrato de soja em pó',
   584: 'Tofu',
   589: 'Castanha-do-pará',
+  593: 'Gergelim',
+  594: 'Linhaça',
 }
 
 // ---------- Regra geral (seção 2, item 3) ----------
 
 /** Parte inteira que é ficha técnica, não comida. */
-const RUIDO = /^(industrializad[oa]s?|envasad[oa]s?|drenad[oa]s?|com óleo hidrogenado|com óleo interesterificado|sabores variados)$/i
+const RUIDO = /^(industrializad[oa]s?|envasad[oa]s?|com óleo hidrogenado|com óleo interesterificado|sabores variados)$/i
+/** "Drenado" é como se serve: vira "escorrido", em todos (revisão de 15/10). */
+const DRENADO = /^drenad([oa]s?)$/i
 const PREPARO = /^(crus?|cruas?|cozid[oa]s?|grelhad[oa]s?|assad[oa]s?|frit[oa]s?|refogad[oa]s?|torrad[oa]s?)$/i
 const CRU = /^(crus?|cruas?)$/i
 const CONGELADO = /^congelad[oa]s?$/i
@@ -167,13 +178,39 @@ const PARTES = new Set([
   'purê',
   'molho',
   'salada',
-  'semente',
   'farinha',
   'massa',
 ])
 /** Grupos em que "cru" não diz nada: come-se assim. */
 const GRUPOS_SEM_CRU = new Set(['Frutas e derivados', 'Nozes e sementes'])
 const GRUPO_VERDURAS = 'Verduras, hortaliças e derivados'
+/** Grupos em que o peso prescrito é do alimento cru, e ele se come preparado: o "cru" vira "(peso cru)". */
+const GRUPOS_PESO_CRU = /^(Cereais|Leguminosas|Carnes|Pescados)/
+/** Legumes e verduras que se comem cozidos: o "cru" também vira "(peso cru)" (seção 2 da spec). */
+const VERDURAS_COZIDAS = new Set([
+  'Batata',
+  'Mandioca',
+  'Cará',
+  'Inhame',
+  'Abóbora',
+  'Abobrinha',
+  'Berinjela',
+  'Chuchu',
+  'Brócolis',
+  'Couve-flor',
+  'Espinafre',
+  'Catalonha',
+  'Taioba',
+  'Caruru',
+  'Serralha',
+  'Mostarda',
+  'Jiló',
+  'Maxixe',
+  'Quiabo',
+  'Vagem',
+  'Jurubeba',
+])
+const PESO_CRU = ' (peso cru)'
 const ORTOGRAFIA: readonly (readonly [RegExp, string])[] = [
   [/Lingüiça/g, 'Linguiça'],
   [/\bpêra\b/g, 'pera'],
@@ -236,13 +273,16 @@ function pelaRegra(alimento: Alimento): string {
     resto = resto.filter((p) => p !== parte)
   }
 
-  const tirarCru =
-    GRUPOS_SEM_CRU.has(alimento.categoria) || (alimento.categoria === GRUPO_VERDURAS && !BASES_COM_PREPARO.has(alimento.base))
+  // O "cru": vira "(peso cru)" onde o peso é do cru e se come preparado; sai onde não diz nada; fica onde importa.
+  const verdura = alimento.categoria === GRUPO_VERDURAS
+  const pesoCru = resto.some((p) => CRU.test(p)) && (GRUPOS_PESO_CRU.test(alimento.categoria) || (verdura && VERDURAS_COZIDAS.has(alimento.base ?? '')))
+  const tirarCru = pesoCru || GRUPOS_SEM_CRU.has(alimento.categoria) || (verdura && !BASES_COM_PREPARO.has(alimento.base))
   const palavras = resto
     .filter((p) => !NOTA.test(p) && !(tirarCru && CRU.test(p)))
-    .map((p) => (p === 'pó' ? 'em pó' : p === 'conserva' ? 'em conserva' : p))
+    .map((p) => (p === 'pó' ? 'em pó' : p === 'conserva' ? 'em conserva' : p.replace(DRENADO, 'escorrid$1')))
   const notas = resto.filter((p) => NOTA.test(p))
-  return maiuscula([cabeca, ...palavras, ...notas].join(' ').replace(/\s+/g, ' ').trim())
+  const nome = maiuscula([cabeca, ...palavras, ...notas].join(' ').replace(/\s+/g, ' ').trim())
+  return pesoCru ? `${nome}${PESO_CRU}` : nome
 }
 
 /** O nome na folha do paciente (CA-623 a CA-626). Sem alimento, "Alimento removido" (CB-180). */
