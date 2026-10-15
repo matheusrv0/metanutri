@@ -11,11 +11,11 @@ describe('a regra de conteúdo do site (D-135)', () => {
         "default-src 'self'",
         `script-src 'self' 'nonce-${NONCE_DO_ANTIFRAUDE}' https://sdk.mercadopago.com https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://www.mercadolibre.com https://www.mercadolivre.com",
+        "img-src 'self' data: https://www.mercadolibre.com https://www.mercadolivre.com https://www.mercadopago.com.br",
         "font-src 'self'",
-        `connect-src 'self' ${SUPABASE} https://api.mercadopago.com https://secure-fields.mercadopago.com https://www.mercadolibre.com https://api.mercadolibre.com https://world.openfoodfacts.org`,
-        'frame-src https://secure-fields.mercadopago.com https://challenges.cloudflare.com',
-        "child-src 'self' https://secure-fields.mercadopago.com https://challenges.cloudflare.com",
+        `connect-src 'self' ${SUPABASE} https://api.mercadopago.com https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://www.mercadolibre.com https://www.mercadopago.com.br https://api.mercadolibre.com https://world.openfoodfacts.org`,
+        'frame-src https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://challenges.cloudflare.com',
+        "child-src 'self' https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://challenges.cloudflare.com",
         "worker-src 'self'",
         "manifest-src 'self'",
         "base-uri 'self'",
@@ -39,7 +39,7 @@ describe('a regra de conteúdo do site (D-135)', () => {
     expect(valores(politica, 'default-src')).toEqual(["'self'"])
   })
 
-  it('CA-485: conecta só ao próprio site, ao Supabase do build, ao Mercado Pago, ao Cloudflare e à Open Food Facts (DP-CSP-2)', () => {
+  it('CA-485: só as origens do D-135: Supabase do build, Mercado Pago e o antifraude dele, Cloudflare e Open Food Facts', () => {
     const origens = new Set(
       politica
         .flatMap(([, fontes]) => fontes)
@@ -51,14 +51,21 @@ describe('a regra de conteúdo do site (D-135)', () => {
         'https://sdk.mercadopago.com',
         'https://api.mercadopago.com',
         'https://secure-fields.mercadopago.com',
+        'https://api-static.mercadopago.com',
         'https://www.mercadolibre.com',
         'https://www.mercadolivre.com',
+        'https://www.mercadopago.com.br',
         'https://api.mercadolibre.com',
         'https://challenges.cloudflare.com',
         'https://world.openfoodfacts.org',
       ].sort(),
     )
-    expect(valores(politica, 'frame-src')).toEqual(['https://secure-fields.mercadopago.com', 'https://challenges.cloudflare.com'])
+    expect(valores(politica, 'frame-src')).toEqual(['https://secure-fields.mercadopago.com', 'https://api-static.mercadopago.com', 'https://challenges.cloudflare.com'])
+    // Achado da revisão: no domínio de produção (.com.br) o antifraude usa www.mercadopago.com.br, por imagem ou por fetch.
+    expect(valores(politica, 'img-src')).toContain('https://www.mercadopago.com.br')
+    expect(valores(politica, 'connect-src')).toContain('https://www.mercadopago.com.br')
+    // O servidor reserva dos campos do cartão (o sourceUrl do SDK).
+    expect(valores(politica, 'connect-src')).toContain('https://api-static.mercadopago.com')
   })
 
   it('CA-485: sem o Supabase no build, a regra não libera Supabase nenhum', () => {
@@ -95,7 +102,7 @@ describe('a regra de conteúdo do site (D-135)', () => {
       return []
     }
     const NECESSARIO: Readonly<Record<string, readonly string[]>> = {
-      moldura: ['https://secure-fields.mercadopago.com', 'https://challenges.cloudflare.com'],
+      moldura: ['https://secure-fields.mercadopago.com', 'https://api-static.mercadopago.com', 'https://challenges.cloudflare.com'],
       trabalhador: ["'self'"],
       manifest: ["'self'"],
     }

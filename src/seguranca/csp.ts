@@ -18,10 +18,17 @@ const SDK_DO_PAGAMENTO = 'https://sdk.mercadopago.com'
 const API_DO_PAGAMENTO = 'https://api.mercadopago.com'
 /** Os três campos do cartão são iframes daqui; o SDK também faz uma consulta a esta origem. */
 const CAMPOS_DO_CARTAO = 'https://secure-fields.mercadopago.com'
+/** O servidor reserva dos campos do cartão (o `sourceUrl` do SDK): moldura e conexão. */
+const CAMPOS_DO_CARTAO_RESERVA = 'https://api-static.mercadopago.com'
 /** Antifraude do pagamento: a consulta `etid` (conexão) e o pixel (imagem). */
 const ANTIFRAUDE = 'https://www.mercadolibre.com'
-/** Antifraude do pagamento: o pixel do Brasil (imagem). */
+/** Antifraude do pagamento: o pixel do Brasil (imagem), o que ele usa fora do domínio de produção. */
 const ANTIFRAUDE_BRASIL = 'https://www.mercadolivre.com'
+/**
+ * Antifraude do pagamento no domínio de produção: em `metanutri.com.br` (`.com.br`) o script usa este host, por imagem
+ * ou por `fetch`, conforme a variante da visita. Em `localhost` ele não aparece (achado da revisão de 14/10/2026).
+ */
+const ANTIFRAUDE_DOMINIO_BR = 'https://www.mercadopago.com.br'
 /** As métricas do SDK do pagamento (`/tracks`). */
 const METRICAS_DO_PAGAMENTO = 'https://api.mercadolibre.com'
 /** A verificação contra robôs: o script e o iframe do Turnstile. */
@@ -68,17 +75,20 @@ export function origemDoSupabase(endereco: unknown): string | null {
 }
 
 export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
-  const molduras = [CAMPOS_DO_CARTAO, VERIFICACAO]
+  const molduras = [CAMPOS_DO_CARTAO, CAMPOS_DO_CARTAO_RESERVA, VERIFICACAO]
   return [
     ['default-src', ["'self'"]],
     ['script-src', ["'self'", `'nonce-${NONCE_DO_ANTIFRAUDE}'`, SDK_DO_PAGAMENTO, VERIFICACAO]],
     // React, Radix, motion, o SDK do pagamento e o Turnstile escrevem estilo na página. Script, nunca.
     ['style-src', ["'self'", "'unsafe-inline'"]],
     // `data:` é a logo do perfil (o FileReader a lê assim).
-    ['img-src', ["'self'", 'data:', ANTIFRAUDE, ANTIFRAUDE_BRASIL]],
+    ['img-src', ["'self'", 'data:', ANTIFRAUDE, ANTIFRAUDE_BRASIL, ANTIFRAUDE_DOMINIO_BR]],
     // DP-CSP-4: as fontes vêm como arquivo do próprio site, nunca `data:`.
     ['font-src', ["'self'"]],
-    ['connect-src', ["'self'", ...(supabase ? [supabase] : []), API_DO_PAGAMENTO, CAMPOS_DO_CARTAO, ANTIFRAUDE, METRICAS_DO_PAGAMENTO, ROTULOS]],
+    [
+      'connect-src',
+      ["'self'", ...(supabase ? [supabase] : []), API_DO_PAGAMENTO, CAMPOS_DO_CARTAO, CAMPOS_DO_CARTAO_RESERVA, ANTIFRAUDE, ANTIFRAUDE_DOMINIO_BR, METRICAS_DO_PAGAMENTO, ROTULOS],
+    ],
     ['frame-src', molduras],
     // DP-CSP-5 (CB-128): reserva para o navegador que não entende frame-src ou worker-src.
     ['child-src', ["'self'", ...molduras]],
