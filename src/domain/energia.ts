@@ -239,7 +239,7 @@ export function percentualDoGasto(
   kcalPlano: number,
   get: number | null,
   limites: { readonly min: number; readonly max: number } = FAIXA_DO_GASTO_PADRAO,
-):{ readonly pct: number; readonly estado: 'abaixo' | 'dentro' | 'acima' } | null {
+): { readonly pct: number; readonly estado: 'abaixo' | 'dentro' | 'acima' } | null {
   if (get === null || get <= 0) return null
   const pct = Math.round((kcalPlano / get) * 100 * 1e6) / 1e6
   return { pct, estado: pct < limites.min ? 'abaixo' : pct > limites.max ? 'acima' : 'dentro' }
