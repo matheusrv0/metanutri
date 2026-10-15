@@ -29,13 +29,19 @@ const HOSTS_LOCAIS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
 
 const NO_WINDOWS = process.platform === 'win32'
 
+/**
+ * O ambiente de todo comando daqui (CLI, Docker e testes): sem nenhuma variável de Supabase, Mercado Pago ou
+ * Cloudflare desta máquina. Assim nem o CLI acha uma chave ou um projeto de verdade para usar.
+ */
+const AMBIENTE_LIMPO = Object.fromEntries(Object.entries(process.env).filter(([chave]) => !/SUPABASE|MERCADOPAGO|TURNSTILE/i.test(chave)))
+
 function rodar(comando, args, opcoes = {}) {
   return spawnSync(comando, args, {
     cwd: RAIZ,
     encoding: 'utf8',
     shell: opcoes.shell ?? false,
     input: opcoes.input,
-    env: opcoes.env ?? process.env,
+    env: opcoes.env ?? AMBIENTE_LIMPO,
     stdio: opcoes.herdar ? 'inherit' : 'pipe',
     maxBuffer: 64 * 1024 * 1024,
   })
@@ -74,9 +80,22 @@ function lerStatus() {
   }
 }
 
+/** A pilha deste projeto pode estar no ar (subindo, rodando): o Ctrl+C precisa derrubar. */
+let pilhaNoAr = false
+
 function derrubar() {
   supabase(['stop', '--no-backup'])
+  pilhaNoAr = false
 }
+
+// Ctrl+C no meio: derruba a pilha local e apaga os dados antes de sair.
+process.on('SIGINT', () => {
+  if (pilhaNoAr) {
+    console.error('\nInterrompido: derrubando o Supabase local e apagando os dados de teste...')
+    derrubar()
+  }
+  process.exit(130)
+})
 
 function aplicarMigracoes() {
   const arquivos = readdirSync(join(RAIZ, 'supabase'))
@@ -97,13 +116,9 @@ function aplicarMigracoes() {
   }
 }
 
-/** O ambiente dos testes: só as chaves locais, sem nenhuma variável que aponte para um Supabase de verdade. */
+/** O ambiente dos testes: o limpo, mais as chaves do Supabase local. */
 function ambienteDosTestes(status) {
-  const env = { ...process.env }
-  for (const chave of Object.keys(env)) {
-    if (/SUPABASE|MERCADOPAGO|TURNSTILE/i.test(chave)) delete env[chave]
-  }
-  return { ...env, ATAQUE_API_URL: status.API_URL, ATAQUE_ANON_KEY: status.ANON_KEY, ATAQUE_SERVICE_KEY: status.SERVICE_ROLE_KEY }
+  return { ...AMBIENTE_LIMPO, ATAQUE_API_URL: status.API_URL, ATAQUE_ANON_KEY: status.ANON_KEY, ATAQUE_SERVICE_KEY: status.SERVICE_ROLE_KEY }
 }
 
 function principal() {
@@ -121,6 +136,7 @@ function principal() {
   // DP-A2: sempre uma pilha nova; uma que sobrou de outra rodada é derrubada com os dados.
   derrubar()
   console.log('Subindo o Supabase local (na primeira vez as imagens são baixadas, pode demorar)...')
+  pilhaNoAr = true
   const subida = supabase(['start', '-x', DESLIGADOS], { herdar: true })
   if (subida.status !== 0) {
     derrubar()
