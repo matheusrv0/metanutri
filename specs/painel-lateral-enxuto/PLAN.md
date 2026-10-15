@@ -223,3 +223,24 @@ Os itens abaixo são da integração; cada tarefa é um commit, com teste antes 
    posição depois: a lista se reordena quando o plano muda.
 3. **Sem o limite do estado**, o arredondamento fica no sentido do estado, que nunca desmente a cor. Hoje
    todo lugar passa o limite.
+
+### Validação da integração (15/10/2026)
+
+`npm run check` verde (195 arquivos, 3.372 testes; lint com 0 erros e o aviso antigo de
+`MolduraPublica.tsx`), `npx playwright test` verde (64 testes, numa cópia da configuração na porta
+4527, apagada depois), `npm run build` verde, `node scripts/conferir-publicacao.mjs` verde e
+`npm run test:csp` verde (3 testes).
+
+| Critério | Teste |
+|---|---|
+| CA-711 | `arredondarNoEstado.test.ts` · "CA-711"; `ResumoDoDia.test.tsx` · "CA-695" e "CA-711"; `FaixaResumo.test.tsx` · "CA-696" (com o 125,2%) |
+| CA-712 | `arredondarNoEstado.test.ts` · "CA-712"; `MedidorMacro.test.tsx` · dois testes "CA-712"; `MicrosDoDia.test.tsx` · dois testes "CA-712"; `TelaAdequacao.test.tsx` · três testes "CA-712" |
+| CA-713 | `focoDoCobrir.test.ts` · quatro testes "CA-713"; `MicrosDoDia.test.tsx` · quatro testes "CA-713"; `TelaAdequacao.test.tsx` · dois testes "CA-713" |
+| CA-714 | e2e "CA-714" (cartão, tabela e lista do celular); `GavetaCobrir.test.tsx` · "CA-714" |
+| CB-211 | `MicrosDoDia.test.tsx` · "CB-211"; `focoDoCobrir.test.ts` · "CA-713 e CB-211" |
+| CB-204 (item c) | `MicrosDoDia.test.tsx` · "CB-204", com a sugestão controlada |
+
+**Divergências da integração:** o foco já se perdia antes, até ao fechar a gaveta sem adicionar (a
+gaveta não tem gatilho próprio); a correção vale para os dois casos, e o D-212 diz isso. O teste do
+modo rápido voltou a "21% da meta", o número de antes do D-209. Os testes do CA-714 passaram de
+primeira: são trava, porque a tela e o domínio já estavam de acordo.
