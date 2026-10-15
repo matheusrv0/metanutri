@@ -244,3 +244,20 @@ Os itens abaixo são da integração; cada tarefa é um commit, com teste antes 
 gaveta não tem gatilho próprio); a correção vale para os dois casos, e o D-212 diz isso. O teste do
 modo rápido voltou a "21% da meta", o número de antes do D-209. Os testes do CA-714 passaram de
 primeira: são trava, porque a tela e o domínio já estavam de acordo.
+
+## Revisão final da integração (15/10/2026)
+
+O coordenador revisou a branch inteira (`revisao-final.md`). Um commit por item, com a nota de spec antes do código
+(este commit traz as notas do I1, do M4 e do M6). O M3 (meta com casa decimal) fica para depois: já era assim antes da
+integração.
+
+| # | Item | Arquivos |
+|---|---|---|
+| F1 | I1 · "(peso cru)" em broto de feijão, fruta-pão e pequi, como os outros 8 que só existem crus; teste com os 11 | `src/domain/nomeParaPaciente.ts` (+ teste); spec `impressao-do-plano` (seção 2, CA-625) |
+| F2 | I2 · CA-34 (`planejador-metanutri`, SPEC e VALIDATION) e CA-210 (`estilo-spora`) anotados: o sódio não tem Cobrir; os dois no cabeçalho desta spec | só specs |
+| F3 | M1 · a tabela de decisões sem a linha em branco antes do D-211 | `SPEC.md` |
+| F4 | M2 · CA-319 na nota do topo da `pdf-e-telas-limpas`; o cabeçalho desta spec cita só CA-333 e CA-338 dela | só specs |
+| F5 | M7 · espaço que faltava em `energia.ts` | `src/domain/energia.ts` |
+| F6 | M4 · o foco usa a ordem de todos os que pedem Cobrir, não só dos 5 à vista (CA-713 completo) | `MicrosDoDia.tsx`, `TelaAdequacao.tsx`, `focoDoCobrir.ts` (+ testes) |
+| F7 | M5 · testes das emendas: CB-204 da etapa 3 com sugestão controlada; restrições do cartão chegam ao Cobrir; % do macro na faixa do topo (CA-712) e CA-711 em teste próprio | `TelaAdequacao.test.tsx`, `MicrosDoDia.test.tsx`, `FaixaResumo.test.tsx` |
+| F8 | M6 · a folha pede 4 trocas e mostra 2 depois do corte por nome (CB-188); as trocas estranhas vão para o Apêndice C da `sugestoes-com-criterio` | `src/domain/folhaDieta.ts` (+ teste), `src/ui/exportar/FolhaDieta.tsx`; spec `sugestoes-com-criterio` (Apêndice C) |

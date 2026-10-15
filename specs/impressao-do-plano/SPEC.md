@@ -11,6 +11,11 @@ CA-629 a CA-632 e CA-634; entraram D-189, CA-641 a CA-645 e CB-189. Depois da ro
 regra dos "mais de 4 pedaços" vale também na refeição e na lista de compras, não só na troca: mudaram D-183, CA-641,
 CA-643 e CA-644.
 
+**Revisão final da integração (15/10/2026):** junto com a frente "sugestões com critério", que deixa no Cobrir e nas
+trocas os alimentos que a base só tem crus contando com o "(peso cru)" da folha, mudaram a seção 2 e o CA-625 (broto
+de feijão, fruta-pão e pequi também levam "(peso cru)") e o CB-188 (a folha pede mais trocas para a vaga não ficar
+vazia).
+
 **Hoje:** a folha da dieta (`src/ui/exportar/FolhaDieta.tsx`, spec `pdf-e-telas-limpas`, US-B1) sai pela impressão do
 navegador ("Imprimir ou salvar em PDF"). O PDF do dono tem cinco defeitos, todos reproduzidos no Chromium 153:
 
@@ -69,11 +74,13 @@ Em ordem; a primeira que decide vale.
    - **peso cru:** o "cru" vira "(peso cru)", no fim do nome, onde o peso prescrito é do alimento cru e ele se come
      preparado — cereais e massas, leguminosas, carnes e peixes, e os legumes e verduras que se comem cozidos (batata,
      batata-doce, batata-baroa, mandioca, cará, inhame, abóbora, abobrinha, berinjela, chuchu, brócolis, couve-flor,
-     espinafre, catalonha, taioba, caruru, serralha, mostarda, jiló, maxixe, quiabo, vagem, jurubeba): "Macarrão (peso
-     cru)", "Feijão carioca (peso cru)", "Peito de frango sem pele (peso cru)". O "cru" puro soava como ordem de comer
-     cru;
+     espinafre, catalonha, taioba, caruru, serralha, mostarda, jiló, maxixe, quiabo, vagem, jurubeba, broto de feijão)
+     e as frutas que se comem cozidas (fruta-pão e pequi): "Macarrão (peso cru)", "Feijão carioca (peso cru)", "Peito
+     de frango sem pele (peso cru)", "Broto de feijão (peso cru)". O "cru" puro soava como ordem de comer cru. *(Broto
+     de feijão, fruta-pão e pequi entraram na revisão final da integração: a spec `sugestoes-com-criterio` os deixa
+     prescritíveis porque a folha marca "(peso cru)", D-199a)*;
    - **cru** fica só onde importa: verdura que se come crua e que a base também tem preparada ("Cenoura crua",
-     "Beterraba crua", "Couve manteiga crua"); sai de fruta, castanha e semente, e da verdura que a base só tem crua
+     "Beterraba crua", "Couve manteiga crua"); sai de fruta (menos fruta-pão e pequi), castanha e semente, e da verdura que a base só tem crua
      ("Alface crespa", "Cebola"); cozido, grelhado, assado, frito, refogado e torrado ficam sempre;
    - "sem pele", "com pele", "sem gordura", "com gordura", "com casca", "sem casca" e "com capa de gordura" vão para o
      fim, antes do "(peso cru)": dizem como preparar ("Peito de frango grelhado sem pele");
@@ -103,7 +110,7 @@ Como paciente, quero ler o nome do alimento como eu falo, para saber o que compr
 
 - **CA-623** · Dado o plano de exemplo, quando imprimo, então os alimentos saem assim: Pão francês, Margarina com sal, Queijo minas frescal, Mamão Formosa, Banana prata, Castanha-do-pará, Arroz branco cozido, Feijão carioca cozido, Peito de frango grelhado sem pele, Brócolis cozido, Cenoura crua, Macarrão (peso cru), Patinho grelhado sem gordura, Batata inglesa cozida, Filé de merluza assado, Iogurte natural, Aveia em flocos, Arroz integral cozido, Lentilha cozida, Ovo cozido, Alface crespa e Maçã Fuji com casca.
 - **CA-624** · Dado qualquer um dos 597 alimentos da base, então o nome para o paciente não é vazio, não tem vírgula, barra nem "%", não tem parêntese além do "(peso cru)", não tem "tipo 1" nem número de amostra, e tem no máximo 48 letras.
-- **CA-625** · Dado um alimento cru de cereal, massa, leguminosa, carne ou peixe, ou um legume ou verdura que se come cozido (lista da seção 2), então o nome termina em "(peso cru)" e não diz "cru" solto; dado uma fruta, castanha ou semente, ou verdura que a base só tem crua, então "cru" não aparece; dado uma verdura que se come crua e que a base também tem preparada, então o nome guarda "cru" ou "crua". Cozido, grelhado, assado, frito, refogado e torrado nunca saem do nome. Os nomes da lista revisada à mão valem acima dessa regra (por exemplo "Aveia em flocos", "Fubá", "Ovo", "Quibe cru").
+- **CA-625** · Dado um alimento cru de cereal, massa, leguminosa, carne ou peixe, ou um legume, verdura ou fruta que se come cozido (lista da seção 2, com broto de feijão, fruta-pão e pequi desde a revisão final da integração), então o nome termina em "(peso cru)" e não diz "cru" solto; os 11 que a spec `sugestoes-com-criterio` deixa prescritíveis só crus (abóboras menina e pescoço, caruru, broto de feijão, inhame, jiló, quiabo, taioba, vagem, fruta-pão e pequi) saem todos com "(peso cru)"; dado uma outra fruta, castanha ou semente, ou verdura que a base só tem crua, então "cru" não aparece; dado uma verdura que se come crua e que a base também tem preparada, então o nome guarda "cru" ou "crua". Cozido, grelhado, assado, frito, refogado e torrado nunca saem do nome. Os nomes da lista revisada à mão valem acima dessa regra (por exemplo "Aveia em flocos", "Fubá", "Ovo", "Quibe cru").
 - **CA-626** · Dado um produto cadastrado em "Meus produtos" no plano, então a folha mostra o nome como a nutricionista escreveu, vírgulas e maiúsculas incluídas.
 - **CA-627** · Dado o planejador, a busca, a tabela de alimentos e o Word de aconselhamento, então eles continuam com o nome da base.
 - **CA-628** · Dado "Lista de compras" e "Trocas" marcadas, então as duas usam o nome para o paciente; a lista de compras fica em ordem alfabética desse nome.
@@ -164,7 +171,9 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
   dois "Arroz branco cozido"; as margarinas de óleos diferentes viram "Margarina com sal"): não aparece, para a folha
   não mandar trocar uma coisa por ela mesma. Duas trocas com o mesmo nome aparecem uma vez; alimento do plano que fica
   sem troca sai da lista de trocas; dois alimentos do plano com o mesmo nome aparecem uma vez. *(visto nos prints de
-  15/10)*
+  15/10)* Para a vaga cortada não ficar vazia, a folha pede 4 trocas e mostra as 2 primeiras que sobram depois desse
+  corte (CA-319 continua: no máximo 2). *(revisão final da integração: o arroz branco do exemplo imprimia só a
+  polenta)*
 - **CB-189** · Firefox: ele entende `box-decoration-break: clone` e entra na mesma regra de página do Chrome, mas o
   cabeçalho e o rodapé dele (título, endereço, data, página) podem não depender da margem e cair no espaço branco da
   folha. **Conferir à mão** uma vez (o Playwright desta máquina só tem o Chromium; o dono usa o Chrome). Se sair, o
