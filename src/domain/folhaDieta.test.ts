@@ -80,8 +80,8 @@ describe('comprasDaFolha (spec impressao-do-plano, CA-628 e CB-181)', () => {
     plano = adicionarItem(plano, almoco.id, 'substituto1', { alimentoId: BANANA, gramas: 80 }, ids)
     plano = adicionarItem(plano, jantar.id, 'principal', { alimentoId: PAO_FRANCES, gramas: 0 }, ids)
     expect(comprasDaFolha(plano, buscarAlimento)).toEqual([
-      { nome: 'Arroz branco cozido', gramas: 250 },
-      { nome: 'Pão francês', gramas: 50 },
+      { nome: 'Arroz branco cozido', gramas: 250, alimentoId: ARROZ_TIPO_1 },
+      { nome: 'Pão francês', gramas: 50, alimentoId: PAO_FRANCES },
     ])
   })
 })

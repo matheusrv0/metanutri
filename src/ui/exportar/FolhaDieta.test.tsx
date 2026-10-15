@@ -223,8 +223,10 @@ describe('Folha da dieta (US-B1)', () => {
 
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
     expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
-    // CA-628: a lista de compras e as trocas usam o nome para o paciente.
-    expect(screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === 'Arroz branco cozido — 150 g')).toBeInTheDocument()
+    // CA-628 e CA-643: a lista de compras usa o nome para o paciente e a quantidade pela regra da refeição.
+    const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
+    expect(compra('Arroz branco cozido — 6 colheres de sopa')).toBeInTheDocument()
+    expect(compra('Macarrão (peso cru) — 80 g')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Trocas' }).textContent).not.toMatch(/,/)
     expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')

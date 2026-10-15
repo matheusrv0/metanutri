@@ -208,7 +208,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                 {compras.map((c) => (
                   <li key={c.nome} className="border-b border-dotted border-border">
                     {`${c.nome} — `}
-                    <span className="numeros">{`${formatarNumero(c.gramas, 0)} g`}</span>
+                    {/* CA-643: a quantidade do dia pela regra da refeição. */}
+                    <Quantidade quantidade={quantidadeNaFolha(c.alimentoId, c.gramas, buscarAlimento)} />
                   </li>
                 ))}
               </ul>

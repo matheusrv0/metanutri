@@ -32,6 +32,8 @@ export function opcoesDaRefeicao(refeicao: Refeicao): readonly (readonly ItemPla
 export interface CompraDaFolha {
   readonly nome: string
   readonly gramas: number
+  /** O primeiro alimento do plano com esse nome: dá a medida caseira da linha (CA-643). */
+  readonly alimentoId: number
 }
 
 /**
@@ -39,15 +41,16 @@ export interface CompraDaFolha {
  * impressao-do-plano, CA-628 e CB-181). Dois alimentos com o mesmo nome viram uma linha só.
  */
 export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly CompraDaFolha[] {
-  const porNome = new Map<string, number>()
+  const porNome = new Map<string, CompraDaFolha>()
   for (const refeicao of plano.refeicoes) {
     for (const item of refeicao.opcoes.principal) {
       if (item.gramas <= 0) continue
       const nome = nomeParaPaciente(buscar(item.alimentoId))
-      porNome.set(nome, (porNome.get(nome) ?? 0) + item.gramas)
+      const antes = porNome.get(nome)
+      porNome.set(nome, { nome, gramas: (antes?.gramas ?? 0) + item.gramas, alimentoId: antes?.alimentoId ?? item.alimentoId })
     }
   }
-  return [...porNome.entries()].map(([nome, gramas]) => ({ nome, gramas })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  return [...porNome.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
 /** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */
