@@ -8,8 +8,10 @@ export const FALHA_DE_REDE = 'Não deu para falar com o servidor. Confira a inte
 export const COPIA_GRANDE_DEMAIS = 'A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.'
 /** D-107 (CA-446): o link passou de um dos tamanhos que a nuvem guarda. */
 export const LINK_GRANDE_DEMAIS = 'Este link ficou grande demais. Tire algumas missões e tente de novo.'
+/** CB-152 (spec dieta-no-link): a cópia da dieta passou de 256 KB. Quase sempre são orientações ou receitas enormes. */
+export const DIETA_GRANDE_DEMAIS = 'A dieta passou do tamanho que o link guarda. Encurte as orientações ou as receitas, ou desmarque "Mostrar a dieta no link".'
 
-/** D-107: as travas de tamanho do banco (supabase/011-seguranca-lote-2.sql), pelo nome, com a frase de cada uma. */
+/** D-107: as travas de tamanho do banco (supabase/011-seguranca-lote-2.sql e 012-dieta-no-link.sql), pelo nome, com a frase de cada uma. */
 export const TRAVAS_DE_TAMANHO: Readonly<Record<string, string>> = {
   copias_dados_tamanho: COPIA_GRANDE_DEMAIS,
   acompanhamentos_missoes_tamanho: LINK_GRANDE_DEMAIS,
@@ -17,6 +19,7 @@ export const TRAVAS_DE_TAMANHO: Readonly<Record<string, string>> = {
   acompanhamentos_nome_tamanho: LINK_GRANDE_DEMAIS,
   acompanhamentos_caso_id_tamanho: LINK_GRANDE_DEMAIS,
   acompanhamentos_paciente_id_tamanho: LINK_GRANDE_DEMAIS,
+  acompanhamentos_dieta_tamanho: DIETA_GRANDE_DEMAIS,
 }
 
 /** O código do Postgres para a trava (check) que recusou a linha. */

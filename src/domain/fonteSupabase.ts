@@ -7,6 +7,7 @@
 // Ver `supabase/001-acompanhamentos.sql`.
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
+import { lerDieta } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 import type { FonteAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
@@ -68,8 +69,8 @@ export function daLinha(linha: unknown): Acompanhamento | null {
     // Na dúvida, avisa. Linha antiga sem a coluna vira link de estudante e mostra o
     // aviso — errar para o lado de avisar demais é o lado certo aqui.
     usoNaoComercial: o['uso_nao_comercial'] !== false,
-    // A nuvem ainda não guarda a dieta: o link que vem de lá vem sem ela.
-    dieta: null,
+    // A função antiga (banco sem o 012) não traz a coluna: o link abre só com as missões (CB-151).
+    dieta: lerDieta(o['dieta']),
   }
 }
 
@@ -85,7 +86,23 @@ function paraLinha(a: Acompanhamento, nutricionistaId: string): Record<string, u
     missoes: a.missoes,
     marcacoes: a.marcacoes,
     uso_nao_comercial: a.usoNaoComercial,
+    // Desligada, vai nula: a cópia sai da linha (D-152).
+    dieta: a.dieta,
   }
+}
+
+/**
+ * DP-154: banco sem o 012 (CB-151). O PostgREST recusa o pedido inteiro que traz uma coluna que ele não
+ * conhece, com este código e o nome da coluna na mensagem. Só esse caso manda de novo sem a dieta.
+ */
+const faltaColunaDieta = (erro: ErroDoBanco | null): boolean => erro?.code === 'PGRST204' && erro.message.includes("'dieta'")
+
+const semDieta = (linha: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(linha).filter(([coluna]) => coluna !== 'dieta'))
+
+/** Faz o pedido; se o banco ainda não conhece a coluna da dieta, faz de novo sem ela, e o link salva como antes. */
+async function comOuSemDieta(linha: Record<string, unknown>, pedir: (linha: Record<string, unknown>) => PromiseLike<Resposta<unknown>>): Promise<Resposta<unknown>> {
+  const resposta = await pedir(linha)
+  return faltaColunaDieta(resposta.error) ? pedir(semDieta(linha)) : resposta
 }
 
 export interface OpcoesFonteSupabase {
@@ -233,7 +250,7 @@ export async function subirAcompanhamento(cliente: ClienteMissoes, a: Acompanham
   return comPrazo<string | null>(async (sinal) => {
     const usuario = await usuarioEsperado(cliente, esperado)
     if (usuario === null) return FALHA_DE_REDE
-    const { error } = await comSinal(cliente.from(TABELA).upsert(paraLinha(a, usuario), { onConflict: 'id', ignoreDuplicates: true }), sinal)
+    const { error } = await comOuSemDieta(paraLinha(a, usuario), (linha) => comSinal(cliente.from(TABELA).upsert(linha, { onConflict: 'id', ignoreDuplicates: true }), sinal))
     return error ? motivoDoErro(error) : null
   }, mensagem)
 }
@@ -261,13 +278,13 @@ export async function salvarLinkNaNuvem(
       const linha = paraLinha(a, usuario)
 
       if (!opcoes.jaEsteveNaNuvem) {
-        const criado = await comSinal(cliente.from(TABELA).upsert(linha, { onConflict: 'id', ignoreDuplicates: true }).select('id'), sinal)
+        const criado = await comOuSemDieta(linha, (l) => comSinal(cliente.from(TABELA).upsert(l, { onConflict: 'id', ignoreDuplicates: true }).select('id'), sinal))
         if (criado.error) return { tipo: 'falhou', motivo: motivoDoErro(criado.error) }
         if (tocouAlgumaLinha(criado.data)) return { tipo: 'salvo' }
       }
 
       const semMarcacoes = Object.fromEntries(Object.entries(linha).filter(([coluna]) => coluna !== 'marcacoes'))
-      const atualizado = await comSinal(cliente.from(TABELA).update(semMarcacoes).eq('id', a.id).select('id'), sinal)
+      const atualizado = await comOuSemDieta(semMarcacoes, (l) => comSinal(cliente.from(TABELA).update(l).eq('id', a.id).select('id'), sinal))
       if (atualizado.error) return { tipo: 'falhou', motivo: motivoDoErro(atualizado.error) }
       // Só uma lista vazia diz que a linha sumiu; resposta sem lista não diz nada, é falha.
       if (!Array.isArray(atualizado.data)) return { tipo: 'falhou', motivo: FALHA_DE_REDE }
