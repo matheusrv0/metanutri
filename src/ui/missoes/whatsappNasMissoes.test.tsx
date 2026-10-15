@@ -1,5 +1,5 @@
 // O WhatsApp no cartão do link e na Adesão (spec whatsapp-e-retorno).
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { criarAcompanhamento, type Acompanhamento, type MarcacaoDia } from '@/domain/acompanhamento.ts'
@@ -208,6 +208,52 @@ describe('WhatsApp e retorno na Adesão', () => {
     await usuario.click(linha('Eva Nunes').getByRole('button', { name: 'WhatsApp' }))
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cadastre o telefone na ficha' }))
     expect(aoCadastrarTelefone).toHaveBeenCalledWith('p9')
+  })
+})
+
+describe('D-144: a Adesão e o cartão contam pelo dia de Brasília, como o Painel', () => {
+  /** Marcou de 08 a 11/10: em dia no dia 14, sumindo no dia 15. */
+  const marcas = marcou('2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11')
+  /** 23h30 de 14/10 em Brasília; em UTC já é 15/10. */
+  const QUASE_MEIA_NOITE = new Date('2026-10-15T02:30:00.000Z')
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('a Adesão, sem "hoje" fixo, usa o dia de Brasília da hora que recebe', () => {
+    render(
+      <Anfitriao links={[link('c1', 'p1', { nome: 'Ana Souza', marcacoes: marcas })]} fichas={[{ id: 'p1', nome: 'Ana Souza' }]}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} agora={QUASE_MEIA_NOITE} />
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Em dia')).toBeInTheDocument()
+  })
+
+  it('CA-529: com a Adesão aberta, o retorno das 16:00 sai às 17:01, sem recarregar', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date('2026-10-14T19:59:30.000Z'))
+    render(
+      <Anfitriao links={[link('c1', 'p1', { nome: 'Ana Souza' })]} fichas={[{ id: 'p1', nome: 'Ana Souza', proximaConsulta: '2026-10-14T16:00' }]}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} />
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Retorno hoje às 16:00')).toBeInTheDocument()
+    act(() => {
+      vi.advanceTimersByTime(120_000)
+    })
+    expect(linha('Ana Souza').queryByText(/Retorno/)).not.toBeInTheDocument()
+  })
+
+  it('o selo do cartão do link, sem "hoje" fixo, também', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(QUASE_MEIA_NOITE)
+    render(
+      <Anfitriao links={[link('c1', 'p1', { marcacoes: marcas })]} fichas={[{ id: 'p1', nome: 'Ana Souza' }]}>
+        <CartaoLinkMissoes casoId="c1" pacienteId="p1" nome="Plano da Ana" missoes={MISSOES} />
+      </Anfitriao>,
+    )
+    expect(within(screen.getByRole('region', { name: 'Missões do paciente' })).getByText('Em dia')).toBeInTheDocument()
   })
 })
 

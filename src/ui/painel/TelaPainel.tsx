@@ -9,6 +9,7 @@ import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { useAgora } from '../estado/usarAgora.ts'
 import { HojeEEstaSemana } from './HojeEEstaSemana.tsx'
 
 interface TelaPainelProps {
@@ -30,7 +31,10 @@ const DIAS = 14
  * Primeira tela do dia: onde você parou e o que está pendente (spec pdf-e-telas-limpas, US-B3), e quem
  * você atende esta semana (spec whatsapp-e-retorno, D-146).
  */
-export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora = new Date(), aoCadastrarTelefone }: TelaPainelProps) {
+export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora: agoraFixo, aoCadastrarTelefone }: TelaPainelProps) {
+  // CA-529: a hora é refeita a cada minuto e ao voltar para a aba; o teste pode fixá-la.
+  const relogio = useAgora()
+  const agora = agoraFixo ?? relogio
   const { casos, avisoArmazenamento } = useCasos()
   const { pacientes } = usePacientes()
 

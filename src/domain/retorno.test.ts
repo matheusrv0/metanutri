@@ -137,12 +137,21 @@ describe('Hoje em Brasília (D-144)', () => {
     expect(somarDias('2028-02-28', 1)).toBe('2028-02-29')
   })
 
-  it('D-145: com horário, passa quando o horário passa; sem horário, quando o dia acaba', () => {
-    expect(consultaPassou({ dia: '2026-10-14', hora: '09:59' }, AGORA)).toBe(true)
+  it('D-145: com horário, passa 1 hora depois do horário; sem horário, quando o dia acaba', () => {
+    expect(consultaPassou({ dia: '2026-10-14', hora: '08:59' }, AGORA)).toBe(true)
+    expect(consultaPassou({ dia: '2026-10-14', hora: '09:00' }, AGORA)).toBe(false)
+    expect(consultaPassou({ dia: '2026-10-14', hora: '09:59' }, AGORA)).toBe(false)
     expect(consultaPassou({ dia: '2026-10-14', hora: '10:00' }, AGORA)).toBe(false)
     expect(consultaPassou({ dia: '2026-10-14', hora: null }, AGORA)).toBe(false)
     expect(consultaPassou({ dia: '2026-10-13', hora: null }, AGORA)).toBe(true)
     expect(consultaPassou({ dia: '2026-10-15', hora: '08:00' }, AGORA)).toBe(false)
+  })
+
+  it('D-145: a tolerância atravessa a meia-noite', () => {
+    const madrugada = agoraEmBrasilia(new Date('2026-10-15T03:10:00.000Z'))
+    expect(madrugada).toEqual({ dia: '2026-10-15', hora: '00:10' })
+    expect(consultaPassou({ dia: '2026-10-14', hora: '23:30' }, madrugada)).toBe(false)
+    expect(consultaPassou({ dia: '2026-10-14', hora: '23:00' }, madrugada)).toBe(true)
   })
 
   it('o quando: hoje, amanhã, dia da semana até 6 dias, depois só a data', () => {
@@ -192,14 +201,16 @@ describe('A agenda da semana (D-146)', () => {
       ficha('caio', 'Caio', { proximaConsulta: '2026-10-16T10:00' }),
       ficha('duda', 'Duda', { proximaConsulta: '2026-10-20T08:00' }),
       ficha('edu', 'Edu', { proximaConsulta: '2026-10-21T08:00' }),
-      ficha('fabi', 'Fabi', { proximaConsulta: '2026-10-14T09:00' }),
+      ficha('fabi', 'Fabi', { proximaConsulta: '2026-10-14T08:30' }),
       ficha('gabi', 'Gabi', { proximaConsulta: '2026-10-13' }),
       ficha('hugo', 'Hugo', { proximaConsulta: '2026-10-14' }),
+      ficha('iara', 'Iara', { proximaConsulta: '2026-10-14T09:15' }),
       ficha('ivo', 'Ivo'),
     ]
     const agenda = agendaDaSemana(pacientes, AGORA)
     expect(agenda.map((i) => `${i.tipo} ${i.paciente.nome} ${i.dia} ${i.hora ?? '-'}`)).toEqual([
       'consulta Hugo 2026-10-14 -',
+      'consulta Iara 2026-10-14 09:15',
       'consulta Ana 2026-10-14 16:00',
       'consulta Bia 2026-10-15 09:00',
       'consulta Caio 2026-10-16 10:00',

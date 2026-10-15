@@ -5,7 +5,6 @@ import { useState, type ReactNode } from 'react'
 import {
   criarAcompanhamento,
   regerarLink,
-  diaLocal,
   diasMarcadosNaSemana,
   estadoDoAcompanhamento,
   progressoDoDia,
@@ -17,6 +16,7 @@ import { dataCompleta } from '@/domain/formatarData.ts'
 import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
+import { agoraEmBrasilia } from '@/domain/retorno.ts'
 import type { Situacao } from '@/domain/situacao.ts'
 import { textoDoLink } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
@@ -40,7 +40,7 @@ interface CartaoLinkMissoesProps {
   readonly plano?: IdPlano
   /** Situação da conta: estudante, aprovada ou não, gera o link com o aviso de uso não comercial (D-95). */
   readonly situacao?: Situacao | null
-  /** Injetável no teste; por padrão é o dia de hoje no fuso de quem olha. */
+  /** Injetável no teste; por padrão, o dia de Brasília, o mesmo do Painel e da Adesão (spec whatsapp-e-retorno, D-144). */
   readonly hoje?: string
   /** Leva a Preços quando o limite de links acaba (CA-177). */
   readonly aoVerPlanos?: (() => void) | undefined
@@ -55,7 +55,7 @@ export function CartaoLinkMissoes({
   missoes,
   plano = PLANO_PADRAO,
   situacao = null,
-  hoje = diaLocal(),
+  hoje = agoraEmBrasilia(new Date()).dia,
   aoVerPlanos,
   aoCadastrarTelefone,
 }: CartaoLinkMissoesProps) {

@@ -1,5 +1,5 @@
 // O bloco "Hoje e esta semana" do Painel (spec whatsapp-e-retorno, D-144 a D-148).
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { criarAcompanhamento, ROTULO_ESTADO, type Acompanhamento } from '@/domain/acompanhamento.ts'
@@ -107,7 +107,7 @@ describe('Painel: Hoje e esta semana', () => {
           { id: 'p2', nome: 'Bia Lima', proximaConsulta: '2026-10-15T09:00' },
           { id: 'p3', nome: 'Caio Reis', proximaConsulta: '2026-10-16T10:00' },
           { id: 'p4', nome: 'Duda Melo', proximaConsulta: '2026-10-14' },
-          { id: 'p5', nome: 'Edu Prado', proximaConsulta: '2026-10-14T09:00' },
+          { id: 'p5', nome: 'Edu Prado', proximaConsulta: '2026-10-14T08:30' },
           { id: 'p6', nome: 'Fabi Cruz', proximaConsulta: '2026-10-21T08:00' },
           { id: 'p7', nome: 'Gabi Dias', proximaConsulta: '2026-10-13T08:00' },
         ]}
@@ -252,5 +252,56 @@ describe('Painel: Hoje e esta semana', () => {
       </ProvedorCasos>,
     )
     expect(linha('Ana Souza').getByText('Hoje às 16:00')).toBeInTheDocument()
+  })
+
+  it('CA-520: a consulta de hoje fica 1 hora depois do horário, e sai depois disso', () => {
+    const fichas = [
+      { id: 'p1', nome: 'Ana Souza', proximaConsulta: '2026-10-14T09:00' },
+      { id: 'p2', nome: 'Bia Lima', proximaConsulta: '2026-10-14T08:59' },
+    ]
+    render(<Anfitriao fichas={fichas}>{painel()}</Anfitriao>)
+    expect(linha('Ana Souza').getByText('Hoje às 09:00')).toBeInTheDocument()
+    expect(bloco().queryByText('Bia Lima')).not.toBeInTheDocument()
+  })
+})
+
+describe('Painel: a hora anda sozinha (CA-529)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /** 16:59:30 em Brasília, com a consulta das 16:00 ainda dentro da tolerância de 1 hora. */
+  const montarAs1659 = () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date('2026-10-14T19:59:30.000Z'))
+    render(
+      <Anfitriao fichas={[{ id: 'p1', nome: 'Ana Souza', proximaConsulta: '2026-10-14T16:00' }, { id: 'p2', nome: 'Bia Lima', proximaConsulta: '2026-10-15T09:00' }]}>
+        <TelaPainel aoAbrirPlano={vi.fn()} aoIrPara={vi.fn()} aoVerExemplo={vi.fn()} />
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Hoje às 16:00')).toBeInTheDocument()
+  }
+
+  it('a cada minuto, sem recarregar: a consulta das 16:00 sai às 17:01', () => {
+    montarAs1659()
+    act(() => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(bloco().getByText('Ana Souza')).toBeInTheDocument()
+    act(() => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(bloco().queryByText('Ana Souza')).not.toBeInTheDocument()
+    expect(linha('Bia Lima').getByText('Amanhã às 09:00')).toBeInTheDocument()
+  })
+
+  it('ao voltar para a aba, a conta é refeita na hora', () => {
+    montarAs1659()
+    vi.setSystemTime(new Date('2026-10-15T12:00:00.000Z'))
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    expect(bloco().queryByText('Ana Souza')).not.toBeInTheDocument()
+    expect(linha('Bia Lima').getByText('Hoje às 09:00')).toBeInTheDocument()
   })
 })

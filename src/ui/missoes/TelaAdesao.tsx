@@ -3,7 +3,6 @@
 import { UserRoundX } from 'lucide-react'
 import { useState } from 'react'
 import {
-  diaLocal,
   diasMarcadosNaSemana,
   estadoDoAcompanhamento,
   ultimaAtividade,
@@ -19,6 +18,7 @@ import { agoraEmBrasilia, consultaPassou, lerConsulta, pacienteDoAcompanhamento,
 import { textoDeContato } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { useCasosOpcional } from '@/ui/estado/contextoCasos.ts'
+import { useAgora } from '@/ui/estado/usarAgora.ts'
 import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
 import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
 import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
@@ -29,7 +29,8 @@ interface TelaAdesaoProps {
   readonly aoAbrirPlano: (casoId: string) => void
   /** Plano da conta, para comparar os pacientes ativos com o limite. */
   readonly plano?: IdPlano
-  readonly hoje?: string
+  /** Injetável no teste; por padrão, o dia de Brasília (D-144). */
+  readonly hoje?: string | undefined
   /** Injetável no teste; decide se o retorno já passou (hora de Brasília, spec whatsapp-e-retorno). */
   readonly agora?: Date | undefined
   /** Leva a Preços quando o limite de pacientes ativos acaba (CA-177). */
@@ -48,11 +49,15 @@ function textoDoRetorno(paciente: Paciente | null, momento: Momento): string | n
   return `Retorno ${quando(consulta, momento.dia)}`
 }
 
-export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal(), agora = new Date(), aoVerPlanos, aoCadastrarTelefone }: TelaAdesaoProps) {
+export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo, agora: agoraFixo, aoVerPlanos, aoCadastrarTelefone }: TelaAdesaoProps) {
   const { acompanhamentos, avisoNuvem, foraDaNuvem, remover, lerDaNuvem } = useAcompanhamentos()
   const fichas = usePacientesOpcional()
   const planos = useCasosOpcional()
-  const momento = agoraEmBrasilia(agora)
+  // CA-529: a hora é refeita a cada minuto e ao voltar para a aba; o teste pode fixá-la.
+  const relogio = useAgora()
+  const momento = agoraEmBrasilia(agoraFixo ?? relogio)
+  // D-144: o mesmo "hoje" do Painel, o de Brasília.
+  const hoje = hojeFixo ?? momento.dia
   // D-104: as marcações do paciente vêm da nuvem, ao abrir e ao voltar para a aba.
   useLerDaNuvemAoAbrir()
 

@@ -75,10 +75,16 @@ export function somarDias(dia: string, n: number): string {
   return data.toISOString().slice(0, 10)
 }
 
-/** Com horário, passou quando o horário passa; sem horário, quando o dia acaba (D-145). */
+/** Quanto tempo a consulta continua no Painel depois do horário: o paciente que atrasa, a consulta em andamento. */
+export const TOLERANCIA_EM_MINUTOS = 60
+
+/** Minutos desde 1970 de um dia e hora de Brasília; só serve para comparar dois deles. */
+const minutos = (dia: string, hora: string): number => Date.parse(`${dia}T${hora}:00Z`) / 60_000
+
+/** Com horário, passou 1 hora depois do horário; sem horário, quando o dia acaba (D-145). */
 export function consultaPassou(consulta: Consulta, agora: Momento): boolean {
-  if (consulta.dia !== agora.dia) return consulta.dia < agora.dia
-  return consulta.hora !== null && consulta.hora < agora.hora
+  if (consulta.hora === null) return consulta.dia < agora.dia
+  return minutos(agora.dia, agora.hora) > minutos(consulta.dia, consulta.hora) + TOLERANCIA_EM_MINUTOS
 }
 
 /** Os 7 dias corridos do bloco: hoje e os 6 seguintes (D-144). */
