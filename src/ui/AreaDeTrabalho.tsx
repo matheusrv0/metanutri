@@ -201,6 +201,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
         <TelaAdesao
           aoAbrirPlano={(casoId) => navegar({ tela: 'planejador', casoId, aba: 'plano' })}
           aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+          aoCadastrarTelefone={cadastrarTelefone}
           {...(sessao ? { plano: assinatura.plano } : {})}
         />
       </Estrutura>

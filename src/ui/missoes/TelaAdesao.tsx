@@ -14,7 +14,14 @@ import {
 } from '@/domain/acompanhamento.ts'
 import { estadoDoLimite, pacientesAtivos, planoPorId, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
+import type { Paciente } from '@/domain/pacientes.ts'
+import { agoraEmBrasilia, consultaPassou, lerConsulta, pacienteDoAcompanhamento, quando, type Momento } from '@/domain/retorno.ts'
+import { textoDeContato } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
+import { useCasosOpcional } from '@/ui/estado/contextoCasos.ts'
+import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
+import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
+import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
 
@@ -23,17 +30,37 @@ interface TelaAdesaoProps {
   /** Plano da conta, para comparar os pacientes ativos com o limite. */
   readonly plano?: IdPlano
   readonly hoje?: string
+  /** Injetável no teste; decide se o retorno já passou (hora de Brasília, spec whatsapp-e-retorno). */
+  readonly agora?: Date | undefined
   /** Leva a Preços quando o limite de pacientes ativos acaba (CA-177). */
   readonly aoVerPlanos?: (() => void) | undefined
+  /** Abre a ficha com o cursor no Telefone, quando o WhatsApp não tem número (CA-505). */
+  readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
 }
 
 /** Sumindo primeiro: é quem precisa de telefonema hoje. */
 const URGENCIA: Readonly<Record<EstadoAcompanhamento, number>> = { sumindo: 0, atencao: 1, 'nao-comecou': 2, 'em-dia': 3 }
 
-export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal(), aoVerPlanos }: TelaAdesaoProps) {
+/** CA-524: "Retorno sexta, 16/10 às 14:30" ao lado do nome, enquanto a consulta não passou. */
+function textoDoRetorno(paciente: Paciente | null, momento: Momento): string | null {
+  const consulta = lerConsulta(paciente?.proximaConsulta)
+  if (!consulta || consultaPassou(consulta, momento)) return null
+  return `Retorno ${quando(consulta, momento.dia)}`
+}
+
+export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal(), agora = new Date(), aoVerPlanos, aoCadastrarTelefone }: TelaAdesaoProps) {
   const { acompanhamentos, avisoNuvem, foraDaNuvem, remover, lerDaNuvem } = useAcompanhamentos()
+  const fichas = usePacientesOpcional()
+  const planos = useCasosOpcional()
+  const momento = agoraEmBrasilia(agora)
   // D-104: as marcações do paciente vêm da nuvem, ao abrir e ao voltar para a aba.
   useLerDaNuvemAoAbrir()
+
+  /** A ficha de quem marca: a do link ou, se o link nasceu antes do vínculo, a do plano (D-147). */
+  const fichaDe = (acompanhamento: Acompanhamento): Paciente | null => {
+    const id = pacienteDoAcompanhamento(acompanhamento, planos?.casos ?? [])
+    return id ? (fichas?.pacientes.find((p) => p.id === id) ?? null) : null
+  }
 
   const comEstado = acompanhamentos
     .map((a) => ({ acompanhamento: a, estado: estadoDoAcompanhamento(a, hoje) }))
@@ -100,19 +127,25 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje = diaLocal
       </section>
 
       <ul className="flex flex-col gap-2.5">
-        {comEstado.map(({ acompanhamento, estado }) => (
-          <li key={acompanhamento.id}>
-            <LinhaPaciente
-              acompanhamento={acompanhamento}
-              estado={estado}
-              hoje={hoje}
-              foraDaNuvem={foraDaNuvem.get(acompanhamento.id)}
-              aoAbrirPlano={aoAbrirPlano}
-              aoRemover={() => remover(acompanhamento.id)}
-              aoTentarDeNovo={lerDaNuvem}
-            />
-          </li>
-        ))}
+        {comEstado.map(({ acompanhamento, estado }) => {
+          const ficha = fichaDe(acompanhamento)
+          return (
+            <li key={acompanhamento.id}>
+              <LinhaPaciente
+                acompanhamento={acompanhamento}
+                estado={estado}
+                hoje={hoje}
+                retorno={textoDoRetorno(ficha, momento)}
+                ficha={ficha}
+                foraDaNuvem={foraDaNuvem.get(acompanhamento.id)}
+                aoAbrirPlano={aoAbrirPlano}
+                aoRemover={() => remover(acompanhamento.id)}
+                aoTentarDeNovo={lerDaNuvem}
+                aoCadastrarTelefone={aoCadastrarTelefone}
+              />
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
@@ -122,14 +155,21 @@ function LinhaPaciente({
   acompanhamento,
   estado,
   hoje,
+  retorno,
+  ficha,
   foraDaNuvem,
   aoAbrirPlano,
   aoRemover,
   aoTentarDeNovo,
+  aoCadastrarTelefone,
 }: {
   readonly acompanhamento: Acompanhamento
   readonly estado: EstadoAcompanhamento
   readonly hoje: string
+  /** "Retorno sexta, 16/10 às 14:30", ou nulo sem consulta por vir (CA-524). */
+  readonly retorno: string | null
+  /** A ficha de quem recebe o WhatsApp; nula sem paciente vinculado. */
+  readonly ficha: PacienteDoWhatsApp | null
   /** O motivo de o link ainda não estar na nuvem (CA-443). */
   readonly foraDaNuvem: string | undefined
   readonly aoAbrirPlano: (casoId: string) => void
@@ -137,6 +177,7 @@ function LinhaPaciente({
   readonly aoRemover: () => Promise<string | null>
   /** Lê a nuvem de novo: sobe o que não subiu e manda o que ficou pendente (CA-443, CB-108). */
   readonly aoTentarDeNovo: () => Promise<void>
+  readonly aoCadastrarTelefone: ((pacienteId: string) => void) | undefined
 }) {
   const naSemana = diasMarcadosNaSemana(acompanhamento, hoje)
   const ultima = ultimaMarcacao(acompanhamento)
@@ -170,6 +211,7 @@ function LinhaPaciente({
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-heading">{acompanhamento.nome || 'Paciente sem nome'}</p>
             <SeloEstado estado={estado} />
+            {retorno ? <span className="text-xs font-medium text-muted-foreground">{retorno}</span> : null}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {naSemana} de {DIAS_NA_SEMANA_PARA_EM_DIA} dias na semana · {ultima ? `última marcação em ${dataCompleta(ultima)}` : 'nunca marcou'}
@@ -187,6 +229,10 @@ function LinhaPaciente({
           <Button type="button" variant="ghost" onClick={() => setConfirmando(true)} disabled={confirmando}>
             Remover link
           </Button>
+          {/* CA-509: a mensagem é para quem está sumindo ou marcando pouco. */}
+          {estado === 'sumindo' || estado === 'atencao' ? (
+            <BotaoWhatsApp paciente={ficha} texto={textoDeContato(ficha?.nome ?? '', estado)} aoCadastrarTelefone={aoCadastrarTelefone} />
+          ) : null}
           <Button type="button" variant="outline" onClick={() => aoAbrirPlano(acompanhamento.casoId)}>
             Abrir plano
           </Button>

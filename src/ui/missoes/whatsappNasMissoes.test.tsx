@@ -2,15 +2,17 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { criarAcompanhamento, type Acompanhamento } from '@/domain/acompanhamento.ts'
+import { criarAcompanhamento, type Acompanhamento, type MarcacaoDia } from '@/domain/acompanhamento.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import { criarRepositorioPacientes, type Paciente } from '@/domain/pacientes.ts'
-import type { Armazenamento } from '@/domain/persistencia.ts'
+import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
 import { criarRepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { ProvedorAcompanhamentos } from '@/ui/estado/ProvedorAcompanhamentos.tsx'
+import { ProvedorCasos } from '@/ui/estado/ProvedorCasos.tsx'
 import { ProvedorPacientes } from '@/ui/estado/ProvedorPacientes.tsx'
 import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { enderecoDoPaciente } from './endereco.ts'
+import { TelaAdesao } from './TelaAdesao.tsx'
 
 const MISSOES: readonly Missao[] = [{ id: 'agua', texto: 'Beber cerca de 2 litros de água', origem: '35 ml por quilo' }]
 
@@ -24,28 +26,49 @@ function memoria(): Armazenamento {
 }
 
 let n = 0
-function link(casoId: string, pacienteId: string | null): Acompanhamento {
+function link(casoId: string, pacienteId: string | null, extra: { readonly criadoEm?: string; readonly nome?: string; readonly marcacoes?: readonly MarcacaoDia[] } = {}): Acompanhamento {
   n += 1
-  return criarAcompanhamento(
-    { casoId, pacienteId, nome: 'Plano da Ana', missoes: MISSOES },
-    { agora: () => '2026-10-01T10:00:00.000Z', gerarId: () => `ac-${n}`, aleatorio: (t) => new Uint8Array(t).fill(n) },
+  const base = criarAcompanhamento(
+    { casoId, pacienteId, nome: extra.nome ?? 'Plano da Ana', missoes: MISSOES },
+    { agora: () => extra.criadoEm ?? '2026-10-01T10:00:00.000Z', gerarId: () => `ac-${n}`, aleatorio: (t) => new Uint8Array(t).fill(n) },
   )
+  return { ...base, marcacoes: extra.marcacoes ?? [] }
 }
 
-/** Monta os provedores com os links e as fichas dados. */
-function Anfitriao({ links, fichas, children }: { readonly links: readonly Acompanhamento[]; readonly fichas: readonly Partial<Paciente>[]; readonly children: ReactNode }) {
+const marcou = (...dias: readonly string[]): readonly MarcacaoDia[] => dias.map((dia) => ({ dia, feitas: ['agua'] }))
+
+/** Monta os provedores com os links, as fichas e os planos dados. */
+function Anfitriao({
+  links,
+  fichas,
+  planos = [],
+  children,
+}: {
+  readonly links: readonly Acompanhamento[]
+  readonly fichas: readonly Partial<Paciente>[]
+  readonly planos?: readonly { readonly id: string; readonly pacienteId: string }[]
+  readonly children: ReactNode
+}) {
   const arm = memoria()
   const acompanhamentos = criarRepositorioAcompanhamentos(arm)
   for (const l of links) acompanhamentos.salvar(l)
-  const ids = fichas.map((f) => f.id ?? 'p1')
-  const pacientes = criarRepositorioPacientes(arm, { gerarId: () => ids.shift() ?? 'px' })
+  const idsDasFichas = fichas.map((f) => f.id ?? 'p1')
+  const pacientes = criarRepositorioPacientes(arm, { gerarId: () => idsDasFichas.shift() ?? 'px' })
   for (const ficha of fichas) {
     const criada = pacientes.criar(ficha.nome ?? '')
     pacientes.salvar({ ...criada, ...ficha, id: criada.id })
   }
+  const idsDosPlanos = planos.map((p) => p.id)
+  const casos = criarRepositorio(arm, { gerarId: () => idsDosPlanos.shift() ?? 'cx' })
+  for (const plano of planos) {
+    const criado = casos.criar('Plano')
+    casos.salvar({ ...criado, caso: { ...criado.caso, pacienteId: plano.pacienteId } })
+  }
   return (
     <ProvedorAcompanhamentos repositorio={acompanhamentos}>
-      <ProvedorPacientes repositorio={pacientes}>{children}</ProvedorPacientes>
+      <ProvedorCasos repositorio={casos}>
+        <ProvedorPacientes repositorio={pacientes}>{children}</ProvedorPacientes>
+      </ProvedorCasos>
     </ProvedorAcompanhamentos>
   )
 }
@@ -105,5 +128,85 @@ describe('WhatsApp no cartão do link (CA-508)', () => {
       </Anfitriao>,
     )
     expect(screen.queryByRole('button', { name: 'WhatsApp' })).not.toBeInTheDocument()
+  })
+})
+
+/** Quarta, 14/10/2026, 10h em Brasília. */
+const HOJE = '2026-10-14'
+const AGORA = new Date('2026-10-14T13:00:00.000Z')
+const TELEFONE = '(11) 98765-4321'
+
+const linha = (nome: string) => {
+  const li = screen.getByText(nome).closest('li')
+  if (!li) throw new Error(`Sem a linha de ${nome}`)
+  return within(li)
+}
+
+describe('WhatsApp e retorno na Adesão', () => {
+  const links = () => [
+    link('c1', 'p1', { nome: 'Ana Souza' }),
+    link('c2', 'p2', { nome: 'Bia Lima', marcacoes: marcou('2026-10-13') }),
+    link('c3', 'p3', { nome: 'Caio Reis', marcacoes: marcou('2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14') }),
+    link('c4', 'p4', { nome: 'Duda Melo', criadoEm: '2026-10-13T10:00:00.000Z' }),
+  ]
+  const fichas = [
+    { id: 'p1', nome: 'Ana Souza', telefone: TELEFONE, proximaConsulta: '2026-10-16T14:30' },
+    { id: 'p2', nome: 'Bia Lima', telefone: TELEFONE, proximaConsulta: '2026-10-13' },
+    { id: 'p3', nome: 'Caio Reis', telefone: TELEFONE, proximaConsulta: '2026-10-14T16:00' },
+    { id: 'p4', nome: 'Duda Melo', telefone: TELEFONE, proximaConsulta: '2026-10-30' },
+  ]
+
+  it('CA-509: "WhatsApp" só para quem está sumindo ou em atenção, com a mensagem de contato', async () => {
+    const usuario = userEvent.setup()
+    render(
+      <Anfitriao links={links()} fichas={fichas}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} />
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
+    expect(linha('Bia Lima').getByText('Atenção')).toBeInTheDocument()
+    expect(linha('Caio Reis').queryByRole('button', { name: 'WhatsApp' })).not.toBeInTheDocument()
+    expect(linha('Duda Melo').queryByRole('button', { name: 'WhatsApp' })).not.toBeInTheDocument()
+
+    await usuario.click(linha('Ana Souza').getByRole('button', { name: 'WhatsApp' }))
+    let dialogo = within(screen.getByRole('dialog', { name: 'Enviar pelo WhatsApp' }))
+    expect(dialogo.getByLabelText('Mensagem')).toHaveValue(
+      'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.',
+    )
+    await usuario.click(dialogo.getByRole('button', { name: 'Cancelar' }))
+
+    await usuario.click(linha('Bia Lima').getByRole('button', { name: 'WhatsApp' }))
+    dialogo = within(screen.getByRole('dialog', { name: 'Enviar pelo WhatsApp' }))
+    expect((dialogo.getByLabelText('Mensagem') as HTMLTextAreaElement).value).toContain('Vi que você marcou poucas missões nesta semana.')
+  })
+
+  it('CA-524: o retorno que ainda não passou aparece ao lado do nome; o passado, não', () => {
+    render(
+      <Anfitriao links={links()} fichas={fichas}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} />
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Retorno sexta, 16/10 às 14:30')).toBeInTheDocument()
+    expect(linha('Bia Lima').queryByText(/Retorno/)).not.toBeInTheDocument()
+    expect(linha('Caio Reis').getByText('Retorno hoje às 16:00')).toBeInTheDocument()
+    expect(linha('Duda Melo').getByText('Retorno 30/10')).toBeInTheDocument()
+  })
+
+  it('D-147: o link criado antes do vínculo usa a ficha do plano; sem telefone, leva à ficha', async () => {
+    const usuario = userEvent.setup()
+    const aoCadastrarTelefone = vi.fn()
+    render(
+      <Anfitriao
+        links={[link('c9', null, { nome: 'Eva Nunes' })]}
+        fichas={[{ id: 'p9', nome: 'Eva Nunes', telefone: '', proximaConsulta: '2026-10-15T08:00' }]}
+        planos={[{ id: 'c9', pacienteId: 'p9' }]}
+      >
+        <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} aoCadastrarTelefone={aoCadastrarTelefone} />
+      </Anfitriao>,
+    )
+    expect(linha('Eva Nunes').getByText('Retorno amanhã às 08:00')).toBeInTheDocument()
+    await usuario.click(linha('Eva Nunes').getByRole('button', { name: 'WhatsApp' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cadastre o telefone na ficha' }))
+    expect(aoCadastrarTelefone).toHaveBeenCalledWith('p9')
   })
 })
