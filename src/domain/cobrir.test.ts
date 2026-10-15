@@ -386,6 +386,16 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     }
   })
 
+  it('CA-675: a mensagem só fala da restrição quando ela tirou algum alimento que cobriria a falta', () => {
+    const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
+    const semEfeito = (restricoes: readonly string[]) =>
+      sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, ...semFonte], restricoes }).motivoSemSugestao
+    const MENSAGEM_PADRAO = 'Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.'
+    // Restrição que não casa com nada, e restrição que só tira quem não cobriria 10% ("Quase nada").
+    expect(semEfeito(['abacaxi'])).toBe(MENSAGEM_PADRAO)
+    expect(semEfeito(['quase'])).toBe(MENSAGEM_PADRAO)
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })

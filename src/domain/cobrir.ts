@@ -152,13 +152,13 @@ export function sugerirParaCobrir(
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
   const restricoes = opcoes.restricoes ?? []
+  let restricaoTirouAlguem = false
 
   const candidatas: (Sugestao & { readonly comum: boolean; readonly magro: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
     if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
-    if (casaRestricao(alimento.descricao, restricoes)) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
@@ -169,6 +169,11 @@ export function sugerirParaCobrir(
     const gramas = Math.min(necessario, porcaoDoAlimento)
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
+    // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
+    if (casaRestricao(alimento.descricao, restricoes)) {
+      restricaoTirouAlguem = true
+      continue
+    }
 
     const kcalAdicionadas = (kcalPorCem * gramas) / 100
     const avisos: AvisoSugestao[] = []
@@ -218,7 +223,7 @@ export function sugerirParaCobrir(
     // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento de rotina${restricoes.length > 0 ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
+        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
         : null,
   }
 }
