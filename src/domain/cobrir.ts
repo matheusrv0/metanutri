@@ -1,5 +1,7 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
+// O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
+import { ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -41,50 +43,15 @@ export interface ResultadoCobrir {
   readonly motivoSemSugestao: string | null
 }
 
-const CATEGORIAS_SEM_VERSAO_CRUA = new Set([
-  'Carnes e derivados',
-  'Pescados e frutos do mar',
-  'Ovos e derivados',
-  'Leguminosas e derivados',
-  'Cereais e derivados',
-])
-const CRUS_CONSUMIDOS = /^Aveia\b/
-const FARINHAS_CONSUMIDAS = new Set(['Farinha, de mandioca, torrada', 'Farinha, láctea, de cereais'])
-
 /**
- * Indica se o alimento faz sentido como sugestão para comer (CA-36a).
- * Exclui itens que a tabela lista como ingrediente ou em forma não consumível.
+ * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
+ * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
  */
-/**
- * Itens que a tabela traz mas quase ninguém põe no plano de rotina:
- * vísceras, miúdos, caça, frutos do mar de exceção, pratos regionais de véspera e
- * folhas e peixes que só uma região conhece (caruru, taioba, lambari). O usuário pediu
- * sugestões da linguagem popular: arroz, feijão, leite, ovo, banana.
- * Não somem da lista; só perdem a frente para o que é de uso comum.
- */
-const POUCO_USUAL =
-  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|linha(ç|c)a|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
-
-/** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
-export function ehDeUsoComum(alimento: Alimento): boolean {
-  return !POUCO_USUAL.test(alimento.descricao)
-}
-
-export function ehSugerivel(alimento: Alimento): boolean {
-  const { descricao, categoria, preparo } = alimento
-  if (categoria === 'Miscelâneas') return false
-  if (/(^|[\s,])pó($|[\s,])|desidratad/i.test(descricao)) return false
-  // Sem \b: em JavaScript ele não reconhece letras acentuadas como parte da palavra ("fubá").
-  const ehFarinhaOuAmido =
-    /(^|[\s,])(farinha|amido|fubá)($|[\s,])/i.test(descricao) && !/(^|[\s,])com farinha($|[\s,])/i.test(descricao)
-  if (ehFarinhaOuAmido && !FARINHAS_CONSUMIDAS.has(descricao)) return false
-  if (preparo === 'cru' && CATEGORIAS_SEM_VERSAO_CRUA.has(categoria) && !CRUS_CONSUMIDOS.test(descricao)) return false
-  return true
-}
+const INFUSAO = /^(Café|Chá), .*infusão/i
 
 export interface OpcoesCobrir {
   readonly alimentos: readonly Alimento[]
-  /** Inclui ingredientes e formas não consumíveis nas sugestões (desliga o filtro do CA-36a). */
+  /** A chave "Incluir ingredientes e alimentos crus": libera só a forma de ingrediente (D-191). */
   readonly incluirIngredientes?: boolean
   /** GET do caso em kcal; `null` quando ainda não calculado. */
   readonly gastoEnergetico: number | null
@@ -148,7 +115,8 @@ export function sugerirParaCobrir(
   const candidatas: (Sugestao & { readonly comum: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
-    if (!opcoes.incluirIngredientes && !ehSugerivel(alimento)) continue
+    if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
+    if (INFUSAO.test(alimento.descricao)) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
@@ -197,9 +165,10 @@ export function sugerirParaCobrir(
     falta,
     kcalDisponiveis,
     sugestoes,
+    // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento da base cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g.`
+        ? `Nenhum alimento de rotina cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
         : null,
   }
 }

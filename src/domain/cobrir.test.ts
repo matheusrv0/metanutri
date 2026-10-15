@@ -1,8 +1,10 @@
-import { calcularAdequacao } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, ehDeUsoComum, ehSugerivel, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
+import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
+import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
+import { criarExemplo } from './exemplo.ts'
+import { ehDeUsoComum, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Totais } from './totais.ts'
-import { CHAVES_NUTRIENTES, totaisDeItens } from './totais.ts'
+import { CHAVES_NUTRIENTES, totaisDeItens, totaisDoPlano } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const totais = (v: Partial<Record<ChaveNutrienteAlimento, number>>): Totais => ({
@@ -171,52 +173,9 @@ describe('sugerirParaCobrir', () => {
     const porDescricao = new Map(ALIMENTOS.map((a) => [a.descricao, a]))
     const barrados = com.sugestoes.filter((s) => {
       const a = porDescricao.get(s.descricao)
-      return a !== undefined && !ehSugerivel(a)
+      return a !== undefined && regraQueExclui(a)?.nivel === 'ingrediente'
     })
     expect(barrados.length).toBeGreaterThan(0)
-  })
-})
-
-describe('ehSugerivel (CA-36a)', () => {
-  const porDescricao = (d: string) => {
-    const a = ALIMENTOS.find((x) => x.descricao === d)
-    if (!a) throw new Error(`não encontrado: ${d}`)
-    return a
-  }
-
-  it.each([
-    'Café, pó, torrado',
-    'Sal, grosso',
-    'Fermento, biológico, levedura, tablete',
-    'Coentro, folhas desidratadas',
-    'Achocolatado, pó',
-    'Farinha, de trigo',
-    'Milho, amido, cru',
-    'Soja, farinha',
-    'Milho, fubá, cru',
-    'Leite, de vaca, desnatado, pó',
-    'Feijão, carioca, cru',
-    'Carne, bovina, fígado, cru',
-    'Frango, peito, sem pele, cru',
-    'Ovo, de galinha, inteiro, cru',
-    'Arroz, integral, cru',
-    'Salmão, sem pele, fresco, cru',
-  ])('não sugere "%s"', (d) => {
-    expect(ehSugerivel(porDescricao(d))).toBe(false)
-  })
-
-  it.each([
-    'Feijão, carioca, cozido',
-    'Carne, bovina, fígado, grelhado',
-    'Aveia, flocos, crua',
-    'Acerola, crua',
-    'Cenoura, crua',
-    'Farinha, de mandioca, torrada',
-    'Farinha, láctea, de cereais',
-    'Pescada, filé, com farinha de trigo, frito',
-    'Castanha-do-Brasil, crua',
-  ])('sugere "%s"', (d) => {
-    expect(ehSugerivel(porDescricao(d))).toBe(true)
   })
 })
 
@@ -245,5 +204,101 @@ describe('uso comum nas sugestões', () => {
     const primeira = r.sugestoes[0]
     expect(primeira).toBeDefined()
     expect(ehDeUsoComum({ descricao: primeira?.descricao ?? '' } as Alimento)).toBe(true)
+  })
+})
+
+describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
+  const plano = totais({ energia_kcal: 1800, ferro_mg: 10, calcio_mg: 1000 })
+  const adequacao = calcularAdequacao(plano, MULHER_28, { tipo: 'individual' })
+  const comoNaTaco = (base: Alimento, categoria: string, preparo: string | null = null): Alimento => ({ ...base, categoria, preparo })
+  const BEBIDAS = 'Bebidas (alcoólicas e não alcoólicas)'
+
+  // Todos mais ricos em ferro e mais leves que qualquer item da BASE: só a regra os tira da frente.
+  const CERVEJA = comoNaTaco(alimento(20, 'Cerveja, pilsen 2', { energia_kcal: 5, ferro_mg: 40 }), BEBIDAS)
+  const REFRIGERANTE = comoNaTaco(alimento(21, 'Refrigerante, tipo cola', { energia_kcal: 5, ferro_mg: 40 }), BEBIDAS)
+  const OLEO = comoNaTaco(alimento(22, 'Óleo, de soja', { energia_kcal: 5, ferro_mg: 40 }), 'Gorduras e óleos')
+  const FEIJAO_CRU = comoNaTaco(alimento(23, 'Feijão, carioca, cru', { energia_kcal: 5, ferro_mg: 40 }), 'Leguminosas e derivados', 'cru')
+  const CHA = comoNaTaco(alimento(24, 'Chá, preto, infusão 5%', { energia_kcal: 2, ferro_mg: 40 }), BEBIDAS)
+  const CAFE = comoNaTaco(alimento(25, 'Café, infusão 10%', { energia_kcal: 2, ferro_mg: 40 }), BEBIDAS)
+  const COM_EXCLUIDOS = [CERVEJA, REFRIGERANTE, OLEO, FEIJAO_CRU, CHA, CAFE, ...BASE]
+
+  const ids = (incluirIngredientes: boolean) =>
+    sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: COM_EXCLUIDOS, incluirIngredientes }).sugestoes.map((s) => s.alimentoId)
+
+  it('CA-650: bebida alcoólica nunca entra, com a chave ligada ou desligada', () => {
+    expect(ids(false)).not.toContain(CERVEJA.id)
+    expect(ids(true)).not.toContain(CERVEJA.id)
+  })
+
+  it('CA-651: com a chave desligada, refrigerante, gordura e forma crua ficam de fora', () => {
+    expect(ids(false)).toEqual([8, 1, 3, 2])
+  })
+
+  it('CA-652: a chave ligada traz de volta só a forma de ingrediente', () => {
+    const comChave = ids(true)
+    expect(comChave).toContain(FEIJAO_CRU.id)
+    expect(comChave).not.toContain(REFRIGERANTE.id)
+    expect(comChave).not.toContain(OLEO.id)
+  })
+
+  it('CA-654: café e chá não entram como fonte, com a chave ligada ou desligada', () => {
+    for (const incluir of [false, true]) {
+      expect(ids(incluir)).not.toContain(CHA.id)
+      expect(ids(incluir)).not.toContain(CAFE.id)
+    }
+  })
+
+  it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
+    const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
+    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
+    expect(r.sugestoes).toEqual([])
+    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.')
+  })
+
+  it('CA-656: a mensagem leva a porção máxima escolhida', () => {
+    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, porcaoMaximaG: 5 })
+    expect(r.sugestoes).toEqual([])
+    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Pela busca do plano, qualquer alimento entra.')
+  })
+
+  describe('CA-657: plano de exemplo, os 16 micronutrientes', () => {
+    let n = 0
+    const { caso, plano: exemplo } = criarExemplo(() => `ex-${++n}`, '2026-10-15')
+    const doExemplo = totaisDoPlano(exemplo, buscarAlimento)
+    const vazio = totaisDeItens([], buscarAlimento)
+    const cenarios = [
+      ['exemplo', doExemplo],
+      ['plano vazio', vazio],
+    ] as const
+
+    it.each(cenarios)('%s: nenhuma sugestão fora da regra, nem infusão', (_nome, t) => {
+      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS }).sugestoes) {
+          const a = buscarAlimento(s.alimentoId)
+          expect(a ? regraQueExclui(a) : 'sem alimento', `${chave}: ${s.descricao}`).toBeNull()
+          expect(s.descricao, chave).not.toMatch(/infusão/)
+        }
+      }
+    })
+
+    it.each(cenarios)('%s: com a chave ligada, só a forma de ingrediente volta', (_nome, t) => {
+      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS, incluirIngredientes: true }).sugestoes) {
+          const a = buscarAlimento(s.alimentoId)
+          const nivel = a ? (regraQueExclui(a)?.nivel ?? 'prescritivel') : 'sem alimento'
+          expect(['prescritivel', 'ingrediente'], `${chave}: ${s.descricao}`).toContain(nivel)
+        }
+      }
+    })
+
+    it('a piridoxina do exemplo não sugere mais cerveja', () => {
+      const ad = calcularAdequacao(doExemplo, caso, caso.adequacao.preset)
+      const r = sugerirParaCobrir('piridoxina_mg', doExemplo, ad, { gastoEnergetico: 1620, alimentos: ALIMENTOS })
+      expect(r.falta).toBeGreaterThan(0)
+      expect(r.sugestoes.length).toBeGreaterThan(0)
+      expect(r.sugestoes.map((s) => s.descricao)).not.toContain('Cerveja, pilsen 2')
+    })
   })
 })
