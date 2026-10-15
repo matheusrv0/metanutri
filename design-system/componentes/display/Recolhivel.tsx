@@ -7,24 +7,36 @@ import { cn } from '@ds/lib/cn.ts'
  * Serve para a tela mostrar só o que se usa sempre (spec pdf-e-telas-limpas, D-53),
  * sem esconder nada: o conteúdo continua no DOM e abre sozinho quando já tem dado
  * (quem chama decide pelo `abertoInicial`).
+ *
+ * Com `aberto` e `aoAlternar`, quem chama controla o estado (spec anamnese-e-prescricoes,
+ * CA-563: "Abrir tudo" e "Recolher tudo" de uma lista de blocos). Sem eles, o estado é do
+ * próprio componente, como sempre foi.
  */
 interface RecolhivelProps {
   readonly titulo: string
   /** Uma linha abaixo do título dizendo o que tem dentro. */
   readonly resumo?: string | undefined
   readonly abertoInicial?: boolean | undefined
+  /** Estado controlado por quem chama; ignora `abertoInicial`. */
+  readonly aberto?: boolean | undefined
+  readonly aoAlternar?: ((aberto: boolean) => void) | undefined
   readonly children: ReactNode
   readonly className?: string | undefined
 }
 
-export function Recolhivel({ titulo, resumo, abertoInicial = false, children, className }: RecolhivelProps) {
-  const [aberto, setAberto] = useState(abertoInicial)
+export function Recolhivel({ titulo, resumo, abertoInicial = false, aberto: controlado, aoAlternar, children, className }: RecolhivelProps) {
+  const [proprio, setProprio] = useState(abertoInicial)
   const id = useId()
+  const aberto = controlado ?? proprio
+  const alternar = () => {
+    if (controlado === undefined) setProprio(!aberto)
+    aoAlternar?.(!aberto)
+  }
   return (
     <div className={cn('rounded-lg bg-surfacerow', className)}>
       <button
         type="button"
-        onClick={() => setAberto((v) => !v)}
+        onClick={alternar}
         aria-expanded={aberto}
         aria-controls={id}
         className="flex min-h-14 w-full items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

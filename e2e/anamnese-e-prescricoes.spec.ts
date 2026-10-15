@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 // Spec anamnese-e-prescricoes: a anamnese com roteiro, os suplementos e o pedido de exames na ficha do paciente.
 
@@ -27,7 +27,11 @@ test('anamnese: responder, editar o roteiro e a resposta continuar depois de rec
   await expect(janela).toBeHidden()
 
   await page.reload()
-  await expect(anamnese.getByRole('button', { name: /^Água/ })).toHaveAttribute('aria-expanded', 'true')
+  // CA-563: ao voltar, o bloco respondido começa recolhido, com o resumo.
+  const agua = anamnese.getByRole('button', { name: /^Água/ })
+  await expect(agua).toHaveAttribute('aria-expanded', 'false')
+  await expect(agua).toContainText('1 de 3 respondida')
+  await agua.click()
   await expect(anamnese.getByLabel('Quanta água bebe por dia')).toHaveValue('Pouca, uns 3 copos')
   await expect(anamnese.getByLabel('Chá ou café por dia')).toBeVisible()
 })
@@ -59,6 +63,17 @@ test('CA-587: em 360 px a ficha não rola para o lado e os alvos têm 44 px', as
 
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: document.documentElement.clientWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
+
+  // No celular, o histórico (com Novo plano) e o peso vêm antes dos cartões longos; Apagar paciente é o último.
+  const topo = async (alvo: Locator) => (await alvo.boundingBox())?.y ?? Number.NaN
+  const historico = await topo(page.getByText('Histórico de planos'))
+  const peso = await topo(page.getByText('Evolução do peso'))
+  const anamneseTopo = await topo(page.getByRole('heading', { name: 'Anamnese' }))
+  const exames = await topo(page.getByRole('heading', { name: 'Pedido de exames' }))
+  const apagar = await topo(page.getByRole('heading', { name: 'Apagar paciente' }))
+  expect(historico).toBeLessThan(anamneseTopo)
+  expect(peso).toBeLessThan(anamneseTopo)
+  expect(apagar).toBeGreaterThan(exames)
 
   for (const nome of ['Anamnese', 'Suplementos', 'Pedido de exames']) {
     const regiao = page.getByRole('region', { name: nome })

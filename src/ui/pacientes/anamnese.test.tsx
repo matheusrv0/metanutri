@@ -87,20 +87,35 @@ describe('Anamnese com roteiro na ficha (US-AP1)', () => {
     }
   })
 
-  it('CA-563: bloco com resposta já abre aberto', () => {
-    montar({ respostasAnamnese: [{ perguntaId: 'agua-dia', blocoId: 'agua', pergunta: 'Quanta água bebe por dia', resposta: '1 litro' }] })
-    expect(bloco('Água')).toHaveAttribute('aria-expanded', 'true')
+  it('CA-563: todo bloco começa recolhido, com o resumo à vista; Abrir tudo e Recolher tudo', async () => {
+    const { usuario } = montar({ respostasAnamnese: [{ perguntaId: 'agua-dia', blocoId: 'agua', pergunta: 'Quanta água bebe por dia', resposta: '1 litro' }] })
+    expect(bloco('Água')).toHaveAttribute('aria-expanded', 'false')
     expect(bloco('Água')).toHaveTextContent('1 de 2 respondida')
+    await usuario.click(anamnese().getByRole('button', { name: 'Abrir tudo' }))
+    for (const titulo of ['Objetivo e queixa', 'Água', 'Recordatório de 24 horas', 'Outras anotações']) expect(bloco(titulo)).toHaveAttribute('aria-expanded', 'true')
     expect(anamnese().getByLabelText('Quanta água bebe por dia')).toHaveValue('1 litro')
-    expect(bloco('Intestino')).toHaveAttribute('aria-expanded', 'false')
+    await usuario.click(anamnese().getByRole('button', { name: 'Recolher tudo' }))
+    for (const titulo of ['Objetivo e queixa', 'Água', 'Outras anotações']) expect(bloco(titulo)).toHaveAttribute('aria-expanded', 'false')
+    // Um bloco aberto à mão: ainda falta abrir os outros.
+    await usuario.click(bloco('Intestino'))
+    expect(anamnese().getByRole('button', { name: 'Abrir tudo' })).toBeInTheDocument()
   })
 
-  it('CA-564: o texto livre de antes aparece inteiro em Observações, aberto, e abrir a ficha não grava nada', () => {
-    const { arm, antes } = montar({ anamnese: 'Dorme às 2h.\nNão toma café.', observacoes: 'Vem com a mãe.' })
-    expect(bloco('Observações')).toHaveAttribute('aria-expanded', 'true')
-    expect(anamnese().getByLabelText('Anotações')).toHaveValue('Dorme às 2h.\nNão toma café.')
+  it('CA-564: o texto livre de antes aparece inteiro em Outras anotações, como "Anamnese de antes", e abrir a ficha não grava nada', async () => {
+    const { arm, antes, usuario } = montar({ anamnese: 'Dorme às 2h.\nNão toma café.', observacoes: 'Vem com a mãe.' })
+    expect(bloco('Outras anotações')).toHaveTextContent('Com anotações')
+    await usuario.click(bloco('Outras anotações'))
+    expect(anamnese().getByLabelText('Anamnese de antes')).toHaveValue('Dorme às 2h.\nNão toma café.')
     expect(anamnese().getByLabelText('Observações')).toHaveValue('Vem com a mãe.')
     expect(arm.getItem('metanutri:pacientes')).toBe(antes)
+  })
+
+  it('CA-564: sem texto de antes, o bloco tem só Observações', async () => {
+    const { usuario } = montar()
+    expect(bloco('Outras anotações')).toHaveTextContent('Sem anotações')
+    await usuario.click(bloco('Outras anotações'))
+    expect(anamnese().queryByLabelText('Anamnese de antes')).not.toBeInTheDocument()
+    expect(anamnese().getByLabelText('Observações')).toHaveValue('')
   })
 
   it('CA-569: restrições, condições e medicamentos continuam em Restrições e saúde', () => {
@@ -133,6 +148,16 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
     expect(anamnese().queryByLabelText('Outras bebidas ao longo do dia')).not.toBeInTheDocument()
   })
 
+  it('CA-565: a janela abre com o roteiro salvo mais recente, mesmo o salvo em outra aba depois que a ficha abriu', async () => {
+    const { arm, usuario } = montar()
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Salva em outra aba' }] } }))
+    await usuario.click(anamnese().getByRole('button', { name: 'Editar roteiro' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Roteiro da anamnese' }))
+    await usuario.click(janela.getByRole('button', { name: /^Água/ }))
+    expect(janela.getByRole('textbox', { name: 'Pergunta 1 de Água' })).toHaveValue('Salva em outra aba')
+    expect(janela.queryByRole('textbox', { name: 'Pergunta 2 de Água' })).not.toBeInTheDocument()
+  })
+
   it('CA-565: Cancelar descarta o que mudou', async () => {
     const { arm, usuario } = montar()
     await usuario.click(anamnese().getByRole('button', { name: 'Editar roteiro' }))
@@ -162,7 +187,8 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
     const arm = new MemoriaFalsa()
     arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { 'alcool-fumo': [{ id: 'alcool', texto: 'Bebida alcoólica: o quê e quanto' }] } }))
     const { pacientes, usuario } = montar({ respostasAnamnese: [{ perguntaId: 'fumo', blocoId: 'alcool-fumo', pergunta: 'Fumo', resposta: 'Parou em 2020' }] }, arm)
-    expect(bloco('Álcool e fumo')).toHaveAttribute('aria-expanded', 'true')
+    expect(bloco('Álcool e fumo')).toHaveTextContent('1 de 2 respondida')
+    await usuario.click(bloco('Álcool e fumo'))
     const campo = anamnese().getByLabelText('Fumo')
     expect(campo).toHaveValue('Parou em 2020')
     expect(within(campo.closest('div[data-pergunta]') ?? document.body).getByText('Fora do roteiro')).toBeInTheDocument()

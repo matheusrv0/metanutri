@@ -128,11 +128,11 @@ export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNo
           </div>
         </Card>
 
-        <AnamneseDaFicha paciente={paciente} aoAlterar={alterar} />
+        <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} />
 
-        <CartaoSuplementos paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
+        <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
 
-        <CartaoExames paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
+        <CartaoExames key={paciente.id} paciente={paciente} assinatura={assinatura} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>
@@ -165,7 +165,8 @@ export function TelaPaciente({ pacienteId, assinatura = null, aoAbrirPlano, aoNo
         </Card>
       </div>
 
-      <div className="flex flex-col gap-6">
+      {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Apagar paciente" fica por último. */}
+      <div className="order-first flex flex-col gap-6 xl:order-none">
         <Card className="gap-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
