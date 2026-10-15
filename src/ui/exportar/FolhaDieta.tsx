@@ -1,19 +1,16 @@
 import { Fragment } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
   comprasDaFolha,
-  lembretesDoDia,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { missoesDoPlano } from '@/domain/missoes.ts'
 import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
@@ -82,7 +79,6 @@ function Ou() {
 export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
   const linhaFina = linhaFinaDaFolha(caso, quem)
-  const lembretes = lembretesDoDia(missoesDoPlano(plano, { pesoKg: caso.pesoKg }))
   const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
   const trocas = opcoes.trocas
     ? trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') })
@@ -108,13 +104,9 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
         </div>
         <QuemAssina assinatura={quem} />
       </header>
-      {/* A régua da marca: teal e, no fim, o laranja como grafismo (o laranja nunca carrega texto). */}
-      <div aria-hidden="true" className="-mt-2 flex">
-        <span className="flex-[86] border-t-[3px] border-primary" />
-        <span className="flex-[14] border-t-[3px] border-laranja" />
-      </div>
 
-      <div className="flex flex-col">
+      {/* Sem régua de cor no topo (spec impressao-do-plano, CA-633): um fio fino separa o topo das refeições. */}
+      <div className="-mt-2 flex flex-col border-t border-border">
         {plano.refeicoes.map((refeicao) => {
           const opcoesDaFolha = opcoesDaRefeicao(refeicao)
           return (
@@ -123,7 +115,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               aria-label={`${refeicao.horario} ${refeicao.nome}`}
               className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-4 break-inside-avoid border-b border-border py-4 last:border-0"
             >
-              <span className="numeros text-xl font-bold leading-snug text-primary">{refeicao.horario}</span>
+              {/* CA-620: o horário na cor do nome da refeição; a cor de ação vira marfim no tema escuro. */}
+              <span className="numeros text-xl font-bold leading-snug text-heading">{refeicao.horario}</span>
               <div className="flex min-w-0 flex-col gap-2">
                 <h3 className="font-titulo text-xl font-bold leading-snug text-heading">{refeicao.nome}</h3>
                 {/* CA-631 e CA-632: a primeira opção com alimento vem sozinha; cada outra, depois de "ou". */}
@@ -140,21 +133,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
         })}
       </div>
 
+      {/* CA-633: depois das refeições, só o que a nutricionista escreveu ou marcou, e a assinatura. */}
       <div className="fim-da-folha flex flex-col gap-5">
-        {lembretes.length > 0 ? (
-          <section aria-label="No dia a dia" className="flex break-inside-avoid flex-col gap-2">
-            <h3 className="font-titulo text-lg font-bold text-heading">No dia a dia</h3>
-            <ul className="flex flex-col gap-1.5">
-              {lembretes.map((m) => (
-                <li key={m.id} className="flex items-start gap-2.5">
-                  <span aria-hidden="true" className="mt-1 size-4 shrink-0 rounded border-[1.5px] border-foreground" />
-                  <span>{m.texto}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         {orientacoes ? (
           <section aria-label="Orientações" className="flex flex-col gap-1.5">
             <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
@@ -190,13 +170,11 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           </section>
         ) : null}
 
-        {/* Assinatura e linha final andam juntas e não ficam sozinhas no topo de uma página. */}
+        {/* A assinatura não fica sozinha no topo de uma página. Em prescrição rápida, a última linha diz que não houve
+            avaliação (CA-634; spec prescricao-rapida-e-base, princípio 4). */}
         <div className="fecho-da-folha flex break-before-avoid break-inside-avoid flex-col gap-5">
           <LinhasDeAssinatura assinatura={quem} />
-
-          <p className="text-xs text-muted-foreground">
-            {`${caso.modo === 'rapido' ? 'Plano montado em prescrição rápida, sem avaliação antropométrica. ' : ''}A prescrição é responsabilidade do nutricionista. Composição dos alimentos: ${NOME_DA_BASE}.`}
-          </p>
+          {caso.modo === 'rapido' ? <p className="text-xs text-muted-foreground">Plano montado em prescrição rápida, sem avaliação antropométrica.</p> : null}
         </div>
       </div>
 

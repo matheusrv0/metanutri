@@ -248,7 +248,9 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   const paginas = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length
   expect(paginas).toBeGreaterThan(1)
   await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
-  await expect(janela).toContainText('Composição dos alimentos: Base MetaNutri.')
+  // Spec impressao-do-plano, CA-633: a linha da base saiu da folha; em prescrição rápida fica só o aviso da avaliação.
+  await expect(janela.getByRole('article')).not.toContainText('Base MetaNutri')
+  await expect(janela.getByRole('article')).toContainText('Plano montado em prescrição rápida, sem avaliação antropométrica.')
   await page.emulateMedia({ media: 'screen' })
 })
 

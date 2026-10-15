@@ -123,13 +123,21 @@ describe('Folha da dieta (US-B1)', () => {
     expect(container.textContent).not.toMatch(/energia|kcal/i)
   })
 
-  it('CA-312: "No dia a dia" traz só o que não é horário de refeição', () => {
-    render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.getByRole('heading', { name: 'No dia a dia' })).toBeInTheDocument()
-    // "litros de água" aparece também nas orientações do caso; aqui só a seção dos lembretes.
-    const lembretes = within(screen.getByRole('region', { name: 'No dia a dia' }))
-    expect(lembretes.getByText(/litros de água/)).toBeInTheDocument()
+  it('CA-633: sem "No dia a dia", sem a régua de cor do topo e sem a linha da base', () => {
+    const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} assinatura={ANA} />)
+    expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Beber cerca de/)).toBeNull()
     expect(screen.queryByText(/por volta das/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/responsabilidade do nutricionista/)).not.toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/Base MetaNutri/)
+    expect(container.querySelector('.border-laranja, .border-primary')).toBeNull()
+  })
+
+  it('CA-620: o horário tem a cor do nome da refeição, não a cor de ação do tema', () => {
+    render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+    const horario = within(screen.getByRole('region', { name: /^12:00 Almoço$/ })).getByText('12:00')
+    expect(horario).toHaveClass('text-heading')
+    expect(horario).not.toHaveClass('text-primary')
   })
 
   it('CA-313: nutricionista assina sozinha, com a linha da conta no topo e no fim', () => {
@@ -150,22 +158,23 @@ describe('Folha da dieta (US-B1)', () => {
     expect(within(screen.getByRole('group', { name: 'Assinaturas' })).getByText('Assinatura')).toBeInTheDocument()
   })
 
-  it('CA-314: lembretes, orientações e assinatura nessa ordem, e a linha da base no fim', () => {
-    render(<FolhaDieta caso={{ ...caso, receitas: 'Cuscuz com ovo.' }} plano={planoCheio()} assinatura={ANA} />)
+  it('CA-633: refeições, orientações, receitas e assinatura nessa ordem; no atendimento completo, a folha acaba na assinatura', () => {
+    const { container } = render(<FolhaDieta caso={{ ...caso, receitas: 'Cuscuz com ovo.' }} plano={planoCheio()} assinatura={ANA} />)
     const antes = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
-    const lembretes = screen.getByRole('heading', { name: 'No dia a dia' })
+    const ceia = screen.getByRole('region', { name: /^21:00 Ceia$/ })
     const orientacoes = screen.getByRole('heading', { name: 'Orientações' })
     const receitas = screen.getByRole('heading', { name: 'Receitas' })
     const assinaturas = screen.getByRole('group', { name: 'Assinaturas' })
-    expect(antes(lembretes, orientacoes)).toBe(true)
+    expect(antes(ceia, orientacoes)).toBe(true)
     expect(antes(orientacoes, receitas)).toBe(true)
     expect(antes(receitas, assinaturas)).toBe(true)
-    expect(screen.getByText(/A prescrição é responsabilidade do nutricionista\. Composição dos alimentos: Base MetaNutri\./)).toBeInTheDocument()
+    expect(container.querySelector('.fecho-da-folha')?.lastElementChild).toBe(assinaturas)
   })
 
-  it('CA-314: em prescrição rápida, a linha final diz que não houve avaliação', () => {
-    render(<FolhaDieta caso={{ ...caso, modo: 'rapido' }} plano={planoCheio()} />)
-    expect(screen.getByText(/^Plano montado em prescrição rápida, sem avaliação antropométrica\./)).toBeInTheDocument()
+  it('CA-634: em prescrição rápida, a última linha diz que não houve avaliação, e só ela', () => {
+    const { container } = render(<FolhaDieta caso={{ ...caso, modo: 'rapido' }} plano={planoCheio()} />)
+    const ultima = container.querySelector('.fecho-da-folha')?.lastElementChild
+    expect(ultima).toHaveTextContent(/^Plano montado em prescrição rápida, sem avaliação antropométrica\.$/)
   })
 
   it('CA-315: refeição e fim da folha não se partem entre páginas', () => {
@@ -216,7 +225,7 @@ describe('Folha da dieta (US-B1)', () => {
     it('CA-577: a seção Suplementos vem logo depois de Orientações, com nome, a linha de baixo e a observação', () => {
       const { container } = render(<FolhaDieta caso={{ ...caso, receitas: 'Bolo de banana.' }} plano={planoCheio()} assinatura={ANA} suplementos={[vitD, { ...vitD, id: 's2', nome: '' }]} />)
       const titulos = [...(container.querySelector('.fim-da-folha')?.querySelectorAll('h3') ?? [])].map((h) => h.textContent)
-      expect(titulos).toEqual(['No dia a dia', 'Orientações', 'Suplementos', 'Receitas'])
+      expect(titulos).toEqual(['Orientações', 'Suplementos', 'Receitas'])
       const secao = within(screen.getByRole('region', { name: 'Suplementos' }))
       const itens = secao.getAllByRole('listitem')
       expect(itens).toHaveLength(1)

@@ -1,7 +1,6 @@
 // O que a folha da dieta mostra e como ela lembra as escolhas de impressão
 // (spec pdf-e-telas-limpas, US-B1).
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
-import type { Missao } from './missoes.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
@@ -19,11 +18,6 @@ export function assinaturaDaFolha(assinatura: AssinaturaDoPlano | null, caso: Ca
   const preceptor = caso.preceptor.trim()
   if (estagiario || preceptor) return { tipo: 'estagio', estagiario, preceptor }
   return { tipo: 'vazia' }
-}
-
-/** CA-312: no papel, só as missões que não repetem o horário das refeições. */
-export function lembretesDoDia(missoes: readonly Missao[]): readonly Missao[] {
-  return missoes.filter((m) => !m.id.startsWith('refeicao-'))
 }
 
 /**

@@ -4,13 +4,11 @@ import {
   assinaturaDaFolha,
   comprasDaFolha,
   gravarOpcoesImpressao,
-  lembretesDoDia,
   lerOpcoesImpressao,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
 } from './folhaDieta.ts'
-import type { Missao } from './missoes.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
@@ -59,18 +57,6 @@ describe('assinaturaDaFolha (CA-313)', () => {
   it('sem ninguém, a folha fica sem nome', () => {
     expect(assinaturaDaFolha(null, caso())).toEqual({ tipo: 'vazia' })
     expect(assinaturaDaFolha(JULIA, caso())).toEqual({ tipo: 'vazia' })
-  })
-})
-
-describe('lembretesDoDia (CA-312)', () => {
-  it('fica só com o que não repete o horário das refeições', () => {
-    const missoes: Missao[] = [
-      { id: 'refeicao-r1', texto: 'Desjejum por volta das 06:00', origem: 'Refeição do plano' },
-      { id: 'frutas', texto: 'Comer as 3 frutas do plano', origem: '' },
-      { id: 'refeicao-r2', texto: 'Almoço por volta das 12:00', origem: 'Refeição do plano' },
-      { id: 'agua', texto: 'Beber cerca de 2,2 litros de água', origem: '' },
-    ]
-    expect(lembretesDoDia(missoes).map((m) => m.id)).toEqual(['frutas', 'agua'])
   })
 })
 

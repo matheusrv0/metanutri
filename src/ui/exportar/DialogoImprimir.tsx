@@ -60,7 +60,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
         <DialogHeader className="print:hidden">
           <DialogTitle>Dieta para imprimir</DialogTitle>
-          <DialogDescription>As refeições, os lembretes, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
+          <DialogDescription>As refeições, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
