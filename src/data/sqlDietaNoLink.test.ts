@@ -63,8 +63,22 @@ describe('banco: a dieta no link do paciente (012, spec dieta-no-link)', () => {
     expect(sql).not.toMatch(/create policy|alter policy|disable row level security/i)
   })
 
-  it('o PostgREST recarrega o esquema, para a coluna nova valer na hora', () => {
-    expect(sql.trimEnd()).toMatch(/notify pgrst, 'reload schema';\s*(--[^\n]*\n?\s*)*$/)
+  it('CA-550: tudo roda numa transação só: begin é o primeiro comando e commit, o último', () => {
+    const comandos = sql
+      .replace(/\$\$[\s\S]*?\$\$/g, '$$$$')
+      .split('\n')
+      .filter((linha) => linha.trim() !== '' && !linha.trim().startsWith('--'))
+      .join('\n')
+      .split(';')
+      .map((c) => c.trim())
+      .filter(Boolean)
+    expect(comandos[0]).toBe('begin')
+    expect(comandos.at(-1)).toBe('commit')
+    expect(comandos.filter((c) => c === 'begin' || c === 'commit')).toHaveLength(2)
+  })
+
+  it('o PostgREST recarrega o esquema, para a coluna nova valer na hora, logo antes do commit', () => {
+    expect(sql).toMatch(/notify pgrst, 'reload schema';\s*commit;\s*(--[^\n]*\n?\s*)*$/)
   })
 
   it('a conferência depois de rodar mostra a coluna, a trava e o retorno da função', () => {

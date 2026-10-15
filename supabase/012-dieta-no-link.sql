@@ -10,6 +10,11 @@
 -- A dieta é uma cópia em texto, feita pelo site do nutricionista e gravada pela tabela (RLS do 001: só o dono).
 -- O paciente só lê, pela mesma função de sempre. A única escrita dele, marcar_missoes, não muda e não toca na dieta.
 -- Publicado antes deste arquivo, o site salva o link sem a dieta e o paciente vê só as missões.
+--
+-- Tudo numa transação só (CA-550): a função do paciente é apagada e criada de novo, e quem abre o link nesse meio
+-- tempo nunca a encontra faltando. Se algum passo falhar, nada fica pela metade.
+
+begin;
 
 
 -- ---------- A coluna da dieta (D-152 e D-156) ----------
@@ -56,8 +61,10 @@ $$;
 revoke all on function public.missoes_por_token(text) from public;
 grant execute on function public.missoes_por_token(text) to anon, authenticated;
 
--- A API do banco passa a conhecer a coluna nova na hora.
+-- A API do banco passa a conhecer a coluna nova na hora (o aviso sai quando a transação fecha).
 notify pgrst, 'reload schema';
+
+commit;
 
 
 -- Conferência depois de rodar (copie para uma consulta nova):
