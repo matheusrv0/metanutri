@@ -19,6 +19,8 @@ interface CampoTextoProps {
   readonly desativado?: boolean | undefined
   /** Põe o cursor no campo ao abrir a tela (o endereço da ficha que leva ao Telefone, spec whatsapp-e-retorno). */
   readonly focar?: boolean | undefined
+  /** Quando o campo perde o foco (o horário apagado da próxima consulta só vale aí). */
+  readonly aoSair?: (() => void) | undefined
 }
 
 export function CampoTexto({
@@ -34,6 +36,7 @@ export function CampoTexto({
   rotuloOculto = false,
   desativado = false,
   focar = false,
+  aoSair,
 }: CampoTextoProps) {
   const id = useId()
   const idErro = `${id}-erro`
@@ -57,6 +60,7 @@ export function CampoTexto({
           placeholder={placeholder}
           disabled={desativado}
           autoFocus={focar}
+          onBlur={aoSair}
           className={sufixo ? 'pr-9' : undefined}
         />
         {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}

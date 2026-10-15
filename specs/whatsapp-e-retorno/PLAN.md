@@ -111,6 +111,8 @@ item, em TDD, um commit cada.
   incompleto do campo do dia não gravam; só valor completo e válido grava; "Limpar" é o único jeito de tirar a
   consulta; horário apagado grava quando o campo perde o foco; aviso "Essa consulta já passou."; o campo do dia
   pede para conferir a data quando o ano não vale.
+- **Altera** `design-system/componentes/forms/CampoTexto.tsx`: prop opcional `aoSair` (perder o foco), para o
+  horário apagado. Acrescentado ao implementar a tarefa.
 - **Altera** `src/ui/pacientes/proximaConsulta.test.tsx`: sequência `''`, `'0002-10-16'`, `'2026-10-16'`.
 
 ### R3 · O relógio: tolerância, o mesmo "hoje" e a hora que anda (D-144, D-145, CA-520, CA-529)

@@ -14,11 +14,15 @@ export interface Consulta {
 const DIA = /^(\d{4})-(\d{2})-(\d{2})$/
 const HORA = /^([01]\d|2[0-3]):([0-5]\d)$/
 
-/** O dia existe no calendário (2026-02-30 não existe). */
-function diaValido(dia: string): boolean {
+/** O primeiro ano aceito. No meio da digitação o navegador manda anos como 0002 e 0202 (CA-514). */
+const PRIMEIRO_ANO = 1900
+
+/** O dia existe no calendário (2026-02-30 não existe) e é de 1900 em diante. */
+export function diaValido(dia: string): boolean {
   const m = DIA.exec(dia)
   if (!m) return false
   const [ano, mes, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  if (ano < PRIMEIRO_ANO) return false
   const data = new Date(Date.UTC(ano, mes - 1, d))
   return data.getUTCFullYear() === ano && data.getUTCMonth() === mes - 1 && data.getUTCDate() === d
 }

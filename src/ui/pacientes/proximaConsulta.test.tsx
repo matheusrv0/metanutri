@@ -87,22 +87,58 @@ describe('Ficha: próxima consulta', () => {
     expect(grupo.queryByRole('button', { name: 'Limpar' })).not.toBeInTheDocument()
   })
 
-  it('CA-514: trocar o dia mantém o horário; apagar o dia apaga tudo', () => {
+  it('CA-514: trocar o dia mantém o horário', () => {
     const { pacientes, grupo } = montar({ proximaConsulta: '2026-10-16T14:30' })
     fireEvent.change(grupo.getByLabelText('Dia'), { target: { value: '2026-10-20' } })
     expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-20T14:30')
-    fireEvent.change(grupo.getByLabelText('Dia'), { target: { value: '' } })
-    expect(pacientes.obter('p1')?.proximaConsulta).toBeNull()
   })
 
-  it('CA-515: a data que já passou ganha o aviso', () => {
+  it("CA-514: digitando o dia ('', '0002-10-16', '2026-10-16'), só o valor final é gravado, com o horário", () => {
+    const { pacientes, grupo } = montar({ proximaConsulta: '2026-10-16T14:30' })
+    const antes = pacientes.obter('p1')?.atualizadoEm
+    const dia = grupo.getByLabelText('Dia')
+
+    fireEvent.change(dia, { target: { value: '' } })
+    expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-16T14:30')
+    expect(pacientes.obter('p1')?.atualizadoEm).toBe(antes)
+    expect(grupo.getByLabelText('Horário')).toHaveValue('14:30')
+
+    fireEvent.change(dia, { target: { value: '0002-10-16' } })
+    expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-16T14:30')
+    expect(pacientes.obter('p1')?.atualizadoEm).toBe(antes)
+    expect(dia).toHaveValue('0002-10-16')
+    expect(grupo.getByText('Confira a data.')).toBeInTheDocument()
+
+    fireEvent.change(dia, { target: { value: '2026-10-21' } })
+    expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-21T14:30')
+    expect(grupo.queryByText('Confira a data.')).not.toBeInTheDocument()
+    expect(grupo.getByLabelText('Horário')).toHaveValue('14:30')
+  })
+
+  it('CA-514: ano antes de 1900 não é gravado nem na ficha nova', () => {
+    const { pacientes, grupo } = montar()
+    fireEvent.change(grupo.getByLabelText('Dia'), { target: { value: '1899-12-31' } })
+    expect(pacientes.obter('p1')?.proximaConsulta).toBeNull()
+    expect(grupo.getByText('Confira a data.')).toBeInTheDocument()
+  })
+
+  it('CA-514: o horário vazio no meio da digitação não grava; apagado e fora do campo, fica só o dia', () => {
+    const { pacientes, grupo } = montar({ proximaConsulta: '2026-10-16T14:30' })
+    const horario = grupo.getByLabelText('Horário')
+    fireEvent.change(horario, { target: { value: '' } })
+    expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-16T14:30')
+    fireEvent.blur(horario)
+    expect(pacientes.obter('p1')?.proximaConsulta).toBe('2026-10-16')
+  })
+
+  it('CA-515: a consulta que já passou ganha o aviso', () => {
     const { grupo } = montar({ proximaConsulta: '2026-10-13T09:00' })
-    expect(grupo.getByText('Essa data já passou.')).toBeInTheDocument()
+    expect(grupo.getByText('Essa consulta já passou.')).toBeInTheDocument()
   })
 
   it('CA-515: a de hoje mais tarde não ganha o aviso', () => {
     const { grupo } = montar({ proximaConsulta: '2026-10-14T16:00' })
-    expect(grupo.queryByText('Essa data já passou.')).not.toBeInTheDocument()
+    expect(grupo.queryByText('Essa consulta já passou.')).not.toBeInTheDocument()
   })
 })
 

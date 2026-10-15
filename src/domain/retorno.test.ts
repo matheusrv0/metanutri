@@ -8,6 +8,7 @@ import {
   agoraEmBrasilia,
   aniversarioNaJanela,
   consultaPassou,
+  diaValido,
   escreverConsulta,
   lerConsulta,
   maiuscula,
@@ -47,6 +48,14 @@ describe('O campo da próxima consulta (D-143)', () => {
     expect(escreverConsulta('2026-10-16', '14:30:00')).toBe('2026-10-16T14:30')
     expect(escreverConsulta('', '14:30')).toBeNull()
     expect(escreverConsulta('2026-10-16', '25:00')).toBe('2026-10-16')
+  })
+
+  it('CA-514: ano antes de 1900 não é dia de consulta (o navegador manda 0002 no meio da digitação)', () => {
+    expect(diaValido('1900-01-01')).toBe(true)
+    expect(diaValido('2026-10-16')).toBe(true)
+    for (const dia of ['0002-10-16', '0202-10-16', '1899-12-31', '2026-02-30', '', '20261-10-16']) expect(diaValido(dia), dia).toBe(false)
+    expect(escreverConsulta('0002-10-16', '14:30')).toBeNull()
+    expect(lerConsulta('0002-10-16T14:30')).toBeNull()
   })
 
   it('CA-526: valor estragado ou ausente lê como "sem consulta"', () => {
