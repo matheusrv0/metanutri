@@ -275,6 +275,20 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(ALIMENTOS).toHaveLength(597)
   })
 
+  it.each([
+    ['  Mortadela', 'Carnes e derivados', 'embutido'],
+    [' Ameixa,  calda, enlatada ', 'Frutas e derivados', 'doce'],
+    ['  Refrigerante,   tipo cola', 'Bebidas (alcoólicas e não alcoólicas)', 'bebida-adocada'],
+    ['  Farinha,  de trigo', 'Cereais e derivados', 'farinha'],
+    [' Alho,  cru', 'Verduras, hortaliças e derivados', 'tempero'],
+  ])('CA-677: espaço nas pontas ou repetido não muda a regra ("%s")', (descricao, categoria, id) => {
+    expect(regraQueExclui({ descricao, categoria, preparo: null })?.id).toBe(id)
+  })
+
+  it('CA-677: a farinha de mandioca torrada continua prescritível com espaço sobrando', () => {
+    expect(regraQueExclui({ descricao: ' Farinha,  de mandioca, torrada ', categoria: 'Verduras, hortaliças e derivados', preparo: 'torrado' })).toBeNull()
+  })
+
   it('o nível mais grave vale primeiro: cerveja antes de tudo, fritura antes de cru', () => {
     // "Pastel, de carne, cru" é cru e é salgado de fritar: vale o motivo que a chave não libera.
     expect(regraQueExclui(porDescricao('Pastel, de carne, cru'))?.id).toBe('fritura')

@@ -98,7 +98,7 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     id: 'doce',
     nivel: 'fora-da-rotina',
     titulo: 'Doce, açúcar ou fruta em calda',
-    casa: (a) => a.categoria === 'Produtos açucarados' || DOCE_PELO_NOME.test(a.descricao.trim()) || DOCE_NO_MEIO.test(a.descricao),
+    casa: (a) => a.categoria === 'Produtos açucarados' || DOCE_PELO_NOME.test(a.descricao) || DOCE_NO_MEIO.test(a.descricao),
   },
   {
     id: 'gordura',
@@ -144,7 +144,7 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     nivel: 'ingrediente',
     titulo: 'Versão crua de alimento que se come cozido',
     casa: (a) => {
-      if (a.categoria === 'Pescados e frutos do mar' && PEIXE_FRESCO.test(a.descricao.trim())) return true
+      if (a.categoria === 'Pescados e frutos do mar' && PEIXE_FRESCO.test(a.descricao)) return true
       if (a.preparo !== 'cru' && !CRU.test(a.descricao)) return false
       if (CRU_CONSUMIDO.test(a.descricao)) return false
       return CATEGORIAS_SO_COZIDAS.has(a.categoria) || VERDURA_SO_COZIDA.test(a.descricao)
@@ -160,11 +160,15 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
 
 const GRAVIDADE: Readonly<Record<NivelPrescricao, number>> = { nunca: 0, 'fora-da-rotina': 1, ingrediente: 2 }
 
-/** A regra de nível mais grave que tira o alimento das propostas; `null` quando ele é prescritível. */
+/**
+ * A regra de nível mais grave que tira o alimento das propostas; `null` quando ele é prescritível.
+ * A TACO tem descrições com espaço nas pontas (" Mamão, doce em calda"): o nome é limpo antes de comparar.
+ */
 export function regraQueExclui(alimento: DadosDaRegra): RegraPrescricao | null {
+  const limpo: DadosDaRegra = { ...alimento, descricao: alimento.descricao.trim().replace(/\s+/g, ' ') }
   let pior: RegraPrescricao | null = null
   for (const regra of REGRAS_PRESCRICAO) {
-    if (!regra.casa(alimento)) continue
+    if (!regra.casa(limpo)) continue
     if (pior === null || GRAVIDADE[regra.nivel] < GRAVIDADE[pior.nivel]) pior = regra
   }
   return pior
