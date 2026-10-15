@@ -55,6 +55,22 @@ function macroDominante(a: Alimento): Macro | null {
   return maior.kcal <= 0 ? null : maior.m
 }
 
+/** Ovo inteiro só troca por ovo inteiro: duas gemas não equivalem a um ovo (spec sugestoes-com-criterio, D-194). */
+function formaDoOvo(a: Alimento): 'gema' | 'clara' | 'inteiro' | null {
+  if (a.categoria !== 'Ovos e derivados') return null
+  if (/(^|[\s,])gema($|[\s,])/i.test(a.descricao)) return 'gema'
+  if (/(^|[\s,])clara($|[\s,])/i.test(a.descricao)) return 'clara'
+  return 'inteiro'
+}
+
+const ehCru = (a: Alimento): boolean => a.preparo === 'cru' || /(^|[\s,])cru(a|s|as)?($|[\s,])/i.test(a.descricao)
+
+/** Verdura cozida troca só por verdura cozida: brócolis cozido por vagem crua não é troca de prato. */
+const ehVerduraCozida = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !ehCru(a)
+
+const mesmaForma = (base: Alimento) => (a: Alimento): boolean =>
+  formaDoOvo(a) === formaDoOvo(base) && (!ehVerduraCozida(base) || !ehCru(a))
+
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
 const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? descricao).trim().toLowerCase()
 
@@ -93,6 +109,7 @@ export function trocasDoAlimento(
 
   return opcoes.alimentos
     .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
+    .filter(mesmaForma(base))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
     .filter((a) => !casaRestricao(a.descricao, restricoes))

@@ -117,6 +117,33 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
     expect(grupos.every((g) => g.trocas.length > 0)).toBe(true)
   })
 
+  it('CA-671: ovo inteiro só troca por outra forma de ovo inteiro, nunca por gema ou clara', () => {
+    const ovo = porDescricao('Ovo, de galinha, inteiro, cozido/10minutos')
+    for (const gramas of [45, 90, 150]) {
+      const trocas = trocasDoAlimento({ alimentoId: ovo.id, gramas }, opcoes).map((t) => t.descricao)
+      for (const t of trocas) expect(t).not.toMatch(/gema|clara/i)
+    }
+  })
+
+  it('CA-671: verdura cozida só troca por verdura cozida', () => {
+    const cozidas = ALIMENTOS.filter((a) => a.categoria.startsWith('Verduras') && a.preparo !== null && a.preparo !== 'cru')
+    expect(cozidas.length).toBeGreaterThan(10)
+    for (const a of cozidas) {
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 80 }, opcoes)) {
+        expect(t.descricao, `${a.descricao} → ${t.descricao}`).not.toMatch(/(^|[\s,])cru(a|s|as)?($|[\s,])/i)
+      }
+    }
+  })
+
+  it('CA-671: no plano de exemplo, o ovo não troca por gema e o brócolis não troca por verdura crua', () => {
+    const { plano } = criarExemplo(contador(), '2026-10-15')
+    const grupos = trocasDoPlano(plano, buscarAlimento, opcoes)
+    const doOvo = grupos.find((g) => g.descricao.startsWith('Ovo, de galinha, inteiro'))
+    const doBrocolis = grupos.find((g) => g.descricao.startsWith('Brócolis'))
+    expect(doOvo?.trocas.map((t) => t.descricao).join(' | ') ?? '').not.toMatch(/gema|clara/i)
+    expect(doBrocolis?.trocas.map((t) => t.descricao).join(' | ') ?? '').not.toMatch(/cru/i)
+  })
+
   it('CA-661: bebida alcoólica no plano não ganha troca', () => {
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cerveja, pilsen 2').id, gramas: 350 }, opcoes)).toEqual([])
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cana, aguardente 1').id, gramas: 50 }, opcoes)).toEqual([])
