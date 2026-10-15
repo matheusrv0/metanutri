@@ -416,6 +416,14 @@ describe('roteiro de anamnese e modelos de suplemento na nuvem (spec anamnese-e-
     expect(nomes(juntarCopias(daqui, daNuvem, AGORA, 'daqui'), MODELOS)).toEqual(['Ferro, novo'])
   })
 
+  it('CB-164: a mesma ficha mexida em dois aparelhos fica inteira com a alteração mais nova, suplementos e respostas juntos', () => {
+    const ficha = (atualizadoEm: string, suplementos: unknown[], respostas: unknown[]) => ({ id: 'ana', nome: 'Ana', atualizadoEm, suplementos, respostasAnamnese: respostas })
+    const resposta = { perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Cansaço' }
+    const daqui = copia({ 'metanutri:pacientes': JSON.stringify([ficha(T(2), [{ id: 's1', nome: 'Ferro' }], [])]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(2) }) })
+    const daNuvem = copia({ 'metanutri:pacientes': JSON.stringify([ficha(T(3), [], [resposta])]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(3) }) })
+    expect(lista(juntarCopias(daqui, daNuvem, AGORA), 'metanutri:pacientes')).toEqual([ficha(T(3), [], [resposta])])
+  })
+
   it('CA-570 e CB-163: o roteiro salvo por último vence, dos dois lados; apagado depois, sai', () => {
     const daqui = (quando: string) => copia({ [ROTEIRO]: roteiro('Daqui'), [CHAVE_MUDANCAS]: mudancas({ [`chave/${ROTEIRO}`]: quando }) })
     const daNuvem = (quando: string) => copia({ [ROTEIRO]: roteiro('Da nuvem'), [CHAVE_MUDANCAS]: mudancas({ [`chave/${ROTEIRO}`]: quando }) })

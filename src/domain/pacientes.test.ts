@@ -58,6 +58,14 @@ describe('ficha do paciente com anamnese, suplementos e exames (spec anamnese-e-
     expect(ana).toMatchObject({ nome: 'Ana', restricoes: 'leite', respostasAnamnese: [], suplementos: [], pedidoExames: { marcados: [], outros: '' } })
   })
 
+  it('CB-167: apagar o paciente leva junto os suplementos e o pedido de exames', () => {
+    const arm = new Memoria()
+    const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'p1' })
+    repo.salvar({ ...repo.criar('Ana'), suplementos: [{ id: 's1', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '' }], pedidoExames: { marcados: ['tsh'], outros: '' } })
+    repo.excluir('p1')
+    expect(arm.getItem('metanutri:pacientes')).toBe('[]')
+  })
+
   it('CA-561: salvar a ficha com uma resposta, um suplemento e um exame troca a data de alteração (vai para a nuvem)', () => {
     const arm = new Memoria()
     const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'p1' })

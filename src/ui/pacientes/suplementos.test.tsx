@@ -142,6 +142,15 @@ describe('Folha de suplementação (CA-576, CA-578, CA-582, CA-583)', () => {
     expect(janela.getByRole('button', { name: 'Imprimir ou salvar em PDF' })).toBeInTheDocument()
   })
 
+  it('CB-168: observação longa quebra a linha na folha, sem cortar', async () => {
+    const longa = `${'Tomar com bastante água e longe de café, chá e leite. '.repeat(6)}Fim.`
+    const { usuario } = montar({ suplementos: [{ ...vitD, observacao: longa }] })
+    const janela = await abrirFolha(usuario)
+    const observacao = within(janela.getByRole('article', { name: 'Suplementação' })).getByText(longa)
+    expect(observacao).toHaveClass('whitespace-pre-wrap', 'break-words')
+    expect(observacao).not.toHaveClass('truncate')
+  })
+
   it('CA-578: sem nenhum suplemento com nome, Imprimir fica desligado', () => {
     montar({ suplementos: [{ ...vitD, nome: '  ' }] })
     expect(cartao().getByRole('button', { name: 'Imprimir' })).toBeDisabled()
