@@ -5,6 +5,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '../App.tsx'
 import { criarAcompanhamento } from '@/domain/acompanhamento.ts'
+import { gravarRoteiro, renomearPergunta, ROTEIRO_PADRAO } from '@/domain/anamnese.ts'
+import { criarRepositorioModelosSuplemento } from '@/domain/suplementos.ts'
 import { criarRepositorioModelos } from '@/domain/modelos.ts'
 import { criarRepositorioPacientes } from '@/domain/pacientes.ts'
 import { gravarPerfil } from '@/domain/perfil.ts'
@@ -43,7 +45,22 @@ function semear(): Semeado {
     medicamentos: malicioso('medicamentos'),
     anamnese: malicioso('anamnese'),
     observacoes: malicioso('observacoes do paciente'),
+    // CA-586 (spec anamnese-e-prescricoes): a resposta, o suplemento e os outros exames.
+    respostasAnamnese: [{ perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: malicioso('resposta da anamnese') }],
+    suplementos: [
+      {
+        id: 's1',
+        nome: malicioso('nome do suplemento'),
+        dose: malicioso('dose do suplemento'),
+        horario: malicioso('horario do suplemento'),
+        duracao: malicioso('duracao do suplemento'),
+        observacao: malicioso('observacao do suplemento'),
+      },
+    ],
+    pedidoExames: { marcados: ['ferritina'], outros: malicioso('outros exames') },
   })
+  gravarRoteiro(localStorage, renomearPergunta(ROTEIRO_PADRAO, 'agua', 'agua-dia', malicioso('pergunta do roteiro')))
+  criarRepositorioModelosSuplemento(localStorage).salvarDe({ id: 'x', nome: malicioso('modelo de suplemento'), dose: malicioso('dose do modelo'), horario: '', duracao: '', observacao: '' })
 
   const produtos = criarRepositorioProdutos(localStorage)
   const produto = produtos.salvar({
@@ -142,6 +159,44 @@ describe('CA-487: código malicioso aparece como texto e nada executa (app no ap
     for (const rotulo of ['objetivo', 'restricao', 'condicoes clinicas', 'medicamentos', 'anamnese', 'observacoes do paciente', 'nome do plano']) {
       cargaComoTexto(rotulo)
     }
+    conferirSemInjecao()
+  })
+
+  it('CA-586 (spec anamnese-e-prescricoes): resposta, roteiro, suplemento e outros exames aparecem como texto na ficha', async () => {
+    await abrir(`#/paciente/${semeado.pacienteId}`, 'resposta da anamnese')
+    for (const rotulo of ['pergunta do roteiro', 'nome do suplemento', 'dose do suplemento', 'horario do suplemento', 'duracao do suplemento', 'observacao do suplemento', 'outros exames']) {
+      cargaComoTexto(rotulo)
+    }
+    conferirSemInjecao()
+  })
+
+  it('CA-586: o roteiro e os modelos de suplemento aparecem como texto nas janelas', async () => {
+    await abrir(`#/paciente/${semeado.pacienteId}`, 'resposta da anamnese')
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Editar roteiro' }))
+    cargaComoTexto('pergunta do roteiro', await screen.findByRole('dialog'))
+    conferirSemInjecao()
+    await usuario.keyboard('{Escape}')
+
+    await usuario.click(screen.getByRole('button', { name: 'Modelos' }))
+    const modelos = await screen.findByRole('dialog')
+    cargaComoTexto('modelo de suplemento', modelos)
+    cargaComoTexto('dose do modelo', modelos)
+    conferirSemInjecao()
+  })
+
+  it('CA-586: as folhas de suplementação e de exames mostram o texto livre como texto', async () => {
+    await abrir(`#/paciente/${semeado.pacienteId}`, 'resposta da anamnese')
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Imprimir' }))
+    const folha = await screen.findByRole('dialog')
+    for (const rotulo of ['nome do suplemento', 'dose do suplemento', 'observacao do suplemento', 'nome do perfil', 'responsavel']) cargaComoTexto(rotulo, folha)
+    conferirSemInjecao()
+    await usuario.keyboard('{Escape}')
+
+    await usuario.click(screen.getByRole('button', { name: 'Imprimir pedido' }))
+    const pedido = await screen.findByRole('dialog')
+    cargaComoTexto('outros exames', pedido)
     conferirSemInjecao()
   })
 

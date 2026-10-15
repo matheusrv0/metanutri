@@ -88,7 +88,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
   it('CA-573: Salvar como modelo guarda na conta e avisa; o mesmo nome troca; sem nome, desligado', async () => {
     const { arm, usuario } = montar({ suplementos: [vitD, { ...vitD, id: 's2', nome: '' }] })
     await usuario.click(within(cartao().getByRole('group', { name: 'Vitamina D3' })).getByRole('button', { name: 'Salvar como modelo' }))
-    expect(cartao().getByRole('status')).toHaveTextContent('Modelo salvo.')
+    expect(cartao().getByText('Modelo salvo.')).toHaveAttribute('aria-live', 'polite')
     expect(within(cartao().getByRole('group', { name: 'Suplemento 2' })).getByRole('button', { name: 'Salvar como modelo' })).toBeDisabled()
     const item = within(cartao().getByRole('group', { name: 'Vitamina D3' }))
     await usuario.clear(item.getByLabelText('Dose'))

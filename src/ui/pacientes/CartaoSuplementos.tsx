@@ -84,7 +84,8 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
           <Plus aria-hidden="true" />
           Acrescentar suplemento
         </Button>
-        <p role="status" className="text-xs text-muted-foreground">
+        {/* Região viva, sem o papel "status": a barra da nuvem é o status da página. */}
+        <p aria-live="polite" className="text-xs text-muted-foreground">
           {mensagem}
         </p>
       </div>
