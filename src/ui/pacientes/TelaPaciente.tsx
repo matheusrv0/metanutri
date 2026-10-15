@@ -13,6 +13,7 @@ import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
 interface TelaPacienteProps {
@@ -95,9 +96,9 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
           </div>
         </Card>
 
-        <Card>
+        <Card role="region" aria-labelledby="titulo-saude">
           <CardHeader>
-            <CardTitle>Restrições e saúde</CardTitle>
+            <CardTitle id="titulo-saude">Restrições e saúde</CardTitle>
             <CardDescription>Uma por linha. O que estiver aqui some das sugestões de alimento.</CardDescription>
           </CardHeader>
           <div className="flex flex-col gap-1.5">
@@ -122,20 +123,7 @@ export function TelaPaciente({ pacienteId, aoAbrirPlano, aoNovoPlano, aoVoltar }
           </div>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Anamnese</CardTitle>
-            <CardDescription>Rotina, horários, preferências e aversões. É o que faz o plano colar na vida da pessoa.</CardDescription>
-          </CardHeader>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="anamnese">Anotações</Label>
-            <Textarea id="anamnese" rows={5} value={paciente.anamnese} onChange={(e) => alterar({ anamnese: e.target.value })} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="obs-paciente">Observações</Label>
-            <Textarea id="obs-paciente" rows={3} value={paciente.observacoes} onChange={(e) => alterar({ observacoes: e.target.value })} />
-          </div>
-        </Card>
+        <AnamneseDaFicha paciente={paciente} aoAlterar={alterar} />
 
         <Card className="gap-3">
           <CardHeader>

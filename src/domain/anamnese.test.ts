@@ -5,6 +5,7 @@ import {
   CHAVE_ROTEIRO,
   gravarRoteiro,
   lerRoteiro,
+  limparRoteiro,
   normalizarRespostas,
   renomearPergunta,
   responder,
@@ -97,6 +98,7 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     const lido = lerRoteiro(arm)
     expect(lido.perguntas.agua.map((p) => p.id)).not.toContain('nova')
     expect(lido.perguntas['alcool-fumo']).toEqual([])
+    expect(limparRoteiro(roteiro)).toEqual(lido)
   })
 
   it('id repetido no roteiro fica só na primeira vez, na ordem dos blocos', () => {

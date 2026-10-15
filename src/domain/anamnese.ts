@@ -87,6 +87,9 @@ function normalizarRoteiro(blocos: unknown): RoteiroAnamnese {
   return { perguntas }
 }
 
+/** O roteiro editado como fica depois de salvo: sem pergunta vazia e sem id repetido (CB-161). */
+export const limparRoteiro = (roteiro: RoteiroAnamnese): RoteiroAnamnese => normalizarRoteiro(roteiro.perguntas)
+
 /** O roteiro da conta. Sem armazenamento, sem nada guardado ou com dado que não se lê, o padrão (CB-160, CB-162). */
 export function lerRoteiro(armazenamento: Armazenamento | null): RoteiroAnamnese {
   if (!armazenamento) return ROTEIRO_PADRAO
