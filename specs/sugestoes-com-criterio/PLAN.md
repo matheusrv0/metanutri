@@ -203,3 +203,26 @@ Fora desta rodada (a revisão listou, o coordenador não pediu): M2 (trocas de l
   conferida desfazendo a correção da calda: ela acusou a ameixa no plano vazio com porção de 50 g.
 - No teste da restrição na tela (CA-675), a primeira versão usava "alface", que não estava nas 5 sugestões, e passava
   sem a correção; a versão final usa o nome da primeira sugestão e falhou antes do código.
+
+### Validação da re-revisão (15/10/2026)
+
+| Item | Onde está o teste |
+|---|---|
+| N1 · CA-679 | `trocas.test.ts` "CA-679" (patinho sem corte gordo; em toda carne de rotina, nenhum magro depois do primeiro gordo; milanesa troca primeiro por frango sem pele) |
+| Regra (a) · CA-670 | `prescritivel.test.ts`: os nove crus voltam a prescritíveis; cada verdura crua que sai tem a versão cozida na base; lista fixa com 298 ids |
+| N2 · CA-671 | `trocas.test.ts` "pão de queijo, farinha, farofa, nhoque, fécula e polvilho não trocam com verdura" |
+| N5 · CA-667 | `prescritivel.test.ts` "a trava de texto pega todos os ids da lista fixa" |
+| N6 · CA-675 | `cobrir.test.ts` "a mensagem só fala da restrição quando ela tirou algum alimento" |
+| N7 | `GavetaCobrir.test.tsx` (a mesma restrição num array novo não refaz o cálculo; uma diferente refaz) |
+
+`npm run check` verde (188 arquivos, 3.275 testes; o aviso do lint é o antigo, de `MolduraPublica.tsx`),
+`npx playwright test` verde (55, porta 4193, configuração temporária já apagada, porque a gaveta mudou) e
+`npm run build` verde. As sugestões que aparecem nos prints (piridoxina, ferro e sódio do exemplo) não mudaram nesta
+rodada, então os prints "depois" continuam valendo.
+
+**Divergências da re-revisão:**
+
+- O teste do N5 não foi visto falhando como teste: antes dele, um teste descartável listou os 54 alimentos excluídos que a
+  trava não pegava, e a trava foi completada.
+- O peixe "fresco" (dourada) continua fora: ele segue a regra antiga de peixe cru, que vale mesmo sem versão cozida, como
+  pescadinha, corvina e tucunaré crus.

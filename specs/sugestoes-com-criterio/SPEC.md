@@ -218,7 +218,7 @@ Vale a menor entre a porção do grupo e a porção máxima que a pessoa escolhe
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
 
 *(revisão)* Gerado a partir do código no fim da rodada de revisão; o teste do CA-664 guarda a mesma lista de ids.
-307 dos 597 alimentos da base (182 deles o filtro antigo deixava sugerir). "Antes" diz o que o filtro antigo
+298 dos 597 alimentos da base (173 deles o filtro antigo deixava sugerir). "Antes" diz o que o filtro antigo
 fazia: *sugeria* (podia aparecer no cobrir e nas trocas) ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo
 que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos continuam disponíveis pela busca.
 
@@ -475,7 +475,7 @@ que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos 
 | 581 | Soja, farinha | Leguminosas e derivados | já fora |
 | 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | já fora |
 
-#### Versão crua de alimento que se come cozido (106)
+#### Versão crua de alimento que se come cozido (97)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
@@ -494,18 +494,9 @@ que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos 
 | 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | sugeria |
 | 96 | Berinjela, crua | Verduras, hortaliças e derivados | sugeria |
 | 103 | Cará, cru | Verduras, hortaliças e derivados | sugeria |
-| 104 | Caruru, cru | Verduras, hortaliças e derivados | sugeria |
 | 113 | Chuchu, cru | Verduras, hortaliças e derivados | sugeria |
-| 125 | Feijão, broto, cru | Verduras, hortaliças e derivados | sugeria |
-| 126 | Inhame, cru | Verduras, hortaliças e derivados | sugeria |
-| 127 | Jiló, cru | Verduras, hortaliças e derivados | sugeria |
 | 130 | Mandioca, crua | Verduras, hortaliças e derivados | sugeria |
 | 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | sugeria |
-| 147 | Quiabo, cru | Verduras, hortaliças e derivados | sugeria |
-| 156 | Taioba, crua | Verduras, hortaliças e derivados | sugeria |
-| 162 | Vagem, crua | Verduras, hortaliças e derivados | sugeria |
-| 196 | Fruta-pão, crua | Frutas e derivados | sugeria |
-| 241 | Pequi, cru | Frutas e derivados | sugeria |
 | 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | já fora |
 | 278 | Atum, fresco, cru | Pescados e frutos do mar | já fora |
 | 279 | Bacalhau, salgado, cru | Pescados e frutos do mar | já fora |
@@ -641,7 +632,7 @@ Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobr
 | Riboflavina (B2) | 0,99 mg | ~~Chá, preto, infusão 5% (200 g)~~ *café ou chá*; Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); ~~Cereal matinal, milho, açúcar (90 g)~~ *doce* | Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); Pão, trigo, francês (50 g); Ovo, de galinha, inteiro, cozido/10minutos (200 g) |
 | Piridoxina (B6) | 1,17 mg | ~~Alfavaca, crua (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (25 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Paçoca, amendoim (100 g)~~ *doce* | Catalonha, crua (200 g); Pão, de soja (50 g); Banana, pacova, crua (200 g); Carne, bovina, maminha, grelhada (200 g); Castanha-de-caju, torrada, salgada (30 g) |
 | Niacina (B3) | 13 mg | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica* | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); Feijão, rosinha, cozido (200 g) |
-| Fibra alimentar | 23 g | Jambo, cru (200 g); Jurubeba, crua (95 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) | Jambo, cru (200 g); Alface, crespa, crua (200 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) |
+| Fibra alimentar | 23 g | Jambo, cru (200 g); Jurubeba, crua (95 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) | Jambo, cru (200 g); Jiló, cru (200 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) |
 
 ## Apêndice C — Para a revisão da estudante: o que ficou dentro e o que pode estar rígido demais
 
