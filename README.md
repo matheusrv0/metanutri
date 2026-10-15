@@ -142,7 +142,7 @@ logo abaixo; depois siga a lista seguinte.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
-   `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql` e `011-seguranca-lote-2.sql`.
+   `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql`, `011-seguranca-lote-2.sql` e `012-dieta-no-link.sql`.
 4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -194,6 +194,10 @@ Para funcionar de verdade, nesta ordem:
    **antes** de publicar as funções do passo 5: elas anotam cada chamada à cobrança na tabela nova, e publicadas antes
    assinar, trocar o cartão, conferir e cancelar falham sem cobrar. Também pode rodar de novo; se rodar o 003, o 006
    ou o 010 de novo, rode o 011 logo depois.
+   Depois rode `supabase/012-dieta-no-link.sql` (spec dieta-no-link): o link do paciente passa a guardar a cópia da
+   dieta ("Meu plano"), até 256 KB, e a função do paciente passa a devolvê-la. Rode **antes** de publicar o site desta
+   versão. Publicado antes, o site continua funcionando, mas o link é salvo sem a dieta e o paciente vê só as missões.
+   Também pode rodar de novo; se rodar o 004 de novo, rode o 012 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a

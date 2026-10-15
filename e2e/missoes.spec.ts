@@ -63,6 +63,44 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   await expect(lista).toContainText('1 de 4 dias na semana')
 })
 
+test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => {
+  await abrirLimpo(page)
+  await montarPlanoComAlmoco(page)
+
+  // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
+  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
+  await expect(cartao.getByRole('checkbox', { name: 'Mostrar a dieta no link' })).toBeChecked()
+  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await expect(cartao.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeVisible()
+  await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
+  const endereco = await cartao.getByLabel('Link do paciente').inputValue()
+
+  // O paciente abre no celular: 360 px de largura
+  await page.setViewportSize({ width: 360, height: 780 })
+  await page.goto(endereco)
+  const seletor = page.getByRole('radiogroup', { name: 'O que ver' })
+  await expect(seletor.getByRole('radio', { name: 'Missões' })).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
+
+  // CA-531: o almoço em medida caseira
+  await seletor.getByRole('radio', { name: 'Meu plano' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeVisible()
+  const almoco = page.getByRole('region', { name: '12:00 Almoço' })
+  await expect(almoco).toContainText('6 colheres de sopa')
+  await expect(almoco).toContainText('Arroz, tipo 1, cozido')
+  await expect(page.getByText(/kcal/)).toHaveCount(0)
+
+  // CA-535: cabe em 360 px, letra de 16 px nos alimentos e toque de 44 px no seletor
+  const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
+  expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
+  const letra = await almoco.getByText('Arroz, tipo 1, cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))
+  expect(letra).toBeGreaterThanOrEqual(16)
+  for (const nome of ['Missões', 'Meu plano']) {
+    const caixa = await seletor.getByRole('radio', { name: nome }).boundingBox()
+    expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+  }
+})
+
 test('link inventado não abre plano de ninguém', async ({ page }) => {
   await abrirLimpo(page)
   await page.goto('/#/missoes/tokeninventado')

@@ -1,6 +1,6 @@
 # O que falta e por quê
 
-Atualizado em 07/10/2026.
+Atualizado em 14/10/2026.
 
 > **Mudou em 26/09/2026.** O plano de negócio (`plano-negocio.md`) foi aprovado e
 > respondeu quase tudo que estava na caixa "decisão sua": o dado do paciente **vai**
@@ -159,6 +159,26 @@ Atualizado em 07/10/2026.
 >
 > Fica para depois (spec, seção 4): verificação em outras ações e a regra de conteúdo do navegador (CSP), que terá
 > de liberar o Cloudflare.
+>
+> **Atualizado em 14/10 (dieta no link):** o link do paciente ganha "Meu plano", com as refeições em medida caseira,
+> os substitutos como "ou" e as orientações, sem kcal (spec `dieta-no-link`, D-150 a D-158). No cartão do link, a
+> caixa "Mostrar a dieta no link" vem marcada (decisão a revisar, D-152). A Política de privacidade cita a dieta no
+> link, e a versão dos termos passa a ser `2026-10-14`.
+>
+> **A ordem para pôr no ar (você roda; o 012 vem antes do site):**
+>
+> 1. juntar o ramo na `main` (feito pelo assistente; não publica nada sozinho);
+> 2. rodar o `012` na `main`, na pasta do projeto:
+>    `npx supabase db query --linked --project-ref qmpljfjbdcrdbqutuvmg -f supabase/012-dieta-no-link.sql`
+> 3. conferir com as consultas do fim do `012`: a coluna `dieta` (jsonb, aceita vazio), a trava
+>    `acompanhamentos_dieta_tamanho` e a função `missoes_por_token` terminando em `dieta jsonb`;
+> 4. publicar o site: `gh workflow run publicar.yml --ref main`. Se o site for antes do 012, ele funciona, mas o link é
+>    salvo sem a dieta e o paciente vê só as missões;
+> 5. conferir: num plano com almoço, gerar o link com a caixa marcada, abrir no celular e tocar em "Meu plano".
+>
+> **Se a publicação não for em 14/10:** a versão dos termos (`VERSAO_TERMOS` e `DATA_TERMOS` em
+> `src/domain/legal.ts`, e os testes em `src/domain/legal.test.ts` e `src/ui/publico/legal.test.tsx`) deve ser a do
+> dia em que o site vai ao ar.
 
 Tudo o que dava para construir sozinho está construído. O que sobrou cai em duas
 caixas: **decisão sua** (não é trabalho de código, é escolha de dono do produto) e
