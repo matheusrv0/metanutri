@@ -156,7 +156,9 @@ export function observarMudancas(conta: ArmazenamentoDaConta, aoMudar: (contou: 
     try {
       registrarMudanca(conta, chave, antes, depois, agora())
     } catch {
-      // sem espaço para a marca: a mudança já está contada e sobe; só a hora dela fica de fora
+      // sem espaço para a marca: a mudança já está contada e sobe; só a hora dela fica de fora. Numa exclusão, a lápide
+      // também fica de fora, e a marca de antes continua: o outro aparelho, que tem o item e a mesma marca, o mantém pelo
+      // DP-40 e ele volta (R8). Só com o navegador quase cheio.
     }
     aoMudar(contou)
   }

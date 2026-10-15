@@ -228,7 +228,7 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
 - [x] **T59** — Spec e plano: CA-610; DP-42.
 - [x] **T60** — A edição que solta o retido nunca fica mais velha que a marca que substitui (DP-42):
   `registrarMudanca` em `src/domain/copiaDaConta.ts`; teste em `copiaDaConta.test.ts`. Cobre CA-609, CA-610.
-- [ ] **T61** — Documento: a lápide que não coube (navegador cheio) pode fazer o item apagado voltar pelo DP-40; o
+- [x] **T61** — Documento: a lápide que não coube (navegador cheio) pode fazer o item apagado voltar pelo DP-40; o
   comentário do "sem espaço" em `src/domain/sincronia.ts` e o R8.
 - [ ] **T62** — Documento: salvar o roteiro sem mudar nada não solta o valor retido; o R8 e a nota de publicação
   (`docs/pendencias.md`) dizem para mudar alguma coisa naquele aparelho.## Mapa de cobertura
@@ -478,6 +478,9 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
     só guarda a marca dele, e os aparelhos com o valor mais velho o mantêm retido, sem subir, até alguém editar.
   - "Sair" numa aba antiga apaga a cópia de trabalho deste navegador, inclusive o que ainda não voltou para a nuvem.
   - As lápides vencem em 90 dias (CB-172).
+  - *(Rodada 4)* Com o navegador quase cheio, a lápide de uma exclusão pode não caber (a gravação da marca falha e é
+    ignorada, `observarMudancas`). O item sai daqui, mas a marca dele continua sem lápide; o aparelho que ainda tem o item
+    com a mesma marca o mantém pelo DP-40, e ele volta. É raro: só acontece com o navegador quase cheio.
   - O aviso de versão nova (D-172) só vale a partir desta publicação: as abas abertas antes dela ainda não o têm. Por
     isso a nota de publicação manda fechar as abas e recarregar uma vez.
 ## Divergências para o dono decidir
