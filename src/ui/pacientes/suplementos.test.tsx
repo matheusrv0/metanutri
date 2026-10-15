@@ -72,6 +72,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
     await usuario.type(item.getByLabelText('Dose'), '1 comprimido')
     await usuario.type(item.getByLabelText('Horário'), 'Em jejum')
     await usuario.type(item.getByLabelText('Por quanto tempo'), '2 meses')
+    expect(item.getByLabelText('Observação').tagName).toBe('TEXTAREA')
     await usuario.type(item.getByLabelText('Observação'), 'Com suco de laranja')
     const salvo = pacientes.obter('p1')
     expect(salvo?.suplementos).toEqual([expect.objectContaining({ nome: 'Ferro', dose: '1 comprimido', horario: 'Em jejum', duracao: '2 meses', observacao: 'Com suco de laranja' })])
@@ -79,10 +80,22 @@ describe('Suplementos na ficha (US-AP2)', () => {
     expect(cartao().getByRole('group', { name: 'Ferro' })).toBeInTheDocument()
   })
 
-  it('CA-572: Tirar remove o suplemento', async () => {
+  it('CA-572: suplemento preenchido pede confirmação para tirar; Cancelar mantém, Tirar mesmo remove', async () => {
     const { pacientes, usuario } = montar({ suplementos: [vitD, { ...vitD, id: 's2', nome: 'Ômega 3' }] })
-    await usuario.click(within(cartao().getByRole('group', { name: 'Vitamina D3' })).getByRole('button', { name: 'Tirar' }))
+    const item = () => within(cartao().getByRole('group', { name: 'Vitamina D3' }))
+    await usuario.click(item().getByRole('button', { name: 'Tirar' }))
+    expect(pacientes.obter('p1')?.suplementos).toHaveLength(2)
+    await usuario.click(item().getByRole('button', { name: 'Cancelar' }))
+    expect(item().queryByRole('button', { name: 'Tirar mesmo' })).not.toBeInTheDocument()
+    await usuario.click(item().getByRole('button', { name: 'Tirar' }))
+    await usuario.click(item().getByRole('button', { name: 'Tirar mesmo' }))
     expect(pacientes.obter('p1')?.suplementos.map((s) => s.nome)).toEqual(['Ômega 3'])
+  })
+
+  it('CA-572: suplemento vazio sai na hora, sem perguntar', async () => {
+    const { pacientes, usuario } = montar({ suplementos: [{ id: 's9', nome: '', dose: '', horario: '', duracao: '', observacao: '' }] })
+    await usuario.click(within(cartao().getByRole('group', { name: 'Suplemento 1' })).getByRole('button', { name: 'Tirar' }))
+    expect(pacientes.obter('p1')?.suplementos).toEqual([])
   })
 
   it('CA-573: Salvar como modelo guarda na conta e avisa; o mesmo nome troca; sem nome, desligado', async () => {
@@ -94,6 +107,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
     await usuario.clear(item.getByLabelText('Dose'))
     await usuario.type(item.getByLabelText('Dose'), '2 cápsulas')
     await usuario.click(within(cartao().getByRole('group', { name: 'Vitamina D3' })).getByRole('button', { name: 'Salvar como modelo' }))
+    expect(cartao().getByText('Modelo atualizado.')).toBeInTheDocument()
     const modelos = criarRepositorioModelosSuplemento(arm).listar()
     expect(modelos.map((m) => [m.nome, m.dose])).toEqual([['Vitamina D3', '2 cápsulas']])
     expect(JSON.parse(arm.getItem(CHAVE_MODELOS_SUPLEMENTO) ?? '[]')).toHaveLength(1)
@@ -108,6 +122,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
     await usuario.click(cartao().getByRole('button', { name: 'Modelos' }))
     const janela = within(screen.getByRole('dialog', { name: 'Modelos de suplemento' }))
     expect(janela.getAllByRole('listitem').map((li) => li.textContent ?? '')).toEqual([expect.stringContaining('Magnésio'), expect.stringContaining('Zinco')])
+    expect(janela.getAllByText('Com uma refeição que tenha gordura')).toHaveLength(2)
     await usuario.click(janela.getByRole('button', { name: 'Apagar o modelo Magnésio' }))
     expect(repo.listar().map((m) => m.nome)).toEqual(['Zinco'])
     await usuario.click(janela.getByRole('button', { name: 'Usar Zinco' }))
@@ -151,9 +166,10 @@ describe('Folha de suplementação (CA-576, CA-578, CA-582, CA-583)', () => {
     expect(observacao).not.toHaveClass('truncate')
   })
 
-  it('CA-578: sem nenhum suplemento com nome, Imprimir fica desligado', () => {
+  it('CA-578: sem nenhum suplemento com nome, Imprimir fica desligado e o cartão diz o porquê', () => {
     montar({ suplementos: [{ ...vitD, nome: '  ' }] })
     expect(cartao().getByRole('button', { name: 'Imprimir' })).toBeDisabled()
+    expect(cartao().getByRole('button', { name: 'Imprimir' })).toHaveAccessibleDescription('Escreva o nome de um suplemento para imprimir.')
   })
 
   it('CA-582: estudante: proposta do estágio, com a frase e as duas assinaturas', async () => {

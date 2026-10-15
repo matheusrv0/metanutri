@@ -74,8 +74,9 @@ describe('modelos de suplemento (D-166, CA-573, CA-574)', () => {
   it('salvar um suplemento cria o modelo com as datas; sem nome, não salva', () => {
     const arm = new Memoria()
     const repo = criarRepositorioModelosSuplemento(arm, { agora: relogio(), gerarId: ids() })
-    const modelo = repo.salvarDe(vitD)
-    expect(modelo).toEqual({
+    const salvo = repo.salvarDe(vitD)
+    expect(salvo?.trocou).toBe(false)
+    expect(salvo?.modelo).toEqual({
       id: 'm1',
       nome: 'Vitamina D3',
       dose: '1 cápsula de 2.000 UI',
@@ -95,7 +96,8 @@ describe('modelos de suplemento (D-166, CA-573, CA-574)', () => {
     repo.salvarDe({ ...vitD, nome: 'Ômega 3' })
     const trocado = repo.salvarDe({ ...vitD, nome: ' omega 3 ', dose: '2 cápsulas' })
     expect(repo.listar()).toHaveLength(1)
-    expect(trocado).toMatchObject({ id: 'm1', nome: 'omega 3', dose: '2 cápsulas', criadoEm: '2026-10-14T12:01:00.000Z', atualizadoEm: '2026-10-14T12:02:00.000Z' })
+    expect(trocado?.trocou).toBe(true)
+    expect(trocado?.modelo).toMatchObject({ id: 'm1', nome: 'omega 3', dose: '2 cápsulas', criadoEm: '2026-10-14T12:01:00.000Z', atualizadoEm: '2026-10-14T12:02:00.000Z' })
   })
 
   it('CA-574: lista em ordem de nome e apaga', () => {
@@ -110,7 +112,7 @@ describe('modelos de suplemento (D-166, CA-573, CA-574)', () => {
 
   it('usar o modelo dá uma cópia com id novo (CB-165)', () => {
     const repo = criarRepositorioModelosSuplemento(new Memoria(), { agora: relogio(), gerarId: ids() })
-    const modelo = repo.salvarDe(vitD)
+    const modelo = repo.salvarDe(vitD)?.modelo
     if (!modelo) throw new Error('modelo não salvo')
     expect(suplementoDoModelo(modelo, 'novo')).toEqual({ ...vitD, id: 'novo' })
   })

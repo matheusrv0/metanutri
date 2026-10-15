@@ -35,13 +35,16 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
   const lista = paciente.suplementos
 
   const mudar = (suplementos: readonly Suplemento[]) => aoAlterar({ suplementos })
+  // CA-578: o motivo do Imprimir desligado. Com a lista vazia, o próprio "Nenhum suplemento." explica.
+  const semNome = suplementosParaDocumento(lista).length === 0
+  const motivo = `${id}-motivo`
 
   const salvarModelo = (suplemento: Suplemento) => {
     const repositorio = criarRepositorioModelosSuplemento(armazenamento)
-    const modelo = repositorio.salvarDe(suplemento)
-    if (!modelo) return
-    // CB-160: o navegador sem espaço não guarda o modelo.
-    setMensagem(repositorio.persistente ? 'Modelo salvo.' : 'Este navegador não guardou o modelo.')
+    const salvo = repositorio.salvarDe(suplemento)
+    if (!salvo) return
+    // CB-160: o navegador sem espaço não guarda o modelo. CA-573: o mesmo nome troca o modelo.
+    setMensagem(!repositorio.persistente ? 'Este navegador não guardou o modelo.' : salvo.trocou ? 'Modelo atualizado.' : 'Modelo salvo.')
   }
 
   return (
@@ -54,7 +57,7 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
               <LayoutTemplate aria-hidden="true" />
               Modelos
             </Button>
-            <Button size="sm" variant="outline" disabled={suplementosParaDocumento(lista).length === 0} onClick={() => setJanela({ tipo: 'imprimir', data: dataDeHoje() })}>
+            <Button size="sm" variant="outline" disabled={semNome} aria-describedby={semNome ? motivo : undefined} onClick={() => setJanela({ tipo: 'imprimir', data: dataDeHoje() })}>
               <Printer aria-hidden="true" />
               Imprimir
             </Button>
@@ -63,7 +66,9 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
       </CardHeader>
 
       {lista.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhum suplemento.</p>
+        <p id={motivo} className="text-sm text-muted-foreground">
+          Nenhum suplemento.
+        </p>
       ) : (
         <div className="flex flex-col gap-3">
           {lista.map((s, i) => (
@@ -78,6 +83,12 @@ export function CartaoSuplementos({ paciente, assinatura, aoAlterar }: CartaoSup
           ))}
         </div>
       )}
+
+      {lista.length > 0 && semNome ? (
+        <p id={motivo} className="text-xs text-muted-foreground">
+          Escreva o nome de um suplemento para imprimir.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button size="sm" variant="lightprimary" onClick={() => mudar([...lista, criarSuplemento(novoId())])}>

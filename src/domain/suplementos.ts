@@ -87,8 +87,8 @@ export const suplementoDoModelo = (modelo: ModeloSuplemento, id: string): Suplem
 
 export interface RepositorioModelosSuplemento {
   listar(): readonly ModeloSuplemento[]
-  /** Guarda o suplemento como modelo; o mesmo nome troca o modelo. Sem nome, `null`. */
-  salvarDe(suplemento: Suplemento): ModeloSuplemento | null
+  /** Guarda o suplemento como modelo; o mesmo nome troca o modelo (`trocou`, CA-573). Sem nome, `null`. */
+  salvarDe(suplemento: Suplemento): { readonly modelo: ModeloSuplemento; readonly trocou: boolean } | null
   excluir(id: string): void
   readonly persistente: boolean
 }
@@ -155,7 +155,7 @@ export function criarRepositorioModelosSuplemento(armazenamento: Armazenamento |
       const igual = lista.find((m) => chaveDoNome(m.nome) === chaveDoNome(nome))
       const modelo: ModeloSuplemento = igual ? { ...igual, ...campos, atualizadoEm: quando } : { id: gerarId(), ...campos, criadoEm: quando, atualizadoEm: quando }
       gravar(igual ? lista.map((m) => (m.id === igual.id ? modelo : m)) : [...lista, modelo])
-      return modelo
+      return { modelo, trocou: igual !== undefined }
     },
 
     excluir(id) {
