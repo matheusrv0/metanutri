@@ -309,6 +309,37 @@
   border-bottom: 1px solid var(--border-default);
 }
 
+/* ---------- O papel: as folhas do paciente são sempre claras ----------
+ * A prévia e o papel usam o tema claro, mesmo com o app no escuro (spec impressao-do-plano, D-180): o PDF de
+ * 15/10/2026 saiu do tema escuro com o horário em marfim e as opções em caixas quase pretas. Os semânticos voltam
+ * ao claro aqui; a ponte do shadcn é calculada no :root, então ela é declarada de novo para ler os valores daqui.
+ */
+.folha-dieta,
+.folha-documento {
+  color-scheme: light;
+  --bg-page: var(--gray-0);
+  --surface-card: var(--gray-0);
+  --surface-sunken: var(--gray-50);
+  --surface-inverse: var(--teal-900);
+  --text-strong: var(--ink-900);
+  --text-body: var(--ink-800);
+  --text-muted: var(--gray-700);
+  --text-subtle: var(--gray-500);
+  --border-subtle: var(--gray-200);
+  --border-default: var(--gray-300);
+  --border-strong: var(--gray-400);
+
+  --background: var(--bg-page);
+  --foreground: var(--text-body);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-body);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--text-muted);
+  --border: var(--border-subtle);
+  --primary: var(--surface-inverse);
+  --heading: var(--text-strong);
+}
+
 /* ---------- Impressão: só a folha da dieta chega ao papel ---------- */
 @media print {
   @page {
@@ -353,13 +384,27 @@
     max-width: none !important;
   }
 
-  /* As caixas cinza das opções e a régua da marca também vão para o papel (e nas folhas do paciente). */
+  /* No papel, a letra é preta (CA-621). As marcas da lista de exames são fundo: vão para o papel mesmo sem
+     "Gráficos de fundo". */
   .folha-dieta,
   .folha-documento {
     max-width: none;
     padding: 0;
+    --text-strong: #000;
+    --text-body: #000;
+    --text-muted: #333;
+    --text-subtle: #555;
+    --border-subtle: #bbb;
+    --border-default: #666;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Com "Gráficos de fundo" ligado e o app no escuro, nada escuro em volta da folha (CA-622). */
+  body > [role='dialog']:has(.area-impressao),
+  .area-impressao {
+    color-scheme: light;
+    background: #fff !important;
   }
 }
 
