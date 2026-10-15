@@ -10,6 +10,7 @@
 // dos erros e o da busca da bandeira não estão confirmados: tudo o que vem da operadora é
 // lido sem confiar no formato, e o que não se reconhece vira "não sei" (foco 3).
 import type { CampoSeguro, DadosDoCartao } from '@/domain/cartao.ts'
+import { NONCE_DO_ANTIFRAUDE } from '@/seguranca/csp.ts'
 import {
   ErroDoCartao,
   URL_DA_FONTE,
@@ -39,7 +40,12 @@ interface InstanciaDoSdk {
   getPaymentMethods(filtro: { readonly bin: string }): Promise<unknown>
 }
 
-export type ConstrutorDoSdk = new (chave: string, opcoes: { readonly locale: 'pt-BR' }) => InstanciaDoSdk
+/**
+ * `deviceProfileCspNonce` (spec seguranca-lote-4, DP-CSP-3): o SDK escreve na página o script do antifraude, que muda a
+ * cada visita. Com o nonce da regra de conteúdo (src/seguranca/csp.ts), ele roda; sem o nonce, a CSP o bloquearia e o
+ * código do cartão sairia sem o aparelho.
+ */
+export type ConstrutorDoSdk = new (chave: string, opcoes: { readonly locale: 'pt-BR'; readonly deviceProfileCspNonce: string }) => InstanciaDoSdk
 
 const construtorGlobal = (): ConstrutorDoSdk | null => {
   const construtor: unknown = (globalThis as unknown as { readonly MercadoPago?: unknown }).MercadoPago
@@ -244,7 +250,7 @@ export function criarProcessadorMercadoPago(chave: string, opcoes: OpcoesDoProce
       const Construtor = await carregar()
       // O formulário pode ter fechado enquanto o script chegava (e o React monta duas vezes no modo estrito).
       if (!vivo) return
-      const instancia = instancias.get(chave) ?? new Construtor(chave, { locale: 'pt-BR' })
+      const instancia = instancias.get(chave) ?? new Construtor(chave, { locale: 'pt-BR', deviceProfileCspNonce: NONCE_DO_ANTIFRAUDE })
       instancias.set(chave, instancia)
       sdk = instancia
       await new Promise<void>((resolver, rejeitar) => {

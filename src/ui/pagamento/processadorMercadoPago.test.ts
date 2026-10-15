@@ -1,3 +1,4 @@
+import { diretivasDaPolitica, NONCE_DO_ANTIFRAUDE } from '@/seguranca/csp.ts'
 import { ErroDoCartao, type EventoDosCampos, type MontagemDosCampos } from './processadorCartao.ts'
 import {
   carregarSdk,
@@ -54,7 +55,7 @@ class CampoFalso {
 
 const sdk = {
   campos: [] as CampoFalso[],
-  construidos: [] as { readonly chave: string; readonly locale: string }[],
+  construidos: [] as { readonly chave: string; readonly locale: string; readonly deviceProfileCspNonce?: string }[],
   bins: [] as string[],
   tokens: [] as unknown[],
   metodos: async (): Promise<unknown> => ({ results: [] }),
@@ -74,8 +75,8 @@ class MercadoPagoFalso {
     },
   }
 
-  constructor(chave: string, opcoes: { readonly locale: string }) {
-    sdk.construidos.push({ chave, locale: opcoes.locale })
+  constructor(chave: string, opcoes: { readonly locale: string; readonly deviceProfileCspNonce?: string }) {
+    sdk.construidos.push({ chave, ...opcoes })
   }
 
   getPaymentMethods(filtro: { readonly bin: string }) {
@@ -170,10 +171,20 @@ describe('o script dos campos seguros (R-35, CB-88)', () => {
   })
 })
 
+describe('o antifraude da operadora com a regra de conteúdo (spec seguranca-lote-4, DP-CSP-3)', () => {
+  it('CA-486: o SDK recebe o nonce que a CSP libera, e o script do antifraude que ele escreve na página pode rodar', async () => {
+    await abrir()
+    const nonce = sdk.construidos[0]?.deviceProfileCspNonce
+    expect(nonce).toBe(NONCE_DO_ANTIFRAUDE)
+    const scripts = diretivasDaPolitica({ supabase: null }).find(([nome]) => nome === 'script-src')?.[1] ?? []
+    expect(scripts).toContain(`'nonce-${nonce ?? ''}'`)
+  })
+})
+
 describe('os três campos (D-66, CA-368)', () => {
   it('cria número, validade e código nos alvos, com o estilo, a fonte do site e o texto de cada um', async () => {
     const { montagem } = await abrir()
-    expect(sdk.construidos).toEqual([{ chave: 'APP_USR-chave-de-teste', locale: 'pt-BR' }])
+    expect(sdk.construidos).toEqual([{ chave: 'APP_USR-chave-de-teste', locale: 'pt-BR', deviceProfileCspNonce: NONCE_DO_ANTIFRAUDE }])
     expect(sdk.campos.map((c) => [c.tipo, c.alvo])).toEqual([
       ['cardNumber', 'cartao-numero'],
       ['expirationDate', 'cartao-validade'],
