@@ -38,6 +38,11 @@ Em português simples, o que já está no MetaNutri:
 - **Texto digitado é sempre texto.** Nome, observação, missão ou qualquer outro campo aparece como foi escrito;
   código colado num campo não roda, nem na tela, nem na folha impressa, nem no Word.
 - **O site não abre dentro de outro site**, para ninguém disfarçar a tela do MetaNutri.
+- **Regra de conteúdo (CSP).** O navegador só roda scripts do próprio site, dos campos do cartão do Mercado Pago e da
+  verificação contra robôs do Cloudflare, e só conversa com os serviços que o site usa. O teste `npm run test:csp`
+  confere isso com os scripts de verdade.
+- **Pacotes conferidos.** A publicação para quando o `npm audit` acusa alerta alto ou crítico num pacote que vai para o
+  site.
 
 ## Os testes de segurança
 

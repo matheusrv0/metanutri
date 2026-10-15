@@ -61,10 +61,10 @@ const SEM_HTML_CRU_SINTAXE = [
   { selector: "CallExpression[callee.property.name=/^(write|writeln)$/][callee.object.property.name='document']", message: MENSAGEM_HTML_CRU },
 ]
 
-const ARQUIVOS_DE_TESTE = ['**/*.test.{ts,tsx}']
+const ARQUIVOS_DE_TESTE = ['**/*.test.{ts,tsx}', '**/*.test-utils.{ts,tsx}']
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'dados-brutos', 'design-system/referencia'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'dados-brutos', 'design-system/referencia', '.claude'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.strict],
