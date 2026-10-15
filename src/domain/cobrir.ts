@@ -2,6 +2,7 @@
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
 import { ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
+import { casaRestricao } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -95,6 +96,8 @@ export interface OpcoesCobrir {
   readonly porcaoMaximaG?: number
   /** Ids de alimentos que o usuário ocultou para este caso (CA-40). */
   readonly ocultos?: ReadonlySet<number>
+  /** O que o paciente não come; filtra antes da escolha das 5, para não deixar a gaveta vazia (CA-675). */
+  readonly restricoes?: readonly string[]
 }
 
 /**
@@ -148,12 +151,14 @@ export function sugerirParaCobrir(
   if (!(porcaoMaxima > 0)) throw new RangeError(`Porção máxima inválida: ${porcaoMaxima} g.`)
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
+  const restricoes = opcoes.restricoes ?? []
 
   const candidatas: (Sugestao & { readonly comum: boolean; readonly magro: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
     if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
+    if (casaRestricao(alimento.descricao, restricoes)) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
@@ -213,7 +218,7 @@ export function sugerirParaCobrir(
     // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento de rotina cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
+        ? `Nenhum alimento de rotina${restricoes.length > 0 ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
         : null,
   }
 }

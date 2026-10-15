@@ -2,7 +2,6 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
-import { casaRestricao } from '@/domain/restricoes.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
@@ -71,10 +70,12 @@ export function GavetaCobrir({
             incluirIngredientes: prefs.incluirIngredientes,
             // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
             ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais(armazenamento)]),
+            // A restrição filtra antes da escolha das 5 (spec sugestoes-com-criterio, CA-675).
+            restricoes,
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento],
+    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, restricoes],
   )
 
   const ocultar = (alimentoId: number) => {
@@ -137,7 +138,7 @@ export function GavetaCobrir({
         ) : null}
 
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
-          {(resultado?.sugestoes ?? []).filter((s) => !casaRestricao(s.descricao, restricoes)).map((s) => {
+          {(resultado?.sugestoes ?? []).map((s) => {
             const medida = medidaEquivalente(s.alimentoId, s.gramas)
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">

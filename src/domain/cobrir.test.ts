@@ -357,6 +357,22 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     expect(ordem).toEqual([62, 63, 60, 61])
   })
 
+  it('CA-675: a restrição do paciente filtra antes da escolha das 5', () => {
+    const queijo = (id: number, kcal: number) => comoNaTaco(alimento(id, `Queijo ${id}`, { energia_kcal: kcal, ferro_mg: 40 }), `Grupo ${id}`)
+    const queijos = [queijo(70, 10), queijo(71, 11), queijo(72, 12), queijo(73, 13), queijo(74, 14)]
+    const verdura = comoNaTaco(alimento(75, 'Couve, refogada', { energia_kcal: 90, ferro_mg: 40 }), 'Verduras')
+    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: [...queijos, verdura], restricoes: ['queijo'] })
+    expect(r.sugestoes.map((s) => s.alimentoId)).toEqual([75])
+  })
+
+  it('CA-675: se a restrição tira tudo, a mensagem diz isso', () => {
+    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, restricoes: ['rico', 'pobre'] })
+    expect(r.sugestoes).toEqual([])
+    expect(r.motivoSemSugestao).toBe(
+      'Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.',
+    )
+  })
+
   it('CA-656: quando só item fora da regra cobriria, explica e aponta a busca', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })

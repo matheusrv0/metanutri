@@ -18,7 +18,15 @@ function planoComArroz(): Plano {
   return adicionarItem(plano, almoco.id, 'principal', { alimentoId: 3, gramas: 200 }, ids)
 }
 
-function Anfitriao({ inicial, planoInicial }: { readonly inicial?: Partial<Caso>; readonly planoInicial?: Plano }) {
+function Anfitriao({
+  inicial,
+  planoInicial,
+  restricoes = [],
+}: {
+  readonly inicial?: Partial<Caso>
+  readonly planoInicial?: Plano
+  readonly restricoes?: readonly string[]
+}) {
   const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...inicial })
   const [plano, setPlano] = useState<Plano>(planoInicial ?? criarPlanoPadrao(ids))
   return (
@@ -26,6 +34,7 @@ function Anfitriao({ inicial, planoInicial }: { readonly inicial?: Partial<Caso>
       caso={caso}
       plano={plano}
       gastoEnergetico={1800}
+      restricoes={restricoes}
       aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
       aoAlterarPlano={setPlano}
       gerarId={ids}
@@ -148,6 +157,21 @@ describe('Etapa 3: adequação', () => {
 
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: /^Nunca sugerir/ }))
     expect(lista()[0]?.textContent).not.toBe(primeiro)
+  })
+
+  it('CA-675: a restrição do paciente não tira vaga das 5 sugestões', async () => {
+    // Primeiro, sem restrição: o nome-base da primeira sugestão vira a restrição do paciente.
+    const sem = render(<Anfitriao inicial={adulta} planoInicial={planoComArroz()} />)
+    const primeira = primeiraSugestao(await abrirCobrir(userEvent.setup(), 'Ferro')).querySelector('p')?.textContent ?? ''
+    const termo = (primeira.split(',')[0] ?? '').trim().toLowerCase()
+    expect(termo.length).toBeGreaterThanOrEqual(3)
+    sem.unmount()
+
+    render(<Anfitriao inicial={adulta} planoInicial={planoComArroz()} restricoes={[termo]} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    const sugestoes = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem')
+    expect(sugestoes).toHaveLength(5)
+    for (const s of sugestoes) expect(s.textContent?.toLowerCase()).not.toContain(termo)
   })
 
   it('CA-36a: incluir ingredientes muda a lista de sugestões', async () => {
