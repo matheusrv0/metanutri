@@ -174,7 +174,7 @@ describe('Painel: Hoje e esta semana', () => {
     await usuario.click(linha('Ana Souza').getByRole('button', { name: 'Lembrar Ana Souza da consulta pelo WhatsApp' }))
     const dialogo = within(screen.getByRole('dialog', { name: 'Enviar pelo WhatsApp' }))
     expect(dialogo.getByLabelText('Mensagem')).toHaveValue('Oi, Ana! Lembrete: sua consulta é dia 16/10 (sexta-feira) às 14:30. Até lá!')
-    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5511987654321\?text=Oi%2C%20Ana!/)
+    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5511987654321\?text=Oi%2C%20Ana!/)
   })
 
   it('CA-511 e CA-522: aniversários entram no bloco, sem selo, com os parabéns no WhatsApp', async () => {
@@ -195,6 +195,25 @@ describe('Painel: Hoje e esta semana', () => {
     expect(linha('Ivo Prado').queryByText('Sumindo')).not.toBeInTheDocument()
     await usuario.click(linha('Ivo Prado').getByRole('button', { name: 'Mandar parabéns para Ivo Prado pelo WhatsApp' }))
     expect(within(screen.getByRole('dialog')).getByLabelText('Mensagem')).toHaveValue('Feliz aniversário, Ivo! Um ótimo dia para você.')
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+
+    // Antes do dia, os parabéns vão adiantados.
+    await usuario.click(linha('Juca Alves').getByRole('button', { name: 'Mandar parabéns para Juca Alves pelo WhatsApp' }))
+    expect(within(screen.getByRole('dialog')).getByText(/não tem telefone/)).toBeInTheDocument()
+  })
+
+  it('CA-511: antes do dia, o texto dos parabéns sai adiantado', async () => {
+    const usuario = userEvent.setup()
+    render(<Anfitriao fichas={[{ id: 'p2', nome: 'Juca Alves', telefone: TELEFONE, nascimento: '1985-10-17' }]}>{painel()}</Anfitriao>)
+    await usuario.click(linha('Juca Alves').getByRole('button', { name: 'Mandar parabéns para Juca Alves pelo WhatsApp' }))
+    expect(within(screen.getByRole('dialog')).getByLabelText('Mensagem')).toHaveValue('Feliz aniversário adiantado, Juca! Que o seu dia seja ótimo.')
+  })
+
+  it('CA-510: a consulta de hoje vai no lembrete como "hoje às 16:00"', async () => {
+    const usuario = userEvent.setup()
+    render(<Anfitriao fichas={[{ id: 'p1', nome: 'Ana Souza', telefone: TELEFONE, proximaConsulta: '2026-10-14T16:00' }]}>{painel()}</Anfitriao>)
+    await usuario.click(linha('Ana Souza').getByRole('button', { name: 'Lembrar Ana Souza da consulta pelo WhatsApp' }))
+    expect(within(screen.getByRole('dialog')).getByLabelText('Mensagem')).toHaveValue('Oi, Ana! Lembrete: sua consulta é hoje às 16:00. Até lá!')
   })
 
   it('CA-523: perto da meia-noite, hoje é o dia de Brasília', () => {

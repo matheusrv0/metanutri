@@ -44,7 +44,7 @@ export function HojeEEstaSemana({ itens, hoje, aoCadastrarTelefone }: HojeEEstaS
                     {link ? <SeloEstado estado={estadoDoAcompanhamento(link, hoje)} className="whitespace-nowrap" /> : null}
                     <BotaoWhatsApp
                       paciente={item.paciente}
-                      texto={item.tipo === 'aniversario' ? textoDeParabens(nome) : textoDoLembrete(nome, item)}
+                      texto={item.tipo === 'aniversario' ? textoDeParabens(nome, item.dia !== hoje) : textoDoLembrete(nome, item, hoje)}
                       aoCadastrarTelefone={aoCadastrarTelefone}
                       rotuloCompacto={
                         item.tipo === 'aniversario' ? `Mandar parabéns para ${nome || 'o paciente'} pelo WhatsApp` : `Lembrar ${nome || 'o paciente'} da consulta pelo WhatsApp`

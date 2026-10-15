@@ -20,9 +20,13 @@ describe('Enviar pelo WhatsApp', () => {
   it('CA-503: com telefone, o diálogo mostra para quem vai, o texto pronto editável e "Abrir no WhatsApp"', async () => {
     const { usuario } = montar(ANA)
     const dialogo = await abrir(usuario)
-    expect(dialogo.getByText(/Ana Souza/)).toHaveTextContent('(11) 98765-4321')
+    expect(dialogo.getByText('Para Ana Souza, (11) 98765-4321. Quem envia é você.')).toBeInTheDocument()
     expect(dialogo.getByLabelText('Mensagem')).toHaveValue('Oi, Ana! Tudo bem?')
-    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' })).toHaveAttribute('href', linkDoWhatsApp('5511987654321', 'Oi, Ana! Tudo bem?'))
+    // "(abre em nova aba)" é só para o leitor de tela.
+    const aviso = dialogo.getByText('(abre em nova aba)')
+    expect(aviso).toHaveClass('sr-only')
+    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' })).toContainElement(aviso)
+    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' })).toHaveAttribute('href', linkDoWhatsApp('5511987654321', 'Oi, Ana! Tudo bem?'))
   })
 
   it('CA-504: o texto editado vai codificado no wa.me, numa aba nova e sem passar o endereço do MetaNutri', async () => {
@@ -31,7 +35,7 @@ describe('Enviar pelo WhatsApp', () => {
     const caixa = dialogo.getByLabelText('Mensagem')
     await usuario.clear(caixa)
     await usuario.type(caixa, 'Olá & até já? #1')
-    const link = dialogo.getByRole('link', { name: 'Abrir no WhatsApp' })
+    const link = dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' })
     expect(link).toHaveAttribute('href', 'https://wa.me/5511987654321?text=Ol%C3%A1%20%26%20at%C3%A9%20j%C3%A1%3F%20%231')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link.getAttribute('rel')?.split(' ').sort()).toEqual(['noopener', 'noreferrer'])
@@ -41,7 +45,7 @@ describe('Enviar pelo WhatsApp', () => {
     const { usuario } = montar(ANA)
     const dialogo = await abrir(usuario)
     await usuario.clear(dialogo.getByLabelText('Mensagem'))
-    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' })).toHaveAttribute('href', 'https://wa.me/5511987654321')
+    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' })).toHaveAttribute('href', 'https://wa.me/5511987654321')
   })
 
   it('reabrir começa de novo do texto pronto', async () => {

@@ -23,7 +23,7 @@ interface DialogoWhatsAppProps {
 function explicacao(paciente: PacienteDoWhatsApp | null, numero: string | null): string {
   if (paciente === null) return 'Este plano não tem paciente vinculado. Vincule um paciente em Dados e medidas para usar o telefone da ficha.'
   const nome = paciente.nome.trim()
-  if (numero !== null) return `Para ${nome ? `${nome}, ` : ''}${formatarTelefone(numero)}. Quem envia é você, pelo seu WhatsApp.`
+  if (numero !== null) return `Para ${nome ? `${nome}, ` : ''}${formatarTelefone(numero)}. Quem envia é você.`
   const deQuem = nome ? `de ${nome}` : 'deste paciente'
   return paciente.telefone.trim() === '' ? `A ficha ${deQuem} não tem telefone.` : `O telefone da ficha ${deQuem} não é um número do Brasil com DDD.`
 }
@@ -60,7 +60,7 @@ export function DialogoWhatsApp({ paciente, texto, aoFechar, aoCadastrarTelefone
             // Um link, não um botão: abrir o WhatsApp é navegação, numa aba nova, sem passar o endereço daqui.
             <a className={buttonVariants()} href={linkDoWhatsApp(numero, mensagem)} target="_blank" rel="noopener noreferrer" onClick={aoFechar}>
               <MessageCircle aria-hidden="true" />
-              Abrir no WhatsApp
+              Abrir no WhatsApp <span className="sr-only">(abre em nova aba)</span>
             </a>
           ) : paciente && aoCadastrarTelefone ? (
             <Button

@@ -47,7 +47,7 @@ test('CA-528: a consulta marcada na ficha aparece no Painel e o WhatsApp abre o 
   await expect(dialogo).toContainText('(11) 98765-4321')
   await expect(dialogo.getByLabel('Mensagem')).toHaveValue(/^Oi, Ana! Lembrete: sua consulta é dia \d{2}\/\d{2} \([a-zçá-]+\) às 14:30\. Até lá!$/)
 
-  const abrir = dialogo.getByRole('link', { name: 'Abrir no WhatsApp' })
+  const abrir = dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' })
   await expect(abrir).toHaveAttribute('href', /^https:\/\/wa\.me\/5511987654321\?text=Oi%2C%20Ana!%20Lembrete/)
   const [aba] = await Promise.all([context.waitForEvent('page'), abrir.click()])
   await aba.waitForLoadState()
@@ -100,7 +100,7 @@ test('CA-527: em 360 px, ficha, Painel e diálogo cabem sem rolar para o lado, c
   const dialogo = page.getByRole('dialog', { name: 'Enviar pelo WhatsApp' })
   await expect(dialogo).toBeVisible()
   await semRolagemLateral()
-  await alturaMinima(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' }))
+  await alturaMinima(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' }))
   await alturaMinima(dialogo.getByRole('button', { name: 'Cancelar' }))
 })
 

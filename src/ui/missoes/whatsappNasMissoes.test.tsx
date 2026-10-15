@@ -92,7 +92,7 @@ describe('WhatsApp no cartão do link (CA-508)', () => {
     const texto = (dialogo.getByLabelText('Mensagem') as HTMLTextAreaElement).value
     expect(texto.startsWith('Oi, Ana! ')).toBe(true)
     expect(texto).toContain(enderecoDoPaciente(l.token))
-    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5511987654321\?text=/)
+    expect(dialogo.getByRole('link', { name: 'Abrir no WhatsApp (abre em nova aba)' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5511987654321\?text=/)
   })
 
   it('o link criado antes do vínculo usa o paciente do plano; sem telefone, leva à ficha', async () => {

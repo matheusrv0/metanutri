@@ -49,10 +49,22 @@ export function formatarTelefone(normalizado: string): string {
   return `(${ddd}) ${numero.slice(0, corte)}-${numero.slice(corte)}`
 }
 
+/** A metade solta de um par (o que sobra ao cortar um emoji no meio), que o encodeURIComponent não aceita. */
+const METADE_SOLTA = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
+
+/** O caractere de troca, U+FFFD. */
+const TROCA = String.fromCharCode(0xfffd)
+
+/** O texto com cada metade solta trocada por U+FFFD (CB-142). Usa o do navegador quando existe. */
+function bemFormado(texto: string): string {
+  const doNavegador = (texto as unknown as { readonly toWellFormed?: () => string }).toWellFormed
+  return typeof doNavegador === 'function' ? doNavegador.call(texto) : texto.replace(METADE_SOLTA, TROCA)
+}
+
 /** O endereço que abre a conversa. Sem texto, abre a conversa vazia (CB-141); com texto, codificado (CB-142). */
 export function linkDoWhatsApp(numero: string, texto: string): string {
   const base = `https://wa.me/${numero}`
-  return texto.trim() === '' ? base : `${base}?text=${encodeURIComponent(texto)}`
+  return texto.trim() === '' ? base : `${base}?text=${encodeURIComponent(bemFormado(texto))}`
 }
 
 /** "  Ana   Souza " → "Ana". Sem nome, vazio. */
@@ -81,14 +93,16 @@ export function textoDeContato(nome: string, estado: keyof typeof ABERTURA_DO_CO
   return `${saudacao(nome)} Tudo bem? ${ABERTURA_DO_CONTATO[estado]} Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.`
 }
 
-/** No bloco "Hoje e esta semana": "sua consulta é dia X às Y" (CA-510). */
-export function textoDoLembrete(nome: string, consulta: { readonly dia: string; readonly hora: string | null }): string {
+/** No bloco "Hoje e esta semana": "sua consulta é dia X às Y", ou "é hoje às Y" no próprio dia (CA-510). */
+export function textoDoLembrete(nome: string, consulta: { readonly dia: string; readonly hora: string | null }, hoje: string): string {
+  const dia = consulta.dia === hoje ? 'hoje' : `dia ${dataCurta(consulta.dia)} (${diaDaSemana(consulta.dia)})`
   const horario = consulta.hora ? ` às ${consulta.hora}` : ''
-  return `${saudacao(nome)} Lembrete: sua consulta é dia ${dataCurta(consulta.dia)} (${diaDaSemana(consulta.dia)})${horario}. Até lá!`
+  return `${saudacao(nome)} Lembrete: sua consulta é ${dia}${horario}. Até lá!`
 }
 
-/** No bloco "Hoje e esta semana", para o aniversariante (CA-511). */
-export function textoDeParabens(nome: string): string {
+/** No bloco "Hoje e esta semana", para o aniversariante; antes do dia, os parabéns vão adiantados (CA-511). */
+export function textoDeParabens(nome: string, adiantado: boolean): string {
   const primeiro = primeiroNome(nome)
-  return `Feliz aniversário${primeiro ? `, ${primeiro}` : ''}! Um ótimo dia para você.`
+  const para = primeiro ? `, ${primeiro}` : ''
+  return adiantado ? `Feliz aniversário adiantado${para}! Que o seu dia seja ótimo.` : `Feliz aniversário${para}! Um ótimo dia para você.`
 }
