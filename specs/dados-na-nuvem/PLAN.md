@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** concluído, com os ajustes antes do merge (08/10/2026); rodada da integração das novidades em 15/10/2026 (T39 a T42) e a revisão final dela (T43 a T50)
+**Status:** concluído, com os ajustes antes do merge (08/10/2026); rodada da integração das novidades em 15/10/2026 (T39 a T42) a revisão final dela (T43 a T50) e a rodada 3 (T51 a T58)
 
 ## Abordagem
 
@@ -217,7 +217,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
 - [x] **T55** — Fluxo normal: teste do relógio atrasado (CA-608), sem mudar código.
 - [x] **T56** — O teste de navegador do CA-603 leva o ID no nome (`e2e/csp.spec.ts`).
 - [x] **T57** — Nota de publicação e relatório: o risco que sobra (R8).
-- [ ] **T58** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
+- [x] **T58** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
   `conferir-publicacao`, `npm run test:csp` e as simulações `reabrir.mts`, `r8.mts` e `ordem.mts`.
 ## Mapa de cobertura
 
@@ -493,3 +493,8 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
   (N1, com o roteiro mais velho, não entra em `mantidas` e não sobe; no fluxo real quem devolve é N2, coberto pelo
   CA-599; a última linha da simulação só acontece se N1 subir por outro motivo antes de N2, o resto do R8),
   `simular.mts` e `simular2.mts` passam.
+- [x] Rodada 3 (15/10/2026): `npm run check` (186 arquivos, 3.063 testes; o aviso antigo de `MolduraPublica.tsx`),
+  `npx playwright test` 55 de 55 (porta própria), `npm run build`, `conferir-publicacao` e `npm run test:csp` (3 de 3)
+  verdes. Simulações: `reabrir.mts` e `r8.mts` param no `JSON.parse` da cópia que N1 sobe, porque ela não leva mais o
+  roteiro velho; numa cópia com guarda nesse ponto (fora do repositório), N2 fica com `r2 novo` e com `['Zinco', 'Ferro
+  NOVO']`. `ordem.mts`: só a Bia ganha marca.
