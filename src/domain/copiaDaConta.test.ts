@@ -804,6 +804,21 @@ describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nu
       aplicarCopia(novo, c5)
       expect(nomesAqui(novo)).toEqual(['Ferro NOVO', 'Zinco NOVO'])
     })
+    it('CA-608: fluxo normal com o relógio de X atrasado: X edita depois de N2 com uma hora menor, e N2 fica com a edição de X', () => {
+      // N2 mexeu no roteiro e no modelo "a" às 5h. X, com o relógio atrasado, mexe nos dois depois, marcando 3h.
+      const n2 = comModelos([modelo('a', 'Ferro de N2', T(5)), modelo('b', 'Zinco', T(1))], { 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(1), [ROT]: T(5) })
+      n2.setItem(ROTEIRO, rot('de N2'))
+      const deX = copia({
+        'metanutri:pacientes': pacientes(),
+        [ROTEIRO]: rot('de X'),
+        [MODELOS]: JSON.stringify([modelo('a', 'Ferro de X', T(3)), modelo('b', 'Zinco', T(1))]),
+        [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'modelos-suplemento/a': T(3), 'modelos-suplemento/b': T(1), [ROT]: T(3) }),
+      })
+      expect(aplicarCopia(n2, deX).mantidas).toEqual([])
+      expect(textoDoRoteiro(n2.getItem(ROTEIRO))).toBe('de X')
+      expect(nomesAqui(n2)).toEqual(['Ferro de X', 'Zinco'])
+      expect(n2.getItem(CHAVE_RETIDOS)).toBeNull()
+    })
     it('CA-604: o item que falta numa lista da cópia, sem marca nem lápide, segue a cópia (fluxo de antes)', () => {
       const arm = comModelos([modelo('a', 'Ferro', T(2)), modelo('b', 'Zinco', T(2))], { 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(2) })
       const semOA = copia({ 'metanutri:pacientes': pacientes(), [MODELOS]: JSON.stringify([modelo('b', 'Zinco', T(2))]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'modelos-suplemento/b': T(2) }) })
