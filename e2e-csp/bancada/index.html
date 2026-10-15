@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bancada da regra de conteúdo</title>
+  </head>
+  <body>
+    <!-- Só o npm run test:csp abre esta página (spec seguranca-lote-4, CA-486). Ela nunca vai para o site. -->
+    <main style="max-width: 24rem; margin: 2rem auto; display: grid; gap: 1rem">
+      <h1>Bancada da regra de conteúdo</h1>
+      <div id="cartao-numero" style="height: 2.75rem; border: 1px solid #888"></div>
+      <div id="cartao-validade" style="height: 2.75rem; border: 1px solid #888"></div>
+      <div id="cartao-codigo" style="height: 2.75rem; border: 1px solid #888"></div>
+      <button id="gerar" type="button">Gerar o código do cartão</button>
+      <div id="verificacao"></div>
+    </main>
+    <script type="module" src="./principal.ts"></script>
+  </body>
+</html>

@@ -25,5 +25,5 @@
 
     "paths": { "@/*": ["./src/*"], "@ds/*": ["./design-system/*"] }
   },
-  "include": ["src", "design-system", "vitest.setup.ts"]
+  "include": ["src", "design-system", "vitest.setup.ts", "e2e-csp/bancada"]
 }
