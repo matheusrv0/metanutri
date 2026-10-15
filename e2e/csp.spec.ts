@@ -149,7 +149,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   expect(violacoes).toEqual([])
 })
 
-test('CA-486: o aplicativo instala (PWA): o navegador lê o manifest e o service worker liga, sem nenhuma violação', async ({ page }) => {
+test('CA-486 e CA-603: o aplicativo instala (PWA), com o registro dentro do pacote: o navegador lê o manifest e o service worker liga, sem script escrito na página e sem nenhuma violação', async ({ page }) => {
   const violacoes = await vigiar(page)
   await page.goto('/')
   const estado = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null)
