@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
-import { FRASE_PROPOSTA } from '@/domain/documentoDoPaciente.ts'
+import { FRASE_PROPOSTA, linhaFinaDoDocumento } from '@/domain/documentoDoPaciente.ts'
 import type { AssinaturaDaFolha } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { LinhasDeAssinatura } from './LinhasDeAssinatura.tsx'
+import { regraDaLinhaFina } from './linhaFina.ts'
 import { QuemAssina } from './QuemAssina.tsx'
 
 interface FolhaDocumentoProps {
@@ -26,9 +27,13 @@ interface FolhaDocumentoProps {
 export function FolhaDocumento({ titulo, paciente, data, assinatura, proposta, children }: FolhaDocumentoProps) {
   const perfil = lerPerfil(useArmazenamento())
   const linha = [paciente.trim() || 'Paciente sem nome', dataPorExtenso(data)].filter(Boolean).join(' · ')
+  const linhaFina = linhaFinaDoDocumento(titulo, paciente, assinatura)
 
   return (
     <article aria-label={titulo} className="folha-documento mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm leading-relaxed text-foreground sm:p-10">
+      {/* Se passar de uma página, as seguintes trazem o título, o paciente e quem assina (como a dieta, CA-316). */}
+      <style>{regraDaLinhaFina(linhaFina.esquerda, linhaFina.direita)}</style>
+
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-3">
           {perfil.logo ? <img src={perfil.logo} alt="" className="h-12 w-auto self-start" /> : <Logo variante="claro" tamanho={24} />}
@@ -49,7 +54,8 @@ export function FolhaDocumento({ titulo, paciente, data, assinatura, proposta, c
 
       {children}
 
-      <div className="break-inside-avoid">
+      {/* A assinatura não fica sozinha no topo de uma página: vai junto com o último item. */}
+      <div className="break-before-avoid break-inside-avoid">
         <LinhasDeAssinatura assinatura={assinatura} />
       </div>
     </article>

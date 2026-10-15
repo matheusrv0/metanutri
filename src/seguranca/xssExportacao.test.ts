@@ -103,6 +103,26 @@ describe('CA-487: código malicioso sai escapado no que o app exporta', () => {
       expect(texto).toContain(malicioso(rotulo))
     }
 
+    // CA-586 (spec anamnese-e-prescricoes): o suplemento da ficha no Word.
+    const comSuplemento = criarAconselhamento({
+      caso,
+      plano,
+      antropometria: avaliarAntropometria(caso),
+      buscar: buscarAlimento,
+      suplementos: [
+        {
+          id: 's1',
+          nome: malicioso('nome do suplemento'),
+          dose: malicioso('dose do suplemento'),
+          horario: '',
+          duracao: '',
+          observacao: malicioso('observacao do suplemento'),
+        },
+      ],
+    })
+    const textoSuplemento = decodificar((await partesDoDocx(await gerarBytes(comSuplemento)))['word/document.xml'] ?? '')
+    for (const rotulo of ['nome do suplemento', 'dose do suplemento', 'observacao do suplemento']) expect(textoSuplemento).toContain(malicioso(rotulo))
+
     const comNutricionista = criarAconselhamento({
       caso: { ...caso, estagiario: '', preceptor: '' },
       plano,

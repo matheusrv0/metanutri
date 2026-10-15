@@ -5,14 +5,14 @@ export function QuemAssina({ assinatura }: { readonly assinatura: AssinaturaDaFo
   if (assinatura.tipo === 'vazia') return null
   if (assinatura.tipo === 'nutricionista') {
     return (
-      <div className="text-right">
+      <div className="text-left sm:text-right">
         <p className="text-base font-semibold text-heading">{assinatura.linha || 'Nutricionista'}</p>
         {assinatura.linha ? <p className="text-muted-foreground">Nutricionista</p> : null}
       </div>
     )
   }
   return (
-    <div className="text-right">
+    <div className="text-left sm:text-right">
       {assinatura.estagiario ? (
         <p>
           <span className="text-muted-foreground">Estagiário(a): </span>

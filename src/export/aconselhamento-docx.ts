@@ -64,7 +64,7 @@ function blocoSuplementos(suplementos: readonly Suplemento[] | undefined, propos
       const linha = descreverSuplemento(s)
       const observacao = s.observacao.trim()
       return [
-        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: s.nome.trim(), bold: true }), ...(linha ? [new TextRun({ text: ` — ${linha}` })] : [])] }),
+        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: s.nome.trim(), bold: true }), ...(linha ? [new TextRun({ text: ` · ${linha}` })] : [])] }),
         ...(observacao ? blocoTexto(observacao) : []),
       ]
     }),

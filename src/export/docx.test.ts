@@ -174,7 +174,7 @@ describe('Suplementos no Word de aconselhamento (spec anamnese-e-prescricoes)', 
       suplementos: [vitD, { ...vitD, id: 's2', nome: '', dose: 'esquecido' }],
     })
     const { texto } = await textoDoDocx(await gerarBytes(doc))
-    const ordem = ['ORIENTAÇÕES NUTRICIONAIS', 'Beber água.', 'SUPLEMENTAÇÃO', 'Vitamina D3 — Dose: 1 cápsula · Horário: No almoço · Por quanto tempo: 3 meses', 'Com comida', 'RECEITAS SAUDÁVEIS'].map((t) =>
+    const ordem = ['ORIENTAÇÕES NUTRICIONAIS', 'Beber água.', 'SUPLEMENTAÇÃO', 'Vitamina D3 · Dose: 1 cápsula · Horário: No almoço · Por quanto tempo: 3 meses', 'Com comida', 'RECEITAS SAUDÁVEIS'].map((t) =>
       texto.indexOf(t),
     )
     expect(ordem.every((i) => i >= 0)).toBe(true)

@@ -25,15 +25,18 @@ export function lembretesDoDia(missoes: readonly Missao[]): readonly Missao[] {
   return missoes.filter((m) => !m.id.startsWith('refeicao-'))
 }
 
+/** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */
+export function assinaturaEmTexto(assinatura: AssinaturaDaFolha): string {
+  return assinatura.tipo === 'nutricionista'
+    ? assinatura.linha
+    : assinatura.tipo === 'estagio'
+      ? [assinatura.estagiario, assinatura.preceptor].filter(Boolean).join(' · ')
+      : ''
+}
+
 /** CA-316: o texto da linha fina do topo, da segunda página em diante. */
 export function linhaFinaDaFolha(caso: Caso, assinatura: AssinaturaDaFolha): { readonly esquerda: string; readonly direita: string } {
-  const direita =
-    assinatura.tipo === 'nutricionista'
-      ? assinatura.linha
-      : assinatura.tipo === 'estagio'
-        ? [assinatura.estagiario, assinatura.preceptor].filter(Boolean).join(' · ')
-        : ''
-  return { esquerda: `Plano alimentar · ${caso.nome.trim() || 'Sem nome'}`, direita }
+  return { esquerda: `Plano alimentar · ${caso.nome.trim() || 'Sem nome'}`, direita: assinaturaEmTexto(assinatura) }
 }
 
 export interface OpcoesImpressao {

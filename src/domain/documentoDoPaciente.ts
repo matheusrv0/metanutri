@@ -4,7 +4,7 @@
 // para o(a) preceptor(a): é a regra de uso não comercial da conta (`conta.ts`) e o que a Lei 8.234/1991 pede
 // de quem ainda não tem CRN. O plano de assinatura não muda as folhas: quem decide é a situação da conta.
 import type { AssinaturaDoPlano } from './assinaturaDoPlano.ts'
-import { assinaturaDaFolha, type AssinaturaDaFolha } from './folhaDieta.ts'
+import { assinaturaDaFolha, assinaturaEmTexto, type AssinaturaDaFolha } from './folhaDieta.ts'
 import type { Caso } from './tipos.ts'
 
 export const FRASE_PROPOSTA = 'Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).'
@@ -31,6 +31,11 @@ const TITULOS: Readonly<Record<TipoDocumento, readonly [normal: string, proposta
 }
 
 export const tituloDoDocumento = (tipo: TipoDocumento, proposta: boolean): string => TITULOS[tipo][proposta ? 1 : 0]
+
+/** CA-576 e CA-580: a linha fina da segunda página em diante, como a da dieta (CA-316): título, paciente e quem assina. */
+export function linhaFinaDoDocumento(titulo: string, paciente: string, assinatura: AssinaturaDaFolha): { readonly esquerda: string; readonly direita: string } {
+  return { esquerda: `${titulo} · ${paciente.trim() || 'Paciente sem nome'}`, direita: assinaturaEmTexto(assinatura) }
+}
 
 /** A data do dia no relógio de quem imprime (AAAA-MM-DD). `toISOString` daria o dia seguinte depois das 21 h no Brasil. */
 export function dataDeHoje(agora: Date = new Date()): string {

@@ -1,6 +1,6 @@
 import type { AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import { criarCasoVazio } from './caso.ts'
-import { assinaturaDoDocumento, dataDeHoje, ehProposta, FRASE_PROPOSTA, propostaNaDieta, tituloDoDocumento } from './documentoDoPaciente.ts'
+import { assinaturaDoDocumento, dataDeHoje, ehProposta, FRASE_PROPOSTA, linhaFinaDoDocumento, propostaNaDieta, tituloDoDocumento } from './documentoDoPaciente.ts'
 
 const ANA: AssinaturaDoPlano = { situacao: 'nutricionista', linhaNutricionista: 'Ana Souza · CRN-6 12345', origem: 'conta', nome: 'Ana Souza', responsavelTecnico: '' }
 const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: null, origem: 'conta', nome: ' Júlia Martins ', responsavelTecnico: 'Carla Mendes' }
@@ -40,6 +40,20 @@ describe('quem assina a folha do paciente (D-167)', () => {
     expect(propostaNaDieta(ANA, { ...caso, preceptor: 'Carla' })).toBe(true)
     expect(propostaNaDieta(null, caso)).toBe(false)
     expect(propostaNaDieta(null, { ...caso, estagiario: 'Júlia' })).toBe(true)
+  })
+})
+
+describe('linha fina das páginas seguintes (CA-576, CA-580)', () => {
+  it('traz o título, o paciente e quem assina, como a dieta', () => {
+    expect(linhaFinaDoDocumento('Suplementação', 'Maria Silva', { tipo: 'nutricionista', linha: 'Ana Souza · CRN-6 12345' })).toEqual({
+      esquerda: 'Suplementação · Maria Silva',
+      direita: 'Ana Souza · CRN-6 12345',
+    })
+    expect(linhaFinaDoDocumento('Proposta de suplementação', '  ', { tipo: 'estagio', estagiario: 'Júlia', preceptor: 'Carla' })).toEqual({
+      esquerda: 'Proposta de suplementação · Paciente sem nome',
+      direita: 'Júlia · Carla',
+    })
+    expect(linhaFinaDoDocumento('Solicitação de exames', 'Ana', { tipo: 'vazia' }).direita).toBe('')
   })
 })
 
