@@ -1,6 +1,7 @@
 // Paciente: a pessoa atendida. Um paciente tem vários planos ao longo do tempo.
 // Fica no mesmo armazenamento local dos planos; nada sai deste aparelho.
 import type { Armazenamento } from './persistencia.ts'
+import { lerConsulta } from './retorno.ts'
 import type { Sexo } from './tipos.ts'
 
 const CHAVE = 'metanutri:pacientes'
@@ -21,6 +22,11 @@ export interface Paciente {
   /** Rotina, preferências e aversões levantadas na anamnese. */
   readonly anamnese: string
   readonly observacoes: string
+  /**
+   * A próxima consulta, na hora de Brasília: `AAAA-MM-DD` ou `AAAA-MM-DDTHH:MM`; nulo quando não há
+   * (spec whatsapp-e-retorno, D-143). Leia sempre por `lerConsulta`.
+   */
+  readonly proximaConsulta: string | null
   readonly criadoEm: string
   readonly atualizadoEm: string
 }
@@ -45,6 +51,7 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     medicamentos: '',
     anamnese: '',
     observacoes: '',
+    proximaConsulta: null,
     criadoEm: agora,
     atualizadoEm: agora,
   }
@@ -107,8 +114,11 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
     try {
       const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE) ?? '[]')
       const lista = Array.isArray(bruto) ? bruto.filter(ehPaciente) : []
-      // Completa campos que versões antigas não tinham.
-      return lista.map((p) => ({ ...criarPacienteVazio(p.id, p.criadoEm ?? agora()), ...p }))
+      // Completa campos que versões antigas não tinham; a consulta estragada vira "sem consulta" (CA-526).
+      return lista.map((p) => {
+        const completo = { ...criarPacienteVazio(p.id, p.criadoEm ?? agora()), ...p }
+        return lerConsulta(completo.proximaConsulta) ? completo : { ...completo, proximaConsulta: null }
+      })
     } catch {
       return [...memoria.values()]
     }
