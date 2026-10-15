@@ -6,8 +6,10 @@ import { cn } from '@ds/lib/cn.ts'
 interface MedidorMacroProps {
   readonly nome: string
   readonly macro: ResultadoMacro
-  /** Texto da meta em uso, ex.: "Meta: 10 a 35% (faixa da idade)". */
+  /** A meta em uso, curta: "10 a 35%" ou "1,2 a 1,6 g/kg · sua meta". */
   readonly meta: string | null
+  /** Mostra o g/kg mesmo com a meta em %: a proteína (spec painel-lateral-enxuto, D-201). */
+  readonly comGPorKg?: boolean | undefined
 }
 
 const COR_MARCADOR: Readonly<Record<EstadoFaixa, string>> = {
@@ -26,12 +28,15 @@ const COR_FRASE: Readonly<Record<EstadoFaixa, string>> = {
  * Onde o macro está na faixa: um trilho com a faixa recomendada em destaque e o
  * marcador do plano. Muda a cada alimento adicionado, e a frase diz se está perto,
  * longe, dentro ou passou — o que o WebDiet mostra e a estudante pediu.
+ *
+ * De relance, gramas e % sem casa decimal; a frase dá a distância exata (D-201).
  */
-export function MedidorMacro({ nome, macro, meta }: MedidorMacroProps) {
+export function MedidorMacro({ nome, macro, meta, comGPorKg = false }: MedidorMacroProps) {
   const medidor = medirMacro(macro)
+  const mostraGPorKg = macro.gPorKg !== null && (comGPorKg || macro.meta?.tipo === 'g_kg')
 
-  const valores = `${formatarNumero(macro.gramas, 1)} g${macro.pctKcal === null ? '' : ` · ${formatarNumero(macro.pctKcal, 1)}%`}${
-    macro.gPorKg === null ? '' : ` · ${formatarNumero(macro.gPorKg, 2)} g/kg`
+  const valores = `${formatarNumero(macro.gramas, 0)} g${macro.pctKcal === null ? '' : ` · ${formatarNumero(macro.pctKcal, 0)}%`}${
+    mostraGPorKg && macro.gPorKg !== null ? ` · ${formatarNumero(macro.gPorKg, 2)} g/kg` : ''
   }`
 
   return (
@@ -67,12 +72,12 @@ export function MedidorMacro({ nome, macro, meta }: MedidorMacroProps) {
           </div>
 
           <div className="flex items-baseline justify-between gap-2">
-            <span className={cn('text-xs font-medium', COR_FRASE[medidor.estado])}>{medidor.frase}</span>
-            {meta ? <span className="text-xs text-muted-foreground">{meta}</span> : null}
+            <span className={cn('min-w-0 text-xs font-medium', COR_FRASE[medidor.estado])}>{medidor.frase}</span>
+            {meta ? <span className="numeros shrink-0 whitespace-nowrap text-xs text-muted-foreground">{meta}</span> : null}
           </div>
         </>
       ) : (
-        <span className="text-xs text-muted-foreground">{meta ?? 'Sem meta: informe a idade ou defina uma meta.'}</span>
+        <span className="text-xs text-muted-foreground">{meta ? `Meta: ${meta}` : 'Sem meta: informe a idade ou defina uma meta.'}</span>
       )}
     </div>
   )

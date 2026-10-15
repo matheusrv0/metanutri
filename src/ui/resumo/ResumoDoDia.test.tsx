@@ -91,7 +91,7 @@ describe('Resumo do dia', () => {
   it('CA-22 e CA-23: macros em gramas, % das kcal e g/kg, com o estado da faixa', () => {
     montar(adulta, planoComArroz())
     const proteina = resumo().getByText('Proteína').closest('div')?.parentElement
-    expect(proteina).toHaveTextContent('7,8 g')
+    expect(proteina).toHaveTextContent('8 g · 8%')
     expect(proteina).toHaveTextContent('0,13 g/kg')
     expect(resumo().getAllByText(/Meta: .* \(faixa da idade\)/).length).toBe(3)
     // O estado agora sai como frase do medidor: dentro, faltam X, quase lá, acima, passou de leve.

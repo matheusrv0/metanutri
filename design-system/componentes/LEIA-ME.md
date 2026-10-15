@@ -444,10 +444,13 @@ que responde à pergunta de verdade ("Faltam 6 pontos para a faixa", "Dentro da 
 Anda a cada alimento adicionado.
 
 Recebe o `ResultadoMacro` do domínio e calcula o resto — no export as posições vinham
-soltas por prop.
+soltas por prop. De relance, gramas e % saem sem casa decimal; o g/kg aparece com
+`comGPorKg` (a proteína) ou quando a meta é em g/kg. A `meta` é curta e fica ao lado da
+frase; sem medidor, sai "Meta: …" (spec painel-lateral-enxuto, D-201 e D-202).
 
 ```tsx
-<MedidorMacro nome="Proteína" macro={macros.proteina} meta="Meta: 10 a 35% (faixa da idade)" />
+<MedidorMacro nome="Proteína" macro={macros.proteina} meta="10 a 35%" comGPorKg />
+<MedidorMacro nome="Gordura" macro={macros.gordura} meta="20 a 30% · sua meta" />
 <MedidorMacro nome="Fibra" macro={semMeta} meta={null} />
 ```
 
