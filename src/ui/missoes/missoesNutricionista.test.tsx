@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
+import { criarAcompanhamento, marcarMissao, missoesDoDia, progressoDoDia, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import { copiarDieta, type DietaDoLink, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
@@ -475,7 +475,29 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(screen.queryByText(/O paciente autorizou\?/)).not.toBeInTheDocument()
   })
 
-  it('CA-545: plano mudado: o cartão avisa e "Atualizar a dieta no link" copia a de agora, sem trocar endereço nem missões', async () => {
+  it('CA-555: "Atualizar a dieta no link" também traz as missões de agora; as marcadas continuam marcadas e o endereço não muda', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const antes = repo.salvar({ ...acompanhamentoDe('c1', 'Ana', [{ dia: HOJE, feitas: ['refeicao-1', 'agua'] }]), dieta: ANTIGA })
+    const agora: readonly Missao[] = [...MISSOES, { id: 'refeicao-2', texto: 'Almoço por volta das 12:00', origem: 'Refeição do plano' }]
+    render(
+      <Anfitriao repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={agora} dieta={DIETA} hoje={HOJE} />
+      </Anfitriao>,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar a dieta no link' }))
+
+    const depois = repo.porCaso('c1')
+    if (!depois) throw new Error('o link sumiu')
+    expect(depois.token).toBe(antes.token)
+    expect(depois.missoes).toEqual(agora)
+    expect(depois.marcacoes).toEqual(antes.marcacoes)
+    expect(missoesDoDia(depois, HOJE).filter((m) => m.feita).map((m) => m.id)).toEqual(['refeicao-1', 'agua'])
+    expect(progressoDoDia(depois, HOJE)).toEqual({ feitas: 2, total: 3, pct: 67 })
+  })
+
+  it('CA-545: plano mudado: o cartão avisa e "Atualizar a dieta no link" copia a de agora, sem trocar o endereço', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const antes = repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: ANTIGA })

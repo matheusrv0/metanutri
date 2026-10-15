@@ -105,6 +105,13 @@ export function CartaoLinkMissoes({
     void gravar({ ...acompanhamento, dieta: ligar && dieta ? copiarDieta(dieta, hoje) : null })
   }
 
+  // CA-555 e D-153: "Atualizar a dieta no link" traz a dieta e as missões de agora, com o mesmo endereço. As
+  // marcações ficam: os ids das missões são estáveis (refeição pelo id da refeição; frutas, vegetais e água fixos).
+  const atualizarDieta = () => {
+    if (!acompanhamento || !dieta) return
+    void gravar({ ...acompanhamento, missoes, dieta: copiarDieta(dieta, hoje) })
+  }
+
   // CA-544: marcar a caixa num link sem dieta pergunta pela autorização; desmarcar grava na hora.
   const mudarCaixa = (marcar: boolean) => {
     if (marcar && acompanhamento?.dieta === null) setAutorizandoDieta(true)
@@ -249,7 +256,7 @@ export function CartaoLinkMissoes({
             aoMudar={mudarCaixa}
             ocupada={salvando}
             desatualizada={acompanhamento.dieta !== null && dietaMudou(acompanhamento.dieta, dieta)}
-            aoAtualizar={() => trocarDieta(true)}
+            aoAtualizar={atualizarDieta}
             pedindoAutorizacao={autorizandoDieta && acompanhamento.dieta === null}
             aoAutorizar={() => trocarDieta(true)}
             aoDesistir={() => setAutorizandoDieta(false)}

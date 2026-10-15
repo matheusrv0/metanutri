@@ -130,6 +130,7 @@ quem publica acerta no dia.
 |---|---|---|
 | `src/ui/missoes/MeuPlano.tsx`, `TelaMissoesPaciente.test.tsx`, `e2e/missoes.spec.ts` | alterar | texto longo quebra (R1) |
 | `src/ui/missoes/CaixaDietaNoLink.tsx`, `CartaoLinkMissoes.tsx`, `missoesNutricionista.test.tsx` | alterar | autorização ao ligar (R2), missões no atualizar (R3), texto da caixa (R4), aviso sem dieta anterior (R6) |
+| `src/domain/missoes.test.ts` | alterar | guarda: os ids das missões não mudam quando o plano muda (R3; acrescentado durante a R3) |
 | `docs/lgpd-rascunhos.md` | alterar | o mesmo conteúdo da Política (R4) |
 | `src/ui/missoes/TelaMissoesPaciente.tsx` (+ teste), `e2e/missoes.spec.ts` | alterar | abas do design system (`Tabs`), com trilho visível (R5) |
 | `CartaoLinkMissoes.tsx`, `TelaAdesao.tsx`, testes do cartão, `src/seguranca/xssTelas.test.tsx`, `e2e/missoes.spec.ts`, `e2e/csp.spec.ts` | alterar | nomes do cartão (R7) |
