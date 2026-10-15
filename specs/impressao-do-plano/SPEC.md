@@ -140,6 +140,11 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
 - **CB-185** · Plano sem nenhum alimento: cada refeição diz "Sem alimentos nesta refeição.", como hoje (CB-71).
 - **CB-186** · Ctrl+P fora da janela "Dieta para imprimir": sai página em branco, como hoje.
 - **CB-187** · Nome de produto com código (script, imagem com onerror): sai como texto, nada executa.
+- **CB-188** · Troca que, com o nome para o paciente, fica igual ao alimento do plano (arroz tipo 1 e tipo 2 viram os
+  dois "Arroz branco cozido"; as margarinas de óleos diferentes viram "Margarina com sal"): não aparece, para a folha
+  não mandar trocar uma coisa por ela mesma. Duas trocas com o mesmo nome aparecem uma vez; alimento do plano que fica
+  sem troca sai da lista de trocas; dois alimentos do plano com o mesmo nome aparecem uma vez. *(visto nos prints de
+  15/10)*
 
 ## 5. Fora de escopo, explicitamente
 

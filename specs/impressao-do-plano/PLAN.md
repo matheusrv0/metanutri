@@ -1,6 +1,6 @@
 # PLAN — Plano alimentar impresso limpo e fácil de ler
 
-**Spec de origem:** `./SPEC.md` (D-180 a D-188, CA-620 a CA-640, CB-180 a CB-187)
+**Spec de origem:** `./SPEC.md` (D-180 a D-188, CA-620 a CA-640, CB-180 a CB-188)
 **Status:** pedido pelo dono em 15/10/2026; aprovação pelas telas antes de publicar
 
 ## Abordagem
@@ -38,15 +38,15 @@ no navegador, num e2e novo.
 |---|---|---|
 | `specs/impressao-do-plano/SPEC.md`, `PLAN.md` | criar | esta frente (T1) |
 | `src/domain/nomeParaPaciente.ts` (+ teste) | criar | o nome para o paciente (T2) |
-| `src/domain/folhaDieta.ts`, `src/domain/folhaDieta.test.ts` | alterar | compras da folha, opções da refeição; sai `lembretesDoDia` (T3) |
-| `src/ui/exportar/FolhaDieta.tsx`, `FolhaDieta.test.tsx` | alterar | nome, quantidade, "ou", menos informação (T4, T5, T6) |
+| `src/domain/folhaDieta.ts`, `src/domain/folhaDieta.test.ts` | alterar | compras da folha, opções da refeição (T3); sai `lembretesDoDia` (T6); trocas da folha (T9) |
+| `src/ui/exportar/FolhaDieta.tsx`, `FolhaDieta.test.tsx` | alterar | nome, quantidade, "ou", menos informação, ajustes dos prints (T4, T5, T6, T9) |
 | `src/ui/exportar/DialogoImprimir.tsx`, `DialogoImprimir.test.tsx` | alterar | a frase da janela (T6) |
 | `src/ui/tema/globals.css` | alterar | papel claro (T7) e regras de página (T8) |
 | `src/ui/exportar/FolhaDocumento.tsx`, `FolhaDocumento.test.tsx` | alterar | sem régua, frase de estágio sem caixa (T7) |
 | `src/ui/exportar/linhaFina.ts` | alterar | aponta para a fonte das margens, que fica em `globals.css` (o lint barra `font-family` em código) (T8) |
 | `e2e/impressao-do-plano.spec.ts` | criar | papel claro no tema escuro e regras de página, no navegador (T7, T8) |
 | `e2e/planejador.spec.ts` | alterar | o teste do PDF esperava a linha da base, que sai (T6) |
-| `specs/pdf-e-telas-limpas/SPEC.md` | alterar | uma nota: D-50, CA-309, CA-310, CA-312 e CA-314 foram substituídos por esta spec (T9) |
+| `specs/pdf-e-telas-limpas/SPEC.md` | alterar | uma nota: D-50, CA-309, CA-310, CA-312 e CA-314 foram substituídos por esta spec (T10) |
 
 ## Tarefas
 
@@ -79,8 +79,13 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   (CA-636, CA-637); as margens do `@page` com a fonte da folha, para a linha fina (CA-637). *Testes:* e2e lê as regras
   de página e de margem no CSSOM e o espaço calculado na impressão; o PDF com as duas opções marcadas tem mais de uma
   página (CA-638). *Depende de:* T7.
-- [ ] **T9** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
-  `npm run check`, `npx playwright test` e `npm run build` verdes. *Depende de:* T8.
+- [ ] **T9** — ajustes vistos nos primeiros prints, em dois commits. (a) A coluna do alimento passa a ter largura fixa
+  (17 rem), para a quantidade ficar perto do nome; no celular, a quantidade embaixo do nome sai em cinza (CA-629).
+  (b) `folhaDieta.ts`: `trocasDaFolha(grupos, buscar)` tira a troca com o mesmo nome para o paciente do alimento do
+  plano, as trocas repetidas pelo nome, o alimento do plano que fica sem troca e o alimento do plano repetido pelo nome;
+  a folha usa essa lista (CB-188). *Testes:* domínio e folha. *Depende de:* T8.
+- [ ] **T10** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
+  `npm run check`, `npx playwright test` e `npm run build` verdes. *Depende de:* T9.
 
 ## Riscos e decisões para revisar
 
