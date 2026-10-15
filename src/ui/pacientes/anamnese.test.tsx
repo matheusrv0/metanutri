@@ -141,13 +141,15 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
 
   it('CA-567: voltar ao roteiro padrão e salvar traz as perguntas do MetaNutri', async () => {
     const arm = new MemoriaFalsa()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Só esta' }] } }))
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Só esta' }], gestacao: [{ id: 'g', texto: 'Semanas' }] } }))
     const { usuario } = montar({}, arm)
     await usuario.click(anamnese().getByRole('button', { name: 'Editar roteiro' }))
     const janela = within(screen.getByRole('dialog', { name: 'Roteiro da anamnese' }))
     await usuario.click(janela.getByRole('button', { name: 'Voltar ao roteiro padrão' }))
     await usuario.click(janela.getByRole('button', { name: 'Salvar roteiro' }))
-    expect(lerRoteiro(arm)).toEqual(ROTEIRO_PADRAO)
+    expect(lerRoteiro(arm).perguntas).toEqual(ROTEIRO_PADRAO.perguntas)
+    // CA-589: o bloco que esta versão não conhece continua guardado.
+    expect(lerRoteiro(arm).outros).toEqual({ gestacao: [{ id: 'g', texto: 'Semanas' }] })
   })
 
   it('CA-568: a pergunta tirada continua na ficha com a resposta, marcada Fora do roteiro, e pode ser apagada', async () => {

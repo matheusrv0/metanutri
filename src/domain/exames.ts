@@ -22,8 +22,6 @@ export const EXAMES: readonly Exame[] = [
   { id: 'tgo-tgp', nome: 'TGO e TGP' },
 ]
 
-const IDS: ReadonlySet<string> = new Set(EXAMES.map((e) => e.id))
-
 export interface PedidoExames {
   /** Ids de `EXAMES` marcados. */
   readonly marcados: readonly string[]
@@ -33,14 +31,16 @@ export interface PedidoExames {
 
 export const PEDIDO_VAZIO: PedidoExames = { marcados: [], outros: '' }
 
-/** CA-588: dado estragado vira vazio; id que não está na lista, ou repetido, sai. */
+/**
+ * CA-588: dado estragado vira vazio; id repetido sai. CA-589: id que esta versão não conhece e campo a mais ficam
+ * guardados; só a tela e a folha os deixam de fora.
+ */
 export function normalizarPedido(valor: unknown): PedidoExames {
   if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return PEDIDO_VAZIO
-  const { marcados, outros } = valor as Record<string, unknown>
-  const lista = Array.isArray(marcados) ? marcados.filter((id): id is string => typeof id === 'string' && IDS.has(id)) : []
-  return { marcados: [...new Set(lista)], outros: typeof outros === 'string' ? outros : '' }
+  const o = valor as Record<string, unknown>
+  const lista = Array.isArray(o['marcados']) ? o['marcados'].filter((id): id is string => typeof id === 'string') : []
+  return { ...o, marcados: [...new Set(lista)], outros: typeof o['outros'] === 'string' ? o['outros'] : '' }
 }
-
 export function marcarExame(pedido: PedidoExames, id: string, marcado: boolean): PedidoExames {
   const sem = pedido.marcados.filter((m) => m !== id)
   return { ...pedido, marcados: marcado ? [...sem, id] : sem }

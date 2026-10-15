@@ -84,7 +84,8 @@ export function DialogoRoteiro({ roteiro, aoSalvar, aoFechar }: DialogoRoteiroPr
         </div>
 
         <DialogFooter className="sm:justify-between">
-          <Button variant="ghost" onClick={() => setRascunho(ROTEIRO_PADRAO)}>
+          {/* CA-589: os blocos que esta versão não conhece continuam guardados. */}
+          <Button variant="ghost" onClick={() => setRascunho((r) => ({ ...ROTEIRO_PADRAO, outros: r.outros }))}>
             Voltar ao roteiro padrão
           </Button>
           <div className="flex flex-col-reverse gap-2 sm:flex-row">

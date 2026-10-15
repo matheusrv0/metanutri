@@ -26,7 +26,6 @@ export const BLOCOS_ANAMNESE: readonly BlocoAnamnese[] = [
 ]
 
 const IDS_BLOCO: ReadonlySet<string> = new Set(BLOCOS_ANAMNESE.map((b) => b.id))
-const ehIdBloco = (v: unknown): v is IdBloco => typeof v === 'string' && IDS_BLOCO.has(v)
 
 export interface PerguntaRoteiro {
   readonly id: string
@@ -35,6 +34,8 @@ export interface PerguntaRoteiro {
 
 export interface RoteiroAnamnese {
   readonly perguntas: Readonly<Record<IdBloco, readonly PerguntaRoteiro[]>>
+  /** CA-589: blocos que esta versão não conhece, guardados como vieram e gravados de volta. */
+  readonly outros: Readonly<Record<string, unknown>>
 }
 
 const p = (id: string, texto: string): PerguntaRoteiro => ({ id, texto })
@@ -64,11 +65,14 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
       p('r24-ceia', 'Ceia'),
     ],
   },
+  outros: {},
 }
 
 /**
- * O roteiro como o app usa: só os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão;
- * bloco esvaziado de propósito continua vazio. Pergunta sem texto sai (CB-161), e o id vale uma vez só.
+ * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão;
+ * bloco esvaziado de propósito continua vazio. Pergunta sem texto sai (CB-161), e o id vale uma vez só. Bloco
+ * desconhecido vai para `outros`, como veio (CA-589). `Object.fromEntries` cria chave própria até para
+ * `__proto__`: o dado de fora não mexe no protótipo.
  */
 function normalizarRoteiro(blocos: unknown): RoteiroAnamnese {
   const fonte = typeof blocos === 'object' && blocos !== null && !Array.isArray(blocos) ? (blocos as Record<string, unknown>) : {}
@@ -84,11 +88,11 @@ function normalizarRoteiro(blocos: unknown): RoteiroAnamnese {
       return [{ id: idPergunta, texto: texto.trim() }]
     })
   }
-  return { perguntas }
+  return { perguntas, outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !IDS_BLOCO.has(id))) }
 }
 
 /** O roteiro editado como fica depois de salvo: sem pergunta vazia e sem id repetido (CB-161). */
-export const limparRoteiro = (roteiro: RoteiroAnamnese): RoteiroAnamnese => normalizarRoteiro(roteiro.perguntas)
+export const limparRoteiro = (roteiro: RoteiroAnamnese): RoteiroAnamnese => ({ ...normalizarRoteiro(roteiro.perguntas), outros: roteiro.outros })
 
 /** O roteiro da conta. Sem armazenamento, sem nada guardado ou com dado que não se lê, o padrão (CB-160, CB-162). */
 export function lerRoteiro(armazenamento: Armazenamento | null): RoteiroAnamnese {
@@ -106,7 +110,7 @@ export function lerRoteiro(armazenamento: Armazenamento | null): RoteiroAnamnese
 export function gravarRoteiro(armazenamento: Armazenamento | null, roteiro: RoteiroAnamnese): boolean {
   if (!armazenamento) return false
   try {
-    armazenamento.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: normalizarRoteiro(roteiro.perguntas).perguntas }))
+    armazenamento.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { ...roteiro.outros, ...normalizarRoteiro(roteiro.perguntas).perguntas } }))
     return true
   } catch {
     return false
@@ -116,6 +120,7 @@ export function gravarRoteiro(armazenamento: Armazenamento | null, roteiro: Rote
 // ---------- Editar o roteiro (CA-565) ----------
 
 const comBloco = (roteiro: RoteiroAnamnese, bloco: IdBloco, perguntas: readonly PerguntaRoteiro[]): RoteiroAnamnese => ({
+  ...roteiro,
   perguntas: { ...roteiro.perguntas, [bloco]: perguntas },
 })
 
@@ -140,23 +145,28 @@ export const tirarPergunta = (roteiro: RoteiroAnamnese, bloco: IdBloco, id: stri
 
 export interface RespostaAnamnese {
   readonly perguntaId: string
-  readonly blocoId: IdBloco
+  /** Um dos blocos de `BLOCOS_ANAMNESE`; outro valor (de uma versão mais nova) fica guardado e não aparece (CA-589). */
+  readonly blocoId: string
   /** O texto da pergunta quando foi respondida: é o que aparece se ela sair do roteiro (CA-568). */
   readonly pergunta: string
   readonly resposta: string
 }
 
-/** CA-588: o que não é lista vira lista vazia; resposta estragada ou vazia sai; o id vale uma vez só. */
+/**
+ * CA-588: o que não é lista vira lista vazia; resposta estragada sai; o id vale uma vez só. CA-589: resposta de bloco
+ * desconhecido e campo a mais ficam guardados; só a ficha os deixa de fora.
+ */
 export function normalizarRespostas(valor: unknown): RespostaAnamnese[] {
   if (!Array.isArray(valor)) return []
   const vistos = new Set<string>()
   return valor.flatMap((item: unknown) => {
     if (typeof item !== 'object' || item === null) return []
-    const { perguntaId, blocoId, pergunta, resposta } = item as Record<string, unknown>
-    if (typeof perguntaId !== 'string' || !ehIdBloco(blocoId) || typeof pergunta !== 'string' || typeof resposta !== 'string') return []
-    if (resposta.trim() === '' || vistos.has(perguntaId)) return []
+    const o = item as Record<string, unknown>
+    const { perguntaId, blocoId, pergunta, resposta } = o
+    if (typeof perguntaId !== 'string' || typeof blocoId !== 'string' || typeof pergunta !== 'string' || typeof resposta !== 'string') return []
+    if (vistos.has(perguntaId)) return []
     vistos.add(perguntaId)
-    return [{ perguntaId, blocoId, pergunta, resposta }]
+    return [{ ...o, perguntaId, blocoId, pergunta, resposta }]
   })
 }
 
@@ -192,7 +202,7 @@ export function blocosDaFicha(roteiro: RoteiroAnamnese, respostas: readonly Resp
   return BLOCOS_ANAMNESE.flatMap(({ id, titulo }) => {
     const doRoteiro = roteiro.perguntas[id].map((pergunta) => ({ id: pergunta.id, texto: pergunta.texto, resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
     const fora = respostas
-      .filter((r) => r.blocoId === id && !noRoteiro.has(r.perguntaId))
+      .filter((r) => r.blocoId === id && !noRoteiro.has(r.perguntaId) && r.resposta.trim() !== '')
       .map((r) => ({ id: r.perguntaId, texto: r.pergunta, resposta: r.resposta, foraDoRoteiro: true }))
     const perguntas = [...doRoteiro, ...fora]
     if (perguntas.length === 0) return []

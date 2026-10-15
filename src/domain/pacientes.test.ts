@@ -58,6 +58,22 @@ describe('ficha do paciente com anamnese, suplementos e exames (spec anamnese-e-
     expect(ana).toMatchObject({ nome: 'Ana', restricoes: 'leite', respostasAnamnese: [], suplementos: [], pedidoExames: { marcados: [], outros: '' } })
   })
 
+  it('CA-589: o que esta versão não conhece passa por ler e salvar a ficha sem sumir', () => {
+    const arm = new Memoria()
+    const desconhecidos = {
+      respostasAnamnese: [{ perguntaId: 'semanas', blocoId: 'gestacao', pergunta: 'Semanas', resposta: '20' }],
+      suplementos: [{ id: 's1', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '', marca: 'Exemplo' }],
+      pedidoExames: { marcados: ['exame-novo', 'tsh'], outros: '' },
+    }
+    arm.setItem('metanutri:pacientes', JSON.stringify([{ id: 'p1', nome: 'Ana', criadoEm: '2026-09-01T00:00:00.000Z', atualizadoEm: '2026-09-02T00:00:00.000Z', ...desconhecidos }]))
+    const repo = criarRepositorioPacientes(arm, { agora: relogio() })
+    const ana = repo.obter('p1')
+    if (!ana) throw new Error('ficha não lida')
+    repo.salvar({ ...ana, nome: 'Ana Souza' })
+    const [guardada] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    expect(guardada).toMatchObject({ nome: 'Ana Souza', ...desconhecidos })
+  })
+
   it('CB-167: apagar o paciente leva junto os suplementos e o pedido de exames', () => {
     const arm = new Memoria()
     const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'p1' })

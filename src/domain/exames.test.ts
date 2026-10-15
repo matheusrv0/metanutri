@@ -40,10 +40,18 @@ describe('pedido de exames (D-169)', () => {
     expect(pedidoVazio({ marcados: [], outros: 'Insulina' })).toBe(false)
   })
 
-  it('CA-588: dado estragado vira vazio; id desconhecido e repetido saem', () => {
+  it('CA-588: dado estragado vira vazio; id repetido sai', () => {
     expect(normalizarPedido(undefined)).toEqual(PEDIDO_VAZIO)
     expect(normalizarPedido([1])).toEqual(PEDIDO_VAZIO)
-    expect(normalizarPedido({ marcados: ['tsh', 'tsh', 'raio-x', 3], outros: 9 })).toEqual({ marcados: ['tsh'], outros: '' })
+    expect(normalizarPedido({ marcados: ['tsh', 'tsh', 3], outros: 9 })).toEqual({ marcados: ['tsh'], outros: '' })
     expect(normalizarPedido({ marcados: 'tsh', outros: 'B12' })).toEqual({ marcados: [], outros: 'B12' })
+  })
+
+  it('CA-589: exame que esta versão não conhece fica guardado, mesmo marcando outro, mas não sai na folha', () => {
+    const lido = normalizarPedido({ marcados: ['tsh', 'exame-novo'], outros: '', data: '2026-10-01' })
+    expect(lido).toEqual({ marcados: ['tsh', 'exame-novo'], outros: '', data: '2026-10-01' })
+    expect(marcarExame(lido, 'ferritina', true).marcados).toEqual(['tsh', 'exame-novo', 'ferritina'])
+    expect(linhasDoPedido(lido)).toEqual(['TSH'])
+    expect(pedidoVazio({ marcados: ['exame-novo'], outros: '' })).toBe(true)
   })
 })

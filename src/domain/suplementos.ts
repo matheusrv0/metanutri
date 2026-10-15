@@ -30,7 +30,10 @@ const camposDe = (o: Record<string, unknown>): Campos => ({
   observacao: textoDe(o, 'observacao'),
 })
 
-/** CA-588: o que não é lista vira lista vazia; item sem id sai; campo que não é texto vira vazio; o id vale uma vez. */
+/**
+ * CA-588: o que não é lista vira lista vazia; item sem id sai; campo conhecido que não é texto vira vazio; o id vale
+ * uma vez. CA-589: campo que esta versão não conhece fica no item.
+ */
 export function normalizarSuplementos(valor: unknown): Suplemento[] {
   if (!Array.isArray(valor)) return []
   const vistos = new Set<string>()
@@ -40,7 +43,7 @@ export function normalizarSuplementos(valor: unknown): Suplemento[] {
     const id = o['id']
     if (typeof id !== 'string' || id === '' || vistos.has(id)) return []
     vistos.add(id)
-    return [{ id, ...camposDe(o) }]
+    return [{ ...o, id, ...camposDe(o) }]
   })
 }
 
@@ -98,7 +101,8 @@ function lerModelos(valor: unknown): ModeloSuplemento[] {
     const id = o['id']
     if (typeof id !== 'string' || id === '') return []
     const criadoEm = textoDe(o, 'criadoEm')
-    return [{ id, ...camposDe(o), criadoEm, atualizadoEm: textoDe(o, 'atualizadoEm') || criadoEm }]
+    // CA-589: campo que esta versão não conhece fica no modelo.
+    return [{ ...o, id, ...camposDe(o), criadoEm, atualizadoEm: textoDe(o, 'atualizadoEm') || criadoEm }]
   })
 }
 

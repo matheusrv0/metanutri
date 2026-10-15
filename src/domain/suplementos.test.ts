@@ -55,6 +55,10 @@ describe('suplemento do paciente (CA-571, CA-578, CA-588)', () => {
     ])
   })
 
+  it('CA-589: campo que esta versão não conhece fica no suplemento', () => {
+    expect(normalizarSuplementos([{ ...vitD, marca: 'Exemplo', lote: 7 }])).toEqual([{ ...vitD, marca: 'Exemplo', lote: 7 }])
+  })
+
   it('CA-578: suplemento sem nome não sai em documento', () => {
     expect(suplementosParaDocumento([vitD, { ...criarSuplemento('s2'), dose: '1 cápsula' }, { ...criarSuplemento('s3'), nome: '   ' }])).toEqual([vitD])
   })
@@ -117,6 +121,21 @@ describe('modelos de suplemento (D-166, CA-573, CA-574)', () => {
     expect(criarRepositorioModelosSuplemento(arm).listar()).toEqual([])
     arm.setItem(CHAVE_MODELOS_SUPLEMENTO, JSON.stringify([{ id: 'a', nome: 'Ferro', criadoEm: 'x', atualizadoEm: 'x' }, { nome: 'sem id' }, 3]))
     expect(criarRepositorioModelosSuplemento(arm).listar()).toEqual([{ id: 'a', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '', criadoEm: 'x', atualizadoEm: 'x' }])
+  })
+
+  it('CA-589: campo a mais num modelo fica guardado depois de trocar e de apagar outro', () => {
+    const arm = new Memoria()
+    arm.setItem(
+      CHAVE_MODELOS_SUPLEMENTO,
+      JSON.stringify([
+        { id: 'a', nome: 'Ferro', dose: '', horario: '', duracao: '', observacao: '', criadoEm: 'x', atualizadoEm: 'x', marca: 'Exemplo' },
+        { id: 'b', nome: 'Zinco', dose: '', horario: '', duracao: '', observacao: '', criadoEm: 'x', atualizadoEm: 'x' },
+      ]),
+    )
+    const repo = criarRepositorioModelosSuplemento(arm, { agora: relogio(), gerarId: ids() })
+    repo.salvarDe({ ...vitD, nome: 'Ferro', dose: '1 comprimido' })
+    repo.excluir('b')
+    expect(JSON.parse(arm.getItem(CHAVE_MODELOS_SUPLEMENTO) ?? '[]')).toEqual([expect.objectContaining({ id: 'a', dose: '1 comprimido', marca: 'Exemplo' })])
   })
 
   it('CB-160: sem armazenamento, ou cheio, os modelos valem só na sessão', () => {

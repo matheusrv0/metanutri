@@ -78,7 +78,7 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     expect(lerRoteiro(arm)).toEqual(ROTEIRO_PADRAO)
   })
 
-  it('CB-162: bloco desconhecido é ignorado; bloco que falta usa o padrão; pergunta estragada sai', () => {
+  it('CB-162: bloco desconhecido não aparece; bloco que falta usa o padrão; pergunta estragada sai', () => {
     const arm = new Memoria()
     arm.setItem(
       CHAVE_ROTEIRO,
@@ -88,12 +88,24 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     expect(lido.perguntas.agua).toEqual([{ id: 'a1', texto: 'Água?' }])
     expect(lido.perguntas.intestino).toEqual(ROTEIRO_PADRAO.perguntas.intestino)
     expect(Object.keys(lido.perguntas)).toEqual(BLOCOS_ANAMNESE.map((b) => b.id))
+    expect(blocosDaFicha(lido, []).map((b) => b.id)).not.toContain('gestacao')
+  })
+
+  it('CA-589: o bloco que esta versão não conhece continua guardado depois de ler, editar e salvar', () => {
+    const arm = new Memoria()
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { gestacao: [{ id: 'g', texto: 'Semanas' }], __proto__: [] } }))
+    const editado = acrescentarPergunta(lerRoteiro(arm), 'agua', 'nova')
+    gravarRoteiro(arm, renomearPergunta(editado, 'agua', 'nova', 'Chá por dia'))
+    const guardado = JSON.parse(arm.getItem(CHAVE_ROTEIRO) ?? '{}') as { blocos: Record<string, unknown> }
+    expect(guardado.blocos['gestacao']).toEqual([{ id: 'g', texto: 'Semanas' }])
+    expect(lerRoteiro(arm).perguntas.agua.at(-1)).toEqual({ id: 'nova', texto: 'Chá por dia' })
+    expect(Object.getPrototypeOf(lerRoteiro(arm).outros)).toBe(Object.prototype)
   })
 
   it('CB-161: pergunta com texto vazio sai ao gravar; bloco esvaziado continua vazio', () => {
     const arm = new Memoria()
     let roteiro = acrescentarPergunta(ROTEIRO_PADRAO, 'agua', 'nova')
-    roteiro = { perguntas: { ...roteiro.perguntas, 'alcool-fumo': [] } }
+    roteiro = { ...roteiro, perguntas: { ...roteiro.perguntas, 'alcool-fumo': [] } }
     gravarRoteiro(arm, roteiro)
     const lido = lerRoteiro(arm)
     expect(lido.perguntas.agua.map((p) => p.id)).not.toContain('nova')
@@ -139,9 +151,17 @@ describe('respostas da ficha (D-163)', () => {
     expect(normalizarRespostas(undefined)).toEqual([])
     expect(normalizarRespostas('texto')).toEqual([])
     const boa: RespostaAnamnese = { perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Dor' }
-    expect(
-      normalizarRespostas([boa, { ...boa, resposta: 'outra' }, { perguntaId: 'x', blocoId: 'gestacao', pergunta: 'a', resposta: 'b' }, { perguntaId: 3 }, null, { ...boa, perguntaId: 'y', resposta: '' }]),
-    ).toEqual([boa])
+    expect(normalizarRespostas([boa, { ...boa, resposta: 'outra' }, { perguntaId: 3 }, null, { ...boa, perguntaId: 'z', blocoId: 4 }])).toEqual([boa])
+  })
+
+  it('CA-589: resposta de bloco desconhecido e campo a mais ficam guardados, mas não aparecem na ficha', () => {
+    const deOutroBloco = { perguntaId: 'semanas', blocoId: 'gestacao', pergunta: 'Semanas', resposta: '20' }
+    const comExtra = { perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Dor', fonte: 'questionario' }
+    const lidas = normalizarRespostas([deOutroBloco, comExtra])
+    expect(lidas).toEqual([deOutroBloco, comExtra])
+    expect(blocosDaFicha(ROTEIRO_PADRAO, lidas).flatMap((b) => b.perguntas.map((p) => p.id))).not.toContain('semanas')
+    const respondidas = responder(lidas, { id: 'agua-dia', texto: 'Quanta água bebe por dia' }, 'agua', '1 litro')
+    expect(respondidas.slice(0, 2)).toEqual([deOutroBloco, comExtra])
   })
 
   it('CA-560: os blocos da ficha dizem quantas perguntas têm resposta', () => {
@@ -174,7 +194,7 @@ describe('respostas da ficha (D-163)', () => {
   })
 
   it('CB-161: bloco sem pergunta some, a não ser que tenha resposta fora do roteiro', () => {
-    const vazio = { perguntas: { ...ROTEIRO_PADRAO.perguntas, 'alcool-fumo': [] } }
+    const vazio = { ...ROTEIRO_PADRAO, perguntas: { ...ROTEIRO_PADRAO.perguntas, 'alcool-fumo': [] } }
     expect(blocosDaFicha(vazio, []).map((b) => b.id)).not.toContain('alcool-fumo')
     const comResposta = responder([], { id: 'fumo', texto: 'Fumo' }, 'alcool-fumo', 'Não fuma')
     const bloco = blocosDaFicha(vazio, comResposta).find((b) => b.id === 'alcool-fumo')
