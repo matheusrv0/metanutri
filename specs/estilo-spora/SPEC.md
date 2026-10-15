@@ -272,7 +272,7 @@ vitamina e mineral e confiar no número.
 
 - **CA-208** · Dado a etapa Adequação, então o topo mostra quatro cartões: energia, proteína, carboidrato e gordura, com o estado de cada um.
 - **CA-209** · Dado a lista de vitaminas e minerais, então cada nutriente ocupa uma linha com: nome, quanto tem de quanto precisa, barra com a marca da meta, percentual, quanto falta e o estado.
-- **CA-210** · Dado um nutriente abaixo da meta, então a linha mostra "Cobrir". Nutriente na meta não mostra.
+- **CA-210** · Dado um nutriente abaixo da meta, então a linha mostra "Cobrir". Nutriente na meta não mostra. **Substituído em parte pelo D-206** (`specs/painel-lateral-enxuto/SPEC.md`, 15/10/2026) e pelo D-199d (`specs/sugestoes-com-criterio/SPEC.md`): exceto o sódio, que não tem "Cobrir" em lugar nenhum.
 - **CA-211** · Dado um nutriente com alimento sem dado, então a barra aparece listrada com "pelo menos X%" e o estado "Dado incompleto", nunca como se o dado fosse zero.
 - **CA-212** · Dado vitamina D, B12 ou folato sem fonte na tabela, então a linha diz "Não dá para avaliar com a tabela brasileira" e o estado "Não avaliado".
 - **CA-213** · Dado o seletor de referência (Individual, Coletivo, Personalizado), então ele fica em pílula no topo da lista e recalcula a lista como hoje.
