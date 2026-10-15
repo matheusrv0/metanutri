@@ -175,3 +175,28 @@ que estão na meta e, abaixo de 640 px, desenha uma lista.
 botão do cartão virou "Ver todos" na validação, para não repetir o 16 da contagem; as marcas † e ‡
 viraram dois componentes de tela (`MarcaSemDado`, `MarcaLimite`), usados pela tabela, pela lista e
 pelo cartão.
+
+## Validação da rodada de revisão (15/10/2026)
+
+`npm run check` verde (190 arquivos, 3.120 testes), `npx playwright test` verde (58 testes) e
+`npm run build` verde. Detector do impeccable sem achados.
+
+| Critério | Teste |
+|---|---|
+| CA-695 | `arredondarNoEstado.test.ts`; `ResumoDoDia.test.tsx` · "CA-695" (89,6% e 110,4%) |
+| CA-696 | `MedidorMacro.test.tsx`, `MicrosDoDia.test.tsx`, `FaixaResumo.test.tsx` · "CA-696"; `TelaAdequacao.test.tsx` · dois testes "CA-696" |
+| CA-697 | `MicrosDoDia.test.tsx` · "CA-697"; `TelaAdequacao.test.tsx` · dois testes "CA-697"; e2e "etapa 2: o cartão Micronutrientes" |
+| CA-698 | `TelaAdequacao.test.tsx` · "CA-698" |
+| CA-699 | `MicrosDoDia.test.tsx` · dois testes "CA-699" |
+| CA-700 | `TelaAdequacao.test.tsx` · "CA-700" e os testes de Cobrir com o nome; e2e com "Cobrir Ferro" |
+| CA-701 | `TelaAdequacao.test.tsx` · dois testes "CA-701"; e2e "etapa 2: o cartão Micronutrientes" e "CB-208 e CA-692" |
+| CA-702 | `ResumoDoDia.test.tsx` · dois testes "CA-702" e "CA-684" |
+| CA-703 | `MicrosDoDia.test.tsx` · "CA-703 e CB-202" e "CA-703" (descrição da lista) |
+| CA-704 | e2e "CA-704" (troca de plano e voltar do navegador) |
+| CB-202 (2ª parte) | `MicrosDoDia.test.tsx` · "CA-703 e CB-202" |
+| CB-204, CB-209, CA-694, CA-690 (mais firmes) | `MicrosDoDia.test.tsx` e `TelaAdequacao.test.tsx` · "Testes mais firmes…" |
+
+**Divergências da rodada:** o arredondamento também vale na faixa do topo da etapa 3 (mesmo erro,
+mesma regra); a contagem do cartão passou a "N para cobrir." porque, sem o sódio, "N de 16 abaixo da
+meta" deixaria de ser verdade; o foco depois de "Adicionar" no cartão não foi mexido (quem devolve o
+foco é a gaveta, que fica com a outra frente).
