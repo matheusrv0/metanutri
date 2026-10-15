@@ -157,6 +157,19 @@ Fora desta rodada (a revisão listou, o coordenador não pediu): M2 (trocas de l
 
 Única mudança de tela: a `GavetaCobrir` passa as restrições para o domínio em vez de filtrar a lista pronta (R13).
 
+### Re-revisão (15/10/2026, fim da tarde)
+
+| Tarefa | Item | Altera | Verificação |
+|---|---|---|---|
+| S0 | nota na SPEC (D-194, D-199a, CA-670, CA-671, CA-675, CA-679, seção 7, Apêndice C) | `SPEC.md`, `PLAN.md` | leitura |
+| S1 | N1: magro antes do gordo nas trocas; `ehCorteGordo` passa de `cobrir.ts` para `prescritivel.ts`, para os dois usarem | `prescritivel.ts`, `cobrir.ts`, `trocas.ts`, `trocas.test.ts` | `trocas.test.ts`, `cobrir.test.ts` |
+| S2 | regra (a) esclarecida: o cru só sai quando a base tem a versão cozida | `prescritivel.ts`, `prescritivel.test.ts`, `naoProposto.test-utils.ts` | `prescritivel.test.ts`, `cobrir.test.ts`, `trocas.test.ts` |
+| S3 | N2: pão de queijo, farinha, farofa, nhoque, fécula e polvilho não são verdura nas trocas | `trocas.ts`, `trocas.test.ts` | `trocas.test.ts` |
+| S4 | N5: a trava de texto cobre todos os ids da lista fixa | `naoProposto.test-utils.ts`, `prescritivel.test.ts` | `prescritivel.test.ts` |
+| S5 | N6: a mensagem só cita a restrição quando ela tirou algo | `cobrir.ts`, `cobrir.test.ts` | `cobrir.test.ts` |
+| S6 | N7: dependência estável das restrições na gaveta | `GavetaCobrir.tsx`, cria `GavetaCobrir.test.tsx` | `src/ui/adequacao` |
+| S7 | Apêndices A e B regenerados, validação, relatório e prints (se o que aparece mudou) | `SPEC.md`, `PLAN.md` | `npm run check`, `npm run build`, `npx playwright test` (a gaveta mudou) |
+
 ### Validação da rodada (15/10/2026)
 
 | Critério | Onde está o teste |
