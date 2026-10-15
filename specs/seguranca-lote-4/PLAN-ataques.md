@@ -16,8 +16,8 @@ Supabase CLI por `npx` para CA-488 e CA-489. Nenhum pacote novo.
 - **Nunca a produção.** Nada aqui lê o `.env.local`, usa `--linked` ou `--project-ref`. O banco dos testes é
   um Supabase local, e a URL dele é conferida duas vezes antes de qualquer pedido (no script e no próprio
   teste): só `127.0.0.1` ou `localhost`.
-- Teste que acha um furo não é afrouxado. O furo é corrigido no menor passo possível, num commit separado
-  e com mensagem neutra; a descrição do ataque fica só no relatório local, nunca no repositório (ele é público).
+- Teste que acha um ponto fraco não é afrouxado: o ponto ganha um endurecimento, no menor passo possível e
+  num commit separado.
 - Um teste por área ou critério, com o ID no nome (`CA-487` … `CA-490`, `CB-129`).
 - `npm run check` continua verde; o `npm run test:seguranca` fica fora dele.
 
@@ -82,7 +82,8 @@ Supabase CLI por `npx` para CA-488 e CA-489. Nenhum pacote novo.
 ## Execução (14/10/2026)
 
 - Tarefas 1 a 6 feitas, nesta ordem, cada uma no seu commit.
-- Dois testes do CA-487 acharam pontos a endurecer na tela e na impressão; cada um foi corrigido num commit
-  `fix` separado (a logo do perfil e a linha fina da folha impressa), com o teste do domínio junto.
+- Os testes do CA-487 pediram dois endurecimentos, cada um num commit `fix` separado e com o teste do domínio
+  junto: a logo do perfil (só imagem embutida, na leitura e ao escolher o arquivo) e a linha fina da folha
+  impressa.
 - Validação: `npm run check` verde, `npx playwright test` verde e `npm run test:seguranca` verde (127 ataques
   barrados no Supabase local, que subiu e foi derrubado pelo script).
