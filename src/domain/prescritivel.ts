@@ -194,7 +194,7 @@ export function ehPrescritivel(alimento: DadosDaRegra, opcoes: OpcoesPrescricao 
  * Não somem da lista; só perdem a frente para o que é de uso comum.
  */
 const POUCO_USUAL =
-  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|jurubeba|jamel(ã|a)o|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|linha(ç|c)a|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
+  /(^|[\s,])(sarapatel|buchada|dobradinha|mocot(ó|o)|f(í|i)gado|cora(ç|c)(ã|a)o|moela|rim|l(í|i)ngua|miolo(?! de alcatra)|tutano|bucho|paio|chispe|jacar(é|e)|javali|codorna|perdiz|marisco|ostra|siri|caranguejo|lagosta|caramujo|r(ã|a)|caruru|lambari|taioba|bertalha|serralha|jambu|jurubeba|jamel(ã|a)o|ora-pro-n(ó|o)bis|mistura para vitamina|petit suisse|sete barbas|manjeric(ã|a)o|salsa|coentro|cebolinha|alecrim|or(é|e)gano|hortel(ã|a)|gergelim|cux(á|a)|tacac(á|a)|mani(ç|c)oba|vatap(á|a))($|[\s,])/i
 
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Pick<Alimento, 'descricao'>): boolean {

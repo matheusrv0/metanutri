@@ -303,4 +303,10 @@ describe('uso comum (D-197)', () => {
     expect(ehDeUsoComum(porDescricao('Jamelão, cru'))).toBe(false)
     expect(ehDeUsoComum(porDescricao('Banana, prata, crua'))).toBe(true)
   })
+
+  it('CA-676: miolo de alcatra (corte magro) e linhaça são de uso comum; o miolo de boi, não', () => {
+    expect(ehDeUsoComum(porDescricao('Carne, bovina, miolo de alcatra, sem gordura, grelhado'))).toBe(true)
+    expect(ehDeUsoComum(porDescricao('Linhaça, semente'))).toBe(true)
+    expect(ehDeUsoComum({ descricao: 'Carne, bovina, miolo, cozido' })).toBe(false)
+  })
 })
