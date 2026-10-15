@@ -1,5 +1,6 @@
 import { criarExemplo } from './exemplo.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
+import { regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import { trocasDoAlimento, trocasDoPlano } from './trocas.ts'
 
@@ -77,5 +78,45 @@ describe('Trocas por grupo', () => {
     const grupos = trocasDoPlano(plano, buscarAlimento, opcoes)
     expect(grupos.filter((g) => g.alimentoId === arroz.id)).toHaveLength(1)
     expect(grupos[0]?.gramas).toBe(150)
+  })
+})
+
+describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
+  it('CA-658: nenhuma troca oferecida é item fora da regra, para nenhum alimento da base', () => {
+    for (const a of ALIMENTOS) {
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
+        const troca = buscarAlimento(t.alimentoId)
+        expect(troca ? regraQueExclui(troca) : 'sem alimento', `${a.descricao} → ${t.descricao}`).toBeNull()
+      }
+    }
+  })
+
+  it('CA-659: item fora da rotina posto à mão troca por um prescritível do mesmo grupo', () => {
+    const ovoFrito = porDescricao('Ovo, de galinha, inteiro, frito')
+    const trocas = trocasDoAlimento({ alimentoId: ovoFrito.id, gramas: 50 }, opcoes).map((t) => t.descricao)
+    expect(trocas).toContain('Ovo, de galinha, inteiro, cozido/10minutos')
+
+    const batataFrita = porDescricao('Batata, inglesa, frita')
+    const daBatata = trocasDoAlimento({ alimentoId: batataFrita.id, gramas: 100 }, opcoes)
+    expect(daBatata.length).toBeGreaterThan(0)
+    expect(daBatata.every((t) => buscarAlimento(t.alimentoId)?.categoria === batataFrita.categoria)).toBe(true)
+  })
+
+  it('CA-660: margarina e doce de leite não têm par prescritível e ficam sem trocas', () => {
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Margarina, com óleo hidrogenado, com sal (65% de lipídeos)').id, gramas: 5 }, opcoes)).toEqual([])
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Doce, de leite, cremoso').id, gramas: 30 }, opcoes)).toEqual([])
+  })
+
+  it('CA-660: no plano de exemplo, a margarina fica sem trocas e o resto continua com as suas', () => {
+    const { plano } = criarExemplo(contador(), '2026-10-15')
+    const grupos = trocasDoPlano(plano, buscarAlimento, opcoes)
+    expect(grupos.some((g) => g.descricao.startsWith('Margarina'))).toBe(false)
+    expect(grupos.length).toBeGreaterThan(4)
+    expect(grupos.every((g) => g.trocas.length > 0)).toBe(true)
+  })
+
+  it('CA-661: bebida alcoólica no plano não ganha troca', () => {
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Cerveja, pilsen 2').id, gramas: 350 }, opcoes)).toEqual([])
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Cana, aguardente 1').id, gramas: 50 }, opcoes)).toEqual([])
   })
 })

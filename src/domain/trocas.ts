@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehDeUsoComum, ehSugerivel } from './cobrir.ts'
+import { ehDeUsoComum, ehPrescritivel, regraQueExclui } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
@@ -38,6 +38,7 @@ const kcalPorCem = (a: Alimento): number | null => {
 /**
  * A categoria da TACO é grossa: "Cereais e derivados" junta arroz e biscoito recheado.
  * Numa folha entregue ao paciente, isso é conselho ruim, então esses saem da lista.
+ * O que é prescritível decide a regra comum (prescritivel.ts); esta lista diz só o que não é troca justa.
  */
 const NAO_EQUIVALE =
   /(^|[\s,])(biscoito|bolo|torta|chocolate|bombom|brigadeiro|doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
@@ -76,6 +77,8 @@ function variedade(baseDoOriginal: string) {
 /**
  * Trocas equivalentes em energia, dentro da mesma categoria da tabela.
  * Alimento sem energia na tabela fica de fora: não dá para dizer o que equivale.
+ * Só alimento prescritível é oferecido; item fora da rotina posto à mão troca por um prescritível (ovo frito
+ * por ovo cozido), e bebida alcoólica não ganha troca (spec sugestoes-com-criterio, D-194).
  */
 export function trocasDoAlimento(
   original: { readonly alimentoId: number; readonly gramas: number },
@@ -86,9 +89,10 @@ export function trocasDoAlimento(
   const base = opcoes.alimentos.find((a) => a.id === original.alimentoId)
   const kcalBase = base ? kcalPorCem(base) : null
   if (!base || kcalBase === null || original.gramas <= 0) return []
+  if (regraQueExclui(base)?.nivel === 'nunca') return []
 
   return opcoes.alimentos
-    .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehSugerivel(a) && ehTrocaRazoavel(a))
+    .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
     .filter((a) => !casaRestricao(a.descricao, restricoes))
