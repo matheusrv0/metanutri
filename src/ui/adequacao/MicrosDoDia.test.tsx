@@ -3,12 +3,24 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
-import type { Caso, Plano } from '@/domain/tipos.ts'
+import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
 import { MicrosDoDia } from './MicrosDoDia.tsx'
+
+// O cálculo de verdade, salvo nos testes que dão à gaveta uma sugestão controlada.
+vi.mock('@/domain/cobrir.ts', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/domain/cobrir.ts')>()
+  return { ...real, sugerirParaCobrir: vi.fn(real.sugerirParaCobrir) }
+})
+
+afterEach(async () => {
+  const real = await vi.importActual<typeof import('@/domain/cobrir.ts')>('@/domain/cobrir.ts')
+  vi.mocked(sugerirParaCobrir).mockImplementation(real.sugerirParaCobrir)
+})
 
 let n = 0
 const ids = () => `id${++n}`
@@ -229,20 +241,57 @@ describe('Legenda do † no cartão (CA-699)', () => {
   })
 })
 
+const CENOURA_CRUA = 110
+
+/** Os nutrientes abaixo da meta, sem contar o sódio (que não se cobre), no plano dado. */
+function abaixoDaMeta(plano: Plano, caso: Caso): readonly ChaveNutrienteAlimento[] {
+  return calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
+    .linhas.filter((l) => l.estado === 'abaixo' && l.chave !== 'sodio_mg')
+    .map((l) => l.chave)
+}
+
+/**
+ * Sugestão controlada (revisão da integração, item c): a menor porção do alimento, em passos de 5 g, que leva o
+ * nutriente à meta; o teste não depende de qual alimento o Cobrir escolhe hoje. Confere que só esse nutriente sai
+ * de "abaixo", para a contagem do cartão cair exatamente um.
+ */
+function sugestaoQueLevaAMeta(plano: Plano, caso: Caso, chave: ChaveNutrienteAlimento, alimentoId: number): Sugestao {
+  const refeicao = plano.refeicoes[0]
+  const alimento = buscarAlimento(alimentoId)
+  if (!refeicao || !alimento) throw new Error('fixture sem refeição ou sem alimento')
+  const antes = abaixoDaMeta(plano, caso)
+  if (!antes.includes(chave)) throw new Error(`fixture: ${chave} já está na meta`)
+  for (let gramas = 5; gramas <= 300; gramas += 5) {
+    const depois = abaixoDaMeta(adicionarItem(plano, refeicao.id, 'principal', { alimentoId, gramas }, ids), caso)
+    if (depois.includes(chave)) continue
+    expect(depois).toEqual(antes.filter((c) => c !== chave))
+    const kcal = ((alimento.nutrientes.energia_kcal ?? 0) * gramas) / 100
+    return { alimentoId, descricao: alimento.descricao, gramas, coberturaPct: 100, parcial: false, kcalAdicionadas: kcal, avisos: [] }
+  }
+  throw new Error(`fixture: ${alimento.descricao} não leva ${chave} à meta em até 300 g`)
+}
+
+/** A gaveta passa a mostrar só a sugestão dada; o resto do resultado é o cálculo de verdade. */
+async function gavetaSugere(sugestao: Sugestao) {
+  const real = await vi.importActual<typeof import('@/domain/cobrir.ts')>('@/domain/cobrir.ts')
+  vi.mocked(sugerirParaCobrir).mockImplementation((...args) => ({ ...real.sugerirParaCobrir(...args), sugestoes: [sugestao] }))
+}
+
 describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
   it('CB-204: o nutriente que chega à meta depois do Cobrir sai do cartão', async () => {
-    const { usuario } = montar(adulta, criarExemplo(ids, '2026-10-15').plano)
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'vitamina_a_rae_mcg', CENOURA_CRUA))
+    const { usuario } = montar(adulta, plano)
     const antes = Number(cartao().getByText(/para cobrir\.$/).textContent?.match(/^(\d+)/)?.[1])
     const vitaminaA = linhas().find((l) => l.textContent?.startsWith('Vitamina A'))
     if (!vitaminaA) throw new Error('vitamina A fora do cartão')
     await usuario.click(within(vitaminaA).getByRole('button', { name: 'Cobrir Vitamina A (RAE)' }))
 
     const gaveta = within(screen.getByRole('dialog'))
-    const cobreTudo = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' }))
-      .getAllByRole('listitem')
-      .find((li) => /cobre 100% da falta/.test(li.textContent ?? ''))
-    if (!cobreTudo) throw new Error('nenhuma sugestão cobre a falta inteira')
-    await usuario.click(within(cobreTudo).getByRole('button', { name: 'Adicionar' }))
+    const sugestao = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getByRole('listitem')
+    expect(sugestao).toHaveTextContent('Cenoura, crua')
+    await usuario.click(within(sugestao).getByRole('button', { name: 'Adicionar' }))
 
     expect(linhas().some((l) => l.textContent?.startsWith('Vitamina A'))).toBe(false)
     expect(cartao().getByText(`${antes - 1} para cobrir.`)).toBeInTheDocument()
