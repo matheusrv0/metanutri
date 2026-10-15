@@ -156,3 +156,37 @@ da regra). Cada tarefa de R1 a R7 atualiza a contagem do CA-664 até o R8 trocá
 Fora desta rodada (a revisão listou, o coordenador não pediu): M2 (trocas de laticínio vazias) e M8 (vitrine).
 
 Única mudança de tela: a `GavetaCobrir` passa as restrições para o domínio em vez de filtrar a lista pronta (R13).
+
+### Validação da rodada (15/10/2026)
+
+| Critério | Onde está o teste |
+|---|---|
+| CA-651 (calda) | `prescritivel.test.ts` ("Ameixa, calda, enlatada") e a trava do CA-667 |
+| CA-654, CA-665 | `prescritivel.test.ts` (sal, shoyu, tempero, fermento, capuccino, gelatina); `cobrir.test.ts` "CA-654 e CA-665" e a trava do CA-667 |
+| CA-655 | `cobrir.test.ts` "CA-655" |
+| CA-664 | `prescritivel.test.ts`: títulos, contagem (307) e lista fixa de ids por motivo |
+| CA-666 | `prescritivel.test.ts` "CA-666" |
+| CA-667 | `cobrir.test.ts`: 12 variações (exemplo e vazio × chave × 50, 100 e 200 g), padrão de `naoProposto.test-utils.ts` |
+| CA-668 | `trocas.test.ts` "CA-658 e CA-668" |
+| CA-669 | `prescritivel.test.ts` "CA-669" |
+| CA-670 | `prescritivel.test.ts` (cru e prescritível) |
+| CA-671 | `trocas.test.ts` (três testes) |
+| CA-672, CB-199 | `trocas.test.ts` |
+| CA-673, CB-197, CB-198 | `cobrir.test.ts` "CA-673" |
+| CA-674 | `cobrir.test.ts` "CA-674" |
+| CA-675 | `cobrir.test.ts` (dois testes) e `TelaAdequacao.test.tsx` |
+| CA-676 | `prescritivel.test.ts` "CA-676" |
+| CA-677 | `prescritivel.test.ts` "CA-677" |
+| CA-678 | `cobrir.test.ts` "CA-678" |
+
+`npm run check` verde (187 arquivos, 3.269 testes; o único aviso do lint é antigo, em `MolduraPublica.tsx`),
+`npx playwright test` verde (55, cópia temporária da configuração na porta 4193, já apagada) e `npm run build` verde.
+
+**Divergências da rodada:**
+
+- O R8 criou `naoProposto.test-utils.ts`, que não estava na lista de arquivos; o PLAN foi atualizado no mesmo commit.
+- O R15 (sódio) entrou depois do R13 e antes do R14, por pedido do coordenador no meio da rodada.
+- Os testes do R8 (trava e lista fixa) e do R9 (CA-655) passaram de primeira, porque guardam o que já valia. A trava foi
+  conferida desfazendo a correção da calda: ela acusou a ameixa no plano vazio com porção de 50 g.
+- No teste da restrição na tela (CA-675), a primeira versão usava "alface", que não estava nas 5 sugestões, e passava
+  sem a correção; a versão final usa o nome da primeira sugestão e falhou antes do código.

@@ -204,11 +204,10 @@ Vale a menor entre a porção do grupo e a porção máxima que a pessoa escolhe
 
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
 
-*(revisão)* As tabelas abaixo são regeneradas a partir do código no fim da rodada de revisão (tarefa R14 do PLAN).
-
-293 dos 597 alimentos da base. "Antes" diz o que o filtro antigo fazia: *sugeria* (podia aparecer no cobrir e nas trocas)
-ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo que vale primeiro, na ordem: nunca, fora da rotina, forma
-de ingrediente. Todos continuam disponíveis pela busca.
+*(revisão)* Gerado a partir do código no fim da rodada de revisão; o teste do CA-664 guarda a mesma lista de ids.
+307 dos 597 alimentos da base (182 deles o filtro antigo deixava sugerir). "Antes" diz o que o filtro antigo
+fazia: *sugeria* (podia aparecer no cobrir e nas trocas) ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo
+que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos continuam disponíveis pela busca.
 
 ### Nível 1 — Nunca
 
@@ -219,9 +218,20 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 472 | Cana, aguardente 1 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
 | 474 | Cerveja, pilsen 2 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
 
+#### Sal, shoyu, tempero pronto ou fermento (6)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
+| 513 | Fermento em pó, químico | Miscelâneas | já fora |
+| 514 | Fermento, biológico, levedura, tablete | Miscelâneas | já fora |
+| 516 | Sal, dietético | Miscelâneas | já fora |
+| 517 | Sal, grosso | Miscelâneas | já fora |
+| 518 | Shoyu | Miscelâneas | já fora |
+| 519 | Tempero a base de sal | Miscelâneas | já fora |
+
 ### Nível 2 — Fora da rotina
 
-#### Refrigerante, isotônico ou bebida adoçada (10)
+#### Refrigerante, isotônico ou bebida adoçada (11)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
@@ -235,8 +245,9 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 481 | Refrigerante, tipo guaraná | Bebidas (alcoólicas e não alcoólicas) | sugeria |
 | 482 | Refrigerante, tipo laranja | Bebidas (alcoólicas e não alcoólicas) | sugeria |
 | 483 | Refrigerante, tipo limão | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 512 | Capuccino, pó | Miscelâneas | já fora |
 
-#### Doce, açúcar ou fruta em calda (50)
+#### Doce, açúcar ou fruta em calda (52)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
@@ -255,6 +266,7 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 29 | Curau, milho verde | Cereais e derivados | sugeria |
 | 30 | Curau, milho verde, mistura para | Cereais e derivados | sugeria |
 | 167 | Açaí, polpa, com xarope de guaraná e glucose | Frutas e derivados | sugeria |
+| 171 | Ameixa, calda, enlatada | Frutas e derivados | sugeria |
 | 173 | Ameixa, em calda, enlatada, drenada | Frutas e derivados | sugeria |
 | 176 | Banana, doce em barra | Frutas e derivados | sugeria |
 | 195 | Figo, enlatado, em calda | Frutas e derivados | sugeria |
@@ -288,6 +300,7 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 508 | Melado | Produtos açucarados | sugeria |
 | 509 | Quindim | Produtos açucarados | sugeria |
 | 510 | Rapadura | Produtos açucarados | sugeria |
+| 515 | Gelatina, sabores variados, pó | Miscelâneas | já fora |
 | 579 | Paçoca, amendoim | Leguminosas e derivados | sugeria |
 | 580 | Pé-de-moleque, amendoim | Leguminosas e derivados | sugeria |
 
@@ -318,7 +331,7 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 545 | Salada, de legumes, com maionese | Alimentos preparados | sugeria |
 | 547 | Salpicão, de frango | Alimentos preparados | sugeria |
 
-#### Embutido, carne processada ou curada (24)
+#### Embutido, carne processada ou curada (20)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
@@ -342,9 +355,19 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 438 | Presunto, com capa de gordura | Carnes e derivados | sugeria |
 | 439 | Presunto, sem capa de gordura | Carnes e derivados | sugeria |
 | 443 | Salame | Carnes e derivados | sugeria |
+
+#### Prato com embutido, toucinho, carne curada ou miúdos (9)
+
+| Id | Alimento | Categoria da TACO | Antes |
+|---|---|---|---|
 | 526 | Arroz carreteiro | Alimentos preparados | sugeria |
+| 527 | Baião de dois, arroz e feijão-de-corda | Alimentos preparados | sugeria |
+| 528 | Barreado | Alimentos preparados | sugeria |
+| 536 | Dobradinha | Alimentos preparados | sugeria |
 | 539 | Feijão tropeiro mineiro | Alimentos preparados | sugeria |
 | 540 | Feijoada | Alimentos preparados | sugeria |
+| 543 | Maniçoba | Alimentos preparados | sugeria |
+| 548 | Sarapatel | Alimentos preparados | sugeria |
 | 555 | Virado à paulista | Alimentos preparados | sugeria |
 
 #### Fritura ou salgado frito (31)
@@ -383,15 +406,18 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 529 | Bife à cavalo, com contra filé | Alimentos preparados | sugeria |
 | 530 | Bolinho de arroz | Alimentos preparados | sugeria |
 
-#### Ultraprocessado, salgadinho ou petisco em conserva (13)
+#### Ultraprocessado, salgadinho ou petisco em conserva (16)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
 | 23 | Cereais, mingau, milho, infantil | Cereais e derivados | sugeria |
 | 24 | Cereais, mistura para vitamina, trigo, cevada e aveia | Cereais e derivados | sugeria |
 | 25 | Cereal matinal, milho | Cereais e derivados | sugeria |
+| 28 | Creme de milho, pó | Cereais e derivados | já fora |
+| 31 | Farinha, de arroz, enriquecida | Cereais e derivados | já fora |
 | 36 | Farinha, láctea, de cereais | Cereais e derivados | sugeria |
 | 39 | Macarrão, instantâneo | Cereais e derivados | sugeria |
+| 46 | Mingau tradicional, pó | Cereais e derivados | já fora |
 | 99 | Biscoito, polvilho doce | Verduras, hortaliças e derivados | sugeria |
 | 324 | Caldo de carne, tablete | Carnes e derivados | sugeria |
 | 325 | Caldo de galinha, tablete | Carnes e derivados | sugeria |
@@ -403,37 +429,26 @@ de ingrediente. Todos continuam disponíveis pela busca.
 
 ### Nível 3 — Forma de ingrediente (a chave do cobrir libera)
 
-#### Tempero, sal, fermento ou pó (Miscelâneas) (9)
+#### Ingrediente da categoria Miscelâneas (café em pó) (1)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
 | 511 | Café, pó, torrado | Miscelâneas | já fora |
-| 512 | Capuccino, pó | Miscelâneas | já fora |
-| 513 | Fermento em pó, químico | Miscelâneas | já fora |
-| 514 | Fermento, biológico, levedura, tablete | Miscelâneas | já fora |
-| 515 | Gelatina, sabores variados, pó | Miscelâneas | já fora |
-| 516 | Sal, dietético | Miscelâneas | já fora |
-| 517 | Sal, grosso | Miscelâneas | já fora |
-| 518 | Shoyu | Miscelâneas | já fora |
-| 519 | Tempero a base de sal | Miscelâneas | já fora |
 
-#### Produto em pó ou desidratado (7)
+#### Produto em pó ou desidratado (5)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
 | 27 | Creme de arroz, pó | Cereais e derivados | já fora |
-| 28 | Creme de milho, pó | Cereais e derivados | já fora |
-| 46 | Mingau tradicional, pó | Cereais e derivados | já fora |
 | 114 | Coentro, folhas desidratadas | Verduras, hortaliças e derivados | já fora |
 | 456 | Leite, de vaca, desnatado, pó | Leite e derivados | já fora |
 | 459 | Leite, de vaca, integral, pó | Leite e derivados | já fora |
 | 583 | Soja, extrato solúvel, pó | Leguminosas e derivados | já fora |
 
-#### Farinha, amido ou fécula de uso culinário (13)
+#### Farinha, amido ou fécula de uso culinário (12)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
-| 31 | Farinha, de arroz, enriquecida | Cereais e derivados | já fora |
 | 32 | Farinha, de centeio, integral | Cereais e derivados | já fora |
 | 33 | Farinha, de milho, amarela | Cereais e derivados | já fora |
 | 34 | Farinha, de rosca | Cereais e derivados | já fora |
@@ -447,7 +462,7 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 581 | Soja, farinha | Leguminosas e derivados | já fora |
 | 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | já fora |
 
-#### Versão crua de alimento que se come cozido (98)
+#### Versão crua de alimento que se come cozido (106)
 
 | Id | Alimento | Categoria da TACO | Antes |
 |---|---|---|---|
@@ -460,17 +475,24 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 41 | Macarrão, trigo, cru, com ovos | Cereais e derivados | já fora |
 | 44 | Milho, verde, cru | Cereais e derivados | já fora |
 | 65 | Abóbora, cabotian, crua | Verduras, hortaliças e derivados | sugeria |
-| 66 | Abóbora, menina brasileira, crua | Verduras, hortaliças e derivados | sugeria |
 | 67 | Abóbora, moranga, crua | Verduras, hortaliças e derivados | sugeria |
-| 69 | Abóbora, pescoço, crua | Verduras, hortaliças e derivados | sugeria |
 | 87 | Batata, baroa, crua | Verduras, hortaliças e derivados | sugeria |
 | 89 | Batata, doce, crua | Verduras, hortaliças e derivados | sugeria |
 | 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | sugeria |
 | 96 | Berinjela, crua | Verduras, hortaliças e derivados | sugeria |
 | 103 | Cará, cru | Verduras, hortaliças e derivados | sugeria |
+| 104 | Caruru, cru | Verduras, hortaliças e derivados | sugeria |
 | 113 | Chuchu, cru | Verduras, hortaliças e derivados | sugeria |
+| 125 | Feijão, broto, cru | Verduras, hortaliças e derivados | sugeria |
+| 126 | Inhame, cru | Verduras, hortaliças e derivados | sugeria |
+| 127 | Jiló, cru | Verduras, hortaliças e derivados | sugeria |
 | 130 | Mandioca, crua | Verduras, hortaliças e derivados | sugeria |
 | 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | sugeria |
+| 147 | Quiabo, cru | Verduras, hortaliças e derivados | sugeria |
+| 156 | Taioba, crua | Verduras, hortaliças e derivados | sugeria |
+| 162 | Vagem, crua | Verduras, hortaliças e derivados | sugeria |
+| 196 | Fruta-pão, crua | Frutas e derivados | sugeria |
+| 241 | Pequi, cru | Frutas e derivados | sugeria |
 | 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | já fora |
 | 278 | Atum, fresco, cru | Pescados e frutos do mar | já fora |
 | 279 | Bacalhau, salgado, cru | Pescados e frutos do mar | já fora |
@@ -479,6 +501,7 @@ de ingrediente. Todos continuam disponíveis pela busca.
 | 288 | Corimba, cru | Pescados e frutos do mar | já fora |
 | 291 | Corvina de água doce, crua | Pescados e frutos do mar | já fora |
 | 292 | Corvina do mar, crua | Pescados e frutos do mar | já fora |
+| 295 | Dourada de água doce, fresca | Pescados e frutos do mar | sugeria |
 | 296 | Lambari, congelado, cru | Pescados e frutos do mar | já fora |
 | 298 | Lambari, fresco, cru | Pescados e frutos do mar | já fora |
 | 302 | Merluza, filé, cru | Pescados e frutos do mar | já fora |
@@ -571,8 +594,8 @@ de ingrediente. Todos continuam disponíveis pela busca.
 
 ## Apêndice B — Sugestões do cobrir antes e depois
 
-Medidas com o código da `main` (8f3ffa2) e o desta frente, com a chave desligada e a porção máxima de 200 g. Riscado:
-saiu pela regra (o motivo vem ao lado). O que sumiu sem risco foi empurrado para fora das 5 por quem entrou, ou perdeu a frente por ser pouco usual (jurubeba e jamelão, D-197).
+Medidas com o código da `main` (8f3ffa2) e o desta frente depois da rodada de revisão, com a chave desligada e a porção máxima de 200 g. Riscado:
+saiu pela regra (o motivo vem ao lado). O que sumiu sem risco foi empurrado para fora das 5 por quem entrou, ou perdeu a frente por ser pouco usual (jurubeba e jamelão, D-197) ou por ser corte gordo (D-199b). Porções menores que antes vêm da porção máxima por grupo (seção 7.1), e o sódio não se cobre (D-199d).
 
 ### Plano de exemplo (Maria, 28 anos, gasto de 1.620 kcal)
 
@@ -581,31 +604,31 @@ Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobr
 | Nutriente | Falta | Antes | Depois |
 |---|---|---|---|
 | Cálcio | 244 mg | Rúcula, crua (200 g); Iogurte, natural, desnatado (160 g); Sardinha, assada (60 g); ~~Limão, tahiti, cru (200 g)~~ *tempero ou molho*; Soja, queijo (tofu) (200 g) | Rúcula, crua (200 g); Iogurte, natural, desnatado (160 g); Sardinha, assada (60 g); Soja, queijo (tofu) (200 g); Laranja, da terra, crua (200 g) |
-| Ferro | 7,53 mg | Alface, roxa, crua (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Azeitona, preta, conserva (140 g)~~ *ultraprocessado*; ~~Bebida isotônica, sabores variados (200 g)~~ *bebida adoçada*; Soja, queijo (tofu) (200 g) | Alface, roxa, crua (200 g); Soja, queijo (tofu) (200 g); Pão, glúten, forma (135 g); Carne, bovina, maminha, grelhada (200 g); Estrogonofe de carne (200 g) |
-| Sódio | 566 mg | ~~Caldo de carne, tablete (5 g)~~ *ultraprocessado*; Palmito, juçara, em conserva (115 g); ~~Tremoço, em conserva (35 g)~~ *ultraprocessado*; ~~Arroz carreteiro (35 g)~~ *embutido*; ~~Azeitona, verde, conserva (45 g)~~ *ultraprocessado* | Palmito, juçara, em conserva (115 g); Bacalhau, salgado, refogado (50 g); Yakisoba (75 g); Ervilha, enlatada, drenada (155 g); Polenta, pré-cozida (130 g) |
-| Vitamina A | 38 µg | ~~Abóbora, menina brasileira, crua (10 g)~~ *cru*; Salada, de legumes, cozida no vapor (15 g); Manga, Palmer, crua (10 g); Pupunha, cozida (10 g); Milho, verde, enlatado, drenado (160 g) | Aipo, cru (10 g); Salada, de legumes, cozida no vapor (15 g); Manga, Palmer, crua (10 g); Pupunha, cozida (10 g); Milho, verde, enlatado, drenado (160 g) |
-| Piridoxina (B6) | 0,39 mg | ~~Alfavaca, crua (70 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (10 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Frango, filé, à milanesa (75 g)~~ *fritura* | Catalonha, crua (110 g); Pão, de soja (50 g); Banana, pacova, crua (200 g); Salada, de legumes, cozida no vapor (200 g); Carne, bovina, costela, assada (115 g) |
+| Ferro | 7,53 mg | Alface, roxa, crua (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Azeitona, preta, conserva (140 g)~~ *ultraprocessado*; ~~Bebida isotônica, sabores variados (200 g)~~ *bebida adoçada*; Soja, queijo (tofu) (200 g) | Alface, roxa, crua (200 g); Pão, glúten, forma (50 g); Soja, queijo (tofu) (200 g); Carne, bovina, maminha, grelhada (200 g); Estrogonofe de carne (200 g) |
+| Sódio | 566 mg | ~~Caldo de carne, tablete (5 g)~~ *ultraprocessado*; Palmito, juçara, em conserva (115 g); ~~Tremoço, em conserva (35 g)~~ *ultraprocessado*; ~~Arroz carreteiro (35 g)~~ *prato com embutido*; ~~Azeitona, verde, conserva (45 g)~~ *ultraprocessado* | — *O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.* |
+| Vitamina A | 38 µg | Abóbora, menina brasileira, crua (10 g); Salada, de legumes, cozida no vapor (15 g); Manga, Palmer, crua (10 g); Pupunha, cozida (10 g); Milho, verde, enlatado, drenado (160 g) | Abóbora, menina brasileira, crua (10 g); Salada, de legumes, cozida no vapor (15 g); Manga, Palmer, crua (10 g); Pupunha, cozida (10 g); Milho, verde, enlatado, drenado (160 g) |
+| Piridoxina (B6) | 0,39 mg | ~~Alfavaca, crua (70 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (10 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Frango, filé, à milanesa (75 g)~~ *fritura* | Catalonha, crua (110 g); Pão, de soja (50 g); Banana, pacova, crua (200 g); Salada, de legumes, cozida no vapor (200 g); Carne, bovina, maminha, grelhada (200 g) |
 
 ### Mesma paciente, plano vazio (os 16 com falta)
 
 | Nutriente | Falta | Antes | Depois |
 |---|---|---|---|
 | Cálcio | 900 mg | Rúcula, crua (200 g); Iogurte, natural, desnatado (200 g); Sardinha, assada (200 g); ~~Limão, tahiti, cru (200 g)~~ *tempero ou molho*; Soja, queijo (tofu) (200 g) | Rúcula, crua (200 g); Iogurte, natural, desnatado (200 g); Sardinha, assada (200 g); Soja, queijo (tofu) (200 g); Laranja, da terra, crua (200 g) |
-| Ferro | 16 mg | Alface, roxa, crua (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Azeitona, preta, conserva (200 g)~~ *ultraprocessado*; Pão, glúten, forma (200 g); Soja, queijo (tofu) (200 g) | Alface, roxa, crua (200 g); Pão, glúten, forma (200 g); Soja, queijo (tofu) (200 g); Carne, bovina, maminha, grelhada (200 g); Estrogonofe de carne (200 g) |
-| Magnésio | 279 mg | Espinafre, Nova Zelândia, cru (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; Feijão, rosinha, cozido (200 g); Mamão, Papaia, cru (200 g); Castanha-do-Brasil, crua (80 g) | Espinafre, Nova Zelândia, cru (200 g); Feijão, rosinha, cozido (200 g); Mamão, Papaia, cru (200 g); Castanha-do-Brasil, crua (80 g); Salada, de legumes, cozida no vapor (200 g) |
-| Zinco | 7,20 mg | Agrião, cru (200 g); Carne, bovina, acém, moído, cozido (90 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Cereal matinal, milho, açúcar (85 g)~~ *doce*; Feijão, rosinha, cozido (200 g) | Agrião, cru (200 g); Carne, bovina, acém, moído, cozido (90 g); Barreado (150 g); Feijão, rosinha, cozido (200 g); Camarão, Rio Grande, grande, cozido (200 g) |
-| Potássio | 2.340 mg | Chicória, crua (200 g); ~~Café, infusão 10% (200 g)~~ *infusão*; ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; Jamelão, cru (200 g); Iogurte, natural, desnatado (200 g) | Chicória, crua (200 g); Romã, crua (200 g); Coco, água de (200 g); Salada, de legumes, cozida no vapor (200 g); Iogurte, natural, desnatado (200 g) |
+| Ferro | 16 mg | Alface, roxa, crua (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Azeitona, preta, conserva (200 g)~~ *ultraprocessado*; Pão, glúten, forma (200 g); Soja, queijo (tofu) (200 g) | Alface, roxa, crua (200 g); Pão, glúten, forma (50 g); Soja, queijo (tofu) (200 g); Carne, bovina, maminha, grelhada (200 g); Estrogonofe de carne (200 g) |
+| Magnésio | 279 mg | Espinafre, Nova Zelândia, cru (200 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; Feijão, rosinha, cozido (200 g); Mamão, Papaia, cru (200 g); Castanha-do-Brasil, crua (80 g) | Espinafre, Nova Zelândia, cru (200 g); Linhaça, semente (30 g); Feijão, rosinha, cozido (200 g); Mamão, Papaia, cru (200 g); Salada, de legumes, cozida no vapor (200 g) |
+| Zinco | 7,20 mg | Agrião, cru (200 g); Carne, bovina, acém, moído, cozido (90 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Cereal matinal, milho, açúcar (85 g)~~ *doce*; Feijão, rosinha, cozido (200 g) | Agrião, cru (200 g); Carne, bovina, acém, moído, cozido (90 g); Charuto, de repolho (200 g); Feijão, rosinha, cozido (200 g); Camarão, Rio Grande, grande, cozido (200 g) |
+| Potássio | 2.340 mg | Chicória, crua (200 g); ~~Café, infusão 10% (200 g)~~ *café ou chá*; ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; Jamelão, cru (200 g); Iogurte, natural, desnatado (200 g) | Chicória, crua (200 g); Romã, crua (200 g); Coco, água de (200 g); Salada, de legumes, cozida no vapor (200 g); Iogurte, natural, desnatado (200 g) |
 | Fósforo | 630 mg | Abadejo, filé, congelado, grelhado (110 g); Alface, roxa, crua (200 g); Iogurte, natural, desnatado (200 g); ~~Presunto, sem capa de gordura (200 g)~~ *embutido*; Camarão à baiana (200 g) | Abadejo, filé, congelado, grelhado (110 g); Alface, roxa, crua (200 g); Iogurte, natural, desnatado (200 g); Camarão à baiana (200 g); Soja, queijo (tofu) (200 g) |
-| Sódio | 1.350 mg | ~~Caldo de carne, tablete (10 g)~~ *ultraprocessado*; Palmito, juçara, em conserva (200 g); ~~Tremoço, em conserva (75 g)~~ *ultraprocessado*; ~~Arroz carreteiro (85 g)~~ *embutido*; ~~Azeitona, verde, conserva (105 g)~~ *ultraprocessado* | Palmito, juçara, em conserva (200 g); Bacalhau, salgado, refogado (110 g); Yakisoba (175 g); Ervilha, enlatada, drenada (200 g); Polenta, pré-cozida (200 g) |
-| Cobre | 0,81 mg | Mamão, Formosa, cru (60 g); Repolho, roxo, cru (90 g); Charuto, de repolho (60 g); Quibe, assado (160 g); Castanha-de-caju, torrada, salgada (45 g) | Mamão, Formosa, cru (60 g); Repolho, roxo, cru (90 g); Charuto, de repolho (60 g); Quibe, assado (160 g); Castanha-de-caju, torrada, salgada (45 g) |
-| Manganês | 1,62 mg | Palmito, juçara, em conserva (15 g); ~~Chá, mate, infusão 5% (200 g)~~ *infusão*; Açaí, polpa, congelada (30 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Melado (65 g)~~ *doce* | Palmito, juçara, em conserva (15 g); Açaí, polpa, congelada (30 g); Coco, água de (200 g); Feijão, rosinha, cozido (200 g); Salada, de legumes, cozida no vapor (200 g) |
-| Vitamina A | 630 µg | ~~Abóbora, menina brasileira, crua (115 g)~~ *cru*; Salada, de legumes, cozida no vapor (200 g); Manga, Palmer, crua (165 g); Pupunha, cozida (145 g); ~~Pescada, branca, frita (200 g)~~ *fritura* | Aipo, cru (140 g); Salada, de legumes, cozida no vapor (200 g); Manga, Palmer, crua (165 g); Pupunha, cozida (145 g); Carne, bovina, fígado, grelhado (5 g) |
+| Sódio | 1.350 mg | ~~Caldo de carne, tablete (10 g)~~ *ultraprocessado*; Palmito, juçara, em conserva (200 g); ~~Tremoço, em conserva (75 g)~~ *ultraprocessado*; ~~Arroz carreteiro (85 g)~~ *prato com embutido*; ~~Azeitona, verde, conserva (105 g)~~ *ultraprocessado* | — *O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.* |
+| Cobre | 0,81 mg | Mamão, Formosa, cru (60 g); Repolho, roxo, cru (90 g); Charuto, de repolho (60 g); Quibe, assado (160 g); Castanha-de-caju, torrada, salgada (45 g) | Mamão, Formosa, cru (60 g); Repolho, roxo, cru (90 g); Charuto, de repolho (60 g); Quibe, assado (160 g); Castanha-de-caju, torrada, salgada (30 g) |
+| Manganês | 1,62 mg | Palmito, juçara, em conserva (15 g); ~~Chá, mate, infusão 5% (200 g)~~ *café ou chá*; Açaí, polpa, congelada (30 g); ~~Tucupi, com pimenta-de-cheiro (200 g)~~ *tempero ou molho*; ~~Melado (65 g)~~ *doce* | Palmito, juçara, em conserva (15 g); Açaí, polpa, congelada (30 g); Coco, água de (200 g); Feijão, rosinha, cozido (200 g); Salada, de legumes, cozida no vapor (200 g) |
+| Vitamina A | 630 µg | Abóbora, menina brasileira, crua (115 g); Salada, de legumes, cozida no vapor (200 g); Manga, Palmer, crua (165 g); Pupunha, cozida (145 g); ~~Pescada, branca, frita (200 g)~~ *fritura* | Abóbora, menina brasileira, crua (115 g); Salada, de legumes, cozida no vapor (200 g); Manga, Palmer, crua (165 g); Pupunha, cozida (145 g); Carne, bovina, fígado, grelhado (5 g) |
 | Vitamina C | 68 mg | Acerola, polpa, congelada (15 g); Pimentão, amarelo, cru (35 g); ~~Tucupi, com pimenta-de-cheiro (150 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (65 g)~~ *ultraprocessado*; Pinhão, cozido (200 g) | Acerola, polpa, congelada (15 g); Pimentão, amarelo, cru (35 g); Salada, de legumes, cozida no vapor (200 g); Pinhão, cozido (200 g); Ervilha, em vagem (200 g) |
-| Tiamina (B1) | 0,99 mg | ~~Chá, preto, infusão 5% (35 g)~~ *infusão*; Alface, crespa, crua (200 g); ~~Limão, tahiti, cru (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (30 g)~~ *ultraprocessado*; ~~Presunto, sem capa de gordura (200 g)~~ *embutido* | Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Porco, lombo, assado (135 g); Ervilha, em vagem (200 g); Biscoito, salgado, cream cracker (140 g) |
-| Riboflavina (B2) | 0,99 mg | ~~Chá, preto, infusão 5% (200 g)~~ *infusão*; Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); ~~Cereal matinal, milho, açúcar (90 g)~~ *doce* | Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); Pão, trigo, francês (150 g); Ovo, de galinha, inteiro, cozido/10minutos (200 g) |
-| Piridoxina (B6) | 1,17 mg | ~~Alfavaca, crua (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (25 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Paçoca, amendoim (100 g)~~ *doce* | Catalonha, crua (200 g); Pão, de soja (150 g); Banana, pacova, crua (200 g); Carne, bovina, costela, assada (200 g); Castanha-de-caju, torrada, salgada (200 g) |
+| Tiamina (B1) | 0,99 mg | ~~Chá, preto, infusão 5% (35 g)~~ *café ou chá*; Alface, crespa, crua (200 g); ~~Limão, tahiti, cru (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (30 g)~~ *ultraprocessado*; ~~Presunto, sem capa de gordura (200 g)~~ *embutido* | Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Porco, lombo, assado (135 g); Ervilha, em vagem (200 g); Biscoito, salgado, cream cracker (50 g) |
+| Riboflavina (B2) | 0,99 mg | ~~Chá, preto, infusão 5% (200 g)~~ *café ou chá*; Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); ~~Cereal matinal, milho, açúcar (90 g)~~ *doce* | Agrião, cru (200 g); Iogurte, natural, desnatado (200 g); Acerola, polpa, congelada (200 g); Pão, trigo, francês (50 g); Ovo, de galinha, inteiro, cozido/10minutos (200 g) |
+| Piridoxina (B6) | 1,17 mg | ~~Alfavaca, crua (200 g)~~ *tempero ou molho*; ~~Cereais, mingau, milho, infantil (25 g)~~ *ultraprocessado*; ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica*; Jamelão, cru (200 g); ~~Paçoca, amendoim (100 g)~~ *doce* | Catalonha, crua (200 g); Pão, de soja (50 g); Banana, pacova, crua (200 g); Carne, bovina, maminha, grelhada (200 g); Castanha-de-caju, torrada, salgada (30 g) |
 | Niacina (B3) | 13 mg | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); ~~Cerveja, pilsen 2 (200 g)~~ *bebida alcoólica* | Frango, peito, sem pele, grelhado (55 g); Alface, crespa, crua (200 g); Cupuaçu, cru (200 g); Cação, posta, cozida (130 g); Feijão, rosinha, cozido (200 g) |
-| Fibra alimentar | 23 g | Jambo, cru (200 g); Jurubeba, crua (95 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) | Jambo, cru (200 g); Jiló, cru (200 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) |
+| Fibra alimentar | 23 g | Jambo, cru (200 g); Jurubeba, crua (95 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) | Jambo, cru (200 g); Alface, crespa, crua (200 g); Feijão, jalo, cozido (165 g); Pinhão, cozido (145 g); Salada, de legumes, cozida no vapor (200 g) |
 
 ## Apêndice C — Para a revisão da estudante: o que ficou dentro e o que pode estar rígido demais
 
