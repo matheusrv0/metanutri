@@ -69,8 +69,16 @@ const CATEGORIAS_SO_COZIDAS = new Set([
   'Leguminosas e derivados',
   'Cereais e derivados',
 ])
-/** Verduras que a base também traz cozidas; a mandioca crua, além disso, é tóxica. */
-const VERDURA_SO_COZIDA = /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora|Berinjela|Chuchu|P(ã|a)o, de queijo),/i
+/**
+ * Verduras e frutas que se comem cozidas (spec sugestoes-com-criterio, D-199a). As primeiras a base também traz
+ * cozidas, e a mandioca crua é tóxica; inhame, vagem, taioba, fruta-pão, jiló, broto, caruru, quiabo e pequi só
+ * existem crus, e a nutricionista põe pela busca. Das abóboras, só as que têm a versão cozida (cabotian e moranga):
+ * a menina e a pescoço só existem cruas e ficam.
+ */
+const VERDURA_SO_COZIDA =
+  /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora, (cabotian|moranga)|Berinjela|Chuchu|P(ã|a)o, de queijo|Inhame|Vagem|Taioba|Fruta-p(ã|a)o|Jil(ó|o)|Feij(ã|a)o, broto|Caruru|Quiabo|Pequi),/i
+/** Peixe "fresco" sem preparo no nome é peixe cru ("Dourada de água doce, fresca"). */
+const PEIXE_FRESCO = /(^|[\s,])fresc[oa]$/i
 const CRU_CONSUMIDO = /^Aveia,/
 
 const ERVA_OU_TEMPERO = /^(Alho|Alfavaca|Manjeric(ã|a)o|Salsa|Coentro|Cebolinha|Alecrim|Or(é|e)gano|Hortel(ã|a)),/i
@@ -136,6 +144,7 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     nivel: 'ingrediente',
     titulo: 'Versão crua de alimento que se come cozido',
     casa: (a) => {
+      if (a.categoria === 'Pescados e frutos do mar' && PEIXE_FRESCO.test(a.descricao.trim())) return true
       if (a.preparo !== 'cru' && !CRU.test(a.descricao)) return false
       if (CRU_CONSUMIDO.test(a.descricao)) return false
       return CATEGORIAS_SO_COZIDAS.has(a.categoria) || VERDURA_SO_COZIDA.test(a.descricao)

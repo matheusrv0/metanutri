@@ -152,7 +152,19 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Batata, doce, crua', 'cru'],
     ['Batata, inglesa, crua', 'cru'],
     ['Cará, cru', 'cru'],
-    ['Abóbora, menina brasileira, crua', 'cru'],
+    ['Abóbora, cabotian, crua', 'cru'],
+    ['Abóbora, moranga, crua', 'cru'],
+    // Revisão D-199a: comem-se cozidos, mesmo sem versão cozida na base.
+    ['Inhame, cru', 'cru'],
+    ['Vagem, crua', 'cru'],
+    ['Taioba, crua', 'cru'],
+    ['Fruta-pão, crua', 'cru'],
+    ['Jiló, cru', 'cru'],
+    ['Feijão, broto, cru', 'cru'],
+    ['Caruru, cru', 'cru'],
+    ['Quiabo, cru', 'cru'],
+    ['Pequi, cru', 'cru'],
+    ['Dourada de água doce, fresca', 'cru'],
     ['Berinjela, crua', 'cru'],
     ['Chuchu, cru', 'cru'],
     ['Pão, de queijo, cru', 'cru'],
@@ -166,7 +178,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Tucupi, com pimenta-de-cheiro', 'tempero'],
     ['Cuxá, molho', 'tempero'],
     ['Uva, suco concentrado, envasado', 'tempero'],
-  ])('CA-652 e CA-653: "%s" é forma de ingrediente (%s); só a chave libera', (d, id) => {
+  ])('CA-652, CA-653 e CA-670: "%s" é forma de ingrediente (%s); só a chave libera', (d, id) => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toMatchObject({ id, nivel: 'ingrediente' })
     expect(ehPrescritivel(a)).toBe(false)
@@ -199,7 +211,11 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     'Couve, manteiga, refogada',
     'Alho-poró, cru',
     'Abobrinha, italiana, crua',
-    'Inhame, cru',
+    'Abóbora, menina brasileira, crua',
+    'Abóbora, pescoço, crua',
+    'Maxixe, cru',
+    'Mostarda, folha, crua',
+    'Salmão, sem pele, fresco, grelhado',
     'Cenoura, crua',
     'Acerola, crua',
     'Açaí, polpa, congelada',
@@ -208,7 +224,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     'Feijão, carioca, cozido',
     'Carne, bovina, fígado, grelhado',
     'Quibe, assado',
-  ])('seção 2.1: "%s" é prescritível', (d) => {
+  ])('seção 2.1 e CA-670: "%s" é prescritível', (d) => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toBeNull()
     expect(ehPrescritivel(a)).toBe(true)
@@ -252,10 +268,10 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       miscelanea: 1,
       po: 5,
       farinha: 12,
-      cru: 98,
+      cru: 106,
       tempero: 14,
     })
-    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(299)
+    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(307)
     expect(ALIMENTOS).toHaveLength(597)
   })
 
