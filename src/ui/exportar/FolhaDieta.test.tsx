@@ -71,6 +71,19 @@ describe('Folha da dieta (US-B1)', () => {
     expect(jantar.getByText('Macarrão cru').closest('li')).toHaveTextContent(/^Macarrão cru, 80 g$/)
   })
 
+  it('CA-641 e CA-642: medida vaga com o peso discreto ao lado; margarina em ponta de faca', () => {
+    let plano = planoCheio()
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 263, gramas: 5 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} />)
+    // Fatia é medida vaga (D-189): o peso vem depois de " · ", em cinza. A medida é a do planejador.
+    const batata = refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li') as HTMLElement
+    expect(batata).toHaveTextContent(/^Batata inglesa cozida, 7 fatias e meia · 120 g$/)
+    expect(within(batata).getByText('· 120 g', { exact: false })).toHaveClass('text-muted-foreground')
+    expect(refeicao(/^06:00 Desjejum$/).getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
+  })
+
   it('CA-626: produto cadastrado sai com o nome que a nutricionista escreveu', () => {
     const whey = { ...ALIMENTOS[0], id: PRIMEIRO_ID_PRODUTO + 7, descricao: 'Whey, baunilha (Marca X)', categoria: 'Meus produtos', base: null } as Alimento
     registrarProdutos([whey])

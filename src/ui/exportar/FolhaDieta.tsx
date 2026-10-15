@@ -1,6 +1,5 @@
 import { Fragment } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { medidaEquivalente } from '@/domain/busca.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
@@ -15,6 +14,7 @@ import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
+import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
@@ -48,8 +48,20 @@ const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,17rem)_minmax(0
 /** Nas trocas, o alimento do plano à esquerda e as trocas dele ao lado. */
 const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
 
-/** Uma quantidade só: a medida caseira; sem ela, o peso (spec impressao-do-plano, D-183, CA-629 e CA-630). */
-const quantidade = (item: ItemPlano): string => medidaEquivalente(item.alimentoId, item.gramas)?.texto ?? `${formatarNumero(item.gramas, 0)} g`
+/**
+ * Uma quantidade por linha (spec impressao-do-plano, D-183): a medida caseira; o peso discreto ao lado só quando a
+ * medida é vaga (D-189, CA-641); sem medida, o peso (CA-630).
+ */
+function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
+  const peso = `${formatarNumero(quantidade.gramas, 0)} g`
+  // No celular a quantidade vai embaixo do nome, em cinza; no papel e na tela larga, na cor do texto.
+  return (
+    <span className="text-muted-foreground sm:text-foreground">
+      {quantidade.medida ?? peso}
+      {quantidade.medida !== null && quantidade.comPeso ? <span className="numeros text-muted-foreground">{` · ${peso}`}</span> : null}
+    </span>
+  )
+}
 
 /** O alimento primeiro, com o nome que o paciente entende (CA-623), e a quantidade ao lado. */
 function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
@@ -59,7 +71,7 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
         <li key={item.id} className={COLUNAS}>
           <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
           <span className="sr-only">, </span>
-          <span className="text-muted-foreground sm:text-foreground">{quantidade(item)}</span>
+          <Quantidade quantidade={quantidadeNaFolha(item.alimentoId, item.gramas, buscarAlimento)} />
         </li>
       ))}
     </ul>
