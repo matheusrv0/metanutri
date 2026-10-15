@@ -113,6 +113,19 @@ describe('nome para o paciente', () => {
     }
   })
 
+  it('CA-625 (revisão final da integração): os 11 que só existem crus e continuam prescritíveis levam "(peso cru)"', () => {
+    // A spec sugestoes-com-criterio (D-199a, Apêndice C.1) os deixa no Cobrir e nas trocas porque a folha marca o peso cru.
+    const SO_CRUS_PRESCRITIVEIS = [66, 69, 104, 125, 126, 127, 147, 156, 162, 196, 241]
+    for (const id of SO_CRUS_PRESCRITIVEIS) {
+      const n = nome(id)
+      expect(n, String(id)).toMatch(/ \(peso cru\)$/)
+      expect(n.replace(/ \(peso cru\)$/, ''), String(id)).not.toMatch(/\bcru/i)
+    }
+    expect(nome(125)).toBe('Broto de feijão (peso cru)')
+    expect(nome(196)).toBe('Fruta-pão (peso cru)')
+    expect(nome(241)).toBe('Pequi (peso cru)')
+  })
+
   it('CA-625: pela regra geral, cereal, leguminosa, carne e peixe crus levam "(peso cru)", e o preparo nunca sai', () => {
     const revisados = new Set(Object.keys(NOMES_REVISADOS).map(Number))
     const pesoCru = /^(Cereais|Leguminosas|Carnes|Pescados)/
@@ -126,7 +139,11 @@ describe('nome para o paciente', () => {
         expect(n, a.descricao).toMatch(/ \(peso cru\)$/)
         expect(semPesoCru, a.descricao).not.toMatch(/\bcru(a|s|as)?\b/)
       }
-      if (cru && /^(Frutas|Nozes)/.test(a.categoria)) expect(n, a.descricao).not.toMatch(/\bcru(a|s|as)?\b/)
+      if (cru && /^(Frutas|Nozes)/.test(a.categoria)) {
+        // Fruta e castanha não dizem "cru"; só a fruta-pão e o pequi, que se comem cozidos, levam "(peso cru)".
+        expect(semPesoCru, a.descricao).not.toMatch(/\bcru(a|s|as)?\b/)
+        if (n !== semPesoCru) expect(['Fruta-pão', 'Pequi'], a.descricao).toContain(a.base)
+      }
     }
   })
 

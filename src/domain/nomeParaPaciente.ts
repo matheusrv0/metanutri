@@ -54,7 +54,7 @@ export const NOMES_REVISADOS: Readonly<Record<number, string>> = {
   114: 'Coentro desidratado',
   119: 'Espinafre (peso cru)',
   120: 'Espinafre refogado',
-  125: 'Broto de feijão',
+  125: 'Broto de feijão (peso cru)',
   131: 'Farofa de mandioca',
   135: 'Folha de mostarda (peso cru)',
   136: 'Nhoque de batata cozido',
@@ -210,6 +210,8 @@ const VERDURAS_COZIDAS = new Set([
   'Vagem',
   'Jurubeba',
 ])
+/** Frutas que se comem cozidas e a base só tem cruas: o "cru" também vira "(peso cru)" (revisão final da integração). */
+const FRUTAS_COZIDAS = new Set(['Fruta-pão', 'Pequi'])
 const PESO_CRU = ' (peso cru)'
 const ORTOGRAFIA: readonly (readonly [RegExp, string])[] = [
   [/Lingüiça/g, 'Linguiça'],
@@ -275,7 +277,10 @@ function pelaRegra(alimento: Alimento): string {
 
   // O "cru": vira "(peso cru)" onde o peso é do cru e se come preparado; sai onde não diz nada; fica onde importa.
   const verdura = alimento.categoria === GRUPO_VERDURAS
-  const pesoCru = resto.some((p) => CRU.test(p)) && (GRUPOS_PESO_CRU.test(alimento.categoria) || (verdura && VERDURAS_COZIDAS.has(alimento.base ?? '')))
+  const baseDaTabela = alimento.base ?? ''
+  const pesoCru =
+    resto.some((p) => CRU.test(p)) &&
+    (GRUPOS_PESO_CRU.test(alimento.categoria) || (verdura && VERDURAS_COZIDAS.has(baseDaTabela)) || FRUTAS_COZIDAS.has(baseDaTabela))
   const tirarCru = pesoCru || GRUPOS_SEM_CRU.has(alimento.categoria) || (verdura && !BASES_COM_PREPARO.has(alimento.base))
   const palavras = resto
     .filter((p) => !NOTA.test(p) && !(tirarCru && CRU.test(p)))
