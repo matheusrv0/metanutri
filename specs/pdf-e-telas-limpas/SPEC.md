@@ -7,7 +7,8 @@ mesmo dia depois de uma rodada no PDF ("muita informação e letra muito pequena
 **Substituída em parte (15/10/2026)** por duas specs:
 - `impressao-do-plano` (a folha impressa) troca o D-50 (o PDF passa a ter o nome do alimento para o paciente), o
   CA-309 (uma quantidade só por linha), o CA-310 (as opções vêm depois de "ou", sem caixa), o CA-312 ("No dia a dia"
-  saiu da folha) e o CA-314 (sai a linha da base; fica só a frase da prescrição rápida).
+  saiu da folha), o CA-314 (sai a linha da base; fica só a frase da prescrição rápida) e o CA-319 (as trocas saem com
+  o nome para o paciente, D-181, e com o peso quando a medida caseira não serve, CA-644).
 - `painel-lateral-enxuto` (as telas do planejador) troca parte do CA-333 ("Metas" fica dentro de "Ajustar", D-203) e
   revê o CA-338 (na etapa 3, os nutrientes na meta ficam recolhidos e, no celular, a tabela vira lista; D-205 e
   D-207). Esses dois critérios trazem a nota ao lado.

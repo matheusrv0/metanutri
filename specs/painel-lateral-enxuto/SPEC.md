@@ -15,7 +15,7 @@ ajuda a decidir some de vez, e nenhuma métrica nova entra.
 o foco depois de "Adicionar" no Cobrir (D-212) e confere o sódio sem Cobrir de ponta a ponta (CA-714).
 Ver "Integração das três frentes" no §3.
 
-**Specs que esta muda:** `pdf-e-telas-limpas` (CA-333 e CA-337 a CA-339), `estilo-spora` (CA-206; e o CA-210, no
+**Specs que esta muda:** `pdf-e-telas-limpas` (CA-333 e CA-338), `estilo-spora` (CA-206; e o CA-210, no
 sódio sem Cobrir, D-206) e `planejador-metanutri` (CA-10 e CA-22, só a forma de mostrar; e o CA-34, no sódio sem
 Cobrir, D-206). Nenhum cálculo muda.
 
