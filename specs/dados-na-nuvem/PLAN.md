@@ -168,6 +168,34 @@ outra.
     edição da Ana feita em A continua).
 - [x] **T42** — Validação: `npm run check`, `npx playwright test`, `npm run build`, as duas simulações do revisor.
 
+### Rodada da revisão final da integração (15/10/2026)
+
+Revisão "com correções", sem nada crítico (simulações `ordem.mts` e `r8.mts`, fora do repositório). Ordem: T43 primeiro;
+T44 a T48 não dependem umas das outras; T49 e T50 no fim.
+
+- [x] **T43** — Spec e plano: D-170 (regra da hora e aba nova), D-172, CA-598 a CA-603; DP-34 a DP-38; R8 revisto.
+- [ ] **T44** — Ordem dos campos da ficha (DP-34): em `criarPacienteVazio` (`src/domain/pacientes.ts`), os campos novos
+  vêm depois de `atualizadoEm`. Teste com a leitura da versão de antes (`pacientes.test.ts`). Cobre CA-598.
+- [ ] **T45** — Só volta para a nuvem o valor daqui mais novo (DP-35): `src/domain/copiaDaConta.ts`; o teste do CA-590
+  muda e entra o cenário do `r8.mts` (`copiaDaConta.test.ts`). Cobre CA-590, CA-599.
+- [ ] **T46** — Aba nova devolve sem esperar edição (DP-36): `src/domain/copiaDaConta.ts` (`chavesMantidas`, sem gravar
+  nada) e `src/domain/sincronia.ts` (abrir com a mesma versão; conferir depois de outra aba deste navegador salvar).
+  Teste em `sincronia.test.ts`. Cobre CA-600.
+- [ ] **T47** — A leitura dos links da nuvem não regrava o link igual (DP-37): `src/domain/repositorioAcompanhamentos.ts`
+  (`marcar`, só as marcas; `mesmoLink`) e `src/ui/estado/ProvedorAcompanhamentos.tsx`; teste em
+  `repositorioAcompanhamentos.test.ts` e no provedor. Cobre CA-601.
+- [ ] **T48** — Aviso de versão nova (DP-38): `vite.config.ts` sem mudar `registerType` nem `workbox`;
+  `src/ui/aplicativo/registrarAplicativo.ts` (o `virtual:pwa-register`), `src/ui/aplicativo/versaoNova.ts` (o estado),
+  `src/ui/aplicativo/AvisoVersaoNova.tsx` (a barra), `src/ui/layout/Estrutura.tsx` (o lugar), `src/main.tsx` (liga) e
+  `src/vite-env.d.ts` (os tipos); testes com o registro de mentira. Cobre CA-602, CA-603 (com o `e2e/csp.spec.ts` e o
+  `npm run test:csp`).
+- [ ] **T49** — Textos: a Política cita a data da próxima consulta (CA-597 da `anamnese-e-prescricoes`); o dia da cópia
+  da dieta é o de Brasília (D-158 da `dieta-no-link`, comentário em `dietaDoLink.ts`); D-150 da `dieta-no-link` exclui os
+  suplementos da ficha; a nota de publicação (`docs/pendencias.md`) manda recarregar e conferir a "Anamnese", cita o R8 e
+  "não use Sair numa aba antiga".
+- [ ] **T50** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
+  `node scripts/conferir-publicacao.mjs`, `npm run test:csp` e as simulações do revisor.
+
 ## Mapa de cobertura
 
 | Critério | Tarefa | Teste |
@@ -195,6 +223,12 @@ outra.
 | CA-595 | T41 | `repositorioAcompanhamentos.test.ts`, `suplementos.test.ts`, `produtos.test.ts` e `modelos.test.ts` "CA-595: …" |
 | CB-170 | T40 | `copiaDaConta.test.ts` "CB-170: …" |
 | CB-171 | T40 | `copiaDaConta.test.ts` "CB-171: …" |
+| CA-598 | T44 | `pacientes.test.ts` "CA-598: …" |
+| CA-599 | T45 | `copiaDaConta.test.ts` "CA-599: …" |
+| CA-600 | T46 | `copiaDaConta.test.ts` e `sincronia.test.ts` "CA-600: …" |
+| CA-601 | T47 | `repositorioAcompanhamentos.test.ts` e `missoesNaNuvem.test.tsx` "CA-601: …" |
+| CA-602 | T48 | `aplicativo.test.tsx` "CA-602: …" |
+| CA-603 | T48 | `aplicativo.test.tsx` "CA-603: …", `e2e/csp.spec.ts` (CA-486) e `npm run test:csp` |
 
 ## Decisões do plano
 
@@ -328,6 +362,31 @@ outra.
   leem a lista guardada como está, trocam só o item salvo (ou tiram o excluído) e gravam os outros exatamente como
   estavam. O que é lido para a tela continua completo. Produtos e modelos de plano já gravavam o que leram, sem
   completar nada; ganharam só o teste.
+- **DP-34 · A ordem dos campos da ficha (CA-598, revisão final).** A versão de antes das novidades lê cada ficha como
+  `{ ...fichaVaziaDela, ...ficha }`: os campos que ela conhece vêm primeiro, na ordem dela, e os outros depois. Para o
+  texto de uma ficha desta versão sair igual dessa leitura, `criarPacienteVazio` põe os campos novos (`proximaConsulta`,
+  `respostasAnamnese`, `suplementos`, `pedidoExames`) depois de `atualizadoEm`. Sem isso, a aba antiga que salva uma ficha
+  regravaria todas com outra ordem, e todas contariam como mudadas agora.
+- **DP-35 · Só sobe o valor daqui mais novo (D-170, CA-599, revisão final).** A chave que a cópia não traz e fica aqui
+  entra em `mantidas` (e sobe) só quando a marca daqui é igual ou mais nova que a marca que a cópia traz dela (sem marca
+  na cópia, conta como mais nova). Mais velha, a chave fica aqui sem subir e assume a marca da cópia: outro aparelho tem
+  o valor mais novo e o devolve, e a próxima cópia traz esse valor para cá. Nas listas, vale item por item: a lista sobe
+  quando algum item que ficou é igual ou mais novo que a marca da cópia.
+- **DP-36 · Aba nova devolve sem esperar edição (CA-600, revisão final).** A aba antiga deste navegador não tira as chaves
+  novas do armazenamento (ela não as conhece), mas grava na situação a versão que mandou. Por isso: ao abrir em dia, com
+  a mesma versão da nuvem, o motor confere (sem gravar nada, `chavesMantidas`) se ficaria alguma chave daqui que a cópia
+  não traz; se sim, aplica e sobe. Ao conferir, quando a versão da nuvem é a mesma da situação mas não é a última que esta
+  aba viu (outra aba deste navegador mandou), lê a cópia uma vez e faz a mesma conferência.
+- **DP-37 · Link igual não é regravado (CA-601, revisão final).** Ao ler os links da nuvem, o link que já está igual aqui
+  (comparando o que importa: id, token, plano, paciente, nome, criação, missões, marcações, aviso e a dieta já lida) não
+  é regravado; só ganha a marca "está na nuvem", se faltar, sem mexer no texto do item (`marcar`). Antes, todo link era
+  regravado com a forma da linha do banco (a ordem dos campos e `dieta: null`), e contava como mudado agora.
+- **DP-38 · Aviso de versão nova (D-172, CA-602, CA-603, revisão final).** O registro do service worker passa do
+  `registerSW.js` que o plugin escrevia para o `virtual:pwa-register` dentro do pacote (o plugin deixa de injetar o
+  script quando o app usa o módulo). `registerType: 'autoUpdate'` e `workbox` não mudam: o service worker novo continua
+  assumindo sozinho; o que muda é que, quando ele assume, o app chama `onNeedReload` em vez de recarregar, e a área de
+  trabalho mostra a barra (um `Alert` no fluxo do conteúdo, como os outros avisos da área). "Atualizar" recarrega. O
+  registro continua esperando o `load` da página, como o script de antes. Sem script na página: a CSP continua igual.
 
 ## Riscos
 
@@ -348,6 +407,10 @@ outra.
   aparelho que só aplicar a cópia já devolvida pelo outro (sem ter passado pela da versão antiga) fica com a dele. Some
   quando a aba velha é fechada ou recarregada: o aplicativo se atualiza sozinho (`registerType: 'autoUpdate'`), mas a
   aba que já estava aberta continua com o código velho até lá. Por isso a nota de publicação pede para fechar as abas.
+  *(Revisão final:)* o caso dos dois roteiros diferentes ficou coberto pelo DP-35 (só o mais novo sobe); daqui para a
+  frente, o aviso de versão nova (D-172) faz a aba velha recarregar logo. Nesta publicação, as abas abertas antes dela
+  ainda não têm o aviso. "Sair" numa aba antiga apaga a cópia de trabalho deste navegador, inclusive as chaves novas que
+  ainda não voltaram para a nuvem: por isso a nota de publicação diz para não usar "Sair" numa aba antiga.
 
 ## Divergências para o dono decidir
 

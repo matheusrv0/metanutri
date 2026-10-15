@@ -108,7 +108,7 @@ Como nutricionista, quero pedir exames de laboratório numa folha pronta.
 - **CA-587** · Dado a ficha numa tela de 360 px, então nada rola para o lado e todo botão e toda caixa de marcar têm pelo menos 44 px de toque. Abaixo da tela larga (xl), "Histórico de planos" (com "Novo plano") e "Evolução do peso" vêm antes dos cartões longos, e "Apagar paciente" é o último cartão. No topo das folhas, quem assina fica alinhado à esquerda quando cai embaixo do título.
 - **CA-588** · Dado uma ficha gravada antes desta mudança (sem os campos novos), então ela abre sem erro, com tudo vazio; e um campo novo estragado (por exemplo, suplementos que não são lista) vira vazio sem apagar o resto da ficha.
 - **CA-589** · Dado dado que esta versão não conhece (exame de id desconhecido, resposta de bloco desconhecido, campo a mais num suplemento ou num modelo, bloco desconhecido no roteiro), então ele não aparece na tela nem nas folhas, mas continua guardado depois de ler e salvar de novo.
-- **CA-597** · Dado a Política de privacidade, então "Que dados guardamos e para quê" diz, numa frase curta, que a ficha do paciente também guarda as respostas da anamnese, os suplementos e os pedidos de exame, que são dados de saúde com o mesmo cuidado dos outros; e a data da versão é "15 de outubro de 2026". *(integração de 15/10)*
+- **CA-597** · Dado a Política de privacidade, então "Que dados guardamos e para quê" diz, numa frase curta, que a ficha do paciente também guarda a data da próxima consulta (spec `whatsapp-e-retorno`; revisão final de 15/10/2026), as respostas da anamnese, os suplementos e os pedidos de exame, que são dados de saúde com o mesmo cuidado dos outros; e a data da versão é "15 de outubro de 2026". *(integração de 15/10)*
 
 ## 5. Casos de borda
 

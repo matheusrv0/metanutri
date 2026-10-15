@@ -10,6 +10,9 @@ as chaves novas da conta (roteiro de anamnese e modelos de suplemento) em todos 
 remarcava todos os outros como mudados agora, o que deixava um aparelho desatualizado passar por cima de edições feitas
 em outro. Vale para todas as contas, desde a publicação das novidades.
 
+**Revisão final de 15/10/2026:** o D-170 ganha a regra da hora (só volta para a nuvem o valor daqui que é o mais novo),
+e entram D-172 (aviso de versão nova), CA-598 a CA-603.
+
 **Hoje:** os dados (planos, pacientes, produtos, modelos, perfil, acompanhamentos) ficam no navegador, separados por conta
 (spec `dados-por-conta`), com uma cópia na nuvem enviada à mão em Configurações. Sair pergunta se apaga os dados do
 aparelho.
@@ -25,8 +28,9 @@ aparelho.
 | D-132 | **Dois aparelhos ao mesmo tempo não se apagam.** Antes de salvar, o site confere se a nuvem mudou desde a última vez; se mudou, junta as duas versões item por item (a mudança mais nova de cada item vence) e só então salva. O que foi excluído num aparelho continua excluído no outro |
 | D-133 | **Na primeira entrada depois desta mudança**, o que já está no navegador vai para a nuvem: sem cópia na nuvem, sobe como está; com cópia na nuvem, as duas são juntadas como no D-132. Nada se perde |
 | D-134 | **"Dados em qualquer aparelho" sai da comparação de planos e da lista de recursos dos planos**, porque vale para todas as contas |
-| D-170 | **Uma versão antiga do site não apaga o que não conhece.** Uma aba aberta antes de uma atualização (ou o aplicativo instalado que ainda não se atualizou) salva a cópia sem os dados que ela não conhece, como o roteiro de anamnese e os modelos de suplemento. O aparelho que conhece esses dados não os apaga ao receber essa cópia: eles ficam e voltam sozinhos para a nuvem. Só uma exclusão de verdade, feita por uma versão que conhece o dado, apaga em todos os aparelhos. *(15/10/2026)* |
+| D-170 | **Uma versão antiga do site não apaga o que não conhece.** Uma aba aberta antes de uma atualização (ou o aplicativo instalado que ainda não se atualizou) salva a cópia sem os dados que ela não conhece, como o roteiro de anamnese e os modelos de suplemento. O aparelho que conhece esses dados não os apaga ao receber essa cópia: eles ficam e voltam sozinhos para a nuvem. Só uma exclusão de verdade, feita por uma versão que conhece o dado, apaga em todos os aparelhos. *(15/10/2026)* **Revisão final:** só volta para a nuvem o valor daqui que é igual ou mais novo que a última mudança que a cópia conhece; o valor daqui mais velho fica aqui, sem subir, porque outro aparelho tem o mais novo e o devolve. Uma aba nova devolve as chaves logo ao abrir, sem esperar uma edição |
 | D-171 | **Salvar um item não mexe nos outros.** Criar, editar ou apagar um paciente, um link, um produto, um modelo de plano ou um modelo de suplemento conta como mudança só daquele item. Os outros continuam com a hora da última mudança de verdade, para um aparelho desatualizado não passar por cima de uma edição feita em outro. *(15/10/2026)* |
+| D-172 | **Versão nova do site avisa, sem recarregar sozinha.** Quando uma versão nova do MetaNutri passa a valer no navegador, a área de trabalho mostra no topo, no fluxo da página (sem cobrir nada), "Há uma versão nova do MetaNutri." com "Atualizar", que recarrega a página. Nada recarrega sozinho, para não perder o que a pessoa está digitando. Assim uma aba aberta antes de uma publicação não fica dias com a versão velha. *(revisão final de 15/10/2026)* |
 
 ## 2. Critérios de aceite
 
@@ -46,6 +50,12 @@ aparelho.
 - **CA-593** · Dado dois pacientes guardados por uma versão anterior (sem os campos novos da ficha), quando um deles é salvo, então só ele conta como mudado; o outro fica exatamente como estava guardado. *(15/10/2026)*
 - **CA-594** · Dado a ficha da Ana editada no aparelho A e o aparelho B, desatualizado, salvando a ficha da Bia, quando as duas cópias se juntam, então a edição da Ana feita em A continua. *(15/10/2026)*
 - **CA-595** · Dado links, modelos de suplemento, produtos e modelos de plano guardados, quando um deles é salvo, criado ou apagado, então só ele conta como mudado. *(15/10/2026)*
+- **CA-598** · Dado fichas gravadas por esta versão, quando uma aba da versão de antes das novidades salva só uma delas, então as outras continuam com o mesmo texto e não contam como mudadas. *(revisão final de 15/10/2026)*
+- **CA-599** · Dado dois aparelhos com roteiros diferentes e a cópia de uma versão antiga sem o roteiro, mas com a hora do roteiro mais novo, quando os dois aplicam essa cópia, então só o aparelho com o roteiro mais novo o devolve à nuvem; o outro fica com o dele sem subir e recebe o mais novo depois. *(revisão final de 15/10/2026)*
+- **CA-600** · Dado uma aba antiga que salvou sem as chaves novas, quando uma aba nova abre no mesmo navegador (ou confere a nuvem depois de a aba antiga salvar), então o roteiro e os modelos voltam para a nuvem sem esperar uma edição. *(revisão final de 15/10/2026)*
+- **CA-601** · Dado um link igual no aparelho e na nuvem, quando a lista de links vem da nuvem, então o link do aparelho não é regravado nem conta como mudado. *(revisão final de 15/10/2026)*
+- **CA-602** · Dado o site aberto na área de trabalho, quando uma versão nova do aplicativo passa a valer, então aparece no topo "Há uma versão nova do MetaNutri." com "Atualizar"; a página não recarrega sozinha, e "Atualizar" recarrega. *(revisão final de 15/10/2026)*
+- **CA-603** · Dado o aviso de versão nova, então o site continua sem script escrito dentro da página e o aplicativo continua instalando e ligando o service worker sem violar a regra de conteúdo (CSP). *(revisão final de 15/10/2026)*
 
 ## 3. Casos de borda
 
