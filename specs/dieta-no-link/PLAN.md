@@ -142,15 +142,20 @@ quem publica acerta no dia.
 - **DP-158** · "Atualizar a dieta no link" grava `missoes` (as de agora) e `dieta` no mesmo link; o token e as marcações
   não mudam. As missões novas usam os mesmos ids (`refeicao-<id da refeição>`, `frutas`, `vegetais`, `agua`).
 
-- [ ] **R1** — `[overflow-wrap:anywhere]` no nome da refeição, no alimento, nas orientações e nas receitas; teste da
+- [x] **R1** — `[overflow-wrap:anywhere]` no nome da refeição, no alimento, nas orientações e nas receitas; teste da
   tela e o e2e de 360 px com um link do Google Drive nas orientações. Cobre CA-535, CA-554.
-- [ ] **R2** — Ligar a dieta num link existente pede a autorização numa linha antes de gravar. Cobre CA-544, D-159.
-- [ ] **R3** — "Atualizar a dieta no link" também atualiza as missões; marcações ficam. Cobre CA-545, CA-555, D-153.
-- [ ] **R4** — Texto da caixa e do rascunho de consentimento com refeições, substitutos, orientações e receitas. Cobre CA-553.
-- [ ] **R5** — Abas na tela do paciente. Cobre CA-530, CA-535, D-154.
-- [ ] **R6** — "O paciente ainda não vê a dieta." quando a cópia guardada está vazia. Cobre CA-545.
-- [ ] **R7** — "Link do paciente", "Gerar link do paciente" e "Endereço do link". Cobre CA-553, D-159.
-- [ ] **R8** — `begin;` e `commit;` no 012. Cobre CA-550.
+- [x] **R2** — Ligar a dieta num link existente pede a autorização numa linha antes de gravar. Cobre CA-544, D-159.
+- [x] **R3** — "Atualizar a dieta no link" também atualiza as missões; marcações ficam. Cobre CA-545, CA-555, D-153.
+- [x] **R4** — Texto da caixa e do rascunho de consentimento com refeições, substitutos, orientações e receitas. Cobre CA-553.
+- [x] **R5** — Abas na tela do paciente. Cobre CA-530, CA-535, D-154.
+- [x] **R6** — "O paciente ainda não vê a dieta." quando a cópia guardada está vazia. Cobre CA-545.
+- [x] **R7** — "Link do paciente", "Gerar link do paciente" e "Endereço do link". Cobre CA-553, D-159.
+- [x] **R8** — `begin;` e `commit;` no 012. Cobre CA-550.
+
+**Validação da rodada (14/10/2026):** `npm run check` (2823 testes), `npx playwright test` (47, porta própria) e
+`npm run build` verdes; o 012 com `begin`/`commit` rodou duas vezes num Postgres local. A mensagem do limite de links
+("links de missões do seu plano") e os nomes dos planos ("Até 3 links de missões") ficaram como estavam: não fazem parte
+do cartão renomeado.
 
 ## Riscos e decisões para o dono revisar
 
