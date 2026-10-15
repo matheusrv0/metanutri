@@ -1,5 +1,5 @@
-import { TriangleAlert } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ChevronDown, TriangleAlert } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
 import { calcularAdequacao, type EstadoAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
@@ -8,6 +8,7 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -105,7 +106,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell>
         {linha.estado === 'abaixo' ? (
-          <Button size="sm" variant="outline" onClick={aoCobrir} className="text-primary">
+          <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
             Cobrir
           </Button>
         ) : null}
@@ -117,6 +118,8 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
 /** Etapa 3: adequação de micronutrientes e ação "cobrir" (CA-25 a CA-40). */
 export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, gerarId = idPadrao, aoAbrirFontes }: TelaAdequacaoProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
+  const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
+  const idNaMeta = useId()
   const prefs = caso.adequacao
 
   const totais = useMemo(() => totaisDoPlano(plano, buscarAlimento), [plano])
@@ -129,6 +132,10 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
   }
 
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
+  // O que pede ação fica à vista, na ordem de sempre; o que está na meta fica recolhido (D-205).
+  const pedemAcao = resultado.linhas.filter((l) => l.estado !== 'adequado')
+  const naMeta = resultado.linhas.filter((l) => l.estado === 'adequado')
+  const rotuloNaMeta = `${mostrarNaMeta ? 'Esconder' : 'Ver'} os ${naMeta.length} na meta`
   const nomeAlimento = (id: number) => ALIMENTOS.find((a) => a.id === id)?.descricao ?? ''
 
   const metaPct = resultado.linhas[0]?.metaPct ?? null
@@ -189,7 +196,29 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resultado.linhas.map((linha) => (
+                  {pedemAcao.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-muted-foreground">
+                        Nenhum nutriente abaixo da meta.
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                  {pedemAcao.map((linha) => (
+                    <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
+                  ))}
+                  {naMeta.length > 0 ? (
+                    <TableRow className="[&:has(td)]:hover:bg-transparent">
+                      <TableCell colSpan={5} className="py-2">
+                        <Button variant="ghost" size="sm" aria-expanded={mostrarNaMeta} aria-controls={idNaMeta} onClick={() => setMostrarNaMeta((v) => !v)}>
+                          <ChevronDown className={cn('transition-transform', mostrarNaMeta && 'rotate-180')} aria-hidden="true" />
+                          {rotuloNaMeta}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </TableBody>
+                <TableBody id={idNaMeta} hidden={!mostrarNaMeta}>
+                  {naMeta.map((linha) => (
                     <Linha key={linha.chave} linha={linha} aoCobrir={() => setCobrindo(linha.chave)} />
                   ))}
                 </TableBody>
@@ -198,17 +227,14 @@ export function TelaAdequacao({ caso, plano, gastoEnergetico, restricoes = [], a
 
             <TableFootnotes>
               <p>
-                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-                Total possivelmente subestimado: algum alimento do plano não tem esse nutriente na tabela de composição. Falta de dado nunca entra como zero.
+                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext" aria-hidden="true">†</span>
+                <span>Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.</span>
               </p>
-              <p className="mt-1">
-                <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
-                O limite superior da tabela não vale para a forma do nutriente presente nos alimentos; o texto completo aparece ao passar o cursor.
+              <p>
+                <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground" aria-hidden="true">‡</span>
+                <span>O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.</span>
               </p>
-              <p className="mt-1">
-                Referência: <span className="uppercase">rda</span> no preset individual, <span className="uppercase">ear</span> no coletivo e{' '}
-                <span className="uppercase">ai</span> quando o nutriente não tem nenhuma das duas.
-              </p>
+              <p>AI: usada quando o nutriente não tem RDA nem EAR.</p>
               <p className="mt-2 flex flex-wrap items-center gap-x-1">
                 {`Composição: ${NOME_DA_BASE}`}
                 {aoAbrirFontes ? (

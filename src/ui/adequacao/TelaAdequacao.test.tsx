@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { criarExemplo } from '@/domain/exemplo.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { TelaAdequacao } from './TelaAdequacao.tsx'
@@ -109,7 +110,7 @@ describe('Etapa 3: adequação', () => {
     const marcas = screen.getAllByTitle(/total possivelmente subestimado/)
     expect(marcas.length).toBeGreaterThan(0)
     expect(marcas[0]).toHaveTextContent("†")
-    expect(screen.getByText(/Falta de dado nunca entra como zero/)).toBeInTheDocument()
+    expect(screen.getByText(/falta de dado nunca entra como zero/i)).toBeInTheDocument()
   })
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
@@ -189,4 +190,69 @@ describe('Etapa 3: adequação', () => {
     const minimo = screen.getByLabelText('Mínimo da meta')
     expect(seletor.compareDocumentPosition(minimo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(minimo.compareDocumentPosition(screen.getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })})
+  })
+})
+
+/** O dia do plano de exemplo: 5 abaixo da meta e 11 na meta. */
+const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+
+/** Linhas de dado que o leitor de tela enxerga (fora do grupo recolhido). */
+const linhasVisiveis = () =>
+  screen
+    .getAllByRole('row')
+    .filter((r) => within(r).queryAllByRole('cell').length === 5)
+    .map((r) => r.textContent ?? '')
+
+describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
+  it('CA-690: à vista só abaixo da meta e acima do limite; os na meta abrem num botão', async () => {
+    const usuario = montar(adulta, exemplo())
+    const visiveis = linhasVisiveis()
+    expect(visiveis.length).toBeGreaterThan(0)
+    for (const texto of visiveis) expect(texto).toMatch(/abaixo|acima do limite/)
+
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const n = Number(botao.textContent?.match(/\d+/)?.[0])
+    expect(visiveis.length + n).toBe(16)
+    expect(botao).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById(botao.getAttribute('aria-controls') ?? '')).toHaveAttribute('hidden')
+
+    await usuario.click(botao)
+    expect(botao).toHaveAttribute('aria-expanded', 'true')
+    expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
+    expect(linhasVisiveis()).toHaveLength(16)
+    // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
+    const ordem = linhasVisiveis()
+    expect(ordem.findIndex((t) => t.startsWith('Cálcio'))).toBeLessThan(ordem.findIndex((t) => t.startsWith('Ferro')))
+  })
+
+  it('CA-691: Cobrir com fundo teal claro, só em linha abaixo da meta', async () => {
+    const usuario = montar(adulta, exemplo())
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    const cobrir = screen.getAllByRole('button', { name: 'Cobrir' })
+    expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo')).length)
+    for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
+  })
+
+  it('CA-693: notas em uma frase cada, sem repetir o seletor', () => {
+    montar(adulta, exemplo())
+    expect(screen.getByText('Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.')).toBeInTheDocument()
+    expect(screen.getByText('O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.')).toBeInTheDocument()
+    expect(screen.getByText('AI: usada quando o nutriente não tem RDA nem EAR.')).toBeInTheDocument()
+    expect(screen.queryByText(/RDA no preset individual/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/passar o cursor/)).not.toBeInTheDocument()
+  })
+
+  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece os 16', () => {
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
+    expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver os 16 na meta' })).toBeInTheDocument()
+  })
+
+  it('CB-204: grupo aberto continua aberto depois de um Cobrir', async () => {
+    const usuario = montar(adulta, exemplo())
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    const gaveta = await abrirCobrir(usuario, 'Ferro')
+    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+  })
+})
