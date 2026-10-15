@@ -2,7 +2,7 @@
 // funções do administrador por conta comum e sem login, e as funções que ninguém de fora chama.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { fotografar, negadoOuVazio, prepararCenario, recusado, semNadaDaVitima, type Cenario } from './preparo.ts'
+import { barrado, barradoOuVazio, fotografar, prepararCenario, recusadoCom, semNadaDaVitima, type Cenario } from './preparo.ts'
 
 let c: Cenario
 let foto: string
@@ -51,7 +51,7 @@ describe('CA-488: conta comum e visitante sem login não usam funções do admin
       const args = DO_ADMINISTRADOR().find(([nome]) => nome === funcao)?.[1] ?? {}
       for (const [, cliente] of quem()) {
         const r = await cliente.rpc(funcao, args)
-        recusado(r)
+        barrado(r)
         semNadaDaVitima(c, r)
       }
     },
@@ -59,7 +59,7 @@ describe('CA-488: conta comum e visitante sem login não usam funções do admin
 
   it('CA-488: eh_admin diz não para a conta comum e é fechada para quem não entrou', async () => {
     expect((await c.atacante.cliente.rpc('eh_admin')).data).toBe(false)
-    recusado(await c.anonimo.rpc('eh_admin'))
+    barrado(await c.anonimo.rpc('eh_admin'))
   })
 })
 
@@ -67,7 +67,7 @@ describe('CA-488: funções da conta chamadas com o que é de outra conta', () =
   it('CA-488: fechar_aviso_estudante com o pedido aprovado da vítima não fecha o aviso dela', async () => {
     const r = await c.atacante.cliente.rpc('fechar_aviso_estudante', { p_pedido: c.vitima.pedidoAprovadoId })
     semNadaDaVitima(c, r)
-    recusado(await c.anonimo.rpc('fechar_aviso_estudante', { p_pedido: c.vitima.pedidoAprovadoId }))
+    barrado(await c.anonimo.rpc('fechar_aviso_estudante', { p_pedido: c.vitima.pedidoAprovadoId }))
   })
 
   it.each([
@@ -81,11 +81,12 @@ describe('CA-488: funções da conta chamadas com o que é de outra conta', () =
       p_formatura: '2030-12-01',
       p_arquivo: caminho(),
     })
-    recusado(r)
+    // A regra da própria função: o arquivo tem de estar na pasta de quem pede.
+    recusadoCom(r, ['22023'])
     semNadaDaVitima(c, r)
     const usados = await c.servico.from('pedidos_estudante').select('usuario').like('arquivo', `%${c.vitima.id}%`)
     expect(usados.data?.every((p) => p.usuario === c.vitima.id)).toBe(true)
-    recusado(await c.anonimo.rpc('enviar_pedido_estudante', { p_instituicao: 'x', p_matricula: '123', p_periodo: 1, p_formatura: '2030-12-01', p_arquivo: c.vitima.arquivo }))
+    barrado(await c.anonimo.rpc('enviar_pedido_estudante', { p_instituicao: 'x', p_matricula: '123', p_periodo: 1, p_formatura: '2030-12-01', p_arquivo: c.vitima.arquivo }))
   })
 
   it('CA-488: comprovantes_da_conta e conferir_envio_de_comprovante só falam da própria conta', async () => {
@@ -93,22 +94,23 @@ describe('CA-488: funções da conta chamadas com o que é de outra conta', () =
     expect((await c.atacante.cliente.rpc('comprovantes_da_conta')).data).toBe(1)
     expect((await c.vitima.cliente.rpc('comprovantes_da_conta')).data).toBe(2)
     expect((await c.atacante.cliente.rpc('conferir_envio_de_comprovante')).data).toBe('ok')
-    recusado(await c.anonimo.rpc('comprovantes_da_conta'))
-    recusado(await c.anonimo.rpc('conferir_envio_de_comprovante'))
+    barrado(await c.anonimo.rpc('comprovantes_da_conta'))
+    barrado(await c.anonimo.rpc('conferir_envio_de_comprovante'))
   })
 
   it('CA-488: informar_situacao e corrigir_crn só mexem na própria conta', async () => {
-    recusado(await c.atacante.cliente.rpc('informar_situacao', { p_situacao: 'nutricionista', p_regiao: 6, p_numero: '123' }))
-    recusado(await c.atacante.cliente.rpc('corrigir_crn', { p_regiao: 6, p_numero: '123' }))
+    // As duas só olham a conta de quem pede: aqui, a regra de cada uma recusa (situação já registrada; não é nutricionista).
+    recusadoCom(await c.atacante.cliente.rpc('informar_situacao', { p_situacao: 'nutricionista', p_regiao: 6, p_numero: '123' }), ['P0001'])
+    recusadoCom(await c.atacante.cliente.rpc('corrigir_crn', { p_regiao: 6, p_numero: '123' }), ['P0001'])
     for (const funcao of ['informar_situacao', 'corrigir_crn', 'me_formei']) {
-      recusado(await c.anonimo.rpc(funcao, funcao === 'informar_situacao' ? { p_situacao: 'estudante', p_regiao: null, p_numero: null } : { p_regiao: 6, p_numero: '123' }))
+      barrado(await c.anonimo.rpc(funcao, funcao === 'informar_situacao' ? { p_situacao: 'estudante', p_regiao: null, p_numero: null } : { p_regiao: 6, p_numero: '123' }))
     }
   })
 
   it('CA-488: missoes_por_token e marcar_missoes com token que não existe não acham nem mudam nada', async () => {
     for (const [, cliente] of quem()) {
       const lido = await cliente.rpc('missoes_por_token', { p_token: 'naoexiste12345' })
-      negadoOuVazio(lido)
+      barradoOuVazio(lido)
       const marcado = await cliente.rpc('marcar_missoes', { p_token: 'naoexiste12345', p_marcacoes: [{ dia: '2026-10-14', missoes: ['m1'] }] })
       semNadaDaVitima(c, marcado)
     }
@@ -133,9 +135,11 @@ describe('CA-488: funções que ninguém de fora chama', () => {
     ['vagas_de_fundador_usadas', {}],
   ] as const)('CA-488: %s é recusada', async (funcao, args) => {
     const comConta = funcao === 'anotar_chamada_da_cobranca' ? { ...args, p_conta: c.vitima.id } : args
+    // As fechadas dão "permission denied" (42501); as de gatilho e a que saiu nem aparecem na API (PGRST202).
+    const esperado = ['eh_email_de_faculdade', 'crn_valido', 'anotar_chamada_da_cobranca'].includes(funcao) ? ['42501'] : ['PGRST202']
     for (const [, cliente] of quem()) {
       const r = await cliente.rpc(funcao, comConta)
-      recusado(r)
+      recusadoCom(r, esperado)
       semNadaDaVitima(c, r)
     }
   })

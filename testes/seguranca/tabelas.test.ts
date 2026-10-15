@@ -3,7 +3,7 @@
 // serviço e comparado com a foto de antes.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { fotografar, negadoOuVazio, prepararCenario, recusado, semNadaDaVitima, TABELAS_DA_CONTA, type Cenario } from './preparo.ts'
+import { barrado, barradoOuVazio, fotografar, prepararCenario, recusadoCom, semNadaDaVitima, TABELAS_DA_CONTA, type Cenario } from './preparo.ts'
 
 let c: Cenario
 let foto: string
@@ -22,7 +22,7 @@ const MUDANCA: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   acompanhamentos: { nome: 'mudado pelo atacante', marcacoes: [] },
   copias: { aparelho: 'mudado pelo atacante', dados: { roubado: true } },
   assinaturas: { plano: 'pro', status: 'ativa', expira_em: null },
-  perfis: { nome: 'mudado pelo atacante', crn_status: 'conferido' },
+  perfis: { nome: 'mudado pelo atacante' },
   pedidos_estudante: { status: 'recusado', motivo: 'mudado pelo atacante' },
   assinaturas_historico: { plano: 'pro' },
   assinando_agora: { desde: '2020-01-01T00:00:00Z' },
@@ -88,7 +88,7 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
         const tudo = await cliente.from(tabela).select('*')
         semNadaDaVitima(c, tudo)
         const daVitima = await cliente.from(tabela).select('*').eq(dono, c.vitima.id)
-        negadoOuVazio(daVitima)
+        barradoOuVazio(daVitima)
         semNadaDaVitima(c, daVitima)
       }
     })
@@ -97,7 +97,7 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
       const mudanca = MUDANCA[tabela] ?? {}
       for (const [, cliente] of quem()) {
         const r = await cliente.from(tabela).update(mudanca).eq(dono, c.vitima.id).select()
-        negadoOuVazio(r)
+        barradoOuVazio(r)
         semNadaDaVitima(c, r)
       }
     })
@@ -105,7 +105,7 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
     it(`CA-488: ${tabela}: apagar a linha da vítima não apaga nada`, async () => {
       for (const [, cliente] of quem()) {
         const r = await cliente.from(tabela).delete().eq(dono, c.vitima.id).select()
-        negadoOuVazio(r)
+        barradoOuVazio(r)
         semNadaDaVitima(c, r)
       }
     })
@@ -113,7 +113,7 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
     it(`CA-488: ${tabela}: criar uma linha em nome da vítima é recusado`, async () => {
       for (const [, cliente] of quem()) {
         const r = await cliente.from(tabela).insert(linhaEmNomeDa(c.vitima.id, tabela)).select()
-        recusado(r)
+        barrado(r)
         semNadaDaVitima(c, r)
       }
     })
@@ -128,12 +128,12 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
     it(`CA-488: ${tabela}: ninguém de fora lê, muda, apaga ou cria`, async () => {
       for (const [, cliente] of quem()) {
         const lido = await cliente.from(tabela).select('*')
-        negadoOuVazio(lido)
+        barradoOuVazio(lido)
         semNadaDaVitima(c, lido)
         // Filtro que pega todas as linhas: sem filtro nenhum, o PostgREST recusa update e delete.
-        negadoOuVazio(await cliente.from(tabela).update(linha).not(coluna, 'is', null).select())
-        negadoOuVazio(await cliente.from(tabela).delete().not(coluna, 'is', null).select())
-        recusado(await cliente.from(tabela).insert(linha).select())
+        barradoOuVazio(await cliente.from(tabela).update(linha).not(coluna, 'is', null).select())
+        barradoOuVazio(await cliente.from(tabela).delete().not(coluna, 'is', null).select())
+        barrado(await cliente.from(tabela).insert(linha).select())
       }
     })
   })
@@ -141,16 +141,16 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
 
 describe('CA-488: uma conta não se dá plano, aprovação nem papel de administrador', () => {
   it('CA-488: a conta não se dá o plano Pro (nem criando, nem mudando a própria assinatura)', async () => {
-    recusado(await c.atacante.cliente.from('assinaturas').insert({ nutricionista_id: c.atacante.id, plano: 'pro', status: 'ativa' }).select())
+    barrado(await c.atacante.cliente.from('assinaturas').insert({ nutricionista_id: c.atacante.id, plano: 'pro', status: 'ativa' }).select())
     const servico = await c.servico.from('assinaturas').insert({ nutricionista_id: c.atacante.id, plano: 'free', status: 'pendente' })
     expect(servico.error).toBeNull()
-    negadoOuVazio(await c.atacante.cliente.from('assinaturas').update({ plano: 'pro', status: 'ativa' }).eq('nutricionista_id', c.atacante.id).select())
+    barradoOuVazio(await c.atacante.cliente.from('assinaturas').update({ plano: 'pro', status: 'ativa' }).eq('nutricionista_id', c.atacante.id).select())
     const depois = await c.servico.from('assinaturas').select('plano, status').eq('nutricionista_id', c.atacante.id).single()
     expect(depois.data).toEqual({ plano: 'free', status: 'pendente' })
   })
 
   it('CA-488: a conta não muda a própria situação nem confere o próprio CRN', async () => {
-    negadoOuVazio(
+    barradoOuVazio(
       await c.atacante.cliente.from('perfis').update({ situacao: 'nutricionista', crn_regiao: 6, crn_numero: '1', crn_status: 'conferido', crn_declarado_em: new Date().toISOString() }).eq('id', c.atacante.id).select(),
     )
     const depois = await c.servico.from('perfis').select('situacao, crn_status').eq('id', c.atacante.id).single()
@@ -166,8 +166,8 @@ describe('CA-488: uma conta não se dá plano, aprovação nem papel de administ
       p_arquivo: c.atacante.arquivo,
     })
     expect(pedido.error).toBeNull()
-    negadoOuVazio(await c.atacante.cliente.from('pedidos_estudante').update({ status: 'aprovado', decidido_em: new Date().toISOString() }).eq('usuario', c.atacante.id).select())
-    recusado(
+    barradoOuVazio(await c.atacante.cliente.from('pedidos_estudante').update({ status: 'aprovado', decidido_em: new Date().toISOString() }).eq('usuario', c.atacante.id).select())
+    barrado(
       await c.atacante.cliente
         .from('pedidos_estudante')
         .insert({ usuario: c.atacante.id, instituicao: 'x', matricula: '123', periodo: 1, formatura: '2030-12-01', status: 'aprovado' })
@@ -178,8 +178,8 @@ describe('CA-488: uma conta não se dá plano, aprovação nem papel de administ
   })
 
   it('CA-488: a conta não se faz administradora nem põe domínio de faculdade', async () => {
-    recusado(await c.atacante.cliente.from('administradores').insert({ usuario: c.atacante.id }).select())
-    recusado(await c.atacante.cliente.from('dominios_faculdade').insert({ dominio: 'gmail.com' }).select())
+    barrado(await c.atacante.cliente.from('administradores').insert({ usuario: c.atacante.id }).select())
+    barrado(await c.atacante.cliente.from('dominios_faculdade').insert({ dominio: 'gmail.com' }).select())
     const eh = await c.atacante.cliente.rpc('eh_admin')
     expect(eh.data).toBe(false)
   })
@@ -191,25 +191,28 @@ describe('CA-488: a conta não toma o link nem a cópia de outra pelo próprio l
       .from('acompanhamentos')
       .upsert({ id: c.vitima.linkId, nutricionista_id: c.atacante.id, token: `tomado${Date.now()}`, caso_id: 'x', nome: 'tomado' })
       .select()
-    recusado(mesmoId)
+    barrado(mesmoId)
     semNadaDaVitima(c, mesmoId)
     const mesmoToken = await c.atacante.cliente
       .from('acompanhamentos')
       .insert({ id: crypto.randomUUID(), nutricionista_id: c.atacante.id, token: c.vitima.token, caso_id: 'x', nome: 'tomado' })
       .select()
-    recusado(mesmoToken)
+    // A linha seria do próprio atacante (a regra de dono deixa); quem barra é o token ser único. O link da
+    // vítima fica igual (a foto confere).
+    recusadoCom(mesmoToken, ['23505'])
+    semNadaDaVitima(c, mesmoToken)
   })
 
   it('CA-488: passar o próprio link ou a própria cópia para o nome da vítima é recusado', async () => {
-    recusado(await c.atacante.cliente.from('acompanhamentos').update({ nutricionista_id: c.vitima.id }).eq('id', c.atacante.linkId).select())
-    recusado(await c.atacante.cliente.from('copias').update({ nutricionista_id: c.vitima.id }).eq('nutricionista_id', c.atacante.id).select())
+    barrado(await c.atacante.cliente.from('acompanhamentos').update({ nutricionista_id: c.vitima.id }).eq('id', c.atacante.linkId).select())
+    barrado(await c.atacante.cliente.from('copias').update({ nutricionista_id: c.vitima.id }).eq('nutricionista_id', c.atacante.id).select())
     const proprio = await c.servico.from('acompanhamentos').select('nutricionista_id').eq('id', c.atacante.linkId).single()
     expect(proprio.data?.nutricionista_id).toBe(c.atacante.id)
   })
 
   it('CA-488: gravar por cima da cópia da vítima (upsert) é recusado', async () => {
     const r = await c.atacante.cliente.from('copias').upsert({ nutricionista_id: c.vitima.id, dados: { tomado: true } }).select()
-    recusado(r)
+    barrado(r)
     semNadaDaVitima(c, r)
   })
 })

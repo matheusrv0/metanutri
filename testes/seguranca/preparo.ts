@@ -10,7 +10,27 @@ import { ambienteLocal, type Ambiente } from './local.ts'
 
 export { ambienteLocal, type Ambiente }
 
-const OPCOES = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+
+/**
+ * Repete o pedido que voltou com "JWT issued at future" (PGRST303): o relógio do Docker pode ficar um pouco
+ * atrás da hora em que o login assinou o token. Recusado assim, o ataque nem chegou à regra do banco, e a
+ * recusa não provaria nada; repetido, ele é de fato avaliado. Qualquer outra resposta volta como veio.
+ */
+const fetchQueEsperaORelogio: typeof fetch = async (entrada, opcoes) => {
+  for (let tentativa = 1; ; tentativa++) {
+    const resposta = await fetch(entrada, opcoes)
+    if (resposta.ok || tentativa >= 40) return resposta
+    const corpo = await resposta.clone().text()
+    if (!/PGRST303|issued at future/i.test(corpo)) return resposta
+    await esperar(250)
+  }
+}
+
+const OPCOES = {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  global: { fetch: fetchQueEsperaORelogio },
+}
 
 export const BALDE = 'comprovantes'
 const PDF = new TextEncoder().encode('%PDF-1.4\n% comprovante de teste\n%%EOF\n')
@@ -277,6 +297,33 @@ export function negadoOuVazio(resposta: RespostaQualquer): void {
 /** Recusado com erro. */
 export function recusado(resposta: RespostaQualquer): void {
   expect(resposta.error, `esperava recusa; veio ${JSON.stringify(resposta.data)}`).not.toBeNull()
+}
+
+/** O código do erro do PostgREST (`42501`, `PGRST202`...), ou o erro inteiro em texto quando não tem código. */
+function codigoDo(erro: unknown): string {
+  if (erro !== null && typeof erro === 'object' && 'code' in erro) return String(erro.code)
+  return JSON.stringify(erro ?? null)
+}
+
+/** Recusado com um destes códigos, e só com eles: outro erro qualquer não prova que a regra barrou. */
+export function recusadoCom(resposta: RespostaQualquer, codigos: readonly string[]): void {
+  expect(resposta.error, `esperava recusa com ${codigos.join(' ou ')}; veio ${JSON.stringify(resposta.data)}`).not.toBeNull()
+  expect(codigos, `recusado por outro motivo: ${JSON.stringify(resposta.error)}`).toContain(codigoDo(resposta.error))
+}
+
+/** Barrado pelo banco: `42501` (regra de linha ou permissão). */
+export function barrado(resposta: RespostaQualquer): void {
+  recusadoCom(resposta, ['42501'])
+}
+
+/** Barrado pelo banco (`42501`) ou nenhuma linha. Outro erro reprova: não prova que a regra barrou. */
+export function barradoOuVazio(resposta: RespostaQualquer): void {
+  if (resposta.error !== null && resposta.error !== undefined) {
+    barrado(resposta)
+    return
+  }
+  const vazio = resposta.data === null || (Array.isArray(resposta.data) && resposta.data.length === 0)
+  expect(vazio, `esperava 42501 ou nada; veio ${JSON.stringify(resposta.data)}`).toBe(true)
 }
 
 /** DP-A4: sem erro de sintaxe do SQL e sem erro do servidor na resposta. */

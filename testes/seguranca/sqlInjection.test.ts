@@ -3,7 +3,19 @@
 // com as tabelas inteiras no fim.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { ambienteLocal, BALDE, clienteSemSessao, fotografar, negadoOuVazio, prepararCenario, semErroDeSql, semNadaDaVitima, TABELAS_DA_CONTA, type Cenario } from './preparo.ts'
+import {
+  ambienteLocal,
+  BALDE,
+  clienteSemSessao,
+  fotografar,
+  negadoOuVazio,
+  prepararCenario,
+  recusadoCom,
+  semErroDeSql,
+  semNadaDaVitima,
+  TABELAS_DA_CONTA,
+  type Cenario,
+} from './preparo.ts'
 
 const CARGAS = [
   "' OR '1'='1",
@@ -115,13 +127,22 @@ describe('CA-489: SQL injection nos parâmetros de texto das funções do banco'
         p_arquivo: `${c.atacante.id}/${carga}`,
       })
       semErroDeSql(r)
+      // A regra da função: não existe arquivo com esse nome na pasta de quem pede.
+      recusadoCom(r, ['22023'])
+      expect(JSON.stringify(r.error)).toContain('O comprovante não chegou')
       semNadaDaVitima(c, r)
     }
   })
 
-  // Usa o pedido em análise que o teste da instituição deixou na conta do atacante.
   it('CA-489: o motivo da recusa com SQL injection fica gravado como texto e não dá plano a ninguém', async () => {
-    const pedido = await c.servico.from('pedidos_estudante').select('id').eq('usuario', c.atacante.id).eq('status', 'em_analise').single()
+    // Um pedido em análise só deste teste, de uma conta nova: não depende da ordem dos outros.
+    const nova = await c.servico.auth.admin.createUser({ email: `motivo.${Date.now()}@usp.br`, email_confirm: true, user_metadata: { situacao: 'estudante' } })
+    expect(nova.error).toBeNull()
+    const pedido = await c.servico
+      .from('pedidos_estudante')
+      .insert({ usuario: nova.data.user?.id, instituicao: 'Universidade', matricula: '123456', periodo: 2, formatura: '2030-12-01' })
+      .select('id')
+      .single()
     expect(pedido.error).toBeNull()
     const motivo = "x'; UPDATE public.assinaturas SET plano = 'pro'; --"
     const r = await c.admin.cliente.rpc('decidir_pedido', { p_pedido: pedido.data?.id, p_aprovar: false, p_motivo: motivo })

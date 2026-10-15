@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   root: fileURLToPath(new URL('../..', import.meta.url)),
+  // Os arquivos .env vêm desta pasta, que não tem nenhum: a suíte nunca carrega o .env.local da raiz.
+  envDir: fileURLToPath(new URL('.', import.meta.url)),
   test: {
     include: ['testes/seguranca/**/*.test.ts'],
     environment: 'node',
