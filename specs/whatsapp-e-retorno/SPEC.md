@@ -3,6 +3,9 @@
 Status: **aprovada pelo dono em 14/10/2026 ('implemente as novidades')**. Revista em 15/10/2026, depois da
 revisão de código da frente: as mudanças estão marcadas "(revisão de 15/10)".
 
+**Integração (15/10/2026):** com a dieta no link (spec `dieta-no-link`), o texto pronto do cartão do link fala também
+do plano alimentar quando o link mostra a dieta. Entra o CA-596.
+
 **Fonte:** `docs/pesquisa/dietbox-comparativo.md`, seção 3, itens 3 ("Enviar pelo WhatsApp", P) e 2 ("O retorno
 marcado", M, com os aniversariantes no mesmo bloco), e seção 4 ("O que não copiar": início lotado, caixa vazia,
 quatro canais para falar com o paciente, texto quebrado quando falta o nome).
@@ -44,6 +47,7 @@ nenhuma tela usa os dois. Não existe data de retorno: o Painel não responde "q
 ### 2.3 Os três lugares (D-149)
 
 - **CA-508** · Dado um plano com o link de missões gerado, então ao lado de "Copiar" está "WhatsApp", e o texto pronto traz o link do paciente.
+- **CA-596** · Dado o link do paciente mostrando a dieta (spec `dieta-no-link`), então o texto pronto do WhatsApp do cartão diz que no link estão as missões e o plano alimentar ("…suas missões e o seu plano alimentar…"); com a dieta desligada, ou com a cópia da dieta vazia, o texto fala só das missões, como antes. *(integração de 15/10)*
 - **CA-509** · Dado a Adesão, então a linha de quem está "Sumindo" ou "Atenção" tem "WhatsApp", com uma mensagem de contato que fala das missões; quem está "Em dia" ou "Ainda não começou" não tem o botão.
 - **CA-510** · Dado uma consulta no bloco "Hoje e esta semana", então o WhatsApp da linha traz o lembrete "Oi, Ana! Lembrete: sua consulta é dia 16/10 (sexta-feira) às 14:30. Até lá!"; sem horário, a frase termina na data. (revisão de 15/10) Dado a consulta de hoje, o lembrete diz "sua consulta é hoje às 14:30" (ou "é hoje", sem horário).
 - **CA-511** · Dado um aniversário no bloco, então o WhatsApp da linha traz os parabéns: no dia, "Feliz aniversário, Ana! Um ótimo dia para você."; (revisão de 15/10) antes do dia, "Feliz aniversário adiantado, Ana! Que o seu dia seja ótimo."
