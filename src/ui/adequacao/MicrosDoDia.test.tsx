@@ -191,3 +191,21 @@ describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
     expect(lista).toHaveAccessibleDescription('Adequação em % da referência; a meta é 90%.')
   })
 })
+
+describe('Legenda do † no cartão (CA-699)', () => {
+  const CURAU = 29
+
+  it('CA-699: com alguma linha marcada, o pé do cartão explica o †, à vista', () => {
+    montar(adulta, criarExemplo(ids, '2026-10-15').plano)
+    expect(cartao().getAllByTitle(/total possivelmente subestimado/).length).toBeGreaterThan(0)
+    expect(cartao().getByText('Total possivelmente subestimado: falta o dado em algum alimento.')).toBeInTheDocument()
+  })
+
+  it('CA-699: sem linha marcada, não há pé', () => {
+    // O curau tem todos os 16 nutrientes na tabela: nenhuma linha leva †.
+    montar(adulta, planoCom([CURAU, 200]))
+    expect(linhas().length).toBeGreaterThan(0)
+    expect(cartao().queryAllByTitle(/total possivelmente subestimado/)).toHaveLength(0)
+    expect(cartao().queryByText(/Total possivelmente subestimado/)).not.toBeInTheDocument()
+  })
+})

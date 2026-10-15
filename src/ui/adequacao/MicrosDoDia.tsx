@@ -49,6 +49,9 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
   const acima = resultado.linhas.filter((l) => l.estado === 'acima-limite')
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
   const metaPct = resultado.linhas[0]?.metaPct ?? null
+  const mostrados = [...paraCobrir.slice(0, MAXIMO), ...acima]
+  // O † precisa de explicação à vista: o title do † não abre por toque nem por teclado (CA-699).
+  const temMarca = mostrados.some((l) => l.semDado > 0)
 
   const contagem =
     paraCobrir.length > 0
@@ -101,6 +104,12 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
                   </li>
                 ))}
               </ul>
+            ) : null}
+            {temMarca ? (
+              <p className="text-xs text-muted-foreground">
+                <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
+                <span>Total possivelmente subestimado: falta o dado em algum alimento.</span>
+              </p>
             ) : null}
           </>
         )}
