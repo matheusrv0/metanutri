@@ -22,7 +22,7 @@ function planoComArroz(): Plano {
   return adicionarItem(plano, almoco.id, 'principal', { alimentoId: 3, gramas: 200 }, ids)
 }
 
-function Anfitriao({ inicial, planoInicial, gasto = 1800 }: { readonly inicial?: Partial<Caso>; readonly planoInicial?: Plano; readonly gasto?: number }) {
+function Anfitriao({ inicial, planoInicial, gasto = 1800 }: { readonly inicial?: Partial<Caso>; readonly planoInicial?: Plano; readonly gasto?: number | null }) {
   const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...inicial })
   const [plano, setPlano] = useState<Plano>(planoInicial ?? criarPlanoPadrao(ids))
   return (
@@ -437,5 +437,34 @@ describe('Chegar pelo "Ver todos" (CA-701)', () => {
   it('CA-701: sem focarTitulo, o foco não muda', () => {
     montar(adulta, exemplo())
     expect(screen.getByRole('heading', { name: 'Micronutrientes' })).not.toHaveFocus()
+  })
+})
+
+describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
+  it('CA-694: sem gasto calculado, a gaveta não fala de kcal', async () => {
+    render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={null} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    const descricao = gaveta.getByText(/para a meta\.$/)
+    expect(descricao.textContent).not.toMatch(/kcal/)
+  })
+
+  it('CA-694: passar 0,4 kcal do gasto sai "Cabem 0 kcal", nunca "-0"', async () => {
+    const plano = exemplo()
+    const kcal = totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total
+    render(<Anfitriao inicial={adulta} planoInicial={plano} gasto={kcal - 0.4} />)
+    const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
+    expect(gaveta.getByText(/Cabem 0 kcal até o gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.queryByText(/-0/)).not.toBeInTheDocument()
+  })
+
+  it('CA-690: o recolhido fecha quando a tela abre de novo', async () => {
+    const plano = exemplo()
+    const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+    unmount()
+
+    render(<Anfitriao inicial={adulta} planoInicial={plano} />)
+    expect(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
   })
 })

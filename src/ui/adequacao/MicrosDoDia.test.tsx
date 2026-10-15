@@ -130,12 +130,14 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
   })
 
   it('CB-209: a referência do caso vale no cartão (coletivo cobra menos)', () => {
-    const { desmontar } = montar()
-    const individual = Number(cartao().getByText(/para cobrir\./).textContent?.split(' ')[0])
+    // "4 para cobrir.", "Nada para cobrir." ou "Todos os 16 na meta.": sem número na frente, é zero.
+    const contar = () => Number(cartao().getByText(/para cobrir\.$|na meta\.$/).textContent?.match(/^(\d+)/)?.[1] ?? 0)
+    const plano = criarExemplo(ids, '2026-10-15').plano
+    const { desmontar } = montar(adulta, plano)
+    const individual = contar()
     desmontar()
-    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'coletivo' } } })
-    const coletivo = Number(cartao().getByText(/para cobrir\./).textContent?.split(' ')[0])
-    expect(coletivo).toBeLessThanOrEqual(individual)
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'coletivo' } } }, plano)
+    expect(contar()).toBeLessThan(individual)
   })
 
   it('a falta de dado aparece com a marca †, como na tabela', () => {
@@ -207,5 +209,25 @@ describe('Legenda do † no cartão (CA-699)', () => {
     expect(linhas().length).toBeGreaterThan(0)
     expect(cartao().queryAllByTitle(/total possivelmente subestimado/)).toHaveLength(0)
     expect(cartao().queryByText(/Total possivelmente subestimado/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
+  it('CB-204: o nutriente que chega à meta depois do Cobrir sai do cartão', async () => {
+    const { usuario } = montar(adulta, criarExemplo(ids, '2026-10-15').plano)
+    const antes = Number(cartao().getByText(/para cobrir\.$/).textContent?.match(/^(\d+)/)?.[1])
+    const vitaminaA = linhas().find((l) => l.textContent?.startsWith('Vitamina A'))
+    if (!vitaminaA) throw new Error('vitamina A fora do cartão')
+    await usuario.click(within(vitaminaA).getByRole('button', { name: 'Cobrir Vitamina A (RAE)' }))
+
+    const gaveta = within(screen.getByRole('dialog'))
+    const cobreTudo = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' }))
+      .getAllByRole('listitem')
+      .find((li) => /cobre 100% da falta/.test(li.textContent ?? ''))
+    if (!cobreTudo) throw new Error('nenhuma sugestão cobre a falta inteira')
+    await usuario.click(within(cobreTudo).getByRole('button', { name: 'Adicionar' }))
+
+    expect(linhas().some((l) => l.textContent?.startsWith('Vitamina A'))).toBe(false)
+    expect(cartao().getByText(`${antes - 1} para cobrir.`)).toBeInTheDocument()
   })
 })
