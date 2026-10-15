@@ -41,3 +41,6 @@ docs/modelos/
 
 # Cache do Supabase CLI
 supabase/.temp/
+
+# cópias de trabalho dos agentes (git worktree)
+.claude/worktrees/
