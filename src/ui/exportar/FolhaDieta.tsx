@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
@@ -8,6 +9,7 @@ import {
   lembretesDoDia,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
+  opcoesDaRefeicao,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
@@ -63,6 +65,16 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
   )
 }
 
+/** Entre duas opções da refeição: "ou" sobre um fio fino, sem caixa (spec impressao-do-plano, D-184). */
+function Ou() {
+  return (
+    <p className="flex items-center gap-3 pt-1 text-sm font-semibold text-muted-foreground">
+      <span>ou</span>
+      <span aria-hidden="true" className="flex-1 border-t border-border" />
+    </p>
+  )
+}
+
 /**
  * Folha da dieta para o paciente: só o que ele usa, em letra de ler sem óculos
  * (spec pdf-e-telas-limpas, US-B1). Na impressão, o navegador salva em PDF.
@@ -104,14 +116,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
 
       <div className="flex flex-col">
         {plano.refeicoes.map((refeicao) => {
-          const principal = refeicao.opcoes.principal.filter((i) => i.gramas > 0)
-          const substitutos = (
-            [
-              ['Opção 2', refeicao.opcoes.substituto1.filter((i) => i.gramas > 0)],
-              ['Opção 3', refeicao.opcoes.substituto2.filter((i) => i.gramas > 0)],
-            ] as const
-          ).filter(([, itens]) => itens.length > 0)
-          const vazia = principal.length === 0 && substitutos.length === 0
+          const opcoesDaFolha = opcoesDaRefeicao(refeicao)
           return (
             <section
               key={refeicao.id}
@@ -121,14 +126,14 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <span className="numeros text-xl font-bold leading-snug text-primary">{refeicao.horario}</span>
               <div className="flex min-w-0 flex-col gap-2">
                 <h3 className="font-titulo text-xl font-bold leading-snug text-heading">{refeicao.nome}</h3>
-                {principal.length > 0 ? <Itens itens={principal} /> : null}
-                {substitutos.map(([rotulo, itens]) => (
-                  <div key={rotulo} className="-ml-3 flex flex-col gap-1 rounded-lg bg-muted px-3 py-2">
-                    <p className="font-bold text-muted-foreground">{rotulo}</p>
+                {/* CA-631 e CA-632: a primeira opção com alimento vem sozinha; cada outra, depois de "ou". */}
+                {opcoesDaFolha.map((itens, i) => (
+                  <Fragment key={itens[0]?.id ?? i}>
+                    {i > 0 ? <Ou /> : null}
                     <Itens itens={itens} />
-                  </div>
+                  </Fragment>
                 ))}
-                {vazia ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
+                {opcoesDaFolha.length === 0 ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
               </div>
             </section>
           )

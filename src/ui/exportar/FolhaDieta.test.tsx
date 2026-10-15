@@ -83,22 +83,32 @@ describe('Folha da dieta (US-B1)', () => {
     }
   })
 
-  it('CA-310: substituto vira "Opção 2"; substituto vazio não aparece', () => {
-    render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    const almoco = refeicao(/^12:00 Almoço$/)
-    expect(almoco.getByText('Opção 2')).toBeInTheDocument()
-    expect(almoco.getByText('Batata inglesa cozida')).toBeInTheDocument()
-    expect(almoco.queryByText('Opção 3')).not.toBeInTheDocument()
+  it('CA-631: o substituto vem depois de "ou", sem caixa e sem "Opção 2"; substituto vazio não aparece', () => {
+    let plano = planoCheio()
+    const almocoId = plano.refeicoes[2]?.id ?? ''
+    plano = adicionarItem(plano, almocoId, 'substituto2', { alimentoId: MACARRAO_CRU, gramas: 0 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} />)
+    const regiao = screen.getByRole('region', { name: /^12:00 Almoço$/ })
+    const almoco = within(regiao)
+    expect(almoco.queryByText(/Opção/)).not.toBeInTheDocument()
+    expect(almoco.getAllByText('ou')).toHaveLength(1)
+    const [principal, substituto] = almoco.getAllByRole('list')
+    expect(principal).toHaveTextContent('Arroz branco cozido')
+    expect(substituto).toHaveTextContent('Batata inglesa cozida')
+    expect(Boolean(almoco.getByText('ou').compareDocumentPosition(substituto as Node) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
+    expect(regiao.querySelector('[class*="bg-"], [class*="rounded"]')).toBeNull()
   })
 
-  it('Foco de revisão 5: refeição só com substituto mostra a opção e não diz que está vazia', () => {
+  it('CA-632: refeição só com substituto começa sem "ou" e não diz que está vazia', () => {
     let plano = criarPlanoPadrao(ids)
     const ceia = plano.refeicoes[5]
     if (!ceia) throw new Error('sem ceia')
     plano = adicionarItem(plano, ceia.id, 'substituto1', { alimentoId: BATATA, gramas: 120 }, ids)
     render(<FolhaDieta caso={caso} plano={plano} />)
     const regiao = refeicao(/^21:00 Ceia$/)
-    expect(regiao.getByText('Opção 2')).toBeInTheDocument()
+    expect(regiao.getByText('Batata inglesa cozida')).toBeInTheDocument()
+    expect(regiao.queryByText('ou')).not.toBeInTheDocument()
+    expect(regiao.queryByText(/Opção/)).not.toBeInTheDocument()
     expect(regiao.queryByText('Sem alimentos nesta refeição.')).not.toBeInTheDocument()
   })
 
