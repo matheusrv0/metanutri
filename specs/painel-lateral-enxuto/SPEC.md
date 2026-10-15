@@ -10,6 +10,11 @@ mantendo a proposta do software."
 micronutrientes faltam, com o **Cobrir** à mão para eles. O detalhe continua a um clique; nada que
 ajuda a decidir some de vez, e nenhuma métrica nova entra.
 
+**Integração (15/10/2026):** esta spec entrou na mesma branch das frentes "sugestões com critério" e
+"impressão do plano". A integração revê o arredondamento (D-211, no lugar do D-209), decide para onde vai
+o foco depois de "Adicionar" no Cobrir (D-212) e confere o sódio sem Cobrir de ponta a ponta (CA-714).
+Ver "Integração das três frentes" no §3.
+
 **Specs que esta muda:** `pdf-e-telas-limpas` (CA-333 e CA-337 a CA-339), `estilo-spora` (CA-206) e
 `planejador-metanutri` (CA-10 e CA-22, só a forma de mostrar). Nenhum cálculo muda.
 
@@ -92,7 +97,10 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 | D-206 | **O sódio nunca é alvo do Cobrir.** Abaixo da meta, ele não entra no cartão da etapa 2 nem na contagem, e não tem Cobrir em lugar nenhum (cartão, tabela e lista do celular); na etapa 3 continua com o valor, a referência e o estado. Acima do limite, aparece no cartão como os outros acima do limite | Decisão do coordenador em 15/10/2026, na revisão: o sal de cozinha não entra no plano, então o sódio dos alimentos fica quase sempre abaixo da AI, e subir sódio por alimento não é conduta; o que importa no sódio é o excesso. A frente "sugestões com critério" faz o domínio do Cobrir não sugerir nada para o sódio |
 | D-207 | **Etapa 3 vira lista abaixo de 640 px**: em cada nutriente, nome e % com o estado, a barra, "quanto tem de quanto precisa" com a referência e o Cobrir | Em 390 px a tabela rolava para o lado e escondia o Cobrir |
 | D-208 | **Na gaveta do Cobrir, o que passou do gasto se diz como passou**: "O plano já passou 55 kcal do gasto energético." no lugar de "Cabem -55 kcal". Só o texto muda | Pedido do coordenador em 15/10/2026. Número negativo depois de "cabem" não se lê |
-| D-209 | **Número na tela arredonda na direção do estado**: abaixo arredonda para baixo, acima para cima, dentro para o mais perto. Vale para o % do gasto, o % das kcal do macro com meta em %, a adequação no cartão, na tabela e na lista do celular, e a faixa do topo da etapa 3 | Revisão de 15/10/2026: com 89,6% a tela dizia "90% do GET, abaixo de 90%". O número não pode desmentir a cor e a frase |
+| D-209 | *Revisto pelo D-211 na integração.* **Número na tela arredonda na direção do estado**: abaixo arredonda para baixo, acima para cima, dentro para o mais perto. Vale para o % do gasto, o % das kcal do macro com meta em %, a adequação no cartão, na tabela e na lista do celular, e a faixa do topo da etapa 3 | Revisão de 15/10/2026: com 89,6% a tela dizia "90% do GET, abaixo de 90%". O número não pode desmentir a cor e a frase |
+
+| D-211 | **O sentido do estado só entra quando o arredondamento comum cruzaria o limite do estado.** Abaixo, se o número arredondado para o mais perto chegaria ao limite de baixo, arredonda para baixo; acima, se não passaria do limite de cima, arredonda para cima. Fora disso, e sempre dentro da faixa, arredonda para o mais perto. Vale em todo lugar do D-209: % do gasto (Resumo do dia e faixa do topo da etapa 3), % das kcal do macro com meta em %, adequação no cartão, na tabela e na lista do celular | Decisão do coordenador na integração (15/10/2026), sobre a dúvida 1 da frente: com o D-209, 125,2% saía "126%", um ponto a mais sem motivo. O número só precisa não desmentir o estado |
+| D-212 | **O foco nunca se perde ao fechar a gaveta do Cobrir.** Se o botão que abriu a gaveta continua na tela, o foco volta a ele, como hoje. Se ele sumiu (o nutriente chegou à meta e saiu do cartão, ou a linha da etapa 3 perdeu o Cobrir), o foco vai para o Cobrir do próximo nutriente que estava abaixo dele na lista; sem próximo, para o título "Micronutrientes" do cartão ou da etapa 3 | Ponto em aberto 1 da frente: o foco caía no corpo da página, e quem usa teclado ou leitor de tela perdia o lugar |
 
 Numeração revista em 15/10/2026, na rodada de revisão, para caber na faixa D-200 a D-209: as notas
 curtas (era D-208) entraram no D-200; o Cobrir teal (era D-206) entrou no D-204 e no D-205; a ordem
@@ -126,8 +134,8 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 
 ### Rodada de revisão (15/10/2026)
 
-- **CA-695** · Dado a energia perto dos limites, então o % da frase arredonda na direção do estado (D-209): 89,6% sai "89% do GET, abaixo de 90%" e 110,4% sai "111% do GET, acima de 110%". Dentro da faixa, arredonda para o mais perto.
-- **CA-696** · Dado a adequação com 89,6% e meta de 90%, então o cartão da etapa 2, a tabela e a lista do celular mostram "89%" (nunca "90%" em cor de abaixo). Do mesmo jeito, o % das kcal de um macro com meta em % arredonda para baixo quando está abaixo e para cima quando está acima, no Resumo do dia e na faixa do topo da etapa 3, e o % do gasto da faixa segue o CA-695. Acima do limite e na meta, a adequação arredonda para o mais perto.
+- **CA-695** · *Revisto pelo CA-711 na integração.* Dado a energia perto dos limites, então o % da frase arredonda na direção do estado (D-209): 89,6% sai "89% do GET, abaixo de 90%" e 110,4% sai "111% do GET, acima de 110%". Dentro da faixa, arredonda para o mais perto.
+- **CA-696** · *Revisto pelo CA-712 na integração.* Dado a adequação com 89,6% e meta de 90%, então o cartão da etapa 2, a tabela e a lista do celular mostram "89%" (nunca "90%" em cor de abaixo). Do mesmo jeito, o % das kcal de um macro com meta em % arredonda para baixo quando está abaixo e para cima quando está acima, no Resumo do dia e na faixa do topo da etapa 3, e o % do gasto da faixa segue o CA-695. Acima do limite e na meta, a adequação arredonda para o mais perto.
 - **CA-697** · Dado o sódio abaixo da meta (D-206), então ele não aparece no cartão da etapa 2 nem entra na contagem, e nenhum "Cobrir" do sódio aparece no cartão, na tabela ou na lista do celular; na etapa 3 ele continua à vista com o valor, a referência e "52% abaixo". Dado o sódio acima do limite, então ele aparece no cartão com "acima do limite", sem Cobrir, como os outros.
 - **CA-698** · Dado "Personalizado", quando a pessoa digita no "Mínimo da meta" um número acima de 1000 (o limite que o cálculo aceita), então o número não vale: a adequação continua com o último mínimo válido, e nenhuma etapa deixa de abrir.
 - **CA-699** · Dado o cartão da etapa 2 com alguma linha marcada com †, então o pé do cartão diz, à vista, sem depender de passar o cursor: "† Total possivelmente subestimado: falta o dado em algum alimento." Sem linha marcada, o pé não aparece.
@@ -136,6 +144,13 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 - **CA-702** · Dado "Ver cálculo" aberto, então a ordem é: TMB, fator de atividade, adicionais e a fonte da energia; depois "Carboidrato no plano" e "Gordura no plano" em g/kg e a origem das metas dos macros. O g/kg de um macro só aparece aqui quando a meta dele é em %; com meta em g/kg, o número já está na linha e não se repete.
 - **CA-703** · Dado o cartão da etapa 2, então a contagem diz "N para cobrir." quando há o que cobrir, "Nada para cobrir." quando não há (mesmo com algum acima do limite ou com só o sódio abaixo) e "Todos os 16 na meta." quando os 16 estão na meta, sempre com ponto final. A meta usada (por exemplo, 90% da referência) vai na descrição da lista para leitor de tela, sem texto a mais na tela.
 - **CA-704** · Dado o recolhido "Ver os N na meta" aberto num plano, quando a pessoa troca para outro plano (inclusive pelo voltar e avançar do navegador), então a etapa 3 do outro plano abre com o recolhido fechado.
+
+### Integração das três frentes (15/10/2026)
+
+- **CA-711** · Dado a energia em relação ao gasto (D-211), então 89,6% sai "89% do GET, abaixo de 90%", 110,4% sai "111% do GET, acima de 110%", 125,2% sai "125% do GET, acima de 110%" e 70,6% sai "71% do GET, abaixo de 90%". O mesmo número sai na faixa do topo da etapa 3.
+- **CA-712** · Dado um percentual com estado (D-211), então a adequação de 89,6% com meta de 90% sai "89%", e a de 72,7% com meta de 90% sai "73%", no cartão, na tabela e na lista do celular; o % das kcal de um macro com meta de 20 a 35% sai "36%" com 35,4%, "40%" com 40,2%, "19%" com 19,6% e "16%" com 15,6%, no Resumo do dia e na faixa do topo da etapa 3.
+- **CA-713** · Dado a gaveta do Cobrir aberta pelo cartão da etapa 2 ou pela etapa 3, quando "Adicionar" leva o nutriente à meta e o Cobrir dele some, então o foco do teclado vai para o Cobrir do próximo nutriente que estava abaixo dele; sem próximo, para o título "Micronutrientes". Quando o nutriente continua abaixo da meta, ou a gaveta fecha sem adicionar, o foco volta ao Cobrir que abriu a gaveta (D-212).
+- **CA-714** · Dado o sódio abaixo da meta, então não há "Cobrir Sódio" em lugar nenhum da interface: nem no cartão da etapa 2, nem na tabela da etapa 3, nem na lista do celular (D-206). Se a gaveta do Cobrir chegar a abrir para o sódio, ela não lista sugestão e mostra a mensagem do domínio: "O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia." (CA-678 da `sugestoes-com-criterio`).
 
 ## 4. Casos de borda
 
@@ -149,10 +164,11 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 - **CB-207** · Modo rápido com meta digitada: "Ver cálculo" só aparece se houver o que mostrar (g/kg ou origem das metas), sem TMB nem fator.
 - **CB-208** · Celular de 360 px: nada rola para o lado no Resumo do dia, no cartão "Micronutrientes" e na etapa 3.
 - **CB-209** · Troca de referência (Individual, Coletivo, Personalizado): o cartão da etapa 2 e a tabela usam a referência do caso e se refazem juntos.
+- **CB-211** · "Adicionar" leva à meta o único nutriente do cartão: a lista some, o cartão diz "Nada para cobrir." ou "Todos os 16 na meta." e o foco vai para o título "Micronutrientes" do cartão (D-212).
 
 ## 5. Fora de escopo, explicitamente
 
-- Qualquer mudança de cálculo, de referência, de quais alimentos o Cobrir sugere (`cobrir.ts`, `trocas.ts`, `sugestoes.ts`, frente "sugestões com critério") e da lógica da gaveta do Cobrir. Na gaveta muda só a frase do CA-694. O sódio sem Cobrir (D-206) é só da tela; o domínio fica com a outra frente.
+- Qualquer mudança de cálculo, de referência, de quais alimentos o Cobrir sugere (`cobrir.ts`, `trocas.ts`, `sugestoes.ts`, frente "sugestões com critério") e da lógica da gaveta do Cobrir. Na gaveta muda só a frase do CA-694 e, na integração, para onde vai o foco ao fechar (D-212). O sódio sem Cobrir (D-206) é só da tela; o domínio fica com a outra frente.
 - O PDF e a impressão (frente "PDF do plano"), o Word e a cópia da tabela.
 - A faixa do topo da etapa 3 (item 1.3), salvo o arredondamento do D-209; a Avaliação antropométrica e o resto da etapa 1.
 - Resumo fixo na tela ao rolar, ou no topo da etapa 2 no celular. A ordem das telas no celular não muda: o Resumo do dia continua depois das refeições, porque pôr no topo empurraria as refeições, que são o trabalho da etapa 2, e nada flutua por cima do conteúdo (era o D-209 até a rodada de revisão).

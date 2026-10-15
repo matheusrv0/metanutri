@@ -200,3 +200,26 @@ pelo cartão.
 mesma regra); a contagem do cartão passou a "N para cobrir." porque, sem o sódio, "N de 16 abaixo da
 meta" deixaria de ser verdade; o foco depois de "Adicionar" no cartão não foi mexido (quem devolve o
 foco é a gaveta, que fica com a outra frente).
+
+## Integração das três frentes (15/10/2026)
+
+A branch de integração junta "sugestões com critério", "painel lateral enxuto" e "impressão do plano".
+Os itens abaixo são da integração; cada tarefa é um commit, com teste antes do código.
+
+| # | Tarefa | Arquivos | Depende de |
+|---|---|---|---|
+| I0 | Spec e plano: D-211, D-212, CA-711 a CA-714, CB-211 | `SPEC.md`, `PLAN.md` | — |
+| I1 | (a) Arredondamento no sentido do estado só quando o comum cruzaria o limite (D-211, CA-711, CA-712) | `src/domain/arredondarNoEstado.ts` (+ teste), `src/domain/energia.ts` (a faixa padrão do gasto vira constante exportada), `src/ui/resumo/ResumoDoDia.tsx`, `src/ui/resumo/FaixaResumo.tsx`, `design-system/componentes/nutricao/MedidorMacro.tsx`, `src/ui/adequacao/MicrosDoDia.tsx`, `src/ui/adequacao/estiloAdequacao.ts`; testes em `ResumoDoDia.test.tsx`, `FaixaResumo.test.tsx`, `MedidorMacro.test.tsx`, `MicrosDoDia.test.tsx`, `TelaAdequacao.test.tsx` | I0 |
+| I2 | (c) O teste do CB-204 do cartão deixa de depender de alguma sugestão cobrir 100%: a gaveta recebe uma sugestão controlada, calculada no teste para levar a vitamina A à meta sem mexer nos outros | `src/ui/adequacao/MicrosDoDia.test.tsx` | I0 |
+| I3 | (b) Foco ao fechar a gaveta do Cobrir (D-212, CA-713, CB-211), no cartão e na etapa 3 | `src/ui/adequacao/focoDoCobrir.ts` (novo, + teste), `GavetaCobrir.tsx` (prop do foco ao fechar), `MicrosDoDia.tsx`, `TelaAdequacao.tsx`, `ItemListaAdequacao.tsx` (marca `data-cobrir` no botão); testes em `MicrosDoDia.test.tsx` e `TelaAdequacao.test.tsx` | I2 |
+| I4 | (d) Sódio sem Cobrir de ponta a ponta (CA-714): e2e no cartão, na tabela e na lista do celular; a gaveta aberta para o sódio mostra a mensagem do domínio | `e2e/planejador.spec.ts`, `src/ui/adequacao/GavetaCobrir.test.tsx` | I0 |
+| I5 | Validação: `npm run check`, `npx playwright test`, `npm run build`, `node scripts/conferir-publicacao.mjs`, `npm run test:csp` | este plano | I1 a I4 |
+
+**Decisões da integração para revisar:**
+
+1. **Foco também na etapa 3 (D-212).** O ponto em aberto falava do cartão; a etapa 3 tem o mesmo defeito
+   (a linha que chega à meta perde o Cobrir e vai para o recolhido), então a mesma regra vale lá.
+2. **"Próximo" é o que estava abaixo dele na lista quando a gaveta abriu**, e não o que ocupa a mesma
+   posição depois: a lista se reordena quando o plano muda.
+3. **Sem o limite do estado**, o arredondamento fica no sentido do estado, que nunca desmente a cor. Hoje
+   todo lugar passa o limite.
