@@ -5,16 +5,18 @@
 **Objetivo:** o Resumo do dia diz cada fato uma vez; a etapa 2 mostra o que falta de micronutriente
 com o Cobrir; a etapa 3 abre no que pede ação e funciona no celular. Só apresentação.
 
-**Arquitetura:** nenhum arquivo de domínio muda. O `MedidorMacro` (biblioteca) passa a mostrar os
-valores sem casa decimal e a meta curta. O `ResumoDoDia` junta "Metas" dentro de "Ajustar" e diz o
-estado da energia numa frase. Um componente de tela novo, `src/ui/adequacao/MicrosDoDia.tsx`, lê
-`calcularAdequacao` e abre a `GavetaCobrir` que já existe, sem mudar nada nela. A `TelaAdequacao`
-separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, desenha uma lista.
+**Arquitetura:** nenhum cálculo do domínio muda; a rodada de revisão só acrescenta uma função pura
+de arredondamento para a tela (`src/domain/arredondarNoEstado.ts`). O `MedidorMacro` (biblioteca)
+passa a mostrar os valores sem casa decimal e a meta curta. O `ResumoDoDia` junta "Metas" dentro de
+"Ajustar" e diz o estado da energia numa frase. Um componente de tela novo,
+`src/ui/adequacao/MicrosDoDia.tsx`, lê `calcularAdequacao` e abre a `GavetaCobrir` que já existe; na
+gaveta muda só a frase do gasto (T7, CA-694). A `TelaAdequacao` separa as linhas que pedem ação das
+que estão na meta e, abaixo de 640 px, desenha uma lista.
 
 ## Restrições
 
-- Nenhuma dependência nova. Nada em `src/domain/cobrir.ts`, `trocas.ts`, `sugestoes.ts`, na
-  `GavetaCobrir`, no PDF, no Word nem na cópia da tabela.
+- Nenhuma dependência nova. Nada em `src/domain/cobrir.ts`, `trocas.ts`, `sugestoes.ts`, no PDF,
+  no Word nem na cópia da tabela. Na `GavetaCobrir`, só a frase do gasto (T7); a lógica não muda.
 - Biblioteca pelo alias `@ds/...`; cor, espaço e raio só por token. Um componente por arquivo, export
   nomeado, sem `any` e sem `!`. Toque de 44 px no celular (os `Button` já garantem).
 - TDD: teste primeiro, ver falhar, código, ver passar. `npm run check` verde no fim de cada tarefa;
@@ -32,6 +34,19 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 | T6 | Etapa 3 em lista no celular | `src/ui/adequacao/TelaAdequacao.tsx`, `TelaAdequacao.test.tsx` | CA-692, CB-208 | T5 |
 | T7 | Gaveta do Cobrir: o que passou do gasto (pedido do coordenador em 15/10) | `src/ui/adequacao/GavetaCobrir.tsx` (só o texto), `TelaAdequacao.test.tsx` | CA-694 | — |
 | T8 | Validação | prints, relatório | todos | T1 a T7 |
+| R1 | Arredondar na direção do estado | `src/domain/arredondarNoEstado.ts` (novo, + teste), `ResumoDoDia.tsx`, `MedidorMacro.tsx`, `MicrosDoDia.tsx`, `TelaAdequacao.tsx`, `FaixaResumo.tsx` (+ testes) | CA-695, CA-696 | — |
+| R2 | Mínimo da meta até 1000% | `TelaAdequacao.tsx` (+ teste) | CA-698 | — |
+| R3 | Specs antigas marcadas como substituídas | `specs/estilo-spora/SPEC.md` (CA-206), `specs/pdf-e-telas-limpas/SPEC.md` (CA-333, CA-338) | — | — |
+| R4 | Sódio sem Cobrir | `MicrosDoDia.tsx`, `TelaAdequacao.tsx` (+ testes) | CA-697, CA-703, CB-202 | R1 |
+| R5 | Legenda do † no cartão | `MicrosDoDia.tsx` (+ teste) | CA-699 | R4 |
+| R6 | Notas † e ‡ lidas com o símbolo | `TelaAdequacao.tsx` (+ teste) | CA-700 | — |
+| R7 | Cobrir com o nome do nutriente | `TelaAdequacao.tsx` (+ testes, e2e) | CA-700 | — |
+| R8 | "Ver todos" leva ao topo e ao título | `AreaDeTrabalho.tsx`, `TelaAdequacao.tsx` (+ teste, e2e) | CA-701 | — |
+| R9 | "Ver cálculo": ordem, "no plano" e g/kg sem repetir | `ResumoDoDia.tsx`, `LinhaCalculo.tsx` (novo) (+ testes) | CA-702 | — |
+| R10 | Componentes em arquivos próprios | `src/ui/adequacao/ItemListaAdequacao.tsx` (novo), `estiloAdequacao.ts` (novo), `TelaAdequacao.tsx` | — | R9 |
+| R11 | Testes mais firmes | `MicrosDoDia.test.tsx`, `TelaAdequacao.test.tsx` | CB-204, CB-209, CA-694, CA-690 | R1 a R10 |
+| R12 | Recolhido de cada plano | `AreaDeTrabalho.tsx` (`key` por plano), e2e | CA-704 | — |
+| R13 | Prints e relatório da rodada | prints `depois-*`, relatório | todos | R1 a R12 |
 
 ## Tarefas
 
@@ -110,8 +125,9 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 2. **Linhas na meta recolhidas na etapa 3 (D-205).** Fechado toda vez que a tela abre; não guarda a
    escolha.
 3. **"Metas" dentro de "Ajustar" (D-203):** um clique a mais para mudar a meta de um macro.
-4. **Ordem do cartão: do mais longe para o mais perto da meta.** Na etapa 3, a ordem continua a de
-   sempre, para a tabela bater com o Word.
+4. **Ordem do cartão: do mais longe para o mais perto da meta.** Na etapa 3, a ordem de sempre vale
+   dentro de cada grupo; com o recolhido aberto, a tabela mostra primeiro o que pede ação, então ela
+   não bate linha a linha com o Word (que segue Cálcio, Ferro, Magnésio, Zinco...).
 
 ## Riscos
 
