@@ -166,7 +166,7 @@ outra.
   - Cobre: CA-593, CA-594, CA-595
   - Feito quando: "salvar um registro não marca os outros" em cada repositório e a junção da simulação do revisor (a
     edição da Ana feita em A continua).
-- [ ] **T42** — Validação: `npm run check`, `npx playwright test`, `npm run build`, as duas simulações do revisor.
+- [x] **T42** — Validação: `npm run check`, `npx playwright test`, `npm run build`, as duas simulações do revisor.
 
 ## Mapa de cobertura
 
@@ -368,3 +368,8 @@ outra.
 - [x] `node scripts/conferir-publicacao.mjs`
 - [x] Cada CA e CB com teste que cita o ID
 - [x] Divergências spec × código listadas (acima e no relatório)
+- [x] Rodada da integração (15/10/2026): `npm run check` (185 arquivos, 3.042 testes; o único aviso do lint é o antigo de
+  `MolduraPublica.tsx`), `npx playwright test` 55 de 55 (numa cópia da configuração, porta própria), `npm run build`,
+  `node scripts/conferir-publicacao.mjs` e `npm run test:csp` (3 de 3) verdes; as duas simulações do revisor
+  (`simular.mts` e `simular2.mts`) passam: só a Bia ganha marca, a edição da Ana feita em A continua, e o roteiro e os
+  modelos ficam depois da cópia do app antigo.
