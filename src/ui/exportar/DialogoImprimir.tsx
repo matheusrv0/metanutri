@@ -2,6 +2,7 @@ import { Printer } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { gravarOpcoesImpressao, lerOpcoesImpressao, type OpcoesImpressao } from '@/domain/folhaDieta.ts'
+import type { Suplemento } from '@/domain/suplementos.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
@@ -18,6 +19,8 @@ interface DialogoImprimirProps {
   readonly restricoes?: string | undefined
   /** Quem assina o plano (spec ajustes-de-uso). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** Os suplementos da ficha do paciente (spec anamnese-e-prescricoes, CA-577). */
+  readonly suplementos?: readonly Suplemento[] | undefined
   readonly aoFechar: () => void
 }
 
@@ -38,7 +41,7 @@ function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; r
  * Prévia da dieta antes de imprimir, com o que mais vai junto (CA-317).
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo.
  */
-export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, aoFechar }: DialogoImprimirProps) {
+export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, suplementos, aoFechar }: DialogoImprimirProps) {
   const armazenamento = useArmazenamento()
   const [opcoes, setOpcoes] = useState<OpcoesImpressao>(() => lerOpcoesImpressao(armazenamento))
 
@@ -54,7 +57,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, a
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
         <DialogHeader className="print:hidden">
           <DialogTitle>Dieta para imprimir</DialogTitle>
-          <DialogDescription>As refeições, os lembretes, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
+          <DialogDescription>As refeições, os lembretes, as orientações, os suplementos da ficha e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
@@ -63,7 +66,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, a
         </div>
 
         <div className="area-impressao border border-border print:border-0">
-          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} />
+          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} suplementos={suplementos} />
         </div>
 
         <DialogFooter className="print:hidden">

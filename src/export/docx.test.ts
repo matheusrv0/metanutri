@@ -158,6 +158,46 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
   })
 })
 
+describe('Suplementos no Word de aconselhamento (spec anamnese-e-prescricoes)', () => {
+  const vitD = { id: 's1', nome: 'Vitamina D3', dose: '1 cápsula', horario: 'No almoço', duracao: '3 meses', observacao: 'Com comida' }
+  const FRASE = 'Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).'
+
+  it('CA-577: SUPLEMENTAÇÃO vem logo depois das orientações, com nome, a linha de baixo e a observação; sem nome não sai', async () => {
+    const { caso, plano } = montarCaso()
+    const doc = criarAconselhamento({
+      caso,
+      plano,
+      antropometria: avaliarAntropometria(caso),
+      buscar: buscarAlimento,
+      orientacoes: 'Beber água.',
+      receitas: 'Salada.',
+      suplementos: [vitD, { ...vitD, id: 's2', nome: '', dose: 'esquecido' }],
+    })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    const ordem = ['ORIENTAÇÕES NUTRICIONAIS', 'Beber água.', 'SUPLEMENTAÇÃO', 'Vitamina D3 — Dose: 1 cápsula · Horário: No almoço · Por quanto tempo: 3 meses', 'Com comida', 'RECEITAS SAUDÁVEIS'].map((t) =>
+      texto.indexOf(t),
+    )
+    expect(ordem.every((i) => i >= 0)).toBe(true)
+    expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)
+    expect(texto).not.toContain('esquecido')
+    expect(texto).not.toContain(FRASE)
+  })
+
+  it('CA-577 e CB-166: sem suplemento, o Word sai sem a seção', async () => {
+    const { caso, plano } = montarCaso()
+    const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento, suplementos: [] })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).not.toContain('SUPLEMENTAÇÃO')
+  })
+
+  it('CA-584: plano de estágio leva a frase de proposta', async () => {
+    const { caso, plano } = montarCaso()
+    const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento, suplementos: [vitD], propostaDeEstagio: true })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto.indexOf(FRASE)).toBeGreaterThan(texto.indexOf('SUPLEMENTAÇÃO'))
+  })
+})
+
 describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
   it('traz energia, macros e a tabela de adequação com o tipo de referência', async () => {
     const { caso, plano } = montarCaso()

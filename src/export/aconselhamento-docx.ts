@@ -3,7 +3,9 @@
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
 import { medidaEquivalente } from '../domain/busca.ts'
+import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
 
@@ -18,6 +20,10 @@ export interface DadosAconselhamento {
   readonly nutricionista?: string | null | undefined
   /** CA-235: `false` tira as receitas, título incluído. */
   readonly comReceitas?: boolean | undefined
+  /** Spec anamnese-e-prescricoes, CA-577: os suplementos da ficha. Sem nenhum com nome, a seção não entra. */
+  readonly suplementos?: readonly Suplemento[] | undefined
+  /** CA-584: plano de estágio; a seção de suplementos leva a frase de proposta. */
+  readonly propostaDeEstagio?: boolean | undefined
 }
 
 const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
@@ -45,6 +51,24 @@ export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimen
 function blocoTexto(conteudo: string | undefined): Paragraph[] {
   const linhas = texto(conteudo).split(/\r?\n/)
   return linhas.map((l) => paragrafo(l))
+}
+
+/** CA-577: "SUPLEMENTAÇÃO", com o nome em negrito, a linha de baixo e a observação de cada um. */
+function blocoSuplementos(suplementos: readonly Suplemento[] | undefined, proposta: boolean): Paragraph[] {
+  const lista = suplementosParaDocumento(suplementos ?? [])
+  if (lista.length === 0) return []
+  return [
+    subtitulo('SUPLEMENTAÇÃO'),
+    ...(proposta ? [paragrafo(FRASE_PROPOSTA, { negrito: true })] : []),
+    ...lista.flatMap((s) => {
+      const linha = descreverSuplemento(s)
+      const observacao = s.observacao.trim()
+      return [
+        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: s.nome.trim(), bold: true }), ...(linha ? [new TextRun({ text: ` — ${linha}` })] : [])] }),
+        ...(observacao ? blocoTexto(observacao) : []),
+      ]
+    }),
+  ]
 }
 
 export function criarAconselhamento(dados: DadosAconselhamento): Document {
@@ -132,6 +156,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
           ...refeicoes,
           subtitulo('ORIENTAÇÕES NUTRICIONAIS'),
           ...blocoTexto(dados.orientacoes),
+          ...blocoSuplementos(dados.suplementos, dados.propostaDeEstagio === true),
           ...receitas,
           ...assinaturas,
         ],

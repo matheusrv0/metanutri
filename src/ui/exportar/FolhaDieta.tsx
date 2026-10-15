@@ -1,6 +1,7 @@
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { medidaEquivalente } from '@/domain/busca.ts'
+import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
   lembretesDoDia,
@@ -12,6 +13,7 @@ import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
+import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
 import type { Caso, ItemPlano, Plano } from '@/domain/tipos.ts'
@@ -31,6 +33,8 @@ interface FolhaDietaProps {
   readonly assinatura?: AssinaturaDoPlano | null | undefined
   /** Lista de compras e trocas, marcadas na janela de imprimir (CA-317). */
   readonly opcoes?: OpcoesImpressao | undefined
+  /** Os suplementos da ficha do paciente do plano (spec anamnese-e-prescricoes, CA-577). */
+  readonly suplementos?: readonly Suplemento[] | undefined
 }
 
 /** Colunas da quantidade e do alimento: a medida mais longa ("2 colheres de servir e meia · 150 g") cabe numa linha. */
@@ -66,7 +70,7 @@ function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
  * Folha da dieta para o paciente: só o que ele usa, em letra de ler sem óculos
  * (spec pdf-e-telas-limpas, US-B1). Na impressão, o navegador salva em PDF.
  */
-export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO }: FolhaDietaProps) {
+export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
   const linhaFina = linhaFinaDaFolha(caso, quem)
   const lembretes = lembretesDoDia(missoesDoPlano(plano, { pesoKg: caso.pesoKg }))
@@ -79,6 +83,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()
   const receitas = caso.receitas.trim()
+  const suplementosDaFolha = suplementosParaDocumento(suplementos)
 
   return (
     <article className="folha-dieta mx-auto flex max-w-[820px] flex-col gap-6 bg-card p-4 text-sm sm:p-10 leading-relaxed text-foreground">
@@ -152,6 +157,27 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           <section aria-label="Orientações" className="flex flex-col gap-1.5">
             <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
             <p className="whitespace-pre-wrap">{caso.orientacoes}</p>
+          </section>
+        ) : null}
+
+        {suplementosDaFolha.length > 0 ? (
+          <section aria-label="Suplementos" className="flex flex-col gap-1.5">
+            <h3 className="font-titulo text-lg font-bold text-heading">Suplementos</h3>
+            {/* CA-584: plano de estágio leva a frase de proposta, como as folhas do paciente. */}
+            {propostaNaDieta(assinatura, caso) ? <p className="font-semibold">{FRASE_PROPOSTA}</p> : null}
+            <ul className="flex flex-col gap-1.5">
+              {suplementosDaFolha.map((s) => {
+                const linha = descreverSuplemento(s)
+                const observacao = s.observacao.trim()
+                return (
+                  <li key={s.id} className="break-inside-avoid">
+                    <strong className="font-bold text-heading">{s.nome.trim()}</strong>
+                    {linha ? <span>{` · ${linha}`}</span> : null}
+                    {observacao ? <span className="block whitespace-pre-wrap break-words text-muted-foreground">{observacao}</span> : null}
+                  </li>
+                )
+              })}
+            </ul>
           </section>
         ) : null}
 

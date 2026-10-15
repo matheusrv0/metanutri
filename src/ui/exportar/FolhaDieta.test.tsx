@@ -178,6 +178,40 @@ describe('Folha da dieta (US-B1)', () => {
     for (const proibido of ['biscoito', 'chocolate', 'salsicha', 'refrigerante']) expect(texto).not.toContain(proibido)
   })
 
+  describe('suplementos da ficha (spec anamnese-e-prescricoes)', () => {
+    const vitD = { id: 's1', nome: 'Vitamina D3', dose: '1 cápsula', horario: 'No almoço', duracao: '3 meses', observacao: 'Com comida' }
+    const JULIA: AssinaturaDoPlano = { situacao: 'estudante', linhaNutricionista: null, origem: 'conta', nome: 'Júlia', responsavelTecnico: 'Carla' }
+    const FRASE = 'Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).'
+
+    it('CA-577: a seção Suplementos vem logo depois de Orientações, com nome, a linha de baixo e a observação', () => {
+      const { container } = render(<FolhaDieta caso={{ ...caso, receitas: 'Bolo de banana.' }} plano={planoCheio()} assinatura={ANA} suplementos={[vitD, { ...vitD, id: 's2', nome: '' }]} />)
+      const titulos = [...(container.querySelector('.fim-da-folha')?.querySelectorAll('h3') ?? [])].map((h) => h.textContent)
+      expect(titulos).toEqual(['No dia a dia', 'Orientações', 'Suplementos', 'Receitas'])
+      const secao = within(screen.getByRole('region', { name: 'Suplementos' }))
+      const itens = secao.getAllByRole('listitem')
+      expect(itens).toHaveLength(1)
+      expect(itens[0]).toHaveTextContent('Vitamina D3 · Dose: 1 cápsula · Horário: No almoço · Por quanto tempo: 3 meses')
+      expect(itens[0]).toHaveTextContent('Com comida')
+      expect(secao.queryByText(FRASE)).not.toBeInTheDocument()
+    })
+
+    it('CA-577 e CB-166: sem suplemento com nome, a folha sai como antes', () => {
+      const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
+      expect(screen.queryByRole('heading', { name: 'Suplementos' })).not.toBeInTheDocument()
+      unmount()
+      render(<FolhaDieta caso={caso} plano={planoCheio()} suplementos={[{ ...vitD, nome: ' ' }]} />)
+      expect(screen.queryByRole('heading', { name: 'Suplementos' })).not.toBeInTheDocument()
+    })
+
+    it('CA-584: plano de estudante, ou com estagiário ou preceptor, leva a frase de proposta', () => {
+      const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} assinatura={JULIA} suplementos={[vitD]} />)
+      expect(within(screen.getByRole('region', { name: 'Suplementos' })).getByText(FRASE)).toBeInTheDocument()
+      unmount()
+      render(<FolhaDieta caso={{ ...caso, preceptor: 'Carla' }} plano={planoCheio()} assinatura={ANA} suplementos={[vitD]} />)
+      expect(within(screen.getByRole('region', { name: 'Suplementos' })).getByText(FRASE)).toBeInTheDocument()
+    })
+  })
+
   it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
     render(<FolhaDieta caso={{ ...caso, orientacoes: '' }} plano={criarPlanoPadrao(ids)} />)
     expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
