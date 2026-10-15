@@ -190,6 +190,27 @@ function listaSem(chave: string, valor: string, ids: ReadonlySet<string>): strin
   return JSON.stringify({ ...arquivo, itens: ficam, naNuvem: soDosQueFicam(arquivo['naNuvem']), pendentes: soDosQueFicam(arquivo['pendentes']) })
 }
 
+/**
+ * DP-40: a lista da cópia com os itens daqui que ficaram, no fim. No arquivo dos links, as marcas de "na nuvem" e de
+ * pendente que esses itens tinham aqui vão junto.
+ */
+function listaCom(chave: string, daNuvem: string, extras: readonly Item[], daqui: string): string {
+  const itens = [...(itensDe(chave, daNuvem) ?? []), ...extras]
+  if (chave !== CHAVE_ACOMPANHAMENTOS) return JSON.stringify(itens)
+  const arquivo = (texto: string): Item => {
+    const v = lerJson(texto)
+    return typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Item) : {}
+  }
+  const daCopia = arquivo(daNuvem)
+  const local = arquivo(daqui)
+  const ids = new Set(extras.map((item) => idDe(item)))
+  const junto = (campo: string): string[] => {
+    const lista = (v: unknown): string[] => (Array.isArray(v) ? v.filter((id): id is string => typeof id === 'string') : [])
+    return [...new Set([...lista(daCopia[campo]), ...lista(local[campo]).filter((id) => ids.has(id))])]
+  }
+  return JSON.stringify({ ...daCopia, formato: 1, itens, naNuvem: junto('naNuvem'), pendentes: junto('pendentes') })
+}
+
 /** DP-39: a cópia que sobe sem os valores retidos (a chave inteira, ou só o item na lista). As marcas ficam. */
 function semRetidos(dados: Record<string, string>, retidos: Readonly<Record<string, string>>): Record<string, string> {
   const refs = Object.keys(retidos)
@@ -327,6 +348,50 @@ function planejarAplicacao(atual: Readonly<Record<string, string>>, copia: Backu
         marcasMudaram = true
       }
     }
+    if (sobe) mantidas.push(chave)
+  }
+  // DP-40: a lista que a cópia traz sem um item daqui. Item que some de uma lista deixa lápide; sem lápide e com a marca
+  // dele na cópia (ou retido aqui), o item faltou porque a cópia veio de quem o reteve ou de uma versão antiga: ele fica,
+  // e sobe só se for igual ou mais novo que a marca da cópia. Sem marca, vale a cópia, como antes.
+  for (const [chave, lista] of Object.entries(LISTAS)) {
+    const daqui = atual[chave]
+    const daNuvem = alvo[chave]
+    if (daqui === undefined || daNuvem === undefined || daqui === daNuvem) continue
+    const itensDaqui = itensDe(chave, daqui)
+    const itensDaNuvem = itensDe(chave, daNuvem)
+    if (itensDaqui === null || itensDaNuvem === null) continue
+    const naCopiaIds = new Set(itensDaNuvem.map((item) => idDe(item)))
+    const ficam: Item[] = []
+    let sobe = false
+    for (const item of itensDaqui) {
+      const id = idDe(item)
+      if (id === null || naCopiaIds.has(id)) continue
+      const ref = `${lista.nome}/${id}`
+      const naCopia = daCopia.alterados[ref]
+      const jaRetido = retidosAntes[ref]
+      if (naCopia === undefined && jaRetido === undefined) continue
+      const tempo = marcasDaqui[ref] ?? lista.tempo(item) ?? ''
+      const lapide = daCopia.excluidos[ref]
+      if (lapide !== undefined && lapide >= tempo) continue
+      ficam.push(item)
+      if (jaRetido !== undefined || (naCopia !== undefined && tempo < naCopia)) {
+        const marca = maisNova(naCopia, jaRetido) ?? tempo
+        retidos[ref] = marca
+        if (marca !== naCopia) {
+          alterados.set(ref, marca)
+          marcasMudaram = true
+        }
+        continue
+      }
+      sobe = true
+      const marca = marcasDaqui[ref]
+      if (marca !== undefined && marca !== naCopia) {
+        alterados.set(ref, marca)
+        marcasMudaram = true
+      }
+    }
+    if (ficam.length === 0) continue
+    alvo[chave] = listaCom(chave, daNuvem, ficam, daqui)
     if (sobe) mantidas.push(chave)
   }
   if (marcasMudaram) {

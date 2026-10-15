@@ -534,9 +534,15 @@ describe('D-170: uma versão antiga do site não apaga o que não conhece', () =
     expect(nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Ferro', 'Zinco'])
     expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS)).alterados['modelos-suplemento/a']).toBe(T(5))
 
+    // O "b" não tem marca na cópia: sobe. O "a" daqui é mais velho que a marca da cópia: fica retido e não vai na lista
+    // que sobe (D-173, DP-40); a marca das 5h continua na cópia que sobe.
     const outro = aparelhoNovo()
     const soUmMaisNovo = copia({ ...maisNova.dados, [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), [`chave/${ROTEIRO}`]: T(2), 'modelos-suplemento/a': T(5) }) })
     expect(aplicarCopia(outro, soUmMaisNovo).mantidas).toEqual([MODELOS])
+    const sobe = montarCopia(outro, AGORA)
+    expect(nomes(sobe, MODELOS)).toEqual(['Zinco'])
+    expect(lerMudancas(sobe.dados[CHAVE_MUDANCAS] ?? null).alterados['modelos-suplemento/a']).toBe(T(5))
+    expect(nomes(copia({ [MODELOS]: outro.getItem(MODELOS) ?? '' }), MODELOS)).toEqual(['Ferro', 'Zinco'])
   })
 
   it('CA-600: chavesMantidas diz quais chaves ficariam e subiriam, sem gravar nada', () => {
@@ -651,6 +657,7 @@ describe('D-171: salvar um item não mexe nos outros', () => {
 })
 describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nuvem conhece', () => {
   const ROTEIRO = 'metanutri:roteiro-anamnese'
+  const MODELOS = 'metanutri:modelos-suplemento'
   const rot = (texto: string) => JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'q', texto }] } })
   const textoDoRoteiro = (valor: string | null | undefined) =>
     valor === null || valor === undefined ? null : (JSON.parse(valor) as { blocos: { agua: { texto: string }[] } }).blocos.agua[0]?.texto
@@ -732,5 +739,50 @@ describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nu
     const n2 = aparelhoComRoteiro('r2 novo', T(4))
     aplicarCopia(n2, deN1)
     expect(textoDoRoteiro(n2.getItem(ROTEIRO))).toBe('r1 editado')
+  })
+  describe('listas, item por item (DP-40)', () => {
+    const modelo = (id: string, nome: string, quando: string) => ({ id, nome, dose: '', horario: '', duracao: '', observacao: '', criadoEm: T(1), atualizadoEm: quando })
+    const nomesAqui = (arm: Memoria) => nomes(copia({ [MODELOS]: arm.getItem(MODELOS) ?? '[]' }), MODELOS).sort()
+    function comModelos(itens: ReturnType<typeof modelo>[], marcas: Record<string, string>): Memoria {
+      const arm = new Memoria()
+      arm.setItem('metanutri:pacientes', pacientes())
+      arm.setItem(MODELOS, JSON.stringify(itens))
+      arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), ...marcas }))
+      return arm
+    }
+
+    it('CA-604: N1 com o "a" velho e o "b" igual aplica a cópia da aba antiga: o "a" velho não sobe, N2 fica com o "a" novo e um aparelho novo o recebe', () => {
+      const n2 = comModelos([modelo('a', 'Ferro NOVO', T(5)), modelo('b', 'Zinco', T(2))], { 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(2) })
+      const n1 = comModelos([modelo('a', 'Ferro velho', T(2)), modelo('b', 'Zinco', T(2))], { 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(2) })
+      const w3 = copia({ 'metanutri:pacientes': pacientes(), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'modelos-suplemento/a': T(5), 'modelos-suplemento/b': T(2) }) })
+
+      aplicarCopia(n1, w3)
+      expect(nomesAqui(n1)).toEqual(['Ferro velho', 'Zinco'])
+      const w4 = montarCopia(n1, T(6))
+      expect(nomes(w4, MODELOS)).toEqual(['Zinco'])
+      expect(lerMudancas(w4.dados[CHAVE_MUDANCAS] ?? null).alterados['modelos-suplemento/a']).toBe(T(5))
+      // Recarregar com a cópia que N1 mandou: o "a" velho continua retido.
+      expect(chavesMantidas(n1, w4)).toEqual([])
+
+      // N2 aplica a lista sem o "a": o "a" novo fica e volta para a nuvem.
+      expect(aplicarCopia(n2, w4).mantidas).toEqual([MODELOS])
+      expect(nomesAqui(n2)).toEqual(['Ferro NOVO', 'Zinco'])
+      const w5 = montarCopia(n2, T(7))
+      expect(nomes(w5, MODELOS).sort()).toEqual(['Ferro NOVO', 'Zinco'])
+
+      const novo = new Memoria()
+      aplicarCopia(novo, w5)
+      expect(nomesAqui(novo)).toEqual(['Ferro NOVO', 'Zinco'])
+      aplicarCopia(n1, w5)
+      expect(nomesAqui(n1)).toEqual(['Ferro NOVO', 'Zinco'])
+      expect(n1.getItem(CHAVE_RETIDOS)).toBeNull()
+    })
+
+    it('CA-604: o item que falta numa lista da cópia, sem marca nem lápide, segue a cópia (fluxo de antes)', () => {
+      const arm = comModelos([modelo('a', 'Ferro', T(2)), modelo('b', 'Zinco', T(2))], { 'modelos-suplemento/a': T(2), 'modelos-suplemento/b': T(2) })
+      const semOA = copia({ 'metanutri:pacientes': pacientes(), [MODELOS]: JSON.stringify([modelo('b', 'Zinco', T(2))]), [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'modelos-suplemento/b': T(2) }) })
+      expect(aplicarCopia(arm, semOA).mantidas).toEqual([])
+      expect(nomesAqui(arm)).toEqual(['Zinco'])
+    })
   })
 })

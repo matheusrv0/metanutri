@@ -209,7 +209,7 @@ de recarregar. Regra única: D-173. Ordem: T51, T52, T53, T54; T55 e T56 não de
   retidos; `aplicarCopia` e `chavesMantidas` os leem; `montarCopia` não leva o valor retido;
   `registrarMudanca` solta o retido que a pessoa edita). Testes em `copiaDaConta.test.ts` e `sincronia.test.ts`.
   Cobre CA-605, CA-606, CA-609.
-- [ ] **T53** — Listas item por item (DP-40): o item mais velho fica retido e não sobe na lista; o item que falta numa
+- [x] **T53** — Listas item por item (DP-40): o item mais velho fica retido e não sobe na lista; o item que falta numa
   lista que a cópia traz, sem lápide e com marca na cópia, fica aqui como a chave que falta. O teste `soUmMaisNovo`
   muda. Cobre CA-604.
 - [ ] **T54** — Junção (DP-41): `juntarCopias` não leva o valor só daqui que é mais velho que a marca da nuvem, e
