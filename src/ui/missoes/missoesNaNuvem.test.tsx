@@ -3,12 +3,13 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, type Acompanhamento, type MarcacaoDia } from '@/domain/acompanhamento.ts'
+import { copiarDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { LIMITE_DE_LINKS, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { criarRepositorioAcompanhamentos, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { ProvedorAcompanhamentos } from '@/ui/estado/ProvedorAcompanhamentos.tsx'
-import { FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
+import { DIETA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { TelaAdesao } from './TelaAdesao.tsx'
 
@@ -29,6 +30,8 @@ const nuvem = vi.hoisted(() => ({
   falha: { select: false, upsert: false, delete: false },
   /** O banco recusa a gravação do link pela trava de tamanho (011). */
   grandeDemais: false,
+  /** O banco recusa a gravação que traz uma dieta, pela trava da dieta (012, CB-152). Sem dieta, grava. */
+  dietaGrandeDemais: false,
   chamadas: [] as string[],
   /** Pedidos que só respondem quando o teste soltar: é assim que se testa a corrida. */
   segurar: { select: false, upsert: false } as Record<'select' | 'upsert', boolean>,
@@ -45,6 +48,12 @@ const GRANDE_DEMAIS: RespostaFalsa = {
   data: null,
   error: { code: '23514', message: 'new row for relation "acompanhamentos" violates check constraint "acompanhamentos_missoes_tamanho"' },
 }
+const DIETA_GRANDE: RespostaFalsa = {
+  data: null,
+  error: { code: '23514', message: 'new row for relation "acompanhamentos" violates check constraint "acompanhamentos_dieta_tamanho"' },
+}
+/** A gravação traz uma dieta que a trava do 012 recusa. */
+const recusaDieta = (campos: Linha): boolean => nuvem.dietaGrandeDemais && campos['dieta'] !== null && campos['dieta'] !== undefined
 
 /** Responde agora, ou quando o teste soltar. `fazer` roda na hora da resposta. */
 function responder(tipo: Segurado, fazer: () => RespostaFalsa): Promise<RespostaFalsa> {
@@ -78,6 +87,7 @@ function clienteDaNuvem(): ClienteMissoes {
           responder('upsert', () => {
             if (nuvem.falha.upsert) return SEM_INTERNET
             if (nuvem.grandeDemais) return GRANDE_DEMAIS
+            if (recusaDieta(linha)) return DIETA_GRANDE
             const i = nuvem.linhas.findIndex((l) => l['id'] === linha['id'])
             if (i === -1) {
               if (nuvem.limite !== null && nuvem.linhas.length >= nuvem.limite) {
@@ -98,6 +108,7 @@ function clienteDaNuvem(): ClienteMissoes {
             responder('upsert', () => {
               if (nuvem.falha.upsert) return SEM_INTERNET
               if (nuvem.grandeDemais) return GRANDE_DEMAIS
+              if (recusaDieta(campos)) return DIETA_GRANDE
               const i = nuvem.linhas.findIndex((l) => l[coluna] === valor)
               if (i === -1) return { data: [], error: null }
               nuvem.linhas[i] = { ...nuvem.linhas[i], ...campos }
@@ -221,6 +232,7 @@ beforeEach(() => {
   nuvem.limite = null
   nuvem.falha = { select: false, upsert: false, delete: false }
   nuvem.grandeDemais = false
+  nuvem.dietaGrandeDemais = false
   nuvem.chamadas = []
   nuvem.segurar = { select: false, upsert: false }
   nuvem.soltar = []
@@ -903,5 +915,91 @@ describe('O link grande demais (D-107)', () => {
     expect(screen.getByText(LINK_GRANDE_DEMAIS)).toBeInTheDocument()
     expect(screen.queryByText(NAO_SALVOU)).not.toBeInTheDocument()
     expect(nuvem.linhas).toEqual([])
+  })
+})
+
+describe('A dieta no link, na nuvem (spec dieta-no-link)', () => {
+  const DIETA: DietaDoPlano = {
+    refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: '6 colheres de sopa', gramas: 150, alimento: 'Arroz, tipo 1, cozido' }]] }],
+    orientacoes: 'Beber água.',
+    receitas: '',
+  }
+
+  function cartaoComDieta(repo: RepositorioAcompanhamentos) {
+    return render(
+      <ProvedorAcompanhamentos repositorio={repo}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} dieta={DIETA} plano="pro" hoje={HOJE} />
+      </ProvedorAcompanhamentos>,
+    )
+  }
+
+  const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar a dieta no link' })
+
+  it('CA-548: o link criado com a dieta leva a cópia para a linha da nuvem', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    cartaoComDieta(repo)
+
+    await gerarLink(usuario)
+
+    await waitFor(() => expect(nuvem.linhas).toHaveLength(1))
+    expect(nuvem.linhas[0]?.['dieta']).toEqual(copiarDieta(DIETA, HOJE))
+  })
+
+  it('CA-543: desmarcar a dieta deixa a coluna vazia na nuvem, com o mesmo token e as marcações do paciente', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const link = { ...acompanhamentoDe('c1', 'Ana', SEMANA_EM_DIA), dieta: copiarDieta(DIETA, HOJE) }
+    repo.salvar(link, { naNuvem: true })
+    nuvem.linhas = [{ ...linhaDe(link), dieta: link.dieta }]
+    cartaoComDieta(repo)
+    await waitFor(() => expect(nuvem.chamadas).toContain('select'))
+
+    await usuario.click(caixa())
+
+    await waitFor(() => expect(nuvem.linhas[0]?.['dieta']).toBeNull())
+    expect(nuvem.linhas[0]?.['token']).toBe(link.token)
+    expect(nuvem.linhas[0]?.['marcacoes']).toEqual(SEMANA_EM_DIA)
+    expect(caixa()).not.toBeChecked()
+  })
+
+  it('CB-154: sem internet ao ligar a dieta, a mudança fica no aparelho, o cartão avisa e "Tentar de novo" leva para a nuvem', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const link = acompanhamentoDe('c1', 'Ana')
+    repo.salvar(link, { naNuvem: true })
+    nuvem.linhas = [linhaDe(link)]
+    cartaoComDieta(repo)
+    await waitFor(() => expect(nuvem.chamadas).toContain('select'))
+
+    nuvem.falha.upsert = true
+    await usuario.click(caixa())
+
+    expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
+    expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
+    expect(repo.estaPendente(link.id)).toBe(true)
+    expect(caixa()).toBeChecked()
+
+    nuvem.falha.upsert = false
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    await waitFor(() => expect(nuvem.linhas[0]?.['dieta']).toEqual(copiarDieta(DIETA, HOJE)))
+    expect(screen.queryByText(NAO_SALVOU)).not.toBeInTheDocument()
+  })
+
+  it('CB-152: dieta grande demais: o cartão diz o que fazer, sem "Tentar de novo"; desmarcar a dieta salva o link', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    nuvem.dietaGrandeDemais = true
+    cartaoComDieta(repo)
+
+    await gerarLink(usuario)
+
+    expect(await screen.findByText(DIETA_GRANDE_DEMAIS)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+
+    await usuario.click(caixa())
+    await waitFor(() => expect(screen.queryByText(DIETA_GRANDE_DEMAIS)).not.toBeInTheDocument())
+    expect(nuvem.linhas).toHaveLength(1)
+    expect(nuvem.linhas[0]?.['dieta']).toBeNull()
   })
 })
