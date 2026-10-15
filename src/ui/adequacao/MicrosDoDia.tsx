@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
@@ -10,6 +10,7 @@ import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
+import { podeCobrir } from './podeCobrir.ts'
 
 interface MicrosDoDiaProps {
   readonly caso: Caso
@@ -35,19 +36,26 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
  */
 export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
+  const idMeta = useId()
 
   const totais = useMemo(() => totaisDoPlano(plano, buscarAlimento), [plano])
   const resultado = useMemo(() => calcularAdequacao(totais, caso, caso.adequacao.preset), [totais, caso])
 
   const vazio = plano.refeicoes.every((r) => r.opcoes.principal.length === 0)
   const total = resultado.linhas.length
-  // Do mais longe para o mais perto da meta; o sort é estável, então empate fica na ordem da tabela.
-  const abaixo = resultado.linhas.filter((l) => l.estado === 'abaixo').sort((a, b) => a.adequacaoPct - b.adequacaoPct)
+  // Só o que se cobre (o sódio não entra, D-206), do mais longe para o mais perto da meta;
+  // o sort é estável, então empate fica na ordem da tabela.
+  const paraCobrir = resultado.linhas.filter(podeCobrir).sort((a, b) => a.adequacaoPct - b.adequacaoPct)
   const acima = resultado.linhas.filter((l) => l.estado === 'acima-limite')
   const rotuloCobrindo = resultado.linhas.find((l) => l.chave === cobrindo)?.rotulo ?? ''
+  const metaPct = resultado.linhas[0]?.metaPct ?? null
 
   const contagem =
-    abaixo.length > 0 ? `${abaixo.length} de ${total} abaixo da meta` : acima.length > 0 ? 'Nenhum abaixo da meta' : `Todos os ${total} na meta.`
+    paraCobrir.length > 0
+      ? `${paraCobrir.length} para cobrir.`
+      : resultado.linhas.every((l) => l.estado === 'adequado')
+        ? `Todos os ${total} na meta.`
+        : 'Nada para cobrir.'
 
   return (
     <section aria-label="Micronutrientes" className="flex flex-col">
@@ -68,9 +76,13 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
         ) : (
           <>
             <p className="text-sm text-muted-foreground">{contagem}</p>
-            {abaixo.length + acima.length > 0 ? (
-              <ul aria-label="Fora da meta" className="flex flex-col">
-                {abaixo.slice(0, MAXIMO).map((linha) => (
+            {/* A meta usada fica para o leitor de tela: na tela, a cor e o Cobrir já dizem que falta (CA-703). */}
+            {metaPct === null ? null : (
+              <span id={idMeta} className="sr-only">{`Adequação em % da referência; a meta é ${formatarNumero(metaPct, 0)}%.`}</span>
+            )}
+            {paraCobrir.length + acima.length > 0 ? (
+              <ul aria-label="Fora da meta" aria-describedby={metaPct === null ? undefined : idMeta} className="flex flex-col">
+                {paraCobrir.slice(0, MAXIMO).map((linha) => (
                   <li key={linha.chave} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-0">
                     <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
                     <span className="flex items-baseline">

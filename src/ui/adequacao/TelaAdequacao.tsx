@@ -22,6 +22,7 @@ import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { MarcaLimite } from './MarcaLimite.tsx'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
+import { podeCobrir } from './podeCobrir.ts'
 
 interface TelaAdequacaoProps {
   readonly caso: Caso
@@ -105,7 +106,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
         <span className={`numeros mt-1 block whitespace-nowrap text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </TableCell>
       <TableCell>
-        {linha.estado === 'abaixo' ? (
+        {podeCobrir(linha) ? (
           <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
             Cobrir
           </Button>
@@ -134,7 +135,7 @@ function ItemLista({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readon
           {` de ${valorDeReferencia(linha.referencia.valor)} ${linha.unidade} `}
           <span className="uppercase">{linha.referencia.tipo}</span>
         </span>
-        {linha.estado === 'abaixo' ? (
+        {podeCobrir(linha) ? (
           <Button size="sm" variant="lightprimary" onClick={aoCobrir}>
             Cobrir
           </Button>

@@ -279,7 +279,8 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
 
   const micros = page.getByRole('region', { name: 'Micronutrientes' })
-  await expect(micros).toContainText(/\d+ de 16 abaixo da meta/)
+  await expect(micros).toContainText(/\d+ para cobrir\./)
+  await expect(micros.getByRole('button', { name: 'Cobrir Sódio' })).toHaveCount(0)
   const linhas = micros.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem')
   const antes = await linhas.allTextContents()
   await linhas.first().getByRole('button', { name: /^Cobrir / }).click()

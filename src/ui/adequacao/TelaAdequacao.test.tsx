@@ -232,7 +232,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     const usuario = montar(adulta, exemplo())
     await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
     const cobrir = screen.getAllByRole('button', { name: 'Cobrir' })
-    expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo')).length)
+    expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo') && !t.startsWith('Sódio')).length)
     for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
   })
 
@@ -370,5 +370,35 @@ describe('Mínimo da meta dentro do que o cálculo aceita (CA-698)', () => {
     await usuario.type(minimo, '10000')
     expect(screen.getByText(/meta de 1\.000% da referência/)).toBeInTheDocument()
     expect(screen.getByRole('table')).toBeInTheDocument()
+  })
+})
+
+describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('CA-697: na tabela, o sódio abaixo da meta fica à vista, com o estado e sem Cobrir', () => {
+    montar(adulta, exemplo())
+    const sodio = linhaDe('Sódio')
+    expect(sodio.getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(sodio.getByText('1.500 mg')).toBeInTheDocument()
+    expect(sodio.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('CA-697: na lista do celular, também', () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({
+      matches: consulta === '(max-width: 639px)',
+      media: consulta,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    montar(adulta, exemplo())
+    const sodio = within(screen.getByRole('list', { name: 'Fora da meta' }))
+      .getAllByRole('listitem')
+      .find((i) => i.textContent?.startsWith('Sódio'))
+    if (!sodio) throw new Error('sódio fora da lista')
+    expect(within(sodio).getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
   })
 })

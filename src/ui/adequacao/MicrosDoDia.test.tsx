@@ -56,8 +56,8 @@ const pctDe = (linha: HTMLElement) => Number((linha.textContent ?? '').match(/(\
 describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () => {
   it('CA-685 e CB-203: conta os abaixo da meta e mostra os 5 mais longe, cada um com Cobrir', () => {
     montar()
-    expect(cartao().getByText(/^\d+ de 16 abaixo da meta$/)).toBeInTheDocument()
-    const total = Number(cartao().getByText(/de 16 abaixo da meta/).textContent?.split(' ')[0])
+    expect(cartao().getByText(/^\d+ para cobrir\.$/)).toBeInTheDocument()
+    const total = Number(cartao().getByText(/para cobrir\./).textContent?.split(' ')[0])
     expect(total).toBeGreaterThan(5)
 
     const itens = linhas()
@@ -131,10 +131,10 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 
   it('CB-209: a referência do caso vale no cartão (coletivo cobra menos)', () => {
     const { desmontar } = montar()
-    const individual = Number(cartao().getByText(/de 16 abaixo da meta/).textContent?.split(' ')[0])
+    const individual = Number(cartao().getByText(/para cobrir\./).textContent?.split(' ')[0])
     desmontar()
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'coletivo' } } })
-    const coletivo = Number(cartao().getByText(/de 16 abaixo da meta/).textContent?.split(' ')[0])
+    const coletivo = Number(cartao().getByText(/para cobrir\./).textContent?.split(' ')[0])
     expect(coletivo).toBeLessThanOrEqual(individual)
   })
 
@@ -159,5 +159,35 @@ describe('Cartão arredonda na direção do estado (CA-696)', () => {
     const linha = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
     if (!linha) throw new Error('cálcio fora do cartão')
     expect(within(linha).getByText(`${Math.floor(calcio.adequacaoPct)}%`)).toBeInTheDocument()
+  })
+})
+
+describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
+  const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+
+  it('CA-697: o sódio abaixo da meta não aparece no cartão nem na contagem', () => {
+    montar(adulta, exemplo())
+    // No exemplo, 5 estão abaixo da meta, e um deles é o sódio.
+    expect(cartao().getByText('4 para cobrir.')).toBeInTheDocument()
+    expect(linhas().some((l) => l.textContent?.startsWith('Sódio'))).toBe(false)
+    expect(cartao().queryByRole('button', { name: 'Cobrir Sódio' })).not.toBeInTheDocument()
+  })
+
+  it('CA-703 e CB-202: nada abaixo e o sódio acima do limite, o cartão diz "Nada para cobrir." e mostra o sódio', () => {
+    const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: 1 } as const
+    const base = exemplo()
+    const almoco = base.refeicoes.find((r) => r.nome === 'Almoço')
+    if (!almoco) throw new Error('sem almoço')
+    const comSal = adicionarItem(base, almoco.id, 'principal', { alimentoId: SAL_GROSSO, gramas: 10 }, ids)
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, comSal)
+    expect(cartao().getByText('Nada para cobrir.')).toBeInTheDocument()
+    expect(linhas()).toHaveLength(1)
+    expect(linhas()[0]).toHaveTextContent(/^Sódio\d+% · acima do limite$/)
+  })
+
+  it('CA-703: a meta usada vai na descrição da lista, para leitor de tela', () => {
+    montar(adulta, exemplo())
+    const lista = cartao().getByRole('list', { name: 'Fora da meta' })
+    expect(lista).toHaveAccessibleDescription('Adequação em % da referência; a meta é 90%.')
   })
 })
