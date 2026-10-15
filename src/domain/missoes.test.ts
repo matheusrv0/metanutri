@@ -31,6 +31,18 @@ describe('missões do dia', () => {
     expect(missoes.find((m) => m.id === 'agua')?.texto).toBe('Beber água ao longo do dia')
   })
 
+  it('CA-555 (spec dieta-no-link): os ids das missões não mudam quando o plano muda, e o que foi marcado continua valendo', () => {
+    const antes = comAlimentos()
+    const almoco = antes.refeicoes[2]
+    const lanche = antes.refeicoes[3]
+    if (!almoco || !lanche) throw new Error('plano incompleto')
+    const depois = adicionarItem(adicionarItem(antes, almoco.id, 'principal', { alimentoId: 3, gramas: 40 }, ids), lanche.id, 'principal', { alimentoId: 3, gramas: 30 }, ids)
+    const idsAntes = missoesDoPlano(antes).map((m) => m.id)
+    const idsDepois = missoesDoPlano(depois).map((m) => m.id)
+    expect(idsDepois).toEqual(expect.arrayContaining(idsAntes))
+    expect(idsDepois).toContain(`refeicao-${lanche.id}`)
+  })
+
   it('plano vazio não gera missão nenhuma', () => {
     expect(missoesDoPlano(criarPlanoPadrao(ids))).toEqual([])
   })

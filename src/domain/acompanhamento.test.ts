@@ -14,7 +14,15 @@ import {
   ultimaMarcacao,
   type Acompanhamento,
 } from './acompanhamento.ts'
+import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
+
+const DIETA: DietaDoLink = {
+  refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: '6 colheres de sopa', gramas: 150, alimento: 'Arroz, tipo 1, cozido' }]] }],
+  orientacoes: '',
+  receitas: '',
+  copiadaEm: '2026-10-01',
+}
 
 const MISSOES: readonly Missao[] = [
   { id: 'refeicao-1', texto: 'Café da manhã por volta das 07:00', origem: 'Refeição do plano' },
@@ -91,6 +99,33 @@ describe('Gerar o link de novo', () => {
   it('atualiza o nome quando o plano mudou de nome', () => {
     expect(regerarLink(novo(), { nome: '  Ana Paula ', missoes: outras }).nome).toBe('Ana Paula')
     expect(regerarLink(novo(), { missoes: outras }).nome).toBe('Ana')
+  })
+
+  it('CA-547: leva a dieta de agora quando ela vem, e fica sem ela quando vem nula', () => {
+    const comDieta = novo({ dieta: DIETA })
+    const nova = { ...DIETA, orientacoes: 'Beber água.', copiadaEm: '2026-10-14' }
+    expect(regerarLink(comDieta, { missoes: outras, dieta: nova }).dieta).toEqual(nova)
+    expect(regerarLink(comDieta, { missoes: outras, dieta: null }).dieta).toBeNull()
+  })
+
+  it('sem dieta no pedido, a do link continua como estava', () => {
+    expect(regerarLink(novo({ dieta: DIETA }), { missoes: outras }).dieta).toEqual(DIETA)
+  })
+})
+
+describe('A dieta do link (spec dieta-no-link)', () => {
+  it('CA-541: sem dieta no pedido, o link nasce sem ela', () => {
+    expect(novo().dieta).toBeNull()
+  })
+
+  it('CA-540: com a dieta no pedido, o link nasce com a cópia', () => {
+    const a = criarAcompanhamento({ casoId: 'c', pacienteId: null, nome: 'Ana', missoes: MISSOES, dieta: DIETA }, { gerarId: () => 'x' })
+    expect(a.dieta).toEqual(DIETA)
+  })
+
+  it('CA-549: marcar missão não mexe na dieta', () => {
+    const a = marcarMissao(novo({ dieta: DIETA }), '2026-09-21', 'agua', true)
+    expect(a.dieta).toEqual(DIETA)
   })
 })
 

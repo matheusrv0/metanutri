@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
+import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { TelaMissoesPaciente } from './TelaMissoesPaciente.tsx'
@@ -177,5 +178,171 @@ describe('Aviso de conta de estágio na tela do paciente', () => {
 
     await screen.findByRole('heading', { name: /missões de hoje/i })
     expect(screen.queryByText(/estágio de nutrição/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
+  const DIETA: DietaDoLink = {
+    refeicoes: [
+      {
+        horario: '12:00',
+        nome: 'Almoço',
+        opcoes: [
+          [
+            { medida: '6 colheres de sopa', gramas: 150, alimento: 'Arroz, tipo 1, cozido' },
+            { medida: '1 concha', gramas: 140, alimento: 'Feijão, carioca, cozido' },
+          ],
+          [{ medida: '1 unidade', gramas: 120, alimento: 'Batata, inglesa, cozida' }],
+          [{ medida: null, gramas: 100, alimento: 'Mandioca, cozida' }],
+        ],
+      },
+      { horario: '19:00', nome: 'Jantar', opcoes: [[{ medida: null, gramas: 80, alimento: 'Macarrão, trigo, cru' }]] },
+    ],
+    orientacoes: 'Beber água ao longo do dia.\nEvitar fritura.',
+    receitas: 'Bolo de banana: 2 ovos, 3 bananas.',
+    copiadaEm: '2026-10-14',
+  }
+
+  const abrirMeuPlano = async (parcial: Partial<Acompanhamento> = {}) => {
+    const { fonte, salvos } = fonteFalsa(acompanhamento({ dieta: DIETA, ...parcial }))
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    await usuario.click(await screen.findByRole('tab', { name: 'Meu plano' }))
+    return { usuario, salvos }
+  }
+
+  it('CA-530: com a dieta, o link mostra as abas e abre em "Missões", com a tela de hoje dentro do painel da aba', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    const abas = await screen.findByRole('tablist', { name: 'O que ver' })
+    const missoes = within(abas).getByRole('tab', { name: 'Missões' })
+    expect(missoes).toHaveAttribute('aria-selected', 'true')
+    expect(within(abas).getByRole('tab', { name: 'Meu plano' })).toHaveAttribute('aria-selected', 'false')
+    const painel = screen.getByRole('tabpanel', { name: 'Missões' })
+    expect(missoes).toHaveAttribute('aria-controls', painel.id)
+    expect(within(painel).getByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '12:00 Almoço' })).not.toBeInTheDocument()
+  })
+
+  it('CA-530: com o foco numa aba, as setas do teclado passam para a outra', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    await usuario.click(await screen.findByRole('tab', { name: 'Missões' }))
+    await usuario.keyboard('{ArrowRight}')
+
+    const meuPlano = screen.getByRole('tab', { name: 'Meu plano' })
+    expect(meuPlano).toHaveFocus()
+    expect(meuPlano).toHaveAttribute('aria-selected', 'true')
+    expect(within(screen.getByRole('tabpanel', { name: 'Meu plano' })).getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
+
+    await usuario.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('CA-531: "Meu plano" mostra cada refeição com horário e nome, a medida caseira em destaque, o peso e o alimento', async () => {
+    await abrirMeuPlano()
+    expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
+
+    const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
+    expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
+    expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
+    expect(almoco.getByText('· 150 g')).toBeInTheDocument()
+    expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+    expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
+  })
+
+  it('CB-156: alimento sem medida caseira mostra só o peso', async () => {
+    await abrirMeuPlano()
+    const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
+    expect(jantar.getByText('80 g').tagName).toBe('STRONG')
+    expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
+  })
+
+  it('CA-532: as opções aparecem uma depois da outra, separadas por "ou"', async () => {
+    await abrirMeuPlano()
+    const almoco = screen.getByRole('region', { name: '12:00 Almoço' })
+    expect(within(almoco).getAllByText('ou')).toHaveLength(2)
+    const texto = almoco.textContent ?? ''
+    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou'))
+    expect(texto.indexOf('ou')).toBeLessThan(texto.indexOf('Batata'))
+    expect(texto.lastIndexOf('ou')).toBeLessThan(texto.indexOf('Mandioca'))
+    expect(within(screen.getByRole('region', { name: '19:00 Jantar' })).queryByText('ou')).not.toBeInTheDocument()
+  })
+
+  it('CA-533: orientações e receitas aparecem com as quebras de linha que o nutricionista escreveu', async () => {
+    await abrirMeuPlano()
+    const orientacoes = screen.getByRole('region', { name: 'Orientações' })
+    expect(within(orientacoes).getByRole('heading', { name: 'Orientações' })).toBeInTheDocument()
+    expect(within(orientacoes).getByText(/Beber água ao longo do dia/).textContent).toBe('Beber água ao longo do dia.\nEvitar fritura.')
+    expect(within(screen.getByRole('region', { name: 'Receitas' })).getByText('Bolo de banana: 2 ovos, 3 bananas.')).toBeInTheDocument()
+  })
+
+  it('CA-533: sem orientações e sem receitas, as seções não aparecem', async () => {
+    await abrirMeuPlano({ dieta: { ...DIETA, orientacoes: '', receitas: '' } })
+    expect(screen.queryByRole('region', { name: 'Orientações' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Receitas' })).not.toBeInTheDocument()
+  })
+
+  it('CA-534: "Meu plano" não mostra kcal, macro nem nutriente', async () => {
+    await abrirMeuPlano()
+    expect(document.body.textContent).not.toMatch(/kcal|prote[ií]na|carboidrato|gordura|lip[ií]dio|nutriente/i)
+  })
+
+  it('CA-554: nome da refeição, alimento, orientações e receitas quebram em qualquer ponto (endereço longo não empurra a página)', async () => {
+    const longo = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/view?usp=sharing'
+    await abrirMeuPlano({
+      dieta: {
+        refeicoes: [{ horario: '12:00', nome: longo, opcoes: [[{ medida: null, gramas: 50, alimento: `${longo}#alimento` }]] }],
+        orientacoes: `${longo}#orientacoes`,
+        receitas: `${longo}#receitas`,
+        copiadaEm: '2026-10-14',
+      },
+    })
+    for (const texto of [longo, `${longo}#alimento`, `${longo}#orientacoes`, `${longo}#receitas`]) {
+      expect(screen.getByText(texto).className, texto).toContain('[overflow-wrap:anywhere]')
+    }
+  })
+
+  it('CA-538: o fim da parte diz o dia da cópia por extenso', async () => {
+    await abrirMeuPlano()
+    expect(screen.getByText('Atualizada em 14 de outubro de 2026.')).toBeInTheDocument()
+  })
+
+  it('CA-537: link de estudante mantém o aviso de estágio em "Meu plano"', async () => {
+    await abrirMeuPlano({ usoNaoComercial: true })
+    expect(screen.getByText(/estágio de nutrição/i)).toBeInTheDocument()
+  })
+
+  it('voltar para "Missões" mostra as missões de novo, e marcar continua gravando só as marcações', async () => {
+    const { usuario, salvos } = await abrirMeuPlano()
+    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
+    expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
+    expect(salvos[0]?.dieta).toEqual(DIETA)
+  })
+
+  it('CA-536: link sem dieta (desligada, antigo ou banco sem o 012) é a tela de missões de hoje, sem seletor', async () => {
+    const { fonte } = fonteFalsa(acompanhamento({ dieta: null }))
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.queryByText('Meu plano')).not.toBeInTheDocument()
+  })
+
+  it('CB-159: dieta vazia conta como sem dieta; só com orientações, "Meu plano" mostra as orientações', async () => {
+    const vazia: DietaDoLink = { refeicoes: [], orientacoes: '', receitas: '', copiadaEm: '2026-10-14' }
+    const { fonte } = fonteFalsa(acompanhamento({ dieta: vazia }))
+    const { unmount } = render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    await screen.findByRole('heading', { name: /missões de hoje/ })
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    unmount()
+
+    await abrirMeuPlano({ dieta: { ...vazia, orientacoes: 'Beber água.' } })
+    expect(screen.getByText('Beber água.')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /^\d\d:\d\d / })).not.toBeInTheDocument()
   })
 })

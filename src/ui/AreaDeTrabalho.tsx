@@ -1,4 +1,5 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
+import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
@@ -353,6 +354,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 pacienteId={registro.caso.pacienteId}
                 nome={registro.caso.nome}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
+                dieta={dietaDoPlano(registro.caso, registro.plano)}
                 aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                 aoCadastrarTelefone={cadastrarTelefone}
                 situacao={perfil?.situacao ?? null}

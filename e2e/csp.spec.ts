@@ -137,10 +137,10 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   expect((await baixando).suggestedFilename()).toMatch(/\.docx$/)
 
   // O link do paciente.
-  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
-  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
-  const endereco = await cartao.getByLabel('Link do paciente').inputValue()
+  const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   await page.goto(endereco)
   await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
   await page.getByRole('button').first().click()

@@ -12,8 +12,8 @@ vi.mock('@/domain/legal.ts', () => ({
   get CONTATO_EMAIL() {
     return legal.CONTATO_EMAIL
   },
-  DATA_TERMOS: '8 de outubro de 2026',
-  VERSAO_TERMOS: '2026-10-08',
+  DATA_TERMOS: '14 de outubro de 2026',
+  VERSAO_TERMOS: '2026-10-14',
   PRAZO_EXCLUSAO_DIAS: 90,
   PRAZO_INCIDENTE_HORAS: 72,
 }))
@@ -27,7 +27,7 @@ describe('documentos legais', () => {
   it('CA-222 e CA-224: termos dizem quem prescreve, quem é controlador e operador, e a data', () => {
     render(<TelaTermos />)
     expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Versão de 8 de outubro de 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Versão de 14 de outubro de 2026/)).toBeInTheDocument()
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('quem prescreve é o nutricionista')
     expect(texto).toContain('controlador')
@@ -49,7 +49,20 @@ describe('documentos legais', () => {
     expect(texto).toContain('presos à conta')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
-    expect(texto).toContain('8 de outubro de 2026')
+    expect(texto).toContain('14 de outubro de 2026')
+  })
+
+  it('CA-552 (spec dieta-no-link): a política diz que o link do paciente pode mostrar o plano alimentar, quando o nutricionista liga', () => {
+    render(<TelaPrivacidade />)
+    const dados = screen.getByRole('heading', { name: 'Que dados guardamos e para quê' }).nextElementSibling
+    expect(dados).toHaveTextContent(
+      'O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista liga "Mostrar a dieta no link": para o paciente ver a dieta no link dele.',
+    )
+    const onde = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
+    expect(onde).toHaveTextContent('A conta, a assinatura, os dados da conta e as missões e a dieta do link do paciente ficam na Supabase')
+    const seguranca = screen.getByRole('heading', { name: 'Segurança' }).nextElementSibling
+    expect(seguranca).toHaveTextContent('O link do paciente usa um endereço secreto e mostra só as missões daquele paciente e, quando o nutricionista liga, a dieta dele.')
+    expect(seguranca).not.toHaveTextContent('mostra só as missões daquele paciente.')
   })
 
   it('D-128 e D-131 (spec dados-na-nuvem): a política diz que os dados ficam na nuvem, presos à conta, e que a cópia do navegador sai ao sair', () => {

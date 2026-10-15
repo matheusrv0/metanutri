@@ -2,6 +2,7 @@
 // Amanhã: o Supabase, sem reescrever tela nenhuma — é para isso que existe a
 // interface `FonteAcompanhamentos` no fim do arquivo.
 import type { Acompanhamento } from './acompanhamento.ts'
+import { lerDieta } from './dietaDoLink.ts'
 import type { Armazenamento } from './persistencia.ts'
 
 const CHAVE = 'metanutri:acompanhamentos'
@@ -48,6 +49,12 @@ function marcar(conjunto: ReadonlySet<string>, id: string, valor: boolean | unde
   return novo
 }
 
+/**
+ * O link como o aparelho guardou. Guardado antes da dieta no link, ele não tem o campo: conta
+ * como link sem dieta (CB-150). Dieta estragada também (CB-153).
+ */
+const comDietaLida = (a: Acompanhamento): Acompanhamento => ({ ...a, dieta: lerDieta((a as { readonly dieta?: unknown }).dieta) })
+
 function ehAcompanhamento(v: unknown): v is Acompanhamento {
   if (typeof v !== 'object' || v === null) return false
   const o = v as Record<string, unknown>
@@ -89,7 +96,7 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
       if (typeof v !== 'object' || v === null) return VAZIO
       const arquivo = v as Partial<ArquivoSalvo>
       if (arquivo.formato !== FORMATO || !Array.isArray(arquivo.itens)) return VAZIO
-      return { itens: arquivo.itens.filter(ehAcompanhamento), naNuvem: new Set(ids(arquivo.naNuvem)), pendentes: new Set(ids(arquivo.pendentes)) }
+      return { itens: arquivo.itens.filter(ehAcompanhamento).map(comDietaLida), naNuvem: new Set(ids(arquivo.naNuvem)), pendentes: new Set(ids(arquivo.pendentes)) }
     } catch {
       return memoria
     }

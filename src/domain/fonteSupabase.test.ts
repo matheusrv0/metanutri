@@ -1,5 +1,6 @@
-import { FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
+import { DIETA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { criarAcompanhamento, type Acompanhamento } from './acompanhamento.ts'
+import type { DietaDoLink } from './dietaDoLink.ts'
 import {
   apagarAcompanhamentosDaNuvem,
   daLinha,
@@ -58,7 +59,12 @@ interface OpcoesDoFalso {
   readonly dadosPor?: Partial<Record<Tipo, unknown>>
   readonly erro?: ErroFalso
   readonly semResposta?: boolean
+  /** Banco sem o 012: o PostgREST recusa o pedido que traz a coluna `dieta` (CB-151). */
+  readonly semColunaDieta?: boolean
 }
+
+/** O que o PostgREST responde quando a coluna não existe (conferido no PostgREST local em 14/10/2026). */
+const SEM_COLUNA_DIETA = { code: 'PGRST204', message: "Could not find the 'dieta' column of 'acompanhamentos' in the schema cache" }
 
 function clienteFalso(opcoes: OpcoesDoFalso = {}) {
   const chamadas: Chamada[] = []
@@ -66,8 +72,9 @@ function clienteFalso(opcoes: OpcoesDoFalso = {}) {
   const erro = typeof opcoes.erro === 'string' ? { message: opcoes.erro } : (opcoes.erro ?? null)
 
   // Um pedido do cliente: é uma promessa, aceita `.select()` e guarda o sinal de desistir.
-  const pedido = (tipo: Tipo) => {
-    const resposta: RespostaFalsa = { data: opcoes.dadosPor?.[tipo] ?? opcoes.dados ?? null, error: erro }
+  const pedido = (tipo: Tipo, linha: Record<string, unknown> = {}) => {
+    const resposta: RespostaFalsa =
+      opcoes.semColunaDieta && 'dieta' in linha ? { data: null, error: SEM_COLUNA_DIETA } : { data: opcoes.dadosPor?.[tipo] ?? opcoes.dados ?? null, error: erro }
     // A nuvem que não responde: a promessa nunca termina.
     const promessa = opcoes.semResposta ? new Promise<RespostaFalsa>(() => undefined) : Promise.resolve(resposta)
     const comSinal = Object.assign(promessa, {
@@ -93,12 +100,12 @@ function clienteFalso(opcoes: OpcoesDoFalso = {}) {
       }),
       upsert: (linha, opcoesDoUpsert) => {
         chamadas.push({ tipo: 'upsert', nome: tabela, parametros: linha, opcoes: { ...opcoesDoUpsert } })
-        return pedido('upsert')
+        return pedido('upsert', linha)
       },
       update: (campos) => ({
         eq: (coluna, valor) => {
           chamadas.push({ tipo: 'update', nome: tabela, parametros: campos, opcoes: { [coluna]: valor } })
-          return pedido('update')
+          return pedido('update', campos)
         },
       }),
       delete: () => ({
@@ -443,5 +450,92 @@ describe('apagar os acompanhamentos com a conta esperada (spec dados-por-conta, 
     const { cliente, chamadas } = clienteFalso({ usuario: 'conta-b' })
     expect(await apagarAcompanhamentosDaNuvem(cliente, 'conta-a')).toBe(FALHA_DE_REDE)
     expect(chamadas).toHaveLength(0)
+  })
+})
+
+describe('A dieta do link na nuvem (spec dieta-no-link)', () => {
+  const DIETA: DietaDoLink = {
+    refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: '6 colheres de sopa', gramas: 150, alimento: 'Arroz, tipo 1, cozido' }]] }],
+    orientacoes: 'Beber água.',
+    receitas: '',
+    copiadaEm: '2026-10-14',
+  }
+  const comDieta = (): Acompanhamento => ({ ...acompanhamento(), dieta: DIETA })
+  const NOVO = { jaEsteveNaNuvem: false }
+  const JA_ESTEVE = { jaEsteveNaNuvem: true }
+
+  it('CA-548: a linha que a função do paciente devolve traz a dieta, e o link abre com ela', async () => {
+    const { cliente } = clienteFalso({ dados: [{ ...LINHA, dieta: DIETA }] })
+    expect((await fonteSupabase(cliente).porToken('kf3mq9zt7bnd'))?.dieta).toEqual(DIETA)
+  })
+
+  it('CB-151: a função antiga (banco sem o 012) não traz a coluna, e o link abre sem dieta', async () => {
+    const { cliente } = clienteFalso({ dados: [LINHA] })
+    const a = await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')
+    expect(a?.missoes).toHaveLength(1)
+    expect(a?.dieta).toBeNull()
+  })
+
+  it('CB-153: dieta estragada na linha conta como sem dieta, e o resto do link continua', () => {
+    const a = daLinha({ ...LINHA, dieta: { refeicoes: 'lixo' } })
+    expect(a?.dieta).toBeNull()
+    expect(a?.missoes).toHaveLength(1)
+  })
+
+  it('CA-548: criar o link com a dieta grava a cópia na coluna', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { upsert: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, comDieta(), NOVO)).toEqual({ tipo: 'salvo' })
+    expect(chamadas[0]?.parametros['dieta']).toEqual(DIETA)
+  })
+
+  it('CA-543: desligar a dieta grava a coluna vazia, pela atualização do link', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { update: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), JA_ESTEVE)).toEqual({ tipo: 'salvo' })
+    expect(chamadas[0]?.tipo).toBe('update')
+    expect(chamadas[0]?.parametros).toHaveProperty('dieta', null)
+  })
+
+  it('CA-549 e CB-158: a tela do paciente nunca manda a dieta: só o token e as marcações', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99' })
+    await fonteSupabase(cliente).salvar(comDieta())
+    expect(chamadas).toHaveLength(1)
+    expect(chamadas[0]).toMatchObject({ tipo: 'rpc', nome: 'marcar_missoes' })
+    expect(Object.keys(chamadas[0]?.parametros ?? {})).toEqual(['p_token', 'p_marcacoes'])
+  })
+
+  it('CB-151: banco sem o 012: criar o link manda de novo sem a coluna, e o link salva', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', semColunaDieta: true, dadosPor: { upsert: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, comDieta(), NOVO)).toEqual({ tipo: 'salvo' })
+    expect(chamadas.map((c) => c.tipo)).toEqual(['upsert', 'upsert'])
+    expect(chamadas[1]?.parametros).not.toHaveProperty('dieta')
+    expect(chamadas[1]?.parametros['token']).toBe(acompanhamento().token)
+  })
+
+  it('CB-151: banco sem o 012: atualizar e subir o link também mandam de novo sem a coluna', async () => {
+    const atualizar = clienteFalso({ usuario: 'user-99', semColunaDieta: true, dadosPor: { update: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(atualizar.cliente, comDieta(), JA_ESTEVE)).toEqual({ tipo: 'salvo' })
+    expect(atualizar.chamadas.map((c) => c.tipo)).toEqual(['update', 'update'])
+    expect(atualizar.chamadas[1]?.parametros).not.toHaveProperty('dieta')
+
+    const subir = clienteFalso({ usuario: 'user-99', semColunaDieta: true })
+    expect(await subirAcompanhamento(subir.cliente, comDieta())).toBeNull()
+    expect(subir.chamadas.map((c) => c.tipo)).toEqual(['upsert', 'upsert'])
+    expect(subir.chamadas[1]?.parametros).not.toHaveProperty('dieta')
+  })
+
+  it('DP-154: só a recusa da coluna dieta manda de novo; outra coluna ou outro erro seguem como antes', async () => {
+    const outraColuna = clienteFalso({ usuario: 'user-99', erro: { code: 'PGRST204', message: "Could not find the 'nome' column of 'acompanhamentos' in the schema cache" } })
+    expect(await salvarLinkNaNuvem(outraColuna.cliente, comDieta(), NOVO)).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+    expect(outraColuna.chamadas).toHaveLength(1)
+
+    const semInternet = clienteFalso({ usuario: 'user-99', erro: 'Failed to fetch' })
+    expect(await salvarLinkNaNuvem(semInternet.cliente, comDieta(), NOVO)).toEqual({ tipo: 'falhou', motivo: FALHA_DE_REDE })
+    expect(semInternet.chamadas).toHaveLength(1)
+  })
+
+  it('CB-152: a dieta grande demais é recusada pela trava dela, e a tela recebe a frase da dieta', async () => {
+    const erro = { code: '23514', message: 'new row for relation "acompanhamentos" violates check constraint "acompanhamentos_dieta_tamanho"' }
+    expect(await salvarLinkNaNuvem(clienteFalso({ usuario: 'user-99', erro }).cliente, comDieta(), NOVO)).toEqual({ tipo: 'falhou', motivo: DIETA_GRANDE_DEMAIS })
+    expect(await subirAcompanhamento(clienteFalso({ usuario: 'user-99', erro }).cliente, comDieta())).toBe(DIETA_GRANDE_DEMAIS)
   })
 })

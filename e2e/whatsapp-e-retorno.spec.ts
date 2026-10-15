@@ -148,10 +148,10 @@ test('CA-527: em 360 px, o cartão do link mostra o endereço inteiro na linha, 
   await expect(page.getByRole('option').first()).toBeVisible()
   await entradaAlmoco.press('Enter')
 
-  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
-  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
-  const endereco = await cartao.getByLabel('Link do paciente').boundingBox()
+  const endereco = await cartao.getByLabel('Endereço do link').boundingBox()
   const linha = await cartao.boundingBox()
   expect(endereco?.width ?? 0).toBeGreaterThan((linha?.width ?? 0) * 0.8)
   const whatsapp = await cartao.getByRole('button', { name: 'WhatsApp' }).boundingBox()

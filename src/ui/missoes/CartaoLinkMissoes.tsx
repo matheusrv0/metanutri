@@ -1,5 +1,5 @@
 // O lado do nutricionista: gerar o link do paciente e ver se ele está marcando.
-// Fica junto do plano, porque é do plano que as missões saem.
+// Fica junto do plano, porque é do plano que as missões e a dieta do link saem.
 import { Check, Copy, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import {
@@ -12,6 +12,7 @@ import {
   EXPLICACAO_ESTADO,
   type Acompanhamento,
 } from '@/domain/acompanhamento.ts'
+import { copiarDieta, dietaMudou, temDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
@@ -21,9 +22,10 @@ import type { Situacao } from '@/domain/situacao.ts'
 import { textoDoLink } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
-import { LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
+import { DIETA_GRANDE_DEMAIS, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
 import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
 import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
+import { CaixaDietaNoLink } from './CaixaDietaNoLink.tsx'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
@@ -36,6 +38,11 @@ interface CartaoLinkMissoesProps {
   readonly pacienteId: string | null
   readonly nome: string
   readonly missoes: readonly Missao[]
+  /**
+   * A dieta do plano de agora, no que o paciente vê (spec dieta-no-link). Sem ela, o cartão não
+   * oferece a dieta e o link sai sem ela (DP-152).
+   */
+  readonly dieta?: DietaDoPlano | undefined
   /** Plano da conta: decide quantos links cabem. */
   readonly plano?: IdPlano
   /** Situação da conta: estudante, aprovada ou não, gera o link com o aviso de uso não comercial (D-95). */
@@ -53,6 +60,7 @@ export function CartaoLinkMissoes({
   pacienteId,
   nome,
   missoes,
+  dieta,
   plano = PLANO_PADRAO,
   situacao = null,
   hoje = agoraEmBrasilia(new Date()).dia,
@@ -69,7 +77,12 @@ export function CartaoLinkMissoes({
   // CA-442: a nuvem recusou pelo limite do plano e o aparelho voltou ao que era.
   const [noLimite, setNoLimite] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  // D-152: antes do primeiro link, a caixa vem marcada (decisão do dono, a revisar).
+  const [mostrarDieta, setMostrarDieta] = useState(true)
+  // CA-544: ligar a dieta num link que já existe espera a confirmação de autorização.
+  const [autorizandoDieta, setAutorizandoDieta] = useState(false)
   const acompanhamento = repositorio.porCaso(casoId)
+  const dietaVai = dieta !== undefined && mostrarDieta
 
   const gravar = async (novo: Acompanhamento) => {
     setSalvando(true)
@@ -81,23 +94,45 @@ export function CartaoLinkMissoes({
   // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
   // dois acompanhamentos para o mesmo plano fariam a tela mostrar o link velho.
   // CA-421: o aviso, uma vez no link, não sai; e entra no link antigo de conta de estudante.
+  // CA-547: o link novo leva a dieta de agora quando ela está ligada; desligada, continua sem.
   const gerar = () => {
     setCopiado(false)
     setPedindoConsentimento(false)
+    const dietaNova = acompanhamento?.dieta && dieta ? { dieta: copiarDieta(dieta, hoje) } : {}
     void gravar(
       acompanhamento
-        ? { ...regerarLink(acompanhamento, { nome, missoes }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
-        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: naoComercial }),
+        ? { ...regerarLink(acompanhamento, { nome, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
+        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: naoComercial, dieta: dieta && mostrarDieta ? copiarDieta(dieta, hoje) : null }),
     )
   }
 
-  // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443). O grande demais (CA-446) não
-  // oferece mandar de novo: o mesmo link seria recusado de novo; a frase diz o que fazer.
+  // CA-543, CA-544 e CA-545: ligar, desligar ou atualizar a dieta não troca o endereço nem as missões.
+  const trocarDieta = (ligar: boolean) => {
+    if (!acompanhamento) return
+    setAutorizandoDieta(false)
+    void gravar({ ...acompanhamento, dieta: ligar && dieta ? copiarDieta(dieta, hoje) : null })
+  }
+
+  // CA-555 e D-153: "Atualizar a dieta no link" traz a dieta e as missões de agora, com o mesmo endereço. As
+  // marcações ficam: os ids das missões são estáveis (refeição pelo id da refeição; frutas, vegetais e água fixos).
+  const atualizarDieta = () => {
+    if (!acompanhamento || !dieta) return
+    void gravar({ ...acompanhamento, missoes, dieta: copiarDieta(dieta, hoje) })
+  }
+
+  // CA-544: marcar a caixa num link sem dieta pergunta pela autorização; desmarcar grava na hora.
+  const mudarCaixa = (marcar: boolean) => {
+    if (marcar && acompanhamento?.dieta === null) setAutorizandoDieta(true)
+    else trocarDieta(marcar)
+  }
+
+  // O link que não chegou à nuvem fica marcado até subir (CA-439, CA-443). O grande demais (CA-446) e a dieta
+  // grande demais (CB-152) não oferecem mandar de novo: o mesmo link seria recusado de novo; a frase diz o que fazer.
   const motivo = noLimite ? LIMITE_DE_LINKS : acompanhamento ? foraDaNuvem.get(acompanhamento.id) : undefined
   const avisoDaNuvem =
-    motivo === undefined ? null : motivo === LINK_GRANDE_DEMAIS ? (
+    motivo === undefined ? null : motivo === LINK_GRANDE_DEMAIS || motivo === DIETA_GRANDE_DEMAIS ? (
       <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
-        <p>{LINK_GRANDE_DEMAIS}</p>
+        <p>{motivo}</p>
       </div>
     ) : motivo === LIMITE_DE_LINKS ? (
       <div role="alert" className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
@@ -137,7 +172,7 @@ export function CartaoLinkMissoes({
     return (
       <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">Monte o plano primeiro: as missões saem das refeições que você montar.</p>
       </section>
@@ -148,7 +183,7 @@ export function CartaoLinkMissoes({
     return (
       <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
 
         {pedindoConsentimento ? (
@@ -161,6 +196,8 @@ export function CartaoLinkMissoes({
               O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Quem colhe a autorização é você, o
               nutricionista — o MetaNutri só guarda. Há um texto pronto em <code>docs/lgpd-rascunhos.md</code>.
             </p>
+            {/* CA-542: o link passa a levar o plano alimentar, e quem autoriza precisa saber. */}
+            {dietaVai ? <p className="mt-2 text-sm text-foreground">Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.</p> : null}
             <div className="mt-4 flex flex-wrap gap-2">
               <Button type="button" onClick={gerar}>
                 Já tenho a autorização, gerar link
@@ -181,9 +218,10 @@ export function CartaoLinkMissoes({
 
             {cabeMaisUm ? (
               <>
+                {dieta ? <CaixaDietaNoLink marcada={mostrarDieta} aoMudar={setMostrarDieta} /> : null}
                 <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
                   <Link2 className="size-4" aria-hidden="true" />
-                  Gerar link das missões
+                  Gerar link do paciente
                 </Button>
                 {naoComercial ? (
                   <p className="mt-3 text-xs text-muted-foreground">
@@ -224,6 +262,21 @@ export function CartaoLinkMissoes({
       gerando={salvando}
       aviso={avisoDaNuvem}
       paciente={paciente}
+      caixaDaDieta={
+        dieta ? (
+          <CaixaDietaNoLink
+            marcada={acompanhamento.dieta !== null}
+            aoMudar={mudarCaixa}
+            ocupada={salvando}
+            desatualizada={acompanhamento.dieta !== null && dietaMudou(acompanhamento.dieta, dieta)}
+            copiaVazia={!temDieta(acompanhamento.dieta)}
+            aoAtualizar={atualizarDieta}
+            pedindoAutorizacao={autorizandoDieta && acompanhamento.dieta === null}
+            aoAutorizar={() => trocarDieta(true)}
+            aoDesistir={() => setAutorizandoDieta(false)}
+          />
+        ) : null
+      }
       aoCopiar={copiar}
       aoGerarNovo={gerar}
       aoCadastrarTelefone={aoCadastrarTelefone}
@@ -238,6 +291,7 @@ function PainelDoLink({
   gerando,
   aviso,
   paciente,
+  caixaDaDieta,
   aoCopiar,
   aoGerarNovo,
   aoCadastrarTelefone,
@@ -250,6 +304,8 @@ function PainelDoLink({
   readonly aviso: ReactNode
   /** A ficha de quem recebe o link pelo WhatsApp; nula sem paciente vinculado. */
   readonly paciente: PacienteDoWhatsApp | null
+  /** Ligar, desligar e atualizar a dieta do link (spec dieta-no-link). */
+  readonly caixaDaDieta: ReactNode
   readonly aoCopiar: (endereco: string) => void
   readonly aoGerarNovo: () => void
   readonly aoCadastrarTelefone: ((pacienteId: string) => void) | undefined
@@ -264,7 +320,7 @@ function PainelDoLink({
     <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
-          Missões do paciente
+          Link do paciente
         </h2>
         <SeloEstado estado={estado} />
       </div>
@@ -292,7 +348,7 @@ function PainelDoLink({
 
       <div className="mt-4">
         <label htmlFor="endereco-missoes" className="text-xs font-medium text-muted-foreground">
-          Link do paciente
+          Endereço do link
         </label>
         <div className="mt-1 flex flex-wrap gap-2">
           <input
@@ -311,12 +367,18 @@ function PainelDoLink({
         </div>
       </div>
 
+      {caixaDaDieta}
+
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button type="button" variant="ghost" disabled={gerando} onClick={aoGerarNovo}>
           <RefreshCw className="size-4" aria-hidden="true" />
           Gerar link novo
         </Button>
-        <p className="text-xs text-muted-foreground">Gerar de novo atualiza as missões com o plano atual. O link antigo para de valer.</p>
+        <p className="text-xs text-muted-foreground">
+          {acompanhamento.dieta === null
+            ? 'Gerar de novo atualiza as missões com o plano atual. O link antigo para de valer.'
+            : 'Gerar de novo atualiza as missões e a dieta com o plano atual. O link antigo para de valer.'}
+        </p>
       </div>
     </section>
   )

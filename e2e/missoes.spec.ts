@@ -32,12 +32,12 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   await montarPlanoComAlmoco(page)
 
   // O nutricionista gera o link a partir do plano
-  const cartao = page.getByRole('region', { name: 'Missões do paciente' })
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await expect(cartao).toContainText('saem deste plano')
-  await cartao.getByRole('button', { name: 'Gerar link das missões' }).click()
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
-  const endereco = await cartao.getByLabel('Link do paciente').inputValue()
+  const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   expect(endereco).toContain('#/missoes/')
   await expect(cartao.getByText('Ainda não começou')).toBeVisible()
 
@@ -61,6 +61,54 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   const lista = page.getByRole('listitem').filter({ hasText: 'Ana' })
   await expect(lista).toContainText('Atenção')
   await expect(lista).toContainText('1 de 4 dias na semana')
+})
+
+/** CA-535 e CA-554: um endereço sem espaço, bem maior que a tela do celular. */
+const LINK_DO_DRIVE = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEf/view?usp=sharing&resourcekey=0-AbCdEfGhIjKlMnOpQrStUv'
+
+test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => {
+  await abrirLimpo(page)
+  await montarPlanoComAlmoco(page)
+  await page.getByRole('button', { name: /Dados e medidas/ }).first().click()
+  await page.getByLabel('Orientações nutricionais').fill(`Receitas da semana: ${LINK_DO_DRIVE}`)
+  await page.getByRole('button', { name: /Plano alimentar/ }).first().click()
+
+  // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
+  const cartao = page.getByRole('region', { name: 'Link do paciente' })
+  await expect(cartao.getByRole('checkbox', { name: 'Mostrar a dieta no link' })).toBeChecked()
+  await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  await expect(cartao.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeVisible()
+  await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
+  const endereco = await cartao.getByLabel('Endereço do link').inputValue()
+
+  // O paciente abre no celular: 360 px de largura
+  await page.setViewportSize({ width: 360, height: 780 })
+  await page.goto(endereco)
+  const seletor = page.getByRole('tablist', { name: 'O que ver' })
+  await expect(seletor.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
+
+  // CA-531: o almoço em medida caseira
+  await seletor.getByRole('tab', { name: 'Meu plano' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeVisible()
+  const almoco = page.getByRole('region', { name: '12:00 Almoço' })
+  await expect(almoco).toContainText('6 colheres de sopa')
+  await expect(almoco).toContainText('Arroz, tipo 1, cozido')
+  await expect(page.getByText(/kcal/)).toHaveCount(0)
+
+  // CA-535: cabe em 360 px, mesmo com o link do Drive nas orientações; letra de 16 px nos alimentos, toque de 44 px nas abas,
+  // e o trilho das abas tem fio, para aparecer sobre a mesa cinza (D-154)
+  await expect(page.getByRole('region', { name: 'Orientações' })).toContainText(LINK_DO_DRIVE)
+  const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
+  expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
+  const letra = await almoco.getByText('Arroz, tipo 1, cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))
+  expect(letra).toBeGreaterThanOrEqual(16)
+  for (const nome of ['Missões', 'Meu plano']) {
+    const caixa = await seletor.getByRole('tab', { name: nome }).boundingBox()
+    expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+  }
+  const fio = await seletor.evaluate((el) => Number.parseFloat(getComputedStyle(el).borderTopWidth))
+  expect(fio).toBeGreaterThanOrEqual(1)
 })
 
 test('link inventado não abre plano de ninguém', async ({ page }) => {

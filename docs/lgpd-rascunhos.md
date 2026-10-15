@@ -55,6 +55,7 @@ nutricionista, nós somos o controlador.
 | Nome, sexo, idade, peso, estatura, medidas | Paciente | Calcular o plano alimentar |
 | Restrições, condições clínicas, medicamentos, anamnese | Paciente | Montar o plano com segurança |
 | Missões marcadas e datas | Paciente | Mostrar a adesão ao nutricionista |
+| Plano alimentar no link (refeições, quantidades, substitutos, orientações e receitas), quando ligado | Paciente | O paciente ver a dieta no celular |
 
 Os dados clínicos são **dados pessoais sensíveis**. Eles são tratados com base no
 consentimento do titular, colhido pelo nutricionista, e para a tutela da saúde por
@@ -76,8 +77,9 @@ portabilidade e eliminação dos dados, e revogar o consentimento (LGPD, art. 18
 escrever para `[E-MAIL DE CONTATO]`. Respondemos em até 15 dias.
 
 **Segurança.** Acesso por senha, conexão criptografada e separação por usuário no banco,
-de modo que um nutricionista não alcança os dados de outro. O link de missões do
-paciente usa um endereço secreto e dá acesso apenas às missões daquele paciente.
+de modo que um nutricionista não alcança os dados de outro. O link do paciente usa um
+endereço secreto e dá acesso apenas às missões daquele paciente e, quando o
+nutricionista liga, à dieta dele.
 
 **Encarregado.** `[ENCARREGADO]`, `[E-MAIL DE CONTATO]`.
 
@@ -102,6 +104,8 @@ Vale em papel ou na tela; o importante é ficar registrado que foi apresentado.
 > - posso pedir para ver, corrigir ou apagar meus dados a qualquer momento;
 > - posso retirar esta autorização quando quiser, sem que isso afete o atendimento já
 >   realizado;
+> - o link de acompanhamento pode mostrar o meu plano alimentar (refeições, quantidades,
+>   substitutos, orientações e receitas), quando o nutricionista ligar essa opção;
 > - o link de acompanhamento é pessoal e não deve ser compartilhado.
 >
 > Nome: _______________________  Data: ____/____/____

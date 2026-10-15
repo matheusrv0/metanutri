@@ -1,5 +1,6 @@
 import sql011 from '../../../supabase/011-seguranca-lote-2.sql?raw'
-import { COPIA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS, mensagemDoBanco, TRAVAS_DE_TAMANHO } from './mensagemDoBanco.ts'
+import sql012 from '../../../supabase/012-dieta-no-link.sql?raw'
+import { COPIA_GRANDE_DEMAIS, DIETA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS, mensagemDoBanco, TRAVAS_DE_TAMANHO } from './mensagemDoBanco.ts'
 
 /** A mensagem que o banco manda quando uma trava (check) recusa a linha. */
 const recusaDaTrava = (tabela: string, trava: string) => ({ code: '23514', message: `new row for relation "${tabela}" violates check constraint "${trava}"` })
@@ -46,6 +47,11 @@ describe('as travas de tamanho (D-107)', () => {
     expect(LINK_GRANDE_DEMAIS).toBe('Este link ficou grande demais. Tire algumas missões e tente de novo.')
   })
 
+  it('CB-152 (spec dieta-no-link): a dieta grande demais chega com a frase da dieta, que diz o que fazer', () => {
+    expect(mensagemDoBanco(recusaDaTrava('acompanhamentos', 'acompanhamentos_dieta_tamanho'))).toBe(DIETA_GRANDE_DEMAIS)
+    expect(DIETA_GRANDE_DEMAIS).toBe('A dieta passou do tamanho que o link guarda. Encurte as orientações ou as receitas, ou desmarque "Mostrar a dieta no link".')
+  })
+
   it('o nome da trava vale em qualquer idioma do banco (vem entre aspas)', () => {
     expect(mensagemDoBanco({ code: '23514', message: 'novo registro da relação "copias" viola restrição de verificação "copias_dados_tamanho"' })).toBe(COPIA_GRANDE_DEMAIS)
   })
@@ -54,8 +60,8 @@ describe('as travas de tamanho (D-107)', () => {
     expect(mensagemDoBanco({ code: '42501', message: 'permission denied "copias_dados_tamanho"' })).toBe(FALHA_DE_REDE)
   })
 
-  it('as travas que a tela conhece são exatamente as do 011', () => {
-    const doBanco = [...sql011.matchAll(/add constraint (\w+_tamanho) check/g)].map((m) => m[1] ?? '').sort()
+  it('as travas que a tela conhece são exatamente as do 011 e do 012', () => {
+    const doBanco = [...`${sql011}\n${sql012}`.matchAll(/add constraint (\w+_tamanho) check/g)].map((m) => m[1] ?? '').sort()
     expect(Object.keys(TRAVAS_DE_TAMANHO).sort()).toEqual(doBanco)
   })
 })

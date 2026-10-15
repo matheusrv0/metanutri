@@ -1,6 +1,7 @@
 // A tela que o paciente abre pelo link, no aparelho dele. Sem conta, sem menu e sem
 // nada para aprender: a lista do dia e um toque para marcar. É a Fase 1 do
-// `docs/plano-negocio.md`, e a métrica do produto nasce aqui.
+// `docs/plano-negocio.md`, e a métrica do produto nasce aqui. Com a dieta no link
+// (spec dieta-no-link), uma segunda parte, "Meu plano", mostra o que comer.
 import { Check, CircleAlert, GraduationCap, Link2Off } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -11,10 +12,32 @@ import {
   progressoDoDia,
   DIAS_NA_SEMANA_PARA_EM_DIA,
   type Acompanhamento,
+  type MissaoDoDia,
+  type ProgressoDia,
 } from '@/domain/acompanhamento.ts'
+import { temDieta } from '@/domain/dietaDoLink.ts'
 import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { cn } from '@/lib/utils'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
+import { MeuPlano } from './MeuPlano.tsx'
+
+type Parte = 'missoes' | 'plano'
+
+/** D-154: as duas partes do link, quando ele tem a dieta. */
+const PARTES: readonly { readonly valor: Parte; readonly rotulo: string }[] = [
+  { valor: 'missoes', rotulo: 'Missões' },
+  { valor: 'plano', rotulo: 'Meu plano' },
+]
+
+/*
+ * DP-157: as abas do design system (Tabs, do Radix: tablist, tab, tabpanel e setas do teclado) com cara de pílula só
+ * nesta tela. O trilho cinza ganha um fio para aparecer sobre a mesa cinza; a aba escolhida é a pílula branca. A régua
+ * por baixo da aba do Tabs some aqui. Toque de 44 px no celular.
+ */
+const TRILHO = 'grid w-full grid-cols-2 gap-1 rounded-full border border-borderdefault bg-surfacerow p-1'
+const ABA =
+  'h-11 rounded-full px-4 font-semibold sm:h-9 data-[state=active]:bg-card data-[state=active]:text-heading data-[state=active]:shadow-xs data-[state=active]:after:hidden'
 
 interface TelaMissoesPacienteProps {
   readonly token: string
@@ -61,6 +84,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   // Guardar o token junto com o resultado deixa "carregando" ser derivado do render,
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
+  // D-154: abre em "Missões", como sempre abriu.
+  const [parte, setParte] = useState<Parte>('missoes')
   const carregando = carga === null || carga.token !== token
   const acompanhamento = carregando ? null : carga.acompanhamento
 
@@ -117,6 +142,19 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   const tudoFeito = progresso.total > 0 && progresso.feitas === progresso.total
   // "Ana, 30 anos" vira "Ana": o nome do plano costuma vir com vírgula e idade.
   const primeiroNome = acompanhamento.nome.trim().split(/[\s,;]+/)[0] || 'Olá'
+  // CA-536 e CB-159: link sem dieta, ou com a dieta vazia, é a tela de missões de sempre.
+  const dieta = temDieta(acompanhamento.dieta) ? acompanhamento.dieta : null
+  const parteDasMissoes = (
+    <ParteDasMissoes
+      hoje={hoje}
+      primeiroNome={primeiroNome}
+      missoes={missoes}
+      progresso={progresso}
+      naSemana={naSemana}
+      tudoFeito={tudoFeito}
+      aoAlternar={alternar}
+    />
+  )
 
   return (
     <Moldura>
@@ -132,6 +170,49 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
 
       <Logo tamanho={22} className="mb-5" />
 
+      {dieta ? (
+        <Tabs value={parte} onValueChange={(valor) => setParte(valor === 'plano' ? 'plano' : 'missoes')}>
+          <TabsList aria-label="O que ver" className={TRILHO}>
+            {PARTES.map((p) => (
+              <TabsTrigger key={p.valor} value={p.valor} className={ABA}>
+                {p.rotulo}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value="missoes" className="mt-6">
+            {parteDasMissoes}
+          </TabsContent>
+          <TabsContent value="plano" className="mt-6">
+            <MeuPlano dieta={dieta} primeiroNome={primeiroNome} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        parteDasMissoes
+      )}
+    </Moldura>
+  )
+}
+
+/** A parte das missões, como era a tela inteira antes da dieta no link. */
+function ParteDasMissoes({
+  hoje,
+  primeiroNome,
+  missoes,
+  progresso,
+  naSemana,
+  tudoFeito,
+  aoAlternar: alternar,
+}: {
+  readonly hoje: string
+  readonly primeiroNome: string
+  readonly missoes: readonly MissaoDoDia[]
+  readonly progresso: ProgressoDia
+  readonly naSemana: number
+  readonly tudoFeito: boolean
+  readonly aoAlternar: (missaoId: string, feita: boolean) => void
+}) {
+  return (
+    <>
       <header className="mb-6">
         <p className="text-sm text-muted-foreground">{dataPorExtenso(hoje)}</p>
         <h1 className="mt-1 font-titulo text-2xl font-bold text-heading">
@@ -197,6 +278,6 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
         </p>
         <p className="mt-4">Não precisa de conta nem de aplicativo. Guarde este link e abra todo dia.</p>
       </footer>
-    </Moldura>
+    </>
   )
 }

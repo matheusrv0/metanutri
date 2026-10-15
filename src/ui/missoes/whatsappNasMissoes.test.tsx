@@ -82,7 +82,7 @@ describe('WhatsApp no cartão do link (CA-508)', () => {
         <CartaoLinkMissoes casoId="c1" pacienteId="p1" nome="Plano da Ana" missoes={MISSOES} hoje="2026-10-14" />
       </Anfitriao>,
     )
-    const cartao = within(screen.getByRole('region', { name: 'Missões do paciente' }))
+    const cartao = within(screen.getByRole('region', { name: 'Link do paciente' }))
     const copiar = cartao.getByRole('button', { name: 'Copiar' })
     const whatsapp = cartao.getByRole('button', { name: 'WhatsApp' })
     expect(copiar.parentElement).toBe(whatsapp.parentElement)
@@ -253,7 +253,7 @@ describe('D-144: a Adesão e o cartão contam pelo dia de Brasília, como o Pain
         <CartaoLinkMissoes casoId="c1" pacienteId="p1" nome="Plano da Ana" missoes={MISSOES} />
       </Anfitriao>,
     )
-    expect(within(screen.getByRole('region', { name: 'Missões do paciente' })).getByText('Em dia')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Link do paciente' })).getByText('Em dia')).toBeInTheDocument()
   })
 })
 
@@ -271,7 +271,7 @@ describe('D-147: o plano trocado de Ana para Bia', () => {
         <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} />
       </Anfitriao>,
     )
-    await usuario.click(within(screen.getByRole('region', { name: 'Missões do paciente' })).getByRole('button', { name: 'WhatsApp' }))
+    await usuario.click(within(screen.getByRole('region', { name: 'Link do paciente' })).getByRole('button', { name: 'WhatsApp' }))
     expect(within(screen.getByRole('dialog')).getByText(/^Para Bia Lima, \(21\) 99876-5432\./)).toBeInTheDocument()
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
 
