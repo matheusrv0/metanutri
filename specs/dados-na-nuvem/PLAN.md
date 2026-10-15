@@ -1,7 +1,7 @@
 # PLAN — Dados na nuvem, presos à conta
 
 **Spec de origem:** `./SPEC.md` (commit 2178814, D-128 a D-134, CA-475 a CA-484, CB-123 a CB-126; CB-127 acrescentado na revisão final)
-**Status:** concluído, com os ajustes antes do merge (08/10/2026); rodada da integração das novidades em 15/10/2026 (T39 a T42)
+**Status:** concluído, com os ajustes antes do merge (08/10/2026); rodada da integração das novidades em 15/10/2026 (T39 a T42) e a revisão final dela (T43 a T50)
 
 ## Abordagem
 
@@ -194,7 +194,7 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
   da dieta é o de Brasília (D-158 da `dieta-no-link`, comentário em `dietaDoLink.ts`); D-150 da `dieta-no-link` exclui os
   suplementos da ficha; a nota de publicação (`docs/pendencias.md`) manda recarregar e conferir a "Anamnese", cita o R8 e
   "não use Sair numa aba antiga".
-- [ ] **T50** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
+- [x] **T50** — Validação: `npm run check`, `npx playwright test` (porta própria), `npm run build`,
   `node scripts/conferir-publicacao.mjs`, `npm run test:csp` e as simulações do revisor.
 
 ## Mapa de cobertura
@@ -440,3 +440,9 @@ T44 a T48 não dependem umas das outras; T49 e T50 no fim.
   `node scripts/conferir-publicacao.mjs` e `npm run test:csp` (3 de 3) verdes; as duas simulações do revisor
   (`simular.mts` e `simular2.mts`) passam: só a Bia ganha marca, a edição da Ana feita em A continua, e o roteiro e os
   modelos ficam depois da cópia do app antigo.
+- [x] Revisão final da integração (15/10/2026): `npm run check` (186 arquivos, 3.055 testes; o aviso antigo de
+  `MolduraPublica.tsx`), `npx playwright test` 55 de 55 (porta própria), `npm run build`, `conferir-publicacao` e
+  `npm run test:csp` (3 de 3) verdes. Simulações: `ordem.mts` (a aba antiga salvando a Bia só marca a Bia), `r8.mts`
+  (N1, com o roteiro mais velho, não entra em `mantidas` e não sobe; no fluxo real quem devolve é N2, coberto pelo
+  CA-599; a última linha da simulação só acontece se N1 subir por outro motivo antes de N2, o resto do R8),
+  `simular.mts` e `simular2.mts` passam.
