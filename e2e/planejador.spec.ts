@@ -324,3 +324,40 @@ test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o
   expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
   expect(await largura()).toBeLessThanOrEqual(360)
 })
+
+test('CA-704: o recolhido da etapa 3 é de cada plano, também pelo voltar do navegador', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+  await expect(page).toHaveURL(/#\/caso\/[^/]+\/plano$/)
+  const planoA = decodeURIComponent(page.url().split('#/caso/')[1]?.split('/')[0] ?? '')
+
+  // Plano B: uma cópia do exemplo, com os mesmos nutrientes na meta.
+  await page.evaluate(() => {
+    location.hash = '#/casos'
+  })
+  await page.getByRole('button', { name: /^Mais ações para Exemplo/ }).click()
+  await page.getByRole('menuitem', { name: 'Duplicar' }).click()
+  await page.getByRole('button', { name: /^Abrir .*\(cópia\)$/ }).click()
+  await expect(page).toHaveURL(/#\/caso\/[^/]+\/caso$/)
+  const planoB = decodeURIComponent(page.url().split('#/caso/')[1]?.split('/')[0] ?? '')
+  expect(planoB).not.toBe(planoA)
+
+  const irPara = (id: string) =>
+    page.evaluate((hash) => {
+      location.hash = hash
+    }, `#/caso/${encodeURIComponent(id)}/adequacao`)
+
+  await irPara(planoA)
+  await page.getByRole('button', { name: /^Ver os \d+ na meta$/ }).click()
+  await expect(page.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+
+  await irPara(planoB)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('(cópia)')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+
+  // Voltar pelo navegador leva ao plano A, que abre fechado também.
+  await page.goBack()
+  await expect(page.getByRole('heading', { level: 1 })).not.toContainText('(cópia)')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+})

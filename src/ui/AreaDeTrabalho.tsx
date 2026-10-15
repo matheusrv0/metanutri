@@ -362,6 +362,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 <div className="flex flex-col gap-6">
                   <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
                   <MicrosDoDia
+                    key={registro.caso.id}
                     caso={registro.caso}
                     plano={registro.plano}
                     gastoEnergetico={gastoEnergetico}
@@ -390,7 +391,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           ) : (
             <div className="flex flex-col gap-6">
               <FaixaResumo caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+              {/* Um estado por plano: trocar de plano (até pelo voltar) abre o recolhido fechado (CA-704). */}
               <TelaAdequacao
+                key={registro.caso.id}
                 caso={registro.caso}
                 plano={registro.plano}
                 gastoEnergetico={gastoEnergetico}
