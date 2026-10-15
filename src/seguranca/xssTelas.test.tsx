@@ -27,7 +27,7 @@ import { TelaNegocio } from '../ui/negocio/TelaNegocio.tsx'
 import { AvisoDoEstudante } from '../ui/painel/AvisoEstudante.tsx'
 import { processadorFalso } from '../ui/pagamento/processadorFalso.test-utils.ts'
 import { contaFalsa } from '../ui/publico/conta/contaFalsa.test-utils.ts'
-import { CARGAS, cargaComoTexto, conferirSemInjecao, malicioso } from './xss.test-utils.ts'
+import { CARGAS, cargaComoTexto, conferirSemInjecao, enderecoPerigoso, JAVASCRIPT_PURO, malicioso } from './xss.test-utils.ts'
 
 vi.mock('../ui/estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({
@@ -77,12 +77,38 @@ function stringsDoCssFechadas(css: string): boolean {
 /** Texto que tenta sair da string do CSS da linha fina: aspas, barra, as quebras de linha do CSS e chaves. */
 const FUGA_DO_CSS = '"; } } } body { background: red } x { content: "\\" \n\r\f} body { color: red } x {'
 
-describe('controle: a conferência pega HTML injetado', () => {
+describe('controle: a conferência pega HTML injetado e endereço perigoso', () => {
   it.each(CARGAS)('%s injetado como HTML reprova a conferência', (carga) => {
     // Só aqui, de propósito: é o que a conferência tem de pegar em qualquer tela.
     const { unmount } = render(<div dangerouslySetInnerHTML={{ __html: carga }} />)
     expect(() => conferirSemInjecao()).toThrow()
     unmount()
+  })
+
+  it.each([
+    ['a carga inteira no endereço', malicioso('x')],
+    ['javascript: puro', JAVASCRIPT_PURO],
+    ['javascript: com tabulação no meio', 'java\tscript:void(0)'],
+    ['javascript: com quebra de linha e maiúsculas', ' JaVa\nScRiPt:void(0)'],
+    ['javascript: com entidade no meio', 'java&#x09;script:void(0)'],
+    ['javascript: com os dois-pontos em entidade', 'javascript&colon;void(0)'],
+    ['alert(1) depois de um endereço comum', 'https://exemplo.com/?q=alert(1)'],
+  ])('um link com %s reprova a conferência', (_caso, endereco) => {
+    const { unmount } = render(<a href={endereco}>x</a>)
+    expect(() => conferirSemInjecao()).toThrow()
+    unmount()
+  })
+
+  it('a entidade no meio do javascript:, lida pelo HTML, também reprova', () => {
+    const { unmount } = render(<div dangerouslySetInnerHTML={{ __html: '<a href="java&#x09;script:void(0)">x</a>' }} />)
+    expect(() => conferirSemInjecao()).toThrow()
+    unmount()
+  })
+
+  it('endereço comum não é perigoso', () => {
+    for (const endereco of ['https://metanutri.com.br/', 'mailto:metanutricontato@gmail.com', '#/casos', 'data:image/png;base64,iVBORw0KGgo=']) {
+      expect(enderecoPerigoso(endereco), endereco).toBe(false)
+    }
   })
 })
 
@@ -91,15 +117,15 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     const acompanhamento = criarAcompanhamento({
       casoId: 'c1',
       pacienteId: 'p1',
-      nome: CARGAS.join(' '),
+      nome: JAVASCRIPT_PURO,
       missoes: [{ id: 'm1', texto: malicioso('missao'), origem: malicioso('origem') }],
     })
     const fonte: FonteAcompanhamentos = { naNuvem: true, porToken: () => Promise.resolve(acompanhamento), salvar: (a) => Promise.resolve(a) }
     render(<TelaMissoesPaciente token={acompanhamento.token} fonte={fonte} hoje="2026-10-14" />)
     await waitFor(() => cargaComoTexto('missao'))
     cargaComoTexto('origem')
-    // A saudação usa o primeiro nome: aqui, a primeira carga inteira, como texto.
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(CARGAS[0])
+    // A saudação usa o primeiro nome do link: aqui, o endereço javascript: puro, como texto.
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(JAVASCRIPT_PURO)
     conferirSemInjecao()
   })
 
@@ -119,7 +145,7 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     }
     render(
       <TelaConta
-        conta={contaFalsa({ sessao: { id: 'u1', email: malicioso('email da conta'), nome: malicioso('nome da conta') } })}
+        conta={contaFalsa({ sessao: { id: 'u1', email: JAVASCRIPT_PURO, nome: malicioso('nome da conta') } })}
         perfil={perfil}
         pedido={pedido}
         meFormei={vi.fn(async () => null)}
@@ -135,7 +161,8 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
         aoSaiu={vi.fn()}
       />,
     )
-    for (const rotulo of ['nome da conta', 'email da conta', 'instituicao do pedido', 'matricula']) cargaComoTexto(rotulo)
+    for (const rotulo of ['nome da conta', 'instituicao do pedido', 'matricula']) cargaComoTexto(rotulo)
+    expect(screen.getByText(JAVASCRIPT_PURO)).toBeInTheDocument()
     conferirSemInjecao()
 
     render(<AvisoDoEstudante aviso={{ tipo: 'recusado', motivo: malicioso('motivo da recusa') }} aoEnviar={vi.fn()} aoFechar={vi.fn()} />)
@@ -206,7 +233,7 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
       id: 'p1',
       usuario: 'u1',
       nome: malicioso('nome no pedido'),
-      email: malicioso('email no pedido'),
+      email: JAVASCRIPT_PURO,
       instituicao: malicioso('instituicao no pedido'),
       matricula: malicioso('matricula no pedido'),
       periodo: 3,
@@ -220,7 +247,7 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
         {
           usuario: 'u2',
           nome: malicioso('nome no crn'),
-          email: malicioso('email no crn'),
+          email: JAVASCRIPT_PURO,
           crn: { regiao: 6, numero: '12345' },
           contaCriadaEm: '2026-09-30T12:00:00Z',
           status: 'em_conferencia',
@@ -236,11 +263,12 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
       recarregar: vi.fn(),
     }
     const tela = render(<TelaAprovacoes aprovacoes={aprovacoes} />)
-    for (const rotulo of ['nome no pedido', 'email no pedido', 'instituicao no pedido', 'matricula no pedido']) cargaComoTexto(rotulo)
+    for (const rotulo of ['nome no pedido', 'instituicao no pedido', 'matricula no pedido']) cargaComoTexto(rotulo)
+    expect(screen.getAllByText(JAVASCRIPT_PURO).length).toBeGreaterThan(0)
     conferirSemInjecao()
     await userEvent.setup().click(screen.getByRole('radio', { name: /CRN/ }))
     await waitFor(() => cargaComoTexto('nome no crn'))
-    cargaComoTexto('email no crn')
+    expect(screen.getAllByText(JAVASCRIPT_PURO).length).toBeGreaterThan(0)
     conferirSemInjecao()
     tela.unmount()
 
@@ -248,12 +276,12 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     render(
       <TelaNegocio
         negocio={negocioFalso({
-          dados: { ...dados, contas: [conta('x1', { nome: malicioso('nome da conta no painel'), email: malicioso('email da conta no painel'), criadaEm: '2026-10-01T12:00:00Z' }), ...dados.contas] },
+          dados: { ...dados, contas: [conta('x1', { nome: malicioso('nome da conta no painel'), email: JAVASCRIPT_PURO, criadaEm: '2026-10-01T12:00:00Z' }), ...dados.contas] },
         })}
       />,
     )
     cargaComoTexto('nome da conta no painel')
-    cargaComoTexto('email da conta no painel')
+    expect(screen.getAllByText(JAVASCRIPT_PURO).length).toBeGreaterThan(0)
     conferirSemInjecao()
   })
 })

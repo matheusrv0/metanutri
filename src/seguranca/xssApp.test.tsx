@@ -14,7 +14,7 @@ import { criarRepositorioProdutos } from '@/domain/produtos.ts'
 import { criarRepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { CHAVE_AVISO_VISTO } from '../ui/casos/AvisoPrimeiroAcesso.tsx'
 import { ProvedorTema } from '../ui/tema/ProvedorTema.tsx'
-import { cargaComoTexto, conferirSemInjecao, malicioso } from './xss.test-utils.ts'
+import { cargaComoTexto, conferirSemInjecao, JAVASCRIPT_PURO, malicioso } from './xss.test-utils.ts'
 
 // Sempre o modo deste aparelho, mesmo com um .env.local de conta na máquina.
 vi.mock('../ui/estado/supabase.ts', () => ({ obterSupabase: () => null, supabaseConfigurado: () => false }))
@@ -34,8 +34,9 @@ function semear(): Semeado {
   const paciente = pacientes.criar(malicioso('nome do paciente'))
   pacientes.salvar({
     ...paciente,
-    telefone: malicioso('telefone'),
-    email: malicioso('email do paciente'),
+    // E-mail, telefone e nome do link levam o endereço javascript: puro, o que viraria link se a tela fizesse um.
+    telefone: JAVASCRIPT_PURO,
+    email: JAVASCRIPT_PURO,
     objetivo: malicioso('objetivo'),
     restricoes: malicioso('restricao'),
     condicoesClinicas: malicioso('condicoes clinicas'),
@@ -87,7 +88,7 @@ function semear(): Semeado {
     criarAcompanhamento({
       casoId: salvo.caso.id,
       pacienteId: 'p1',
-      nome: malicioso('nome do link'),
+      nome: JAVASCRIPT_PURO,
       missoes: [{ id: 'm1', texto: malicioso('missao'), origem: malicioso('origem da missao') }],
     }),
   )
@@ -98,8 +99,8 @@ function semear(): Semeado {
     crn: malicioso('crn'),
     instituicao: malicioso('instituicao'),
     responsavel: malicioso('responsavel'),
-    telefone: malicioso('telefone do perfil'),
-    email: malicioso('email do perfil'),
+    telefone: JAVASCRIPT_PURO,
+    email: JAVASCRIPT_PURO,
     logo: 'javascript:alert(1)',
   })
   return { casoId: salvo.caso.id, pacienteId: 'p1' }
@@ -137,7 +138,8 @@ describe('CA-487: código malicioso aparece como texto e nada executa (app no ap
     conferirSemInjecao()
     cleanup()
     await abrir(`#/paciente/${semeado.pacienteId}`, 'nome do paciente')
-    for (const rotulo of ['telefone', 'email do paciente', 'objetivo', 'restricao', 'condicoes clinicas', 'medicamentos', 'anamnese', 'observacoes do paciente', 'nome do plano']) {
+    expect(screen.getAllByDisplayValue(JAVASCRIPT_PURO)).toHaveLength(2)
+    for (const rotulo of ['objetivo', 'restricao', 'condicoes clinicas', 'medicamentos', 'anamnese', 'observacoes do paciente', 'nome do plano']) {
       cargaComoTexto(rotulo)
     }
     conferirSemInjecao()
@@ -175,8 +177,14 @@ describe('CA-487: código malicioso aparece como texto e nada executa (app no ap
     conferirSemInjecao()
   })
 
-  it('CA-487: missões do nutricionista: nome do link, missão e origem aparecem como texto', async () => {
-    await abrir('#/adesao', 'nome do link')
+  it('CA-487: missões do nutricionista: o nome do link (javascript: puro) aparece como texto e não vira link', async () => {
+    window.location.hash = '#/adesao'
+    render(
+      <ProvedorTema>
+        <App />
+      </ProvedorTema>,
+    )
+    expect((await screen.findAllByText(JAVASCRIPT_PURO)).length).toBeGreaterThan(0)
     conferirSemInjecao()
   })
 
@@ -188,7 +196,8 @@ describe('CA-487: código malicioso aparece como texto e nada executa (app no ap
 
   it('CA-487: perfil: nome, registro, contato e responsável aparecem como texto, e a logo não vira endereço javascript:', async () => {
     await abrir('#/config', 'nome do perfil')
-    for (const rotulo of ['instituicao', 'responsavel', 'telefone do perfil', 'email do perfil']) cargaComoTexto(rotulo)
+    for (const rotulo of ['instituicao', 'responsavel']) cargaComoTexto(rotulo)
+    expect(screen.getAllByDisplayValue(JAVASCRIPT_PURO)).toHaveLength(2)
     conferirSemInjecao()
     // O CRN só aparece para quem é nutricionista.
     await userEvent.setup().click(screen.getByRole('radio', { name: 'Nutricionista' }))
