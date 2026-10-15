@@ -1,7 +1,7 @@
 # PLAN — Plano alimentar impresso limpo e fácil de ler
 
 **Spec de origem:** `./SPEC.md` (D-180 a D-188, CA-620 a CA-640, CB-180 a CB-188)
-**Status:** pedido pelo dono em 15/10/2026; aprovação pelas telas antes de publicar
+**Status:** pedido pelo dono em 15/10/2026; aprovação pelas telas antes de publicar; T1 a T10 feitas em 15/10/2026
 
 ## Abordagem
 
@@ -52,39 +52,39 @@ no navegador, num e2e novo.
 
 Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o código.
 
-- [ ] **T1** — SPEC e PLAN. *Verifica:* revisão.
-- [ ] **T2** — `nomeParaPaciente(alimento: Alimento | undefined): string`. Regras da seção 2 da spec: produto e
+- [x] **T1** — SPEC e PLAN. *Verifica:* revisão.
+- [x] **T2** — `nomeParaPaciente(alimento: Alimento | undefined): string`. Regras da seção 2 da spec: produto e
   removido (CB-180, CB-182), lista revisada (`NOMES_REVISADOS`, por id), regra geral (ficha técnica, parte antes,
   cru, notas no fim, "em pó", ortografia). *Testes:* CA-623 (os 22 nomes do exemplo, pelo id), CA-624 (os 597),
   CA-625 (cru por grupo), CA-626 (produto igual ao escrito), CB-180, CB-182. *Depende de:* nada.
-- [ ] **T3** — `folhaDieta.ts`: `comprasDaFolha(plano, buscar)` → `{ nome, gramas }[]`, só a principal, somando por
+- [x] **T3** — `folhaDieta.ts`: `comprasDaFolha(plano, buscar)` → `{ nome, gramas }[]`, só a principal, somando por
   nome para o paciente, em ordem alfabética pt-BR (CA-628, CB-181); `opcoesDaRefeicao(refeicao)` → as listas de itens
   com gramas > 0, na ordem principal, substituto 1, substituto 2, sem as vazias (CA-631, CA-632). *Depende de:* T2.
-- [ ] **T4** — `FolhaDieta.tsx`: cada linha mostra o nome para o paciente e uma quantidade (medida caseira; sem ela,
+- [x] **T4** — `FolhaDieta.tsx`: cada linha mostra o nome para o paciente e uma quantidade (medida caseira; sem ela,
   gramas), alimento primeiro (CA-623, CA-626, CA-629, CA-630); trocas e lista de compras com o nome para o paciente
   (CA-628). *Testes:* os CA citados, na folha. *Depende de:* T2, T3.
-- [ ] **T5** — `FolhaDieta.tsx`: opções sem caixa, cada substituto depois de "ou" com fio fino; refeição só com
+- [x] **T5** — `FolhaDieta.tsx`: opções sem caixa, cada substituto depois de "ou" com fio fino; refeição só com
   substituto começa sem "ou" (CA-631, CA-632). *Depende de:* T3, T4.
-- [ ] **T6** — `FolhaDieta.tsx`: saem "No dia a dia", a régua do topo e a linha da base; a frase da prescrição rápida
+- [x] **T6** — `FolhaDieta.tsx`: saem "No dia a dia", a régua do topo e a linha da base; a frase da prescrição rápida
   fica, sozinha, depois da assinatura (CA-633, CA-634); horário em `text-heading`. Sai `lembretesDoDia` de
   `folhaDieta.ts` e o teste dele (só servia ao "No dia a dia"). `DialogoImprimir.tsx`: a frase nova
   (CA-635). `e2e/planejador.spec.ts`: sai a espera da linha da base. *Depende de:* T5.
-- [ ] **T7** — `globals.css`: escopo de papel claro em `.folha-dieta` e `.folha-documento` (semânticos claros e ponte
+- [x] **T7** — `globals.css`: escopo de papel claro em `.folha-dieta` e `.folha-documento` (semânticos claros e ponte
   do shadcn redeclarada; `color-scheme: light`), texto preto na impressão no mesmo escopo, e fundo branco na janela e
   em `.area-impressao` na impressão (CA-620, CA-621, CA-622). `FolhaDocumento.tsx`: sem régua; frase de estágio em
   negrito sem caixa (CA-639, CA-640). *Testes:* `e2e/impressao-do-plano.spec.ts` (tema escuro: fundo e cores na tela
   e na impressão; nenhum fundo escuro), `FolhaDocumento.test.tsx` (CA-640). *Depende de:* T6.
-- [ ] **T8** — `globals.css`: dentro de `@supports (box-decoration-break: clone)`, `@page { margin-bottom: 0 }`,
+- [x] **T8** — `globals.css`: dentro de `@supports (box-decoration-break: clone)`, `@page { margin-bottom: 0 }`,
   `@page :first { margin-top: 0 }`, espaço de 14 mm no topo da folha e no pé de `.area-impressao` com `clone`
   (CA-636, CA-637); as margens do `@page` com a fonte da folha, para a linha fina (CA-637). *Testes:* e2e lê as regras
   de página e de margem no CSSOM e o espaço calculado na impressão; o PDF com as duas opções marcadas tem mais de uma
   página (CA-638). *Depende de:* T7.
-- [ ] **T9** — ajustes vistos nos primeiros prints, em dois commits. (a) A coluna do alimento passa a ter largura fixa
+- [x] **T9** — ajustes vistos nos primeiros prints, em dois commits. (a) A coluna do alimento passa a ter largura fixa
   (17 rem), para a quantidade ficar perto do nome; no celular, a quantidade embaixo do nome sai em cinza (CA-629).
   (b) `folhaDieta.ts`: `trocasDaFolha(grupos, buscar)` tira a troca com o mesmo nome para o paciente do alimento do
   plano, as trocas repetidas pelo nome, o alimento do plano que fica sem troca e o alimento do plano repetido pelo nome;
   a folha usa essa lista (CB-188). *Testes:* domínio e folha. *Depende de:* T8.
-- [ ] **T10** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
+- [x] **T10** — nota na spec `pdf-e-telas-limpas`; prints de antes e depois (PDF A4 e PNG por página) e relatório.
   `npm run check`, `npx playwright test` e `npm run build` verdes. *Depende de:* T9.
 
 ## Riscos e decisões para revisar

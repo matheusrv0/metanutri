@@ -46,8 +46,8 @@ Em ordem; a primeira que decide vale.
    pontas). Alimento que não existe mais na base: "Alimento removido", como hoje.
 2. **Lista revisada à mão**: os alimentos comuns cuja regra geral não fica natural ("Pão, trigo, francês" → "Pão
    francês"; "Ovo, de galinha, inteiro, cozido/10minutos" → "Ovo cozido"; "Arroz, tipo 1, cozido" → "Arroz branco
-   cozido"; "Leite, de vaca, integral" → "Leite integral"; "Castanha-do-Brasil, crua" → "Castanha-do-pará"). Cerca de
-   100 dos 597 alimentos.
+   cozido"; "Leite, de vaca, integral" → "Leite integral"; "Castanha-do-Brasil, crua" → "Castanha-do-pará"). São 121
+   dos 597 alimentos.
 3. **Regra geral**, sobre as partes do nome separadas por vírgula:
    - sai o que é ficha técnica: teor de gordura entre parênteses ("(65% de lipídeos)"), tempo de cozimento
      ("/10minutos"), concentração ("infusão 5%"), número de amostra ("pilsen 2"), "industrializado", "envasado",

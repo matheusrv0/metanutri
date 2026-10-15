@@ -4,6 +4,11 @@ Status: **aprovada** em 01/10/2026. Escrita em 01/10/2026, a partir do protótip
 limpas" (`https://claude.ai/code/artifact/2b7bb911-197d-4ab4-8120-e7e88f51c1b9`), aprovado no
 mesmo dia depois de uma rodada no PDF ("muita informação e letra muito pequena").
 
+**Substituída em parte (15/10/2026):** a spec `impressao-do-plano` troca o D-50 (o PDF passa a ter o nome do alimento
+para o paciente), o CA-309 (uma quantidade só por linha), o CA-310 (as opções vêm depois de "ou", sem caixa), o
+CA-312 ("No dia a dia" saiu da folha) e o CA-314 (sai a linha da base; fica só a frase da prescrição rápida). O resto
+desta spec continua valendo.
+
 **Fontes:** a conversa de 30/09/2026 ("o PDF que sai pode ser mais bonito e organizado, com um
 design próprio", "achei muito poluído", "evite termos como TACO, IBGE; a gente tem que garantir
 a nossa própria fonte") e as respostas de 01/10/2026 sobre o protótipo.
