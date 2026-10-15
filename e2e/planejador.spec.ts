@@ -298,3 +298,23 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   await expect(page.getByRole('region', { name: 'Resumo do dia' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Micronutrientes' })).toHaveCount(0)
 })
+
+test('CB-208 e CA-692: em 360 px, etapa 2 e etapa 3 sem rolar para o lado, com o Cobrir à vista', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+  const largura = () => page.evaluate(() => document.documentElement.scrollWidth)
+
+  await expect(page.getByRole('region', { name: 'Micronutrientes' })).toBeVisible()
+  expect(await largura()).toBeLessThanOrEqual(360)
+
+  await page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Adequação/ }).click()
+  const ferro = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Ferro' })
+  const cobrir = ferro.getByRole('button', { name: 'Cobrir' })
+  await expect(cobrir).toBeVisible()
+  const caixa = await cobrir.boundingBox()
+  expect((caixa?.x ?? 0) + (caixa?.width ?? 0)).toBeLessThanOrEqual(360)
+  expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+  expect(await largura()).toBeLessThanOrEqual(360)
+})

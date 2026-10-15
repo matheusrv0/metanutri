@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
+import { criarExemplo } from '@/domain/exemplo.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { MicrosDoDia } from './MicrosDoDia.tsx'
@@ -115,6 +116,13 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
   it('CB-201: sem sexo e idade, mostra o motivo e não lista nada', () => {
     montar({}, planoCom([ARROZ, 200]))
     expect(cartao().getByText(/Informe sexo e idade/)).toBeInTheDocument()
+    expect(cartao().queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('CB-202: nada abaixo da meta nem acima do limite, o cartão diz que está tudo na meta', () => {
+    const preset = { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } as const
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, criarExemplo(ids, '2026-10-15').plano)
+    expect(cartao().getByText('Todos os 16 na meta.')).toBeInTheDocument()
     expect(cartao().queryByRole('list')).not.toBeInTheDocument()
   })
 

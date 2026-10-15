@@ -121,3 +121,41 @@ separa as linhas que pedem ação das que estão na meta e, abaixo de 640 px, de
 - **`matchMedia` na lista do celular.** Sem `matchMedia` (testes, primeiro quadro) vale a tabela;
   o celular troca para a lista no primeiro quadro, sem piscar, porque o `useMediaQuery` lê o
   navegador direto.
+
+## Validação (15/10/2026)
+
+`npm run check` verde (188 arquivos, 3.094 testes), `npx playwright test` verde (57 testes) e
+`npm run build` verde. Detector do impeccable sem achados nos arquivos mudados.
+
+| Critério | Teste |
+|---|---|
+| CA-680 | `ResumoDoDia.test.tsx` · "Resumo do dia num cartão só (CA-333, CA-680)" |
+| CA-681 | `ResumoDoDia.test.tsx` · "CA-10 e CA-681" e "CA-681: no modo rápido" |
+| CA-682 | `ResumoDoDia.test.tsx` · "CA-22, CA-23 e CA-682"; `MedidorMacro.test.tsx` · três testes CA-682 |
+| CA-683 | `ResumoDoDia.test.tsx` · "CA-24 e CA-683" e "CA-683: no modo rápido" |
+| CA-684 | `ResumoDoDia.test.tsx` · "CA-684" |
+| CA-685 | `MicrosDoDia.test.tsx` · "CA-685 e CB-203"; e2e "etapa 2: o cartão Micronutrientes" |
+| CA-686 | `MicrosDoDia.test.tsx` · "CA-686 e CB-204"; e2e "etapa 2: o cartão Micronutrientes" |
+| CA-687 | `MicrosDoDia.test.tsx` · "CA-687" |
+| CA-688 | `MicrosDoDia.test.tsx` · "CA-688"; e2e "etapa 2: o cartão Micronutrientes" |
+| CA-689 | e2e "etapa 2: o cartão Micronutrientes" |
+| CA-690 | `TelaAdequacao.test.tsx` · "CA-690" |
+| CA-691 | `TelaAdequacao.test.tsx` · "CA-691"; `MicrosDoDia.test.tsx` · "CA-691" |
+| CA-692 | `TelaAdequacao.test.tsx` · dois testes "CA-692"; e2e "CB-208 e CA-692" |
+| CA-693 | `TelaAdequacao.test.tsx` · "CA-693" |
+| CA-694 | `TelaAdequacao.test.tsx` · dois testes "CA-694" |
+| CB-200 | `MicrosDoDia.test.tsx` · "CB-200"; `TelaAdequacao.test.tsx` · "CB-05" |
+| CB-201 | `MicrosDoDia.test.tsx` · "CB-201" |
+| CB-202 | `MicrosDoDia.test.tsx` · "CB-202"; `TelaAdequacao.test.tsx` · "CB-202" |
+| CB-203 | `MicrosDoDia.test.tsx` · "CA-685 e CB-203" |
+| CB-204 | `MicrosDoDia.test.tsx` · "CA-686 e CB-204"; `TelaAdequacao.test.tsx` · "CB-204" |
+| CB-205 | `MedidorMacro.test.tsx` · "CB-205" |
+| CB-206 | `ResumoDoDia.test.tsx` · "CB-206"; `MedidorMacro.test.tsx` · "CB-206" |
+| CB-207 | `ResumoDoDia.test.tsx` · "CB-207" |
+| CB-208 | e2e "CB-208 e CA-692" (etapas 2 e 3 em 360 px) |
+| CB-209 | `MicrosDoDia.test.tsx` · "CB-209" |
+
+**Divergências do plano:** a T7 (gaveta do Cobrir) entrou a pedido do coordenador, com o CA-694; o
+botão do cartão virou "Ver todos" na validação, para não repetir o 16 da contagem; as marcas † e ‡
+viraram dois componentes de tela (`MarcaSemDado`, `MarcaLimite`), usados pela tabela, pela lista e
+pelo cartão.
