@@ -14,6 +14,7 @@ import { Card } from '@ds/componentes/display/card.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { TelaDesignSystem } from '@ds/vitrine/TelaDesignSystem.tsx'
 import { TelaAdequacao } from './adequacao/TelaAdequacao.tsx'
+import { MicrosDoDia } from './adequacao/MicrosDoDia.tsx'
 import { TelaAjuda } from './ajuda/TelaAjuda.tsx'
 import { TelaAlimentos } from './alimentos/TelaAlimentos.tsx'
 import { TelaAprovacoes } from './aprovacoes/TelaAprovacoes.tsx'
@@ -323,6 +324,12 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
     const pacienteDoPlano = registro.caso.pacienteId ? pacientes.find((p) => p.id === registro.caso.pacienteId) ?? null : null
     const restricoesDoPaciente = pacienteDoPlano ? listaDeRestricoes(pacienteDoPlano.restricoes) : []
+    // O gasto energético limita as sugestões do Cobrir, na etapa 2 e na 3.
+    const gastoEnergetico = calcularEnergia(registro.caso, {
+      fator: registro.caso.energia.fator,
+      formula: registro.caso.energia.formula,
+      getManual: registro.caso.energia.getManual,
+    }).get
 
     const indice = ETAPAS.findIndex((e) => e.aba === rota.aba)
     const proxima = ETAPAS[indice + 1]
@@ -349,7 +356,18 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
             <div className="flex flex-col gap-6">
               <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
-                <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+                <div className="flex flex-col gap-6">
+                  <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+                  <MicrosDoDia
+                    caso={registro.caso}
+                    plano={registro.plano}
+                    gastoEnergetico={gastoEnergetico}
+                    restricoes={restricoesDoPaciente}
+                    aoAlterarCaso={alterarCaso}
+                    aoAlterarPlano={alterarPlano}
+                    aoVerTodos={() => navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })}
+                  />
+                </div>
               </div>
               <CartaoLinkMissoes
                 casoId={registro.caso.id}
@@ -369,13 +387,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
               <TelaAdequacao
                 caso={registro.caso}
                 plano={registro.plano}
-                gastoEnergetico={
-                  calcularEnergia(registro.caso, {
-                    fator: registro.caso.energia.fator,
-                    formula: registro.caso.energia.formula,
-                    getManual: registro.caso.energia.getManual,
-                  }).get
-                }
+                gastoEnergetico={gastoEnergetico}
                 restricoes={restricoesDoPaciente}
                 aoAlterarCaso={alterarCaso}
                 aoAlterarPlano={alterarPlano}

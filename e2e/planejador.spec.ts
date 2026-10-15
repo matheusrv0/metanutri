@@ -272,3 +272,29 @@ test('CA-336: em tela larga as sugestões também ficam numa linha só', async (
   const ultima = await sugestoes.last().boundingBox()
   expect(ultima?.y).toBe(primeira?.y)
 })
+
+test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685, CA-686, CA-688, CA-689)', async ({ page }) => {
+  await abrirLimpo(page)
+  await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
+  await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
+
+  const micros = page.getByRole('region', { name: 'Micronutrientes' })
+  await expect(micros).toContainText(/\d+ de 16 abaixo da meta/)
+  const linhas = micros.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem')
+  const antes = await linhas.allTextContents()
+  await linhas.first().getByRole('button', { name: /^Cobrir / }).click()
+
+  const gaveta = page.getByRole('dialog')
+  await expect(gaveta).toContainText('para a meta')
+  await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem').first().getByRole('button', { name: 'Adicionar' }).click()
+  await expect(gaveta).toBeHidden()
+  await expect.poll(() => linhas.allTextContents()).not.toEqual(antes)
+
+  await micros.getByRole('button', { name: 'Ver os 16' }).click()
+  const etapas = page.getByRole('navigation', { name: 'Etapas do plano' })
+  await expect(etapas.getByRole('button', { name: /Adequação/ })).toHaveAttribute('aria-current', 'step')
+
+  await etapas.getByRole('button', { name: /Dados e medidas/ }).click()
+  await expect(page.getByRole('region', { name: 'Resumo do dia' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Micronutrientes' })).toHaveCount(0)
+})
