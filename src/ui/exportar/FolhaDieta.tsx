@@ -4,13 +4,15 @@ import { medidaEquivalente } from '@/domain/busca.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
+  comprasDaFolha,
   lembretesDoDia,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   type OpcoesImpressao,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { listaDeCompras, missoesDoPlano } from '@/domain/missoes.ts'
+import { missoesDoPlano } from '@/domain/missoes.ts'
+import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
@@ -37,29 +39,24 @@ interface FolhaDietaProps {
   readonly suplementos?: readonly Suplemento[] | undefined
 }
 
-/** Colunas da quantidade e do alimento: a medida mais longa ("2 colheres de servir e meia · 150 g") cabe numa linha. */
-const COLUNAS = 'grid grid-cols-1 gap-x-4 sm:grid-cols-[minmax(0,16.5rem)_minmax(0,1fr)]'
+/** Colunas do alimento e da quantidade: a medida mais longa ("2 colheres de servir e meia") cabe numa linha. */
+const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]'
 
-/** "6 colheres de sopa · 150 g"; sem medida caseira, só o peso (CA-309). */
-function Quantidade({ item }: { readonly item: ItemPlano }) {
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
-  const gramas = `${formatarNumero(item.gramas, 0)} g`
-  if (!medida) return <strong className="font-bold text-heading">{gramas}</strong>
-  return (
-    <span>
-      <strong className="font-bold text-heading">{medida.texto}</strong>
-      <span className="text-muted-foreground">{` · ${gramas}`}</span>
-    </span>
-  )
-}
+/** Nas trocas, o alimento do plano à esquerda e as trocas dele ao lado. */
+const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
 
+/** Uma quantidade só: a medida caseira; sem ela, o peso (spec impressao-do-plano, D-183, CA-629 e CA-630). */
+const quantidade = (item: ItemPlano): string => medidaEquivalente(item.alimentoId, item.gramas)?.texto ?? `${formatarNumero(item.gramas, 0)} g`
+
+/** O alimento primeiro, com o nome que o paciente entende (CA-623), e a quantidade ao lado. */
 function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
   return (
     <ul className="flex flex-col gap-1">
       {itens.map((item) => (
         <li key={item.id} className={COLUNAS}>
-          <Quantidade item={item} />
-          <span>{buscarAlimento(item.alimentoId)?.descricao ?? 'Alimento removido'}</span>
+          <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
+          <span className="sr-only">, </span>
+          <span>{quantidade(item)}</span>
         </li>
       ))}
     </ul>
@@ -74,7 +71,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const quem = assinaturaDaFolha(assinatura, caso)
   const linhaFina = linhaFinaDaFolha(caso, quem)
   const lembretes = lembretesDoDia(missoesDoPlano(plano, { pesoKg: caso.pesoKg }))
-  const compras = opcoes.listaDeCompras ? listaDeCompras(plano) : []
+  const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
   const trocas = opcoes.trocas
     ? trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: 2, restricoes: listaDeRestricoes(restricoes ?? '') })
     : []
@@ -205,8 +202,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <h3 className="font-titulo text-lg font-bold text-heading">Lista de compras</h3>
               <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
                 {compras.map((c) => (
-                  <li key={c.descricao} className="border-b border-dotted border-border">
-                    {`${c.descricao} — `}
+                  <li key={c.nome} className="border-b border-dotted border-border">
+                    {`${c.nome} — `}
                     <span className="numeros">{`${formatarNumero(c.gramas, 0)} g`}</span>
                   </li>
                 ))}
@@ -220,11 +217,11 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
               <p className="text-muted-foreground">Mesmo tipo de alimento, na quantidade certa. Pode trocar sem perguntar.</p>
               <ul aria-label="Trocas" className="flex flex-col">
                 {trocas.map((g) => (
-                  <li key={g.alimentoId} className={`${COLUNAS} break-inside-avoid border-t border-border py-2`}>
-                    <strong className="font-bold text-heading">{g.descricao}</strong>
+                  <li key={g.alimentoId} className={`${COLUNAS_TROCAS} break-inside-avoid border-t border-border py-2`}>
+                    <strong className="font-bold text-heading">{nomeParaPaciente(buscarAlimento(g.alimentoId))}</strong>
                     <span className="flex flex-col">
                       {g.trocas.map((t) => (
-                        <span key={t.alimentoId} className="troca">{`${t.descricao} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
+                        <span key={t.alimentoId} className="troca">{`${nomeParaPaciente(buscarAlimento(t.alimentoId))} · ${t.medida ? t.medida.texto : `${formatarNumero(t.gramas, 0)} g`}`}</span>
                       ))}
                     </span>
                   </li>

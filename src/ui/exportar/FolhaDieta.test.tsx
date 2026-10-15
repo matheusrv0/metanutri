@@ -2,7 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
-import type { Caso, Plano } from '@/domain/tipos.ts'
+import { PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { ALIMENTOS, registrarProdutos } from '@/domain/tabelas.ts'
+import type { Alimento, Caso, Plano } from '@/domain/tipos.ts'
 import { FolhaDieta } from './FolhaDieta.tsx'
 
 let n = 0
@@ -52,24 +54,40 @@ describe('Folha da dieta (US-B1)', () => {
     expect(screen.getByText('Sem nome')).toBeInTheDocument()
   })
 
-  it('CA-309: medida caseira em destaque, peso ao lado e o alimento', () => {
+  it('CA-623, CA-629 e CA-630: o nome que o paciente entende e uma quantidade só', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
     const almoco = refeicao(/^12:00 Almoço$/)
     expect(almoco.getByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
-    expect(almoco.getByText('6 colheres de sopa')).toBeInTheDocument()
-    expect(almoco.getByText(/· 150 g/)).toBeInTheDocument()
-    expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+    const arroz = almoco.getByText('Arroz branco cozido').closest('li')
+    expect(arroz).toHaveTextContent(/^Arroz branco cozido, 6 colheres de sopa$/)
+    expect(almoco.queryByText(/150 g/)).not.toBeInTheDocument()
+    expect(almoco.queryByText(/Arroz, tipo 1/)).not.toBeInTheDocument()
 
+    // Sem medida caseira, o peso.
     const jantar = refeicao(/^19:00 Jantar$/)
-    expect(jantar.getByText('80 g')).toBeInTheDocument()
-    expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
+    expect(jantar.getByText('Macarrão cru').closest('li')).toHaveTextContent(/^Macarrão cru, 80 g$/)
+  })
+
+  it('CA-626: produto cadastrado sai com o nome que a nutricionista escreveu', () => {
+    const whey = { ...ALIMENTOS[0], id: PRIMEIRO_ID_PRODUTO + 7, descricao: 'Whey, baunilha (Marca X)', categoria: 'Meus produtos', base: null } as Alimento
+    registrarProdutos([whey])
+    try {
+      let plano = criarPlanoPadrao(ids)
+      const ceia = plano.refeicoes[5]
+      if (!ceia) throw new Error('sem ceia')
+      plano = adicionarItem(plano, ceia.id, 'principal', { alimentoId: whey.id, gramas: 30 }, ids)
+      render(<FolhaDieta caso={caso} plano={plano} />)
+      expect(refeicao(/^21:00 Ceia$/).getByText('Whey, baunilha (Marca X)')).toBeInTheDocument()
+    } finally {
+      registrarProdutos([])
+    }
   })
 
   it('CA-310: substituto vira "Opção 2"; substituto vazio não aparece', () => {
     render(<FolhaDieta caso={caso} plano={planoCheio()} />)
     const almoco = refeicao(/^12:00 Almoço$/)
     expect(almoco.getByText('Opção 2')).toBeInTheDocument()
-    expect(almoco.getByText('Batata, inglesa, cozida')).toBeInTheDocument()
+    expect(almoco.getByText('Batata inglesa cozida')).toBeInTheDocument()
     expect(almoco.queryByText('Opção 3')).not.toBeInTheDocument()
   })
 
@@ -164,8 +182,10 @@ describe('Folha da dieta (US-B1)', () => {
 
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
     expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
-    expect(screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === 'Arroz, tipo 1, cozido — 150 g')).toBeInTheDocument()
+    // CA-628: a lista de compras e as trocas usam o nome para o paciente.
+    expect(screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === 'Arroz branco cozido — 150 g')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Trocas' }).textContent).not.toMatch(/,/)
     expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')
     for (const linha of within(screen.getByRole('list', { name: 'Trocas' })).getAllByRole('listitem')) {
       expect(linha.querySelectorAll('.troca').length).toBeLessThanOrEqual(2)
