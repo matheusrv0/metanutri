@@ -45,7 +45,7 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | D-196 | **O plano de exemplo, as listas por refeição e a vitrine não mudam.** O exemplo é um plano escrito à mão, como a nutricionista escreveria, e os 5 g de margarina no pão são prescrição comum. *(revisão)* O "Macarrão, trigo, cru" do substituto 1 do almoço também fica: a TACO só traz o macarrão cru, e 90 g de macarrão seco é como a nutricionista escreve a porção. As listas passam na regra | — |
 | D-197 | **A ordem do cobrir continua a mesma**: uso comum primeiro, depois menos kcal por parte da falta coberta, e um grupo por vez (CA-35, CA-36, CA-82). Jurubeba e jamelão, frutas que só uma região conhece, entram na lista de pouco usual. *(revisão)* Saem dela "miolo de alcatra" (corte magro e comum, que o padrão "miolo" pegava) e linhaça (prescrição frequente). Entre os de uso comum, corte magro e ave sem pele vêm antes de corte gordo e ave com pele (D-199b) | — |
 | D-198 | **A regra é por nome e categoria da TACO.** Alimento novo na base sem regra que o pegue entra como prescritível; *(revisão)* um teste guarda a lista fixa de ids excluídos por motivo e acusa qualquer mudança da base. A descrição é limpa antes de comparar (espaço nas pontas e espaço repetido não contam) | — |
-| D-199 | *(revisão)* **a) Versão crua de alimento que se come cozido não é proposta**: inhame, vagem, taioba, fruta-pão, jiló, broto de feijão, caruru, quiabo e pequi (só existem crus na base); batata, batata-doce, batata-baroa, mandioca, cará, berinjela e chuchu crus; abóbora crua quando a base tem a mesma abóbora cozida (cabotian e moranga; a menina e a pescoço só existem cruas e ficam); peixe cru ou "fresco" sem preparo. **b) Porção máxima por grupo no cobrir** (seção 7.1), tirada das medidas caseiras da POF quando existem, e nunca acima da porção máxima que a pessoa escolheu. **c) Os itens "talvez rígidos demais"** (azeite, mel, chocolate meio amargo, leite fermentado, charque e carne seca, azeitona, ovo frito, feijoada) continuam fora por padrão e vão para o Apêndice C, como decisão do dono e da estudante | A tabela 2.1 nos itens marcados |
+| D-199 | *(revisão)* **a) Versão crua de alimento que se come cozido não é proposta**: inhame, vagem, taioba, fruta-pão, jiló, broto de feijão, caruru, quiabo e pequi (só existem crus na base); batata, batata-doce, batata-baroa, mandioca, cará, berinjela e chuchu crus; abóbora crua quando a base tem a mesma abóbora cozida (cabotian e moranga; a menina e a pescoço só existem cruas e ficam); peixe cru ou "fresco" sem preparo. **b) Porção máxima por grupo no cobrir** (seção 7.1), tirada das medidas caseiras da POF quando existem, e nunca acima da porção máxima que a pessoa escolheu. **c) Os itens "talvez rígidos demais"** (azeite, mel, chocolate meio amargo, leite fermentado, charque e carne seca, azeitona, ovo frito, feijoada) continuam fora por padrão e vão para o Apêndice C, como decisão do dono e da estudante. **d) O sódio não se cobre com alimento**: o cobrir do sódio não devolve sugestão e diz "O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia." O botão do sódio sai da tela na frente `painel-lateral-enxuto`; aqui só o domínio muda | A tabela 2.1 nos itens marcados; para o sódio, o CA-34 a CA-39 (o cobrir valia para todo micronutriente abaixo da meta) |
 
 ### 2.1 Casos de borda
 
@@ -125,6 +125,7 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 - **CA-675** *(revisão)* · Dado restrições do paciente, então elas filtram antes da escolha das 5 sugestões; se nada sobra, a gaveta mostra "Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra."
 - **CA-676** *(revisão)* · Dado "Carne, bovina, miolo de alcatra" e linhaça, então eles contam como uso comum.
 - **CA-677** *(revisão)* · Dado uma descrição com espaço nas pontas ou espaço repetido, então a regra a classifica igual à descrição limpa.
+- **CA-678** *(revisão)* · Dado o cobrir do sódio, com qualquer falta, chave ou porção máxima, então não há sugestão e o motivo é "O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia."
 
 ## 4. Casos de borda
 
@@ -144,8 +145,8 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 ## 5. Fora de escopo
 
 - A busca e a ordem dos resultados dela (escolha manual).
-- Tirar o botão cobrir do sódio. Subir sódio por alimento quase nunca é conduta, porque o sal de cozinha não entra no
-  plano; fica para o dono decidir.
+- *(revisão)* Tirar o botão cobrir do sódio da tela: fica com a frente `painel-lateral-enxuto`. Aqui o domínio já não
+  sugere nada para o sódio (D-199d).
 - Porção máxima por alimento fora dos grupos da seção 7.1 (200 g de alface ainda é uma sugestão possível).
 - Corrigir valores da TACO (B1 e B2 do chá, cobre do mamão formosa, vitamina A do aipo; leite integral e UHT sem kcal, por isso o leite nunca entra no cobrir nem nas trocas).
 - *(revisão)* Trocas de laticínio que ficaram vazias (iogurte desnatado, amendoim) e a vitrine da página inicial, que não mostra o que o cobrir devolve hoje: ficaram para uma próxima rodada.
@@ -179,6 +180,15 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 | M9 · a restrição do paciente filtrava depois do corte das 5 | filtra antes, com mensagem própria | CA-675 |
 | M10 · macarrão cru do exemplo sem justificativa | D-196 | — |
 | Decisões do coordenador (a), (b) e (c) | D-199 | CA-670, CA-673, CA-674 |
+| Decisão do coordenador sobre o sódio (dúvida 1 do relatório) | D-199d | CA-678 |
+
+**Respostas às dúvidas do relatório (coordenador, 15/10/2026):**
+
+1. Sódio: não se cobre com alimento (D-199d).
+2. A chave "Incluir ingredientes e alimentos crus" continua liberando só a forma de ingrediente; doce, gordura,
+   embutido, fritura e ultraprocessado ficam fora mesmo com ela ligada (D-191, confirmado).
+3. A revisão da estudante segue pelos Apêndices A e C.
+4. A margarina do plano de exemplo fica (D-196, confirmado).
 
 ### 7.1 Porção máxima por grupo no cobrir (D-199b)
 

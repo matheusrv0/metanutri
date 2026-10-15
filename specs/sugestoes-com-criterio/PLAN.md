@@ -147,6 +147,7 @@ Lê a seção 7 da SPEC. Mesmas regras: nota na spec primeiro, TDD, um commit po
 | R11 | M1: item fora da rotina prefere o mesmo alimento | `trocas.ts`, `trocas.test.ts` | idem |
 | R12 | D-199b: porção máxima por grupo e corte magro primeiro | `cobrir.ts`, `cobrir.test.ts` | `cobrir.test.ts` |
 | R13 | M9: restrição antes do corte das 5 | `cobrir.ts`, `cobrir.test.ts`, `src/ui/adequacao/GavetaCobrir.tsx`, `TelaAdequacao.test.tsx` | `cobrir.test.ts`, `src/ui/adequacao` |
+| R15 | D-199d: o sódio não se cobre (feito antes do R14; nota na spec antes do código) | `cobrir.ts`, `cobrir.test.ts` | `cobrir.test.ts` |
 | R14 | Apêndices A e B regenerados do código, validação, prints e relatório | `SPEC.md`, `PLAN.md` | `npm run check`, `npx playwright test` (porta própria), `npm run build` |
 
 Dependências: R8 vem depois de R1 a R7, porque guarda a lista final de ids. R10 e R11 dependem de R5 (a vagem crua sai
