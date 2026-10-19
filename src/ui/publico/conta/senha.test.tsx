@@ -333,6 +333,16 @@ describe('TelaNovaSenha (link antigo)', () => {
     expect(aoPedirOutro).toHaveBeenCalledOnce()
   })
 
+  it('CA-853 (spec seguranca-lote-5, D-266): só a sessão aberta, sem o código de troca, não troca a senha', async () => {
+    const conta = contaFalsa({ sessao: { id: 'conta-1', email: 'maria@exemplo.com', nome: 'Maria' }, emRecuperacao: false })
+    const aoPedirOutro = vi.fn()
+    render(<TelaNovaSenha conta={conta} vencido={false} aoSenhaTrocada={vi.fn()} aoPedirOutro={aoPedirOutro} aoIrParaInicio={vi.fn()} />)
+    expect(screen.queryByLabelText('Senha nova')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Pedir um código' }))
+    expect(aoPedirOutro).toHaveBeenCalledOnce()
+    expect(conta.trocarSenha).not.toHaveBeenCalled()
+  })
+
   it('CA-145, CA-146 e CA-414: com o link antigo, troca a senha e segue', async () => {
     const conta = contaFalsa({ emRecuperacao: true })
     const aoSenhaTrocada = vi.fn()

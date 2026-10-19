@@ -25,8 +25,9 @@ export function TelaNovaSenha({ conta, vencido, aoSenhaTrocada, aoPedirOutro, ao
   const [repetida, setRepetida] = useState('')
   const [erro, setErro] = useState<ErroConta | null>(null)
   const [salvando, setSalvando] = useState(false)
-  // Só dá para trocar quem chegou pelo link (modo de recuperação) ou já está conectado.
-  const podeTrocar = !vencido && (conta.emRecuperacao || conta.sessao !== null)
+  // Só troca quem confirmou o código de troca (ou o link) agora: a sessão aberta sozinha não basta, para quem
+  // pega um computador com a conta aberta não trocar a senha de outra pessoa (spec seguranca-lote-5, D-266).
+  const podeTrocar = !vencido && conta.emRecuperacao
 
   if (!podeTrocar) {
     return (
