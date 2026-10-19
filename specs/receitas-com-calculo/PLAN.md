@@ -52,7 +52,7 @@
 | `src/ui/navegacao.ts` (+ teste), `src/ui/layout/MenuLateral.tsx`, `src/ui/AreaDeTrabalho.tsx` | alterar: rota e menu | T5 |
 | `src/ui/plano/EntradaRapida.tsx`, `LinhaItem.tsx`, `CartaoRefeicao.tsx`, `TelaPlano.tsx` | alterar | T6 |
 | `src/ui/plano/receitaNaRefeicao.test.tsx` | criar (arquivo novo de teste, para não brigar com a frente que mexe nos testes da área de trabalho) | T6 |
-| `src/domain/missoes.test.ts`, `cobrir.test.ts`, `trocas.test.ts`, `modelos.test.ts` | alterar: testes de guarda | T7 |
+| `src/domain/receitaNasRegras.test.ts` | criar: testes de guarda de cobrir, missões, trocas, modelo e duplicar | T7 |
 | `src/domain/folhaDieta.ts` (+ teste), `src/ui/exportar/FolhaDieta.tsx` (+ teste) | alterar | T8 |
 | `src/domain/dietaDoLink.ts` (+ teste), `src/ui/missoes/MeuPlano.tsx` (+ teste) | alterar | T9 |
 | `src/export/aconselhamento-docx.ts`, `src/export/docx.test.ts` | alterar | T10 |
