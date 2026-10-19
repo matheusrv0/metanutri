@@ -1,8 +1,13 @@
 // D-263 e D-264 (spec seguranca-lote-5): a limpeza dos comprovantes no banco de verdade do Supabase local.
-// Os prazos são vistos pela data de referência da função (DP-L5-4), sem mexer no relógio.
+// Os prazos são vistos pela data de referência da função (DP-L5-4), sem mexer no relógio. A função
+// limpar-comprovantes roda pelo núcleo e pela ligação de verdade (só o Deno.serve do index.ts fica de fora,
+// conferido pelo texto em src/data/servidorLigacao.test.ts).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
+import { createServer } from 'node:http'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { CABECALHO_DA_CHAVE, limparComprovantes } from '../../supabase/functions/_shared/limpeza.ts'
+import { criarBancoDaLimpeza } from '../../supabase/functions/_shared/limpezaSupabase.ts'
 import { sqlNoBancoLocal } from './bancoLocal.ts'
 import { arquivoPdf, BALDE, barrado, prepararCenario, type Cenario } from './preparo.ts'
 
@@ -120,6 +125,84 @@ describe('D-264: a chave da limpeza', () => {
     expect(await conferir(chave.slice(0, 31))).toBe(false)
     expect(await conferir('')).toBe(false)
     expect(await conferir(null)).toBe(false)
+  })
+})
+
+/** O núcleo da função limpar-comprovantes com a ligação de verdade ao banco e ao armazenamento local. */
+const limparComONucleo = (chave: string | null, agora: Date) =>
+  limparComprovantes({ metodo: 'POST', chave }, { banco: criarBancoDaLimpeza(c.servico), agora: () => agora, log: () => undefined })
+
+const existe = async (caminho: string): Promise<boolean> => {
+  const [pasta = '', nome = ''] = caminho.split('/')
+  const r = await c.servico.storage.from(BALDE).list(pasta, { search: nome })
+  return (r.data ?? []).some((item) => item.name === nome)
+}
+
+describe('D-263: a função limpar-comprovantes com o banco e o armazenamento de verdade', () => {
+  it('CA-847: com a chave errada, nada sai do balde', async () => {
+    const resposta = await limparComONucleo('f'.repeat(64), new Date(Date.now() + 40 * UM_DIA_MS))
+    expect(resposta.status).toBe(401)
+    expect(await existe(c.vitima.segundoArquivo)).toBe(true)
+  })
+
+  it('CA-843, CA-844, CA-845 e CB-266: apaga do balde os vencidos, anota os pedidos e deixa o que não venceu', async () => {
+    const decidido = await pedidoDecididoComArquivo(c.atacante)
+    const chave = sqlNoBancoLocal("select decrypted_secret from vault.decrypted_secrets where name = 'metanutri_chave_da_limpeza';").saida
+    const resposta = await limparComONucleo(chave, new Date(Date.now() + 40 * UM_DIA_MS))
+    expect(resposta.status).toBe(200)
+    expect(Number(resposta.corpo['apagados'])).toBeGreaterThanOrEqual(3)
+    // Saíram de verdade do armazenamento: o decidido há mais de 30 dias e os sem pedido.
+    expect(await existe(decidido.arquivo)).toBe(false)
+    expect(await existe(c.vitima.segundoArquivo)).toBe(false)
+    expect(await existe(c.atacante.arquivo)).toBe(false)
+    // O do pedido em análise fica.
+    expect(await existe(c.vitima.arquivo)).toBe(true)
+    const pedido = await c.servico.from('pedidos_estudante').select('status, motivo, arquivo').eq('id', decidido.id).single()
+    expect(pedido.data).toEqual({ status: 'recusado', motivo: 'ilegível', arquivo: null })
+    const emAnalise = await c.servico.from('pedidos_estudante').select('arquivo').eq('id', c.vitima.pedidoId).single()
+    expect(emAnalise.data?.arquivo).toBe(c.vitima.arquivo)
+    // CB-266: rodar de novo não acha nada e não dá erro.
+    expect(await limparComONucleo(chave, new Date(Date.now() + 40 * UM_DIA_MS))).toEqual({ status: 200, corpo: { apagados: 0, marcados: 0 } })
+  })
+})
+
+describe('CA-846: o agendamento chama a função com a chave', () => {
+  it('CA-846: o comando do agendamento manda POST para /functions/v1/limpar-comprovantes com a chave do cofre, e a resposta volta ao banco', async () => {
+    const recebidos: { metodo: string; caminho: string; chave: string | null }[] = []
+    // Faz o papel da função publicada: o mesmo núcleo, com a ligação de verdade. O banco no Docker chega a
+    // esta máquina por host.docker.internal.
+    const servidor = createServer((req, res) => {
+      const chave = typeof req.headers[CABECALHO_DA_CHAVE] === 'string' ? req.headers[CABECALHO_DA_CHAVE] : null
+      recebidos.push({ metodo: req.method ?? '', caminho: req.url ?? '', chave })
+      void limparComONucleo(chave, new Date()).then((resposta) => {
+        res.writeHead(resposta.status, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(resposta.corpo))
+      })
+    })
+    await new Promise<void>((pronto) => servidor.listen(0, '127.0.0.1', () => pronto()))
+    const endereco = servidor.address()
+    const porta = typeof endereco === 'object' && endereco ? endereco.port : 0
+    try {
+      const gravado = sqlNoBancoLocal(`select vault.create_secret('http://host.docker.internal:${porta}', 'metanutri_url_do_projeto');`)
+      expect(gravado.ok, gravado.erro).toBe(true)
+      // O comando exato do agendamento.
+      const comando = sqlNoBancoLocal("select command from cron.job where jobname = 'metanutri-limpar-comprovantes';").saida
+      const pedido = sqlNoBancoLocal(comando)
+      expect(pedido.ok, pedido.erro).toBe(true)
+      const id = Number(pedido.saida)
+      expect(id).toBeGreaterThan(0)
+      let status = ''
+      for (let i = 0; i < 60 && status === ''; i++) {
+        await new Promise((pronto) => setTimeout(pronto, 250))
+        status = sqlNoBancoLocal(`select coalesce(status_code::text, error_msg) from net._http_response where id = ${id};`).saida
+      }
+      expect(status).toBe('200')
+      const chaveDoCofre = sqlNoBancoLocal("select decrypted_secret from vault.decrypted_secrets where name = 'metanutri_chave_da_limpeza';").saida
+      expect(recebidos).toEqual([{ metodo: 'POST', caminho: '/functions/v1/limpar-comprovantes', chave: chaveDoCofre }])
+    } finally {
+      sqlNoBancoLocal("delete from vault.secrets where name = 'metanutri_url_do_projeto';")
+      servidor.close()
+    }
   })
 })
 
