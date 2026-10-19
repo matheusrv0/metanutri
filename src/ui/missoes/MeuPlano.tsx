@@ -2,7 +2,7 @@
 // impressa que serve a quem come, em letra de ler no ônibus: refeição, medida caseira, os
 // substitutos como "ou" e as orientações. Sem kcal e sem nutriente (D-150).
 import { useId } from 'react'
-import type { DietaDoLink, ItemDaDieta } from '@/domain/dietaDoLink.ts'
+import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
@@ -68,6 +68,37 @@ function Texto({ titulo, texto }: { readonly titulo: string; readonly texto: str
   )
 }
 
+/** Uma receita do plano: o nome, o rendimento, os ingredientes com a medida e o modo de preparo (spec receitas-com-calculo). */
+function ReceitaDoLink({ receita }: { readonly receita: ReceitaDaDieta }) {
+  const id = useId()
+  return (
+    <article aria-labelledby={id} className="flex flex-col gap-2 border-t border-border pt-4 first:border-0 first:pt-0">
+      <h3 id={id} className="text-base font-semibold text-heading [overflow-wrap:anywhere]">
+        {receita.nome}
+      </h3>
+      <p className="numeros text-sm text-muted-foreground">{receita.rendimento}</p>
+      <Itens itens={receita.ingredientes} />
+      {receita.preparo ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{receita.preparo}</p> : null}
+    </article>
+  )
+}
+
+/** CA-884: "Receitas" com as receitas do plano e, depois, o texto livre de antes. */
+function Receitas({ receitas, texto }: { readonly receitas: readonly ReceitaDaDieta[]; readonly texto: string }) {
+  const id = useId()
+  return (
+    <section aria-labelledby={id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+      <h2 id={id} className="font-titulo text-lg font-semibold text-heading">
+        Receitas
+      </h2>
+      {receitas.map((r, i) => (
+        <ReceitaDoLink key={`${i}-${r.nome}`} receita={r} />
+      ))}
+      {texto ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{texto}</p> : null}
+    </section>
+  )
+}
+
 export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
   const dia = dataPorExtenso(dieta.copiadaEm)
   return (
@@ -90,7 +121,7 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
       ))}
 
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
-      {dieta.receitas ? <Texto titulo="Receitas" texto={dieta.receitas} /> : null}
+      {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} /> : null}
 
       {dia ? <p className="mt-5 text-center text-xs text-muted-foreground">{`Atualizada em ${dia}.`}</p> : null}
     </div>

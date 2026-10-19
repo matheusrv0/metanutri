@@ -55,7 +55,8 @@
 | `src/domain/receitaNasRegras.test.ts` | criar: testes de guarda de cobrir, missões, trocas, modelo e duplicar | T7 |
 | `src/domain/folhaDieta.ts`, `src/ui/exportar/FolhaDieta.tsx` | alterar | T8 |
 | `src/domain/folhaComReceita.test.ts`, `src/ui/exportar/FolhaComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T8 |
-| `src/domain/dietaDoLink.ts` (+ teste), `src/ui/missoes/MeuPlano.tsx` (+ teste) | alterar | T9 |
+| `src/domain/dietaDoLink.ts`, `src/ui/missoes/MeuPlano.tsx` | alterar | T9 |
+| `src/domain/dietaComReceita.test.ts`, `src/ui/missoes/MeuPlanoComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T9 |
 | `src/export/aconselhamento-docx.ts`, `src/export/docx.test.ts` | alterar | T10 |
 | `src/seguranca/xssTelas.test.tsx` | alterar: nome e preparo com código | T11 |
 | `e2e/receitas.spec.ts` | criar | T12 |
@@ -93,7 +94,8 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   `receitasDaFolha` (CA-880, CB-278) e `comprasDaFolha` abrindo a receita (CA-881) em `folhaDieta.ts`; `FolhaDieta`
   usa as três. *Testes:* `folhaComReceita.test.ts`, `FolhaComReceita.test.tsx`. *Depende de:* T2.
 - [ ] **T9** — O link do paciente. `itemDaDieta` com receita (CA-883), `receitasDoPlano` na cópia e em `lerDieta`
-  (CA-884, CA-885), `MeuPlano` com a seção. *Testes:* `dietaDoLink.test.ts`, `MeuPlano.test.tsx`. *Depende de:* T2.
+  (CA-884, CA-885), `MeuPlano` com a seção. *Testes:* `dietaComReceita.test.ts`, `MeuPlanoComReceita.test.tsx`.
+  *Depende de:* T2.
 - [ ] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
   `docx.test.ts`. *Depende de:* T2.
 - [ ] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (plano e link de antes, campo de texto), CB-276
