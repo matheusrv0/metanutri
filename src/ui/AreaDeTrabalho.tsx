@@ -283,6 +283,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
             cobranca.recarregar()
           }}
           aoSaiu={depoisDeSair}
+          ehAdmin={perfilConta.ehAdmin}
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}

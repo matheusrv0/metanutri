@@ -4,7 +4,10 @@ import { emReais, linhaDaCobranca, linhaDoCartao, nomeComCiclo, recadoDaAssinatu
 import { planoPorId, PLANOS, type Ciclo } from '@/domain/conta.ts'
 import { formatarDataLonga, type PedidoEstudante } from '@/domain/pedidoEstudante.ts'
 import type { Crn, PerfilConta } from '@/domain/situacao.ts'
+import { baixarBackup } from '../config/baixarBackup.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { useAssinatura } from '../estado/usarAssinatura.ts'
+import { useExclusaoDaConta } from '../estado/usarExclusaoDaConta.ts'
 import { useSaida } from '../estado/usarSaida.ts'
 import { ehPlanoPago, type PlanoPago } from '../navegacao.ts'
 import { AvisoPagamento } from '../pagamento/AvisoPagamento.tsx'
@@ -18,6 +21,7 @@ import type { ValorConta } from '../estado/usarConta.ts'
 import { AvisoCrn } from '../painel/AvisoCrn.tsx'
 import { CartaoSituacao } from './CartaoSituacao.tsx'
 import { DialogoCancelarAssinatura } from './DialogoCancelarAssinatura.tsx'
+import { DialogoExcluirConta } from './DialogoExcluirConta.tsx'
 import { DialogoMeFormei } from './DialogoMeFormei.tsx'
 import { DialogoSair } from './DialogoSair.tsx'
 import { DialogoTrocarCartao } from './DialogoTrocarCartao.tsx'
@@ -44,8 +48,10 @@ interface TelaContaProps {
   readonly corrigirCrn: (crn: Crn) => Promise<string | null>
   /** CA-304: estudante sem pedido ou recusada vai para Comprovar matrícula. */
   readonly aoEnviarComprovante: () => void
-  /** Depois de sair; a cópia de trabalho deste navegador já foi apagada (spec dados-na-nuvem, D-131). */
+  /** Depois de sair; a cópia de trabalho deste navegador já foi apagada (spec dados-na-nuvem, D-131). Também depois de excluir a conta. */
   readonly aoSaiu: () => void
+  /** D-254 (spec exclusao-de-conta): conta de administrador não se exclui pelo site. */
+  readonly ehAdmin?: boolean
 }
 
 /** Estado da conta: quem está conectado, qual plano, o cartão que paga e o que fazer sem conta (spec checkout-proprio, US-B2). */
@@ -64,6 +70,7 @@ export function TelaConta({
   corrigirCrn,
   aoEnviarComprovante,
   aoSaiu,
+  ehAdmin = false,
 }: TelaContaProps) {
   // D-131: só "Sair"; a pergunta (CA-479) só quando há mudança que não chegou à nuvem.
   const saida = useSaida(conta, aoSaiu)
@@ -74,6 +81,10 @@ export function TelaConta({
   const [trocando, setTrocando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const refAviso = useRef<HTMLDivElement>(null)
+  // Spec exclusao-de-conta: dando certo, termina como "Sair" (D-255).
+  const exclusao = useExclusaoDaConta(conta, aoSaiu)
+  const armazenamento = useArmazenamento()
+  const [excluindoConta, setExcluindoConta] = useState(false)
 
   const plano = planoPorId(assinatura.plano)
   const paga = temAssinaturaPaga(assinatura)
@@ -232,7 +243,34 @@ export function TelaConta({
         ) : null}
       </Card>
 
+      {/* D-250 e D-254 (spec exclusao-de-conta): o último bloco, só com a conta aberta. */}
+      {conta.sessao ? (
+        <Card>
+          {ehAdmin ? (
+            <p className="text-sm text-muted-foreground">Conta de administrador não é excluída pelo site.</p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="min-w-0 flex-1 basis-56 text-sm text-muted-foreground">Apaga a conta e tudo o que ela guarda na nuvem.</p>
+              <Button variant="lighterror" onClick={() => setExcluindoConta(true)}>
+                Excluir conta
+              </Button>
+            </div>
+          )}
+        </Card>
+      ) : null}
+
       <DialogoSair aberto={saida.perguntando} saindo={saida.saindo} aoFicar={saida.ficar} aoSairMesmoAssim={() => void saida.sairMesmoAssim()} />
+
+      {conta.sessao && !ehAdmin ? (
+        <DialogoExcluirConta
+          aberto={excluindoConta}
+          // CA-803: a mesma condição que mostra "Cancelar assinatura": ainda há cobrança para cancelar.
+          pagaNaOperadora={(paga && !noPrazo) || travadaNova}
+          excluir={exclusao.excluir}
+          aoBaixarBackup={() => baixarBackup(armazenamento)}
+          aoFechar={() => setExcluindoConta(false)}
+        />
+      ) : null}
 
       <DialogoMeFormei
         aberto={formando}
