@@ -66,7 +66,7 @@ reusa sem mudar), `seguranca-lote-2` (D-108 e D-110: limite de chamadas e tamanh
 
 ### Tela pequena
 
-- **CA-829** · Dado a tela de 360 px, então o bloco e a janela cabem sem rolagem para o lado, e os botões e o campo de senha têm pelo menos 44 px de altura.
+- **CA-829** · Dado a tela de 360 px, então o bloco e a janela cabem sem rolagem para o lado, e os botões (inclusive o de mostrar a senha) têm pelo menos 44 px de altura. O campo de senha segue os campos do site (DESIGN.md, "Campos").
 
 ## 3. Casos de borda
 
