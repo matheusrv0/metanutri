@@ -128,10 +128,15 @@ describe('DialogoExcluirConta (spec exclusao-de-conta)', () => {
     await waitFor(() => expect(excluir).toHaveBeenCalledWith('minha-senha', ['tok-excluir']))
   })
 
-  it('CA-829: os botões têm 44 px de altura no celular, inclusive o de mostrar a senha', () => {
+  it('CA-829: os botões têm 44 px de altura no celular', () => {
     montar()
-    for (const nome of ['Baixar backup', 'Manter conta', 'Excluir conta', 'Mostrar a senha']) {
-      expect(screen.getByRole('button', { name: nome }).className).toMatch(/\b(h-11|size-11)\b/)
+    for (const nome of ['Baixar backup', 'Manter conta', 'Excluir conta']) {
+      expect(screen.getByRole('button', { name: nome }).className).toMatch(/\bh-11\b/)
     }
+  })
+
+  it('CA-383 (spec checkout-proprio): nenhum ícone de biblioteca na janela, só os da marca', () => {
+    montar()
+    expect(screen.getByRole('dialog').querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
   })
 })

@@ -2,10 +2,11 @@ import { useId, useRef, useState, type FormEvent } from 'react'
 import { MENSAGEM_ERRO } from '@/domain/conta.ts'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { Input } from '@ds/componentes/forms/input.tsx'
+import { Label } from '@ds/componentes/forms/label.tsx'
 import { DialogFooter } from '@ds/componentes/overlay/dialog.tsx'
 import type { ResultadoDaExclusao } from '../estado/usarExclusaoDaConta.ts'
 import { AvisoPagamento } from '../pagamento/AvisoPagamento.tsx'
-import { CampoSenha } from '../publico/conta/CampoSenha.tsx'
 import { useVerificacao, type ExtraDoPedido } from '../publico/conta/usarVerificacao.ts'
 import { VerificacaoContraRobos } from '../publico/conta/VerificacaoContraRobos.tsx'
 
@@ -89,7 +90,18 @@ export function FormularioExcluirConta({ pagaNaOperadora, excluir, aoBaixarBacku
         </p>
       </div>
 
-      <CampoSenha id={`${id}-senha`} rotulo="Sua senha" valor={senha} aoMudar={setSenha} novaSenha={false} invalido={erro?.naSenha === true} />
+      {/* Sem o olho de mostrar a senha: Conta e plano só usa os ícones da marca (CA-383). */}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${id}-senha`}>Sua senha</Label>
+        <Input
+          id={`${id}-senha`}
+          type="password"
+          autoComplete="current-password"
+          value={senha}
+          onChange={(evento) => setSenha(evento.target.value)}
+          aria-invalid={erro?.naSenha === true}
+        />
+      </div>
 
       {erro ? <AvisoPagamento tipo="erro">{erro.texto}</AvisoPagamento> : null}
 
