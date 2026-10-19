@@ -50,6 +50,7 @@ partes pedem mais do que uma classe:
 | `src/ui/publico/TelaVoltaPagamento.tsx` (+ teste) | alterar | T5 (o `main`, CA-757) |
 | `e2e/publico.spec.ts` | alterar (rodapé, Preços em 768 px) | T10 |
 | `specs/impressao-do-plano/SPEC.md` | alterar (nota: R-182 resolvido por esta spec) | T11 |
+| `specs/dieta-no-link/SPEC.md` | alterar (nota: o nome e o peso de CA-531 seguem a D-231 desta spec) | T11 |
 
 ## Tarefas
 

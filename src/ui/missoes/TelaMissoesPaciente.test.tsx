@@ -242,7 +242,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('CA-531: "Meu plano" mostra cada refeição com horário e nome, a medida caseira em destaque, o peso e o alimento', async () => {
+  it('CA-531 e CA-748 (spec revisao-geral-publica): cada refeição com horário e nome, a medida em destaque e o nome da folha impressa', async () => {
     await abrirMeuPlano()
     expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
@@ -250,9 +250,79 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
     expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
-    expect(almoco.getByText('· 150 g')).toBeInTheDocument()
-    expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+    expect(almoco.getByText('Arroz branco cozido')).toBeInTheDocument()
+    expect(almoco.queryByText('Arroz, tipo 1, cozido')).not.toBeInTheDocument()
     expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
+  })
+
+  it('CA-749: o peso fica ao lado só da medida vaga; medida clara sai sem o peso', async () => {
+    await abrirMeuPlano({
+      dieta: {
+        ...DIETA,
+        refeicoes: [
+          {
+            horario: '07:00',
+            nome: 'Café da manhã',
+            opcoes: [
+              [
+                { medida: '1 unidade e meia', gramas: 70, alimento: 'Pão, trigo, francês' },
+                { medida: null, gramas: 5, alimento: 'Margarina, com óleo hidrogenado, com sal (65% de lipídeos)' },
+                { medida: '5 fatias', gramas: 130, alimento: 'Banana, prata, crua' },
+                { medida: '3 fatias e meia', gramas: 130, alimento: 'Maçã, Fuji, com casca, crua' },
+              ],
+            ],
+          },
+        ],
+      },
+    })
+    const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
+    const linha = (nome: string) => cafe.getByText(nome).closest('li')?.textContent
+    expect(linha('Pão francês')).toBe('1 unidade e meiaPão francês')
+    expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
+    expect(linha('Banana prata')).toBe('130 gBanana prata')
+    expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meia · 130 gMaçã Fuji com casca')
+    expect(cafe.getByText('· 130 g').className).toContain('text-muted-foreground')
+  })
+
+  it('CA-750: produto do nutricionista e alimento removido saem como foram guardados', async () => {
+    await abrirMeuPlano({
+      dieta: {
+        ...DIETA,
+        refeicoes: [
+          {
+            horario: '10:00',
+            nome: 'Lanche',
+            opcoes: [
+              [
+                { medida: null, gramas: 45, alimento: 'Barra de proteína da Ana, sabor cacau' },
+                { medida: '2 unidades', gramas: 60, alimento: 'Pão, de queijo, nome antigo' },
+                { medida: null, gramas: 80, alimento: 'Alimento removido' },
+              ],
+            ],
+          },
+        ],
+      },
+    })
+    const lanche = within(screen.getByRole('region', { name: '10:00 Lanche' }))
+    expect(lanche.getByText('Barra de proteína da Ana, sabor cacau').closest('li')?.textContent).toBe('45 gBarra de proteína da Ana, sabor cacau')
+    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('2 unidades · 60 gPão, de queijo, nome antigo')
+    expect(lanche.getByText('Alimento removido').closest('li')?.textContent).toBe('80 gAlimento removido')
+  })
+
+  it('CA-751: desenhar "Meu plano" não muda a cópia guardada; marcar grava a mesma dieta', async () => {
+    const copia = structuredClone(DIETA)
+    const { usuario, salvos } = await abrirMeuPlano({ dieta: copia })
+    expect(copia).toEqual(DIETA)
+    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
+    expect(salvos[0]?.dieta).toEqual(DIETA)
+  })
+
+  it('CA-752: o alimento continua em letra de 16 px (text-base) e a medida em destaque, em cima do nome', async () => {
+    await abrirMeuPlano()
+    const linha = within(screen.getByRole('region', { name: '12:00 Almoço' })).getByText('Arroz branco cozido').closest('li')
+    expect(linha?.className).toContain('text-base')
+    expect(linha?.firstElementChild?.textContent).toBe('6 colheres de sopa')
   })
 
   it('CB-156: alimento sem medida caseira mostra só o peso', async () => {
@@ -260,6 +330,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
     expect(jantar.getByText('80 g').tagName).toBe('STRONG')
     expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
+    expect(jantar.getByText('Macarrão (peso cru)')).toBeInTheDocument()
   })
 
   it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou · Opção N"', async () => {

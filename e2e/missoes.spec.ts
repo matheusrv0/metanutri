@@ -93,7 +93,7 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   await expect(page.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeVisible()
   const almoco = page.getByRole('region', { name: '12:00 Almoço' })
   await expect(almoco).toContainText('6 colheres de sopa')
-  await expect(almoco).toContainText('Arroz, tipo 1, cozido')
+  await expect(almoco).toContainText('Arroz branco cozido')
   await expect(page.getByText(/kcal/)).toHaveCount(0)
 
   // CA-535: cabe em 360 px, mesmo com o link do Drive nas orientações; letra de 16 px nos alimentos, toque de 44 px nas abas,
@@ -101,7 +101,7 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   await expect(page.getByRole('region', { name: 'Orientações' })).toContainText(LINK_DO_DRIVE)
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
-  const letra = await almoco.getByText('Arroz, tipo 1, cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))
+  const letra = await almoco.getByText('Arroz branco cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))
   expect(letra).toBeGreaterThanOrEqual(16)
   for (const nome of ['Missões', 'Meu plano']) {
     const caixa = await seletor.getByRole('tab', { name: nome }).boundingBox()
