@@ -19,6 +19,11 @@ describe('navegação por endereço', () => {
     expect(lerRota(hash)).toEqual(rota)
   })
 
+  it('CA-860 (spec receitas-com-calculo): as receitas têm endereço próprio', () => {
+    expect(lerRota('#/receitas')).toEqual({ tela: 'receitas' })
+    expect(escreverRota({ tela: 'receitas' })).toBe('#/receitas')
+  })
+
   it('o link do paciente sobrevive à ida e volta', () => {
     const rota = { tela: 'missoes', token: 'kf3mq9zt7bnd' } as const
     expect(escreverRota(rota)).toBe('#/missoes/kf3mq9zt7bnd')
