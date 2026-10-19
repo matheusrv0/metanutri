@@ -75,8 +75,9 @@ teste primeiro, visto falhando, depois o código.
     (um numa subpasta), assinatura com cartão, histórico, reserva, tentativas e chamadas; o núcleo roda com o banco e a
     porta de verdade e uma operadora de mentira (o Mercado Pago nunca é chamado). Confere CA-812 a CA-826, CB-252 e
     CB-259, e que a outra conta e o administrador não mudam.
-  - `tsconfig.seguranca.json` ganha `paths` para `npm:@supabase/supabase-js@*` e `https://esm.sh/@supabase/supabase-js@*`
-    (só o tipo; o Vitest apaga `import type`).
+  - `tsconfig.seguranca.json` ganha `paths` para `npm:@supabase/supabase-js@*` e `https://esm.sh/@supabase/supabase-js@*`,
+    apontando para o mesmo arquivo de tipos que `@supabase/supabase-js` usa (`dist/index.d.mts`): só o tipo; o Vitest
+    apaga `import type`.
 - [ ] **T6 — O navegador chama a função.** Depende de T4.
   - `chamar` exportada de `usarAssinatura.ts`.
   - `contaExcluida.ts`: marca, lê e esquece o aviso no `sessionStorage` (sobrevive ao recarregar; outra aba não vê).

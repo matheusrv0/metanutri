@@ -72,7 +72,7 @@ reusa sem mudar), `seguranca-lote-2` (D-108 e D-110: limite de chamadas e tamanh
 
 - **CB-250** · A resposta se perde depois de o servidor excluir: o próximo clique não confere a senha de novo (ela foi conferida há pouco), o servidor responde "já excluída" e o navegador termina como no CA-808.
 - **CB-251** · Falha depois de cancelar a assinatura e antes de apagar o login: a conta continua, com a assinatura cancelada (o período pago, se houver, continua valendo). O pedido seguinte não cancela de novo na operadora.
-- **CB-252** · Dois pedidos ao mesmo tempo (duas abas): nada sai feito duas vezes. Assinatura já cancelada não é cancelada de novo, arquivo que já sumiu não dá erro, o login já apagado responde "já excluída", e o registro do CA-818 não fica duplicado.
+- **CB-252** · Dois pedidos ao mesmo tempo (duas abas): nada sai feito duas vezes. Assinatura já cancelada não é cancelada de novo, arquivo que já sumiu não dá erro, o login já apagado conta como feito, e o registro do CA-818 não fica duplicado. Se um pedido terminar enquanto o outro ainda está no meio, o segundo pode responder a frase do CA-809; o clique seguinte acha a conta já excluída e termina (CB-250).
 - **CB-253** · Pagamento em andamento em outra aba na mesma hora: se a assinatura nascer na operadora depois de a conta sumir, a função `assinar` não consegue gravar e cancela lá, e o aviso da operadora cancela assinatura de conta que não existe (CB-111). Nada novo aqui.
 - **CB-254** · O aviso da operadora sobre a assinatura cancelada chega depois da exclusão: não acha a linha e é ignorado, sem erro (já é assim).
 - **CB-255** · Outro aparelho com a conta aberta tenta salvar: o banco recusa linha de uma conta que não existe, e nada volta para a nuvem (D-258).

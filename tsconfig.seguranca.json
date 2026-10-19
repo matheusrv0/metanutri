@@ -17,7 +17,12 @@
     "exactOptionalPropertyTypes": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+
+    "paths": {
+      "npm:@supabase/supabase-js@*": ["./node_modules/@supabase/supabase-js/dist/index.d.mts"],
+      "https://esm.sh/@supabase/supabase-js@*": ["./node_modules/@supabase/supabase-js/dist/index.d.mts"]
+    }
   },
   "include": ["testes/seguranca"]
 }
