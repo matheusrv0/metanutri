@@ -1,4 +1,4 @@
-import { CONTATO_EMAIL, PRAZO_EXCLUSAO_DIAS, RESPONSAVEL } from '@/domain/legal.ts'
+import { CONTATO_EMAIL, RESPONSAVEL } from '@/domain/legal.ts'
 import { DocumentoLegal } from './DocumentoLegal.tsx'
 
 /** Termos de uso (spec estilo-spora, CA-222). Escritos sem advogado, por decisão do dono (R-14). */
@@ -57,7 +57,8 @@ export function TelaTermos() {
 
       <h2>Encerramento</h2>
       <p>
-        Você pode parar de usar quando quiser. Peça a exclusão da conta pelo {CONTATO_EMAIL ?? ''}: os dados na nuvem são apagados em até {PRAZO_EXCLUSAO_DIAS} dias.
+        Você pode parar de usar quando quiser. Para excluir a conta, use Conta e plano: os dados na nuvem são apagados na hora. Também dá para pedir
+        pelo {CONTATO_EMAIL ?? ''}.
         Contas usadas para fraude ou para atender sem registro no CRN, fora do plano Estudante, podem ser encerradas.
       </p>
 

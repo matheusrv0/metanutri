@@ -70,8 +70,21 @@ export function TelaPrivacidade() {
 
       <h2>Por quanto tempo</h2>
       <p>
-        Enquanto a conta existir. Depois do pedido de exclusão, os dados na nuvem são apagados em até {PRAZO_EXCLUSAO_DIAS} dias, salvo obrigação legal de
-        guardar. A cópia de trabalho no navegador some quando você sai da conta.
+        Enquanto a conta existir. Para excluir, use Conta e plano e confirme com a senha: os dados da conta saem da nuvem na hora, inclusive os
+        pacientes e os links deles, que deixam de abrir. Também dá para pedir pelo {CONTATO_EMAIL ?? ''}.
+      </p>
+      <p>Depois da exclusão, ficam só três coisas, sem nome, e-mail nem cartão:</p>
+      <ul>
+        <li>
+          O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos: a lei fiscal manda guardar,
+          e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).
+        </li>
+        <li>O histórico das mudanças de plano, sem ligação com a pessoa, para as contas do MetaNutri.</li>
+        <li>O registro dos avisos do Mercado Pago, que não tem dado pessoal e some em 90 dias.</li>
+      </ul>
+      <p>
+        As cópias de segurança do banco somem sozinhas em até {PRAZO_EXCLUSAO_DIAS} dias. A cópia de trabalho no navegador some quando você sai da
+        conta.
       </p>
 
       <h2>Seus direitos</h2>

@@ -12,8 +12,8 @@ vi.mock('@/domain/legal.ts', () => ({
   get CONTATO_EMAIL() {
     return legal.CONTATO_EMAIL
   },
-  DATA_TERMOS: '15 de outubro de 2026',
-  VERSAO_TERMOS: '2026-10-15',
+  DATA_TERMOS: '19 de outubro de 2026',
+  VERSAO_TERMOS: '2026-10-19',
   PRAZO_EXCLUSAO_DIAS: 90,
   PRAZO_INCIDENTE_HORAS: 72,
 }))
@@ -27,7 +27,7 @@ describe('documentos legais', () => {
   it('CA-222 e CA-224: termos dizem quem prescreve, quem é controlador e operador, e a data', () => {
     render(<TelaTermos />)
     expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.getByText(/Versão de 15 de outubro de 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/Versão de 19 de outubro de 2026/)).toBeInTheDocument()
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('quem prescreve é o nutricionista')
     expect(texto).toContain('controlador')
@@ -49,7 +49,7 @@ describe('documentos legais', () => {
     expect(texto).toContain('presos à conta')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
-    expect(texto).toContain('15 de outubro de 2026')
+    expect(texto).toContain('19 de outubro de 2026')
   })
 
   it('CA-552 (spec dieta-no-link): a política diz que o link do paciente pode mostrar o plano alimentar, quando o nutricionista liga', () => {
@@ -96,6 +96,34 @@ describe('documentos legais', () => {
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('Se outra conta entrar no mesmo aparelho, ela não vê os seus dados.')
     expect(texto).not.toContain('precisa sair ou apagar')
+  })
+
+  it('CA-827 (spec exclusao-de-conta): a política diz como excluir a conta, o que sai na hora, o que fica, por quanto tempo, e que o e-mail continua valendo', () => {
+    render(<TelaPrivacidade />)
+    const titulo = screen.getByRole('heading', { name: 'Por quanto tempo' })
+    const secao: Element[] = []
+    for (let atual = titulo.nextElementSibling; atual && atual.tagName !== 'H2'; atual = atual.nextElementSibling) secao.push(atual)
+    const texto = secao.map((elemento) => elemento.textContent).join(' ')
+    expect(texto).toContain(
+      'Enquanto a conta existir. Para excluir, use Conta e plano e confirme com a senha: os dados da conta saem da nuvem na hora, inclusive os pacientes e os links deles, que deixam de abrir. Também dá para pedir pelo contato@exemplo.com.',
+    )
+    expect(texto).toContain('Depois da exclusão, ficam só três coisas, sem nome, e-mail nem cartão:')
+    expect(texto).toContain(
+      'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
+    )
+    expect(texto).toContain('O histórico das mudanças de plano, sem ligação com a pessoa, para as contas do MetaNutri.')
+    expect(texto).toContain('O registro dos avisos do Mercado Pago, que não tem dado pessoal e some em 90 dias.')
+    expect(texto).toContain('As cópias de segurança do banco somem sozinhas em até 90 dias.')
+    expect(texto).not.toContain('apagados em até 90 dias, salvo obrigação legal')
+  })
+
+  it('CA-828 (spec exclusao-de-conta): os termos dizem que a conta é excluída em Conta e plano, na hora, ou pelo e-mail', () => {
+    render(<TelaTermos />)
+    const encerramento = screen.getByRole('heading', { name: 'Encerramento' }).nextElementSibling
+    expect(encerramento).toHaveTextContent(
+      'Você pode parar de usar quando quiser. Para excluir a conta, use Conta e plano: os dados na nuvem são apagados na hora. Também dá para pedir pelo contato@exemplo.com.',
+    )
+    expect(encerramento).not.toHaveTextContent('Peça a exclusão da conta pelo')
   })
 
   it('D-46: sem responsável ou contato, os dois mostram que estão em preparação', () => {
