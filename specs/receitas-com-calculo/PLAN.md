@@ -59,7 +59,7 @@
 | `src/domain/dietaComReceita.test.ts`, `src/ui/missoes/MeuPlanoComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T9 |
 | `src/export/aconselhamento-docx.ts` | alterar | T10 |
 | `src/export/docxComReceita.test.ts` | criar (teste novo em arquivo próprio) | T10 |
-| `src/seguranca/xssTelas.test.tsx` | alterar: nome e preparo com código | T11 |
+| `src/seguranca/xssReceitas.test.tsx`, `src/domain/receitaDadosAntigos.test.ts` | criar: nome e preparo com código; dados de antes | T11 |
 | `e2e/receitas.spec.ts` | criar | T12 |
 | `docs/backlog.md`, `docs/decisoes.md` | alterar: B-32 feito, D-270 a D-279 | T12 |
 
@@ -99,8 +99,8 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   *Depende de:* T2.
 - [ ] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
   `docxComReceita.test.ts`. *Depende de:* T2.
-- [ ] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (plano e link de antes, campo de texto), CB-276
-  (`xssTelas.test.tsx`). *Depende de:* T5 a T10.
+- [ ] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (`receitaDadosAntigos.test.ts`: plano, backup e
+  campo de texto de antes), CB-276 (`xssReceitas.test.tsx`). *Depende de:* T5 a T10.
 - [ ] **T12** — Ponta a ponta, prints e documentos. `e2e/receitas.spec.ts` (criar receita, pôr na refeição, painel,
   folha, link, 360 px: CA-889); prints de antes e depois; B-32 no backlog e as decisões em `docs/decisoes.md`.
   *Verifica:* `npm run check`, `npx playwright test`, `npm run build`. *Depende de:* todas.
