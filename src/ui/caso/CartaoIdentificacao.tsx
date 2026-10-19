@@ -24,7 +24,7 @@ export function CartaoIdentificacao({ caso, aoAlterar, pacientes, aoVincularPaci
         <CardTitle>Identificação</CardTitle>
       </CardHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
         {aoVincularPaciente ? (
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label htmlFor="paciente-do-plano">Paciente</Label>
@@ -32,7 +32,7 @@ export function CartaoIdentificacao({ caso, aoAlterar, pacientes, aoVincularPaci
               id="paciente-do-plano"
               value={caso.pacienteId ?? ''}
               onChange={(e) => aoVincularPaciente(e.target.value || null)}
-              className="h-11 rounded-md border border-input bg-card px-3 text-sm"
+              className="h-11 w-full min-w-0 truncate rounded-md border border-input bg-card px-3 text-sm"
             >
               <option value="">Sem paciente vinculado</option>
               {pacientes.map((p) => (

@@ -64,7 +64,7 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
           </Button>
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Pacientes">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Pacientes">
           {lista.map(({ paciente, planos, ultimo }) => {
             const idade = idadeDe(paciente.nascimento)
             const nome = paciente.nome.trim() || 'Paciente sem nome'
