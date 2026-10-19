@@ -1,7 +1,9 @@
 import { LayoutTemplate, Plus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { copiaParaOPlano } from '@/domain/receitas.ts'
 import {
   adicionarItem,
+  adicionarReceita,
   adicionarRefeicao,
   atualizarGramas,
   mudarHorario,
@@ -53,6 +55,10 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
             aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
             aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
             aoAdicionarItem={(opcao, alimentoId, gramas) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas }, gerarId))}
+            // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita.
+            aoAdicionarReceita={(opcao, receita, gramas) =>
+              aoAlterarPlano(adicionarReceita(plano, refeicao.id, opcao, { receita: copiaParaOPlano(receita), gramas }, gerarId))
+            }
             aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
             aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
             {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}

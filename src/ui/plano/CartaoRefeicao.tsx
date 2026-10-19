@@ -1,5 +1,6 @@
 import { Clock, MoreHorizontal, Trash } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import type { Receita } from '@/domain/receitas.ts'
 import type { SugestaoAlimento, TipoRefeicao } from '@/domain/sugestoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
@@ -25,6 +26,8 @@ interface CartaoRefeicaoProps {
   readonly aoMudarHorario: (horario: string) => void
   readonly aoRemover: () => void
   readonly aoAdicionarItem: (opcao: OpcaoId, alimentoId: number, gramas: number) => void
+  /** Põe uma receita da conta na opção (spec receitas-com-calculo, D-274). Sem ele, a busca mostra só alimentos. */
+  readonly aoAdicionarReceita?: ((opcao: OpcaoId, receita: Receita, gramas: number) => void) | undefined
   readonly aoMudarGramas: (opcao: OpcaoId, itemId: string, gramas: number) => void
   readonly aoRemoverItem: (opcao: OpcaoId, itemId: string) => void
   /** Tipo da refeição, pelo nome ou pelo horário (CA-239, CA-240). */
@@ -44,6 +47,7 @@ export function CartaoRefeicao({
   aoMudarHorario,
   aoRemover,
   aoAdicionarItem,
+  aoAdicionarReceita,
   aoMudarGramas,
   aoRemoverItem,
   tipo,
@@ -142,6 +146,7 @@ export function CartaoRefeicao({
         <EntradaRapida
           rotulo={`Adicionar alimento em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`}
           aoAdicionar={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
+          aoAdicionarReceita={aoAdicionarReceita ? (receita, gramas) => aoAdicionarReceita(opcaoAtiva, receita, gramas) : undefined}
           quandoVazio={
             <SugestoesDaRefeicao
               tipo={tipo}

@@ -84,6 +84,8 @@ export interface ResultadoReceita {
   readonly gramas: number | null
   readonly porcoes: number | null
   readonly aviso: string | null
+  /** O nome começa pelo que foi digitado: a receita vem acima dos alimentos; senão, abaixo (D-274). */
+  readonly antesDosAlimentos: boolean
 }
 
 /** Nomes de porção de uma palavra que a tabela de medidas não tem sozinhos ("copo", "xícara"), com o plural. */
@@ -120,20 +122,22 @@ export function buscarReceitas(texto: string, receitas: readonly Receita[]): rea
     .filter(({ nome }) => termos.every((t) => nome.includes(t)))
     .sort((a, b) => Number(b.nome.startsWith(primeiro)) - Number(a.nome.startsWith(primeiro)) || a.receita.nome.localeCompare(b.receita.nome, 'pt-BR'))
     .slice(0, RECEITAS_NA_BUSCA)
-    .map(({ receita }): ResultadoReceita => {
+    .map(({ receita, nome }): ResultadoReceita => {
+      const antesDosAlimentos = nome.startsWith(primeiro)
       const porcao = pesoDaPorcao(receita)
       if (medida === null) {
-        if (quantidade === null) return { receita, gramas: porcao, porcoes: 1, aviso: null }
-        return { receita, gramas: quantidade, porcoes: quantidade / porcao, aviso: null }
+        if (quantidade === null) return { receita, gramas: porcao, porcoes: 1, aviso: null, antesDosAlimentos }
+        return { receita, gramas: quantidade, porcoes: quantidade / porcao, aviso: null, antesDosAlimentos }
       }
       const nomeDaPorcao = receita.nomeDaPorcao.trim() || 'porção'
       const q = quantidade ?? 1
-      if (medida === 'porção' || normalizar(medida) === normalizar(nomeDaPorcao)) return { receita, gramas: q * porcao, porcoes: q, aviso: null }
+      if (medida === 'porção' || normalizar(medida) === normalizar(nomeDaPorcao)) return { receita, gramas: q * porcao, porcoes: q, aviso: null, antesDosAlimentos }
       return {
         receita,
         gramas: null,
         porcoes: null,
         aviso: `Esta receita é medida em ${nomeDaPorcao}. Use "${quantidadeEmTexto(q)} ${nomeDaPorcao}" ou as gramas.`,
+        antesDosAlimentos,
       }
     })
 }

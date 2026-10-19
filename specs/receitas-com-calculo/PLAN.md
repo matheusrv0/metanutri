@@ -50,7 +50,8 @@
 | `src/ui/estado/usarReceitas.ts` | criar | T5 |
 | `src/ui/receitas/TelaReceitas.tsx`, `EditorReceita.tsx`, `ResumoDaPorcao.tsx` (+ teste) | criar | T5 |
 | `src/ui/navegacao.ts` (+ teste), `src/ui/layout/MenuLateral.tsx`, `src/ui/AreaDeTrabalho.tsx` | alterar: rota e menu | T5 |
-| `src/ui/plano/EntradaRapida.tsx` (+ teste), `LinhaItem.tsx`, `CartaoRefeicao.tsx`, `TelaPlano.tsx` (+ teste) | alterar | T6 |
+| `src/ui/plano/EntradaRapida.tsx`, `LinhaItem.tsx`, `CartaoRefeicao.tsx`, `TelaPlano.tsx` | alterar | T6 |
+| `src/ui/plano/receitaNaRefeicao.test.tsx` | criar (arquivo novo de teste, para não brigar com a frente que mexe nos testes da área de trabalho) | T6 |
 | `src/domain/missoes.test.ts`, `cobrir.test.ts`, `trocas.test.ts`, `modelos.test.ts` | alterar: testes de guarda | T7 |
 | `src/domain/folhaDieta.ts` (+ teste), `src/ui/exportar/FolhaDieta.tsx` (+ teste) | alterar | T8 |
 | `src/domain/dietaDoLink.ts` (+ teste), `src/ui/missoes/MeuPlano.tsx` (+ teste) | alterar | T9 |
@@ -84,7 +85,7 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   CA-866, CB-270, CB-274), `navegacao.test.ts`. *Depende de:* T3.
 - [ ] **T6** — A receita na refeição. `EntradaRapida` com `aoAdicionarReceita` (CA-871, CA-872); `LinhaItem` mostra
   a receita (CA-873); `CartaoRefeicao` e `TelaPlano` levam a receita ao plano como cópia. *Testes:*
-  `EntradaRapida.test.tsx`, `TelaPlano.test.tsx` (CA-870, CA-873, CA-874 no cartão). *Depende de:* T5.
+  `receitaNaRefeicao.test.tsx` (CA-870 a CA-874 na tela). *Depende de:* T5.
 - [ ] **T7** — Onde a receita não entra. Testes de guarda (o código atual já ignora o id 0; se algum falhar, a
   correção vai junto): cobrir (CA-877), missões (CA-878), trocas (CA-882), modelo e duplicar (CA-876). *Depende de:* T2.
 - [ ] **T8** — A folha impressa. `linhaDaFolha` (nome e quantidade de alimento ou receita, CA-879),

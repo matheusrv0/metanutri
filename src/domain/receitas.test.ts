@@ -157,7 +157,9 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
   it('CA-871: sem quantidade, 1 porção; no máximo 2 receitas, as que começam com o termo primeiro', () => {
     const resultados = buscarReceitas('panqueca', lista)
     expect(resultados).toHaveLength(2)
-    expect(resultados[0]).toMatchObject({ receita: { id: 'b' }, porcoes: 1, gramas: 120, aviso: null })
+    expect(resultados[0]).toMatchObject({ receita: { id: 'b' }, porcoes: 1, gramas: 120, aviso: null, antesDosAlimentos: true })
+    // D-274: o termo só no meio do nome deixa a receita abaixo dos alimentos.
+    expect(buscarReceitas('banana', lista).map((r) => r.antesDosAlimentos)).toEqual([false, false])
     // Nenhuma começa com "banana": a ordem é a do nome.
     expect(buscarReceitas('banana', lista).map((r) => r.receita.id)).toEqual(['d', 'a'])
     expect(buscarReceitas('bolo', lista).map((r) => r.receita.id)).toEqual(['d'])
