@@ -26,8 +26,12 @@ export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: Dest
   globalThis.setTimeout(() => globalThis.document.getElementById(ancora)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
 }
 
+/**
+ * Spec revisao-geral-publica, D-235: 44 px de toque no celular e o texto que quebra alinhado à esquerda (o botão
+ * centraliza por padrão).
+ */
 const LINK_RODAPE =
-  'rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'inline-flex min-h-11 items-center text-left sm:min-h-0 rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 /**
  * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa
@@ -45,7 +49,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             type="button"
             onClick={() => irComAncora(aoIrPara, 'inicio')}
             aria-label="MetaNutri, início"
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
           >
             <Logo tamanho={28} />
           </button>
@@ -100,15 +104,18 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             <h2 id="fontes" className="mb-3.5 scroll-mt-24 text-sm font-semibold text-muted-foreground">
               Fontes dos dados
             </h2>
+            {/* D-235: sem "·" entre as partes, que ficava sozinho no fim da linha em 768 e 1024 px; o link das fontes da
+                base vai na linha de baixo do nome dela, em qualquer largura. */}
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
-              <li className="flex flex-wrap items-center gap-x-1">
-                <span>{`${NOME_DA_BASE} ·`}</span>
-                <button type="button" onClick={() => aoIrPara('fontes')} className={`${LINK_RODAPE} inline-flex min-h-11 items-center`}>
+              <li className="flex flex-col items-start">
+                <span>{NOME_DA_BASE}</span>
+                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE}>
                   Fontes da base
                 </button>
               </li>
               <li>NASEM. DRI, Apêndice J, 2019</li>
-              <li>OMS, 2006 e 2007 · SISVAN, 2011</li>
+              <li>OMS, 2006 e 2007</li>
+              <li>SISVAN, 2011</li>
             </ul>
           </section>
           <div>
