@@ -27,13 +27,14 @@ describe('as funções são só ligação (D-88)', () => {
     expect(codigo).not.toMatch(/\.from\(|api\.mercadopago\.com|traduzirStatus|preapproval|PLANOS/)
   })
 
-  it.each(Object.entries(NUCLEOS))('%s: sem Deno, sem esm.sh, sem console e sem relógio solto', (_, codigo) => {
-    expect(codigo).not.toMatch(/Deno\.|esm\.sh|console\.|Date\.now\(\)|new Date\(\)/)
+  it.each(Object.entries(NUCLEOS))('%s: sem Deno, sem import de fora, sem console e sem relógio solto', (_, codigo) => {
+    expect(codigo).not.toMatch(/Deno\.|esm\.sh|npm:|console\.|Date\.now\(\)|new Date\(\)/)
   })
 
-  it('o supabase-js tem a versão fixa nas três funções e no banco: o comportamento foi conferido nela', () => {
+  it('CA-852: o supabase-js vem do npm com a versão fixa nas três funções e no banco; nada vem do esm.sh', () => {
     for (const codigo of [...Object.values(INDICES), bancoSupabase]) {
-      expect(codigo.match(/https:\/\/esm\.sh\/[^'"]+/g)).toEqual(['https://esm.sh/@supabase/supabase-js@2.117.2'])
+      expect(codigo.match(/from '(?:npm:|jsr:|https?:)[^']+'/g)).toEqual(["from 'npm:@supabase/supabase-js@2.117.2'"])
+      expect(codigo).not.toContain('esm.sh')
     }
   })
 

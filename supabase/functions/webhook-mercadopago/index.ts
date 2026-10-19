@@ -1,7 +1,7 @@
 // Recebe os avisos da operadora de pagamento (spec cobranca-em-producao, D-83 e D-84). A decisão mora
 // em ../_shared/webhook.ts, que o Vitest executa; aqui só se liga o ambiente. Publicada com
 // --no-verify-jwt: quem chama é a operadora, que não tem conta no Supabase.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { criarBanco } from '../_shared/bancoSupabase.ts'
 import { lerCorpo } from '../_shared/corpo.ts'
 import { criarOperadora } from '../_shared/operadora.ts'

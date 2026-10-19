@@ -3,7 +3,7 @@
 // que o Vitest executa; aqui só se liga o ambiente.
 //
 // Deno / Supabase Edge Functions. Não faz parte do build do app.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { criarBanco, quemPede } from '../_shared/bancoSupabase.ts'
 import { CABECALHOS, responder } from '../_shared/cobranca.ts'
 import { lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'

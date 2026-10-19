@@ -3,7 +3,7 @@
 //
 // Roda no servidor porque precisa do access token da operadora, que dá poder de cobrar em nome do dono.
 // Deno / Supabase Edge Functions. Não faz parte do build do app.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { assinar } from '../_shared/assinar.ts'
 import { criarBanco, quemPede } from '../_shared/bancoSupabase.ts'
 import { CABECALHOS, responder, SEM_COBRANCA } from '../_shared/cobranca.ts'

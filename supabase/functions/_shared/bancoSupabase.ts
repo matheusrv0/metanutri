@@ -1,11 +1,12 @@
 // O banco de verdade das três funções: o supabase-js com a chave de serviço, que passa por cima do RLS
-// (spec cobranca-em-producao, D-88). É o único arquivo de _shared que importa do esm.sh, e o Vitest não o
-// executa: aqui só se traduz cada consulta, com o mesmo sentido do banco de mentira
+// (spec cobranca-em-producao, D-88). É o único arquivo de _shared da cobrança que importa o supabase-js, e o
+// Vitest não o executa: aqui só se traduz cada consulta, com o mesmo sentido do banco de mentira
 // (src/data/servidorFalsos.test-utils.ts), e src/data/servidorLigacao.test.ts confere o texto.
 //
 // O supabase-js devolve o erro do banco (e o da rede) no resultado, sem lançar: é o que a porta pede.
-// A versão é fixa (a mesma dos três index.ts): o comportamento acima foi conferido nela.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2'
+// A versão é fixa e vem do npm (a mesma dos três index.ts; spec seguranca-lote-5, D-265): o comportamento
+// acima foi conferido nela.
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { UM_DIA_MS } from './cobranca.ts'
 import type { BancoDaCobranca, ContaQuePede, FalhaDoBanco, LinhaDaAssinatura, Registro } from './portas.ts'
 
