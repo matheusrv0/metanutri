@@ -61,6 +61,15 @@ minimum_password_length = 6
 enable_signup = true
 enable_confirmations = false
 
+# O segundo fator do administrador: app autenticador (spec seguranca-lote-5, D-260). Em produção o TOTP já vem
+# ligado em Authentication > Multi-Factor; aqui o padrão do CLI é desligado.
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [edge_runtime]
 enabled = false
 

@@ -7,6 +7,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { expect } from 'vitest'
 import { ambienteLocal, type Ambiente } from './local.ts'
+import { codigoDoApp } from './totp.ts'
 
 export { ambienteLocal, type Ambiente }
 
@@ -62,13 +63,22 @@ export interface Atacante extends Conta {
   readonly arquivo: string
 }
 
+export interface Administrador extends Conta {
+  /** A chave do app autenticador do administrador de teste (base32), para calcular o código. */
+  readonly chaveDoApp: string
+  readonly fatorId: string
+}
+
 export interface Cenario {
   readonly ambiente: Ambiente
   readonly servico: SupabaseClient
   readonly anonimo: SupabaseClient
   readonly vitima: Vitima
   readonly atacante: Atacante
-  readonly admin: Conta
+  /** O administrador com a sessão confirmada pelo código do app (aal2; spec seguranca-lote-5, D-260). */
+  readonly admin: Administrador
+  /** O mesmo administrador noutra sessão, só com a senha (aal1): o banco não o reconhece como administrador. */
+  readonly adminSemCodigo: SupabaseClient
   /** Texto que só existe no dado da vítima: se aparecer numa resposta ao atacante, vazou. */
   readonly marcador: string
 }
@@ -97,6 +107,42 @@ async function criarConta(
 /** Um cliente novo com uma conta que já existe (para entrar de novo depois de mudar algo). */
 export function clienteSemSessao(ambiente: Ambiente): SupabaseClient {
   return createClient(ambiente.url, ambiente.anon, OPCOES)
+}
+
+/**
+ * A hora do servidor de login local (cabeçalho Date da resposta): o relógio do Docker pode estar um minuto ou
+ * mais longe do relógio desta máquina, e o código do app vale 30 segundos.
+ */
+async function horaDoServidor(ambiente: Ambiente): Promise<number> {
+  const resposta = await fetch(`${ambiente.url}/auth/v1/health`, { headers: { apikey: ambiente.anon } })
+  const data = Date.parse(resposta.headers.get('date') ?? '')
+  return Number.isNaN(data) ? Date.now() : data
+}
+
+/**
+ * Confirma a sessão com o código do app (aal2), pela hora do servidor, repetindo na janela seguinte e na
+ * anterior se a hora cair na divisa dos 30 segundos.
+ */
+export async function confirmarComOApp(ambiente: Ambiente, cliente: SupabaseClient, fatorId: string, chaveDoApp: string): Promise<void> {
+  let ultimo: { readonly message: string } | null = null
+  for (const deslocamentoMs of [0, 30_000, -30_000]) {
+    const code = await codigoDoApp(chaveDoApp, (await horaDoServidor(ambiente)) + deslocamentoMs)
+    const r = await cliente.auth.mfa.challengeAndVerify({ factorId: fatorId, code })
+    if (!r.error) return
+    ultimo = r.error
+  }
+  falhou('confirmar o código do app do administrador', ultimo)
+}
+
+/** Cadastra o app autenticador da conta e confirma a sessão com o código (D-260). */
+async function cadastrarApp(ambiente: Ambiente, conta: Conta): Promise<Administrador> {
+  const cadastro = await conta.cliente.auth.mfa.enroll({ factorType: 'totp', issuer: 'MetaNutri' })
+  falhou('cadastrar o app do administrador', cadastro.error)
+  const fatorId = cadastro.data?.id ?? ''
+  const chaveDoApp = cadastro.data?.totp.secret ?? ''
+  if (!fatorId || !chaveDoApp) throw new Error('Preparo do cenário: o cadastro do app veio sem id ou sem chave')
+  await confirmarComOApp(ambiente, conta.cliente, fatorId, chaveDoApp)
+  return { ...conta, chaveDoApp, fatorId }
 }
 
 async function criarLink(conta: Conta, token: string, nome: string): Promise<string> {
@@ -131,13 +177,18 @@ export async function prepararCenario(): Promise<Cenario> {
   // outro é só a regra de dono, que é o que está sendo atacado.
   const contaVitima = await criarConta(ambiente, servico, `vitima.${sufixo}@usp.br`, { situacao: 'estudante', nome: `Vitima ${marcador}` })
   const contaAtacante = await criarConta(ambiente, servico, `atacante.${sufixo}@usp.br`, { situacao: 'estudante', nome: 'Atacante' })
-  const admin = await criarConta(ambiente, servico, `admin.${sufixo}@exemplo.com`, {
+  const contaAdmin = await criarConta(ambiente, servico, `admin.${sufixo}@exemplo.com`, {
     situacao: 'nutricionista',
     nome: 'Administrador de teste',
     crn_regiao: 6,
     crn_numero: '12345',
   })
-  falhou('cadastrar o administrador', (await servico.from('administradores').insert({ usuario: admin.id })).error)
+  falhou('cadastrar o administrador', (await servico.from('administradores').insert({ usuario: contaAdmin.id })).error)
+  // D-260: o administrador tem o app autenticador; a sessão principal dele é confirmada pelo código (aal2), e
+  // uma segunda sessão entra só com a senha (aal1).
+  const admin = await cadastrarApp(ambiente, contaAdmin)
+  const adminSemCodigo = createClient(ambiente.url, ambiente.anon, OPCOES)
+  falhou('entrar com o administrador só com a senha', (await adminSemCodigo.auth.signInWithPassword({ email: admin.email, password: admin.senha })).error)
 
   // O que a vítima grava pelo próprio login, como no app.
   const tokenVitima = `vit${aleatorio(8)}`
@@ -220,6 +271,7 @@ export async function prepararCenario(): Promise<Cenario> {
     },
     atacante: { ...contaAtacante, token: tokenAtacante, linkId: linkAtacante, arquivo: arquivoAtacante },
     admin,
+    adminSemCodigo,
   }
 }
 
