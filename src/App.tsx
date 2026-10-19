@@ -17,6 +17,7 @@ import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino }
 import { ehEnderecoDaRaiz, ehRotaLivre, escreverRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
 import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
+import { AvisoContaExcluida } from './ui/publico/AvisoContaExcluida.tsx'
 import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
 import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaCheckout } from './ui/publico/TelaCheckout.tsx'
@@ -196,6 +197,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   if (rota.tela === 'inicio') {
     return (
       <MolduraPublica atual="inicio" temSessao={sessao !== null} aoIrPara={irPara}>
+        {/* Spec exclusao-de-conta, CA-808: a saída depois de excluir a conta chega aqui. */}
+        <AvisoContaExcluida />
         <TelaInicio aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))} aoVerPrecos={() => navegar({ tela: 'precos' })} />
       </MolduraPublica>
     )
