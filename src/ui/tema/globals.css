@@ -351,7 +351,9 @@
     background: #fff;
   }
 
-  body > *:not(:has(.area-impressao)) {
+  /* Com uma janela de impressão aberta, só a folha vai para o papel. Sem ela, o Ctrl+P imprime a tela aberta, sem o
+     menu e sem os botões (spec revisao-geral-trabalho, D-240): nunca mais uma página em branco. */
+  body:has(.area-impressao) > *:not(:has(.area-impressao)) {
     display: none !important;
   }
 

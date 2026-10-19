@@ -94,3 +94,49 @@ test.describe('Nome longo não alarga a tela (D-245)', () => {
     }
   })
 })
+
+test.describe('Ctrl+P imprime a tela (D-240)', () => {
+  test('CA-770: sem janela de impressão, o papel tem o título e a etapa, sem o menu e sem os botões do cabeçalho', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const casoId = await abrirComExemplo(page)
+    for (const aba of ['caso', 'plano', 'adequacao']) {
+      await page.goto(`/#/caso/${casoId}/${aba}`)
+      await expect(page.getByRole('navigation', { name: 'Etapas do plano' })).toBeVisible()
+      await page.emulateMedia({ media: 'print' })
+      await expect(page.getByRole('heading', { level: 1, name: 'Exemplo — Maria, 28 anos' })).toBeVisible()
+      await expect(page.locator('#conteudo')).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Etapas do plano' })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Menu principal' })).toBeHidden()
+      await expect(page.getByRole('button', { name: 'Exportar' })).toBeHidden()
+      await page.emulateMedia({ media: 'screen' })
+    }
+  })
+
+  test('CA-771: com "Dieta para imprimir" aberta, só a folha vai para o papel', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await abrirComExemplo(page)
+    await page.getByRole('button', { name: 'Exportar' }).click()
+    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+    const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await page.emulateMedia({ media: 'print' })
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await expect(page.locator('#conteudo')).toBeHidden()
+    await expect(page.getByRole('heading', { level: 1, name: 'Exemplo — Maria, 28 anos' })).toBeHidden()
+  })
+
+  test('CB-240: Tabela de alimentos e "Plano não encontrado" não saem em branco', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await abrirComExemplo(page)
+    for (const [rota, titulo] of [
+      ['/#/alimentos', 'Tabela de alimentos'],
+      ['/#/caso/nao-existe/caso', 'Plano não encontrado'],
+    ] as const) {
+      await page.goto(rota)
+      await page.emulateMedia({ media: 'print' })
+      await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible()
+      await expect(page.locator('#conteudo')).toBeVisible()
+      await page.emulateMedia({ media: 'screen' })
+    }
+  })
+})

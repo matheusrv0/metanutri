@@ -12,7 +12,7 @@ export function SituacaoDaNuvem() {
   if (fase !== 'pronta' || trava !== null) return null
   const salvo = !pendente && !salvando
   return (
-    <p role="status" className="shrink-0 text-xs text-muted-foreground">
+    <p role="status" className="shrink-0 text-xs text-muted-foreground print:hidden">
       {salvo ? <span>Salvo</span> : <span aria-hidden="true">Salvando…</span>}
     </p>
   )

@@ -20,9 +20,9 @@ interface CabecalhoProps {
 /** Cabeça de página: trilha fina, título e ações. */
 export function Cabecalho({ titulo, trilha, acoes, situacao, aoAbrirMenu }: CabecalhoProps) {
   return (
-    <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:static print:backdrop-blur-none">
       <div className="mx-auto flex h-16 min-h-[64px] max-w-[1400px] items-center gap-3 px-4 py-2 sm:px-8">
-        <Button variant="ghost" size="icon" className="xl:hidden" onClick={aoAbrirMenu} aria-label="Abrir menu">
+        <Button variant="ghost" size="icon" className="xl:hidden print:hidden" onClick={aoAbrirMenu} aria-label="Abrir menu">
           <Menu className="size-5" aria-hidden="true" />
         </Button>
         <div className="min-w-0 flex-1">
@@ -47,7 +47,8 @@ export function Cabecalho({ titulo, trilha, acoes, situacao, aoAbrirMenu }: Cabe
           <h1 className="truncate text-xl leading-tight">{titulo}</h1>
         </div>
         {situacao}
-        {acoes ? <div className="flex shrink-0 items-center gap-2">{acoes}</div> : null}
+        {/* D-240: no papel, só a trilha e o título; os botões ficam na tela. */}
+        {acoes ? <div className="flex shrink-0 items-center gap-2 print:hidden">{acoes}</div> : null}
       </div>
     </header>
   )
