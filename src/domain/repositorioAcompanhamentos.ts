@@ -243,10 +243,23 @@ export function semMudancasPendentes(guardado: string): string {
  * o Supabase entrar, basta uma segunda implementação desta mesma interface.
  */
 export interface FonteAcompanhamentos {
+  /** Nulo quando o link não existe. Pode rejeitar com `LinkSemConexao` quando nem a nuvem nem o aparelho responderam. */
   porToken(token: string): Promise<Acompanhamento | null>
+  /** Pode rejeitar com `LinkSemConexao` quando a nuvem não gravou: aí nada foi guardado. */
   salvar(acompanhamento: Acompanhamento): Promise<Acompanhamento>
   /** Falso quando os dados só existem neste navegador, para a tela poder avisar. */
   readonly naNuvem: boolean
+}
+
+/**
+ * A nuvem não respondeu (sem internet, ou o servidor recusou) e não havia como seguir sem ela (spec
+ * revisao-geral-publica, D-232). A tela do paciente diz isso, em vez de "o link não existe" ou de fingir que salvou.
+ */
+export class LinkSemConexao extends Error {
+  constructor() {
+    super('Não consegui falar com a nuvem.')
+    this.name = 'LinkSemConexao'
+  }
 }
 
 export function fonteLocal(repositorio: RepositorioAcompanhamentos): FonteAcompanhamentos {

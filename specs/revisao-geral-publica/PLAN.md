@@ -41,7 +41,8 @@ partes pedem mais do que uma classe:
 | `src/domain/dietaParaPaciente.ts` (+ teste) | criar | T3 |
 | `src/ui/missoes/MeuPlano.tsx`, `src/ui/missoes/TelaMissoesPaciente.test.tsx` | alterar | T4 |
 | `src/domain/repositorioAcompanhamentos.ts` | alterar (classe `LinkSemConexao`) | T5 |
-| `src/ui/estado/ProvedorAcompanhamentos.tsx` (+ teste) | alterar | T5 |
+| `src/domain/fonteSupabase.ts` (+ teste) | alterar (`fonteDoPaciente`: a fonte do link, nuvem mais cópia do aparelho, que sai do provedor para poder ser testada sozinha) | T5 |
+| `src/ui/estado/ProvedorAcompanhamentos.tsx` | alterar (usa `fonteDoPaciente`) | T5 |
 | `src/ui/missoes/TelaMissoesPaciente.tsx` (+ teste) | alterar | T5 |
 | `src/ui/publico/MolduraPublica.tsx` (+ teste) | alterar | T6 |
 | `src/ui/publico/SecaoPrecos.tsx` (+ teste) | alterar | T7 |

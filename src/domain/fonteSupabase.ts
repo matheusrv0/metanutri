@@ -9,7 +9,7 @@ import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
-import type { FonteAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -137,6 +137,53 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       const { error } = await cliente.rpc('marcar_missoes', { p_token: acompanhamento.token, p_marcacoes: acompanhamento.marcacoes })
       if (error) avisar(traduzido(error))
       return acompanhamento
+    },
+  }
+}
+
+/**
+ * A fonte do link do paciente (spec revisao-geral-publica, D-232): a nuvem, com a cópia do aparelho por trás. Sem
+ * servidor, só o aparelho, como antes (CB-239). Com servidor:
+ * - abrir: vale o da nuvem; sem ele, a cópia do aparelho (CA-754); sem os dois, nulo quando a nuvem respondeu que o
+ *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753);
+ * - marcar: grava pela função do paciente e só depois a cópia do aparelho; a nuvem recusando, rejeita com
+ *   `LinkSemConexao` sem gravar nada aqui (CA-756), para a tela desfazer a marca em vez de fingir que salvou.
+ * `aoSalvar` avisa quem guarda a lista do aparelho que ela mudou.
+ */
+export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: RepositorioAcompanhamentos, aoSalvar: () => void): FonteAcompanhamentos {
+  const local = fonteLocal(repositorio)
+  const salvarAqui = async (acompanhamento: Acompanhamento) => {
+    const salvo = await local.salvar(acompanhamento)
+    aoSalvar()
+    return salvo
+  }
+  if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: salvarAqui }
+
+  /** A fonte da nuvem de um pedido só, com a marca de que ele falhou. */
+  const daNuvem = () => {
+    const pedido = { falhou: false }
+    return { pedido, fonte: fonteSupabase(cliente, { aoFalhar: () => (pedido.falhou = true) }) }
+  }
+
+  return {
+    naNuvem: true,
+    async porToken(token) {
+      const { pedido, fonte } = daNuvem()
+      const achado = await fonte.porToken(token).catch(() => {
+        pedido.falhou = true
+        return null
+      })
+      if (achado) return achado
+      const copia = repositorio.porToken(token)
+      if (copia) return copia
+      if (pedido.falhou) throw new LinkSemConexao()
+      return null
+    },
+    async salvar(acompanhamento) {
+      const { pedido, fonte } = daNuvem()
+      await fonte.salvar(acompanhamento).catch(() => (pedido.falhou = true))
+      if (pedido.falhou) throw new LinkSemConexao()
+      return salvarAqui(acompanhamento)
     },
   }
 }

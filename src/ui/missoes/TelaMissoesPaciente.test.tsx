@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
 import type { Missao } from '@/domain/missoes.ts'
-import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { LinkSemConexao, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { TelaMissoesPaciente } from './TelaMissoesPaciente.tsx'
 
 const MISSOES: readonly Missao[] = [
@@ -420,5 +420,98 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     await abrirMeuPlano({ dieta: { ...vazia, orientacoes: 'Beber água.' } })
     expect(screen.getByText('Beber água.')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: /^\d\d:\d\d / })).not.toBeInTheDocument()
+  })
+})
+
+describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', () => {
+  it('CA-753: sem resposta da nuvem e sem cópia, diz que não conseguiu abrir e oferece tentar de novo', async () => {
+    let semInternet = true
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => (semInternet ? Promise.reject(new LinkSemConexao()) : Promise.resolve(acompanhamento())),
+      salvar: (a) => Promise.resolve(a),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(screen.getByText('Confira a internet do celular e tente de novo.')).toBeInTheDocument()
+    expect(screen.queryByText('Este link não existe mais')).not.toBeInTheDocument()
+
+    // CB-235: tentar de novo ainda sem internet volta à mesma tela.
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Tentar de novo' })).toHaveLength(1)
+
+    semInternet = false
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+  })
+
+  it('CA-755: a nuvem respondeu que o link não existe: continua "Este link não existe mais"', async () => {
+    const { fonte } = fonteFalsa(null, true)
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Este link não existe mais' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+  })
+
+  it('CA-756: a marcação que a nuvem não gravou volta atrás e a tela avisa; com a internet, salva e o aviso some', async () => {
+    let semInternet = true
+    const salvos: Acompanhamento[] = []
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(acompanhamento()),
+      salvar: (a) => {
+        if (semInternet) return Promise.reject(new LinkSemConexao())
+        salvos.push(a)
+        return Promise.resolve(a)
+      },
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
+
+    semInternet = false
+    await usuario.click(agua)
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
+    expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('CB-236: a falha de uma marcação desfaz só aquela missão', async () => {
+    const pendentes: (() => void)[] = []
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(acompanhamento()),
+      salvar: (a) =>
+        a.marcacoes.some((m) => m.feitas.includes('agua')) && !a.marcacoes.some((m) => m.feitas.includes('refeicao-1'))
+          ? new Promise((_, rejeitar) => pendentes.push(() => rejeitar(new LinkSemConexao())))
+          : Promise.resolve(a),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    const cafe = screen.getByRole('button', { name: /Café da manhã/ })
+    await usuario.click(agua)
+    await usuario.click(cafe)
+    await act(async () => {
+      pendentes.shift()?.()
+      await Promise.resolve()
+    })
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('CA-757: a tela do paciente tem a região principal', async () => {
+    const { fonte } = fonteFalsa(acompanhamento())
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }))
   })
 })
