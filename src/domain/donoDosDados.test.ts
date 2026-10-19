@@ -310,6 +310,22 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     expect(conta.getItem('metanutri:roteiro-anamnese')).toBe('{"formato":1,"blocos":{"agua":[]}}')
   })
 
+  it('CA-867 (spec receitas-com-calculo): as receitas de antes juntam com as da conta sem perder nenhuma', () => {
+    const receita = (id: string, nome: string) => ({ id, nome, ingredientes: [], porcoes: 1, nomeDaPorcao: 'porção', pesoProntoG: 100, preparo: '', criadoEm: '2026-10-19', atualizadoEm: '2026-10-19' })
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      'metanutri:conta:conta-a:receitas': JSON.stringify([receita('r1', 'Panqueca')]),
+      'metanutri:receitas': JSON.stringify([receita('r1', 'Panqueca, da aba antiga'), receita('r2', 'Bolo')]),
+    })
+    migrarDadosSemConta(arm, 'conta-a', { gerarId: () => 'r-novo' })
+    const lista = JSON.parse(armazenamentoDaConta(arm, 'conta-a').getItem('metanutri:receitas') ?? '[]') as { id: string; nome: string }[]
+    expect(lista.map((r) => [r.id, r.nome])).toEqual([
+      ['r1', 'Panqueca'],
+      ['r2', 'Bolo'],
+      ['r-novo', 'Panqueca, da aba antiga'],
+    ])
+  })
+
   it('D-127: valor de fora que o app não lê sai, e a conta fica com o dela; valor da conta ilegível dá lugar ao de fora', () => {
     const arm = memoria({
       [CHAVE_DONO]: 'conta-a',

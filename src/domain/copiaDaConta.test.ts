@@ -853,3 +853,64 @@ describe('D-173: um aparelho nunca sobe um valor mais velho que a marca que a nu
     })
   })
 })
+
+describe('receitas na nuvem (spec receitas-com-calculo, CA-867, CA-868, CB-275)', () => {
+  const RECEITAS = 'metanutri:receitas'
+  const receita = (id: string, nome: string, atualizadoEm = T(1), alimentoId = 7) => ({
+    id,
+    nome,
+    ingredientes: [{ alimentoId, gramas: 30 }],
+    porcoes: 1,
+    nomeDaPorcao: 'porção',
+    pesoProntoG: null,
+    preparo: '',
+    criadoEm: T(1),
+    atualizadoEm,
+  })
+
+  it('CA-867: a chave é dado da conta: entra em CHAVES_DE_DADOS, na cópia e no backup de Configurações', () => {
+    expect(CHAVES_DE_DADOS).toContain(RECEITAS)
+    const arm = new Memoria()
+    arm.setItem(RECEITAS, JSON.stringify([receita('a', 'Panqueca')]))
+    expect(Object.keys(montarCopia(arm, AGORA).dados)).toEqual([RECEITAS])
+    const outro = new Memoria()
+    expect(restaurarBackup(outro, JSON.stringify(montarBackup(arm, [...CHAVES_DE_DADOS], AGORA)))).toEqual({ restaurados: 1, erro: null })
+    expect(outro.getItem(RECEITAS)).toBe(arm.getItem(RECEITAS))
+    expect(itensDaCopia(montarCopia(arm, AGORA))).toBe(1)
+  })
+
+  it('cada receita que entra ou muda ganha a hora; a excluída ganha a lápide', () => {
+    const arm = new Memoria()
+    registrarMudanca(arm, RECEITAS, JSON.stringify([receita('a', 'Panqueca'), receita('b', 'Bolo')]), JSON.stringify([receita('a', 'Panqueca de banana'), receita('c', 'Torta')]), T(2))
+    expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: { 'receitas/a': T(2), 'receitas/c': T(2) }, excluidos: { 'receitas/b': T(2) } })
+  })
+
+  it('CA-868 e CB-275: dois aparelhos juntam receita por receita; a mais nova vence e a excluída não volta', () => {
+    const daqui = copia({
+      [RECEITAS]: JSON.stringify([receita('a', 'Panqueca, daqui', T(3)), receita('d', 'Suco')]),
+      [CHAVE_MUDANCAS]: mudancas({ 'receitas/a': T(3), 'receitas/d': T(1) }, { 'receitas/c': T(4) }),
+    })
+    const daNuvem = copia({
+      [RECEITAS]: JSON.stringify([receita('a', 'Panqueca, da nuvem', T(2)), receita('b', 'Bolo'), receita('c', 'Torta', T(5))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'receitas/a': T(2), 'receitas/b': T(1), 'receitas/c': T(5) }),
+    })
+    // A torta foi editada na nuvem (5h) depois de excluída aqui (4h): a edição mais nova fica.
+    expect(nomes(juntarCopias(daqui, daNuvem, AGORA), RECEITAS)).toEqual(['Panqueca, daqui', 'Suco', 'Bolo', 'Torta'])
+    const excluidaDepois = copia({ ...daqui.dados, [CHAVE_MUDANCAS]: mudancas({ 'receitas/a': T(3), 'receitas/d': T(1) }, { 'receitas/c': T(6) }) })
+    expect(nomes(juntarCopias(excluidaDepois, daNuvem, AGORA), RECEITAS)).toEqual(['Panqueca, daqui', 'Suco', 'Bolo'])
+  })
+
+  it('DP-4: o produto daqui que ganha id novo leva junto o ingrediente da receita daqui', () => {
+    const daqui = copia({
+      'metanutri:produtos': JSON.stringify([produto(900000, 'Granola daqui', T(4))]),
+      [RECEITAS]: JSON.stringify([receita('a', 'Iogurte com granola', T(4), 900000)]),
+      [CHAVE_MUDANCAS]: mudancas({ 'produtos/900000': T(4), 'receitas/a': T(4) }),
+    })
+    const daNuvem = copia({
+      'metanutri:produtos': JSON.stringify([produto(900000, 'Iogurte da nuvem', T(3))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'produtos/900000': T(3) }),
+    })
+    const junta = juntarCopias(daqui, daNuvem, AGORA)
+    expect((lista(junta, RECEITAS) as { ingredientes: { alimentoId: number }[] }[])[0]?.ingredientes[0]?.alimentoId).toBe(900001)
+  })
+})
