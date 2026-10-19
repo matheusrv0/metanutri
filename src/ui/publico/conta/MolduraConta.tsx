@@ -18,8 +18,10 @@ interface MolduraContaProps {
 export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, children }: MolduraContaProps) {
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
-      <div className="mx-auto grid max-w-[1000px] overflow-hidden rounded-2xl bg-card lg:grid-cols-[1.05fr_0.95fr]">
-        <main className="flex flex-col gap-4 p-6 sm:p-10">
+      {/* D-237 (spec revisao-geral-publica): coluna que encolhe (DESIGN.md). Sem o minmax, um e-mail longo alargava a
+          coluna e o formulário saía cortado pelo cartão. */}
+      <div className="mx-auto grid max-w-[1000px] grid-cols-[minmax(0,1fr)] overflow-hidden rounded-2xl bg-card lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <main className="flex min-w-0 flex-col gap-4 p-6 sm:p-10">
           {aoIrParaInicio ? (
             <button
               type="button"
@@ -43,7 +45,7 @@ export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, c
           ) : null}
           <div>
             <h1 className="text-3xl font-bold leading-tight">{titulo}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{subtitulo}</p>
+            <p className="mt-2 text-sm text-muted-foreground [overflow-wrap:anywhere]">{subtitulo}</p>
           </div>
           {children}
         </main>

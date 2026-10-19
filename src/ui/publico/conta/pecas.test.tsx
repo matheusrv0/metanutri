@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
 import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
@@ -43,5 +44,24 @@ describe('peças das telas de conta', () => {
     )
     expect(screen.getByRole('heading', { level: 1, name: 'Crie sua conta' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Passo 1 de 3' })).toBeInTheDocument()
+  })
+
+  it('D-237 (spec revisao-geral-publica): o cartão encolhe e o subtítulo quebra em qualquer ponto (e-mail longo)', () => {
+    const email = `${'maria.aparecida.dos.santos'.repeat(2)}@aluno.universidade.edu.br`
+    render(
+      <MolduraConta titulo="Confira seu e-mail" subtitulo={`Mandamos um código para ${email}.`}>
+        <p>formulário</p>
+      </MolduraConta>,
+    )
+    const subtitulo = screen.getByText(`Mandamos um código para ${email}.`)
+    expect(subtitulo.className).toContain('[overflow-wrap:anywhere]')
+    const principal = screen.getByRole('main')
+    expect(principal.className).toContain('min-w-0')
+    expect(principal.parentElement?.className).toContain('grid-cols-[minmax(0,1fr)]')
+  })
+
+  it('D-237 (spec revisao-geral-publica): o aviso do formulário quebra em qualquer ponto', () => {
+    render(<AvisoFormulario tipo="ok">E-mail da faculdade confirmado: {'a'.repeat(80)}@x.br</AvisoFormulario>)
+    expect(screen.getByRole('status').lastElementChild?.className).toContain('[overflow-wrap:anywhere]')
   })
 })
