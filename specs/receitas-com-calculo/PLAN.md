@@ -57,7 +57,8 @@
 | `src/domain/folhaComReceita.test.ts`, `src/ui/exportar/FolhaComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T8 |
 | `src/domain/dietaDoLink.ts`, `src/ui/missoes/MeuPlano.tsx` | alterar | T9 |
 | `src/domain/dietaComReceita.test.ts`, `src/ui/missoes/MeuPlanoComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T9 |
-| `src/export/aconselhamento-docx.ts`, `src/export/docx.test.ts` | alterar | T10 |
+| `src/export/aconselhamento-docx.ts` | alterar | T10 |
+| `src/export/docxComReceita.test.ts` | criar (teste novo em arquivo próprio) | T10 |
 | `src/seguranca/xssTelas.test.tsx` | alterar: nome e preparo com código | T11 |
 | `e2e/receitas.spec.ts` | criar | T12 |
 | `docs/backlog.md`, `docs/decisoes.md` | alterar: B-32 feito, D-270 a D-279 | T12 |
@@ -97,7 +98,7 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   (CA-884, CA-885), `MeuPlano` com a seção. *Testes:* `dietaComReceita.test.ts`, `MeuPlanoComReceita.test.tsx`.
   *Depende de:* T2.
 - [ ] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
-  `docx.test.ts`. *Depende de:* T2.
+  `docxComReceita.test.ts`. *Depende de:* T2.
 - [ ] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (plano e link de antes, campo de texto), CB-276
   (`xssTelas.test.tsx`). *Depende de:* T5 a T10.
 - [ ] **T12** — Ponta a ponta, prints e documentos. `e2e/receitas.spec.ts` (criar receita, pôr na refeição, painel,
