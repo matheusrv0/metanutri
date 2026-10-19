@@ -49,7 +49,9 @@ const PREFERENCIA_MEDIDAS = [
 const ERRO_MAXIMO = 0.15
 const QUANTIDADE_MAXIMA = 8
 
-const FEMININOS = new Set(['unidade', 'fatia', 'colher', 'concha', 'xícara', 'escumadeira', 'banda', 'metade', 'rodela', 'posta', 'coxa', 'sobrecoxa', 'folha', 'espiga'])
+// "porção" entrou com as receitas (spec receitas-com-calculo): "meia porção". Nenhum alimento escolhe "porção" como
+// medida (não está em PREFERENCIA_MEDIDAS).
+const FEMININOS = new Set(['unidade', 'fatia', 'colher', 'concha', 'xícara', 'escumadeira', 'banda', 'metade', 'rodela', 'posta', 'coxa', 'sobrecoxa', 'folha', 'espiga', 'porção'])
 
 function plural(nome: string): string {
   const [primeira = '', ...resto] = nome.split(' ')
