@@ -219,22 +219,34 @@ export function TelaCheckout({
     )
   }
 
+  // D-236 (spec revisao-geral-publica): no tema escuro o resumo é marfim. Os avisos dentro dele ficam no escopo do tema
+  // claro (`.papel`, o mesmo da folha impressa); com as cores do escuro, a letra clara sobre o marfim não se lia.
   const acoes = !disponivel ? (
-    <AvisoPagamento tipo="erro">A conta na nuvem não está configurada neste MetaNutri.</AvisoPagamento>
+    <div className="papel">
+      <AvisoPagamento tipo="erro">A conta na nuvem não está configurada neste MetaNutri.</AvisoPagamento>
+    </div>
   ) : jaAssina ? (
     <>
-      <AvisoPagamento tipo="ok">
-        {`Você já assina o plano ${planoPorId(assinaturaAtual.plano)?.nome ?? ''}. A troca de plano pago ainda não é feita pelo site.`}
-      </AvisoPagamento>
+      <div className="papel">
+        <AvisoPagamento tipo="ok">
+          {`Você já assina o plano ${planoPorId(assinaturaAtual.plano)?.nome ?? ''}. A troca de plano pago ainda não é feita pelo site.`}
+        </AvisoPagamento>
+      </div>
       <Button variant="outline" size="lg" block onClick={aoIrParaPainel}>
         Ir para o painel
       </Button>
     </>
   ) : criarProcessador === null ? (
-    <AvisoPagamento tipo="erro">{PAGAMENTO_INDISPONIVEL}</AvisoPagamento>
+    <div className="papel">
+      <AvisoPagamento tipo="erro">{PAGAMENTO_INDISPONIVEL}</AvisoPagamento>
+    </div>
   ) : (
     <>
-      {estudanteAtivo ? <AvisoPagamento tipo="ok">Você está no plano Estudante. Quando o banco autorizar o cartão, o plano pago fica no lugar dele.</AvisoPagamento> : null}
+      {estudanteAtivo ? (
+        <div className="papel">
+          <AvisoPagamento tipo="ok">Você está no plano Estudante. Quando o banco autorizar o cartão, o plano pago fica no lugar dele.</AvisoPagamento>
+        </div>
+      ) : null}
       <label htmlFor={`${id}-aceite`} className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed">
         <input
           ref={refAceite}
@@ -259,11 +271,15 @@ export function TelaCheckout({
         </span>
       </label>
       {erroAceite ? (
-        <div id={`${id}-aceite-erro`}>
+        <div id={`${id}-aceite-erro`} className="papel">
           <AvisoPagamento tipo="erro">{ACEITE_FALTANDO}</AvisoPagamento>
         </div>
       ) : null}
-      {erro ? <AvisoPagamento tipo="erro">{erro}</AvisoPagamento> : null}
+      {erro ? (
+        <div className="papel">
+          <AvisoPagamento tipo="erro">{erro}</AvisoPagamento>
+        </div>
+      ) : null}
       <Button type="submit" variant="laranja" size="lg" block disabled={!pronto || enviando} aria-busy={enviando || undefined}>
         {enviando ? (
           <>
