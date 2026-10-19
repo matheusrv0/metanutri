@@ -1,13 +1,14 @@
 // O limite de chamadas à operadora por conta (spec seguranca-lote-2, D-108; CA-448, CA-449, CB-113 a
 // CB-115). Usado pela assinar e pelas três ações da gerenciar-assinatura, logo antes de cada chamada à
-// operadora. Puro: o banco, o relógio e o registro chegam de fora; sem Deno e sem rede.
+// operadora, e pela excluir-conta, no começo do pedido (spec exclusao-de-conta, D-256). Puro: o banco, o
+// relógio e o registro chegam de fora; sem Deno e sem rede.
 import { UM_DIA_MS } from './cobranca.ts'
 import { respostaDeErro as erro, type BancoDaCobranca, type Registro, type RespostaDaFuncao, type TipoDeChamada } from './portas.ts'
 
 /** D-108 (CA-448 e CA-449): a resposta do limite atingido. */
 export const MUITAS_CHAMADAS = 'Muitas tentativas seguidas. Espere uma hora e tente de novo.'
-/** D-108: quantas chamadas de cada tipo a conta faz por hora. */
-export const LIMITE_DE_CHAMADAS: Readonly<Record<TipoDeChamada, number>> = { cartao: 10, conferir: 20 }
+/** D-108: quantas chamadas de cada tipo a conta faz por hora. D-256 (spec exclusao-de-conta): 5 pedidos de exclusão. */
+export const LIMITE_DE_CHAMADAS: Readonly<Record<TipoDeChamada, number>> = { cartao: 10, conferir: 20, excluir: 5 }
 /** A janela do limite: a última hora, estrita (a chamada de exatamente 1 h atrás já não conta). */
 export const JANELA_DAS_CHAMADAS_MS = 60 * 60 * 1000
 /** As chamadas anotadas ficam 2 dias. */

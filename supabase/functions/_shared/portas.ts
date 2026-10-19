@@ -21,8 +21,11 @@ export interface FalhaDoBanco {
 
 export type EncerradaPor = 'pessoa' | 'recusa' | 'operadora'
 
-/** D-108: os dois limites de chamadas à operadora por conta. 'cartao': assinar e trocar o cartão; 'conferir': a prévia e o cancelamento. */
-export type TipoDeChamada = 'cartao' | 'conferir'
+/**
+ * D-108: os limites de chamadas à operadora por conta. 'cartao': assinar e trocar o cartão; 'conferir': a prévia e o
+ * cancelamento; 'excluir': o pedido de excluir a conta (spec exclusao-de-conta, D-256), que pode cancelar a assinatura.
+ */
+export type TipoDeChamada = 'cartao' | 'conferir' | 'excluir'
 
 /** A linha de public.assinaturas, só com as colunas que os núcleos leem. */
 export interface LinhaDaAssinatura {
