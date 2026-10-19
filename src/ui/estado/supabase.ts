@@ -24,7 +24,9 @@ export function obterSupabase(): SupabaseClient | null {
   }
   try {
     cliente = createClient(import.meta.env['VITE_SUPABASE_URL'] as string, import.meta.env['VITE_SUPABASE_ANON_KEY'] as string, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      // PKCE (spec seguranca-lote-5, D-267): os e-mails só trazem código, e um endereço com a sessão dentro
+      // (#access_token=...), montado por outra pessoa, não abre o site já dentro da conta dela.
+      auth: { persistSession: true, autoRefreshToken: true, flowType: 'pkce' },
     })
   } catch {
     cliente = null
