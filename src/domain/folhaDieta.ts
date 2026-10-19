@@ -3,6 +3,8 @@
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
+import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
+import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
@@ -42,15 +44,63 @@ export interface CompraDaFolha {
  */
 export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly CompraDaFolha[] {
   const porNome = new Map<string, CompraDaFolha>()
+  const somar = (alimentoId: number, gramas: number) => {
+    if (!(gramas > 0)) return
+    const nome = nomeParaPaciente(buscar(alimentoId))
+    const antes = porNome.get(nome)
+    porNome.set(nome, { nome, gramas: (antes?.gramas ?? 0) + gramas, alimentoId: antes?.alimentoId ?? alimentoId })
+  }
   for (const refeicao of plano.refeicoes) {
     for (const item of refeicao.opcoes.principal) {
       if (item.gramas <= 0) continue
-      const nome = nomeParaPaciente(buscar(item.alimentoId))
-      const antes = porNome.get(nome)
-      porNome.set(nome, { nome, gramas: (antes?.gramas ?? 0) + item.gramas, alimentoId: antes?.alimentoId ?? item.alimentoId })
+      // Spec receitas-com-calculo, CA-881: a receita entra pelos ingredientes, na quantidade do dia.
+      if (ehItemDeReceita(item)) {
+        const receita = receitaDoItem(item)
+        if (receita !== null) for (const i of ingredientesNaQuantidade(receita, item.gramas)) somar(i.alimentoId, i.gramas)
+        continue
+      }
+      somar(item.alimentoId, item.gramas)
     }
   }
   return [...porNome.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
+/** Uma linha de alimento na folha: o nome que o paciente lê e a quantidade (spec impressao-do-plano). */
+export interface LinhaDaFolha {
+  readonly nome: string
+  readonly quantidade: QuantidadeNaFolha
+}
+
+/**
+ * A linha da refeição na folha. Alimento: o nome para o paciente e a quantidade da folha (D-181, D-183). Receita (spec
+ * receitas-com-calculo, CA-879): o nome como foi escrito e a porção com o peso ao lado; sem meia porção que feche, o peso.
+ */
+export function linhaDaFolha(item: ItemPlano, buscar: BuscarAlimento): LinhaDaFolha {
+  if (!ehItemDeReceita(item)) return { nome: nomeParaPaciente(buscar(item.alimentoId)), quantidade: quantidadeNaFolha(item.alimentoId, item.gramas, buscar) }
+  const receita = receitaDoItem(item)
+  return { nome: nomeDaReceita(receita), quantidade: { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, comPeso: true } }
+}
+
+/** Uma receita na seção "Receitas" da folha (CA-880). */
+export interface ReceitaDaFolha {
+  readonly nome: string
+  /** "Rende 2 unidades (120 g cada)". */
+  readonly rendimento: string
+  /** Os ingredientes da receita inteira, com o nome para o paciente e a quantidade da folha. */
+  readonly ingredientes: readonly LinhaDaFolha[]
+  readonly preparo: string
+}
+
+/** CA-880 e CB-278: cada receita do plano uma vez, na ordem das refeições, com os ingredientes da receita inteira. */
+export function receitasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly ReceitaDaFolha[] {
+  return receitasDoPlano(plano).map((r) => ({
+    nome: nomeDaReceita(r),
+    rendimento: textoDoRendimento(r),
+    ingredientes: r.ingredientes
+      .filter((i) => i.gramas > 0)
+      .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, buscar) })),
+    preparo: r.preparo.trim(),
+  }))
 }
 
 /** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */

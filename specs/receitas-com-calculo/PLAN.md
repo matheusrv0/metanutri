@@ -53,7 +53,8 @@
 | `src/ui/plano/EntradaRapida.tsx`, `LinhaItem.tsx`, `CartaoRefeicao.tsx`, `TelaPlano.tsx` | alterar | T6 |
 | `src/ui/plano/receitaNaRefeicao.test.tsx` | criar (arquivo novo de teste, para não brigar com a frente que mexe nos testes da área de trabalho) | T6 |
 | `src/domain/receitaNasRegras.test.ts` | criar: testes de guarda de cobrir, missões, trocas, modelo e duplicar | T7 |
-| `src/domain/folhaDieta.ts` (+ teste), `src/ui/exportar/FolhaDieta.tsx` (+ teste) | alterar | T8 |
+| `src/domain/folhaDieta.ts`, `src/ui/exportar/FolhaDieta.tsx` | alterar | T8 |
+| `src/domain/folhaComReceita.test.ts`, `src/ui/exportar/FolhaComReceita.test.tsx` | criar (testes novos em arquivo próprio) | T8 |
 | `src/domain/dietaDoLink.ts` (+ teste), `src/ui/missoes/MeuPlano.tsx` (+ teste) | alterar | T9 |
 | `src/export/aconselhamento-docx.ts`, `src/export/docx.test.ts` | alterar | T10 |
 | `src/seguranca/xssTelas.test.tsx` | alterar: nome e preparo com código | T11 |
@@ -90,7 +91,7 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   correção vai junto): cobrir (CA-877), missões (CA-878), trocas (CA-882), modelo e duplicar (CA-876). *Depende de:* T2.
 - [ ] **T8** — A folha impressa. `linhaDaFolha` (nome e quantidade de alimento ou receita, CA-879),
   `receitasDaFolha` (CA-880, CB-278) e `comprasDaFolha` abrindo a receita (CA-881) em `folhaDieta.ts`; `FolhaDieta`
-  usa as três. *Testes:* `folhaDieta.test.ts`, `FolhaDieta.test.tsx`. *Depende de:* T2.
+  usa as três. *Testes:* `folhaComReceita.test.ts`, `FolhaComReceita.test.tsx`. *Depende de:* T2.
 - [ ] **T9** — O link do paciente. `itemDaDieta` com receita (CA-883), `receitasDoPlano` na cópia e em `lerDieta`
   (CA-884, CA-885), `MeuPlano` com a seção. *Testes:* `dietaDoLink.test.ts`, `MeuPlano.test.tsx`. *Depende de:* T2.
 - [ ] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
