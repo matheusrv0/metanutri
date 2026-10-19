@@ -1,6 +1,10 @@
 // O perfil da conta (situação e CRN) e se ela é administradora. O navegador só lê;
 // mudar a situação passa pelas funções do banco, que conferem cada pedido (spec
 // conta-e-verificacao, D-40).
+//
+// Administrador só com o código do app autenticador (spec seguranca-lote-5, D-260 e DP-L5-1): a conta é de
+// administrador quando eh_admin ou admin_sem_segundo_fator dizem sim (DP-L5-2); ela fica liberada só com a
+// sessão confirmada pelo código (aal2). O nível vem do token, sem rede. Quem decide de verdade é o banco.
 import { useCallback, useEffect, useState } from 'react'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { daLinhaPerfil, type Crn, type PerfilConta, type Situacao } from '@/domain/situacao.ts'
@@ -10,7 +14,10 @@ import { obterSupabase } from './supabase.ts'
 
 export interface ValorPerfilConta {
   readonly perfil: PerfilConta | null
+  /** Administrador com a sessão confirmada pelo código do app: as telas e as leituras do administrador abrem. */
   readonly ehAdmin: boolean
+  /** Administrador sem o código do app nesta sessão: Negócio e Aprovações pedem o código (D-261). */
+  readonly precisaSegundoFator: boolean
   /** A primeira resposta desta conta chegou (ou não há sessão, ou não há servidor). Releituras não voltam a falso. */
   readonly carregado: boolean
   /** A leitura falhou: não dá para afirmar que a conta não tem perfil. */
@@ -26,6 +33,7 @@ interface Carga {
   readonly usuario: string
   readonly perfil: PerfilConta | null
   readonly ehAdmin: boolean
+  readonly precisaSegundoFator: boolean
   readonly falhou: boolean
 }
 
@@ -73,14 +81,23 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
     if (!cliente || !usuarioId) return
     let vivo = true
     // O administrador lê todos os perfis (RLS): sem o filtro, viriam várias linhas.
-    void Promise.all([cliente.from('perfis').select(COLUNAS).eq('id', usuarioId).maybeSingle(), cliente.rpc('eh_admin')]).then(([perfil, admin]) => {
+    void Promise.all([
+      cliente.from('perfis').select(COLUNAS).eq('id', usuarioId).maybeSingle(),
+      cliente.rpc('eh_admin'),
+      // Antes do 014 esta função não existe: o erro vale como "não" (CA-840).
+      cliente.rpc('admin_sem_segundo_fator'),
+      cliente.auth.mfa.getAuthenticatorAssuranceLevel(),
+    ]).then(([perfil, admin, semFator, nivel]) => {
       if (!vivo) return
       const falhou = perfil.error !== null
       if (!falhou) guardar(armazenamento, usuarioId, perfil.data)
+      const contaDeAdmin = admin.data === true || semFator.data === true
+      const comCodigo = nivel.data?.currentLevel === 'aal2'
       setCarga({
         usuario: usuarioId,
         perfil: daLinhaPerfil(falhou ? lerGuardada(armazenamento, usuarioId) : perfil.data),
-        ehAdmin: admin.data === true,
+        ehAdmin: contaDeAdmin && comCodigo,
+        precisaSegundoFator: contaDeAdmin && !comCodigo,
         falhou,
       })
     })
@@ -108,6 +125,7 @@ export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
   return {
     perfil: atual?.perfil ?? null,
     ehAdmin: atual?.ehAdmin ?? false,
+    precisaSegundoFator: atual?.precisaSegundoFator ?? false,
     carregado,
     falhou: atual?.falhou ?? false,
     informarSituacao,

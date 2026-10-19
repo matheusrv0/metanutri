@@ -10,6 +10,7 @@ import { useAprovacoes } from './ui/estado/usarAprovacoes.ts'
 import { useAssinatura } from './ui/estado/usarAssinatura.ts'
 import { useConta, type ResultadoConfirmacao, type ValorConta } from './ui/estado/usarConta.ts'
 import { useNegocio } from './ui/estado/usarNegocio.ts'
+import { useSegundoFator } from './ui/estado/usarSegundoFator.ts'
 import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
 import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
@@ -110,6 +111,9 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
   // Só lê com a tela aberta: são as contas inteiras, não precisa a cada abertura do app.
   const negocio = useNegocio(perfilConta.ehAdmin && rota.tela === 'negocio')
+  // O app autenticador do administrador (spec seguranca-lote-5, D-261): só nas telas dele, e aqui em cima para o
+  // código QR não mudar quando ele passa de Negócio para Aprovações no meio do cadastro.
+  const segundoFator = useSegundoFator(perfilConta.precisaSegundoFator && (rota.tela === 'negocio' || rota.tela === 'aprovacoes'), perfilConta.recarregar)
 
   const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 
@@ -136,6 +140,7 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
           pedidoEstudante={pedidoEstudante}
           aprovacoes={aprovacoes}
           negocio={negocio}
+          segundoFator={segundoFator}
           depoisDeSair={depoisDeSair}
         />
       </ProvedoresDeDados>
@@ -181,7 +186,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
     if (!perfilConta.carregado) return telaCarregando
 
     // CB-68: conta sem situação completa o cadastro antes de qualquer tela de trabalho.
-    if (perfilConta.carregado && !perfilConta.falhou && perfil === null && !perfilConta.ehAdmin) {
+    // CA-842: o administrador sem o código do app também não completa cadastro.
+    if (perfilConta.carregado && !perfilConta.falhou && perfil === null && !perfilConta.ehAdmin && !perfilConta.precisaSegundoFator) {
       return (
         <TelaCompletarCadastro
           email={sessao.email}

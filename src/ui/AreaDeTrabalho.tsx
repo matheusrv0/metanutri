@@ -35,6 +35,7 @@ import type { ValorConta } from './estado/usarConta.ts'
 import type { ValorNegocio } from './estado/usarNegocio.ts'
 import type { ValorPedidoEstudante } from './estado/usarPedidoEstudante.ts'
 import type { ValorPerfilConta } from './estado/usarPerfilConta.ts'
+import type { ValorSegundoFator } from './estado/usarSegundoFator.ts'
 import { MenuExportar } from './exportar/MenuExportar.tsx'
 import { rotaDePlanos } from './fluxoConta.ts'
 import { Estrutura } from './layout/Estrutura.tsx'
@@ -44,6 +45,7 @@ import { TelaAdesao } from './missoes/TelaAdesao.tsx'
 import { TelaMissoesPaciente } from './missoes/TelaMissoesPaciente.tsx'
 import { ETAPAS, type Rota } from './navegacao.ts'
 import { TelaNegocio } from './negocio/TelaNegocio.tsx'
+import { TelaSegundoFator } from './segundoFator/TelaSegundoFator.tsx'
 import { TelaPaciente } from './pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './pacientes/TelaPacientes.tsx'
 import { processadorDoSite } from './pagamento/processadorMercadoPago.ts'
@@ -65,6 +67,8 @@ interface AreaDeTrabalhoProps {
   readonly pedidoEstudante: ValorPedidoEstudante
   readonly aprovacoes: ValorAprovacoes
   readonly negocio: ValorNegocio
+  /** O passo do app autenticador do administrador (spec seguranca-lote-5, D-261). */
+  readonly segundoFator: ValorSegundoFator
   /** Depois de sair da conta; a cópia de trabalho do navegador já foi apagada (spec dados-na-nuvem, D-131). */
   readonly depoisDeSair: () => void
 }
@@ -73,7 +77,7 @@ interface AreaDeTrabalhoProps {
  * As telas que mostram os dados da conta: o link do paciente e a área do nutricionista. Fica
  * dentro de ProvedoresDeDados, que a remonta quando a conta muda (spec dados-por-conta, CB-120).
  */
-export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pedidoEstudante, aprovacoes, negocio, depoisDeSair }: AreaDeTrabalhoProps) {
+export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pedidoEstudante, aprovacoes, negocio, segundoFator, depoisDeSair }: AreaDeTrabalhoProps) {
   const { casos, repositorio, atualizar } = useCasos()
   const { pacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
@@ -135,7 +139,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
   }
 
-  const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso, aprovacoesPendentes: perfilConta.ehAdmin ? aprovacoes.pendentes.total : null } as const
+  // CA-839: sem o código do app, o menu do administrador aparece sem o número de pendências (nada foi lido).
+  const pendentes = perfilConta.ehAdmin ? aprovacoes.pendentes.total : perfilConta.precisaSegundoFator ? 0 : null
+  const base = { rota, navegar, casoAtual, aoNovoCaso: novoCaso, aprovacoesPendentes: pendentes } as const
   const irParaCasos = { rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }
 
   const aviso = perfil?.situacao === 'estudante' && pedidoEstudante.carregado ? avisoDoEstudante(pedidoEstudante.pedido, assinatura) : null
@@ -220,6 +226,15 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     return (
       <Estrutura {...base} titulo="Ajuda">
         <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+      </Estrutura>
+    )
+  }
+
+  // D-261: o administrador sem o código do app vê o passo do app no lugar de Negócio e de Aprovações.
+  if ((rota.tela === 'negocio' || rota.tela === 'aprovacoes') && perfilConta.precisaSegundoFator) {
+    return (
+      <Estrutura {...base} titulo={rota.tela === 'negocio' ? 'Negócio' : 'Aprovações'}>
+        <TelaSegundoFator segundoFator={segundoFator} />
       </Estrutura>
     )
   }
