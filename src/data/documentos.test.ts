@@ -26,4 +26,9 @@ describe('documentos no modelo de dados na nuvem (CA-796)', () => {
     expect(texto).toMatch(/só existe "Sair"/i)
     expect(texto).toMatch(/sem internet, a área de trabalho trava/i)
   })
+
+  it('PRODUCT.md diz que a conta se exclui pelo site (spec exclusao-de-conta; revisão de 20/10/2026)', () => {
+    expect(produto).not.toMatch(/excluir a conta ainda é por pedido|Falta excluir a conta/i)
+    expect(produto).toMatch(/a conta se exclui pelo próprio site/)
+  })
 })

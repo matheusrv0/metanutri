@@ -46,7 +46,7 @@ Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o
 - Preceptora usa preset individual (RDA, 90%) e coletivo (EAR, 50%).
 - Uso frequente com internet instável. Decisão de 08/10/2026 (spec `dados-na-nuvem`, D-130): sem internet, a área de trabalho trava até a conexão voltar, em vez de deixar editar o que não chegaria à nuvem; quando ela volta, o que faltava sobe sozinho e a área destrava.
 - Os dados da conta (planos, pacientes, produtos, modelos, perfil e acompanhamentos) ficam na nuvem, presos à conta: entrar em qualquer aparelho mostra os mesmos dados. O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e toda mudança sobe sozinha em poucos segundos ("Salvo"). Só existe "Sair", e sair apaga a cópia do navegador. Dois aparelhos ao mesmo tempo não se apagam: a mudança mais nova de cada item vence. O link do paciente lê as missões da nuvem e abre no celular dele. O backup em arquivo, em Configurações, continua.
-- LGPD: o pedido de autorização antes de gerar o link, a Política de privacidade e os Termos estão no ar; excluir a conta ainda é por pedido no e-mail de contato.
+- LGPD: o pedido de autorização antes de gerar o link, a Política de privacidade e os Termos estão no ar, e a conta se exclui pelo próprio site, em Conta e plano, com a senha (spec `exclusao-de-conta`).
 
 ## Capabilities and Constraints
 
@@ -60,7 +60,7 @@ Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o
 - A interface sai de uma biblioteca só, em `design-system/`; o contrato visual e os tokens estão em `DESIGN.md`.
 - Composição corporal opcional por dobras (Jackson e Pollock, Faulkner) ou bioimpedância.
 - Pendente: revisão clínica das oito referências pela nutricionista antes do lançamento.
-- Construídos depois do plano: a nuvem presa à conta, a cobrança (ainda com credenciais de teste do Mercado Pago, até a troca para produção) e os documentos de LGPD. Falta excluir a conta pelo site. Ver `docs/pendencias.md`.
+- Construídos depois do plano: a nuvem presa à conta, a cobrança (ainda com credenciais de teste do Mercado Pago, até a troca para produção), os documentos de LGPD e a exclusão da conta pelo site (spec `exclusao-de-conta`). Ver `docs/pendencias.md`.
 - Pendente antes da Fase 1: as 10 conversas de validação com recém-formados (Fase 0). O roteiro está em `docs/plano-negocio.md`.
 - **Decidido em 27/09: funcionalidade nova está congelada até essas conversas.** A única exceção é a base de alimentos com micronutrientes completos, que é o bloqueador declarado do diferencial. Modo treino e trava de CRN ainda não foram construídos.
 
