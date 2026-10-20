@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
+import { modoDeQuantidade } from '@/domain/caso.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
@@ -19,7 +20,7 @@ import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNa
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
-import type { Caso, ItemPlano, Plano } from '@/domain/tipos.ts'
+import type { Caso, ItemPlano, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
@@ -50,29 +51,27 @@ const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,17rem)_minmax(0
 const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
 
 /**
- * Uma quantidade por linha (spec impressao-do-plano, D-183): a medida caseira; o peso discreto ao lado só quando a
- * medida é vaga (D-189, CA-641); sem medida, o peso (CA-630).
+ * Uma quantidade por linha, pela escolha do plano (spec conduta-da-nutricionista, D-297): em "Medida caseira", a medida;
+ * em "Gramas", ou sem medida que sirva, o peso.
  */
 function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
-  const peso = `${formatarNumero(quantidade.gramas, 0)} g`
   // No celular a quantidade vai embaixo do nome, em cinza; no papel e na tela larga, na cor do texto.
   return (
     <span className="text-muted-foreground sm:text-foreground">
-      {quantidade.medida ?? peso}
-      {quantidade.medida !== null && quantidade.comPeso ? <span className="numeros text-muted-foreground">{` · ${peso}`}</span> : null}
+      {quantidade.medida ?? `${formatarNumero(quantidade.gramas, 0)} g`}
     </span>
   )
 }
 
 /** O alimento primeiro, com o nome que o paciente entende (CA-623), e a quantidade ao lado. */
-function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
+function Itens({ itens, modo }: { readonly itens: readonly ItemPlano[]; readonly modo: ModoQuantidade }) {
   return (
     <ul className="flex flex-col gap-1">
       {itens.map((item) => (
         <li key={item.id} className={COLUNAS}>
           <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
           <span className="sr-only">, </span>
-          <Quantidade quantidade={quantidadeNaFolha(item.alimentoId, item.gramas, buscarAlimento)} />
+          <Quantidade quantidade={quantidadeNaFolha(item.alimentoId, item.gramas, modo)} />
         </li>
       ))}
     </ul>
@@ -109,6 +108,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
       )
     : []
   const perfil = lerPerfil(useArmazenamento())
+  const modo = modoDeQuantidade(caso)
   const nome = caso.nome.trim() || 'Sem nome'
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()
@@ -148,7 +148,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                 {opcoesDaFolha.map((itens, i) => (
                   <Fragment key={itens[0]?.id ?? i}>
                     {opcoesDaFolha.length > 1 ? <RotuloDaOpcao numero={i + 1} /> : null}
-                    <Itens itens={itens} />
+                    <Itens itens={itens} modo={modo} />
                   </Fragment>
                 ))}
                 {opcoesDaFolha.length === 0 ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
@@ -213,7 +213,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                   <li key={c.nome} className="border-b border-dotted border-border">
                     {`${c.nome} — `}
                     {/* CA-643: a quantidade do dia pela regra da refeição. */}
-                    <Quantidade quantidade={quantidadeNaFolha(c.alimentoId, c.gramas, buscarAlimento)} />
+                    <Quantidade quantidade={quantidadeNaFolha(c.alimentoId, c.gramas, modo)} />
                   </li>
                 ))}
               </ul>
@@ -233,7 +233,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                         <span key={t.alimentoId} className="troca">
                           {`${t.nome} · `}
                           {/* CA-644: a mesma regra da refeição. */}
-                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, buscarAlimento)} />
+                          <Quantidade quantidade={quantidadeNaFolha(t.alimentoId, t.gramas, modo)} />
                         </span>
                       ))}
                     </span>

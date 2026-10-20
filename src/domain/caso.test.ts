@@ -1,5 +1,19 @@
-import { criarCasoVazio, lerNumero, validarCaso } from './caso.ts'
+import { criarCasoVazio, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
 import type { Caso } from './tipos.ts'
+
+describe('quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
+  it('CA-924: plano novo vem com "Medida caseira"', () => {
+    expect(criarCasoVazio('c1').quantidades).toBe('medida-caseira')
+  })
+
+  it('CB-290 e CB-291: sem o campo, ou com valor estranho, vale "Medida caseira"', () => {
+    expect(modoDeQuantidade({ quantidades: 'gramas' })).toBe('gramas')
+    expect(modoDeQuantidade({ quantidades: 'medida-caseira' })).toBe('medida-caseira')
+    expect(modoDeQuantidade({})).toBe('medida-caseira')
+    expect(modoDeQuantidade({ quantidades: 'quilos' })).toBe('medida-caseira')
+    expect(modoDeQuantidade({ quantidades: null })).toBe('medida-caseira')
+  })
+})
 
 const adulta = (parcial: Partial<Caso> = {}): Caso => ({
   ...criarCasoVazio('c1'),

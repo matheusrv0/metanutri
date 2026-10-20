@@ -92,6 +92,17 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(descreverItem({ id: 'x', alimentoId: 40, gramas: 80 }, buscarAlimento)).toBe('Macarrão, trigo, cru (80 g)')
   })
 
+  it('CA-929 (spec conduta-da-nutricionista): a quantidade segue a escolha do plano', async () => {
+    expect(descreverItem({ id: 'x', alimentoId: 3, gramas: 150 }, buscarAlimento, 'gramas')).toBe('Arroz, tipo 1, cozido (150 g)')
+    expect(descreverItem({ id: 'x', alimentoId: 3, gramas: 150 }, buscarAlimento, 'medida-caseira')).toBe('Arroz, tipo 1, cozido (6 colheres de sopa)')
+    // CA-927: manteiga em ponta de faca.
+    expect(descreverItem({ id: 'x', alimentoId: 261, gramas: 5 }, buscarAlimento)).toBe('Manteiga, com sal (1 ponta de faca)')
+    const { caso, plano } = montarCaso({ quantidades: 'gramas' })
+    const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toContain('Arroz, tipo 1, cozido (150 g); Feijão, carioca, cozido (140 g)')
+  })
+
   it('CA-47: campos vazios ficam em branco, sem "undefined" nem "null"', async () => {
     const gerar = ids()
     const caso = criarCasoVazio('vazio')

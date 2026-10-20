@@ -91,6 +91,30 @@ describe('dietaDoPlano: a dieta que vai para o link (D-150)', () => {
   })
 })
 
+describe('a escolha de quantidade do plano no link (spec conduta-da-nutricionista, D-297)', () => {
+  it('CA-928: em "Gramas", a cópia vai sem medida: qualquer versão do app mostra só o peso', () => {
+    const dieta = dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio())
+    for (const item of dieta.refeicoes.flatMap((r) => r.opcoes.flat())) expect(item.medida).toBeNull()
+    expect(dieta.refeicoes[0]?.opcoes[0]).toEqual([{ medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }])
+  })
+
+  it('CA-927 e CA-928: em "Medida caseira", a medida para a paciente, com a ponta de faca da manteiga', () => {
+    let plano = planoCheio()
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 261, gramas: 5 }, ids)
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 490, gramas: 55 }, ids)
+    const itens = dietaDoPlano(caso(), plano).refeicoes[0]?.opcoes[0]
+    expect(itens?.map((i) => i.medida)).toEqual(['1 ponta de faca', '1 unidade'])
+  })
+
+  it('CA-930: trocar a escolha muda o que a paciente vê, e o link avisa que o plano mudou', () => {
+    const noLink = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-20')
+    expect(dietaMudou(noLink, dietaDoPlano(caso(), planoCheio()))).toBe(false)
+    expect(dietaMudou(noLink, dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio()))).toBe(true)
+  })
+})
+
 describe('copiarDieta, dietaMudou e temDieta', () => {
   it('D-158: a cópia guarda o dia em que foi feita', () => {
     const copia = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-14')

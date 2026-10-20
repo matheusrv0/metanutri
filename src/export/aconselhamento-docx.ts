@@ -2,11 +2,12 @@
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
-import { medidaEquivalente } from '../domain/busca.ts'
+import { modoDeQuantidade } from '../domain/caso.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { quantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type OpcaoId, type Plano } from '../domain/tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
 
 export interface DadosAconselhamento {
@@ -32,19 +33,21 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
   substituto2: 'Substituto 2:',
 }
 
-/** "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). */
-export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
+/**
+ * "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). A quantidade segue a escolha do
+ * plano entre medida caseira e gramas, como a folha e o link (spec conduta-da-nutricionista, D-297).
+ */
+export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
   const alimento = buscar(item.alimentoId)
   if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
-  const quantidade = medida ? medida.texto : `${formatarNumeroDocx(item.gramas, 0)} g`
+  const quantidade = quantidadeNaFolha(item.alimentoId, item.gramas, modo).medida ?? `${formatarNumeroDocx(item.gramas, 0)} g`
   return `${alimento.descricao} (${quantidade})`
 }
 
-export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento): string {
+export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
   return itens
     .filter((i) => i.gramas > 0)
-    .map((i) => descreverItem(i, buscar))
+    .map((i) => descreverItem(i, buscar, modo))
     .join('; ')
 }
 
@@ -124,7 +127,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
   const refeicoes = plano.refeicoes.flatMap((r) => [
     tabela([
       linha([celula(`${r.horario} - ${r.nome}`, { negrito: true, colunas: 2 })]),
-      ...OPCOES.map((o) => linha([celula(NOME_OPCAO[o], { negrito: true }), celula(descreverOpcao(r.opcoes[o], buscar))])),
+      ...OPCOES.map((o) => linha([celula(NOME_OPCAO[o], { negrito: true }), celula(descreverOpcao(r.opcoes[o], buscar, modoDeQuantidade(caso)))])),
     ]),
     new Paragraph({ text: '' }),
   ])

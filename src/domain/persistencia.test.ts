@@ -177,6 +177,15 @@ describe('repositório de casos', () => {
     expect(reaberto.obter(a.caso.id)).toBeNull()
   })
 
+  it('CB-290 (spec conduta-da-nutricionista): plano gravado antes, sem a escolha de quantidade, abre com "Medida caseira"', () => {
+    const arm = new MemoriaFalsa()
+    const antigo = { ...criarRepositorio(arm).criar('Antigo') }
+    const gravado = JSON.parse(arm.getItem(`metanutri:caso:${antigo.caso.id}`) ?? '{}') as { caso: Record<string, unknown> }
+    delete gravado.caso['quantidades']
+    arm.setItem(`metanutri:caso:${antigo.caso.id}`, JSON.stringify(gravado))
+    expect(criarRepositorio(arm).obter(antigo.caso.id)?.caso.quantidades).toBe('medida-caseira')
+  })
+
   it('operar em caso inexistente é erro', () => {
     const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
     expect(() => repo.duplicar('x')).toThrow(/x/)

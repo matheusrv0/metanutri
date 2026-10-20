@@ -2,12 +2,16 @@
 // e serve a quem come: refeição, medida caseira, substitutos e orientações. Sem kcal e sem
 // nutriente (D-150). Vira texto na hora da cópia (D-151): o aparelho do paciente não tem os
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
-import { medidaEquivalente } from './busca.ts'
+import { modoDeQuantidade } from './caso.ts'
+import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { buscarAlimento } from './tabelas.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano } from './tipos.ts'
 
 export interface ItemDaDieta {
-  /** "6 colheres de sopa"; nulo quando o alimento não tem medida caseira conhecida (CB-156). */
+  /**
+   * "6 colheres de sopa"; nulo quando o alimento não tem medida caseira conhecida (CB-156) ou quando o plano escolheu
+   * "Gramas" (spec conduta-da-nutricionista, D-297): a escolha vai no próprio item, e qualquer versão do app mostra o peso.
+   */
   readonly medida: string | null
   readonly gramas: number
   readonly alimento: string
@@ -37,21 +41,26 @@ export interface DietaDoLink extends DietaDoPlano {
   readonly copiadaEm: string
 }
 
-function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento): ItemDaDieta {
+function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
   return {
-    medida: medidaEquivalente(item.alimentoId, item.gramas)?.texto ?? null,
+    medida: quantidadeNaFolha(item.alimentoId, item.gramas, modo).medida,
     gramas: item.gramas,
     alimento: buscar(item.alimentoId)?.descricao ?? 'Alimento removido',
   }
 }
 
-/** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534). */
-export function dietaDoPlano(caso: Pick<Caso, 'orientacoes' | 'receitas'>, plano: Plano, buscar: BuscarAlimento = buscarAlimento): DietaDoPlano {
+/** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534) e a escolha de quantidade do plano. */
+export function dietaDoPlano(
+  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade },
+  plano: Plano,
+  buscar: BuscarAlimento = buscarAlimento,
+): DietaDoPlano {
+  const modo = modoDeQuantidade(caso)
   const refeicoes = plano.refeicoes
     .map((refeicao) => ({
       horario: refeicao.horario,
       nome: refeicao.nome,
-      opcoes: OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0).map((i) => itemDaDieta(i, buscar))).filter((itens) => itens.length > 0),
+      opcoes: OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0).map((i) => itemDaDieta(i, buscar, modo))).filter((itens) => itens.length > 0),
     }))
     .filter((refeicao) => refeicao.opcoes.length > 0)
   return { refeicoes, orientacoes: caso.orientacoes.trim(), receitas: caso.receitas.trim() }
