@@ -432,6 +432,36 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
   })
 })
 
+describe('Mínimo da meta só com número inteiro (spec revisao-geral-trabalho, D-243)', () => {
+  it('CA-782: "90,4" avisa e não muda a meta; "85" muda e o aviso some', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '90,4')
+    expect(screen.getByText('Use um número inteiro, como 90.')).toBeInTheDocument()
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '85')
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+    expect(screen.getByText(/meta de 85% da referência/)).toBeInTheDocument()
+  })
+
+  it('CB-242: campo vazio não mostra o aviso e não muda a meta', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    await usuario.clear(screen.getByLabelText('Mínimo da meta'))
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
+  })
+
+  it('CA-783: um mínimo de 90,4% guardado aparece como 90 no campo e no subtítulo', () => {
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 90.4 } } }, planoComArroz())
+    expect(screen.getByLabelText('Mínimo da meta')).toHaveValue('90')
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
+  })
+})
+
 describe('Mínimo da meta dentro do que o cálculo aceita (CA-698)', () => {
   it('CA-698: acima de 1000% o número não vale, e a tela não cai', async () => {
     const usuario = montar(adulta, planoComArroz())

@@ -1,6 +1,6 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, minimoInteiro, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
@@ -129,6 +129,8 @@ export function TelaAdequacao({
   const focoAoFechar = () =>
     abertura.current ? destinoDoFoco(tela.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
   const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
+  // D-243: com vírgula, o mínimo da meta avisa e não muda.
+  const [minimoNaoInteiro, setMinimoNaoInteiro] = useState(false)
   const idNaMeta = useId()
   const celular = useMediaQuery(CELULAR)
   const prefs = caso.adequacao
@@ -189,14 +191,16 @@ export function TelaAdequacao({
             />
             <CampoNumero
               rotulo="Mínimo da meta"
-              valor={prefs.preset.tipo === 'personalizado' ? prefs.preset.minimoPct : 90}
-              aoMudar={(v) =>
+              valor={prefs.preset.tipo === 'personalizado' ? minimoInteiro(prefs.preset.minimoPct) : 90}
+              aoMudar={(v) => {
+                const inteiro = v === null || Number.isInteger(v)
+                setMinimoNaoInteiro(!inteiro)
                 // Acima de 1000% o cálculo da adequação recusa o número: ele não vale, e a tela não cai (CA-698).
-                v !== null &&
-                v > 0 &&
-                v <= MINIMO_MAXIMO_PCT &&
-                aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
-              }
+                if (v !== null && inteiro && v > 0 && v <= MINIMO_MAXIMO_PCT) {
+                  aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
+                }
+              }}
+              erro={minimoNaoInteiro ? 'Use um número inteiro, como 90.' : undefined}
               sufixo="%"
             />
           </div>
