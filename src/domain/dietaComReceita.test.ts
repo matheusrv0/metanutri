@@ -2,6 +2,7 @@
 import { criarCasoVazio } from './caso.ts'
 import { copiarDieta, dietaDoPlano, dietaMudou, lerDieta, temDieta } from './dietaDoLink.ts'
 import { adicionarReceita, atualizarGramas, criarPlanoPadrao } from './plano.ts'
+import { LIMITE_NOME_RECEITA, LIMITE_PREPARO_RECEITA } from './receitas.ts'
 import { PANQUECA } from './receitas.test-utils.ts'
 import type { Caso, Plano } from './tipos.ts'
 
@@ -56,6 +57,24 @@ describe('a receita na dieta do link', () => {
     expect(linkAntigo).not.toBeNull()
     expect(linkAntigo && 'receitasDoPlano' in linkAntigo).toBe(false)
     expect(linkAntigo && dietaMudou(linkAntigo, semReceita)).toBe(false)
+  })
+
+  it('CB-277: dez receitas no limite de tamanho (nome de 120 e preparo de 4.000 letras, 12 ingredientes) cabem bem abaixo dos 256 KB do link', () => {
+    let plano = criarPlanoPadrao(ids)
+    for (let i = 0; i < 10; i++) {
+      const refeicao = plano.refeicoes[i % plano.refeicoes.length]
+      if (!refeicao) throw new Error('plano padrão mudou')
+      const grande = {
+        ...PANQUECA,
+        origemId: `r${i}`,
+        nome: `${i}`.padEnd(LIMITE_NOME_RECEITA, 'n'),
+        preparo: 'p'.repeat(LIMITE_PREPARO_RECEITA),
+        ingredientes: Array.from({ length: 12 }, (_, j) => ({ alimentoId: j + 1, gramas: 10 })),
+      }
+      plano = adicionarReceita(plano, refeicao.id, 'principal', { receita: grande, gramas: 100 }, ids)
+    }
+    const tamanho = new TextEncoder().encode(JSON.stringify(copiarDieta(dietaDoPlano(caso(), plano), '2026-10-19'))).length
+    expect(tamanho).toBeLessThan(256 * 1024 * 0.25)
   })
 
   it('CA-885: pôr, mudar a quantidade ou tirar a receita conta como mudança', () => {

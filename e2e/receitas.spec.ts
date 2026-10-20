@@ -110,6 +110,27 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await semRolagemLateral(page)
 })
 
+test('CA-889 (rodada da revisão): a linha da receita no plano cabe em 360 px, com botões de 44 px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 })
+  await abrirLimpo(page)
+  await criarPanqueca(page)
+  await page.goto('/#/painel')
+  await page.getByRole('button', { name: 'Novo plano' }).first().click()
+  await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
+  await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
+  await page.getByRole('radio', { name: 'Feminino' }).click()
+  await page.getByLabel('Idade', { exact: true }).fill('30')
+  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await porPanquecaNoDesjejum(page)
+  const desjejum = page.getByRole('tabpanel', { name: 'Principal de Desjejum' })
+  await expect(desjejum).toContainText('Receita · 1 unidade')
+  await semRolagemLateral(page)
+  const remover = await desjejum.getByRole('button', { name: 'Remover Panqueca de banana' }).boundingBox()
+  expect(remover?.height ?? 0).toBeGreaterThanOrEqual(44)
+  const gramas = await desjejum.getByLabel('Gramas de Panqueca de banana').boundingBox()
+  expect((gramas?.x ?? 0) + (gramas?.width ?? 0)).toBeLessThanOrEqual(360)
+})
+
 test('CA-889: lista e editor de receitas cabem em 360 px, com botões de 44 px', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await abrirLimpo(page)

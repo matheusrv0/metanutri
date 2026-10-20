@@ -900,6 +900,30 @@ describe('receitas na nuvem (spec receitas-com-calculo, CA-867, CA-868, CB-275)'
     expect(nomes(juntarCopias(excluidaDepois, daNuvem, AGORA), RECEITAS)).toEqual(['Panqueca, daqui', 'Suco', 'Bolo'])
   })
 
+  it('D-170 (rodada da revisão): a cópia de uma versão antiga, sem a chave das receitas, não as apaga, e elas voltam para a nuvem', () => {
+    const arm = new Memoria()
+    arm.setItem('metanutri:pacientes', JSON.stringify([paciente('ana', 'Ana')]))
+    arm.setItem(RECEITAS, JSON.stringify([receita('a', 'Panqueca', T(2)), receita('b', 'Bolo', T(2))]))
+    arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), 'receitas/a': T(2), 'receitas/b': T(2) }))
+    // A versão antiga não conhece a chave: a cópia dela vem sem ela, com a marca de uma só receita.
+    const doAppAntigo = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana'), paciente('bia', 'Bia', T(3))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'pacientes/bia': T(3), 'receitas/a': T(2) }),
+    })
+    const aplicada = aplicarCopia(arm, doAppAntigo)
+    expect(aplicada.mantidas).toEqual([RECEITAS])
+    expect(nomes(copia({ [RECEITAS]: arm.getItem(RECEITAS) ?? '' }), RECEITAS)).toEqual(['Panqueca', 'Bolo'])
+    expect(nomes(montarCopia(arm, AGORA), RECEITAS)).toEqual(['Panqueca', 'Bolo'])
+  })
+
+  it('D-170: a receita excluída de verdade em outro aparelho (com lápide) sai daqui, mesmo pela cópia da versão antiga', () => {
+    const arm = new Memoria()
+    arm.setItem(RECEITAS, JSON.stringify([receita('a', 'Panqueca', T(2)), receita('b', 'Bolo', T(2))]))
+    arm.setItem(CHAVE_MUDANCAS, mudancas({ 'receitas/a': T(2), 'receitas/b': T(2) }))
+    aplicarCopia(arm, copia({ [CHAVE_MUDANCAS]: mudancas({ 'receitas/a': T(2) }, { 'receitas/b': T(4) }) }))
+    expect(nomes(copia({ [RECEITAS]: arm.getItem(RECEITAS) ?? '' }), RECEITAS)).toEqual(['Panqueca'])
+  })
+
   it('DP-4: o produto daqui que ganha id novo leva junto o ingrediente da receita daqui', () => {
     const daqui = copia({
       'metanutri:produtos': JSON.stringify([produto(900000, 'Granola daqui', T(4))]),
