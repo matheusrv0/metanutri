@@ -5,6 +5,7 @@ import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
+import { appConfirmado, confirmarComOApp } from './codigoDoApp.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
 
 export interface Resultado {
@@ -55,7 +56,11 @@ export interface ValorConta {
   readonly pedirTrocaDeSenha: (email: string, captchaToken?: string) => Promise<Resultado>
   /** Confere o código de troca de senha; dando certo, liga o modo de recuperação e `trocarSenha` grava a nova (CA-412). */
   readonly conferirCodigoDeSenha: (email: string, codigo: string) => Promise<Resultado>
-  readonly trocarSenha: (senha: string) => Promise<Resultado>
+  /**
+   * Grava a senha nova. Com o app autenticador ativo, o servidor pede a sessão confirmada pelo app
+   * (`precisa-codigo-do-app`): a tela pede o código e chama de novo com ele (spec seguranca-lote-5, D-268).
+   */
+  readonly trocarSenha: (senha: string, codigoDoApp?: string) => Promise<Resultado>
   /**
    * D-131 (spec dados-na-nuvem): sai e apaga a cópia de trabalho desta conta neste navegador; os dados
    * dela estão na nuvem. Os de outras contas ficam (D-124). Quem chama para a nuvem antes (DP-11).
@@ -85,6 +90,8 @@ function erroDoPedido(erro: { readonly message: string; readonly code?: string |
  */
 export function traduzir(mensagem: string, codigo?: string): ErroConta {
   if (codigo === 'email_not_confirmed') return 'email-nao-confirmado'
+  // D-268: a conta tem o app autenticador e a sessão ainda não foi confirmada por ele.
+  if (codigo === 'insufficient_aal') return 'precisa-codigo-do-app'
   // CA-460: o servidor recusou a verificação contra robôs (vencida, já usada ou falsa).
   if (codigo === 'captcha_failed') return 'verificacao-recusada'
   // O Supabase usa o mesmo código para o código digitado errado e para o vencido.
@@ -234,9 +241,20 @@ export function useConta(): ValorConta {
     return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
   }, [])
 
-  const trocarSenha = useCallback(async (senha: string): Promise<Resultado> => {
+  const trocarSenha = useCallback(async (senha: string, codigoDoApp?: string): Promise<Resultado> => {
     const c = obterSupabase()
     if (!c) return SEM_SERVIDOR
+    if (codigoDoApp !== undefined) {
+      // D-268: primeiro a sessão é confirmada pelo app; só depois o servidor aceita a senha.
+      const app = await appConfirmado(c)
+      if (app.erro) return { ok: false, erro: traduzir(app.erro.message, app.erro.code) }
+      if (app.fatorId === null) return { ok: false, erro: 'falha-rede' }
+      const recusa = await confirmarComOApp(c, app.fatorId, codigoDoApp)
+      if (recusa) {
+        const errado = recusa.code === 'mfa_verification_failed' || recusa.code === 'mfa_challenge_expired'
+        return { ok: false, erro: errado ? 'codigo-do-app-invalido' : traduzir(recusa.message, recusa.code) }
+      }
+    }
     const { error } = await c.auth.updateUser({ password: senha })
     if (error) return { ok: false, erro: traduzir(error.message, error.code) }
     setEmRecuperacao(false)

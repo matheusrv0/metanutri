@@ -9,6 +9,8 @@ interface CampoCodigoProps {
   readonly invalido?: boolean | undefined
   /** Quantos dígitos o código tem: 8 no e-mail; 6 no app autenticador (spec seguranca-lote-5, CA-835). */
   readonly digitos?: number | undefined
+  /** Rótulo próprio, quando a tela tem dois códigos (o do e-mail e o do app; spec seguranca-lote-5, CA-858). */
+  readonly rotulo?: string | undefined
 }
 
 /**
@@ -16,10 +18,10 @@ interface CampoCodigoProps {
  * autenticador. Só aceita dígitos e não tem `maxLength`: colar "1234 5678" cortaria o
  * último número antes de o espaço sair (CB-100). O teclado numérico vem do `inputMode`.
  */
-export function CampoCodigo({ id, valor, aoMudar, invalido = false, digitos = DIGITOS_DO_CODIGO }: CampoCodigoProps) {
+export function CampoCodigo({ id, valor, aoMudar, invalido = false, digitos = DIGITOS_DO_CODIGO, rotulo }: CampoCodigoProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Código de {digitos} dígitos</Label>
+      <Label htmlFor={id}>{rotulo ?? `Código de ${digitos} dígitos`}</Label>
       <Input
         id={id}
         inputMode="numeric"

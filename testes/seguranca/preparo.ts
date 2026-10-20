@@ -166,6 +166,13 @@ async function enviarArquivo(conta: Conta, caminho: string): Promise<void> {
   falhou(`enviar ${caminho}`, r.error)
 }
 
+/** Mais um administrador, com o app autenticador já confirmado (para testes que mudam a conta dele). */
+export async function novoAdministradorComApp(c: Cenario, email: string): Promise<Administrador> {
+  const conta = await criarConta(c.ambiente, c.servico, email, { situacao: 'nutricionista', nome: 'Outro administrador', crn_regiao: 6, crn_numero: '12345' })
+  falhou('cadastrar o outro administrador', (await c.servico.from('administradores').insert({ usuario: conta.id })).error)
+  return cadastrarApp(c.ambiente, conta)
+}
+
 export async function prepararCenario(): Promise<Cenario> {
   const ambiente = ambienteLocal()
   const servico = createClient(ambiente.url, ambiente.servico, OPCOES)

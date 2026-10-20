@@ -17,6 +17,10 @@ const { auth, avisar } = vi.hoisted(() => {
     updateUser: vi.fn(),
     verifyOtp: vi.fn(),
     signOut: vi.fn(),
+    mfa: {
+      listFactors: vi.fn(),
+      challengeAndVerify: vi.fn(),
+    },
   }
   return { auth, avisar: (evento: string, sessao: unknown) => ouvinte?.(evento, sessao) }
 })
@@ -316,6 +320,72 @@ describe('useConta', () => {
     })
     expect(auth.updateUser).toHaveBeenCalledWith({ password: 'novasenha1' })
     expect(result.current.emRecuperacao).toBe(false)
+  })
+
+  describe('D-268 e CA-858: a senha de quem tem o app autenticador', () => {
+    const FATORES = { data: { all: [], totp: [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }], phone: [], webauthn: [] }, error: null }
+    const SEM_APP = new AuthApiError('AAL2 session is required to update email or password when MFA is enabled.', 401, 'insufficient_aal')
+
+    it('o pedido do código do app é reconhecido pelo código do erro, nunca vira "falha de rede"', () => {
+      expect(traduzir(SEM_APP.message, 'insufficient_aal')).toBe('precisa-codigo-do-app')
+    })
+
+    it('sem o código do app, a recusa diz que falta o código e o modo de troca continua', async () => {
+      auth.verifyOtp.mockImplementation(async () => {
+        avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'dono@exemplo.com', user_metadata: {} } })
+        return { data: { user: { id: 'u1' }, session: {} }, error: null }
+      })
+      auth.updateUser.mockResolvedValue({ error: SEM_APP })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        await result.current.conferirCodigoDeSenha('dono@exemplo.com', '12345678')
+      })
+      await act(async () => {
+        expect(await result.current.trocarSenha('novasenha1')).toEqual({ ok: false, erro: 'precisa-codigo-do-app' })
+      })
+      expect(result.current.emRecuperacao).toBe(true)
+      expect(auth.mfa.challengeAndVerify).not.toHaveBeenCalled()
+    })
+
+    it('com o código do app, confirma a sessão pelo app e só então grava a senha', async () => {
+      auth.mfa.listFactors.mockResolvedValue(FATORES)
+      auth.mfa.challengeAndVerify.mockResolvedValue({ data: {}, error: null })
+      auth.updateUser.mockResolvedValue({ error: null })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        expect(await result.current.trocarSenha('novasenha1', '123456')).toEqual({ ok: true, erro: null })
+      })
+      expect(auth.mfa.challengeAndVerify).toHaveBeenCalledWith({ factorId: 'fator-1', code: '123456' })
+      expect(auth.updateUser).toHaveBeenCalledWith({ password: 'novasenha1' })
+      expect(auth.mfa.challengeAndVerify.mock.invocationCallOrder[0]).toBeLessThan(auth.updateUser.mock.invocationCallOrder[0] ?? 0)
+    })
+
+    it('código do app errado: avisa e não tenta gravar a senha', async () => {
+      auth.mfa.listFactors.mockResolvedValue(FATORES)
+      auth.mfa.challengeAndVerify.mockResolvedValue({ data: null, error: new AuthApiError('Invalid TOTP code entered', 422, 'mfa_verification_failed') })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        expect(await result.current.trocarSenha('novasenha1', '000000')).toEqual({ ok: false, erro: 'codigo-do-app-invalido' })
+      })
+      expect(auth.updateUser).not.toHaveBeenCalled()
+    })
+
+    it('CB-269: o endereço IP mudou entre pedir e confirmar: tenta uma vez de novo, sozinho', async () => {
+      auth.mfa.listFactors.mockResolvedValue(FATORES)
+      auth.mfa.challengeAndVerify
+        .mockResolvedValueOnce({ data: null, error: new AuthApiError('Challenge and verify IP addresses mismatch.', 422, 'mfa_ip_address_mismatch') })
+        .mockResolvedValueOnce({ data: {}, error: null })
+      auth.updateUser.mockResolvedValue({ error: null })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        expect(await result.current.trocarSenha('novasenha1', '123456')).toEqual({ ok: true, erro: null })
+      })
+      expect(auth.mfa.challengeAndVerify).toHaveBeenCalledTimes(2)
+    })
   })
 
   it('CA-411: entrar sem confirmar é achado também pelo código do erro', async () => {
