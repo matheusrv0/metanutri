@@ -113,8 +113,12 @@ TDD. O I-2 (nome de receita no "Meu plano") fica para a integração com a frent
 - [ ] **R9 (M-9)** — Escopo neutro `.tema-claro` junto com `:root, .papel` em `tokens.css` e `globals.css`; o checkout
   passa a usá-lo. *Testes:* o checkout e um teste de texto das duas folhas de estilo.
 
+- [ ] **R10 (achado na validação da rodada)** — O CA-119 (`e2e/publico.spec.ts`, a foto do topo da landing) lia
+  `naturalWidth` logo depois de a foto aparecer, antes de ela terminar de carregar (`decoding="async"`), e falhou 1 vez
+  com a máquina carregada. Passa a esperar a foto carregar (`expect.poll`). Só teste.
+
 Arquivos a mais nesta rodada: `src/ui/publico/conta/CamposSituacao.tsx` e `TelaCriarConta.test.tsx` (R2), `design-system/tokens/tokens.css` e
-`src/ui/tema/globals.css` (R9), `e2e/apoio/fumaca.ts` (R6), `src/ui/tema/temaClaro.test.ts` (R9, novo).
+`src/ui/tema/globals.css` (R9), `e2e/apoio/fumaca.ts` (R6), `src/ui/tema/temaClaro.test.ts` (R9, novo), `e2e/publico.spec.ts` (R10).
 
 ## Riscos e decisões para revisar
 
