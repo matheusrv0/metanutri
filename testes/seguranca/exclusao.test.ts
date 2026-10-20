@@ -429,6 +429,20 @@ describe('D-259 (revisão de 19/10/2026): a rotina diária', () => {
     expect(await registrosDeAcesso(c, c.vitima.email)).toEqual([])
   })
 
+  it('CA-825 (L1): apaga o registro de assinaturas com mais de 5 anos, sem precisar de outra exclusão', async () => {
+    const c = await prepararCenario()
+    const sufixo = randomBytes(4).toString('hex')
+    const ano = 365 * 24 * 60 * MINUTO_MS
+    const antigos = await c.servico.from('assinaturas_de_contas_excluidas').insert([
+      { preapproval_id: `pre-rotina-seis-${sufixo}`, plano: 'solo', valor_centavos: 2990, excluida_em: new Date(Date.now() - 6 * ano).toISOString().slice(0, 10) },
+      { preapproval_id: `pre-rotina-quatro-${sufixo}`, plano: 'solo', valor_centavos: 2990, excluida_em: new Date(Date.now() - 4 * ano).toISOString().slice(0, 10) },
+    ])
+    expect(antigos.error).toBeNull()
+    expect((await c.servico.rpc('limpar_registros_guardados')).error).toBeNull()
+    expect(await registroDa(c, `pre-rotina-seis-${sufixo}`)).toEqual([])
+    expect(await registroDa(c, `pre-rotina-quatro-${sufixo}`)).toHaveLength(1)
+  })
+
   it('conta comum e visitante não chamam a rotina', async () => {
     const c = await prepararCenario()
     for (const cliente of [c.atacante.cliente, c.anonimo]) barrado(await cliente.rpc('limpar_registros_guardados'))

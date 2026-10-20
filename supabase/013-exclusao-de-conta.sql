@@ -111,6 +111,8 @@ set search_path = ''
 as $$
 begin
   delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';
+  -- CA-825 (L1 da revisão): os 5 anos do registro valem mesmo sem outra exclusão.
+  delete from public.assinaturas_de_contas_excluidas where excluida_em < p_agora - interval '5 years';
 end;
 $$;
 

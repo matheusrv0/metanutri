@@ -132,6 +132,10 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
       expect(corpoDaRotina).toContain("delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';")
     })
 
+    it('CA-825 (L1): apaga todo dia o registro de assinaturas com mais de 5 anos, mesmo sem exclusão nenhuma', () => {
+      expect(corpoDaRotina).toContain("delete from public.assinaturas_de_contas_excluidas where excluida_em < p_agora - interval '5 years';")
+    })
+
     it('security definer com search_path vazio e só nomes qualificados; só o servidor chama', () => {
       expect(cabecalhoDaRotina).toContain('returns void')
       expect(cabecalhoDaRotina).toContain('security definer')
