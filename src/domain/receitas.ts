@@ -197,15 +197,33 @@ export interface OpcoesReceitas {
   readonly gerarId?: () => string
 }
 
+/** A chave da memória da aba quando o navegador não guarda dados. */
+const SEM_ARMAZENAMENTO = {}
+
+/**
+ * CB-274: a memória das receitas, uma por armazenamento (e uma para "sem armazenamento"), para a aba inteira: a receita
+ * criada na tela Receitas aparece na busca da refeição, que cria o próprio repositório.
+ */
+const memorias = new WeakMap<object, { lista: unknown[] }>()
+
+function memoriaDe(armazenamento: Armazenamento | null): { lista: unknown[] } {
+  const chave = armazenamento ?? SEM_ARMAZENAMENTO
+  const existente = memorias.get(chave)
+  if (existente) return existente
+  const nova = { lista: [] as unknown[] }
+  memorias.set(chave, nova)
+  return nova
+}
+
 export function criarRepositorioReceitas(armazenamento: Armazenamento | null, opcoes: OpcoesReceitas = {}): RepositorioReceitas {
   const agora = opcoes.agora ?? (() => new Date().toISOString())
   const gerarId = opcoes.gerarId ?? (() => globalThis.crypto.randomUUID())
   // A lista como está guardada: salvar uma receita não reescreve as outras, nem o que uma versão mais nova guardou a mais.
-  let memoria: unknown[] = []
+  const memoria = memoriaDe(armazenamento)
   let persistente = armazenamento !== null
 
   const lerBruto = (): unknown[] => {
-    if (!persistente || !armazenamento) return memoria
+    if (!persistente || !armazenamento) return memoria.lista
     try {
       const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE_RECEITAS) ?? '[]')
       return Array.isArray(bruto) ? bruto : []
@@ -215,7 +233,7 @@ export function criarRepositorioReceitas(armazenamento: Armazenamento | null, op
   }
 
   const gravar = (lista: unknown[]) => {
-    memoria = lista
+    memoria.lista = lista
     if (!persistente || !armazenamento) return
     try {
       armazenamento.setItem(CHAVE_RECEITAS, JSON.stringify(lista))

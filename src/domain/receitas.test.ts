@@ -128,8 +128,14 @@ describe('a biblioteca de receitas (CA-861, CA-863 a CA-866)', () => {
   it('CB-274: sem armazenamento, guarda em memória e avisa que não é persistente', () => {
     const repo = criarRepositorioReceitas(null, opcoes)
     expect(repo.persistente).toBe(false)
-    repo.salvar(DADOS)
-    expect(repo.listar().map((r) => r.nome)).toEqual(['Panqueca de banana'])
+    repo.salvar({ ...DADOS, nome: 'Só na memória' })
+    expect(repo.listar().map((r) => r.nome)).toContain('Só na memória')
+  })
+
+  it('CB-274 (rodada da revisão): sem armazenamento, a memória é uma só para a aba inteira', () => {
+    criarRepositorioReceitas(null, opcoes).salvar({ ...DADOS, nome: 'Criada na tela Receitas' })
+    // Outra tela (a busca da refeição) cria o próprio repositório e vê a mesma receita.
+    expect(criarRepositorioReceitas(null).listar().map((r) => r.nome)).toContain('Criada na tela Receitas')
   })
 
   it('CA-866: filtra pelo nome, sem diferença de acento e maiúscula', () => {
