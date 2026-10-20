@@ -1,7 +1,10 @@
 // D-268 (spec seguranca-lote-5, emenda de 19/10/2026): com o app autenticador ativo, o servidor de login só grava a
 // senha numa sessão confirmada pelo app. "Esqueci a senha" abre uma sessão de recuperação (aal1): a senha é recusada
 // com `insufficient_aal` e, depois do código do app, aceita. É o que a tela faz (CA-858).
+import { readFileSync } from 'node:fs'
+import { fileURLToPath, URL } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { sqlNoBancoLocal } from './bancoLocal.ts'
 import { clienteSemSessao, confirmarComOApp, novoAdministradorComApp, prepararCenario, type Cenario } from './preparo.ts'
 
 let c: Cenario
@@ -34,6 +37,24 @@ describe('D-268: a senha do administrador com o app', () => {
     expect((await cliente.auth.updateUser({ password: 'Senha-nova-do-admin-1' })).error).toBeNull()
     const entrou = await clienteSemSessao(c.ambiente).auth.signInWithPassword({ email, password: 'Senha-nova-do-admin-1' })
     expect(entrou.error).toBeNull()
+  })
+
+  it('CB-261: a receita do celular perdido (topo do 014) tira a sessão confirmada pelo app e libera a troca de senha', async () => {
+    const email = `celular.perdido.${Date.now()}@exemplo.com`
+    const admin = await novoAdministradorComApp(c, email)
+    const sql014 = readFileSync(fileURLToPath(new URL('../../supabase/014-seguranca-lote-5.sql', import.meta.url)), 'utf8')
+    const receita = sql014
+      .split('\n')
+      .filter((linha) => /^-- delete from auth\.(mfa_factors|sessions) where user_id/.test(linha))
+      .map((linha) => linha.replace(/^-- /, '').replace('seu-email@exemplo.com', email))
+    expect(receita).toHaveLength(2)
+    const rodada = sqlNoBancoLocal(receita.join('\n'))
+    expect(rodada.ok, rodada.erro).toBe(true)
+    // A sessão do "celular perdido" (aal2) não renova mais.
+    expect((await admin.cliente.auth.refreshSession()).error).not.toBeNull()
+    // Sem o app, o código do e-mail basta para a senha nova.
+    const cliente = await sessaoDeRecuperacao(email)
+    expect((await cliente.auth.updateUser({ password: 'Senha-depois-do-celular-1' })).error).toBeNull()
   })
 
   it('controle: conta sem o app troca a senha só com o código do e-mail', async () => {
