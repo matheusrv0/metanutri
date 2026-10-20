@@ -36,7 +36,8 @@ describe('lista padrão (seção 3.1, D-36)', () => {
       'Cuscuz, de milho, cozido com sal · 135',
       'Ovo, de galinha, inteiro, cozido/10minutos · 45',
       'Pão, trigo, francês · 50',
-      'Tapioca, com manteiga · 50',
+      // CA-916 (spec conduta-da-nutricionista, D-291): a tapioca com manteiga dá lugar a uma fruta in natura.
+      'Mamão, Papaia, cru · 170',
       'Café, infusão 10% · 50',
     ])
     expect(descrever('lanche')).toEqual([

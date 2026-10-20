@@ -1,6 +1,10 @@
-// Travas por texto do que o MetaNutri nunca propõe sozinho (spec sugestoes-com-criterio, CA-667 e CA-668).
+// Travas por texto do que o MetaNutri nunca propõe sozinho (spec sugestoes-com-criterio, CA-667 e CA-668; com a
+// conduta da nutricionista, spec conduta-da-nutricionista, CA-913).
 // Escritas à mão, sem usar a regra de prescritivel.ts: um alimento que a regra deixar passar por engano cai aqui.
 // O nome não termina em `.test.ts`, então o Vitest não roda este arquivo como teste.
+// Os itens que a parceira liberou (D-290) não estão aqui: azeite de oliva, mel, chocolate meio amargo, leite
+// fermentado, cereal matinal sem açúcar, charque e carne seca cozidos, azeitonas, tremoço em conserva, ovo frito,
+// feijoada, baião de dois, barreado, dobradinha, maniçoba, sarapatel, farinha d'água e leite em pó.
 
 /** Não aparece em modo nenhum, nem com a chave "Incluir ingredientes e alimentos crus" ligada. */
 export const NUNCA_APARECE = new RegExp(
@@ -10,7 +14,6 @@ export const NUNCA_APARECE = new RegExp(
     'refrigerante',
     'isot[oô]nica',
     'bebida l[áa]ctea',
-    'leite, fermentado',
     'achocolatado',
     'leite, condensado',
     'iogurte, sabor',
@@ -22,18 +25,18 @@ export const NUNCA_APARECE = new RegExp(
     '^doce',
     'doce (em|de) ',
     'doce, casc',
-    '^chocolate',
-    '^mel,',
+    '^chocolate, ao leite',
     'melado',
     'rapadura',
     '^biscoito, doce',
     '^bolo',
-    'frit[oa]',
+    // O ovo frito voltou (D-290); as outras frituras, não.
+    '^(?!ovo, de galinha, inteiro, frito$).*frit[oa]',
     'milanesa',
     '^margarina',
     '^manteiga',
     '^óleo',
-    '^azeite',
+    '^azeite, de dend',
     'maionese',
     'toucinho',
     'creme de leite',
@@ -42,18 +45,19 @@ export const NUNCA_APARECE = new RegExp(
     'salame',
     'mortadela',
     'hamb[úu]rguer',
-    'charque',
-    'carne, bovina, seca',
-    'feijoada',
+    'charque, cru',
+    'carne, bovina, seca, crua',
     'tropeiro',
+    // Gordura trans (D-292) e as preparações que saíram (D-291).
+    'hidrogenad',
+    'gordura vegetal',
+    '^tapioca, com manteiga',
+    '^p[ãa]o, de queijo, assado',
+    '^pipoca',
+    'cream cracker',
     'carreteiro',
-    'mani[çc]oba',
-    'barreado',
-    'sarapatel',
-    'dobradinha',
     'tablete',
     'instant[âa]neo',
-    'azeitona',
     '^sal,',
     'shoyu',
     'tempero a base',
@@ -61,7 +65,6 @@ export const NUNCA_APARECE = new RegExp(
     'capuccino',
     'gelatina',
     'mingau',
-    'cereal matinal',
     'farinha, l[áa]ctea',
     'enriquecid',
     // Revisão N5: o resto do nível "fora da rotina", para a trava não depender só da lista fixa de ids.
@@ -93,8 +96,6 @@ export const NUNCA_APARECE = new RegExp(
     '(^|[\\s,])paio($|[\\s,])',
     'porco, (orelha|rabo)',
     'virado',
-    'bai[ãa]o de dois',
-    'tremo[çc]o, em conserva',
   ].join('|'),
   'i',
 )
@@ -105,10 +106,10 @@ export const CAFE_OU_CHA = /^(café|chá),/i
 /** Forma de ingrediente: não aparece com a chave desligada nem nas trocas. */
 export const FORMA_DE_INGREDIENTE = new RegExp(
   [
-    '(^|[\\s,])pó($|[\\s,])',
+    // O leite em pó voltou (D-290).
+    '^(?!leite, de vaca, (integral|desnatado), pó$).*(^|[\\s,])pó($|[\\s,])',
     'desidratad',
     '^farinha, de (trigo|arroz|milho|centeio|rosca|puba|mesocarpo)',
-    '^farinha, de mandioca, crua',
     '^f[ée]cula',
     '^polvilho',
     '^milho, (amido|fubá)',

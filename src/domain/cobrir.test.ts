@@ -300,7 +300,8 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       ['Amendoim, torrado, salgado', 'Leguminosas e derivados', 30],
       ['Queijo, mozarela', 'Leite e derivados', 50],
       ['Pão, trigo, francês', 'Cereais e derivados', 50],
-      ['Biscoito, salgado, cream cracker', 'Cereais e derivados', 50],
+      // O cream cracker saiu das propostas (spec conduta-da-nutricionista, D-291); a torrada fica no grupo.
+      ['Torrada, pão francês', 'Cereais e derivados', 50],
       ['Tamarindo, cru', 'Frutas e derivados', 30],
       ['Carne, bovina, picanha, com gordura, grelhada', 'Carnes e derivados', 100],
       ['Frango, coxa, com pele, assada', 'Carnes e derivados', 100],

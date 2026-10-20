@@ -104,9 +104,18 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
     expect(daBatata.every((t) => buscarAlimento(t.alimentoId)?.categoria === batataFrita.categoria)).toBe(true)
   })
 
-  it('CA-660: margarina e doce de leite não têm par prescritível e ficam sem trocas', () => {
+  it('CA-660 e CA-912: margarina hidrogenada é "nunca" e não ganha troca; a interesterificada, em 5 g, também não', () => {
     expect(trocasDoAlimento({ alimentoId: porDescricao('Margarina, com óleo hidrogenado, com sal (65% de lipídeos)').id, gramas: 5 }, opcoes)).toEqual([])
-    expect(trocasDoAlimento({ alimentoId: porDescricao('Doce, de leite, cremoso').id, gramas: 30 }, opcoes)).toEqual([])
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Margarina, com óleo hidrogenado, com sal (65% de lipídeos)').id, gramas: 30 }, opcoes)).toEqual([])
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Chantilly, spray, com gordura vegetal').id, gramas: 30 }, opcoes)).toEqual([])
+    // O único par de gordura é o azeite (D-290), e 3 g de azeite é porção que ninguém mede.
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Margarina, com óleo interesterificado, com sal (65%de lipídeos)').id, gramas: 5 }, opcoes)).toEqual([])
+  })
+
+  it('CA-660 e D-290: doce de leite posto à mão troca só pelos doces que a parceira liberou', () => {
+    const trocas = trocasDoAlimento({ alimentoId: porDescricao('Doce, de leite, cremoso').id, gramas: 30 }, opcoes).map((t) => t.descricao)
+    expect(trocas.length).toBeGreaterThan(0)
+    for (const t of trocas) expect(['Mel, de abelha', 'Chocolate, meio amargo']).toContain(t)
   })
 
   it('CA-660: no plano de exemplo, a margarina fica sem trocas e o resto continua com as suas', () => {
@@ -126,7 +135,10 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
   })
 
   it('CA-671: verdura cozida só troca por verdura cozida', () => {
-    const cozidas = ALIMENTOS.filter((a) => a.categoria.startsWith('Verduras') && a.preparo !== null && a.preparo !== 'cru')
+    // Farinha, farofa e pão de queijo não contam como verdura (re-revisão N2): a farinha torrada troca pela d'água.
+    const cozidas = ALIMENTOS.filter(
+      (a) => a.categoria.startsWith('Verduras') && a.preparo !== null && a.preparo !== 'cru' && !/^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/.test(a.descricao.trim()),
+    )
     expect(cozidas.length).toBeGreaterThan(10)
     for (const a of cozidas) {
       for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 80 }, opcoes)) {
@@ -156,8 +168,9 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
   })
 
   it('CA-672: item fora da rotina troca primeiro pelo mesmo alimento em outro preparo', () => {
-    const ovoFrito = porDescricao('Ovo, de galinha, inteiro, frito')
-    expect(trocasDoAlimento({ alimentoId: ovoFrito.id, gramas: 50 }, opcoes)[0]?.descricao).toBe('Ovo, de galinha, inteiro, cozido/10minutos')
+    // O ovo frito voltou a ser prescritível (spec conduta-da-nutricionista, D-290); a bisteca frita, não.
+    const bistecaFrita = porDescricao('Porco, bisteca, frita')
+    expect(trocasDoAlimento({ alimentoId: bistecaFrita.id, gramas: 100 }, opcoes)[0]?.descricao).toBe('Porco, bisteca, grelhada')
 
     const batataFrita = porDescricao('Batata, inglesa, frita')
     expect(trocasDoAlimento({ alimentoId: batataFrita.id, gramas: 100 }, opcoes)[0]?.descricao).toMatch(/^Batata, inglesa, /)

@@ -30,7 +30,8 @@ export const SUGESTOES_PADRAO: ListasDeSugestoes = {
     { alimentoId: 533, gramas: 135 }, // Cuscuz, de milho, cozido com sal
     { alimentoId: 488, gramas: 45 }, // Ovo, de galinha, inteiro, cozido/10minutos
     { alimentoId: 53, gramas: 50 }, // Pão, trigo, francês
-    { alimentoId: 551, gramas: 50 }, // Tapioca, com manteiga
+    // A tapioca com manteiga saiu: preparação que quase nunca se prescreve assim (spec conduta-da-nutricionista, D-291).
+    { alimentoId: 226, gramas: 170 }, // Mamão, Papaia, cru
     { alimentoId: 471, gramas: 50 }, // Café, infusão 10%
   ],
   lanche: [

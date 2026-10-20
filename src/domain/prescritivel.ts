@@ -1,4 +1,5 @@
-// O que o MetaNutri pode propor sozinho (spec sugestoes-com-criterio, D-190 a D-198).
+// O que o MetaNutri pode propor sozinho (spec sugestoes-com-criterio, D-190 a D-198; com a conduta da nutricionista
+// parceira, spec conduta-da-nutricionista, D-290 a D-293).
 //
 // Vale para tudo que o sistema escolhe sem a nutricionista pedir: o cobrir e as trocas da folha do paciente.
 // A escolha manual (busca, substituto, edição das listas) nunca passa por aqui: pela busca, qualquer alimento entra.
@@ -28,6 +29,53 @@ const ALCOOL = palavra('cerveja|aguardente|cacha(ç|c)a|vinho|vodca|u(í|i)sque|
 
 /** Nem como ingrediente alguém prescreve 200 g de shoyu (revisão I1). */
 const SAL_E_FERMENTO = /^(Sal,|Shoyu|Tempero a base de sal|Fermento)/i
+
+/**
+ * Gordura trans nunca é sugerida (spec conduta-da-nutricionista, D-292): o nome que diz "hidrogenada", e "gordura
+ * vegetal", que é o nome de rótulo da gordura hidrogenada (o chantilly em spray da TACO).
+ */
+const GORDURA_TRANS = /hidrogenad|gordura vegetal/i
+
+/**
+ * Preparações que quase nunca se prescrevem assim (spec conduta-da-nutricionista, D-291). Pelo nome inteiro: o pão de
+ * queijo cru continua forma de ingrediente.
+ */
+const PREPARACOES = new Set(['tapioca, com manteiga', 'pão, de queijo, assado', 'pipoca, com óleo de soja, sem sal', 'biscoito, salgado, cream cracker'])
+
+/**
+ * Voltam a ser propostos pela conduta da nutricionista parceira (spec conduta-da-nutricionista, D-290), pelo nome
+ * inteiro: vencem os motivos "fora da rotina" e "forma de ingrediente", nunca o "nunca". `segundaEscolha` diz se o item
+ * vem depois dos magros, in natura e preparos simples no cobrir e nas trocas (D-293): todos, menos a farinha d'água.
+ */
+const LIBERADOS_PELA_CONDUTA: ReadonlyMap<string, { readonly segundaEscolha: boolean }> = new Map(
+  [
+    'azeite, de oliva, extra virgem',
+    'mel, de abelha',
+    'chocolate, meio amargo',
+    'leite, fermentado',
+    'cereal matinal, milho',
+    'carne, bovina, charque, cozido',
+    'carne, bovina, seca, cozida',
+    'azeitona, preta, conserva',
+    'azeitona, verde, conserva',
+    'tremoço, em conserva',
+    'ovo, de galinha, inteiro, frito',
+    'feijoada',
+    'baião de dois, arroz e feijão-de-corda',
+    'barreado',
+    'dobradinha',
+    'maniçoba',
+    'sarapatel',
+    'leite, de vaca, integral, pó',
+    'leite, de vaca, desnatado, pó',
+  ]
+    .map((nome): [string, { readonly segundaEscolha: boolean }] => [nome, { segundaEscolha: true }])
+    .concat([['farinha, de mandioca, crua', { segundaEscolha: false }]]),
+)
+
+/** A descrição como a regra compara: sem espaço nas pontas nem repetido (CA-677). */
+const limpar = (descricao: string): string => descricao.trim().replace(/\s+/g, ' ')
+const chaveDoNome = (descricao: string): string => limpar(descricao).toLowerCase()
 
 const BEBIDA_ADOCADA =
   /^(Refrigerante|Bebida isot(ô|o)nica|Bebida l(á|a)ctea|Cana, caldo|Leite, fermentado|Leite, de vaca, achocolatado|Capuccino)/i
@@ -87,6 +135,7 @@ const MOLHO_OU_CONCENTRADO = /^Lim(ã|a)o, [^,]+, cru|^Tomate, (extrato|pur(ê|e
 export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
   { id: 'alcool', nivel: 'nunca', titulo: 'Bebida alcoólica', casa: (a) => ALCOOL.test(a.descricao) },
   { id: 'sal-e-fermento', nivel: 'nunca', titulo: 'Sal, shoyu, tempero pronto ou fermento', casa: (a) => SAL_E_FERMENTO.test(a.descricao) },
+  { id: 'gordura-trans', nivel: 'nunca', titulo: 'Gordura trans (hidrogenada)', casa: (a) => GORDURA_TRANS.test(a.descricao) },
   {
     id: 'bebida-adocada',
     nivel: 'fora-da-rotina',
@@ -130,6 +179,12 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     titulo: 'Ultraprocessado, salgadinho ou petisco em conserva',
     casa: (a) => ULTRAPROCESSADO.test(a.descricao),
   },
+  {
+    id: 'preparacao',
+    nivel: 'fora-da-rotina',
+    titulo: 'Preparação que raramente se prescreve assim',
+    casa: (a) => PREPARACOES.has(a.descricao.toLowerCase()),
+  },
   { id: 'miscelanea', nivel: 'ingrediente', titulo: 'Ingrediente da categoria Miscelâneas (café em pó)', casa: (a) => a.categoria === 'Miscelâneas' },
   { id: 'po', nivel: 'ingrediente', titulo: 'Produto em pó ou desidratado', casa: (a) => PO.test(a.descricao) },
   {
@@ -164,12 +219,14 @@ const GRAVIDADE: Readonly<Record<NivelPrescricao, number>> = { nunca: 0, 'fora-d
  * A TACO tem descrições com espaço nas pontas (" Mamão, doce em calda"): o nome é limpo antes de comparar.
  */
 export function regraQueExclui(alimento: DadosDaRegra): RegraPrescricao | null {
-  const limpo: DadosDaRegra = { ...alimento, descricao: alimento.descricao.trim().replace(/\s+/g, ' ') }
+  const limpo: DadosDaRegra = { ...alimento, descricao: limpar(alimento.descricao) }
   let pior: RegraPrescricao | null = null
   for (const regra of REGRAS_PRESCRICAO) {
     if (!regra.casa(limpo)) continue
     if (pior === null || GRAVIDADE[regra.nivel] < GRAVIDADE[pior.nivel]) pior = regra
   }
+  // A conduta da parceira libera o item, mas nunca o que é "nunca" (D-290).
+  if (pior !== null && pior.nivel !== 'nunca' && LIBERADOS_PELA_CONDUTA.has(chaveDoNome(alimento.descricao))) return null
   return pior
 }
 
