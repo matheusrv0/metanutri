@@ -97,7 +97,7 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
 /** Dicas embaixo do rótulo, pelo id da pergunta (seção 2). Num `Map`, um id como "constructor" não acha nada. */
 const DICAS: ReadonlyMap<string, string> = new Map([
   ['fezes', 'Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.'],
-  ['cor-da-urina', 'Escala de Armstrong: de 1 (quase transparente) a 8 (marrom); de 1 a 3, boa hidratação.'],
+  ['cor-da-urina', 'Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3, boa hidratação.'],
   ['alergias-alimentares', 'Para o cobrir não sugerir o alimento, escreva-o também em Restrições e saúde.'],
 ])
 
@@ -117,7 +117,7 @@ export const tipoDaPergunta = (id: string): TipoPergunta => TIPOS.get(id) ?? 'te
 
 /** A escala de 8 cores de Armstrong, da urina mais clara à mais escura (seção 1.1 da spec). */
 export const ESCALA_DA_URINA: readonly { readonly numero: number; readonly nome: string }[] = [
-  { numero: 1, nome: 'Quase transparente' },
+  { numero: 1, nome: 'Quase incolor' },
   { numero: 2, nome: 'Amarelo muito claro' },
   { numero: 3, nome: 'Amarelo-claro' },
   { numero: 4, nome: 'Amarelo' },

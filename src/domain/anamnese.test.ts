@@ -71,13 +71,13 @@ describe('roteiro padrão (D-160, seção 2 da spec)', () => {
     expect(tipoDaPergunta('gestacao-trimestre')).toBe('trimestre')
     expect(tipoDaPergunta('agua-dia')).toBe('texto')
     expect(tipoDaPergunta('p-123')).toBe('texto')
-    expect(dicaDaPergunta('cor-da-urina')).toBe('Escala de Armstrong: de 1 (quase transparente) a 8 (marrom); de 1 a 3, boa hidratação.')
+    expect(dicaDaPergunta('cor-da-urina')).toBe('Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3, boa hidratação.')
     expect(dicaDaPergunta('alergias-alimentares')).toBe('Para o cobrir não sugerir o alimento, escreva-o também em Restrições e saúde.')
   })
 
   it('CA-934: a escala de Armstrong tem 8 cores, com número e nome, e a resposta fica legível', () => {
     expect(ESCALA_DA_URINA.map((c) => `${c.numero} · ${c.nome}`)).toEqual([
-      '1 · Quase transparente',
+      '1 · Quase incolor',
       '2 · Amarelo muito claro',
       '3 · Amarelo-claro',
       '4 · Amarelo',

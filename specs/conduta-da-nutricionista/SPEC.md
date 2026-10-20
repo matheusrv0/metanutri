@@ -41,7 +41,7 @@ alergias nem gestação.
 
 | Nº | Nome | Leitura |
 |---|---|---|
-| 1 | Quase transparente | boa hidratação |
+| 1 | Quase incolor | boa hidratação |
 | 2 | Amarelo muito claro | boa hidratação |
 | 3 | Amarelo-claro | boa hidratação |
 | 4 | Amarelo | beber mais água |
@@ -50,7 +50,7 @@ alergias nem gestação.
 | 7 | Âmbar-escuro | desidratação |
 | 8 | Marrom | desidratação |
 
-A dica embaixo do rótulo, como a de Bristol: "Escala de Armstrong: de 1 (quase transparente) a 8 (marrom); de 1 a 3,
+A dica embaixo do rótulo, como a de Bristol: "Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3,
 boa hidratação." As cores são tokens do design system (`--urina-1` a `--urina-8`), as mesmas nos dois temas.
 
 ## 2. Critérios de aceite
@@ -93,7 +93,7 @@ boa hidratação." As cores são tokens do design system (`--urina-1` a `--urina
 
 ### US-CN5 · Anamnese (E)
 
-- **CA-934** · Dado o bloco "Água" aberto, então "Cor da urina" mostra 8 opções em ordem, cada uma com a cor, o número e o nome, e o nome acessível de cada uma é "1 · Quase transparente" a "8 · Marrom"; a dica de Armstrong fica embaixo do rótulo. Escolher grava na ficha "3 · Amarelo-claro" e conta como respondida; tocar de novo na opção marcada apaga a resposta.
+- **CA-934** · Dado o bloco "Água" aberto, então "Cor da urina" mostra 8 opções em ordem, cada uma com a cor, o número e o nome, e o nome acessível de cada uma é "1 · Quase incolor" a "8 · Marrom"; a dica de Armstrong fica embaixo do rótulo. Escolher grava na ficha "3 · Amarelo-claro" e conta como respondida; tocar de novo na opção marcada apaga a resposta.
 - **CA-935** · Dado a ficha, então a anamnese mostra 10 blocos, nesta ordem: Objetivo e queixa; Rotina e sono; Intestino; Água; Álcool e fumo; Atividade física; Preferências e aversões; Intolerâncias e alergias; Gestação; Recordatório de 24 horas. "Intolerâncias e alergias" tem "Intolerâncias alimentares" e "Alergias alimentares" (texto); "Gestação" tem "Trimestre" (escolha única: Não gestante, 1º trimestre, 2º trimestre, 3º trimestre) e "Anotações da gestação" (texto).
 - **CA-936** · Dado um roteiro salvo antes desta versão, com perguntas editadas, então ele abre com as edições, os dois blocos novos com as perguntas padrão e a "Cor da urina" na Água, depois de "Quanta água bebe por dia" (ou no fim, se ela foi tirada); depois de salvo, tirar a "Cor da urina" vale e ela não volta.
 - **CA-937** · Dado uma resposta de escolha (cor da urina ou trimestre), então ela fica nas respostas da ficha, com o texto da pergunta, como as outras (sai do roteiro sem se perder, CA-568; sobe para a nuvem com a ficha).

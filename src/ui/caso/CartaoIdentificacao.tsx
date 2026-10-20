@@ -61,16 +61,6 @@ export function CartaoIdentificacao({ caso, aoAlterar, pacientes, aoVincularPaci
             <CampoTexto rotulo="Preceptor(a)" valor={caso.preceptor} aoMudar={(v) => aoAlterar({ preceptor: v })} />
           </>
         ) : null}
-        {/* Spec conduta-da-nutricionista, D-297: vale para a folha impressa, o link do paciente e o Word. */}
-        <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <span className="text-sm font-medium text-foreground">{ROTULO_QUANTIDADES}</span>
-          <SeletorSegmentado<ModoQuantidade>
-            rotulo={ROTULO_QUANTIDADES}
-            opcoes={OPCOES_QUANTIDADE}
-            valor={modoDeQuantidade(caso)}
-            aoEscolher={(quantidades) => aoAlterar({ quantidades })}
-          />
-        </div>
       </div>
 
       {camposDeEstagio && situacao === 'estudante' && assinatura ? (
@@ -99,6 +89,17 @@ export function CartaoIdentificacao({ caso, aoAlterar, pacientes, aoVincularPaci
           </p>
         </div>
       )}
+
+      {/* Spec conduta-da-nutricionista, D-297: vale para a folha impressa, o link do paciente e o Word. */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-foreground">{ROTULO_QUANTIDADES}</span>
+        <SeletorSegmentado<ModoQuantidade>
+          rotulo={ROTULO_QUANTIDADES}
+          opcoes={OPCOES_QUANTIDADE}
+          valor={modoDeQuantidade(caso)}
+          aoEscolher={(quantidades) => aoAlterar({ quantidades })}
+        />
+      </div>
     </Card>
   )
 }

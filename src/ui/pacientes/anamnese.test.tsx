@@ -139,13 +139,13 @@ describe('Anamnese com roteiro na ficha (US-AP1)', () => {
 })
 
 describe('Perguntas de escolha (spec conduta-da-nutricionista, D-299)', () => {
-  const ORDEM = ['1 · Quase transparente', '2 · Amarelo muito claro', '3 · Amarelo-claro', '4 · Amarelo', '5 · Amarelo-escuro', '6 · Âmbar', '7 · Âmbar-escuro', '8 · Marrom']
+  const ORDEM = ['1 · Quase incolor', '2 · Amarelo muito claro', '3 · Amarelo-claro', '4 · Amarelo', '5 · Amarelo-escuro', '6 · Âmbar', '7 · Âmbar-escuro', '8 · Marrom']
 
   it('CA-934: a cor da urina tem as 8 cores em ordem, com número e nome, e a dica de Armstrong', async () => {
     const { usuario } = montar()
     await usuario.click(bloco('Água'))
     const escala = anamnese().getByRole('radiogroup', { name: 'Cor da urina' })
-    expect(escala).toHaveAccessibleDescription('Escala de Armstrong: de 1 (quase transparente) a 8 (marrom); de 1 a 3, boa hidratação.')
+    expect(escala).toHaveAccessibleDescription('Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3, boa hidratação.')
     const opcoes = within(escala).getAllByRole('radio')
     expect(opcoes.map((o) => o.getAttribute('aria-label'))).toEqual(ORDEM)
     // A cor sozinha não diz nada: número e nome também estão escritos.
