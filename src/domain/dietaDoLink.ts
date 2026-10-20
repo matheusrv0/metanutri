@@ -51,7 +51,10 @@ export function dietaDoPlano(caso: Pick<Caso, 'orientacoes' | 'receitas'>, plano
     .map((refeicao) => ({
       horario: refeicao.horario,
       nome: refeicao.nome,
-      opcoes: OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0).map((i) => itemDaDieta(i, buscar))).filter((itens) => itens.length > 0),
+      // D-248 (spec revisao-geral-trabalho): o produto apagado não vai para o paciente.
+      opcoes: OPCOES.map((opcao) =>
+        refeicao.opcoes[opcao].filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined).map((i) => itemDaDieta(i, buscar)),
+      ).filter((itens) => itens.length > 0),
     }))
     .filter((refeicao) => refeicao.opcoes.length > 0)
   return { refeicoes, orientacoes: caso.orientacoes.trim(), receitas: caso.receitas.trim() }

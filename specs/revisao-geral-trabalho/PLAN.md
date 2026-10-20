@@ -191,7 +191,7 @@ Revisão da frente: 0 crítico, 3 importantes, 7 menores (`revisao-trabalho.md`,
 | V3 | I-3: seletor de referência empilhado abaixo de 640 px | `src/ui/adequacao/TelaAdequacao.tsx`, e2e | CA-795 |
 | V4 | M-1: trocar de tipo apaga o aviso de número inteiro | `src/ui/adequacao/TelaAdequacao.tsx`, teste | CA-782 |
 | V5 | M-2: a idade assentada recomeça em outro plano | `src/ui/caso/TelaCaso.tsx` (`key` do `CartaoPessoa`), teste | CA-784 |
-| V6 | M-3: o item apagado sai do que vai para o paciente; aviso na linha do planejador | `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/ui/exportar/FolhaDieta.tsx`, `src/ui/plano/LinhaItem.tsx`, `src/ui/plano/DialogoSugestoes.tsx`, testes | CA-789 |
+| V6 | M-3: o item apagado sai do que vai para o paciente; aviso na linha do planejador | `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/ui/exportar/FolhaDieta.tsx`, `src/ui/plano/LinhaItem.tsx`, `src/ui/plano/DialogoSugestoes.tsx`, testes; nota no CB-155 da `dieta-no-link` e no CB-180 da `impressao-do-plano` | CA-789 |
 | V7 | M-4: nada aberto, véu ou aviso do topo no papel da tela | `src/ui/tema/globals.css`, `design-system/componentes/overlay/dialog.tsx`, `sheet.tsx`, `src/ui/layout/Estrutura.tsx`, e2e | CA-770 |
 | V8 | M-5: textos da medida do link e da exclusão de conta | `specs/revisao-geral-trabalho/SPEC.md`, `PLAN.md`, `PRODUCT.md` | — |
 | V9 | M-6: testes com o id, † na tela, medida num só `evaluate`, animação reduzida | `src/ui/painel/TelaPainel.test.tsx`, `src/ui/adequacao/TelaAdequacao.test.tsx`, e2e | CA-777, CA-793 |

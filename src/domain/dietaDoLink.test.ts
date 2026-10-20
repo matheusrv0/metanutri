@@ -77,7 +77,7 @@ describe('dietaDoPlano: a dieta que vai para o link (D-150)', () => {
     for (const refeicao of dieta.refeicoes) for (const opcao of refeicao.opcoes) for (const item of opcao) expect(Object.keys(item).sort()).toEqual(['alimento', 'gramas', 'medida'])
   })
 
-  it('CB-155: produto próprio vai com o nome em texto; alimento que saiu da tabela vira "Alimento removido"', () => {
+  it('CB-155: produto próprio vai com o nome em texto; alimento que saiu da tabela fica de fora (spec revisao-geral-trabalho, D-248)', () => {
     const PRODUTO = 900001
     const produto = { ...buscarAlimento(ARROZ), id: PRODUTO, descricao: 'Granola da casa' } as Alimento
     const buscar = (id: number) => (id === PRODUTO ? produto : undefined)
@@ -87,7 +87,7 @@ describe('dietaDoPlano: a dieta que vai para o link (D-150)', () => {
     plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: PRODUTO, gramas: 40 }, ids)
     plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: 123456, gramas: 30 }, ids)
     const nomes = dietaDoPlano(caso(), plano, buscar).refeicoes[0]?.opcoes[0]?.map((i) => i.alimento)
-    expect(nomes).toEqual(['Granola da casa', 'Alimento removido'])
+    expect(nomes).toEqual(['Granola da casa'])
   })
 })
 
@@ -158,5 +158,20 @@ describe('lerDieta: o que chega da nuvem ou do aparelho (CB-153)', () => {
 
   it('sem o dia da cópia, ou com dia estranho, o dia fica vazio e a dieta continua', () => {
     expect(lerDieta({ ...BOA, copiadaEm: 7 })?.copiadaEm).toBe('')
+  })
+})
+
+describe('Produto apagado fica fora da dieta do link (spec revisao-geral-trabalho, D-248, CA-789)', () => {
+  it('o item apagado não vai para o paciente, e opção que fica vazia não entra', () => {
+    let plano = planoCheio()
+    const almoco = plano.refeicoes[2]
+    const lanche = plano.refeicoes[3]
+    if (!almoco || !lanche) throw new Error('plano padrão mudou')
+    plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids)
+    plano = adicionarItem(plano, lanche.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids)
+    const dieta = dietaDoPlano(caso(), plano)
+    expect(dieta.refeicoes.map((r) => r.nome)).toEqual(['Almoço', 'Jantar'])
+    expect(dieta.refeicoes[0]?.opcoes[0]).toEqual([{ medida: '6 colheres de sopa', gramas: 150, alimento: 'Arroz, tipo 1, cozido' }])
+    expect(JSON.stringify(dieta)).not.toMatch(/removido|apagado/i)
   })
 })

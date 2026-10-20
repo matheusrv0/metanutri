@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { buscarAlimentos, medidaParaMostrar } from '@/domain/busca.ts'
 import { NOME_DO_TIPO, SUGESTOES_PADRAO, sugestoesProntas, type SugestaoAlimento, type TipoRefeicao } from '@/domain/sugestoes.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
+import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -24,7 +25,8 @@ function porcao(alimentoId: number, gramas: number): string {
   return medida ? `${medida.texto} · ${g}` : g
 }
 
-const nomeDe = (alimentoId: number) => buscarAlimento(alimentoId)?.descricao ?? 'Alimento removido'
+// As sugestões já deixam de fora o que não existe mais (CB-57); a palavra é a mesma de todo lugar (D-248).
+const nomeDe = (alimentoId: number) => buscarAlimento(alimentoId)?.descricao ?? nomeSemAlimento(alimentoId)
 
 /**
  * CA-241 a CA-243: tirar, acrescentar, mudar a ordem e voltar à lista padrão.

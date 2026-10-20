@@ -28,6 +28,8 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.getByText('— kcal')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Substituir/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Remover Produto apagado' })).toBeInTheDocument()
+    // Revisão de 20/10/2026: a nutricionista sabe que o paciente não vê esse item.
+    expect(screen.getByText('Não sai na folha nem no link do paciente.')).toBeInTheDocument()
   })
 
   it('CA-780: 30 g de manteiga mostram "1 colher de sopa", nunca "1 fatia"', () => {

@@ -35,6 +35,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
           {descricao}
         </p>
         {medida ? <p className="truncate text-xs text-muted-foreground">{medida.texto}</p> : null}
+        {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item apagado de fora; a nutricionista fica sabendo aqui. */}
+        {alimento ? null : <p className="text-xs text-warningtext">Não sai na folha nem no link do paciente.</p>}
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="w-24 shrink-0">

@@ -3,6 +3,7 @@
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
+import { buscarAlimento } from './tabelas.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
@@ -23,10 +24,14 @@ export function assinaturaDaFolha(assinatura: AssinaturaDoPlano | null, caso: Ca
 
 /**
  * As opções de uma refeição que têm alimento, na ordem principal, substituto 1, substituto 2 (spec
- * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou".
+ * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou". O item cujo
+ * alimento não existe mais (produto apagado em "Meus produtos") fica de fora, inteiro: o paciente não recebe uma
+ * linha que não diz o que comer (spec revisao-geral-trabalho, D-248).
  */
-export function opcoesDaRefeicao(refeicao: Refeicao): readonly (readonly ItemPlano[])[] {
-  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0)).filter((itens) => itens.length > 0)
+export function opcoesDaRefeicao(refeicao: Refeicao, buscar: BuscarAlimento = buscarAlimento): readonly (readonly ItemPlano[])[] {
+  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)).filter(
+    (itens) => itens.length > 0,
+  )
 }
 
 export interface CompraDaFolha {
@@ -44,8 +49,10 @@ export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly C
   const porNome = new Map<string, CompraDaFolha>()
   for (const refeicao of plano.refeicoes) {
     for (const item of refeicao.opcoes.principal) {
-      if (item.gramas <= 0) continue
-      const nome = nomeParaPaciente(buscar(item.alimentoId))
+      // D-248: o produto apagado não entra na lista de compras do paciente.
+      const alimento = buscar(item.alimentoId)
+      if (item.gramas <= 0 || !alimento) continue
+      const nome = nomeParaPaciente(alimento)
       const antes = porNome.get(nome)
       porNome.set(nome, { nome, gramas: (antes?.gramas ?? 0) + item.gramas, alimentoId: antes?.alimentoId ?? item.alimentoId })
     }

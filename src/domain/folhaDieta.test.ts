@@ -191,3 +191,24 @@ describe('opções de impressão (CA-317, CA-320, CB-72)', () => {
     expect(CHAVES_DE_DADOS).toContain('metanutri:impressao')
   })
 })
+
+describe('Produto apagado fica fora da folha do paciente (spec revisao-geral-trabalho, D-248, CA-789)', () => {
+  const APAGADO = 900_001
+  let k = 0
+  const ids = () => `apagado${++k}`
+
+  it('a refeição e a lista de compras deixam o item de fora, inteiro', () => {
+    let plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    const lanche = plano.refeicoes[3]
+    if (!almoco || !lanche) throw new Error('plano padrão mudou')
+    plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: 3, gramas: 150 }, ids)
+    plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: APAGADO, gramas: 40 }, ids)
+    plano = adicionarItem(plano, lanche.id, 'principal', { alimentoId: APAGADO, gramas: 40 }, ids)
+    const almocoNaFolha = opcoesDaRefeicao(plano.refeicoes[2] as Refeicao)
+    expect(almocoNaFolha.flat().map((i) => i.alimentoId)).toEqual([3])
+    // Refeição só com o item apagado: fica sem opção, e a folha diz "Sem alimentos nesta refeição.".
+    expect(opcoesDaRefeicao(plano.refeicoes[3] as Refeicao)).toEqual([])
+    expect(comprasDaFolha(plano, buscarAlimento).map((c) => c.alimentoId)).toEqual([3])
+  })
+})

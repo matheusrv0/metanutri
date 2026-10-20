@@ -159,7 +159,7 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
 
 ## 4. Casos de borda
 
-- **CB-180** · Alimento que saiu da base: a linha diz "Alimento removido", como hoje.
+- **CB-180** · Alimento que saiu da base: a linha diz "Alimento removido", como hoje. *(Mudado em 20/10/2026 pelo D-248 da `revisao-geral-trabalho`: a folha e a lista de compras deixam esse item de fora; o planejador avisa a nutricionista.)*
 - **CB-181** · Dois alimentos diferentes com o mesmo nome para o paciente na lista de compras (por exemplo, arroz tipo 1 e tipo 2, os dois "Arroz branco cozido"): uma linha só, com os gramas somados.
 - **CB-182** · Produto cadastrado com nome vazio: sai "Alimento sem nome", nunca uma linha em branco.
 - **CB-183** · Quem imprime escolhe "Margens: mínimo" ou "Personalizado", ou liga "Cabeçalhos e rodapés" num navegador que ainda ofereça: o navegador pode pôr de volta a data e o endereço. O resto da folha sai igual. Não dá para impedir por código.
