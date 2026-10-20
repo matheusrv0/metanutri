@@ -145,6 +145,13 @@ describe('banco: segurança, lote 5 (014)', () => {
       expect(conferencia).toContain("from cron.job where jobname = 'metanutri-limpar-comprovantes'")
       expect(conferencia).toContain("from vault.secrets where name in ('metanutri_chave_da_limpeza', 'metanutri_url_do_projeto')")
       expect(conferencia).toContain("has_function_privilege('authenticated', 'public.comprovantes_vencidos(timestamptz, integer)', 'execute')")
+      // A resposta do pg_net some em 6 horas: a primeira limpeza é conferida pelo histórico do agendamento e pelos
+      // registros da função, que ficam.
+      expect(conferencia).toContain(
+        "select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-comprovantes') order by start_time desc limit 1;",
+      )
+      expect(conferencia).toContain('Edge Functions > limpar-comprovantes > Invocations')
+      expect(conferencia).not.toContain('net._http_response')
     })
   })
 })

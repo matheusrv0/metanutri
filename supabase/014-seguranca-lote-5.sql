@@ -250,5 +250,8 @@ commit;
 --        has_function_privilege('anon', 'public.admin_sem_segundo_fator()', 'execute') as visitante_sem_fator,
 --        has_function_privilege('authenticated', 'public.admin_sem_segundo_fator()', 'execute') as logado_sem_fator;
 -- -- uma linha: false, false, true
--- Um dia depois, a primeira limpeza (status 200 e a resposta com os números):
--- select status_code, content from net._http_response order by created desc limit 1;
+-- Depois das 03:15 (Brasília) do dia seguinte, a primeira limpeza. O agendamento rodou:
+-- select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-comprovantes') order by start_time desc limit 1;
+-- -- uma linha: succeeded, com a hora de hoje
+-- E a função respondeu: no painel, Edge Functions > limpar-comprovantes > Invocations, a chamada de hoje com status 200.
+-- (A resposta guardada pelo pg_net some em 6 horas; por isso a conferência é por estes dois.)
