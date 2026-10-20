@@ -127,7 +127,7 @@ menores (M-1 a M-11). Decisão do coordenador para o I-1: publicar em duas vezes
 |---|---|---|
 | `specs/receitas-com-calculo/SPEC.md`, `PLAN.md` | alterar | R0 |
 | `src/domain/receitas.ts`, `src/ui/plano/TelaPlano.tsx`, `src/ui/plano/receitaNaRefeicao.test.tsx`, `e2e/receitas.spec.ts` | alterar: a constante `RECEITAS_NA_REFEICAO` | R1 |
-| `src/ui/aplicativo/LimiteDeErro.tsx`, `recarregarComVersaoNova.ts` (+ `LimiteDeErro.test.tsx`), `src/main.tsx` | criar e alterar: tela de erro na raiz | R2 |
+| `src/ui/aplicativo/LimiteDeErro.tsx`, `TelaDeErro.tsx`, `recarregarComVersaoNova.ts` (+ `LimiteDeErro.test.tsx`), `src/main.tsx` | criar e alterar: tela de erro na raiz | R2 |
 | `src/ui/aplicativo/registrarAplicativo.ts` (+ `registrarAplicativo.test.ts`) | alterar: conferir ao voltar e a cada 60 min | R3 |
 | `src/domain/receitas.ts`, `src/ui/plano/EntradaRapida.tsx` e os testes | alterar: receita acima só sem alimento com o mesmo começo | R4 |
 | `src/domain/receitas.ts` (+ teste) | alterar: sem número, o texto todo é o nome | R5 |

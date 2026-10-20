@@ -5,6 +5,7 @@ import '@fontsource-variable/manrope'
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
 import { App } from './App.tsx'
+import { LimiteDeErro } from './ui/aplicativo/LimiteDeErro.tsx'
 import { registrarAplicativo } from './ui/aplicativo/registrarAplicativo.ts'
 import { avisarVersaoNova } from './ui/aplicativo/versaoNova.ts'
 import { AvisoMoldura } from './ui/AvisoMoldura.tsx'
@@ -51,7 +52,10 @@ if (estaEmMoldura(globalThis)) {
     createRoot(raiz).render(
       <StrictMode>
         <ProvedorTema>
-          <App />
+          {/* Spec receitas-com-calculo, D-274b: tela que quebra ao desenhar mostra "Recarregar", não a página em branco. */}
+          <LimiteDeErro>
+            <App />
+          </LimiteDeErro>
         </ProvedorTema>
       </StrictMode>,
     )
