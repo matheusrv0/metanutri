@@ -106,6 +106,20 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 - **CB-314** · Campo de data, hora, mês e busca (`type="date"`, `"time"`, `"month"`, `"search"`) segue o `Input`.
 - **CB-315** · Campo só de leitura (o endereço do link do paciente) também tem 16 px: o iPhone aproxima a tela ao
   focar mesmo sem teclado.
+- **CB-316** · *(Revisão final, M-1.)* Cópia de um plano em "Gramas" que perdeu o campo `quantidades` (uma aba com a
+  versão de antes da integração regravou o link): quando todo item da cópia, nas refeições e nos ingredientes das
+  receitas, está sem medida e pelo menos um alimento da base teria medida hoje, "Meu plano" lê a cópia como "Gramas" e
+  mostra só o peso, como a folha. Cópia antiga em "Medida caseira" com todos os itens sem medida (raro: só alimentos
+  que não tinham medida no planejador) também sai em peso, que é o que ela guardava.
+- **CB-317** · *(Revisão final, M-5.)* Receita sem o que comer: a cópia estragada (CB-273 da `receitas-com-calculo`)
+  ou a receita sem nenhum ingrediente que ainda exista com gramas fica fora da folha (refeição e seção "Receitas") e do
+  link, como o item apagado (D-248, D-317). Na linha do planejador ela continua, com a † e o aviso "Não sai na folha
+  nem no link do paciente.". Hoje não acontece com a nutricionista (a receita na refeição está desligada, D-315); a
+  regra vale antes da publicação 2.
+- **CB-318** · *(Revisão final, M-2.)* O banco de produção pode negar à rotina diária do 013 o apagamento de
+  `auth.audit_log_entries` ("permission denied", `insufficient_privilege`). Nesse caso a rotina avisa (`warning`) e
+  segue: o registro de assinaturas com mais de 5 anos (CA-825 da `exclusao-de-conta`) continua sendo apagado, e o
+  agendamento não fica com erro. O dono confere a contagem dos registros de acesso antigos (README).
 
 ## 4. Fora de escopo
 

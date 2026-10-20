@@ -40,7 +40,21 @@ O CA-981 (D-315) não pede código: o teste `receitaNaRefeicao.test.tsx` · "CA-
 3. **D-310:** a marca muda o formato da cópia só no item de receita; como nenhum link com receita existe, nenhum link
    já enviado aparece como "o plano mudou".
 
-## 4. Validação (20/10/2026)
+## 4. Revisão final (20/10/2026)
+
+O coordenador revisou a branch inteira (`revisao-final.md`): pronta para a `main` com 1 correção de texto (I-1) e
+menores. Um commit por item, com a nota da spec antes do código (este commit traz as notas do M-1, M-2 e M-5).
+
+| # | Item | Arquivos |
+|---|---|---|
+| F1 | I-1 · o topo do 014 com o TOTP antes do site; sai do `config.toml` de teste a frase "Em produção o TOTP já vem ligado" | `supabase/014-seguranca-lote-5.sql`, `testes/supabase-local/supabase/config.toml` |
+| F2 | M-2 · a rotina diária do 013 apaga primeiro as assinaturas de 5 anos e, se o banco negar o apagamento dos registros de acesso, avisa e segue (CB-318); README e `specs/exclusao-de-conta/PLAN.md` com o remédio certo | `supabase/013-exclusao-de-conta.sql`, `src/data/sqlExclusao.test.ts`, `testes/seguranca/exclusao.test.ts`, `README.md`, `specs/exclusao-de-conta/PLAN.md` |
+| F3 | M-1 · a cópia sem `quantidades` com toda medida vazia lida como "Gramas" (CB-316) | `src/domain/dietaParaPaciente.ts` (`modoDaCopia`), `src/ui/missoes/MeuPlano.tsx`; testes em `dietaParaPaciente.test.ts` e `MeuPlanoComReceita.test.tsx` |
+| F4 | M-4 · o CA-983 sem "o peso"; o README com as sete frentes; a tarefa da D-319 neste plano | `specs/integracao-rodada-1910/SPEC.md`, `README.md`, este plano |
+| F5 | M-5 · receita sem o que comer fora da folha e do link, com o aviso na linha do planejador (CB-317) | `src/domain/receitaNoPlano.ts` (`receitaComOQueComer`), `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/ui/plano/LinhaItem.tsx`; testes em `folhaComReceita.test.ts`, `dietaComReceita.test.ts`, `LinhaItem.test.tsx` |
+| F6 | M-6, M-7 e M-8 · notas nas decisões do relatório (sem código) | `rodada-1910/integracao-report.md` (fora do repositório) |
+
+## 5. Validação (20/10/2026)
 
 Na branch inteira, depois das sete frentes e dos itens:
 
