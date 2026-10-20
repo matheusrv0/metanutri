@@ -38,6 +38,26 @@ async function listarArquivos(balde: Balde, pasta: string, achados: string[]): P
 
 export function criarPortaDaExclusao(cliente: SupabaseClient): PortaDaExclusao {
   return {
+    // CB-253 (L4 da revisão): a mesma trava do 008 que o pagamento e a troca de cartão usam; sem cartão, que aqui não há.
+    async reservar(conta, antesDe) {
+      try {
+        const vencida = await cliente.from('assinando_agora').delete().eq('nutricionista_id', conta).lt('desde', antesDe)
+        if (vencida.error) return { tipo: 'falhou', mensagem: vencida.error.message }
+        const { error } = await cliente.from('assinando_agora').insert({ nutricionista_id: conta })
+        if (!error) return { tipo: 'reservada' }
+        return error.code === '23505' ? { tipo: 'ocupada' } : { tipo: 'falhou', mensagem: error.message || 'A reserva falhou.' }
+      } catch (erro) {
+        return { tipo: 'falhou', mensagem: mensagemDe(erro) }
+      }
+    },
+    async soltarReserva(conta) {
+      try {
+        const { error } = await cliente.from('assinando_agora').delete().eq('nutricionista_id', conta)
+        return error ? error.message || 'A reserva não saiu.' : null
+      } catch (erro) {
+        return mensagemDe(erro)
+      }
+    },
     async ehAdmin(conta) {
       const { data, error } = await cliente.from('administradores').select('usuario').eq('usuario', conta).maybeSingle()
       if (error) throw new Error(error.message || 'A leitura dos administradores falhou.')

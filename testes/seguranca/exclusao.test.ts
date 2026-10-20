@@ -4,6 +4,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { randomBytes } from 'node:crypto'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { EM_ANDAMENTO } from '../../supabase/functions/_shared/assinar.ts'
 import { criarBanco } from '../../supabase/functions/_shared/bancoSupabase.ts'
 import { excluirConta, horaDaSenha, type PortaDaExclusao, type QuemPedeAExclusao } from '../../supabase/functions/_shared/excluirConta.ts'
 import { criarPortaDaExclusao, quemPedeAExclusao } from '../../supabase/functions/_shared/exclusaoSupabase.ts'
@@ -121,6 +122,15 @@ async function registroDa(c: Cenario, preapprovalId: string): Promise<Record<str
   return (r.data ?? []) as Record<string, unknown>[]
 }
 
+/**
+ * O cenário deixa a conta reservada agora (assinando_agora), como um pagamento em andamento. Aqui a reserva vira a de
+ * uma função que morreu há 10 minutos: vencida, ela sai sozinha na exclusão (CB-253).
+ */
+async function reservaVencida(c: Cenario): Promise<void> {
+  const r = await c.servico.from('assinando_agora').update({ desde: new Date(Date.now() - 10 * MINUTO_MS).toISOString() }).eq('nutricionista_id', c.vitima.id)
+  if (r.error) throw new Error(`vencer a reserva: ${r.error.message}`)
+}
+
 /** Um login novo, criado pela chave de serviço, sem perfil nem nada (CB-258). */
 async function loginNovo(c: Cenario, prefixo: string): Promise<string> {
   const criada = await c.servico.auth.admin.createUser({ email: `${prefixo}.${randomBytes(4).toString('hex')}@exemplo.com`, password: `Senha-${randomBytes(8).toString('hex')}`, email_confirm: true })
@@ -151,6 +161,7 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     // Um valor só deste teste: com as datas arredondadas para o dia (L2), é por ele que o histórico é reencontrado.
     const valor = await c.servico.from('assinaturas').update({ valor_centavos: valorUnico }).eq('nutricionista_id', c.vitima.id)
     if (valor.error) throw new Error(valor.error.message)
+    await reservaVencida(c)
     fotoDaOutra = await fotoDaConta(c, c.atacante.id)
     fotoDoAdmin = await fotoDaConta(c, c.admin.id)
     avisosAntes = JSON.stringify((await c.servico.from('avisos_da_operadora').select('*').order('id')).data)
@@ -264,6 +275,9 @@ describe('nada muda quando a exclusão é recusada (CA-814, CA-816, CA-817, CA-8
 
   beforeAll(async () => {
     c = await prepararCenario()
+    // Sem pagamento em andamento: a recusa de cada teste vem do que ele testa, não da reserva (CB-253, testado abaixo).
+    const semReserva = await c.servico.from('assinando_agora').delete().eq('nutricionista_id', c.vitima.id)
+    if (semReserva.error) throw new Error(semReserva.error.message)
     foto = await fotoDaConta(c, c.vitima.id)
   })
 
@@ -322,6 +336,7 @@ describe('nada muda quando a exclusão é recusada (CA-814, CA-816, CA-817, CA-8
 describe('CA-821 e CB-251: falha no meio, e o pedido seguinte termina', () => {
   it('o login não sai: a conta continua entrando, com os dados; o pedido seguinte não cancela de novo e termina', async () => {
     const c = await prepararCenario()
+    await reservaVencida(c)
     const real = criarPortaDaExclusao(c.servico)
     let falhas = 1
     const porta: PortaDaExclusao = { ...real, apagarLogin: async (conta) => (falhas-- > 0 ? 'login fora (teste)' : real.apagarLogin(conta)) }
@@ -343,9 +358,31 @@ describe('CA-821 e CB-251: falha no meio, e o pedido seguinte termina', () => {
   })
 })
 
-describe('CB-252: dois pedidos ao mesmo tempo', () => {
-  it('a conta sai uma vez: um responde 200, o outro 200 ou a falha do CA-809, e o pedido seguinte acha a conta já excluída', async () => {
+describe('CB-253 (L4 da revisão): pagamento em andamento', () => {
+  it('a conta reservada agora (o cenário deixa um pagamento em andamento) recebe 409 e nada muda; vencida a reserva, a exclusão segue', async () => {
     const c = await prepararCenario()
+    const operadora = operadoraFalsa()
+    const quem = await quemE(c, c.vitima)
+    const antes = await fotoDaConta(c, c.vitima.id)
+    expect(await excluirConta({ quem, corpo: PEDIDO }, dependencias(c.servico, { operadora: operadora.operadora }).deps)).toEqual({
+      status: 409,
+      corpo: { erro: EM_ANDAMENTO, codigo: 'em-andamento' },
+    })
+    expect(operadora.pedidos).toEqual([])
+    // A tentativa conta no limite (D-256); o resto, igual, inclusive a reserva do pagamento.
+    await c.servico.from('chamadas_da_cobranca').delete().eq('nutricionista_id', c.vitima.id).eq('tipo', 'excluir')
+    expect(await fotoDaConta(c, c.vitima.id)).toBe(antes)
+    expect(await loginExiste(c, c.vitima.id)).toBe(true)
+
+    await reservaVencida(c)
+    expect(await excluirConta({ quem, corpo: PEDIDO }, dependencias(c.servico).deps)).toEqual(EXCLUIDA)
+  })
+})
+
+describe('CB-252: dois pedidos ao mesmo tempo', () => {
+  it('a conta sai uma vez: um responde 200, o outro 200, o 409 da reserva (CB-253) ou a falha do CA-809, e o pedido seguinte acha a conta já excluída', async () => {
+    const c = await prepararCenario()
+    await reservaVencida(c)
     const jwt = await tokenDa(c.vitima)
     const quem = await quemPedeAExclusao(c.servico, `Bearer ${jwt}`)
     const respostas = await Promise.all([
@@ -353,7 +390,7 @@ describe('CB-252: dois pedidos ao mesmo tempo', () => {
       excluirConta({ quem, corpo: PEDIDO }, dependencias(c.servico).deps),
     ])
     expect(respostas).toContainEqual(EXCLUIDA)
-    for (const r of respostas) expect([200, 502]).toContain(r.status)
+    for (const r of respostas) expect([200, 409, 502]).toContain(r.status)
     expect(await loginExiste(c, c.vitima.id)).toBe(false)
     expect(await registroDa(c, `pre-${c.marcador}`)).toHaveLength(1)
     expect(await quemPedeAExclusao(c.servico, `Bearer ${jwt}`)).toEqual({ tipo: 'apagada' })

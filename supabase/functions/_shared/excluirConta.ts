@@ -3,7 +3,8 @@
 // de ponta a ponta, no Supabase local, testes/seguranca/exclusao.test.ts).
 //
 // D-252, a ordem, para nunca ficar pela metade:
-//   1. confere quem pede, a hora da senha, se é administrador e o limite de pedidos;
+//   1. confere quem pede, a hora da senha, se é administrador e o limite de pedidos, e reserva a conta (a mesma
+//      reserva do pagamento e da troca de cartão, CB-253), até o fim do pedido;
 //   2. cancela a assinatura paga pelo mesmo caminho do "Cancelar assinatura" (gerenciarAssinatura). Se não der, para
 //      aqui, sem apagar nada;
 //   3. apaga os comprovantes de matrícula do armazenamento;
@@ -11,6 +12,7 @@
 //      (supabase/013-exclusao-de-conta.sql).
 // Antes do passo 4, a conta funciona com todos os dados (no máximo, sem os arquivos dos comprovantes). Pedir de novo
 // faz só o que falta: a assinatura já cancelada não vai de novo à operadora, e arquivo que já saiu não é erro.
+import { EM_ANDAMENTO, RESERVA_VENCE_MS } from './assinar.ts'
 import { conferirChamadas } from './chamadas.ts'
 import { objeto, PAGOS } from './cobranca.ts'
 import { gerenciarAssinatura, type DependenciasDeGerenciar } from './gerenciarAssinatura.ts'
@@ -38,8 +40,15 @@ export interface PedidoDeExclusao {
   readonly corpo: unknown
 }
 
+/** A reserva da conta (assinando_agora): a mesma do pagamento e da troca de cartão, uma por conta. */
+export type ReservaDaConta = { readonly tipo: 'reservada' } | { readonly tipo: 'ocupada' } | { readonly tipo: 'falhou'; readonly mensagem: string }
+
 /** O que só a exclusão usa do servidor (supabase/functions/_shared/exclusaoSupabase.ts). */
 export interface PortaDaExclusao {
+  /** Solta a reserva desta conta feita antes de `antesDe` (função que morreu no meio) e reserva a conta. */
+  reservar(conta: string, antesDe: string): Promise<ReservaDaConta>
+  /** Solta a reserva desta conta. Nulo quando deu certo; senão, a mensagem (ela vence em 5 minutos). */
+  soltarReserva(conta: string): Promise<string | null>
   /** A conta é de administrador? Sem conseguir saber, rejeita. */
   ehAdmin(conta: string): Promise<boolean>
   /** Apaga os arquivos da pasta da conta em `comprovantes`. Nulo quando não sobrou nenhum; senão, a mensagem da falha. */
@@ -115,6 +124,26 @@ export async function excluirConta(pedido: PedidoDeExclusao, deps: DependenciasD
   const barrado = await conferirChamadas(deps.banco, dono, 'excluir', agora, deps.log, EXCLUSAO_FALHOU)
   if (barrado) return barrado
 
+  // CB-253 (L4 da revisão): a mesma reserva do pagamento e da troca de cartão. Com um deles em andamento, uma assinatura
+  // poderia nascer entre o passo 2 e o 4 sem ninguém cancelar; com a exclusão em andamento, eles esperam.
+  const reserva = await deps.exclusao.reservar(dono, new Date(agora.getTime() - RESERVA_VENCE_MS).toISOString())
+  if (reserva.tipo === 'ocupada') return erro(EM_ANDAMENTO, 409, 'em-andamento')
+  if (reserva.tipo === 'falhou') {
+    deps.log('Não consegui reservar a conta para a exclusão:', reserva.mensagem)
+    return falhou()
+  }
+  try {
+    return await excluirReservada(quem.conta, deps)
+  } finally {
+    // Apagado o login, a reserva já saiu junto; soltar de novo não faz nada.
+    const naoSoltou = await deps.exclusao.soltarReserva(dono)
+    if (naoSoltou) deps.log('Não consegui soltar a reserva da exclusão (ela vence em 5 minutos):', naoSoltou)
+  }
+}
+
+/** Os passos 2 a 4, com a conta já reservada. */
+async function excluirReservada(conta: ContaQuePede, deps: DependenciasDaExclusao): Promise<RespostaDaFuncao> {
+  const dono = conta.id
   // Passo 2 (CA-814): a assinatura paga sai da operadora antes de qualquer coisa ser apagada.
   const { linha, falha } = await deps.banco.lerDaConta(dono)
   if (falha) {
@@ -122,7 +151,7 @@ export async function excluirConta(pedido: PedidoDeExclusao, deps: DependenciasD
     return falhou()
   }
   if (precisaCancelar(linha)) {
-    const cancelamento = await gerenciarAssinatura({ conta: quem.conta, corpo: { acao: 'cancelar' } }, deps)
+    const cancelamento = await gerenciarAssinatura({ conta, corpo: { acao: 'cancelar' } }, deps)
     // 409: a linha deixou de ser paga entre as duas leituras; não há o que cancelar.
     if (cancelamento.status !== 200 && cancelamento.status !== 409) {
       deps.log('A assinatura não foi cancelada; nada foi apagado. Status:', cancelamento.status)

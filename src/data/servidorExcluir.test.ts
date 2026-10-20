@@ -1,6 +1,7 @@
 // @vitest-environment node
 // O núcleo da função excluir-conta (spec exclusao-de-conta, D-251 a D-256), com o banco e a operadora de mentira
 // (src/data/servidorFalsos.test-utils.ts) e uma porta de exclusão de mentira, aqui mesmo.
+import { EM_ANDAMENTO, RESERVA_VENCE_MS } from '../../supabase/functions/_shared/assinar.ts'
 import { MUITAS_CHAMADAS } from '../../supabase/functions/_shared/chamadas.ts'
 import {
   ADMINISTRADOR,
@@ -41,12 +42,34 @@ interface OpcoesDaPorta {
   /** Quantas vezes cada passo falha antes de dar certo. */
   readonly falhasDosArquivos?: number
   readonly falhasDoLogin?: number
+  /** L4: uma reserva já feita (pagamento ou outra exclusão em andamento), feita em `desde`; ou a reserva que falha. */
+  readonly reservaDesde?: string | 'falha'
 }
 
 /** A porta de mentira: anota cada passo em `c.ordem`, como o banco e a operadora de mentira. */
-function portaFalsa(c: Cenario, { admin = false, falhasDosArquivos = 0, falhasDoLogin = 0 }: OpcoesDaPorta = {}) {
-  const estado = { arquivosApagados: 0, loginApagado: false, faltamArquivos: falhasDosArquivos, faltamLogin: falhasDoLogin }
+function portaFalsa(c: Cenario, { admin = false, falhasDosArquivos = 0, falhasDoLogin = 0, reservaDesde }: OpcoesDaPorta = {}) {
+  const estado = {
+    arquivosApagados: 0,
+    loginApagado: false,
+    faltamArquivos: falhasDosArquivos,
+    faltamLogin: falhasDoLogin,
+    reserva: reservaDesde === 'falha' ? null : (reservaDesde ?? null),
+    vencidasAntesDe: [] as string[],
+  }
   const porta: PortaDaExclusao = {
+    async reservar(_conta, antesDe) {
+      c.ordem.push('reservar')
+      estado.vencidasAntesDe.push(antesDe)
+      if (reservaDesde === 'falha') return { tipo: 'falhou', mensagem: 'reserva fora' }
+      if (estado.reserva !== null && estado.reserva >= antesDe) return { tipo: 'ocupada' }
+      estado.reserva = AGORA.toISOString()
+      return { tipo: 'reservada' }
+    },
+    async soltarReserva() {
+      c.ordem.push('soltarReserva')
+      estado.reserva = null
+      return null
+    },
     async ehAdmin() {
       c.ordem.push('ehAdmin')
       if (admin === 'falha') throw new Error('administradores fora')
@@ -221,7 +244,7 @@ describe('excluirConta: a ordem dos passos (D-252, CA-812, CA-814)', () => {
   it('CA-812: conta sem assinatura paga: confere, anota, lê a assinatura, apaga os arquivos e depois o login', async () => {
     const { c, deps, estado } = montar([])
     expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)
-    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'lerDaConta', 'apagarArquivos', 'apagarLogin'])
+    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'reservar', 'lerDaConta', 'apagarArquivos', 'apagarLogin', 'soltarReserva'])
     expect(c.pedidos).toEqual([])
     expect(estado).toMatchObject({ arquivosApagados: 1, loginApagado: true })
   })
@@ -229,7 +252,7 @@ describe('excluirConta: a ordem dos passos (D-252, CA-812, CA-814)', () => {
   it('CA-814: assinatura paga ativa: cancela na operadora pelo caminho do "Cancelar assinatura" antes de apagar qualquer coisa', async () => {
     const { c, deps, estado } = montar([ATIVA])
     expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)
-    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'lerDaConta', 'lerDaConta', ...LIMITE, GET, PUT, 'mudar', 'apagarArquivos', 'apagarLogin'])
+    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'reservar', 'lerDaConta', 'lerDaConta', ...LIMITE, GET, PUT, 'mudar', 'apagarArquivos', 'apagarLogin', 'soltarReserva'])
     expect(c.pedidos.map((p) => [p.metodo, p.corpo])).toEqual([
       ['GET', undefined],
       ['PUT', { status: 'cancelled' }],
@@ -317,11 +340,44 @@ describe('excluirConta: a ordem dos passos (D-252, CA-812, CA-814)', () => {
   })
 })
 
+describe('excluirConta: a reserva da conta (L4 da revisão, CB-253)', () => {
+  it('CB-253: com um pagamento (ou outra exclusão) em andamento, 409 com a frase de pagamento em andamento, e nada é feito', async () => {
+    const { c, deps, estado } = montar([ATIVA], BEM, { reservaDesde: AGORA.toISOString() })
+    expect(await excluirConta(PEDIDO, deps)).toEqual({ status: 409, corpo: { erro: EM_ANDAMENTO, codigo: 'em-andamento' } })
+    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'reservar'])
+    expect(c.pedidos).toEqual([])
+    expect(estado.loginApagado).toBe(false)
+    // A reserva do outro pedido continua: quem a fez solta.
+    expect(estado.reserva).toBe(AGORA.toISOString())
+  })
+
+  it('CB-253: a reserva de uma função que morreu há mais de 5 minutos vence, e a exclusão segue', async () => {
+    const { deps, estado } = montar([], BEM, { reservaDesde: new Date(AGORA.getTime() - 6 * MINUTO_MS).toISOString() })
+    expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)
+    expect(estado.vencidasAntesDe).toEqual([new Date(AGORA.getTime() - RESERVA_VENCE_MS).toISOString()])
+  })
+
+  it('sem conseguir reservar, 502 e nada é feito', async () => {
+    const { c, deps, estado } = montar([ATIVA], BEM, { reservaDesde: 'falha' })
+    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU)
+    expect(c.ordem).toEqual(['ehAdmin', ...LIMITE, 'reservar'])
+    expect(estado.loginApagado).toBe(false)
+    expect(c.log).toHaveBeenCalledWith('Não consegui reservar a conta para a exclusão:', 'reserva fora')
+  })
+
+  it('a reserva sai também quando um passo falha (o pedido seguinte reserva de novo)', async () => {
+    const { c, deps, estado } = montar([ATIVA], { [GET]: [null] })
+    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU)
+    expect(c.ordem.at(-1)).toBe('soltarReserva')
+    expect(estado.reserva).toBeNull()
+  })
+})
+
 describe('excluirConta: falha no meio e o pedido seguinte (D-252, CA-821)', () => {
   it('CA-821: os arquivos não saem: 502, o login fica; o pedido seguinte termina', async () => {
     const { c, deps, estado } = montar([], BEM, { falhasDosArquivos: 1 })
     expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU)
-    expect(c.ordem.at(-1)).toBe('apagarArquivos')
+    expect(c.ordem.slice(-2)).toEqual(['apagarArquivos', 'soltarReserva'])
     expect(estado.loginApagado).toBe(false)
     expect(c.log).toHaveBeenCalledWith('Não consegui apagar os comprovantes; o login ficou:', 'armazenamento fora')
     expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)

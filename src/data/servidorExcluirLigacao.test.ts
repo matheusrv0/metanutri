@@ -93,6 +93,15 @@ describe('excluir-conta: o lado de verdade (exclusaoSupabase.ts)', () => {
     expect(ladoDeVerdade).toContain('.remove(')
   })
 
+  it('CB-253 (L4): reserva a conta em assinando_agora (a vencida sai pela data), conta já reservada é "ocupada", e solta no fim', () => {
+    const reservar = ladoDeVerdade.split('async reservar(')[1]?.split('async soltarReserva(')[0] ?? ''
+    expect(reservar).toContain(".from('assinando_agora').delete().eq('nutricionista_id', conta).lt('desde', antesDe)")
+    expect(reservar).toContain(".from('assinando_agora').insert({ nutricionista_id: conta })")
+    expect(reservar).toContain("error.code === '23505' ? { tipo: 'ocupada' }")
+    const soltar = ladoDeVerdade.split('async soltarReserva(')[1]?.split('async ehAdmin(')[0] ?? ''
+    expect(soltar).toContain(".from('assinando_agora').delete().eq('nutricionista_id', conta)")
+  })
+
   it('CB-252: apagar o login que já não existe conta como feito', () => {
     const apagar = ladoDeVerdade.split('async apagarLogin(')[1] ?? ''
     expect(apagar).toContain('cliente.auth.admin.deleteUser(conta)')
@@ -106,7 +115,7 @@ describe('excluir-conta: o núcleo (excluirConta.ts)', () => {
   })
 
   it('o cancelamento é o da gerenciar-assinatura, sem caminho próprio até a operadora', () => {
-    expect(nucleo).toContain("gerenciarAssinatura({ conta: quem.conta, corpo: { acao: 'cancelar' } }, deps)")
+    expect(nucleo).toContain("gerenciarAssinatura({ conta, corpo: { acao: 'cancelar' } }, deps)")
     expect(nucleo).not.toMatch(/deps\.operadora\(|tentarCancelarNaOperadora|preapproval\//)
   })
 })

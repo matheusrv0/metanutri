@@ -142,6 +142,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
   it.each([
     ['CA-801: administrador (403)', 403, { erro: 'Conta de administrador não é excluída pelo site.', codigo: 'administrador' }],
     ['CA-810: pedidos demais (429)', 429, { erro: 'Muitas tentativas seguidas. Espere uma hora e tente de novo.', codigo: 'muitas-chamadas' }],
+    ['CB-253: pagamento em andamento (409)', 409, { erro: 'Já estamos confirmando uma assinatura desta conta. Confira em Conta e plano em um minuto.', codigo: 'em-andamento' }],
   ])('%s: a frase do servidor', async (_caso, status, corpo) => {
     const { hook } = montar()
     cliente.invocar.mockResolvedValue(respondeu(status, corpo))

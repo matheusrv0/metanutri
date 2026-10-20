@@ -66,8 +66,8 @@ export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' |
           conferidaEm.current = null
           return falhou(CONFIRME_A_SENHA, true)
         }
-        // CA-801 e CA-810: administrador e pedidos demais, a frase do servidor. 401: a sessão acabou.
-        if (falha.status === 403 || falha.status === 429) return falhou(falha.erro ?? EXCLUSAO_NAO_TERMINOU)
+        // CA-801, CA-810 e CB-253: administrador, pedidos demais e pagamento em andamento, a frase do servidor. 401: a sessão acabou.
+        if (falha.status === 403 || falha.status === 409 || falha.status === 429) return falhou(falha.erro ?? EXCLUSAO_NAO_TERMINOU)
         if (falha.status === 401) return falhou(falha.erro ?? SESSAO_TERMINOU)
         return falhou(EXCLUSAO_NAO_TERMINOU)
       }
