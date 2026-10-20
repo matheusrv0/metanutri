@@ -106,6 +106,8 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.goto(endereco)
   await page.getByRole('tablist', { name: 'O que ver' }).getByRole('tab', { name: 'Meu plano' }).click()
   await expect(page.getByRole('region', { name: '06:00 Desjejum' })).toContainText('Panqueca de banana')
+  // CA-974 (spec integracao-rodada-1910): a porção e o peso da receita, a mesma linha da folha impressa.
+  await expect(page.getByRole('region', { name: '06:00 Desjejum' })).toContainText('1 unidade · 120 g')
   await expect(page.getByRole('region', { name: 'Receitas' })).toContainText('Amasse a banana')
   await semRolagemLateral(page)
 })

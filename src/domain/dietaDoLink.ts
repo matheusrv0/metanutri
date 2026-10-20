@@ -12,6 +12,11 @@ export interface ItemDaDieta {
   readonly medida: string | null
   readonly gramas: number
   readonly alimento: string
+  /**
+   * Só no item da refeição que é uma receita (spec integracao-rodada-1910, D-310): o nome é o da receita, e "Meu plano"
+   * nunca o procura na base. Item de alimento não leva o campo, e a cópia de um plano sem receita fica igual à de antes.
+   */
+  readonly receita?: true
 }
 
 export interface RefeicaoDaDieta {
@@ -66,7 +71,7 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
 function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento): ItemDaDieta {
   if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar)
   const receita = receitaDoItem(item)
-  return { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, alimento: nomeDaReceita(receita) }
+  return { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
 }
 
 /** CA-884: cada receita do plano, inteira, em texto. */
@@ -121,7 +126,8 @@ function lerItem(v: unknown): ItemDaDieta | null {
   const { medida, gramas, alimento } = o
   if (typeof alimento !== 'string' || typeof gramas !== 'number' || !Number.isFinite(gramas)) return null
   if (medida !== null && typeof medida !== 'string') return null
-  return { medida, gramas, alimento }
+  // D-310 (integracao-rodada-1910): a marca de receita só vale como `true`; outro valor é ignorado.
+  return { medida, gramas, alimento, ...(o['receita'] === true ? { receita: true as const } : {}) }
 }
 
 function lerRefeicao(v: unknown): RefeicaoDaDieta | null {

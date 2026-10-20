@@ -76,6 +76,23 @@ describe('a dieta do link para o paciente (D-231)', () => {
     expect(texto(mudou.quantidade)).toBe('2 unidades · 60 g')
   })
 
+  it('CA-971 (integracao-rodada-1910): item de receita com o nome de um prato da base sai com a porção e o peso da receita', () => {
+    // "Feijoada" e "Quindim" existem na base; marcados como receita, nunca são procurados lá.
+    const feijoada = paraOPaciente({ medida: '1 porção', gramas: 300, alimento: 'Feijoada', receita: true })
+    expect(feijoada.nome).toBe('Feijoada')
+    expect(texto(feijoada.quantidade)).toBe('1 porção · 300 g')
+    const quindim = paraOPaciente({ medida: '1 unidade', gramas: 50, alimento: 'Quindim', receita: true })
+    expect(texto(quindim.quantidade)).toBe('1 unidade · 50 g')
+    // O mesmo item, se fosse alimento da base, viraria só o peso: é isso que a marca evita.
+    expect(texto(paraOPaciente({ medida: '1 porção', gramas: 300, alimento: 'Feijoada' }).quantidade)).toBe('300 g')
+  })
+
+  it('CA-972 (integracao-rodada-1910): item de receita sem porção na cópia sai só com o peso e o nome guardado', () => {
+    const estragada = paraOPaciente({ medida: null, gramas: 300, alimento: 'Feijoada', receita: true })
+    expect(estragada.nome).toBe('Feijoada')
+    expect(texto(estragada.quantidade)).toBe('300 g')
+  })
+
   it('CB-230: as 597 descrições da base são únicas, então o nome guardado acha um alimento só', () => {
     expect(new Set(ALIMENTOS.map((a) => a.descricao)).size).toBe(ALIMENTOS.length)
   })
