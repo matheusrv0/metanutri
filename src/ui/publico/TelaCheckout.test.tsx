@@ -328,15 +328,17 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
   })
 
   describe('D-236 (spec revisao-geral-publica): os avisos do resumo usam as cores do tema claro (o painel é marfim no escuro)', () => {
-    /** Todo aviso dentro do resumo fica no escopo `.papel`, dentro do próprio resumo. */
+    /** Todo aviso dentro do resumo fica no escopo neutro do tema claro, `.tema-claro` (M-9), dentro do próprio resumo. */
     const avisosDoResumoNoPapel = () => {
       const resumo = screen.getByRole('region', { name: 'Resumo' })
       const avisos = within(resumo).queryAllByRole('alert').concat(within(resumo).queryAllByRole('status'))
       expect(avisos.length).toBeGreaterThan(0)
       for (const aviso of avisos) {
-        const papel = aviso.closest('.papel')
-        expect(papel, aviso.textContent ?? '').not.toBeNull()
-        expect(resumo.contains(papel)).toBe(true)
+        const escopo = aviso.closest('.tema-claro')
+        expect(escopo, aviso.textContent ?? '').not.toBeNull()
+        expect(resumo.contains(escopo)).toBe(true)
+        // M-9: a classe da folha impressa não entra no checkout; uma regra de impressão para ela não chega aqui.
+        expect(aviso.closest('.papel')).toBeNull()
       }
     }
 
@@ -369,8 +371,8 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
 
     it('CA-747: o botão e a autorização continuam fora do escopo claro', async () => {
       await montar()
-      expect(botaoAssinar().closest('.papel')).toBeNull()
-      expect(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }).closest('.papel')).toBeNull()
+      expect(botaoAssinar().closest('.tema-claro')).toBeNull()
+      expect(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }).closest('.tema-claro')).toBeNull()
     })
   })
 })

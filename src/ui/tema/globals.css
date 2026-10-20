@@ -21,10 +21,12 @@
 
 /* ---------- Os tokens do sistema no vocabulário do shadcn/ui ----------
  * Também em .papel: a ponte é calculada onde é declarada, então a folha do paciente a declara de novo para ler o
- * tema claro de tokens.css (spec impressao-do-plano, D-180).
+ * tema claro de tokens.css (spec impressao-do-plano, D-180). E em .tema-claro, o nome neutro do mesmo escopo (spec
+ * revisao-geral-publica, D-236 e M-9).
  */
 :root,
-.papel {
+.papel,
+.tema-claro {
   /* A ação principal é a superfície inversa: grafite no claro, clara no escuro. */
   --color-primary: var(--surface-inverse);
   --color-secondary: var(--blue-700);
@@ -318,7 +320,8 @@
  * 15/10/2026 saiu do tema escuro com o horário em marfim e as opções em caixas quase pretas. As cores vêm do mesmo
  * escopo do tema claro (`:root, .papel` em tokens.css e na ponte acima); aqui só o esquema de cores.
  */
-.papel {
+.papel,
+.tema-claro {
   color-scheme: light;
 }
 
