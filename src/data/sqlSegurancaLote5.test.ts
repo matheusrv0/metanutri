@@ -28,8 +28,12 @@ describe('banco: segurança, lote 5 (014)', () => {
       expect(bloco).toContain("f.user_id = a.usuario and f.factor_type = 'totp' and f.status = 'verified'")
     })
 
-    it('CB-261: o comentário ensina a apagar o fator perdido e a desfazer o lote', () => {
+    it('CB-261: o comentário ensina a apagar o fator perdido, derrubar as sessões, trocar a senha e desfazer o lote', () => {
       expect(sql).toContain("-- delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'seu-email@exemplo.com');")
+      // Apagar o fator não rebaixa uma sessão já confirmada pelo app: as sessões da conta saem junto.
+      expect(sql).toContain("-- delete from auth.sessions where user_id = (select id from auth.users where email = 'seu-email@exemplo.com');")
+      expect(sql).toContain('-- Depois troque a senha em "Esqueci a senha" e ative o app de novo em Aprovações.')
+      expect(sql.indexOf('-- delete from auth.mfa_factors')).toBeLessThan(sql.indexOf('-- delete from auth.sessions'))
       expect(sql).toContain('-- create or replace function public.eh_admin() returns boolean language sql stable security definer set search_path = public as $$ select exists (select 1 from public.administradores where usuario = auth.uid()); $$;')
     })
   })

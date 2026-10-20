@@ -13,8 +13,12 @@
 --   * o banco só reconhece o administrador numa sessão confirmada pelo código do app autenticador (aal2);
 --   * os comprovantes passam a ser apagados pelo servidor, uma vez por dia, pela função limpar-comprovantes.
 --
--- Perdeu o celular do app? Rode SÓ esta linha, com o seu e-mail, e ative o app de novo pelo site:
+-- Perdeu o celular do app? Rode SÓ estas duas linhas, com o seu e-mail. A primeira apaga o app; a segunda tira a
+-- conta de todo aparelho (apagar só o app não derruba uma sessão já confirmada por ele, como a do celular perdido;
+-- o acesso que sobra vence em até 1 hora):
 -- delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'seu-email@exemplo.com');
+-- delete from auth.sessions where user_id = (select id from auth.users where email = 'seu-email@exemplo.com');
+-- Depois troque a senha em "Esqueci a senha" e ative o app de novo em Aprovações.
 --
 -- Para desfazer o segundo fator (volta o eh_admin de antes, sem o código), rode SÓ esta linha:
 -- create or replace function public.eh_admin() returns boolean language sql stable security definer set search_path = public as $$ select exists (select 1 from public.administradores where usuario = auth.uid()); $$;

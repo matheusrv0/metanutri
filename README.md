@@ -214,8 +214,8 @@ Para funcionar de verdade, nesta ordem:
    `pg_net`) e para sem mudar nada se algum administrador ainda não ativou o app. Logo depois, grave o endereço do
    projeto no cofre com a linha comentada no fim do 014 e publique a função `limpar-comprovantes`
    (`npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg`). Perdeu
-   o celular do app: rode a linha do topo do 014 que apaga o fator e ative de novo pelo site. Também pode rodar de
-   novo.
+   o celular do app: rode as duas linhas do topo do 014 (a que apaga o app e a que tira a conta de todo aparelho),
+   troque a senha em "Esqueci a senha" e ative o app de novo em Aprovações. Também pode rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
