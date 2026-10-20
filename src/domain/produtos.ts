@@ -1,6 +1,7 @@
 // Produtos industrializados cadastrados pelo rótulo (revisão de produto, B-25).
 // Ficam no mesmo armazenamento dos casos e entram nos cálculos como qualquer alimento.
 import type { Armazenamento } from './persistencia.ts'
+import { CHAVES_NUTRIENTES } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const CHAVE = 'metanutri:produtos'
@@ -116,9 +117,13 @@ export function validarProduto(p: DadosProduto): readonly ProblemaProduto[] {
   return problemas
 }
 
-/** O produto entra na busca e nos cálculos como um alimento normal, por 100 g. */
+/**
+ * O produto entra na busca e nos cálculos como um alimento normal, por 100 g.
+ * Toda chave que o rótulo não traz fica nula, nunca indefinida: indefinido virava NaN nos totais do plano, e as
+ * vitaminas do complemento do USDA nunca vêm do rótulo (spec vitaminas-usda, D-303 e CA-951).
+ */
 export function produtoComoAlimento(p: Produto): Alimento {
-  const nutrientes: Partial<Record<ChaveNutrienteAlimento, number | null>> = {}
+  const nutrientes = Object.fromEntries(CHAVES_NUTRIENTES.map((c) => [c, null])) as Record<ChaveNutrienteAlimento, number | null>
   for (const [chave, valor] of Object.entries(p.porPorcao)) {
     nutrientes[chave as ChaveNutrienteAlimento] = typeof valor === 'number' ? porCem(valor, p.porcaoG) : null
   }
@@ -130,7 +135,7 @@ export function produtoComoAlimento(p: Produto): Alimento {
     base: null,
     preparo: null,
     qualificadores: null,
-    nutrientes: nutrientes as Alimento['nutrientes'],
+    nutrientes,
     tracos: [],
   }
 }
