@@ -90,4 +90,12 @@ describe('MolduraPublica', () => {
     expect(acoes?.className).toContain('md:ml-0')
     expect(acoes?.className).not.toContain('sm:ml-0')
   })
+
+  it('M-1 (spec revisao-geral-publica, CA-741): "Fontes da base" tem 44 px em qualquer largura, como desde 01/10', () => {
+    montar(false, vi.fn())
+    const fontes = within(screen.getByRole('contentinfo')).getByRole('button', { name: 'Fontes da base' })
+    expect(fontes.className).toContain('min-h-11')
+    expect(fontes.className).not.toContain('sm:min-h-0')
+  })
 })
+

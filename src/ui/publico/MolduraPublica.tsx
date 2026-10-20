@@ -30,8 +30,10 @@ export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: Dest
  * Spec revisao-geral-publica, D-235: 44 px de toque no celular e o texto que quebra alinhado à esquerda (o botão
  * centraliza por padrão).
  */
-const LINK_RODAPE =
-  'inline-flex min-h-11 items-center text-left sm:min-h-0 rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const LINK_RODAPE_44 =
+  'inline-flex min-h-11 items-center text-left rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+/** A partir de 640 px, os links de navegação do rodapé voltam à altura do texto. */
+const LINK_RODAPE = `${LINK_RODAPE_44} sm:min-h-0`
 
 /**
  * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa
@@ -111,7 +113,8 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
               <li className="flex flex-col items-start">
                 <span>{NOME_DA_BASE}</span>
-                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE}>
+                {/* M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque). */}
+                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE_44}>
                   Fontes da base
                 </button>
               </li>

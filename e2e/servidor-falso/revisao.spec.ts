@@ -87,6 +87,15 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
     })
   }
 
+  for (const largura of [768, 1280]) {
+    test(`M-1 (CA-741): em ${largura} px, "Fontes da base" continua com 44 px`, async ({ page }) => {
+      await page.setViewportSize({ width: largura, height: 800 })
+      await ligarServidorFalso(page)
+      await page.goto('/#/inicio')
+      expect((await caixa(page.getByRole('contentinfo').getByRole('button', { name: 'Fontes da base' }))).height).toBeGreaterThanOrEqual(44)
+    })
+  }
+
   test('CA-741: em 390 px, a logo e os links do rodapé têm 44 px, e o link que quebra fica à esquerda', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 })
     await ligarServidorFalso(page)
