@@ -5,8 +5,8 @@ import { criarExemplo } from './exemplo.ts'
 import type { QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ALIMENTOS } from './tabelas.ts'
 
-/** Como a tela escreve: a medida, e o peso depois de " · " quando a medida é vaga; sem medida, só o peso. */
-const texto = (q: QuantidadeNaFolha) => (q.medida === null ? `${q.gramas} g` : q.comPeso ? `${q.medida} · ${q.gramas} g` : q.medida)
+/** Como a tela escreve: uma quantidade só, a medida; sem medida, o peso (spec conduta-da-nutricionista, D-297). */
+const texto = (q: QuantidadeNaFolha) => q.medida ?? `${q.gramas} g`
 
 /** A cópia do link como o app faz hoje (D-151): o nome da tabela e a medida do planejador. */
 function copiaDoExemplo(): readonly ItemDaDieta[] {
@@ -44,17 +44,17 @@ describe('a dieta do link para o paciente (D-231)', () => {
     ])
   })
 
-  it('CA-749: a quantidade segue a folha (peso só na medida vaga, ponta de faca, mais de 4 pedaços vira peso)', () => {
+  it('CA-749 (com a D-295 e a D-297 da conduta-da-nutricionista): a quantidade é a da folha, uma só, com ponta de faca e até 4 pedaços', () => {
     const linhas = Object.fromEntries(copiaDoExemplo().map((item) => [paraOPaciente(item).nome, texto(paraOPaciente(item).quantidade)]))
     expect(linhas).toMatchObject({
       'Pão francês': '1 unidade e meia',
       'Arroz branco cozido': '6 colheres de sopa',
       'Ovo cozido': '2 unidades',
       'Iogurte natural': '1 copo americano',
-      'Maçã Fuji com casca': '3 fatias e meia · 130 g',
-      'Filé de merluza assado': 'meia unidade · 100 g',
-      'Peito de frango grelhado sem pele': '1 bife · 100 g',
-      'Banana prata': '130 g',
+      'Maçã Fuji com casca': '3 fatias e meia',
+      'Filé de merluza assado': 'meia unidade',
+      'Peito de frango grelhado sem pele': '1 bife',
+      'Banana prata': '1 unidade e meia',
       'Margarina com sal': '1 ponta de faca',
       'Queijo minas frescal': '30 g',
       'Macarrão (peso cru)': '90 g',
@@ -70,19 +70,19 @@ describe('a dieta do link para o paciente (D-231)', () => {
     expect(removido.nome).toBe('Alimento removido')
     expect(texto(removido.quantidade)).toBe('80 g')
 
-    // Um nome que a base mudou depois da cópia: sem saber se a medida é vaga, o peso fica ao lado.
+    // Um nome que a base mudou depois da cópia: a medida guardada.
     const mudou = paraOPaciente({ medida: '2 unidades', gramas: 60, alimento: 'Pão, de queijo, nome antigo' })
     expect(mudou.nome).toBe('Pão, de queijo, nome antigo')
-    expect(texto(mudou.quantidade)).toBe('2 unidades · 60 g')
+    expect(texto(mudou.quantidade)).toBe('2 unidades')
   })
 
-  it('CA-971 (integracao-rodada-1910): item de receita com o nome de um prato da base sai com a porção e o peso da receita', () => {
+  it('CA-971 (integracao-rodada-1910): item de receita com o nome de um prato da base sai com a porção da receita', () => {
     // "Feijoada" e "Quindim" existem na base; marcados como receita, nunca são procurados lá.
     const feijoada = paraOPaciente({ medida: '1 porção', gramas: 300, alimento: 'Feijoada', receita: true })
     expect(feijoada.nome).toBe('Feijoada')
-    expect(texto(feijoada.quantidade)).toBe('1 porção · 300 g')
+    expect(texto(feijoada.quantidade)).toBe('1 porção')
     const quindim = paraOPaciente({ medida: '1 unidade', gramas: 50, alimento: 'Quindim', receita: true })
-    expect(texto(quindim.quantidade)).toBe('1 unidade · 50 g')
+    expect(texto(quindim.quantidade)).toBe('1 unidade')
     // O mesmo item, se fosse alimento da base, viraria só o peso: é isso que a marca evita.
     expect(texto(paraOPaciente({ medida: '1 porção', gramas: 300, alimento: 'Feijoada' }).quantidade)).toBe('300 g')
   })
@@ -93,14 +93,23 @@ describe('a dieta do link para o paciente (D-231)', () => {
     expect(texto(estragada.quantidade)).toBe('300 g')
   })
 
+  it('D-319 (integracao-rodada-1910): com o plano em "Gramas", só o peso, sem refazer a medida pela base', () => {
+    expect(texto(paraOPaciente({ medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }, 'gramas').quantidade)).toBe('150 g')
+    expect(paraOPaciente({ medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }, 'gramas').nome).toBe('Arroz branco cozido')
+    expect(texto(paraOPaciente({ medida: '1 porção', gramas: 300, alimento: 'Feijoada', receita: true }, 'gramas').quantidade)).toBe('300 g')
+    expect(texto(paraOPaciente({ medida: '2 unidades', gramas: 60, alimento: 'Pão, de queijo, nome antigo' }, 'gramas').quantidade)).toBe('60 g')
+    // Em "Medida caseira" (o padrão), a medida é refeita pela base, mesmo que a cópia não tenha guardado nenhuma.
+    expect(texto(paraOPaciente({ medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }).quantidade)).toBe('6 colheres de sopa')
+  })
+
   it('CB-230: as 597 descrições da base são únicas, então o nome guardado acha um alimento só', () => {
     expect(new Set(ALIMENTOS.map((a) => a.descricao)).size).toBe(ALIMENTOS.length)
   })
 
   it('CB-232: a quantidade é a da base de hoje, não a medida guardada na cópia', () => {
-    // A cópia guardou "5 fatias" (o planejador); a folha de hoje troca mais de 4 pedaços pelo peso.
+    // A cópia guardou "5 fatias" (o planejador); a folha de hoje usa a medida de até 4 pedaços que serve (D-295).
     const banana = paraOPaciente({ medida: '5 fatias', gramas: 130, alimento: 'Banana, prata, crua' })
-    expect(texto(banana.quantidade)).toBe('130 g')
+    expect(texto(banana.quantidade)).toBe('1 unidade e meia')
     // Uma medida guardada que a base não daria mais (a base de hoje é quem manda).
     const arroz = paraOPaciente({ medida: '1 xícara de chá', gramas: 150, alimento: 'Arroz, tipo 1, cozido' })
     expect(texto(arroz.quantidade)).toBe('6 colheres de sopa')

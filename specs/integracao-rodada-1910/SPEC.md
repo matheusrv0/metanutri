@@ -15,7 +15,7 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 
 | # | Decisão | Motivo |
 |---|---|---|
-| D-310 | **Item de receita marcado na cópia do link.** Na dieta copiada para o link, o item da refeição que é uma receita leva a marca `receita: true`. "Meu plano" nunca procura um item marcado na base pelo nome: mostra o nome da receita como foi escrito e a porção com o peso ao lado ("1 porção · 300 g"), como a folha impressa (spec `receitas-com-calculo`, CA-879); sem porção que feche, só o peso. Item de alimento não leva marca, e a cópia de um plano sem receita fica igual à de antes. Os ingredientes da seção "Receitas" continuam alimentos da base e seguem a D-231 da `revisao-geral-publica` | Resolve o I-2 da revisão da `revisao-geral-publica`: uma receita com o nome de um prato da base ("Feijoada", "Quindim", "Bolinho de arroz") perdia a porção no celular e divergia da folha. É seguro: nenhum link com receita existe em produção, porque as receitas nunca foram publicadas e a receita na refeição sai desligada (D-274a) |
+| D-310 | **Item de receita marcado na cópia do link.** Na dieta copiada para o link, o item da refeição que é uma receita leva a marca `receita: true`. "Meu plano" nunca procura um item marcado na base pelo nome: mostra o nome da receita como foi escrito e a porção com o peso ao lado ("1 porção · 300 g"), como a folha impressa (spec `receitas-com-calculo`, CA-879); sem porção que feche, só o peso. *Com a conduta (D-319): a porção sozinha ("1 porção"); em "Gramas", o peso.* Item de alimento não leva marca, e a cópia de um plano sem receita fica igual à de antes. Os ingredientes da seção "Receitas" continuam alimentos da base e seguem a D-231 da `revisao-geral-publica` | Resolve o I-2 da revisão da `revisao-geral-publica`: uma receita com o nome de um prato da base ("Feijoada", "Quindim", "Bolinho de arroz") perdia a porção no celular e divergia da folha. É seguro: nenhum link com receita existe em produção, porque as receitas nunca foram publicadas e a receita na refeição sai desligada (D-274a) |
 | D-311 | **Campos de texto no celular com letra de 16 px e 44 px de altura.** Abaixo de 640 px, o campo (`Input`), a lista de escolha (`SelectTrigger`) e a caixa de texto (`Textarea`) do design system têm letra de 16 px; o campo e a lista de escolha têm 44 px de altura. A partir de 640 px, nada muda: 40 px e letra de 14 px. As listas de escolha nativas do app (região do CRN, período atual, filtros de Alimentos, "Adicionar em" do Cobrir, o paciente do plano) e o endereço do link do paciente seguem a mesma medida. Revê a D-239 da `revisao-geral-publica` e a seção "Campos" do `DESIGN.md` | No iPhone, tocar num campo com letra menor que 16 px aproxima a tela inteira, e o formulário sai do lugar. 44 px é o alvo de toque do projeto (`--tap-min`), como os botões já têm no celular (CA-108) |
 | D-312 | **Quem tem tamanho próprio fica com ele em toda largura.** O campo do código (48 px, letra de 20 px), a busca de Alimentos (pílula de 44 px) e a caixa do formulário do cartão (48 px, D-73) não herdam os 40 px de 640 px para cima | O tamanho do celular do campo comum vem com uma regra própria de 640 px; quem muda a altura precisa dizer a dos dois tamanhos, senão perderia a sua acima de 640 px |
 | D-313 | **O formulário do cartão fica de fora da letra de 16 px.** Os cinco campos do cartão (checkout e Trocar cartão) continuam com letra de 14 px: três deles são campos seguros da operadora (iframes), cuja letra é passada ao Mercado Pago na hora em que o formulário abre, e os cinco precisam ser iguais (CA-368) | A rodada é sem o Mercado Pago ("faça a revisão geral sem o MP agora"). Entra junto com a troca para produção (CB-313) |
@@ -23,6 +23,7 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 | D-315 | **A receita na refeição continua desligada** (`RECEITAS_NA_REFEICAO = false`, D-274a da `receitas-com-calculo`). A integração não liga a constante; quem liga é o coordenador, na publicação 2 | A publicação em duas vezes protege o aparelho com a versão antiga aberta (R-270) |
 | D-317 | **Ingrediente apagado da receita fica fora do que vai ao paciente**, como o item apagado da refeição (D-248 da `revisao-geral-trabalho`): sai da seção "Receitas" da folha e da cópia do link (a lista de compras já o deixava de fora). A nutricionista continua vendo: no editor da receita a linha diz "Produto apagado" (ou "Alimento removido") com o aviso "Não sai na folha nem no link do paciente.", e o Word diz "Produto apagado (20 g)". A receita em si nunca é tirada da folha nem do link por não estar na base (o item de receita guarda `alimentoId` 0) | A regra do coordenador na revisão da área de trabalho (M-3): o paciente não recebe uma linha que não diz o que comer. Revê o CB-271 da `receitas-com-calculo`, que imprimia "Alimento removido" |
 | D-318 | **A † da energia e dos macros também vale para a receita com dado faltando.** O ingrediente sem energia (apagado, ou alimento da base sem o valor) conta como falta de dado no total da refeição, no Resumo do dia, na faixa da etapa 3 e no Cobrir (que não diz quantas kcal cabem). Na linha do planejador, a receita com parte da energia mostra as kcal com a † | Pedido do coordenador ao juntar as frentes: a † da `revisao-geral-trabalho` (I-2) não pode esquecer a receita, que soma pelos ingredientes |
+| D-319 | **"Meu plano" segue a escolha de quantidade do plano** (D-297 da `conduta-da-nutricionista`, que vale onde as regras se cruzam). A cópia do link de um plano em "Gramas" leva o campo `quantidades: 'gramas'` (e cada item sem medida, como a conduta já fazia); "Meu plano" lê o campo e mostra só o peso, sem refazer a medida pela base (D-231). A cópia de um plano em "Medida caseira" fica sem o campo, e "Meu plano" mostra uma quantidade só: a medida da folha de hoje (com ponta de faca e até 4 pedaços quando outra medida serve). Trocar o modo conta como "o plano mudou". O item de receita (D-310) mostra a porção ("1 porção"); em "Gramas", o peso. A mesma regra vale na folha, nas trocas, na lista de compras e no Word, e substitui o peso ao lado da medida vaga (D-189 da `impressao-do-plano`, CA-749 da `revisao-geral-publica`, D-277 e CA-886 da `receitas-com-calculo`) e o "mais de 4 pedaços, sem medida" (D-242 da `revisao-geral-trabalho`) | Pedido do coordenador ao juntar a conduta: as regras da folha que o link aplica na hora precisam seguir o modo do plano. Sem o campo, uma cópia em "Gramas" teria a medida refeita pela base. A medida que a tela mostra fica uma só (`medidaParaMostrar`): ponta de faca, gordura nunca em fatia e a medida de até 4 pedaços da conduta |
 | D-316 | **O README traz a ordem única dos passos do dono** para as quatro frentes: painel, SQL 013, funções, site, app autenticador, SQL 014, cofre e a função da limpeza | As frentes escreveram cada uma a sua ordem; o dono roda uma lista só |
 
 ## 2. Critérios de aceite
@@ -33,14 +34,14 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
   receita leva `receita: true` e os itens de alimento não levam a marca; a cópia de um plano sem receita continua sem
   nenhum campo novo (CA-885 da `receitas-com-calculo`).
 - **CA-971** · Dado a cópia do link com o item de receita "Feijoada" (marcado, "1 porção", 300 g), quando o paciente
-  abre "Meu plano", então a linha mostra "1 porção · 300 g" e "Feijoada", e não o nome nem a quantidade da feijoada da
-  base.
+  abre "Meu plano", então a linha mostra "1 porção" e "Feijoada", e não o nome nem a quantidade da feijoada da base
+  (sem o peso ao lado desde a D-319).
 - **CA-972** · Dado um item de receita sem porção na cópia (receita estragada, medida nula), então a linha mostra só o
   peso ("300 g") e o nome guardado.
 - **CA-973** · Dado a cópia lida de novo da nuvem (`lerDieta`), então a marca de receita volta igual; uma marca com
   outro valor (texto, número) é ignorada, e o item é lido como alimento.
 - **CA-974** · Dado a panqueca no Desjejum e o link aberto no celular (360 px), então "Meu plano" mostra
-  "1 unidade · 120 g" e "Panqueca de banana", a mesma linha da folha impressa.
+  "1 unidade" e "Panqueca de banana", a mesma linha da folha impressa (uma quantidade só desde a D-319).
 
 ### Campos de texto no celular (D-311 a D-313)
 
@@ -71,6 +72,17 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 - **CA-986** · Dado uma receita com um ingrediente que tem as cinco chaves do USDA (salmão) e outro sem equivalente do
   USDA (canjica), então a receita soma as cinco pelo salmão e conta a canjica como falta de dado nelas (`semDado` 1),
   nunca como zero nem `NaN`; com um ingrediente apagado, as cinco também contam a falta (`vitaminas-usda`, D-303).
+
+### A escolha de quantidade no link (D-319)
+
+- **CA-987** · Dado um plano em "Gramas", quando a dieta é copiada para o link, então a cópia leva
+  `quantidades: 'gramas'` e cada item sem medida; "Meu plano" mostra só o peso de cada alimento e da receita, com o nome
+  para o paciente; a leitura da nuvem guarda o campo só quando ele vale "gramas".
+- **CA-988** · Dado um plano em "Medida caseira", então a cópia não tem o campo `quantidades`, e "Meu plano" mostra uma
+  quantidade só: a medida da folha de hoje, também numa cópia antiga feita com a medida do planejador ("5 fatias" de
+  banana sai "1 unidade e meia").
+- **CA-989** · Dado um link copiado em "Medida caseira" e o plano passado para "Gramas" (ou o contrário), então o
+  cartão do link diz que o plano mudou.
 
 ### Termos e receita na refeição (D-314, D-315)
 

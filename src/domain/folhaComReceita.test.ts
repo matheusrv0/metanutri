@@ -15,21 +15,22 @@ const plano = (principal: ItemPlano[], substituto1: ItemPlano[] = []): Plano => 
 })
 
 describe('a linha da refeição (CA-879)', () => {
-  it('receita: o nome como foi escrito, a porção com o peso ao lado', () => {
+  it('receita: o nome como foi escrito e a porção, uma quantidade só (spec conduta-da-nutricionista, D-297); em "Gramas", o peso', () => {
     expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento)).toEqual({
       nome: 'Panqueca de banana',
-      quantidade: { medida: '1 unidade e meia', gramas: 180, comPeso: true },
+      quantidade: { medida: '1 unidade e meia', gramas: 180 },
     })
+    expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento, 'gramas').quantidade).toEqual({ medida: null, gramas: 180 })
   })
 
   it('CB-279: sem meia porção que feche, só o peso', () => {
-    expect(linhaDaFolha(itemDeReceita('a', 150), buscarAlimento).quantidade).toEqual({ medida: null, gramas: 150, comPeso: true })
+    expect(linhaDaFolha(itemDeReceita('a', 150), buscarAlimento).quantidade).toEqual({ medida: null, gramas: 150 })
   })
 
   it('alimento: o nome para o paciente e a quantidade da folha, como antes', () => {
     expect(linhaDaFolha({ id: 'b', alimentoId: BANANA, gramas: 75 }, buscarAlimento)).toEqual({
       nome: 'Banana prata',
-      quantidade: { medida: '1 unidade', gramas: 75, comPeso: false },
+      quantidade: { medida: '1 unidade', gramas: 75 },
     })
   })
 
@@ -47,9 +48,9 @@ describe('a seção Receitas (CA-880, CB-278)', () => {
       nome: 'Panqueca de banana',
       rendimento: 'Rende 2 unidades (120 g cada)',
       ingredientes: [
-        { nome: 'Banana prata', quantidade: { medida: '2 unidades', gramas: 150, comPeso: false } },
-        { nome: 'Ovo', quantidade: { medida: null, gramas: 100, comPeso: false } },
-        { nome: 'Aveia em flocos', quantidade: { medida: '2 colheres de sopa', gramas: 30, comPeso: false } },
+        { nome: 'Banana prata', quantidade: { medida: '2 unidades', gramas: 150 } },
+        { nome: 'Ovo', quantidade: { medida: null, gramas: 100 } },
+        { nome: 'Aveia em flocos', quantidade: { medida: '2 colheres de sopa', gramas: 30 } },
       ],
       preparo: PANQUECA.preparo,
     })

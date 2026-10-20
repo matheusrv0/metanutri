@@ -242,7 +242,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('CA-531 e CA-748 (spec revisao-geral-publica): cada refeição com horário e nome, a medida em destaque e o nome da folha impressa', async () => {
+  it('CA-531, CA-748 (spec revisao-geral-publica) e CA-928 (spec conduta-da-nutricionista): cada refeição com horário e nome, só a medida caseira em destaque e o nome da folha impressa', async () => {
     await abrirMeuPlano()
     expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
@@ -250,12 +250,14 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
     expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
+    // D-297 (conduta-da-nutricionista): com a medida caseira, o peso não vai ao lado.
+    expect(almoco.queryByText(/150 g/)).not.toBeInTheDocument()
     expect(almoco.getByText('Arroz branco cozido')).toBeInTheDocument()
     expect(almoco.queryByText('Arroz, tipo 1, cozido')).not.toBeInTheDocument()
     expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
   })
 
-  it('CA-749: o peso fica ao lado só da medida vaga; medida clara sai sem o peso', async () => {
+  it('CA-749 (com a D-295 e a D-297 da conduta-da-nutricionista): uma quantidade só, a da folha de hoje, mesmo numa cópia antiga', async () => {
     await abrirMeuPlano({
       dieta: {
         ...DIETA,
@@ -279,9 +281,8 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const linha = (nome: string) => cafe.getByText(nome).closest('li')?.textContent
     expect(linha('Pão francês')).toBe('1 unidade e meiaPão francês')
     expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
-    expect(linha('Banana prata')).toBe('130 gBanana prata')
-    expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meia · 130 gMaçã Fuji com casca')
-    expect(cafe.getByText('· 130 g').className).toContain('text-muted-foreground')
+    expect(linha('Banana prata')).toBe('1 unidade e meiaBanana prata')
+    expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meiaMaçã Fuji com casca')
   })
 
   it('CA-750: produto do nutricionista e alimento removido saem como foram guardados', async () => {
@@ -305,7 +306,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     })
     const lanche = within(screen.getByRole('region', { name: '10:00 Lanche' }))
     expect(lanche.getByText('Barra de proteína da Ana, sabor cacau').closest('li')?.textContent).toBe('45 gBarra de proteína da Ana, sabor cacau')
-    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('2 unidades · 60 gPão, de queijo, nome antigo')
+    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('2 unidadesPão, de queijo, nome antigo')
     expect(lanche.getByText('Alimento removido').closest('li')?.textContent).toBe('80 gAlimento removido')
   })
 
@@ -323,6 +324,14 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const linha = within(screen.getByRole('region', { name: '12:00 Almoço' })).getByText('Arroz branco cozido').closest('li')
     expect(linha?.className).toContain('text-base')
     expect(linha?.firstElementChild?.textContent).toBe('6 colheres de sopa')
+  })
+
+  it('CA-928 (spec conduta-da-nutricionista) e D-319 (integracao-rodada-1910): plano em "Gramas" chega sem medida e marcado, e cada alimento mostra só o peso', async () => {
+    const emGramas = DIETA.refeicoes.map((r) => ({ ...r, opcoes: r.opcoes.map((o) => o.map((i) => ({ ...i, medida: null }))) }))
+    await abrirMeuPlano({ dieta: { ...DIETA, refeicoes: emGramas, quantidades: 'gramas' } })
+    const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
+    expect(almoco.getByText('150 g').tagName).toBe('STRONG')
+    expect(almoco.queryByText(/colheres/)).not.toBeInTheDocument()
   })
 
   it('CB-156: alimento sem medida caseira mostra só o peso', async () => {

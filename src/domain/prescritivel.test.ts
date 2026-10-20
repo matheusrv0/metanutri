@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
-import { ehDeUsoComum, ehPrescritivel, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
+import { ehDeUsoComum, ehPrescritivel, ehSegundaEscolha, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
 
@@ -14,19 +16,23 @@ const porDescricao = (d: string): Alimento => {
 const IDS_POR_MOTIVO: Readonly<Record<string, readonly number[]>> = {
   alcool: [472, 474],
   'sal-e-fermento': [513, 514, 516, 517, 518, 519],
-  'bebida-adocada': [446, 455, 460, 470, 473, 479, 480, 481, 482, 483, 512],
+  // Spec conduta-da-nutricionista, D-292: gordura trans é "nunca".
+  'gordura-trans': [263, 264, 522],
+  'bebida-adocada': [446, 455, 470, 473, 479, 480, 481, 482, 483, 512],
   doce: [
     8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 20, 26, 29, 30, 167, 171, 173, 176, 195, 198, 199, 224, 227, 245, 450, 451, 452, 453, 466,
-    491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 515, 579, 580,
+    491, 492, 493, 494, 495, 496, 497, 499, 500, 501, 502, 503, 504, 505, 506, 508, 509, 510, 515, 579, 580,
   ],
-  gordura: [259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 444, 445, 447, 522, 523, 524, 545, 547],
-  embutido: [323, 338, 339, 384, 385, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 434, 437, 438, 439, 443],
-  'prato-com-embutido': [526, 527, 528, 536, 539, 540, 543, 548, 555],
-  fritura: [55, 56, 57, 58, 59, 60, 90, 93, 132, 281, 286, 297, 299, 300, 303, 305, 306, 308, 320, 331, 340, 386, 387, 388, 401, 428, 442, 490, 525, 529, 530],
-  ultraprocessado: [23, 24, 25, 28, 31, 36, 39, 46, 99, 324, 325, 389, 390, 520, 521, 586],
+  gordura: [259, 261, 262, 265, 266, 267, 268, 269, 270, 271, 272, 444, 445, 447, 523, 524, 545, 547],
+  embutido: [323, 339, 385, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 434, 437, 438, 439, 443],
+  'prato-com-embutido': [526, 539, 555],
+  fritura: [55, 56, 57, 58, 59, 60, 90, 93, 132, 281, 286, 297, 299, 300, 303, 305, 306, 308, 320, 331, 340, 386, 387, 388, 401, 428, 442, 525, 529, 530],
+  ultraprocessado: [23, 24, 28, 31, 36, 39, 46, 99, 324, 325, 389, 390],
+  // Spec conduta-da-nutricionista, D-291: preparações que quase nunca se prescrevem assim.
+  preparacao: [13, 61, 140, 551],
   miscelanea: [511],
-  po: [27, 114, 456, 459, 583],
-  farinha: [32, 33, 34, 35, 42, 43, 121, 123, 124, 146, 581, 592],
+  po: [27, 114, 583],
+  farinha: [32, 33, 34, 35, 42, 43, 123, 124, 146, 581, 592],
   cru: [
     2, 4, 6, 19, 38, 40, 41, 44, 65, 67, 87, 89, 92, 96, 103, 113, 130, 141, 275, 278, 279,
     283, 285, 288, 291, 292, 295, 296, 298, 302, 304, 307, 310, 312, 314, 316, 321, 322, 327, 329, 330, 333, 334, 336, 341, 343, 345, 348,
@@ -62,17 +68,8 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     },
   )
 
-  it.each([
-    'Feijoada',
-    'Feijão tropeiro mineiro',
-    'Virado à paulista',
-    'Arroz carreteiro',
-    'Maniçoba',
-    'Barreado',
-    'Baião de dois, arroz e feijão-de-corda',
-    'Dobradinha',
-    'Sarapatel',
-  ])('CA-669: "%s" é prato com embutido, toucinho, carne curada ou miúdos, como a feijoada', (d) => {
+  // A feijoada e os pratos regionais voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-290).
+  it.each(['Feijão tropeiro mineiro', 'Virado à paulista', 'Arroz carreteiro'])('CA-669 e CA-910: "%s" continua prato com embutido ou carne curada', (d) => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toMatchObject({ id: 'prato-com-embutido', nivel: 'fora-da-rotina' })
     expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
@@ -97,11 +94,8 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Bebida isotônica, sabores variados', 'bebida-adocada'],
     ['Cana, caldo de', 'bebida-adocada'],
     ['Bebida láctea, pêssego', 'bebida-adocada'],
-    ['Leite, fermentado', 'bebida-adocada'],
     ['Leite, de vaca, achocolatado', 'bebida-adocada'],
     ['Doce, de leite, cremoso', 'doce'],
-    ['Mel, de abelha', 'doce'],
-    ['Chocolate, meio amargo', 'doce'],
     ['Achocolatado, pó', 'doce'],
     ['Biscoito, doce, recheado com chocolate', 'doce'],
     ['Bolo, pronto, chocolate', 'doce'],
@@ -114,9 +108,11 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Queijo, petit suisse, morango', 'doce'],
     ['Leite, condensado', 'doce'],
     ['Paçoca, amendoim', 'doce'],
+    ['Chocolate, ao leite', 'doce'],
+    ['Cereal matinal, milho, açúcar', 'doce'],
     ['Óleo, de soja', 'gordura'],
-    ['Azeite, de oliva, extra virgem', 'gordura'],
-    ['Margarina, com óleo hidrogenado, com sal (65% de lipídeos)', 'gordura'],
+    ['Azeite, de dendê', 'gordura'],
+    ['Margarina, com óleo interesterificado, com sal (65%de lipídeos)', 'gordura'],
     ['Manteiga, com sal', 'gordura'],
     ['Maionese, tradicional com ovos', 'gordura'],
     ['Creme de Leite', 'gordura'],
@@ -129,9 +125,8 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Salame', 'embutido'],
     ['Apresuntado', 'embutido'],
     ['Hambúrguer, bovino, grelhado', 'embutido'],
-    ['Carne, bovina, charque, cozido', 'embutido'],
-    ['Carne, bovina, seca, cozida', 'embutido'],
-    ['Ovo, de galinha, inteiro, frito', 'fritura'],
+    ['Carne, bovina, charque, cru', 'embutido'],
+    ['Carne, bovina, seca, crua', 'embutido'],
     ['Frango, filé, à milanesa', 'fritura'],
     ['Batata, inglesa, frita', 'fritura'],
     ['Batata, frita, tipo chips, industrializada', 'fritura'],
@@ -143,14 +138,11 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     ['Bife à cavalo, com contra filé', 'fritura'],
     ['Caldo de carne, tablete', 'ultraprocessado'],
     ['Macarrão, instantâneo', 'ultraprocessado'],
-    ['Cereal matinal, milho', 'ultraprocessado'],
     ['Cereais, mingau, milho, infantil', 'ultraprocessado'],
     ['Cereais, mistura para vitamina, trigo, cevada e aveia', 'ultraprocessado'],
     ['Farinha, láctea, de cereais', 'ultraprocessado'],
     ['Empada de frango, pré-cozida, assada', 'ultraprocessado'],
     ['Biscoito, polvilho doce', 'ultraprocessado'],
-    ['Azeitona, preta, conserva', 'ultraprocessado'],
-    ['Tremoço, em conserva', 'ultraprocessado'],
   ])('CA-651 e CA-652: "%s" fica fora da rotina (%s), com a chave ligada ou não', (d, id) => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toMatchObject({ id, nivel: 'fora-da-rotina' })
@@ -161,7 +153,6 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
   it.each([
     ['Café, pó, torrado', 'miscelanea'],
     ['Coentro, folhas desidratadas', 'po'],
-    ['Leite, de vaca, desnatado, pó', 'po'],
     ['Farinha, de trigo', 'farinha'],
     ['Milho, amido, cru', 'farinha'],
     ['Milho, fubá, cru', 'farinha'],
@@ -212,14 +203,10 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     'Queijo, requeijão, cremoso',
     'Queijo, pasteurizado',
     'Cuscuz, de milho, cozido com sal',
-    'Tapioca, com manteiga',
-    'Pão, de queijo, assado',
     'Bacalhau, salgado, refogado',
     'Sardinha, conserva em óleo',
     'Atum, conserva em óleo',
     'Palmito, juçara, em conserva',
-    'Biscoito, salgado, cream cracker',
-    'Pipoca, com óleo de soja, sem sal',
     'Castanha-de-caju, torrada, salgada',
     'Castanha-do-Brasil, crua',
     'Omelete, de queijo',
@@ -274,6 +261,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(REGRAS_PRESCRICAO.map((r) => [r.id, r.nivel, r.titulo])).toEqual([
       ['alcool', 'nunca', 'Bebida alcoólica'],
       ['sal-e-fermento', 'nunca', 'Sal, shoyu, tempero pronto ou fermento'],
+      ['gordura-trans', 'nunca', 'Gordura trans (hidrogenada)'],
       ['bebida-adocada', 'fora-da-rotina', 'Refrigerante, isotônico ou bebida adoçada'],
       ['doce', 'fora-da-rotina', 'Doce, açúcar ou fruta em calda'],
       ['gordura', 'fora-da-rotina', 'Óleo ou gordura de adição'],
@@ -281,6 +269,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       ['prato-com-embutido', 'fora-da-rotina', 'Prato com embutido, toucinho, carne curada ou miúdos'],
       ['fritura', 'fora-da-rotina', 'Fritura ou salgado frito'],
       ['ultraprocessado', 'fora-da-rotina', 'Ultraprocessado, salgadinho ou petisco em conserva'],
+      ['preparacao', 'fora-da-rotina', 'Preparação que raramente se prescreve assim'],
       ['miscelanea', 'ingrediente', 'Ingrediente da categoria Miscelâneas (café em pó)'],
       ['po', 'ingrediente', 'Produto em pó ou desidratado'],
       ['farinha', 'ingrediente', 'Farinha, amido ou fécula de uso culinário'],
@@ -298,20 +287,22 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(contagem).toEqual({
       alcool: 2,
       'sal-e-fermento': 6,
-      'bebida-adocada': 11,
-      doce: 52,
-      gordura: 22,
-      embutido: 20,
-      'prato-com-embutido': 9,
-      fritura: 31,
-      ultraprocessado: 16,
+      'gordura-trans': 3,
+      'bebida-adocada': 10,
+      doce: 50,
+      gordura: 18,
+      embutido: 18,
+      'prato-com-embutido': 3,
+      fritura: 30,
+      ultraprocessado: 12,
+      preparacao: 4,
       miscelanea: 1,
-      po: 5,
-      farinha: 12,
+      po: 3,
+      farinha: 11,
       cru: 97,
       tempero: 14,
     })
-    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(298)
+    expect(Object.values(contagem).reduce((x, y) => x + y, 0)).toBe(282)
     expect(ALIMENTOS).toHaveLength(597)
   })
 
@@ -324,7 +315,23 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(porMotivo).toEqual(IDS_POR_MOTIVO)
   })
 
-  it('CA-667: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
+  it('CA-918: o Apêndice A da spec sugestoes-com-criterio traz os mesmos ids por motivo', () => {
+    // O Vitest roda na raiz do projeto.
+    const spec = readFileSync(join(process.cwd(), 'specs', 'sugestoes-com-criterio', 'SPEC.md'), 'utf-8')
+    const apendice = spec.slice(spec.indexOf('## Apêndice A'), spec.indexOf('#### Liberados pela conduta'))
+    const porTitulo = new Map(REGRAS_PRESCRICAO.map((r) => [r.titulo, r.id]))
+    const doApendice: Record<string, number[]> = {}
+    for (const bloco of apendice.split('\n#### ').slice(1)) {
+      const primeiraLinha = bloco.split('\n')[0] ?? ''
+      const titulo = primeiraLinha.slice(0, primeiraLinha.lastIndexOf(' (')).trim()
+      const id = porTitulo.get(titulo)
+      expect(id, titulo).toBeDefined()
+      doApendice[id ?? titulo] = [...bloco.matchAll(/^\| (\d+) \|/gm)].map((m) => Number(m[1]))
+    }
+    expect(doApendice).toEqual(IDS_POR_MOTIVO)
+  })
+
+  it('CA-667 e CA-913: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
     const FORMA = new Set(['miscelanea', 'po', 'farinha', 'cru', 'tempero'])
     for (const [motivo, ids] of Object.entries(IDS_POR_MOTIVO)) {
       const trava = FORMA.has(motivo) ? FORMA_DE_INGREDIENTE : NUNCA_APARECE
@@ -354,6 +361,96 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(regraQueExclui(porDescricao('Pastel, de carne, cru'))?.id).toBe('fritura')
     // "Lingüiça, frango, crua" é cru e é embutido.
     expect(regraQueExclui(porDescricao('Lingüiça, frango, crua'))?.id).toBe('embutido')
+  })
+})
+
+describe('a conduta da nutricionista (spec conduta-da-nutricionista)', () => {
+  const LIBERADOS = [
+    'Azeite, de oliva, extra virgem',
+    'Mel, de abelha',
+    'Chocolate, meio amargo',
+    'Leite, fermentado',
+    'Cereal matinal, milho',
+    'Carne, bovina, charque, cozido',
+    'Carne, bovina, seca, cozida',
+    'Azeitona, preta, conserva',
+    'Azeitona, verde, conserva',
+    'Tremoço, em conserva',
+    'Ovo, de galinha, inteiro, frito',
+    'Feijoada',
+    'Baião de dois, arroz e feijão-de-corda',
+    'Barreado',
+    'Dobradinha',
+    'Maniçoba',
+    'Sarapatel',
+    'Farinha, de mandioca, crua',
+    'Leite, de vaca, integral, pó',
+    'Leite, de vaca, desnatado, pó',
+  ]
+
+  it.each(LIBERADOS)('CA-910: "%s" volta a ser proposto, com a chave ligada ou desligada', (d) => {
+    const a = porDescricao(d)
+    expect(regraQueExclui(a)).toBeNull()
+    expect(ehPrescritivel(a)).toBe(true)
+    expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(true)
+  })
+
+  it.each([
+    ['Azeite, de dendê', 'gordura'],
+    ['Cereal matinal, milho, açúcar', 'doce'],
+    ['Carne, bovina, charque, cru', 'embutido'],
+    ['Carne, bovina, seca, crua', 'embutido'],
+    ['Feijão tropeiro mineiro', 'prato-com-embutido'],
+    ['Virado à paulista', 'prato-com-embutido'],
+    ['Arroz carreteiro', 'prato-com-embutido'],
+  ])('CA-910: o parente que a parceira não liberou continua fora ("%s", %s)', (d, id) => {
+    expect(regraQueExclui(porDescricao(d))?.id).toBe(id)
+  })
+
+  it('CA-910: o nome é limpo antes de comparar, como no resto da regra', () => {
+    expect(regraQueExclui({ descricao: '  Mel,  de abelha ', categoria: 'Produtos açucarados', preparo: null })).toBeNull()
+  })
+
+  it.each(['Tapioca, com manteiga', 'Pão, de queijo, assado', 'Pipoca, com óleo de soja, sem sal', 'Biscoito, salgado, cream cracker'])(
+    'CA-911: "%s" é preparação que raramente se prescreve assim; a chave não a traz',
+    (d) => {
+      const a = porDescricao(d)
+      expect(regraQueExclui(a)).toMatchObject({ id: 'preparacao', nivel: 'fora-da-rotina', titulo: 'Preparação que raramente se prescreve assim' })
+      expect(ehPrescritivel(a)).toBe(false)
+      expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+    },
+  )
+
+  it('CA-911: o pão de queijo cru continua forma de ingrediente', () => {
+    expect(regraQueExclui(porDescricao('Pão, de queijo, cru'))?.id).toBe('cru')
+  })
+
+  it.each([
+    'Margarina, com óleo hidrogenado, com sal (65% de lipídeos)',
+    'Margarina, com óleo hidrogenado, sem sal (80% de lipídeos)',
+    'Chantilly, spray, com gordura vegetal',
+  ])('CA-912: "%s" é gordura trans: nunca, nem com a chave ligada', (d) => {
+    const a = porDescricao(d)
+    expect(regraQueExclui(a)).toMatchObject({ id: 'gordura-trans', nivel: 'nunca' })
+    expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+  })
+
+  it.each(LIBERADOS.filter((d) => d !== 'Farinha, de mandioca, crua'))('CA-914: "%s" é segunda escolha (D-293)', (d) => {
+    expect(ehSegundaEscolha(porDescricao(d))).toBe(true)
+  })
+
+  it('CA-914: corte gordo e ave com pele também são segunda escolha; magro, in natura e a farinha d\'água, não', () => {
+    expect(ehSegundaEscolha(porDescricao('Carne, bovina, picanha, com gordura, grelhada'))).toBe(true)
+    expect(ehSegundaEscolha(porDescricao('Frango, coxa, com pele, assada'))).toBe(true)
+    for (const d of ['Farinha, de mandioca, crua', 'Carne, bovina, patinho, sem gordura, grelhado', 'Feijão, carioca, cozido', 'Banana, prata, crua']) {
+      expect(ehSegundaEscolha(porDescricao(d)), d).toBe(false)
+    }
+  })
+
+  it('CA-912: qualquer nome que diga "hidrogenada" é trans; a margarina interesterificada continua gordura de adição', () => {
+    expect(regraQueExclui({ descricao: 'Gordura vegetal hidrogenada', categoria: 'Gorduras e óleos', preparo: null })?.id).toBe('gordura-trans')
+    expect(regraQueExclui({ descricao: 'Biscoito, com óleo hidrogenado', categoria: 'Cereais e derivados', preparo: null })?.id).toBe('gordura-trans')
+    expect(regraQueExclui(porDescricao('Margarina, com óleo interesterificado, sem sal (65% de lipídeos)'))).toMatchObject({ id: 'gordura', nivel: 'fora-da-rotina' })
   })
 })
 

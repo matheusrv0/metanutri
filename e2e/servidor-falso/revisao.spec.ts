@@ -305,6 +305,7 @@ test.describe('Avisos do checkout (D-236)', () => {
 test.describe('Link do paciente', () => {
   test.use({ viewport: { width: 390, height: 800 } })
 
+  // CA-749 com a D-295 e a D-297 da conduta-da-nutricionista: uma quantidade só, e até 4 pedaços quando outra medida serve.
   test('CA-748 e CA-749: "Meu plano" com o nome e a quantidade da folha impressa, a partir da cópia de hoje', async ({ page }) => {
     await ligarServidorFalso(page, { link: linkFalso({ dieta: DIETA_GUARDADA }) })
     await page.goto('/#/missoes/token-do-teste')
@@ -313,11 +314,11 @@ test.describe('Link do paciente', () => {
     await expect(linha('06:00 Desjejum', 'Pão francês')).toHaveText('1 unidade e meiaPão francês')
     await expect(linha('06:00 Desjejum', 'Margarina com sal')).toHaveText('1 ponta de facaMargarina com sal')
     await expect(linha('06:00 Desjejum', 'Queijo minas frescal')).toHaveText('30 gQueijo minas frescal')
-    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('130 gBanana prata')
+    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('1 unidade e meiaBanana prata')
     await expect(linha('12:00 Almoço', 'Macarrão (peso cru)')).toHaveText('90 gMacarrão (peso cru)')
-    await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('meia unidade · 100 gFilé de merluza assado')
+    await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('meia unidadeFilé de merluza assado')
     await expect(linha('19:00 Jantar', 'Ovo cozido')).toHaveText('2 unidadesOvo cozido')
-    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('3 fatias e meia · 130 gMaçã Fuji com casca')
+    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('3 fatias e meiaMaçã Fuji com casca')
     await expect(page.getByText(/Pão, trigo|lipídeos|cozido\/10minutos/)).toHaveCount(0)
     await semRolagemLateral(page)
   })

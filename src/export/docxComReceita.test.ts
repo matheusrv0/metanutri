@@ -46,14 +46,15 @@ const RECEITA = [
 ]
 
 describe('a receita no Word', () => {
-  it('CA-886: a refeição diz o nome da receita com a porção e o peso', () => {
-    expect(descreverItem(itemDeReceita('a', 120), buscarAlimento)).toBe('Panqueca de banana (1 unidade · 120 g)')
+  it('CA-886: a refeição diz o nome da receita com a porção; uma quantidade só (spec conduta-da-nutricionista, D-297): em "Gramas" ou sem meia porção que feche, o peso', () => {
+    expect(descreverItem(itemDeReceita('a', 120), buscarAlimento)).toBe('Panqueca de banana (1 unidade)')
+    expect(descreverItem(itemDeReceita('a', 120), buscarAlimento, 'gramas')).toBe('Panqueca de banana (120 g)')
     expect(descreverItem(itemDeReceita('a', 150), buscarAlimento)).toBe('Panqueca de banana (150 g)')
   })
 
   it('CA-887: estudante: a receita inteira dentro de RECEITAS SAUDÁVEIS, antes do texto livre', async () => {
     const texto = await textoDoDocx(dados(planoComPanqueca()))
-    expect(texto).toContain('Panqueca de banana (1 unidade · 120 g)')
+    expect(texto).toContain('Panqueca de banana (1 unidade)')
     const ordem = ['RECEITAS SAUDÁVEIS', ...RECEITA, 'Suco verde: couve e limão.'].map((t) => texto.indexOf(t))
     expect(ordem.every((posicao) => posicao >= 0)).toBe(true)
     expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)

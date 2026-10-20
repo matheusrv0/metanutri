@@ -112,7 +112,20 @@ export interface Caso {
   readonly orientacoes: string
   /** Receitas anexadas ao documento (CA-44). */
   readonly receitas: string
+  /**
+   * Como a quantidade sai para o paciente na folha, no link e no Word (spec conduta-da-nutricionista, D-297). Plano
+   * gravado antes, sem o campo, lê "medida-caseira" (`modoDeQuantidade`).
+   */
+  readonly quantidades: ModoQuantidade
+  /**
+   * A linha da água no começo de "Orientações" da folha (spec conduta-da-nutricionista, D-298): `null` é a automática
+   * (35 ml por kg); texto é o que a nutricionista escreveu; vazio tira a linha da folha.
+   */
+  readonly linhaDaAgua: string | null
 }
+
+/** "Medida caseira" (a medida do planejador, para a paciente) ou "Gramas" (só o peso). */
+export type ModoQuantidade = 'medida-caseira' | 'gramas'
 
 export type OpcaoId = 'principal' | 'substituto1' | 'substituto2'
 

@@ -83,15 +83,44 @@ export interface MedidaEquivalente {
   readonly gramasEquivalentes: number
 }
 
-/** A medida mais legível entre as preferidas; `semFatia` tira a "fatia" (manteiga e margarina, D-242). */
-function melhorMedida(alimentoId: number, gramas: number, semFatia: boolean): MedidaEquivalente | null {
+/** Medidas de contar: unidade e pedaço (spec conduta-da-nutricionista, D-295). */
+export const MEDIDAS_DE_CONTAR: ReadonlySet<string> = new Set([
+  'unidade',
+  'unidade pequena',
+  'fatia',
+  'pedaço',
+  'rodela',
+  'gomo',
+  'banda',
+  'metade',
+  'bife',
+  'filé',
+  'posta',
+  'coxa',
+  'sobrecoxa',
+  'peito',
+])
+
+/** Mais de 4 unidades ou pedaços não é como a paciente conta a comida ("7 torradas", "5 fatias e meia de ovo"). */
+export const MAXIMO_DE_PEDACOS = 4
+
+interface OpcoesDaMedida {
+  /** Tira a medida de contar que pediria mais pedaços que isto (D-295 da conduta-da-nutricionista). */
+  readonly maximoDePedacos?: number | undefined
+  /** Tira a "fatia" (manteiga e margarina, D-242 da revisao-geral-trabalho). */
+  readonly semFatia?: boolean | undefined
+}
+
+/** A medida mais legível entre as preferidas, em passos de meia medida. */
+function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida): MedidaEquivalente | null {
   if (!(gramas > 0)) return null
   let melhor: { m: MedidaCaseira; q: number; pontos: number } | null = null
   for (const m of medidasDoAlimento(alimentoId)) {
     const preferencia = PREFERENCIA_MEDIDAS.indexOf(m.nome)
-    if (preferencia < 0 || (semFatia && m.nome === 'fatia')) continue
+    if (preferencia < 0 || (opcoes.semFatia && m.nome === 'fatia')) continue
     const q = Math.max(0.5, Math.round((gramas / m.gramas) * 2) / 2)
     if (q > QUANTIDADE_MAXIMA) continue
+    if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
     if (erro > ERRO_MAXIMO) continue
     // desempate: menos unidades da medida lê melhor ("1 concha" em vez de "4 colheres de servir")
@@ -108,19 +137,16 @@ function melhorMedida(alimentoId: number, gramas: number, semFatia: boolean): Me
 }
 
 /**
- * CA-19: gramas expressas na medida caseira mais legível do alimento, em passos de meia medida. É a medida que escolhe
- * as trocas (`trocas.ts`) e a que vai para a dieta do link do paciente: mudar aqui mudaria as trocas e faria todo link
- * já enviado dizer "o plano mudou" (R-182 da spec impressao-do-plano). Para mostrar, use `medidaParaMostrar`.
+ * CA-19: gramas expressas na medida caseira mais legível do alimento, em passos de meia medida: a medida do planejador
+ * na busca. Com `maximoDePedacos`, deixa de fora a medida de contar com mais pedaços (D-295 da conduta-da-nutricionista).
+ * Para mostrar à pessoa (planejador, folha, link, Word), use `medidaParaMostrar`.
  */
-export function medidaEquivalente(alimentoId: number, gramas: number): MedidaEquivalente | null {
-  return melhorMedida(alimentoId, gramas, false)
+export function medidaEquivalente(alimentoId: number, gramas: number, opcoes: { readonly maximoDePedacos?: number } = {}): MedidaEquivalente | null {
+  return melhorMedida(alimentoId, gramas, { maximoDePedacos: opcoes.maximoDePedacos })
 }
 
 const PONTA_DE_FACA = 'ponta de faca'
 const MAXIMO_DE_PONTAS = 3
-/** Medidas de pedaço: mais de 4 não serve ("Banana · 5 fatias"); a pessoa lê os gramas (CA-644 da impressao-do-plano). */
-const PEDACOS = new Set(['fatia', 'pedaço', 'rodela', 'gomo', 'banda', 'metade'])
-const MAXIMO_DE_PEDACOS = 4
 /** Manteiga e margarina: a "fatia" de 32 g da base não é como ninguém serve gordura. */
 const GORDURAS = 'Gorduras e óleos'
 
@@ -139,15 +165,22 @@ function emPontaDeFaca(alimentoId: number, gramas: number): MedidaEquivalente | 
 }
 
 /**
- * D-242 (spec revisao-geral-trabalho): a medida caseira que se mostra, igual no planejador, na folha do paciente, no
- * Cobrir, no substituto e no Word. Ponta de faca primeiro; gordura nunca em fatia; mais de 4 pedaços, sem medida.
+ * A medida caseira que a paciente lê (spec conduta-da-nutricionista, D-295 e D-297): a do planejador, mas, quando ela
+ * pede mais de 4 unidades ou pedaços e outra medida do alimento serve, a outra ("1 unidade" de ovo frito, não "5 fatias e
+ * meia"). Sem outra que sirva, fica a do planejador. Gordura nunca em fatia (D-242 da revisao-geral-trabalho).
+ */
+export function medidaCaseiraParaPaciente(alimentoId: number, gramas: number): MedidaEquivalente | null {
+  const semFatia = buscarAlimento(alimentoId)?.categoria === GORDURAS
+  return melhorMedida(alimentoId, gramas, { semFatia, maximoDePedacos: MAXIMO_DE_PEDACOS }) ?? melhorMedida(alimentoId, gramas, { semFatia })
+}
+
+/**
+ * A medida caseira que se mostra, igual no planejador, na folha do paciente, no link, no Cobrir, no substituto e no Word
+ * (D-242 da revisao-geral-trabalho): ponta de faca primeiro; depois a medida para a paciente (D-295 da
+ * conduta-da-nutricionista, que substitui o "mais de 4 pedaços, sem medida" da D-242).
  */
 export function medidaParaMostrar(alimentoId: number, gramas: number): MedidaEquivalente | null {
-  const ponta = emPontaDeFaca(alimentoId, gramas)
-  if (ponta) return ponta
-  const medida = melhorMedida(alimentoId, gramas, buscarAlimento(alimentoId)?.categoria === GORDURAS)
-  if (medida && PEDACOS.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS) return null
-  return medida
+  return emPontaDeFaca(alimentoId, gramas) ?? medidaCaseiraParaPaciente(alimentoId, gramas)
 }
 
 /** Nomes de medidas conhecidos, das mais longas para as mais curtas (para casar "colher de sopa" antes de "colher"). */

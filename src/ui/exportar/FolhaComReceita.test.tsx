@@ -22,10 +22,13 @@ function planoComPanqueca(gramas = 120): Plano {
 beforeEach(() => localStorage.clear())
 
 describe('a receita na folha (CA-879 a CA-881)', () => {
-  it('CA-879: a refeição mostra o nome da receita e a porção com o peso ao lado', () => {
-    render(<FolhaDieta caso={caso} plano={planoComPanqueca(180)} />)
+  it('CA-879: a refeição mostra o nome da receita e a porção, uma quantidade só (spec conduta-da-nutricionista, D-297); em "Gramas", o peso', () => {
+    const { unmount } = render(<FolhaDieta caso={caso} plano={planoComPanqueca(180)} />)
     const desjejum = within(screen.getByRole('region', { name: '06:00 Desjejum' }))
-    expect(desjejum.getByText('Panqueca de banana').closest('li')).toHaveTextContent(/^Panqueca de banana, 1 unidade e meia · 180 g$/)
+    expect(desjejum.getByText('Panqueca de banana').closest('li')).toHaveTextContent(/^Panqueca de banana, 1 unidade e meia$/)
+    unmount()
+    render(<FolhaDieta caso={{ ...caso, quantidades: 'gramas' }} plano={planoComPanqueca(180)} />)
+    expect(within(screen.getByRole('region', { name: '06:00 Desjejum' })).getByText('Panqueca de banana').closest('li')).toHaveTextContent(/^Panqueca de banana, 180 g$/)
     expect(desjejum.queryByText(/Banana prata/)).not.toBeInTheDocument()
   })
 

@@ -1,5 +1,5 @@
 // Criação e validação do caso (SPEC CA-01, CB-01, CB-02, CB-02a, CB-02b, CB-03, CB-12).
-import type { Caso } from './tipos.ts'
+import type { Caso, ModoQuantidade } from './tipos.ts'
 
 export type CampoCaso = keyof Caso
 
@@ -58,7 +58,17 @@ export function criarCasoVazio(id: string): Caso {
     adequacao: { preset: { tipo: 'individual' }, porcaoMaximaG: 200, incluirIngredientes: false, ocultos: [] },
     orientacoes: '',
     receitas: '',
+    quantidades: 'medida-caseira',
+    linhaDaAgua: null,
   }
+}
+
+/**
+ * A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297). Sem o campo, ou com valor que esta versão
+ * não conhece, vale "Medida caseira" (CB-290, CB-291).
+ */
+export function modoDeQuantidade(caso: { readonly quantidades?: unknown }): ModoQuantidade {
+  return caso.quantidades === 'gramas' ? 'gramas' : 'medida-caseira'
 }
 
 /**

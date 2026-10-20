@@ -7,6 +7,7 @@ import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoL
 import { paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import type { QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
+import type { ModoQuantidade } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
 interface MeuPlanoProps {
@@ -16,25 +17,19 @@ interface MeuPlanoProps {
 }
 
 /**
- * A medida caseira em destaque; o peso ao lado só quando a medida é vaga ("3 fatias e meia · 130 g"); sem medida que
- * sirva, só o peso (CB-156). A mesma regra da folha impressa (spec impressao-do-plano, D-183 e D-189).
+ * Uma quantidade só, como na folha (spec conduta-da-nutricionista, D-297): a medida caseira; sem medida, ou com o plano
+ * em "Gramas", o peso (CB-156).
  */
 function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
-  const gramas = `${formatarNumero(quantidade.gramas, 0)} g`
-  if (quantidade.medida === null) return <strong className="numeros font-bold text-heading">{gramas}</strong>
-  return (
-    <span>
-      <strong className="font-bold text-heading">{quantidade.medida}</strong>
-      {quantidade.comPeso ? <span className="numeros text-muted-foreground">{` · ${gramas}`}</span> : null}
-    </span>
-  )
+  if (quantidade.medida === null) return <strong className="numeros font-bold text-heading">{`${formatarNumero(quantidade.gramas, 0)} g`}</strong>
+  return <strong className="font-bold text-heading">{quantidade.medida}</strong>
 }
 
-function Itens({ itens }: { readonly itens: readonly ItemDaDieta[] }) {
+function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readonly modo: ModoQuantidade }) {
   return (
     <ul className="flex flex-col gap-3">
       {itens.map((item, i) => {
-        const paciente = paraOPaciente(item)
+        const paciente = paraOPaciente(item, modo)
         return (
           <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
             <Quantidade quantidade={paciente.quantidade} />
@@ -78,7 +73,7 @@ function Texto({ titulo, texto }: { readonly titulo: string; readonly texto: str
 }
 
 /** Uma receita do plano: o nome, o rendimento, os ingredientes com a medida e o modo de preparo (spec receitas-com-calculo). */
-function ReceitaDoLink({ receita }: { readonly receita: ReceitaDaDieta }) {
+function ReceitaDoLink({ receita, modo }: { readonly receita: ReceitaDaDieta; readonly modo: ModoQuantidade }) {
   const id = useId()
   return (
     <article aria-labelledby={id} className="flex flex-col gap-2 border-t border-border py-4 first:border-0 first:pt-0 last:pb-0">
@@ -86,14 +81,14 @@ function ReceitaDoLink({ receita }: { readonly receita: ReceitaDaDieta }) {
         {receita.nome}
       </h3>
       <p className="numeros text-sm text-muted-foreground">{receita.rendimento}</p>
-      <Itens itens={receita.ingredientes} />
+      <Itens itens={receita.ingredientes} modo={modo} />
       {receita.preparo ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{receita.preparo}</p> : null}
     </article>
   )
 }
 
 /** CA-884: "Receitas" com as receitas do plano e, depois, o texto livre de antes. */
-function Receitas({ receitas, texto }: { readonly receitas: readonly ReceitaDaDieta[]; readonly texto: string }) {
+function Receitas({ receitas, texto, modo }: { readonly receitas: readonly ReceitaDaDieta[]; readonly texto: string; readonly modo: ModoQuantidade }) {
   const id = useId()
   return (
     <section aria-labelledby={id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
@@ -103,7 +98,7 @@ function Receitas({ receitas, texto }: { readonly receitas: readonly ReceitaDaDi
       {receitas.length > 0 ? (
         <div className="flex flex-col">
           {receitas.map((r, i) => (
-            <ReceitaDoLink key={`${i}-${r.nome}`} receita={r} />
+            <ReceitaDoLink key={`${i}-${r.nome}`} receita={r} modo={modo} />
           ))}
         </div>
       ) : null}
@@ -114,6 +109,8 @@ function Receitas({ receitas, texto }: { readonly receitas: readonly ReceitaDaDi
 
 export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
   const dia = dataPorExtenso(dieta.copiadaEm)
+  // A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319).
+  const modo: ModoQuantidade = dieta.quantidades === 'gramas' ? 'gramas' : 'medida-caseira'
   return (
     <div className="flex flex-col gap-3">
       <h1 className="mb-3 font-titulo text-2xl font-bold text-heading [overflow-wrap:anywhere]">{`Seu plano alimentar, ${primeiroNome}`}</h1>
@@ -127,14 +124,14 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
           {refeicao.opcoes.map((itens, j) => (
             <div key={j}>
               {refeicao.opcoes.length > 1 ? <RotuloDaOpcao numero={j + 1} /> : null}
-              <Itens itens={itens} />
+              <Itens itens={itens} modo={modo} />
             </div>
           ))}
         </section>
       ))}
 
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
-      {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} /> : null}
+      {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} modo={modo} /> : null}
 
       {dia ? <p className="mt-5 text-center text-xs text-muted-foreground">{`Atualizada em ${dia}.`}</p> : null}
     </div>

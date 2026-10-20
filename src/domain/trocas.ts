@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
-import { medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, regraQueExclui } from './prescritivel.ts'
+import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, type MedidaEquivalente } from './busca.ts'
+import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
@@ -94,6 +94,16 @@ function partesEmComum(original: string): (descricao: string) => number {
   }
 }
 
+/**
+ * A troca é realista quando a medida caseira que a paciente lê não pede mais de 4 unidades ou pedaços (spec
+ * conduta-da-nutricionista, D-295): "Pão francês → 7 torradas" não é troca. Sem medida caseira, vale o peso, e a troca
+ * fica.
+ */
+function ehRealista(alimentoId: number, gramas: number): boolean {
+  const medida = medidaCaseiraParaPaciente(alimentoId, gramas)
+  return medida === null || !MEDIDAS_DE_CONTAR.has(medida.medida) || medida.quantidade <= MAXIMO_DE_PEDACOS
+}
+
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
 const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? descricao).trim().toLowerCase()
 
@@ -130,29 +140,43 @@ export function trocasDoAlimento(
   if (!base || kcalBase === null || original.gramas <= 0) return []
   const regraDaBase = regraQueExclui(base)
   if (regraDaBase?.nivel === 'nunca') return []
-  // Item fora da rotina posto à mão: o melhor conselho é o mesmo alimento em outro preparo (ovo frito → ovo cozido).
+  // Item fora da rotina posto à mão: o melhor conselho é o mesmo alimento em outro preparo (batata frita → batata cozida).
   const parecidoComABase = regraDaBase?.nivel === 'fora-da-rotina' ? partesEmComum(base.descricao) : () => 0
+  // Alimento simples nunca troca por prato composto (spec conduta-da-nutricionista, D-294).
+  const baseSimples = !ehPratoComposto(base)
 
-  return opcoes.alimentos
+  const candidatas = opcoes.alimentos
     .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
     .filter(mesmaForma(base))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
     .filter((a) => !casaRestricao(a.descricao, restricoes))
+    .filter((a) => !baseSimples || !ehPratoComposto(a))
     .map((a) => ({ a, kcal: kcalPorCem(a) }))
     .filter((x): x is { a: Alimento; kcal: number } => x.kcal !== null)
     .map(({ a, kcal }) => {
       const gramas = Math.round((kcalBase * original.gramas) / kcal)
       return { a, gramas }
     })
-    // Porção que ninguém come na vida real não ajuda o paciente.
-    .filter(({ gramas }) => gramas >= 5 && gramas <= 600)
+    // Porção que ninguém come na vida real não ajuda o paciente, nem 7 torradas no lugar de um pão (D-295).
+    .filter(({ a, gramas }) => gramas >= 5 && gramas <= 600 && ehRealista(a.id, gramas))
+
+  // In natura antes de processado: com uma troca não processada à mão, as processadas saem (D-296).
+  const semProcessadas = !ehProcessado(base) && candidatas.some(({ a }) => !ehProcessado(a))
+  return candidatas
+    .filter(({ a }) => !semProcessadas || !ehProcessado(a))
     .sort((x, y) => {
       const mesmoAlimento = parecidoComABase(y.a.descricao) - parecidoComABase(x.a.descricao)
       if (mesmoAlimento !== 0) return mesmoAlimento
-      // Corte magro e ave sem pele antes de corte gordo e ave com pele, como no cobrir (CA-679).
-      const magro = Number(ehCorteGordo(x.a)) - Number(ehCorteGordo(y.a))
-      if (magro !== 0) return magro
+      // Preparo simples antes de prato composto, e in natura antes de processado (D-294, D-296).
+      const simples = Number(ehPratoComposto(x.a)) - Number(ehPratoComposto(y.a))
+      if (simples !== 0) return simples
+      const natural = Number(ehProcessado(x.a)) - Number(ehProcessado(y.a))
+      if (natural !== 0) return natural
+      // Corte magro e ave sem pele antes de corte gordo e ave com pele, como no cobrir (CA-679), e o que voltou pela
+      // conduta da parceira depois do resto (D-293).
+      const primeira = Number(ehSegundaEscolha(x.a)) - Number(ehSegundaEscolha(y.a))
+      if (primeira !== 0) return primeira
       const comum = Number(ehDeUsoComum(y.a)) - Number(ehDeUsoComum(x.a))
       if (comum !== 0) return comum
       // Depois do uso comum, quem tem medida caseira ganha: é o que o paciente entende.
@@ -165,7 +189,7 @@ export function trocasDoAlimento(
     })
     .filter(variedade(nomeBase(base.descricao)))
     .slice(0, limite)
-    .map(({ a, gramas }) => ({ alimentoId: a.id, descricao: a.descricao, gramas, medida: medidaEquivalente(a.id, gramas) }))
+    .map(({ a, gramas }) => ({ alimentoId: a.id, descricao: a.descricao, gramas, medida: medidaCaseiraParaPaciente(a.id, gramas) }))
 }
 
 /**
@@ -190,7 +214,7 @@ export function trocasDoPlano(plano: Plano, buscar: BuscarAlimento, opcoes: Opco
       alimentoId,
       descricao: alimento.descricao,
       gramas,
-      medida: medidaEquivalente(alimentoId, gramas),
+      medida: medidaCaseiraParaPaciente(alimentoId, gramas),
       categoria: alimento.categoria,
       trocas,
     })

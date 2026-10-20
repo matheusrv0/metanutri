@@ -1,39 +1,47 @@
-// Spec impressao-do-plano, D-183 e D-189: a quantidade que a folha do paciente mostra.
+// A quantidade que a paciente lê: a nutricionista escolhe, por plano, entre medida caseira e gramas (spec
+// conduta-da-nutricionista, D-297, que substitui o D-183 e o D-189 da impressao-do-plano).
 import { criarExemplo } from './exemplo.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
-import { medidaVaga, quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
+import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { buscarAlimento } from './tabelas.ts'
+import type { ModoQuantidade } from './tipos.ts'
 
-/** Como a folha escreve: a medida, e o peso depois de " · " quando a medida é vaga; sem medida, só o peso. */
-const texto = (q: QuantidadeNaFolha) => (q.medida === null ? `${q.gramas} g` : q.comPeso ? `${q.medida} · ${q.gramas} g` : q.medida)
+/** Como a folha escreve: a medida; sem medida, o peso. */
+const texto = (q: QuantidadeNaFolha) => q.medida ?? `${q.gramas} g`
 
-const MARGARINA = 263
+const MARGARINA = 265
+const MARGARINA_HIDROGENADA = 263
 const MANTEIGA = 261
-const OMELETE = 484
 const OVO_FRITO = 490
-const LARANJA_BAIA = 208
 const BANANA_PRATA = 182
-const BATATA_INGLESA_COZIDA = 91
+const TORRADA = 63
 
-describe('quantidade na folha', () => {
-  it('CA-641, CA-629 e CA-630: no plano de exemplo, o peso vai ao lado só das medidas vagas', () => {
-    let n = 0
-    const { plano } = criarExemplo(() => `id${++n}`, '2026-10-15')
-    const itens = plano.refeicoes.flatMap((r) => [...r.opcoes.principal, ...r.opcoes.substituto1, ...r.opcoes.substituto2])
-    const linhas = Object.fromEntries(itens.map((i) => [nomeParaPaciente(buscarAlimento(i.alimentoId)), texto(quantidadeNaFolha(i.alimentoId, i.gramas, buscarAlimento))]))
-    expect(linhas).toMatchObject({
-      // Mais de 4 pedaços: só o peso (CA-644).
-      'Banana prata': '130 g',
-      'Maçã Fuji com casca': '3 fatias e meia · 130 g',
-      'Filé de merluza assado': 'meia unidade · 100 g',
-      'Peito de frango grelhado sem pele': '1 bife · 100 g',
-      'Patinho grelhado sem gordura': '1 bife · 100 g',
-      'Alface crespa': '4 colheres de servir e meia · 70 g',
-      'Mamão Formosa': '3 colheres de sopa · 120 g',
-      'Brócolis cozido': '4 colheres de servir · 80 g',
-      'Cenoura crua': 'meia unidade · 60 g',
-      'Batata inglesa cozida': '2 colheres de servir e meia · 150 g',
+function linhasDoExemplo(modo: ModoQuantidade): Record<string, string> {
+  let n = 0
+  const { plano } = criarExemplo(() => `id${++n}`, '2026-10-20')
+  const itens = plano.refeicoes.flatMap((r) => [...r.opcoes.principal, ...r.opcoes.substituto1, ...r.opcoes.substituto2])
+  return Object.fromEntries(itens.map((i) => [nomeParaPaciente(buscarAlimento(i.alimentoId)), texto(quantidadeNaFolha(i.alimentoId, i.gramas, modo))]))
+}
+
+describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', () => {
+  it('CA-925: em "Gramas", só o peso, em todo alimento do exemplo', () => {
+    const linhas = linhasDoExemplo('gramas')
+    expect(linhas).toMatchObject({ 'Pão francês': '70 g', 'Margarina com sal': '5 g', 'Banana prata': '130 g', 'Arroz branco cozido': '150 g', 'Ovo cozido': '90 g' })
+    for (const [nome, linha] of Object.entries(linhas)) expect(linha, nome).toMatch(/^\d+ g$/)
+  })
+
+  it('CA-926: em "Medida caseira", só a medida, sem o peso ao lado; o peso só sem medida que sirva', () => {
+    expect(linhasDoExemplo('medida-caseira')).toMatchObject({
       'Pão francês': '1 unidade e meia',
+      'Maçã Fuji com casca': '3 fatias e meia',
+      'Filé de merluza assado': 'meia unidade',
+      'Peito de frango grelhado sem pele': '1 bife',
+      'Patinho grelhado sem gordura': '1 bife',
+      'Alface crespa': '4 colheres de servir e meia',
+      'Mamão Formosa': '3 colheres de sopa',
+      'Brócolis cozido': '4 colheres de servir',
+      'Cenoura crua': 'meia unidade',
+      'Batata inglesa cozida': '2 colheres de servir e meia',
       'Arroz branco cozido': '6 colheres de sopa',
       'Feijão carioca cozido': '6 colheres de sopa',
       'Ovo cozido': '2 unidades',
@@ -41,50 +49,38 @@ describe('quantidade na folha', () => {
       'Castanha-do-pará': '1 unidade',
       'Iogurte natural': '1 copo americano',
       'Aveia em flocos': '2 colheres de sopa',
+      // D-295: "5 fatias" vira a medida de até 4 pedaços que serve.
+      'Banana prata': '1 unidade e meia',
+      // Sem medida caseira que sirva, o peso.
       'Queijo minas frescal': '30 g',
+      'Macarrão (peso cru)': '90 g',
     })
   })
 
-  it('CA-642: manteiga e margarina em ponta de faca, até 3 e dentro de 15% do peso', () => {
-    expect(texto(quantidadeNaFolha(MARGARINA, 5, buscarAlimento))).toBe('1 ponta de faca')
-    expect(texto(quantidadeNaFolha(MARGARINA, 2.5, buscarAlimento))).toBe('meia ponta de faca')
-    expect(texto(quantidadeNaFolha(MANTEIGA, 7.5, buscarAlimento))).toBe('1 ponta de faca e meia')
-    expect(texto(quantidadeNaFolha(MANTEIGA, 10, buscarAlimento))).toBe('2 pontas de faca')
-    // Mais que 3 pontas de faca: a regra comum (colher de chá de gordura é medida clara).
-    expect(texto(quantidadeNaFolha(MARGARINA, 24, buscarAlimento))).toBe('3 colheres de chá')
+  it('CA-926: o padrão é "Medida caseira"; a medida tem até 4 pedaços quando outra serve, e a do planejador quando não', () => {
+    expect(quantidadeNaFolha(OVO_FRITO, 55)).toEqual({ medida: '1 unidade', gramas: 55 })
+    expect(texto(quantidadeNaFolha(BANANA_PRATA, 104))).toBe('4 fatias')
+    // A torrada só tem a unidade de 8 g: 56 g ficam "7 unidades" (na troca, ela nem entra, D-295).
+    expect(texto(quantidadeNaFolha(TORRADA, 56))).toBe('7 unidades')
   })
 
   it('CA-780 (spec revisao-geral-trabalho): manteiga e margarina nunca em fatia na folha', () => {
-    expect(texto(quantidadeNaFolha(MANTEIGA, 30, buscarAlimento))).toBe('1 colher de sopa')
-    expect(texto(quantidadeNaFolha(MARGARINA, 30, buscarAlimento))).toBe('1 colher de sopa')
+    expect(texto(quantidadeNaFolha(MANTEIGA, 30))).toBe('1 colher de sopa')
+    expect(texto(quantidadeNaFolha(MARGARINA, 30))).toBe('1 colher de sopa')
   })
 
-  it('CA-644: medida de pedaço com mais de 4 pedaços vira o peso, na refeição, na lista de compras e na troca', () => {
-    expect(texto(quantidadeNaFolha(OMELETE, 50, buscarAlimento))).toBe('50 g')
-    expect(texto(quantidadeNaFolha(OVO_FRITO, 55, buscarAlimento))).toBe('55 g')
-    expect(texto(quantidadeNaFolha(LARANJA_BAIA, 117, buscarAlimento))).toBe('117 g')
-    expect(texto(quantidadeNaFolha(BANANA_PRATA, 130, buscarAlimento))).toBe('130 g')
-    expect(texto(quantidadeNaFolha(BATATA_INGLESA_COZIDA, 120, buscarAlimento))).toBe('120 g')
-    // Até 4 pedaços, a medida com o peso ao lado (D-189).
-    expect(texto(quantidadeNaFolha(BANANA_PRATA, 104, buscarAlimento))).toBe('4 fatias · 104 g')
+  it('CA-927: manteiga e margarina em ponta de faca, até 3 e dentro de 15% do peso; em "Gramas", o peso', () => {
+    expect(texto(quantidadeNaFolha(MARGARINA, 5, 'medida-caseira'))).toBe('1 ponta de faca')
+    expect(texto(quantidadeNaFolha(MARGARINA_HIDROGENADA, 2.5, 'medida-caseira'))).toBe('meia ponta de faca')
+    expect(texto(quantidadeNaFolha(MANTEIGA, 7.5, 'medida-caseira'))).toBe('1 ponta de faca e meia')
+    expect(texto(quantidadeNaFolha(MANTEIGA, 10, 'medida-caseira'))).toBe('2 pontas de faca')
+    // Mais que 3 pontas de faca: a medida comum.
+    expect(texto(quantidadeNaFolha(MARGARINA_HIDROGENADA, 24, 'medida-caseira'))).toBe('3 colheres de chá')
+    expect(texto(quantidadeNaFolha(MARGARINA, 5, 'gramas'))).toBe('5 g')
   })
 
-  it('D-189: o que é vago depende da medida e do tipo de alimento', () => {
-    expect(medidaVaga('fatia', 'Cereais e derivados')).toBe(true)
-    expect(medidaVaga('bife', 'Carnes e derivados')).toBe(true)
-    expect(medidaVaga('unidade', 'Pescados e frutos do mar')).toBe(true)
-    expect(medidaVaga('unidade', 'Verduras, hortaliças e derivados')).toBe(true)
-    expect(medidaVaga('unidade', 'Frutas e derivados')).toBe(false)
-    expect(medidaVaga('unidade', 'Ovos e derivados')).toBe(false)
-    expect(medidaVaga('colher de sopa', 'Frutas e derivados')).toBe(true)
-    expect(medidaVaga('colher de servir', 'Verduras, hortaliças e derivados')).toBe(true)
-    expect(medidaVaga('colher de sopa', 'Cereais e derivados')).toBe(false)
-    expect(medidaVaga('concha', 'Leguminosas e derivados')).toBe(false)
-    expect(medidaVaga('copo americano', 'Leite e derivados')).toBe(false)
-    expect(medidaVaga('colher de chá', 'Carnes e derivados')).toBe(false)
-  })
-
-  it('alimento sem medida, produto e alimento removido: só o peso', () => {
-    expect(quantidadeNaFolha(999_999, 40, buscarAlimento)).toEqual({ medida: null, gramas: 40, comPeso: false })
+  it('alimento sem medida, produto e alimento removido: só o peso, nos dois modos', () => {
+    expect(quantidadeNaFolha(999_999, 40, 'medida-caseira')).toEqual({ medida: null, gramas: 40 })
+    expect(quantidadeNaFolha(999_999, 40, 'gramas')).toEqual({ medida: null, gramas: 40 })
   })
 })

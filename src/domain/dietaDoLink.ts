@@ -2,13 +2,17 @@
 // e serve a quem come: refeição, medida caseira, substitutos e orientações. Sem kcal e sem
 // nutriente (D-150). Vira texto na hora da cópia (D-151): o aparelho do paciente não tem os
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
-import { medidaEquivalente } from './busca.ts'
+import { modoDeQuantidade } from './caso.ts'
+import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano as receitasNoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
 import { buscarAlimento } from './tabelas.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type ReceitaDoPlano } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type ReceitaDoPlano } from './tipos.ts'
 
 export interface ItemDaDieta {
-  /** "6 colheres de sopa"; nulo quando o alimento não tem medida caseira conhecida (CB-156). */
+  /**
+   * "6 colheres de sopa"; nulo quando o alimento não tem medida caseira conhecida (CB-156) ou quando o plano escolheu
+   * "Gramas" (spec conduta-da-nutricionista, D-297): a escolha vai no próprio item, e qualquer versão do app mostra o peso.
+   */
   readonly medida: string | null
   readonly gramas: number
   readonly alimento: string
@@ -48,6 +52,11 @@ export interface DietaDoPlano {
    * fica igual à de antes desta versão, e o link já enviado não aparece como mudado (CA-885).
    */
   readonly receitasDoPlano?: readonly ReceitaDaDieta[]
+  /**
+   * Só existe quando o plano escolheu "Gramas" (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319):
+   * "Meu plano" mostra só o peso e não refaz a medida caseira. A cópia de um plano em "Medida caseira" fica sem o campo.
+   */
+  readonly quantidades?: 'gramas'
 }
 
 /** A cópia que mora no link. */
@@ -59,33 +68,43 @@ export interface DietaDoLink extends DietaDoPlano {
   readonly copiadaEm: string
 }
 
-function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlimento): ItemDaDieta {
+function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
   return {
-    medida: medidaEquivalente(alimentoId, gramas)?.texto ?? null,
+    // A quantidade para a paciente, na escolha do plano (spec conduta-da-nutricionista, D-297).
+    medida: quantidadeNaFolha(alimentoId, gramas, modo).medida,
     gramas,
     alimento: buscar(alimentoId)?.descricao ?? 'Alimento removido',
   }
 }
 
-/** Spec receitas-com-calculo, CA-883: a receita é um item com a porção, o peso e o nome dela. */
-function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento): ItemDaDieta {
-  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar)
+/**
+ * Spec receitas-com-calculo, CA-883: a receita é um item com a porção, o peso e o nome dela; em "Gramas", só o peso
+ * (D-297 da conduta-da-nutricionista).
+ */
+function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
+  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo)
   const receita = receitaDoItem(item)
-  return { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
+  const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
+  return { medida, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
 }
 
 /** CA-884: cada receita do plano, inteira, em texto. O ingrediente apagado fica de fora (D-317 da integracao-rodada-1910). */
-function receitaDaDieta(r: ReceitaDoPlano, buscar: BuscarAlimento): ReceitaDaDieta {
+function receitaDaDieta(r: ReceitaDoPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ReceitaDaDieta {
   return {
     nome: nomeDaReceita(r),
     rendimento: textoDoRendimento(r),
-    ingredientes: r.ingredientes.filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined).map((i) => alimentoDaDieta(i.alimentoId, i.gramas, buscar)),
+    ingredientes: r.ingredientes.filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined).map((i) => alimentoDaDieta(i.alimentoId, i.gramas, buscar, modo)),
     preparo: r.preparo.trim(),
   }
 }
 
-/** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534). */
-export function dietaDoPlano(caso: Pick<Caso, 'orientacoes' | 'receitas'>, plano: Plano, buscar: BuscarAlimento = buscarAlimento): DietaDoPlano {
+/** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534) e a escolha de quantidade do plano. */
+export function dietaDoPlano(
+  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade },
+  plano: Plano,
+  buscar: BuscarAlimento = buscarAlimento,
+): DietaDoPlano {
+  const modo = modoDeQuantidade(caso)
   const refeicoes = plano.refeicoes
     .map((refeicao) => ({
       horario: refeicao.horario,
@@ -95,22 +114,42 @@ export function dietaDoPlano(caso: Pick<Caso, 'orientacoes' | 'receitas'>, plano
       opcoes: OPCOES.map((opcao) =>
         refeicao.opcoes[opcao]
           .filter((i) => i.gramas > 0 && (ehItemDeReceita(i) || buscar(i.alimentoId) !== undefined))
-          .map((i) => itemDaDieta(i, buscar)),
+          .map((i) => itemDaDieta(i, buscar, modo)),
       ).filter((itens) => itens.length > 0),
     }))
     .filter((refeicao) => refeicao.opcoes.length > 0)
-  const receitasDoPlano = receitasNoPlano(plano).map((r) => receitaDaDieta(r, buscar))
-  return { refeicoes, orientacoes: caso.orientacoes.trim(), receitas: caso.receitas.trim(), ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}) }
+  const receitasDoPlano = receitasNoPlano(plano).map((r) => receitaDaDieta(r, buscar, modo))
+  return {
+    refeicoes,
+    orientacoes: caso.orientacoes.trim(),
+    receitas: caso.receitas.trim(),
+    ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
+    ...(modo === 'gramas' ? { quantidades: 'gramas' as const } : {}),
+  }
 }
 
 export function copiarDieta(dieta: DietaDoPlano, dia: string): DietaDoLink {
-  const { refeicoes, orientacoes, receitas, receitasDoPlano } = dieta
-  return { refeicoes, orientacoes, receitas, ...(receitasDoPlano && receitasDoPlano.length > 0 ? { receitasDoPlano } : {}), copiadaEm: dia }
+  const { refeicoes, orientacoes, receitas, receitasDoPlano, quantidades } = dieta
+  return {
+    refeicoes,
+    orientacoes,
+    receitas,
+    ...(receitasDoPlano && receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
+    ...(quantidades === 'gramas' ? { quantidades } : {}),
+    copiadaEm: dia,
+  }
 }
 
 /** Só o que o paciente vê: o dia da cópia não conta (DP-153). Sem receita calculada, o mesmo texto de antes (CA-885). */
 const conteudo = (dieta: DietaDoPlano): string =>
-  JSON.stringify([dieta.refeicoes, dieta.orientacoes, dieta.receitas, ...(dieta.receitasDoPlano && dieta.receitasDoPlano.length > 0 ? [dieta.receitasDoPlano] : [])])
+  JSON.stringify([
+    dieta.refeicoes,
+    dieta.orientacoes,
+    dieta.receitas,
+    ...(dieta.receitasDoPlano && dieta.receitasDoPlano.length > 0 ? [dieta.receitasDoPlano] : []),
+    // D-319 (integracao-rodada-1910): trocar entre "Gramas" e "Medida caseira" muda o que o paciente vê.
+    ...(dieta.quantidades === 'gramas' ? ['gramas'] : []),
+  ])
 
 /** O plano mudou em algo que o paciente vê desde a cópia (CA-545, CA-546). */
 export function dietaMudou(noLink: DietaDoLink, doPlano: DietaDoPlano): boolean {
@@ -172,6 +211,8 @@ export function lerDieta(v: unknown): DietaDoLink | null {
     orientacoes: o['orientacoes'],
     receitas: o['receitas'],
     ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
+    // D-319 (integracao-rodada-1910): só "gramas" vale; link de antes não tem o campo e é "Medida caseira".
+    ...(o['quantidades'] === 'gramas' ? { quantidades: 'gramas' as const } : {}),
     copiadaEm: typeof o['copiadaEm'] === 'string' ? o['copiadaEm'] : '',
   }
 }

@@ -1,12 +1,13 @@
 // O que a folha da dieta mostra e como ela lembra as escolhas de impressão
 // (spec pdf-e-telas-limpas, US-B1).
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
+import { litrosDeAgua } from './missoes.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
 import { buscarAlimento } from './tabelas.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
 export type AssinaturaDaFolha =
@@ -80,13 +81,15 @@ export interface LinhaDaFolha {
 }
 
 /**
- * A linha da refeição na folha. Alimento: o nome para o paciente e a quantidade da folha (D-181, D-183). Receita (spec
- * receitas-com-calculo, CA-879): o nome como foi escrito e a porção com o peso ao lado; sem meia porção que feche, o peso.
+ * A linha da refeição na folha. Alimento: o nome para o paciente e a quantidade na escolha do plano (D-181; D-297 da
+ * conduta-da-nutricionista). Receita (spec receitas-com-calculo, CA-879): o nome como foi escrito e a porção ("1
+ * unidade"); sem meia porção que feche, ou em "Gramas", o peso.
  */
-export function linhaDaFolha(item: ItemPlano, buscar: BuscarAlimento): LinhaDaFolha {
-  if (!ehItemDeReceita(item)) return { nome: nomeParaPaciente(buscar(item.alimentoId)), quantidade: quantidadeNaFolha(item.alimentoId, item.gramas, buscar) }
+export function linhaDaFolha(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): LinhaDaFolha {
+  if (!ehItemDeReceita(item)) return { nome: nomeParaPaciente(buscar(item.alimentoId)), quantidade: quantidadeNaFolha(item.alimentoId, item.gramas, modo) }
   const receita = receitaDoItem(item)
-  return { nome: nomeDaReceita(receita), quantidade: { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, comPeso: true } }
+  const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
+  return { nome: nomeDaReceita(receita), quantidade: { medida, gramas: item.gramas } }
 }
 
 /** Uma receita na seção "Receitas" da folha (CA-880). */
@@ -104,15 +107,30 @@ export interface ReceitaDaFolha {
  * ingrediente apagado fica de fora, como o item apagado da refeição (D-248 da revisao-geral-trabalho; D-317 da
  * integracao-rodada-1910).
  */
-export function receitasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly ReceitaDaFolha[] {
+export function receitasDaFolha(plano: Plano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): readonly ReceitaDaFolha[] {
   return receitasDoPlano(plano).map((r) => ({
     nome: nomeDaReceita(r),
     rendimento: textoDoRendimento(r),
     ingredientes: r.ingredientes
       .filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)
-      .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, buscar) })),
+      .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, modo) })),
     preparo: r.preparo.trim(),
   }))
+}
+
+/** A linha automática da água: "Beba cerca de 2,2 litros de água por dia." Sem peso, nenhuma (D-298). */
+export function linhaDaAguaAutomatica(pesoKg: number | null): string | null {
+  const litros = litrosDeAgua(pesoKg)
+  return litros === null ? null : `Beba cerca de ${String(litros).replace('.', ',')} litros de água por dia.`
+}
+
+/**
+ * A linha da água no começo de "Orientações" (spec conduta-da-nutricionista, D-298): o que a nutricionista escreveu, ou
+ * a automática quando ela não mexeu. Escrito vazio tira a linha. Plano antigo, sem o campo, usa a automática (CB-290).
+ */
+export function linhaDaAguaNaFolha(caso: Pick<Caso, 'pesoKg'> & { readonly linhaDaAgua?: unknown }): string | null {
+  if (typeof caso.linhaDaAgua === 'string') return caso.linhaDaAgua.trim() || null
+  return linhaDaAguaAutomatica(caso.pesoKg)
 }
 
 /** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */

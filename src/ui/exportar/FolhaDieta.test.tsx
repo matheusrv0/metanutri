@@ -90,20 +90,40 @@ describe('Folha da dieta (US-B1)', () => {
     }
   })
 
-  it('CA-641 e CA-642: medida vaga com o peso discreto ao lado; margarina em ponta de faca', () => {
+  // Spec conduta-da-nutricionista, D-297: a nutricionista escolhe, por plano; substitui o D-183 e o D-189.
+  function planoComDesjejum(): Plano {
     let plano = planoCheio()
     const desjejum = plano.refeicoes[0]
     if (!desjejum) throw new Error('sem desjejum')
-    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 263, gramas: 5 }, ids)
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 265, gramas: 5 }, ids)
     plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 222, gramas: 130 }, ids)
-    render(<FolhaDieta caso={caso} plano={plano} />)
-    // Fatia é medida vaga (D-189): até 4 pedaços, o peso vem depois de " · ", em cinza.
-    const maca = refeicao(/^06:00 Desjejum$/).getByText('Maçã Fuji com casca').closest('li') as HTMLElement
-    expect(maca).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia · 130 g$/)
-    expect(within(maca).getByText('· 130 g', { exact: false })).toHaveClass('text-muted-foreground')
-    // CA-644: mais de 4 pedaços (a batata daria "7 fatias e meia"), só o peso.
-    expect(refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li')).toHaveTextContent(/^Batata inglesa cozida, 120 g$/)
-    expect(refeicao(/^06:00 Desjejum$/).getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 182, gramas: 130 }, ids)
+    return plano
+  }
+
+  it('CA-926 e CA-927: em "Medida caseira", só a medida, sem o peso ao lado; margarina em ponta de faca', () => {
+    render(<FolhaDieta caso={caso} plano={planoComDesjejum()} />)
+    const desjejum = refeicao(/^06:00 Desjejum$/)
+    expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia$/)
+    // D-295: "5 fatias" de banana vira a medida de até 4 pedaços que serve.
+    expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 1 unidade e meia$/)
+    expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
+    // A batata de 120 g não sai mais em gramas: tem medida caseira que serve.
+    expect(refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li')).not.toHaveTextContent(/\d g$/)
+    expect(screen.getByRole('article').textContent).not.toMatch(/ · \d+ g/)
+  })
+
+  it('CA-925: em "Gramas", só o peso, na refeição, na lista de compras e nas trocas', () => {
+    render(<FolhaDieta caso={{ ...caso, quantidades: 'gramas' }} plano={planoComDesjejum()} opcoes={{ listaDeCompras: true, trocas: true }} />)
+    const desjejum = refeicao(/^06:00 Desjejum$/)
+    expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 130 g$/)
+    expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 5 g$/)
+    expect(refeicao(/^12:00 Almoço$/).getByText('Arroz branco cozido').closest('li')).toHaveTextContent(/^Arroz branco cozido, 150 g$/)
+    const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
+    expect(compra('Arroz branco cozido — 150 g')).toBeInTheDocument()
+    const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
+    expect(trocas.length).toBeGreaterThan(0)
+    for (const troca of trocas) expect(troca).toMatch(/ · \d+ g$/)
   })
 
   it('CA-626: produto cadastrado sai com o nome que a nutricionista escreveu', () => {
@@ -277,7 +297,8 @@ describe('Folha da dieta (US-B1)', () => {
     const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
     expect(trocas.length).toBeGreaterThan(0)
     for (const troca of trocas) expect(troca).not.toMatch(/\b([5-9]|\d{2,})( fatias| pedaços| rodelas| gomos)/)
-    expect(trocas.some((t) => /^Omelete de queijo · \d+ g$/.test(t))).toBe(true)
+    // A omelete saiu das trocas do ovo: alimento simples não troca por prato composto (spec conduta-da-nutricionista, CA-919).
+    expect(trocas.some((t) => t.startsWith('Omelete'))).toBe(false)
   })
 
   it('as trocas não oferecem doce nem ultraprocessado', () => {
@@ -320,8 +341,38 @@ describe('Folha da dieta (US-B1)', () => {
     })
   })
 
+  describe('a água em Orientações (spec conduta-da-nutricionista, D-298)', () => {
+    it('CA-931: sem edição, Orientações começa pela linha automática e segue com o texto da nutricionista', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect([...secao.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Beba cerca de 2,2 litros de água por dia.', 'Coma devagar.'])
+    })
+
+    it('CA-931: sem texto da nutricionista, a seção traz só a linha da água', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: '' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect([...secao.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Beba cerca de 2,2 litros de água por dia.'])
+    })
+
+    it('CA-932 e CA-933: a linha escrita vale, a apagada não sai, e não há caixa de marcar', () => {
+      const { unmount } = render(<FolhaDieta caso={{ ...caso, linhaDaAgua: 'Beba 2 litros de água, mais no treino.' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect(secao).toHaveTextContent('Beba 2 litros de água, mais no treino.')
+      expect(secao).not.toHaveTextContent('Beba cerca de')
+      expect(secao.querySelector('input, [role="checkbox"], .rounded.border-\\[1\\.5px\\]')).toBeNull()
+      unmount()
+      render(<FolhaDieta caso={{ ...caso, linhaDaAgua: '', orientacoes: '' }} plano={planoCheio()} />)
+      expect(screen.queryByRole('region', { name: 'Orientações' })).not.toBeInTheDocument()
+    })
+
+    it('CB-298: sem peso e sem edição, não há linha da água', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: null, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
+      expect(screen.getByRole('region', { name: 'Orientações' })).not.toHaveTextContent(/litros/)
+    })
+  })
+
   it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
-    render(<FolhaDieta caso={{ ...caso, orientacoes: '' }} plano={criarPlanoPadrao(ids)} />)
+    render(<FolhaDieta caso={{ ...caso, orientacoes: '', linhaDaAgua: '' }} plano={criarPlanoPadrao(ids)} />)
     expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
     expect(screen.queryByRole('heading', { name: 'Orientações' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()

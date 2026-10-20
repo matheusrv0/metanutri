@@ -2,13 +2,14 @@
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
-import { medidaParaMostrar } from '../domain/busca.ts'
+import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { quantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type OpcaoId, type Plano } from '../domain/tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
 
 export interface DadosAconselhamento {
@@ -34,33 +35,34 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
   substituto2: 'Substituto 2:',
 }
 
-/** "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). */
-function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento): string {
+/**
+ * "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). A quantidade segue a escolha do
+ * plano entre medida caseira e gramas, como a folha e o link (spec conduta-da-nutricionista, D-297).
+ */
+function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade): string {
   // D-248 (spec revisao-geral-trabalho): o produto apagado sai com o nome do que aconteceu e os gramas, sem quebrar o Word.
   const alimento = buscar(alimentoId)
-  const medida = alimento ? medidaParaMostrar(alimentoId, gramas) : null
-  const quantidade = medida ? medida.texto : `${formatarNumeroDocx(gramas, 0)} g`
-  return `${alimento?.descricao ?? nomeSemAlimento(alimentoId)} (${quantidade})`
+  const medida = alimento ? quantidadeNaFolha(alimentoId, gramas, modo).medida : null
+  return `${alimento?.descricao ?? nomeSemAlimento(alimentoId)} (${medida ?? `${formatarNumeroDocx(gramas, 0)} g`})`
 }
 
 /**
- * "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). Spec receitas-com-calculo,
- * CA-886: a receita sai "Panqueca de banana (1 unidade · 120 g)"; sem meia porção que feche, só o peso.
+ * Um item do plano no Word. Spec receitas-com-calculo, CA-886: a receita sai pelo nome dela, com a porção ("Panqueca de
+ * banana (1 unidade)"); sem meia porção que feche, ou com o plano em "Gramas", o peso (D-297 da conduta-da-nutricionista).
  */
-export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
-  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar)
+export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
+  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo)
   const receita = receitaDoItem(item)
-  const peso = `${formatarNumeroDocx(item.gramas, 0)} g`
-  const porcao = receita ? textoDaPorcao(receita, item.gramas) : null
-  return `${nomeDaReceita(receita)} (${porcao ? `${porcao} · ${peso}` : peso})`
+  const porcao = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
+  return `${nomeDaReceita(receita)} (${porcao ?? `${formatarNumeroDocx(item.gramas, 0)} g`})`
 }
 
 /** CA-887: cada receita do plano com o rendimento, os ingredientes da receita inteira e o modo de preparo. */
-function blocoReceitasDoPlano(plano: Plano, buscar: BuscarAlimento): Paragraph[] {
+function blocoReceitasDoPlano(plano: Plano, buscar: BuscarAlimento, modo: ModoQuantidade): Paragraph[] {
   return receitasDoPlano(plano).flatMap((r) => {
     // Ingrediente que sumiu da base não derruba o documento (CB-271) e tem o mesmo nome da linha do plano: "Produto
     // apagado" ou "Alimento removido" (D-248 da revisao-geral-trabalho).
-    const ingredientes = r.ingredientes.filter((i) => i.gramas > 0).map((i) => descreverAlimento(i.alimentoId, i.gramas, buscar))
+    const ingredientes = r.ingredientes.filter((i) => i.gramas > 0).map((i) => descreverAlimento(i.alimentoId, i.gramas, buscar, modo))
     const preparo = r.preparo.trim()
     return [
       new Paragraph({ spacing: { before: 160, after: 40 }, children: [new TextRun({ text: nomeDaReceita(r), bold: true }), new TextRun({ text: ` · ${textoDoRendimento(r)}` })] }),
@@ -70,10 +72,10 @@ function blocoReceitasDoPlano(plano: Plano, buscar: BuscarAlimento): Paragraph[]
   })
 }
 
-export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento): string {
+export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
   return itens
     .filter((i) => i.gramas > 0)
-    .map((i) => descreverItem(i, buscar))
+    .map((i) => descreverItem(i, buscar, modo))
     .join('; ')
 }
 
@@ -153,13 +155,13 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
   const refeicoes = plano.refeicoes.flatMap((r) => [
     tabela([
       linha([celula(`${r.horario} - ${r.nome}`, { negrito: true, colunas: 2 })]),
-      ...OPCOES.map((o) => linha([celula(NOME_OPCAO[o], { negrito: true }), celula(descreverOpcao(r.opcoes[o], buscar))])),
+      ...OPCOES.map((o) => linha([celula(NOME_OPCAO[o], { negrito: true }), celula(descreverOpcao(r.opcoes[o], buscar, modoDeQuantidade(caso)))])),
     ]),
     new Paragraph({ text: '' }),
   ])
 
   // CA-887: as receitas do plano saem para todos; o texto livre e o título do estágio seguem o CA-235.
-  const receitasDoPlanoNoWord = blocoReceitasDoPlano(plano, buscar)
+  const receitasDoPlanoNoWord = blocoReceitasDoPlano(plano, buscar, modoDeQuantidade(caso))
   const receitas =
     dados.comReceitas === false
       ? receitasDoPlanoNoWord.length > 0

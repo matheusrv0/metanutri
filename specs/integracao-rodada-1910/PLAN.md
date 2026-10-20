@@ -13,6 +13,8 @@ Um `git merge --no-ff` por frente, com `npm run check` verde depois de cada um.
 | M3 | `revisao-geral-publica` | ba6e9d4 | Nenhum. O servidor de conta falso continua abrindo as telas com o login PKCE e o segundo fator do lote 5 |
 | M4 | `receitas-com-calculo` | 86fee64 | `MeuPlano.tsx` (imports): os dois ficam. O CA-884 de `MeuPlanoComReceita.test.tsx` passou ao comportamento novo: os ingredientes seguem as regras da folha (D-231) |
 | M5 | `revisao-geral-trabalho` (`fix/revisao-geral-trabalho`) | 97c3d93 | `busca.ts`, `totais.ts`, `aconselhamento-docx.ts`, `LinhaItem.tsx`, `folhaDieta.ts` e `CartaoIdentificacao.tsx`, pelo guia de `revisao-trabalho.md`: o ramo da receita fica, junto do sem-throw, `medidaParaMostrar`, `nomeSemAlimento` e "Produto apagado". Emenda: o filtro do item apagado na folha e no link tirava também a receita (que guarda `alimentoId` 0); a receita fica. O CB-271 do editor passou a "Produto apagado" |
+| M6 | `vitaminas-usda` | 03d153c | `produtos.ts` (a mesma correção nas duas: chave fora do rótulo é nula), `produtos.test.ts` e `docx.test.ts` (os testes das duas ficam). Depois: os "16" das specs antigas anotados (346e105) e o CA-986 (ab200c2) |
+| M7 | `conduta-da-nutricionista` | (este merge) | A conduta vale onde as regras se cruzam (D-319). `busca.ts`: `medidaParaMostrar` = ponta de faca, gordura sem fatia e a medida de até 4 pedaços da conduta; `quantidadeNaFolha` com o modo do plano e uma quantidade só; `dietaDoLink`, `folhaDieta`, `FolhaDieta.tsx`, `aconselhamento-docx` e `MeuPlano` com o modo, a receita, o item apagado e a água; `cobrir.ts` com os grupos de ovo do USDA e os da conduta. Testes das frentes passaram para uma quantidade só |
 
 ## 2. Tarefas
 

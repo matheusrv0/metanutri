@@ -9,6 +9,10 @@ vai em PDF (`src/ui/exportar/FolhaDieta.tsx`). O paciente que quer saber o que c
 **Depois:** o mesmo link ganha uma segunda parte, "Meu plano", com o que a folha impressa mostra: as refeições por
 horário, em medida caseira, com os substitutos como "ou", e as orientações. Sem kcal e sem tabela de nutriente.
 
+**Conduta da nutricionista parceira (20/10/2026).** "Meu plano" mostra uma quantidade só, pela escolha do plano entre
+"Medida caseira" e "Gramas" (spec `conduta-da-nutricionista`, D-297): a medida caseira sem o peso ao lado, ou só o
+peso. Em "Gramas", a cópia do link vai com a medida vazia.
+
 ## 1. Decisões
 
 | # | Decisão |

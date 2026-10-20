@@ -1,4 +1,4 @@
-import { buscarAlimentos, formatarQuantidadeMedida, interpretarEntrada, MEDIDAS, medidaEquivalente, medidaParaMostrar } from './busca.ts'
+import { buscarAlimentos, formatarQuantidadeMedida, interpretarEntrada, MEDIDAS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, medidaParaMostrar } from './busca.ts'
 import { ALIMENTOS } from './tabelas.ts'
 
 describe('interpretarEntrada', () => {
@@ -178,15 +178,44 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
     expect(medidaParaMostrar(MARGARINA, 2000)).toBeNull()
   })
 
-  it('CA-781: medida de pedaço com mais de 4 pedaços não aparece; até 4, aparece', () => {
-    expect(medidaParaMostrar(BANANA_PRATA, 130)).toBeNull()
+  it('CA-781 (com a D-295 da conduta-da-nutricionista): mais de 4 pedaços dá lugar a outra medida que sirva; até 4, aparece', () => {
+    // Antes da conduta, 130 g de banana saíam sem medida; a parceira pediu a medida de contar que serve.
+    expect(medidaParaMostrar(BANANA_PRATA, 130)?.texto).toBe('1 unidade e meia')
     expect(medidaParaMostrar(BANANA_PRATA, 104)?.texto).toBe('4 fatias')
     expect(medidaParaMostrar(3, 150)?.texto).toBe('6 colheres de sopa')
   })
 
-  it('a escolha das trocas e a dieta do link continuam com a medida de antes (R-182)', () => {
+  it('a medida do planejador na busca (medidaEquivalente) continua a de antes (R-182)', () => {
     expect(medidaEquivalente(MARGARINA, 5)).toBeNull()
     expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 fatia')
     expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('5 fatias')
+  })
+})
+
+describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e D-297)', () => {
+  it('prefere uma medida de até 4 unidades ou pedaços quando outra medida do alimento serve', () => {
+    // Ovo frito, 55 g: o planejador diz "5 fatias e meia"; para o paciente, "1 unidade".
+    expect(medidaEquivalente(490, 55)?.texto).toBe('5 fatias e meia')
+    expect(medidaCaseiraParaPaciente(490, 55)?.texto).toBe('1 unidade')
+    // Banana prata, 130 g: "5 fatias" vira "1 unidade e meia".
+    expect(medidaCaseiraParaPaciente(182, 130)?.texto).toBe('1 unidade e meia')
+  })
+
+  it('sem outra medida que sirva, fica a do planejador, mesmo com mais de 4 pedaços', () => {
+    // Torrada: só a unidade de 8 g serve para 56 g.
+    expect(medidaCaseiraParaPaciente(63, 56)).toEqual(medidaEquivalente(63, 56))
+    expect(medidaCaseiraParaPaciente(63, 56)?.texto).toBe('7 unidades')
+  })
+
+  it('com até 4 pedaços, é a mesma do planejador', () => {
+    expect(medidaCaseiraParaPaciente(3, 150)).toEqual(medidaEquivalente(3, 150))
+    expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('3 fatias e meia')
+    expect(medidaCaseiraParaPaciente(40, 100)).toBeNull()
+  })
+
+  it('as medidas de contar são as de unidade e pedaço', () => {
+    expect([...MEDIDAS_DE_CONTAR].sort()).toEqual(
+      ['banda', 'bife', 'coxa', 'fatia', 'filé', 'gomo', 'metade', 'pedaço', 'peito', 'posta', 'rodela', 'sobrecoxa', 'unidade', 'unidade pequena'].sort(),
+    )
   })
 })

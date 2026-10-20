@@ -16,6 +16,11 @@ trocas os alimentos que a base só tem crus contando com o "(peso cru)" da folha
 de feijão, fruta-pão e pequi também levam "(peso cru)") e o CB-188 (a folha pede mais trocas para a vaga não ficar
 vazia).
 
+**Conduta da nutricionista parceira (20/10/2026).** A quantidade da folha passa a seguir a escolha de cada plano
+entre "Medida caseira" e "Gramas" (spec `conduta-da-nutricionista`, D-297): saem o peso ao lado da medida vaga e o
+"mais de 4 pedaços vira peso" (D-183 e D-189, CA-641 e CA-644 desta spec); a ponta de faca (CA-642) fica. A meta de
+água volta à folha como a primeira linha de "Orientações" (D-298), só na parte da água do D-185.
+
 **Hoje:** a folha da dieta (`src/ui/exportar/FolhaDieta.tsx`, spec `pdf-e-telas-limpas`, US-B1) sai pela impressão do
 navegador ("Imprimir ou salvar em PDF"). O PDF do dono tem cinco defeitos, todos reproduzidos no Chromium 153:
 

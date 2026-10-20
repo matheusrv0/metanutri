@@ -22,7 +22,7 @@ test('anamnese: responder, editar o roteiro e a resposta continuar depois de rec
   const janela = page.getByRole('dialog', { name: 'Roteiro da anamnese' })
   await janela.getByRole('button', { name: /^Água/ }).click()
   await janela.getByRole('button', { name: 'Acrescentar pergunta em Água' }).click()
-  await janela.getByRole('textbox', { name: 'Pergunta 3 de Água' }).fill('Chá ou café por dia')
+  await janela.getByRole('textbox', { name: 'Pergunta 4 de Água' }).fill('Chá ou café por dia')
   await janela.getByRole('button', { name: 'Salvar roteiro' }).click()
   await expect(janela).toBeHidden()
 
@@ -30,7 +30,7 @@ test('anamnese: responder, editar o roteiro e a resposta continuar depois de rec
   // CA-563: ao voltar, o bloco respondido começa recolhido, com o resumo.
   const agua = anamnese.getByRole('button', { name: /^Água/ })
   await expect(agua).toHaveAttribute('aria-expanded', 'false')
-  await expect(agua).toContainText('1 de 3 respondida')
+  await expect(agua).toContainText('1 de 4 respondida')
   await agua.click()
   await expect(anamnese.getByLabel('Quanta água bebe por dia')).toHaveValue('Pouca, uns 3 copos')
   await expect(anamnese.getByLabel('Chá ou café por dia')).toBeVisible()
@@ -60,6 +60,10 @@ test('CA-587: em 360 px a ficha não rola para o lado e os alvos têm 44 px', as
   await abrirFichaNova(page)
   await page.getByRole('region', { name: 'Suplementos' }).getByRole('button', { name: 'Acrescentar suplemento' }).click()
   await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Objetivo e queixa/ }).click()
+  // Spec conduta-da-nutricionista, CA-938: a escala da urina e o trimestre também cabem e têm 44 px.
+  await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Água/ }).click()
+  await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Gestação/ }).click()
+  await expect(page.getByRole('radiogroup', { name: 'Cor da urina' }).getByRole('radio')).toHaveCount(8)
 
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: document.documentElement.clientWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)

@@ -28,10 +28,11 @@ describe('a receita no Meu plano', () => {
     const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
     expect(cafe.getByText('1 unidade')).toBeInTheDocument()
     expect(cafe.getByText('Panqueca de banana')).toBeInTheDocument()
-    expect(cafe.getByRole('listitem')).toHaveTextContent('1 unidade · 120 gPanqueca de banana')
+    // Uma quantidade só (spec conduta-da-nutricionista, D-297).
+    expect(cafe.getByRole('listitem')).toHaveTextContent(/^1 unidadePanqueca de banana$/)
   })
 
-  it('CA-971 (integracao-rodada-1910): receita com o nome de um prato da base mostra a porção e o peso, como a folha', () => {
+  it('CA-971 (integracao-rodada-1910): receita com o nome de um prato da base mostra a porção, como a folha', () => {
     const dieta: DietaDoLink = {
       refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: '1 porção', gramas: 300, alimento: 'Feijoada', receita: true }]] }],
       orientacoes: '',
@@ -40,7 +41,7 @@ describe('a receita no Meu plano', () => {
     }
     render(<MeuPlano dieta={dieta} primeiroNome="Ana" />)
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
-    expect(almoco.getByRole('listitem')).toHaveTextContent('1 porção · 300 gFeijoada')
+    expect(almoco.getByRole('listitem')).toHaveTextContent(/^1 porçãoFeijoada$/)
   })
 
   it('CA-884: a seção Receitas traz a receita inteira e, depois, o texto livre', () => {

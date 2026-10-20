@@ -9,6 +9,12 @@ mesma. O coordenador decidiu ainda: versão crua de alimento que se come cozido 
 cozida respeita a forma, porção máxima por grupo calórico no cobrir, e os itens "talvez rígidos demais" ficam fora mas
 vão para o Apêndice C. As mudanças estão nas decisões e critérios marcados com *(revisão)* e na seção 7.
 
+**Conduta da nutricionista parceira (20/10/2026).** A parceira respondeu aos Apêndices A e C. Voltaram a ser
+propostos os 20 itens do Apêndice C.2; saíram tapioca com manteiga, pão de queijo assado, pipoca com óleo e cream
+cracker; gordura trans virou "nunca"; e as trocas passaram a ser simples, realistas e in natura primeiro. As decisões
+estão na spec `conduta-da-nutricionista` (D-290 a D-296), que substitui as linhas desta spec que tratam desses itens.
+Os Apêndices A e C abaixo foram atualizados em 20/10/2026.
+
 **Fonte:** a conversa de 15/10/2026: "Você tem que ter a consciência do que você está sugerindo nas coisas do MetaNutri.
 Não é para sugerir tudo só por cobrir os macros e micros. (...) você está numa plataforma de dieta, de prescrições, e eu
 vi que você colocou para sugerir cerveja Pilsen. Que não tem o menor sentido."
@@ -217,384 +223,406 @@ Vale a menor entre a porção do grupo e a porção máxima que a pessoa escolhe
 
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
 
-*(revisão)* Gerado a partir do código no fim da rodada de revisão; o teste do CA-664 guarda a mesma lista de ids.
-298 dos 597 alimentos da base (173 deles o filtro antigo deixava sugerir). "Antes" diz o que o filtro antigo
-fazia: *sugeria* (podia aparecer no cobrir e nas trocas) ou *já fora* (o CA-36a já tirava). Estão agrupados pelo motivo
-que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos continuam disponíveis pela busca.
+*(20/10/2026)* Regenerado a partir do código depois da conduta da nutricionista parceira (spec
+`conduta-da-nutricionista`, D-290 a D-292); o teste do CA-664 guarda a mesma lista de ids. 282 dos 597 alimentos
+(eram 298 em 15/10). A coluna "Em 15/10" diz o que mudou: "igual" quando nada mudou; o motivo de antes quando o item
+trocou de motivo (as margarinas hidrogenadas e o chantilly eram gordura de adição e agora são gordura trans); e
+"prescritível" para as quatro preparações que saíram em 20/10. Os 20 itens liberados estão na última tabela. Estão
+agrupados pelo motivo que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos continuam
+disponíveis pela busca.
 
 ### Nível 1 — Nunca
 
 #### Bebida alcoólica (2)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 472 | Cana, aguardente 1 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 474 | Cerveja, pilsen 2 | Bebidas (alcoólicas e não alcoólicas) | sugeria |
+| 472 | Cana, aguardente 1 | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 474 | Cerveja, pilsen 2 | Bebidas (alcoólicas e não alcoólicas) | igual |
 
 #### Sal, shoyu, tempero pronto ou fermento (6)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 513 | Fermento em pó, químico | Miscelâneas | já fora |
-| 514 | Fermento, biológico, levedura, tablete | Miscelâneas | já fora |
-| 516 | Sal, dietético | Miscelâneas | já fora |
-| 517 | Sal, grosso | Miscelâneas | já fora |
-| 518 | Shoyu | Miscelâneas | já fora |
-| 519 | Tempero a base de sal | Miscelâneas | já fora |
+| 513 | Fermento em pó, químico | Miscelâneas | igual |
+| 514 | Fermento, biológico, levedura, tablete | Miscelâneas | igual |
+| 516 | Sal, dietético | Miscelâneas | igual |
+| 517 | Sal, grosso | Miscelâneas | igual |
+| 518 | Shoyu | Miscelâneas | igual |
+| 519 | Tempero a base de sal | Miscelâneas | igual |
+
+#### Gordura trans (hidrogenada) (3)
+
+| Id | Alimento | Categoria da TACO | Em 15/10 |
+|---|---|---|---|
+| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | Gorduras e óleos | gordura (mudou em 20/10) |
+| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | Gorduras e óleos | gordura (mudou em 20/10) |
+| 522 | Chantilly, spray, com gordura vegetal | Outros alimentos industrializados | gordura (mudou em 20/10) |
 
 ### Nível 2 — Fora da rotina
 
-#### Refrigerante, isotônico ou bebida adoçada (11)
+#### Refrigerante, isotônico ou bebida adoçada (10)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 446 | Bebida láctea, pêssego | Leite e derivados | sugeria |
-| 455 | Leite, de vaca, achocolatado | Leite e derivados | sugeria |
-| 460 | Leite, fermentado | Leite e derivados | sugeria |
-| 470 | Bebida isotônica, sabores variados | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 473 | Cana, caldo de | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 479 | Refrigerante, tipo água tônica | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 480 | Refrigerante, tipo cola | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 481 | Refrigerante, tipo guaraná | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 482 | Refrigerante, tipo laranja | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 483 | Refrigerante, tipo limão | Bebidas (alcoólicas e não alcoólicas) | sugeria |
-| 512 | Capuccino, pó | Miscelâneas | já fora |
+| 446 | Bebida láctea, pêssego | Leite e derivados | igual |
+| 455 | Leite, de vaca, achocolatado | Leite e derivados | igual |
+| 470 | Bebida isotônica, sabores variados | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 473 | Cana, caldo de | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 479 | Refrigerante, tipo água tônica | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 480 | Refrigerante, tipo cola | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 481 | Refrigerante, tipo guaraná | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 482 | Refrigerante, tipo laranja | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 483 | Refrigerante, tipo limão | Bebidas (alcoólicas e não alcoólicas) | igual |
+| 512 | Capuccino, pó | Miscelâneas | igual |
 
-#### Doce, açúcar ou fruta em calda (52)
+#### Doce, açúcar ou fruta em calda (50)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 8 | Biscoito, doce, maisena | Cereais e derivados | sugeria |
-| 9 | Biscoito, doce, recheado com chocolate | Cereais e derivados | sugeria |
-| 10 | Biscoito, doce, recheado com morango | Cereais e derivados | sugeria |
-| 11 | Biscoito, doce, wafer, recheado de chocolate | Cereais e derivados | sugeria |
-| 12 | Biscoito, doce, wafer, recheado de morango | Cereais e derivados | sugeria |
-| 14 | Bolo, mistura para | Cereais e derivados | sugeria |
-| 15 | Bolo, pronto, aipim | Cereais e derivados | sugeria |
-| 16 | Bolo, pronto, chocolate | Cereais e derivados | sugeria |
-| 17 | Bolo, pronto, coco | Cereais e derivados | sugeria |
-| 18 | Bolo, pronto, milho | Cereais e derivados | sugeria |
-| 20 | Canjica, com leite integral | Cereais e derivados | sugeria |
-| 26 | Cereal matinal, milho, açúcar | Cereais e derivados | sugeria |
-| 29 | Curau, milho verde | Cereais e derivados | sugeria |
-| 30 | Curau, milho verde, mistura para | Cereais e derivados | sugeria |
-| 167 | Açaí, polpa, com xarope de guaraná e glucose | Frutas e derivados | sugeria |
-| 171 | Ameixa, calda, enlatada | Frutas e derivados | sugeria |
-| 173 | Ameixa, em calda, enlatada, drenada | Frutas e derivados | sugeria |
-| 176 | Banana, doce em barra | Frutas e derivados | sugeria |
-| 195 | Figo, enlatado, em calda | Frutas e derivados | sugeria |
-| 198 | Goiaba, doce em pasta | Frutas e derivados | sugeria |
-| 199 | Goiaba, doce, cascão | Frutas e derivados | sugeria |
-| 224 | Mamão, doce em calda, drenado | Frutas e derivados | sugeria |
-| 227 | Mamão verde, doce em calda, drenado | Frutas e derivados | sugeria |
-| 245 | Pêssego, enlatado, em calda | Frutas e derivados | sugeria |
-| 450 | Iogurte, sabor abacaxi | Leite e derivados | sugeria |
-| 451 | Iogurte, sabor morango | Leite e derivados | sugeria |
-| 452 | Iogurte, sabor pêssego | Leite e derivados | sugeria |
-| 453 | Leite, condensado | Leite e derivados | sugeria |
-| 466 | Queijo, petit suisse, morango | Leite e derivados | sugeria |
-| 491 | Achocolatado, pó | Produtos açucarados | já fora |
-| 492 | Açúcar, cristal | Produtos açucarados | sugeria |
-| 493 | Açúcar, mascavo | Produtos açucarados | sugeria |
-| 494 | Açúcar, refinado | Produtos açucarados | sugeria |
-| 495 | Chocolate, ao leite | Produtos açucarados | sugeria |
-| 496 | Chocolate, ao leite, com castanha do Pará | Produtos açucarados | sugeria |
-| 497 | Chocolate, ao leite, dietético | Produtos açucarados | sugeria |
-| 498 | Chocolate, meio amargo | Produtos açucarados | sugeria |
-| 499 | Cocada branca | Produtos açucarados | sugeria |
-| 500 | Doce, de abóbora, cremoso | Produtos açucarados | sugeria |
-| 501 | Doce, de leite, cremoso | Produtos açucarados | sugeria |
-| 502 | Geléia, mocotó, natural | Produtos açucarados | sugeria |
-| 503 | Glicose de milho | Produtos açucarados | sugeria |
-| 504 | Maria mole | Produtos açucarados | sugeria |
-| 505 | Maria mole, coco queimado | Produtos açucarados | sugeria |
-| 506 | Marmelada | Produtos açucarados | sugeria |
-| 507 | Mel, de abelha | Produtos açucarados | sugeria |
-| 508 | Melado | Produtos açucarados | sugeria |
-| 509 | Quindim | Produtos açucarados | sugeria |
-| 510 | Rapadura | Produtos açucarados | sugeria |
-| 515 | Gelatina, sabores variados, pó | Miscelâneas | já fora |
-| 579 | Paçoca, amendoim | Leguminosas e derivados | sugeria |
-| 580 | Pé-de-moleque, amendoim | Leguminosas e derivados | sugeria |
+| 8 | Biscoito, doce, maisena | Cereais e derivados | igual |
+| 9 | Biscoito, doce, recheado com chocolate | Cereais e derivados | igual |
+| 10 | Biscoito, doce, recheado com morango | Cereais e derivados | igual |
+| 11 | Biscoito, doce, wafer, recheado de chocolate | Cereais e derivados | igual |
+| 12 | Biscoito, doce, wafer, recheado de morango | Cereais e derivados | igual |
+| 14 | Bolo, mistura para | Cereais e derivados | igual |
+| 15 | Bolo, pronto, aipim | Cereais e derivados | igual |
+| 16 | Bolo, pronto, chocolate | Cereais e derivados | igual |
+| 17 | Bolo, pronto, coco | Cereais e derivados | igual |
+| 18 | Bolo, pronto, milho | Cereais e derivados | igual |
+| 20 | Canjica, com leite integral | Cereais e derivados | igual |
+| 26 | Cereal matinal, milho, açúcar | Cereais e derivados | igual |
+| 29 | Curau, milho verde | Cereais e derivados | igual |
+| 30 | Curau, milho verde, mistura para | Cereais e derivados | igual |
+| 167 | Açaí, polpa, com xarope de guaraná e glucose | Frutas e derivados | igual |
+| 171 | Ameixa, calda, enlatada | Frutas e derivados | igual |
+| 173 | Ameixa, em calda, enlatada, drenada | Frutas e derivados | igual |
+| 176 | Banana, doce em barra | Frutas e derivados | igual |
+| 195 | Figo, enlatado, em calda | Frutas e derivados | igual |
+| 198 | Goiaba, doce em pasta | Frutas e derivados | igual |
+| 199 | Goiaba, doce, cascão | Frutas e derivados | igual |
+| 224 | Mamão, doce em calda, drenado | Frutas e derivados | igual |
+| 227 | Mamão verde, doce em calda, drenado | Frutas e derivados | igual |
+| 245 | Pêssego, enlatado, em calda | Frutas e derivados | igual |
+| 450 | Iogurte, sabor abacaxi | Leite e derivados | igual |
+| 451 | Iogurte, sabor morango | Leite e derivados | igual |
+| 452 | Iogurte, sabor pêssego | Leite e derivados | igual |
+| 453 | Leite, condensado | Leite e derivados | igual |
+| 466 | Queijo, petit suisse, morango | Leite e derivados | igual |
+| 491 | Achocolatado, pó | Produtos açucarados | igual |
+| 492 | Açúcar, cristal | Produtos açucarados | igual |
+| 493 | Açúcar, mascavo | Produtos açucarados | igual |
+| 494 | Açúcar, refinado | Produtos açucarados | igual |
+| 495 | Chocolate, ao leite | Produtos açucarados | igual |
+| 496 | Chocolate, ao leite, com castanha do Pará | Produtos açucarados | igual |
+| 497 | Chocolate, ao leite, dietético | Produtos açucarados | igual |
+| 499 | Cocada branca | Produtos açucarados | igual |
+| 500 | Doce, de abóbora, cremoso | Produtos açucarados | igual |
+| 501 | Doce, de leite, cremoso | Produtos açucarados | igual |
+| 502 | Geléia, mocotó, natural | Produtos açucarados | igual |
+| 503 | Glicose de milho | Produtos açucarados | igual |
+| 504 | Maria mole | Produtos açucarados | igual |
+| 505 | Maria mole, coco queimado | Produtos açucarados | igual |
+| 506 | Marmelada | Produtos açucarados | igual |
+| 508 | Melado | Produtos açucarados | igual |
+| 509 | Quindim | Produtos açucarados | igual |
+| 510 | Rapadura | Produtos açucarados | igual |
+| 515 | Gelatina, sabores variados, pó | Miscelâneas | igual |
+| 579 | Paçoca, amendoim | Leguminosas e derivados | igual |
+| 580 | Pé-de-moleque, amendoim | Leguminosas e derivados | igual |
 
-#### Óleo ou gordura de adição (22)
+#### Óleo ou gordura de adição (18)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 259 | Azeite, de dendê | Gorduras e óleos | sugeria |
-| 260 | Azeite, de oliva, extra virgem | Gorduras e óleos | sugeria |
-| 261 | Manteiga, com sal | Gorduras e óleos | sugeria |
-| 262 | Manteiga, sem sal | Gorduras e óleos | sugeria |
-| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | Gorduras e óleos | sugeria |
-| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | Gorduras e óleos | sugeria |
-| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | Gorduras e óleos | sugeria |
-| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | Gorduras e óleos | sugeria |
-| 267 | Óleo, de babaçu | Gorduras e óleos | sugeria |
-| 268 | Óleo, de canola | Gorduras e óleos | sugeria |
-| 269 | Óleo, de girassol | Gorduras e óleos | sugeria |
-| 270 | Óleo, de milho | Gorduras e óleos | sugeria |
-| 271 | Óleo, de pequi | Gorduras e óleos | sugeria |
-| 272 | Óleo, de soja | Gorduras e óleos | sugeria |
-| 444 | Toucinho, cru | Carnes e derivados | já fora |
-| 445 | Toucinho, frito | Carnes e derivados | sugeria |
-| 447 | Creme de Leite | Leite e derivados | sugeria |
-| 522 | Chantilly, spray, com gordura vegetal | Outros alimentos industrializados | sugeria |
-| 523 | Leite, de coco | Outros alimentos industrializados | sugeria |
-| 524 | Maionese, tradicional com ovos | Outros alimentos industrializados | sugeria |
-| 545 | Salada, de legumes, com maionese | Alimentos preparados | sugeria |
-| 547 | Salpicão, de frango | Alimentos preparados | sugeria |
+| 259 | Azeite, de dendê | Gorduras e óleos | igual |
+| 261 | Manteiga, com sal | Gorduras e óleos | igual |
+| 262 | Manteiga, sem sal | Gorduras e óleos | igual |
+| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | Gorduras e óleos | igual |
+| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | Gorduras e óleos | igual |
+| 267 | Óleo, de babaçu | Gorduras e óleos | igual |
+| 268 | Óleo, de canola | Gorduras e óleos | igual |
+| 269 | Óleo, de girassol | Gorduras e óleos | igual |
+| 270 | Óleo, de milho | Gorduras e óleos | igual |
+| 271 | Óleo, de pequi | Gorduras e óleos | igual |
+| 272 | Óleo, de soja | Gorduras e óleos | igual |
+| 444 | Toucinho, cru | Carnes e derivados | igual |
+| 445 | Toucinho, frito | Carnes e derivados | igual |
+| 447 | Creme de Leite | Leite e derivados | igual |
+| 523 | Leite, de coco | Outros alimentos industrializados | igual |
+| 524 | Maionese, tradicional com ovos | Outros alimentos industrializados | igual |
+| 545 | Salada, de legumes, com maionese | Alimentos preparados | igual |
+| 547 | Salpicão, de frango | Alimentos preparados | igual |
 
-#### Embutido, carne processada ou curada (20)
+#### Embutido, carne processada ou curada (18)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 323 | Apresuntado | Carnes e derivados | sugeria |
-| 338 | Carne, bovina, charque, cozido | Carnes e derivados | sugeria |
-| 339 | Carne, bovina, charque, cru | Carnes e derivados | já fora |
-| 384 | Carne, bovina, seca, cozida | Carnes e derivados | sugeria |
-| 385 | Carne, bovina, seca, crua | Carnes e derivados | já fora |
-| 415 | Hambúrguer, bovino, cru | Carnes e derivados | já fora |
-| 416 | Hambúrguer, bovino, frito | Carnes e derivados | sugeria |
-| 417 | Hambúrguer, bovino, grelhado | Carnes e derivados | sugeria |
-| 418 | Lingüiça, frango, crua | Carnes e derivados | já fora |
-| 419 | Lingüiça, frango, frita | Carnes e derivados | sugeria |
-| 420 | Lingüiça, frango, grelhada | Carnes e derivados | sugeria |
-| 421 | Lingüiça, porco, crua | Carnes e derivados | já fora |
-| 422 | Lingüiça, porco, frita | Carnes e derivados | sugeria |
-| 423 | Lingüiça, porco, grelhada | Carnes e derivados | sugeria |
-| 424 | Mortadela | Carnes e derivados | sugeria |
-| 434 | Porco, orelha, salgada, crua | Carnes e derivados | já fora |
-| 437 | Porco, rabo, salgado, cru | Carnes e derivados | já fora |
-| 438 | Presunto, com capa de gordura | Carnes e derivados | sugeria |
-| 439 | Presunto, sem capa de gordura | Carnes e derivados | sugeria |
-| 443 | Salame | Carnes e derivados | sugeria |
+| 323 | Apresuntado | Carnes e derivados | igual |
+| 339 | Carne, bovina, charque, cru | Carnes e derivados | igual |
+| 385 | Carne, bovina, seca, crua | Carnes e derivados | igual |
+| 415 | Hambúrguer, bovino, cru | Carnes e derivados | igual |
+| 416 | Hambúrguer, bovino, frito | Carnes e derivados | igual |
+| 417 | Hambúrguer, bovino, grelhado | Carnes e derivados | igual |
+| 418 | Lingüiça, frango, crua | Carnes e derivados | igual |
+| 419 | Lingüiça, frango, frita | Carnes e derivados | igual |
+| 420 | Lingüiça, frango, grelhada | Carnes e derivados | igual |
+| 421 | Lingüiça, porco, crua | Carnes e derivados | igual |
+| 422 | Lingüiça, porco, frita | Carnes e derivados | igual |
+| 423 | Lingüiça, porco, grelhada | Carnes e derivados | igual |
+| 424 | Mortadela | Carnes e derivados | igual |
+| 434 | Porco, orelha, salgada, crua | Carnes e derivados | igual |
+| 437 | Porco, rabo, salgado, cru | Carnes e derivados | igual |
+| 438 | Presunto, com capa de gordura | Carnes e derivados | igual |
+| 439 | Presunto, sem capa de gordura | Carnes e derivados | igual |
+| 443 | Salame | Carnes e derivados | igual |
 
-#### Prato com embutido, toucinho, carne curada ou miúdos (9)
+#### Prato com embutido, toucinho, carne curada ou miúdos (3)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 526 | Arroz carreteiro | Alimentos preparados | sugeria |
-| 527 | Baião de dois, arroz e feijão-de-corda | Alimentos preparados | sugeria |
-| 528 | Barreado | Alimentos preparados | sugeria |
-| 536 | Dobradinha | Alimentos preparados | sugeria |
-| 539 | Feijão tropeiro mineiro | Alimentos preparados | sugeria |
-| 540 | Feijoada | Alimentos preparados | sugeria |
-| 543 | Maniçoba | Alimentos preparados | sugeria |
-| 548 | Sarapatel | Alimentos preparados | sugeria |
-| 555 | Virado à paulista | Alimentos preparados | sugeria |
+| 526 | Arroz carreteiro | Alimentos preparados | igual |
+| 539 | Feijão tropeiro mineiro | Alimentos preparados | igual |
+| 555 | Virado à paulista | Alimentos preparados | igual |
 
-#### Fritura ou salgado frito (31)
+#### Fritura ou salgado frito (30)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 55 | Pastel, de carne, cru | Cereais e derivados | já fora |
-| 56 | Pastel, de carne, frito | Cereais e derivados | sugeria |
-| 57 | Pastel, de queijo, cru | Cereais e derivados | já fora |
-| 58 | Pastel, de queijo, frito | Cereais e derivados | sugeria |
-| 59 | Pastel, massa, crua | Cereais e derivados | já fora |
-| 60 | Pastel, massa, frita | Cereais e derivados | sugeria |
-| 90 | Batata, frita, tipo chips, industrializada | Verduras, hortaliças e derivados | sugeria |
-| 93 | Batata, inglesa, frita | Verduras, hortaliças e derivados | sugeria |
-| 132 | Mandioca, frita | Verduras, hortaliças e derivados | sugeria |
-| 281 | Cação, posta, com farinha de trigo, frita | Pescados e frutos do mar | sugeria |
-| 286 | Camarão, Sete Barbas, sem cabeça, com casca, frito | Pescados e frutos do mar | sugeria |
-| 297 | Lambari, congelado, frito | Pescados e frutos do mar | sugeria |
-| 299 | Manjuba, com farinha de trigo, frita | Pescados e frutos do mar | sugeria |
-| 300 | Manjuba, frita | Pescados e frutos do mar | sugeria |
-| 303 | Merluza, filé, frito | Pescados e frutos do mar | sugeria |
-| 305 | Pescada, branca, frita | Pescados e frutos do mar | sugeria |
-| 306 | Pescada, filé, com farinha de trigo, frito | Pescados e frutos do mar | sugeria |
-| 308 | Pescada, filé, frito | Pescados e frutos do mar | sugeria |
-| 320 | Sardinha, frita | Pescados e frutos do mar | sugeria |
-| 331 | Carne, bovina, almôndegas, fritas | Carnes e derivados | sugeria |
-| 340 | Carne, bovina, contra-filé, à milanesa | Carnes e derivados | sugeria |
-| 386 | Coxinha de frango, frita | Carnes e derivados | sugeria |
-| 387 | Croquete, de carne, cru | Carnes e derivados | já fora |
-| 388 | Croquete, de carne, frito | Carnes e derivados | sugeria |
-| 401 | Frango, filé, à milanesa | Carnes e derivados | sugeria |
-| 428 | Porco, bisteca, frita | Carnes e derivados | sugeria |
-| 442 | Quibe, frito | Carnes e derivados | sugeria |
-| 490 | Ovo, de galinha, inteiro, frito | Ovos e derivados | sugeria |
-| 525 | Acarajé | Alimentos preparados | sugeria |
-| 529 | Bife à cavalo, com contra filé | Alimentos preparados | sugeria |
-| 530 | Bolinho de arroz | Alimentos preparados | sugeria |
+| 55 | Pastel, de carne, cru | Cereais e derivados | igual |
+| 56 | Pastel, de carne, frito | Cereais e derivados | igual |
+| 57 | Pastel, de queijo, cru | Cereais e derivados | igual |
+| 58 | Pastel, de queijo, frito | Cereais e derivados | igual |
+| 59 | Pastel, massa, crua | Cereais e derivados | igual |
+| 60 | Pastel, massa, frita | Cereais e derivados | igual |
+| 90 | Batata, frita, tipo chips, industrializada | Verduras, hortaliças e derivados | igual |
+| 93 | Batata, inglesa, frita | Verduras, hortaliças e derivados | igual |
+| 132 | Mandioca, frita | Verduras, hortaliças e derivados | igual |
+| 281 | Cação, posta, com farinha de trigo, frita | Pescados e frutos do mar | igual |
+| 286 | Camarão, Sete Barbas, sem cabeça, com casca, frito | Pescados e frutos do mar | igual |
+| 297 | Lambari, congelado, frito | Pescados e frutos do mar | igual |
+| 299 | Manjuba, com farinha de trigo, frita | Pescados e frutos do mar | igual |
+| 300 | Manjuba, frita | Pescados e frutos do mar | igual |
+| 303 | Merluza, filé, frito | Pescados e frutos do mar | igual |
+| 305 | Pescada, branca, frita | Pescados e frutos do mar | igual |
+| 306 | Pescada, filé, com farinha de trigo, frito | Pescados e frutos do mar | igual |
+| 308 | Pescada, filé, frito | Pescados e frutos do mar | igual |
+| 320 | Sardinha, frita | Pescados e frutos do mar | igual |
+| 331 | Carne, bovina, almôndegas, fritas | Carnes e derivados | igual |
+| 340 | Carne, bovina, contra-filé, à milanesa | Carnes e derivados | igual |
+| 386 | Coxinha de frango, frita | Carnes e derivados | igual |
+| 387 | Croquete, de carne, cru | Carnes e derivados | igual |
+| 388 | Croquete, de carne, frito | Carnes e derivados | igual |
+| 401 | Frango, filé, à milanesa | Carnes e derivados | igual |
+| 428 | Porco, bisteca, frita | Carnes e derivados | igual |
+| 442 | Quibe, frito | Carnes e derivados | igual |
+| 525 | Acarajé | Alimentos preparados | igual |
+| 529 | Bife à cavalo, com contra filé | Alimentos preparados | igual |
+| 530 | Bolinho de arroz | Alimentos preparados | igual |
 
-#### Ultraprocessado, salgadinho ou petisco em conserva (16)
+#### Ultraprocessado, salgadinho ou petisco em conserva (12)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 23 | Cereais, mingau, milho, infantil | Cereais e derivados | sugeria |
-| 24 | Cereais, mistura para vitamina, trigo, cevada e aveia | Cereais e derivados | sugeria |
-| 25 | Cereal matinal, milho | Cereais e derivados | sugeria |
-| 28 | Creme de milho, pó | Cereais e derivados | já fora |
-| 31 | Farinha, de arroz, enriquecida | Cereais e derivados | já fora |
-| 36 | Farinha, láctea, de cereais | Cereais e derivados | sugeria |
-| 39 | Macarrão, instantâneo | Cereais e derivados | sugeria |
-| 46 | Mingau tradicional, pó | Cereais e derivados | já fora |
-| 99 | Biscoito, polvilho doce | Verduras, hortaliças e derivados | sugeria |
-| 324 | Caldo de carne, tablete | Carnes e derivados | sugeria |
-| 325 | Caldo de galinha, tablete | Carnes e derivados | sugeria |
-| 389 | Empada de frango, pré-cozida, assada | Carnes e derivados | sugeria |
-| 390 | Empada, de frango, pré-cozida | Carnes e derivados | sugeria |
-| 520 | Azeitona, preta, conserva | Outros alimentos industrializados | sugeria |
-| 521 | Azeitona, verde, conserva | Outros alimentos industrializados | sugeria |
-| 586 | Tremoço, em conserva | Leguminosas e derivados | sugeria |
+| 23 | Cereais, mingau, milho, infantil | Cereais e derivados | igual |
+| 24 | Cereais, mistura para vitamina, trigo, cevada e aveia | Cereais e derivados | igual |
+| 28 | Creme de milho, pó | Cereais e derivados | igual |
+| 31 | Farinha, de arroz, enriquecida | Cereais e derivados | igual |
+| 36 | Farinha, láctea, de cereais | Cereais e derivados | igual |
+| 39 | Macarrão, instantâneo | Cereais e derivados | igual |
+| 46 | Mingau tradicional, pó | Cereais e derivados | igual |
+| 99 | Biscoito, polvilho doce | Verduras, hortaliças e derivados | igual |
+| 324 | Caldo de carne, tablete | Carnes e derivados | igual |
+| 325 | Caldo de galinha, tablete | Carnes e derivados | igual |
+| 389 | Empada de frango, pré-cozida, assada | Carnes e derivados | igual |
+| 390 | Empada, de frango, pré-cozida | Carnes e derivados | igual |
+
+#### Preparação que raramente se prescreve assim (4)
+
+| Id | Alimento | Categoria da TACO | Em 15/10 |
+|---|---|---|---|
+| 13 | Biscoito, salgado, cream cracker | Cereais e derivados | prescritível (saiu em 20/10) |
+| 61 | Pipoca, com óleo de soja, sem sal | Cereais e derivados | prescritível (saiu em 20/10) |
+| 140 | Pão, de queijo, assado | Verduras, hortaliças e derivados | prescritível (saiu em 20/10) |
+| 551 | Tapioca, com manteiga | Alimentos preparados | prescritível (saiu em 20/10) |
 
 ### Nível 3 — Forma de ingrediente (a chave do cobrir libera)
 
 #### Ingrediente da categoria Miscelâneas (café em pó) (1)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 511 | Café, pó, torrado | Miscelâneas | já fora |
+| 511 | Café, pó, torrado | Miscelâneas | igual |
 
-#### Produto em pó ou desidratado (5)
+#### Produto em pó ou desidratado (3)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 27 | Creme de arroz, pó | Cereais e derivados | já fora |
-| 114 | Coentro, folhas desidratadas | Verduras, hortaliças e derivados | já fora |
-| 456 | Leite, de vaca, desnatado, pó | Leite e derivados | já fora |
-| 459 | Leite, de vaca, integral, pó | Leite e derivados | já fora |
-| 583 | Soja, extrato solúvel, pó | Leguminosas e derivados | já fora |
+| 27 | Creme de arroz, pó | Cereais e derivados | igual |
+| 114 | Coentro, folhas desidratadas | Verduras, hortaliças e derivados | igual |
+| 583 | Soja, extrato solúvel, pó | Leguminosas e derivados | igual |
 
-#### Farinha, amido ou fécula de uso culinário (12)
+#### Farinha, amido ou fécula de uso culinário (11)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 32 | Farinha, de centeio, integral | Cereais e derivados | já fora |
-| 33 | Farinha, de milho, amarela | Cereais e derivados | já fora |
-| 34 | Farinha, de rosca | Cereais e derivados | já fora |
-| 35 | Farinha, de trigo | Cereais e derivados | já fora |
-| 42 | Milho, amido, cru | Cereais e derivados | já fora |
-| 43 | Milho, fubá, cru | Cereais e derivados | já fora |
-| 121 | Farinha, de mandioca, crua | Verduras, hortaliças e derivados | já fora |
-| 123 | Farinha, de puba | Verduras, hortaliças e derivados | já fora |
-| 124 | Fécula, de mandioca | Verduras, hortaliças e derivados | sugeria |
-| 146 | Polvilho, doce | Verduras, hortaliças e derivados | sugeria |
-| 581 | Soja, farinha | Leguminosas e derivados | já fora |
-| 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | já fora |
+| 32 | Farinha, de centeio, integral | Cereais e derivados | igual |
+| 33 | Farinha, de milho, amarela | Cereais e derivados | igual |
+| 34 | Farinha, de rosca | Cereais e derivados | igual |
+| 35 | Farinha, de trigo | Cereais e derivados | igual |
+| 42 | Milho, amido, cru | Cereais e derivados | igual |
+| 43 | Milho, fubá, cru | Cereais e derivados | igual |
+| 123 | Farinha, de puba | Verduras, hortaliças e derivados | igual |
+| 124 | Fécula, de mandioca | Verduras, hortaliças e derivados | igual |
+| 146 | Polvilho, doce | Verduras, hortaliças e derivados | igual |
+| 581 | Soja, farinha | Leguminosas e derivados | igual |
+| 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | igual |
 
 #### Versão crua de alimento que se come cozido (97)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 2 | Arroz, integral, cru | Cereais e derivados | já fora |
-| 4 | Arroz, tipo 1, cru | Cereais e derivados | já fora |
-| 6 | Arroz, tipo 2, cru | Cereais e derivados | já fora |
-| 19 | Canjica, branca, crua | Cereais e derivados | já fora |
-| 38 | Lasanha, massa fresca, crua | Cereais e derivados | já fora |
-| 40 | Macarrão, trigo, cru | Cereais e derivados | já fora |
-| 41 | Macarrão, trigo, cru, com ovos | Cereais e derivados | já fora |
-| 44 | Milho, verde, cru | Cereais e derivados | já fora |
-| 65 | Abóbora, cabotian, crua | Verduras, hortaliças e derivados | sugeria |
-| 67 | Abóbora, moranga, crua | Verduras, hortaliças e derivados | sugeria |
-| 87 | Batata, baroa, crua | Verduras, hortaliças e derivados | sugeria |
-| 89 | Batata, doce, crua | Verduras, hortaliças e derivados | sugeria |
-| 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | sugeria |
-| 96 | Berinjela, crua | Verduras, hortaliças e derivados | sugeria |
-| 103 | Cará, cru | Verduras, hortaliças e derivados | sugeria |
-| 113 | Chuchu, cru | Verduras, hortaliças e derivados | sugeria |
-| 130 | Mandioca, crua | Verduras, hortaliças e derivados | sugeria |
-| 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | sugeria |
-| 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | já fora |
-| 278 | Atum, fresco, cru | Pescados e frutos do mar | já fora |
-| 279 | Bacalhau, salgado, cru | Pescados e frutos do mar | já fora |
-| 283 | Cação, posta, crua | Pescados e frutos do mar | já fora |
-| 285 | Camarão, Rio Grande, grande, cru | Pescados e frutos do mar | já fora |
-| 288 | Corimba, cru | Pescados e frutos do mar | já fora |
-| 291 | Corvina de água doce, crua | Pescados e frutos do mar | já fora |
-| 292 | Corvina do mar, crua | Pescados e frutos do mar | já fora |
-| 295 | Dourada de água doce, fresca | Pescados e frutos do mar | sugeria |
-| 296 | Lambari, congelado, cru | Pescados e frutos do mar | já fora |
-| 298 | Lambari, fresco, cru | Pescados e frutos do mar | já fora |
-| 302 | Merluza, filé, cru | Pescados e frutos do mar | já fora |
-| 304 | Pescada, branca, crua | Pescados e frutos do mar | já fora |
-| 307 | Pescada, filé, cru | Pescados e frutos do mar | já fora |
-| 310 | Pescadinha, crua | Pescados e frutos do mar | já fora |
-| 312 | Pintado, cru | Pescados e frutos do mar | já fora |
-| 314 | Porquinho, cru | Pescados e frutos do mar | já fora |
-| 316 | Salmão, sem pele, fresco, cru | Pescados e frutos do mar | já fora |
-| 321 | Sardinha, inteira, crua | Pescados e frutos do mar | já fora |
-| 322 | Tucunaré, filé, congelado, cru | Pescados e frutos do mar | já fora |
-| 327 | Carne, bovina, acém, moído, cru | Carnes e derivados | já fora |
-| 329 | Carne, bovina, acém, sem gordura, cru | Carnes e derivados | já fora |
-| 330 | Carne, bovina, almôndegas, cruas | Carnes e derivados | sugeria |
-| 333 | Carne, bovina, bucho, cru | Carnes e derivados | já fora |
-| 334 | Carne, bovina, capa de contra-filé, com gordura, crua | Carnes e derivados | já fora |
-| 336 | Carne, bovina, capa de contra-filé, sem gordura, crua | Carnes e derivados | já fora |
-| 341 | Carne, bovina, contra-filé de costela, cru | Carnes e derivados | já fora |
-| 343 | Carne, bovina, contra-filé, com gordura, cru | Carnes e derivados | já fora |
-| 345 | Carne, bovina, contra-filé, sem gordura, cru | Carnes e derivados | já fora |
-| 348 | Carne, bovina, costela, crua | Carnes e derivados | já fora |
-| 350 | Carne, bovina, coxão duro, sem gordura, cru | Carnes e derivados | já fora |
-| 352 | Carne, bovina, coxão mole, sem gordura, cru | Carnes e derivados | já fora |
-| 354 | Carne, bovina, cupim, cru | Carnes e derivados | já fora |
-| 355 | Carne, bovina, fígado, cru | Carnes e derivados | já fora |
-| 357 | Carne, bovina, filé mingnon, sem gordura, cru | Carnes e derivados | já fora |
-| 360 | Carne, bovina, flanco, sem gordura, cru | Carnes e derivados | já fora |
-| 362 | Carne, bovina, fraldinha, com gordura, crua | Carnes e derivados | já fora |
-| 364 | Carne, bovina, lagarto, cru | Carnes e derivados | já fora |
-| 366 | Carne, bovina, língua, crua | Carnes e derivados | já fora |
-| 367 | Carne, bovina, maminha, crua | Carnes e derivados | já fora |
-| 369 | Carne, bovina, miolo de alcatra, sem gordura, cru | Carnes e derivados | já fora |
-| 372 | Carne, bovina, músculo, sem gordura, cru | Carnes e derivados | já fora |
-| 373 | Carne, bovina, paleta, com gordura, crua | Carnes e derivados | já fora |
-| 375 | Carne, bovina, paleta, sem gordura, crua | Carnes e derivados | já fora |
-| 376 | Carne, bovina, patinho, sem gordura, cru | Carnes e derivados | já fora |
-| 379 | Carne, bovina, peito, sem gordura, cru | Carnes e derivados | já fora |
-| 380 | Carne, bovina, picanha, com gordura, crua | Carnes e derivados | já fora |
-| 382 | Carne, bovina, picanha, sem gordura, crua | Carnes e derivados | já fora |
-| 391 | Frango, asa, com pele, crua | Carnes e derivados | já fora |
-| 394 | Frango, coração, cru | Carnes e derivados | já fora |
-| 397 | Frango, coxa, com pele, crua | Carnes e derivados | já fora |
-| 399 | Frango, coxa, sem pele, crua | Carnes e derivados | já fora |
-| 400 | Frango, fígado, cru | Carnes e derivados | já fora |
-| 402 | Frango, inteiro, com pele, cru | Carnes e derivados | já fora |
-| 405 | Frango, inteiro, sem pele, cru | Carnes e derivados | já fora |
-| 407 | Frango, peito, com pele, cru | Carnes e derivados | já fora |
-| 409 | Frango, peito, sem pele, cru | Carnes e derivados | já fora |
-| 412 | Frango, sobrecoxa, com pele, crua | Carnes e derivados | já fora |
-| 414 | Frango, sobrecoxa, sem pele, crua | Carnes e derivados | já fora |
-| 426 | Peru, congelado, cru | Carnes e derivados | já fora |
-| 427 | Porco, bisteca, crua | Carnes e derivados | já fora |
-| 431 | Porco, costela, crua | Carnes e derivados | já fora |
-| 433 | Porco, lombo, cru | Carnes e derivados | já fora |
-| 436 | Porco, pernil, cru | Carnes e derivados | já fora |
-| 441 | Quibe, cru | Carnes e derivados | já fora |
-| 485 | Ovo, de codorna, inteiro, cru | Ovos e derivados | já fora |
-| 489 | Ovo, de galinha, inteiro, cru | Ovos e derivados | já fora |
-| 557 | Amendoim, grão, cru | Leguminosas e derivados | já fora |
-| 562 | Feijão, carioca, cru | Leguminosas e derivados | já fora |
-| 564 | Feijão, fradinho, cru | Leguminosas e derivados | já fora |
-| 566 | Feijão, jalo, cru | Leguminosas e derivados | já fora |
-| 568 | Feijão, preto, cru | Leguminosas e derivados | já fora |
-| 570 | Feijão, rajado, cru | Leguminosas e derivados | já fora |
-| 572 | Feijão, rosinha, cru | Leguminosas e derivados | já fora |
-| 574 | Feijão, roxo, cru | Leguminosas e derivados | já fora |
-| 575 | Grão-de-bico, cru | Leguminosas e derivados | já fora |
-| 576 | Guandu, cru | Leguminosas e derivados | já fora |
-| 578 | Lentilha, crua | Leguminosas e derivados | já fora |
-| 585 | Tremoço, cru | Leguminosas e derivados | já fora |
+| 2 | Arroz, integral, cru | Cereais e derivados | igual |
+| 4 | Arroz, tipo 1, cru | Cereais e derivados | igual |
+| 6 | Arroz, tipo 2, cru | Cereais e derivados | igual |
+| 19 | Canjica, branca, crua | Cereais e derivados | igual |
+| 38 | Lasanha, massa fresca, crua | Cereais e derivados | igual |
+| 40 | Macarrão, trigo, cru | Cereais e derivados | igual |
+| 41 | Macarrão, trigo, cru, com ovos | Cereais e derivados | igual |
+| 44 | Milho, verde, cru | Cereais e derivados | igual |
+| 65 | Abóbora, cabotian, crua | Verduras, hortaliças e derivados | igual |
+| 67 | Abóbora, moranga, crua | Verduras, hortaliças e derivados | igual |
+| 87 | Batata, baroa, crua | Verduras, hortaliças e derivados | igual |
+| 89 | Batata, doce, crua | Verduras, hortaliças e derivados | igual |
+| 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | igual |
+| 96 | Berinjela, crua | Verduras, hortaliças e derivados | igual |
+| 103 | Cará, cru | Verduras, hortaliças e derivados | igual |
+| 113 | Chuchu, cru | Verduras, hortaliças e derivados | igual |
+| 130 | Mandioca, crua | Verduras, hortaliças e derivados | igual |
+| 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | igual |
+| 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | igual |
+| 278 | Atum, fresco, cru | Pescados e frutos do mar | igual |
+| 279 | Bacalhau, salgado, cru | Pescados e frutos do mar | igual |
+| 283 | Cação, posta, crua | Pescados e frutos do mar | igual |
+| 285 | Camarão, Rio Grande, grande, cru | Pescados e frutos do mar | igual |
+| 288 | Corimba, cru | Pescados e frutos do mar | igual |
+| 291 | Corvina de água doce, crua | Pescados e frutos do mar | igual |
+| 292 | Corvina do mar, crua | Pescados e frutos do mar | igual |
+| 295 | Dourada de água doce, fresca | Pescados e frutos do mar | igual |
+| 296 | Lambari, congelado, cru | Pescados e frutos do mar | igual |
+| 298 | Lambari, fresco, cru | Pescados e frutos do mar | igual |
+| 302 | Merluza, filé, cru | Pescados e frutos do mar | igual |
+| 304 | Pescada, branca, crua | Pescados e frutos do mar | igual |
+| 307 | Pescada, filé, cru | Pescados e frutos do mar | igual |
+| 310 | Pescadinha, crua | Pescados e frutos do mar | igual |
+| 312 | Pintado, cru | Pescados e frutos do mar | igual |
+| 314 | Porquinho, cru | Pescados e frutos do mar | igual |
+| 316 | Salmão, sem pele, fresco, cru | Pescados e frutos do mar | igual |
+| 321 | Sardinha, inteira, crua | Pescados e frutos do mar | igual |
+| 322 | Tucunaré, filé, congelado, cru | Pescados e frutos do mar | igual |
+| 327 | Carne, bovina, acém, moído, cru | Carnes e derivados | igual |
+| 329 | Carne, bovina, acém, sem gordura, cru | Carnes e derivados | igual |
+| 330 | Carne, bovina, almôndegas, cruas | Carnes e derivados | igual |
+| 333 | Carne, bovina, bucho, cru | Carnes e derivados | igual |
+| 334 | Carne, bovina, capa de contra-filé, com gordura, crua | Carnes e derivados | igual |
+| 336 | Carne, bovina, capa de contra-filé, sem gordura, crua | Carnes e derivados | igual |
+| 341 | Carne, bovina, contra-filé de costela, cru | Carnes e derivados | igual |
+| 343 | Carne, bovina, contra-filé, com gordura, cru | Carnes e derivados | igual |
+| 345 | Carne, bovina, contra-filé, sem gordura, cru | Carnes e derivados | igual |
+| 348 | Carne, bovina, costela, crua | Carnes e derivados | igual |
+| 350 | Carne, bovina, coxão duro, sem gordura, cru | Carnes e derivados | igual |
+| 352 | Carne, bovina, coxão mole, sem gordura, cru | Carnes e derivados | igual |
+| 354 | Carne, bovina, cupim, cru | Carnes e derivados | igual |
+| 355 | Carne, bovina, fígado, cru | Carnes e derivados | igual |
+| 357 | Carne, bovina, filé mingnon, sem gordura, cru | Carnes e derivados | igual |
+| 360 | Carne, bovina, flanco, sem gordura, cru | Carnes e derivados | igual |
+| 362 | Carne, bovina, fraldinha, com gordura, crua | Carnes e derivados | igual |
+| 364 | Carne, bovina, lagarto, cru | Carnes e derivados | igual |
+| 366 | Carne, bovina, língua, crua | Carnes e derivados | igual |
+| 367 | Carne, bovina, maminha, crua | Carnes e derivados | igual |
+| 369 | Carne, bovina, miolo de alcatra, sem gordura, cru | Carnes e derivados | igual |
+| 372 | Carne, bovina, músculo, sem gordura, cru | Carnes e derivados | igual |
+| 373 | Carne, bovina, paleta, com gordura, crua | Carnes e derivados | igual |
+| 375 | Carne, bovina, paleta, sem gordura, crua | Carnes e derivados | igual |
+| 376 | Carne, bovina, patinho, sem gordura, cru | Carnes e derivados | igual |
+| 379 | Carne, bovina, peito, sem gordura, cru | Carnes e derivados | igual |
+| 380 | Carne, bovina, picanha, com gordura, crua | Carnes e derivados | igual |
+| 382 | Carne, bovina, picanha, sem gordura, crua | Carnes e derivados | igual |
+| 391 | Frango, asa, com pele, crua | Carnes e derivados | igual |
+| 394 | Frango, coração, cru | Carnes e derivados | igual |
+| 397 | Frango, coxa, com pele, crua | Carnes e derivados | igual |
+| 399 | Frango, coxa, sem pele, crua | Carnes e derivados | igual |
+| 400 | Frango, fígado, cru | Carnes e derivados | igual |
+| 402 | Frango, inteiro, com pele, cru | Carnes e derivados | igual |
+| 405 | Frango, inteiro, sem pele, cru | Carnes e derivados | igual |
+| 407 | Frango, peito, com pele, cru | Carnes e derivados | igual |
+| 409 | Frango, peito, sem pele, cru | Carnes e derivados | igual |
+| 412 | Frango, sobrecoxa, com pele, crua | Carnes e derivados | igual |
+| 414 | Frango, sobrecoxa, sem pele, crua | Carnes e derivados | igual |
+| 426 | Peru, congelado, cru | Carnes e derivados | igual |
+| 427 | Porco, bisteca, crua | Carnes e derivados | igual |
+| 431 | Porco, costela, crua | Carnes e derivados | igual |
+| 433 | Porco, lombo, cru | Carnes e derivados | igual |
+| 436 | Porco, pernil, cru | Carnes e derivados | igual |
+| 441 | Quibe, cru | Carnes e derivados | igual |
+| 485 | Ovo, de codorna, inteiro, cru | Ovos e derivados | igual |
+| 489 | Ovo, de galinha, inteiro, cru | Ovos e derivados | igual |
+| 557 | Amendoim, grão, cru | Leguminosas e derivados | igual |
+| 562 | Feijão, carioca, cru | Leguminosas e derivados | igual |
+| 564 | Feijão, fradinho, cru | Leguminosas e derivados | igual |
+| 566 | Feijão, jalo, cru | Leguminosas e derivados | igual |
+| 568 | Feijão, preto, cru | Leguminosas e derivados | igual |
+| 570 | Feijão, rajado, cru | Leguminosas e derivados | igual |
+| 572 | Feijão, rosinha, cru | Leguminosas e derivados | igual |
+| 574 | Feijão, roxo, cru | Leguminosas e derivados | igual |
+| 575 | Grão-de-bico, cru | Leguminosas e derivados | igual |
+| 576 | Guandu, cru | Leguminosas e derivados | igual |
+| 578 | Lentilha, crua | Leguminosas e derivados | igual |
+| 585 | Tremoço, cru | Leguminosas e derivados | igual |
 
 #### Tempero, molho ou concentrado (14)
 
-| Id | Alimento | Categoria da TACO | Antes |
+| Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
-| 81 | Alfavaca, crua | Verduras, hortaliças e derivados | sugeria |
-| 82 | Alho, cru | Verduras, hortaliças e derivados | sugeria |
-| 108 | Cebolinha, crua | Verduras, hortaliças e derivados | sugeria |
-| 133 | Manjericão, cru | Verduras, hortaliças e derivados | sugeria |
-| 153 | Salsa, crua | Verduras, hortaliças e derivados | sugeria |
-| 158 | Tomate, extrato | Verduras, hortaliças e derivados | sugeria |
-| 159 | Tomate, molho industrializado | Verduras, hortaliças e derivados | sugeria |
-| 160 | Tomate, purê | Verduras, hortaliças e derivados | sugeria |
-| 188 | Caju, suco concentrado, envasado | Frutas e derivados | sugeria |
-| 220 | Limão, tahiti, cru | Frutas e derivados | sugeria |
-| 234 | Maracujá, suco concentrado, envasado | Frutas e derivados | sugeria |
-| 258 | Uva, suco concentrado, envasado | Frutas e derivados | sugeria |
-| 535 | Cuxá, molho | Alimentos preparados | sugeria |
-| 552 | Tucupi, com pimenta-de-cheiro | Alimentos preparados | sugeria |
+| 81 | Alfavaca, crua | Verduras, hortaliças e derivados | igual |
+| 82 | Alho, cru | Verduras, hortaliças e derivados | igual |
+| 108 | Cebolinha, crua | Verduras, hortaliças e derivados | igual |
+| 133 | Manjericão, cru | Verduras, hortaliças e derivados | igual |
+| 153 | Salsa, crua | Verduras, hortaliças e derivados | igual |
+| 158 | Tomate, extrato | Verduras, hortaliças e derivados | igual |
+| 159 | Tomate, molho industrializado | Verduras, hortaliças e derivados | igual |
+| 160 | Tomate, purê | Verduras, hortaliças e derivados | igual |
+| 188 | Caju, suco concentrado, envasado | Frutas e derivados | igual |
+| 220 | Limão, tahiti, cru | Frutas e derivados | igual |
+| 234 | Maracujá, suco concentrado, envasado | Frutas e derivados | igual |
+| 258 | Uva, suco concentrado, envasado | Frutas e derivados | igual |
+| 535 | Cuxá, molho | Alimentos preparados | igual |
+| 552 | Tucupi, com pimenta-de-cheiro | Alimentos preparados | igual |
+
+#### Liberados pela conduta da parceira (20/10/2026)
+
+| Id | Alimento | Categoria da TACO | Em 15/10 |
+|---|---|---|---|
+| 260 | Azeite, de oliva, extra virgem | Gorduras e óleos | gordura |
+| 507 | Mel, de abelha | Produtos açucarados | doce |
+| 498 | Chocolate, meio amargo | Produtos açucarados | doce |
+| 460 | Leite, fermentado | Leite e derivados | bebida adoçada |
+| 25 | Cereal matinal, milho | Cereais e derivados | ultraprocessado |
+| 338 | Carne, bovina, charque, cozido | Carnes e derivados | embutido |
+| 384 | Carne, bovina, seca, cozida | Carnes e derivados | embutido |
+| 520 | Azeitona, preta, conserva | Outros alimentos industrializados | ultraprocessado |
+| 521 | Azeitona, verde, conserva | Outros alimentos industrializados | ultraprocessado |
+| 586 | Tremoço, em conserva | Leguminosas e derivados | ultraprocessado |
+| 490 | Ovo, de galinha, inteiro, frito | Ovos e derivados | fritura |
+| 540 | Feijoada | Alimentos preparados | prato com embutido |
+| 527 | Baião de dois, arroz e feijão-de-corda | Alimentos preparados | prato com embutido |
+| 528 | Barreado | Alimentos preparados | prato com embutido |
+| 536 | Dobradinha | Alimentos preparados | prato com embutido |
+| 543 | Maniçoba | Alimentos preparados | prato com embutido |
+| 548 | Sarapatel | Alimentos preparados | prato com embutido |
+| 121 | Farinha, de mandioca, crua | Verduras, hortaliças e derivados | farinha |
+| 456 | Leite, de vaca, desnatado, pó | Leite e derivados | pó |
+| 459 | Leite, de vaca, integral, pó | Leite e derivados | pó |
 
 ## Apêndice B — Sugestões do cobrir antes e depois
 
@@ -639,6 +667,11 @@ Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobr
 O Apêndice A só mostra o que saiu. Aqui estão os casos discutíveis dos dois lados. Mudar um deles é mudar uma linha da
 regra e a lista fixa do teste.
 
+*(20/10/2026)* A parceira respondeu (spec `conduta-da-nutricionista`): tudo do C.2 voltou (D-290); do C.1, saíram
+tapioca com manteiga, pão de queijo assado, pipoca com óleo e cream cracker (D-291); o resto do C.1 fica, porque
+preparações regionais e o resto "vão da conduta do nutricionista". As trocas do C.3 mudaram (D-294 a D-296): a coluna
+"Em 20/10" mostra o que a folha imprime agora.
+
 ### C.1 Ficaram dentro (o sistema ainda propõe sozinho)
 
 | Id | Alimento | Por que revisar |
@@ -651,7 +684,7 @@ regra e a lista fixa do teste.
 | 392, 396, 406, 411 | Frango com pele | no cobrir, até 100 g e depois do frango sem pele |
 | 486, 487 | Ovo, clara e gema cozidas | prescritíveis, mas não trocam por ovo inteiro (CA-671) |
 | 465, 468 | Queijo pasteurizado; Requeijão cremoso | ultraprocessados pela classificação NOVA; ficaram por uso comum |
-| 551, 140, 61, 13 | Tapioca com manteiga; Pão de queijo assado; Pipoca com óleo; Biscoito cream cracker | decisões da seção 2.1 |
+| 551, 140, 61, 13 | Tapioca com manteiga; Pão de queijo assado; Pipoca com óleo; Biscoito cream cracker | decisões da seção 2.1. *(20/10: saíram, preparação que raramente se prescreve assim, D-291)* |
 | 558, 587, 588 | Amendoim, amêndoa e castanha-de-caju torrados e salgados | no cobrir, até 30 g |
 | 277, 319, 138, 139 | Atum e sardinha em óleo; palmitos em conserva | sódio |
 | 471, 475, 476, 477 | Café e chás | o cobrir não usa como fonte, mas entram nas trocas de bebida (refrigerante troca por café) |
@@ -661,7 +694,9 @@ regra e a lista fixa do teste.
 
 ### C.2 Ficaram fora e podem estar rígidos demais (decisão do dono e da estudante)
 
-| Id | Alimento | Motivo hoje | Argumento para voltar |
+*(20/10/2026)* Todos voltaram a ser propostos (D-290), como segunda escolha e com porção máxima no cobrir (D-293).
+
+| Id | Alimento | Motivo em 15/10 | Argumento para voltar |
 |---|---|---|---|
 | 260 | Azeite de oliva extra virgem | gordura de adição | prescrito com frequência; na folha fica sem trocas |
 | 507, 498 | Mel; Chocolate meio amargo | doce | às vezes se prescrevem em porção pequena |
@@ -679,17 +714,18 @@ regra e a lista fixa do teste.
 
 Todas passam na regra (são prescritíveis), mas não são a troca mais comum. Geradas com o código já junto: a folha pede
 4 trocas e mostra as 2 primeiras que sobram depois do corte por nome (CB-188 da `impressao-do-plano`). O nome e a
-quantidade são os que a folha imprime.
+quantidade são os que a folha imprime. *(20/10)* A coluna "Em 20/10" traz só o nome: a quantidade agora segue a escolha
+de cada plano entre medida caseira e gramas (spec `conduta-da-nutricionista`, D-297).
 
-| Alimento do plano (id) | Troca impressa (id) | Por que olhar |
-|---|---|---|
-| Peito de frango grelhado sem pele (410) | Quibe assado (440), 2 unidades e meia · 117 g | prato de carne moída com trigo no lugar de carne magra |
-| Peito de frango grelhado sem pele (410) | Peito de frango cozido sem pele (408), 1 bife · 98 g | "bife" como medida de frango cozido |
-| Aveia em flocos (7) | Pipoca com óleo de soja sem sal (61), 4 conchas e meia | pipoca no lugar de aveia; medida estranha |
-| Pão francês (53) | Torrada de pão francês (63), 7 unidades | quantidade alta de torradas |
-| Iogurte natural (448) e Queijo minas frescal (461) | Leite de cabra (454) | leite pouco comum, e líquido no lugar de queijo |
-| Brócolis cozido (100) | Palmito juçara em conserva (138) | conserva, com sódio |
-| Castanha-do-pará (589) | Castanha-de-caju torrada salgada (588) | com sal |
-| Arroz branco cozido (3) | Pamonha pré-cozida (47), 3 fatias · 112 g | entrou quando a folha passou a pedir 4 trocas; pamonha no lugar de arroz |
-| Maracujá (232) | Fruta-pão (peso cru) (196) | fruta que se come cozida no lugar de fruta crua |
-| Abacate (163), Polpa de açaí congelada (168) e Tucumã (253) | Pequi (peso cru) (241) | fruta que se come cozida, de uso regional |
+| Alimento do plano (id) | Troca impressa (id) | Por que olhar | Em 20/10 |
+|---|---|---|---|
+| Peito de frango grelhado sem pele (410) | Quibe assado (440), 2 unidades e meia · 117 g | prato de carne moída com trigo no lugar de carne magra | Peito de frango cozido sem pele (408); Contra-filé grelhado sem gordura (346) |
+| Peito de frango grelhado sem pele (410) | Peito de frango cozido sem pele (408), 1 bife · 98 g | "bife" como medida de frango cozido | Peito de frango cozido sem pele (408); Contra-filé grelhado sem gordura (346) |
+| Aveia em flocos (7) | Pipoca com óleo de soja sem sal (61), 4 conchas e meia | pipoca no lugar de aveia; medida estranha | Torrada de pão francês (63); Pão sovado (54) |
+| Pão francês (53) | Torrada de pão francês (63), 7 unidades | quantidade alta de torradas | Pão de forma de milho (51); Aveia em flocos (7) |
+| Iogurte natural (448) e Queijo minas frescal (461) | Leite de cabra (454) | leite pouco comum, e líquido no lugar de queijo | 448: Leite de cabra (454); Ricota (469) · 461: Requeijão cremoso (468); Leite de cabra (454) |
+| Brócolis cozido (100) | Palmito juçara em conserva (138) | conserva, com sódio | Abobrinha italiana refogada (72); Abóbora moranga refogada (68) |
+| Castanha-do-pará (589) | Castanha-de-caju torrada salgada (588) | com sal | Noz (597); Linhaça (594) |
+| Arroz branco cozido (3) | Pamonha pré-cozida (47), 3 fatias · 112 g | entrou quando a folha passou a pedir 4 trocas; pamonha no lugar de arroz | Polenta pré-cozida (62); Pão de forma integral (52) |
+| Maracujá (232) | Fruta-pão (peso cru) (196) | fruta que se come cozida no lugar de fruta crua | Fruta-pão (peso cru) (196); Manga Palmer (229) |
+| Abacate (163), Polpa de açaí congelada (168) e Tucumã (253) | Pequi (peso cru) (241) | fruta que se come cozida, de uso regional | 163: Tucumã (253); Pequi (peso cru) (241) · 168: Abacate (163); Tucumã (253) · 253: Abacate (163); Pequi (peso cru) (241) |

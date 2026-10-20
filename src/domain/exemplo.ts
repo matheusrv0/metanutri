@@ -17,7 +17,8 @@ interface EntradaExemplo {
 /** Dia comum, comida do dia a dia brasileiro, com dois substitutos no almoço. */
 const ENTRADAS: readonly EntradaExemplo[] = [
   { refeicao: 'Desjejum', opcao: 'principal', texto: '70 pao frances' },
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '5 margarina' },
+  // A com óleo interesterificado: a hidrogenada é gordura trans, "nunca" (spec conduta-da-nutricionista, D-292).
+  { refeicao: 'Desjejum', opcao: 'principal', texto: '5 margarina interesterificado com sal' },
   { refeicao: 'Desjejum', opcao: 'principal', texto: '30 queijo minas frescal' },
   { refeicao: 'Desjejum', opcao: 'principal', texto: '120 mamao formosa' },
 
@@ -78,7 +79,8 @@ export function criarExemplo(gerarId: GerarId, hoje: string): { readonly caso: C
     diagnosticoClinico: 'Eutrofia',
     dataConsulta: hoje,
     observacoes: 'Plano de exemplo, criado pelo próprio MetaNutri. Pode apagar quando quiser.',
-    orientacoes: 'Beba água ao longo do dia. Coma devagar e sem tela na frente.',
+    // A água sai na folha pela linha automática (spec conduta-da-nutricionista, D-298): aqui não se repete.
+    orientacoes: 'Coma devagar e sem tela na frente.',
   }
 
   let plano = criarPlanoPadrao(gerarId)

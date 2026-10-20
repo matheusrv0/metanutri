@@ -5,6 +5,7 @@ import {
   comprasDaFolha,
   gravarOpcoesImpressao,
   lerOpcoesImpressao,
+  linhaDaAguaNaFolha,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
@@ -12,6 +13,7 @@ import {
   TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
 } from './folhaDieta.ts'
+import { duplicarCaso } from './duplicar.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import type { Armazenamento } from './persistencia.ts'
@@ -37,6 +39,39 @@ function memoria(inicial: Record<string, string> = {}) {
   }
   return arm
 }
+
+describe('a água na folha (spec conduta-da-nutricionista, D-298)', () => {
+  it('CA-931: sem edição, a linha automática pelo peso (35 ml por kg)', () => {
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62 }))).toBe('Beba cerca de 2,2 litros de água por dia.')
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: 80 }))).toBe('Beba cerca de 2,8 litros de água por dia.')
+  })
+
+  it('CA-932: o que a nutricionista escreveu vale; vazio tira a linha', () => {
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '  Beba 2 litros de água por dia, mais no calor.  ' }))).toBe('Beba 2 litros de água por dia, mais no calor.')
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '' }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '   ' }))).toBeNull()
+  })
+
+  it('CA-933 e CB-298: sem peso e sem edição, não há linha; a escrita à mão vale mesmo sem peso', () => {
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: null }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ pesoKg: null, linhaDaAgua: 'Beba água ao longo do dia.' }))).toBe('Beba água ao longo do dia.')
+  })
+
+  it('CB-290: plano gravado antes, sem o campo, ou com valor estranho, usa a automática', () => {
+    const antigo: Pick<Caso, 'pesoKg'> = { pesoKg: 62 }
+    expect(linhaDaAguaNaFolha(antigo)).toBe('Beba cerca de 2,2 litros de água por dia.')
+    expect(linhaDaAguaNaFolha({ ...antigo, linhaDaAgua: 42 } as unknown as Caso)).toBe('Beba cerca de 2,2 litros de água por dia.')
+  })
+
+  it('CB-299: plano duplicado leva a escolha de quantidade e a linha da água', () => {
+    let n = 0
+    const ids = () => `d${++n}`
+    const original = { caso: caso({ quantidades: 'gramas', linhaDaAgua: 'Beba 3 litros.' }), plano: criarPlanoPadrao(ids) }
+    const copia = duplicarCaso(original, ids, { hoje: '2026-10-20' }).caso
+    expect(copia.quantidades).toBe('gramas')
+    expect(copia.linhaDaAgua).toBe('Beba 3 litros.')
+  })
+})
 
 describe('assinaturaDaFolha (CA-313)', () => {
   it('nutricionista assina com a linha do cadastro', () => {

@@ -1,7 +1,7 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
-import { ehCorteGordo, ehDeUsoComum, ehPrescritivel } from './prescritivel.ts'
+import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
@@ -60,6 +60,8 @@ const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
 const OVO_INTEIRO = /^Ovo, de (galinha|codorna), inteiro/i
 const GEMA = /^Ovo, de galinha, gema/i
 const CLARA = /^Ovo, de galinha, clara/i
+/** Charque e carne seca cozidos e ovo frito, que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293). */
+const CURADO_OU_FRITO = /^(Carne, bovina, (charque|seca), cozid|Ovo, de galinha, inteiro, frito)/i
 
 export interface PorcaoDoGrupo {
   readonly grupo: string
@@ -84,7 +86,18 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
     gramas: 30,
     casa: (a) => a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200,
   },
-  { grupo: 'Cortes gordos e aves com pele', gramas: 100, casa: ehCorteGordo },
+  {
+    grupo: 'Cortes gordos, aves com pele, carne curada e ovo frito',
+    gramas: 100,
+    casa: (a) => ehCorteGordo(a) || CURADO_OU_FRITO.test(nomeLimpo(a)),
+  },
+  // Os grupos dos itens que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293).
+  { grupo: 'Gordura de adição', gramas: 10, casa: (a) => a.categoria === 'Gorduras e óleos' },
+  { grupo: 'Mel e chocolate', gramas: 25, casa: (a) => /^(Mel|Chocolate),/i.test(nomeLimpo(a)) },
+  { grupo: 'Azeitona e tremoço em conserva', gramas: 30, casa: (a) => /^(Azeitona,|Tremoço, em conserva)/i.test(nomeLimpo(a)) },
+  { grupo: 'Cereal matinal e leite em pó', gramas: 30, casa: (a) => /^(Cereal matinal|Leite, de vaca, [^,]+, pó$)/i.test(nomeLimpo(a)) },
+  { grupo: 'Leite fermentado', gramas: 80, casa: (a) => /^Leite, fermentado/i.test(nomeLimpo(a)) },
+  { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^Farinha, de mandioca/i.test(nomeLimpo(a)) },
 ]
 
 /** A porção máxima do grupo do alimento; `null` quando ele não está em nenhum grupo da tabela. */
@@ -164,7 +177,7 @@ export function sugerirParaCobrir(
   const restricoes = opcoes.restricoes ?? []
   let restricaoTirouAlguem = false
 
-  const candidatas: (Sugestao & { readonly comum: boolean; readonly magro: boolean })[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
@@ -201,7 +214,7 @@ export function sugerirParaCobrir(
 
     candidatas.push({
       comum: ehDeUsoComum(alimento),
-      magro: !ehCorteGordo(alimento),
+      primeira: !ehSegundaEscolha(alimento),
       alimentoId: alimento.id,
       descricao: alimento.descricao,
       gramas,
@@ -216,11 +229,12 @@ export function sugerirParaCobrir(
   // no empate, a que cobre mais. Assim uma verdura rica vem antes de um doce que cobre tudo de uma vez.
   const kcalPorFaltaInteira = (s: Sugestao) => s.kcalAdicionadas / (s.coberturaPct / 100)
   // Alimento de uso comum vem primeiro: víscera e fruto do mar de exceção só aparecem se sobrar espaço.
-  // Depois, corte magro e ave sem pele antes de corte gordo e ave com pele (D-199b).
+  // Depois, a primeira escolha antes da segunda: corte magro e ave sem pele antes de corte gordo e ave com pele
+  // (D-199b), e o que voltou pela conduta da parceira depois do resto (spec conduta-da-nutricionista, D-293).
   candidatas.sort(
     (a, b) =>
       Number(b.comum) - Number(a.comum) ||
-      Number(b.magro) - Number(a.magro) ||
+      Number(b.primeira) - Number(a.primeira) ||
       kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) ||
       b.coberturaPct - a.coberturaPct,
   )

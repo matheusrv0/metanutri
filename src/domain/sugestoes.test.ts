@@ -36,7 +36,8 @@ describe('lista padrão (seção 3.1, D-36)', () => {
       'Cuscuz, de milho, cozido com sal · 135',
       'Ovo, de galinha, inteiro, cozido/10minutos · 45',
       'Pão, trigo, francês · 50',
-      'Tapioca, com manteiga · 50',
+      // CA-916 (spec conduta-da-nutricionista, D-291): a tapioca com manteiga dá lugar a uma fruta in natura.
+      'Mamão, Papaia, cru · 170',
       'Café, infusão 10% · 50',
     ])
     expect(descrever('lanche')).toEqual([
@@ -139,6 +140,13 @@ describe('repositório das sugestões (CA-243, CA-306, CB-70)', () => {
     const lidas = criarRepositorioSugestoes(arm).ler()
     expect(lidas.almoco).toEqual(nova)
     expect(lidas.jantar).toEqual(SUGESTOES_PADRAO.jantar)
+  })
+
+  it('CB-293 (spec conduta-da-nutricionista): a lista do desjejum que a pessoa salvou com a tapioca fica como ela salvou', () => {
+    const { arm } = memoria()
+    const dela = [{ alimentoId: 551, gramas: 50 }, ...SUGESTOES_PADRAO.desjejum]
+    criarRepositorioSugestoes(arm).salvar('desjejum', dela)
+    expect(criarRepositorioSugestoes(arm).ler().desjejum).toEqual(dela)
   })
 
   it('CA-306: lista vazia continua vazia', () => {
