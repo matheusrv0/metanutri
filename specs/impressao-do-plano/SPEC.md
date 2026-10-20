@@ -206,7 +206,9 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
 - **R-181** · Os nomes para o paciente (seção 2) foram escritos sem a revisão de uma nutricionista. Um nome errado
   confunde a compra; a lista completa está no relatório.
 - **R-182** · A folha e a dieta do link agora diferem no nome e nos gramas. Para igualar, o link teria de mudar junto,
-  e todo link já enviado apareceria como "o plano mudou" uma vez.
+  e todo link já enviado apareceria como "o plano mudou" uma vez. *(Resolvido em 19/10/2026 pela spec
+  `revisao-geral-publica`, D-231: "Meu plano" aplica as regras da folha na hora de desenhar, sobre a cópia guardada,
+  que não muda; nenhum link aparece como "o plano mudou".)*
 - **R-183** · Com os gramas só nas medidas vagas (D-183 e D-189), quem pesa toda a comida (clínica, atleta) não vê o
   peso do arroz ou do pão no papel; ele continua no planejador e no Word. Se uma nutricionista pedir, cabe uma opção
   "Peso em gramas em tudo" na janela de imprimir. A lista do que é vago (D-189) foi decidida sem a nutricionista

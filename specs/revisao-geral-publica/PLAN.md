@@ -1,7 +1,7 @@
 # PLAN — Revisão geral das telas públicas
 
 **Spec de origem:** `./SPEC.md` (D-230 a D-239, CA-740 a CA-759, CB-230 a CB-239)
-**Status:** pedida pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação pelas telas antes de publicar
+**Status:** pedida pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação pelas telas antes de publicar; T1 a T11 feitas em 19/10/2026
 
 ## Abordagem
 
@@ -59,35 +59,35 @@ partes pedem mais do que uma classe:
 
 Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o código.
 
-- [ ] **T1** — SPEC (com o Apêndice A da auditoria) e PLAN. *Verifica:* revisão.
-- [ ] **T2** — Servidor de conta falso e o segundo site de teste (D-233). Primeiro teste: Completar cadastro abre com
+- [x] **T1** — SPEC (com o Apêndice A da auditoria) e PLAN. *Verifica:* revisão.
+- [x] **T2** — Servidor de conta falso e o segundo site de teste (D-233). Primeiro teste: Completar cadastro abre com
   sessão falsa em 390 e 1280 px (CA-758). *Verifica:* `npx playwright test --project servidor-falso`. *Depende de:*
   T1.
-- [ ] **T3** — `paraOPaciente(item: ItemDaDieta): { nome; quantidade: QuantidadeNaFolha }` (D-231). *Testes:* CA-748
+- [x] **T3** — `paraOPaciente(item: ItemDaDieta): { nome; quantidade: QuantidadeNaFolha }` (D-231). *Testes:* CA-748
   (os 22 nomes do exemplo, a partir da cópia feita por `dietaDoPlano`), CA-749 (as quantidades), CA-750 (produto,
   removido, nome que mudou), CB-230 (os 597 nomes da base são únicos), CB-232. *Depende de:* T1.
-- [ ] **T4** — `MeuPlano` desenha com `paraOPaciente`: medida em destaque, peso ao lado só quando `comPeso`, peso
+- [x] **T4** — `MeuPlano` desenha com `paraOPaciente`: medida em destaque, peso ao lado só quando `comPeso`, peso
   sozinho sem medida, nome embaixo. *Testes:* CA-748, CA-749 e CA-752 na tela (TelaMissoesPaciente.test), CA-751 (a
   cópia que a tela recebe não muda). *Depende de:* T3.
-- [ ] **T5** — Link sem internet e `main` (D-232, D-238). `LinkSemConexao`; a fonte do provedor rejeita quando a nuvem
+- [x] **T5** — Link sem internet e `main` (D-232, D-238). `LinkSemConexao`; a fonte do provedor rejeita quando a nuvem
   falha sem cópia (abrir) e quando a nuvem recusa (marcar, sem gravar o aparelho); a tela mostra o erro com "Tentar de
   novo" e desfaz a marca com o aviso. `main` no link e na volta do pagamento. *Testes:* CA-753, CA-754, CA-755,
   CA-756, CB-235, CB-236, CB-239, CA-757. *Depende de:* T1.
-- [ ] **T6** — Rodapé e topo públicos (D-235). *Testes:* CA-740 (estrutura dos itens), CA-741 (classes de 44 px e
+- [x] **T6** — Rodapé e topo públicos (D-235). *Testes:* CA-740 (estrutura dos itens), CA-741 (classes de 44 px e
   `text-left`). *Depende de:* T1.
-- [ ] **T7** — Preços (D-234): tabela a partir de `lg`, cartões abaixo, `h1`, `h2` nos cartões, seletor `h-11
+- [x] **T7** — Preços (D-234): tabela a partir de `lg`, cartões abaixo, `h1`, `h2` nos cartões, seletor `h-11
   sm:h-10`. *Testes:* CA-743 (unidade); CA-742 no navegador (T10). *Depende de:* T1.
-- [ ] **T8** — Telas de conta (D-237): `grid-cols-[minmax(0,1fr)]` no cartão, `[overflow-wrap:anywhere]` no subtítulo
+- [x] **T8** — Telas de conta (D-237): `grid-cols-[minmax(0,1fr)]` no cartão, `[overflow-wrap:anywhere]` no subtítulo
   e no aviso. *Testes:* classes (unidade); CA-744 e CA-745 no navegador (T10). *Depende de:* T1.
-- [ ] **T9** — Avisos do painel do checkout com as cores do tema claro (D-236). *Testes:* o aviso dentro do painel
+- [x] **T9** — Avisos do painel do checkout com as cores do tema claro (D-236). *Testes:* o aviso dentro do painel
   está no escopo `.papel` (unidade); CA-746 e CA-747 no navegador, medindo o contraste (T10). *Depende de:* T1.
-- [ ] **T10** — Testes de navegador (CA-758) e os que precisam de navegador: CA-740, CA-741, CA-742, CA-744, CA-745,
+- [x] **T10** — Testes de navegador (CA-758) e os que precisam de navegador: CA-740, CA-741, CA-742, CA-744, CA-745,
   CA-746, CA-747, CA-748, CA-753, CA-756. *Verifica:* `npx playwright test`. *Depende de:* T2 a T9.
-- [ ] **T10b** — Toque de 44 px nas caixas de aceite e de declaração das telas de conta (CA-759, achado A-21 da
+- [x] **T10b** — Toque de 44 px nas caixas de aceite e de declaração das telas de conta (CA-759, achado A-21 da
   segunda rodada). `CaixaDeclaracao` ganha a área de toque sem mudar o desenho (`py-3 -my-3`). As listas de escolha
   ficam como os campos ao lado (A-22, D-239). *Testes:* classes (unidade); a altura no navegador (e2e). *Depende
   de:* T10.
-- [ ] **T11** — Validação: `npm run check`, `npx playwright test`, `npm run build`; nota na spec `impressao-do-plano`
+- [x] **T11** — Validação: `npm run check`, `npx playwright test`, `npm run build`; nota na spec `impressao-do-plano`
   (R-182 resolvido); prints de antes e depois; relatório. *Depende de:* T10.
 
 ## Riscos e decisões para revisar
