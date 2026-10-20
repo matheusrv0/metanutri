@@ -91,3 +91,18 @@ Na branch inteira, depois das sete frentes e dos itens:
 **Divergências:** o CA-974 e o CA-985 (tela) passaram de primeira: são trava, porque o comportamento já estava certo
 depois do merge. O CA-986 também. Os prints ficam em `rodada-1910/integracao/` (itens a e b, antes das frentes 5 a 7)
 e `rodada-1910/final/` (o estado final, antes = `main` 2eb11db).
+
+### Validação da revisão final (20/10/2026)
+
+Commits: 6d7f3c0 (notas), 304bbe5 (F1), 3beeea4 (F2), 0f72f61 (F3), 88dcfbb (F4), ab5570e (F5). `npm run check` verde
+(237 arquivos, 4.117 testes), `npx playwright test` 227 de 227 em 18 arquivos (porta própria), `npm run build` verde,
+`conferir-publicacao` verde, e `npm run test:seguranca` na pilha local própria 205 de 205 (o teste novo do CB-318).
+
+| Critério | Teste |
+|---|---|
+| CB-316 | `dietaParaPaciente.test.ts` · "CB-316" (4 testes); `MeuPlanoComReceita.test.tsx` · "CB-316" |
+| CB-317 | `folhaComReceita.test.ts` · "CB-317" (3 testes); `dietaComReceita.test.ts` · "CB-317"; `LinhaItem.test.tsx` · "CB-317" |
+| CB-318 | `sqlExclusao.test.ts` · "CB-318" (texto do bloco); `testes/seguranca/exclusao.test.ts` · "CB-318" (Supabase local, a rotina dona de um papel sem acesso ao esquema auth) |
+
+**Divergências:** o teste de banco do CB-318 rodou só depois do código (o de texto foi visto falhando antes). O
+"com um ingrediente que ainda existe" do CB-317 é trava: passou de primeira.
