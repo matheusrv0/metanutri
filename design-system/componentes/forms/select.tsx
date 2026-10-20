@@ -12,7 +12,8 @@ export const SelectTrigger = React.forwardRef<React.ElementRef<typeof SelectPrim
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
-        'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground whitespace-nowrap',
+        // A altura e a letra do Input: 44 px e 16 px no celular, 40 px e 14 px a partir de 640 px (spec integracao-rodada-1910, D-311).
+        'flex h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1.5 text-base text-foreground whitespace-nowrap sm:h-10 sm:text-sm',
         'data-[placeholder]:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
         '[&>span]:line-clamp-1 [&>span]:text-left',
         className,

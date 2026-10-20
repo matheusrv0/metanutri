@@ -142,7 +142,7 @@ export function GavetaCobrir({
             id="refeicao-destino"
             value={refeicaoId}
             onChange={(e) => setRefeicaoId(e.target.value)}
-            className="h-10 rounded-md border border-input bg-card px-3 text-sm"
+            className="h-11 rounded-md border border-input bg-card px-3 text-base sm:h-10 sm:text-sm"
           >
             {plano.refeicoes.map((r) => (
               <option key={r.id} value={r.id}>

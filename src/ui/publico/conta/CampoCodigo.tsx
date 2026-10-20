@@ -31,7 +31,7 @@ export function CampoCodigo({ id, valor, aoMudar, invalido = false, digitos = DI
         value={valor}
         onChange={(e) => aoMudar(soDigitos(e.target.value).slice(0, digitos))}
         aria-invalid={invalido}
-        className="numeros h-12 text-center text-xl font-semibold tracking-[0.3em]"
+        className="numeros h-12 text-center text-xl font-semibold tracking-[0.3em] sm:h-12 sm:text-xl"
       />
     </div>
   )

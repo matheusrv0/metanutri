@@ -357,7 +357,7 @@ function PainelDoLink({
             value={endereco}
             onFocus={(e) => e.currentTarget.select()}
             // No celular o endereço ocupa a linha e Copiar e WhatsApp vão para baixo (spec whatsapp-e-retorno, CA-527).
-            className="w-full min-w-0 rounded-lg border border-border bg-surfacesunken px-3 py-2 text-sm text-foreground sm:w-auto sm:flex-1"
+            className="min-h-11 w-full min-w-0 rounded-lg border border-border bg-surfacesunken px-3 py-2 text-base text-foreground sm:min-h-0 sm:w-auto sm:flex-1 sm:text-sm"
           />
           <Button type="button" variant="outline" onClick={() => aoCopiar(endereco)}>
             {copiado ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}

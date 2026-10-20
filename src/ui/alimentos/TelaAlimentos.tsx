@@ -27,7 +27,7 @@ const NIVEIS: readonly { readonly valor: NivelCompletude; readonly rotulo: strin
 ]
 
 /** As listas de escolha usam o select do navegador, como o paciente da etapa 1 (Decisão 5). */
-const SELECT = 'h-11 w-full rounded-md border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const SELECT = 'h-11 w-full rounded-md border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm'
 
 const SELO: Readonly<Record<NivelCompletude, string>> = {
   completo: 'bg-lightprimary text-primary',
@@ -114,7 +114,7 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
                 onChange={(e) => mudarFiltro(() => setTermo(e.target.value))}
                 placeholder="Buscar por nome: arroz integral, queijo minas…"
                 aria-label="Buscar alimento na tabela"
-                className="h-11 rounded-full pl-10"
+                className="h-11 rounded-full pl-10 sm:h-11"
               />
             </div>
             <div className="flex flex-col gap-1 lg:w-52">

@@ -124,7 +124,7 @@ export function TelaComprovarMatricula({ email, pedido, enviar, aoEnviado, aoDep
               id={`${id}-periodo`}
               value={periodo ?? ''}
               onChange={(e) => setPeriodo(e.target.value ? Number(e.target.value) : null)}
-              className="h-10 rounded-md border border-input bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-11 rounded-md border border-input bg-card px-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10 sm:text-sm"
             >
               <option value="">Escolha</option>
               {PERIODOS.map((p) => (
