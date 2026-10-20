@@ -8,7 +8,6 @@ import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
-import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
@@ -246,13 +245,6 @@ export function TelaPaciente({
           </div>
           <EvolucaoPeso pontos={evolucao} />
         </Card>
-
-        {paciente.restricoes.trim() ? (
-          <Alert variant="info">
-            <UserRound aria-hidden="true" />
-            <p>As restrições desta ficha já filtram as sugestões do cobrir nos planos deste paciente.</p>
-          </Alert>
-        ) : null}
       </div>
     </div>
   )

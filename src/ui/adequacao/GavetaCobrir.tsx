@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { medidaParaMostrar } from '@/domain/busca.ts'
+import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
@@ -114,7 +115,8 @@ export function GavetaCobrir({
       >
         <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
-          {resultado ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
+          {/* CA-791: a falta com a mesma precisão da tabela da etapa 3 ("244 mg", não "243,60 mg"). */}
+          {resultado ? `Faltam ${quantidadeNoPlano(resultado.falta)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
         </SheetDescription>
 
         <div className="flex flex-col gap-3 border border-border bg-muted p-4">

@@ -14,6 +14,13 @@ const montar = () => {
   return userEvent.setup()
 }
 
+describe('Texto-guia (spec revisao-geral-trabalho, CA-791)', () => {
+  it('diz "colheres", no plural', () => {
+    montar()
+    expect(screen.getByRole('combobox', { name: 'Adicionar alimento' }).getAttribute('placeholder')).toMatch(/2 colheres de sopa/)
+  })
+})
+
 describe('Conteúdo com o campo vazio (CA-307)', () => {
   it('aparece com o campo vazio e some enquanto se digita', async () => {
     render(

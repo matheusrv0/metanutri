@@ -51,6 +51,18 @@ describe('Cartão do link de missões', () => {
     expect(screen.queryByRole('button', { name: /Gerar link/ })).not.toBeInTheDocument()
   })
 
+  it('CA-792 (spec revisao-geral-trabalho): o pedido de autorização não mostra caminho de arquivo', async () => {
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Gerar link do paciente' }))
+    expect(screen.getByText('Antes de gerar: o paciente autorizou?')).toBeInTheDocument()
+    expect(screen.queryByText(/docs\/|\.md/)).not.toBeInTheDocument()
+    expect(document.querySelector('code')).toBeNull()
+  })
+
   it('com plano montado e sem link, diz quantas missões saem dali', () => {
     render(
       <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>

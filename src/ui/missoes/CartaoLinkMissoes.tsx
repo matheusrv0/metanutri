@@ -194,7 +194,7 @@ export function CartaoLinkMissoes({
             </p>
             <p className="mt-2 text-sm text-foreground">
               O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Quem colhe a autorização é você, o
-              nutricionista — o MetaNutri só guarda. Há um texto pronto em <code>docs/lgpd-rascunhos.md</code>.
+              nutricionista — o MetaNutri só guarda.
             </p>
             {/* CA-542: o link passa a levar o plano alimentar, e quem autoriza precisa saber. */}
             {dietaVai ? <p className="mt-2 text-sm text-foreground">Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.</p> : null}

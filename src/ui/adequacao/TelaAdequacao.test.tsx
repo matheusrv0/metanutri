@@ -143,6 +143,12 @@ describe('Etapa 3: adequação', () => {
     expect(gaveta.getByText(/Faltam .* mg para a meta/)).toBeInTheDocument()
   })
 
+  it('CA-791 (spec revisao-geral-trabalho): a falta com a precisão da tabela, sem duas casas', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    const gaveta = await abrirCobrir(usuario, 'Cálcio')
+    expect(gaveta.getByText(/^Faltam \d[\d.]* mg para a meta\./)).toBeInTheDocument()
+  })
+
   it('CA-34 a CA-36: sugestões trazem porção, cobertura e kcal', async () => {
     const usuario = montar(adulta, planoComArroz())
     const gaveta = await abrirCobrir(usuario, 'Ferro')

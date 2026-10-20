@@ -26,6 +26,14 @@ const semCalculo = () => expect(painel().queryByText(/kg\/m²/)).not.toBeInTheDo
 
 const adulta = { sexo: 'F', idadeAnos: 28, pesoKg: 68, estaturaCm: 165 } as const
 
+describe('Observações sem repetir o título (spec revisao-geral-trabalho, CA-791)', () => {
+  it('"Observações" aparece uma vez, e o campo continua achável pelo nome', () => {
+    montar({ ...adulta, observacoes: 'Anotação' })
+    expect(screen.getAllByText('Observações', { ignore: '.sr-only' })).toHaveLength(1)
+    expect(screen.getByLabelText('Observações')).toHaveValue('Anotação')
+  })
+})
+
 describe('Etapa 1: dados do caso', () => {
   it('CA-01: mostra todos os campos do cabeçalho do estágio', () => {
     montar()

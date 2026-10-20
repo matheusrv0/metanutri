@@ -86,7 +86,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapid
             setSelecionado(0)
           }}
           onKeyDown={aoTeclar}
-          placeholder="150 arroz integral ou 2 colher de sopa feijão…"
+          placeholder="150 arroz integral ou 2 colheres de sopa de feijão…"
           className="pl-10"
         />
       </div>
