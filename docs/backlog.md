@@ -44,7 +44,7 @@ motivo — decisão sua ou risco clínico.
 | B-29 | Composição corporal: dobras cutâneas por protocolo e bioimpedância | revisão de produto, 15/09 | MVP+ | M | B-05 | **pronto** |
 | B-30 | Restrições e alergias no paciente, filtrando as sugestões do cobrir | revisão de produto, 15/09 | MVP+ | P | B-21 | **pronto** |
 | B-31 | Favoritos de alimentos e ordenação por uso | revisão de produto, 15/09 | MVP+ | P | — | **pronto** |
-| B-32 | Preparações e receitas com ingredientes, rendimento e valor por porção | revisão de produto, 15/09 | MVP+ | M | — | ideia |
+| B-32 | Preparações e receitas com ingredientes, rendimento e valor por porção | revisão de produto, 15/09 | MVP+ | M | — | **pronto** em 19/10/2026 (spec `receitas-com-calculo`), à espera da aprovação pelas telas |
 | B-33 | Marca do profissional nos documentos: logo, cor e assinatura digitalizada | revisão de produto, 15/09 | SaaS | P | B-19 | parcial: logo e linha de responsabilidade na folha do paciente; cor da marca não |
 | B-34 | Painel inicial com pendências do dia, planos recentes e os dois botões de criação | revisão de produto, 15/09 | SaaS | P | B-21 | **pronto** |
 | B-35 | LGPD: consentimento, exportação, exclusão de conta e registro de acesso a dado de paciente | revisão de produto, 15/09 | SaaS | M | B-21 | obrigatória antes de dado real (docs/pendencias.md) |

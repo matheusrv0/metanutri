@@ -49,9 +49,12 @@ const PREFERENCIA_MEDIDAS = [
 const ERRO_MAXIMO = 0.15
 const QUANTIDADE_MAXIMA = 8
 
-const FEMININOS = new Set(['unidade', 'fatia', 'colher', 'concha', 'xícara', 'escumadeira', 'banda', 'metade', 'rodela', 'posta', 'coxa', 'sobrecoxa', 'folha', 'espiga'])
+// "porção" entrou com as receitas (spec receitas-com-calculo): "meia porção". Nenhum alimento escolhe "porção" como
+// medida (não está em PREFERENCIA_MEDIDAS).
+const FEMININOS = new Set(['unidade', 'fatia', 'colher', 'concha', 'xícara', 'escumadeira', 'banda', 'metade', 'rodela', 'posta', 'coxa', 'sobrecoxa', 'folha', 'espiga', 'porção'])
 
-function plural(nome: string): string {
+/** "unidade" → "unidades", "colher de sopa" → "colheres de sopa", "porção" → "porções". */
+export function pluralDaMedida(nome: string): string {
   const [primeira = '', ...resto] = nome.split(' ')
   const p = (w: string) =>
     w.endsWith('ão') ? `${w.slice(0, -2)}ões` : /[rz]$/.test(w) ? `${w}es` : w.endsWith('l') ? `${w.slice(0, -1)}is` : `${w}s`
@@ -67,7 +70,7 @@ export function formatarQuantidadeMedida(quantidade: number, medida: string): st
   const inteiro = Math.floor(quantidade)
   const temMeia = quantidade - inteiro === 0.5
   if (inteiro === 0 && temMeia) return `${meia} ${medida}`
-  const nome = inteiro >= 2 ? plural(medida) : medida
+  const nome = inteiro >= 2 ? pluralDaMedida(medida) : medida
   // "1 concha e meia", "2 fatias e meia"
   return temMeia ? `${inteiro} ${nome} e ${meia}` : `${inteiro} ${nome}`
 }

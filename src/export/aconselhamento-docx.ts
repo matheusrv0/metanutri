@@ -5,6 +5,7 @@ import type { ResultadoAntropometria } from '../domain/antropometria.ts'
 import { medidaEquivalente } from '../domain/busca.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
@@ -33,12 +34,40 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
 }
 
 /** "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). */
-export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
-  const alimento = buscar(item.alimentoId)
-  if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
-  const quantidade = medida ? medida.texto : `${formatarNumeroDocx(item.gramas, 0)} g`
+function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento): string {
+  const alimento = buscar(alimentoId)
+  if (!alimento) throw new Error(`Alimento ${alimentoId} não existe na tabela.`)
+  const medida = medidaEquivalente(alimentoId, gramas)
+  const quantidade = medida ? medida.texto : `${formatarNumeroDocx(gramas, 0)} g`
   return `${alimento.descricao} (${quantidade})`
+}
+
+/**
+ * "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). Spec receitas-com-calculo,
+ * CA-886: a receita sai "Panqueca de banana (1 unidade · 120 g)"; sem meia porção que feche, só o peso.
+ */
+export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
+  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar)
+  const receita = receitaDoItem(item)
+  const peso = `${formatarNumeroDocx(item.gramas, 0)} g`
+  const porcao = receita ? textoDaPorcao(receita, item.gramas) : null
+  return `${nomeDaReceita(receita)} (${porcao ? `${porcao} · ${peso}` : peso})`
+}
+
+/** CA-887: cada receita do plano com o rendimento, os ingredientes da receita inteira e o modo de preparo. */
+function blocoReceitasDoPlano(plano: Plano, buscar: BuscarAlimento): Paragraph[] {
+  return receitasDoPlano(plano).flatMap((r) => {
+    // Ingrediente que sumiu da base não derruba o documento (CB-271).
+    const ingredientes = r.ingredientes
+      .filter((i) => i.gramas > 0)
+      .map((i) => (buscar(i.alimentoId) ? descreverAlimento(i.alimentoId, i.gramas, buscar) : `Alimento removido (${formatarNumeroDocx(i.gramas, 0)} g)`))
+    const preparo = r.preparo.trim()
+    return [
+      new Paragraph({ spacing: { before: 160, after: 40 }, children: [new TextRun({ text: nomeDaReceita(r), bold: true }), new TextRun({ text: ` · ${textoDoRendimento(r)}` })] }),
+      paragrafo(`Ingredientes: ${ingredientes.join('; ')}`),
+      ...(preparo ? [paragrafo('Modo de preparo:'), ...blocoTexto(preparo)] : []),
+    ]
+  })
 }
 
 export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento): string {
@@ -129,7 +158,14 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
     new Paragraph({ text: '' }),
   ])
 
-  const receitas = dados.comReceitas === false ? [] : [subtitulo('RECEITAS SAUDÁVEIS'), ...blocoTexto(dados.receitas)]
+  // CA-887: as receitas do plano saem para todos; o texto livre e o título do estágio seguem o CA-235.
+  const receitasDoPlanoNoWord = blocoReceitasDoPlano(plano, buscar)
+  const receitas =
+    dados.comReceitas === false
+      ? receitasDoPlanoNoWord.length > 0
+        ? [subtitulo('RECEITAS'), ...receitasDoPlanoNoWord]
+        : []
+      : [subtitulo('RECEITAS SAUDÁVEIS'), ...receitasDoPlanoNoWord, ...(receitasDoPlanoNoWord.length > 0 && !texto(dados.receitas).trim() ? [] : blocoTexto(dados.receitas))]
   const data = new Paragraph({ spacing: { before: 480 }, children: [new TextRun('Data: ____/____/________')] })
   const assinaturas =
     nutricionista === null

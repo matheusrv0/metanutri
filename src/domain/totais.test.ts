@@ -1,3 +1,5 @@
+import { ID_DE_RECEITA } from './receitaNoPlano.ts'
+import { itemDeReceita, KCAL_DA_PANQUECA, PANQUECA, VITAMINA_C_DA_PANQUECA } from './receitas.test-utils.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { totaisDeItens, totaisDoPlano } from './totais.ts'
 import type { ItemPlano, Plano, Refeicao } from './tipos.ts'
@@ -67,5 +69,63 @@ describe('totaisDoPlano', () => {
 
   it('CB-05: plano sem refeições dá zero', () => {
     expect(totaisDoPlano({ refeicoes: [] }, buscarAlimento).nutrientes.energia_kcal.total).toBe(0)
+  })
+})
+
+describe('receita no plano (spec receitas-com-calculo)', () => {
+  it('CA-874: a receita soma pelos ingredientes, na proporção das gramas', () => {
+    const uma = totaisDeItens([itemDeReceita('a', 120)], buscarAlimento)
+    expect(uma.nutrientes.energia_kcal.total).toBeCloseTo(KCAL_DA_PANQUECA, 6)
+    expect(uma.nutrientes.vitamina_c_mg.total).toBeCloseTo(VITAMINA_C_DA_PANQUECA, 6)
+    expect(uma.itens).toBe(1)
+    const duas = totaisDeItens([itemDeReceita('a', 240)], buscarAlimento)
+    expect(duas.nutrientes.energia_kcal.total).toBeCloseTo(2 * KCAL_DA_PANQUECA, 6)
+  })
+
+  it('CA-874: soma junto com os alimentos soltos', () => {
+    const t = totaisDeItens([itemDeReceita('a', 120), item('b', 1, 100)], buscarAlimento)
+    expect(t.nutrientes.energia_kcal.total).toBeCloseTo(KCAL_DA_PANQUECA + 123.5349, 6)
+    expect(t.itens).toBe(2)
+  })
+
+  it('CA-875: ingrediente sem o nutriente conta na marca †, e o dos outros entra', () => {
+    const t = totaisDeItens([itemDeReceita('a', 120)], buscarAlimento)
+    // Vitamina C: o ovo não tem dado; banana e aveia somam.
+    expect(t.nutrientes.vitamina_c_mg.semDado).toBe(1)
+    // Vitamina A: só a banana tem.
+    expect(t.nutrientes.vitamina_a_rae_mcg.semDado).toBe(2)
+    expect(t.nutrientes.vitamina_a_rae_mcg.total).toBeCloseTo((16.2083 * 1.5) / 2, 6)
+    expect(t.nutrientes.energia_kcal.semDado).toBe(0)
+  })
+
+  it('CB-271: ingrediente que não existe mais conta como sem dado em tudo, sem quebrar', () => {
+    const comRemovido = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_999, gramas: 20 }], pesoProntoG: null }
+    const t = totaisDeItens([itemDeReceita('a', 150, comRemovido)], buscarAlimento)
+    expect(t.nutrientes.energia_kcal.semDado).toBe(1)
+    expect(t.nutrientes.energia_kcal.total).toBeGreaterThan(0)
+  })
+
+  it('CB-272: receita com 0 g não soma nem conta', () => {
+    const t = totaisDeItens([itemDeReceita('a', 0)], buscarAlimento)
+    expect(t.itens).toBe(0)
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 0, semDado: 0 })
+  })
+
+  it('CB-273: cópia estragada conta como sem dado em todo nutriente, sem quebrar', () => {
+    const estragado = { id: 'a', alimentoId: ID_DE_RECEITA, gramas: 100, receita: { nome: 'X' } } as unknown as ItemPlano
+    const t = totaisDeItens([estragado], buscarAlimento)
+    expect(t.itens).toBe(1)
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 0, semDado: 1 })
+    expect(t.nutrientes.ferro_mg.semDado).toBe(1)
+  })
+
+  it('CB-273 (rodada da revisão): cópia sem ingrediente com gramas leva a marca †, nunca soma zero em silêncio', () => {
+    const t = totaisDeItens([itemDeReceita('a', 100, { ...PANQUECA, ingredientes: [], pesoProntoG: 100 })], buscarAlimento)
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 0, semDado: 1 })
+  })
+
+  it('CA-874: receita em substituto não soma no dia', () => {
+    const plano: Plano = { refeicoes: [refeicao('cafe', [item('a', 1, 100)], [itemDeReceita('s', 120)])] }
+    expect(totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total).toBeCloseTo(123.5349, 6)
   })
 })

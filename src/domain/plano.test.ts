@@ -1,5 +1,8 @@
+import { ID_DE_RECEITA } from './receitaNoPlano.ts'
+import { PANQUECA } from './receitas.test-utils.ts'
 import {
   adicionarItem,
+  adicionarReceita,
   adicionarRefeicao,
   atualizarGramas,
   criarPlanoPadrao,
@@ -120,5 +123,32 @@ describe('operações de item', () => {
   it('editar item inexistente é erro', () => {
     const plano = criarPlanoPadrao(gerador())
     expect(() => atualizarGramas(plano, refeicao(plano, 'Almoço').id, 'principal', 'x', 10)).toThrow(/x/)
+  })
+})
+
+describe('receita na refeição (spec receitas-com-calculo, D-273)', () => {
+  it('põe a cópia da receita no item, com o id de receita e as gramas servidas', () => {
+    const id = gerador()
+    const plano = criarPlanoPadrao(id)
+    const cafe = refeicao(plano, 'Desjejum').id
+    const comReceita = adicionarReceita(plano, cafe, 'principal', { receita: PANQUECA, gramas: 120 }, id)
+    const [item] = refeicao(comReceita, 'Desjejum').opcoes.principal
+    expect(item).toEqual({ id: expect.any(String) as string, alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
+  })
+
+  it('mudar as gramas guarda a cópia', () => {
+    const id = gerador()
+    const plano = criarPlanoPadrao(id)
+    const cafe = refeicao(plano, 'Desjejum').id
+    const comReceita = adicionarReceita(plano, cafe, 'principal', { receita: PANQUECA, gramas: 120 }, id)
+    const itemId = refeicao(comReceita, 'Desjejum').opcoes.principal[0]?.id ?? ''
+    const editado = atualizarGramas(comReceita, cafe, 'principal', itemId, 240)
+    expect(refeicao(editado, 'Desjejum').opcoes.principal[0]).toMatchObject({ gramas: 240, receita: PANQUECA })
+  })
+
+  it('CB-04: recusa quantidade negativa', () => {
+    const id = gerador()
+    const plano = criarPlanoPadrao(id)
+    expect(() => adicionarReceita(plano, refeicao(plano, 'Desjejum').id, 'principal', { receita: PANQUECA, gramas: -1 }, id)).toThrow(RangeError)
   })
 })

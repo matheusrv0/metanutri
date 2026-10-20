@@ -1,4 +1,5 @@
 // Totais de nutrientes de uma lista de itens e do plano (SPEC CA-32, CA-43, CB-04, CB-05).
+import { ehItemDeReceita, ingredientesNaQuantidade, receitaDoItem } from './receitaNoPlano.ts'
 import type { BuscarAlimento, ChaveNutrienteAlimento, ItemPlano, Plano } from './tipos.ts'
 
 export const CHAVES_NUTRIENTES: readonly ChaveNutrienteAlimento[] = [
@@ -50,6 +51,26 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
       throw new RangeError(`Quantidade inválida (${item.gramas} g) no item ${item.id}.`)
     }
     if (item.gramas === 0) continue
+    // Spec receitas-com-calculo: a receita soma pelos ingredientes, na quantidade servida (CA-874). Ingrediente sem o
+    // nutriente, que não existe mais ou cópia estragada contam como sem dado, nunca como zero (D-275, CB-271, CB-273).
+    if (ehItemDeReceita(item)) {
+      contados++
+      const receita = receitaDoItem(item)
+      if (receita === null) {
+        for (const chave of CHAVES_NUTRIENTES) semDado[chave]++
+        continue
+      }
+      for (const ingrediente of ingredientesNaQuantidade(receita, item.gramas)) {
+        if (!(ingrediente.gramas > 0)) continue
+        const alimento = buscar(ingrediente.alimentoId)
+        for (const chave of CHAVES_NUTRIENTES) {
+          const valor = alimento?.nutrientes[chave] ?? null
+          if (valor === null) semDado[chave]++
+          else total[chave] += (valor * ingrediente.gramas) / 100
+        }
+      }
+      continue
+    }
     const alimento = buscar(item.alimentoId)
     if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
     contados++

@@ -1,15 +1,24 @@
 import { Plus, Search } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { buscarAlimentos, GRAMAS_PADRAO, type ResultadoBusca } from '@/domain/busca.ts'
+import { buscarAlimentos, type ResultadoBusca } from '@/domain/busca.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
-import { alimentosComProdutos } from '@/domain/tabelas.ts'
+import { ID_DE_RECEITA, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
+import { buscarReceitas, copiaParaOPlano, type Receita, type ResultadoReceita } from '@/domain/receitas.ts'
+import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
+import { totaisDeItens } from '@/domain/totais.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '@ds/componentes/forms/input.tsx'
+import { useReceitas } from '../estado/usarReceitas.ts'
 
 interface EntradaRapidaProps {
   readonly rotulo: string
   readonly aoAdicionar: (alimentoId: number, gramas: number) => void
+  /**
+   * Põe uma receita da conta (spec receitas-com-calculo, D-274). Sem ele, a busca mostra só alimentos: é assim no
+   * editor de receita e na janela de substituto.
+   */
+  readonly aoAdicionarReceita?: ((receita: Receita, gramas: number) => void) | undefined
   /** Aparece embaixo do campo enquanto ele está vazio, como as sugestões da refeição (CA-307). */
   readonly quandoVazio?: ReactNode
 }
@@ -18,6 +27,16 @@ interface EntradaRapidaProps {
 const kcalDe = (r: ResultadoBusca, gramas: number): string => {
   const porCem = r.alimento.nutrientes.energia_kcal
   return porCem === null ? '— kcal' : `${formatarNumero((porCem * gramas) / 100, 0)} kcal`
+}
+
+/** "1 unidade · 120 g · 204 kcal": a porção (quando fecha em meias medidas), o peso e as kcal pelos ingredientes. */
+function quantidadeDaReceita(r: ResultadoReceita): string {
+  if (r.gramas === null) return r.aviso ?? 'medida indisponível'
+  const copia = copiaParaOPlano(r.receita)
+  const energia = totaisDeItens([{ id: 'busca', alimentoId: ID_DE_RECEITA, gramas: r.gramas, receita: copia }], buscarAlimento).nutrientes.energia_kcal
+  const kcal = energia.semDado > 0 && energia.total === 0 ? '— kcal' : `${formatarNumero(energia.total, 0)} kcal`
+  const porcao = textoDaPorcao(copia, r.gramas)
+  return [porcao, `${formatarNumero(r.gramas, 0)} g`, kcal].filter(Boolean).join(' · ')
 }
 
 /** Diz, na hora de escolher, o quanto a tabela sabe sobre este alimento. */
@@ -35,29 +54,51 @@ function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['al
   )
 }
 
+/** Uma linha da lista: um alimento da tabela ou uma receita da conta. */
+type Opcao = { readonly tipo: 'alimento'; readonly r: ResultadoBusca } | { readonly tipo: 'receita'; readonly r: ResultadoReceita }
+
+const chaveDa = (o: Opcao): string => (o.tipo === 'alimento' ? `a-${o.r.alimento.id}` : `r-${o.r.receita.id}`)
+
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
-export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapidaProps) {
+export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio }: EntradaRapidaProps) {
   const [texto, setTexto] = useState('')
   const [selecionado, setSelecionado] = useState(0)
   const idLista = useId()
+  const { lista: receitas } = useReceitas()
 
   const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos()), [texto])
-  const escolhido = resultados[Math.min(selecionado, resultados.length - 1)]
-  const semResultado = texto.trim() !== '' && resultados.length === 0
+  // D-274: só onde a receita pode entrar (a refeição); a que começa pelo termo vem antes dos alimentos.
+  const daReceita = useMemo(
+    () => (aoAdicionarReceita ? buscarReceitas(texto, receitas, resultados.map((r) => r.alimento)) : []),
+    [aoAdicionarReceita, texto, receitas, resultados],
+  )
+  const opcoes: readonly Opcao[] = [
+    ...daReceita.filter((r) => r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
+    ...resultados.map((r): Opcao => ({ tipo: 'alimento', r })),
+    ...daReceita.filter((r) => !r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
+  ]
+  const escolhido = opcoes[Math.min(selecionado, opcoes.length - 1)]
+  const avisoDaBusca = daReceita.length > 0 ? null : aviso
+  const semResultado = texto.trim() !== '' && opcoes.length === 0
 
-  const adicionar = (r: ResultadoBusca | undefined) => {
-    if (!r) return
-    // CB-07: medida que não existe para o alimento não vira grama inventada.
-    if (r.gramas === null) return
-    aoAdicionar(r.alimento.id, r.gramas)
+  const limpar = () => {
     setTexto('')
     setSelecionado(0)
+  }
+
+  const adicionar = (o: Opcao | undefined) => {
+    if (!o) return
+    // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada.
+    if (o.r.gramas === null) return
+    if (o.tipo === 'receita') aoAdicionarReceita?.(o.r.receita, o.r.gramas)
+    else aoAdicionar(o.r.alimento.id, o.r.gramas)
+    limpar()
   }
 
   const aoTeclar = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelecionado((i) => Math.min(i + 1, resultados.length - 1))
+      setSelecionado((i) => Math.min(i + 1, opcoes.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelecionado((i) => Math.max(i - 1, 0))
@@ -65,8 +106,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapid
       e.preventDefault()
       adicionar(escolhido)
     } else if (e.key === 'Escape') {
-      setTexto('')
-      setSelecionado(0)
+      limpar()
     }
   }
 
@@ -77,7 +117,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapid
         <Input
           role="combobox"
           aria-label={rotulo}
-          aria-expanded={resultados.length > 0}
+          aria-expanded={opcoes.length > 0}
           aria-controls={idLista}
           aria-autocomplete="list"
           value={texto}
@@ -93,21 +133,20 @@ export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapid
 
       {texto.trim() === '' ? quandoVazio : null}
 
-      {aviso ? <p className="text-xs text-warningtext">{aviso}</p> : null}
-      {semResultado && !aviso ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}
+      {avisoDaBusca ? <p className="text-xs text-warningtext">{avisoDaBusca}</p> : null}
+      {semResultado && !avisoDaBusca ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}
 
-      {resultados.length > 0 ? (
+      {opcoes.length > 0 ? (
         <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col border border-borderdefault bg-card">
-          {resultados.map((r, i) => {
-            const gramas = r.gramas ?? GRAMAS_PADRAO
-            const atual = r === escolhido
+          {opcoes.map((o, i) => {
+            const atual = o === escolhido
             return (
-              <li key={r.alimento.id}>
+              <li key={chaveDa(o)}>
                 <button
                   type="button"
                   role="option"
                   aria-selected={atual}
-                  onClick={() => adicionar(r)}
+                  onClick={() => adicionar(o)}
                   onMouseEnter={() => setSelecionado(i)}
                   className={cn(
                     'flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left text-sm transition-colors last:border-0',
@@ -116,13 +155,26 @@ export function EntradaRapida({ rotulo, aoAdicionar, quandoVazio }: EntradaRapid
                   )}
                 >
                   <Plus className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate">{r.alimento.descricao}</span>
-                  <MarcaDeCompletude alimento={r.alimento} />
-                  <span className="numeros shrink-0 text-xs text-muted-foreground">
-                    {r.gramas === null
-                      ? r.aviso ?? 'medida indisponível'
-                      : `${formatarNumero(gramas, 0)} g${r.medida ? ` · ${r.medida.quantidade} ${r.medida.nome}` : ''} · ${kcalDe(r, gramas)}`}
-                  </span>
+                  {o.tipo === 'receita' ? (
+                    // No celular, o nome numa linha e "Receita" com a quantidade embaixo: o nome não some.
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                      <span className="min-w-0 truncate sm:flex-1">{o.r.receita.nome}</span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="rotulo shrink-0 text-muted-foreground">Receita</span>
+                        <span className="numeros min-w-0 truncate text-xs text-muted-foreground">{quantidadeDaReceita(o.r)}</span>
+                      </span>
+                    </span>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 truncate">{o.r.alimento.descricao}</span>
+                      <MarcaDeCompletude alimento={o.r.alimento} />
+                      <span className="numeros shrink-0 text-xs text-muted-foreground">
+                        {o.r.gramas === null
+                          ? o.r.aviso ?? 'medida indisponível'
+                          : `${formatarNumero(o.r.gramas, 0)} g${o.r.medida ? ` · ${o.r.medida.quantidade} ${o.r.medida.nome}` : ''} · ${kcalDe(o.r, o.r.gramas)}`}
+                      </span>
+                    </>
+                  )}
                 </button>
               </li>
             )

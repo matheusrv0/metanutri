@@ -99,6 +99,8 @@ export const CHAVES_DE_DADOS = [
   // Spec anamnese-e-prescricoes: o roteiro de anamnese (D-161) e os modelos de suplemento (D-166) da conta.
   'metanutri:roteiro-anamnese',
   'metanutri:modelos-suplemento',
+  // Spec receitas-com-calculo, D-272: a biblioteca de receitas da conta.
+  'metanutri:receitas',
 ] as const
 
 export interface Backup {

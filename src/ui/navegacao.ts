@@ -42,6 +42,8 @@ export type Rota =
   | { readonly tela: 'paciente'; readonly pacienteId: string; readonly campo?: 'telefone' }
   | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
+  // Spec receitas-com-calculo, D-272: a biblioteca de receitas da conta.
+  | { readonly tela: 'receitas' }
   | { readonly tela: 'config' }
   | { readonly tela: 'ajuda' }
   | { readonly tela: 'designsystem' }
@@ -77,6 +79,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'conta') return { tela: 'conta' }
   if (tela === 'alimentos') return { tela: 'alimentos' }
   if (tela === 'produtos') return { tela: 'produtos' }
+  if (tela === 'receitas') return { tela: 'receitas' }
   if (tela === 'config') return { tela: 'config' }
   if (tela === 'ajuda') return { tela: 'ajuda' }
   if (tela === 'design-system') return { tela: 'designsystem' }
@@ -139,6 +142,8 @@ export function escreverRota(rota: Rota): string {
       return '#/alimentos'
     case 'produtos':
       return '#/produtos'
+    case 'receitas':
+      return '#/receitas'
     case 'config':
       return '#/config'
     case 'ajuda':

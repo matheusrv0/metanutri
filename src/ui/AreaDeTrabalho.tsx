@@ -54,6 +54,7 @@ import { AvisoDoEstudante } from './painel/AvisoEstudante.tsx'
 import { TelaPainel } from './painel/TelaPainel.tsx'
 import { TelaPlano } from './plano/TelaPlano.tsx'
 import { TelaProdutos } from './produtos/TelaProdutos.tsx'
+import { TelaReceitas } from './receitas/TelaReceitas.tsx'
 import { Redirecionar } from './Redirecionar.tsx'
 import { FaixaResumo } from './resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './resumo/ResumoDoDia.tsx'
@@ -322,6 +323,14 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     return (
       <Estrutura {...base} titulo="Meus produtos">
         <TelaProdutos />
+      </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'receitas') {
+    return (
+      <Estrutura {...base} titulo="Receitas">
+        <TelaReceitas />
       </Estrutura>
     )
   }

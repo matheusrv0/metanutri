@@ -1,18 +1,20 @@
-import { Fragment } from 'react'
+import { Fragment, useId } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
   comprasDaFolha,
+  linhaDaFolha,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  receitasDaFolha,
   TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
   type OpcoesImpressao,
+  type ReceitaDaFolha,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
@@ -68,14 +70,43 @@ function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) 
 function Itens({ itens }: { readonly itens: readonly ItemPlano[] }) {
   return (
     <ul className="flex flex-col gap-1">
-      {itens.map((item) => (
-        <li key={item.id} className={COLUNAS}>
-          <span className="font-medium text-heading">{nomeParaPaciente(buscarAlimento(item.alimentoId))}</span>
-          <span className="sr-only">, </span>
-          <Quantidade quantidade={quantidadeNaFolha(item.alimentoId, item.gramas, buscarAlimento)} />
-        </li>
-      ))}
+      {itens.map((item) => {
+        // Spec receitas-com-calculo, CA-879: a receita sai pelo nome dela, com a porção e o peso.
+        const linha = linhaDaFolha(item, buscarAlimento)
+        return (
+          <li key={item.id} className={COLUNAS}>
+            <span className="font-medium text-heading">{linha.nome}</span>
+            <span className="sr-only">, </span>
+            <Quantidade quantidade={linha.quantidade} />
+          </li>
+        )
+      })}
     </ul>
+  )
+}
+
+/**
+ * Uma receita na seção "Receitas" (spec receitas-com-calculo, CA-880): o nome, o rendimento, os ingredientes da receita
+ * inteira pela regra da lista de compras e o modo de preparo. Não se parte entre duas páginas.
+ */
+function ReceitaNaFolha({ receita }: { readonly receita: ReceitaDaFolha }) {
+  const id = useId()
+  return (
+    <article aria-labelledby={id} className="flex break-inside-avoid flex-col gap-1 pt-1">
+      <h4 id={id} className="font-bold text-heading">
+        {receita.nome}
+      </h4>
+      <p className="numeros text-muted-foreground">{receita.rendimento}</p>
+      <ul className="flex flex-col">
+        {receita.ingredientes.map((i, n) => (
+          <li key={`${n}-${i.nome}`}>
+            {`${i.nome} — `}
+            <Quantidade quantidade={i.quantidade} />
+          </li>
+        ))}
+      </ul>
+      {receita.preparo ? <p className="whitespace-pre-wrap">{receita.preparo}</p> : null}
+    </article>
   )
 }
 
@@ -113,6 +144,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()
   const receitas = caso.receitas.trim()
+  const receitasCalculadas = receitasDaFolha(plano, buscarAlimento)
   const suplementosDaFolha = suplementosParaDocumento(suplementos)
 
   return (
@@ -188,10 +220,14 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           </section>
         ) : null}
 
-        {receitas ? (
+        {receitasCalculadas.length > 0 || receitas ? (
           <section aria-label="Receitas" className="flex flex-col gap-1.5">
             <h3 className="font-titulo text-lg font-bold text-heading">Receitas</h3>
-            <p className="whitespace-pre-wrap">{caso.receitas}</p>
+            {/* Spec receitas-com-calculo, CA-880: cada receita do plano inteira; o texto livre antigo vem depois. */}
+            {receitasCalculadas.map((r, i) => (
+              <ReceitaNaFolha key={`${i}-${r.nome}`} receita={r} />
+            ))}
+            {receitas ? <p className="whitespace-pre-wrap">{caso.receitas}</p> : null}
           </section>
         ) : null}
 

@@ -118,10 +118,38 @@ export type OpcaoId = 'principal' | 'substituto1' | 'substituto2'
 
 export const OPCOES: readonly OpcaoId[] = ['principal', 'substituto1', 'substituto2']
 
-export interface ItemPlano {
-  readonly id: string
+/** Um ingrediente de receita: um alimento da base (ou de "Meus produtos") e o peso usado na receita inteira. */
+export interface IngredienteReceita {
   readonly alimentoId: number
   readonly gramas: number
+}
+
+/**
+ * A cópia da receita que o item do plano guarda (spec receitas-com-calculo, D-273): mudar ou excluir a receita da
+ * biblioteca depois não muda o plano.
+ */
+export interface ReceitaDoPlano {
+  /** A receita da biblioteca de onde a cópia saiu; só referência, nunca relida. */
+  readonly origemId: string
+  readonly nome: string
+  readonly ingredientes: readonly IngredienteReceita[]
+  /** Quantas porções a receita inteira rende (D-271). */
+  readonly porcoes: number
+  /** Como a porção se chama: "unidade", "fatia", "porção"… */
+  readonly nomeDaPorcao: string
+  /** O peso da receita pronta; `null` = a soma dos ingredientes. */
+  readonly pesoProntoG: number | null
+  readonly preparo: string
+}
+
+export interface ItemPlano {
+  readonly id: string
+  /** Na receita, `ID_DE_RECEITA` (0): nenhum alimento da base tem esse id. */
+  readonly alimentoId: number
+  /** Na receita, o peso da receita pronta servida. */
+  readonly gramas: number
+  /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
+  readonly receita?: ReceitaDoPlano
 }
 
 export interface Refeicao {

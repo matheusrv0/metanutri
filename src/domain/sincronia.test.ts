@@ -7,7 +7,11 @@ import { nuvemFalsa, type NuvemFalsa } from './nuvemFalsa.test-utils.ts'
 import { criarRepositorioPacientes } from './pacientes.ts'
 import { gravarPerfil, lerPerfil, PERFIL_VAZIO, type Backup } from './perfil.ts'
 import { criarRepositorio, type ArmazenamentoListavel } from './persistencia.ts'
+import { adicionarReceita } from './plano.ts'
 import { criarRepositorioProdutos } from './produtos.ts'
+import { copiaParaOPlano, criarRepositorioReceitas } from './receitas.ts'
+import { buscarAlimento } from './tabelas.ts'
+import { totaisDoPlano } from './totais.ts'
 import { CHAVE_NUVEM, CONFERIR_A_CADA_MS, contarMudanca, criarSincronia, ficouParcial, ESPERA_PARA_SALVAR_MS, INTERVALO_DE_TENTATIVA_MS, lerSituacao, observarMudancas, saiuDaConta, type Sincronia } from './sincronia.ts'
 import { CHAVE_MODELOS_SUPLEMENTO, criarRepositorioModelosSuplemento, criarSuplemento } from './suplementos.ts'
 
@@ -1223,5 +1227,67 @@ describe('ligar e desligar (StrictMode, troca de conta)', () => {
     a.pacientes.criar('Ana')
     await salvar()
     expect(ouvinte).not.toHaveBeenCalled()
+  })
+})
+
+describe('receitas na nuvem (spec receitas-com-calculo)', () => {
+  const PANQUECA = {
+    nome: 'Panqueca de banana',
+    ingredientes: [
+      { alimentoId: 182, gramas: 150 },
+      { alimentoId: 489, gramas: 100 },
+    ],
+    porcoes: 2,
+    nomeDaPorcao: 'unidade',
+    pesoProntoG: 240,
+    preparo: 'Misture e doure.',
+  }
+
+  it('CA-869: as receitas e o plano com receita vêm com a conta para o aparelho novo, e o plano calcula igual', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    const receitasA = criarRepositorioReceitas(a.observado, { gerarId })
+    const salva = receitasA.salvar(PANQUECA)
+    const caso = a.planos.criar('Plano da Ana')
+    const cafe = caso.plano.refeicoes[0]?.id ?? ''
+    const plano = adicionarReceita(caso.plano, cafe, 'principal', { receita: copiaParaOPlano(salva), gramas: 120 }, gerarId)
+    a.planos.salvar({ caso: caso.caso, plano })
+    await salvar()
+    // A pessoa sai (o espaço da conta some deste navegador) e entra noutro, vazio.
+    a.sincronia.parar()
+
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    expect(criarRepositorioReceitas(b.observado).listar().map((r) => r.nome)).toEqual(['Panqueca de banana'])
+    const doB = b.planos.obter(caso.caso.id)
+    expect(doB?.plano).toEqual(plano)
+    expect(totaisDoPlano(doB?.plano ?? { refeicoes: [] }, buscarAlimento).nutrientes.energia_kcal.total).toBeCloseTo(
+      totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total,
+      6,
+    )
+  })
+
+  it('CA-868: receita criada em A aparece em B; excluída em A não volta pelo B', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    const receitasA = criarRepositorioReceitas(a.observado, { gerarId })
+    const panqueca = receitasA.salvar(PANQUECA)
+    receitasA.salvar({ ...PANQUECA, nome: 'Bolo' })
+    await salvar()
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    const receitasB = criarRepositorioReceitas(b.observado, { gerarId })
+    expect(receitasB.listar().map((r) => r.nome)).toEqual(['Bolo', 'Panqueca de banana'])
+
+    vi.setSystemTime(new Date('2026-10-08T12:01:00.000Z'))
+    receitasA.excluir(panqueca.id)
+    await salvar()
+    receitasB.salvar({ ...PANQUECA, nome: 'Suco verde' })
+    await salvar()
+    expect(receitasB.listar().map((r) => r.nome)).toEqual(['Bolo', 'Suco verde'])
+    const naNuvem = JSON.parse(copiaNaNuvem(nuvem).dados['metanutri:receitas'] ?? '[]') as { nome: string }[]
+    expect(naNuvem.map((r) => r.nome).sort()).toEqual(['Bolo', 'Suco verde'])
   })
 })

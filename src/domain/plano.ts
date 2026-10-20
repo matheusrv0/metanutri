@@ -1,5 +1,6 @@
 // Operações imutáveis sobre o plano (SPEC CA-12, CA-13, CA-14, CB-04).
-import type { ItemPlano, OpcaoId, Plano, Refeicao } from './tipos.ts'
+import { ID_DE_RECEITA } from './receitaNoPlano.ts'
+import type { ItemPlano, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
 
 export type GerarId = () => string
 
@@ -77,6 +78,20 @@ export function adicionarItem(
 ): Plano {
   validarGramas(dados.gramas)
   return alterarOpcao(plano, refeicaoId, opcao, (itens) => [...itens, { id: gerarId(), alimentoId: dados.alimentoId, gramas: dados.gramas }])
+}
+
+/**
+ * Spec receitas-com-calculo, D-273: a receita entra no plano como cópia. As gramas são o peso da receita pronta servida.
+ */
+export function adicionarReceita(
+  plano: Plano,
+  refeicaoId: string,
+  opcao: OpcaoId,
+  dados: { readonly receita: ReceitaDoPlano; readonly gramas: number },
+  gerarId: GerarId,
+): Plano {
+  validarGramas(dados.gramas)
+  return alterarOpcao(plano, refeicaoId, opcao, (itens) => [...itens, { id: gerarId(), alimentoId: ID_DE_RECEITA, gramas: dados.gramas, receita: dados.receita }])
 }
 
 function exigirItem(itens: readonly ItemPlano[], itemId: string) {
