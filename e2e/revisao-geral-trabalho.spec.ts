@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 // Spec revisao-geral-trabalho: a área de trabalho no celular e no computador.
 
@@ -203,4 +203,91 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
   await page.getByRole('button', { name: /^Cobrir / }).first().click()
   await expect(page.getByRole('dialog')).toContainText('para a meta')
   expect(erros).toEqual([])
+})
+
+/**
+ * A área que, tocada, cai no elemento: varre a linha e a coluna do centro. Conta o rótulo do campo e a área invisível
+ * de um pseudo-elemento, que o dedo também acerta.
+ */
+const areaDeToque = async (alvo: Locator) => {
+  await alvo.scrollIntoViewIfNeeded()
+  return alvo.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    const acerta = (x: number, y: number) => {
+      const achado = document.elementFromPoint(x, y)
+      return achado !== null && (el === achado || el.contains(achado))
+    }
+    let altura = 0
+    for (let y = Math.floor(cy - 40); y <= cy + 40; y += 1) if (acerta(cx, y)) altura += 1
+    let largura = 0
+    for (let x = Math.floor(cx - 40); x <= cx + 40; x += 1) if (acerta(x, cy)) largura += 1
+    return { altura, largura }
+  })
+}
+
+const alvoDe44 = async (alvo: Locator, comLargura = false) => {
+  const { altura, largura } = await areaDeToque(alvo)
+  expect(altura, `altura de ${await alvo.textContent()}`).toBeGreaterThanOrEqual(44)
+  if (comLargura) expect(largura, `largura de ${await alvo.textContent()}`).toBeGreaterThanOrEqual(44)
+}
+
+test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
+  test('CA-788: o "Fechar" das janelas e da gaveta e as opções em pílula', async ({ page }) => {
+    const casoId = await abrirComExemplo(page)
+    await page.setViewportSize({ width: 390, height: 800 })
+
+    await page.getByRole('button', { name: 'Modelos de plano' }).click()
+    // O X do canto (o outro "Fechar" é o botão do rodapé).
+    await alvoDe44(page.getByRole('dialog', { name: 'Modelos de plano' }).getByRole('button', { name: 'Fechar' }).last(), true)
+    await page.keyboard.press('Escape')
+
+    await page.getByRole('button', { name: 'Exportar' }).click()
+    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+    await alvoDe44(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('button', { name: 'Fechar' }).last(), true)
+    await page.keyboard.press('Escape')
+
+    await page.goto(`/#/caso/${casoId}/adequacao`)
+    await page.getByRole('button', { name: /^Cobrir / }).first().click()
+    await alvoDe44(page.getByRole('dialog').getByRole('button', { name: 'Fechar' }), true)
+    await page.keyboard.press('Escape')
+
+    await page.goto(`/#/caso/${casoId}/caso`)
+    for (const opcao of ['Feminino', 'Masculino', 'Emagrecer', 'Nenhuma', 'Sedentário (1,2)']) await alvoDe44(page.getByRole('radio', { name: opcao }))
+    await page.goto('/#/pacientes')
+    await page.getByRole('button', { name: 'Novo paciente' }).click()
+    await alvoDe44(page.getByRole('radio', { name: 'Feminino' }))
+    await page.goto('/#/config')
+    await alvoDe44(page.getByRole('radio', { name: 'Estudante' }))
+
+    // No computador, nada muda de tamanho.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const caixa = await page.getByRole('radio', { name: 'Estudante' }).boundingBox()
+    expect(caixa?.height ?? 0).toBeLessThan(40)
+  })
+
+  test('CA-790: a trilha, o Exportar, a Ajuda, "Ver as fontes" e o interruptor do Cobrir', async ({ page }) => {
+    const casoId = await abrirComExemplo(page)
+    await page.setViewportSize({ width: 390, height: 800 })
+
+    await alvoDe44(page.getByRole('navigation', { name: 'Você está em' }).getByRole('button', { name: 'Planos' }))
+
+    await page.getByRole('button', { name: 'Exportar' }).click()
+    for (const item of await page.getByRole('menuitem').all()) await alvoDe44(item)
+    await page.keyboard.press('Escape')
+
+    await page.goto(`/#/caso/${casoId}/caso`)
+    await alvoDe44(page.getByRole('button', { name: /^Ver as \d+ fontes$/ }))
+
+    await page.goto(`/#/caso/${casoId}/adequacao`)
+    await page.getByRole('button', { name: /^Cobrir / }).first().click()
+    await alvoDe44(page.getByRole('dialog').locator('label').filter({ hasText: 'Incluir ingredientes e alimentos crus' }))
+    await page.keyboard.press('Escape')
+
+    await page.goto('/#/ajuda')
+    for (const ir of await page.getByRole('button', { name: 'Ir', exact: true }).all()) await alvoDe44(ir, true)
+    for (const abrir of await page.getByRole('link', { name: 'Abrir' }).all()) await alvoDe44(abrir)
+    await alvoDe44(page.getByRole('button', { name: 'Ir para Configurações' }))
+  })
 })

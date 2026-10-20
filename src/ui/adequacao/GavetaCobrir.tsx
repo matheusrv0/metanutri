@@ -124,7 +124,7 @@ export function GavetaCobrir({
             aoMudar={(v) => v !== null && v > 0 && aoAlterarCaso({ adequacao: { ...prefs, porcaoMaximaG: v } })}
             sufixo="g"
           />
-          <label className="flex items-center justify-between gap-3 text-sm">
+          <label className="flex items-center justify-between gap-3 text-sm max-sm:min-h-11">
             <span>Incluir ingredientes e alimentos crus</span>
             <Switch
               checked={prefs.incluirIngredientes}
