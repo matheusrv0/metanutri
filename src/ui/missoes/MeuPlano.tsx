@@ -12,16 +12,13 @@ interface MeuPlanoProps {
   readonly primeiroNome: string
 }
 
-/** "6 colheres de sopa · 150 g"; sem medida caseira, só o peso (CB-156), como na folha. */
+/**
+ * Uma quantidade só, como na folha (spec conduta-da-nutricionista, D-297): a medida caseira; sem medida, o peso (CB-156).
+ * Plano em "Gramas" chega sem medida, e aqui sai só o peso.
+ */
 function Quantidade({ item }: { readonly item: ItemDaDieta }) {
-  const gramas = `${formatarNumero(item.gramas, 0)} g`
-  if (item.medida === null) return <strong className="numeros font-bold text-heading">{gramas}</strong>
-  return (
-    <span>
-      <strong className="font-bold text-heading">{item.medida}</strong>
-      <span className="numeros text-muted-foreground">{` · ${gramas}`}</span>
-    </span>
-  )
+  if (item.medida === null) return <strong className="numeros font-bold text-heading">{`${formatarNumero(item.gramas, 0)} g`}</strong>
+  return <strong className="font-bold text-heading">{item.medida}</strong>
 }
 
 function Itens({ itens }: { readonly itens: readonly ItemDaDieta[] }) {

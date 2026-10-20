@@ -242,7 +242,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('CA-531: "Meu plano" mostra cada refeição com horário e nome, a medida caseira em destaque, o peso e o alimento', async () => {
+  it('CA-531 e CA-928 (spec conduta-da-nutricionista): "Meu plano" mostra cada refeição com horário e nome, só a medida caseira em destaque e o alimento', async () => {
     await abrirMeuPlano()
     expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
@@ -250,9 +250,18 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
     expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
-    expect(almoco.getByText('· 150 g')).toBeInTheDocument()
+    // D-297: com a medida caseira, o peso não vai ao lado (a nutricionista escolheu "Medida caseira").
+    expect(almoco.queryByText(/150 g/)).not.toBeInTheDocument()
     expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
     expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
+  })
+
+  it('CA-928 (spec conduta-da-nutricionista): plano em "Gramas" chega sem medida, e cada alimento mostra só o peso', async () => {
+    const emGramas = DIETA.refeicoes.map((r) => ({ ...r, opcoes: r.opcoes.map((o) => o.map((i) => ({ ...i, medida: null }))) }))
+    await abrirMeuPlano({ dieta: { ...DIETA, refeicoes: emGramas } })
+    const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
+    expect(almoco.getByText('150 g').tagName).toBe('STRONG')
+    expect(almoco.queryByText(/colheres/)).not.toBeInTheDocument()
   })
 
   it('CB-156: alimento sem medida caseira mostra só o peso', async () => {

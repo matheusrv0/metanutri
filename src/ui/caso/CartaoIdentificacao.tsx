@@ -1,9 +1,17 @@
 import { UserRound } from 'lucide-react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import type { Caso } from '@/domain/tipos.ts'
+import { modoDeQuantidade } from '@/domain/caso.ts'
+import type { Caso, ModoQuantidade } from '@/domain/tipos.ts'
 import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
+import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
+
+const ROTULO_QUANTIDADES = 'Quantidades para o paciente'
+const OPCOES_QUANTIDADE: readonly { readonly valor: ModoQuantidade; readonly rotulo: string }[] = [
+  { valor: 'medida-caseira', rotulo: 'Medida caseira' },
+  { valor: 'gramas', rotulo: 'Gramas' },
+]
 
 interface CartaoIdentificacaoProps {
   readonly caso: Caso
@@ -53,6 +61,16 @@ export function CartaoIdentificacao({ caso, aoAlterar, pacientes, aoVincularPaci
             <CampoTexto rotulo="Preceptor(a)" valor={caso.preceptor} aoMudar={(v) => aoAlterar({ preceptor: v })} />
           </>
         ) : null}
+        {/* Spec conduta-da-nutricionista, D-297: vale para a folha impressa, o link do paciente e o Word. */}
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <span className="text-sm font-medium text-foreground">{ROTULO_QUANTIDADES}</span>
+          <SeletorSegmentado<ModoQuantidade>
+            rotulo={ROTULO_QUANTIDADES}
+            opcoes={OPCOES_QUANTIDADE}
+            valor={modoDeQuantidade(caso)}
+            aoEscolher={(quantidades) => aoAlterar({ quantidades })}
+          />
+        </div>
       </div>
 
       {camposDeEstagio && situacao === 'estudante' && assinatura ? (
