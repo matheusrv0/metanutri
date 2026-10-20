@@ -90,6 +90,31 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
 - [x] **T11** — Validação: `npm run check`, `npx playwright test`, `npm run build`; nota na spec `impressao-do-plano`
   (R-182 resolvido); prints de antes e depois; relatório. *Depende de:* T10.
 
+## Rodada da revisão (20/10/2026)
+
+Revisão do coordenador: aprovar com correções, nenhum crítico (`rodada-1910/revisao-publica.md`). Um commit por item, em
+TDD. O I-2 (nome de receita no "Meu plano") fica para a integração com a frente de receitas.
+
+- [ ] **R1 (I-1)** — Testes de geometria estáveis: os retângulos comparados medidos num só `evaluate` (o mesmo quadro)
+  em CA-740, D-235/A-23, A-24 e CA-744, e `reducedMotion: 'reduce'` no arquivo (a entrada animada de Preços).
+  *Verifica:* `revisao.spec.ts` rodado 30 vezes seguidas sem falha.
+- [ ] **R2 (I-3)** — 24 px entre a declaração e o aceite dos Termos (`CaixaDeclaracao` aceita `className`; o aceite
+  ganha `mt-2` quando vem depois de uma declaração). *Testes:* unidade (a classe) e e2e com `elementFromPoint` no
+  meio do vão.
+- [ ] **R3 (M-1)** — "Fontes da base" com 44 px em qualquer largura. *Testes:* unidade (classe) e e2e em 1280 px.
+- [ ] **R4 (M-3b)** — Recusa do servidor (não a rede) na marcação: `MarcacaoRecusada` com o motivo; a tela mostra o
+  motivo e "Fale com quem montou seu plano.". *Testes:* `fonteSupabase.test.ts` e a tela.
+- [ ] **R5 (M-4)** — Ao falhar a marcação, a tela relê o link antes de desfazer e fica com o que a nuvem guardou.
+  *Testes:* a tela (CA-756, CB-236).
+- [ ] **R6 (M-5)** — `vigiarConsole` grava o endereço do pedido que falhou junto com o erro. *Testes:* e2e.
+- [ ] **R7 (M-6)** — Tirar `esperaDoLinkMs`, que nenhum teste usa, do servidor falso.
+- [ ] **R8 (M-8)** — `reuseExistingServer: false` nos dois sites de teste.
+- [ ] **R9 (M-9)** — Escopo neutro `.tema-claro` junto com `:root, .papel` em `tokens.css` e `globals.css`; o checkout
+  passa a usá-lo. *Testes:* o checkout e um teste de texto das duas folhas de estilo.
+
+Arquivos a mais nesta rodada: `src/ui/publico/conta/TelaCriarConta.tsx` (R2), `design-system/tokens/tokens.css` e
+`src/ui/tema/globals.css` (R9), `e2e/apoio/fumaca.ts` (R6), `src/ui/tema/temaClaro.test.ts` (R9, novo).
+
 ## Riscos e decisões para revisar
 
 - **D-231** (caminho seguro): alimento que não é achado pelo nome mostra o peso ao lado da medida guardada, como hoje.
