@@ -147,4 +147,53 @@ teste primeiro, visto falhando, depois o código.
 - Edge Functions › `excluir-conta`: "Verify JWT" ligado.
 - Edge Functions › Secrets: `MERCADOPAGO_ACCESS_TOKEN` já existe (o mesmo das outras funções).
 - Authentication › (Audit Logs): se o registro de auditoria é gravado no banco, ele guarda e-mail e endereço de internet
-  de quem entrou, e isso não sai com a conta (SPEC, R4).
+  de quem entrou, e isso não sai com a conta (SPEC, R4). *(Revisão de 19/10/2026: a rotina diária do 013 apaga os de
+  mais de 6 meses, D-259.)*
+- *(Revisão de 19/10/2026.)* Database › Extensions: `pg_cron` ligado (o 013 tenta ligar; se o SQL Editor recusar, ligue
+  ali e rode o 013 de novo). Depois de um dia, a rotina precisa aparecer sem erro:
+  `select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-registros') order by start_time desc limit 5;`
+  Se aparecer "permission denied" para `auth.audit_log_entries`, desligue a gravação do registro de auditoria no banco
+  (Authentication › Audit Logs) ou apague à mão os de mais de 6 meses; o resto da rotina continua valendo.
+- *(Revisão de 19/10/2026, SPEC R5.)* Authentication › Providers › Email: "Secure password change" e "Secure email
+  change" ficam ligados.
+
+### Excluir uma conta pelo painel do Supabase (pedido por e-mail)
+
+*(Revisão de 19/10/2026.)* Pelo painel, o banco guarda o registro e fecha o histórico (CA-826), mas não fala com o
+Mercado Pago nem com o armazenamento. Antes de apagar o usuário:
+
+1. Cancele a assinatura dele no Mercado Pago (painel do Mercado Pago › Assinaturas, pelo código que está em
+   `assinaturas.preapproval_id`). Sem isso, ele paga mais uma mensalidade antes de o aviso cancelar.
+2. Em Storage › `comprovantes`, apague a pasta com o código da conta (`comprovantes/<código>`). Pelo painel ela fica
+   para sempre: a limpeza de 30 dias parte dos pedidos, que somem junto com a conta.
+3. Só então apague o usuário em Authentication › Users.
+
+O jeito mais simples continua sendo a pessoa excluir pelo site, em Conta e plano: os três passos acontecem sozinhos.
+
+## 7. Rodada de correção (revisão de segurança, 19/10/2026)
+
+Da revisão `revisao-exclusao.md` (pronta com correções, nenhum achado Crítico ou Alto). Um commit por item, em TDD.
+
+- [ ] **C1 — M1, registros de acesso.** No 013: liga `pg_cron` (como o 014 da outra frente, `with schema pg_catalog`;
+  o 013 não depende do 014), cria `public.limpar_registros_guardados()` (`security definer`, só o servidor) que apaga
+  `auth.audit_log_entries` com mais de 6 meses, e agenda `metanutri-limpar-registros` todo dia. Testado no Supabase
+  local (o papel `postgres` tem `delete` ali). A Política diz que os registros de acesso ficam 6 meses (D-259).
+- [ ] **C2 — L1, os 5 anos de verdade.** A mesma rotina apaga o registro de assinaturas com mais de 5 anos (CA-825).
+- [ ] **C3 — M2 e L8 (c).** O gatilho põe a linha "cancelada" de fechamento no histórico quando a assinatura não estava
+  cancelada; o cabeçalho do 013 e a seção 6 dizem o que fazer antes de excluir pelo painel. Teste: excluir pelo painel
+  uma conta ativa e conferir `receitaNoHistorico` antes e depois.
+- [ ] **C4 — L2.** As datas do registro (a) e do histórico da conta excluída ficam só com o dia; a Política diz "sem
+  ligação direta".
+- [ ] **C5 — L4.** A exclusão segura a reserva de `assinando_agora` (solta a vencida, reserva, solta no fim); conta já
+  reservada responde 409 com a frase `EM_ANDAMENTO`. A porta da exclusão ganha `reservar` e `soltarReserva`;
+  `bancoSupabase.ts` não muda (L7: outra frente o migra).
+- [ ] **C6 — L5.** Falha depois de cancelar a assinatura responde a frase própria (CA-809) com o código
+  `assinatura-cancelada`, e Conta e plano relê a assinatura. A janela diz que o tempo pago que falta se perde (CA-803).
+- [ ] **C7 — L6.** Antes de pedir a exclusão, o navegador anota no aparelho (`metanutri:exclusao-pedida`, fora de
+  `CHAVES_DE_DADOS`) o código da conta. Um `SIGNED_OUT` que chega com essa anotação apaga a cópia de trabalho daquela
+  conta; uma resposta do servidor (sim ou não) tira a anotação; ela vence em 1 dia. Passados 9 minutos, "Senha
+  incorreta" só aparece se o servidor de login disser que a conta ainda existe; se não existe, termina como no CA-808.
+- [ ] **C8 — L8 (a) e (b).** No Supabase local: renovar a sessão mantém a hora da entrada no token; o token de uma conta
+  com o código de outra no corpo exclui só a dona do token.
+- **L7** fica como está (outra frente migra `bancoSupabase.ts` para `npm:@supabase/supabase-js@2.117.2`, a mesma versão).
+- **L3** sem código: SPEC R5 e a seção 6.
