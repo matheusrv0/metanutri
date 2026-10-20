@@ -119,7 +119,7 @@ Ajuda ganham o texto novo.
 |---|---|---|---|
 | R1 | Uma castanha no exemplo; aviso de limite só quando o alimento traz o nutriente | `src/domain/exemplo.ts`, `exemplo.test.ts`, `src/domain/cobrir.ts` (só o aviso), `cobrir.test.ts`; testes do cartão e da tabela que tiravam a castanha (`MicrosDoDia.test.tsx`, `TelaAdequacao.test.tsx`) voltam ao exemplo | CA-957b, CA-957c |
 | R2 | Porção máxima de ovo no Cobrir | `src/domain/cobrir.ts` (`PORCOES_POR_GRUPO`), `cobrir.test.ts` | CA-957a |
-| R3 | `PRODUCT.md` com 21 | `PRODUCT.md` | CA-966a |
+| R3 | `PRODUCT.md` com 21 | `PRODUCT.md`, `src/domain/baseMetanutri.test.ts` (lê o `PRODUCT.md`) | CA-966a |
 
 Um commit por item, TDD; depois `npm run check`, o e2e afetado (planejador, impressão do plano, vitaminas-usda) e
 `npm run build`.

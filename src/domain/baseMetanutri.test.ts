@@ -1,4 +1,18 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { FONTES_DA_BASE, NOME_DA_BASE, resumoDaBase } from './baseMetanutri.ts'
+
+describe('PRODUCT.md acompanha a base (spec vitaminas-usda, CA-966a)', () => {
+  // O Vitest roda na raiz do projeto.
+  const produto = readFileSync(join(process.cwd(), 'PRODUCT.md'), 'utf8')
+
+  it('diz 21 linhas no Cobrir, cinco delas do USDA, e não diz mais que vitamina D, B12 e folato só vêm de rótulo', () => {
+    expect(produto).toContain('20 vitaminas e minerais, mais a fibra')
+    expect(produto).toMatch(/vitamina D, vitamina E, folato, vitamina B12 e selênio[^.]*USDA FoodData Central[^.]*308 dos 597/)
+    expect(produto).not.toMatch(/15 vitaminas e minerais/)
+    expect(produto).not.toMatch(/Vitamina D, B12, folato, açúcares e gordura saturada não existem na TACO/)
+  })
+})
 
 describe('Base MetaNutri (D-51, CA-322)', () => {
   it('tem o nome da base', () => {
