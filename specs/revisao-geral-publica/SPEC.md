@@ -75,7 +75,7 @@ script de verdade dos campos do cartão (chave pública de teste). A lista compl
 ### Testes de navegador
 
 - **CA-758** · Para cada tela do escopo, em 390 e 1280 px, um teste de navegador abre a tela e confere: ela aparece (o título certo), a página não rola para o lado, o console não tem erro e a ação principal está visível. Telas: landing (e o endereço sem caminho), Preços (e `#/precos/solo`), Entrar, Criar conta (Free, Solo, Solo anual, Pro e Estudante), Confirmar e-mail, Esqueci a senha (os dois passos), Nova senha, Termos, Privacidade, Fontes, checkout, volta do pagamento, Comprovar matrícula, Completar cadastro e o link do paciente (Missões e Meu plano).
-- **CA-759** · O Apêndice A lista cada defeito achado na revisão, com a gravidade, o print e o que foi feito; os falsos positivos da medição ficam marcados como tal.
+- **CA-759** · Dado as telas de conta num celular (menos de 640 px), então cada caixa de aceite ou de declaração (Termos e Política, "Declaro que este CRN…", "Declaro ter matrícula…") tem 44 px de altura de toque, e as listas de escolha da região do CRN e do período atual têm 44 px de altura. *(Revisão da frente, 19/10/2026: achado na segunda rodada da auditoria, A-21. Antes, este número dizia que o Apêndice A lista os defeitos com a gravidade; isso continua valendo como regra do método, na D-230.)*
 
 ## 3. Casos de borda
 
@@ -132,6 +132,7 @@ padrão `<tela>-<largura>-<tema>-antes.png`.
 | A-18 | Menor | Todas | O título da aba do navegador é "MetaNutri" em toda tela | todas | fica (fora de escopo) |
 | A-19 | Menor | Comprovar matrícula | "Previsão de formatura" usa campo de mês: no Firefox de computador vira campo de texto, sem calendário | Firefox | fica |
 | A-20 | Menor | Criar conta pago | O subtítulo "Passo 1 de 3." repete a barra de passos | todas | fica (texto aprovado na `conta-e-verificacao`) |
+| A-21 | Importante | Criar conta, Completar cadastro, Comprovar matrícula | No celular, as caixas de aceite e de declaração têm 20 a 40 px de altura de toque, e as listas de escolha (região do CRN, período atual) têm 40 px. Achado na segunda rodada, depois das correções | menos de 640 px | CA-759 |
 
 **Sem defeito (conferido):** landing (incluindo o endereço sem caminho, que abre `#/inicio`), Entrar, Esqueci a senha
 (os dois passos), Nova senha, Termos, Privacidade e Fontes nos dois temas e nas seis larguras, fora o rodapé; o foco
