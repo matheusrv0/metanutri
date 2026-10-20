@@ -9,8 +9,13 @@ MetaNutri: software de nutrição para quem está começando na profissão. **O 
 é dizer o que comer**: o painel de micronutrientes mostra o que falta e o botão
 **cobrir** sugere o alimento e a porção que fecham a falta — nenhum concorrente
 brasileiro faz isso. As missões diárias do paciente são o argumento de venda (check-in
-os concorrentes já têm). Roda no navegador, funciona **offline** (PWA), e a conta na
-nuvem (Supabase) é opcional. Interface em pt-BR.
+os concorrentes já têm). Roda no navegador (PWA instalável). Interface em pt-BR.
+
+**Onde moram os dados** (spec `dados-na-nuvem`): os dados ficam na nuvem, presos à conta
+(Supabase). O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e
+toda mudança sobe sozinha. Só existe "Sair", que apaga a cópia do navegador.
+Sem internet, a área de trabalho trava até a conexão voltar. Sem as chaves do Supabase
+(desenvolvimento e testes), o app abre no modo local, com os dados só no navegador.
 
 Estratégia aprovada em [docs/plano-negocio.md](docs/plano-negocio.md): quem paga é o
 recém-formado, o estudante é canal e a execução tem quatro fases com portões. Missões,
@@ -69,7 +74,7 @@ errado. A interface não conhece o formato dos arquivos de dados: isso é de `sr
 - Sem `any` sem comentário explicando. Componentes funcionais, um por arquivo, export
   nomeado. Estado local primeiro.
 - Commits em Conventional Commits.
-- **Nenhuma dependência nova sem perguntar.** O app roda offline: cada pacote novo entra
+- **Nenhuma dependência nova sem perguntar.** O app é instalável (PWA): cada pacote novo entra
   no cache de quem usa.
 
 ## Regras do produto que não se negociam

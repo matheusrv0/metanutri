@@ -41,7 +41,7 @@ classe de layout, texto e testes.
 | T10 | Seletor de referência no celular | `src/ui/adequacao/TelaAdequacao.tsx` (ou o `SeletorSegmentado` da biblioteca), `e2e/revisao-geral-trabalho.spec.ts` | CA-795 | T5 |
 | T11 | Cada tela de ponta a ponta, e o teclado | `e2e/revisao-geral-trabalho.spec.ts` | CA-797, CA-799 | T1 a T10 |
 | T12 | Telas com servidor, dados falsos | `src/ui/telasComServidor.test.tsx` (novo) | CA-798 | T0 |
-| T13 | PRODUCT.md e AGENTS.md | `PRODUCT.md`, `AGENTS.md`, `src/data/documentos.test.ts` (novo) | CA-796 | T0 |
+| T13 | PRODUCT.md e AGENTS.md | `PRODUCT.md`, `AGENTS.md`, `README.md` (só a frase "a conta na nuvem é opcional"), `src/data/documentos.test.ts` (novo) | CA-796 | T0 |
 | T14 | Validação | prints de depois, relatório | todos | T1 a T13 |
 
 ## Tarefas
