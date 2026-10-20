@@ -100,3 +100,22 @@ banco é calculado com `node:crypto` (RFC 6238).
 - O teste do PKCE mostrou, antes da mudança, o cliente entrando na conta de um token posto no endereço; depois, não.
 - No Supabase local, o caminho inteiro da limpeza rodou: o comando do agendamento, o pedido do `pg_net`, a chave do
   cofre, o núcleo da função com a ligação de verdade, o arquivo saindo do balde e o pedido guardando a decisão.
+
+## Rodada de correção da revisão de segurança (19/10/2026)
+
+Uma tarefa por item, cada uma com o teste antes e o seu commit.
+
+12. **M-1 · senha do administrador com o app (D-268, CA-858)** — `traduzir` reconhece `insufficient_aal`;
+    `trocarSenha(senha, codigoDoApp?)` confirma a sessão com o app antes de gravar; `src/ui/estado/codigoDoApp.ts`
+    junta o "fator confirmado da conta" e o `challengeAndVerify` com uma nova tentativa no `mfa_ip_address_mismatch`
+    (usado também pelo `useSegundoFator`); "Esqueci a senha" e "Nova senha" mostram o campo do app quando o servidor
+    pede. Teste no Supabase local (`testes/seguranca/senhaComApp.test.ts`): código de troca → `insufficient_aal` →
+    código do app → senha gravada.
+13. **M-2 · cadastro do app estável (D-269, CA-859, CB-269)** — `useSegundoFator(ativo, usuarioId, aoLiberado)`: não
+    recadastra quando a tela volta; a etapa é presa à conta; `mfa_factor_not_found` prepara de novo com o aviso do QR.
+14. **L-4 · campo do app com 6 dígitos** — `CampoCodigo` corta em `digitos`; rótulo opcional.
+15. **L-6 · chave da limpeza com 64 caracteres** — o núcleo recusa outro tamanho sem perguntar ao banco.
+16. **M-3, L-1 e L-3 · textos** — D-266 e R-61 (feito na emenda da spec), `SECURITY.md`, comentário do `014` (receita do
+    celular perdido com as sessões e a senha; conferência por `cron.job_run_details`) e `README.md`.
+17. **Validação** — `npm run check`, Playwright numa porta própria, `npm run build`, `npm run test:seguranca` na pilha
+    local desta frente; relatório com os passos do dono revistos (L-2, L-5 e L-7 viram avisos nos passos).
