@@ -307,3 +307,297 @@ test('CA-795: no celular, cada opção do seletor de referência fica numa linha
     await expect(page.getByLabel('Mínimo da meta')).toBeVisible()
   }
 })
+
+// ---------- CA-797: cada tela da área de trabalho, no celular e no computador ----------
+
+interface Tela {
+  readonly nome: string
+  /** Abre a tela e devolve o título que ela tem. */
+  readonly abrir: (pagina: Page, casoId: string) => Promise<string | RegExp>
+  /** A ação principal da tela, com o resultado conferido. */
+  readonly agir: (pagina: Page, casoId: string) => Promise<void>
+}
+
+const ficha = async (pagina: Page) => {
+  await pagina.goto('/#/pacientes')
+  await pagina.getByRole('button', { name: 'Novo paciente' }).click()
+  await expect(pagina).toHaveURL(/#\/paciente\//)
+}
+
+const PLANO = 'Exemplo — Maria, 28 anos'
+
+const TELAS: readonly Tela[] = [
+  {
+    nome: 'Painel',
+    abrir: async (p) => {
+      await p.goto('/#/painel')
+      return 'Painel'
+    },
+    agir: async (p) => {
+      await p.getByRole('list', { name: 'Planos recentes' }).getByRole('button', { name: 'Abrir' }).first().click()
+      await expect(p).toHaveURL(/#\/caso\//)
+    },
+  },
+  {
+    nome: 'Pacientes',
+    abrir: async (p) => {
+      await p.goto('/#/pacientes')
+      return 'Pacientes'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: 'Novo paciente' }).click()
+      await expect(p).toHaveURL(/#\/paciente\//)
+    },
+  },
+  {
+    nome: 'ficha do paciente',
+    abrir: async (p) => {
+      await ficha(p)
+      return 'Paciente sem nome'
+    },
+    agir: async (p) => {
+      await p.getByLabel('Nome', { exact: true }).fill('Joana Prado')
+      await expect(p.getByRole('heading', { level: 1, name: 'Joana Prado' })).toBeVisible()
+      for (const cartao of ['Identificação', 'Próxima consulta', 'Restrições e saúde', 'Anamnese', 'Suplementos', 'Pedido de exames']) {
+        await expect(p.getByRole('heading', { name: cartao, exact: true })).toBeVisible()
+      }
+    },
+  },
+  {
+    nome: 'Adesão',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/plano`)
+      await p.getByRole('button', { name: 'Gerar link do paciente' }).click()
+      await p.getByRole('button', { name: 'Já tenho a autorização, gerar link' }).click()
+      await expect(p.getByLabel('Endereço do link')).toBeVisible()
+      await p.goto('/#/adesao')
+      return 'Adesão'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: 'Abrir plano' }).click()
+      await expect(p).toHaveURL(/#\/caso\/[^/]+\/plano$/)
+    },
+  },
+  {
+    nome: 'Planos',
+    abrir: async (p) => {
+      await p.goto('/#/casos')
+      return 'Planos'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: `Abrir ${PLANO}` }).click()
+      await expect(p).toHaveURL(/#\/caso\//)
+    },
+  },
+  {
+    nome: 'etapa 1',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/caso`)
+      return PLANO
+    },
+    agir: async (p) => {
+      await p.getByLabel('Nome do plano').fill('Maria, retorno')
+      await expect(p.getByRole('heading', { level: 1, name: 'Maria, retorno' })).toBeVisible()
+    },
+  },
+  {
+    nome: 'etapa 2',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/plano`)
+      return PLANO
+    },
+    agir: async (p) => {
+      const itens = p.getByRole('list', { name: 'Alimentos em Principal de Almoço' }).getByRole('listitem')
+      const antes = await itens.count()
+      const entrada = p.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
+      await entrada.fill('100 feijao carioca cozido')
+      await expect(p.getByRole('option').first()).toBeVisible()
+      await entrada.press('Enter')
+      await expect(itens).toHaveCount(antes + 1)
+    },
+  },
+  {
+    nome: 'etapa 3',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/adequacao`)
+      return PLANO
+    },
+    agir: async (p) => {
+      await p.getByRole('radio', { name: /Coletivo/ }).click()
+      await expect(p.getByText(/meta de 50% da referência/)).toBeVisible()
+    },
+  },
+  {
+    nome: 'gaveta do Cobrir',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/adequacao`)
+      await p.getByRole('button', { name: /^Cobrir / }).first().click()
+      return PLANO
+    },
+    agir: async (p) => {
+      const gaveta = p.getByRole('dialog')
+      await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('button', { name: 'Adicionar' }).first().click()
+      await expect(gaveta).toBeHidden()
+    },
+  },
+  {
+    nome: 'Modelos de plano',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/plano`)
+      await p.getByRole('button', { name: 'Modelos de plano' }).click()
+      return PLANO
+    },
+    agir: async (p) => {
+      const janela = p.getByRole('dialog', { name: 'Modelos de plano' })
+      await janela.getByLabel('Nome do modelo').fill('Modelo da revisão')
+      await janela.getByRole('button', { name: 'Salvar como modelo' }).click()
+      await expect(janela.getByRole('list', { name: 'Modelos salvos' })).toContainText('Modelo da revisão')
+    },
+  },
+  {
+    nome: 'Exportar e Dieta para imprimir',
+    abrir: async (p, casoId) => {
+      await p.goto(`/#/caso/${casoId}/plano`)
+      await p.getByRole('button', { name: 'Exportar' }).click()
+      await expect(p.getByRole('menuitem', { name: 'Memorial de cálculo em Word' })).toBeVisible()
+      await p.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+      return PLANO
+    },
+    agir: async (p) => {
+      const janela = p.getByRole('dialog', { name: 'Dieta para imprimir' })
+      await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+      const lista = janela.getByRole('switch', { name: 'Lista de compras' })
+      if ((await lista.getAttribute('aria-checked')) !== 'true') await lista.click()
+      await expect(janela.getByRole('region', { name: 'Lista de compras' })).toBeVisible()
+    },
+  },
+  {
+    nome: 'Pedido de exames para imprimir',
+    abrir: async (p) => {
+      await ficha(p)
+      return 'Paciente sem nome'
+    },
+    agir: async (p) => {
+      await p.getByRole('checkbox', { name: 'Hemograma completo' }).check()
+      await p.getByRole('button', { name: 'Imprimir pedido' }).click()
+      await expect(p.getByRole('dialog', { name: 'Pedido de exames para imprimir' })).toContainText('Hemograma completo')
+    },
+  },
+  {
+    nome: 'Tabela de alimentos',
+    abrir: async (p) => {
+      await p.goto('/#/alimentos')
+      return 'Tabela de alimentos'
+    },
+    agir: async (p) => {
+      await p.getByPlaceholder(/Buscar por nome/).fill('brocolis')
+      await expect(p.getByText(/Brócolis/).first()).toBeVisible()
+    },
+  },
+  {
+    nome: 'Meus produtos',
+    abrir: async (p) => {
+      await p.goto('/#/produtos')
+      return 'Meus produtos'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: 'Cadastrar pelo rótulo' }).first().click()
+      await expect(p.getByRole('dialog', { name: 'Cadastrar produto pelo rótulo' })).toBeVisible()
+    },
+  },
+  {
+    nome: 'Conta e plano',
+    abrir: async (p) => {
+      await p.goto('/#/conta')
+      return 'Conta e plano'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: 'Ir para o backup' }).click()
+      await expect(p).toHaveURL(/#\/config$/)
+    },
+  },
+  {
+    nome: 'Configurações',
+    abrir: async (p) => {
+      await p.goto('/#/config')
+      return 'Configurações'
+    },
+    agir: async (p) => {
+      await p.getByLabel('Seu nome').fill('Ana Teste')
+      await expect(p.getByText(/No documento vai sair/)).toContainText('Ana Teste')
+    },
+  },
+  {
+    nome: 'Ajuda',
+    abrir: async (p) => {
+      await p.goto('/#/ajuda')
+      return 'Ajuda'
+    },
+    agir: async (p) => {
+      await p.getByRole('button', { name: 'Ir', exact: true }).first().click()
+      await expect(p).toHaveURL(/#\/pacientes$/)
+    },
+  },
+]
+
+const rolaDeLado = (pagina: Page) => pagina.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+test.describe('Cada tela, de ponta a ponta (CA-797)', () => {
+  for (const largura of [390, 1280]) {
+    for (const tela of TELAS) {
+      test(`CA-797: ${tela.nome} em ${largura} px`, async ({ page }) => {
+        const erros: string[] = []
+        page.on('console', (m) => {
+          if (m.type() === 'error') erros.push(m.text())
+        })
+        page.on('pageerror', (e) => erros.push(e.message))
+        const casoId = await abrirComExemplo(page)
+        await page.setViewportSize({ width: largura, height: largura < 640 ? 800 : 900 })
+        const titulo = await tela.abrir(page, casoId)
+        // Com uma janela aberta, o resto da página fica fora da árvore de acessibilidade, mas continua na tela.
+        await expect(page.getByRole('heading', { level: 1, name: titulo, includeHidden: true })).toBeVisible()
+        expect(await rolaDeLado(page)).toBeLessThanOrEqual(0)
+        expect(await vazaDaTela(page)).toEqual([])
+        await tela.agir(page, casoId)
+        expect(await rolaDeLado(page)).toBeLessThanOrEqual(0)
+        expect(erros).toEqual([])
+      })
+    }
+  }
+})
+
+test('CA-799: só com o teclado, o primeiro Tab vai a "Pular para o conteúdo", o foco aparece e Esc fecha janela e gaveta', async ({ page }) => {
+  const casoId = await abrirComExemplo(page)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  const anelVisivel = () =>
+    page.evaluate(() => {
+      const el = document.activeElement
+      if (!el || el === document.body) return false
+      const cs = getComputedStyle(el)
+      return (cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px') || cs.boxShadow !== 'none'
+    })
+  const rotas = ['/#/painel', '/#/pacientes', '/#/adesao', '/#/casos', `/#/caso/${casoId}/caso`, `/#/caso/${casoId}/plano`, `/#/caso/${casoId}/adequacao`, '/#/alimentos', '/#/produtos', '/#/conta', '/#/config', '/#/ajuda']
+  for (const rota of rotas) {
+    await page.goto(rota)
+    await page.reload()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await page.keyboard.press('Tab')
+    await expect(page.locator(':focus')).toHaveText('Pular para o conteúdo')
+    await page.keyboard.press('Tab')
+    expect(await anelVisivel(), rota).toBe(true)
+  }
+
+  await page.goto(`/#/caso/${casoId}/plano`)
+  await page.getByRole('button', { name: 'Modelos de plano' }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'Modelos de plano' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Modelos de plano' })).toBeHidden()
+
+  await page.goto(`/#/caso/${casoId}/adequacao`)
+  await page.getByRole('button', { name: /^Cobrir / }).first().focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toBeHidden()
+})
