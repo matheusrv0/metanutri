@@ -133,7 +133,7 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
       { nome: 'Panqueca de banana', gramas: 150 },
     ])
     await usuario.type(campo(), '2 colher de sopa panqueca')
-    expect(screen.getByText('Esta receita é medida em unidade. Use "2 unidade" ou as gramas.')).toBeInTheDocument()
+    expect(screen.getByText('Esta receita é medida em unidade. Use "2 unidades" ou as gramas.')).toBeInTheDocument()
     await usuario.keyboard('{Enter}')
     expect(adicionadas).toHaveLength(2)
   })

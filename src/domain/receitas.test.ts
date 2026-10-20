@@ -214,6 +214,8 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
 
   it('CA-872: medida que não é a da porção não põe nada e diz qual usar', () => {
     const [r] = buscarReceitas('2 colher de sopa panqueca de banana', lista)
-    expect(r).toMatchObject({ gramas: null, porcoes: null, aviso: 'Esta receita é medida em unidade. Use "2 unidade" ou as gramas.' })
+    expect(r).toMatchObject({ gramas: null, porcoes: null, aviso: 'Esta receita é medida em unidade. Use "2 unidades" ou as gramas.' })
+    // Uma porção só: singular.
+    expect(buscarReceitas('1 colher de sopa panqueca de banana', lista)[0]?.aviso).toBe('Esta receita é medida em unidade. Use "1 unidade" ou as gramas.')
   })
 })

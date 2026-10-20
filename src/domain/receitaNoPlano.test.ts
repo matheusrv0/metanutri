@@ -70,6 +70,12 @@ describe('o texto da porção (CA-873, CB-279)', () => {
     expect(textoDoRendimento({ ...PANQUECA, porcoes: 1, nomeDaPorcao: 'porção', pesoProntoG: 300 })).toBe('Rende 1 porção (300 g)')
     expect(textoDoRendimento({ ...PANQUECA, porcoes: 2.5, pesoProntoG: 250 })).toBe('Rende 2 unidades e meia (100 g cada)')
   })
+
+  it('CB-279 (rodada da revisão): o rendimento fracionado concorda em número', () => {
+    expect(textoDoRendimento({ ...PANQUECA, porcoes: 2.3 })).toBe('Rende 2,3 unidades (104 g cada)')
+    expect(textoDoRendimento({ ...PANQUECA, porcoes: 1.4 })).toBe('Rende 1,4 unidade (171 g cada)')
+    expect(textoDoRendimento({ ...PANQUECA, porcoes: 3.2, nomeDaPorcao: 'colher de sopa' })).toBe('Rende 3,2 colheres de sopa (75 g cada)')
+  })
 })
 
 describe('ler a cópia do item (CB-273)', () => {

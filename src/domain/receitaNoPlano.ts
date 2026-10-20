@@ -3,7 +3,7 @@
 // O item de receita tem `alimentoId: ID_DE_RECEITA` e guarda a cópia em `receita`; as gramas do item são o peso da
 // receita pronta servida. Tudo que calcula ou mostra a receita (totais, folha, link, Word, linha do plano) lê a cópia
 // por aqui, nunca direto: a cópia pode vir estragada de dado mexido à mão (CB-273).
-import { formatarQuantidadeMedida } from './busca.ts'
+import { formatarQuantidadeMedida, pluralDaMedida } from './busca.ts'
 import { valorDeReferencia } from './formatarQuantidade.ts'
 import { OPCOES, type IngredienteReceita, type ItemPlano, type Plano, type ReceitaDoPlano } from './tipos.ts'
 
@@ -90,7 +90,8 @@ export function textoDaPorcao(r: ReceitaDoPlano, gramas: number): string | null 
 export function textoDoRendimento(r: ReceitaDoPlano): string {
   const nome = r.nomeDaPorcao.trim() || 'porção'
   const emMeias = Math.round(r.porcoes * 2) / 2 === r.porcoes
-  const quantas = emMeias ? formatarQuantidadeMedida(r.porcoes, nome) : `${valorDeReferencia(r.porcoes)} ${nome}`
+  // CB-279: o número quebrado concorda também: "2,3 unidades", "1,4 unidade".
+  const quantas = emMeias ? formatarQuantidadeMedida(r.porcoes, nome) : `${valorDeReferencia(r.porcoes)} ${r.porcoes >= 2 ? pluralDaMedida(nome) : nome}`
   const peso = `${valorDeReferencia(Math.round(pesoDaPorcao(r)))} g`
   return `Rende ${quantas} (${r.porcoes === 1 ? peso : `${peso} cada`})`
 }

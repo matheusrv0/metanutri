@@ -2,7 +2,7 @@
 //
 // A biblioteca fica na chave `metanutri:receitas`, uma lista com id, como os modelos de suplemento: vai para a nuvem
 // item por item, com lápide (D-272). O plano nunca lê daqui depois de pôr a receita: ele guarda uma cópia (D-273).
-import { interpretarEntrada, normalizar } from './busca.ts'
+import { interpretarEntrada, normalizar, pluralDaMedida } from './busca.ts'
 import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao } from './receitaNoPlano.ts'
@@ -160,7 +160,7 @@ export function buscarReceitas(texto: string, receitas: readonly Receita[], alim
         receita,
         gramas: null,
         porcoes: null,
-        aviso: `Esta receita é medida em ${nomeDaPorcao}. Use "${quantidadeEmTexto(q)} ${nomeDaPorcao}" ou as gramas.`,
+        aviso: `Esta receita é medida em ${nomeDaPorcao}. Use "${quantidadeEmTexto(q)} ${q >= 2 ? pluralDaMedida(nomeDaPorcao) : nomeDaPorcao}" ou as gramas.`,
         antesDosAlimentos,
       }
     })
