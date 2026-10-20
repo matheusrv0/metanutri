@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
+import { CaixaDeclaracao } from './CaixaDeclaracao.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
 import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
@@ -63,5 +64,17 @@ describe('peças das telas de conta', () => {
   it('D-237 (spec revisao-geral-publica): o aviso do formulário quebra em qualquer ponto', () => {
     render(<AvisoFormulario tipo="ok">E-mail da faculdade confirmado: {'a'.repeat(80)}@x.br</AvisoFormulario>)
     expect(screen.getByRole('status').lastElementChild?.className).toContain('[overflow-wrap:anywhere]')
+  })
+
+  it('CA-759 (spec revisao-geral-publica): a caixa de aceite tem 44 px de toque sem mudar o desenho', () => {
+    render(
+      <CaixaDeclaracao id="aceite" marcada={false} aoMudar={vi.fn()}>
+        Declaro que este CRN é meu e está ativo.
+      </CaixaDeclaracao>,
+    )
+    const rotulo = screen.getByText('Declaro que este CRN é meu e está ativo.').closest('label')
+    // A área de toque cresce 12 px para cima e para baixo; a margem negativa devolve o espaço ao formulário.
+    expect(rotulo?.className).toContain('py-3')
+    expect(rotulo?.className).toContain('-my-3')
   })
 })

@@ -139,6 +139,20 @@ test.describe('Telas de conta com e-mail longo (D-237)', () => {
   })
 })
 
+test('CA-759: em 390 px, as caixas de aceite e de declaração do cadastro têm 44 px de toque', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await ligarServidorFalso(page)
+  await page.goto('/#/criar-conta')
+  await page.getByRole('radio', { name: /Nutricionista/ }).check()
+  const caixas = page.getByRole('checkbox')
+  expect(await caixas.count()).toBe(2)
+  for (const caixa of await caixas.all()) {
+    const rotulo = caixa.locator('xpath=ancestor::label[1]')
+    expect((await rotulo.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+  }
+  await semRolagemLateral(page)
+})
+
 test.describe('Avisos do checkout (D-236)', () => {
   for (const tema of ['dark', 'light'] as const) {
     test(`${tema === 'dark' ? 'CA-746' : 'CA-747'}: no tema ${tema === 'dark' ? 'escuro' : 'claro'}, o aviso do resumo tem contraste de 4,5:1 ou mais`, async ({ page }) => {
