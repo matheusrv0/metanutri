@@ -5,10 +5,45 @@ import { assinaturaFalsa, DIETA_GUARDADA, ligarServidorFalso, linkFalso, PERFIL_
 
 const EMAIL_LONGO = 'maria.aparecida.dos.santos.oliveira.nutricao2026@aluno.universidadefederal.edu.br'
 
+// I-1 (revisão de 20/10/2026): sem a entrada animada de Preços (o TimelineContent respeita a preferência), as
+// posições não mudam no meio da medida.
+test.use({ reducedMotion: 'reduce' })
+
 async function caixa(alvo: Locator) {
   const c = await alvo.boundingBox()
   if (!c) throw new Error('sem caixa')
   return c
+}
+
+interface Retangulo {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
+/**
+ * I-1: os retângulos de vários elementos medidos num só `evaluate`, no mesmo quadro. Duas chamadas de `boundingBox`
+ * seguidas podiam pegar a página no meio de uma mudança de layout (uma imagem que acabou de carregar acima).
+ */
+async function retangulos(...alvos: readonly Locator[]): Promise<readonly Retangulo[]> {
+  const primeiro = alvos[0]
+  if (!primeiro) return []
+  const elementos = await Promise.all(
+    alvos.map(async (alvo) => {
+      const elemento = await alvo.elementHandle()
+      if (!elemento) throw new Error('sem elemento')
+      return elemento
+    }),
+  )
+  return primeiro.page().evaluate(
+    (lista) =>
+      lista.map((el) => {
+        const r = el.getBoundingClientRect()
+        return { x: r.x, y: r.y, width: r.width, height: r.height }
+      }),
+    elementos,
+  )
 }
 
 /** Contraste WCAG entre a cor do texto e a do fundo opaco do aviso, lidas no navegador. */
@@ -45,8 +80,8 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
       await page.goto('/#/inicio')
       const fontes = page.getByRole('contentinfo').locator('section', { has: page.getByRole('heading', { name: 'Fontes dos dados' }) })
       expect(await fontes.innerText()).not.toContain('·')
-      const nome = await caixa(fontes.getByText('Base MetaNutri', { exact: true }))
-      const link = await caixa(fontes.getByRole('button', { name: 'Fontes da base' }))
+      const [nome, link] = await retangulos(fontes.getByText('Base MetaNutri', { exact: true }), fontes.getByRole('button', { name: 'Fontes da base' }))
+      if (!nome || !link) throw new Error('sem medida')
       expect(link.y).toBeGreaterThanOrEqual(nome.y + nome.height - 1)
       await semRolagemLateral(page)
     })
@@ -71,9 +106,12 @@ test('D-235 (A-23): em 700 px, Entrar e Começar grátis ficam na linha da logo,
   await ligarServidorFalso(page)
   await page.goto('/#/inicio')
   const topo = page.getByRole('banner')
-  const logo = await caixa(topo.getByRole('button', { name: 'MetaNutri, início' }))
-  const comecar = await caixa(topo.getByRole('button', { name: 'Começar grátis' }))
-  const menu = await caixa(topo.getByRole('navigation', { name: 'Seções' }))
+  const [logo, comecar, menu] = await retangulos(
+    topo.getByRole('button', { name: 'MetaNutri, início' }),
+    topo.getByRole('button', { name: 'Começar grátis' }),
+    topo.getByRole('navigation', { name: 'Seções' }),
+  )
+  if (!logo || !comecar || !menu) throw new Error('sem medida')
   expect(Math.abs(comecar.y + comecar.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(4)
   expect(menu.y).toBeGreaterThan(logo.y + logo.height - 1)
 })
@@ -83,8 +121,8 @@ test.describe('Preços (D-234)', () => {
     await page.setViewportSize({ width: 768, height: 800 })
     await ligarServidorFalso(page)
     await page.goto('/#/precos')
-    const free = await caixa(page.getByRole('region', { name: 'Plano Free' }))
-    const solo = await caixa(page.getByRole('region', { name: 'Plano Solo' }))
+    const [free, solo] = await retangulos(page.getByRole('region', { name: 'Plano Free' }), page.getByRole('region', { name: 'Plano Solo' }))
+    if (!free || !solo) throw new Error('sem medida')
     expect(Math.abs(free.y - solo.y)).toBeLessThan(1)
     expect(Math.abs(free.height - solo.height)).toBeLessThan(1)
   })
@@ -134,11 +172,14 @@ test.describe('Telas de conta com e-mail longo (D-237)', () => {
     await page.goto('/#/confirmar-email')
     await expect(page.getByText(EMAIL_LONGO, { exact: false })).toBeVisible()
     await semRolagemLateral(page)
-    const cartao = await caixa(page.getByRole('main'))
-    for (const alvo of [page.getByLabel('Código de 8 dígitos'), page.getByRole('button', { name: 'Confirmar' }), page.getByRole('button', { name: 'Reenviar o código' })]) {
-      const c = await caixa(alvo)
-      expect(c.x + c.width).toBeLessThanOrEqual(cartao.x + cartao.width + 0.5)
-    }
+    const [cartao, ...alvos] = await retangulos(
+      page.getByRole('main'),
+      page.getByLabel('Código de 8 dígitos'),
+      page.getByRole('button', { name: 'Confirmar' }),
+      page.getByRole('button', { name: 'Reenviar o código' }),
+    )
+    if (!cartao || alvos.length !== 3) throw new Error('sem medida')
+    for (const c of alvos) expect(c.x + c.width).toBeLessThanOrEqual(cartao.x + cartao.width + 0.5)
   })
 
   test('CA-745: Comprovar matrícula e Completar cadastro quebram o e-mail longo', async ({ page }) => {
