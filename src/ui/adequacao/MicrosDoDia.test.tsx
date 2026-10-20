@@ -42,21 +42,10 @@ function planoCom(...itens: readonly (readonly [number, number])[]): Plano {
 
 const ARROZ = 3
 const SAL_GROSSO = 517
-const CASTANHA_DO_PARA = 589
-const AMENDOA_TORRADA = 587
+const OLEO_DE_GIRASSOL = 269
 const QUEIJO_PRATO = 467
 const SALMAO_GRELHADO = 317
 const TODOS_NA_META = `Todos os ${MICRONUTRIENTES_ADEQUACAO.length} na meta.`
-
-/**
- * O exemplo sem os 15 g de castanha-do-pará. Com o selênio do USDA (1.917 µg em 100 g, spec vitaminas-usda), a
- * castanha leva o dia do exemplo um pouco acima do UL de selênio; os testes que precisam de "nada acima do limite"
- * usam o dia sem ela.
- */
-function exemploSemCastanha(): Plano {
-  const plano = criarExemplo(ids, '2026-10-15').plano
-  return { refeicoes: plano.refeicoes.map((r) => ({ ...r, opcoes: { ...r.opcoes, principal: r.opcoes.principal.filter((i) => i.alimentoId !== CASTANHA_DO_PARA) } })) }
-}
 
 function Anfitriao({
   inicial,
@@ -166,7 +155,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 
   it('CB-202: nada abaixo da meta nem acima do limite, o cartão diz que está tudo na meta', () => {
     const preset = { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } as const
-    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, exemploSemCastanha())
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, criarExemplo(ids, '2026-10-15').plano)
     expect(cartao().getByText(TODOS_NA_META)).toBeInTheDocument()
     expect(TODOS_NA_META).toBe('Todos os 21 na meta.')
     expect(cartao().queryByRole('list')).not.toBeInTheDocument()
@@ -192,35 +181,35 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 })
 
 describe('Cartão arredonda sem desmentir o estado (CA-696, CA-712)', () => {
-  const calcioDoExemplo = (plano: Plano) => {
+  const ferroDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    const calcio = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
-    if (!calcio) throw new Error('sem cálcio')
+    const ferro = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'ferro_mg')
+    if (!ferro) throw new Error('sem ferro')
     // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
-    expect(calcio.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
-    return calcio.adequacaoPct
+    expect(ferro.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
+    return ferro.adequacaoPct
   }
-  const pctDoCalcio = () => {
-    const linha = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
-    if (!linha) throw new Error('cálcio fora do cartão')
+  const pctDoFerro = () => {
+    const linha = linhas().find((l) => l.textContent?.startsWith('Ferro'))
+    if (!linha) throw new Error('ferro fora do cartão')
     return within(linha)
   }
 
   it('CA-712: longe da meta, a adequação arredonda para o mais perto', () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     expect(pct).toBeLessThan(89)
     montar(adulta, plano)
-    expect(pctDoCalcio().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: com a meta logo acima, a adequação arredonda para baixo', () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     // Meta no inteiro logo acima: o mais perto daria o número da meta, em cor de abaixo.
     const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } as const
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, plano)
-    expect(pctDoCalcio().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
   })
 })
 
@@ -241,7 +230,7 @@ describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
 
   it('CA-703 e CB-202: nada abaixo e o sódio acima do limite, o cartão diz "Nada para cobrir." e mostra o sódio', () => {
     const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: 1 } as const
-    const base = exemploSemCastanha()
+    const base = exemplo()
     const almoco = base.refeicoes.find((r) => r.nome === 'Almoço')
     if (!almoco) throw new Error('sem almoço')
     const comSal = adicionarItem(base, almoco.id, 'principal', { alimentoId: SAL_GROSSO, gramas: 10 }, ids)
@@ -317,7 +306,8 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
 
   it('CA-713: o nutriente chega à meta e sai do cartão; o foco vai para o Cobrir do próximo', async () => {
     const plano = exemplo()
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'vitamina_e_mg', AMENDOA_TORRADA, ids))
+    // Controlada: o óleo leva só a vitamina E à meta (o Cobrir nunca sugere óleo; aqui a gaveta é de teste).
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'vitamina_e_mg', OLEO_DE_GIRASSOL, ids))
     const { usuario } = montar(adulta, plano)
     const ordem = cobrirDoCartao()
     const proximo = ordem[ordem.indexOf('Cobrir Vitamina E') + 1]

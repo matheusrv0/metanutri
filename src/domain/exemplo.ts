@@ -22,7 +22,9 @@ const ENTRADAS: readonly EntradaExemplo[] = [
   { refeicao: 'Desjejum', opcao: 'principal', texto: '120 mamao formosa' },
 
   { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '130 banana prata' },
-  { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '15 castanha do brasil' },
+  // Uma castanha (a unidade da POF, 4 g): com o selênio do USDA (1.917 µg em 100 g), as quatro de antes passavam do UL
+  // (spec vitaminas-usda, D-301).
+  { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '4 castanha do brasil' },
 
   { refeicao: 'Almoço', opcao: 'principal', texto: '150 arroz tipo 1 cozido' },
   { refeicao: 'Almoço', opcao: 'principal', texto: '100 feijao carioca cozido' },

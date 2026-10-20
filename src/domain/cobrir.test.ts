@@ -509,3 +509,27 @@ describe('Cobrir das vitaminas do USDA, plano vazio da Maria (spec vitaminas-usd
     expect(peixe?.avisos).toContainEqual({ tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' })
   })
 })
+
+describe('Aviso de limite só de quem traz o nutriente (spec vitaminas-usda, CA-957b)', () => {
+  // Plano já acima do UL de selênio (400 µg). Falta de ferro: 6,2 mg.
+  const plano = totais({ energia_kcal: 1500, ferro_mg: 10, selenio_mcg: 600 })
+  const adequacao = calcularAdequacao(plano, MULHER_28, { tipo: 'individual' })
+  const base = [
+    { ...alimento(90, 'Sem selênio', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: 0 }), categoria: 'Grupo A' },
+    { ...alimento(91, 'Selênio sem dado', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: null }), categoria: 'Grupo B' },
+    { ...alimento(92, 'Com selênio', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: 10 }), categoria: 'Grupo C' },
+  ]
+  const avisosDe = (id: number) =>
+    sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 3000, alimentos: base }).sugestoes.find((s) => s.alimentoId === id)?.avisos ?? []
+  const SELENIO = { tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' }
+
+  it('o plano já passou do limite: quem não traz selênio não recebe o aviso', () => {
+    expect(adequacao.linhas.find((l) => l.chave === 'selenio_mcg')?.estado).toBe('acima-limite')
+    expect(avisosDe(90)).not.toContainEqual(SELENIO)
+    expect(avisosDe(91)).not.toContainEqual(SELENIO)
+  })
+
+  it('quem traz selênio recebe o aviso, como antes', () => {
+    expect(avisosDe(92)).toContainEqual(SELENIO)
+  })
+})

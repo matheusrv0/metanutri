@@ -37,7 +37,8 @@ describe('quantidade na folha', () => {
       'Arroz branco cozido': '6 colheres de sopa',
       'Feijão carioca cozido': '6 colheres de sopa',
       'Ovo cozido': '2 unidades',
-      'Castanha-do-pará': '4 unidades',
+      // Uma castanha, a unidade da POF (spec vitaminas-usda, D-301).
+      'Castanha-do-pará': '1 unidade',
       'Iogurte natural': '1 copo americano',
       'Aveia em flocos': '2 colheres de sopa',
       'Queijo minas frescal': '30 g',

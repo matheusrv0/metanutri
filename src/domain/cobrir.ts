@@ -182,7 +182,9 @@ export function sugerirParaCobrir(
     }
     for (const l of limites) {
       const extra = ((alimento.nutrientes[l.chave] ?? 0) * gramas) / 100
-      if (l.limite && l.total + extra > l.limite.valor) {
+      // Só avisa quem traz o nutriente: com o plano já acima do limite, o aviso ia para toda sugestão, até a que
+      // não tem nada dele (spec vitaminas-usda, D-306 e CA-957b).
+      if (l.limite && extra > 0 && l.total + extra > l.limite.valor) {
         avisos.push({ tipo: 'excede-limite', chave: l.chave, rotulo: l.rotulo })
       }
     }

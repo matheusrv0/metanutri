@@ -231,17 +231,8 @@ describe('Etapa 3: adequação', () => {
   })
 })
 
-/** O dia do plano de exemplo: alguns abaixo da meta, o selênio acima do limite e o resto na meta. */
+/** O dia do plano de exemplo: alguns abaixo da meta e o resto na meta. */
 const exemplo = () => criarExemplo(ids, '2026-10-15').plano
-
-/**
- * O exemplo sem os 15 g de castanha-do-pará: com o selênio do USDA (spec vitaminas-usda), a castanha leva o dia um
- * pouco acima do UL de selênio, e "nada pede ação" precisa do dia sem ela.
- */
-const exemploSemCastanha = (): Plano => {
-  const plano = exemplo()
-  return { refeicoes: plano.refeicoes.map((r) => ({ ...r, opcoes: { ...r.opcoes, principal: r.opcoes.principal.filter((i) => i.alimentoId !== 589) } })) }
-}
 
 const TOTAL_DE_LINHAS = MICRONUTRIENTES_ADEQUACAO.length
 
@@ -292,7 +283,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
   })
 
   it('CB-202: nada abaixo da meta, a tabela diz isso e oferece todas as linhas', () => {
-    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemploSemCastanha())
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
     expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} na meta` })).toBeInTheDocument()
     expect(TOTAL_DE_LINHAS).toBe(21)
@@ -384,25 +375,25 @@ describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
 })
 
 describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', () => {
-  const calcioDoExemplo = (plano: Plano) => {
+  const ferroDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
-    if (!linha) throw new Error('sem cálcio')
+    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'ferro_mg')
+    if (!linha) throw new Error('sem ferro')
     // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
     expect(linha.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
     expect(linha.adequacaoPct).toBeLessThan(89)
     return linha.adequacaoPct
   }
-  // Meta no inteiro logo acima do cálcio: o mais perto daria o número da meta, em cor de abaixo.
+  // Meta no inteiro logo acima do ferro (com a castanha de 4 g, o cálcio do exemplo ficou em 64,03%): o mais perto daria o número da meta, em cor de abaixo.
   const comMetaLogoAcima = (pct: number): Partial<Caso> => ({
     ...adulta,
     adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } },
   })
-  const itemDoCalcio = () => {
+  const itemDoFerro = () => {
     const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
       .getAllByRole('listitem')
-      .find((i) => i.textContent?.startsWith('Cálcio'))
-    if (!item) throw new Error('cálcio fora da lista')
+      .find((i) => i.textContent?.startsWith('Ferro'))
+    if (!item) throw new Error('ferro fora da lista')
     return within(item)
   }
   const celular = () =>
@@ -419,28 +410,28 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
 
   it('CA-712: na tabela, longe da meta arredonda para o mais perto', () => {
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     montar(adulta, plano)
-    expect(linhaDe('Cálcio').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na tabela, com a meta logo acima, arredonda para baixo', () => {
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     montar(comMetaLogoAcima(pct), plano)
-    expect(linhaDe('Cálcio').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na lista do celular, também', () => {
     celular()
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    expect(itemDoCalcio().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
     unmount()
 
     render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
-    expect(itemDoCalcio().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
   })
 })
 
