@@ -79,7 +79,8 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
     expect(cliente.invocar).toHaveBeenCalledWith('excluir-conta', { body: { acao: 'excluir' } })
     expect(ordem).toEqual(['entrar', 'invocar excluir-conta', 'parar', 'sair', 'excluida'])
     expect(aoExcluida).toHaveBeenCalledOnce()
-    expect(contaFoiExcluida()).toBe(true)
+    // O aviso é da página que abre depois da recarga.
+    expect(contaFoiExcluida(undefined, Number.POSITIVE_INFINITY)).toBe(true)
   })
 
   it('CA-811: a verificação contra robôs vai junto com a senha', async () => {
@@ -97,7 +98,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
     expect(resultado).toEqual({ ok: false, erro: SENHA_INCORRETA, naSenha: true })
     expect(SENHA_INCORRETA).toBe('Senha incorreta.')
     expect(cliente.invocar).not.toHaveBeenCalled()
-    expect(contaFoiExcluida()).toBe(false)
+    expect(contaFoiExcluida(undefined, Number.POSITIVE_INFINITY)).toBe(false)
   })
 
   it.each<[ErroConta, string]>([
