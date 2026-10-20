@@ -432,6 +432,21 @@
     .folha-documento {
       padding-top: 14mm;
     }
+
+    /* O Ctrl+P da tela, sem folha aberta (spec revisao-geral-trabalho, D-240 e CA-770): o @page acima zera a margem
+       de cima da 1ª página e a de baixo de todas, e aqui nada as devolvia (o papel saía com 4 a 5 mm). Mesma técnica
+       da folha: 14 mm no começo e 14 mm no pé de cada página. */
+    body:not(:has(.area-impressao)) > #root {
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      padding-bottom: 14mm;
+    }
+
+    body:not(:has(.area-impressao)) > #root::before {
+      content: '';
+      display: block;
+      height: 14mm;
+    }
   }
 }
 

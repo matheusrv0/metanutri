@@ -112,6 +112,40 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     }
   })
 
+  test('CA-770 (revisão de 20/10/2026): o papel da tela tem 14 mm em cima e embaixo de toda página; a folha continua como era', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await abrirComExemplo(page)
+    // O @page zera a margem de cima da 1ª página e a de baixo de todas (é a regra da folha, CA-636 e CA-637): os 14 mm
+    // voltam por um espaço no começo e por outro que se repete no pé de cada página (box-decoration-break: clone).
+    // A emulação de mídia não pagina; a distância no PDF de verdade foi medida à parte (relatório da frente).
+    const espacos = () =>
+      page.evaluate(() => {
+        const raiz = document.getElementById('root')
+        if (!raiz) return null
+        const cs = getComputedStyle(raiz)
+        return {
+          quebra: cs.boxDecorationBreak,
+          pe: Number.parseFloat(cs.paddingBottom),
+          topo: Number.parseFloat(getComputedStyle(raiz, '::before').height) || 0,
+        }
+      })
+    await page.emulateMedia({ media: 'print' })
+    const tela = await espacos()
+    expect(tela?.quebra).toBe('clone')
+    // 14 mm = 52,9 px.
+    expect(tela?.pe).toBeCloseTo(52.9, 0)
+    expect(tela?.topo).toBeCloseTo(52.9, 0)
+    await page.emulateMedia({ media: 'screen' })
+
+    await page.getByRole('button', { name: 'Exportar' }).click()
+    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+    await expect(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await page.emulateMedia({ media: 'print' })
+    const folha = await espacos()
+    expect(folha?.pe).toBe(0)
+    expect(folha?.topo).toBe(0)
+  })
+
   test('CA-771: com "Dieta para imprimir" aberta, só a folha vai para o papel', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await abrirComExemplo(page)
