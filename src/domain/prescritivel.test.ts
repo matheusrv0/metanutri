@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, ehPrescritivel, ehSegundaEscolha, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS } from './tabelas.ts'
@@ -311,6 +313,22 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
       if (regra) (porMotivo[regra.id] ??= []).push(a.id)
     }
     expect(porMotivo).toEqual(IDS_POR_MOTIVO)
+  })
+
+  it('CA-918: o Apêndice A da spec sugestoes-com-criterio traz os mesmos ids por motivo', () => {
+    // O Vitest roda na raiz do projeto.
+    const spec = readFileSync(join(process.cwd(), 'specs', 'sugestoes-com-criterio', 'SPEC.md'), 'utf-8')
+    const apendice = spec.slice(spec.indexOf('## Apêndice A'), spec.indexOf('#### Liberados pela conduta'))
+    const porTitulo = new Map(REGRAS_PRESCRICAO.map((r) => [r.titulo, r.id]))
+    const doApendice: Record<string, number[]> = {}
+    for (const bloco of apendice.split('\n#### ').slice(1)) {
+      const primeiraLinha = bloco.split('\n')[0] ?? ''
+      const titulo = primeiraLinha.slice(0, primeiraLinha.lastIndexOf(' (')).trim()
+      const id = porTitulo.get(titulo)
+      expect(id, titulo).toBeDefined()
+      doApendice[id ?? titulo] = [...bloco.matchAll(/^\| (\d+) \|/gm)].map((m) => Number(m[1]))
+    }
+    expect(doApendice).toEqual(IDS_POR_MOTIVO)
   })
 
   it('CA-667: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
