@@ -80,4 +80,14 @@ describe('MolduraPublica', () => {
       expect(link.className, link.textContent ?? '').toContain('text-left')
     }
   })
+
+  it('D-235 e A-23 (spec revisao-geral-publica): até 767 px o menu fica na segunda linha, com Entrar e Começar grátis ao lado da logo', () => {
+    montar(false, vi.fn())
+    const menu = screen.getByRole('navigation', { name: 'Seções' })
+    expect(menu.className).toContain('md:order-none')
+    expect(menu.className).not.toContain('sm:order-none')
+    const acoes = within(screen.getByRole('banner')).getByRole('button', { name: 'Entrar' }).parentElement
+    expect(acoes?.className).toContain('md:ml-0')
+    expect(acoes?.className).not.toContain('sm:ml-0')
+  })
 })

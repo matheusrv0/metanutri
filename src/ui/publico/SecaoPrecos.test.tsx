@@ -145,4 +145,9 @@ describe('SecaoPrecos', () => {
       expect(opcao.className).toContain('sm:h-10')
     }
   })
+
+  it('D-234 e A-24 (spec revisao-geral-publica): os cartões da mesma linha têm a mesma altura', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) expect(screen.getByRole('region', { name: `Plano ${plano}` }).className).toContain('h-full')
+  })
 })

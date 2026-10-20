@@ -66,7 +66,29 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
   })
 })
 
+test('D-235 (A-23): em 700 px, Entrar e Começar grátis ficam na linha da logo, e o menu na de baixo', async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 800 })
+  await ligarServidorFalso(page)
+  await page.goto('/#/inicio')
+  const topo = page.getByRole('banner')
+  const logo = await caixa(topo.getByRole('button', { name: 'MetaNutri, início' }))
+  const comecar = await caixa(topo.getByRole('button', { name: 'Começar grátis' }))
+  const menu = await caixa(topo.getByRole('navigation', { name: 'Seções' }))
+  expect(Math.abs(comecar.y + comecar.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(4)
+  expect(menu.y).toBeGreaterThan(logo.y + logo.height - 1)
+})
+
 test.describe('Preços (D-234)', () => {
+  test('D-234 (A-24): em 768 px, os cartões da mesma linha têm a mesma altura', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 800 })
+    await ligarServidorFalso(page)
+    await page.goto('/#/precos')
+    const free = await caixa(page.getByRole('region', { name: 'Plano Free' }))
+    const solo = await caixa(page.getByRole('region', { name: 'Plano Solo' }))
+    expect(Math.abs(free.y - solo.y)).toBeLessThan(1)
+    expect(Math.abs(free.height - solo.height)).toBeLessThan(1)
+  })
+
   for (const largura of [360, 390, 640, 768, 1023]) {
     test(`CA-742: em ${largura} px, os planos em cartões e sem rolar para o lado`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 800 })

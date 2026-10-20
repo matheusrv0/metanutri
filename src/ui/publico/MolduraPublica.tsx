@@ -54,7 +54,9 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             <Logo tamanho={28} />
           </button>
 
-          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 sm:order-none sm:mx-auto sm:w-auto">
+          {/* D-235: até 767 px o menu desce para a segunda linha; em 640 px ele cabia ao lado da logo e empurrava os
+              botões de Entrar para uma linha sozinhos. */}
+          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 md:order-none md:mx-auto md:w-auto">
             {LINKS.map((link) => {
               const aqui = atual === link.destino && !link.ancora
               return (
@@ -71,7 +73,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
             {temSessao ? (
               <Button onClick={() => aoIrPara('painel')}>Ir para o painel</Button>
             ) : (

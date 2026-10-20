@@ -279,7 +279,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
           <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada}>
             <section
               aria-label={`Plano ${plano.nome}`}
-              className={cn('rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+              className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
