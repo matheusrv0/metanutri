@@ -189,6 +189,7 @@ ou contradiz), **M** menor. Prints na pasta da frente (`antes/`, com o nome do a
 | A-27 | Negócio | No celular, a tabela de Contas rola de lado dentro do cartão e o selo fica cortado na borda | M | `bancada/negocio-390-claro` | não muda (CB-249) |
 | A-28 | Documentos | PRODUCT.md e AGENTS.md dizem que os dados ficam no aparelho, que a conta é opcional e que funciona offline | I | — | D-249 |
 | A-29 | Planejador | Apagar em "Meus produtos" um produto usado num plano derruba a tela do plano (o total do dia não acha o alimento e para tudo). Achado pela frente de receitas, reproduzido aqui | C | e2e CA-789 | D-248 |
+| A-31 | Meus produtos | O cartão "Meus produtos" repete o título da página (visto nos prints de depois). Ao contrário de Pacientes, a frase dele explica o que é cadastrar pelo rótulo | M | `depois/produto-apagado-aviso-390` | dono decide |
 | A-30 | Etapas 2 e 3 | Com um produto do rótulo no plano, os nutrientes que o rótulo não traz somam "NaN" (vitamina A, complexo B, fósforo, cobre, manganês, colesterol) em vez de contar como falta de dado | C | teste CA-793 | D-248 |
 
 **Sem defeito achado:** rolagem lateral da página (nenhuma tela em 640, 768, 1024 e 1280 px), erros no console
