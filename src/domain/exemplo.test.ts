@@ -1,5 +1,7 @@
 import { calcularEnergia } from './energia.ts'
 import { criarExemplo, entradasSemAlimento, NOME_DO_EXEMPLO } from './exemplo.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
+import { regraQueExclui } from './prescritivel.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { totaisDoPlano } from './totais.ts'
 
@@ -41,6 +43,18 @@ describe('Plano de exemplo', () => {
     const proporcao = kcal / (get ?? 1)
     expect(proporcao).toBeGreaterThan(0.9)
     expect(proporcao).toBeLessThan(1.1)
+  })
+
+  it('CA-917: nenhum item do exemplo é "nunca"; a margarina é a com óleo interesterificado e sai como "Margarina com sal"', () => {
+    const { plano } = criarExemplo(contador(), '2026-10-20')
+    const itens = plano.refeicoes.flatMap((r) => [...r.opcoes.principal, ...r.opcoes.substituto1, ...r.opcoes.substituto2])
+    for (const item of itens) {
+      const alimento = buscarAlimento(item.alimentoId)
+      expect(alimento && regraQueExclui(alimento)?.nivel, alimento?.descricao).not.toBe('nunca')
+    }
+    const margarina = itens.map((i) => buscarAlimento(i.alimentoId)).find((a) => a?.descricao.startsWith('Margarina'))
+    expect(margarina?.descricao).toBe('Margarina, com óleo interesterificado, com sal (65%de lipídeos)')
+    expect(nomeParaPaciente(margarina)).toBe('Margarina com sal')
   })
 
   it('vem com dados completos para a avaliação funcionar', () => {
