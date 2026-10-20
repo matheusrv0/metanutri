@@ -35,7 +35,8 @@ export function ResumoDaPorcao({ receita }: ResumoDaPorcaoProps) {
             <div key={l.chave} className="flex flex-col">
               <dt className="text-xs text-muted-foreground">{l.rotulo}</dt>
               <dd className="font-semibold text-heading">
-                {`${formatarNumero(total, l.casas)} ${l.unidade}`}
+                {/* Nenhum ingrediente tem o dado: travessão, nunca zero. */}
+                {semDado > 0 && total === 0 ? `— ${l.unidade}` : `${formatarNumero(total, l.casas)} ${l.unidade}`}
                 {semDado > 0 ? (
                   <span className="ml-0.5 align-super text-2xs font-semibold text-warningtext" title="Um ingrediente não tem este dado na tabela: valor possivelmente subestimado.">
                     †

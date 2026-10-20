@@ -97,6 +97,21 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Receita “Panqueca de banana” salva.')
   })
 
+  it('CA-861 (rodada da revisão): sem dado de energia em nenhum ingrediente, a lista diz "— kcal", nunca "0 kcal"', () => {
+    montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 458, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
+    const linha = within(listaDeReceitas()).getByRole('listitem')
+    expect(linha).toHaveTextContent('Rende 1 copo (200 g) · — kcal por copo')
+    expect(linha).not.toHaveTextContent('0 kcal')
+  })
+
+  it('CA-862: no valor da porção, o nutriente sem nenhum dado aparece como travessão', async () => {
+    const usuario = montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 458, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
+    await usuario.click(screen.getByRole('button', { name: 'Editar Leite batido' }))
+    const porcao = screen.getByRole('region', { name: 'Valor de uma porção' })
+    expect(porcao).toHaveTextContent('— kcal')
+    expect(porcao).not.toHaveTextContent('0 kcal')
+  })
+
   it('CB-270: salvar vazio não salva e diz o que falta', async () => {
     const arm = new Memoria()
     const usuario = montar(arm)

@@ -14,12 +14,16 @@ import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
 import { useReceitas } from '../estado/usarReceitas.ts'
 import { EditorReceita } from './EditorReceita.tsx'
 
-/** "Rende 2 unidades (120 g cada) · 204 kcal por unidade"; energia que falta num ingrediente leva a marca †. */
+/**
+ * "Rende 2 unidades (120 g cada) · 204 kcal por unidade"; energia que falta num ingrediente leva a marca †, e sem
+ * nenhum dado de energia, travessão: falta de dado nunca é zero (CA-861).
+ */
 function detalheDa(receita: Receita): string {
   const copia = copiaParaOPlano(receita)
   const energia = totaisDaPorcao(copia, buscarAlimento).nutrientes.energia_kcal
   const nome = receita.nomeDaPorcao.trim() || 'porção'
-  return `${textoDoRendimento(copia)} · ${formatarNumero(energia.total, 0)} kcal${energia.semDado > 0 ? '†' : ''} por ${nome}`
+  const kcal = energia.semDado > 0 && energia.total === 0 ? '— kcal' : `${formatarNumero(energia.total, 0)} kcal${energia.semDado > 0 ? '†' : ''}`
+  return `${textoDoRendimento(copia)} · ${kcal} por ${nome}`
 }
 
 /** As receitas da conta (spec receitas-com-calculo, US-RC1): lista, busca e o editor no mesmo lugar (D-272). */
