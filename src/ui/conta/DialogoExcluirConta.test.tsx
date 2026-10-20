@@ -6,11 +6,11 @@ import { DialogoExcluirConta } from './DialogoExcluirConta.tsx'
 
 const NAO_TERMINOU = 'Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
 
-function montar({ paga = false, resultado = { ok: true } as ResultadoDaExclusao } = {}) {
+function montar({ paga = false, periodo = false, resultado = { ok: true } as ResultadoDaExclusao } = {}) {
   const excluir = vi.fn(async (): Promise<ResultadoDaExclusao> => resultado)
   const aoBaixarBackup = vi.fn()
   const aoFechar = vi.fn()
-  const vista = render(<DialogoExcluirConta aberto pagaNaOperadora={paga} excluir={excluir} aoBaixarBackup={aoBaixarBackup} aoFechar={aoFechar} />)
+  const vista = render(<DialogoExcluirConta aberto pagaNaOperadora={paga} periodoPago={periodo} excluir={excluir} aoBaixarBackup={aoBaixarBackup} aoFechar={aoFechar} />)
   return { excluir, aoBaixarBackup, aoFechar, vista, usuario: userEvent.setup() }
 }
 
@@ -43,6 +43,14 @@ describe('DialogoExcluirConta (spec exclusao-de-conta)', () => {
     vista.unmount()
     montar({ paga: false })
     expect(screen.getByRole('dialog')).not.toHaveTextContent(/assinatura/i)
+  })
+
+  it('CA-803 (L5 da revisão): com um plano pago ainda valendo, diz que o tempo que falta se perde; sem ele, não diz', () => {
+    const { vista } = montar({ paga: true, periodo: true })
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toContain('O tempo que falta do período pago se perde.')
+    vista.unmount()
+    montar({ paga: false, periodo: false })
+    expect(screen.getByRole('dialog')).not.toHaveTextContent('período pago')
   })
 
   it('CA-804: "Baixar backup" baixa o backup e a janela continua aberta, dizendo que salvou', async () => {

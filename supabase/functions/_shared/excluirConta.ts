@@ -15,11 +15,13 @@
 import { EM_ANDAMENTO, RESERVA_VENCE_MS } from './assinar.ts'
 import { conferirChamadas } from './chamadas.ts'
 import { objeto, PAGOS } from './cobranca.ts'
-import { gerenciarAssinatura, type DependenciasDeGerenciar } from './gerenciarAssinatura.ts'
+import { GRAVADA_LA_SO, gerenciarAssinatura, type DependenciasDeGerenciar } from './gerenciarAssinatura.ts'
 import { respostaDeErro as erro, type ContaQuePede, type RespostaDaFuncao } from './portas.ts'
 
 /** CA-809: qualquer falha antes do fim. Antes do passo 4 a conta continua (D-252). */
 export const EXCLUSAO_FALHOU = 'Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
+/** CA-809 (L5 da revisão): a falha depois de o mesmo pedido cancelar a assinatura; a conta continua, sem o plano pago. */
+export const EXCLUSAO_FALHOU_CANCELADA = 'Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.'
 export const SEM_SESSAO = 'Entre na sua conta antes de excluir.'
 /** CA-816: a senha foi conferida há mais de 10 minutos (ou o token não diz quando). */
 export const CONFIRME_A_SENHA = 'Confirme sua senha de novo.'
@@ -63,6 +65,7 @@ export interface DependenciasDaExclusao extends DependenciasDeGerenciar {
 
 const EXCLUIDA: RespostaDaFuncao = { status: 200, corpo: { excluida: true } }
 const falhou = (): RespostaDaFuncao => erro(EXCLUSAO_FALHOU, 502)
+const falhouCancelada = (): RespostaDaFuncao => erro(EXCLUSAO_FALHOU_CANCELADA, 502, 'assinatura-cancelada')
 const mensagemDe = (falha: unknown): string => (falha instanceof Error ? falha.message : String(falha))
 
 /** A carga do token, decodificada do base64url. Nula quando não é um token com carga JSON. */
@@ -150,27 +153,33 @@ async function excluirReservada(conta: ContaQuePede, deps: DependenciasDaExclusa
     deps.log('Não consegui ler a assinatura da conta:', falha.mensagem)
     return falhou()
   }
+  // L5 da revisão: se este pedido cancelou a assinatura, a falha depois diz isso (CA-809), e a tela relê a assinatura.
+  let cancelou = false
   if (precisaCancelar(linha)) {
     const cancelamento = await gerenciarAssinatura({ conta, corpo: { acao: 'cancelar' } }, deps)
+    if (cancelamento.status === 200) cancelou = true
     // 409: a linha deixou de ser paga entre as duas leituras; não há o que cancelar.
-    if (cancelamento.status !== 200 && cancelamento.status !== 409) {
+    else if (cancelamento.status !== 409) {
       deps.log('A assinatura não foi cancelada; nada foi apagado. Status:', cancelamento.status)
-      return cancelamento.status === 429 ? cancelamento : falhou()
+      if (cancelamento.status === 429) return cancelamento
+      // Cancelada lá e não gravada aqui: para a pessoa, a assinatura já foi cancelada.
+      return cancelamento.corpo['erro'] === GRAVADA_LA_SO ? falhouCancelada() : falhou()
     }
   }
+  const falhouDepois = (): RespostaDaFuncao => (cancelou ? falhouCancelada() : falhou())
 
   // Passo 3: os comprovantes. Apagado o login, só a chave de serviço os acharia.
   const arquivos = await deps.exclusao.apagarArquivos(dono)
   if (arquivos) {
     deps.log('Não consegui apagar os comprovantes; o login ficou:', arquivos)
-    return falhou()
+    return falhouDepois()
   }
 
   // Passo 4: o login, e com ele, num passo só, as linhas da conta (013).
   const login = await deps.exclusao.apagarLogin(dono)
   if (login) {
     deps.log('Não consegui apagar o login:', login)
-    return falhou()
+    return falhouDepois()
   }
   return EXCLUIDA
 }

@@ -7,6 +7,7 @@ import {
   ADMINISTRADOR,
   CONFIRME_A_SENHA,
   EXCLUSAO_FALHOU,
+  EXCLUSAO_FALHOU_CANCELADA,
   excluirConta,
   horaDaSenha,
   SEM_SESSAO,
@@ -33,6 +34,8 @@ const BEM = { [GET]: [responde(200, COBRADA)], [PUT]: [responde(200)] }
 
 const EXCLUIDA = { status: 200, corpo: { excluida: true } }
 const FALHOU = { status: 502, corpo: { erro: EXCLUSAO_FALHOU } }
+/** L5 da revisão (CA-809): a falha depois de o mesmo pedido cancelar a assinatura. */
+const FALHOU_CANCELADA = { status: 502, corpo: { erro: EXCLUSAO_FALHOU_CANCELADA, codigo: 'assinatura-cancelada' } }
 const MUITAS = { status: 429, corpo: { erro: MUITAS_CHAMADAS, codigo: 'muitas-chamadas' } }
 /** D-256: o pedido anotado no limite (e as chamadas antigas apagadas). */
 const LIMITE = ['anotarChamada', 'apagarChamadasAntesDe'] as const
@@ -302,10 +305,10 @@ describe('excluirConta: a ordem dos passos (D-252, CA-812, CA-814)', () => {
     expect(estado.loginApagado).toBe(false)
   })
 
-  it('CB-251: cancelada lá e não gravada aqui: 502 sem apagar; o pedido seguinte não cancela de novo e termina', async () => {
+  it('CB-251: cancelada lá e não gravada aqui: 502 sem apagar, dizendo que a assinatura foi cancelada; o pedido seguinte não cancela de novo e termina', async () => {
     const { c, deps, estado } = montar([ATIVA], { [GET]: [responde(200, COBRADA), responde(200, CANCELADA_LA)], [PUT]: [responde(200)] })
     c.falhar('mudar', 2)
-    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU)
+    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU_CANCELADA)
     expect(estado.loginApagado).toBe(false)
     expect(c.pedidos.filter((p) => p.metodo === 'PUT')).toHaveLength(1)
     expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)
@@ -391,6 +394,20 @@ describe('excluirConta: falha no meio e o pedido seguinte (D-252, CA-821)', () =
     expect(c.log).toHaveBeenCalledWith('Não consegui apagar o login:', 'login fora')
     expect(await excluirConta(PEDIDO, deps)).toEqual(EXCLUIDA)
     expect(estado).toMatchObject({ arquivosApagados: 2, loginApagado: true })
+  })
+
+  it.each([
+    ['os arquivos não saem', { falhasDosArquivos: 1 }],
+    ['o login não sai', { falhasDoLogin: 1 }],
+  ])('CA-809 (L5 da revisão): o pedido cancelou a assinatura e %s: a frase diz que a assinatura já foi cancelada', async (_caso, opcoes) => {
+    const { deps } = montar([ATIVA], BEM, opcoes)
+    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU_CANCELADA)
+    expect(EXCLUSAO_FALHOU_CANCELADA).toBe('Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.')
+  })
+
+  it('CA-809: a assinatura já estava cancelada antes deste pedido e os arquivos não saem: a frase de sempre', async () => {
+    const { deps } = montar([{ ...ATIVA, status: 'cancelada', expira_em: '2026-11-06T02:59:59.000Z', encerrada_por: 'pessoa' }], BEM, { falhasDosArquivos: 1 })
+    expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU)
   })
 
   it('nenhum registro leva o e-mail', async () => {

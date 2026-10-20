@@ -13,6 +13,8 @@ import { VerificacaoContraRobos } from '../publico/conta/VerificacaoContraRobos.
 interface FormularioExcluirContaProps {
   /** CA-803: assinatura do Mercado Pago que ainda cobra; a exclusão a cancela. */
   readonly pagaNaOperadora: boolean
+  /** CA-803 (L5 da revisão): um plano pago ainda vale (ativo ou cancelado no prazo); o tempo que falta se perde. */
+  readonly periodoPago: boolean
   readonly excluir: (senha: string, extra: ExtraDoPedido) => Promise<ResultadoDaExclusao>
   readonly aoBaixarBackup: () => void
   readonly aoFechar: () => void
@@ -31,7 +33,7 @@ interface Erro {
  * O que há dentro da janela de excluir a conta (spec exclusao-de-conta, D-250 e D-251). Nasce com a janela aberta: a
  * verificação contra robôs desenha o widget na caixa que este componente põe na página (useVerificacao).
  */
-export function FormularioExcluirConta({ pagaNaOperadora, excluir, aoBaixarBackup, aoFechar, enviando, aoMudarEnviando }: FormularioExcluirContaProps) {
+export function FormularioExcluirConta({ pagaNaOperadora, periodoPago, excluir, aoBaixarBackup, aoFechar, enviando, aoMudarEnviando }: FormularioExcluirContaProps) {
   const id = useId()
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<Erro | null>(null)
@@ -69,6 +71,7 @@ export function FormularioExcluirConta({ pagaNaOperadora, excluir, aoBaixarBacku
           <li>Os links dos pacientes, que deixam de abrir.</li>
           <li>Situação, CRN e comprovantes de matrícula.</li>
           {pagaNaOperadora ? <li>A assinatura é cancelada, sem novas cobranças.</li> : null}
+          {periodoPago ? <li>O tempo que falta do período pago se perde.</li> : null}
         </ul>
         <p className="text-muted-foreground">Em outro aparelho com a conta aberta, saia antes.</p>
       </div>

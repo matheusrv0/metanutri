@@ -786,14 +786,19 @@ describe('TelaConta', () => {
       estado.assinatura = PAGA
       const { usuario } = montar(nutri)
       await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
-      expect(screen.getByRole('dialog', { name: 'Excluir sua conta?' })).toHaveTextContent('A assinatura é cancelada, sem novas cobranças.')
+      const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
+      expect(janela).toHaveTextContent('A assinatura é cancelada, sem novas cobranças.')
+      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
     })
 
     it('CA-803: cancelada no prazo, a janela não fala de cancelar (já não há cobrança)', async () => {
       estado.assinatura = CANCELADA_NO_PRAZO
       const { usuario } = montar(nutri)
       await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
-      expect(screen.getByRole('dialog', { name: 'Excluir sua conta?' })).not.toHaveTextContent('A assinatura é cancelada')
+      const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
+      expect(janela).not.toHaveTextContent('A assinatura é cancelada')
+      // L5 da revisão: o período pago ainda vale e se perde com a conta.
+      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
     })
 
     it('CA-804: "Baixar backup" na janela baixa o backup da conta', async () => {

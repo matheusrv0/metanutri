@@ -81,8 +81,14 @@ export function TelaConta({
   const [trocando, setTrocando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const refAviso = useRef<HTMLDivElement>(null)
-  // Spec exclusao-de-conta: dando certo, termina como "Sair" (D-255).
-  const exclusao = useExclusaoDaConta(conta, aoSaiu)
+  // Spec exclusao-de-conta: dando certo, termina como "Sair" (D-255). Se cancelou a assinatura e parou no meio (CA-809),
+  // esta tela e o App leem a assinatura de novo.
+  const exclusao = useExclusaoDaConta(conta, aoSaiu, {
+    aoCancelarAssinatura: () => {
+      recarregar()
+      aoMudouAssinatura()
+    },
+  })
   const armazenamento = useArmazenamento()
   const [excluindoConta, setExcluindoConta] = useState(false)
 
@@ -266,6 +272,8 @@ export function TelaConta({
           aberto={excluindoConta}
           // CA-803: a mesma condição que mostra "Cancelar assinatura": ainda há cobrança para cancelar.
           pagaNaOperadora={(paga && !noPrazo) || travadaNova}
+          // L5 da revisão: o plano pago que ainda vale, ativo ou cancelado no prazo, mensal ou anual.
+          periodoPago={paga}
           excluir={exclusao.excluir}
           aoBaixarBackup={() => baixarBackup(armazenamento)}
           aoFechar={() => setExcluindoConta(false)}

@@ -49,12 +49,14 @@ function montar({ entrar = { ok: true, erro: null as ErroConta | null }, comNuve
     return EXCLUIDA
   })
   const envolver = ({ children }: { children: ReactNode }) => <ContextoNuvem.Provider value={comNuvem ? nuvem : null}>{children}</ContextoNuvem.Provider>
-  const hook = renderHook(() => useExclusaoDaConta(conta, aoExcluida, () => relogio), { wrapper: envolver })
+  const aoCancelarAssinatura = vi.fn()
+  const hook = renderHook(() => useExclusaoDaConta(conta, aoExcluida, { agora: () => relogio, aoCancelarAssinatura }), { wrapper: envolver })
   return {
     hook,
     conta,
     nuvem,
     aoExcluida,
+    aoCancelarAssinatura,
     ordem,
     andar: (ms: number) => {
       relogio += ms
@@ -127,6 +129,26 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
     expect(EXCLUSAO_NAO_TERMINOU).toBe('Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.')
     expect(conta.sair).not.toHaveBeenCalled()
     expect(nuvem.parar).not.toHaveBeenCalled()
+  })
+
+  it('CA-809 (L5 da revisão): o servidor cancelou a assinatura e não terminou: a frase dele, e Conta e plano relê a assinatura', async () => {
+    const { hook, conta, aoCancelarAssinatura } = montar()
+    const frase = 'Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.'
+    cliente.invocar.mockResolvedValue(respondeu(502, { erro: frase, codigo: 'assinatura-cancelada' }))
+    let resultado
+    await act(async () => {
+      resultado = await hook.result.current.excluir('minha-senha', [])
+    })
+    expect(resultado).toEqual({ ok: false, erro: frase, naSenha: false })
+    expect(aoCancelarAssinatura).toHaveBeenCalledOnce()
+    expect(conta.sair).not.toHaveBeenCalled()
+  })
+
+  it('CA-809: a falha comum não relê a assinatura', async () => {
+    const { hook, aoCancelarAssinatura } = montar()
+    cliente.invocar.mockResolvedValue(respondeu(502, { erro: EXCLUSAO_NAO_TERMINOU }))
+    await act(() => hook.result.current.excluir('minha-senha', []))
+    expect(aoCancelarAssinatura).not.toHaveBeenCalled()
   })
 
   it('CA-809: sem resposta (a rede caiu): a mesma frase', async () => {

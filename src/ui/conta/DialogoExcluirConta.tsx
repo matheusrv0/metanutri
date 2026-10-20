@@ -9,6 +9,8 @@ interface DialogoExcluirContaProps {
   readonly aberto: boolean
   /** CA-803: assinatura do Mercado Pago que ainda cobra; a exclusão a cancela. */
   readonly pagaNaOperadora: boolean
+  /** CA-803 (L5 da revisão): um plano pago ainda vale (ativo ou cancelado no prazo); o tempo que falta se perde. */
+  readonly periodoPago: boolean
   readonly excluir: (senha: string, extra: ExtraDoPedido) => Promise<ResultadoDaExclusao>
   readonly aoBaixarBackup: () => void
   readonly aoFechar: () => void
@@ -18,7 +20,7 @@ interface DialogoExcluirContaProps {
  * A janela de excluir a conta (spec exclusao-de-conta, D-250, CA-802 a CA-811). "Manter conta" recebe o foco: é a
  * escolha que não apaga nada. Enquanto o pedido corre, ela não fecha. Rola por dentro em tela baixa.
  */
-export function DialogoExcluirConta({ aberto, pagaNaOperadora, excluir, aoBaixarBackup, aoFechar }: DialogoExcluirContaProps) {
+export function DialogoExcluirConta({ aberto, pagaNaOperadora, periodoPago, excluir, aoBaixarBackup, aoFechar }: DialogoExcluirContaProps) {
   const [enviando, setEnviando] = useState(false)
   return (
     <Dialog open={aberto} onOpenChange={(abrir) => (abrir || enviando ? undefined : aoFechar())}>
@@ -29,6 +31,7 @@ export function DialogoExcluirConta({ aberto, pagaNaOperadora, excluir, aoBaixar
         </DialogHeader>
         <FormularioExcluirConta
           pagaNaOperadora={pagaNaOperadora}
+          periodoPago={periodoPago}
           excluir={excluir}
           aoBaixarBackup={aoBaixarBackup}
           aoFechar={aoFechar}

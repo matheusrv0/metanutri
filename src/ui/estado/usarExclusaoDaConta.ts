@@ -30,10 +30,18 @@ export interface ValorExclusao {
 
 const falhou = (erro: string, naSenha = false): ResultadoDaExclusao => ({ ok: false, erro, naSenha })
 
+export interface OpcoesDaExclusao {
+  /** CA-809 (L5 da revisão): o pedido cancelou a assinatura e não terminou; quem chama relê a assinatura. */
+  readonly aoCancelarAssinatura?: () => void
+  /** O relógio; só muda nos testes. */
+  readonly agora?: () => number
+}
+
 /**
- * `aoExcluida` é o mesmo de depois de "Sair": vai para a página inicial e recarrega. `agora` só muda nos testes.
+ * `aoExcluida` é o mesmo de depois de "Sair": vai para a página inicial e recarrega.
  */
-export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' | 'sair'>, aoExcluida: () => void, agora: () => number = Date.now): ValorExclusao {
+export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' | 'sair'>, aoExcluida: () => void, opcoes: OpcoesDaExclusao = {}): ValorExclusao {
+  const { aoCancelarAssinatura, agora = Date.now } = opcoes
   const nuvem = useNuvem()
   const [excluindo, setExcluindo] = useState(false)
   // CA-807: um pedido por vez; o segundo clique não sai.
@@ -69,6 +77,10 @@ export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' |
         // CA-801, CA-810 e CB-253: administrador, pedidos demais e pagamento em andamento, a frase do servidor. 401: a sessão acabou.
         if (falha.status === 403 || falha.status === 409 || falha.status === 429) return falhou(falha.erro ?? EXCLUSAO_NAO_TERMINOU)
         if (falha.status === 401) return falhou(falha.erro ?? SESSAO_TERMINOU)
+        if (falha.codigo === 'assinatura-cancelada') {
+          aoCancelarAssinatura?.()
+          return falhou(falha.erro ?? EXCLUSAO_NAO_TERMINOU)
+        }
         return falhou(EXCLUSAO_NAO_TERMINOU)
       }
       if (dados?.excluida !== true) return falhou(EXCLUSAO_NAO_TERMINOU)
