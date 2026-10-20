@@ -186,6 +186,14 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
     expect(buscarReceitas('2 copos suco verde', copo)[0]).toMatchObject({ porcoes: 2, gramas: 500 })
   })
 
+  it('CA-872 (rodada da revisão): sem número no começo, o texto todo é o nome, mesmo começando com nome de porção', () => {
+    const doces = [receita('c', 'Copo da felicidade', { pesoProntoG: 600, porcoes: 3 }), receita('f', 'Fatia húngara', { pesoProntoG: 800, porcoes: 8 })]
+    expect(buscarReceitas('copo da felicidade', doces)).toMatchObject([{ receita: { id: 'c' }, porcoes: 1, gramas: 200, aviso: null }])
+    expect(buscarReceitas('fatia hungara', doces)).toMatchObject([{ receita: { id: 'f' }, porcoes: 1, gramas: 100, aviso: null }])
+    // Com número, a palavra volta a ser a medida.
+    expect(buscarReceitas('2 unidade copo da felicidade', doces)).toMatchObject([{ porcoes: 2, gramas: 400 }])
+  })
+
   it('CA-872: medida que não é a da porção não põe nada e diz qual usar', () => {
     const [r] = buscarReceitas('2 colher de sopa panqueca de banana', lista)
     expect(r).toMatchObject({ gramas: null, porcoes: null, aviso: 'Esta receita é medida em unidade. Use "2 unidade" ou as gramas.' })

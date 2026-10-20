@@ -115,10 +115,13 @@ const quantidadeEmTexto = (q: number): string => String(q).replace('.', ',')
  * Enter de "75 banana" continua pondo banana mesmo com "Banana amassada com aveia" na biblioteca.
  */
 export function buscarReceitas(texto: string, receitas: readonly Receita[], alimentosAchados: readonly Pick<Alimento, 'descricao'>[] = []): readonly ResultadoReceita[] {
-  const lida = interpretarEntrada(texto)
+  // CA-872: sem número no começo, o texto todo é o nome ("copo da felicidade", "fatia húngara"); a medida só vale depois
+  // de um número ("2 unidade panqueca").
+  const comNumero = /^\d/.test(normalizar(texto).trim())
+  const lida = comNumero ? interpretarEntrada(texto) : { quantidade: null, medida: null, termos: normalizar(texto).trim().split(/\s+/).filter((t) => t !== '' && t !== 'de') }
   let { medida, termos } = lida
   const { quantidade } = lida
-  if (medida === null && termos.length > 1) {
+  if (comNumero && medida === null && termos.length > 1) {
     const daPorcao = PORCOES_DE_UMA_PALAVRA.get(termos[0] ?? '')
     if (daPorcao !== undefined) {
       medida = daPorcao
