@@ -498,15 +498,18 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     expect(agua).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('CB-236: a falha de uma marcação desfaz só aquela missão', async () => {
+  it('CB-236 (M-4): a primeira marcação falha depois de a segunda salvar com ela junto: a tela relê e fica como a nuvem, sem aviso', async () => {
+    let nuvem = acompanhamento()
     const pendentes: (() => void)[] = []
     const fonte: FonteAcompanhamentos = {
       naNuvem: true,
-      porToken: () => Promise.resolve(acompanhamento()),
-      salvar: (a) =>
-        a.marcacoes.some((m) => m.feitas.includes('agua')) && !a.marcacoes.some((m) => m.feitas.includes('refeicao-1'))
-          ? new Promise((_, rejeitar) => pendentes.push(() => rejeitar(new LinkSemConexao())))
-          : Promise.resolve(a),
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        const soAgua = a.marcacoes.some((m) => m.feitas.includes('agua')) && !a.marcacoes.some((m) => m.feitas.includes('refeicao-1'))
+        if (soAgua) return new Promise((_, rejeitar) => pendentes.push(() => rejeitar(new LinkSemConexao())))
+        nuvem = a
+        return Promise.resolve(a)
+      },
     }
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
@@ -517,10 +520,50 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     await usuario.click(cafe)
     await act(async () => {
       pendentes.shift()?.()
-      await Promise.resolve()
+      await new Promise((fim) => setTimeout(fim, 0))
     })
-    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    // A segunda levou a lista inteira: a água chegou à nuvem por ela, e a tela concorda.
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
     expect(cafe).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-4: a resposta se perdeu, mas a nuvem gravou: a tela relê, a marca fica e não há aviso', async () => {
+    let nuvem = acompanhamento()
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        nuvem = a
+        return Promise.reject(new LinkSemConexao())
+      },
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    await act(async () => {
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-4: sem conseguir reler, desfaz só aquela missão e avisa', async () => {
+    let leituras = 0
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => (++leituras === 1 ? Promise.resolve(acompanhamento({ marcacoes: [{ dia: HOJE, feitas: ['refeicao-1'] }] })) : Promise.reject(new LinkSemConexao())),
+      salvar: () => Promise.reject(new LinkSemConexao()),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(leituras).toBe(2)
   })
 
   it('CA-757: a tela do paciente tem a região principal', async () => {

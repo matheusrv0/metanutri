@@ -121,8 +121,10 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   }, [token, fonte, tentativa])
 
   /**
-   * Marca na hora e grava. A nuvem não gravando (D-232, CA-756), só esta missão volta como estava (CB-236) e a tela
-   * avisa: a marca não fica fingindo que salvou.
+   * Marca na hora e grava. A gravação falhando (D-232, CA-756), a tela relê o link e fica com o que a nuvem guardou
+   * (M-4): a marca pode ter chegado por outra marcação, que leva a lista inteira (CB-236), ou a resposta pode ter se
+   * perdido depois de gravar. O aviso só aparece se a marca não ficou lá. Sem conseguir reler, só esta missão volta como
+   * estava. A marca nunca fica fingindo que salvou.
    */
   const alternar = (missaoId: string, feita: boolean) => {
     if (carga === null || carga.acompanhamento === null) return
@@ -132,8 +134,17 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
     fonte.salvar(novo).then(
       () => setNaoSalvou(null),
       (erro: unknown) => {
-        setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
-        setNaoSalvou(fraseDaFalha(erro))
+        const frase = fraseDaFalha(erro)
+        const desfazer = () => {
+          setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
+          setNaoSalvou(frase)
+        }
+        fonte.porToken(token).then((daNuvem) => {
+          if (daNuvem === null) return desfazer()
+          setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: daNuvem } : atual))
+          const ficou = missoesDoDia(daNuvem, hoje).some((m) => m.id === missaoId && m.feita === feita)
+          setNaoSalvou(ficou ? null : frase)
+        }, desfazer)
       },
     )
   }
