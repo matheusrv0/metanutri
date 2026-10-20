@@ -103,7 +103,10 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
           <CardDescription>Nada aqui é opinião do sistema; são fatos sobre os dados e sobre a lei.</CardDescription>
         </CardHeader>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
-          <li>A tabela de composição não traz vitamina D, vitamina B12 nem folato. A adequação desses três não aparece.</li>
+          <li>
+            Vitamina D, vitamina E, folato, vitamina B12 e selênio vêm de alimento equivalente do USDA e faltam em boa parte das
+            preparações brasileiras. Quando falta, a linha da adequação leva †.
+          </li>
           <li>Açúcares e gordura saturada só existem em produto que você cadastra pelo rótulo.</li>
           <li>Os números de energia, dobras e ganho de peso ainda não foram conferidos por nutricionista.</li>
           <li>A prescrição de dieta é privativa de nutricionista com registro no CRN, pela Lei 8.234/1991.</li>

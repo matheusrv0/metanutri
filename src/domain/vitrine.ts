@@ -1,67 +1,16 @@
 // Números que a área pública mostra. Os da base são medidos na tabela de verdade;
 // os do plano vêm do exemplo que o próprio sistema cria, e a tela diz que é exemplo.
-import { completudeDe, NUTRIENTES_CONFERIDOS } from './completude.ts'
 import { ALIMENTOS } from './tabelas.ts'
-
-export interface LacunaDaBase {
-  readonly valor: string
-  readonly rotulo: string
-  /** Largura da barra, de 0 a 100. */
-  readonly proporcao: number
-}
+import type { ChaveNutrienteAlimento } from './tipos.ts'
 
 const pct = (quantos: number) => (quantos / ALIMENTOS.length) * 100
 
-const semNutriente = (chave: (typeof NUTRIENTES_CONFERIDOS)[number]) =>
+const semNutriente = (chave: ChaveNutrienteAlimento) =>
   ALIMENTOS.filter((a) => a.nutrientes[chave] === null && !a.tracos.includes(chave)).length
-
-const formatar = (n: number) => `${n.toFixed(1).replace('.', ',')}%`
 
 /** Percentual (inteiro) dos alimentos da TACO sem vitamina A medida (spec estilo-spora, CA-114). */
 export function pctAlimentosSemVitaminaA(): number {
   return Math.round(pct(semNutriente('vitamina_a_rae_mcg')))
-}
-
-/**
- * Medido na tabela em uso, não escrito à mão: se a base mudar, a página muda junto.
- * É a informação mais desconfortável do produto e por isso fica em destaque.
- */
-export const LACUNAS_DA_BASE: readonly LacunaDaBase[] = (() => {
-  const semVitaminaA = semNutriente('vitamina_a_rae_mcg')
-  const semFibra = semNutriente('fibra_g')
-  const completos = ALIMENTOS.filter((a) => completudeDe(a).nivel === 'completo').length
-  return [
-    { valor: formatar(pct(semVitaminaA)), rotulo: 'dos alimentos sem vitamina A', proporcao: pct(semVitaminaA) },
-    { valor: formatar(pct(semFibra)), rotulo: 'sem fibra alimentar', proporcao: pct(semFibra) },
-    {
-      valor: `${completos} de ${ALIMENTOS.length}`,
-      rotulo: 'com os 20 nutrientes medidos',
-      proporcao: Math.max(pct(completos), 1),
-    },
-    {
-      valor: '5',
-      rotulo: 'nutrientes que faltam para todos os alimentos',
-      // Cinco de uma lista de 25: os 20 conferidos mais os 5 que a tabela nem traz.
-      proporcao: (5 / (NUTRIENTES_CONFERIDOS.length + 5)) * 100,
-    },
-  ]
-})()
-
-export interface BarraDaVitrine {
-  readonly nome: string
-  readonly detalhe: string
-  /** `null` quando a tabela não traz o nutriente: vira hachura, nunca zero. */
-  readonly pct: number | null
-  readonly fonte: string
-}
-
-/** Três linhas do plano de exemplo, escolhidas por contarem histórias diferentes. */
-export function adequacaoDoExemplo(): readonly BarraDaVitrine[] {
-  return [
-    { nome: 'Ferro', detalhe: '16,6 de 18 mg', pct: 92, fonte: 'RDA' },
-    { nome: 'Cálcio', detalhe: '680 de 1.000 mg', pct: 68, fonte: 'RDA' },
-    { nome: 'Vitamina D', detalhe: 'não existe na base', pct: null, fonte: 'RDA' },
-  ]
 }
 
 export interface SugestaoDaVitrine {

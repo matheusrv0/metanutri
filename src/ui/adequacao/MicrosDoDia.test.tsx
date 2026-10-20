@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
-import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -10,12 +10,9 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import {
-  CENOURA_CRUA,
-  CHA_PRETO,
   gavetaDeVerdade,
   gavetaSugere,
   IOGURTE_DESNATADO,
-  LENTILHA_COZIDA,
   sugestaoQueLevaAMeta,
   sugestaoQueNaoLevaAMeta,
 } from './cobrirControlado.test-utils.ts'
@@ -45,6 +42,10 @@ function planoCom(...itens: readonly (readonly [number, number])[]): Plano {
 
 const ARROZ = 3
 const SAL_GROSSO = 517
+const OLEO_DE_GIRASSOL = 269
+const QUEIJO_PRATO = 467
+const SALMAO_GRELHADO = 317
+const TODOS_NA_META = `Todos os ${MICRONUTRIENTES_ADEQUACAO.length} na meta.`
 
 function Anfitriao({
   inicial,
@@ -155,12 +156,13 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
   it('CB-202: nada abaixo da meta nem acima do limite, o cartão diz que está tudo na meta', () => {
     const preset = { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } as const
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, criarExemplo(ids, '2026-10-15').plano)
-    expect(cartao().getByText('Todos os 16 na meta.')).toBeInTheDocument()
+    expect(cartao().getByText(TODOS_NA_META)).toBeInTheDocument()
+    expect(TODOS_NA_META).toBe('Todos os 21 na meta.')
     expect(cartao().queryByRole('list')).not.toBeInTheDocument()
   })
 
   it('CB-209: a referência do caso vale no cartão (coletivo cobra menos)', () => {
-    // "4 para cobrir.", "Nada para cobrir." ou "Todos os 16 na meta.": sem número na frente, é zero.
+    // "4 para cobrir.", "Nada para cobrir." ou "Todos os 21 na meta.": sem número na frente, é zero.
     const contar = () => Number(cartao().getByText(/para cobrir\.$|na meta\.$/).textContent?.match(/^(\d+)/)?.[1] ?? 0)
     const plano = criarExemplo(ids, '2026-10-15').plano
     const { desmontar } = montar(adulta, plano)
@@ -179,35 +181,35 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 })
 
 describe('Cartão arredonda sem desmentir o estado (CA-696, CA-712)', () => {
-  const calcioDoExemplo = (plano: Plano) => {
+  const ferroDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    const calcio = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
-    if (!calcio) throw new Error('sem cálcio')
+    const ferro = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'ferro_mg')
+    if (!ferro) throw new Error('sem ferro')
     // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
-    expect(calcio.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
-    return calcio.adequacaoPct
+    expect(ferro.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
+    return ferro.adequacaoPct
   }
-  const pctDoCalcio = () => {
-    const linha = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
-    if (!linha) throw new Error('cálcio fora do cartão')
+  const pctDoFerro = () => {
+    const linha = linhas().find((l) => l.textContent?.startsWith('Ferro'))
+    if (!linha) throw new Error('ferro fora do cartão')
     return within(linha)
   }
 
   it('CA-712: longe da meta, a adequação arredonda para o mais perto', () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     expect(pct).toBeLessThan(89)
     montar(adulta, plano)
-    expect(pctDoCalcio().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: com a meta logo acima, a adequação arredonda para baixo', () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     // Meta no inteiro logo acima: o mais perto daria o número da meta, em cor de abaixo.
     const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } as const
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, plano)
-    expect(pctDoCalcio().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
   })
 })
 
@@ -215,9 +217,13 @@ describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
   const exemplo = () => criarExemplo(ids, '2026-10-15').plano
 
   it('CA-697: o sódio abaixo da meta não aparece no cartão nem na contagem', () => {
-    montar(adulta, exemplo())
-    // No exemplo, 5 estão abaixo da meta, e um deles é o sódio.
-    expect(cartao().getByText('4 para cobrir.')).toBeInTheDocument()
+    const plano = exemplo()
+    const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
+    const abaixo = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.filter((l) => l.estado === 'abaixo')
+    // No exemplo, o sódio está entre os abaixo da meta, e a contagem não o conta.
+    expect(abaixo.map((l) => l.chave)).toContain('sodio_mg')
+    montar(adulta, plano)
+    expect(cartao().getByText(`${abaixo.length - 1} para cobrir.`)).toBeInTheDocument()
     expect(linhas().some((l) => l.textContent?.startsWith('Sódio'))).toBe(false)
     expect(cartao().queryByRole('button', { name: 'Cobrir Sódio' })).not.toBeInTheDocument()
   })
@@ -242,7 +248,7 @@ describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
 })
 
 describe('Legenda do † no cartão (CA-699)', () => {
-  const CURAU = 29
+  const BANANA_NANICA = 179
 
   it('CA-699: com alguma linha marcada, o pé do cartão explica o †, à vista', () => {
     montar(adulta, criarExemplo(ids, '2026-10-15').plano)
@@ -251,8 +257,8 @@ describe('Legenda do † no cartão (CA-699)', () => {
   })
 
   it('CA-699: sem linha marcada, não há pé', () => {
-    // O curau tem todos os 16 nutrientes na tabela: nenhuma linha leva †.
-    montar(adulta, planoCom([CURAU, 200]))
+    // A banana-nanica tem as 21 linhas da adequação na base (as cinco do USDA também): nenhuma linha leva †.
+    montar(adulta, planoCom([BANANA_NANICA, 200]))
     expect(linhas().length).toBeGreaterThan(0)
     expect(cartao().queryAllByTitle(/total possivelmente subestimado/)).toHaveLength(0)
     expect(cartao().queryByText(/Total possivelmente subestimado/)).not.toBeInTheDocument()
@@ -263,19 +269,19 @@ describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
   it('CB-204: o nutriente que chega à meta depois do Cobrir sai do cartão', async () => {
     const plano = criarExemplo(ids, '2026-10-15').plano
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'vitamina_a_rae_mcg', CENOURA_CRUA, ids))
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'calcio_mg', IOGURTE_DESNATADO, ids))
     const { usuario } = montar(adulta, plano)
     const antes = Number(cartao().getByText(/para cobrir\.$/).textContent?.match(/^(\d+)/)?.[1])
-    const vitaminaA = linhas().find((l) => l.textContent?.startsWith('Vitamina A'))
-    if (!vitaminaA) throw new Error('vitamina A fora do cartão')
-    await usuario.click(within(vitaminaA).getByRole('button', { name: 'Cobrir Vitamina A (RAE)' }))
+    const calcio = linhas().find((l) => l.textContent?.startsWith('Cálcio'))
+    if (!calcio) throw new Error('cálcio fora do cartão')
+    await usuario.click(within(calcio).getByRole('button', { name: 'Cobrir Cálcio' }))
 
     const gaveta = within(screen.getByRole('dialog'))
     const sugestao = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getByRole('listitem')
-    expect(sugestao).toHaveTextContent('Cenoura, crua')
+    expect(sugestao).toHaveTextContent('Iogurte, natural, desnatado')
     await usuario.click(within(sugestao).getByRole('button', { name: 'Adicionar' }))
 
-    expect(linhas().some((l) => l.textContent?.startsWith('Vitamina A'))).toBe(false)
+    expect(linhas().some((l) => l.textContent?.startsWith('Cálcio'))).toBe(false)
     expect(cartao().getByText(`${antes - 1} para cobrir.`)).toBeInTheDocument()
   })
 })
@@ -285,6 +291,11 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
   const casoDe = (inicial: Partial<Caso>): Caso => ({ ...criarCasoVazio('c1'), ...inicial })
   const cobrirDoCartao = () => cartao().getAllByRole('button', { name: /^Cobrir / }).map((b) => b.getAttribute('aria-label') ?? '')
   const titulo = () => cartao().getByRole('heading', { name: 'Micronutrientes' })
+  /** Os que se cobrem, na ordem do cartão: do mais longe para o mais perto da meta. */
+  const abaixoDaMetaEmOrdem = (plano: Plano, caso: Caso) =>
+    calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
+      .linhas.filter((l) => l.estado === 'abaixo' && l.chave !== 'sodio_mg')
+      .sort((a, b) => a.adequacaoPct - b.adequacaoPct)
 
   /** Abre o Cobrir do nutriente no cartão e clica em "Adicionar" na sugestão (única) da gaveta. */
   const cobrirEAdicionar = async (usuario: ReturnType<typeof userEvent.setup>, rotulo: string) => {
@@ -295,24 +306,32 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
 
   it('CA-713: o nutriente chega à meta e sai do cartão; o foco vai para o Cobrir do próximo', async () => {
     const plano = exemplo()
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'calcio_mg', IOGURTE_DESNATADO, ids))
+    // Controlada: o óleo leva só a vitamina E à meta (o Cobrir nunca sugere óleo; aqui a gaveta é de teste).
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'vitamina_e_mg', OLEO_DE_GIRASSOL, ids))
     const { usuario } = montar(adulta, plano)
     const ordem = cobrirDoCartao()
-    const proximo = ordem[ordem.indexOf('Cobrir Cálcio') + 1]
-    if (!proximo) throw new Error('o cálcio é o último do cartão')
+    const proximo = ordem[ordem.indexOf('Cobrir Vitamina E') + 1]
+    if (!proximo) throw new Error('a vitamina E é a última do cartão')
 
-    await cobrirEAdicionar(usuario, 'Cálcio')
-    expect(cartao().queryByRole('button', { name: 'Cobrir Cálcio' })).not.toBeInTheDocument()
+    await cobrirEAdicionar(usuario, 'Vitamina E')
+    expect(cartao().queryByRole('button', { name: 'Cobrir Vitamina E' })).not.toBeInTheDocument()
     await waitFor(() => expect(cartao().getByRole('button', { name: proximo })).toHaveFocus())
   })
 
   it('CA-713: sem próximo, o foco vai para o título do cartão', async () => {
+    // Com a meta em 80%, os que se cobrem no exemplo cabem nos 5 do cartão, e o último deles fica sem próximo.
+    const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 80 } } }
     const plano = exemplo()
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(adulta), 'vitamina_a_rae_mcg', CENOURA_CRUA, ids))
-    const { usuario } = montar(adulta, plano)
-    expect(cobrirDoCartao().at(-1)).toBe('Cobrir Vitamina A (RAE)')
+    const ordem = abaixoDaMetaEmOrdem(plano, casoDe(inicial))
+    const ultimo = ordem.at(-1)
+    if (!ultimo) throw new Error('fixture: nada para cobrir')
+    expect(ordem.length).toBeLessThanOrEqual(5)
+    expect(ultimo.chave).toBe('calcio_mg')
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(inicial), 'calcio_mg', IOGURTE_DESNATADO, ids))
+    const { usuario } = montar(inicial, plano)
+    expect(cobrirDoCartao().at(-1)).toBe('Cobrir Cálcio')
 
-    await cobrirEAdicionar(usuario, 'Vitamina A (RAE)')
+    await cobrirEAdicionar(usuario, 'Cálcio')
     expect(cartao().getAllByRole('button', { name: /^Cobrir / }).length).toBeGreaterThan(0)
     await waitFor(() => expect(titulo()).toHaveFocus())
   })
@@ -335,17 +354,16 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
   })
 
   it('CA-713: com mais de 5 para cobrir, o 6º que entra à vista recebe o foco quando o 5º chega à meta', async () => {
-    // Com a meta em 140%, no exemplo 9 ficam abaixo (fora o sódio): o cartão mostra 5.
+    // Com a meta em 140%, no exemplo ficam mais de 5 abaixo (fora o sódio): o cartão mostra 5, e o 5º é o cálcio.
     const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 140 } } }
     const plano = exemplo()
     const caso = casoDe(inicial)
-    const ordem = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
-      .linhas.filter((l) => l.estado === 'abaixo' && l.chave !== 'sodio_mg')
-      .sort((a, b) => a.adequacaoPct - b.adequacaoPct)
+    const ordem = abaixoDaMetaEmOrdem(plano, caso)
     const [quinto, sexto] = [ordem[4], ordem[5]]
     if (!quinto || !sexto) throw new Error('fixture: menos de 6 para cobrir')
-    expect(quinto.chave).toBe('tiamina_mg')
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'tiamina_mg', CHA_PRETO, ids))
+    expect(quinto.chave).toBe('calcio_mg')
+    // O queijo prato leva só o cálcio a 140%.
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, caso, 'calcio_mg', QUEIJO_PRATO, ids))
     const { usuario } = montar(inicial, plano)
     expect(cobrirDoCartao()).toHaveLength(5)
     expect(cobrirDoCartao()).not.toContain(`Cobrir ${sexto.rotulo}`)
@@ -356,15 +374,15 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
   })
 
   it('CB-211: o único do cartão chega à meta; o cartão diz "Nada para cobrir." e o foco vai para o título', async () => {
-    // Com a meta em 50%, no exemplo só o ferro fica abaixo (fora o sódio).
-    const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 50 } } }
+    // Com a meta em 30%, no exemplo só a vitamina D fica abaixo (fora o sódio).
+    const inicial: Partial<Caso> = { ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 30 } } }
     const plano = exemplo()
-    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(inicial), 'ferro_mg', LENTILHA_COZIDA, ids))
+    await gavetaSugere(sugestaoQueLevaAMeta(plano, casoDe(inicial), 'vitamina_d_mcg', SALMAO_GRELHADO, ids))
     const { usuario } = montar(inicial, plano)
-    expect(cobrirDoCartao()).toEqual(['Cobrir Ferro'])
+    expect(cobrirDoCartao()).toEqual(['Cobrir Vitamina D'])
 
-    await cobrirEAdicionar(usuario, 'Ferro')
-    expect(cartao().getByText(/^(Nada para cobrir|Todos os 16 na meta)\.$/)).toBeInTheDocument()
+    await cobrirEAdicionar(usuario, 'Vitamina D')
+    expect(cartao().getByText(/^(Nada para cobrir|Todos os \d+ na meta)\.$/)).toBeInTheDocument()
     await waitFor(() => expect(titulo()).toHaveFocus())
   })
 })
@@ -390,5 +408,15 @@ describe('Restrições do paciente no Cobrir do cartão (sugestoes-com-criterio,
     await com.usuario.click(cartao().getByRole('button', { name: 'Cobrir Ferro' }))
     expect(vi.mocked(sugerirParaCobrir)).toHaveBeenLastCalledWith('ferro_mg', expect.anything(), expect.anything(), expect.objectContaining({ restricoes: [termo] }))
     expect(nomesSugeridos()).not.toContain(primeira)
+  })
+})
+
+describe('As cinco do USDA no cartão (spec vitaminas-usda, CA-958)', () => {
+  it('entram no cartão como as outras, com † quando falta o dado', () => {
+    // 533 Cuscuz: sem equivalente no USDA, as cinco ficam em 0%, sem dado.
+    montar(adulta, planoCom([533, 200]))
+    const novas = linhas().filter((l) => /^(Selênio|Vitamina D|Vitamina E|Folato \(DFE\)|Vitamina B12)/.test(l.textContent ?? ''))
+    expect(novas.length).toBeGreaterThan(0)
+    for (const linha of novas) expect(within(linha).getByTitle(/total possivelmente subestimado/)).toHaveTextContent('†')
   })
 })

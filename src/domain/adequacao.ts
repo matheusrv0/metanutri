@@ -4,7 +4,11 @@ import type { EstagioDri } from './tabelas.ts'
 import type { Totais } from './totais.ts'
 import type { Caso, ChaveNutrienteAlimento, PresetAdequacao } from './tipos.ts'
 
-/** Micronutrientes (e fibra) da TACO avaliados na adequação, na ordem de exibição. */
+/**
+ * Micronutrientes (e fibra) avaliados na adequação, na ordem de exibição. Selênio, vitamina D, vitamina E, folato e
+ * B12 vêm do complemento do USDA (spec vitaminas-usda, D-304): minerais com minerais, lipossolúveis juntas, complexo B
+ * junto. A gordura trans do complemento não entra: não tem DRI.
+ */
 export const MICRONUTRIENTES_ADEQUACAO: readonly ChaveNutrienteAlimento[] = [
   'calcio_mg',
   'ferro_mg',
@@ -15,12 +19,17 @@ export const MICRONUTRIENTES_ADEQUACAO: readonly ChaveNutrienteAlimento[] = [
   'sodio_mg',
   'cobre_mg',
   'manganes_mg',
+  'selenio_mcg',
   'vitamina_a_rae_mcg',
   'vitamina_c_mg',
+  'vitamina_d_mcg',
+  'vitamina_e_mg',
   'tiamina_mg',
   'riboflavina_mg',
   'piridoxina_mg',
   'niacina_mg',
+  'folato_dfe_mcg',
+  'vitamina_b12_mcg',
   'fibra_g',
 ]
 

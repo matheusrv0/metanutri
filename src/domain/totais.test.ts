@@ -32,6 +32,16 @@ describe('totaisDeItens', () => {
     expect(t.nutrientes.ferro_mg.semDado).toBe(0)
   })
 
+  it('CA-950 (spec vitaminas-usda): soma as chaves do USDA e conta quem não tem o dado', () => {
+    // 317 Salmão grelhado: vitamina D 13,1 µg, gordura trans nula. 533 Cuscuz: sem equivalente no USDA.
+    const t = totaisDeItens([item('a', 317, 150), item('b', 533, 100)], buscarAlimento)
+    expect(t.nutrientes.vitamina_d_mcg.total).toBeCloseTo(13.1 * 1.5, 6)
+    expect(t.nutrientes.vitamina_d_mcg.semDado).toBe(1)
+    expect(t.nutrientes.selenio_mcg.total).toBeCloseTo(41.4 * 1.5, 6)
+    expect(t.nutrientes.gordura_trans_g.total).toBe(0)
+    expect(t.nutrientes.gordura_trans_g.semDado).toBe(2)
+  })
+
   it('CB-04: quantidade zero é aceita e não soma nem conta', () => {
     const t = totaisDeItens([item('a', 1, 0)], buscarAlimento)
     expect(t.nutrientes.energia_kcal.total).toBe(0)

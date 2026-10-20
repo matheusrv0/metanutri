@@ -1,5 +1,5 @@
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
+import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, porcaoMaximaDoGrupo, sugerirParaCobrir } from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, regraQueExclui } from './prescritivel.ts'
@@ -345,7 +345,10 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
           if (/^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(30)
           if (/^Queijo,/.test(nome) && !/ricota/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
           if (/^(Pão|Biscoito|Torrada)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
-          if (/com gordura|com pele|costela|cupim|bisteca/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(100)
+          // O grupo é de carne gorda e ave com pele (D-199b): peixe com pele, como o salmão que a vitamina D do USDA
+          // trouxe para as sugestões (spec vitaminas-usda), não é corte gordo e fica na porção padrão.
+          const carne = buscarAlimento(s.alimentoId)?.categoria === 'Carnes e derivados'
+          if (carne && /com gordura|com pele|costela|cupim|bisteca/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(100)
         }
       }
     })
@@ -416,7 +419,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Pela busca do plano, qualquer alimento entra.')
   })
 
-  describe('CA-657: plano de exemplo, os 16 micronutrientes', () => {
+  describe('CA-657 e CA-957: plano de exemplo e plano vazio, todas as linhas da adequação', () => {
     let n = 0
     const { caso, plano: exemplo } = criarExemplo(() => `ex-${++n}`, '2026-10-15')
     const doExemplo = totaisDoPlano(exemplo, buscarAlimento)
@@ -454,5 +457,130 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       expect(r.sugestoes.length).toBeGreaterThan(0)
       expect(r.sugestoes.map((s) => s.descricao)).not.toContain('Cerveja, pilsen 2')
     })
+  })
+})
+
+describe('Cobrir das vitaminas do USDA, plano vazio da Maria (spec vitaminas-usda)', () => {
+  const vazio = totaisDeItens([], buscarAlimento)
+  const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+  const cobrir = (chave: ChaveNutrienteAlimento) => sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS })
+  const categoria = (id: number) => buscarAlimento(id)?.categoria ?? ''
+  /** Depois do primeiro pouco usual (fígado, miúdos), só vem pouco usual (D-306). */
+  const usuaisAntes = (ids: readonly number[]) => {
+    const comum = ids.map((id) => ehDeUsoComum({ descricao: buscarAlimento(id)?.descricao ?? '' }))
+    return comum.every((c, i) => c || comum.slice(i).every((d) => !d))
+  }
+
+  it('as cinco aparecem na adequação do plano vazio, e o Cobrir funciona para todas', () => {
+    for (const chave of ['selenio_mcg', 'vitamina_d_mcg', 'vitamina_e_mg', 'folato_dfe_mcg', 'vitamina_b12_mcg'] as const) {
+      const r = cobrir(chave)
+      expect(r.falta, chave).toBeGreaterThan(0)
+      expect(r.sugestoes.length, chave).toBeGreaterThan(0)
+    }
+  })
+
+  it('CA-955: vitamina D sai de peixe e ovo, nunca de leite ou derivado, e o fígado fica para o fim', () => {
+    const r = cobrir('vitamina_d_mcg')
+    const ids = r.sugestoes.map((s) => s.alimentoId)
+    const categorias = new Set(ids.map(categoria))
+    expect(categorias.has('Pescados e frutos do mar')).toBe(true)
+    expect(categorias.has('Ovos e derivados')).toBe(true)
+    expect(categorias.has('Leite e derivados')).toBe(false)
+    expect(usuaisAntes(ids)).toBe(true)
+    for (const s of r.sugestoes) expect(s.gramas, s.descricao).toBeLessThanOrEqual(PORCAO_MAXIMA_PADRAO_G)
+  })
+
+  it('CA-956: B12 sai de carne, peixe, leite ou derivado e ovo, com miúdos no fim e queijo até 50 g', () => {
+    const r = cobrir('vitamina_b12_mcg')
+    const ids = r.sugestoes.map((s) => s.alimentoId)
+    const categorias = new Set(ids.map(categoria))
+    for (const c of ['Carnes e derivados', 'Pescados e frutos do mar', 'Leite e derivados', 'Ovos e derivados']) expect(categorias.has(c), c).toBe(true)
+    expect(usuaisAntes(ids)).toBe(true)
+    for (const s of r.sugestoes) {
+      expect(s.gramas, s.descricao).toBeLessThanOrEqual(PORCAO_MAXIMA_PADRAO_G)
+      if (/^Queijo,/.test(s.descricao) && !/ricota/.test(s.descricao)) expect(s.gramas, s.descricao).toBeLessThanOrEqual(50)
+    }
+  })
+
+  it('CA-957 e D-306: a castanha-do-pará cobre o selênio com 5 g, dentro da porção do grupo', () => {
+    const castanha = cobrir('selenio_mcg').sugestoes.find((s) => s.alimentoId === 589)
+    expect(castanha).toMatchObject({ gramas: 5, coberturaPct: 100 })
+  })
+
+  it('CB-306: a sugestão que passaria do UL de selênio recebe o aviso', () => {
+    // Plano com 390 µg de selênio: quase no UL de 400 µg. Cobrir a vitamina D com peixe passa do limite.
+    const plano = totais({ energia_kcal: 1500, selenio_mcg: 390 })
+    const adequacao = calcularAdequacao(plano, MULHER_28, { tipo: 'individual' })
+    const r = sugerirParaCobrir('vitamina_d_mcg', plano, adequacao, { gastoEnergetico: 2000, alimentos: ALIMENTOS })
+    const peixe = r.sugestoes.find((s) => categoria(s.alimentoId) === 'Pescados e frutos do mar')
+    expect(peixe?.avisos).toContainEqual({ tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' })
+  })
+})
+
+describe('Aviso de limite só de quem traz o nutriente (spec vitaminas-usda, CA-957b)', () => {
+  // Plano já acima do UL de selênio (400 µg). Falta de ferro: 6,2 mg.
+  const plano = totais({ energia_kcal: 1500, ferro_mg: 10, selenio_mcg: 600 })
+  const adequacao = calcularAdequacao(plano, MULHER_28, { tipo: 'individual' })
+  const base = [
+    { ...alimento(90, 'Sem selênio', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: 0 }), categoria: 'Grupo A' },
+    { ...alimento(91, 'Selênio sem dado', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: null }), categoria: 'Grupo B' },
+    { ...alimento(92, 'Com selênio', { energia_kcal: 50, ferro_mg: 10, selenio_mcg: 10 }), categoria: 'Grupo C' },
+  ]
+  const avisosDe = (id: number) =>
+    sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 3000, alimentos: base }).sugestoes.find((s) => s.alimentoId === id)?.avisos ?? []
+  const SELENIO = { tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' }
+
+  it('o plano já passou do limite: quem não traz selênio não recebe o aviso', () => {
+    expect(adequacao.linhas.find((l) => l.chave === 'selenio_mcg')?.estado).toBe('acima-limite')
+    expect(avisosDe(90)).not.toContainEqual(SELENIO)
+    expect(avisosDe(91)).not.toContainEqual(SELENIO)
+  })
+
+  it('quem traz selênio recebe o aviso, como antes', () => {
+    expect(avisosDe(92)).toContainEqual(SELENIO)
+  })
+})
+
+describe('Porção máxima de ovo no Cobrir (spec vitaminas-usda, D-306 e CA-957a)', () => {
+  const OVOS_INTEIROS = [485, 488, 489, 490]
+  const GEMA = 487
+  const CLARA = 486
+  const OMELETE = 484
+  const porcao = (id: number) => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return porcaoMaximaDoGrupo(a)
+  }
+
+  it('ovo inteiro até 100 g (2 ovos), gema até 40 g (2 gemas), clara até 100 g; a omelete não tem porção de grupo', () => {
+    for (const id of OVOS_INTEIROS) expect(porcao(id), String(id)).toBe(100)
+    expect(porcao(GEMA)).toBe(40)
+    expect(porcao(CLARA)).toBe(100)
+    expect(porcao(OMELETE)).toBeNull()
+  })
+
+  it('no plano vazio e no exemplo, nenhuma sugestão de ovo passa da porção, em nenhuma linha da adequação', () => {
+    let n = 0
+    const { caso, plano } = criarExemplo(() => `ovo-${++n}`, '2026-10-15')
+    for (const t of [totaisDeItens([], buscarAlimento), totaisDoPlano(plano, buscarAlimento)]) {
+      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, porcaoMaximaG: 200 }).sugestoes) {
+          if (OVOS_INTEIROS.includes(s.alimentoId)) expect(s.gramas, `${chave} ${s.descricao}`).toBeLessThanOrEqual(100)
+          if (s.alimentoId === GEMA) expect(s.gramas, chave).toBeLessThanOrEqual(40)
+          if (s.alimentoId === CLARA) expect(s.gramas, chave).toBeLessThanOrEqual(100)
+        }
+      }
+    }
+  })
+
+  it('a gema para a vitamina D sai com 40 g, e a porção escolhida menor continua valendo', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+    const gema = (porcaoMaximaG: number) =>
+      sugerirParaCobrir('vitamina_d_mcg', vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, porcaoMaximaG }).sugestoes.find((s) => s.alimentoId === GEMA)
+    expect(gema(200)).toMatchObject({ gramas: 40, parcial: true })
+    // 20 g de gema cobrem 8% da falta (menos de 10%): sai da lista, em vez de passar dos 20 g escolhidos.
+    expect(gema(20)).toBeUndefined()
   })
 })

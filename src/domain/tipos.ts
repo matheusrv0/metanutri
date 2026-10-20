@@ -164,7 +164,7 @@ export interface Plano {
   readonly refeicoes: readonly Refeicao[]
 }
 
-/** Chaves de nutrientes presentes na tabela de alimentos (TACO). */
+/** Chaves de nutrientes de um alimento: as da TACO e as do complemento do USDA (spec vitaminas-usda). */
 export type ChaveNutrienteAlimento =
   | 'energia_kcal'
   | 'proteina_g'
@@ -190,6 +190,22 @@ export type ChaveNutrienteAlimento =
   | 'piridoxina_mg'
   | 'niacina_mg'
   | 'vitamina_c_mg'
+  /* A TACO não traz estas seis: vêm de alimento equivalente do USDA FoodData Central (spec vitaminas-usda, D-300). */
+  | 'vitamina_d_mcg'
+  | 'vitamina_e_mg'
+  | 'folato_dfe_mcg'
+  | 'vitamina_b12_mcg'
+  | 'selenio_mcg'
+  | 'gordura_trans_g'
+
+/** De onde vêm os valores do complemento: o alimento equivalente no USDA FoodData Central. */
+export interface OrigemUsda {
+  readonly fdcId: number
+  /** "SR Legacy" ou "Foundation Foods". */
+  readonly conjunto: string
+  /** Ano e mês da versão do conjunto, "2018-04". */
+  readonly versao: string
+}
 
 export interface Alimento {
   readonly id: number
@@ -201,6 +217,8 @@ export interface Alimento {
   /** Valores por 100 g. `null` = não analisado; 0 pode ser traço (ver `tracos`). */
   readonly nutrientes: Readonly<Record<ChaveNutrienteAlimento, number | null>>
   readonly tracos: readonly ChaveNutrienteAlimento[]
+  /** Presente quando o alimento da TACO tem equivalente no USDA (spec vitaminas-usda, D-303). */
+  readonly usda?: OrigemUsda
 }
 
 export type BuscarAlimento = (id: number) => Alimento | undefined

@@ -117,7 +117,11 @@ export function validarProduto(p: DadosProduto): readonly ProblemaProduto[] {
   return problemas
 }
 
-/** O produto entra na busca e nos cálculos como um alimento normal, por 100 g. */
+/**
+ * O produto entra na busca e nos cálculos como um alimento normal, por 100 g.
+ * Toda chave que o rótulo não traz fica nula, nunca indefinida: indefinido virava NaN nos totais do plano, e as
+ * vitaminas do complemento do USDA nunca vêm do rótulo (spec vitaminas-usda, D-303 e CA-951).
+ */
 export function produtoComoAlimento(p: Produto): Alimento {
   // CA-793 (spec revisao-geral-trabalho): o que o rótulo não traz é falta de dado (nulo); indefinido virava NaN na soma.
   const nutrientes = Object.fromEntries(CHAVES_NUTRIENTES.map((chave) => [chave, null])) as Record<ChaveNutrienteAlimento, number | null>

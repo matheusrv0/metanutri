@@ -1,6 +1,7 @@
 import { calcularAdequacao } from '../domain/adequacao.ts'
+import { buscarAlimento } from '../domain/tabelas.ts'
 import type { Totais } from '../domain/totais.ts'
-import { CHAVES_NUTRIENTES } from '../domain/totais.ts'
+import { CHAVES_NUTRIENTES, totaisDeItens } from '../domain/totais.ts'
 import type { ChaveNutrienteAlimento } from '../domain/tipos.ts'
 import { formatarNumero, tabelaAdequacaoParaCopiar } from './copiar-tabela.ts'
 
@@ -62,5 +63,24 @@ describe('tabelaAdequacaoParaCopiar (CA-48)', () => {
     const r = tabelaAdequacaoParaCopiar(vazia)
     expect(r.texto).toMatch(/Informe sexo e idade/)
     expect(r.html).not.toContain('<table')
+  })
+})
+
+describe('Copiar tabela com as vitaminas do USDA (spec vitaminas-usda, CA-967)', () => {
+  // 317 Salmão grelhado (vitamina D 13,1 µg) e 533 Cuscuz (sem equivalente no USDA): as cinco novas levam "*".
+  const totaisReais = totaisDeItens([{ id: 'a', alimentoId: 317, gramas: 100 }, { id: 'b', alimentoId: 533, gramas: 100 }], buscarAlimento)
+  const adequacao = calcularAdequacao(totaisReais, MULHER_28, { tipo: 'individual' })
+  const { html, texto } = tabelaAdequacaoParaCopiar(adequacao)
+
+  it('as 21 linhas, no HTML e no texto', () => {
+    expect(adequacao.linhas).toHaveLength(21)
+    expect((html.match(/<tr>/g) ?? []).length).toBe(22)
+    expect(texto.split('\n').filter((l) => l.includes('\t'))).toHaveLength(22)
+  })
+
+  it('as cinco novas com a unidade, a referência e o "*" de quem não tem o dado', () => {
+    expect(html).toContain('<td>Vitamina D</td><td>13,1 µg *</td><td>15,0 µg</td><td>RDA</td><td>87%</td><td>Abaixo da meta</td>')
+    for (const rotulo of ['Selênio', 'Vitamina E', 'Folato (DFE)', 'Vitamina B12']) expect(html).toMatch(new RegExp(`<td>${rotulo.replace(/[()]/g, '\\$&')}</td><td>[\\d.,]+ (µg|mg) \\*</td>`))
+    expect(html).not.toContain('Gordura trans')
   })
 })

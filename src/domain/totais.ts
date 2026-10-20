@@ -26,6 +26,13 @@ export const CHAVES_NUTRIENTES: readonly ChaveNutrienteAlimento[] = [
   'piridoxina_mg',
   'niacina_mg',
   'vitamina_c_mg',
+  // Complemento do USDA (spec vitaminas-usda): somado como os outros; nulo conta como sem dado.
+  'vitamina_d_mcg',
+  'vitamina_e_mg',
+  'folato_dfe_mcg',
+  'vitamina_b12_mcg',
+  'selenio_mcg',
+  'gordura_trans_g',
 ]
 
 export interface TotalNutriente {

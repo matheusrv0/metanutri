@@ -1,3 +1,4 @@
+import { calcularAdequacao } from './adequacao.ts'
 import { calcularEnergia } from './energia.ts'
 import { criarExemplo, entradasSemAlimento, NOME_DO_EXEMPLO } from './exemplo.ts'
 import { buscarAlimento } from './tabelas.ts'
@@ -50,5 +51,17 @@ describe('Plano de exemplo', () => {
     expect(caso.pesoKg).not.toBeNull()
     expect(caso.estaturaCm).not.toBeNull()
     expect(caso.dataConsulta).toBe('2026-09-16')
+  })
+})
+
+describe('Selênio do exemplo (spec vitaminas-usda, CA-957c)', () => {
+  it('uma castanha-do-pará (4 g, a unidade da POF): o selênio fica abaixo do UL e nada passa do limite', () => {
+    const { caso, plano } = criarExemplo(contador(), '2026-09-16')
+    const castanhas = plano.refeicoes.flatMap((r) => r.opcoes.principal).filter((i) => i.alimentoId === 589)
+    expect(castanhas.map((i) => i.gramas)).toEqual([4])
+    const adequacao = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset)
+    const selenio = adequacao.linhas.find((l) => l.chave === 'selenio_mcg')
+    expect(selenio?.total).toBeLessThan(400)
+    expect(adequacao.linhas.filter((l) => l.estado === 'acima-limite').map((l) => l.chave)).toEqual([])
   })
 })

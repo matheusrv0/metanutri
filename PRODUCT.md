@@ -26,7 +26,7 @@ Em volta disso, fazer o plano ser seguido: ele vira missões diárias que o paci
 
 ## Positioning
 
-**O diferencial é dizer o que comer.** Corrigido em 27/09/2026: a pesquisa de mercado verificou sete concorrentes brasileiros e nenhum sugere alimento para cobrir o micronutriente que falta — "o espaço mais limpo", "a parte mais defensável". O concorrente real dessa função é o ChatGPT, e o MetaNutri ganha dele com porção exata, dados da TACO e tudo dentro do plano. O botão cobrir é só de micronutrientes (15 vitaminas e minerais, mais a fibra); macros têm medidor com a faixa da idade, não têm cobrir.
+**O diferencial é dizer o que comer.** Corrigido em 27/09/2026: a pesquisa de mercado verificou sete concorrentes brasileiros e nenhum sugere alimento para cobrir o micronutriente que falta — "o espaço mais limpo", "a parte mais defensável". O concorrente real dessa função é o ChatGPT, e o MetaNutri ganha dele com porção exata, dados da TACO e tudo dentro do plano. O botão cobrir é só de micronutrientes (21 linhas: 20 vitaminas e minerais, mais a fibra; desde 20/10/2026, cinco delas vêm do USDA, ver abaixo); macros têm medidor com a faixa da idade, não têm cobrir.
 
 **A adesão é o argumento de venda**, não o diferencial: check-in, metas e lembrete já existem em WebDiet, Nutrium, DietSystem e Dietbox. A frase que abre a conversa é "seu paciente para de abandonar a dieta na segunda semana" — e o que segura o cliente depois é o cobrir. Não é "igual ao Dietbox, mais barato". Duas funções carregam o produto; o resto é paridade, precisa existir mas não vende.
 
@@ -51,8 +51,8 @@ Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o
 ## Capabilities and Constraints
 
 - Idades de 1 ano em diante, incluindo gestantes e lactantes.
-- Base TACO com 597 alimentos, medidas caseiras da POF, DRI do NASEM 2019, energia do NASEM 2023, curvas da OMS, cortes do SISVAN e ganho de peso gestacional de Kac 2021.
-- Buracos conhecidos da base, medidos e admitidos em tela: só 6 dos 597 alimentos têm todos os nutrientes; 57,3% não têm vitamina A; 39,4% não têm fibra; 6 não têm energia. Vitamina D, B12, folato, açúcares e gordura saturada não existem na TACO — só aparecem em produto cadastrado pelo rótulo.
+- Base TACO com 597 alimentos, complemento do USDA FoodData Central (CC0) para cinco vitaminas e minerais, medidas caseiras da POF, DRI do NASEM 2019, energia do NASEM 2023, curvas da OMS, cortes do SISVAN e ganho de peso gestacional de Kac 2021.
+- Buracos conhecidos da base, medidos e admitidos em tela: só 6 dos 597 alimentos têm todos os nutrientes da TACO; 57,3% não têm vitamina A; 39,4% não têm fibra; 6 não têm energia. A TACO não traz vitamina D, vitamina E, folato, vitamina B12 e selênio: desde 20/10/2026 esses cinco vêm de alimento equivalente do USDA FoodData Central para 308 dos 597 alimentos (spec `vitaminas-usda`), com a marca "USDA" na ficha; quase toda preparação brasileira fica sem eles, e a adequação marca a falta com †. Açúcares e gordura saturada só aparecem em produto cadastrado pelo rótulo.
 - Energia: Mifflin-St Jeor (padrão) e Harris-Benedict para adultos; equações próprias do NASEM para crianças, adolescentes, gestantes e lactantes.
 - Substitutos não entram na soma do dia nem na adequação.
 - Falta de dado nunca vira zero silencioso: o nutriente é marcado como possivelmente subestimado.

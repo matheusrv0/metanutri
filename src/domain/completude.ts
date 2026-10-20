@@ -2,8 +2,10 @@
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 /**
- * Os nutrientes cobrados na adequação. Açúcares e gordura saturada ficam de fora
- * porque a TACO não os traz para alimento nenhum: cobrá-los puniria todos por igual.
+ * Os nutrientes da tabela brasileira que a completude cobra. Açúcares e gordura saturada ficam de fora
+ * porque a TACO não os traz para alimento nenhum: cobrá-los puniria todos por igual. As seis do complemento
+ * do USDA também ficam (spec vitaminas-usda, D-307): só metade da base tem equivalente, e contá-las marcaria
+ * quase toda preparação brasileira como "dado parcial". A falta delas aparece pelo † da adequação.
  */
 export const NUTRIENTES_CONFERIDOS: readonly ChaveNutrienteAlimento[] = [
   'energia_kcal',
@@ -61,6 +63,12 @@ const ROTULOS: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
   piridoxina_mg: 'piridoxina',
   niacina_mg: 'niacina',
   vitamina_c_mg: 'vitamina C',
+  vitamina_d_mcg: 'vitamina D',
+  vitamina_e_mg: 'vitamina E',
+  folato_dfe_mcg: 'folato',
+  vitamina_b12_mcg: 'vitamina B12',
+  selenio_mcg: 'selênio',
+  gordura_trans_g: 'gordura trans',
 }
 
 export const nomeDoNutriente = (chave: ChaveNutrienteAlimento): string => ROTULOS[chave] ?? chave

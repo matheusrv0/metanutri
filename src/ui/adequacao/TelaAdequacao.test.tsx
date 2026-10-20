@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
-import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { produtoComoAlimento } from '@/domain/produtos.ts'
 import { buscarAlimento, registrarProdutos } from '@/domain/tabelas.ts'
@@ -238,8 +238,10 @@ describe('Etapa 3: adequação', () => {
   })
 })
 
-/** O dia do plano de exemplo: 5 abaixo da meta e 11 na meta. */
+/** O dia do plano de exemplo: alguns abaixo da meta e o resto na meta. */
 const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+
+const TOTAL_DE_LINHAS = MICRONUTRIENTES_ADEQUACAO.length
 
 /** Linhas de dado que o leitor de tela enxerga (fora do grupo recolhido). */
 const linhasVisiveis = () =>
@@ -257,14 +259,14 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
     const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
     const n = Number(botao.textContent?.match(/\d+/)?.[0])
-    expect(visiveis.length + n).toBe(16)
+    expect(visiveis.length + n).toBe(TOTAL_DE_LINHAS)
     expect(botao).toHaveAttribute('aria-expanded', 'false')
     expect(document.getElementById(botao.getAttribute('aria-controls') ?? '')).toHaveAttribute('hidden')
 
     await usuario.click(botao)
     expect(botao).toHaveAttribute('aria-expanded', 'true')
     expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
-    expect(linhasVisiveis()).toHaveLength(16)
+    expect(linhasVisiveis()).toHaveLength(TOTAL_DE_LINHAS)
     // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
     const ordem = linhasVisiveis()
     expect(ordem.findIndex((t) => t.startsWith('Cálcio'))).toBeLessThan(ordem.findIndex((t) => t.startsWith('Ferro')))
@@ -287,10 +289,11 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(screen.queryByText(/passar o cursor/)).not.toBeInTheDocument()
   })
 
-  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece os 16', () => {
+  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece todas as linhas', () => {
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
     expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Ver os 16 na meta' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} na meta` })).toBeInTheDocument()
+    expect(TOTAL_DE_LINHAS).toBe(21)
   })
 
   it('CB-204: o nutriente que chega à meta passa para o grupo aberto, que continua aberto', async () => {
@@ -379,25 +382,25 @@ describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
 })
 
 describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', () => {
-  const calcioDoExemplo = (plano: Plano) => {
+  const ferroDoExemplo = (plano: Plano) => {
     const caso: Caso = { ...criarCasoVazio('c1'), ...adulta }
-    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'calcio_mg')
-    if (!linha) throw new Error('sem cálcio')
+    const linha = calcularAdequacao(totaisDoPlano(plano, buscarAlimento), caso, caso.adequacao.preset).linhas.find((l) => l.chave === 'ferro_mg')
+    if (!linha) throw new Error('sem ferro')
     // Só prova alguma coisa se arredondar para o mais perto e para baixo dessem números diferentes.
     expect(linha.adequacaoPct % 1).toBeGreaterThanOrEqual(0.5)
     expect(linha.adequacaoPct).toBeLessThan(89)
     return linha.adequacaoPct
   }
-  // Meta no inteiro logo acima do cálcio: o mais perto daria o número da meta, em cor de abaixo.
+  // Meta no inteiro logo acima do ferro (com a castanha de 4 g, o cálcio do exemplo ficou em 64,03%): o mais perto daria o número da meta, em cor de abaixo.
   const comMetaLogoAcima = (pct: number): Partial<Caso> => ({
     ...adulta,
     adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } },
   })
-  const itemDoCalcio = () => {
+  const itemDoFerro = () => {
     const item = within(screen.getByRole('list', { name: 'Fora da meta' }))
       .getAllByRole('listitem')
-      .find((i) => i.textContent?.startsWith('Cálcio'))
-    if (!item) throw new Error('cálcio fora da lista')
+      .find((i) => i.textContent?.startsWith('Ferro'))
+    if (!item) throw new Error('ferro fora da lista')
     return within(item)
   }
   const celular = () =>
@@ -414,28 +417,28 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
 
   it('CA-712: na tabela, longe da meta arredonda para o mais perto', () => {
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     montar(adulta, plano)
-    expect(linhaDe('Cálcio').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na tabela, com a meta logo acima, arredonda para baixo', () => {
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     montar(comMetaLogoAcima(pct), plano)
-    expect(linhaDe('Cálcio').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na lista do celular, também', () => {
     celular()
     const plano = exemplo()
-    const pct = calcioDoExemplo(plano)
+    const pct = ferroDoExemplo(plano)
     const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    expect(itemDoCalcio().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
     unmount()
 
     render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
-    expect(itemDoCalcio().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
   })
 })
 
@@ -640,5 +643,21 @@ describe('Foco depois do Cobrir na etapa 3 (D-212, CA-713)', () => {
     await usuario.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
+  })
+})
+
+describe('As cinco do USDA na etapa 3 (spec vitaminas-usda, CA-958)', () => {
+  it('aparecem na tabela, com † quando algum alimento do plano não tem o dado', () => {
+    // 533 Cuscuz: sem equivalente no USDA, as cinco ficam sem dado.
+    const plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('sem almoço')
+    montar(adulta, adicionarItem(plano, almoco.id, 'principal', { alimentoId: 533, gramas: 200 }, ids))
+    for (const rotulo of ['Selênio', 'Vitamina D', 'Vitamina E', 'Folato (DFE)', 'Vitamina B12']) {
+      const linha = screen.getAllByRole('row').find((r) => r.textContent?.startsWith(rotulo))
+      if (!linha) throw new Error(`${rotulo} fora da tabela`)
+      expect(within(linha).getByTitle(/total possivelmente subestimado/)).toHaveTextContent('†')
+      expect(within(linha).getByRole('button', { name: `Cobrir ${rotulo}` })).toBeInTheDocument()
+    }
   })
 })

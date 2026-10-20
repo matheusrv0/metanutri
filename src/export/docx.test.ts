@@ -250,6 +250,19 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     expect(texto).toContain('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')
   })
 
+  it('CA-968 (spec vitaminas-usda): a tabela de adequação traz as 21 linhas, com as cinco do USDA', async () => {
+    const { caso, plano } = montarCaso()
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const adequacao = calcularAdequacao(totais, caso, { tipo: 'individual' })
+    const doc = criarMemorial({ caso, energia: calcularEnergia(caso, { fator: 1.37 }), macros: calcularMacros(totais, caso), adequacao, kcalPlano: totais.nutrientes.energia_kcal.total })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(adequacao.linhas).toHaveLength(21)
+    for (const linha of adequacao.linhas) expect(texto, linha.rotulo).toContain(linha.rotulo)
+    expect(texto).toMatch(/Vitamina D.*µg.*RDA/s)
+    expect(texto).toMatch(/Selênio.*µg.*RDA/s)
+    expect(texto).not.toMatch(/undefined|null|NaN/)
+  })
+
   it('CA-47: sem dados do caso, gera o documento sem "undefined" e explica a falta das referências', async () => {
     const caso = criarCasoVazio('vazio')
     const totais = totaisDoPlano({ refeicoes: [] }, buscarAlimento)

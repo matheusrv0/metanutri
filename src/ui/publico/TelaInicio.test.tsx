@@ -25,7 +25,7 @@ describe('TelaInicio', () => {
     render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
     const numeros = [String(MICRONUTRIENTES_ADEQUACAO.length), String(ALIMENTOS.length), String(coberturaDeCalcio().length), `${pctAlimentosSemVitaminaA()}%`]
     // Prende o dado de hoje: se algum desses números mudar sem querer, o teste avisa.
-    expect(numeros).toEqual(['16', '597', '5', '57%'])
+    expect(numeros).toEqual(['21', '597', '5', '57%'])
     for (const numero of numeros) expect(screen.getByText(numero)).toBeInTheDocument()
   })
 

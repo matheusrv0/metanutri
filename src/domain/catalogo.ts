@@ -1,4 +1,5 @@
 // Navegar a tabela de composição inteira: filtrar, ordenar e ler um alimento por completo.
+import { CHAVES_USDA } from './complementoUsda.ts'
 import { completudeDe, NUTRIENTES_CONFERIDOS, nomeDoNutriente, type NivelCompletude } from './completude.ts'
 import { normalizar } from './busca.ts'
 import { ALIMENTOS } from './tabelas.ts'
@@ -50,6 +51,8 @@ export interface LinhaDeComposicao {
   /** `null` = não analisado. `0` com `traco` = medido e desprezível. */
   readonly valor: number | null
   readonly traco: boolean
+  /** Linha do complemento do USDA: o valor é de um alimento equivalente americano (spec vitaminas-usda, D-308). */
+  readonly usda: boolean
 }
 
 const UNIDADE: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
@@ -59,17 +62,25 @@ const UNIDADE: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
   sodio_mg: 'mg', potassio_mg: 'mg', cobre_mg: 'mg', zinco_mg: 'mg',
   vitamina_a_rae_mcg: 'µg', tiamina_mg: 'mg', riboflavina_mg: 'mg',
   piridoxina_mg: 'mg', niacina_mg: 'mg', vitamina_c_mg: 'mg',
+  vitamina_d_mcg: 'µg', vitamina_e_mg: 'mg', folato_dfe_mcg: 'µg', vitamina_b12_mcg: 'µg', selenio_mcg: 'µg',
+  gordura_trans_g: 'g',
 }
 
-/** A composição do alimento por 100 g, na ordem em que a TACO publica. */
+/**
+ * A composição do alimento por 100 g, na ordem em que a TACO publica. Com equivalente no USDA, as seis do
+ * complemento vêm depois, marcadas; sem equivalente, elas não entram (a ficha diz isso numa linha só, D-308).
+ */
 export function composicaoDe(alimento: Alimento): readonly LinhaDeComposicao[] {
-  return NUTRIENTES_CONFERIDOS.map((chave) => ({
+  const linha = (chave: ChaveNutrienteAlimento, usda: boolean): LinhaDeComposicao => ({
     chave,
     nome: nomeDoNutriente(chave),
     unidade: UNIDADE[chave] ?? '',
-    valor: alimento.nutrientes[chave],
+    valor: alimento.nutrientes[chave] ?? null,
     traco: alimento.tracos.includes(chave),
-  }))
+    usda,
+  })
+  const taco = NUTRIENTES_CONFERIDOS.map((chave) => linha(chave, false))
+  return alimento.usda ? [...taco, ...CHAVES_USDA.map((chave) => linha(chave, true))] : taco
 }
 
 export interface ResumoDoCatalogo {
