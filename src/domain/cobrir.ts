@@ -57,6 +57,9 @@ const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' 
 
 const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
 const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
+const OVO_INTEIRO = /^Ovo, de (galinha|codorna), inteiro/i
+const GEMA = /^Ovo, de galinha, gema/i
+const CLARA = /^Ovo, de galinha, clara/i
 
 export interface PorcaoDoGrupo {
   readonly grupo: string
@@ -72,6 +75,10 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Oleaginosas e sementes', gramas: 30, casa: (a) => OLEAGINOSA.test(nomeLimpo(a)) },
   { grupo: 'Queijos (menos a ricota)', gramas: 50, casa: (a) => /^Queijo,/i.test(nomeLimpo(a)) && !/ricota/i.test(a.descricao) },
   { grupo: 'Pães, biscoitos e torradas', gramas: 50, casa: (a) => PAO_OU_BISCOITO.test(nomeLimpo(a)) },
+  // Ovo (spec vitaminas-usda, D-306): a gema saía com 200 g para a vitamina D, umas 11 gemas. A omelete é preparação.
+  { grupo: 'Ovo inteiro (2 ovos)', gramas: 100, casa: (a) => OVO_INTEIRO.test(nomeLimpo(a)) },
+  { grupo: 'Gema de ovo (2 gemas)', gramas: 40, casa: (a) => GEMA.test(nomeLimpo(a)) },
+  { grupo: 'Clara de ovo', gramas: 100, casa: (a) => CLARA.test(nomeLimpo(a)) },
   {
     grupo: 'Frutas secas e muito calóricas',
     gramas: 30,

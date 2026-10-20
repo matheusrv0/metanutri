@@ -1,5 +1,5 @@
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
+import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, porcaoMaximaDoGrupo, sugerirParaCobrir } from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, regraQueExclui } from './prescritivel.ts'
@@ -531,5 +531,49 @@ describe('Aviso de limite só de quem traz o nutriente (spec vitaminas-usda, CA-
 
   it('quem traz selênio recebe o aviso, como antes', () => {
     expect(avisosDe(92)).toContainEqual(SELENIO)
+  })
+})
+
+describe('Porção máxima de ovo no Cobrir (spec vitaminas-usda, D-306 e CA-957a)', () => {
+  const OVOS_INTEIROS = [485, 488, 489, 490]
+  const GEMA = 487
+  const CLARA = 486
+  const OMELETE = 484
+  const porcao = (id: number) => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return porcaoMaximaDoGrupo(a)
+  }
+
+  it('ovo inteiro até 100 g (2 ovos), gema até 40 g (2 gemas), clara até 100 g; a omelete não tem porção de grupo', () => {
+    for (const id of OVOS_INTEIROS) expect(porcao(id), String(id)).toBe(100)
+    expect(porcao(GEMA)).toBe(40)
+    expect(porcao(CLARA)).toBe(100)
+    expect(porcao(OMELETE)).toBeNull()
+  })
+
+  it('no plano vazio e no exemplo, nenhuma sugestão de ovo passa da porção, em nenhuma linha da adequação', () => {
+    let n = 0
+    const { caso, plano } = criarExemplo(() => `ovo-${++n}`, '2026-10-15')
+    for (const t of [totaisDeItens([], buscarAlimento), totaisDoPlano(plano, buscarAlimento)]) {
+      const ad = calcularAdequacao(t, caso, caso.adequacao.preset)
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, t, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, porcaoMaximaG: 200 }).sugestoes) {
+          if (OVOS_INTEIROS.includes(s.alimentoId)) expect(s.gramas, `${chave} ${s.descricao}`).toBeLessThanOrEqual(100)
+          if (s.alimentoId === GEMA) expect(s.gramas, chave).toBeLessThanOrEqual(40)
+          if (s.alimentoId === CLARA) expect(s.gramas, chave).toBeLessThanOrEqual(100)
+        }
+      }
+    }
+  })
+
+  it('a gema para a vitamina D sai com 40 g, e a porção escolhida menor continua valendo', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+    const gema = (porcaoMaximaG: number) =>
+      sugerirParaCobrir('vitamina_d_mcg', vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS, porcaoMaximaG }).sugestoes.find((s) => s.alimentoId === GEMA)
+    expect(gema(200)).toMatchObject({ gramas: 40, parcial: true })
+    // 20 g de gema cobrem 8% da falta (menos de 10%): sai da lista, em vez de passar dos 20 g escolhidos.
+    expect(gema(20)).toBeUndefined()
   })
 })
