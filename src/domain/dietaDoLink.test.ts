@@ -113,6 +113,20 @@ describe('a escolha de quantidade do plano no link (spec conduta-da-nutricionist
     expect(dieta.orientacoes).toBe('Coma devagar.')
   })
 
+  it('CB-292: link enviado antes, com a manteiga em colher de chá, avisa uma vez que o plano mudou (agora é ponta de faca)', () => {
+    let plano = planoCheio()
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 261, gramas: 5 }, ids)
+    const agora = dietaDoPlano(caso(), plano)
+    const antes = {
+      ...agora,
+      refeicoes: agora.refeicoes.map((r) => ({ ...r, opcoes: r.opcoes.map((o) => o.map((i) => (i.alimento.startsWith('Manteiga') ? { ...i, medida: '1 colher de chá' } : i))) })),
+    }
+    expect(dietaMudou(copiarDieta(antes, '2026-10-15'), agora)).toBe(true)
+    expect(lerDieta(copiarDieta(antes, '2026-10-15'))?.refeicoes[0]?.opcoes[0]?.[0]?.medida).toBe('1 colher de chá')
+  })
+
   it('CA-930: trocar a escolha muda o que a paciente vê, e o link avisa que o plano mudou', () => {
     const noLink = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-20')
     expect(dietaMudou(noLink, dietaDoPlano(caso(), planoCheio()))).toBe(false)

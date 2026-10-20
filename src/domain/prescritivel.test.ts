@@ -331,7 +331,7 @@ describe('regra "prescritível" (spec sugestoes-com-criterio)', () => {
     expect(doApendice).toEqual(IDS_POR_MOTIVO)
   })
 
-  it('CA-667: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
+  it('CA-667 e CA-913: a trava de texto pega todos os ids da lista fixa (revisão N5)', () => {
     const FORMA = new Set(['miscelanea', 'po', 'farinha', 'cru', 'tempero'])
     for (const [motivo, ids] of Object.entries(IDS_POR_MOTIVO)) {
       const trava = FORMA.has(motivo) ? FORMA_DE_INGREDIENTE : NUNCA_APARECE

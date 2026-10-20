@@ -82,7 +82,7 @@ describe('Trocas por grupo', () => {
 })
 
 describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
-  it('CA-658 e CA-668: nenhuma troca casa com a trava por texto, para nenhum alimento da base', () => {
+  it('CA-658, CA-668 e CA-913: nenhuma troca casa com a trava por texto, para nenhum alimento da base', () => {
     // Trava escrita à mão, sem usar a regra (revisão I3).
     for (const a of ALIMENTOS) {
       for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
@@ -291,6 +291,29 @@ describe('Trocas pela conduta da nutricionista (spec conduta-da-nutricionista)',
       expect(primeira, d).toBeDefined()
       expect(PROCESSADO.test(primeira ?? ''), `${d} → ${primeira}`).toBe(false)
     }
+  })
+
+  it('CB-294: plano antigo com margarina hidrogenada não muda; ela só não ganha troca', () => {
+    let n = 0
+    const gerar = () => `cb${++n}`
+    let plano = criarPlanoPadrao(gerar)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 263, gramas: 10 }, gerar)
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: 53, gramas: 50 }, gerar)
+    expect(plano.refeicoes[0]?.opcoes.principal.map((i) => i.alimentoId)).toEqual([263, 53])
+    const grupos = trocasDoPlano(plano, buscarAlimento, opcoes)
+    expect(grupos.map((g) => g.alimentoId)).toEqual([53])
+  })
+
+  it('CB-295: alimento sem troca simples, realista e in natura sai da lista de trocas', () => {
+    let n = 0
+    const gerar = () => `cc${++n}`
+    let plano = criarPlanoPadrao(gerar)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: porDescricao('Cuscuz, de milho, cozido com sal').id, gramas: 135 }, gerar)
+    expect(trocasDoPlano(plano, buscarAlimento, opcoes)).toEqual([])
   })
 
   it('CA-912: item "nunca" posto à mão não ganha troca', () => {

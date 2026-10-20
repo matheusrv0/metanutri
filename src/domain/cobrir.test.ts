@@ -469,7 +469,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Pela busca do plano, qualquer alimento entra.')
   })
 
-  describe('CA-657: plano de exemplo, os 16 micronutrientes', () => {
+  describe('CA-657, CA-667 e CA-913 (spec conduta-da-nutricionista): plano de exemplo, os 16 micronutrientes', () => {
     let n = 0
     const { caso, plano: exemplo } = criarExemplo(() => `ex-${++n}`, '2026-10-15')
     const doExemplo = totaisDoPlano(exemplo, buscarAlimento)

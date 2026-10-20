@@ -19,6 +19,10 @@ nenhum.
 **Objetivo:** toda consulta começa pela anamnese, com um roteiro de perguntas prontas; e o que a comida não fecha vira
 suplemento ou exame, escrito pelo nutricionista, num documento curto com a assinatura de quem atende.
 
+**Conduta da nutricionista parceira (20/10/2026).** O roteiro passa a ter 10 blocos, com "Intolerâncias e alergias"
+e "Gestação" antes do recordatório, e a Água ganha "Cor da urina" (spec `conduta-da-nutricionista`, D-299, que
+substitui o número de blocos do D-160 e do CA-560). Roteiro salvo antes ganha os blocos e a pergunta novos.
+
 ## 1. Decisões
 
 | # | Decisão | Motivo |

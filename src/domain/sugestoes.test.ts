@@ -142,6 +142,13 @@ describe('repositório das sugestões (CA-243, CA-306, CB-70)', () => {
     expect(lidas.jantar).toEqual(SUGESTOES_PADRAO.jantar)
   })
 
+  it('CB-293 (spec conduta-da-nutricionista): a lista do desjejum que a pessoa salvou com a tapioca fica como ela salvou', () => {
+    const { arm } = memoria()
+    const dela = [{ alimentoId: 551, gramas: 50 }, ...SUGESTOES_PADRAO.desjejum]
+    criarRepositorioSugestoes(arm).salvar('desjejum', dela)
+    expect(criarRepositorioSugestoes(arm).ler().desjejum).toEqual(dela)
+  })
+
   it('CA-306: lista vazia continua vazia', () => {
     const { arm } = memoria()
     criarRepositorioSugestoes(arm).salvar('ceia', [])

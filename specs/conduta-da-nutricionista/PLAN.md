@@ -1,7 +1,8 @@
 # PLAN — A conduta da nutricionista
 
 **Spec de origem:** `./SPEC.md` (D-290 a D-299, CA-910 a CA-939, CB-290 a CB-299)
-**Status:** pedido pelo dono em 20/10/2026 ("Apenas faça"); aprovação pelas telas antes de publicar.
+**Status:** pedido pelo dono em 20/10/2026 ("Apenas faça"); aprovação pelas telas antes de publicar. T1 a T12
+feitas em 20/10/2026; o que mudou na execução está em "Desvios", no fim.
 
 ## Abordagem
 
@@ -63,27 +64,27 @@ Cinco partes, na ordem da spec, cada uma em tarefas pequenas e commitáveis, em 
 
 Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o código.
 
-- [ ] **T1** — SPEC e PLAN. *Verifica:* revisão.
-- [ ] **T2** — Regra: liberados (D-290), preparação (D-291), gordura trans (D-292); lista fixa de ids e trava de
+- [x] **T1** — SPEC e PLAN. *Verifica:* revisão.
+- [x] **T2** — Regra: liberados (D-290), preparação (D-291), gordura trans (D-292); lista fixa de ids e trava de
   texto. *Testes:* CA-910, CA-911, CA-912, CA-913 (ids e trava). *Depende de:* T1.
-- [ ] **T3** — Cobrir: `ehSegundaEscolha`, grupos de porção novos (D-293). *Testes:* CA-913 (varredura do cobrir),
+- [x] **T3** — Cobrir: `ehSegundaEscolha`, grupos de porção novos (D-293). *Testes:* CA-913 (varredura do cobrir),
   CA-914, CA-915. *Depende de:* T2.
-- [ ] **T4** — Lista padrão do desjejum e margarina do exemplo. *Testes:* CA-916, CA-917. *Depende de:* T2.
-- [ ] **T5** — Trocas: composto, medida realista, processado (D-294 a D-296). *Testes:* CA-919 a CA-923, CA-913
+- [x] **T4** — Lista padrão do desjejum e margarina do exemplo. *Testes:* CA-916, CA-917. *Depende de:* T2.
+- [x] **T5** — Trocas: composto, medida realista, processado (D-294 a D-296). *Testes:* CA-919 a CA-923, CA-913
   (varredura das trocas), CA-912 (sem troca para "nunca"). *Depende de:* T2.
-- [ ] **T6** — Apêndices A e C da `sugestoes-com-criterio`, gerados do código, com nota datada. *Verifica:* CA-918
+- [x] **T6** — Apêndices A e C da `sugestoes-com-criterio`, gerados do código, com nota datada. *Verifica:* CA-918
   (o Apêndice A bate com a lista fixa do teste). *Depende de:* T5.
-- [ ] **T7** — Quantidades no domínio: o campo do caso, `quantidadeParaPaciente`, a cópia do link e o Word.
+- [x] **T7** — Quantidades no domínio: o campo do caso, `quantidadeParaPaciente`, a cópia do link e o Word.
   *Testes:* CA-925 a CA-930 (domínio), CB-290, CB-291. *Depende de:* T1.
-- [ ] **T8** — Quantidades na tela: a escolha na etapa 1, a folha e "Meu plano". *Testes:* CA-924, CA-925, CA-926 e
+- [x] **T8** — Quantidades na tela: a escolha na etapa 1, a folha e "Meu plano". *Testes:* CA-924, CA-925, CA-926 e
   CA-928 (tela). *Depende de:* T7.
-- [ ] **T9** — Água: a conta, a linha da folha, o campo da etapa 1, o exemplo sem a frase repetida. *Testes:* CA-931
+- [x] **T9** — Água: a conta, a linha da folha, o campo da etapa 1, o exemplo sem a frase repetida. *Testes:* CA-931
   a CA-933, CB-298, CB-299. *Depende de:* T7 (mesmos arquivos do caso).
-- [ ] **T10** — Anamnese no domínio: 10 blocos, perguntas de escolha, versão do roteiro. *Testes:* CA-935, CA-936,
+- [x] **T10** — Anamnese no domínio: 10 blocos, perguntas de escolha, versão do roteiro. *Testes:* CA-935, CA-936,
   CA-937, CA-939 (domínio), CB-296, CB-297. *Depende de:* T1.
-- [ ] **T11** — Anamnese na tela: escala da urina, escolha única, tokens. *Testes:* CA-934, CA-935, CA-938, CA-939
+- [x] **T11** — Anamnese na tela: escala da urina, escolha única, tokens. *Testes:* CA-934, CA-935, CA-938, CA-939
   (tela). *Depende de:* T10.
-- [ ] **T12** — e2e, notas nas specs antigas, prints e validação (lint, typecheck, testes, Playwright, build).
+- [x] **T12** — e2e, notas nas specs antigas, prints e validação (lint, typecheck, testes, Playwright, build).
   *Depende de:* todas.
 
 ## Riscos e decisões para o dono revisar
@@ -94,3 +95,22 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
 - **R-291** · `tokens.css` ganha 8 cores de dado (a escala da urina). Não são cor de marca; ficam iguais nos dois temas.
 - **R-292** · A cópia do link de quem tem manteiga ou margarina no plano muda ("ponta de faca"): o cartão do link avisa
   uma vez que o plano mudou (CB-292).
+
+## Desvios na execução (20/10/2026)
+
+- **T2** levou junto a troca da tapioca pelo mamão papaia na lista padrão do desjejum (era da T4): sem ela, o CA-662
+  ficava vermelho no commit da regra. A T4 ficou só com a margarina do exemplo.
+- **T5** mexeu em `busca.ts` (fora da lista original, entrou no plano antes do código, no commit `docs(spec)` da mesma
+  tarde): a medida caseira para a paciente prefere uma de até 4 pedaços quando ela serve. Sem isso, o ovo frito de
+  55 g era "5 fatias e meia", saía das trocas pela regra do D-295, e o ovo cozido ficava sem troca. Na mesma volta, a
+  salada de legumes no vapor passou a contar como prato composto (o cuscuz trocava por 433 g dela) e a bebida de soja
+  como processado (o feijão trocava por ela). A spec mudou antes (D-294 a D-297).
+- **T7** levou junto a parte da folha impressa da T8 (`FolhaDieta.tsx`): a função da quantidade mudou de assinatura, e
+  a folha não compilava sem ela. A T8 ficou com a etapa 1 e "Meu plano" (o teste de "Meu plano" mora em
+  `TelaMissoesPaciente.test.tsx`).
+- **T9** ganhou `CampoAgua.tsx` (novo, como previsto) e mexeu em `duplicar` só por teste (CB-299, o duplicar já copiava).
+- **T10** levou junto os testes de tela da anamnese e o e2e que contavam 8 blocos e 2 perguntas na Água; a T11 ficou
+  com as escolhas na tela.
+- **Prints:** "Quase transparente" era cortado na cor 1 e virou "Quase incolor"; a escolha de quantidade saiu do meio
+  dos campos de estágio para o fim do cartão Identificação (commit `fix(telas)`).
+- **T6** ganhou um teste (CA-918) que confere o Apêndice A da spec antiga com a lista fixa de ids.
