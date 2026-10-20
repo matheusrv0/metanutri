@@ -14,7 +14,7 @@ Um `git merge --no-ff` por frente, com `npm run check` verde depois de cada um.
 | M4 | `receitas-com-calculo` | 86fee64 | `MeuPlano.tsx` (imports): os dois ficam. O CA-884 de `MeuPlanoComReceita.test.tsx` passou ao comportamento novo: os ingredientes seguem as regras da folha (D-231) |
 | M5 | `revisao-geral-trabalho` (`fix/revisao-geral-trabalho`) | 97c3d93 | `busca.ts`, `totais.ts`, `aconselhamento-docx.ts`, `LinhaItem.tsx`, `folhaDieta.ts` e `CartaoIdentificacao.tsx`, pelo guia de `revisao-trabalho.md`: o ramo da receita fica, junto do sem-throw, `medidaParaMostrar`, `nomeSemAlimento` e "Produto apagado". Emenda: o filtro do item apagado na folha e no link tirava também a receita (que guarda `alimentoId` 0); a receita fica. O CB-271 do editor passou a "Produto apagado" |
 | M6 | `vitaminas-usda` | 03d153c | `produtos.ts` (a mesma correção nas duas: chave fora do rótulo é nula), `produtos.test.ts` e `docx.test.ts` (os testes das duas ficam). Depois: os "16" das specs antigas anotados (346e105) e o CA-986 (ab200c2) |
-| M7 | `conduta-da-nutricionista` | (este merge) | A conduta vale onde as regras se cruzam (D-319). `busca.ts`: `medidaParaMostrar` = ponta de faca, gordura sem fatia e a medida de até 4 pedaços da conduta; `quantidadeNaFolha` com o modo do plano e uma quantidade só; `dietaDoLink`, `folhaDieta`, `FolhaDieta.tsx`, `aconselhamento-docx` e `MeuPlano` com o modo, a receita, o item apagado e a água; `cobrir.ts` com os grupos de ovo do USDA e os da conduta. Testes das frentes passaram para uma quantidade só |
+| M7 | `conduta-da-nutricionista` | 71598cc | A conduta vale onde as regras se cruzam (D-319). `busca.ts`: `medidaParaMostrar` = ponta de faca, gordura sem fatia e a medida de até 4 pedaços da conduta; `quantidadeNaFolha` com o modo do plano e uma quantidade só; `dietaDoLink`, `folhaDieta`, `FolhaDieta.tsx`, `aconselhamento-docx` e `MeuPlano` com o modo, a receita, o item apagado e a água; `cobrir.ts` com os grupos de ovo do USDA e os da conduta. Testes das frentes passaram para uma quantidade só |
 
 ## 2. Tarefas
 
@@ -39,3 +39,40 @@ O CA-981 (D-315) não pede código: o teste `receitaNaRefeicao.test.tsx` · "CA-
 2. **D-313:** o formulário do cartão fica com 14 px até a troca do Mercado Pago para produção.
 3. **D-310:** a marca muda o formato da cópia só no item de receita; como nenhum link com receita existe, nenhum link
    já enviado aparece como "o plano mudou".
+
+## 4. Validação (20/10/2026)
+
+Na branch inteira, depois das sete frentes e dos itens:
+
+| Verificação | Resultado |
+|---|---|
+| `npm run check` | verde: lint sem erro (o aviso antigo de `MolduraPublica.tsx`), tipos ok, 237 arquivos e 4.106 testes |
+| `npx playwright test` (cópia da configuração nas portas 4831 e 4836, apagada depois) | 227 de 227, em 18 arquivos (`--list` conferido antes) |
+| `npm run build` | verde |
+| `node scripts/conferir-publicacao.mjs` | "pode publicar" |
+| `npm run test:csp` | 3 de 3 |
+| `npm run test:seguranca` (pilha local própria, `metanutri-integracao`, portas 5572x; cópia do script apagada depois) | 204 de 204, em 8 arquivos, com as migrações 001 a 014 |
+
+| Critério | Teste |
+|---|---|
+| CA-970 | `dietaComReceita.test.ts` · "CA-883 e CA-970", "CA-970 … só o item de receita", "CA-970 … sem receita" |
+| CA-971 | `dietaParaPaciente.test.ts` · "CA-971"; `MeuPlanoComReceita.test.tsx` · "CA-971" |
+| CA-972 | `dietaParaPaciente.test.ts` · "CA-972" |
+| CA-973 | `dietaComReceita.test.ts` · "CA-973" |
+| CA-974 | e2e `receitas.spec.ts` (CA-974, no celular de 360 px) |
+| CA-975 e CA-976 | `src/ui/camposNoCelular.test.tsx`; e2e `campos-no-celular.spec.ts` · "CA-976" e `servidor-falso/campos-no-celular.spec.ts` · "CA-976" |
+| CA-977 | `camposNoCelular.test.tsx` · "CA-977" (região do CRN e filtros de Alimentos); as outras listas nativas pelo e2e do CA-979 |
+| CA-978 | `camposNoCelular.test.tsx` · "CA-978"; e2e `servidor-falso/campos-no-celular.spec.ts` · "CA-978" em 390 e 1280 px |
+| CA-979 | e2e `campos-no-celular.spec.ts` (planejador, Alimentos, ficha) e `servidor-falso/campos-no-celular.spec.ts` (Entrar, Criar conta, código, Comprovar matrícula, Completar cadastro), em 360 e 390 px |
+| CA-980 | `legal.test.ts` · "CA-980"; `conferir-publicacao.mjs` |
+| CA-981 | `receitaNaRefeicao.test.tsx` · "CA-871a" (`RECEITAS_NA_REFEICAO` é `false`) |
+| CA-982 | `folhaComReceita.test.ts` · "CB-271 e CA-982" |
+| CA-983 | `dietaComReceita.test.ts` · "CA-983" |
+| CA-984 | `LinhaItem.test.tsx` · "CA-984" |
+| CA-985 | `totais.test.ts` · "CA-985"; `TelaPlano.test.tsx` · "CA-985"; `cobrir.test.ts` · "CA-789" (energia sem dado: `kcalDisponiveis` nulo) |
+| CA-986 | `totais.test.ts` · "CA-986" |
+| CA-987 a CA-989 | `dietaDoLink.test.ts` · "CA-987", "CA-988", "CA-989"; `dietaParaPaciente.test.ts` · "D-319"; `TelaMissoesPaciente.test.tsx` · "CA-928 … e D-319" |
+
+**Divergências:** o CA-974 e o CA-985 (tela) passaram de primeira: são trava, porque o comportamento já estava certo
+depois do merge. O CA-986 também. Os prints ficam em `rodada-1910/integracao/` (itens a e b, antes das frentes 5 a 7)
+e `rodada-1910/final/` (o estado final, antes = `main` 2eb11db).
