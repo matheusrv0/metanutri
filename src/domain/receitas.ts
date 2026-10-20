@@ -5,6 +5,7 @@
 import { interpretarEntrada, normalizar, pluralDaMedida } from './busca.ts'
 import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
+import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
 import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao } from './receitaNoPlano.ts'
 import { totaisDeItens, type Totais } from './totais.ts'
 import type { Alimento, BuscarAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos.ts'
@@ -77,6 +78,18 @@ export function copiaParaOPlano(r: Receita): ReceitaDoPlano {
 /** CA-862: o valor de uma porção, com a contagem de quem não tem dado (D-275). */
 export function totaisDaPorcao(r: ReceitaDoPlano, buscar: BuscarAlimento): Totais {
   return totaisDeItens([{ id: 'porcao', alimentoId: ID_DE_RECEITA, gramas: pesoDaPorcao(r), receita: r }], buscar)
+}
+
+/**
+ * CA-862: de onde vem a soma da porção, para o número aparecer ao lado da fonte: "TACO 2011" quando há ingrediente da
+ * base e "rótulo de Meus produtos" quando há produto cadastrado.
+ */
+export function fontesDaSoma(r: Pick<ReceitaDoPlano, 'ingredientes'>): readonly string[] {
+  const usados = r.ingredientes.filter((i) => i.gramas > 0)
+  return [
+    usados.some((i) => i.alimentoId < PRIMEIRO_ID_PRODUTO) ? 'TACO 2011' : null,
+    usados.some((i) => i.alimentoId >= PRIMEIRO_ID_PRODUTO) ? 'rótulo de Meus produtos' : null,
+  ].filter((f): f is string => f !== null)
 }
 
 /** CA-866: as receitas cujo nome tem todas as palavras digitadas, sem acento e sem maiúscula. */

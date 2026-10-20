@@ -1,5 +1,5 @@
 import { pesoDaPorcao } from '@/domain/receitaNoPlano.ts'
-import { totaisDaPorcao } from '@/domain/receitas.ts'
+import { fontesDaSoma, totaisDaPorcao } from '@/domain/receitas.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ChaveNutrienteAlimento, ReceitaDoPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -50,7 +50,7 @@ export function ResumoDaPorcao({ receita }: ResumoDaPorcaoProps) {
       <p className="text-xs text-muted-foreground">
         {temMarca ? <span className="mr-1 font-semibold text-warningtext">†</span> : null}
         {temMarca ? 'Valor possivelmente subestimado: um ingrediente não tem o dado. ' : null}
-        Soma dos ingredientes, TACO 2011.
+        {`Soma dos ingredientes: ${fontesDaSoma(receita).join(' e ')}.`}
       </p>
     </section>
   )
