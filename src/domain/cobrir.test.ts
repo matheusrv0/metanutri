@@ -2,7 +2,7 @@ import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, sugerirParaCobrir } from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
-import { ehDeUsoComum, regraQueExclui } from './prescritivel.ts'
+import { ehDeUsoComum, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Totais } from './totais.ts'
 import { CHAVES_NUTRIENTES, totaisDeItens, totaisDoPlano } from './totais.ts'
@@ -310,6 +310,30 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       expect(gramasDe(rico(50, descricao, categoria))).toBe(maximo)
     })
 
+    it('CA-915: gordura de adição não passa de 10 g (1 colher de sopa)', () => {
+      // A TACO não traz micronutriente do azeite: o teste dá a ele 40 mg de ferro em 100 g, que pediriam 20 g.
+      const azeite = comoNaTaco(alimento(49, 'Azeite, de oliva, extra virgem', { energia_kcal: 884, ferro_mg: 40 }), 'Gorduras e óleos')
+      expect(gramasDe(azeite)).toBe(10)
+    })
+
+    it.each([
+      ['Mel, de abelha', 'Produtos açucarados', 25],
+      ['Chocolate, meio amargo', 'Produtos açucarados', 25],
+      ['Azeitona, preta, conserva', 'Outros alimentos industrializados', 30],
+      ['Tremoço, em conserva', 'Leguminosas e derivados', 30],
+      ['Cereal matinal, milho', 'Cereais e derivados', 30],
+      ['Leite, de vaca, integral, pó', 'Leite e derivados', 30],
+      ['Leite, de vaca, desnatado, pó', 'Leite e derivados', 30],
+      ['Leite, fermentado', 'Leite e derivados', 80],
+      ['Farinha, de mandioca, crua', 'Verduras, hortaliças e derivados', 30],
+      ['Farinha, de mandioca, torrada', 'Verduras, hortaliças e derivados', 30],
+      ['Carne, bovina, charque, cozido', 'Carnes e derivados', 100],
+      ['Carne, bovina, seca, cozida', 'Carnes e derivados', 100],
+      ['Ovo, de galinha, inteiro, frito', 'Ovos e derivados', 100],
+    ] as const)('CA-915: "%s" (%s) não passa de %s g (D-293)', (descricao, categoria, maximo) => {
+      expect(gramasDe(rico(50, descricao, categoria))).toBe(maximo)
+    })
+
     it('a ricota é magra e fica na porção padrão', () => {
       expect(gramasDe(rico(51, 'Queijo, ricota', 'Leite e derivados', 140))).toBe(200)
     })
@@ -340,9 +364,44 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
           if (/^Queijo,/.test(nome) && !/ricota/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
           if (/^(Pão|Biscoito|Torrada)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(50)
           if (/com gordura|com pele|costela|cupim|bisteca/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(100)
+          // CA-915: os grupos da conduta da parceira (D-293).
+          if (/^(Azeite|Óleo|Manteiga)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(10)
+          if (/^(Mel,|Chocolate,)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(25)
+          if (/^(Azeitona|Tremoço, em conserva|Cereal matinal|Leite, de vaca, [^,]+, pó|Farinha, de mandioca)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(30)
+          if (/^Leite, fermentado/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(80)
+          if (/^(Carne, bovina, (charque|seca)|Ovo, de galinha, inteiro, frito)/.test(nome)) expect(s.gramas, nome).toBeLessThanOrEqual(100)
         }
       }
     })
+  })
+
+  it('CA-914: entre os de uso comum, o que voltou pela conduta vem depois do magro e in natura', () => {
+    const rico = (id: number, descricao: string, categoria: string, kcal: number) => comoNaTaco(alimento(id, descricao, { energia_kcal: kcal, ferro_mg: 40 }), categoria)
+    const base = [
+      // Os mais leves, mas de segunda escolha (D-293): vão para depois.
+      rico(80, 'Carne, bovina, charque, cozido', 'Carnes e derivados', 10),
+      rico(81, 'Azeitona, preta, conserva', 'Outros alimentos industrializados', 11),
+      rico(82, 'Feijoada', 'Alimentos preparados', 12),
+      rico(83, 'Carne, bovina, patinho, sem gordura, grelhado', 'Carnes e derivados', 200),
+      rico(84, 'Feijão, carioca, cozido', 'Leguminosas e derivados', 210),
+    ]
+    const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base }).sugestoes.map((s) => s.alimentoId)
+    expect(ordem.slice(0, 2)).toEqual([83, 84])
+  })
+
+  it('CA-914: no plano vazio da Maria, segunda escolha de uso comum nunca vem antes de primeira escolha de uso comum', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+    const porId = new Map(ALIMENTOS.map((a) => [a.id, a]))
+    for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+      const sugestoes = sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS }).sugestoes
+      const comuns = sugestoes.map((s) => porId.get(s.alimentoId)).filter((a): a is Alimento => a !== undefined && ehDeUsoComum(a))
+      const segunda = comuns.map((a) => ehSegundaEscolha(a))
+      const primeiraSegunda = segunda.indexOf(true)
+      if (primeiraSegunda >= 0) expect(segunda.slice(primeiraSegunda), chave).not.toContain(false)
+    }
+    const ferro = sugerirParaCobrir('ferro_mg', vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS }).sugestoes[0]?.descricao ?? ''
+    expect(ferro).not.toMatch(/charque|seca|Azeitona|Sarapatel/)
   })
 
   it('CA-674: corte magro e ave sem pele vêm antes de corte gordo e ave com pele', () => {

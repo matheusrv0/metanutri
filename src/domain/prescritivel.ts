@@ -262,6 +262,15 @@ export function ehCorteGordo(alimento: Pick<Alimento, 'descricao' | 'categoria'>
   return alimento.categoria === 'Carnes e derivados' && CORTE_GORDO.test(alimento.descricao)
 }
 
+/**
+ * Segunda escolha: prescritível, mas vem depois dos magros, in natura e preparos simples no cobrir e nas trocas (spec
+ * conduta-da-nutricionista, D-293). É o corte gordo e a ave com pele (D-199b) e o que a parceira liberou e antes era
+ * fora da rotina ou pó (todos os liberados, menos a farinha d'água). Usado só para ordenar.
+ */
+export function ehSegundaEscolha(alimento: Pick<Alimento, 'descricao' | 'categoria'>): boolean {
+  return ehCorteGordo(alimento) || LIBERADOS_PELA_CONDUTA.get(chaveDoNome(alimento.descricao))?.segundaEscolha === true
+}
+
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Pick<Alimento, 'descricao'>): boolean {
   return !POUCO_USUAL.test(alimento.descricao)

@@ -1,5 +1,5 @@
 import { FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
-import { ehDeUsoComum, ehPrescritivel, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
+import { ehDeUsoComum, ehPrescritivel, ehSegundaEscolha, REGRAS_PRESCRICAO, regraQueExclui } from './prescritivel.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
 
@@ -415,6 +415,18 @@ describe('a conduta da nutricionista (spec conduta-da-nutricionista)', () => {
     const a = porDescricao(d)
     expect(regraQueExclui(a)).toMatchObject({ id: 'gordura-trans', nivel: 'nunca' })
     expect(ehPrescritivel(a, { incluirIngredientes: true })).toBe(false)
+  })
+
+  it.each(LIBERADOS.filter((d) => d !== 'Farinha, de mandioca, crua'))('CA-914: "%s" é segunda escolha (D-293)', (d) => {
+    expect(ehSegundaEscolha(porDescricao(d))).toBe(true)
+  })
+
+  it('CA-914: corte gordo e ave com pele também são segunda escolha; magro, in natura e a farinha d\'água, não', () => {
+    expect(ehSegundaEscolha(porDescricao('Carne, bovina, picanha, com gordura, grelhada'))).toBe(true)
+    expect(ehSegundaEscolha(porDescricao('Frango, coxa, com pele, assada'))).toBe(true)
+    for (const d of ['Farinha, de mandioca, crua', 'Carne, bovina, patinho, sem gordura, grelhado', 'Feijão, carioca, cozido', 'Banana, prata, crua']) {
+      expect(ehSegundaEscolha(porDescricao(d)), d).toBe(false)
+    }
   })
 
   it('CA-912: qualquer nome que diga "hidrogenada" é trans; a margarina interesterificada continua gordura de adição', () => {
