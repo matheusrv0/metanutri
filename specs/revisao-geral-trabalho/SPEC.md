@@ -85,14 +85,14 @@ nutriente, de energia ou do cobrir muda.
 
 ### Toque (D-246)
 
-- **CA-788** · Dado o celular (390 px), então o "Fechar" das janelas (Modelos de plano, Dieta para imprimir) e da gaveta do Cobrir tem pelo menos 44 × 44 px, e cada opção em pílula (Sexo, Objetivo, Condição e Nível de atividade na etapa 1; Sexo na ficha; Situação em Configurações) tem pelo menos 44 px de altura.
+- **CA-788** · Dado o celular (390 px), então o "Fechar" das janelas (Modelos de plano, Dieta para imprimir) e da gaveta do Cobrir tem pelo menos 44 × 44 px, e cada opção em pílula (Sexo, Objetivo, Condição e Nível de atividade na etapa 1; Sexo na ficha; Situação em Configurações) tem pelo menos 44 px de altura. *(Revisão de 20/10/2026: na gaveta da Tabela de alimentos, o título termina pelo menos 8 px antes do "Fechar".)*
 - **CA-790** · Dado o celular, então a trilha do cabeçalho ("Planos"), cada item do menu Exportar, os botões e links da Ajuda, o "Ver as fontes" da avaliação antropométrica e a linha "Incluir ingredientes e alimentos crus" do Cobrir têm pelo menos 44 px de altura de área de toque.
 
 ### Texto (D-247)
 
 - **CA-791** · Dado Pacientes, então "Pacientes" aparece só como título da página, e a busca e "Novo paciente" continuam; dado a ficha, então a frase sobre as restrições filtrarem as sugestões aparece uma vez; dado a etapa 1, então "Observações" aparece uma vez como título do recolhido e o campo continua com o nome acessível "Observações"; dado a busca de alimento de uma refeição, então o texto-guia diz "colheres"; dado o Cobrir de cálcio com 243,6 mg faltando, então a gaveta diz "Faltam 244 mg para a meta."
 - **CA-792** · Dado o pedido de autorização do link do paciente, então nenhum caminho de arquivo (como `docs/...`) aparece na tela.
-- **CA-794** · Dado a Tabela de alimentos em ordem de nome, então os alimentos cujo nome começa por espaço entram na posição da primeira letra ("Mamão, doce em calda" junto dos outros "Mamão"), e "valores por 100 g" não quebra entre o número e a unidade.
+- **CA-794** · Dado a Tabela de alimentos em ordem de nome, então os alimentos cujo nome começa por espaço entram na posição da primeira letra ("Mamão, doce em calda" junto dos outros "Mamão"), e "valores por 100 g" não quebra entre o número e a unidade. *(Revisão de 20/10/2026: também na ficha do alimento, na gaveta do celular e ao lado da lista.)*
 - **CA-795** · Dado a etapa 3 no celular, então cada opção do seletor de referência ("Individual (RDA, 90%)", "Coletivo (EAR, 50%)", "Personalizado") fica numa linha só. *(Revisão de 20/10/2026: abaixo de 640 px as opções empilham, cada uma inteira dentro da tela; o seletor não rola de lado.)*
 
 ### Produto do rótulo (D-248)

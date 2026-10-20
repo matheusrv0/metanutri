@@ -244,9 +244,10 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
         <SheetContent side="bottom" className="gap-0 p-0">
           {aberto ? (
             <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5">
-              <div className="flex flex-col gap-1 pr-8">
+              {/* O "Fechar" tem 44 px no celular (D-246): o título termina antes dele, com folga. */}
+              <div className="flex flex-col gap-1 pr-8 max-sm:pr-11">
                 <SheetTitle className="text-base leading-snug">{aberto.descricao}</SheetTitle>
-                <SheetDescription>{`${aberto.categoria} · valores por 100 g`}</SheetDescription>
+                <SheetDescription>{`${aberto.categoria} · valores por 100\u00a0g`}</SheetDescription>
               </div>
               <CorpoDaFicha alimento={aberto} />
             </div>
@@ -274,7 +275,7 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
     <Card className="gap-4">
       <CardHeader>
         <CardTitle>{alimento.descricao}</CardTitle>
-        <CardDescription>{`${alimento.categoria} · valores por 100 g`}</CardDescription>
+        <CardDescription>{`${alimento.categoria} · valores por 100\u00a0g`}</CardDescription>
       </CardHeader>
       <CorpoDaFicha alimento={alimento} />
     </Card>

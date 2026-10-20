@@ -330,6 +330,22 @@ test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
     expect(caixa?.height ?? 0).toBeLessThan(40)
   })
 
+  test('CA-788 (revisão de 20/10/2026): na gaveta de alimento, o título não encosta no "Fechar" e "100 g" não quebra', async ({ page }) => {
+    await abrirComExemplo(page)
+    await page.setViewportSize({ width: 390, height: 800 })
+    await page.goto('/#/alimentos')
+    await page.getByRole('list', { name: 'Alimentos da tabela' }).getByRole('button').first().click()
+    const gaveta = page.getByRole('dialog')
+    await expect(gaveta).toBeVisible()
+    const medida = await gaveta.evaluate((el) => {
+      const titulo = el.querySelector('h2')?.getBoundingClientRect()
+      const fechar = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Fechar'))?.getBoundingClientRect()
+      return { folga: titulo && fechar ? fechar.left - titulo.right : -1, descricao: el.querySelector('p')?.textContent ?? '' }
+    })
+    expect(medida.folga).toBeGreaterThanOrEqual(8)
+    expect(medida.descricao).toContain('100' + String.fromCharCode(0xa0) + 'g')
+  })
+
   test('CA-790: a trilha, o Exportar, a Ajuda, "Ver as fontes" e o interruptor do Cobrir', async ({ page }) => {
     const casoId = await abrirComExemplo(page)
     await page.setViewportSize({ width: 390, height: 800 })
