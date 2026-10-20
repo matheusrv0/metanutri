@@ -110,15 +110,17 @@ describe('documentos legais', () => {
     expect(texto).toContain('Depois da exclusão, ficam só:')
     expect(texto).not.toContain('ficam só três coisas, sem nome, e-mail nem cartão')
     expect(texto).toContain(
-      'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos, sem nome, e-mail nem cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
+      'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas, só com o dia), por 5 anos, sem nome, e-mail nem cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
     )
+    // L2 da revisão: "sem ligação direta", porque o dono, com o painel do Mercado Pago, ainda poderia cruzar os dados.
+    expect(texto).toContain('O histórico das mudanças de plano, sem nome nem e-mail e sem ligação direta com a pessoa, com as datas só com o dia, para as contas do MetaNutri.')
+    expect(texto).toContain('O registro dos avisos do Mercado Pago, sem nome nem e-mail, que some em 90 dias.')
+    expect(texto).not.toMatch(/sem ligação com a pessoa|não tem dado pessoal/)
     // D-259 (revisão de 19/10/2026): o registro de acesso guarda o e-mail, e a Política diz.
     expect(texto).toContain('Os registros de acesso dos últimos 6 meses.')
     expect(texto).toContain(
       'Os registros de acesso (data, hora, endereço IP e o e-mail usado para entrar) ficam 6 meses, como manda o Marco Civil da Internet (art. 15), e depois são apagados.',
     )
-    expect(texto).toContain('O histórico das mudanças de plano, sem ligação com a pessoa, para as contas do MetaNutri.')
-    expect(texto).toContain('O registro dos avisos do Mercado Pago, que não tem dado pessoal e some em 90 dias.')
     expect(texto).toContain('As cópias de segurança do banco somem sozinhas em até 90 dias.')
     expect(texto).not.toContain('apagados em até 90 dias, salvo obrigação legal')
   })

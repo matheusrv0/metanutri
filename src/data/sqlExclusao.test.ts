@@ -51,7 +51,17 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
       expect(inicioDaTabela).toBeGreaterThan(-1)
       expect(colunas).toEqual(['id', 'preapproval_id', 'plano', 'ciclo', 'valor_centavos', 'ultima_cobranca_paga', 'encerrada_por', 'encerrada_em', 'excluida_em'])
       expect(tabela).toContain('preapproval_id text not null unique')
-      expect(tabela).toContain('excluida_em timestamptz not null default now()')
+      // L2 da revisão: as datas só com o dia (de Brasília), para a hora exata não ligar o registro ao histórico.
+      expect(tabela).toContain('ultima_cobranca_paga date,')
+      expect(tabela).toContain('encerrada_em date,')
+      expect(tabela).toContain("excluida_em date not null default ((now() at time zone 'America/Sao_Paulo')::date)")
+    })
+
+    it('L2: quem rodou uma versão anterior deste arquivo também fica com as datas só com o dia', () => {
+      for (const coluna of ['ultima_cobranca_paga', 'encerrada_em', 'excluida_em']) {
+        expect(sql).toContain(`alter table public.assinaturas_de_contas_excluidas alter column ${coluna} type date using ${coluna}::date;`)
+      }
+      expect(sql).toContain("alter table public.assinaturas_de_contas_excluidas alter column excluida_em set default ((now() at time zone 'America/Sao_Paulo')::date);")
     })
 
     it('CA-818: sem nome, sem e-mail, sem cartão e sem o código da conta', () => {
@@ -93,14 +103,21 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
 
     it('CA-818 e CB-252: guarda a assinatura do Mercado Pago da conta, uma vez só', () => {
       expect(corpo).toMatch(
-        /insert into public\.assinaturas_de_contas_excluidas \(preapproval_id, plano, ciclo, valor_centavos, ultima_cobranca_paga, encerrada_por, encerrada_em\)\s+select a\.preapproval_id, a\.plano, a\.ciclo, a\.valor_centavos, a\.ultima_cobranca_paga, a\.encerrada_por, a\.encerrada_em\s+from public\.assinaturas a\s+where a\.nutricionista_id = old\.id and a\.preapproval_id is not null\s+on conflict \(preapproval_id\) do nothing;/,
+        /insert into public\.assinaturas_de_contas_excluidas \(preapproval_id, plano, ciclo, valor_centavos, ultima_cobranca_paga, encerrada_por, encerrada_em\)\s+select a\.preapproval_id, a\.plano, a\.ciclo, a\.valor_centavos, \(a\.ultima_cobranca_paga at time zone 'America\/Sao_Paulo'\)::date, a\.encerrada_por, \(a\.encerrada_em at time zone 'America\/Sao_Paulo'\)::date\s+from public\.assinaturas a\s+where a\.nutricionista_id = old\.id and a\.preapproval_id is not null\s+on conflict \(preapproval_id\) do nothing;/,
       )
     })
 
     it('CA-819: troca o código da conta no histórico por um só código novo, sorteado uma vez', () => {
       expect(corpo).toContain('v_anonimo uuid := gen_random_uuid();')
-      expect(corpo).toContain('update public.assinaturas_historico set nutricionista_id = v_anonimo where nutricionista_id = old.id;')
+      expect(corpo).toContain(
+        "update public.assinaturas_historico set nutricionista_id = v_anonimo, quando = date_trunc('day', quando, 'America/Sao_Paulo') where nutricionista_id = old.id;",
+      )
       expect(corpo.match(/gen_random_uuid\(\)/g)).toHaveLength(1)
+    })
+
+    it('L2: a linha de fechamento também fica só com o dia', () => {
+      expect(corpo).toContain("insert into public.assinaturas_historico (nutricionista_id, plano, status, ciclo, valor_centavos, preco_travado, quando)")
+      expect(corpo).toContain("select v_anonimo, a.plano, 'cancelada', a.ciclo, a.valor_centavos, a.preco_travado, date_trunc('day', now(), 'America/Sao_Paulo')")
     })
 
     it('CA-826 (M2 da revisão): assinatura que não estava cancelada ganha a linha "cancelada" de fechamento, com o código sorteado, depois da troca', () => {

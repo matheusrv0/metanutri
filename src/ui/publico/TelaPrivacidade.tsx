@@ -76,11 +76,14 @@ export function TelaPrivacidade() {
       <p>Depois da exclusão, ficam só:</p>
       <ul>
         <li>
-          O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos, sem nome, e-mail nem
-          cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).
+          O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas, só com o dia), por 5 anos, sem nome,
+          e-mail nem cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).
         </li>
-        <li>O histórico das mudanças de plano, sem ligação com a pessoa, para as contas do MetaNutri.</li>
-        <li>O registro dos avisos do Mercado Pago, que não tem dado pessoal e some em 90 dias.</li>
+        <li>
+          O histórico das mudanças de plano, sem nome nem e-mail e sem ligação direta com a pessoa, com as datas só com o dia, para as contas do
+          MetaNutri.
+        </li>
+        <li>O registro dos avisos do Mercado Pago, sem nome nem e-mail, que some em 90 dias.</li>
         <li>Os registros de acesso dos últimos 6 meses.</li>
       </ul>
       <p>

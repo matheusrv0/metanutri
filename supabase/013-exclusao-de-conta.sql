@@ -33,11 +33,17 @@ create table if not exists public.assinaturas_de_contas_excluidas (
   plano text not null,
   ciclo text,
   valor_centavos integer not null,
-  ultima_cobranca_paga timestamptz,
+  ultima_cobranca_paga date,
   encerrada_por text,
-  encerrada_em timestamptz,
-  excluida_em timestamptz not null default now()
+  encerrada_em date,
+  excluida_em date not null default ((now() at time zone 'America/Sao_Paulo')::date)
 );
+-- L2 da revisão: as datas só com o dia (de Brasília), para a hora exata não ligar o registro ao histórico. Quem rodou
+-- uma versão anterior deste arquivo (com a hora) também fica assim; numa coluna que já é data, nada muda.
+alter table public.assinaturas_de_contas_excluidas alter column ultima_cobranca_paga type date using ultima_cobranca_paga::date;
+alter table public.assinaturas_de_contas_excluidas alter column encerrada_em type date using encerrada_em::date;
+alter table public.assinaturas_de_contas_excluidas alter column excluida_em type date using excluida_em::date;
+alter table public.assinaturas_de_contas_excluidas alter column excluida_em set default ((now() at time zone 'America/Sao_Paulo')::date);
 create index if not exists assinaturas_de_contas_excluidas_por_data on public.assinaturas_de_contas_excluidas (excluida_em);
 alter table public.assinaturas_de_contas_excluidas enable row level security;
 revoke all on public.assinaturas_de_contas_excluidas from anon, authenticated;
@@ -77,18 +83,19 @@ declare
 begin
   -- CB-252: a mesma assinatura não entra duas vezes.
   insert into public.assinaturas_de_contas_excluidas (preapproval_id, plano, ciclo, valor_centavos, ultima_cobranca_paga, encerrada_por, encerrada_em)
-  select a.preapproval_id, a.plano, a.ciclo, a.valor_centavos, a.ultima_cobranca_paga, a.encerrada_por, a.encerrada_em
+  select a.preapproval_id, a.plano, a.ciclo, a.valor_centavos, (a.ultima_cobranca_paga at time zone 'America/Sao_Paulo')::date, a.encerrada_por, (a.encerrada_em at time zone 'America/Sao_Paulo')::date
     from public.assinaturas a
    where a.nutricionista_id = old.id and a.preapproval_id is not null
   on conflict (preapproval_id) do nothing;
 
-  update public.assinaturas_historico set nutricionista_id = v_anonimo where nutricionista_id = old.id;
+  -- L2 da revisão: o histórico também fica só com o dia (meia-noite de Brasília).
+  update public.assinaturas_historico set nutricionista_id = v_anonimo, quando = date_trunc('day', quando, 'America/Sao_Paulo') where nutricionista_id = old.id;
 
   -- M2 da revisão: excluída pelo painel com a assinatura ainda valendo, a conta fecha o histórico com uma linha
   -- "cancelada". Sem ela, o gráfico de receita somaria a conta excluída em todos os meses seguintes. Pelo site a
   -- assinatura já chega cancelada (passo 2), e nada entra aqui.
-  insert into public.assinaturas_historico (nutricionista_id, plano, status, ciclo, valor_centavos, preco_travado)
-  select v_anonimo, a.plano, 'cancelada', a.ciclo, a.valor_centavos, a.preco_travado
+  insert into public.assinaturas_historico (nutricionista_id, plano, status, ciclo, valor_centavos, preco_travado, quando)
+  select v_anonimo, a.plano, 'cancelada', a.ciclo, a.valor_centavos, a.preco_travado, date_trunc('day', now(), 'America/Sao_Paulo')
     from public.assinaturas a
    where a.nutricionista_id = old.id and a.status <> 'cancelada';
 

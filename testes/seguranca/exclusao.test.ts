@@ -109,7 +109,7 @@ interface LinhaDoHistorico {
   readonly quando: string
 }
 
-async function historicoDe(c: Cenario, filtro: { readonly coluna: 'nutricionista_id' | 'quando'; readonly valores: readonly string[] }): Promise<LinhaDoHistorico[]> {
+async function historicoDe(c: Cenario, filtro: { readonly coluna: 'nutricionista_id' | 'valor_centavos'; readonly valores: readonly (string | number)[] }): Promise<LinhaDoHistorico[]> {
   const r = await c.servico.from('assinaturas_historico').select('nutricionista_id, plano, status, quando').in(filtro.coluna, [...filtro.valores])
   if (r.error) throw new Error(`ler o histórico: ${r.error.message}`)
   return (r.data ?? []) as LinhaDoHistorico[]
@@ -138,6 +138,7 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
   let arquivosAntes: string[]
   let jwt: string
   const operadora = operadoraFalsa()
+  const valorUnico = 710_000 + Math.floor(Math.random() * 9_000)
   let resposta: Awaited<ReturnType<typeof excluirConta>>
 
   beforeAll(async () => {
@@ -147,6 +148,9 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     if (dieta.error) throw new Error(dieta.error.message)
     const sub = await c.vitima.cliente.storage.from(BALDE).upload(`${c.vitima.id}/pasta/terceiro.pdf`, arquivoPdf('terceiro'), { contentType: 'application/pdf' })
     if (sub.error) throw new Error(sub.error.message)
+    // Um valor só deste teste: com as datas arredondadas para o dia (L2), é por ele que o histórico é reencontrado.
+    const valor = await c.servico.from('assinaturas').update({ valor_centavos: valorUnico }).eq('nutricionista_id', c.vitima.id)
+    if (valor.error) throw new Error(valor.error.message)
     fotoDaOutra = await fotoDaConta(c, c.atacante.id)
     fotoDoAdmin = await fotoDaConta(c, c.admin.id)
     avisosAntes = JSON.stringify((await c.servico.from('avisos_da_operadora').select('*').order('id')).data)
@@ -200,16 +204,19 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     const linhas = await registroDa(c, `pre-${c.marcador}`)
     expect(linhas).toHaveLength(1)
     const linha = linhas[0] ?? {}
-    expect(linha).toMatchObject({ plano: 'solo', ciclo: 'mensal', valor_centavos: 2990, encerrada_por: 'pessoa' })
+    expect(linha).toMatchObject({ plano: 'solo', ciclo: 'mensal', valor_centavos: valorUnico, encerrada_por: 'pessoa' })
     expect(Object.keys(linha).sort()).toEqual(['ciclo', 'encerrada_em', 'encerrada_por', 'excluida_em', 'id', 'plano', 'preapproval_id', 'ultima_cobranca_paga', 'valor_centavos'])
-    expect(Date.now() - Date.parse(String(linha['excluida_em']))).toBeLessThan(10 * MINUTO_MS)
+    // L2: só o dia, o de Brasília.
+    const hojeEmBrasilia = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+    expect(linha['excluida_em']).toBe(hojeEmBrasilia)
+    expect(linha['encerrada_em']).toBe(hojeEmBrasilia)
     const texto = JSON.stringify(linha)
     for (const proibido of [c.vitima.id, c.vitima.email, 'Visa', '4242']) expect(texto).not.toContain(proibido)
   })
 
   it('CA-819: o histórico fica, todo com um mesmo código novo que não é o da conta nem de login nenhum, com o cancelamento no fim', async () => {
     expect(await historicoDe(c, { coluna: 'nutricionista_id', valores: [c.vitima.id] })).toEqual([])
-    const reencontradas = await historicoDe(c, { coluna: 'quando', valores: historicoAntes.map((h) => h.quando) })
+    const reencontradas = await historicoDe(c, { coluna: 'valor_centavos', valores: [valorUnico] })
     const codigos = [...new Set(reencontradas.map((h) => h.nutricionista_id))]
     expect(codigos).toHaveLength(1)
     const codigo = codigos[0] ?? ''
@@ -218,6 +225,8 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     const todas = await historicoDe(c, { coluna: 'nutricionista_id', valores: [codigo] })
     expect(todas).toHaveLength(historicoAntes.length + 1)
     expect(todas.map((h) => h.status)).toContain('cancelada')
+    // L2: as datas ficam só com o dia (a meia-noite de Brasília, 03:00 UTC).
+    for (const h of todas) expect(new Date(h.quando).toISOString()).toMatch(/T03:00:00\.000Z$/)
     // O painel do dono lê o histórico assim: as linhas da conta excluída continuam lá.
     const painel = await c.admin.cliente.rpc('painel_historico_assinaturas')
     expect(painel.error).toBeNull()
