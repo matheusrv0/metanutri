@@ -150,3 +150,57 @@ test('CA-778: no computador, o Painel tem um "Novo plano" só; no celular, o do 
   await page.setViewportSize({ width: 390, height: 800 })
   await expect(page.getByRole('banner').getByRole('button', { name: 'Novo plano' })).toBeVisible()
 })
+
+test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', async ({ page }) => {
+  const erros: string[] = []
+  page.on('pageerror', (e) => erros.push(e.message))
+  const casoId = await abrirComExemplo(page)
+  // Um produto do rótulo no desjejum do plano de exemplo.
+  await page.evaluate((casoId) => {
+    const produto = {
+      id: 900_001,
+      codigoBarras: '',
+      nome: 'Granola da casa',
+      marca: 'Marca Exemplo',
+      porcaoG: 40,
+      medidaCaseira: '4 colheres de sopa',
+      porPorcao: { energia_kcal: 160, carboidrato_g: 26, proteina_g: 4, lipideos_g: 5, fibra_g: 3, sodio_mg: 20 },
+      criadoEm: new Date().toISOString(),
+    }
+    localStorage.setItem('metanutri:produtos', JSON.stringify([produto]))
+    const chave = `metanutri:caso:${casoId}`
+    const registro = JSON.parse(localStorage.getItem(chave) ?? '{}') as { plano: { refeicoes: { opcoes: { principal: unknown[] } }[] } }
+    registro.plano.refeicoes[0]?.opcoes.principal.push({ id: 'granola', alimentoId: 900_001, gramas: 40 })
+    localStorage.setItem(chave, JSON.stringify(registro))
+  }, casoId)
+  await page.reload()
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('Granola da casa (Marca Exemplo)')
+
+  await page.goto('/#/produtos')
+  await page.getByRole('button', { name: 'Excluir Granola da casa' }).click()
+  const aviso = page.getByRole('alertdialog', { name: 'Excluir “Granola da casa”?' })
+  await expect(aviso).toContainText('passa a mostrar “Produto apagado” nessa linha')
+  await aviso.getByRole('button', { name: 'Excluir produto' }).click()
+
+  for (const aba of ['caso', 'plano', 'adequacao']) {
+    await page.goto(`/#/caso/${casoId}/${aba}`)
+    await expect(page.getByRole('heading', { level: 1, name: 'Exemplo — Maria, 28 anos' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Etapas do plano' })).toBeVisible()
+  }
+  await page.goto(`/#/caso/${casoId}/plano`)
+  await expect(page.getByText('Produto apagado', { exact: true })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('— kcal')
+  // O Cobrir e o Exportar continuam funcionando.
+  await page.getByRole('button', { name: 'Exportar' }).click()
+  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Exportar' }).click()
+  const baixando = page.waitForEvent('download')
+  await page.getByRole('menuitem', { name: 'Aconselhamento em Word' }).click()
+  expect((await baixando).suggestedFilename()).toMatch(/aconselhamento\.docx$/)
+  await page.goto(`/#/caso/${casoId}/adequacao`)
+  await page.getByRole('button', { name: /^Cobrir / }).first().click()
+  await expect(page.getByRole('dialog')).toContainText('para a meta')
+  expect(erros).toEqual([])
+})

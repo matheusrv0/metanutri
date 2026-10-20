@@ -1,6 +1,7 @@
 // Produtos industrializados cadastrados pelo rótulo (revisão de produto, B-25).
 // Ficam no mesmo armazenamento dos casos e entram nos cálculos como qualquer alimento.
 import type { Armazenamento } from './persistencia.ts'
+import { CHAVES_NUTRIENTES } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const CHAVE = 'metanutri:produtos'
@@ -118,7 +119,8 @@ export function validarProduto(p: DadosProduto): readonly ProblemaProduto[] {
 
 /** O produto entra na busca e nos cálculos como um alimento normal, por 100 g. */
 export function produtoComoAlimento(p: Produto): Alimento {
-  const nutrientes: Partial<Record<ChaveNutrienteAlimento, number | null>> = {}
+  // CA-793 (spec revisao-geral-trabalho): o que o rótulo não traz é falta de dado (nulo); indefinido virava NaN na soma.
+  const nutrientes = Object.fromEntries(CHAVES_NUTRIENTES.map((chave) => [chave, null])) as Record<ChaveNutrienteAlimento, number | null>
   for (const [chave, valor] of Object.entries(p.porPorcao)) {
     nutrientes[chave as ChaveNutrienteAlimento] = typeof valor === 'number' ? porCem(valor, p.porcaoG) : null
   }
@@ -130,9 +132,17 @@ export function produtoComoAlimento(p: Produto): Alimento {
     base: null,
     preparo: null,
     qualificadores: null,
-    nutrientes: nutrientes as Alimento['nutrientes'],
+    nutrientes,
     tracos: [],
   }
+}
+
+/**
+ * D-248 (spec revisao-geral-trabalho): o nome da linha do plano cujo alimento não existe mais. Produto apagado em
+ * "Meus produtos" diz isso; o resto é alimento que saiu da base (CB-180 da impressao-do-plano).
+ */
+export function nomeSemAlimento(alimentoId: number): string {
+  return alimentoId >= PRIMEIRO_ID_PRODUTO ? 'Produto apagado' : 'Alimento removido'
 }
 
 export interface RepositorioProdutos {

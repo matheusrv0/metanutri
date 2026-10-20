@@ -1,6 +1,7 @@
 import { ArrowLeftRight, X } from 'lucide-react'
 import { medidaParaMostrar } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
+import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -18,7 +19,8 @@ interface LinhaItemProps {
 /** CA-19: gramas editáveis, medida caseira equivalente, kcal e remoção. */
 export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: LinhaItemProps) {
   const alimento = buscarAlimento(item.alimentoId)
-  const descricao = alimento?.descricao ?? 'Alimento não encontrado'
+  // D-248 (spec revisao-geral-trabalho): produto apagado em "Meus produtos" fica como "Produto apagado", sem valores.
+  const descricao = alimento?.descricao ?? nomeSemAlimento(item.alimentoId)
   const medida = medidaParaMostrar(item.alimentoId, item.gramas)
   const incompleto = alimento ? explicarCompletude(alimento) : null
   const porCem = alimento?.nutrientes.energia_kcal ?? null
@@ -51,7 +53,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
         >
           {kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}
         </span>
-        {aoSubstituir ? (
+        {/* Sem o alimento, não há o que comparar para um substituto equivalente. */}
+        {aoSubstituir && alimento ? (
           <Button variant="ghost" size="iconsm" onClick={aoSubstituir} aria-label={`Substituir ${descricao}`}>
             <ArrowLeftRight aria-hidden="true" />
           </Button>

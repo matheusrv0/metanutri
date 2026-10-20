@@ -50,13 +50,14 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
       throw new RangeError(`Quantidade inválida (${item.gramas} g) no item ${item.id}.`)
     }
     if (item.gramas === 0) continue
+    // D-248 (spec revisao-geral-trabalho): o produto apagado em "Meus produtos" (ou o alimento que saiu da base) continua
+    // no plano e conta como falta de dado em tudo; o nutriente que o alimento não traz também. Nunca zero, nunca NaN.
     const alimento = buscar(item.alimentoId)
-    if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
     contados++
     const fator = item.gramas / 100
     for (const chave of CHAVES_NUTRIENTES) {
-      const valor = alimento.nutrientes[chave]
-      if (valor === null) semDado[chave]++
+      const valor = alimento?.nutrientes[chave]
+      if (typeof valor !== 'number') semDado[chave]++
       else total[chave] += valor * fator
     }
   }

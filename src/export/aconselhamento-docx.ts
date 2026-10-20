@@ -3,6 +3,7 @@
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
 import { medidaParaMostrar } from '../domain/busca.ts'
+import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
@@ -34,11 +35,11 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
 
 /** "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). */
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
+  // D-248 (spec revisao-geral-trabalho): o produto apagado sai com o nome do que aconteceu e os gramas, sem quebrar o Word.
   const alimento = buscar(item.alimentoId)
-  if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
-  const medida = medidaParaMostrar(item.alimentoId, item.gramas)
+  const medida = alimento ? medidaParaMostrar(item.alimentoId, item.gramas) : null
   const quantidade = medida ? medida.texto : `${formatarNumeroDocx(item.gramas, 0)} g`
-  return `${alimento.descricao} (${quantidade})`
+  return `${alimento?.descricao ?? nomeSemAlimento(item.alimentoId)} (${quantidade})`
 }
 
 export function descreverOpcao(itens: readonly ItemPlano[], buscar: BuscarAlimento): string {

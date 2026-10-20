@@ -17,6 +17,19 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.getByText('1 ponta de faca')).toBeInTheDocument()
   })
 
+  it('CA-789: produto apagado vira "Produto apagado", com os gramas, "— kcal" e sem substituto', () => {
+    render(
+      <ul>
+        <LinhaItem item={{ id: 'i1', alimentoId: 900_001, gramas: 40 }} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} aoSubstituir={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.getByText('Produto apagado')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gramas de Produto apagado')).toHaveValue('40')
+    expect(screen.getByText('— kcal')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Substituir/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Remover Produto apagado' })).toBeInTheDocument()
+  })
+
   it('CA-780: 30 g de manteiga mostram "1 colher de sopa", nunca "1 fatia"', () => {
     linha(MANTEIGA, 30)
     expect(screen.getByText('1 colher de sopa')).toBeInTheDocument()

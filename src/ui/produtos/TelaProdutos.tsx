@@ -135,7 +135,7 @@ export function TelaProdutos() {
 
       <DialogoExcluir
         nome={excluindo?.nome ?? null}
-        descricao="Plano que usa este produto passa a mostrar “Alimento não encontrado” nessa linha. Não dá para desfazer."
+        descricao="Plano que usa este produto passa a mostrar “Produto apagado” nessa linha, sem valores. Não dá para desfazer."
         acao="Excluir produto"
         aoConfirmar={excluir}
         aoFechar={() => setExcluindo(null)}
