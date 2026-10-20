@@ -31,7 +31,7 @@ teste primeiro, visto falhando, depois o código.
 | `src/ui/publico/AvisoContaExcluida.tsx` (+ teste) | T9 | novo: "Sua conta foi excluída." na página inicial |
 | `src/App.tsx` | T9 | põe o aviso no topo da página inicial |
 | `src/ui/publico/TelaPrivacidade.tsx`, `src/ui/publico/TelaTermos.tsx`, `src/domain/legal.ts`, `src/domain/legal.test.ts`, `src/ui/publico/legal.test.tsx` | T10 | os textos legais e a versão |
-| `e2e/conta.spec.ts` | T11 | no modo local, Conta e plano não oferece excluir |
+| `e2e/exclusao-de-conta.spec.ts` | T11 | novo: no modo local, Conta e plano não oferece excluir; o aviso da página inicial aparece uma vez |
 
 ## 2. Tarefas
 
@@ -104,7 +104,9 @@ teste primeiro, visto falhando, depois o código.
   - Política ("Por quanto tempo") e Termos ("Encerramento") como no D-257; `VERSAO_TERMOS = '2026-10-19'`,
     `DATA_TERMOS = '19 de outubro de 2026'` (CA-827, CA-828).
 - [ ] **T11 — Ponta a ponta.** Depende de T8.
-  - `e2e/conta.spec.ts`: no modo local, Conta e plano não mostra "Excluir conta" (CA-800).
+  - `e2e/exclusao-de-conta.spec.ts` (arquivo próprio, para não esbarrar nas outras frentes): no modo local, Conta e plano
+    não mostra "Excluir conta" (CA-800); o aviso "Sua conta foi excluída." aparece no topo da página inicial e some ao
+    recarregar (CA-808).
 - [ ] **T12 — Validação.** `npm run check`, `npx playwright test` (cópia da configuração numa porta própria),
   `npm run build`, os testes de ataque no Supabase local (uma pilha própria desta frente) e os prints.
 
