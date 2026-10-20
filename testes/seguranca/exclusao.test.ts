@@ -401,3 +401,36 @@ describe('CB-259: mais de 100 arquivos na pasta da conta', () => {
     expect(await criarPortaDaExclusao(c.servico).apagarArquivos(id)).toBeNull()
   }, 120_000)
 })
+
+interface RegistroDeAcesso {
+  readonly payload?: { readonly actor_username?: string }
+}
+
+/** Os registros de acesso (auth.audit_log_entries) de um e-mail, pela API de administração do servidor de login. */
+async function registrosDeAcesso(c: Cenario, email: string): Promise<RegistroDeAcesso[]> {
+  const resposta = await fetch(`${c.ambiente.url}/auth/v1/admin/audit?per_page=1000`, {
+    headers: { apikey: c.ambiente.servico, Authorization: `Bearer ${c.ambiente.servico}` },
+  })
+  if (!resposta.ok) throw new Error(`ler os registros de acesso: HTTP ${resposta.status}`)
+  const lista = (await resposta.json()) as RegistroDeAcesso[]
+  return lista.filter((r) => r.payload?.actor_username === email)
+}
+
+describe('D-259 (revisão de 19/10/2026): a rotina diária', () => {
+  it('apaga os registros de acesso com mais de 6 meses e deixa os mais novos', async () => {
+    const c = await prepararCenario()
+    // Entrar deixa um registro de acesso com o e-mail (CA-827: a Política diz isso).
+    expect((await registrosDeAcesso(c, c.vitima.email)).length).toBeGreaterThan(0)
+    expect((await c.servico.rpc('limpar_registros_guardados')).error).toBeNull()
+    expect((await registrosDeAcesso(c, c.vitima.email)).length).toBeGreaterThan(0)
+    // Daqui a 7 meses, os de hoje passaram de 6: a mesma rotina os apaga, com a permissão que ela tem no banco.
+    const daquiA7Meses = new Date(Date.now() + 7 * 31 * 24 * 60 * MINUTO_MS).toISOString()
+    expect((await c.servico.rpc('limpar_registros_guardados', { p_agora: daquiA7Meses })).error).toBeNull()
+    expect(await registrosDeAcesso(c, c.vitima.email)).toEqual([])
+  })
+
+  it('conta comum e visitante não chamam a rotina', async () => {
+    const c = await prepararCenario()
+    for (const cliente of [c.atacante.cliente, c.anonimo]) barrado(await cliente.rpc('limpar_registros_guardados'))
+  })
+})

@@ -107,9 +107,15 @@ describe('documentos legais', () => {
     expect(texto).toContain(
       'Enquanto a conta existir. Para excluir, use Conta e plano e confirme com a senha: os dados da conta saem da nuvem na hora, inclusive os pacientes e os links deles, que deixam de abrir. Também dá para pedir pelo contato@exemplo.com.',
     )
-    expect(texto).toContain('Depois da exclusão, ficam só três coisas, sem nome, e-mail nem cartão:')
+    expect(texto).toContain('Depois da exclusão, ficam só:')
+    expect(texto).not.toContain('ficam só três coisas, sem nome, e-mail nem cartão')
     expect(texto).toContain(
-      'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
+      'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas), por 5 anos, sem nome, e-mail nem cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
+    )
+    // D-259 (revisão de 19/10/2026): o registro de acesso guarda o e-mail, e a Política diz.
+    expect(texto).toContain('Os registros de acesso dos últimos 6 meses.')
+    expect(texto).toContain(
+      'Os registros de acesso (data, hora, endereço IP e o e-mail usado para entrar) ficam 6 meses, como manda o Marco Civil da Internet (art. 15), e depois são apagados.',
     )
     expect(texto).toContain('O histórico das mudanças de plano, sem ligação com a pessoa, para as contas do MetaNutri.')
     expect(texto).toContain('O registro dos avisos do Mercado Pago, que não tem dado pessoal e some em 90 dias.')

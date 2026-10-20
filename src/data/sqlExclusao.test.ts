@@ -62,7 +62,8 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
       expect(sql).toContain('alter table public.assinaturas_de_contas_excluidas enable row level security;')
       expect(sql).toContain('revoke all on public.assinaturas_de_contas_excluidas from anon, authenticated;')
       expect(sql).not.toMatch(/create policy|alter policy|disable row level security/i)
-      expect(sql).not.toMatch(/\bgrant\b/i)
+      // A única concessão é a da rotina do D-259, só para o servidor.
+      expect([...sql.matchAll(/^grant [^;]*;/gim)].map((m) => m[0])).toEqual(['grant execute on function public.limpar_registros_guardados(timestamptz) to service_role;'])
     })
 
     it('CA-825: um índice pela data da exclusão, para apagar os de mais de 5 anos', () => {
@@ -113,6 +114,36 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
 
   it('D-256: o pedido de exclusão entra no limite de chamadas, com um tipo próprio', () => {
     expect(sql).toContain("alter table public.chamadas_da_cobranca add constraint chamadas_da_cobranca_tipo_check check (tipo in ('cartao', 'conferir', 'excluir'));")
+  })
+
+  describe('D-259 (revisão de 19/10/2026): a rotina diária', () => {
+    const inicioDaRotina = sql.indexOf('create or replace function public.limpar_registros_guardados(p_agora timestamptz default now())')
+    const rotina = sql.slice(inicioDaRotina, sql.indexOf('$$;', inicioDaRotina))
+    const cabecalhoDaRotina = rotina.split('as $$')[0] ?? ''
+    const corpoDaRotina = rotina.split('as $$')[1] ?? ''
+
+    it('liga o pg_cron sozinho, do mesmo jeito que o 014 da outra frente: o 013 não depende do 014', () => {
+      expect(sql).toContain('create extension if not exists pg_cron with schema pg_catalog;')
+      expect(sql.indexOf('create extension if not exists pg_cron')).toBeLessThan(sql.indexOf("select cron.schedule('metanutri-limpar-registros'"))
+    })
+
+    it('CA-827 e D-259: apaga os registros de acesso do servidor de login com mais de 6 meses', () => {
+      expect(inicioDaRotina).toBeGreaterThan(-1)
+      expect(corpoDaRotina).toContain("delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';")
+    })
+
+    it('security definer com search_path vazio e só nomes qualificados; só o servidor chama', () => {
+      expect(cabecalhoDaRotina).toContain('returns void')
+      expect(cabecalhoDaRotina).toContain('security definer')
+      expect(cabecalhoDaRotina).toContain("set search_path = ''")
+      expect(sql).toContain('revoke all on function public.limpar_registros_guardados(timestamptz) from public, anon, authenticated;')
+      expect(sql).toContain('grant execute on function public.limpar_registros_guardados(timestamptz) to service_role;')
+    })
+
+    it('roda todo dia, com um nome que um segundo agendamento troca em vez de duplicar', () => {
+      expect(sql).toContain("select cron.schedule('metanutri-limpar-registros', '45 6 * * *', 'select public.limpar_registros_guardados();');")
+      expect(sql).toMatch(/^-- select schedule, command, active from cron\.job where jobname = 'metanutri-limpar-registros';/m)
+    })
   })
 
   it('a conferência depois de rodar mostra o gatilho, a tabela fechada, o histórico sem chave estrangeira e o tipo novo', () => {

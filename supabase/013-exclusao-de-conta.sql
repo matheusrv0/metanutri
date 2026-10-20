@@ -10,6 +10,7 @@
 --       conta, por 5 anos (obrigação fiscal e contestação de cobrança, LGPD art. 16, I);
 --   (b) o histórico das mudanças de plano (o gráfico de receita do painel do dono), com o código da conta trocado por um
 --       código novo, sorteado, que não leva à pessoa.
+-- E uma rotina diária (pg_cron) apaga os registros de acesso do servidor de login com mais de 6 meses (D-259).
 --
 -- Tudo numa transação só: se algum passo falhar, nada fica pela metade.
 
@@ -92,6 +93,34 @@ create trigger guardar_ao_excluir_conta
   for each row execute function public.guardar_ao_excluir_conta();
 
 
+-- ---------- A rotina diária (D-259, revisão de 19/10/2026) ----------
+
+-- O servidor de login do Supabase anota cada entrada (data, hora, endereço IP e o e-mail usado) em
+-- auth.audit_log_entries, que não sai com a conta. O Marco Civil da Internet (art. 15) manda guardar esses registros
+-- por 6 meses; depois disso, esta rotina os apaga, todo dia. O 013 liga o pg_cron sozinho, do mesmo jeito que o 014
+-- (seguranca-lote-5): um não depende do outro. Se o SQL Editor recusar a extensão, ligue pg_cron em
+-- Database > Extensions e rode o arquivo de novo.
+create extension if not exists pg_cron with schema pg_catalog;
+
+-- `p_agora` só muda nos testes do Supabase local; a rotina chama sem nada. Só o servidor (e o agendador) chama.
+create or replace function public.limpar_registros_guardados(p_agora timestamptz default now())
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';
+end;
+$$;
+
+revoke all on function public.limpar_registros_guardados(timestamptz) from public, anon, authenticated;
+grant execute on function public.limpar_registros_guardados(timestamptz) to service_role;
+
+-- Todo dia às 6h45 (UTC). O nome faz um agendamento novo trocar o anterior, em vez de duplicar.
+select cron.schedule('metanutri-limpar-registros', '45 6 * * *', 'select public.limpar_registros_guardados();');
+
+
 -- ---------- Limite de pedidos de exclusão (D-256, CA-822) ----------
 
 -- O pedido de exclusão entra no mesmo registro de chamadas da cobrança (011), com um tipo próprio. O limite (5 por
@@ -117,3 +146,8 @@ commit;
 -- -- CHECK ((tipo = ANY (ARRAY['cartao'::text, 'conferir'::text, 'excluir'::text])))
 -- select has_table_privilege('authenticated', 'public.assinaturas_de_contas_excluidas', 'select') as logado_le;
 -- -- false
+-- select schedule, command, active from cron.job where jobname = 'metanutri-limpar-registros';
+-- -- uma linha: 45 6 * * *, select public.limpar_registros_guardados();, true
+-- Depois de um dia, a rotina sem erro (status succeeded):
+-- select status, return_message, start_time from cron.job_run_details
+--  where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-registros') order by start_time desc limit 5;
