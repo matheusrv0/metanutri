@@ -23,8 +23,6 @@ export interface Cenario {
   readonly pedidoEstudante?: Linha | null
   /** A linha que `missoes_por_token` devolve; nula, o link não existe; `'sem-rede'`, o pedido cai. */
   readonly link?: Linha | null | 'sem-rede'
-  /** Espera antes de responder ao link (para ver o "abrindo"). */
-  readonly esperaDoLinkMs?: number
   /** O que o login responde. */
   readonly entrar?: 'ok' | 'credencial-invalida' | 'sem-rede'
   /** A marcação do paciente (`marcar_missoes`): grava, ou o pedido cai. */
@@ -105,7 +103,6 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
     if (caminho.startsWith('/auth/v1/')) return json(route, {})
 
     if (caminho === '/rest/v1/rpc/missoes_por_token') {
-      if (cenario.esperaDoLinkMs) await new Promise((fim) => setTimeout(fim, cenario.esperaDoLinkMs))
       if (cenario.link === 'sem-rede') return route.abort('internetdisconnected')
       return json(route, cenario.link ? [cenario.link] : [])
     }
