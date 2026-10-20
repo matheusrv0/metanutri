@@ -4,7 +4,8 @@ Status: **pedida pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação p
 disse "apenas faça": as decisões abaixo estão tomadas e documentadas, sem pergunta em aberto.
 
 **O que é:** a branch que junta as frentes prontas e revisadas da rodada, nesta ordem: `seguranca-lote-5`,
-`exclusao-de-conta`, `revisao-geral-publica` e `receitas-com-calculo`. Esta spec cobre só o que a junção pede além das
+`exclusao-de-conta`, `revisao-geral-publica`, `receitas-com-calculo`, `revisao-geral-trabalho`, `vitaminas-usda` e
+`conduta-da-nutricionista`. Esta spec cobre só o que a junção pede além das
 quatro specs: as emendas entre elas, a data dos termos e os campos de texto no celular. As frentes que entram depois
 (revisão da área de trabalho, conduta da nutricionista, vitaminas do USDA) acrescentam notas aqui.
 
@@ -20,6 +21,8 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 | D-313 | **O formulário do cartão fica de fora da letra de 16 px.** Os cinco campos do cartão (checkout e Trocar cartão) continuam com letra de 14 px: três deles são campos seguros da operadora (iframes), cuja letra é passada ao Mercado Pago na hora em que o formulário abre, e os cinco precisam ser iguais (CA-368) | A rodada é sem o Mercado Pago ("faça a revisão geral sem o MP agora"). Entra junto com a troca para produção (CB-313) |
 | D-314 | **Uma versão só dos termos: `2026-10-20` ("20 de outubro de 2026").** Só a `exclusao-de-conta` mudou a Política e os Termos nesta rodada. Quem publica em outro dia troca a data em `src/domain/legal.ts` (as duas constantes) e no teste dela | A versão vai gravada no cadastro (CA-223 da `conta-e-verificacao`): uma data só para o texto que vai ao ar |
 | D-315 | **A receita na refeição continua desligada** (`RECEITAS_NA_REFEICAO = false`, D-274a da `receitas-com-calculo`). A integração não liga a constante; quem liga é o coordenador, na publicação 2 | A publicação em duas vezes protege o aparelho com a versão antiga aberta (R-270) |
+| D-317 | **Ingrediente apagado da receita fica fora do que vai ao paciente**, como o item apagado da refeição (D-248 da `revisao-geral-trabalho`): sai da seção "Receitas" da folha e da cópia do link (a lista de compras já o deixava de fora). A nutricionista continua vendo: no editor da receita a linha diz "Produto apagado" (ou "Alimento removido") com o aviso "Não sai na folha nem no link do paciente.", e o Word diz "Produto apagado (20 g)". A receita em si nunca é tirada da folha nem do link por não estar na base (o item de receita guarda `alimentoId` 0) | A regra do coordenador na revisão da área de trabalho (M-3): o paciente não recebe uma linha que não diz o que comer. Revê o CB-271 da `receitas-com-calculo`, que imprimia "Alimento removido" |
+| D-318 | **A † da energia e dos macros também vale para a receita com dado faltando.** O ingrediente sem energia (apagado, ou alimento da base sem o valor) conta como falta de dado no total da refeição, no Resumo do dia, na faixa da etapa 3 e no Cobrir (que não diz quantas kcal cabem). Na linha do planejador, a receita com parte da energia mostra as kcal com a † | Pedido do coordenador ao juntar as frentes: a † da `revisao-geral-trabalho` (I-2) não pode esquecer a receita, que soma pelos ingredientes |
 | D-316 | **O README traz a ordem única dos passos do dono** para as quatro frentes: painel, SQL 013, funções, site, app autenticador, SQL 014, cofre e a função da limpeza | As frentes escreveram cada uma a sua ordem; o dono roda uma lista só |
 
 ## 2. Critérios de aceite
@@ -54,6 +57,17 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
   código), Comprovar matrícula, Completar cadastro, o planejador (dados do caso e plano alimentar), Alimentos e a
   ficha do paciente, então nenhuma tela rola para o lado, e cada campo de texto à vista (fora do formulário do cartão)
   tem letra de 16 px ou mais e, se não for caixa de texto, 44 px de altura ou mais.
+
+### Ingrediente apagado e a † da receita (D-317, D-318)
+
+- **CA-982** · Dado uma receita no plano com um ingrediente apagado (produto apagado em "Meus produtos"), então a seção
+  "Receitas" da folha lista só os outros ingredientes, sem "Alimento removido".
+- **CA-983** · Dado a mesma receita, quando a dieta é copiada para o link, então os ingredientes da receita na cópia
+  não têm o apagado; a receita continua na refeição, com a porção e o peso.
+- **CA-984** · Dado a mesma receita na linha do planejador, então as kcal da linha levam a †; dado uma receita com
+  todos os ingredientes, então sem †.
+- **CA-985** · Dado a mesma receita no Desjejum, então a energia do Desjejum e a do dia levam a † (`semDado` maior que
+  zero), e o Cobrir não diz quantas kcal cabem (`kcalDisponiveis` nulo).
 
 ### Termos e receita na refeição (D-314, D-315)
 

@@ -12,6 +12,7 @@ Um `git merge --no-ff` por frente, com `npm run check` verde depois de cada um.
 | M2 | `exclusao-de-conta` | 8a00b76 | Fusão automática em `App.tsx`, `AreaDeTrabalho.tsx`, `usarConta.ts` e o teste dele. As cinco funções e o `bancoSupabase.ts` usam `npm:@supabase/supabase-js@2.117.2`; o caminho do esm.sh saiu do `tsconfig.seguranca.json` (L7 da revisão da exclusão). 013 e 014 são independentes |
 | M3 | `revisao-geral-publica` | ba6e9d4 | Nenhum. O servidor de conta falso continua abrindo as telas com o login PKCE e o segundo fator do lote 5 |
 | M4 | `receitas-com-calculo` | 86fee64 | `MeuPlano.tsx` (imports): os dois ficam. O CA-884 de `MeuPlanoComReceita.test.tsx` passou ao comportamento novo: os ingredientes seguem as regras da folha (D-231) |
+| M5 | `revisao-geral-trabalho` (`fix/revisao-geral-trabalho`) | 97c3d93 | `busca.ts`, `totais.ts`, `aconselhamento-docx.ts`, `LinhaItem.tsx`, `folhaDieta.ts` e `CartaoIdentificacao.tsx`, pelo guia de `revisao-trabalho.md`: o ramo da receita fica, junto do sem-throw, `medidaParaMostrar`, `nomeSemAlimento` e "Produto apagado". Emenda: o filtro do item apagado na folha e no link tirava também a receita (que guarda `alimentoId` 0); a receita fica. O CB-271 do editor passou a "Produto apagado" |
 
 ## 2. Tarefas
 
@@ -24,6 +25,7 @@ Cada tarefa é um commit, com o teste antes do código.
 | I2 | Campos no celular (D-311, D-312, CA-975 a CA-979) | `design-system/componentes/forms/input.tsx`, `select.tsx`, `textarea.tsx`; listas nativas em `src/ui/publico/conta/CampoCrn.tsx`, `src/ui/publico/conta/TelaComprovarMatricula.tsx`, `src/ui/adequacao/GavetaCobrir.tsx`, `src/ui/alimentos/TelaAlimentos.tsx`, `src/ui/caso/CartaoIdentificacao.tsx`; o endereço em `src/ui/missoes/CartaoLinkMissoes.tsx`; tamanho próprio em `src/ui/publico/conta/CampoCodigo.tsx`, `src/ui/alimentos/TelaAlimentos.tsx` e `src/ui/pagamento/estiloDaCaixa.ts`; teste de unidade em `src/ui/camposNoCelular.test.tsx`; e2e em `e2e/campos-no-celular.spec.ts` (site sem conta) e `e2e/servidor-falso/campos-no-celular.spec.ts` (telas de conta), com a medida em `e2e/apoio/campos.ts` | I0 |
 | I3 | Versão dos termos `2026-10-20` (D-314, CA-980) | `src/domain/legal.ts`, `src/domain/legal.test.ts` | I0 |
 | I4 | README com a ordem única dos passos do dono (D-316) | `README.md` | I0 |
+| I6 | Ingrediente apagado fora do que vai ao paciente e a † da receita (D-317, D-318, CA-982 a CA-985) | `src/domain/folhaDieta.ts` e `src/domain/dietaDoLink.ts` (ingrediente apagado fora), `src/ui/plano/LinhaItem.tsx` (a † nas kcal da receita); testes em `src/domain/folhaComReceita.test.ts`, `src/domain/dietaComReceita.test.ts`, `src/domain/totais.test.ts`, `src/domain/cobrir.test.ts`, `src/ui/plano/LinhaItem.test.tsx` e `src/ui/plano/TelaPlano.test.tsx` | M5 |
 | I5 | Validação: `npm run check`, `npx playwright test` (porta própria, contagem inteira), `npm run build`, `node scripts/conferir-publicacao.mjs`, `npm run test:csp` e `npm run test:seguranca` numa pilha local própria (001 a 014); a tabela de testes abaixo | este plano | I1 a I4 |
 
 O CA-981 (D-315) não pede código: o teste `receitaNaRefeicao.test.tsx` · "CA-871a" já confere `false`.
