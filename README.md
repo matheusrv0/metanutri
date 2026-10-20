@@ -286,8 +286,9 @@ navegador do administrador faz ao abrir Aprovações continua como reserva.
 
 ### Ordem para publicar a rodada de 19/10/2026
 
-Segurança (lote 5), exclusão de conta, revisão das telas públicas e receitas com cálculo vão ao ar juntas, nesta
-ordem (spec integracao-rodada-1910, D-316). Tudo pelo painel do Supabase (projeto `qmpljfjbdcrdbqutuvmg`) e pelo
+As sete frentes da rodada vão ao ar juntas: segurança (lote 5), exclusão de conta, revisão das telas públicas, receitas
+com cálculo, revisão da área de trabalho, vitaminas do USDA e a conduta da nutricionista parceira. Só as duas primeiras
+pedem passos no Supabase; a ordem é esta (spec integracao-rodada-1910, D-316). Tudo pelo painel do Supabase (projeto `qmpljfjbdcrdbqutuvmg`) e pelo
 terminal na pasta do projeto, com a `main` atualizada.
 
 1. **Painel > Authentication > Multi-Factor:** *TOTP (App Authenticator)* ligado (cadastrar e verificar). Antes do

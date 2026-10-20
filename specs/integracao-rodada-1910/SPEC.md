@@ -64,7 +64,8 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
 - **CA-982** · Dado uma receita no plano com um ingrediente apagado (produto apagado em "Meus produtos"), então a seção
   "Receitas" da folha lista só os outros ingredientes, sem "Alimento removido".
 - **CA-983** · Dado a mesma receita, quando a dieta é copiada para o link, então os ingredientes da receita na cópia
-  não têm o apagado; a receita continua na refeição, com a porção e o peso.
+  não têm o apagado; a receita continua na refeição, com a porção (desde a D-319, uma quantidade só: a porção, ou o
+  peso em "Gramas").
 - **CA-984** · Dado a mesma receita na linha do planejador, então as kcal da linha levam a †; dado uma receita com
   todos os ingredientes, então sem †.
 - **CA-985** · Dado a mesma receita no Desjejum, então a energia do Desjejum e a do dia levam a † (`semDado` maior que
