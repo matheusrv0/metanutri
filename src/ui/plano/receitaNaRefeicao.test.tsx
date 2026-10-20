@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarPlanoPadrao } from '@/domain/plano.ts'
 import { ID_DE_RECEITA } from '@/domain/receitaNoPlano.ts'
-import { CHAVE_RECEITAS, type Receita } from '@/domain/receitas.ts'
+import { CHAVE_RECEITAS, RECEITAS_NA_REFEICAO, type Receita } from '@/domain/receitas.ts'
 import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
 import type { Plano } from '@/domain/tipos.ts'
 import { EntradaRapida } from './EntradaRapida.tsx'
@@ -29,7 +29,7 @@ let n = 0
 const ids = () => `id${++n}`
 let ultimoPlano: Plano | null = null
 
-function Anfitriao({ inicial }: { readonly inicial: Plano }) {
+function Anfitriao({ inicial, receitasNaRefeicao }: { readonly inicial: Plano; readonly receitasNaRefeicao?: boolean }) {
   const [plano, setPlano] = useState<Plano>(inicial)
   return (
     <TelaPlano
@@ -39,12 +39,13 @@ function Anfitriao({ inicial }: { readonly inicial: Plano }) {
         setPlano(novo)
       }}
       gerarId={ids}
+      {...(receitasNaRefeicao === undefined ? {} : { receitasNaRefeicao })}
     />
   )
 }
 
-const montarPlano = (inicial: Plano = criarPlanoPadrao(ids)) => {
-  render(<Anfitriao inicial={inicial} />)
+const montarPlano = (inicial: Plano = criarPlanoPadrao(ids), receitasNaRefeicao?: boolean) => {
+  render(<Anfitriao inicial={inicial} {...(receitasNaRefeicao === undefined ? {} : { receitasNaRefeicao })} />)
   return userEvent.setup()
 }
 
@@ -131,10 +132,28 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
   })
 })
 
-describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
-  it('CA-871: pela busca do Desjejum, a receita entra como cópia', async () => {
+describe('publicação em duas vezes (D-274a, CA-871a)', () => {
+  it('publicação 1: a constante está desligada, e a busca da refeição não mostra receita', async () => {
+    expect(RECEITAS_NA_REFEICAO).toBe(false)
     guardarReceitas([NA_BIBLIOTECA])
     const usuario = montarPlano()
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' }), 'panqueca')
+    expect(screen.queryByRole('option', { name: /Panqueca de banana/ })).not.toBeInTheDocument()
+    await usuario.keyboard('{Enter}')
+    expect(ultimoPlano).toBeNull()
+  })
+
+  it('publicação 1: a receita que já está no plano continua aparecendo e somando', () => {
+    montarPlano(comPanquecaNoDesjejum())
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    expect(desjejum.getByText('Receita · 1 unidade')).toBeInTheDocument()
+  })
+})
+
+describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
+  it('CA-871 (publicação 2, constante ligada): pela busca do Desjejum, a receita entra como cópia', async () => {
+    guardarReceitas([NA_BIBLIOTECA])
+    const usuario = montarPlano(criarPlanoPadrao(ids), true)
     await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' }), 'panqueca{Enter}')
     const item = ultimoPlano?.refeicoes.find((r) => r.nome === 'Desjejum')?.opcoes.principal[0]
     expect(item).toMatchObject({ alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })

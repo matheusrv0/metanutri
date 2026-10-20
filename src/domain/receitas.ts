@@ -11,6 +11,13 @@ import type { BuscarAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos
 
 export const CHAVE_RECEITAS = 'metanutri:receitas'
 
+/**
+ * D-274a (publicação em duas vezes): pôr receita na refeição fica desligado na publicação 1, para nenhum plano ganhar
+ * receita antes de todo aparelho ter a versão que sabe ler (R-270). A biblioteca, a linha do plano, a folha, o link e o
+ * Word já leem receita. Na publicação 2, o coordenador troca para `true`.
+ */
+export const RECEITAS_NA_REFEICAO: boolean = false
+
 export interface Receita {
   readonly id: string
   readonly nome: string

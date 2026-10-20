@@ -1,6 +1,6 @@
 import { LayoutTemplate, Plus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { copiaParaOPlano } from '@/domain/receitas.ts'
+import { copiaParaOPlano, RECEITAS_NA_REFEICAO } from '@/domain/receitas.ts'
 import {
   adicionarItem,
   adicionarReceita,
@@ -25,12 +25,14 @@ interface TelaPlanoProps {
   readonly gerarId?: GerarId
   /** Conteúdo extra no fim de uma opção (calculadora de substitutos). */
   readonly extraDaOpcao?: (refeicaoId: string, opcao: OpcaoId) => ReactNode
+  /** A busca da refeição põe receita (spec receitas-com-calculo, D-274a). Padrão: a constante da publicação. */
+  readonly receitasNaRefeicao?: boolean
 }
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
 /** Etapa 2: refeições do dia com entrada rápida de alimentos (CA-12 a CA-21). */
-export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOpcao }: TelaPlanoProps) {
+export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOpcao, receitasNaRefeicao = RECEITAS_NA_REFEICAO }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
   return (
@@ -55,9 +57,11 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
             aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
             aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
             aoAdicionarItem={(opcao, alimentoId, gramas) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas }, gerarId))}
-            // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita.
-            aoAdicionarReceita={(opcao, receita, gramas) =>
-              aoAlterarPlano(adicionarReceita(plano, refeicao.id, opcao, { receita: copiaParaOPlano(receita), gramas }, gerarId))
+            // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita. Desligado na publicação 1 (D-274a).
+            aoAdicionarReceita={
+              receitasNaRefeicao
+                ? (opcao, receita, gramas) => aoAlterarPlano(adicionarReceita(plano, refeicao.id, opcao, { receita: copiaParaOPlano(receita), gramas }, gerarId))
+                : undefined
             }
             aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
             aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}

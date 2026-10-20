@@ -34,6 +34,25 @@ const criarPanqueca = async (pagina: Page) => {
   await expect(pagina.getByRole('list', { name: 'Receitas' })).toContainText('Rende 2 unidades (120 g cada) · 204 kcal por unidade')
 }
 
+/** Põe 1 unidade da primeira receita da biblioteca no Desjejum do plano aberto, direto nos dados, e recarrega. */
+const porPanquecaNoDesjejum = async (pagina: Page) => {
+  const casoId = decodeURIComponent(new URL(pagina.url()).hash.split('/')[2] ?? '')
+  await pagina.evaluate((id) => {
+    const chave = `metanutri:caso:${id}`
+    const salvo = JSON.parse(localStorage.getItem(chave) ?? 'null') as {
+      versao: number
+      plano: { refeicoes: { nome: string; opcoes: { principal: unknown[] } }[] }
+    }
+    const [r] = JSON.parse(localStorage.getItem('metanutri:receitas') ?? '[]') as Record<string, unknown>[]
+    if (!r) throw new Error('sem receita na biblioteca')
+    const receita = { origemId: r['id'], nome: r['nome'], ingredientes: r['ingredientes'], porcoes: r['porcoes'], nomeDaPorcao: r['nomeDaPorcao'], pesoProntoG: r['pesoProntoG'], preparo: r['preparo'] }
+    salvo.plano.refeicoes.find((refeicao) => refeicao.nome === 'Desjejum')?.opcoes.principal.push({ id: 'item-panqueca', alimentoId: 0, gramas: 120, receita })
+    salvo.versao += 1
+    localStorage.setItem(chave, JSON.stringify(salvo))
+  }, casoId)
+  await pagina.reload()
+}
+
 /** Nada passa da largura da tela (sem rolagem para o lado). */
 const semRolagemLateral = async (pagina: Page) => {
   const larguras = await pagina.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
@@ -55,10 +74,14 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
   await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  // D-274a, publicação 1: a busca da refeição ainda não põe receita. O plano ganha a receita pelos dados, como
+  // chegaria de um aparelho na publicação 2; a linha, a soma, a folha e o link já sabem ler.
   const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
   await busca.fill('panqueca')
-  await expect(page.getByRole('option').first()).toContainText('Receita')
-  await busca.press('Enter')
+  await expect(page.getByText(/Nenhum alimento encontrado/)).toBeVisible()
+  await expect(page.getByRole('option', { name: /Receita/ })).toHaveCount(0)
+  await busca.fill('')
+  await porPanquecaNoDesjejum(page)
   const desjejum = page.getByRole('tabpanel', { name: 'Principal de Desjejum' })
   await expect(desjejum).toContainText('Panqueca de banana')
   await expect(desjejum).toContainText('Receita · 1 unidade')
