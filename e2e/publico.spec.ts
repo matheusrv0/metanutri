@@ -15,7 +15,8 @@ test.describe('Landing (spec estilo-spora)', () => {
     await page.goto('/#/inicio')
     const foto = page.getByAltText(/Três pratos/)
     await expect(foto).toBeVisible()
-    expect(await foto.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+    // A foto aparece antes de terminar de carregar (decoding="async"): espera a largura real chegar, sem ler cedo demais.
+    await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
   })
 
   test('CA-116a: o cartão de 597 alimentos rola até as fontes dos dados', async ({ page }) => {
