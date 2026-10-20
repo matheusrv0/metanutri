@@ -201,7 +201,7 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
 | Título de página (h1) | Manrope 20 px, peso 600, tracking −0.02em |
 | Título de bloco (`card-title`) | Manrope 16 px, peso 600, tracking −0.01em |
 | Rótulo de dado (`rotulo`) | Manrope 11 px (`text-2xs`), peso 700, caixa alta, tracking 0.1em. Só sobre o dado que ele nomeia, nunca como tagline (D-77) |
-| Texto e campos | Manrope 14 px (`text-sm`) |
+| Texto e campos | Manrope 14 px (`text-sm`); campos de texto com 16 px abaixo de 640 px (D-311 da `integracao-rodada-1910`) |
 | Legenda | Manrope 12 px |
 
 ### Named Rules
@@ -275,7 +275,9 @@ não aparecem.
 
 ### Campos
 
-Entrada de 40 px, raio 12, sufixo de unidade dentro do campo, rótulo acima ou oculto
+Entrada de 40 px, raio 12 (abaixo de 640 px, 44 px e letra de 16 px, para o iPhone não aproximar a tela ao tocar;
+vale também para a lista de escolha e, na letra, para a caixa de texto; spec `integracao-rodada-1910`, D-311),
+sufixo de unidade dentro do campo, rótulo acima ou oculto
 para leitor de tela quando a coluna já nomeia o dado. Foco põe borda forte e anel;
 `aria-invalid` troca a borda para a cor de erro.
 
@@ -283,7 +285,8 @@ No formulário do cartão (checkout e Trocar cartão; spec checkout-proprio, D-7
 campos usam a caixa do protótipo v2: 48 px, raio 12, fundo `--surface-sunken` e sem fio; no
 foco, fundo de cartão e anel de 2 px por dentro; com erro, fundo e anel de erro. Três deles
 são campos seguros da operadora (iframes): a cor do texto, a do placeholder e o tamanho da
-letra vão para dentro deles lidos dos tokens do tema na hora em que o formulário abre.
+letra vão para dentro deles lidos dos tokens do tema na hora em que o formulário abre. A letra fica em 14 px também no celular até
+a troca do Mercado Pago para produção (D-313 da `integracao-rodada-1910`).
 
 ### Ícones da marca
 
