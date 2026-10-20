@@ -1,5 +1,7 @@
 # Painel lateral enxuto · Plano de implementação
 
+> **Atualizado pela `vitaminas-usda` (20/10/2026):** onde este plano diz "16" nutrientes ou linhas, a adequação hoje tem 21.
+
 **Spec:** `specs/painel-lateral-enxuto/SPEC.md` (pedida em 15/10/2026; aprovação pelas telas).
 
 **Objetivo:** o Resumo do dia diz cada fato uma vez; a etapa 2 mostra o que falta de micronutriente

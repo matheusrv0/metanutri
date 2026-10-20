@@ -25,7 +25,7 @@ número de linhas da adequação", hoje 21), `sugestoes-com-criterio` (CA-657 e 
 `estilo-spora` (CA-113 e CA-114, o cartão "16 nutrientes" da área pública, que já é contado e passa a 21) e
 `pdf-e-telas-limpas` (CA-321: a marca "USDA" na ficha do alimento é a única exceção à regra de só citar fontes na
 página Fontes da base; CA-322: a página passa a citar quatro fontes). Essas specs não são editadas aqui, porque
-outras frentes mexem nelas ao mesmo tempo.
+outras frentes mexem nelas ao mesmo tempo. *Anotadas na integração de 20/10/2026 (spec `integracao-rodada-1910`): cada critério com "16" ganhou a nota.*
 
 ## 1. O que existe hoje
 

@@ -19,7 +19,7 @@ const LINHAS: readonly { readonly chave: ChaveNutrienteAlimento; readonly rotulo
 
 /**
  * CA-862: o valor de uma porção enquanto a receita é montada. Falta de dado num ingrediente leva a marca †, nunca vira
- * zero (D-275). Os 16 nutrientes da adequação também somam, no plano; aqui fica o que decide a porção.
+ * zero (D-275). Os 21 nutrientes da adequação também somam, no plano; aqui fica o que decide a porção.
  */
 export function ResumoDaPorcao({ receita }: ResumoDaPorcaoProps) {
   const totais = totaisDaPorcao(receita, buscarAlimento)

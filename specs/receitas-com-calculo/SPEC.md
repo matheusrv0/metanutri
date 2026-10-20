@@ -16,7 +16,7 @@ Pela D-34 da spec `ajustes-de-uso`, ele só aparece para estudante (ou quando o 
 ovo, aveia" e a soma de micros só fica certa se a nutricionista lembrar de pôr cada ingrediente.
 
 **Objetivo:** a nutricionista monta uma vez "Panqueca de banana" com os ingredientes da base, o rendimento e o modo de
-preparo, e põe "1 unidade de Panqueca de banana" no plano. Energia, macros e os 16 nutrientes da adequação somam certo
+preparo, e põe "1 unidade de Panqueca de banana" no plano. Energia, macros e os 16 nutrientes da adequação (21 desde a `vitaminas-usda`, 20/10/2026) somam certo
 pelos ingredientes; o paciente lê "Panqueca de banana" na refeição e a receita inteira numa seção "Receitas".
 
 ## 1. Decisões

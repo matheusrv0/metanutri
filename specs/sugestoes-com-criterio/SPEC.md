@@ -104,7 +104,7 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 - **CA-654** · Dado o cobrir, com a chave ligada ou desligada, então café e chás não aparecem como fonte, *(revisão)* em nenhuma forma (café em pó incluído).
 - **CA-655** · Dado as sugestões do cobrir, então a ordem continua: uso comum primeiro, depois menos kcal por parte da falta coberta, e grupos diferentes antes de repetir grupo.
 - **CA-656** · Dado um nutriente que só alimentos fora da regra cobririam dentro da porção máxima, então o cobrir mostra "Nenhum alimento de rotina cobre ao menos 10% da falta em até {porção} g. Pela busca do plano, qualquer alimento entra." em vez de uma lista vazia.
-- **CA-657** · Dado o plano de exemplo (Maria, 28 anos), quando o cobrir é pedido para cada um dos 16 micronutrientes, então nenhuma sugestão é item fora da regra; o mesmo vale para o plano vazio da mesma paciente, em que os 16 têm falta.
+- **CA-657** · Dado o plano de exemplo (Maria, 28 anos), quando o cobrir é pedido para cada um dos 16 micronutrientes, então nenhuma sugestão é item fora da regra; o mesmo vale para o plano vazio da mesma paciente, em que os 16 têm falta. *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CA-658** · Dado a lista de trocas de qualquer alimento da base, então nenhuma troca oferecida é item fora da regra, de nenhum nível.
 - **CA-659** · Dado um item fora da rotina posto à mão no plano, então as trocas dele vêm só de alimentos prescritíveis do mesmo grupo e com o mesmo macro dominante (ovo frito troca por ovo cozido).
 - **CA-660** · Dado um item fora da regra sem nenhum par prescritível no grupo (margarina, doce de leite), então ele não ganha trocas, e os outros alimentos do plano continuam com as suas.
@@ -114,7 +114,7 @@ tablete" para o sódio. As trocas ofereciam cerveja no lugar de refrigerante e o
 - **CA-664** · Dado a regra, então cada alimento fora dela tem um nível e um motivo, e *(revisão)* a lista de ids por motivo é a do Apêndice A, guardada fixa no teste (não só a contagem).
 - **CA-665** *(revisão)* · Dado o cobrir com a chave ligada, então não aparecem café (em pó ou infusão), chá, capuccino, gelatina, sal, shoyu, tempero a base de sal nem fermento.
 - **CA-666** *(revisão)* · Dado pó ou farinha fortificados (mingau tradicional em pó, creme de milho em pó, farinha de arroz enriquecida), então ficam fora da rotina, como o mingau infantil: a chave não os traz.
-- **CA-667** *(revisão)* · Dado o cobrir dos 16 micronutrientes, no plano de exemplo e no plano vazio, com a chave ligada e desligada e com porção máxima de 50, 100 e 200 g, então nenhuma sugestão casa com o padrão fixo de texto do que nunca aparece (bebida alcoólica, refrigerante, isotônico, açúcar, calda, xarope, doce, fritura, margarina, óleo, manteiga, embutidos, sal, shoyu, fermento, café, chá, capuccino, gelatina, mingau e cereal fortificados); com a chave desligada, também não casa com o padrão de forma (pó, desidratado, farinha, fécula, polvilho e alimento cru que se come cozido). O padrão é escrito à mão no teste, sem usar a regra.
+- **CA-667** *(revisão)* · Dado o cobrir dos 16 micronutrientes, no plano de exemplo e no plano vazio, com a chave ligada e desligada e com porção máxima de 50, 100 e 200 g, então nenhuma sugestão casa com o padrão fixo de texto do que nunca aparece (bebida alcoólica, refrigerante, isotônico, açúcar, calda, xarope, doce, fritura, margarina, óleo, manteiga, embutidos, sal, shoyu, fermento, café, chá, capuccino, gelatina, mingau e cereal fortificados); com a chave desligada, também não casa com o padrão de forma (pó, desidratado, farinha, fécula, polvilho e alimento cru que se come cozido). O padrão é escrito à mão no teste, sem usar a regra. *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CA-668** *(revisão)* · Dado as trocas de todos os alimentos da base, então nenhuma troca casa com os padrões fixos do CA-667 (os da chave desligada).
 - **CA-669** *(revisão)* · Dado maniçoba, barreado, baião de dois, dobradinha e sarapatel, então ficam fora da rotina, com o mesmo motivo da feijoada.
 - **CA-670** *(revisão, esclarecido na re-revisão)* · Dado a versão crua de verdura ou fruta que se come cozida, quando a base tem a versão cozida do mesmo alimento, então a crua não é proposta com a chave desligada; quando a base só tem a crua (inhame, vagem, taioba, fruta-pão, jiló, broto de feijão, caruru, quiabo, pequi, abóbora menina e pescoço), ela continua prescritível.
@@ -603,7 +603,7 @@ saiu pela regra (o motivo vem ao lado). O que sumiu sem risco foi empurrado para
 
 ### Plano de exemplo (Maria, 28 anos, gasto de 1.620 kcal)
 
-Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobrir. Os cinco com falta:
+Onze dos 16 micronutrientes já atingem a meta no exemplo e não têm o que cobrir. *(Retrato de 15/10/2026; desde a `vitaminas-usda`, 20/10/2026, a adequação tem 21 linhas.)* Os cinco com falta:
 
 | Nutriente | Falta | Antes | Depois |
 |---|---|---|---|

@@ -1,5 +1,7 @@
 # PLAN — Sugestões com critério
 
+> **Atualizado pela `vitaminas-usda` (20/10/2026):** onde este plano diz "16" nutrientes ou linhas, a adequação hoje tem 21.
+
 Lê `specs/sugestoes-com-criterio/SPEC.md`. Status: **pedido pelo dono em 15/10/2026; aprovação pelas telas antes de
 publicar.** Cada tarefa é um commit, em TDD: o teste primeiro, visto falhando, depois o código.
 

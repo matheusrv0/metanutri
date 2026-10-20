@@ -58,7 +58,7 @@ some de vez: o que não fica na linha está em "Ajustar" ou em "Ver cálculo".
 |---|---|---|---|
 | 19 | Título e subtítulo | "Micronutrientes" · "mulheres de 19 a 30 anos · meta de 90% da referência" | **Fica** |
 | 20 | Seletor de referência | Individual, Coletivo, Personalizado | **Fica** |
-| 21 | Tabela com as 16 linhas, sempre abertas | 5 abaixo da meta, 11 na meta | **As que pedem ação ficam à vista** (abaixo da meta e acima do limite); **as 11 na meta ficam recolhidas** em "Ver os 11 na meta", na mesma tabela |
+| 21 | Tabela com as 16 linhas, sempre abertas | 5 abaixo da meta, 11 na meta | **As que pedem ação ficam à vista** (abaixo da meta e acima do limite); **as 11 na meta ficam recolhidas** em "Ver os 11 na meta", na mesma tabela *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.* |
 | 22 | Colunas Nutriente, No plano, Referência (com RDA/EAR/AI), Adequação (barra e texto), ação | | **Ficam** na tela larga |
 | 23 | Botão "Cobrir" com fio, só em linha abaixo da meta | | **Fica, com mais destaque** (fundo teal claro) |
 | 24 | Marcas † e ‡ | † em todas as linhas do exemplo | **Ficam** (falta de dado nunca é zero) |
@@ -94,7 +94,7 @@ na etapa 3. É o diferencial do produto escondido na etapa em que ele passa mais
 | D-202 | **Meta do macro curta** ("10 a 35%"), ao lado da frase. "sua meta" aparece quando a meta é sua; a origem padrão ("faixa da idade") vai para "Ver cálculo" | "Meta:" e "(faixa da idade)" se repetiam nas três linhas |
 | D-203 | **Um "Ajustar" para os alvos do dia**: energia, como hoje, e o botão "Metas de macronutrientes" | Dois botões soltos ("Ajustar" e "Metas") para a mesma ideia: mudar o alvo |
 | D-204 | **Cartão "Micronutrientes" na coluna da direita da etapa 2**, abaixo do Resumo do dia: quantos estão abaixo da meta, até 5 (os mais longe da meta primeiro), cada um com "Cobrir" (fundo teal claro, nunca laranja), os acima do limite sem Cobrir, e "Ver todos" para a etapa 3. Não aparece na etapa 1 | O diferencial onde o plano é montado, ocupando o espaço vazio da coluna. **Para o dono decidir pelas telas** (é a única coisa que entra em vez de sair) |
-| D-205 | **Etapa 3 mostra primeiro o que pede ação**: abaixo da meta e acima do limite ficam à vista, na ordem de sempre dentro de cada grupo; os na meta ficam recolhidos em "Ver os N na meta", fechado ao abrir a tela e a cada plano. O Cobrir tem fundo teal claro (`lightprimary`), nunca laranja | De 16 linhas para as 5 que pedem alguma coisa, sem tirar nenhuma. O laranja não entra em painel de dado (DESIGN.md) |
+| D-205 | **Etapa 3 mostra primeiro o que pede ação**: abaixo da meta e acima do limite ficam à vista, na ordem de sempre dentro de cada grupo; os na meta ficam recolhidos em "Ver os N na meta", fechado ao abrir a tela e a cada plano. O Cobrir tem fundo teal claro (`lightprimary`), nunca laranja | De 16 linhas para as 5 que pedem alguma coisa, sem tirar nenhuma. O laranja não entra em painel de dado (DESIGN.md) *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.* |
 | D-206 | **O sódio nunca é alvo do Cobrir.** Abaixo da meta, ele não entra no cartão da etapa 2 nem na contagem, e não tem Cobrir em lugar nenhum (cartão, tabela e lista do celular); na etapa 3 continua com o valor, a referência e o estado. Acima do limite, aparece no cartão como os outros acima do limite | Decisão do coordenador em 15/10/2026, na revisão: o sal de cozinha não entra no plano, então o sódio dos alimentos fica quase sempre abaixo da AI, e subir sódio por alimento não é conduta; o que importa no sódio é o excesso. A frente "sugestões com critério" faz o domínio do Cobrir não sugerir nada para o sódio |
 | D-207 | **Etapa 3 vira lista abaixo de 640 px**: em cada nutriente, nome e % com o estado, a barra, "quanto tem de quanto precisa" com a referência e o Cobrir | Em 390 px a tabela rolava para o lado e escondia o Cobrir |
 | D-208 | **Na gaveta do Cobrir, o que passou do gasto se diz como passou**: "O plano já passou 55 kcal do gasto energético." no lugar de "Cabem -55 kcal". Só o texto muda | Pedido do coordenador em 15/10/2026. Número negativo depois de "cabem" não se lê |
@@ -118,7 +118,7 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 
 ### Micronutrientes na etapa 2
 
-- **CA-685** · Dado a etapa 2 com alimentos no plano, então a coluna da direita mostra, abaixo do Resumo do dia, o cartão "Micronutrientes" com a contagem do CA-703 e até 5 nutrientes abaixo da meta, do mais longe para o mais perto da meta, cada um com o nome, a adequação em % na cor de "abaixo" e o botão "Cobrir". *Revisto na rodada de revisão (15/10): a contagem era "N de 16 abaixo da meta"; com o sódio fora do cartão (D-206) ela passou a contar o que se cobre.*
+- **CA-685** · Dado a etapa 2 com alimentos no plano, então a coluna da direita mostra, abaixo do Resumo do dia, o cartão "Micronutrientes" com a contagem do CA-703 e até 5 nutrientes abaixo da meta, do mais longe para o mais perto da meta, cada um com o nome, a adequação em % na cor de "abaixo" e o botão "Cobrir". *Revisto na rodada de revisão (15/10): a contagem era "N de 16 abaixo da meta"; com o sódio fora do cartão (D-206) ela passou a contar o que se cobre.* *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CA-686** · Dado "Cobrir" no cartão, então abre a mesma gaveta do Cobrir da etapa 3 ("Cobrir Ferro", quanto falta e as sugestões). "Adicionar" põe o alimento na refeição escolhida, fecha a gaveta e o cartão se refaz com o plano novo.
 - **CA-687** · Dado um nutriente acima do limite superior, então ele aparece no cartão com a adequação e "acima do limite", na cor de acima, sem "Cobrir".
 - **CA-688** · Dado "Ver todos" no cartão, então o planejador vai para a etapa 3, Adequação, com a página no topo e o foco no título "Micronutrientes" (CA-701).
@@ -142,7 +142,7 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 - **CA-700** · Dado um leitor de tela, então todo "Cobrir" diz o nutriente ("Cobrir Ferro") no cartão, na tabela e na lista do celular, e as notas † e ‡ da tabela são lidas com o símbolo.
 - **CA-701** · Dado "Ver todos" no cartão, então a etapa 3 abre com a página no topo e o foco do teclado no título "Micronutrientes".
 - **CA-702** · Dado "Ver cálculo" aberto, então a ordem é: TMB, fator de atividade, adicionais e a fonte da energia; depois "Carboidrato no plano" e "Gordura no plano" em g/kg e a origem das metas dos macros. O g/kg de um macro só aparece aqui quando a meta dele é em %; com meta em g/kg, o número já está na linha e não se repete.
-- **CA-703** · Dado o cartão da etapa 2, então a contagem diz "N para cobrir." quando há o que cobrir, "Nada para cobrir." quando não há (mesmo com algum acima do limite ou com só o sódio abaixo) e "Todos os 16 na meta." quando os 16 estão na meta, sempre com ponto final. A meta usada (por exemplo, 90% da referência) vai na descrição da lista para leitor de tela, sem texto a mais na tela.
+- **CA-703** · Dado o cartão da etapa 2, então a contagem diz "N para cobrir." quando há o que cobrir, "Nada para cobrir." quando não há (mesmo com algum acima do limite ou com só o sódio abaixo) e "Todos os 16 na meta." quando os 16 estão na meta, sempre com ponto final. A meta usada (por exemplo, 90% da referência) vai na descrição da lista para leitor de tela, sem texto a mais na tela. *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CA-704** · Dado o recolhido "Ver os N na meta" aberto num plano, quando a pessoa troca para outro plano (inclusive pelo voltar e avançar do navegador), então a etapa 3 do outro plano abre com o recolhido fechado.
 
 ### Integração das três frentes (15/10/2026)
@@ -154,9 +154,9 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 
 ## 4. Casos de borda
 
-- **CB-200** · Plano sem alimentos: o cartão "Micronutrientes" da etapa 2 diz "O plano ainda não tem alimentos." e não lista nada. Na etapa 3, as 16 linhas ficam à vista (todas abaixo) e o Cobrir funciona, como hoje (CB-05).
+- **CB-200** · Plano sem alimentos: o cartão "Micronutrientes" da etapa 2 diz "O plano ainda não tem alimentos." e não lista nada. Na etapa 3, as 16 linhas ficam à vista (todas abaixo) e o Cobrir funciona, como hoje (CB-05). *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CB-201** · Sem sexo ou idade para achar a referência: o cartão mostra o motivo, o mesmo da etapa 3, e não lista nada.
-- **CB-202** · Nenhum abaixo da meta e nenhum acima do limite: o cartão diz "Todos os 16 na meta." e a etapa 3 mostra "Nenhum nutriente abaixo da meta." acima do botão "Ver os 16 na meta". Nenhum abaixo e algum acima do limite: o cartão diz "Nada para cobrir." e lista os acima do limite, sem Cobrir; a etapa 3 mostra os acima do limite à vista e o resto recolhido.
+- **CB-202** · Nenhum abaixo da meta e nenhum acima do limite: o cartão diz "Todos os 16 na meta." e a etapa 3 mostra "Nenhum nutriente abaixo da meta." acima do botão "Ver os 16 na meta". Nenhum abaixo e algum acima do limite: o cartão diz "Nada para cobrir." e lista os acima do limite, sem Cobrir; a etapa 3 mostra os acima do limite à vista e o resto recolhido. *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 - **CB-203** · Mais de 5 abaixo da meta: o cartão mostra os 5 mais longe da meta, e a contagem diz o total ("8 para cobrir.").
 - **CB-204** · Nutriente que chega à meta depois de um Cobrir: sai do cartão e, na etapa 3, passa para o grupo recolhido (se o grupo estiver aberto, continua aberto).
 - **CB-205** · Macro sem meta (sem idade, ou plano sem energia): a linha mostra as gramas e "Sem meta: informe a idade ou defina uma meta.", como hoje; com meta e sem medidor, "Meta: 10 a 35%".
@@ -164,7 +164,7 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 - **CB-207** · Modo rápido com meta digitada: "Ver cálculo" só aparece se houver o que mostrar (g/kg ou origem das metas), sem TMB nem fator.
 - **CB-208** · Celular de 360 px: nada rola para o lado no Resumo do dia, no cartão "Micronutrientes" e na etapa 3.
 - **CB-209** · Troca de referência (Individual, Coletivo, Personalizado): o cartão da etapa 2 e a tabela usam a referência do caso e se refazem juntos.
-- **CB-211** · "Adicionar" leva à meta o único nutriente do cartão: a lista some, o cartão diz "Nada para cobrir." ou "Todos os 16 na meta." e o foco vai para o título "Micronutrientes" do cartão (D-212).
+- **CB-211** · "Adicionar" leva à meta o único nutriente do cartão: a lista some, o cartão diz "Nada para cobrir." ou "Todos os 16 na meta." e o foco vai para o título "Micronutrientes" do cartão (D-212). *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
 
 ## 5. Fora de escopo, explicitamente
 
@@ -177,4 +177,4 @@ das telas no celular (era D-209) foi para o §5; a gaveta passou de D-210 para D
 ## 6. Riscos para você revisar
 
 - **R-200** · O cartão "Micronutrientes" (D-204) é a única coisa que entra. Se o dono achar que polui, sai sozinho: é um cartão à parte, e o resto da spec não depende dele.
-- **R-201** · Linhas na meta recolhidas (D-205): quem confere a tabela inteira precisa de um clique a mais. O Word e a cópia da tabela continuam com as 16 linhas.
+- **R-201** · Linhas na meta recolhidas (D-205): quem confere a tabela inteira precisa de um clique a mais. O Word e a cópia da tabela continuam com as 16 linhas. *Atualizado pela `vitaminas-usda` (20/10/2026): a adequação tem 21 linhas; leia "16" como o número de linhas da adequação.*
