@@ -82,6 +82,21 @@ describe('a receita com dado faltando (spec integracao-rodada-1910, D-318)', () 
     expect(Number.isNaN(t.nutrientes.energia_kcal.total)).toBe(false)
     expect(totaisDeItens([itemDeReceita('a', 120)], buscarAlimento).nutrientes.energia_kcal.semDado).toBe(0)
   })
+
+  it('CA-986: a receita soma as cinco chaves do USDA pelos ingredientes; o que falta é falta de dado, nunca zero nem NaN', () => {
+    const USDA = ['vitamina_d_mcg', 'vitamina_e_mg', 'folato_dfe_mcg', 'vitamina_b12_mcg', 'selenio_mcg'] as const
+    // 317 Salmão, sem pele, fresco, grelhado (com equivalente do USDA); 19 Canjica, branca, crua (sem equivalente).
+    const salmaoComCanjica = { ...PANQUECA, nome: 'Salmão com canjica', ingredientes: [{ alimentoId: 317, gramas: 100 }, { alimentoId: 19, gramas: 50 }], porcoes: 1, pesoProntoG: 150 }
+    const t = totaisDeItens([itemDeReceita('a', 150, salmaoComCanjica)], buscarAlimento)
+    expect(t.nutrientes.vitamina_d_mcg.total).toBeCloseTo(13.1, 6)
+    for (const chave of USDA) {
+      expect(t.nutrientes[chave].semDado, chave).toBe(1)
+      expect(Number.isNaN(t.nutrientes[chave].total), chave).toBe(false)
+    }
+    const comApagado = { ...salmaoComCanjica, ingredientes: [{ alimentoId: 317, gramas: 100 }, { alimentoId: 900_001, gramas: 50 }] }
+    const t2 = totaisDeItens([itemDeReceita('b', 150, comApagado)], buscarAlimento)
+    for (const chave of USDA) expect(t2.nutrientes[chave].semDado, chave).toBe(1)
+  })
 })
 
 describe('totaisDoPlano', () => {

@@ -68,6 +68,9 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
   todos os ingredientes, então sem †.
 - **CA-985** · Dado a mesma receita no Desjejum, então a energia do Desjejum e a do dia levam a † (`semDado` maior que
   zero), e o Cobrir não diz quantas kcal cabem (`kcalDisponiveis` nulo).
+- **CA-986** · Dado uma receita com um ingrediente que tem as cinco chaves do USDA (salmão) e outro sem equivalente do
+  USDA (canjica), então a receita soma as cinco pelo salmão e conta a canjica como falta de dado nelas (`semDado` 1),
+  nunca como zero nem `NaN`; com um ingrediente apagado, as cinco também contam a falta (`vitaminas-usda`, D-303).
 
 ### Termos e receita na refeição (D-314, D-315)
 
