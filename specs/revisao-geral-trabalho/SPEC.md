@@ -140,7 +140,7 @@ Um teste por critério, com o id no nome. `e2e` é `e2e/revisao-geral-trabalho.s
 
 | Critério | Teste |
 |---|---|
-| CA-770, CA-771, CB-240 | e2e (mídia de impressão) |
+| CA-770, CA-771, CB-240 | e2e (mídia de impressão; desde a revisão de 20/10, também os espaços de 14 mm e a janela aberta), `src/ui/layout/Estrutura.test.tsx` (avisos do topo); a distância do texto à borda no PDF do Chrome foi medida à parte (relatório da frente) |
 | CA-772, CB-246 | `src/ui/tema/ProvedorTema.test.tsx` |
 | CA-773, CA-774, CA-776, CA-777, CB-241 | `src/ui/painel/TelaPainel.test.tsx` |
 | CA-775 | `src/ui/painel/hojeEEstaSemana.test.tsx` |
@@ -149,10 +149,10 @@ Um teste por critério, com o id no nome. `e2e` é `e2e/revisao-geral-trabalho.s
 | CA-782, CA-783, CB-242, CB-247 | `src/domain/adequacao.test.ts`, `src/ui/adequacao/TelaAdequacao.test.tsx` |
 | CA-784, CB-243, CB-248 | `src/ui/caso/etapa1.test.tsx` |
 | CA-785, CA-786, CA-787, CB-245 | e2e (360 e 390 px) |
-| CA-788, CA-790 | e2e (área de toque medida no celular) |
-| CA-789 | e2e, `LinhaItem.test.tsx`, `docx.test.ts` |
+| CA-788, CA-790 | e2e (área de toque medida no celular; folga do título na gaveta de alimento) |
+| CA-789 | e2e, `LinhaItem.test.tsx`, `docx.test.ts`, `folhaDieta.test.ts`, `dietaDoLink.test.ts`, `FolhaDieta.test.tsx`, `TelaPlano.test.tsx`, `ResumoDoDia.test.tsx`, `FaixaResumo.test.tsx`, `cobrir.test.ts` |
 | CA-791, CA-792 | `pacientes.test.tsx`, `TelaCaso.test.tsx`, `EntradaRapida.test.tsx`, `TelaAdequacao.test.tsx`, `missoesNutricionista.test.tsx` |
-| CA-793 | `src/domain/totais.test.ts`, `src/domain/produtos.test.ts` |
+| CA-793 | `src/domain/totais.test.ts`, `src/domain/produtos.test.ts`, `src/ui/adequacao/TelaAdequacao.test.tsx` (a † na tela) |
 | CA-794 | `src/domain/catalogo.test.ts`, `src/ui/alimentos/TelaAlimentos.test.tsx` |
 | CA-795 | e2e |
 | CA-796 | `src/data/documentos.test.ts` |
