@@ -24,7 +24,8 @@ export function ChaveDoApp({ chave }: { readonly chave: string }) {
     <div className="flex flex-col gap-2 border-t border-borderdefault pt-4">
       <p className="text-sm text-muted-foreground">Sem a câmera, digite esta chave no app:</p>
       <div className="flex flex-wrap items-center gap-3">
-        <span translate="no" className="numeros select-all rounded-xl bg-surfacerow px-3 py-2.5 text-sm font-semibold tracking-wide break-all text-foreground">
+        {/* Quebra só entre os grupos: um grupo partido ao meio confunde quem digita. */}
+        <span translate="no" className="numeros select-all rounded-xl bg-surfacerow px-3 py-2.5 text-sm font-semibold tracking-wide text-foreground">
           {emGrupos(chave)}
         </span>
         <Button type="button" variant="outline" size="lg" onClick={copiar}>
