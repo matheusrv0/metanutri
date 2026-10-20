@@ -186,7 +186,8 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
   ali faria todo link já enviado aparecer como "o plano mudou" (CA-545) — ver R-182. Só os rótulos das opções
   (CA-645) vão para o link, porque são desenho de tela e não mudam a cópia.
 - A medida que o planejador mostra (`busca.ts`): a "ponta de faca" (CA-642) e a troca de medida de pedaço pelo peso
-  (CA-644) valem só nas folhas do paciente.
+  (CA-644) valem só nas folhas do paciente. *(Mudado em 19/10/2026 pelo D-242 da `revisao-geral-trabalho`: o
+  planejador, o Cobrir, o substituto e o Word mostram a mesma medida da folha.)*
 - O Word de aconselhamento e o memorial de cálculo.
 - Renomear um item do plano (D-182).
 - A escolha das trocas e da medida caseira (`trocas.ts`, `busca.ts`): a folha só troca o nome que mostra.

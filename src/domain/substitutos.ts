@@ -1,5 +1,5 @@
 // Porção equivalente de um substituto (SPEC CA-41, CA-42).
-import { medidaEquivalente, type MedidaEquivalente } from './busca.ts'
+import { medidaParaMostrar, type MedidaEquivalente } from './busca.ts'
 import type { BuscarAlimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 export type CriterioEquivalencia = 'kcal' | 'proteina' | 'carboidrato'
@@ -62,5 +62,5 @@ export function calcularSubstituto(
     MACROS.map((m) => [m, valor(b.nutrientes[m], gramas) - valor(a.nutrientes[m], original.gramas)]),
   ) as Record<Macro, number>
 
-  return { gramas, medida: medidaEquivalente(substitutoId, gramas), diferencas, motivoSemCalculo: null }
+  return { gramas, medida: medidaParaMostrar(substitutoId, gramas), diferencas, motivoSemCalculo: null }
 }

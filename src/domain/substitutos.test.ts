@@ -1,4 +1,4 @@
-import { medidaEquivalente } from './busca.ts'
+import { medidaParaMostrar } from './busca.ts'
 import { calcularSubstituto } from './substitutos.ts'
 import { buscarAlimento } from './tabelas.ts'
 
@@ -34,9 +34,10 @@ describe('calcularSubstituto', () => {
   it('CA-42: mostra a porção também em medida caseira', () => {
     const r = calcularSubstituto({ alimentoId: FRANGO, gramas: 100 }, PATINHO, 'proteina', buscarAlimento)
     expect(r.medida).not.toBeNull()
-    expect(r.medida).toEqual(medidaEquivalente(PATINHO, 89))
+    // CA-781 (spec revisao-geral-trabalho): a mesma medida da linha do plano e da folha.
+    expect(r.medida).toEqual(medidaParaMostrar(PATINHO, 89))
     const semMedida = calcularSubstituto({ alimentoId: ARROZ, gramas: 150 }, BATATA, 'carboidrato', buscarAlimento)
-    expect(semMedida.medida).toEqual(medidaEquivalente(BATATA, 352))
+    expect(semMedida.medida).toEqual(medidaParaMostrar(BATATA, 352))
   })
 
   it('CA-42: mostra a diferença de kcal e macros em relação ao original, com a porção arredondada', () => {

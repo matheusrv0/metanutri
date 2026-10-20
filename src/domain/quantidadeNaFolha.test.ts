@@ -53,6 +53,11 @@ describe('quantidade na folha', () => {
     expect(texto(quantidadeNaFolha(MARGARINA, 24, buscarAlimento))).toBe('3 colheres de chá')
   })
 
+  it('CA-780 (spec revisao-geral-trabalho): manteiga e margarina nunca em fatia na folha', () => {
+    expect(texto(quantidadeNaFolha(MANTEIGA, 30, buscarAlimento))).toBe('1 colher de sopa')
+    expect(texto(quantidadeNaFolha(MARGARINA, 30, buscarAlimento))).toBe('1 colher de sopa')
+  })
+
   it('CA-644: medida de pedaço com mais de 4 pedaços vira o peso, na refeição, na lista de compras e na troca', () => {
     expect(texto(quantidadeNaFolha(OMELETE, 50, buscarAlimento))).toBe('50 g')
     expect(texto(quantidadeNaFolha(OVO_FRITO, 55, buscarAlimento))).toBe('55 g')

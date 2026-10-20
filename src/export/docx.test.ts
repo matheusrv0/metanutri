@@ -92,6 +92,11 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(descreverItem({ id: 'x', alimentoId: 40, gramas: 80 }, buscarAlimento)).toBe('Macarrão, trigo, cru (80 g)')
   })
 
+  it('CA-781 (spec revisao-geral-trabalho): a medida do Word é a da folha, com a ponta de faca e sem fatia de manteiga', () => {
+    expect(descreverItem({ id: 'x', alimentoId: 263, gramas: 5 }, buscarAlimento)).toBe('Margarina, com óleo hidrogenado, com sal (65% de lipídeos) (1 ponta de faca)')
+    expect(descreverItem({ id: 'y', alimentoId: 261, gramas: 30 }, buscarAlimento)).toBe('Manteiga, com sal (1 colher de sopa)')
+  })
+
   it('CA-47: campos vazios ficam em branco, sem "undefined" nem "null"', async () => {
     const gerar = ids()
     const caso = criarCasoVazio('vazio')

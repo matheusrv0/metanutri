@@ -1,5 +1,5 @@
 import { ArrowLeftRight, X } from 'lucide-react'
-import { medidaEquivalente } from '@/domain/busca.ts'
+import { medidaParaMostrar } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
@@ -19,7 +19,7 @@ interface LinhaItemProps {
 export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: LinhaItemProps) {
   const alimento = buscarAlimento(item.alimentoId)
   const descricao = alimento?.descricao ?? 'Alimento não encontrado'
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
+  const medida = medidaParaMostrar(item.alimentoId, item.gramas)
   const incompleto = alimento ? explicarCompletude(alimento) : null
   const porCem = alimento?.nutrientes.energia_kcal ?? null
   // A tabela não traz energia deste alimento: mostra travessão, nunca zero (princípio do produto).

@@ -1,4 +1,4 @@
-import { buscarAlimentos, formatarQuantidadeMedida, interpretarEntrada, MEDIDAS, medidaEquivalente } from './busca.ts'
+import { buscarAlimentos, formatarQuantidadeMedida, interpretarEntrada, MEDIDAS, medidaEquivalente, medidaParaMostrar } from './busca.ts'
 import { ALIMENTOS } from './tabelas.ts'
 
 describe('interpretarEntrada', () => {
@@ -145,5 +145,48 @@ describe('medidaEquivalente (CA-19)', () => {
   it('alimento sem medidas ou quantidade zero não tem equivalente', () => {
     expect(medidaEquivalente(40, 100)).toBeNull() // macarrão cru
     expect(medidaEquivalente(3, 0)).toBeNull()
+  })
+})
+
+describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
+  const MANTEIGA = 261
+  const MARGARINA = 263
+  const GORDURAS = [261, 262, 263, 264, 265, 266]
+  const BANANA_PRATA = 182
+
+  it.each([
+    [2.5, 'meia ponta de faca'],
+    [5, '1 ponta de faca'],
+    [7.5, '1 ponta de faca e meia'],
+    [10, '2 pontas de faca'],
+    [15, '3 pontas de faca'],
+  ] as const)('CA-779: margarina e manteiga com %s g = %s', (gramas, texto) => {
+    expect(medidaParaMostrar(MARGARINA, gramas)?.texto).toBe(texto)
+    expect(medidaParaMostrar(MANTEIGA, gramas)?.texto).toBe(texto)
+  })
+
+  it('CA-780: manteiga e margarina nunca saem em fatia; 30 g é "1 colher de sopa"', () => {
+    expect(medidaParaMostrar(MANTEIGA, 30)?.texto).toBe('1 colher de sopa')
+    expect(medidaParaMostrar(MARGARINA, 30)?.texto).toBe('1 colher de sopa')
+    for (const id of GORDURAS) {
+      for (let gramas = 1; gramas <= 300; gramas += 1) expect(medidaParaMostrar(id, gramas)?.medida).not.toBe('fatia')
+    }
+  })
+
+  it('CB-244: acima de 3 pontas de faca vale a medida comum, sem fatia; o que nenhuma medida alcança fica sem medida', () => {
+    expect(medidaParaMostrar(MARGARINA, 24)?.texto).toBe('3 colheres de chá')
+    expect(medidaParaMostrar(MARGARINA, 2000)).toBeNull()
+  })
+
+  it('CA-781: medida de pedaço com mais de 4 pedaços não aparece; até 4, aparece', () => {
+    expect(medidaParaMostrar(BANANA_PRATA, 130)).toBeNull()
+    expect(medidaParaMostrar(BANANA_PRATA, 104)?.texto).toBe('4 fatias')
+    expect(medidaParaMostrar(3, 150)?.texto).toBe('6 colheres de sopa')
+  })
+
+  it('a escolha das trocas e a dieta do link continuam com a medida de antes (R-182)', () => {
+    expect(medidaEquivalente(MARGARINA, 5)).toBeNull()
+    expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 fatia')
+    expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('5 fatias')
   })
 })

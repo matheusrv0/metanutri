@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Plus, TriangleAlert, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { buscarAlimentos, medidaEquivalente } from '@/domain/busca.ts'
+import { buscarAlimentos, medidaParaMostrar } from '@/domain/busca.ts'
 import { NOME_DO_TIPO, SUGESTOES_PADRAO, sugestoesProntas, type SugestaoAlimento, type TipoRefeicao } from '@/domain/sugestoes.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -19,7 +19,7 @@ interface DialogoSugestoesProps {
 
 /** "4 colheres de sopa · 100 g"; sem medida caseira, só as gramas. */
 function porcao(alimentoId: number, gramas: number): string {
-  const medida = medidaEquivalente(alimentoId, gramas)
+  const medida = medidaParaMostrar(alimentoId, gramas)
   const g = `${formatarNumero(gramas, 0)} g`
   return medida ? `${medida.texto} · ${g}` : g
 }

@@ -2,7 +2,7 @@
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
-import { medidaEquivalente } from '../domain/busca.ts'
+import { medidaParaMostrar } from '../domain/busca.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
@@ -36,7 +36,7 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
   const alimento = buscar(item.alimentoId)
   if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
-  const medida = medidaEquivalente(item.alimentoId, item.gramas)
+  const medida = medidaParaMostrar(item.alimentoId, item.gramas)
   const quantidade = medida ? medida.texto : `${formatarNumeroDocx(item.gramas, 0)} g`
   return `${alimento.descricao} (${quantidade})`
 }

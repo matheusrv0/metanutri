@@ -2,7 +2,7 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
-import { medidaEquivalente } from '@/domain/busca.ts'
+import { medidaParaMostrar } from '@/domain/busca.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
@@ -161,7 +161,7 @@ export function GavetaCobrir({
 
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
           {(resultado?.sugestoes ?? []).map((s) => {
-            const medida = medidaEquivalente(s.alimentoId, s.gramas)
+            const medida = medidaParaMostrar(s.alimentoId, s.gramas)
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
                 <p className="text-sm font-semibold text-heading">{s.descricao}</p>
