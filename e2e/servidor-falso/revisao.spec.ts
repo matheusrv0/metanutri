@@ -216,6 +216,57 @@ test('CA-759: em 390 px, as caixas de aceite e de declaração do cadastro têm 
   await semRolagemLateral(page)
 })
 
+for (const [plano, declaracao] of [
+  ['', 'Declaro que este CRN é meu e está ativo.'],
+  ['/estudante', 'Declaro ter matrícula ativa no curso de Nutrição.'],
+] as const) {
+  test(`I-3 (CA-759): em 390 px, um toque no vão abaixo de "${declaracao}" nunca marca os Termos`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 })
+    await ligarServidorFalso(page)
+    await page.goto(`/#/criar-conta${plano}`)
+    if (!plano) await page.getByRole('radio', { name: /Nutricionista/ }).check()
+    const declarar = page.getByRole('checkbox', { name: declaracao })
+    const termos = page.getByRole('checkbox', { name: /Li e aceito/ })
+    // Num só quadro: o texto das duas caixas e o que está embaixo de cada ponto do vão entre elas.
+    const alvos = await page.evaluate(
+      ([textoDeclaracao]) => {
+        const rotulos = [...document.querySelectorAll('label')].filter((l) => l.querySelector('input[type=checkbox]'))
+        const declarar = rotulos.find((l) => l.textContent?.includes(textoDeclaracao))
+        const termos = rotulos.find((l) => l.textContent?.includes('Li e aceito'))
+        if (!declarar || !termos) return null
+        // elementFromPoint só enxerga o que está na janela: a declaração vai para o meio da tela antes de medir.
+        declarar.scrollIntoView({ block: 'center' })
+        const fimDoTexto = (declarar.lastElementChild ?? declarar).getBoundingClientRect().bottom
+        const inicioDoTexto = (termos.lastElementChild ?? termos).getBoundingClientRect().top
+        const meio = (fimDoTexto + inicioDoTexto) / 2
+        const x = declarar.getBoundingClientRect().left + 40
+        const quem = (y: number) => {
+          const el = document.elementFromPoint(x, y)?.closest('label')
+          return el === declarar ? 'declaracao' : el === termos ? 'termos' : 'nenhum'
+        }
+        return {
+          vao: inicioDoTexto - fimDoTexto,
+          acimaDoMeio: quem(meio - 2),
+          abaixoDoMeio: quem(meio + 2),
+          logoAbaixo: quem(fimDoTexto + 4),
+          toque: { x, y: fimDoTexto + 4 },
+        }
+      },
+      [declaracao] as const,
+    )
+    expect(alvos).not.toBeNull()
+    expect(alvos?.vao).toBeGreaterThanOrEqual(23.5)
+    expect(alvos?.logoAbaixo).toBe('declaracao')
+    expect(alvos?.acimaDoMeio).toBe('declaracao')
+    expect(alvos?.abaixoDoMeio).toBe('termos')
+    // E o toque de verdade, 4 px abaixo do texto da declaração, marca a declaração e não os Termos.
+    if (!alvos) return
+    await page.mouse.click(alvos.toque.x, alvos.toque.y)
+    await expect(declarar).toBeChecked()
+    await expect(termos).not.toBeChecked()
+  })
+}
+
 test.describe('Avisos do checkout (D-236)', () => {
   for (const tema of ['dark', 'light'] as const) {
     test(`${tema === 'dark' ? 'CA-746' : 'CA-747'}: no tema ${tema === 'dark' ? 'escuro' : 'claro'}, o aviso do resumo tem contraste de 4,5:1 ou mais`, async ({ page }) => {

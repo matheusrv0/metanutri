@@ -98,8 +98,9 @@ TDD. O I-2 (nome de receita no "Meu plano") fica para a integração com a frent
 - [ ] **R1 (I-1)** — Testes de geometria estáveis: os retângulos comparados medidos num só `evaluate` (o mesmo quadro)
   em CA-740, D-235/A-23, A-24 e CA-744, e `reducedMotion: 'reduce'` no arquivo (a entrada animada de Preços).
   *Verifica:* `revisao.spec.ts` rodado 30 vezes seguidas sem falha.
-- [ ] **R2 (I-3)** — 24 px entre a declaração e o aceite dos Termos (`CaixaDeclaracao` aceita `className`; o aceite
-  ganha `mt-2` quando vem depois de uma declaração). *Testes:* unidade (a classe) e e2e com `elementFromPoint` no
+- [ ] **R2 (I-3)** — 24 px entre a declaração e o aceite dos Termos: a declaração (CRN ou matrícula) fica num invólucro
+  com `pb-2`, montado junto com ela em `CamposSituacao.tsx` (uma margem na própria caixa brigaria com o `-my-3` dela, e
+  trocar a classe do aceite que já estava na tela às vezes deixava o Chromium com o estilo velho). *Testes:* unidade (a classe) e e2e com `elementFromPoint` no
   meio do vão.
 - [ ] **R3 (M-1)** — "Fontes da base" com 44 px em qualquer largura. *Testes:* unidade (classe) e e2e em 1280 px.
 - [ ] **R4 (M-3b)** — Recusa do servidor (não a rede) na marcação: `MarcacaoRecusada` com o motivo; a tela mostra o
@@ -112,7 +113,7 @@ TDD. O I-2 (nome de receita no "Meu plano") fica para a integração com a frent
 - [ ] **R9 (M-9)** — Escopo neutro `.tema-claro` junto com `:root, .papel` em `tokens.css` e `globals.css`; o checkout
   passa a usá-lo. *Testes:* o checkout e um teste de texto das duas folhas de estilo.
 
-Arquivos a mais nesta rodada: `src/ui/publico/conta/TelaCriarConta.tsx` (R2), `design-system/tokens/tokens.css` e
+Arquivos a mais nesta rodada: `src/ui/publico/conta/CamposSituacao.tsx` e `TelaCriarConta.test.tsx` (R2), `design-system/tokens/tokens.css` e
 `src/ui/tema/globals.css` (R9), `e2e/apoio/fumaca.ts` (R6), `src/ui/tema/temaClaro.test.ts` (R9, novo).
 
 ## Riscos e decisões para revisar
