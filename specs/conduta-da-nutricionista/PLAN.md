@@ -41,6 +41,8 @@ Cinco partes, na ordem da spec, cada uma em tarefas pequenas e commitáveis, em 
 | `src/domain/sugestoes.ts`, `sugestoes.test.ts` | alterar | T4 |
 | `src/domain/exemplo.ts`, `exemplo.test.ts` | alterar | T4, T9 |
 | `src/domain/trocas.ts`, `trocas.test.ts` | alterar | T5 |
+| `src/domain/busca.ts`, `busca.test.ts` | alterar | T5 (a medida caseira para a paciente, D-295: o ovo frito de 55 g é "1 unidade", não "5 fatias e meia"; sem ela, o ovo cozido ficava sem troca) |
+| `src/ui/exportar/FolhaDieta.test.tsx` | alterar | T5 (a omelete saiu das trocas do ovo) |
 | `specs/sugestoes-com-criterio/SPEC.md` | alterar | T6 (notas e Apêndices A e C) |
 | `src/domain/tipos.ts`, `src/domain/caso.ts` | alterar | T7, T9 |
 | `src/domain/quantidadeNaFolha.ts`, `quantidadeNaFolha.test.ts` | alterar | T7 |
