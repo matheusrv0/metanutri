@@ -327,3 +327,16 @@ describe('Folha da dieta (US-B1)', () => {
     expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
   })
 })
+
+describe('Produto apagado fica fora da folha (spec revisao-geral-trabalho, D-248, CA-789)', () => {
+  it('nem a refeição nem a lista de compras citam o item apagado', () => {
+    let plano = planoCheio()
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('plano padrão mudou')
+    plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} opcoes={{ listaDeCompras: true, trocas: true }} />)
+    const folha = screen.getByRole('heading', { name: 'Plano alimentar' }).closest('article') as HTMLElement
+    expect(folha).not.toHaveTextContent(/removido|apagado|40 g/i)
+    expect(refeicao(/^12:00 Almoço$/).getByText('Arroz branco cozido')).toBeInTheDocument()
+  })
+})

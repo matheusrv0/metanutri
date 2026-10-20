@@ -34,6 +34,24 @@ const montar = (inicial?: Partial<Caso>, plano?: Plano) => {
 const resumo = () => within(screen.getByRole('region', { name: 'Resumo do dia' }))
 const abrirAjustes = async (usuario: ReturnType<typeof userEvent.setup>) => usuario.click(screen.getByRole('button', { name: 'Ajustar' }))
 
+describe('Produto apagado no Resumo do dia (spec revisao-geral-trabalho, CA-789)', () => {
+  it('a energia e os macros levam a †, com a frase que explica', () => {
+    const plano = planoComArroz()
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('plano sem almoço')
+    montar(adulta, adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids))
+    const energia = resumo().getByText(/kcal$/, { selector: '.text-2xl' })
+    expect(energia.parentElement).toHaveTextContent('†')
+    for (const macro of ['Proteína', 'Carboidrato', 'Gordura']) expect(resumo().getByText(macro).parentElement).toHaveTextContent('†')
+    expect(resumo().getByText('Total possivelmente subestimado: falta o dado em algum alimento.')).toBeInTheDocument()
+  })
+
+  it('sem item faltando, nenhuma †', () => {
+    montar(adulta, planoComArroz())
+    expect(screen.getByRole('region', { name: 'Resumo do dia' })).not.toHaveTextContent('†')
+  })
+})
+
 describe('Resumo do dia', () => {
   it('CA-06 e CA-07: TMB por Mifflin e GET pelo fator de atividade', async () => {
     const usuario = montar(adulta)

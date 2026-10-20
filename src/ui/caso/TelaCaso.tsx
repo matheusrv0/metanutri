@@ -56,7 +56,8 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
           camposDeEstagio={atual.estagio}
         />
 
-        <CartaoPessoa caso={caso} aoAlterar={aoAlterar} erros={validacao.erros} />
+        {/* Um cartão por plano: a idade "assentada" (D-244) não passa de um plano para outro (CA-784, revisão de 20/10/2026). */}
+        <CartaoPessoa key={caso.id} caso={caso} aoAlterar={aoAlterar} erros={validacao.erros} />
 
         <Card>
           <CardHeader>
@@ -80,7 +81,10 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
           )}
           <Recolhivel key={`observacoes-${caso.id}`} titulo="Observações" resumo="Anotações suas, não saem no documento." abertoInicial={caso.observacoes.trim() !== ''}>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="observacoes">Observações</Label>
+              {/* D-247: o título do recolhido já diz "Observações"; o rótulo fica só para o leitor de tela. */}
+              <Label htmlFor="observacoes" className="sr-only">
+                Observações
+              </Label>
               <Textarea id="observacoes" rows={4} value={caso.observacoes} onChange={(e) => aoAlterar({ observacoes: e.target.value })} />
             </div>
           </Recolhivel>

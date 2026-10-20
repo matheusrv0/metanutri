@@ -4,7 +4,7 @@ import { idadeDe } from '@/domain/pacientes.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 
@@ -33,11 +33,8 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* D-247 (spec revisao-geral-trabalho): o título da página já diz "Pacientes"; o cartão fica só com a busca. */}
       <Card className="gap-4">
-        <CardHeader>
-          <CardTitle>Pacientes</CardTitle>
-          <CardDescription>Cada pessoa guarda restrições, condições clínicas e o histórico de planos que você montou.</CardDescription>
-        </CardHeader>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
             <CampoTexto rotulo="Buscar paciente" valor={busca} aoMudar={setBusca} placeholder="Nome…" />
@@ -64,7 +61,7 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
           </Button>
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Pacientes">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Pacientes">
           {lista.map(({ paciente, planos, ultimo }) => {
             const idade = idadeDe(paciente.nascimento)
             const nome = paciente.nome.trim() || 'Paciente sem nome'

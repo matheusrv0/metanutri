@@ -90,7 +90,13 @@ export function dietaDoPlano(caso: Pick<Caso, 'orientacoes' | 'receitas'>, plano
     .map((refeicao) => ({
       horario: refeicao.horario,
       nome: refeicao.nome,
-      opcoes: OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0).map((i) => itemDaDieta(i, buscar))).filter((itens) => itens.length > 0),
+      // D-248 (spec revisao-geral-trabalho): o produto apagado não vai para o paciente. A receita vai: ela não está na
+      // base, e o nome vem da cópia guardada no item (spec receitas-com-calculo, CA-883).
+      opcoes: OPCOES.map((opcao) =>
+        refeicao.opcoes[opcao]
+          .filter((i) => i.gramas > 0 && (ehItemDeReceita(i) || buscar(i.alimentoId) !== undefined))
+          .map((i) => itemDaDieta(i, buscar)),
+      ).filter((itens) => itens.length > 0),
     }))
     .filter((refeicao) => refeicao.opcoes.length > 0)
   const receitasDoPlano = receitasNoPlano(plano).map((r) => receitaDaDieta(r, buscar))

@@ -64,20 +64,22 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
         if (!(ingrediente.gramas > 0)) continue
         const alimento = buscar(ingrediente.alimentoId)
         for (const chave of CHAVES_NUTRIENTES) {
-          const valor = alimento?.nutrientes[chave] ?? null
-          if (valor === null) semDado[chave]++
+          // D-248 (revisao-geral-trabalho): o que não é número (produto apagado, nutriente que falta) é falta de dado.
+          const valor = alimento?.nutrientes[chave]
+          if (typeof valor !== 'number') semDado[chave]++
           else total[chave] += (valor * ingrediente.gramas) / 100
         }
       }
       continue
     }
+    // D-248 (spec revisao-geral-trabalho): o produto apagado em "Meus produtos" (ou o alimento que saiu da base) continua
+    // no plano e conta como falta de dado em tudo; o nutriente que o alimento não traz também. Nunca zero, nunca NaN.
     const alimento = buscar(item.alimentoId)
-    if (!alimento) throw new Error(`Alimento ${item.alimentoId} não existe na tabela.`)
     contados++
     const fator = item.gramas / 100
     for (const chave of CHAVES_NUTRIENTES) {
-      const valor = alimento.nutrientes[chave]
-      if (valor === null) semDado[chave]++
+      const valor = alimento?.nutrientes[chave]
+      if (typeof valor !== 'number') semDado[chave]++
       else total[chave] += valor * fator
     }
   }

@@ -65,6 +65,29 @@ describe('Pacientes', () => {
     expect(aoAbrir).toHaveBeenCalledWith('p1')
   })
 
+  it('CA-791 (spec revisao-geral-trabalho): "Pacientes" não se repete dentro da tela; a busca e "Novo paciente" ficam', () => {
+    montar(<TelaPacientes aoAbrir={vi.fn()} />)
+    expect(screen.queryByRole('heading', { name: 'Pacientes' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Buscar paciente')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Novo paciente' })).toBeInTheDocument()
+  })
+
+  it('CA-791: na ficha, a frase de que as restrições filtram as sugestões aparece uma vez', async () => {
+    const armazenamento = new MemoriaFalsa()
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    pacientes.salvar({ ...pacientes.criar('Maria'), restricoes: 'camarão' })
+    const casos = criarRepositorio(armazenamento, { agora: relogio() })
+    render(
+      <ProvedorCasos repositorio={casos}>
+        <ProvedorPacientes repositorio={pacientes}>
+          <TelaPaciente pacienteId="p1" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
+        </ProvedorPacientes>
+      </ProvedorCasos>,
+    )
+    expect(screen.getAllByText(/sugest/i)).toHaveLength(1)
+    expect(screen.getByText('Uma por linha. O que estiver aqui some das sugestões de alimento.')).toBeInTheDocument()
+  })
+
   it('a ficha guarda nome, restrições e mostra o histórico vazio', async () => {
     const armazenamento = new MemoriaFalsa()
     const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })

@@ -98,7 +98,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           />
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Planos salvos">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Planos salvos">
           {casos.map((c) => (
             <li key={c.id}>
               <CartaoCaso

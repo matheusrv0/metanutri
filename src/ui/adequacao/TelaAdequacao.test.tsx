@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
-import { buscarAlimento } from '@/domain/tabelas.ts'
+import { produtoComoAlimento } from '@/domain/produtos.ts'
+import { buscarAlimento, registrarProdutos } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
@@ -141,6 +142,12 @@ describe('Etapa 3: adequação', () => {
     expect(linhaDe('Ferro').getByText('0% abaixo')).toBeInTheDocument()
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     expect(gaveta.getByText(/Faltam .* mg para a meta/)).toBeInTheDocument()
+  })
+
+  it('CA-791 (spec revisao-geral-trabalho): a falta com a precisão da tabela, sem duas casas', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    const gaveta = await abrirCobrir(usuario, 'Cálcio')
+    expect(gaveta.getByText(/^Faltam \d[\d.]* mg para a meta\./)).toBeInTheDocument()
   })
 
   it('CA-34 a CA-36: sugestões trazem porção, cobertura e kcal', async () => {
@@ -429,6 +436,77 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
 
     render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
     expect(itemDoCalcio().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+  })
+})
+
+describe('Produto do rótulo na etapa 3 (spec revisao-geral-trabalho, CA-793)', () => {
+  afterEach(() => {
+    registrarProdutos([])
+  })
+
+  it('o nutriente que o rótulo não traz leva a † na linha; o que o rótulo traz, não', () => {
+    registrarProdutos([
+      produtoComoAlimento({
+        id: 900_001,
+        codigoBarras: '',
+        nome: 'Granola',
+        marca: '',
+        porcaoG: 40,
+        medidaCaseira: '',
+        porPorcao: { energia_kcal: 160, ferro_mg: 2, calcio_mg: 40 },
+        criadoEm: '2026-10-20T12:00:00.000Z',
+      }),
+    ])
+    const plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('sem almoço')
+    montar(adulta, adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids))
+    expect(linhaDe('Vitamina A (RAE)').getAllByText('†').length).toBeGreaterThan(0)
+    expect(linhaDe('Ferro').queryByText('†')).not.toBeInTheDocument()
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Mínimo da meta só com número inteiro (spec revisao-geral-trabalho, D-243)', () => {
+  it('CA-782: "90,4" avisa e não muda a meta; "85" muda e o aviso some', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '90,4')
+    expect(screen.getByText('Use um número inteiro, como 90.')).toBeInTheDocument()
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '85')
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+    expect(screen.getByText(/meta de 85% da referência/)).toBeInTheDocument()
+  })
+
+  it('CA-782 (revisão de 20/10/2026): trocar de tipo e voltar a "Personalizado" mostra o campo sem o aviso', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '90,4')
+    expect(screen.getByText('Use um número inteiro, como 90.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('radio', { name: 'Individual (RDA, 90%)' }))
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    expect(screen.getByLabelText('Mínimo da meta')).toHaveValue('90')
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+  })
+
+  it('CB-242: campo vazio não mostra o aviso e não muda a meta', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    await usuario.clear(screen.getByLabelText('Mínimo da meta'))
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
+  })
+
+  it('CA-783: um mínimo de 90,4% guardado aparece como 90 no campo e no subtítulo', () => {
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'rda', minimoPct: 90.4 } } }, planoComArroz())
+    expect(screen.getByLabelText('Mínimo da meta')).toHaveValue('90')
+    expect(screen.getByText(/meta de 90% da referência/)).toBeInTheDocument()
   })
 })
 

@@ -26,6 +26,17 @@ const casoCom = (extra: Partial<Caso>): Caso => ({
   ...extra,
 })
 const comGet = (get: number) => casoCom({ energia: { ...criarCasoVazio('x').energia, getManual: get } })
+describe('Produto apagado na faixa da etapa 3 (spec revisao-geral-trabalho, CA-789)', () => {
+  it('a energia e os macros levam a †', () => {
+    const plano = planoComArroz()
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('plano sem almoço')
+    render(<FaixaResumo caso={comGet(1800)} plano={adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids)} aoAlterar={vi.fn()} />)
+    for (const rotulo of ['Energia do plano', 'Proteína', 'Carboidrato', 'Gordura']) expect(screen.getByText(rotulo).parentElement).toHaveTextContent('†')
+    expect(screen.getByText('GET manual').parentElement).not.toHaveTextContent('†')
+  })
+})
+
 const celula = (rotulo: string) => {
   const pai = screen.getByText(rotulo).parentElement
   if (!pai) throw new Error(`sem a célula ${rotulo}`)

@@ -8,6 +8,10 @@ import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { CampoMetaEnergia } from './CampoMetaEnergia.tsx'
 import { CampoNivelAtividade } from './CampoNivelAtividade.tsx'
+import { useValorAssentado } from './usarValorAssentado.ts'
+
+/** D-244: quanto esperar depois da última tecla da idade para mostrar ou esconder os campos que dependem dela. */
+const ESPERA_DA_IDADE_MS = 500
 
 interface CartaoPessoaProps {
   readonly caso: Caso
@@ -26,7 +30,10 @@ const CONDICOES: readonly { readonly valor: TipoCondicao; readonly rotulo: strin
 /** Pessoa, medidas e meta: só os campos que valem para o caso (CA-330 e CA-331). */
 export function CartaoPessoa({ caso, aoAlterar, erros }: CartaoPessoaProps) {
   const rapido = caso.modo === 'rapido'
-  const campos = camposDaPessoa(caso)
+  // D-244 (spec revisao-geral-trabalho): os campos que dependem da idade seguem a idade que a pessoa terminou de
+  // digitar; digitar "28" não mostra e esconde "Meses além dos anos" no meio.
+  const [idadeAssentada, assentarIdade] = useValorAssentado(caso.idadeAnos, ESPERA_DA_IDADE_MS)
+  const campos = camposDaPessoa({ ...caso, idadeAnos: idadeAssentada })
   const { condicao } = caso
   const numero = (campo: keyof Caso) => (valor: number | null) => aoAlterar({ [campo]: valor } as Partial<Caso>)
 
@@ -99,7 +106,15 @@ export function CartaoPessoa({ caso, aoAlterar, erros }: CartaoPessoaProps) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <CampoNumero rotulo="Idade" valor={caso.idadeAnos} aoMudar={numero('idadeAnos')} sufixo="anos" erro={erros.idadeAnos} />
+        <div
+          className="contents"
+          onBlur={assentarIdade}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Tab') assentarIdade()
+          }}
+        >
+          <CampoNumero rotulo="Idade" valor={caso.idadeAnos} aoMudar={numero('idadeAnos')} sufixo="anos" erro={erros.idadeAnos} />
+        </div>
         {campos.mesesAlemDosAnos ? (
           <CampoNumero
             rotulo="Meses além dos anos"

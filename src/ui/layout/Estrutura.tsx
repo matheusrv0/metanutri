@@ -55,7 +55,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
         Pular para o conteúdo
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] xl:block">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] xl:block print:hidden">
         <MenuLateral rota={rota} navegar={navegar} casoAtual={casoAtual} aoNovoCaso={aoNovoCaso} aprovacoesPendentes={aprovacoesPendentes} />
       </aside>
 
@@ -67,13 +67,13 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
         </SheetContent>
       </Sheet>
 
-      <div className="xl:pl-[264px]">
+      <div className="xl:pl-[264px] print:pl-0">
         <Cabecalho titulo={titulo} trilha={trilha} acoes={acoes} situacao={<SituacaoDaNuvem />} aoAbrirMenu={() => setMenuAberto(true)} />
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
           {/* D-172: a versão nova do MetaNutri passou a valer; recarrega só quando a pessoa pede. */}
           <AvisoVersaoNova />
           {migracaoIncompleta ? (
-            <Alert variant="warning" className="mb-6">
+            <Alert variant="warning" className="mb-6 print:hidden">
               <TriangleAlert aria-hidden="true" />
               <p>
                 Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do
@@ -82,7 +82,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
             </Alert>
           ) : null}
           {reduzindo ? (
-            <Alert variant="warning" className="mb-6">
+            <Alert variant="warning" className="mb-6 print:hidden">
               <TriangleAlert aria-hidden="true" />
               <p>{COPIA_GRANDE_DEMAIS}</p>
             </Alert>

@@ -162,7 +162,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           <EscolherModo
             aoEscolher={(modo) => novoCaso(modo)}
             gatilho={
-              <Button size="sm">
+              // CA-778: no computador, o "Novo plano" do menu basta, como em Planos.
+              <Button size="sm" className="xl:hidden">
                 <Plus aria-hidden="true" />
                 Novo plano
               </Button>

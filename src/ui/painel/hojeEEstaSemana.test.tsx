@@ -44,7 +44,7 @@ function Anfitriao({
 }: {
   readonly fichas: readonly Partial<Paciente>[]
   readonly links?: readonly Acompanhamento[]
-  readonly planos?: readonly { readonly id: string; readonly pacienteId: string }[]
+  readonly planos?: readonly { readonly id: string; readonly pacienteId: string | null }[]
   readonly acompanhamentos?: ValorAcompanhamentos
   readonly children: ReactNode
 }) {
@@ -96,7 +96,7 @@ describe('Painel: Hoje e esta semana', () => {
     )
     expect(screen.queryByRole('heading', { name: 'Hoje e esta semana' })).not.toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Consultas e aniversários' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Precisa de atenção' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Onde você parou' })).toBeInTheDocument()
   })
 
   it('CA-519 e CA-520: nome e quando, por dia e horário; passadas e de 7 dias em diante ficam de fora', () => {
@@ -124,11 +124,15 @@ describe('Painel: Hoje e esta semana', () => {
     ])
   })
 
-  it('D-146: o bloco fica na coluna da direita, acima de "Precisa de atenção"', () => {
-    render(<Anfitriao fichas={[{ id: 'p1', nome: 'Ana', proximaConsulta: '2026-10-14T16:00' }]}>{painel()}</Anfitriao>)
+  it('D-146: o bloco fica na coluna da direita, acima de "Falta completar"', () => {
+    render(
+      <Anfitriao fichas={[{ id: 'p1', nome: 'Ana', proximaConsulta: '2026-10-14T16:00' }]} planos={[{ id: 'c1', pacienteId: null }]}>
+        {painel()}
+      </Anfitriao>,
+    )
     const onde = screen.getByRole('heading', { name: 'Onde você parou' })
     const hoje = screen.getByRole('heading', { name: 'Hoje e esta semana' })
-    const atencao = screen.getByRole('heading', { name: 'Precisa de atenção' })
+    const atencao = screen.getByRole('heading', { name: 'Falta completar' })
     expect(onde.compareDocumentPosition(hoje) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(hoje.compareDocumentPosition(atencao) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const coluna = (el: HTMLElement) => el.closest('[data-slot="card"]')?.parentElement
@@ -149,6 +153,21 @@ describe('Painel: Hoje e esta semana', () => {
     )
     expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
     for (const rotulo of Object.values(ROTULO_ESTADO)) expect(linha('Bia Lima').queryByText(rotulo)).not.toBeInTheDocument()
+  })
+
+  it('CA-775 (spec revisao-geral-trabalho): paciente "Sumindo" e cadastro completo: nada no Painel diz que está tudo em dia', () => {
+    render(
+      <Anfitriao
+        fichas={[{ id: 'p1', nome: 'Ana Souza', proximaConsulta: '2026-10-15T09:00' }]}
+        planos={[{ id: 'c1', pacienteId: 'p1' }]}
+        links={[link('p1', '2026-10-01T10:00:00.000Z', [], 'c1')]}
+      >
+        {painel()}
+      </Anfitriao>,
+    )
+    expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Falta completar' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/em dia/i)).not.toBeInTheDocument()
   })
 
   it('D-147: plano trocado de Ana para Bia: o selo do link vai para a linha da Bia', () => {

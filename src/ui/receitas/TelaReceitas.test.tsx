@@ -170,10 +170,12 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     expect(within(listaDeReceitas()).getByRole('listitem')).toHaveTextContent('Panqueca fit')
   })
 
-  it('CB-271: no editor, o ingrediente que não existe mais diz "Alimento não encontrado", como a linha do plano', async () => {
+  it('CB-271: no editor, o ingrediente que não existe mais tem o mesmo nome da linha do plano ("Produto apagado")', async () => {
+    // A linha do plano passou a dizer "Produto apagado" ou "Alimento removido" (spec revisao-geral-trabalho, D-248); o
+    // editor usa a mesma linha.
     const usuario = montar(new Memoria(), [salva('a', 'Panqueca de banana', { ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_999, gramas: 20 }] })])
     await usuario.click(screen.getByRole('button', { name: 'Editar Panqueca de banana' }))
-    expect(within(screen.getByRole('list', { name: 'Ingredientes' })).getByText('Alimento não encontrado')).toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: 'Ingredientes' })).getByText('Produto apagado')).toBeInTheDocument()
   })
 
   it('CA-864: duplicar faz "(cópia)"', async () => {

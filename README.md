@@ -6,7 +6,7 @@ o que falta e o botão **cobrir** sugere o alimento e a porção que fecham a fa
 nenhum concorrente brasileiro faz isso. Os macros andam ao vivo enquanto o plano é
 montado. E o plano vira **missões diárias** que o paciente marca num link próprio,
 com a tela de Adesão mostrando quem está sumindo — esse é o argumento de venda.
-Funciona no navegador; a conta na nuvem é opcional.
+Funciona no navegador, com os dados na nuvem, presos à conta.
 
 Estratégia, público, preços e fases: [docs/plano-negocio.md](docs/plano-negocio.md).
 

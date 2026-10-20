@@ -14,6 +14,11 @@ describe('Tabela de alimentos (US-B4)', () => {
     expect(aoAbrirFontes).toHaveBeenCalledOnce()
   })
 
+  it('CA-794 (spec revisao-geral-trabalho): "100 g" não quebra entre o número e a unidade', () => {
+    render(<TelaAlimentos aoAbrirFontes={vi.fn()} />)
+    expect(screen.getByText(/valores por 100/).textContent).toContain('100\u00a0g')
+  })
+
   it('CA-340: grupo, ordem e completude são listas de escolha', async () => {
     render(<TelaAlimentos />)
     const usuario = userEvent.setup()

@@ -14,6 +14,13 @@ describe('Catálogo de alimentos', () => {
     expect(todos[0]?.descricao.localeCompare(todos[1]?.descricao ?? '', 'pt-BR')).toBeLessThanOrEqual(0)
   })
 
+  it('CA-794 (spec revisao-geral-trabalho): espaço no começo do nome não põe o alimento antes do "A"', () => {
+    const nomes = filtrarCatalogo().map((a) => a.descricao.trim())
+    expect(nomes[0]?.startsWith('A')).toBe(true)
+    const ordenados = [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    expect(nomes).toEqual(ordenados)
+  })
+
   it('busca sem acento acha o alimento acentuado', () => {
     const achados = filtrarCatalogo({ termo: 'brocolis' })
     expect(achados.some((a) => a.descricao.includes('Brócolis'))).toBe(true)

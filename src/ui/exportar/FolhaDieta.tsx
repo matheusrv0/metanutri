@@ -165,7 +165,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
       {/* Sem régua de cor no topo (spec impressao-do-plano, CA-633): um fio fino separa o topo das refeições. */}
       <div className="-mt-2 flex flex-col border-t border-border">
         {plano.refeicoes.map((refeicao) => {
-          const opcoesDaFolha = opcoesDaRefeicao(refeicao)
+          const opcoesDaFolha = opcoesDaRefeicao(refeicao, buscarAlimento)
           return (
             <section
               key={refeicao.id}

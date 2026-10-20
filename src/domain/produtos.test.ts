@@ -1,6 +1,7 @@
 import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
 import type { Armazenamento } from './persistencia.ts'
-import { criarRepositorioProdutos, idsDeProdutoEm } from './produtos.ts'
+import { criarRepositorioProdutos, idsDeProdutoEm, produtoComoAlimento } from './produtos.ts'
+import { CHAVES_NUTRIENTES } from './totais.ts'
 
 class Memoria implements Armazenamento {
   readonly dados = new Map<string, string>()
@@ -56,5 +57,23 @@ describe('D-171: salvar um produto não mexe nos outros (spec dados-na-nuvem)', 
     repo.excluir(900001)
     expect(lerMudancas(arm.getItem(CHAVE_MUDANCAS))).toEqual({ alterados: { 'produtos/900002': '2026-10-15T12:00:00.000Z' }, excluidos: { 'produtos/900001': '2026-10-15T12:00:00.000Z' } })
     expect((JSON.parse(arm.getItem('metanutri:produtos') ?? '[]') as { id: number }[]).find((p) => p.id === 900000)).toEqual(iogurte)
+  })
+})
+describe('Produto como alimento (spec revisao-geral-trabalho, D-248)', () => {
+  it('CA-793: traz todos os nutrientes; o que o rótulo não traz é falta de dado (nulo), nunca indefinido', () => {
+    const alimento = produtoComoAlimento({
+      id: 900_001,
+      codigoBarras: '',
+      nome: 'Granola',
+      marca: '',
+      porcaoG: 40,
+      medidaCaseira: '',
+      porPorcao: { energia_kcal: 160, ferro_mg: null },
+      criadoEm: '2026-10-19T12:00:00.000Z',
+    })
+    expect(Object.keys(alimento.nutrientes).sort()).toEqual([...CHAVES_NUTRIENTES].sort())
+    expect(alimento.nutrientes.energia_kcal).toBe(400)
+    expect(alimento.nutrientes.ferro_mg).toBeNull()
+    expect(alimento.nutrientes.vitamina_a_rae_mcg).toBeNull()
   })
 })

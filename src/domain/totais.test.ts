@@ -49,8 +49,18 @@ describe('totaisDeItens', () => {
     expect(t.nutrientes.energia_kcal).toEqual({ total: 0, semDado: 0 })
   })
 
-  it('alimento inexistente é erro de programação', () => {
-    expect(() => totaisDeItens([item('a', 99999, 100)], buscarAlimento)).toThrow(/99999/)
+  it('CA-793 (spec revisao-geral-trabalho): alimento que não existe mais (produto apagado) conta como falta de dado em tudo', () => {
+    const t = totaisDeItens([item('a', 1, 100), item('b', 900_001, 40)], buscarAlimento)
+    expect(t.itens).toBe(2)
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 123.5349, semDado: 1 })
+    expect(t.nutrientes.ferro_mg).toEqual({ total: 0.262, semDado: 1 })
+  })
+
+  it('CA-793: nutriente que o alimento não traz (indefinido) é falta de dado, nunca NaN', () => {
+    const semVitaminaA = { ...buscarAlimento(1), nutrientes: { energia_kcal: 100 } } as unknown as ReturnType<typeof buscarAlimento>
+    const t = totaisDeItens([item('a', 1, 100)], () => semVitaminaA)
+    expect(t.nutrientes.vitamina_a_rae_mcg).toEqual({ total: 0, semDado: 1 })
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 100, semDado: 0 })
   })
 })
 

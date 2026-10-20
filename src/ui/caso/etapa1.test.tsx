@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
@@ -39,10 +39,11 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     const idade = screen.getByLabelText('Idade')
     await usuario.clear(idade)
     await usuario.type(idade, '8')
-    expect(screen.getByLabelText('Meses além dos anos')).toBeInTheDocument()
+    // D-244 (spec revisao-geral-trabalho): o campo segue a idade quando a pessoa termina de digitar.
+    expect(await screen.findByLabelText('Meses além dos anos')).toBeInTheDocument()
     await usuario.clear(idade)
     await usuario.type(idade, '72')
-    expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument())
     expect(screen.getByLabelText('Circunferência da panturrilha')).toBeInTheDocument()
   })
 
@@ -78,5 +79,93 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     montar(adulta)
     const imc = screen.getByText('22,8 kg/m²')
     expect(imc.parentElement?.textContent).toMatch(/22,8 kg\/m² · Eutrofia/)
+  })
+})
+
+describe('Meses além dos anos sem piscar (spec revisao-geral-trabalho, D-244)', () => {
+  const meses = () => screen.queryByLabelText('Meses além dos anos')
+  const idade = () => screen.getByLabelText('Idade')
+  const digitar = (valor: string) => fireEvent.change(idade(), { target: { value: valor } })
+
+  describe('com o relógio parado', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+    const esperar = (ms: number) =>
+      act(() => {
+        vi.advanceTimersByTime(ms)
+      })
+
+    it('CA-784: digitar "2" e "8" num adulto nunca mostra o campo de meses', () => {
+      render(<Anfitriao inicial={adulta} />)
+      digitar('')
+      digitar('2')
+      expect(meses()).not.toBeInTheDocument()
+      digitar('28')
+      expect(meses()).not.toBeInTheDocument()
+      esperar(1000)
+      expect(meses()).not.toBeInTheDocument()
+    })
+
+    it('CA-784: digitar "8" e parar mostra o campo meio segundo depois', () => {
+      render(<Anfitriao inicial={adulta} />)
+      digitar('8')
+      esperar(400)
+      expect(meses()).not.toBeInTheDocument()
+      esperar(100)
+      expect(meses()).toBeInTheDocument()
+    })
+
+    it('CA-784: digitar "8" e sair do campo mostra o campo na hora', () => {
+      render(<Anfitriao inicial={adulta} />)
+      digitar('8')
+      fireEvent.blur(idade())
+      expect(meses()).toBeInTheDocument()
+    })
+
+    it('CA-784 (revisão de 20/10/2026): abrir outro plano mostra os campos dele na hora, sem os do anterior', () => {
+      function Trocador() {
+        const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...adulta, idadeAnos: 8, modo: 'completo' })
+        return (
+          <>
+            <button type="button" onClick={() => setCaso({ ...criarCasoVazio('c2'), modo: 'completo' })}>
+              Outro plano
+            </button>
+            <button type="button" onClick={() => setCaso({ ...criarCasoVazio('c3'), ...adulta, idadeAnos: 65, modo: 'completo' })}>
+              Plano de 65 anos
+            </button>
+            <TelaCaso caso={caso} aoAlterar={(m) => setCaso((c) => ({ ...c, ...m }))} />
+          </>
+        )
+      }
+      render(<Trocador />)
+      expect(meses()).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Outro plano' }))
+      expect(meses()).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Plano de 65 anos' }))
+      expect(screen.getByLabelText('Circunferência da panturrilha')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Outro plano' }))
+      expect(screen.queryByLabelText('Circunferência da panturrilha')).not.toBeInTheDocument()
+    })
+
+    it('CB-243: idade apagada, sem meses guardados: o campo some quando a pessoa termina', () => {
+      render(<Anfitriao inicial={{ ...adulta, idadeAnos: 8 }} />)
+      expect(meses()).toBeInTheDocument()
+      digitar('')
+      expect(meses()).toBeInTheDocument()
+      esperar(500)
+      expect(meses()).not.toBeInTheDocument()
+    })
+  })
+
+  it('CB-248: digitar "8" e teclar Tab: o campo de meses aparece e recebe o foco', async () => {
+    const usuario = montar(adulta)
+    await usuario.clear(idade())
+    await usuario.type(idade(), '8')
+    await usuario.tab()
+    expect(meses()).toHaveFocus()
   })
 })

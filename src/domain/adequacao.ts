@@ -87,6 +87,14 @@ function limiteSuperior(chave: ChaveNutrienteAlimento, estagio: EstagioDri, ul: 
   return { limite: { tipo: 'ul' as const, valor: ul }, nota: null }
 }
 
+/**
+ * D-243 (spec revisao-geral-trabalho): o mínimo da meta é inteiro. Um mínimo com casa decimal guardado por uma versão
+ * anterior vale arredondado (nunca menos de 1%), para o subtítulo e as linhas dizerem o mesmo número.
+ */
+export function minimoInteiro(minimoPct: number): number {
+  return Math.max(1, Math.round(minimoPct))
+}
+
 export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Preset): ResultadoAdequacao {
   const fonte = `${DRI.fonte.publicacao} ${DRI.fonte.nome}.`
   if (preset.tipo === 'personalizado' && (!(preset.minimoPct > 0) || preset.minimoPct > 1000)) {
@@ -103,7 +111,7 @@ export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Pr
     }
   }
 
-  const config = preset.tipo === 'personalizado' ? preset : PRESETS[preset.tipo]
+  const config = preset.tipo === 'personalizado' ? { referencia: preset.referencia, minimoPct: minimoInteiro(preset.minimoPct) } : PRESETS[preset.tipo]
   const valores = DRI.valores[estagio.id] ?? {}
 
   const linhas = MICRONUTRIENTES_ADEQUACAO.map((chave): LinhaAdequacao => {

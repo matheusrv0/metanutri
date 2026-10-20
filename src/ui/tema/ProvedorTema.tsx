@@ -42,6 +42,26 @@ export function ProvedorTema({ children }: { readonly children: ReactNode }) {
     }
   }, [aplicado])
 
+  // D-240 (spec revisao-geral-trabalho): o papel é claro em qualquer tema. Ao imprimir pelo navegador, a página sai
+  // do escuro; quando a caixa de impressão fecha (impressa ou cancelada), o tema escolhido volta.
+  useEffect(() => {
+    const raiz = document.documentElement
+    const antes = () => {
+      raiz.classList.remove('dark')
+      raiz.style.colorScheme = 'light'
+    }
+    const depois = () => {
+      raiz.classList.toggle('dark', aplicado === 'escuro')
+      raiz.style.colorScheme = aplicado === 'escuro' ? 'dark' : 'light'
+    }
+    globalThis.addEventListener('beforeprint', antes)
+    globalThis.addEventListener('afterprint', depois)
+    return () => {
+      globalThis.removeEventListener('beforeprint', antes)
+      globalThis.removeEventListener('afterprint', depois)
+    }
+  }, [aplicado])
+
   const definir = useCallback((p: PreferenciaTema) => {
     setPreferencia(p)
     try {

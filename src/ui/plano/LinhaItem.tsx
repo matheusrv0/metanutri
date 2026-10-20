@@ -1,6 +1,7 @@
 import { ArrowLeftRight, X } from 'lucide-react'
-import { medidaEquivalente } from '@/domain/busca.ts'
+import { medidaParaMostrar } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
+import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
@@ -31,15 +32,16 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
   const deReceita = ehItemDeReceita(item)
   const receita = receitaDoItem(item)
   const alimento = deReceita ? undefined : buscarAlimento(item.alimentoId)
-  const descricao = deReceita ? nomeDaReceita(receita) : (alimento?.descricao ?? 'Alimento não encontrado')
+  // D-248 (spec revisao-geral-trabalho): produto apagado em "Meus produtos" fica como "Produto apagado", sem valores.
+  const descricao = deReceita ? nomeDaReceita(receita) : (alimento?.descricao ?? nomeSemAlimento(item.alimentoId))
   const medidaTexto = deReceita
     ? ['Receita', receita ? textoDaPorcao(receita, item.gramas) : null].filter(Boolean).join(' · ')
-    : (medidaEquivalente(item.alimentoId, item.gramas)?.texto ?? null)
+    : (medidaParaMostrar(item.alimentoId, item.gramas)?.texto ?? null)
   const incompleto = alimento ? explicarCompletude(alimento) : null
   const porCem = alimento?.nutrientes.energia_kcal ?? null
   // A tabela não traz energia deste alimento: mostra travessão, nunca zero (princípio do produto).
   const kcal = deReceita ? kcalDaReceita(item) : porCem === null ? null : (porCem * item.gramas) / 100
-  const substituir = deReceita ? undefined : aoSubstituir
+  const substituir = deReceita || !alimento ? undefined : aoSubstituir
 
   return (
     // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
@@ -49,6 +51,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
           {descricao}
         </p>
         {medidaTexto ? <p className="truncate text-xs text-muted-foreground">{medidaTexto}</p> : null}
+        {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item apagado de fora; a nutricionista fica sabendo aqui. */}
+        {deReceita || alimento ? null : <p className="text-xs text-warningtext">Não sai na folha nem no link do paciente.</p>}
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="w-24 shrink-0">
@@ -67,6 +71,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
         >
           {kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}
         </span>
+        {/* Sem o alimento, não há o que comparar para um substituto equivalente; a receita também não tem (CA-873). */}
         {substituir ? (
           <Button variant="ghost" size="iconsm" onClick={substituir} aria-label={`Substituir ${descricao}`}>
             <ArrowLeftRight aria-hidden="true" />

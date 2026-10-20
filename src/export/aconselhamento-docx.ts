@@ -2,7 +2,8 @@
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
-import { medidaEquivalente } from '../domain/busca.ts'
+import { medidaParaMostrar } from '../domain/busca.ts'
+import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
@@ -35,11 +36,11 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
 
 /** "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). */
 function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento): string {
+  // D-248 (spec revisao-geral-trabalho): o produto apagado sai com o nome do que aconteceu e os gramas, sem quebrar o Word.
   const alimento = buscar(alimentoId)
-  if (!alimento) throw new Error(`Alimento ${alimentoId} não existe na tabela.`)
-  const medida = medidaEquivalente(alimentoId, gramas)
+  const medida = alimento ? medidaParaMostrar(alimentoId, gramas) : null
   const quantidade = medida ? medida.texto : `${formatarNumeroDocx(gramas, 0)} g`
-  return `${alimento.descricao} (${quantidade})`
+  return `${alimento?.descricao ?? nomeSemAlimento(alimentoId)} (${quantidade})`
 }
 
 /**
@@ -57,10 +58,9 @@ export function descreverItem(item: ItemPlano, buscar: BuscarAlimento): string {
 /** CA-887: cada receita do plano com o rendimento, os ingredientes da receita inteira e o modo de preparo. */
 function blocoReceitasDoPlano(plano: Plano, buscar: BuscarAlimento): Paragraph[] {
   return receitasDoPlano(plano).flatMap((r) => {
-    // Ingrediente que sumiu da base não derruba o documento (CB-271).
-    const ingredientes = r.ingredientes
-      .filter((i) => i.gramas > 0)
-      .map((i) => (buscar(i.alimentoId) ? descreverAlimento(i.alimentoId, i.gramas, buscar) : `Alimento removido (${formatarNumeroDocx(i.gramas, 0)} g)`))
+    // Ingrediente que sumiu da base não derruba o documento (CB-271) e tem o mesmo nome da linha do plano: "Produto
+    // apagado" ou "Alimento removido" (D-248 da revisao-geral-trabalho).
+    const ingredientes = r.ingredientes.filter((i) => i.gramas > 0).map((i) => descreverAlimento(i.alimentoId, i.gramas, buscar))
     const preparo = r.preparo.trim()
     return [
       new Paragraph({ spacing: { before: 160, after: 40 }, children: [new TextRun({ text: nomeDaReceita(r), bold: true }), new TextRun({ text: ` · ${textoDoRendimento(r)}` })] }),

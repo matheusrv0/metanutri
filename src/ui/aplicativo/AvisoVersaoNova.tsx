@@ -18,7 +18,7 @@ export function AvisoVersaoNova({ recarregar = recarregarPagina }: AvisoVersaoNo
   const temVersaoNova = useVersaoNova()
   if (!temVersaoNova) return null
   return (
-    <Alert variant="info" className="mb-6 flex-wrap items-center">
+    <Alert variant="info" className="mb-6 flex-wrap items-center print:hidden">
       <RefreshCw aria-hidden="true" />
       <p className="min-w-0 flex-1">Há uma versão nova do MetaNutri.</p>
       <Button size="sm" variant="outline" onClick={recarregar}>

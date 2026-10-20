@@ -446,7 +446,8 @@ Anda a cada alimento adicionado.
 Recebe o `ResultadoMacro` do domínio e calcula o resto — no export as posições vinham
 soltas por prop. De relance, gramas e % saem sem casa decimal; o g/kg aparece com
 `comGPorKg` (a proteína) ou quando a meta é em g/kg. A `meta` é curta e fica ao lado da
-frase; sem medidor, sai "Meta: …" (spec painel-lateral-enxuto, D-201 e D-202).
+frase; sem medidor, sai "Meta: …" (spec painel-lateral-enxuto, D-201 e D-202). A `marca`, opcional, vai logo
+depois dos valores: a † de total possivelmente subestimado (spec revisao-geral-trabalho, D-248).
 
 ```tsx
 <MedidorMacro nome="Proteína" macro={macros.proteina} meta="10 a 35%" comGPorKg />

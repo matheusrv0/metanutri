@@ -4,7 +4,7 @@
 
 Fatos confirmados no plano de negócio aprovado (`docs/plano-negocio.md`, 26/09/2026), na SPEC aprovada (`specs/planejador-metanutri/SPEC.md`), nas entrevistas em `docs/entrevista-estudante-2026-09-15.md` e `docs/feedback-nutricionista.md` e nas decisões em `docs/decisoes.md`. Nada aqui foi inventado.
 
-> **Onde o produto está.** O plano de 26/09/2026 organiza a execução em quatro fases. O planejador, o painel de micros e a prescrição rápida (**Fase 2**) estão construídos. As missões diárias e a tela de adesão (**Fase 1**) foram construídas em 26/09, com uma ressalva que vale em tela: o link do paciente só abre no navegador onde o plano foi montado até o Supabase entrar no ar. A **Fase 0** — as 10 conversas de validação — não foi feita. Este documento marca o que já existe e o que está decidido mas não construído.
+> **Onde o produto está.** O plano de 26/09/2026 organiza a execução em quatro fases. O planejador, o painel de micros e a prescrição rápida (**Fase 2**) estão construídos. As missões diárias e a tela de adesão (**Fase 1**) foram construídas em 26/09; desde 08/10/2026 os dados ficam na nuvem, presos à conta (spec `dados-na-nuvem`), e o link do paciente abre no celular dele. A cobrança do Solo e do Pro está construída, com o Mercado Pago ainda em credenciais de teste. A **Fase 0** — as 10 conversas de validação — não foi feita. Este documento marca o que já existe e o que está decidido mas não construído.
 
 ## Platform
 
@@ -33,7 +33,7 @@ Em volta disso, fazer o plano ser seguido: ele vira missões diárias que o paci
 1. **Painel de micronutrientes com o botão cobrir** (construído): o concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora?" — o botão **cobrir** sugere até cinco alimentos de grupos diferentes que fecham a falta, com a porção em gramas e em medida caseira, quanto da falta cobrem e quantas kcal somam.
 2. **Missões diárias** (construído): o plano alimentar vira tarefas que o paciente marca como feitas num link próprio, sem conta e sem baixar app, e o nutricionista enxerga em *Adesão* quem está sumindo antes de sumir de vez. Quem passa 4 dias sem marcar sobe para o topo da lista.
 
-Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados para servidor.
+Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro.
 
 ## Operating Context
 
@@ -44,8 +44,9 @@ Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados p
 - Documento final no modelo do estágio: cabeçalho do caso, antropometria, refeições por horário com principal e dois substitutos, orientações, receitas e assinaturas.
 - Clínica pede gramas; unidade básica de saúde e atendimento social pedem medida caseira.
 - Preceptora usa preset individual (RDA, 90%) e coletivo (EAR, 50%).
-- Uso frequente sem internet estável; o app precisa abrir e calcular offline.
-- Os dados de cada caso, e também as missões marcadas, ficam no aparelho, sem conta e sem nuvem. Consequência que a tela admite em texto: o link do paciente só abre no navegador onde o plano foi montado. **Decidido em 26/09/2026 e ainda não construído:** levar esse dado para o Supabase, o que faz o link funcionar no celular do paciente e traz junto as obrigações de LGPD — consentimento do paciente, política de privacidade, exclusão de conta e o contrato que põe o nutricionista como controlador e o MetaNutri como operador.
+- Uso frequente com internet instável. Decisão de 08/10/2026 (spec `dados-na-nuvem`, D-130): sem internet, a área de trabalho trava até a conexão voltar, em vez de deixar editar o que não chegaria à nuvem; quando ela volta, o que faltava sobe sozinho e a área destrava.
+- Os dados da conta (planos, pacientes, produtos, modelos, perfil e acompanhamentos) ficam na nuvem, presos à conta: entrar em qualquer aparelho mostra os mesmos dados. O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e toda mudança sobe sozinha em poucos segundos ("Salvo"). Só existe "Sair", e sair apaga a cópia do navegador. Dois aparelhos ao mesmo tempo não se apagam: a mudança mais nova de cada item vence. O link do paciente lê as missões da nuvem e abre no celular dele. O backup em arquivo, em Configurações, continua.
+- LGPD: o pedido de autorização antes de gerar o link, a Política de privacidade e os Termos estão no ar, e a conta se exclui pelo próprio site, em Conta e plano, com a senha (spec `exclusao-de-conta`).
 
 ## Capabilities and Constraints
 
@@ -55,19 +56,19 @@ Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados p
 - Energia: Mifflin-St Jeor (padrão) e Harris-Benedict para adultos; equações próprias do NASEM para crianças, adolescentes, gestantes e lactantes.
 - Substitutos não entram na soma do dia nem na adequação.
 - Falta de dado nunca vira zero silencioso: o nutriente é marcado como possivelmente subestimado.
-- React 18, TypeScript estrito, Tailwind, Vite, shadcn/ui, tudo no navegador. Sem back-end **no que está construído**; a Fase 1 traz Supabase (Postgres com RLS e autenticação), decidido em 15/09 e confirmado em 26/09.
+- React 18, TypeScript estrito, Tailwind, Vite, shadcn/ui no navegador. O back-end é o Supabase (Postgres com RLS, autenticação e funções), e a cobrança passa pelo Mercado Pago. Sem as chaves do Supabase (desenvolvimento e testes), o app abre no modo local, com os dados só no navegador.
 - A interface sai de uma biblioteca só, em `design-system/`; o contrato visual e os tokens estão em `DESIGN.md`.
 - Composição corporal opcional por dobras (Jackson e Pollock, Faulkner) ou bioimpedância.
 - Pendente: revisão clínica das oito referências pela nutricionista antes do lançamento.
-- Ainda não construído, em ordem: sincronização na nuvem (sem ela o link do paciente não sai deste navegador), cobrança de verdade e os documentos de LGPD. As três dependem do projeto no Supabase existir. Ver `docs/pendencias.md`.
+- Construídos depois do plano: a nuvem presa à conta, a cobrança (ainda com credenciais de teste do Mercado Pago, até a troca para produção), os documentos de LGPD e a exclusão da conta pelo site (spec `exclusao-de-conta`). Ver `docs/pendencias.md`.
 - Pendente antes da Fase 1: as 10 conversas de validação com recém-formados (Fase 0). O roteiro está em `docs/plano-negocio.md`.
 - **Decidido em 27/09: funcionalidade nova está congelada até essas conversas.** A única exceção é a base de alimentos com micronutrientes completos, que é o bloqueador declarado do diferencial. Modo treino e trava de CRN ainda não foram construídos.
 
 ## Brand Commitments
 
 - Nome: MetaNutri. Interface toda em português do Brasil.
-- Ícones Lucide, embutidos no pacote, porque o app roda offline.
-- Preços aprovados em 26/09/2026: Free R$ 0 (2 pacientes ativos, com marca MetaNutri no PDF), Estudante R$ 0 com comprovante (10 pacientes), Solo R$ 34,90/mês ou R$ 299/ano (25 pacientes), Pro R$ 64,90/mês ou R$ 599/ano (ilimitado) e Clínica R$ 149/mês até 4 nutris. A cobrança é por **paciente ativo** — quem teve plano ou missão nos últimos 30 dias. O teto de R$ 20 tirado da entrevista com a estudante não vale mais: ela não é a cliente. Ainda não implementado — ver `docs/pendencias.md`.
+- Ícones Lucide, embutidos no pacote: o site não busca ícone fora dele.
+- Preços aprovados em 26/09/2026: Free R$ 0 (2 pacientes ativos, com marca MetaNutri no PDF), Estudante R$ 0 com comprovante (10 pacientes), Solo R$ 34,90/mês ou R$ 299/ano (25 pacientes), Pro R$ 64,90/mês ou R$ 599/ano (ilimitado) e Clínica R$ 149/mês até 4 nutris. A cobrança é por **paciente ativo** — quem teve plano ou missão nos últimos 30 dias. O teto de R$ 20 tirado da entrevista com a estudante não vale mais: ela não é a cliente. A cobrança do Solo e do Pro está construída, com o Mercado Pago ainda em credenciais de teste — ver `docs/pendencias.md`.
 
 ## Evidence on Hand
 
@@ -82,8 +83,8 @@ Hoje o que está no ar roda inteiro no navegador, sem login e sem enviar dados p
 1. Toda conta mostra de onde veio: nome e ano da referência ao lado do número.
 2. Falta de dado aparece como falta de dado, nunca como zero.
 3. A estudante decide; o app sugere e explica o critério.
-4. O trabalho nunca se perde: salva a cada tecla, funciona offline e exporta para Word.
-   Como tudo fica no navegador, o backup em Configurações é parte do produto, não um extra.
+4. O trabalho nunca se perde: salva a cada tecla na nuvem da conta, trava sem internet em vez de deixar
+   editar o que não chegaria à nuvem, e exporta para Word. O backup em arquivo, em Configurações, continua.
 5. O plano é o produto: a interface existe para chegar ao documento entregue.
 
 ## Accessibility & Inclusion

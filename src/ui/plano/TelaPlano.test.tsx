@@ -25,6 +25,18 @@ const painel = (nome: string) => within(screen.getByRole('tabpanel', { name: `Pr
 
 beforeEach(() => localStorage.clear())
 
+describe('Produto apagado no cabeçalho da refeição (spec revisao-geral-trabalho, CA-789)', () => {
+  it('as kcal da opção levam a †', () => {
+    const plano = criarPlanoPadrao(ids)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    montar({ ...plano, refeicoes: [{ ...desjejum, opcoes: { ...desjejum.opcoes, principal: [{ id: 'x', alimentoId: 900_001, gramas: 40 }] } }, ...plano.refeicoes.slice(1)] })
+    const cartao = (nome: string) => within(screen.getByRole('textbox', { name: `Nome da refeição ${nome}` }).closest('[data-slot="card"]') as HTMLElement)
+    expect(cartao('Desjejum').getByText('0 kcal').parentElement).toHaveTextContent('†')
+    expect(cartao('Almoço').getByText('0 kcal').parentElement).not.toHaveTextContent('†')
+  })
+})
+
 describe('Etapa 2: plano alimentar', () => {
   it('CA-12: começa com as seis refeições padrão, com horário', () => {
     montar()

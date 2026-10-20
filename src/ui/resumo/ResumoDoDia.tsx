@@ -19,6 +19,7 @@ import { AjusteEnergia } from './AjusteEnergia.tsx'
 import { MedidorMacro } from '@ds/componentes/nutricao/MedidorMacro.tsx'
 import { DialogoMetas } from './DialogoMetas.tsx'
 import { LinhaCalculo } from './LinhaCalculo.tsx'
+import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
 
 interface ResumoDoDiaProps {
   readonly caso: Caso
@@ -84,6 +85,14 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
 
   const rapido = caso.modo === 'rapido'
   const kcalPlano = totais.nutrientes.energia_kcal.total
+  // D-248: alimento sem o dado (produto apagado, alimento sem energia na tabela) deixa o total possivelmente subestimado.
+  const semDado = {
+    energia: totais.nutrientes.energia_kcal.semDado,
+    proteina: totais.nutrientes.proteina_g.semDado,
+    carboidrato: totais.nutrientes.carboidrato_g.semDado,
+    gordura: totais.nutrientes.lipideos_g.semDado,
+  }
+  const temMarca = Object.values(semDado).some((n) => n > 0)
   const doGet = percentualDoGasto(kcalPlano, energia.get)
   const ehAdulto = (caso.idadeAnos ?? 0) >= 19 && caso.condicao.tipo === 'nenhuma'
   const rotuloEnergia = rapido
@@ -151,7 +160,10 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-sm text-muted-foreground">Energia do plano</span>
-            <span className="numeros text-2xl font-bold text-heading">{`${formatarNumero(kcalPlano, 0)} kcal`}</span>
+            <span className="flex items-baseline">
+              <span className="numeros text-2xl font-bold text-heading">{`${formatarNumero(kcalPlano, 0)} kcal`}</span>
+              <MarcaSemDado semDado={semDado.energia} />
+            </span>
           </div>
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-sm text-muted-foreground">{rotuloEnergia}</span>
@@ -168,9 +180,16 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
         </div>
 
         <div className="flex flex-col gap-3.5 border-t border-border pt-4">
-          <MedidorMacro nome="Proteína" macro={macros.proteina} meta={descreverMeta(macros.proteina)} comGPorKg />
-          <MedidorMacro nome="Carboidrato" macro={macros.carboidrato} meta={descreverMeta(macros.carboidrato)} />
-          <MedidorMacro nome="Gordura" macro={macros.gordura} meta={descreverMeta(macros.gordura)} />
+          <MedidorMacro nome="Proteína" macro={macros.proteina} meta={descreverMeta(macros.proteina)} comGPorKg marca={<MarcaSemDado semDado={semDado.proteina} />} />
+          <MedidorMacro nome="Carboidrato" macro={macros.carboidrato} meta={descreverMeta(macros.carboidrato)} marca={<MarcaSemDado semDado={semDado.carboidrato} />} />
+          <MedidorMacro nome="Gordura" macro={macros.gordura} meta={descreverMeta(macros.gordura)} marca={<MarcaSemDado semDado={semDado.gordura} />} />
+          {/* O † precisa de explicação à vista: o title não abre por toque nem por teclado (CA-699). */}
+          {temMarca ? (
+            <p className="text-xs text-muted-foreground">
+              <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
+              <span>Total possivelmente subestimado: falta o dado em algum alimento.</span>
+            </p>
+          ) : null}
         </div>
 
         {temCalculo ? (

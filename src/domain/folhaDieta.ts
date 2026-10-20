@@ -5,6 +5,7 @@ import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
+import { buscarAlimento } from './tabelas.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
@@ -25,10 +26,15 @@ export function assinaturaDaFolha(assinatura: AssinaturaDoPlano | null, caso: Ca
 
 /**
  * As opções de uma refeição que têm alimento, na ordem principal, substituto 1, substituto 2 (spec
- * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou".
+ * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou". O item cujo
+ * alimento não existe mais (produto apagado em "Meus produtos") fica de fora, inteiro: o paciente não recebe uma
+ * linha que não diz o que comer (spec revisao-geral-trabalho, D-248). A receita fica: ela não está na base, e o nome
+ * dela vem da cópia guardada no item (spec receitas-com-calculo, CA-879).
  */
-export function opcoesDaRefeicao(refeicao: Refeicao): readonly (readonly ItemPlano[])[] {
-  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0)).filter((itens) => itens.length > 0)
+export function opcoesDaRefeicao(refeicao: Refeicao, buscar: BuscarAlimento = buscarAlimento): readonly (readonly ItemPlano[])[] {
+  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0 && (ehItemDeReceita(i) || buscar(i.alimentoId) !== undefined))).filter(
+    (itens) => itens.length > 0,
+  )
 }
 
 export interface CompraDaFolha {
@@ -60,7 +66,8 @@ export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly C
         for (const i of receita ? ingredientesNaQuantidade(receita, item.gramas) : []) if (buscar(i.alimentoId)) somar(i.alimentoId, i.gramas)
         continue
       }
-      somar(item.alimentoId, item.gramas)
+      // D-248 (spec revisao-geral-trabalho): o produto apagado não entra na lista de compras do paciente.
+      if (buscar(item.alimentoId)) somar(item.alimentoId, item.gramas)
     }
   }
   return [...porNome.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))

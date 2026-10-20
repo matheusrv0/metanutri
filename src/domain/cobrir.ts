@@ -128,7 +128,10 @@ export function sugerirParaCobrir(
   opcoes: OpcoesCobrir,
 ): ResultadoCobrir {
   const kcalPlano = totais.nutrientes.energia_kcal.total
-  const kcalDisponiveis = opcoes.gastoEnergetico === null ? null : opcoes.gastoEnergetico - kcalPlano
+  // Spec revisao-geral-trabalho, D-248: sem o dado de energia de algum alimento (produto apagado, alimento sem energia
+  // na tabela), a energia do plano é só uma parte; a folga até o gasto não é conhecida, e o Cobrir não a usa.
+  const energiaIncompleta = totais.nutrientes.energia_kcal.semDado > 0
+  const kcalDisponiveis = opcoes.gastoEnergetico === null || energiaIncompleta ? null : opcoes.gastoEnergetico - kcalPlano
   const linha = adequacao.linhas.find((l) => l.chave === chave)
   const vazio = (unidade: string, falta: number, motivo: string): ResultadoCobrir => ({
     chave,

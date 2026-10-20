@@ -159,13 +159,14 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
 
 ## 4. Casos de borda
 
-- **CB-180** · Alimento que saiu da base: a linha diz "Alimento removido", como hoje.
+- **CB-180** · Alimento que saiu da base: a linha diz "Alimento removido", como hoje. *(Mudado em 20/10/2026 pelo D-248 da `revisao-geral-trabalho`: a folha e a lista de compras deixam esse item de fora; o planejador avisa a nutricionista.)*
 - **CB-181** · Dois alimentos diferentes com o mesmo nome para o paciente na lista de compras (por exemplo, arroz tipo 1 e tipo 2, os dois "Arroz branco cozido"): uma linha só, com os gramas somados.
 - **CB-182** · Produto cadastrado com nome vazio: sai "Alimento sem nome", nunca uma linha em branco.
 - **CB-183** · Quem imprime escolhe "Margens: mínimo" ou "Personalizado", ou liga "Cabeçalhos e rodapés" num navegador que ainda ofereça: o navegador pode pôr de volta a data e o endereço. O resto da folha sai igual. Não dá para impedir por código.
 - **CB-184** · Safari e navegadores sem `box-decoration-break: clone`: as margens de página continuam as de hoje (14 mm em volta) e o cabeçalho do navegador segue a opção dele; nada encosta na borda.
 - **CB-185** · Plano sem nenhum alimento: cada refeição diz "Sem alimentos nesta refeição.", como hoje (CB-71).
-- **CB-186** · Ctrl+P fora da janela "Dieta para imprimir": sai página em branco, como hoje.
+- **CB-186** · Ctrl+P fora da janela "Dieta para imprimir": sai página em branco, como hoje. *(Substituído em
+  19/10/2026 pelo D-240 da `revisao-geral-trabalho`: o Ctrl+P fora da janela imprime a tela aberta, sem o menu.)*
 - **CB-187** · Nome de produto com código (script, imagem com onerror): sai como texto, nada executa.
 - **CB-188** · Troca que, com o nome para o paciente, fica igual ao alimento do plano (arroz tipo 1 e tipo 2 viram os
   dois "Arroz branco cozido"; as margarinas de óleos diferentes viram "Margarina com sal"): não aparece, para a folha
@@ -185,12 +186,13 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
   ali faria todo link já enviado aparecer como "o plano mudou" (CA-545) — ver R-182. Só os rótulos das opções
   (CA-645) vão para o link, porque são desenho de tela e não mudam a cópia.
 - A medida que o planejador mostra (`busca.ts`): a "ponta de faca" (CA-642) e a troca de medida de pedaço pelo peso
-  (CA-644) valem só nas folhas do paciente.
+  (CA-644) valem só nas folhas do paciente. *(Mudado em 19/10/2026 pelo D-242 da `revisao-geral-trabalho`: o
+  planejador, o Cobrir, o substituto e o Word mostram a mesma medida da folha.)*
 - O Word de aconselhamento e o memorial de cálculo.
 - Renomear um item do plano (D-182).
 - A escolha das trocas e da medida caseira (`trocas.ts`, `busca.ts`): a folha só troca o nome que mostra.
 - O conteúdo das folhas de suplementação e de pedido de exames.
-- Imprimir pelo Ctrl+P sem a janela aberta (CB-186).
+- Imprimir pelo Ctrl+P sem a janela aberta (CB-186; resolvido depois pelo D-240 da `revisao-geral-trabalho`).
 
 ## 6. O que fica com você
 

@@ -2,7 +2,8 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
-import { medidaEquivalente } from '@/domain/busca.ts'
+import { medidaParaMostrar } from '@/domain/busca.ts'
+import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
@@ -114,7 +115,8 @@ export function GavetaCobrir({
       >
         <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
-          {resultado ? `Faltam ${formatarNumero(resultado.falta, 2)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
+          {/* CA-791: a falta com a mesma precisão da tabela da etapa 3 ("244 mg", não "243,60 mg"). */}
+          {resultado ? `Faltam ${quantidadeNoPlano(resultado.falta)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
         </SheetDescription>
 
         <div className="flex flex-col gap-3 border border-border bg-muted p-4">
@@ -124,7 +126,7 @@ export function GavetaCobrir({
             aoMudar={(v) => v !== null && v > 0 && aoAlterarCaso({ adequacao: { ...prefs, porcaoMaximaG: v } })}
             sufixo="g"
           />
-          <label className="flex items-center justify-between gap-3 text-sm">
+          <label className="flex items-center justify-between gap-3 text-sm max-sm:min-h-11">
             <span>Incluir ingredientes e alimentos crus</span>
             <Switch
               checked={prefs.incluirIngredientes}
@@ -161,7 +163,7 @@ export function GavetaCobrir({
 
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
           {(resultado?.sugestoes ?? []).map((s) => {
-            const medida = medidaEquivalente(s.alimentoId, s.gramas)
+            const medida = medidaParaMostrar(s.alimentoId, s.gramas)
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
                 <p className="text-sm font-semibold text-heading">{s.descricao}</p>

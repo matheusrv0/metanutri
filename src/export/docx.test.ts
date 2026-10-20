@@ -92,6 +92,16 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(descreverItem({ id: 'x', alimentoId: 40, gramas: 80 }, buscarAlimento)).toBe('Macarrão, trigo, cru (80 g)')
   })
 
+  it('CA-789 (spec revisao-geral-trabalho): produto apagado sai como "Produto apagado", com os gramas, sem quebrar o Word', () => {
+    expect(descreverItem({ id: 'x', alimentoId: 900_001, gramas: 40 }, buscarAlimento)).toBe('Produto apagado (40 g)')
+    expect(descreverItem({ id: 'y', alimentoId: 99_999, gramas: 80 }, buscarAlimento)).toBe('Alimento removido (80 g)')
+  })
+
+  it('CA-781 (spec revisao-geral-trabalho): a medida do Word é a da folha, com a ponta de faca e sem fatia de manteiga', () => {
+    expect(descreverItem({ id: 'x', alimentoId: 263, gramas: 5 }, buscarAlimento)).toBe('Margarina, com óleo hidrogenado, com sal (65% de lipídeos) (1 ponta de faca)')
+    expect(descreverItem({ id: 'y', alimentoId: 261, gramas: 30 }, buscarAlimento)).toBe('Manteiga, com sal (1 colher de sopa)')
+  })
+
   it('CA-47: campos vazios ficam em branco, sem "undefined" nem "null"', async () => {
     const gerar = ids()
     const caso = criarCasoVazio('vazio')
@@ -222,6 +232,22 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     expect(texto).toContain('Referências:')
     expect(tabelas).toBe(3)
     expect(texto).not.toMatch(/undefined|null|NaN/)
+  })
+
+  it('CA-789 (spec revisao-geral-trabalho): sem o dado de energia de algum alimento, "kcal do plano" leva "*" e a nota', async () => {
+    const { caso, plano } = montarCaso()
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const doc = criarMemorial({
+      caso,
+      energia: calcularEnergia(caso, { fator: 1.37 }),
+      macros: calcularMacros(totais, caso),
+      adequacao: calcularAdequacao(totais, caso, { tipo: 'individual' }),
+      kcalPlano: totais.nutrientes.energia_kcal.total,
+      kcalPlanoSemDado: 1,
+    })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toMatch(/kcal do plano.*\d kcal \*/s)
+    expect(texto).toContain('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')
   })
 
   it('CA-47: sem dados do caso, gera o documento sem "undefined" e explica a falta das referências', async () => {

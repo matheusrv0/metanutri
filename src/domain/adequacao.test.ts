@@ -79,6 +79,18 @@ describe('calcularAdequacao', () => {
     expect(linha(r, 'ferro_mg')).toMatchObject({ referencia: { tipo: 'rda', valor: 18 }, metaPct: 50, estado: 'adequado' })
   })
 
+  it('CA-783 (spec revisao-geral-trabalho): mínimo com casa decimal guardado vale arredondado, no cálculo e no texto', () => {
+    // 16,236 mg de ferro = 90,2% da RDA de 18 mg: com o mínimo de 90,4% guardado, vale 90% e está na meta.
+    const ferro = linha(calcularAdequacao(totais({ ferro_mg: 16.236 }), MULHER_28, { tipo: 'personalizado', referencia: 'rda', minimoPct: 90.4 }), 'ferro_mg')
+    expect(ferro).toMatchObject({ metaPct: 90, estado: 'adequado' })
+  })
+
+  it('CB-247: mínimo 0,4% guardado vale 1%, nunca 0%', () => {
+    const ferro = linha(calcularAdequacao(totais({ ferro_mg: 0.1 }), MULHER_28, { tipo: 'personalizado', referencia: 'rda', minimoPct: 0.4 }), 'ferro_mg')
+    expect(ferro.metaPct).toBe(1)
+    expect(ferro.estado).toBe('abaixo')
+  })
+
   it('CA-29 (D-4): sem RDA ou EAR usa AI e sinaliza', () => {
     const individual = linha(calcularAdequacao(totais({ potassio_mg: 1300 }), MULHER_28, { tipo: 'individual' }), 'potassio_mg')
     expect(individual.referencia).toEqual({ tipo: 'ai', valor: 2600 })

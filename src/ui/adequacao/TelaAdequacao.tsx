@@ -1,6 +1,6 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, minimoInteiro, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
@@ -129,6 +129,8 @@ export function TelaAdequacao({
   const focoAoFechar = () =>
     abertura.current ? destinoDoFoco(tela.current, abertura.current.ordem, abertura.current.chave, document.getElementById(idTitulo)) : null
   const [mostrarNaMeta, setMostrarNaMeta] = useState(false)
+  // D-243: com vírgula, o mínimo da meta avisa e não muda.
+  const [minimoNaoInteiro, setMinimoNaoInteiro] = useState(false)
   const idNaMeta = useId()
   const celular = useMediaQuery(CELULAR)
   const prefs = caso.adequacao
@@ -137,6 +139,8 @@ export function TelaAdequacao({
   const resultado = useMemo(() => calcularAdequacao(totais, caso, prefs.preset), [totais, caso, prefs.preset])
 
   const trocarPreset = (tipo: PresetAdequacao['tipo']) => {
+    // O campo do mínimo some com o tipo; o aviso dele não pode voltar velho (CA-782, revisão de 20/10/2026).
+    setMinimoNaoInteiro(false)
     const preset: PresetAdequacao =
       tipo === 'personalizado' ? { tipo: 'personalizado', referencia: 'rda', minimoPct: 90 } : { tipo }
     aoAlterarCaso({ adequacao: { ...prefs, preset } })
@@ -174,7 +178,14 @@ export function TelaAdequacao({
           {subtitulo ? <CardDescription>{subtitulo}</CardDescription> : null}
         </CardHeader>
 
-        <SeletorSegmentado rotulo="Tipo de referência" opcoes={TIPO_PRESET} valor={prefs.preset.tipo} aoEscolher={trocarPreset} className="max-w-full overflow-x-auto" />
+        {/* CA-795: cada opção numa linha; abaixo de 640 px elas empilham, todas inteiras à vista (revisão de 20/10/2026). */}
+        <SeletorSegmentado
+          rotulo="Tipo de referência"
+          opcoes={TIPO_PRESET.map((o) => ({ valor: o.valor, rotulo: <span className="whitespace-nowrap">{o.rotulo}</span> }))}
+          valor={prefs.preset.tipo}
+          aoEscolher={trocarPreset}
+          className="max-w-full overflow-x-auto max-sm:w-full max-sm:flex-col max-sm:rounded-2xl"
+        />
 
         {prefs.preset.tipo === 'personalizado' ? (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -189,14 +200,16 @@ export function TelaAdequacao({
             />
             <CampoNumero
               rotulo="Mínimo da meta"
-              valor={prefs.preset.tipo === 'personalizado' ? prefs.preset.minimoPct : 90}
-              aoMudar={(v) =>
+              valor={prefs.preset.tipo === 'personalizado' ? minimoInteiro(prefs.preset.minimoPct) : 90}
+              aoMudar={(v) => {
+                const inteiro = v === null || Number.isInteger(v)
+                setMinimoNaoInteiro(!inteiro)
                 // Acima de 1000% o cálculo da adequação recusa o número: ele não vale, e a tela não cai (CA-698).
-                v !== null &&
-                v > 0 &&
-                v <= MINIMO_MAXIMO_PCT &&
-                aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
-              }
+                if (v !== null && inteiro && v > 0 && v <= MINIMO_MAXIMO_PCT) {
+                  aoAlterarCaso({ adequacao: { ...prefs, preset: { ...prefs.preset, minimoPct: v } as PresetAdequacao } })
+                }
+              }}
+              erro={minimoNaoInteiro ? 'Use um número inteiro, como 90.' : undefined}
               sufixo="%"
             />
           </div>

@@ -11,6 +11,7 @@ export const DialogOverlay = React.forwardRef<React.ElementRef<typeof DialogPrim
   ({ className, ...props }, ref) => (
     <DialogPrimitive.Overlay
       ref={ref}
+      data-slot="dialog-overlay"
       className={cn('fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0', className)}
       {...props}
     />
@@ -41,7 +42,7 @@ export const DialogContent = React.forwardRef<
     >
       {children}
       {semFechar ? null : (
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex items-center justify-center rounded-xs print:hidden p-1 text-muted-foreground hover:bg-lightprimary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:right-2 max-sm:top-2 max-sm:size-11">
           {iconeFechar ?? <X className="size-5" aria-hidden="true" />}
           <span className="sr-only">Fechar</span>
         </DialogPrimitive.Close>
