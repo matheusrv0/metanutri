@@ -153,11 +153,14 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                 >
                   <Plus className="size-4 shrink-0" aria-hidden="true" />
                   {o.tipo === 'receita' ? (
-                    <>
-                      <span className="min-w-0 flex-1 truncate">{o.r.receita.nome}</span>
-                      <span className="rotulo shrink-0 text-muted-foreground">Receita</span>
-                      <span className="numeros shrink-0 text-xs text-muted-foreground">{quantidadeDaReceita(o.r)}</span>
-                    </>
+                    // No celular, o nome numa linha e "Receita" com a quantidade embaixo: o nome não some.
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                      <span className="min-w-0 truncate sm:flex-1">{o.r.receita.nome}</span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="rotulo shrink-0 text-muted-foreground">Receita</span>
+                        <span className="numeros min-w-0 truncate text-xs text-muted-foreground">{quantidadeDaReceita(o.r)}</span>
+                      </span>
+                    </span>
                   ) : (
                     <>
                       <span className="min-w-0 flex-1 truncate">{o.r.alimento.descricao}</span>

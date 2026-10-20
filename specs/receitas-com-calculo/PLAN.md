@@ -1,7 +1,9 @@
 # PLAN — Receitas com cálculo
 
 **Spec de origem:** `./SPEC.md` (D-270 a D-279, CA-860 a CA-889, CB-270 a CB-279)
-**Status:** pedido pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação pelas telas antes de publicar
+**Status:** pedido pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação pelas telas antes de publicar; T1 a
+T12 feitas em 19/10/2026. Os testes de tela novos ficaram em arquivos próprios (não nos de sempre), para não brigar com
+a frente que revisa as telas da área de trabalho ao mesmo tempo.
 
 ## Abordagem
 
@@ -61,48 +63,48 @@
 | `src/export/docxComReceita.test.ts` | criar (teste novo em arquivo próprio) | T10 |
 | `src/seguranca/xssReceitas.test.tsx`, `src/domain/receitaDadosAntigos.test.ts` | criar: nome e preparo com código; dados de antes | T11 |
 | `e2e/receitas.spec.ts` | criar | T12 |
-| `docs/backlog.md`, `docs/decisoes.md` | alterar: B-32 feito, D-270 a D-279 | T12 |
+| `docs/backlog.md` | alterar: B-32 pronto, à espera da aprovação (as decisões só entram em `docs/decisoes.md` quando o dono aprovar) | T12 |
 
 ## Tarefas
 
 Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o código.
 
-- [ ] **T1** — SPEC e PLAN. *Verifica:* revisão.
-- [ ] **T2** — A cópia da receita no plano. `ReceitaDoPlano` e `ItemPlano.receita?` em `tipos.ts`;
+- [x] **T1** — SPEC e PLAN. *Verifica:* revisão.
+- [x] **T2** — A cópia da receita no plano. `ReceitaDoPlano` e `ItemPlano.receita?` em `tipos.ts`;
   `receitaNoPlano.ts` com `ID_DE_RECEITA`, `receitaDoItem` (cópia válida ou `null`, CB-273), `itemDeReceita` (item
   com cópia, válida ou não), `pesoProntoDe`, `pesoDaPorcao`, `porcoesDe`, `textoDaPorcao` (meias medidas a 15%,
   CB-279), `ingredientesNaQuantidade`, `receitasDoPlano` (cópias distintas, CB-278); `totaisDeItens` abre a receita
   (CA-874, CA-875, CB-271, CB-272, CB-273); `adicionarReceita` em `plano.ts`. *Testes:* `receitaNoPlano.test.ts`,
   `totais.test.ts`, `plano.test.ts`. *Depende de:* T1.
-- [ ] **T3** — A biblioteca. `receitas.ts`: `Receita`, `validarReceita` (CB-270), `criarRepositorioReceitas`
+- [x] **T3** — A biblioteca. `receitas.ts`: `Receita`, `validarReceita` (CB-270), `criarRepositorioReceitas`
   (listar por nome, obter, salvar com `atualizadoEm`, duplicar com `nomeDaCopia`, excluir; sem armazenamento, em
   memória), `copiaParaOPlano`, `totaisDaPorcao`, `filtrarReceitas` (CA-866) e `buscarReceitas` (CA-871, CA-872).
   *Testes:* `receitas.test.ts`. *Depende de:* T2.
-- [ ] **T4** — As receitas na nuvem. `metanutri:receitas` em `CHAVES_DE_DADOS`, em `LISTAS` (`receitas/<id>`, tempo
+- [x] **T4** — As receitas na nuvem. `metanutri:receitas` em `CHAVES_DE_DADOS`, em `LISTAS` (`receitas/<id>`, tempo
   `atualizadoEm`) e em `juntar` da migração (como os modelos). *Testes:* `copiaDaConta.test.ts` (CA-867, CA-868),
   `donoDosDados.test.ts` (CA-867), `sincronia.test.ts` (CA-868, CA-869, CB-275). *Depende de:* T3.
-- [ ] **T5** — A tela Receitas. `usarReceitas` (lê ao montar, relê quando outra aba grava), `TelaReceitas` (lista,
+- [x] **T5** — A tela Receitas. `usarReceitas` (lê ao montar, relê quando outra aba grava), `TelaReceitas` (lista,
   busca, vazia, aviso sem armazenamento, excluir com `DialogoExcluir`), `EditorReceita` (nome, ingredientes com
   `EntradaRapida` e `LinhaItem`, rendimento, nome da porção, peso pronto, preparo, erros do CB-270) e `ResumoDaPorcao`
   (CA-862, †). Rota `#/receitas`, item "Receitas" no grupo Alimentos. *Testes:* `TelaReceitas.test.tsx` (CA-860 a
   CA-866, CB-270, CB-274), `navegacao.test.ts`. *Depende de:* T3.
-- [ ] **T6** — A receita na refeição. `EntradaRapida` com `aoAdicionarReceita` (CA-871, CA-872); `LinhaItem` mostra
+- [x] **T6** — A receita na refeição. `EntradaRapida` com `aoAdicionarReceita` (CA-871, CA-872); `LinhaItem` mostra
   a receita (CA-873); `CartaoRefeicao` e `TelaPlano` levam a receita ao plano como cópia. *Testes:*
   `receitaNaRefeicao.test.tsx` (CA-870 a CA-874 na tela). *Depende de:* T5.
-- [ ] **T7** — Onde a receita não entra. Testes de guarda (o código atual já ignora o id 0; se algum falhar, a
+- [x] **T7** — Onde a receita não entra. Testes de guarda (o código atual já ignora o id 0; se algum falhar, a
   correção vai junto): cobrir (CA-877), missões (CA-878), trocas (CA-882), modelo e duplicar (CA-876). *Depende de:* T2.
-- [ ] **T8** — A folha impressa. `linhaDaFolha` (nome e quantidade de alimento ou receita, CA-879),
+- [x] **T8** — A folha impressa. `linhaDaFolha` (nome e quantidade de alimento ou receita, CA-879),
   `receitasDaFolha` (CA-880, CB-278) e `comprasDaFolha` abrindo a receita (CA-881) em `folhaDieta.ts`; `FolhaDieta`
   usa as três. *Testes:* `folhaComReceita.test.ts`, `FolhaComReceita.test.tsx`. *Depende de:* T2.
-- [ ] **T9** — O link do paciente. `itemDaDieta` com receita (CA-883), `receitasDoPlano` na cópia e em `lerDieta`
+- [x] **T9** — O link do paciente. `itemDaDieta` com receita (CA-883), `receitasDoPlano` na cópia e em `lerDieta`
   (CA-884, CA-885), `MeuPlano` com a seção. *Testes:* `dietaComReceita.test.ts`, `MeuPlanoComReceita.test.tsx`.
   *Depende de:* T2.
-- [ ] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
+- [x] **T10** — O Word. `descreverItem` com receita (CA-886) e as receitas na seção (CA-887). *Testes:*
   `docxComReceita.test.ts`. *Depende de:* T2.
-- [ ] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (`receitaDadosAntigos.test.ts`: plano, backup e
+- [x] **T11** — Dados antigos e texto com código. *Testes:* CA-888 (`receitaDadosAntigos.test.ts`: plano, backup e
   campo de texto de antes), CB-276 (`xssReceitas.test.tsx`). *Depende de:* T5 a T10.
-- [ ] **T12** — Ponta a ponta, prints e documentos. `e2e/receitas.spec.ts` (criar receita, pôr na refeição, painel,
-  folha, link, 360 px: CA-889); prints de antes e depois; B-32 no backlog e as decisões em `docs/decisoes.md`.
+- [x] **T12** — Ponta a ponta, prints e documentos. `e2e/receitas.spec.ts` (criar receita, pôr na refeição, painel,
+  folha, link, 360 px: CA-889); prints de antes e depois; B-32 no backlog.
   *Verifica:* `npm run check`, `npx playwright test`, `npm run build`. *Depende de:* todas.
 
 ## Riscos e decisões para revisar

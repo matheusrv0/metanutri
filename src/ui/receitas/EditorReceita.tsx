@@ -94,7 +94,7 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
         ) : null}
       </section>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <CampoNumero rotulo="Rende" valor={porcoes} aoMudar={setPorcoes} placeholder="2" erro={erroDe('porcoes')} />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={idPorcao}>Nome da porção</Label>
@@ -111,15 +111,17 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
             </SelectContent>
           </Select>
         </div>
-        <CampoNumero
-          rotulo="Peso pronto"
-          valor={pesoProntoG}
-          aoMudar={setPesoProntoG}
-          sufixo="g"
-          placeholder={soma > 0 ? formatarNumero(soma, 0) : undefined}
-          dica={pesoProntoG === null && soma > 0 ? `Vazio: a soma dos ingredientes, ${formatarNumero(soma, 0)} g.` : undefined}
-          erro={erroDe('pesoProntoG')}
-        />
+        <div className="col-span-2 sm:col-span-1">
+          <CampoNumero
+            rotulo="Peso pronto"
+            valor={pesoProntoG}
+            aoMudar={setPesoProntoG}
+            sufixo="g"
+            placeholder={soma > 0 ? formatarNumero(soma, 0) : undefined}
+            dica={pesoProntoG === null && soma > 0 ? `Vazio: a soma dos ingredientes, ${formatarNumero(soma, 0)} g.` : undefined}
+            erro={erroDe('pesoProntoG')}
+          />
+        </div>
       </div>
 
       {podeMostrarPorcao ? <ResumoDaPorcao receita={paraCalcular} /> : null}

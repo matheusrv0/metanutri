@@ -72,7 +72,7 @@ function Texto({ titulo, texto }: { readonly titulo: string; readonly texto: str
 function ReceitaDoLink({ receita }: { readonly receita: ReceitaDaDieta }) {
   const id = useId()
   return (
-    <article aria-labelledby={id} className="flex flex-col gap-2 border-t border-border pt-4 first:border-0 first:pt-0">
+    <article aria-labelledby={id} className="flex flex-col gap-2 border-t border-border py-4 first:border-0 first:pt-0 last:pb-0">
       <h3 id={id} className="text-base font-semibold text-heading [overflow-wrap:anywhere]">
         {receita.nome}
       </h3>
@@ -91,9 +91,13 @@ function Receitas({ receitas, texto }: { readonly receitas: readonly ReceitaDaDi
       <h2 id={id} className="font-titulo text-lg font-semibold text-heading">
         Receitas
       </h2>
-      {receitas.map((r, i) => (
-        <ReceitaDoLink key={`${i}-${r.nome}`} receita={r} />
-      ))}
+      {receitas.length > 0 ? (
+        <div className="flex flex-col">
+          {receitas.map((r, i) => (
+            <ReceitaDoLink key={`${i}-${r.nome}`} receita={r} />
+          ))}
+        </div>
+      ) : null}
       {texto ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{texto}</p> : null}
     </section>
   )
