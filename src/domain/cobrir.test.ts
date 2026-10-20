@@ -115,6 +115,13 @@ describe('sugerirParaCobrir', () => {
     expect(rica?.avisos).toContainEqual({ tipo: 'excede-limite', chave: 'calcio_mg', rotulo: 'Cálcio' })
   })
 
+  it('CA-789 (spec revisao-geral-trabalho): sem o dado de energia de algum alimento, não diz quantas kcal cabem nem avisa do gasto', () => {
+    const semEnergia: Totais = { ...plano, nutrientes: { ...plano.nutrientes, energia_kcal: { total: 1800, semDado: 1 } } }
+    const r = sugerirParaCobrir('ferro_mg', semEnergia, adequacao, { gastoEnergetico: 1850, alimentos: BASE })
+    expect(r.kcalDisponiveis).toBeNull()
+    expect(r.sugestoes.every((s) => s.avisos.every((a) => a.tipo !== 'excede-gasto'))).toBe(true)
+  })
+
   it('sem GET informado, não avisa sobre energia', () => {
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: null, alimentos: BASE })
     expect(r.kcalDisponiveis).toBeNull()

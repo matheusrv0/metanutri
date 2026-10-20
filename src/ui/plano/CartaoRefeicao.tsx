@@ -15,6 +15,7 @@ import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
 import { SugestoesDaRefeicao } from './SugestoesDaRefeicao.tsx'
+import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
 
 const ROTULO_OPCAO: Record<OpcaoId, string> = { principal: 'Principal', substituto1: 'Substituto 1', substituto2: 'Substituto 2' }
 const OPCOES_ORDEM: readonly OpcaoId[] = ['principal', 'substituto1', 'substituto2']
@@ -68,7 +69,8 @@ export function CartaoRefeicao({
     setHorarioTexto(refeicao.horario)
   }
   const itens = refeicao.opcoes[opcaoAtiva]
-  const kcal = totaisDeItens(itens, buscarAlimento).nutrientes.energia_kcal.total
+  const energia = totaisDeItens(itens, buscarAlimento).nutrientes.energia_kcal
+  const kcal = energia.total
 
   return (
     <Card className="gap-4">
@@ -99,6 +101,8 @@ export function CartaoRefeicao({
         />
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <span className="numeros text-sm font-semibold text-heading">{`${formatarNumero(kcal, 0)} kcal`}</span>
+          {/* D-248: item sem o dado de energia (produto apagado) deixa o total possivelmente subestimado. */}
+          <MarcaSemDado semDado={energia.semDado} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label={`Mais ações de ${refeicao.nome}`}>

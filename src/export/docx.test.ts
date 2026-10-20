@@ -234,6 +234,22 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     expect(texto).not.toMatch(/undefined|null|NaN/)
   })
 
+  it('CA-789 (spec revisao-geral-trabalho): sem o dado de energia de algum alimento, "kcal do plano" leva "*" e a nota', async () => {
+    const { caso, plano } = montarCaso()
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const doc = criarMemorial({
+      caso,
+      energia: calcularEnergia(caso, { fator: 1.37 }),
+      macros: calcularMacros(totais, caso),
+      adequacao: calcularAdequacao(totais, caso, { tipo: 'individual' }),
+      kcalPlano: totais.nutrientes.energia_kcal.total,
+      kcalPlanoSemDado: 1,
+    })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toMatch(/kcal do plano.*\d kcal \*/s)
+    expect(texto).toContain('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')
+  })
+
   it('CA-47: sem dados do caso, gera o documento sem "undefined" e explica a falta das referências', async () => {
     const caso = criarCasoVazio('vazio')
     const totais = totaisDoPlano({ refeicoes: [] }, buscarAlimento)

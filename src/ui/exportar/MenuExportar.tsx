@@ -63,6 +63,7 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
       macros: calcularMacros(totais, caso, caso.metasMacros),
       adequacao: calcularAdequacao(totais, caso, caso.adequacao.preset),
       kcalPlano: totais.nutrientes.energia_kcal.total,
+      kcalPlanoSemDado: totais.nutrientes.energia_kcal.semDado,
     })
     baixarBlob(await gerarBlob(documento), nomeDeArquivo(caso.nome, 'memorial-de-calculo'))
     setMensagem('Memorial de cálculo baixado.')

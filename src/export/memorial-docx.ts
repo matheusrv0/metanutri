@@ -13,6 +13,8 @@ export interface DadosMemorial {
   readonly macros: ResultadoMacros
   readonly adequacao: ResultadoAdequacao
   readonly kcalPlano: number
+  /** Quantos alimentos do plano não têm o dado de energia: a energia leva "*" e a nota (spec revisao-geral-trabalho, D-248). */
+  readonly kcalPlanoSemDado?: number | undefined
 }
 
 const NOME_METODO: Readonly<Record<NonNullable<ResultadoEnergia['metodo']>, string>> = {
@@ -37,6 +39,7 @@ function linhaMacro(nome: string, m: ResultadoMacro) {
 
 export function criarMemorial(dados: DadosMemorial): Document {
   const { caso, energia, macros, adequacao } = dados
+  const energiaIncompleta = (dados.kcalPlanoSemDado ?? 0) > 0
 
   const energiaLinhas = [
     ['Método', energia.getManual ? 'GET definido manualmente' : energia.metodo ? NOME_METODO[energia.metodo] : ''],
@@ -45,7 +48,7 @@ export function criarMemorial(dados: DadosMemorial): Document {
     ['Categoria de atividade (NASEM)', texto(energia.categoriaAtividade)],
     ...energia.adicionais.map((a) => [a.descricao, `${a.kcal > 0 ? '+' : ''}${formatarNumeroDocx(a.kcal, 0)} kcal`]),
     ['GET', energia.get === null ? '' : `${formatarNumeroDocx(energia.get, 0)} kcal`],
-    ['kcal do plano', `${formatarNumeroDocx(dados.kcalPlano, 0)} kcal`],
+    ['kcal do plano', `${formatarNumeroDocx(dados.kcalPlano, 0)} kcal${energiaIncompleta ? ' *' : ''}`],
   ]
 
   const adequacaoCopiada = tabelaAdequacaoParaCopiar(adequacao)
@@ -76,6 +79,7 @@ export function criarMemorial(dados: DadosMemorial): Document {
           subtitulo('ENERGIA'),
           tabela(energiaLinhas.map(([rotulo, valor]) => linha([celula(texto(rotulo), { negrito: true }), celula(texto(valor))]))),
           ...(energia.fonte ? [paragrafo(`Fonte: ${energia.fonte}`)] : []),
+          ...(energiaIncompleta ? [paragrafo('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')] : []),
           subtitulo('DISTRIBUIÇÃO DE MACRONUTRIENTES'),
           tabela([
             linha(['Macronutriente', 'Gramas', '% das kcal', 'g/kg', 'Meta', 'Estado'].map((c) => celula(c, { negrito: true }))),

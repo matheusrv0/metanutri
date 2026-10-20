@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import type { EstadoFaixa, ResultadoMacro } from '@/domain/macros.ts'
 import { medirMacro } from '@/domain/medidorMacro.ts'
@@ -11,6 +12,8 @@ interface MedidorMacroProps {
   readonly meta: string | null
   /** Mostra o g/kg mesmo com a meta em %: a proteína (spec painel-lateral-enxuto, D-201). */
   readonly comGPorKg?: boolean | undefined
+  /** Uma marca depois dos valores, como a † de total possivelmente subestimado (spec revisao-geral-trabalho, D-248). */
+  readonly marca?: ReactNode
 }
 
 const COR_MARCADOR: Readonly<Record<EstadoFaixa, string>> = {
@@ -32,7 +35,7 @@ const COR_FRASE: Readonly<Record<EstadoFaixa, string>> = {
  *
  * De relance, gramas e % sem casa decimal; a frase dá a distância exata (D-201).
  */
-export function MedidorMacro({ nome, macro, meta, comGPorKg = false }: MedidorMacroProps) {
+export function MedidorMacro({ nome, macro, meta, comGPorKg = false, marca }: MedidorMacroProps) {
   const medidor = medirMacro(macro)
   const mostraGPorKg = macro.gPorKg !== null && (comGPorKg || macro.meta?.tipo === 'g_kg')
   // O % só carrega o estado quando a meta é em %; aí ele não pode desmentir o estado (D-211).
@@ -46,7 +49,10 @@ export function MedidorMacro({ nome, macro, meta, comGPorKg = false }: MedidorMa
     <div className="flex flex-col gap-2 border-b border-border pb-3.5 last:border-0 last:pb-0">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-sm font-medium text-foreground">{nome}</span>
-        <span className="numeros text-sm font-semibold text-heading">{valores}</span>
+        <span className="numeros text-sm font-semibold text-heading">
+          {valores}
+          {marca}
+        </span>
       </div>
 
       {medidor ? (
