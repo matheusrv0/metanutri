@@ -10,6 +10,7 @@ import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
+import { CampoAgua } from './CampoAgua.tsx'
 import { CamposComposicao } from './CamposComposicao.tsx'
 import { CartaoIdentificacao } from './CartaoIdentificacao.tsx'
 import { CartaoPessoa } from './CartaoPessoa.tsx'
@@ -62,6 +63,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
           <CardHeader>
             <CardTitle>{comReceitas ? 'Orientações e receitas' : 'Orientações'}</CardTitle>
           </CardHeader>
+          <CampoAgua caso={caso} aoAlterar={aoAlterar} />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="orientacoes">Orientações nutricionais</Label>
             <Textarea id="orientacoes" rows={4} value={caso.orientacoes} onChange={(e) => aoAlterar({ orientacoes: e.target.value })} />

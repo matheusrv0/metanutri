@@ -1,4 +1,4 @@
-import { missoesDoPlano } from './missoes.ts'
+import { litrosDeAgua, missoesDoPlano } from './missoes.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
 
 let n = 0
@@ -24,6 +24,13 @@ describe('missões do dia', () => {
   it('a água usa 35 ml por quilo quando há peso', () => {
     const missoes = missoesDoPlano(comAlimentos(), { pesoKg: 60 })
     expect(missoes.find((m) => m.id === 'agua')?.texto).toBe('Beber cerca de 2,1 litros de água')
+  })
+
+  it('D-298 (spec conduta-da-nutricionista): a conta dos litros é uma só, para as missões e para a folha', () => {
+    expect(litrosDeAgua(62)).toBe(2.2)
+    expect(litrosDeAgua(60)).toBe(2.1)
+    expect(litrosDeAgua(null)).toBeNull()
+    expect(litrosDeAgua(0)).toBeNull()
   })
 
   it('sem peso, a missão da água continua existindo sem inventar número', () => {

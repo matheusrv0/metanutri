@@ -1,6 +1,7 @@
 // O que a folha da dieta mostra e como ela lembra as escolhas de impressão
 // (spec pdf-e-telas-limpas, US-B1).
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
+import { litrosDeAgua } from './missoes.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type Plano, type Refeicao } from './tipos.ts'
@@ -51,6 +52,21 @@ export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly C
     }
   }
   return [...porNome.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
+/** A linha automática da água: "Beba cerca de 2,2 litros de água por dia." Sem peso, nenhuma (D-298). */
+export function linhaDaAguaAutomatica(pesoKg: number | null): string | null {
+  const litros = litrosDeAgua(pesoKg)
+  return litros === null ? null : `Beba cerca de ${String(litros).replace('.', ',')} litros de água por dia.`
+}
+
+/**
+ * A linha da água no começo de "Orientações" (spec conduta-da-nutricionista, D-298): o que a nutricionista escreveu, ou
+ * a automática quando ela não mexeu. Escrito vazio tira a linha. Plano antigo, sem o campo, usa a automática (CB-290).
+ */
+export function linhaDaAguaNaFolha(caso: Pick<Caso, 'pesoKg'> & { readonly linhaDaAgua?: unknown }): string | null {
+  if (typeof caso.linhaDaAgua === 'string') return caso.linhaDaAgua.trim() || null
+  return linhaDaAguaAutomatica(caso.pesoKg)
 }
 
 /** Quem assina numa linha só, para a linha fina (CA-316; também nas folhas do paciente, spec anamnese-e-prescricoes). */

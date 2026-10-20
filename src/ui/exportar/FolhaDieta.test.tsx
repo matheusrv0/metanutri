@@ -341,8 +341,38 @@ describe('Folha da dieta (US-B1)', () => {
     })
   })
 
+  describe('a água em Orientações (spec conduta-da-nutricionista, D-298)', () => {
+    it('CA-931: sem edição, Orientações começa pela linha automática e segue com o texto da nutricionista', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect([...secao.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Beba cerca de 2,2 litros de água por dia.', 'Coma devagar.'])
+    })
+
+    it('CA-931: sem texto da nutricionista, a seção traz só a linha da água', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: '' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect([...secao.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Beba cerca de 2,2 litros de água por dia.'])
+    })
+
+    it('CA-932 e CA-933: a linha escrita vale, a apagada não sai, e não há caixa de marcar', () => {
+      const { unmount } = render(<FolhaDieta caso={{ ...caso, linhaDaAgua: 'Beba 2 litros de água, mais no treino.' }} plano={planoCheio()} />)
+      const secao = screen.getByRole('region', { name: 'Orientações' })
+      expect(secao).toHaveTextContent('Beba 2 litros de água, mais no treino.')
+      expect(secao).not.toHaveTextContent('Beba cerca de')
+      expect(secao.querySelector('input, [role="checkbox"], .rounded.border-\\[1\\.5px\\]')).toBeNull()
+      unmount()
+      render(<FolhaDieta caso={{ ...caso, linhaDaAgua: '', orientacoes: '' }} plano={planoCheio()} />)
+      expect(screen.queryByRole('region', { name: 'Orientações' })).not.toBeInTheDocument()
+    })
+
+    it('CB-298: sem peso e sem edição, não há linha da água', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: null, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
+      expect(screen.getByRole('region', { name: 'Orientações' })).not.toHaveTextContent(/litros/)
+    })
+  })
+
   it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
-    render(<FolhaDieta caso={{ ...caso, orientacoes: '' }} plano={criarPlanoPadrao(ids)} />)
+    render(<FolhaDieta caso={{ ...caso, orientacoes: '', linhaDaAgua: '' }} plano={criarPlanoPadrao(ids)} />)
     expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
     expect(screen.queryByRole('heading', { name: 'Orientações' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()

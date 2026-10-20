@@ -57,6 +57,12 @@ describe('Plano de exemplo', () => {
     expect(nomeParaPaciente(margarina)).toBe('Margarina com sal')
   })
 
+  it('D-298: as orientações do exemplo não repetem a água, que a folha já traz pela conta automática', () => {
+    const { caso } = criarExemplo(contador(), '2026-10-20')
+    expect(caso.orientacoes).not.toMatch(/água/i)
+    expect(caso.linhaDaAgua).toBeNull()
+  })
+
   it('vem com dados completos para a avaliação funcionar', () => {
     const { caso } = criarExemplo(contador(), '2026-09-16')
     expect(caso.modo).toBe('completo')

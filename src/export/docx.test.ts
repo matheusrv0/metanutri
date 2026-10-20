@@ -101,6 +101,8 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     const doc = criarAconselhamento({ caso, plano, antropometria: avaliarAntropometria(caso), buscar: buscarAlimento })
     const { texto } = await textoDoDocx(await gerarBytes(doc))
     expect(texto).toContain('Arroz, tipo 1, cozido (150 g); Feijão, carioca, cozido (140 g)')
+    // CA-933: a linha automática da água é só da folha impressa.
+    expect(texto).not.toContain('litros de água')
   })
 
   it('CA-47: campos vazios ficam em branco, sem "undefined" nem "null"', async () => {

@@ -59,6 +59,7 @@ export function criarCasoVazio(id: string): Caso {
     orientacoes: '',
     receitas: '',
     quantidades: 'medida-caseira',
+    linhaDaAgua: null,
   }
 }
 

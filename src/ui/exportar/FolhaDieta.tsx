@@ -5,6 +5,7 @@ import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts
 import {
   assinaturaDaFolha,
   comprasDaFolha,
+  linhaDaAguaNaFolha,
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
@@ -112,6 +113,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const nome = caso.nome.trim() || 'Sem nome'
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()
+  const agua = linhaDaAguaNaFolha(caso)
   const receitas = caso.receitas.trim()
   const suplementosDaFolha = suplementosParaDocumento(suplementos)
 
@@ -160,10 +162,12 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
 
       {/* CA-633: depois das refeições, só o que a nutricionista escreveu ou marcou, e a assinatura. */}
       <div className="fim-da-folha flex flex-col gap-5">
-        {orientacoes ? (
+        {orientacoes || agua ? (
           <section aria-label="Orientações" className="flex flex-col gap-1.5">
             <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
-            <p className="whitespace-pre-wrap">{caso.orientacoes}</p>
+            {/* Spec conduta-da-nutricionista, D-298: a linha da água primeiro, sem caixa de marcar. */}
+            {agua ? <p>{agua}</p> : null}
+            {orientacoes ? <p className="whitespace-pre-wrap">{caso.orientacoes}</p> : null}
           </section>
         ) : null}
 

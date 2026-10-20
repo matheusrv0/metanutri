@@ -15,6 +15,15 @@ const CATEGORIAS_FRUTA = /^Frutas/i
 const CATEGORIAS_VERDURA = /^(Verduras|Hortaliças|Leguminosas)/i
 
 /**
+ * A meta de água: 35 ml por quilo de peso, em litros com uma casa (referência de rotina). Sem peso, não há meta. É a
+ * mesma conta das missões e da linha automática da folha (spec conduta-da-nutricionista, D-298).
+ */
+export function litrosDeAgua(pesoKg: number | null): number | null {
+  if (pesoKg === null || !(pesoKg > 0)) return null
+  return Math.round((pesoKg * 35) / 100) / 10
+}
+
+/**
  * Gera as missões do dia a partir do plano: uma por refeição com alimento,
  * mais as de hábito que o próprio plano justifica.
  */
@@ -49,12 +58,11 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number 
   }
 
   const totais = totaisDoPlano(plano, buscarAlimento)
-  const peso = opcoes.pesoKg ?? null
+  const litros = litrosDeAgua(opcoes.pesoKg ?? null)
   const temAlimento = itens.some((i) => i.gramas > 0)
 
   if (temAlimento || totais.nutrientes.fibra_g.total > 0) {
-    if (peso !== null && peso > 0) {
-      const litros = Math.round((peso * 35) / 100) / 10
+    if (litros !== null) {
       missoes.push({
         id: 'agua',
         texto: `Beber cerca de ${String(litros).replace('.', ',')} litros de água`,

@@ -108,6 +108,11 @@ describe('a escolha de quantidade do plano no link (spec conduta-da-nutricionist
     expect(itens?.map((i) => i.medida)).toEqual(['1 ponta de faca', '1 unidade'])
   })
 
+  it('CA-933: a linha automática da água não vai para o link (as missões já têm a água)', () => {
+    const dieta = dietaDoPlano(caso({ pesoKg: 62, orientacoes: 'Coma devagar.' }), planoCheio())
+    expect(dieta.orientacoes).toBe('Coma devagar.')
+  })
+
   it('CA-930: trocar a escolha muda o que a paciente vê, e o link avisa que o plano mudou', () => {
     const noLink = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-20')
     expect(dietaMudou(noLink, dietaDoPlano(caso(), planoCheio()))).toBe(false)

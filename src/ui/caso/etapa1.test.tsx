@@ -36,6 +36,39 @@ describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', (
   })
 })
 
+describe('Água na dieta (spec conduta-da-nutricionista, D-298)', () => {
+  it('CA-932: o campo mostra a linha automática; escrever troca, apagar tira, e "Usar a automática" volta à conta', async () => {
+    const usuario = montar(adulta)
+    const campo = screen.getByLabelText('Água na dieta')
+    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
+    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
+
+    await usuario.clear(campo)
+    expect(campo).toHaveValue('')
+    await usuario.type(campo, 'Beba 2 litros de água por dia.')
+    expect(campo).toHaveValue('Beba 2 litros de água por dia.')
+
+    await usuario.click(screen.getByRole('button', { name: 'Usar a automática' }))
+    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
+    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
+  })
+
+  it('CA-932: a linha automática acompanha o peso enquanto não há edição', async () => {
+    const usuario = montar(adulta)
+    const peso = screen.getByLabelText('Peso')
+    await usuario.clear(peso)
+    await usuario.type(peso, '80')
+    expect(screen.getByLabelText('Água na dieta')).toHaveValue('Beba cerca de 2,8 litros de água por dia.')
+  })
+
+  it('CB-298: sem peso, o campo fica vazio, com a dica de informar o peso', () => {
+    montar({ ...adulta, pesoKg: null })
+    const campo = screen.getByLabelText('Água na dieta')
+    expect(campo).toHaveValue('')
+    expect(campo).toHaveAttribute('placeholder', 'Informe o peso para a meta automática')
+  })
+})
+
 describe('Etapa 1 mais limpa (US-B4)', () => {
   it('CA-329: cartões sem a frase de descrição', () => {
     montar(adulta)
