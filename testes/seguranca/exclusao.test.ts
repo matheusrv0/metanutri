@@ -10,6 +10,7 @@ import { excluirConta, horaDaSenha, type PortaDaExclusao, type QuemPedeAExclusao
 import { criarPortaDaExclusao, quemPedeAExclusao } from '../../supabase/functions/_shared/exclusaoSupabase.ts'
 import type { Operadora, Registro } from '../../supabase/functions/_shared/portas.ts'
 import { daLinhaMudanca, receitaNoHistorico, type MudancaDeAssinatura } from '../../src/domain/negocio.ts'
+import { sqlNoBancoLocal } from './bancoLocal.ts'
 import { arquivoPdf, BALDE, barrado, clienteSemSessao, prepararCenario, TABELAS_DA_CONTA, type Cenario, type Conta } from './preparo.ts'
 
 const MINUTO_MS = 60_000
@@ -555,5 +556,29 @@ describe('D-259 (revisão de 19/10/2026): a rotina diária', () => {
   it('conta comum e visitante não chamam a rotina', async () => {
     const c = await prepararCenario()
     for (const cliente of [c.atacante.cliente, c.anonimo]) barrado(await cliente.rpc('limpar_registros_guardados'))
+  })
+
+  it('CB-318 (integracao-rodada-1910, revisão final M-2): sem permissão nos registros de acesso, a rotina avisa e ainda apaga as assinaturas de 5 anos', () => {
+    // Numa transação que volta atrás no fim: a rotina passa a ser de um papel sem acesso ao esquema auth, como se o
+    // banco de produção negasse o apagamento dos registros de acesso.
+    const marca = `pre-sem-permissao-${randomBytes(4).toString('hex')}`
+    const r = sqlNoBancoLocal(`
+      begin;
+      create role metanutri_teste_sem_auditoria nologin;
+      grant metanutri_teste_sem_auditoria to postgres;
+      grant usage, create on schema public to metanutri_teste_sem_auditoria;
+      grant select, delete on public.assinaturas_de_contas_excluidas to metanutri_teste_sem_auditoria;
+      -- A tabela tem RLS sem regra; o dono de verdade (postgres) passa por cima, o papel do teste precisa da sua.
+      create policy teste_sem_auditoria on public.assinaturas_de_contas_excluidas for all to metanutri_teste_sem_auditoria using (true);
+      alter function public.limpar_registros_guardados(timestamptz) owner to metanutri_teste_sem_auditoria;
+      insert into public.assinaturas_de_contas_excluidas (preapproval_id, plano, valor_centavos, excluida_em)
+        values ('${marca}', 'solo', 2990, current_date - 6 * 365);
+      select public.limpar_registros_guardados();
+      select 'restantes=' || count(*) from public.assinaturas_de_contas_excluidas where preapproval_id = '${marca}';
+      rollback;
+    `)
+    expect(r.erro).toContain('sem permissão para apagar auth.audit_log_entries')
+    expect(r.ok, r.erro).toBe(true)
+    expect(r.saida).toContain('restantes=0')
   })
 })

@@ -318,8 +318,12 @@ terminal na pasta do projeto, com a `main` atualizada.
    ```
 10. **Conferir:** as consultas do fim do 014. No dia seguinte, `cron.job_run_details` com `succeeded` para
     `metanutri-limpar-registros` (013) e `metanutri-limpar-comprovantes` (014), e a chamada do dia com status 200 em
-    *Edge Functions > limpar-comprovantes > Invocations*. Se aparecer "permission denied" em
-    `auth.audit_log_entries`, desligue a gravação do registro de auditoria no banco (*Authentication > Audit Logs*).
+    *Edge Functions > limpar-comprovantes > Invocations*. Os registros de acesso (data, hora, IP e e-mail de quem entrou)
+    ficam 6 meses: a partir de abril de 2027, confira que
+    `select count(*) from auth.audit_log_entries where created_at < now() - interval '6 months';` dá 0. Se não der, o
+    banco negou à rotina a permissão de apagar ali; ela só avisa e segue, e as assinaturas de 5 anos continuam sendo
+    apagadas. Nesse caso, peça ao suporte do Supabase a permissão de apagar em `auth.audit_log_entries` para o papel
+    `postgres`.
 
 A receita na refeição continua desligada (`RECEITAS_NA_REFEICAO = false`): ela entra numa segunda publicação, depois
 que todo aparelho já abriu esta versão (spec receitas-com-calculo, D-274a).

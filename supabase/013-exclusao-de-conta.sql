@@ -131,9 +131,15 @@ security definer
 set search_path = ''
 as $$
 begin
-  delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';
   -- CA-825 (L1 da revisão): os 5 anos do registro valem mesmo sem outra exclusão.
   delete from public.assinaturas_de_contas_excluidas where excluida_em < p_agora - interval '5 years';
+  -- Integração de 20/10/2026 (CB-318): se o banco negar o apagamento dos registros de acesso, a rotina avisa e segue.
+  -- O bloco desfaz só a si mesmo; o apagamento das assinaturas acima fica, e o agendamento não aparece com erro.
+  begin
+    delete from auth.audit_log_entries where created_at < p_agora - interval '6 months';
+  exception when insufficient_privilege then
+    raise warning 'metanutri-limpar-registros: sem permissão para apagar auth.audit_log_entries (%).', sqlerrm;
+  end;
 end;
 $$;
 
@@ -171,6 +177,9 @@ commit;
 -- -- false
 -- select schedule, command, active from cron.job where jobname = 'metanutri-limpar-registros';
 -- -- uma linha: 45 6 * * *, select public.limpar_registros_guardados();, true
+-- Depois de um dia, os registros de acesso com mais de 6 meses (tem que dar 0; se não der, o banco negou a permissão à
+-- rotina, que só avisa e segue):
+-- select count(*) from auth.audit_log_entries where created_at < now() - interval '6 months';
 -- Depois de um dia, a rotina sem erro (status succeeded):
 -- select status, return_message, start_time from cron.job_run_details
 --  where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-registros') order by start_time desc limit 5;

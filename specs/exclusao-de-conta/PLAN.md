@@ -152,8 +152,12 @@ teste primeiro, visto falhando, depois o código.
 - *(Revisão de 19/10/2026.)* Database › Extensions: `pg_cron` ligado (o 013 tenta ligar; se o SQL Editor recusar, ligue
   ali e rode o 013 de novo). Depois de um dia, a rotina precisa aparecer sem erro:
   `select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'metanutri-limpar-registros') order by start_time desc limit 5;`
-  Se aparecer "permission denied" para `auth.audit_log_entries`, desligue a gravação do registro de auditoria no banco
-  (Authentication › Audit Logs) ou apague à mão os de mais de 6 meses; o resto da rotina continua valendo.
+  *(Integração de 20/10/2026, CB-318 da `integracao-rodada-1910`: o texto de antes dizia para desligar o registro de
+  auditoria, o que não muda permissão nenhuma, e que "o resto da rotina continua valendo", o que era falso: o erro
+  desfazia a rotina inteira.)* Agora, se o banco negar o apagamento de `auth.audit_log_entries`, a rotina avisa
+  (`warning`) e segue, e as assinaturas de 5 anos continuam sendo apagadas. Para saber, a partir de abril de 2027:
+  `select count(*) from auth.audit_log_entries where created_at < now() - interval '6 months';` tem que dar 0. Se não
+  der, peça ao suporte do Supabase a permissão de apagar ali para o papel `postgres`.
 - *(Revisão de 19/10/2026, SPEC R5.)* Authentication › Providers › Email: "Secure password change" e "Secure email
   change" ficam ligados.
 

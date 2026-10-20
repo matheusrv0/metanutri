@@ -168,6 +168,17 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
       expect(corpoDaRotina).toContain("delete from public.assinaturas_de_contas_excluidas where excluida_em < p_agora - interval '5 years';")
     })
 
+    it('CB-318 (integracao-rodada-1910, revisão final M-2): sem permissão nos registros de acesso, a rotina avisa e segue', () => {
+      // Primeiro as assinaturas de 5 anos; depois os registros de acesso, num bloco próprio que só desfaz a si mesmo.
+      expect(corpoDaRotina.indexOf('delete from public.assinaturas_de_contas_excluidas')).toBeLessThan(corpoDaRotina.indexOf('delete from auth.audit_log_entries'))
+      expect(corpoDaRotina).toMatch(
+        /begin\s+delete from auth\.audit_log_entries where created_at < p_agora - interval '6 months';\s+exception when insufficient_privilege then\s+raise warning '[^']*%[^']*', sqlerrm;\s+end;/,
+      )
+      // Nenhum outro erro é engolido: só o de permissão.
+      expect(corpoDaRotina.match(/exception when/g)).toHaveLength(1)
+      expect(corpoDaRotina).not.toMatch(/when others/i)
+    })
+
     it('security definer com search_path vazio e só nomes qualificados; só o servidor chama', () => {
       expect(cabecalhoDaRotina).toContain('returns void')
       expect(cabecalhoDaRotina).toContain('security definer')
