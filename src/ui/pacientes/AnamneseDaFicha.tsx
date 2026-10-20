@@ -1,6 +1,20 @@
 import { ChevronsDownUp, ChevronsUpDown, Pencil } from 'lucide-react'
 import { useCallback, useId, useState } from 'react'
-import { blocosDaFicha, CHAVE_ROTEIRO, dicaDaPergunta, gravarRoteiro, lerRoteiro, limparRoteiro, responder, resumoDoBloco, type RoteiroAnamnese } from '@/domain/anamnese.ts'
+import {
+  blocosDaFicha,
+  CHAVE_ROTEIRO,
+  dicaDaPergunta,
+  gravarRoteiro,
+  lerRoteiro,
+  limparRoteiro,
+  numeroDaUrina,
+  responder,
+  respostaDaUrina,
+  resumoDoBloco,
+  tipoDaPergunta,
+  TRIMESTRES,
+  type RoteiroAnamnese,
+} from '@/domain/anamnese.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -11,6 +25,8 @@ import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 import { DialogoRoteiro } from './DialogoRoteiro.tsx'
+import { EscalaDaUrina } from './EscalaDaUrina.tsx'
+import { EscolhaUnica } from './EscolhaUnica.tsx'
 
 interface AnamneseDaFichaProps {
   readonly paciente: Paciente
@@ -21,7 +37,7 @@ interface AnamneseDaFichaProps {
 const OUTRAS = 'outras-anotacoes'
 
 /**
- * A anamnese com roteiro (spec anamnese-e-prescricoes, US-AP1): os oito blocos do roteiro da conta, todos
+ * A anamnese com roteiro (spec anamnese-e-prescricoes, US-AP1): os blocos do roteiro da conta, todos
  * recolhidos ao abrir a ficha, com o resumo das respostas à vista (CA-563), e o bloco "Outras anotações", com o
  * texto livre de antes no mesmo campo (D-162). Quem usa leva a chave do paciente: o estado não passa de uma ficha
  * para outra.
@@ -97,10 +113,17 @@ export function AnamneseDaFicha({ paciente, aoAlterar }: AnamneseDaFichaProps) {
             {bloco.perguntas.map((pergunta) => {
               const campo = `${id}-${bloco.id}-${pergunta.id}`
               const dica = dicaDaPergunta(pergunta.id)
+              const gravar = (resposta: string) => aoAlterar({ respostasAnamnese: responder(paciente.respostasAnamnese, pergunta, bloco.id, resposta) })
+              // Spec conduta-da-nutricionista, D-299: a cor da urina e o trimestre são de escolha. Resposta que não é
+              // uma das escolhas (escrita como texto numa versão antiga) fica no campo de texto, para nada sumir (CB-297).
+              const tipo = tipoDaPergunta(pergunta.id)
+              const urina = tipo === 'cor-da-urina' ? numeroDaUrina(pergunta.resposta) : null
+              const trimestre = tipo === 'trimestre' && TRIMESTRES.includes(pergunta.resposta) ? pergunta.resposta : null
+              const comoTexto = tipo === 'texto' || (pergunta.resposta.trim() !== '' && urina === null && trimestre === null)
               return (
                 <div key={pergunta.id} data-pergunta="" className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Label htmlFor={campo}>{pergunta.texto}</Label>
+                    {comoTexto ? <Label htmlFor={campo}>{pergunta.texto}</Label> : <Label id={`${campo}-rotulo`}>{pergunta.texto}</Label>}
                     {pergunta.foraDoRoteiro ? <Badge variant="muted">Fora do roteiro</Badge> : null}
                   </div>
                   {dica ? (
@@ -108,15 +131,26 @@ export function AnamneseDaFicha({ paciente, aoAlterar }: AnamneseDaFichaProps) {
                       {dica}
                     </p>
                   ) : null}
-                  <Textarea
-                    id={campo}
-                    aria-describedby={dica ? `${campo}-dica` : undefined}
-                    rows={2}
-                    className="min-h-16"
-                    value={pergunta.resposta}
-                    placeholder={bloco.id === 'recordatorio' ? 'Horário, o que comeu e quanto…' : undefined}
-                    onChange={(e) => aoAlterar({ respostasAnamnese: responder(paciente.respostasAnamnese, pergunta, bloco.id, e.target.value) })}
-                  />
+                  {comoTexto ? (
+                    <Textarea
+                      id={campo}
+                      aria-describedby={dica ? `${campo}-dica` : undefined}
+                      rows={2}
+                      className="min-h-16"
+                      value={pergunta.resposta}
+                      placeholder={bloco.id === 'recordatorio' ? 'Horário, o que comeu e quanto…' : undefined}
+                      onChange={(e) => gravar(e.target.value)}
+                    />
+                  ) : tipo === 'cor-da-urina' ? (
+                    <EscalaDaUrina
+                      rotuloId={`${campo}-rotulo`}
+                      dicaId={dica ? `${campo}-dica` : undefined}
+                      valor={urina}
+                      aoEscolher={(numero) => gravar(numero === null ? '' : respostaDaUrina(numero))}
+                    />
+                  ) : (
+                    <EscolhaUnica rotuloId={`${campo}-rotulo`} opcoes={TRIMESTRES} valor={trimestre} aoEscolher={(opcao) => gravar(opcao ?? '')} />
+                  )}
                 </div>
               )
             })}

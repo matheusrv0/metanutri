@@ -60,6 +60,10 @@ test('CA-587: em 360 px a ficha não rola para o lado e os alvos têm 44 px', as
   await abrirFichaNova(page)
   await page.getByRole('region', { name: 'Suplementos' }).getByRole('button', { name: 'Acrescentar suplemento' }).click()
   await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Objetivo e queixa/ }).click()
+  // Spec conduta-da-nutricionista, CA-938: a escala da urina e o trimestre também cabem e têm 44 px.
+  await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Água/ }).click()
+  await page.getByRole('region', { name: 'Anamnese' }).getByRole('button', { name: /^Gestação/ }).click()
+  await expect(page.getByRole('radiogroup', { name: 'Cor da urina' }).getByRole('radio')).toHaveCount(8)
 
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: document.documentElement.clientWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)

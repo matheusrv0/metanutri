@@ -81,6 +81,17 @@
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
+  /* Dado: a escala de cor da urina de Armstrong, de 1 (quase transparente) a 8 (marrom), na anamnese
+   * (spec conduta-da-nutricionista, D-299). É a cor que a paciente compara com a do vaso: igual nos dois temas, e
+   * sempre com o número e o nome escritos ao lado. Não é cor de estado nem de marca. */
+  --urina-1: #fbf8e1;
+  --urina-2: #f7f0b6;
+  --urina-3: #f2e48a;
+  --urina-4: #ecd55e;
+  --urina-5: #e2c13d;
+  --urina-6: #d3a52f;
+  --urina-7: #b8862c;
+  --urina-8: #8a6328;
 }
 
 /* ---------- Camada 2: semânticos, tema claro ----------
