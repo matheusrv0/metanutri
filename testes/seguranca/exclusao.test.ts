@@ -358,6 +358,32 @@ describe('CA-821 e CB-251: falha no meio, e o pedido seguinte termina', () => {
   })
 })
 
+describe('L8 da revisão: o que o D-251 e o CA-820 supõem', () => {
+  it('L8 (a), D-251 e CA-816: renovar a sessão, sem senha, troca o token mas não a hora da entrada', async () => {
+    const c = await prepararCenario()
+    const antes = await tokenDa(c.vitima)
+    await new Promise((resolver) => setTimeout(resolver, 2_000))
+    const renovada = await c.vitima.cliente.auth.refreshSession()
+    expect(renovada.error).toBeNull()
+    const depois = renovada.data.session?.access_token ?? ''
+    expect(depois).not.toBe(antes)
+    expect(horaDaSenha(depois)).not.toBeNull()
+    expect(horaDaSenha(depois)).toEqual(horaDaSenha(antes))
+  })
+
+  it('L8 (b) e CA-820: o token de uma conta com o código de outra no corpo exclui só a dona do token', async () => {
+    const c = await prepararCenario()
+    const fotoDaVitima = await fotoDaConta(c, c.vitima.id)
+    const quem = await quemE(c, c.atacante)
+    const resposta = await excluirConta({ quem, corpo: { acao: 'excluir', conta: c.vitima.id, nutricionista_id: c.vitima.id } }, dependencias(c.servico).deps)
+    expect(resposta).toEqual(EXCLUIDA)
+    expect(await loginExiste(c, c.atacante.id)).toBe(false)
+    expect(await loginExiste(c, c.vitima.id)).toBe(true)
+    expect(await fotoDaConta(c, c.vitima.id)).toBe(fotoDaVitima)
+    expect(await consegueEntrar(c, c.vitima)).toBe(true)
+  })
+})
+
 describe('CB-253 (L4 da revisão): pagamento em andamento', () => {
   it('a conta reservada agora (o cenário deixa um pagamento em andamento) recebe 409 e nada muda; vencida a reserva, a exclusão segue', async () => {
     const c = await prepararCenario()
