@@ -453,6 +453,19 @@ describe('Mínimo da meta só com número inteiro (spec revisao-geral-trabalho, 
     expect(screen.getByText(/meta de 85% da referência/)).toBeInTheDocument()
   })
 
+  it('CA-782 (revisão de 20/10/2026): trocar de tipo e voltar a "Personalizado" mostra o campo sem o aviso', async () => {
+    const usuario = montar(adulta, planoComArroz())
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    const minimo = screen.getByLabelText('Mínimo da meta')
+    await usuario.clear(minimo)
+    await usuario.type(minimo, '90,4')
+    expect(screen.getByText('Use um número inteiro, como 90.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('radio', { name: 'Individual (RDA, 90%)' }))
+    await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))
+    expect(screen.getByLabelText('Mínimo da meta')).toHaveValue('90')
+    expect(screen.queryByText('Use um número inteiro, como 90.')).not.toBeInTheDocument()
+  })
+
   it('CB-242: campo vazio não mostra o aviso e não muda a meta', async () => {
     const usuario = montar(adulta, planoComArroz())
     await usuario.click(screen.getByRole('radio', { name: 'Personalizado' }))

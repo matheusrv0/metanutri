@@ -139,6 +139,8 @@ export function TelaAdequacao({
   const resultado = useMemo(() => calcularAdequacao(totais, caso, prefs.preset), [totais, caso, prefs.preset])
 
   const trocarPreset = (tipo: PresetAdequacao['tipo']) => {
+    // O campo do mínimo some com o tipo; o aviso dele não pode voltar velho (CA-782, revisão de 20/10/2026).
+    setMinimoNaoInteiro(false)
     const preset: PresetAdequacao =
       tipo === 'personalizado' ? { tipo: 'personalizado', referencia: 'rda', minimoPct: 90 } : { tipo }
     aoAlterarCaso({ adequacao: { ...prefs, preset } })
