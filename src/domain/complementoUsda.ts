@@ -80,9 +80,14 @@ export function juntarComplemento(alimentos: readonly AlimentoTaco[], dados: Pic
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
+/** "2018-04" vira "abril de 2018"; versão fora do formato fica como veio. */
+export function mesDaVersao(versao: string): string {
+  const [ano, mes] = versao.split('-')
+  const nomeDoMes = MESES[Number(mes) - 1]
+  return nomeDoMes && ano ? `${nomeDoMes} de ${ano}` : versao
+}
+
 /** "SR Legacy, abril de 2018": o conjunto e o mês da versão, para a ficha do alimento (CA-960). */
 export function descreverOrigemUsda(origem: OrigemUsda): string {
-  const [ano, mes] = origem.versao.split('-')
-  const nomeDoMes = MESES[Number(mes) - 1]
-  return nomeDoMes && ano ? `${origem.conjunto}, ${nomeDoMes} de ${ano}` : `${origem.conjunto}, ${origem.versao}`
+  return `${origem.conjunto}, ${mesDaVersao(origem.versao)}`
 }

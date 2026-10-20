@@ -32,7 +32,13 @@ describe('Ajuda', () => {
 
   it('diz o que a base não tem e o limite legal', () => {
     render(<TelaAjuda aoIrPara={vi.fn()} />)
-    expect(screen.getByText(/não traz vitamina D, vitamina B12 nem folato/)).toBeInTheDocument()
+    // CA-965 (spec vitaminas-usda): as cinco vêm do USDA, e a falta aparece com †.
+    expect(
+      screen.getByText(
+        'Vitamina D, vitamina E, folato, vitamina B12 e selênio vêm de alimento equivalente do USDA e faltam em boa parte das preparações brasileiras. Quando falta, a linha da adequação leva †.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/não traz vitamina D/)).not.toBeInTheDocument()
     expect(screen.getByText(/privativa de nutricionista com registro no CRN/)).toBeInTheDocument()
   })
 

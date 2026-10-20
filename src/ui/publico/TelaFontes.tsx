@@ -8,7 +8,7 @@ export function TelaFontes() {
     <article className="mx-auto flex max-w-[72ch] flex-col gap-3 px-4 py-12 text-sm leading-relaxed text-foreground sm:px-8">
       <h1 className="text-4xl font-bold">Fontes da base</h1>
       <p className="text-base">
-        {`A ${NOME_DA_BASE} reúne ${resumo.alimentos} alimentos, com os ${resumo.nutrientes} nutrientes que o MetaNutri confere (energia, macronutrientes, fibra, vitaminas e minerais), e as medidas caseiras de ${resumo.comMedidaCaseira} deles. O MetaNutri organiza e confere esses dados a partir destas fontes públicas.`}
+        {`A ${NOME_DA_BASE} reúne ${resumo.alimentos} alimentos, com os ${resumo.nutrientes} nutrientes da tabela brasileira (energia, macronutrientes, fibra, vitaminas e minerais) e as medidas caseiras de ${resumo.comMedidaCaseira} deles. Para ${resumo.comComplementoUsda}, traz também vitamina D, vitamina E, folato, vitamina B12 e selênio. O MetaNutri organiza e confere esses dados a partir destas fontes públicas.`}
       </p>
       <ul className="mt-4 flex flex-col">
         {FONTES_DA_BASE.map((fonte) => (

@@ -25,10 +25,11 @@ test.describe('Landing (spec estilo-spora)', () => {
   })
 })
 
-test('CA-322: Fontes da base abre sem conta e cita as três fontes', async ({ page }) => {
+test('CA-322 e CA-963: Fontes da base abre sem conta e cita as quatro fontes, com o USDA', async ({ page }) => {
   await page.goto('/#/fontes')
   await expect(page.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeVisible()
-  await expect(page.getByRole('main').getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('main').getByRole('link')).toHaveCount(4)
+  await expect(page.getByRole('main').getByRole('link', { name: 'Abrir o FoodData Central' })).toBeVisible()
   await expect(page.getByText(/Tabela Brasileira de Composição de Alimentos \(TACO\)/)).toBeVisible()
 })
 

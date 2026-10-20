@@ -2,17 +2,21 @@ import { render, screen } from '@testing-library/react'
 import { TelaFontes } from './TelaFontes.tsx'
 
 describe('Fontes da base (CA-322)', () => {
-  it('diz o que é a base e cita as três fontes com link', () => {
+  it('diz o que é a base e cita as quatro fontes com link', () => {
     render(<TelaFontes />)
     expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
     expect(screen.getByText(/A Base MetaNutri reúne 597 alimentos/)).toBeInTheDocument()
     expect(screen.getByText(/medidas caseiras de 287 deles/)).toBeInTheDocument()
-    for (const assunto of ['Composição dos alimentos', 'Medidas caseiras', 'Produtos de rótulo']) {
+    // CA-964 (spec vitaminas-usda): a frase de abertura conta o complemento do USDA.
+    expect(screen.getByText(/Para 308, traz também vitamina D, vitamina E, folato, vitamina B12 e selênio\./)).toBeInTheDocument()
+    for (const assunto of ['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Medidas caseiras', 'Produtos de rótulo']) {
       expect(screen.getByRole('heading', { name: assunto })).toBeInTheDocument()
     }
     expect(screen.getByText(/Tabela Brasileira de Composição de Alimentos \(TACO\), 4ª edição revisada e ampliada/)).toBeInTheDocument()
     const links = screen.getAllByRole('link')
-    expect(links).toHaveLength(3)
+    expect(links).toHaveLength(4)
+    expect(screen.getByRole('link', { name: 'Abrir o FoodData Central' })).toHaveAttribute('href', 'https://fdc.nal.usda.gov/')
+    expect(screen.getByText(/CC0 1\.0 Universal/)).toBeInTheDocument()
     for (const link of links) expect(link).toHaveAttribute('href', expect.stringMatching(/^https:\/\//))
   })
 })
