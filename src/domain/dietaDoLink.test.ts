@@ -132,6 +132,26 @@ describe('a escolha de quantidade do plano no link (spec conduta-da-nutricionist
     expect(dietaMudou(noLink, dietaDoPlano(caso(), planoCheio()))).toBe(false)
     expect(dietaMudou(noLink, dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio()))).toBe(true)
   })
+
+  it('CA-987 (integracao-rodada-1910, D-319): em "Gramas", a cópia leva o campo quantidades, e a leitura da nuvem o guarda só valendo "gramas"', () => {
+    const copia = copiarDieta(dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio()), '2026-10-20')
+    expect(copia.quantidades).toBe('gramas')
+    expect(lerDieta(JSON.parse(JSON.stringify(copia)))).toEqual(copia)
+    expect(lerDieta({ ...copia, quantidades: 'medida-caseira' })).not.toHaveProperty('quantidades')
+    expect(lerDieta({ ...copia, quantidades: 1 })).not.toHaveProperty('quantidades')
+  })
+
+  it('CA-988 (integracao-rodada-1910, D-319): em "Medida caseira", a cópia não ganha o campo', () => {
+    const copia = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-20')
+    expect(copia).not.toHaveProperty('quantidades')
+    expect(lerDieta(JSON.parse(JSON.stringify(copia)))).not.toHaveProperty('quantidades')
+  })
+
+  it('CA-989 (integracao-rodada-1910, D-319): um link copiado em "Gramas" e o plano voltado a "Medida caseira" também conta como mudança', () => {
+    const emGramas = copiarDieta(dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio()), '2026-10-20')
+    expect(dietaMudou(emGramas, dietaDoPlano(caso({ quantidades: 'gramas' }), planoCheio()))).toBe(false)
+    expect(dietaMudou(emGramas, dietaDoPlano(caso(), planoCheio()))).toBe(true)
+  })
 })
 
 describe('copiarDieta, dietaMudou e temDieta', () => {
