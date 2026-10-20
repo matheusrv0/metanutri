@@ -1,8 +1,9 @@
 import { ChevronRight, CircleDashed, Contrast, Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { categoriasDoCatalogo, composicaoDe, filtrarCatalogo, resumoDoCatalogo, type OrdemCatalogo } from '@/domain/catalogo.ts'
 import { medidasDoAlimento } from '@/domain/busca.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
+import { descreverOrigemUsda } from '@/domain/complementoUsda.ts'
 import { completudeDe, explicarCompletude, type NivelCompletude } from '@/domain/completude.ts'
 import type { Alimento } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -263,7 +264,7 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
       <Card className="gap-3">
         <CardHeader>
           <CardTitle>Ficha do alimento</CardTitle>
-          <CardDescription>Escolha um alimento da lista para ver os 20 nutrientes, as medidas caseiras e o que a tabela não mediu.</CardDescription>
+          <CardDescription>Escolha um alimento da lista para ver a composição, as medidas caseiras e o que a tabela não mediu.</CardDescription>
         </CardHeader>
       </Card>
     )
@@ -283,6 +284,7 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
 /** Composição completa de um alimento, com o que falta dito por nome. Serve à ficha lateral e à gaveta. */
 function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
   const linhas = composicaoDe(alimento)
+  const idComposicao = useId()
   const c = completudeDe(alimento)
   const explicacao = explicarCompletude(alimento)
   const medidas = medidasDoAlimento(alimento.id)
@@ -312,8 +314,10 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
       ) : null}
 
       <div className="border-t border-border pt-4">
-        <p className="rotulo mb-2">Composição</p>
-        <ul>
+        <p id={idComposicao} className="rotulo mb-2">
+          Composição
+        </p>
+        <ul aria-labelledby={idComposicao}>
           {linhas.map((l) => (
             <li key={l.chave} className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-0">
               <span className="text-sm">{l.nome}</span>
@@ -324,17 +328,32 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
               ) : (
                 <span className="numeros text-sm font-medium">
                   {l.traco && l.valor === 0 ? 'Tr' : `${formatarNumero(l.valor, l.valor < 10 ? 1 : 0)} ${l.unidade}`}
+                  {/* O valor é de alimento equivalente americano: a marca diz isso sem pesar (spec vitaminas-usda, D-308). */}
+                  {l.usda ? (
+                    <span className="ml-1.5 text-xs font-medium tracking-wide text-muted-foreground">
+                      <span aria-hidden="true">USDA</span>
+                      <span className="sr-only">valor do USDA</span>
+                    </span>
+                  ) : null}
                 </span>
               )}
             </li>
           ))}
         </ul>
+        {alimento.usda ? null : (
+          <p className="pt-2 text-xs leading-relaxed text-muted-foreground">Sem dado de vitamina D, vitamina E, folato, vitamina B12, selênio e gordura trans.</p>
+        )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Fonte: {NOME_DA_BASE}. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de medição, não ausência do
-        nutriente.
-      </p>
+      <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+        <p>
+          Fonte: {NOME_DA_BASE}. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de medição, não ausência do
+          nutriente.
+        </p>
+        {alimento.usda ? (
+          <p>{`Os valores marcados USDA são do alimento equivalente nº ${alimento.usda.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usda)}).`}</p>
+        ) : null}
+      </div>
     </>
   )
 }

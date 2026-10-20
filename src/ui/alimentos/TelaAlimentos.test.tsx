@@ -44,6 +44,40 @@ describe('Tabela de alimentos (US-B4)', () => {
     expect(primeira.querySelector('.text-muted-foreground')?.textContent).not.toBe('')
   })
 
+  const abrirFicha = async (busca: string) => {
+    render(<TelaAlimentos />)
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByRole('searchbox', { name: 'Buscar alimento na tabela' }), busca)
+    await usuario.click(within(screen.getByRole('list', { name: 'Alimentos da tabela' })).getAllByRole('button')[0] as HTMLElement)
+    return within(screen.getByRole('dialog'))
+  }
+
+  it('CA-959 e CA-960 (spec vitaminas-usda): os valores do USDA levam a marca, e o rodapé diz de onde vieram', async () => {
+    const ficha = await abrirFicha('salmão sem pele grelhado')
+    const composicao = within(ficha.getByRole('list', { name: 'Composição' }))
+    const vitaminaD = composicao.getByText('vitamina D').closest('li') as HTMLElement
+    expect(vitaminaD).toHaveTextContent(/^vitamina D13 µgUSDAvalor do USDA$/)
+    expect(within(vitaminaD).getByText('valor do USDA')).toHaveClass('sr-only')
+    // O que é da TACO não leva marca; o nulo do equivalente aparece como não analisado, sem marca.
+    expect(composicao.getByText('ferro').closest('li')).not.toHaveTextContent('USDA')
+    expect(composicao.getByText('gordura trans').closest('li')).toHaveTextContent(/^gordura transnão analisado$/)
+    expect(composicao.getAllByText('USDA')).toHaveLength(5)
+    expect(ficha.getByText('Os valores marcados USDA são do alimento equivalente nº 175168 do USDA FoodData Central (SR Legacy, abril de 2018).')).toBeInTheDocument()
+    expect(ficha.getByText(/^\d+ de 20 nutrientes$/)).toBeInTheDocument()
+  })
+
+  it('CA-961 (spec vitaminas-usda): sem equivalente, uma linha só e nenhuma marca', async () => {
+    const ficha = await abrirFicha('cuscuz milho')
+    expect(ficha.getByText('Sem dado de vitamina D, vitamina E, folato, vitamina B12, selênio e gordura trans.')).toBeInTheDocument()
+    expect(ficha.queryByText('USDA')).not.toBeInTheDocument()
+    expect(ficha.queryByText(/FoodData Central/)).not.toBeInTheDocument()
+  })
+
+  it('CA-962 (spec vitaminas-usda): a ficha vazia não diz um número de nutrientes', () => {
+    render(<TelaAlimentos />)
+    expect(screen.getByText('Escolha um alimento da lista para ver a composição, as medidas caseiras e o que a tabela não mediu.')).toBeInTheDocument()
+  })
+
   it('a ficha fala em Base MetaNutri, sem nome de origem', async () => {
     render(<TelaAlimentos />)
     const usuario = userEvent.setup()
