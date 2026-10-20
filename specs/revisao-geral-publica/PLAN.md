@@ -95,25 +95,25 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
 Revisão do coordenador: aprovar com correções, nenhum crítico (`rodada-1910/revisao-publica.md`). Um commit por item, em
 TDD. O I-2 (nome de receita no "Meu plano") fica para a integração com a frente de receitas.
 
-- [ ] **R1 (I-1)** — Testes de geometria estáveis: os retângulos comparados medidos num só `evaluate` (o mesmo quadro)
+- [x] **R1 (I-1)** — Testes de geometria estáveis: os retângulos comparados medidos num só `evaluate` (o mesmo quadro)
   em CA-740, D-235/A-23, A-24 e CA-744, e `reducedMotion: 'reduce'` no arquivo (a entrada animada de Preços).
   *Verifica:* `revisao.spec.ts` rodado 30 vezes seguidas sem falha.
-- [ ] **R2 (I-3)** — 24 px entre a declaração e o aceite dos Termos: a declaração (CRN ou matrícula) fica num invólucro
+- [x] **R2 (I-3)** — 24 px entre a declaração e o aceite dos Termos: a declaração (CRN ou matrícula) fica num invólucro
   com `pb-2`, montado junto com ela em `CamposSituacao.tsx` (uma margem na própria caixa brigaria com o `-my-3` dela, e
   trocar a classe do aceite que já estava na tela às vezes deixava o Chromium com o estilo velho). *Testes:* unidade (a classe) e e2e com `elementFromPoint` no
   meio do vão.
-- [ ] **R3 (M-1)** — "Fontes da base" com 44 px em qualquer largura. *Testes:* unidade (classe) e e2e em 1280 px.
-- [ ] **R4 (M-3b)** — Recusa do servidor (não a rede) na marcação: `MarcacaoRecusada` com o motivo; a tela mostra o
+- [x] **R3 (M-1)** — "Fontes da base" com 44 px em qualquer largura. *Testes:* unidade (classe) e e2e em 1280 px.
+- [x] **R4 (M-3b)** — Recusa do servidor (não a rede) na marcação: `MarcacaoRecusada` com o motivo; a tela mostra o
   motivo e "Fale com quem montou seu plano.". *Testes:* `fonteSupabase.test.ts` e a tela.
-- [ ] **R5 (M-4)** — Ao falhar a marcação, a tela relê o link antes de desfazer e fica com o que a nuvem guardou.
+- [x] **R5 (M-4)** — Ao falhar a marcação, a tela relê o link antes de desfazer e fica com o que a nuvem guardou.
   *Testes:* a tela (CA-756, CB-236).
-- [ ] **R6 (M-5)** — `vigiarConsole` grava o endereço do pedido que falhou junto com o erro. *Testes:* e2e.
-- [ ] **R7 (M-6)** — Tirar `esperaDoLinkMs`, que nenhum teste usa, do servidor falso.
-- [ ] **R8 (M-8)** — `reuseExistingServer: false` nos dois sites de teste.
-- [ ] **R9 (M-9)** — Escopo neutro `.tema-claro` junto com `:root, .papel` em `tokens.css` e `globals.css`; o checkout
+- [x] **R6 (M-5)** — `vigiarConsole` grava o endereço do pedido que falhou junto com o erro. *Testes:* e2e.
+- [x] **R7 (M-6)** — Tirar `esperaDoLinkMs`, que nenhum teste usa, do servidor falso.
+- [x] **R8 (M-8)** — `reuseExistingServer: false` nos dois sites de teste.
+- [x] **R9 (M-9)** — Escopo neutro `.tema-claro` junto com `:root, .papel` em `tokens.css` e `globals.css`; o checkout
   passa a usá-lo. *Testes:* o checkout e um teste de texto das duas folhas de estilo.
 
-- [ ] **R10 (achado na validação da rodada)** — O CA-119 (`e2e/publico.spec.ts`, a foto do topo da landing) lia
+- [x] **R10 (achado na validação da rodada)** — O CA-119 (`e2e/publico.spec.ts`, a foto do topo da landing) lia
   `naturalWidth` logo depois de a foto aparecer, antes de ela terminar de carregar (`decoding="async"`), e falhou 1 vez
   com a máquina carregada. Passa a esperar a foto carregar (`expect.poll`). Só teste.
 
