@@ -90,7 +90,8 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
       <div className="flex flex-col gap-5">
         <Card className="gap-4">
           <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
-            {`${NOME_DA_BASE} · ${resumo.total} alimentos · valores por 100 g`}
+            {/* CA-794: o número e a unidade na mesma linha. */}
+            {`${NOME_DA_BASE} · ${resumo.total} alimentos · valores por 100\u00a0g`}
             {aoAbrirFontes ? (
               <span className="inline-flex items-center gap-1 whitespace-nowrap">
                 <span aria-hidden="true">·</span>

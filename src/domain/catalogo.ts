@@ -23,10 +23,11 @@ export function categoriasDoCatalogo(): readonly { readonly nome: string; readon
 }
 
 const ORDENA: Readonly<Record<OrdemCatalogo, (a: Alimento, b: Alimento) => number>> = {
-  nome: (a, b) => a.descricao.localeCompare(b.descricao, 'pt-BR'),
+  // CA-794 (spec revisao-geral-trabalho): dois nomes da base começam com espaço; sem o trim, iam antes do "A".
+  nome: (a, b) => a.descricao.trim().localeCompare(b.descricao.trim(), 'pt-BR'),
   // Sem energia vai para o fim: não dá para ordenar pelo que não existe.
   energia: (a, b) => (b.nutrientes.energia_kcal ?? -1) - (a.nutrientes.energia_kcal ?? -1),
-  completude: (a, b) => completudeDe(b).preenchidos - completudeDe(a).preenchidos || a.descricao.localeCompare(b.descricao, 'pt-BR'),
+  completude: (a, b) => completudeDe(b).preenchidos - completudeDe(a).preenchidos || a.descricao.trim().localeCompare(b.descricao.trim(), 'pt-BR'),
 }
 
 export function filtrarCatalogo(filtro: FiltroCatalogo = {}): readonly Alimento[] {
