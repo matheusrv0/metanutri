@@ -11,6 +11,9 @@ import type { Registro, RespostaDaFuncao } from './portas.ts'
 /** O cabeçalho em que o agendamento manda a chave da limpeza. */
 export const CABECALHO_DA_CHAVE = 'x-chave-da-limpeza'
 
+/** A chave do cofre tem 64 caracteres (014); outro tamanho é recusado sem perguntar ao banco (CA-847). */
+export const TAMANHO_DA_CHAVE = 64
+
 /** No máximo 1000 arquivos por rodada (CB-265); o resto sai nas próximas. */
 export const LIMITE_POR_RODADA = 1000
 
@@ -41,8 +44,9 @@ export interface DependenciasDaLimpeza {
 export async function limparComprovantes(pedido: PedidoDeLimpeza, deps: DependenciasDaLimpeza): Promise<RespostaDaFuncao> {
   if (pedido.metodo !== 'POST') return { status: 405, corpo: { erro: 'Use POST.' } }
   const chave = pedido.chave?.trim() ?? ''
-  // CA-847: sem a chave, nem pergunta ao banco; com a errada, para logo depois de conferir.
-  if (chave === '' || !(await deps.banco.chaveConfere(chave))) return { status: 401, corpo: { erro: 'Chave da limpeza ausente ou errada.' } }
+  // CA-847: sem a chave ou com outro tamanho, nem pergunta ao banco (a função responde a qualquer um); com a
+  // errada, para logo depois de conferir.
+  if (chave.length !== TAMANHO_DA_CHAVE || !(await deps.banco.chaveConfere(chave))) return { status: 401, corpo: { erro: 'Chave da limpeza ausente ou errada.' } }
 
   const caminhos = await deps.banco.vencidos(deps.agora(), LIMITE_POR_RODADA)
   if (caminhos.length === 0) return { status: 200, corpo: { apagados: 0, marcados: 0 } }

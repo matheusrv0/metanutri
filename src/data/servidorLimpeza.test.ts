@@ -51,6 +51,13 @@ describe('D-264: só o agendamento, com a chave do cofre, aciona a limpeza', () 
     expect(banco.chamadas).toEqual([])
   })
 
+  it.each([31, 63, 65, 200])('CA-847: chave com %i caracteres (a do cofre tem 64) é recusada sem perguntar ao banco', async (tamanho) => {
+    const banco = bancoFalso()
+    const resposta = await pedir(banco, 'a'.repeat(tamanho))
+    expect(resposta).toEqual({ status: 401, corpo: { erro: 'Chave da limpeza ausente ou errada.' } })
+    expect(banco.chamadas).toEqual([])
+  })
+
   it('CA-847: com a chave errada, responde 401 e não lista nem apaga nada', async () => {
     const banco = bancoFalso()
     const resposta = await pedir(banco, 'b'.repeat(64))
