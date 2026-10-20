@@ -15,10 +15,12 @@ export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
  * 15/10/2026: a Política passou a falar da dieta no link do paciente (spec dieta-no-link, D-157) e da anamnese, dos
  * suplementos e dos pedidos de exame da ficha (spec anamnese-e-prescricoes, CA-597).
  * 19/10/2026: a Política e os Termos passaram a dizer como excluir a conta pelo site e o que fica guardado (spec
- * exclusao-de-conta, D-257). Quem publica acerta a data para o dia em que o site vai ao ar.
+ * exclusao-de-conta, D-257).
+ * 20/10/2026: uma versão só para a integração da rodada (spec integracao-rodada-1910, D-314). Quem publica em outro dia
+ * troca as duas constantes e o teste delas para o dia em que o site vai ao ar.
  */
-export const VERSAO_TERMOS = '2026-10-19'
-export const DATA_TERMOS = '19 de outubro de 2026'
+export const VERSAO_TERMOS = '2026-10-20'
+export const DATA_TERMOS = '20 de outubro de 2026'
 
 /** Em quantos dias as cópias de segurança do banco somem depois da exclusão (a exclusão em si é na hora). */
 export const PRAZO_EXCLUSAO_DIAS = 90
