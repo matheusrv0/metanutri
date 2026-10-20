@@ -4,7 +4,7 @@
 // seguem as regras da folha, aplicadas na hora sobre a cópia guardada (spec revisao-geral-publica, D-231).
 import { useId } from 'react'
 import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
-import { paraOPaciente } from '@/domain/dietaParaPaciente.ts'
+import { modoDaCopia, paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import type { QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import type { ModoQuantidade } from '@/domain/tipos.ts'
@@ -109,8 +109,8 @@ function Receitas({ receitas, texto, modo }: { readonly receitas: readonly Recei
 
 export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
   const dia = dataPorExtenso(dieta.copiadaEm)
-  // A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319).
-  const modo: ModoQuantidade = dieta.quantidades === 'gramas' ? 'gramas' : 'medida-caseira'
+  // A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319 e CB-316).
+  const modo: ModoQuantidade = modoDaCopia(dieta)
   return (
     <div className="flex flex-col gap-3">
       <h1 className="mb-3 font-titulo text-2xl font-bold text-heading [overflow-wrap:anywhere]">{`Seu plano alimentar, ${primeiroNome}`}</h1>

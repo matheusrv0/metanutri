@@ -1,6 +1,6 @@
 // Spec revisao-geral-publica, D-231: "Meu plano" com as regras da folha impressa, a partir da cópia guardada no link.
-import { copiarDieta, dietaDoPlano, type ItemDaDieta } from './dietaDoLink.ts'
-import { paraOPaciente } from './dietaParaPaciente.ts'
+import { copiarDieta, dietaDoPlano, type DietaDoLink, type ItemDaDieta } from './dietaDoLink.ts'
+import { modoDaCopia, paraOPaciente } from './dietaParaPaciente.ts'
 import { criarExemplo } from './exemplo.ts'
 import type { QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ALIMENTOS } from './tabelas.ts'
@@ -113,5 +113,35 @@ describe('a dieta do link para o paciente (D-231)', () => {
     // Uma medida guardada que a base não daria mais (a base de hoje é quem manda).
     const arroz = paraOPaciente({ medida: '1 xícara de chá', gramas: 150, alimento: 'Arroz, tipo 1, cozido' })
     expect(texto(arroz.quantidade)).toBe('6 colheres de sopa')
+  })
+})
+
+describe('CB-316 (integracao-rodada-1910, revisão final M-1): a cópia em "Gramas" que perdeu o campo quantidades', () => {
+  const copia = (itens: readonly ItemDaDieta[], extra: Partial<DietaDoLink> = {}): DietaDoLink => ({
+    refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [itens] }],
+    orientacoes: '',
+    receitas: '',
+    copiadaEm: '2026-10-20',
+    ...extra,
+  })
+  const ARROZ_SEM_MEDIDA: ItemDaDieta = { medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }
+
+  it('com o campo, "Gramas"; sem o campo e com alguma medida guardada, "Medida caseira"', () => {
+    expect(modoDaCopia(copia([ARROZ_SEM_MEDIDA], { quantidades: 'gramas' }))).toBe('gramas')
+    expect(modoDaCopia(copia([{ ...ARROZ_SEM_MEDIDA, medida: '6 colheres de sopa' }]))).toBe('medida-caseira')
+  })
+
+  it('toda medida vazia e um alimento da base que teria medida hoje: lida como "Gramas" (a aba velha apagou o campo)', () => {
+    expect(modoDaCopia(copia([ARROZ_SEM_MEDIDA, { medida: null, gramas: 300, alimento: 'Feijoada', receita: true }]))).toBe('gramas')
+  })
+
+  it('toda medida vazia, mas nenhum alimento teria medida (macarrão cru, produto da nutricionista): "Medida caseira", que já sai em peso', () => {
+    expect(modoDaCopia(copia([{ medida: null, gramas: 90, alimento: 'Macarrão, trigo, cru' }, { medida: null, gramas: 45, alimento: 'Barra da Ana' }]))).toBe('medida-caseira')
+  })
+
+  it('os ingredientes das receitas também contam, e a cópia vazia é "Medida caseira"', () => {
+    const receita = { nome: 'Panqueca', rendimento: 'Rende 2 unidades (120 g cada)', ingredientes: [{ medida: '2 unidades', gramas: 150, alimento: 'Banana, prata, crua' }], preparo: '' }
+    expect(modoDaCopia(copia([ARROZ_SEM_MEDIDA], { receitasDoPlano: [receita] }))).toBe('medida-caseira')
+    expect(modoDaCopia(copia([]))).toBe('medida-caseira')
   })
 })

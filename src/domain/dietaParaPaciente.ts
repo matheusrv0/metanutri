@@ -5,7 +5,7 @@
 // integracao-rodada-1910). Assim uma cópia antiga, feita com a medida do planejador, também sai como a folha. A cópia
 // não tem o id do alimento; ele é achado pela descrição guardada, que é a descrição exata da base (as 597 são únicas).
 // O item de receita vem marcado e não passa pela procura (D-310 da integracao-rodada-1910).
-import type { ItemDaDieta } from './dietaDoLink.ts'
+import type { DietaDoLink, ItemDaDieta } from './dietaDoLink.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ALIMENTOS } from './tabelas.ts'
@@ -31,4 +31,23 @@ export function paraOPaciente(item: ItemDaDieta, modo: ModoQuantidade = 'medida-
   const alimento = PELA_DESCRICAO.get(item.alimento)
   if (!alimento) return { nome: item.alimento, quantidade: comoGuardado }
   return { nome: nomeParaPaciente(alimento), quantidade: quantidadeNaFolha(alimento.id, item.gramas, modo) }
+}
+
+/** O alimento da base daria uma medida caseira hoje (em "Medida caseira"). */
+const teriaMedida = (item: ItemDaDieta): boolean => {
+  if (item.receita) return false
+  const alimento = PELA_DESCRICAO.get(item.alimento)
+  return alimento !== undefined && quantidadeNaFolha(alimento.id, item.gramas).medida !== null
+}
+
+/**
+ * A escolha de quantidade da cópia (D-319 da integracao-rodada-1910). O campo `quantidades: 'gramas'` decide. Sem ele,
+ * uma cópia com toda medida vazia (refeições e ingredientes) em que algum alimento da base teria medida hoje também é
+ * "Gramas": foi gravada em "Gramas" e uma aba com a versão de antes apagou o campo ao regravar o link (CB-316).
+ */
+export function modoDaCopia(dieta: DietaDoLink): ModoQuantidade {
+  if (dieta.quantidades === 'gramas') return 'gramas'
+  const itens = [...dieta.refeicoes.flatMap((r) => r.opcoes.flat()), ...(dieta.receitasDoPlano ?? []).flatMap((r) => r.ingredientes)]
+  if (itens.length === 0 || itens.some((i) => i.medida !== null)) return 'medida-caseira'
+  return itens.some(teriaMedida) ? 'gramas' : 'medida-caseira'
 }

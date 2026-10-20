@@ -66,4 +66,15 @@ describe('a receita no Meu plano', () => {
     expect(within(secao).queryByRole('article')).not.toBeInTheDocument()
     expect(secao).toHaveTextContent('Suco verde')
   })
+
+  it('CB-316 (integracao-rodada-1910, revisão final M-1): cópia em "Gramas" sem o campo (toda medida vazia) sai em peso, como a folha', () => {
+    const semCampo: DietaDoLink = {
+      refeicoes: [{ horario: '12:00', nome: 'Almoço', opcoes: [[{ medida: null, gramas: 150, alimento: 'Arroz, tipo 1, cozido' }]] }],
+      orientacoes: '',
+      receitas: '',
+      copiadaEm: '2026-10-20',
+    }
+    render(<MeuPlano dieta={semCampo} primeiroNome="Ana" />)
+    expect(within(screen.getByRole('region', { name: '12:00 Almoço' })).getByRole('listitem')).toHaveTextContent(/^150 gArroz branco cozido$/)
+  })
 })
