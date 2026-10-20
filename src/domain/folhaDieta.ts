@@ -99,13 +99,17 @@ export interface ReceitaDaFolha {
   readonly preparo: string
 }
 
-/** CA-880 e CB-278: cada receita do plano uma vez, na ordem das refeições, com os ingredientes da receita inteira. */
+/**
+ * CA-880 e CB-278: cada receita do plano uma vez, na ordem das refeições, com os ingredientes da receita inteira. O
+ * ingrediente apagado fica de fora, como o item apagado da refeição (D-248 da revisao-geral-trabalho; D-317 da
+ * integracao-rodada-1910).
+ */
 export function receitasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly ReceitaDaFolha[] {
   return receitasDoPlano(plano).map((r) => ({
     nome: nomeDaReceita(r),
     rendimento: textoDoRendimento(r),
     ingredientes: r.ingredientes
-      .filter((i) => i.gramas > 0)
+      .filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)
       .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, buscar) })),
     preparo: r.preparo.trim(),
   }))

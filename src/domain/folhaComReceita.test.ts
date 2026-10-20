@@ -1,5 +1,5 @@
 // Spec receitas-com-calculo, D-277: a receita na folha impressa (CA-879 a CA-881, CB-271, CB-272, CB-278).
-import { comprasDaFolha, linhaDaFolha, receitasDaFolha } from './folhaDieta.ts'
+import { comprasDaFolha, linhaDaFolha, opcoesDaRefeicao, receitasDaFolha } from './folhaDieta.ts'
 import { ID_DE_RECEITA } from './receitaNoPlano.ts'
 import { itemDeReceita, PANQUECA } from './receitas.test-utils.ts'
 import { buscarAlimento } from './tabelas.ts'
@@ -55,10 +55,14 @@ describe('a seção Receitas (CA-880, CB-278)', () => {
     })
   })
 
-  it('CB-271: ingrediente que sumiu aparece como "Alimento removido"', () => {
-    const comRemovido = { ...PANQUECA, ingredientes: [{ alimentoId: 999_999, gramas: 20 }] }
-    const [r] = receitasDaFolha(plano([itemDeReceita('a', 120, comRemovido)]), buscarAlimento)
-    expect(r?.ingredientes.map((i) => i.nome)).toEqual(['Alimento removido'])
+  it('CB-271 e CA-982 (integracao-rodada-1910): o ingrediente apagado fica fora da seção Receitas, e a receita continua na refeição', () => {
+    const comApagado = { ...PANQUECA, ingredientes: [{ alimentoId: BANANA, gramas: 150 }, { alimentoId: 900_001, gramas: 20 }] }
+    const p = plano([itemDeReceita('a', 120, comApagado)])
+    const [r] = receitasDaFolha(p, buscarAlimento)
+    expect(r?.ingredientes.map((i) => i.nome)).toEqual(['Banana prata'])
+    const [cafe] = p.refeicoes
+    if (!cafe) throw new Error('plano sem café')
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => linhaDaFolha(i, buscarAlimento).nome)).toEqual(['Panqueca de banana'])
   })
 
   it('CB-272: receita com 0 g não entra; plano sem receita, lista vazia', () => {

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
 import { LinhaItem } from './LinhaItem.tsx'
 
 const MARGARINA = 263
@@ -30,6 +31,23 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.getByRole('button', { name: 'Remover Produto apagado' })).toBeInTheDocument()
     // Revisão de 20/10/2026: a nutricionista sabe que o paciente não vê esse item.
     expect(screen.getByText('Não sai na folha nem no link do paciente.')).toBeInTheDocument()
+  })
+
+  it('CA-984 (integracao-rodada-1910): a receita com um ingrediente apagado mostra as kcal com a †; inteira, sem †', () => {
+    const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }
+    const { unmount } = render(
+      <ul>
+        <LinhaItem item={itemDeReceita('r1', 120, comApagado)} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.getByText(/kcal/).textContent).toMatch(/^\d+ kcal†$/)
+    unmount()
+    render(
+      <ul>
+        <LinhaItem item={itemDeReceita('r2', 120)} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.getByText(/kcal/).textContent).toMatch(/^\d+ kcal$/)
   })
 
   it('CA-780: 30 g de manteiga mostram "1 colher de sopa", nunca "1 fatia"', () => {

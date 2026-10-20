@@ -64,6 +64,16 @@ describe('totaisDeItens', () => {
   })
 })
 
+describe('a receita com dado faltando (spec integracao-rodada-1910, D-318)', () => {
+  it('CA-985: o ingrediente apagado conta como falta de dado na energia e nos macros da receita', () => {
+    const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }
+    const t = totaisDeItens([itemDeReceita('a', 120, comApagado)], buscarAlimento)
+    for (const chave of ['energia_kcal', 'proteina_g', 'carboidrato_g', 'lipideos_g'] as const) expect(t.nutrientes[chave].semDado, chave).toBeGreaterThan(0)
+    expect(Number.isNaN(t.nutrientes.energia_kcal.total)).toBe(false)
+    expect(totaisDeItens([itemDeReceita('a', 120)], buscarAlimento).nutrientes.energia_kcal.semDado).toBe(0)
+  })
+})
+
 describe('totaisDoPlano', () => {
   it('CA-43 (D-2): soma só a opção Principal de cada refeição', () => {
     const plano: Plano = {

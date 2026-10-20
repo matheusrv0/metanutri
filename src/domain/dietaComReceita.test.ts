@@ -80,6 +80,16 @@ describe('a receita na dieta do link', () => {
     expect(temDieta(copiarDieta(dieta, '2026-10-19'))).toBe(true)
   })
 
+  it('CA-983 (integracao-rodada-1910): o ingrediente apagado fica fora da cópia; a receita continua na refeição', () => {
+    const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }
+    const plano = criarPlanoPadrao(ids)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('plano padrão mudou')
+    const dieta = dietaDoPlano(caso(), adicionarReceita(plano, desjejum.id, 'principal', { receita: comApagado, gramas: 120 }, ids))
+    expect(dieta.refeicoes[0]?.opcoes[0]?.map((i) => i.alimento)).toEqual(['Panqueca de banana'])
+    expect(dieta.receitasDoPlano?.[0]?.ingredientes.map((i) => i.alimento)).toEqual(['Banana, prata, crua', 'Ovo, de galinha, inteiro, cru', 'Aveia, flocos, crua'])
+  })
+
   it('CA-884: a cópia guardada volta igual pela leitura, e receita estragada fica de fora', () => {
     const copia = copiarDieta(dietaDoPlano(caso(), comPanqueca()), '2026-10-19')
     const lida = lerDieta(JSON.parse(JSON.stringify(copia)))

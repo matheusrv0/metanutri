@@ -9,6 +9,7 @@ import type { ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
 
 interface LinhaItemProps {
   readonly item: ItemPlano
@@ -18,10 +19,13 @@ interface LinhaItemProps {
   readonly aoSubstituir?: (() => void) | undefined
 }
 
-/** A energia da receita pelos ingredientes; sem nenhum dado de energia, `null` (travessão, nunca zero). */
-function kcalDaReceita(item: ItemPlano): number | null {
+/**
+ * A energia da receita pelos ingredientes; sem nenhum dado de energia, `null` (travessão, nunca zero). `semDado` conta os
+ * ingredientes sem energia, para a † (D-318 da integracao-rodada-1910).
+ */
+function energiaDaReceita(item: ItemPlano): { readonly kcal: number | null; readonly semDado: number } {
   const { total, semDado } = totaisDeItens([item], buscarAlimento).nutrientes.energia_kcal
-  return semDado > 0 && total === 0 ? null : total
+  return { kcal: semDado > 0 && total === 0 ? null : total, semDado }
 }
 
 /**
@@ -40,7 +44,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
   const incompleto = alimento ? explicarCompletude(alimento) : null
   const porCem = alimento?.nutrientes.energia_kcal ?? null
   // A tabela não traz energia deste alimento: mostra travessão, nunca zero (princípio do produto).
-  const kcal = deReceita ? kcalDaReceita(item) : porCem === null ? null : (porCem * item.gramas) / 100
+  const daReceita = deReceita ? energiaDaReceita(item) : null
+  const kcal = daReceita ? daReceita.kcal : porCem === null ? null : (porCem * item.gramas) / 100
   const substituir = deReceita || !alimento ? undefined : aoSubstituir
 
   return (
@@ -70,6 +75,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
           title={kcal === null ? 'A tabela de composição não traz energia para este alimento.' : undefined}
         >
           {kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}
+          {kcal !== null && daReceita ? <MarcaSemDado semDado={daReceita.semDado} /> : null}
         </span>
         {/* Sem o alimento, não há o que comparar para um substituto equivalente; a receita também não tem (CA-873). */}
         {substituir ? (

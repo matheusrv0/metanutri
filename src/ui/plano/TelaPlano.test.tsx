@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarPlanoPadrao } from '@/domain/plano.ts'
+import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
 import type { Plano } from '@/domain/tipos.ts'
 import { TelaPlano } from './TelaPlano.tsx'
 
@@ -34,6 +35,20 @@ describe('Produto apagado no cabeçalho da refeição (spec revisao-geral-trabal
     const cartao = (nome: string) => within(screen.getByRole('textbox', { name: `Nome da refeição ${nome}` }).closest('[data-slot="card"]') as HTMLElement)
     expect(cartao('Desjejum').getByText('0 kcal').parentElement).toHaveTextContent('†')
     expect(cartao('Almoço').getByText('0 kcal').parentElement).not.toHaveTextContent('†')
+  })
+})
+
+describe('Receita com ingrediente apagado no cabeçalho da refeição (spec integracao-rodada-1910, CA-985)', () => {
+  it('as kcal da opção levam a †', () => {
+    const plano = criarPlanoPadrao(ids)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('sem desjejum')
+    const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }
+    montar({ ...plano, refeicoes: [{ ...desjejum, opcoes: { ...desjejum.opcoes, principal: [itemDeReceita('x', 120, comApagado)] } }, ...plano.refeicoes.slice(1)] })
+    const cartao = within(screen.getByRole('textbox', { name: 'Nome da refeição Desjejum' }).closest('[data-slot="card"]') as HTMLElement)
+    // O primeiro "N kcal" do cartão é o do cabeçalho da opção; o segundo, o da linha da receita.
+    const [cabecalho] = cartao.getAllByText(/^\d+ kcal$/)
+    expect(cabecalho?.parentElement).toHaveTextContent('†')
   })
 })
 

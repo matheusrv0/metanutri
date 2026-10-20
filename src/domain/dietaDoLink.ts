@@ -74,12 +74,12 @@ function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento): ItemDaDieta {
   return { medida: receita ? textoDaPorcao(receita, item.gramas) : null, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
 }
 
-/** CA-884: cada receita do plano, inteira, em texto. */
+/** CA-884: cada receita do plano, inteira, em texto. O ingrediente apagado fica de fora (D-317 da integracao-rodada-1910). */
 function receitaDaDieta(r: ReceitaDoPlano, buscar: BuscarAlimento): ReceitaDaDieta {
   return {
     nome: nomeDaReceita(r),
     rendimento: textoDoRendimento(r),
-    ingredientes: r.ingredientes.filter((i) => i.gramas > 0).map((i) => alimentoDaDieta(i.alimentoId, i.gramas, buscar)),
+    ingredientes: r.ingredientes.filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined).map((i) => alimentoDaDieta(i.alimentoId, i.gramas, buscar)),
     preparo: r.preparo.trim(),
   }
 }
