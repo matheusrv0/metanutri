@@ -33,8 +33,8 @@ nutriente, de energia ou do cobrir muda.
 | D-244 | **"Meses além dos anos" só aparece ou some quando a pessoa termina de digitar a idade**: meio segundo depois da última tecla, ao sair do campo ou ao teclar Tab (aí o campo de meses, se aparecer, é o próximo a receber o foco). Digitar "28" não faz o campo piscar |
 | D-245 | **Nome longo nunca alarga a tela.** Paciente ou plano com nome comprido corta com reticências na lista de Pacientes, na de Planos e no seletor "Paciente" da etapa 1, a partir de 360 px |
 | D-246 | **Alvo de toque de 44 px no celular** (abaixo de 640 px) também em: o "Fechar" de toda janela e gaveta, as opções em pílula (Sexo, Objetivo, Condição, Nível de atividade, Situação), a trilha do cabeçalho ("Planos", "Pacientes"), os itens do menu Exportar, os links da Ajuda e o "Ver as fontes". No computador nada muda de tamanho |
-| D-247 | **Cada coisa dita uma vez, e nada de texto de programador na tela.** Sai o cartão "Pacientes" que repetia o título da página (a busca e "Novo paciente" ficam); sai o aviso azul da ficha que repetia a frase de "Restrições e saúde"; o recolhido "Observações" da etapa 1 não repete "Observações" em cima do campo; o pedido de autorização do link do paciente não mostra mais o caminho de um arquivo do repositório |
-| D-248 | **Acertos de leitura.** Os números do Painel concordam no singular ("1 plano mexido", "1 dia trabalhado"); "Onde você parou" diz quando antes do tipo de plano, porque no celular o fim da linha é cortado; o Painel no computador tem um "Novo plano" só (o do menu), como Planos; o texto-guia da busca de alimento diz "2 colheres de sopa"; o Cobrir diz a falta com a mesma precisão da tabela ("Faltam 244 mg", não "243,60 mg"); a Tabela de alimentos ordena por nome sem se deixar enganar por espaço no começo do nome e não quebra "100 g"; no celular, o seletor de referência da etapa 3 não quebra cada opção em três linhas |
+| D-247 | **Cada coisa dita uma vez, nada de texto de programador na tela, e os acertos de leitura.** Sai o cartão "Pacientes" que repetia o título da página (a busca e "Novo paciente" ficam); sai o aviso azul da ficha que repetia a frase de "Restrições e saúde"; o recolhido "Observações" da etapa 1 não repete "Observações" em cima do campo; o pedido de autorização do link do paciente não mostra mais o caminho de um arquivo do repositório. Os números do Painel concordam no singular ("1 plano mexido", "1 dia trabalhado"); "Onde você parou" diz quando antes do tipo de plano, porque no celular o fim da linha é cortado; o Painel no computador tem um "Novo plano" só (o do menu), como Planos; o texto-guia da busca de alimento diz "2 colheres de sopa"; o Cobrir diz a falta com a mesma precisão da tabela ("Faltam 244 mg", não "243,60 mg"); a Tabela de alimentos ordena por nome sem se deixar enganar por espaço no começo do nome e não quebra "100 g"; no celular, o seletor de referência da etapa 3 não quebra cada opção em três linhas |
+| D-248 | **Produto do rótulo nunca derruba o plano.** *(Acrescentada em 19/10/2026, a partir do defeito achado pela frente de receitas.)* Um produto apagado em "Meus produtos" continua no plano que o usa como **"Produto apagado"**, com os gramas e sem valores: conta como falta de dado em todos os nutrientes (marca † no total, nunca zero), a energia mostra travessão e a pessoa tira a linha ou põe outro alimento no lugar; as três etapas, o Cobrir, o Exportar e o link continuam funcionando. Não guardamos uma cópia do produto apagado: apagar foi pedido pela pessoa, e o aviso de antes de apagar diz o que acontece com o plano. Um produto que o rótulo não traz um nutriente (vitamina A, as do complexo B, fósforo…) conta esse nutriente como falta de dado, nunca como "NaN" |
 | D-249 | **PRODUCT.md e AGENTS.md descrevem o modelo de dados de hoje** (spec `dados-na-nuvem`): os dados ficam na nuvem, presos à conta; o navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro; só existe "Sair"; sem internet, a área de trabalho trava até a conexão voltar. Sem conta configurada (desenvolvimento e testes), o app abre no modo local |
 
 ## 2. Critérios de aceite
@@ -45,7 +45,7 @@ nutriente, de energia ou do cobrir muda.
 - **CA-771** · Dado "Dieta para imprimir" aberta, quando a pessoa imprime, então só a folha vai para o papel, como hoje: a tela de trás não aparece.
 - **CA-772** · Dado o tema escuro, quando a impressão começa, então a página fica no tema claro; quando a impressão termina, o tema escuro volta.
 
-### Painel (D-241 e D-248)
+### Painel (D-241 e D-247)
 
 - **CA-773** · Dado um plano sem nome, um plano sem paciente ou nenhum paciente cadastrado, então o Painel mostra o bloco "Falta completar" com cada pendência numa linha e o botão dela ("Ver" ou "Cadastrar"), como hoje.
 - **CA-774** · Dado nada a completar, então o bloco "Falta completar" não existe e o texto "Tudo em dia." não aparece em lugar nenhum; sem consulta nem aniversário na semana, "Onde você parou" ocupa a largura toda.
@@ -77,17 +77,20 @@ nutriente, de energia ou do cobrir muda.
 
 ### Toque (D-246)
 
-- **CA-788** · Dado o celular (390 px), então o "Fechar" das janelas (Modelos de plano, Dieta para imprimir) e da gaveta do Cobrir tem pelo menos 44 × 44 px.
-- **CA-789** · Dado o celular, então cada opção em pílula (Sexo, Objetivo, Condição e Nível de atividade na etapa 1; Sexo na ficha; Situação em Configurações) tem pelo menos 44 px de altura.
+- **CA-788** · Dado o celular (390 px), então o "Fechar" das janelas (Modelos de plano, Dieta para imprimir) e da gaveta do Cobrir tem pelo menos 44 × 44 px, e cada opção em pílula (Sexo, Objetivo, Condição e Nível de atividade na etapa 1; Sexo na ficha; Situação em Configurações) tem pelo menos 44 px de altura.
 - **CA-790** · Dado o celular, então a trilha do cabeçalho ("Planos"), cada item do menu Exportar, os botões e links da Ajuda e o "Ver as fontes" da avaliação antropométrica têm pelo menos 44 px de altura.
 
-### Texto (D-247 e D-248)
+### Texto (D-247)
 
-- **CA-791** · Dado Pacientes, então "Pacientes" aparece só como título da página, e a busca e "Novo paciente" continuam; dado a ficha, então a frase sobre as restrições filtrarem as sugestões aparece uma vez; dado a etapa 1, então "Observações" aparece uma vez como título do recolhido e o campo continua com o nome acessível "Observações".
+- **CA-791** · Dado Pacientes, então "Pacientes" aparece só como título da página, e a busca e "Novo paciente" continuam; dado a ficha, então a frase sobre as restrições filtrarem as sugestões aparece uma vez; dado a etapa 1, então "Observações" aparece uma vez como título do recolhido e o campo continua com o nome acessível "Observações"; dado a busca de alimento de uma refeição, então o texto-guia diz "colheres"; dado o Cobrir de cálcio com 243,6 mg faltando, então a gaveta diz "Faltam 244 mg para a meta."
 - **CA-792** · Dado o pedido de autorização do link do paciente, então nenhum caminho de arquivo (como `docs/...`) aparece na tela.
-- **CA-793** · Dado a busca de alimento de uma refeição, então o texto-guia diz "colheres"; dado o Cobrir de cálcio com 243,6 mg faltando, então a gaveta diz "Faltam 244 mg para a meta."
 - **CA-794** · Dado a Tabela de alimentos em ordem de nome, então os alimentos cujo nome começa por espaço entram na posição da primeira letra ("Mamão, doce em calda" junto dos outros "Mamão"), e "valores por 100 g" não quebra entre o número e a unidade.
 - **CA-795** · Dado a etapa 3 no celular, então cada opção do seletor de referência ("Individual (RDA, 90%)", "Coletivo (EAR, 50%)", "Personalizado") fica numa linha só.
+
+### Produto do rótulo (D-248)
+
+- **CA-789** · Dado um produto do rótulo usado num plano, quando a pessoa o apaga em "Meus produtos" e abre o plano, então as três etapas abrem sem erro; a linha do alimento diz "Produto apagado", com os gramas e "— kcal", sem o botão de substituto; o Cobrir, "Dieta para imprimir" e o Word continuam funcionando; e o aviso de antes de apagar diz que o plano passa a mostrar "Produto apagado" nessa linha.
+- **CA-793** · Dado um produto do rótulo no plano, então os nutrientes que o rótulo não traz (vitamina A, tiamina, fósforo…) contam como falta de dado, com a marca †, e nenhum número da tela, da folha ou do Word sai como "NaN"; um item cujo alimento não existe mais conta como falta de dado em todos os nutrientes.
 
 ### Documentos (D-249)
 
@@ -105,7 +108,7 @@ nutriente, de energia ou do cobrir muda.
 - **CB-241** · Conta nova, sem nada: o Painel mostra os números, "Onde você parou" com "Ver um plano de exemplo" e "Falta completar" com "Nenhum paciente cadastrado".
 - **CB-242** · "Mínimo da meta" vazio, zero ou acima de 1000: a meta não muda (como o CA-698) e o aviso de número inteiro não aparece para o campo vazio.
 - **CB-243** · Idade apagada: o campo de meses segue a regra de sempre (some, a menos que já tenha meses guardados) quando a pessoa termina de digitar.
-- **CB-244** · Margarina numa quantidade em que nem a ponta de faca nem outra medida serve (por exemplo, 13 g): o planejador não mostra medida; nunca "fatia".
+- **CB-244** · Manteiga ou margarina acima de 3 pontas de faca (por exemplo, 24 g): vale a medida comum ("3 colheres de chá"), nunca "fatia"; a quantidade que nenhuma medida alcança fica sem medida.
 - **CB-245** · Nome de uma palavra só, sem espaço, com 80 letras: também corta, não alarga a tela.
 - **CB-246** · Tema escuro e a pessoa cancela a caixa de impressão: o tema escuro volta igual.
 - **CB-247** · Plano guardado com mínimo da meta 0,4%: vale 1%, nunca 0%.
@@ -139,25 +142,27 @@ ou contradiz), **M** menor. Prints na pasta da frente (`antes/`, com o nome do a
 | A-07 | Etapa 3 | "Mínimo da meta" 90,4: o subtítulo diz "meta de 90%" e uma linha com 90,2% diz "90% abaixo" | I | (teste) | D-243 |
 | A-08 | Etapa 1 | "Meses além dos anos" pisca ao digitar a idade de um adulto ("2" mostra, "28" esconde) e empurra Peso e Estatura | I | (teste) | D-244 |
 | A-09 | Todas | Alvos de toque abaixo de 44 px no celular: "Fechar" das janelas e da gaveta (28 px), opções em pílula (34 px), trilha do cabeçalho (11 px), itens do Exportar (36 px), "Ir" e "Abrir" da Ajuda (20 px), "Ver as fontes" (16 px) | I | `relatorio.json` da auditoria | D-246 |
-| A-10 | Etapa 3 | No celular, o seletor de referência quebra cada opção em três linhas ("Individual / (RDA, / 90%)") | I | `etapa3-390-claro` | D-248 |
+| A-10 | Etapa 3 | No celular, o seletor de referência quebra cada opção em três linhas ("Individual / (RDA, / 90%)") | I | `etapa3-390-claro` | D-247 |
 | A-11 | Etapa 2 | O pedido de autorização do link mostra o caminho `docs/lgpd-rascunhos.md`, que não existe para quem usa o site | I | código | D-247 |
-| A-12 | Painel | "1 plano · mexidos em 14 dias", "1 dia · trabalhados em 14 dias" | M | `painel-390-claro` | D-248 |
-| A-13 | Painel | No computador, dois "Novo plano" (menu e cabeçalho); Planos já esconde o do cabeçalho | M | `painel-1280-claro` | D-248 |
-| A-14 | Painel | "Onde você parou" no celular corta a data: "Atendimento completo · altera…" | M | `painel-390-claro` | D-248 |
+| A-12 | Painel | "1 plano · mexidos em 14 dias", "1 dia · trabalhados em 14 dias" | M | `painel-390-claro` | D-247 |
+| A-13 | Painel | No computador, dois "Novo plano" (menu e cabeçalho); Planos já esconde o do cabeçalho | M | `painel-1280-claro` | D-247 |
+| A-14 | Painel | "Onde você parou" no celular corta a data: "Atendimento completo · altera…" | M | `painel-390-claro` | D-247 |
 | A-15 | Pacientes | O cartão "Pacientes" repete o título da página | M | `pacientes-1280-claro` | D-247 |
 | A-16 | Ficha | O aviso azul repete a frase de "Restrições e saúde" (as restrições filtram as sugestões), longe do cartão | M | `ficha-1280-escuro` | D-247 |
 | A-17 | Etapa 1 | "Observações" (título do recolhido) e "Observações" (rótulo do campo) um em cima do outro | M | `etapa1-390-claro` | D-247 |
-| A-18 | Tabela de alimentos | Dois alimentos com espaço no começo do nome aparecem antes de "Abacate" na ordem por nome | M | `alimentos-1280-claro` | D-248 |
-| A-19 | Tabela de alimentos | No celular, "100" e "g" em linhas diferentes e "· Fontes da base" sozinho numa linha | M | `alimentos-390-claro` | D-248 |
-| A-20 | Etapa 2 | Texto-guia da busca: "2 colher de sopa feijão" | M | `etapa2-390-claro` | D-248 |
+| A-18 | Tabela de alimentos | Dois alimentos com espaço no começo do nome aparecem antes de "Abacate" na ordem por nome | M | `alimentos-1280-claro` | D-247 |
+| A-19 | Tabela de alimentos | No celular, "100" e "g" em linhas diferentes e "· Fontes da base" sozinho numa linha | M | `alimentos-390-claro` | D-247 |
+| A-20 | Etapa 2 | Texto-guia da busca: "2 colher de sopa feijão" | M | `etapa2-390-claro` | D-247 |
 | A-21 | Conta e plano (modo local) | Texto de programador (".env.local", "README") e "funciona sem conta"; só sem servidor | M | `conta-390-claro` | fora de escopo |
 | A-22 | Todas | Campos de texto com 40 px de altura no celular | M | `relatorio.json` | dono decide |
 | A-23 | "Sair" | No celular, "Sair mesmo assim" (vermelho) fica em cima de "Ficar" (o rodapé das janelas empilha ao contrário) | M | `bancada/sair-390-claro` | dono decide |
-| A-24 | Cobrir | "Faltam 243,60 mg" com duas casas, enquanto a tabela diz "656 mg" | M | `cobrir-390-claro` | D-248 |
+| A-24 | Cobrir | "Faltam 243,60 mg" com duas casas, enquanto a tabela diz "656 mg" | M | `cobrir-390-claro` | D-247 |
 | A-25 | Etapa 3 | "Ajustar" sozinho numa faixa da largura toda debaixo dos números | M | `etapa3-768-claro` | não muda |
 | A-26 | Ficha | No celular, Histórico, Evolução do peso (vazia) e o aviso vêm antes da Identificação | M | `ficha-390-claro` | dono decide |
 | A-27 | Negócio | No celular, a tabela de Contas rola de lado dentro do cartão e o selo fica cortado na borda | M | `bancada/negocio-390-claro` | não muda (CB-249) |
 | A-28 | Documentos | PRODUCT.md e AGENTS.md dizem que os dados ficam no aparelho, que a conta é opcional e que funciona offline | I | — | D-249 |
+| A-29 | Planejador | Apagar em "Meus produtos" um produto usado num plano derruba a tela do plano (o total do dia não acha o alimento e para tudo). Achado pela frente de receitas, reproduzido aqui | C | e2e CA-789 | D-248 |
+| A-30 | Etapas 2 e 3 | Com um produto do rótulo no plano, os nutrientes que o rótulo não traz somam "NaN" (vitamina A, complexo B, fósforo, cobre, manganês, colesterol) em vez de contar como falta de dado | C | teste CA-793 | D-248 |
 
 **Sem defeito achado:** rolagem lateral da página (nenhuma tela em 640, 768, 1024 e 1280 px), erros no console
 (nenhum), foco com o teclado (anel visível, ordem certa, "Pular para o conteúdo" primeiro, Esc fecha as janelas),

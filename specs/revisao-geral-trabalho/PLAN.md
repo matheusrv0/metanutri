@@ -32,10 +32,11 @@ classe de layout, texto e testes.
 | T2 | Ctrl+P imprime a tela | `src/ui/tema/globals.css`, `src/ui/layout/Estrutura.tsx`, `src/ui/layout/Cabecalho.tsx`, `src/ui/nuvem/SituacaoDaNuvem.tsx` e `src/ui/aplicativo/AvisoVersaoNova.tsx` (só `print:hidden`), `src/ui/tema/ProvedorTema.tsx`, `src/ui/tema/ProvedorTema.test.tsx` (novo), `e2e/revisao-geral-trabalho.spec.ts`, `specs/impressao-do-plano/SPEC.md` (nota no CB-186) | CA-770, CA-771, CA-772, CB-240, CB-246 | T1 (arquivo de e2e) |
 | T3 | Painel: "Falta completar" e acertos | `src/ui/painel/TelaPainel.tsx`, `src/ui/AreaDeTrabalho.tsx`, `TelaPainel.test.tsx`, `hojeEEstaSemana.test.tsx`, `specs/pdf-e-telas-limpas/SPEC.md` (nota no CA-326) | CA-773 a CA-778, CB-241 | T0 |
 | T4 | Medida caseira igual à da folha | `src/domain/busca.ts`, `src/domain/quantidadeNaFolha.ts`, `src/domain/substitutos.ts`, `src/export/aconselhamento-docx.ts`, `src/ui/plano/LinhaItem.tsx`, `src/ui/plano/DialogoSugestoes.tsx`, `src/ui/adequacao/GavetaCobrir.tsx` (só a medida mostrada), testes de cada um, `specs/impressao-do-plano/SPEC.md` (nota no "Fora de escopo") | CA-779, CA-780, CA-781, CB-244 | T0 |
+| T4b | Produto do rótulo nunca derruba o plano (acrescentada em 19/10, pedido do coordenador: defeito achado pela frente de receitas) | `src/domain/totais.ts`, `src/domain/produtos.ts`, `src/domain/substitutos.ts`, `src/export/aconselhamento-docx.ts`, `src/ui/plano/LinhaItem.tsx`, `src/ui/produtos/TelaProdutos.tsx` (o texto do aviso), testes de cada um, `e2e/revisao-geral-trabalho.spec.ts` | CA-789, CA-793 | T4 |
 | T5 | Mínimo da meta inteiro | `src/domain/adequacao.ts`, `src/ui/adequacao/TelaAdequacao.tsx`, `adequacao.test.ts`, `TelaAdequacao.test.tsx` | CA-782, CA-783, CB-242, CB-247 | T0 |
 | T6 | Meses além dos anos sem piscar | `src/ui/caso/CartaoPessoa.tsx`, `src/ui/caso/usarValorAssentado.ts` (novo), `etapa1.test.tsx` | CA-784, CB-243, CB-248 | T0 |
-| T7 | Toque de 44 px no celular | `design-system/componentes/overlay/dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `design-system/componentes/forms/GrupoOpcoes.tsx`, `design-system/componentes/display/Fontes.tsx` (ou onde mora o "Ver as fontes"), `src/ui/layout/Cabecalho.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `e2e/revisao-geral-trabalho.spec.ts` | CA-788, CA-789, CA-790 | T1 |
-| T8 | Textos sem repetição | `src/ui/pacientes/TelaPacientes.tsx`, `src/ui/pacientes/TelaPaciente.tsx`, `src/ui/caso/TelaCaso.tsx`, `src/ui/missoes/CartaoLinkMissoes.tsx`, `src/ui/plano/EntradaRapida.tsx`, `src/ui/adequacao/GavetaCobrir.tsx` (só a frase da falta), testes | CA-791, CA-792, CA-793 | T1, T4 |
+| T7 | Toque de 44 px no celular | `design-system/componentes/overlay/dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `design-system/componentes/forms/GrupoOpcoes.tsx`, `design-system/componentes/display/Fontes.tsx` (ou onde mora o "Ver as fontes"), `src/ui/layout/Cabecalho.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `e2e/revisao-geral-trabalho.spec.ts` | CA-788, CA-790 | T1 |
+| T8 | Textos sem repetição | `src/ui/pacientes/TelaPacientes.tsx`, `src/ui/pacientes/TelaPaciente.tsx`, `src/ui/caso/TelaCaso.tsx`, `src/ui/missoes/CartaoLinkMissoes.tsx`, `src/ui/plano/EntradaRapida.tsx`, `src/ui/adequacao/GavetaCobrir.tsx` (só a frase da falta), testes | CA-791, CA-792 | T1, T4 |
 | T9 | Tabela de alimentos | `src/domain/catalogo.ts`, `src/ui/alimentos/TelaAlimentos.tsx`, testes | CA-794 | T0 |
 | T10 | Seletor de referência no celular | `src/ui/adequacao/TelaAdequacao.tsx` (ou o `SeletorSegmentado` da biblioteca), `e2e/revisao-geral-trabalho.spec.ts` | CA-795 | T5 |
 | T11 | Cada tela de ponta a ponta, e o teclado | `e2e/revisao-geral-trabalho.spec.ts` | CA-797, CA-799 | T1 a T10 |
@@ -85,6 +86,18 @@ classe de layout, texto e testes.
    4 pedaços. `quantidadeNaFolha.ts` passa a usar `medidaParaMostrar` (a regra sai de lá). `LinhaItem`, `DialogoSugestoes`,
    a medida mostrada no `GavetaCobrir`, `substitutos.ts` e o Word passam a usar `medidaParaMostrar`.
 3. Nota no "Fora de escopo" da `impressao-do-plano`. `npm run check`. Commit `fix(medida): planejador mostra a medida da folha`.
+
+### T4b · Produto do rótulo nunca derruba o plano
+1. Testes: e2e `CA-789` (produto num plano, apagado em Meus produtos: as três etapas abrem, a linha diz "Produto apagado"
+   com "— kcal", "Dieta para imprimir", o Word e o Cobrir funcionam, sem erro na página); `totais.test.ts` (alimento que
+   não existe conta como falta de dado em tudo, CA-793; o teste antigo "inexistente é erro de programação" muda);
+   `produtos.test.ts` (o produto como alimento traz todos os nutrientes, com nulo no que o rótulo não traz, CA-793);
+   `docx.test.ts` (o Word descreve "Produto apagado (40 g)"); `substitutos.test.ts` (original apagado devolve o motivo,
+   sem erro); `LinhaItem.test.tsx` ("Produto apagado", "— kcal", sem "Substituir").
+2. Ver falhar. `totaisDeItens` conta o alimento que falta (e o nutriente indefinido) como falta de dado;
+   `produtoComoAlimento` preenche todos os nutrientes; `calcularSubstituto` devolve o motivo; o Word e a linha dizem
+   "Produto apagado" (id de produto) ou "Alimento removido" (outro id); o aviso de apagar produto diz "Produto apagado".
+3. `npm run check`. Commit `fix(produtos): produto apagado não derruba o plano`.
 
 ### T5 · Mínimo da meta inteiro
 1. Testes: `adequacao.test.ts` (mínimo 90,4 vale 90 e 90,2% está na meta, CA-783; 0,4 vale 1, CB-247);
@@ -163,4 +176,5 @@ Prints de depois em 1280 e 390 px (mesmo roteiro dos de antes), relatório em
 | R-242 | O Word de aconselhamento passa a dizer "ponta de faca" e deixa de dizer "fatia" de manteiga, como a folha |
 | R-243 | O Ctrl+P imprime a tela como ela é, com os botões de dentro do conteúdo (Cobrir, Abrir…). Para entregar ao paciente, continua sendo "Exportar › Dieta para imprimir" |
 | R-244 | A dieta do link do paciente continua com a medida de antes (R-182 da `impressao-do-plano`): a margarina pode sair sem medida no link e com "ponta de faca" na folha |
+| R-246 | Produto apagado não deixa cópia: o plano fica com "Produto apagado", sem valores, até a pessoa trocar a linha. Guardar uma cópia escondida manteria os números, mas o produto continuaria existindo depois de a pessoa mandar apagar |
 | R-245 | Um mínimo da meta com casa decimal guardado antes desta versão passa a valer arredondado: um nutriente entre o valor antigo e o arredondado pode mudar de "abaixo" para "na meta" (ou o contrário) |
