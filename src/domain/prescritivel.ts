@@ -271,6 +271,36 @@ export function ehSegundaEscolha(alimento: Pick<Alimento, 'descricao' | 'categor
   return ehCorteGordo(alimento) || LIBERADOS_PELA_CONDUTA.get(chaveDoNome(alimento.descricao))?.segundaEscolha === true
 }
 
+/**
+ * Os preparos simples entre os pratos prontos da TACO: um ingrediente principal, preparado de um jeito só. A salada de
+ * legumes no vapor mistura vários legumes e conta como composta: cuscuz não troca por 433 g dela.
+ */
+const PREPARO_SIMPLES_ENTRE_OS_PRATOS = /^(Cuscuz, de milho|Frango, com açafrão|Quibebe)/i
+/** Pratos compostos que a TACO põe fora de "Alimentos preparados". */
+const PRATO_COMPOSTO =
+  /^(Quibe|Carne, bovina, almôndegas|Hambúrguer|Coxinha|Croquete|Empada|Pastel|Pamonha|Omelete|Mandioca, farofa|Nhoque|Pescada, filé, molho escabeche|Pão, de queijo)/i
+
+/**
+ * Prato composto: vários ingredientes num preparo só (spec conduta-da-nutricionista, D-294). Alimento simples nunca
+ * troca por ele: peito de frango não troca por quibe.
+ */
+export function ehPratoComposto(alimento: Pick<Alimento, 'descricao' | 'categoria'>): boolean {
+  const nome = limpar(alimento.descricao)
+  if (alimento.categoria === 'Alimentos preparados') return !PREPARO_SIMPLES_ENTRE_OS_PRATOS.test(nome)
+  return PRATO_COMPOSTO.test(nome)
+}
+
+const PROCESSADO =
+  /(^|[\s,])(salgad[oa]s?|conserva|enlatad[oa]s?|industrializad[oa]s?)($|[\s,])|(^|[\s,])pó($|[\s,])|extrato solúvel|^(Cereal matinal|Leite, fermentado|Carne, bovina, (charque|seca)|Seleta)/i
+
+/**
+ * Processado: salgado, em conserva, enlatado, industrializado, em pó, bebida de soja (extrato solúvel), cereal matinal,
+ * leite fermentado e carne curada (spec conduta-da-nutricionista, D-296). Nas trocas, o in natura vem antes.
+ */
+export function ehProcessado(alimento: Pick<Alimento, 'descricao'>): boolean {
+  return PROCESSADO.test(limpar(alimento.descricao))
+}
+
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Pick<Alimento, 'descricao'>): boolean {
   return !POUCO_USUAL.test(alimento.descricao)

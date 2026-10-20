@@ -79,8 +79,29 @@ export interface MedidaEquivalente {
   readonly gramasEquivalentes: number
 }
 
+/** Medidas de contar: unidade e pedaço (spec conduta-da-nutricionista, D-295). */
+export const MEDIDAS_DE_CONTAR: ReadonlySet<string> = new Set([
+  'unidade',
+  'unidade pequena',
+  'fatia',
+  'pedaço',
+  'rodela',
+  'gomo',
+  'banda',
+  'metade',
+  'bife',
+  'filé',
+  'posta',
+  'coxa',
+  'sobrecoxa',
+  'peito',
+])
+
+/** Mais de 4 unidades ou pedaços não é como a paciente conta a comida ("7 torradas", "5 fatias e meia de ovo"). */
+export const MAXIMO_DE_PEDACOS = 4
+
 /** CA-19: gramas expressas na medida caseira mais legível do alimento, em passos de meia medida. */
-export function medidaEquivalente(alimentoId: number, gramas: number): MedidaEquivalente | null {
+export function medidaEquivalente(alimentoId: number, gramas: number, opcoes: { readonly maximoDePedacos?: number } = {}): MedidaEquivalente | null {
   if (!(gramas > 0)) return null
   let melhor: { m: MedidaCaseira; q: number; pontos: number } | null = null
   for (const m of medidasDoAlimento(alimentoId)) {
@@ -88,6 +109,7 @@ export function medidaEquivalente(alimentoId: number, gramas: number): MedidaEqu
     if (preferencia < 0) continue
     const q = Math.max(0.5, Math.round((gramas / m.gramas) * 2) / 2)
     if (q > QUANTIDADE_MAXIMA) continue
+    if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
     if (erro > ERRO_MAXIMO) continue
     // desempate: menos unidades da medida lê melhor ("1 concha" em vez de "4 colheres de servir")
@@ -101,6 +123,15 @@ export function medidaEquivalente(alimentoId: number, gramas: number): MedidaEqu
     texto: formatarQuantidadeMedida(melhor.q, melhor.m.nome),
     gramasEquivalentes: Math.round(melhor.q * melhor.m.gramas * 10) / 10,
   }
+}
+
+/**
+ * A medida caseira que a paciente lê (spec conduta-da-nutricionista, D-297): a do planejador, mas, quando ela pede mais
+ * de 4 unidades ou pedaços e outra medida do alimento serve, a outra ("1 unidade" de ovo frito, não "5 fatias e meia").
+ * Sem outra que sirva, fica a do planejador.
+ */
+export function medidaCaseiraParaPaciente(alimentoId: number, gramas: number): MedidaEquivalente | null {
+  return medidaEquivalente(alimentoId, gramas, { maximoDePedacos: MAXIMO_DE_PEDACOS }) ?? medidaEquivalente(alimentoId, gramas)
 }
 
 /** Nomes de medidas conhecidos, das mais longas para as mais curtas (para casar "colher de sopa" antes de "colher"). */

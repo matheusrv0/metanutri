@@ -184,7 +184,8 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
   })
 
   it('CA-679: carne magra troca por carne magra antes de corte gordo ou ave com pele', () => {
-    const GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra/i
+    // Segunda escolha (spec conduta-da-nutricionista, D-293): corte gordo, ave com pele e carne curada.
+    const GORDO = /com gordura|com pele|costela|cupim|bisteca|capa de contra|charque|bovina, seca/i
     const patinho = trocasDoAlimento({ alimentoId: porDescricao('Carne, bovina, patinho, sem gordura, grelhado').id, gramas: 100 }, opcoes)
     expect(patinho.length).toBeGreaterThan(0)
     for (const t of patinho) expect(t.descricao).not.toMatch(GORDO)
@@ -203,5 +204,110 @@ describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
   it('CA-661: bebida alcoólica no plano não ganha troca', () => {
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cerveja, pilsen 2').id, gramas: 350 }, opcoes)).toEqual([])
     expect(trocasDoAlimento({ alimentoId: porDescricao('Cana, aguardente 1').id, gramas: 50 }, opcoes)).toEqual([])
+  })
+})
+
+// Travas escritas à mão para a spec conduta-da-nutricionista (D-294 a D-296), sem usar as funções de prescritivel.ts.
+const PRATO_COMPOSTO =
+  /^(Quibe|Carne, bovina, almôndegas|Hambúrguer|Coxinha|Croquete|Empada|Pastel|Pamonha|Omelete|Mandioca, farofa|Nhoque|Pescada, filé, molho escabeche|Pão, de queijo)/
+const PREPARO_SIMPLES_ENTRE_OS_PRATOS = /^(Cuscuz, de milho|Frango, com açafrão|Quibebe)/
+const composto = (descricao: string): boolean => {
+  const a = porDescricao(descricao)
+  return a.categoria === 'Alimentos preparados' ? !PREPARO_SIMPLES_ENTRE_OS_PRATOS.test(a.descricao.trim()) : PRATO_COMPOSTO.test(a.descricao.trim())
+}
+const PROCESSADO = /(^|[\s,])(salgad[oa]s?|conserva|enlatad[oa]s?|industrializad[oa]s?)($|[\s,])|(^|[\s,])pó($|[\s,])|extrato solúvel|^Cereal matinal|^Leite, fermentado|^Carne, bovina, (charque|seca)|^Seleta/
+const MUITOS_PEDACOS = /^([5-9]|\d{2,}) (unidades|fatias|pedaços|rodelas|gomos|bandas|metades|bifes|filés|postas|coxas|sobrecoxas|peitos)/
+
+describe('Trocas pela conduta da nutricionista (spec conduta-da-nutricionista)', () => {
+  const nomes = (descricao: string, gramas: number) => trocasDoAlimento({ alimentoId: porDescricao(descricao).id, gramas }, opcoes).map((t) => t.descricao)
+
+  it('CA-919: alimento simples não troca por prato composto', () => {
+    expect(nomes('Frango, peito, sem pele, grelhado', 100)).not.toContain('Quibe, assado')
+    expect(nomes('Arroz, tipo 1, cozido', 150)).not.toContain('Pamonha, barra para cozimento, pré-cozida')
+    expect(nomes('Ovo, de galinha, inteiro, cozido/10minutos', 90)).not.toContain('Omelete, de queijo')
+    expect(nomes('Cuscuz, de milho, cozido com sal', 135)).not.toContain('Yakisoba')
+    expect(nomes('Cuscuz, de milho, cozido com sal', 135)).not.toContain('Salada, de legumes, cozida no vapor')
+    // O ovo cozido continua com troca: o ovo frito voltou e sai em "1 unidade", não em "5 fatias e meia".
+    expect(nomes('Ovo, de galinha, inteiro, cozido/10minutos', 90)).toEqual(['Ovo, de galinha, inteiro, frito'])
+    expect(trocasDoAlimento({ alimentoId: porDescricao('Ovo, de galinha, inteiro, cozido/10minutos').id, gramas: 90 }, opcoes)[0]?.medida?.texto).toBe('1 unidade')
+    for (const a of ALIMENTOS) {
+      if (composto(a.descricao)) continue
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
+        expect(composto(t.descricao), `${a.descricao} → ${t.descricao}`).toBe(false)
+      }
+    }
+  })
+
+  it('CA-920: prato composto posto à mão troca primeiro por preparo simples', () => {
+    let comparados = 0
+    for (const a of ALIMENTOS.filter((x) => composto(x.descricao))) {
+      const ordem = trocasDoAlimento({ alimentoId: a.id, gramas: 150 }, opcoes).map((t) => composto(t.descricao))
+      const primeiroComposto = ordem.indexOf(true)
+      if (primeiroComposto >= 0) expect(ordem.slice(primeiroComposto), a.descricao).not.toContain(false)
+      if (ordem.includes(true) && ordem.includes(false)) comparados += 1
+    }
+    expect(comparados).toBeGreaterThan(0)
+  })
+
+  it('CA-921: nenhuma troca pede mais de 4 unidades ou pedaços; o pão francês não troca por 7 torradas e continua com trocas', () => {
+    const doPao = trocasDoAlimento({ alimentoId: porDescricao('Pão, trigo, francês').id, gramas: 70 }, { ...opcoes, porAlimento: 4 })
+    expect(doPao.length).toBeGreaterThan(1)
+    expect(doPao.map((t) => t.descricao)).not.toContain('Torrada, pão francês')
+    for (const a of ALIMENTOS) {
+      for (const gramas of [50, 100, 200]) {
+        for (const t of trocasDoAlimento({ alimentoId: a.id, gramas }, { ...opcoes, porAlimento: 4 })) {
+          expect(t.medida?.texto ?? '', `${a.descricao} ${gramas} g → ${t.descricao}`).not.toMatch(MUITOS_PEDACOS)
+        }
+      }
+    }
+  })
+
+  it('CA-922: alimento in natura não troca por processado quando há troca in natura', () => {
+    const daCastanha = nomes('Castanha-do-Brasil, crua', 15)
+    expect(daCastanha.length).toBeGreaterThan(0)
+    for (const t of daCastanha) expect(t).not.toMatch(/salgad/)
+    expect(nomes('Brócolis, cozido', 80).join(' | ')).not.toMatch(/conserva/)
+    expect(nomes('Merluza, filé, assado', 100).join(' | ')).not.toMatch(/Bacalhau, salgado/)
+    expect(nomes('Feijão, carioca, cozido', 100).join(' | ')).not.toMatch(/enlatad/)
+    for (const a of ALIMENTOS.filter((x) => !PROCESSADO.test(x.descricao.trim()))) {
+      const processadas = trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes).map((t) => PROCESSADO.test(t.descricao.trim()))
+      // Ou todas processadas (não havia outra), ou nenhuma.
+      if (processadas.includes(false)) expect(processadas, a.descricao).not.toContain(true)
+    }
+  })
+
+  it('CA-923: alimento processado posto à mão troca primeiro pelo não processado', () => {
+    // O mesmo alimento em outro preparo vem antes de tudo para item fora da rotina (CA-672): cereal com açúcar → sem açúcar.
+    const primeiraParte = (d: string) => d.split(',')[0]?.trim().toLowerCase()
+    for (const a of ALIMENTOS.filter((x) => PROCESSADO.test(x.descricao.trim()))) {
+      const ordem = trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)
+        .filter((t) => primeiraParte(t.descricao) !== primeiraParte(a.descricao))
+        .map((t) => PROCESSADO.test(t.descricao.trim()))
+      const primeiroProcessado = ordem.indexOf(true)
+      if (primeiroProcessado >= 0) expect(ordem.slice(primeiroProcessado), a.descricao).not.toContain(false)
+    }
+    for (const [d, gramas] of [['Castanha-de-caju, torrada, salgada', 20], ['Palmito, juçara, em conserva', 80]] as const) {
+      const primeira = nomes(d, gramas)[0]
+      expect(primeira, d).toBeDefined()
+      expect(PROCESSADO.test(primeira ?? ''), `${d} → ${primeira}`).toBe(false)
+    }
+  })
+
+  it('CA-912: item "nunca" posto à mão não ganha troca', () => {
+    for (const d of ['Margarina, com óleo hidrogenado, sem sal (80% de lipídeos)', 'Chantilly, spray, com gordura vegetal', 'Shoyu']) {
+      expect(nomes(d, 50), d).toEqual([])
+    }
+  })
+
+  it('no plano de exemplo, as trocas impressas da revisão da parceira mudaram', () => {
+    let n = 0
+    const { plano } = criarExemplo(() => `cn${++n}`, '2026-10-20')
+    const grupos = trocasDoPlano(plano, buscarAlimento, { ...opcoes, porAlimento: 4 })
+    const de = (inicio: string) => grupos.find((g) => g.descricao.startsWith(inicio))?.trocas.map((t) => t.descricao) ?? []
+    expect(de('Frango, peito, sem pele, grelhado')).not.toContain('Quibe, assado')
+    expect(de('Pão, trigo, francês')).not.toContain('Torrada, pão francês')
+    expect(de('Castanha-do-Brasil')).not.toContain('Castanha-de-caju, torrada, salgada')
+    expect(de('Aveia')).not.toContain('Pipoca, com óleo de soja, sem sal')
+    expect(de('Brócolis')).not.toContain('Palmito, juçara, em conserva')
   })
 })

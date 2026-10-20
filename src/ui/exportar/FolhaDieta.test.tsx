@@ -277,7 +277,8 @@ describe('Folha da dieta (US-B1)', () => {
     const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
     expect(trocas.length).toBeGreaterThan(0)
     for (const troca of trocas) expect(troca).not.toMatch(/\b([5-9]|\d{2,})( fatias| pedaços| rodelas| gomos)/)
-    expect(trocas.some((t) => /^Omelete de queijo · \d+ g$/.test(t))).toBe(true)
+    // A omelete saiu das trocas do ovo: alimento simples não troca por prato composto (spec conduta-da-nutricionista, CA-919).
+    expect(trocas.some((t) => t.startsWith('Omelete'))).toBe(false)
   })
 
   it('as trocas não oferecem doce nem ultraprocessado', () => {
