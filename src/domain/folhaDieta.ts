@@ -5,7 +5,7 @@ import { litrosDeAgua } from './missoes.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
-import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
+import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaComOQueComer, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
@@ -30,10 +30,13 @@ export function assinaturaDaFolha(assinatura: AssinaturaDoPlano | null, caso: Ca
  * impressao-do-plano, CA-631 e CA-632): na folha, a primeira vem sem "ou" e as outras depois de "ou". O item cujo
  * alimento não existe mais (produto apagado em "Meus produtos") fica de fora, inteiro: o paciente não recebe uma
  * linha que não diz o que comer (spec revisao-geral-trabalho, D-248). A receita fica: ela não está na base, e o nome
- * dela vem da cópia guardada no item (spec receitas-com-calculo, CA-879).
+ * dela vem da cópia guardada no item (spec receitas-com-calculo, CA-879), quando tem o que comer (CB-317 da
+ * integracao-rodada-1910): a cópia estragada e a receita sem ingrediente que exista ficam de fora, como o item apagado.
  */
 export function opcoesDaRefeicao(refeicao: Refeicao, buscar: BuscarAlimento = buscarAlimento): readonly (readonly ItemPlano[])[] {
-  return OPCOES.map((opcao) => refeicao.opcoes[opcao].filter((i) => i.gramas > 0 && (ehItemDeReceita(i) || buscar(i.alimentoId) !== undefined))).filter(
+  return OPCOES.map((opcao) =>
+    refeicao.opcoes[opcao].filter((i) => i.gramas > 0 && (ehItemDeReceita(i) ? receitaComOQueComer(receitaDoItem(i), buscar) : buscar(i.alimentoId) !== undefined)),
+  ).filter(
     (itens) => itens.length > 0,
   )
 }
@@ -108,14 +111,16 @@ export interface ReceitaDaFolha {
  * integracao-rodada-1910).
  */
 export function receitasDaFolha(plano: Plano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): readonly ReceitaDaFolha[] {
-  return receitasDoPlano(plano).map((r) => ({
-    nome: nomeDaReceita(r),
-    rendimento: textoDoRendimento(r),
-    ingredientes: r.ingredientes
-      .filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)
-      .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, modo) })),
-    preparo: r.preparo.trim(),
-  }))
+  return receitasDoPlano(plano)
+    .filter((r) => receitaComOQueComer(r, buscar))
+    .map((r) => ({
+      nome: nomeDaReceita(r),
+      rendimento: textoDoRendimento(r),
+      ingredientes: r.ingredientes
+        .filter((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)
+        .map((i) => ({ nome: nomeParaPaciente(buscar(i.alimentoId)), quantidade: quantidadeNaFolha(i.alimentoId, i.gramas, modo) })),
+      preparo: r.preparo.trim(),
+    }))
 }
 
 /** A linha automática da água: "Beba cerca de 2,2 litros de água por dia." Sem peso, nenhuma (D-298). */

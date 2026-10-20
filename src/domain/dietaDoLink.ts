@@ -4,7 +4,15 @@
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
 import { modoDeQuantidade } from './caso.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
-import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano as receitasNoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
+import {
+  ehItemDeReceita,
+  nomeDaReceita,
+  receitaComOQueComer,
+  receitaDoItem,
+  receitasDoPlano as receitasNoPlano,
+  textoDaPorcao,
+  textoDoRendimento,
+} from './receitaNoPlano.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type ReceitaDoPlano } from './tipos.ts'
 
@@ -113,12 +121,15 @@ export function dietaDoPlano(
       // base, e o nome vem da cópia guardada no item (spec receitas-com-calculo, CA-883).
       opcoes: OPCOES.map((opcao) =>
         refeicao.opcoes[opcao]
-          .filter((i) => i.gramas > 0 && (ehItemDeReceita(i) || buscar(i.alimentoId) !== undefined))
+          // CB-317 (integracao-rodada-1910): a receita sem o que comer também fica de fora.
+          .filter((i) => i.gramas > 0 && (ehItemDeReceita(i) ? receitaComOQueComer(receitaDoItem(i), buscar) : buscar(i.alimentoId) !== undefined))
           .map((i) => itemDaDieta(i, buscar, modo)),
       ).filter((itens) => itens.length > 0),
     }))
     .filter((refeicao) => refeicao.opcoes.length > 0)
-  const receitasDoPlano = receitasNoPlano(plano).map((r) => receitaDaDieta(r, buscar, modo))
+  const receitasDoPlano = receitasNoPlano(plano)
+    .filter((r) => receitaComOQueComer(r, buscar))
+    .map((r) => receitaDaDieta(r, buscar, modo))
   return {
     refeicoes,
     orientacoes: caso.orientacoes.trim(),

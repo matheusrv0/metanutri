@@ -2,7 +2,7 @@ import { ArrowLeftRight, X } from 'lucide-react'
 import { medidaParaMostrar } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
 import { nomeSemAlimento } from '@/domain/produtos.ts'
-import { ehItemDeReceita, nomeDaReceita, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
+import { ehItemDeReceita, nomeDaReceita, receitaComOQueComer, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
@@ -57,7 +57,10 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
         </p>
         {medidaTexto ? <p className="truncate text-xs text-muted-foreground">{medidaTexto}</p> : null}
         {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item apagado de fora; a nutricionista fica sabendo aqui. */}
-        {deReceita || alimento ? null : <p className="text-xs text-warningtext">Não sai na folha nem no link do paciente.</p>}
+        {/* CB-317 (integracao-rodada-1910): a receita sem o que comer também fica de fora. */}
+        {(deReceita ? receitaComOQueComer(receita, buscarAlimento) : alimento) ? null : (
+          <p className="text-xs text-warningtext">Não sai na folha nem no link do paciente.</p>
+        )}
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="w-24 shrink-0">

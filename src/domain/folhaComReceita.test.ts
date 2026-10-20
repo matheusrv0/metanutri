@@ -40,6 +40,34 @@ describe('a linha da refeição (CA-879)', () => {
   })
 })
 
+describe('CB-317 (integracao-rodada-1910, revisão final M-5): receita sem o que comer fica fora da folha', () => {
+  const soApagados = { ...PANQUECA, ingredientes: [{ alimentoId: 900_001, gramas: 150 }, { alimentoId: 900_002, gramas: 50 }] }
+  const estragado = { id: 'x', alimentoId: ID_DE_RECEITA, gramas: 100, receita: { nome: 'X' } } as unknown as ItemPlano
+
+  it('todos os ingredientes apagados: sai da refeição e da seção Receitas', () => {
+    const p = plano([itemDeReceita('a', 120, soApagados), { id: 'b', alimentoId: BANANA, gramas: 75 }])
+    const [cafe] = p.refeicoes
+    if (!cafe) throw new Error('plano sem café')
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['b'])
+    expect(receitasDaFolha(p, buscarAlimento)).toEqual([])
+  })
+
+  it('cópia estragada (CB-273): sai da refeição', () => {
+    const [cafe] = plano([estragado, { id: 'b', alimentoId: BANANA, gramas: 75 }]).refeicoes
+    if (!cafe) throw new Error('plano sem café')
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['b'])
+  })
+
+  it('com um ingrediente que ainda existe, a receita fica', () => {
+    const umQueFica = { ...soApagados, ingredientes: [...soApagados.ingredientes, { alimentoId: BANANA, gramas: 75 }] }
+    const p = plano([itemDeReceita('a', 120, umQueFica)])
+    const [cafe] = p.refeicoes
+    if (!cafe) throw new Error('plano sem café')
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['a'])
+    expect(receitasDaFolha(p, buscarAlimento).map((r) => r.ingredientes.map((i) => i.nome))).toEqual([['Banana prata']])
+  })
+})
+
 describe('a seção Receitas (CA-880, CB-278)', () => {
   it('cada receita uma vez: nome, rendimento, ingredientes da receita inteira e o modo de preparo', () => {
     const [panqueca, ...resto] = receitasDaFolha(plano([itemDeReceita('a', 120)], [itemDeReceita('s', 240)]), buscarAlimento)

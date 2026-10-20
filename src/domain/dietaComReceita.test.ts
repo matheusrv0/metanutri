@@ -90,6 +90,18 @@ describe('a receita na dieta do link', () => {
     expect(dieta.receitasDoPlano?.[0]?.ingredientes.map((i) => i.alimento)).toEqual(['Banana, prata, crua', 'Ovo, de galinha, inteiro, cru', 'Aveia, flocos, crua'])
   })
 
+  it('CB-317 (integracao-rodada-1910, revisão final M-5): receita sem o que comer fica fora da cópia do link', () => {
+    const soApagados = { ...PANQUECA, ingredientes: [{ alimentoId: 900_001, gramas: 150 }] }
+    const plano = criarPlanoPadrao(ids)
+    const desjejum = plano.refeicoes[0]
+    if (!desjejum) throw new Error('plano padrão mudou')
+    let comReceitas = adicionarReceita(plano, desjejum.id, 'principal', { receita: soApagados, gramas: 120 }, ids)
+    comReceitas = adicionarItem(comReceitas, desjejum.id, 'principal', { alimentoId: ID_ARROZ, gramas: 150 }, ids)
+    const dieta = dietaDoPlano(caso(), comReceitas)
+    expect(dieta.refeicoes[0]?.opcoes[0]?.map((i) => i.alimento)).toEqual(['Arroz, tipo 1, cozido'])
+    expect(dieta).not.toHaveProperty('receitasDoPlano')
+  })
+
   it('CA-884: a cópia guardada volta igual pela leitura, e receita estragada fica de fora', () => {
     const copia = copiarDieta(dietaDoPlano(caso(), comPanqueca()), '2026-10-19')
     const lida = lerDieta(JSON.parse(JSON.stringify(copia)))

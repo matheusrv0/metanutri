@@ -5,7 +5,7 @@
 // por aqui, nunca direto: a cópia pode vir estragada de dado mexido à mão (CB-273).
 import { formatarQuantidadeMedida, pluralDaMedida } from './busca.ts'
 import { valorDeReferencia } from './formatarQuantidade.ts'
-import { OPCOES, type IngredienteReceita, type ItemPlano, type Plano, type ReceitaDoPlano } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type IngredienteReceita, type ItemPlano, type Plano, type ReceitaDoPlano } from './tipos.ts'
 
 /** O `alimentoId` do item de receita: a TACO começa no id 1 e os produtos em 900 000. */
 export const ID_DE_RECEITA = 0
@@ -54,6 +54,14 @@ export const ehItemDeReceita = (item: ItemPlano): boolean => item.receita !== un
 /** A cópia do item de receita; `null` no item de alimento e na cópia estragada. */
 export function receitaDoItem(item: ItemPlano): ReceitaDoPlano | null {
   return ehItemDeReceita(item) ? lerReceitaDoPlano(item.receita as unknown) : null
+}
+
+/**
+ * A receita tem o que comer (CB-317 da integracao-rodada-1910): a cópia lê bem e ao menos um ingrediente com gramas
+ * ainda existe. Sem isso, ela fica fora da folha e do link do paciente, como o item apagado (D-248, D-317).
+ */
+export function receitaComOQueComer(r: ReceitaDoPlano | null, buscar: BuscarAlimento): boolean {
+  return r !== null && r.ingredientes.some((i) => i.gramas > 0 && buscar(i.alimentoId) !== undefined)
 }
 
 /** A soma dos pesos dos ingredientes, crus como entram na receita. */

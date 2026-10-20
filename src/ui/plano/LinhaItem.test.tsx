@@ -50,6 +50,23 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.getByText(/kcal/).textContent).toMatch(/^\d+ kcal$/)
   })
 
+  it('CB-317 (integracao-rodada-1910, revisão final M-5): receita sem ingrediente que exista avisa que não sai para o paciente', () => {
+    const soApagados = { ...PANQUECA, ingredientes: [{ alimentoId: 900_001, gramas: 150 }] }
+    const { unmount } = render(
+      <ul>
+        <LinhaItem item={itemDeReceita('r1', 120, soApagados)} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.getByText('Não sai na folha nem no link do paciente.')).toBeInTheDocument()
+    unmount()
+    render(
+      <ul>
+        <LinhaItem item={itemDeReceita('r2', 120)} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.queryByText('Não sai na folha nem no link do paciente.')).not.toBeInTheDocument()
+  })
+
   it('CA-780: 30 g de manteiga mostram "1 colher de sopa", nunca "1 fatia"', () => {
     linha(MANTEIGA, 30)
     expect(screen.getByText('1 colher de sopa')).toBeInTheDocument()
