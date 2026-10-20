@@ -90,6 +90,9 @@ describe('ler a cópia do item (CB-273)', () => {
       { ...PANQUECA, porcoes: 0 },
       { ...PANQUECA, pesoProntoG: 0 },
       { ...PANQUECA, ingredientes: [], pesoProntoG: null },
+      // Rodada da revisão (M-2): sem ingrediente com gramas, mesmo com peso pronto, não há o que somar.
+      { ...PANQUECA, ingredientes: [], pesoProntoG: 100 },
+      { ...PANQUECA, ingredientes: [{ alimentoId: 7, gramas: 0 }], pesoProntoG: 100 },
       null,
     ]
     for (const receita of estragadas) {

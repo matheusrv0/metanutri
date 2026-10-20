@@ -117,9 +117,9 @@ describe('a biblioteca de receitas (CA-861, CA-863 a CA-866)', () => {
     expect((JSON.parse(arm.getItem(CHAVE_RECEITAS) ?? '[]') as unknown[])[0]).toEqual(antiga)
   })
 
-  it('dado estragado: item sem os campos não aparece, e a lista ilegível conta como vazia', () => {
+  it('dado estragado: item sem os campos ou sem ingrediente com gramas não aparece, e a lista ilegível conta como vazia', () => {
     const arm = new Memoria()
-    arm.setItem(CHAVE_RECEITAS, JSON.stringify([receita('a', 'Bolo'), { id: 'b' }, 3]))
+    arm.setItem(CHAVE_RECEITAS, JSON.stringify([receita('a', 'Bolo'), { id: 'b' }, 3, receita('c', 'Vazia', { ingredientes: [] }), receita('d', 'Zerada', { ingredientes: [{ alimentoId: 7, gramas: 0 }] })]))
     expect(criarRepositorioReceitas(arm).listar().map((r) => r.id)).toEqual(['a'])
     arm.setItem(CHAVE_RECEITAS, '{')
     expect(criarRepositorioReceitas(arm).listar()).toEqual([])

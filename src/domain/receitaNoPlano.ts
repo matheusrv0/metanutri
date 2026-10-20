@@ -44,7 +44,8 @@ export function lerReceitaDoPlano(v: unknown): ReceitaDoPlano | null {
     pesoProntoG,
     preparo,
   }
-  return pesoProntoDe(receita) > 0 ? receita : null
+  // Sem ingrediente com gramas não há o que somar: vale como cópia estragada, com a marca † (CB-273, D-275).
+  return receita.ingredientes.some((i) => i.gramas > 0) && pesoProntoDe(receita) > 0 ? receita : null
 }
 
 /** O item é de receita: tem a cópia, ou o id de receita (mesmo com a cópia estragada). */

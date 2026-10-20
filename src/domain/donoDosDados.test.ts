@@ -311,7 +311,7 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
   })
 
   it('CA-867 (spec receitas-com-calculo): as receitas de antes juntam com as da conta sem perder nenhuma', () => {
-    const receita = (id: string, nome: string) => ({ id, nome, ingredientes: [], porcoes: 1, nomeDaPorcao: 'porção', pesoProntoG: 100, preparo: '', criadoEm: '2026-10-19', atualizadoEm: '2026-10-19' })
+    const receita = (id: string, nome: string) => ({ id, nome, ingredientes: [{ alimentoId: 7, gramas: 30 }], porcoes: 1, nomeDaPorcao: 'porção', pesoProntoG: 100, preparo: '', criadoEm: '2026-10-19', atualizadoEm: '2026-10-19' })
     const arm = memoria({
       [CHAVE_DONO]: 'conta-a',
       'metanutri:conta:conta-a:receitas': JSON.stringify([receita('r1', 'Panqueca')]),

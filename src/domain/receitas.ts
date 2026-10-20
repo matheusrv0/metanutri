@@ -180,6 +180,8 @@ function ehReceita(v: unknown): v is Receita {
     typeof o['nome'] === 'string' &&
     Array.isArray(o['ingredientes']) &&
     (o['ingredientes'] as unknown[]).every((i) => typeof i === 'object' && i !== null && ehNumero((i as Record<string, unknown>)['alimentoId']) && ehNumero((i as Record<string, unknown>)['gramas'])) &&
+    // CB-273: sem ingrediente com gramas, a receita não tem o que somar (dado mexido à mão).
+    (o['ingredientes'] as { gramas: number }[]).some((i) => i.gramas > 0) &&
     ehNumero(o['porcoes']) &&
     o['porcoes'] > 0 &&
     typeof o['nomeDaPorcao'] === 'string' &&

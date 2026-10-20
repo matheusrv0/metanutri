@@ -119,6 +119,11 @@ describe('receita no plano (spec receitas-com-calculo)', () => {
     expect(t.nutrientes.ferro_mg.semDado).toBe(1)
   })
 
+  it('CB-273 (rodada da revisão): cópia sem ingrediente com gramas leva a marca †, nunca soma zero em silêncio', () => {
+    const t = totaisDeItens([itemDeReceita('a', 100, { ...PANQUECA, ingredientes: [], pesoProntoG: 100 })], buscarAlimento)
+    expect(t.nutrientes.energia_kcal).toEqual({ total: 0, semDado: 1 })
+  })
+
   it('CA-874: receita em substituto não soma no dia', () => {
     const plano: Plano = { refeicoes: [refeicao('cafe', [item('a', 1, 100)], [itemDeReceita('s', 120)])] }
     expect(totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total).toBeCloseTo(123.5349, 6)
