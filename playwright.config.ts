@@ -29,11 +29,14 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${PORTA_COM_CONTA}` },
     },
   ],
+  // M-8 (spec revisao-geral-publica, D-233): nenhum dos dois sites reaproveita um servidor que já esteja na porta. Um
+  // `vite preview` esquecido, de outra worktree ou de um build antigo, faria o teste rodar contra o site errado em
+  // silêncio; com a porta ocupada, o Playwright para e diz isso.
   webServer: [
     {
       command: `npm run build && npx vite preview --port ${PORTA} --strictPort`,
       url: `http://localhost:${PORTA}`,
-      reuseExistingServer: !process.env['CI'],
+      reuseExistingServer: false,
       timeout: 180_000,
       // Sem servidor de conta nos testes de navegador: o app abre no modo local
       // (SPEC CA-150), mesmo que exista um .env.local com as chaves nesta máquina.
@@ -47,7 +50,7 @@ export default defineConfig({
       // do cartão; o script da operadora é respondido pelo servidor falso e nunca sai da máquina.
       command: `npx vite build --outDir ${SAIDA_COM_CONTA} --emptyOutDir && npx vite preview --outDir ${SAIDA_COM_CONTA} --port ${PORTA_COM_CONTA} --strictPort`,
       url: `http://localhost:${PORTA_COM_CONTA}`,
-      reuseExistingServer: !process.env['CI'],
+      reuseExistingServer: false,
       timeout: 180_000,
       env: {
         VITE_SUPABASE_URL: ENDERECO_FALSO,
