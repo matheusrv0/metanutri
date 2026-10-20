@@ -3,11 +3,16 @@ import type { ReactNode } from 'react'
 import type { ErroConta } from '@/domain/conta.ts'
 import type { EstadoDaNuvem } from '@/domain/sincronia.ts'
 import { contaFoiExcluida } from '../contaExcluida.ts'
+import { exclusaoPedidaPor } from '../exclusaoPedida.ts'
 import { ContextoNuvem, type ValorNuvem } from './contextoNuvem.ts'
 import { CONFIRME_A_SENHA, EXCLUSAO_NAO_TERMINOU, SENHA_CONFERIDA_VALE_MS, SENHA_INCORRETA, useExclusaoDaConta } from './usarExclusaoDaConta.ts'
 
 const { cliente } = vi.hoisted(() => {
-  const cliente = { invocar: vi.fn(), functions: { invoke: (...args: unknown[]) => cliente.invocar(...args) } }
+  const cliente = {
+    invocar: vi.fn(),
+    functions: { invoke: (...args: unknown[]) => cliente.invocar(...args) },
+    auth: { getUser: vi.fn() },
+  }
   return { cliente }
 })
 
@@ -67,7 +72,10 @@ function montar({ entrar = { ok: true, erro: null as ErroConta | null }, comNuve
 describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
   beforeEach(() => {
     cliente.invocar.mockReset()
+    cliente.auth.getUser.mockReset()
+    cliente.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
     sessionStorage.clear()
+    localStorage.clear()
   })
 
   it('CA-807 e CA-808: confere a senha, pede a exclusão e termina como "Sair": para a nuvem, apaga a cópia, marca o aviso e sai', async () => {
@@ -232,6 +240,57 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
     })
     expect(hook.result.current.excluindo).toBe(false)
     expect(cliente.invocar).toHaveBeenCalledOnce()
+  })
+
+  describe('L6 da revisão: a resposta perdida', () => {
+    it('antes de pedir, anota a exclusão no aparelho; sem resposta, a anotação fica (para a sessão que cair apagar a cópia)', async () => {
+      const { hook } = montar()
+      cliente.invocar.mockImplementation(async () => {
+        expect(exclusaoPedidaPor('u1')).toBe(true)
+        throw new Error('rede caiu')
+      })
+      await act(() => hook.result.current.excluir('minha-senha', []))
+      expect(exclusaoPedidaPor('u1')).toBe(true)
+    })
+
+    it.each([
+      ['a exclusão feita', EXCLUIDA],
+      ['uma recusa do servidor', respondeu(502, { erro: EXCLUSAO_NAO_TERMINOU })],
+      ['a senha antiga', respondeu(401, { erro: CONFIRME_A_SENHA, codigo: 'login-antigo' })],
+    ])('%s (uma resposta, sim ou não) tira a anotação', async (_caso, resposta) => {
+      const { hook } = montar()
+      cliente.invocar.mockResolvedValue(resposta)
+      await act(() => hook.result.current.excluir('minha-senha', []))
+      expect(exclusaoPedidaPor('u1')).toBe(false)
+    })
+
+    it('passados 9 minutos, a senha "errada" é de um login que não existe mais: termina como no CA-808, em vez de "Senha incorreta."', async () => {
+      const { hook, conta, aoExcluida, andar } = montar()
+      cliente.invocar.mockRejectedValueOnce(new Error('rede caiu'))
+      await act(() => hook.result.current.excluir('minha-senha', []))
+      andar(SENHA_CONFERIDA_VALE_MS + 1)
+      conta.entrar.mockResolvedValueOnce({ ok: false, erro: 'credencial-invalida' })
+      cliente.auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'User from sub claim in JWT does not exist', status: 403, code: 'user_not_found' } })
+      let resultado
+      await act(async () => {
+        resultado = await hook.result.current.excluir('minha-senha', [])
+      })
+      expect(resultado).toEqual({ ok: true })
+      expect(conta.sair).toHaveBeenCalledOnce()
+      expect(aoExcluida).toHaveBeenCalledOnce()
+      expect(contaFoiExcluida(undefined, Number.POSITIVE_INFINITY)).toBe(true)
+    })
+
+    it('a conta ainda existe: a senha errada é "Senha incorreta."', async () => {
+      const { hook, conta } = montar({ entrar: { ok: false, erro: 'credencial-invalida' } })
+      let resultado
+      await act(async () => {
+        resultado = await hook.result.current.excluir('errada', [])
+      })
+      expect(resultado).toEqual({ ok: false, erro: SENHA_INCORRETA, naSenha: true })
+      expect(cliente.auth.getUser).toHaveBeenCalledOnce()
+      expect(conta.sair).not.toHaveBeenCalled()
+    })
   })
 
   it('sem nuvem (o cliente da nuvem não abriu), termina do mesmo jeito', async () => {

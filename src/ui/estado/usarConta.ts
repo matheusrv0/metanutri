@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
 import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
+import { contaDaExclusaoPedida, esquecerExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { obterSupabase, supabaseConfigurado } from './supabase.ts'
@@ -127,9 +128,22 @@ export function useConta(): ValorConta {
   useEffect(() => {
     if (!cliente) return
     let vivo = true
+    // A conta da sessão de agora, para saber quem saiu quando a sessão cai (L6 da revisão da exclusão).
+    let contaDaSessao: string | null = null
+
+    /** Spec exclusao-de-conta (CB-250): a exclusão desta conta foi pedida e a resposta se perdeu; a conta pode já não existir. */
+    const apagarSeFoiExcluida = (conta: string) => {
+      if (!exclusaoPedidaPor(conta)) return
+      apagarDadosDaConta(armazenamentoLocal(), conta)
+      esquecerExclusaoPedida()
+    }
 
     void cliente.auth.getSession().then(({ data }) => {
       if (!vivo) return
+      contaDaSessao = data.session?.user.id ?? null
+      // O site abre sem sessão depois de uma exclusão sem resposta: a cópia de trabalho daquela conta sai.
+      const pendente = contaDaSessao === null ? contaDaExclusaoPedida() : null
+      if (pendente !== null) apagarSeFoiExcluida(pendente)
       setSessao(montarSessao(data.session?.user ?? null))
       setCarregando(false)
     })
@@ -138,7 +152,12 @@ export function useConta(): ValorConta {
       if (!vivo) return
       if (evento === 'PASSWORD_RECOVERY') setEmRecuperacao(true)
       // Sair no meio da troca de senha não deve deixar o modo de recuperação ligado.
-      if (evento === 'SIGNED_OUT') setEmRecuperacao(false)
+      if (evento === 'SIGNED_OUT') {
+        setEmRecuperacao(false)
+        // A sessão caiu (a renovação falhou com o login apagado) depois de um pedido de exclusão sem resposta.
+        if (contaDaSessao !== null) apagarSeFoiExcluida(contaDaSessao)
+      }
+      contaDaSessao = nova?.user.id ?? null
       setSessao(montarSessao(nova?.user ?? null))
     })
 

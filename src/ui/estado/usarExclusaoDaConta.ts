@@ -4,8 +4,10 @@
 import { useRef, useState } from 'react'
 import { MENSAGEM_ERRO } from '@/domain/conta.ts'
 import { marcarContaExcluida } from '../contaExcluida.ts'
+import { anotarExclusaoPedida, esquecerExclusaoPedida } from '../exclusaoPedida.ts'
 import type { ExtraDoPedido } from '../publico/conta/usarVerificacao.ts'
 import { useNuvem } from './contextoNuvem.ts'
+import { obterSupabase } from './supabase.ts'
 import { chamar, PEDIDO_EM_ANDAMENTO, SESSAO_TERMINOU } from './usarAssinatura.ts'
 import type { ValorConta } from './usarConta.ts'
 
@@ -30,6 +32,16 @@ export interface ValorExclusao {
 
 const falhou = (erro: string, naSenha = false): ResultadoDaExclusao => ({ ok: false, erro, naSenha })
 
+/** O servidor de login diz que o login desta sessão não existe mais. Sem resposta, ou sem sessão, não dá para saber: falso. */
+async function loginApagado(): Promise<boolean> {
+  try {
+    const resposta = await obterSupabase()?.auth.getUser()
+    return resposta?.error?.code === 'user_not_found'
+  } catch {
+    return false
+  }
+}
+
 export interface OpcoesDaExclusao {
   /** CA-809 (L5 da revisão): o pedido cancelou a assinatura e não terminou; quem chama relê a assinatura. */
   readonly aoCancelarAssinatura?: () => void
@@ -49,6 +61,16 @@ export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' |
   // CB-250: quando a senha foi conferida por último neste navegador; lido só nos manipuladores.
   const conferidaEm = useRef<number | null>(null)
 
+  /** D-255 (CA-808): como "Sair": a nuvem para antes de a cópia de trabalho ser apagada. */
+  const terminar = async (): Promise<ResultadoDaExclusao> => {
+    nuvem?.parar()
+    await conta.sair()
+    esquecerExclusaoPedida()
+    marcarContaExcluida()
+    aoExcluida()
+    return { ok: true }
+  }
+
   const excluir = async (senha: string, extra: ExtraDoPedido): Promise<ResultadoDaExclusao> => {
     if (ocupado.current) return falhou(PEDIDO_EM_ANDAMENTO)
     const sessao = conta.sessao
@@ -63,12 +85,18 @@ export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' |
         const entrou = await conta.entrar(sessao.email, senha, ...extra)
         if (!entrou.ok) {
           const motivo = entrou.erro ?? 'falha-rede'
-          return motivo === 'credencial-invalida' ? falhou(SENHA_INCORRETA, true) : falhou(MENSAGEM_ERRO[motivo])
+          if (motivo !== 'credencial-invalida') return falhou(MENSAGEM_ERRO[motivo])
+          // CB-250 (L6 da revisão): a senha certa não entra num login que já foi apagado por um pedido sem resposta.
+          return (await loginApagado()) ? await terminar() : falhou(SENHA_INCORRETA, true)
         }
         conferidaEm.current = agora()
       }
 
+      // L6 da revisão: se a resposta se perder e a sessão cair, quem a vê cair apaga a cópia de trabalho (usarConta.ts).
+      anotarExclusaoPedida(sessao.id)
       const { dados, falha } = await chamar<{ readonly excluida?: unknown }>('excluir-conta', { acao: 'excluir' })
+      // Uma resposta, sim ou não, diz se a conta existe: a anotação sai. Sem resposta, fica.
+      if (falha?.status !== null) esquecerExclusaoPedida()
       if (falha) {
         if (falha.status === 401 && falha.codigo === 'login-antigo') {
           conferidaEm.current = null
@@ -84,13 +112,7 @@ export function useExclusaoDaConta(conta: Pick<ValorConta, 'sessao' | 'entrar' |
         return falhou(EXCLUSAO_NAO_TERMINOU)
       }
       if (dados?.excluida !== true) return falhou(EXCLUSAO_NAO_TERMINOU)
-
-      // D-255 (CA-808): como "Sair": a nuvem para antes de a cópia de trabalho ser apagada.
-      nuvem?.parar()
-      await conta.sair()
-      marcarContaExcluida()
-      aoExcluida()
-      return { ok: true }
+      return await terminar()
     } finally {
       ocupado.current = false
       setExcluindo(false)
