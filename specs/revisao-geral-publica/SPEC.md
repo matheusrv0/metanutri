@@ -32,7 +32,7 @@ script de verdade dos campos do cartão (chave pública de teste). A lista compl
 | D-236 | **Avisos do painel do checkout no tema escuro:** no escuro o painel do resumo é marfim, então os avisos dentro dele usam as cores do tema claro (o mesmo escopo `.papel` da folha impressa). No tema claro nada muda | Os avisos saíam com letra clara sobre fundo claro (1,4:1): "O pagamento não está disponível agora", "Você já assina…" e os erros do cartão ficavam ilegíveis |
 | D-237 | **Texto longo quebra dentro do cartão** nas telas de conta: a coluna do formulário encolhe (`minmax(0,1fr)`, regra "Coluna que encolhe" do DESIGN.md) e o subtítulo e os avisos quebram em qualquer ponto | Um e-mail de faculdade longo empurrava o formulário da tela do código para fora do cartão em 360 px |
 | D-238 | **Região principal** (`main`) no link do paciente e na volta do pagamento | Eram as duas telas públicas sem `main`; leitor de tela pula direto para o conteúdo |
-| D-239 | **Fica para o dono decidir (não muda aqui):** campos de 40 px com letra de 14 px no celular (o iPhone aproxima a tela ao tocar no campo) e os alvos de 32 a 40 px entre 640 e 1023 px (tablet) vêm do design system, que vale para o app inteiro; marcar missão sem internet e mandar depois seria uma fila nova no aparelho do paciente | Mudar no componente da biblioteca muda a área de trabalho, que é de outra frente; a fila é função nova |
+| D-239 | **Fica para o dono decidir (não muda aqui):** campos de 40 px com letra de 14 px no celular (o iPhone aproxima a tela ao tocar no campo), e as listas de escolha das telas de conta, que têm a altura dos campos ao lado e os alvos de 32 a 40 px entre 640 e 1023 px (tablet) vêm do design system, que vale para o app inteiro; marcar missão sem internet e mandar depois seria uma fila nova no aparelho do paciente | Mudar no componente da biblioteca muda a área de trabalho, que é de outra frente; a fila é função nova |
 
 ## 2. Critérios de aceite
 
@@ -75,7 +75,7 @@ script de verdade dos campos do cartão (chave pública de teste). A lista compl
 ### Testes de navegador
 
 - **CA-758** · Para cada tela do escopo, em 390 e 1280 px, um teste de navegador abre a tela e confere: ela aparece (o título certo), a página não rola para o lado, o console não tem erro e a ação principal está visível. Telas: landing (e o endereço sem caminho), Preços (e `#/precos/solo`), Entrar, Criar conta (Free, Solo, Solo anual, Pro e Estudante), Confirmar e-mail, Esqueci a senha (os dois passos), Nova senha, Termos, Privacidade, Fontes, checkout, volta do pagamento, Comprovar matrícula, Completar cadastro e o link do paciente (Missões e Meu plano).
-- **CA-759** · Dado as telas de conta num celular (menos de 640 px), então cada caixa de aceite ou de declaração (Termos e Política, "Declaro que este CRN…", "Declaro ter matrícula…") tem 44 px de altura de toque, e as listas de escolha da região do CRN e do período atual têm 44 px de altura. *(Revisão da frente, 19/10/2026: achado na segunda rodada da auditoria, A-21. Antes, este número dizia que o Apêndice A lista os defeitos com a gravidade; isso continua valendo como regra do método, na D-230.)*
+- **CA-759** · Dado as telas de conta num celular (menos de 640 px), então cada caixa de aceite ou de declaração (Termos e Política, "Declaro que este CRN…", "Declaro ter matrícula…") tem 44 px de altura de toque, sem mudar o desenho do formulário. As listas de escolha (região do CRN, período atual) ficam com 40 px, iguais aos campos de texto ao lado delas (D-239). *(Revisão da frente, 19/10/2026: achado na segunda rodada da auditoria, A-21. Antes, este número dizia que o Apêndice A lista os defeitos com a gravidade; isso continua valendo como regra do método, na D-230.)*
 
 ## 3. Casos de borda
 
@@ -132,7 +132,8 @@ padrão `<tela>-<largura>-<tema>-antes.png`.
 | A-18 | Menor | Todas | O título da aba do navegador é "MetaNutri" em toda tela | todas | fica (fora de escopo) |
 | A-19 | Menor | Comprovar matrícula | "Previsão de formatura" usa campo de mês: no Firefox de computador vira campo de texto, sem calendário | Firefox | fica |
 | A-20 | Menor | Criar conta pago | O subtítulo "Passo 1 de 3." repete a barra de passos | todas | fica (texto aprovado na `conta-e-verificacao`) |
-| A-21 | Importante | Criar conta, Completar cadastro, Comprovar matrícula | No celular, as caixas de aceite e de declaração têm 20 a 40 px de altura de toque, e as listas de escolha (região do CRN, período atual) têm 40 px. Achado na segunda rodada, depois das correções | menos de 640 px | CA-759 |
+| A-21 | Importante | Criar conta, Completar cadastro | No celular, as caixas de aceite e de declaração têm 20 a 40 px de altura de toque. Achado na segunda rodada, depois das correções | menos de 640 px | CA-759 |
+| A-22 | Menor | Criar conta, Comprovar matrícula | As listas de escolha (região do CRN, período atual) têm 40 px, como os campos de texto ao lado | menos de 640 px | decisão do dono (D-239) |
 
 **Sem defeito (conferido):** landing (incluindo o endereço sem caminho, que abre `#/inicio`), Entrar, Esqueci a senha
 (os dois passos), Nova senha, Termos, Privacidade e Fontes nos dois temas e nas seis larguras, fora o rodapé; o foco

@@ -51,7 +51,7 @@ partes pedem mais do que uma classe:
 | `src/ui/publico/TelaVoltaPagamento.tsx` (+ teste) | alterar | T5 (o `main`, CA-757) |
 | `e2e/servidor-falso/revisao.spec.ts` | criar (os critérios que pedem navegador: rodapé, Preços em 768 px, e-mail longo, contraste do checkout, Meu plano, sem internet) | T10 |
 | `e2e/apoio/servidorFalso.ts`, `playwright.config.ts` | alterar (marcação que falha, e-mail da sessão, o script do cartão respondido aqui e a chave pública de teste no segundo site) | T10 |
-| `src/ui/publico/conta/CaixaDeclaracao.tsx`, `CampoCrn.tsx`, `TelaComprovarMatricula.tsx` (+ testes) | alterar (toque de 44 px) | T10b |
+| `src/ui/publico/conta/CaixaDeclaracao.tsx` (+ teste), `e2e/servidor-falso/revisao.spec.ts` | alterar (toque de 44 px) | T10b |
 | `specs/impressao-do-plano/SPEC.md` | alterar (nota: R-182 resolvido por esta spec) | T11 |
 | `specs/dieta-no-link/SPEC.md` | alterar (nota: o nome e o peso de CA-531 seguem a D-231 desta spec) | T11 |
 
@@ -83,10 +83,10 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   está no escopo `.papel` (unidade); CA-746 e CA-747 no navegador, medindo o contraste (T10). *Depende de:* T1.
 - [ ] **T10** — Testes de navegador (CA-758) e os que precisam de navegador: CA-740, CA-741, CA-742, CA-744, CA-745,
   CA-746, CA-747, CA-748, CA-753, CA-756. *Verifica:* `npx playwright test`. *Depende de:* T2 a T9.
-- [ ] **T10b** — Toque de 44 px nas caixas de aceite e nas listas de escolha das telas de conta (CA-759, achado A-21 da
-  segunda rodada). `CaixaDeclaracao` ganha a área de toque sem mudar o desenho (`py-3 -my-3`, com `min-h-11` na
-  medida), e as duas listas (`CampoCrn`, período de Comprovar matrícula) ficam `h-11 sm:h-10`. *Testes:* classes
-  (unidade); a altura no navegador (e2e). *Depende de:* T10.
+- [ ] **T10b** — Toque de 44 px nas caixas de aceite e de declaração das telas de conta (CA-759, achado A-21 da
+  segunda rodada). `CaixaDeclaracao` ganha a área de toque sem mudar o desenho (`py-3 -my-3`). As listas de escolha
+  ficam como os campos ao lado (A-22, D-239). *Testes:* classes (unidade); a altura no navegador (e2e). *Depende
+  de:* T10.
 - [ ] **T11** — Validação: `npm run check`, `npx playwright test`, `npm run build`; nota na spec `impressao-do-plano`
   (R-182 resolvido); prints de antes e depois; relatório. *Depende de:* T10.
 
