@@ -51,7 +51,7 @@ nutriente, de energia ou do cobrir muda.
 - **CA-774** · Dado nada a completar, então o bloco "Falta completar" não existe e o texto "Tudo em dia." não aparece em lugar nenhum; sem consulta nem aniversário na semana, "Onde você parou" ocupa a largura toda.
 - **CA-775** · Dado um paciente "Sumindo" em "Hoje e esta semana" e o cadastro completo, então nenhum texto do Painel diz que está tudo em dia.
 - **CA-776** · Dado 1 plano mexido e 1 dia trabalhado em 14 dias, então o Painel diz "1 plano · mexido em 14 dias" e "1 dia · trabalhado em 14 dias"; com 2 ou mais, "mexidos" e "trabalhados".
-- **CA-777** · Dado o Painel, então cada linha de "Onde você parou" diz primeiro quando o plano mudou e depois o tipo ("Alterado hoje às 14:00 · Atendimento completo").
+- **CA-777** · Dado o Painel, então cada linha de "Onde você parou" diz primeiro quando o plano mudou e depois o tipo ("Alterado hoje às 14:00 · atendimento completo").
 - **CA-778** · Dado o Painel no computador (1280 px ou mais), então há um botão "Novo plano" só, o do menu; abaixo de 1280 px, o do cabeçalho continua.
 
 ### Medida caseira (D-242)

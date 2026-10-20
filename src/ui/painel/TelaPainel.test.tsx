@@ -55,6 +55,15 @@ describe('Painel', () => {
     expect(screen.getByText('Nenhum paciente cadastrado')).toBeInTheDocument()
   })
 
+  it('CB-241: conta nova mostra os números, o exemplo e "Falta completar" com "Nenhum paciente cadastrado"', () => {
+    montar(false)
+    expect(screen.getByRole('region', { name: 'Seus números' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver um plano de exemplo' })).toBeInTheDocument()
+    const bloco = within(screen.getByRole('region', { name: 'Falta completar' }))
+    expect(bloco.getByText('Nenhum paciente cadastrado')).toBeInTheDocument()
+    expect(bloco.getByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+  })
+
   it('CA-325: três números numa faixa, contados nos últimos 14 dias', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'))
@@ -67,7 +76,9 @@ describe('Painel', () => {
       expect(faixa.getAllByText('2')).toHaveLength(1)
       expect(faixa.getAllByText('1')).toHaveLength(2)
       // Também no celular e no leitor de tela: o apoio diz "em 14 dias" e não fica escondido.
-      const apoio = faixa.getByText('trabalhados em 14 dias')
+      expect(faixa.getByText('mexidos em 14 dias')).toBeInTheDocument()
+      // CA-776: um dia só, no singular.
+      const apoio = faixa.getByText('trabalhado em 14 dias')
       expect(apoio.className).not.toMatch(/\bhidden\b|sr-only/)
     } finally {
       vi.useRealTimers()
@@ -78,7 +89,8 @@ describe('Painel', () => {
     const { aoAbrirPlano, usuario } = montar(true)
     const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
     expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()
-    expect(recentes.getByText(/Prescrição rápida/)).toBeInTheDocument()
+    // CA-777: quando primeiro, porque no celular o fim da linha é cortado.
+    expect(recentes.getByText(/^Alterado .* · prescrição rápida$/)).toBeInTheDocument()
     await usuario.click(recentes.getAllByRole('button', { name: 'Abrir' })[0] as HTMLElement)
     expect(aoAbrirPlano).toHaveBeenCalled()
   })
@@ -101,13 +113,22 @@ describe('Painel', () => {
     expect(screen.queryByRole('button', { name: 'Ver um plano de exemplo' })).not.toBeInTheDocument()
   })
 
-  it('aponta plano sem nome e plano sem paciente', () => {
-    montar(true)
-    expect(screen.getByText('1 plano sem nome')).toBeInTheDocument()
-    expect(screen.getByText('2 planos sem paciente vinculado')).toBeInTheDocument()
+  it('CA-773: "Falta completar" aponta plano sem nome e plano sem paciente, cada um com "Ver"', async () => {
+    const { aoIrPara, usuario } = montar(true)
+    const bloco = within(screen.getByRole('region', { name: 'Falta completar' }))
+    expect(bloco.getByText('1 plano sem nome')).toBeInTheDocument()
+    expect(bloco.getByText('2 planos sem paciente vinculado')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Precisa de atenção' })).not.toBeInTheDocument()
+    await usuario.click(bloco.getAllByRole('button', { name: 'Ver' })[0] as HTMLElement)
+    expect(aoIrPara).toHaveBeenCalledWith('casos')
   })
 
-  it('CA-326: com plano nomeado, vinculado e paciente cadastrado, aparece "Tudo em dia."', () => {
+  it('CA-774 e CA-776: nada a completar, sem o bloco nem "Tudo em dia.", e "Onde você parou" na largura toda', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'))
+    onTestFinished(() => {
+      vi.useRealTimers()
+    })
     const armazenamento = new MemoriaFalsa()
     const casos = criarRepositorio(armazenamento, { agora: relogio() })
     const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
@@ -121,6 +142,16 @@ describe('Painel', () => {
         </ProvedorPacientes>
       </ProvedorCasos>,
     )
-    expect(screen.getByText('Tudo em dia.')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Falta completar' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Tudo em dia.')).not.toBeInTheDocument()
+    expect(screen.queryByText(/em dia/i)).not.toBeInTheDocument()
+    // Sem consulta nem aniversário na semana, a coluna da direita não existe.
+    const grade = screen.getByRole('heading', { name: 'Onde você parou' }).closest('[data-slot="card"]')?.parentElement
+    expect(grade?.className).not.toMatch(/xl:grid-cols/)
+    expect(grade?.children).toHaveLength(1)
+    // CA-776: um plano e um dia, no singular.
+    const faixa = within(screen.getByRole('region', { name: 'Seus números' }))
+    expect(faixa.getByText('mexido em 14 dias')).toBeInTheDocument()
+    expect(faixa.getByText('trabalhado em 14 dias')).toBeInTheDocument()
   })
 })

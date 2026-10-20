@@ -1,7 +1,8 @@
 import { ClipboardList, Sparkles, TriangleAlert } from 'lucide-react'
-import { useMemo, type ReactNode } from 'react'
+import { useId, useMemo, type ReactNode } from 'react'
 import { atividadePorDia, resumirAtividade } from '@/domain/atividade.ts'
 import { agendaDaSemana, agoraEmBrasilia } from '@/domain/retorno.ts'
+import { cn } from '@/lib/utils'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -44,6 +45,7 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
   const atividade = useMemo(() => resumirAtividade(atividadePorDia(casos, DIAS, new Date())), [casos])
   const momento = agoraEmBrasilia(agora)
   const agenda = agendaDaSemana(pacientes, momento)
+  const idFalta = useId()
 
   const pendencias = [
     semNome > 0 ? { texto: `${semNome} ${semNome === 1 ? 'plano sem nome' : 'planos sem nome'}`, acao: 'Ver', ir: () => aoIrPara('casos') } : null,
@@ -53,11 +55,14 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
     pacientes.length === 0 ? { texto: 'Nenhum paciente cadastrado', acao: 'Cadastrar', ir: () => aoIrPara('pacientes') } : null,
   ].filter((p): p is { texto: string; acao: string; ir: () => void } => p !== null)
 
+  // CA-776: o apoio concorda com o número ("1 plano · mexido", "2 planos · mexidos").
   const numeros = [
-    { valor: atividade.total, rotulo: atividade.total === 1 ? 'plano' : 'planos', apoio: `mexidos em ${DIAS} dias` },
+    { valor: atividade.total, rotulo: atividade.total === 1 ? 'plano' : 'planos', apoio: `${atividade.total === 1 ? 'mexido' : 'mexidos'} em ${DIAS} dias` },
     { valor: pacientes.length, rotulo: pacientes.length === 1 ? 'paciente' : 'pacientes', apoio: 'com ficha' },
-    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `trabalhados em ${DIAS} dias` },
+    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `${atividade.diasAtivos === 1 ? 'trabalhado' : 'trabalhados'} em ${DIAS} dias` },
   ]
+  // D-241: a coluna da direita só existe quando tem o que mostrar; sem ela, "Onde você parou" ocupa a largura toda.
+  const temDireita = agenda.length > 0 || pendencias.length > 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,7 +87,7 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
         </Alert>
       ) : null}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+      <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-6', temDireita && 'xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start')}>
         <Card className="gap-4">
           <CardTitle>Onde você parou</CardTitle>
           {recentes.length === 0 ? (
@@ -100,7 +105,8 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
                   <LinhaLista
                     inicio={<ClipboardList aria-hidden="true" />}
                     titulo={c.nome.trim() || 'Plano sem nome'}
-                    detalhe={`${c.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · ${formatarAlteracao(c.atualizadoEm).toLowerCase()}`}
+                    // CA-777: quando primeiro; no celular, o fim da linha é o que se corta.
+                    detalhe={`${formatarAlteracao(c.atualizadoEm)} · ${c.modo === 'rapido' ? 'prescrição rápida' : 'atendimento completo'}`}
                     fim={
                       <Button size="sm" variant="ghost" onClick={() => aoAbrirPlano(c.id)}>
                         Abrir
@@ -113,32 +119,34 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
           )}
         </Card>
 
-        <div className="flex min-w-0 flex-col gap-6">
-          {/* D-146: só existe quando há consulta ou aniversário nos 7 dias; sem caixa vazia. */}
-          {agenda.length > 0 ? <HojeEEstaSemana itens={agenda} hoje={momento.dia} aoCadastrarTelefone={aoCadastrarTelefone} /> : null}
+        {temDireita ? (
+          <div className="flex min-w-0 flex-col gap-6">
+            {/* D-146: só existe quando há consulta ou aniversário nos 7 dias; sem caixa vazia. */}
+            {agenda.length > 0 ? <HojeEEstaSemana itens={agenda} hoje={momento.dia} aoCadastrarTelefone={aoCadastrarTelefone} /> : null}
 
-          <Card className="gap-4">
-            <CardTitle>Precisa de atenção</CardTitle>
-            {pendencias.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Tudo em dia.</p>
-            ) : (
-              <ul className="flex flex-col gap-1.5">
-                {pendencias.map((p) => (
-                  <li key={p.texto}>
-                    <LinhaLista
-                      titulo={p.texto}
-                      fim={
-                        <Button size="sm" variant="ghost" onClick={p.ir}>
-                          {p.acao}
-                        </Button>
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </div>
+            {/* D-241: fala do cadastro, não da adesão; sem nada a completar, o bloco não existe (nunca "Tudo em dia."
+                ao lado de um paciente sumindo). */}
+            {pendencias.length > 0 ? (
+              <Card role="region" aria-labelledby={idFalta} className="gap-4">
+                <CardTitle id={idFalta}>Falta completar</CardTitle>
+                <ul className="flex flex-col gap-1.5">
+                  {pendencias.map((p) => (
+                    <li key={p.texto}>
+                      <LinhaLista
+                        titulo={p.texto}
+                        fim={
+                          <Button size="sm" variant="ghost" onClick={p.ir}>
+                            {p.acao}
+                          </Button>
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   )

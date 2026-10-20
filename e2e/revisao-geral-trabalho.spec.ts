@@ -140,3 +140,13 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     }
   })
 })
+
+test('CA-778: no computador, o Painel tem um "Novo plano" só; no celular, o do cabeçalho continua', async ({ page }) => {
+  await abrirComExemplo(page)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/#/painel')
+  await expect(page.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Novo plano' }).locator('visible=true')).toHaveCount(1)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Novo plano' })).toBeVisible()
+})

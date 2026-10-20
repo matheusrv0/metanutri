@@ -80,7 +80,7 @@ Como nutricionista, quero abrir o Painel e ver logo onde parei e o que está pen
 
 - **CA-324** · Dado o Painel, então o topo tem o título e o botão "Novo plano" (que abre a escolha entre prescrição rápida e atendimento completo, como hoje).
 - **CA-325** · Dado o Painel, então uma faixa mostra três números: planos mexidos nos últimos 14 dias, pacientes e dias trabalhados nos últimos 14. No celular, os três ficam lado a lado.
-- **CA-326** · Dado o Painel, então "Onde você parou" lista os últimos planos, como hoje, cada um com "Abrir", e "Precisa de atenção" lista as mesmas pendências de hoje. Sem pendência, aparece "Tudo em dia."
+- **CA-326** · Dado o Painel, então "Onde você parou" lista os últimos planos, como hoje, cada um com "Abrir", e "Precisa de atenção" lista as mesmas pendências de hoje. Sem pendência, aparece "Tudo em dia." *(Mudado em 19/10/2026 pelo D-241 da `revisao-geral-trabalho`: o bloco se chama "Falta completar" e só aparece quando há pendência.)*
 - **CA-327** · Dado nenhum plano ainda, então "Onde você parou" diz "Nenhum plano ainda." e oferece "Ver um plano de exemplo".
 - **CA-328** · Dado o Painel, então não há mais os quatro cartões grandes, o gráfico de 14 dias nem os botões "Pacientes" e "Cadastrar produto" (o menu já leva a eles). Os avisos da conta (estudante e CRN) continuam no topo.
 
