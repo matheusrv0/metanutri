@@ -126,6 +126,33 @@ nutriente, de energia ou do cobrir muda.
   decisões de produto, listadas no relatório.
 - O texto de Conta e plano no modo local, sem servidor (A-21): só aparece em desenvolvimento e nos testes.
 
+## 5. Validação
+
+Um teste por critério, com o id no nome. `e2e` é `e2e/revisao-geral-trabalho.spec.ts`.
+
+| Critério | Teste |
+|---|---|
+| CA-770, CA-771, CB-240 | e2e (mídia de impressão) |
+| CA-772, CB-246 | `src/ui/tema/ProvedorTema.test.tsx` |
+| CA-773, CA-774, CA-776, CA-777, CB-241 | `src/ui/painel/TelaPainel.test.tsx` |
+| CA-775 | `src/ui/painel/hojeEEstaSemana.test.tsx` |
+| CA-778 | e2e |
+| CA-779, CA-780, CA-781, CB-244 | `src/domain/busca.test.ts`, `quantidadeNaFolha.test.ts`, `substitutos.test.ts`, `src/export/docx.test.ts`, `src/ui/plano/LinhaItem.test.tsx` |
+| CA-782, CA-783, CB-242, CB-247 | `src/domain/adequacao.test.ts`, `src/ui/adequacao/TelaAdequacao.test.tsx` |
+| CA-784, CB-243, CB-248 | `src/ui/caso/etapa1.test.tsx` |
+| CA-785, CA-786, CA-787, CB-245 | e2e (360 e 390 px) |
+| CA-788, CA-790 | e2e (área de toque medida no celular) |
+| CA-789 | e2e, `LinhaItem.test.tsx`, `docx.test.ts` |
+| CA-791, CA-792 | `pacientes.test.tsx`, `TelaCaso.test.tsx`, `EntradaRapida.test.tsx`, `TelaAdequacao.test.tsx`, `missoesNutricionista.test.tsx` |
+| CA-793 | `src/domain/totais.test.ts`, `src/domain/produtos.test.ts` |
+| CA-794 | `src/domain/catalogo.test.ts`, `src/ui/alimentos/TelaAlimentos.test.tsx` |
+| CA-795 | e2e |
+| CA-796 | `src/data/documentos.test.ts` |
+| CA-797 | e2e (16 telas × 390 e 1280 px) |
+| CA-798 | `src/ui/telasComServidor.test.tsx` |
+| CA-799 | e2e |
+| CB-249 | sem teste automático: a tabela já rola dentro do cartão; conferido nos prints da bancada |
+
 ## Apêndice A — Defeitos achados na revisão (main 2eb11db)
 
 Gravidade: **C** crítico (tela quebra, corta conteúdo ou perde o que a pessoa fez), **I** importante (atrapalha o uso
