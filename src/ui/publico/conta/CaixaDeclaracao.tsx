@@ -8,10 +8,13 @@ interface CaixaDeclaracaoProps {
   readonly children: ReactNode
 }
 
-/** Caixa de declaração ou de aceite: o texto inteiro é clicável. */
+/**
+ * Caixa de declaração ou de aceite: o texto inteiro é clicável. A área de toque passa de 44 px (12 px a mais em cima e
+ * embaixo) sem mudar o desenho: a margem negativa devolve o espaço ao formulário (spec revisao-geral-publica, CA-759).
+ */
 export function CaixaDeclaracao({ id, marcada, aoMudar, invalido = false, children }: CaixaDeclaracaoProps) {
   return (
-    <label htmlFor={id} className="flex cursor-pointer items-start gap-2.5 text-sm">
+    <label htmlFor={id} className="-my-3 flex cursor-pointer items-start gap-2.5 py-3 text-sm">
       <input
         id={id}
         type="checkbox"

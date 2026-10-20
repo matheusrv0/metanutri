@@ -195,3 +195,26 @@ describe('TelaCriarConta com a verificação contra robôs (spec seguranca-lote-
     expect(conta.cadastrar).toHaveBeenCalledWith(expect.objectContaining({ situacao: 'nutricionista' }), 'tok-cadastro')
   })
 })
+
+describe('I-3 (spec revisao-geral-publica, CA-759): 24 px entre a declaração e o aceite dos Termos', () => {
+  // O vão a mais fica num invólucro novo, montado junto com a declaração: a caixa tem margem negativa (-my-3), e uma
+  // margem a mais nela brigaria com essa. Trocar a classe de um elemento que já estava na tela, como na primeira
+  // tentativa, às vezes deixava o Chromium com o estilo velho (visto no e2e).
+  const involucroDa = (nome: string | RegExp) => screen.getByRole('checkbox', { name: nome }).closest('label')?.parentElement
+
+  it('sem situação escolhida, não há declaração antes do aceite', () => {
+    montar()
+    expect(screen.queryByRole('checkbox', { name: /^Declaro/ })).not.toBeInTheDocument()
+  })
+
+  it('a declaração do CRN deixa 8 px a mais embaixo (16 do formulário + 8 = 24 até o aceite)', async () => {
+    const { usuario } = montar()
+    await usuario.click(screen.getByRole('radio', { name: /Nutricionista/ }))
+    expect(involucroDa('Declaro que este CRN é meu e está ativo.')?.className).toBe('pb-2')
+  })
+
+  it('no cadastro de estudante, a declaração de matrícula deixa o mesmo espaço', () => {
+    montar({ plano: 'estudante' })
+    expect(involucroDa('Declaro ter matrícula ativa no curso de Nutrição.')?.className).toBe('pb-2')
+  })
+})

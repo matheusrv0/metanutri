@@ -1,9 +1,12 @@
 // "Meu plano": a dieta no celular do paciente (spec dieta-no-link). O conteúdo é o da folha
 // impressa que serve a quem come, em letra de ler no ônibus: refeição, medida caseira, os
-// substitutos como "ou" e as orientações. Sem kcal e sem nutriente (D-150).
+// substitutos como "ou" e as orientações. Sem kcal e sem nutriente (D-150). O nome e a quantidade
+// seguem as regras da folha, aplicadas na hora sobre a cópia guardada (spec revisao-geral-publica, D-231).
 import { useId } from 'react'
 import type { DietaDoLink, ItemDaDieta } from '@/domain/dietaDoLink.ts'
+import { paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
+import type { QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
 interface MeuPlanoProps {
@@ -12,14 +15,17 @@ interface MeuPlanoProps {
   readonly primeiroNome: string
 }
 
-/** "6 colheres de sopa · 150 g"; sem medida caseira, só o peso (CB-156), como na folha. */
-function Quantidade({ item }: { readonly item: ItemDaDieta }) {
-  const gramas = `${formatarNumero(item.gramas, 0)} g`
-  if (item.medida === null) return <strong className="numeros font-bold text-heading">{gramas}</strong>
+/**
+ * A medida caseira em destaque; o peso ao lado só quando a medida é vaga ("3 fatias e meia · 130 g"); sem medida que
+ * sirva, só o peso (CB-156). A mesma regra da folha impressa (spec impressao-do-plano, D-183 e D-189).
+ */
+function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
+  const gramas = `${formatarNumero(quantidade.gramas, 0)} g`
+  if (quantidade.medida === null) return <strong className="numeros font-bold text-heading">{gramas}</strong>
   return (
     <span>
-      <strong className="font-bold text-heading">{item.medida}</strong>
-      <span className="numeros text-muted-foreground">{` · ${gramas}`}</span>
+      <strong className="font-bold text-heading">{quantidade.medida}</strong>
+      {quantidade.comPeso ? <span className="numeros text-muted-foreground">{` · ${gramas}`}</span> : null}
     </span>
   )
 }
@@ -27,12 +33,15 @@ function Quantidade({ item }: { readonly item: ItemDaDieta }) {
 function Itens({ itens }: { readonly itens: readonly ItemDaDieta[] }) {
   return (
     <ul className="flex flex-col gap-3">
-      {itens.map((item, i) => (
-        <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
-          <Quantidade item={item} />
-          <span className="text-foreground [overflow-wrap:anywhere]">{item.alimento}</span>
-        </li>
-      ))}
+      {itens.map((item, i) => {
+        const paciente = paraOPaciente(item)
+        return (
+          <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
+            <Quantidade quantidade={paciente.quantidade} />
+            <span className="text-foreground [overflow-wrap:anywhere]">{paciente.nome}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }

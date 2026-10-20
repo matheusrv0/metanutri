@@ -23,14 +23,15 @@ function Cartao({ selo, tom, titulo, children }: { readonly selo: ReactNode; rea
   const cores = { ok: 'bg-lightsuccess text-successtext', analise: 'bg-lightwarning text-warningtext', erro: 'bg-lighterror text-errortext', neutro: 'bg-surfacerow text-muted-foreground' }
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
-      <div className="mx-auto flex max-w-[560px] flex-col gap-4 rounded-2xl bg-card p-7 sm:p-10">
+      {/* CA-757 (spec revisao-geral-publica): o cartão é a região principal. */}
+      <main className="mx-auto flex max-w-[560px] flex-col gap-4 rounded-2xl bg-card p-7 sm:p-10">
         <Logo tamanho={24} />
         <span className={cn('grid size-12 place-content-center rounded-full [&_svg]:size-6', cores[tom])} aria-hidden="true">
           {selo}
         </span>
         <h1 className="text-3xl font-bold">{titulo}</h1>
         {children}
-      </div>
+      </main>
     </div>
   )
 }

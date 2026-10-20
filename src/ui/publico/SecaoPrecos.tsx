@@ -62,7 +62,7 @@ function Chave({ anual, aoTrocar }: { readonly anual: boolean; readonly aoTrocar
             aria-checked={ativo}
             onClick={() => aoTrocar(opcao.valor)}
             className={cn(
-              'relative z-10 h-10 rounded-full px-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'relative z-10 h-11 rounded-full px-5 text-sm font-medium sm:h-10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               ativo ? 'text-textoninverse' : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -197,7 +197,8 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
     <div ref={secao} className="bg-background px-4 py-16 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
       <div className="mx-auto mb-10 max-w-2xl text-center">
-        <TimelineContent as="h2" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
+        {/* CA-743 (spec revisao-geral-publica): o título da página é o h1. */}
+        <TimelineContent as="h1" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
           Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
         </TimelineContent>
         <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
@@ -209,8 +210,9 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
         <Chave anual={anual} aoTrocar={setAnual} />
       </TimelineContent>
 
-      {/* Tabela: a partir de md. No celular a mesma informação vira uma lista por plano. */}
-      <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="mt-10 hidden md:block">
+      {/* Tabela: a partir de 1024 px (D-234: em 768 px ela não cabia e a página rolava para o lado). Abaixo, a mesma
+          informação vira um cartão por plano. */}
+      <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="mt-10 hidden lg:block">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">Comparativo dos planos do MetaNutri</caption>
           <thead>
@@ -271,16 +273,16 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
         </div>
       </TimelineContent>
 
-      {/* Celular: uma lista por plano, com os mesmos valores da tabela. */}
-      <div className="mt-8 flex flex-col gap-4 md:hidden">
+      {/* Celular e tablet: um cartão por plano, com os mesmos valores da tabela; dois por linha a partir de 640 px. */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:hidden">
         {colunas.map((plano, i) => (
           <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada}>
             <section
               aria-label={`Plano ${plano.nome}`}
-              className={cn('rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+              className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h3>
+                <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
                 {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
               </div>
 
@@ -309,7 +311,9 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
           </TimelineContent>
         ))}
 
-        <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
+        <div className="sm:col-span-2">
+          <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
+        </div>
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">

@@ -4,6 +4,7 @@ import type { DietaDoLink } from './dietaDoLink.ts'
 import {
   apagarAcompanhamentosDaNuvem,
   daLinha,
+  fonteDoPaciente,
   fonteSupabase,
   listarAcompanhamentosDaNuvem,
   removerAcompanhamentoDaNuvem,
@@ -14,6 +15,8 @@ import {
   type ClienteMissoes,
 } from './fonteSupabase.ts'
 import type { Missao } from './missoes.ts'
+import type { Armazenamento } from './persistencia.ts'
+import { criarRepositorioAcompanhamentos, LinkSemConexao, MarcacaoRecusada } from './repositorioAcompanhamentos.ts'
 
 const MISSOES: readonly Missao[] = [{ id: 'agua', texto: 'Beber água', origem: 'Hábito' }]
 
@@ -537,5 +540,81 @@ describe('A dieta do link na nuvem (spec dieta-no-link)', () => {
     const erro = { code: '23514', message: 'new row for relation "acompanhamentos" violates check constraint "acompanhamentos_dieta_tamanho"' }
     expect(await salvarLinkNaNuvem(clienteFalso({ usuario: 'user-99', erro }).cliente, comDieta(), NOVO)).toEqual({ tipo: 'falhou', motivo: DIETA_GRANDE_DEMAIS })
     expect(await subirAcompanhamento(clienteFalso({ usuario: 'user-99', erro }).cliente, comDieta())).toBe(DIETA_GRANDE_DEMAIS)
+  })
+})
+
+describe('A fonte do link do paciente: nuvem e cópia do aparelho (spec revisao-geral-publica, D-232)', () => {
+  function memoria(): Armazenamento {
+    const dados = new Map<string, string>()
+    return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => void dados.set(c, v), removeItem: (c) => void dados.delete(c) }
+  }
+
+  it('CA-755: a nuvem não conhece o link e o aparelho não tem cópia: nulo ("Este link não existe mais")', async () => {
+    const { cliente } = clienteFalso({ dados: [] })
+    expect(await fonteDoPaciente(cliente, criarRepositorioAcompanhamentos(memoria()), vi.fn()).porToken('kf3mq9zt7bnd')).toBeNull()
+  })
+
+  it('CA-753: a nuvem não respondeu e o aparelho não tem cópia: rejeita com LinkSemConexao, em vez de dizer que o link não existe', async () => {
+    const { cliente } = clienteFalso({ erro: 'TypeError: Failed to fetch' })
+    await expect(fonteDoPaciente(cliente, criarRepositorioAcompanhamentos(memoria()), vi.fn()).porToken('kf3mq9zt7bnd')).rejects.toBeInstanceOf(LinkSemConexao)
+  })
+
+  it('CA-754: a nuvem não respondeu e o aparelho tem a cópia: abre pela cópia', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const copia = repo.salvar(acompanhamento())
+    const { cliente } = clienteFalso({ erro: 'TypeError: Failed to fetch' })
+    expect(await fonteDoPaciente(cliente, repo, vi.fn()).porToken(copia.token)).toEqual(copia)
+  })
+
+  it('a nuvem achou o link: vale o da nuvem', async () => {
+    const { cliente } = clienteFalso({ dados: [LINHA] })
+    expect((await fonteDoPaciente(cliente, criarRepositorioAcompanhamentos(memoria()), vi.fn()).porToken('kf3mq9zt7bnd'))?.nome).toBe('Ana')
+  })
+
+  it('CA-756: a nuvem recusou a marcação: rejeita com LinkSemConexao e não grava a cópia do aparelho', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const aoSalvar = vi.fn()
+    const { cliente } = clienteFalso({ erro: 'TypeError: Failed to fetch' })
+    await expect(fonteDoPaciente(cliente, repo, aoSalvar).salvar(acompanhamento())).rejects.toBeInstanceOf(LinkSemConexao)
+    expect(repo.listar()).toEqual([])
+    expect(aoSalvar).not.toHaveBeenCalled()
+  })
+
+  it('M-3b (CA-756): a nuvem recusou por um motivo dela, não a rede: rejeita com MarcacaoRecusada e o motivo, sem gravar aqui', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const { cliente } = clienteFalso({ erro: { code: '22023', message: 'Este link já guarda marcações demais.' } })
+    const recusa = await fonteDoPaciente(cliente, repo, vi.fn())
+      .salvar(acompanhamento())
+      .then(
+        () => null,
+        (erro: unknown) => erro,
+      )
+    expect(recusa).toBeInstanceOf(MarcacaoRecusada)
+    expect(recusa instanceof MarcacaoRecusada ? recusa.motivo : null).toBe('Este link já guarda marcações demais.')
+    expect(repo.listar()).toEqual([])
+  })
+
+  it('M-3b: erro do banco que não é uma frase do MetaNutri continua contando como sem conexão', async () => {
+    const { cliente } = clienteFalso({ erro: { code: '22023', message: 'cannot get array length of a scalar' } })
+    await expect(fonteDoPaciente(cliente, criarRepositorioAcompanhamentos(memoria()), vi.fn()).salvar(acompanhamento())).rejects.toBeInstanceOf(LinkSemConexao)
+  })
+
+  it('CA-756: a nuvem aceitou a marcação: grava a cópia do aparelho e avisa', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const aoSalvar = vi.fn()
+    const { cliente, chamadas } = clienteFalso()
+    await fonteDoPaciente(cliente, repo, aoSalvar).salvar(acompanhamento())
+    expect(chamadas.map((c) => c.nome)).toEqual(['marcar_missoes'])
+    expect(repo.listar()).toHaveLength(1)
+    expect(aoSalvar).toHaveBeenCalledOnce()
+  })
+
+  it('CB-239: sem servidor, a fonte é só a do aparelho, como antes', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const fonte = fonteDoPaciente(null, repo, vi.fn())
+    expect(fonte.naNuvem).toBe(false)
+    expect(await fonte.porToken('inexistente')).toBeNull()
+    const salvo = await fonte.salvar(acompanhamento())
+    expect(await fonte.porToken(salvo.token)).toEqual(salvo)
   })
 })

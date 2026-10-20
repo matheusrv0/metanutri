@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Acompanhamento } from '@/domain/acompanhamento.ts'
 import { chaveDoEvento } from '@/domain/armazenamentoDaConta.ts'
 import {
-  fonteSupabase,
+  fonteDoPaciente,
   listarAcompanhamentosDaNuvem,
   removerAcompanhamentoDaNuvem,
   salvarLinkNaNuvem,
@@ -10,7 +10,7 @@ import {
   LIMITE_DE_LINKS,
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
-import { criarRepositorioAcompanhamentos, fonteLocal, mesmoLink, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, mesmoLink, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
@@ -266,22 +266,9 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua
    * neste navegador. A cópia local é mantida nos dois casos: é ela que faz o app funcionar offline.
+   * Sem resposta da nuvem, a fonte diz isso à tela (spec revisao-geral-publica, D-232).
    */
-  const fonte = useMemo(() => {
-    const local = fonteLocal(repo)
-    const remota = cliente ? fonteSupabase(cliente) : null
-
-    return {
-      naNuvem: remota !== null,
-      porToken: async (token: string) => (remota ? ((await remota.porToken(token)) ?? repo.porToken(token)) : local.porToken(token)),
-      salvar: async (acompanhamento: Acompanhamento) => {
-        if (remota) await remota.salvar(acompanhamento)
-        const salvo = await local.salvar(acompanhamento)
-        atualizar()
-        return salvo
-      },
-    }
-  }, [repo, cliente, atualizar])
+  const fonte = useMemo(() => fonteDoPaciente(cliente, repo, atualizar), [repo, cliente, atualizar])
 
   const valor = useMemo<ValorAcompanhamentos>(
     () => ({

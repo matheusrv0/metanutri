@@ -2,8 +2,8 @@
 // nada para aprender: a lista do dia e um toque para marcar. É a Fase 1 do
 // `docs/plano-negocio.md`, e a métrica do produto nasce aqui. Com a dieta no link
 // (spec dieta-no-link), uma segunda parte, "Meu plano", mostra o que comer.
-import { Check, CircleAlert, GraduationCap, Link2Off } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Check, CircleAlert, GraduationCap, Link2Off, WifiOff } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   diaLocal,
   diasMarcadosNaSemana,
@@ -16,9 +16,11 @@ import {
   type ProgressoDia,
 } from '@/domain/acompanhamento.ts'
 import { temDieta } from '@/domain/dietaDoLink.ts'
-import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { cn } from '@/lib/utils'
+import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
 import { MeuPlano } from './MeuPlano.tsx'
 
@@ -53,15 +55,16 @@ function dataPorExtenso(dia: string): string {
   return Number.isNaN(quando.getTime()) ? '' : DATA_LONGA.format(quando)
 }
 
-function Moldura({ children }: { readonly children: React.ReactNode }) {
+/** CA-757 (spec revisao-geral-publica): o conteúdo da tela é a região principal. */
+function Moldura({ children }: { readonly children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-background px-4 py-8">
-      <div className="mx-auto w-full max-w-md">{children}</div>
+      <main className="mx-auto w-full max-w-md">{children}</main>
     </div>
   )
 }
 
-function Aviso({ icone, titulo, texto }: { readonly icone: React.ReactNode; readonly titulo: string; readonly texto: string }) {
+function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; readonly titulo: string; readonly texto: string; readonly acao?: ReactNode }) {
   return (
     <Moldura>
       <div className="rounded-2xl border border-border bg-card p-8 text-center">
@@ -70,53 +73,102 @@ function Aviso({ icone, titulo, texto }: { readonly icone: React.ReactNode; read
         </span>
         <h1 className="font-titulo text-xl font-bold text-heading">{titulo}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{texto}</p>
+        {acao ? <div className="mt-6">{acao}</div> : null}
       </div>
     </Moldura>
   )
 }
 
+const NAO_SALVOU = 'Não consegui salvar. Confira a internet e marque de novo.'
+
+/** M-3b: a nuvem recusou por um motivo dela (tentar de novo não resolve); senão, é a internet (D-232). */
+const fraseDaFalha = (erro: unknown): string => (erro instanceof MarcacaoRecusada ? `${erro.motivo} Fale com quem montou seu plano.` : NAO_SALVOU)
+
 interface Carga {
   readonly token: string
+  /** Qual pedido respondeu: "Tentar de novo" pede outra vez (CA-753). */
+  readonly tentativa: number
   readonly acompanhamento: Acompanhamento | null
+  /** A nuvem não respondeu e o aparelho não tinha cópia (D-232): não dá para dizer que o link não existe. */
+  readonly semConexao: boolean
 }
 
 export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMissoesPacienteProps) {
   // Guardar o token junto com o resultado deixa "carregando" ser derivado do render,
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
+  const [tentativa, setTentativa] = useState(0)
+  // D-232: a frase de quando a última marcação não chegou à nuvem; some quando uma marcação salva.
+  const [naoSalvou, setNaoSalvou] = useState<string | null>(null)
   // D-154: abre em "Missões", como sempre abriu.
   const [parte, setParte] = useState<Parte>('missoes')
-  const carregando = carga === null || carga.token !== token
+  const carregando = carga === null || carga.token !== token || carga.tentativa !== tentativa
   const acompanhamento = carregando ? null : carga.acompanhamento
 
   useEffect(() => {
     let vivo = true
-    void fonte.porToken(token).then((achado) => {
-      if (vivo) setCarga({ token, acompanhamento: achado })
-    })
+    fonte.porToken(token).then(
+      (achado) => {
+        if (vivo) setCarga({ token, tentativa, acompanhamento: achado, semConexao: false })
+      },
+      () => {
+        if (vivo) setCarga({ token, tentativa, acompanhamento: null, semConexao: true })
+      },
+    )
     return () => {
       vivo = false
     }
-  }, [token, fonte])
+  }, [token, fonte, tentativa])
 
-  const alternar = useCallback(
-    (missaoId: string, feita: boolean) => {
-      setCarga((atual) => {
-        if (atual === null || atual.acompanhamento === null) return atual
-        const novo = marcarMissao(atual.acompanhamento, hoje, missaoId, feita)
-        if (novo === atual.acompanhamento) return atual
-        void fonte.salvar(novo)
-        return { token: atual.token, acompanhamento: novo }
-      })
-    },
-    [fonte, hoje],
-  )
+  /**
+   * Marca na hora e grava. A gravação falhando (D-232, CA-756), a tela relê o link e fica com o que a nuvem guardou
+   * (M-4): a marca pode ter chegado por outra marcação, que leva a lista inteira (CB-236), ou a resposta pode ter se
+   * perdido depois de gravar. O aviso só aparece se a marca não ficou lá. Sem conseguir reler, só esta missão volta como
+   * estava. A marca nunca fica fingindo que salvou.
+   */
+  const alternar = (missaoId: string, feita: boolean) => {
+    if (carga === null || carga.acompanhamento === null) return
+    const novo = marcarMissao(carga.acompanhamento, hoje, missaoId, feita)
+    if (novo === carga.acompanhamento) return
+    setCarga({ ...carga, acompanhamento: novo })
+    fonte.salvar(novo).then(
+      () => setNaoSalvou(null),
+      (erro: unknown) => {
+        const frase = fraseDaFalha(erro)
+        const desfazer = () => {
+          setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
+          setNaoSalvou(frase)
+        }
+        fonte.porToken(token).then((daNuvem) => {
+          if (daNuvem === null) return desfazer()
+          setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: daNuvem } : atual))
+          const ficou = missoesDoDia(daNuvem, hoje).some((m) => m.id === missaoId && m.feita === feita)
+          setNaoSalvou(ficou ? null : frase)
+        }, desfazer)
+      },
+    )
+  }
 
   if (carregando) {
     return (
       <Moldura>
         <p className="py-16 text-center text-sm text-muted-foreground">Abrindo suas missões…</p>
       </Moldura>
+    )
+  }
+
+  if (acompanhamento === null && carga.semConexao) {
+    return (
+      <Aviso
+        icone={<WifiOff className="size-6" />}
+        titulo="Não consegui abrir suas missões"
+        texto="Confira a internet do celular e tente de novo."
+        acao={
+          <Button size="lg" block onClick={() => setTentativa((n) => n + 1)}>
+            Tentar de novo
+          </Button>
+        }
+      />
     )
   }
 
@@ -152,6 +204,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
       progresso={progresso}
       naSemana={naSemana}
       tudoFeito={tudoFeito}
+      naoSalvou={naoSalvou}
       aoAlternar={alternar}
     />
   )
@@ -201,6 +254,7 @@ function ParteDasMissoes({
   progresso,
   naSemana,
   tudoFeito,
+  naoSalvou,
   aoAlternar: alternar,
 }: {
   readonly hoje: string
@@ -209,6 +263,7 @@ function ParteDasMissoes({
   readonly progresso: ProgressoDia
   readonly naSemana: number
   readonly tudoFeito: boolean
+  readonly naoSalvou: string | null
   readonly aoAlternar: (missaoId: string, feita: boolean) => void
 }) {
   return (
@@ -234,6 +289,12 @@ function ParteDasMissoes({
           <div className={cn('h-full rounded-full transition-[width] duration-300', tudoFeito ? 'bg-stateok' : 'bg-surfaceinverse')} style={{ width: `${progresso.pct}%` }} />
         </div>
       </section>
+
+      {naoSalvou ? (
+        <Alert variant="error" role="alert" className="mb-4">
+          {naoSalvou}
+        </Alert>
+      ) : null}
 
       <ul className="flex flex-col gap-2.5">
         {missoes.map((missao) => (

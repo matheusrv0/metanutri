@@ -26,8 +26,14 @@ export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: Dest
   globalThis.setTimeout(() => globalThis.document.getElementById(ancora)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
 }
 
-const LINK_RODAPE =
-  'rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+/**
+ * Spec revisao-geral-publica, D-235: 44 px de toque no celular e o texto que quebra alinhado à esquerda (o botão
+ * centraliza por padrão).
+ */
+const LINK_RODAPE_44 =
+  'inline-flex min-h-11 items-center text-left rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+/** A partir de 640 px, os links de navegação do rodapé voltam à altura do texto. */
+const LINK_RODAPE = `${LINK_RODAPE_44} sm:min-h-0`
 
 /**
  * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa
@@ -45,12 +51,14 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             type="button"
             onClick={() => irComAncora(aoIrPara, 'inicio')}
             aria-label="MetaNutri, início"
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
           >
             <Logo tamanho={28} />
           </button>
 
-          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 sm:order-none sm:mx-auto sm:w-auto">
+          {/* D-235: até 767 px o menu desce para a segunda linha; em 640 px ele cabia ao lado da logo e empurrava os
+              botões de Entrar para uma linha sozinhos. */}
+          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 md:order-none md:mx-auto md:w-auto">
             {LINKS.map((link) => {
               const aqui = atual === link.destino && !link.ancora
               return (
@@ -67,7 +75,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
             {temSessao ? (
               <Button onClick={() => aoIrPara('painel')}>Ir para o painel</Button>
             ) : (
@@ -100,15 +108,19 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
             <h2 id="fontes" className="mb-3.5 scroll-mt-24 text-sm font-semibold text-muted-foreground">
               Fontes dos dados
             </h2>
+            {/* D-235: sem "·" entre as partes, que ficava sozinho no fim da linha em 768 e 1024 px; o link das fontes da
+                base vai na linha de baixo do nome dela, em qualquer largura. */}
             <ul className="grid gap-2.5 text-sm text-muted-foreground">
-              <li className="flex flex-wrap items-center gap-x-1">
-                <span>{`${NOME_DA_BASE} ·`}</span>
-                <button type="button" onClick={() => aoIrPara('fontes')} className={`${LINK_RODAPE} inline-flex min-h-11 items-center`}>
+              <li className="flex flex-col items-start">
+                <span>{NOME_DA_BASE}</span>
+                {/* M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque). */}
+                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE_44}>
                   Fontes da base
                 </button>
               </li>
               <li>NASEM. DRI, Apêndice J, 2019</li>
-              <li>OMS, 2006 e 2007 · SISVAN, 2011</li>
+              <li>OMS, 2006 e 2007</li>
+              <li>SISVAN, 2011</li>
             </ul>
           </section>
           <div>

@@ -116,4 +116,38 @@ describe('SecaoPrecos', () => {
     expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
     expect(screen.getByText('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e plano.')).toBeInTheDocument()
   })
+
+  it('CA-743 (spec revisao-geral-publica): o título é o único h1, e os cartões do celular têm h2', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const titulos = screen.getAllByRole('heading', { level: 1 })
+    expect(titulos).toHaveLength(1)
+    expect(titulos[0]).toHaveTextContent('Grátis na faculdade, barato ao se formar')
+    for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) {
+      expect(within(screen.getByRole('region', { name: `Plano ${plano}` })).getByRole('heading', { level: 2, name: plano })).toBeInTheDocument()
+    }
+  })
+
+  it('CA-742 (spec revisao-geral-publica): a tabela só aparece a partir de 1024 px; abaixo, os cartões', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const tabela = screen.getByRole('table')
+    expect(tabela.parentElement?.className).toMatch(/(^|\s)hidden(\s|$)/)
+    expect(tabela.parentElement?.className).toContain('lg:block')
+    expect(tabela.parentElement?.className).not.toContain('md:block')
+    const cartoes = screen.getByRole('region', { name: 'Plano Free' }).parentElement?.parentElement
+    expect(cartoes?.className).toContain('lg:hidden')
+    expect(cartoes?.className).not.toContain('md:hidden')
+  })
+
+  it('CA-743 (spec revisao-geral-publica): no celular, cada opção de Mensal e Anual tem 44 px', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    for (const opcao of within(screen.getByRole('radiogroup', { name: 'Período de cobrança' })).getAllByRole('radio')) {
+      expect(opcao.className).toContain('h-11')
+      expect(opcao.className).toContain('sm:h-10')
+    }
+  })
+
+  it('D-234 e A-24 (spec revisao-geral-publica): os cartões da mesma linha têm a mesma altura', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) expect(screen.getByRole('region', { name: `Plano ${plano}` }).className).toContain('h-full')
+  })
 })

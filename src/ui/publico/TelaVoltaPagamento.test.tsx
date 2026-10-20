@@ -17,6 +17,13 @@ describe('TelaVoltaPagamento', () => {
     Reflect.deleteProperty(globalThis.navigator, 'onLine')
   })
 
+  it('CA-757 (spec revisao-geral-publica): o cartão da volta é a região principal, em todos os estados', () => {
+    const { rerender } = montar(SEM_ASSINATURA, false)
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }))
+    rerender(<TelaVoltaPagamento assinatura={assinatura({ plano: 'solo', planoPedido: 'solo', status: 'ativa' })} carregado recarregar={vi.fn()} aoIrParaPainel={vi.fn()} aoTentarDeNovo={vi.fn()} />)
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1, name: 'Assinatura ativa' }))
+  })
+
   it('enquanto confere, diz isso', () => {
     montar(SEM_ASSINATURA, false)
     expect(screen.getByRole('heading', { level: 1, name: /Conferindo o pagamento/ })).toBeInTheDocument()

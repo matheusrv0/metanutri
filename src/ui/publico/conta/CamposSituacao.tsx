@@ -68,21 +68,28 @@ export function CamposSituacao({ id, valor, aoMudar, erro, travarEstudante = fal
             invalido={erro === 'crn-regiao' || erro === 'crn-numero'}
             dica="Vamos conferir seu registro no conselho. Você já pode usar tudo enquanto isso."
           />
-          <CaixaDeclaracao id={`${id}-declara-crn`} marcada={valor.declarouCrn} aoMudar={(v) => mudar({ declarouCrn: v })} invalido={erro === 'declaracao-crn'}>
-            Declaro que este CRN é meu e está ativo.
-          </CaixaDeclaracao>
+          {/* I-3 (spec revisao-geral-publica, CA-759): 8 px a mais embaixo da declaração. No cadastro, o aceite dos
+              Termos vem logo depois: 16 + 8 = 24 px entre as duas caixas, e as áreas de toque (12 px a mais de cada
+              lado) não se sobrepõem. */}
+          <div className="pb-2">
+            <CaixaDeclaracao id={`${id}-declara-crn`} marcada={valor.declarouCrn} aoMudar={(v) => mudar({ declarouCrn: v })} invalido={erro === 'declaracao-crn'}>
+              Declaro que este CRN é meu e está ativo.
+            </CaixaDeclaracao>
+          </div>
         </>
       ) : null}
 
       {valor.situacao === 'estudante' ? (
-        <CaixaDeclaracao
-          id={`${id}-declara-matricula`}
-          marcada={valor.declarouMatricula}
-          aoMudar={(v) => mudar({ declarouMatricula: v })}
-          invalido={erro === 'declaracao-matricula'}
-        >
-          Declaro ter matrícula ativa no curso de Nutrição.
-        </CaixaDeclaracao>
+        <div className="pb-2">
+          <CaixaDeclaracao
+            id={`${id}-declara-matricula`}
+            marcada={valor.declarouMatricula}
+            aoMudar={(v) => mudar({ declarouMatricula: v })}
+            invalido={erro === 'declaracao-matricula'}
+          >
+            Declaro ter matrícula ativa no curso de Nutrição.
+          </CaixaDeclaracao>
+        </div>
       ) : null}
     </div>
   )

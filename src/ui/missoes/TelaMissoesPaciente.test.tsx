@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
 import type { Missao } from '@/domain/missoes.ts'
-import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { LinkSemConexao, MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { TelaMissoesPaciente } from './TelaMissoesPaciente.tsx'
 
 const MISSOES: readonly Missao[] = [
@@ -242,7 +242,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('CA-531: "Meu plano" mostra cada refeição com horário e nome, a medida caseira em destaque, o peso e o alimento', async () => {
+  it('CA-531 e CA-748 (spec revisao-geral-publica): cada refeição com horário e nome, a medida em destaque e o nome da folha impressa', async () => {
     await abrirMeuPlano()
     expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
@@ -250,9 +250,79 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
     expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
-    expect(almoco.getByText('· 150 g')).toBeInTheDocument()
-    expect(almoco.getByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+    expect(almoco.getByText('Arroz branco cozido')).toBeInTheDocument()
+    expect(almoco.queryByText('Arroz, tipo 1, cozido')).not.toBeInTheDocument()
     expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
+  })
+
+  it('CA-749: o peso fica ao lado só da medida vaga; medida clara sai sem o peso', async () => {
+    await abrirMeuPlano({
+      dieta: {
+        ...DIETA,
+        refeicoes: [
+          {
+            horario: '07:00',
+            nome: 'Café da manhã',
+            opcoes: [
+              [
+                { medida: '1 unidade e meia', gramas: 70, alimento: 'Pão, trigo, francês' },
+                { medida: null, gramas: 5, alimento: 'Margarina, com óleo hidrogenado, com sal (65% de lipídeos)' },
+                { medida: '5 fatias', gramas: 130, alimento: 'Banana, prata, crua' },
+                { medida: '3 fatias e meia', gramas: 130, alimento: 'Maçã, Fuji, com casca, crua' },
+              ],
+            ],
+          },
+        ],
+      },
+    })
+    const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
+    const linha = (nome: string) => cafe.getByText(nome).closest('li')?.textContent
+    expect(linha('Pão francês')).toBe('1 unidade e meiaPão francês')
+    expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
+    expect(linha('Banana prata')).toBe('130 gBanana prata')
+    expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meia · 130 gMaçã Fuji com casca')
+    expect(cafe.getByText('· 130 g').className).toContain('text-muted-foreground')
+  })
+
+  it('CA-750: produto do nutricionista e alimento removido saem como foram guardados', async () => {
+    await abrirMeuPlano({
+      dieta: {
+        ...DIETA,
+        refeicoes: [
+          {
+            horario: '10:00',
+            nome: 'Lanche',
+            opcoes: [
+              [
+                { medida: null, gramas: 45, alimento: 'Barra de proteína da Ana, sabor cacau' },
+                { medida: '2 unidades', gramas: 60, alimento: 'Pão, de queijo, nome antigo' },
+                { medida: null, gramas: 80, alimento: 'Alimento removido' },
+              ],
+            ],
+          },
+        ],
+      },
+    })
+    const lanche = within(screen.getByRole('region', { name: '10:00 Lanche' }))
+    expect(lanche.getByText('Barra de proteína da Ana, sabor cacau').closest('li')?.textContent).toBe('45 gBarra de proteína da Ana, sabor cacau')
+    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('2 unidades · 60 gPão, de queijo, nome antigo')
+    expect(lanche.getByText('Alimento removido').closest('li')?.textContent).toBe('80 gAlimento removido')
+  })
+
+  it('CA-751: desenhar "Meu plano" não muda a cópia guardada; marcar grava a mesma dieta', async () => {
+    const copia = structuredClone(DIETA)
+    const { usuario, salvos } = await abrirMeuPlano({ dieta: copia })
+    expect(copia).toEqual(DIETA)
+    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
+    expect(salvos[0]?.dieta).toEqual(DIETA)
+  })
+
+  it('CA-752: o alimento continua em letra de 16 px (text-base) e a medida em destaque, em cima do nome', async () => {
+    await abrirMeuPlano()
+    const linha = within(screen.getByRole('region', { name: '12:00 Almoço' })).getByText('Arroz branco cozido').closest('li')
+    expect(linha?.className).toContain('text-base')
+    expect(linha?.firstElementChild?.textContent).toBe('6 colheres de sopa')
   })
 
   it('CB-156: alimento sem medida caseira mostra só o peso', async () => {
@@ -260,6 +330,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
     expect(jantar.getByText('80 g').tagName).toBe('STRONG')
     expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
+    expect(jantar.getByText('Macarrão (peso cru)')).toBeInTheDocument()
   })
 
   it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou · Opção N"', async () => {
@@ -349,5 +420,156 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     await abrirMeuPlano({ dieta: { ...vazia, orientacoes: 'Beber água.' } })
     expect(screen.getByText('Beber água.')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: /^\d\d:\d\d / })).not.toBeInTheDocument()
+  })
+})
+
+describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', () => {
+  it('CA-753: sem resposta da nuvem e sem cópia, diz que não conseguiu abrir e oferece tentar de novo', async () => {
+    let semInternet = true
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => (semInternet ? Promise.reject(new LinkSemConexao()) : Promise.resolve(acompanhamento())),
+      salvar: (a) => Promise.resolve(a),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(screen.getByText('Confira a internet do celular e tente de novo.')).toBeInTheDocument()
+    expect(screen.queryByText('Este link não existe mais')).not.toBeInTheDocument()
+
+    // CB-235: tentar de novo ainda sem internet volta à mesma tela.
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Tentar de novo' })).toHaveLength(1)
+
+    semInternet = false
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+  })
+
+  it('CA-755: a nuvem respondeu que o link não existe: continua "Este link não existe mais"', async () => {
+    const { fonte } = fonteFalsa(null, true)
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Este link não existe mais' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+  })
+
+  it('CA-756: a marcação que a nuvem não gravou volta atrás e a tela avisa; com a internet, salva e o aviso some', async () => {
+    let semInternet = true
+    const salvos: Acompanhamento[] = []
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(acompanhamento()),
+      salvar: (a) => {
+        if (semInternet) return Promise.reject(new LinkSemConexao())
+        salvos.push(a)
+        return Promise.resolve(a)
+      },
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
+
+    semInternet = false
+    await usuario.click(agua)
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
+    expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-3b (CA-756): a nuvem recusou por um motivo dela: a tela mostra o motivo e diz com quem falar, sem mandar marcar de novo', async () => {
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(acompanhamento()),
+      salvar: () => Promise.reject(new MarcacaoRecusada('Este link já guarda marcações demais.')),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Este link já guarda marcações demais. Fale com quem montou seu plano.')
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Confira a internet')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('CB-236 (M-4): a primeira marcação falha depois de a segunda salvar com ela junto: a tela relê e fica como a nuvem, sem aviso', async () => {
+    let nuvem = acompanhamento()
+    const pendentes: (() => void)[] = []
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        const soAgua = a.marcacoes.some((m) => m.feitas.includes('agua')) && !a.marcacoes.some((m) => m.feitas.includes('refeicao-1'))
+        if (soAgua) return new Promise((_, rejeitar) => pendentes.push(() => rejeitar(new LinkSemConexao())))
+        nuvem = a
+        return Promise.resolve(a)
+      },
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    const cafe = screen.getByRole('button', { name: /Café da manhã/ })
+    await usuario.click(agua)
+    await usuario.click(cafe)
+    await act(async () => {
+      pendentes.shift()?.()
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+    // A segunda levou a lista inteira: a água chegou à nuvem por ela, e a tela concorda.
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-4: a resposta se perdeu, mas a nuvem gravou: a tela relê, a marca fica e não há aviso', async () => {
+    let nuvem = acompanhamento()
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        nuvem = a
+        return Promise.reject(new LinkSemConexao())
+      },
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    await act(async () => {
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+    expect(agua).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-4: sem conseguir reler, desfaz só aquela missão e avisa', async () => {
+    let leituras = 0
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => (++leituras === 1 ? Promise.resolve(acompanhamento({ marcacoes: [{ dia: HOJE, feitas: ['refeicao-1'] }] })) : Promise.reject(new LinkSemConexao())),
+      salvar: () => Promise.reject(new LinkSemConexao()),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(leituras).toBe(2)
+  })
+
+  it('CA-757: a tela do paciente tem a região principal', async () => {
+    const { fonte } = fonteFalsa(acompanhamento())
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }))
   })
 })

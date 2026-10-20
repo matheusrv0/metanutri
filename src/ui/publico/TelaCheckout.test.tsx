@@ -326,4 +326,53 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })
+
+  describe('D-236 (spec revisao-geral-publica): os avisos do resumo usam as cores do tema claro (o painel é marfim no escuro)', () => {
+    /** Todo aviso dentro do resumo fica no escopo neutro do tema claro, `.tema-claro` (M-9), dentro do próprio resumo. */
+    const avisosDoResumoNoPapel = () => {
+      const resumo = screen.getByRole('region', { name: 'Resumo' })
+      const avisos = within(resumo).queryAllByRole('alert').concat(within(resumo).queryAllByRole('status'))
+      expect(avisos.length).toBeGreaterThan(0)
+      for (const aviso of avisos) {
+        const escopo = aviso.closest('.tema-claro')
+        expect(escopo, aviso.textContent ?? '').not.toBeNull()
+        expect(resumo.contains(escopo)).toBe(true)
+        // M-9: a classe da folha impressa não entra no checkout; uma regra de impressão para ela não chega aqui.
+        expect(aviso.closest('.papel')).toBeNull()
+      }
+    }
+
+    it('CA-746: conta sem nuvem, já assina, sem a chave e estudante', async () => {
+      const { unmount } = await montar({ disponivel: false })
+      avisosDoResumoNoPapel()
+      unmount()
+      const ja = await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'solo', planoPedido: 'solo', status: 'ativa' } })
+      avisosDoResumoNoPapel()
+      ja.unmount()
+      const sem = await montar({ semChave: true })
+      avisosDoResumoNoPapel()
+      sem.unmount()
+      await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'estudante', planoPedido: 'estudante', status: 'ativa' } })
+      avisosDoResumoNoPapel()
+    })
+
+    it('CA-746: aceite faltando e recusa do banco', async () => {
+      const { usuario, falso } = await montar({ aoAssinar: async () => ({ ok: false, erro: RECUSA_PADRAO }) })
+      falso.preencher()
+      await usuario.type(screen.getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
+      await usuario.type(screen.getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
+      await usuario.click(botaoAssinar())
+      avisosDoResumoNoPapel()
+      await usuario.click(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }))
+      await usuario.click(botaoAssinar())
+      await screen.findByText(RECUSA_PADRAO)
+      avisosDoResumoNoPapel()
+    })
+
+    it('CA-747: o botão e a autorização continuam fora do escopo claro', async () => {
+      await montar()
+      expect(botaoAssinar().closest('.tema-claro')).toBeNull()
+      expect(screen.getByRole('checkbox', { name: /Autorizo a cobrança/ }).closest('.tema-claro')).toBeNull()
+    })
+  })
 })
