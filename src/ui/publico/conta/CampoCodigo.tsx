@@ -29,7 +29,7 @@ export function CampoCodigo({ id, valor, aoMudar, invalido = false, digitos = DI
         autoComplete="one-time-code"
         spellCheck={false}
         value={valor}
-        onChange={(e) => aoMudar(soDigitos(e.target.value))}
+        onChange={(e) => aoMudar(soDigitos(e.target.value).slice(0, digitos))}
         aria-invalid={invalido}
         className="numeros h-12 text-center text-xl font-semibold tracking-[0.3em]"
       />

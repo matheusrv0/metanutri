@@ -44,6 +44,17 @@ describe('TelaSegundoFator (spec seguranca-lote-5, D-261)', () => {
     expect(confirmar).not.toHaveBeenCalled()
   })
 
+  it('CA-838: o campo não passa de 6 dígitos, nem colando o código de 8 dígitos do e-mail', async () => {
+    const confirmar = vi.fn(async () => null)
+    render(<TelaSegundoFator segundoFator={segundoFatorFalso(CONFIRMAR, confirmar)} />)
+    const usuario = userEvent.setup()
+    await usuario.click(campo())
+    await usuario.paste('1234 5678')
+    expect(campo()).toHaveValue('123456')
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(confirmar).toHaveBeenCalledWith('123456')
+  })
+
   it('CA-835: o código certo vai para a confirmação', async () => {
     const confirmar = vi.fn(async () => null)
     render(<TelaSegundoFator segundoFator={segundoFatorFalso(CADASTRAR, confirmar)} />)
