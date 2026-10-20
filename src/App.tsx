@@ -113,7 +113,11 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   const negocio = useNegocio(perfilConta.ehAdmin && rota.tela === 'negocio')
   // O app autenticador do administrador (spec seguranca-lote-5, D-261): só nas telas dele, e aqui em cima para o
   // código QR não mudar quando ele passa de Negócio para Aprovações no meio do cadastro.
-  const segundoFator = useSegundoFator(perfilConta.precisaSegundoFator && (rota.tela === 'negocio' || rota.tela === 'aprovacoes'), perfilConta.recarregar)
+  const segundoFator = useSegundoFator(
+    perfilConta.precisaSegundoFator && (rota.tela === 'negocio' || rota.tela === 'aprovacoes'),
+    sessao?.id ?? null,
+    perfilConta.recarregar,
+  )
 
   const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
 

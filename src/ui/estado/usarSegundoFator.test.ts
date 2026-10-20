@@ -13,6 +13,9 @@ const banco = vi.hoisted(() => ({
   erroAoListar: null as unknown,
   erroAoCadastrar: null as unknown,
   erroAoConfirmar: null as unknown,
+  /** Erros da confirmação, um por chamada, antes do `erroAoConfirmar`. */
+  errosEmSequencia: [] as unknown[],
+  cadastros: 0,
   chamadas: [] as string[],
 }))
 
@@ -31,11 +34,16 @@ const cliente = {
       enroll: async (parametros: { factorType: string; issuer?: string; friendlyName?: string }) => {
         banco.chamadas.push(`cadastrar ${JSON.stringify(parametros)}`)
         if (banco.erroAoCadastrar) return { data: null, error: banco.erroAoCadastrar }
-        return { data: { id: 'fator-novo', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,<svg></svg>', secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', uri: 'otpauth://x' } }, error: null }
+        banco.cadastros += 1
+        const n = banco.cadastros
+        const id = n === 1 ? 'fator-novo' : `fator-novo-${n}`
+        const secret = n === 1 ? 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP' : `CHAVE${n}`
+        return { data: { id, type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,<svg></svg>', secret, uri: 'otpauth://x' } }, error: null }
       },
       challengeAndVerify: async ({ factorId, code }: { factorId: string; code: string }) => {
         banco.chamadas.push(`confirmar ${factorId} ${code}`)
-        return { data: banco.erroAoConfirmar ? null : {}, error: banco.erroAoConfirmar }
+        const erro = banco.errosEmSequencia.length > 0 ? banco.errosEmSequencia.shift() : banco.erroAoConfirmar
+        return { data: erro ? null : {}, error: erro ?? null }
       },
     },
   },
@@ -49,24 +57,26 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     banco.erroAoListar = null
     banco.erroAoCadastrar = null
     banco.erroAoConfirmar = null
+    banco.errosEmSequencia = []
+    banco.cadastros = 0
     banco.chamadas = []
   })
 
   it('desligado (fora das telas do administrador), não pergunta nada', () => {
-    const { result } = renderHook(() => useSegundoFator(false, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(false, 'u1', vi.fn()))
     expect(result.current.etapa).toEqual({ tipo: 'carregando' })
     expect(banco.chamadas).toEqual([])
   })
 
   it('CA-836: com o app já cadastrado, pede só o código', async () => {
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa).toEqual({ tipo: 'confirmar', fatorId: 'fator-1' }))
     expect(banco.chamadas).toEqual(['listar'])
   })
 
   it('CA-835 e DP-L5-3: sem app, cadastra com o nome MetaNutri e mostra o código QR e a chave', async () => {
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('cadastrar'))
     expect(result.current.etapa).toEqual({ tipo: 'cadastrar', fatorId: 'fator-novo', qr: 'data:image/svg+xml;utf-8,<svg></svg>', chave: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP' })
     expect(banco.chamadas).toEqual(['listar', 'cadastrar {"factorType":"totp","issuer":"MetaNutri"}'])
@@ -77,14 +87,14 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
       { id: 'velho-1', factor_type: 'totp', status: 'unverified' },
       { id: 'telefone', factor_type: 'phone', status: 'unverified' },
     ]
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('cadastrar'))
     expect(banco.chamadas).toEqual(['listar', 'descartar velho-1', 'cadastrar {"factorType":"totp","issuer":"MetaNutri"}'])
   })
 
   it('a leitura que falha mostra o aviso e "Tentar de novo" lê de novo', async () => {
     banco.erroAoListar = new AuthRetryableFetchError('Failed to fetch', 0)
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa).toEqual({ tipo: 'falhou', mensagem: 'Não deu para falar com o servidor. Confira a internet e tente de novo.' }))
     banco.erroAoListar = null
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
@@ -94,14 +104,14 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
 
   it('o cadastro que falha também vira o aviso', async () => {
     banco.erroAoCadastrar = new AuthApiError('MFA enroll is disabled for TOTP', 422, 'mfa_totp_enroll_not_enabled')
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('falhou'))
   })
 
   it('CA-835 e CA-836: o código certo confirma a sessão e avisa quem chamou', async () => {
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
     const aoLiberado = vi.fn()
-    const { result } = renderHook(() => useSegundoFator(true, aoLiberado))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', aoLiberado))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('confirmar'))
     let erro: string | null = 'x'
     await act(async () => {
@@ -121,7 +131,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
     banco.erroAoConfirmar = falha
     const aoLiberado = vi.fn()
-    const { result } = renderHook(() => useSegundoFator(true, aoLiberado))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', aoLiberado))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('confirmar'))
     let erro: string | null = null
     await act(async () => {
@@ -133,7 +143,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
 
   it('CA-838: menos de 6 dígitos não vai ao servidor', async () => {
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
-    const { result } = renderHook(() => useSegundoFator(true, vi.fn()))
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
     await waitFor(() => expect(result.current.etapa.tipo).toBe('confirmar'))
     let erro: string | null = null
     await act(async () => {
@@ -141,5 +151,48 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     })
     expect(erro).toBe('Digite os 6 dígitos do código.')
     expect(banco.chamadas).toEqual(['listar'])
+  })
+  it('CA-859: sair da tela e voltar no meio do cadastro mantém o mesmo código QR, sem cadastrar de novo', async () => {
+    const { result, rerender } = renderHook(({ ativo }: { ativo: boolean }) => useSegundoFator(ativo, 'u1', vi.fn()), { initialProps: { ativo: true } })
+    await waitFor(() => expect(result.current.etapa.tipo).toBe('cadastrar'))
+    const antes = result.current.etapa
+    rerender({ ativo: false })
+    rerender({ ativo: true })
+    await new Promise((pronto) => setTimeout(pronto, 50))
+    expect(result.current.etapa).toEqual(antes)
+    expect(banco.cadastros).toBe(1)
+  })
+
+  it('CA-859: o servidor já não conhece o cadastro (outra aba começou outro): prepara outro QR e avisa', async () => {
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
+    await waitFor(() => expect(result.current.etapa.tipo).toBe('cadastrar'))
+    banco.erroAoConfirmar = new AuthApiError('Factor not found', 404, 'mfa_factor_not_found')
+    let erro: string | null = null
+    await act(async () => {
+      erro = await result.current.confirmar('123456')
+    })
+    expect(erro).toBe('O código QR mudou. Apague a entrada antiga do MetaNutri no app e leia este.')
+    await waitFor(() => expect(result.current.etapa).toMatchObject({ tipo: 'cadastrar', fatorId: 'fator-novo-2', chave: 'CHAVE2' }))
+  })
+
+  it('CB-269: outra conta na mesma aba não vê o código QR nem a chave da anterior', async () => {
+    const { result, rerender } = renderHook(({ conta }: { conta: string }) => useSegundoFator(true, conta, vi.fn()), { initialProps: { conta: 'u1' } })
+    await waitFor(() => expect(result.current.etapa).toMatchObject({ chave: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP' }))
+    rerender({ conta: 'u2' })
+    expect(result.current.etapa).toEqual({ tipo: 'carregando' })
+    await waitFor(() => expect(result.current.etapa).toMatchObject({ tipo: 'cadastrar', chave: 'CHAVE2' }))
+  })
+
+  it('CB-269: o endereço IP mudou entre pedir e confirmar: tenta uma vez de novo, sozinho', async () => {
+    banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
+    banco.errosEmSequencia = [new AuthApiError('Challenge and verify IP addresses mismatch.', 422, 'mfa_ip_address_mismatch')]
+    const aoLiberado = vi.fn()
+    const { result } = renderHook(() => useSegundoFator(true, 'u1', aoLiberado))
+    await waitFor(() => expect(result.current.etapa.tipo).toBe('confirmar'))
+    await act(async () => {
+      expect(await result.current.confirmar('123456')).toBeNull()
+    })
+    expect(banco.chamadas.filter((c) => c.startsWith('confirmar'))).toHaveLength(2)
+    expect(aoLiberado).toHaveBeenCalledOnce()
   })
 })
