@@ -175,6 +175,24 @@ Prints de depois em 1280 e 390 px (mesmo roteiro dos de antes), relatório em
 | R-241 | O planejador deixa de mostrar medida de pedaço com mais de 4 pedaços ("Banana · 5 fatias" vira só os gramas), como a folha já faz |
 | R-242 | O Word de aconselhamento passa a dizer "ponta de faca" e deixa de dizer "fatia" de manteiga, como a folha |
 | R-243 | O Ctrl+P imprime a tela como ela é, com os botões de dentro do conteúdo (Cobrir, Abrir…). Para entregar ao paciente, continua sendo "Exportar › Dieta para imprimir" |
-| R-244 | A dieta do link do paciente continua com a medida de antes (R-182 da `impressao-do-plano`): a margarina pode sair sem medida no link e com "ponta de faca" na folha |
+| R-244 | A cópia de texto guardada no link continua com a medida de antes (R-182 da `impressao-do-plano`). *(Revisão de 20/10/2026: o que o paciente vê em "Meu plano" vem da frente pública, que desenha com `quantidadeNaFolha`; depois da integração, ele vê a mesma medida da folha. Só a cópia guardada fica com o texto antigo.)* |
 | R-246 | Produto apagado não deixa cópia: o plano fica com "Produto apagado", sem valores, até a pessoa trocar a linha. Guardar uma cópia escondida manteria os números, mas o produto continuaria existindo depois de a pessoa mandar apagar |
 | R-245 | Um mínimo da meta com casa decimal guardado antes desta versão passa a valer arredondado: um nutriente entre o valor antigo e o arredondado pode mudar de "abaixo" para "na meta" (ou o contrário) |
+
+## Rodada de revisão (20/10/2026)
+
+Revisão da frente: 0 crítico, 3 importantes, 7 menores (`revisao-trabalho.md`, fora do repositório). O dono disse
+"apenas faça". Um commit por item, em TDD, com o critério da spec já emendado (commit da spec antes do código).
+
+| # | Item | Arquivos | Critérios |
+|---|---|---|---|
+| V1 | I-1: papel do Ctrl+P com 14 mm em cima e embaixo de toda página | `src/ui/tema/globals.css`, `e2e/revisao-geral-trabalho.spec.ts` | CA-770 |
+| V2 | I-2: † na energia e nos macros com item sem dado; Cobrir sem folga de kcal quando falta energia; "*" no Memorial | `src/ui/plano/CartaoRefeicao.tsx`, `src/ui/resumo/ResumoDoDia.tsx`, `src/ui/resumo/FaixaResumo.tsx`, `design-system/componentes/nutricao/MedidorMacro.tsx` (marca depois do nome), `src/domain/cobrir.ts` (só a folga de kcal), `src/export/memorial-docx.ts`, `src/ui/exportar/MenuExportar.tsx`, testes | CA-789, CA-793 |
+| V3 | I-3: seletor de referência empilhado abaixo de 640 px | `src/ui/adequacao/TelaAdequacao.tsx`, e2e | CA-795 |
+| V4 | M-1: trocar de tipo apaga o aviso de número inteiro | `src/ui/adequacao/TelaAdequacao.tsx`, teste | CA-782 |
+| V5 | M-2: a idade assentada recomeça em outro plano | `src/ui/caso/TelaCaso.tsx` (`key` do `CartaoPessoa`), teste | CA-784 |
+| V6 | M-3: o item apagado sai do que vai para o paciente; aviso na linha do planejador | `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/ui/exportar/FolhaDieta.tsx`, `src/ui/plano/LinhaItem.tsx`, `src/ui/plano/DialogoSugestoes.tsx`, testes | CA-789 |
+| V7 | M-4: nada aberto, véu ou aviso do topo no papel da tela | `src/ui/tema/globals.css`, `design-system/componentes/overlay/dialog.tsx`, `sheet.tsx`, `src/ui/layout/Estrutura.tsx`, e2e | CA-770 |
+| V8 | M-5: textos da medida do link e da exclusão de conta | `specs/revisao-geral-trabalho/SPEC.md`, `PLAN.md`, `PRODUCT.md` | — |
+| V9 | M-6: testes com o id, † na tela, medida num só `evaluate`, animação reduzida | `src/ui/painel/TelaPainel.test.tsx`, `src/ui/adequacao/TelaAdequacao.test.tsx`, e2e | CA-777, CA-793 |
+| V10 | M-7: folga do X na gaveta de alimento e "100 g" sem quebra nela | `src/ui/alimentos/TelaAlimentos.tsx`, teste | CA-788, CA-794 |
