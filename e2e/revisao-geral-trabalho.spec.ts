@@ -291,3 +291,19 @@ test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
     await alvoDe44(page.getByRole('button', { name: 'Ir para Configurações' }))
   })
 })
+
+test('CA-795: no celular, cada opção do seletor de referência fica numa linha só', async ({ page }) => {
+  const casoId = await abrirComExemplo(page)
+  for (const largura of [360, 390]) {
+    await page.setViewportSize({ width: largura, height: 800 })
+    await page.goto(`/#/caso/${casoId}/adequacao`)
+    const grupo = page.getByRole('radiogroup', { name: 'Tipo de referência' })
+    for (const opcao of ['Individual (RDA, 90%)', 'Coletivo (EAR, 50%)', 'Personalizado']) {
+      const caixa = await grupo.getByRole('radio', { name: opcao }).boundingBox()
+      expect(caixa?.height ?? 0, opcao).toBeLessThanOrEqual(48)
+    }
+    expect(await vazaDaTela(page)).toEqual([])
+    await grupo.getByRole('radio', { name: 'Personalizado' }).click()
+    await expect(page.getByLabel('Mínimo da meta')).toBeVisible()
+  }
+})
