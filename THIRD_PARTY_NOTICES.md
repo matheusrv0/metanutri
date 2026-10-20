@@ -32,6 +32,14 @@ Dados reorganizados por https://github.com/brolesi/taco (licença MIT, © 2026 F
 publicações públicas da NEPA/UNICAMP (TACO, 4ª edição, 2011) e do IBGE (POF 2008-2009). Texto da licença em
 `dados-brutos/taco/LICENSE`.
 
+## USDA FoodData Central (vitamina D, B12, folato, vitamina E, selênio e gordura trans)
+
+Valores de alimento equivalente para os 308 alimentos da TACO que têm equivalente, em `src/data/complemento-usda.json`,
+gerado por `scripts/dados/importar-usda.mjs` (spec vitaminas-usda). Domínio público, CC0 1.0 Universal; o USDA pede
+só a citação: U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019.
+fdc.nal.usda.gov. Conjuntos SR Legacy (abril de 2018) e Foundation Foods (abril de 2026), baixados em 20/10/2026 de
+https://fdc.nal.usda.gov/download-datasets/.
+
 ## Referências nutricionais e antropométricas
 
 Valores factuais citados com fonte: NASEM (Dietary Reference Intakes, 2019 e Energy, 2023), OMS (curvas de crescimento

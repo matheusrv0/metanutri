@@ -33,7 +33,7 @@ Ajuda ganham o texto novo.
 | T5 | Ficha do alimento com a marca USDA | `src/domain/catalogo.ts`, `catalogo.test.ts`, `src/domain/completude.ts` (rótulos), `src/ui/alimentos/TelaAlimentos.tsx`, `TelaAlimentos.test.tsx` | CA-959 a CA-962, CB-309 | T2 |
 | T6 | Fontes da base, Ajuda e vitrine | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/domain/complementoUsda.ts` (mês da versão), `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `TelaAjuda.test.tsx`, `src/domain/vitrine.ts`, `e2e/publico.spec.ts` (quatro links) | CA-963 a CA-966 | T2 |
 | T7 | Exportação com 21 linhas; as cinco no cartão e na tabela | `src/export/copiar-tabela.test.ts`, `src/export/docx.test.ts`, `src/ui/adequacao/MicrosDoDia.test.tsx`, `src/ui/adequacao/TelaAdequacao.test.tsx` | CA-958, CA-967, CA-968 | T4 |
-| T8 | Navegador e validação | `e2e/vitaminas-usda.spec.ts` (novo), prints, relatório | CA-969, todos | T1 a T7 |
+| T8 | Navegador e validação | `e2e/vitaminas-usda.spec.ts` (novo), `THIRD_PARTY_NOTICES.md` (a fonte do USDA, como as outras bases), prints, relatório | CA-969, CB-309, todos | T1 a T7 |
 
 ## Tarefas
 
@@ -112,6 +112,19 @@ Ajuda ganham o texto novo.
 2. `npm run check`, `npx playwright test` (configuração temporária numa porta própria), `npm run build`.
 3. Prints de depois (1280 e 390): tabela da etapa 3, cartão da etapa 2, Cobrir da vitamina D e da B12, ficha com a
    marca USDA, ficha sem equivalente, Fontes da base. Relatório.
+
+## Validação (20/10/2026)
+
+- `npm run check`: lint sem erro (1 aviso antigo, em `MolduraPublica.tsx`), typecheck limpo, 197 arquivos e 3.445
+  testes passando.
+- `npx playwright test` (configuração temporária na porta 4471, apagada depois): 67 passando.
+- `npm run build`: limpo; o pacote principal cresce 64 kB (7,5 kB comprimido) com o complemento.
+- Cada critério tem teste: CA-940 a CA-947 em `complemento-usda.test.ts`; CA-948 a CA-950 em `complementoUsda.test.ts`
+  e `totais.test.ts`; CA-951 e CA-952 em `produtos.test.ts`; CA-953 a CA-957 em `adequacao.test.ts` e
+  `cobrir.test.ts`; CA-958 em `MicrosDoDia.test.tsx` e `TelaAdequacao.test.tsx`; CA-959 a CA-962 em
+  `catalogo.test.ts` e `TelaAlimentos.test.tsx`; CA-963 a CA-966 em `baseMetanutri.test.ts`, `TelaFontes.test.tsx`,
+  `TelaAjuda.test.tsx` e `TelaInicio.test.tsx`; CA-967 e CA-968 em `copiar-tabela.test.ts` e `docx.test.ts`; CA-969 e
+  CB-309 em `e2e/vitaminas-usda.spec.ts`.
 
 ## Riscos e decisões para o dono revisar
 
