@@ -22,7 +22,7 @@ test('anamnese: responder, editar o roteiro e a resposta continuar depois de rec
   const janela = page.getByRole('dialog', { name: 'Roteiro da anamnese' })
   await janela.getByRole('button', { name: /^Água/ }).click()
   await janela.getByRole('button', { name: 'Acrescentar pergunta em Água' }).click()
-  await janela.getByRole('textbox', { name: 'Pergunta 3 de Água' }).fill('Chá ou café por dia')
+  await janela.getByRole('textbox', { name: 'Pergunta 4 de Água' }).fill('Chá ou café por dia')
   await janela.getByRole('button', { name: 'Salvar roteiro' }).click()
   await expect(janela).toBeHidden()
 
@@ -30,7 +30,7 @@ test('anamnese: responder, editar o roteiro e a resposta continuar depois de rec
   // CA-563: ao voltar, o bloco respondido começa recolhido, com o resumo.
   const agua = anamnese.getByRole('button', { name: /^Água/ })
   await expect(agua).toHaveAttribute('aria-expanded', 'false')
-  await expect(agua).toContainText('1 de 3 respondida')
+  await expect(agua).toContainText('1 de 4 respondida')
   await agua.click()
   await expect(anamnese.getByLabel('Quanta água bebe por dia')).toHaveValue('Pouca, uns 3 copos')
   await expect(anamnese.getByLabel('Chá ou café por dia')).toBeVisible()

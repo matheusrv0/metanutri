@@ -49,9 +49,20 @@ const anamnese = () => within(screen.getByRole('region', { name: 'Anamnese' }))
 const bloco = (titulo: string) => anamnese().getByRole('button', { name: new RegExp(`^${titulo}`) })
 
 describe('Anamnese com roteiro na ficha (US-AP1)', () => {
-  it('CA-560: os 8 blocos, em ordem, recolhidos e com o resumo das respostas', () => {
+  it('CA-560 e CA-935: os 10 blocos, em ordem, recolhidos e com o resumo das respostas', () => {
     montar()
-    const titulos = ['Objetivo e queixa', 'Rotina e sono', 'Intestino', 'Água', 'Álcool e fumo', 'Atividade física', 'Preferências e aversões', 'Recordatório de 24 horas']
+    const titulos = [
+      'Objetivo e queixa',
+      'Rotina e sono',
+      'Intestino',
+      'Água',
+      'Álcool e fumo',
+      'Atividade física',
+      'Preferências e aversões',
+      'Intolerâncias e alergias',
+      'Gestação',
+      'Recordatório de 24 horas',
+    ]
     for (const titulo of titulos) {
       expect(bloco(titulo)).toHaveAttribute('aria-expanded', 'false')
       expect(bloco(titulo)).toHaveTextContent('Sem respostas')
@@ -59,7 +70,7 @@ describe('Anamnese com roteiro na ficha (US-AP1)', () => {
     const nomes = anamnese()
       .getAllByRole('button', { expanded: false })
       .map((b) => b.textContent ?? '')
-    expect(nomes.slice(0, 8).map((n) => n.replace('Sem respostas', ''))).toEqual(titulos)
+    expect(nomes.slice(0, 10).map((n) => n.replace('Sem respostas', ''))).toEqual(titulos)
   })
 
   it('CA-561: o que se escreve fica salvo na ficha na hora e muda a data de alteração', async () => {
@@ -90,7 +101,7 @@ describe('Anamnese com roteiro na ficha (US-AP1)', () => {
   it('CA-563: todo bloco começa recolhido, com o resumo à vista; Abrir tudo e Recolher tudo', async () => {
     const { usuario } = montar({ respostasAnamnese: [{ perguntaId: 'agua-dia', blocoId: 'agua', pergunta: 'Quanta água bebe por dia', resposta: '1 litro' }] })
     expect(bloco('Água')).toHaveAttribute('aria-expanded', 'false')
-    expect(bloco('Água')).toHaveTextContent('1 de 2 respondida')
+    expect(bloco('Água')).toHaveTextContent('1 de 3 respondida')
     await usuario.click(anamnese().getByRole('button', { name: 'Abrir tudo' }))
     for (const titulo of ['Objetivo e queixa', 'Água', 'Recordatório de 24 horas', 'Outras anotações']) expect(bloco(titulo)).toHaveAttribute('aria-expanded', 'true')
     expect(anamnese().getByLabelText('Quanta água bebe por dia')).toHaveValue('1 litro')
@@ -136,13 +147,13 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
     const primeira = janela.getByLabelText('Pergunta 1 de Água')
     await usuario.clear(primeira)
     await usuario.type(primeira, 'Litros de água por dia')
-    await usuario.click(janela.getByRole('button', { name: 'Tirar a pergunta 2 de Água' }))
+    await usuario.click(janela.getByRole('button', { name: 'Tirar a pergunta 3 de Água' }))
     await usuario.click(janela.getByRole('button', { name: 'Acrescentar pergunta em Água' }))
-    await usuario.type(janela.getByLabelText('Pergunta 2 de Água'), 'Chá por dia')
+    await usuario.type(janela.getByLabelText('Pergunta 3 de Água'), 'Chá por dia')
     await usuario.click(janela.getByRole('button', { name: 'Salvar roteiro' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(lerRoteiro(arm).perguntas.agua.map((p) => p.texto)).toEqual(['Litros de água por dia', 'Chá por dia'])
+    expect(lerRoteiro(arm).perguntas.agua.map((p) => p.texto)).toEqual(['Litros de água por dia', 'Cor da urina', 'Chá por dia'])
     expect(anamnese().getByLabelText('Litros de água por dia')).toHaveValue('1 litro')
     expect(anamnese().getByLabelText('Chá por dia')).toHaveValue('')
     expect(anamnese().queryByLabelText('Outras bebidas ao longo do dia')).not.toBeInTheDocument()
@@ -150,7 +161,7 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
 
   it('CA-565: a janela abre com o roteiro salvo mais recente, mesmo o salvo em outra aba depois que a ficha abriu', async () => {
     const { arm, usuario } = montar()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Salva em outra aba' }] } }))
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 2, blocos: { agua: [{ id: 'x', texto: 'Salva em outra aba' }] } }))
     await usuario.click(anamnese().getByRole('button', { name: 'Editar roteiro' }))
     const janela = within(screen.getByRole('dialog', { name: 'Roteiro da anamnese' }))
     await usuario.click(janela.getByRole('button', { name: /^Água/ }))
@@ -172,7 +183,7 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
 
   it('CA-567: voltar ao roteiro padrão e salvar traz as perguntas do MetaNutri', async () => {
     const arm = new MemoriaFalsa()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Só esta' }], gestacao: [{ id: 'g', texto: 'Semanas' }] } }))
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos: { agua: [{ id: 'x', texto: 'Só esta' }], especialidade: [{ id: 'g', texto: 'Semanas' }] } }))
     const { usuario } = montar({}, arm)
     await usuario.click(anamnese().getByRole('button', { name: 'Editar roteiro' }))
     const janela = within(screen.getByRole('dialog', { name: 'Roteiro da anamnese' }))
@@ -180,7 +191,7 @@ describe('Editar o roteiro (CA-565 a CA-568)', () => {
     await usuario.click(janela.getByRole('button', { name: 'Salvar roteiro' }))
     expect(lerRoteiro(arm).perguntas).toEqual(ROTEIRO_PADRAO.perguntas)
     // CA-589: o bloco que esta versão não conhece continua guardado.
-    expect(lerRoteiro(arm).outros).toEqual({ gestacao: [{ id: 'g', texto: 'Semanas' }] })
+    expect(lerRoteiro(arm).outros).toEqual({ especialidade: [{ id: 'g', texto: 'Semanas' }] })
   })
 
   it('CA-568: a pergunta tirada continua na ficha com a resposta, marcada Fora do roteiro, e pode ser apagada', async () => {
