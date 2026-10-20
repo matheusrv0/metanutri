@@ -4,11 +4,17 @@ import { expect, type Locator, type Page } from '@playwright/test'
 
 export const LARGURAS_DA_FUMACA = [390, 1280] as const
 
-/** Vigia o console desde antes do `goto`: erro de script, erro da página e violação da regra de conteúdo (CSP). */
+/**
+ * Vigia o console desde antes do `goto`: erro de script, erro da página e violação da regra de conteúdo (CSP). O erro
+ * de pedido ("Failed to load resource") não diz o endereço no texto; ele vai junto, entre colchetes, para quem lê a
+ * falha saber qual pedido caiu (revisão de 20/10/2026, M-5).
+ */
 export async function vigiarConsole(pagina: Page): Promise<string[]> {
   const erros: string[] = []
   pagina.on('console', (mensagem) => {
-    if (mensagem.type() === 'error') erros.push(mensagem.text())
+    if (mensagem.type() !== 'error') return
+    const endereco = mensagem.location().url
+    erros.push(endereco && !mensagem.text().includes(endereco) ? `${mensagem.text()} [${endereco}]` : mensagem.text())
   })
   pagina.on('pageerror', (erro) => erros.push(erro.message))
   await pagina.addInitScript(() => {

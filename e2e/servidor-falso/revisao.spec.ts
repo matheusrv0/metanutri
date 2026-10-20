@@ -276,6 +276,19 @@ for (const [plano, declaracao] of [
   })
 }
 
+test('M-5: o vigia do console grava o endereço do pedido que falhou', async ({ page }) => {
+  const erros = await vigiarConsole(page)
+  await ligarServidorFalso(page)
+  await page.route('**/m5-pedido-que-falha.png', (rota) => rota.abort())
+  await page.goto('/#/inicio')
+  await page.evaluate(() => {
+    const imagem = document.createElement('img')
+    imagem.src = './m5-pedido-que-falha.png'
+    document.body.append(imagem)
+  })
+  await expect.poll(() => erros.join('\n')).toContain('m5-pedido-que-falha.png')
+})
+
 test.describe('Avisos do checkout (D-236)', () => {
   for (const tema of ['dark', 'light'] as const) {
     test(`${tema === 'dark' ? 'CA-746' : 'CA-747'}: no tema ${tema === 'dark' ? 'escuro' : 'claro'}, o aviso do resumo tem contraste de 4,5:1 ou mais`, async ({ page }) => {
