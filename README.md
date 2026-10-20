@@ -168,7 +168,10 @@ Para funcionar de verdade, nesta ordem:
 
 1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://metanutri.com.br/`.
    Em *Redirect URLs*: `https://metanutri.com.br/**`, `https://matheusrv0.github.io/metanutri/**` (o endereço antigo, que redireciona) e `http://localhost:5173/**`.
-2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8.
+2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8. *Secure
+   password change* e *Require current password when updating* LIGADOS: o servidor pede a senha atual para trocar a
+   senha, e o código de "Esqueci a senha" continua valendo (spec seguranca-lote-5, R-61). Se o painel não mostrar a
+   segunda opção, ligue pela API de configuração (`security_update_password_require_current_password: true`).
 3. **E-mail (SMTP).** Os e-mails saem pelo Resend, com o domínio `metanutri.com.br`. No Resend, em *Domains*,
    adicione o domínio, copie os registros de DNS para a zona do domínio no Registro.br e espere a verificação; em
    *API Keys*, crie uma chave com *Sending access*. Depois preencha *Authentication > Emails > SMTP Settings*

@@ -31,7 +31,8 @@ Em português simples, o que já está no MetaNutri:
   link que vence em minutos.
 - **Os comprovantes são apagados sozinhos.** O servidor confere todo dia e apaga o arquivo 30 dias depois da
   análise; o envio que não virou pedido sai depois de 1 dia. O pedido guarda só os dados digitados e a decisão.
-- **Trocar a senha pede o código que chega por e-mail**, e um endereço do site nunca abre já dentro de uma conta.
+- **Trocar a senha pelo site pede o código que chega por e-mail** (e, na conta do administrador, também o código do
+  app). Fora do site, o servidor de login pede a senha atual. Um endereço do site nunca abre já dentro de uma conta.
 - **O link do paciente não abre o resto.** Ele tem um código aleatório; quem tem o link vê e marca só as
   missões daquele link, sem conta e sem acesso a mais nada.
 - **O cartão não passa pelo MetaNutri.** O número, a validade e o código vão do navegador direto para o Mercado
