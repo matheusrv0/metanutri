@@ -126,6 +126,31 @@ describe('Meses além dos anos sem piscar (spec revisao-geral-trabalho, D-244)',
       expect(meses()).toBeInTheDocument()
     })
 
+    it('CA-784 (revisão de 20/10/2026): abrir outro plano mostra os campos dele na hora, sem os do anterior', () => {
+      function Trocador() {
+        const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c1'), ...adulta, idadeAnos: 8, modo: 'completo' })
+        return (
+          <>
+            <button type="button" onClick={() => setCaso({ ...criarCasoVazio('c2'), modo: 'completo' })}>
+              Outro plano
+            </button>
+            <button type="button" onClick={() => setCaso({ ...criarCasoVazio('c3'), ...adulta, idadeAnos: 65, modo: 'completo' })}>
+              Plano de 65 anos
+            </button>
+            <TelaCaso caso={caso} aoAlterar={(m) => setCaso((c) => ({ ...c, ...m }))} />
+          </>
+        )
+      }
+      render(<Trocador />)
+      expect(meses()).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Outro plano' }))
+      expect(meses()).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Plano de 65 anos' }))
+      expect(screen.getByLabelText('Circunferência da panturrilha')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Outro plano' }))
+      expect(screen.queryByLabelText('Circunferência da panturrilha')).not.toBeInTheDocument()
+    })
+
     it('CB-243: idade apagada, sem meses guardados: o campo some quando a pessoa termina', () => {
       render(<Anfitriao inicial={{ ...adulta, idadeAnos: 8 }} />)
       expect(meses()).toBeInTheDocument()

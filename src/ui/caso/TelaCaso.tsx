@@ -56,7 +56,8 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
           camposDeEstagio={atual.estagio}
         />
 
-        <CartaoPessoa caso={caso} aoAlterar={aoAlterar} erros={validacao.erros} />
+        {/* Um cartão por plano: a idade "assentada" (D-244) não passa de um plano para outro (CA-784, revisão de 20/10/2026). */}
+        <CartaoPessoa key={caso.id} caso={caso} aoAlterar={aoAlterar} erros={validacao.erros} />
 
         <Card>
           <CardHeader>
