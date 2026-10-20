@@ -147,6 +147,12 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     expect(within(listaDeReceitas()).getByRole('listitem')).toHaveTextContent('Panqueca fit')
   })
 
+  it('CB-271: no editor, o ingrediente que não existe mais diz "Alimento não encontrado", como a linha do plano', async () => {
+    const usuario = montar(new Memoria(), [salva('a', 'Panqueca de banana', { ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_999, gramas: 20 }] })])
+    await usuario.click(screen.getByRole('button', { name: 'Editar Panqueca de banana' }))
+    expect(within(screen.getByRole('list', { name: 'Ingredientes' })).getByText('Alimento não encontrado')).toBeInTheDocument()
+  })
+
   it('CA-864: duplicar faz "(cópia)"', async () => {
     const usuario = montar(new Memoria(), [salva('a', 'Panqueca de banana')])
     await usuario.click(screen.getByRole('button', { name: 'Mais ações de Panqueca de banana' }))

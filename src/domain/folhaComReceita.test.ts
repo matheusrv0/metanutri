@@ -78,6 +78,12 @@ describe('a lista de compras abre a receita (CA-881)', () => {
     expect(compras.some((c) => c.nome === 'Panqueca de banana')).toBe(false)
   })
 
+  it('CB-271 (rodada da revisão): ingrediente que não existe mais não vira linha da lista de compras', () => {
+    const comRemovidos = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_998, gramas: 10 }, { alimentoId: 999_999, gramas: 20 }], pesoProntoG: null }
+    const compras = comprasDaFolha(plano([itemDeReceita('a', 155, comRemovidos)]), buscarAlimento)
+    expect(compras.map((c) => c.nome)).toEqual(['Aveia em flocos', 'Banana prata', 'Ovo'])
+  })
+
   it('receita em substituto não entra na lista do dia, como todo substituto', () => {
     const compras = comprasDaFolha(plano([], [itemDeReceita('s', 120)]), buscarAlimento)
     expect(compras.map((c) => c.nome)).toEqual(['Banana prata'])

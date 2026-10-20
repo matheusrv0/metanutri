@@ -53,10 +53,11 @@ export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly C
   for (const refeicao of plano.refeicoes) {
     for (const item of refeicao.opcoes.principal) {
       if (item.gramas <= 0) continue
-      // Spec receitas-com-calculo, CA-881: a receita entra pelos ingredientes, na quantidade do dia.
+      // Spec receitas-com-calculo, CA-881: a receita entra pelos ingredientes, na quantidade do dia. O ingrediente que
+      // não existe mais não vira linha: não há o que comprar (CB-271).
       if (ehItemDeReceita(item)) {
         const receita = receitaDoItem(item)
-        if (receita !== null) for (const i of ingredientesNaQuantidade(receita, item.gramas)) somar(i.alimentoId, i.gramas)
+        for (const i of receita ? ingredientesNaQuantidade(receita, item.gramas) : []) if (buscar(i.alimentoId)) somar(i.alimentoId, i.gramas)
         continue
       }
       somar(item.alimentoId, item.gramas)
