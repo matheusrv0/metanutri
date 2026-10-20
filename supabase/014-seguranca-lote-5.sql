@@ -4,8 +4,9 @@
 -- Rode DEPOIS do 001 ao 012 (e do 013, se ele já rodou: um não depende do outro).
 --
 -- ORDEM (D-262), para o administrador não ficar trancado do lado de fora:
---   1. o site desta versão no ar (ele já pede o código do app nas telas do administrador);
---   2. em Authentication > Multi-Factor, o "TOTP (App Authenticator)" ligado;
+--   1. em Authentication > Multi-Factor, o "TOTP (App Authenticator)" ligado, ANTES do site: sem ele, o site novo
+--      não consegue cadastrar o app e não abre Negócio nem Aprovações;
+--   2. o site desta versão no ar (ele já pede o código do app nas telas do administrador);
 --   3. cada administrador entra no site, abre Aprovações e ativa a verificação em duas etapas;
 --   4. só então este arquivo. Se algum administrador ainda não ativou, ele para logo no começo e não muda nada.
 --
