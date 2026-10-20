@@ -4,6 +4,10 @@ import { usePerfilConta } from './usarPerfilConta.ts'
 const banco = vi.hoisted(() => ({
   perfil: { data: null as unknown, error: null as unknown },
   admin: { data: false as unknown, error: null as unknown },
+  /** admin_sem_segundo_fator; antes do 014 ela não existe (erro PGRST202). */
+  semFator: { data: false as unknown, error: null as unknown },
+  /** O nível da sessão que o login põe no token (D-260). */
+  nivel: 'aal1' as string | null,
   rpcErro: null as unknown,
   chamadas: [] as { funcao: string; args: unknown }[],
   filtro: null as unknown,
@@ -27,8 +31,14 @@ const cliente = {
   }),
   rpc: async (funcao: string, args?: unknown) => {
     if (funcao === 'eh_admin') return banco.admin
+    if (funcao === 'admin_sem_segundo_fator') return banco.semFator
     banco.chamadas.push({ funcao, args })
     return { data: null, error: banco.rpcErro }
+  },
+  auth: {
+    mfa: {
+      getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: banco.nivel, nextLevel: banco.nivel, currentAuthenticationMethods: [] }, error: null }),
+    },
   },
 }
 
@@ -38,6 +48,8 @@ describe('usePerfilConta', () => {
   beforeEach(() => {
     banco.perfil = { data: { nome: 'Ana', situacao: 'nutricionista', crn_regiao: 6, crn_numero: '12345', crn_status: 'em_conferencia', crn_declarado_em: '2026-09-30T12:00:00Z', crn_decidido_em: null }, error: null }
     banco.admin = { data: false, error: null }
+    banco.semFator = { data: false, error: null }
+    banco.nivel = 'aal1'
     banco.rpcErro = null
     banco.chamadas = []
     banco.filtro = null
@@ -98,10 +110,40 @@ describe('usePerfilConta', () => {
     expect(result.current.perfil).toBeNull()
   })
 
-  it('sabe quem é administrador', async () => {
+  it('D-260: sabe quem é administrador com o código do app (aal2)', async () => {
     banco.admin = { data: true, error: null }
+    banco.nivel = 'aal2'
     const { result } = renderHook(() => usePerfilConta('u1'))
     await waitFor(() => expect(result.current.ehAdmin).toBe(true))
+    expect(result.current.precisaSegundoFator).toBe(false)
+  })
+
+  it('CA-840: com o banco antigo (eh_admin diz sim no aal1, sem a função nova), o administrador ainda precisa do código', async () => {
+    banco.admin = { data: true, error: null }
+    banco.semFator = { data: null, error: { message: 'Could not find the function', code: 'PGRST202' } }
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.ehAdmin).toBe(false)
+    expect(result.current.precisaSegundoFator).toBe(true)
+  })
+
+  it('D-260: com o 014, o administrador sem o código é reconhecido pela função nova e precisa do código', async () => {
+    banco.semFator = { data: true, error: null }
+    const { result } = renderHook(() => usePerfilConta('u1'))
+    await waitFor(() => expect(result.current.carregado).toBe(true))
+    expect(result.current.ehAdmin).toBe(false)
+    expect(result.current.precisaSegundoFator).toBe(true)
+  })
+
+  it('CA-833: conta comum, em qualquer nível, nem é administradora nem precisa do código', async () => {
+    for (const nivel of ['aal1', 'aal2']) {
+      banco.nivel = nivel
+      const { result, unmount } = renderHook(() => usePerfilConta('u1'))
+      await waitFor(() => expect(result.current.carregado).toBe(true))
+      expect(result.current.ehAdmin).toBe(false)
+      expect(result.current.precisaSegundoFator).toBe(false)
+      unmount()
+    }
   })
 
   it('CA-287: Me formei chama a função do banco com o CRN', async () => {

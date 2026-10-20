@@ -15,9 +15,24 @@ import portas from '../../supabase/functions/_shared/portas.ts?raw'
 import tentativas from '../../supabase/functions/_shared/tentativas.ts?raw'
 import chamadas from '../../supabase/functions/_shared/chamadas.ts?raw'
 import nucleoWebhook from '../../supabase/functions/_shared/webhook.ts?raw'
+import nucleoLimpeza from '../../supabase/functions/_shared/limpeza.ts?raw'
+import limpezaSupabase from '../../supabase/functions/_shared/limpezaSupabase.ts?raw'
+import limparIndex from '../../supabase/functions/limpar-comprovantes/index.ts?raw'
 
 const INDICES = { assinar: assinarIndex, 'gerenciar-assinatura': gerenciarIndex, 'webhook-mercadopago': webhookIndex }
-const NUCLEOS = { assinar: nucleoAssinar, gerenciarAssinatura: nucleoGerenciar, webhook: nucleoWebhook, operadora, portas, cobranca, tentativas, corpo: corpoDoPedido, chamadas }
+const NUCLEOS = {
+  assinar: nucleoAssinar,
+  gerenciarAssinatura: nucleoGerenciar,
+  webhook: nucleoWebhook,
+  operadora,
+  portas,
+  cobranca,
+  tentativas,
+  corpo: corpoDoPedido,
+  chamadas,
+  limpeza: nucleoLimpeza,
+  limpezaSupabase,
+}
 const registros = (codigo: string) => codigo.split('\n').filter((linha) => linha.includes('console.'))
 
 describe('as funções são só ligação (D-88)', () => {
@@ -27,13 +42,14 @@ describe('as funções são só ligação (D-88)', () => {
     expect(codigo).not.toMatch(/\.from\(|api\.mercadopago\.com|traduzirStatus|preapproval|PLANOS/)
   })
 
-  it.each(Object.entries(NUCLEOS))('%s: sem Deno, sem esm.sh, sem console e sem relógio solto', (_, codigo) => {
-    expect(codigo).not.toMatch(/Deno\.|esm\.sh|console\.|Date\.now\(\)|new Date\(\)/)
+  it.each(Object.entries(NUCLEOS))('%s: sem Deno, sem import de fora, sem console e sem relógio solto', (_, codigo) => {
+    expect(codigo).not.toMatch(/Deno\.|esm\.sh|npm:|console\.|Date\.now\(\)|new Date\(\)/)
   })
 
-  it('o supabase-js tem a versão fixa nas três funções e no banco: o comportamento foi conferido nela', () => {
-    for (const codigo of [...Object.values(INDICES), bancoSupabase]) {
-      expect(codigo.match(/https:\/\/esm\.sh\/[^'"]+/g)).toEqual(['https://esm.sh/@supabase/supabase-js@2.117.2'])
+  it('CA-852: o supabase-js vem do npm com a versão fixa nas quatro funções e no banco; nada vem do esm.sh', () => {
+    for (const codigo of [...Object.values(INDICES), bancoSupabase, limparIndex]) {
+      expect(codigo.match(/from '(?:npm:|jsr:|https?:)[^']+'/g)).toEqual(["from 'npm:@supabase/supabase-js@2.117.2'"])
+      expect(codigo).not.toContain('esm.sh')
     }
   })
 
@@ -103,6 +119,39 @@ describe('as funções são só ligação (D-88)', () => {
       expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })")
       expect(codigo).toContain('return responder(resposta.corpo, resposta.status)')
     }
+  })
+})
+
+describe('limpar-comprovantes é só ligação (spec seguranca-lote-5, D-263 e D-264)', () => {
+  it('cliente com a chave de serviço, a chave da limpeza do cabeçalho, e nenhuma decisão', () => {
+    expect(limparIndex).toContain('createClient(urlSupabase, servico, { auth: { persistSession: false, autoRefreshToken: false } })')
+    expect(limparIndex).toContain('{ metodo: req.method, chave: req.headers.get(CABECALHO_DA_CHAVE) }')
+    expect(limparIndex).toContain('banco: criarBancoDaLimpeza(cliente)')
+    expect(limparIndex).toContain('agora: () => new Date()')
+    expect(limparIndex).not.toMatch(/\.from\(|\.rpc\(|storage\.|comprovantes_vencidos|remove\(/)
+  })
+
+  it('DP-L5-6: não lê o corpo do pedido', () => {
+    expect(limparIndex).not.toMatch(/req\.json\(|req\.text\(|lerCorpo|req\.body/)
+  })
+
+  it('falha inesperada responde 500 e o registro leva só a mensagem', () => {
+    const pegar = limparIndex.indexOf('} catch (erro) {')
+    expect(pegar).toBeGreaterThan(limparIndex.indexOf('return responder(resposta.corpo, resposta.status)'))
+    const depois = limparIndex.slice(pegar)
+    expect(depois).toContain("console.error('Falha inesperada na limpeza:', erro instanceof Error ? erro.message : 'erro desconhecido')")
+    expect(depois).toContain("return responder({ erro: 'Falha inesperada na limpeza.' }, 500)")
+  })
+
+  it('sem a configuração do servidor, responde 500 sem chamar nada', () => {
+    expect(limparIndex).toContain("if (!urlSupabase || !servico) return responder({ erro: 'A função não está configurada no servidor.' }, 500)")
+  })
+
+  it('a ligação ao banco usa as funções do 014 e o balde dos comprovantes', () => {
+    expect(limpezaSupabase).toContain("cliente.rpc('conferir_chave_da_limpeza', { p_chave: chave })")
+    expect(limpezaSupabase).toContain("cliente.rpc('comprovantes_vencidos', { p_agora: agora.toISOString(), p_limite: limite })")
+    expect(limpezaSupabase).toContain("cliente.storage.from('comprovantes').remove([...caminhos])")
+    expect(limpezaSupabase).toContain("cliente.rpc('anotar_comprovantes_apagados', { p_caminhos: [...caminhos] })")
   })
 })
 

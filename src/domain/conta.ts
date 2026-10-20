@@ -246,6 +246,10 @@ export type ErroConta =
   | 'verificacao-nao-carregou'
   | 'sem-servidor'
   | 'falha-rede'
+  // D-268 (spec seguranca-lote-5): a senha de quem tem o app autenticador pede também o código do app.
+  | 'precisa-codigo-do-app'
+  | 'codigo-do-app-incompleto'
+  | 'codigo-do-app-invalido'
 
 /*
  * O código que chega por e-mail para confirmar a conta e trocar a senha (spec
@@ -273,6 +277,10 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'verificacao-nao-carregou': 'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
   'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
   'falha-rede': 'Não deu para falar com o servidor. Confira a internet e tente de novo.',
+  // D-268 e CA-858 (spec seguranca-lote-5).
+  'precisa-codigo-do-app': 'Esta conta usa o app autenticador. Digite o código do app para salvar a senha.',
+  'codigo-do-app-incompleto': 'Digite os 6 dígitos do código do app.',
+  'codigo-do-app-invalido': 'Código do app errado. Confira o app e tente de novo.',
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

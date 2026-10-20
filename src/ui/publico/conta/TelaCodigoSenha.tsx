@@ -4,6 +4,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import type { Resultado, ValorConta } from '../../estado/usarConta.ts'
+import { DIGITOS_DO_APP } from '../../estado/usarSegundoFator.ts'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { BotaoReenviar } from './BotaoReenviar.tsx'
 import { CampoCodigo } from './CampoCodigo.tsx'
@@ -29,6 +30,9 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
   const [codigo, setCodigo] = useState('')
   const [senha, setSenha] = useState('')
   const [repetida, setRepetida] = useState('')
+  // D-268: conta com o app autenticador; o servidor pediu o código do app para gravar a senha.
+  const [pedeApp, setPedeApp] = useState(false)
+  const [codigoApp, setCodigoApp] = useState('')
   const [aviso, setAviso] = useState<Aviso>('nada')
   const [salvando, setSalvando] = useState(false)
   const salvandoRef = useRef(false)
@@ -43,6 +47,7 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
     if (!codigoCompleto(codigo)) return 'codigo-incompleto'
     if (senha.length < SENHA_MINIMA) return 'senha-curta'
     if (senha !== repetida) return 'senha-diferente'
+    if (pedeApp && codigoApp.length !== DIGITOS_DO_APP) return 'codigo-do-app-incompleto'
     return null
   }
 
@@ -52,7 +57,7 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
       if (!conferido.ok) return conferido
       codigoAceitoRef.current = true
     }
-    return conta.trocarSenha(senha)
+    return pedeApp ? conta.trocarSenha(senha, codigoApp) : conta.trocarSenha(senha)
   }
 
   const salvar = async (evento: FormEvent) => {
@@ -70,6 +75,7 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
     salvandoRef.current = false
     setSalvando(false)
     if (!resultado.ok) {
+      if (resultado.erro === 'precisa-codigo-do-app') setPedeApp(true)
       setAviso(resultado.erro ?? 'falha-rede')
       return
     }
@@ -126,6 +132,16 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
           dica={`Pelo menos ${SENHA_MINIMA} caracteres.`}
         />
         <CampoSenha id={`${id}-repetida`} rotulo="Repita a senha" valor={repetida} aoMudar={setRepetida} novaSenha invalido={aviso === 'senha-diferente'} />
+        {pedeApp ? (
+          <CampoCodigo
+            id={`${id}-app`}
+            rotulo={`Código do app (${DIGITOS_DO_APP} dígitos)`}
+            digitos={DIGITOS_DO_APP}
+            valor={codigoApp}
+            aoMudar={setCodigoApp}
+            invalido={aviso === 'codigo-do-app-invalido' || aviso === 'codigo-do-app-incompleto'}
+          />
+        ) : null}
 
         {aviso === 'enviado' ? <AvisoFormulario tipo="ok">Mandamos um código novo para {digitado.trim()}.</AvisoFormulario> : null}
         {aviso !== 'nada' && aviso !== 'enviado' ? <AvisoFormulario tipo="erro">{MENSAGEM_ERRO[aviso]}</AvisoFormulario> : null}

@@ -145,6 +145,8 @@ logo abaixo; depois siga a lista seguinte.
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
    `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql`, `011-seguranca-lote-2.sql` e `012-dieta-no-link.sql`.
+   O `014-seguranca-lote-5.sql` roda depois de o administrador ativar o app autenticador no site (passo 4 da lista
+   seguinte).
 4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
@@ -152,8 +154,10 @@ logo abaixo; depois siga a lista seguinte.
    npx supabase functions deploy gerenciar-assinatura --project-ref <ref>
    npx supabase functions deploy assinar --project-ref <ref>
    npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref <ref>
+   npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref <ref>
    ```
-   O `--no-verify-jwt` é obrigatório na última: quem chama é o Mercado Pago, que não tem conta no Supabase.
+   O `--no-verify-jwt` é obrigatório nas duas últimas: quem chama a do aviso é o Mercado Pago, que não tem conta no
+   Supabase; quem chama a da limpeza é o agendamento do próprio banco, com a chave do cofre.
 5. Siga a lista abaixo (no passo 4 dela, os SQL já rodaram; no passo 5, as funções já estão publicadas).
 6. **Teste o Mercado Pago no ambiente de teste antes de abrir para o público**: use as credenciais de teste
    e um usuário de teste do Mercado Pago, e só depois troque para as credenciais de produção.
@@ -164,7 +168,10 @@ Para funcionar de verdade, nesta ordem:
 
 1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://metanutri.com.br/`.
    Em *Redirect URLs*: `https://metanutri.com.br/**`, `https://matheusrv0.github.io/metanutri/**` (o endereço antigo, que redireciona) e `http://localhost:5173/**`.
-2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8.
+2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8. *Secure
+   password change* e *Require current password when updating* LIGADOS: o servidor pede a senha atual para trocar a
+   senha, e o código de "Esqueci a senha" continua valendo (spec seguranca-lote-5, R-61). Se o painel não mostrar a
+   segunda opção, ligue pela API de configuração (`security_update_password_require_current_password: true`).
 3. **E-mail (SMTP).** Os e-mails saem pelo Resend, com o domínio `metanutri.com.br`. No Resend, em *Domains*,
    adicione o domínio, copie os registros de DNS para a zona do domínio no Registro.br e espere a verificação; em
    *API Keys*, crie uma chave com *Sending access*. Depois preencha *Authentication > Emails > SMTP Settings*
@@ -200,6 +207,18 @@ Para funcionar de verdade, nesta ordem:
    dieta ("Meu plano"), até 256 KB, e a função do paciente passa a devolvê-la. Rode **antes** de publicar o site desta
    versão. Publicado antes, o site continua funcionando, mas o link é salvo sem a dieta e o paciente vê só as missões.
    Também pode rodar de novo; se rodar o 004 de novo, rode o 012 logo depois.
+   Depois rode `supabase/014-seguranca-lote-5.sql` (spec seguranca-lote-5), **nesta ordem**: (1) em
+   *Authentication > Multi-Factor*, o *TOTP (App Authenticator)* ligado, **antes** de publicar (sem ele, o site novo
+   não abre Negócio nem Aprovações); (2) o site desta versão no ar, e no seu navegador a versão nova (aceite o aviso de
+   versão nova ou recarregue); (3) cada administrador entra no site, abre Aprovações e ativa a verificação em duas
+   etapas com o app do celular, sem sair da tela até o fim (confirmar o código tira a conta dos outros aparelhos onde
+   ela entrou só com a senha); (4) só então o 014. Ele faz o
+   banco exigir o código do app do administrador, agenda a limpeza diária dos comprovantes (liga `pg_cron` e
+   `pg_net`) e para sem mudar nada se algum administrador ainda não ativou o app. Logo depois, grave o endereço do
+   projeto no cofre com a linha comentada no fim do 014 e publique a função `limpar-comprovantes`
+   (`npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg`). Perdeu
+   o celular do app: rode as duas linhas do topo do 014 (a que apaga o app e a que tira a conta de todo aparelho),
+   troque a senha em "Esqueci a senha" e ative o app de novo em Aprovações. Também pode rodar de novo.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a

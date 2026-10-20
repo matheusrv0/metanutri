@@ -287,6 +287,44 @@ describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
     expect(aoSenhaTrocada).toHaveBeenCalledOnce()
   })
 
+  describe('CA-858 (spec seguranca-lote-5, D-268): conta com o app autenticador', () => {
+    const campoDoApp = () => screen.getByLabelText('Código do app (6 dígitos)')
+
+    it('o servidor pede o app: a tela diz o motivo, mostra o campo do app e, com o código, grava a senha sem gastar o código do e-mail de novo', async () => {
+      const trocarSenha = vi.fn<ValorConta['trocarSenha']>().mockResolvedValueOnce({ ok: false, erro: 'precisa-codigo-do-app' }).mockResolvedValueOnce({ ok: true, erro: null })
+      const conta = contaFalsa({ trocarSenha })
+      const { usuario, aoSenhaTrocada } = montarCodigoSenha({ conta })
+      expect(screen.queryByLabelText('Código do app (6 dígitos)')).not.toBeInTheDocument()
+      await preencherSenha(usuario, '12345678', 'novasenha1')
+      expect(screen.getByRole('alert')).toHaveTextContent('Esta conta usa o app autenticador. Digite o código do app para salvar a senha.')
+      expect(campoDoApp()).toHaveAttribute('autocomplete', 'one-time-code')
+      await usuario.type(campoDoApp(), '123456')
+      await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+      expect(trocarSenha).toHaveBeenLastCalledWith('novasenha1', '123456')
+      expect(conta.conferirCodigoDeSenha).toHaveBeenCalledTimes(1)
+      expect(aoSenhaTrocada).toHaveBeenCalledOnce()
+    })
+
+    it('código do app incompleto não vai ao servidor; errado mostra a mensagem do app', async () => {
+      const trocarSenha = vi
+        .fn<ValorConta['trocarSenha']>()
+        .mockResolvedValueOnce({ ok: false, erro: 'precisa-codigo-do-app' })
+        .mockResolvedValueOnce({ ok: false, erro: 'codigo-do-app-invalido' })
+      const conta = contaFalsa({ trocarSenha })
+      const { usuario, aoSenhaTrocada } = montarCodigoSenha({ conta })
+      await preencherSenha(usuario, '12345678', 'novasenha1')
+      await usuario.type(campoDoApp(), '123')
+      await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+      expect(screen.getByRole('alert')).toHaveTextContent('Digite os 6 dígitos do código do app.')
+      expect(trocarSenha).toHaveBeenCalledTimes(1)
+      await usuario.type(campoDoApp(), '456')
+      await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+      expect(screen.getByRole('alert')).toHaveTextContent('Código do app errado. Confira o app e tente de novo.')
+      expect(campoDoApp()).toHaveAttribute('aria-invalid', 'true')
+      expect(aoSenhaTrocada).not.toHaveBeenCalled()
+    })
+  })
+
   it('CB-101: clique duplo em "Salvar a senha" faz um pedido só', async () => {
     const { promessa, resolver } = pedidoPendurado()
     const conta = contaFalsa({ conferirCodigoDeSenha: vi.fn(() => promessa) })
@@ -331,6 +369,32 @@ describe('TelaNovaSenha (link antigo)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Pedir um código' }))
     expect(aoPedirOutro).toHaveBeenCalledOnce()
+  })
+
+  it('CA-853 (spec seguranca-lote-5, D-266): só a sessão aberta, sem o código de troca, não troca a senha', async () => {
+    const conta = contaFalsa({ sessao: { id: 'conta-1', email: 'maria@exemplo.com', nome: 'Maria' }, emRecuperacao: false })
+    const aoPedirOutro = vi.fn()
+    render(<TelaNovaSenha conta={conta} vencido={false} aoSenhaTrocada={vi.fn()} aoPedirOutro={aoPedirOutro} aoIrParaInicio={vi.fn()} />)
+    expect(screen.queryByLabelText('Senha nova')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Pedir um código' }))
+    expect(aoPedirOutro).toHaveBeenCalledOnce()
+    expect(conta.trocarSenha).not.toHaveBeenCalled()
+  })
+
+  it('CA-858 (spec seguranca-lote-5, D-268): no modo de troca, a conta com o app também dá o código do app', async () => {
+    const trocarSenha = vi.fn<ValorConta['trocarSenha']>().mockResolvedValueOnce({ ok: false, erro: 'precisa-codigo-do-app' }).mockResolvedValueOnce({ ok: true, erro: null })
+    const conta = contaFalsa({ emRecuperacao: true, trocarSenha })
+    const aoSenhaTrocada = vi.fn()
+    render(<TelaNovaSenha conta={conta} vencido={false} aoSenhaTrocada={aoSenhaTrocada} aoPedirOutro={vi.fn()} aoIrParaInicio={vi.fn()} />)
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByLabelText('Senha nova'), 'novasenha1')
+    await usuario.type(screen.getByLabelText('Repita a senha'), 'novasenha1')
+    await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Esta conta usa o app autenticador.')
+    await usuario.type(screen.getByLabelText('Código do app (6 dígitos)'), '123456')
+    await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
+    expect(trocarSenha).toHaveBeenLastCalledWith('novasenha1', '123456')
+    expect(aoSenhaTrocada).toHaveBeenCalledOnce()
   })
 
   it('CA-145, CA-146 e CA-414: com o link antigo, troca a senha e segue', async () => {

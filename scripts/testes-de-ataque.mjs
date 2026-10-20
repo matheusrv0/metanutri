@@ -116,9 +116,18 @@ function aplicarMigracoes() {
   }
 }
 
-/** O ambiente dos testes: o limpo, mais as chaves do Supabase local. */
+/**
+ * O ambiente dos testes: o limpo, mais as chaves do Supabase local e o contêiner do banco local, para as
+ * conferências que a API não mostra (agendamentos, cofre; spec seguranca-lote-5).
+ */
 function ambienteDosTestes(status) {
-  return { ...AMBIENTE_LIMPO, ATAQUE_API_URL: status.API_URL, ATAQUE_ANON_KEY: status.ANON_KEY, ATAQUE_SERVICE_KEY: status.SERVICE_ROLE_KEY }
+  return {
+    ...AMBIENTE_LIMPO,
+    ATAQUE_API_URL: status.API_URL,
+    ATAQUE_ANON_KEY: status.ANON_KEY,
+    ATAQUE_SERVICE_KEY: status.SERVICE_ROLE_KEY,
+    ATAQUE_CONTEINER_DO_BANCO: CONTEINER_DO_BANCO,
+  }
 }
 
 function principal() {

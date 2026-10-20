@@ -44,6 +44,7 @@ vi.mock('./ui/estado/usarAssinatura.ts', () => ({
 const verificacao = vi.hoisted(() => ({
   perfil: { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null } as unknown,
   ehAdmin: false,
+  precisaSegundoFator: false,
   carregado: true,
   pedido: null as unknown,
   pedidoCarregado: true,
@@ -53,6 +54,7 @@ vi.mock('./ui/estado/usarPerfilConta.ts', () => ({
   usePerfilConta: () => ({
     perfil: verificacao.perfil,
     ehAdmin: verificacao.ehAdmin,
+    precisaSegundoFator: verificacao.precisaSegundoFator,
     carregado: verificacao.carregado,
     falhou: false,
     informarSituacao: vi.fn(async () => null),
@@ -76,6 +78,15 @@ vi.mock('./ui/estado/usarAprovacoes.ts', () => ({
     abrirComprovante: vi.fn(),
     recarregar: vi.fn(),
   }),
+}))
+
+const segundoFator = vi.hoisted(() => ({ ativo: null as boolean | null }))
+vi.mock('./ui/estado/usarSegundoFator.ts', async (original) => ({
+  ...(await original<typeof import('./ui/estado/usarSegundoFator.ts')>()),
+  useSegundoFator: (ativo: boolean) => {
+    segundoFator.ativo = ativo
+    return { etapa: { tipo: 'confirmar', fatorId: 'f1' }, confirmar: vi.fn(async () => null), tentarDeNovo: vi.fn() }
+  },
 }))
 
 const negocio = vi.hoisted(() => ({ dados: null as unknown, atualizar: vi.fn() }))
@@ -105,6 +116,8 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     processador.falso.criados = 0
     verificacao.perfil = { nome: 'Maria', situacao: 'nutricionista', crn: { regiao: 6, numero: '12345' }, statusCrn: 'em_conferencia', crnDeclaradoEm: '2026-09-30T12:00:00Z', crnDecididoEm: null }
     verificacao.ehAdmin = false
+    verificacao.precisaSegundoFator = false
+    segundoFator.ativo = null
     verificacao.carregado = true
     verificacao.pedido = null
     verificacao.pedidoCarregado = true
@@ -278,6 +291,52 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     render(tela())
     expect(screen.queryByRole('button', { name: /Aprovações/ })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+  })
+
+  describe('D-261: o administrador sem o código do app (spec seguranca-lote-5)', () => {
+    it.each([
+      ['#/aprovacoes', 'Aprovações'],
+      ['#/negocio', 'Negócio'],
+    ])('CA-836: em %s, a tela pede o código do app no lugar dos dados', (endereco, titulo) => {
+      verificacao.precisaSegundoFator = true
+      estado.conta = comSessao('conta-1')
+      window.location.hash = endereco
+      render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: titulo })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 2, name: 'Digite o código do app autenticador' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Atualizar' })).not.toBeInTheDocument()
+      expect(window.location.hash).toBe(endereco)
+      expect(segundoFator.ativo).toBe(true)
+    })
+
+    it('CA-839: o menu mostra Negócio e Aprovações sem o número de pendências', () => {
+      verificacao.precisaSegundoFator = true
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/painel'
+      render(tela())
+      expect(screen.getByRole('button', { name: 'Negócio' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Aprovações' })).toBeInTheDocument()
+      // Fora das telas do administrador, o app autenticador não é consultado.
+      expect(segundoFator.ativo).toBe(false)
+    })
+
+    it('CA-842: sem perfil, o administrador sem o código não cai em "Complete seu cadastro"', () => {
+      verificacao.perfil = null
+      verificacao.precisaSegundoFator = true
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/aprovacoes'
+      render(tela())
+      expect(screen.queryByRole('heading', { level: 1, name: 'Complete seu cadastro' })).not.toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 2, name: 'Digite o código do app autenticador' })).toBeInTheDocument()
+    })
+
+    it('CA-833: conta comum em Aprovações continua indo para o painel, sem pedir código', () => {
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/aprovacoes'
+      render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { level: 2, name: 'Digite o código do app autenticador' })).not.toBeInTheDocument()
+    })
   })
 
   it('CA-291: administrador vê Aprovações no menu e abre a tela', () => {

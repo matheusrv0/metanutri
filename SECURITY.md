@@ -25,8 +25,14 @@ Em português simples, o que já está no MetaNutri:
   pedido de estudante ficam presos à conta dentro do próprio banco de dados, e não só na tela. Pedir pelo
   endereço do dado de outra conta não traz nada.
 - **Só o administrador usa as funções do administrador**, e quem confere isso é o banco, a cada chamada.
+- **O administrador entra com dois passos:** a senha e o código de 6 dígitos de um app autenticador no celular.
+  Só com a senha, a conta dele é tratada pelo banco como uma conta comum.
 - **Os comprovantes de matrícula ficam num lugar privado.** Só a própria pessoa e o administrador abrem, por um
   link que vence em minutos.
+- **Os comprovantes são apagados sozinhos.** O servidor confere todo dia e apaga o arquivo 30 dias depois da
+  análise; o envio que não virou pedido sai depois de 1 dia. O pedido guarda só os dados digitados e a decisão.
+- **Trocar a senha pelo site pede o código que chega por e-mail** (e, na conta do administrador, também o código do
+  app). Fora do site, o servidor de login pede a senha atual. Um endereço do site nunca abre já dentro de uma conta.
 - **O link do paciente não abre o resto.** Ele tem um código aleatório; quem tem o link vê e marca só as
   missões daquele link, sem conta e sem acesso a mais nada.
 - **O cartão não passa pelo MetaNutri.** O número, a validade e o código vão do navegador direto para o Mercado
@@ -57,8 +63,10 @@ Os ataques mais comuns viraram testes automáticos (spec `specs/seguranca-lote-4
 **`npm run test:seguranca`** ataca um banco de verdade, mas **só um Supabase local**, que ele mesmo sobe e
 derruba. Ele aplica as migrações de `supabase/` na ordem, cria duas contas e um administrador de teste e tenta,
 com o login de uma conta e sem login nenhum: ler, mudar, apagar e criar dado da outra em cada tabela; chamar
-cada função do banco com os dados da outra; usar as funções do administrador; mexer nos arquivos da outra no
-armazenamento; e mandar texto de SQL injection em filtros, buscas e campos.
+cada função do banco com os dados da outra; usar as funções do administrador, inclusive com a conta do
+administrador entrando só com a senha; mexer nos arquivos da outra no armazenamento; e mandar texto de SQL
+injection em filtros, buscas e campos. Ele também confere a limpeza dos comprovantes, do agendamento até o
+arquivo sair do armazenamento (spec `specs/seguranca-lote-5`).
 
 Para rodar:
 
