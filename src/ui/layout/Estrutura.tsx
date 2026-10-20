@@ -73,7 +73,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
           {/* D-172: a versão nova do MetaNutri passou a valer; recarrega só quando a pessoa pede. */}
           <AvisoVersaoNova />
           {migracaoIncompleta ? (
-            <Alert variant="warning" className="mb-6">
+            <Alert variant="warning" className="mb-6 print:hidden">
               <TriangleAlert aria-hidden="true" />
               <p>
                 Parte dos dados guardados antes neste aparelho ainda não apareceu: o armazenamento do navegador está cheio. Feche outras abas do
@@ -82,7 +82,7 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
             </Alert>
           ) : null}
           {reduzindo ? (
-            <Alert variant="warning" className="mb-6">
+            <Alert variant="warning" className="mb-6 print:hidden">
               <TriangleAlert aria-hidden="true" />
               <p>{COPIA_GRANDE_DEMAIS}</p>
             </Alert>

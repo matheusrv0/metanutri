@@ -146,6 +146,29 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     expect(folha?.topo).toBe(0)
   })
 
+  test('CA-770 (revisão de 20/10/2026): com a gaveta ou uma janela aberta, o papel tem a tela, sem elas e sem o véu escuro', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const casoId = await abrirComExemplo(page)
+    await page.goto(`/#/caso/${casoId}/adequacao`)
+    await page.getByRole('button', { name: /^Cobrir / }).first().click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.locator('[data-slot="sheet-overlay"]')).toBeVisible()
+    await page.emulateMedia({ media: 'print' })
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page.locator('[data-slot="sheet-overlay"]')).toBeHidden()
+    await expect(page.locator('#conteudo')).toBeVisible()
+    await page.emulateMedia({ media: 'screen' })
+    await page.keyboard.press('Escape')
+
+    await page.goto(`/#/caso/${casoId}/plano`)
+    await page.getByRole('button', { name: 'Modelos de plano' }).click()
+    await expect(page.locator('[data-slot="dialog-overlay"]')).toBeVisible()
+    await page.emulateMedia({ media: 'print' })
+    await expect(page.getByRole('dialog', { name: 'Modelos de plano' })).toBeHidden()
+    await expect(page.locator('[data-slot="dialog-overlay"]')).toBeHidden()
+    await expect(page.locator('#conteudo')).toBeVisible()
+  })
+
   test('CA-771: com "Dieta para imprimir" aberta, só a folha vai para o papel', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await abrirComExemplo(page)

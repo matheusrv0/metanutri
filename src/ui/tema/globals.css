@@ -358,7 +358,15 @@
   }
 
   [data-slot='dialog-overlay'],
+  [data-slot='sheet-overlay'],
   .print\:hidden {
+    display: none !important;
+  }
+
+  /* O Ctrl+P da tela com uma janela ou gaveta aberta (o Cobrir, Modelos de plano): no papel vai a tela, sem elas
+     (spec revisao-geral-trabalho, D-240). A janela de impressão é o outro caminho, com .area-impressao. */
+  body:not(:has(.area-impressao)) > [role='dialog'],
+  body:not(:has(.area-impressao)) > [role='alertdialog'] {
     display: none !important;
   }
 
