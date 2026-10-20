@@ -1,5 +1,6 @@
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { anotarExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
 import { traduzir, useConta } from './usarConta.ts'
 
 const { auth, avisar } = vi.hoisted(() => {
@@ -210,6 +211,54 @@ describe('useConta', () => {
         await result.current.sair()
       })
       expect(JSON.stringify({ ...localStorage })).toBe(antes)
+    })
+  })
+
+  describe('a exclusão pedida e a resposta perdida (spec exclusao-de-conta, CB-250, L6 da revisão)', () => {
+    const SESSAO_U1 = { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }
+
+    beforeEach(() => {
+      localStorage.clear()
+      localStorage.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"}]')
+      localStorage.setItem('metanutri:conta:u2:pacientes', '[{"id":"p2"}]')
+    })
+
+    const daConta = (id: string) => Object.keys(localStorage).filter((chave) => chave.startsWith(`metanutri:conta:${id}:`))
+
+    it('a sessão cai (a renovação falha com o login apagado) depois de um pedido de exclusão: a cópia de trabalho daquela conta é apagada', async () => {
+      auth.getSession.mockResolvedValueOnce({ data: { session: SESSAO_U1 } } as never)
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      anotarExclusaoPedida('u1')
+      act(() => avisar('SIGNED_OUT', null))
+      expect(daConta('u1')).toEqual([])
+      expect(daConta('u2')).toHaveLength(1)
+      expect(exclusaoPedidaPor('u1')).toBe(false)
+    })
+
+    it('sem pedido de exclusão, a sessão que cai não apaga nada (os dados estão na nuvem e voltam ao entrar)', async () => {
+      auth.getSession.mockResolvedValueOnce({ data: { session: SESSAO_U1 } } as never)
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      act(() => avisar('SIGNED_OUT', null))
+      expect(daConta('u1')).toHaveLength(1)
+    })
+
+    it('o site abre sem sessão e com a anotação: a cópia de trabalho daquela conta é apagada', async () => {
+      anotarExclusaoPedida('u1')
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      expect(daConta('u1')).toEqual([])
+      expect(daConta('u2')).toHaveLength(1)
+      expect(exclusaoPedidaPor('u1')).toBe(false)
+    })
+
+    it('o site abre com a sessão da própria conta (a exclusão não aconteceu): nada é apagado', async () => {
+      anotarExclusaoPedida('u1')
+      auth.getSession.mockResolvedValueOnce({ data: { session: SESSAO_U1 } } as never)
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      expect(daConta('u1')).toHaveLength(1)
     })
   })
 

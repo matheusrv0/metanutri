@@ -2,7 +2,7 @@
 // D-108 (spec seguranca-lote-2): o limite de chamadas à operadora por conta, pela assinar e pela
 // gerenciar-assinatura, com o banco de mentira (src/data/servidorFalsos.test-utils.ts).
 import { assinar, type PedidoDeAssinatura } from '../../supabase/functions/_shared/assinar.ts'
-import { CHAMADAS_FICAM_MS, JANELA_DAS_CHAMADAS_MS, LIMITE_DE_CHAMADAS, MUITAS_CHAMADAS } from '../../supabase/functions/_shared/chamadas.ts'
+import { CHAMADAS_FICAM_MS, conferirChamadas, JANELA_DAS_CHAMADAS_MS, LIMITE_DE_CHAMADAS, MUITAS_CHAMADAS } from '../../supabase/functions/_shared/chamadas.ts'
 import { SEM_COBRANCA, UM_DIA_MS } from '../../supabase/functions/_shared/cobranca.ts'
 import { FORA, gerenciarAssinatura, type PedidoDeGerenciar } from '../../supabase/functions/_shared/gerenciarAssinatura.ts'
 import type { RespostaDaOperadora } from '../../supabase/functions/_shared/portas.ts'
@@ -41,8 +41,8 @@ type Rotas = Readonly<Record<string, readonly (RespostaDaOperadora | null)[]>>
 type Linha = Parameters<typeof linhaDe>[0]
 
 describe('D-108: os números da spec', () => {
-  it('10 pedidos com cartão e 20 de conferir por hora; as chamadas anotadas ficam 2 dias', () => {
-    expect(LIMITE_DE_CHAMADAS).toEqual({ cartao: 10, conferir: 20 })
+  it('10 pedidos com cartão e 20 de conferir por hora (e 5 de excluir a conta, D-256); as chamadas anotadas ficam 2 dias', () => {
+    expect(LIMITE_DE_CHAMADAS).toEqual({ cartao: 10, conferir: 20, excluir: 5 })
     expect(JANELA_DAS_CHAMADAS_MS).toBe(HORA_MS)
     expect(CHAMADAS_FICAM_MS).toBe(2 * UM_DIA_MS)
     expect(MUITAS_CHAMADAS).toBe(MUITAS.corpo.erro)
@@ -254,5 +254,29 @@ describe('D-108: o limite de conferir e cancelar (CA-449)', () => {
     const cartao = cenario([ATIVA], ROTAS)
     cartao.semearChamadas('u1', 'conferir', 20, antes(0.5))
     expect((await gerenciarAssinatura(TROCAR, cartao.deps)).status).toBe(200)
+  })
+})
+
+describe('D-256 (spec exclusao-de-conta): o limite de pedidos de exclusão (CA-822)', () => {
+  it('CA-822: com 5 pedidos de exclusão na última hora, o próximo é barrado (429) e não fica anotado', async () => {
+    const c = cenario()
+    c.semearChamadas('u1', 'excluir', 5, antes(0.5))
+    expect(await conferirChamadas(c.banco, 'u1', 'excluir', AGORA, c.log, FORA)).toEqual(MUITAS)
+    expect(c.chamadas).toHaveLength(5)
+    expect(c.log).toHaveBeenCalledWith('Chamadas demais à operadora na última hora; ela não foi chamada. Tipo:', 'excluir')
+  })
+
+  it('CB-113: o 5º pedido de exclusão ainda passa e fica anotado', async () => {
+    const c = cenario()
+    c.semearChamadas('u1', 'excluir', 4, antes(0.5))
+    expect(await conferirChamadas(c.banco, 'u1', 'excluir', AGORA, c.log, FORA)).toBeNull()
+    expect(c.chamadas.filter((ch) => ch.tipo === 'excluir')).toHaveLength(5)
+  })
+
+  it('excluir é um limite separado de conferir e de cartão', async () => {
+    const c = cenario()
+    c.semearChamadas('u1', 'conferir', 20, antes(0.5))
+    c.semearChamadas('u1', 'cartao', 10, antes(0.5))
+    expect(await conferirChamadas(c.banco, 'u1', 'excluir', AGORA, c.log, FORA)).toBeNull()
   })
 })

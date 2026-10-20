@@ -26,6 +26,17 @@ const estado = vi.hoisted(() => ({
   trocarCartao: vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: true })),
   previa: vi.fn(async (): Promise<ResultadoDaPrevia> => ({ ok: true, cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' })),
 }))
+const exclusao = vi.hoisted(() => ({
+  excluir: vi.fn(async (): Promise<{ readonly ok: true }> => ({ ok: true })),
+  baixado: null as Blob | null,
+}))
+vi.mock('../estado/usarExclusaoDaConta.ts', () => ({ useExclusaoDaConta: () => ({ excluindo: false, excluir: exclusao.excluir }) }))
+vi.mock('../exportar/baixar.ts', () => ({
+  baixarBlob: (blob: Blob) => {
+    exclusao.baixado = blob
+  },
+}))
+
 vi.mock('../estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({
     assinatura: estado.assinatura,
@@ -76,10 +87,11 @@ function montar(
   pedido: PedidoEstudante | null = null,
   meFormei = vi.fn(async () => null as string | null),
   falso: ProcessadorFalso | null = processadorFalso(),
+  { conta = contaFalsa({ sessao: { id: 'u1', email: 'julia@ufrn.edu.br', nome: 'Júlia' } }), ehAdmin = false } = {},
 ) {
-  const conta = contaFalsa({ sessao: { id: 'u1', email: 'julia@ufrn.edu.br', nome: 'Júlia' } })
   const props = {
     conta,
+    ehAdmin,
     perfil,
     pedido,
     meFormei,
@@ -726,6 +738,90 @@ describe('TelaConta', () => {
     expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+  })
+
+  describe('excluir a conta (spec exclusao-de-conta)', () => {
+    const SEM_SESSAO = contaFalsa({ sessao: null })
+    const MODO_LOCAL = contaFalsa({ sessao: null, disponivel: false })
+
+    beforeEach(() => {
+      exclusao.baixado = null
+      exclusao.excluir.mockClear()
+    })
+
+    it('CA-800: com a conta aberta, o último bloco tem "Excluir conta"', () => {
+      montar(nutri)
+      const botao = screen.getByRole('button', { name: 'Excluir conta' })
+      // O bloco de excluir vem depois de todos os outros botões da tela.
+      expect(screen.getAllByRole('button').at(-1)).toBe(botao)
+      expect(screen.getByText('Apaga a conta e tudo o que ela guarda na nuvem.')).toBeInTheDocument()
+    })
+
+    it.each([
+      ['sem sessão', SEM_SESSAO],
+      ['no modo local, sem servidor de conta', MODO_LOCAL],
+    ])('CA-800: %s, o bloco não aparece', (_caso, conta) => {
+      montar(null, null, undefined, processadorFalso(), { conta })
+      expect(screen.queryByRole('button', { name: 'Excluir conta' })).not.toBeInTheDocument()
+      expect(screen.queryByText(/excluída pelo site/)).not.toBeInTheDocument()
+    })
+
+    it('CA-801: administrador vê a frase, sem o botão', () => {
+      montar(nutri, null, undefined, processadorFalso(), { ehAdmin: true })
+      expect(screen.getByText('Conta de administrador não é excluída pelo site.')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Excluir conta' })).not.toBeInTheDocument()
+    })
+
+    it('CA-802 e CA-807: o botão abre a janela, e confirmar com a senha pede a exclusão', async () => {
+      const { usuario } = montar(nutri)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
+      expect(janela).not.toHaveTextContent(/assinatura/i)
+      await usuario.type(within(janela).getByLabelText('Sua senha'), 'minha-senha')
+      await usuario.click(within(janela).getByRole('button', { name: /Excluir conta/ }))
+      expect(exclusao.excluir).toHaveBeenCalledWith('minha-senha', [])
+    })
+
+    it('CA-803: com assinatura paga ativa, a janela diz que ela é cancelada', async () => {
+      estado.assinatura = PAGA
+      const { usuario } = montar(nutri)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
+      expect(janela).toHaveTextContent('A assinatura é cancelada, sem novas cobranças.')
+      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
+    })
+
+    it('CA-803: cancelada no prazo, a janela não fala de cancelar (já não há cobrança)', async () => {
+      estado.assinatura = CANCELADA_NO_PRAZO
+      const { usuario } = montar(nutri)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
+      expect(janela).not.toHaveTextContent('A assinatura é cancelada')
+      // L5 da revisão: o período pago ainda vale e se perde com a conta.
+      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
+    })
+
+    it('CA-804: "Baixar backup" na janela baixa o backup da conta', async () => {
+      const { usuario } = montar(nutri)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      await usuario.click(screen.getByRole('button', { name: 'Baixar backup' }))
+      expect(exclusao.baixado?.type).toBe('application/json')
+      expect(screen.getByRole('dialog', { name: 'Excluir sua conta?' })).toBeInTheDocument()
+    })
+
+    it('"Manter conta" fecha a janela', async () => {
+      const { usuario } = montar(nutri)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      await usuario.click(screen.getByRole('button', { name: 'Manter conta' }))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('CA-383: nenhum ícone de biblioteca no bloco nem na janela', async () => {
+      const { usuario } = montar(nutri)
+      expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+      await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
+      expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
+    })
   })
 
   it('CA-383: os pontos da marca no lugar da roda enquanto confere', async () => {

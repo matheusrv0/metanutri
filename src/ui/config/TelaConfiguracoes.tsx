@@ -1,15 +1,15 @@
 import { Download, Image, ShieldCheck, Upload } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
-import { CHAVES_DE_DADOS, ehLogoEmbutida, gravarPerfil, lerPerfil, linhaDeResponsabilidade, montarBackup, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
+import { ehLogoEmbutida, gravarPerfil, lerPerfil, linhaDeResponsabilidade, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
-import { baixarBlob } from '../exportar/baixar.ts'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { useNuvem } from '../estado/contextoNuvem.ts'
 import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
+import { baixarBackup } from './baixarBackup.ts'
 
 /**
  * Perfil, marca nos documentos e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
@@ -53,9 +53,7 @@ export function TelaConfiguracoes() {
   }
 
   const exportarTudo = () => {
-    const backup = montarBackup(armazenamento, [...CHAVES_DE_DADOS], new Date().toISOString())
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-    baixarBlob(blob, `metanutri-backup-${new Date().toISOString().slice(0, 10)}.json`.replace('.docx', ''))
+    baixarBackup(armazenamento)
     setMensagem('Backup salvo. Guarde esse arquivo: é a cópia de tudo que está aqui.')
   }
 

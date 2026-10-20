@@ -39,7 +39,7 @@ export const PEDIDO_EM_ANDAMENTO = 'Espere terminar o pedido anterior.'
 export const SESSAO_TERMINOU = 'Sua sessão terminou. Entre de novo na sua conta e tente outra vez.'
 
 /** O que deu errado: `status` nulo é rede ou servidor fora (CA-374). */
-interface Falha {
+export interface Falha {
   readonly status: number | null
   readonly erro: string | null
   readonly codigo: string | null
@@ -79,7 +79,8 @@ function mensagemDaFalha(falha: Falha): string {
 /** Sem resposta, erro de servidor ou conflito: o servidor pode ter mudado algo, então a tela lê de novo. A recusa (402) não muda nada. */
 const ehAmbigua = (falha: Falha): boolean => falha.status === null || falha.status >= 500 || falha.status === 409
 
-async function chamar<T>(nome: string, corpo: Record<string, unknown>): Promise<{ readonly dados: T | null; readonly falha: Falha | null }> {
+/** Chama uma função do servidor com a sessão da conta. Também usada pela exclusão da conta (usarExclusaoDaConta.ts). */
+export async function chamar<T>(nome: string, corpo: Record<string, unknown>): Promise<{ readonly dados: T | null; readonly falha: Falha | null }> {
   const cliente = obterSupabase()
   if (!cliente) return { dados: null, falha: { status: 0, erro: SEM_NUVEM, codigo: null } }
   try {
