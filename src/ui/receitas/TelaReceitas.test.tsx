@@ -112,6 +112,14 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     expect(porcao).not.toHaveTextContent('0 kcal')
   })
 
+  it('DESIGN.md: o título da seção de ingredientes não é rótulo em caixa alta', async () => {
+    const usuario = montar(new Memoria())
+    await usuario.click(screen.getByRole('button', { name: 'Nova receita' }))
+    const titulo = screen.getByRole('heading', { level: 3, name: 'Ingredientes' })
+    expect(titulo).not.toHaveClass('rotulo')
+    expect(titulo).toHaveClass('font-semibold')
+  })
+
   it('CB-270: salvar vazio não salva e diz o que falta', async () => {
     const arm = new Memoria()
     const usuario = montar(arm)

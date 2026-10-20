@@ -78,7 +78,8 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
       />
 
       <section aria-label="Ingredientes da receita" className="flex flex-col gap-3">
-        <h3 className="rotulo">Ingredientes</h3>
+        {/* Título de seção em caixa normal: o rótulo em caixa alta só nomeia dado (DESIGN.md, D-77). */}
+        <h3 className="text-sm font-semibold text-heading">Ingredientes</h3>
         <EntradaRapida
           rotulo="Adicionar ingrediente"
           aoAdicionar={(alimentoId, gramas) => setIngredientes((atual) => [...atual, { id: idNovo(), alimentoId, gramas }])}
