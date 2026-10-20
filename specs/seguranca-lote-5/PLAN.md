@@ -86,3 +86,17 @@ banco é calculado com `node:crypto` (RFC 6238).
 - **DP-L5-8** · Os testes de banco desta frente rodam com uma cópia temporária, fora do Git, de
   `scripts/testes-de-ataque.mjs` e da configuração local, com outro `project_id` e outras portas. A cópia é apagada
   no fim.
+- **DP-L5-9** · (Na execução) O campo do código do app é o `CampoCodigo` que já existe, com a quantidade de dígitos
+  como propriedade (`digitos`, padrão 8): não nasceu um `CampoCodigoDoApp.tsx`.
+- **DP-L5-10** · (Na execução) O `useSegundoFator` fica no `App.tsx`, como `useAprovacoes`: as duas telas do
+  administrador usam o mesmo cadastro, e o código QR não muda quando ele passa de uma para a outra.
+- **DP-L5-11** · (Na execução) O código QR do Supabase vem sem fundo: ele fica numa caixa branca nos dois temas
+  (`bg-white`), porque a câmera do app não lê o desenho sobre o fundo escuro.
+
+## Execução (19/10/2026)
+
+- Tarefas 1 a 10 feitas, nesta ordem, cada uma no seu commit; a chave do app ganhou um ajuste depois dos prints
+  (quebra só entre os grupos, CB-268).
+- O teste do PKCE mostrou, antes da mudança, o cliente entrando na conta de um token posto no endereço; depois, não.
+- No Supabase local, o caminho inteiro da limpeza rodou: o comando do agendamento, o pedido do `pg_net`, a chave do
+  cofre, o núcleo da função com a ligação de verdade, o arquivo saindo do balde e o pedido guardando a decisão.
