@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { lerReceitaDoPlano, NOMES_DA_PORCAO, somaDosIngredientes } from '@/domain/receitaNoPlano.ts'
 import { LIMITE_NOME_RECEITA, LIMITE_PREPARO_RECEITA, validarReceita, type DadosReceita, type Receita } from '@/domain/receitas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
@@ -10,8 +10,10 @@ import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ds/componentes/forms/select.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { EntradaRapida } from '../plano/EntradaRapida.tsx'
 import { LinhaItem } from '../plano/LinhaItem.tsx'
+import { useGuardaDeSaida, type GuardaDeSaida } from '../usarRota.ts'
 import { ResumoDaPorcao } from './ResumoDaPorcao.tsx'
 
 interface EditorReceitaProps {
@@ -36,6 +38,8 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
   const [pesoProntoG, setPesoProntoG] = useState<number | null>(receita?.pesoProntoG ?? null)
   const [preparo, setPreparo] = useState(receita?.preparo ?? '')
   const [tentouSalvar, setTentouSalvar] = useState(false)
+  // CA-863a: para onde a pessoa ia quando a saída foi segurada; a janela pergunta enquanto houver.
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null)
   const idPreparo = useId()
   const idPorcao = useId()
 
@@ -47,6 +51,23 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
     pesoProntoG,
     preparo,
   }
+  // O que a receita era ao abrir o editor: mudou alguma coisa, sair pergunta antes (CA-863a).
+  const [comoAbriu] = useState(() => JSON.stringify(rascunho))
+  const sujo = JSON.stringify(rascunho) !== comoAbriu
+  const segurarSaida = useCallback<GuardaDeSaida>((seguir) => {
+    setSaidaPendente(() => seguir)
+    return false
+  }, [])
+  useGuardaDeSaida(sujo, segurarSaida)
+  useEffect(() => {
+    if (!sujo) return
+    const aoFechar = (evento: BeforeUnloadEvent) => {
+      evento.preventDefault()
+      evento.returnValue = ''
+    }
+    globalThis.addEventListener('beforeunload', aoFechar)
+    return () => globalThis.removeEventListener('beforeunload', aoFechar)
+  }, [sujo])
   const problemas = validarReceita(rascunho)
   // O peso pronto inválido aparece na hora; o resto, depois de tentar salvar.
   const erroDe = (campo: (typeof problemas)[number]['campo']) =>
@@ -156,6 +177,30 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
         </Button>
         <Button onClick={salvar}>Salvar receita</Button>
       </div>
+
+      <Dialog open={saidaPendente !== null} onOpenChange={(aberta) => !aberta && setSaidaPendente(null)}>
+        <DialogContent role="alertdialog">
+          <DialogHeader>
+            <DialogTitle>Sair sem salvar a receita?</DialogTitle>
+            <DialogDescription>O que você mudou nesta receita vai se perder.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaidaPendente(null)} autoFocus>
+              Continuar editando
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const seguir = saidaPendente
+                setSaidaPendente(null)
+                seguir?.()
+              }}
+            >
+              Sair sem salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

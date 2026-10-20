@@ -140,7 +140,7 @@ menores (M-1 a M-11). Decisão do coordenador para o I-1: publicar em duas vezes
 | `src/domain/dietaComReceita.test.ts`, `src/domain/copiaDaConta.test.ts`, `e2e/receitas.spec.ts` | alterar: testes que faltavam (CB-277, D-170, CA-889 na linha do plano) | R12 |
 | `src/ui/receitas/EditorReceita.tsx` | alterar: título de seção sem caixa alta | R13 |
 | `src/domain/receitas.ts` (`fontesDaSoma`), `src/ui/receitas/ResumoDaPorcao.tsx` (+ `ResumoDaPorcao.test.tsx`) | alterar: a fonte de cada parte | R14 |
-| `src/ui/usarRota.ts` (+ `usarRota.test.ts`), `src/ui/receitas/EditorReceita.tsx` (+ teste) | alterar: perguntar antes de sair sem salvar | R15 |
+| `src/ui/usarRota.ts`, `src/ui/receitas/EditorReceita.tsx` (+ `sairSemSalvar.test.tsx`) | alterar: perguntar antes de sair sem salvar | R15 |
 
 - [ ] **R0** — Notas na SPEC e no PLAN (D-274, D-274a a D-274c, CAs, CBs e R-270 revistos; M-10; M-11). *Verifica:* revisão.
 - [ ] **R1** — I-1a: `RECEITAS_NA_REFEICAO = false`; `TelaPlano` só passa a entrada de receita com ela ligada (prop
