@@ -144,20 +144,22 @@ logo abaixo; depois siga a lista seguinte.
 3. No **SQL Editor**, rode os arquivos de [supabase/](supabase/) na ordem:
    `001-acompanhamentos.sql`, `002-copia-na-nuvem.sql`, `003-assinaturas.sql`, `004-uso-nao-comercial.sql`,
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
-   `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql`, `011-seguranca-lote-2.sql` e `012-dieta-no-link.sql`.
-   O `014-seguranca-lote-5.sql` roda depois de o administrador ativar o app autenticador no site (passo 4 da lista
+   `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql`, `011-seguranca-lote-2.sql`, `012-dieta-no-link.sql` e
+   `013-exclusao-de-conta.sql`. O `014-seguranca-lote-5.sql` roda depois de o administrador ativar o app autenticador no site (passo 4 da lista
    seguinte).
-4. Publique as três funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
+4. Publique as funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
    ```bash
    npx supabase secrets set SITE_URL=https://metanutri.com.br/ --project-ref <ref>
    npx supabase functions deploy gerenciar-assinatura --project-ref <ref>
    npx supabase functions deploy assinar --project-ref <ref>
+   npx supabase functions deploy excluir-conta --project-ref <ref>
    npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref <ref>
    npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref <ref>
    ```
    O `--no-verify-jwt` é obrigatório nas duas últimas: quem chama a do aviso é o Mercado Pago, que não tem conta no
-   Supabase; quem chama a da limpeza é o agendamento do próprio banco, com a chave do cofre.
+   Supabase; quem chama a da limpeza é o agendamento do próprio banco, com a chave do cofre. A `excluir-conta` fica
+   **sem** ele: só quem está logado pede a exclusão da própria conta.
 5. Siga a lista abaixo (no passo 4 dela, os SQL já rodaram; no passo 5, as funções já estão publicadas).
 6. **Teste o Mercado Pago no ambiente de teste antes de abrir para o público**: use as credenciais de teste
    e um usuário de teste do Mercado Pago, e só depois troque para as credenciais de produção.
@@ -207,6 +209,11 @@ Para funcionar de verdade, nesta ordem:
    dieta ("Meu plano"), até 256 KB, e a função do paciente passa a devolvê-la. Rode **antes** de publicar o site desta
    versão. Publicado antes, o site continua funcionando, mas o link é salvo sem a dieta e o paciente vê só as missões.
    Também pode rodar de novo; se rodar o 004 de novo, rode o 012 logo depois.
+   Depois rode `supabase/013-exclusao-de-conta.sql` (spec exclusao-de-conta): ao excluir uma conta, o banco guarda só
+   o registro da última assinatura (sem nome, e-mail nem cartão, por 5 anos) e o histórico de planos sem ligação com a
+   pessoa, e uma rotina diária apaga os registros de acesso com mais de 6 meses. Rode **antes** de publicar a função
+   `excluir-conta` (`npx supabase functions deploy excluir-conta --project-ref qmpljfjbdcrdbqutuvmg`, sem
+   `--no-verify-jwt`) e, depois dela, o site desta versão. Também pode rodar de novo.
    Depois rode `supabase/014-seguranca-lote-5.sql` (spec seguranca-lote-5), **nesta ordem**: (1) em
    *Authentication > Multi-Factor*, o *TOTP (App Authenticator)* ligado, **antes** de publicar (sem ele, o site novo
    não abre Negócio nem Aprovações); (2) o site desta versão no ar, e no seu navegador a versão nova (aceite o aviso de
@@ -273,9 +280,49 @@ Para funcionar de verdade, nesta ordem:
    de novo. Quando o Cloudflare voltar, ligue o captcha outra vez. Com o captcha ligado, o `npm run dev` só entra na
    conta com a mesma Site Key no `.env.local`.
 
-Comprovantes de estudante ficam no balde privado `comprovantes`. A limpeza dos que passaram de 30 dias depois
-da decisão acontece quando o administrador abre o app (qualquer tela, com a conta de administrador); não há
-tarefa agendada no servidor, então, se ele ficar semanas sem abrir, o arquivo dura mais que o prazo.
+Comprovantes de estudante ficam no balde privado `comprovantes`. Com o 014, os que passaram de 30 dias depois da
+decisão saem todo dia às 03:15 de Brasília, pelo servidor (a função `limpar-comprovantes`); a limpeza que o
+navegador do administrador faz ao abrir Aprovações continua como reserva.
+
+### Ordem para publicar a rodada de 19/10/2026
+
+Segurança (lote 5), exclusão de conta, revisão das telas públicas e receitas com cálculo vão ao ar juntas, nesta
+ordem (spec integracao-rodada-1910, D-316). Tudo pelo painel do Supabase (projeto `qmpljfjbdcrdbqutuvmg`) e pelo
+terminal na pasta do projeto, com a `main` atualizada.
+
+1. **Painel > Authentication > Multi-Factor:** *TOTP (App Authenticator)* ligado (cadastrar e verificar). Antes do
+   site: sem ele, o site novo não abre Negócio nem Aprovações.
+2. **Painel > Authentication > Sign In / Providers > Email:** *Secure password change*, *Secure email change* e
+   *Require current password when updating* ligados (passo 2 da lista acima).
+3. **Painel > Database > Extensions:** `pg_cron` e `pg_net` ligados (o 013 e o 014 tentam ligar sozinhos; se o SQL
+   Editor recusar, é aqui).
+4. **SQL Editor:** `supabase/013-exclusao-de-conta.sql` inteiro, e depois as conferências do fim dele.
+5. **Terminal:** a função nova da exclusão e as três de cobrança, que agora importam o supabase-js pelo `npm:`, mesma
+   versão e mesmo comportamento:
+   ```bash
+   npx supabase functions deploy excluir-conta --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy webhook-mercadopago --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+6. **Publicar o site** (Actions > Publicar no GitHub Pages). A versão dos termos é a de 20/10/2026
+   (`src/domain/legal.ts`); publicando em outro dia, troque as duas constantes e o teste delas antes. Depois, em cada
+   aparelho e navegador já usado, abra o MetaNutri e recarregue até aparecer **Receitas** no menu.
+7. **No celular**, instale um app autenticador. **No site**, cada administrador abre **Aprovações**, lê o código QR e
+   digita o código em **Ativar**, sem sair da tela até o fim.
+8. **SQL Editor:** `supabase/014-seguranca-lote-5.sql` inteiro; depois, a linha do cofre do fim do 014 (o endereço do
+   projeto para o agendamento da limpeza).
+9. **Terminal:**
+   ```bash
+   npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+10. **Conferir:** as consultas do fim do 014. No dia seguinte, `cron.job_run_details` com `succeeded` para
+    `metanutri-limpar-registros` (013) e `metanutri-limpar-comprovantes` (014), e a chamada do dia com status 200 em
+    *Edge Functions > limpar-comprovantes > Invocations*. Se aparecer "permission denied" em
+    `auth.audit_log_entries`, desligue a gravação do registro de auditoria no banco (*Authentication > Audit Logs*).
+
+A receita na refeição continua desligada (`RECEITAS_NA_REFEICAO = false`): ela entra numa segunda publicação, depois
+que todo aparelho já abriu esta versão (spec receitas-com-calculo, D-274a).
 
 ## A marca
 
