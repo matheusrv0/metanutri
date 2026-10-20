@@ -1,0 +1,4746 @@
+{
+ "fonte": {
+  "nome": "USDA FoodData Central",
+  "autor": "U.S. Department of Agriculture, Agricultural Research Service",
+  "citacao": "U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov.",
+  "licenca": "CC0 1.0 Universal (domínio público)",
+  "url": "https://fdc.nal.usda.gov/",
+  "baixadoEm": "2026-10-20",
+  "base": "100 g de parte comestível",
+  "conjuntos": [
+   {
+    "nome": "SR Legacy",
+    "versao": "2018-04",
+    "arquivo": "FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+    "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+    "sha256": "b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0"
+   },
+   {
+    "nome": "Foundation Foods",
+    "versao": "2026-04",
+    "arquivo": "FoodData_Central_foundation_food_csv_2026-04-30.zip",
+    "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_csv_2026-04-30.zip",
+    "sha256": "70457ee9d9342f43bda2010318c85f04210c689fdeb9cd2da4c513b0e8dbc655"
+   }
+  ],
+  "criterio": "Alimento equivalente ao da TACO, revisado à mão em 20/10/2026; só confiança alta ou média. Fortificação americana (leite, cereal, margarina) não é copiada; folato de farinha enriquecida fica, porque a farinha brasileira também é enriquecida por lei (RDC Anvisa 604/2022)."
+ },
+ "nutrientes": [
+  {
+   "chave": "vitamina_d_mcg",
+   "unidade": "µg",
+   "rotulo": "Vitamina D"
+  },
+  {
+   "chave": "vitamina_e_mg",
+   "unidade": "mg",
+   "rotulo": "Vitamina E (alfa-tocoferol)"
+  },
+  {
+   "chave": "folato_dfe_mcg",
+   "unidade": "µg",
+   "rotulo": "Folato (DFE)"
+  },
+  {
+   "chave": "vitamina_b12_mcg",
+   "unidade": "µg",
+   "rotulo": "Vitamina B12"
+  },
+  {
+   "chave": "selenio_mcg",
+   "unidade": "µg",
+   "rotulo": "Selênio"
+  },
+  {
+   "chave": "gordura_trans_g",
+   "unidade": "g",
+   "rotulo": "Gordura trans"
+  }
+ ],
+ "alimentos": [
+  {
+   "id": 1,
+   "fdcId": 169704,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.17,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 5.8,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 2,
+   "fdcId": 169703,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.6,
+    "folato_dfe_mcg": 23,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 17.1,
+    "gordura_trans_g": 0.001
+   }
+  },
+  {
+   "id": 3,
+   "fdcId": 169757,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 7.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 4,
+   "fdcId": 169756,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 15.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 5,
+   "fdcId": 169757,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 7.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 6,
+   "fdcId": 169756,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 15.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 7,
+   "fdcId": 2346396,
+   "conjunto": "Foundation Foods",
+   "versao": "2026-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 32.03,
+    "vitamina_b12_mcg": null,
+    "selenio_mcg": 25.35,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 8,
+   "fdcId": 171867,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.45,
+    "folato_dfe_mcg": 186,
+    "vitamina_b12_mcg": 0.19,
+    "selenio_mcg": 23.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 9,
+   "fdcId": 172718,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.47,
+    "folato_dfe_mcg": 102,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 5.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 11,
+   "fdcId": 172736,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.5,
+    "folato_dfe_mcg": 129,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 12,
+   "fdcId": 172736,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.5,
+    "folato_dfe_mcg": 129,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 13,
+   "fdcId": 167530,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 1.59,
+    "folato_dfe_mcg": 253,
+    "vitamina_b12_mcg": 0.46,
+    "selenio_mcg": 9.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 14,
+   "fdcId": 174947,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.92,
+    "folato_dfe_mcg": 108,
+    "vitamina_b12_mcg": 0.1,
+    "selenio_mcg": 3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 21,
+   "fdcId": 168929,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 10.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 22,
+   "fdcId": 168929,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 10.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 27,
+   "fdcId": 169714,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 15.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 32,
+   "fdcId": 168885,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.73,
+    "folato_dfe_mcg": 33,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 18,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 35,
+   "fdcId": 168894,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.06,
+    "folato_dfe_mcg": 291,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 33.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 37,
+   "fdcId": 169728,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 104,
+    "vitamina_b12_mcg": 0.14,
+    "selenio_mcg": null,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 38,
+   "fdcId": 169727,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 284,
+    "vitamina_b12_mcg": 0.31,
+    "selenio_mcg": null,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 40,
+   "fdcId": 169736,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 391,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 63.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 41,
+   "fdcId": 169731,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.3,
+    "vitamina_e_mg": 0.37,
+    "folato_dfe_mcg": 370,
+    "vitamina_b12_mcg": 0.29,
+    "selenio_mcg": 78.8,
+    "gordura_trans_g": 0.061
+   }
+  },
+  {
+   "id": 42,
+   "fdcId": 169698,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 2.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 43,
+   "fdcId": 168867,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 335,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 10.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 45,
+   "fdcId": 169214,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.131,
+    "folato_dfe_mcg": 56.78,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.8736,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 1.456,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 48,
+   "fdcId": 172678,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.48,
+    "folato_dfe_mcg": 87,
+    "vitamina_b12_mcg": 0.03,
+    "selenio_mcg": 24.6,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 50,
+   "fdcId": 174917,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.36,
+    "folato_dfe_mcg": 173,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 32.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 52,
+   "fdcId": 172688,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.66,
+    "folato_dfe_mcg": 42,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 25.7,
+    "gordura_trans_g": 0.02
+   }
+  },
+  {
+   "id": 53,
+   "fdcId": 172795,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 169,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 27.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 54,
+   "fdcId": 174924,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 171,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 22,
+    "gordura_trans_g": 0.027
+   }
+  },
+  {
+   "id": 63,
+   "fdcId": 174911,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 217,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 29.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 70,
+   "fdcId": 169292,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 28,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 71,
+   "fdcId": 169291,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 24,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 75,
+   "fdcId": 170068,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 76,
+   "fdcId": 169988,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 36,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 77,
+   "fdcId": 169248,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 29,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 78,
+   "fdcId": 169249,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 38,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 79,
+   "fdcId": 168429,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 73,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 80,
+   "fdcId": 168431,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.15,
+    "folato_dfe_mcg": 36,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 82,
+   "fdcId": 169230,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.08,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 14.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 83,
+   "fdcId": 169246,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.92,
+    "folato_dfe_mcg": 64,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 84,
+   "fdcId": 169992,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.26,
+    "folato_dfe_mcg": 110,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 88,
+   "fdcId": 168484,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.94,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 89,
+   "fdcId": 168482,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.26,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 90,
+   "fdcId": 169677,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 10.45,
+    "folato_dfe_mcg": 29,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 2.5,
+    "gordura_trans_g": 0.084
+   }
+  },
+  {
+   "id": 91,
+   "fdcId": 170440,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.005999,
+    "folato_dfe_mcg": 5.399,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.18,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.5999,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 92,
+   "fdcId": 170026,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.01,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 95,
+   "fdcId": 169229,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.41,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 96,
+   "fdcId": 169228,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 22,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 97,
+   "fdcId": 169146,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 80,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 98,
+   "fdcId": 169145,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 109,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 100,
+   "fdcId": 169967,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.45,
+    "folato_dfe_mcg": 108,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 101,
+   "fdcId": 170379,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.78,
+    "folato_dfe_mcg": 63,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 2.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 102,
+   "fdcId": 170072,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.34,
+    "folato_dfe_mcg": 16,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 103,
+   "fdcId": 170071,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.35,
+    "folato_dfe_mcg": 23,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 104,
+   "fdcId": 168385,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 85,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 107,
+   "fdcId": 170000,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.02,
+    "folato_dfe_mcg": 19,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 108,
+   "fdcId": 170005,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.55,
+    "folato_dfe_mcg": 64,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 109,
+   "fdcId": 170394,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.03,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 110,
+   "fdcId": 170393,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.66,
+    "folato_dfe_mcg": 19,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 111,
+   "fdcId": 168412,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.44,
+    "folato_dfe_mcg": 142,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 112,
+   "fdcId": 170403,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.14,
+    "folato_dfe_mcg": 18,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 113,
+   "fdcId": 170402,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 93,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 114,
+   "fdcId": 170921,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.03,
+    "folato_dfe_mcg": 274,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 29.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 115,
+   "fdcId": 170406,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.26,
+    "folato_dfe_mcg": 129,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 117,
+   "fdcId": 169986,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.08,
+    "folato_dfe_mcg": 57,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 118,
+   "fdcId": 170397,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.07,
+    "folato_dfe_mcg": 44,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 119,
+   "fdcId": 168440,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.42,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 120,
+   "fdcId": 168441,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.572,
+    "folato_dfe_mcg": 16.73,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.882,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 2.091,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 125,
+   "fdcId": 169957,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 61,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 130,
+   "fdcId": 169985,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 27,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 133,
+   "fdcId": 172232,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.8,
+    "folato_dfe_mcg": 68,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 135,
+   "fdcId": 169256,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.01,
+    "folato_dfe_mcg": 12,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 137,
+   "fdcId": 170465,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.03,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 142,
+   "fdcId": 168409,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.03,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 143,
+   "fdcId": 169383,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 26,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 144,
+   "fdcId": 170427,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.37,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 145,
+   "fdcId": 170108,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.58,
+    "folato_dfe_mcg": 46,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 147,
+   "fdcId": 169260,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 60,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 148,
+   "fdcId": 169276,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 25,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 149,
+   "fdcId": 169975,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.15,
+    "folato_dfe_mcg": 43,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 150,
+   "fdcId": 169977,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 18,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 152,
+   "fdcId": 169387,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.43,
+    "folato_dfe_mcg": 97,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 153,
+   "fdcId": 170416,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.75,
+    "folato_dfe_mcg": 152,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 157,
+   "fdcId": 170457,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.54,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 158,
+   "fdcId": 170459,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 3.195,
+    "folato_dfe_mcg": 8.917,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.938,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.7431,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 160,
+   "fdcId": 170460,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.97,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 162,
+   "fdcId": 169961,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.41,
+    "folato_dfe_mcg": 33,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 163,
+   "fdcId": 171707,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.66,
+    "folato_dfe_mcg": 35,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": null,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 164,
+   "fdcId": 169124,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.02,
+    "folato_dfe_mcg": 18,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 169,
+   "fdcId": 171686,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 172,
+   "fdcId": 169949,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.26,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 175,
+   "fdcId": 169130,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 22,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 178,
+   "fdcId": 173944,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 20,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 179,
+   "fdcId": 173944,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 20,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 180,
+   "fdcId": 173944,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 20,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 182,
+   "fdcId": 173944,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 20,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 189,
+   "fdcId": 169941,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.73,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 190,
+   "fdcId": 171715,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.15,
+    "folato_dfe_mcg": 12,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 194,
+   "fdcId": 173021,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 196,
+   "fdcId": 171714,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 197,
+   "fdcId": 173044,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.73,
+    "folato_dfe_mcg": 49,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 200,
+   "fdcId": 173044,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.73,
+    "folato_dfe_mcg": 49,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 201,
+   "fdcId": 167761,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.08,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 204,
+   "fdcId": 174687,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.34,
+    "folato_dfe_mcg": 24,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": null,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 206,
+   "fdcId": 168150,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": null,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": null,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 207,
+   "fdcId": 168153,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.46,
+    "folato_dfe_mcg": 25,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 208,
+   "fdcId": 169917,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.15,
+    "folato_dfe_mcg": 34,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 209,
+   "fdcId": 169098,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 214,
+   "fdcId": 169097,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 215,
+   "fdcId": 169098,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 216,
+   "fdcId": 169916,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 39,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": null,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 217,
+   "fdcId": 169098,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.04,
+    "folato_dfe_mcg": 30,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 219,
+   "fdcId": 168156,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 220,
+   "fdcId": 168155,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 221,
+   "fdcId": 171688,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 222,
+   "fdcId": 167793,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": null,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 225,
+   "fdcId": 169926,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 37,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 226,
+   "fdcId": 169926,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 37,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 228,
+   "fdcId": 169910,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.9,
+    "folato_dfe_mcg": 43,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 229,
+   "fdcId": 169910,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.9,
+    "folato_dfe_mcg": 43,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 231,
+   "fdcId": 169910,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.9,
+    "folato_dfe_mcg": 43,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 235,
+   "fdcId": 167765,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.05,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 236,
+   "fdcId": 169093,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.05,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 237,
+   "fdcId": 169105,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.2,
+    "folato_dfe_mcg": 16,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 238,
+   "fdcId": 169105,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.2,
+    "folato_dfe_mcg": 16,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 239,
+   "fdcId": 167762,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.29,
+    "folato_dfe_mcg": 24,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.4,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 240,
+   "fdcId": 169908,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 242,
+   "fdcId": 169118,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 243,
+   "fdcId": 169118,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 244,
+   "fdcId": 169928,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.73,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 245,
+   "fdcId": 169112,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.49,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 246,
+   "fdcId": 168175,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 247,
+   "fdcId": 169129,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": null,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": null,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 249,
+   "fdcId": 169134,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.6,
+    "folato_dfe_mcg": 38,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 250,
+   "fdcId": 167763,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.3,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 251,
+   "fdcId": 169105,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.2,
+    "folato_dfe_mcg": 16,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 252,
+   "fdcId": 169925,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.13,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 256,
+   "fdcId": 174683,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 257,
+   "fdcId": 174683,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 260,
+   "fdcId": 171413,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 14.35,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 261,
+   "fdcId": 173410,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.32,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0.17,
+    "selenio_mcg": 1,
+    "gordura_trans_g": 3.278
+   }
+  },
+  {
+   "id": 262,
+   "fdcId": 173430,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 2.32,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0.17,
+    "selenio_mcg": 1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 267,
+   "fdcId": 171428,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 19.1,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 268,
+   "fdcId": 172336,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 17.46,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0.395
+   }
+  },
+  {
+   "id": 269,
+   "fdcId": 171025,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 41.08,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 270,
+   "fdcId": 171029,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 14.3,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 272,
+   "fdcId": 171411,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 8.18,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0.533
+   }
+  },
+  {
+   "id": 277,
+   "fdcId": 173708,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 6.7,
+    "vitamina_e_mg": 0.87,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 2.2,
+    "selenio_mcg": 76,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 281,
+   "fdcId": 175143,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 22,
+    "vitamina_b12_mcg": 1.21,
+    "selenio_mcg": 34,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 284,
+   "fdcId": 171971,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 2.2,
+    "folato_dfe_mcg": 24,
+    "vitamina_b12_mcg": 1.66,
+    "selenio_mcg": 49.5,
+    "gordura_trans_g": 0.035
+   }
+  },
+  {
+   "id": 285,
+   "fdcId": 174210,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.07341,
+    "vitamina_e_mg": 0.969,
+    "folato_dfe_mcg": 13.95,
+    "vitamina_b12_mcg": 0.8149,
+    "selenio_mcg": 21.73,
+    "gordura_trans_g": 0.01321
+   },
+   "ajuste": {
+    "fator": 0.7341,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 292,
+   "fdcId": 174192,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.7,
+    "vitamina_e_mg": 1.29,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 2.5,
+    "selenio_mcg": 36.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 301,
+   "fdcId": 175161,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1.8,
+    "vitamina_e_mg": 0.38,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 2.6,
+    "selenio_mcg": 41.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 302,
+   "fdcId": 173713,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1.4,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 2.3,
+    "selenio_mcg": 32.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 304,
+   "fdcId": 173695,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 3,
+    "selenio_mcg": 36.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 306,
+   "fdcId": 171957,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 45,
+    "vitamina_b12_mcg": 2.1,
+    "selenio_mcg": 38.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 307,
+   "fdcId": 173695,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 3,
+    "selenio_mcg": 36.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 315,
+   "fdcId": 175168,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 13.1,
+    "vitamina_e_mg": 1.14,
+    "folato_dfe_mcg": 34,
+    "vitamina_b12_mcg": 2.8,
+    "selenio_mcg": 41.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 316,
+   "fdcId": 175167,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 11,
+    "vitamina_e_mg": 3.55,
+    "folato_dfe_mcg": 26,
+    "vitamina_b12_mcg": 3.23,
+    "selenio_mcg": 24,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 317,
+   "fdcId": 175168,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 13.1,
+    "vitamina_e_mg": 1.14,
+    "folato_dfe_mcg": 34,
+    "vitamina_b12_mcg": 2.8,
+    "selenio_mcg": 41.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 319,
+   "fdcId": 175139,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 4.8,
+    "vitamina_e_mg": 2.04,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 8.94,
+    "selenio_mcg": 52.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 326,
+   "fdcId": 171794,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 2.8,
+    "selenio_mcg": 21.6,
+    "gordura_trans_g": 0.359
+   }
+  },
+  {
+   "id": 327,
+   "fdcId": 171790,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.17,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 2.24,
+    "selenio_mcg": 17.4,
+    "gordura_trans_g": 0.22
+   }
+  },
+  {
+   "id": 328,
+   "fdcId": 171782,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.13,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 2.97,
+    "selenio_mcg": 30,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 329,
+   "fdcId": 174018,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.13,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 3.21,
+    "selenio_mcg": 30,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 332,
+   "fdcId": 174769,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.2587,
+    "folato_dfe_mcg": 5.544,
+    "vitamina_b12_mcg": 1.331,
+    "selenio_mcg": 21.81,
+    "gordura_trans_g": 0.3696
+   },
+   "ajuste": {
+    "fator": 1.848,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 333,
+   "fdcId": 170599,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1531,
+    "folato_dfe_mcg": 8.505,
+    "vitamina_b12_mcg": 2.364,
+    "selenio_mcg": 21.26,
+    "gordura_trans_g": 0.2551
+   },
+   "ajuste": {
+    "fator": 1.701,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 341,
+   "fdcId": 169437,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 3.57,
+    "selenio_mcg": 17.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 342,
+   "fdcId": 169438,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.41,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 1.8,
+    "selenio_mcg": 33.6,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 343,
+   "fdcId": 169538,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.39,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 1.06,
+    "selenio_mcg": 22.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 344,
+   "fdcId": 168718,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.3,
+    "vitamina_e_mg": 0.48,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 1.73,
+    "selenio_mcg": 28.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 345,
+   "fdcId": 171814,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 1.13,
+    "selenio_mcg": 27.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 346,
+   "fdcId": 168632,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.33,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 4.39,
+    "selenio_mcg": 27,
+    "gordura_trans_g": 0.437
+   }
+  },
+  {
+   "id": 349,
+   "fdcId": 174053,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.45,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 1.89,
+    "selenio_mcg": 38.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 350,
+   "fdcId": 174046,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.29,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 1.57,
+    "selenio_mcg": 28.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 351,
+   "fdcId": 170235,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 2.7,
+    "selenio_mcg": 33,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 352,
+   "fdcId": 171757,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.23,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 1.64,
+    "selenio_mcg": 22.2,
+    "gordura_trans_g": 0.138
+   }
+  },
+  {
+   "id": 355,
+   "fdcId": 169451,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1.2,
+    "vitamina_e_mg": 0.38,
+    "folato_dfe_mcg": 290,
+    "vitamina_b12_mcg": 59.3,
+    "selenio_mcg": 39.7,
+    "gordura_trans_g": 0.17
+   }
+  },
+  {
+   "id": 356,
+   "fdcId": 168627,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1.2,
+    "vitamina_e_mg": 0.46,
+    "folato_dfe_mcg": 260,
+    "vitamina_b12_mcg": 83.13,
+    "selenio_mcg": 32.8,
+    "gordura_trans_g": 0.335
+   }
+  },
+  {
+   "id": 357,
+   "fdcId": 171767,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.23,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 3.53,
+    "selenio_mcg": 20.4,
+    "gordura_trans_g": 0.271
+   }
+  },
+  {
+   "id": 358,
+   "fdcId": 170641,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.28,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 4.57,
+    "selenio_mcg": 28,
+    "gordura_trans_g": 0.438
+   }
+  },
+  {
+   "id": 364,
+   "fdcId": 171762,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.24,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 1.84,
+    "selenio_mcg": 22.6,
+    "gordura_trans_g": 0.14
+   }
+  },
+  {
+   "id": 365,
+   "fdcId": 170598,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.4,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 3.13,
+    "selenio_mcg": 13.2,
+    "gordura_trans_g": 0.84
+   }
+  },
+  {
+   "id": 366,
+   "fdcId": 170196,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 3.79,
+    "selenio_mcg": 9.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 367,
+   "fdcId": 174770,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.29,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 1.04,
+    "selenio_mcg": 25.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 368,
+   "fdcId": 169571,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.38,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 1.53,
+    "selenio_mcg": 30.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 369,
+   "fdcId": 174055,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.32,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 1.09,
+    "selenio_mcg": 27.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 370,
+   "fdcId": 168634,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.39,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 1.71,
+    "selenio_mcg": 35.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 371,
+   "fdcId": 169442,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 3.79,
+    "selenio_mcg": 30,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 372,
+   "fdcId": 169441,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 3.33,
+    "selenio_mcg": 17.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 373,
+   "fdcId": 169491,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.4,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 1.65,
+    "selenio_mcg": 20.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 374,
+   "fdcId": 174050,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.45,
+    "folato_dfe_mcg": 12,
+    "vitamina_b12_mcg": 2.53,
+    "selenio_mcg": 35.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 375,
+   "fdcId": 174051,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.28,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 1.88,
+    "selenio_mcg": 25.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 376,
+   "fdcId": 173125,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 12,
+    "vitamina_b12_mcg": 1.47,
+    "selenio_mcg": 26,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 377,
+   "fdcId": 170233,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1304,
+    "vitamina_e_mg": 0.4564,
+    "folato_dfe_mcg": 11.74,
+    "vitamina_b12_mcg": 1.982,
+    "selenio_mcg": 40.55,
+    "gordura_trans_g": null
+   },
+   "ajuste": {
+    "fator": 1.304,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 378,
+   "fdcId": 170210,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.43,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 2.42,
+    "selenio_mcg": 34,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 379,
+   "fdcId": 168656,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.14,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 1.81,
+    "selenio_mcg": 24.6,
+    "gordura_trans_g": 0.202
+   }
+  },
+  {
+   "id": 380,
+   "fdcId": 174706,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 2.64,
+    "selenio_mcg": 28.1,
+    "gordura_trans_g": 0.755
+   }
+  },
+  {
+   "id": 381,
+   "fdcId": 173061,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 2.77,
+    "selenio_mcg": 35.6,
+    "gordura_trans_g": 0.704
+   }
+  },
+  {
+   "id": 382,
+   "fdcId": 172173,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 2.69,
+    "selenio_mcg": 27.9,
+    "gordura_trans_g": 0.253
+   }
+  },
+  {
+   "id": 383,
+   "fdcId": 172170,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 2.74,
+    "selenio_mcg": 35.3,
+    "gordura_trans_g": 0.348
+   }
+  },
+  {
+   "id": 391,
+   "fdcId": 172390,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.64,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0.25,
+    "selenio_mcg": 17.6,
+    "gordura_trans_g": 0.061
+   }
+  },
+  {
+   "id": 394,
+   "fdcId": 171458,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 72,
+    "vitamina_b12_mcg": 7.29,
+    "selenio_mcg": 4.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 396,
+   "fdcId": 173612,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.39,
+    "selenio_mcg": 26.9,
+    "gordura_trans_g": 0.055
+   }
+  },
+  {
+   "id": 397,
+   "fdcId": 172373,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0.53,
+    "selenio_mcg": 20.2,
+    "gordura_trans_g": 0.047
+   }
+  },
+  {
+   "id": 398,
+   "fdcId": 172377,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0.24,
+    "selenio_mcg": 18,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 399,
+   "fdcId": 173614,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.51,
+    "selenio_mcg": 21.8,
+    "gordura_trans_g": 0.018
+   }
+  },
+  {
+   "id": 400,
+   "fdcId": 171060,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.7,
+    "folato_dfe_mcg": 588,
+    "vitamina_b12_mcg": 16.58,
+    "selenio_mcg": 54.6,
+    "gordura_trans_g": 0.065
+   }
+  },
+  {
+   "id": 402,
+   "fdcId": 171447,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.3,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0.31,
+    "selenio_mcg": 14.4,
+    "gordura_trans_g": 0.097
+   }
+  },
+  {
+   "id": 403,
+   "fdcId": 171054,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0.33,
+    "selenio_mcg": 22,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 404,
+   "fdcId": 171451,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0.22,
+    "selenio_mcg": 20.9,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 405,
+   "fdcId": 171052,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0.37,
+    "selenio_mcg": 15.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 406,
+   "fdcId": 171075,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.32,
+    "selenio_mcg": 24.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 407,
+   "fdcId": 171474,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.4,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.34,
+    "selenio_mcg": 16.6,
+    "gordura_trans_g": 0.105
+   }
+  },
+  {
+   "id": 408,
+   "fdcId": 171478,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.27,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0.23,
+    "selenio_mcg": 22.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 409,
+   "fdcId": 171077,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.56,
+    "folato_dfe_mcg": 9,
+    "vitamina_b12_mcg": 0.21,
+    "selenio_mcg": 22.8,
+    "gordura_trans_g": 0.007
+   }
+  },
+  {
+   "id": 410,
+   "fdcId": 171534,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.54,
+    "folato_dfe_mcg": null,
+    "vitamina_b12_mcg": 0.21,
+    "selenio_mcg": 28.4,
+    "gordura_trans_g": 0.01
+   }
+  },
+  {
+   "id": 411,
+   "fdcId": 173625,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.44,
+    "selenio_mcg": 25.3,
+    "gordura_trans_g": 0.081
+   }
+  },
+  {
+   "id": 412,
+   "fdcId": 172385,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0.62,
+    "selenio_mcg": 18.9,
+    "gordura_trans_g": 0.085
+   }
+  },
+  {
+   "id": 413,
+   "fdcId": 172388,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0.42,
+    "selenio_mcg": 27.1,
+    "gordura_trans_g": 0.044
+   }
+  },
+  {
+   "id": 414,
+   "fdcId": 173627,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.18,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.61,
+    "selenio_mcg": 22.9,
+    "gordura_trans_g": 0.02
+   }
+  },
+  {
+   "id": 421,
+   "fdcId": 172934,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 1.4,
+    "vitamina_e_mg": 0.99,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0.92,
+    "selenio_mcg": 17.8,
+    "gordura_trans_g": 0.101
+   }
+  },
+  {
+   "id": 422,
+   "fdcId": 174578,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 1.4,
+    "vitamina_e_mg": 0.9,
+    "folato_dfe_mcg": 1,
+    "vitamina_b12_mcg": 0.98,
+    "selenio_mcg": 20.7,
+    "gordura_trans_g": 0.12
+   }
+  },
+  {
+   "id": 423,
+   "fdcId": 174578,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 1.4,
+    "vitamina_e_mg": 0.9,
+    "folato_dfe_mcg": 1,
+    "vitamina_b12_mcg": 0.98,
+    "selenio_mcg": 20.7,
+    "gordura_trans_g": 0.12
+   }
+  },
+  {
+   "id": 425,
+   "fdcId": 172869,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.3,
+    "vitamina_e_mg": 0.06,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 1.68,
+    "selenio_mcg": 30.7,
+    "gordura_trans_g": 0.047
+   }
+  },
+  {
+   "id": 426,
+   "fdcId": 172868,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.08,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 1.05,
+    "selenio_mcg": 22.6,
+    "gordura_trans_g": 0.025
+   }
+  },
+  {
+   "id": 427,
+   "fdcId": 168238,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0.53,
+    "selenio_mcg": 33.8,
+    "gordura_trans_g": 0.092
+   }
+  },
+  {
+   "id": 428,
+   "fdcId": 168292,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.6,
+    "vitamina_e_mg": 0.2,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0.79,
+    "selenio_mcg": 40.8,
+    "gordura_trans_g": 0.075
+   }
+  },
+  {
+   "id": 429,
+   "fdcId": 167827,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.8,
+    "vitamina_e_mg": 0.11,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0.59,
+    "selenio_mcg": 43.6,
+    "gordura_trans_g": 0.107
+   }
+  },
+  {
+   "id": 431,
+   "fdcId": 167853,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 2.3,
+    "vitamina_e_mg": 0.37,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0.38,
+    "selenio_mcg": 22,
+    "gordura_trans_g": 0.222
+   }
+  },
+  {
+   "id": 432,
+   "fdcId": 167821,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1,
+    "vitamina_e_mg": 0.19,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0.71,
+    "selenio_mcg": 33.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 433,
+   "fdcId": 167818,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 1,
+    "vitamina_b12_mcg": 0.53,
+    "selenio_mcg": 33.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 435,
+   "fdcId": 168223,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.8,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 10,
+    "vitamina_b12_mcg": 0.68,
+    "selenio_mcg": 45.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 436,
+   "fdcId": 168222,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0.63,
+    "selenio_mcg": 29.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 443,
+   "fdcId": 174582,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.9,
+    "vitamina_e_mg": 0.64,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 1.15,
+    "selenio_mcg": 33.6,
+    "gordura_trans_g": 0.48
+   }
+  },
+  {
+   "id": 447,
+   "fdcId": 170857,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 1.1,
+    "vitamina_e_mg": 0.12,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0.14,
+    "selenio_mcg": 4.6,
+    "gordura_trans_g": 0.625
+   }
+  },
+  {
+   "id": 448,
+   "fdcId": 171284,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.06,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 0.37,
+    "selenio_mcg": 2.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 449,
+   "fdcId": 170887,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 8.03,
+    "vitamina_b12_mcg": 0.4082,
+    "selenio_mcg": 2.409,
+    "gordura_trans_g": null
+   },
+   "ajuste": {
+    "fator": 0.6692,
+    "base": "proteína"
+   }
+  },
+  {
+   "id": 453,
+   "fdcId": 171275,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.16,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 0.44,
+    "selenio_mcg": 14.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 454,
+   "fdcId": 171278,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.07,
+    "folato_dfe_mcg": 1,
+    "vitamina_b12_mcg": 0.07,
+    "selenio_mcg": 1.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 456,
+   "fdcId": 170877,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 50,
+    "vitamina_b12_mcg": 4.03,
+    "selenio_mcg": 27.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 457,
+   "fdcId": 173432,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.01,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0.5,
+    "selenio_mcg": 3.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 458,
+   "fdcId": 172217,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.07,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0.45,
+    "selenio_mcg": 3.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 459,
+   "fdcId": 173454,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": 0.58,
+    "folato_dfe_mcg": 37,
+    "vitamina_b12_mcg": 3.25,
+    "selenio_mcg": 16.3,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 461,
+   "fdcId": 172223,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": 0.37,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 1.68,
+    "selenio_mcg": 19.3,
+    "gordura_trans_g": 0.834
+   }
+  },
+  {
+   "id": 463,
+   "fdcId": 170846,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 8,
+    "vitamina_b12_mcg": 0.73,
+    "selenio_mcg": 16.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 464,
+   "fdcId": 170848,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.5,
+    "vitamina_e_mg": 0.22,
+    "folato_dfe_mcg": 7,
+    "vitamina_b12_mcg": 1.2,
+    "selenio_mcg": 22.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 469,
+   "fdcId": 171248,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.1,
+    "vitamina_e_mg": 0.07,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 0.29,
+    "selenio_mcg": 16.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 471,
+   "fdcId": 171890,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.01,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 472,
+   "fdcId": 174815,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 474,
+   "fdcId": 168746,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 6,
+    "vitamina_b12_mcg": 0.02,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 475,
+   "fdcId": 173232,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 1,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 477,
+   "fdcId": 173227,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 5,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 478,
+   "fdcId": 170174,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 479,
+   "fdcId": 171869,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 480,
+   "fdcId": 174852,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 481,
+   "fdcId": 173205,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 482,
+   "fdcId": 174854,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": null,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 483,
+   "fdcId": 173205,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 485,
+   "fdcId": 172191,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 1.4,
+    "vitamina_e_mg": 1.08,
+    "folato_dfe_mcg": 66,
+    "vitamina_b12_mcg": 1.58,
+    "selenio_mcg": 32,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 486,
+   "fdcId": 172183,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 4,
+    "vitamina_b12_mcg": 0.09,
+    "selenio_mcg": 20,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 487,
+   "fdcId": 172184,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 5.4,
+    "vitamina_e_mg": 2.58,
+    "folato_dfe_mcg": 146,
+    "vitamina_b12_mcg": 1.95,
+    "selenio_mcg": 56,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 488,
+   "fdcId": 173424,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 2.2,
+    "vitamina_e_mg": 1.03,
+    "folato_dfe_mcg": 44,
+    "vitamina_b12_mcg": 1.11,
+    "selenio_mcg": 30.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 489,
+   "fdcId": 171287,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 2,
+    "vitamina_e_mg": 1.05,
+    "folato_dfe_mcg": 47,
+    "vitamina_b12_mcg": 0.89,
+    "selenio_mcg": 30.7,
+    "gordura_trans_g": 0.038
+   }
+  },
+  {
+   "id": 490,
+   "fdcId": 173423,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 2.2,
+    "vitamina_e_mg": 1.31,
+    "folato_dfe_mcg": 51,
+    "vitamina_b12_mcg": 0.97,
+    "selenio_mcg": 33.1,
+    "gordura_trans_g": 0.041
+   }
+  },
+  {
+   "id": 492,
+   "fdcId": 169655,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 494,
+   "fdcId": 169655,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 495,
+   "fdcId": 167587,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.51,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 0.75,
+    "selenio_mcg": 4.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 498,
+   "fdcId": 167976,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.26,
+    "folato_dfe_mcg": 13,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 4.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 501,
+   "fdcId": 173461,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0.2,
+    "vitamina_e_mg": 0.2,
+    "folato_dfe_mcg": 11,
+    "vitamina_b12_mcg": 0.31,
+    "selenio_mcg": 2.7,
+    "gordura_trans_g": 0.364
+   }
+  },
+  {
+   "id": 503,
+   "fdcId": 168837,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 507,
+   "fdcId": 169640,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 2,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.8,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 513,
+   "fdcId": 172803,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.2,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 514,
+   "fdcId": 175042,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 785,
+    "vitamina_b12_mcg": 0.01,
+    "selenio_mcg": 8.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 515,
+   "fdcId": 168775,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 6.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 517,
+   "fdcId": 173468,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 518,
+   "fdcId": 174277,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0,
+    "folato_dfe_mcg": 14,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 521,
+   "fdcId": 169096,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 3.81,
+    "folato_dfe_mcg": 3,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 522,
+   "fdcId": 170867,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.85,
+    "folato_dfe_mcg": 0,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.5,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 524,
+   "fdcId": 171009,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0.08886,
+    "vitamina_e_mg": 1.457,
+    "folato_dfe_mcg": 2.221,
+    "vitamina_b12_mcg": 0.05332,
+    "selenio_mcg": 1.022,
+    "gordura_trans_g": 0.08308
+   },
+   "ajuste": {
+    "fator": 0.4443,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 557,
+   "fdcId": 172430,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 8.33,
+    "folato_dfe_mcg": 240,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 7.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 558,
+   "fdcId": 174262,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 4.93,
+    "folato_dfe_mcg": 97,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 9.3,
+    "gordura_trans_g": 0.027
+   }
+  },
+  {
+   "id": 559,
+   "fdcId": 170419,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.13,
+    "folato_dfe_mcg": 65,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.8,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 560,
+   "fdcId": 170104,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.03,
+    "folato_dfe_mcg": 44,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.7,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 561,
+   "fdcId": 175200,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.5023,
+    "folato_dfe_mcg": 91.92,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.313,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.5344,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 562,
+   "fdcId": 175199,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 525,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 27.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 563,
+   "fdcId": 173759,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.1883,
+    "folato_dfe_mcg": 139.9,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1.681,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.6725,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 564,
+   "fdcId": 173758,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.39,
+    "folato_dfe_mcg": 633,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 567,
+   "fdcId": 173735,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.5076,
+    "folato_dfe_mcg": 86.94,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.7002,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.5835,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 568,
+   "fdcId": 173734,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 444,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 571,
+   "fdcId": 175198,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.4464,
+    "folato_dfe_mcg": 76.52,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.6377,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.4555,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 572,
+   "fdcId": 173748,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.21,
+    "folato_dfe_mcg": 463,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 13,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 575,
+   "fdcId": 173756,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.82,
+    "folato_dfe_mcg": 557,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 576,
+   "fdcId": 172436,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 456,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 8.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 577,
+   "fdcId": 172421,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.08785,
+    "folato_dfe_mcg": 144.5,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 2.236,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.7986,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 578,
+   "fdcId": 172420,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.49,
+    "folato_dfe_mcg": 479,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 0.1,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 581,
+   "fdcId": 174273,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 1.95,
+    "folato_dfe_mcg": 345,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 7.5,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 582,
+   "fdcId": 172446,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.07966,
+    "folato_dfe_mcg": 13.04,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 3.476,
+    "gordura_trans_g": 0
+   },
+   "ajuste": {
+    "fator": 0.7242,
+    "base": "energia"
+   }
+  },
+  {
+   "id": 584,
+   "fdcId": 172476,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.01,
+    "folato_dfe_mcg": 15,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 8.9,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 585,
+   "fdcId": 172423,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": null,
+    "folato_dfe_mcg": 355,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 8.2,
+    "gordura_trans_g": 0
+   }
+  },
+  {
+   "id": 587,
+   "fdcId": 168596,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 23.9,
+    "folato_dfe_mcg": 55,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 2,
+    "gordura_trans_g": 0.007
+   }
+  },
+  {
+   "id": 588,
+   "fdcId": 169421,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.92,
+    "folato_dfe_mcg": 69,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 11.7,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 589,
+   "fdcId": 170569,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "media",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 5.65,
+    "folato_dfe_mcg": 22,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 1917,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 590,
+   "fdcId": 170169,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.24,
+    "folato_dfe_mcg": 26,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 10.1,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 593,
+   "fdcId": 170150,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.25,
+    "folato_dfe_mcg": 97,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 34.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 594,
+   "fdcId": 169414,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.31,
+    "folato_dfe_mcg": 87,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 25.4,
+    "gordura_trans_g": null
+   }
+  },
+  {
+   "id": 597,
+   "fdcId": 170187,
+   "conjunto": "SR Legacy",
+   "versao": "2018-04",
+   "confianca": "alta",
+   "valores": {
+    "vitamina_d_mcg": 0,
+    "vitamina_e_mg": 0.7,
+    "folato_dfe_mcg": 98,
+    "vitamina_b12_mcg": 0,
+    "selenio_mcg": 4.9,
+    "gordura_trans_g": null
+   }
+  }
+ ]
+}
