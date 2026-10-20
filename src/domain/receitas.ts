@@ -7,7 +7,7 @@ import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao } from './receitaNoPlano.ts'
 import { totaisDeItens, type Totais } from './totais.ts'
-import type { BuscarAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos.ts'
+import type { Alimento, BuscarAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos.ts'
 
 export const CHAVE_RECEITAS = 'metanutri:receitas'
 
@@ -91,7 +91,7 @@ export interface ResultadoReceita {
   readonly gramas: number | null
   readonly porcoes: number | null
   readonly aviso: string | null
-  /** O nome começa pelo que foi digitado: a receita vem acima dos alimentos; senão, abaixo (D-274). */
+  /** O nome começa pelo que foi digitado e nenhum alimento achado começa igual: vem acima dos alimentos (D-274). */
   readonly antesDosAlimentos: boolean
 }
 
@@ -109,8 +109,12 @@ const PORCOES_DE_UMA_PALAVRA = new Map<string, string>(
 
 const quantidadeEmTexto = (q: number): string => String(q).replace('.', ',')
 
-/** CA-871 e CA-872: as receitas que casam com o que foi digitado, com a quantidade a pôr. */
-export function buscarReceitas(texto: string, receitas: readonly Receita[]): readonly ResultadoReceita[] {
+/**
+ * CA-871 e CA-872: as receitas que casam com o que foi digitado, com a quantidade a pôr. `alimentosAchados` são os
+ * alimentos que a busca da refeição achou: se um deles começa pelo mesmo termo, a receita vem depois deles (D-274), e o
+ * Enter de "75 banana" continua pondo banana mesmo com "Banana amassada com aveia" na biblioteca.
+ */
+export function buscarReceitas(texto: string, receitas: readonly Receita[], alimentosAchados: readonly Pick<Alimento, 'descricao'>[] = []): readonly ResultadoReceita[] {
   const lida = interpretarEntrada(texto)
   let { medida, termos } = lida
   const { quantidade } = lida
@@ -123,6 +127,7 @@ export function buscarReceitas(texto: string, receitas: readonly Receita[]): rea
   }
   if (termos.length === 0) return []
   const primeiro = termos[0] ?? ''
+  const alimentoComOMesmoComeco = alimentosAchados.some((a) => normalizar(a.descricao).startsWith(primeiro))
 
   return receitas
     .map((receita) => ({ receita, nome: normalizar(receita.nome) }))
@@ -130,7 +135,7 @@ export function buscarReceitas(texto: string, receitas: readonly Receita[]): rea
     .sort((a, b) => Number(b.nome.startsWith(primeiro)) - Number(a.nome.startsWith(primeiro)) || a.receita.nome.localeCompare(b.receita.nome, 'pt-BR'))
     .slice(0, RECEITAS_NA_BUSCA)
     .map(({ receita, nome }): ResultadoReceita => {
-      const antesDosAlimentos = nome.startsWith(primeiro)
+      const antesDosAlimentos = nome.startsWith(primeiro) && !alimentoComOMesmoComeco
       const porcao = pesoDaPorcao(receita)
       if (medida === null) {
         if (quantidade === null) return { receita, gramas: porcao, porcoes: 1, aviso: null, antesDosAlimentos }

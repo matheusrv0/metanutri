@@ -68,7 +68,10 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
 
   const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos()), [texto])
   // D-274: só onde a receita pode entrar (a refeição); a que começa pelo termo vem antes dos alimentos.
-  const daReceita = useMemo(() => (aoAdicionarReceita ? buscarReceitas(texto, receitas) : []), [aoAdicionarReceita, texto, receitas])
+  const daReceita = useMemo(
+    () => (aoAdicionarReceita ? buscarReceitas(texto, receitas, resultados.map((r) => r.alimento)) : []),
+    [aoAdicionarReceita, texto, receitas, resultados],
+  )
   const opcoes: readonly Opcao[] = [
     ...daReceita.filter((r) => r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
     ...resultados.map((r): Opcao => ({ tipo: 'alimento', r })),

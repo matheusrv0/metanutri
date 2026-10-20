@@ -109,6 +109,20 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
     expect(adicionadas).toEqual([])
   })
 
+  it('CA-871 (rodada da revisão): receita que começa com nome de alimento não rouba o Enter', async () => {
+    const outra = (id: string, nome: string): Receita => ({ ...NA_BIBLIOTECA, id, nome })
+    guardarReceitas([outra('b', 'Banana amassada com aveia'), outra('r', 'Arroz com legumes')])
+    const usuario = montar()
+    await usuario.type(campo(), '75 banana')
+    expect(screen.getAllByRole('option')[0]).not.toHaveTextContent('Receita')
+    expect(screen.getAllByRole('option').at(-1)).toHaveTextContent('Banana amassada com aveia')
+    await usuario.keyboard('{Enter}')
+    await usuario.type(campo(), '100 arroz{Enter}')
+    expect(adicionadas).toEqual([])
+    expect(alimentos.map((a) => a.gramas)).toEqual([75, 100])
+    expect(alimentos.every((a) => a.alimentoId !== ID_DE_RECEITA)).toBe(true)
+  })
+
   it('CA-872: com o nome da porção, as porções; só número, as gramas; outra medida, o aviso', async () => {
     guardarReceitas([NA_BIBLIOTECA])
     const usuario = montar()

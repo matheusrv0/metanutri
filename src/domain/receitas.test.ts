@@ -11,7 +11,8 @@ import {
   type Receita,
 } from './receitas.ts'
 import { KCAL_DA_PANQUECA, PANQUECA } from './receitas.test-utils.ts'
-import { buscarAlimento } from './tabelas.ts'
+import { buscarAlimentos } from './busca.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 
 class Memoria implements Armazenamento {
   readonly dados = new Map<string, string>()
@@ -165,6 +166,15 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
     expect(buscarReceitas('bolo', lista).map((r) => r.receita.id)).toEqual(['d'])
     expect(buscarReceitas('', lista)).toEqual([])
     expect(buscarReceitas('arroz', lista)).toEqual([])
+  })
+
+  it('CA-871 (rodada da revisão): com alimento que começa pelo mesmo termo, a receita vem abaixo dos alimentos', () => {
+    const comecamComAlimento = [receita('b', 'Banana amassada com aveia'), receita('r', 'Arroz com legumes')]
+    const achados = (texto: string) => buscarAlimentos(texto, ALIMENTOS).resultados.map((r) => r.alimento)
+    expect(buscarReceitas('75 banana', comecamComAlimento, achados('75 banana'))).toMatchObject([{ receita: { id: 'b' }, antesDosAlimentos: false }])
+    expect(buscarReceitas('100 arroz', comecamComAlimento, achados('100 arroz'))).toMatchObject([{ receita: { id: 'r' }, antesDosAlimentos: false }])
+    // Nenhum alimento começa com "panqueca": a receita continua no topo.
+    expect(buscarReceitas('panqueca', lista, achados('panqueca')).every((r) => r.antesDosAlimentos)).toBe(true)
   })
 
   it('CA-872: com o nome da porção ou "porção", as porções; só número, as gramas', () => {
