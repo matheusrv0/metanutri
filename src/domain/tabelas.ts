@@ -1,11 +1,13 @@
-// Acesso tipado às tabelas geradas em src/data (TACO e DRI).
+// Acesso tipado às tabelas geradas em src/data (TACO, complemento do USDA e DRI).
 import tabelaAlimentos from '../data/alimentos.json'
 import tabelaDri from '../data/dri.json'
+import { COMPLEMENTO_USDA, juntarComplemento, type AlimentoTaco } from './complementoUsda.ts'
 import type { Alimento, BuscarAlimento, Sexo } from './tipos.ts'
 
 // O JSON importado é tipado pelo TypeScript de forma ampla (string em vez de união de chaves);
 // a forma exata é garantida pelo script de importação e por src/data/alimentos.test.ts.
-export const ALIMENTOS: readonly Alimento[] = tabelaAlimentos.alimentos as unknown as readonly Alimento[]
+// A TACO fica como está; o complemento do USDA entra aqui, ao carregar (spec vitaminas-usda, D-303).
+export const ALIMENTOS: readonly Alimento[] = juntarComplemento(tabelaAlimentos.alimentos as unknown as readonly AlimentoTaco[], COMPLEMENTO_USDA)
 
 export const FONTE_ALIMENTOS = tabelaAlimentos.fonte
 
