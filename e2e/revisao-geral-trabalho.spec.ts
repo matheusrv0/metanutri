@@ -326,15 +326,29 @@ test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
   })
 })
 
-test('CA-795: no celular, cada opção do seletor de referência fica numa linha só', async ({ page }) => {
+test('CA-795: no celular, cada opção do seletor de referência fica numa linha só e inteira dentro da tela', async ({ page }) => {
   const casoId = await abrirComExemplo(page)
   for (const largura of [360, 390]) {
     await page.setViewportSize({ width: largura, height: 800 })
     await page.goto(`/#/caso/${casoId}/adequacao`)
     const grupo = page.getByRole('radiogroup', { name: 'Tipo de referência' })
-    for (const opcao of ['Individual (RDA, 90%)', 'Coletivo (EAR, 50%)', 'Personalizado']) {
-      const caixa = await grupo.getByRole('radio', { name: opcao }).boundingBox()
-      expect(caixa?.height ?? 0, opcao).toBeLessThanOrEqual(48)
+    await expect(grupo).toBeVisible()
+    // Revisão de 20/10/2026: abaixo de 640 px as opções empilham; tudo medido de uma vez, sem rolar nada.
+    const opcoes = await grupo.evaluate((el) => {
+      const largura = document.documentElement.clientWidth
+      return {
+        rolaDeLado: el.scrollWidth > el.clientWidth + 1,
+        caixas: [...el.querySelectorAll('[role="radio"]')].map((r) => {
+          const c = r.getBoundingClientRect()
+          return { nome: (r.textContent ?? '').trim(), altura: c.height, inteira: c.left >= 0 && c.right <= largura }
+        }),
+      }
+    })
+    expect(opcoes.rolaDeLado).toBe(false)
+    expect(opcoes.caixas.map((c) => c.nome)).toEqual(['Individual (RDA, 90%)', 'Coletivo (EAR, 50%)', 'Personalizado'])
+    for (const caixa of opcoes.caixas) {
+      expect(caixa.altura, caixa.nome).toBeLessThanOrEqual(48)
+      expect(caixa.inteira, caixa.nome).toBe(true)
     }
     expect(await vazaDaTela(page)).toEqual([])
     await grupo.getByRole('radio', { name: 'Personalizado' }).click()

@@ -176,13 +176,13 @@ export function TelaAdequacao({
           {subtitulo ? <CardDescription>{subtitulo}</CardDescription> : null}
         </CardHeader>
 
-        {/* CA-795: no celular, cada opção numa linha; o seletor rola de lado dentro do cartão. */}
+        {/* CA-795: cada opção numa linha; abaixo de 640 px elas empilham, todas inteiras à vista (revisão de 20/10/2026). */}
         <SeletorSegmentado
           rotulo="Tipo de referência"
           opcoes={TIPO_PRESET.map((o) => ({ valor: o.valor, rotulo: <span className="whitespace-nowrap">{o.rotulo}</span> }))}
           valor={prefs.preset.tipo}
           aoEscolher={trocarPreset}
-          className="max-w-full overflow-x-auto"
+          className="max-w-full overflow-x-auto max-sm:w-full max-sm:flex-col max-sm:rounded-2xl"
         />
 
         {prefs.preset.tipo === 'personalizado' ? (
