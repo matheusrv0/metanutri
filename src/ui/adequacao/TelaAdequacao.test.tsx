@@ -576,3 +576,19 @@ describe('Foco depois do Cobrir na etapa 3 (D-212, CA-713)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Cobrir Cálcio' })).toHaveFocus())
   })
 })
+
+describe('As cinco do USDA na etapa 3 (spec vitaminas-usda, CA-958)', () => {
+  it('aparecem na tabela, com † quando algum alimento do plano não tem o dado', () => {
+    // 533 Cuscuz: sem equivalente no USDA, as cinco ficam sem dado.
+    const plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('sem almoço')
+    montar(adulta, adicionarItem(plano, almoco.id, 'principal', { alimentoId: 533, gramas: 200 }, ids))
+    for (const rotulo of ['Selênio', 'Vitamina D', 'Vitamina E', 'Folato (DFE)', 'Vitamina B12']) {
+      const linha = screen.getAllByRole('row').find((r) => r.textContent?.startsWith(rotulo))
+      if (!linha) throw new Error(`${rotulo} fora da tabela`)
+      expect(within(linha).getByTitle(/total possivelmente subestimado/)).toHaveTextContent('†')
+      expect(within(linha).getByRole('button', { name: `Cobrir ${rotulo}` })).toBeInTheDocument()
+    }
+  })
+})

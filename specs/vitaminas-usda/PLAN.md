@@ -31,8 +31,8 @@ Ajuda ganham o texto novo.
 | T3 | Produto de rótulo com chaves nulas; dado antigo | `src/domain/produtos.ts`, `src/domain/produtos.test.ts` | CA-951, CA-952, CB-304, CB-305 | T2 |
 | T4 | Adequação com 21 linhas e o Cobrir das novas | `src/domain/adequacao.ts`, `adequacao.test.ts`, `cobrir.test.ts`; testes da UI que contavam 16 (`MicrosDoDia.test.tsx`, `TelaAdequacao.test.tsx`) e os comentários de `MicrosDoDia.tsx` | CA-953 a CA-958, CA-966 (parte), CB-303, CB-306 | T2 |
 | T5 | Ficha do alimento com a marca USDA | `src/domain/catalogo.ts`, `catalogo.test.ts`, `src/domain/completude.ts` (rótulos), `src/ui/alimentos/TelaAlimentos.tsx`, `TelaAlimentos.test.tsx` | CA-959 a CA-962, CB-309 | T2 |
-| T6 | Fontes da base, Ajuda e vitrine | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `TelaAjuda.test.tsx`, `src/domain/vitrine.ts` | CA-963 a CA-966 | T2 |
-| T7 | Exportação com 21 linhas | `src/export/copiar-tabela.test.ts`, `src/export/docx.test.ts` | CA-967, CA-968 | T4 |
+| T6 | Fontes da base, Ajuda e vitrine | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/domain/complementoUsda.ts` (mês da versão), `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `src/ui/ajuda/TelaAjuda.tsx`, `TelaAjuda.test.tsx`, `src/domain/vitrine.ts`, `e2e/publico.spec.ts` (quatro links) | CA-963 a CA-966 | T2 |
+| T7 | Exportação com 21 linhas; as cinco no cartão e na tabela | `src/export/copiar-tabela.test.ts`, `src/export/docx.test.ts`, `src/ui/adequacao/MicrosDoDia.test.tsx`, `src/ui/adequacao/TelaAdequacao.test.tsx` | CA-958, CA-967, CA-968 | T4 |
 | T8 | Navegador e validação | `e2e/vitaminas-usda.spec.ts` (novo), prints, relatório | CA-969, todos | T1 a T7 |
 
 ## Tarefas
@@ -90,10 +90,20 @@ Ajuda ganham o texto novo.
    resumo; `TelaFontes.tsx`: frase de abertura; `TelaAjuda.tsx`: o limite; `vitrine.ts`: saem `LACUNAS_DA_BASE` e
    `adequacaoDoExemplo`, que ninguém usa e diziam que a base não tem vitamina D.
 
-### T7 · Exportação
+### T7 · Exportação e as cinco na tela
 
-1. Testes: "Copiar tabela" e o Memorial com a adequação real de um plano com 21 linhas e "*" (CA-967, CA-968). O
-   código já percorre as linhas; se o teste passar de primeira, ele fica como trava.
+1. Testes: "Copiar tabela" e o Memorial com a adequação real de um plano com 21 linhas e "*" (CA-967, CA-968); o
+   cartão da etapa 2 e a tabela da etapa 3 com as cinco novas e o † num plano de cuscuz (CA-958). O código já
+   percorre as linhas; os testes passam de primeira e ficam como trava.
+
+### Ajustes feitos durante a implementação (20/10/2026)
+
+- T4: os testes do cartão e da tabela que dependiam do exemplo trocam de nutriente (cálcio, vitamina E, vitamina D)
+  ou tiram a castanha do exemplo, porque com o selênio do USDA o exemplo passa do UL de selênio (R-301). O teste
+  "nenhuma sugestão passa da porção do grupo" (`cobrir.test.ts`) passa a cobrar a porção de corte gordo só de carne:
+  o salmão com pele, que agora aparece para a vitamina D, é peixe, e a regra (D-199b) é de carne e ave.
+- T3: o teste novo mostrou que o produto de rótulo já deixava `NaN` nos totais para as chaves fora do rótulo
+  (colesterol, vitamina A). A correção é a mesma do D-303.
 
 ### T8 · Navegador e validação
 

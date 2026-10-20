@@ -420,3 +420,13 @@ describe('Restrições do paciente no Cobrir do cartão (sugestoes-com-criterio,
     expect(nomesSugeridos()).not.toContain(primeira)
   })
 })
+
+describe('As cinco do USDA no cartão (spec vitaminas-usda, CA-958)', () => {
+  it('entram no cartão como as outras, com † quando falta o dado', () => {
+    // 533 Cuscuz: sem equivalente no USDA, as cinco ficam em 0%, sem dado.
+    montar(adulta, planoCom([533, 200]))
+    const novas = linhas().filter((l) => /^(Selênio|Vitamina D|Vitamina E|Folato \(DFE\)|Vitamina B12)/.test(l.textContent ?? ''))
+    expect(novas.length).toBeGreaterThan(0)
+    for (const linha of novas) expect(within(linha).getByTitle(/total possivelmente subestimado/)).toHaveTextContent('†')
+  })
+})

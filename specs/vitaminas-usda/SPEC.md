@@ -138,8 +138,11 @@ Baixados em 20/10/2026 de https://fdc.nal.usda.gov/download-datasets/. Licença:
 
 - **R-300** · Valor americano não é medida do alimento brasileiro: variedade, solo e ração mudam selênio, vitamina D
   (ovo e peixe) e vitamina E (óleos e frituras). A marca USDA e o rodapé da ficha dizem isso por fonte.
-- **R-301** · O plano de exemplo tem 15 g de castanha-do-pará: com 1.917 µg em 100 g, o selênio do exemplo pode
-  passar do UL. É verdade dos dados (o dono escolheu o valor do SR), mas aparece logo na primeira tela; está nos
-  prints para o dono olhar.
+- **R-301** · O plano de exemplo tem 15 g de castanha-do-pará: com 1.917 µg em 100 g, o selênio do exemplo fica em
+  406,5 µg, acima do UL de 400 µg ("acima do limite" no cartão e na tabela). Como o aviso do Cobrir olha o total do
+  plano, toda sugestão do Cobrir no exemplo passa a dizer "Passa do limite superior de Selênio.". É verdade dos dados
+  (o dono escolheu o valor do SR; 3 castanhas por dia já são quase o UL), mas aparece logo na primeira tela. Nada
+  disso muda aqui (o exemplo e o Cobrir são de outras specs); está nos prints. Saídas possíveis para o dono: o
+  exemplo com 5 g de castanha (uma unidade), ou o aviso só quando o alimento sugerido traz o nutriente que passou.
 - **R-302** · Com as cinco novas, a vitamina D tende a ficar entre as primeiras do cartão da etapa 2 em quase todo
   plano brasileiro. É o retrato certo do consumo, mas muda o que o cartão mostra hoje.
