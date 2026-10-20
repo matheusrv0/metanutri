@@ -207,9 +207,12 @@ Para funcionar de verdade, nesta ordem:
    dieta ("Meu plano"), até 256 KB, e a função do paciente passa a devolvê-la. Rode **antes** de publicar o site desta
    versão. Publicado antes, o site continua funcionando, mas o link é salvo sem a dieta e o paciente vê só as missões.
    Também pode rodar de novo; se rodar o 004 de novo, rode o 012 logo depois.
-   Depois rode `supabase/014-seguranca-lote-5.sql` (spec seguranca-lote-5), **nesta ordem**: (1) o site desta versão
-   no ar; (2) em *Authentication > Multi-Factor*, o *TOTP (App Authenticator)* ligado; (3) cada administrador entra
-   no site, abre Aprovações e ativa a verificação em duas etapas com o app do celular; (4) só então o 014. Ele faz o
+   Depois rode `supabase/014-seguranca-lote-5.sql` (spec seguranca-lote-5), **nesta ordem**: (1) em
+   *Authentication > Multi-Factor*, o *TOTP (App Authenticator)* ligado, **antes** de publicar (sem ele, o site novo
+   não abre Negócio nem Aprovações); (2) o site desta versão no ar, e no seu navegador a versão nova (aceite o aviso de
+   versão nova ou recarregue); (3) cada administrador entra no site, abre Aprovações e ativa a verificação em duas
+   etapas com o app do celular, sem sair da tela até o fim (confirmar o código tira a conta dos outros aparelhos onde
+   ela entrou só com a senha); (4) só então o 014. Ele faz o
    banco exigir o código do app do administrador, agenda a limpeza diária dos comprovantes (liga `pg_cron` e
    `pg_net`) e para sem mudar nada se algum administrador ainda não ativou o app. Logo depois, grave o endereço do
    projeto no cofre com a linha comentada no fim do 014 e publique a função `limpar-comprovantes`
