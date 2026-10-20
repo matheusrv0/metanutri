@@ -16,7 +16,7 @@ import {
   type ProgressoDia,
 } from '@/domain/acompanhamento.ts'
 import { temDieta } from '@/domain/dietaDoLink.ts'
-import type { FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { cn } from '@/lib/utils'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
@@ -79,6 +79,11 @@ function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; read
   )
 }
 
+const NAO_SALVOU = 'Não consegui salvar. Confira a internet e marque de novo.'
+
+/** M-3b: a nuvem recusou por um motivo dela (tentar de novo não resolve); senão, é a internet (D-232). */
+const fraseDaFalha = (erro: unknown): string => (erro instanceof MarcacaoRecusada ? `${erro.motivo} Fale com quem montou seu plano.` : NAO_SALVOU)
+
 interface Carga {
   readonly token: string
   /** Qual pedido respondeu: "Tentar de novo" pede outra vez (CA-753). */
@@ -93,8 +98,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
   const [tentativa, setTentativa] = useState(0)
-  // D-232: a última marcação não chegou à nuvem; some quando uma marcação salva.
-  const [naoSalvou, setNaoSalvou] = useState(false)
+  // D-232: a frase de quando a última marcação não chegou à nuvem; some quando uma marcação salva.
+  const [naoSalvou, setNaoSalvou] = useState<string | null>(null)
   // D-154: abre em "Missões", como sempre abriu.
   const [parte, setParte] = useState<Parte>('missoes')
   const carregando = carga === null || carga.token !== token || carga.tentativa !== tentativa
@@ -125,10 +130,10 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
     if (novo === carga.acompanhamento) return
     setCarga({ ...carga, acompanhamento: novo })
     fonte.salvar(novo).then(
-      () => setNaoSalvou(false),
-      () => {
+      () => setNaoSalvou(null),
+      (erro: unknown) => {
         setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
-        setNaoSalvou(true)
+        setNaoSalvou(fraseDaFalha(erro))
       },
     )
   }
@@ -247,7 +252,7 @@ function ParteDasMissoes({
   readonly progresso: ProgressoDia
   readonly naSemana: number
   readonly tudoFeito: boolean
-  readonly naoSalvou: boolean
+  readonly naoSalvou: string | null
   readonly aoAlternar: (missaoId: string, feita: boolean) => void
 }) {
   return (
@@ -276,7 +281,7 @@ function ParteDasMissoes({
 
       {naoSalvou ? (
         <Alert variant="error" role="alert" className="mb-4">
-          Não consegui salvar. Confira a internet e marque de novo.
+          {naoSalvou}
         </Alert>
       ) : null}
 

@@ -16,7 +16,7 @@ import {
 } from './fonteSupabase.ts'
 import type { Missao } from './missoes.ts'
 import type { Armazenamento } from './persistencia.ts'
-import { criarRepositorioAcompanhamentos, LinkSemConexao } from './repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, LinkSemConexao, MarcacaoRecusada } from './repositorioAcompanhamentos.ts'
 
 const MISSOES: readonly Missao[] = [{ id: 'agua', texto: 'Beber água', origem: 'Hábito' }]
 
@@ -578,6 +578,25 @@ describe('A fonte do link do paciente: nuvem e cópia do aparelho (spec revisao-
     await expect(fonteDoPaciente(cliente, repo, aoSalvar).salvar(acompanhamento())).rejects.toBeInstanceOf(LinkSemConexao)
     expect(repo.listar()).toEqual([])
     expect(aoSalvar).not.toHaveBeenCalled()
+  })
+
+  it('M-3b (CA-756): a nuvem recusou por um motivo dela, não a rede: rejeita com MarcacaoRecusada e o motivo, sem gravar aqui', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const { cliente } = clienteFalso({ erro: { code: '22023', message: 'Este link já guarda marcações demais.' } })
+    const recusa = await fonteDoPaciente(cliente, repo, vi.fn())
+      .salvar(acompanhamento())
+      .then(
+        () => null,
+        (erro: unknown) => erro,
+      )
+    expect(recusa).toBeInstanceOf(MarcacaoRecusada)
+    expect(recusa instanceof MarcacaoRecusada ? recusa.motivo : null).toBe('Este link já guarda marcações demais.')
+    expect(repo.listar()).toEqual([])
+  })
+
+  it('M-3b: erro do banco que não é uma frase do MetaNutri continua contando como sem conexão', async () => {
+    const { cliente } = clienteFalso({ erro: { code: '22023', message: 'cannot get array length of a scalar' } })
+    await expect(fonteDoPaciente(cliente, criarRepositorioAcompanhamentos(memoria()), vi.fn()).salvar(acompanhamento())).rejects.toBeInstanceOf(LinkSemConexao)
   })
 
   it('CA-756: a nuvem aceitou a marcação: grava a cópia do aparelho e avisa', async () => {

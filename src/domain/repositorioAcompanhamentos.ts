@@ -262,6 +262,18 @@ export class LinkSemConexao extends Error {
   }
 }
 
+/**
+ * A nuvem respondeu e recusou a marcação por um motivo dela, numa frase para quem lê, como "Este link já guarda
+ * marcações demais." (spec revisao-geral-publica, revisão de 20/10/2026, M-3b). Tentar de novo não resolve, então a
+ * tela mostra o motivo em vez de mandar conferir a internet.
+ */
+export class MarcacaoRecusada extends Error {
+  constructor(readonly motivo: string) {
+    super(motivo)
+    this.name = 'MarcacaoRecusada'
+  }
+}
+
 export function fonteLocal(repositorio: RepositorioAcompanhamentos): FonteAcompanhamentos {
   return {
     naNuvem: false,

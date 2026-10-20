@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
 import type { Missao } from '@/domain/missoes.ts'
-import { LinkSemConexao, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { LinkSemConexao, MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { TelaMissoesPaciente } from './TelaMissoesPaciente.tsx'
 
 const MISSOES: readonly Missao[] = [
@@ -481,6 +481,21 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     expect(agua).toHaveAttribute('aria-pressed', 'true')
     expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('M-3b (CA-756): a nuvem recusou por um motivo dela: a tela mostra o motivo e diz com quem falar, sem mandar marcar de novo', async () => {
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(acompanhamento()),
+      salvar: () => Promise.reject(new MarcacaoRecusada('Este link já guarda marcações demais.')),
+    }
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    await usuario.click(agua)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Este link já guarda marcações demais. Fale com quem montou seu plano.')
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Confira a internet')
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('CB-236: a falha de uma marcação desfaz só aquela missão', async () => {

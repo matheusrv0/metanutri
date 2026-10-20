@@ -9,7 +9,7 @@ import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
-import { fonteLocal, LinkSemConexao, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -146,8 +146,9 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
  * servidor, só o aparelho, como antes (CB-239). Com servidor:
  * - abrir: vale o da nuvem; sem ele, a cópia do aparelho (CA-754); sem os dois, nulo quando a nuvem respondeu que o
  *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753);
- * - marcar: grava pela função do paciente e só depois a cópia do aparelho; a nuvem recusando, rejeita com
- *   `LinkSemConexao` sem gravar nada aqui (CA-756), para a tela desfazer a marca em vez de fingir que salvou.
+ * - marcar: grava pela função do paciente e só depois a cópia do aparelho. Sem resposta da nuvem, rejeita com
+ *   `LinkSemConexao`; recusada por um motivo da nuvem ("Este link já guarda marcações demais."), com `MarcacaoRecusada`
+ *   e o motivo (M-3b). Nos dois casos nada é gravado aqui (CA-756), e a tela não finge que salvou.
  * `aoSalvar` avisa quem guarda a lista do aparelho que ela mudou.
  */
 export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: RepositorioAcompanhamentos, aoSalvar: () => void): FonteAcompanhamentos {
@@ -159,10 +160,14 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
   }
   if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: salvarAqui }
 
-  /** A fonte da nuvem de um pedido só, com a marca de que ele falhou. */
+  /** A fonte da nuvem de um pedido só, com a marca de que ele falhou e a frase traduzida da falha. */
   const daNuvem = () => {
-    const pedido = { falhou: false }
-    return { pedido, fonte: fonteSupabase(cliente, { aoFalhar: () => (pedido.falhou = true) }) }
+    const pedido: { falhou: boolean; motivo: string | null } = { falhou: false, motivo: null }
+    const aoFalhar = (mensagem: string) => {
+      pedido.falhou = true
+      pedido.motivo = mensagem
+    }
+    return { pedido, fonte: fonteSupabase(cliente, { aoFalhar }) }
   }
 
   return {
@@ -182,7 +187,7 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
     async salvar(acompanhamento) {
       const { pedido, fonte } = daNuvem()
       await fonte.salvar(acompanhamento).catch(() => (pedido.falhou = true))
-      if (pedido.falhou) throw new LinkSemConexao()
+      if (pedido.falhou) throw pedido.motivo !== null && pedido.motivo !== FALHA_DE_REDE ? new MarcacaoRecusada(pedido.motivo) : new LinkSemConexao()
       return salvarAqui(acompanhamento)
     },
   }
