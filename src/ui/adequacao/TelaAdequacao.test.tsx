@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
-import { calcularAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -231,8 +231,19 @@ describe('Etapa 3: adequação', () => {
   })
 })
 
-/** O dia do plano de exemplo: 5 abaixo da meta e 11 na meta. */
+/** O dia do plano de exemplo: alguns abaixo da meta, o selênio acima do limite e o resto na meta. */
 const exemplo = () => criarExemplo(ids, '2026-10-15').plano
+
+/**
+ * O exemplo sem os 15 g de castanha-do-pará: com o selênio do USDA (spec vitaminas-usda), a castanha leva o dia um
+ * pouco acima do UL de selênio, e "nada pede ação" precisa do dia sem ela.
+ */
+const exemploSemCastanha = (): Plano => {
+  const plano = exemplo()
+  return { refeicoes: plano.refeicoes.map((r) => ({ ...r, opcoes: { ...r.opcoes, principal: r.opcoes.principal.filter((i) => i.alimentoId !== 589) } })) }
+}
+
+const TOTAL_DE_LINHAS = MICRONUTRIENTES_ADEQUACAO.length
 
 /** Linhas de dado que o leitor de tela enxerga (fora do grupo recolhido). */
 const linhasVisiveis = () =>
@@ -250,14 +261,14 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
     const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
     const n = Number(botao.textContent?.match(/\d+/)?.[0])
-    expect(visiveis.length + n).toBe(16)
+    expect(visiveis.length + n).toBe(TOTAL_DE_LINHAS)
     expect(botao).toHaveAttribute('aria-expanded', 'false')
     expect(document.getElementById(botao.getAttribute('aria-controls') ?? '')).toHaveAttribute('hidden')
 
     await usuario.click(botao)
     expect(botao).toHaveAttribute('aria-expanded', 'true')
     expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
-    expect(linhasVisiveis()).toHaveLength(16)
+    expect(linhasVisiveis()).toHaveLength(TOTAL_DE_LINHAS)
     // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
     const ordem = linhasVisiveis()
     expect(ordem.findIndex((t) => t.startsWith('Cálcio'))).toBeLessThan(ordem.findIndex((t) => t.startsWith('Ferro')))
@@ -280,10 +291,11 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(screen.queryByText(/passar o cursor/)).not.toBeInTheDocument()
   })
 
-  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece os 16', () => {
-    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
+  it('CB-202: nada abaixo da meta, a tabela diz isso e oferece todas as linhas', () => {
+    montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemploSemCastanha())
     expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Ver os 16 na meta' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} na meta` })).toBeInTheDocument()
+    expect(TOTAL_DE_LINHAS).toBe(21)
   })
 
   it('CB-204: o nutriente que chega à meta passa para o grupo aberto, que continua aberto', async () => {

@@ -21,7 +21,7 @@ interface MicrosDoDiaProps {
   readonly restricoes?: readonly string[]
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAlterarPlano: (novo: Plano) => void
-  /** Leva à etapa 3, onde estão os 16. */
+  /** Leva à etapa 3, onde estão todas as linhas da adequação. */
   readonly aoVerTodos: () => void
   readonly gerarId?: GerarId
 }
@@ -33,7 +33,7 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
 /**
  * O que falta de micronutriente, com o Cobrir, na coluna da etapa 2 (spec painel-lateral-enxuto, D-204).
- * Mostra só o que pede ação; os 16 estão na etapa 3.
+ * Mostra só o que pede ação; todas as linhas estão na etapa 3.
  */
 export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
