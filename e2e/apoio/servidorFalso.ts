@@ -27,32 +27,43 @@ export interface Cenario {
   readonly esperaDoLinkMs?: number
   /** O que o login responde. */
   readonly entrar?: 'ok' | 'credencial-invalida' | 'sem-rede'
+  /** A marcação do paciente (`marcar_missoes`): grava, ou o pedido cai. */
+  readonly marcar?: 'ok' | 'sem-rede'
+  /** O e-mail da sessão, quando o teste precisa de um diferente (um e-mail longo, por exemplo). */
+  readonly emailDaSessao?: string
 }
 
 const base64url = (texto: string): string => Buffer.from(texto).toString('base64url')
 
 /** Um JWT só no formato: o site não confere a assinatura, e o servidor falso não confere nada. */
-function tokenFalso(validoAte: number): string {
+function tokenFalso(validoAte: number, email: string): string {
   const cabecalho = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const corpo = base64url(JSON.stringify({ sub: USUARIO_FALSO.id, email: USUARIO_FALSO.email, role: 'authenticated', aud: 'authenticated', exp: validoAte }))
+  const corpo = base64url(JSON.stringify({ sub: USUARIO_FALSO.id, email, role: 'authenticated', aud: 'authenticated', exp: validoAte }))
   return `${cabecalho}.${corpo}.assinatura-falsa`
 }
 
-const usuario = {
+const usuarioFalso = (email: string) => ({
   id: USUARIO_FALSO.id,
   aud: 'authenticated',
   role: 'authenticated',
-  email: USUARIO_FALSO.email,
+  email,
   email_confirmed_at: '2026-10-01T12:00:00Z',
   user_metadata: { nome: USUARIO_FALSO.nome },
   app_metadata: { provider: 'email' },
   identities: [{ id: 'i1' }],
   created_at: '2026-10-01T12:00:00Z',
-}
+})
 
-function sessao() {
+function sessao(email: string = USUARIO_FALSO.email) {
   const validoAte = Math.floor(Date.now() / 1000) + 24 * 3600
-  return { access_token: tokenFalso(validoAte), refresh_token: 'refresh-falso', token_type: 'bearer', expires_in: 24 * 3600, expires_at: validoAte, user: usuario }
+  return {
+    access_token: tokenFalso(validoAte, email),
+    refresh_token: 'refresh-falso',
+    token_type: 'bearer',
+    expires_in: 24 * 3600,
+    expires_at: validoAte,
+    user: usuarioFalso(email),
+  }
 }
 
 const json = (route: Route, corpo: unknown, status = 200) =>
@@ -65,9 +76,13 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       ([chave, valor]) => {
         if (!localStorage.getItem(chave)) localStorage.setItem(chave, valor)
       },
-      [CHAVE_DA_SESSAO, JSON.stringify(sessao())] as const,
+      [CHAVE_DA_SESSAO, JSON.stringify(sessao(cenario.emailDaSessao))] as const,
     )
   }
+
+  // O script dos campos do cartão nunca sai da máquina: um script vazio carrega, não cria a operadora, e o checkout
+  // mostra o aviso de campos que não carregaram, com o botão de assinar parado (CB-88 da checkout-proprio).
+  await pagina.route('https://sdk.mercadopago.com/**', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }))
 
   await pagina.route(`${ENDERECO_FALSO}/**`, async (route) => {
     const pedido = route.request()
@@ -82,10 +97,10 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
 
     if (caminho.startsWith('/auth/v1/token')) {
       if (cenario.entrar === 'sem-rede') return route.abort('internetdisconnected')
-      if (cenario.entrar === 'ok') return json(route, sessao())
+      if (cenario.entrar === 'ok') return json(route, sessao(cenario.emailDaSessao))
       return json(route, { code: 'invalid_credentials', error_code: 'invalid_credentials', msg: 'Invalid login credentials' }, 400)
     }
-    if (caminho.startsWith('/auth/v1/user')) return json(route, usuario)
+    if (caminho.startsWith('/auth/v1/user')) return json(route, usuarioFalso(cenario.emailDaSessao ?? USUARIO_FALSO.email))
     if (caminho.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204 })
     if (caminho.startsWith('/auth/v1/')) return json(route, {})
 
@@ -94,6 +109,7 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       if (cenario.link === 'sem-rede') return route.abort('internetdisconnected')
       return json(route, cenario.link ? [cenario.link] : [])
     }
+    if (caminho === '/rest/v1/rpc/marcar_missoes') return cenario.marcar === 'sem-rede' ? route.abort('internetdisconnected') : json(route, null)
     if (caminho === '/rest/v1/rpc/eh_admin') return json(route, false)
     if (caminho.startsWith('/rest/v1/rpc/')) return json(route, null)
 
@@ -155,4 +171,60 @@ export function linkFalso(parcial: Linha = {}): Linha {
     dieta: null,
     ...parcial,
   }
+}
+
+const item = (medida: string | null, gramas: number, alimento: string) => ({ medida, gramas, alimento })
+
+/**
+ * A dieta do plano de exemplo como o link a guarda hoje (spec dieta-no-link, D-151): o nome da tabela e a medida do
+ * planejador. Copiada do `dietaDoPlano` do exemplo em 19/10/2026 (o Playwright não lê o JSON da base pelo domínio).
+ */
+export const DIETA_GUARDADA = {
+  refeicoes: [
+    {
+      horario: '06:00',
+      nome: 'Desjejum',
+      opcoes: [
+        [
+          item('1 unidade e meia', 70, 'Pão, trigo, francês'),
+          item(null, 5, 'Margarina, com óleo hidrogenado, com sal (65% de lipídeos)'),
+          item(null, 30, 'Queijo, minas, frescal'),
+          item('3 colheres de sopa', 120, 'Mamão, Formosa, cru'),
+        ],
+      ],
+    },
+    { horario: '09:00', nome: 'Lanche da manhã', opcoes: [[item('5 fatias', 130, 'Banana, prata, crua'), item('4 unidades', 15, 'Castanha-do-Brasil, crua')]] },
+    {
+      horario: '12:00',
+      nome: 'Almoço',
+      opcoes: [
+        [
+          item('6 colheres de sopa', 150, 'Arroz, tipo 1, cozido'),
+          item('6 colheres de sopa', 100, 'Feijão, carioca, cozido'),
+          item('1 bife', 100, 'Frango, peito, sem pele, grelhado'),
+          item('4 colheres de servir', 80, 'Brócolis, cozido'),
+          item('meia unidade', 60, 'Cenoura, crua'),
+        ],
+        [item(null, 90, 'Macarrão, trigo, cru'), item('1 bife', 100, 'Carne, bovina, patinho, sem gordura, grelhado')],
+        [item('2 colheres de servir e meia', 150, 'Batata, inglesa, cozida'), item('meia unidade', 100, 'Merluza, filé, assado')],
+      ],
+    },
+    { horario: '16:00', nome: 'Lanche da tarde', opcoes: [[item('1 copo americano', 150, 'Iogurte, natural'), item('2 colheres de sopa', 30, 'Aveia, flocos, crua')]] },
+    {
+      horario: '19:00',
+      nome: 'Jantar',
+      opcoes: [
+        [
+          item('6 colheres de sopa', 120, 'Arroz, integral, cozido'),
+          item('3 colheres de sopa e meia', 60, 'Lentilha, cozida'),
+          item('2 unidades', 90, 'Ovo, de galinha, inteiro, cozido/10minutos'),
+          item('4 colheres de servir e meia', 70, 'Alface, crespa, crua'),
+        ],
+      ],
+    },
+    { horario: '21:00', nome: 'Ceia', opcoes: [[item('3 fatias e meia', 130, 'Maçã, Fuji, com casca, crua')]] },
+  ],
+  orientacoes: 'Beba água ao longo do dia.\nEvite frituras.',
+  receitas: 'Salada de grão-de-bico: grão-de-bico cozido, tomate, cebola e azeite.',
+  copiadaEm: '2026-10-15',
 }

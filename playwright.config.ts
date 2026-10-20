@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import { CHAVE_FALSA, ENDERECO_FALSO } from './e2e/apoio/servidorFalso.ts'
+import { AMBIENTE_DO_TESTE_CSP } from './e2e-csp/ambiente.ts'
 
 const PORTA = 4173
 /** O segundo site de teste, com o servidor de conta falso (spec revisao-geral-publica, D-233). */
@@ -41,8 +42,9 @@ export default defineConfig({
       env: { VITE_SUPABASE_URL: 'desligado', VITE_SUPABASE_ANON_KEY: 'desligado', VITE_TURNSTILE_SITE_KEY: 'desligado' },
     },
     {
-      // Num build e numa pasta próprios: o `dist/` do site de cima fica intacto. Sem a chave do pagamento e sem a
-      // verificação contra robôs, como o site de cima: nenhum script de fora carrega.
+      // Num build e numa pasta próprios: o `dist/` do site de cima fica intacto. Sem a verificação contra robôs. A
+      // chave do pagamento é a pública de TESTE (a mesma do `npm run test:csp`), para o checkout desenhar o formulário
+      // do cartão; o script da operadora é respondido pelo servidor falso e nunca sai da máquina.
       command: `npx vite build --outDir ${SAIDA_COM_CONTA} --emptyOutDir && npx vite preview --outDir ${SAIDA_COM_CONTA} --port ${PORTA_COM_CONTA} --strictPort`,
       url: `http://localhost:${PORTA_COM_CONTA}`,
       reuseExistingServer: !process.env['CI'],
@@ -51,7 +53,7 @@ export default defineConfig({
         VITE_SUPABASE_URL: ENDERECO_FALSO,
         VITE_SUPABASE_ANON_KEY: CHAVE_FALSA,
         VITE_TURNSTILE_SITE_KEY: 'desligado',
-        VITE_MERCADOPAGO_PUBLIC_KEY: ' ',
+        VITE_MERCADOPAGO_PUBLIC_KEY: AMBIENTE_DO_TESTE_CSP.VITE_MERCADOPAGO_PUBLIC_KEY,
       },
     },
   ],

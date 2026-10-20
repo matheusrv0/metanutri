@@ -49,7 +49,8 @@ partes pedem mais do que uma classe:
 | `src/ui/publico/conta/MolduraConta.tsx`, `AvisoFormulario.tsx` (+ testes) | alterar | T8 |
 | `src/ui/publico/TelaCheckout.tsx` (+ teste) | alterar | T9 |
 | `src/ui/publico/TelaVoltaPagamento.tsx` (+ teste) | alterar | T5 (o `main`, CA-757) |
-| `e2e/publico.spec.ts` | alterar (rodapé, Preços em 768 px) | T10 |
+| `e2e/servidor-falso/revisao.spec.ts` | criar (os critérios que pedem navegador: rodapé, Preços em 768 px, e-mail longo, contraste do checkout, Meu plano, sem internet) | T10 |
+| `e2e/apoio/servidorFalso.ts`, `playwright.config.ts` | alterar (marcação que falha, e-mail da sessão, o script do cartão respondido aqui e a chave pública de teste no segundo site) | T10 |
 | `specs/impressao-do-plano/SPEC.md` | alterar (nota: R-182 resolvido por esta spec) | T11 |
 | `specs/dieta-no-link/SPEC.md` | alterar (nota: o nome e o peso de CA-531 seguem a D-231 desta spec) | T11 |
 
