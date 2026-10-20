@@ -89,10 +89,16 @@ describe('Painel', () => {
     const { aoAbrirPlano, usuario } = montar(true)
     const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
     expect(recentes.getByText('Maria, retorno')).toBeInTheDocument()
-    // CA-777: quando primeiro, porque no celular o fim da linha é cortado.
-    expect(recentes.getByText(/^Alterado .* · prescrição rápida$/)).toBeInTheDocument()
     await usuario.click(recentes.getAllByRole('button', { name: 'Abrir' })[0] as HTMLElement)
     expect(aoAbrirPlano).toHaveBeenCalled()
+  })
+
+  it('CA-777 (spec revisao-geral-trabalho): cada linha diz primeiro quando o plano mudou, depois o tipo', () => {
+    montar(true)
+    const recentes = within(screen.getByRole('list', { name: 'Planos recentes' }))
+    // No celular, o fim da linha é o que se corta: o quando fica à vista.
+    expect(recentes.getByText(/^Alterado .* · prescrição rápida$/)).toBeInTheDocument()
+    expect(recentes.getByText(/^Alterado .* · atendimento completo$/)).toBeInTheDocument()
   })
 
   it('CA-328: sem os cartões grandes, o gráfico e os atalhos que repetem o menu', () => {

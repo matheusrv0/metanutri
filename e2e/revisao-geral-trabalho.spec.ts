@@ -4,6 +4,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const NOME_LONGO = 'Maria Aparecida dos Santos Albuquerque de Oliveira Nascimento Ferreira'
 
+// As medidas de caixa (o "Fechar" da janela, a área de toque) não podem cair no meio da animação de abrir: com a
+// animação reduzida, o site a encurta para quase zero (globals.css, prefers-reduced-motion).
+test.use({ reducedMotion: 'reduce' })
+
 /** Navegador limpo, sem o aviso de primeiro acesso, com o plano de exemplo aberto na etapa 2. Devolve o id do plano. */
 async function abrirComExemplo(pagina: Page): Promise<string> {
   await pagina.goto('/#/painel')
@@ -53,11 +57,13 @@ const vazaDaTela = (pagina: Page) =>
       .map((el) => `${el.tagName.toLowerCase()} ${(el.textContent ?? '').trim().slice(0, 40)}`)
   })
 
+/** O botão inteiro dentro da largura da tela, medido num só momento. */
 const dentroDaTela = async (pagina: Page, nome: string | RegExp) => {
-  const caixa = await pagina.getByRole('button', { name: nome }).first().boundingBox()
-  const largura = await pagina.evaluate(() => document.documentElement.clientWidth)
-  expect(caixa).not.toBeNull()
-  expect((caixa?.x ?? 0) + (caixa?.width ?? 0)).toBeLessThanOrEqual(largura)
+  const medida = await pagina
+    .getByRole('button', { name: nome })
+    .first()
+    .evaluate((el) => ({ direita: el.getBoundingClientRect().right, largura: document.documentElement.clientWidth }))
+  expect(medida.direita).toBeLessThanOrEqual(medida.largura)
 }
 
 test.describe('Nome longo não alarga a tela (D-245)', () => {

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
-import { buscarAlimento } from '@/domain/tabelas.ts'
+import { produtoComoAlimento } from '@/domain/produtos.ts'
+import { buscarAlimento, registrarProdutos } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
@@ -435,6 +436,34 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
 
     render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
     expect(itemDoCalcio().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+  })
+})
+
+describe('Produto do rótulo na etapa 3 (spec revisao-geral-trabalho, CA-793)', () => {
+  afterEach(() => {
+    registrarProdutos([])
+  })
+
+  it('o nutriente que o rótulo não traz leva a † na linha; o que o rótulo traz, não', () => {
+    registrarProdutos([
+      produtoComoAlimento({
+        id: 900_001,
+        codigoBarras: '',
+        nome: 'Granola',
+        marca: '',
+        porcaoG: 40,
+        medidaCaseira: '',
+        porPorcao: { energia_kcal: 160, ferro_mg: 2, calcio_mg: 40 },
+        criadoEm: '2026-10-20T12:00:00.000Z',
+      }),
+    ])
+    const plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('sem almoço')
+    montar(adulta, adicionarItem(plano, almoco.id, 'principal', { alimentoId: 900_001, gramas: 40 }, ids))
+    expect(linhaDe('Vitamina A (RAE)').getAllByText('†').length).toBeGreaterThan(0)
+    expect(linhaDe('Ferro').queryByText('†')).not.toBeInTheDocument()
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument()
   })
 })
 
