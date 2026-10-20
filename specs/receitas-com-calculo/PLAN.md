@@ -116,3 +116,59 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
   calcular (totais, folha, link, Word, linha do plano) leem a cópia por `receitaNoPlano.ts`.
 - **DP-271** · As gramas do item são o peso da receita pronta servida; a porção é derivada (gramas ÷ peso da porção).
   Assim todo filtro "gramas > 0" e a soma proporcional continuam valendo.
+
+## Rodada da revisão (19/10/2026)
+
+Revisão do coordenador em `…\scratchpad\rodada-1910\revisao-receitas.md`: 0 crítico, 2 importantes (I-1, I-2), 11
+menores (M-1 a M-11). Decisão do coordenador para o I-1: publicar em duas vezes (D-274a), com tela de erro na raiz
+(D-274b) e conferência da versão nova ao voltar para a aba e a cada 60 min (D-274c). Um commit por item, em TDD.
+
+| Arquivo | Ação | Item |
+|---|---|---|
+| `specs/receitas-com-calculo/SPEC.md`, `PLAN.md` | alterar | R0 |
+| `src/domain/receitas.ts`, `src/ui/plano/TelaPlano.tsx`, `src/ui/plano/receitaNaRefeicao.test.tsx`, `e2e/receitas.spec.ts` | alterar: a constante `RECEITAS_NA_REFEICAO` | R1 |
+| `src/ui/aplicativo/LimiteDeErro.tsx`, `recarregarComVersaoNova.ts` (+ `LimiteDeErro.test.tsx`), `src/main.tsx` | criar e alterar: tela de erro na raiz | R2 |
+| `src/ui/aplicativo/registrarAplicativo.ts` (+ `registrarAplicativo.test.ts`) | alterar: conferir ao voltar e a cada 60 min | R3 |
+| `src/domain/receitas.ts`, `src/ui/plano/EntradaRapida.tsx` e os testes | alterar: receita acima só sem alimento com o mesmo começo | R4 |
+| `src/domain/receitas.ts` (+ teste) | alterar: sem número, o texto todo é o nome | R5 |
+| `src/domain/receitaNoPlano.ts`, `src/domain/receitas.ts` (+ testes), `src/domain/donoDosDados.test.ts` | alterar: ao menos um ingrediente com gramas | R6 |
+| `src/domain/receitas.ts` (+ teste) | alterar: memória única sem armazenamento | R7 |
+| `src/domain/receitas.ts`, `src/ui/receitas/EditorReceita.tsx` (+ testes) | alterar: limites com contagem | R8 |
+| `src/domain/folhaDieta.ts` (+ teste) | alterar: compras sem o ingrediente removido | R9 |
+| `src/domain/busca.ts`, `src/domain/receitaNoPlano.ts`, `src/domain/receitas.ts` (+ testes) | alterar: concordância | R10 |
+| `src/ui/receitas/TelaReceitas.tsx` (+ teste) | alterar: "— kcal" | R11 |
+| `src/domain/dietaComReceita.test.ts`, `src/domain/copiaDaConta.test.ts`, `e2e/receitas.spec.ts` | alterar: testes que faltavam (CB-277, D-170, CA-889 na linha do plano) | R12 |
+| `src/ui/receitas/EditorReceita.tsx` | alterar: título de seção sem caixa alta | R13 |
+| `src/ui/receitas/ResumoDaPorcao.tsx` (+ teste) | alterar: a fonte de cada parte | R14 |
+| `src/ui/usarRota.ts` (+ `usarRota.test.ts`), `src/ui/receitas/EditorReceita.tsx` (+ teste) | alterar: perguntar antes de sair sem salvar | R15 |
+
+- [ ] **R0** — Notas na SPEC e no PLAN (D-274, D-274a a D-274c, CAs, CBs e R-270 revistos; M-10; M-11). *Verifica:* revisão.
+- [ ] **R1** — I-1a: `RECEITAS_NA_REFEICAO = false`; `TelaPlano` só passa a entrada de receita com ela ligada (prop
+  `receitasNaRefeicao`, padrão a constante). *Testes:* as duas situações (CA-871a); o e2e põe a receita no plano pelos
+  dados, não pela busca.
+- [ ] **R2** — I-1b: `LimiteDeErro` na raiz, com "Recarregar" (`recarregarComVersaoNova`: `getRegistration()`,
+  `update()` com prazo, `reload()`). *Testes:* CA-888a, nada apagado.
+- [ ] **R3** — I-1c: `registrarAplicativo` confere a versão no `visibilitychange` e a cada 60 min (`onRegisteredSW`).
+  *Testes:* CA-888b.
+- [ ] **R4** — I-2: `buscarReceitas` recebe os alimentos achados; receita acima só sem alimento que comece pelo termo.
+  *Testes:* "Banana amassada com aveia" e "Arroz com legumes" (CA-871).
+- [ ] **R5** — M-1. *Testes:* "copo da felicidade", "fatia húngara" (CA-872).
+- [ ] **R6** — M-2. *Testes:* CB-273.
+- [ ] **R7** — M-3. *Testes:* CB-274.
+- [ ] **R8** — M-4: 120 e 4.000 letras, contagem visível, validação. *Testes:* CA-861a.
+- [ ] **R9** — M-5. *Testes:* CB-271.
+- [ ] **R10** — M-6. *Testes:* CA-872, CB-279.
+- [ ] **R11** — M-7. *Testes:* CA-861.
+- [ ] **R12** — M-8. *Testes:* CB-277, D-170 da chave das receitas, CA-889 na linha do plano.
+- [ ] **R13** — M-9a. *Verifica:* teste da tela (o título "Ingredientes").
+- [ ] **R14** — M-9b. *Testes:* CA-862.
+- [ ] **R15** — M-9c. *Testes:* CA-863a.
+- [ ] **R16** — Prints de depois refeitos (publicação 1, e a busca também com a constante ligada, para a publicação 2),
+  `npm run check`, `npx playwright test`, `npm run build`, relatório.
+
+**M-11 (um componente por arquivo):** `ReceitaNaFolha` (em `FolhaDieta.tsx`) e `ReceitaDoLink` e `Receitas` (em
+`MeuPlano.tsx`) ficam no arquivo da tela, como os outros pedaços que esses arquivos já tinham (`Quantidade`, `Itens`,
+`RotuloDaOpcao`, `Texto`). Decisão do coordenador: manter o padrão do arquivo; fica anotado para o dono.
+
+**DP-272** · A tela de erro é um componente de classe: o React só segura erro de desenho com `componentDidCatch` e
+`getDerivedStateFromError`, que não existem em componente de função. É a única exceção à convenção.
