@@ -12,6 +12,12 @@
 --       código novo, sorteado, que não leva à pessoa.
 -- E uma rotina diária (pg_cron) apaga os registros de acesso do servidor de login com mais de 6 meses (D-259).
 --
+-- Antes de excluir alguém pelo painel do Supabase (Authentication > Users, pedido por e-mail):
+--   1. cancele a assinatura no Mercado Pago (pelo código em assinaturas.preapproval_id);
+--   2. apague a pasta comprovantes/<código da conta> em Storage.
+-- Pelo painel, o banco guarda o registro e fecha o histórico, mas não fala com o Mercado Pago nem com o armazenamento.
+-- Pelo site (Conta e plano), a função excluir-conta faz os dois sozinha.
+--
 -- Tudo numa transação só: se algum passo falhar, nada fica pela metade.
 
 begin;
@@ -77,6 +83,14 @@ begin
   on conflict (preapproval_id) do nothing;
 
   update public.assinaturas_historico set nutricionista_id = v_anonimo where nutricionista_id = old.id;
+
+  -- M2 da revisão: excluída pelo painel com a assinatura ainda valendo, a conta fecha o histórico com uma linha
+  -- "cancelada". Sem ela, o gráfico de receita somaria a conta excluída em todos os meses seguintes. Pelo site a
+  -- assinatura já chega cancelada (passo 2), e nada entra aqui.
+  insert into public.assinaturas_historico (nutricionista_id, plano, status, ciclo, valor_centavos, preco_travado)
+  select v_anonimo, a.plano, 'cancelada', a.ciclo, a.valor_centavos, a.preco_travado
+    from public.assinaturas a
+   where a.nutricionista_id = old.id and a.status <> 'cancelada';
 
   -- CA-825: o registro fica 5 anos.
   delete from public.assinaturas_de_contas_excluidas where excluida_em < now() - interval '5 years';

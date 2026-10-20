@@ -103,6 +103,21 @@ describe('banco: excluir a conta (013, spec exclusao-de-conta)', () => {
       expect(corpo.match(/gen_random_uuid\(\)/g)).toHaveLength(1)
     })
 
+    it('CA-826 (M2 da revisão): assinatura que não estava cancelada ganha a linha "cancelada" de fechamento, com o código sorteado, depois da troca', () => {
+      const fechamento = corpo.indexOf('insert into public.assinaturas_historico')
+      expect(fechamento).toBeGreaterThan(corpo.indexOf('update public.assinaturas_historico'))
+      expect(corpo.slice(fechamento)).toMatch(
+        /insert into public\.assinaturas_historico \(nutricionista_id, plano, status, ciclo, valor_centavos, preco_travado(, quando)?\)\s+select v_anonimo, a\.plano, 'cancelada', a\.ciclo, a\.valor_centavos, a\.preco_travado(, [^\n]+)?\s+from public\.assinaturas a\s+where a\.nutricionista_id = old\.id and a\.status <> 'cancelada';/,
+      )
+    })
+
+    it('M2: o cabeçalho diz o que fazer antes de excluir pelo painel do Supabase', () => {
+      const cabecalhoDoArquivo = sql.slice(0, sql.indexOf('begin;'))
+      expect(cabecalhoDoArquivo).toContain('Antes de excluir alguém pelo painel do Supabase')
+      expect(cabecalhoDoArquivo).toContain('cancele a assinatura no Mercado Pago')
+      expect(cabecalhoDoArquivo).toContain('comprovantes/<código da conta>')
+    })
+
     it("CA-825: apaga do registro o que passou de 5 anos", () => {
       expect(corpo).toContain("delete from public.assinaturas_de_contas_excluidas where excluida_em < now() - interval '5 years';")
     })

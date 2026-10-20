@@ -19,7 +19,10 @@
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
 
+    "resolveJsonModule": true,
+
     "paths": {
+      "@/*": ["./src/*"],
       "npm:@supabase/supabase-js@*": ["./node_modules/@supabase/supabase-js/dist/index.d.mts"],
       "https://esm.sh/@supabase/supabase-js@*": ["./node_modules/@supabase/supabase-js/dist/index.d.mts"]
     }

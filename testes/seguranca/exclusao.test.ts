@@ -8,6 +8,7 @@ import { criarBanco } from '../../supabase/functions/_shared/bancoSupabase.ts'
 import { excluirConta, horaDaSenha, type PortaDaExclusao, type QuemPedeAExclusao } from '../../supabase/functions/_shared/excluirConta.ts'
 import { criarPortaDaExclusao, quemPedeAExclusao } from '../../supabase/functions/_shared/exclusaoSupabase.ts'
 import type { Operadora, Registro } from '../../supabase/functions/_shared/portas.ts'
+import { daLinhaMudanca, receitaNoHistorico, type MudancaDeAssinatura } from '../../src/domain/negocio.ts'
 import { arquivoPdf, BALDE, barrado, clienteSemSessao, prepararCenario, TABELAS_DA_CONTA, type Cenario, type Conta } from './preparo.ts'
 
 const MINUTO_MS = 60_000
@@ -373,6 +374,42 @@ describe('CA-825 e CA-826: o banco ao apagar um login pelo painel do Supabase', 
     expect(await registroDa(c, `pre-quatro-${sufixo}`)).toHaveLength(1)
     expect(await historicoDe(c, { coluna: 'nutricionista_id', valores: [id] })).toEqual([])
     expect((await c.servico.from('assinaturas').select('*').eq('nutricionista_id', id)).data).toEqual([])
+  })
+
+  it('M2 e L8 (c): excluir pelo painel uma conta Pro ativa fecha o histórico, e a receita dos meses seguintes não a conta', async () => {
+    const c = await prepararCenario()
+    const id = await loginNovo(c, 'receita')
+    // Um valor só deste teste, para achar as linhas dele no histórico do painel.
+    const valor = 640_000 + Math.floor(Math.random() * 9_000)
+    const assinatura = await c.servico
+      .from('assinaturas')
+      .insert({ nutricionista_id: id, plano: 'pro', status: 'ativa', valor_centavos: valor, ciclo: 'mensal', preapproval_id: `pre-receita-${randomBytes(4).toString('hex')}` })
+    expect(assinatura.error).toBeNull()
+    expect((await c.servico.auth.admin.deleteUser(id)).error).toBeNull()
+
+    const painel = await c.admin.cliente.rpc('painel_historico_assinaturas')
+    expect(painel.error).toBeNull()
+    const linhas = (Array.isArray(painel.data) ? painel.data : []).map(daLinhaMudanca).filter((m): m is MudancaDeAssinatura => m !== null && m.valorCentavos === valor)
+    expect(linhas.map((m) => m.status)).toEqual(['ativa', 'cancelada'])
+    const codigos = [...new Set(linhas.map((m) => m.conta))]
+    expect(codigos).toHaveLength(1)
+    expect(codigos[0]).not.toBe(id)
+    const mesQueVem = Date.now() + 31 * 24 * 60 * MINUTO_MS
+    expect(receitaNoHistorico(linhas, mesQueVem)).toBe(0)
+    // Sem a linha de fechamento, a conta excluída seguiria somando para sempre.
+    expect(receitaNoHistorico(linhas.filter((m) => m.status !== 'cancelada'), mesQueVem)).toBe(valor)
+  })
+
+  it('M2: a conta excluída pelo site (assinatura já cancelada no passo 2) não ganha uma segunda linha de fechamento', async () => {
+    const c = await prepararCenario()
+    const id = await loginNovo(c, 'ja-cancelada')
+    const valor = 650_000 + Math.floor(Math.random() * 9_000)
+    await c.servico.from('assinaturas').insert({ nutricionista_id: id, plano: 'solo', status: 'ativa', valor_centavos: valor, ciclo: 'mensal', preapproval_id: `pre-cancelada-${randomBytes(4).toString('hex')}` })
+    await c.servico.from('assinaturas').update({ status: 'cancelada', encerrada_por: 'pessoa', encerrada_em: new Date().toISOString() }).eq('nutricionista_id', id)
+    expect((await c.servico.auth.admin.deleteUser(id)).error).toBeNull()
+    const painel = await c.admin.cliente.rpc('painel_historico_assinaturas')
+    const linhas = (Array.isArray(painel.data) ? painel.data : []).map(daLinhaMudanca).filter((m): m is MudancaDeAssinatura => m !== null && m.valorCentavos === valor)
+    expect(linhas.map((m) => m.status)).toEqual(['ativa', 'cancelada'])
   })
 
   it('CB-258: login sem perfil, sem assinatura e sem histórico também sai, sem deixar registro', async () => {
