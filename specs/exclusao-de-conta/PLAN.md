@@ -174,26 +174,26 @@ O jeito mais simples continua sendo a pessoa excluir pelo site, em Conta e plano
 
 Da revisão `revisao-exclusao.md` (pronta com correções, nenhum achado Crítico ou Alto). Um commit por item, em TDD.
 
-- [ ] **C1 — M1, registros de acesso.** No 013: liga `pg_cron` (como o 014 da outra frente, `with schema pg_catalog`;
+- [x] **C1 — M1, registros de acesso.** No 013: liga `pg_cron` (como o 014 da outra frente, `with schema pg_catalog`;
   o 013 não depende do 014), cria `public.limpar_registros_guardados()` (`security definer`, só o servidor) que apaga
   `auth.audit_log_entries` com mais de 6 meses, e agenda `metanutri-limpar-registros` todo dia. Testado no Supabase
   local (o papel `postgres` tem `delete` ali). A Política diz que os registros de acesso ficam 6 meses (D-259).
-- [ ] **C2 — L1, os 5 anos de verdade.** A mesma rotina apaga o registro de assinaturas com mais de 5 anos (CA-825).
-- [ ] **C3 — M2 e L8 (c).** O gatilho põe a linha "cancelada" de fechamento no histórico quando a assinatura não estava
+- [x] **C2 — L1, os 5 anos de verdade.** A mesma rotina apaga o registro de assinaturas com mais de 5 anos (CA-825).
+- [x] **C3 — M2 e L8 (c).** O gatilho põe a linha "cancelada" de fechamento no histórico quando a assinatura não estava
   cancelada; o cabeçalho do 013 e a seção 6 dizem o que fazer antes de excluir pelo painel. Teste: excluir pelo painel
   uma conta ativa e conferir `receitaNoHistorico` antes e depois.
-- [ ] **C4 — L2.** As datas do registro (a) e do histórico da conta excluída ficam só com o dia; a Política diz "sem
+- [x] **C4 — L2.** As datas do registro (a) e do histórico da conta excluída ficam só com o dia; a Política diz "sem
   ligação direta".
-- [ ] **C5 — L4.** A exclusão segura a reserva de `assinando_agora` (solta a vencida, reserva, solta no fim); conta já
+- [x] **C5 — L4.** A exclusão segura a reserva de `assinando_agora` (solta a vencida, reserva, solta no fim); conta já
   reservada responde 409 com a frase `EM_ANDAMENTO`. A porta da exclusão ganha `reservar` e `soltarReserva`;
   `bancoSupabase.ts` não muda (L7: outra frente o migra).
-- [ ] **C6 — L5.** Falha depois de cancelar a assinatura responde a frase própria (CA-809) com o código
+- [x] **C6 — L5.** Falha depois de cancelar a assinatura responde a frase própria (CA-809) com o código
   `assinatura-cancelada`, e Conta e plano relê a assinatura. A janela diz que o tempo pago que falta se perde (CA-803).
-- [ ] **C7 — L6.** Antes de pedir a exclusão, o navegador anota no aparelho (`metanutri:exclusao-pedida`, fora de
+- [x] **C7 — L6.** Antes de pedir a exclusão, o navegador anota no aparelho (`metanutri:exclusao-pedida`, fora de
   `CHAVES_DE_DADOS`) o código da conta. Um `SIGNED_OUT` que chega com essa anotação apaga a cópia de trabalho daquela
   conta; uma resposta do servidor (sim ou não) tira a anotação; ela vence em 1 dia. Passados 9 minutos, "Senha
   incorreta" só aparece se o servidor de login disser que a conta ainda existe; se não existe, termina como no CA-808.
-- [ ] **C8 — L8 (a) e (b).** No Supabase local: renovar a sessão mantém a hora da entrada no token; o token de uma conta
+- [x] **C8 — L8 (a) e (b).** No Supabase local: renovar a sessão mantém a hora da entrada no token; o token de uma conta
   com o código de outra no corpo exclui só a dona do token.
 - **L7** fica como está (outra frente migra `bancoSupabase.ts` para `npm:@supabase/supabase-js@2.117.2`, a mesma versão).
 - **L3** sem código: SPEC R5 e a seção 6.
