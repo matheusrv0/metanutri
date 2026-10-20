@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { CHAVE_RECEITAS, type Receita } from '@/domain/receitas.ts'
@@ -108,6 +108,22 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     await usuario.type(screen.getByLabelText('Peso pronto'), '0')
     expect(screen.getByText('O peso pronto precisa ser maior que zero.')).toBeInTheDocument()
     expect(JSON.parse(arm.getItem(CHAVE_RECEITAS) ?? '[]')).toEqual([])
+  })
+
+  it('CA-861a: nome e modo de preparo com limite e contagem visível', async () => {
+    const usuario = montar(new Memoria())
+    await usuario.click(screen.getByRole('button', { name: 'Nova receita' }))
+    expect(screen.getByText('0/120')).toBeInTheDocument()
+    expect(screen.getByText('0/4.000')).toBeInTheDocument()
+    const nome = screen.getByLabelText('Nome')
+    fireEvent.change(nome, { target: { value: 'a'.repeat(130) } })
+    expect(nome).toHaveValue('a'.repeat(120))
+    expect(screen.getByText('120/120')).toBeInTheDocument()
+    const preparo = screen.getByLabelText('Modo de preparo')
+    expect(preparo).toHaveAttribute('maxLength', '4000')
+    fireEvent.change(preparo, { target: { value: 'b'.repeat(4100) } })
+    expect(preparo).toHaveValue('b'.repeat(4000))
+    expect(screen.getByText('4.000/4.000')).toBeInTheDocument()
   })
 
   it('cancelar volta para a lista sem salvar', async () => {

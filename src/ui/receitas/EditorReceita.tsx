@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { lerReceitaDoPlano, NOMES_DA_PORCAO, somaDosIngredientes } from '@/domain/receitaNoPlano.ts'
-import { validarReceita, type DadosReceita, type Receita } from '@/domain/receitas.ts'
+import { LIMITE_NOME_RECEITA, LIMITE_PREPARO_RECEITA, validarReceita, type DadosReceita, type Receita } from '@/domain/receitas.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card } from '@ds/componentes/display/card.tsx'
@@ -67,7 +67,15 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
     <Card className="mx-auto w-full max-w-3xl gap-6">
       <h2 className="card-title">{receita ? 'Editar receita' : 'Nova receita'}</h2>
 
-      <CampoTexto rotulo="Nome" valor={nome} aoMudar={setNome} placeholder="Panqueca de banana" erro={erroDe('nome')} />
+      {/* CA-861a: o nome tem limite, e a contagem fica à vista. */}
+      <CampoTexto
+        rotulo="Nome"
+        valor={nome}
+        aoMudar={(v) => setNome(v.slice(0, LIMITE_NOME_RECEITA))}
+        placeholder="Panqueca de banana"
+        erro={erroDe('nome')}
+        dica={`${nome.length}/${LIMITE_NOME_RECEITA}`}
+      />
 
       <section aria-label="Ingredientes da receita" className="flex flex-col gap-3">
         <h3 className="rotulo">Ingredientes</h3>
@@ -128,7 +136,17 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={idPreparo}>Modo de preparo</Label>
-        <Textarea id={idPreparo} rows={5} value={preparo} onChange={(e) => setPreparo(e.target.value)} />
+        <Textarea
+          id={idPreparo}
+          rows={5}
+          value={preparo}
+          maxLength={LIMITE_PREPARO_RECEITA}
+          aria-describedby={`${idPreparo}-contagem`}
+          onChange={(e) => setPreparo(e.target.value.slice(0, LIMITE_PREPARO_RECEITA))}
+        />
+        <p id={`${idPreparo}-contagem`} className="numeros self-end text-xs text-muted-foreground">
+          {`${formatarNumero(preparo.length, 0)}/${formatarNumero(LIMITE_PREPARO_RECEITA, 0)}`}
+        </p>
       </div>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

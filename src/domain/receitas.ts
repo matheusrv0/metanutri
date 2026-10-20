@@ -38,14 +38,23 @@ export type DadosReceita = Pick<Receita, 'nome' | 'ingredientes' | 'porcoes' | '
 export type RascunhoReceita = Omit<DadosReceita, 'porcoes'> & { readonly porcoes: number | null }
 
 export interface ProblemaReceita {
-  readonly campo: 'nome' | 'ingredientes' | 'porcoes' | 'pesoProntoG'
+  readonly campo: 'nome' | 'ingredientes' | 'porcoes' | 'pesoProntoG' | 'preparo'
   readonly mensagem: string
 }
 
-/** CB-270: o que impede salvar, campo a campo. */
+/**
+ * CA-861a: o tamanho máximo do nome e do modo de preparo. A cópia da receita se repete em cada item de cada plano e
+ * modelo (D-273), e a cópia da conta tem teto de 5 MB.
+ */
+export const LIMITE_NOME_RECEITA = 120
+export const LIMITE_PREPARO_RECEITA = 4000
+
+/** CB-270 e CA-861a: o que impede salvar, campo a campo. */
 export function validarReceita(r: RascunhoReceita): readonly ProblemaReceita[] {
   const problemas: ProblemaReceita[] = []
   if (r.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'A receita precisa de um nome.' })
+  if (r.nome.length > LIMITE_NOME_RECEITA) problemas.push({ campo: 'nome', mensagem: `O nome passa de ${LIMITE_NOME_RECEITA} letras.` })
+  if (r.preparo.length > LIMITE_PREPARO_RECEITA) problemas.push({ campo: 'preparo', mensagem: 'O modo de preparo passa de 4.000 letras.' })
   if (!r.ingredientes.some((i) => i.gramas > 0)) problemas.push({ campo: 'ingredientes', mensagem: 'Adicione pelo menos um ingrediente.' })
   if (r.porcoes === null || !Number.isFinite(r.porcoes) || r.porcoes <= 0) problemas.push({ campo: 'porcoes', mensagem: 'Diga quantas porções a receita rende.' })
   if (r.pesoProntoG !== null && !(r.pesoProntoG > 0)) problemas.push({ campo: 'pesoProntoG', mensagem: 'O peso pronto precisa ser maior que zero.' })
