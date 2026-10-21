@@ -38,7 +38,10 @@ test('CA-485: o site servido tem a <meta> da regra, logo depois do charset, igua
   const meta = metaDaPolitica(textoDaPolitica(diretivasDaPolitica({ supabase: null })))
   expect(html).toContain(`<meta charset="UTF-8" />\n    ${meta}`)
   expect(html.indexOf(meta)).toBeLessThan(html.indexOf('<script'))
-  expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/)
+  // CA-1012 (spec site-publico-profissional, D-330): a única exceção é o bloco de dados estruturados, que o navegador
+  // não executa.
+  expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>/)
+  expect(html.match(/<script type="application\/ld\+json">/g)).toHaveLength(1)
 })
 
 test('CA-485: a regra bloqueia script escrito na página, atributo de evento, script de outro domínio e eval', async ({ page }) => {

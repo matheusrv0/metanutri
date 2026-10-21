@@ -1,0 +1,8 @@
+# MetaNutri. Todos os robôs podem ler o site, inclusive os de assistentes de IA
+# (spec site-publico-profissional, D-333). Para bloquear um, acrescente:
+#   User-agent: GPTBot
+#   Disallow: /
+User-agent: *
+Allow: /
+
+Sitemap: https://metanutri.com.br/sitemap.xml

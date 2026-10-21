@@ -1,0 +1,39 @@
+# MetaNutri
+
+> Software de nutrição para nutricionistas, no navegador. Monta o plano alimentar, mostra o que falta de 20 vitaminas e minerais e da fibra, e o botão Cobrir sugere o alimento e a porção que fecham cada falta. O plano vira missões diárias que o paciente marca pelo celular.
+
+## Para quem
+
+- Nutricionistas em início de carreira e clínicas pequenas.
+- Estudantes de nutrição usam grátis, com o comprovante de matrícula, em conta de uso não comercial (estágio).
+
+## O que faz
+
+- Plano alimentar por refeição, com a opção principal, dois substitutos e a medida caseira de cada alimento.
+- Adequação de 20 vitaminas e minerais e da fibra, comparada com as DRI. O botão Cobrir sugere até 5 alimentos de grupos diferentes para cada falta, com a porção em gramas e em medida caseira.
+- Missões diárias do paciente num link, sem baixar app nem criar conta. A tela de Adesão mostra quem passou 4 dias sem marcar.
+- Anamnese, antropometria, composição corporal, gasto energético, receitas com cálculo, suplementos e pedido de exames.
+- Folha do paciente para imprimir ou salvar em PDF e documentos em Word.
+- Dados na nuvem, presos à conta do nutricionista. Abre no computador e no celular.
+
+## Planos
+
+A conta é por paciente ativo: quem teve plano ou missão nos últimos 30 dias. Pagamento com cartão de crédito, no site.
+
+- Free: R$ 0, 2 pacientes ativos.
+- Estudante: R$ 0, com o comprovante de matrícula, 10 pacientes ativos.
+- Solo: R$ 34,90 por mês ou R$ 299 por ano, 25 pacientes ativos.
+- Pro: R$ 64,90 por mês ou R$ 599 por ano, pacientes ilimitados.
+- Clínica: R$ 149 por mês, até 4 nutricionistas, combinado por e-mail.
+
+## Contato
+
+- E-mail: metanutricontato@gmail.com
+
+## Páginas
+
+- Início: https://metanutri.com.br/
+- Preços: https://metanutri.com.br/precos/
+- Termos de uso: https://metanutri.com.br/termos/
+- Política de privacidade: https://metanutri.com.br/privacidade/
+- Fontes da base: https://metanutri.com.br/fontes/
