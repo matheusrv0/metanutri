@@ -139,13 +139,14 @@ describe('TelaInicio (spec site-publico-profissional)', () => {
     expect(aoVerPrecos).toHaveBeenCalledOnce()
   })
 
-  it('CA-119 e CA-1020: a foto do topo tem o tamanho reservado e prioridade alta', () => {
+  it('CA-119, CA-1020 e CA-1027: a foto do topo tem o tamanho reservado, prioridade alta e é preguiçosa', () => {
     montar()
     const foto = screen.getByAltText(/Três pratos/)
     expect(foto).toHaveAttribute('width', '1600')
     expect(foto).toHaveAttribute('height', '712')
     expect(foto).toHaveAttribute('fetchpriority', 'high')
-    expect(foto).not.toHaveAttribute('loading', 'lazy')
+    // Escondida (link do paciente, raiz com sessão), não baixa; na landing, o <head> já a pré-carrega (preparar-pagina.js).
+    expect(foto).toHaveAttribute('loading', 'lazy')
   })
 
   it('CA-1008: cada informação uma vez, uma pergunta só, sem frase de efeito, comparação ou promessa clínica', () => {

@@ -92,8 +92,9 @@ const PRECOS = (() => {
 
 const FREE = planoPorId('free')
 
-// D-334 e CA-1020: a foto do topo carrega antes do resto. O React 18 não conhece `fetchPriority`; o atributo vai em
-// minúsculas, como o navegador lê.
+// D-334, CA-1020 e CA-1027: prioridade alta, mas preguiçosa. Na landing à vista, o <head> já pré-carrega esta mesma foto
+// (public/preparar-pagina.js, mesmo srcset e sizes); escondida (link do paciente, raiz com sessão), ela não baixa. O React
+// 18 não conhece `fetchPriority`; o atributo vai em minúsculas, como o navegador lê.
 const PRIORIDADE_ALTA = { fetchpriority: 'high' }
 
 const TITULO_SECAO = 'text-[clamp(28px,3.4vw,36px)] font-bold leading-tight'
@@ -115,6 +116,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
             sizes="(max-width: 640px) 92vw, 600px"
             width={1600}
             height={712}
+            loading="lazy"
             alt="Três pratos vistos de cima: salada com grão-de-bico, tigela com tofu e legumes, prato com ovo e tomate."
             className="mx-auto mt-4 h-auto w-[92%] max-w-[600px]"
           />

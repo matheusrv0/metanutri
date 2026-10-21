@@ -99,7 +99,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   expect(raiz).toMatch(/<h1[^>]*>Faltou cálcio\?/)
   for (const trecho of ['Como funciona', 'Do atendimento à folha do paciente', 'Quanto custa', 'R$ 34,90', 'Termos de uso']) expect(raiz).toContain(trecho)
   expect(html).toMatch(/<link rel="preload" href="\.\/assets\/manrope-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/)
-  expect(raiz).toMatch(/<img fetchpriority="high"[^>]*width="1600" height="712"/)
+  expect(raiz).toMatch(/<img fetchpriority="high"[^>]*width="1600" height="712" loading="lazy"/)
 })
 
 test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a mesma CSP e a tela escrita', async ({ request }) => {
@@ -168,6 +168,27 @@ test('CA-1025: com o service worker ativo, os arquivos de texto abrem como arqui
   await page.goto('/precos')
   await expect(page).toHaveURL(/\/#\/precos$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+})
+
+test('CA-1027: a foto do topo só é pedida com a landing à vista, e o <head> a pede com o mesmo srcset da tela', async ({ page }) => {
+  const pedidos: string[] = []
+  page.on('request', (pedido) => {
+    if (pedido.url().includes('pratos-heroi')) pedidos.push(pedido.url())
+  })
+  await page.goto('/#/missoes/qualquer')
+  await expect(page.locator('[data-vitrine]')).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
+  expect(pedidos).toEqual([])
+
+  await page.goto('/#/inicio')
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Faltou cálcio\?/)
+  await expect.poll(() => pedidos.length).toBeGreaterThan(0)
+  const [preload, foto] = await Promise.all([
+    page.locator('link[rel="preload"][as="image"]').getAttribute('imagesrcset'),
+    page.getByAltText(/Três pratos/).getAttribute('srcset'),
+  ])
+  expect(preload).toBe(foto)
 })
 
 test('CA-1018 e CA-1021: robots, sitemap e llms na raiz; o service worker guarda as páginas próprias', async ({ request }) => {

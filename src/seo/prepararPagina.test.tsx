@@ -2,7 +2,9 @@
 // (spec site-publico-profissional, D-332, CA-1016 e CA-1017).
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { render, screen } from '@testing-library/react'
 import { CHAVE_TEMA } from '@/ui/tema/contextoTema.ts'
+import { TelaInicio } from '@/ui/publico/TelaInicio.tsx'
 
 const SCRIPT = readFileSync(join(process.cwd(), 'public', 'preparar-pagina.js'), 'utf8')
 
@@ -38,6 +40,30 @@ describe('preparar-pagina.js', () => {
     document.documentElement.className = ''
     document.documentElement.removeAttribute('data-rota')
     localStorage.clear()
+    for (const link of document.head.querySelectorAll('link[rel="preload"]')) link.remove()
+  })
+
+  const preloadDaFoto = () => document.head.querySelector<HTMLLinkElement>('link[rel="preload"][as="image"]')
+
+  it('CA-1027: com a landing à vista, o <head> pré-carrega a foto do topo, com o mesmo srcset e sizes da tela', () => {
+    rodar({ hash: '#/inicio' })
+    const link = preloadDaFoto()
+    expect(link).not.toBeNull()
+    expect(link?.getAttribute('fetchpriority')).toBe('high')
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} aoVerFontes={vi.fn()} />)
+    const foto = screen.getByAltText(/Três pratos/)
+    // No teste, BASE_URL é "/"; no build, "./". Compara sem a base (o e2e confere no build de verdade).
+    const semBase = (lista: string | null | undefined) => lista?.replaceAll(/(^|, )\.?\//g, '$1')
+    expect(semBase(link?.getAttribute('imagesrcset'))).toBe(semBase(foto.getAttribute('srcset')))
+    expect(link?.getAttribute('imagesizes')).toBe(foto.getAttribute('sizes'))
+  })
+
+  it('CA-1027: no link do paciente, na raiz com sessão e nas páginas próprias, a foto não é pré-carregada', () => {
+    for (const cenario of [{ hash: '#/missoes/abc' }, { hash: '', sessao: true }, { rotaDaPagina: 'precos' }, { busca: '?volta=confirmacao&code=x' }]) {
+      for (const link of document.head.querySelectorAll('link[rel="preload"]')) link.remove()
+      rodar(cenario)
+      expect(preloadDaFoto(), JSON.stringify(cenario)).toBeNull()
+    }
   })
 
   it('CA-1017: usa a mesma chave de tema do app', () => {

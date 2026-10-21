@@ -31,4 +31,16 @@
   var noCaminho = location.pathname.match(/\/(precos|termos|privacidade|fontes)\/?$/)
   if (noCaminho && noCaminho[1] !== pagina) outraTela = true
   if (outraTela) raiz.classList.add('sem-vitrine')
+
+  // 3. A foto do topo da landing é preguiçosa (escondida, não baixa); com a landing à vista, ela é pedida já daqui,
+  //    com prioridade alta. srcset e sizes iguais aos de src/ui/publico/TelaInicio.tsx (um teste confere) (CA-1027).
+  if (!outraTela && pagina === 'inicio') {
+    var foto = document.createElement('link')
+    foto.rel = 'preload'
+    foto.setAttribute('as', 'image')
+    foto.setAttribute('imagesrcset', './imagens/pratos-heroi-800.webp 800w, ./imagens/pratos-heroi.webp 1600w')
+    foto.setAttribute('imagesizes', '(max-width: 640px) 92vw, 600px')
+    foto.setAttribute('fetchpriority', 'high')
+    document.head.appendChild(foto)
+  }
 })()
