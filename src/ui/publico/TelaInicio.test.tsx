@@ -1,36 +1,65 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { DIAS_PARA_SUMIR } from '@/domain/acompanhamento.ts'
 import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
+import { MAXIMO_SUGESTOES } from '@/domain/cobrir.ts'
+import { DIAS_PACIENTE_ATIVO, planoPorId } from '@/domain/conta.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
-import { coberturaDeCalcio, pctAlimentosSemVitaminaA } from '@/domain/vitrine.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
-const titulos = () => screen.getAllByRole('heading').map((h) => h.textContent ?? '')
-const posicao = (padrao: RegExp) => titulos().findIndex((t) => padrao.test(t))
+const montar = (acoes: Partial<{ aoComecar: () => void; aoVerPrecos: () => void; aoVerFontes: () => void }> = {}) =>
+  render(<TelaInicio aoComecar={acoes.aoComecar ?? vi.fn()} aoVerPrecos={acoes.aoVerPrecos ?? vi.fn()} aoVerFontes={acoes.aoVerFontes ?? vi.fn()} />)
 
-describe('TelaInicio', () => {
-  it('CA-112: topo, problema, como funciona, o diferencial e a faixa final, nesta ordem', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    const ordem = [/Faltou cálcio/, /Todo programa avisa/, /^Como funciona$/, /^O Cobrir e as missões do paciente$/, /Monte o próximo plano/].map(posicao)
+const titulos = () => screen.getAllByRole('heading').map((h) => h.textContent ?? '')
+const texto = () => document.body.textContent ?? ''
+
+describe('TelaInicio (spec site-publico-profissional)', () => {
+  it('CA-1000: topo, Como funciona, recursos, Quanto custa e a faixa final, nesta ordem', () => {
+    montar()
+    const ordem = [/^Faltou cálcio\?/, /^Como funciona$/, /^Do atendimento à folha do paciente$/, /^Quanto custa$/, /^Comece pelo Free$/].map((padrao) =>
+      titulos().findIndex((t) => padrao.test(t)),
+    )
     expect(ordem.every((p) => p >= 0)).toBe(true)
     expect([...ordem].sort((a, b) => a - b)).toEqual(ordem)
   })
 
+  it('CA-1000: saem a frase do ferro, os cartões de 57% e "g + colher", "O diferencial" e os números de passo', () => {
+    montar()
+    expect(texto()).not.toMatch(/Todo programa avisa|Nenhum diz|57%|g \+ colher|O diferencial|O Cobrir e as missões/)
+    for (const numero of ['01', '02', '03']) expect(screen.queryByText(numero)).not.toBeInTheDocument()
+  })
+
   it('CA-113: o título do topo é o combinado', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+    montar()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Faltou cálcio? O MetaNutri diz o que comer.')
   })
 
-  it('CA-114: só números verdadeiros, calculados do sistema e da base', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    const numeros = [String(MICRONUTRIENTES_ADEQUACAO.length), String(ALIMENTOS.length), String(coberturaDeCalcio().length), `${pctAlimentosSemVitaminaA()}%`]
-    // Prende o dado de hoje: se algum desses números mudar sem querer, o teste avisa.
-    expect(numeros).toEqual(['21', '597', '5', '57%'])
-    for (const numero of numeros) expect(screen.getByText(numero)).toBeInTheDocument()
+  it('CA-1001: uma frase embaixo do título diz para quem é e o que faz, e os botões vêm depois; nada acima do título', () => {
+    montar()
+    const titulo = screen.getByRole('heading', { level: 1 })
+    const frase = titulo.nextElementSibling
+    expect(frase?.tagName).toBe('P')
+    expect(frase).toHaveTextContent(
+      'Software de nutrição para nutricionistas: monte o plano, veja o que falta de 20 vitaminas e minerais e da fibra, e o botão Cobrir sugere o alimento e a porção que fecham cada falta.',
+    )
+    const botoes = frase?.nextElementSibling
+    expect(within(botoes as HTMLElement).getAllByRole('button').map((b) => b.textContent)).toEqual(['Começar grátis', 'Ver preços'])
+    expect(titulo.previousElementSibling).toBeNull()
   })
 
-  it('CA-115: o diferencial mostra telas reais do app, uma captura por tema, só a do tema visível', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+  it('CA-1003: Como funciona tem o Cobrir e o acompanhamento do paciente, com as telas reais', () => {
+    montar()
+    const secao = within(screen.getByRole('region', { name: 'Como funciona' }))
+    const cobrir = secao.getByRole('heading', { level: 3, name: 'Monte o plano e feche o que falta' }).parentElement
+    expect(cobrir).toHaveTextContent(`o botão Cobrir sugere até ${MAXIMO_SUGESTOES} alimentos de grupos diferentes, com a porção em gramas e em medida caseira e quanto da falta cada um cobre`)
+    const paciente = secao.getByRole('heading', { level: 3, name: 'Acompanhe o paciente entre as consultas' }).parentElement
+    expect(paciente).toHaveTextContent('sem baixar app nem criar conta')
+    expect(paciente).toHaveTextContent(`quem passa ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo da lista`)
+    expect(paciente).toHaveTextContent('WhatsApp, com o texto pronto')
+  })
+
+  it('CA-115: as telas reais, uma captura por tema, só a do tema visível', () => {
+    montar()
     for (const [alt, nome] of [
       [/botão Cobrir/, 'cobrir'],
       [/missões do paciente/, 'missoes'],
@@ -43,16 +72,66 @@ describe('TelaInicio', () => {
     }
   })
 
-  it('CA-113: o topo não tem mais o nome grande atrás dos pratos', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    expect(screen.queryByText('metanutri')).not.toBeInTheDocument()
-    expect(screen.getByAltText(/Três pratos/)).toBeInTheDocument()
+  it('CA-1004: seis recursos que existem no produto, sem cartão dentro de cartão', () => {
+    montar()
+    const secao = screen.getByRole('region', { name: 'Do atendimento à folha do paciente' })
+    expect(within(secao).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Anamnese e avaliação',
+      'Substitutos e trocas',
+      'Receitas com cálculo',
+      'Suplementos e exames',
+      'Folha do paciente',
+      'Na sua conta',
+    ])
+    expect(secao).toHaveTextContent('imprimir ou salvar em PDF, com nomes que o paciente entende, e documentos em Word')
+    expect(secao.querySelectorAll('.rounded-3xl')).toHaveLength(0)
   })
 
-  it('CA-117: Começar grátis e Ver preços chamam quem manda', async () => {
+  it('CA-1005: Quanto custa mostra Estudante, Solo e Pro com os valores e limites do domínio, e leva a Preços', async () => {
+    const aoVerPrecos = vi.fn()
+    montar({ aoVerPrecos })
+    const secao = within(screen.getByRole('region', { name: 'Quanto custa' }))
+    const solo = planoPorId('solo')
+    const pro = planoPorId('pro')
+    const estudante = planoPorId('estudante')
+    expect(secao.getByText('R$ 0')).toBeInTheDocument()
+    expect(secao.getByText('R$ 34,90')).toBeInTheDocument()
+    expect(secao.getByText('R$ 64,90')).toBeInTheDocument()
+    expect(secao.getByText(`Com o comprovante de matrícula. ${estudante?.limitePacientesAtivos ?? ''} pacientes ativos.`)).toBeInTheDocument()
+    expect(secao.getByText(`${solo?.resumo ?? ''} ${solo?.limitePacientesAtivos ?? ''} pacientes ativos.`)).toBeInTheDocument()
+    expect(secao.getByText(`${pro?.resumo ?? ''} Pacientes ilimitados.`)).toBeInTheDocument()
+    expect(secao.getByText(`A conta é por paciente ativo: quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`)).toBeInTheDocument()
+    await userEvent.setup().click(secao.getByRole('button', { name: 'Comparar os planos' }))
+    expect(aoVerPrecos).toHaveBeenCalledOnce()
+  })
+
+  it('CA-1006: só números verdadeiros, do domínio; o teste prende os de hoje', () => {
+    montar()
+    const numeros = [MICRONUTRIENTES_ADEQUACAO.length, MICRONUTRIENTES_ADEQUACAO.filter((c) => c !== 'fibra_g').length, ALIMENTOS.length]
+    expect(numeros).toEqual([21, 20, 597])
+    expect(screen.getByText('21')).toBeInTheDocument()
+    expect(screen.getByText('597')).toBeInTheDocument()
+    expect(screen.getByText('na adequação de cada plano')).toBeInTheDocument()
+    expect(texto()).not.toContain('conferidos')
+  })
+
+  it('CA-1007: o cartão dos 21 nutrientes rola até Como funciona; o dos 597 alimentos abre Fontes da base', async () => {
+    const aoVerFontes = vi.fn()
+    montar({ aoVerFontes })
+    const alvo = document.getElementById('como-funciona')
+    if (!alvo) throw new Error('sem a seção Como funciona')
+    alvo.scrollIntoView = vi.fn()
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: /^21/ }))
+    expect(alvo.scrollIntoView).toHaveBeenCalled()
+    await usuario.click(screen.getByRole('button', { name: /^597/ }))
+    expect(aoVerFontes).toHaveBeenCalledOnce()
+  })
+
+  it('CA-117: Começar grátis (do topo e da faixa final) e Ver preços chamam quem manda', async () => {
     const aoComecar = vi.fn()
     const aoVerPrecos = vi.fn()
-    render(<TelaInicio aoComecar={aoComecar} aoVerPrecos={aoVerPrecos} />)
+    montar({ aoComecar, aoVerPrecos })
     const usuario = userEvent.setup()
     for (const botao of screen.getAllByRole('button', { name: /Começar grátis/ })) await usuario.click(botao)
     expect(aoComecar).toHaveBeenCalledTimes(2)
@@ -60,35 +139,26 @@ describe('TelaInicio', () => {
     expect(aoVerPrecos).toHaveBeenCalledOnce()
   })
 
-  it('CA-119: a foto do topo tem o tamanho reservado', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+  it('CA-119 e CA-1020: a foto do topo tem o tamanho reservado e prioridade alta', () => {
+    montar()
     const foto = screen.getByAltText(/Três pratos/)
     expect(foto).toHaveAttribute('width', '1600')
     expect(foto).toHaveAttribute('height', '712')
+    expect(foto).toHaveAttribute('fetchpriority', 'high')
+    expect(foto).not.toHaveAttribute('loading', 'lazy')
   })
 
-  it('D-79: cada informação aparece uma vez, sem frase de efeito nem pergunta retórica fora do título', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    const texto = document.body.textContent ?? ''
-    const vezes = (trecho: string) => texto.split(trecho).length - 1
+  it('CA-1008: cada informação uma vez, uma pergunta só, sem frase de efeito, comparação ou promessa clínica', () => {
+    montar()
+    const vezes = (trecho: string) => texto().split(trecho).length - 1
     expect(vezes('em gramas e em medida caseira')).toBe(1)
-    expect(vezes('em minutos')).toBe(1)
     expect(vezes('?')).toBe(1)
-    expect(texto).not.toMatch(/de verdade|sem planilha|conta de cabeça|nunca vira zero/)
-    expect(texto).not.toContain('O MetaNutri mostra o que falta e já sugere o alimento')
+    expect(texto()).not.toMatch(/de verdade|nenhum programa|o único|para de abandonar|sem planilha|nunca vira zero/i)
   })
 
-  it('D-79: os textos da landing', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
-    expect(screen.getByText('Monte o plano e veja o que falta de vitaminas e minerais. O MetaNutri sugere alimentos do dia a dia para cobrir a diferença.')).toBeInTheDocument()
-    expect(screen.getByText('não têm vitamina A medida. O MetaNutri avisa quando o dado falta, em vez de contar zero.')).toBeInTheDocument()
-    expect(screen.getByText('No exemplo, faltou cálcio no plano e o Cobrir sugeriu rúcula e iogurte.')).toBeInTheDocument()
-  })
-
-  it('CA-321: a área pública fala em Base MetaNutri, não nas tabelas de origem', () => {
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
+  it('CA-321 e CA-1008: a área pública fala em Base MetaNutri, não nas tabelas de origem', () => {
+    montar()
     expect(screen.getByText('da Base MetaNutri')).toBeInTheDocument()
-    expect(screen.getByText('dos alimentos da base')).toBeInTheDocument()
-    expect(document.body.textContent).not.toMatch(/TACO|POF|IBGE/)
+    expect(texto()).not.toMatch(/TACO|POF|IBGE/)
   })
 })

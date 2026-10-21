@@ -209,7 +209,14 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
       <MolduraPublica atual="inicio" temSessao={sessao !== null} aoIrPara={irPara}>
         {/* Spec exclusao-de-conta, CA-808: a saída depois de excluir a conta chega aqui. */}
         <AvisoContaExcluida />
-        <TelaInicio aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))} aoVerPrecos={() => navegar({ tela: 'precos' })} />
+        <TelaInicio
+          aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))}
+          aoVerPrecos={() => navegar({ tela: 'precos' })}
+          aoVerFontes={() => {
+            navegar({ tela: 'fontes' })
+            globalThis.scrollTo?.({ top: 0 })
+          }}
+        />
       </MolduraPublica>
     )
   }

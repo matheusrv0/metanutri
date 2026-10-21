@@ -31,7 +31,7 @@ const contaComSessao = () => contaFalsa({ sessao: { id: 'u1', email: 'ana@exempl
 
 /** As telas que a spec cita, cada uma montada sozinha. */
 const TELAS: readonly (readonly [string, () => Promise<void> | void])[] = [
-  ['landing', () => void render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)],
+  ['landing', () => void render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} aoVerFontes={vi.fn()} />)],
   ['Preços', () => void render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)],
   [
     'checkout',

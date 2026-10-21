@@ -47,15 +47,9 @@ const LINK_RODAPE_44 =
 /** A partir de 640 px, os links de navegação do rodapé voltam à altura do texto. */
 const LINK_RODAPE = `${LINK_RODAPE_44} sm:min-h-0`
 
-const TITULO_COLUNA = 'mb-3.5 text-sm font-semibold text-heading'
-
-function ColunaRodape({ titulo, children }: { readonly titulo: string; readonly children: ReactNode }) {
-  return (
-    <div>
-      <h2 className={TITULO_COLUNA}>{titulo}</h2>
-      <ul className="grid gap-2.5 text-sm">{children}</ul>
-    </div>
-  )
+interface ColunaRodape {
+  readonly titulo: string
+  readonly links: readonly { readonly texto: string; readonly ir: () => void; readonly classe: string }[]
 }
 
 /**
@@ -73,6 +67,32 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarrega
   const itemMenu =
     'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9'
   const ano = new Date().getFullYear()
+  const colunas: readonly ColunaRodape[] = [
+    {
+      titulo: 'Produto',
+      links: [
+        ...LINKS.map((link) => ({ texto: link.texto, ir: () => irComAncora(aoIrPara, link.destino, link.ancora), classe: LINK_RODAPE })),
+        // M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque).
+        { texto: 'Fontes da base', ir: () => irComAncora(aoIrPara, 'fontes'), classe: LINK_RODAPE_44 },
+      ],
+    },
+    {
+      titulo: 'Conta',
+      links: temSessao
+        ? [{ texto: 'Ir para o painel', ir: () => aoIrPara('painel'), classe: LINK_RODAPE }]
+        : [
+            { texto: 'Começar grátis', ir: () => aoIrPara('criar-conta'), classe: LINK_RODAPE },
+            { texto: 'Entrar', ir: () => aoIrPara('entrar'), classe: LINK_RODAPE },
+          ],
+    },
+    {
+      titulo: 'Legal',
+      links: [
+        { texto: 'Termos de uso', ir: () => irComAncora(aoIrPara, 'termos'), classe: LINK_RODAPE },
+        { texto: 'Política de privacidade', ir: () => irComAncora(aoIrPara, 'privacidade'), classe: LINK_RODAPE },
+      ],
+    },
+  ]
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -132,47 +152,20 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarrega
           <div className="sm:col-span-3 md:col-span-1">
             <Logo tamanho={28} />
           </div>
-          <ColunaRodape titulo="Produto">
-            {LINKS.map((link) => (
-              <li key={link.texto}>
-                <button type="button" onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)} className={LINK_RODAPE}>
-                  {link.texto}
-                </button>
-              </li>
-            ))}
-            <li>
-              {/* M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque). */}
-              <button type="button" onClick={() => irComAncora(aoIrPara, 'fontes')} className={LINK_RODAPE_44}>
-                Fontes da base
-              </button>
-            </li>
-          </ColunaRodape>
-          <ColunaRodape titulo="Conta">
-            <li>
-              <button type="button" onClick={() => aoIrPara(temSessao ? 'painel' : 'criar-conta')} className={LINK_RODAPE}>
-                {temSessao ? 'Ir para o painel' : 'Começar grátis'}
-              </button>
-            </li>
-            {temSessao ? null : (
-              <li>
-                <button type="button" onClick={() => aoIrPara('entrar')} className={LINK_RODAPE}>
-                  Entrar
-                </button>
-              </li>
-            )}
-          </ColunaRodape>
-          <ColunaRodape titulo="Legal">
-            <li>
-              <button type="button" onClick={() => irComAncora(aoIrPara, 'termos')} className={LINK_RODAPE}>
-                Termos de uso
-              </button>
-            </li>
-            <li>
-              <button type="button" onClick={() => irComAncora(aoIrPara, 'privacidade')} className={LINK_RODAPE}>
-                Política de privacidade
-              </button>
-            </li>
-          </ColunaRodape>
+          {colunas.map((coluna) => (
+            <div key={coluna.titulo}>
+              <h2 className="mb-3.5 text-sm font-semibold text-heading">{coluna.titulo}</h2>
+              <ul className="grid gap-2.5 text-sm">
+                {coluna.links.map((link) => (
+                  <li key={link.texto}>
+                    <button type="button" onClick={link.ir} className={link.classe}>
+                      {link.texto}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <div className="mx-auto mt-10 flex max-w-[1216px] flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-border pt-6 text-sm text-muted-foreground">
