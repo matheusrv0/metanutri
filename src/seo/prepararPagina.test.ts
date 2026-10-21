@@ -8,19 +8,20 @@ const SCRIPT = readFileSync(join(process.cwd(), 'public', 'preparar-pagina.js'),
 
 interface Cenario {
   readonly hash?: string
+  readonly busca?: string
   readonly rotaDaPagina?: string
   readonly tema?: string
   readonly sistemaEscuro?: boolean
   readonly sessao?: boolean
 }
 
-function rodar({ hash = '', rotaDaPagina, tema, sistemaEscuro = false, sessao = false }: Cenario): DOMTokenList {
+function rodar({ hash = '', busca = '', rotaDaPagina, tema, sistemaEscuro = false, sessao = false }: Cenario): DOMTokenList {
   const raiz = document.documentElement
   raiz.className = ''
   raiz.removeAttribute('style')
   if (rotaDaPagina) raiz.setAttribute('data-rota', rotaDaPagina)
   else raiz.removeAttribute('data-rota')
-  globalThis.history.replaceState(null, '', `/${hash}`)
+  globalThis.history.replaceState(null, '', `/${busca}${hash}`)
   localStorage.clear()
   if (tema) localStorage.setItem(CHAVE_TEMA, tema)
   if (sessao) localStorage.setItem('sb-abcdefgh-auth-token', '{}')
@@ -64,6 +65,12 @@ describe('preparar-pagina.js', () => {
     expect(rodar({ hash: '#/precos' }).contains('sem-vitrine')).toBe(true)
     expect(rodar({ hash: '#access_token=x&type=signup' }).contains('sem-vitrine')).toBe(true)
     expect(rodar({ hash: '#/entrar', rotaDaPagina: 'precos' }).contains('sem-vitrine')).toBe(true)
+  })
+
+  it('CA-1024: a volta do e-mail (?volta=…) esconde a vitrine desde o primeiro quadro', () => {
+    expect(rodar({ busca: '?volta=confirmacao&code=abc' }).contains('sem-vitrine')).toBe(true)
+    expect(rodar({ busca: '?volta=recuperacao&code=abc' }).contains('sem-vitrine')).toBe(true)
+    expect(rodar({ busca: '?origem=busca' }).contains('sem-vitrine')).toBe(false)
   })
 
   it('CA-1016: com sessão aberta, a raiz vai para o painel e a vitrine não aparece; a página própria aparece', () => {

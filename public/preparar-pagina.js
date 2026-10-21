@@ -3,7 +3,7 @@
 // 1. aplica o tema guardado pelo app (a chave é a CHAVE_TEMA de src/ui/tema/contextoTema.ts), ou o do sistema, para
 //    a página não pintar clara antes de o app montar (CA-1017);
 // 2. esconde o conteúdo pré-desenhado quando o endereço pede outra tela (link do paciente, área de trabalho, volta do
-//    e-mail) ou quando há sessão aberta e o endereço é a raiz, que leva ao painel (CA-1016).
+//    e-mail, com ?volta=) ou quando há sessão aberta e o endereço é a raiz, que leva ao painel (CA-1016, CA-1024).
 ;(function () {
   var raiz = document.documentElement
   var escolha = null
@@ -25,5 +25,7 @@
   var pagina = raiz.getAttribute('data-rota') || 'inicio'
   var pedida = location.hash.replace(/^#\/?/, '').split('/')[0]
   var outraTela = pedida !== '' ? pedida !== pagina : pagina === 'inicio' && temSessao
+  // A volta do e-mail (CA-1024): /?volta=confirmacao&code=… ou /?volta=recuperacao&code=…, que o app troca pela tela certa.
+  if (/[?&]volta=/.test(location.search)) outraTela = true
   if (outraTela) raiz.classList.add('sem-vitrine')
 })()
