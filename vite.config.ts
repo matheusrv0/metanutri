@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { pluginPoliticaDeConteudo } from './src/seguranca/pluginCsp.ts'
+import { pluginSeo } from './src/seo/pluginSeo.ts'
 
 // O manifest do PWA é JSON puro: não lê var(). Estes dois espelham
 // --mesa e --ink-800 de design-system/tokens/tokens.css — mudou lá, muda aqui.
@@ -44,6 +45,9 @@ export default defineConfig({
     }),
     // D-135: a regra de conteúdo (CSP) numa <meta> do index.html, só no build. A regra vive em src/seguranca/csp.ts.
     pluginPoliticaDeConteudo(),
+    // D-331 (spec site-publico-profissional): a landing e as páginas de Preços, Termos, Privacidade e Fontes saem
+    // pré-desenhadas, antes de o PWA montar o service worker.
+    pluginSeo(),
   ],
   build: {
     // DP-CSP-4: fonte pequena virava `data:` dentro do CSS; como arquivo, a CSP aceita fonte só do próprio site.

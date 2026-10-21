@@ -16,8 +16,15 @@ import { tirarDestino } from './ui/fluxoConta.ts'
 import { escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
+import { enderecoDoApp } from './seo/rotaDaPagina.ts'
+
+// D-331 (spec site-publico-profissional): aberta pela página própria (/precos/, /termos/…), o app passa ao endereço da
+// raiz com a rota da página, sem recarregar. Antes de tudo: o resto do app lê o endereço.
+const enderecoDaPagina = enderecoDoApp(document.documentElement.dataset['rota'], globalThis.location.hash, globalThis.location.search, document.baseURI)
+if (enderecoDaPagina) globalThis.history.replaceState(null, '', enderecoDaPagina)
 
 // D-172: o service worker do aplicativo; a versão nova avisa na área de trabalho em vez de recarregar sozinha.
+// D-320 (spec site-publico-profissional): na vitrine, a moldura pública recarrega a página.
 registrarAplicativo(avisarVersaoNova)
 
 const raiz = document.getElementById('root')

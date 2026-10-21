@@ -6,8 +6,7 @@ import { PLANOS } from '@/domain/conta.ts'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { ENDERECO_DO_SITE, enderecoDaPagina, paginaDaRota, type PaginaIndexavel } from './paginas.ts'
 
-export const MARCA_INICIO = '<!-- seo:inicio -->'
-export const MARCA_FIM = '<!-- seo:fim -->'
+export { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
 
 /** A imagem das prévias de link: 1200 × 630, feita da marca por scripts/imagem-de-compartilhar.mjs. */
 export const IMAGEM_DE_COMPARTILHAR = `${ENDERECO_DO_SITE}imagem-compartilhar.png`

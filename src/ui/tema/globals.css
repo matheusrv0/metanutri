@@ -493,3 +493,10 @@
     touch-action: manipulation;
   }
 }
+
+/* ---------- Página pré-desenhada (spec site-publico-profissional, D-332) ---------- */
+/* O build escreve a vitrine dentro do #root; quando o endereço pede outra tela (o link do paciente, a área de
+   trabalho), o script do <head> marca o <html> e ela não aparece em nenhum quadro. O app, ao montar, troca tudo. */
+.sem-vitrine [data-vitrine] {
+  display: none;
+}
