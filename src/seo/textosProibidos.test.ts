@@ -20,6 +20,8 @@ const ALVOS = [
   ...arquivos(join(RAIZ, 'src', 'ui', 'publico'), ehCodigo),
   ...arquivos(join(RAIZ, 'src', 'seo'), ehCodigo),
   join(RAIZ, 'index.html'),
+  // CA-1029: a frase dos cálculos também saiu da Ajuda da área de trabalho; o dono não a quer em lugar nenhum.
+  join(RAIZ, 'src', 'ui', 'ajuda', 'TelaAjuda.tsx'),
   ...arquivos(join(RAIZ, 'public'), (nome) => /\.(txt|xml|webmanifest)$/.test(nome)),
 ]
 
@@ -49,6 +51,7 @@ describe('CA-990: textos proibidos no site público', () => {
     expect(lidos).toContain('src/ui/publico/TelaInicio.tsx')
     expect(lidos).toContain('src/ui/publico/TelaTermos.tsx')
     expect(lidos).toContain('index.html')
+    expect(lidos).toContain('src/ui/ajuda/TelaAjuda.tsx')
     expect(lidos.some((nome) => nome.includes('.test.'))).toBe(false)
   })
 

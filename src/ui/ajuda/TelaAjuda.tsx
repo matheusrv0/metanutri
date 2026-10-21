@@ -108,7 +108,6 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
             preparações brasileiras. Quando falta, a linha da adequação leva †.
           </li>
           <li>Açúcares e gordura saturada só existem em produto que você cadastra pelo rótulo.</li>
-          <li>Os números de energia, dobras e ganho de peso ainda não foram conferidos por nutricionista.</li>
           <li>A prescrição de dieta é privativa de nutricionista com registro no CRN, pela Lei 8.234/1991.</li>
           <li>
             {nuvem === null
