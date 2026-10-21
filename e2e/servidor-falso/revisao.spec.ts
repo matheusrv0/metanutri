@@ -92,7 +92,7 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
       await page.goto('/#/inicio')
-      expect((await caixa(page.getByRole('contentinfo').getByRole('button', { name: 'Fontes da base' }))).height).toBeGreaterThanOrEqual(44)
+      expect((await caixa(page.getByRole('contentinfo').getByRole('link', { name: 'Fontes da base' }))).height).toBeGreaterThanOrEqual(44)
     })
   }
 
@@ -101,9 +101,10 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
     await ligarServidorFalso(page)
     await page.goto('/#/inicio')
     expect((await caixa(page.getByRole('banner').getByRole('button', { name: 'MetaNutri, início' }))).height).toBeGreaterThanOrEqual(44)
-    const links = page.getByRole('contentinfo').getByRole('button')
-    expect(await links.count()).toBe(8)
-    for (const link of [...(await links.all()), page.getByRole('contentinfo').getByRole('link')]) {
+    // CA-1028: os itens do rodapé são links (8 e o do e-mail).
+    const links = page.getByRole('contentinfo').getByRole('link')
+    expect(await links.count()).toBe(9)
+    for (const link of await links.all()) {
       expect((await caixa(link)).height, await link.innerText()).toBeGreaterThanOrEqual(44)
       expect(await link.evaluate((el) => getComputedStyle(el).textAlign)).toBe('left')
     }

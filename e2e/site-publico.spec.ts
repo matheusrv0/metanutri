@@ -25,10 +25,10 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Faltou cálcio\?/)
         await semRolagemLateral(page)
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
-        for (const item of await page.getByRole('navigation', { name: 'Seções' }).getByRole('button').all()) {
+        for (const item of await page.getByRole('navigation', { name: 'Seções' }).getByRole('link').all()) {
           expect(await item.evaluate((el) => getComputedStyle(el).textTransform)).toBe('none')
         }
-        await expect(page.getByRole('navigation', { name: 'Seções' }).getByRole('button')).toHaveText(['Como funciona', 'Recursos', 'Preços'])
+        await expect(page.getByRole('navigation', { name: 'Seções' }).getByRole('link')).toHaveText(['Como funciona', 'Recursos', 'Preços'])
         const rodape = page.getByRole('contentinfo')
         await rodape.scrollIntoViewIfNeeded()
         await expect(rodape.getByRole('heading')).toHaveText(['Produto', 'Conta', 'Legal'])
@@ -168,6 +168,26 @@ test('CA-1025: com o service worker ativo, os arquivos de texto abrem como arqui
   await page.goto('/precos')
   await expect(page).toHaveURL(/\/#\/precos$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+})
+
+test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique troca de tela sem recarregar', async ({ page, request }) => {
+  const html = await (await request.get('/')).text()
+  for (const destino of ['precos/', 'termos/', 'privacidade/', 'fontes/']) expect(html).toContain(`href="${destino}"`)
+
+  await page.goto('/#/inicio')
+  await expect(page.locator('[data-vitrine]')).toHaveCount(0)
+  await page.evaluate(() => {
+    ;(window as unknown as { mesmaPagina: boolean }).mesmaPagina = true
+  })
+  const precos = page.getByRole('navigation', { name: 'Seções' }).getByRole('link', { name: 'Preços' })
+  await expect(precos).toHaveAttribute('href', 'precos/')
+  await precos.click()
+  await expect(page).toHaveURL(/\/#\/precos$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+  expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Termos de uso' }).click()
+  await expect(page).toHaveURL(/\/#\/termos$/)
+  expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
 })
 
 test('CA-1027: a foto do topo só é pedida com a landing à vista, e o <head> a pede com o mesmo srcset da tela', async ({ page }) => {

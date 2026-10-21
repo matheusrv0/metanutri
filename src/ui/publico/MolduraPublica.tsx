@@ -1,6 +1,6 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type MouseEvent, type ReactNode } from 'react'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cn } from '@/lib/utils'
 import { paginaAbriuNaVitrine } from '../aplicativo/aberturaDaPagina.ts'
@@ -25,14 +25,26 @@ interface LinkPublico {
   readonly texto: string
   readonly destino: DestinoPublico
   readonly ancora?: string
+  /** D-339: o endereço que a aba nova e os robôs seguem. As páginas próprias são relativas à raiz do site. */
+  readonly href: string
 }
 
 /** D-321 (spec site-publico-profissional): as seções da landing e Preços, em caixa normal. */
 const LINKS: readonly LinkPublico[] = [
-  { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona' },
-  { texto: 'Recursos', destino: 'inicio', ancora: 'recursos' },
-  { texto: 'Preços', destino: 'precos' },
+  { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona', href: '#/inicio' },
+  { texto: 'Recursos', destino: 'inicio', ancora: 'recursos', href: '#/inicio' },
+  { texto: 'Preços', destino: 'precos', href: 'precos/' },
 ]
+
+/**
+ * D-339 (CA-1028): o clique comum troca de tela pelo app, sem recarregar; com Ctrl, Cmd, Shift, Alt ou o botão do meio
+ * (aba nova), o navegador segue o endereço do link.
+ */
+function navegarPeloApp(evento: MouseEvent<HTMLAnchorElement>, ir: () => void) {
+  if (evento.defaultPrevented || evento.button !== 0 || evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.altKey) return
+  evento.preventDefault()
+  ir()
+}
 
 /** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */
 export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
@@ -51,7 +63,7 @@ const LINK_RODAPE =
 
 interface ColunaRodape {
   readonly titulo: string
-  readonly links: readonly { readonly texto: string; readonly ir: () => void }[]
+  readonly links: readonly { readonly texto: string; readonly href: string; readonly ir: () => void }[]
 }
 
 /**
@@ -81,24 +93,24 @@ export function MolduraPublica({
     {
       titulo: 'Produto',
       links: [
-        ...LINKS.map((link) => ({ texto: link.texto, ir: () => irComAncora(aoIrPara, link.destino, link.ancora) })),
-        { texto: 'Fontes da base', ir: () => irComAncora(aoIrPara, 'fontes') },
+        ...LINKS.map((link) => ({ texto: link.texto, href: link.href, ir: () => irComAncora(aoIrPara, link.destino, link.ancora) })),
+        { texto: 'Fontes da base', href: 'fontes/', ir: () => irComAncora(aoIrPara, 'fontes') },
       ],
     },
     {
       titulo: 'Conta',
       links: temSessao
-        ? [{ texto: 'Ir para o painel', ir: () => aoIrPara('painel') }]
+        ? [{ texto: 'Ir para o painel', href: '#/painel', ir: () => aoIrPara('painel') }]
         : [
-            { texto: 'Começar grátis', ir: () => aoIrPara('criar-conta') },
-            { texto: 'Entrar', ir: () => aoIrPara('entrar') },
+            { texto: 'Começar grátis', href: '#/criar-conta', ir: () => aoIrPara('criar-conta') },
+            { texto: 'Entrar', href: '#/entrar', ir: () => aoIrPara('entrar') },
           ],
     },
     {
       titulo: 'Legal',
       links: [
-        { texto: 'Termos de uso', ir: () => irComAncora(aoIrPara, 'termos') },
-        { texto: 'Política de privacidade', ir: () => irComAncora(aoIrPara, 'privacidade') },
+        { texto: 'Termos de uso', href: 'termos/', ir: () => irComAncora(aoIrPara, 'termos') },
+        { texto: 'Política de privacidade', href: 'privacidade/', ir: () => irComAncora(aoIrPara, 'privacidade') },
       ],
     },
   ]
@@ -122,15 +134,15 @@ export function MolduraPublica({
             {LINKS.map((link) => {
               const aqui = atual === link.destino && !link.ancora
               return (
-                <button
+                <a
                   key={link.texto}
-                  type="button"
-                  onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)}
+                  href={link.href}
+                  onClick={(evento) => navegarPeloApp(evento, () => irComAncora(aoIrPara, link.destino, link.ancora))}
                   aria-current={aqui ? 'page' : undefined}
                   className={cn(itemMenu, aqui ? 'text-heading underline underline-offset-8' : 'text-foreground hover:bg-card')}
                 >
                   {link.texto}
-                </button>
+                </a>
               )
             })}
           </nav>
@@ -167,9 +179,9 @@ export function MolduraPublica({
               <ul className="grid text-sm">
                 {coluna.links.map((link) => (
                   <li key={link.texto}>
-                    <button type="button" onClick={link.ir} className={LINK_RODAPE}>
+                    <a href={link.href} onClick={(evento) => navegarPeloApp(evento, link.ir)} className={LINK_RODAPE}>
                       {link.texto}
-                    </button>
+                    </a>
                   </li>
                 ))}
               </ul>

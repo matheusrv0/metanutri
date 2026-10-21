@@ -32,6 +32,12 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
     expect(corpo('fontes')).toMatch(/<h1[^>]*>Fontes da base<\/h1>/)
   })
 
+  it('CA-1028: o HTML pré-desenhado liga as páginas entre si por links que os robôs seguem', () => {
+    for (const pagina of paginas) {
+      for (const destino of ['precos/', 'termos/', 'privacidade/', 'fontes/']) expect(pagina.corpo, pagina.rota).toContain(`href="${destino}"`)
+    }
+  })
+
   it('CA-998: nada sai invisível esperando animação', () => {
     for (const pagina of paginas) expect(pagina.corpo).not.toMatch(/opacity:\s*0|blur\(/)
   })
