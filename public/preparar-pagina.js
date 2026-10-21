@@ -27,5 +27,8 @@
   var outraTela = pedida !== '' ? pedida !== pagina : pagina === 'inicio' && temSessao
   // A volta do e-mail (CA-1024): /?volta=confirmacao&code=… ou /?volta=recuperacao&code=…, que o app troca pela tela certa.
   if (/[?&]volta=/.test(location.search)) outraTela = true
+  // A página inicial entregue pelo service worker em /precos, sem a barra (CA-1025): o app abre Preços, não a landing.
+  var noCaminho = location.pathname.match(/\/(precos|termos|privacidade|fontes)\/?$/)
+  if (noCaminho && noCaminho[1] !== pagina) outraTela = true
   if (outraTela) raiz.classList.add('sem-vitrine')
 })()

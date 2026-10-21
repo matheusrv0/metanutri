@@ -29,8 +29,15 @@ export function enderecoDaVitrine({ hash, busca, caminho, comServidor, vitrineEs
   return `${caminho}${busca}#/inicio`
 }
 
-export function enderecoDoApp(rotaDaPagina: string | undefined, hash: string, busca: string, base: string): string | null {
-  if (!rotaDaPagina || !PAGINAS_PROPRIAS.includes(rotaDaPagina)) return null
+/**
+ * D-338 (CA-1025): `/precos` sem a barra do fim. Com o service worker, a navegação recebe a página inicial nesse
+ * endereço (o precache só conhece `/precos/`); a rota sai do caminho.
+ */
+const PAGINA_NO_CAMINHO = /\/(precos|termos|privacidade|fontes)\/?$/
+
+export function enderecoDoApp(rotaDaPagina: string | undefined, hash: string, busca: string, base: string, caminho = ''): string | null {
+  const rota = rotaDaPagina ?? PAGINA_NO_CAMINHO.exec(caminho)?.[1]
+  if (!rota || !PAGINAS_PROPRIAS.includes(rota)) return null
   if (hash.replace(/^#\/?/, '') !== '') return null
-  return `${base}${busca}#/${rotaDaPagina}`
+  return `${new URL('./', base).href}${busca}#/${rota}`
 }

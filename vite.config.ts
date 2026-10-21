@@ -26,6 +26,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         // A base de alimentos e as tabelas entram no pacote JavaScript: precisa caber no cache.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        // D-338 (spec site-publico-profissional): sitemap.xml, robots.txt, llms.txt e as imagens abertas no navegador são
+        // o arquivo, não a página do app.
+        navigateFallbackDenylist: [/\.(?:txt|xml|png)$/],
       },
       manifest: {
         name: 'MetaNutri — nutrição que diz o que comer',

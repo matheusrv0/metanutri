@@ -153,6 +153,23 @@ test('CA-1016 e CA-1017: sem o app, o link do paciente não mostra a vitrine e o
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe('rgb(241, 240, 240)')
 })
 
+test('CA-1025: com o service worker ativo, os arquivos de texto abrem como arquivo e /precos sem barra abre Preços', async ({ page }) => {
+  await page.goto('/#/inicio')
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
+  await page.reload()
+  await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true)
+  for (const arquivo of ['sitemap.xml', 'robots.txt', 'llms.txt']) {
+    await page.goto(`/${arquivo}`)
+    // Sem a lista de exclusão, o service worker entregava o index.html (a página do app) nesse endereço.
+    expect(await page.evaluate(() => document.contentType), arquivo).not.toBe('text/html')
+  }
+  await page.goto('/precos')
+  await expect(page).toHaveURL(/\/#\/precos$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+})
+
 test('CA-1018 e CA-1021: robots, sitemap e llms na raiz; o service worker guarda as páginas próprias', async ({ request }) => {
   expect(await (await request.get('/robots.txt')).text()).toContain('Sitemap: https://metanutri.com.br/sitemap.xml')
   expect(await (await request.get('/sitemap.xml')).text()).toContain('<loc>https://metanutri.com.br/precos/</loc>')

@@ -23,6 +23,13 @@ describe('enderecoDoApp (spec site-publico-profissional, D-331, CA-1015)', () =>
     expect(enderecoDoApp('fontes', '', '?origem=busca', 'https://metanutri.com.br/')).toBe('https://metanutri.com.br/?origem=busca#/fontes')
   })
 
+  it('CA-1025: o endereço de página própria sem a barra do fim (o service worker entrega a inicial) também abre a tela dela', () => {
+    expect(enderecoDoApp(undefined, '', '', 'https://metanutri.com.br/precos', '/precos')).toBe('https://metanutri.com.br/#/precos')
+    expect(enderecoDoApp(undefined, '', '?x=1', 'https://metanutri.com.br/termos', '/termos')).toBe('https://metanutri.com.br/?x=1#/termos')
+    expect(enderecoDoApp(undefined, '', '', 'https://metanutri.com.br/', '/')).toBeNull()
+    expect(enderecoDoApp(undefined, '', '', 'https://metanutri.com.br/painel', '/painel')).toBeNull()
+  })
+
   it('não mexe na página inicial, numa rota que já está no endereço nem em página desconhecida', () => {
     expect(enderecoDoApp(undefined, '', '', 'https://metanutri.com.br/')).toBeNull()
     expect(enderecoDoApp('inicio', '', '', 'https://metanutri.com.br/')).toBeNull()

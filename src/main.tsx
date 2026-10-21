@@ -20,7 +20,14 @@ import { enderecoDaVitrine, enderecoDoApp } from './seo/rotaDaPagina.ts'
 
 // D-331 (spec site-publico-profissional): aberta pela página própria (/precos/, /termos/…), o app passa ao endereço da
 // raiz com a rota da página, sem recarregar. Antes de tudo: o resto do app lê o endereço.
-const enderecoDaPagina = enderecoDoApp(document.documentElement.dataset['rota'], globalThis.location.hash, globalThis.location.search, document.baseURI)
+// D-338: também `/precos` sem a barra, quando o service worker entrega a página inicial nesse endereço.
+const enderecoDaPagina = enderecoDoApp(
+  document.documentElement.dataset['rota'],
+  globalThis.location.hash,
+  globalThis.location.search,
+  document.baseURI,
+  globalThis.location.pathname,
+)
 if (enderecoDaPagina) globalThis.history.replaceState(null, '', enderecoDaPagina)
 // D-337: a raiz sem sessão vai para a landing já no endereço dela, sem passar pelo "Carregando…" do portão da conta.
 const enderecoDaLanding = enderecoDaVitrine({
