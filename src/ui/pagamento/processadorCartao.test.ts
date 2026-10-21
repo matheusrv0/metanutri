@@ -38,4 +38,12 @@ describe('CA-404: Manrope primeiro e a fonte do sistema como reserva, nunca a se
     expect(FONTE_DOS_CAMPOS).toContain('system-ui')
     expect(FONTE_DOS_CAMPOS.trim().endsWith('sans-serif')).toBe(true)
   })
+
+  it('CB-313: a letra é de 16 px abaixo de 640 px, para o iPhone não aproximar a tela, e a do tema a partir de 640 px', () => {
+    const ler = (token: string) => CLARO[token] ?? ''
+    expect(estiloDosCampos(ler, 390).fontSize).toBe('16px')
+    expect(estiloDosCampos(ler, 639).fontSize).toBe('16px')
+    expect(estiloDosCampos(ler, 640).fontSize).toBe('14px')
+    expect(estiloDosCampos(ler, 1280).fontSize).toBe('14px')
+  })
 })

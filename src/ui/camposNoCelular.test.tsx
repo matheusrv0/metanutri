@@ -69,7 +69,9 @@ describe('campos de texto no celular (spec integracao-rodada-1910)', () => {
     expect(classes(busca)).toEqual(expect.arrayContaining(['h-11', 'sm:h-11']))
   })
 
-  it('CA-978 e D-313: a caixa do formulário do cartão fica com 48 px em toda largura e letra de 14 px', () => {
-    expect(CAIXA.split(/\s+/)).toEqual(expect.arrayContaining(['h-12', 'sm:h-12', 'text-sm']))
+  it('CA-978 e CB-313: a caixa do formulário do cartão fica com 48 px em toda largura e letra de 16 px no celular, 14 px a partir de 640 px', () => {
+    const classesDaCaixa = CAIXA.split(/\s+/)
+    expect(classesDaCaixa).toEqual(expect.arrayContaining(['h-12', 'sm:h-12', 'text-base', 'sm:text-sm']))
+    expect(classesDaCaixa).not.toContain('text-sm')
   })
 })

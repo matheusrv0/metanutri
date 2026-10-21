@@ -82,11 +82,19 @@ export const URL_DA_FONTE = 'https://fonts.googleapis.com/css2?family=Manrope:wg
  * dos tokens do tema aplicado. A caixa em volta (altura, canto, fundo, foco) é nossa.
  * Token que não resolveu fica de fora, em vez de ir vazio para o iframe.
  */
-export function estiloDosCampos(ler: (token: string) => string): EstiloDosCampos {
+export const LARGURA_DO_COMPUTADOR = 640
+/** CB-313: o iPhone aproxima a tela ao focar campo com letra menor que 16 px. */
+export const LETRA_DO_CELULAR = '16px'
+
+/**
+ * A letra vale pela largura da tela na hora em que o formulário abre: o estilo vai ao SDK só na criação dos campos
+ * seguros (sem `update`), então girar o aparelho com o formulário aberto só vale na próxima abertura.
+ */
+export function estiloDosCampos(ler: (token: string) => string, larguraDaTela: number = window.innerWidth): EstiloDosCampos {
   const valores: Record<string, string> = {
     color: ler('--text-strong'),
     placeholderColor: ler('--text-subtle'),
-    fontSize: ler('--fonte-md'),
+    fontSize: larguraDaTela < LARGURA_DO_COMPUTADOR ? LETRA_DO_CELULAR : ler('--fonte-md'),
     fontFamily: FONTE_DOS_CAMPOS,
     height: '100%',
     padding: '0',

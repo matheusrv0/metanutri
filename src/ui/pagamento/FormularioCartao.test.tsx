@@ -61,6 +61,20 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     for (const classe of ['h-12', 'rounded-md', 'bg-surfacesunken', 'focus-visible:ring-primary']) expect(nome()).toHaveClass(classe)
   })
 
+  it('CB-313: o estilo dos campos seguros leva a letra de 16 px em 390 px de largura e a de 14 px em 1280 px', async () => {
+    const larguraOriginal = window.innerWidth
+    document.documentElement.style.setProperty('--fonte-md', '14px')
+    try {
+      window.innerWidth = 390
+      expect((await montar()).falso.montagem?.estilo.fontSize).toBe('16px')
+      window.innerWidth = 1280
+      expect((await montar()).falso.montagem?.estilo.fontSize).toBe('14px')
+    } finally {
+      window.innerWidth = larguraOriginal
+      document.documentElement.style.removeProperty('--fonte-md')
+    }
+  })
+
   it('CB-88: campos que não abrem mostram o aviso e o envio fica parado', async () => {
     const falso = processadorFalso()
     falso.falharAoMontar = true
