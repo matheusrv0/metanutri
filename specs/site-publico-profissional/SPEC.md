@@ -115,7 +115,7 @@ diz para quem é o MetaNutri, quanto custa nem o que mais ele faz.
 
 ## 4. Fora de escopo
 
-- As telas da área de trabalho e a ajuda (`TelaAjuda` ainda diz que energia, dobras e ganho de peso não foram conferidos; é de outra frente).
+- As telas da área de trabalho e a ajuda (`TelaAjuda` ainda diz que energia, dobras e ganho de peso não foram conferidos; é de outra frente). *Revisão de 21/10/2026: a frase da Ajuda saiu (CA-1029); o resto da área de trabalho continua fora.*
 - Dividir o pacote de JavaScript (D-335), o título da aba por tela no app e a hidratação do React.
 - Blog, páginas por palavra-chave, perfil no Google, diretórios e anúncios: posicionamento fora do site, para depois.
 - Verificar o domínio no Google Search Console e enviar o sitemap (D-336, passos do dono).
@@ -127,7 +127,37 @@ diz para quem é o MetaNutri, quanto custa nem o que mais ele faz.
 - **R-321** · O pacote de JavaScript tem 2,3 MB: a pré-renderização mostra o texto antes, mas os botões só respondem depois que ele carrega (em 4G, 1 a 3 s). Dividir o pacote é a próxima melhoria de velocidade.
 - **R-322** · Os robôs de IA ficam liberados (D-333). Para bloquear, uma linha no `robots.txt`.
 - **R-323** · `/precos/` vira `/#/precos` na barra de endereço depois que o app abre. Quem copiar o endereço copia o com `#`, que também abre Preços.
-- **R-324** · CB-324: depois de publicar, quem já tinha o site guardado (o iPhone do dono, por exemplo) e abrir direto `metanutri.com.br/precos/` vê uma página em branco uma vez; recarregar resolve. Abrir primeiro `metanutri.com.br` evita.
+- **R-324** · CB-324: depois de publicar, quem já tinha o site guardado (o iPhone do dono, por exemplo) e abrir direto `metanutri.com.br/precos/` vê uma página em branco uma vez; recarregar resolve. Abrir primeiro `metanutri.com.br` evita. *Revisão de 21/10/2026 (M-7): "uma vez" vale depois que o service worker novo terminou de instalar (alguns segundos); recarregar antes disso dá branco de novo. Esperar alguns dias antes de pedir a indexação de `/precos/` e de mandar links para ele.*
+
+## 6. Rodada da revisão (21/10/2026)
+
+Revisão do coordenador (`rodada-1910/revisao-site-publico.md`): nada crítico, dois pontos importantes (I-1 e I-2) e
+oito menores. Entram nesta rodada o I-1, o M-1, o M-2, o M-3, o M-4, o M-5, o M-8 e a frase da Ajuda; o I-2 é texto do
+relatório ao dono; M-6 e M-7 ficam como estão (M-7 virou nota no R-324).
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-337 | **A raiz sem sessão vai para `#/inicio` antes de o app montar** (com o servidor de conta; sem ele, a raiz continua indo para a área de trabalho, CA-150). Regra igual à do script do `<head>`: só quando a vitrine está à vista (sem sessão guardada, sem `?volta=`, sem rota no endereço). O estado final é o mesmo do CA-730; `inicio` é rota livre, então o "Carregando…" do portão da conta não aparece | I-1: medido no build com servidor, a raiz piscava landing → "Carregando…" → landing, e quem tinha rolado a landing voltava ao topo |
+| D-338 | **O service worker não entrega a página inicial para arquivo de texto, XML ou imagem** (`navigateFallbackDenylist`), e o endereço de página própria sem a barra do fim (`/precos`, `/termos`, `/privacidade`, `/fontes`) abre o app na tela dela, como com a barra | M-2: com o service worker novo, `/precos` (sem barra), `/sitemap.xml`, `/robots.txt` e `/llms.txt` abertos no navegador mostravam a landing |
+| D-339 | **Menu e rodapé da moldura pública são links de verdade** (`<a href>`): Preços → `precos/`, Termos → `termos/`, Privacidade → `privacidade/`, Fontes → `fontes/`, Como funciona e Recursos → `#/inicio`, Começar grátis → `#/criar-conta`, Entrar → `#/entrar`, Ir para o painel → `#/painel`. O clique comum continua sendo navegação do app (o link não recarrega a página); abrir em aba nova e os robôs seguem o endereço. A logo e os botões "Entrar" e "Começar grátis" do topo continuam botões | M-5: sem link, os robôs só achavam as páginas pelo sitemap |
+
+**Mudam nesta rodada:**
+- **D-320** (M-3): a recarga automática só vale quando a página **abriu** numa tela de vitrine (início, Preços, Termos, Privacidade ou Fontes, depois das trocas de endereço do boot). Quem abriu na área de trabalho, viu a barra de versão nova e foi a "Ver preços" ou "Fontes da base" não tem a página recarregada no meio do caminho.
+- **D-332** (M-1 e M-4): o script do `<head>` também esconde a vitrine quando o endereço traz `?volta=` (a volta do e-mail, com PKCE, D-267: não existe mais `#access_token`). E a foto do topo passa a `loading="lazy"`, com o script do `<head>` pré-carregando a mesma foto (mesmo `srcset` e `sizes`, prioridade alta) só quando a landing está à vista: no link do paciente e na raiz com sessão, a foto não é baixada.
+- **D-323** (frase da Ajuda): a Ajuda da área de trabalho também deixa de dizer que "os números de energia, dobras e ganho de peso ainda não foram conferidos por nutricionista" (o dono não quer a frase em lugar nenhum); a guarda CA-990 passa a ler a Ajuda.
+- **CB-322** passa a: volta do e-mail (`/?volta=confirmacao&code=…` ou `/?volta=recuperacao&code=…`): a vitrine não aparece em nenhum quadro; o app troca o código e leva à tela certa.
+- **CB-320** passa a: sem JavaScript, os links do menu e do rodapé levam às páginas próprias (Preços, Termos, Privacidade, Fontes); os botões do topo não fazem nada.
+- **CA-1020** passa a: a foto do topo tem `fetchpriority="high"`, `width`, `height` e `loading="lazy"`, e o `<head>` da landing pré-carrega a foto quando a vitrine está à vista.
+- O teste do CA-770 (Ctrl+P da área de trabalho, `revisao-geral-trabalho`) lê o espaço do papel com `expect.poll` (M-8): com movimento reduzido, a regra global de transição faz o padding ir de 0 a 14 mm em uma transição de 0,01 ms, e a leitura logo depois de emular a impressão pegava o 0.
+
+**Critérios novos:**
+- **CA-1023** · Dado o site com servidor de conta, sem sessão, quando a raiz `/` abre, então o endereço passa a `/#/inicio` antes de o app montar e o texto "Carregando…" não aparece em nenhum quadro; dado uma sessão guardada, então nada muda (vai ao painel).
+- **CA-1024** · Dado `/?volta=confirmacao&code=…` ou `/?volta=recuperacao&code=…`, quando a página abre, então a vitrine fica escondida desde o primeiro quadro.
+- **CA-1025** · Dado o service worker novo ativo, quando `/sitemap.xml`, `/robots.txt` ou `/llms.txt` abre no navegador, então aparece o arquivo, não a landing; dado `/precos` (sem barra), então o app abre em Preços (`/#/precos`).
+- **CA-1026** · Dado a página aberta numa tela de vitrine, quando a versão nova passa a valer, então a página recarrega (CA-996); dado a página aberta na área de trabalho e depois levada a uma tela de vitrine, então nada recarrega.
+- **CA-1027** · Dado o link do paciente ou a raiz com sessão, então a foto do topo não é pedida ao servidor; dado a landing, então ela é pedida com prioridade alta já pelo `<head>`.
+- **CA-1028** · Dado o menu e o rodapé da moldura pública, então cada item é um link com o endereço da D-339; o clique leva à tela sem recarregar a página; o HTML pré-desenhado tem os links para `precos/`, `termos/`, `privacidade/` e `fontes/`.
+- **CA-1029** · Dado a Ajuda da área de trabalho, então ela não diz que os números não foram conferidos, e a guarda CA-990 lê `src/ui/ajuda/TelaAjuda.tsx`.
 
 ## Apêndice A — Auditoria das telas públicas (21/10/2026)
 

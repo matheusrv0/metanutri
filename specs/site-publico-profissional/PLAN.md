@@ -16,6 +16,22 @@ código). Nenhuma dependência nova: `react-dom/server`, a API do Vite e o Playw
 | T7 | **Testes de navegador**: landing, Preços e rodapé em 390 e 1280, claro e escuro; tags no `dist/index.html`; landing pré-desenhada; páginas próprias abrindo o app; link do paciente sem a vitrine; tema escuro antes do app | `e2e/site-publico.spec.ts` (novo) | CA-1002, CA-1009, CA-1013 a CA-1017, CA-1020 a CA-1022 | T2 a T6 |
 | T8 | Validação: `npm run check`, `npx playwright test`, `npm run build`, `npm run test:csp`, `node scripts/conferir-publicacao.mjs`; prints de depois; relatório | — | todos | T7 |
 
+### Rodada da revisão (21/10/2026, SPEC §6)
+
+A branch foi rebaseada na `main` 6e1fd93 antes desta rodada. Um commit por item, teste primeiro.
+
+| # | Item | Arquivos | Critérios |
+|---|---|---|---|
+| R1 | SPEC §6 e este plano | `SPEC.md`, `PLAN.md` | — |
+| R2 | I-1: raiz sem sessão em `#/inicio` antes de montar | `src/seo/rotaDaPagina.ts` e `.test.ts`, `src/main.tsx`, `e2e/servidor-falso/site-publico.spec.ts` (novo) | CA-1023 |
+| R3 | M-1: `?volta=` esconde a vitrine | `public/preparar-pagina.js`, `src/seo/prepararPagina.test.ts` | CA-1024 |
+| R4 | M-2: lista de exclusão do service worker e `/precos` sem barra | `vite.config.ts`, `src/seo/rotaDaPagina.ts` e `.test.ts`, `src/main.tsx`, `e2e/site-publico.spec.ts` | CA-1025 |
+| R5 | M-3: recarga só para quem abriu na vitrine | `src/ui/aplicativo/aberturaDaPagina.ts` e `.test.ts` (novos), `src/main.tsx`, `src/ui/publico/MolduraPublica.tsx` e `.test.tsx` | CA-1026 |
+| R6 | M-4: foto do topo preguiçosa, pré-carregada só na landing à vista | `src/ui/publico/TelaInicio.tsx` e `.test.tsx`, `public/preparar-pagina.js`, `src/seo/prepararPagina.test.ts`, `e2e/site-publico.spec.ts` | CA-1027, CA-1020 |
+| R7 | M-5: menu e rodapé com links | `src/ui/publico/MolduraPublica.tsx` e `.test.tsx`, `src/seo/vitrine.test.tsx`, `e2e/site-publico.spec.ts`, `e2e/servidor-falso/revisao.spec.ts` | CA-1028 |
+| R8 | M-8: CA-770 com `expect.poll` | `e2e/revisao-geral-trabalho.spec.ts` | CA-770 |
+| R9 | A frase da Ajuda e a guarda | `src/ui/ajuda/TelaAjuda.tsx` (e o teste dela, se citar a frase), `src/seo/textosProibidos.test.ts` | CA-1029 |
+
 ### O que mudou no caminho (registrado antes de cada commit)
 
 - **T2** também mexeu em `e2e/servidor-falso/revisao.spec.ts`: o CA-740 conferia a lista "Fontes dos dados" do rodapé, que
