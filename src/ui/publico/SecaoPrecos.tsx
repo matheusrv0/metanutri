@@ -7,10 +7,12 @@
 //
 // O conteúdo vem de `comparativoDosPlanos()`, derivado dos próprios planos: a tela não
 // tem como afirmar limite que o plano não tem.
-import NumberFlow from '@number-flow/react'
+//
+// Spec site-publico-profissional, D-325: sem animação de entrada (os cartões ficavam em branco até ela acabar), preço
+// em texto e o botão do design system. A página sai pronta também na pré-renderização (D-331).
 import { Check, GraduationCap, Minus } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
   comparativoDosPlanos,
   descontoAnualPct,
@@ -25,8 +27,6 @@ import {
 } from '@/domain/conta.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { OriginButton } from '@ds/componentes/efeitos/origin-button.tsx'
-import { TimelineContent } from '@ds/componentes/efeitos/timeline-animation.tsx'
 
 interface SecaoPrecosProps {
   readonly aoEscolher: (plano: IdPlano, ciclo: Ciclo) => void
@@ -34,11 +34,6 @@ interface SecaoPrecosProps {
   readonly contato: string | null
   /** Plano em destaque vindo do aviso de limite (CA-177). Sem ele, vale o destaque do próprio plano. */
   readonly destaque?: IdPlano | undefined
-}
-
-const entrada = {
-  visible: (i: number) => ({ y: 0, opacity: 1, filter: 'blur(0px)', transition: { delay: i * 0.1, duration: 0.5 } }),
-  hidden: { filter: 'blur(10px)', y: -16, opacity: 0 },
 }
 
 const colunas = PLANOS_COMPARADOS.map((id) => planoPorId(id)).filter((p): p is PlanoAssinatura => p !== null)
@@ -107,7 +102,9 @@ function Preco({
     <div className="flex flex-col items-center gap-3">
       <div className="flex items-baseline gap-1">
         <span className="numeros font-titulo text-lg font-semibold text-muted-foreground">R$</span>
-        <NumberFlow value={valor} locales="pt-BR" format={{ minimumFractionDigits: casas, maximumFractionDigits: casas }} className="numeros font-titulo text-4xl font-bold text-heading" />
+        <span className="numeros font-titulo text-4xl font-bold text-heading">
+          {valor.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}
+        </span>
         {gratis ? null : <span className="text-sm text-muted-foreground">/mês</span>}
       </div>
 
@@ -129,17 +126,9 @@ function Preco({
           )}
         </p>
       ) : (
-        <OriginButton
-          onClick={aoEscolher}
-          tom={destacado ? 'verde' : 'contorno'}
-          aria-label={`${plano.acaoTexto} ${plano.nome}`}
-          className={cn(
-            'w-full',
-            destacado ? 'border-transparent bg-primary text-primary-foreground hover:bg-primaryemphasis' : 'border-borderdefault bg-transparent text-foreground hover:border-primary',
-          )}
-        >
+        <Button onClick={aoEscolher} variant={destacado ? 'default' : 'outline'} block aria-label={`${plano.acaoTexto} ${plano.nome}`}>
           {plano.acaoTexto}
-        </OriginButton>
+        </Button>
       )}
     </div>
   )
@@ -172,14 +161,18 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
   if (!estudante) return null
 
   return (
-    <div className="flex flex-wrap items-start gap-3 rounded-3xl bg-card p-5">
-      <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
-      <p className="min-w-0 flex-1 text-sm text-foreground">
-        <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
-        Aprovado, o Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses
-        ou até a formatura. Conta de estágio é de uso não comercial: a tela do paciente avisa que não é atendimento profissional.
-      </p>
-      <Button variant="outline" size="sm" onClick={aoEscolher}>
+    // D-325 (CA-997): abaixo de 640 px o texto vem em cima, na largura do cartão, e o botão embaixo. O `flex-1` (base
+    // zero) no parágrafo deixava o botão na mesma linha e o texto numa coluna de 63 px.
+    <div role="note" aria-label="Plano Estudante" className="flex flex-col gap-4 rounded-3xl bg-card p-5 sm:flex-row sm:items-start">
+      <div className="flex min-w-0 items-start gap-3 sm:flex-1">
+        <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
+        <p className="min-w-0 text-sm text-foreground">
+          <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
+          Aprovado, o Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12
+          meses ou até a formatura. Conta de estágio é de uso não comercial: a tela do paciente avisa que não é atendimento profissional.
+        </p>
+      </div>
+      <Button variant="outline" size="sm" className="self-start sm:shrink-0" onClick={aoEscolher}>
         {estudante.acaoTexto}
       </Button>
     </div>
@@ -188,31 +181,28 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
 
 export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps) {
   const [anual, setAnual] = useState(false)
-  const secao = useRef<HTMLDivElement>(null)
   const linhas = comparativoDosPlanos()
   const ciclo: Ciclo = anual ? 'anual' : 'mensal'
   const estaEmDestaque = (p: PlanoAssinatura) => (destaque ? p.id === destaque : p.destaque)
 
   return (
-    <div ref={secao} className="bg-background px-4 py-16 sm:px-8">
+    <div className="bg-background px-4 py-16 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         {/* CA-743 (spec revisao-geral-publica): o título da página é o h1. */}
-        <TimelineContent as="h1" animationNum={0} timelineRef={secao} customVariants={entrada} className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
+        <h1 className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
           Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
-        </TimelineContent>
-        <TimelineContent as="p" animationNum={1} timelineRef={secao} customVariants={entrada} className="mt-4 text-sm text-muted-foreground sm:text-base">
+        </h1>
+        <p className="mt-4 text-sm text-muted-foreground sm:text-base">
           O plano depende de quantos pacientes ativos você atende. Quem parou de vir não entra na conta.
-        </TimelineContent>
+        </p>
       </div>
 
-      <TimelineContent as="div" animationNum={2} timelineRef={secao} customVariants={entrada}>
-        <Chave anual={anual} aoTrocar={setAnual} />
-      </TimelineContent>
+      <Chave anual={anual} aoTrocar={setAnual} />
 
       {/* Tabela: a partir de 1024 px (D-234: em 768 px ela não cabia e a página rolava para o lado). Abaixo, a mesma
           informação vira um cartão por plano. */}
-      <TimelineContent as="div" animationNum={3} timelineRef={secao} customVariants={entrada} className="mt-10 hidden lg:block">
+      <div className="mt-10 hidden lg:block">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">Comparativo dos planos do MetaNutri</caption>
           <thead>
@@ -271,44 +261,43 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
         <div className="mt-6">
           <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
         </div>
-      </TimelineContent>
+      </div>
 
       {/* Celular e tablet: um cartão por plano, com os mesmos valores da tabela; dois por linha a partir de 640 px. */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:hidden">
-        {colunas.map((plano, i) => (
-          <TimelineContent key={plano.id} as="div" animationNum={3 + i} timelineRef={secao} customVariants={entrada}>
-            <section
-              aria-label={`Plano ${plano.nome}`}
-              className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
-                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
-              </div>
+        {colunas.map((plano) => (
+          <section
+            key={plano.id}
+            aria-label={`Plano ${plano.nome}`}
+            className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
+              {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
+            </div>
 
-              <div className="mt-4">
-                <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
-              </div>
+            <div className="mt-4">
+              <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
+            </div>
 
-              <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
-                {linhas.map((linha) => {
-                  const valor = linha.valores[colunas.indexOf(plano)]
-                  if (valor === false) return null
-                  return (
-                    <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
-                      <dt className="text-sm text-foreground">
-                        {linha.rotulo}
-                        {linha.detalhe ? <span className="mt-0.5 block text-xs text-muted-foreground">{linha.detalhe}</span> : null}
-                      </dt>
-                      <dd className="shrink-0 text-sm font-semibold text-heading">
-                        {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
-                      </dd>
-                    </div>
-                  )
-                })}
-              </dl>
-            </section>
-          </TimelineContent>
+            <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
+              {linhas.map((linha) => {
+                const valor = linha.valores[colunas.indexOf(plano)]
+                if (valor === false) return null
+                return (
+                  <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
+                    <dt className="text-sm text-foreground">
+                      {linha.rotulo}
+                      {linha.detalhe ? <span className="mt-0.5 block text-xs text-muted-foreground">{linha.detalhe}</span> : null}
+                    </dt>
+                    <dd className="shrink-0 text-sm font-semibold text-heading">
+                      {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
+                    </dd>
+                  </div>
+                )
+              })}
+            </dl>
+          </section>
         ))}
 
         <div className="sm:col-span-2">

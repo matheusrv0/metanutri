@@ -27,26 +27,6 @@ vi.mock('./estado/usarAssinatura.ts', () => ({
   useAssinatura: () => ({ assinatura: PAGA, recarregar: vi.fn(), cancelar: vi.fn(), previaDoCancelamento: vi.fn(), trocarCartao: vi.fn() }),
 }))
 
-// O NumberFlow de verdade quebra no jsdom ao atualizar; aqui basta o número escrito.
-vi.mock('@number-flow/react', () => ({
-  default: ({ value, className }: { readonly value: number; readonly className?: string }) => <span className={className}>{value}</span>,
-}))
-
-// O TimelineContent da página de preços chama o IntersectionObserver, que o jsdom não tem.
-class ObservadorFalso implements IntersectionObserver {
-  readonly root: Element | Document | null = null
-  readonly rootMargin: string = ''
-  readonly scrollMargin: string = ''
-  readonly thresholds: readonly number[] = []
-  disconnect(): void {}
-  observe(): void {}
-  takeRecords(): IntersectionObserverEntry[] {
-    return []
-  }
-  unobserve(): void {}
-}
-vi.stubGlobal('IntersectionObserver', ObservadorFalso)
-
 const contaComSessao = () => contaFalsa({ sessao: { id: 'u1', email: 'ana@exemplo.com', nome: 'Ana' } })
 
 /** As telas que a spec cita, cada uma montada sozinha. */

@@ -2,29 +2,6 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SecaoPrecos } from './SecaoPrecos.tsx'
 
-// O NumberFlow de verdade é um custom element com shadow DOM e Web Animations API: no
-// jsdom ele monta, mas quebra ao atualizar o valor (troca de ciclo), porque o elemento
-// nunca chega a ser "upgraded" de verdade. Troca por um span simples só nos testes.
-vi.mock('@number-flow/react', () => ({
-  default: ({ value, className }: { readonly value: number; readonly className?: string }) => <span className={className}>{value}</span>,
-}))
-
-// jsdom não implementa IntersectionObserver; o TimelineContent (useInView do framer-motion)
-// chama o construtor assim que monta. Sem este dublê, todo render desta tela quebra.
-class ObservadorFalso implements IntersectionObserver {
-  readonly root: Element | Document | null = null
-  readonly rootMargin: string = ''
-  readonly scrollMargin: string = ''
-  readonly thresholds: readonly number[] = []
-  disconnect(): void {}
-  observe(): void {}
-  takeRecords(): IntersectionObserverEntry[] {
-    return []
-  }
-  unobserve(): void {}
-}
-vi.stubGlobal('IntersectionObserver', ObservadorFalso)
-
 const primeiro = (nome: string) => {
   const botao = screen.getAllByRole('button', { name: nome })[0]
   if (!botao) throw new Error(`sem botão ${nome}`)
@@ -133,7 +110,7 @@ describe('SecaoPrecos', () => {
     expect(tabela.parentElement?.className).toMatch(/(^|\s)hidden(\s|$)/)
     expect(tabela.parentElement?.className).toContain('lg:block')
     expect(tabela.parentElement?.className).not.toContain('md:block')
-    const cartoes = screen.getByRole('region', { name: 'Plano Free' }).parentElement?.parentElement
+    const cartoes = screen.getByRole('region', { name: 'Plano Free' }).parentElement
     expect(cartoes?.className).toContain('lg:hidden')
     expect(cartoes?.className).not.toContain('md:hidden')
   })
@@ -149,5 +126,35 @@ describe('SecaoPrecos', () => {
   it('D-234 e A-24 (spec revisao-geral-publica): os cartões da mesma linha têm a mesma altura', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
     for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) expect(screen.getByRole('region', { name: `Plano ${plano}` }).className).toContain('h-full')
+  })
+
+  it('CA-997 (spec site-publico-profissional): a nota do Estudante empilha no celular, com o botão embaixo do texto', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    for (const nota of screen.getAllByRole('note', { name: 'Plano Estudante' })) {
+      expect(nota.className).toContain('flex-col')
+      expect(nota.className).toContain('sm:flex-row')
+      const texto = within(nota).getByText(/crie a conta com o e-mail da faculdade/).closest('p')
+      // Base zero (flex-1) deixava o texto numa coluna de 63 px ao lado do botão.
+      expect(texto?.className).not.toMatch(/(^|\s)flex-1(\s|$)/)
+      const botao = within(nota).getByRole('button', { name: 'Usar o e-mail da faculdade' })
+      expect(texto?.compareDocumentPosition(botao) ?? 0).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    }
+  })
+
+  it('CA-998 (spec site-publico-profissional): nada espera animação para aparecer, e o preço é texto', async () => {
+    const { container } = render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    expect(container.querySelectorAll('[style*="opacity"], [style*="blur"]')).toHaveLength(0)
+    expect(container.querySelector('number-flow-react')).toBeNull()
+    const solo = within(screen.getByRole('region', { name: 'Plano Solo' }))
+    expect(solo.getByText('34,90')).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('radio', { name: /Anual/ }))
+    expect(solo.getByText('24,92')).toBeInTheDocument()
+    expect(solo.getByText('R$ 299 uma vez por ano.')).toBeInTheDocument()
+  })
+
+  it('CA-999 (spec site-publico-profissional): os botões dos planos são o Button do design system, sem efeito de onda', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    for (const botao of screen.getAllByRole('button', { name: /Assinar (Solo|Pro)|Começar agora Free/ })) expect(botao.querySelector('span[style]')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/fundador|vagas?\b|preço travado|não sobe/i)
   })
 })
