@@ -57,6 +57,7 @@ Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). 
 - **Componentes da referência:** `CartaoNumero`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
 - **Sem taglines** (D-77 da `limpeza-visual`, 05/10/2026). Nenhum rótulo decorativo em caixa alta acima de título ou de seção, nenhum subtítulo no cabeçalho e nada embaixo da logo do menu. O rótulo em caixa alta (`rotulo`) só nomeia o dado logo abaixo dele, como "Você paga hoje" sobre o total; cabeçalho de tabela, rótulo de campo e grupo do menu também ficam.
 - **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
+- **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; passo de "Como funciona" não leva número; nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
 
 ## Colors
 

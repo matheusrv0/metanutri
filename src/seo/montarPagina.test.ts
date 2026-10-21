@@ -25,7 +25,8 @@ const precos = { rota: 'precos', caminho: 'precos/', cabecalho: '<title>Preços<
 describe('montarPagina (spec site-publico-profissional, D-331)', () => {
   it('CA-1013: a página inicial ganha o cabeçalho dela e o conteúdo dentro do #root, marcado como vitrine', () => {
     const html = montarPagina(CONSTRUIDO, inicio, { fonte: null })
-    expect(html).toContain('<div id="root"><div data-vitrine="">' + inicio.corpo + '</div></div>')
+    // `inert`: os botões pré-desenhados não fazem nada; até o app montar, nada ali recebe toque nem foco.
+    expect(html).toContain('<div id="root"><div data-vitrine="" inert="">' + inicio.corpo + '</div></div>')
     expect(html).toContain('<title>Início</title>')
     expect(html).not.toContain('<title>velho</title>')
     expect(html).not.toContain(MARCA_INICIO)

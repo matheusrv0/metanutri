@@ -29,7 +29,8 @@ export function localizarFonte(arquivosDeAssets: readonly string[]): string | nu
 
 /**
  * O index.html da página: o cabeçalho dela entre as marcas, a tela dentro do #root (embrulhada em `data-vitrine`, que o
- * script do <head> esconde quando o endereço pede outra tela) e, nas páginas de subpasta, `<base>` e `data-rota`.
+ * script do <head> esconde quando o endereço pede outra tela, e `inert`, porque os botões só funcionam depois que o app
+ * monta) e, nas páginas de subpasta, `<base>` e `data-rota`.
  * Falta alguma peça, o build para: melhor do que publicar uma página pela metade.
  */
 export function montarPagina(html: string, pagina: PaginaDesenhada, { fonte }: OpcoesDaPagina): string {
@@ -39,7 +40,7 @@ export function montarPagina(html: string, pagina: PaginaDesenhada, { fonte }: O
   if (!html.includes(RAIZ_VAZIA)) throw new Error('index.html sem o #root vazio: a página pré-desenhada entra nele.')
 
   let saida = `${html.slice(0, inicio)}${pagina.cabecalho}${html.slice(fim + MARCA_FIM.length)}`
-  saida = saida.replace(RAIZ_VAZIA, `<div id="root"><div data-vitrine="">${pagina.corpo}</div></div>`)
+  saida = saida.replace(RAIZ_VAZIA, `<div id="root"><div data-vitrine="" inert="">${pagina.corpo}</div></div>`)
 
   if (fonte) {
     const preload = `<link rel="preload" href="./${fonte}" as="font" type="font/woff2" crossorigin />`

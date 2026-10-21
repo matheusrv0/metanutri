@@ -16,6 +16,19 @@ código). Nenhuma dependência nova: `react-dom/server`, a API do Vite e o Playw
 | T7 | **Testes de navegador**: landing, Preços e rodapé em 390 e 1280, claro e escuro; tags no `dist/index.html`; landing pré-desenhada; páginas próprias abrindo o app; link do paciente sem a vitrine; tema escuro antes do app | `e2e/site-publico.spec.ts` (novo) | CA-1002, CA-1009, CA-1013 a CA-1017, CA-1020 a CA-1022 | T2 a T6 |
 | T8 | Validação: `npm run check`, `npx playwright test`, `npm run build`, `npm run test:csp`, `node scripts/conferir-publicacao.mjs`; prints de depois; relatório | — | todos | T7 |
 
+### O que mudou no caminho (registrado antes de cada commit)
+
+- **T2** também mexeu em `e2e/servidor-falso/revisao.spec.ts`: o CA-740 conferia a lista "Fontes dos dados" do rodapé, que
+  saiu (passa a conferir o rodapé só com links, CA-992), e o CA-741 conta 8 links e o do e-mail.
+- **Rodada de prints (depois da T6, commit próprio):** os links do rodapé ficaram todos com 44 px em qualquer largura (o
+  "Fontes da base" já era, M-1; com alturas diferentes, os vãos ficavam desiguais); os cartões de Estudante e Pro em
+  "Quanto custa" passaram a branco (o cinza sumia sobre a mesa no tema claro); a foto do topo foi a 600 px, para o
+  título e "Começar grátis" caberem em 1280 × 720 (CA-1002). A SPEC ganhou o CB-324 reescrito e o R-324.
+- **T7** também mexeu em `e2e/csp.spec.ts` (o CA-486/CA-603 contava todo `<script>` sem `src`; o JSON-LD é a exceção do
+  CA-1012), em `src/seo/montarPagina.ts` (a vitrine sai `inert`: até o app montar, os botões pré-desenhados não recebem
+  toque nem foco, e o teste não clica num botão que ainda não funciona) e no `DESIGN.md` (a regra da área pública sem
+  enfeite, na seção do estilo Spora).
+
 ## Riscos e decisões para o dono revisar
 
 - **Sem hidratação (D-331).** O React desenha de novo por cima do conteúdo pré-desenhado. É o mesmo desenho, então não

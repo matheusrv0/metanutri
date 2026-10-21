@@ -158,8 +158,9 @@ test('CA-486 e CA-603: o aplicativo instala (PWA), com o registro dentro do paco
   const estado = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null)
   expect(['activating', 'activated']).toContain(estado)
   // CA-603 (spec dados-na-nuvem): o registro vem do pacote (virtual:pwa-register); nenhum script escrito na página nem o
-  // registerSW.js que o plugin injetava.
-  expect(await page.locator('script:not([src])').count()).toBe(0)
+  // registerSW.js que o plugin injetava. CA-1012 (spec site-publico-profissional): o bloco de dados estruturados é a
+  // única exceção, porque o navegador não o executa.
+  expect(await page.locator('script:not([src]):not([type="application/ld+json"])').count()).toBe(0)
   expect(await page.locator('script[src*="registerSW"]').count()).toBe(0)
 
   const cdp = await page.context().newCDPSession(page)
