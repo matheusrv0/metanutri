@@ -3,6 +3,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { useEffect, type ReactNode } from 'react'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cn } from '@/lib/utils'
+import { paginaAbriuNaVitrine } from '../aplicativo/aberturaDaPagina.ts'
 import { useVersaoNova } from '../aplicativo/versaoNova.ts'
 
 export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade' | 'fontes'
@@ -14,6 +15,8 @@ interface MolduraPublicaProps {
   readonly children: ReactNode
   /** Recarrega a página quando chega versão nova (D-320). Os testes passam um dublê. */
   readonly recarregar?: () => void
+  /** A página abriu numa tela de vitrine (CA-1026). Sem ela, vale o que o boot marcou. */
+  readonly abriuNaVitrine?: boolean
 }
 
 const recarregarPagina = () => globalThis.location.reload()
@@ -55,13 +58,21 @@ interface ColunaRodape {
  * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa cinza e o botão de começar em pílula
  * de contorno. Spec site-publico-profissional: o menu em caixa normal (D-321) e o rodapé só com links (D-322).
  */
-export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarregar = recarregarPagina }: MolduraPublicaProps) {
+export function MolduraPublica({
+  atual,
+  temSessao,
+  aoIrPara,
+  children,
+  recarregar = recarregarPagina,
+  abriuNaVitrine = paginaAbriuNaVitrine(),
+}: MolduraPublicaProps) {
   // D-320: a vitrine não tem nada digitado a perder; versão nova que passou a valer recarrega a página na hora, para
-  // ninguém ficar lendo textos que já saíram do site.
+  // ninguém ficar lendo textos que já saíram do site. Só a página que abriu na vitrine (CA-1026): quem veio da área de
+  // trabalho não é recarregado no meio do caminho.
   const versaoNova = useVersaoNova()
   useEffect(() => {
-    if (versaoNova) recarregar()
-  }, [versaoNova, recarregar])
+    if (versaoNova && abriuNaVitrine) recarregar()
+  }, [versaoNova, abriuNaVitrine, recarregar])
 
   const itemMenu =
     'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9'

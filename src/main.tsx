@@ -5,6 +5,7 @@ import '@fontsource-variable/manrope'
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
 import { App } from './App.tsx'
+import { marcarAbertura } from './ui/aplicativo/aberturaDaPagina.ts'
 import { LimiteDeErro } from './ui/aplicativo/LimiteDeErro.tsx'
 import { registrarAplicativo } from './ui/aplicativo/registrarAplicativo.ts'
 import { avisarVersaoNova } from './ui/aplicativo/versaoNova.ts'
@@ -38,6 +39,8 @@ const enderecoDaLanding = enderecoDaVitrine({
   vitrineEscondida: document.documentElement.classList.contains('sem-vitrine'),
 })
 if (enderecoDaLanding) globalThis.history.replaceState(null, '', enderecoDaLanding)
+// CA-1026: só a página que abriu numa tela de vitrine recarrega sozinha quando chega versão nova.
+marcarAbertura(globalThis.location.hash)
 
 // D-172: o service worker do aplicativo; a versão nova avisa na área de trabalho em vez de recarregar sozinha.
 // D-320 (spec site-publico-profissional): na vitrine, a moldura pública recarrega a página.

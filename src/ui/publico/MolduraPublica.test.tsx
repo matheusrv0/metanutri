@@ -123,12 +123,23 @@ describe('MolduraPublica', () => {
   })
 
   // Por último: o aviso de versão nova é um estado da página inteira e não volta atrás.
-  it('CA-996: quando a versão nova passa a valer, a vitrine recarrega uma vez', async () => {
-    const recarregar = vi.fn()
-    montar(false, vi.fn(), recarregar)
-    expect(recarregar).not.toHaveBeenCalled()
+  it('CA-996 e CA-1026: quando a versão nova passa a valer, recarrega só a página que abriu na vitrine', async () => {
+    const naVitrine = vi.fn()
+    const vindaDoTrabalho = vi.fn()
+    render(
+      <>
+        <MolduraPublica atual="inicio" temSessao={false} aoIrPara={vi.fn()} recarregar={naVitrine} abriuNaVitrine>
+          <p>aberta na landing</p>
+        </MolduraPublica>
+        <MolduraPublica atual="fontes" temSessao aoIrPara={vi.fn()} recarregar={vindaDoTrabalho} abriuNaVitrine={false}>
+          <p>aberta na área de trabalho, levada a Fontes</p>
+        </MolduraPublica>
+      </>,
+    )
+    expect(naVitrine).not.toHaveBeenCalled()
     const { avisarVersaoNova } = await import('../aplicativo/versaoNova.ts')
     act(() => avisarVersaoNova())
-    expect(recarregar).toHaveBeenCalledTimes(1)
+    expect(naVitrine).toHaveBeenCalledTimes(1)
+    expect(vindaDoTrabalho).not.toHaveBeenCalled()
   })
 })
