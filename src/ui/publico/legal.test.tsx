@@ -39,6 +39,14 @@ describe('documentos legais', () => {
     expect(texto).toContain('7 dias')
   })
 
+  it('CA-994 (spec site-publico-profissional): quem prescreve continua nos Termos, sem dizer que os cálculos não foram conferidos', () => {
+    render(<TelaTermos />)
+    const secao = screen.getByRole('heading', { name: 'Quem prescreve é o nutricionista' }).nextElementSibling
+    expect(secao).toHaveTextContent('Lei 8.234/1991')
+    expect(secao).toHaveTextContent('confere cada número antes de entregar ao paciente')
+    expect(document.body.textContent).not.toMatch(/conferidos/)
+  })
+
   it('CA-221, CA-224 e CA-302: a política diz quem responde, onde ficam os dados e o que é feito do comprovante', () => {
     render(<TelaPrivacidade />)
     expect(screen.getByRole('heading', { level: 1, name: 'Política de privacidade' })).toBeInTheDocument()

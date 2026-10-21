@@ -74,15 +74,15 @@ async function contrasteDoAviso(aviso: Locator): Promise<number> {
 
 test.describe('Rodapé e topo públicos (D-235)', () => {
   for (const largura of [360, 390, 768, 1024, 1280]) {
-    test(`CA-740: em ${largura} px, as fontes dos dados não têm "·" solto e o link vai abaixo do nome da base`, async ({ page }) => {
+    test(`CA-740 e CA-992: em ${largura} px, o rodapé só tem links, sem "·" solto nem fontes técnicas`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
       await page.goto('/#/inicio')
-      const fontes = page.getByRole('contentinfo').locator('section', { has: page.getByRole('heading', { name: 'Fontes dos dados' }) })
-      expect(await fontes.innerText()).not.toContain('·')
-      const [nome, link] = await retangulos(fontes.getByText('Base MetaNutri', { exact: true }), fontes.getByRole('button', { name: 'Fontes da base' }))
-      if (!nome || !link) throw new Error('sem medida')
-      expect(link.y).toBeGreaterThanOrEqual(nome.y + nome.height - 1)
+      const rodape = page.getByRole('contentinfo')
+      const texto = await rodape.innerText()
+      expect(texto).not.toContain('·')
+      expect(texto).not.toMatch(/Fontes dos dados|NASEM|SISVAN|conferidos|8\.234/)
+      await expect(rodape.getByRole('heading')).toHaveText(['Produto', 'Conta', 'Legal'])
       await semRolagemLateral(page)
     })
   }
@@ -102,8 +102,8 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
     await page.goto('/#/inicio')
     expect((await caixa(page.getByRole('banner').getByRole('button', { name: 'MetaNutri, início' }))).height).toBeGreaterThanOrEqual(44)
     const links = page.getByRole('contentinfo').getByRole('button')
-    expect(await links.count()).toBe(6)
-    for (const link of await links.all()) {
+    expect(await links.count()).toBe(8)
+    for (const link of [...(await links.all()), page.getByRole('contentinfo').getByRole('link')]) {
       expect((await caixa(link)).height, await link.innerText()).toBeGreaterThanOrEqual(44)
       expect(await link.evaluate((el) => getComputedStyle(el).textAlign)).toBe('left')
     }

@@ -1,8 +1,9 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import type { ReactNode } from 'react'
-import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
+import { useEffect, type ReactNode } from 'react'
+import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cn } from '@/lib/utils'
+import { useVersaoNova } from '../aplicativo/versaoNova.ts'
 
 export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade' | 'fontes'
 
@@ -11,11 +12,22 @@ interface MolduraPublicaProps {
   readonly temSessao: boolean
   readonly aoIrPara: (destino: DestinoPublico) => void
   readonly children: ReactNode
+  /** Recarrega a página quando chega versão nova (D-320). Os testes passam um dublê. */
+  readonly recarregar?: () => void
 }
 
-const LINKS: readonly { readonly texto: string; readonly destino: DestinoPublico; readonly ancora?: string }[] = [
+const recarregarPagina = () => globalThis.location.reload()
+
+interface LinkPublico {
+  readonly texto: string
+  readonly destino: DestinoPublico
+  readonly ancora?: string
+}
+
+/** D-321 (spec site-publico-profissional): as seções da landing e Preços, em caixa normal. */
+const LINKS: readonly LinkPublico[] = [
   { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona' },
-  { texto: 'O diferencial', destino: 'inicio', ancora: 'o-diferencial' },
+  { texto: 'Recursos', destino: 'inicio', ancora: 'recursos' },
   { texto: 'Preços', destino: 'precos' },
 ]
 
@@ -35,13 +47,32 @@ const LINK_RODAPE_44 =
 /** A partir de 640 px, os links de navegação do rodapé voltam à altura do texto. */
 const LINK_RODAPE = `${LINK_RODAPE_44} sm:min-h-0`
 
+const TITULO_COLUNA = 'mb-3.5 text-sm font-semibold text-heading'
+
+function ColunaRodape({ titulo, children }: { readonly titulo: string; readonly children: ReactNode }) {
+  return (
+    <div>
+      <h2 className={TITULO_COLUNA}>{titulo}</h2>
+      <ul className="grid gap-2.5 text-sm">{children}</ul>
+    </div>
+  )
+}
+
 /**
- * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa
- * cinza, em versalete, e o botão de começar em pílula de contorno.
+ * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa cinza e o botão de começar em pílula
+ * de contorno. Spec site-publico-profissional: o menu em caixa normal (D-321) e o rodapé só com links (D-322).
  */
-export function MolduraPublica({ atual, temSessao, aoIrPara, children }: MolduraPublicaProps) {
+export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarregar = recarregarPagina }: MolduraPublicaProps) {
+  // D-320: a vitrine não tem nada digitado a perder; versão nova que passou a valer recarrega a página na hora, para
+  // ninguém ficar lendo textos que já saíram do site.
+  const versaoNova = useVersaoNova()
+  useEffect(() => {
+    if (versaoNova) recarregar()
+  }, [versaoNova, recarregar])
+
   const itemMenu =
-    'inline-flex items-center min-h-11 sm:min-h-9 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+    'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9'
+  const ano = new Date().getFullYear()
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -80,7 +111,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
               <Button onClick={() => aoIrPara('painel')}>Ir para o painel</Button>
             ) : (
               <>
-                <button type="button" onClick={() => aoIrPara('entrar')} className={cn(itemMenu, 'text-sm normal-case tracking-normal text-foreground hover:bg-card')}>
+                <button type="button" onClick={() => aoIrPara('entrar')} className={cn(itemMenu, 'text-foreground hover:bg-card')}>
                   Entrar
                 </button>
                 <Button variant="outline" className="border-heading bg-transparent text-heading" onClick={() => aoIrPara('criar-conta')}>
@@ -97,74 +128,60 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children }: Moldura
       </main>
 
       <footer className="bg-card px-4 pb-8 pt-14 sm:px-8">
-        <div className="mx-auto grid max-w-[1216px] gap-9 md:grid-cols-[2fr_1fr_1fr_1fr]">
-          <div>
+        <div className="mx-auto grid max-w-[1216px] gap-9 sm:grid-cols-3 md:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-3 md:col-span-1">
             <Logo tamanho={28} />
-            <p className="mt-3.5 max-w-[38ch] text-sm text-muted-foreground">
-              O programa de nutrição que mostra o que falta no plano e sugere o que comer. Funciona no navegador, sem instalar nada.
-            </p>
           </div>
-          <section aria-labelledby="fontes">
-            <h2 id="fontes" className="mb-3.5 scroll-mt-24 text-sm font-semibold text-muted-foreground">
-              Fontes dos dados
-            </h2>
-            {/* D-235: sem "·" entre as partes, que ficava sozinho no fim da linha em 768 e 1024 px; o link das fontes da
-                base vai na linha de baixo do nome dela, em qualquer largura. */}
-            <ul className="grid gap-2.5 text-sm text-muted-foreground">
-              <li className="flex flex-col items-start">
-                <span>{NOME_DA_BASE}</span>
-                {/* M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque). */}
-                <button type="button" onClick={() => aoIrPara('fontes')} className={LINK_RODAPE_44}>
-                  Fontes da base
+          <ColunaRodape titulo="Produto">
+            {LINKS.map((link) => (
+              <li key={link.texto}>
+                <button type="button" onClick={() => irComAncora(aoIrPara, link.destino, link.ancora)} className={LINK_RODAPE}>
+                  {link.texto}
                 </button>
               </li>
-              <li>NASEM. DRI, Apêndice J, 2019</li>
-              <li>OMS, 2006 e 2007</li>
-              <li>SISVAN, 2011</li>
-            </ul>
-          </section>
-          <div>
-            <h2 className="mb-3.5 text-sm font-semibold text-muted-foreground">Produto</h2>
-            <ul className="grid gap-2.5 text-sm">
+            ))}
+            <li>
+              {/* M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque). */}
+              <button type="button" onClick={() => irComAncora(aoIrPara, 'fontes')} className={LINK_RODAPE_44}>
+                Fontes da base
+              </button>
+            </li>
+          </ColunaRodape>
+          <ColunaRodape titulo="Conta">
+            <li>
+              <button type="button" onClick={() => aoIrPara(temSessao ? 'painel' : 'criar-conta')} className={LINK_RODAPE}>
+                {temSessao ? 'Ir para o painel' : 'Começar grátis'}
+              </button>
+            </li>
+            {temSessao ? null : (
               <li>
-                <button type="button" onClick={() => aoIrPara('precos')} className={LINK_RODAPE}>
-                  Preços
+                <button type="button" onClick={() => aoIrPara('entrar')} className={LINK_RODAPE}>
+                  Entrar
                 </button>
               </li>
-              <li>
-                <button type="button" onClick={() => aoIrPara(temSessao ? 'painel' : 'criar-conta')} className={LINK_RODAPE}>
-                  {temSessao ? 'Ir para o painel' : 'Começar grátis'}
-                </button>
-              </li>
-              {temSessao ? null : (
-                <li>
-                  <button type="button" onClick={() => aoIrPara('entrar')} className={LINK_RODAPE}>
-                    Entrar
-                  </button>
-                </li>
-              )}
-            </ul>
-          </div>
-          <div>
-            <h2 className="mb-3.5 text-sm font-semibold text-muted-foreground">Legal</h2>
-            <ul className="grid gap-2.5 text-sm">
-              <li>
-                <button type="button" onClick={() => aoIrPara('termos')} className={LINK_RODAPE}>
-                  Termos de uso
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => aoIrPara('privacidade')} className={LINK_RODAPE}>
-                  Política de privacidade
-                </button>
-              </li>
-            </ul>
-          </div>
+            )}
+          </ColunaRodape>
+          <ColunaRodape titulo="Legal">
+            <li>
+              <button type="button" onClick={() => irComAncora(aoIrPara, 'termos')} className={LINK_RODAPE}>
+                Termos de uso
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={() => irComAncora(aoIrPara, 'privacidade')} className={LINK_RODAPE}>
+                Política de privacidade
+              </button>
+            </li>
+          </ColunaRodape>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-[1216px] gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
-          <p>A prescrição de dieta é privativa de nutricionista com registro no CRN (Lei 8.234/1991).</p>
-          <p>Os cálculos ainda não foram conferidos por nutricionista.</p>
+        <div className="mx-auto mt-10 flex max-w-[1216px] flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-border pt-6 text-sm text-muted-foreground">
+          <p>{`© ${ano} MetaNutri`}</p>
+          {CONTATO_EMAIL ? (
+            <a href={`mailto:${CONTATO_EMAIL}`} className={LINK_RODAPE_44}>
+              {CONTATO_EMAIL}
+            </a>
+          ) : null}
         </div>
       </footer>
     </div>

@@ -18,9 +18,11 @@ export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
  * exclusao-de-conta, D-257).
  * 20/10/2026: uma versão só para a integração da rodada (spec integracao-rodada-1910, D-314). Quem publica em outro dia
  * troca as duas constantes e o teste delas para o dia em que o site vai ao ar.
+ * 21/10/2026: os Termos deixaram de dizer que os cálculos não foram conferidos por nutricionista (spec
+ * site-publico-profissional, D-323).
  */
-export const VERSAO_TERMOS = '2026-10-20'
-export const DATA_TERMOS = '20 de outubro de 2026'
+export const VERSAO_TERMOS = '2026-10-21'
+export const DATA_TERMOS = '21 de outubro de 2026'
 
 /** Em quantos dias as cópias de segurança do banco somem depois da exclusão (a exclusão em si é na hora). */
 export const PRAZO_EXCLUSAO_DIAS = 90

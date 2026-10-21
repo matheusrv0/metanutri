@@ -30,6 +30,16 @@ export function TelaFontes() {
           </li>
         ))}
       </ul>
+      {/* D-324 (spec site-publico-profissional): as referências saíram do rodapé e ficam aqui, sem link novo. */}
+      <section aria-labelledby="referencias-dos-calculos" className="border-t border-border pt-5">
+        <h2 id="referencias-dos-calculos" className="text-base font-semibold text-heading">
+          Referências dos cálculos
+        </h2>
+        <p className="mt-2">
+          A adequação e a energia seguem as DRI do NASEM (2019 e 2023); a antropometria, as curvas da OMS (2006 e 2007) e os pontos de corte do SISVAN
+          (2011); o ganho de peso na gestação, Kac (2021).
+        </p>
+      </section>
     </article>
   )
 }

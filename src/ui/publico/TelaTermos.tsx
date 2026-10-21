@@ -15,7 +15,7 @@ export function TelaTermos() {
       <p>
         O MetaNutri calcula e sugere; quem prescreve é o nutricionista, que confere cada número antes de entregar ao paciente. A prescrição de dieta é
         privativa de nutricionista com registro no CRN (Lei 8.234/1991). Os cálculos seguem tabelas públicas de composição de alimentos e de referências
-        nutricionais, e ainda não foram conferidos por nutricionista.
+        nutricionais.
       </p>
 
       <h2>Os dados dos pacientes</h2>

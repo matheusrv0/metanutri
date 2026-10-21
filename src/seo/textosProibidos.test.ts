@@ -1,0 +1,71 @@
+// CA-990 (spec site-publico-profissional): a guarda dos textos que o dono já mandou tirar do site público.
+// Lê o código-fonte, não a tela: pega o texto antes de ele chegar a qualquer página, em qualquer largura.
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
+
+const RAIZ = process.cwd()
+
+function arquivos(pasta: string, aceitar: (nome: string) => boolean): string[] {
+  return readdirSync(pasta).flatMap((nome) => {
+    const caminho = join(pasta, nome)
+    if (statSync(caminho).isDirectory()) return arquivos(caminho, aceitar)
+    return aceitar(nome) ? [caminho] : []
+  })
+}
+
+const ehCodigo = (nome: string) => /\.(ts|tsx)$/.test(nome) && !/\.test\.|\.test-utils\./.test(nome)
+
+/** O que o site público mostra ou publica: as telas, o cabeçalho da página e os arquivos de texto da raiz. */
+const ALVOS = [
+  ...arquivos(join(RAIZ, 'src', 'ui', 'publico'), ehCodigo),
+  ...arquivos(join(RAIZ, 'src', 'seo'), ehCodigo),
+  join(RAIZ, 'index.html'),
+  ...arquivos(join(RAIZ, 'public'), (nome) => /\.(txt|xml|webmanifest)$/.test(nome)),
+]
+
+const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
+  // D-78 da limpeza-visual: não existe preço de fundador, nem vagas, nem preço que não sobe.
+  ['preço de fundador', /fundador/i],
+  ['vagas de fundador', /200 primeiras/i],
+  // DP-26 da dados-na-nuvem: sem internet, a área de trabalho trava. Frase que avisa que a pessoa está sem internet passa.
+  ['promessa de uso sem internet', /\b(até|funciona|abre|usa|trabalha|roda)\s+(mesmo\s+)?sem\s+internet/i],
+  ['promessa de uso offline', /\boffline\b/i],
+  // D-322 e D-323: a frase que diminuía o produto.
+  ['"não foram conferidos"', /não\s+foram\s+conferidos/i],
+  // D-77 da limpeza-visual: rótulo em caixa alta com bolinha acima de título ("• COMO FUNCIONA").
+  ['rótulo com bolinha', /[•·]\s*\p{Lu}{2,}(\s+\p{Lu}{2,})*/u],
+]
+
+const achados = (padrao: RegExp) =>
+  ALVOS.flatMap((arquivo) => {
+    const texto = readFileSync(arquivo, 'utf8')
+    return padrao.test(texto) ? [relative(RAIZ, arquivo)] : []
+  })
+
+describe('CA-990: textos proibidos no site público', () => {
+  it('a varredura enxerga as telas públicas, o index.html e a raiz do site', () => {
+    const lidos = ALVOS.map((arquivo) => relative(RAIZ, arquivo).replaceAll('\\', '/'))
+    expect(lidos).toContain('src/ui/publico/MolduraPublica.tsx')
+    expect(lidos).toContain('src/ui/publico/TelaInicio.tsx')
+    expect(lidos).toContain('src/ui/publico/TelaTermos.tsx')
+    expect(lidos).toContain('index.html')
+    expect(lidos.some((nome) => nome.includes('.test.'))).toBe(false)
+  })
+
+  it.each(PROIBIDOS)('nenhum arquivo tem %s', (_nome, padrao) => {
+    expect(achados(padrao)).toEqual([])
+  })
+
+  it('o menu do topo não está em caixa alta (D-321)', () => {
+    const moldura = readFileSync(join(RAIZ, 'src', 'ui', 'publico', 'MolduraPublica.tsx'), 'utf8')
+    expect(moldura).not.toMatch(/\buppercase\b/)
+    expect(moldura).not.toMatch(/tracking-\[0\.0[5-9]em\]/)
+  })
+
+  it('as frases verdadeiras sobre internet continuam permitidas', () => {
+    const promessa = PROIBIDOS.find(([nome]) => nome === 'promessa de uso sem internet')?.[1]
+    expect(promessa?.test('Você está sem internet. Conecte-se para entrar e abrir seus dados.')).toBe(false)
+    expect(promessa?.test('Sem internet, o MetaNutri não deixa editar até a conexão voltar.')).toBe(false)
+    expect(promessa?.test('Funciona no navegador, até sem internet.')).toBe(true)
+  })
+})

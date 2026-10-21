@@ -19,4 +19,11 @@ describe('Fontes da base (CA-322)', () => {
     expect(screen.getByText(/CC0 1\.0 Universal/)).toBeInTheDocument()
     for (const link of links) expect(link).toHaveAttribute('href', expect.stringMatching(/^https:\/\//))
   })
+
+  it('CA-995 (spec site-publico-profissional): as referências dos cálculos, que saíram do rodapé, sem link novo', () => {
+    render(<TelaFontes />)
+    const secao = screen.getByRole('heading', { level: 2, name: 'Referências dos cálculos' }).nextElementSibling
+    for (const trecho of ['NASEM', '2019', '2023', 'OMS', '2006 e 2007', 'SISVAN', '2011', 'Kac', '2021']) expect(secao).toHaveTextContent(trecho)
+    expect(screen.getAllByRole('link')).toHaveLength(4)
+  })
 })
