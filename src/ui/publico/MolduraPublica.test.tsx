@@ -100,6 +100,8 @@ describe('MolduraPublica', () => {
     for (const link of links) {
       expect(link.className, link.textContent ?? '').toContain('min-h-11')
       expect(link.className, link.textContent ?? '').toContain('text-left')
+      // Todos com a mesma altura em qualquer largura: com o "Fontes da base" maior, o rodapé ficava com vãos desiguais.
+      expect(link.className, link.textContent ?? '').not.toContain('sm:min-h-0')
     }
   })
 

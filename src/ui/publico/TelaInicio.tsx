@@ -84,9 +84,9 @@ const PRECOS = (() => {
   const pro = planoPorId('pro')
   if (!estudante || !solo || !pro) return []
   return [
-    { id: 'estudante', valor: `R$ ${reais(estudante.mensal)}`, rotulo: 'Estudante de nutrição', apoio: `Com o comprovante de matrícula. ${pacientes(estudante)}`, tom: 'cinza' },
+    { id: 'estudante', valor: `R$ ${reais(estudante.mensal)}`, rotulo: 'Estudante de nutrição', apoio: `Com o comprovante de matrícula. ${pacientes(estudante)}`, tom: 'branco' },
     { id: 'solo', valor: `R$ ${reais(solo.mensal)}`, rotulo: 'Solo, por mês', apoio: `${solo.resumo} ${pacientes(solo)}`, tom: 'teal' },
-    { id: 'pro', valor: `R$ ${reais(pro.mensal)}`, rotulo: 'Pro, por mês', apoio: `${pro.resumo} ${pacientes(pro)}`, tom: 'cinza' },
+    { id: 'pro', valor: `R$ ${reais(pro.mensal)}`, rotulo: 'Pro, por mês', apoio: `${pro.resumo} ${pacientes(pro)}`, tom: 'branco' },
   ] as const
 })()
 
@@ -112,14 +112,14 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
             {...PRIORIDADE_ALTA}
             src={`${BASE}imagens/pratos-heroi.webp`}
             srcSet={`${BASE}imagens/pratos-heroi-800.webp 800w, ${BASE}imagens/pratos-heroi.webp 1600w`}
-            sizes="(max-width: 640px) 92vw, 640px"
+            sizes="(max-width: 640px) 92vw, 600px"
             width={1600}
             height={712}
             alt="Três pratos vistos de cima: salada com grão-de-bico, tigela com tofu e legumes, prato com ovo e tomate."
-            className="mx-auto mt-4 h-auto w-[92%] max-w-[640px]"
+            className="mx-auto mt-4 h-auto w-[92%] max-w-[600px]"
           />
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div>
               <h1 id="titulo-inicio" className="text-[clamp(34px,5vw,52px)] font-bold leading-[1.02]">
                 Faltou cálcio?{' '}

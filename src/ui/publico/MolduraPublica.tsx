@@ -39,17 +39,16 @@ export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: Dest
 }
 
 /**
- * Spec revisao-geral-publica, D-235: 44 px de toque no celular e o texto que quebra alinhado à esquerda (o botão
- * centraliza por padrão).
+ * Spec revisao-geral-publica, D-235: 44 px de toque e o texto que quebra alinhado à esquerda (o botão centraliza por
+ * padrão). Spec site-publico-profissional: 44 px em qualquer largura para todos, como já era o "Fontes da base" (M-1),
+ * e a lista sem vão entre eles; com alturas diferentes, o rodapé ficava com espaços desiguais.
  */
-const LINK_RODAPE_44 =
+const LINK_RODAPE =
   'inline-flex min-h-11 items-center text-left rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-/** A partir de 640 px, os links de navegação do rodapé voltam à altura do texto. */
-const LINK_RODAPE = `${LINK_RODAPE_44} sm:min-h-0`
 
 interface ColunaRodape {
   readonly titulo: string
-  readonly links: readonly { readonly texto: string; readonly ir: () => void; readonly classe: string }[]
+  readonly links: readonly { readonly texto: string; readonly ir: () => void }[]
 }
 
 /**
@@ -71,25 +70,24 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarrega
     {
       titulo: 'Produto',
       links: [
-        ...LINKS.map((link) => ({ texto: link.texto, ir: () => irComAncora(aoIrPara, link.destino, link.ancora), classe: LINK_RODAPE })),
-        // M-1 (revisão de 20/10/2026): 44 px em qualquer largura, como desde 01/10 (tablet também é toque).
-        { texto: 'Fontes da base', ir: () => irComAncora(aoIrPara, 'fontes'), classe: LINK_RODAPE_44 },
+        ...LINKS.map((link) => ({ texto: link.texto, ir: () => irComAncora(aoIrPara, link.destino, link.ancora) })),
+        { texto: 'Fontes da base', ir: () => irComAncora(aoIrPara, 'fontes') },
       ],
     },
     {
       titulo: 'Conta',
       links: temSessao
-        ? [{ texto: 'Ir para o painel', ir: () => aoIrPara('painel'), classe: LINK_RODAPE }]
+        ? [{ texto: 'Ir para o painel', ir: () => aoIrPara('painel') }]
         : [
-            { texto: 'Começar grátis', ir: () => aoIrPara('criar-conta'), classe: LINK_RODAPE },
-            { texto: 'Entrar', ir: () => aoIrPara('entrar'), classe: LINK_RODAPE },
+            { texto: 'Começar grátis', ir: () => aoIrPara('criar-conta') },
+            { texto: 'Entrar', ir: () => aoIrPara('entrar') },
           ],
     },
     {
       titulo: 'Legal',
       links: [
-        { texto: 'Termos de uso', ir: () => irComAncora(aoIrPara, 'termos'), classe: LINK_RODAPE },
-        { texto: 'Política de privacidade', ir: () => irComAncora(aoIrPara, 'privacidade'), classe: LINK_RODAPE },
+        { texto: 'Termos de uso', ir: () => irComAncora(aoIrPara, 'termos') },
+        { texto: 'Política de privacidade', ir: () => irComAncora(aoIrPara, 'privacidade') },
       ],
     },
   ]
@@ -154,11 +152,11 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarrega
           </div>
           {colunas.map((coluna) => (
             <div key={coluna.titulo}>
-              <h2 className="mb-3.5 text-sm font-semibold text-heading">{coluna.titulo}</h2>
-              <ul className="grid gap-2.5 text-sm">
+              <h2 className="mb-1 text-sm font-semibold text-heading">{coluna.titulo}</h2>
+              <ul className="grid text-sm">
                 {coluna.links.map((link) => (
                   <li key={link.texto}>
-                    <button type="button" onClick={link.ir} className={link.classe}>
+                    <button type="button" onClick={link.ir} className={LINK_RODAPE}>
                       {link.texto}
                     </button>
                   </li>
@@ -171,7 +169,7 @@ export function MolduraPublica({ atual, temSessao, aoIrPara, children, recarrega
         <div className="mx-auto mt-10 flex max-w-[1216px] flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-border pt-6 text-sm text-muted-foreground">
           <p>{`© ${ano} MetaNutri`}</p>
           {CONTATO_EMAIL ? (
-            <a href={`mailto:${CONTATO_EMAIL}`} className={LINK_RODAPE_44}>
+            <a href={`mailto:${CONTATO_EMAIL}`} className={LINK_RODAPE}>
               {CONTATO_EMAIL}
             </a>
           ) : null}
