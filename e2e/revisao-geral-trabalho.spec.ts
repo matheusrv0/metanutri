@@ -136,20 +136,20 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
         }
       })
     await page.emulateMedia({ media: 'print' })
-    const tela = await espacos()
-    expect(tela?.quebra).toBe('clone')
-    // 14 mm = 52,9 px.
-    expect(tela?.pe).toBeCloseTo(52.9, 0)
-    expect(tela?.topo).toBeCloseTo(52.9, 0)
+    // M-8 (revisão da spec site-publico-profissional): este arquivo usa movimento reduzido, e a regra global põe uma
+    // transição de 0,01 ms em tudo; o padding vai de 0 a 14 mm nessa transição, e a leitura logo depois de emular a
+    // impressão pegava o 0. A leitura espera o valor assentar. 14 mm = 52,9 px.
+    await expect.poll(async () => (await espacos())?.pe).toBeCloseTo(52.9, 0)
+    await expect.poll(async () => (await espacos())?.topo).toBeCloseTo(52.9, 0)
+    expect((await espacos())?.quebra).toBe('clone')
     await page.emulateMedia({ media: 'screen' })
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
     await expect(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
     await page.emulateMedia({ media: 'print' })
-    const folha = await espacos()
-    expect(folha?.pe).toBe(0)
-    expect(folha?.topo).toBe(0)
+    await expect.poll(async () => (await espacos())?.pe).toBe(0)
+    await expect.poll(async () => (await espacos())?.topo).toBe(0)
   })
 
   test('CA-770 (revisão de 20/10/2026): com a gaveta ou uma janela aberta, o papel tem a tela, sem elas e sem o véu escuro', async ({ page }) => {
