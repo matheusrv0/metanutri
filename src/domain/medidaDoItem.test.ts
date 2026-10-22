@@ -1,5 +1,5 @@
 // Spec alimentos-e-gramaturas, G1 a G5, G8, G9 e D-374 a D-379: a medida guardada no item e o que o paciente lê.
-import { buscarAlimentos } from './busca.ts'
+import { buscarAlimentos, registrarMedidasProprias } from './busca.ts'
 import { criarCasoVazio } from './caso.ts'
 import { copiarDieta, dietaDoPlano, dietaMudou, lerDieta } from './dietaDoLink.ts'
 import { modoDaCopia, paraOPaciente } from './dietaParaPaciente.ts'
@@ -220,4 +220,30 @@ describe('uma tolerância só: 5% (correção A, D-434)', () => {
     const base = criarPlanoPadrao(() => 'r1')
     return { refeicoes: base.refeicoes.slice(0, 1).map((r) => ({ ...r, id: 'r1', opcoes: { ...r.opcoes, principal: [i] } })) }
   }
+})
+
+describe('a medida própria chega ao link (correção A, D-436; Importante 2 da revisão de código)', () => {
+  const caso: Caso = { ...criarCasoVazio('c1'), quantidades: 'medida-e-gramas' }
+  const plano = (i: ItemPlano): Plano => {
+    const base = criarPlanoPadrao(() => 'r1')
+    return { refeicoes: base.refeicoes.slice(0, 1).map((r) => ({ ...r, id: 'r1', opcoes: { ...r.opcoes, principal: [i] } })) }
+  }
+  afterEach(() => registrarMedidasProprias([]))
+
+  it('CA-1239: com "concha = 100 g" da conta, a folha e o "Meu plano" no celular do paciente dizem "1 concha (100 g)"', () => {
+    registrarMedidasProprias([{ alimentoId: FEIJAO, nome: 'concha', gramas: 100 }])
+    const feijao = item(FEIJAO, 100)
+    expect(texto(feijao, 'medida-e-gramas')).toBe('1 concha (100 g)')
+    const copia = copiarDieta(dietaDoPlano(caso, plano(feijao)), '2026-10-22')
+    const noLink = copia.refeicoes[0]?.opcoes[0]?.[0]
+    expect(noLink).toMatchObject({ medida: '1 concha', escolhida: true })
+    // O celular do paciente não tem as medidas da conta.
+    registrarMedidasProprias([])
+    expect(noLink ? textoDaQuantidade(paraOPaciente(noLink, 'medida-e-gramas').quantidade) : '').toBe('1 concha (100 g)')
+  })
+
+  it('CA-1239: sem medida própria, a cópia do item automático continua sem "escolhida" (o link enviado não muda)', () => {
+    const copia = copiarDieta(dietaDoPlano(caso, plano(item(FEIJAO, 102))), '2026-10-22')
+    expect(copia.refeicoes[0]?.opcoes[0]?.[0]).not.toHaveProperty('escolhida')
+  })
 })
