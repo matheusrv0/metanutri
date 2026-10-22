@@ -38,21 +38,22 @@ export const PAGINAS: readonly PaginaIndexavel[] = [
   {
     rota: 'inicio',
     caminho: '',
-    titulo: 'MetaNutri: software de nutrição que diz o que comer',
-    descricao: `Monte o plano alimentar, veja o que falta de ${VITAMINAS_E_MINERAIS} vitaminas e minerais e receba alimento e porção para cobrir cada falta. Grátis para começar.`,
+    // Spec textos-e-promessas, D-415: para quem é e o diferencial, no mesmo vocabulário da landing.
+    titulo: 'MetaNutri: software para nutricionistas que diz o que comer',
+    descricao: `Monte o plano alimentar, veja o que ficou abaixo da meta em ${VITAMINAS_E_MINERAIS} vitaminas e minerais e receba o alimento e a porção em medida caseira. Comece grátis.`,
   },
   {
     rota: 'precos',
     caminho: 'precos/',
-    titulo: `Preços do MetaNutri: grátis para estudante, Solo a R$ ${reais(planoPorId('solo')?.mensal ?? 0)}`,
-    descricao: descricaoDosPrecos(),
+    titulo: `Preços do MetaNutri: Free, Solo a R$ ${reais(planoPorId('solo')?.mensal ?? 0)} e Pro a R$ ${reais(planoPorId('pro')?.mensal ?? 0)}`,
+    descricao: `${descricaoDosPrecos()} Todos os planos têm as mesmas funções.`,
   },
   {
     rota: 'termos',
     caminho: 'termos/',
     titulo: 'Termos de uso do MetaNutri',
     descricao:
-      'Regras de uso do MetaNutri: conta, planos e pagamento, plano Estudante, CRN do nutricionista, dados dos pacientes e encerramento da conta.',
+      'Regras de uso do MetaNutri: conta, assinaturas e pagamento, plano Estudante, CRN do nutricionista, dados dos pacientes e encerramento da conta.',
   },
   {
     rota: 'privacidade',

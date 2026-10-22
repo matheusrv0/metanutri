@@ -1,24 +1,24 @@
 # MetaNutri
 
-> Software de nutrição para nutricionistas, no navegador. Monta o plano alimentar, mostra o que falta de 20 vitaminas e minerais e da fibra, e o botão Cobrir sugere o alimento e a porção que fecham cada falta. O plano vira missões diárias que o paciente marca pelo celular.
+> Software para nutricionistas, no navegador. Monta o plano alimentar e mostra a adequação de 20 vitaminas e minerais e da fibra. Em cada nutriente abaixo da meta, o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença, respeitando as restrições do paciente. O plano vira missões diárias que o paciente marca pelo celular.
 
 ## Para quem
 
 - Nutricionistas em início de carreira e clínicas pequenas.
-- Estudantes de nutrição usam grátis, com o comprovante de matrícula, em conta de uso não comercial (estágio).
+- Estudantes de nutrição usam grátis, com o comprovante de matrícula, em conta de uso não comercial (casos de estudo e estágio supervisionado).
 
 ## O que faz
 
-- Plano alimentar por refeição, com a opção principal, dois substitutos e a medida caseira de cada alimento.
-- Adequação de 20 vitaminas e minerais e da fibra, comparada com as DRI. O botão Cobrir sugere até 5 alimentos de grupos diferentes para cada falta, com a porção em gramas e em medida caseira.
-- Missões diárias do paciente num link, sem baixar app nem criar conta. A tela de Adesão mostra quem passou 4 dias sem marcar.
-- Anamnese, antropometria, composição corporal, gasto energético, receitas com cálculo, suplementos e pedido de exames.
-- Folha do paciente para imprimir ou salvar em PDF e documentos em Word.
-- Dados na nuvem, presos à conta do nutricionista. Abre no computador e no celular.
+- Plano alimentar por refeição, com a opção principal, até dois substitutos e a medida caseira de cada alimento.
+- Adequação de 20 vitaminas e minerais e da fibra, comparada com as DRI. O botão Cobrir sugere até 5 alimentos de grupos diferentes para cada nutriente abaixo da meta, com a porção em gramas e em medida caseira.
+- Missões diárias do paciente num link, sem baixar aplicativo nem criar conta. A tela Adesão mostra quem está há 4 dias sem marcar.
+- Anamnese, antropometria, composição corporal, gasto energético, receitas com cálculo, alimentos próprios cadastrados pelo rótulo ou pelo código de barras, suplementos e pedido de exames.
+- Plano alimentar em PDF, com nomes de alimentos que o paciente entende; aconselhamento nutricional e memorial de cálculo em Word.
+- Dados salvos na nuvem, na conta do nutricionista. Abre no computador e no celular.
 
 ## Planos
 
-A conta é por paciente ativo: quem teve plano ou missão nos últimos 30 dias. Pagamento com cartão de crédito, no site.
+Todos os planos têm as mesmas funções. O preço depende de quantos pacientes ativos o nutricionista tem: quem teve plano ou missão nos últimos 30 dias. Pagamento com cartão de crédito, no site.
 
 - Free: R$ 0, 2 pacientes ativos.
 - Estudante: R$ 0, com o comprovante de matrícula, 10 pacientes ativos.

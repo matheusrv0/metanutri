@@ -30,10 +30,11 @@ describe('as páginas indexáveis (spec site-publico-profissional)', () => {
 
   it('CA-1009: a página inicial diz o que é e o diferencial, com o número de nutrientes do domínio', () => {
     const inicio = paginaDaRota('inicio')
-    expect(inicio.titulo).toBe('MetaNutri: software de nutrição que diz o que comer')
+    // CA-1183 (spec textos-e-promessas, D-415): para quem é e o diferencial, coerente com o título da landing.
+    expect(inicio.titulo).toBe('MetaNutri: software para nutricionistas que diz o que comer')
     const vitaminasEMinerais = MICRONUTRIENTES_ADEQUACAO.filter((c) => c !== 'fibra_g').length
     expect(inicio.descricao).toBe(
-      `Monte o plano alimentar, veja o que falta de ${vitaminasEMinerais} vitaminas e minerais e receba alimento e porção para cobrir cada falta. Grátis para começar.`,
+      `Monte o plano alimentar, veja o que ficou abaixo da meta em ${vitaminasEMinerais} vitaminas e minerais e receba o alimento e a porção em medida caseira. Comece grátis.`,
     )
   })
 
@@ -41,9 +42,10 @@ describe('as páginas indexáveis (spec site-publico-profissional)', () => {
     const precos = paginaDaRota('precos')
     const solo = planoPorId('solo')
     expect(solo?.mensal).toBe(34.9)
-    expect(precos.titulo).toBe('Preços do MetaNutri: grátis para estudante, Solo a R$ 34,90')
+    expect(precos.titulo).toBe('Preços do MetaNutri: Free, Solo a R$ 34,90 e Pro a R$ 64,90')
     expect(precos.descricao).toBe(
-      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano e Pro por R$ 64,90 ao mês ou R$ 599 ao ano.',
+      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano e Pro por R$ 64,90 ao mês ou R$ 599 ao ano. Todos os planos têm as mesmas funções.',
     )
+    expect(paginaDaRota('termos').descricao).toContain('assinaturas e pagamento')
   })
 })

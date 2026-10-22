@@ -62,6 +62,17 @@ describe('o cabeçalho de cada página (spec site-publico-profissional)', () => 
     expect(JSON.stringify(dados)).not.toMatch(/aggregateRating|review|ratingValue/)
   })
 
+  it('CA-1183 (spec textos-e-promessas, D-415): a descrição do aplicativo e o texto da imagem seguem a landing, sem "falta" repetido', () => {
+    const aplicativo = dadosEstruturados()['@graph'].find((no) => no['@type'] === 'SoftwareApplication')
+    expect(aplicativo?.['applicationSubCategory']).toBe('Software para nutricionistas')
+    expect(aplicativo?.['description']).toBe(
+      'Software para nutricionistas: plano alimentar com adequação de 20 vitaminas e minerais e da fibra, sugestão de alimento e porção em medida caseira para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.',
+    )
+    expect(meta(cabecalhoDaPagina(paginaDaRota('inicio')), 'property', 'og:image:alt')).toBe(
+      'Logotipo do MetaNutri em fundo verde-petróleo, com a frase “Software de nutrição que diz o que comer”.',
+    )
+  })
+
   it('CA-1012: o JSON-LD não abre brecha para fechar o <script> antes da hora', () => {
     const html = cabecalhoDaPagina(paginaDaRota('inicio'))
     const bloco = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html)?.[1] ?? ''

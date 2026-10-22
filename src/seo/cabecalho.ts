@@ -10,7 +10,7 @@ export { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
 
 /** A imagem das prévias de link: 1200 × 630, feita da marca por scripts/imagem-de-compartilhar.mjs. */
 export const IMAGEM_DE_COMPARTILHAR = `${ENDERECO_DO_SITE}imagem-compartilhar.png`
-const TEXTO_DA_IMAGEM = 'Símbolo e nome do MetaNutri sobre o teal da marca, com a frase: software de nutrição que diz o que comer.'
+const TEXTO_DA_IMAGEM = 'Logotipo do MetaNutri em fundo verde-petróleo, com a frase “Software de nutrição que diz o que comer”.'
 
 /** Só a página inicial e Preços falam do produto e dos preços; Termos, Privacidade e Fontes não precisam. */
 const COM_DADOS_ESTRUTURADOS: readonly PaginaIndexavel['rota'][] = ['inicio', 'precos']
@@ -54,10 +54,10 @@ export function dadosEstruturados(): DadosEstruturados {
         name: 'MetaNutri',
         url: ENDERECO_DO_SITE,
         applicationCategory: 'HealthApplication',
-        applicationSubCategory: 'Software de nutrição para nutricionistas',
+        applicationSubCategory: 'Software para nutricionistas',
         operatingSystem: 'Web',
         inLanguage: 'pt-BR',
-        description: `Software de nutrição para nutricionistas: plano alimentar com a adequação de ${vitaminasEMinerais} vitaminas e minerais e da fibra, o botão Cobrir, que sugere alimento e porção para cada falta, e missões diárias para o paciente.`,
+        description: `Software para nutricionistas: plano alimentar com adequação de ${vitaminasEMinerais} vitaminas e minerais e da fibra, sugestão de alimento e porção em medida caseira para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.`,
         image: IMAGEM_DE_COMPARTILHAR,
         publisher: { '@id': organizacao },
         offers: ofertas,

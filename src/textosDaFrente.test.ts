@@ -142,6 +142,9 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"feche o que falta"', /feche o que falta/i],
   ['"Comece pelo Free"', /Comece pelo Free/i],
   ['"Comparar os planos"', /Comparar os planos/i],
+  // D-415: a busca e os robôs com o mesmo glossário da landing.
+  ['"folha do paciente"', /folha do paciente/i],
+  ['comentário antigo do index.html', /impeccable:direction|OWN-WORLD/],
 ]
 
 const achados = (padrao: RegExp) =>

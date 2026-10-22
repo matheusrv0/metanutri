@@ -76,7 +76,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   const html = await (await request.get('/')).text()
   expect(html).toMatch(/<html lang="pt-BR">/)
   const titulo = atributo(html, /<title>([^<]+)<\/title>/) ?? ''
-  expect(titulo).toBe('MetaNutri: software de nutrição que diz o que comer')
+  expect(titulo).toBe('MetaNutri: software para nutricionistas que diz o que comer')
   expect(titulo.length).toBeLessThanOrEqual(60)
   const descricao = atributo(html, /<meta name="description" content="([^"]+)" \/>/) ?? ''
   expect(descricao.length).toBeGreaterThan(50)
