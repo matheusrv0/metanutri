@@ -39,6 +39,12 @@ describe('navegação por endereço', () => {
     expect(escreverRota({ tela: 'paciente', pacienteId: 'p1' })).toBe('#/paciente/p1')
   })
 
+  it('CA-1323: a ficha aberta na Suplementação prescrita tem endereço próprio (D-476)', () => {
+    const rota = { tela: 'paciente', pacienteId: 'p1', campo: 'suplementos' } as const
+    expect(escreverRota(rota)).toBe('#/paciente/p1/suplementos')
+    expect(lerRota(escreverRota(rota))).toEqual(rota)
+  })
+
   it('ida e volta preserva a rota, inclusive id com caracteres especiais', () => {
     const rota = { tela: 'planejador', casoId: 'caso com espaço/barra', aba: 'adequacao' } as const
     expect(lerRota(escreverRota(rota))).toEqual(rota)

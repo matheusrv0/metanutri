@@ -19,6 +19,7 @@ import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
+import type { CampoDaFicha } from '../navegacao.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 
 interface TelaPacienteProps {
@@ -30,8 +31,8 @@ interface TelaPacienteProps {
   readonly aoAbrirPlano: (casoId: string) => void
   readonly aoNovoPlano: (pacienteId: string, modo: ModoPlano) => void
   readonly aoVoltar: () => void
-  /** O campo que recebe o cursor ao abrir: o WhatsApp sem telefone leva até ele (spec whatsapp-e-retorno, CA-517). */
-  readonly focar?: 'telefone' | undefined
+  /** O campo que recebe o cursor ao abrir: o WhatsApp sem telefone leva até ele (CA-517); o Cobrir do ferro da gestante, à Suplementação prescrita (D-476). */
+  readonly focar?: CampoDaFicha | undefined
   /** Injetável no teste; decide se a próxima consulta já passou, a idade de hoje e as semanas de gestação. */
   readonly agora?: Date | undefined
 }
@@ -116,7 +117,7 @@ export function TelaPaciente({
           <h2 id={idConduta} className="card-title px-1">
             Conduta
           </h2>
-          <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
+          <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} focar={focar === 'suplementos'} />
           <CartaoExames key={`exames-${paciente.id}`} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
           <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
         </section>

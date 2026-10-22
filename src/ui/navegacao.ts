@@ -3,6 +3,9 @@ import { ehCiclo, ehIdPlano, type Ciclo, type IdPlano } from '@/domain/conta.ts'
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
+/** Onde a ficha do paciente abre: no Telefone (CA-517) ou na Suplementação prescrita (D-476). */
+export type CampoDaFicha = 'telefone' | 'suplementos'
+
 /** Os planos que se paga pelo checkout. Clínica é conversa; Free e Estudante não pagam. */
 export type PlanoPago = 'solo' | 'pro'
 export const ehPlanoPago = (valor: unknown): valor is PlanoPago => valor === 'solo' || valor === 'pro'
@@ -39,7 +42,8 @@ export type Rota =
   | { readonly tela: 'pacientes' }
   | { readonly tela: 'adesao' }
   // `campo`: a ficha abre com o cursor nele (o WhatsApp sem telefone leva até lá; spec whatsapp-e-retorno, CA-517).
-  | { readonly tela: 'paciente'; readonly pacienteId: string; readonly campo?: 'telefone' }
+  // 'suplementos': a ficha abre no cartão "Suplementação prescrita" (o Cobrir do ferro da gestante leva até lá, D-476).
+  | { readonly tela: 'paciente'; readonly pacienteId: string; readonly campo?: CampoDaFicha }
   | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
   // Spec receitas-com-calculo, D-272: a biblioteca de receitas da conta.
@@ -86,7 +90,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
-  if (tela === 'paciente' && id) return aba === 'telefone' ? { tela: 'paciente', pacienteId: id, campo: 'telefone' } : { tela: 'paciente', pacienteId: id }
+  if (tela === 'paciente' && id) return aba === 'telefone' || aba === 'suplementos' ? { tela: 'paciente', pacienteId: id, campo: aba } : { tela: 'paciente', pacienteId: id }
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
   if (tela === 'negocio') return { tela: 'negocio' }
   if (tela === 'comprovar-matricula') return { tela: 'comprovar-matricula' }

@@ -1,4 +1,4 @@
-import { EyeOff, TriangleAlert } from 'lucide-react'
+import { EyeOff, Info, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { refeicaoIndicada, sugerirParaCobrir } from '@/domain/cobrir.ts'
@@ -38,7 +38,12 @@ interface GavetaCobrirProps {
    * cairia no corpo da página.
    */
   readonly focoAoFechar?: () => HTMLElement | null
+  /** Abre a ficha na Suplementação prescrita; só com paciente vinculado (spec sugestoes-com-criterio, D-476). */
+  readonly aoVerSuplementos?: (() => void) | undefined
 }
+
+/** D-476: na gestação, o ferro e o folato vêm do suplemento prescrito no pré-natal (PNSF; OMS, 2016). */
+const DO_SUPLEMENTO_NA_GESTACAO: ReadonlySet<ChaveNutrienteAlimento> = new Set(['ferro_mg', 'folato_dfe_mcg'])
 
 /** Quanto cabe até o gasto; com o plano acima dele, quanto já passou, sem número negativo (CA-694). */
 function fraseDoGasto(kcalDisponiveis: number | null): string {
@@ -63,6 +68,7 @@ export function GavetaCobrir({
   aoAdicionar,
   aoFechar,
   focoAoFechar,
+  aoVerSuplementos,
 }: GavetaCobrirProps) {
   const { adequacao: prefs } = caso
   // D-441 (spec sugestoes-com-criterio): vazio é "Refeição de cada alimento"; cada sugestão vai para a refeição dela.
@@ -153,6 +159,20 @@ export function GavetaCobrir({
             ))}
           </select>
         </div>
+
+        {chave !== null && caso.condicao.tipo === 'gestante' && DO_SUPLEMENTO_NA_GESTACAO.has(chave) ? (
+          <Alert variant="info">
+            <Info aria-hidden="true" />
+            <div className="flex flex-col items-start gap-1">
+              <p>Na gestação, o ferro e o ácido fólico costumam vir do suplemento prescrito no pré-natal.</p>
+              {aoVerSuplementos ? (
+                <Button variant="link" size="sm" className="h-auto px-0 max-sm:min-h-11" onClick={aoVerSuplementos}>
+                  Ver Suplementação prescrita
+                </Button>
+              ) : null}
+            </div>
+          </Alert>
+        ) : null}
 
         {resultado?.motivoSemSugestao ? (
           <Alert variant="warning">

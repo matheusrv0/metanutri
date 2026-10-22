@@ -25,6 +25,8 @@ interface MicrosDoDiaProps {
   /** Leva à etapa 3, onde estão todas as linhas da adequação. */
   readonly aoVerTodos: () => void
   readonly gerarId?: GerarId
+  /** Abre a ficha na Suplementação prescrita (D-476); sem paciente vinculado, não vem. */
+  readonly aoVerSuplementos?: (() => void) | undefined
 }
 
 /** Quantos abaixo da meta o cartão mostra: o resto está na etapa 3 (CB-203). */
@@ -36,7 +38,17 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
  * O que falta de micronutriente, com o Cobrir, na coluna da etapa 2 (spec painel-lateral-enxuto, D-204).
  * Mostra só o que pede ação; todas as linhas estão na etapa 3.
  */
-export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RESTRICOES, aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
+export function MicrosDoDia({
+  caso,
+  plano,
+  gastoEnergetico,
+  restricoes = SEM_RESTRICOES,
+  aoAlterarCaso,
+  aoAlterarPlano,
+  aoVerTodos,
+  gerarId = idPadrao,
+  aoVerSuplementos,
+}: MicrosDoDiaProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const idMeta = useId()
   const idTitulo = useId()
@@ -142,6 +154,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RES
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
         focoAoFechar={focoAoFechar}
+        aoVerSuplementos={aoVerSuplementos}
         aoAdicionar={(refeicaoId, opcao, alimentoId, gramas, medida) => {
           aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas, medida: medida ?? undefined }, gerarId))
           setCobrindo(null)

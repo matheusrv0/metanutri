@@ -379,6 +379,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     // Spec ficha-unica, D-353: as restrições da ficha valem no Cobrir, nas trocas, nas sugestões e na linha do plano; com
     // elas, os cuidados da fase de vida do plano (spec sugestoes-com-criterio, correção A, D-442 e D-443).
     const restricoesDoPaciente = comCuidadosDaFase(pacienteDoPlano ? restricoesDaFicha(pacienteDoPlano) : SEM_RESTRICOES, caso)
+    // D-476 (correção C): o Cobrir do ferro e do folato da gestante leva à Suplementação prescrita da ficha.
+    const verSuplementos = pacienteDoPlano ? () => navegar({ tela: 'paciente', pacienteId: pacienteDoPlano.id, campo: 'suplementos' }) : undefined
     // O gasto energético limita as sugestões do Cobrir, na etapa 2 e na 3.
     const gastoEnergetico = calcularEnergia(caso, {
       fator: caso.energia.fator,
@@ -448,6 +450,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                         setFocarAdequacao(true)
                         navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })
                       }}
+                      aoVerSuplementos={verSuplementos}
                     />
                   </div>
                 </div>
@@ -479,6 +482,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   aoAbrirFontes={() => navegar({ tela: 'fontes' })}
                   focarTitulo={focarAdequacao}
                   aoFocarTitulo={() => setFocarAdequacao(false)}
+                  aoVerSuplementos={verSuplementos}
                 />
               </div>
             )}

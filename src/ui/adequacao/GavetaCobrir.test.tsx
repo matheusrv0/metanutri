@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
@@ -151,6 +151,54 @@ describe('Porção máxima automática (spec sugestoes-com-criterio, correção 
 
   it('CA-1321: um teto digitado antes aparece', () => {
     expect(montar(30).campo).toHaveValue('30')
+  })
+})
+
+describe('Gestação: ferro e folato do suplemento (spec sugestoes-com-criterio, correção C, D-476)', () => {
+  const NOTA = 'Na gestação, o ferro e o ácido fólico costumam vir do suplemento prescrito no pré-natal.'
+  const gestante: Caso = { ...caso, condicao: { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 } }
+  const montar = (oCaso: Caso, chave: 'ferro_mg' | 'folato_dfe_mcg' | 'calcio_mg', aoVerSuplementos?: () => void) => {
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    render(
+      <GavetaCobrir
+        chave={chave}
+        rotulo="Nutriente"
+        caso={oCaso}
+        plano={plano}
+        totais={totais}
+        adequacao={calcularAdequacao(totais, oCaso, oCaso.adequacao.preset)}
+        gastoEnergetico={2200}
+        aoAlterarCaso={nada}
+        aoAdicionar={nada}
+        aoFechar={nada}
+        aoVerSuplementos={aoVerSuplementos}
+      />,
+    )
+    return within(screen.getByRole('dialog'))
+  }
+
+  it('CA-1323: no ferro e no folato da gestante, a nota vem antes das sugestões, que continuam', async () => {
+    for (const chave of ['ferro_mg', 'folato_dfe_mcg'] as const) {
+      const aoVer = vi.fn()
+      const gaveta = montar(gestante, chave, aoVer)
+      expect(gaveta.getByText(NOTA)).toBeInTheDocument()
+      expect(within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem').length).toBeGreaterThan(0)
+      await userEvent.setup().click(gaveta.getByRole('button', { name: 'Ver Suplementação prescrita' }))
+      expect(aoVer).toHaveBeenCalledTimes(1)
+      cleanup()
+    }
+  })
+
+  it('CB-445: sem paciente vinculado, a nota aparece sem o botão', () => {
+    const gaveta = montar(gestante, 'ferro_mg')
+    expect(gaveta.getByText(NOTA)).toBeInTheDocument()
+    expect(gaveta.queryByRole('button', { name: 'Ver Suplementação prescrita' })).not.toBeInTheDocument()
+  })
+
+  it('CA-1323: fora da gestação, ou em outro nutriente, nada', () => {
+    expect(montar(caso, 'ferro_mg', vi.fn()).queryByText(NOTA)).not.toBeInTheDocument()
+    cleanup()
+    expect(montar(gestante, 'calcio_mg', vi.fn()).queryByText(NOTA)).not.toBeInTheDocument()
   })
 })
 

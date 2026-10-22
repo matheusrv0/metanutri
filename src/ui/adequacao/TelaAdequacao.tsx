@@ -42,6 +42,8 @@ interface TelaAdequacaoProps {
   /** Chegou pelo "Ver todos" do cartão da etapa 2: abre no topo, com o foco no título (CA-701). */
   readonly focarTitulo?: boolean | undefined
   readonly aoFocarTitulo?: (() => void) | undefined
+  /** Abre a ficha do paciente na Suplementação prescrita (D-476); sem paciente vinculado, não vem. */
+  readonly aoVerSuplementos?: (() => void) | undefined
 }
 
 const TIPO_PRESET: readonly { readonly valor: PresetAdequacao['tipo']; readonly rotulo: string }[] = [
@@ -100,6 +102,7 @@ export function TelaAdequacao({
   aoAbrirFontes,
   focarTitulo = false,
   aoFocarTitulo,
+  aoVerSuplementos,
 }: TelaAdequacaoProps) {
   const idTitulo = useId()
   // O cartão da etapa 2 fica depois das refeições: sem isto, a pessoa cairia no fim da etapa 3.
@@ -311,6 +314,7 @@ export function TelaAdequacao({
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
         focoAoFechar={focoAoFechar}
+        aoVerSuplementos={aoVerSuplementos}
         aoAdicionar={(refeicaoId, opcao, alimentoId, gramas, medida) => {
           aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas, medida: medida ?? undefined }, gerarId))
           setCobrindo(null)

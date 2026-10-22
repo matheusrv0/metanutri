@@ -27,7 +27,7 @@ const relogio = () => {
 /** Quarta, 14/10/2026, 10h em Brasília. */
 const AGORA = new Date('2026-10-14T13:00:00.000Z')
 
-function montar(mudanca: Partial<Paciente> = {}, extra: { readonly focar?: 'telefone'; readonly armazenamento?: MemoriaFalsa } = {}) {
+function montar(mudanca: Partial<Paciente> = {}, extra: { readonly focar?: 'telefone' | 'suplementos'; readonly armazenamento?: MemoriaFalsa } = {}) {
   const armazenamento = extra.armazenamento ?? new MemoriaFalsa()
   const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
   if (!pacientes.obter('p1')) {
@@ -159,6 +159,12 @@ describe('Ficha: telefone para o WhatsApp', () => {
 
   it('CA-517: aberta do jeito comum, o cursor não vai para o Telefone', () => {
     montar()
+    expect(screen.getByLabelText('Telefone')).not.toHaveFocus()
+  })
+
+  it('CA-1323: aberta pelo Cobrir da gestante, o foco vai para "Suplementação prescrita" (D-476)', () => {
+    montar({}, { focar: 'suplementos' })
+    expect(screen.getByRole('heading', { name: 'Suplementação prescrita' })).toHaveFocus()
     expect(screen.getByLabelText('Telefone')).not.toHaveFocus()
   })
 })

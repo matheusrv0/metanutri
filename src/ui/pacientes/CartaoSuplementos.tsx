@@ -1,5 +1,5 @@
 import { LayoutTemplate, Plus, Printer } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { dataDeHoje } from '@/domain/documentoDoPaciente.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
@@ -19,6 +19,8 @@ interface CartaoSuplementosProps {
   /** O exportar bloqueado pelo CRN (CA-290): a folha fica desligada com o mesmo aviso da dieta (CA-578, CA-581). */
   readonly bloqueio: string | null
   readonly aoAlterar: (mudanca: Partial<Paciente>) => void
+  /** Abre com o foco no título: o Cobrir do ferro e do folato da gestante leva até aqui (spec sugestoes-com-criterio, D-476). */
+  readonly focar?: boolean | undefined
 }
 
 type Janela = { readonly tipo: 'modelos' } | { readonly tipo: 'imprimir'; readonly data: string }
@@ -29,11 +31,18 @@ const novoId = () => globalThis.crypto.randomUUID()
  * Os suplementos do paciente (spec anamnese-e-prescricoes, US-AP2): digitados pelo nutricionista, nada sugerido
  * (D-164), com modelos da conta para reusar e a folha para imprimir.
  */
-export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar }: CartaoSuplementosProps) {
+export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar, focar = false }: CartaoSuplementosProps) {
   const armazenamento = useArmazenamento()
+  const id = useId()
+  // D-476: a ficha aberta pelo Cobrir do ferro da gestante cai aqui, com o foco no título.
+  useEffect(() => {
+    if (!focar) return
+    const titulo = document.getElementById(`${id}-titulo`)
+    titulo?.scrollIntoView?.({ block: 'start' })
+    titulo?.focus({ preventScroll: true })
+  }, [focar, id])
   const [janela, setJanela] = useState<Janela | null>(null)
   const [mensagem, setMensagem] = useState('')
-  const id = useId()
   const lista = paciente.suplementos
 
   const mudar = (suplementos: readonly Suplemento[]) => aoAlterar({ suplementos })
@@ -53,7 +62,9 @@ export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar }:
     <Card role="region" aria-labelledby={`${id}-titulo`}>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle id={`${id}-titulo`}>Suplementação prescrita</CardTitle>
+          <CardTitle id={`${id}-titulo`} tabIndex={-1} className="outline-none">
+            Suplementação prescrita
+          </CardTitle>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => setJanela({ tipo: 'modelos' })}>
               <LayoutTemplate aria-hidden="true" />
