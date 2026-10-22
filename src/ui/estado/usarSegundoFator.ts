@@ -14,7 +14,7 @@ export const CODIGO_INCOMPLETO = `Digite os ${DIGITOS_DO_APP} dígitos do códig
 export const CODIGO_ERRADO = 'Código errado. Confira o app e tente de novo.'
 export const MUITAS_TENTATIVAS = 'Muitas tentativas seguidas. Espere um pouco e tente de novo.'
 /** D-269 (CA-859): o servidor já não conhece o cadastro mostrado; a tela prepara outro. */
-export const QR_MUDOU = 'O código QR mudou. Apague a entrada antiga do MetaNutri no app e leia este.'
+export const QR_MUDOU = 'O código QR mudou. Exclua a entrada antiga do MetaNutri no app e leia este código.'
 const NAO_CONFIRMOU = 'Não foi possível confirmar o código agora. Tente de novo.'
 const NAO_PREPAROU = 'Não foi possível preparar a verificação em duas etapas agora. Tente de novo.'
 

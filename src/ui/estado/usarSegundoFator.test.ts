@@ -171,7 +171,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     await act(async () => {
       erro = await result.current.confirmar('123456')
     })
-    expect(erro).toBe('O código QR mudou. Apague a entrada antiga do MetaNutri no app e leia este.')
+    expect(erro).toBe('O código QR mudou. Exclua a entrada antiga do MetaNutri no app e leia este código.')
     await waitFor(() => expect(result.current.etapa).toMatchObject({ tipo: 'cadastrar', fatorId: 'fator-novo-2', chave: 'CHAVE2' }))
   })
 

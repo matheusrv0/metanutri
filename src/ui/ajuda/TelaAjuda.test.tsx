@@ -47,7 +47,7 @@ describe('Ajuda', () => {
     const texto = document.body.textContent ?? ''
     expect(texto).not.toMatch(/Cinco minutos|Nada aqui é opinião|Dieta para imprimir|use o cobrir|fechar a falta|nascem com/)
     expect(screen.getByText('Veja os nutrientes abaixo da meta e use o botão Cobrir.')).toBeInTheDocument()
-    expect(screen.getByText('O plano impresso vira PDF no próprio navegador; o aconselhamento e o memorial saem em Word.')).toBeInTheDocument()
+    expect(screen.getByText('O plano impresso é salvo em PDF pelo próprio navegador; o aconselhamento e o memorial são gerados em Word.')).toBeInTheDocument()
     expect(screen.getByText('Digite “150 arroz int” e tecle Enter. A medida caseira e as kcal aparecem na hora.')).toBeInTheDocument()
     expect(screen.getByText('Açúcares e gordura saturada só aparecem nos produtos cadastrados pelo rótulo.')).toBeInTheDocument()
   })
