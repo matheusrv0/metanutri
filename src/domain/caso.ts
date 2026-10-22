@@ -60,6 +60,8 @@ export function criarCasoVazio(id: string): Caso {
     receitas: '',
     quantidades: 'medida-caseira',
     linhaDaAgua: null,
+    metodoAgua: 'ml-kg',
+    aguaLitros: null,
   }
 }
 

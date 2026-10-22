@@ -122,6 +122,13 @@ export interface Caso {
    * (35 ml por kg); texto é o que a nutricionista escreveu; vazio tira a linha da folha.
    */
   readonly linhaDaAgua: string | null
+  /**
+   * Como a meta de água é calculada (spec ficha-unica, D-355): pelo peso ou por 1 ml/kcal. Plano gravado antes, sem o
+   * campo, lê "Por peso" (`metodoDaAgua`).
+   */
+  readonly metodoAgua: 'ml-kg' | 'ml-kcal'
+  /** A meta de água digitada pela nutricionista, em litros; `null` usa a calculada (CA-1093). */
+  readonly aguaLitros: number | null
 }
 
 /** "Medida caseira" (a medida do planejador, para a paciente) ou "Gramas" (só o peso). */

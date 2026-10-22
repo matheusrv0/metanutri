@@ -36,38 +36,54 @@ describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', (
   })
 })
 
-describe('Meta de água (spec conduta-da-nutricionista, D-298; spec ficha-unica, D-355)', () => {
-  it('CA-932 e CA-1083: o campo mostra a linha automática; escrever troca, apagar tira, e "Usar a automática" volta à conta', async () => {
-    const usuario = montar(adulta)
+describe('Meta de água pelo peso (spec ficha-unica, D-355; spec conduta-da-nutricionista, D-298)', () => {
+  it('CA-1092: o campo mostra a meta em litros, o método e a conta, e a referência da DRI numa linha à parte', () => {
+    montar(adulta)
     const campo = screen.getByLabelText('Meta de água')
-    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
-    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
-
-    await usuario.clear(campo)
-    expect(campo).toHaveValue('')
-    await usuario.type(campo, 'Beba 2 litros de água por dia.')
-    expect(campo).toHaveValue('Beba 2 litros de água por dia.')
-
-    await usuario.click(screen.getByRole('button', { name: 'Usar a automática' }))
-    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
-    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
+    expect(campo).toHaveValue('2,2')
+    expect(campo).toHaveAccessibleDescription('Por peso: 35 ml/kg (18 a 55 anos) · 35 ml × 62 kg = 2,2 L')
+    expect(screen.getByText('Referência da DRI para mulheres de 19 anos ou mais: 2,7 L de água total, cerca de 2,2 L em bebidas.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Usar a calculada' })).not.toBeInTheDocument()
   })
 
-  it('CA-1083: a dica diz a água total, a parte em bebidas e a fase de vida; o peso não muda a meta', async () => {
+  it('CA-1092: a meta acompanha o peso enquanto não há edição', async () => {
     const usuario = montar(adulta)
-    const campo = screen.getByLabelText('Meta de água')
-    expect(campo).toHaveAccessibleDescription(/Referência de água da DRI para mulheres de 19 anos ou mais: 2,7 litros por dia, dos quais cerca de 2,2 litros em bebidas/)
     const peso = screen.getByLabelText('Peso')
     await usuario.clear(peso)
     await usuario.type(peso, '80')
-    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
+    expect(screen.getByLabelText('Meta de água')).toHaveValue('2,8')
   })
 
-  it('CA-1083: sem sexo ou idade, o campo fica vazio, com a dica de informar os dois', () => {
-    montar({ ...adulta, sexo: null })
+  it('CA-1093: o valor digitado vale e fica; apagar tira a meta; "Usar a calculada" volta à conta', async () => {
+    const usuario = montar(adulta)
+    const campo = screen.getByLabelText('Meta de água')
+    await usuario.clear(campo)
+    expect(campo).toHaveAccessibleDescription('Sem meta de água no plano impresso e na missão do link.')
+    await usuario.type(campo, '3')
+    expect(campo).toHaveValue('3')
+    expect(screen.getByText('Valor digitado. A conta dá 2,2 L.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
+    expect(campo).toHaveValue('2,2')
+  })
+
+  it('CA-1091: "Por energia (1 ml/kcal)" usa a meta de energia', async () => {
+    const usuario = montar(adulta)
+    await usuario.click(screen.getByRole('radio', { name: 'Por energia (1 ml/kcal)' }))
+    expect(screen.getByLabelText('Meta de água')).toHaveAccessibleDescription(/^Por energia: 1 ml\/kcal · 1 ml × [\d.]+ kcal = \d,\d L$/)
+  })
+
+  it('CA-1092: sem peso, o campo fica vazio e pede o peso', () => {
+    montar({ ...adulta, pesoKg: null })
     const campo = screen.getByLabelText('Meta de água')
     expect(campo).toHaveValue('')
-    expect(campo).toHaveAttribute('placeholder', 'Informe sexo e idade para a meta automática.')
+    expect(campo).toHaveAccessibleDescription('Informe o peso para a meta automática.')
+  })
+
+  it('CA-1095: a linha escrita à mão antes continua, com o aviso, até "Usar a calculada"', async () => {
+    const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
+    expect(screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você usar a calculada.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
+    expect(screen.queryByText(/Linha escrita antes/)).not.toBeInTheDocument()
   })
 })
 

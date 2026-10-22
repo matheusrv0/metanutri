@@ -1,6 +1,6 @@
 // Missões diárias: o plano vira uma lista curta de coisas para o paciente marcar no dia.
 // Tudo é derivado do plano; nada aqui inventa recomendação nova.
-import { litros, type MetaDeAgua } from './agua.ts'
+import { litros } from './agua.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { totaisDoPlano } from './totais.ts'
 import type { Plano } from './tipos.ts'
@@ -22,7 +22,7 @@ export const quantosLitros = (l: number): string => `${litros(l)} ${l < 2 ? 'lit
  * Gera as missões do dia a partir do plano: uma por refeição com alimento,
  * mais as de hábito que o próprio plano justifica.
  */
-export function missoesDoPlano(plano: Plano, opcoes: { readonly agua?: MetaDeAgua | null } = {}): readonly Missao[] {
+export function missoesDoPlano(plano: Plano, opcoes: { readonly aguaL?: number | null } = {}): readonly Missao[] {
   const missoes: Missao[] = []
 
   for (const refeicao of plano.refeicoes) {
@@ -53,16 +53,16 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly agua?: MetaDeAgu
   }
 
   const totais = totaisDoPlano(plano, buscarAlimento)
-  // A meta de água da fase de vida: a parte em bebidas, a mesma da folha (spec ficha-unica, D-355).
-  const agua = opcoes.agua ?? null
+  // A meta de água do plano, a mesma da linha da folha (spec ficha-unica, D-355 e CA-1094).
+  const agua = opcoes.aguaL ?? null
   const temAlimento = itens.some((i) => i.gramas > 0)
 
   if (temAlimento || totais.nutrientes.fibra_g.total > 0) {
     if (agua !== null) {
       missoes.push({
         id: 'agua',
-        texto: `Beber cerca de ${quantosLitros(agua.bebidasL)} de água`,
-        origem: `Referência de água da DRI para ${agua.fase}`,
+        texto: `Beber cerca de ${quantosLitros(agua)} de água`,
+        origem: 'Meta de água do plano',
       })
     } else {
       missoes.push({ id: 'agua', texto: 'Beber água ao longo do dia', origem: 'Hábito que acompanha o plano' })

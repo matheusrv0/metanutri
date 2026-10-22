@@ -21,18 +21,13 @@ describe('missões do dia', () => {
     expect(missoes.some((m) => m.texto.includes('Almoço por volta das 12:00'))).toBe(true)
   })
 
-  it('CA-1082 (spec ficha-unica): a água usa a parte em bebidas da fase de vida, a mesma da folha', () => {
-    const crianca = missoesDoPlano(comAlimentos(), { agua: { totalL: 1.7, bebidasL: 1.2, fase: 'crianças de 4 a 8 anos' } })
-    expect(crianca.find((m) => m.id === 'agua')).toEqual({
-      id: 'agua',
-      texto: 'Beber cerca de 1,2 litro de água',
-      origem: 'Referência de água da DRI para crianças de 4 a 8 anos',
-    })
-    const homem = missoesDoPlano(comAlimentos(), { agua: { totalL: 3.7, bebidasL: 3, fase: 'homens de 19 anos ou mais' } })
-    expect(homem.find((m) => m.id === 'agua')?.texto).toBe('Beber cerca de 3,0 litros de água')
+  it('CA-1094 (spec ficha-unica): a missão usa a meta de água do plano, a mesma da folha', () => {
+    const crianca = missoesDoPlano(comAlimentos(), { aguaL: 1.5 })
+    expect(crianca.find((m) => m.id === 'agua')).toEqual({ id: 'agua', texto: 'Beber cerca de 1,5 litro de água', origem: 'Meta de água do plano' })
+    expect(missoesDoPlano(comAlimentos(), { aguaL: 2.5 }).find((m) => m.id === 'agua')?.texto).toBe('Beber cerca de 2,5 litros de água')
   })
 
-  it('sem meta de água (sem sexo ou idade), a missão continua existindo sem inventar número', () => {
+  it('sem meta de água (sem peso, ou tirada da folha), a missão continua existindo sem inventar número', () => {
     const missoes = missoesDoPlano(comAlimentos())
     expect(missoes.find((m) => m.id === 'agua')?.texto).toBe('Beber água ao longo do dia')
   })

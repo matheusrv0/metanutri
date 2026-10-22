@@ -365,8 +365,8 @@ describe('Folha da dieta (US-B1)', () => {
       expect(screen.queryByRole('region', { name: 'Orientações' })).not.toBeInTheDocument()
     })
 
-    it('CA-1083 (spec ficha-unica): sem sexo e sem edição, não há linha da água; o peso não entra na conta', () => {
-      render(<FolhaDieta caso={{ ...caso, sexo: null, pesoKg: 62, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
+    it('CA-1092 (spec ficha-unica): sem peso e sem edição, não há linha da água', () => {
+      render(<FolhaDieta caso={{ ...caso, pesoKg: null, orientacoes: 'Coma devagar.' }} plano={planoCheio()} />)
       expect(screen.getByRole('region', { name: 'Orientações' })).not.toHaveTextContent(/litros/)
     })
   })
