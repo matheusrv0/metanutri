@@ -89,9 +89,16 @@ async function capturar(navegador, tema, sufixo) {
   // Sem foco nem cursor por cima de nenhum botão na foto.
   await pagina.evaluate(() => globalThis.document.activeElement?.blur?.())
   await pagina.mouse.move(1, 1)
-  await pagina.waitForTimeout(400) // a gaveta termina de deslizar
-  const caixaGaveta = await gaveta.boundingBox()
-  const segunda = await sugestoes.nth(1).boundingBox()
+  // A gaveta termina de deslizar e a lista para de mudar (o "Nunca sugerir" refaz a lista): espera duas leituras iguais.
+  let caixaGaveta = null
+  let segunda = null
+  for (let tentativa = 0; tentativa < 20; tentativa++) {
+    await pagina.waitForTimeout(250)
+    const [g, s] = [await gaveta.boundingBox(), await sugestoes.nth(1).boundingBox()]
+    if (g && s && caixaGaveta && segunda && g.x === caixaGaveta.x && g.y === caixaGaveta.y && s.y === segunda.y && s.height === segunda.height) break
+    caixaGaveta = g
+    segunda = s
+  }
   await recortar(
     pagina,
     { x: caixaGaveta.x, y: caixaGaveta.y, width: caixaGaveta.width, height: Math.round(segunda.y + segunda.height + 4 - caixaGaveta.y) },
