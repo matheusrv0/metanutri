@@ -87,7 +87,7 @@ test('o plano lê a ficha: resumo na etapa 1, alergia na linha do plano e meta d
   await expect(page.getByText('Por peso: 35 ml/kg (18 a 55 anos) · 35 ml × 72 kg = 2,5 L')).toBeVisible()
   await semRolarParaOLado(page)
 
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entrada = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entrada.fill('30 queijo minas frescal')
   await expect(page.getByRole('option').first()).toBeVisible()
