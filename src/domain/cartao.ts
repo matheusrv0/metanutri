@@ -89,11 +89,11 @@ export const ehCredito = (tipo: string | null): boolean => tipo === null || tipo
 
 export const USE_CREDITO = 'Use um cartão de crédito.'
 /** CB-88. */
-export const CAMPOS_NAO_CARREGARAM = 'Não consegui abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.'
+export const CAMPOS_NAO_CARREGARAM = 'Não foi possível abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.'
 /** CB-89. */
 export const PAGAMENTO_INDISPONIVEL = 'O pagamento não está disponível agora.'
 /** CA-374. */
-export const SERVIDOR_FORA = 'Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
+export const SERVIDOR_FORA = 'Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 /** CA-373. */
 /** Só depois de uma recusa do banco ao cartão novo: sem resposta ou erro de servidor, o cartão novo pode ter sido aceito. */
 export const CARTAO_ANTIGO = 'O cartão antigo continua valendo.'
@@ -102,7 +102,7 @@ export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou 
 /** CB-90 e erro do gerador do código do cartão. */
 export const CONFIRA_O_CARTAO = 'Confira os dados do cartão e tente de novo. Nada foi cobrado.'
 /** Erro que não é do cartão (configuração, conta de teste): não culpa o banco. */
-export const FALHA_DESCONHECIDA = 'Não consegui concluir a assinatura agora. Nada foi cobrado. Tente de novo em alguns minutos.'
+export const FALHA_DESCONHECIDA = 'Não foi possível concluir a assinatura agora. Nada foi cobrado. Tente de novo em alguns minutos.'
 /** CA-373: depois da recusa, o código de segurança é apagado. */
 export const DIGITE_O_CODIGO_DE_NOVO = 'Digite o código de novo.'
 /** CA-370. */

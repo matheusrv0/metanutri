@@ -120,7 +120,7 @@ describe('TelaEntrar com a verificação contra robôs (spec seguranca-lote-3)',
     await falso.pronto()
     falso.aprovar('tok-1')
     await entrar(usuario)
-    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para confirmar que é você. Tente de novo.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível concluir a verificação de segurança. Tente de novo.')
     expect(falso.api.reset).toHaveBeenCalledWith('widget-1')
     expect(aoEntrou).not.toHaveBeenCalled()
   })

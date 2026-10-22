@@ -258,7 +258,7 @@ function LinhaPaciente({
 
       {falhou ? (
         <p role="alert" className="mt-3 text-sm text-errortext">
-          Não consegui remover o link na nuvem. Ele continua valendo. Tente de novo.
+          Não foi possível remover o link. Ele continua valendo. Tente de novo.
         </p>
       ) : null}
     </div>

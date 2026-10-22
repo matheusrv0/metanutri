@@ -98,9 +98,9 @@ describe('só cartão de crédito (CA-369, D-67)', () => {
 
   it('CA-369, CA-370, CA-374, CB-88 e CB-89: as frases fixas da spec', () => {
     expect(USE_CREDITO).toBe('Use um cartão de crédito.')
-    expect(CAMPOS_NAO_CARREGARAM).toBe('Não consegui abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
+    expect(CAMPOS_NAO_CARREGARAM).toBe('Não foi possível abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
     expect(PAGAMENTO_INDISPONIVEL).toBe('O pagamento não está disponível agora.')
-    expect(SERVIDOR_FORA).toBe('Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.')
+    expect(SERVIDOR_FORA).toBe('Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.')
     expect(ACEITE_FALTANDO).toBe('Marque a autorização da cobrança para assinar.')
   })
 })

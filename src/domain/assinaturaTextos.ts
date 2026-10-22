@@ -27,7 +27,7 @@ export interface PreviaDoCancelamento {
 }
 
 export const CONFERINDO_COBRANCA = 'Conferindo se já houve cobrança…'
-export const PREVIA_FALHOU = 'Não consegui conferir se já houve cobrança.'
+export const PREVIA_FALHOU = 'Não foi possível conferir se já houve cobrança.'
 /** D-108 (CA-448 e CA-449): a frase do limite de pedidos seguidos, a mesma que o servidor manda no 429. */
 export const MUITAS_TENTATIVAS_SEGUIDAS = MUITAS_CHAMADAS
 

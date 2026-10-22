@@ -47,7 +47,7 @@ vi.mock('./ui/estado/usarAprovacoes.ts', () => ({
   useAprovacoes: () => ({ pedidos: [], crns: [], pendentes: { estudantes: 0, crn: 0, total: 0 }, carregado: true, erro: null, decidirPedido: vi.fn(), decidirCrn: vi.fn(), abrirComprovante: vi.fn(), recarregar: vi.fn() }),
 }))
 vi.mock('./ui/estado/usarNegocio.ts', () => ({
-  FALHA_AO_LER_NEGOCIO: 'Não consegui ler os números agora. Confira a internet e toque em Atualizar.',
+  FALHA_AO_LER_NEGOCIO: 'Não foi possível ler os números agora. Confira a internet e toque em Atualizar.',
   useNegocio: () => ({ dados: null, carregando: false, erro: null, atualizar: vi.fn() }),
 }))
 

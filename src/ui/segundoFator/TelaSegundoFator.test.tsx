@@ -102,9 +102,9 @@ describe('TelaSegundoFator (spec seguranca-lote-5, D-261)', () => {
   })
 
   it('a preparação que falhou mostra o motivo e "Tentar de novo"', async () => {
-    const segundoFator = segundoFatorFalso({ tipo: 'falhou', mensagem: 'Não deu para falar com o servidor. Confira a internet e tente de novo.' })
+    const segundoFator = segundoFatorFalso({ tipo: 'falhou', mensagem: 'Não foi possível falar com o servidor. Confira a internet e tente de novo.' })
     render(<TelaSegundoFator segundoFator={segundoFator} />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para falar com o servidor.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível falar com o servidor.')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Tentar de novo' }))
     expect(segundoFator.tentarDeNovo).toHaveBeenCalledOnce()
   })

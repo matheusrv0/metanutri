@@ -61,8 +61,8 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
 
   if (semInternet) {
     return (
-      <Cartao selo={<IconeMarca nome="alerta" />} tom="neutro" titulo="Não consegui conferir">
-        <p className="text-sm text-muted-foreground">Parece que você está sem internet. Assim que voltar, confira de novo.</p>
+      <Cartao selo={<IconeMarca nome="alerta" />} tom="neutro" titulo="Não foi possível conferir o pagamento">
+        <p className="text-sm text-muted-foreground">Parece que você está sem internet. Quando a conexão voltar, toque em Conferir de novo.</p>
         <Button size="lg" block onClick={conferirDeNovo}>
           Conferir de novo
         </Button>

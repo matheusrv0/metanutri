@@ -86,7 +86,7 @@ describe('TelaComprovarMatricula', () => {
   })
 
   it('CA-277: falha do servidor mantém tudo preenchido', async () => {
-    const enviar = vi.fn(async () => 'Não deu para falar com o servidor. Confira a internet e tente de novo.')
+    const enviar = vi.fn(async () => 'Não foi possível falar com o servidor. Confira a internet e tente de novo.')
     const { usuario } = montar(null, enviar)
     await preencher(usuario)
     await usuario.click(screen.getByRole('button', { name: 'Enviar para análise' }))

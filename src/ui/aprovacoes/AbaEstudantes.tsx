@@ -101,7 +101,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
     if (!aberto.arquivo) return
     const url = await abrirComprovante(aberto.arquivo)
     if (url) globalThis.open(url, '_blank', 'noopener,noreferrer')
-    else avisar(pedidoAberto, 'Não deu para abrir o comprovante agora. Tente de novo.')
+    else avisar(pedidoAberto, 'Não foi possível abrir o comprovante agora. Tente de novo.')
   }
 
   return (

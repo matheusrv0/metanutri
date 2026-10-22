@@ -354,7 +354,7 @@ describe('Código do e-mail (spec confirmacao-por-codigo)', () => {
 describe('Verificação contra robôs (spec seguranca-lote-3)', () => {
   it('CA-458, CA-460 e CA-461: as frases da verificação são as da spec', () => {
     expect(MENSAGEM_ERRO['verificacao-pendente']).toBe('Espere a verificação de segurança terminar.')
-    expect(MENSAGEM_ERRO['verificacao-recusada']).toBe('Não deu para confirmar que é você. Tente de novo.')
+    expect(MENSAGEM_ERRO['verificacao-recusada']).toBe('Não foi possível concluir a verificação de segurança. Tente de novo.')
     expect(MENSAGEM_ERRO['verificacao-nao-carregou']).toBe(
       'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
     )

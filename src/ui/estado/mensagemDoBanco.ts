@@ -2,7 +2,7 @@
 // códigos). Qualquer outra coisa é rede, servidor fora ou erro que a pessoa não
 // tem como resolver: vira a mensagem de falha de rede. A exceção são as travas de
 // tamanho (D-107): o banco recusa pelo nome da trava, e a tela diz o motivo.
-export const FALHA_DE_REDE = 'Não deu para falar com o servidor. Confira a internet e tente de novo.'
+export const FALHA_DE_REDE = 'Não foi possível falar com o servidor. Confira a internet e tente de novo.'
 
 /** D-107 (CA-445): a cópia completa passou do tamanho que a nuvem guarda. Texto da spec dados-na-nuvem (CB-123). */
 export const COPIA_GRANDE_DEMAIS = 'A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.'

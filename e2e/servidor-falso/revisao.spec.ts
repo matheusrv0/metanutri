@@ -324,12 +324,12 @@ test.describe('Link do paciente', () => {
     await semRolagemLateral(page)
   })
 
-  test('CA-753: sem internet, "Não consegui abrir suas missões"; com a internet de volta, "Tentar de novo" abre', async ({ page }) => {
+  test('CA-753: sem internet, "Não foi possível abrir suas missões"; com a internet de volta, "Tentar de novo" abre', async ({ page }) => {
     const erros = await vigiarConsole(page)
     const cenario: { link: Linha | 'sem-rede' } = { link: 'sem-rede' }
     await ligarServidorFalso(page, cenario)
     await page.goto('/#/missoes/token-do-teste')
-    await expect(page.getByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeVisible()
     await expect(page.getByText('Este link não existe mais')).toHaveCount(0)
     cenario.link = linkFalso()
     await page.getByRole('button', { name: 'Tentar de novo' }).click()
@@ -344,7 +344,7 @@ test.describe('Link do paciente', () => {
     await page.goto('/#/missoes/token-do-teste')
     const agua = page.getByRole('button', { name: /Beber 2 litros de água/ })
     await agua.click()
-    await expect(page.getByRole('alert')).toHaveText('Não consegui salvar. Confira a internet e marque de novo.')
+    await expect(page.getByRole('alert')).toHaveText('Não foi possível salvar. Confira a internet e marque de novo.')
     await expect(agua).toHaveAttribute('aria-pressed', 'false')
     cenario.marcar = 'ok'
     await agua.click()

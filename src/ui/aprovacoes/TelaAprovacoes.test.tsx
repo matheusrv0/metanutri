@@ -157,7 +157,7 @@ describe('TelaAprovacoes', () => {
     await usuario.click(screen.getByRole('button', { name: 'Aprovar' }))
     // Enquanto o p1 espera a resposta, o administrador abre o p2.
     await usuario.click(screen.getByRole('button', { name: /Júlia Martins/ }))
-    await act(async () => terminar('Não deu para falar com o servidor. Confira a internet e tente de novo.'))
+    await act(async () => terminar('Não foi possível falar com o servidor. Confira a internet e tente de novo.'))
     expect(screen.getByRole('heading', { level: 2, name: 'Júlia Martins' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })

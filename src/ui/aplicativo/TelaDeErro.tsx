@@ -18,8 +18,8 @@ export function TelaDeErro({ aoRecarregar }: TelaDeErroProps) {
       <div className="flex w-full max-w-md flex-col items-start gap-5 rounded-3xl bg-card p-6">
         <Logo tamanho={24} />
         <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-heading">O MetaNutri não conseguiu abrir esta tela.</h1>
-          <p className="text-sm text-muted-foreground">Seus dados continuam guardados. Recarregue para abrir a versão mais nova.</p>
+          <h1 className="text-xl font-semibold text-heading">Não foi possível abrir esta tela.</h1>
+          <p className="text-sm text-muted-foreground">Seus dados continuam salvos. Recarregue a página para abrir a versão mais nova.</p>
         </div>
         <Button
           loading={recarregando}

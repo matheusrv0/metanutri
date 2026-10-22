@@ -169,6 +169,6 @@ export function restaurarBackup(armazenamento: Armazenamento | null, texto: stri
     }
     return { restaurados, erro: null }
   } catch {
-    return { restaurados: 0, erro: 'Não consegui ler o arquivo. Ele precisa ser o JSON exportado pelo MetaNutri.' }
+    return { restaurados: 0, erro: 'Não foi possível ler o arquivo. Escolha o backup em JSON baixado do MetaNutri.' }
   }
 }

@@ -48,7 +48,7 @@ describe('Configurações', () => {
   })
 
   it('arquivo estranho é recusado com explicação', () => {
-    expect(restaurarBackup(new MemoriaFalsa(), 'nada disso').erro).toContain('Não consegui ler o arquivo')
+    expect(restaurarBackup(new MemoriaFalsa(), 'nada disso').erro).toContain('Não foi possível ler o arquivo')
     expect(restaurarBackup(new MemoriaFalsa(), '{"formato":9}').erro).toContain('não é um backup do MetaNutri')
   })
 

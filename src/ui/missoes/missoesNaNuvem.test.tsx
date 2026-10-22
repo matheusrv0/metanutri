@@ -14,8 +14,8 @@ import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { TelaAdesao } from './TelaAdesao.tsx'
 
 const LIMITE = LIMITE_DE_LINKS
-const NAO_SALVOU = 'Não consegui salvar o link na nuvem. O paciente ainda não consegue abrir. Tente de novo.'
-const SEM_ATUALIZAR = 'Não consegui atualizar com a nuvem. Mostrando a cópia deste aparelho.'
+const NAO_SALVOU = 'Não foi possível salvar o link. O paciente ainda não consegue abri-lo. Tente de novo.'
+const SEM_ATUALIZAR = 'Não foi possível atualizar os links com a nuvem. Você está vendo a cópia deste aparelho.'
 
 type Linha = Record<string, unknown>
 type Segurado = 'select' | 'upsert'
@@ -402,7 +402,7 @@ describe('Remover o link (D-103)', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Remover link' }))
     await usuario.click(screen.getByRole('button', { name: 'Remover' }))
 
-    expect(await screen.findByText(/Não consegui remover o link na nuvem/)).toBeInTheDocument()
+    expect(await screen.findByText(/Não foi possível remover o link/)).toBeInTheDocument()
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(repo.listar()).toHaveLength(1)
     expect(nuvem.linhas).toHaveLength(1)
@@ -700,7 +700,7 @@ describe('Servidor ligado e sem sessão (token vencido sem internet)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Remover link' }))
     await usuario.click(screen.getByRole('button', { name: 'Remover' }))
 
-    expect(await screen.findByText(/Não consegui remover o link na nuvem/)).toBeInTheDocument()
+    expect(await screen.findByText(/Não foi possível remover o link/)).toBeInTheDocument()
     expect(repo.listar()).toHaveLength(1)
     expect(nuvem.linhas).toHaveLength(1)
   })

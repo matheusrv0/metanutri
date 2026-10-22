@@ -456,7 +456,7 @@ describe('TelaConta', () => {
     const { usuario } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
-    expect(await within(janela).findByText('Não consegui conferir se já houve cobrança.')).toBeInTheDocument()
+    expect(await within(janela).findByText('Não foi possível conferir se já houve cobrança.')).toBeInTheDocument()
     expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeDisabled()
     estado.previa.mockResolvedValueOnce({ ok: true, cobrada: false, expiraEm: null })
     await usuario.click(within(janela).getByRole('button', { name: 'Tentar de novo' }))
@@ -482,7 +482,7 @@ describe('TelaConta', () => {
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
     expect(await within(janela).findByText('Muitas tentativas seguidas. Espere uma hora e tente de novo.')).toBeInTheDocument()
-    expect(within(janela).queryByText('Não consegui conferir se já houve cobrança.')).not.toBeInTheDocument()
+    expect(within(janela).queryByText('Não foi possível conferir se já houve cobrança.')).not.toBeInTheDocument()
     expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeDisabled()
     // Tentar de novo agora daria a mesma resposta: o botão não aparece.
     expect(within(janela).queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()

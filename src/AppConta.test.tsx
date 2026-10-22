@@ -91,7 +91,7 @@ vi.mock('./ui/estado/usarSegundoFator.ts', async (original) => ({
 
 const negocio = vi.hoisted(() => ({ dados: null as unknown, atualizar: vi.fn() }))
 vi.mock('./ui/estado/usarNegocio.ts', () => ({
-  FALHA_AO_LER_NEGOCIO: 'Não consegui ler os números agora. Confira a internet e toque em Atualizar.',
+  FALHA_AO_LER_NEGOCIO: 'Não foi possível ler os números agora. Confira a internet e toque em Atualizar.',
   useNegocio: () => ({ dados: negocio.dados, carregando: false, erro: null, atualizar: negocio.atualizar }),
 }))
 
@@ -940,7 +940,7 @@ describe('dados por conta no aparelho (spec dados-por-conta)', () => {
     // A sessão chegou enquanto a senha nova ia para o servidor, e o servidor recusou.
     rerender(tela())
     await act(async () => responder({ ok: false, erro: 'falha-rede' }))
-    expect(screen.getByText('Não deu para falar com o servidor. Confira a internet e tente de novo.')).toBeInTheDocument()
+    expect(screen.getByText('Não foi possível falar com o servidor. Confira a internet e tente de novo.')).toBeInTheDocument()
     expect(screen.getByText(/Se existir conta com maria@exemplo\.com/)).toBeInTheDocument()
     expect(screen.getByLabelText('Senha nova')).toHaveValue('novasenha1')
 

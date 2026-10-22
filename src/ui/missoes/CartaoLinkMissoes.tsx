@@ -31,7 +31,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
 
 /** CA-439: a cópia do aparelho ficou, mas o paciente ainda não abre o link. */
-const NAO_SALVOU = 'Não consegui salvar o link na nuvem. O paciente ainda não consegue abrir. Tente de novo.'
+const NAO_SALVOU = 'Não foi possível salvar o link. O paciente ainda não consegue abri-lo. Tente de novo.'
 
 interface CartaoLinkMissoesProps {
   readonly casoId: string

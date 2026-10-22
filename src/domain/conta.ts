@@ -273,10 +273,10 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
   // Verificação contra robôs (spec seguranca-lote-3): CA-458, CA-460 e CA-461.
   'verificacao-pendente': 'Espere a verificação de segurança terminar.',
-  'verificacao-recusada': 'Não deu para confirmar que é você. Tente de novo.',
+  'verificacao-recusada': 'Não foi possível concluir a verificação de segurança. Tente de novo.',
   'verificacao-nao-carregou': 'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
   'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
-  'falha-rede': 'Não deu para falar com o servidor. Confira a internet e tente de novo.',
+  'falha-rede': 'Não foi possível falar com o servidor. Confira a internet e tente de novo.',
   // D-268 e CA-858 (spec seguranca-lote-5).
   'precisa-codigo-do-app': 'Esta conta usa o app autenticador. Digite o código do app para salvar a senha.',
   'codigo-do-app-incompleto': 'Digite os 6 dígitos do código do app.',

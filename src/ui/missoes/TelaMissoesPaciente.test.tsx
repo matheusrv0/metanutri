@@ -443,13 +443,13 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeInTheDocument()
     expect(screen.getByText('Confira a internet do celular e tente de novo.')).toBeInTheDocument()
     expect(screen.queryByText('Este link não existe mais')).not.toBeInTheDocument()
 
     // CB-235: tentar de novo ainda sem internet volta à mesma tela.
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Tentar de novo' })).toHaveLength(1)
 
     semInternet = false
@@ -481,7 +481,7 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
 
     const agua = await screen.findByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar. Confira a internet e marque de novo.')
     expect(agua).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
 
@@ -569,7 +569,7 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     const agua = await screen.findByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar. Confira a internet e marque de novo.')
     expect(agua).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'true')
     expect(leituras).toBe(2)

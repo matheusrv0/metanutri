@@ -19,7 +19,7 @@ export function DialogoExcluir({ nome, descricao, acao = 'Excluir plano', aoConf
   // Com a conta na nuvem, o plano some de todos os aparelhos (spec dados-na-nuvem, DP-26).
   const naNuvem = useNuvem() !== null
   const texto =
-    descricao ?? (naNuvem ? 'O plano alimentar será apagado da sua conta, em todos os aparelhos. Não dá para desfazer.' : 'O plano alimentar será apagado deste aparelho. Não dá para desfazer.')
+    descricao ?? (naNuvem ? 'O plano alimentar será excluído da sua conta, em todos os aparelhos. Não é possível desfazer.' : 'O plano alimentar será excluído deste aparelho. Não é possível desfazer.')
   return (
     <Dialog open={nome !== null} onOpenChange={(aberto) => !aberto && aoFechar()}>
       <DialogContent role="alertdialog">

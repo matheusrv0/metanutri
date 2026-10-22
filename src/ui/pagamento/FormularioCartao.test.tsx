@@ -79,7 +79,7 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     const falso = processadorFalso()
     falso.falharAoMontar = true
     await montar(falso)
-    expect(screen.getByRole('alert')).toHaveTextContent('Não consegui abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
     expect(screen.getByText('parado')).toBeInTheDocument()
   })
 

@@ -113,9 +113,9 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
 
   it.each<[ErroConta, string]>([
     ['verificacao-pendente', 'Espere a verificação de segurança terminar.'],
-    ['verificacao-recusada', 'Não deu para confirmar que é você. Tente de novo.'],
+    ['verificacao-recusada', 'Não foi possível concluir a verificação de segurança. Tente de novo.'],
     ['muitas-tentativas', 'Muitas tentativas seguidas. Espere um minuto e tente de novo.'],
-    ['falha-rede', 'Não deu para falar com o servidor. Confira a internet e tente de novo.'],
+    ['falha-rede', 'Não foi possível falar com o servidor. Confira a internet e tente de novo.'],
   ])('CA-811 e CB-257: a conferência da senha falha com %s: a frase de Entrar, e nada é pedido ao servidor', async (erro, frase) => {
     const { hook } = montar({ entrar: { ok: false, erro } })
     let resultado
@@ -134,7 +134,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
       resultado = await hook.result.current.excluir('minha-senha', [])
     })
     expect(resultado).toEqual({ ok: false, erro: EXCLUSAO_NAO_TERMINOU, naSenha: false })
-    expect(EXCLUSAO_NAO_TERMINOU).toBe('Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.')
+    expect(EXCLUSAO_NAO_TERMINOU).toBe('Não foi possível concluir a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.')
     expect(conta.sair).not.toHaveBeenCalled()
     expect(nuvem.parar).not.toHaveBeenCalled()
   })

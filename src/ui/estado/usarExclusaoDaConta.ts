@@ -14,7 +14,7 @@ import type { ValorConta } from './usarConta.ts'
 /** CA-806. */
 export const SENHA_INCORRETA = 'Senha incorreta.'
 /** CA-809: a mesma frase da função. */
-export const EXCLUSAO_NAO_TERMINOU = 'Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
+export const EXCLUSAO_NAO_TERMINOU = 'Não foi possível concluir a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
 /** CA-816: a função achou a senha antiga. */
 export const CONFIRME_A_SENHA = 'Confirme sua senha de novo.'
 /** CB-250: a senha conferida vale para tentar de novo sem conferir outra vez. O servidor aceita 10 minutos; aqui, 9, com folga. */

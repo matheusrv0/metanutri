@@ -12,7 +12,7 @@ import {
 } from '@/domain/negocio.ts'
 import { obterSupabase } from './supabase.ts'
 
-export const FALHA_AO_LER_NEGOCIO = 'Não consegui ler os números agora. Confira a internet e toque em Atualizar.'
+export const FALHA_AO_LER_NEGOCIO = 'Não foi possível ler os números agora. Confira a internet e toque em Atualizar.'
 
 export interface DadosDoNegocio {
   readonly contas: readonly ContaNoPainel[]

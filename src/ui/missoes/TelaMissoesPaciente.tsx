@@ -79,7 +79,7 @@ function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; read
   )
 }
 
-const NAO_SALVOU = 'Não consegui salvar. Confira a internet e marque de novo.'
+const NAO_SALVOU = 'Não foi possível salvar. Confira a internet e marque de novo.'
 
 /** M-3b: a nuvem recusou por um motivo dela (tentar de novo não resolve); senão, é a internet (D-232). */
 const fraseDaFalha = (erro: unknown): string => (erro instanceof MarcacaoRecusada ? `${erro.motivo} Fale com quem montou seu plano.` : NAO_SALVOU)
@@ -161,7 +161,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
     return (
       <Aviso
         icone={<WifiOff className="size-6" />}
-        titulo="Não consegui abrir suas missões"
+        titulo="Não foi possível abrir suas missões"
         texto="Confira a internet do celular e tente de novo."
         acao={
           <Button size="lg" block onClick={() => setTentativa((n) => n + 1)}>

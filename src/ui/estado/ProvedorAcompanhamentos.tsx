@@ -16,7 +16,7 @@ import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
 
 /** CB-106: a leitura da nuvem falhou e a tela segue com a cópia do aparelho. */
-const SEM_ATUALIZAR = 'Não consegui atualizar com a nuvem. Mostrando a cópia deste aparelho.'
+const SEM_ATUALIZAR = 'Não foi possível atualizar os links com a nuvem. Você está vendo a cópia deste aparelho.'
 
 /**
  * Compartilha os acompanhamentos entre a tela do nutricionista e o link do paciente.

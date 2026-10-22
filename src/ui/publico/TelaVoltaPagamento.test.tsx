@@ -71,7 +71,7 @@ describe('TelaVoltaPagamento', () => {
   it('CA-170: sem internet, avisa e deixa conferir de novo', async () => {
     Object.defineProperty(globalThis.navigator, 'onLine', { value: false, configurable: true })
     const { recarregar } = montar(assinatura({ planoPedido: 'solo', status: 'pendente' }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Não consegui conferir' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Não foi possível conferir o pagamento' })).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Conferir de novo' }))
     expect(recarregar).toHaveBeenCalled()
   })

@@ -63,9 +63,9 @@ describe('aviso único da nuvem (spec dados-na-nuvem, DP-26)', () => {
 describe('excluir um plano (DP-26)', () => {
   it('com a conta na nuvem, diz que some de todos os aparelhos; sem nuvem, do aparelho', () => {
     const { unmount } = render(comNuvem(<DialogoExcluir nome="Plano da Ana" aoConfirmar={vi.fn()} aoFechar={vi.fn()} />))
-    expect(screen.getByText('O plano alimentar será apagado da sua conta, em todos os aparelhos. Não dá para desfazer.')).toBeInTheDocument()
+    expect(screen.getByText('O plano alimentar será excluído da sua conta, em todos os aparelhos. Não é possível desfazer.')).toBeInTheDocument()
     unmount()
     render(<DialogoExcluir nome="Plano da Ana" aoConfirmar={vi.fn()} aoFechar={vi.fn()} />)
-    expect(screen.getByText('O plano alimentar será apagado deste aparelho. Não dá para desfazer.')).toBeInTheDocument()
+    expect(screen.getByText('O plano alimentar será excluído deste aparelho. Não é possível desfazer.')).toBeInTheDocument()
   })
 })

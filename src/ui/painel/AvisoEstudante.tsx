@@ -26,7 +26,7 @@ function tomDo(aviso: NonNullable<AvisoEstudante>): Tom {
     case 'analise':
       return { icone: <Clock aria-hidden="true" />, fundo: 'bg-lightinfo text-infotext', titulo: 'Comprovante em análise', texto: 'Até 2 dias úteis. Enquanto isso, sua conta funciona como Free.' }
     case 'recusado':
-      return { icone: <TriangleAlert aria-hidden="true" />, fundo: 'bg-lighterror text-errortext', titulo: 'Não conseguimos aprovar seu comprovante', texto: `Motivo: ${aviso.motivo}.` }
+      return { icone: <TriangleAlert aria-hidden="true" />, fundo: 'bg-lighterror text-errortext', titulo: 'Seu comprovante não foi aprovado', texto: `Motivo: ${aviso.motivo}.` }
     case 'aprovado':
       return { icone: <CircleCheck aria-hidden="true" />, fundo: 'bg-lightsuccess text-successtext', titulo: 'Plano Estudante ativo', texto: `Vale até ${formatarDataLonga(aviso.expiraEm)}.` }
   }

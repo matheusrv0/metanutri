@@ -257,7 +257,7 @@ export interface FonteAcompanhamentos {
  */
 export class LinkSemConexao extends Error {
   constructor() {
-    super('Não consegui falar com a nuvem.')
+    super('Não foi possível falar com a nuvem.')
     this.name = 'LinkSemConexao'
   }
 }
