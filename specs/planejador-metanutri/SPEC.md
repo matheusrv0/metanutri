@@ -44,7 +44,7 @@ Permitir que um estudante de nutrição ou recém-formado monte o plano alimenta
 - **CA-02b** · Dado um caso marcado como gestante, então o sistema pede idade gestacional (semanas) e peso pré-gestacional, classifica o IMC pré-gestacional e mostra a faixa de ganho de peso recomendada para a gestação.
 - **CA-02c** · Dado um caso marcado como lactante, então o sistema pede o tempo pós-parto (meses).
 - **CA-03** · Dado sexo e circunferência da cintura preenchidos em adulto, então o sistema mostra a classificação de risco e a referência usada.
-- **CA-04** · Dado idade de 60 anos ou mais e circunferência da panturrilha preenchida, então o sistema mostra a classificação e a referência usada.
+- **CA-04** · Dado idade de 60 anos ou mais e circunferência da panturrilha preenchida, então o sistema mostra a classificação e a referência usada. *Revisto pelo D-460 da `ficha-unica` (22/10/2026): o corte é o brasileiro, por sexo (abaixo de 34 cm no homem e de 33 cm na mulher, Pagotto et al., 2018); os 31 cm da OMS ficam na nota.*
 - **CA-05** · Dado qualquer valor de referência antropométrica exibido, então a fonte (nome e ano)
   fica registrada no mesmo cartão, alcançável em um clique. *Revisto em 24/09/2026: era "ao lado";
   com seis referências na tela a citação ocupava mais espaço que o dado. A procedência continua
