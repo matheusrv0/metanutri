@@ -89,7 +89,8 @@ describe('a medida guardada no item (G1, D-374)', () => {
   it('CA-1118: o seletor traz as medidas da POF na ordem de preferência, cada uma com o peso', () => {
     const nomes = medidasDoSeletor(FEIJAO).map((m) => m.nome)
     expect(nomes.slice(0, 3)).toEqual(['colher de sopa', 'colher de servir', 'concha'])
-    expect(nomes).toContain('cumbuca')
+    // A "cumbuca" de feijão era uma concha na fonte da POF: saiu pela camada de plausibilidade (D-430).
+    expect(nomes).not.toContain('cumbuca')
     expect(medidasDoSeletor(MACARRAO)).toEqual([])
   })
 })

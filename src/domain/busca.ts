@@ -49,6 +49,8 @@ export const PREFERENCIA_MEDIDAS: readonly string[] = [
   'fatia',
   'bife',
   'filé',
+  // Correção A (spec alimentos-e-gramaturas, D-431): a folha crua só tem folha, pires e prato; "3 folhas" é como se lê.
+  'folha',
   'colher de sopa',
   'colher de servir',
   'concha',

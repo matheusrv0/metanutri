@@ -205,15 +205,16 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
 
   it('a medida do planejador na busca (medidaEquivalente) continua a de antes (R-182)', () => {
     expect(medidaEquivalente(MARGARINA, 5)).toBeNull()
-    expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 fatia')
+    // Desde a correção A (D-430), a gordura não tem mais a "fatia" de 32 g da POF: 30 g é 1 colher de sopa.
+    expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 colher de sopa')
     expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('5 fatias')
   })
 })
 
 describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e D-297)', () => {
   it('prefere uma medida de até 4 unidades ou pedaços quando outra medida do alimento serve', () => {
-    // Ovo frito, 55 g: o planejador diz "5 fatias e meia"; para o paciente, "1 unidade".
-    expect(medidaEquivalente(490, 55)?.texto).toBe('5 fatias e meia')
+    // Ovo frito, 55 g: era "5 fatias e meia" no planejador; desde a correção A (D-430) o ovo frito só tem a unidade.
+    expect(medidaEquivalente(490, 55)?.texto).toBe('1 unidade')
     expect(medidaCaseiraParaPaciente(490, 55)?.texto).toBe('1 unidade')
     // Banana prata, 130 g: "5 fatias" vira "1 unidade e meia".
     expect(medidaCaseiraParaPaciente(182, 130)?.texto).toBe('1 unidade e meia')
@@ -229,6 +230,13 @@ describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e
     expect(medidaCaseiraParaPaciente(3, 150)).toEqual(medidaEquivalente(3, 150))
     expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('3 fatias e meia')
     expect(medidaCaseiraParaPaciente(40, 100)).toBeNull()
+  })
+
+  it('D-431 (correção A): a folha crua sai em folhas, o milho de lata em colheres, a manga Palmer em gramas', () => {
+    expect(medidaParaMostrar(78, 30)?.texto).toBe('3 folhas') // Alface, crespa, crua
+    expect(medidaParaMostrar(80, 200)?.medida).not.toBe('unidade') // Alface roxa: nunca "1 unidade · 200 g"
+    expect(medidaParaMostrar(45, 48)?.texto).toBe('2 colheres de sopa') // Milho enlatado: nunca "unidade"
+    expect(medidaParaMostrar(229, 198)).toBeNull() // Manga Palmer: sem colher de servir
   })
 
   it('as medidas de contar são as de unidade e pedaço', () => {
