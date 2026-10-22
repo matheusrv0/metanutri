@@ -15,7 +15,7 @@ const kcal = (valor: number) => formatarNumero(valor, 0)
 /** Vai na descrição do campo (aria-describedby): o número calculado não pode ficar só no placeholder. */
 function dicaDaMeta(estado: ReturnType<typeof estadoDaMeta>): string | undefined {
   if (estado.tipo === 'calculada') return `Calculada: ${kcal(estado.kcal)} kcal. Trocar o nível de atividade muda a meta na hora.`
-  if (estado.tipo === 'digitada' && estado.calculada !== null) return `Vale o seu número. Apague o campo para voltar à calculada (${kcal(estado.calculada)} kcal).`
+  if (estado.tipo === 'digitada' && estado.calculada !== null) return `Vale o valor que você digitou. Apague o campo para voltar à meta calculada (${kcal(estado.calculada)} kcal).`
   if (estado.tipo === 'sem-calculo') return estado.motivo
   return undefined
 }

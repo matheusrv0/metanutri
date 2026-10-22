@@ -98,10 +98,10 @@ export function TelaConfiguracoes() {
             <CampoTexto rotulo="CRN" valor={perfil.crn} aoMudar={(v) => alterar({ crn: v })} placeholder="CRN-6 12345…" />
           ) : (
             <CampoTexto
-              rotulo="Responsável técnico"
+              rotulo="Preceptor(a)"
               valor={perfil.responsavel}
               aoMudar={(v) => alterar({ responsavel: v })}
-              dica="Quem assina junto com você no estágio."
+              dica="Quem assina com você no estágio."
             />
           )}
           <CampoTexto rotulo="Instituição" valor={perfil.instituicao} aoMudar={(v) => alterar({ instituicao: v })} />

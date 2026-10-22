@@ -26,16 +26,17 @@ const semCalculo = () => expect(painel().queryByText(/kg\/m²/)).not.toBeInTheDo
 
 const adulta = { sexo: 'F', idadeAnos: 28, pesoKg: 68, estaturaCm: 165 } as const
 
-describe('Observações sem repetir o título (spec revisao-geral-trabalho, CA-791)', () => {
-  it('"Observações" aparece uma vez, e o campo continua achável pelo nome', () => {
+describe('Anotações sem repetir o título (spec revisao-geral-trabalho, CA-791; spec ficha-unica, texto 113)', () => {
+  it('"Anotações deste plano" aparece uma vez, e o campo continua achável pelo nome', () => {
     montar({ ...adulta, observacoes: 'Anotação' })
-    expect(screen.getAllByText('Observações', { ignore: '.sr-only' })).toHaveLength(1)
-    expect(screen.getByLabelText('Observações')).toHaveValue('Anotação')
+    expect(screen.getAllByText('Anotações deste plano', { ignore: '.sr-only' })).toHaveLength(1)
+    expect(screen.getByLabelText('Anotações deste plano')).toHaveValue('Anotação')
+    expect(screen.getByText('Anotações internas. Não aparecem no documento.')).toBeInTheDocument()
   })
 })
 
 describe('Etapa 1: dados do caso', () => {
-  it('CA-01: mostra todos os campos do cabeçalho do estágio', () => {
+  it('CA-01 e CA-1067: o plano sem paciente mostra os campos do cabeçalho do estágio, sem Objetivo', () => {
     montar()
     for (const rotulo of [
       'Nome do plano',
@@ -47,12 +48,14 @@ describe('Etapa 1: dados do caso', () => {
       'Idade',
       'Peso',
       'Estatura',
-      'Observações',
+      'Anotações deste plano',
     ]) {
       expect(screen.getByLabelText(rotulo)).toBeInTheDocument()
     }
     expect(screen.getByRole('radiogroup', { name: 'Sexo' })).toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: 'Objetivo' })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Objetivo' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Medidas e energia' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
   })
 
   it('CA-02, CA-05 e CB-12: IMC de adulto com vírgula decimal, classificação e fonte', async () => {
@@ -109,7 +112,7 @@ describe('Etapa 1: dados do caso', () => {
     const usuario = montar(adulta)
     await usuario.click(screen.getByRole('radio', { name: 'Gestante' }))
     await usuario.click(screen.getByRole('radio', { name: 'Masculino' }))
-    expect(screen.getByRole('radiogroup', { name: 'Condição' })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Gestação ou lactação' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('só pode ser marcada para o sexo feminino')
   })
 

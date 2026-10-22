@@ -23,7 +23,7 @@ describe('Nível de atividade no atendimento completo (CA-225, CA-231)', () => {
     expect(screen.getAllByRole('radiogroup', { name: 'Nível de atividade' })).toHaveLength(1)
   })
 
-  it('CA-231: escolher no cartão muda o GET, e o Ajustar mostra o mesmo nível', async () => {
+  it('CA-231 e CA-1069: escolher no cartão muda o GET; "Ajustar" não repete o nível, e o fator próprio acompanha', async () => {
     render(<Anfitriao />)
     const usuario = userEvent.setup()
     const resumo = within(screen.getByRole('region', { name: 'Resumo do dia' }))
@@ -31,7 +31,18 @@ describe('Nível de atividade no atendimento completo (CA-225, CA-231)', () => {
     await usuario.click(screen.getByRole('radio', { name: 'Muito ativo (1,7)' }))
     expect(resumo.getByText('2.261 kcal')).toBeInTheDocument() // 1330,25 × 1,7 = 2261,4
     await usuario.click(resumo.getByRole('button', { name: 'Ajustar' }))
-    const noAjuste = within(resumo.getByRole('radiogroup', { name: 'Nível de atividade' }))
-    expect(noAjuste.getByRole('radio', { name: 'Muito ativo (1,7)' })).toHaveAttribute('aria-checked', 'true')
+    expect(resumo.queryByRole('radiogroup', { name: 'Nível de atividade' })).not.toBeInTheDocument()
+    expect(resumo.getByLabelText('Fator próprio')).toHaveValue('1,7')
+    expect(screen.getAllByRole('radiogroup', { name: 'Nível de atividade' })).toHaveLength(1)
+  })
+
+  it('R11: o fator só aparece ao lado do nome na equação de adulto', () => {
+    function Crianca() {
+      const [caso, setCaso] = useState<Caso>({ ...criarCasoVazio('c2'), sexo: 'F', idadeAnos: 6, pesoKg: 21, estaturaCm: 116 })
+      return <TelaCaso caso={caso} aoAlterar={(m) => setCaso((c) => ({ ...c, ...m }))} />
+    }
+    render(<Crianca />)
+    expect(screen.getByRole('radio', { name: 'Sedentário' })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: 'Sedentário (1,2)' })).not.toBeInTheDocument()
   })
 })

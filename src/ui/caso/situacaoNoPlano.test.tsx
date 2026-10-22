@@ -43,7 +43,7 @@ describe('Identificação pela situação (CA-251, CB-51, CB-69)', () => {
   it('estudante vê os dois campos e de onde eles vêm', () => {
     montar(JULIA)
     expect(screen.getByLabelText('Estagiário(a)')).toBeInTheDocument()
-    expect(screen.getByText(/Em plano novo, Estagiário\(a\) vem do nome da sua conta/)).toBeInTheDocument()
+    expect(screen.getByText('Num plano novo, estes nomes vêm da sua conta e de Configurações › Quem assina. Você pode trocá-los aqui.')).toBeInTheDocument()
   })
 
   it('Foco de revisão 5: nutricionista sem nome e CRN em Quem assina é mandada para lá', () => {
@@ -60,15 +60,15 @@ describe('Identificação pela situação (CA-251, CB-51, CB-69)', () => {
 })
 
 describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
-  it('CA-234: nutricionista vê só Orientações', () => {
+  it('CA-234: nutricionista vê Orientações e documento, sem Receitas', () => {
     montar(ANA)
-    expect(screen.getByRole('heading', { name: 'Orientações' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
     expect(screen.queryByLabelText('Receitas')).not.toBeInTheDocument()
   })
 
   it('CB-50: receitas já escritas continuam aparecendo', () => {
     montar(ANA, { receitas: 'Cuscuz com ovo.' })
-    expect(screen.getByRole('heading', { name: 'Orientações e receitas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
     expect(screen.getByLabelText('Receitas')).toHaveValue('Cuscuz com ovo.')
   })
 
@@ -87,7 +87,7 @@ describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
 
   it('CA-236: estudante continua com o campo Receitas', () => {
     montar(JULIA)
-    expect(screen.getByRole('heading', { name: 'Orientações e receitas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
     expect(screen.getByLabelText('Receitas')).toBeInTheDocument()
   })
 })

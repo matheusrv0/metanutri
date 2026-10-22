@@ -1,22 +1,25 @@
 import { Ruler } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
+import type { SugestaoDeNivel } from '@/domain/anamneseNoPlano.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { mostraCamposDeEstagio, mostraReceitas, type AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { temDadoDeComposicao } from '@/domain/camposVisiveis.ts'
 import { validarCaso } from '@/domain/caso.ts'
+import { casoComFicha, type PlanoComFicha } from '@/domain/fichaNoPlano.ts'
+import type { Paciente } from '@/domain/pacientes.ts'
 import type { Caso } from '@/domain/tipos.ts'
-import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
-import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
+import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { Label } from '@ds/componentes/forms/label.tsx'
-import { Textarea } from '@ds/componentes/forms/textarea.tsx'
-import { CampoAgua } from './CampoAgua.tsx'
-import { CamposComposicao } from './CamposComposicao.tsx'
+import { CartaoDocumento } from './CartaoDocumento.tsx'
 import { CartaoIdentificacao } from './CartaoIdentificacao.tsx'
-import { CartaoPessoa } from './CartaoPessoa.tsx'
+import { CartaoMedidas } from './CartaoMedidas.tsx'
 import { PainelAntropometria } from './PainelAntropometria.tsx'
+import { useValorAssentado } from './usarValorAssentado.ts'
+
+/** D-244: quanto esperar depois da última tecla da idade para mostrar ou esconder os campos que dependem dela. */
+const ESPERA_DA_IDADE_MS = 500
 
 interface TelaCasoProps {
+  /** O caso como vale: com paciente, já com o que vem da ficha (spec ficha-unica, D-340). */
   readonly caso: Caso
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
   /** Pacientes cadastrados, para vincular este plano a uma ficha. */
@@ -26,13 +29,43 @@ interface TelaCasoProps {
   readonly lateral?: ReactNode
   /** Quem assina e a situação (US-A2, US-A4); sem ela, o plano fica como era (CB-69). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** A ficha do paciente do plano e o que ela dá ao plano (D-340 a D-344). */
+  readonly paciente?: Paciente | null | undefined
+  readonly comFicha?: PlanoComFicha | undefined
+  readonly aoAlterarPaciente?: ((mudanca: Partial<Paciente>) => void) | undefined
+  readonly aoAbrirFicha?: (() => void) | undefined
+  /** D-358: o peso da última consulta do paciente. */
+  readonly pesoAnterior?: { readonly pesoKg: number; readonly data: string } | null | undefined
+  /** D-356 e CA-1071: o que a anamnese diz da atividade e da hidratação. */
+  readonly sugestaoNivel?: SugestaoDeNivel | null | undefined
+  readonly lembreteAgua?: string | null | undefined
 }
 
-/** Etapa 1: dados do caso e avaliação antropométrica, só com o que vale para o caso (US-B4). */
-export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [], aoVincularPaciente }: TelaCasoProps) {
+/**
+ * Etapa 1 (spec ficha-unica, D-345): Identificação, Medidas e energia, e Orientações e documento, só com o que vale
+ * para o paciente (US-B4), e a avaliação ao lado.
+ */
+export function TelaCaso({
+  caso,
+  aoAlterar,
+  lateral,
+  assinatura,
+  pacientes = [],
+  aoVincularPaciente,
+  paciente = null,
+  comFicha,
+  aoAlterarPaciente,
+  aoAbrirFicha,
+  pesoAnterior,
+  sugestaoNivel,
+  lembreteAgua,
+}: TelaCasoProps) {
   const validacao = useMemo(() => validarCaso(caso), [caso])
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
   const situacao = assinatura?.situacao ?? null
+  // D-244 (spec revisao-geral-trabalho): os campos que dependem da idade seguem a idade que a pessoa terminou de
+  // digitar; outro plano mostra os campos dele na hora (CA-784).
+  const [idadeAssentada, assentarIdade] = useValorAssentado(caso.idadeAnos, ESPERA_DA_IDADE_MS, caso.id)
 
   // Quais campos aparecem se decide quando o plano abre (ou a situação muda), não a cada tecla:
   // senão apagar todo o texto de Receitas, por exemplo, faria o campo sumir no meio da edição.
@@ -42,8 +75,8 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
     atual = { id: caso.id, situacao, estagio: mostraCamposDeEstagio(situacao, caso), receitas: mostraReceitas(situacao, caso) }
     setVisibilidade(atual)
   }
-  const comReceitas = atual.receitas
   const rapido = caso.modo === 'rapido'
+  const ficha = comFicha ?? casoComFicha(caso, null, caso.dataConsulta ?? '')
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -53,44 +86,32 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
           aoAlterar={aoAlterar}
           pacientes={pacientes}
           aoVincularPaciente={aoVincularPaciente}
-          assinatura={assinatura}
-          camposDeEstagio={atual.estagio}
+          paciente={paciente}
+          comFicha={ficha}
+          aoAlterarPaciente={aoAlterarPaciente}
+          aoAbrirFicha={aoAbrirFicha}
+          erros={validacao.erros}
+          idadeAssentada={idadeAssentada}
+          assentarIdade={assentarIdade}
         />
 
-        {/* Um cartão por plano: a idade "assentada" (D-244) não passa de um plano para outro (CA-784, revisão de 20/10/2026). */}
-        <CartaoPessoa key={caso.id} caso={caso} aoAlterar={aoAlterar} erros={validacao.erros} />
+        <CartaoMedidas
+          caso={caso}
+          aoAlterar={aoAlterar}
+          erros={validacao.erros}
+          idadeAssentada={idadeAssentada}
+          pesoAnterior={pesoAnterior}
+          sugestaoNivel={sugestaoNivel}
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{comReceitas ? 'Orientações e receitas' : 'Orientações'}</CardTitle>
-          </CardHeader>
-          <CampoAgua caso={caso} aoAlterar={aoAlterar} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="orientacoes">Orientações nutricionais</Label>
-            <Textarea id="orientacoes" rows={4} value={caso.orientacoes} onChange={(e) => aoAlterar({ orientacoes: e.target.value })} />
-          </div>
-          {comReceitas ? (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="receitas">Receitas</Label>
-              <Textarea id="receitas" rows={4} value={caso.receitas} onChange={(e) => aoAlterar({ receitas: e.target.value })} />
-            </div>
-          ) : null}
-
-          {rapido ? null : (
-            <Recolhivel key={`composicao-${caso.id}`} titulo="Composição corporal" resumo="Dobras ou bioimpedância. Opcional." abertoInicial={temDadoDeComposicao(caso)}>
-              <CamposComposicao caso={caso} aoAlterar={aoAlterar} />
-            </Recolhivel>
-          )}
-          <Recolhivel key={`observacoes-${caso.id}`} titulo="Observações" resumo="Anotações suas, não saem no documento." abertoInicial={caso.observacoes.trim() !== ''}>
-            <div className="flex flex-col gap-1.5">
-              {/* D-247: o título do recolhido já diz "Observações"; o rótulo fica só para o leitor de tela. */}
-              <Label htmlFor="observacoes" className="sr-only">
-                Observações
-              </Label>
-              <Textarea id="observacoes" rows={4} value={caso.observacoes} onChange={(e) => aoAlterar({ observacoes: e.target.value })} />
-            </div>
-          </Recolhivel>
-        </Card>
+        <CartaoDocumento
+          caso={caso}
+          aoAlterar={aoAlterar}
+          assinatura={assinatura}
+          camposDeEstagio={atual.estagio}
+          comReceitas={atual.receitas}
+          lembreteAgua={lembreteAgua}
+        />
       </div>
 
       <div className="flex flex-col gap-6">
@@ -102,7 +123,7 @@ export function TelaCaso({ caso, aoAlterar, lateral, assinatura, pacientes = [],
             </div>
             <p className="text-sm text-muted-foreground">Esta é uma prescrição rápida: sem avaliação antropométrica, e o documento exportado diz isso.</p>
             <Button variant="lightprimary" className="self-start" onClick={() => aoAlterar({ modo: 'completo' })}>
-              Virar atendimento completo
+              Mudar para atendimento completo
             </Button>
           </Card>
         ) : (

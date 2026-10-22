@@ -27,8 +27,8 @@ describe('Configurações', () => {
 
   it('a linha de responsabilidade muda entre estudante e nutricionista', () => {
     expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Ana', tipo: 'profissional', crn: 'CRN-6 12345' })).toBe('Ana · CRN CRN-6 12345')
-    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia', responsavel: 'Dra. Carla' })).toBe('Bia · responsável técnico: Dra. Carla')
-    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia' })).toContain('sem responsável técnico informado')
+    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia', responsavel: 'Dra. Carla' })).toBe('Bia · preceptor(a): Dra. Carla')
+    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia' })).toContain('sem preceptor(a) informado(a)')
   })
 
   it('backup leva só as chaves do MetaNutri e volta inteiro', () => {

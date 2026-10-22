@@ -37,8 +37,8 @@ export function linhaDeResponsabilidade(perfil: Perfil): string {
   if (perfil.tipo === 'estudante') {
     const responsavel = perfil.responsavel.trim()
     return responsavel
-      ? `${perfil.nome.trim() || 'Estudante'} · responsável técnico: ${responsavel}`
-      : `${perfil.nome.trim() || 'Estudante'} · documento de estudo, sem responsável técnico informado`
+      ? `${perfil.nome.trim() || 'Estudante'} · preceptor(a): ${responsavel}`
+      : `${perfil.nome.trim() || 'Estudante'} · documento de estudo, sem preceptor(a) informado(a)`
   }
   return perfil.nome.trim()
 }

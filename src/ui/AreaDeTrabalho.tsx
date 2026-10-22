@@ -1,12 +1,14 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { diaLocal } from '@/domain/acompanhamento.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
+import { lembreteDaHidratacao, nivelSugerido } from '@/domain/anamneseNoPlano.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
-import { restricoesDaFicha } from '@/domain/fichaNoPlano.ts'
-import { idadeDe } from '@/domain/pacientes.ts'
+import { casoComFicha, pesoAnterior, restricoesDaFicha } from '@/domain/fichaNoPlano.ts'
+import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import { SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import { avisoDoEstudante } from '@/domain/pedidoEstudante.ts'
 import { assinaturaDoPlano, camposDeEstagioIniciais } from '@/domain/assinaturaDoPlano.ts'
@@ -84,7 +86,7 @@ interface AreaDeTrabalhoProps {
  */
 export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pedidoEstudante, aprovacoes, negocio, segundoFator, depoisDeSair }: AreaDeTrabalhoProps) {
   const { casos, repositorio, atualizar } = useCasos()
-  const { pacientes } = usePacientes()
+  const { pacientes, repositorio: repoPacientes, atualizar: atualizarPacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const { fonte } = useAcompanhamentos()
   // "Ver todos" do cartão da etapa 2 leva ao título da etapa 3 (spec painel-lateral-enxuto, CA-701).
@@ -110,18 +112,23 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     const criado = repositorio.criar('')
     const paciente = pacienteId ? pacientes.find((p) => p.id === pacienteId) ?? null : null
     const idade = paciente ? idadeDe(paciente.nascimento) : null
+    // D-356: o nível de atividade já vem sugerido pela anamnese.
+    const sugestao = paciente ? nivelSugerido(paciente.respostasAnamnese) : null
     const salvo = repositorio.salvar({
       caso: {
         ...criado.caso,
         modo,
         pacienteId,
+        // CA-1033 (spec ficha-unica): todo plano novo nasce com a data de hoje.
+        dataConsulta: diaLocal(new Date()),
         // CA-253: plano de estudante nasce com estagiário e preceptor.
         ...camposDeEstagioIniciais(quemAssina),
-        // O plano já nasce com o que a ficha do paciente sabe.
+        // D-340: cópia do que a ficha sabe, só para versões antigas do app; o plano lê a ficha.
         nome: paciente?.nome ?? criado.caso.nome,
         sexo: paciente?.sexo ?? criado.caso.sexo,
         idadeAnos: idade?.anos ?? criado.caso.idadeAnos,
         idadeMesesAdicionais: idade?.meses ?? criado.caso.idadeMesesAdicionais,
+        energia: sugestao ? { ...criado.caso.energia, fator: sugestao.fator } : criado.caso.energia,
       },
       plano: criado.plano,
     })
@@ -356,13 +363,24 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     }
 
     const pacienteDoPlano = registro.caso.pacienteId ? pacientes.find((p) => p.id === registro.caso.pacienteId) ?? null : null
+    // Spec ficha-unica, D-340: o plano lê a ficha (sexo, idade e gestação na data da consulta, nome, ocupação, doenças).
+    const comFicha = casoComFicha(registro.caso, pacienteDoPlano, diaLocal(new Date()))
+    const caso = comFicha.caso
+    const alterarPaciente = (mudanca: Partial<Paciente>) => {
+      if (!pacienteDoPlano) return
+      repoPacientes.salvar({ ...pacienteDoPlano, ...mudanca })
+      atualizarPacientes()
+    }
+    const outrosDoPaciente = registro.caso.pacienteId
+      ? casos.filter((c) => c.pacienteId === registro.caso.pacienteId && c.id !== registro.caso.id).flatMap((c) => repositorio.obter(c.id) ?? [])
+      : []
     // Spec ficha-unica, D-353: as restrições da ficha valem no Cobrir, nas trocas, nas sugestões e na linha do plano.
     const restricoesDoPaciente = pacienteDoPlano ? restricoesDaFicha(pacienteDoPlano) : SEM_RESTRICOES
     // O gasto energético limita as sugestões do Cobrir, na etapa 2 e na 3.
-    const gastoEnergetico = calcularEnergia(registro.caso, {
-      fator: registro.caso.energia.fator,
-      formula: registro.caso.energia.formula,
-      getManual: registro.caso.energia.getManual,
+    const gastoEnergetico = calcularEnergia(caso, {
+      fator: caso.energia.fator,
+      formula: caso.energia.formula,
+      getManual: caso.energia.getManual,
     }).get
 
     const indice = ETAPAS.findIndex((e) => e.aba === rota.aba)
@@ -370,9 +388,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     return (
       <Estrutura
         {...base}
-        titulo={registro.caso.nome || 'Plano sem nome'}
+        titulo={caso.nome || 'Plano sem nome'}
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
+        acoes={<MenuExportar caso={caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
       >
         <ContextoRestricoes.Provider value={restricoesDoPaciente}>
           <div className="flex flex-col gap-6">
@@ -380,22 +398,29 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
             {rota.aba === 'caso' ? (
               <TelaCaso
-                caso={registro.caso}
+                caso={caso}
                 aoAlterar={alterarCaso}
                 assinatura={quemAssina}
                 pacientes={pacientes.map((p) => ({ id: p.id, nome: p.nome }))}
                 aoVincularPaciente={(pacienteId) => alterarCaso({ pacienteId })}
-                lateral={<ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />}
+                paciente={pacienteDoPlano}
+                comFicha={comFicha}
+                aoAlterarPaciente={alterarPaciente}
+                aoAbrirFicha={pacienteDoPlano ? () => navegar({ tela: 'paciente', pacienteId: pacienteDoPlano.id }) : undefined}
+                pesoAnterior={pesoAnterior(registro.caso, outrosDoPaciente)}
+                sugestaoNivel={pacienteDoPlano ? nivelSugerido(pacienteDoPlano.respostasAnamnese) : null}
+                lembreteAgua={pacienteDoPlano ? lembreteDaHidratacao(pacienteDoPlano.respostasAnamnese) : null}
+                lateral={<ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />}
               />
             ) : rota.aba === 'plano' ? (
               <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                   <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
                   <div className="flex flex-col gap-6">
-                    <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+                    <ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />
                     <MicrosDoDia
                       key={registro.caso.id}
-                      caso={registro.caso}
+                      caso={caso}
                       plano={registro.plano}
                       gastoEnergetico={gastoEnergetico}
                       restricoes={restricoesDoPaciente}
@@ -411,9 +436,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 <CartaoLinkMissoes
                   casoId={registro.caso.id}
                   pacienteId={registro.caso.pacienteId}
-                  nome={registro.caso.nome}
-                  missoes={missoesDoPlano(registro.plano, { aguaL: aguaDoCaso(registro.caso).litros })}
-                  dieta={dietaDoPlano(registro.caso, registro.plano)}
+                  nome={caso.nome}
+                  missoes={missoesDoPlano(registro.plano, { aguaL: aguaDoCaso(caso).litros })}
+                  dieta={dietaDoPlano(caso, registro.plano)}
                   aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                   aoCadastrarTelefone={cadastrarTelefone}
                   situacao={perfil?.situacao ?? null}
@@ -422,11 +447,11 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
               </div>
             ) : (
               <div className="flex flex-col gap-6">
-                <FaixaResumo caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
+                <FaixaResumo caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />
                 {/* Um estado por plano: trocar de plano (até pelo voltar) abre o recolhido fechado (CA-704). */}
                 <TelaAdequacao
                   key={registro.caso.id}
-                  caso={registro.caso}
+                  caso={caso}
                   plano={registro.plano}
                   gastoEnergetico={gastoEnergetico}
                   restricoes={restricoesDoPaciente}

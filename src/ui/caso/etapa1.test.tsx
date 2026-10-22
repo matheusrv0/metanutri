@@ -28,11 +28,11 @@ describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', (
     expect(within(escolha).getByRole('radio', { name: 'Medida caseira' })).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('CA-924: fica no cartão Identificação, o primeiro da etapa', () => {
+  it('CA-924 e CA-1071: fica no cartão Orientações e documento (spec ficha-unica, P-37)', () => {
     montar(adulta)
-    const identificacao = screen.getByRole('heading', { name: 'Identificação' }).closest('[data-slot="card"]')
-    expect(identificacao).not.toBeNull()
-    expect(within(identificacao as HTMLElement).getByRole('radiogroup', { name: 'Quantidades para o paciente' })).toBeInTheDocument()
+    const documento = screen.getByRole('heading', { name: 'Orientações e documento' }).closest('[data-slot="card"]')
+    expect(documento).not.toBeNull()
+    expect(within(documento as HTMLElement).getByRole('radiogroup', { name: 'Quantidades para o paciente' })).toBeInTheDocument()
   })
 })
 
@@ -96,10 +96,10 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     expect(screen.queryByRole('heading', { name: 'Condição fisiológica' })).not.toBeInTheDocument()
   })
 
-  it('CA-330 e CA-331: masculino não vê condição; adulto não vê meses nem panturrilha', () => {
+  it('CA-330 e CA-331: masculino não vê gestação ou lactação; adulto não vê meses nem panturrilha', () => {
     montar({ ...adulta, sexo: 'M' })
-    expect(screen.queryByRole('radiogroup', { name: 'Condição' })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Gestação ou lactação' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Circunferência da panturrilha')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Circunferência da cintura')).toBeInTheDocument()
   })
@@ -110,23 +110,30 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     await usuario.clear(idade)
     await usuario.type(idade, '8')
     // D-244 (spec revisao-geral-trabalho): o campo segue a idade quando a pessoa termina de digitar.
-    expect(await screen.findByLabelText('Meses além dos anos')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Meses')).toBeInTheDocument()
     await usuario.clear(idade)
     await usuario.type(idade, '72')
-    await waitFor(() => expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument())
     expect(screen.getByLabelText('Circunferência da panturrilha')).toBeInTheDocument()
   })
 
-  it('CB-73: campo com valor continua aparecendo', () => {
+  it('CB-73: campo com valor continua aparecendo (os meses do adulto, não: R9)', () => {
     montar({ ...adulta, idadeAnos: 45, circunferenciaPanturrilhaCm: 33, idadeMesesAdicionais: 4 })
     expect(screen.getByLabelText('Circunferência da panturrilha')).toHaveValue('33')
-    expect(screen.getByLabelText('Meses além dos anos')).toHaveValue('4')
+    expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument()
+  })
+
+  it('R1 e R8: a menina de 6 anos não vê gestação nem cintura; a gestante não vê cintura', () => {
+    montar({ sexo: 'F', idadeAnos: 6, pesoKg: 21, estaturaCm: 116 })
+    expect(screen.queryByRole('radiogroup', { name: 'Gestação ou lactação' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Circunferência da cintura')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Meses')).toHaveAccessibleDescription('Além dos anos completos.')
   })
 
   it('CA-332: composição corporal e observações recolhidas, e abrem com um clique', async () => {
     const usuario = montar(adulta)
     const composicao = screen.getByRole('button', { name: /Composição corporal/ })
-    const observacoes = screen.getByRole('button', { name: /Observações/ })
+    const observacoes = screen.getByRole('button', { name: /Anotações deste plano/ })
     expect(composicao).toHaveAttribute('aria-expanded', 'false')
     expect(observacoes).toHaveAttribute('aria-expanded', 'false')
     await usuario.click(composicao)
@@ -142,7 +149,7 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
       composicao: { ...vazio.composicao, dobras: { ...vazio.composicao.dobras, tricipital: 12 } },
     })
     expect(screen.getByRole('button', { name: /Composição corporal/ })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: /Observações/ })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /Anotações deste plano/ })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('CA-333: avaliação mostra valor e classificação na mesma linha', () => {
@@ -152,8 +159,8 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
   })
 })
 
-describe('Meses além dos anos sem piscar (spec revisao-geral-trabalho, D-244)', () => {
-  const meses = () => screen.queryByLabelText('Meses além dos anos')
+describe('Meses sem piscar (spec revisao-geral-trabalho, D-244)', () => {
+  const meses = () => screen.queryByLabelText('Meses')
   const idade = () => screen.getByLabelText('Idade')
   const digitar = (valor: string) => fireEvent.change(idade(), { target: { value: valor } })
 

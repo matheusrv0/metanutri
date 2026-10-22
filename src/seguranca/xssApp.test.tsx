@@ -210,7 +210,8 @@ describe('CA-487: código malicioso aparece como texto e nada executa (app no ap
 
   it('CA-487: plano: dados, observações, orientações e receitas aparecem como texto', async () => {
     await abrir(`#/caso/${semeado.casoId}/caso`, 'nome do plano')
-    for (const rotulo of ['diagnostico', 'ocupacao', 'observacoes do plano']) cargaComoTexto(rotulo)
+    // Spec ficha-unica, D-340: com paciente, o diagnóstico e as restrições vêm da ficha, no resumo da etapa 1.
+    for (const rotulo of ['condicoes clinicas', 'restricao', 'observacoes do plano']) cargaComoTexto(rotulo)
     conferirSemInjecao()
   })
 
