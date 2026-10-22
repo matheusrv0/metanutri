@@ -504,7 +504,8 @@ const TELAS: readonly Tela[] = [
       const antes = await itens.count()
       const entrada = p.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
       await entrada.fill('100 feijao carioca cozido')
-      await expect(p.getByRole('option').first()).toBeVisible()
+      // A lista da busca, não as opções do seletor de medida das linhas que já existem (spec alimentos-e-gramaturas).
+      await expect(p.getByRole('listbox', { name: /^Resultados para/ }).getByRole('option').first()).toBeVisible()
       await entrada.press('Enter')
       await expect(itens).toHaveCount(antes + 1)
     },
