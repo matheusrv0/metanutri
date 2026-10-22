@@ -81,7 +81,7 @@ export function pesoAnterior(atual: Caso, registros: readonly { readonly caso: C
   const candidatos = registros
     .map((r) => r.caso)
     .filter((c) => c.id !== atual.id && c.pacienteId === atual.pacienteId && c.pesoKg !== null && c.dataConsulta !== null && lerDia(c.dataConsulta) !== null)
-    .filter((c) => atual.dataConsulta === null || (c.dataConsulta ?? '') < atual.dataConsulta)
+    .filter((c) => atual.dataConsulta === null || (c.dataConsulta ?? '') <= atual.dataConsulta)
     .sort((a, b) => (b.dataConsulta ?? '').localeCompare(a.dataConsulta ?? ''))
   const ultimo = candidatos[0]
   return ultimo && ultimo.pesoKg !== null && ultimo.dataConsulta !== null ? { pesoKg: ultimo.pesoKg, data: ultimo.dataConsulta } : null

@@ -81,7 +81,7 @@ export function calcularAgua(caso: DadosDaConta, get: number | null): CalculoDaA
   if (idadeAnos < 18) {
     const { ml, partes } = hollidaySegar(pesoKg)
     const l = paraLitros(ml + acrescimo)
-    return { litros: l, metodo: 'Por peso: Holliday-Segar (abaixo de 18 anos)', conta: `Holliday-Segar: ${partes}${textoDoAcrescimo} = ${litros(l)} L`, nota: null }
+    return { litros: l, metodo: 'Por peso: Holliday-Segar (abaixo de 18 anos)', conta: `${partes}${textoDoAcrescimo} = ${litros(l)} L`, nota: null }
   }
 
   const { mlPorKg, faixa } = faixaDoAdulto(idadeAnos)

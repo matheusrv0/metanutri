@@ -118,7 +118,7 @@ referência.
 | 56 a 65 anos | 30 ml/kg | "30 ml × 70 kg = 2,1 L" |
 | Acima de 65 anos | 25 ml/kg | "25 ml × 60 kg = 1,5 L" |
 | Adulto com IMC de 30 ou mais | a faixa da idade sobre o **peso ajustado** = peso ideal (IMC 25 × estatura²) + 0,25 × (peso atual − peso ideal) | "35 ml × 79,5 kg (peso ajustado) = 2,8 L" e a nota "IMC de 30 ou mais: usado o peso ajustado, o peso ideal (IMC 25) mais 25% do excesso." |
-| Abaixo de 18 anos | Holliday-Segar: 100 ml/kg nos primeiros 10 kg, mais 50 ml/kg nos 10 kg seguintes, mais 20 ml/kg acima de 20 kg | "Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L" |
+| Abaixo de 18 anos | Holliday-Segar: 100 ml/kg nos primeiros 10 kg, mais 50 ml/kg nos 10 kg seguintes, mais 20 ml/kg acima de 20 kg | "1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L" (o nome do método já está na linha, antes da conta) |
 | Gestante | a conta da idade **mais 300 ml** | "35 ml × 64 kg + 300 ml da gestação = 2,5 L" |
 | Lactante | a conta da idade **mais 700 ml** | "35 ml × 62 kg + 700 ml da lactação = 2,9 L" |
 | Método por energia (escolha do plano) | 1 ml por kcal da meta de energia (GET ou meta digitada); gestação e lactação já estão na energia | "1 ml × 2.050 kcal = 2,1 L" |
@@ -225,7 +225,7 @@ Pessoas: **nutricionista**, **estudante** (plano sem paciente) e **paciente**.
 - **CA-1069** · Dado a etapa 1, então "Nível de atividade" aparece uma vez, com o fator ao lado do nome só para adulto sem gestação nem lactação ("Sedentário (1,2)"; para a criança, "Sedentário"); "Ajustar" não tem o nível e continua com fórmula (adulto), fator próprio e GET manual.
 - **CA-1070** · Dado a anamnese com atividade, então a etapa 1 mostra "Na anamnese: musculação, 4 vezes por semana, 60 minutos por vez. Sugere Moderadamente ativo." e "Usar" quando o nível marcado é outro; "Usar" marca o sugerido.
 - **CA-1071** · Dado a etapa 1, então "Orientações e documento" tem Quantidades para o paciente, Meta de água (com o lembrete da Hidratação: "Na anamnese: 1 litro por dia · urina 5 · Amarelo-escuro"), Orientações nutricionais, Receitas (quando vale), Estagiário(a) e Preceptor(a) ou "Assina este plano", e "Anotações deste plano" recolhido ("Anotações internas. Não aparecem no documento.").
-- **CA-1072** · Dado "Duplicar" num plano de paciente com 82 kg em 10/09/2026, então a cópia tem a data de hoje, o peso vazio e a dica "Última: 82 kg em 10/09/2026"; a idade e as semanas são as da data nova. Plano sem paciente duplicado continua com o peso.
+- **CA-1072** · Dado "Duplicar" num plano de paciente com 82 kg em 10/09/2026, então a cópia tem a data de hoje, o peso vazio e a dica "Última: 82 kg em 10/09/2026"; a idade e as semanas são as da data nova. A dica vale também para o plano de origem do mesmo dia (duplicar na mesma consulta não perde o peso de vista). Plano sem paciente duplicado continua com o peso.
 
 ### US-FU5 · Restrições que protegem
 
@@ -243,7 +243,7 @@ Pessoas: **nutricionista**, **estudante** (plano sem paciente) e **paciente**.
 
 - **CA-1082** · Dado um adulto, então a meta é a faixa da idade vezes o peso: 35 anos e 72 kg dão "35 ml × 72 kg = 2,5 L"; 60 anos e 70 kg, "30 ml × 70 kg = 2,1 L"; 70 anos e 60 kg, "25 ml × 60 kg = 1,5 L".
 - **CA-1083** · Dado um adulto com IMC de 30 ou mais (35 anos, 100 kg, 1,65 m), então a conta usa o peso ajustado (68,1 kg ideal + 25% do excesso = 76 kg): "35 ml × 76 kg (peso ajustado) = 2,7 L", com a nota do peso ajustado.
-- **CA-1084** · Dado uma criança ou adolescente, então a meta é a de Holliday-Segar: 21 kg dão 1,5 L ("Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L"); 8 kg, 0,8 L; 15 kg, 1,3 L.
+- **CA-1084** · Dado uma criança ou adolescente, então a meta é a de Holliday-Segar: 21 kg dão 1,5 L ("Por peso: Holliday-Segar (abaixo de 18 anos) · 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L", sem repetir o nome); 8 kg, 0,8 L; 15 kg, 1,3 L.
 - **CA-1090** · Dado uma gestante, então a conta soma 300 ml; dada uma lactante, 700 ml, e a conta diz o acréscimo.
 - **CA-1091** · Dado o método "Por energia (1 ml/kcal)" escolhido no plano, então a meta é 1 ml por kcal da meta de energia ("1 ml × 2.050 kcal = 2,1 L"), sem os acréscimos de gestação e lactação; sem meta de energia, não há valor automático. Plano antigo, sem o campo, usa "Por peso".
 - **CA-1092** · Dado a etapa 1, então o campo "Meta de água" mostra o valor em litros, o nome do método e a conta, e uma linha discreta com a referência da DRI para a fase de vida; sem peso, o campo fica vazio, com "Informe o peso para a meta automática.".

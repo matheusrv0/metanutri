@@ -117,6 +117,11 @@ describe('O peso da última consulta (D-358, CA-1072)', () => {
     expect(pesoAnterior(atual, [...outros, { caso: atual }])).toEqual({ pesoKg: 82, data: '2026-09-10' })
   })
 
+  it('o plano de origem do mesmo dia também vale: duplicar na mesma consulta não perde o peso de vista', () => {
+    const atual = registro('c2', '2026-10-21', null).caso
+    expect(pesoAnterior(atual, [registro('c1', '2026-10-21', 82), { caso: atual }])).toEqual({ pesoKg: 82, data: '2026-10-21' })
+  })
+
   it('sem outro plano com peso, nada', () => {
     const atual = registro('c3', '2026-10-21', null).caso
     expect(pesoAnterior(atual, [registro('c1', '2026-08-01', null), { caso: atual }])).toBeNull()

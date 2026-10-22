@@ -43,7 +43,7 @@ export function CamposDoPlanoSemPaciente({ caso, aoAlterar, erros, idadeAssentad
   return (
     <>
       <div className="sm:col-span-2">
-        <CampoTexto rotulo="Nome do plano" valor={caso.nome} aoMudar={(nome) => aoAlterar({ nome })} placeholder="Caso de estudo 1…" />
+        <CampoTexto rotulo="Nome do plano" valor={caso.nome} aoMudar={(nome) => aoAlterar({ nome })} />
       </div>
       <GrupoOpcoes<Sexo>
         rotulo="Sexo"

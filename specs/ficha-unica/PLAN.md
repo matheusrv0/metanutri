@@ -77,3 +77,9 @@ Cada tarefa vai num commit (Conventional Commits, em português), com o teste an
   da T7 deixaria o teste de tela da anamnese vermelho. Os dois foram juntos.
 - **Resumo do link no Retorno** saiu num arquivo próprio (`src/domain/adesaoNoRetorno.ts`), para não mexer em
   `acompanhamento.ts`, que é da frente de textos e da tela Adesão.
+- **T9 e T10 num commit só.** Os textos da tabela §3.10 caem nos mesmos componentes da etapa 1 que a T9 refez
+  (`CampoMetaEnergia`, a etapa sem paciente, "Mudar para atendimento completo"); o item 111 (Configurações › Quem
+  assina, "Preceptor(a)") e o texto da prescrição rápida no "Novo plano" (P-31) foram junto.
+- **Etapa 1 em três cartões novos** (`CartaoIdentificacao` refeito, `CartaoMedidas` no lugar de `CartaoPessoa`, e
+  `CartaoDocumento`), com `ResumoDoPaciente` e `CamposDoPlanoSemPaciente`. A composição corporal foi para Medidas e
+  energia, que é onde a medida mora.

@@ -46,7 +46,7 @@ export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnte
         <CardTitle>Medidas e energia</CardTitle>
       </CardHeader>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
         <CampoNumero rotulo="Peso" valor={caso.pesoKg} aoMudar={numero('pesoKg')} sufixo="kg" erro={erros.pesoKg} dica={dicaDoPeso} />
         <CampoNumero rotulo="Estatura" valor={caso.estaturaCm} aoMudar={numero('estaturaCm')} sufixo="cm" erro={erros.estaturaCm} />
         {campos.cintura ? (

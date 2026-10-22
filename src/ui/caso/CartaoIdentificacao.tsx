@@ -58,7 +58,7 @@ export function CartaoIdentificacao({
               onChange={(e) => aoVincularPaciente(e.target.value || null)}
               className="h-11 w-full min-w-0 truncate rounded-md border border-input bg-card px-3 text-base sm:text-sm"
             >
-              <option value="">Sem paciente (caso de estudo)</option>
+              <option value="">Sem paciente vinculado</option>
               {pacientes.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nome.trim() || 'Paciente sem nome'}

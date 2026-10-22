@@ -42,10 +42,10 @@ describe('Por peso, adulto pela faixa de idade (CA-1082)', () => {
 
 describe('Abaixo de 18 anos: Holliday-Segar (CA-1084)', () => {
   it.each([
-    [6, 21, 1.5, 'Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L'],
-    [2, 8, 0.8, 'Holliday-Segar: 100 ml × 8 kg = 0,8 L'],
-    [4, 15, 1.3, 'Holliday-Segar: 1.000 ml + 50 ml × 5 kg = 1,3 L'],
-    [16, 60, 2.3, 'Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 40 kg = 2,3 L'],
+    [6, 21, 1.5, '1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L'],
+    [2, 8, 0.8, '100 ml × 8 kg = 0,8 L'],
+    [4, 15, 1.3, '1.000 ml + 50 ml × 5 kg = 1,3 L'],
+    [16, 60, 2.3, '1.000 ml + 500 ml + 20 ml × 40 kg = 2,3 L'],
   ])('%i anos e %i kg', (idade, peso, litros, conta) => {
     expect(calcularAgua(pessoa(idade, peso), null)).toEqual({ litros, metodo: 'Por peso: Holliday-Segar (abaixo de 18 anos)', conta, nota: null })
   })
