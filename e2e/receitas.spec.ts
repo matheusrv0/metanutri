@@ -74,14 +74,11 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
   await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
-  // D-274a, publicação 1: a busca da refeição ainda não põe receita. O plano ganha a receita pelos dados, como
-  // chegaria de um aparelho na publicação 2; a linha, a soma, a folha e o link já sabem ler.
+  // D-274a, publicação 2 (spec alimentos-e-gramaturas, D-388): a busca da refeição põe a receita.
   const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
   await busca.fill('panqueca')
-  await expect(page.getByText(/Nenhum alimento encontrado/)).toBeVisible()
-  await expect(page.getByRole('option', { name: /Receita/ })).toHaveCount(0)
-  await busca.fill('')
-  await porPanquecaNoDesjejum(page)
+  await expect(page.getByRole('option', { name: /Panqueca de banana/ })).toBeVisible()
+  await busca.press('Enter')
   const desjejum = page.getByRole('tabpanel', { name: 'Principal de Desjejum' })
   await expect(desjejum).toContainText('Panqueca de banana')
   await expect(desjejum).toContainText('Receita · 1 unidade')

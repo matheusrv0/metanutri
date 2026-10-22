@@ -15,11 +15,12 @@ import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, IngredienteRecei
 export const CHAVE_RECEITAS = 'metanutri:receitas'
 
 /**
- * D-274a (publicação em duas vezes): pôr receita na refeição fica desligado na publicação 1, para nenhum plano ganhar
- * receita antes de todo aparelho ter a versão que sabe ler (R-270). A biblioteca, a linha do plano, a folha, o link e o
- * Word já leem receita. Na publicação 2, o coordenador troca para `true`.
+ * D-274a (publicação em duas vezes): pôr receita na refeição ficou desligado na publicação 1, para nenhum plano ganhar
+ * receita antes de todo aparelho ter a versão que sabe ler (R-270). Publicação 2 (decisão 7 da rodada de 21/10/2026, spec
+ * alimentos-e-gramaturas, D-388): ligada, porque o aplicativo (PWA, atualização automática) já trocou de versão há dois
+ * dias.
  */
-export const RECEITAS_NA_REFEICAO: boolean = false
+export const RECEITAS_NA_REFEICAO: boolean = true
 
 export interface Receita {
   readonly id: string
