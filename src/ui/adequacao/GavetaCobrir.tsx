@@ -1,7 +1,7 @@
 import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
-import { refeicaoIndicada, sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
+import { refeicaoIndicada, sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { formatarQuantidadeMedida } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
@@ -18,7 +18,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
-import { aberturaDoCobrir } from './estiloAdequacao.ts'
+import { aberturaDoCobrir, descreverAvisos } from './estiloAdequacao.ts'
 
 interface GavetaCobrirProps {
   /** Nutriente a cobrir; `null` mantém a gaveta fechada. */
@@ -40,14 +40,6 @@ interface GavetaCobrirProps {
    * cairia no corpo da página.
    */
   readonly focoAoFechar?: () => HTMLElement | null
-}
-
-function descreverAvisos(s: Sugestao): readonly string[] {
-  return s.avisos.map((a) =>
-    a.tipo === 'excede-gasto'
-      ? `Ultrapassa o gasto energético em ${formatarNumero(a.kcalAcima, 0)} kcal.`
-      : `Ultrapassa o limite superior (UL) de ${a.rotulo}.`,
-  )
 }
 
 /** Quanto cabe até o gasto; com o plano acima dele, quanto já passou, sem número negativo (CA-694). */

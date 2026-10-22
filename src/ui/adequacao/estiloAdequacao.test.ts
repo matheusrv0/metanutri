@@ -1,6 +1,6 @@
 // A adequação diz de que é a porcentagem (spec ficha-unica, D-459, CA-1283).
 import type { LinhaAdequacao } from '@/domain/adequacao.ts'
-import { aberturaDoCobrir, pctDaReferencia, rotuloDosNaMeta, textoDaAdequacao } from './estiloAdequacao.ts'
+import { aberturaDoCobrir, descreverAvisos, pctDaReferencia, rotuloDosNaMeta, textoDaAdequacao } from './estiloAdequacao.ts'
 
 const linha = (adequacaoPct: number, estado: LinhaAdequacao['estado']): LinhaAdequacao => ({
   chave: 'calcio_mg',
@@ -38,6 +38,14 @@ describe('A adequação em % da referência (CA-1283)', () => {
 
   it('o arredondamento continua sem desmentir o estado (D-211)', () => {
     expect(pctDaReferencia(linha(89.6, 'abaixo'))).toBe('89% da referência')
+  })
+
+  it('CA-1314: os avisos da sugestão, com a nota do fígado (D-471)', () => {
+    expect(
+      descreverAvisos({
+        avisos: [{ tipo: 'excede-gasto', kcalAcima: 120 }, { tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' }, { tipo: 'figado-semanal' }],
+      }),
+    ).toEqual(['Ultrapassa o gasto energético em 120 kcal.', 'Ultrapassa o limite superior (UL) de Selênio.', 'Fígado: no máximo 1 vez por semana.'])
   })
 
   it('a gaveta do Cobrir começa por quanto o plano tem', () => {

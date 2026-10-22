@@ -41,13 +41,20 @@ describe('gestação sem fígado (D-442)', () => {
 
   it('CA-1250: o Cobrir, em todas as linhas da adequação, não traz fígado nem sarapatel', () => {
     const ad = calcularAdequacao(vazio, perfil, { tipo: 'individual' })
-    const sem = MICRONUTRIENTES_ADEQUACAO.flatMap((chave) => sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2400 }).sugestoes.map((s) => s.alimentoId))
+    // Desde a correção C (D-471), o fígado só cabe no limite da vitamina A pelo de frango cru, com a chave ligada, e
+    // perde a frente para os de uso comum: a base só de fígados mostra que ele apareceria sem o cuidado.
+    const soFigados = FIGADOS.map(alimento)
+    const sem = MICRONUTRIENTES_ADEQUACAO.flatMap((chave) =>
+      sugerirParaCobrir(chave, vazio, ad, { alimentos: soFigados, gastoEnergetico: 2400, incluirIngredientes: true }).sugestoes.map((s) => s.alimentoId),
+    )
     // O fígado aparece sem o cuidado (a revisão o viu na vitamina A): o teste não passa à toa.
     expect(sem.some((id) => FIGADOS.includes(id))).toBe(true)
     for (const chave of MICRONUTRIENTES_ADEQUACAO) {
-      for (const incluirIngredientes of [false, true]) {
-        const ids = sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2400, restricoes: gestante, incluirIngredientes }).sugestoes.map((s) => s.alimentoId)
-        expect(ids.filter((id) => FIGADOS.includes(id)), chave).toEqual([])
+      for (const alimentos of [ALIMENTOS, soFigados]) {
+        for (const incluirIngredientes of [false, true]) {
+          const ids = sugerirParaCobrir(chave, vazio, ad, { alimentos, gastoEnergetico: 2400, restricoes: gestante, incluirIngredientes }).sugestoes.map((s) => s.alimentoId)
+          expect(ids.filter((id) => FIGADOS.includes(id)), chave).toEqual([])
+        }
       }
     }
   })

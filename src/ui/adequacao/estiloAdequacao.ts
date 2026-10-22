@@ -1,4 +1,5 @@
 import type { EstadoAdequacao, LinhaAdequacao } from '@/domain/adequacao.ts'
+import type { Sugestao } from '@/domain/cobrir.ts'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
@@ -37,6 +38,17 @@ export function textoDaAdequacao(linha: LinhaAdequacao): string {
 export function rotuloDosNaMeta(quantos: number, aberto: boolean): string {
   const verbo = aberto ? 'Esconder' : 'Ver'
   return quantos === 1 ? `${verbo} o nutriente na meta` : `${verbo} os ${quantos} nutrientes na meta`
+}
+
+/** Os avisos de uma sugestão do Cobrir, um por linha (CA-37; D-471 da correção C: a nota do fígado). */
+export function descreverAvisos(s: Pick<Sugestao, 'avisos'>): readonly string[] {
+  return s.avisos.map((a) =>
+    a.tipo === 'excede-gasto'
+      ? `Ultrapassa o gasto energético em ${formatarNumero(a.kcalAcima, 0)} kcal.`
+      : a.tipo === 'figado-semanal'
+        ? 'Fígado: no máximo 1 vez por semana.'
+        : `Ultrapassa o limite superior (UL) de ${a.rotulo}.`,
+  )
 }
 
 /** A primeira frase da gaveta do Cobrir: "O plano tem 28% da referência. " (D-459); sem a linha, nada. */

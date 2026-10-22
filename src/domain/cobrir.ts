@@ -7,6 +7,10 @@ import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } 
 import { tipoDaRefeicao, type TipoRefeicao } from './sugestoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento, MedidaDoItem, Plano, Refeicao } from './tipos.ts'
+import { vitaminaAPreFormadaPorCem } from './vitaminaA.ts'
+
+/** A vitamina A: o limite dela vale para a parte pré-formada e vira o teto da porção (D-470, D-471). */
+const VITAMINA_A: ChaveNutrienteAlimento = 'vitamina_a_rae_mcg'
 
 /** Porção máxima padrão de uma sugestão, editável pelo usuário (D-5). */
 export const PORCAO_MAXIMA_PADRAO_G = 200
@@ -22,6 +26,8 @@ export const MAXIMO_SUGESTOES = 5
 export type AvisoSugestao =
   | { readonly tipo: 'excede-gasto'; readonly kcalAcima: number }
   | { readonly tipo: 'excede-limite'; readonly chave: ChaveNutrienteAlimento; readonly rotulo: string }
+  // D-471 (correção C): o fígado que cabe no limite da vitamina A, no máximo 1 vez por semana (NHS).
+  | { readonly tipo: 'figado-semanal' }
 
 export interface Sugestao {
   readonly alimentoId: number
@@ -309,7 +315,10 @@ export function sugerirParaCobrir(
   const porcaoMaxima = opcoes.porcaoMaximaG ?? PORCAO_MAXIMA_PADRAO_G
   if (!(porcaoMaxima > 0)) throw new RangeError(`Porção máxima inválida: ${porcaoMaxima} g.`)
 
-  const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
+  const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave && l.chave !== VITAMINA_A)
+  // D-471 (correção C): quanto ainda cabe de vitamina A pré-formada até o limite da fase de vida; `null` sem limite.
+  const linhaVitaminaA = adequacao.linhas.find((l) => l.chave === VITAMINA_A)
+  const folgaPreFormada = linhaVitaminaA?.limite ? linhaVitaminaA.limite.valor - linhaVitaminaA.totalNoLimite : null
   const restricoes = comoRestricoes(opcoes.restricoes)
   let restricaoTirouAlguem = false
   // D-442: na gestação, a vitamina A vem primeiro das fontes vegetais (carotenoides), não do retinol das animais.
@@ -324,8 +333,15 @@ export function sugerirParaCobrir(
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
 
-    // Vale a menor entre a porção do grupo na idade do paciente e a que a pessoa escolheu (CB-197; D-439).
-    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaNaIdade(alimento, opcoes.idadeAnos))
+    // Vale a menor entre a porção do grupo na idade do paciente e a que a pessoa escolheu (CB-197; D-439), e nunca acima
+    // do que cabe de vitamina A pré-formada (D-471): com o plano no limite, nada que a traga.
+    const preFormadaPorCem = vitaminaAPreFormadaPorCem(alimento)
+    const tetoDaVitaminaA =
+      folgaPreFormada !== null && preFormadaPorCem > 0
+        ? Math.floor((Math.max(0, folgaPreFormada) / preFormadaPorCem) * (100 / PASSO_PORCAO_G)) * PASSO_PORCAO_G
+        : Number.POSITIVE_INFINITY
+    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaNaIdade(alimento, opcoes.idadeAnos), tetoDaVitaminaA)
+    if (porcaoDoAlimento <= 0) continue
     // D-440: carne e ovo têm porção mínima; a que não cabe na porção máxima escolhida não é porção de verdade.
     const minima = porcaoMinima(alimento, opcoes.idadeAnos)
     if (minima !== null && minima > porcaoDoAlimento) continue
@@ -352,10 +368,11 @@ export function sugerirParaCobrir(
       const extra = ((alimento.nutrientes[l.chave] ?? 0) * gramas) / 100
       // Só avisa quem traz o nutriente: com o plano já acima do limite, o aviso ia para toda sugestão, até a que
       // não tem nada dele (spec vitaminas-usda, D-306 e CA-957b).
-      if (l.limite && extra > 0 && l.total + extra > l.limite.valor) {
+      if (l.limite && extra > 0 && l.totalNoLimite + extra > l.limite.valor) {
         avisos.push({ tipo: 'excede-limite', chave: l.chave, rotulo: l.rotulo })
       }
     }
+    if (FIGADO.test(alimento.descricao)) avisos.push({ tipo: 'figado-semanal' })
 
     candidatas.push({
       animal: vegetalPrimeiro && ORIGEM_ANIMAL.has(alimento.categoria),

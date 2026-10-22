@@ -18,6 +18,7 @@ import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
 import type { Totais } from './totais.ts'
 import { CHAVES_NUTRIENTES, totaisDeItens, totaisDoPlano } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
+import { vitaminaAPreFormadaPorCem } from './vitaminaA.ts'
 
 const totais = (v: Partial<Record<ChaveNutrienteAlimento, number>>): Totais => ({
   itens: 3,
@@ -704,6 +705,7 @@ describe('porção realista por grupo e por idade (spec sugestoes-com-criterio, 
   const ALFACE_ROXA = 80
   const RUCULA = 152
   const FIGADO = 356
+  const FIGADO_DE_FRANGO_CRU = 400
   const OVO = 488
   const ESTROGONOFE = 537
   const alimentoDe = (id: number): Alimento => {
@@ -771,10 +773,15 @@ describe('porção realista por grupo e por idade (spec sugestoes-com-criterio, 
     const ad = calcularAdequacao(vazio, perfil(35, 'M'), { tipo: 'individual' })
     const linha = ad.linhas.find((l) => l.chave === 'vitamina_a_rae_mcg')
     if (!linha) throw new Error('sem vitamina A')
-    // Falta pequena: 100 µg, que 1 g de fígado cobriria.
+    // Falta pequena: 100 µg, que 1 g de fígado cobriria. Correção C (D-471): o fígado bovino grelhado já não cabe no
+    // limite da vitamina A pré-formada em 50 g; o de frango cru (3.863 µg em 100 g, chave ligada) cabe.
     const quase = totais({ energia_kcal: 1600, vitamina_a_rae_mcg: (linha.referencia.valor * linha.metaPct) / 100 - 100 })
     const ad2 = calcularAdequacao(quase, perfil(35, 'M'), { tipo: 'individual' })
-    const figado = sugerirParaCobrir('vitamina_a_rae_mcg', quase, ad2, { gastoEnergetico: 2500, alimentos: [alimentoDe(FIGADO)] }).sugestoes[0]
+    const figado = sugerirParaCobrir('vitamina_a_rae_mcg', quase, ad2, {
+      gastoEnergetico: 2500,
+      alimentos: [alimentoDe(FIGADO_DE_FRANGO_CRU)],
+      incluirIngredientes: true,
+    }).sugestoes[0]
     expect(figado?.gramas).toBeGreaterThanOrEqual(50)
     expect(figado?.coberturaPct).toBe(100)
     const ferro = ad.linhas.find((l) => l.chave === 'ferro_mg')
@@ -830,5 +837,74 @@ describe('refeição de cada alimento no Cobrir (spec sugestoes-com-criterio, co
     if (!alface) throw new Error('sem alface')
     expect(refeicaoIndicada(soJantar, alface)?.nome).toMatch(/Jantar/)
     expect(refeicaoIndicada({ refeicoes: [] }, alface)).toBeNull()
+  })
+})
+
+describe('teto da vitamina A pré-formada no Cobrir (spec sugestoes-com-criterio, correção C, D-471)', () => {
+  const HOMEM_35 = { sexo: 'M' as const, idadeAnos: 35, condicao: { tipo: 'nenhuma' as const } }
+  const FIGADO_GRELHADO = 356
+  const FIGADO_DE_FRANGO_CRU = 400
+  const daBase = (id: number): Alimento => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return a
+  }
+  /** A vitamina A pré-formada que a sugestão leva ao plano. */
+  const preFormadaDa = (s: { readonly alimentoId: number; readonly gramas: number }) => (vitaminaAPreFormadaPorCem(daBase(s.alimentoId)) * s.gramas) / 100
+
+  it('CA-1313: homem de 35, plano vazio, chave desligada: nem a vitamina A nem o ferro trazem fígado, e nada passa de 3.000 µg', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, HOMEM_35, { tipo: 'individual' })
+    for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+      for (const s of sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2700, idadeAnos: 35 }).sugestoes) {
+        expect(s.descricao, chave).not.toMatch(/fígado|sarapatel/i)
+        expect(preFormadaDa(s), `${chave} ${s.descricao}`).toBeLessThanOrEqual(3000)
+      }
+    }
+  })
+
+  it('CA-1314: com a chave ligada, o fígado de frango cru cabe em até 75 g, com a nota de 1 vez por semana; o grelhado não cabe', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const ad = calcularAdequacao(vazio, HOMEM_35, { tipo: 'individual' })
+    const r = sugerirParaCobrir('ferro_mg', vazio, ad, {
+      alimentos: [daBase(FIGADO_GRELHADO), daBase(FIGADO_DE_FRANGO_CRU)],
+      gastoEnergetico: 2700,
+      idadeAnos: 35,
+      incluirIngredientes: true,
+    })
+    expect(r.sugestoes.map((s) => s.alimentoId)).toEqual([FIGADO_DE_FRANGO_CRU])
+    const [frango] = r.sugestoes
+    expect(frango?.gramas).toBeLessThanOrEqual(75)
+    expect(frango && preFormadaDa(frango)).toBeLessThanOrEqual(3000)
+    expect(frango?.avisos).toContainEqual({ tipo: 'figado-semanal' })
+  })
+
+  it('CA-1314: o teto desconta a pré-formada que o plano já tem', () => {
+    // 100 g de patinho não têm retinol; 10 g de fígado grelhado, 1.457 µg: sobram 1.543 µg, uns 40 g de fígado de frango.
+    const plano = totaisDeItens([{ id: 'f', alimentoId: FIGADO_GRELHADO, gramas: 10 }], buscarAlimento)
+    const ad = calcularAdequacao(plano, HOMEM_35, { tipo: 'individual' })
+    const r = sugerirParaCobrir('ferro_mg', plano, ad, { alimentos: [daBase(FIGADO_DE_FRANGO_CRU)], gastoEnergetico: 2700, incluirIngredientes: true })
+    // A porção cortada (35 g) fica abaixo da mínima de carne (50 g): o fígado sai.
+    expect(r.sugestoes).toEqual([])
+  })
+
+  it('CA-1315: com o plano acima do limite, nada com vitamina A pré-formada é sugerido', () => {
+    const plano = totaisDeItens([{ id: 'f', alimentoId: FIGADO_GRELHADO, gramas: 30 }], buscarAlimento)
+    const ad = calcularAdequacao(plano, HOMEM_35, { tipo: 'individual' })
+    expect(ad.linhas.find((l) => l.chave === 'vitamina_a_rae_mcg')?.estado).toBe('acima-limite')
+    for (const chave of ['ferro_mg', 'zinco_mg', 'calcio_mg', 'vitamina_b12_mcg'] as const) {
+      for (const s of sugerirParaCobrir(chave, plano, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2700, incluirIngredientes: true }).sugestoes) {
+        expect(preFormadaDa(s), `${chave} ${s.descricao}`).toBe(0)
+      }
+    }
+  })
+
+  it('a sugestão de vegetal não avisa limite de vitamina A, mesmo com a total acima de 3.000 µg', () => {
+    // 3.000 µg de carotenoide (abóbora) no plano: a pré-formada é zero, e a cenoura não passa de limite nenhum.
+    const plano = totaisDeItens([{ id: 'a', alimentoId: 66, gramas: 600 }], buscarAlimento)
+    const ad = calcularAdequacao(plano, HOMEM_35, { tipo: 'individual' })
+    for (const s of sugerirParaCobrir('ferro_mg', plano, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2700 }).sugestoes) {
+      expect(s.avisos.filter((a) => a.tipo === 'excede-limite'), s.descricao).toEqual([])
+    }
   })
 })
