@@ -9,7 +9,7 @@ import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, MedidaDoItem, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { chaveDasRestricoes, comoRestricoes, SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
-import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
+import { CampoPorcaoMaxima } from './CampoPorcaoMaxima.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { lerOcultosGlobais, ocultarGlobalmente } from '../estado/ocultosGlobais.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -124,12 +124,7 @@ export function GavetaCobrir({
         </SheetDescription>
 
         <div className="flex flex-col gap-3 border border-border bg-muted p-4">
-          <CampoNumero
-            rotulo="Porção máxima por sugestão"
-            valor={prefs.porcaoMaximaG}
-            aoMudar={(v) => v !== null && v > 0 && aoAlterarCaso({ adequacao: { ...prefs, porcaoMaximaG: v } })}
-            sufixo="g"
-          />
+          <CampoPorcaoMaxima valor={prefs.porcaoMaximaG} aoMudar={(porcaoMaximaG) => aoAlterarCaso({ adequacao: { ...prefs, porcaoMaximaG } })} />
           <label className="flex items-center justify-between gap-3 text-sm max-sm:min-h-11">
             <span>Incluir ingredientes e alimentos crus</span>
             <Switch

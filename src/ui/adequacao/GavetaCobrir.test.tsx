@@ -108,6 +108,52 @@ describe('Refeição de cada alimento (spec sugestoes-com-criterio, correção A
   })
 })
 
+describe('Porção máxima automática (spec sugestoes-com-criterio, correção C, D-475)', () => {
+  const montar = (porcaoMaximaG: number, aoAlterarCaso = vi.fn()) => {
+    const comPorcao: Caso = { ...caso, adequacao: { ...caso.adequacao, porcaoMaximaG } }
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    render(
+      <GavetaCobrir
+        chave="ferro_mg"
+        rotulo="Ferro"
+        caso={comPorcao}
+        plano={plano}
+        totais={totais}
+        adequacao={calcularAdequacao(totais, comPorcao, comPorcao.adequacao.preset)}
+        gastoEnergetico={1800}
+        aoAlterarCaso={aoAlterarCaso}
+        aoAdicionar={nada}
+        aoFechar={nada}
+      />,
+    )
+    return { aoAlterarCaso, campo: within(screen.getByRole('dialog')).getByLabelText(/Porção máxima por sugestão/) }
+  }
+  const DICA = 'Automática, pelo grupo do alimento e pela idade. Digite um valor para limitar.'
+
+  it('CA-1321: no padrão (200 g, também de plano antigo), o campo fica vazio, com a dica', () => {
+    const { campo } = montar(200)
+    expect(campo).toHaveValue('')
+    expect(within(screen.getByRole('dialog')).getByText(DICA)).toBeInTheDocument()
+  })
+
+  it('CA-1321: digitar 30 limita; apagar volta à automática', async () => {
+    const { aoAlterarCaso, campo } = montar(200)
+    const usuario = userEvent.setup()
+    await usuario.type(campo, '30')
+    expect(campo).toHaveValue('30')
+    expect(aoAlterarCaso).toHaveBeenLastCalledWith({ adequacao: expect.objectContaining({ porcaoMaximaG: 30 }) })
+    await usuario.clear(campo)
+    expect(aoAlterarCaso).toHaveBeenLastCalledWith({ adequacao: expect.objectContaining({ porcaoMaximaG: 200 }) })
+    // Digitar 200 de novo não apaga o que se digita.
+    await usuario.type(campo, '200')
+    expect(campo).toHaveValue('200')
+  })
+
+  it('CA-1321: um teto digitado antes aparece', () => {
+    expect(montar(30).campo).toHaveValue('30')
+  })
+})
+
 describe('Gaveta aberta para o sódio (CA-714)', () => {
   it('CA-714: se a gaveta chegar a abrir para o sódio, não lista sugestão e mostra a mensagem do domínio', () => {
     const totais = totaisDoPlano(plano, buscarAlimento)

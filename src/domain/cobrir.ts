@@ -12,7 +12,10 @@ import { vitaminaAPreFormadaPorCem } from './vitaminaA.ts'
 /** A vitamina A: o limite dela vale para a parte pré-formada e vira o teto da porção (D-470, D-471). */
 const VITAMINA_A: ChaveNutrienteAlimento = 'vitamina_a_rae_mcg'
 
-/** Porção máxima padrão de uma sugestão, editável pelo usuário (D-5). */
+/**
+ * Porção máxima padrão de uma sugestão, editável pelo usuário (D-5). Desde a D-439 é a "automática": vale a porção do
+ * grupo e da idade, e o campo da gaveta fica vazio (D-475).
+ */
 export const PORCAO_MAXIMA_PADRAO_G = 200
 
 /** Sem medida caseira que caiba, as porções são arredondadas para cima em múltiplos deste passo. */
@@ -417,7 +420,10 @@ export function sugerirParaCobrir(
     // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Você ainda pode adicionar qualquer alimento pela busca da refeição.`
+        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta ${
+            // D-475 (correção C): na porção automática, o teto é a porção de cada grupo, não 200 g.
+            porcaoMaxima >= PORCAO_MAXIMA_PADRAO_G ? 'na porção de cada grupo' : `em até ${porcaoMaxima} g`
+          }. Você ainda pode adicionar qualquer alimento pela busca da refeição.`
         : null,
   }
 }

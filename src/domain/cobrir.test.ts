@@ -455,7 +455,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, restricoes: ['rico', 'pobre'] })
     expect(r.sugestoes).toEqual([])
     expect(r.motivoSemSugestao).toBe(
-      'Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.',
+      'Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta na porção de cada grupo. Você ainda pode adicionar qualquer alimento pela busca da refeição.',
     )
   })
 
@@ -476,7 +476,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const semEfeito = (restricoes: readonly string[]) =>
       sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, ...semFonte], restricoes }).motivoSemSugestao
-    const MENSAGEM_PADRAO = 'Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.'
+    const MENSAGEM_PADRAO = 'Nenhum alimento de rotina cobre ao menos 10% da falta na porção de cada grupo. Você ainda pode adicionar qualquer alimento pela busca da refeição.'
     // Restrição que não casa com nada, e restrição que só tira quem não cobriria 10% ("Quase nada").
     expect(semEfeito(['abacaxi'])).toBe(MENSAGEM_PADRAO)
     expect(semEfeito(['quase'])).toBe(MENSAGEM_PADRAO)
@@ -486,10 +486,10 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
     expect(r.sugestoes).toEqual([])
-    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.')
+    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta na porção de cada grupo. Você ainda pode adicionar qualquer alimento pela busca da refeição.')
   })
 
-  it('CA-656: a mensagem leva a porção máxima escolhida', () => {
+  it('CA-656 e CA-1322: a mensagem leva a porção máxima digitada; na automática, a porção de cada grupo (D-475)', () => {
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, porcaoMaximaG: 5 })
     expect(r.sugestoes).toEqual([])
     expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.')
