@@ -372,11 +372,40 @@ describe('roteiro salvo na versão 1 ou 2 vira a 3 (spec ficha-unica, D-350, CA-
     expect(lerRoteiro(guardado({ agua: [{ id: 'agua-dia', texto: 'Água' }] }, 2)).perguntas.agua.map((q) => q.id)).toEqual(['agua-dia'])
   })
 
-  it('CB-348: roteiro da versão 3 salvo por uma versão antiga (sem versão, com os blocos novos) é lido como versão 3', () => {
-    const arm = guardado({ motivo: [{ id: 'queixa', texto: 'Queixa' }], objetivo: [{ id: 'queixa', texto: 'Queixa principal' }] })
+  it('CB-348 e CA-1300: o roteiro da versão 3 regravado pela versão no ar (78c0157) é lido de novo igual', () => {
+    // O que a 78c0157 grava ao salvar o roteiro da versão 3: `versao: 2`, os blocos que ela conhece (os que faltavam no
+    // guardado, com o padrão dela; os que existem, como vieram) e os blocos novos como desconhecidos.
+    const daV3 = new Memoria()
+    gravarRoteiro(daV3, ROTEIRO_PADRAO)
+    const blocosV3 = (JSON.parse(daV3.getItem(CHAVE_ROTEIRO) ?? '{}') as { blocos: Record<string, unknown> }).blocos
+    const padraoDaAntiga = {
+      objetivo: [
+        { id: 'queixa', texto: 'Queixa principal' },
+        { id: 'historico-peso', texto: 'Histórico do peso' },
+        { id: 'dietas', texto: 'Dietas que já fez' },
+        { id: 'suplementos-uso', texto: 'Suplementos que já usa' },
+        { id: 'doencas-familia', texto: 'Doenças na família' },
+      ],
+      intestino: [
+        { id: 'evacuacao', texto: 'Frequência de evacuação' },
+        { id: 'fezes', texto: 'Consistência das fezes' },
+        { id: 'desconforto', texto: 'Gases, estufamento ou desconforto' },
+      ],
+      preferencias: [
+        { id: 'gosta', texto: 'Alimentos de que gosta' },
+        { id: 'nao-gosta', texto: 'Alimentos de que não gosta' },
+        { id: 'vontades', texto: 'Vontade de doce ou salgado' },
+        { id: 'apetite', texto: 'Apetite e mastigação' },
+      ],
+      intolerancias: [
+        { id: 'intolerancias-alimentares', texto: 'Intolerâncias alimentares' },
+        { id: 'alergias-alimentares', texto: 'Alergias alimentares' },
+      ],
+    }
+    const arm = guardado({ ...blocosV3, ...padraoDaAntiga }, 2)
     const lido = lerRoteiro(arm)
-    expect(lido.perguntas.motivo).toEqual([{ id: 'queixa', texto: 'Queixa' }])
-    expect(lido.outros).toHaveProperty('objetivo')
+    expect(lido.perguntas).toEqual(ROTEIRO_PADRAO.perguntas)
+    expect(Object.keys(lido.outros).sort()).toEqual(['intestino', 'intolerancias', 'objetivo', 'preferencias'])
   })
 
   it('CA-1298 (D-465): pergunta própria criada numa aba antiga em bloco só da versão 2 aparece no bloco novo; tirada, não volta', () => {
