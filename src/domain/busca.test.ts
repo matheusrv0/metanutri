@@ -395,6 +395,8 @@ describe('fruta inteira em peça inteira (spec alimentos-e-gramaturas, correçã
     }
     expect(medidaCaseiraParaPaciente(182, 75)?.texto).toBe('1 unidade')
     expect(medidaCaseiraParaPaciente(182, 40)?.texto).toBe('meia unidade')
+    // A folga de 20% vale só para uma peça (ou meia): 225 g de laranja pera não são "1 unidade e meia" (270 g, 20% a mais).
+    expect(medidaCaseiraParaPaciente(214, 225)?.texto).not.toBe('1 unidade e meia')
     // Nenhuma fruta inteira crua lê "unidade pequena" com meia, de 20 a 400 g.
     for (const a of ALIMENTOS.filter((x) => x.categoria === 'Frutas e derivados' && x.preparo === 'cru' && !/suco|polpa/i.test(x.descricao))) {
       for (let gramas = 20; gramas <= 400; gramas += 5) {

@@ -189,9 +189,10 @@ function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida
     if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
     if (opcoes.maximoDeColheres !== undefined && m.nome.startsWith('colher') && q > opcoes.maximoDeColheres) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
-    // D-484 (correção C): a peça da fruta varia de tamanho; aceita até 20% (e a linha diz "cerca de" acima de 5%, D-434):
-    // 130 g de maçã é "130 g (cerca de 1 unidade)", não "1 unidade pequena e meia".
-    const tolerancia = servePraFruta && PECAS_DA_FRUTA_PEQUENA.has(m.nome) && m.propria !== true ? ERRO_MAXIMO_DA_PECA_DE_FRUTA : ERRO_MAXIMO
+    // D-484 (correção C): uma peça de fruta (ou meia) varia de tamanho; aceita até 20% (e a linha diz "cerca de" acima de
+    // 5%, D-434): 130 g de maçã é "130 g (cerca de 1 unidade)", não "1 unidade pequena e meia". Com mais peças, 15%.
+    const umaPeca = servePraFruta && PECAS_DA_FRUTA_PEQUENA.has(m.nome) && m.propria !== true && q <= 1
+    const tolerancia = umaPeca ? ERRO_MAXIMO_DA_PECA_DE_FRUTA : ERRO_MAXIMO
     if (erro > tolerancia) continue
     // desempate: menos unidades da medida lê melhor ("1 concha" em vez de "4 colheres de servir")
     const pontos = erro + preferencia * 0.01 + (q - 1) * 0.004
