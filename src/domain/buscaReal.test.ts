@@ -10,7 +10,8 @@ const ENTRADAS: readonly (readonly [texto: string, alimento: string, gramas: num
   ['2 colheres arroz', 'Arroz, tipo 1, cozido', 50, '2 colheres de sopa · 50 g'],
   ['1 colher de arroz', 'Arroz, tipo 1, cozido', 25, '1 colher de sopa · 25 g'],
   ['1 escumadeira de arroz', 'Arroz, tipo 1, cozido', 85, '1 escumadeira · 85 g'],
-  ['3 arroz', 'Arroz, tipo 1, cozido', 3, '3 g'],
+  // D-482b (3ª revisão): número abaixo de 20 sem unidade nem medida de contar avisa, e nada entra.
+  ['3 arroz', 'Arroz, tipo 1, cozido', null, null],
   ['1 concha de feijão', 'Feijão, carioca, cozido', 140, '1 concha · 140 g'],
   ['uma concha de feijão', 'Feijão, carioca, cozido', 140, '1 concha · 140 g'],
   ['meia concha de feijão', 'Feijão, carioca, cozido', 70, 'meia concha · 70 g'],
@@ -62,6 +63,11 @@ const ENTRADAS: readonly (readonly [texto: string, alimento: string, gramas: num
   ['1 colher de mel', 'Mel, de abelha', 15, '1 colher de sopa · 15 g'],
   ['1 tomate', 'Tomate, com semente, cru', 100, '1 unidade · 100 g'],
   ['100 alface', 'Alface, lisa, crua', 100, '100 g'],
+  // 3ª revisão (D-482a e D-482b): cortes com 20 ou mais são peso; abaixo de 20, nada vira gramas calado.
+  ['100 peito de frango', 'Frango, peito, sem pele, grelhado', 100, '100 g'],
+  ['2 filés de frango', 'Frango, peito, sem pele, grelhado', 200, '2 filés · 200 g'],
+  ['1 iogurte', 'Iogurte, natural', 200, '1 pote · 200 g'],
+  ['200 iogurte', 'Iogurte, natural', 200, '200 g'],
 ]
 
 describe('CA-1110: a entrada rápida com entradas reais', () => {
@@ -103,8 +109,8 @@ describe('CA-1110: a entrada rápida com entradas reais', () => {
     expect(nanica?.alimento.descricao).toBe('Banana, nanica, crua')
     expect(nanica).toMatchObject({ gramas: null, faltaMedida: { nome: 'unidade', quantidade: 1 } })
     expect(nanica?.aviso).toBe('Sem “unidade” · tem fatia (26 g), pedaço (16 g)')
-    // A prata tem a unidade da POF; "3 arroz" continua 3 g (CA-1102).
+    // A prata tem a unidade da POF; "3 arroz" avisa desde a D-482b (antes, 3 g, CA-1102).
     expect(buscarAlimentos('1 banana prata', ALIMENTOS).resultados[0]?.gramas).toBe(75)
-    expect(buscarAlimentos('3 arroz', ALIMENTOS).resultados[0]?.gramas).toBe(3)
+    expect(buscarAlimentos('3 arroz', ALIMENTOS).resultados[0]?.gramas).toBeNull()
   })
 })

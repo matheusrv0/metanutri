@@ -417,14 +417,49 @@ describe('o número conta peças na entrada rápida (spec alimentos-e-gramaturas
     expect(buscarAlimentos('clara de ovo', ALIMENTOS).resultados.map((r) => r.alimento.descricao)).toContain('Ovo, de galinha, clara, cozida/10minutos')
   })
 
-  it('CA-1331: "2 ovos" só traz ovos que se contam; "15 aveia" continua a aveia com 15 g (D-371)', () => {
+  it('CA-1331: "2 ovos" só traz ovos que se contam; "15 aveia" continua sendo a aveia, à frente do pão de aveia', () => {
     const ovos = buscarAlimentos('2 ovos', ALIMENTOS).resultados.filter((r) => r.alimento.descricao.startsWith('Ovo'))
     expect(ovos.length).toBeGreaterThan(0)
     for (const r of ovos) expect(medidaDeContar(r.alimento.id), r.alimento.descricao).not.toBeNull()
-    // O número não puxa para a frente quem tem medida de contar: o pão de aveia viraria 15 fatias.
+    // O número não puxa para a frente quem tem medida de contar: o pão de aveia viraria 15 fatias. Desde a D-482b (3ª
+    // revisão), a aveia sem unidade avisa em vez de virar 15 g calada; "15 g de aveia" são 15 g.
     const [aveia] = buscarAlimentos('15 aveia', ALIMENTOS).resultados
     expect(aveia?.alimento.descricao).toBe('Aveia, flocos, crua')
-    expect(aveia?.gramas).toBe(15)
+    expect(buscarAlimentos('15 g de aveia', ALIMENTOS).resultados[0]?.gramas).toBe(15)
+  })
+})
+
+describe('número abaixo de 20 nunca vira gramas calado (spec alimentos-e-gramaturas, 3ª revisão, D-482b)', () => {
+  it('CA-1343: "2 pães" não traz "2 g": o pão sem unidade avisa', () => {
+    for (const r of buscarAlimentos('2 pães', ALIMENTOS).resultados) {
+      expect(r.gramas, r.alimento.descricao).not.toBe(2)
+      if (r.gramas === null) expect(r.aviso, r.alimento.descricao).toMatch(/^Sem “unidade”/)
+    }
+  })
+
+  it('CA-1343: "1 iogurte" é 1 pote (200 g); "1 leite", 1 copo americano; "200 iogurte", 200 g', () => {
+    const [iogurte] = buscarAlimentos('1 iogurte', ALIMENTOS).resultados
+    expect(iogurte?.medida).toMatchObject({ nome: 'pote', quantidade: 1 })
+    expect(iogurte?.gramas).toBe(200)
+    expect(buscarAlimentos('1 leite', ALIMENTOS).resultados[0]?.medida).toMatchObject({ nome: 'copo americano', quantidade: 1 })
+    expect(buscarAlimentos('200 iogurte', ALIMENTOS).resultados[0]).toMatchObject({ gramas: 200, medida: null })
+  })
+
+  it('CA-1343: "15 aveia" e "2 arroz" avisam que falta a unidade e oferecem a medida nova', () => {
+    for (const entrada of ['15 aveia', '2 arroz']) {
+      const [r] = buscarAlimentos(entrada, ALIMENTOS).resultados
+      expect(r?.gramas, entrada).toBeNull()
+      expect(r?.aviso, entrada).toMatch(/^Sem “unidade”/)
+      expect(r?.faltaMedida, entrada).toMatchObject({ nome: 'unidade' })
+    }
+  })
+
+  it('CB-455: o alimento próprio com porção do rótulo conta porções: "2 granola" = 2 × 4 colheres de sopa', () => {
+    const base = ALIMENTOS.find((a) => a.descricao === 'Aveia, flocos, crua')
+    if (!base) throw new Error('sem aveia')
+    const granola = { ...base, id: PRIMEIRO_ID_PROPRIO + 9, descricao: 'Granola da casa', porcaoPadrao: { nome: 'colher de sopa', quantidade: 4, gramasPorMedida: 10 } }
+    const [r] = buscarAlimentos('2 granola', [granola]).resultados
+    expect(r).toMatchObject({ gramas: 80, medida: { nome: 'colher de sopa', quantidade: 8, gramasPorMedida: 10 } })
   })
 })
 

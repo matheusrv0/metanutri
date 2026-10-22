@@ -479,6 +479,18 @@ const ORDEM_DE_CONTAR = ['unidade', 'fatia', 'bife', 'filé', 'unidade pequena',
 /** Fruta se conta pela unidade: "1 banana nanica" nunca é "1 fatia" (correção A, CA-1258). */
 const ORDEM_DE_CONTAR_FRUTA = ['unidade', 'unidade pequena']
 
+/** D-482b: o recipiente em que o alimento sem medida de contar se serve ("1 iogurte" = 1 pote, "1 leite" = 1 copo). */
+const ORDEM_DE_RECIPIENTE = ['pote', 'copo americano', 'copo de requeijão', 'xícara de chá']
+
+function medidaDeRecipiente(alimentoId: number): MedidaCaseira | null {
+  const medidas = medidasDoAlimento(alimentoId)
+  for (const nome of ORDEM_DE_RECIPIENTE) {
+    const achada = medidas.find((m) => m.nome === nome)
+    if (achada) return achada
+  }
+  return null
+}
+
 /** A medida de contar do alimento, na ordem acima; `null` quando ele não tem. */
 export function medidaDeContar(alimentoId: number): MedidaCaseira | null {
   const medidas = medidasDoAlimento(alimentoId)
@@ -629,12 +641,20 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
     return { gramas: arredondar(q * m.gramas), medida: { nome: m.nome, quantidade: q, gramasPorMedida: m.gramas }, unidade, aviso: null }
   }
   if (lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES) {
+    const q = lida.quantidade
     const m = medidaDeContar(alimento.id)
-    if (m) return { gramas: arredondar(lida.quantidade * m.gramas), medida: { nome: m.nome, quantidade: lida.quantidade, gramasPorMedida: m.gramas }, unidade, aviso: null }
-    // CA-1258: fruta sem a unidade na base não vira 1 g: pede gramas ou a medida.
-    if (ehFruta(alimento.id)) {
-      return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, 'unidade', unidade), faltaMedida: { nome: 'unidade', quantidade: lida.quantidade } }
+    if (m) return { gramas: arredondar(q * m.gramas), medida: { nome: m.nome, quantidade: q, gramasPorMedida: m.gramas }, unidade, aviso: null }
+    // D-482b (3ª revisão, R2): o número abaixo de 20 nunca vira gramas calado. O alimento próprio conta porções do rótulo
+    // ("2 granola" = 2 × "4 colheres de sopa"); o que tem pote ou copo usa o primeiro ("1 iogurte" = 1 pote); a fruta
+    // (CA-1258) e o resto avisam que falta a unidade, e o Enter não põe.
+    const porcao = alimento.porcaoPadrao
+    if (porcao && !ehFruta(alimento.id)) {
+      const quantidade = q * porcao.quantidade
+      return { gramas: arredondar(quantidade * porcao.gramasPorMedida), medida: { ...porcao, quantidade }, unidade, aviso: null }
     }
+    const recipiente = ehFruta(alimento.id) ? null : medidaDeRecipiente(alimento.id)
+    if (recipiente) return { gramas: arredondar(q * recipiente.gramas), medida: { nome: recipiente.nome, quantidade: q, gramasPorMedida: recipiente.gramas }, unidade, aviso: null }
+    return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, 'unidade', unidade), faltaMedida: { nome: 'unidade', quantidade: q } }
   }
   // D-433: sem quantidade, o alimento próprio entra pela porção do rótulo ("4 colheres de sopa · 40 g"), não por 100 g.
   const porcao = alimento.porcaoPadrao
