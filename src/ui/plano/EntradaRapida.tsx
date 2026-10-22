@@ -1,19 +1,22 @@
 import { Plus, Search } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { buscarAlimentos, type ResultadoBusca } from '@/domain/busca.ts'
+import { buscarAlimentos, leituraDoResultado, PRIMEIRO_ID_PROPRIO, type ResultadoBusca } from '@/domain/busca.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
 import { ID_DE_RECEITA, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarReceitas, copiaParaOPlano, type Receita, type ResultadoReceita } from '@/domain/receitas.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
+import type { MedidaDoItem } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { useReceitas } from '../estado/usarReceitas.ts'
+import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
 interface EntradaRapidaProps {
   readonly rotulo: string
-  readonly aoAdicionar: (alimentoId: number, gramas: number) => void
+  /** Põe o alimento; com a medida que a pessoa digitou ou a das unidades (spec alimentos-e-gramaturas, G1 e D-371). */
+  readonly aoAdicionar: (alimentoId: number, gramas: number, medida?: MedidaDoItem) => void
   /**
    * Põe uma receita da conta (spec receitas-com-calculo, D-274). Sem ele, a busca mostra só alimentos: é assim no
    * editor de receita e na janela de substituto.
@@ -49,7 +52,7 @@ function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['al
       className={cn('rotulo shrink-0', nivel === 'minimo' ? 'text-errortext' : 'text-warningtext')}
       title={explicacao}
     >
-      {nivel === 'minimo' ? 'dado mínimo' : 'dado parcial'}
+      {nivel === 'minimo' ? 'poucos nutrientes' : 'parte dos nutrientes'}
     </span>
   )
 }
@@ -66,7 +69,9 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
   const idLista = useId()
   const { lista: receitas } = useReceitas()
 
-  const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos()), [texto])
+  // D-370 (spec alimentos-e-gramaturas): o que a conta mais usa vem primeiro; os planos só são lidos quando há texto.
+  const uso = useUsoDaConta(texto.trim() !== '')
+  const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos(), { uso }), [texto, uso])
   // D-274: só onde a receita pode entrar (a refeição); a que começa pelo termo vem antes dos alimentos.
   const daReceita = useMemo(
     () => (aoAdicionarReceita ? buscarReceitas(texto, receitas, resultados.map((r) => r.alimento)) : []),
@@ -91,6 +96,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada.
     if (o.r.gramas === null) return
     if (o.tipo === 'receita') aoAdicionarReceita?.(o.r.receita, o.r.gramas)
+    else if (o.r.medida) aoAdicionar(o.r.alimento.id, o.r.gramas, o.r.medida)
     else aoAdicionar(o.r.alimento.id, o.r.gramas)
     limpar()
   }
@@ -126,7 +132,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
             setSelecionado(0)
           }}
           onKeyDown={aoTeclar}
-          placeholder="150 arroz integral ou 2 colheres de sopa de feijão…"
+          placeholder="1 concha de feijão ou 150 arroz…"
           className="pl-10"
         />
       </div>
@@ -166,12 +172,16 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                     </span>
                   ) : (
                     <>
-                      <span className="min-w-0 flex-1 truncate">{o.r.alimento.descricao}</span>
-                      <MarcaDeCompletude alimento={o.r.alimento} />
-                      <span className="numeros shrink-0 text-xs text-muted-foreground">
-                        {o.r.gramas === null
-                          ? o.r.aviso ?? 'medida indisponível'
-                          : `${formatarNumero(o.r.gramas, 0)} g${o.r.medida ? ` · ${o.r.medida.quantidade} ${o.r.medida.nome}` : ''} · ${kcalDe(o.r, o.r.gramas)}`}
+                      {/* No celular, o nome numa linha e a leitura embaixo: "1 concha e meia · 210 g · 160 kcal" (D-373). */}
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                        <span className="min-w-0 truncate sm:flex-1">{o.r.alimento.descricao}</span>
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                          {o.r.alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
+                          <MarcaDeCompletude alimento={o.r.alimento} />
+                          <span className={cn('numeros min-w-0 text-xs', o.r.gramas === null ? 'text-warningtext' : 'whitespace-nowrap text-muted-foreground')}>
+                            {o.r.gramas === null ? (o.r.aviso ?? 'Medida indisponível.') : `${leituraDoResultado(o.r) ?? ''} · ${kcalDe(o.r, o.r.gramas)}`}
+                          </span>
+                        </span>
                       </span>
                     </>
                   )}

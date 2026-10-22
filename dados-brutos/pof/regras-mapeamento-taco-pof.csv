@@ -14,6 +14,11 @@ padrao_taco;codigo_pof;medidas_excluidas;observacao
 ^Torrada, pão francês$;8001901;;POF: TORRADA DE QUALQUER PAO
 ^Cereal matinal, milho$;6500903;BARRA;POF: CEREAL MATINAL DE MILHO EM FLOCOS
 ^Farinha, de mandioca, torrada$;6501401;;POF: FARINHA DE MANDIOCA
+^Farinha, de mandioca, crua$;6501401;;POF: FARINHA DE MANDIOCA (a mesma farinha, sem torrar; A9 de 21/10/2026)
+^Farinha, de milho, amarela$;6500603;CONCHA;POF: FARINHA DE MILHO (A9 de 21/10/2026)
+#sem mapeamento: Farinha, de trigo (a POF não mede farinha de trigo crua; a medida própria da conta resolve, D-387)
+#sem mapeamento: Arroz, Feijão, Lentilha e Grão-de-bico crus (as medidas da POF são do grão pronto)
+^Pão, (aveia|glúten), forma$;8000501;;POF: PAO DE FORMA INDUSTRIALIZADO DE QUALQUER MARCA (A9 de 21/10/2026)
 ^Milho, verde, enlatado, drenado$;7700401;;POF: MILHO VERDE EM CONSERVA
 ^Pamonha;6905101;;POF: PAMONHA
 ^Curau, milho verde$;8501904;;POF: CURAU
@@ -29,6 +34,8 @@ padrao_taco;codigo_pof;medidas_excluidas;observacao
 ^Ervilha, enlatada, drenada$;7700201;;POF: ERVILHA EM CONSERVA
 ^Ervilha, em vagem$;6705501;;POF: ERVILHA EM VAGEM
 ^Amendoim, grão, cru$;6301001;;POF: AMENDOIM (EM GRAO) (IN NATURA)
+^Amendoim, torrado, salgado$;6301001;;POF: AMENDOIM (EM GRAO) (IN NATURA): o grão torrado tem o mesmo tamanho (A9 de 21/10/2026)
+^Soja, queijo \(tofu\)$;7903402;;POF: TOFU (A9 de 21/10/2026)
 ^Paçoca, amendoim$;6903203;;POF: PACOCA
 ^Abóbora, ;6703901;;POF: ABOBORA
 ^Abobrinha, ;6703701;;POF: ABOBRINHA
@@ -159,12 +166,18 @@ padrao_taco;codigo_pof;medidas_excluidas;observacao
 ^Caranguejo, cozido$;7262101;;POF: CARANGUEJO
 ^Leite, de vaca, integral$;7900101;;POF: LEITE DE VACA INTEGRAL
 ^Leite, de vaca, desnatado, UHT$;7903601;;POF: LEITE DE VACA DESNATADO
+^Leite, de vaca, integral, pó$;7900601;CANECO|CONCHA|COPO*|LITRO|XICARA*;POF: LEITE EM PO INTEGRAL, só as colheres (copo e caneca são do leite já preparado) (A9 de 21/10/2026)
+^Leite, de vaca, desnatado, pó$;7900710;COPO*|XICARA*;POF: LEITE EM PO DESNATADO, só as colheres (A9 de 21/10/2026)
+^Leite, fermentado$;7901304;;POF: LEITE FERMENTADO (A9 de 21/10/2026)
+^Laranja, [^,]+, suco$;8500407;;POF: SUCO DE LARANJA (A9 de 21/10/2026)
+^Coco, água de$;8202101;;POF: AGUA DE COCO (A9 de 21/10/2026)
 ^Leite, de cabra$;7900301;;POF: LEITE DE CABRA
 ^Iogurte, natural, desnatado$;7901203;PONTA DE FACA;POF: IOGURTE DESNATADO
 ^Iogurte, natural$;7901204;;POF: IOGURTE NATURAL
 ^Iogurte, sabor ;7901201;;POF: IOGURTE DE QUALQUER SABOR
 ^Bebida láctea, ;7901303;;POF: BEBIDA LACTEA
 ^Queijo, minas, frescal$;7902001;;POF: QUEIJO DE MINAS
+^Queijo, minas, meia cura$;7902001;;POF: QUEIJO DE MINAS (A9 de 21/10/2026)
 ^Queijo, mozarela$;7901801;;POF: QUEIJO MUZARELLA
 ^Queijo, prato$;7901701;;POF: QUEIJO PRATO
 ^Queijo, parmesão$;7902403;;POF: QUEIJO RALADO
@@ -172,6 +185,7 @@ padrao_taco;codigo_pof;medidas_excluidas;observacao
 ^Queijo, requeijão, cremoso$;7902901;;POF: REQUEIJAO
 ^Creme de Leite$;7901001;;POF: CREME DE LEITE
 ^Ovo, de galinha, inteiro, (cozido/10minutos|frito)$;7803301;;POF: OVO DE GALINHA
+^Ovo, de galinha, inteiro, cru$;7803301;;POF: OVO DE GALINHA, preparação CRU(A): a unidade de 45 g é a mesma do cozido (A9 de 21/10/2026)
 ^Ovo, de codorna, inteiro, cru$;7803501;;POF: OVO DE CODORNA
 ^Omelete, de queijo$;8506501;;POF: OMELETE
 ^Castanha-do-Brasil, crua$;6600701;;POF: CASTANHA DO PARA
@@ -190,6 +204,7 @@ padrao_taco;codigo_pof;medidas_excluidas;observacao
 ^Café, infusão 10%$;8501302;;POF: CAFE
 ^Chá, [^,]+, infusão 5%$;8206301;;POF: CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC)
 ^Chocolate, ao leite$;6900702;;POF: BARRA DE CHOCOLATE
+^Chocolate, meio amargo$;6900702;BARRA|UNIDADE|METADE;POF: BARRA DE CHOCOLATE, só o pedaço (A9 de 21/10/2026)
 #removida: goiabada não existe na TACO;;;
 ^Geléia, mocotó, natural$;6901101;;POF: GELEIA DE MOCOTO
 ^Refrigerante, tipo cola$;8200101;;POF: REFRIGERANTE DE COLA TRADICIONAL

@@ -242,8 +242,8 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
   await page.goto('/#/produtos')
   await page.getByRole('button', { name: 'Excluir Granola da casa' }).click()
   const aviso = page.getByRole('alertdialog', { name: 'Excluir “Granola da casa”?' })
-  await expect(aviso).toContainText('passa a mostrar “Produto apagado” nessa linha')
-  await aviso.getByRole('button', { name: 'Excluir produto' }).click()
+  await expect(aviso).toContainText('vão mostrar “Alimento excluído” no lugar dele')
+  await aviso.getByRole('button', { name: 'Excluir alimento' }).click()
 
   for (const aba of ['caso', 'plano', 'adequacao']) {
     await page.goto(`/#/caso/${casoId}/${aba}`)
@@ -251,7 +251,7 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
     await expect(page.getByRole('navigation', { name: 'Etapas do plano' })).toBeVisible()
   }
   await page.goto(`/#/caso/${casoId}/plano`)
-  await expect(page.getByText('Produto apagado', { exact: true })).toBeVisible()
+  await expect(page.getByText('Alimento excluído', { exact: true })).toBeVisible()
   await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('— kcal')
   // O Cobrir e o Exportar continuam funcionando.
   await page.getByRole('button', { name: 'Exportar' }).click()
@@ -505,7 +505,8 @@ const TELAS: readonly Tela[] = [
       const antes = await itens.count()
       const entrada = p.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
       await entrada.fill('100 feijao carioca cozido')
-      await expect(p.getByRole('option').first()).toBeVisible()
+      // A lista da busca, não as opções do seletor de medida das linhas que já existem (spec alimentos-e-gramaturas).
+      await expect(p.getByRole('listbox', { name: /^Resultados para/ }).getByRole('option').first()).toBeVisible()
       await entrada.press('Enter')
       await expect(itens).toHaveCount(antes + 1)
     },

@@ -19,13 +19,12 @@ import {
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { nomeDoPacienteDoPlano, PACIENTE_SEM_NOME } from '@/domain/nomeDoPaciente.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
-import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
+import { quantidadeNaFolha, textoDaQuantidade, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
-import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
+import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
 import type { Caso, ItemPlano, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { montarRestricoes, SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
-import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { usePacientesOpcional } from '../estado/contextoPacientes.ts'
@@ -57,16 +56,12 @@ const COLUNAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,17rem)_minmax(0
 const COLUNAS_TROCAS = 'grid grid-cols-1 gap-x-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]'
 
 /**
- * Uma quantidade por linha, pela escolha do plano (spec conduta-da-nutricionista, D-297): em "Medida caseira", a medida;
- * em "Gramas", ou sem medida que sirva, o peso.
+ * Uma quantidade por linha, pela escolha do plano (spec alimentos-e-gramaturas, D-376 e D-377): "1 concha e meia (210
+ * g)", "1 concha e meia" ou "210 g"; a medida escolhida que não fecha sai "190 g (cerca de 1 concha e meia)".
  */
 function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
   // No celular a quantidade vai embaixo do nome, em cinza; no papel e na tela larga, na cor do texto.
-  return (
-    <span className="text-muted-foreground sm:text-foreground">
-      {quantidade.medida ?? `${formatarNumero(quantidade.gramas, 0)} g`}
-    </span>
-  )
+  return <span className="text-muted-foreground sm:text-foreground">{textoDaQuantidade(quantidade)}</span>
 }
 
 /** O alimento primeiro, com o nome que o paciente entende (CA-623), e a quantidade ao lado. */
@@ -142,7 +137,12 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
     ? trocasDaFolha(
-        trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: typeof restricoes === 'string' ? montarRestricoes({ marcadas: [], texto: restricoes, doencas: [], naoGosta: '' }) : (restricoes ?? SEM_RESTRICOES) }),
+        // D-386 (spec alimentos-e-gramaturas): o alimento próprio só troca com a chave ligada.
+        trocasDoPlano(plano, buscarAlimento, {
+          alimentos: alimentosParaSugerir(),
+          porAlimento: TROCAS_PEDIDAS_PELA_FOLHA,
+          restricoes: typeof restricoes === 'string' ? montarRestricoes({ marcadas: [], texto: restricoes, doencas: [], naoGosta: '' }) : (restricoes ?? SEM_RESTRICOES),
+        }),
         buscarAlimento,
       )
     : []

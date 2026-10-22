@@ -1,23 +1,50 @@
 // Entrada rápida de alimentos (SPEC CA-15 a CA-18, CA-20, CA-21, CB-07).
 import tabelaMedidas from '../data/medidas-caseiras.json'
-import { buscarAlimento } from './tabelas.ts'
+import { posicaoNoConsumo } from './consumoPof.ts'
+import { unidadeDo, type UnidadeDoAlimento } from './liquido.ts'
+import { ehDeUsoComum, ehPratoComposto, regraQueExclui } from './prescritivel.ts'
+import { alimentosComProdutos, buscarAlimento } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
+
+/** O primeiro id de alimento próprio (o mesmo `PRIMEIRO_ID_PRODUTO` de `produtos.ts`; aqui sem importar, para não fechar um ciclo). */
+export const PRIMEIRO_ID_PROPRIO = 900_000
 
 export interface MedidaCaseira {
   readonly nome: string
   readonly gramas: number
+  /** Medida da conta (spec alimentos-e-gramaturas, D-387): vem antes das da POF e leva a marca "sua". */
+  readonly propria?: boolean
 }
 
 const MEDIDAS_POR_ALIMENTO = new Map<number, readonly MedidaCaseira[]>(
   Object.entries(tabelaMedidas.alimentos as Record<string, { medidas: MedidaCaseira[] }>).map(([id, r]) => [Number(id), r.medidas]),
 )
 
+/** As medidas da conta para alimentos da base (spec alimentos-e-gramaturas, D-387), registradas pela interface. */
+const PROPRIAS = new Map<number, readonly MedidaCaseira[]>()
+let versaoDasProprias = 0
+
+/** Troca as medidas da conta que a busca e a linha do plano conhecem (ao abrir, ao gravar e quando outra aba grava). */
+export function registrarMedidasProprias(lista: readonly { readonly alimentoId: number; readonly nome: string; readonly gramas: number }[]): void {
+  PROPRIAS.clear()
+  for (const m of lista) PROPRIAS.set(m.alimentoId, [...(PROPRIAS.get(m.alimentoId) ?? []), { nome: m.nome, gramas: m.gramas, propria: true }])
+  versaoDasProprias += 1
+}
+
+/**
+ * As medidas do alimento: as da conta primeiro (marcadas `propria`), depois as da POF; com o mesmo nome, vale a da conta
+ * (D-387). O alimento próprio traz as dele no cadastro.
+ */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
-  return MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  if (alimentoId >= PRIMEIRO_ID_PROPRIO) return buscarAlimento(alimentoId)?.medidas ?? []
+  const daPof = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  const proprias = PROPRIAS.get(alimentoId)
+  if (!proprias) return daPof
+  return [...proprias, ...daPof.filter((m) => !proprias.some((p) => p.nome === m.nome))]
 }
 
 /** Medidas mais legíveis num plano, em ordem de preferência; medidas vagas ("porção", "prato") ficam de fora. */
-const PREFERENCIA_MEDIDAS = [
+export const PREFERENCIA_MEDIDAS: readonly string[] = [
   'unidade',
   'fatia',
   'bife',
@@ -65,9 +92,14 @@ export function pluralDaMedida(nome: string): string {
   return [p(primeira), ...adjetivo].join(' ')
 }
 
+/** "0,25", "1,5": vírgula decimal, até duas casas. */
+const decimal = (q: number): string => String(Math.round(q * 100) / 100).replace('.', ',')
+
 export function formatarQuantidadeMedida(quantidade: number, medida: string): string {
   const feminino = FEMININOS.has(medida.split(' ')[0] ?? '')
   const meia = feminino ? 'meia' : 'meio'
+  // D-373 (spec alimentos-e-gramaturas): fração que não é meia sai com vírgula ("0,25 xícara de chá").
+  if (!Number.isInteger(quantidade * 2)) return `${decimal(quantidade)} ${quantidade >= 2 ? pluralDaMedida(medida) : medida}`
   const inteiro = Math.floor(quantidade)
   const temMeia = quantidade - inteiro === 0.5
   if (inteiro === 0 && temMeia) return `${meia} ${medida}`
@@ -191,6 +223,9 @@ export const MEDIDAS: readonly string[] = [...new Set([...MEDIDAS_POR_ALIMENTO.v
 export const GRAMAS_PADRAO = 100
 export const LIMITE_RESULTADOS = 5
 
+/** Abaixo disto, número sem medida conta unidades quando o alimento tem medida de contar (D-371). */
+export const LIMITE_DE_UNIDADES = 20
+
 export const normalizar = (s: string) =>
   s
     .normalize('NFD')
@@ -209,29 +244,93 @@ function variantesPlural(palavra: string): string[] {
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-const PADROES_MEDIDA = MEDIDAS.map((nome) => {
+const padraoDaMedida = (nome: string): RegExp => {
   const [primeira = '', ...resto] = normalizar(nome).split(' ')
   const inicio = `(?:${variantesPlural(primeira).map(escapar).join('|')})`
   const fim = resto.length ? ` ${resto.map(escapar).join(' ')}` : ''
-  return { nome, re: new RegExp(`^${inicio}${fim}(?:\\s+de)?(?=\\s|$)`) }
-})
+  return new RegExp(`^${inicio}${fim}(?=\\s|$)`)
+}
+
+let padroes: { readonly chave: unknown; readonly versao: number; readonly lista: readonly { readonly nome: string; readonly re: RegExp }[] } | null = null
+
+/**
+ * Os nomes de medida que a entrada entende: os da POF, os das medidas da conta e os dos alimentos próprios (D-387), dos
+ * mais longos para os mais curtos. Refeito só quando um deles muda.
+ */
+function padroesDeMedida(): readonly { readonly nome: string; readonly re: RegExp }[] {
+  const comProprios = alimentosComProdutos()
+  if (padroes && padroes.chave === comProprios && padroes.versao === versaoDasProprias) return padroes.lista
+  const nomes = new Set(MEDIDAS)
+  for (const lista of PROPRIAS.values()) for (const m of lista) nomes.add(m.nome)
+  for (const a of comProprios) for (const m of a.medidas ?? []) nomes.add(m.nome)
+  const lista = [...nomes].sort((a, b) => b.length - a.length).map((nome) => ({ nome, re: padraoDaMedida(nome) }))
+  padroes = { chave: comProprios, versao: versaoDasProprias, lista }
+  return lista
+}
+
+/**
+ * D-372 (spec alimentos-e-gramaturas): o nome curto da medida, como se fala. Vale a primeira medida da lista que o
+ * alimento tiver; sem nenhuma, a medida não existe para ele.
+ */
+export const MEDIDAS_CURTAS: Readonly<Record<string, readonly string[]>> = {
+  colher: ['colher de sopa', 'colher de servir'],
+  'xícara': ['xícara de chá'],
+  copo: ['copo americano', 'copo médio', 'copo de requeijão', 'copo grande'],
+}
+
+const PADROES_CURTOS = Object.keys(MEDIDAS_CURTAS).map((nome) => ({ nome, re: padraoDaMedida(nome) }))
+
+/** Quantidade por extenso (D-372). */
+const PALAVRAS_QUANTIDADE: Readonly<Record<string, number>> = { meia: 0.5, meio: 0.5, uma: 1, um: 1, duas: 2, dois: 2, tres: 3, quatro: 4, cinco: 5 }
+const PALAVRA_QUANTIDADE = /^(meia|meio|uma|um|duas|dois|tres|quatro|cinco)(?=\s|$)/
+const FRACOES: Readonly<Record<string, string>> = { '½': ' 1/2 ', '¼': ' 1/4 ', '¾': ' 3/4 ' }
 
 export interface InterpretacaoEntrada {
   readonly quantidade: number | null
+  /** O nome inteiro da medida ("colher de sopa") ou o curto ("colher", D-372). */
   readonly medida: string | null
+  /** "g" quando a pessoa escreveu gramas; "ml" quando escreveu ml ou litro; `null` quando não disse. */
+  readonly unidade: 'g' | 'ml' | null
   readonly termos: readonly string[]
 }
 
+const fracao = (a: string, b: string): number => (Number(b) === 0 ? Number.NaN : Number(a) / Number(b))
+
 function lerQuantidade(texto: string): { valor: number; resto: string } | null {
   const m = texto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|[a-z]|$)|^(\d+(?:[.,]\d+)?)(?=\s|[a-z]|$)/)
-  if (!m) return null
-  const valor = m[1] && m[2] ? Number(m[1]) / Number(m[2]) : Number((m[3] ?? '').replace(',', '.'))
+  let valor: number
+  let resto: string
+  if (m) {
+    valor = m[1] && m[2] ? fracao(m[1], m[2]) : Number((m[3] ?? '').replace(',', '.'))
+    resto = texto.slice(m[0].length).trim()
+  } else {
+    const p = texto.match(PALAVRA_QUANTIDADE)
+    if (!p?.[1]) return null
+    valor = PALAVRAS_QUANTIDADE[p[1]] ?? Number.NaN
+    resto = texto.slice(p[0].length).trim()
+  }
   if (!Number.isFinite(valor)) return null
-  return { valor, resto: texto.slice(m[0].length).trim() }
+  // "1 1/2" (de "1½") e "1 e meia" / "uma e meia".
+  const meia = Number.isInteger(valor) ? resto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|$)/) : null
+  if (meia?.[1] && meia[2] && Number(meia[1]) < Number(meia[2])) {
+    valor += fracao(meia[1], meia[2])
+    resto = resto.slice(meia[0].length).trim()
+  }
+  const eMeia = resto.match(/^e (meia|meio)(?=\s|$)/)
+  if (eMeia) {
+    valor += 0.5
+    resto = resto.slice(eMeia[0].length).trim()
+  }
+  return { valor, resto }
 }
 
+/** "de", "da", "do" depois da medida ou da unidade. */
+const tirarDe = (texto: string): string => texto.replace(/^(de|da|do|dos|das)(?=\s|$)/, '').trim()
+
 export function interpretarEntrada(texto: string): InterpretacaoEntrada {
-  let resto = normalizar(texto).trim().replace(/\s+/g, ' ')
+  let resto = normalizar(texto.replace(/[½¼¾]/g, (f) => FRACOES[f] ?? f))
+    .trim()
+    .replace(/\s+/g, ' ')
   let quantidade: number | null = null
   const q = lerQuantidade(resto)
   if (q) {
@@ -240,98 +339,238 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
   }
 
   let medida: string | null = null
-  const gramas = resto.match(/^(?:g|gr|grama|gramas)(?:\s+de)?(?=\s|$)/)
+  let unidade: InterpretacaoEntrada['unidade'] = null
+  const gramas = resto.match(/^(?:g|gr|grama|gramas)(?=\s|$)/)
+  const ml = resto.match(/^(?:ml|mililitro|mililitros)(?=\s|$)/)
+  const litro = resto.match(/^(?:l|litro|litros)(?=\s|$)/)
   if (gramas) {
-    resto = resto.slice(gramas[0].length).trim()
+    unidade = 'g'
+    resto = tirarDe(resto.slice(gramas[0].length).trim())
+  } else if (ml || litro) {
+    unidade = 'ml'
+    if (litro && quantidade !== null) quantidade *= 1000
+    resto = tirarDe(resto.slice((ml ?? litro)?.[0].length ?? 0).trim())
   } else {
-    for (const p of PADROES_MEDIDA) {
+    for (const p of [...padroesDeMedida(), ...PADROES_CURTOS]) {
       const m = resto.match(p.re)
       if (m) {
         medida = p.nome
         resto = resto.slice(m[0].length).trim()
+        // "1 concha e meia de feijão"
+        const eMeia = resto.match(/^e (meia|meio)(?=\s|$)/)
+        if (eMeia) {
+          quantidade = (quantidade ?? 1) + 0.5
+          resto = resto.slice(eMeia[0].length).trim()
+        }
+        resto = tirarDe(resto)
         if (quantidade === null) quantidade = 1
+        // "1 xícara de café", "1 colher de chá": a última palavra da medida também é o alimento.
+        if (resto === '' && p.nome.includes(' ')) resto = normalizar(p.nome.split(' ').at(-1) ?? '')
         break
       }
     }
   }
 
   const termos = resto.split(' ').filter((t) => t !== '' && t !== 'de')
-  return { quantidade, medida, termos }
+  return { quantidade, medida, unidade, termos }
+}
+
+/** O termo com e sem o plural (D-372): "ovos" acha ovo; "paes" acha pao; "feijoes" acha feijao. */
+export function variantesDoTermo(termo: string): readonly string[] {
+  const singular = termo.endsWith('oes') || termo.endsWith('aes')
+    ? `${termo.slice(0, -3)}ao`
+    : termo.endsWith('ais')
+      ? `${termo.slice(0, -3)}al`
+      : termo.endsWith('eis')
+        ? `${termo.slice(0, -3)}el`
+        : /[rz]es$/.test(termo)
+          ? termo.slice(0, -2)
+          : termo.length > 3 && termo.endsWith('s')
+            ? termo.slice(0, -1)
+            : termo
+  return singular === termo ? [termo] : [termo, singular]
+}
+
+/** A medida que o alimento tem com o nome pedido (inteiro ou curto); `null` quando ele não tem. */
+export function medidaPedida(alimentoId: number, pedida: string): MedidaCaseira | null {
+  const medidas = medidasDoAlimento(alimentoId)
+  const nomes = MEDIDAS_CURTAS[pedida] ?? [pedida]
+  for (const nome of nomes) {
+    const achada = medidas.find((m) => m.nome === nome)
+    if (achada) return achada
+  }
+  return null
+}
+
+/** A ordem das medidas de contar para "1 banana" (D-371): unidade primeiro, depois fatia, bife, filé… */
+const ORDEM_DE_CONTAR = ['unidade', 'fatia', 'bife', 'filé', 'unidade pequena', 'pedaço', 'posta', 'coxa', 'sobrecoxa', 'peito', 'rodela']
+
+/** A medida de contar do alimento, na ordem acima; `null` quando ele não tem. */
+export function medidaDeContar(alimentoId: number): MedidaCaseira | null {
+  const medidas = medidasDoAlimento(alimentoId)
+  for (const nome of ORDEM_DE_CONTAR) {
+    const achada = medidas.find((m) => m.nome === nome)
+    if (achada) return achada
+  }
+  return null
+}
+
+export interface MedidaDoResultado {
+  readonly nome: string
+  readonly quantidade: number
+  readonly gramasPorMedida: number
 }
 
 export interface ResultadoBusca {
   readonly alimento: Alimento
   /** Gramas a adicionar; `null` quando a medida digitada não existe para este alimento (CB-07). */
   readonly gramas: number | null
-  readonly medida: { readonly nome: string; readonly quantidade: number; readonly gramasPorMedida: number } | null
+  readonly medida: MedidaDoResultado | null
+  /** Como o peso se escreve: ml para líquido ou quando a pessoa digitou ml (D-378). */
+  readonly unidade: UnidadeDoAlimento
   readonly aviso: string | null
 }
 
 interface Indice {
   readonly alimento: Alimento
   readonly texto: string
+  /** A forma crua de quem se come cozido, quando a base tem a preparada: vem depois dela (D-370, item 3). */
+  readonly cruIngrediente: boolean
+  readonly usoComum: boolean
+  /** Desempate depois do uso comum: o prescritível simples, o ingrediente, o prato composto e o fora da rotina. */
+  readonly classe: number
+  readonly consumo: number
+  readonly virgulas: number
 }
+
+/** "Arroz, integral, cru" termina no preparo cru. */
+const CRU_NO_FIM = /,\s*cru[ao]?s?$/
+/** A descrição sem o último pedaço (o preparo): "Arroz, integral, cru" e "Arroz, integral, cozido" dão "arroz, integral". */
+const semPreparo = (descricao: string): string => normalizar(descricao).trim().split(',').slice(0, -1).map((p) => p.trim()).join(',')
 
 const indices = new WeakMap<readonly Alimento[], readonly Indice[]>()
 function indexar(alimentos: readonly Alimento[]): readonly Indice[] {
   let i = indices.get(alimentos)
   if (!i) {
-    i = alimentos.map((alimento) => ({ alimento, texto: normalizar(alimento.descricao) }))
+    const preparadas = new Set(alimentos.filter((a) => !CRU_NO_FIM.test(normalizar(a.descricao).trim())).map((a) => semPreparo(a.descricao)))
+    i = alimentos.map((alimento) => {
+      const texto = normalizar(alimento.descricao).trim()
+      const regra = regraQueExclui(alimento)
+      return {
+        alimento,
+        texto,
+        cruIngrediente: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && preparadas.has(semPreparo(alimento.descricao)),
+        usoComum: ehDeUsoComum(alimento),
+        classe: regra === null ? (ehPratoComposto(alimento) ? 2 : 0) : regra.nivel === 'ingrediente' ? 1 : 3,
+        consumo: posicaoNoConsumo(alimento.id),
+        virgulas: texto.split(',').length,
+      }
+    })
     indices.set(alimentos, i)
   }
   return i
 }
 
-export function buscarAlimentos(texto: string, alimentos: readonly Alimento[]): { readonly resultados: readonly ResultadoBusca[]; readonly aviso: string | null } {
-  const { quantidade, medida, termos } = interpretarEntrada(texto)
-  if (termos.length === 0) return { resultados: [], aviso: null }
+export interface OpcoesBusca {
+  /** Quantas vezes cada alimento aparece nos planos desta conta (D-370, item 2). */
+  readonly uso?: ReadonlyMap<number, number>
+}
 
-  const primeiro = termos[0] ?? ''
-  const candidatos = indexar(alimentos)
-    .filter((i) => termos.every((t) => i.texto.includes(t)))
-    .map((i) => {
-      const medidaDoAlimento = medida ? medidasDoAlimento(i.alimento.id).find((m) => m.nome === medida) : undefined
-      return {
-        i,
-        temMedida: medida === null || medidaDoAlimento !== undefined,
-        medidaDoAlimento,
-        comeca: i.texto.startsWith(primeiro),
-        virgulas: i.texto.split(',').length,
-      }
-    })
+/** O alimento próprio conta como usado: se ela cadastrou, é porque usa (D-370). */
+const usoDe = (alimento: Alimento, uso: ReadonlyMap<number, number> | undefined): number =>
+  (uso?.get(alimento.id) ?? 0) + (alimento.id >= PRIMEIRO_ID_PROPRIO ? 1 : 0)
+
+/** Os alimentos com todas as palavras, na ordem de relevância da D-370 (sem a medida, que só a entrada conhece). */
+export function porRelevancia(termos: readonly string[], alimentos: readonly Alimento[], opcoes: OpcoesBusca = {}): readonly Alimento[] {
+  return candidatosDaBusca(termos, alimentos, opcoes, () => true).map((c) => c.i.alimento)
+}
+
+interface Candidato {
+  readonly i: Indice
+  readonly temMedida: boolean
+  readonly comeca: boolean
+  readonly uso: number
+}
+
+function candidatosDaBusca(
+  termos: readonly string[],
+  alimentos: readonly Alimento[],
+  opcoes: OpcoesBusca,
+  temMedida: (alimento: Alimento) => boolean,
+): readonly Candidato[] {
+  const variantes = termos.map(variantesDoTermo)
+  const primeiro = variantes[0] ?? []
+  return indexar(alimentos)
+    .filter((i) => variantes.every((vs) => vs.some((v) => i.texto.includes(v))))
+    .map((i) => ({ i, temMedida: temMedida(i.alimento), comeca: primeiro.some((v) => i.texto.startsWith(v)), uso: usoDe(i.alimento, opcoes.uso) }))
     .sort(
       (a, b) =>
         Number(b.temMedida) - Number(a.temMedida) ||
+        b.uso - a.uso ||
+        Number(a.i.cruIngrediente) - Number(b.i.cruIngrediente) ||
         Number(b.comeca) - Number(a.comeca) ||
-        a.virgulas - b.virgulas ||
+        Number(b.i.usoComum) - Number(a.i.usoComum) ||
+        a.i.classe - b.i.classe ||
+        a.i.consumo - b.i.consumo ||
+        a.i.virgulas - b.i.virgulas ||
         a.i.texto.length - b.i.texto.length,
     )
-    .slice(0, LIMITE_RESULTADOS)
+}
 
+const arredondar = (g: number): number => Math.round(g * 10) / 10
+
+/** O que a entrada quer dizer para este alimento: a medida dele, as unidades (D-371) ou os gramas. */
+function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<ResultadoBusca, 'alimento'> {
+  const unidade: UnidadeDoAlimento = lida.unidade === 'ml' ? 'ml' : unidadeDo(alimento)
+  if (lida.medida !== null) {
+    const m = medidaPedida(alimento.id, lida.medida)
+    if (!m) {
+      return {
+        gramas: null,
+        medida: null,
+        unidade,
+        aviso: `A medida “${MEDIDAS_CURTAS[lida.medida]?.[0] ?? lida.medida}” não está cadastrada para ${alimento.descricao.trim()}. Informe a quantidade em gramas.`,
+      }
+    }
+    const q = lida.quantidade ?? 1
+    return { gramas: arredondar(q * m.gramas), medida: { nome: m.nome, quantidade: q, gramasPorMedida: m.gramas }, unidade, aviso: null }
+  }
+  if (lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES) {
+    const m = medidaDeContar(alimento.id)
+    if (m) return { gramas: arredondar(lida.quantidade * m.gramas), medida: { nome: m.nome, quantidade: lida.quantidade, gramasPorMedida: m.gramas }, unidade, aviso: null }
+  }
+  return { gramas: lida.quantidade ?? GRAMAS_PADRAO, medida: null, unidade, aviso: null }
+}
+
+export function buscarAlimentos(
+  texto: string,
+  alimentos: readonly Alimento[],
+  opcoes: OpcoesBusca = {},
+): { readonly resultados: readonly ResultadoBusca[]; readonly aviso: string | null } {
+  const lida = interpretarEntrada(texto)
+  const termos = lida.termos.filter((t) => t.length > 1 || /\d/.test(t))
+  if (termos.length === 0) return { resultados: [], aviso: null }
+
+  const pedida = lida.medida
+  const candidatos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null).slice(0, LIMITE_RESULTADOS)
   if (candidatos.length === 0) {
     return { resultados: [], aviso: 'Nenhum alimento encontrado com esse nome. Tente outra palavra ou menos letras.' }
   }
+  return { resultados: candidatos.map(({ i }) => ({ alimento: i.alimento, ...lerParaOAlimento(lida, i.alimento) })), aviso: null }
+}
 
-  const resultados = candidatos.map(({ i, medidaDoAlimento }): ResultadoBusca => {
-    if (medida === null) {
-      return { alimento: i.alimento, gramas: quantidade ?? GRAMAS_PADRAO, medida: null, aviso: null }
-    }
-    if (!medidaDoAlimento) {
-      return {
-        alimento: i.alimento,
-        gramas: null,
-        medida: null,
-        aviso: `A medida "${medida}" não está cadastrada para ${i.alimento.descricao}; informe a quantidade em gramas.`,
-      }
-    }
-    const qtd = quantidade ?? 1
-    return {
-      alimento: i.alimento,
-      gramas: Math.round(qtd * medidaDoAlimento.gramas * 10) / 10,
-      medida: { nome: medida, quantidade: qtd, gramasPorMedida: medidaDoAlimento.gramas },
-      aviso: null,
-    }
-  })
+/**
+ * D-373: a leitura do resultado como a folha escreve, sem as kcal: "1 unidade · 75 g", "1 concha e meia · 210 g",
+ * "200 ml". `null` quando a medida não existe para o alimento.
+ */
+export function leituraDoResultado(r: Pick<ResultadoBusca, 'gramas' | 'medida' | 'unidade'>): string | null {
+  if (r.gramas === null) return null
+  const peso = `${formatarPeso(r.gramas)} ${r.unidade}`
+  return r.medida ? `${formatarQuantidadeMedida(r.medida.quantidade, r.medida.nome)} · ${peso}` : peso
+}
 
-  return { resultados, aviso: null }
+/** "150", "37,5": o peso com no máximo uma casa, vírgula decimal. */
+export function formatarPeso(gramas: number): string {
+  const arredondado = Math.round(gramas * 10) / 10
+  return Number.isInteger(arredondado) ? String(arredondado) : String(arredondado).replace('.', ',')
 }

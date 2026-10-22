@@ -10,7 +10,8 @@ import { FolhaDieta } from './FolhaDieta.tsx'
 let n = 0
 const ids = () => `id${++n}`
 
-const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Maria, 28 anos', receitas: 'Suco verde: couve, limão e água.' }
+// Em "Só medida", o modo dos planos de antes (spec alimentos-e-gramaturas, D-376).
+const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Maria, 28 anos', receitas: 'Suco verde: couve, limão e água.', quantidades: 'medida-caseira' }
 
 function planoComPanqueca(gramas = 120): Plano {
   const plano = criarPlanoPadrao(ids)
@@ -38,7 +39,7 @@ describe('a receita na folha (CA-879 a CA-881)', () => {
     const receita = within(secao).getByRole('article', { name: 'Panqueca de banana' })
     expect(receita).toHaveTextContent('Rende 2 unidades (120 g cada)')
     const ingredientes = within(receita).getAllByRole('listitem').map((li) => li.textContent)
-    expect(ingredientes).toEqual(['Banana prata — 2 unidades', 'Ovo — 100 g', 'Aveia em flocos — 2 colheres de sopa'])
+    expect(ingredientes).toEqual(['Banana prata — 2 unidades', 'Ovo — 2 unidades', 'Aveia em flocos — 2 colheres de sopa'])
     expect(within(receita).getByText(/Amasse a banana/)).toHaveClass('whitespace-pre-wrap')
     // O texto livre vem depois das receitas calculadas.
     expect(secao.textContent?.indexOf('Suco verde')).toBeGreaterThan(secao.textContent?.indexOf('Amasse a banana') ?? Infinity)

@@ -2,6 +2,8 @@
 import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
 import { CHAVE_DONO, migrarDadosSemConta, type ResultadoMigracao } from '@/domain/donoDosDados.ts'
 import type { Armazenamento, ArmazenamentoListavel } from '@/domain/persistencia.ts'
+import { registrarMedidasProprias } from '@/domain/busca.ts'
+import { criarRepositorioMedidasProprias } from '@/domain/medidasProprias.ts'
 import { criarRepositorioProdutos, produtoComoAlimento } from '@/domain/produtos.ts'
 import { registrarProdutos } from '@/domain/tabelas.ts'
 import { esquecerOcultosEmMemoria } from './ocultosGlobais.ts'
@@ -33,8 +35,8 @@ export function armazenamentoDaSessao(base: ArmazenamentoListavel | null, usuari
 }
 
 /**
- * O que fica em memória de módulo troca junto com a conta (DP-7): os produtos que a busca
- * conhece e a reserva das sugestões ocultas.
+ * O que fica em memória de módulo troca junto com a conta (DP-7): os alimentos próprios e as medidas próprias que a
+ * busca conhece (spec alimentos-e-gramaturas, D-387) e a reserva das sugestões ocultas.
  */
 export function trocarDadosEmMemoria(armazenamento: Armazenamento | null): void {
   try {
@@ -42,6 +44,11 @@ export function trocarDadosEmMemoria(armazenamento: Armazenamento | null): void 
   } catch {
     // navegador sem armazenamento: a busca segue só com a tabela
     registrarProdutos([])
+  }
+  try {
+    registrarMedidasProprias(criarRepositorioMedidasProprias(armazenamento).listar())
+  } catch {
+    registrarMedidasProprias([])
   }
   esquecerOcultosEmMemoria()
 }

@@ -27,7 +27,7 @@ const criarPanqueca = async (pagina: Page) => {
   await pagina.getByLabel('Rende').fill('2')
   await pagina.getByRole('combobox', { name: 'Nome da porção' }).click()
   await pagina.getByRole('option', { name: 'unidade' }).click()
-  await pagina.getByLabel('Peso pronto').fill('240')
+  await pagina.getByLabel('Peso da receita pronta').fill('240')
   await pagina.getByLabel('Modo de preparo').fill('Amasse a banana, misture o ovo e a aveia.\nDoure dos dois lados.')
   await expect(pagina.getByRole('region', { name: 'Valor de uma porção' })).toContainText('204 kcal')
   await pagina.getByRole('button', { name: 'Salvar receita' }).click()
@@ -74,14 +74,11 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
   await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
-  // D-274a, publicação 1: a busca da refeição ainda não põe receita. O plano ganha a receita pelos dados, como
-  // chegaria de um aparelho na publicação 2; a linha, a soma, a folha e o link já sabem ler.
+  // D-274a, publicação 2 (spec alimentos-e-gramaturas, D-388): a busca da refeição põe a receita.
   const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
   await busca.fill('panqueca')
-  await expect(page.getByText(/Nenhum alimento encontrado/)).toBeVisible()
-  await expect(page.getByRole('option', { name: /Receita/ })).toHaveCount(0)
-  await busca.fill('')
-  await porPanquecaNoDesjejum(page)
+  await expect(page.getByRole('option', { name: /Panqueca de banana/ })).toBeVisible()
+  await busca.press('Enter')
   const desjejum = page.getByRole('tabpanel', { name: 'Principal de Desjejum' })
   await expect(desjejum).toContainText('Panqueca de banana')
   await expect(desjejum).toContainText('Receita · 1 unidade')
@@ -106,9 +103,9 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.goto(endereco)
   await page.getByRole('tablist', { name: 'O que ver' }).getByRole('tab', { name: 'Meu plano' }).click()
   await expect(page.getByRole('region', { name: '06:00 Desjejum' })).toContainText('Panqueca de banana')
-  // CA-974 (spec integracao-rodada-1910): a porção da receita, a mesma linha da folha impressa (uma quantidade só, D-297
-  // da conduta-da-nutricionista).
-  await expect(page.getByRole('region', { name: '06:00 Desjejum' }).getByRole('listitem').filter({ hasText: 'Panqueca de banana' })).toHaveText('1 unidadePanqueca de banana')
+  // CA-974 (spec integracao-rodada-1910): a porção da receita, a mesma linha da folha impressa. Plano novo em "Medida e
+  // gramas" (spec alimentos-e-gramaturas, D-376): a porção com o peso ao lado.
+  await expect(page.getByRole('region', { name: '06:00 Desjejum' }).getByRole('listitem').filter({ hasText: 'Panqueca de banana' })).toHaveText('1 unidade (120 g)Panqueca de banana')
   await expect(page.getByRole('region', { name: 'Receitas' })).toContainText('Amasse a banana')
   await semRolagemLateral(page)
 })

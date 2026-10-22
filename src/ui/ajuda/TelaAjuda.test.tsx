@@ -48,7 +48,9 @@ describe('Ajuda', () => {
     expect(texto).not.toMatch(/Cinco minutos|Nada aqui é opinião|Dieta para imprimir|use o cobrir|fechar a falta|nascem com/)
     expect(screen.getByText('Veja os nutrientes abaixo da meta e use o botão Cobrir.')).toBeInTheDocument()
     expect(screen.getByText('O plano impresso é salvo em PDF pelo próprio navegador; o aconselhamento e o memorial são gerados em Word.')).toBeInTheDocument()
-    expect(screen.getByText('Digite “150 arroz int” e tecle Enter. A medida caseira e as kcal aparecem na hora.')).toBeInTheDocument()
+    // O exemplo da entrada rápida é o da frente alimentos-e-gramaturas (medida digitada, CA da busca); as aspas e o
+    // "aparecem" são do glossário.
+    expect(screen.getByText('Digite “1 concha de feijão” e tecle Enter. A medida, os gramas e as kcal aparecem juntos.')).toBeInTheDocument()
     expect(screen.getByText('Açúcares e gordura saturada só aparecem nos produtos cadastrados pelo rótulo.')).toBeInTheDocument()
   })
 

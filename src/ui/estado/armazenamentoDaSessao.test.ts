@@ -53,7 +53,7 @@ describe('armazenamento da sessão (spec dados-por-conta)', () => {
   it('DP-7: os produtos da busca trocam junto com a conta', () => {
     localStorage.setItem('metanutri:conta:conta-a:produtos', JSON.stringify([produto(900_001, 'Iogurte da Ana')]))
     localStorage.setItem('metanutri:conta:conta-b:produtos', JSON.stringify([produto(900_002, 'Barra da Bia')]))
-    const descricoes = () => alimentosComProdutos().filter((a) => a.categoria === 'Meus produtos').map((a) => a.descricao)
+    const descricoes = () => alimentosComProdutos().filter((a) => a.categoria === 'Meus alimentos').map((a) => a.descricao)
 
     trocarDadosEmMemoria(armazenamentoDaSessao(localStorage, 'conta-a').armazenamento)
     expect(descricoes()).toEqual(['Iogurte da Ana'])

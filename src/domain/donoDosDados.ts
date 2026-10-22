@@ -102,6 +102,17 @@ const proximoIdDeProduto = (usados: ReadonlySet<Id>): number =>
   Math.max(PRIMEIRO_ID_PRODUTO - 1, ...[...usados].filter((id): id is number => typeof id === 'number')) + 1
 
 /** Listas simples (índice de planos, sugestões ocultas): a ordem da conta, depois o que faltava. */
+/**
+ * Spec alimentos-e-gramaturas, D-387: as medidas próprias têm id de conteúdo ("561:concha"). O mesmo id dos dois lados
+ * é a mesma medida, e fica a da conta; o que só existia fora entra.
+ */
+function juntarPorId(daConta: unknown, deFora: unknown): Juntado {
+  if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
+  if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
+  const naConta = new Set(comId(daConta).map((item) => idDe(item)))
+  return { valor: [...daConta, ...comId(deFora).filter((item) => !naConta.has(idDe(item)))] }
+}
+
 function uniao(daConta: unknown, deFora: unknown): Juntado {
   if (!Array.isArray(daConta)) return { ilegivel: 'conta' }
   if (!Array.isArray(deFora)) return { ilegivel: 'fora' }
@@ -172,6 +183,8 @@ function juntar(chave: string, daConta: string, deFora: string, gerarId: () => s
           ? juntarComIdNovo(conta, fora, proximoIdDeProduto)
           : chave === 'metanutri:modelos' || chave === 'metanutri:modelos-suplemento' || chave === 'metanutri:receitas'
             ? juntarComIdNovo(conta, fora, idDeModelo)
+            : chave === 'metanutri:medidas-proprias'
+              ? juntarPorId(conta, fora)
             : chave === 'metanutri:acompanhamentos'
               ? juntarAcompanhamentos(conta, fora)
               : null

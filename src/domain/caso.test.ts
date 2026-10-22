@@ -2,8 +2,9 @@ import { criarCasoVazio, lerNumero, modoDeQuantidade, validarCaso } from './caso
 import type { Caso } from './tipos.ts'
 
 describe('quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
-  it('CA-924: plano novo vem com "Medida caseira"', () => {
-    expect(criarCasoVazio('c1').quantidades).toBe('medida-caseira')
+  it('CA-1120 (spec alimentos-e-gramaturas, D-376): plano novo vem com "Medida e gramas"', () => {
+    expect(criarCasoVazio('c1').quantidades).toBe('medida-e-gramas')
+    expect(modoDeQuantidade({ quantidades: 'medida-e-gramas' })).toBe('medida-e-gramas')
   })
 
   it('CB-290 e CB-291: sem o campo, ou com valor estranho, vale "Medida caseira"', () => {

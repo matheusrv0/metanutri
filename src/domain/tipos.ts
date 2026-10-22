@@ -113,8 +113,9 @@ export interface Caso {
   /** Receitas anexadas ao documento (CA-44). */
   readonly receitas: string
   /**
-   * Como a quantidade sai para o paciente na folha, no link e no Word (spec conduta-da-nutricionista, D-297). Plano
-   * gravado antes, sem o campo, lê "medida-caseira" (`modoDeQuantidade`).
+   * Como a quantidade sai para o paciente na folha, no link e no Word (spec conduta-da-nutricionista, D-297; spec
+   * alimentos-e-gramaturas, D-376). Plano novo nasce em "medida-e-gramas"; plano gravado antes, sem o campo, lê
+   * "medida-caseira" (`modoDeQuantidade`).
    */
   readonly quantidades: ModoQuantidade
   /**
@@ -131,8 +132,21 @@ export interface Caso {
   readonly aguaLitros: number | null
 }
 
-/** "Medida caseira" (a medida do planejador, para a paciente) ou "Gramas" (só o peso). */
-export type ModoQuantidade = 'medida-caseira' | 'gramas'
+/**
+ * "Medida e gramas" (a medida com o peso ao lado, o padrão de plano novo), "Só medida" (`medida-caseira`, o nome
+ * gravado desde a D-297) ou "Só gramas" (`gramas`). Spec alimentos-e-gramaturas, D-376.
+ */
+export type ModoQuantidade = 'medida-e-gramas' | 'medida-caseira' | 'gramas'
+
+/**
+ * A medida que a nutricionista escolheu para o item (spec alimentos-e-gramaturas, G1 e D-374): uma cópia, que não muda
+ * quando a medida própria muda depois. Os gramas do item continuam sendo a verdade da conta.
+ */
+export interface MedidaDoItem {
+  readonly nome: string
+  readonly quantidade: number
+  readonly gramasPorMedida: number
+}
 
 export type OpcaoId = 'principal' | 'substituto1' | 'substituto2'
 
@@ -168,6 +182,11 @@ export interface ItemPlano {
   readonly alimentoId: number
   /** Na receita, o peso da receita pronta servida. */
   readonly gramas: number
+  /**
+   * D-374 (spec alimentos-e-gramaturas): a medida escolhida; `null` = só gramas para este item; sem o campo, a medida
+   * automática (`medidaParaMostrar`).
+   */
+  readonly medida?: MedidaDoItem | null
   /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
   readonly receita?: ReceitaDoPlano
 }
@@ -239,6 +258,25 @@ export interface Alimento {
   readonly tracos: readonly ChaveNutrienteAlimento[]
   /** Presente quando o alimento da TACO tem equivalente no USDA (spec vitaminas-usda, D-303). */
   readonly usda?: OrigemUsda
+  /**
+   * Energia e macros que a TACO não publicou e vieram do USDA (spec alimentos-e-gramaturas, D-380): a origem e as chaves
+   * preenchidas, para a ficha marcar "USDA".
+   */
+  readonly usdaMacros?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
+  /** Só no alimento próprio: medido em g ou em ml (spec alimentos-e-gramaturas, D-378). */
+  readonly unidade?: 'g' | 'ml'
+  /** Só no alimento próprio: as medidas do cadastro (D-383). */
+  readonly medidas?: readonly { readonly nome: string; readonly gramas: number }[]
+  /** Só no alimento próprio (D-383 a D-386): o que a busca, a folha e o Cobrir precisam saber dele. */
+  readonly proprio?: {
+    readonly tipo: 'alimento' | 'preparacao' | 'rotulo'
+    /** O nome da folha e do link; vazio usa a descrição. */
+    readonly nomeParaPaciente: string
+    /** "Pode aparecer no Cobrir e nas trocas" ligado (D-386). */
+    readonly sugerir: boolean
+    /** A energia digitada não bate com os macros (D-384): não entra nas sugestões. */
+    readonly energiaIncoerente: boolean
+  }
 }
 
 export type BuscarAlimento = (id: number) => Alimento | undefined

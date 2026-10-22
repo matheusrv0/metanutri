@@ -75,12 +75,12 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     const ingredientes = screen.getByRole('list', { name: 'Ingredientes' })
     expect(within(ingredientes).getAllByRole('listitem')).toHaveLength(3)
     // Sem o peso pronto, o campo diz quanto dá a soma.
-    expect(screen.getByText('Vazio: a soma dos ingredientes, 280 g.')).toBeInTheDocument()
+    expect(screen.getByText('Se ficar vazio, vale a soma dos ingredientes (280 g).')).toBeInTheDocument()
 
     await usuario.type(screen.getByLabelText('Rende'), '2')
     await usuario.click(screen.getByRole('combobox', { name: 'Nome da porção' }))
     await usuario.click(screen.getByRole('option', { name: 'unidade' }))
-    await usuario.type(screen.getByLabelText('Peso pronto'), '240')
+    await usuario.type(screen.getByLabelText('Peso da receita pronta'), '240')
     await usuario.type(screen.getByLabelText('Modo de preparo'), 'Amasse e doure.')
 
     const porcao = screen.getByRole('region', { name: 'Valor de uma porção' })
@@ -98,14 +98,14 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
   })
 
   it('CA-861 (rodada da revisão): sem dado de energia em nenhum ingrediente, a lista diz "— kcal", nunca "0 kcal"', () => {
-    montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 458, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
+    montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 591, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
     const linha = within(listaDeReceitas()).getByRole('listitem')
     expect(linha).toHaveTextContent('Rende 1 copo (200 g) · — kcal por copo')
     expect(linha).not.toHaveTextContent('0 kcal')
   })
 
   it('CA-862: no valor da porção, o nutriente sem nenhum dado aparece como travessão', async () => {
-    const usuario = montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 458, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
+    const usuario = montar(new Memoria(), [salva('l', 'Leite batido', { ingredientes: [{ alimentoId: 591, gramas: 200 }], porcoes: 1, nomeDaPorcao: 'copo', pesoProntoG: null })])
     await usuario.click(screen.getByRole('button', { name: 'Editar Leite batido' }))
     const porcao = screen.getByRole('region', { name: 'Valor de uma porção' })
     expect(porcao).toHaveTextContent('— kcal')
@@ -127,8 +127,8 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Salvar receita' }))
     expect(screen.getByText('A receita precisa de um nome.')).toBeInTheDocument()
     expect(screen.getByText('Adicione pelo menos um ingrediente.')).toBeInTheDocument()
-    expect(screen.getByText('Diga quantas porções a receita rende.')).toBeInTheDocument()
-    await usuario.type(screen.getByLabelText('Peso pronto'), '0')
+    expect(screen.getByText('Informe quantas porções a receita rende.')).toBeInTheDocument()
+    await usuario.type(screen.getByLabelText('Peso da receita pronta'), '0')
     expect(screen.getByText('O peso pronto precisa ser maior que zero.')).toBeInTheDocument()
     expect(JSON.parse(arm.getItem(CHAVE_RECEITAS) ?? '[]')).toEqual([])
   })
@@ -175,7 +175,7 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     // editor usa a mesma linha.
     const usuario = montar(new Memoria(), [salva('a', 'Panqueca de banana', { ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_999, gramas: 20 }] })])
     await usuario.click(screen.getByRole('button', { name: 'Editar Panqueca de banana' }))
-    expect(within(screen.getByRole('list', { name: 'Ingredientes' })).getByText('Produto apagado')).toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: 'Ingredientes' })).getByText('Alimento excluído')).toBeInTheDocument()
   })
 
   it('CA-864: duplicar faz "(cópia)"', async () => {

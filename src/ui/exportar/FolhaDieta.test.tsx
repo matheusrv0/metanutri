@@ -17,6 +17,8 @@ const MACARRAO_CRU = 40
 
 const caso: Caso = {
   ...criarCasoVazio('c1'),
+  // Os textos abaixo são do plano em "Só medida" (spec alimentos-e-gramaturas, D-376: o plano de antes lê assim).
+  quantidades: 'medida-caseira',
   nome: 'Maria, 28 anos',
   dataConsulta: '2026-09-15',
   sexo: 'F',

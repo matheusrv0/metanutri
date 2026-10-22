@@ -37,7 +37,7 @@ describe('Substitutos', () => {
     expect(janela.getByRole('radio', { name: 'Energia (kcal)' })).toHaveAttribute('aria-checked', 'true')
 
     await usuario.type(janela.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'batata inglesa cozida{Enter}')
-    expect(janela.getByText(/^\d+ g/)).toBeInTheDocument()
+    expect(janela.getByText(/^(\d+ g|.+ · \d+ g)$/)).toBeInTheDocument()
     expect(janela.getAllByRole('term').map((d) => d.textContent)).toEqual(['Energia', 'Proteína', 'Carboidrato', 'Gordura'])
     expect(janela.getAllByRole('definition')).toHaveLength(4)
     expect(janela.getByText(/Diferença em relação ao alimento original/)).toBeInTheDocument()
@@ -50,10 +50,10 @@ describe('Substitutos', () => {
     await usuario.click(screen.getByRole('button', { name: /^Substituir Arroz/ }))
     const janela = within(screen.getByRole('dialog', { name: 'Substituto equivalente' }))
     await usuario.type(janela.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'batata inglesa cozida{Enter}')
-    const porEnergia = janela.getByText(/^\d+ g/).textContent
+    const porEnergia = janela.getByText(/^(\d+ g|.+ · \d+ g)$/).textContent
 
     await usuario.click(janela.getByRole('radio', { name: 'Proteína' }))
-    expect(janela.getByText(/^\d+ g/).textContent).not.toBe(porEnergia)
+    expect(janela.getByText(/^(\d+ g|.+ · \d+ g)$/).textContent).not.toBe(porEnergia)
   })
 
   it('CA-43: o substituto adicionado não entra na soma do dia', async () => {
@@ -66,7 +66,7 @@ describe('Substitutos', () => {
     await usuario.click(screen.getByRole('button', { name: /^Substituir Arroz/ }))
     const janela = within(screen.getByRole('dialog', { name: 'Substituto equivalente' }))
     await usuario.type(janela.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'batata inglesa cozida{Enter}')
-    await usuario.click(janela.getByRole('button', { name: 'Pôr em Substituto 1' }))
+    await usuario.click(janela.getByRole('button', { name: 'Usar como substituto 1' }))
 
     expect(screen.queryByRole('dialog', { name: 'Substituto equivalente' })).not.toBeInTheDocument()
     const abas = within(screen.getByRole('tablist', { name: 'Opções de Almoço' }))

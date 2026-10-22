@@ -10,7 +10,7 @@ interface TelaAjudaProps {
 const PASSOS = [
   { titulo: 'Cadastre o paciente', texto: 'Nome, nascimento e restrições. Os próximos planos já começam com esses dados.', tela: 'pacientes' as const },
   { titulo: 'Escolha o caminho', texto: 'Prescrição rápida para retorno e ajuste; atendimento completo quando houver avaliação.', tela: 'painel' as const },
-  { titulo: 'Monte o plano', texto: 'Digite “150 arroz int” e tecle Enter. A medida caseira e as kcal aparecem na hora.', tela: 'casos' as const },
+  { titulo: 'Monte o plano', texto: 'Digite “1 concha de feijão” e tecle Enter. A medida, os gramas e as kcal aparecem juntos.', tela: 'casos' as const },
   { titulo: 'Confira a adequação', texto: 'Veja os nutrientes abaixo da meta e use o botão Cobrir.', tela: 'casos' as const },
   { titulo: 'Entregue', texto: 'O plano impresso é salvo em PDF pelo próprio navegador; o aconselhamento e o memorial são gerados em Word.', tela: 'casos' as const },
 ]

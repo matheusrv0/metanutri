@@ -129,3 +129,23 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     expect(janela().getByRole('button', { name: /Imprimir ou salvar em PDF/ })).toBeInTheDocument()
   })
 })
+
+describe('Quantidades para o paciente na janela de imprimir (spec alimentos-e-gramaturas, D-376)', () => {
+  it('CA-1121 e CA-1122: plano novo em "Medida e gramas"; trocar o modo muda a folha e chama quem grava no plano', async () => {
+    const aoMudarModo = vi.fn()
+    const { rerender } = render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} aoMudarModo={aoMudarModo} aoFechar={vi.fn()} />)
+    const escolha = janela().getByRole('radiogroup', { name: 'Quantidades para o paciente' })
+    expect(within(escolha).getByRole('radio', { name: 'Medida e gramas' })).toHaveAttribute('aria-checked', 'true')
+    expect(janela().getByText('6 colheres de sopa (150 g)')).toBeInTheDocument()
+    await userEvent.setup().click(within(escolha).getByRole('radio', { name: 'Só gramas' }))
+    expect(aoMudarModo).toHaveBeenLastCalledWith('gramas')
+    rerender(<DialogoImprimir aberto caso={{ ...caso, quantidades: 'gramas' }} plano={plano()} assinatura={ANA} aoMudarModo={aoMudarModo} aoFechar={vi.fn()} />)
+    expect(janela().getByText('150 g')).toBeInTheDocument()
+  })
+
+  it('sem quem grave no plano, a escolha vale só para esta impressão', async () => {
+    abrir()
+    await userEvent.setup().click(janela().getByRole('radio', { name: 'Só medida' }))
+    expect(janela().getByText('6 colheres de sopa')).toBeInTheDocument()
+  })
+})

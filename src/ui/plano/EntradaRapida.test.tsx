@@ -15,9 +15,9 @@ const montar = () => {
 }
 
 describe('Texto-guia (spec revisao-geral-trabalho, CA-791)', () => {
-  it('diz "colheres", no plural', () => {
+  it('CA-1112: ensina um exemplo que funciona', () => {
     montar()
-    expect(screen.getByRole('combobox', { name: 'Adicionar alimento' }).getAttribute('placeholder')).toMatch(/2 colheres de sopa/)
+    expect(screen.getByRole('combobox', { name: 'Adicionar alimento' }).getAttribute('placeholder')).toMatch(/^1 concha de feijão/)
   })
 })
 
@@ -51,8 +51,8 @@ describe('Conteúdo com o campo vazio (CA-307)', () => {
 describe('Honestidade do dado', () => {
   it('alimento sem energia na tabela mostra travessão, não zero', async () => {
     const usuario = montar()
-    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'leite de vaca integral')
-    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Leite, de vaca, integral'))
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'coco verde')
+    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Coco,  verde, cru'))
     expect(opcao).toBeDefined()
     expect(opcao?.textContent).toContain('— kcal')
     expect(opcao?.textContent).not.toContain('0 kcal')
@@ -60,8 +60,8 @@ describe('Honestidade do dado', () => {
 
   it('alimento com dado faltando sai marcado na lista', async () => {
     const usuario = montar()
-    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'leite de vaca integral')
-    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Leite, de vaca, integral'))
-    expect(opcao?.textContent).toMatch(/dado (parcial|mínimo)/)
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'coco verde')
+    const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Coco,  verde, cru'))
+    expect(opcao?.textContent).toMatch(/(parte dos|poucos) nutrientes/)
   })
 })

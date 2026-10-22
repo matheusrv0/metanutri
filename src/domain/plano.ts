@@ -1,6 +1,6 @@
 // Operações imutáveis sobre o plano (SPEC CA-12, CA-13, CA-14, CB-04).
 import { ID_DE_RECEITA } from './receitaNoPlano.ts'
-import type { ItemPlano, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
+import type { ItemPlano, MedidaDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
 
 export type GerarId = () => string
 
@@ -69,15 +69,25 @@ function alterarOpcao(plano: Plano, refeicaoId: string, opcao: OpcaoId, alterar:
   return alterarRefeicao(plano, refeicaoId, (r) => ({ ...r, opcoes: { ...r.opcoes, [opcao]: alterar(r.opcoes[opcao]) } }))
 }
 
+/**
+ * Põe um alimento na opção. Com `medida`, o item guarda a medida escolhida (spec alimentos-e-gramaturas, G1); `null`
+ * marca "só gramas"; sem o campo, vale a medida automática.
+ */
 export function adicionarItem(
   plano: Plano,
   refeicaoId: string,
   opcao: OpcaoId,
-  dados: { readonly alimentoId: number; readonly gramas: number },
+  dados: { readonly alimentoId: number; readonly gramas: number; readonly medida?: MedidaDoItem | null | undefined },
   gerarId: GerarId,
 ): Plano {
   validarGramas(dados.gramas)
-  return alterarOpcao(plano, refeicaoId, opcao, (itens) => [...itens, { id: gerarId(), alimentoId: dados.alimentoId, gramas: dados.gramas }])
+  const item: ItemPlano = {
+    id: gerarId(),
+    alimentoId: dados.alimentoId,
+    gramas: dados.gramas,
+    ...(dados.medida === undefined ? {} : { medida: dados.medida === null ? null : { ...dados.medida } }),
+  }
+  return alterarOpcao(plano, refeicaoId, opcao, (itens) => [...itens, item])
 }
 
 /**
@@ -98,11 +108,33 @@ function exigirItem(itens: readonly ItemPlano[], itemId: string) {
   if (!itens.some((i) => i.id === itemId)) throw new Error(`Item ${itemId} não existe nesta opção.`)
 }
 
+/**
+ * Muda os gramas. Com medida escolhida, a quantidade dela passa a ser gramas ÷ peso da medida (G2): o peso nunca muda
+ * sozinho, e a medida fica aproximada quando não fecha em meia medida (D-374).
+ */
 export function atualizarGramas(plano: Plano, refeicaoId: string, opcao: OpcaoId, itemId: string, gramas: number): Plano {
   validarGramas(gramas)
   return alterarOpcao(plano, refeicaoId, opcao, (itens) => {
     exigirItem(itens, itemId)
-    return itens.map((i) => (i.id === itemId ? { ...i, gramas } : i))
+    return itens.map((i) => {
+      if (i.id !== itemId) return i
+      const medida = i.medida
+      if (!medida || !(medida.gramasPorMedida > 0)) return { ...i, gramas }
+      return { ...i, gramas, medida: { ...medida, quantidade: Math.round((gramas / medida.gramasPorMedida) * 1000) / 1000 } }
+    })
+  })
+}
+
+/**
+ * Escolhe a medida do item (G2 e G3): com uma medida, os gramas viram quantidade × peso; com `null` ("só gramas"), os
+ * gramas ficam.
+ */
+export function escolherMedida(plano: Plano, refeicaoId: string, opcao: OpcaoId, itemId: string, medida: MedidaDoItem | null): Plano {
+  const gramas = medida === null ? null : Math.round(medida.quantidade * medida.gramasPorMedida * 10) / 10
+  if (gramas !== null) validarGramas(gramas)
+  return alterarOpcao(plano, refeicaoId, opcao, (itens) => {
+    exigirItem(itens, itemId)
+    return itens.map((i) => (i.id === itemId ? { ...i, medida: medida === null ? null : { ...medida }, ...(gramas === null ? {} : { gramas }) } : i))
   })
 }
 

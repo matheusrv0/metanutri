@@ -101,6 +101,8 @@ export const CHAVES_DE_DADOS = [
   'metanutri:modelos-suplemento',
   // Spec receitas-com-calculo, D-272: a biblioteca de receitas da conta.
   'metanutri:receitas',
+  // Spec alimentos-e-gramaturas, D-387: as medidas da conta para alimentos da base.
+  'metanutri:medidas-proprias',
 ] as const
 
 export interface Backup {

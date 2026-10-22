@@ -51,10 +51,13 @@ describe('Completude do alimento', () => {
     expect(niveis.size).toBeGreaterThan(1)
   })
 
-  it('leite de vaca integral, que não tem energia na TACO, é apontado', () => {
+  it('coco verde, que não tem energia na TACO nem no USDA, é apontado (spec alimentos-e-gramaturas, CA-1130)', () => {
+    const coco = ALIMENTOS.find((a) => a.descricao === 'Coco,  verde, cru')
+    expect(coco).toBeDefined()
+    expect(coco && completudeDe(coco).semEnergia).toBe(true)
+    expect(coco && buscarAlimento(coco.id)).toBeDefined()
+    // O leite integral ganhou a energia do USDA (D-380).
     const leite = ALIMENTOS.find((a) => a.descricao === 'Leite, de vaca, integral')
-    expect(leite).toBeDefined()
-    expect(leite && completudeDe(leite).semEnergia).toBe(true)
-    expect(leite && buscarAlimento(leite.id)).toBeDefined()
+    expect(leite && completudeDe(leite).semEnergia).toBe(false)
   })
 })

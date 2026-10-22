@@ -25,7 +25,7 @@ function sugestao(alimentoId: number, gramas: number, coberturaPct: number): Sug
   const alimento = buscarAlimento(alimentoId)
   if (!alimento) throw new Error(`fixture: alimento ${alimentoId} não existe`)
   const kcal = ((alimento.nutrientes.energia_kcal ?? 0) * gramas) / 100
-  return { alimentoId, descricao: alimento.descricao, gramas, coberturaPct, parcial: false, kcalAdicionadas: kcal, avisos: [] }
+  return { alimentoId, descricao: alimento.descricao, gramas, medida: null, coberturaPct, parcial: false, kcalAdicionadas: kcal, avisos: [] }
 }
 
 /**

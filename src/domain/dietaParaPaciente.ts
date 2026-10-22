@@ -6,6 +6,7 @@
 // não tem o id do alimento; ele é achado pela descrição guardada, que é a descrição exata da base (as 597 são únicas).
 // O item de receita vem marcado e não passa pela procura (D-310 da integracao-rodada-1910).
 import type { DietaDoLink, ItemDaDieta } from './dietaDoLink.ts'
+import { unidadeDo } from './liquido.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ALIMENTOS } from './tabelas.ts'
@@ -24,12 +25,20 @@ const PELA_DESCRICAO = new Map<string, Alimento>(ALIMENTOS.map((a) => [a.descric
  * e a medida guardada; sem ela, ou em "Gramas", o peso (CA-750).
  */
 export function paraOPaciente(item: ItemDaDieta, modo: ModoQuantidade = 'medida-caseira'): ItemParaPaciente {
-  const comoGuardado = { medida: modo === 'gramas' ? null : item.medida, gramas: item.gramas }
+  const alimento = item.receita ? undefined : PELA_DESCRICAO.get(item.alimento)
+  const comoGuardado: QuantidadeNaFolha = {
+    medida: modo === 'gramas' ? null : item.medida,
+    gramas: item.gramas,
+    unidade: item.unidade ?? unidadeDo(alimento),
+    aproximada: modo !== 'gramas' && item.aproximada === true,
+    comPeso: modo === 'medida-e-gramas',
+  }
   // Item de receita (spec integracao-rodada-1910, D-310): o nome da receita e a porção, como a folha impressa
   // (receitas-com-calculo, CA-879). Nunca é procurado na base: "Feijoada" também é um prato da TACO.
   if (item.receita) return { nome: item.alimento, quantidade: comoGuardado }
-  const alimento = PELA_DESCRICAO.get(item.alimento)
   if (!alimento) return { nome: item.alimento, quantidade: comoGuardado }
+  // G1 e D-377 (spec alimentos-e-gramaturas): a medida que a nutricionista escolheu vai como foi guardada.
+  if (item.escolhida) return { nome: nomeParaPaciente(alimento), quantidade: comoGuardado }
   return { nome: nomeParaPaciente(alimento), quantidade: quantidadeNaFolha(alimento.id, item.gramas, modo) }
 }
 
@@ -46,7 +55,7 @@ const teriaMedida = (item: ItemDaDieta): boolean => {
  * "Gramas": foi gravada em "Gramas" e uma aba com a versão de antes apagou o campo ao regravar o link (CB-316).
  */
 export function modoDaCopia(dieta: DietaDoLink): ModoQuantidade {
-  if (dieta.quantidades === 'gramas') return 'gramas'
+  if (dieta.quantidades === 'gramas' || dieta.quantidades === 'medida-e-gramas') return dieta.quantidades
   const itens = [...dieta.refeicoes.flatMap((r) => r.opcoes.flat()), ...(dieta.receitasDoPlano ?? []).flatMap((r) => r.ingredientes)]
   if (itens.length === 0 || itens.some((i) => i.medida !== null)) return 'medida-caseira'
   return itens.some(teriaMedida) ? 'gramas' : 'medida-caseira'

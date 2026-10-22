@@ -1,4 +1,5 @@
 // Código de barras do produto: validação do EAN e leitura do rótulo em base pública.
+import { CONTATO_EMAIL } from './legal.ts'
 import type { ChaveNutrienteAlimento } from './tipos.ts'
 
 /** Confere o dígito verificador de EAN-8, EAN-13 ou UPC-A. */
@@ -17,9 +18,15 @@ export interface RotuloEncontrado {
   readonly codigo: string
   readonly nome: string
   readonly marca: string
-  readonly porcaoG: number | null
-  readonly medidaCaseira: string
-  readonly porPorcao: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>
+  /**
+   * Os valores por 100 g ou 100 ml, como a Open Food Facts publica (spec alimentos-e-gramaturas, A13 e D-382). Nunca são
+   * reescalados para uma porção: a porção do rótulo vira só a medida. `null` = a base não tem o valor.
+   */
+  readonly por100: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>
+  /** A porção declarada, quando a base tem: "30 g", com o peso. */
+  readonly porcao: { readonly gramas: number; readonly texto: string } | null
+  /** Produto medido em ml (bebida, leite) ou em g (A23). */
+  readonly unidade: 'g' | 'ml'
   readonly fonte: string
 }
 
@@ -27,43 +34,89 @@ interface ProdutoOpenFoodFacts {
   readonly product_name?: string
   readonly product_name_pt?: string
   readonly brands?: string
+  readonly quantity?: string
   readonly serving_size?: string
   readonly serving_quantity?: number | string
+  readonly serving_quantity_unit?: string
+  readonly nutrition_data_per?: string
   readonly nutriments?: Record<string, number | string | undefined>
 }
 
+/** Número da base; texto, negativo ou NaN viram nulo (CB-369). */
 const numero = (v: number | string | undefined): number | null => {
-  if (typeof v === 'number') return Number.isFinite(v) ? v : null
-  if (typeof v === 'string' && v.trim() !== '') {
-    const n = Number(v.replace(',', '.'))
-    return Number.isFinite(n) ? n : null
-  }
-  return null
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v.replace(',', '.')) : Number.NaN
+  return Number.isFinite(n) && n >= 0 ? n : null
 }
 
-/** Converte os nutrientes da Open Food Facts (por 100 g) para a porção declarada. */
-function nutrientesDaPorcao(n: Record<string, number | string | undefined>, porcaoG: number | null) {
-  const fator = porcaoG && porcaoG > 0 ? porcaoG / 100 : 1
+/**
+ * Os nutrientes da Open Food Facts, por 100 g, na unidade da adequação (A14): a OFF guarda minerais e vitaminas em
+ * gramas. O folato da OFF vai como está para o folato DFE: é a melhor aproximação que o rótulo dá.
+ */
+const DA_OFF: readonly { readonly chave: ChaveNutrienteAlimento; readonly off: string; readonly fator: number }[] = [
+  { chave: 'carboidrato_g', off: 'carbohydrates', fator: 1 },
+  { chave: 'acucares_g', off: 'sugars', fator: 1 },
+  { chave: 'proteina_g', off: 'proteins', fator: 1 },
+  { chave: 'lipideos_g', off: 'fat', fator: 1 },
+  { chave: 'gordura_saturada_g', off: 'saturated-fat', fator: 1 },
+  { chave: 'gordura_trans_g', off: 'trans-fat', fator: 1 },
+  { chave: 'fibra_g', off: 'fiber', fator: 1 },
+  { chave: 'colesterol_mg', off: 'cholesterol', fator: 1000 },
+  { chave: 'calcio_mg', off: 'calcium', fator: 1000 },
+  { chave: 'ferro_mg', off: 'iron', fator: 1000 },
+  { chave: 'zinco_mg', off: 'zinc', fator: 1000 },
+  { chave: 'potassio_mg', off: 'potassium', fator: 1000 },
+  { chave: 'magnesio_mg', off: 'magnesium', fator: 1000 },
+  { chave: 'fosforo_mg', off: 'phosphorus', fator: 1000 },
+  { chave: 'cobre_mg', off: 'copper', fator: 1000 },
+  { chave: 'manganes_mg', off: 'manganese', fator: 1000 },
+  { chave: 'selenio_mcg', off: 'selenium', fator: 1_000_000 },
+  { chave: 'vitamina_a_rae_mcg', off: 'vitamin-a', fator: 1_000_000 },
+  { chave: 'vitamina_c_mg', off: 'vitamin-c', fator: 1000 },
+  { chave: 'vitamina_d_mcg', off: 'vitamin-d', fator: 1_000_000 },
+  { chave: 'vitamina_e_mg', off: 'vitamin-e', fator: 1000 },
+  { chave: 'tiamina_mg', off: 'vitamin-b1', fator: 1000 },
+  { chave: 'riboflavina_mg', off: 'vitamin-b2', fator: 1000 },
+  { chave: 'piridoxina_mg', off: 'vitamin-b6', fator: 1000 },
+  { chave: 'niacina_mg', off: 'vitamin-pp', fator: 1000 },
+  { chave: 'folato_dfe_mcg', off: 'vitamin-b9', fator: 1_000_000 },
+  { chave: 'vitamina_b12_mcg', off: 'vitamin-b12', fator: 1_000_000 },
+]
+
+const arredondar = (v: number): number => Math.round(v * 1000) / 1000
+
+/** Os valores por 100 g ou 100 ml. Sem sódio, o sódio sai do sal (÷ 2,5); sem kcal, da energia em kJ (÷ 4,184). */
+export function nutrientesPor100(n: Record<string, number | string | undefined>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
   const porCem = (chave: string) => numero(n[`${chave}_100g`])
-  const escalar = (v: number | null) => (v === null ? null : Math.round(v * fator * 100) / 100)
-  return {
-    energia_kcal: escalar(porCem('energy-kcal') ?? (numero(n['energy_100g']) === null ? null : (numero(n['energy_100g']) ?? 0) / 4.184)),
-    carboidrato_g: escalar(porCem('carbohydrates')),
-    acucares_g: escalar(porCem('sugars')),
-    proteina_g: escalar(porCem('proteins')),
-    lipideos_g: escalar(porCem('fat')),
-    gordura_saturada_g: escalar(porCem('saturated-fat')),
-    fibra_g: escalar(porCem('fiber')),
-    sodio_mg: escalar(porCem('sodium') === null ? null : (porCem('sodium') ?? 0) * 1000),
-    calcio_mg: escalar(porCem('calcium') === null ? null : (porCem('calcium') ?? 0) * 1000),
-    ferro_mg: escalar(porCem('iron') === null ? null : (porCem('iron') ?? 0) * 1000),
+  const valores: Partial<Record<ChaveNutrienteAlimento, number | null>> = {}
+  const kcal = porCem('energy-kcal')
+  const kj = porCem('energy')
+  valores.energia_kcal = kcal ?? (kj === null ? null : arredondar(kj / 4.184))
+  for (const { chave, off, fator } of DA_OFF) {
+    const v = porCem(off)
+    valores[chave] = v === null ? null : arredondar(v * fator)
   }
+  const sodio = porCem('sodium')
+  const sal = porCem('salt')
+  valores.sodio_mg = sodio !== null ? arredondar(sodio * 1000) : sal !== null ? arredondar((sal / 2.5) * 1000) : null
+  return valores
+}
+
+/** "ml" quando a OFF diz que a porção ou a embalagem é em ml ou litro (A23). */
+function unidadeDo(p: ProdutoOpenFoodFacts): 'g' | 'ml' {
+  if (p.nutrition_data_per === '100ml' || p.serving_quantity_unit?.toLowerCase() === 'ml') return 'ml'
+  return /\d\s*(ml|l|litros?)\b/i.test(p.quantity ?? '') ? 'ml' : 'g'
 }
 
 export interface OpcoesBusca {
   readonly buscar?: typeof fetch
   readonly sinal?: AbortSignal
 }
+
+/**
+ * Como o MetaNutri se apresenta à Open Food Facts, que pede "App/Versão (email)" (A25). O navegador não deixa trocar o
+ * User-Agent; a OFF aceita o `X-User-Agent`.
+ */
+export const IDENTIFICACAO_OFF = `MetaNutri/1.0 (${CONTATO_EMAIL ?? 'metanutri.com.br'})`
 
 /**
  * Procura o produto pelo código na Open Food Facts, base colaborativa e aberta.
@@ -73,23 +126,25 @@ export async function buscarRotuloPorCodigo(codigo: string, opcoes: OpcoesBusca 
   const digitos = codigo.replace(/\D/g, '')
   if (digitos === '') return null
   const buscar = opcoes.buscar ?? fetch
-  const url = `https://world.openfoodfacts.org/api/v2/product/${digitos}.json?fields=product_name,product_name_pt,brands,serving_size,serving_quantity,nutriments`
+  const campos = 'product_name,product_name_pt,brands,quantity,serving_size,serving_quantity,serving_quantity_unit,nutrition_data_per,nutriments'
+  const url = `https://world.openfoodfacts.org/api/v2/product/${digitos}.json?fields=${campos}`
 
-  const resposta = await buscar(url, opcoes.sinal ? { signal: opcoes.sinal } : {})
+  const resposta = await buscar(url, { headers: { 'X-User-Agent': IDENTIFICACAO_OFF }, ...(opcoes.sinal ? { signal: opcoes.sinal } : {}) })
   if (!resposta.ok) return null
   const corpo = (await resposta.json()) as { readonly status?: number; readonly product?: ProdutoOpenFoodFacts }
   if (corpo.status !== 1 || !corpo.product) return null
 
   const p = corpo.product
-  const porcaoG = numero(p.serving_quantity)
+  const gramasDaPorcao = numero(p.serving_quantity)
+  const unidade = unidadeDo(p)
   const nome = (p.product_name_pt ?? p.product_name ?? '').trim()
   return {
     codigo: digitos,
     nome,
     marca: (p.brands ?? '').split(',')[0]?.trim() ?? '',
-    porcaoG,
-    medidaCaseira: (p.serving_size ?? '').trim(),
-    porPorcao: nutrientesDaPorcao(p.nutriments ?? {}, porcaoG),
+    por100: nutrientesPor100(p.nutriments ?? {}),
+    porcao: gramasDaPorcao !== null && gramasDaPorcao > 0 ? { gramas: Math.round(gramasDaPorcao * 10) / 10, texto: (p.serving_size ?? '').trim() } : null,
+    unidade,
     fonte: 'Open Food Facts',
   }
 }

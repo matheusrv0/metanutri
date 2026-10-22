@@ -4,6 +4,7 @@ import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
 import { lembreteDaHidratacao, nivelSugerido } from '@/domain/anamneseNoPlano.ts'
+import { modoDeQuantidade } from '@/domain/caso.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
@@ -391,7 +392,15 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
         {...base}
         titulo={caso.nome || 'Plano sem nome'}
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
+        acoes={
+          <MenuExportar
+            caso={caso}
+            plano={registro.plano}
+            bloqueio={bloqueio}
+            assinatura={quemAssina}
+            aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
+          />
+        }
       >
         <ContextoRestricoes.Provider value={restricoesDoPaciente}>
           <div className="flex flex-col gap-6">
@@ -416,7 +425,12 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
             ) : rota.aba === 'plano' ? (
               <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
+                  <TelaPlano
+                    plano={registro.plano}
+                    aoAlterarPlano={alterarPlano}
+                    modo={modoDeQuantidade(caso)}
+                    aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
+                  />
                   <div className="flex flex-col gap-6">
                     <ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />
                     <MicrosDoDia

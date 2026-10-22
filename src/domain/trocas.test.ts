@@ -53,9 +53,9 @@ describe('Trocas por grupo', () => {
   })
 
   it('alimento sem energia na tabela não gera troca', () => {
-    const leite = porDescricao('Leite, de vaca, integral')
-    expect(leite.nutrientes.energia_kcal).toBeNull()
-    expect(trocasDoAlimento({ alimentoId: leite.id, gramas: 200 }, opcoes)).toEqual([])
+    const coco = porDescricao('Coco,  verde, cru')
+    expect(coco.nutrientes.energia_kcal).toBeNull()
+    expect(trocasDoAlimento({ alimentoId: coco.id, gramas: 200 }, opcoes)).toEqual([])
   })
 
   it('o plano de exemplo gera lista de trocas para as refeições', () => {

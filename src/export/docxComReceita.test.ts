@@ -18,7 +18,8 @@ async function textoDoDocx(dados: DadosAconselhamento): Promise<string> {
 let n = 0
 const ids = () => `id${++n}`
 
-const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Paciente Exemplo', sexo: 'F', idadeAnos: 30 }
+// Em "Só medida", o modo dos planos de antes (spec alimentos-e-gramaturas, D-376).
+const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Paciente Exemplo', sexo: 'F', idadeAnos: 30, quantidades: 'medida-caseira' }
 
 function planoComPanqueca(): Plano {
   const plano = criarPlanoPadrao(ids)
@@ -39,7 +40,7 @@ const dados = (plano: Plano, extra: Partial<DadosAconselhamento> = {}): DadosAco
 
 const RECEITA = [
   'Panqueca de banana · Rende 2 unidades (120 g cada)',
-  'Ingredientes: Banana, prata, crua (2 unidades); Ovo, de galinha, inteiro, cru (100 g); Aveia, flocos, crua (2 colheres de sopa)',
+  'Ingredientes: Banana, prata, crua (2 unidades); Ovo, de galinha, inteiro, cru (2 unidades); Aveia, flocos, crua (2 colheres de sopa)',
   'Modo de preparo:',
   'Amasse a banana, misture o ovo e a aveia.',
   'Doure dos dois lados.',

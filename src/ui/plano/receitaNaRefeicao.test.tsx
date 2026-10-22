@@ -147,14 +147,14 @@ describe('a receita na busca da refeição (CA-871, CA-872)', () => {
 })
 
 describe('publicação em duas vezes (D-274a, CA-871a)', () => {
-  it('publicação 1: a constante está desligada, e a busca da refeição não mostra receita', async () => {
-    expect(RECEITAS_NA_REFEICAO).toBe(false)
+  it('CA-1163 (spec alimentos-e-gramaturas, D-388): publicação 2: a constante está ligada, e a busca da refeição põe a receita', async () => {
+    expect(RECEITAS_NA_REFEICAO).toBe(true)
     guardarReceitas([NA_BIBLIOTECA])
     const usuario = montarPlano()
     await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' }), 'panqueca')
-    expect(screen.queryByRole('option', { name: /Panqueca de banana/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Panqueca de banana/ })).toBeInTheDocument()
     await usuario.keyboard('{Enter}')
-    expect(ultimoPlano).toBeNull()
+    expect(ultimoPlano).not.toBeNull()
   })
 
   it('publicação 1: a receita que já está no plano continua aparecendo e somando', () => {

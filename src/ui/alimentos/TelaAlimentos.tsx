@@ -1,7 +1,11 @@
-import { ChevronRight, CircleDashed, Contrast, Search, X } from 'lucide-react'
+import { ChevronRight, CircleDashed, Contrast, Copy, Plus, Search, X } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import { categoriasDoCatalogo, composicaoDe, filtrarCatalogo, resumoDoCatalogo, type OrdemCatalogo } from '@/domain/catalogo.ts'
-import { medidasDoAlimento } from '@/domain/busca.ts'
+import { dadosDaCopiaDaBase, produtoDosDados } from '@/domain/alimentoProprio.ts'
+import { medidasDoAlimento, PRIMEIRO_ID_PROPRIO, type MedidaCaseira } from '@/domain/busca.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
+import { MEUS_ALIMENTOS_NOVOS, type DadosAlimentoProprio, type FonteAlimentoProprio, type Produto } from '@/domain/produtos.ts'
+import { ALIMENTOS, alimentosComProdutos } from '@/domain/tabelas.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { descreverOrigemUsda } from '@/domain/complementoUsda.ts'
 import { completudeDe, explicarCompletude, type NivelCompletude } from '@/domain/completude.ts'
@@ -13,18 +17,24 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
+import { DialogoAlimentoProprio } from '../produtos/DialogoAlimentoProprio.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
+import { useMedidasProprias } from '../estado/usarMedidasProprias.ts'
+import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
+import { DialogoNovaMedida } from './DialogoNovaMedida.tsx'
+import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
 const ORDENS: readonly { readonly valor: OrdemCatalogo; readonly rotulo: string }[] = [
+  { valor: 'relevancia', rotulo: 'Relevância' },
   { valor: 'nome', rotulo: 'Nome' },
   { valor: 'energia', rotulo: 'Energia' },
-  { valor: 'completude', rotulo: 'Mais completos' },
+  { valor: 'completude', rotulo: 'Mais nutrientes' },
 ]
 
 const NIVEIS: readonly { readonly valor: NivelCompletude; readonly rotulo: string }[] = [
   { valor: 'completo', rotulo: 'Completos' },
-  { valor: 'parcial', rotulo: 'Dado parcial' },
-  { valor: 'minimo', rotulo: 'Dado mínimo' },
+  { valor: 'parcial', rotulo: 'Parte dos nutrientes' },
+  { valor: 'minimo', rotulo: 'Poucos nutrientes' },
 ]
 
 /** As listas de escolha usam o select do navegador, como o paciente da etapa 1 (Decisão 5). */
@@ -38,8 +48,8 @@ const SELO: Readonly<Record<NivelCompletude, string>> = {
 
 const ROTULO_NIVEL: Readonly<Record<NivelCompletude, string>> = {
   completo: 'completo',
-  parcial: 'dado parcial',
-  minimo: 'dado mínimo',
+  parcial: 'parte dos nutrientes',
+  minimo: 'poucos nutrientes',
 }
 
 /** Quantos alimentos a lista mostra de uma vez; o resto entra pelo botão. */
@@ -56,20 +66,59 @@ const LARGO = '(min-width: 1280px)'
 interface TelaAlimentosProps {
   /** Abre a página Fontes da base (CA-323). */
   readonly aoAbrirFontes?: (() => void) | undefined
+  /** "Copiar para Meus alimentos" (D-385); padrão: a constante da publicação. */
+  readonly formularioNovo?: boolean
 }
 
-export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
+type Origem = 'todas' | 'base' | 'meus'
+
+/** A fonte do alimento próprio, como a ficha escreve (D-385). */
+function textoDaFonte(fonte: FonteAlimentoProprio | undefined, codigoBarras: string): string {
+  if (!fonte) return codigoBarras ? 'Open Food Facts' : 'rótulo'
+  if (fonte.tipo === 'outra') return fonte.texto.trim() || 'outra'
+  return { rotulo: 'rótulo', 'open-food-facts': 'Open Food Facts', laboratorio: 'análise de laboratório', 'copia-da-base': 'cópia da base' }[fonte.tipo]
+}
+
+export function TelaAlimentos({ aoAbrirFontes, formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaAlimentosProps = {}) {
   const [termo, setTermo] = useState('')
   const [categoria, setCategoria] = useState<string | null>(null)
   const [nivel, setNivel] = useState<NivelCompletude | null>(null)
-  const [ordem, setOrdem] = useState<OrdemCatalogo>('nome')
+  const [ordem, setOrdem] = useState<OrdemCatalogo>('relevancia')
   const [quantos, setQuantos] = useState(PAGINA)
   const [aberto, setAberto] = useState<Alimento | null>(null)
+  const [origem, setOrigem] = useState<Origem>('todas')
   const largo = useMediaQuery(LARGO)
+  // D-385 e D-387 (spec alimentos-e-gramaturas): os alimentos e as medidas da conta, relidos a cada gravação.
+  const meusAlimentos = useMeusAlimentos()
+  const medidasProprias = useMedidasProprias()
+  const [novaMedidaPara, setNovaMedidaPara] = useState<Alimento | null>(null)
+  const [copiando, setCopiando] = useState<DadosAlimentoProprio | null>(null)
+  const [mensagem, setMensagem] = useState<string | null>(null)
+  const produtoDe = (a: Alimento): Produto | undefined => meusAlimentos.lista.find((p) => p.id === a.id)
 
   const categorias = useMemo(() => categoriasDoCatalogo(), [])
   const resumo = useMemo(() => resumoDoCatalogo(), [])
-  const lista = useMemo(() => filtrarCatalogo({ termo, categoria, nivel, ordem }), [termo, categoria, nivel, ordem])
+  // A15 e D-370 (spec alimentos-e-gramaturas): com termo, a ordem da entrada rápida, com o uso desta conta.
+  const uso = useUsoDaConta(termo.trim() !== '' && ordem === 'relevancia')
+  const daOrigem = useMemo(() => {
+    void meusAlimentos.lista
+    const todos = alimentosComProdutos()
+    return origem === 'base' ? ALIMENTOS : origem === 'meus' ? todos.filter((a) => a.id >= PRIMEIRO_ID_PROPRIO) : todos
+  }, [origem, meusAlimentos.lista])
+  const lista = useMemo(() => filtrarCatalogo({ termo, categoria, nivel, ordem, uso }, daOrigem), [termo, categoria, nivel, ordem, uso, daOrigem])
+  const acoesDaFicha = {
+    versaoDasMedidas: medidasProprias.versao,
+    aoCriarMedida: (a: Alimento) => setNovaMedidaPara(a),
+    aoExcluirMedida: (a: Alimento, m: MedidaCaseira) => {
+      const propria = medidasProprias.doAlimento(a.id).find((x) => x.nome === m.nome)
+      if (propria) medidasProprias.excluir(propria.id)
+    },
+    aoCopiar: formularioNovo ? (a: Alimento) => setCopiando(dadosDaCopiaDaBase(a)) : undefined,
+    fonteDe: (a: Alimento) => {
+      const p = produtoDe(a)
+      return p ? textoDaFonte(p.fonte, p.codigoBarras) : null
+    },
+  }
   const visiveis = lista.slice(0, quantos)
 
   const mudarFiltro = (acao: () => void) => {
@@ -82,9 +131,10 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
       setTermo('')
       setCategoria(null)
       setNivel(null)
+      setOrigem('todas')
     })
 
-  const temFiltro = termo.trim() !== '' || categoria !== null || nivel !== null
+  const temFiltro = termo.trim() !== '' || categoria !== null || nivel !== null || origem !== 'todas'
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -119,6 +169,14 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
                 className="h-11 rounded-full pl-10 sm:h-11"
               />
             </div>
+            <div className="flex flex-col gap-1 lg:w-44">
+              <Label htmlFor="filtro-origem">Origem</Label>
+              <select id="filtro-origem" value={origem} onChange={(e) => mudarFiltro(() => setOrigem(e.target.value as Origem))} className={SELECT}>
+                <option value="todas">Todas</option>
+                <option value="base">Base MetaNutri</option>
+                <option value="meus">Meus alimentos</option>
+              </select>
+            </div>
             <div className="flex flex-col gap-1 lg:w-52">
               <Label htmlFor="filtro-grupo">Grupo</Label>
               <select id="filtro-grupo" value={categoria ?? ''} onChange={(e) => mudarFiltro(() => setCategoria(e.target.value || null))} className={SELECT}>
@@ -139,7 +197,7 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
               </select>
             </div>
             <div className="flex flex-col gap-1 lg:w-44">
-              <Label htmlFor="filtro-completude">Completude do dado</Label>
+              <Label htmlFor="filtro-completude">Nutrientes disponíveis</Label>
               <select
                 id="filtro-completude"
                 value={nivel ?? ''}
@@ -171,11 +229,11 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
             <ul aria-label="Legenda" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <li className="inline-flex items-center gap-1">
                 <Contrast className="size-3.5 text-warningtext" aria-hidden="true" />
-                dado parcial
+                parte dos nutrientes
               </li>
               <li className="inline-flex items-center gap-1">
                 <CircleDashed className="size-3.5 text-errortext" aria-hidden="true" />
-                dado mínimo
+                poucos nutrientes
               </li>
             </ul>
           </div>
@@ -206,6 +264,7 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
                       <p className="min-w-0 flex-1 text-sm">
                         <span className="line-clamp-2">
                           {a.descricao} <span className="text-xs text-muted-foreground">{a.categoria}</span>
+                          {a.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo ml-1.5 text-muted-foreground">meu</span> : null}
                         </span>
                       </p>
                       {c.nivel === 'parcial' ? <Contrast className="size-3.5 shrink-0 text-warningtext" aria-hidden="true" /> : null}
@@ -237,7 +296,7 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
 
       {/* Tela larga: a ficha acompanha a rolagem ao lado da lista. */}
       <div className="hidden xl:block xl:sticky xl:top-24 xl:self-start">
-        <FichaDoAlimento alimento={aberto} />
+        <FichaDoAlimento alimento={aberto} acoes={acoesDaFicha} />
       </div>
 
       {/* Tela estreita: a ficha sobe numa gaveta, senão ficava abaixo de 597 linhas. */}
@@ -248,19 +307,73 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
               {/* O "Fechar" tem 44 px no celular (D-246): o título termina antes dele, com folga. */}
               <div className="flex flex-col gap-1 pr-8 max-sm:pr-11">
                 <SheetTitle className="text-base leading-snug">{aberto.descricao}</SheetTitle>
-                <SheetDescription>{`${aberto.categoria} · valores por 100\u00a0g`}</SheetDescription>
+                <SheetDescription>{descricaoDaFicha(aberto, acoesDaFicha.fonteDe(aberto))}</SheetDescription>
               </div>
-              <CorpoDaFicha alimento={aberto} />
+              <CorpoDaFicha alimento={aberto} acoes={acoesDaFicha} />
             </div>
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {/* Sempre montado: a região viva só anuncia o que muda dentro dela. */}
+      <p role="status" className={mensagem ? 'text-sm text-muted-foreground xl:col-span-2' : 'sr-only'}>
+        {mensagem}
+      </p>
+
+      <DialogoNovaMedida
+        alimento={novaMedidaPara}
+        unidade={unidadeDo(novaMedidaPara ?? undefined)}
+        aoSalvar={(m) => {
+          if (!novaMedidaPara) return null
+          try {
+            medidasProprias.salvar({ alimentoId: novaMedidaPara.id, nome: m.nome, gramas: m.gramas })
+            setMensagem(`Medida “${m.nome}” salva em ${novaMedidaPara.descricao.trim()}.`)
+            return null
+          } catch (erro) {
+            return erro instanceof Error ? erro.message : 'Não foi possível salvar a medida. Tente de novo.'
+          }
+        }}
+        aoFechar={() => setNovaMedidaPara(null)}
+      />
+
+      <DialogoAlimentoProprio
+        inicial={copiando ? { dados: copiando, editando: false } : null}
+        aoSalvar={(dados) => {
+          try {
+            const salvo = meusAlimentos.salvar(produtoDosDados(dados))
+            setCopiando(null)
+            setMensagem(`“${salvo.nome}” está em Meus alimentos.`)
+            return null
+          } catch (erro) {
+            return erro instanceof Error ? erro.message : 'Não foi possível salvar. Tente de novo.'
+          }
+        }}
+        aoFechar={() => setCopiando(null)}
+      />
     </div>
   )
 }
 
+interface AcoesDaFicha {
+  /** Muda quando uma medida da conta muda: a ficha relê as medidas. */
+  readonly versaoDasMedidas: number
+  readonly aoCriarMedida: (alimento: Alimento) => void
+  readonly aoExcluirMedida: (alimento: Alimento, medida: MedidaCaseira) => void
+  /** "Copiar para Meus alimentos" (D-385); sem ele, o botão não aparece. */
+  readonly aoCopiar: ((alimento: Alimento) => void) | undefined
+  /** A fonte do alimento próprio; `null` para o da base. */
+  readonly fonteDe: (alimento: Alimento) => string | null
+}
+
+/** "Cereais e derivados · valores por 100 g"; o próprio diz que foi cadastrado e de onde vieram os valores (D-385). */
+function descricaoDaFicha(alimento: Alimento, fonte: string | null): string {
+  const unidade = unidadeDo(alimento)
+  if (alimento.id < PRIMEIRO_ID_PROPRIO) return `${alimento.categoria} · valores por 100\u00a0${unidade}`
+  return `Cadastrado por você · fonte: ${fonte ?? 'rótulo'} · valores por 100\u00a0${unidade}`
+}
+
 /** Ficha ao lado da lista; vazia, explica o que vai aparecer. */
-function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
+function FichaDoAlimento({ alimento, acoes }: { readonly alimento: Alimento | null; readonly acoes: AcoesDaFicha }) {
   if (!alimento) {
     return (
       <Card className="gap-3">
@@ -276,20 +389,26 @@ function FichaDoAlimento({ alimento }: { readonly alimento: Alimento | null }) {
     <Card className="gap-4">
       <CardHeader>
         <CardTitle>{alimento.descricao}</CardTitle>
-        <CardDescription>{`${alimento.categoria} · valores por 100\u00a0g`}</CardDescription>
+        <CardDescription>{descricaoDaFicha(alimento, acoes.fonteDe(alimento))}</CardDescription>
       </CardHeader>
-      <CorpoDaFicha alimento={alimento} />
+      <CorpoDaFicha alimento={alimento} acoes={acoes} />
     </Card>
   )
 }
 
 /** Composição completa de um alimento, com o que falta dito por nome. Serve à ficha lateral e à gaveta. */
-function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
+function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readonly acoes: AcoesDaFicha }) {
   const linhas = composicaoDe(alimento)
   const idComposicao = useId()
   const c = completudeDe(alimento)
   const explicacao = explicarCompletude(alimento)
-  const medidas = medidasDoAlimento(alimento.id)
+  // As medidas da conta vêm primeiro, marcadas "sua" (D-387); a versão faz reler quando uma muda.
+  const medidas = useMemo(() => {
+    void acoes.versaoDasMedidas
+    return medidasDoAlimento(alimento.id)
+  }, [alimento.id, acoes.versaoDasMedidas])
+  const daBase = alimento.id < PRIMEIRO_ID_PROPRIO
+  const unidade = unidadeDo(alimento)
 
   return (
     <>
@@ -302,18 +421,44 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
 
       {explicacao ? <p className="text-xs leading-relaxed text-muted-foreground">{explicacao}</p> : null}
 
-      {medidas.length > 0 ? (
-        <div className="border-t border-border pt-4">
-          <p className="rotulo mb-2">Medidas caseiras</p>
+      <div className="border-t border-border pt-4">
+        <p className="rotulo mb-2">Medidas caseiras</p>
+        {medidas.length > 0 ? (
           <ul className="flex flex-wrap gap-1.5">
-            {medidas.slice(0, 6).map((m) => (
-              <li key={m.nome} className="numeros rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-                {`${m.nome} · ${formatarNumero(m.gramas, 0)} g`}
+            {medidas.slice(0, 8).map((m) => (
+              <li key={`${m.propria === true ? 'p' : 'b'}-${m.nome}`} className="numeros inline-flex items-center gap-1 rounded-full border border-border py-1 pl-2.5 pr-1 text-xs text-muted-foreground">
+                <span className="pr-1.5">{`${m.nome} · ${formatarNumero(m.gramas, m.gramas < 10 && !Number.isInteger(m.gramas) ? 1 : 0)} ${unidade}${m.propria === true ? ' · sua' : ''}`}</span>
+                {m.propria === true ? (
+                  <button
+                    type="button"
+                    onClick={() => acoes.aoExcluirMedida(alimento, m)}
+                    aria-label={`Excluir a medida ${m.nome}`}
+                    className="inline-flex size-6 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:size-9"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
+        ) : (
+          <p className="text-xs text-muted-foreground">Sem medida caseira na base.</p>
+        )}
+        {daBase ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="lightprimary" size="sm" onClick={() => acoes.aoCriarMedida(alimento)}>
+              <Plus aria-hidden="true" />
+              Medida sua
+            </Button>
+            {acoes.aoCopiar ? (
+              <Button variant="outline" size="sm" onClick={() => acoes.aoCopiar?.(alimento)}>
+                <Copy aria-hidden="true" />
+                Copiar para Meus alimentos
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       <div className="border-t border-border pt-4">
         <p id={idComposicao} className="rotulo mb-2">
@@ -342,18 +487,24 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
             </li>
           ))}
         </ul>
-        {alimento.usda ? null : (
+        {alimento.usda || !daBase ? null : (
           <p className="pt-2 text-xs leading-relaxed text-muted-foreground">Sem dado de vitamina D, vitamina E, folato, vitamina B12, selênio e gordura trans.</p>
         )}
       </div>
 
       <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
         <p>
-          Fonte: {NOME_DA_BASE}. <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de medição, não ausência do
-          nutriente.
+          {daBase ? `Fonte: ${NOME_DA_BASE}. ` : 'Cadastrado por você em Meus alimentos. '}
+          <strong>Tr</strong> é traço: medido e desprezível. “Não analisado” é falta de medição, não ausência do nutriente.
         </p>
         {alimento.usda ? (
           <p>{`Os valores marcados USDA são do alimento equivalente nº ${alimento.usda.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usda)}).`}</p>
+        ) : null}
+        {/* D-380 (spec alimentos-e-gramaturas): a TACO não publicou a energia e os macros; vieram do USDA. */}
+        {alimento.usdaMacros && alimento.usdaMacros.fdcId !== alimento.usda?.fdcId ? (
+          <p>{`A energia e os macros marcados USDA são do alimento equivalente nº ${alimento.usdaMacros.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usdaMacros)}), porque a TACO não os publicou.`}</p>
+        ) : alimento.usdaMacros ? (
+          <p>A TACO não publicou a energia e os macros deste alimento: vieram do mesmo equivalente do USDA.</p>
         ) : null}
       </div>
     </>

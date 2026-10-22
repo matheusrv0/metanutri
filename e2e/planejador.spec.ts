@@ -69,7 +69,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await buscaSubstituto.fill('batata inglesa cozida')
   await buscaSubstituto.press('Enter')
   await expect(janelaSubstituto).toContainText('Diferença em relação ao alimento original')
-  await janelaSubstituto.getByRole('button', { name: 'Pôr em Substituto 1' }).click()
+  await janelaSubstituto.getByRole('button', { name: 'Usar como substituto 1' }).click()
   await expect(page.getByRole('tab', { name: 'Substituto 1 (1)' })).toBeVisible()
 
   // CA-38: cobrir o ferro pela etapa 3

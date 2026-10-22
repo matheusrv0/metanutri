@@ -1,5 +1,5 @@
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, porcaoMaximaDoGrupo, sugerirParaCobrir } from './cobrir.ts'
+import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, porcaoEmMedida, porcaoMaximaDoGrupo, sugerirParaCobrir } from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
@@ -43,7 +43,7 @@ describe('sugerirParaCobrir', () => {
   const adequacao = calcularAdequacao(plano, MULHER_28, { tipo: 'individual' })
 
   it('CA-35: informa quanto falta para a meta e a porção de cada sugestão', () => {
-    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE })
+    const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, porcaoEmMedidaCaseira: false })
     expect(r.falta).toBeCloseTo(6.2, 6)
     expect(r.unidade).toBe('mg')
     const leve = r.sugestoes.find((s) => s.alimentoId === 1)
@@ -299,6 +299,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       sugerirParaCobrir('ferro_mg', plano, adequacao, {
         gastoEnergetico: 5000,
         alimentos: [a],
+        porcaoEmMedidaCaseira: false,
         ...(porcaoMaximaG === undefined ? {} : { porcaoMaximaG }),
       }).sugestoes[0]?.gramas
 
@@ -423,7 +424,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       carne(62, 'Carne, bovina, patinho, sem gordura, grelhado', 200),
       carne(63, 'Frango, peito, sem pele, grelhado', 210),
     ]
-    const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base }).sugestoes.map((s) => s.alimentoId)
+    const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base, porcaoEmMedidaCaseira: false }).sugestoes.map((s) => s.alimentoId)
     expect(ordem).toEqual([62, 63, 60, 61])
   })
 
@@ -439,7 +440,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, restricoes: ['rico', 'pobre'] })
     expect(r.sugestoes).toEqual([])
     expect(r.motivoSemSugestao).toBe(
-      'Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.',
+      'Nenhum alimento de rotina, dentro das restrições do paciente, cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.',
     )
   })
 
@@ -460,7 +461,7 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const semEfeito = (restricoes: readonly string[]) =>
       sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, ...semFonte], restricoes }).motivoSemSugestao
-    const MENSAGEM_PADRAO = 'Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.'
+    const MENSAGEM_PADRAO = 'Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.'
     // Restrição que não casa com nada, e restrição que só tira quem não cobriria 10% ("Quase nada").
     expect(semEfeito(['abacaxi'])).toBe(MENSAGEM_PADRAO)
     expect(semEfeito(['quase'])).toBe(MENSAGEM_PADRAO)
@@ -470,13 +471,13 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
     const semFonte = BASE.filter((a) => a.id === 4 || a.id === 7)
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: [CERVEJA, REFRIGERANTE, OLEO, CHA, ...semFonte] })
     expect(r.sugestoes).toEqual([])
-    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Pela busca do plano, qualquer alimento entra.')
+    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 200 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.')
   })
 
   it('CA-656: a mensagem leva a porção máxima escolhida', () => {
     const r = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 2000, alimentos: BASE, porcaoMaximaG: 5 })
     expect(r.sugestoes).toEqual([])
-    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Pela busca do plano, qualquer alimento entra.')
+    expect(r.motivoSemSugestao).toBe('Nenhum alimento de rotina cobre ao menos 10% da falta em até 5 g. Você ainda pode adicionar qualquer alimento pela busca da refeição.')
   })
 
   describe('CA-657, CA-667, CA-913 (spec conduta-da-nutricionista) e CA-957: plano de exemplo e plano vazio, todas as linhas da adequação', () => {
@@ -642,5 +643,44 @@ describe('Porção máxima de ovo no Cobrir (spec vitaminas-usda, D-306 e CA-957
     expect(gema(200)).toMatchObject({ gramas: 40, parcial: true })
     // 20 g de gema cobrem 8% da falta (menos de 10%): sai da lista, em vez de passar dos 20 g escolhidos.
     expect(gema(20)).toBeUndefined()
+  })
+})
+
+describe('porção em meia medida caseira (spec alimentos-e-gramaturas, G8 e D-379)', () => {
+  const vazio = totais({ energia_kcal: 1600 })
+  const ad = calcularAdequacao(vazio, MULHER_28, { tipo: 'individual' })
+
+  it('CA-1125: a porção é uma meia medida, e a cobertura e as kcal saem desse peso', () => {
+    for (const chave of ['calcio_mg', 'ferro_mg', 'vitamina_c_mg', 'fibra_g'] as const) {
+      const r = sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2000, alimentos: ALIMENTOS })
+      const comMedida = r.sugestoes.filter((s) => s.medida !== null)
+      expect(comMedida.length, chave).toBeGreaterThan(0)
+      for (const s of comMedida) {
+        const medida = s.medida as NonNullable<typeof s.medida>
+        expect(Number.isInteger(medida.quantidade * 2), s.descricao).toBe(true)
+        expect(s.gramas).toBeCloseTo(medida.quantidade * medida.gramasPorMedida, 1)
+        const a = buscarAlimento(s.alimentoId)
+        const porCem = a?.nutrientes[chave] ?? 0
+        expect(s.coberturaPct).toBeCloseTo(Math.min(100, ((porCem * s.gramas) / 100 / r.falta) * 100), 6)
+        expect(s.kcalAdicionadas).toBeCloseTo(((a?.nutrientes.energia_kcal ?? 0) * s.gramas) / 100, 6)
+      }
+    }
+  })
+
+  it('CA-1125: a meia medida cobre a falta quando cabe na porção do grupo; senão, a maior que cabe', () => {
+    const cobre = porcaoEmMedida(458, 280, 400)
+    expect(cobre?.parcial).toBe(false)
+    expect(cobre?.gramas).toBeGreaterThanOrEqual(280)
+    expect(cobre?.gramas).toBeLessThanOrEqual(400)
+    expect(cobre ? cobre.medida.quantidade * cobre.medida.gramasPorMedida : 0).toBeCloseTo(cobre?.gramas ?? -1, 1)
+    const limitada = porcaoEmMedida(458, 600, 200)
+    expect(limitada?.parcial).toBe(true)
+    expect(limitada?.gramas).toBeLessThanOrEqual(200)
+  })
+
+  it('CB-378: sem meia medida que caiba, volta ao passo de 5 g', () => {
+    // Macarrão cru não tem medida; ovo inteiro (45 g) não cabe em 20 g.
+    expect(porcaoEmMedida(40, 80, 200)).toBeNull()
+    expect(porcaoEmMedida(488, 80, 20)).toBeNull()
   })
 })

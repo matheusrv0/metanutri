@@ -304,7 +304,7 @@ export function TelaAdequacao({
                 ) : null}
               </p>
               <p>{`Referências de ingestão: ${resultado.fonte}`}</p>
-              {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste caso: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
+              {prefs.ocultos.length > 0 ? <p className="mt-1">{`Sugestões ocultas neste plano: ${prefs.ocultos.map(nomeAlimento).join(', ')}.`}</p> : null}
             </TableFootnotes>
           </>
         )}
@@ -321,8 +321,8 @@ export function TelaAdequacao({
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
         focoAoFechar={focoAoFechar}
-        aoAdicionar={(refeicaoId, opcao, alimentoId, gramas) => {
-          aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas }, gerarId))
+        aoAdicionar={(refeicaoId, opcao, alimentoId, gramas, medida) => {
+          aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas, medida: medida ?? undefined }, gerarId))
           setCobrindo(null)
         }}
       />

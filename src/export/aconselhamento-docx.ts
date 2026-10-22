@@ -6,10 +6,10 @@ import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
-import { quantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
+import { quantidadeNaFolha, textoDoPeso, type QuantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type OpcaoId, type Plano } from '../domain/tipos.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type MedidaDoItem, type ModoQuantidade, type OpcaoId, type Plano } from '../domain/tipos.ts'
 import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto, titulo } from './docx-comum.ts'
 
 export interface DadosAconselhamento {
@@ -44,11 +44,23 @@ const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
  * "Arroz, tipo 1, cozido (6 colheres de sopa)"; sem medida caseira, em gramas (CA-45). A quantidade segue a escolha do
  * plano entre medida caseira e gramas, como a folha e o link (spec conduta-da-nutricionista, D-297).
  */
-function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade): string {
+function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade, medida?: MedidaDoItem | null): string {
   // D-248 (spec revisao-geral-trabalho): o produto apagado sai com o nome do que aconteceu e os gramas, sem quebrar o Word.
   const alimento = buscar(alimentoId)
-  const medida = alimento ? quantidadeNaFolha(alimentoId, gramas, modo).medida : null
-  return `${alimento?.descricao ?? nomeSemAlimento(alimentoId)} (${medida ?? `${formatarNumeroDocx(gramas, 0)} g`})`
+  if (!alimento) return `${nomeSemAlimento(alimentoId)} (${formatarNumeroDocx(gramas, 0)} g)`
+  // G1 (spec alimentos-e-gramaturas): a medida escolhida no item vem antes da automática.
+  return `${alimento.descricao} (${quantidadeNoWord(quantidadeNaFolha(alimentoId, gramas, modo, medida))})`
+}
+
+/**
+ * A quantidade dentro dos parênteses do Word, com o ponto no lugar dos parênteses de dentro (D-279): "1 concha e meia ·
+ * 210 g", "1 concha e meia", "210 g", "190 g · cerca de 1 concha e meia".
+ */
+export function quantidadeNoWord(q: QuantidadeNaFolha): string {
+  const peso = textoDoPeso(q.gramas, q.unidade)
+  if (q.medida === null) return peso
+  if (q.aproximada) return `${peso} · cerca de ${q.medida}`
+  return q.comPeso ? `${q.medida} · ${peso}` : q.medida
 }
 
 /**
@@ -56,10 +68,10 @@ function descreverAlimento(alimentoId: number, gramas: number, buscar: BuscarAli
  * banana (1 unidade)"); sem meia porção que feche, ou com o plano em "Gramas", o peso (D-297 da conduta-da-nutricionista).
  */
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
-  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo)
+  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)
   const receita = receitaDoItem(item)
   const porcao = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
-  return `${nomeDaReceita(receita)} (${porcao ?? `${formatarNumeroDocx(item.gramas, 0)} g`})`
+  return `${nomeDaReceita(receita)} (${quantidadeNoWord({ medida: porcao, gramas: item.gramas, unidade: 'g', aproximada: false, comPeso: modo === 'medida-e-gramas' })})`
 }
 
 /** CA-887: cada receita do plano com o rendimento, os ingredientes da receita inteira e o modo de preparo. */

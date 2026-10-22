@@ -109,7 +109,8 @@ export function converter() {
     if (!registros) throw new Error(`Regra da linha ${regra.linha}: código POF ${regra.codigo_pof} não existe`)
 
     const excluidas = regra.medidas_excluidas ? regra.medidas_excluidas.split('|') : []
-    const porCategoria = MEDIDAS_DESCARTADAS_POR_CATEGORIA[a.categoria]
+    // O suco de fruta é medido em copo (spec alimentos-e-gramaturas, A9): a regra do copo é só para a fruta inteira.
+    const porCategoria = /(^|, )suco/i.test(a.descricao) ? undefined : MEDIDAS_DESCARTADAS_POR_CATEGORIA[a.categoria]
     const aceitos = PREPAROS[a.preparo ?? ''] ?? PREPAROS['']
     const preparo = aceitos.find((p) => registros.some((r) => r.descricao_preparacao === p))
     if (!preparo) {

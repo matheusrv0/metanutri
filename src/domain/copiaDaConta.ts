@@ -94,6 +94,9 @@ const LISTAS: Readonly<Record<string, Lista>> = {
   'metanutri:modelos-suplemento': { nome: 'modelos-suplemento', tempo: (i) => campo(i, 'atualizadoEm') ?? campo(i, 'criadoEm') },
   // Spec receitas-com-calculo, D-272: receita por receita, com lápide; a edição mais nova vence (CB-275).
   'metanutri:receitas': { nome: 'receitas', tempo: (i) => campo(i, 'atualizadoEm') ?? campo(i, 'criadoEm') },
+  // Spec alimentos-e-gramaturas, D-387: medida por medida, com lápide. O id é texto ("561:concha") e só vale para
+  // alimento da base, então não precisa da renumeração dos produtos (DP-4).
+  'metanutri:medidas-proprias': { nome: 'medidas-proprias', tempo: (i) => campo(i, 'atualizadoEm') ?? campo(i, 'criadoEm') },
 }
 
 type Item = Record<string, unknown>

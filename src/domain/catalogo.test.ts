@@ -61,6 +61,15 @@ describe('Catálogo de alimentos', () => {
     expect(completos.length).toBe(resumoDoCatalogo().completos)
   })
 
+  it('CA-1153 (spec alimentos-e-gramaturas): com termo, a ordem é a da relevância da entrada rápida', () => {
+    const lista = filtrarCatalogo({ termo: 'farinha de trigo' }).map((a) => a.descricao)
+    expect(lista[0]).toBe('Farinha, de trigo')
+    expect(lista.indexOf('Farinha, de trigo')).toBeLessThan(lista.findIndex((d) => d.startsWith('Cação')))
+    expect(filtrarCatalogo({ termo: 'arroz' })[0]?.descricao).toBe('Arroz, tipo 1, cozido')
+    // A ordem "Nome" continua alfabética.
+    expect(filtrarCatalogo({ termo: 'arroz', ordem: 'nome' })[0]?.descricao).toBe('Arroz carreteiro')
+  })
+
   it('termo que não existe devolve lista vazia, sem estourar', () => {
     expect(filtrarCatalogo({ termo: 'xyzabc' })).toEqual([])
   })
@@ -99,8 +108,16 @@ describe('Catálogo de alimentos', () => {
   })
 
   it('alimento sem energia aparece com valor nulo, nunca zero', () => {
+    const coco = composicaoDe(porDescricao('Coco,  verde, cru'))
+    expect(coco.find((l) => l.chave === 'energia_kcal')?.valor).toBeNull()
+  })
+
+  it('CA-1128 (spec alimentos-e-gramaturas, D-380): energia e macros do leite vêm do USDA, marcados', () => {
     const leite = composicaoDe(porDescricao('Leite, de vaca, integral'))
-    expect(leite.find((l) => l.chave === 'energia_kcal')?.valor).toBeNull()
+    expect(leite.find((l) => l.chave === 'energia_kcal')).toMatchObject({ valor: 61, usda: true })
+    expect(leite.find((l) => l.chave === 'proteina_g')).toMatchObject({ valor: 3.15, usda: true })
+    // O cálcio é da TACO e continua sem a marca.
+    expect(leite.find((l) => l.chave === 'calcio_mg')).toMatchObject({ usda: false })
   })
 
   it('o resumo bate com a tabela em uso', () => {

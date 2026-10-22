@@ -1,20 +1,12 @@
 import { UserRound } from 'lucide-react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { modoDeQuantidade } from '@/domain/caso.ts'
-import type { Caso, ModoQuantidade } from '@/domain/tipos.ts'
+import type { Caso } from '@/domain/tipos.ts'
 import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
-import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { CampoAgua } from './CampoAgua.tsx'
-
-const ROTULO_QUANTIDADES = 'Quantidades para o paciente'
-const OPCOES_QUANTIDADE: readonly { readonly valor: ModoQuantidade; readonly rotulo: string }[] = [
-  { valor: 'medida-caseira', rotulo: 'Medida caseira' },
-  { valor: 'gramas', rotulo: 'Gramas' },
-]
 
 interface CartaoDocumentoProps {
   /** O caso como vale (a meta de água depende de idade, sexo e gestação, que podem vir da ficha). */
@@ -40,17 +32,7 @@ export function CartaoDocumento({ caso, aoAlterar, assinatura, camposDeEstagio, 
         <CardTitle>Orientações e documento</CardTitle>
       </CardHeader>
 
-      {/* Spec conduta-da-nutricionista, D-297: vale para a folha impressa, o link do paciente e o Word. */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-foreground">{ROTULO_QUANTIDADES}</span>
-        <SeletorSegmentado<ModoQuantidade>
-          rotulo={ROTULO_QUANTIDADES}
-          opcoes={OPCOES_QUANTIDADE}
-          valor={modoDeQuantidade(caso)}
-          aoEscolher={(quantidades) => aoAlterar({ quantidades })}
-        />
-      </div>
-
+      {/* Spec alimentos-e-gramaturas, D-376: as quantidades para o paciente ficam no topo da etapa Refeições e na janela de imprimir. */}
       <CampoAgua caso={caso} aoAlterar={aoAlterar} lembrete={lembreteAgua} />
 
       <div className="flex flex-col gap-1.5">

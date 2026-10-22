@@ -1,15 +1,16 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
+import { medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Totais } from './totais.ts'
-import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
+import type { Alimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
 
 /** Porção máxima padrão de uma sugestão, editável pelo usuário (D-5). */
 export const PORCAO_MAXIMA_PADRAO_G = 200
 
-/** Porções são arredondadas para cima em múltiplos deste passo. */
+/** Sem medida caseira que caiba, as porções são arredondadas para cima em múltiplos deste passo. */
 export const PASSO_PORCAO_G = 5
 
 /** Abaixo desta cobertura da falta, a sugestão não ajuda de forma perceptível e é descartada. */
@@ -25,6 +26,8 @@ export interface Sugestao {
   readonly alimentoId: number
   readonly descricao: string
   readonly gramas: number
+  /** A porção em meia medida caseira, que o item guarda ao entrar no plano (spec alimentos-e-gramaturas, G8). */
+  readonly medida: MedidaDoItem | null
   /** Parte da falta coberta pela porção, de 0 a 100. */
   readonly coberturaPct: number
   /** Verdadeiro quando a porção máxima não basta para cobrir toda a falta. */
@@ -100,6 +103,30 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^Farinha, de mandioca/i.test(nomeLimpo(a)) },
 ]
 
+/**
+ * G8 e D-379 (spec alimentos-e-gramaturas): a meia medida caseira mais perto que cobre a falta (gramas = quantidade ×
+ * peso da medida), sem passar da porção máxima. A medida é a que a paciente leria para essa quantidade. `null` quando
+ * nenhuma medida cabe (nem meia): o Cobrir volta ao passo de 5 g (CB-378).
+ */
+export function porcaoEmMedida(
+  alimentoId: number,
+  necessarioG: number,
+  limiteG: number,
+): { readonly gramas: number; readonly medida: MedidaDoItem; readonly parcial: boolean } | null {
+  const alvo = Math.min(necessarioG, limiteG)
+  const referencia = medidaParaMostrar(alimentoId, alvo)
+  const peso = referencia ? medidasDoAlimento(alimentoId).find((m) => m.nome === referencia.medida)?.gramas : undefined
+  if (!referencia || !peso) return null
+  let quantidade = Math.ceil((necessarioG / peso) * 2) / 2
+  let parcial = false
+  if (quantidade * peso > limiteG) {
+    quantidade = Math.floor((limiteG / peso) * 2) / 2
+    parcial = true
+  }
+  if (quantidade < 0.5) return null
+  return { gramas: Math.round(quantidade * peso * 10) / 10, medida: { nome: referencia.medida, quantidade, gramasPorMedida: peso }, parcial }
+}
+
 /** A porção máxima do grupo do alimento; `null` quando ele não está em nenhum grupo da tabela. */
 export function porcaoMaximaDoGrupo(alimento: Alimento): number | null {
   return PORCOES_POR_GRUPO.find((g) => g.casa(alimento))?.gramas ?? null
@@ -116,6 +143,11 @@ export interface OpcoesCobrir {
   readonly ocultos?: ReadonlySet<number>
   /** O que o paciente não come; filtra antes da escolha das 5, para não deixar a gaveta vazia (CA-675). */
   readonly restricoes?: RestricoesDoPaciente | readonly string[]
+  /**
+   * A porção em meia medida caseira (G8, padrão ligado). Desligada, vale só o passo de 5 g: serve aos testes que medem
+   * a regra dos gramas com alimentos inventados, cujos ids caem em medidas de alimentos de verdade.
+   */
+  readonly porcaoEmMedidaCaseira?: boolean
 }
 
 /**
@@ -162,7 +194,7 @@ export function sugerirParaCobrir(
     motivoSemSugestao: motivo,
   })
 
-  if (!linha) return vazio('', 0, 'Sem referências para este caso: complete sexo, idade e condição.')
+  if (!linha) return vazio('', 0, 'Sem referências para este plano: complete sexo, idade e condição.')
 
   const meta = (linha.referencia.valor * linha.metaPct) / 100
   const falta = Math.max(0, meta - linha.total)
@@ -188,8 +220,12 @@ export function sugerirParaCobrir(
 
     // Vale a menor entre a porção do grupo calórico e a que a pessoa escolheu (CB-197).
     const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaDoGrupo(alimento) ?? porcaoMaxima)
-    const necessario = Math.ceil(((falta / porCem) * 100) / PASSO_PORCAO_G) * PASSO_PORCAO_G
-    const gramas = Math.min(necessario, porcaoDoAlimento)
+    const necessarioG = (falta / porCem) * 100
+    // G8: em meia medida caseira; sem medida que caiba, o passo de 5 g.
+    const emMedida = opcoes.porcaoEmMedidaCaseira === false ? null : porcaoEmMedida(alimento.id, necessarioG, porcaoDoAlimento)
+    const necessario = Math.ceil(necessarioG / PASSO_PORCAO_G) * PASSO_PORCAO_G
+    const gramas = emMedida ? emMedida.gramas : Math.min(necessario, porcaoDoAlimento)
+    const parcial = emMedida ? emMedida.parcial : necessario > porcaoDoAlimento
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
     // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
@@ -219,8 +255,9 @@ export function sugerirParaCobrir(
       alimentoId: alimento.id,
       descricao: alimento.descricao,
       gramas,
+      medida: emMedida?.medida ?? null,
       coberturaPct,
-      parcial: necessario > porcaoDoAlimento,
+      parcial,
       kcalAdicionadas,
       avisos,
     })
@@ -252,7 +289,7 @@ export function sugerirParaCobrir(
     // "De rotina": o que passa na regra prescritível. O resto da base continua a uma busca de distância (D-195).
     motivoSemSugestao:
       sugestoes.length === 0
-        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Pela busca do plano, qualquer alimento entra.`
+        ? `Nenhum alimento de rotina${restricaoTirouAlguem ? ', dentro das restrições do paciente,' : ''} cobre ao menos ${COBERTURA_MINIMA_PCT}% da falta em até ${porcaoMaxima} g. Você ainda pode adicionar qualquer alimento pela busca da refeição.`
         : null,
   }
 }

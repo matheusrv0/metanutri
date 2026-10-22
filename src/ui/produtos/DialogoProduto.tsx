@@ -48,17 +48,19 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
     try {
       const achado = await buscarRotuloPorCodigo(codigo)
       if (!achado) {
-        setAvisoCodigo('Não achei esse código na base pública. Copie os números da embalagem e o produto fica salvo aqui.')
+        setAvisoCodigo('Este código não está na Open Food Facts. Digite os valores do rótulo; o produto fica salvo na sua conta.')
         return
       }
       if (achado.nome) setNome(achado.nome)
       if (achado.marca) setMarca(achado.marca)
-      if (achado.porcaoG) setPorcaoG(achado.porcaoG)
-      if (achado.medidaCaseira) setMedidaCaseira(achado.medidaCaseira)
-      setValores((atual) => ({ ...atual, ...achado.porPorcao }))
-      setAvisoCodigo(`Dados trazidos da ${achado.fonte}. Confira com a embalagem antes de salvar: base colaborativa erra às vezes.`)
+      // A13 (spec alimentos-e-gramaturas, D-382): os valores ficam por 100 g ou 100 ml, como a base publica; nunca são
+      // reescalados para uma porção digitada depois. A porção do rótulo vai para a medida.
+      setPorcaoG(100)
+      setMedidaCaseira(achado.porcao ? achado.porcao.texto || `${formatarNumero(achado.porcao.gramas, 0)} ${achado.unidade}` : '')
+      setValores((atual) => ({ ...atual, ...achado.por100 }))
+      setAvisoCodigo(`Dados da ${achado.fonte}, por 100 ${achado.unidade}. Confira com a embalagem antes de salvar: a base é colaborativa e pode ter erros.`)
     } catch {
-      setAvisoCodigo('Sem internet para consultar o código. Digite os valores do rótulo.')
+      setAvisoCodigo('Não foi possível consultar o código sem internet. Digite os valores do rótulo.')
     } finally {
       setProcurando(false)
     }
@@ -108,7 +110,7 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
       <LeitorCodigo aoLer={(codigo) => void lerCodigo(codigo)} ocupado={procurando} />
 
       {avisoCodigo ? (
-        <Alert variant={avisoCodigo.startsWith('Dados trazidos') ? 'info' : 'warning'}>
+        <Alert variant={avisoCodigo.startsWith('Dados da') ? 'info' : 'warning'}>
           <span aria-hidden="true">i</span>
           <p>{avisoCodigo}</p>
         </Alert>
@@ -134,7 +136,7 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
       {previa !== null ? (
         <Alert variant="info">
           <span aria-hidden="true">=</span>
-          <p>{`Equivale a ${formatarNumero(previa, 0)} kcal por 100 g, que é como o plano vai calcular.`}</p>
+          <p>{`Equivale a ${formatarNumero(previa, 0)} kcal por 100 g, valor usado nos cálculos do plano.`}</p>
         </Alert>
       ) : null}
 

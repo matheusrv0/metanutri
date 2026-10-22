@@ -6,18 +6,21 @@ import { interpretarEntrada, normalizar, pluralDaMedida } from './busca.ts'
 import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
-import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao } from './receitaNoPlano.ts'
-import { totaisDeItens, type Totais } from './totais.ts'
-import type { Alimento, BuscarAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos.ts'
+import { dadosEmBranco } from './alimentoProprio.ts'
+import type { DadosAlimentoProprio } from './produtos.ts'
+import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao, pesoProntoDe } from './receitaNoPlano.ts'
+import { CHAVES_NUTRIENTES, totaisDeItens, type Totais } from './totais.ts'
+import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, IngredienteReceita, ReceitaDoPlano } from './tipos.ts'
 
 export const CHAVE_RECEITAS = 'metanutri:receitas'
 
 /**
- * D-274a (publicação em duas vezes): pôr receita na refeição fica desligado na publicação 1, para nenhum plano ganhar
- * receita antes de todo aparelho ter a versão que sabe ler (R-270). A biblioteca, a linha do plano, a folha, o link e o
- * Word já leem receita. Na publicação 2, o coordenador troca para `true`.
+ * D-274a (publicação em duas vezes): pôr receita na refeição ficou desligado na publicação 1, para nenhum plano ganhar
+ * receita antes de todo aparelho ter a versão que sabe ler (R-270). Publicação 2 (decisão 7 da rodada de 21/10/2026, spec
+ * alimentos-e-gramaturas, D-388): ligada, porque o aplicativo (PWA, atualização automática) já trocou de versão há dois
+ * dias.
  */
-export const RECEITAS_NA_REFEICAO: boolean = false
+export const RECEITAS_NA_REFEICAO: boolean = true
 
 export interface Receita {
   readonly id: string
@@ -54,10 +57,10 @@ export const LIMITE_PREPARO_RECEITA = 4000
 export function validarReceita(r: RascunhoReceita): readonly ProblemaReceita[] {
   const problemas: ProblemaReceita[] = []
   if (r.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'A receita precisa de um nome.' })
-  if (r.nome.length > LIMITE_NOME_RECEITA) problemas.push({ campo: 'nome', mensagem: `O nome passa de ${LIMITE_NOME_RECEITA} letras.` })
-  if (r.preparo.length > LIMITE_PREPARO_RECEITA) problemas.push({ campo: 'preparo', mensagem: 'O modo de preparo passa de 4.000 letras.' })
+  if (r.nome.length > LIMITE_NOME_RECEITA) problemas.push({ campo: 'nome', mensagem: `O nome tem mais de ${LIMITE_NOME_RECEITA} caracteres.` })
+  if (r.preparo.length > LIMITE_PREPARO_RECEITA) problemas.push({ campo: 'preparo', mensagem: 'O modo de preparo tem mais de 4.000 caracteres.' })
   if (!r.ingredientes.some((i) => i.gramas > 0)) problemas.push({ campo: 'ingredientes', mensagem: 'Adicione pelo menos um ingrediente.' })
-  if (r.porcoes === null || !Number.isFinite(r.porcoes) || r.porcoes <= 0) problemas.push({ campo: 'porcoes', mensagem: 'Diga quantas porções a receita rende.' })
+  if (r.porcoes === null || !Number.isFinite(r.porcoes) || r.porcoes <= 0) problemas.push({ campo: 'porcoes', mensagem: 'Informe quantas porções a receita rende.' })
   if (r.pesoProntoG !== null && !(r.pesoProntoG > 0)) problemas.push({ campo: 'pesoProntoG', mensagem: 'O peso pronto precisa ser maior que zero.' })
   return problemas
 }
@@ -88,7 +91,7 @@ export function fontesDaSoma(r: Pick<ReceitaDoPlano, 'ingredientes'>): readonly 
   const usados = r.ingredientes.filter((i) => i.gramas > 0)
   return [
     usados.some((i) => i.alimentoId < PRIMEIRO_ID_PRODUTO) ? 'TACO 2011' : null,
-    usados.some((i) => i.alimentoId >= PRIMEIRO_ID_PRODUTO) ? 'rótulo de Meus produtos' : null,
+    usados.some((i) => i.alimentoId >= PRIMEIRO_ID_PRODUTO) ? 'Meus alimentos' : null,
   ].filter((f): f is string => f !== null)
 }
 
@@ -311,6 +314,43 @@ export function criarRepositorioReceitas(armazenamento: Armazenamento | null, op
 
     excluir(id) {
       gravar(lerBruto().filter((v) => idDe(v) !== id))
+    },
+  }
+}
+
+// ---------- Receita como alimento (spec alimentos-e-gramaturas, D-385) ----------
+
+const ROTULO_DO_MACRO: Readonly<Record<string, string>> = { energia_kcal: 'energia', proteina_g: 'proteína', carboidrato_g: 'carboidrato', lipideos_g: 'gordura' }
+
+/**
+ * "Salvar como alimento" (CA-1149): a receita pronta vira uma preparação de "Meus alimentos", por 100 g, com a porção
+ * como medida. O nutriente que algum ingrediente não tem fica nulo (nunca zero); sem um dos 4 macros em algum
+ * ingrediente, não vira (CB-377): o alimento próprio precisa deles.
+ */
+export function receitaComoAlimento(r: Receita, buscar: BuscarAlimento): { readonly dados: DadosAlimentoProprio } | { readonly motivo: string } {
+  const copia = copiaParaOPlano(r)
+  const peso = pesoProntoDe(copia)
+  if (!(peso > 0)) return { motivo: 'A receita não tem peso: adicione os ingredientes.' }
+  const totais = totaisDeItens([{ id: 'como-alimento', alimentoId: ID_DE_RECEITA, gramas: peso, receita: copia }], buscar)
+  const semMacro = Object.keys(ROTULO_DO_MACRO).find((chave) => totais.nutrientes[chave as ChaveNutrienteAlimento].semDado > 0)
+  if (semMacro) return { motivo: `Algum ingrediente não tem ${ROTULO_DO_MACRO[semMacro] ?? semMacro} na tabela: sem os 4 macros, a receita não vira alimento.` }
+  const valores = Object.fromEntries(
+    CHAVES_NUTRIENTES.map((chave) => {
+      const t = totais.nutrientes[chave]
+      return [chave, t.semDado > 0 ? null : Math.round(((t.total * 100) / peso) * 1000) / 1000]
+    }),
+  ) as Partial<Record<ChaveNutrienteAlimento, number | null>>
+  return {
+    dados: {
+      ...dadosEmBranco('preparacao'),
+      nome: r.nome.trim(),
+      grupo: 'Alimentos preparados',
+      preparo: 'pronto para consumo',
+      base: 'por100',
+      porcaoG: 100,
+      valores,
+      medidas: [{ nome: r.nomeDaPorcao.trim() || 'porção', gramas: Math.round(pesoDaPorcao(copia) * 10) / 10 }],
+      fonte: { tipo: 'outra', texto: `Receita “${r.nome.trim()}”, pelos ingredientes` },
     },
   }
 }

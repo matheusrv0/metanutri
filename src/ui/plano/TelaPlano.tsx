@@ -6,6 +6,7 @@ import {
   adicionarReceita,
   adicionarRefeicao,
   atualizarGramas,
+  escolherMedida,
   mudarHorario,
   removerItem,
   removerRefeicao,
@@ -13,11 +14,19 @@ import {
   type GerarId,
 } from '@/domain/plano.ts'
 import { tipoDaRefeicao } from '@/domain/sugestoes.ts'
-import type { OpcaoId, Plano } from '@/domain/tipos.ts'
+import type { MedidaCaseira } from '@/domain/busca.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
+import { PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import type { ModoQuantidade, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { DialogoNovaMedida } from '../alimentos/DialogoNovaMedida.tsx'
+import { useMedidasProprias } from '../estado/usarMedidasProprias.ts'
+import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useSugestoes } from '../estado/usarSugestoes.ts'
 import { DialogoModelos } from '../modelos/DialogoModelos.tsx'
 import { CartaoRefeicao } from './CartaoRefeicao.tsx'
+import { ModoDasQuantidades } from './ModoDasQuantidades.tsx'
 
 interface TelaPlanoProps {
   readonly plano: Plano
@@ -27,17 +36,56 @@ interface TelaPlanoProps {
   readonly extraDaOpcao?: (refeicaoId: string, opcao: OpcaoId) => ReactNode
   /** A busca da refeição põe receita (spec receitas-com-calculo, D-274a). Padrão: a constante da publicação. */
   readonly receitasNaRefeicao?: boolean
+  /** Como o paciente lê as quantidades e a troca do modo (spec alimentos-e-gramaturas, D-376). Sem eles, não aparece. */
+  readonly modo?: ModoQuantidade | undefined
+  readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
+  /** "+ Nova medida…" na linha do plano (D-387). */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
 }
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
 /** Etapa 2: refeições do dia com entrada rápida de alimentos (CA-12 a CA-21). */
-export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOpcao, receitasNaRefeicao = RECEITAS_NA_REFEICAO }: TelaPlanoProps) {
+export function TelaPlano({
+  plano,
+  aoAlterarPlano,
+  gerarId = idPadrao,
+  extraDaOpcao,
+  receitasNaRefeicao = RECEITAS_NA_REFEICAO,
+  modo,
+  aoMudarModo,
+  aoCriarMedida,
+}: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
+  // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha. Alimento da base: medida própria da conta;
+  // alimento próprio: a medida entra no cadastro dele.
+  const medidasProprias = useMedidasProprias()
+  const meusAlimentos = useMeusAlimentos()
+  const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void } | null>(null)
+  const criarMedida = aoCriarMedida ?? ((alimentoId: number, aoCriar: (m: MedidaCaseira) => void) => setNovaMedida({ alimentoId, aoCriar }))
+  const alimentoDaMedida = novaMedida ? (buscarAlimento(novaMedida.alimentoId) ?? null) : null
+  const salvarMedida = (m: MedidaCaseira): string | null => {
+    if (!novaMedida) return null
+    try {
+      if (novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO) {
+        const proprio = meusAlimentos.lista.find((p) => p.id === novaMedida.alimentoId)
+        if (!proprio) return 'Este alimento foi excluído. Escolha outro.'
+        meusAlimentos.salvar({ ...proprio, medidas: [...(proprio.medidas ?? []).filter((x) => x.nome !== m.nome), { nome: m.nome, gramas: m.gramas }] })
+      } else {
+        medidasProprias.salvar({ alimentoId: novaMedida.alimentoId, nome: m.nome, gramas: m.gramas })
+      }
+      novaMedida.aoCriar({ ...m, propria: true })
+      return null
+    } catch (erro) {
+      return erro instanceof Error ? erro.message : 'Não foi possível salvar a medida. Tente de novo.'
+    }
+  }
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      {/* D-376: a escolha de como o paciente lê fica no topo da etapa, onde as quantidades são montadas. */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        {modo && aoMudarModo ? <ModoDasQuantidades modo={modo} aoMudar={aoMudarModo} /> : <span />}
         <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
           <LayoutTemplate aria-hidden="true" />
           Modelos de plano
@@ -56,7 +104,7 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
             aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
             aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
             aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
-            aoAdicionarItem={(opcao, alimentoId, gramas) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas }, gerarId))}
+            aoAdicionarItem={(opcao, alimentoId, gramas, medida) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas, medida }, gerarId))}
             // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita. Desligado na publicação 1 (D-274a).
             aoAdicionarReceita={
               receitasNaRefeicao
@@ -65,6 +113,9 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
             }
             aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
             aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
+            aoMudarMedida={(opcao, itemId, medida) => aoAlterarPlano(escolherMedida(plano, refeicao.id, opcao, itemId, medida))}
+            modo={modo ?? 'medida-caseira'}
+            aoCriarMedida={criarMedida}
             {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
           />
         )
@@ -80,6 +131,7 @@ export function TelaPlano({ plano, aoAlterarPlano, gerarId = idPadrao, extraDaOp
       </Button>
 
       <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
+      <DialogoNovaMedida alimento={alimentoDaMedida} unidade={unidadeDo(alimentoDaMedida ?? undefined)} aoSalvar={salvarMedida} aoFechar={() => setNovaMedida(null)} />
     </div>
   )
 }

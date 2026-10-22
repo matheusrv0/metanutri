@@ -18,14 +18,14 @@ interface EntradaExemplo {
 const ENTRADAS: readonly EntradaExemplo[] = [
   { refeicao: 'Desjejum', opcao: 'principal', texto: '70 pao frances' },
   // A com óleo interesterificado: a hidrogenada é gordura trans, "nunca" (spec conduta-da-nutricionista, D-292).
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '5 margarina interesterificado com sal' },
+  { refeicao: 'Desjejum', opcao: 'principal', texto: '5 g margarina interesterificado com sal' },
   { refeicao: 'Desjejum', opcao: 'principal', texto: '30 queijo minas frescal' },
   { refeicao: 'Desjejum', opcao: 'principal', texto: '120 mamao formosa' },
 
   { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '130 banana prata' },
   // Uma castanha (a unidade da POF, 4 g): com o selênio do USDA (1.917 µg em 100 g), as quatro de antes passavam do UL
-  // (spec vitaminas-usda, D-301).
-  { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '4 castanha do brasil' },
+  // (spec vitaminas-usda, D-301). Com "g": abaixo de 20, o número sozinho conta unidades (spec alimentos-e-gramaturas, D-371).
+  { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '4 g castanha do brasil' },
 
   { refeicao: 'Almoço', opcao: 'principal', texto: '150 arroz tipo 1 cozido' },
   { refeicao: 'Almoço', opcao: 'principal', texto: '100 feijao carioca cozido' },
