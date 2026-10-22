@@ -136,7 +136,7 @@ export function TelaConta({
           <Alert variant="info">
             <IconeMarca nome="alerta" />
             <div>
-              <p className="font-medium">A conta na nuvem ainda não foi ligada neste projeto.</p>
+              <p className="font-medium">O servidor da conta não está configurado nesta instalação.</p>
               <p className="mt-1 text-sm">
                 Falta criar o projeto no Supabase e preencher as duas chaves em <code className="rounded-md bg-muted px-1">.env.local</code>. O passo a passo está no
                 README. Enquanto isso, o backup em Configurações leva tudo para outro aparelho.

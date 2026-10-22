@@ -104,7 +104,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   // A logo do perfil é `data:` (img-src).
   await page.goto('/#/config')
   await page.locator('input[type="file"][accept="image/*"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG_1X1 })
-  const logo = page.getByRole('img', { name: 'Sua logo' })
+  const logo = page.getByRole('img', { name: 'Seu logotipo' })
   await expect(logo).toBeVisible()
   expect(await logo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
 

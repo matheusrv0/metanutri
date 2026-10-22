@@ -76,14 +76,14 @@ export function criarRepositorioAcompanhamentos(armazenamento: Armazenamento | n
   let aviso: string | null = null
 
   if (armazenamento === null) {
-    aviso = 'Este navegador não permite guardar dados: os links de missões não sobrevivem ao fechar.'
+    aviso = 'Este navegador não permite guardar dados: os links do paciente não ficam salvos ao fechar.'
   } else {
     try {
       armazenamento.setItem(`${CHAVE}:teste`, '1')
       armazenamento.removeItem(`${CHAVE}:teste`)
       persistente = true
     } catch {
-      aviso = 'O navegador bloqueou o armazenamento: os links de missões não sobrevivem ao fechar.'
+      aviso = 'O navegador bloqueou o armazenamento: os links do paciente não ficam salvos ao fechar.'
     }
   }
 

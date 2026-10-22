@@ -260,7 +260,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
 
   it('sem a conta na nuvem, avisa e não abre o formulário', async () => {
     const { falso } = await montar({ disponivel: false })
-    expect(screen.getByText('A conta na nuvem não está configurada neste MetaNutri.')).toBeInTheDocument()
+    expect(screen.getByText('O servidor da conta não está configurado nesta instalação.')).toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })
 

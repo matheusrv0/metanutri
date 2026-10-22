@@ -224,7 +224,7 @@ export function TelaCheckout({
   // marfim não se lia.
   const acoes = !disponivel ? (
     <div className="tema-claro">
-      <AvisoPagamento tipo="erro">A conta na nuvem não está configurada neste MetaNutri.</AvisoPagamento>
+      <AvisoPagamento tipo="erro">O servidor da conta não está configurado nesta instalação.</AvisoPagamento>
     </div>
   ) : jaAssina ? (
     <>

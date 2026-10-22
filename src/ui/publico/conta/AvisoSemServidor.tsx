@@ -6,7 +6,7 @@ export function AvisoSemServidor({ aoAbrirSistema }: { readonly aoAbrirSistema: 
     <div className="flex items-start gap-3 rounded-xl bg-surfacerow p-4 text-sm">
       <Info className="mt-0.5 size-4 shrink-0 text-secondary" aria-hidden="true" />
       <div>
-        <p className="font-semibold text-heading">A conta na nuvem não está ligada neste MetaNutri.</p>
+        <p className="font-semibold text-heading">O servidor da conta não está configurado nesta instalação.</p>
         <p className="mt-1 text-muted-foreground">Neste modo, tudo fica salvo neste navegador e não precisa de conta.</p>
         <button
           type="button"

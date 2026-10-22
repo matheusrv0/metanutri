@@ -34,7 +34,7 @@ export interface ValorAssinatura {
   readonly recarregar: () => void
 }
 
-export const SEM_NUVEM = 'A conta na nuvem não está configurada neste MetaNutri.'
+export const SEM_NUVEM = 'O servidor da conta não está configurado nesta instalação.'
 export const PEDIDO_EM_ANDAMENTO = 'Espere terminar o pedido anterior.'
 export const SESSAO_TERMINOU = 'Sua sessão terminou. Entre de novo na sua conta e tente outra vez.'
 

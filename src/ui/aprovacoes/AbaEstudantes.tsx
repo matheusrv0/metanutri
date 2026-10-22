@@ -181,7 +181,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
         </div>
 
         <fieldset className="flex flex-col gap-2.5 border-t border-border pt-4">
-          <legend className="rotulo pb-2.5">Se for recusar, o motivo</legend>
+          <legend className="rotulo pb-2.5">Motivo da recusa</legend>
           <div className="flex flex-wrap gap-1.5">
             {[...MOTIVOS_RECUSA, OUTRO].map((m) => (
               <label

@@ -301,7 +301,7 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'verificacao-pendente': 'Espere a verificação de segurança terminar.',
   'verificacao-recusada': 'Não foi possível concluir a verificação de segurança. Tente de novo.',
   'verificacao-nao-carregou': 'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
-  'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
+  'sem-servidor': 'O servidor da conta não está configurado nesta instalação. O MetaNutri funciona sem ele, com os dados neste navegador.',
   'falha-rede': 'Não foi possível falar com o servidor. Confira a internet e tente de novo.',
   // D-268 e CA-858 (spec seguranca-lote-5).
   'precisa-codigo-do-app': 'Esta conta usa o app autenticador. Digite o código do app para salvar a senha.',

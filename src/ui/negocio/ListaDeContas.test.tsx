@@ -11,7 +11,7 @@ const texto = (el: HTMLElement) => (el.textContent ?? '').replace(/\s/g, ' ')
 describe('ListaDeContas (spec painel-do-dono)', () => {
   it('CA-356: uma linha por conta, a mais nova primeiro, com as cinco colunas', () => {
     render(<ListaDeContas contas={contas} agora={AGORA} />)
-    expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Pessoa', 'Situação', 'Plano', 'Criou a conta', 'Último login'])
+    expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Pessoa', 'Situação', 'Plano', 'Criou a conta', 'Último acesso'])
     const primeiras = linhas().map((l) => texto(within(l).getAllByRole('cell')[0] as HTMLElement))
     expect(primeiras).toEqual(['Ana Souzaa@exemplo.com', 'Bruno Limab@exemplo.com', 'Carla Diasc@exemplo.com', 'sem.nome@exemplo.com', 'dono@exemplo.com'])
   })

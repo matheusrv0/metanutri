@@ -137,7 +137,7 @@ describe('Tela de missões do paciente', () => {
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
     expect(await screen.findByText('Este link ainda não abre em outro aparelho')).toBeInTheDocument()
-    expect(screen.getByText(/conta na nuvem do MetaNutri não foi ligada/)).toBeInTheDocument()
+    expect(screen.getByText(/O servidor da conta não está configurado nesta instalação\. Por enquanto/)).toBeInTheDocument()
   })
 
   it('com nuvem ligada, link inexistente diz que foi trocado', async () => {

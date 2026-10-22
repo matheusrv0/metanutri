@@ -185,6 +185,22 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"1 ou mais alimentos"', /\b1 ou mais alimentos/i],
   ['maiúscula no meio do rótulo', /Data da Consulta|Circunferência da (Cintura|Panturrilha)/],
   ['"ou · Opção"', /ou · Opção/],
+  // CA-1195 a CA-1197: Configurações, Ajuda, mensagens do sistema e administração.
+  ['"presos à conta"', /presos? à/i],
+  ['"folha da dieta"', /folha da dieta/i],
+  ['"Dieta para imprimir"', /Dieta para imprimir/i],
+  ['"Responsável técnico" (é Preceptor(a))', /respons[áa]vel técnico/i],
+  ['"Cinco minutos"', /Cinco minutos/i],
+  ['"Nada aqui é opinião"', /Nada aqui é opinião/i],
+  ['"Último login"', /último login/i],
+  ['"Reduzir os dados"', /Reduzir os dados/i],
+  ['servidor ausente em várias vozes', /conta na nuvem (ainda )?não (está|foi) (ligada|configurada)|não foi ligada/i],
+  ['"os casos não serão salvos"', /os casos não serão salvos/i],
+  ['"não sobrevivem ao fechar"', /não sobrevivem/i],
+  ['"Se for recusar, o motivo"', /Se for recusar/i],
+  ['"logo" no lugar de "logotipo"', /\b(a|uma|Sua|Remover) logo\b/],
+  // Aspas curvas no texto de tela (glossário): "assim" vira “assim”. O HTML do cabeçalho de busca usa aspas de atributo.
+  ['aspas retas em volta de palavras', /(^|\s)"[\p{L}\d][^"<>=]*"(\s|[.,:;)]|$)/u],
 ]
 
 const achados = (padrao: RegExp) =>

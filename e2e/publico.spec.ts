@@ -38,7 +38,7 @@ test('CA-322 e CA-963: Fontes da base abre sem conta e cita as quatro fontes, co
 test('CA-367: o checkout não cita o processador e, sem conta na nuvem, não carrega o script dos campos seguros', async ({ page }) => {
   await page.goto('/#/assinar/solo/mensal')
   await expect(page.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeVisible()
-  await expect(page.getByText('A conta na nuvem não está configurada neste MetaNutri.')).toBeVisible()
+  await expect(page.getByText('O servidor da conta não está configurado nesta instalação.')).toBeVisible()
   expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
   await expect(page.locator('script[src*="mercadopago"]')).toHaveCount(0)
 })

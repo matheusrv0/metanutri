@@ -60,7 +60,7 @@ function guardar(armazenamento: Armazenamento | null, usuarioId: string, linha: 
   }
 }
 
-const SEM_SERVIDOR = 'A conta na nuvem não está configurada neste MetaNutri.'
+const SEM_SERVIDOR = 'O servidor da conta não está configurado nesta instalação.'
 
 export function usePerfilConta(usuarioId: string | null): ValorPerfilConta {
   const [cliente] = useState(() => obterSupabase())

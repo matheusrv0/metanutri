@@ -183,7 +183,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
       <Aviso
         icone={<CircleAlert className="size-6" />}
         titulo="Este link ainda não abre em outro aparelho"
-        texto="A conta na nuvem do MetaNutri não foi ligada. Por enquanto, as missões só aparecem no computador onde o plano foi montado."
+        texto="O servidor da conta não está configurado nesta instalação. Por enquanto, as missões só aparecem no computador onde o plano foi montado."
       />
     )
   }

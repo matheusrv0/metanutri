@@ -617,7 +617,7 @@ const TELAS: readonly Tela[] = [
     },
     agir: async (p) => {
       await p.getByLabel('Seu nome').fill('Ana Teste')
-      await expect(p.getByText(/No documento vai sair/)).toContainText('Ana Teste')
+      await expect(p.getByText(/Como aparece no documento/)).toContainText('Ana Teste')
     },
   },
   {

@@ -8,11 +8,11 @@ interface TelaAjudaProps {
 }
 
 const PASSOS = [
-  { titulo: 'Cadastre o paciente', texto: 'Nome, nascimento e restrições. Os planos seguintes já nascem com esses dados.', tela: 'pacientes' as const },
+  { titulo: 'Cadastre o paciente', texto: 'Nome, nascimento e restrições. Os próximos planos já começam com esses dados.', tela: 'pacientes' as const },
   { titulo: 'Escolha o caminho', texto: 'Prescrição rápida para retorno e ajuste; atendimento completo quando houver avaliação.', tela: 'painel' as const },
-  { titulo: 'Monte o plano', texto: 'Digite "150 arroz int" e tecle Enter. Medida caseira e kcal aparecem sozinhas.', tela: 'casos' as const },
-  { titulo: 'Confira a adequação', texto: 'Veja o que falta de micronutriente e use o cobrir para fechar a falta.', tela: 'casos' as const },
-  { titulo: 'Entregue', texto: 'Dieta para imprimir vira PDF no próprio navegador; o Word segue o modelo do estágio.', tela: 'casos' as const },
+  { titulo: 'Monte o plano', texto: 'Digite “150 arroz int” e tecle Enter. A medida caseira e as kcal aparecem na hora.', tela: 'casos' as const },
+  { titulo: 'Confira a adequação', texto: 'Veja os nutrientes abaixo da meta e use o botão Cobrir.', tela: 'casos' as const },
+  { titulo: 'Entregue', texto: 'O plano impresso vira PDF no próprio navegador; o aconselhamento e o memorial saem em Word.', tela: 'casos' as const },
 ]
 
 const REFERENCIAS = [
@@ -34,7 +34,6 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
       <Card className="gap-4">
         <CardHeader>
           <CardTitle>Primeiros passos</CardTitle>
-          <CardDescription>Cinco minutos até a primeira dieta entregue.</CardDescription>
         </CardHeader>
         <ol className="flex flex-col">
           {PASSOS.map((p, i) => (
@@ -100,19 +99,18 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
       <Card className="gap-3">
         <CardHeader>
           <CardTitle>Limites que você precisa conhecer</CardTitle>
-          <CardDescription>Nada aqui é opinião do sistema; são fatos sobre os dados e sobre a lei.</CardDescription>
         </CardHeader>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
           <li>
             Vitamina D, vitamina E, folato, vitamina B12 e selênio vêm de alimento equivalente do USDA e faltam em boa parte das
-            preparações brasileiras. Quando falta, a linha da adequação leva †.
+            preparações brasileiras. Quando o dado falta, a linha da adequação recebe †.
           </li>
-          <li>Açúcares e gordura saturada só existem em produto que você cadastra pelo rótulo.</li>
+          <li>Açúcares e gordura saturada só aparecem nos produtos cadastrados pelo rótulo.</li>
           <li>A prescrição de dieta é privativa de nutricionista com registro no CRN, pela Lei 8.234/1991.</li>
           <li>
             {nuvem === null
               ? 'Tudo fica guardado só neste navegador. Faça backup em Configurações antes de trocar de aparelho.'
-              : 'Os dados ficam na nuvem, presos à sua conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.'}
+              : 'Seus dados ficam salvos na sua conta, na nuvem. Sem internet, a edição fica travada até a conexão voltar.'}
           </li>
         </ul>
         <button

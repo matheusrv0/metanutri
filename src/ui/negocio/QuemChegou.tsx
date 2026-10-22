@@ -37,7 +37,7 @@ export function QuemChegou({ funil, uso }: QuemChegouProps) {
         </ol>
         <ul className="grid gap-2 sm:grid-cols-2">
           <li className="flex items-baseline justify-between gap-3 rounded-lg bg-surfacerow px-3.5 py-2.5 text-sm">
-            <span>Links de missões criados em 30 dias</span>
+            <span>Links do paciente criados em 30 dias</span>
             <strong className="numeros text-heading">{inteiro(uso.links30Dias)}</strong>
           </li>
           <li className="flex items-baseline justify-between gap-3 rounded-lg bg-surfacerow px-3.5 py-2.5 text-sm">

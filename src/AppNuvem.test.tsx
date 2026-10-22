@@ -229,7 +229,7 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     expect(screen.getByText('Salvo')).toBeInTheDocument()
   })
 
-  it('CB-123: a cópia passa do limite: a frase do CA-445 cobre a área; "Reduzir os dados" deixa a frase no alto da tela', async () => {
+  it('CB-123: a cópia passa do limite: a frase do CA-445 cobre a área; "Liberar espaço" deixa a frase no alto da tela', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     render(tela())
     expect(await screen.findByText('Salvo')).toBeInTheDocument()
@@ -240,7 +240,7 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     const trava = screen.getByRole('dialog')
     expect(trava).toHaveTextContent('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')
 
-    act(() => screen.getByRole('button', { name: 'Reduzir os dados' }).click())
+    act(() => screen.getByRole('button', { name: 'Liberar espaço' }).click())
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByText('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')).toBeInTheDocument()
     expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
