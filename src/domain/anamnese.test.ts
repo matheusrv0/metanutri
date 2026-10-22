@@ -379,6 +379,32 @@ describe('roteiro salvo na versão 1 ou 2 vira a 3 (spec ficha-unica, D-350, CA-
     expect(lido.outros).toHaveProperty('objetivo')
   })
 
+  it('CA-1298 (D-465): pergunta própria criada numa aba antiga em bloco só da versão 2 aparece no bloco novo; tirada, não volta', () => {
+    const arm = guardado(
+      {
+        motivo: ROTEIRO_PADRAO.perguntas.motivo,
+        objetivo: [...(v2({}).objetivo as object[]), { id: 'p-velha', texto: 'Come fora no fim de semana' }],
+        intestino: [{ id: 'evacuacao', texto: 'Frequência de evacuação' }, { id: 'p-int', texto: 'Usa laxante' }],
+        preferencias: [{ id: 'p-pref', texto: 'Prefere doce' }],
+        intolerancias: [{ id: 'p-intol', texto: 'Estufa com feijão' }, { id: 'queixa', texto: 'Repetida' }],
+      },
+      2,
+    )
+    const lido = lerRoteiro(arm)
+    expect(lido.perguntas.motivo.at(-1)).toEqual({ id: 'p-velha', texto: 'Come fora no fim de semana' })
+    expect(lido.perguntas.digestao.at(-1)).toEqual({ id: 'p-int', texto: 'Usa laxante' })
+    expect(lido.perguntas.alimentacao.slice(-2)).toEqual([
+      { id: 'p-pref', texto: 'Prefere doce' },
+      { id: 'p-intol', texto: 'Estufa com feijão' },
+    ])
+    // CB-426: o id que já está no roteiro da versão 3 vale uma vez.
+    expect(BLOCOS_ANAMNESE.flatMap((b) => lido.perguntas[b.id]).filter((q) => q.id === 'queixa')).toEqual([{ id: 'queixa', texto: 'Queixa principal' }])
+    expect(JSON.stringify(lido.outros)).not.toContain('p-velha')
+    gravarRoteiro(arm, tirarPergunta(lido, 'motivo', 'p-velha'))
+    expect(lerRoteiro(arm).perguntas.motivo.map((q) => q.id)).not.toContain('p-velha')
+    expect(lerRoteiro(arm).perguntas.digestao.at(-1)).toEqual({ id: 'p-int', texto: 'Usa laxante' })
+  })
+
   it('abrir não grava nada', () => {
     const arm = guardado(v2({}), 2)
     const antes = arm.getItem(CHAVE_ROTEIRO)

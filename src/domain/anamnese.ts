@@ -372,6 +372,39 @@ const RETIRADAS_DA_V3: ReadonlyMap<string, string> = new Map([['mora-com', 'Com 
 const retirada = (q: PerguntaRoteiro) => RETIRADAS_DA_V3.get(q.id) === q.texto
 
 const BLOCOS_SO_DA_V3: readonly string[] = BLOCOS_ANAMNESE.map((b) => b.id).filter((id) => !(BLOCOS_V2 as readonly string[]).includes(id))
+const BLOCOS_SO_DA_V2: readonly IdBlocoV2[] = BLOCOS_V2.filter((id) => !IDS_BLOCO.has(id))
+
+/**
+ * D-465: no roteiro da versão 3 regravado por uma versão antiga, a pergunta própria que uma aba antiga criou num bloco
+ * que só a versão 2 tem ("Objetivo e queixa", "Intestino", "Preferências e aversões", "Intolerâncias e alergias") vai
+ * para o bloco novo dele e sai do bloco antigo guardado, para não voltar depois de tirada. As padrão da versão 2 ficam.
+ */
+function trazerDosBlocosDaV2(
+  fonte: Readonly<Record<string, unknown>>,
+  perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>,
+  vistos: Set<string>,
+): Record<string, unknown> {
+  const outros: Record<string, unknown> = Object.fromEntries(Object.entries(fonte).filter(([id]) => !IDS_BLOCO.has(id)))
+  for (const antigo of BLOCOS_SO_DA_V2) {
+    const lista = fonte[antigo]
+    if (!Object.hasOwn(fonte, antigo) || !Array.isArray(lista)) continue
+    const trazidas = new Set<string>()
+    for (const q of perguntasValidas(lista, new Set())) {
+      if (PADRAO_V2_POR_ID.has(q.id) || vistos.has(q.id)) continue
+      vistos.add(q.id)
+      trazidas.add(q.id)
+      const destino = BLOCO_NOVO[antigo]
+      perguntas[destino] = [...perguntas[destino], q]
+    }
+    if (trazidas.size > 0) {
+      outros[antigo] = lista.filter((item: unknown) => {
+        const id = typeof item === 'object' && item !== null ? (item as Record<string, unknown>)['id'] : undefined
+        return typeof id !== 'string' || !trazidas.has(id)
+      })
+    }
+  }
+  return outros
+}
 
 /**
  * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão; bloco
@@ -382,19 +415,17 @@ function normalizarRoteiro(blocos: unknown, versaoGuardada: number = VERSAO_DO_R
   const fonte = typeof blocos === 'object' && blocos !== null && !Array.isArray(blocos) ? (blocos as Record<string, unknown>) : {}
   // CB-348: um roteiro da versão 3 salvo de novo por uma versão antiga volta sem versão, mas com os blocos novos.
   const ehV3 = versaoGuardada >= 3 || BLOCOS_SO_DA_V3.some((id) => Object.hasOwn(fonte, id))
-  let perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>
   if (ehV3) {
     const vistos = new Set<string>()
-    perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
+    const perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
     for (const { id } of BLOCOS_ANAMNESE) {
       const lista = Object.hasOwn(fonte, id) ? fonte[id] : ROTEIRO_PADRAO.perguntas[id]
       perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos).filter((q) => !retirada(q))
     }
-  } else {
-    perguntas = daVersao2(fonte, versaoGuardada)
+    return { perguntas, outros: trazerDosBlocosDaV2(fonte, perguntas, vistos) }
   }
-  const conhecidos = new Set<string>([...IDS_BLOCO, ...(ehV3 ? [] : BLOCOS_V2)])
-  return { perguntas, outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !conhecidos.has(id))) }
+  const conhecidos = new Set<string>([...IDS_BLOCO, ...BLOCOS_V2])
+  return { perguntas: daVersao2(fonte, versaoGuardada), outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !conhecidos.has(id))) }
 }
 
 /** O roteiro editado como fica depois de salvo: sem pergunta vazia e sem id repetido (CB-161). */
