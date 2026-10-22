@@ -1,3 +1,4 @@
+import { mostraNivelDeAtividade } from '@/domain/camposVisiveis.ts'
 import type { Caso, FormulaTmb } from '@/domain/tipos.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -32,12 +33,15 @@ export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergia
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <CampoNumero
-          rotulo="Fator próprio"
-          valor={energia.fator}
-          aoMudar={(v) => v !== null && alterarEnergia({ fator: v })}
-          dica="Use quando a conduta pedir outro fator."
-        />
+        {/* D-458 (spec ficha-unica): de 1 a 2 anos a equação do NASEM não usa fator de atividade. */}
+        {mostraNivelDeAtividade(caso) ? (
+          <CampoNumero
+            rotulo="Fator próprio"
+            valor={energia.fator}
+            aoMudar={(v) => v !== null && alterarEnergia({ fator: v })}
+            dica="Use quando a conduta pedir outro fator."
+          />
+        ) : null}
         <CampoNumero
           rotulo="GET manual"
           valor={energia.getManual}

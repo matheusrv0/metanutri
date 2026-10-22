@@ -36,3 +36,18 @@ export function temDadoDeComposicao(caso: Caso): boolean {
     bioimpedancia.aparelho.trim() !== ''
   )
 }
+
+/**
+ * D-458 (spec ficha-unica): o nível de atividade e o fator só entram na conta de 3 anos em diante; a equação do NASEM
+ * de 1 e 2 anos não usa atividade. Sem a idade, aparece.
+ */
+export const mostraNivelDeAtividade = (caso: Pick<Caso, 'idadeAnos'>): boolean => caso.idadeAnos === null || caso.idadeAnos >= 3
+
+/**
+ * D-458: as equações de dobras do app (Jackson e Pollock; Faulkner) são de adultos e não valem na gestação; a
+ * bioimpedância continua para todos. Dobra já preenchida continua à vista (CB-73).
+ */
+export function mostraDobras(caso: Caso): boolean {
+  if (Object.values(caso.composicao.dobras).some((v) => v !== null)) return true
+  return (caso.idadeAnos === null || caso.idadeAnos >= 18) && caso.condicao.tipo !== 'gestante'
+}

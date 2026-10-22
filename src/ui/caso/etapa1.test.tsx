@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import type { Caso } from '@/domain/tipos.ts'
+import { AjusteEnergia } from '../resumo/AjusteEnergia.tsx'
 import { TelaCaso } from './TelaCaso.tsx'
 
 function Anfitriao({ inicial }: { readonly inicial: Partial<Caso> }) {
@@ -232,5 +233,31 @@ describe('Meses sem piscar (spec revisao-geral-trabalho, D-244)', () => {
     await usuario.type(idade(), '8')
     await usuario.tab()
     expect(meses()).toHaveFocus()
+  })
+})
+
+describe('correção B: o que vale para a criança e a gestante na etapa 1 (spec ficha-unica, D-458)', () => {
+  it('CA-1279: com 2 anos não há nível de atividade nem fator próprio; com 3, há', () => {
+    montar({ sexo: 'M', idadeAnos: 2, pesoKg: 12, estaturaCm: 86 })
+    expect(screen.queryByRole('radiogroup', { name: 'Nível de atividade' })).not.toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'M', idadeAnos: 3, pesoKg: 14, estaturaCm: 95 })
+    expect(screen.getByRole('radiogroup', { name: 'Nível de atividade' })).toBeInTheDocument()
+    cleanup()
+    render(<AjusteEnergia caso={{ ...criarCasoVazio('c2'), sexo: 'M', idadeAnos: 2 }} aoAlterar={vi.fn()} mostrarFormula={false} />)
+    expect(screen.queryByLabelText('Fator próprio')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('GET manual')).toBeInTheDocument()
+  })
+
+  it('CA-1281: a criança de 6 anos e a gestante só têm a bioimpedância; o adulto tem as dobras', async () => {
+    const usuario = montar({ sexo: 'F', idadeAnos: 6, pesoKg: 21, estaturaCm: 116 })
+    await usuario.click(screen.getByRole('button', { name: /^Composição corporal/ }))
+    expect(screen.getByRole('button', { name: /^Composição corporal/ })).toHaveTextContent('Bioimpedância. Opcional.')
+    expect(screen.queryByRole('radiogroup', { name: 'Protocolo de dobras' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Aparelho')).toBeInTheDocument()
+    cleanup()
+    const outro = montar(adulta)
+    await outro.click(screen.getByRole('button', { name: /^Composição corporal/ }))
+    expect(screen.getByRole('radiogroup', { name: 'Protocolo de dobras' })).toBeInTheDocument()
   })
 })
