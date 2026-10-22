@@ -638,6 +638,12 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
 const PARTE_DO_OVO = /^(gema|clara)s?$/
 const PARTE_DO_OVO_NA_DESCRICAO = /^ovo, [^,]+, (gema|clara)/
 
+/**
+ * O alimento principal do nome (D-482 ampliada): a parte antes da primeira vírgula ("ovo" em "ovo, de galinha, inteiro");
+ * sem vírgula, a primeira palavra ("iogurte" em "iogurte grego da casa", o alimento próprio, CB-454).
+ */
+const principalDoNome = (texto: string): string => (texto.includes(',') ? (texto.split(',')[0] ?? '') : (texto.trim().split(/\s+/)[0] ?? '')).trim()
+
 export function buscarAlimentos(
   texto: string,
   alimentos: readonly Alimento[],
@@ -650,9 +656,15 @@ export function buscarAlimentos(
   const pedida = lida.medida
   // D-482 (correção C): gema e clara são partes do ovo; só aparecem quando a busca as nomeia ("2 ovos" é o ovo inteiro).
   const nomeiaParte = termos.some((t) => PARTE_DO_OVO.test(t))
-  const candidatos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null)
-    .filter(({ i }) => nomeiaParte || !PARTE_DO_OVO_NA_DESCRICAO.test(i.texto))
-    .slice(0, LIMITE_RESULTADOS)
+  const todos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null).filter(
+    ({ i }) => nomeiaParte || !PARTE_DO_OVO_NA_DESCRICAO.test(i.texto),
+  )
+  // D-482 ampliada: com um número e um nome simples ("2 ovos", "1 maçã"), fica só quem tem esse alimento como principal
+  // (a parte antes da primeira vírgula), quando algum tem: sai "Macarrão, trigo, cru, com ovos", sai a macaúba.
+  const contando = pedida === null && lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES
+  const nomes = new Set(termos.flatMap(variantesDoTermo))
+  const doNome = contando ? todos.filter(({ i }) => nomes.has(principalDoNome(i.texto))) : []
+  const candidatos = (doNome.length > 0 ? doNome : todos).slice(0, LIMITE_RESULTADOS)
   if (candidatos.length === 0) {
     return { resultados: [], aviso: 'Nenhum alimento encontrado com esse nome. Tente outra palavra ou menos letras.' }
   }

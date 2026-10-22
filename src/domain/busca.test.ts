@@ -428,6 +428,42 @@ describe('o número conta peças na entrada rápida (spec alimentos-e-gramaturas
   })
 })
 
+describe('número + nome simples: o alimento principal (spec alimentos-e-gramaturas, correção C, D-482 ampliada)', () => {
+  const principal = (descricao: string) => (descricao.split(',')[0] ?? '').trim()
+
+  it.each([
+    ['2 ovos', 'Ovo', /^Ovo, de galinha, inteiro, cozido/],
+    ['1 banana', 'Banana', /^Banana, /],
+    ['2 pães', 'Pão', /^Pão, trigo, francês/],
+    ['1 maçã', 'Maçã', /^Maçã, /],
+  ])('CA-1341: "%s" só traz alimentos cujo principal é "%s", e o primeiro lê peças', (entrada, nome, primeiro) => {
+    const { resultados } = buscarAlimentos(entrada, ALIMENTOS)
+    expect(resultados.length).toBeGreaterThan(0)
+    for (const r of resultados) expect(principal(r.alimento.descricao), `${entrada}: ${r.alimento.descricao}`).toBe(nome)
+    expect(resultados[0]?.alimento.descricao).toMatch(primeiro)
+    expect(resultados[0]?.medida?.nome).toMatch(/^unidade/)
+  })
+
+  it('CA-1341: "2 ovos" não traz macarrão com ovos, maionese, gema, clara nem omelete; "2 omeletes" traz a omelete', () => {
+    const nomes = buscarAlimentos('2 ovos', ALIMENTOS).resultados.map((r) => r.alimento.descricao)
+    for (const n of nomes) expect(n).not.toMatch(/Macarrão|Maionese|gema|clara|Omelete/i)
+    expect(buscarAlimentos('2 omeletes', ALIMENTOS).resultados[0]?.alimento.descricao).toMatch(/^Omelete/)
+  })
+
+  it('CB-454: o alimento próprio sem vírgula no nome tem a primeira palavra como principal ("1 iogurte" acha o da conta)', () => {
+    const base = ALIMENTOS.find((a) => a.descricao === 'Iogurte, natural')
+    if (!base) throw new Error('sem iogurte')
+    const proprio = { ...base, id: PRIMEIRO_ID_PROPRIO + 7, descricao: 'Iogurte grego da casa' }
+    const nomes = buscarAlimentos('1 iogurte', [...ALIMENTOS, proprio]).resultados.map((r) => r.alimento.descricao)
+    expect(nomes).toContain('Iogurte grego da casa')
+  })
+
+  it('CA-1341: sem número, ou com gramas, a busca continua larga ("ovos" acha o macarrão com ovos; "100 ovos" é peso)', () => {
+    expect(buscarAlimentos('ovos', ALIMENTOS).resultados.map((r) => r.alimento.descricao)).toContain('Macarrão, trigo, cru, com ovos')
+    expect(buscarAlimentos('macarrão com ovos', ALIMENTOS).resultados[0]?.alimento.descricao).toBe('Macarrão, trigo, cru, com ovos')
+  })
+})
+
 describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
   const ATUM = 277
 

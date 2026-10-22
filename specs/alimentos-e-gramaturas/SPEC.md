@@ -278,7 +278,17 @@ publicar. Completa a D-430 e a D-431 (plausibilidade, seção 5), a D-423 (fruta
 N9 não muda: a Tabela de alimentos e o seletor da linha mostram as mesmas medidas (D-437); a D-423 vale para a medida
 automática, e a nutricionista ainda escolhe "fatia" à mão.
 
+**D-482 ampliada (22/10/2026, pedido do coordenador depois da caminhada):** "2 ovos" ainda listava "Macarrão, trigo,
+cru, com ovos" e "Maionese, tradicional com ovos", e "1 maçã" listava a macaúba. Regra: com um número sem medida nem
+unidade (abaixo de 20, D-371) e um nome simples, quando algum resultado tem esse alimento como principal (a parte antes
+da primeira vírgula: "Ovo", "Banana", "Pão", "Maçã", com e sem plural e acento), a lista fica só com eles. O composto e
+o que só contém o nome no meio ("com ovos", "Torrada, pão francês", "Doce de banana", "Macaúba") saem; a omelete só
+aparece quando se escreve "omelete". A ordem de dentro continua (ovo cozido, frito, de codorna). Sem número, ou com
+gramas ("100 ovos" é peso, "ovos" sozinho), a busca continua larga. O nome sem vírgula (o alimento próprio "Iogurte grego da casa") tem a primeira palavra como principal (CB-454).
+
 ### 7.2 Critérios de aceite
+
+- **CA-1341** · Dado "2 ovos", "1 banana", "2 pães" e "1 maçã", então todo resultado tem como principal o ovo, a banana, o pão e a maçã, e o primeiro lê unidades (o ovo cozido, o pão francês); "2 ovos" não traz macarrão com ovos, maionese, gema, clara nem omelete, e "2 omeletes" traz a omelete; dado "ovos" sem número, o macarrão com ovos continua na lista.
 
 - **CA-1329** · Dado a linha do plano a 390 px com "Ovo, de galinha, inteiro, cozido/10minutos" e "Leite, de vaca, integral" em "copo americano", então o nome aparece inteiro (sem reticências), o seletor mostra "copo americano · 150 ml" inteiro, as três abas cabem sem rolar, e a página não rola para o lado.
 - **CA-1330** · Dado "2 ovos" na entrada rápida, então o primeiro resultado é um ovo inteiro com "2 unidades", e nenhum resultado é gema ou clara; dado "2 gemas", a gema aparece.
