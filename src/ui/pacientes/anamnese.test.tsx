@@ -389,4 +389,16 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     expect(anamnese().getByLabelText('Histórico do peso')).toHaveAccessibleDescription('Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).')
     expect(anamnese().queryByLabelText('Dietas que já fez')).not.toBeInTheDocument()
   })
+
+  it('CA-1272 a CA-1274: a mulher de 68 anos vê "Menopausa" e "Ainda menstrua", sem fluxo, e a reposição hormonal', async () => {
+    const { usuario } = montar(MULHER_68)
+    await usuario.click(bloco('Saúde da mulher'))
+    const menstruacao = anamnese().getByRole('radiogroup', { name: 'Menstruação' })
+    expect(within(menstruacao).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(anamnese().queryByText('Fluxo menstrual intenso')).not.toBeInTheDocument()
+    expect(anamnese().getByLabelText('Reposição hormonal')).toBeInTheDocument()
+    await usuario.click(within(menstruacao).getByRole('radio', { name: 'Ainda menstrua' }))
+    expect(anamnese().getByRole('radiogroup', { name: 'Fluxo menstrual intenso' })).toBeInTheDocument()
+    expect(anamnese().getByLabelText('Anticoncepcional ou reposição hormonal')).toBeInTheDocument()
+  })
 })

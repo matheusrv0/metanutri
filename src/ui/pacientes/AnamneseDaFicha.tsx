@@ -7,6 +7,7 @@ import {
   gravarRoteiro,
   lerRoteiro,
   limparRoteiro,
+  opcoesDaPergunta,
   responder,
   resumoDoBloco,
   type CamposDoBloco,
@@ -185,6 +186,7 @@ export function AnamneseDaFicha({ paciente, aoAlterar, perfil, hoje, adesao = nu
                 campo={`${id}-${bloco.id}-${pergunta.id}`}
                 pergunta={pergunta}
                 dica={dicaDaPergunta(pergunta.id, perfil)}
+                opcoes={opcoesDaPergunta(pergunta.id, perfil)}
                 placeholder={bloco.id === 'recordatorio' || pergunta.id === 'retorno-recordatorio' ? 'Horário, o que comeu e quanto…' : undefined}
                 aoResponder={(resposta) => aoAlterar({ respostasAnamnese: responder(paciente.respostasAnamnese, pergunta, bloco.id, resposta, hoje) })}
               />

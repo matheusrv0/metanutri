@@ -13,6 +13,8 @@ interface PerguntaDaAnamneseProps {
   readonly dica: string | undefined
   /** Texto-guia do campo vazio (o recordatório). */
   readonly placeholder?: string | undefined
+  /** As opções da pergunta de escolha para a pessoa (D-453); sem elas, as do id. */
+  readonly opcoes?: readonly string[] | undefined
   readonly aoResponder: (resposta: string) => void
 }
 
@@ -21,11 +23,11 @@ interface PerguntaDaAnamneseProps {
  * número, escolha única ou a escala da urina. Resposta que não é uma das escolhas (escrita como texto numa versão
  * antiga) fica num campo de texto, para nada sumir (CB-297).
  */
-export function PerguntaDaAnamnese({ campo, pergunta, dica, placeholder, aoResponder }: PerguntaDaAnamneseProps) {
+export function PerguntaDaAnamnese({ campo, pergunta, dica, placeholder, opcoes: opcoesDaPessoa, aoResponder }: PerguntaDaAnamneseProps) {
   const tipo = tipoDaPergunta(pergunta.id)
   const temResposta = pergunta.resposta.trim() !== ''
   const urina = tipo === 'cor-da-urina' ? numeroDaUrina(pergunta.resposta) : null
-  const opcoes = opcoesDaPergunta(pergunta.id)
+  const opcoes = opcoesDaPessoa ?? opcoesDaPergunta(pergunta.id)
   const escolha = tipo === 'escolha' && opcoes.includes(pergunta.resposta) ? pergunta.resposta : null
   const deEscolha = (tipo === 'cor-da-urina' && (urina !== null || !temResposta)) || (tipo === 'escolha' && (escolha !== null || !temResposta))
   const idDica = dica ? `${campo}-dica` : undefined

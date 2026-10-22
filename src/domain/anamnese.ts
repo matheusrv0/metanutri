@@ -189,8 +189,30 @@ export function tipoDaPergunta(id: string): TipoPergunta {
   return 'texto'
 }
 
-/** As opções de uma pergunta de escolha, na ordem da tela. */
-export const opcoesDaPergunta = (id: string): readonly string[] => ESCOLHAS.get(id) ?? []
+// D-453: antes dos 40 anos a parada da menstruação é insuficiência ovariana prematura (vai em Outros diagnósticos), e
+// depois dos 55 a menopausa já é tardia: as opções acompanham a idade.
+const MENOPAUSA = 'Menopausa'
+const AINDA_MENSTRUA = 'Ainda menstrua'
+const NAO_MENSTRUA = 'Não menstrua'
+const MENSTRUACAO_ANTES_DOS_40: readonly string[] = ['Regular', 'Irregular', NAO_MENSTRUA]
+const MENSTRUACAO_DE_56_EM_DIANTE: readonly string[] = [MENOPAUSA, AINDA_MENSTRUA]
+
+/** As opções de uma pergunta de escolha, na ordem da tela; a menstruação muda com a idade (D-453). */
+export function opcoesDaPergunta(id: string, perfil: PerfilDaFicha | null = null): readonly string[] {
+  const idade = idadeDe(perfil)
+  if (id === 'menstruacao' && idade !== null) {
+    if (idade < 40) return MENSTRUACAO_ANTES_DOS_40
+    if (idade >= 56) return MENSTRUACAO_DE_56_EM_DIANTE
+  }
+  return ESCOLHAS.get(id) ?? []
+}
+
+/** D-453: a menopausa marcada, ou 56 anos ou mais sem "Ainda menstrua". */
+function depoisDaMenopausa(perfil: PerfilDaFicha, respostas: ReadonlyMap<string, RespostaAnamnese>): boolean {
+  const menstruacao = respostas.get('menstruacao')?.resposta.trim() ?? ''
+  const idade = idadeDe(perfil)
+  return menstruacao === MENOPAUSA || (idade !== null && idade >= 56 && menstruacao !== AINDA_MENSTRUA)
+}
 
 /** A escala de 8 cores de Armstrong, da urina mais clara à mais escura (seção 1.1 da spec da conduta). */
 export const ESCALA_DA_URINA: readonly { readonly numero: number; readonly nome: string }[] = [
@@ -499,9 +521,23 @@ function perguntaAparece(id: string, perfil: PerfilDaFicha | null, respostas: Re
   if (id === 'tempo-de-tela') return menorDe18(perfil)
   // D-452: criança não faz dieta por conta própria; a restrição da família vai em Alimentação.
   if (id === 'dietas') return idade === null || idade >= 12
+  // D-453: o fluxo é de quem menstrua; o anticoncepcional, da idade fértil (R1 começa aos 14).
+  if (id === 'fluxo-intenso') return respostas.get('menstruacao')?.resposta.trim() !== NAO_MENSTRUA && !depoisDaMenopausa(perfil, respostas)
+  if (id === 'hormonios') return idade === null || idade >= 14
   // D-356: com "Não" em Prática de exercício, as outras perguntas da atividade não se aplicam.
   if (id.startsWith('atividade-') && id !== 'atividade-pratica') return respostas.get('atividade-pratica')?.resposta.trim() !== 'Não'
   return true
+}
+
+const TEXTO_PADRAO: ReadonlyMap<string, string> = new Map(BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id].map((q) => [q.id, q.texto] as const)))
+
+/**
+ * O texto da pergunta para a pessoa (D-453): o padrão muda com ela; o renomeado pela conta fica como a conta escreveu.
+ */
+function textoParaAPessoa(pergunta: PerguntaRoteiro, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): string {
+  if (perfil === null || TEXTO_PADRAO.get(pergunta.id) !== pergunta.texto) return pergunta.texto
+  if (pergunta.id === 'hormonios' && depoisDaMenopausa(perfil, respostas)) return 'Reposição hormonal'
+  return pergunta.texto
 }
 
 /**
@@ -522,7 +558,7 @@ export function blocosDaFicha(
   return BLOCOS_ANAMNESE.flatMap(({ id, titulo, regra }) => {
     const doRoteiro = roteiro.perguntas[id]
       .filter((pergunta) => comResposta(pergunta.id) || perguntaAparece(pergunta.id, perfil, porId))
-      .map((pergunta) => ({ id: pergunta.id, texto: pergunta.texto, resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
+      .map((pergunta) => ({ id: pergunta.id, texto: textoParaAPessoa(pergunta, perfil, porId), resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
     const fora = respostas
       .filter((r) => blocoDaResposta(r) === id && !noRoteiro.has(r.perguntaId) && r.resposta.trim() !== '')
       .map((r) => ({ id: r.perguntaId, texto: r.pergunta, resposta: r.resposta, foraDoRoteiro: true }))

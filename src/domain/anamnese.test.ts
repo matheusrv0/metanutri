@@ -493,4 +493,41 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     const dietas = responder([], { id: 'dietas', texto: 'Dietas que já fez' }, 'motivo', 'Sem glúten por conta da mãe')
     expect(perguntasDe('motivo', perfil({ idadeAnos: 6 }), dietas)).toContain('Dietas que já fez')
   })
+
+  const menstruacao = { id: 'menstruacao', texto: 'Menstruação' }
+  const mulher = (idadeAnos: number) => perfil({ sexo: 'F', idadeAnos })
+
+  it('CA-1272: as opções de menstruação pela idade; sem idade, as de adulta (D-453, CB-420)', () => {
+    expect(opcoesDaPergunta('menstruacao', mulher(28))).toEqual(['Regular', 'Irregular', 'Não menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(39))).toEqual(['Regular', 'Irregular', 'Não menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(40))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('menstruacao', mulher(55))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('menstruacao', mulher(56))).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(68))).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(opcoesDaPergunta('menstruacao', perfil({ idadeAnos: null }))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('fluxo-intenso', mulher(68))).toEqual(['Sim', 'Não'])
+  })
+
+  it('CA-1273: o fluxo intenso só para quem menstrua; de 56 anos em diante, só com "Ainda menstrua"; respondido, continua', () => {
+    const comMenstruacao = (resposta: string) => responder([], menstruacao, 'saude-mulher', resposta)
+    expect(perguntasDe('saude-mulher', mulher(28))).toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(28), comMenstruacao('Não menstrua'))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(50), comMenstruacao('Menopausa'))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(68))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(68), comMenstruacao('Ainda menstrua'))).toContain('Fluxo menstrual intenso')
+    const fluxo = responder(comMenstruacao('Menopausa'), { id: 'fluxo-intenso', texto: 'Fluxo menstrual intenso' }, 'saude-mulher', 'Sim')
+    expect(perguntasDe('saude-mulher', mulher(50), fluxo)).toContain('Fluxo menstrual intenso')
+  })
+
+  it('CA-1274: anticoncepcional de 14 anos em diante; com menopausa, "Reposição hormonal"; renomeada, fica com o texto da conta', () => {
+    const hormonios = 'Anticoncepcional ou reposição hormonal'
+    expect(perguntasDe('saude-mulher', mulher(12))).not.toContain(hormonios)
+    expect(perguntasDe('saude-mulher', mulher(14))).toContain(hormonios)
+    expect(perguntasDe('saude-mulher', mulher(50), responder([], menstruacao, 'saude-mulher', 'Menopausa'))).toContain('Reposição hormonal')
+    expect(perguntasDe('saude-mulher', mulher(68))).toEqual(['Menstruação', 'Reposição hormonal'])
+    expect(perguntasDe('saude-mulher', mulher(68), responder([], menstruacao, 'saude-mulher', 'Ainda menstrua'))).toContain(hormonios)
+    const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'saude-mulher', 'hormonios', 'Hormônios')
+    const textosRenomeado = blocosDaFicha(renomeado, [], mulher(68)).find((b) => b.id === 'saude-mulher')?.perguntas.map((q) => q.texto)
+    expect(textosRenomeado).toContain('Hormônios')
+  })
 })
