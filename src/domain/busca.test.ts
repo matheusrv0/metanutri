@@ -464,6 +464,39 @@ describe('número + nome simples: o alimento principal (spec alimentos-e-gramatu
   })
 })
 
+describe('número de 20 ou mais é peso, também com nome de corte (spec alimentos-e-gramaturas, 3ª revisão, D-482a)', () => {
+  it.each([
+    ['120 filé de frango', 120],
+    ['100 peito de frango', 100],
+    ['100 coxa de frango', 100],
+  ])('CA-1342: "%s" entra com %i g de frango, nunca com peças', (entrada, gramas) => {
+    const { resultados } = buscarAlimentos(entrada, ALIMENTOS)
+    expect(resultados[0]?.alimento.descricao).toMatch(/^Frango/)
+    expect(resultados[0]?.gramas).toBe(gramas)
+    for (const r of resultados) expect(r.gramas ?? 0, `${entrada}: ${r.alimento.descricao}`).toBeLessThanOrEqual(2000)
+  })
+
+  it('CA-1342: abaixo de 20, o corte conta peças: "2 filés de frango" = 2 filés; "1 bife" acha quem tem bife', () => {
+    const [frango] = buscarAlimentos('2 filés de frango', ALIMENTOS).resultados
+    expect(frango?.medida).toMatchObject({ nome: 'filé', quantidade: 2 })
+    expect(frango?.gramas).toBe(200)
+    const bife = buscarAlimentos('1 bife', ALIMENTOS).resultados
+    expect(bife.length).toBeGreaterThan(0)
+    for (const r of bife) expect(r.medida, r.alimento.descricao).toMatchObject({ nome: 'bife', quantidade: 1 })
+  })
+
+  it('CA-1342: acima de 2 kg (ou 2 litros), "Quantidade muito alta: confira." e não entra (CB-456)', () => {
+    for (const r of buscarAlimentos('3000 arroz', ALIMENTOS).resultados) {
+      expect(r.gramas).toBeNull()
+      expect(r.aviso).toBe('Quantidade muito alta: confira.')
+    }
+    expect(buscarAlimentos('2 litros de leite', ALIMENTOS).resultados[0]?.gramas).toBe(2000)
+    expect(buscarAlimentos('3 litros de leite', ALIMENTOS).resultados[0]?.gramas).toBeNull()
+    // Medida escrita que não é corte continua medida: 25 colheres de sopa de arroz.
+    expect(buscarAlimentos('25 colheres de arroz', ALIMENTOS).resultados[0]?.medida?.nome).toBe('colher de sopa')
+  })
+})
+
 describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
   const ATUM = 277
 

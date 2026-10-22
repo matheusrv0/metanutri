@@ -381,6 +381,13 @@ function lerQuantidade(texto: string): { valor: number; resto: string } | null {
   return { valor, resto }
 }
 
+/** As medidas que também são nome de corte, na TACO e na fala (D-482a). */
+const CORTES: ReadonlySet<string> = new Set(['filé', 'bife', 'peito', 'coxa', 'sobrecoxa', 'posta'])
+
+/** D-482a: acima disto (2 kg ou 2 litros), a leitura avisa e não entra no plano. */
+export const QUANTIDADE_MAXIMA_G = 2000
+export const AVISO_QUANTIDADE_ALTA = 'Quantidade muito alta: confira.'
+
 /** "de", "da", "do" depois da medida ou da unidade. */
 const tirarDe = (texto: string): string => texto.replace(/^(de|da|do|dos|das)(?=\s|$)/, '').trim()
 
@@ -410,6 +417,9 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
   } else {
     for (const p of [...padroesDeMedida(), ...PADROES_CURTOS]) {
       const m = resto.match(p.re)
+      // D-482a (3ª revisão, R1): o corte (filé, peito, coxa…) também é o nome do alimento; com 20 ou mais, o número é peso,
+      // e a palavra fica no nome ("120 filé de frango" = 120 g, nunca 120 filés).
+      if (m && CORTES.has(p.nome) && quantidade !== null && quantidade >= LIMITE_DE_UNIDADES) break
       if (m) {
         medida = p.nome
         resto = resto.slice(m[0].length).trim()
@@ -651,13 +661,15 @@ export function buscarAlimentos(
 ): { readonly resultados: readonly ResultadoBusca[]; readonly aviso: string | null } {
   const lida = interpretarEntrada(texto)
   const termos = lida.termos.filter((t) => t.length > 1 || /\d/.test(t))
-  if (termos.length === 0) return { resultados: [], aviso: null }
-
   const pedida = lida.medida
+  // D-482a: "1 bife" sem mais nada procura quem tem a medida do corte.
+  const soOCorte = termos.length === 0 && pedida !== null && CORTES.has(pedida)
+  if (termos.length === 0 && !soOCorte) return { resultados: [], aviso: null }
+
   // D-482 (correção C): gema e clara são partes do ovo; só aparecem quando a busca as nomeia ("2 ovos" é o ovo inteiro).
   const nomeiaParte = termos.some((t) => PARTE_DO_OVO.test(t))
   const todos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null).filter(
-    ({ i }) => nomeiaParte || !PARTE_DO_OVO_NA_DESCRICAO.test(i.texto),
+    ({ i, temMedida }) => (nomeiaParte || !PARTE_DO_OVO_NA_DESCRICAO.test(i.texto)) && (!soOCorte || temMedida),
   )
   // D-482 ampliada: com um número e um nome simples ("2 ovos", "1 maçã"), fica só quem tem esse alimento como principal
   // (a parte antes da primeira vírgula), quando algum tem: sai "Macarrão, trigo, cru, com ovos", sai a macaúba.
@@ -668,7 +680,13 @@ export function buscarAlimentos(
   if (candidatos.length === 0) {
     return { resultados: [], aviso: 'Nenhum alimento encontrado com esse nome. Tente outra palavra ou menos letras.' }
   }
-  return { resultados: candidatos.map(({ i }) => ({ alimento: i.alimento, ...lerParaOAlimento(lida, i.alimento) })), aviso: null }
+  return { resultados: candidatos.map(({ i }) => ({ alimento: i.alimento, ...comTrava(lerParaOAlimento(lida, i.alimento)) })), aviso: null }
+}
+
+/** D-482a: leitura acima de 2 kg (ou 2 litros) avisa e não entra; "120 filés (12.000 g)" nunca mais vai para o plano. */
+function comTrava(leitura: Omit<ResultadoBusca, 'alimento'>): Omit<ResultadoBusca, 'alimento'> {
+  if (leitura.gramas === null || leitura.gramas <= QUANTIDADE_MAXIMA_G) return leitura
+  return { gramas: null, medida: null, unidade: leitura.unidade, aviso: AVISO_QUANTIDADE_ALTA }
 }
 
 /**
