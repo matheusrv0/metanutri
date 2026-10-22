@@ -125,7 +125,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   await page.getByRole('button', { name: 'Exportar' }).click()
   await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
   const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
-  await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
   await page.emulateMedia({ media: 'print' })
   await expect(janela.locator('img[src^="data:image/png"]')).toBeVisible()
   await page.pdf({ format: 'A4' })

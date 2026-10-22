@@ -58,7 +58,7 @@ export function CaixaDietaNoLink({
       {pedindoAutorizacao && aoAutorizar && aoDesistir ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-3">
           <p className="min-w-48 flex-1 text-sm text-infotext">
-            Ligado, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?
+            Com esta opção ligada, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?
           </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" loading={ocupada} onClick={aoAutorizar}>

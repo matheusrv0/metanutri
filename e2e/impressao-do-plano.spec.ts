@@ -11,7 +11,7 @@ const abrirExemplo = async (pagina: Page) => {
   await pagina.getByRole('button', { name: 'Exportar' }).click()
   await pagina.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
   const janela = pagina.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
-  await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
   return janela
 }
 

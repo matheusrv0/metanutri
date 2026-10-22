@@ -146,7 +146,7 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
-    await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await page.emulateMedia({ media: 'print' })
     await expect.poll(async () => (await espacos())?.pe).toBe(0)
     await expect.poll(async () => (await espacos())?.topo).toBe(0)
@@ -181,9 +181,9 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     await page.getByRole('button', { name: 'Exportar' }).click()
     await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
     const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
-    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await page.emulateMedia({ media: 'print' })
-    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await expect(page.locator('#conteudo')).toBeHidden()
     await expect(page.getByRole('heading', { level: 1, name: 'Exemplo — Maria, 28 anos' })).toBeHidden()
   })
@@ -256,7 +256,7 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
   // O Cobrir e o Exportar continuam funcionando.
   await page.getByRole('button', { name: 'Exportar' }).click()
   await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
-  await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Exportar' }).click()
   const baixando = page.waitForEvent('download')
@@ -558,7 +558,7 @@ const TELAS: readonly Tela[] = [
     },
     agir: async (p) => {
       const janela = p.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
-      await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+      await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
       const lista = janela.getByRole('switch', { name: 'Lista de compras' })
       if ((await lista.getAttribute('aria-checked')) !== 'true') await lista.click()
       await expect(janela.getByRole('region', { name: 'Lista de compras' })).toBeVisible()

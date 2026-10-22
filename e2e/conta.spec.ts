@@ -5,7 +5,7 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     await page.goto('/#/inicio')
     await page.getByRole('banner').getByRole('button', { name: 'Começar grátis' }).click()
     await expect(page).toHaveURL(/#\/criar-conta$/)
-    await expect(page.getByText('No Free você já tem')).toBeVisible()
+    await expect(page.getByText('No Free, você já tem')).toBeVisible()
   })
 
   test('CA-122: Assinar Solo no anual leva ao cadastro com o Solo anual marcado', async ({ page }) => {

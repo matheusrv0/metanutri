@@ -141,10 +141,10 @@ quantidade), Configurações, Ajuda, mensagens de erro e telas de administraçã
   refeições e a adequação. Crie o primeiro."; dado renomear, então o exemplo é “Maria Silva, retorno de março”; dado
   o primeiro acesso, então ele diz "Seus planos e pacientes ficam salvos na sua conta."
 - **CA-1190** · Dado o cartão do link do paciente e a Adesão, então eles aplicam a §3.13: "Mostrar o plano alimentar no
-  link", "Ligado, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço.", "Cabe a você,
+  link", "Com esta opção ligada, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço.", "Cabe a você,
   nutricionista, obter a autorização do paciente", "Este plano gera N missões.", "Você já usou os N links da sua
-  assinatura.", "Ver preços", "Nenhum paciente em acompanhamento", "Sem marcar há 4+ dias", "Em acompanhamento", "Sua
-  assinatura não tem limite.", "as marcações são apagadas".
+  assinatura.", "Ver preços", "Nenhum paciente em acompanhamento", "Parou de marcar" (selo) e "Pararam de marcar" (cartão), "Em acompanhamento", "Sua
+  assinatura não tem limite.", "Ainda cabe 1.", "as marcações são apagadas".
 - **CA-1191** · Dado a tela do paciente, então ela diz "Dia completo, Maria.", "Você está no ritmo combinado.", "A meta
   é marcar em 4 dias por semana.", "Atualizado em …" e, nas opções, "ou Opção 2"; dado a mensagem de contato do
   WhatsApp, então ela diz "me conte".
@@ -217,3 +217,44 @@ quantidade), Configurações, Ajuda, mensagens de erro e telas de administraçã
 - **R-403** · As três funções do servidor (assinar, gerenciar-assinatura e excluir-conta) só mudam as mensagens; o
   dono publica as três (comandos no relatório). Os quatro modelos de e-mail são colados no painel do Supabase.
 - **R-404** · Os textos que moram nos arquivos das outras frentes (D-417) só ficam coerentes depois da junção.
+
+## Apêndice A — O que foi aplicado da revisão de texto (21/10/2026)
+
+A revisão de texto da rodada numerou 232 correções (fora do repositório). Esta frente aplicou as das seções §1, §2,
+§3.1 a §3.9, §3.13, §3.14 e §3.17 a §3.20, e as linhas 136 e 188 que caem na Ajuda. Os desvios, com o motivo:
+
+| Linha | Proposta da revisão | O que ficou | Por quê |
+|---|---|---|---|
+| 1 | Frase do topo com "adequação de 20 vitaminas e minerais e da fibra" | "Monte o plano alimentar, entregue em PDF e acompanhe o paciente…" | O cartão do lado já diz os 21 nutrientes; a frase repetia o número (D-402) |
+| 2 | Cartão "5 sugestões" | "Até 5" | O Cobrir mostra no máximo cinco; às vezes menos (R-402) |
+| 6 | Uma frase do Cobrir | Duas frases: a lista por nutriente contra a conta do que falta, e o que as sugestões respeitam | Decisão 9 do coordenador (D-403) |
+| 7 e 8 | "consulta o plano alimentar"; "O link e os lembretes vão pelo WhatsApp" | "Se você quiser, o mesmo link mostra o plano alimentar"; "Você manda o link e os lembretes pelo WhatsApp" | O plano no link depende da chave; o envio é da nutricionista, não automático |
+| 21 | "…que sugere o que comer" | "…que diz o que comer" | O título com "sugere" passava de 60 letras; "diz" é o do `h1` |
+| 22 | "receba a sugestão de alimento e porção" | "receba o alimento e a porção em medida caseira" | Põe o diferencial na descrição da busca |
+| 27 e 37 | Clínica "em breve (R$ 149, até 4 nutricionistas)" | Nota "fale com a gente", sem preço | Decisão 8 (D-406, R-400) |
+| 31 | "Contratação por e-mail:" | A nota da Clínica com o e-mail como link | A Clínica saiu da tabela |
+| 36, 38 a 40 | Tirar as promessas falsas uma a uma | A tabela passou a comparar só os limites e marcar o que vem em todas | Todas as assinaturas têm as mesmas funções (D-405) |
+| 150 e 154 | "Sem marcar há 4+ dias" | Selo "Parou de marcar"; cartão "Pararam de marcar" | Rótulo curto que cabe no selo; a regra dos 4 dias continua na explicação e na landing |
+| 152 | "Ainda cabem N." | "Ainda cabe 1." no singular | Concordância |
+| 156 | "Comer as verduras, os legumes e o feijão do plano" | "Comer as verduras e os legumes do plano", sem contar feijão | D-411: a missão diz o que conta; feijão é outro grupo |
+| 160 | "ou Opção 2" | Aplicado | — |
+| 189 | Nome do paciente no PDF e no Word | Também no link novo e no nome do arquivo | D-409 |
+| 199 | "07:00 – Café da manhã" | O travessão curto; "Desjejum" é da outra frente | §3.11 |
+| 200 | "RECEITAS" no lugar de "RECEITAS SAUDÁVEIS" | Fica "RECEITAS SAUDÁVEIS" no Word de estágio | É o nome da seção no modelo do estágio, que o preceptor espera |
+| 214 | "Backup restaurado (N tipos de dado)" | Aplicado | — |
+| 221 a 230 | Em todo o site | Nos arquivos desta frente | D-417: os das outras frentes ficam com elas |
+
+**Achados além da revisão**, corrigidos aqui: "Ainda cabem 1" (concordância); a frase do limite de links que o banco
+levanta continua igual (só identifica o erro) e a tela diz "assinatura" (`LIMITE_DE_LINKS_NO_BANCO`); "Sem nome" no
+plano impresso virou "Paciente sem nome"; os estados de macro do memorial ganharam "da faixa"; na Ajuda, "saem em Word"
+virou "são gerados em Word"; no segundo fator, "Apague a entrada antiga" virou "Exclua"; no comprovante, "passa de 5
+MB. Tire uma foto menor" virou "tem mais de 5 MB. Envie uma foto menor"; o aviso do comprovante recusado virou "Seu
+comprovante não foi aprovado"; os testes de navegador que procuravam o título "Plano alimentar" na janela de imprimir
+passaram a pedir o nome exato, porque a janela agora se chama "Plano alimentar para imprimir".
+
+**Ficam para as outras frentes** (D-417), achados nesta: `src/ui/caso/CartaoIdentificacao.tsx` ("Confira nome e CRN
+em Conta e plano." e o exemplo "Maria, 28 anos…"); `src/domain/receitas.ts` ("rótulo de Meus produtos");
+`src/domain/produtos.ts` (categoria "Meus produtos"); `src/ui/produtos/TelaProdutos.tsx` (título "Meus produtos" e
+"Não dá para desfazer"); `src/ui/receitas/TelaReceitas.tsx` ("Não dá para desfazer"); `src/ui/plano/DialogoSugestoes.tsx`
+("Não deu para salvar"); `src/ui/produtos/LeitorCodigo.tsx` e `DialogoProduto.tsx` ("Não consegui"); `src/domain/plano.ts`
+("Desjejum"); e `src/ui/adequacao/TelaAdequacao.tsx`, que pode passar a usar `descreverEstagio` do domínio.

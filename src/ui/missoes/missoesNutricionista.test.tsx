@@ -514,7 +514,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(caixa()).not.toBeChecked()
     await usuario.click(caixa())
 
-    expect(screen.getByText('Ligado, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?')).toBeInTheDocument()
+    expect(screen.getByText('Com esta opção ligada, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?')).toBeInTheDocument()
     expect(repo.porCaso('c1')?.dieta).toBeNull()
     expect(caixa()).not.toBeChecked()
 

@@ -142,7 +142,9 @@ test.describe('Preços (D-234)', () => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
       await page.goto('/#/precos')
-      await expect(page.getByRole('region', { name: 'Plano Clínica' })).toBeVisible()
+      // D-406 (spec textos-e-promessas): o último cartão é o Pro; a Clínica é uma nota de contato embaixo.
+      await expect(page.getByRole('region', { name: 'Plano Pro' })).toBeVisible()
+      await expect(page.getByRole('note', { name: 'Plano Clínica' }).filter({ visible: true })).toHaveCount(1)
       await expect(page.getByRole('table')).toBeHidden()
       await semRolagemLateral(page)
     })
@@ -154,7 +156,7 @@ test.describe('Preços (D-234)', () => {
       await ligarServidorFalso(page)
       await page.goto('/#/precos')
       await expect(page.getByRole('table')).toBeVisible()
-      await expect(page.getByRole('columnheader', { name: /Clínica/ })).toBeInViewport()
+      await expect(page.getByRole('columnheader', { name: /^Pro/ })).toBeInViewport()
       await semRolagemLateral(page)
     })
   }
