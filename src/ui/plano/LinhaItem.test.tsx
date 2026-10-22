@@ -20,17 +20,17 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.getByText('1 ponta de faca')).toBeInTheDocument()
   })
 
-  it('CA-789: produto apagado vira "Produto apagado", com os gramas, "— kcal" e sem substituto', () => {
+  it('CA-789 e CA-1151: alimento próprio excluído vira "Alimento excluído", com os gramas, "— kcal" e sem substituto', () => {
     render(
       <ul>
         <LinhaItem item={{ id: 'i1', alimentoId: 900_001, gramas: 40 }} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} aoSubstituir={vi.fn()} />
       </ul>,
     )
-    expect(screen.getByText('Produto apagado')).toBeInTheDocument()
-    expect(screen.getByLabelText('Gramas de Produto apagado')).toHaveValue('40')
+    expect(screen.getByText('Alimento excluído')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gramas de Alimento excluído')).toHaveValue('40')
     expect(screen.getByText('— kcal')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Substituir/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Remover Produto apagado' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Remover Alimento excluído' })).toBeInTheDocument()
     // Revisão de 20/10/2026: a nutricionista sabe que o paciente não vê esse item.
     expect(screen.getByText('Não aparece no plano impresso nem no link do paciente.')).toBeInTheDocument()
   })

@@ -5,7 +5,8 @@ import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { formatarQuantidadeMedida } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
-import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
+import { PRIMEIRO_ID_PROPRIO } from '@/domain/busca.ts'
+import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, MedidaDoItem, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -84,7 +85,8 @@ export function GavetaCobrir({
       chave === null
         ? null
         : sugerirParaCobrir(chave, totais, adequacao, {
-            alimentos: ALIMENTOS,
+            // D-386 (spec alimentos-e-gramaturas): a base e os alimentos próprios com a chave ligada.
+            alimentos: alimentosParaSugerir(),
             gastoEnergetico,
             porcaoMaximaG: prefs.porcaoMaximaG,
             incluirIngredientes: prefs.incluirIngredientes,
@@ -170,7 +172,10 @@ export function GavetaCobrir({
             const porcao = s.medida ? `${formatarQuantidadeMedida(s.medida.quantidade, s.medida.nome)} · ${peso}` : peso
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
-                <p className="text-sm font-semibold text-heading">{s.descricao}</p>
+                <p className="flex items-center gap-2 text-sm font-semibold text-heading">
+                  <span className="min-w-0">{s.descricao}</span>
+                  {s.alimentoId >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
+                </p>
                 <p className="numeros text-sm text-muted-foreground">
                   {`${porcao} · cobre ${formatarNumero(s.coberturaPct, 0)}% da falta · +${formatarNumero(
                     s.kcalAdicionadas,

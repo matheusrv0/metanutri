@@ -21,7 +21,7 @@ import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { quantidadeNaFolha, textoDaQuantidade, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
-import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
+import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
 import type { Caso, ItemPlano, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
@@ -131,7 +131,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
     ? trocasDaFolha(
-        trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: listaDeRestricoes(restricoes ?? '') }),
+        // D-386 (spec alimentos-e-gramaturas): o alimento próprio só troca com a chave ligada.
+        trocasDoPlano(plano, buscarAlimento, { alimentos: alimentosParaSugerir(), porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: listaDeRestricoes(restricoes ?? '') }),
         buscarAlimento,
       )
     : []

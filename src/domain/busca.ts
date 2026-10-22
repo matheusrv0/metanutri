@@ -3,7 +3,7 @@ import tabelaMedidas from '../data/medidas-caseiras.json'
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { unidadeDo, type UnidadeDoAlimento } from './liquido.ts'
 import { ehDeUsoComum, ehPratoComposto, regraQueExclui } from './prescritivel.ts'
-import { buscarAlimento } from './tabelas.ts'
+import { alimentosComProdutos, buscarAlimento } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
 
 /** O primeiro id de alimento próprio (o mesmo `PRIMEIRO_ID_PRODUTO` de `produtos.ts`; aqui sem importar, para não fechar um ciclo). */
@@ -20,8 +20,27 @@ const MEDIDAS_POR_ALIMENTO = new Map<number, readonly MedidaCaseira[]>(
   Object.entries(tabelaMedidas.alimentos as Record<string, { medidas: MedidaCaseira[] }>).map(([id, r]) => [Number(id), r.medidas]),
 )
 
+/** As medidas da conta para alimentos da base (spec alimentos-e-gramaturas, D-387), registradas pela interface. */
+const PROPRIAS = new Map<number, readonly MedidaCaseira[]>()
+let versaoDasProprias = 0
+
+/** Troca as medidas da conta que a busca e a linha do plano conhecem (ao abrir, ao gravar e quando outra aba grava). */
+export function registrarMedidasProprias(lista: readonly { readonly alimentoId: number; readonly nome: string; readonly gramas: number }[]): void {
+  PROPRIAS.clear()
+  for (const m of lista) PROPRIAS.set(m.alimentoId, [...(PROPRIAS.get(m.alimentoId) ?? []), { nome: m.nome, gramas: m.gramas, propria: true }])
+  versaoDasProprias += 1
+}
+
+/**
+ * As medidas do alimento: as da conta primeiro (marcadas `propria`), depois as da POF; com o mesmo nome, vale a da conta
+ * (D-387). O alimento próprio traz as dele no cadastro.
+ */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
-  return MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  if (alimentoId >= PRIMEIRO_ID_PROPRIO) return buscarAlimento(alimentoId)?.medidas ?? []
+  const daPof = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  const proprias = PROPRIAS.get(alimentoId)
+  if (!proprias) return daPof
+  return [...proprias, ...daPof.filter((m) => !proprias.some((p) => p.nome === m.nome))]
 }
 
 /** Medidas mais legíveis num plano, em ordem de preferência; medidas vagas ("porção", "prato") ficam de fora. */
@@ -232,7 +251,22 @@ const padraoDaMedida = (nome: string): RegExp => {
   return new RegExp(`^${inicio}${fim}(?=\\s|$)`)
 }
 
-const PADROES_MEDIDA = MEDIDAS.map((nome) => ({ nome, re: padraoDaMedida(nome) }))
+let padroes: { readonly chave: unknown; readonly versao: number; readonly lista: readonly { readonly nome: string; readonly re: RegExp }[] } | null = null
+
+/**
+ * Os nomes de medida que a entrada entende: os da POF, os das medidas da conta e os dos alimentos próprios (D-387), dos
+ * mais longos para os mais curtos. Refeito só quando um deles muda.
+ */
+function padroesDeMedida(): readonly { readonly nome: string; readonly re: RegExp }[] {
+  const comProprios = alimentosComProdutos()
+  if (padroes && padroes.chave === comProprios && padroes.versao === versaoDasProprias) return padroes.lista
+  const nomes = new Set(MEDIDAS)
+  for (const lista of PROPRIAS.values()) for (const m of lista) nomes.add(m.nome)
+  for (const a of comProprios) for (const m of a.medidas ?? []) nomes.add(m.nome)
+  const lista = [...nomes].sort((a, b) => b.length - a.length).map((nome) => ({ nome, re: padraoDaMedida(nome) }))
+  padroes = { chave: comProprios, versao: versaoDasProprias, lista }
+  return lista
+}
 
 /**
  * D-372 (spec alimentos-e-gramaturas): o nome curto da medida, como se fala. Vale a primeira medida da lista que o
@@ -317,7 +351,7 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
     if (litro && quantidade !== null) quantidade *= 1000
     resto = tirarDe(resto.slice((ml ?? litro)?.[0].length ?? 0).trim())
   } else {
-    for (const p of [...PADROES_MEDIDA, ...PADROES_CURTOS]) {
+    for (const p of [...padroesDeMedida(), ...PADROES_CURTOS]) {
       const m = resto.match(p.re)
       if (m) {
         medida = p.nome

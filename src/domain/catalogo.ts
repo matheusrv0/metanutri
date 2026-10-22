@@ -93,6 +93,8 @@ export function composicaoDe(alimento: Alimento): readonly LinhaDeComposicao[] {
   })
   // D-380 (spec alimentos-e-gramaturas): energia e macros que vieram do USDA levam a marca.
   const taco = NUTRIENTES_CONFERIDOS.map((chave) => linha(chave, alimento.usdaMacros?.chaves.includes(chave) === true))
+  // O alimento próprio mostra as seis também: quem cadastrou pode ter digitado (spec alimentos-e-gramaturas, D-383).
+  if (alimento.proprio) return [...taco, ...CHAVES_USDA.map((chave) => linha(chave, false))]
   return alimento.usda ? [...taco, ...CHAVES_USDA.map((chave) => linha(chave, true))] : taco
 }
 

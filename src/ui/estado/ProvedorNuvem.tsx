@@ -70,7 +70,7 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       } else if (chave !== null && ehChaveDaNuvem(chave)) {
         sincronia.mudou()
         // CB-124: os produtos da outra aba entram na busca daqui.
-        if (chave === 'metanutri:produtos') trocarDadosEmMemoria(conta)
+        if (chave === 'metanutri:produtos' || chave === 'metanutri:medidas-proprias') trocarDadosEmMemoria(conta)
       }
     }
     // DP-27: ao esconder ou fechar a aba, o que falta vai na hora; fechar com pendência avisa.

@@ -258,6 +258,18 @@ export interface Alimento {
   readonly usdaMacros?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
   /** Só no alimento próprio: medido em g ou em ml (spec alimentos-e-gramaturas, D-378). */
   readonly unidade?: 'g' | 'ml'
+  /** Só no alimento próprio: as medidas do cadastro (D-383). */
+  readonly medidas?: readonly { readonly nome: string; readonly gramas: number }[]
+  /** Só no alimento próprio (D-383 a D-386): o que a busca, a folha e o Cobrir precisam saber dele. */
+  readonly proprio?: {
+    readonly tipo: 'alimento' | 'preparacao' | 'rotulo'
+    /** O nome da folha e do link; vazio usa a descrição. */
+    readonly nomeParaPaciente: string
+    /** "Pode aparecer no Cobrir e nas trocas" ligado (D-386). */
+    readonly sugerir: boolean
+    /** A energia digitada não bate com os macros (D-384): não entra nas sugestões. */
+    readonly energiaIncoerente: boolean
+  }
 }
 
 export type BuscarAlimento = (id: number) => Alimento | undefined

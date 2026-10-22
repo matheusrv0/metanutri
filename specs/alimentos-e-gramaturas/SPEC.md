@@ -155,4 +155,8 @@ próprios alimentos e as próprias medidas.
 - Parte comestível (%) e nome no plural escolhido à mão na medida (o plural segue `pluralDaMedida`).
 - Medida própria de alimento próprio fora do item (mora dentro dele).
 - "Adicionar em" do Cobrir começando pela refeição do tipo do alimento (A19).
+- O nome para o paciente no Word do aconselhamento (A22): o Word continua com o nome da tabela.
+- O botão "Tr" (traço) no formulário de "Meus alimentos": vazio é "não informado"; traço se digita como 0.
 - Mudar a regra prescritível (`prescritivel.ts`).
+- Na publicação 1, a tela "Meus alimentos" continua com o cadastro pelo rótulo de antes (já com a correção da A13); o
+  seletor de unidade g/ml (A23) chega com o formulário novo, na publicação 2.

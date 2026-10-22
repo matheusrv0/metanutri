@@ -59,7 +59,7 @@ describe('validar a receita (CB-270)', () => {
     expect(problemas({ ...DADOS, ingredientes: [] })).toEqual([['ingredientes', 'Adicione pelo menos um ingrediente.']])
     expect(problemas({ ...DADOS, ingredientes: [{ alimentoId: 7, gramas: 0 }] })).toEqual([['ingredientes', 'Adicione pelo menos um ingrediente.']])
     for (const porcoes of [null, 0, -2]) {
-      expect(problemas({ ...DADOS, porcoes })).toEqual([['porcoes', 'Diga quantas porções a receita rende.']])
+      expect(problemas({ ...DADOS, porcoes })).toEqual([['porcoes', 'Informe quantas porções a receita rende.']])
     }
     for (const pesoProntoG of [0, -10]) {
       expect(problemas({ ...DADOS, pesoProntoG })).toEqual([['pesoProntoG', 'O peso pronto precisa ser maior que zero.']])
@@ -72,8 +72,8 @@ describe('limite de tamanho (CA-861a)', () => {
     expect(LIMITE_NOME_RECEITA).toBe(120)
     expect(LIMITE_PREPARO_RECEITA).toBe(4000)
     expect(validarReceita({ ...DADOS, nome: 'a'.repeat(120), preparo: 'b'.repeat(4000) })).toEqual([])
-    expect(validarReceita({ ...DADOS, nome: 'a'.repeat(121) }).map((p) => [p.campo, p.mensagem])).toEqual([['nome', 'O nome passa de 120 letras.']])
-    expect(validarReceita({ ...DADOS, preparo: 'b'.repeat(4001) }).map((p) => [p.campo, p.mensagem])).toEqual([['preparo', 'O modo de preparo passa de 4.000 letras.']])
+    expect(validarReceita({ ...DADOS, nome: 'a'.repeat(121) }).map((p) => [p.campo, p.mensagem])).toEqual([['nome', 'O nome tem mais de 120 caracteres.']])
+    expect(validarReceita({ ...DADOS, preparo: 'b'.repeat(4001) }).map((p) => [p.campo, p.mensagem])).toEqual([['preparo', 'O modo de preparo tem mais de 4.000 caracteres.']])
   })
 })
 

@@ -93,7 +93,7 @@ describe('Produto pelo rótulo', () => {
     await usuario.click(janela.getByRole('button', { name: 'Cadastrar produto' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    const lista = within(screen.getByRole('list', { name: 'Produtos cadastrados' }))
+    const lista = within(screen.getByRole('list', { name: 'Alimentos cadastrados' }))
     expect(lista.getByRole('heading', { name: 'Iogurte natural' })).toBeInTheDocument()
     expect(lista.getByText(/170 g · 1 pote|170 g/)).toBeInTheDocument()
   })
@@ -109,9 +109,9 @@ describe('Produto pelo rótulo', () => {
     expect(screen.getByRole('heading', { name: 'Iogurte natural' })).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Excluir Iogurte natural' }))
-    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir produto' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir alimento' }))
     expect(screen.queryByRole('heading', { name: 'Iogurte natural' })).not.toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('Produto “Iogurte natural” excluído.')
+    expect(screen.getByRole('status')).toHaveTextContent('Alimento “Iogurte natural” excluído.')
   })
 
   it('não salva com campo do rótulo faltando', async () => {

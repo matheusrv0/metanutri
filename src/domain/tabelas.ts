@@ -24,6 +24,7 @@ export function registrarProdutos(lista: readonly Alimento[]): void {
   extras.clear()
   for (const a of lista) extras.set(a.id, a)
   comProdutos = null
+  paraSugerir = null
 }
 
 /**
@@ -41,6 +42,25 @@ export function alimentosComProdutos(): readonly Alimento[] {
 }
 
 export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? extras.get(id)
+
+/**
+ * D-386 (spec alimentos-e-gramaturas): o alimento próprio entra nas sugestões automáticas (Cobrir e trocas da folha) só
+ * com "Pode aparecer no Cobrir e nas trocas" ligado, com energia, fora do grupo "Suplementos" e sem o aviso de energia
+ * incoerente. A regra prescritível (nome, grupo e preparo) e o nutriente pedido são conferidos por quem sugere; a regra
+ * "nunca" não se desliga.
+ */
+export function proprioPodeSerSugerido(a: Alimento): boolean {
+  return a.proprio !== undefined && a.proprio.sugerir && !a.proprio.energiaIncoerente && a.categoria !== 'Suplementos' && a.nutrientes.energia_kcal !== null
+}
+
+let paraSugerir: readonly Alimento[] | null = null
+
+/** A base e os alimentos próprios que podem ser sugeridos (D-386); a mesma lista enquanto os produtos não mudam. */
+export function alimentosParaSugerir(): readonly Alimento[] {
+  if (extras.size === 0) return ALIMENTOS
+  paraSugerir ??= [...ALIMENTOS, ...[...extras.values()].filter(proprioPodeSerSugerido)]
+  return paraSugerir
+}
 
 export type CampoDri = 'ear' | 'rda' | 'ai' | 'ul'
 

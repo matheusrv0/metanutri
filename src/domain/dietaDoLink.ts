@@ -4,6 +4,7 @@
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
 import { modoDeQuantidade } from './caso.ts'
 import { lerMedidaDoItem } from './medidaDoItem.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import {
   ehItemDeReceita,
@@ -97,7 +98,8 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
   return {
     medida: q.medida,
     gramas,
-    alimento: buscar(alimentoId)?.descricao ?? 'Alimento removido',
+    // O alimento próprio vai com o nome para o paciente do cadastro (D-385): o celular do paciente não o conhece.
+    alimento: DA_BASE.has(alimentoId) ? (buscar(alimentoId)?.descricao ?? 'Alimento removido') : nomeParaPaciente(buscar(alimentoId)),
     ...(escolhida ? { escolhida: true as const } : {}),
     ...(q.aproximada ? { aproximada: true as const } : {}),
     ...(q.unidade === 'ml' && !DA_BASE.has(alimentoId) ? { unidade: 'ml' as const } : {}),

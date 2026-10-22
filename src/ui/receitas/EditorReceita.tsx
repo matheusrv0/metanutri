@@ -143,12 +143,12 @@ export function EditorReceita({ receita, aoSalvar, aoCancelar }: EditorReceitaPr
         </div>
         <div className="col-span-2 sm:col-span-1">
           <CampoNumero
-            rotulo="Peso pronto"
+            rotulo="Peso da receita pronta"
             valor={pesoProntoG}
             aoMudar={setPesoProntoG}
             sufixo="g"
             placeholder={soma > 0 ? formatarNumero(soma, 0) : undefined}
-            dica={pesoProntoG === null && soma > 0 ? `Vazio: a soma dos ingredientes, ${formatarNumero(soma, 0)} g.` : undefined}
+            dica={pesoProntoG === null && soma > 0 ? `Se ficar vazio, vale a soma dos ingredientes (${formatarNumero(soma, 0)} g).` : undefined}
             erro={erroDe('pesoProntoG')}
           />
         </div>

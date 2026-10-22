@@ -21,3 +21,23 @@ export function contarUso(planos: Iterable<Plano | null | undefined>): Map<numbe
   }
   return uso
 }
+
+/**
+ * Em quantos planos o alimento aparece, como item ou como ingrediente de receita guardada no item (spec
+ * alimentos-e-gramaturas, D-385): editar o alimento próprio muda os cálculos deles.
+ */
+export function planosComAlimento(planos: Iterable<Plano | null | undefined>, alimentoId: number): number {
+  let quantos = 0
+  for (const plano of planos) {
+    const refeicoes: unknown = plano?.refeicoes
+    if (!Array.isArray(refeicoes)) continue
+    const usa = (refeicoes as Plano['refeicoes']).some((refeicao) =>
+      OPCOES.some((opcao) => {
+        const itens: unknown = refeicao?.opcoes?.[opcao]
+        return Array.isArray(itens) && (itens as Plano['refeicoes'][number]['opcoes'][typeof opcao]).some((i) => i?.alimentoId === alimentoId || i?.receita?.ingredientes?.some((g) => g?.alimentoId === alimentoId) === true)
+      }),
+    )
+    if (usa) quantos += 1
+  }
+  return quantos
+}

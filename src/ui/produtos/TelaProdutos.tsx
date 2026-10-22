@@ -1,67 +1,98 @@
-import { Barcode, Pencil, Plus, Trash } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
-import { criarRepositorioProdutos, produtoComoAlimento, type Produto } from '@/domain/produtos.ts'
-import { registrarProdutos } from '@/domain/tabelas.ts'
+import { Apple, Barcode, Pencil, Plus, Trash } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { dadosDoProduto, dadosEmBranco, produtoDosDados } from '@/domain/alimentoProprio.ts'
+import { LIMITE_ALIMENTOS_PROPRIOS, MEUS_ALIMENTOS_NOVOS, produtoComoAlimento, type DadosAlimentoProprio, type Produto } from '@/domain/produtos.ts'
+import { planosComAlimento } from '@/domain/usoDaConta.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
-import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
-import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
+import { useCasosOpcional } from '../estado/contextoCasos.ts'
+import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
+import { DialogoAlimentoProprio } from './DialogoAlimentoProprio.tsx'
 import { DialogoProduto } from './DialogoProduto.tsx'
 
-/** Meus produtos: o que vem de rótulo e não existe na tabela de composição. */
-export function TelaProdutos() {
-  const armazenamento = useArmazenamento()
-  const repositorio = useMemo(() => criarRepositorioProdutos(armazenamento), [armazenamento])
-  const [versao, setVersao] = useState(0)
+const TIPO: Readonly<Record<NonNullable<Produto['tipo']>, string>> = { alimento: 'Alimento', preparacao: 'Preparação', rotulo: 'Rótulo' }
+
+interface TelaProdutosProps {
+  /** O formulário novo de "Meus alimentos" (D-383); padrão: a constante da publicação. */
+  readonly formularioNovo?: boolean
+}
+
+/**
+ * "Meus alimentos" (spec alimentos-e-gramaturas, D-383 a D-385): o que a nutricionista cadastra e a base não tem. Com o
+ * formulário novo desligado (publicação 1), é o cadastro pelo rótulo de antes, com o nome novo.
+ */
+export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProdutosProps = {}) {
+  const { repositorio, lista, salvar, excluir } = useMeusAlimentos()
+  const casos = useCasosOpcional()
   const [busca, setBusca] = useState('')
-  const [editando, setEditando] = useState<Produto | 'novo' | null>(null)
+  const [editandoRotulo, setEditandoRotulo] = useState<Produto | 'novo' | null>(null)
+  const [editando, setEditando] = useState<{ readonly dados: DadosAlimentoProprio; readonly editando: boolean; readonly id?: number } | null>(null)
   const [excluindo, setExcluindo] = useState<Produto | null>(null)
   // Última ação concluída: fica escrita na tela e o leitor de tela anuncia.
   const [mensagem, setMensagem] = useState<string | null>(null)
 
   const produtos = useMemo(() => {
-    void versao
     const termo = busca.trim().toLowerCase()
-    return repositorio.listar().filter((p) => (termo === '' ? true : `${p.nome} ${p.marca}`.toLowerCase().includes(termo)))
-  }, [repositorio, versao, busca])
+    return lista.filter((p) => (termo === '' ? true : `${p.nome} ${p.marca}`.toLowerCase().includes(termo)))
+  }, [lista, busca])
 
-  const atualizar = useCallback(() => setVersao((v) => v + 1), [])
-  // CB-124: outra aba da conta gravou produtos; a lista se refaz.
-  useOutraAbaGravou('metanutri:produtos', atualizar)
+  // D-385: editar avisa em quantos planos o alimento está.
+  const emPlanos = useMemo(() => {
+    if (!editando?.id || !casos) return 0
+    return planosComAlimento(
+      casos.casos.map((c) => casos.repositorio.obter(c.id)?.plano),
+      editando.id,
+    )
+  }, [editando, casos])
 
-  const excluir = () => {
+  const noLimite = lista.length >= LIMITE_ALIMENTOS_PROPRIOS
+
+  const confirmarExclusao = () => {
     if (!excluindo) return
-    repositorio.excluir(excluindo.id)
+    excluir(excluindo.id)
     setExcluindo(null)
-    setMensagem(`Produto “${excluindo.nome}” excluído.`)
-    atualizar()
+    setMensagem(`Alimento “${excluindo.nome}” excluído.`)
   }
 
-  // Mantém a busca de alimentos em dia com o que está cadastrado.
-  registrarProdutos(repositorio.listar().map(produtoComoAlimento))
+  const salvarDoFormulario = (dados: DadosAlimentoProprio): string | null => {
+    try {
+      const salvo = salvar(produtoDosDados(dados, editando?.id))
+      setEditando(null)
+      setMensagem(`Alimento “${salvo.nome}” salvo.`)
+      return null
+    } catch (erro) {
+      return erro instanceof Error ? erro.message : 'Não foi possível salvar. Tente de novo.'
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>Meus produtos</CardTitle>
+          <CardTitle>Meus alimentos</CardTitle>
           <CardDescription>
-            Industrializado não está na tabela de composição. Cadastre pelo rótulo uma vez e use nos planos como qualquer alimento.
+            {formularioNovo
+              ? 'O que a base não tem: um alimento da sua região, uma preparação ou um produto pelo rótulo. Cadastre uma vez e use nos planos como qualquer alimento.'
+              : 'Produtos industrializados não estão na TACO. Cadastre o rótulo uma vez e use o produto nos planos como qualquer alimento.'}
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
-            <CampoTexto rotulo="Buscar produto" valor={busca} aoMudar={setBusca} placeholder="Nome ou marca…" />
+            <CampoTexto rotulo="Buscar" valor={busca} aoMudar={setBusca} placeholder="Nome ou marca…" />
           </div>
-          <Button onClick={() => setEditando('novo')}>
+          <Button
+            disabled={noLimite}
+            onClick={() => (formularioNovo ? setEditando({ dados: dadosEmBranco('alimento'), editando: false }) : setEditandoRotulo('novo'))}
+          >
             <Plus aria-hidden="true" />
-            Cadastrar pelo rótulo
+            {formularioNovo ? 'Novo alimento' : 'Cadastrar pelo rótulo'}
           </Button>
         </div>
+        {noLimite ? <p className="text-sm text-warningtext">{`Você chegou a ${LIMITE_ALIMENTOS_PROPRIOS} alimentos, o limite da conta. Exclua um que não usa mais para cadastrar outro.`}</p> : null}
         {/* Sempre montado: a região viva só anuncia o que muda dentro dela. */}
         <p role="status" className={mensagem ? 'text-sm text-muted-foreground' : 'sr-only'}>
           {mensagem}
@@ -71,27 +102,38 @@ export function TelaProdutos() {
       {produtos.length === 0 ? (
         <Card className="items-center gap-3 py-12 text-center">
           <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
-            <Barcode className="size-6" aria-hidden="true" />
+            {formularioNovo ? <Apple className="size-6" aria-hidden="true" /> : <Barcode className="size-6" aria-hidden="true" />}
           </span>
-          <h2 className="card-title">{busca.trim() ? 'Nenhum produto com esse nome' : 'Nenhum produto cadastrado'}</h2>
+          <h2 className="card-title">{busca.trim() ? 'Nenhum alimento com esse nome' : 'Nenhum alimento cadastrado'}</h2>
           <p className="max-w-[52ch] text-sm text-muted-foreground">
-            Pegue a embalagem, copie a tabela nutricional e a porção declarada. O sistema converte para 100 g sozinho.
+            {formularioNovo
+              ? 'Valores por 100 g ou na porção do rótulo; as medidas caseiras que você cadastrar aparecem na linha do plano.'
+              : 'Copie a tabela nutricional e a porção do rótulo. A conversão para 100 g é automática.'}
           </p>
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2" aria-label="Produtos cadastrados">
+        <ul className="grid gap-4 sm:grid-cols-2" aria-label="Alimentos cadastrados">
           {produtos.map((p) => {
             const alimento = produtoComoAlimento(p)
             const kcal = alimento.nutrientes.energia_kcal
+            const unidade = alimento.unidade ?? 'g'
+            const porCemNaBase = (p.base ?? 'porcao') === 'por100'
+            const tipo = TIPO[p.tipo ?? 'rotulo']
+            const subtitulo = [tipo, p.tipo === 'rotulo' || !p.tipo ? p.marca.trim() || 'Sem marca' : (p.grupo ?? '')].filter(Boolean).join(' · ')
             return (
               <li key={p.id}>
                 <Card className="gap-3 p-5">
                   <div className="flex items-start gap-3">
                     <div className="min-w-0 flex-1">
                       <h2 className="card-title truncate text-base">{p.nome}</h2>
-                      <p className="text-xs text-muted-foreground">{p.marca.trim() || 'Sem marca'}</p>
+                      <p className="text-xs text-muted-foreground">{subtitulo}</p>
                     </div>
-                    <Button variant="ghost" size="iconsm" onClick={() => setEditando(p)} aria-label={`Editar ${p.nome}`}>
+                    <Button
+                      variant="ghost"
+                      size="iconsm"
+                      onClick={() => (formularioNovo ? setEditando({ dados: dadosDoProduto(p), editando: true, id: p.id }) : setEditandoRotulo(p))}
+                      aria-label={`Editar ${p.nome}`}
+                    >
                       <Pencil aria-hidden="true" />
                     </Button>
                     <Button variant="ghost" size="iconsm" onClick={() => setExcluindo(p)} aria-label={`Excluir ${p.nome}`}>
@@ -100,12 +142,12 @@ export function TelaProdutos() {
                   </div>
                   <dl className="numeros grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border pt-3 text-sm">
                     <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">Porção</dt>
-                      <dd>{`${formatarNumero(p.porcaoG, 0)} g${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
+                      <dt className="text-muted-foreground">{porCemNaBase ? 'Valores' : 'Porção'}</dt>
+                      <dd>{porCemNaBase ? `por 100 ${unidade}` : `${formatarNumero(p.porcaoG, 0)} ${unidade}${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">Por 100 g</dt>
-                      <dd>{kcal === null ? '—' : `${formatarNumero(kcal, 0)} kcal`}</dd>
+                      <dt className="text-muted-foreground">{`Por 100 ${unidade}`}</dt>
+                      <dd>{kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}</dd>
                     </div>
                   </dl>
                 </Card>
@@ -118,26 +160,31 @@ export function TelaProdutos() {
       {repositorio.persistente ? null : (
         <Alert variant="warning">
           <Barcode aria-hidden="true" />
-          <p>Este navegador não guarda dados: os produtos valem só enquanto a aba estiver aberta.</p>
+          <p>Este navegador não guarda dados: os alimentos valem só enquanto a aba estiver aberta.</p>
         </Alert>
       )}
 
       <DialogoProduto
-        produto={editando}
-        aoFechar={() => setEditando(null)}
+        produto={editandoRotulo}
+        aoFechar={() => setEditandoRotulo(null)}
         aoSalvar={(dados) => {
-          const salvo = repositorio.salvar(dados)
-          atualizar()
-          setEditando(null)
-          setMensagem(`Produto “${salvo.nome}” salvo.`)
+          try {
+            const salvo = salvar(dados)
+            setEditandoRotulo(null)
+            setMensagem(`Produto “${salvo.nome}” salvo.`)
+          } catch (erro) {
+            setMensagem(erro instanceof Error ? erro.message : 'Não foi possível salvar. Tente de novo.')
+          }
         }}
       />
 
+      <DialogoAlimentoProprio inicial={editando} emPlanos={emPlanos} aoSalvar={salvarDoFormulario} aoFechar={() => setEditando(null)} />
+
       <DialogoExcluir
         nome={excluindo?.nome ?? null}
-        descricao="Plano que usa este produto passa a mostrar “Produto apagado” nessa linha, sem valores. Não dá para desfazer."
-        acao="Excluir produto"
-        aoConfirmar={excluir}
+        descricao="Os planos que usam este alimento vão mostrar “Alimento excluído” no lugar dele, sem valores. Não é possível desfazer."
+        acao="Excluir alimento"
+        aoConfirmar={confirmarExclusao}
         aoFechar={() => setExcluindo(null)}
       />
     </div>

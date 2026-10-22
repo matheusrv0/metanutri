@@ -123,7 +123,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
 
         <Secao titulo="Alimentos">
           <ItemMenu icone={<BookOpen aria-hidden="true" />} rotulo="Tabela de alimentos" ativo={rota.tela === 'alimentos'} aoClicar={() => ir({ tela: 'alimentos' })} />
-          <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus produtos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
+          <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus alimentos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
           <ItemMenu icone={<CookingPot aria-hidden="true" />} rotulo="Receitas" ativo={rota.tela === 'receitas'} aoClicar={() => ir({ tela: 'receitas' })} />
         </Secao>
 

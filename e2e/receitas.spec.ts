@@ -27,7 +27,7 @@ const criarPanqueca = async (pagina: Page) => {
   await pagina.getByLabel('Rende').fill('2')
   await pagina.getByRole('combobox', { name: 'Nome da porção' }).click()
   await pagina.getByRole('option', { name: 'unidade' }).click()
-  await pagina.getByLabel('Peso pronto').fill('240')
+  await pagina.getByLabel('Peso da receita pronta').fill('240')
   await pagina.getByLabel('Modo de preparo').fill('Amasse a banana, misture o ovo e a aveia.\nDoure dos dois lados.')
   await expect(pagina.getByRole('region', { name: 'Valor de uma porção' })).toContainText('204 kcal')
   await pagina.getByRole('button', { name: 'Salvar receita' }).click()

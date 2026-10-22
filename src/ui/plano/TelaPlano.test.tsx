@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
+import { registrarMedidasProprias } from '@/domain/busca.ts'
 import { criarPlanoPadrao } from '@/domain/plano.ts'
 import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
 import type { ModoQuantidade, Plano } from '@/domain/tipos.ts'
@@ -295,5 +296,21 @@ describe('Quantidades para o paciente no topo da etapa (spec alimentos-e-gramatu
     await userEvent.setup().type(entradaDoAlmoco(), '1 banana{Enter}')
     expect(almoco().getByLabelText('Gramas de Banana, prata, crua')).toHaveValue('75')
     expect(almoco().getByRole('combobox', { name: 'Medida de Banana, prata, crua' })).toHaveValue('unidade')
+  })
+})
+
+describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-387)', () => {
+  it('CA-1159: cria a medida ali, e ela fica escolhida no item', async () => {
+    const usuario = montar()
+    await usuario.type(entradaDoAlmoco(), '100 feijao carioca cozido{Enter}')
+    await usuario.selectOptions(almoco().getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), '+ Nova medida…')
+    const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    await usuario.type(janela.getByLabelText('Nome da medida'), 'cumbuca da casa')
+    await usuario.type(janela.getByLabelText('Peso'), '180')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
+    expect(screen.queryByRole('dialog', { name: 'Nova medida' })).not.toBeInTheDocument()
+    expect(almoco().getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' })).toHaveValue('cumbuca da casa')
+    expect(almoco().getByText(/cumbuca da casa · 180 g · sua/)).toBeInTheDocument()
+    registrarMedidasProprias([])
   })
 })

@@ -29,13 +29,13 @@ describe('a fonte do valor da porção (CA-862)', () => {
   it('com produto de Meus produtos: a TACO e o rótulo', () => {
     registrarProdutos([GRANOLA])
     render(<ResumoDaPorcao receita={{ ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: GRANOLA.id, gramas: 20 }] }} />)
-    expect(screen.getByText(/Soma dos ingredientes: TACO 2011 e rótulo de Meus produtos\./)).toBeInTheDocument()
+    expect(screen.getByText(/Soma dos ingredientes: TACO 2011 e Meus alimentos\./)).toBeInTheDocument()
   })
 
   it('só produtos: só o rótulo, sem a TACO', () => {
     registrarProdutos([GRANOLA])
     render(<ResumoDaPorcao receita={{ ...PANQUECA, ingredientes: [{ alimentoId: GRANOLA.id, gramas: 40 }], pesoProntoG: null }} />)
-    expect(screen.getByText(/Soma dos ingredientes: rótulo de Meus produtos\./)).toBeInTheDocument()
+    expect(screen.getByText(/Soma dos ingredientes: Meus alimentos\./)).toBeInTheDocument()
     expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
   })
 })

@@ -94,8 +94,8 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(descreverItem({ id: 'x', alimentoId: 40, gramas: 80 }, buscarAlimento)).toBe('Macarrão, trigo, cru (80 g)')
   })
 
-  it('CA-789 (spec revisao-geral-trabalho): produto apagado sai como "Produto apagado", com os gramas, sem quebrar o Word', () => {
-    expect(descreverItem({ id: 'x', alimentoId: 900_001, gramas: 40 }, buscarAlimento)).toBe('Produto apagado (40 g)')
+  it('CA-789 (spec revisao-geral-trabalho; D-385 da alimentos-e-gramaturas): alimento próprio excluído sai como "Alimento excluído", com os gramas, sem quebrar o Word', () => {
+    expect(descreverItem({ id: 'x', alimentoId: 900_001, gramas: 40 }, buscarAlimento)).toBe('Alimento excluído (40 g)')
     expect(descreverItem({ id: 'y', alimentoId: 99_999, gramas: 80 }, buscarAlimento)).toBe('Alimento removido (80 g)')
   })
 

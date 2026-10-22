@@ -1,7 +1,9 @@
-import { Copy, CookingPot, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react'
+import { Apple, Copy, CookingPot, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { textoDoRendimento } from '@/domain/receitaNoPlano.ts'
-import { copiaParaOPlano, filtrarReceitas, totaisDaPorcao, type Receita } from '@/domain/receitas.ts'
+import { produtoDosDados } from '@/domain/alimentoProprio.ts'
+import { MEUS_ALIMENTOS_NOVOS, type DadosAlimentoProprio } from '@/domain/produtos.ts'
+import { copiaParaOPlano, filtrarReceitas, receitaComoAlimento, totaisDaPorcao, type Receita } from '@/domain/receitas.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -11,7 +13,9 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ds/componentes/overlay/dropdown-menu.tsx'
 import { DialogoExcluir } from '../casos/DialogoExcluir.tsx'
+import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useReceitas } from '../estado/usarReceitas.ts'
+import { DialogoAlimentoProprio } from '../produtos/DialogoAlimentoProprio.tsx'
 import { EditorReceita } from './EditorReceita.tsx'
 
 /**
@@ -27,8 +31,15 @@ function detalheDa(receita: Receita): string {
 }
 
 /** As receitas da conta (spec receitas-com-calculo, US-RC1): lista, busca e o editor no mesmo lugar (D-272). */
-export function TelaReceitas() {
+interface TelaReceitasProps {
+  /** "Salvar como alimento" (spec alimentos-e-gramaturas, D-385); padrão: a constante da publicação. */
+  readonly formularioNovo?: boolean
+}
+
+export function TelaReceitas({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaReceitasProps = {}) {
   const { repositorio, lista, recarregar } = useReceitas()
+  const meusAlimentos = useMeusAlimentos()
+  const [comoAlimento, setComoAlimento] = useState<DadosAlimentoProprio | null>(null)
   const [busca, setBusca] = useState('')
   const [editando, setEditando] = useState<Receita | 'nova' | null>(null)
   const [excluindo, setExcluindo] = useState<Receita | null>(null)
@@ -56,6 +67,13 @@ export function TelaReceitas() {
     const copia = repositorio.duplicar(receita.id)
     recarregar()
     if (copia) setMensagem(`Receita “${copia.nome}” criada.`)
+  }
+
+  // CA-1149: a receita pronta vira uma preparação de "Meus alimentos", por 100 g; o formulário abre para conferir.
+  const salvarComoAlimento = (receita: Receita) => {
+    const r = receitaComoAlimento(receita, buscarAlimento)
+    if ('motivo' in r) setMensagem(r.motivo)
+    else setComoAlimento(r.dados)
   }
 
   const excluir = () => {
@@ -115,6 +133,12 @@ export function TelaReceitas() {
                             <Copy aria-hidden="true" />
                             Duplicar
                           </DropdownMenuItem>
+                          {formularioNovo ? (
+                            <DropdownMenuItem onSelect={() => salvarComoAlimento(r)}>
+                              <Apple aria-hidden="true" />
+                              Salvar como alimento
+                            </DropdownMenuItem>
+                          ) : null}
                           <DropdownMenuItem onSelect={() => setExcluindo(r)}>
                             <Trash aria-hidden="true" />
                             Excluir
@@ -139,10 +163,25 @@ export function TelaReceitas() {
 
       <DialogoExcluir
         nome={excluindo?.nome ?? null}
-        descricao="Os planos que já usam esta receita continuam com ela. Não dá para desfazer."
+        descricao="Os planos que já usam esta receita continuam com ela. Não é possível desfazer."
         acao="Excluir receita"
         aoConfirmar={excluir}
         aoFechar={() => setExcluindo(null)}
+      />
+
+      <DialogoAlimentoProprio
+        inicial={comoAlimento ? { dados: comoAlimento, editando: false } : null}
+        aoSalvar={(dados) => {
+          try {
+            const salvo = meusAlimentos.salvar(produtoDosDados(dados))
+            setComoAlimento(null)
+            setMensagem(`“${salvo.nome}” está em Meus alimentos.`)
+            return null
+          } catch (erro) {
+            return erro instanceof Error ? erro.message : 'Não foi possível salvar. Tente de novo.'
+          }
+        }}
+        aoFechar={() => setComoAlimento(null)}
       />
     </div>
   )

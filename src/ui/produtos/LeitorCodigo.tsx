@@ -127,7 +127,7 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
       ) : null}
 
       {temCamera ? null : (
-        <p className="text-xs text-muted-foreground">Este navegador não lê a câmera. No celular, use o Chrome para escanear, ou digite o número.</p>
+        <p className="text-xs text-muted-foreground">Este navegador não lê código de barras pela câmera. No celular, use o Chrome ou digite o número.</p>
       )}
     </div>
   )
