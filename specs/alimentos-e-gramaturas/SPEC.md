@@ -305,3 +305,22 @@ gramas ("100 ovos" é peso, "ovos" sozinho), a busca continua larga. O nome sem 
 - **CB-450** · Item gravado antes com a medida que saiu (ricota em "colher de sopa", 44 g): continua com a medida guardada (CA-1162, CB-391).
 - **CB-451** · "2 ovos" com um alimento próprio "Ovo caipira" com unidade: ele entra entre os que têm medida de contar.
 - **CB-452** · Fruta com medida da conta (D-387): vale como ela pôs, inteira ou não (CB-392).
+
+### 7.4 3ª revisão como usuária real (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da 3ª revisão (`revisao-usuario-3.md`, R1 bloqueador, R2, R3 e
+os menores R4, R6 e R7). Muda a D-371 no que ela tinha de "alimento sem medida de contar: gramas".
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-482a | **Número de 20 ou mais é peso, também com nome de corte.** Filé, bife, peito, coxa, sobrecoxa e posta são medida e nome do alimento: com 20 ou mais, o número é gramas e a palavra fica no nome ("120 filé de frango" = 120 g, "100 peito de frango" = 100 g); abaixo de 20, conta peças ("2 filés de frango" = 2 filés). Medida escrita que não é corte ("25 colheres") continua medida. "1 bife" sem mais nada procura os alimentos que têm a medida "bife". **Trava:** leitura acima de 2 kg (ou 2 litros) mostra "Quantidade muito alta: confira." na lista, e o Enter não põe no plano | R1 (bloqueador): "120 filé de frango" entrava como "120 filés (12.000 g)", 19.102 kcal; "100 peito de frango", 18 kg |
+| D-482b | **Número abaixo de 20 nunca vira gramas calado.** Sem medida nem unidade escritas: (1) o alimento com medida de contar conta peças (D-371); (2) a fruta sem unidade avisa (CA-1258); (3) o alimento próprio com porção do rótulo conta porções do rótulo; (4) o alimento com pote ou copo usa o primeiro de pote, copo americano, copo de requeijão e xícara de chá ("1 iogurte" = 1 pote, "1 leite" = 1 copo americano); (5) o resto avisa "Sem “unidade” · tem …", e o Enter não põe ("Nada foi adicionado: digite em gramas ou crie a medida", com "+ Nova medida"). Quem quer gramas escreve "15 g de aveia". Muda o CA-1331 no "15 aveia" | R2: "1 iogurte" entrava com 1 g, "2 pães" listava "Pão, de soja · 2 g" |
+| D-482c | **Sinônimos e gênero na busca.** A busca acha "bovino" em "bovina", "moída" em "moído", "cozida" em "cozido" (as terminações -ino/-ina, -ido/-ida, -ado/-ada), e uma tabela curta de apelidos vale junto com o nome escrito: queijo branco → queijo minas frescal; filé de frango → frango, peito; pão de sal → pão francês; aipim e macaxeira → mandioca; boi → bovina. A ordem das palavras não importa | R3: "fígado bovino", "carne moída" e "queijo branco" não achavam nada |
+| D-483a | **Mais plausibilidade (menores R4, R6, R7).** Legume ou verdura crua que se come cozida (a lista do "(peso cru)") não tem colher, concha nem escumadeira (são medidas do cozido); a romã não tem "unidade" (a POF pesa 70 g de parte comestível; a romã inteira passa de 200 g); filé de peixe não tem "unidade" nem "unidade pequena" | "Jiló, cru · 1 colher de servir · 95 g (peso cru)", "Romã · 1 unidade · 70 g", "Merluza, filé · meia unidade pequena" |
+
+- **CA-1342** · Dado "120 filé de frango", "100 peito de frango" e "100 coxa de frango", então o 1º resultado é frango com 120, 100 e 100 g; dado "2 filés de frango", 2 filés (200 g); dado "1 bife", alimentos com a medida "bife", em 1 bife; dado "3000 arroz", o aviso "Quantidade muito alta: confira." e nada entra com Enter.
+- **CA-1343** · Dado "2 pães", então nenhum resultado diz "2 g" (o pão de soja, sem unidade, avisa); dado "1 iogurte", 1 pote (200 g); dado "200 iogurte", 200 g; dado "15 aveia", o aviso de "unidade"; dado "15 g de aveia", 15 g.
+- **CA-1344** · Dado "fígado bovino", "carne moída" e "queijo branco", então a busca acha o fígado bovino, a carne moída e o queijo minas frescal; dado "frescal minas", também.
+- **CA-1345** · Dado o jiló cru, nenhuma colher; dado a romã, nenhuma "unidade"; dado o filé de merluza, nenhuma "unidade"; `medidas-revisao.md` diz o motivo de cada uma.
+- **CB-455** · Alimento próprio com porção do rótulo e "2 granola": 2 porções do rótulo.
+- **CB-456** · "2 litros de água": 2.000 ml entram; "3 litros", não.
