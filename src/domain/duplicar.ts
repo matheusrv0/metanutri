@@ -20,8 +20,9 @@ export function nomeDaCopia(nome: string): string {
 }
 
 /**
- * Cópia independente do caso e do plano: ids novos em tudo, mesmo paciente,
- * mesma antropometria, data da consulta trocada pela de hoje.
+ * Cópia independente do caso e do plano: ids novos em tudo, mesmo paciente, data da consulta trocada pela de hoje.
+ * No retorno de um paciente, o peso fica vazio, para ninguém salvar o peso velho como novo; a tela mostra o último ao
+ * lado (spec ficha-unica, D-358). Plano sem paciente leva o peso, como sempre.
  */
 export function duplicarCaso(
   registro: { readonly caso: Caso; readonly plano: Plano },
@@ -30,7 +31,13 @@ export function duplicarCaso(
 ): { readonly caso: Caso; readonly plano: Plano } {
   const hoje = opcoes.hoje === undefined ? new Date().toISOString().slice(0, 10) : opcoes.hoje
   return {
-    caso: { ...registro.caso, id: gerarId(), nome: nomeDaCopia(registro.caso.nome), dataConsulta: hoje },
+    caso: {
+      ...registro.caso,
+      id: gerarId(),
+      nome: nomeDaCopia(registro.caso.nome),
+      dataConsulta: hoje,
+      pesoKg: registro.caso.pacienteId === null ? registro.caso.pesoKg : null,
+    },
     plano: clonarPlano(registro.plano, gerarId),
   }
 }

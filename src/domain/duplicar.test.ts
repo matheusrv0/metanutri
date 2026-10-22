@@ -34,6 +34,11 @@ describe('nomeDaCopia', () => {
 })
 
 describe('duplicarCaso', () => {
+  it('CB-356 (spec ficha-unica): plano sem paciente continua com o peso', () => {
+    const copia = duplicarCaso(registro({ pacienteId: null }), contador('copia'), { hoje: '2026-09-16' })
+    expect(copia.caso.pesoKg).toBe(68)
+  })
+
   it('troca o id do caso e o de cada item do plano', () => {
     const original = registro()
     const copia = duplicarCaso(original, contador('copia'), { hoje: '2026-09-16' })
@@ -44,12 +49,12 @@ describe('duplicarCaso', () => {
     expect(idsCopia.some((id) => idsOriginais.includes(id))).toBe(false)
   })
 
-  it('mantém paciente, peso e alimentos, e põe a data de hoje', () => {
+  it('CA-1072 (spec ficha-unica): mantém paciente e alimentos, põe a data de hoje e deixa o peso vazio no retorno', () => {
     const original = registro()
     const copia = duplicarCaso(original, contador('copia'), { hoje: '2026-09-16' })
 
     expect(copia.caso.pacienteId).toBe('p1')
-    expect(copia.caso.pesoKg).toBe(68)
+    expect(copia.caso.pesoKg).toBeNull()
     expect(copia.caso.dataConsulta).toBe('2026-09-16')
     expect(copia.plano.refeicoes[0]?.opcoes.principal[0]?.alimentoId).toBe(original.plano.refeicoes[0]?.opcoes.principal[0]?.alimentoId)
   })
