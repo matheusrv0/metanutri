@@ -222,8 +222,8 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   await page.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / }).first().click()
 
   await page.getByRole('button', { name: 'Exportar' }).click()
-  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
+  await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
   await expect(janela.getByRole('heading', { name: 'Lista de compras' })).toHaveCount(0)
 
   // CA-317: marcar muda a prévia na hora.

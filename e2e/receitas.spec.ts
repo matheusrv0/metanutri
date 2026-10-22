@@ -89,8 +89,8 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
 
   // CA-880: a folha traz a receita na refeição e inteira em Receitas.
   await page.getByRole('button', { name: 'Exportar' }).click()
-  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
+  await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
   await expect(janela.getByRole('region', { name: '06:00 Desjejum' })).toContainText('Panqueca de banana')
   const receitas = janela.getByRole('region', { name: 'Receitas' })
   await expect(receitas).toContainText('Rende 2 unidades (120 g cada)')

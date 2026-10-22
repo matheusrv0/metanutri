@@ -4,6 +4,7 @@ import { mostraReceitas, nutricionistaDoWord, type AssinaturaDoPlano } from '@/d
 import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
+import { nomeDoPacienteDoPlano } from '@/domain/nomeDoPaciente.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { calcularMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
@@ -37,11 +38,14 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
   const restricoes = paciente?.restricoes
   // Spec anamnese-e-prescricoes, CA-577 e CB-166: os suplementos da ficha do paciente do plano.
   const suplementos = paciente?.suplementos ?? []
+  // D-409 (spec textos-e-promessas): o nome do paciente vinculado vai ao Word e ao nome do arquivo; sem ele, o do plano.
+  const nomeDoPaciente = nomeDoPacienteDoPlano(caso, paciente)
 
   const baixarAconselhamento = async () => {
     const documento = criarAconselhamento({
       caso,
       plano,
+      nomeDoPaciente,
       antropometria: avaliarAntropometria(caso),
       buscar: buscarAlimento,
       orientacoes: caso.orientacoes,
@@ -51,7 +55,7 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
       suplementos,
       propostaDeEstagio: propostaNaDieta(assinatura ?? null, caso),
     })
-    baixarBlob(await gerarBlob(documento), nomeDeArquivo(caso.nome, 'aconselhamento'))
+    baixarBlob(await gerarBlob(documento), nomeDeArquivo(nomeDoPaciente ?? '', 'aconselhamento'))
     setMensagem('Aconselhamento baixado.')
   }
 
@@ -59,13 +63,14 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
     const totais = totaisDoPlano(plano, buscarAlimento)
     const documento = criarMemorial({
       caso,
+      paciente: paciente?.nome.trim() ? paciente.nome.trim() : null,
       energia: calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula, getManual: caso.energia.getManual }),
       macros: calcularMacros(totais, caso, caso.metasMacros),
       adequacao: calcularAdequacao(totais, caso, caso.adequacao.preset),
       kcalPlano: totais.nutrientes.energia_kcal.total,
       kcalPlanoSemDado: totais.nutrientes.energia_kcal.semDado,
     })
-    baixarBlob(await gerarBlob(documento), nomeDeArquivo(caso.nome, 'memorial-de-calculo'))
+    baixarBlob(await gerarBlob(documento), nomeDeArquivo(nomeDoPaciente ?? '', 'memorial-de-calculo'))
     setMensagem('Memorial de cálculo baixado.')
   }
 
@@ -97,7 +102,7 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setImprimindo(true)}>
             <Printer aria-hidden="true" />
-            Dieta para imprimir (PDF)
+            Plano alimentar (PDF)
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void baixarAconselhamento()}>
             <FileText aria-hidden="true" />

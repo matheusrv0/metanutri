@@ -84,8 +84,8 @@ describe('Suplementos da ficha na dieta e no Word (spec anamnese-e-prescricoes, 
   it('CA-577: o plano ligado ao paciente leva os suplementos da ficha para a dieta e para o Word', async () => {
     const usuario = comPaciente({ ...criarCasoVazio('c1'), pacienteId: 'p1' }, ANA)
     await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
-    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Dieta para imprimir (PDF)' }))
-    const dieta = within(screen.getByRole('dialog', { name: 'Dieta para imprimir' }))
+    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Plano alimentar (PDF)' }))
+    const dieta = within(screen.getByRole('dialog', { name: 'Plano alimentar para imprimir' }))
     expect(within(dieta.getByRole('region', { name: 'Suplementos' })).getByText(/Vitamina D3/)).toBeInTheDocument()
     await usuario.keyboard('{Escape}')
 
@@ -95,6 +95,26 @@ describe('Suplementos da ficha na dieta e no Word (spec anamnese-e-prescricoes, 
     const dados = vi.mocked(criarAconselhamento).mock.calls[0]?.[0]
     expect(dados?.suplementos).toEqual([vitD])
     expect(dados?.propostaDeEstagio).toBe(false)
+  })
+
+  it('CA-1193 (spec textos-e-promessas, D-409): o PDF, o Word e o nome do arquivo trazem o paciente, não o nome do plano', async () => {
+    const baixados: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      baixados.push(this.download)
+    })
+    const usuario = comPaciente({ ...criarCasoVazio('c1'), nome: 'Maria, 28 anos, gestante', pacienteId: 'p1', dataConsulta: null }, ANA)
+    await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
+    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Plano alimentar (PDF)' }))
+    const folha = within(screen.getByRole('dialog', { name: 'Plano alimentar para imprimir' }))
+    expect(folha.getByText('Maria')).toBeInTheDocument()
+    expect(folha.queryByText(/28 anos, gestante/)).not.toBeInTheDocument()
+    await usuario.keyboard('{Escape}')
+
+    await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
+    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Aconselhamento em Word' }))
+    await screen.findByText('Aconselhamento baixado.')
+    expect(vi.mocked(criarAconselhamento).mock.calls[0]?.[0]?.nomeDoPaciente).toBe('Maria')
+    expect(baixados).toEqual(['Maria-aconselhamento.docx'])
   })
 
   it('CA-584: plano de estudante manda a frase de proposta ao Word', async () => {

@@ -180,15 +180,15 @@ describe('opcoesDaRefeicao (spec impressao-do-plano, CA-631 e CA-632)', () => {
 
 describe('linhaFinaDaFolha (CA-316)', () => {
   it('leva o nome do plano e quem assina', () => {
-    expect(linhaFinaDaFolha(caso(), { tipo: 'nutricionista', linha: 'Ana Souza · CRN-6 12345' })).toEqual({
-      esquerda: 'Plano alimentar · Maria, 28 anos',
+    expect(linhaFinaDaFolha('Maria Silva', { tipo: 'nutricionista', linha: 'Ana Souza · CRN-6 12345' })).toEqual({
+      esquerda: 'Plano alimentar · Maria Silva',
       direita: 'Ana Souza · CRN-6 12345',
     })
-    expect(linhaFinaDaFolha(caso({ nome: '  ' }), { tipo: 'estagio', estagiario: 'Júlia', preceptor: 'Carla' })).toEqual({
-      esquerda: 'Plano alimentar · Sem nome',
+    expect(linhaFinaDaFolha('  ', { tipo: 'estagio', estagiario: 'Júlia', preceptor: 'Carla' })).toEqual({
+      esquerda: 'Plano alimentar · Paciente sem nome',
       direita: 'Júlia · Carla',
     })
-    expect(linhaFinaDaFolha(caso(), { tipo: 'vazia' }).direita).toBe('')
+    expect(linhaFinaDaFolha('Maria Silva', { tipo: 'vazia' }).direita).toBe('')
   })
 })
 

@@ -6,7 +6,7 @@ export function nomeDeArquivo(base: string, sufixo: string): string {
     .replace(/[^\w\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-')
-  return `${limpo || 'caso'}-${sufixo}.docx`
+  return `${limpo || 'plano'}-${sufixo}.docx`
 }
 
 /** Baixa um arquivo gerado no navegador. */

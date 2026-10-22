@@ -9,8 +9,8 @@ const abrirExemplo = async (pagina: Page) => {
   await pagina.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
   await pagina.getByRole('button', { name: 'Ver um plano de exemplo' }).click()
   await pagina.getByRole('button', { name: 'Exportar' }).click()
-  await pagina.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  const janela = pagina.getByRole('dialog', { name: 'Dieta para imprimir' })
+  await pagina.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  const janela = pagina.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
   await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
   return janela
 }

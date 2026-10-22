@@ -52,7 +52,7 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('Foco de revisão 2: sem nome e sem data, nada de separador solto', () => {
     render(<FolhaDieta caso={{ ...caso, nome: '', dataConsulta: null }} plano={planoCheio()} />)
-    expect(screen.getByText('Sem nome')).toBeInTheDocument()
+    expect(screen.getByText('Paciente sem nome')).toBeInTheDocument()
   })
 
   it('CA-623, CA-629 e CA-630: o nome que o paciente entende e uma quantidade só', () => {

@@ -74,8 +74,8 @@ describe('Exportar', () => {
     expect(Object.keys(item.tipos)).toEqual(['text/html', 'text/plain'])
   })
 
-  it('CA-47: caso sem nome ainda gera um nome de arquivo válido', () => {
-    expect(nomeDeArquivo('', 'aconselhamento')).toBe('caso-aconselhamento.docx')
+  it('CA-47 e CA-1194: plano sem nome nem paciente ainda gera um nome de arquivo válido, sem "caso"', () => {
+    expect(nomeDeArquivo('', 'aconselhamento')).toBe('plano-aconselhamento.docx')
     expect(nomeDeArquivo('João / Ação 3', 'memorial')).toBe('Joao-Acao-3-memorial.docx')
   })
 })

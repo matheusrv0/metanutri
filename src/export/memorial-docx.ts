@@ -1,6 +1,7 @@
 // Documento "Memorial de cálculo": energia, macronutrientes e adequação (SPEC CA-46, CA-47).
 import { Document } from 'docx'
 import type { ResultadoAdequacao } from '../domain/adequacao.ts'
+import { descreverEstagio } from '../domain/descreverEstagio.ts'
 import type { ResultadoEnergia } from '../domain/energia.ts'
 import type { ResultadoMacro, ResultadoMacros } from '../domain/macros.ts'
 import type { Caso } from '../domain/tipos.ts'
@@ -9,6 +10,8 @@ import { celula, formatarNumeroDocx, linha, paragrafo, subtitulo, tabela, texto,
 
 export interface DadosMemorial {
   readonly caso: Caso
+  /** O nome do paciente vinculado (spec textos-e-promessas, D-409). Sem ele, o documento diz o nome do plano. */
+  readonly paciente?: string | null | undefined
   readonly energia: ResultadoEnergia
   readonly macros: ResultadoMacros
   readonly adequacao: ResultadoAdequacao
@@ -23,7 +26,8 @@ const NOME_METODO: Readonly<Record<NonNullable<ResultadoEnergia['metodo']>, stri
   'nasem-2023': 'Equações de EER do NASEM (2023)',
 }
 
-const ESTADO_MACRO = { abaixo: 'Abaixo', dentro: 'Dentro', acima: 'Acima' } as const
+/** Os estados de macro dizem a que se referem, como os da adequação (spec textos-e-promessas, CA-1194). */
+const ESTADO_MACRO = { abaixo: 'Abaixo da faixa', dentro: 'Dentro da faixa', acima: 'Acima da faixa' } as const
 
 function linhaMacro(nome: string, m: ResultadoMacro) {
   const meta = m.meta ? `${formatarNumeroDocx(m.meta.min, m.meta.tipo === 'g_kg' ? 1 : 0)} a ${formatarNumeroDocx(m.meta.max, m.meta.tipo === 'g_kg' ? 1 : 0)} ${m.meta.tipo === 'g_kg' ? 'g/kg' : '%'}` : ''
@@ -64,7 +68,7 @@ export function criarMemorial(dados: DadosMemorial): Document {
               .filter((l) => l.includes('\t'))
               .map((l) => linha(l.split('\t').map((c) => celula(c)))),
           ]),
-          ...(adequacao.linhas.some((l) => l.subestimado) ? [paragrafo('* 1 ou mais alimentos sem dado para este nutriente: o total pode estar subestimado.')] : []),
+          ...(adequacao.linhas.some((l) => l.subestimado) ? [paragrafo('* Um ou mais alimentos não têm dado para este nutriente; o total pode estar subestimado.')] : []),
         ]
 
   return new Document({
@@ -75,11 +79,11 @@ export function criarMemorial(dados: DadosMemorial): Document {
       {
         children: [
           titulo('MEMORIAL DE CÁLCULO'),
-          paragrafo(`Caso: ${texto(caso.nome)}`),
+          paragrafo(dados.paciente?.trim() ? `Paciente: ${dados.paciente.trim()}` : `Plano: ${texto(caso.nome)}`),
           subtitulo('ENERGIA'),
           tabela(energiaLinhas.map(([rotulo, valor]) => linha([celula(texto(rotulo), { negrito: true }), celula(texto(valor))]))),
           ...(energia.fonte ? [paragrafo(`Fonte: ${energia.fonte}`)] : []),
-          ...(energiaIncompleta ? [paragrafo('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')] : []),
+          ...(energiaIncompleta ? [paragrafo('* Um ou mais alimentos não têm dado de energia; o total pode estar subestimado.')] : []),
           subtitulo('DISTRIBUIÇÃO DE MACRONUTRIENTES'),
           tabela([
             linha(['Macronutriente', 'Gramas', '% das kcal', 'g/kg', 'Meta', 'Estado'].map((c) => celula(c, { negrito: true }))),
@@ -88,7 +92,7 @@ export function criarMemorial(dados: DadosMemorial): Document {
             linhaMacro('Gordura', macros.gordura),
           ]),
           subtitulo('ADEQUAÇÃO DE MICRONUTRIENTES'),
-          ...(adequacao.estagio ? [paragrafo(`Estágio de vida das referências: ${adequacao.estagio.id}`)] : []),
+          ...(adequacao.estagio ? [paragrafo(`Referências para ${descreverEstagio(adequacao.estagio)}`)] : []),
           ...adequacaoTabela,
           paragrafo(`Referências: ${adequacao.fonte}`),
         ],

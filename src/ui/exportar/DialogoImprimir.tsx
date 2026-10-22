@@ -59,15 +59,15 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
         <DialogHeader className="print:hidden">
-          <DialogTitle>Dieta para imprimir</DialogTitle>
-          <DialogDescription>As refeições, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
+          <DialogTitle>Plano alimentar para imprimir</DialogTitle>
+          <DialogDescription>Refeições, orientações e assinatura sempre entram. Marque o que mais quer incluir.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
           <Opcao titulo="Lista de compras" texto="Os alimentos do dia com as quantidades." marcado={opcoes.listaDeCompras} aoMudar={(v) => mudar({ listaDeCompras: v })} />
           <Opcao titulo="Trocas" texto="Até 2 opções para cada alimento do plano." marcado={opcoes.trocas} aoMudar={(v) => mudar({ trocas: v })} />
           {temSuplementos ? (
-            <Opcao titulo="Suplementos da ficha" texto="Os suplementos escritos na ficha do paciente." marcado={comSuplementos} aoMudar={setComSuplementos} />
+            <Opcao titulo="Suplementos da ficha" texto="Os suplementos registrados na ficha do paciente." marcado={comSuplementos} aoMudar={setComSuplementos} />
           ) : null}
         </div>
 

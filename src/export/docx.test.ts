@@ -71,13 +71,13 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     const { texto, tabelas } = await textoDoDocx(await gerarBytes(doc))
 
     expect(texto).toContain('ACONSELHAMENTO NUTRICIONAL')
-    for (const t of ['Nome: Paciente Exemplo', 'Diagnóstico clínico: Hipertensão', 'Idade: 45 anos', 'Sexo: M( ) F(X)', 'Data da Consulta: 15/09/2026', 'Peso: 72,0 kg', 'Estatura: 160 cm', 'Ocupação: Professora', 'Estagiário(a): Estagiária Exemplo', 'Preceptor(a): Preceptora Exemplo']) {
+    for (const t of ['Nome: Paciente Exemplo', 'Diagnóstico clínico: Hipertensão', 'Idade: 45 anos', 'Sexo: M( ) F(X)', 'Data da consulta: 15/09/2026', 'Peso: 72,0 kg', 'Estatura: 160 cm', 'Ocupação: Professora', 'Estagiário(a): Estagiária Exemplo', 'Preceptor(a): Preceptora Exemplo']) {
       expect(texto).toContain(t)
     }
     expect(texto).toContain('ANTROPOMETRIA')
     expect(texto).toMatch(/IMC.*28,1 kg\/m².*Sobrepeso/s)
-    expect(texto).toMatch(/CC \(Circunferência da Cintura\).*90,0 cm.*Risco substancialmente aumentado/s)
-    for (const r of ['06:00 - Desjejum', '09:00 - Lanche da manhã', '12:00 - Almoço', '16:00 - Lanche da tarde', '19:00 - Jantar', '21:00 - Ceia']) {
+    expect(texto).toMatch(/CC \(circunferência da cintura\).*90,0 cm.*Risco substancialmente aumentado/s)
+    for (const r of ['06:00 – Desjejum', '09:00 – Lanche da manhã', '12:00 – Almoço', '16:00 – Lanche da tarde', '19:00 – Jantar', '21:00 – Ceia']) {
       expect(texto).toContain(r)
     }
     expect(texto).toContain('Arroz, tipo 1, cozido (6 colheres de sopa); Feijão, carioca, cozido (1 concha)')
@@ -260,7 +260,7 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     })
     const { texto } = await textoDoDocx(await gerarBytes(doc))
     expect(texto).toMatch(/kcal do plano.*\d kcal \*/s)
-    expect(texto).toContain('* 1 ou mais alimentos sem dado de energia: o total pode estar subestimado.')
+    expect(texto).toContain('* Um ou mais alimentos não têm dado de energia; o total pode estar subestimado.')
   })
 
   it('CA-968 (spec vitaminas-usda): a tabela de adequação traz as 21 linhas, com as cinco do USDA', async () => {
@@ -289,5 +289,46 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     const { texto } = await textoDoDocx(await gerarBytes(doc))
     expect(texto).not.toMatch(/undefined|null|NaN/)
     expect(texto).toMatch(/Informe sexo e idade/)
+  })
+})
+
+describe('CA-1193 e CA-1194 (spec textos-e-promessas, D-409 e D-410): o paciente e os rótulos nos documentos', () => {
+  const memorial = async (caso: Caso, plano: Plano, paciente: string | null) => {
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const doc = criarMemorial({
+      caso,
+      paciente,
+      energia: calcularEnergia(caso, { fator: 1.37 }),
+      macros: calcularMacros(totais, caso),
+      adequacao: calcularAdequacao(totais, caso, { tipo: 'individual' }),
+      kcalPlano: totais.nutrientes.energia_kcal.total,
+    })
+    return (await textoDoDocx(await gerarBytes(doc))).texto
+  }
+
+  it('o aconselhamento traz o nome do paciente vinculado, não o nome do plano', async () => {
+    const { caso, plano } = montarCaso({ nome: 'Maria, 28 anos, gestante' })
+    const doc = criarAconselhamento({ caso, plano, nomeDoPaciente: 'Maria Silva', antropometria: avaliarAntropometria(caso), buscar: buscarAlimento })
+    const { texto } = await textoDoDocx(await gerarBytes(doc))
+    expect(texto).toContain('Nome: Maria Silva')
+    expect(texto).not.toContain('28 anos, gestante')
+    expect(texto).toContain('CP (circunferência da panturrilha)')
+    expect(texto).not.toMatch(/Data da Consulta|Circunferência da Cintura|\d - [A-Z]/)
+  })
+
+  it('o memorial diz o paciente e as referências por extenso, sem o código interno', async () => {
+    const { caso, plano } = montarCaso({ nome: 'Maria, 28 anos, gestante' })
+    const texto = await memorial(caso, plano, 'Maria Silva')
+    expect(texto).toContain('Paciente: Maria Silva')
+    expect(texto).toContain('Referências para mulheres de 31 a 50 anos')
+    expect(texto).not.toMatch(/feminino-31-50|Estágio de vida|Caso:|28 anos, gestante/)
+    expect(texto).toMatch(/(Abaixo|Dentro|Acima) da faixa/)
+  })
+
+  it('CB-380: sem paciente, o memorial diz o nome do plano, como plano', async () => {
+    const { caso, plano } = montarCaso({ nome: 'Plano de retorno', sexo: 'M', idadeAnos: 25 })
+    const texto = await memorial(caso, plano, null)
+    expect(texto).toContain('Plano: Plano de retorno')
+    expect(texto).toContain('Referências para homens de 19 a 30 anos')
   })
 })

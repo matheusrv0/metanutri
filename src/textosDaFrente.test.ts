@@ -178,6 +178,13 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"Comer os vegetais do almoço e do jantar"', /vegetais do almoço/i],
   ['"Seu plano não tem limite" e "Acima do seu plano"', /Seu plano não tem limite|Acima do seu plano/],
   ['"Atualizada em" para o plano', /Atualizada em/],
+  // CA-1193 e CA-1194: documentos impressos e em Word.
+  ['código do estágio de vida', /Estágio de vida das referências/i],
+  ['"Caso:" no memorial', /^Caso: /],
+  ['"Mesmo tipo de alimento"', /Mesmo tipo de alimento/i],
+  ['"1 ou mais alimentos"', /\b1 ou mais alimentos/i],
+  ['maiúscula no meio do rótulo', /Data da Consulta|Circunferência da (Cintura|Panturrilha)/],
+  ['"ou · Opção"', /ou · Opção/],
 ]
 
 const achados = (padrao: RegExp) =>
