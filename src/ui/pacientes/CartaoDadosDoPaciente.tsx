@@ -70,7 +70,8 @@ export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focar
           rotulo="Pessoas que moram na casa"
           valor={paciente.pessoasNaCasa}
           aoMudar={(v) => aoAlterar({ pessoasNaCasa: v === null ? null : Math.round(v) })}
-          dica="Contando o paciente: 1 quer dizer que mora só."
+          // D-488 (correção C): "mora só" não se aplica abaixo de 18 anos.
+          dica={menor ? 'Contando o paciente.' : 'Contando o paciente: 1 quer dizer que mora só.'}
         />
         {menor || paciente.responsavel.trim() !== '' ? (
           <CampoTexto rotulo="Responsável" valor={paciente.responsavel} aoMudar={(responsavel) => aoAlterar({ responsavel })} />

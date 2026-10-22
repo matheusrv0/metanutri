@@ -50,8 +50,8 @@ const PESSOAS: readonly Pessoa[] = [
     nascimento: anosAtras(6),
     blocos: ['Infância', 'Atividade física'],
     semBlocos: ['Álcool e tabagismo', 'Gestação', 'Saúde da mulher', 'Pessoa idosa'],
-    comRotulos: ['Escola e ano', 'Responsável', 'Tempo de tela por dia', 'Rotina da escola ou da creche'],
-    semRotulos: ['Ocupação', 'Dietas que já fez', 'Rotina de trabalho ou estudo', 'Tabagismo'],
+    comRotulos: ['Escola e ano', 'Responsável', 'Tempo de tela por dia', 'Rotina da escola'],
+    semRotulos: ['Ocupação', 'Dietas que já fez', 'Rotina de trabalho ou estudo', 'Rotina da escola ou da creche', 'Tabagismo'],
     comSop: false,
   },
   {

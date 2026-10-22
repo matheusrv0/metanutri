@@ -423,7 +423,9 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
   it('CA-1279 e CA-1280: a menina de 6 anos tem a rotina da escola; aos 4 anos, "Escola ou creche"; aos 2, sem Atividade física', async () => {
     const { usuario } = montar(MENINA_6)
     await usuario.click(bloco('Rotina e sono'))
-    expect(anamnese().getByLabelText('Rotina da escola ou da creche')).toBeInTheDocument()
+    expect(anamnese().getByLabelText('Rotina da escola')).toBeInTheDocument()
+    // CA-1338 (D-488): abaixo de 18 anos, sem "1 quer dizer que mora só".
+    expect(dados().getByLabelText('Pessoas que moram na casa')).toHaveAccessibleDescription('Contando o paciente.')
     cleanup()
     montar({ sexo: 'F', nascimento: '2022-05-01' })
     expect(dados().getByLabelText('Escola ou creche')).toBeInTheDocument()

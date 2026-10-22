@@ -574,9 +574,9 @@ const TEXTO_PADRAO: ReadonlyMap<string, string> = new Map(BLOCOS_ANAMNESE.flatMa
 function textoParaAPessoa(pergunta: PerguntaRoteiro, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): string {
   if (perfil === null || TEXTO_PADRAO.get(pergunta.id) !== pergunta.texto) return pergunta.texto
   if (pergunta.id === 'hormonios' && depoisDaMenopausa(perfil, respostas)) return 'Reposição hormonal'
-  // D-458: abaixo de 14 anos não há trabalho; a rotina é a da escola ou da creche.
+  // D-458: abaixo de 14 anos não há trabalho; a rotina é a da escola. D-488 (correção C): até 5 anos, da creche ou da escola.
   const idade = idadeDe(perfil)
-  if (pergunta.id === 'rotina-trabalho' && idade !== null && idade < 14) return 'Rotina da escola ou da creche'
+  if (pergunta.id === 'rotina-trabalho' && idade !== null && idade < 14) return idade < 6 ? 'Rotina da creche ou da escola' : 'Rotina da escola'
   return pergunta.texto
 }
 

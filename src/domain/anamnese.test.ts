@@ -602,9 +602,11 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     expect(bloco?.perguntas.at(-1)).toEqual({ id: 'mora-com', texto: 'Com quem mora', resposta: 'Com a filha', foraDoRoteiro: true })
   })
 
-  it('CA-1279: abaixo de 14 anos a rotina é a da escola ou da creche; renomeada, fica (D-458)', () => {
-    expect(perguntasDe('rotina', perfil({ idadeAnos: 6 }))[0]).toBe('Rotina da escola ou da creche')
-    expect(perguntasDe('rotina', perfil({ idadeAnos: 13 }))[0]).toBe('Rotina da escola ou da creche')
+  it('CA-1279 e CA-1338: abaixo de 14 anos a rotina é a da escola (da creche ou da escola até 5 anos); renomeada, fica (D-458, D-488)', () => {
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 4 }))[0]).toBe('Rotina da creche ou da escola')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 5 }))[0]).toBe('Rotina da creche ou da escola')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 6 }))[0]).toBe('Rotina da escola')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 13 }))[0]).toBe('Rotina da escola')
     expect(perguntasDe('rotina', perfil({ idadeAnos: 14 }))[0]).toBe('Rotina de trabalho ou estudo')
     const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'rotina', 'rotina-trabalho', 'Rotina')
     expect(blocosDaFicha(renomeado, [], perfil({ idadeAnos: 6 })).find((b) => b.id === 'rotina')?.perguntas[0]?.texto).toBe('Rotina')
