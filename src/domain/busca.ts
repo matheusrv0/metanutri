@@ -151,6 +151,8 @@ const PECAS_DA_FRUTA_PEQUENA: ReadonlySet<string> = new Set(['unidade', 'unidade
 /** Fruta com unidade da base até este peso se come inteira: maçã, pera, laranja, banana prata. */
 const FRUTA_PEQUENA_ATE_G = 250
 const MAXIMO_DE_FATIAS_DE_FRUTA = 2
+/** D-484: o erro aceito na unidade da fruta, que varia de tamanho (a automática diz "cerca de" acima de 5%). */
+const ERRO_MAXIMO_DA_PECA_DE_FRUTA = 0.2
 
 /**
  * D-423 (spec alimentos-e-gramaturas, seção 6): a peça que a fruta inteira crua aceita. A fruta pequena só em unidade e
@@ -163,7 +165,11 @@ function pecaDaFruta(alimentoId: number, medidas: readonly MedidaCaseira[]): ((m
   if (!a || a.categoria !== 'Frutas e derivados' || a.preparo !== 'cru' || /suco|polpa/i.test(a.descricao)) return null
   const pequena = medidas.some((m) => m.propria !== true && PECAS_DA_FRUTA_PEQUENA.has(m.nome) && m.gramas <= FRUTA_PEQUENA_ATE_G)
   return (m, quantidade) => {
-    if (m.propria === true || !MEDIDAS_DE_CONTAR.has(m.nome) || PECAS_DA_FRUTA_PEQUENA.has(m.nome)) return true
+    if (m.propria === true || !MEDIDAS_DE_CONTAR.has(m.nome)) return true
+    // D-484 (correção C): a unidade pequena é sempre inteira ("1 unidade pequena e meia" de maçã não se lê); a unidade
+    // aceita a meia ("1 unidade e meia" de banana, "meia unidade").
+    if (m.nome === 'unidade pequena') return Number.isInteger(quantidade)
+    if (PECAS_DA_FRUTA_PEQUENA.has(m.nome)) return true
     return !pequena && (m.nome === 'fatia' || m.nome === 'pedaço') && quantidade <= MAXIMO_DE_FATIAS_DE_FRUTA
   }
 }
@@ -183,7 +189,10 @@ function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida
     if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
     if (opcoes.maximoDeColheres !== undefined && m.nome.startsWith('colher') && q > opcoes.maximoDeColheres) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
-    if (erro > ERRO_MAXIMO) continue
+    // D-484 (correção C): a peça da fruta varia de tamanho; aceita até 20% (e a linha diz "cerca de" acima de 5%, D-434):
+    // 130 g de maçã é "130 g (cerca de 1 unidade)", não "1 unidade pequena e meia".
+    const tolerancia = servePraFruta && PECAS_DA_FRUTA_PEQUENA.has(m.nome) && m.propria !== true ? ERRO_MAXIMO_DA_PECA_DE_FRUTA : ERRO_MAXIMO
+    if (erro > tolerancia) continue
     // desempate: menos unidades da medida lê melhor ("1 concha" em vez de "4 colheres de servir")
     const pontos = erro + preferencia * 0.01 + (q - 1) * 0.004
     if (!melhor || pontos < melhor.pontos) melhor = { m, q, pontos }

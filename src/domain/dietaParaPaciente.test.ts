@@ -51,7 +51,7 @@ describe('a dieta do link para o paciente (D-231)', () => {
       'Arroz branco cozido': '6 colheres de sopa',
       'Ovo cozido': '2 unidades',
       'Iogurte natural': '1 copo americano',
-      'Maçã Fuji com casca': '1 unidade pequena e meia', // D-423: eram "3 fatias e meia"
+      'Maçã Fuji com casca': '1 unidade', // D-423: eram "3 fatias e meia"; D-484: nem "unidade pequena e meia"
       'Filé de merluza assado': 'meia unidade',
       'Peito de frango grelhado sem pele': '1 bife',
       'Banana prata': '1 unidade e meia',

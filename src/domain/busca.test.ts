@@ -234,8 +234,8 @@ describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e
 
   it('com até 4 pedaços, é a mesma do planejador', () => {
     expect(medidaCaseiraParaPaciente(3, 150)).toEqual(medidaEquivalente(3, 150))
-    // D-423: a maçã de 130 g era "3 fatias e meia".
-    expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('1 unidade pequena e meia')
+    // D-423: a maçã de 130 g era "3 fatias e meia"; D-484 (correção C): nem "1 unidade pequena e meia".
+    expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('1 unidade')
     expect(medidaCaseiraParaPaciente(40, 100)).toBeNull()
   })
 
@@ -381,6 +381,27 @@ describe('um copo por nome e a unidade emprestada (spec alimentos-e-gramaturas, 
     const r = buscarAlimentos('1 banana maçã', ALIMENTOS).resultados[0]
     expect(r?.alimento.descricao).toBe('Banana, maçã, crua')
     expect(r?.gramas).toBe(75)
+  })
+})
+
+describe('fruta inteira em peça inteira (spec alimentos-e-gramaturas, correção C, D-484)', () => {
+  it('CA-1334: maçã e laranja nunca "unidade pequena e meia"; banana prata em 1 unidade ou meia', () => {
+    for (const [id, gramas] of [
+      [222, 130],
+      [214, 135],
+    ] as const) {
+      const m = medidaCaseiraParaPaciente(id, gramas)
+      expect(m?.texto ?? `${gramas} g`, `${id} ${gramas} g`).not.toMatch(/unidade pequena e meia|meia unidade pequena/)
+    }
+    expect(medidaCaseiraParaPaciente(182, 75)?.texto).toBe('1 unidade')
+    expect(medidaCaseiraParaPaciente(182, 40)?.texto).toBe('meia unidade')
+    // Nenhuma fruta inteira crua lê "unidade pequena" com meia, de 20 a 400 g.
+    for (const a of ALIMENTOS.filter((x) => x.categoria === 'Frutas e derivados' && x.preparo === 'cru' && !/suco|polpa/i.test(x.descricao))) {
+      for (let gramas = 20; gramas <= 400; gramas += 5) {
+        const m = medidaCaseiraParaPaciente(a.id, gramas)
+        if (m?.medida === 'unidade pequena') expect(Number.isInteger(m.quantidade), `${a.descricao} ${gramas} g: ${m.texto}`).toBe(true)
+      }
+    }
   })
 })
 

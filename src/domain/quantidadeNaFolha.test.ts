@@ -33,7 +33,7 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
   it('CA-926: em "Medida caseira", só a medida, sem o peso ao lado; o peso só sem medida que sirva', () => {
     expect(linhasDoExemplo('medida-caseira')).toMatchObject({
       'Pão francês': '1 unidade e meia',
-      'Maçã Fuji com casca': '1 unidade pequena e meia', // D-423: eram "3 fatias e meia"
+      'Maçã Fuji com casca': '1 unidade', // D-423: eram "3 fatias e meia"; D-484: nem "unidade pequena e meia"
       'Filé de merluza assado': 'meia unidade',
       'Peito de frango grelhado sem pele': '1 bife',
       'Patinho grelhado sem gordura': '1 bife',
