@@ -6,8 +6,10 @@ import {
   renomearPergunta,
   ROTEIRO_PADRAO,
   tirarPergunta,
+  type IdBloco,
   type RoteiroAnamnese,
 } from '@/domain/anamnese.ts'
+import { ETIQUETA_DA_REGRA } from '@/domain/regrasDaFicha.ts'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
@@ -22,9 +24,16 @@ interface DialogoRoteiroProps {
 
 const quantas = (n: number) => (n === 0 ? 'Nenhuma pergunta' : n === 1 ? '1 pergunta' : `${n} perguntas`)
 
+/** Os campos da ficha de cada bloco (spec ficha-unica, D-349): aparecem na janela, mas não se editam aqui. */
+const CAMPOS_DA_FICHA: Partial<Readonly<Record<IdBloco, string>>> = {
+  motivo: 'Objetivo do paciente',
+  saude: 'Doenças e diagnósticos, Medicamentos em uso',
+  alimentacao: 'Alergias, Intolerâncias, Não come por escolha, Outros alimentos que não come, Óleo, sal e açúcar por mês',
+}
+
 /**
- * Editar o roteiro da conta (CA-565): as perguntas de cada bloco, com tirar e acrescentar. Os blocos são
- * fixos (D-160). Nada é gravado antes de "Salvar roteiro"; "Cancelar" e fechar descartam.
+ * Editar o roteiro da conta (CA-565; spec ficha-unica, CA-1060): as perguntas de cada bloco, com tirar e adicionar; a
+ * etiqueta de quem vê o bloco; os campos da ficha, que não são do roteiro. Nada é gravado antes de "Salvar roteiro".
  */
 export function DialogoRoteiro({ roteiro, aoSalvar, aoFechar }: DialogoRoteiroProps) {
   const [rascunho, setRascunho] = useState(roteiro)
@@ -35,14 +44,16 @@ export function DialogoRoteiro({ roteiro, aoSalvar, aoFechar }: DialogoRoteiroPr
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Roteiro da anamnese</DialogTitle>
-          <DialogDescription>Vale para todos os pacientes. Tirar uma pergunta não apaga as respostas já escritas.</DialogDescription>
+          <DialogDescription>Vale para todos os pacientes. Tirar uma pergunta não apaga as respostas já registradas.</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          {BLOCOS_ANAMNESE.map(({ id: bloco, titulo }) => {
+          {BLOCOS_ANAMNESE.map(({ id: bloco, titulo, regra }) => {
             const perguntas = rascunho.perguntas[bloco]
+            const campos = CAMPOS_DA_FICHA[bloco]
             return (
-              <Recolhivel key={bloco} titulo={titulo} resumo={quantas(perguntas.length)}>
+              <Recolhivel key={bloco} titulo={titulo} resumo={regra ? `${quantas(perguntas.length)} · ${ETIQUETA_DA_REGRA[regra]}` : quantas(perguntas.length)}>
+                {campos ? <p className="text-xs text-muted-foreground">{`Campos da ficha, sempre presentes: ${campos}.`}</p> : null}
                 <ol className="flex flex-col gap-2">
                   {perguntas.map((pergunta, i) => (
                     <li key={pergunta.id} className="flex items-center gap-2">
@@ -68,7 +79,7 @@ export function DialogoRoteiro({ roteiro, aoSalvar, aoFechar }: DialogoRoteiroPr
                   size="sm"
                   variant="ghost"
                   className="self-start"
-                  aria-label={`Acrescentar pergunta em ${titulo}`}
+                  aria-label={`Adicionar pergunta em ${titulo}`}
                   onClick={() => {
                     const id = `p-${globalThis.crypto.randomUUID()}`
                     setNova(id)
@@ -76,7 +87,7 @@ export function DialogoRoteiro({ roteiro, aoSalvar, aoFechar }: DialogoRoteiroPr
                   }}
                 >
                   <Plus aria-hidden="true" />
-                  Acrescentar pergunta
+                  Adicionar pergunta
                 </Button>
               </Recolhivel>
             )

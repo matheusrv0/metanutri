@@ -23,6 +23,13 @@ suplemento ou exame, escrito pelo nutricionista, num documento curto com a assin
 e "Gestação" antes do recordatório, e a Água ganha "Cor da urina" (spec `conduta-da-nutricionista`, D-299, que
 substitui o número de blocos do D-160 e do CA-560). Roteiro salvo antes ganha os blocos e a pergunta novos.
 
+**Ficha única (21/10/2026).** A spec `ficha-unica` substitui o D-160 (os blocos passam a 16, na ordem do Processo de
+Cuidado em Nutrição, mais o Retorno, e os de fase de vida só aparecem para quem vale), a seção 2 (o roteiro padrão
+passa à versão 3), o CA-560 e o CA-565 (os blocos da ficha e da janela) e o CA-569 (o cartão "Restrições e saúde"
+deixa de existir: as restrições vão para Alimentação, em escolhas; condições clínicas e medicamentos, para Saúde). O
+D-168 continua (a anamnese não sai em documento), mas gestação, restrições, atividade e água passam a alimentar o
+plano. O cartão "Suplementos" passa a se chamar "Suplementação prescrita" e o "Apagar paciente", "Excluir paciente".
+
 ## 1. Decisões
 
 | # | Decisão | Motivo |

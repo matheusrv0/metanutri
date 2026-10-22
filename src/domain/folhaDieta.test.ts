@@ -40,25 +40,40 @@ function memoria(inicial: Record<string, string> = {}) {
   return arm
 }
 
-describe('a água na folha (spec conduta-da-nutricionista, D-298)', () => {
-  it('CA-931: sem edição, a linha automática pelo peso (35 ml por kg)', () => {
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62 }))).toBe('Beba cerca de 2,2 litros de água por dia.')
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: 80 }))).toBe('Beba cerca de 2,8 litros de água por dia.')
+describe('a água na folha (spec conduta-da-nutricionista, D-298; spec ficha-unica, D-355)', () => {
+  const mulher = { sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 165 } as const
+  it('CA-1094: sem edição, a linha usa a meta de água do plano, pelo peso', () => {
+    expect(linhaDaAguaNaFolha(caso(mulher))).toBe('Beba cerca de 2,2 litros de água por dia.')
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, pesoKg: 80 }))).toBe('Beba cerca de 2,8 litros de água por dia.')
+    expect(linhaDaAguaNaFolha(caso({ sexo: 'F', idadeAnos: 6, pesoKg: 21 }))).toBe('Beba cerca de 1,5 litro de água por dia.')
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, condicao: { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 } }))).toBe(
+      'Beba cerca de 2,5 litros de água por dia.',
+    )
+  })
+
+  it('CA-1093: o valor digitado pela nutricionista vale na folha', () => {
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, aguaLitros: 3 }))).toBe('Beba cerca de 3,0 litros de água por dia.')
+  })
+
+  it('CA-1091: no método por energia, 1 ml por kcal da meta', () => {
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, modo: 'rapido', metaEnergiaKcal: 1800, metodoAgua: 'ml-kcal' }))).toBe('Beba cerca de 1,8 litro de água por dia.')
   })
 
   it('CA-932: o que a nutricionista escreveu vale; vazio tira a linha', () => {
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '  Beba 2 litros de água por dia, mais no calor.  ' }))).toBe('Beba 2 litros de água por dia, mais no calor.')
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '' }))).toBeNull()
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: 62, linhaDaAgua: '   ' }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, linhaDaAgua: '  Beba 2 litros de água por dia, mais no calor.  ' }))).toBe('Beba 2 litros de água por dia, mais no calor.')
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, aguaLitros: 3, linhaDaAgua: '' }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, linhaDaAgua: '' }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, linhaDaAgua: '   ' }))).toBeNull()
   })
 
-  it('CA-933 e CB-298: sem peso e sem edição, não há linha; a escrita à mão vale mesmo sem peso', () => {
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: null }))).toBeNull()
-    expect(linhaDaAguaNaFolha(caso({ pesoKg: null, linhaDaAgua: 'Beba água ao longo do dia.' }))).toBe('Beba água ao longo do dia.')
+  it('CA-1092 e CA-1095: sem peso e sem edição, não há linha; a escrita à mão antes vale sempre', () => {
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, pesoKg: null }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, idadeAnos: null }))).toBeNull()
+    expect(linhaDaAguaNaFolha(caso({ ...mulher, pesoKg: null, linhaDaAgua: 'Beba água ao longo do dia.' }))).toBe('Beba água ao longo do dia.')
   })
 
-  it('CB-290: plano gravado antes, sem o campo, ou com valor estranho, usa a automática', () => {
-    const antigo: Pick<Caso, 'pesoKg'> = { pesoKg: 62 }
+  it('CB-290: plano gravado antes, sem os campos, ou com valor estranho, usa a calculada', () => {
+    const antigo = Object.fromEntries(Object.entries(caso(mulher)).filter(([chave]) => chave !== 'metodoAgua' && chave !== 'aguaLitros')) as unknown as Caso
     expect(linhaDaAguaNaFolha(antigo)).toBe('Beba cerca de 2,2 litros de água por dia.')
     expect(linhaDaAguaNaFolha({ ...antigo, linhaDaAgua: 42 } as unknown as Caso)).toBe('Beba cerca de 2,2 litros de água por dia.')
   })

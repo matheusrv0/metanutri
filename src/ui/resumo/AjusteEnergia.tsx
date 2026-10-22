@@ -1,7 +1,6 @@
 import type { Caso, FormulaTmb } from '@/domain/tipos.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
-import { CampoNivelAtividade } from '../caso/CampoNivelAtividade.tsx'
 
 interface AjusteEnergiaProps {
   readonly caso: Caso
@@ -10,7 +9,10 @@ interface AjusteEnergiaProps {
   readonly mostrarFormula: boolean
 }
 
-/** Controles do cálculo: fórmula, nível de atividade, fator próprio e GET manual (CA-06 a CA-09). */
+/**
+ * Controles do cálculo: fórmula, fator próprio e GET manual (CA-06 a CA-09). O nível de atividade fica só na etapa 1
+ * (spec ficha-unica, D-357).
+ */
 export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergiaProps) {
   const { energia } = caso
   const alterarEnergia = (mudanca: Partial<Caso['energia']>) => aoAlterar({ energia: { ...energia, ...mudanca } })
@@ -28,8 +30,6 @@ export function AjusteEnergia({ caso, aoAlterar, mostrarFormula }: AjusteEnergia
           aoEscolher={(formula) => alterarEnergia({ formula })}
         />
       ) : null}
-
-      <CampoNivelAtividade fator={energia.fator} aoEscolher={(fator) => alterarEnergia({ fator })} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoNumero

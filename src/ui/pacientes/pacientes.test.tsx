@@ -50,11 +50,11 @@ describe('Pacientes', () => {
   })
 
   it('a restrição casa com o alimento mesmo sem acento', () => {
-    expect(casaRestricao('Camarão, cozido', ['camarao'])).toBe(true)
-    expect(casaRestricao('Leite, de vaca, integral', ['leite'])).toBe(true)
-    expect(casaRestricao('Arroz, tipo 1, cozido', ['leite'])).toBe(false)
+    expect(casaRestricao({ id: 0, descricao: 'Camarão, cozido' }, ['camarao'])).toBe(true)
+    expect(casaRestricao({ id: 0, descricao: 'Leite, de vaca, integral' }, ['leite'])).toBe(true)
+    expect(casaRestricao({ id: 0, descricao: 'Arroz, tipo 1, cozido' }, ['leite'])).toBe(false)
     // termo curto demais não filtra, para não apagar meia base
-    expect(casaRestricao('Arroz, tipo 1, cozido', ['ar'])).toBe(false)
+    expect(casaRestricao({ id: 0, descricao: 'Arroz, tipo 1, cozido' }, ['ar'])).toBe(false)
   })
 
   it('lista vazia convida a cadastrar', async () => {
@@ -85,7 +85,7 @@ describe('Pacientes', () => {
       </ProvedorCasos>,
     )
     expect(screen.getAllByText(/sugest/i)).toHaveLength(1)
-    expect(screen.getByText('Uma por linha. O que estiver aqui some das sugestões de alimento.')).toBeInTheDocument()
+    expect(screen.getByText('Um por linha. Esses alimentos não aparecem nas sugestões nem no Cobrir.')).toBeInTheDocument()
   })
 
   it('a ficha guarda nome, restrições e mostra o histórico vazio', async () => {
@@ -104,7 +104,8 @@ describe('Pacientes', () => {
     const usuario = userEvent.setup()
 
     expect(screen.getByLabelText('Nome')).toHaveValue('Maria')
-    await usuario.type(screen.getByLabelText('Não come ou não pode comer'), 'camarão')
+    await usuario.click(screen.getByRole('button', { name: /^Alimentação/ }))
+    await usuario.type(screen.getByLabelText('Outros alimentos que não come'), 'camarão')
     expect(pacientes.obter('p1')?.restricoes).toContain('camarão')
     expect(screen.getByText('Nenhum plano para este paciente ainda.')).toBeInTheDocument()
     expect(screen.getByText(/pelo menos dois planos com peso/)).toBeInTheDocument()

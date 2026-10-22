@@ -154,7 +154,7 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
     const faltando = validacao.faltando.map((c) => NOMES_CAMPO[c] ?? c)
     const motivo = faltando.length
       ? `Informe ${faltando.join(', ')} para calcular a energia.`
-      : 'Corrija os campos inválidos do caso para calcular a energia.'
+      : 'Corrija os campos inválidos do plano para calcular a energia.'
     return resultado({ metodo: null, tmb: null, categoriaAtividade: null, adicionais: [], get: null, fonte: null, motivoSemCalculo: motivo })
   }
 
@@ -208,7 +208,7 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
   }
 
   if (idadeAnos < 19) {
-    if (opcoes.formula) avisos.push(`${opcoes.formula === 'mifflin' ? 'Mifflin-St Jeor' : 'Harris-Benedict'} não vale para menores de 19 anos; usada a equação do NASEM 2023.`)
+    if (opcoes.formula) avisos.push(`${opcoes.formula === 'mifflin' ? 'Mifflin-St Jeor' : 'Harris-Benedict'} não vale para menores de 19 anos; foi usada a equação do NASEM (2023).`)
     const crescimento = tabela.custoCrescimento.find((c) => c.sexo === sexo && idadeAnos >= c.idadeMin && idadeAnos <= c.idadeMax)
     if (!crescimento) throw new Error(`Custo de crescimento ausente para ${sexo}, ${idadeAnos} anos.`)
     adicionais.push({ descricao: 'Custo energético do crescimento', kcal: crescimento.kcal })

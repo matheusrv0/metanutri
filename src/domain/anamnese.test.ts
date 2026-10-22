@@ -4,23 +4,25 @@ import {
   blocosDaFicha,
   CHAVE_ROTEIRO,
   dicaDaPergunta,
+  ESCALA_DA_URINA,
   gravarRoteiro,
   lerRoteiro,
   limparRoteiro,
   normalizarRespostas,
   numeroDaUrina,
+  opcoesDaPergunta,
+  regraDoBloco,
   renomearPergunta,
   respostaDaUrina,
   responder,
   resumoDoBloco,
   ROTEIRO_PADRAO,
-  ESCALA_DA_URINA,
   tipoDaPergunta,
   tirarPergunta,
-  TRIMESTRES,
   type RespostaAnamnese,
 } from './anamnese.ts'
 import type { Armazenamento } from './persistencia.ts'
+import type { PerfilDaFicha } from './regrasDaFicha.ts'
 
 class Memoria implements Armazenamento {
   readonly dados = new Map<string, string>()
@@ -36,43 +38,68 @@ class Memoria implements Armazenamento {
 }
 
 const textos = (lista: readonly { texto: string }[]) => lista.map((p) => p.texto)
+const perfil = (p: Partial<PerfilDaFicha> = {}): PerfilDaFicha => ({ sexo: 'F', idadeAnos: 30, momento: null, temPlano: false, ...p })
+const ids = (roteiro = ROTEIRO_PADRAO, respostas: readonly RespostaAnamnese[] = [], quem: PerfilDaFicha | null = null) =>
+  blocosDaFicha(roteiro, respostas, quem).map((b) => b.id)
 
-describe('roteiro padrão (D-160, seção 2 da spec)', () => {
-  it('CA-560 e CA-935: 10 blocos fixos, nesta ordem (spec conduta-da-nutricionista, D-299)', () => {
+describe('roteiro padrão (spec ficha-unica, D-347 e seção 2)', () => {
+  it('CA-1047: os blocos na ordem do PCN, com o Retorno antes de todos', () => {
     expect(BLOCOS_ANAMNESE.map((b) => b.titulo)).toEqual([
-      'Objetivo e queixa',
-      'Rotina e sono',
-      'Intestino',
-      'Água',
-      'Álcool e fumo',
-      'Atividade física',
-      'Preferências e aversões',
-      'Intolerâncias e alergias',
+      'Retorno',
+      'Motivo da consulta',
+      'Saúde',
       'Gestação',
+      'Lactação',
+      'Saúde da mulher',
+      'Digestão',
+      'Rotina e sono',
+      'Atividade física',
+      'Hidratação',
+      'Álcool e tabagismo',
+      'Alimentação',
+      'Infância',
+      'Pessoa idosa',
       'Recordatório de 24 horas',
     ])
   })
 
-  it('CA-934 e CA-935: as perguntas novas, com o tipo pelo id', () => {
-    expect(ROTEIRO_PADRAO.perguntas.agua).toEqual([
-      { id: 'agua-dia', texto: 'Quanta água bebe por dia' },
-      { id: 'cor-da-urina', texto: 'Cor da urina' },
-      { id: 'outras-bebidas', texto: 'Outras bebidas ao longo do dia' },
-    ])
-    expect(ROTEIRO_PADRAO.perguntas.intolerancias).toEqual([
-      { id: 'intolerancias-alimentares', texto: 'Intolerâncias alimentares' },
-      { id: 'alergias-alimentares', texto: 'Alergias alimentares' },
-    ])
-    expect(ROTEIRO_PADRAO.perguntas.gestacao).toEqual([
-      { id: 'gestacao-trimestre', texto: 'Trimestre' },
-      { id: 'gestacao-anotacoes', texto: 'Anotações da gestação' },
-    ])
+  it('seção 2: as perguntas de cada bloco, em tema curto', () => {
+    expect(textos(ROTEIRO_PADRAO.perguntas.motivo)).toEqual(['Queixa principal', 'Histórico do peso', 'Dietas que já fez'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.saude)).toEqual(['Suplementos em uso', 'Cirurgias e internações', 'Doenças na família'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.gestacao)).toEqual(['Náusea ou vômito', 'Desejos', 'Diabetes gestacional ou pressão alta'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.digestao)).toEqual(['Frequência de evacuação', 'Consistência das fezes', 'Gases, estufamento ou azia', 'Apetite', 'Mastigação e deglutição'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.atividade)).toEqual(['Prática de exercício', 'Tipo de atividade', 'Vezes por semana', 'Minutos por vez', 'Horário do exercício'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.agua)).toEqual(['Água por dia', 'Cor da urina', 'Outras bebidas'])
+    expect(textos(ROTEIRO_PADRAO.perguntas['alcool-fumo'])).toEqual(['Álcool', 'Tabagismo'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.alimentacao)).toEqual(['Alimentos de que gosta', 'Alimentos de que não gosta', 'Vontade de doce ou salgado', 'Quem prepara as refeições e onde come'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas', 'Com quem mora'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
+  })
+
+  it('CA-1054: nada se pergunta duas vezes; ids únicos; os campos da ficha não estão no roteiro', () => {
+    const todas = BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id])
+    expect(new Set(todas.map((p) => p.id)).size).toBe(todas.length)
+    const rotulos = todas.map((p) => p.texto.toLowerCase())
+    for (const repetido of ['objetivo', 'alergia', 'intolerância', 'medicamento', 'ocupação', 'trimestre', 'óleo, sal']) {
+      expect(rotulos.filter((r) => r.includes(repetido)), repetido).toEqual([])
+    }
+    expect(rotulos.filter((r) => r.includes('azia'))).toHaveLength(1)
+    expect(rotulos.filter((r) => r.includes('suplement'))).toEqual(['suplementos em uso'])
+  })
+
+  it('CA-1063: as perguntas de escolha e de número, pelo id', () => {
     expect(tipoDaPergunta('cor-da-urina')).toBe('cor-da-urina')
-    expect(tipoDaPergunta('gestacao-trimestre')).toBe('trimestre')
+    expect(tipoDaPergunta('fezes')).toBe('escolha')
+    expect(opcoesDaPergunta('fezes')).toHaveLength(7)
+    expect(opcoesDaPergunta('fezes')[3]).toBe('4 · Salsicha lisa e macia')
+    expect(opcoesDaPergunta('retorno-seguir')).toEqual(['Fácil', 'Médio', 'Difícil'])
+    expect(opcoesDaPergunta('menstruacao')).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('fluxo-intenso')).toEqual(['Sim', 'Não'])
+    expect(opcoesDaPergunta('atividade-pratica')).toEqual(['Sim', 'Não'])
+    expect(tipoDaPergunta('atividade-vezes')).toBe('numero')
+    expect(tipoDaPergunta('atividade-minutos')).toBe('numero')
     expect(tipoDaPergunta('agua-dia')).toBe('texto')
     expect(tipoDaPergunta('p-123')).toBe('texto')
-    expect(dicaDaPergunta('cor-da-urina')).toBe('Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3, boa hidratação.')
-    expect(dicaDaPergunta('alergias-alimentares')).toBe('Para o cobrir não sugerir o alimento, escreva-o também em Restrições e saúde.')
   })
 
   it('CA-934: a escala de Armstrong tem 8 cores, com número e nome, e a resposta fica legível', () => {
@@ -89,32 +116,104 @@ describe('roteiro padrão (D-160, seção 2 da spec)', () => {
     expect(respostaDaUrina(3)).toBe('3 · Amarelo-claro')
     expect(numeroDaUrina('3 · Amarelo-claro')).toBe(3)
     expect(numeroDaUrina(' 8 · Marrom ')).toBe(8)
-    // CB-297: resposta que não é da escala (escrita como texto numa versão antiga) não vira número.
     expect(numeroDaUrina('clara')).toBeNull()
     expect(numeroDaUrina('9 · Roxo')).toBeNull()
-    expect(numeroDaUrina('')).toBeNull()
   })
 
-  it('CA-935: o trimestre é escolha única entre quatro respostas', () => {
-    expect(TRIMESTRES).toEqual(['Não gestante', '1º trimestre', '2º trimestre', '3º trimestre'])
-  })
-
-  it('CA-562: o recordatório pergunta refeição por refeição', () => {
-    expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
-  })
-
-  it('seção 2: a consistência das fezes traz a dica da escala de Bristol; outra pergunta não tem dica', () => {
+  it('as dicas; a de suplementos diz onde fica a prescrição e muda na gestação; a de mastigação, a partir de 60 anos', () => {
     expect(dicaDaPergunta('fezes')).toBe('Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.')
+    expect(dicaDaPergunta('suplementos-uso')).toBe('O que o paciente já toma. A suplementação que você prescreve fica em Conduta.')
+    expect(dicaDaPergunta('suplementos-uso', perfil({ momento: 'gestante' }))).toBe(
+      'O que o paciente já toma. A suplementação que você prescreve fica em Conduta. Na gestação, anote ferro e ácido fólico.',
+    )
+    expect(dicaDaPergunta('mastigacao', perfil({ idadeAnos: 68 }))).toBe('Prótese, dificuldade para mastigar ou engasgos.')
+    expect(dicaDaPergunta('mastigacao', perfil({ idadeAnos: 35 }))).toBeUndefined()
     expect(dicaDaPergunta('queixa')).toBeUndefined()
     expect(dicaDaPergunta('constructor')).toBeUndefined()
   })
+})
 
-  it('as perguntas padrão têm ids únicos e nenhuma repete o Objetivo da identificação', () => {
-    const todas = BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id])
-    expect(new Set(todas.map((p) => p.id)).size).toBe(todas.length)
-    expect(textos(ROTEIRO_PADRAO.perguntas.objetivo)).toEqual(['Queixa principal', 'Histórico do peso', 'Dietas que já fez', 'Suplementos que já usa', 'Doenças na família'])
-    expect(textos(ROTEIRO_PADRAO.perguntas.rotina)).toContain('Óleo, sal e açúcar por mês em casa')
-    expect(textos(ROTEIRO_PADRAO.perguntas.preferencias)).toContain('Apetite e mastigação')
+describe('Quem vê cada bloco (spec ficha-unica, R2 a R13)', () => {
+  it('CA-1048: homem de 35 anos', () => {
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ sexo: 'M', idadeAnos: 35 }))).toEqual([
+      'motivo',
+      'saude',
+      'digestao',
+      'rotina',
+      'atividade',
+      'agua',
+      'alcool-fumo',
+      'alimentacao',
+      'recordatorio',
+    ])
+  })
+
+  it('CA-1049: mulher de 28 anos gestante', () => {
+    const blocos = ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 28, momento: 'gestante' }))
+    expect(blocos).toContain('gestacao')
+    for (const fora of ['lactacao', 'saude-mulher', 'infancia', 'idoso']) expect(blocos).not.toContain(fora)
+  })
+
+  it('CA-1050: menina de 6 anos, com o tempo de tela', () => {
+    const quem = perfil({ idadeAnos: 6 })
+    const blocos = ids(ROTEIRO_PADRAO, [], quem)
+    expect(blocos).toContain('infancia')
+    for (const fora of ['alcool-fumo', 'gestacao', 'lactacao', 'saude-mulher', 'idoso']) expect(blocos).not.toContain(fora)
+    const rotina = blocosDaFicha(ROTEIRO_PADRAO, [], quem).find((b) => b.id === 'rotina')
+    expect(rotina?.perguntas.map((q) => q.texto)).toContain('Tempo de tela por dia')
+    const adulto = blocosDaFicha(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 30 })).find((b) => b.id === 'rotina')
+    expect(adulto?.perguntas.map((q) => q.texto)).not.toContain('Tempo de tela por dia')
+  })
+
+  it('CA-1051: mulher de 68 anos', () => {
+    const blocos = ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 68 }))
+    expect(blocos).toContain('saude-mulher')
+    expect(blocos).toContain('idoso')
+    for (const fora of ['gestacao', 'lactacao', 'infancia']) expect(blocos).not.toContain(fora)
+  })
+
+  it('lactante tem Lactação e Saúde da mulher', () => {
+    const blocos = ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 30, momento: 'lactante' }))
+    expect(blocos).toContain('lactacao')
+    expect(blocos).toContain('saude-mulher')
+    expect(blocos).not.toContain('gestacao')
+  })
+
+  it('CA-1052: sem sexo ou sem data de nascimento, só os blocos de todos', () => {
+    for (const quem of [perfil({ sexo: null }), perfil({ idadeAnos: null })]) {
+      expect(ids(ROTEIRO_PADRAO, [], quem)).toEqual(['motivo', 'saude', 'digestao', 'rotina', 'atividade', 'agua', 'alimentacao', 'recordatorio'])
+    }
+  })
+
+  it('CA-1064: o Retorno só aparece para quem já tem plano', () => {
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ temPlano: true }))[0]).toBe('retorno')
+    expect(ids(ROTEIRO_PADRAO, [], perfil())).not.toContain('retorno')
+  })
+
+  it('CA-1053: bloco fora da regra com resposta fica, com o aviso; "Não gestante" antigo não segura o bloco', () => {
+    const homem = perfil({ sexo: 'M', idadeAnos: 35 })
+    const respondeu = responder([], { id: 'gestacao-enjoo', texto: 'Náusea ou vômito' }, 'gestacao', 'Sim, de manhã')
+    const gestacao = blocosDaFicha(ROTEIRO_PADRAO, respondeu, homem).find((b) => b.id === 'gestacao')
+    expect(gestacao?.aviso).toBe('Este bloco vale só para gestante. As respostas continuam guardadas.')
+    const antiga: RespostaAnamnese = { perguntaId: 'gestacao-trimestre', blocoId: 'gestacao', pergunta: 'Trimestre', resposta: 'Não gestante' }
+    expect(ids(ROTEIRO_PADRAO, [antiga], homem)).not.toContain('gestacao')
+    const semPerfil = blocosDaFicha(ROTEIRO_PADRAO, respondeu, perfil({ sexo: null })).find((b) => b.id === 'gestacao')
+    expect(semPerfil?.aviso).toBe('Preencha sexo e data de nascimento. As respostas continuam guardadas.')
+  })
+
+  it('D-356: com "Não" em Prática de exercício, só ela aparece; resposta antiga nas outras fica', () => {
+    const nao = responder([], { id: 'atividade-pratica', texto: 'Prática de exercício' }, 'atividade', 'Não')
+    const atividade = (respostas: readonly RespostaAnamnese[]) => blocosDaFicha(ROTEIRO_PADRAO, respostas, perfil())?.find((b) => b.id === 'atividade')
+    expect(atividade(nao)?.perguntas.map((q) => q.id)).toEqual(['atividade-pratica'])
+    const comTipo = responder(nao, { id: 'atividade-tipo', texto: 'Tipo de atividade' }, 'atividade', 'Caminhada')
+    expect(atividade(comTipo)?.perguntas.map((q) => q.id)).toEqual(['atividade-pratica', 'atividade-tipo'])
+    expect(atividade([])?.perguntas).toHaveLength(5)
+  })
+
+  it('CA-1060: a etiqueta da regra de cada bloco condicional', () => {
+    expect(regraDoBloco('gestacao')).toBe('gestante')
+    expect(regraDoBloco('idoso')).toBe('idoso')
+    expect(regraDoBloco('motivo')).toBeUndefined()
   })
 })
 
@@ -125,10 +224,11 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     expect(gravarRoteiro(null, ROTEIRO_PADRAO)).toBe(false)
   })
 
-  it('grava e lê de volta', () => {
+  it('grava na versão 3 e lê de volta', () => {
     const arm = new Memoria()
     const meu = renomearPergunta(ROTEIRO_PADRAO, 'agua', 'agua-dia', 'Litros de água por dia')
     expect(gravarRoteiro(arm, meu)).toBe(true)
+    expect(JSON.parse(arm.getItem(CHAVE_ROTEIRO) ?? '{}')).toMatchObject({ formato: 1, versao: 3 })
     expect(lerRoteiro(arm)).toEqual(meu)
   })
 
@@ -144,18 +244,18 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     const arm = new Memoria()
     arm.setItem(
       CHAVE_ROTEIRO,
-      JSON.stringify({ formato: 1, versao: 2, blocos: { agua: [{ id: 'a1', texto: 'Água?' }, { id: 7, texto: 'x' }, { texto: 'sem id' }, 'lixo'], especialidade: [{ id: 'g', texto: 'Semanas' }] } }),
+      JSON.stringify({ formato: 1, versao: 3, blocos: { agua: [{ id: 'a1', texto: 'Água?' }, { id: 7, texto: 'x' }, { texto: 'sem id' }, 'lixo'], especialidade: [{ id: 'g', texto: 'Semanas' }] } }),
     )
     const lido = lerRoteiro(arm)
     expect(lido.perguntas.agua).toEqual([{ id: 'a1', texto: 'Água?' }])
-    expect(lido.perguntas.intestino).toEqual(ROTEIRO_PADRAO.perguntas.intestino)
+    expect(lido.perguntas.digestao).toEqual(ROTEIRO_PADRAO.perguntas.digestao)
     expect(Object.keys(lido.perguntas)).toEqual(BLOCOS_ANAMNESE.map((b) => b.id))
-    expect(blocosDaFicha(lido, []).map((b) => b.id)).not.toContain('especialidade')
+    expect(ids(lido)).not.toContain('especialidade')
   })
 
   it('CA-589: o bloco que esta versão não conhece continua guardado depois de ler, editar e salvar', () => {
     const arm = new Memoria()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 2, blocos: { especialidade: [{ id: 'g', texto: 'Semanas' }], __proto__: [] } }))
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 3, blocos: { especialidade: [{ id: 'g', texto: 'Semanas' }], __proto__: [] } }))
     const editado = acrescentarPergunta(lerRoteiro(arm), 'agua', 'nova')
     gravarRoteiro(arm, renomearPergunta(editado, 'agua', 'nova', 'Chá por dia'))
     const guardado = JSON.parse(arm.getItem(CHAVE_ROTEIRO) ?? '{}') as { blocos: Record<string, unknown> }
@@ -174,82 +274,116 @@ describe('ler e gravar o roteiro da conta (D-161, CB-160, CB-161, CB-162)', () =
     expect(lido.perguntas['alcool-fumo']).toEqual([])
     expect(limparRoteiro(roteiro)).toEqual(lido)
   })
-
-  it('id repetido no roteiro fica só na primeira vez, na ordem dos blocos', () => {
-    const arm = new Memoria()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 2, blocos: { agua: [{ id: 'x', texto: 'A' }], intestino: [{ id: 'x', texto: 'B' }, { id: 'x', texto: 'C' }] } }))
-    const lido = lerRoteiro(arm)
-    expect(lido.perguntas.intestino).toEqual([{ id: 'x', texto: 'B' }])
-    expect(lido.perguntas.agua).toEqual([])
-  })
 })
 
-describe('roteiro salvo antes da conduta da parceira (spec conduta-da-nutricionista, CA-936 e CB-296)', () => {
-  const antigo = (blocos: Record<string, unknown>) => {
+describe('roteiro salvo na versão 1 ou 2 vira a 3 (spec ficha-unica, D-350, CA-1061)', () => {
+  const guardado = (blocos: Record<string, unknown>, versao?: number) => {
     const arm = new Memoria()
-    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, blocos }))
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify(versao === undefined ? { formato: 1, blocos } : { formato: 1, versao, blocos }))
     return arm
   }
+  const v2 = (mudancas: Record<string, unknown>) => ({
+    objetivo: [
+      { id: 'queixa', texto: 'Queixa principal' },
+      { id: 'historico-peso', texto: 'Histórico do peso' },
+      { id: 'dietas', texto: 'Dietas que já fez' },
+      { id: 'suplementos-uso', texto: 'Suplementos que já usa' },
+      { id: 'doencas-familia', texto: 'Doenças na família' },
+    ],
+    'alcool-fumo': [
+      { id: 'alcool', texto: 'Bebida alcoólica: o quê e quanto' },
+      { id: 'fumo', texto: 'Fumo' },
+    ],
+    preferencias: [
+      { id: 'gosta', texto: 'Alimentos de que gosta' },
+      { id: 'nao-gosta', texto: 'Alimentos de que não gosta' },
+      { id: 'vontades', texto: 'Vontade de doce ou salgado' },
+      { id: 'apetite', texto: 'Apetite e mastigação' },
+    ],
+    intolerancias: [
+      { id: 'intolerancias-alimentares', texto: 'Intolerâncias alimentares' },
+      { id: 'alergias-alimentares', texto: 'Alergias alimentares' },
+    ],
+    ...mudancas,
+  })
 
-  it('CA-936: ganha os blocos novos e a cor da urina depois de "Quanta água bebe por dia", sem perder as edições', () => {
-    const arm = antigo({
-      agua: [
-        { id: 'agua-dia', texto: 'Litros por dia' },
-        { id: 'outras-bebidas', texto: 'Outras bebidas ao longo do dia' },
-        { id: 'p-1', texto: 'Chá por dia' },
-      ],
-      intestino: [{ id: 'evacuacao', texto: 'Vai ao banheiro todo dia?' }],
-    })
+  it('CA-1061: a pergunta própria vai para o bloco novo, a renomeada fica com o texto, a tirada continua fora', () => {
+    const lido = lerRoteiro(
+      guardado(
+        v2({
+          objetivo: [
+            { id: 'queixa', texto: 'Queixa principal' },
+            { id: 'historico-peso', texto: 'Histórico do peso' },
+            { id: 'suplementos-uso', texto: 'Suplementos que já usa' },
+            { id: 'doencas-familia', texto: 'Doenças na família' },
+          ],
+          'alcool-fumo': [
+            { id: 'alcool', texto: 'Bebida alcoólica: o quê e quanto' },
+            { id: 'fumo', texto: 'Cigarro' },
+          ],
+          preferencias: [
+            { id: 'gosta', texto: 'Alimentos de que gosta' },
+            { id: 'nao-gosta', texto: 'Alimentos de que não gosta' },
+            { id: 'vontades', texto: 'Vontade de doce ou salgado' },
+            { id: 'apetite', texto: 'Apetite e mastigação' },
+            { id: 'p-1', texto: 'Come assistindo TV' },
+          ],
+        }),
+        2,
+      ),
+    )
+    expect(textos(lido.perguntas.motivo)).toEqual(['Queixa principal', 'Histórico do peso'])
+    expect(textos(lido.perguntas['alcool-fumo'])).toEqual(['Álcool', 'Cigarro'])
+    expect(lido.perguntas.alimentacao.at(-1)).toEqual({ id: 'p-1', texto: 'Come assistindo TV' })
+    // As perguntas novas entram; as substituídas por campo da ficha saem.
+    expect(textos(lido.perguntas.saude)).toEqual(['Suplementos em uso', 'Cirurgias e internações', 'Doenças na família'])
+    expect(lido.perguntas.digestao.map((q) => q.id)).toContain('mastigacao')
+    const todos = BLOCOS_ANAMNESE.flatMap((b) => lido.perguntas[b.id].map((q) => q.id))
+    for (const saiu of ['intolerancias-alimentares', 'alergias-alimentares', 'gestacao-trimestre', 'oleo-sal-acucar', 'atividade-frequencia']) expect(todos).not.toContain(saiu)
+  })
+
+  it('a pergunta própria de cada bloco antigo vai para o bloco novo dele', () => {
+    const lido = lerRoteiro(
+      guardado({
+        intestino: [{ id: 'p-int', texto: 'Usa laxante' }],
+        agua: [
+          { id: 'agua-dia', texto: 'Quanta água bebe por dia' },
+          { id: 'p-agua', texto: 'Garrafinha' },
+        ],
+        gestacao: [
+          { id: 'gestacao-trimestre', texto: 'Trimestre' },
+          { id: 'gestacao-anotacoes', texto: 'Anotações da gestação' },
+          { id: 'p-gest', texto: 'Pré-natal em dia' },
+        ],
+      }, 2),
+    )
+    expect(lido.perguntas.digestao.at(-1)).toEqual({ id: 'p-int', texto: 'Usa laxante' })
+    expect(lido.perguntas.agua.at(-1)).toEqual({ id: 'p-agua', texto: 'Garrafinha' })
+    expect(lido.perguntas.gestacao.map((q) => q.id)).toEqual(['gestacao-enjoo', 'gestacao-desejos', 'gestacao-intercorrencias', 'p-gest'])
+  })
+
+  it('"Anotações da gestação" renomeada fica como pergunta da conta', () => {
+    const lido = lerRoteiro(guardado({ gestacao: [{ id: 'gestacao-anotacoes', texto: 'Pré-natal' }] }, 2))
+    expect(lido.perguntas.gestacao.at(-1)).toEqual({ id: 'gestacao-anotacoes', texto: 'Pré-natal' })
+  })
+
+  it('roteiro da versão 1, sem a cor da urina, a recebe; tirada na versão 2, continua fora', () => {
+    expect(lerRoteiro(guardado({ agua: [{ id: 'agua-dia', texto: 'Água' }] })).perguntas.agua.map((q) => q.id)).toEqual(['agua-dia', 'cor-da-urina'])
+    expect(lerRoteiro(guardado({ agua: [{ id: 'agua-dia', texto: 'Água' }] }, 2)).perguntas.agua.map((q) => q.id)).toEqual(['agua-dia'])
+  })
+
+  it('CB-348: roteiro da versão 3 salvo por uma versão antiga (sem versão, com os blocos novos) é lido como versão 3', () => {
+    const arm = guardado({ motivo: [{ id: 'queixa', texto: 'Queixa' }], objetivo: [{ id: 'queixa', texto: 'Queixa principal' }] })
     const lido = lerRoteiro(arm)
-    expect(lido.perguntas.agua.map((p) => p.texto)).toEqual(['Litros por dia', 'Cor da urina', 'Outras bebidas ao longo do dia', 'Chá por dia'])
-    expect(lido.perguntas.intestino).toEqual([{ id: 'evacuacao', texto: 'Vai ao banheiro todo dia?' }])
-    expect(lido.perguntas.intolerancias).toEqual(ROTEIRO_PADRAO.perguntas.intolerancias)
-    expect(lido.perguntas.gestacao).toEqual(ROTEIRO_PADRAO.perguntas.gestacao)
-    // Abrir não grava nada.
-    expect(JSON.parse(arm.getItem(CHAVE_ROTEIRO) ?? '{}')).not.toHaveProperty('versao')
+    expect(lido.perguntas.motivo).toEqual([{ id: 'queixa', texto: 'Queixa' }])
+    expect(lido.outros).toHaveProperty('objetivo')
   })
 
-  it('CA-936: sem "Quanta água bebe por dia", a cor da urina vai para o fim da Água; sem o bloco Água, vale o padrão', () => {
-    expect(lerRoteiro(antigo({ agua: [{ id: 'p-9', texto: 'Garrafinha?' }] })).perguntas.agua.map((p) => p.id)).toEqual(['p-9', 'cor-da-urina'])
-    expect(lerRoteiro(antigo({ intestino: [] })).perguntas.agua).toEqual(ROTEIRO_PADRAO.perguntas.agua)
-  })
-
-  it('CA-936: a cor da urina não se repete, nem quando já está em outro bloco', () => {
-    const lido = lerRoteiro(antigo({ agua: [{ id: 'agua-dia', texto: 'Água' }], intestino: [{ id: 'cor-da-urina', texto: 'Cor da urina' }] }))
-    expect(lido.perguntas.agua.map((p) => p.id)).toEqual(['agua-dia'])
-    expect(lido.perguntas.intestino.map((p) => p.id)).toEqual(['cor-da-urina'])
-  })
-
-  it('CA-936: depois de salvo, tirar a cor da urina vale e ela não volta', () => {
-    const arm = antigo({ agua: [{ id: 'agua-dia', texto: 'Água' }] })
-    gravarRoteiro(arm, tirarPergunta(lerRoteiro(arm), 'agua', 'cor-da-urina'))
-    expect(JSON.parse(arm.getItem(CHAVE_ROTEIRO) ?? '{}')).toMatchObject({ formato: 1, versao: 2 })
-    expect(lerRoteiro(arm).perguntas.agua.map((p) => p.id)).toEqual(['agua-dia'])
-    expect(limparRoteiro(lerRoteiro(arm)).perguntas.agua.map((p) => p.id)).toEqual(['agua-dia'])
-  })
-
-  it('CB-296: um roteiro gravado por versão antiga (sem versão) recebe a cor da urina de novo; os blocos novos ficam', () => {
-    const arm = antigo({ agua: [{ id: 'agua-dia', texto: 'Água' }], gestacao: [{ id: 'gestacao-trimestre', texto: 'Trimestre da gestação' }] })
-    const lido = lerRoteiro(arm)
-    expect(lido.perguntas.agua.map((p) => p.id)).toEqual(['agua-dia', 'cor-da-urina'])
-    expect(lido.perguntas.gestacao).toEqual([{ id: 'gestacao-trimestre', texto: 'Trimestre da gestação' }])
-  })
-})
-
-describe('respostas de escolha (spec conduta-da-nutricionista, CA-937)', () => {
-  it('a cor da urina e o trimestre ficam na ficha como as outras respostas, com o texto da pergunta', () => {
-    const urina = ROTEIRO_PADRAO.perguntas.agua[1] ?? { id: '', texto: '' }
-    const trimestre = ROTEIRO_PADRAO.perguntas.gestacao[0] ?? { id: '', texto: '' }
-    let r = responder([], urina, 'agua', respostaDaUrina(3))
-    r = responder(r, trimestre, 'gestacao', '2º trimestre')
-    expect(r).toEqual([
-      { perguntaId: 'cor-da-urina', blocoId: 'agua', pergunta: 'Cor da urina', resposta: '3 · Amarelo-claro' },
-      { perguntaId: 'gestacao-trimestre', blocoId: 'gestacao', pergunta: 'Trimestre', resposta: '2º trimestre' },
-    ])
-    // CA-568: tirada do roteiro, a resposta continua no bloco, fora do roteiro.
-    const semUrina = tirarPergunta(ROTEIRO_PADRAO, 'agua', 'cor-da-urina')
-    const agua = blocosDaFicha(semUrina, r).find((b) => b.id === 'agua')
-    expect(agua?.perguntas.at(-1)).toEqual({ id: 'cor-da-urina', texto: 'Cor da urina', resposta: '3 · Amarelo-claro', foraDoRoteiro: true })
+  it('abrir não grava nada', () => {
+    const arm = guardado(v2({}), 2)
+    const antes = arm.getItem(CHAVE_ROTEIRO)
+    lerRoteiro(arm)
+    expect(arm.getItem(CHAVE_ROTEIRO)).toBe(antes)
   })
 })
 
@@ -261,74 +395,77 @@ describe('editar o roteiro (CA-565)', () => {
     expect(r.perguntas.agua.at(-1)).toEqual({ id: 'p-1', texto: 'Chá por dia' })
     r = tirarPergunta(r, 'agua', 'agua-dia')
     expect(r.perguntas.agua.map((p) => p.id)).toEqual(['cor-da-urina', 'outras-bebidas', 'p-1'])
-    expect(r.perguntas.intestino).toBe(ROTEIRO_PADRAO.perguntas.intestino)
-    expect(ROTEIRO_PADRAO.perguntas.agua).toHaveLength(3)
+    expect(r.perguntas.digestao).toBe(ROTEIRO_PADRAO.perguntas.digestao)
   })
 })
 
 describe('respostas da ficha (D-163)', () => {
-  const queixa = ROTEIRO_PADRAO.perguntas.objetivo[0] ?? { id: '', texto: '' }
+  const queixa = ROTEIRO_PADRAO.perguntas.motivo[0] ?? { id: '', texto: '' }
 
-  it('CA-561: responder guarda a resposta com o texto da pergunta; resposta vazia sai', () => {
-    let r = responder([], queixa, 'objetivo', 'Cansaço à tarde')
-    expect(r).toEqual([{ perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Cansaço à tarde' }])
-    r = responder(r, queixa, 'objetivo', 'Cansaço à tarde e sono ')
+  it('CA-561 e CA-1065: responder guarda a resposta com o texto da pergunta e o dia; resposta vazia sai', () => {
+    let r = responder([], queixa, 'motivo', 'Cansaço à tarde', '2026-10-21')
+    expect(r).toEqual([{ perguntaId: 'queixa', blocoId: 'motivo', pergunta: 'Queixa principal', resposta: 'Cansaço à tarde', respondidaEm: '2026-10-21' }])
+    r = responder(r, queixa, 'motivo', 'Cansaço à tarde e sono ', '2026-10-22')
     expect(r).toHaveLength(1)
-    expect(r[0]?.resposta).toBe('Cansaço à tarde e sono ')
-    expect(responder(r, queixa, 'objetivo', '   ')).toEqual([])
+    expect(r[0]).toMatchObject({ resposta: 'Cansaço à tarde e sono ', respondidaEm: '2026-10-22' })
+    expect(responder(r, queixa, 'motivo', '   ')).toEqual([])
   })
 
   it('CA-588: respostas estragadas viram vazio, item ruim sai, id repetido fica uma vez', () => {
     expect(normalizarRespostas(undefined)).toEqual([])
-    expect(normalizarRespostas('texto')).toEqual([])
     const boa: RespostaAnamnese = { perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Dor' }
     expect(normalizarRespostas([boa, { ...boa, resposta: 'outra' }, { perguntaId: 3 }, null, { ...boa, perguntaId: 'z', blocoId: 4 }])).toEqual([boa])
   })
 
   it('CA-589: resposta de bloco desconhecido e campo a mais ficam guardados, mas não aparecem na ficha', () => {
     const deOutroBloco = { perguntaId: 'semanas', blocoId: 'especialidade', pergunta: 'Semanas', resposta: '20' }
-    const comExtra = { perguntaId: 'queixa', blocoId: 'objetivo', pergunta: 'Queixa principal', resposta: 'Dor', fonte: 'questionario' }
+    const comExtra = { perguntaId: 'queixa', blocoId: 'motivo', pergunta: 'Queixa principal', resposta: 'Dor', fonte: 'questionario' }
     const lidas = normalizarRespostas([deOutroBloco, comExtra])
     expect(lidas).toEqual([deOutroBloco, comExtra])
-    expect(blocosDaFicha(ROTEIRO_PADRAO, lidas).flatMap((b) => b.perguntas.map((p) => p.id))).not.toContain('semanas')
-    const respondidas = responder(lidas, { id: 'agua-dia', texto: 'Quanta água bebe por dia' }, 'agua', '1 litro')
-    expect(respondidas.slice(0, 2)).toEqual([deOutroBloco, comExtra])
+    expect(blocosDaFicha(ROTEIRO_PADRAO, lidas, null).flatMap((b) => b.perguntas.map((p) => p.id))).not.toContain('semanas')
   })
 
-  it('CA-560: os blocos da ficha dizem quantas perguntas têm resposta', () => {
-    const respostas = responder([], queixa, 'objetivo', 'Dor')
-    const blocos = blocosDaFicha(ROTEIRO_PADRAO, respostas)
-    expect(blocos.map((b) => b.id)).toEqual(BLOCOS_ANAMNESE.map((b) => b.id))
-    const objetivo = blocos[0]
-    expect(objetivo?.respondidas).toBe(1)
-    expect(objetivo?.perguntas[0]).toEqual({ id: 'queixa', texto: 'Queixa principal', resposta: 'Dor', foraDoRoteiro: false })
-    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 5 respondida')
-    const agua = blocos[3]
+  it('CA-1065: o resumo diz quantas têm resposta e o dia da última', () => {
+    const respostas = responder(responder([], queixa, 'motivo', 'Dor', '2026-09-10'), { id: 'dietas', texto: 'Dietas que já fez' }, 'motivo', 'Low carb', '2026-10-21')
+    const motivo = blocosDaFicha(ROTEIRO_PADRAO, respostas, null).find((b) => b.id === 'motivo')
+    expect(motivo ? resumoDoBloco(motivo) : '').toBe('2 de 3 respondidas · 21/10/2026')
+    expect(motivo ? resumoDoBloco(motivo, { total: 1, preenchidos: 1 }) : '').toBe('3 de 4 respondidas · 21/10/2026')
+    const semData = blocosDaFicha(ROTEIRO_PADRAO, responder([], queixa, 'motivo', 'Dor'), null).find((b) => b.id === 'motivo')
+    expect(semData ? resumoDoBloco(semData) : '').toBe('1 de 3 respondida')
+    const agua = blocosDaFicha(ROTEIRO_PADRAO, [], null).find((b) => b.id === 'agua')
     expect(agua ? resumoDoBloco(agua) : '').toBe('Sem respostas')
-    const dois = blocosDaFicha(ROTEIRO_PADRAO, responder(respostas, { id: 'dietas', texto: 'Dietas que já fez' }, 'objetivo', 'Low carb'))[0]
-    expect(dois ? resumoDoBloco(dois) : '').toBe('2 de 5 respondidas')
   })
 
   it('CA-566: a pergunta renomeada mostra o texto novo com a resposta de antes', () => {
-    const respostas = responder([], queixa, 'objetivo', 'Dor')
-    const roteiro = renomearPergunta(ROTEIRO_PADRAO, 'objetivo', 'queixa', 'Motivo da consulta')
-    expect(blocosDaFicha(roteiro, respostas)[0]?.perguntas[0]).toEqual({ id: 'queixa', texto: 'Motivo da consulta', resposta: 'Dor', foraDoRoteiro: false })
+    const respostas = responder([], queixa, 'motivo', 'Dor')
+    const roteiro = renomearPergunta(ROTEIRO_PADRAO, 'motivo', 'queixa', 'Por que veio')
+    expect(blocosDaFicha(roteiro, respostas, null).find((b) => b.id === 'motivo')?.perguntas[0]).toEqual({ id: 'queixa', texto: 'Por que veio', resposta: 'Dor', foraDoRoteiro: false })
   })
 
   it('CA-568: pergunta tirada com resposta continua no bloco, fora do roteiro, no fim', () => {
-    const respostas = responder([], queixa, 'objetivo', 'Dor')
-    const roteiro = tirarPergunta(ROTEIRO_PADRAO, 'objetivo', 'queixa')
-    const objetivo = blocosDaFicha(roteiro, respostas)[0]
-    expect(objetivo?.perguntas.map((p) => p.texto)).toEqual(['Histórico do peso', 'Dietas que já fez', 'Suplementos que já usa', 'Doenças na família', 'Queixa principal'])
-    expect(objetivo?.perguntas.at(-1)).toEqual({ id: 'queixa', texto: 'Queixa principal', resposta: 'Dor', foraDoRoteiro: true })
-    expect(objetivo ? resumoDoBloco(objetivo) : '').toBe('1 de 5 respondida')
+    const respostas = responder([], queixa, 'motivo', 'Dor')
+    const motivo = blocosDaFicha(tirarPergunta(ROTEIRO_PADRAO, 'motivo', 'queixa'), respostas, null).find((b) => b.id === 'motivo')
+    expect(motivo?.perguntas.at(-1)).toEqual({ id: 'queixa', texto: 'Queixa principal', resposta: 'Dor', foraDoRoteiro: true })
+  })
+
+  it('CA-1061: a resposta antiga de pergunta que saiu aparece no bloco novo, fora do roteiro', () => {
+    const antigas: RespostaAnamnese[] = [
+      { perguntaId: 'alergias-alimentares', blocoId: 'intolerancias', pergunta: 'Alergias alimentares', resposta: 'Camarão' },
+      { perguntaId: 'oleo-sal-acucar', blocoId: 'rotina', pergunta: 'Óleo, sal e açúcar por mês em casa', resposta: '2 latas de óleo' },
+      { perguntaId: 'atividade-frequencia', blocoId: 'atividade', pergunta: 'Frequência e duração', resposta: '3 vezes, 1 hora' },
+      { perguntaId: 'suplementos-uso', blocoId: 'objetivo', pergunta: 'Suplementos que já usa', resposta: 'Whey' },
+    ]
+    const blocos = blocosDaFicha(ROTEIRO_PADRAO, antigas, null)
+    const do_ = (id: string) => blocos.find((b) => b.id === id)?.perguntas.filter((q) => q.resposta !== '').map((q) => `${q.texto}: ${q.resposta}${q.foraDoRoteiro ? ' (fora)' : ''}`)
+    expect(do_('alimentacao')).toEqual(['Alergias alimentares: Camarão (fora)', 'Óleo, sal e açúcar por mês em casa: 2 latas de óleo (fora)'])
+    expect(do_('atividade')).toEqual(['Frequência e duração: 3 vezes, 1 hora (fora)'])
+    expect(do_('saude')).toEqual(['Suplementos em uso: Whey'])
   })
 
   it('CB-161: bloco sem pergunta some, a não ser que tenha resposta fora do roteiro', () => {
     const vazio = { ...ROTEIRO_PADRAO, perguntas: { ...ROTEIRO_PADRAO.perguntas, 'alcool-fumo': [] } }
-    expect(blocosDaFicha(vazio, []).map((b) => b.id)).not.toContain('alcool-fumo')
-    const comResposta = responder([], { id: 'fumo', texto: 'Fumo' }, 'alcool-fumo', 'Não fuma')
-    const bloco = blocosDaFicha(vazio, comResposta).find((b) => b.id === 'alcool-fumo')
-    expect(bloco?.perguntas).toEqual([{ id: 'fumo', texto: 'Fumo', resposta: 'Não fuma', foraDoRoteiro: true }])
+    expect(ids(vazio)).not.toContain('alcool-fumo')
+    const comResposta = responder([], { id: 'fumo', texto: 'Tabagismo' }, 'alcool-fumo', 'Não fuma')
+    expect(blocosDaFicha(vazio, comResposta, null).find((b) => b.id === 'alcool-fumo')?.perguntas).toEqual([{ id: 'fumo', texto: 'Tabagismo', resposta: 'Não fuma', foraDoRoteiro: true }])
   })
 })

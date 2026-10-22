@@ -50,14 +50,14 @@ describe('Prescrição rápida', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('entre 500 e 6000 kcal')
   })
 
-  it('virar atendimento completo revela a avaliação sem perder o que foi digitado', async () => {
+  it('mudar para atendimento completo revela a avaliação sem perder o que foi digitado', async () => {
     const usuario = montar({ ...rapido, nome: 'Maria', metaEnergiaKcal: 1800 })
-    await usuario.click(screen.getByRole('button', { name: 'Virar atendimento completo' }))
+    await usuario.click(screen.getByRole('button', { name: 'Mudar para atendimento completo' }))
 
     expect(screen.getByRole('region', { name: 'Avaliação antropométrica' })).toBeInTheDocument()
     expect(screen.getByLabelText('Circunferência da cintura')).toBeInTheDocument()
     expect(screen.getByLabelText('Nome do plano')).toHaveValue('Maria')
-    expect(screen.queryByRole('button', { name: 'Virar atendimento completo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Mudar para atendimento completo' })).not.toBeInTheDocument()
   })
 
   it('no atendimento completo a meta de energia não aparece', () => {
@@ -106,7 +106,7 @@ describe('Meta de energia no modo rápido (CA-225 a CA-230, CA-232, CA-233)', ()
     const usuario = montar(comMedidas)
     await usuario.type(meta(), '1800')
     expect(screen.getByText('definida por você')).toBeInTheDocument()
-    expect(screen.getByText('Vale o seu número. Apague o campo para voltar à calculada (2.074 kcal).')).toBeInTheDocument()
+    expect(screen.getByText('Vale o valor que você digitou. Apague o campo para voltar à meta calculada (2.074 kcal).')).toBeInTheDocument()
     await usuario.click(screen.getByRole('radio', { name: 'Muito ativo (1,7)' }))
     expect(meta()).toHaveValue('1800')
   })

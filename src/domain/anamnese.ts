@@ -1,39 +1,54 @@
-// Anamnese com roteiro (spec anamnese-e-prescricoes, D-160 a D-163; spec conduta-da-nutricionista, D-299).
+// Anamnese com roteiro (spec anamnese-e-prescricoes, D-160 a D-163; spec conduta-da-nutricionista, D-299; spec
+// ficha-unica, D-347 a D-350).
 //
-// O roteiro é da conta: dez blocos fixos, com as perguntas que o nutricionista edita. As respostas são do
-// paciente e ficam na ficha dele, cada uma com o texto da pergunta, para nunca se perder quando o roteiro muda.
+// O roteiro é da conta: os blocos na ordem do Processo de Cuidado em Nutrição, com as perguntas que o nutricionista
+// edita. As respostas são do paciente e ficam na ficha dele, cada uma com o texto da pergunta, para nunca se perder
+// quando o roteiro muda. Os campos fixos da ficha (objetivo, doenças, restrições, exames…) não são do roteiro.
 import type { Armazenamento } from './persistencia.ts'
+import { aplicaRegra, avisoForaDaRegra, menorDe18, type PerfilDaFicha, type RegraDoBloco } from './regrasDaFicha.ts'
 
 export const CHAVE_ROTEIRO = 'metanutri:roteiro-anamnese'
 
 export type IdBloco =
-  | 'objetivo'
+  | 'retorno'
+  | 'motivo'
+  | 'saude'
+  | 'gestacao'
+  | 'lactacao'
+  | 'saude-mulher'
+  | 'digestao'
   | 'rotina'
-  | 'intestino'
+  | 'atividade'
   | 'agua'
   | 'alcool-fumo'
-  | 'atividade'
-  | 'preferencias'
-  | 'intolerancias'
-  | 'gestacao'
+  | 'alimentacao'
+  | 'infancia'
+  | 'idoso'
   | 'recordatorio'
 
 export interface BlocoAnamnese {
   readonly id: IdBloco
   readonly titulo: string
+  /** Para quem o bloco vale (spec ficha-unica, seção 3); sem regra, para todos. */
+  readonly regra?: RegraDoBloco
 }
 
-/** D-160: os blocos e a ordem deles são fixos; "Intolerâncias e alergias" e "Gestação" entraram em 20/10 (D-299). */
+/** D-347: a ordem do PCN; o Retorno vem antes de todos. Exames recentes e Outras anotações são da ficha. */
 export const BLOCOS_ANAMNESE: readonly BlocoAnamnese[] = [
-  { id: 'objetivo', titulo: 'Objetivo e queixa' },
+  { id: 'retorno', titulo: 'Retorno', regra: 'retorno' },
+  { id: 'motivo', titulo: 'Motivo da consulta' },
+  { id: 'saude', titulo: 'Saúde' },
+  { id: 'gestacao', titulo: 'Gestação', regra: 'gestante' },
+  { id: 'lactacao', titulo: 'Lactação', regra: 'lactante' },
+  { id: 'saude-mulher', titulo: 'Saúde da mulher', regra: 'saude-mulher' },
+  { id: 'digestao', titulo: 'Digestão' },
   { id: 'rotina', titulo: 'Rotina e sono' },
-  { id: 'intestino', titulo: 'Intestino' },
-  { id: 'agua', titulo: 'Água' },
-  { id: 'alcool-fumo', titulo: 'Álcool e fumo' },
   { id: 'atividade', titulo: 'Atividade física' },
-  { id: 'preferencias', titulo: 'Preferências e aversões' },
-  { id: 'intolerancias', titulo: 'Intolerâncias e alergias' },
-  { id: 'gestacao', titulo: 'Gestação' },
+  { id: 'agua', titulo: 'Hidratação' },
+  { id: 'alcool-fumo', titulo: 'Álcool e tabagismo', regra: 'a-partir-de-12' },
+  { id: 'alimentacao', titulo: 'Alimentação' },
+  { id: 'infancia', titulo: 'Infância', regra: 'infancia' },
+  { id: 'idoso', titulo: 'Pessoa idosa', regra: 'idoso' },
   { id: 'recordatorio', titulo: 'Recordatório de 24 horas' },
 ]
 
@@ -52,35 +67,56 @@ export interface RoteiroAnamnese {
 
 const p = (id: string, texto: string): PerguntaRoteiro => ({ id, texto })
 
-/** Seção 2 da spec. Os ids são estáveis: as respostas dos pacientes apontam para eles. */
+/** Seção 2 da spec ficha-unica (versão 3). Os ids são estáveis: as respostas dos pacientes apontam para eles. */
 export const ROTEIRO_PADRAO: RoteiroAnamnese = {
   perguntas: {
-    objetivo: [
-      p('queixa', 'Queixa principal'),
-      p('historico-peso', 'Histórico do peso'),
-      p('dietas', 'Dietas que já fez'),
-      p('suplementos-uso', 'Suplementos que já usa'),
-      p('doencas-familia', 'Doenças na família'),
+    retorno: [
+      p('retorno-seguir', 'Seguir o plano'),
+      p('retorno-ajudou', 'O que ajudou e o que atrapalhou'),
+      p('retorno-mudancas', 'Mudanças desde a última consulta'),
+      p('retorno-sintomas', 'Sintomas novos'),
+      p('retorno-recordatorio', 'Recordatório de hoje'),
+    ],
+    motivo: [p('queixa', 'Queixa principal'), p('historico-peso', 'Histórico do peso'), p('dietas', 'Dietas que já fez')],
+    saude: [p('suplementos-uso', 'Suplementos em uso'), p('cirurgias', 'Cirurgias e internações'), p('doencas-familia', 'Doenças na família')],
+    gestacao: [p('gestacao-enjoo', 'Náusea ou vômito'), p('gestacao-desejos', 'Desejos'), p('gestacao-intercorrencias', 'Diabetes gestacional ou pressão alta')],
+    lactacao: [p('lactacao-mamadas', 'Mamadas por dia'), p('lactacao-dificuldades', 'Dificuldades na amamentação')],
+    'saude-mulher': [p('menstruacao', 'Menstruação'), p('fluxo-intenso', 'Fluxo menstrual intenso'), p('hormonios', 'Anticoncepcional ou reposição hormonal')],
+    digestao: [
+      p('evacuacao', 'Frequência de evacuação'),
+      p('fezes', 'Consistência das fezes'),
+      p('desconforto', 'Gases, estufamento ou azia'),
+      p('apetite', 'Apetite'),
+      p('mastigacao', 'Mastigação e deglutição'),
     ],
     rotina: [
       p('rotina-trabalho', 'Rotina de trabalho ou estudo'),
-      p('refeicoes-onde', 'Quem prepara as refeições e onde come'),
-      p('oleo-sal-acucar', 'Óleo, sal e açúcar por mês em casa'),
       p('sono-horario', 'Horário de dormir e de acordar'),
       p('sono-qualidade', 'Qualidade do sono'),
+      p('tempo-de-tela', 'Tempo de tela por dia'),
     ],
-    intestino: [p('evacuacao', 'Frequência de evacuação'), p('fezes', 'Consistência das fezes'), p('desconforto', 'Gases, estufamento ou desconforto')],
-    agua: [p('agua-dia', 'Quanta água bebe por dia'), p('cor-da-urina', 'Cor da urina'), p('outras-bebidas', 'Outras bebidas ao longo do dia')],
-    'alcool-fumo': [p('alcool', 'Bebida alcoólica: o quê e quanto'), p('fumo', 'Fumo')],
-    atividade: [p('atividade-tipo', 'Atividade que pratica'), p('atividade-frequencia', 'Frequência e duração'), p('atividade-horario', 'Horário')],
-    preferencias: [
+    atividade: [
+      p('atividade-pratica', 'Prática de exercício'),
+      p('atividade-tipo', 'Tipo de atividade'),
+      p('atividade-vezes', 'Vezes por semana'),
+      p('atividade-minutos', 'Minutos por vez'),
+      p('atividade-horario', 'Horário do exercício'),
+    ],
+    agua: [p('agua-dia', 'Água por dia'), p('cor-da-urina', 'Cor da urina'), p('outras-bebidas', 'Outras bebidas')],
+    'alcool-fumo': [p('alcool', 'Álcool'), p('fumo', 'Tabagismo')],
+    alimentacao: [
       p('gosta', 'Alimentos de que gosta'),
       p('nao-gosta', 'Alimentos de que não gosta'),
       p('vontades', 'Vontade de doce ou salgado'),
-      p('apetite', 'Apetite e mastigação'),
+      p('refeicoes-onde', 'Quem prepara as refeições e onde come'),
     ],
-    intolerancias: [p('intolerancias-alimentares', 'Intolerâncias alimentares'), p('alergias-alimentares', 'Alergias alimentares')],
-    gestacao: [p('gestacao-trimestre', 'Trimestre'), p('gestacao-anotacoes', 'Anotações da gestação')],
+    infancia: [
+      p('aleitamento', 'Aleitamento materno'),
+      p('introducao-alimentar', 'Introdução alimentar'),
+      p('lanche-escola', 'Lanche e merenda da escola'),
+      p('variedade', 'Variedade de alimentos'),
+    ],
+    idoso: [p('perda-de-peso', 'Perda de peso sem querer'), p('quedas', 'Quedas'), p('mora-com', 'Com quem mora')],
     recordatorio: [
       p('r24-acordar', 'Ao acordar'),
       p('r24-cafe', 'Café da manhã'),
@@ -94,28 +130,63 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
   outros: {},
 }
 
+// ---------- Dicas e tipos de pergunta ----------
+
 /** Dicas embaixo do rótulo, pelo id da pergunta (seção 2). Num `Map`, um id como "constructor" não acha nada. */
 const DICAS: ReadonlyMap<string, string> = new Map([
+  ['retorno-mudancas', 'Saúde, remédios, suplementos e rotina.'],
+  ['historico-peso', 'Peso habitual, maior e menor peso na vida adulta.'],
+  ['suplementos-uso', 'O que o paciente já toma. A suplementação que você prescreve fica em Conduta.'],
+  ['gestacao-desejos', 'Inclusive de algo que não é alimento, como gelo ou terra.'],
+  ['evacuacao', 'Quantas vezes por semana.'],
   ['fezes', 'Escala de Bristol: de 1 (bolinhas duras) a 7 (líquida); 3 e 4 são o esperado.'],
+  ['agua-dia', 'Em copos ou litros.'],
   ['cor-da-urina', 'Escala de Armstrong: de 1 (quase incolor) a 8 (marrom); de 1 a 3, boa hidratação.'],
-  ['alergias-alimentares', 'Para o cobrir não sugerir o alimento, escreva-o também em Restrições e saúde.'],
+  ['outras-bebidas', 'Refrigerante, suco, café, chá.'],
+  ['alcool', 'O que bebe, quanto e quantas vezes por semana.'],
+  ['fumo', 'Cigarro comum ou eletrônico e quanto por dia.'],
+  ['aleitamento', 'Até quando mamou no peito.'],
+  ['variedade', 'Se come poucos alimentos ou recusa grupos inteiros.'],
+  ['perda-de-peso', 'Nos últimos 3 meses.'],
+  ['quedas', 'No último ano.'],
 ])
 
-export const dicaDaPergunta = (id: string): string | undefined => DICAS.get(id)
-
-// ---------- Perguntas de escolha (spec conduta-da-nutricionista, D-299) ----------
+/** A dica da pergunta; algumas mudam com a pessoa (spec ficha-unica, D-363 e seção 2). */
+export function dicaDaPergunta(id: string, perfil: PerfilDaFicha | null = null): string | undefined {
+  const fixa = DICAS.get(id)
+  if (id === 'suplementos-uso' && perfil?.momento === 'gestante') return `${fixa ?? ''} Na gestação, anote ferro e ácido fólico.`
+  if (id === 'mastigacao' && perfil?.idadeAnos !== null && perfil?.idadeAnos !== undefined && perfil.idadeAnos >= 60) return 'Prótese, dificuldade para mastigar ou engasgos.'
+  return fixa
+}
 
 /** Como a pergunta se responde. O tipo vem do id: renomear a pergunta não muda o tipo. */
-export type TipoPergunta = 'texto' | 'cor-da-urina' | 'trimestre'
+export type TipoPergunta = 'texto' | 'cor-da-urina' | 'escolha' | 'numero'
 
-const TIPOS: ReadonlyMap<string, TipoPergunta> = new Map([
-  ['cor-da-urina', 'cor-da-urina'],
-  ['gestacao-trimestre', 'trimestre'],
+const ESCOLHAS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['retorno-seguir', ['Fácil', 'Médio', 'Difícil']],
+  ['menstruacao', ['Regular', 'Irregular', 'Não menstrua', 'Menopausa']],
+  ['fluxo-intenso', ['Sim', 'Não']],
+  ['atividade-pratica', ['Sim', 'Não']],
+  // A escala de Bristol, com o número e o nome, como a da urina (seção 2).
+  [
+    'fezes',
+    ['1 · Bolinhas duras', '2 · Salsicha encaroçada', '3 · Salsicha com rachaduras', '4 · Salsicha lisa e macia', '5 · Pedaços macios', '6 · Pastosa', '7 · Líquida'],
+  ],
 ])
 
-export const tipoDaPergunta = (id: string): TipoPergunta => TIPOS.get(id) ?? 'texto'
+const NUMEROS: ReadonlySet<string> = new Set(['atividade-vezes', 'atividade-minutos'])
 
-/** A escala de 8 cores de Armstrong, da urina mais clara à mais escura (seção 1.1 da spec). */
+export function tipoDaPergunta(id: string): TipoPergunta {
+  if (id === 'cor-da-urina') return 'cor-da-urina'
+  if (ESCOLHAS.has(id)) return 'escolha'
+  if (NUMEROS.has(id)) return 'numero'
+  return 'texto'
+}
+
+/** As opções de uma pergunta de escolha, na ordem da tela. */
+export const opcoesDaPergunta = (id: string): readonly string[] => ESCOLHAS.get(id) ?? []
+
+/** A escala de 8 cores de Armstrong, da urina mais clara à mais escura (seção 1.1 da spec da conduta). */
 export const ESCALA_DA_URINA: readonly { readonly numero: number; readonly nome: string }[] = [
   { numero: 1, nome: 'Quase incolor' },
   { numero: 2, nome: 'Amarelo muito claro' },
@@ -139,63 +210,157 @@ export function numeroDaUrina(resposta: string): number | null {
   return achado ? Number(achado[1]) : null
 }
 
-/** As respostas do trimestre, na ordem da tela. */
-export const TRIMESTRES: readonly string[] = ['Não gestante', '1º trimestre', '2º trimestre', '3º trimestre']
+/** A resposta "Não gestante" do Trimestre antigo: não segura o bloco Gestação (D-348). */
+const RESPOSTA_SEM_INFORMACAO = (perguntaId: string, resposta: string) => perguntaId === 'gestacao-trimestre' && resposta.trim() === 'Não gestante'
 
 // ---------- O roteiro guardado ----------
 
 /**
- * A versão do roteiro padrão. A 2 trouxe a "Cor da urina" na Água (D-299): o roteiro salvo antes a recebe uma vez só,
- * ao ser lido; salvo de novo, ele leva a versão, e tirar a pergunta passa a valer.
+ * A versão do roteiro padrão. A 2 trouxe a "Cor da urina" (spec conduta-da-nutricionista, D-299); a 3 trouxe os blocos
+ * da ficha única (D-347), e o roteiro salvo antes passa por `daVersao2`.
  */
-const VERSAO_DO_ROTEIRO = 2
+const VERSAO_DO_ROTEIRO = 3
 
-const PERGUNTAS_NOVAS: readonly { readonly versao: number; readonly bloco: IdBloco; readonly pergunta: PerguntaRoteiro; readonly depoisDe: string }[] = [
-  { versao: 2, bloco: 'agua', pergunta: p('cor-da-urina', 'Cor da urina'), depoisDe: 'agua-dia' },
-]
+/** O roteiro padrão da versão 2, para saber o que a conta editou antes (D-350). */
+const BLOCOS_V2 = ['objetivo', 'rotina', 'intestino', 'agua', 'alcool-fumo', 'atividade', 'preferencias', 'intolerancias', 'gestacao', 'recordatorio'] as const
+type IdBlocoV2 = (typeof BLOCOS_V2)[number]
 
-/** CA-936: acrescenta ao roteiro salvo antes as perguntas das versões que ele não conhecia, sem mexer nas edições. */
-function comPerguntasNovas(
-  perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>,
-  fonte: Readonly<Record<string, unknown>>,
-  versaoGuardada: number,
-): Record<IdBloco, readonly PerguntaRoteiro[]> {
-  const resultado = { ...perguntas }
-  for (const nova of PERGUNTAS_NOVAS) {
-    // Bloco que faltava já veio do padrão, com a pergunta nova.
-    if (nova.versao <= versaoGuardada || !Object.hasOwn(fonte, nova.bloco)) continue
-    if (BLOCOS_ANAMNESE.some(({ id }) => resultado[id].some((q) => q.id === nova.pergunta.id))) continue
-    const lista = resultado[nova.bloco]
-    const depois = lista.findIndex((q) => q.id === nova.depoisDe)
-    resultado[nova.bloco] = depois < 0 ? [...lista, nova.pergunta] : [...lista.slice(0, depois + 1), nova.pergunta, ...lista.slice(depois + 1)]
-  }
-  return resultado
+const PADRAO_V2: Readonly<Record<IdBlocoV2, readonly PerguntaRoteiro[]>> = {
+  objetivo: [
+    p('queixa', 'Queixa principal'),
+    p('historico-peso', 'Histórico do peso'),
+    p('dietas', 'Dietas que já fez'),
+    p('suplementos-uso', 'Suplementos que já usa'),
+    p('doencas-familia', 'Doenças na família'),
+  ],
+  rotina: [
+    p('rotina-trabalho', 'Rotina de trabalho ou estudo'),
+    p('refeicoes-onde', 'Quem prepara as refeições e onde come'),
+    p('oleo-sal-acucar', 'Óleo, sal e açúcar por mês em casa'),
+    p('sono-horario', 'Horário de dormir e de acordar'),
+    p('sono-qualidade', 'Qualidade do sono'),
+  ],
+  intestino: [p('evacuacao', 'Frequência de evacuação'), p('fezes', 'Consistência das fezes'), p('desconforto', 'Gases, estufamento ou desconforto')],
+  agua: [p('agua-dia', 'Quanta água bebe por dia'), p('cor-da-urina', 'Cor da urina'), p('outras-bebidas', 'Outras bebidas ao longo do dia')],
+  'alcool-fumo': [p('alcool', 'Bebida alcoólica: o quê e quanto'), p('fumo', 'Fumo')],
+  atividade: [p('atividade-tipo', 'Atividade que pratica'), p('atividade-frequencia', 'Frequência e duração'), p('atividade-horario', 'Horário')],
+  preferencias: [
+    p('gosta', 'Alimentos de que gosta'),
+    p('nao-gosta', 'Alimentos de que não gosta'),
+    p('vontades', 'Vontade de doce ou salgado'),
+    p('apetite', 'Apetite e mastigação'),
+  ],
+  intolerancias: [p('intolerancias-alimentares', 'Intolerâncias alimentares'), p('alergias-alimentares', 'Alergias alimentares')],
+  gestacao: [p('gestacao-trimestre', 'Trimestre'), p('gestacao-anotacoes', 'Anotações da gestação')],
+  recordatorio: [
+    p('r24-acordar', 'Ao acordar'),
+    p('r24-cafe', 'Café da manhã'),
+    p('r24-lanche-manha', 'Lanche da manhã'),
+    p('r24-almoco', 'Almoço'),
+    p('r24-lanche-tarde', 'Lanche da tarde'),
+    p('r24-jantar', 'Jantar'),
+    p('r24-ceia', 'Ceia'),
+  ],
+}
+
+/** D-350: o bloco novo de cada bloco antigo. */
+const BLOCO_NOVO: Readonly<Record<IdBlocoV2, IdBloco>> = {
+  objetivo: 'motivo',
+  rotina: 'rotina',
+  intestino: 'digestao',
+  agua: 'agua',
+  'alcool-fumo': 'alcool-fumo',
+  atividade: 'atividade',
+  preferencias: 'alimentacao',
+  intolerancias: 'alimentacao',
+  gestacao: 'gestacao',
+  recordatorio: 'recordatorio',
+}
+
+/** Viraram campo da ficha ou escolha: saem do roteiro mesmo renomeadas (D-350). */
+const SUBSTITUIDAS: ReadonlySet<string> = new Set(['intolerancias-alimentares', 'alergias-alimentares', 'gestacao-trimestre', 'oleo-sal-acucar', 'atividade-frequencia'])
+/** Saem do padrão; ficam só quando a conta as renomeou. */
+const SAEM_SE_NAO_RENOMEADAS: ReadonlySet<string> = new Set(['gestacao-anotacoes'])
+/** Onde a resposta de uma pergunta que saiu aparece (o bloco do campo da ficha que a substitui). */
+const BLOCO_DA_RESPOSTA_ANTIGA: ReadonlyMap<string, IdBloco> = new Map([['oleo-sal-acucar', 'alimentacao']])
+
+const PADRAO_V2_POR_ID: ReadonlyMap<string, PerguntaRoteiro> = new Map(BLOCOS_V2.flatMap((b) => PADRAO_V2[b].map((q) => [q.id, q] as const)))
+const BLOCO_PADRAO_V3: ReadonlyMap<string, IdBloco> = new Map(BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id].map((q) => [q.id, b.id] as const)))
+
+/** As perguntas válidas de um bloco guardado: id em texto, texto não vazio, id ainda não visto (CB-161). */
+function perguntasValidas(lista: unknown, vistos: Set<string>): PerguntaRoteiro[] {
+  if (!Array.isArray(lista)) return []
+  return lista.flatMap((item: unknown) => {
+    if (typeof item !== 'object' || item === null) return []
+    const { id: idPergunta, texto } = item as Record<string, unknown>
+    if (typeof idPergunta !== 'string' || idPergunta === '' || typeof texto !== 'string' || texto.trim() === '' || vistos.has(idPergunta)) return []
+    vistos.add(idPergunta)
+    return [{ id: idPergunta, texto: texto.trim() }]
+  })
 }
 
 /**
- * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão;
- * bloco esvaziado de propósito continua vazio. Pergunta sem texto sai (CB-161), e o id vale uma vez só. Bloco
- * desconhecido vai para `outros`, como veio (CA-589). `Object.fromEntries` cria chave própria até para
- * `__proto__`: o dado de fora não mexe no protótipo.
+ * D-350: o roteiro salvo na versão 1 ou 2 vira o da versão 3. Pergunta própria continua, no bloco novo do antigo;
+ * padrão renomeada mantém o texto; padrão tirada continua fora; as substituídas saem.
+ */
+function daVersao2(fonte: Readonly<Record<string, unknown>>, versaoGuardada: number): Record<IdBloco, readonly PerguntaRoteiro[]> {
+  const perguntas = Object.fromEntries(BLOCOS_ANAMNESE.map(({ id }) => [id, [...ROTEIRO_PADRAO.perguntas[id]]])) as Record<IdBloco, PerguntaRoteiro[]>
+  const tirar = (id: string) => {
+    for (const bloco of BLOCOS_ANAMNESE) perguntas[bloco.id] = perguntas[bloco.id].filter((q) => q.id !== id)
+  }
+  const renomear = (id: string, texto: string) => {
+    for (const bloco of BLOCOS_ANAMNESE) perguntas[bloco.id] = perguntas[bloco.id].map((q) => (q.id === id ? { id, texto } : q))
+  }
+  const existe = (id: string) => BLOCOS_ANAMNESE.some((b) => perguntas[b.id].some((q) => q.id === id))
+  const vistos = new Set<string>()
+  for (const antigo of BLOCOS_V2) {
+    // Bloco que não estava guardado (o roteiro é de antes dele) não tira nada.
+    if (!Object.hasOwn(fonte, antigo)) continue
+    const salvas = perguntasValidas(fonte[antigo], vistos)
+    for (const padrao of PADRAO_V2[antigo]) {
+      // A cor da urina entrou na versão 2: ausente de um roteiro de antes não foi tirada pela conta.
+      if (padrao.id === 'cor-da-urina' && versaoGuardada < 2) continue
+      if (!salvas.some((q) => q.id === padrao.id) && BLOCO_PADRAO_V3.has(padrao.id)) tirar(padrao.id)
+    }
+    for (const salva of salvas) {
+      const padrao = PADRAO_V2_POR_ID.get(salva.id)
+      if (padrao && SUBSTITUIDAS.has(salva.id)) continue
+      if (padrao && BLOCO_PADRAO_V3.has(salva.id)) {
+        if (salva.texto !== padrao.texto) renomear(salva.id, salva.texto)
+        continue
+      }
+      if (padrao && SAEM_SE_NAO_RENOMEADAS.has(salva.id) && salva.texto === padrao.texto) continue
+      const destino = BLOCO_NOVO[antigo]
+      if (!existe(salva.id)) perguntas[destino] = [...perguntas[destino], salva]
+    }
+  }
+  return perguntas
+}
+
+const BLOCOS_SO_DA_V3: readonly string[] = BLOCOS_ANAMNESE.map((b) => b.id).filter((id) => !(BLOCOS_V2 as readonly string[]).includes(id))
+
+/**
+ * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão; bloco
+ * esvaziado de propósito continua vazio. Pergunta sem texto sai (CB-161), e o id vale uma vez só. Bloco desconhecido
+ * vai para `outros`, como veio (CA-589). `Object.fromEntries` cria chave própria até para `__proto__`.
  */
 function normalizarRoteiro(blocos: unknown, versaoGuardada: number = VERSAO_DO_ROTEIRO): RoteiroAnamnese {
   const fonte = typeof blocos === 'object' && blocos !== null && !Array.isArray(blocos) ? (blocos as Record<string, unknown>) : {}
-  const vistos = new Set<string>()
-  const perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
-  for (const { id } of BLOCOS_ANAMNESE) {
-    const lista = Object.hasOwn(fonte, id) ? fonte[id] : ROTEIRO_PADRAO.perguntas[id]
-    perguntas[id] = (Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id]).flatMap((item: unknown) => {
-      if (typeof item !== 'object' || item === null) return []
-      const { id: idPergunta, texto } = item as Record<string, unknown>
-      if (typeof idPergunta !== 'string' || idPergunta === '' || typeof texto !== 'string' || texto.trim() === '' || vistos.has(idPergunta)) return []
-      vistos.add(idPergunta)
-      return [{ id: idPergunta, texto: texto.trim() }]
-    })
+  // CB-348: um roteiro da versão 3 salvo de novo por uma versão antiga volta sem versão, mas com os blocos novos.
+  const ehV3 = versaoGuardada >= 3 || BLOCOS_SO_DA_V3.some((id) => Object.hasOwn(fonte, id))
+  let perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>
+  if (ehV3) {
+    const vistos = new Set<string>()
+    perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
+    for (const { id } of BLOCOS_ANAMNESE) {
+      const lista = Object.hasOwn(fonte, id) ? fonte[id] : ROTEIRO_PADRAO.perguntas[id]
+      perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos)
+    }
+  } else {
+    perguntas = daVersao2(fonte, versaoGuardada)
   }
-  return {
-    perguntas: comPerguntasNovas(perguntas, fonte, versaoGuardada),
-    outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !IDS_BLOCO.has(id))),
-  }
+  const conhecidos = new Set<string>([...IDS_BLOCO, ...(ehV3 ? [] : BLOCOS_V2)])
+  return { perguntas, outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !conhecidos.has(id))) }
 }
 
 /** O roteiro editado como fica depois de salvo: sem pergunta vazia e sem id repetido (CB-161). */
@@ -257,11 +422,13 @@ export const tirarPergunta = (roteiro: RoteiroAnamnese, bloco: IdBloco, id: stri
 
 export interface RespostaAnamnese {
   readonly perguntaId: string
-  /** Um dos blocos de `BLOCOS_ANAMNESE`; outro valor (de uma versão mais nova) fica guardado e não aparece (CA-589). */
+  /** Um dos blocos de `BLOCOS_ANAMNESE` (ou um da versão 2, que aparece no bloco novo); outro fica guardado e não aparece (CA-589). */
   readonly blocoId: string
   /** O texto da pergunta quando foi respondida: é o que aparece se ela sair do roteiro (CA-568). */
   readonly pergunta: string
   readonly resposta: string
+  /** O dia da última resposta, AAAA-MM-DD (spec ficha-unica, D-358); resposta de antes não tem. */
+  readonly respondidaEm?: string
 }
 
 /**
@@ -282,10 +449,16 @@ export function normalizarRespostas(valor: unknown): RespostaAnamnese[] {
   })
 }
 
-/** CA-561: grava a resposta (com o texto atual da pergunta). Resposta só com espaço sai da ficha. */
-export function responder(respostas: readonly RespostaAnamnese[], pergunta: PerguntaRoteiro, blocoId: IdBloco, resposta: string): RespostaAnamnese[] {
+/** CA-561: grava a resposta (com o texto atual da pergunta e o dia). Resposta só com espaço sai da ficha. */
+export function responder(
+  respostas: readonly RespostaAnamnese[],
+  pergunta: PerguntaRoteiro,
+  blocoId: IdBloco,
+  resposta: string,
+  dia: string | null = null,
+): RespostaAnamnese[] {
   if (resposta.trim() === '') return respostas.filter((r) => r.perguntaId !== pergunta.id)
-  const nova: RespostaAnamnese = { perguntaId: pergunta.id, blocoId, pergunta: pergunta.texto, resposta }
+  const nova: RespostaAnamnese = { perguntaId: pergunta.id, blocoId, pergunta: pergunta.texto, resposta, ...(dia ? { respondidaEm: dia } : {}) }
   return respostas.some((r) => r.perguntaId === pergunta.id) ? respostas.map((r) => (r.perguntaId === pergunta.id ? nova : r)) : [...respostas, nova]
 }
 
@@ -302,28 +475,89 @@ export interface BlocoDaFicha {
   readonly titulo: string
   readonly perguntas: readonly PerguntaDaFicha[]
   readonly respondidas: number
+  /** Bloco à vista fora da regra, porque tem resposta (D-348); `null` dentro da regra. */
+  readonly aviso: string | null
+  /** O dia da resposta mais recente do bloco (D-358); `null` quando nenhuma tem data. */
+  readonly ultimaResposta: string | null
+}
+
+/** O bloco em que a resposta aparece quando a pergunta dela não está no roteiro. */
+function blocoDaResposta(r: RespostaAnamnese): string {
+  return BLOCO_PADRAO_V3.get(r.perguntaId) ?? BLOCO_DA_RESPOSTA_ANTIGA.get(r.perguntaId) ?? (BLOCO_NOVO as Readonly<Record<string, IdBloco>>)[r.blocoId] ?? r.blocoId
+}
+
+/** Pergunta que só vale para parte das pessoas, dentro de um bloco de todos (seção 2). */
+function perguntaAparece(id: string, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): boolean {
+  if (perfil === null) return true
+  if (id === 'tempo-de-tela') return menorDe18(perfil)
+  // D-356: com "Não" em Prática de exercício, as outras perguntas da atividade não se aplicam.
+  if (id.startsWith('atividade-') && id !== 'atividade-pratica') return respostas.get('atividade-pratica')?.resposta.trim() !== 'Não'
+  return true
 }
 
 /**
- * Os blocos como a ficha mostra: as perguntas do roteiro com a resposta, depois as respostas cuja pergunta
- * saiu do roteiro. Bloco sem nada para mostrar some (CB-161).
+ * Os blocos como a ficha mostra: as perguntas do roteiro com a resposta, depois as respostas cuja pergunta saiu do
+ * roteiro. Bloco sem nada para mostrar some (CB-161). Com o perfil, o bloco fora da regra some, a não ser que tenha
+ * resposta: aí fica, com o aviso (D-348). Sem perfil (`null`), todos os blocos aparecem. Os blocos de `comCampos`
+ * têm campos da ficha (D-349): não somem por estar sem pergunta.
  */
-export function blocosDaFicha(roteiro: RoteiroAnamnese, respostas: readonly RespostaAnamnese[]): BlocoDaFicha[] {
+export function blocosDaFicha(
+  roteiro: RoteiroAnamnese,
+  respostas: readonly RespostaAnamnese[],
+  perfil: PerfilDaFicha | null,
+  comCampos: ReadonlySet<IdBloco> = new Set(),
+): BlocoDaFicha[] {
   const porId = new Map(respostas.map((r) => [r.perguntaId, r]))
   const noRoteiro = new Set(BLOCOS_ANAMNESE.flatMap((b) => roteiro.perguntas[b.id].map((pergunta) => pergunta.id)))
-  return BLOCOS_ANAMNESE.flatMap(({ id, titulo }) => {
-    const doRoteiro = roteiro.perguntas[id].map((pergunta) => ({ id: pergunta.id, texto: pergunta.texto, resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
+  const comResposta = (id: string) => (porId.get(id)?.resposta.trim() ?? '') !== ''
+  return BLOCOS_ANAMNESE.flatMap(({ id, titulo, regra }) => {
+    const doRoteiro = roteiro.perguntas[id]
+      .filter((pergunta) => comResposta(pergunta.id) || perguntaAparece(pergunta.id, perfil, porId))
+      .map((pergunta) => ({ id: pergunta.id, texto: pergunta.texto, resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
     const fora = respostas
-      .filter((r) => r.blocoId === id && !noRoteiro.has(r.perguntaId) && r.resposta.trim() !== '')
+      .filter((r) => blocoDaResposta(r) === id && !noRoteiro.has(r.perguntaId) && r.resposta.trim() !== '')
       .map((r) => ({ id: r.perguntaId, texto: r.pergunta, resposta: r.resposta, foraDoRoteiro: true }))
     const perguntas = [...doRoteiro, ...fora]
-    if (perguntas.length === 0) return []
-    return [{ id, titulo, perguntas, respondidas: perguntas.filter((pergunta) => pergunta.resposta.trim() !== '').length }]
+    if (perguntas.length === 0 && !comCampos.has(id)) return []
+    const temDado = perguntas.some((q) => q.resposta.trim() !== '' && !RESPOSTA_SEM_INFORMACAO(q.id, q.resposta))
+    const dentro = perfil === null || regra === undefined || aplicaRegra(regra, perfil)
+    if (!dentro && !temDado) return []
+    const datas = perguntas.flatMap((q) => {
+      const dia = porId.get(q.id)?.respondidaEm
+      return q.resposta.trim() !== '' && typeof dia === 'string' ? [dia] : []
+    })
+    return [
+      {
+        id,
+        titulo,
+        perguntas,
+        respondidas: perguntas.filter((pergunta) => pergunta.resposta.trim() !== '').length,
+        aviso: dentro || regra === undefined || perfil === null ? null : avisoForaDaRegra(regra, perfil),
+        ultimaResposta: datas.sort().at(-1) ?? null,
+      },
+    ]
   })
 }
 
-/** CA-560: "2 de 3 respondidas", "1 de 3 respondida" ou "Sem respostas". */
-export function resumoDoBloco(bloco: BlocoDaFicha): string {
-  if (bloco.respondidas === 0) return 'Sem respostas'
-  return `${bloco.respondidas} de ${bloco.perguntas.length} ${bloco.respondidas === 1 ? 'respondida' : 'respondidas'}`
+/** Os campos da ficha contados no resumo do bloco (D-349). */
+export interface CamposDoBloco {
+  readonly total: number
+  readonly preenchidos: number
 }
+
+const dataCurta = (dia: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dia)
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : ''
+}
+
+/** CA-560 e CA-1065: "2 de 3 respondidas", "1 de 3 respondida" ou "Sem respostas", e a data da última resposta. */
+export function resumoDoBloco(bloco: Pick<BlocoDaFicha, 'perguntas' | 'respondidas' | 'ultimaResposta'>, campos: CamposDoBloco = { total: 0, preenchidos: 0 }): string {
+  const respondidas = bloco.respondidas + campos.preenchidos
+  const total = bloco.perguntas.length + campos.total
+  if (respondidas === 0) return 'Sem respostas'
+  const contagem = `${respondidas} de ${total} ${respondidas === 1 ? 'respondida' : 'respondidas'}`
+  return bloco.ultimaResposta ? `${contagem} · ${dataCurta(bloco.ultimaResposta)}` : contagem
+}
+
+/** Os blocos do roteiro com regra, para a etiqueta na janela "Editar roteiro" (CA-1060). */
+export const regraDoBloco = (id: IdBloco): RegraDoBloco | undefined => BLOCOS_ANAMNESE.find((b) => b.id === id)?.regra

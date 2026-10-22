@@ -1069,7 +1069,8 @@ describe('cópia grande demais (CB-123)', () => {
     const nuvem = nuvemFalsa()
     const a = abrirAparelho(nuvem)
     await ligar(a)
-    nuvem.limite = 1000
+    // A ficha vazia cresceu com os campos da ficha única (spec ficha-unica, D-359): o limite de teste acompanha.
+    nuvem.limite = 1500
     const muitos = ['Ana', 'Bia', 'Caio', 'Davi', 'Eva'].map((nome) => a.pacientes.criar(nome))
     await salvar()
     expect(a.sincronia.estado).toMatchObject({ trava: 'grande-demais', reduzindo: false, pendente: true })

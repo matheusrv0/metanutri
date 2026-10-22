@@ -1,7 +1,9 @@
 // Paciente: a pessoa atendida. Um paciente tem vários planos ao longo do tempo.
 // Fica no mesmo armazenamento local dos planos; nada sai deste aparelho.
 import { normalizarRespostas, type RespostaAnamnese } from './anamnese.ts'
+import { CONSUMO_VAZIO, lerConsumo, type ConsumoMensal } from './consumoDaCasa.ts'
 import { normalizarPedido, PEDIDO_VAZIO, type PedidoExames } from './exames.ts'
+import { lerDia, lerMomento, type MomentoDeVida } from './momentoDeVida.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { lerConsulta } from './retorno.ts'
 import { normalizarSuplementos, type Suplemento } from './suplementos.ts'
@@ -17,10 +19,13 @@ export interface Paciente {
   readonly nascimento: string | null
   readonly telefone: string
   readonly email: string
+  /** "Objetivo do paciente", nas palavras dele, no bloco Motivo da consulta (spec ficha-unica, D-346). */
   readonly objetivo: string
-  /** O que a pessoa não come: alergia, intolerância, escolha. Uma por linha. */
+  /** "Outros alimentos que não come", um por linha: o que as escolhas de restrição não cobrem (D-351). */
   readonly restricoes: string
+  /** "Outros diagnósticos": o texto livre ao lado das escolhas de doença (D-360). */
   readonly condicoesClinicas: string
+  /** "Medicamentos em uso", no bloco Saúde (D-349). */
   readonly medicamentos: string
   /** O texto livre da anamnese, de antes do roteiro. Aparece no bloco "Observações" (spec anamnese-e-prescricoes, D-162). */
   readonly anamnese: string
@@ -38,6 +43,29 @@ export interface Paciente {
   readonly pedidoExames: PedidoExames
   readonly criadoEm: string
   readonly atualizadoEm: string
+  // ---- Ficha única (spec ficha-unica, D-359 a D-362) ----
+  /** Ocupação (18 anos ou mais) ou escola e ano (abaixo de 18). */
+  readonly ocupacao: string
+  readonly pessoasNaCasa: number | null
+  /** Quem responde pela criança ou pelo adolescente. */
+  readonly responsavel: string
+  /** Gestação ou lactação (D-342); `null` quando não foi informado. */
+  readonly momentoDeVida: MomentoDeVida | null
+  /** Ids de `RESTRICOES` marcados; id desconhecido fica guardado e não conta (D-365). */
+  readonly restricoesMarcadas: readonly string[]
+  /** Ids de `DOENCAS` marcados; id desconhecido fica guardado e não aparece. */
+  readonly doencas: readonly string[]
+  readonly consumoMensal: ConsumoMensal
+  readonly examesRecentes: readonly ExameRecente[]
+}
+
+/** Um resultado de exame registrado na anamnese (D-362). */
+export interface ExameRecente {
+  readonly id: string
+  /** AAAA-MM-DD, ou vazio. */
+  readonly data: string
+  readonly exame: string
+  readonly valor: string
 }
 
 export interface ResumoPaciente extends Paciente {
@@ -68,6 +96,15 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     respostasAnamnese: [],
     suplementos: [],
     pedidoExames: PEDIDO_VAZIO,
+    // Os da ficha única vêm depois, pelo mesmo motivo (spec ficha-unica, D-365).
+    ocupacao: '',
+    pessoasNaCasa: null,
+    responsavel: '',
+    momentoDeVida: null,
+    restricoesMarcadas: [],
+    doencas: [],
+    consumoMensal: CONSUMO_VAZIO,
+    examesRecentes: [],
   }
 }
 
@@ -87,6 +124,28 @@ export function idadeDe(nascimento: string | null, hoje: Date = new Date()): { r
     meses += 12
   }
   return { anos, meses }
+}
+
+/** Idade em anos e meses num dia do calendário (AAAA-MM-DD): a da data da consulta (spec ficha-unica, D-341). */
+export function idadeNaData(nascimento: string | null, dia: string): { readonly anos: number; readonly meses: number } | null {
+  const data = lerDia(dia)
+  if (!data) return null
+  return idadeDe(nascimento, new Date(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()))
+}
+
+const texto = (v: unknown): string => (typeof v === 'string' ? v : '')
+const listaDeTextos = (v: unknown): readonly string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+const pessoas = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= 50 ? v : null)
+
+/** D-365: exame estragado sai; campo a mais fica (como o CA-589). */
+export function normalizarExamesRecentes(valor: unknown): ExameRecente[] {
+  if (!Array.isArray(valor)) return []
+  return valor.flatMap((item: unknown) => {
+    if (typeof item !== 'object' || item === null) return []
+    const o = item as Record<string, unknown>
+    if (typeof o['id'] !== 'string' || o['id'] === '') return []
+    return [{ ...o, id: o['id'], data: texto(o['data']), exame: texto(o['exame']), valor: texto(o['valor']) }]
+  })
 }
 
 /** Uma restrição por linha; linhas vazias são ignoradas. */
@@ -136,6 +195,14 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
       respostasAnamnese: normalizarRespostas(completo.respostasAnamnese),
       suplementos: normalizarSuplementos(completo.suplementos),
       pedidoExames: normalizarPedido(completo.pedidoExames),
+      ocupacao: texto(completo.ocupacao),
+      pessoasNaCasa: pessoas(completo.pessoasNaCasa),
+      responsavel: texto(completo.responsavel),
+      momentoDeVida: lerMomento(completo.momentoDeVida),
+      restricoesMarcadas: listaDeTextos(completo.restricoesMarcadas),
+      doencas: listaDeTextos(completo.doencas),
+      consumoMensal: lerConsumo(completo.consumoMensal),
+      examesRecentes: normalizarExamesRecentes(completo.examesRecentes),
     }
   }
 

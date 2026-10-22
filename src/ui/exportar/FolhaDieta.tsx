@@ -17,7 +17,6 @@ import {
   type ReceitaDaFolha,
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { listaDeRestricoes } from '@/domain/pacientes.ts'
 import { nomeDoPacienteDoPlano, PACIENTE_SEM_NOME } from '@/domain/nomeDoPaciente.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
@@ -25,6 +24,7 @@ import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { trocasDoPlano } from '@/domain/trocas.ts'
 import type { Caso, ItemPlano, ModoQuantidade, Plano } from '@/domain/tipos.ts'
+import { montarRestricoes, SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
@@ -37,7 +37,8 @@ interface FolhaDietaProps {
   readonly caso: Caso
   readonly plano: Plano
   /** Restrições da ficha do paciente, para não sugerir troca proibida. */
-  readonly restricoes?: string | undefined
+  /** As restrições da ficha; um texto (versão de antes da ficha única) vale como "Outros alimentos que não come". */
+  readonly restricoes?: RestricoesDoPaciente | string | undefined
   /** Quem assina o plano (spec ajustes-de-uso). Sem ela, valem os campos de estágio do plano. */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
   /** Lista de compras e trocas, marcadas na janela de imprimir (CA-317). */
@@ -141,7 +142,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
     ? trocasDaFolha(
-        trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: listaDeRestricoes(restricoes ?? '') }),
+        trocasDoPlano(plano, buscarAlimento, { alimentos: ALIMENTOS, porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, restricoes: typeof restricoes === 'string' ? montarRestricoes({ marcadas: [], texto: restricoes, doencas: [], naoGosta: '' }) : (restricoes ?? SEM_RESTRICOES) }),
         buscarAlimento,
       )
     : []

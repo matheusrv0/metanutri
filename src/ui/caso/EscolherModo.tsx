@@ -12,7 +12,7 @@ const OPCOES = [
     modo: 'rapido' as const,
     icone: ClipboardList,
     titulo: 'Prescrição rápida',
-    descricao: 'Só nome, sexo, idade e a meta de kcal. Sem medidas.',
+    descricao: 'Sem avaliação antropométrica. Peso e estatura são opcionais.',
   },
   {
     modo: 'completo' as const,

@@ -317,7 +317,8 @@ test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
     await page.keyboard.press('Escape')
 
     await page.goto(`/#/caso/${casoId}/caso`)
-    for (const opcao of ['Feminino', 'Masculino', 'Emagrecer', 'Nenhuma', 'Sedentário (1,2)']) await alvoDe44(page.getByRole('radio', { name: opcao }))
+    // Spec ficha-unica: o Objetivo saiu da etapa 1; a gestação e o cálculo da água são pílulas também.
+    for (const opcao of ['Feminino', 'Masculino', 'Gestante', 'Sedentário (1,2)', 'Por peso']) await alvoDe44(page.getByRole('radio', { name: opcao }))
     await page.goto('/#/pacientes')
     await page.getByRole('button', { name: 'Novo paciente' }).click()
     await alvoDe44(page.getByRole('radio', { name: 'Feminino' }))
@@ -451,7 +452,7 @@ const TELAS: readonly Tela[] = [
     agir: async (p) => {
       await p.getByLabel('Nome', { exact: true }).fill('Joana Prado')
       await expect(p.getByRole('heading', { level: 1, name: 'Joana Prado' })).toBeVisible()
-      for (const cartao of ['Identificação', 'Próxima consulta', 'Restrições e saúde', 'Anamnese', 'Suplementos', 'Pedido de exames']) {
+      for (const cartao of ['Dados do paciente', 'Anamnese', 'Conduta', 'Suplementação prescrita', 'Pedido de exames', 'Próxima consulta']) {
         await expect(p.getByRole('heading', { name: cartao, exact: true })).toBeVisible()
       }
     },

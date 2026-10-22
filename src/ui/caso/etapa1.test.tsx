@@ -28,44 +28,62 @@ describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', (
     expect(within(escolha).getByRole('radio', { name: 'Medida caseira' })).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('CA-924: fica no cartão Identificação, o primeiro da etapa', () => {
+  it('CA-924 e CA-1071: fica no cartão Orientações e documento (spec ficha-unica, P-37)', () => {
     montar(adulta)
-    const identificacao = screen.getByRole('heading', { name: 'Identificação' }).closest('[data-slot="card"]')
-    expect(identificacao).not.toBeNull()
-    expect(within(identificacao as HTMLElement).getByRole('radiogroup', { name: 'Quantidades para o paciente' })).toBeInTheDocument()
+    const documento = screen.getByRole('heading', { name: 'Orientações e documento' }).closest('[data-slot="card"]')
+    expect(documento).not.toBeNull()
+    expect(within(documento as HTMLElement).getByRole('radiogroup', { name: 'Quantidades para o paciente' })).toBeInTheDocument()
   })
 })
 
-describe('Água na dieta (spec conduta-da-nutricionista, D-298)', () => {
-  it('CA-932: o campo mostra a linha automática; escrever troca, apagar tira, e "Usar a automática" volta à conta', async () => {
-    const usuario = montar(adulta)
-    const campo = screen.getByLabelText('Água na dieta')
-    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
-    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
-
-    await usuario.clear(campo)
-    expect(campo).toHaveValue('')
-    await usuario.type(campo, 'Beba 2 litros de água por dia.')
-    expect(campo).toHaveValue('Beba 2 litros de água por dia.')
-
-    await usuario.click(screen.getByRole('button', { name: 'Usar a automática' }))
-    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
-    expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
+describe('Meta de água pelo peso (spec ficha-unica, D-355; spec conduta-da-nutricionista, D-298)', () => {
+  it('CA-1092: o campo mostra a meta em litros, o método e a conta, e a referência da DRI numa linha à parte', () => {
+    montar(adulta)
+    const campo = screen.getByLabelText('Meta de água')
+    expect(campo).toHaveValue('2,2')
+    expect(campo).toHaveAccessibleDescription('Por peso: 35 ml/kg (18 a 55 anos) · 35 ml × 62 kg = 2,2 L')
+    expect(screen.getByText('Referência da DRI para mulheres de 19 anos ou mais: 2,7 L de água total, cerca de 2,2 L em bebidas.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Usar a calculada' })).not.toBeInTheDocument()
   })
 
-  it('CA-932: a linha automática acompanha o peso enquanto não há edição', async () => {
+  it('CA-1092: a meta acompanha o peso enquanto não há edição', async () => {
     const usuario = montar(adulta)
     const peso = screen.getByLabelText('Peso')
     await usuario.clear(peso)
     await usuario.type(peso, '80')
-    expect(screen.getByLabelText('Água na dieta')).toHaveValue('Beba cerca de 2,8 litros de água por dia.')
+    expect(screen.getByLabelText('Meta de água')).toHaveValue('2,8')
   })
 
-  it('CB-298: sem peso, o campo fica vazio, com a dica de informar o peso', () => {
+  it('CA-1093: o valor digitado vale e fica; apagar tira a meta; "Usar a calculada" volta à conta', async () => {
+    const usuario = montar(adulta)
+    const campo = screen.getByLabelText('Meta de água')
+    await usuario.clear(campo)
+    expect(campo).toHaveAccessibleDescription('Sem meta de água no plano impresso e na missão do link.')
+    await usuario.type(campo, '3')
+    expect(campo).toHaveValue('3')
+    expect(screen.getByText('Valor digitado. A conta dá 2,2 L.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
+    expect(campo).toHaveValue('2,2')
+  })
+
+  it('CA-1091: "Por energia (1 ml/kcal)" usa a meta de energia', async () => {
+    const usuario = montar(adulta)
+    await usuario.click(screen.getByRole('radio', { name: 'Por energia (1 ml/kcal)' }))
+    expect(screen.getByLabelText('Meta de água')).toHaveAccessibleDescription(/^Por energia: 1 ml\/kcal · 1 ml × [\d.]+ kcal = \d,\d L$/)
+  })
+
+  it('CA-1092: sem peso, o campo fica vazio e pede o peso', () => {
     montar({ ...adulta, pesoKg: null })
-    const campo = screen.getByLabelText('Água na dieta')
+    const campo = screen.getByLabelText('Meta de água')
     expect(campo).toHaveValue('')
-    expect(campo).toHaveAttribute('placeholder', 'Informe o peso para a meta automática')
+    expect(campo).toHaveAccessibleDescription('Informe o peso para a meta automática.')
+  })
+
+  it('CA-1095: a linha escrita à mão antes continua, com o aviso, até "Usar a calculada"', async () => {
+    const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
+    expect(screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você usar a calculada.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
+    expect(screen.queryByText(/Linha escrita antes/)).not.toBeInTheDocument()
   })
 })
 
@@ -78,10 +96,10 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     expect(screen.queryByRole('heading', { name: 'Condição fisiológica' })).not.toBeInTheDocument()
   })
 
-  it('CA-330 e CA-331: masculino não vê condição; adulto não vê meses nem panturrilha', () => {
+  it('CA-330 e CA-331: masculino não vê gestação ou lactação; adulto não vê meses nem panturrilha', () => {
     montar({ ...adulta, sexo: 'M' })
-    expect(screen.queryByRole('radiogroup', { name: 'Condição' })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Gestação ou lactação' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Circunferência da panturrilha')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Circunferência da cintura')).toBeInTheDocument()
   })
@@ -92,23 +110,30 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
     await usuario.clear(idade)
     await usuario.type(idade, '8')
     // D-244 (spec revisao-geral-trabalho): o campo segue a idade quando a pessoa termina de digitar.
-    expect(await screen.findByLabelText('Meses além dos anos')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Meses')).toBeInTheDocument()
     await usuario.clear(idade)
     await usuario.type(idade, '72')
-    await waitFor(() => expect(screen.queryByLabelText('Meses além dos anos')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument())
     expect(screen.getByLabelText('Circunferência da panturrilha')).toBeInTheDocument()
   })
 
-  it('CB-73: campo com valor continua aparecendo', () => {
+  it('CB-73: campo com valor continua aparecendo (os meses do adulto, não: R9)', () => {
     montar({ ...adulta, idadeAnos: 45, circunferenciaPanturrilhaCm: 33, idadeMesesAdicionais: 4 })
     expect(screen.getByLabelText('Circunferência da panturrilha')).toHaveValue('33')
-    expect(screen.getByLabelText('Meses além dos anos')).toHaveValue('4')
+    expect(screen.queryByLabelText('Meses')).not.toBeInTheDocument()
+  })
+
+  it('R1 e R8: a menina de 6 anos não vê gestação nem cintura; a gestante não vê cintura', () => {
+    montar({ sexo: 'F', idadeAnos: 6, pesoKg: 21, estaturaCm: 116 })
+    expect(screen.queryByRole('radiogroup', { name: 'Gestação ou lactação' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Circunferência da cintura')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Meses')).toHaveAccessibleDescription('Além dos anos completos.')
   })
 
   it('CA-332: composição corporal e observações recolhidas, e abrem com um clique', async () => {
     const usuario = montar(adulta)
     const composicao = screen.getByRole('button', { name: /Composição corporal/ })
-    const observacoes = screen.getByRole('button', { name: /Observações/ })
+    const observacoes = screen.getByRole('button', { name: /Anotações deste plano/ })
     expect(composicao).toHaveAttribute('aria-expanded', 'false')
     expect(observacoes).toHaveAttribute('aria-expanded', 'false')
     await usuario.click(composicao)
@@ -124,7 +149,7 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
       composicao: { ...vazio.composicao, dobras: { ...vazio.composicao.dobras, tricipital: 12 } },
     })
     expect(screen.getByRole('button', { name: /Composição corporal/ })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: /Observações/ })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /Anotações deste plano/ })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('CA-333: avaliação mostra valor e classificação na mesma linha', () => {
@@ -134,8 +159,8 @@ describe('Etapa 1 mais limpa (US-B4)', () => {
   })
 })
 
-describe('Meses além dos anos sem piscar (spec revisao-geral-trabalho, D-244)', () => {
-  const meses = () => screen.queryByLabelText('Meses além dos anos')
+describe('Meses sem piscar (spec revisao-geral-trabalho, D-244)', () => {
+  const meses = () => screen.queryByLabelText('Meses')
   const idade = () => screen.getByLabelText('Idade')
   const digitar = (valor: string) => fireEvent.change(idade(), { target: { value: valor } })
 

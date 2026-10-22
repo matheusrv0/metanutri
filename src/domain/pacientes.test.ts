@@ -1,5 +1,5 @@
 import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
-import { criarPacienteVazio, criarRepositorioPacientes } from './pacientes.ts'
+import { criarPacienteVazio, criarRepositorioPacientes, idadeNaData } from './pacientes.ts'
 import type { Armazenamento } from './persistencia.ts'
 
 class Memoria implements Armazenamento {
@@ -197,5 +197,122 @@ describe('CA-598: uma aba da versão de antes salva uma ficha sem remarcar as ou
     const marcas = new Memoria()
     registrarMudanca(marcas, 'metanutri:pacientes', antes, depois, '2026-10-16T10:05:00.000Z')
     expect(lerMudancas(marcas.getItem(CHAVE_MUDANCAS)).alterados).toEqual({ 'pacientes/bia': '2026-10-16T10:05:00.000Z' })
+  })
+})
+
+describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
+  it('paciente novo nasce com os campos novos vazios', () => {
+    const vazio = criarPacienteVazio('p1', '2026-10-21T12:00:00.000Z')
+    expect(vazio).toMatchObject({
+      ocupacao: '',
+      pessoasNaCasa: null,
+      responsavel: '',
+      momentoDeVida: null,
+      restricoesMarcadas: [],
+      doencas: [],
+      consumoMensal: { oleoL: null, salKg: null, acucarKg: null },
+      examesRecentes: [],
+    })
+  })
+
+  it('CA-1089: os campos novos vêm depois dos antigos, na ordem guardada (DP-34)', () => {
+    const chaves = Object.keys(criarPacienteVazio('p1', '2026-10-21T12:00:00.000Z'))
+    expect(chaves.slice(chaves.indexOf('pedidoExames') + 1)).toEqual([
+      'ocupacao',
+      'pessoasNaCasa',
+      'responsavel',
+      'momentoDeVida',
+      'restricoesMarcadas',
+      'doencas',
+      'consumoMensal',
+      'examesRecentes',
+    ])
+  })
+
+  it('CA-1089: a leitura da versão de 15/10 (com consulta, anamnese, suplementos e exames) devolve o mesmo texto', () => {
+    const arm = new Memoria()
+    const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'ana' })
+    const ana = repo.criar('Ana')
+    repo.salvar({ ...ana, ocupacao: 'Professora', restricoesMarcadas: ['leite'], momentoDeVida: { tipo: 'nenhum' } })
+    const [ficha] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    const vaziaDe1510 = {
+      id: 'ana',
+      nome: '',
+      sexo: null,
+      nascimento: null,
+      telefone: '',
+      email: '',
+      objetivo: '',
+      restricoes: '',
+      condicoesClinicas: '',
+      medicamentos: '',
+      anamnese: '',
+      observacoes: '',
+      criadoEm: '',
+      atualizadoEm: '',
+      proximaConsulta: null,
+      respostasAnamnese: [],
+      suplementos: [],
+      pedidoExames: { marcados: [], outros: '' },
+    }
+    expect(JSON.stringify({ ...vaziaDe1510, ...ficha })).toBe(JSON.stringify(ficha))
+  })
+
+  it('CA-1087: ficha guardada antes abre com os campos novos vazios e o resto igual, sem gravar nada', () => {
+    const arm = new Memoria()
+    const guardado = JSON.stringify([
+      { id: 'p1', nome: 'Ana', restricoes: 'lactose', condicoesClinicas: 'Gastrite', criadoEm: '2026-09-01T00:00:00.000Z', atualizadoEm: '2026-09-02T00:00:00.000Z' },
+    ])
+    arm.setItem('metanutri:pacientes', guardado)
+    const ana = criarRepositorioPacientes(arm).obter('p1')
+    expect(ana).toMatchObject({ restricoes: 'lactose', condicoesClinicas: 'Gastrite', momentoDeVida: null, restricoesMarcadas: [], doencas: [], examesRecentes: [] })
+    expect(arm.getItem('metanutri:pacientes')).toBe(guardado)
+  })
+
+  it('CA-1088: campo novo estragado vira vazio; id desconhecido de restrição e de doença fica guardado depois de salvar', () => {
+    const arm = new Memoria()
+    arm.setItem(
+      'metanutri:pacientes',
+      JSON.stringify([
+        {
+          id: 'p1',
+          nome: 'Ana',
+          ocupacao: 42,
+          pessoasNaCasa: 'quatro',
+          responsavel: null,
+          momentoDeVida: 'gestante',
+          restricoesMarcadas: ['leite', 7, 'restricao-do-futuro'],
+          doencas: ['hipertensao', 'doenca-do-futuro'],
+          consumoMensal: [1],
+          examesRecentes: [{ id: 'e1', data: '2026-10-01', exame: 'Ferritina', valor: '12 ng/mL' }, { exame: 'sem id' }, 'lixo'],
+          criadoEm: '2026-09-01T00:00:00.000Z',
+          atualizadoEm: '2026-09-02T00:00:00.000Z',
+        },
+      ]),
+    )
+    const repo = criarRepositorioPacientes(arm, { agora: relogio() })
+    const ana = repo.obter('p1')
+    expect(ana).toMatchObject({
+      ocupacao: '',
+      pessoasNaCasa: null,
+      responsavel: '',
+      momentoDeVida: null,
+      restricoesMarcadas: ['leite', 'restricao-do-futuro'],
+      doencas: ['hipertensao', 'doenca-do-futuro'],
+      consumoMensal: { oleoL: null, salKg: null, acucarKg: null },
+      examesRecentes: [{ id: 'e1', data: '2026-10-01', exame: 'Ferritina', valor: '12 ng/mL' }],
+    })
+    if (!ana) throw new Error('ficha não lida')
+    repo.salvar({ ...ana, nome: 'Ana Souza' })
+    const [guardada] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    expect(guardada?.['restricoesMarcadas']).toEqual(['leite', 'restricao-do-futuro'])
+    expect(guardada?.['doencas']).toEqual(['hipertensao', 'doenca-do-futuro'])
+  })
+
+  it('a idade na data pedida, em anos e meses', () => {
+    expect(idadeNaData('1991-03-10', '2026-10-21')).toEqual({ anos: 35, meses: 7 })
+    expect(idadeNaData('1991-03-10', '2026-03-09')).toEqual({ anos: 34, meses: 11 })
+    expect(idadeNaData('2030-01-01', '2026-10-21')).toBeNull()
+    expect(idadeNaData(null, '2026-10-21')).toBeNull()
   })
 })

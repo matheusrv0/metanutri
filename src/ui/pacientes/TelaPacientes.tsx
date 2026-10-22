@@ -51,9 +51,9 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
           <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
             <UserRound className="size-6" aria-hidden="true" />
           </span>
-          <h2 className="card-title">{busca.trim() ? 'Ninguém com esse nome' : 'Nenhum paciente ainda'}</h2>
+          <h2 className="card-title">{busca.trim() ? 'Nenhum paciente com esse nome' : 'Nenhum paciente ainda'}</h2>
           <p className="max-w-[52ch] text-sm text-muted-foreground">
-            Cadastre a pessoa uma vez. Os planos seguintes reaproveitam restrições, condições e o histórico.
+            Cadastre o paciente uma vez: os planos dele usam a idade, o sexo, as restrições e o histórico da ficha.
           </p>
           <Button onClick={criar}>
             <Plus aria-hidden="true" />

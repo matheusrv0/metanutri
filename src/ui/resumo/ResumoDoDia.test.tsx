@@ -59,8 +59,11 @@ describe('Resumo do dia', () => {
     expect(resumo().getByText('1.330 kcal')).toBeInTheDocument()
     expect(resumo().getByText('1.596 kcal')).toBeInTheDocument()
 
+    // Spec ficha-unica, D-357: o nível fica na etapa 1; em "Ajustar", o fator próprio.
     await abrirAjustes(usuario)
-    await usuario.click(screen.getByRole('radio', { name: /Moderadamente ativo/ }))
+    const fator = screen.getByLabelText('Fator próprio')
+    await usuario.clear(fator)
+    await usuario.type(fator, '1,55')
     expect(resumo().getByText('2.062 kcal')).toBeInTheDocument()
   })
 
@@ -92,7 +95,9 @@ describe('Resumo do dia', () => {
     const usuario = montar({ sexo: 'M', idadeAnos: 8, pesoKg: 25, estaturaCm: 128 })
     await abrirAjustes(usuario)
     expect(screen.queryByRole('radio', { name: 'Harris-Benedict' })).not.toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: 'Nível de atividade' })).toBeInTheDocument()
+    // Spec ficha-unica, D-357: o nível de atividade fica só na etapa 1; "Ajustar" tem o fator próprio e o GET manual.
+    expect(screen.queryByRole('radiogroup', { name: 'Nível de atividade' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Fator próprio')).toBeInTheDocument()
   })
 
   it('CA-06c e CA-06d: lactante mostra o adicional da lactação e a categoria de atividade', () => {
@@ -167,7 +172,9 @@ describe('Resumo do dia', () => {
     const plano = planoComArroz()
     const usuario = montar(adulta, plano)
     await abrirAjustes(usuario)
-    await usuario.click(screen.getByRole('radio', { name: /Muito ativo/ }))
+    const fator = screen.getByLabelText('Fator próprio')
+    await usuario.clear(fator)
+    await usuario.type(fator, '1,7')
     expect(resumo().getByText('371 kcal')).toBeInTheDocument()
     expect(plano.refeicoes[2]?.opcoes.principal).toHaveLength(1)
   })

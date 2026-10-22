@@ -1,7 +1,9 @@
 import { Pencil, Plus } from 'lucide-react'
+import { casaRestricao } from '@/domain/restricoes.ts'
 import { NOME_DO_TIPO, sugestoesProntas, type SugestaoAlimento, type TipoRefeicao } from '@/domain/sugestoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { useRestricoesDoPlano } from '../estado/contextoRestricoes.ts'
 
 interface SugestoesDaRefeicaoProps {
   readonly tipo: TipoRefeicao
@@ -13,7 +15,9 @@ interface SugestoesDaRefeicaoProps {
 
 /** CA-237, CA-238 e CA-306: os alimentos de sempre daquele tipo de refeição, a um clique. */
 export function SugestoesDaRefeicao({ tipo, sugestoes, aoEscolher, aoEditar }: SugestoesDaRefeicaoProps) {
-  const prontas = sugestoesProntas(sugestoes, buscarAlimento)
+  const restricoes = useRestricoesDoPlano()
+  // Spec ficha-unica, D-353: alimento que bate com a restrição do paciente não aparece nas sugestões da refeição.
+  const prontas = sugestoesProntas(sugestoes, buscarAlimento).filter((s) => !casaRestricao(s.alimento, restricoes))
   const titulo = `Sugestões para ${NOME_DO_TIPO[tipo]}`
 
   const editar = aoEditar ? (

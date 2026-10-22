@@ -1,8 +1,9 @@
-import { ArrowLeftRight, X } from 'lucide-react'
+import { ArrowLeftRight, TriangleAlert, X } from 'lucide-react'
 import { medidaParaMostrar } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
 import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaComOQueComer, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
+import { restricaoDoItem } from '@/domain/restricoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
 import type { ItemPlano } from '@/domain/tipos.ts'
@@ -10,6 +11,7 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
+import { useRestricoesDoPlano } from '../estado/contextoRestricoes.ts'
 
 interface LinhaItemProps {
   readonly item: ItemPlano
@@ -47,6 +49,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
   const daReceita = deReceita ? energiaDaReceita(item) : null
   const kcal = daReceita ? daReceita.kcal : porCem === null ? null : (porCem * item.gramas) / 100
   const substituir = deReceita || !alimento ? undefined : aoSubstituir
+  // Spec ficha-unica, D-353: o alimento (ou um ingrediente da receita) que bate com a restrição do paciente avisa.
+  const restricao = restricaoDoItem(item, buscarAlimento, useRestricoesDoPlano())
 
   return (
     // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
@@ -56,6 +60,12 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir }: Linh
           {descricao}
         </p>
         {medidaTexto ? <p className="truncate text-xs text-muted-foreground">{medidaTexto}</p> : null}
+        {restricao ? (
+          <p className="flex items-center gap-1 text-xs font-medium text-errortext">
+            <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
+            {restricao}
+          </p>
+        ) : null}
         {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item apagado de fora; a nutricionista fica sabendo aqui. */}
         {/* CB-317 (integracao-rodada-1910): a receita sem o que comer também fica de fora. */}
         {(deReceita ? receitaComOQueComer(receita, buscarAlimento) : alimento) ? null : (

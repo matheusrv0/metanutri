@@ -4,6 +4,7 @@ import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { gravarOpcoesImpressao, lerOpcoesImpressao, type OpcoesImpressao } from '@/domain/folhaDieta.ts'
 import { suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
+import type { RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
@@ -16,7 +17,7 @@ interface DialogoImprimirProps {
   readonly caso: Caso
   readonly plano: Plano
   /** Restrições da ficha do paciente; a lista de trocas as respeita. */
-  readonly restricoes?: string | undefined
+  readonly restricoes?: RestricoesDoPaciente | undefined
   /** Quem assina o plano (spec ajustes-de-uso). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
   /** Os suplementos da ficha do paciente (spec anamnese-e-prescricoes, CA-577). */

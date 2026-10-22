@@ -4,6 +4,12 @@ Status: **pedida pelo dono em 20/10/2026, a partir da revisão da nutricionista 
 "Apenas faça": as dúvidas foram decididas pelos princípios da parceira (abaixo) e ficam escritas aqui; a aprovação é
 pelas telas antes de publicar.
 
+**Ficha única (21/10/2026).** A spec `ficha-unica` substitui o D-299 na parte do "Trimestre" e dos blocos
+"Gestação" e "Intolerâncias e alergias" (a gestação vira dado da ficha, com as semanas, e o bloco só aparece para
+gestante; alergias e intolerâncias viram escolhas em Alimentação) e o D-298 na conta da água (AI da DRI por fase de
+vida, no lugar de 35 ml por kg). Os dois itens da seção 4 sobre ligar o trimestre e as alergias ao plano passam a
+fazer parte (D-343 e D-351 a D-353 de lá). A "Cor da urina" continua como está.
+
 **Fonte:** as respostas da nutricionista parceira à página de revisão de 19/10/2026 (spec `sugestoes-com-criterio`,
 Apêndices A e C). Os princípios dela valem para toda decisão desta spec:
 

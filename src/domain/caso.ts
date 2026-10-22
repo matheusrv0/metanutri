@@ -60,6 +60,8 @@ export function criarCasoVazio(id: string): Caso {
     receitas: '',
     quantidades: 'medida-caseira',
     linhaDaAgua: null,
+    metodoAgua: 'ml-kg',
+    aguaLitros: null,
   }
 }
 
@@ -103,7 +105,7 @@ export function validarCaso(caso: Caso): ResultadoValidacao {
   } else if (!Number.isInteger(caso.idadeAnos)) {
     erros.idadeAnos = 'Informe a idade em anos completos.'
   } else if (caso.idadeAnos < FAIXAS.idadeAnos.min) {
-    erros.idadeAnos = 'O planejador atende casos a partir de 1 ano.'
+    erros.idadeAnos = 'O MetaNutri calcula para pacientes a partir de 1 ano.'
   } else if (caso.idadeAnos > FAIXAS.idadeAnos.max) {
     erros.idadeAnos = `Idade acima de ${FAIXAS.idadeAnos.max} anos não é plausível.`
   }
@@ -148,7 +150,7 @@ export function validarCaso(caso: Caso): ResultadoValidacao {
     if (caso.sexo === 'M') {
       erros.condicao = `${nomeCondicao} só pode ser marcada para o sexo feminino.`
     } else if (caso.idadeAnos !== null && fora(caso.idadeAnos, faixa)) {
-      erros.condicao = `As referências de ${nomeCondicao.toLowerCase()} cobrem ${faixa.min} a ${faixa.max} anos.`
+      erros.condicao = `As referências de ${nomeCondicao.toLowerCase()} cobrem de ${faixa.min} a ${faixa.max} anos.`
     } else if (condicao.tipo === 'gestante') {
       if (condicao.semanasGestacao === null) {
         avisos.push('Informe a idade gestacional para calcular o adicional de energia e o ganho de peso.')

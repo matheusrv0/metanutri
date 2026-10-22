@@ -53,7 +53,7 @@ function montar(ajuste: Partial<Paciente> = {}, assinatura: AssinaturaDoPlano | 
   return { arm, pacientes, usuario: userEvent.setup() }
 }
 
-const cartao = () => within(screen.getByRole('region', { name: 'Suplementos' }))
+const cartao = () => within(screen.getByRole('region', { name: 'Suplementação prescrita' }))
 
 describe('Suplementos na ficha (US-AP2)', () => {
   it('CA-585: paciente novo não tem suplemento, e a conta não tem modelo', async () => {
@@ -67,7 +67,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
   it('CA-571: acrescentar um suplemento e preencher os cinco campos salva na ficha na hora', async () => {
     const { pacientes, usuario } = montar()
     const antes = pacientes.obter('p1')?.atualizadoEm ?? ''
-    await usuario.click(cartao().getByRole('button', { name: 'Acrescentar suplemento' }))
+    await usuario.click(cartao().getByRole('button', { name: 'Adicionar suplemento' }))
     const item = within(cartao().getByRole('group', { name: 'Suplemento 1' }))
     await usuario.type(item.getByLabelText('Nome'), 'Ferro')
     await usuario.type(item.getByLabelText('Dose'), '1 comprimido')
@@ -124,7 +124,7 @@ describe('Suplementos na ficha (US-AP2)', () => {
     const janela = within(screen.getByRole('dialog', { name: 'Modelos de suplemento' }))
     expect(janela.getAllByRole('listitem').map((li) => li.textContent ?? '')).toEqual([expect.stringContaining('Magnésio'), expect.stringContaining('Zinco')])
     expect(janela.getAllByText('Com uma refeição que tenha gordura')).toHaveLength(2)
-    await usuario.click(janela.getByRole('button', { name: 'Apagar o modelo Magnésio' }))
+    await usuario.click(janela.getByRole('button', { name: 'Excluir o modelo Magnésio' }))
     expect(repo.listar().map((m) => m.nome)).toEqual(['Zinco'])
     await usuario.click(janela.getByRole('button', { name: 'Usar Zinco' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
