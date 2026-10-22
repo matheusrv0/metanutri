@@ -102,7 +102,8 @@ export function condicaoNaData(momento: MomentoDeVida | null, dia: string): Cond
   }
   if (momento.dataDoParto === null) return { tipo: 'lactante', mesesPosParto: null }
   const meses = mesesEntre(momento.dataDoParto, dia)
-  if (meses === null) return { tipo: 'nenhuma' }
+  // D-457: acima de 60 meses do parto não há referência de lactação; a ficha e a etapa 1 avisam.
+  if (meses === null || meses > FAIXAS.mesesPosParto.max) return { tipo: 'nenhuma' }
   // D-456: a amamentação com outros alimentos muda a energia; só no peito (ou sem resposta) é a de sempre.
   return momento.amamentacao === 'mista' ? { tipo: 'lactante', mesesPosParto: meses, amamentacao: 'mista' } : { tipo: 'lactante', mesesPosParto: meses }
 }

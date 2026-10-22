@@ -84,6 +84,16 @@ describe('Gestação e lactação na data da consulta (D-343)', () => {
     const lactante = ficha({ sexo: 'F', nascimento: '1998-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'exclusiva' } })
     expect(casoComFicha(plano({ dataConsulta: '2026-10-21' }), lactante, HOJE).caso.condicao).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
   })
+
+  it('CA-1278: acima de 60 meses do parto não é lactante e avisa para atualizar a ficha (D-457)', () => {
+    const antiga = ficha({ sexo: 'F', nascimento: '1990-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2020-01-15', amamentacao: 'mista' } })
+    const r = casoComFicha(plano({ dataConsulta: '2026-10-21' }), antiga, HOJE)
+    expect(r.caso.condicao).toEqual({ tipo: 'nenhuma' })
+    expect(r.avisos).toEqual(['Pela data do parto informada na ficha, já se passaram mais de 60 meses. Atualize a ficha.'])
+    const sessenta = ficha({ sexo: 'F', nascimento: '1990-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2021-10-21', amamentacao: 'exclusiva' } })
+    expect(casoComFicha(plano({ dataConsulta: '2026-10-21' }), sessenta, HOJE).caso.condicao).toEqual({ tipo: 'lactante', mesesPosParto: 60 })
+    expect(casoComFicha(plano({ dataConsulta: '2026-10-21' }), sessenta, HOJE).avisos).toEqual([])
+  })
 })
 
 describe('Plano antigo com outra condição (D-344, CA-1044)', () => {

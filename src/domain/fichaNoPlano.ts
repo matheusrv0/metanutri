@@ -3,7 +3,7 @@
 // o que é da consulta (medidas, energia, documento) continua no plano. Plano sem paciente fica como está (D-366).
 import { textoDasDoencas } from './doencas.ts'
 import { FAIXAS } from './caso.ts'
-import { condicaoNaData, lerDia, semanasNaData } from './momentoDeVida.ts'
+import { condicaoNaData, lerDia, mesesEntre, semanasNaData } from './momentoDeVida.ts'
 import { idadeNaData, type Paciente } from './pacientes.ts'
 import { podeGestarOuLactar, type PerfilDaFicha } from './regrasDaFicha.ts'
 import { montarRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
@@ -50,6 +50,13 @@ export function casoComFicha(caso: Caso, paciente: Paciente | null, hoje: string
     const semanas = semanasNaData(momento, dia)
     if (semanas !== null && semanas > FAIXAS.semanasGestacao.max) {
       avisos.push(`Pela data informada na ficha, a gestação passou de ${FAIXAS.semanasGestacao.max} semanas. Atualize a ficha.`)
+    }
+  }
+  // D-457: como a gestação acima de 42 semanas, a lactação acima de 60 meses não vale e pede a ficha atualizada.
+  if (momento?.tipo === 'lactante' && momento.dataDoParto !== null) {
+    const meses = mesesEntre(momento.dataDoParto, dia)
+    if (meses !== null && meses > FAIXAS.mesesPosParto.max) {
+      avisos.push(`Pela data do parto informada na ficha, já se passaram mais de ${FAIXAS.mesesPosParto.max} meses. Atualize a ficha.`)
     }
   }
 

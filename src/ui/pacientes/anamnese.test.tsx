@@ -414,4 +414,9 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     const amamentacao = dados().getByRole('radiogroup', { name: 'Amamentação' })
     expect(within(amamentacao).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Só no peito', 'Peito e outros alimentos'])
   })
+
+  it('CA-1278: a ficha de lactante com o parto há mais de 60 meses avisa', () => {
+    montar({ sexo: 'F', nascimento: '1990-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2020-01-15', amamentacao: 'mista' } })
+    expect(dados().getByText('Pela data do parto, já se passaram mais de 60 meses. Se a amamentação terminou, marque Não.')).toBeInTheDocument()
+  })
 })
