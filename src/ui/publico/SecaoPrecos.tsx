@@ -205,7 +205,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
           {/* CA-743 (spec revisao-geral-publica): o título da página é o h1. */}
           <h1 className="font-titulo text-3xl font-bold text-heading sm:text-5xl">Planos e preços</h1>
           <p className="mt-4 text-sm text-muted-foreground sm:text-base">
-            Todos os planos têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.
+            Todas as assinaturas têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.
           </p>
         </div>
 

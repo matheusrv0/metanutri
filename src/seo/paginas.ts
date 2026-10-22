@@ -46,7 +46,7 @@ export const PAGINAS: readonly PaginaIndexavel[] = [
     rota: 'precos',
     caminho: 'precos/',
     titulo: `Preços do MetaNutri: Free, Solo a R$ ${reais(planoPorId('solo')?.mensal ?? 0)} e Pro a R$ ${reais(planoPorId('pro')?.mensal ?? 0)}`,
-    descricao: `${descricaoDosPrecos()} Todos os planos têm as mesmas funções.`,
+    descricao: `${descricaoDosPrecos()} As assinaturas têm as mesmas funções.`,
   },
   {
     rota: 'termos',

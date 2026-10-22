@@ -3,6 +3,7 @@
 // A biblioteca fica na chave `metanutri:receitas`, uma lista com id, como os modelos de suplemento: vai para a nuvem
 // item por item, com lápide (D-272). O plano nunca lê daqui depois de pôr a receita: ele guarda uma cópia (D-273).
 import { interpretarEntrada, normalizar, pluralDaMedida } from './busca.ts'
+import { NOME_DA_BASE } from './baseMetanutri.ts'
 import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
@@ -84,13 +85,14 @@ export function totaisDaPorcao(r: ReceitaDoPlano, buscar: BuscarAlimento): Totai
 }
 
 /**
- * CA-862: de onde vem a soma da porção, para o número aparecer ao lado da fonte: "TACO 2011" quando há ingrediente da
+ * CA-862: de onde vem a soma da porção, para o número aparecer ao lado da fonte: "Base MetaNutri" (o nome do glossário,
+ * D-461 da spec ficha-unica) quando há ingrediente da
  * base e "rótulo de Meus produtos" quando há produto cadastrado.
  */
 export function fontesDaSoma(r: Pick<ReceitaDoPlano, 'ingredientes'>): readonly string[] {
   const usados = r.ingredientes.filter((i) => i.gramas > 0)
   return [
-    usados.some((i) => i.alimentoId < PRIMEIRO_ID_PRODUTO) ? 'TACO 2011' : null,
+    usados.some((i) => i.alimentoId < PRIMEIRO_ID_PRODUTO) ? NOME_DA_BASE : null,
     usados.some((i) => i.alimentoId >= PRIMEIRO_ID_PRODUTO) ? 'Meus alimentos' : null,
   ].filter((f): f is string => f !== null)
 }

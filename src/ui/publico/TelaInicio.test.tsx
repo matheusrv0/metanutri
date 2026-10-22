@@ -143,7 +143,7 @@ describe('TelaInicio (spec site-publico-profissional, textos da spec textos-e-pr
     expect(secao.getByText(`Pacientes ilimitados. ${pro?.resumo ?? ''}`)).toBeInTheDocument()
     expect(
       secao.getByText(
-        `Todos os planos têm as mesmas funções. O preço depende de quantos pacientes ativos você tem: quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`,
+        `Todas as assinaturas têm as mesmas funções. O preço depende de quantos pacientes ativos você tem: quem teve plano alimentar ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`,
       ),
     ).toBeInTheDocument()
     await userEvent.setup().click(secao.getByRole('button', { name: 'Comparar planos' }))

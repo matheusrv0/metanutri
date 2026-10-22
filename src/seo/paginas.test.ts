@@ -44,7 +44,7 @@ describe('as páginas indexáveis (spec site-publico-profissional)', () => {
     expect(solo?.mensal).toBe(34.9)
     expect(precos.titulo).toBe('Preços do MetaNutri: Free, Solo a R$ 34,90 e Pro a R$ 64,90')
     expect(precos.descricao).toBe(
-      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano e Pro por R$ 64,90 ao mês ou R$ 599 ao ano. Todos os planos têm as mesmas funções.',
+      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano e Pro por R$ 64,90 ao mês ou R$ 599 ao ano. As assinaturas têm as mesmas funções.',
     )
     expect(paginaDaRota('termos').descricao).toContain('assinaturas e pagamento')
   })

@@ -77,7 +77,7 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
           <CardDescription>
             {formularioNovo
               ? 'O que a base não tem: um alimento da sua região, uma preparação ou um produto pelo rótulo. Cadastre uma vez e use nos planos como qualquer alimento.'
-              : 'Produtos industrializados não estão na TACO. Cadastre o rótulo uma vez e use o produto nos planos como qualquer alimento.'}
+              : 'Produtos industrializados não estão na Base MetaNutri. Cadastre o rótulo uma vez e use o produto nos planos como qualquer alimento.'}
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-end gap-3">

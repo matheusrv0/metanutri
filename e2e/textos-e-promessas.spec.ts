@@ -37,7 +37,7 @@ test.describe('CA-1198: landing e Preços com o texto novo, em 390 e 1280 px, cl
         await page.setViewportSize({ width: largura, height: 844 })
         await abrir(page, '/#/precos', tema)
         await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
-        await expect(page.getByText('Todos os planos têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.')).toBeVisible()
+        await expect(page.getByText('Todas as assinaturas têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.')).toBeVisible()
         const clinica = page.getByRole('note', { name: 'Plano Clínica' }).filter({ visible: true })
         await expect(clinica).toContainText('Clínica com mais de um nutricionista:')
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
@@ -51,7 +51,7 @@ test.describe('CA-1198: landing e Preços com o texto novo, em 390 e 1280 px, cl
 test('CA-1198: o HTML publicado já traz o texto novo, sem o cartão de alimentos nem a Clínica a R$ 149', async ({ request }) => {
   const inicio = await (await request.get('/')).text()
   const raiz = inicio.slice(inicio.indexOf('<div id="root">'))
-  for (const trecho of ['Uma lista dos alimentos mais ricos em cálcio', 'Do atendimento ao documento entregue', 'Todos os planos têm as mesmas funções', 'Teste com um paciente real']) {
+  for (const trecho of ['Uma lista dos alimentos mais ricos em cálcio', 'Do atendimento ao documento entregue', 'Todas as assinaturas têm as mesmas funções', 'Teste com um paciente real']) {
     expect(raiz).toContain(trecho)
   }
   expect(raiz).not.toMatch(/597|Comece pelo Free|folha do paciente/)

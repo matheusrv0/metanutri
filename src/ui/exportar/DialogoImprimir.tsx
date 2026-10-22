@@ -70,7 +70,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto print:max-h-none print:overflow-visible print:border-0 print:p-0 print:shadow-none">
         <DialogHeader className="print:hidden">
           <DialogTitle>Plano alimentar para imprimir</DialogTitle>
-          <DialogDescription>Refeições, orientações e assinatura sempre entram. Marque o que mais quer incluir.</DialogDescription>
+          <DialogDescription>Refeições, orientações e assinatura sempre entram. Escolha o que incluir além disso.</DialogDescription>
         </DialogHeader>
 
         <div className="print:hidden">

@@ -394,7 +394,7 @@ export function comparativoDosPlanos(): readonly LinhaComparativo[] {
   return [
     {
       rotulo: 'Pacientes ativos',
-      detalhe: `Quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`,
+      detalhe: `Quem teve plano alimentar ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`,
       valores: porPlano((p) => numeroOuIlimitado(p.limitePacientesAtivos)),
     },
     {

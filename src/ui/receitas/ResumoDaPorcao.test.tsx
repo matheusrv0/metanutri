@@ -21,15 +21,15 @@ const GRANOLA: Alimento = {
 afterEach(() => registrarProdutos([]))
 
 describe('a fonte do valor da porção (CA-862)', () => {
-  it('só ingredientes da base: TACO 2011', () => {
+  it('só ingredientes da base: Base MetaNutri (CA-1293, D-461)', () => {
     render(<ResumoDaPorcao receita={PANQUECA} />)
-    expect(screen.getByText(/Soma dos ingredientes: TACO 2011\./)).toBeInTheDocument()
+    expect(screen.getByText(/Soma dos ingredientes: Base MetaNutri\./)).toBeInTheDocument()
   })
 
   it('com produto de Meus produtos: a TACO e o rótulo', () => {
     registrarProdutos([GRANOLA])
     render(<ResumoDaPorcao receita={{ ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: GRANOLA.id, gramas: 20 }] }} />)
-    expect(screen.getByText(/Soma dos ingredientes: TACO 2011 e Meus alimentos\./)).toBeInTheDocument()
+    expect(screen.getByText(/Soma dos ingredientes: Base MetaNutri e Meus alimentos\./)).toBeInTheDocument()
   })
 
   it('só produtos: só o rótulo, sem a TACO', () => {
