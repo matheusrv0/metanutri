@@ -1,4 +1,4 @@
-import { litrosDeAgua, missoesDoPlano } from './missoes.ts'
+import { horaNoTexto, litrosDeAgua, missoesDoPlano } from './missoes.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
 
 let n = 0
@@ -18,7 +18,7 @@ describe('missões do dia', () => {
   it('cria uma missão por refeição que tem alimento', () => {
     const missoes = missoesDoPlano(comAlimentos())
     expect(missoes.filter((m) => m.origem === 'Refeição do plano')).toHaveLength(2)
-    expect(missoes.some((m) => m.texto.includes('Almoço por volta das 12:00'))).toBe(true)
+    expect(missoes.some((m) => m.texto.includes('Almoço por volta das 12h'))).toBe(true)
   })
 
   it('a água usa 35 ml por quilo quando há peso', () => {
@@ -52,5 +52,77 @@ describe('missões do dia', () => {
 
   it('plano vazio não gera missão nenhuma', () => {
     expect(missoesDoPlano(criarPlanoPadrao(ids))).toEqual([])
+  })
+})
+
+/** Um plano com estes alimentos no almoço. */
+const comNoAlmoco = (...alimentos: readonly number[]) => {
+  const plano = criarPlanoPadrao(ids)
+  const almoco = plano.refeicoes[2]
+  if (!almoco) throw new Error('plano incompleto')
+  return alimentos.reduce((p, alimentoId) => adicionarItem(p, almoco.id, 'principal', { alimentoId, gramas: 100 }, ids), plano)
+}
+
+const ALFACE = 78
+const BROCOLIS = 100
+const CENOURA = 109
+const ALHO_PORO = 83
+const FEIJAO = 561
+const BATATA = 91
+const MANDIOCA = 129
+const PAO_DE_QUEIJO = 140
+const FARINHA_DE_MANDIOCA = 122
+const ALHO = 82
+const EXTRATO_DE_TOMATE = 158
+
+describe('CA-1192 (spec textos-e-promessas, D-411): a missão das verduras conta só verdura e legume', () => {
+  const vegetais = (plano: ReturnType<typeof comNoAlmoco>) => missoesDoPlano(plano).find((m) => m.id === 'vegetais')
+
+  it('com verdura ou legume, a missão diz o que é, sem prometer almoço e jantar', () => {
+    for (const alimento of [ALFACE, BROCOLIS, CENOURA, ALHO_PORO]) {
+      expect(vegetais(comNoAlmoco(alimento)), String(alimento)).toEqual({
+        id: 'vegetais',
+        texto: 'Comer as verduras e os legumes do plano',
+        origem: 'Verduras e legumes que estão no plano',
+      })
+    }
+  })
+
+  it('feijão é leguminosa, não verdura: sozinho, não cria a missão', () => {
+    expect(vegetais(comNoAlmoco(FEIJAO))).toBeUndefined()
+  })
+
+  it('batata e mandioca (raízes e tubérculos), pão de queijo e farinha (amido) e temperos não criam a missão', () => {
+    for (const alimento of [BATATA, MANDIOCA, PAO_DE_QUEIJO, FARINHA_DE_MANDIOCA, ALHO, EXTRATO_DE_TOMATE]) {
+      expect(vegetais(comNoAlmoco(alimento)), String(alimento)).toBeUndefined()
+    }
+  })
+
+  it('CB-389: com uma verdura junto, a batata não atrapalha', () => {
+    expect(vegetais(comNoAlmoco(BATATA, ALFACE))?.texto).toBe('Comer as verduras e os legumes do plano')
+  })
+
+  it('CB-381: o id continua "vegetais", para as marcações dos links já enviados valerem', () => {
+    expect(vegetais(comNoAlmoco(ALFACE))?.id).toBe('vegetais')
+  })
+})
+
+describe('CA-1192 (spec textos-e-promessas, D-412): a hora no texto da missão', () => {
+  it.each([
+    ['12:00', 'por volta das 12h'],
+    ['12:30', 'por volta das 12h30'],
+    ['07:00', 'por volta das 7h'],
+    ['01:00', 'por volta da 1h'],
+    ['00:30', 'por volta da 0h30'],
+  ])('%s vira "%s"', (antes, depois) => {
+    expect(horaNoTexto(antes)).toBe(depois)
+  })
+
+  it('CB-388: fora do formato, o horário como veio', () => {
+    expect(horaNoTexto('meio-dia')).toBe('por volta de meio-dia')
+  })
+
+  it('a missão da refeição usa a hora no texto', () => {
+    expect(missoesDoPlano(comNoAlmoco(ALFACE)).find((m) => m.origem === 'Refeição do plano')?.texto).toBe('Almoço por volta das 12h')
   })
 })

@@ -232,13 +232,13 @@ export function estadoDoAcompanhamento(acompanhamento: Acompanhamento, hoje: str
 export const ROTULO_ESTADO: Readonly<Record<EstadoAcompanhamento, string>> = {
   'em-dia': 'Em dia',
   atencao: 'Atenção',
-  sumindo: 'Sumindo',
+  sumindo: 'Parou de marcar',
   'nao-comecou': 'Ainda não começou',
 }
 
 export const EXPLICACAO_ESTADO: Readonly<Record<EstadoAcompanhamento, string>> = {
   'em-dia': `Marcou missão em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias ou mais na última semana.`,
   atencao: 'Está marcando, mas menos do que a meta da semana.',
-  sumindo: `Sem marcar nada há ${DIAS_PARA_SUMIR} dias ou mais. É a hora de chamar.`,
+  sumindo: `Está há ${DIAS_PARA_SUMIR} dias ou mais sem marcar. Hora de entrar em contato.`,
   'nao-comecou': 'O link foi criado e o paciente ainda não marcou nada.',
 }

@@ -122,7 +122,7 @@ test('CA-527: em 360 px, a Adesão cabe sem rolar para o lado, com o retorno e o
   await page.reload()
 
   const linha = page.getByRole('listitem').filter({ hasText: 'Ana Souza' })
-  await expect(linha).toContainText('Sumindo')
+  await expect(linha).toContainText('Parou de marcar')
   await expect(linha).toContainText('Retorno amanhã às 14:30')
   const larguras = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, tela: window.innerWidth }))
   expect(larguras.pagina).toBeLessThanOrEqual(larguras.tela)

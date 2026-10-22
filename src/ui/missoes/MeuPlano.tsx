@@ -46,7 +46,7 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readon
 
 /**
  * CA-532: o "ou" entre as opções, com um fio de cada lado. Spec impressao-do-plano, CA-645: com os rótulos da folha
- * impressa, "Opção 1" em cima da primeira e "ou · Opção 2" entre elas, para o paciente ver que a refeição inteira é
+ * impressa, "Opção 1" em cima da primeira e "ou Opção 2" entre elas, para o paciente ver que a refeição inteira é
  * trocada. É só desenho: a cópia guardada no link não muda.
  */
 function RotuloDaOpcao({ numero }: { readonly numero: number }) {
@@ -54,7 +54,7 @@ function RotuloDaOpcao({ numero }: { readonly numero: number }) {
   return (
     <p className="my-4 flex items-center gap-3 text-sm font-semibold text-muted-foreground">
       <span aria-hidden="true" className="h-px flex-1 bg-border" />
-      <span>{`ou · Opção ${numero}`}</span>
+      <span>{`ou Opção ${numero}`}</span>
       <span aria-hidden="true" className="h-px flex-1 bg-border" />
     </p>
   )
@@ -133,7 +133,7 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
       {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} modo={modo} /> : null}
 
-      {dia ? <p className="mt-5 text-center text-xs text-muted-foreground">{`Atualizada em ${dia}.`}</p> : null}
+      {dia ? <p className="mt-5 text-center text-xs text-muted-foreground">{`Atualizado em ${dia}.`}</p> : null}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, type Acompanhamento, type MarcacaoDia } from '@/domain/acompanhamento.ts'
 import { copiarDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
-import { LIMITE_DE_LINKS, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
+import { LIMITE_DE_LINKS, LIMITE_DE_LINKS_NO_BANCO, type ClienteMissoes } from '@/domain/fonteSupabase.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { criarRepositorioAcompanhamentos, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
@@ -91,7 +91,7 @@ function clienteDaNuvem(): ClienteMissoes {
             const i = nuvem.linhas.findIndex((l) => l['id'] === linha['id'])
             if (i === -1) {
               if (nuvem.limite !== null && nuvem.linhas.length >= nuvem.limite) {
-                return { data: null, error: { code: 'P0001', message: LIMITE } }
+                return { data: null, error: { code: 'P0001', message: LIMITE_DE_LINKS_NO_BANCO } }
               }
               nuvem.linhas.push({ marcacoes: [], ...linha })
               return { data: [{ id: linha['id'] }], error: null }
@@ -385,7 +385,7 @@ describe('Remover o link (D-103)', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Remover link' }))
     await usuario.click(screen.getByRole('button', { name: 'Remover' }))
 
-    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
     expect(nuvem.linhas).toEqual([])
     expect(repo.listar()).toEqual([])
   })
@@ -500,7 +500,7 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     await act(async () => {
       await Promise.resolve()
     })
-    expect(within(linhaDoPaciente('Ana')).getByText('Sumindo')).toBeInTheDocument()
+    expect(within(linhaDoPaciente('Ana')).getByText('Parou de marcar')).toBeInTheDocument()
 
     nuvem.linhas = [{ ...linhaDe(ana), marcacoes: SEMANA_EM_DIA }]
     act(() => {
@@ -600,7 +600,7 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     nuvem.linhas = []
     adesao(repo)
 
-    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
     expect(repo.listar()).toEqual([])
     expect(nuvem.linhas).toEqual([])
     expect(nuvem.chamadas).not.toContain('criar-se-faltar')
@@ -636,7 +636,7 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
       fireEvent(document, new Event('visibilitychange'))
     })
 
-    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
     expect(nuvem.linhas).toEqual([])
   })
 
@@ -779,7 +779,7 @@ describe('Mudança que não chegou à nuvem fica pendente (CB-108)', () => {
     nuvem.linhas = []
     adesao(repo)
 
-    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
     expect(nuvem.linhas).toEqual([])
   })
 
@@ -838,7 +838,7 @@ describe('Corridas entre a leitura e o que a nutricionista faz', () => {
     await usuario.click(screen.getByRole('button', { name: 'Remover' }))
     await soltarUm()
 
-    expect(await screen.findByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
     expect(nuvem.linhas).toEqual([])
     expect(repo.listar()).toEqual([])
   })
@@ -977,7 +977,7 @@ describe('A dieta no link, na nuvem (spec dieta-no-link)', () => {
     )
   }
 
-  const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar a dieta no link' })
+  const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar o plano alimentar no link' })
 
   it('CA-548: o link criado com a dieta leva a cópia para a linha da nuvem', async () => {
     const usuario = userEvent.setup()
@@ -1018,7 +1018,7 @@ describe('A dieta no link, na nuvem (spec dieta-no-link)', () => {
 
     nuvem.falha.upsert = true
     await usuario.click(caixa())
-    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar a dieta' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar o plano' }))
 
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))

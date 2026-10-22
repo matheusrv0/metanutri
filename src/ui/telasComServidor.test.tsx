@@ -83,7 +83,7 @@ describe('Telas com servidor, com dados falsos (CA-798)', () => {
   it.each([
     ['sem-internet', 'Sem internet.'],
     ['sem-espaco', 'O navegador está sem espaço para seus dados.'],
-    ['grande-demais', 'A cópia passou de 5 MB, o máximo da nuvem.'],
+    ['grande-demais', 'Seus dados passaram de 5 MB, o limite da conta.'],
   ] as const)('a trava %s cobre a área com o título dela e "Sair"', (trava, titulo) => {
     comNuvem({ trava })
     const capa = screen.getByRole('dialog')

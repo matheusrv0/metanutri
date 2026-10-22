@@ -1,5 +1,5 @@
 import { PLANOS } from '@/domain/conta.ts'
-import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
+import { LIMITE_DE_LINKS_NO_BANCO } from '@/domain/fonteSupabase.ts'
 import { LIMITE_DE_COMPROVANTES } from '@/domain/pedidoEstudante.ts'
 import sql003 from '../../supabase/003-assinaturas.sql?raw'
 import sql from '../../supabase/011-seguranca-lote-2.sql?raw'
@@ -69,7 +69,7 @@ describe('banco: segurança, lote 2 (011)', () => {
 
     it('CB-113: com 999 links o milésimo passa; com 1000, o próximo é recusado com a frase que a tela já traduz (CA-422)', () => {
       expect(corpo).toMatch(/if v_links >= v_limite then\s+raise exception 'Você chegou ao limite de links do seu plano\.' using errcode = 'P0001';/)
-      expect(corpo).toContain(`'${LIMITE_DE_LINKS}'`)
+      expect(corpo).toContain(`'${LIMITE_DE_LINKS_NO_BANCO}'`)
     })
 
     it('a contagem vale em todo plano, com a trava contra duas abas antes de contar', () => {

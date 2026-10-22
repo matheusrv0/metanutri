@@ -2,7 +2,7 @@
 // Tudo é derivado do plano; nada aqui inventa recomendação nova.
 import { buscarAlimento } from './tabelas.ts'
 import { totaisDoPlano } from './totais.ts'
-import type { Plano } from './tipos.ts'
+import type { Alimento, Plano } from './tipos.ts'
 
 export interface Missao {
   readonly id: string
@@ -12,7 +12,30 @@ export interface Missao {
 }
 
 const CATEGORIAS_FRUTA = /^Frutas/i
-const CATEGORIAS_VERDURA = /^(Verduras|Hortaliças|Leguminosas)/i
+const CATEGORIA_VERDURA = /^(Verduras|Hortaliças)/i
+
+/**
+ * O que a TACO põe entre as verduras e não é verdura nem legume (spec textos-e-promessas, D-411): raízes e tubérculos,
+ * que o Guia Alimentar junta aos cereais; derivados de amido; e temperos. A vírgula separa "Alho, cru" de "Alho-poró".
+ */
+const NAO_E_VERDURA_NEM_LEGUME =
+  /^(Batata|Mandioca|Cará|Inhame|Pão|Farinha|Fécula|Polvilho|Biscoito|Nhoque|Alho|Cebolinha|Coentro|Salsa|Manjericão|Alfavaca),|^Tomate, (extrato|molho|purê)/i
+
+/** Verdura ou legume de fato. Feijão, lentilha e grão-de-bico (leguminosas) não entram: são outro grupo. */
+export const ehVerduraOuLegume = (alimento: Pick<Alimento, 'descricao' | 'categoria'>): boolean =>
+  CATEGORIA_VERDURA.test(alimento.categoria) && !NAO_E_VERDURA_NEM_LEGUME.test(alimento.descricao.trim())
+
+/**
+ * A hora no texto corrido (spec textos-e-promessas, D-412): "por volta das 12h", "das 12h30", "da 1h". O campo continua
+ * "12:00". Fora do formato, o horário como veio (CB-388).
+ */
+export function horaNoTexto(horario: string): string {
+  const partes = /^(\d{1,2}):(\d{2})$/.exec(horario.trim())
+  if (!partes) return `por volta de ${horario.trim()}`
+  const hora = Number(partes[1])
+  const minutos = partes[2] === '00' ? '' : partes[2]
+  return `por volta ${hora <= 1 ? 'da' : 'das'} ${hora}h${minutos ?? ''}`
+}
 
 /**
  * A meta de água: 35 ml por quilo de peso, em litros com uma casa (referência de rotina). Sem peso, não há meta. É a
@@ -35,7 +58,7 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number 
     if (itens.length === 0) continue
     missoes.push({
       id: `refeicao-${refeicao.id}`,
-      texto: `${refeicao.nome} por volta das ${refeicao.horario}`,
+      texto: `${refeicao.nome} ${horaNoTexto(refeicao.horario)}`,
       origem: 'Refeição do plano',
     })
   }
@@ -52,9 +75,9 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number 
     })
   }
 
-  const vegetais = alimentos.filter((a) => CATEGORIAS_VERDURA.test(a.categoria)).length
-  if (vegetais > 0) {
-    missoes.push({ id: 'vegetais', texto: 'Comer os vegetais do almoço e do jantar', origem: 'Verduras e leguminosas do plano' })
+  // D-411: o id continua "vegetais", para as marcações dos links já enviados valerem (CB-381).
+  if (alimentos.some(ehVerduraOuLegume)) {
+    missoes.push({ id: 'vegetais', texto: 'Comer as verduras e os legumes do plano', origem: 'Verduras e legumes que estão no plano' })
   }
 
   const totais = totaisDoPlano(plano, buscarAlimento)

@@ -230,13 +230,16 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes, espe
 // ---------- O lado do nutricionista: o link na nuvem (spec missoes-na-nuvem) ----------
 
 /**
- * A frase que o banco levanta quando o plano não comporta mais um link (supabase/010,
- * `errcode 'P0001'`). É a única cópia dela no app: o cliente e os testes usam esta.
+ * A frase que o banco levanta quando a assinatura não comporta mais um link (supabase/010, `errcode 'P0001'`). É a única
+ * cópia dela no app: o cliente e os testes usam esta. Só identifica o erro; mudar exige mudar o SQL junto.
  */
-export const LIMITE_DE_LINKS = 'Você chegou ao limite de links do seu plano.'
+export const LIMITE_DE_LINKS_NO_BANCO = 'Você chegou ao limite de links do seu plano.'
+
+/** O que a tela diz no limite (spec textos-e-promessas, D-408): "assinatura" é a cobrança. */
+export const LIMITE_DE_LINKS = 'Você chegou ao limite de links da sua assinatura.'
 
 /** O P0001 é de qualquer `raise exception`: o limite é o P0001 com esta frase. */
-const ehLimiteDeLinks = (erro: ErroDoBanco): boolean => erro.code === 'P0001' && erro.message === LIMITE_DE_LINKS
+const ehLimiteDeLinks = (erro: ErroDoBanco): boolean => erro.code === 'P0001' && erro.message === LIMITE_DE_LINKS_NO_BANCO
 
 /** O motivo que a tela mostra para um erro do banco ao gravar o link. */
 const motivoDoErro = (erro: ErroDoBanco): string => (ehLimiteDeLinks(erro) ? LIMITE_DE_LINKS : traduzido(erro))

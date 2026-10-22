@@ -47,10 +47,10 @@ export function CaixaDietaNoLink({
         />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span id={`${id}-titulo`} className="text-sm font-semibold text-heading">
-            Mostrar a dieta no link
+            Mostrar o plano alimentar no link
           </span>
           <span id={`${id}-texto`} className="text-xs text-muted-foreground">
-            Refeições em medida caseira, substitutos, orientações e receitas. Sem kcal.
+            Refeições com as quantidades, substitutos, orientações e receitas. Sem kcal.
           </span>
         </span>
       </label>
@@ -58,11 +58,11 @@ export function CaixaDietaNoLink({
       {pedindoAutorizacao && aoAutorizar && aoDesistir ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-3">
           <p className="min-w-48 flex-1 text-sm text-infotext">
-            Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço. O paciente autorizou?
+            Ligado, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?
           </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" loading={ocupada} onClick={aoAutorizar}>
-              Já tenho a autorização, mostrar a dieta
+              Já tenho a autorização, mostrar o plano
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={aoDesistir}>
               Agora não
@@ -75,11 +75,11 @@ export function CaixaDietaNoLink({
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-3">
           {/* No celular, a frase fica numa linha e o botão vai para baixo dela, em vez de espremer a frase. */}
           <p className="min-w-48 flex-1 text-sm text-infotext">
-            {copiaVazia ? 'O paciente ainda não vê a dieta.' : 'O plano mudou. O paciente ainda vê a dieta anterior.'}
+            {copiaVazia ? 'O paciente ainda não vê o plano alimentar.' : 'O plano mudou. O paciente ainda vê a versão anterior.'}
           </p>
           <Button type="button" size="sm" variant="outline" loading={ocupada} onClick={aoAtualizar}>
             <RefreshCw aria-hidden="true" />
-            Atualizar a dieta no link
+            Atualizar o plano no link
           </Button>
         </div>
       ) : null}

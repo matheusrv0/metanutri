@@ -113,13 +113,13 @@ function ReceitaNaFolha({ receita }: { readonly receita: ReceitaDaFolha }) {
 
 /**
  * O rótulo de cada opção, quando a refeição tem mais de uma (spec impressao-do-plano, D-184): "Opção 1" pequeno em
- * cima da primeira; "ou · Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
+ * cima da primeira; "ou Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
  */
 function RotuloDaOpcao({ numero }: { readonly numero: number }) {
   if (numero === 1) return <p className="text-sm font-semibold text-muted-foreground">Opção 1</p>
   return (
     <p className="flex items-center gap-3 pt-1 text-sm font-semibold text-muted-foreground">
-      <span>{`ou · Opção ${numero}`}</span>
+      <span>{`ou Opção ${numero}`}</span>
       <span aria-hidden="true" className="flex-1 border-t border-border" />
     </p>
   )

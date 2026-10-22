@@ -47,7 +47,7 @@ describe('Cartão do link de missões', () => {
         <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={[]} hoje={HOJE} />
       </Anfitriao>,
     )
-    expect(screen.getByText(/Monte o plano primeiro/)).toBeInTheDocument()
+    expect(screen.getByText('Monte as refeições primeiro: as missões são criadas a partir delas.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Gerar link/ })).not.toBeInTheDocument()
   })
 
@@ -69,7 +69,7 @@ describe('Cartão do link de missões', () => {
         <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
       </Anfitriao>,
     )
-    expect(screen.getByText('2 missões saem deste plano.')).toBeInTheDocument()
+    expect(screen.getByText('Este plano gera 2 missões.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Gerar link do paciente/ })).toBeInTheDocument()
   })
 
@@ -196,7 +196,7 @@ describe('Tela de adesão', () => {
         <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} />
       </Anfitriao>,
     )
-    expect(screen.getByText('Nenhum paciente acompanhando ainda')).toBeInTheDocument()
+    expect(screen.getByText('Nenhum paciente em acompanhamento')).toBeInTheDocument()
   })
 
   it('põe quem sumiu no topo da lista', () => {
@@ -213,7 +213,7 @@ describe('Tela de adesão', () => {
 
     const itens = screen.getAllByRole('listitem')
     expect(itens.map((li) => within(li).getByText(/Ana|Bia/).textContent)).toEqual(['Ana', 'Bia'])
-    expect(within(itens[0] as HTMLElement).getByText('Sumindo')).toBeInTheDocument()
+    expect(within(itens[0] as HTMLElement).getByText('Parou de marcar')).toBeInTheDocument()
     expect(within(itens[1] as HTMLElement).getByText('Em dia')).toBeInTheDocument()
   })
 
@@ -228,9 +228,9 @@ describe('Tela de adesão', () => {
       </Anfitriao>,
     )
 
-    const cartao = screen.getByText('Sumindo', { selector: 'p' }).closest('div')
+    const cartao = screen.getByText('Pararam de marcar', { selector: 'p' }).closest('div')
     expect(within(cartao as HTMLElement).getByText('2')).toBeInTheDocument()
-    expect(screen.getByText('Vale uma mensagem hoje.')).toBeInTheDocument()
+    expect(screen.getByText('Mande uma mensagem hoje.')).toBeInTheDocument()
   })
 
   it('compara os pacientes ativos com o limite do plano', () => {
@@ -244,7 +244,22 @@ describe('Tela de adesão', () => {
     )
 
     expect(screen.getByText('/2')).toBeInTheDocument()
-    expect(screen.getByText('Cabem mais 1.')).toBeInTheDocument()
+    // CA-1190: concordância no singular.
+    expect(screen.getByText('Ainda cabe 1.')).toBeInTheDocument()
+    expect(screen.getByText('Em acompanhamento')).toBeInTheDocument()
+    expect(screen.getByText('Links do paciente gerados.')).toBeInTheDocument()
+  })
+
+  it('CA-1190 (spec textos-e-promessas): sem limite, a frase fala da assinatura', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    repo.salvar(acompanhamentoDe('c1', 'Ana'))
+    render(
+      <Anfitriao repositorio={repo}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} plano="pro" hoje={HOJE} />
+      </Anfitriao>,
+    )
+    expect(screen.getByText('Sua assinatura não tem limite.')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Seu plano|Sumindo|Acompanhando/)
   })
 
   it('abre o plano do paciente', async () => {
@@ -359,7 +374,25 @@ describe('Conta de estudante: uso não comercial', () => {
     )
 
     expect(screen.queryByRole('button', { name: /Gerar link do paciente/ })).not.toBeInTheDocument()
-    expect(screen.getByText(/links de missões do seu plano/i)).toBeInTheDocument()
+    // CA-1190 (spec textos-e-promessas): "assinatura" é a cobrança; o verbo é "Remover".
+    expect(screen.getByText('Você já usou os 3 links da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar outro.')).toBeInTheDocument()
+  })
+
+  it('CA-1190 (spec textos-e-promessas): o pedido de autorização diz de quem é a responsabilidade, sem travessão', async () => {
+    const usuario = userEvent.setup()
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="solo" hoje={HOJE} />
+      </Anfitriao>,
+    )
+    expect(screen.getByText(/Ele marca o que cumpriu no dia, e você vê quem parou de marcar antes que abandone o plano\./)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
+    expect(
+      screen.getByText(
+        'O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Cabe a você, nutricionista, obter a autorização do paciente; o MetaNutri apenas armazena os dados.',
+      ),
+    ).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/—|sumindo|Ver planos/)
   })
 
   it('com três links, o plano Pro continua gerando', () => {
@@ -397,7 +430,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     receitas: '',
   }
   const ANTIGA: DietaDoLink = { ...copiarDieta(DIETA, '2026-09-01'), orientacoes: 'Orientação de antes.' }
-  const MUDOU = 'O plano mudou. O paciente ainda vê a dieta anterior.'
+  const MUDOU = 'O plano mudou. O paciente ainda vê a versão anterior.'
 
   function cartaoComDieta(repo: RepositorioAcompanhamentos) {
     return render(
@@ -407,14 +440,14 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     )
   }
 
-  const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar a dieta no link' })
+  const caixa = () => screen.getByRole('checkbox', { name: 'Mostrar o plano alimentar no link' })
 
   async function gerar(usuario: ReturnType<typeof userEvent.setup>) {
     await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
   }
 
-  it('CA-539: sem link, a caixa "Mostrar a dieta no link" aparece marcada, acima do botão de gerar', () => {
+  it('CA-539: sem link, a caixa "Mostrar o plano alimentar no link" aparece marcada, acima do botão de gerar', () => {
     cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
     expect(caixa()).toBeChecked()
     const botao = screen.getByRole('button', { name: /Gerar link do paciente/ })
@@ -423,7 +456,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
 
   it('CA-553: a caixa diz o mesmo conteúdo que a Política: refeições, substitutos, orientações e receitas, sem kcal', () => {
     cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
-    expect(caixa()).toHaveAccessibleDescription('Refeições em medida caseira, substitutos, orientações e receitas. Sem kcal.')
+    expect(caixa()).toHaveAccessibleDescription('Refeições com as quantidades, substitutos, orientações e receitas. Sem kcal.')
   })
 
   it('CA-540: com a caixa marcada, o link nasce com a cópia da dieta de agora', async () => {
@@ -448,7 +481,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     const usuario = userEvent.setup()
     cartaoComDieta(criarRepositorioAcompanhamentos(memoria()))
     await usuario.click(screen.getByRole('button', { name: /Gerar link do paciente/ }))
-    expect(screen.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeInTheDocument()
+    expect(screen.getByText('O link também mostra o plano alimentar a qualquer pessoa que tenha o endereço.')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
     await usuario.click(caixa())
@@ -481,11 +514,11 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(caixa()).not.toBeChecked()
     await usuario.click(caixa())
 
-    expect(screen.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço. O paciente autorizou?')).toBeInTheDocument()
+    expect(screen.getByText('Ligado, o link mostra o plano alimentar a qualquer pessoa que tenha o endereço. O paciente autorizou?')).toBeInTheDocument()
     expect(repo.porCaso('c1')?.dieta).toBeNull()
     expect(caixa()).not.toBeChecked()
 
-    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar a dieta' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já tenho a autorização, mostrar o plano' }))
 
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
     expect(repo.porCaso('c1')?.token).toBe(antes.token)
@@ -507,7 +540,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(screen.queryByText(/O paciente autorizou\?/)).not.toBeInTheDocument()
   })
 
-  it('CA-555: "Atualizar a dieta no link" também traz as missões de agora; as marcadas continuam marcadas e o endereço não muda', async () => {
+  it('CA-555: "Atualizar o plano no link" também traz as missões de agora; as marcadas continuam marcadas e o endereço não muda', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const antes = repo.salvar({ ...acompanhamentoDe('c1', 'Ana', [{ dia: HOJE, feitas: ['refeicao-1', 'agua'] }]), dieta: ANTIGA })
@@ -518,7 +551,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: 'Atualizar a dieta no link' }))
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar o plano no link' }))
 
     const depois = repo.porCaso('c1')
     if (!depois) throw new Error('o link sumiu')
@@ -529,21 +562,21 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(progressoDoDia(depois, HOJE)).toEqual({ feitas: 2, total: 3, pct: 67 })
   })
 
-  it('CA-545: plano mudado: o cartão avisa e "Atualizar a dieta no link" copia a de agora, sem trocar o endereço', async () => {
+  it('CA-545: plano mudado: o cartão avisa e "Atualizar o plano no link" copia a de agora, sem trocar o endereço', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const antes = repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: ANTIGA })
     cartaoComDieta(repo)
 
     expect(screen.getByText(MUDOU)).toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Atualizar a dieta no link' }))
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar o plano no link' }))
 
     const depois = repo.porCaso('c1')
     expect(depois?.dieta).toEqual(copiarDieta(DIETA, HOJE))
     expect(depois?.token).toBe(antes.token)
     expect(depois?.missoes).toEqual(antes.missoes)
     expect(screen.queryByText(MUDOU)).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Atualizar a dieta no link' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Atualizar o plano no link' })).not.toBeInTheDocument()
   })
 
   it('CA-546: plano igual no que o paciente vê (só a cópia é de outro dia): sem aviso e sem botão', () => {
@@ -551,7 +584,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: copiarDieta(DIETA, '2026-09-01') })
     cartaoComDieta(repo)
     expect(screen.queryByText(MUDOU)).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Atualizar a dieta no link' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Atualizar o plano no link' })).not.toBeInTheDocument()
   })
 
   it('CA-545: cópia guardada vazia (nada para o paciente ver): o aviso diz que o paciente ainda não vê a dieta', async () => {
@@ -560,11 +593,11 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: copiarDieta({ refeicoes: [], orientacoes: '', receitas: '' }, '2026-09-01') })
     cartaoComDieta(repo)
 
-    expect(screen.getByText('O paciente ainda não vê a dieta.')).toBeInTheDocument()
+    expect(screen.getByText('O paciente ainda não vê o plano alimentar.')).toBeInTheDocument()
     expect(screen.queryByText(MUDOU)).not.toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Atualizar a dieta no link' }))
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar o plano no link' }))
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
-    expect(screen.queryByText('O paciente ainda não vê a dieta.')).not.toBeInTheDocument()
+    expect(screen.queryByText('O paciente ainda não vê o plano alimentar.')).not.toBeInTheDocument()
   })
 
   it('CA-545: link sem dieta não avisa que o plano mudou', () => {
@@ -582,7 +615,7 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
     expect(repo.porCaso('c1')?.token).not.toBe(comDieta.token)
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
-    expect(screen.getByText('Gerar de novo atualiza as missões e a dieta com o plano atual. O link antigo para de valer.')).toBeInTheDocument()
+    expect(screen.getByText('Gerar um link novo atualiza as missões e o plano alimentar do link. O link antigo deixa de funcionar.')).toBeInTheDocument()
     unmount()
 
     const outro = criarRepositorioAcompanhamentos(memoria())

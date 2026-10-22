@@ -271,7 +271,7 @@ function ParteDasMissoes({
       <header className="mb-6">
         <p className="text-sm text-muted-foreground">{dataPorExtenso(hoje)}</p>
         <h1 className="mt-1 font-titulo text-2xl font-bold text-heading">
-          {tudoFeito ? `Dia fechado, ${primeiroNome}.` : `Suas missões de hoje, ${primeiroNome}`}
+          {tudoFeito ? `Dia completo, ${primeiroNome}.` : `Suas missões de hoje, ${primeiroNome}`}
         </h1>
       </header>
 
@@ -335,7 +335,7 @@ function ParteDasMissoes({
             : `Você marcou missão em ${naSemana} ${naSemana === 1 ? 'dia' : 'dias'} desta semana.`}
         </p>
         <p className="mt-1">
-          {naSemana >= DIAS_NA_SEMANA_PARA_EM_DIA ? 'Está no ritmo que seu nutricionista combinou.' : `A meta são ${DIAS_NA_SEMANA_PARA_EM_DIA} dias por semana.`}
+          {naSemana >= DIAS_NA_SEMANA_PARA_EM_DIA ? 'Você está no ritmo combinado.' : `A meta é marcar em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias por semana.`}
         </p>
         <p className="mt-4">Não precisa de conta nem de aplicativo. Guarde este link e abra todo dia.</p>
       </footer>

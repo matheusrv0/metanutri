@@ -151,7 +151,7 @@ describe('Painel: Hoje e esta semana', () => {
         {painel()}
       </Anfitriao>,
     )
-    expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
+    expect(linha('Ana Souza').getByText('Parou de marcar')).toBeInTheDocument()
     for (const rotulo of Object.values(ROTULO_ESTADO)) expect(linha('Bia Lima').queryByText(rotulo)).not.toBeInTheDocument()
   })
 
@@ -165,7 +165,7 @@ describe('Painel: Hoje e esta semana', () => {
         {painel()}
       </Anfitriao>,
     )
-    expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
+    expect(linha('Ana Souza').getByText('Parou de marcar')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Falta completar' })).not.toBeInTheDocument()
     expect(screen.queryByText(/em dia/i)).not.toBeInTheDocument()
   })
@@ -183,7 +183,7 @@ describe('Painel: Hoje e esta semana', () => {
         {painel()}
       </Anfitriao>,
     )
-    expect(linha('Bia Lima').getByText('Sumindo')).toBeInTheDocument()
+    expect(linha('Bia Lima').getByText('Parou de marcar')).toBeInTheDocument()
     for (const rotulo of Object.values(ROTULO_ESTADO)) expect(linha('Ana Souza').queryByText(rotulo)).not.toBeInTheDocument()
   })
 
@@ -211,7 +211,7 @@ describe('Painel: Hoje e esta semana', () => {
     )
     expect(linha('Ivo Prado').getByText('Aniversário hoje')).toBeInTheDocument()
     expect(linha('Juca Alves').getByText('Aniversário sábado, 17/10')).toBeInTheDocument()
-    expect(linha('Ivo Prado').queryByText('Sumindo')).not.toBeInTheDocument()
+    expect(linha('Ivo Prado').queryByText('Parou de marcar')).not.toBeInTheDocument()
     await usuario.click(linha('Ivo Prado').getByRole('button', { name: 'Mandar parabéns para Ivo Prado pelo WhatsApp' }))
     expect(within(screen.getByRole('dialog')).getByLabelText('Mensagem')).toHaveValue('Feliz aniversário, Ivo! Um ótimo dia para você.')
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))

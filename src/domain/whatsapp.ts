@@ -92,7 +92,7 @@ const ABERTURA_DO_CONTATO = {
 
 /** Na Adesão, para quem está sumindo ou marcando pouco (CA-509). */
 export function textoDeContato(nome: string, estado: keyof typeof ABERTURA_DO_CONTATO): string {
-  return `${saudacao(nome)} Tudo bem? ${ABERTURA_DO_CONTATO[estado]} Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.`
+  return `${saudacao(nome)} Tudo bem? ${ABERTURA_DO_CONTATO[estado]} Como está indo com o plano? Se algo estiver difícil, me conte que a gente ajusta.`
 }
 
 /** No bloco "Hoje e esta semana": "sua consulta é dia X às Y", ou "é hoje às Y" no próprio dia (CA-510). */

@@ -167,6 +167,17 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"trabalhados em"', /trabalhad[oa]s? em/i],
   ['"Os casos ficam"', /Os casos ficam/i],
   ['exemplo de nome com idade e condição', /28 anos, gestante/],
+  // CA-1190 a CA-1192: link do paciente, Adesão e missões.
+  ['"Ver planos"', /Ver planos/],
+  ['"Mostrar a dieta no link"', /Mostrar a dieta no link/i],
+  ['"Sumindo" como rótulo e "sumindo antes de sumir"', /Sumindo|sumir de vez/],
+  ['"Acompanhando"', /Acompanhando|paciente acompanhando/],
+  ['"missões saem"', /miss(ão|ões) sa(i|em)\b/i],
+  ['"Dia fechado"', /Dia fechado/i],
+  ['"me conta"', /\bme conta\b/i],
+  ['"Comer os vegetais do almoço e do jantar"', /vegetais do almoço/i],
+  ['"Seu plano não tem limite" e "Acima do seu plano"', /Seu plano não tem limite|Acima do seu plano/],
+  ['"Atualizada em" para o plano', /Atualizada em/],
 ]
 
 const achados = (padrao: RegExp) =>

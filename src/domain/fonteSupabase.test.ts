@@ -11,6 +11,7 @@ import {
   salvarLinkNaNuvem,
   subirAcompanhamento,
   LIMITE_DE_LINKS,
+  LIMITE_DE_LINKS_NO_BANCO,
   PRAZO_DA_NUVEM_MS,
   type ClienteMissoes,
 } from './fonteSupabase.ts'
@@ -256,7 +257,7 @@ describe('Apagar os dados da nuvem', () => {
 })
 
 describe('O link do paciente na nuvem, pelo lado do nutricionista (missoes-na-nuvem)', () => {
-  const LIMITE = { code: 'P0001', message: LIMITE_DE_LINKS }
+  const LIMITE = { code: 'P0001', message: LIMITE_DE_LINKS_NO_BANCO }
   const NOVO = { jaEsteveNaNuvem: false }
   const JA_ESTEVE = { jaEsteveNaNuvem: true }
 
