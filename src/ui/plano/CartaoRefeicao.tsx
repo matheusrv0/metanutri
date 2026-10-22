@@ -36,8 +36,8 @@ interface CartaoRefeicaoProps {
   readonly aoMudarMedida?: ((opcao: OpcaoId, itemId: string, medida: MedidaDoItem | null) => void) | undefined
   /** Como o paciente lê as quantidades (D-376). */
   readonly modo?: ModoQuantidade | undefined
-  /** "+ Nova medida…" no seletor da linha (D-387). */
-  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
+  /** "+ Nova medida…" no seletor da linha (D-387) e na entrada rápida, com o nome da medida que faltou (D-432). */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
   /** Tipo da refeição, pelo nome ou pelo horário (CA-239, CA-240). */
   readonly tipo: TipoRefeicao
   /** A lista de sugestões que vale para esse tipo (CA-237). */
@@ -161,6 +161,7 @@ export function CartaoRefeicao({
           rotulo={`Adicionar alimento em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`}
           aoAdicionar={(alimentoId, gramas, medida) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas, medida)}
           aoAdicionarReceita={aoAdicionarReceita ? (receita, gramas) => aoAdicionarReceita(opcaoAtiva, receita, gramas) : undefined}
+          aoCriarMedida={aoCriarMedida}
           quandoVazio={
             <SugestoesDaRefeicao
               tipo={tipo}

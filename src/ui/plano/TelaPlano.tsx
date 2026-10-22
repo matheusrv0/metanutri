@@ -39,8 +39,8 @@ interface TelaPlanoProps {
   /** Como o paciente lê as quantidades e a troca do modo (spec alimentos-e-gramaturas, D-376). Sem eles, não aparece. */
   readonly modo?: ModoQuantidade | undefined
   readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
-  /** "+ Nova medida…" na linha do plano (D-387). */
-  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
+  /** "+ Nova medida…" na linha do plano (D-387) e na entrada rápida (D-432). */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
 }
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
@@ -63,8 +63,9 @@ export function TelaPlano({
   // ao editar e apagaria a medida (D-383); até lá, ela mora na chave das medidas da conta (correção A, D-433).
   const medidasProprias = useMedidasProprias()
   const meusAlimentos = useMeusAlimentos()
-  const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void } | null>(null)
-  const criarMedida = aoCriarMedida ?? ((alimentoId: number, aoCriar: (m: MedidaCaseira) => void) => setNovaMedida({ alimentoId, aoCriar }))
+  const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void; readonly nome: string } | null>(null)
+  const criarMedida =
+    aoCriarMedida ?? ((alimentoId: number, aoCriar: (m: MedidaCaseira) => void, nomeInicial?: string) => setNovaMedida({ alimentoId, aoCriar, nome: nomeInicial ?? '' }))
   const alimentoDaMedida = novaMedida ? (buscarAlimento(novaMedida.alimentoId) ?? null) : null
   const salvarMedida = (m: MedidaCaseira): string | null => {
     if (!novaMedida) return null
@@ -132,7 +133,13 @@ export function TelaPlano({
       </Button>
 
       <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
-      <DialogoNovaMedida alimento={alimentoDaMedida} unidade={unidadeDo(alimentoDaMedida ?? undefined)} aoSalvar={salvarMedida} aoFechar={() => setNovaMedida(null)} />
+      <DialogoNovaMedida
+        alimento={alimentoDaMedida}
+        unidade={unidadeDo(alimentoDaMedida ?? undefined)}
+        nomeInicial={novaMedida?.nome ?? ''}
+        aoSalvar={salvarMedida}
+        aoFechar={() => setNovaMedida(null)}
+      />
     </div>
   )
 }

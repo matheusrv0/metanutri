@@ -82,9 +82,19 @@ describe('CA-1110: a entrada rápida com entradas reais', () => {
     for (const cozido of lista.filter((d) => /cozido/.test(d))) expect(cru === -1 || lista.indexOf(cozido) < cru).toBe(true)
   })
 
-  it('"meia xícara de aveia" pede gramas, sem inventar a conversão (CB-361)', () => {
-    expect(buscarAlimentos('meia xícara de aveia', ALIMENTOS).resultados[0]?.aviso).toBe(
-      'A medida “xícara de chá” não está cadastrada para Aveia, flocos, crua. Informe a quantidade em gramas.',
-    )
+  it('CA-1228: "meia xícara de aveia" pede gramas ou a medida, sem inventar a conversão (CB-361), e diz as medidas que há', () => {
+    const aveia = buscarAlimentos('meia xícara de aveia', ALIMENTOS).resultados[0]
+    expect(aveia).toMatchObject({ gramas: null, faltaMedida: { nome: 'xícara de chá', quantidade: 0.5 } })
+    expect(aveia?.aviso).toBe('Sem “xícara de chá” · tem colher de sopa (15 g), colher de servir (30 g), colher de sobremesa (7 g)')
+  })
+
+  it('CA-1258: "1 banana nanica" não vira 1 g nem 1 fatia: a fruta sem a unidade pede gramas ou a medida', () => {
+    const nanica = buscarAlimentos('1 banana nanica', ALIMENTOS).resultados[0]
+    expect(nanica?.alimento.descricao).toBe('Banana, nanica, crua')
+    expect(nanica).toMatchObject({ gramas: null, faltaMedida: { nome: 'unidade', quantidade: 1 } })
+    expect(nanica?.aviso).toBe('Sem “unidade” · tem fatia (26 g), pedaço (16 g)')
+    // A prata tem a unidade da POF; "3 arroz" continua 3 g (CA-1102).
+    expect(buscarAlimentos('1 banana prata', ALIMENTOS).resultados[0]?.gramas).toBe(75)
+    expect(buscarAlimentos('3 arroz', ALIMENTOS).resultados[0]?.gramas).toBe(3)
   })
 })

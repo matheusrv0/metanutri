@@ -408,10 +408,13 @@ export function medidaPedida(alimentoId: number, pedida: string): MedidaCaseira 
 /** A ordem das medidas de contar para "1 banana" (D-371): unidade primeiro, depois fatia, bife, filé… */
 const ORDEM_DE_CONTAR = ['unidade', 'fatia', 'bife', 'filé', 'unidade pequena', 'pedaço', 'posta', 'coxa', 'sobrecoxa', 'peito', 'rodela']
 
+/** Fruta se conta pela unidade: "1 banana nanica" nunca é "1 fatia" (correção A, CA-1258). */
+const ORDEM_DE_CONTAR_FRUTA = ['unidade', 'unidade pequena']
+
 /** A medida de contar do alimento, na ordem acima; `null` quando ele não tem. */
 export function medidaDeContar(alimentoId: number): MedidaCaseira | null {
   const medidas = medidasDoAlimento(alimentoId)
-  for (const nome of ORDEM_DE_CONTAR) {
+  for (const nome of ehFruta(alimentoId) ? ORDEM_DE_CONTAR_FRUTA : ORDEM_DE_CONTAR) {
     const achada = medidas.find((m) => m.nome === nome)
     if (achada) return achada
   }
@@ -432,7 +435,29 @@ export interface ResultadoBusca {
   /** Como o peso se escreve: ml para líquido ou quando a pessoa digitou ml (D-378). */
   readonly unidade: UnidadeDoAlimento
   readonly aviso: string | null
+  /**
+   * A medida pedida que o alimento não tem, com a quantidade digitada: "+ Nova medida" cria e põe o alimento nela
+   * (spec alimentos-e-gramaturas, correção A, D-432).
+   */
+  readonly faltaMedida?: { readonly nome: string; readonly quantidade: number }
 }
+
+/** Quantas medidas que há o aviso cita. */
+const MEDIDAS_NO_AVISO = 3
+
+/** "Sem “xícara de chá” · tem colher de sopa (15 g), colher de servir (30 g)" (D-432). */
+function avisoSemMedida(alimento: Alimento, nome: string, unidade: UnidadeDoAlimento): string {
+  const posicao = (m: MedidaCaseira) => (m.propria === true ? -1 : PREFERENCIA_MEDIDAS.indexOf(m.nome))
+  const legiveis = medidasDoAlimento(alimento.id)
+    .filter((m) => posicao(m) !== -1 || m.propria === true)
+    .sort((a, b) => posicao(a) - posicao(b))
+    .slice(0, MEDIDAS_NO_AVISO)
+  if (legiveis.length === 0) return `Sem “${nome}” e sem outra medida cadastrada`
+  return `Sem “${nome}” · tem ${legiveis.map((m) => `${m.nome} (${formatarPeso(m.gramas)} ${unidade})`).join(', ')}`
+}
+
+/** O alimento é fruta: conta pela unidade (CA-1258). */
+const ehFruta = (alimentoId: number): boolean => buscarAlimento(alimentoId)?.categoria.startsWith('Frutas') === true
 
 interface Indice {
   readonly alimento: Alimento
@@ -528,12 +553,9 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   if (lida.medida !== null) {
     const m = medidaPedida(alimento.id, lida.medida)
     if (!m) {
-      return {
-        gramas: null,
-        medida: null,
-        unidade,
-        aviso: `A medida “${MEDIDAS_CURTAS[lida.medida]?.[0] ?? lida.medida}” não está cadastrada para ${alimento.descricao.trim()}. Informe a quantidade em gramas.`,
-      }
+      // D-432: o aviso diz o que falta e o que há; "+ Nova medida" cria a que falta com a quantidade digitada.
+      const nome = MEDIDAS_CURTAS[lida.medida]?.[0] ?? lida.medida
+      return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, nome, unidade), faltaMedida: { nome, quantidade: lida.quantidade ?? 1 } }
     }
     const q = lida.quantidade ?? 1
     return { gramas: arredondar(q * m.gramas), medida: { nome: m.nome, quantidade: q, gramasPorMedida: m.gramas }, unidade, aviso: null }
@@ -541,6 +563,10 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   if (lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES) {
     const m = medidaDeContar(alimento.id)
     if (m) return { gramas: arredondar(lida.quantidade * m.gramas), medida: { nome: m.nome, quantidade: lida.quantidade, gramasPorMedida: m.gramas }, unidade, aviso: null }
+    // CA-1258: fruta sem a unidade na base não vira 1 g: pede gramas ou a medida.
+    if (ehFruta(alimento.id)) {
+      return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, 'unidade', unidade), faltaMedida: { nome: 'unidade', quantidade: lida.quantidade } }
+    }
   }
   // D-433: sem quantidade, o alimento próprio entra pela porção do rótulo ("4 colheres de sopa · 40 g"), não por 100 g.
   const porcao = alimento.porcaoPadrao

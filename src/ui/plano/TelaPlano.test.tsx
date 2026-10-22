@@ -316,6 +316,20 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     registrarMedidasProprias([])
   })
 
+  it('CA-1230: na entrada rápida, "meia xícara de aveia" sem a xícara abre "Nova medida" com o nome escrito e põe a aveia nela', async () => {
+    const usuario = montar()
+    await usuario.type(entradaDoAlmoco(), 'meia xícara de aveia')
+    await usuario.click(almoco().getByRole('button', { name: 'Nova medida “xícara de chá” para Aveia, flocos, crua' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    expect(janela.getByLabelText('Nome da medida')).toHaveValue('xícara de chá')
+    await usuario.type(janela.getByLabelText('Peso'), '80')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
+    expect(almoco().getByLabelText('Gramas de Aveia, flocos, crua')).toHaveValue('40')
+    expect(almoco().getByRole('combobox', { name: 'Medida de Aveia, flocos, crua' })).toHaveValue('xícara de chá')
+    expect(entradaDoAlmoco()).toHaveValue('')
+    registrarMedidasProprias([])
+  })
+
   it('CA-1234: o alimento próprio também ganha "+ Nova medida…", gravada como medida da conta', async () => {
     const granola: Produto = {
       id: 900_001,

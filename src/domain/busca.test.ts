@@ -86,8 +86,9 @@ describe('buscarAlimentos', () => {
   it('CB-07: medida que não existe para o alimento pede gramas e não inventa conversão', () => {
     const r = buscarAlimentos('2 colheres de sopa macarrão', ALIMENTOS)
     const macarrao = r.resultados.find((x) => x.alimento.descricao === 'Macarrão, trigo, cru')
-    expect(macarrao).toMatchObject({ gramas: null, medida: null })
-    expect(macarrao?.aviso).toMatch(/colher de sopa.*não está cadastrada.*gramas/)
+    expect(macarrao).toMatchObject({ gramas: null, medida: null, faltaMedida: { nome: 'colher de sopa', quantidade: 2 } })
+    // D-432 (correção A): o aviso diz o que falta e as medidas que há (o macarrão cru não tem nenhuma).
+    expect(macarrao?.aviso).toBe('Sem “colher de sopa” e sem outra medida cadastrada')
   })
 
   it('CA-20: sem correspondência, não devolve nada e explica', () => {
