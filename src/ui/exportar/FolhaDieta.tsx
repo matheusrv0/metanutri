@@ -129,6 +129,7 @@ function RotuloDaOpcao({ numero }: { readonly numero: number }) {
  */
 export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
+  const refeicoesDaFolha = plano.refeicoes.map((refeicao) => ({ refeicao, opcoes: opcoesDaRefeicao(refeicao, buscarAlimento) })).filter((r) => r.opcoes.length > 0)
   // D-409 (spec textos-e-promessas): o paciente vinculado dá o nome da folha; o nome do plano é da nutricionista.
   const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
   const nome = nomeDoPacienteDoPlano(caso, paciente) ?? PACIENTE_SEM_NOME
@@ -172,8 +173,9 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
 
       {/* Sem régua de cor no topo (spec impressao-do-plano, CA-633): um fio fino separa o topo das refeições. */}
       <div className="-mt-2 flex flex-col border-t border-border">
-        {plano.refeicoes.map((refeicao) => {
-          const opcoesDaFolha = opcoesDaRefeicao(refeicao, buscarAlimento)
+        {/* D-444 (correção A): a refeição sem alimento não sai no documento do paciente, como já não sai em "Meu plano". */}
+        {refeicoesDaFolha.length === 0 ? <p className="py-4 text-muted-foreground">Sem alimentos no plano.</p> : null}
+        {refeicoesDaFolha.map(({ refeicao, opcoes: opcoesDaFolha }) => {
           return (
             <section
               key={refeicao.id}
@@ -191,7 +193,6 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
                     <Itens itens={itens} modo={modo} />
                   </Fragment>
                 ))}
-                {opcoesDaFolha.length === 0 ? <p className="text-muted-foreground">Sem alimentos nesta refeição.</p> : null}
               </div>
             </section>
           )
@@ -202,10 +203,13 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
       <div className="fim-da-folha flex flex-col gap-5">
         {orientacoes || agua ? (
           <section aria-label="Orientações" className="flex flex-col gap-1.5">
-            <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
-            {/* Spec conduta-da-nutricionista, D-298: a linha da água primeiro, sem caixa de marcar. */}
-            {agua ? <p>{agua}</p> : null}
-            {orientacoes ? <p className="whitespace-pre-wrap">{caso.orientacoes}</p> : null}
+            {/* D-444 (correção A): o título fica preso ao primeiro parágrafo; os dois não se partem entre páginas. Spec
+                conduta-da-nutricionista, D-298: a linha da água primeiro, sem caixa de marcar. */}
+            <div className="flex break-inside-avoid flex-col gap-1.5">
+              <h3 className="font-titulo text-lg font-bold text-heading">Orientações</h3>
+              {agua ? <p>{agua}</p> : <p className="whitespace-pre-wrap">{caso.orientacoes}</p>}
+            </div>
+            {agua && orientacoes ? <p className="whitespace-pre-wrap">{caso.orientacoes}</p> : null}
           </section>
         ) : null}
 

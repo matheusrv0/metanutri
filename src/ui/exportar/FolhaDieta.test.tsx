@@ -228,7 +228,8 @@ describe('Folha da dieta (US-B1)', () => {
   it('CA-633: refeições, orientações, receitas e assinatura nessa ordem; no atendimento completo, a folha acaba na assinatura', () => {
     const { container } = render(<FolhaDieta caso={{ ...caso, receitas: 'Cuscuz com ovo.' }} plano={planoCheio()} assinatura={ANA} />)
     const antes = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
-    const ceia = screen.getByRole('region', { name: /^21:00 Ceia$/ })
+    // A última refeição com alimento (a refeição vazia não sai na folha, D-444 da correção A).
+    const ceia = screen.getAllByRole('region', { name: /^\d\d:\d\d / }).at(-1) as HTMLElement
     const orientacoes = screen.getByRole('heading', { name: 'Orientações' })
     const receitas = screen.getByRole('heading', { name: 'Receitas' })
     const assinaturas = screen.getByRole('group', { name: 'Assinaturas' })
@@ -374,11 +375,31 @@ describe('Folha da dieta (US-B1)', () => {
     })
   })
 
-  it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
+  it('CB-71 (mudado pela D-444 da correção A, CA-1254): plano sem alimento sai com uma linha só, sem refeição vazia', () => {
     render(<FolhaDieta caso={{ ...caso, orientacoes: '', linhaDaAgua: '' }} plano={criarPlanoPadrao(ids)} />)
-    expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
+    expect(screen.getByText('Sem alimentos no plano.')).toBeInTheDocument()
+    expect(screen.queryByText('Sem alimentos nesta refeição.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /^\d\d:\d\d / })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Orientações' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
+  })
+
+  it('CA-1254: a refeição sem alimento não aparece na folha; as outras, sim', () => {
+    let plano = criarPlanoPadrao(ids)
+    const almocoPadrao = plano.refeicoes[2]
+    if (!almocoPadrao) throw new Error('sem almoço')
+    plano = adicionarItem(plano, almocoPadrao.id, 'principal', { alimentoId: BATATA, gramas: 120 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} />)
+    expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço'])
+    expect(screen.queryByText('Sem alimentos no plano.')).not.toBeInTheDocument()
+  })
+
+  it('CA-1253: o título "Orientações" fica preso ao primeiro parágrafo, num bloco que não se parte', () => {
+    render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: 'Coma devagar.\nMastigue bem.' }} plano={planoCheio()} />)
+    const titulo = screen.getByRole('heading', { name: 'Orientações' })
+    const bloco = titulo.parentElement
+    expect(bloco).toHaveClass('break-inside-avoid')
+    expect(bloco?.querySelector('p')?.textContent).toBe('Beba cerca de 2,2 litros de água por dia.')
   })
 })
 
