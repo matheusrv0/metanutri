@@ -1,6 +1,5 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { calcularAdequacao } from '@/domain/adequacao.ts'
-import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -11,6 +10,7 @@ import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
+import { pctDaReferencia, textoDaAdequacao } from './estiloAdequacao.ts'
 import { MarcaSemDado } from './MarcaSemDado.tsx'
 import { podeCobrir } from './podeCobrir.ts'
 
@@ -104,7 +104,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RES
                   <li key={linha.chave} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-0">
                     <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
                     <span className="flex items-baseline">
-                      <span className="numeros text-sm font-semibold text-warningtext">{`${formatarNumero(arredondarNoEstado(linha.adequacaoPct, 'abaixo', { min: linha.metaPct }), 0)}%`}</span>
+                      <span className="numeros text-sm font-semibold text-warningtext">{pctDaReferencia(linha)}</span>
                       <MarcaSemDado semDado={linha.semDado} />
                     </span>
                     <Button size="sm" variant="lightprimary" onClick={() => abrirCobrir(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`} data-cobrir={linha.chave}>
@@ -113,9 +113,9 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RES
                   </li>
                 ))}
                 {acima.map((linha) => (
-                  <li key={linha.chave} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-0">
+                  <li key={linha.chave} className="flex min-h-12 flex-wrap items-center gap-x-3 border-b border-border py-1.5 last:border-0">
                     <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
-                    <span className="numeros text-sm font-semibold text-errortext">{`${formatarNumero(linha.adequacaoPct, 0)}% · acima do limite`}</span>
+                    <span className="numeros text-sm font-semibold text-errortext">{textoDaAdequacao(linha)}</span>
                   </li>
                 ))}
               </ul>

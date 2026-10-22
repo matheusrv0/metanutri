@@ -75,7 +75,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell className="min-w-36">
         <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
-        <span className={`numeros mt-1 block whitespace-nowrap text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
+        <span className={`numeros mt-1 block text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </TableCell>
       <TableCell>
         {podeCobrir(linha) ? (

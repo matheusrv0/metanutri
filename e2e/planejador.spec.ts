@@ -319,7 +319,7 @@ test('CA-714: o sódio abaixo da meta não tem Cobrir em lugar nenhum', async ({
   // Etapa 3, tela larga: a linha do sódio fica à vista, com o estado, sem Cobrir; o ferro, abaixo também, tem.
   await micros.getByRole('button', { name: 'Ver todos' }).click()
   const linhaSodio = page.getByRole('row').filter({ hasText: 'Sódio' })
-  await expect(linhaSodio).toContainText(/\d+% abaixo/)
+  await expect(linhaSodio).toContainText(/\d+% da referência · abaixo da meta/)
   await expect(linhaSodio.getByRole('button')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
   await expect(cobrirSodio).toHaveCount(0)
@@ -327,7 +327,7 @@ test('CA-714: o sódio abaixo da meta não tem Cobrir em lugar nenhum', async ({
   // Celular: a lista também.
   await page.setViewportSize({ width: 390, height: 844 })
   const itemSodio = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Sódio' })
-  await expect(itemSodio).toContainText(/\d+% abaixo/)
+  await expect(itemSodio).toContainText(/\d+% da referência · abaixo da meta/)
   await expect(itemSodio.getByRole('button')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
   await expect(cobrirSodio).toHaveCount(0)

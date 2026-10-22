@@ -16,12 +16,12 @@ interface ItemListaAdequacaoProps {
 export function ItemListaAdequacao({ linha, aoCobrir }: ItemListaAdequacaoProps) {
   return (
     <li className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="min-w-0 text-sm font-medium text-heading">
           {linha.rotulo}
           <MarcaLimite nota={linha.notaLimite} />
         </span>
-        <span className={`numeros shrink-0 text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
+        <span className={`numeros text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </div>
       <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
       <div className="flex min-h-11 items-center justify-between gap-3">
