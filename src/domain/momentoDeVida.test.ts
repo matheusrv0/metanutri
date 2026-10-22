@@ -90,7 +90,7 @@ describe('A condição do plano na data da consulta (D-343)', () => {
   it('CA-1043: lactante que amamenta tem os meses daquela data; quem não amamenta não é lactante', () => {
     const lactante = (amamentacao: 'exclusiva' | 'mista' | null): MomentoDeVida => ({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao })
     expect(condicaoNaData(lactante('exclusiva'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
-    expect(condicaoNaData(lactante('mista'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
+    expect(condicaoNaData(lactante('mista'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3, amamentacao: 'mista' })
     expect(condicaoNaData(lactante(null), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
     expect(condicaoNaData(lerMomento({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'nao-amamenta' }), '2026-10-21')).toEqual({ tipo: 'nenhuma' })
   })

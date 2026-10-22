@@ -194,12 +194,15 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
     const { exclusiva, parcial } = tabela.lactacao
     if (meses === null) {
       avisos.push('Informe o tempo pós-parto para somar o custo de produção de leite.')
-    } else if (meses <= exclusiva.mesesMax) {
+    } else if (meses <= exclusiva.mesesMax && condicao.amamentacao !== 'mista') {
       adicionais.push({ descricao: 'Produção de leite (0 a 6 meses)', kcal: exclusiva.producaoLeite })
       adicionais.push({ descricao: 'Mobilização de reservas (0 a 6 meses)', kcal: -exclusiva.mobilizacao })
       get += exclusiva.producaoLeite - exclusiva.mobilizacao
     } else if (meses <= parcial.mesesMax) {
-      adicionais.push({ descricao: 'Produção de leite (7 a 12 meses)', kcal: parcial.producaoLeite })
+      // D-456 (spec ficha-unica): peito e outros alimentos antes dos 6 meses usa o valor que o NASEM dá para a
+      // amamentação parcial (7 a 12 meses), quando o bebê já come outros alimentos e mama menos.
+      const descricao = meses <= exclusiva.mesesMax ? 'Produção de leite, peito e outros alimentos (valor de 7 a 12 meses)' : 'Produção de leite (7 a 12 meses)'
+      adicionais.push({ descricao, kcal: parcial.producaoLeite })
       get += parcial.producaoLeite
     } else {
       avisos.push('Não há adicional de lactação definido nas referências para mais de 12 meses pós-parto.')

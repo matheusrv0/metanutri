@@ -102,7 +102,9 @@ export function condicaoNaData(momento: MomentoDeVida | null, dia: string): Cond
   }
   if (momento.dataDoParto === null) return { tipo: 'lactante', mesesPosParto: null }
   const meses = mesesEntre(momento.dataDoParto, dia)
-  return meses === null ? { tipo: 'nenhuma' } : { tipo: 'lactante', mesesPosParto: meses }
+  if (meses === null) return { tipo: 'nenhuma' }
+  // D-456: a amamentação com outros alimentos muda a energia; só no peito (ou sem resposta) é a de sempre.
+  return momento.amamentacao === 'mista' ? { tipo: 'lactante', mesesPosParto: meses, amamentacao: 'mista' } : { tipo: 'lactante', mesesPosParto: meses }
 }
 
 /** O dia `meses` antes de `dia`, no mesmo dia do mês (ou no último dia, quando o mês é mais curto). */

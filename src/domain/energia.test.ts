@@ -159,6 +159,14 @@ describe('calcularEnergia: gestação e lactação', () => {
     expect(r.get).toBeCloseTo(2381.15 + 380, 6)
   })
 
+  it('CA-1277: peito e outros alimentos de 0 a 6 meses soma o valor de 7 a 12 meses, sem mobilização (D-456)', () => {
+    const mista = (mesesPosParto: number) =>
+      calcularEnergia(caso({ sexo: 'F', idadeAnos: 30, pesoKg: 65, estaturaCm: 165, condicao: { tipo: 'lactante', mesesPosParto, amamentacao: 'mista' } }), { fator: 1.55 })
+    expect(mista(3).adicionais).toEqual([{ descricao: 'Produção de leite, peito e outros alimentos (valor de 7 a 12 meses)', kcal: 380 }])
+    expect(mista(3).get).toBeCloseTo(2381.15 + 380, 6)
+    expect(mista(9).adicionais).toEqual([{ descricao: 'Produção de leite (7 a 12 meses)', kcal: 380 }])
+  })
+
   it('lactação acima de 12 meses não tem adicional e avisa', () => {
     const r = calcularEnergia(caso({ sexo: 'F', idadeAnos: 30, pesoKg: 65, estaturaCm: 165, condicao: { tipo: 'lactante', mesesPosParto: 14 } }), { fator: 1.55 })
     expect(r.adicionais).toEqual([])
