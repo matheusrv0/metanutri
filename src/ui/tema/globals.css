@@ -285,13 +285,12 @@
   @apply text-base text-heading;
 }
 
-/* Rótulo de seção: versalete condensado, onde o texto nomeia um dado. */
+/* Rótulo de seção, onde o texto nomeia um dado: em caixa de frase e em negrito, nunca em caixa alta (regra do dono;
+   spec alimentos-e-gramaturas, correção A, D-437). */
 @utility rotulo {
   font-family: var(--font-display);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-size: var(--fonte-2xs);
+  font-weight: var(--weight-semibold);
+  font-size: var(--fonte-xs);
   @apply leading-none text-muted-foreground;
 }
 

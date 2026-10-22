@@ -70,7 +70,7 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
         <Celula rotulo="Energia do plano" valor={`${formatarNumero(kcalPlano, 0)} kcal`} semDado={totais.nutrientes.energia_kcal.semDado} />
         <Celula rotulo={energia.getManual ? 'GET manual' : 'GET calculado'} valor={energia.get === null ? '—' : `${formatarNumero(energia.get, 0)} kcal`} />
         <Celula
-          rotulo="Do gasto"
+          rotulo="% do GET"
           valor={doGet ? `${formatarNumero(arredondarNoEstado(doGet.pct, doGet.estado, FAIXA_DO_GASTO_PADRAO), 0)}%` : '—'}
           {...(doGet ? { cor: COR[doGet.estado] } : {})}
         />

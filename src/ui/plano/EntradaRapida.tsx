@@ -48,17 +48,16 @@ function quantidadeDaReceita(r: ResultadoReceita): string {
   return [porcao, `${formatarNumero(r.gramas, 0)} g`, kcal].filter(Boolean).join(' · ')
 }
 
-/** Diz, na hora de escolher, o quanto a tabela sabe sobre este alimento. */
+/**
+ * Diz, na hora de escolher, quando a tabela sabe pouco deste alimento. "Parte dos nutrientes" (arroz, feijão, ovo) fica
+ * só na Tabela de alimentos: na entrada rápida ela aparecia em quase todo alimento básico e virava ruído (D-437).
+ */
 function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['alimento'] }) {
   const { nivel } = completudeDe(alimento)
-  if (nivel === 'completo') return null
-  const explicacao = explicarCompletude(alimento) ?? ''
+  if (nivel !== 'minimo') return null
   return (
-    <span
-      className={cn('rotulo shrink-0', nivel === 'minimo' ? 'text-errortext' : 'text-warningtext')}
-      title={explicacao}
-    >
-      {nivel === 'minimo' ? 'poucos nutrientes' : 'parte dos nutrientes'}
+    <span className="rotulo shrink-0 text-errortext" title={explicarCompletude(alimento) ?? ''}>
+      poucos nutrientes
     </span>
   )
 }
