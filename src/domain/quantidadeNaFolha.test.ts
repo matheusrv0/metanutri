@@ -66,8 +66,9 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
   })
 
   it('CA-780 (spec revisao-geral-trabalho): manteiga e margarina nunca em fatia na folha', () => {
-    expect(texto(quantidadeNaFolha(MANTEIGA, 30))).toBe('1 colher de sopa')
-    expect(texto(quantidadeNaFolha(MARGARINA, 30))).toBe('1 colher de sopa')
+    // Correção C (D-483): sem a colher de sopa cheia de 32 g da POF; 23 g é 1 colher de sobremesa.
+    expect(texto(quantidadeNaFolha(MANTEIGA, 23))).toBe('1 colher de sobremesa')
+    expect(texto(quantidadeNaFolha(MARGARINA, 23))).toBe('1 colher de sobremesa')
   })
 
   it('CA-927: manteiga e margarina em ponta de faca, até 3 e dentro de 15% do peso; em "Gramas", o peso', () => {

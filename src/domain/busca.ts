@@ -143,6 +143,8 @@ interface OpcoesDaMedida {
   readonly maximoDePedacos?: number | undefined
   /** Tira a "fatia" (manteiga e margarina, D-242 da revisao-geral-trabalho). */
   readonly semFatia?: boolean | undefined
+  /** Tira a colher (de sopa, de sobremesa, de servir, de chá) que pediria mais colheres que isto (D-483, carne e peixe). */
+  readonly maximoDeColheres?: number | undefined
 }
 
 const PECAS_DA_FRUTA_PEQUENA: ReadonlySet<string> = new Set(['unidade', 'unidade pequena'])
@@ -179,6 +181,7 @@ function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida
     if (q > QUANTIDADE_MAXIMA) continue
     if (servePraFruta && !servePraFruta(m, q)) continue
     if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
+    if (opcoes.maximoDeColheres !== undefined && m.nome.startsWith('colher') && q > opcoes.maximoDeColheres) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
     if (erro > ERRO_MAXIMO) continue
     // desempate: menos unidades da medida lê melhor ("1 concha" em vez de "4 colheres de servir")
@@ -207,6 +210,7 @@ const PONTA_DE_FACA = 'ponta de faca'
 const MAXIMO_DE_PONTAS = 3
 /** Manteiga e margarina: a "fatia" de 32 g da base não é como ninguém serve gordura. */
 const GORDURAS = 'Gorduras e óleos'
+const CARNE_OU_PEIXE: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
 
 /** CA-642 da impressao-do-plano: o que se passa no pão, em ponta de faca, até 3 e dentro de 15% do peso. */
 function emPontaDeFaca(alimentoId: number, gramas: number): MedidaEquivalente | null {
@@ -228,8 +232,14 @@ function emPontaDeFaca(alimentoId: number, gramas: number): MedidaEquivalente | 
  * meia"). Sem outra que sirva, fica a do planejador. Gordura nunca em fatia (D-242 da revisao-geral-trabalho).
  */
 export function medidaCaseiraParaPaciente(alimentoId: number, gramas: number): MedidaEquivalente | null {
-  const semFatia = buscarAlimento(alimentoId)?.categoria === GORDURAS
-  return melhorMedida(alimentoId, gramas, { semFatia, maximoDePedacos: MAXIMO_DE_PEDACOS }) ?? melhorMedida(alimentoId, gramas, { semFatia })
+  const categoria = buscarAlimento(alimentoId)?.categoria
+  const semFatia = categoria === GORDURAS
+  // D-483 (correção C): carne, ave e peixe em colher só até 4 ("7 colheres de sopa e meia" de atum não se lê).
+  const maximoDeColheres = categoria !== undefined && CARNE_OU_PEIXE.has(categoria) ? MAXIMO_DE_PEDACOS : undefined
+  return (
+    melhorMedida(alimentoId, gramas, { semFatia, maximoDePedacos: MAXIMO_DE_PEDACOS, maximoDeColheres }) ??
+    melhorMedida(alimentoId, gramas, { semFatia, maximoDeColheres })
+  )
 }
 
 /**
@@ -306,7 +316,11 @@ export const MEDIDAS_CURTAS: Readonly<Record<string, readonly string[]>> = {
   'copo médio': ['copo médio', 'copo de requeijão'],
 }
 
-const PADROES_CURTOS = Object.keys(MEDIDAS_CURTAS).map((nome) => ({ nome, re: padraoDaMedida(nome) }))
+// Do mais longo para o mais curto: "copo médio" antes de "copo". Sem isso, o nome antigo só era lido enquanto algum
+// alimento da base ainda tinha "copo médio" (o cereal matinal, até a D-483 da correção C).
+const PADROES_CURTOS = Object.keys(MEDIDAS_CURTAS)
+  .sort((a, b) => b.length - a.length)
+  .map((nome) => ({ nome, re: padraoDaMedida(nome) }))
 
 /** Quantidade por extenso (D-372). */
 const PALAVRAS_QUANTIDADE: Readonly<Record<string, number>> = { meia: 0.5, meio: 0.5, uma: 1, um: 1, duas: 2, dois: 2, tres: 3, quatro: 4, cinco: 5 }

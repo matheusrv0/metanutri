@@ -273,3 +273,36 @@ describe('sobras da caminhada dos 4 pacientes (spec alimentos-e-gramaturas, seç
     for (const id of [177, 179, 180, 228, 229, 231]) expect(revisao, descricao(id)).toContain(`| ${id} | ${descricao(id)} |`)
   })
 })
+
+describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
+  it('CA-1332: cereal matinal só em xícara de chá e porção', () => {
+    for (const nome of nomes(25)) expect(['xícara de chá', 'porção'], nome).toContain(nome)
+    expect(nomes(25)).toContain('xícara de chá')
+  })
+
+  it('CA-1332: queijo e gordura sem colher de sopa acima de 30 g (a ricota de 44 g sai)', () => {
+    for (const [a, r] of comMedidas) {
+      if (a.categoria !== 'Gorduras e óleos' && !/^Queijo,/.test(a.descricao)) continue
+      const sopa = r.medidas.find((m) => m.nome === 'colher de sopa')
+      if (sopa) expect(sopa.gramas, a.descricao).toBeLessThanOrEqual(30)
+    }
+    expect(nomes(469)).not.toContain('colher de sopa')
+  })
+
+  it('CA-1332: pão de forma só em fatia; creme de leite sem copo; camarão grande sem colher', () => {
+    for (const [a, r] of comMedidas) {
+      if (/^Pão, .*forma/.test(a.descricao)) expect(r.medidas.map((m) => m.nome), a.descricao).toEqual(['fatia'])
+    }
+    for (const nome of nomes(447)) expect(nome, 'Creme de Leite').not.toMatch(/^copo/)
+    for (const nome of nomes(284)) expect(nome, 'Camarão grande').not.toMatch(/^colher/)
+    expect(nomes(284)).toContain('unidade')
+  })
+
+  it('CA-1332: a revisão traz cada medida tirada com o motivo novo', () => {
+    expect(revisao).toContain('| 25 | Cereal matinal, milho | colher de servir | 8 g | cereal matinal só em xícara ou porção |')
+    expect(revisao).toContain('| 469 | Queijo, ricota | colher de sopa | 44 g | colher de sopa de queijo ou gordura acima de 30 g |')
+    expect(revisao).toContain('| 51 | Pão, milho, forma | unidade | 70 g | pão de forma só em fatia |')
+    expect(revisao).toContain('| 447 | Creme de Leite | copo americano | 150 g | creme de leite só em colher ou ponta de faca |')
+    expect(revisao).toContain('| 284 | Camarão, Rio Grande, grande, cozido | colher de sopa | 20 g | camarão grande só em unidade, porção ou punhado |')
+  })
+})

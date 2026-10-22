@@ -185,9 +185,10 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
     expect(medidaParaMostrar(MANTEIGA, gramas)?.texto).toBe(texto)
   })
 
-  it('CA-780: manteiga e margarina nunca saem em fatia; 30 g é "1 colher de sopa"', () => {
-    expect(medidaParaMostrar(MANTEIGA, 30)?.texto).toBe('1 colher de sopa')
-    expect(medidaParaMostrar(MARGARINA, 30)?.texto).toBe('1 colher de sopa')
+  it('CA-780: manteiga e margarina nunca saem em fatia; 23 g é "1 colher de sobremesa"', () => {
+    // Correção C (D-483): a colher de sopa cheia de 32 g da POF saiu (gordura com colher de sopa até 30 g).
+    expect(medidaParaMostrar(MANTEIGA, 23)?.texto).toBe('1 colher de sobremesa')
+    expect(medidaParaMostrar(MARGARINA, 23)?.texto).toBe('1 colher de sobremesa')
     for (const id of GORDURAS) {
       for (let gramas = 1; gramas <= 300; gramas += 1) expect(medidaParaMostrar(id, gramas)?.medida).not.toBe('fatia')
     }
@@ -208,8 +209,9 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
 
   it('a medida do planejador na busca (medidaEquivalente) continua a de antes (R-182)', () => {
     expect(medidaEquivalente(MARGARINA, 5)).toBeNull()
-    // Desde a correção A (D-430), a gordura não tem mais a "fatia" de 32 g da POF: 30 g é 1 colher de sopa.
-    expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 colher de sopa')
+    // Desde a correção A (D-430), a gordura não tem mais a "fatia" de 32 g da POF; desde a C (D-483), nem a colher de
+    // sopa cheia de 32 g: 23 g é 1 colher de sobremesa.
+    expect(medidaEquivalente(MANTEIGA, 23)?.texto).toBe('1 colher de sobremesa')
     // D-423: a fruta pequena só em unidade, também no planejador (eram "5 fatias").
     expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('1 unidade e meia')
   })
@@ -379,5 +381,27 @@ describe('um copo por nome e a unidade emprestada (spec alimentos-e-gramaturas, 
     const r = buscarAlimentos('1 banana maçã', ALIMENTOS).resultados[0]
     expect(r?.alimento.descricao).toBe('Banana, maçã, crua')
     expect(r?.gramas).toBe(75)
+  })
+})
+
+describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
+  const ATUM = 277
+
+  it('CA-1333: 120 g de atum não se leem "7 colheres de sopa e meia"; carne e peixe nunca mais de 4 colheres', () => {
+    expect(medidaParaMostrar(ATUM, 120)?.medida ?? 'gramas').not.toMatch(/^colher/)
+    for (const a of ALIMENTOS.filter((x) => x.categoria === 'Carnes e derivados' || x.categoria === 'Pescados e frutos do mar')) {
+      for (let gramas = 20; gramas <= 250; gramas += 10) {
+        const m = medidaParaMostrar(a.id, gramas)
+        if (m && m.medida.startsWith('colher')) expect(m.quantidade, `${a.descricao} ${gramas} g: ${m.texto}`).toBeLessThanOrEqual(4)
+      }
+    }
+    // Até 4 colheres continua: 2 colheres de sopa de atum (32 g).
+    expect(medidaParaMostrar(ATUM, 32)?.texto).toBe('2 colheres de sopa')
+  })
+
+  it('CA-1333: "1 copo de leite" não acha o creme de leite', () => {
+    const { resultados } = buscarAlimentos('1 copo de leite', ALIMENTOS)
+    expect(resultados.length).toBeGreaterThan(0)
+    for (const r of resultados) expect(r.alimento.descricao).not.toMatch(/^Creme de Leite/i)
   })
 })

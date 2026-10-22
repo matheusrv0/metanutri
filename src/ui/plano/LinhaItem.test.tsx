@@ -69,9 +69,9 @@ describe('Linha do alimento no planejador (spec revisao-geral-trabalho, D-242)',
     expect(screen.queryByText('Não aparece no plano impresso nem no link do paciente.')).not.toBeInTheDocument()
   })
 
-  it('CA-780: 30 g de manteiga mostram "1 colher de sopa", nunca "1 fatia"', () => {
-    linha(MANTEIGA, 30)
-    expect(screen.getByText('1 colher de sopa')).toBeInTheDocument()
+  it('CA-780: 23 g de manteiga mostram "1 colher de sobremesa", nunca "1 fatia" (D-483)', () => {
+    linha(MANTEIGA, 23)
+    expect(screen.getByText('1 colher de sobremesa')).toBeInTheDocument()
     expect(screen.queryByText(/fatia/)).not.toBeInTheDocument()
   })
 })

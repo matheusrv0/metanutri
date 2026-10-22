@@ -165,6 +165,14 @@ export function motivoDaClasse(alimento, nome) {
     return 'fruta só em unidade, fatia, pedaço ou taça'
   }
   if (/^(milho, verde, enlatado|ervilha, enlatada)/.test(d)) return /^(colher|porção)/.test(nome) ? null : 'grão em conserva só em colher'
+  // D-483 (correção C): o cereal matinal se serve em xícara ("4 colheres de servir" de cereal não existe).
+  if (/^cereal matinal/.test(d)) return nome === 'xícara de chá' || nome === 'porção' ? null : 'cereal matinal só em xícara ou porção'
+  // D-483: a "unidade" e a "porção" de 70 g do pão de milho de forma vêm do pão de milho redondo.
+  if (/^pao, [^,]+, forma/.test(d)) return nome === 'fatia' ? null : 'pão de forma só em fatia'
+  // D-483: creme de leite se mede em colher ("1 copo de leite" achava o creme de leite).
+  if (/^creme de leite/.test(d)) return /^(colher|ponta de faca)/.test(nome) ? null : 'creme de leite só em colher ou ponta de faca'
+  // D-483 (N12): camarão grande se conta; a colher de sopa de 20 g é de camarão pequeno.
+  if (/^camarao, [^,]+, grande/.test(d)) return ['unidade', 'porção', 'punhado'].includes(nome) ? null : 'camarão grande só em unidade, porção ou punhado'
   if (/^ovo, de galinha, inteiro, frito/.test(d)) return nome === 'unidade' || nome === 'porção' ? null : 'ovo frito só em unidade'
   if (alimento.categoria === 'Carnes e derivados' || alimento.categoria === 'Pescados e frutos do mar') {
     const pronto = ['grelhado', 'assado', 'frito'].includes(alimento.preparo)
@@ -187,7 +195,12 @@ const PESO_MAXIMO = { 'colher de sopa': 45, 'colher de servir': 120, 'colher de 
 /** A colher menor como parte da colher de sopa do mesmo alimento. */
 const PROPORCAO_DA_SOPA = { 'colher de chá': [0.15, 0.5], 'colher de sobremesa': [0.35, 0.85], 'colher de café': [0.05, 0.3] }
 
+/** D-483 (correção C): a colher de sopa de queijo e de gordura (ricota de 44 g, manteiga de 32 g) é cheia demais. */
+const COLHER_DE_SOPA_DE_QUEIJO_OU_GORDURA_G = 30
+
 export function motivoDoPeso(alimento, nome, gramas) {
+  const queijoOuGordura = alimento.categoria === 'Gorduras e óleos' || /^queijo,/.test(semAcento(alimento.descricao))
+  if (nome === 'colher de sopa' && queijoOuGordura && gramas > COLHER_DE_SOPA_DE_QUEIJO_OU_GORDURA_G) return 'colher de sopa de queijo ou gordura acima de 30 g'
   const maximo = nome === 'fatia' ? (alimento.categoria === 'Frutas e derivados' ? 250 : 100) : PESO_MAXIMO[nome]
   return maximo !== undefined && gramas > maximo ? `peso acima de ${maximo} g` : null
 }
@@ -419,7 +432,7 @@ export function converter() {
       '',
       '## Medidas tiradas pela camada de plausibilidade',
       '',
-      'Spec alimentos-e-gramaturas, D-430: outro preparo, outra variedade, outro utensílio na fonte, tipo que o grupo não',
+      'Spec alimentos-e-gramaturas, D-430 e D-483: outro preparo, outra variedade, outro utensílio na fonte, tipo que o grupo não',
       'usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte é a da POF (`descricao_fonte`).',
       '',
       '| TACO | Descrição TACO | Medida | Peso | Motivo | Fonte da POF |',

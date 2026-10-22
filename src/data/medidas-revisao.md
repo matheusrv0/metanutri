@@ -1,6 +1,6 @@
 # Revisão das medidas caseiras (TACO ↔ POF)
 
-Gerado por scripts/dados/importar-medidas-pof.mjs. 285 alimentos da TACO com medidas caseiras; 894 medidas da POF tiradas pela camada de plausibilidade.
+Gerado por scripts/dados/importar-medidas-pof.mjs. 285 alimentos da TACO com medidas caseiras; 914 medidas da POF tiradas pela camada de plausibilidade.
 Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentido para a forma de preparo.
 
 | TACO | Descrição TACO | Alimento POF (preparação) | Medidas |
@@ -15,14 +15,14 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 11 | Biscoito, doce, wafer, recheado de chocolate | BISCOITO DOCE (NAO SE APLICA) | porção 35 g; punhado 17 g; unidade 5 g |
 | 12 | Biscoito, doce, wafer, recheado de morango | BISCOITO DOCE (NAO SE APLICA) | porção 35 g; punhado 17 g; unidade 5 g |
 | 13 | Biscoito, salgado, cream cracker | BISCOITO SALGADO (NAO SE APLICA) | porção 32.5 g; punhado 17 g; unidade 5 g |
-| 25 | Cereal matinal, milho | CEREAL MATINAL DE MILHO EM FLOCOS (NAO SE APLICA) | colher de servir 8 g; colher de sopa 4 g; copo americano 25 g; copo médio 29.5 g; porção 30 g; punhado 9 g; xícara de café 7.5 g; xícara de chá 30 g |
+| 25 | Cereal matinal, milho | CEREAL MATINAL DE MILHO EM FLOCOS (NAO SE APLICA) | porção 30 g; xícara de chá 30 g |
 | 29 | Curau, milho verde | CURAU (NAO SE APLICA) | colher de sopa 35 g; pedaço 150 g; prato fundo 500 g; prato raso 300 g |
 | 33 | Farinha, de milho, amarela | FARINHA DE MILHO (NAO SE APLICA) | colher de chá 3 g; colher de servir 24 g; colher de sobremesa 6 g; colher de sopa 12 g; porção 42 g |
 | 45 | Milho, verde, enlatado, drenado | MILHO VERDE EM CONSERVA (NAO SE APLICA) | colher de café 4.3 g; colher de chá 8.5 g; colher de servir 38 g; colher de sobremesa 17 g; colher de sopa 24 g; porção 172 g |
 | 47 | Pamonha, barra para cozimento, pré-cozida | PAMONHA (NAO SE APLICA) | banda 80 g; fatia 40 g; pedaço 40 g; unidade 160 g |
 | 48 | Pão, aveia, forma | PAO DE FORMA INDUSTRIALIZADO DE QUALQUER MARCA (NAO SE APLICA) | fatia 25 g |
 | 50 | Pão, glúten, forma | PAO DE FORMA INDUSTRIALIZADO DE QUALQUER MARCA (NAO SE APLICA) | fatia 25 g |
-| 51 | Pão, milho, forma | PAO DE MILHO (NAO SE APLICA) | fatia 35 g; porção 70 g; unidade 70 g |
+| 51 | Pão, milho, forma | PAO DE MILHO (NAO SE APLICA) | fatia 35 g |
 | 52 | Pão, trigo, forma, integral | PAO INTEGRAL (NAO SE APLICA) | fatia 25 g |
 | 53 | Pão, trigo, francês | PAO DE SAL (NAO SE APLICA) | banda 25 g; fatia 25 g; metade 25 g; pedaço 25 g; porção 50 g; unidade 50 g |
 | 54 | Pão, trigo, sovado | PAO NAO ESPECIFICADO (NAO SE APLICA) | banda 25 g; bisnaga 200 g; fatia 25 g; metade 25 g; pedaço 25 g; porção 50 g; unidade 50 g |
@@ -154,12 +154,12 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 256 | Uva, Itália, crua | UVA (NAO SE APLICA) | bago 8 g; cacho 170 g; gomo 8 g; porção 99.2 g; unidade 8 g; unidade pequena 4 g |
 | 257 | Uva, Rubi, crua | UVA (NAO SE APLICA) | bago 8 g; cacho 170 g; gomo 8 g; porção 99.2 g; unidade 8 g; unidade pequena 4 g |
 | 260 | Azeite, de oliva, extra virgem | AZEITE DE OLIVA (NAO SE APLICA) | colher de café 1 g; colher de chá 2 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 7.6 g |
-| 261 | Manteiga, com sal | MANTEIGA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
-| 262 | Manteiga, sem sal | MANTEIGA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
-| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
-| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
-| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
-| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; colher de sopa 32 g; ponta de faca 5 g; porção 9.8 g |
+| 261 | Manteiga, com sal | MANTEIGA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
+| 262 | Manteiga, sem sal | MANTEIGA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
+| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
+| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
+| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
+| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | MARGARINA COM OU SEM SAL (NAO SE APLICA) | colher de café 4 g; colher de chá 8 g; colher de sobremesa 23 g; ponta de faca 5 g; porção 9.8 g |
 | 268 | Óleo, de canola | OLEO NAO ESPECIFICADO (NAO SE APLICA) | colher de café 1 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 8 g |
 | 269 | Óleo, de girassol | OLEO NAO ESPECIFICADO (NAO SE APLICA) | colher de café 1 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 8 g |
 | 270 | Óleo, de milho | OLEO NAO ESPECIFICADO (NAO SE APLICA) | colher de café 1 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 8 g |
@@ -171,7 +171,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 280 | Bacalhau, salgado, refogado | BACALHAU (REFOGADO(A)) | colher de sopa 20 g |
 | 281 | Cação, posta, com farinha de trigo, frita | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
 | 282 | Cação, posta, cozida | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (CROZIDO(A)) | filé 120 g; porção 75 g; posta 200 g; unidade 200 g |
-| 284 | Camarão, Rio Grande, grande, cozido | CAMARAO (CROZIDO(A)) | colher de servir 35 g; colher de sopa 20 g; porção 190 g; punhado 40 g; unidade 30 g |
+| 284 | Camarão, Rio Grande, grande, cozido | CAMARAO (CROZIDO(A)) | porção 190 g; punhado 40 g; unidade 30 g |
 | 286 | Camarão, Sete Barbas, sem cabeça, com casca, frito | CAMARAO (FRITO(A)) | porção 104 g; punhado 40 g; unidade 30 g |
 | 287 | Caranguejo, cozido | CARANGUEJO (CROZIDO(A)) | porção 45 g; unidade 20 g |
 | 289 | Corimbatá, assado | PEIXE DE AGUA DOCE (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | banda 100 g; bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
@@ -231,7 +231,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 442 | Quibe, frito | QUIBE (NAO SE APLICA) | pedaço 12 g; unidade 50 g; unidade pequena 12 g |
 | 443 | Salame | SALAME (NAO SE APLICA) | fatia 20 g; porção 62 g |
 | 446 | Bebida láctea, pêssego | BEBIDA LACTEA (NAO SE APLICA) | copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g |
-| 447 | Creme de Leite | CREME DE LEITE (NAO SE APLICA) | colher de café 2.5 g; colher de chá 5 g; colher de servir 30 g; colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; ponta de faca 12.5 g |
+| 447 | Creme de Leite | CREME DE LEITE (NAO SE APLICA) | colher de café 2.5 g; colher de chá 5 g; colher de servir 30 g; colher de sopa 15 g; ponta de faca 12.5 g |
 | 448 | Iogurte, natural | IOGURTE NATURAL (NAO SE APLICA) | colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; pote 200 g |
 | 449 | Iogurte, natural, desnatado | IOGURTE DESNATADO (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; pote 200 g |
 | 450 | Iogurte, sabor abacaxi | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
@@ -249,7 +249,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 464 | Queijo, parmesão | QUEIJO RALADO (NAO SE APLICA) | colher de café 2 g; colher de chá 4 g; colher de servir 30 g; colher de sobremesa 8 g; colher de sopa 15 g; porção 30 g |
 | 467 | Queijo, prato | QUEIJO PRATO (NAO SE APLICA) | fatia 15 g; porção 30 g |
 | 468 | Queijo, requeijão, cremoso | REQUEIJAO (NAO SE APLICA) | colher de café 3.8 g; colher de chá 7.5 g; colher de servir 60 g; colher de sobremesa 15 g; colher de sopa 30 g; copo de requeijão 240 g; ponta de faca 6 g; porção 45 g |
-| 469 | Queijo, ricota | QUEIJO RICOTA (NAO SE APLICA) | colher de sopa 44 g; fatia 35 g; ponta de faca 6 g; porção 100 g |
+| 469 | Queijo, ricota | QUEIJO RICOTA (NAO SE APLICA) | fatia 35 g; ponta de faca 6 g; porção 100 g |
 | 471 | Café, infusão 10% | CAFE (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; dose 50 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 475 | Chá, erva-doce, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 476 | Chá, mate, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
@@ -611,7 +611,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 
 ## Medidas tiradas pela camada de plausibilidade
 
-Spec alimentos-e-gramaturas, D-430: outro preparo, outra variedade, outro utensílio na fonte, tipo que o grupo não
+Spec alimentos-e-gramaturas, D-430 e D-483: outro preparo, outra variedade, outro utensílio na fonte, tipo que o grupo não
 usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte é a da POF (`descricao_fonte`).
 
 | TACO | Descrição TACO | Medida | Peso | Motivo | Fonte da POF |
@@ -670,12 +670,18 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 13 | Biscoito, salgado, cream cracker | xícara de café | 17 g | excluída na regra do mapeamento | Biscoito doce bichinhos Piraquê - punhado |
 | 25 | Cereal matinal, milho | barra | 25 g | excluída na regra do mapeamento | Barra de cereal banana Nutry |
 | 25 | Cereal matinal, milho | caneca | 29,5 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - copo duplo cheio |
+| 25 | Cereal matinal, milho | colher de servir | 8 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - 2 colheres de sopa cheias |
+| 25 | Cereal matinal, milho | colher de sopa | 4 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - colher de sopa cheia |
+| 25 | Cereal matinal, milho | copo americano | 25 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - copo pequeno cheio |
+| 25 | Cereal matinal, milho | copo médio | 29,5 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - copo duplo cheio |
 | 25 | Cereal matinal, milho | cumbuca | 30 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - xícara |
 | 25 | Cereal matinal, milho | pires | 30 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - 1/2 xícara |
+| 25 | Cereal matinal, milho | punhado | 9 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - punhado |
 | 25 | Cereal matinal, milho | prato fundo | 60 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - 2 xícaras |
 | 25 | Cereal matinal, milho | prato raso | 30 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - xícara |
 | 25 | Cereal matinal, milho | taça | 30 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - xícara |
 | 25 | Cereal matinal, milho | tigela | 30 g | a fonte é de outro utensílio | Cereal matinal Corn Flakes Kellogg's - xícara |
+| 25 | Cereal matinal, milho | xícara de café | 7,5 g | cereal matinal só em xícara ou porção | Cereal matinal Corn Flakes Kellogg's - 1/4 xícara |
 | 29 | Curau, milho verde | pires | 150 g | a fonte é de outro utensílio | Angu - 1/2 prato raso |
 | 33 | Farinha, de milho, amarela | concha | 48 g | excluída na regra do mapeamento | Farinha de milho - 4 colheres de sopa |
 | 45 | Milho, verde, enlatado, drenado | concha | 76 g | a fonte é de outro utensílio | Ervilha enlatada - 2 colheres de arroz cheia |
@@ -687,6 +693,8 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 48 | Pão, aveia, forma | metade | 25 g | excluída na regra do mapeamento | Pão de forma branco - fatia |
 | 50 | Pão, glúten, forma | banda | 25 g | excluída na regra do mapeamento | Pão de forma branco - unidade |
 | 50 | Pão, glúten, forma | metade | 25 g | excluída na regra do mapeamento | Pão de forma branco - fatia |
+| 51 | Pão, milho, forma | porção | 70 g | pão de forma só em fatia | Pão de milho - porção Guia Alimentar |
+| 51 | Pão, milho, forma | unidade | 70 g | pão de forma só em fatia | Pão de milho - unidade média |
 | 52 | Pão, trigo, forma, integral | banda | 25 g | excluída na regra do mapeamento | Pão de forma de aveia - unidade |
 | 53 | Pão, trigo, francês | rodela | 16,7 g | a fonte é de outro utensílio | Pão francês - 1/3 unidade |
 | 61 | Pipoca, com óleo de soja, sem sal | cumbuca | 10 g | a fonte é de outro utensílio | Pipoca com sal - xícara de chá |
@@ -1256,34 +1264,40 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 257 | Uva, Rubi, crua | punhado | 170 g | fruta só em unidade, fatia, pedaço ou taça | Uva - cacho pequeno |
 | 260 | Azeite, de oliva, extra virgem | colher de servir | 16 g | gordura só em colher ou ponta de faca | Óleo vegetal - 2 colheres de sopa |
 | 261 | Manteiga, com sal | colher de servir | 64 g | gordura só em colher ou ponta de faca | Manteiga - 2 colheres de sopa cheias |
+| 261 | Manteiga, com sal | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Manteiga - colher de sopa cheia |
 | 261 | Manteiga, com sal | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 261 | Manteiga, com sal | copo médio | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 261 | Manteiga, com sal | fatia | 32 g | gordura só em colher ou ponta de faca | Manteiga - colher de sopa cheia |
 | 261 | Manteiga, com sal | garfada | 32 g | a fonte é de outro utensílio | Manteiga - colher de sopa cheia |
 | 262 | Manteiga, sem sal | colher de servir | 64 g | gordura só em colher ou ponta de faca | Manteiga - 2 colheres de sopa cheias |
+| 262 | Manteiga, sem sal | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Manteiga - colher de sopa cheia |
 | 262 | Manteiga, sem sal | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 262 | Manteiga, sem sal | copo médio | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 262 | Manteiga, sem sal | fatia | 32 g | gordura só em colher ou ponta de faca | Manteiga - colher de sopa cheia |
 | 262 | Manteiga, sem sal | garfada | 32 g | a fonte é de outro utensílio | Manteiga - colher de sopa cheia |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | colher de servir | 64 g | gordura só em colher ou ponta de faca | Margarina - 2 colheres de sopa cheias |
+| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Margarina - colher de sopa cheia |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | concha | 64 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | fatia | 32 g | gordura só em colher ou ponta de faca | Margarina - colher de sopa cheia |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | garfada | 32 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | xícara de chá | 155 g | gordura só em colher ou ponta de faca | Manteiga - xícara de chá |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | colher de servir | 64 g | gordura só em colher ou ponta de faca | Margarina - 2 colheres de sopa cheias |
+| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Margarina - colher de sopa cheia |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | concha | 64 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | fatia | 32 g | gordura só em colher ou ponta de faca | Margarina - colher de sopa cheia |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | garfada | 32 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | xícara de chá | 155 g | gordura só em colher ou ponta de faca | Manteiga - xícara de chá |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | colher de servir | 64 g | gordura só em colher ou ponta de faca | Margarina - 2 colheres de sopa cheias |
+| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Margarina - colher de sopa cheia |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | concha | 64 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | fatia | 32 g | gordura só em colher ou ponta de faca | Margarina - colher de sopa cheia |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | garfada | 32 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | xícara de chá | 155 g | gordura só em colher ou ponta de faca | Manteiga - xícara de chá |
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | colher de servir | 64 g | gordura só em colher ou ponta de faca | Margarina - 2 colheres de sopa cheias |
+| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | colher de sopa | 32 g | colher de sopa de queijo ou gordura acima de 30 g | Margarina - colher de sopa cheia |
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | concha | 64 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | copo americano | 155 g | a fonte é de outro utensílio | Manteiga - xícara de chá |
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | fatia | 32 g | gordura só em colher ou ponta de faca | Margarina - colher de sopa cheia |
@@ -1295,7 +1309,9 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 274 | Abadejo, filé, congelado,cozido | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
 | 280 | Bacalhau, salgado, refogado | concha | 110 g | a fonte é de outro utensílio | Bacalhau cozido - 2 colheres de arroz cheia desfiado |
 | 282 | Cação, posta, cozida | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
-| 284 | Camarão, Rio Grande, grande, cozido | colher de chá | 30 g | peso acima de 12 g | Camarão - unidade grande |
+| 284 | Camarão, Rio Grande, grande, cozido | colher de servir | 35 g | camarão grande só em unidade, porção ou punhado | Camarão frito - colher de arroz cheia |
+| 284 | Camarão, Rio Grande, grande, cozido | colher de chá | 30 g | camarão grande só em unidade, porção ou punhado | Camarão - unidade grande |
+| 284 | Camarão, Rio Grande, grande, cozido | colher de sopa | 20 g | camarão grande só em unidade, porção ou punhado | Camarão frito - colher de sopa cheia |
 | 284 | Camarão, Rio Grande, grande, cozido | concha | 70 g | a fonte é de outro utensílio | Camarão frito - 2 colheres de arroz cheia |
 | 284 | Camarão, Rio Grande, grande, cozido | escumadeira | 35 g | a fonte é de outro utensílio | Camarão frito - colher de arroz cheia |
 | 284 | Camarão, Rio Grande, grande, cozido | prato fundo | 70 g | a fonte é de outro utensílio | Camarão frito - 2 colheres de arroz cheia |
@@ -1377,6 +1393,9 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 422 | Lingüiça, porco, frita | pegador | 22 g | a fonte é de outro utensílio | Lingüiça - colher de sopa cheia picada |
 | 422 | Lingüiça, porco, frita | rodela | 10 g | a fonte é de outro utensílio | Lingüiça - gomo/fatia média |
 | 432 | Porco, lombo, assado | fatia | 190 g | peso acima de 100 g | Porco lombo assado - 1 fatia |
+| 447 | Creme de Leite | copo americano | 150 g | creme de leite só em colher ou ponta de faca | Copo americano |
+| 447 | Creme de Leite | copo de requeijão | 240 g | creme de leite só em colher ou ponta de faca | Copo de requeijão |
+| 447 | Creme de Leite | copo médio | 240 g | creme de leite só em colher ou ponta de faca | copo médio |
 | 447 | Creme de Leite | pote | 150 g | a fonte é de outro utensílio | Copo americano |
 | 447 | Creme de Leite | taça | 150 g | a fonte é de outro utensílio | Copo americano |
 | 447 | Creme de Leite | tigela | 150 g | a fonte é de outro utensílio | Copo americano |
@@ -1400,6 +1419,7 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 459 | Leite, de vaca, integral, pó | xícara de chá | 26,7 g | excluída na regra do mapeamento | Diluição para o preparo de 1 xícara de chá |
 | 464 | Queijo, parmesão | copo americano | 74 g | a fonte é de outro utensílio | Queijo parmesão - xícara de chá |
 | 468 | Queijo, requeijão, cremoso | garfada | 30 g | a fonte é de outro utensílio | Requeijão - colher de sopa cheia |
+| 469 | Queijo, ricota | colher de sopa | 44 g | colher de sopa de queijo ou gordura acima de 30 g | Queijo cottage - colher de sopa cheia |
 | 475 | Chá, erva-doce, infusão 5% | unidade | 240 g | café, chá, leite e refrigerante não têm unidade | copo médio |
 | 476 | Chá, mate, infusão 5% | unidade | 240 g | café, chá, leite e refrigerante não têm unidade | copo médio |
 | 477 | Chá, preto, infusão 5% | unidade | 240 g | café, chá, leite e refrigerante não têm unidade | copo médio |
@@ -1532,7 +1552,6 @@ sobra sozinho passa a se chamar "copo de requeijão". O item gravado com o nome 
 | 215 | Laranja, pêra, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
 | 217 | Laranja, valência, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
 | 446 | Bebida láctea, pêssego | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
-| 447 | Creme de Leite | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
 | 448 | Iogurte, natural | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
 | 449 | Iogurte, natural, desnatado | copo médio | 240 g | renomeado para copo de requeijão (o mesmo copo de 240 ml) |
 | 450 | Iogurte, sabor abacaxi | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
@@ -1585,13 +1604,6 @@ paciente lê o peso até a nutricionista criar a medida dela ("+ Nova medida", D
 | 88 | Batata, doce, cozida | colher de sopa | 42 g | colher de sopa acima de 30 g |
 | 132 | Mandioca, frita | colher de sopa | 35 g | colher de sopa acima de 30 g |
 | 163 | Abacate, cru | colher de sopa | 45 g | colher de sopa acima de 30 g |
-| 261 | Manteiga, com sal | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 262 | Manteiga, sem sal | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 263 | Margarina, com óleo hidrogenado, com sal (65% de lipídeos) | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 264 | Margarina, com óleo hidrogenado, sem sal (80% de lipídeos) | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 265 | Margarina, com óleo interesterificado, com sal (65%de lipídeos) | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | colher de sopa | 32 g | colher de sopa acima de 30 g |
-| 469 | Queijo, ricota | colher de sopa | 44 g | colher de sopa acima de 30 g |
 
 ## Regras que não encontraram alimento na TACO
 

@@ -101,9 +101,10 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
 
   it('CA-781 (spec revisao-geral-trabalho): a medida do Word é a da folha, com a ponta de faca e sem fatia de manteiga', () => {
     expect(descreverItem({ id: 'x', alimentoId: 263, gramas: 5 }, buscarAlimento)).toBe('Margarina, com óleo hidrogenado, com sal (65% de lipídeos) (1 ponta de faca)')
-    // D-434 (correção A): 1 colher de sopa são 32 g, a mais de 5% dos 30 g: o Word diz o peso e "cerca de".
-    expect(descreverItem({ id: 'y', alimentoId: 261, gramas: 30 }, buscarAlimento)).toBe('Manteiga, com sal (30 g · cerca de 1 colher de sopa)')
-    expect(descreverItem({ id: 'z', alimentoId: 261, gramas: 32 }, buscarAlimento)).toBe('Manteiga, com sal (1 colher de sopa)')
+    // D-434 (correção A): a medida a mais de 5% dos gramas sai com o peso e "cerca de". Correção C (D-483): a gordura não
+    // tem mais a colher de sopa cheia de 32 g; a de sobremesa tem 23 g.
+    expect(descreverItem({ id: 'y', alimentoId: 261, gramas: 30 }, buscarAlimento)).toBe('Manteiga, com sal (30 g · cerca de 4 colheres de chá)')
+    expect(descreverItem({ id: 'z', alimentoId: 261, gramas: 23 }, buscarAlimento)).toBe('Manteiga, com sal (1 colher de sobremesa)')
   })
 
   it('CA-929 (spec conduta-da-nutricionista): a quantidade segue a escolha do plano', async () => {
