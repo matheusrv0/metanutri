@@ -29,7 +29,7 @@ for (const largura of [360, 390]) {
       await abrirLimpo(page)
       await comecarPlano(page)
       await conferirCamposNoCelular(page, 'dados do caso')
-      await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+      await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
       const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
       await busca.fill('120 arroz cozido')
       await busca.press('Enter')

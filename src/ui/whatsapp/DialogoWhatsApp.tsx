@@ -21,7 +21,7 @@ interface DialogoWhatsAppProps {
 
 /** O que o diálogo diz em cada caso do D-142. */
 function explicacao(paciente: PacienteDoWhatsApp | null, numero: string | null): string {
-  if (paciente === null) return 'Este plano não tem paciente vinculado. Vincule um paciente em Dados e medidas para usar o telefone da ficha.'
+  if (paciente === null) return 'Este plano não tem paciente vinculado. Vincule um paciente em Paciente e medidas para usar o telefone da ficha.'
   const nome = paciente.nome.trim()
   if (numero !== null) return `Para ${nome ? `${nome}, ` : ''}${formatarTelefone(numero)}. Quem envia é você.`
   const deQuem = nome ? `de ${nome}` : 'deste paciente'

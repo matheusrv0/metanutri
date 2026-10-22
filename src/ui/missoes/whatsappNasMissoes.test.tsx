@@ -183,7 +183,7 @@ describe('WhatsApp e retorno na Adesão', () => {
         <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} agora={AGORA} />
       </Anfitriao>,
     )
-    expect(linha('Ana Souza').getByText('Sumindo')).toBeInTheDocument()
+    expect(linha('Ana Souza').getByText('Parou de marcar')).toBeInTheDocument()
     expect(linha('Bia Lima').getByText('Atenção')).toBeInTheDocument()
     expect(linha('Caio Reis').queryByRole('button', { name: 'WhatsApp' })).not.toBeInTheDocument()
     expect(linha('Duda Melo').queryByRole('button', { name: 'WhatsApp' })).not.toBeInTheDocument()
@@ -191,7 +191,7 @@ describe('WhatsApp e retorno na Adesão', () => {
     await usuario.click(linha('Ana Souza').getByRole('button', { name: 'WhatsApp' }))
     let dialogo = within(screen.getByRole('dialog', { name: 'Enviar pelo WhatsApp' }))
     expect(dialogo.getByLabelText('Mensagem')).toHaveValue(
-      'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.',
+      'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conte que a gente ajusta.',
     )
     await usuario.click(dialogo.getByRole('button', { name: 'Cancelar' }))
 

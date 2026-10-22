@@ -203,7 +203,7 @@ describe('usePerfilConta', () => {
     })
     banco.rpcErro = { message: 'TypeError: Failed to fetch', code: '' }
     await act(async () => {
-      expect(await result.current.corrigirCrn({ regiao: 6, numero: '1' })).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.')
+      expect(await result.current.corrigirCrn({ regiao: 6, numero: '1' })).toBe('Não foi possível falar com o servidor. Confira a internet e tente de novo.')
     })
   })
 

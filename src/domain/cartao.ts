@@ -63,7 +63,7 @@ export const MENSAGEM_DO_CAMPO: Readonly<Record<CampoDoCartao, { readonly vazio:
   validade: { vazio: 'Digite a validade, como 11/30.', invalido: 'Confira a validade do cartão.' },
   codigo: { vazio: 'Digite o código de segurança.', invalido: 'Confira o código de segurança.' },
   nome: { vazio: 'Digite o nome como está impresso no cartão.', invalido: 'Use só letras no nome.' },
-  cpf: { vazio: 'Digite o CPF do titular do cartão.', invalido: 'Confira o CPF: os dígitos não batem.' },
+  cpf: { vazio: 'Digite o CPF do titular do cartão.', invalido: 'Este CPF não é válido. Confira os números.' },
 }
 
 /** CA-370: o erro de cada campo, na ordem da tela; só os que têm erro. */
@@ -89,11 +89,11 @@ export const ehCredito = (tipo: string | null): boolean => tipo === null || tipo
 
 export const USE_CREDITO = 'Use um cartão de crédito.'
 /** CB-88. */
-export const CAMPOS_NAO_CARREGARAM = 'Não consegui abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.'
+export const CAMPOS_NAO_CARREGARAM = 'Não foi possível abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.'
 /** CB-89. */
 export const PAGAMENTO_INDISPONIVEL = 'O pagamento não está disponível agora.'
 /** CA-374. */
-export const SERVIDOR_FORA = 'Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
+export const SERVIDOR_FORA = 'Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 /** CA-373. */
 /** Só depois de uma recusa do banco ao cartão novo: sem resposta ou erro de servidor, o cartão novo pode ter sido aceito. */
 export const CARTAO_ANTIGO = 'O cartão antigo continua valendo.'
@@ -102,7 +102,7 @@ export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou 
 /** CB-90 e erro do gerador do código do cartão. */
 export const CONFIRA_O_CARTAO = 'Confira os dados do cartão e tente de novo. Nada foi cobrado.'
 /** Erro que não é do cartão (configuração, conta de teste): não culpa o banco. */
-export const FALHA_DESCONHECIDA = 'Não consegui concluir a assinatura agora. Nada foi cobrado. Tente de novo em alguns minutos.'
+export const FALHA_DESCONHECIDA = 'Não foi possível concluir a assinatura agora. Nada foi cobrado. Tente de novo em alguns minutos.'
 /** CA-373: depois da recusa, o código de segurança é apagado. */
 export const DIGITE_O_CODIGO_DE_NOVO = 'Digite o código de novo.'
 /** CA-370. */
@@ -116,7 +116,7 @@ const RECUSAS: Readonly<Record<string, string>> = {
   cc_rejected_insufficient_amount: 'O cartão não tem limite para esta cobrança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_call_for_authorize: 'O banco pediu para você autorizar esta cobrança. Ligue para o banco do cartão e tente de novo. Nada foi cobrado.',
   cc_rejected_card_disabled: 'Este cartão está bloqueado. Ligue para o banco ou use outro cartão. Nada foi cobrado.',
-  cc_rejected_duplicated_payment: 'Já existe uma cobrança igual de poucos minutos atrás. Confira em Conta e plano antes de tentar de novo.',
+  cc_rejected_duplicated_payment: 'Já existe uma cobrança igual de poucos minutos atrás. Confira em Conta e assinatura antes de tentar de novo.',
   cc_rejected_high_risk: 'O pagamento foi recusado por segurança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_blacklist: 'O pagamento foi recusado por segurança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_max_attempts: 'Muitas tentativas com este cartão. Use outro cartão ou tente amanhã. Nada foi cobrado.',

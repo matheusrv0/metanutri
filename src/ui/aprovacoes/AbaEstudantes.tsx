@@ -101,7 +101,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
     if (!aberto.arquivo) return
     const url = await abrirComprovante(aberto.arquivo)
     if (url) globalThis.open(url, '_blank', 'noopener,noreferrer')
-    else avisar(pedidoAberto, 'Não deu para abrir o comprovante agora. Tente de novo.')
+    else avisar(pedidoAberto, 'Não foi possível abrir o comprovante agora. Tente de novo.')
   }
 
   return (
@@ -181,7 +181,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
         </div>
 
         <fieldset className="flex flex-col gap-2.5 border-t border-border pt-4">
-          <legend className="rotulo pb-2.5">Se for recusar, o motivo</legend>
+          <legend className="rotulo pb-2.5">Motivo da recusa</legend>
           <div className="flex flex-wrap gap-1.5">
             {[...MOTIVOS_RECUSA, OUTRO].map((m) => (
               <label

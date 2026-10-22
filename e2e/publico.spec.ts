@@ -19,11 +19,11 @@ test.describe('Landing (spec estilo-spora)', () => {
     await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
   })
 
-  test('CA-1007 (antes CA-116a): o cartão de 597 alimentos abre Fontes da base, no topo', async ({ page }) => {
+  test('CA-1173 (antes CA-1007): o cartão das sugestões leva a Como funciona; não há cartão de alimentos da base', async ({ page }) => {
     await page.goto('/#/inicio')
-    await page.getByRole('button', { name: /597/ }).click()
-    await expect(page).toHaveURL(/#\/fontes$/)
-    await expect(page.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: /597/ })).toHaveCount(0)
+    await page.getByRole('button', { name: /^Até 5/ }).click()
+    await expect(page.getByRole('heading', { level: 2, name: 'Como funciona' })).toBeInViewport()
   })
 })
 
@@ -38,7 +38,7 @@ test('CA-322 e CA-963: Fontes da base abre sem conta e cita as quatro fontes, co
 test('CA-367: o checkout não cita o processador e, sem conta na nuvem, não carrega o script dos campos seguros', async ({ page }) => {
   await page.goto('/#/assinar/solo/mensal')
   await expect(page.getByRole('heading', { level: 1, name: 'Assine o MetaNutri' })).toBeVisible()
-  await expect(page.getByText('A conta na nuvem não está configurada neste MetaNutri.')).toBeVisible()
+  await expect(page.getByText('O servidor da conta não está configurado nesta instalação.')).toBeVisible()
   expect(await page.locator('body').innerText()).not.toMatch(/mercado ?pago/i)
   await expect(page.locator('script[src*="mercadopago"]')).toHaveCount(0)
 })

@@ -4,6 +4,7 @@ import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
+import { nomeDoPacienteDoPlano } from '@/domain/nomeDoPaciente.ts'
 import { idadeDe, listaDeRestricoes } from '@/domain/pacientes.ts'
 import { avisoDoEstudante } from '@/domain/pedidoEstudante.ts'
 import { assinaturaDoPlano, camposDeEstagioIniciais } from '@/domain/assinaturaDoPlano.ts'
@@ -286,7 +287,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   if (rota.tela === 'conta') {
     return (
-      <Estrutura {...base} titulo="Conta e plano">
+      <Estrutura {...base} titulo="Conta e assinatura">
         <TelaConta
           conta={conta}
           perfil={perfil}
@@ -322,7 +323,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   if (rota.tela === 'produtos') {
     return (
-      <Estrutura {...base} titulo="Meus produtos">
+      <Estrutura {...base} titulo="Meus alimentos">
         <TelaProdutos />
       </Estrutura>
     )
@@ -405,7 +406,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
               <CartaoLinkMissoes
                 casoId={registro.caso.id}
                 pacienteId={registro.caso.pacienteId}
-                nome={registro.caso.nome}
+                // D-409 (spec textos-e-promessas): o link saúda o paciente pelo nome dele, não pelo nome do plano.
+                nome={nomeDoPacienteDoPlano(registro.caso, pacienteDoPlano) ?? ''}
                 missoes={missoesDoPlano(registro.plano, { pesoKg: registro.caso.pesoKg })}
                 dieta={dietaDoPlano(registro.caso, registro.plano)}
                 aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}

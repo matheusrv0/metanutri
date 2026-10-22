@@ -2,14 +2,14 @@
 // códigos). Qualquer outra coisa é rede, servidor fora ou erro que a pessoa não
 // tem como resolver: vira a mensagem de falha de rede. A exceção são as travas de
 // tamanho (D-107): o banco recusa pelo nome da trava, e a tela diz o motivo.
-export const FALHA_DE_REDE = 'Não deu para falar com o servidor. Confira a internet e tente de novo.'
+export const FALHA_DE_REDE = 'Não foi possível falar com o servidor. Confira a internet e tente de novo.'
 
 /** D-107 (CA-445): a cópia completa passou do tamanho que a nuvem guarda. Texto da spec dados-na-nuvem (CB-123). */
-export const COPIA_GRANDE_DEMAIS = 'A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.'
+export const COPIA_GRANDE_DEMAIS = 'Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.'
 /** D-107 (CA-446): o link passou de um dos tamanhos que a nuvem guarda. */
-export const LINK_GRANDE_DEMAIS = 'Este link ficou grande demais. Tire algumas missões e tente de novo.'
+export const LINK_GRANDE_DEMAIS = 'Este link ficou grande demais. Remova algumas missões e tente de novo.'
 /** CB-152 (spec dieta-no-link): a cópia da dieta passou de 256 KB. Quase sempre são orientações ou receitas enormes. */
-export const DIETA_GRANDE_DEMAIS = 'A dieta passou do tamanho que o link guarda. Encurte as orientações ou as receitas, ou desmarque "Mostrar a dieta no link".'
+export const DIETA_GRANDE_DEMAIS = 'O plano alimentar é grande demais para o link. Encurte as orientações ou as receitas, ou desligue “Mostrar o plano alimentar no link”.'
 
 /** D-107: as travas de tamanho do banco (supabase/011-seguranca-lote-2.sql e 012-dieta-no-link.sql), pelo nome, com a frase de cada uma. */
 export const TRAVAS_DE_TAMANHO: Readonly<Record<string, string>> = {

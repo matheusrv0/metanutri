@@ -200,7 +200,7 @@ export const FormularioCartao = forwardRef<ControleDoCartao, FormularioCartaoPro
           </div>
         </CampoDoFormulario>
 
-        <CampoDoFormulario id={alvos.codigo} rotulo="Código de segurança" erro={erros.codigo} dica="Os 3 números do verso" seguro>
+        <CampoDoFormulario id={alvos.codigo} rotulo="Código de segurança" erro={erros.codigo} dica="3 dígitos no verso; no Amex, 4 na frente" seguro>
           <div role="group" aria-labelledby={`${alvos.codigo}-rotulo`} aria-describedby={descrito(alvos.codigo, erros.codigo, true)} className={caixaSegura(erros.codigo)}>
             <div id={alvos.codigo} className="h-full min-w-0 flex-1" />
             <IconeMarca nome="cadeado" className="text-textsubtle" />

@@ -20,7 +20,7 @@ describe('TelaCompletarCadastro (CB-68)', () => {
     const informarSituacao = vi.fn(async () => 'Sua situação já está registrada.')
     render(<TelaCompletarCadastro email="julia@ufrn.edu.br" informarSituacao={informarSituacao} sair={vi.fn(async () => undefined)} aoSaiu={vi.fn()} />)
     const usuario = userEvent.setup()
-    await usuario.click(screen.getByRole('radio', { name: /Estudante de Nutrição/ }))
+    await usuario.click(screen.getByRole('radio', { name: /Estudante de nutrição/ }))
     await usuario.click(screen.getByRole('checkbox', { name: 'Declaro ter matrícula ativa no curso de Nutrição.' }))
     await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Sua situação já está registrada.')

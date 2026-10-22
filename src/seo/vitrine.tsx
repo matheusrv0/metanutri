@@ -16,7 +16,7 @@ import { PAGINAS, type RotaIndexavel } from './paginas.ts'
 const nada = () => undefined
 
 const TELAS: Readonly<Record<RotaIndexavel, () => ReactElement>> = {
-  inicio: () => <TelaInicio aoComecar={nada} aoVerPrecos={nada} aoVerFontes={nada} />,
+  inicio: () => <TelaInicio aoComecar={nada} aoVerPrecos={nada} />,
   precos: () => <SecaoPrecos contato={CONTATO_EMAIL} aoEscolher={nada} />,
   termos: () => <TelaTermos />,
   privacidade: () => <TelaPrivacidade />,

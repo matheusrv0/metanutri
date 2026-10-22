@@ -107,7 +107,7 @@ describe('Os textos prontos (D-149)', () => {
 
   it('CA-509: o contato fala das missões, um texto para quem sumiu e outro para quem marca pouco', () => {
     expect(textoDeContato('Ana', 'sumindo')).toBe(
-      'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conta que a gente ajusta.',
+      'Oi, Ana! Tudo bem? Vi que faz alguns dias que você não marca as missões. Como está indo com o plano? Se algo estiver difícil, me conte que a gente ajusta.',
     )
     expect(textoDeContato('Ana', 'atencao')).toContain('Vi que você marcou poucas missões nesta semana.')
   })

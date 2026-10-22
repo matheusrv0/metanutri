@@ -37,7 +37,7 @@ export function AvisoNuvem() {
     <Dialog open={aberto} onOpenChange={(v) => !v && confirmar()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Seus planos e pacientes agora ficam salvos na nuvem, presos à sua conta.</DialogTitle>{' '}
+          <DialogTitle>Seus planos e pacientes agora ficam salvos na nuvem, vinculados à sua conta.</DialogTitle>{' '}
           <DialogDescription>Assim você abre tudo em qualquer aparelho.</DialogDescription>
         </DialogHeader>
         <DialogFooter>

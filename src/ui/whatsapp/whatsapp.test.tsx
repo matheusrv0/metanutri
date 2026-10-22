@@ -80,7 +80,7 @@ describe('Enviar pelo WhatsApp', () => {
   it('CA-506: sem paciente vinculado, explica como vincular; não há link nem ficha para abrir', async () => {
     const { usuario } = montar(null)
     const dialogo = await abrir(usuario)
-    expect(dialogo.getByText(/Este plano não tem paciente vinculado\. Vincule um paciente em Dados e medidas/)).toBeInTheDocument()
+    expect(dialogo.getByText(/Este plano não tem paciente vinculado\. Vincule um paciente em Paciente e medidas/)).toBeInTheDocument()
     expect(dialogo.queryByRole('link')).not.toBeInTheDocument()
     expect(dialogo.queryByRole('button', { name: 'Cadastre o telefone na ficha' })).not.toBeInTheDocument()
     await usuario.click(dialogo.getByRole('button', { name: 'Entendi' }))

@@ -55,7 +55,7 @@ describe('backup só da conta que está dentro (spec dados-por-conta, D-125)', (
     const entrada = container.querySelector<HTMLInputElement>('input[accept="application/json"]')
     if (!entrada) throw new Error('campo do arquivo ausente')
     await userEvent.setup().upload(entrada, arquivo)
-    await screen.findByText(/1 conjunto restaurado/)
+    await screen.findByText(/Backup restaurado \(1 tipo de dado\)/)
     expect(localStorage.getItem('metanutri:conta:conta-b:modelos')).toBe('[{"id":"m1"}]')
     expect(localStorage.getItem('metanutri:conta:conta-a:modelos')).toBeNull()
     expect(localStorage.getItem('metanutri:modelos')).toBeNull()
@@ -73,7 +73,7 @@ describe('backup só da conta que está dentro (spec dados-por-conta, D-125)', (
     const entrada = container.querySelector<HTMLInputElement>('input[accept="application/json"]')
     if (!entrada) throw new Error('campo do arquivo ausente')
     await userEvent.setup().upload(entrada, arquivo)
-    expect(await screen.findByText('1 conjunto restaurado. Vale para todos os aparelhos da sua conta. Recarregue a página para ver.')).toBeInTheDocument()
+    expect(await screen.findByText('Backup restaurado (1 tipo de dado). Vale para todos os aparelhos da sua conta. Recarregue a página para ver.')).toBeInTheDocument()
   })
 
   it('o perfil digitado em Configurações fica na conta', async () => {

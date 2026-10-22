@@ -114,14 +114,14 @@ describe('Repositório de acompanhamentos', () => {
     const repo = criarRepositorioAcompanhamentos(null)
     const a = repo.salvar(novo())
     expect(repo.porId(a.id)?.nome).toBe('Ana')
-    expect(repo.aviso).toContain('não sobrevivem ao fechar')
+    expect(repo.aviso).toContain('não ficam salvos ao fechar')
   })
 
   it('armazenamento cheio: a tela continua funcionando e o aviso aparece', () => {
     const repo = criarRepositorioAcompanhamentos(cheio())
     const a = repo.salvar(novo())
     expect(repo.porId(a.id)?.nome).toBe('Ana')
-    expect(repo.aviso).toContain('não sobrevivem ao fechar')
+    expect(repo.aviso).toContain('não ficam salvos ao fechar')
   })
 })
 

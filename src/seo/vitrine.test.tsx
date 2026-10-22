@@ -18,7 +18,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
   it('CA-1013: a landing sai escrita, dentro da moldura pública, com os títulos, os preços e o rodapé', () => {
     const html = corpo('inicio')
     expect(html).toMatch(/<h1[^>]*>Faltou cálcio\?/)
-    for (const trecho of ['Como funciona', 'Do atendimento à folha do paciente', 'Quanto custa', 'R$ 34,90', 'Comece pelo Free', 'Termos de uso', 'Fontes da base']) {
+    for (const trecho of ['Como funciona', 'Do atendimento ao documento entregue', 'Quanto custa', 'R$ 34,90', 'Teste com um paciente real', 'Termos de uso', 'Fontes da base']) {
       expect(html).toContain(trecho)
     }
     expect(html).toContain('<header')
@@ -26,7 +26,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
   })
 
   it('CA-1014: Preços, Termos, Privacidade e Fontes saem com o título de cada uma', () => {
-    expect(corpo('precos')).toContain('Grátis na faculdade, barato ao se')
+    expect(corpo('precos')).toMatch(/<h1[^>]*>Planos e preços<\/h1>/)
     expect(corpo('termos')).toMatch(/<h1[^>]*>Termos de uso<\/h1>/)
     expect(corpo('privacidade')).toMatch(/<h1[^>]*>Política de privacidade<\/h1>/)
     expect(corpo('fontes')).toMatch(/<h1[^>]*>Fontes da base<\/h1>/)

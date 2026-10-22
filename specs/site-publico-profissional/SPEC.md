@@ -159,6 +159,24 @@ relatório ao dono; M-6 e M-7 ficam como estão (M-7 virou nota no R-324).
 - **CA-1028** · Dado o menu e o rodapé da moldura pública, então cada item é um link com o endereço da D-339; o clique leva à tela sem recarregar a página; o HTML pré-desenhado tem os links para `precos/`, `termos/`, `privacidade/` e `fontes/`.
 - **CA-1029** · Dado a Ajuda da área de trabalho, então ela não diz que os números não foram conferidos, e a guarda CA-990 lê `src/ui/ajuda/TelaAjuda.tsx`.
 
+## 7. Revisão de texto (21/10/2026, spec `textos-e-promessas`)
+
+A estrutura, a pré-renderização, o SEO técnico e a guarda CA-990 continuam. Mudam os textos e os números da vitrine:
+
+- **CA-999** passa a: o único `h1` de Preços é "Planos e preços" (D-407 da `textos-e-promessas`); a tabela compara Free,
+  Solo e Pro, e a Clínica vira uma nota de contato (D-406).
+- **CA-1000** passa a: os títulos da landing são "Faltou cálcio? O MetaNutri diz o que comer.", "Como funciona", "Do
+  atendimento ao documento entregue", "Quanto custa" e "Teste com um paciente real".
+- **CA-1001** passa a: a frase do topo é a da D-402 ("Software para nutricionistas. …"); o Cobrir fica com o título e
+  com "Como funciona".
+- **CA-1003**, **CA-1004** e **CA-1005** passam aos textos da D-403 e da D-404: "Monte o plano e cubra o que falta",
+  "Receitas e alimentos próprios", "Documentos" e "Quanto custa" com Free, Solo e Pro e o botão "Comparar planos".
+- **CA-1006** e **CA-1007** passam a: os cartões do topo são "21 nutrientes na adequação" e "Até 5 sugestões de
+  alimento", os dois levando a "Como funciona"; o cartão de 597 alimentos sai (decisão 9 da rodada).
+- **CA-1009** passa a: o título é "MetaNutri: software para nutricionistas que diz o que comer" (D-415).
+- **CA-1011** passa a: as ofertas do JSON-LD não incluem a Clínica (0, 34.90, 299, 64.90, 599).
+- **CA-1019** passa a: no `llms.txt`, a Clínica aparece como contato por e-mail, sem preço.
+
 ## Apêndice A — Auditoria das telas públicas (21/10/2026)
 
 Feita no site montado (`vite build` + `vite preview`, sem servidor de conta) em 360, 390, 768 e 1280 px, temas claro e

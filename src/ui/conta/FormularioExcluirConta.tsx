@@ -67,13 +67,13 @@ export function FormularioExcluirConta({ pagaNaOperadora, periodoPago, excluir, 
     <form onSubmit={(evento) => void confirmar(evento)} noValidate className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 text-sm">
         <ul className="flex list-disc flex-col gap-1.5 pl-5 text-foreground marker:text-muted-foreground">
-          <li>Pacientes, planos e o resto dos dados da conta.</li>
+          <li>Pacientes, planos e os demais dados da conta.</li>
           <li>Os links dos pacientes, que deixam de abrir.</li>
           <li>Situação, CRN e comprovantes de matrícula.</li>
           {pagaNaOperadora ? <li>A assinatura é cancelada, sem novas cobranças.</li> : null}
-          {periodoPago ? <li>O tempo que falta do período pago se perde.</li> : null}
+          {periodoPago ? <li>O tempo restante do período pago é perdido.</li> : null}
         </ul>
-        <p className="text-muted-foreground">Em outro aparelho com a conta aberta, saia antes.</p>
+        <p className="text-muted-foreground">Se a conta estiver aberta em outro aparelho, saia dela antes.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -93,7 +93,7 @@ export function FormularioExcluirConta({ pagaNaOperadora, periodoPago, excluir, 
         </p>
       </div>
 
-      {/* Sem o olho de mostrar a senha: Conta e plano só usa os ícones da marca (CA-383). */}
+      {/* Sem o olho de mostrar a senha: Conta e assinatura só usa os ícones da marca (CA-383). */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${id}-senha`}>Sua senha</Label>
         <Input

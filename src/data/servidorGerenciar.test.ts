@@ -106,12 +106,12 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
 
     for (const corpo of [[], null, 'cancelar']) {
       const c = cenario([ATIVA])
-      expect(await gerenciarAssinatura(pedir(corpo), c.deps)).toEqual({ status: 400, corpo: { erro: 'Corpo da requisição inválido.' } })
+      expect(await gerenciarAssinatura(pedir(corpo), c.deps)).toEqual({ status: 400, corpo: { erro: 'O pedido chegou incompleto. Recarregue a página e tente de novo.' } })
       expect(c.ordem).toEqual([])
     }
 
     const desconhecida = cenario([ATIVA], { [GET]: [responde(200, COBRADA)], [PUT]: [responde(200)] })
-    expect(await gerenciarAssinatura(pedir({ acao: 'x' }), desconhecida.deps)).toEqual({ status: 400, corpo: { erro: 'Ação desconhecida.' } })
+    expect(await gerenciarAssinatura(pedir({ acao: 'x' }), desconhecida.deps)).toEqual({ status: 400, corpo: { erro: 'O pedido chegou incompleto. Recarregue a página e tente de novo.' } })
     expect(desconhecida.pedidos).toEqual([])
 
     const semPaga: readonly (readonly Linha[])[] = [
@@ -364,7 +364,7 @@ describe('gerenciarAssinatura: o núcleo da função (spec checkout-proprio e co
   it('trocar cartão só da ativa (409) e com o cartão completo (400); nada é contado nem pedido', async () => {
     for (const status of ['pendente', 'pausada', 'cancelada']) {
       const c = cenario([{ ...ATIVA, status }], { [PUT]: [responde(200)] })
-      expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual({ status: 409, corpo: { erro: 'Só dá para trocar o cartão de uma assinatura ativa.' } })
+      expect(await gerenciarAssinatura(TROCAR, c.deps)).toEqual({ status: 409, corpo: { erro: 'Só é possível trocar o cartão de uma assinatura ativa.' } })
       expect(c.ordem).toEqual(['lerDaConta'])
     }
     const incompletos = [

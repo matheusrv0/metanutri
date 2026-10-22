@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 // Spec exclusao-de-conta. Os testes de navegador rodam sem servidor de conta (playwright.config.ts): aqui se confere o
 // que não depende dele. A exclusão de verdade roda contra o Supabase local (testes/seguranca/exclusao.test.ts).
 test.describe('Excluir a conta (spec exclusao-de-conta)', () => {
-  test('CA-800: sem servidor de conta (modo local), Conta e plano não oferece excluir', async ({ page }) => {
+  test('CA-800: sem servidor de conta (modo local), Conta e assinatura não oferece excluir', async ({ page }) => {
     await page.goto('/#/conta')
     // Num navegador novo, o aviso de primeiro acesso (CA-51) abre por cima.
     await page.getByRole('button', { name: 'Entendi' }).click()

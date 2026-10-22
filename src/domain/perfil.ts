@@ -37,8 +37,8 @@ export function linhaDeResponsabilidade(perfil: Perfil): string {
   if (perfil.tipo === 'estudante') {
     const responsavel = perfil.responsavel.trim()
     return responsavel
-      ? `${perfil.nome.trim() || 'Estudante'} · responsável técnico: ${responsavel}`
-      : `${perfil.nome.trim() || 'Estudante'} · documento de estudo, sem responsável técnico informado`
+      ? `${perfil.nome.trim() || 'Estudante'} · preceptor(a): ${responsavel}`
+      : `${perfil.nome.trim() || 'Estudante'} · documento de estudo, sem preceptor(a) informado(a)`
   }
   return perfil.nome.trim()
 }
@@ -169,6 +169,6 @@ export function restaurarBackup(armazenamento: Armazenamento | null, texto: stri
     }
     return { restaurados, erro: null }
   } catch {
-    return { restaurados: 0, erro: 'Não consegui ler o arquivo. Ele precisa ser o JSON exportado pelo MetaNutri.' }
+    return { restaurados: 0, erro: 'Não foi possível ler o arquivo. Escolha o backup em JSON baixado do MetaNutri.' }
   }
 }

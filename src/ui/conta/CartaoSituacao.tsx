@@ -36,7 +36,7 @@ function Dado({ rotulo, valor }: { readonly rotulo: string; readonly valor: stri
   )
 }
 
-/** A situação da conta em Conta e plano (spec conta-e-verificacao, CA-282, CA-283 e CA-304). */
+/** A situação da conta em Conta e assinatura (spec conta-e-verificacao, CA-282, CA-283 e CA-304). */
 export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante }: CartaoSituacaoProps) {
   if (perfil.situacao === 'nutricionista') {
     const selo = perfil.statusCrn ? SELO_CRN[perfil.statusCrn] : SELO_CRN.em_conferencia
@@ -50,7 +50,7 @@ export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante
           <Dado rotulo="CRN" valor={perfil.crn ? formatarCrn(perfil.crn) : 'Não informado'} />
           <Dado rotulo="Declarado em" valor={perfil.crnDeclaradoEm ? formatarDataLonga(perfil.crnDeclaradoEm) : '—'} />
         </dl>
-        <p className="border-t border-border pt-3.5 text-sm text-muted-foreground">Você já pode usar tudo. Seu nome e CRN saem na folha da dieta.</p>
+        <p className="border-t border-border pt-3.5 text-sm text-muted-foreground">Seu nome e seu CRN aparecem no plano impresso.</p>
       </Card>
     )
   }
@@ -59,7 +59,7 @@ export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante
   return (
     <Card className="gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <CardTitle>Estudante de Nutrição</CardTitle>
+        <CardTitle>Estudante de nutrição</CardTitle>
         <Badge variant={selo.variante}>{selo.texto}</Badge>
       </div>
       {pedido ? (
@@ -72,14 +72,14 @@ export function CartaoSituacao({ perfil, pedido, aoMeFormei, aoEnviarComprovante
       ) : null}
       {pedido === null || pedido.status === 'recusado' ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3.5">
-          <span className="text-sm text-muted-foreground">O plano Estudante libera depois que o comprovante de matrícula for aprovado.</span>
+          <span className="text-sm text-muted-foreground">O plano Estudante é liberado depois que o comprovante de matrícula for aprovado.</span>
           <Button onClick={aoEnviarComprovante}>Enviar comprovante</Button>
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3.5">
         <span className="text-sm text-muted-foreground">Já se formou e tem CRN?</span>
         <Button variant="outline" onClick={aoMeFormei}>
-          Me formei
+          Já me formei
         </Button>
       </div>
     </Card>

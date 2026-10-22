@@ -31,7 +31,7 @@ const contaComSessao = () => contaFalsa({ sessao: { id: 'u1', email: 'ana@exempl
 
 /** As telas que a spec cita, cada uma montada sozinha. */
 const TELAS: readonly (readonly [string, () => Promise<void> | void])[] = [
-  ['landing', () => void render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} aoVerFontes={vi.fn()} />)],
+  ['landing', () => void render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)],
   ['Preços', () => void render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)],
   [
     'checkout',
@@ -56,7 +56,7 @@ const TELAS: readonly (readonly [string, () => Promise<void> | void])[] = [
     },
   ],
   [
-    'Conta e plano',
+    'Conta e assinatura',
     () =>
       void render(
         <TelaConta
@@ -92,7 +92,7 @@ const rotulosEmCaixaAlta = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[class*="uppercase"], .rotulo')).map((el) => el.textContent?.trim() ?? '')
 
 describe('limpeza visual (spec limpeza-visual)', () => {
-  it.each(TELAS.filter(([nome]) => ['landing', 'Preços', 'checkout', 'Conta e plano'].includes(nome)))(
+  it.each(TELAS.filter(([nome]) => ['landing', 'Preços', 'checkout', 'Conta e assinatura'].includes(nome)))(
     'CA-387: %s não tem rótulo decorativo em caixa alta acima de título ou de seção',
     async (_nome, montar) => {
       await montar()

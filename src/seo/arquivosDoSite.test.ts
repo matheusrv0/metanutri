@@ -22,6 +22,8 @@ describe('arquivos de busca e o index.html', () => {
     expect(html).toMatch(/<html lang="pt-BR">/)
     expect(html).toContain('<meta name="theme-color"')
     expect(html).toContain('<link rel="apple-touch-icon" href="apple-touch-icon.png" />')
+    // CA-1183 (spec textos-e-promessas, D-415): o comentário antigo, em inglês e com fontes que o site não usa, saiu.
+    expect(html).not.toMatch(/impeccable:direction|OWN-WORLD|Archivo|Figtree/)
   })
 
   it('CA-1018: o robots.txt libera todos os robôs e aponta o sitemap', () => {
@@ -41,7 +43,9 @@ describe('arquivos de busca e o index.html', () => {
   it('CA-1019: o llms.txt traz os planos com os preços de PLANOS, o contato e as páginas', () => {
     const llms = ler('public', 'llms.txt')
     expect(llms.startsWith('# MetaNutri\n')).toBe(true)
-    for (const plano of PLANOS) {
+    // D-406 (spec textos-e-promessas): a Clínica é por contato, sem preço.
+    expect(llms).toContain('- Clínica com mais de um nutricionista: condições combinadas pelo e-mail de contato.')
+    for (const plano of PLANOS.filter((p) => !p.porContato)) {
       const linha = llms.split('\n').find((l) => l.startsWith(`- ${plano.nome}: R$ ${reais(plano.mensal)}`))
       expect(linha, plano.nome).toBeDefined()
       if (plano.anual > 0) expect(linha).toContain(`R$ ${reais(plano.anual)} por ano`)
@@ -50,6 +54,15 @@ describe('arquivos de busca e o index.html', () => {
     expect(llms).toContain(`nos últimos ${DIAS_PACIENTE_ATIVO} dias`)
     expect(llms).toContain(`E-mail: ${CONTATO_EMAIL ?? ''}`)
     for (const pagina of PAGINAS) expect(llms).toContain(enderecoDaPagina(pagina))
+  })
+
+  it('CA-1183 (spec textos-e-promessas): o llms.txt diz o mesmo que a landing, com o glossário', () => {
+    const llms = ler('public', 'llms.txt')
+    expect(llms).toContain(
+      '> Software para nutricionistas, no navegador. Monta o plano alimentar e mostra a adequação de 20 vitaminas e minerais e da fibra. Em cada nutriente abaixo da meta, o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença, respeitando as restrições do paciente. O plano vira missões diárias que o paciente marca pelo celular.',
+    )
+    expect(llms).toContain('Todos os planos têm as mesmas funções.')
+    expect(llms).not.toMatch(/presos|Folha do paciente|até 4 nutricionistas|R\$ 149/i)
   })
 
   it('CA-1010: a imagem de compartilhar é um PNG de 1200 × 630 com menos de 300 KB', () => {

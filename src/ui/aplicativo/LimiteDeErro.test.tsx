@@ -35,8 +35,8 @@ describe('tela de erro na raiz (CA-888a)', () => {
         <Quebra />
       </LimiteDeErro>,
     )
-    expect(screen.getByRole('heading', { name: 'O MetaNutri não conseguiu abrir esta tela.' })).toBeInTheDocument()
-    expect(screen.getByText('Seus dados continuam guardados. Recarregue para abrir a versão mais nova.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Não foi possível abrir esta tela.' })).toBeInTheDocument()
+    expect(screen.getByText('Seus dados continuam salvos. Recarregue a página para abrir a versão mais nova.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Recarregar' }))
     expect(recarregar).toHaveBeenCalledTimes(1)
     expect({ ...localStorage }).toEqual(antes)

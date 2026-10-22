@@ -34,7 +34,7 @@ export interface ValorAssinatura {
   readonly recarregar: () => void
 }
 
-export const SEM_NUVEM = 'A conta na nuvem não está configurada neste MetaNutri.'
+export const SEM_NUVEM = 'O servidor da conta não está configurado nesta instalação.'
 export const PEDIDO_EM_ANDAMENTO = 'Espere terminar o pedido anterior.'
 export const SESSAO_TERMINOU = 'Sua sessão terminou. Entre de novo na sua conta e tente outra vez.'
 
@@ -92,7 +92,7 @@ export async function chamar<T>(nome: string, corpo: Record<string, unknown>): P
   }
 }
 
-/** D-70: o navegador manda o código do cartão e, para mostrar em Conta e plano, a bandeira e o final. */
+/** D-70: o navegador manda o código do cartão e, para mostrar em Conta e assinatura, a bandeira e o final. */
 const doCartao = (cartao: DadosDoCartao) => ({ card_token_id: cartao.token, cartao: { bandeira: cartao.bandeira, final: cartao.final } })
 
 /** `usuarioId` é o id de quem está na conta (nulo sem sessão): os dados lidos seguem o usuário, não só a sessão. */

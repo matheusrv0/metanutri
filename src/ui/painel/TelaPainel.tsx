@@ -55,11 +55,12 @@ export function TelaPainel({ aoAbrirPlano, aoIrPara, aoVerExemplo, aviso, agora:
     pacientes.length === 0 ? { texto: 'Nenhum paciente cadastrado', acao: 'Cadastrar', ir: () => aoIrPara('pacientes') } : null,
   ].filter((p): p is { texto: string; acao: string; ir: () => void } => p !== null)
 
-  // CA-776: o apoio concorda com o número ("1 plano · mexido", "2 planos · mexidos").
+  // CA-776: o apoio concorda com o número ("1 plano · editado", "2 planos · editados"). CA-1189 (spec
+  // textos-e-promessas): sem gíria ("mexidos") e com o período dito por inteiro.
   const numeros = [
-    { valor: atividade.total, rotulo: atividade.total === 1 ? 'plano' : 'planos', apoio: `${atividade.total === 1 ? 'mexido' : 'mexidos'} em ${DIAS} dias` },
-    { valor: pacientes.length, rotulo: pacientes.length === 1 ? 'paciente' : 'pacientes', apoio: 'com ficha' },
-    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `${atividade.diasAtivos === 1 ? 'trabalhado' : 'trabalhados'} em ${DIAS} dias` },
+    { valor: atividade.total, rotulo: atividade.total === 1 ? 'plano' : 'planos', apoio: `${atividade.total === 1 ? 'editado' : 'editados'} nos últimos ${DIAS} dias` },
+    { valor: pacientes.length, rotulo: pacientes.length === 1 ? 'paciente' : 'pacientes', apoio: pacientes.length === 1 ? 'cadastrado' : 'cadastrados' },
+    { valor: atividade.diasAtivos, rotulo: atividade.diasAtivos === 1 ? 'dia' : 'dias', apoio: `com atividade nos últimos ${DIAS} dias` },
   ]
   // D-241: a coluna da direita só existe quando tem o que mostrar; sem ela, "Onde você parou" ocupa a largura toda.
   const temDireita = agenda.length > 0 || pendencias.length > 0

@@ -46,6 +46,8 @@ describe('Tela Planos', () => {
   it('lista vazia convida a criar o primeiro caso', async () => {
     const { aoNovoCaso } = montar()
     expect(screen.getByRole('heading', { name: 'Nenhum plano ainda' })).toBeInTheDocument()
+    // CA-1189 (spec textos-e-promessas): o que é um plano, sem "pessoa" nem "plano alimentar" dentro do plano.
+    expect(screen.getByText('Cada plano reúne os dados do paciente, as refeições e a adequação. Crie o primeiro.')).toBeInTheDocument()
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Criar primeiro plano' }))
     await usuario.click(screen.getByRole('menuitem', { name: /Prescrição rápida/ }))
@@ -145,7 +147,7 @@ describe('Aviso de primeiro acesso', () => {
   it('CA-51: aparece no primeiro acesso com os três pontos e não volta depois de confirmado', async () => {
     const { unmount } = render(<AvisoPrimeiroAcesso />)
     const aviso = screen.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })
-    expect(within(aviso).getByText(/apoia o estudo e o planejamento/)).toBeInTheDocument()
+    expect(within(aviso).getByText('O MetaNutri calcula e sugere.')).toBeInTheDocument()
     expect(within(aviso).getByText(/prescrição é responsabilidade do nutricionista/)).toBeInTheDocument()
     expect(within(aviso).getByText(/só neste aparelho/)).toBeInTheDocument()
 
@@ -158,14 +160,14 @@ describe('Aviso de primeiro acesso', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('D-128 (spec dados-na-nuvem): com a conta na nuvem, o aviso diz que os casos ficam na nuvem, presos à conta', () => {
+  it('D-128 (spec dados-na-nuvem) e CA-1189: com a conta na nuvem, o aviso diz que planos e pacientes ficam salvos na conta', () => {
     render(
       <ContextoNuvem.Provider value={NUVEM_PRONTA}>
         <AvisoPrimeiroAcesso />
       </ContextoNuvem.Provider>,
     )
     const aviso = screen.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' })
-    expect(within(aviso).getByText('Os casos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(within(aviso).getByText('Seus planos e pacientes ficam salvos na sua conta.')).toBeInTheDocument()
     expect(within(aviso).queryByText(/só neste aparelho|Nada é enviado/)).not.toBeInTheDocument()
   })
 })

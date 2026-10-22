@@ -27,7 +27,7 @@ export function DialogoExcluirConta({ aberto, pagaNaOperadora, periodoPago, excl
       <DialogContent iconeFechar={<IconeMarca nome="fechar" />} className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Excluir sua conta?</DialogTitle>
-          <DialogDescription>Tudo sai da nuvem na hora, e não dá para desfazer.</DialogDescription>
+          <DialogDescription>Todos os dados são apagados da nuvem na hora. Não é possível desfazer.</DialogDescription>
         </DialogHeader>
         <FormularioExcluirConta
           pagaNaOperadora={pagaNaOperadora}

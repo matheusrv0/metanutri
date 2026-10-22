@@ -1,17 +1,14 @@
 import { ArrowLeftRight, ArrowUpRight, ClipboardList, Cloud, CookingPot, FileText, Pill, type LucideIcon } from 'lucide-react'
 import { DIAS_PARA_SUMIR } from '@/domain/acompanhamento.ts'
 import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
-import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { MAXIMO_SUGESTOES } from '@/domain/cobrir.ts'
 import { DIAS_PACIENTE_ATIVO, planoPorId, type PlanoAssinatura } from '@/domain/conta.ts'
-import { ALIMENTOS } from '@/domain/tabelas.ts'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface TelaInicioProps {
   readonly aoComecar: () => void
   readonly aoVerPrecos: () => void
-  readonly aoVerFontes: () => void
 }
 
 const BASE = import.meta.env.BASE_URL
@@ -37,13 +34,17 @@ interface Parte {
   readonly alt: string
 }
 
-/** CA-1003: as duas funções que carregam o produto (PRODUCT.md), cada uma com a tela real do app. */
+/**
+ * CA-1174 (spec textos-e-promessas): as duas funções que carregam o produto, cada uma com a tela real do app. A
+ * primeira diz o que uma busca por nutriente não faz (D-403): a conta do que falta e a porção que fecha a diferença.
+ */
 const PARTES: readonly Parte[] = [
   {
-    titulo: 'Monte o plano e feche o que falta',
+    titulo: 'Monte o plano e cubra o que falta',
     paragrafos: [
-      'Digite “150 arroz” e tecle Enter: o alimento entra na refeição com a medida caseira, e energia e macros acompanham cada alimento.',
-      `A adequação compara o dia com as DRI e mostra o que ficou abaixo da meta. Para cada falta, o botão Cobrir sugere até ${MAXIMO_SUGESTOES} alimentos de grupos diferentes, com a porção em gramas e em medida caseira e quanto da falta cada um cobre.`,
+      'Digite “150 arroz” e tecle Enter: o alimento entra na refeição já com a medida caseira, e as calorias e os macros do dia se atualizam.',
+      'Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato. O MetaNutri calcula quanto falta em cada nutriente abaixo da meta, e o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença.',
+      'As sugestões vêm de grupos diferentes e respeitam as restrições do paciente. Se nem uma porção realista fecha a diferença, a sugestão mostra quanto ela cobre. Você escolhe, e o alimento entra na refeição.',
     ],
     captura: 'cobrir',
     largura: 448,
@@ -53,8 +54,8 @@ const PARTES: readonly Parte[] = [
   {
     titulo: 'Acompanhe o paciente entre as consultas',
     paragrafos: [
-      'O plano vira missões do dia num link. O paciente marca pelo celular o que cumpriu, sem baixar app nem criar conta, e vê o plano alimentar no mesmo link.',
-      `Em Adesão, quem passa ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo da lista. O link vai pelo WhatsApp, com o texto pronto.`,
+      'O plano vira missões diárias num link. O paciente abre no celular, sem baixar aplicativo nem criar conta, e marca o que cumpriu. Se você quiser, o mesmo link mostra o plano alimentar.',
+      `Na tela Adesão, quem fica ${DIAS_PARA_SUMIR} dias sem marcar sobe para o topo da lista. Você manda o link e os lembretes pelo WhatsApp, com a mensagem pronta.`,
     ],
     captura: 'missoes',
     largura: 390,
@@ -63,34 +64,51 @@ const PARTES: readonly Parte[] = [
   },
 ]
 
-/** CA-1004: só o que existe no produto (README, "O que o sistema faz"). */
+/** CA-1175: só o que existe no produto, um recurso por item. */
 const RECURSOS: readonly { readonly icone: LucideIcon; readonly titulo: string; readonly texto: string }[] = [
   {
     icone: ClipboardList,
     titulo: 'Anamnese e avaliação',
-    texto: 'Roteiro de anamnese que você edita, antropometria, composição corporal e gasto energético com a fórmula à mostra.',
+    texto: 'Roteiro de anamnese editável, antropometria, composição corporal e gasto energético com a fórmula à mostra.',
   },
-  { icone: ArrowLeftRight, titulo: 'Substitutos e trocas', texto: 'Cada refeição com a opção principal e dois substitutos, e a lista de trocas na folha do paciente.' },
-  { icone: CookingPot, titulo: 'Receitas com cálculo', texto: 'Ingredientes, rendimento e valor por porção, para pôr a receita direto na refeição.' },
-  { icone: Pill, titulo: 'Suplementos e exames', texto: 'Folhas de suplementos e de pedido de exames para imprimir, com a sua assinatura.' },
-  { icone: FileText, titulo: 'Folha do paciente', texto: 'Plano para imprimir ou salvar em PDF, com nomes que o paciente entende, e documentos em Word.' },
-  { icone: Cloud, titulo: 'Na sua conta', texto: 'Planos e pacientes salvos na nuvem, presos à sua conta: abra no computador ou no celular.' },
+  {
+    icone: ArrowLeftRight,
+    titulo: 'Substitutos e trocas',
+    texto: 'Cada refeição com a opção principal e até dois substitutos equivalentes, e a lista de trocas no plano impresso.',
+  },
+  {
+    icone: CookingPot,
+    titulo: 'Receitas e alimentos próprios',
+    texto: 'Receitas com valor nutricional por porção e produtos cadastrados pelo rótulo ou pelo código de barras. Entram na refeição como qualquer alimento.',
+  },
+  { icone: Pill, titulo: 'Suplementos e exames', texto: 'Prescrição de suplementos e pedido de exames prontos para imprimir, com a sua assinatura.' },
+  {
+    icone: FileText,
+    titulo: 'Documentos',
+    texto: 'Plano alimentar em PDF, com nomes de alimentos que o paciente entende. Aconselhamento nutricional e memorial de cálculo em Word.',
+  },
+  { icone: Cloud, titulo: 'Na sua conta', texto: 'Planos e pacientes salvos na nuvem. Abra no computador ou no celular.' },
 ]
 
-/** CA-1005: do estágio ao consultório, com os valores de `PLANOS`. */
+/** CA-1176: Free, Solo e Pro, com os valores de `PLANOS`; o Estudante entra no texto do Free. */
 const PRECOS = (() => {
+  const free = planoPorId('free')
   const estudante = planoPorId('estudante')
   const solo = planoPorId('solo')
   const pro = planoPorId('pro')
-  if (!estudante || !solo || !pro) return []
+  if (!free || !estudante || !solo || !pro) return []
   return [
-    { id: 'estudante', valor: `R$ ${reais(estudante.mensal)}`, rotulo: 'Estudante de nutrição', apoio: `Com o comprovante de matrícula. ${pacientes(estudante)}`, tom: 'branco' },
-    { id: 'solo', valor: `R$ ${reais(solo.mensal)}`, rotulo: 'Solo, por mês', apoio: `${solo.resumo} ${pacientes(solo)}`, tom: 'teal' },
-    { id: 'pro', valor: `R$ ${reais(pro.mensal)}`, rotulo: 'Pro, por mês', apoio: `${pro.resumo} ${pacientes(pro)}`, tom: 'branco' },
+    {
+      id: 'free',
+      valor: `R$ ${reais(free.mensal)}`,
+      rotulo: free.nome,
+      apoio: `${free.limitePacientesAtivos ?? ''} pacientes ativos, sem cartão. Estudante com comprovante de matrícula: ${estudante.limitePacientesAtivos ?? ''}.`,
+      tom: 'branco',
+    },
+    { id: 'solo', valor: `R$ ${reais(solo.mensal)}`, rotulo: `${solo.nome}, por mês`, apoio: `${pacientes(solo)} ${solo.resumo}`, tom: 'teal' },
+    { id: 'pro', valor: `R$ ${reais(pro.mensal)}`, rotulo: `${pro.nome}, por mês`, apoio: `${pacientes(pro)} ${pro.resumo}`, tom: 'branco' },
   ] as const
 })()
-
-const FREE = planoPorId('free')
 
 // D-334, CA-1020 e CA-1027: prioridade alta, mas preguiçosa. Na landing à vista, o <head> já pré-carrega esta mesma foto
 // (public/preparar-pagina.js, mesmo srcset e sizes); escondida (link do paciente, raiz com sessão), ela não baixa. O React
@@ -100,11 +118,11 @@ const PRIORIDADE_ALTA = { fetchpriority: 'high' }
 const TITULO_SECAO = 'text-[clamp(28px,3.4vw,36px)] font-bold leading-tight'
 
 /**
- * Landing no estilo da referência Spora (spec estilo-spora), reescrita na spec site-publico-profissional (D-326): o
- * diferencial no topo, como funciona, os recursos, quanto custa e a faixa final. Foto só no topo (D-22); daqui para
- * baixo, texto, números do domínio e telas reais.
+ * Landing no estilo da referência Spora (spec estilo-spora), reescrita na spec site-publico-profissional (D-326) e com
+ * o texto revisto na spec textos-e-promessas (D-402 a D-404): o diferencial no topo, como funciona, os recursos, quanto
+ * custa e a faixa final. Foto só no topo (D-22); daqui para baixo, texto, números do domínio e telas reais.
  */
-export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioProps) {
+export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
   return (
     <>
       <section aria-labelledby="titulo-inicio" className="overflow-hidden px-4 pb-12 sm:px-8">
@@ -129,7 +147,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
                 <br />o que comer.
               </h1>
               <p className="mt-4 max-w-[52ch] text-base leading-relaxed text-muted-foreground">
-                {`Software de nutrição para nutricionistas: monte o plano, veja o que falta de ${VITAMINAS_E_MINERAIS} vitaminas e minerais e da fibra, e o botão Cobrir sugere o alimento e a porção que fecham cada falta.`}
+                Software para nutricionistas. Monte o plano alimentar, entregue em PDF e acompanhe o paciente pelo celular entre as consultas.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button variant="laranja" onClick={aoComecar}>
@@ -141,9 +159,20 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
                 </Button>
               </div>
             </div>
+            {/* D-402: dois números do domínio que levam a Como funciona. O de alimentos da base saiu (decisão 9). */}
             <div className="grid grid-cols-2 gap-3 lg:w-[400px]">
-              <CartaoNumero valor={String(NUTRIENTES)} rotulo="nutrientes" apoio="na adequação de cada plano" aoClicar={() => rolarAte('como-funciona')} />
-              <CartaoNumero valor={String(ALIMENTOS.length)} rotulo="alimentos" apoio={`da ${NOME_DA_BASE}`} aoClicar={aoVerFontes} />
+              <CartaoNumero
+                valor={String(NUTRIENTES)}
+                rotulo="nutrientes na adequação"
+                apoio={`${VITAMINAS_E_MINERAIS} vitaminas e minerais e a fibra`}
+                aoClicar={() => rolarAte('como-funciona')}
+              />
+              <CartaoNumero
+                valor={`Até ${MAXIMO_SUGESTOES}`}
+                rotulo="sugestões de alimento"
+                apoio="para cada nutriente abaixo da meta"
+                aoClicar={() => rolarAte('como-funciona')}
+              />
             </div>
           </div>
         </div>
@@ -188,7 +217,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
       <section id="recursos" aria-labelledby="titulo-recursos" className="scroll-mt-24 bg-card px-4 pb-20 sm:px-14">
         <div className="mx-auto max-w-[1216px]">
           <h2 id="titulo-recursos" className={`${TITULO_SECAO} max-w-[22ch]`}>
-            Do atendimento à folha do paciente
+            Do atendimento ao documento entregue
           </h2>
           <ul className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {RECURSOS.map((recurso) => (
@@ -214,10 +243,10 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="max-w-[60ch] text-sm text-muted-foreground">
-              {`A conta é por paciente ativo: quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`}
+              {`Todos os planos têm as mesmas funções. O preço depende de quantos pacientes ativos você tem: quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`}
             </p>
             <Button variant="outline" className="bg-transparent" onClick={aoVerPrecos}>
-              Comparar os planos
+              Comparar planos
             </Button>
           </div>
         </div>
@@ -227,9 +256,9 @@ export function TelaInicio({ aoComecar, aoVerPrecos, aoVerFontes }: TelaInicioPr
         <div className="mx-auto flex max-w-[1216px] flex-wrap items-center justify-between gap-6">
           <div>
             <h2 id="titulo-fecho" className="text-[clamp(26px,3.2vw,34px)] font-bold leading-tight text-textonbrand">
-              Comece pelo Free
+              Teste com um paciente real
             </h2>
-            {FREE ? <p className="mt-2 text-sm text-textonbrandmuted">{FREE.resumo}</p> : null}
+            <p className="mt-2 text-sm text-textonbrandmuted">Grátis, sem cartão.</p>
           </div>
           <Button variant="laranja" onClick={aoComecar}>
             Começar grátis

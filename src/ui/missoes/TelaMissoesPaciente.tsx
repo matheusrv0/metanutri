@@ -79,7 +79,7 @@ function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; read
   )
 }
 
-const NAO_SALVOU = 'Não consegui salvar. Confira a internet e marque de novo.'
+const NAO_SALVOU = 'Não foi possível salvar. Confira a internet e marque de novo.'
 
 /** M-3b: a nuvem recusou por um motivo dela (tentar de novo não resolve); senão, é a internet (D-232). */
 const fraseDaFalha = (erro: unknown): string => (erro instanceof MarcacaoRecusada ? `${erro.motivo} Fale com quem montou seu plano.` : NAO_SALVOU)
@@ -161,7 +161,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
     return (
       <Aviso
         icone={<WifiOff className="size-6" />}
-        titulo="Não consegui abrir suas missões"
+        titulo="Não foi possível abrir suas missões"
         texto="Confira a internet do celular e tente de novo."
         acao={
           <Button size="lg" block onClick={() => setTentativa((n) => n + 1)}>
@@ -183,7 +183,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
       <Aviso
         icone={<CircleAlert className="size-6" />}
         titulo="Este link ainda não abre em outro aparelho"
-        texto="A conta na nuvem do MetaNutri não foi ligada. Por enquanto, as missões só aparecem no computador onde o plano foi montado."
+        texto="O servidor da conta não está configurado nesta instalação. Por enquanto, as missões só aparecem no computador onde o plano foi montado."
       />
     )
   }
@@ -271,7 +271,7 @@ function ParteDasMissoes({
       <header className="mb-6">
         <p className="text-sm text-muted-foreground">{dataPorExtenso(hoje)}</p>
         <h1 className="mt-1 font-titulo text-2xl font-bold text-heading">
-          {tudoFeito ? `Dia fechado, ${primeiroNome}.` : `Suas missões de hoje, ${primeiroNome}`}
+          {tudoFeito ? `Dia completo, ${primeiroNome}.` : `Suas missões de hoje, ${primeiroNome}`}
         </h1>
       </header>
 
@@ -335,7 +335,7 @@ function ParteDasMissoes({
             : `Você marcou missão em ${naSemana} ${naSemana === 1 ? 'dia' : 'dias'} desta semana.`}
         </p>
         <p className="mt-1">
-          {naSemana >= DIAS_NA_SEMANA_PARA_EM_DIA ? 'Está no ritmo que seu nutricionista combinou.' : `A meta são ${DIAS_NA_SEMANA_PARA_EM_DIA} dias por semana.`}
+          {naSemana >= DIAS_NA_SEMANA_PARA_EM_DIA ? 'Você está no ritmo combinado.' : `A meta é marcar em ${DIAS_NA_SEMANA_PARA_EM_DIA} dias por semana.`}
         </p>
         <p className="mt-4">Não precisa de conta nem de aplicativo. Guarde este link e abra todo dia.</p>
       </footer>

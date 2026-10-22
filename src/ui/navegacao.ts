@@ -168,9 +168,10 @@ export interface Etapa {
 
 /** Etapas do planejador na ordem em que a estudante trabalha. */
 export const ETAPAS: readonly Etapa[] = [
-  { aba: 'caso', numero: 1, rotulo: 'Dados e medidas', descricao: 'Pessoa, medidas e energia' },
-  { aba: 'plano', numero: 2, rotulo: 'Plano alimentar', descricao: 'Refeições e alimentos' },
-  { aba: 'adequacao', numero: 3, rotulo: 'Adequação', descricao: 'Vitaminas e minerais' },
+  // Spec textos-e-promessas, D-400: o glossário das etapas (o plano inteiro é o "plano alimentar"; a etapa 2 são as refeições).
+  { aba: 'caso', numero: 1, rotulo: 'Paciente e medidas', descricao: 'Dados, medidas e energia' },
+  { aba: 'plano', numero: 2, rotulo: 'Refeições', descricao: 'Alimentos, substitutos e orientações' },
+  { aba: 'adequacao', numero: 3, rotulo: 'Adequação', descricao: 'Vitaminas, minerais e fibra' },
 ]
 
 /** A moldura da área pública é outra: sem menu lateral. */

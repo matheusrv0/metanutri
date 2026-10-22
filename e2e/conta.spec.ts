@@ -5,7 +5,7 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     await page.goto('/#/inicio')
     await page.getByRole('banner').getByRole('button', { name: 'Começar grátis' }).click()
     await expect(page).toHaveURL(/#\/criar-conta$/)
-    await expect(page.getByText('No Free você já tem')).toBeVisible()
+    await expect(page.getByText('No Free, você já tem')).toBeVisible()
   })
 
   test('CA-122: Assinar Solo no anual leva ao cadastro com o Solo anual marcado', async ({ page }) => {
@@ -18,8 +18,8 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
 
   test('CA-265 e CA-267: o botão do Estudante abre o cadastro já em Estudante', async ({ page }) => {
     await page.goto('/#/precos')
-    await page.getByRole('button', { name: 'Usar o e-mail da faculdade' }).first().click()
-    await expect(page.getByRole('radio', { name: /Estudante de Nutrição/ })).toBeChecked()
+    await page.getByRole('button', { name: 'Criar conta de estudante' }).first().click()
+    await expect(page.getByRole('radio', { name: /Estudante de nutrição/ })).toBeChecked()
     await expect(page.getByLabel('E-mail da faculdade')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Passo 1 de 2' })).toBeVisible()
   })

@@ -26,10 +26,10 @@ describe('TelaEntrar', () => {
   it('CA-135: pede e-mail e senha e tem os atalhos', async () => {
     const { usuario, aoEsqueci, aoCriarConta } = montar()
     await usuario.click(screen.getByRole('button', { name: 'Esqueci a senha' }))
-    await usuario.click(screen.getByRole('button', { name: 'Criar grátis' }))
+    await usuario.click(screen.getByRole('button', { name: 'Criar conta grátis' }))
     expect(aoEsqueci).toHaveBeenCalledOnce()
     expect(aoCriarConta).toHaveBeenCalledOnce()
-    expect(screen.getByText('No Free você já tem')).toBeInTheDocument()
+    expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
   })
 
   it('CA-137: deu certo, avisa quem manda', async () => {
@@ -120,7 +120,7 @@ describe('TelaEntrar com a verificação contra robôs (spec seguranca-lote-3)',
     await falso.pronto()
     falso.aprovar('tok-1')
     await entrar(usuario)
-    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para confirmar que é você. Tente de novo.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível concluir a verificação de segurança. Tente de novo.')
     expect(falso.api.reset).toHaveBeenCalledWith('widget-1')
     expect(aoEntrou).not.toHaveBeenCalled()
   })

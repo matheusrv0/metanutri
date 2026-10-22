@@ -62,9 +62,9 @@ describe('TelaComprovarMatricula', () => {
     expect(aoEnviado).toHaveBeenCalledOnce()
   })
 
-  it('CA-274: "Fazer isso depois" sai sem enviar', async () => {
+  it('CA-274: "Enviar depois" sai sem enviar', async () => {
     const { usuario, aoDepois, enviar } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Fazer isso depois' }))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar depois' }))
     expect(aoDepois).toHaveBeenCalledOnce()
     expect(enviar).not.toHaveBeenCalled()
   })
@@ -86,7 +86,7 @@ describe('TelaComprovarMatricula', () => {
   })
 
   it('CA-277: falha do servidor mantém tudo preenchido', async () => {
-    const enviar = vi.fn(async () => 'Não deu para falar com o servidor. Confira a internet e tente de novo.')
+    const enviar = vi.fn(async () => 'Não foi possível falar com o servidor. Confira a internet e tente de novo.')
     const { usuario } = montar(null, enviar)
     await preencher(usuario)
     await usuario.click(screen.getByRole('button', { name: 'Enviar para análise' }))

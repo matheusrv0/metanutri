@@ -131,7 +131,7 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
             placeholder={estudante ? 'voce@aluno.faculdade.br' : 'voce@exemplo.com'}
             aria-invalid={erroConta === 'email-invalido' || erroConta === 'email-em-uso' || erroSituacao === 'email-faculdade'}
           />
-          {estudante ? <p className="text-xs text-muted-foreground">O e-mail que a faculdade forneceu a você. É por ele que confirmamos o vínculo.</p> : null}
+          {estudante ? <p className="text-xs text-muted-foreground">Use o e-mail institucional da faculdade. É por ele que confirmamos a matrícula.</p> : null}
         </div>
 
         <CampoSenha id={`${id}-senha`} rotulo="Senha" valor={senha} aoMudar={setSenha} novaSenha invalido={erroConta === 'senha-curta'} dica={`Pelo menos ${SENHA_MINIMA} caracteres.`} />
@@ -153,7 +153,7 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
         {erroSituacao ? (
           <AvisoFormulario tipo="erro">
             {MENSAGEM_ERRO_SITUACAO[erroSituacao]}
-            {erroSituacao === 'email-faculdade' && contato ? ` Se a sua faculdade não aparece, escreva para ${contato} pedindo a inclusão.` : null}
+            {erroSituacao === 'email-faculdade' && contato ? ` Se o e-mail da sua faculdade não for aceito, escreva para ${contato} e peça a inclusão.` : null}
           </AvisoFormulario>
         ) : null}
 

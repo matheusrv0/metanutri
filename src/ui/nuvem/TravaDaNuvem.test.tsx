@@ -36,10 +36,10 @@ describe('trava da nuvem (spec dados-na-nuvem)', () => {
     expect(screen.getByRole('button', { name: 'Sair' })).toHaveFocus()
   })
 
-  it('CB-123: a cópia grande demais cobre a área com a frase do CA-445; "Reduzir os dados" tira a capa', async () => {
+  it('CB-123: a cópia grande demais cobre a área com a frase do CA-445; "Liberar espaço" tira a capa', async () => {
     const { usuario, nuvem } = montar({ trava: 'grande-demais', pendente: true })
     expect(screen.getByRole('dialog')).toHaveTextContent(COPIA_GRANDE_DEMAIS)
-    await usuario.click(screen.getByRole('button', { name: 'Reduzir os dados' }))
+    await usuario.click(screen.getByRole('button', { name: 'Liberar espaço' }))
     expect(nuvem.reduzir).toHaveBeenCalledOnce()
   })
 
@@ -85,7 +85,7 @@ describe('trava da nuvem (spec dados-na-nuvem)', () => {
     montar({ trava: 'sem-espaco', pendente: true })
     expect(screen.getByRole('dialog')).toHaveTextContent('O navegador está sem espaço para seus dados. Feche outras abas do MetaNutri e recarregue a página.')
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Reduzir os dados' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Liberar espaço' })).not.toBeInTheDocument()
   })
 
   it('DP-25: sem internet antes de abrir, a tela tem "Sair"; com dado que nunca subiu, pergunta antes', async () => {

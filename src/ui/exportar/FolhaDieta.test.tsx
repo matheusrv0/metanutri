@@ -52,7 +52,7 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('Foco de revisão 2: sem nome e sem data, nada de separador solto', () => {
     render(<FolhaDieta caso={{ ...caso, nome: '', dataConsulta: null }} plano={planoCheio()} />)
-    expect(screen.getByText('Sem nome')).toBeInTheDocument()
+    expect(screen.getByText('Paciente sem nome')).toBeInTheDocument()
   })
 
   it('CA-623, CA-629 e CA-630: o nome que o paciente entende e uma quantidade só', () => {
@@ -141,7 +141,7 @@ describe('Folha da dieta (US-B1)', () => {
     }
   })
 
-  it('CA-631: "Opção 1" em cima da primeira e "ou · Opção 2" no fio, sem caixa; substituto vazio não aparece nem conta', () => {
+  it('CA-631: "Opção 1" em cima da primeira e "ou Opção 2" no fio, sem caixa; substituto vazio não aparece nem conta', () => {
     // A batata vai no substituto 2, com o substituto 1 vazio: na folha ela é a "Opção 2" (a ordem em que aparece).
     let plano = criarPlanoPadrao(ids)
     const almocoId = plano.refeicoes[2]?.id ?? ''
@@ -151,13 +151,13 @@ describe('Folha da dieta (US-B1)', () => {
     render(<FolhaDieta caso={caso} plano={plano} />)
     const regiao = screen.getByRole('region', { name: /^12:00 Almoço$/ })
     const almoco = within(regiao)
-    expect(almoco.getAllByText(/Opção/).map((e) => e.textContent)).toEqual(['Opção 1', 'ou · Opção 2'])
+    expect(almoco.getAllByText(/Opção/).map((e) => e.textContent)).toEqual(['Opção 1', 'ou Opção 2'])
     const [principal, substituto] = almoco.getAllByRole('list')
     expect(principal).toHaveTextContent('Arroz branco cozido')
     expect(substituto).toHaveTextContent('Batata inglesa cozida')
     const antes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
     expect(antes(almoco.getByText('Opção 1'), principal as Node)).toBe(true)
-    expect(antes(almoco.getByText('ou · Opção 2'), substituto as Node)).toBe(true)
+    expect(antes(almoco.getByText('ou Opção 2'), substituto as Node)).toBe(true)
     expect(regiao.querySelector('[class*="bg-"], [class*="rounded"]')).toBeNull()
   })
 

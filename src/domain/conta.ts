@@ -27,19 +27,28 @@ export interface PlanoAssinatura {
    */
   readonly limiteLinksPaciente: number | null
   /**
-   * Conta de estudante: pode usar, mas não para atender comercialmente. O PDF sai
-   * marcado e a tela do paciente avisa — é o modelo do WebDiet, e o que a Lei
-   * 8.234/1991 pede de quem ainda não tem CRN.
+   * Conta de estudante: pode usar, mas não para atender comercialmente. A tela do
+   * paciente avisa e os documentos saem como proposta do estágio — é o modelo do
+   * WebDiet, e o que a Lei 8.234/1991 pede de quem ainda não tem CRN.
    */
   readonly usoNaoComercial: boolean
   /** Só vale para conta criada com e-mail de faculdade (spec estilo-spora, D-28). */
   readonly exigeEmailDeFaculdade: boolean
-  /** O PDF sai com a marca do MetaNutri em vez da marca de quem atende. */
-  readonly marcaNoPdf: boolean
-  /** O que muda de verdade neste plano. */
+  /**
+   * Contratada por e-mail, sem preço público nem botão (spec textos-e-promessas, D-406). O `mensal` fica para o painel
+   * do dono, que soma uma assinatura feita à mão.
+   */
+  readonly porContato: boolean
+  /**
+   * O que muda de verdade nesta assinatura: os limites (spec textos-e-promessas, D-405). O que vem em todas está em
+   * `RECURSOS_EM_TODOS_OS_PLANOS`.
+   */
   readonly recursos: readonly string[]
-  /** Frase que abre a lista do que vem junto. */
-  readonly inclui: readonly string[]
+}
+
+/** "25 pacientes ativos" e "25 links do paciente", a partir dos números do plano: o texto não tem como divergir deles. */
+function textoDosLimites(pacientes: number | null, links: number | null): readonly string[] {
+  return [pacientes === null ? 'Pacientes ilimitados' : `${pacientes} pacientes ativos`, links === null ? 'Links do paciente ilimitados' : `${links} links do paciente`]
 }
 
 /**
@@ -48,47 +57,48 @@ export interface PlanoAssinatura {
  *
  * O plano Estudante segue o modelo do WebDiet, decidido em 27/09: a pessoa usa o
  * sistema de verdade, mas a conta é de **uso não comercial** — no máximo 3 links de
- * missões, marca no PDF e aviso na tela do paciente. É o que concilia o estágio real
- * com a Lei 8.234/1991, que reserva a prescrição a quem tem CRN. A conta entra pelo
- * e-mail da faculdade, aprovada pelo servidor (spec estilo-spora, D-28).
+ * missões e aviso na tela do paciente. É o que concilia o estágio real com a Lei
+ * 8.234/1991, que reserva a prescrição a quem tem CRN. A conta entra pelo e-mail da
+ * faculdade, aprovada pelo servidor (spec estilo-spora, D-28).
+ *
+ * Spec textos-e-promessas (D-405 a D-407): todas as assinaturas têm as mesmas funções; o texto de cada uma só fala dos
+ * limites e de para quem ela é.
  */
 export const PLANOS: readonly PlanoAssinatura[] = [
   {
     id: 'free',
     nome: 'Free',
-    resumo: 'Para conhecer o sistema com um caso real, sem cartão.',
+    resumo: 'Para testar com um paciente real, sem cartão.',
     mensal: 0,
     anual: 0,
     destaque: false,
-    acaoTexto: 'Começar agora',
+    acaoTexto: 'Começar grátis',
     limitePacientesAtivos: 2,
     limiteLinksPaciente: 2,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
-    marcaNoPdf: true,
-    recursos: ['2 pacientes ativos', 'Marca MetaNutri no PDF', 'Funciona no navegador, sem instalar nada'],
-    inclui: ['Já vem com:', 'Adequação de micronutrientes', 'Missões diárias do paciente', 'Exportar Word e PDF'],
+    porContato: false,
+    recursos: textoDosLimites(2, 2),
   },
   {
     id: 'estudante',
     nome: 'Estudante',
-    resumo: 'Para o estágio, enquanto a faculdade não acaba. Uso não comercial.',
+    resumo: 'Para casos de estudo e estágio supervisionado. Uso não comercial.',
     mensal: 0,
     anual: 0,
     destaque: false,
-    acaoTexto: 'Usar o e-mail da faculdade',
+    acaoTexto: 'Criar conta de estudante',
     limitePacientesAtivos: 10,
     limiteLinksPaciente: 3,
     usoNaoComercial: true,
     exigeEmailDeFaculdade: true,
-    marcaNoPdf: true,
-    recursos: ['10 pacientes ativos', 'Até 3 links de missões', 'Grátis até a formatura'],
-    inclui: ['Tudo do Free, mais:', 'Documento no modelo do estágio', 'Cadastro de produto por código de barras'],
+    porContato: false,
+    recursos: [...textoDosLimites(10, 3), 'Grátis até a formatura'],
   },
   {
     id: 'solo',
     nome: 'Solo',
-    resumo: 'Para quem acabou de se formar e está montando a clientela.',
+    resumo: 'Para quem está começando a atender.',
     mensal: 34.9,
     anual: 299,
     destaque: true,
@@ -97,14 +107,13 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limiteLinksPaciente: 25,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
-    marcaNoPdf: false,
-    recursos: ['25 pacientes ativos', 'Seu logo nos documentos'],
-    inclui: ['Tudo do Grátis, mais:', 'Acompanhamento de quem está sumindo', 'Histórico de evolução', 'Suporte por e-mail'],
+    porContato: false,
+    recursos: textoDosLimites(25, 25),
   },
   {
     id: 'pro',
     nome: 'Pro',
-    resumo: 'Para nutricionista estabelecido, com agenda cheia.',
+    resumo: 'Para quem já tem agenda cheia.',
     mensal: 64.9,
     anual: 599,
     destaque: false,
@@ -113,26 +122,43 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     limiteLinksPaciente: null,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
-    marcaNoPdf: false,
-    recursos: ['Pacientes ilimitados', 'Painel de micros completo'],
-    inclui: ['Tudo do Solo, mais:', 'Relatório de adesão por paciente', 'Modelos próprios de documento'],
+    porContato: false,
+    recursos: textoDosLimites(null, null),
   },
   {
     id: 'clinica',
     nome: 'Clínica',
-    resumo: 'Para consultório com mais de um nutricionista.',
+    resumo: 'Condições combinadas por e-mail.',
     mensal: 149,
     anual: 0,
     destaque: false,
-    acaoTexto: 'Falar com a gente',
+    acaoTexto: 'Fale com a gente',
     limitePacientesAtivos: null,
     limiteLinksPaciente: null,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
-    marcaNoPdf: false,
-    recursos: ['Até 4 nutricionistas', 'Pacientes compartilhados', 'Painel do gestor'],
-    inclui: ['Tudo do Pro, mais:', 'R$ 35 por nutricionista extra', 'Preceptor revisa e aprova', 'Suporte por WhatsApp'],
+    porContato: true,
+    recursos: [],
   },
+]
+
+export type IdRecurso = 'adequacao' | 'adesao' | 'documentos' | 'logotipo' | 'alimentos-proprios'
+
+export interface RecursoDeTodos {
+  readonly id: IdRecurso
+  readonly texto: string
+}
+
+/**
+ * O que vem em todas as assinaturas (spec textos-e-promessas, D-405). Cada item tem prova num teste
+ * (`src/recursosDosPlanos.test.ts`, CA-1179): um item novo sem prova não compila.
+ */
+export const RECURSOS_EM_TODOS_OS_PLANOS: readonly RecursoDeTodos[] = [
+  { id: 'adequacao', texto: 'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir' },
+  { id: 'adesao', texto: 'Missões diárias no link do paciente e tela Adesão' },
+  { id: 'documentos', texto: 'Plano impresso em PDF; aconselhamento e memorial em Word' },
+  { id: 'logotipo', texto: 'Seu logotipo nos documentos impressos' },
+  { id: 'alimentos-proprios', texto: 'Meus alimentos e receitas com cálculo' },
 ]
 
 export const ehIdPlano = (valor: unknown): valor is IdPlano => typeof valor === 'string' && PLANOS.some((p) => p.id === valor)
@@ -269,14 +295,14 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'email-nao-confirmado': 'Confirme seu e-mail antes de entrar.',
   'codigo-incompleto': `Digite os ${DIGITOS_DO_CODIGO} dígitos do código.`,
   'codigo-invalido': 'Código errado ou vencido. Confira o último e-mail ou peça outro.',
-  'link-vencido': 'Este link não vale mais. Peça outro.',
+  'link-vencido': 'Este link expirou. Peça outro.',
   'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
   // Verificação contra robôs (spec seguranca-lote-3): CA-458, CA-460 e CA-461.
   'verificacao-pendente': 'Espere a verificação de segurança terminar.',
-  'verificacao-recusada': 'Não deu para confirmar que é você. Tente de novo.',
+  'verificacao-recusada': 'Não foi possível concluir a verificação de segurança. Tente de novo.',
   'verificacao-nao-carregou': 'A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página.',
-  'sem-servidor': 'A conta na nuvem ainda não foi configurada neste MetaNutri. O sistema funciona normalmente sem ela.',
-  'falha-rede': 'Não deu para falar com o servidor. Confira a internet e tente de novo.',
+  'sem-servidor': 'O servidor da conta não está configurado nesta instalação. O MetaNutri funciona sem ele, com os dados neste navegador.',
+  'falha-rede': 'Não foi possível falar com o servidor. Confira a internet e tente de novo.',
   // D-268 e CA-858 (spec seguranca-lote-5).
   'precisa-codigo-do-app': 'Esta conta usa o app autenticador. Digite o código do app para salvar a senha.',
   'codigo-do-app-incompleto': 'Digite os 6 dígitos do código do app.',
@@ -346,8 +372,11 @@ export interface LinhaComparativo {
   readonly valores: readonly ValorComparativo[]
 }
 
-/** A coluna do Estudante não entra: ela é uma nota dentro da coluna Grátis. */
-export const PLANOS_COMPARADOS: readonly IdPlano[] = ['free', 'solo', 'pro', 'clinica']
+/**
+ * Free, Solo e Pro (spec textos-e-promessas, D-406): o Estudante é uma nota dentro da coluna Free, e a Clínica, uma nota
+ * de contato, sem preço nem recurso a comparar.
+ */
+export const PLANOS_COMPARADOS: readonly IdPlano[] = ['free', 'solo', 'pro']
 
 const porPlano = (fn: (plano: PlanoAssinatura) => ValorComparativo): readonly ValorComparativo[] =>
   PLANOS_COMPARADOS.map((id) => {
@@ -357,37 +386,22 @@ const porPlano = (fn: (plano: PlanoAssinatura) => ValorComparativo): readonly Va
 
 const numeroOuIlimitado = (n: number | null) => (n === null ? 'Ilimitados' : String(n))
 
+/**
+ * Os limites, que são a única diferença entre as assinaturas, e o que vem em todas, marcado nas três colunas (D-405).
+ * Sem linha de suporte: o e-mail de contato atende quem escrever, de qualquer assinatura.
+ */
 export function comparativoDosPlanos(): readonly LinhaComparativo[] {
   return [
     {
       rotulo: 'Pacientes ativos',
-      detalhe: 'Quem teve plano ou missão nos últimos 30 dias.',
+      detalhe: `Quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`,
       valores: porPlano((p) => numeroOuIlimitado(p.limitePacientesAtivos)),
     },
     {
-      rotulo: 'Links de missões',
-      detalhe: 'O endereço que o paciente abre no celular.',
+      rotulo: 'Links do paciente',
+      detalhe: 'O endereço que o paciente abre no celular para marcar as missões.',
       valores: porPlano((p) => numeroOuIlimitado(p.limiteLinksPaciente)),
     },
-    { rotulo: 'Missões diárias do paciente', valores: porPlano(() => true) },
-    { rotulo: 'Painel de micronutrientes com o botão cobrir', valores: porPlano(() => true) },
-    { rotulo: 'Documento em Word no modelo do estágio', valores: porPlano(() => true) },
-    {
-      rotulo: 'Seu logo nos documentos',
-      detalhe: 'Sem ele, o PDF sai com a marca do MetaNutri.',
-      valores: porPlano((p) => !p.marcaNoPdf),
-    },
-    {
-      rotulo: 'Quem está sumindo, no painel de adesão',
-      valores: porPlano((p) => p.mensal > 0),
-    },
-    {
-      rotulo: 'Mais de um nutricionista na mesma conta',
-      valores: porPlano((p) => (p.id === 'clinica' ? 'Até 4' : false)),
-    },
-    {
-      rotulo: 'Suporte',
-      valores: porPlano((p) => (p.id === 'clinica' ? 'WhatsApp' : p.mensal > 0 ? 'E-mail' : 'Ajuda no app')),
-    },
+    ...RECURSOS_EM_TODOS_OS_PLANOS.map((recurso) => ({ rotulo: recurso.texto, valores: porPlano(() => true) })),
   ]
 }

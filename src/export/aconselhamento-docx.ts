@@ -1,4 +1,4 @@
-// Documento "Aconselhamento Nutricional" no formato do modelo de estágio (SPEC CA-44, CA-45, CA-47).
+// Documento "Aconselhamento nutricional" no formato do modelo de estágio (SPEC CA-44, CA-45, CA-47).
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
 import type { ResultadoAntropometria } from '../domain/antropometria.ts'
@@ -15,6 +15,11 @@ import { celula, celulaRotulo, formatarNumeroDocx, linha, paragrafo, subtitulo, 
 export interface DadosAconselhamento {
   readonly caso: Caso
   readonly plano: Plano
+  /**
+   * O nome do paciente vinculado, já resolvido (`nomeDoPacienteDoPlano`, spec textos-e-promessas, D-409). Sem ele, o
+   * nome do plano, como antes.
+   */
+  readonly nomeDoPaciente?: string | null | undefined
   readonly antropometria: ResultadoAntropometria
   readonly buscar: BuscarAlimento
   readonly orientacoes?: string
@@ -109,8 +114,8 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
   const idade = caso.idadeAnos === null ? '' : `${caso.idadeAnos} anos${caso.idadeMesesAdicionais ? ` e ${caso.idadeMesesAdicionais} meses` : ''}`
 
   const cabecalho = tabela([
-    linha([celulaRotulo('Nome:', caso.nome, 2), celulaRotulo('Diagnóstico clínico:', caso.diagnosticoClinico, 2)]),
-    linha([celulaRotulo('Idade:', idade), celulaRotulo('Sexo:', marcaSexo), celulaRotulo('Data da Consulta:', dataCompleta(caso.dataConsulta), 2)]),
+    linha([celulaRotulo('Nome:', dados.nomeDoPaciente ?? caso.nome, 2), celulaRotulo('Diagnóstico clínico:', caso.diagnosticoClinico, 2)]),
+    linha([celulaRotulo('Idade:', idade), celulaRotulo('Sexo:', marcaSexo), celulaRotulo('Data da consulta:', dataCompleta(caso.dataConsulta), 2)]),
     linha([
       celulaRotulo('Peso:', caso.pesoKg === null ? '' : `${formatarNumeroDocx(caso.pesoKg)} kg`),
       celulaRotulo('Estatura:', caso.estaturaCm === null ? '' : `${formatarNumeroDocx(caso.estaturaCm, 0)} cm`),
@@ -141,12 +146,12 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
   }
   linhasAntropometria.push(
     linha([
-      celula('CC (Circunferência da Cintura)'),
+      celula('CC (circunferência da cintura)'),
       celula(caso.circunferenciaCinturaCm === null ? '' : `${formatarNumeroDocx(caso.circunferenciaCinturaCm)} cm`),
       celula(a.cintura?.classe ?? ''),
     ]),
     linha([
-      celula('CP (Circunferência da Panturrilha)'),
+      celula('CP (circunferência da panturrilha)'),
       celula(caso.circunferenciaPanturrilhaCm === null ? '' : `${formatarNumeroDocx(caso.circunferenciaPanturrilhaCm)} cm`),
       celula(a.panturrilha?.classe ?? ''),
     ]),
@@ -154,7 +159,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
 
   const refeicoes = plano.refeicoes.flatMap((r) => [
     tabela([
-      linha([celula(`${r.horario} - ${r.nome}`, { negrito: true, colunas: 2 })]),
+      linha([celula(`${r.horario} – ${r.nome}`, { negrito: true, colunas: 2 })]),
       ...OPCOES.map((o) => linha([celula(NOME_OPCAO[o], { negrito: true }), celula(descreverOpcao(r.opcoes[o], buscar, modoDeQuantidade(caso)))])),
     ]),
     new Paragraph({ text: '' }),
@@ -181,7 +186,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
 
   return new Document({
     creator: 'MetaNutri',
-    title: 'Aconselhamento Nutricional',
+    title: 'Aconselhamento nutricional',
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
     sections: [
       {

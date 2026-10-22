@@ -50,7 +50,7 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     const alvos = falso.montagem?.alvos
     expect(alvos ? document.getElementById(alvos.numero) : null).not.toBeNull()
     expect(alvos?.numero).toMatch(/^[a-zA-Z0-9-]+$/)
-    expect(screen.getByText('Os 3 números do verso')).toBeInTheDocument()
+    expect(screen.getByText('3 dígitos no verso; no Amex, 4 na frente')).toBeInTheDocument()
   })
 
   it('CA-368, CA-404: os campos seguros recebem a fonte do site e ocupam a caixa, que é a mesma dos campos nossos', async () => {
@@ -79,7 +79,7 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     const falso = processadorFalso()
     falso.falharAoMontar = true
     await montar(falso)
-    expect(screen.getByRole('alert')).toHaveTextContent('Não consegui abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível abrir o formulário do cartão. Recarregue a página ou desative o bloqueador de anúncios para este site.')
     expect(screen.getByText('parado')).toBeInTheDocument()
   })
 
@@ -115,7 +115,7 @@ describe('FormularioCartao (spec checkout-proprio)', () => {
     await usuario.type(cpf(), '12345678900')
     await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
     expect(nome()).toHaveFocus()
-    expect(screen.getByText('Confira o CPF: os dígitos não batem.')).toBeInTheDocument()
+    expect(screen.getByText('Este CPF não é válido. Confira os números.')).toBeInTheDocument()
     expect(cpf()).toHaveAttribute('aria-invalid', 'true')
     expect(falso.tokens).toHaveLength(0)
   })

@@ -34,7 +34,7 @@ function Formulario({ nomeAtual, aoConfirmar, aoFechar }: { readonly nomeAtual: 
     <form onSubmit={enviar} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>Renomear plano</DialogTitle>
-        <DialogDescription>Use um nome que ajude a achar o plano depois, como "Maria, 28 anos, gestante".</DialogDescription>
+        <DialogDescription>Use um nome que ajude a achar o plano depois, como “Maria Silva, retorno de março”.</DialogDescription>
       </DialogHeader>
       <div className="grid gap-2">
         <Label htmlFor={id}>Nome do plano</Label>

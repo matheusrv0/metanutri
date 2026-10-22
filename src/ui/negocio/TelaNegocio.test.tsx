@@ -75,7 +75,7 @@ describe('TelaNegocio (spec painel-do-dono)', () => {
       '3foram verificadas · 75%',
       '2assinaram um plano pago · 50%',
     ])
-    expect(espacos(cartao.textContent)).toContain('Links de missões criados em 30 dias58')
+    expect(espacos(cartao.textContent)).toContain('Links do paciente criados em 30 dias58')
     expect(espacos(cartao.textContent)).toContain('Contas que atualizaram a cópia na nuvem em 30 dias112')
   })
 

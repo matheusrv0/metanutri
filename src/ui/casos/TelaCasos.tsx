@@ -85,7 +85,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           </span>
           <h2 className="card-title">Nenhum plano ainda</h2>
           <p className="max-w-[48ch] text-sm text-muted-foreground">
-            Um plano guarda os dados da pessoa, o plano alimentar e a adequação de micronutrientes. Comece criando o primeiro.
+            Cada plano reúne os dados do paciente, as refeições e a adequação. Crie o primeiro.
           </p>
           <EscolherModo
             aoEscolher={aoNovoCaso}

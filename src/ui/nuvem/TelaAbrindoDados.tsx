@@ -9,7 +9,7 @@ const TEXTOS: Readonly<Record<Exclude<FaseDaNuvem, 'pronta'>, string>> = {
   // CA-484: a entrada não trouxe os dados; o motor tenta de novo quando a internet volta.
   'sem-conexao': 'Sem internet. Conecte-se para abrir seus dados.',
   // Uma cópia gravada por uma versão mais nova do MetaNutri não é sobrescrita por esta.
-  'formato-desconhecido': 'A cópia na nuvem está num formato que este MetaNutri não entende.',
+  'formato-desconhecido': 'Seus dados foram salvos por uma versão mais nova do MetaNutri. Recarregue a página.',
 }
 
 interface TelaAbrindoDadosProps {

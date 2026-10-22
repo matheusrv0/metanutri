@@ -83,14 +83,14 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
   }
 
   if (armazenamento === null) {
-    desligarPersistencia('Este navegador não permite guardar dados: os casos não serão salvos ao fechar.')
+    desligarPersistencia('Este navegador não permite guardar dados: os planos não serão salvos ao fechar.')
   } else {
     try {
       armazenamento.setItem(CHAVE_TESTE, '1')
       armazenamento.removeItem(CHAVE_TESTE)
       persistente = true
     } catch {
-      desligarPersistencia('O navegador bloqueou o armazenamento: os casos não serão salvos ao fechar.')
+      desligarPersistencia('O navegador bloqueou o armazenamento: os planos não serão salvos ao fechar.')
     }
   }
 

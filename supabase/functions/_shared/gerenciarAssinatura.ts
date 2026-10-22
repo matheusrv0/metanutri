@@ -25,6 +25,7 @@ import {
 } from './cobranca.ts'
 import { tentarCancelarNaOperadora } from './operadora.ts'
 import {
+  PEDIDO_INVALIDO,
   respostaDeErro as erro,
   type BancoDaCobranca,
   type ContaQuePede,
@@ -37,8 +38,8 @@ import {
 import { anotarTentativaDeCartao, conferirTentativas, ehRecusaDoCartao, type BancoDasTentativas } from './tentativas.ts'
 
 /** A operadora não respondeu: nada mudou lá nem aqui. */
-export const FORA = 'Não consegui falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.'
-export const GRAVADA_LA_SO = 'A assinatura foi cancelada, mas não consegui mostrar aqui. Abra Conta e plano de novo em alguns minutos.'
+export const FORA = 'Não foi possível falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.'
+export const GRAVADA_LA_SO = 'A assinatura foi cancelada. A tela pode levar alguns minutos para mostrar isso.'
 
 export interface PedidoDeGerenciar {
   /** Quem pede, lido do token da sessão; nulo sem sessão. */
@@ -88,7 +89,7 @@ const motivoDaLeitura = (lida: RespostaDaOperadora | null): number | string => (
 export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: DependenciasDeGerenciar): Promise<RespostaDaFuncao> {
   if (!pedido.conta) return erro('Entre na sua conta antes de mudar a assinatura.', 401)
   const corpo = objeto(pedido.corpo)
-  if (!corpo) return erro('Corpo da requisição inválido.', 400)
+  if (!corpo) return erro(PEDIDO_INVALIDO, 400)
   const dono = pedido.conta.id
 
   const { linha, falha } = await deps.banco.lerDaConta(dono)
@@ -159,7 +160,7 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
   }
 
   if (corpo['acao'] === 'trocar_cartao') {
-    if (linha.status !== 'ativa') return erro('Só dá para trocar o cartão de uma assinatura ativa.', 409)
+    if (linha.status !== 'ativa') return erro('Só é possível trocar o cartão de uma assinatura ativa.', 409)
     const cartaoToken = tokenDoCartao(corpo['card_token_id'])
     const cartao = lerCartao(corpo['cartao'])
     if (!cartaoToken || !cartao) return erro('Faltam os dados do cartão. Confira e tente de novo.', 400)
@@ -183,7 +184,7 @@ export async function gerenciarAssinatura(pedido: PedidoDeGerenciar, deps: Depen
     }
   }
 
-  return erro('Ação desconhecida.', 400)
+  return erro(PEDIDO_INVALIDO, 400)
 }
 
 /** CA-379 e D-101: o portão das tentativas e a troca na operadora, com a conta já reservada (CB-109). */

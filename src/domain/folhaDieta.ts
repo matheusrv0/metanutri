@@ -2,6 +2,7 @@
 // (spec pdf-e-telas-limpas, US-B1).
 import { nutricionistaDoWord, type AssinaturaDoPlano } from './assinaturaDoPlano.ts'
 import { litrosDeAgua } from './missoes.ts'
+import { PACIENTE_SEM_NOME } from './nomeDoPaciente.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
@@ -147,9 +148,12 @@ export function assinaturaEmTexto(assinatura: AssinaturaDaFolha): string {
       : ''
 }
 
-/** CA-316: o texto da linha fina do topo, da segunda página em diante. */
-export function linhaFinaDaFolha(caso: Caso, assinatura: AssinaturaDaFolha): { readonly esquerda: string; readonly direita: string } {
-  return { esquerda: `Plano alimentar · ${caso.nome.trim() || 'Sem nome'}`, direita: assinaturaEmTexto(assinatura) }
+/**
+ * CA-316: o texto da linha fina do topo, da segunda página em diante. O nome é o do paciente, resolvido por quem chama
+ * (`nomeDoPacienteDoPlano`, spec textos-e-promessas, D-409).
+ */
+export function linhaFinaDaFolha(paciente: string, assinatura: AssinaturaDaFolha): { readonly esquerda: string; readonly direita: string } {
+  return { esquerda: `Plano alimentar · ${paciente.trim() || PACIENTE_SEM_NOME}`, direita: assinaturaEmTexto(assinatura) }
 }
 
 export interface TrocasDaFolha {

@@ -16,7 +16,7 @@ const NUVEM: ValorNuvem = {
   parar: () => undefined,
 }
 
-const TITULO = 'Seus planos e pacientes agora ficam salvos na nuvem, presos à sua conta.'
+const TITULO = 'Seus planos e pacientes agora ficam salvos na nuvem, vinculados à sua conta.'
 const conta = () => armazenamentoDaConta(localStorage, 'conta-a')
 
 function comNuvem(filho: ReactNode, nuvem: ValorNuvem | null = NUVEM) {
@@ -48,7 +48,7 @@ describe('aviso único da nuvem (spec dados-na-nuvem, DP-26)', () => {
     expect(screen.queryByText(TITULO)).not.toBeInTheDocument()
     unmount()
     render(comNuvem(<AvisoPrimeiroAcesso />))
-    expect(screen.getByText('Os casos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(screen.getByText('Seus planos e pacientes ficam salvos na sua conta.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Entendi' }))
     expect(conta().getItem(CHAVE_AVISO_NUVEM)).toBe('1')
   })
@@ -63,9 +63,9 @@ describe('aviso único da nuvem (spec dados-na-nuvem, DP-26)', () => {
 describe('excluir um plano (DP-26)', () => {
   it('com a conta na nuvem, diz que some de todos os aparelhos; sem nuvem, do aparelho', () => {
     const { unmount } = render(comNuvem(<DialogoExcluir nome="Plano da Ana" aoConfirmar={vi.fn()} aoFechar={vi.fn()} />))
-    expect(screen.getByText('O plano alimentar será apagado da sua conta, em todos os aparelhos. Não dá para desfazer.')).toBeInTheDocument()
+    expect(screen.getByText('O plano alimentar será excluído da sua conta, em todos os aparelhos. Não é possível desfazer.')).toBeInTheDocument()
     unmount()
     render(<DialogoExcluir nome="Plano da Ana" aoConfirmar={vi.fn()} aoFechar={vi.fn()} />)
-    expect(screen.getByText('O plano alimentar será apagado deste aparelho. Não dá para desfazer.')).toBeInTheDocument()
+    expect(screen.getByText('O plano alimentar será excluído deste aparelho. Não é possível desfazer.')).toBeInTheDocument()
   })
 })

@@ -4,7 +4,7 @@ import type { ResultadoDaExclusao } from '../estado/usarExclusaoDaConta.ts'
 import { ligarTurnstileFalso } from '../publico/conta/turnstileFalso.test-utils.ts'
 import { DialogoExcluirConta } from './DialogoExcluirConta.tsx'
 
-const NAO_TERMINOU = 'Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
+const NAO_TERMINOU = 'Não foi possível concluir a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
 
 function montar({ paga = false, periodo = false, resultado = { ok: true } as ResultadoDaExclusao } = {}) {
   const excluir = vi.fn(async (): Promise<ResultadoDaExclusao> => resultado)
@@ -23,13 +23,13 @@ describe('DialogoExcluirConta (spec exclusao-de-conta)', () => {
     vi.unstubAllGlobals()
   })
 
-  it('CA-802: diz o que some, que não dá para desfazer, e pede para sair dos outros aparelhos antes', () => {
+  it('CA-802 e CA-1171: diz o que é apagado, que não é possível desfazer, e pede para sair dos outros aparelhos antes', () => {
     montar()
     const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
-    expect(janela).toHaveTextContent('Tudo sai da nuvem na hora, e não dá para desfazer.')
+    expect(janela).toHaveTextContent('Todos os dados são apagados da nuvem na hora. Não é possível desfazer.')
     const itens = screen.getAllByRole('listitem').map((item) => item.textContent)
-    expect(itens).toEqual(['Pacientes, planos e o resto dos dados da conta.', 'Os links dos pacientes, que deixam de abrir.', 'Situação, CRN e comprovantes de matrícula.'])
-    expect(janela).toHaveTextContent('Em outro aparelho com a conta aberta, saia antes.')
+    expect(itens).toEqual(['Pacientes, planos e os demais dados da conta.', 'Os links dos pacientes, que deixam de abrir.', 'Situação, CRN e comprovantes de matrícula.'])
+    expect(janela).toHaveTextContent('Se a conta estiver aberta em outro aparelho, saia dela antes.')
   })
 
   it('CA-802: o foco começa em "Manter conta", a escolha que não apaga nada', () => {
@@ -47,7 +47,7 @@ describe('DialogoExcluirConta (spec exclusao-de-conta)', () => {
 
   it('CA-803 (L5 da revisão): com um plano pago ainda valendo, diz que o tempo que falta se perde; sem ele, não diz', () => {
     const { vista } = montar({ paga: true, periodo: true })
-    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toContain('O tempo que falta do período pago se perde.')
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toContain('O tempo restante do período pago é perdido.')
     vista.unmount()
     montar({ paga: false, periodo: false })
     expect(screen.getByRole('dialog')).not.toHaveTextContent('período pago')

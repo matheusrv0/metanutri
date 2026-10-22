@@ -36,25 +36,25 @@ export function TelaConfiguracoes() {
   const escolherLogo = (arquivo: File | undefined) => {
     if (!arquivo) return
     if (arquivo.size > 500_000) {
-      setMensagem('A imagem passa de 500 KB. Use uma logo menor para o documento não ficar pesado.')
+      setMensagem('A imagem tem mais de 500 KB. Use um logotipo menor para o documento não ficar pesado.')
       return
     }
     const leitor = new FileReader()
     leitor.onload = () => {
-      // CA-487: só imagem embutida vira logo, a mesma regra de lerPerfil; outro arquivo não é guardado.
+      // CA-487: só imagem embutida vira logotipo, a mesma regra de lerPerfil; outro arquivo não é guardado.
       if (typeof leitor.result !== 'string' || !ehLogoEmbutida(leitor.result)) {
         setMensagem('Escolha uma imagem PNG, JPG ou SVG.')
         return
       }
       alterar({ logo: leitor.result })
-      setMensagem('Logo guardada. Ela aparece na folha da dieta.')
+      setMensagem('Logotipo salvo. Ele aparece no alto do plano impresso.')
     }
     leitor.readAsDataURL(arquivo)
   }
 
   const exportarTudo = () => {
     baixarBackup(armazenamento)
-    setMensagem('Backup salvo. Guarde esse arquivo: é a cópia de tudo que está aqui.')
+    setMensagem('Backup salvo. Guarde esse arquivo: é a cópia de todos os seus dados.')
   }
 
   const importar = (arquivo: File | undefined) => {
@@ -64,7 +64,7 @@ export function TelaConfiguracoes() {
       const { restaurados, erro } = restaurarBackup(armazenamento, String(leitor.result ?? ''))
       // Com a nuvem, o que foi restaurado sobe e vale para a conta toda (spec dados-na-nuvem, DP-27).
       const vale = naNuvem ? ' Vale para todos os aparelhos da sua conta.' : ''
-      setMensagem(erro ?? `${restaurados} ${restaurados === 1 ? 'conjunto restaurado' : 'conjuntos restaurados'}.${vale} Recarregue a página para ver.`)
+      setMensagem(erro ?? `Backup restaurado (${restaurados} ${restaurados === 1 ? 'tipo de dado' : 'tipos de dado'}).${vale} Recarregue a página para ver.`)
     }
     leitor.readAsText(arquivo)
   }
@@ -81,7 +81,7 @@ export function TelaConfiguracoes() {
       <Card>
         <CardHeader>
           <CardTitle>Quem assina</CardTitle>
-          <CardDescription>Estes dados saem no rodapé dos documentos que você entrega.</CardDescription>
+          <CardDescription>Estes dados aparecem no rodapé dos documentos.</CardDescription>
         </CardHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <CampoTexto rotulo="Seu nome" valor={perfil.nome} aoMudar={(v) => alterar({ nome: v })} />
@@ -98,10 +98,10 @@ export function TelaConfiguracoes() {
             <CampoTexto rotulo="CRN" valor={perfil.crn} aoMudar={(v) => alterar({ crn: v })} placeholder="CRN-6 12345…" />
           ) : (
             <CampoTexto
-              rotulo="Responsável técnico"
+              rotulo="Preceptor(a)"
               valor={perfil.responsavel}
               aoMudar={(v) => alterar({ responsavel: v })}
-              dica="Quem assina junto com você no estágio."
+              dica="Quem assina com você no estágio."
             />
           )}
           <CampoTexto rotulo="Instituição" valor={perfil.instituicao} aoMudar={(v) => alterar({ instituicao: v })} />
@@ -109,18 +109,18 @@ export function TelaConfiguracoes() {
           <CampoTexto rotulo="E-mail" valor={perfil.email} aoMudar={(v) => alterar({ email: v })} />
         </div>
         <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-          No documento vai sair: <span className="text-foreground">{linhaDeResponsabilidade(perfil)}</span>
+          Como aparece no documento: <span className="text-foreground">{linhaDeResponsabilidade(perfil)}</span>
         </p>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Marca</CardTitle>
-          <CardDescription>A logo aparece no alto da folha da dieta.</CardDescription>
+          <CardTitle>Logotipo</CardTitle>
+          <CardDescription>O logotipo aparece no alto do plano impresso.</CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-center gap-4">
           {perfil.logo ? (
-            <img src={perfil.logo} alt="Sua logo" className="h-16 w-auto border border-border bg-card p-1" />
+            <img src={perfil.logo} alt="Seu logotipo" className="h-16 w-auto border border-border bg-card p-1" />
           ) : (
             <span className="flex size-16 items-center justify-center border border-dashed border-borderdefault text-muted-foreground">
               <Image className="size-6" aria-hidden="true" />
@@ -133,7 +133,7 @@ export function TelaConfiguracoes() {
           </label>
           {perfil.logo ? (
             <Button variant="ghost" onClick={() => alterar({ logo: null })}>
-              Remover logo
+              Remover logotipo
             </Button>
           ) : null}
         </div>

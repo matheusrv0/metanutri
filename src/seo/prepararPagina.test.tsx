@@ -50,7 +50,7 @@ describe('preparar-pagina.js', () => {
     const link = preloadDaFoto()
     expect(link).not.toBeNull()
     expect(link?.getAttribute('fetchpriority')).toBe('high')
-    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} aoVerFontes={vi.fn()} />)
+    render(<TelaInicio aoComecar={vi.fn()} aoVerPrecos={vi.fn()} />)
     const foto = screen.getByAltText(/Três pratos/)
     // No teste, BASE_URL é "/"; no build, "./". Compara sem a base (o e2e confere no build de verdade).
     const semBase = (lista: string | null | undefined) => lista?.replaceAll(/(^|, )\.?\//g, '$1')

@@ -7,15 +7,21 @@ import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
 
 describe('peças das telas de conta', () => {
-  it('sem plano escolhido, o lado mostra o que o Free inclui', () => {
+  it('CA-1182: sem plano escolhido, o lado mostra os limites do Free e o que vem em todas as assinaturas', () => {
     render(<LadoDoPlano plano={null} ciclo="mensal" />)
-    expect(screen.getByText('No Free você já tem')).toBeInTheDocument()
-    expect(screen.getByText('2 pacientes ativos')).toBeInTheDocument()
+    expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      '2 pacientes ativos',
+      '2 links do paciente',
+      'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir',
+      'Missões diárias no link do paciente e tela Adesão',
+      'Plano impresso em PDF; aconselhamento e memorial em Word',
+    ])
   })
 
-  it('D-128 (spec dados-na-nuvem): o lado do plano diz que os planos ficam na nuvem, presos à conta', () => {
+  it('D-128 (spec dados-na-nuvem) e D-400: o lado do plano diz que os dados ficam salvos na conta, sem "presos"', () => {
     render(<LadoDoPlano plano={null} ciclo="mensal" />)
-    expect(screen.getByText('Seus planos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(screen.getByText('Seus planos alimentares e pacientes ficam salvos na sua conta.')).toBeInTheDocument()
     expect(screen.queryByText('Seus planos ficam salvos no aparelho e funcionam sem internet depois do primeiro acesso.')).not.toBeInTheDocument()
   })
 

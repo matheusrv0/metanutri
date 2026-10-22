@@ -142,7 +142,9 @@ test.describe('Preços (D-234)', () => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
       await page.goto('/#/precos')
-      await expect(page.getByRole('region', { name: 'Plano Clínica' })).toBeVisible()
+      // D-406 (spec textos-e-promessas): o último cartão é o Pro; a Clínica é uma nota de contato embaixo.
+      await expect(page.getByRole('region', { name: 'Plano Pro' })).toBeVisible()
+      await expect(page.getByRole('note', { name: 'Plano Clínica' }).filter({ visible: true })).toHaveCount(1)
       await expect(page.getByRole('table')).toBeHidden()
       await semRolagemLateral(page)
     })
@@ -154,7 +156,7 @@ test.describe('Preços (D-234)', () => {
       await ligarServidorFalso(page)
       await page.goto('/#/precos')
       await expect(page.getByRole('table')).toBeVisible()
-      await expect(page.getByRole('columnheader', { name: /Clínica/ })).toBeInViewport()
+      await expect(page.getByRole('columnheader', { name: /^Pro/ })).toBeInViewport()
       await semRolagemLateral(page)
     })
   }
@@ -164,7 +166,7 @@ test.describe('Preços (D-234)', () => {
     await ligarServidorFalso(page)
     await page.goto('/#/precos')
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
     for (const opcao of await page.getByRole('radiogroup', { name: 'Período de cobrança' }).getByRole('radio').all()) {
       expect((await caixa(opcao)).height).toBeGreaterThanOrEqual(44)
     }
@@ -324,12 +326,12 @@ test.describe('Link do paciente', () => {
     await semRolagemLateral(page)
   })
 
-  test('CA-753: sem internet, "Não consegui abrir suas missões"; com a internet de volta, "Tentar de novo" abre', async ({ page }) => {
+  test('CA-753: sem internet, "Não foi possível abrir suas missões"; com a internet de volta, "Tentar de novo" abre', async ({ page }) => {
     const erros = await vigiarConsole(page)
     const cenario: { link: Linha | 'sem-rede' } = { link: 'sem-rede' }
     await ligarServidorFalso(page, cenario)
     await page.goto('/#/missoes/token-do-teste')
-    await expect(page.getByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeVisible()
     await expect(page.getByText('Este link não existe mais')).toHaveCount(0)
     cenario.link = linkFalso()
     await page.getByRole('button', { name: 'Tentar de novo' }).click()
@@ -344,7 +346,7 @@ test.describe('Link do paciente', () => {
     await page.goto('/#/missoes/token-do-teste')
     const agua = page.getByRole('button', { name: /Beber 2 litros de água/ })
     await agua.click()
-    await expect(page.getByRole('alert')).toHaveText('Não consegui salvar. Confira a internet e marque de novo.')
+    await expect(page.getByRole('alert')).toHaveText('Não foi possível salvar. Confira a internet e marque de novo.')
     await expect(agua).toHaveAttribute('aria-pressed', 'false')
     cenario.marcar = 'ok'
     await agua.click()

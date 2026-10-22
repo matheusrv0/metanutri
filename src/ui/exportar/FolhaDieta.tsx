@@ -18,6 +18,7 @@ import {
 } from '@/domain/folhaDieta.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { listaDeRestricoes } from '@/domain/pacientes.ts'
+import { nomeDoPacienteDoPlano, PACIENTE_SEM_NOME } from '@/domain/nomeDoPaciente.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
@@ -27,6 +28,7 @@ import type { Caso, ItemPlano, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { usePacientesOpcional } from '../estado/contextoPacientes.ts'
 import { LinhasDeAssinatura } from './LinhasDeAssinatura.tsx'
 import { regraDaLinhaFina } from './linhaFina.ts'
 import { QuemAssina } from './QuemAssina.tsx'
@@ -113,13 +115,13 @@ function ReceitaNaFolha({ receita }: { readonly receita: ReceitaDaFolha }) {
 
 /**
  * O rótulo de cada opção, quando a refeição tem mais de uma (spec impressao-do-plano, D-184): "Opção 1" pequeno em
- * cima da primeira; "ou · Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
+ * cima da primeira; "ou Opção 2" sobre um fio fino antes das outras, sem caixa. Diz que a refeição inteira é trocada.
  */
 function RotuloDaOpcao({ numero }: { readonly numero: number }) {
   if (numero === 1) return <p className="text-sm font-semibold text-muted-foreground">Opção 1</p>
   return (
     <p className="flex items-center gap-3 pt-1 text-sm font-semibold text-muted-foreground">
-      <span>{`ou · Opção ${numero}`}</span>
+      <span>{`ou Opção ${numero}`}</span>
       <span aria-hidden="true" className="flex-1 border-t border-border" />
     </p>
   )
@@ -131,7 +133,10 @@ function RotuloDaOpcao({ numero }: { readonly numero: number }) {
  */
 export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
-  const linhaFina = linhaFinaDaFolha(caso, quem)
+  // D-409 (spec textos-e-promessas): o paciente vinculado dá o nome da folha; o nome do plano é da nutricionista.
+  const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
+  const nome = nomeDoPacienteDoPlano(caso, paciente) ?? PACIENTE_SEM_NOME
+  const linhaFina = linhaFinaDaFolha(nome, quem)
   const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
@@ -142,7 +147,6 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
     : []
   const perfil = lerPerfil(useArmazenamento())
   const modo = modoDeQuantidade(caso)
-  const nome = caso.nome.trim() || 'Sem nome'
   const data = dataPorExtenso(caso.dataConsulta)
   const orientacoes = caso.orientacoes.trim()
   const agua = linhaDaAguaNaFolha(caso)
@@ -264,7 +268,7 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
           {trocas.length > 0 ? (
             <section aria-label="Trocas" className="flex flex-col gap-2">
               <h3 className="font-titulo text-lg font-bold text-heading">Trocas</h3>
-              <p className="text-muted-foreground">Mesmo tipo de alimento, na quantidade certa. Pode trocar sem perguntar.</p>
+              <p className="text-muted-foreground">Alimentos do mesmo grupo, na quantidade equivalente. Você pode trocar à vontade.</p>
               <ul aria-label="Trocas" className="flex flex-col">
                 {trocas.map((g) => (
                   <li key={g.alimentoId} className={`${COLUNAS_TROCAS} break-inside-avoid border-t border-border py-2`}>

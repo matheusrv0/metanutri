@@ -42,7 +42,7 @@ describe('tabelaAdequacaoParaCopiar (CA-48)', () => {
     expect(html).toContain('<td>Sódio</td>')
     expect(html).toMatch(/Acima do limite \(CDRR 2\.300,0 mg\)/)
     expect(html).toMatch(/Vitamina C<\/td><td>0,00 mg \*<\/td>/) // valores em mg abaixo de 1 usam 2 casas
-    expect(html).toContain('* 1 ou mais alimentos sem dado')
+    expect(html).toContain('* Um ou mais alimentos não têm dado')
   })
 
   it('gera também texto separado por tabulação, para colar em planilha', () => {

@@ -104,7 +104,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   // A logo do perfil é `data:` (img-src).
   await page.goto('/#/config')
   await page.locator('input[type="file"][accept="image/*"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG_1X1 })
-  const logo = page.getByRole('img', { name: 'Sua logo' })
+  const logo = page.getByRole('img', { name: 'Seu logotipo' })
   await expect(logo).toBeVisible()
   expect(await logo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
 
@@ -115,7 +115,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
   await expect(page.getByRole('option').first()).toBeVisible()
@@ -123,9 +123,9 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
 
   // A impressão, com a logo na folha.
   await page.getByRole('button', { name: 'Exportar' }).click()
-  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
-  await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
+  await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
   await page.emulateMedia({ media: 'print' })
   await expect(janela.locator('img[src^="data:image/png"]')).toBeVisible()
   await page.pdf({ format: 'A4' })

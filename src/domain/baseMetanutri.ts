@@ -39,7 +39,7 @@ export const FONTES_DA_BASE: readonly FonteDaBase[] = [
   {
     assunto: 'Vitaminas D, B12, folato, E e selênio',
     citacao: `${FONTE_USDA.citacao} ${conjuntosDoUsda()} Domínio público (CC0 1.0 Universal).`,
-    uso: `Valores de alimento equivalente americano para os ${comComplementoUsda()} alimentos que têm equivalente, porque a tabela brasileira não traz esses cinco. A gordura trans vem junto, só informativa. Sem equivalente, o dado fica em branco, nunca zero.`,
+    uso: `Para os ${comComplementoUsda()} alimentos com equivalente no USDA, os cinco nutrientes que a TACO não traz vêm do alimento americano correspondente. A gordura trans vem junto, só como informação. Sem equivalente, o dado fica em branco, nunca zero.`,
     url: FONTE_USDA.url,
     rotuloLink: 'Abrir o FoodData Central',
   },
@@ -47,14 +47,14 @@ export const FONTES_DA_BASE: readonly FonteDaBase[] = [
     assunto: 'Medidas caseiras',
     citacao:
       'Instituto Brasileiro de Geografia e Estatística (IBGE). Pesquisa de Orçamentos Familiares 2008-2009: tabela de medidas referidas para os alimentos consumidos no Brasil. Rio de Janeiro: IBGE, 2011.',
-    uso: 'É daqui que vêm "4 colheres de sopa", "1 concha" e "1 bife" em cada alimento.',
+    uso: 'É daqui que vêm “4 colheres de sopa”, “1 concha” e “1 bife” em cada alimento.',
     url: 'https://www.ibge.gov.br/estatisticas/sociais/populacao/9050-pesquisa-de-orcamentos-familiares.html',
     rotuloLink: 'Abrir a publicação',
   },
   {
     assunto: 'Produtos de rótulo',
     citacao: 'Open Food Facts, base colaborativa e aberta de produtos alimentícios, sob a licença Open Database License (ODbL).',
-    uso: 'Só entra o produto que você cadastra em Meus produtos; açúcares e gordura saturada vêm do rótulo.',
+    uso: 'Usada só nos produtos que você cadastra em Meus alimentos; açúcares e gordura saturada vêm do rótulo.',
     url: 'https://world.openfoodfacts.org/',
     rotuloLink: 'Abrir o Open Food Facts',
   },

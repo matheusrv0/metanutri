@@ -31,7 +31,7 @@ const impedir = (evento: Event) => evento.preventDefault()
  * A capa da área de trabalho (spec dados-na-nuvem): sem internet (D-130, CA-477), com a cópia grande
  * demais (CB-123) ou com o navegador sem espaço (DP-23). É modal e não fecha: prende o foco e o clique, e a área de trás sai do alcance.
  * Destrava sozinha quando a nuvem aceita a cópia. "Sair" é o único caminho até o CA-479 (DP-10); na
- * de tamanho, "Reduzir os dados" tira a capa para a pessoa apagar o que não precisa (DP-9).
+ * de tamanho, "Liberar espaço" tira a capa para a pessoa apagar o que não precisa (DP-9).
  */
 export function TravaDaNuvem({ trava, conta, aoSaiu, aoReduzir }: TravaDaNuvemProps) {
   const saida = useSaida(conta, aoSaiu)
@@ -48,7 +48,7 @@ export function TravaDaNuvem({ trava, conta, aoSaiu, aoReduzir }: TravaDaNuvemPr
             <Button variant="outline" onClick={() => void saida.pedirSair()} disabled={saida.saindo}>
               {saida.saindo ? 'Saindo…' : 'Sair'}
             </Button>
-            {trava === 'grande-demais' ? <Button onClick={aoReduzir}>Reduzir os dados</Button> : null}
+            {trava === 'grande-demais' ? <Button onClick={aoReduzir}>Liberar espaço</Button> : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -27,8 +27,8 @@ describe('Configurações', () => {
 
   it('a linha de responsabilidade muda entre estudante e nutricionista', () => {
     expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Ana', tipo: 'profissional', crn: 'CRN-6 12345' })).toBe('Ana · CRN CRN-6 12345')
-    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia', responsavel: 'Dra. Carla' })).toBe('Bia · responsável técnico: Dra. Carla')
-    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia' })).toContain('sem responsável técnico informado')
+    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia', responsavel: 'Dra. Carla' })).toBe('Bia · preceptor(a): Dra. Carla')
+    expect(linhaDeResponsabilidade({ ...PERFIL_VAZIO, nome: 'Bia' })).toContain('sem preceptor(a) informado(a)')
   })
 
   it('backup leva só as chaves do MetaNutri e volta inteiro', () => {
@@ -48,7 +48,7 @@ describe('Configurações', () => {
   })
 
   it('arquivo estranho é recusado com explicação', () => {
-    expect(restaurarBackup(new MemoriaFalsa(), 'nada disso').erro).toContain('Não consegui ler o arquivo')
+    expect(restaurarBackup(new MemoriaFalsa(), 'nada disso').erro).toContain('Não foi possível ler o arquivo')
     expect(restaurarBackup(new MemoriaFalsa(), '{"formato":9}').erro).toContain('não é um backup do MetaNutri')
   })
 
@@ -57,7 +57,7 @@ describe('Configurações', () => {
     const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))
     const tela = render(<TelaConfiguracoes />)
     await userEvent.setup().upload(screen.getByLabelText('Escolher imagem'), new File([bytes], 'logo.png', { type: 'image/png' }))
-    expect(await screen.findByText('Logo guardada. Ela aparece na folha da dieta.')).toBeInTheDocument()
+    expect(await screen.findByText('Logotipo salvo. Ele aparece no alto do plano impresso.')).toBeInTheDocument()
     tela.unmount()
 
     let n = 0
@@ -72,7 +72,7 @@ describe('Configurações', () => {
     await userEvent.setup({ applyAccept: false }).upload(screen.getByLabelText('Escolher imagem'), new File(['<script>alert(1)</script>'], 'logo.html', { type: 'text/html' }))
     expect(await screen.findByText('Escolha uma imagem PNG, JPG ou SVG.')).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('metanutri:perfil') ?? '{}').logo ?? null).toBeNull()
-    expect(screen.queryByRole('img', { name: 'Sua logo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Seu logotipo' })).not.toBeInTheDocument()
   })
 
   it('guarda o perfil ao digitar e mostra como sai no documento', async () => {
@@ -101,6 +101,17 @@ describe('Configurações', () => {
       expect(screen.getByRole('button', { name: 'Restaurar backup' })).toBeInTheDocument()
       unmount()
     }
+  })
+
+  it('CA-1195 (spec textos-e-promessas): Preceptor(a) e logotipo, no mesmo nome dos documentos', async () => {
+    render(<TelaConfiguracoes />)
+    await userEvent.setup().click(screen.getByRole('radio', { name: 'Estudante' }))
+    expect(screen.getByLabelText('Preceptor(a)')).toBeInTheDocument()
+    expect(screen.getByText('Quem assina com você no estágio.')).toBeInTheDocument()
+    expect(screen.getByText('Estes dados aparecem no rodapé dos documentos.')).toBeInTheDocument()
+    expect(screen.getByText('O logotipo aparece no alto do plano impresso.')).toBeInTheDocument()
+    expect(screen.getByText(/Como aparece no documento:/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Responsável técnico|folha da dieta|a logo|vai sair/)
   })
 
   it('D-128: Configurações não diz mais que os dados ficam só neste aparelho', () => {

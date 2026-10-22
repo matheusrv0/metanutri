@@ -75,10 +75,11 @@ describe('Painel', () => {
       expect(faixa.getByText('dia')).toBeInTheDocument()
       expect(faixa.getAllByText('2')).toHaveLength(1)
       expect(faixa.getAllByText('1')).toHaveLength(2)
-      // Também no celular e no leitor de tela: o apoio diz "em 14 dias" e não fica escondido.
-      expect(faixa.getByText('mexidos em 14 dias')).toBeInTheDocument()
-      // CA-776: um dia só, no singular.
-      const apoio = faixa.getByText('trabalhado em 14 dias')
+      // Também no celular e no leitor de tela: o apoio diz "nos últimos 14 dias" e não fica escondido (CA-1189).
+      expect(faixa.getByText('editados nos últimos 14 dias')).toBeInTheDocument()
+      expect(faixa.getByText('cadastrado')).toBeInTheDocument()
+      // CA-776: um dia só; o apoio não muda com o número.
+      const apoio = faixa.getByText('com atividade nos últimos 14 dias')
       expect(apoio.className).not.toMatch(/\bhidden\b|sr-only/)
     } finally {
       vi.useRealTimers()
@@ -157,7 +158,8 @@ describe('Painel', () => {
     expect(grade?.children).toHaveLength(1)
     // CA-776: um plano e um dia, no singular.
     const faixa = within(screen.getByRole('region', { name: 'Seus números' }))
-    expect(faixa.getByText('mexido em 14 dias')).toBeInTheDocument()
-    expect(faixa.getByText('trabalhado em 14 dias')).toBeInTheDocument()
+    expect(faixa.getByText('editado nos últimos 14 dias')).toBeInTheDocument()
+    expect(faixa.getByText('com atividade nos últimos 14 dias')).toBeInTheDocument()
+    expect(faixa.queryByText(/mexid|trabalhad|com ficha/)).not.toBeInTheDocument()
   })
 })

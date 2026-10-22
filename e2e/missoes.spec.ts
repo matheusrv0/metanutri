@@ -20,7 +20,7 @@ const montarPlanoComAlmoco = async (pagina: Page) => {
   await pagina.getByRole('radio', { name: 'Feminino' }).click()
   await pagina.getByLabel('Idade', { exact: true }).fill('30')
 
-  await pagina.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await pagina.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entradaAlmoco = pagina.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
   await expect(pagina.getByRole('option').first()).toBeVisible()
@@ -33,7 +33,7 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
 
   // O nutricionista gera o link a partir do plano
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
-  await expect(cartao).toContainText('saem deste plano')
+  await expect(cartao).toContainText('Este plano gera')
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
@@ -69,15 +69,15 @@ const LINK_DO_DRIVE = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx
 test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => {
   await abrirLimpo(page)
   await montarPlanoComAlmoco(page)
-  await page.getByRole('button', { name: /Dados e medidas/ }).first().click()
+  await page.getByRole('button', { name: /Paciente e medidas/ }).first().click()
   await page.getByLabel('Orientações nutricionais').fill(`Receitas da semana: ${LINK_DO_DRIVE}`)
-  await page.getByRole('button', { name: /Plano alimentar/ }).first().click()
+  await page.getByRole('button', { name: /Refeições/ }).first().click()
 
   // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
-  await expect(cartao.getByRole('checkbox', { name: 'Mostrar a dieta no link' })).toBeChecked()
+  await expect(cartao.getByRole('checkbox', { name: 'Mostrar o plano alimentar no link' })).toBeChecked()
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
-  await expect(cartao.getByText('Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.')).toBeVisible()
+  await expect(cartao.getByText('O link também mostra o plano alimentar a qualquer pessoa que tenha o endereço.')).toBeVisible()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
 

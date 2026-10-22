@@ -23,16 +23,16 @@ import {
 } from './cobranca.ts'
 import { conferirChamadas, type BancoDasChamadas } from './chamadas.ts'
 import { cancelarNaOperadora } from './operadora.ts'
-import { respostaDeErro as erro, type BancoDaCobranca, type ContaQuePede, type Operadora, type Registro, type RespostaDaFuncao } from './portas.ts'
+import { PEDIDO_INVALIDO, respostaDeErro as erro, type BancoDaCobranca, type ContaQuePede, type Operadora, type Registro, type RespostaDaFuncao } from './portas.ts'
 import { anotarTentativaDeCartao, conferirTentativas, ehRecusaDoCartao, type BancoDasTentativas } from './tentativas.ts'
 
 /** A reserva de uma função que morreu no meio vence em 5 minutos (008). */
 export const RESERVA_VENCE_MS = 5 * 60_000
 /** D-85: a assinatura procurada nasceu depois do começo do pedido, com esta folga para o relógio da operadora. */
 export const FOLGA_DA_BUSCA_MS = 2 * 60_000
-export const EM_ANDAMENTO = 'Já estamos confirmando uma assinatura desta conta. Confira em Conta e plano em um minuto.'
-export const JA_ASSINA = 'Você já tem uma assinatura ativa. A troca de plano ainda não é feita pelo site.'
-export const ANDAMENTO_NA_CONTA = 'Você já tem uma assinatura em andamento. Confira em Conta e plano.'
+export const EM_ANDAMENTO = 'Já há uma assinatura sendo confirmada nesta conta. Confira em Conta e assinatura daqui a um minuto.'
+export const JA_ASSINA = 'Você já tem uma assinatura ativa. Ainda não é possível trocar de plano pelo site: escreva para o e-mail de contato do MetaNutri.'
+export const ANDAMENTO_NA_CONTA = 'Você já tem uma assinatura em andamento. Confira em Conta e assinatura.'
 
 export interface PedidoDeAssinatura {
   /** Quem pede, lido do token da sessão; nulo sem sessão. */
@@ -97,10 +97,10 @@ export async function assinar(pedido: PedidoDeAssinatura, deps: DependenciasDeAs
   const email = conta?.email
   if (!conta || !email) return erro('Entre na sua conta antes de assinar.', 401)
   const corpo = objeto(pedido.corpo)
-  if (!corpo) return erro('Corpo da requisição inválido.', 400)
+  if (!corpo) return erro(PEDIDO_INVALIDO, 400)
   // O preço vem daqui, nunca do navegador: senão dá para assinar o Pro por R$ 1.
   const plano = planoAssinavel(corpo['plano'])
-  if (!plano) return erro('Plano desconhecido.', 400)
+  if (!plano) return erro('Este plano não pode ser assinado pelo site.', 400)
   const ciclo: CicloDaAssinatura = corpo['ciclo'] === 'anual' ? 'anual' : 'mensal'
   const valor = PLANOS_DO_SERVIDOR[plano][ciclo]
   const cartaoToken = tokenDoCartao(corpo['card_token_id'])
@@ -139,7 +139,7 @@ export async function assinar(pedido: PedidoDeAssinatura, deps: DependenciasDeAs
     const { linha: atual, falha } = await deps.banco.lerDaConta(uid)
     if (falha) {
       deps.log('Não consegui conferir a assinatura atual:', falha.mensagem)
-      return erro('Não consegui conferir sua assinatura agora. Tente de novo em alguns minutos.', 502)
+      return erro('Não foi possível conferir sua assinatura agora. Nada foi cobrado. Tente de novo em alguns minutos.', 502)
     }
     // CB-91: quem já paga não assina de novo por aqui. A cancelada, mesmo no prazo, pode (CA-380).
     if (atual?.status === 'ativa' && PAGOS.includes(atual.plano)) return erro(JA_ASSINA, 409)

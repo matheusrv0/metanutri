@@ -20,7 +20,7 @@ function plano(): Plano {
 }
 
 const abrir = () => render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} aoFechar={vi.fn()} />)
-const janela = () => within(screen.getByRole('dialog', { name: 'Dieta para imprimir' }))
+const janela = () => within(screen.getByRole('dialog', { name: 'Plano alimentar para imprimir' }))
 
 beforeEach(() => localStorage.clear())
 
@@ -40,7 +40,7 @@ describe('Suplementos da ficha na janela de imprimir (spec anamnese-e-prescricoe
     render(<DialogoImprimir aberto caso={caso} plano={plano()} assinatura={ANA} suplementos={[{ ...vitD, nome: '' }]} aoFechar={vi.fn()} />)
     expect(janela().queryByRole('switch', { name: 'Suplementos da ficha' })).not.toBeInTheDocument()
     // CA-635 (spec impressao-do-plano): os lembretes saíram da folha.
-    expect(screen.getByText('As refeições, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.')).toBeInTheDocument()
+    expect(screen.getByText('Refeições, orientações e assinatura sempre entram. Marque o que mais quer incluir.')).toBeInTheDocument()
   })
 })
 
@@ -124,7 +124,7 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     render(<MenuExportar caso={caso} plano={plano()} assinatura={ANA} />)
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Exportar' }))
-    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Dieta para imprimir/ }))
+    await usuario.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }))
     expect(janela().getAllByText('Ana Souza · CRN-6 12345').length).toBeGreaterThan(0)
     expect(janela().getByRole('button', { name: /Imprimir ou salvar em PDF/ })).toBeInTheDocument()
   })

@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { planoPorId, valorNoCiclo, type Ciclo, type IdPlano } from '@/domain/conta.ts'
+import { planoPorId, RECURSOS_EM_TODOS_OS_PLANOS, valorNoCiclo, type Ciclo, type IdPlano } from '@/domain/conta.ts'
 
 interface LadoDoPlanoProps {
   readonly plano: IdPlano | null
@@ -10,18 +10,21 @@ interface LadoDoPlanoProps {
 const reais = (valor: number) =>
   valor.toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(valor) ? 0 : 2, maximumFractionDigits: 2 })
 
-/** O que a pessoa leva: o plano escolhido, ou o Free quando não escolheu nenhum. */
+/**
+ * O que a pessoa leva: o plano escolhido, ou o Free quando não escolheu nenhum. Os limites dele e, depois, o que vem em
+ * todas as assinaturas (spec textos-e-promessas, D-405 e CA-1182).
+ */
 export function LadoDoPlano({ plano, ciclo, aoTrocarPlano }: LadoDoPlanoProps) {
   const escolhido = planoPorId(plano ?? 'free')
   if (!escolhido) return null
-  const itens = [...escolhido.recursos, ...escolhido.inclui.slice(1)].slice(0, 5)
+  const itens = [...escolhido.recursos, ...RECURSOS_EM_TODOS_OS_PLANOS.map((r) => r.texto)].slice(0, 5)
   const valor = valorNoCiclo(escolhido, ciclo)
   const anualDeVerdade = ciclo === 'anual' && escolhido.anual > 0
 
   return (
     <>
       <div className="rounded-3xl bg-card p-5">
-        <p className="rotulo">{plano === null ? 'No Free você já tem' : 'Plano escolhido'}</p>
+        <p className="rotulo">{plano === null ? 'No Free, você já tem' : 'Plano escolhido'}</p>
         <p className="mt-2 font-titulo text-xl font-bold text-heading">{escolhido.nome}</p>
         {escolhido.mensal > 0 ? (
           <p className="mt-2 font-titulo text-3xl font-bold text-heading">
@@ -48,7 +51,7 @@ export function LadoDoPlano({ plano, ciclo, aoTrocarPlano }: LadoDoPlanoProps) {
           Trocar de plano
         </button>
       ) : (
-        <p className="text-xs text-muted-foreground">Seus planos ficam salvos na nuvem, presos à sua conta.</p>
+        <p className="text-xs text-muted-foreground">Seus planos alimentares e pacientes ficam salvos na sua conta.</p>
       )}
     </>
   )

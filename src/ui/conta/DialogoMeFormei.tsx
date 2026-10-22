@@ -54,7 +54,7 @@ export function DialogoMeFormei({ aberto, aoFechar, meFormei, aoFormado }: Dialo
     <Dialog open={aberto} onOpenChange={(abrir) => (abrir ? undefined : aoFechar())}>
       <DialogContent iconeFechar={<IconeMarca nome="fechar" />}>
         <DialogHeader>
-          <DialogTitle>Me formei</DialogTitle>
+          <DialogTitle>Já me formei</DialogTitle>
           <DialogDescription>Informe seu CRN para a conta passar a ser de nutricionista.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">

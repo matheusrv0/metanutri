@@ -52,7 +52,7 @@ export function tabelaAdequacaoParaCopiar(resultado: ResultadoAdequacao): { read
 
   const linhas = resultado.linhas.map(celulas)
   const temSubestimado = resultado.linhas.some((l) => l.subestimado)
-  const nota = temSubestimado ? '* 1 ou mais alimentos sem dado para este nutriente: o total pode estar subestimado.' : ''
+  const nota = temSubestimado ? '* Um ou mais alimentos não têm dado para este nutriente; o total pode estar subestimado.' : ''
 
   const tr = (tag: 'th' | 'td', valores: readonly string[]) => `<tr>${valores.map((v) => `<${tag}>${escapar(v)}</${tag}>`).join('')}</tr>`
   const html =

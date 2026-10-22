@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { MENSAGEM_COMPROVANTES_DEMAIS } from '@/domain/pedidoEstudante.ts'
 import { usePedidoEstudante } from './usarPedidoEstudante.ts'
 
-const FALHA = 'Não deu para falar com o servidor. Confira a internet e tente de novo.'
+const FALHA = 'Não foi possível falar com o servidor. Confira a internet e tente de novo.'
 const RECUSA_DO_ARMAZENAMENTO = { error: { message: 'new row violates row-level security policy', statusCode: '403' } }
 
 const banco = vi.hoisted(() => ({

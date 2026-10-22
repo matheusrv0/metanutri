@@ -122,7 +122,7 @@ test('CA-527: em 360 px, a Adesão cabe sem rolar para o lado, com o retorno e o
   await page.reload()
 
   const linha = page.getByRole('listitem').filter({ hasText: 'Ana Souza' })
-  await expect(linha).toContainText('Sumindo')
+  await expect(linha).toContainText('Parou de marcar')
   await expect(linha).toContainText('Retorno amanhã às 14:30')
   const larguras = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, tela: window.innerWidth }))
   expect(larguras.pagina).toBeLessThanOrEqual(larguras.tela)
@@ -142,7 +142,7 @@ test('CA-527: em 360 px, o cartão do link mostra o endereço inteiro na linha, 
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
   await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
   await expect(page.getByRole('option').first()).toBeVisible()

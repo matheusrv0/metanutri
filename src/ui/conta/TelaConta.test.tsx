@@ -144,11 +144,11 @@ describe('TelaConta', () => {
 
   it('CA-282: estudante vê instituição, formatura, matrícula, selo e "Me formei"', () => {
     montar(estudante, aprovado)
-    expect(screen.getByText('Estudante de Nutrição')).toBeInTheDocument()
+    expect(screen.getByText('Estudante de nutrição')).toBeInTheDocument()
     expect(screen.getByText('UFRN')).toBeInTheDocument()
     expect(screen.getByText('julho de 2027')).toBeInTheDocument()
     expect(screen.getByText('Matrícula verificada')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Me formei' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Já me formei' })).toBeInTheDocument()
   })
 
   it('CA-282: estudante sem pedido vê "Falta enviar"', () => {
@@ -160,10 +160,10 @@ describe('TelaConta', () => {
     montar(nutri)
     expect(screen.getByText('CRN-6 12345')).toBeInTheDocument()
     expect(screen.getByText('CRN em conferência')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Me formei' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Já me formei' })).not.toBeInTheDocument()
   })
 
-  it('CA-289: CRN não encontrado aparece em Conta e plano, com o prazo e a correção', async () => {
+  it('CA-289: CRN não encontrado aparece em Conta e assinatura, com o prazo e a correção', async () => {
     const { usuario, corrigirCrn } = montar({ ...nutri, statusCrn: 'nao_encontrado', crnDecididoEm: new Date().toISOString() })
     const aviso = screen.getByRole('region', { name: 'CRN' })
     expect(aviso).toHaveTextContent('Não encontramos seu CRN no conselho')
@@ -180,9 +180,9 @@ describe('TelaConta', () => {
     expect(screen.queryByText('Não encontramos seu CRN no conselho')).not.toBeInTheDocument()
   })
 
-  it('CA-287: o cartão do nutricionista diz que nome e CRN saem na folha da dieta', () => {
+  it('CA-287 e CA-1187: o cartão do nutricionista diz que nome e CRN aparecem no plano impresso', () => {
     montar(nutri)
-    expect(screen.getByText('Você já pode usar tudo. Seu nome e CRN saem na folha da dieta.')).toBeInTheDocument()
+    expect(screen.getByText('Seu nome e seu CRN aparecem no plano impresso.')).toBeInTheDocument()
   })
 
   it('CA-304: estudante sem pedido ou recusada vê "Enviar comprovante", que leva a Comprovar matrícula', async () => {
@@ -214,8 +214,8 @@ describe('TelaConta', () => {
 
   it('CA-286 e CA-287: Me formei pede o CRN e a declaração, e confirma', async () => {
     const { usuario, meFormei, aoMudouSituacao } = montar(estudante, aprovado)
-    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
-    const janela = screen.getByRole('dialog', { name: 'Me formei' })
+    await usuario.click(screen.getByRole('button', { name: 'Já me formei' }))
+    const janela = screen.getByRole('dialog', { name: 'Já me formei' })
     expect(janela).toHaveTextContent('Seus planos alimentares e pacientes continuam salvos.')
     await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
     await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '23891')
@@ -229,7 +229,7 @@ describe('TelaConta', () => {
 
   it('CA-288: cancelar não muda nada', async () => {
     const { usuario, meFormei } = montar(estudante, aprovado)
-    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já me formei' }))
     await usuario.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(meFormei).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -237,7 +237,7 @@ describe('TelaConta', () => {
 
   it('CRN inválido marca o campo do CRN, não a declaração', async () => {
     const { usuario } = montar(estudante, aprovado)
-    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já me formei' }))
     await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
     await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '12a45')
     await usuario.click(screen.getByRole('checkbox', { name: 'Declaro que este CRN é meu e está ativo.' }))
@@ -247,7 +247,7 @@ describe('TelaConta', () => {
 
   it('declaração desmarcada marca a declaração, não o CRN válido', async () => {
     const { usuario } = montar(estudante, aprovado)
-    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já me formei' }))
     await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
     await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '23891')
     await usuario.click(screen.getByRole('button', { name: 'Mudar para nutricionista' }))
@@ -259,7 +259,7 @@ describe('TelaConta', () => {
     let terminar: (v: string | null) => void = () => undefined
     const meFormei = vi.fn(() => new Promise<string | null>((r) => (terminar = r)))
     const { usuario } = montar(estudante, aprovado, meFormei)
-    await usuario.click(screen.getByRole('button', { name: 'Me formei' }))
+    await usuario.click(screen.getByRole('button', { name: 'Já me formei' }))
     await usuario.selectOptions(screen.getByRole('combobox', { name: 'Região do CRN' }), 'CRN-6')
     await usuario.type(screen.getByRole('textbox', { name: 'Número do CRN' }), '23891')
     await usuario.click(screen.getByRole('checkbox', { name: 'Declaro que este CRN é meu e está ativo.' }))
@@ -278,6 +278,18 @@ describe('TelaConta', () => {
     expect(screen.getByRole('button', { name: 'Trocar cartão' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar assinatura' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Assinar/ })).not.toBeInTheDocument()
+  })
+
+  it('CA-1187 (spec textos-e-promessas, D-408): o cartão da cobrança é "Sua assinatura", com "Ver preços"; o Free diz para quem é', async () => {
+    estado.assinatura = SEM_ASSINATURA
+    const { aoVerPrecos, usuario } = montar(nutri)
+    expect(screen.getByText('Sua assinatura')).toBeInTheDocument()
+    expect(screen.queryByText('Seu plano')).not.toBeInTheDocument()
+    expect(screen.getByText('Para testar com um paciente real, sem cartão.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Mudar de plano' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Ver preços' }))
+    expect(aoVerPrecos).toHaveBeenCalledOnce()
+    expect(screen.getByText('Exclui a conta e todos os dados dela na nuvem.')).toBeInTheDocument()
   })
 
   it('CA-389: na ativa, plano, selo, cartão e próxima cobrança aparecem uma vez cada; o mini cartão não se repete em texto', () => {
@@ -311,7 +323,7 @@ describe('TelaConta', () => {
     desmontar()
     estado.assinatura = { ...SEM_ASSINATURA, planoPedido: 'estudante', status: 'vencida' }
     const { unmount: fechar } = montar(estudante, aprovado)
-    expect(screen.getByText('Seu plano venceu e a conta voltou ao Free.')).toBeInTheDocument()
+    expect(screen.getByText('Sua assinatura venceu, e a conta voltou ao Free.')).toBeInTheDocument()
     fechar()
     estado.assinatura = SEM_ASSINATURA
     montar(nutri)
@@ -322,7 +334,7 @@ describe('TelaConta', () => {
     estado.assinatura = PAGA
     const { usuario } = montar(nutri)
     const janela = await abrirCancelamento(usuario)
-    expect(janela).toHaveTextContent('O plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.')
+    expect(janela).toHaveTextContent('A assinatura do plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois, a conta volta para o Free, sem perder nenhum plano alimentar.')
     await waitFor(() => expect(within(janela).getByRole('button', { name: 'Manter assinatura' })).toHaveFocus())
     await usuario.click(within(janela).getByRole('button', { name: 'Manter assinatura' }))
     expect(estado.cancelar).not.toHaveBeenCalled()
@@ -377,7 +389,7 @@ describe('TelaConta', () => {
   })
 
   it('cancelamento que falha mostra a mensagem dentro da confirmação, que continua aberta', async () => {
-    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.' }))
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não foi possível falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.' }))
     estado.assinatura = PAGA
     const { usuario } = montar(nutri)
     const janela = await abrirCancelamento(usuario)
@@ -397,7 +409,7 @@ describe('TelaConta', () => {
     estado.previa = vi.fn(async (): Promise<ResultadoDaPrevia> => ({ ok: true, cobrada: true, expiraEm: null }))
     const { usuario } = montar(nutri)
     const janela = await abrirCancelamento(usuario)
-    expect(janela).toHaveTextContent('Cancelando agora, a conta volta ao Free na hora e nada mais é cobrado.')
+    expect(janela).toHaveTextContent('Se cancelar agora, a conta volta ao Free na hora e nada mais será cobrado.')
     expect(janela).not.toHaveTextContent('período já pago')
   })
 
@@ -445,7 +457,7 @@ describe('TelaConta', () => {
     estado.assinatura = PAGA
     const { usuario } = montar(nutri)
     const janela = await abrirCancelamento(usuario)
-    expect(janela).toHaveTextContent('Ainda não houve cobrança. Cancelando agora, nada é cobrado e a conta volta ao Free na hora.')
+    expect(janela).toHaveTextContent('Ainda não houve cobrança. Se cancelar agora, nada será cobrado e a conta volta ao Free na hora.')
     await usuario.click(within(janela).getByRole('button', { name: 'Cancelar assinatura' }))
     expect(estado.cancelar).toHaveBeenCalledOnce()
   })
@@ -456,7 +468,7 @@ describe('TelaConta', () => {
     const { usuario } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
-    expect(await within(janela).findByText('Não consegui conferir se já houve cobrança.')).toBeInTheDocument()
+    expect(await within(janela).findByText('Não foi possível conferir se já houve cobrança.')).toBeInTheDocument()
     expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeDisabled()
     estado.previa.mockResolvedValueOnce({ ok: true, cobrada: false, expiraEm: null })
     await usuario.click(within(janela).getByRole('button', { name: 'Tentar de novo' }))
@@ -482,7 +494,7 @@ describe('TelaConta', () => {
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
     expect(await within(janela).findByText('Muitas tentativas seguidas. Espere uma hora e tente de novo.')).toBeInTheDocument()
-    expect(within(janela).queryByText('Não consegui conferir se já houve cobrança.')).not.toBeInTheDocument()
+    expect(within(janela).queryByText('Não foi possível conferir se já houve cobrança.')).not.toBeInTheDocument()
     expect(within(janela).getByRole('button', { name: 'Cancelar assinatura' })).toBeDisabled()
     // Tentar de novo agora daria a mesma resposta: o botão não aparece.
     expect(within(janela).queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
@@ -569,7 +581,7 @@ describe('TelaConta', () => {
 
   it('erro de servidor ao trocar o cartão: a frase vem como está, sem prometer o cartão antigo', async () => {
     estado.assinatura = PAGA
-    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança.' }))
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não foi possível falar com o servidor de cobrança.' }))
     const { usuario, falso } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
     const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
@@ -578,7 +590,7 @@ describe('TelaConta', () => {
     await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
     await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
     await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
-    expect(await within(janela).findByText('Não consegui falar com o servidor de cobrança.')).toBeInTheDocument()
+    expect(await within(janela).findByText('Não foi possível falar com o servidor de cobrança.')).toBeInTheDocument()
     expect(janela).not.toHaveTextContent('cartão antigo')
   })
 
@@ -706,7 +718,7 @@ describe('TelaConta', () => {
     expect(screen.queryByRole('button', { name: 'Trocar cartão' })).not.toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Cancelar assinatura' }))
     const janela = screen.getByRole('dialog', { name: 'Cancelar a assinatura?' })
-    expect(janela).toHaveTextContent('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
+    expect(janela).toHaveTextContent('A assinatura do plano Solo é encerrada e nada mais será cobrado. Você passa para o plano Free.')
     expect(janela).not.toHaveTextContent('período já pago')
     expect(estado.previa).not.toHaveBeenCalled()
     await usuario.click(within(janela).getByRole('button', { name: 'Cancelar assinatura' }))
@@ -726,13 +738,13 @@ describe('TelaConta', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).not.toBeInTheDocument()
   })
 
-  it('CA-381: Conta e plano não cita o processador', () => {
+  it('CA-381: Conta e assinatura não cita o processador', () => {
     montar(nutri)
     expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
     expect(screen.getByText('O pagamento é com cartão de crédito, aqui no site.')).toBeInTheDocument()
   })
 
-  it('CA-383: nenhum ícone de biblioteca em Conta e plano, nem na confirmação', async () => {
+  it('CA-383: nenhum ícone de biblioteca em Conta e assinatura, nem na confirmação', async () => {
     estado.assinatura = PAGA
     const { usuario } = montar({ ...nutri, statusCrn: 'nao_encontrado', crnDecididoEm: new Date().toISOString() })
     expect(document.querySelectorAll('svg:not([data-icone])')).toHaveLength(0)
@@ -754,7 +766,7 @@ describe('TelaConta', () => {
       const botao = screen.getByRole('button', { name: 'Excluir conta' })
       // O bloco de excluir vem depois de todos os outros botões da tela.
       expect(screen.getAllByRole('button').at(-1)).toBe(botao)
-      expect(screen.getByText('Apaga a conta e tudo o que ela guarda na nuvem.')).toBeInTheDocument()
+      expect(screen.getByText('Exclui a conta e todos os dados dela na nuvem.')).toBeInTheDocument()
     })
 
     it.each([
@@ -788,7 +800,7 @@ describe('TelaConta', () => {
       await usuario.click(screen.getByRole('button', { name: 'Excluir conta' }))
       const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
       expect(janela).toHaveTextContent('A assinatura é cancelada, sem novas cobranças.')
-      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
+      expect(janela).toHaveTextContent('O tempo restante do período pago é perdido.')
     })
 
     it('CA-803: cancelada no prazo, a janela não fala de cancelar (já não há cobrança)', async () => {
@@ -798,7 +810,7 @@ describe('TelaConta', () => {
       const janela = screen.getByRole('dialog', { name: 'Excluir sua conta?' })
       expect(janela).not.toHaveTextContent('A assinatura é cancelada')
       // L5 da revisão: o período pago ainda vale e se perde com a conta.
-      expect(janela).toHaveTextContent('O tempo que falta do período pago se perde.')
+      expect(janela).toHaveTextContent('O tempo restante do período pago é perdido.')
     })
 
     it('CA-804: "Baixar backup" na janela baixa o backup da conta', async () => {

@@ -91,9 +91,9 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo,
         <span aria-hidden="true" className="mx-auto mb-4 grid size-12 place-content-center rounded-full bg-muted text-muted-foreground">
           <UserRoundX className="size-6" />
         </span>
-        <h2 className="font-titulo text-xl font-bold text-heading">Nenhum paciente acompanhando ainda</h2>
+        <h2 className="font-titulo text-xl font-bold text-heading">Nenhum paciente em acompanhamento</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Abra um plano e gere o link do paciente. O paciente marca no celular o que fez no dia, e esta tela passa a mostrar quem está sumindo.
+          Abra um plano e gere o link do paciente. Ele marca no celular o que cumpriu no dia, e esta tela passa a mostrar quem parou de marcar.
         </p>
         </div>
       </div>
@@ -105,14 +105,14 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo,
       {aviso}
       <section aria-label="Resumo da adesão" className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Sumindo</p>
+          <p className="text-xs text-muted-foreground">Pararam de marcar</p>
           <p className="numeros font-titulo text-2xl font-bold text-heading">{sumindo}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{sumindo === 0 ? 'Ninguém parou de marcar.' : 'Vale uma mensagem hoje.'}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{sumindo === 0 ? 'Ninguém parou de marcar.' : 'Mande uma mensagem hoje.'}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Acompanhando</p>
+          <p className="text-xs text-muted-foreground">Em acompanhamento</p>
           <p className="numeros font-titulo text-2xl font-bold text-heading">{acompanhamentos.length}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Links de missões criados.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Links do paciente gerados.</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">Pacientes ativos</p>
@@ -121,11 +121,17 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo,
             {limite.limite === null ? '' : <span className="text-base text-muted-foreground">/{limite.limite}</span>}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {limite.limite === null ? 'Seu plano não tem limite.' : limite.excedeu ? 'Acima do seu plano.' : `Cabem mais ${limite.restantes}.`}
+            {limite.limite === null
+              ? 'Sua assinatura não tem limite.'
+              : limite.excedeu
+                ? 'Acima do limite da sua assinatura.'
+                : limite.restantes === 1
+                  ? 'Ainda cabe 1.'
+                  : `Ainda cabem ${limite.restantes ?? 0}.`}
           </p>
           {limite.excedeu && aoVerPlanos ? (
             <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
-              Ver planos
+              Ver preços
             </Button>
           ) : null}
         </div>
@@ -246,7 +252,7 @@ function LinhaPaciente({
 
       {confirmando ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-surfacesunken p-3">
-          <p className="mr-auto text-sm text-foreground">O paciente deixa de abrir as missões e as marcações somem.</p>
+          <p className="mr-auto text-sm text-foreground">O paciente não consegue mais abrir as missões, e as marcações são apagadas.</p>
           <Button type="button" variant="destructive" loading={removendo} onClick={() => void remover()}>
             Remover
           </Button>
@@ -258,7 +264,7 @@ function LinhaPaciente({
 
       {falhou ? (
         <p role="alert" className="mt-3 text-sm text-errortext">
-          Não consegui remover o link na nuvem. Ele continua valendo. Tente de novo.
+          Não foi possível remover o link. Ele continua valendo. Tente de novo.
         </p>
       ) : null}
     </div>

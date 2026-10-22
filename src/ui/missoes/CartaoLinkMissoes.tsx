@@ -31,7 +31,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
 
 /** CA-439: a cópia do aparelho ficou, mas o paciente ainda não abre o link. */
-const NAO_SALVOU = 'Não consegui salvar o link na nuvem. O paciente ainda não consegue abrir. Tente de novo.'
+const NAO_SALVOU = 'Não foi possível salvar o link. O paciente ainda não consegue abri-lo. Tente de novo.'
 
 interface CartaoLinkMissoesProps {
   readonly casoId: string
@@ -139,7 +139,7 @@ export function CartaoLinkMissoes({
         <p>{LIMITE_DE_LINKS}</p>
         {aoVerPlanos ? (
           <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
-            Ver planos
+            Ver preços
           </Button>
         ) : null}
       </div>
@@ -174,7 +174,7 @@ export function CartaoLinkMissoes({
         <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
           Link do paciente
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">Monte o plano primeiro: as missões saem das refeições que você montar.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Monte as refeições primeiro: as missões são criadas a partir delas.</p>
       </section>
     )
   }
@@ -193,11 +193,11 @@ export function CartaoLinkMissoes({
               Antes de gerar: o paciente autorizou?
             </p>
             <p className="mt-2 text-sm text-foreground">
-              O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Quem colhe a autorização é você, o
-              nutricionista — o MetaNutri só guarda.
+              O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Cabe a você, nutricionista, obter a
+              autorização do paciente; o MetaNutri apenas armazena os dados.
             </p>
             {/* CA-542: o link passa a levar o plano alimentar, e quem autoriza precisa saber. */}
-            {dietaVai ? <p className="mt-2 text-sm text-foreground">Com a dieta, o link também mostra o plano alimentar a quem tiver o endereço.</p> : null}
+            {dietaVai ? <p className="mt-2 text-sm text-foreground">O link também mostra o plano alimentar a qualquer pessoa que tenha o endereço.</p> : null}
             <div className="mt-4 flex flex-wrap gap-2">
               <Button type="button" onClick={gerar}>
                 Já tenho a autorização, gerar link
@@ -210,10 +210,11 @@ export function CartaoLinkMissoes({
         ) : (
           <>
             <p className="mt-2 text-sm text-muted-foreground">
-              Gere um link para o paciente abrir no celular. Ele marca o que fez no dia e você vê quem está sumindo antes de sumir de vez.
+              Gere um link para o paciente abrir no celular. Ele marca o que cumpriu no dia, e você vê quem parou de marcar antes que abandone o
+              plano.
             </p>
             <p className="mt-3 text-sm text-foreground">
-              {missoes.length} {missoes.length === 1 ? 'missão sai' : 'missões saem'} deste plano.
+              {missoes.length === 1 ? 'Este plano gera 1 missão.' : `Este plano gera ${missoes.length} missões.`}
             </p>
 
             {cabeMaisUm ? (
@@ -233,12 +234,12 @@ export function CartaoLinkMissoes({
             ) : (
               <div className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
                 <p>
-                  Você usou {planoAtual?.limiteLinksPaciente} de {planoAtual?.limiteLinksPaciente} links de missões do seu plano. Apague um acompanhamento em
-                  Adesão ou mude de plano para gerar outro.
+                  Você já usou os {planoAtual?.limiteLinksPaciente} links da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar
+                  outro.
                 </p>
                 {aoVerPlanos ? (
                   <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
-                    Ver planos
+                    Ver preços
                   </Button>
                 ) : null}
               </div>
@@ -381,8 +382,8 @@ function PainelDoLink({
         </Button>
         <p className="text-xs text-muted-foreground">
           {acompanhamento.dieta === null
-            ? 'Gerar de novo atualiza as missões com o plano atual. O link antigo para de valer.'
-            : 'Gerar de novo atualiza as missões e a dieta com o plano atual. O link antigo para de valer.'}
+            ? 'Gerar um link novo atualiza as missões com o plano atual. O link antigo deixa de funcionar.'
+            : 'Gerar um link novo atualiza as missões e o plano alimentar do link. O link antigo deixa de funcionar.'}
         </p>
       </div>
     </section>

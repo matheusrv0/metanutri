@@ -38,7 +38,7 @@ describe('Base MetaNutri (D-51, CA-322)', () => {
       'U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. Conjuntos SR Legacy (versão de abril de 2018) e Foundation Foods (versão de abril de 2026), baixados em 20/10/2026. Domínio público (CC0 1.0 Universal).',
     )
     expect(usda?.uso).toBe(
-      'Valores de alimento equivalente americano para os 308 alimentos que têm equivalente, porque a tabela brasileira não traz esses cinco. A gordura trans vem junto, só informativa. Sem equivalente, o dado fica em branco, nunca zero.',
+      'Para os 308 alimentos com equivalente no USDA, os cinco nutrientes que a TACO não traz vêm do alimento americano correspondente. A gordura trans vem junto, só como informação. Sem equivalente, o dado fica em branco, nunca zero.',
     )
     expect(usda?.url).toBe('https://fdc.nal.usda.gov/')
     expect(usda?.rotuloLink).toBe('Abrir o FoodData Central')

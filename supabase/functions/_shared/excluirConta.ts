@@ -16,12 +16,12 @@ import { EM_ANDAMENTO, RESERVA_VENCE_MS } from './assinar.ts'
 import { conferirChamadas } from './chamadas.ts'
 import { objeto, PAGOS } from './cobranca.ts'
 import { GRAVADA_LA_SO, gerenciarAssinatura, type DependenciasDeGerenciar } from './gerenciarAssinatura.ts'
-import { respostaDeErro as erro, type ContaQuePede, type RespostaDaFuncao } from './portas.ts'
+import { PEDIDO_INVALIDO, respostaDeErro as erro, type ContaQuePede, type RespostaDaFuncao } from './portas.ts'
 
 /** CA-809: qualquer falha antes do fim. Antes do passo 4 a conta continua (D-252). */
-export const EXCLUSAO_FALHOU = 'Não deu para terminar a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
+export const EXCLUSAO_FALHOU = 'Não foi possível concluir a exclusão. Sua conta continua ativa. Tente de novo em alguns minutos.'
 /** CA-809 (L5 da revisão): a falha depois de o mesmo pedido cancelar a assinatura; a conta continua, sem o plano pago. */
-export const EXCLUSAO_FALHOU_CANCELADA = 'Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.'
+export const EXCLUSAO_FALHOU_CANCELADA = 'Não foi possível concluir a exclusão. A assinatura já foi cancelada, mas os demais dados da conta continuam salvos. Tente de novo em alguns minutos.'
 export const SEM_SESSAO = 'Entre na sua conta antes de excluir.'
 /** CA-816: a senha foi conferida há mais de 10 minutos (ou o token não diz quando). */
 export const CONFIRME_A_SENHA = 'Confirme sua senha de novo.'
@@ -107,7 +107,7 @@ export async function excluirConta(pedido: PedidoDeExclusao, deps: DependenciasD
   if (quem.tipo === 'ninguem') return erro(SEM_SESSAO, 401)
   // CA-821 e CB-250: o token vale, mas o login já saiu; a resposta do pedido anterior se perdeu.
   if (quem.tipo === 'apagada') return EXCLUIDA
-  if (objeto(pedido.corpo)?.['acao'] !== 'excluir') return erro('Corpo da requisição inválido.', 400)
+  if (objeto(pedido.corpo)?.['acao'] !== 'excluir') return erro(PEDIDO_INVALIDO, 400)
 
   const agora = deps.agora()
   const dono = quem.conta.id

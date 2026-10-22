@@ -37,19 +37,19 @@ describe('mensagemDoBanco (D-98)', () => {
 describe('as travas de tamanho (D-107)', () => {
   it('CA-445: a cópia acima de 5 MB chega com a frase da cópia', () => {
     expect(mensagemDoBanco(recusaDaTrava('copias', 'copias_dados_tamanho'))).toBe(COPIA_GRANDE_DEMAIS)
-    expect(COPIA_GRANDE_DEMAIS).toBe('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')
+    expect(COPIA_GRANDE_DEMAIS).toBe('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')
   })
 
   it('CA-446: cada trava de tamanho do link chega com a frase do link', () => {
     for (const trava of ['acompanhamentos_missoes_tamanho', 'acompanhamentos_marcacoes_tamanho', 'acompanhamentos_nome_tamanho', 'acompanhamentos_caso_id_tamanho', 'acompanhamentos_paciente_id_tamanho']) {
       expect(mensagemDoBanco(recusaDaTrava('acompanhamentos', trava)), trava).toBe(LINK_GRANDE_DEMAIS)
     }
-    expect(LINK_GRANDE_DEMAIS).toBe('Este link ficou grande demais. Tire algumas missões e tente de novo.')
+    expect(LINK_GRANDE_DEMAIS).toBe('Este link ficou grande demais. Remova algumas missões e tente de novo.')
   })
 
   it('CB-152 (spec dieta-no-link): a dieta grande demais chega com a frase da dieta, que diz o que fazer', () => {
     expect(mensagemDoBanco(recusaDaTrava('acompanhamentos', 'acompanhamentos_dieta_tamanho'))).toBe(DIETA_GRANDE_DEMAIS)
-    expect(DIETA_GRANDE_DEMAIS).toBe('A dieta passou do tamanho que o link guarda. Encurte as orientações ou as receitas, ou desmarque "Mostrar a dieta no link".')
+    expect(DIETA_GRANDE_DEMAIS).toBe('O plano alimentar é grande demais para o link. Encurte as orientações ou as receitas, ou desligue “Mostrar o plano alimentar no link”.')
   })
 
   it('o nome da trava vale em qualquer idioma do banco (vem entre aspas)', () => {

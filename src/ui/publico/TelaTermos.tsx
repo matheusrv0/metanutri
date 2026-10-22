@@ -7,8 +7,8 @@ export function TelaTermos() {
     <DocumentoLegal titulo="Termos de uso">
       <h2>O que é o MetaNutri</h2>
       <p>
-        Um programa de planejamento alimentar para nutricionistas: monta o plano, mostra o que falta de vitaminas e minerais, sugere alimentos e acompanha o
-        paciente por missões diárias. É oferecido por {RESPONSAVEL ?? ''}.
+        Um software de planejamento alimentar para nutricionistas: monta o plano alimentar, mostra o que ficou abaixo da meta em vitaminas e minerais,
+        sugere alimentos e porções e acompanha o paciente por missões diárias. É oferecido por {RESPONSAVEL ?? ''}.
       </p>
 
       <h2>Quem prescreve é o nutricionista</h2>
@@ -27,38 +27,41 @@ export function TelaTermos() {
       <h2>Conta</h2>
       <ul>
         <li>Cada conta é de uma pessoa. Não compartilhe a senha.</li>
-        <li>Os planos ficam na nuvem, presos à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.</li>
+        <li>Os planos alimentares ficam na nuvem, vinculados à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.</li>
         <li>Se outra conta entrar no mesmo aparelho, ela não vê os seus dados.</li>
       </ul>
 
-      <h2>Planos e pagamento</h2>
+      <h2>Assinaturas e pagamento</h2>
       <ul>
-        <li>Solo e Pro são assinaturas pagas com cartão de crédito, no ciclo mensal ou anual, e renovam sozinhas até você cancelar.</li>
-        <li>Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago; depois a conta volta para o Free, sem perder nada.</li>
+        <li>Solo e Pro são assinaturas pagas com cartão de crédito, no ciclo mensal ou anual, e renovam automaticamente até você cancelar.</li>
         <li>
-          O plano pago começa quando o banco autoriza o cartão. Se as cobranças continuarem sendo recusadas, a assinatura é cancelada e a conta
+          Para cancelar, use Conta e assinatura. A assinatura vale até o fim do período já pago; depois, a conta volta para o Free, sem perder
+          nada.
+        </li>
+        <li>
+          A assinatura começa quando o banco autoriza o cartão. Se as cobranças continuarem sendo recusadas, a assinatura é cancelada e a conta
           volta para o Free.
         </li>
       </ul>
 
       <h2>Plano Estudante</h2>
       <p>
-        Para estudante de Nutrição, com conta criada com o e-mail da faculdade e comprovante de matrícula aprovado pelo MetaNutri. Vale 12 meses ou até a
-        formatura prevista, o que vier antes, e renova com um comprovante novo. É de uso não comercial: serve para o estágio, sob supervisão, não para
-        atender por conta própria. A tela do paciente avisa que não é atendimento profissional.
+        Para estudante de nutrição, com conta criada com o e-mail da faculdade e comprovante de matrícula aprovado pelo MetaNutri. Vale 12 meses ou até a
+        formatura prevista, o que vier antes, e renova com um comprovante novo. É de uso não comercial: serve para casos de estudo e estágio
+        supervisionado, não para atender por conta própria. A tela do paciente avisa que não é atendimento profissional.
       </p>
 
       <h2>Nutricionista e CRN</h2>
       <p>
         Quem cria a conta como nutricionista declara que o CRN informado é seu e está ativo. O MetaNutri confere o registro na Consulta Nacional do
-        Conselho Federal de Nutrição. Se o registro não for encontrado, a conta tem 7 dias para corrigir; depois disso, exportar documentos fica bloqueado
-        até a correção. A situação da conta só muda de estudante para nutricionista, informando o CRN.
+        Conselho Federal de Nutrição. Se o registro não for encontrado, o titular tem 7 dias para corrigir; depois disso, exportar documentos fica
+        bloqueado até a correção. A conta só passa de estudante para nutricionista quando o CRN é informado.
       </p>
 
       <h2>Encerramento</h2>
       <p>
-        Você pode parar de usar quando quiser. Para excluir a conta, use Conta e plano: os dados na nuvem são apagados na hora. Também dá para pedir
-        pelo {CONTATO_EMAIL ?? ''}.
+        Você pode parar de usar quando quiser. Para excluir a conta, use Conta e assinatura: os dados na nuvem são apagados na hora. Você também pode
+        pedir a exclusão pelo e-mail {CONTATO_EMAIL ?? ''}.
         Contas usadas para fraude ou para atender sem registro no CRN, fora do plano Estudante, podem ser encerradas.
       </p>
 

@@ -95,7 +95,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
   it('a leitura que falha mostra o aviso e "Tentar de novo" lê de novo', async () => {
     banco.erroAoListar = new AuthRetryableFetchError('Failed to fetch', 0)
     const { result } = renderHook(() => useSegundoFator(true, 'u1', vi.fn()))
-    await waitFor(() => expect(result.current.etapa).toEqual({ tipo: 'falhou', mensagem: 'Não deu para falar com o servidor. Confira a internet e tente de novo.' }))
+    await waitFor(() => expect(result.current.etapa).toEqual({ tipo: 'falhou', mensagem: 'Não foi possível falar com o servidor. Confira a internet e tente de novo.' }))
     banco.erroAoListar = null
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
     act(() => result.current.tentarDeNovo())
@@ -126,7 +126,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     ['CA-837: código errado', new AuthApiError('Invalid TOTP code entered', 422, 'mfa_verification_failed'), 'Código errado. Confira o app e tente de novo.'],
     ['CB-262: código vencido', new AuthApiError('MFA challenge has expired', 422, 'mfa_challenge_expired'), 'Código errado. Confira o app e tente de novo.'],
     ['CB-264: muitas tentativas', new AuthApiError('Too many requests', 429, 'over_request_rate_limit'), 'Muitas tentativas seguidas. Espere um pouco e tente de novo.'],
-    ['CB-263: sem internet', new AuthRetryableFetchError('Failed to fetch', 0), 'Não deu para falar com o servidor. Confira a internet e tente de novo.'],
+    ['CB-263: sem internet', new AuthRetryableFetchError('Failed to fetch', 0), 'Não foi possível falar com o servidor. Confira a internet e tente de novo.'],
   ])('%s: a mensagem certa, e a tela não libera', async (_caso, falha, mensagem) => {
     banco.fatores = [{ id: 'fator-1', factor_type: 'totp', status: 'verified' }]
     banco.erroAoConfirmar = falha
@@ -171,7 +171,7 @@ describe('useSegundoFator (spec seguranca-lote-5, D-261)', () => {
     await act(async () => {
       erro = await result.current.confirmar('123456')
     })
-    expect(erro).toBe('O código QR mudou. Apague a entrada antiga do MetaNutri no app e leia este.')
+    expect(erro).toBe('O código QR mudou. Exclua a entrada antiga do MetaNutri no app e leia este código.')
     await waitFor(() => expect(result.current.etapa).toMatchObject({ tipo: 'cadastrar', fatorId: 'fator-novo-2', chave: 'CHAVE2' }))
   })
 

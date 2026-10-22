@@ -20,7 +20,7 @@ const CONSTRUIDO = `<!doctype html>
 </html>`
 
 const inicio = { rota: 'inicio', caminho: '', cabecalho: '<title>Início</title>', corpo: '<header>topo</header><main><h1>Faltou cálcio?</h1></main>' }
-const precos = { rota: 'precos', caminho: 'precos/', cabecalho: '<title>Preços</title>', corpo: '<main><h1>Grátis na faculdade</h1></main>' }
+const precos = { rota: 'precos', caminho: 'precos/', cabecalho: '<title>Preços</title>', corpo: '<main><h1>Planos e preços</h1></main>' }
 
 describe('montarPagina (spec site-publico-profissional, D-331)', () => {
   it('CA-1013: a página inicial ganha o cabeçalho dela e o conteúdo dentro do #root, marcado como vitrine', () => {
@@ -40,7 +40,7 @@ describe('montarPagina (spec site-publico-profissional, D-331)', () => {
     expect(html).toContain(`<meta http-equiv="Content-Security-Policy" content="default-src 'self'" />\n    <base href="../" />`)
     expect(html).toContain('<html lang="pt-BR" data-rota="precos">')
     expect(html).toContain('<title>Preços</title>')
-    expect(html).toContain('<h1>Grátis na faculdade</h1>')
+    expect(html).toContain('<h1>Planos e preços</h1>')
   })
 
   it('CA-1020: a fonte pré-carregada entra antes do pacote, com crossorigin', () => {

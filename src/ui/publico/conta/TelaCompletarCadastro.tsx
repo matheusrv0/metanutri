@@ -45,7 +45,7 @@ export function TelaCompletarCadastro({ email, informarSituacao, sair, aoSaiu }:
   return (
     <MolduraConta
       titulo="Complete seu cadastro"
-      subtitulo={`Falta dizer quem você é para usar o MetaNutri com ${email}.`}
+      subtitulo={`Para usar o MetaNutri com ${email}, diga se você é nutricionista ou estudante.`}
       aoIrParaInicio={() => void saida.pedirSair()}
     >
       <form onSubmit={(e) => void enviar(e)} noValidate className="flex flex-col gap-4">

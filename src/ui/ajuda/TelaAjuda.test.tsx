@@ -35,11 +35,21 @@ describe('Ajuda', () => {
     // CA-965 (spec vitaminas-usda): as cinco vêm do USDA, e a falta aparece com †.
     expect(
       screen.getByText(
-        'Vitamina D, vitamina E, folato, vitamina B12 e selênio vêm de alimento equivalente do USDA e faltam em boa parte das preparações brasileiras. Quando falta, a linha da adequação leva †.',
+        'Vitamina D, vitamina E, folato, vitamina B12 e selênio vêm de alimento equivalente do USDA e faltam em boa parte das preparações brasileiras. Quando o dado falta, a linha da adequação recebe †.',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/não traz vitamina D/)).not.toBeInTheDocument()
     expect(screen.getByText(/privativa de nutricionista com registro no CRN/)).toBeInTheDocument()
+  })
+
+  it('CA-1196 (spec textos-e-promessas, D-413): sem promessa de tempo nem frase de efeito, com os nomes do glossário', () => {
+    render(<TelaAjuda aoIrPara={vi.fn()} />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).not.toMatch(/Cinco minutos|Nada aqui é opinião|Dieta para imprimir|use o cobrir|fechar a falta|nascem com/)
+    expect(screen.getByText('Veja os nutrientes abaixo da meta e use o botão Cobrir.')).toBeInTheDocument()
+    expect(screen.getByText('O plano impresso é salvo em PDF pelo próprio navegador; o aconselhamento e o memorial são gerados em Word.')).toBeInTheDocument()
+    expect(screen.getByText('Digite “150 arroz int” e tecle Enter. A medida caseira e as kcal aparecem na hora.')).toBeInTheDocument()
+    expect(screen.getByText('Açúcares e gordura saturada só aparecem nos produtos cadastrados pelo rótulo.')).toBeInTheDocument()
   })
 
   it('leva para a tela do passo', async () => {
@@ -55,7 +65,7 @@ describe('Ajuda', () => {
         <TelaAjuda aoIrPara={vi.fn()} />
       </ContextoNuvem.Provider>,
     )
-    expect(screen.getByText('Os dados ficam na nuvem, presos à sua conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.')).toBeInTheDocument()
+    expect(screen.getByText('Seus dados ficam salvos na sua conta, na nuvem. Sem internet, a edição fica travada até a conexão voltar.')).toBeInTheDocument()
     expect(screen.queryByText(/só neste navegador/)).not.toBeInTheDocument()
   })
 })

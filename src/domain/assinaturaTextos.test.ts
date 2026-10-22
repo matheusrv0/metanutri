@@ -81,7 +81,7 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
     expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'pro', status: 'cancelada' })).toBeNull()
     expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'pendente' })).toBe('O banco ainda está confirmando o pagamento. Até lá, vale o Free.')
     expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'solo', status: 'pausada' })).toBe('A assinatura está pausada. Até ela voltar, vale o Free.')
-    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'estudante', status: 'vencida' })).toBe('Seu plano venceu e a conta voltou ao Free.')
+    expect(recadoDaAssinatura({ ...SEM_ASSINATURA, planoPedido: 'estudante', status: 'vencida' })).toBe('Sua assinatura venceu, e a conta voltou ao Free.')
   })
 
   it('CA-366 e D-79: a próxima cobrança prevista e o que vem depois de hoje, sem repetir o valor que está logo acima', () => {
@@ -116,22 +116,22 @@ describe('textos da assinatura (spec checkout-proprio)', () => {
   })
 
   it('CA-395: sem cobrança ainda, nada é cobrado e a conta volta ao Free na hora', () => {
-    expect(textoDoCancelamento(PAGA, { cobrada: false, expiraEm: null })).toBe('Ainda não houve cobrança. Cancelando agora, nada é cobrado e a conta volta ao Free na hora.')
+    expect(textoDoCancelamento(PAGA, { cobrada: false, expiraEm: null })).toBe('Ainda não houve cobrança. Se cancelar agora, nada será cobrado e a conta volta ao Free na hora.')
   })
 
   it('CA-396: com cobrança, até quando vale', () => {
     expect(textoDoCancelamento(PAGA, { cobrada: true, expiraEm: '2026-11-02T02:59:59.000Z' })).toBe(
-      'O plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.',
+      'A assinatura do plano Solo continua até 1 de novembro de 2026, o fim do período já pago. Depois, a conta volta para o Free, sem perder nenhum plano alimentar.',
     )
   })
 
   it('cobrada sem data à frente: Free na hora', () => {
-    expect(textoDoCancelamento(PAGA, { cobrada: true, expiraEm: null })).toBe('Cancelando agora, a conta volta ao Free na hora e nada mais é cobrado.')
+    expect(textoDoCancelamento(PAGA, { cobrada: true, expiraEm: null })).toBe('Se cancelar agora, a conta volta ao Free na hora e nada mais será cobrado.')
   })
 
   it('pendente e pausada: o texto de sempre, sem prévia', () => {
-    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pendente' }, null)).toBe('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
-    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pausada' }, null)).toBe('A assinatura do plano Solo para e nada mais é cobrado. Você continua no plano Free.')
+    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pendente' }, null)).toBe('A assinatura do plano Solo é encerrada e nada mais será cobrado. Você passa para o plano Free.')
+    expect(textoDoCancelamento({ ...PAGA, plano: 'free', status: 'pausada' }, null)).toBe('A assinatura do plano Solo é encerrada e nada mais será cobrado. Você passa para o plano Free.')
   })
 
   it('CA-381: nenhum texto da recusa ou do cancelamento cita o processador', () => {

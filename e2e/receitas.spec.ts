@@ -73,7 +73,7 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   // D-274a, publicação 1: a busca da refeição ainda não põe receita. O plano ganha a receita pelos dados, como
   // chegaria de um aparelho na publicação 2; a linha, a soma, a folha e o link já sabem ler.
   const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
@@ -89,8 +89,8 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
 
   // CA-880: a folha traz a receita na refeição e inteira em Receitas.
   await page.getByRole('button', { name: 'Exportar' }).click()
-  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
+  await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
   await expect(janela.getByRole('region', { name: '06:00 Desjejum' })).toContainText('Panqueca de banana')
   const receitas = janela.getByRole('region', { name: 'Receitas' })
   await expect(receitas).toContainText('Rende 2 unidades (120 g cada)')
@@ -123,7 +123,7 @@ test('CA-889 (rodada da revisão): a linha da receita no plano cabe em 360 px, c
   await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   await porPanquecaNoDesjejum(page)
   const desjejum = page.getByRole('tabpanel', { name: 'Principal de Desjejum' })
   await expect(desjejum).toContainText('Receita · 1 unidade')

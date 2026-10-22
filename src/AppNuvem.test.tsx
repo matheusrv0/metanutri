@@ -47,7 +47,7 @@ vi.mock('./ui/estado/usarAprovacoes.ts', () => ({
   useAprovacoes: () => ({ pedidos: [], crns: [], pendentes: { estudantes: 0, crn: 0, total: 0 }, carregado: true, erro: null, decidirPedido: vi.fn(), decidirCrn: vi.fn(), abrirComprovante: vi.fn(), recarregar: vi.fn() }),
 }))
 vi.mock('./ui/estado/usarNegocio.ts', () => ({
-  FALHA_AO_LER_NEGOCIO: 'Não consegui ler os números agora. Confira a internet e toque em Atualizar.',
+  FALHA_AO_LER_NEGOCIO: 'Não foi possível ler os números agora. Confira a internet e toque em Atualizar.',
   useNegocio: () => ({ dados: null, carregando: false, erro: null, atualizar: vi.fn() }),
 }))
 
@@ -229,7 +229,7 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     expect(screen.getByText('Salvo')).toBeInTheDocument()
   })
 
-  it('CB-123: a cópia passa do limite: a frase do CA-445 cobre a área; "Reduzir os dados" deixa a frase no alto da tela', async () => {
+  it('CB-123: a cópia passa do limite: a frase do CA-445 cobre a área; "Liberar espaço" deixa a frase no alto da tela', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     render(tela())
     expect(await screen.findByText('Salvo')).toBeInTheDocument()
@@ -238,11 +238,11 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     act(() => screen.getByRole('button', { name: 'Novo paciente' }).click())
     await act(() => vi.advanceTimersByTimeAsync(ESPERA_PARA_SALVAR_MS))
     const trava = screen.getByRole('dialog')
-    expect(trava).toHaveTextContent('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')
+    expect(trava).toHaveTextContent('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')
 
-    act(() => screen.getByRole('button', { name: 'Reduzir os dados' }).click())
+    act(() => screen.getByRole('button', { name: 'Liberar espaço' }).click())
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(screen.getByText('A cópia passou de 5 MB, o máximo da nuvem. Apague o que não precisa para voltar a salvar.')).toBeInTheDocument()
+    expect(screen.getByText('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')).toBeInTheDocument()
     expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
   })
 })

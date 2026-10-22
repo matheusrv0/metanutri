@@ -86,7 +86,7 @@ export const MENSAGEM_ERRO_PEDIDO: Readonly<Record<ErroPedido, string>> = {
   formatura: 'Escolha a previsão de formatura, deste mês em diante.',
   'arquivo-vazio': 'Escolha o arquivo do comprovante.',
   'arquivo-tipo': 'O comprovante precisa ser PDF, JPG ou PNG.',
-  'arquivo-grande': 'O comprovante passa de 5 MB. Tire uma foto menor ou exporte o PDF de novo.',
+  'arquivo-grande': 'O comprovante tem mais de 5 MB. Envie uma foto menor ou exporte o PDF de novo.',
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/

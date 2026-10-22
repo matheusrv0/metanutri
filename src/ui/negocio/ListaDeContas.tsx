@@ -58,7 +58,7 @@ export function ListaDeContas({ contas, agora }: ListaDeContasProps) {
                 <TableHead>Situação</TableHead>
                 <TableHead>Plano</TableHead>
                 <TableHead>Criou a conta</TableHead>
-                <TableHead>Último login</TableHead>
+                <TableHead>Último acesso</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

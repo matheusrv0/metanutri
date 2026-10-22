@@ -108,7 +108,7 @@ describe('Tela de missões do paciente', () => {
 
     await usuario.click(await screen.findByRole('button', { name: /litros de água/ }))
 
-    expect(screen.getByText(/Dia fechado, Ana/)).toBeInTheDocument()
+    expect(screen.getByText(/Dia completo, Ana/)).toBeInTheDocument()
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
   })
 
@@ -121,7 +121,7 @@ describe('Tela de missões do paciente', () => {
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
     expect(await screen.findByText('Você marcou missão em 2 dias desta semana.')).toBeInTheDocument()
-    expect(screen.getByText('A meta são 4 dias por semana.')).toBeInTheDocument()
+    expect(screen.getByText('A meta é marcar em 4 dias por semana.')).toBeInTheDocument()
   })
 
   it('quem está no ritmo recebe outra frase', async () => {
@@ -129,7 +129,7 @@ describe('Tela de missões do paciente', () => {
     const { fonte } = fonteFalsa(acompanhamento({ marcacoes: dias.map((dia) => ({ dia, feitas: ['agua'] })) }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByText(/no ritmo que seu nutricionista combinou/)).toBeInTheDocument()
+    expect(await screen.findByText('Você está no ritmo combinado.')).toBeInTheDocument()
   })
 
   it('sem nuvem ligada, explica por que o link não abre em outro aparelho', async () => {
@@ -137,7 +137,7 @@ describe('Tela de missões do paciente', () => {
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
     expect(await screen.findByText('Este link ainda não abre em outro aparelho')).toBeInTheDocument()
-    expect(screen.getByText(/conta na nuvem do MetaNutri não foi ligada/)).toBeInTheDocument()
+    expect(screen.getByText(/O servidor da conta não está configurado nesta instalação\. Por enquanto/)).toBeInTheDocument()
   })
 
   it('com nuvem ligada, link inexistente diz que foi trocado', async () => {
@@ -342,16 +342,16 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(jantar.getByText('Macarrão (peso cru)')).toBeInTheDocument()
   })
 
-  it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou · Opção N"', async () => {
+  it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou Opção N"', async () => {
     await abrirMeuPlano()
     const almoco = screen.getByRole('region', { name: '12:00 Almoço' })
     expect(within(almoco).getByText('Opção 1')).toBeInTheDocument()
-    expect(within(almoco).getAllByText(/^ou · Opção \d$/).map((e) => e.textContent)).toEqual(['ou · Opção 2', 'ou · Opção 3'])
+    expect(within(almoco).getAllByText(/^ou Opção \d$/).map((e) => e.textContent)).toEqual(['ou Opção 2', 'ou Opção 3'])
     const texto = almoco.textContent ?? ''
     expect(texto.indexOf('Opção 1')).toBeLessThan(texto.indexOf('Feijão'))
-    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou · Opção 2'))
-    expect(texto.indexOf('ou · Opção 2')).toBeLessThan(texto.indexOf('Batata'))
-    expect(texto.indexOf('ou · Opção 3')).toBeLessThan(texto.indexOf('Mandioca'))
+    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou Opção 2'))
+    expect(texto.indexOf('ou Opção 2')).toBeLessThan(texto.indexOf('Batata'))
+    expect(texto.indexOf('ou Opção 3')).toBeLessThan(texto.indexOf('Mandioca'))
     // Uma opção só: sem rótulo e sem "ou".
     const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
     expect(jantar.queryByText(/Opção/)).not.toBeInTheDocument()
@@ -394,7 +394,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
 
   it('CA-538: o fim da parte diz o dia da cópia por extenso', async () => {
     await abrirMeuPlano()
-    expect(screen.getByText('Atualizada em 14 de outubro de 2026.')).toBeInTheDocument()
+    expect(screen.getByText('Atualizado em 14 de outubro de 2026.')).toBeInTheDocument()
   })
 
   it('CA-537: link de estudante mantém o aviso de estágio em "Meu plano"', async () => {
@@ -443,13 +443,13 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeInTheDocument()
     expect(screen.getByText('Confira a internet do celular e tente de novo.')).toBeInTheDocument()
     expect(screen.queryByText('Este link não existe mais')).not.toBeInTheDocument()
 
     // CB-235: tentar de novo ainda sem internet volta à mesma tela.
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Não consegui abrir suas missões' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Tentar de novo' })).toHaveLength(1)
 
     semInternet = false
@@ -481,7 +481,7 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
 
     const agua = await screen.findByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar. Confira a internet e marque de novo.')
     expect(agua).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
 
@@ -569,7 +569,7 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     const agua = await screen.findByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui salvar. Confira a internet e marque de novo.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar. Confira a internet e marque de novo.')
     expect(agua).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'true')
     expect(leituras).toBe(2)

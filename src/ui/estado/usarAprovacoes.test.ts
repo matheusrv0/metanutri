@@ -83,7 +83,7 @@ describe('useAprovacoes', () => {
 
     banco.respostas['pedidos_em_analise'] = { data: null, error: { message: 'Failed to fetch', code: '' } }
     act(() => result.current.recarregar())
-    await waitFor(() => expect(result.current.erro).toBe('Não deu para falar com o servidor. Confira a internet e tente de novo.'))
+    await waitFor(() => expect(result.current.erro).toBe('Não foi possível falar com o servidor. Confira a internet e tente de novo.'))
     expect(result.current.pedidos).toHaveLength(1)
     expect(result.current.pedidos[0]?.id).toBe('p1')
     expect(result.current.pendentes.total).toBe(1)

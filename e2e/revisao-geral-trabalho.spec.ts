@@ -145,8 +145,8 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     await page.emulateMedia({ media: 'screen' })
 
     await page.getByRole('button', { name: 'Exportar' }).click()
-    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-    await expect(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+    await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await page.emulateMedia({ media: 'print' })
     await expect.poll(async () => (await espacos())?.pe).toBe(0)
     await expect.poll(async () => (await espacos())?.topo).toBe(0)
@@ -175,15 +175,15 @@ test.describe('Ctrl+P imprime a tela (D-240)', () => {
     await expect(page.locator('#conteudo')).toBeVisible()
   })
 
-  test('CA-771: com "Dieta para imprimir" aberta, só a folha vai para o papel', async ({ page }) => {
+  test('CA-771: com "Plano alimentar para imprimir" aberta, só a folha vai para o papel', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await abrirComExemplo(page)
     await page.getByRole('button', { name: 'Exportar' }).click()
-    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-    const janela = page.getByRole('dialog', { name: 'Dieta para imprimir' })
-    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+    const janela = page.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await page.emulateMedia({ media: 'print' })
-    await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+    await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
     await expect(page.locator('#conteudo')).toBeHidden()
     await expect(page.getByRole('heading', { level: 1, name: 'Exemplo — Maria, 28 anos' })).toBeHidden()
   })
@@ -255,8 +255,8 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
   await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('— kcal')
   // O Cobrir e o Exportar continuam funcionando.
   await page.getByRole('button', { name: 'Exportar' }).click()
-  await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-  await expect(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+  await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Exportar' }).click()
   const baixando = page.waitForEvent('download')
@@ -307,8 +307,8 @@ test.describe('Alvo de toque de 44 px no celular (D-246)', () => {
     await page.keyboard.press('Escape')
 
     await page.getByRole('button', { name: 'Exportar' }).click()
-    await page.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
-    await alvoDe44(page.getByRole('dialog', { name: 'Dieta para imprimir' }).getByRole('button', { name: 'Fechar' }).last(), true)
+    await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
+    await alvoDe44(page.getByRole('dialog', { name: 'Plano alimentar para imprimir' }).getByRole('button', { name: 'Fechar' }).last(), true)
     await page.keyboard.press('Escape')
 
     await page.goto(`/#/caso/${casoId}/adequacao`)
@@ -548,17 +548,17 @@ const TELAS: readonly Tela[] = [
     },
   },
   {
-    nome: 'Exportar e Dieta para imprimir',
+    nome: 'Exportar e Plano alimentar para imprimir',
     abrir: async (p, casoId) => {
       await p.goto(`/#/caso/${casoId}/plano`)
       await p.getByRole('button', { name: 'Exportar' }).click()
       await expect(p.getByRole('menuitem', { name: 'Memorial de cálculo em Word' })).toBeVisible()
-      await p.getByRole('menuitem', { name: /Dieta para imprimir/ }).click()
+      await p.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
       return PLANO
     },
     agir: async (p) => {
-      const janela = p.getByRole('dialog', { name: 'Dieta para imprimir' })
-      await expect(janela.getByRole('heading', { name: 'Plano alimentar' })).toBeVisible()
+      const janela = p.getByRole('dialog', { name: 'Plano alimentar para imprimir' })
+      await expect(janela.getByRole('heading', { name: 'Plano alimentar', exact: true })).toBeVisible()
       const lista = janela.getByRole('switch', { name: 'Lista de compras' })
       if ((await lista.getAttribute('aria-checked')) !== 'true') await lista.click()
       await expect(janela.getByRole('region', { name: 'Lista de compras' })).toBeVisible()
@@ -588,10 +588,10 @@ const TELAS: readonly Tela[] = [
     },
   },
   {
-    nome: 'Meus produtos',
+    nome: 'Meus alimentos',
     abrir: async (p) => {
       await p.goto('/#/produtos')
-      return 'Meus produtos'
+      return 'Meus alimentos'
     },
     agir: async (p) => {
       await p.getByRole('button', { name: 'Cadastrar pelo rótulo' }).first().click()
@@ -599,10 +599,10 @@ const TELAS: readonly Tela[] = [
     },
   },
   {
-    nome: 'Conta e plano',
+    nome: 'Conta e assinatura',
     abrir: async (p) => {
       await p.goto('/#/conta')
-      return 'Conta e plano'
+      return 'Conta e assinatura'
     },
     agir: async (p) => {
       await p.getByRole('button', { name: 'Ir para o backup' }).click()
@@ -617,7 +617,7 @@ const TELAS: readonly Tela[] = [
     },
     agir: async (p) => {
       await p.getByLabel('Seu nome').fill('Ana Teste')
-      await expect(p.getByText(/No documento vai sair/)).toContainText('Ana Teste')
+      await expect(p.getByText(/Como aparece no documento/)).toContainText('Ana Teste')
     },
   },
   {
