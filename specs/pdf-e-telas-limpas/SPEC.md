@@ -4,6 +4,11 @@ Status: **aprovada** em 01/10/2026. Escrita em 01/10/2026, a partir do protótip
 limpas" (`https://claude.ai/code/artifact/2b7bb911-197d-4ab4-8120-e7e88f51c1b9`), aprovado no
 mesmo dia depois de uma rodada no PDF ("muita informação e letra muito pequena").
 
+**Nota de 21/10/2026 (spec `ficha-unica`).** O CA-330 e o CA-331 mudam: "Pessoa e medidas" vira "Medidas e
+energia"; sexo, idade e "Gestação ou lactação" (antes "Condição") vão para Identificação; o Objetivo sai. "Gestação ou
+lactação" segue a regra R1 (sexo feminino de 14 a 50 anos), "Meses" (antes "Meses além dos anos") só aparece abaixo de
+19 anos e no plano sem paciente, e a cintura, de 20 anos em diante e fora da gestação. O CB-73 e o CB-74 continuam.
+
 **Substituída em parte (15/10/2026)** por duas specs:
 - `impressao-do-plano` (a folha impressa) troca o D-50 (o PDF passa a ter o nome do alimento para o paciente), o
   CA-309 (uma quantidade só por linha), o CA-310 (as opções vêm depois de "ou", sem caixa), o CA-312 ("No dia a dia"

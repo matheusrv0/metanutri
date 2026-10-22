@@ -5,6 +5,11 @@
 
 > **Nota de 26/09/2026.** O plano de negócio aprovado (`docs/plano-negocio.md`) mudou a estratégia: o cliente que paga é o recém-formado e o estudante é canal. *Corrigido em 27/09:* o diferencial do produto é o que esta SPEC descreve — o painel de micros com o botão cobrir (§4.7) —, e as missões diárias são o argumento de venda. Esta SPEC continua valendo como o contrato do que está construído; no roteiro do plano ela é a **Fase 2**. O que ela descreve não foi revogado; o que mudou é a prioridade e o público de quem compra. Preço e público desta SPEC devem ser lidos em `docs/plano-negocio.md`, não aqui.
 
+> **Nota de 21/10/2026 (spec `ficha-unica`).** No plano com paciente, nome, sexo, idade, gestação ou lactação,
+> ocupação e diagnóstico vêm da ficha, e a idade é a da data da consulta; o objetivo (emagrecer, manter, ganhar) do
+> CA-01 saiu da tela, porque nada o usava. As semanas de gestação do CA-02b e os meses pós-parto do CA-02c saem da
+> ficha na data da consulta. No plano sem paciente, os campos continuam no plano.
+
 ## 1. Objetivo
 
 Permitir que um estudante de nutrição ou recém-formado monte o plano alimentar de um caso, confira energia, macronutrientes e adequação de micronutrientes, receba sugestões de alimentos para cobrir o que falta e exporte o resultado em Word no formato exigido pela faculdade.

@@ -2,6 +2,9 @@
 
 Status: **pedida pelo dono em 19/10/2026 ("resolva todo o resto"); aprovação pelas telas antes de publicar.**
 
+**Nota de 21/10/2026 (spec `ficha-unica`).** O D-244 e o CA-784 valem só para o plano sem paciente: com paciente, a
+idade vem da ficha, na data da consulta, e não há campo para digitar.
+
 **Fonte:** parte 6 do lançamento, "revisão geral sem bugs, e2e em todas as telas, celular e computador". Esta frente
 cuida de tudo o que fica **dentro da área de trabalho** (a moldura com o menu lateral). As telas públicas, as de conta
 e o link do paciente são de outra frente.
