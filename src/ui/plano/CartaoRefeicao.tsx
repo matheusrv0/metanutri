@@ -133,7 +133,12 @@ export function CartaoRefeicao({
         </div>
       </div>
 
-      <div role="tablist" aria-label={`Opções de ${refeicao.nome}`} className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-surfacerow p-1">
+      {/* D-481 (correção C): no celular, as três abas dividem a largura, sem rolar ("Substitut…" ficava cortada). */}
+      <div
+        role="tablist"
+        aria-label={`Opções de ${refeicao.nome}`}
+        className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-surfacerow p-1 max-sm:grid max-sm:w-full max-sm:grid-cols-3 max-sm:rounded-2xl"
+      >
         {OPCOES_ORDEM.map((o) => {
           const ativa = o === opcaoAtiva
           const quantos = refeicao.opcoes[o].length
@@ -146,6 +151,7 @@ export function CartaoRefeicao({
               onClick={() => setOpcaoAtiva(o)}
               className={cn(
                 'inline-flex min-h-11 shrink-0 items-center rounded-full px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9',
+                'max-sm:min-w-0 max-sm:justify-center max-sm:rounded-xl max-sm:px-1 max-sm:text-center max-sm:leading-tight max-[379px]:text-xs',
                 ativa ? 'bg-card text-heading shadow-xs' : 'text-muted-foreground hover:text-foreground',
               )}
             >

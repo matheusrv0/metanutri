@@ -139,10 +139,10 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
       <li className="flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3">
         <div className="min-w-0 sm:flex-1">
-          <p className="truncate text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
+          <p className="break-words text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
             {descricao}
           </p>
-          {medidaTexto ? <p className="truncate text-xs text-muted-foreground">{medidaTexto}</p> : null}
+          {medidaTexto ? <p className="break-words text-xs text-muted-foreground">{medidaTexto}</p> : null}
           {avisoDeRestricao}
           {modo && aoMudarMedida && leitura ? <p className="text-xs text-muted-foreground">{`O paciente lê: ${leitura}`}</p> : null}
           {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item excluído de fora; a nutricionista fica sabendo aqui. */}
@@ -167,7 +167,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
     // G2: o nome; quantidade + medida = gramas; o que o paciente lê. No celular, as três linhas; nada passa de 360 px.
     <li className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
       <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 truncate pt-0.5 text-sm font-medium text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
+        {/* D-481 (correção C): o nome quebra linha; "Ovo, de galinha, inteiro…" não dizia se era cozido ou frito. */}
+        <p className="min-w-0 flex-1 break-words pt-0.5 text-sm font-medium text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
           {descricao}
         </p>
         {kcalTexto}
@@ -175,7 +176,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       </div>
       {avisoDeRestricao}
 
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      {/* D-481: no celular, quantidade e medida ocupam a linha (o nome da medida cabe inteiro) e "= gramas" desce. */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:gap-2">
         {naLinha ? (
           <>
             {aproximada ? (
@@ -207,15 +209,17 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
             unidade={unidade}
             aoEscolher={escolher}
             aoCriarMedida={criar}
-            className="flex-1 sm:w-56 sm:flex-none"
+            className="min-w-0 flex-1 basis-40 sm:w-56 sm:flex-none sm:basis-auto"
           />
         ) : null}
-        {naLinha ? (
-          <span aria-hidden="true" className="shrink-0 text-sm text-muted-foreground">
-            =
-          </span>
-        ) : null}
-        {campoGramas}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {naLinha ? (
+            <span aria-hidden="true" className="shrink-0 text-sm text-muted-foreground">
+              =
+            </span>
+          ) : null}
+          {campoGramas}
+        </div>
       </div>
 
       {leitura ? (
