@@ -17,21 +17,23 @@ const porDescricao = (descricao: string) => {
 }
 
 describe('Trocas por grupo', () => {
-  it('só sugere alimento da mesma categoria', () => {
-    const arroz = porDescricao('Arroz, tipo 1, cozido')
-    const trocas = trocasDoAlimento({ alimentoId: arroz.id, gramas: 150 }, opcoes)
+  it('alimento sem papel na refeição só troca dentro da categoria (D-421 da conduta-da-nutricionista)', () => {
+    // Desde a D-421, o arroz troca pelo papel (acompanhamento), também com batata; o queijo continua na categoria.
+    const queijo = porDescricao('Queijo, minas, frescal')
+    const trocas = trocasDoAlimento({ alimentoId: queijo.id, gramas: 30 }, opcoes)
     expect(trocas.length).toBeGreaterThan(0)
     for (const t of trocas) {
-      expect(buscarAlimento(t.alimentoId)?.categoria).toBe(arroz.categoria)
+      expect(buscarAlimento(t.alimentoId)?.categoria).toBe(queijo.categoria)
     }
   })
 
-  it('a porção sugerida tem a mesma energia da original, com arredondamento de grama', () => {
+  it('a porção sugerida tem a energia da original, a até 15% quando os gramas viram os da medida (D-434)', () => {
     const arroz = porDescricao('Arroz, tipo 1, cozido')
     const kcalOriginal = ((arroz.nutrientes.energia_kcal ?? 0) * 150) / 100
     for (const t of trocasDoAlimento({ alimentoId: arroz.id, gramas: 150 }, opcoes)) {
       const kcalTroca = ((buscarAlimento(t.alimentoId)?.nutrientes.energia_kcal ?? 0) * t.gramas) / 100
-      expect(Math.abs(kcalTroca - kcalOriginal)).toBeLessThan(kcalOriginal * 0.02 + 2)
+      const tolerancia = t.medida ? 0.15 : 0.02
+      expect(Math.abs(kcalTroca - kcalOriginal), t.descricao).toBeLessThan(kcalOriginal * tolerancia + 2)
     }
   })
 
@@ -331,7 +333,9 @@ describe('Trocas pela conduta da nutricionista (spec conduta-da-nutricionista)',
     let plano = criarPlanoPadrao(gerar)
     const desjejum = plano.refeicoes[0]
     if (!desjejum) throw new Error('sem desjejum')
-    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: porDescricao('Cuscuz, de milho, cozido com sal').id, gramas: 135 }, gerar)
+    // Era o cuscuz; desde a D-421 ele troca no papel de acompanhamento (arroz, batata). O arroz cru continua sem troca
+    // (CB-394).
+    plano = adicionarItem(plano, desjejum.id, 'principal', { alimentoId: porDescricao('Arroz, tipo 1, cru').id, gramas: 50 }, gerar)
     expect(trocasDoPlano(plano, buscarAlimento, opcoes)).toEqual([])
   })
 
@@ -351,5 +355,85 @@ describe('Trocas pela conduta da nutricionista (spec conduta-da-nutricionista)',
     expect(de('Castanha-do-Brasil')).not.toContain('Castanha-de-caju, torrada, salgada')
     expect(de('Aveia')).not.toContain('Pipoca, com óleo de soja, sem sal')
     expect(de('Brócolis')).not.toContain('Palmito, juçara, em conserva')
+  })
+})
+
+describe('Troca no papel da refeição e fruta por fruta (spec conduta-da-nutricionista, seção 6)', () => {
+  const trocas = (id: number, gramas: number) => trocasDoAlimento({ alimentoId: id, gramas }, { ...opcoes, porAlimento: 6 })
+  const descricoes = (id: number, gramas: number) => trocas(id, gramas).map((t) => t.descricao)
+  const ACOMPANHAMENTO =
+    /^(Arroz, (integral|tipo 1|tipo 2), cozido|Macarrão, trigo, cru|Cuscuz, de milho, cozido|Polenta, pré-cozida|Batata, (inglesa|doce|baroa), cozida|Mandioca, cozida|Cará, cozido)/
+  const ARROZ = 3
+  const PAO_FRANCES = 53
+  const AVEIA = 7
+  const BATATA = 91
+  const BANANA_PRATA = 182
+  const MACA_FUJI = 222
+
+  it('CA-1203 (D-421): arroz cozido troca só por acompanhamento, também de fora dos cereais', () => {
+    const t = descricoes(ARROZ, 150)
+    expect(t.length).toBeGreaterThan(1)
+    for (const d of t) expect(d).toMatch(ACOMPANHAMENTO)
+    expect(t.some((d) => !d.startsWith('Arroz'))).toBe(true)
+  })
+
+  it('CA-1204 (D-421): pão troca só por pão e torrada; aveia nunca por pão, torrada ou pipoca', () => {
+    const doPao = descricoes(PAO_FRANCES, 50)
+    expect(doPao.length).toBeGreaterThan(0)
+    for (const d of doPao) expect(d).toMatch(/^(Pão, |Torrada, pão francês)/)
+    for (const d of descricoes(AVEIA, 30)) expect(d).not.toMatch(/^(Pão|Torrada|Pipoca)/)
+  })
+
+  it('CA-1205 (D-421): batata cozida troca por acompanhamento, nunca por verdura', () => {
+    const t = descricoes(BATATA, 150)
+    expect(t.length).toBeGreaterThan(0)
+    for (const d of t) expect(d).toMatch(ACOMPANHAMENTO)
+  })
+
+  it('CA-1206 (D-422): fruta não troca pela mesma fruta e troca em peça, sem "e meia" de fatia', () => {
+    for (const [id, gramas] of [
+      [BANANA_PRATA, 75],
+      [MACA_FUJI, 130],
+    ] as const) {
+      const base = (buscarAlimento(id)?.descricao ?? '').split(',')[0]
+      const lista = trocas(id, gramas)
+      expect(lista.length, `${base}`).toBeGreaterThan(0)
+      for (const t of lista) {
+        expect(t.descricao.split(',')[0], t.descricao).not.toBe(base)
+        expect(['unidade', 'unidade pequena', 'fatia', 'pedaço'], `${t.descricao}: ${t.medida?.texto ?? `${t.gramas} g`}`).toContain(t.medida?.medida)
+        if (t.medida?.medida === 'fatia' || t.medida?.medida === 'pedaço') expect(t.medida.quantidade, t.descricao).toBeLessThanOrEqual(2)
+      }
+    }
+  })
+
+  it('CA-1207: no plano de exemplo, o arroz não troca por pão e a banana não troca por banana', () => {
+    let n = 0
+    const { plano } = criarExemplo(() => `pa${++n}`, '2026-10-22')
+    const grupos = trocasDoPlano(plano, buscarAlimento, { ...opcoes, porAlimento: 4 })
+    const de = (inicio: string) => grupos.find((g) => g.descricao.startsWith(inicio))?.trocas.map((t) => t.descricao) ?? []
+    expect(de('Arroz, tipo 1, cozido').length).toBeGreaterThan(0)
+    for (const d of de('Arroz, tipo 1, cozido')) expect(d).not.toMatch(/^(Pão|Torrada|Cereais|Pamonha)/)
+    for (const d of de('Banana, prata')) expect(d).not.toMatch(/^Banana/)
+  })
+
+  it('CB-393: flocão de milho e fubá trocam sem alimento com papel', () => {
+    for (const id of [22, 43]) {
+      for (const d of descricoes(id, 50)) expect(d, `${id}`).not.toMatch(new RegExp(`${ACOMPANHAMENTO.source}|^(Pão, |Torrada|Aveia|Cereal matinal)`))
+    }
+  })
+
+  it('CB-394: arroz cru fica sem troca: o cru é forma de ingrediente, e o pronto é outro estado', () => {
+    expect(descricoes(4, 50)).toEqual([])
+    // O arroz cozido nunca troca pelo macarrão cru (forma de ingrediente, CA-658).
+    for (const d of descricoes(ARROZ, 150)) expect(d).not.toMatch(/cru/)
+  })
+
+  it('CB-395: fruta que só se leria em gramas fica fora das trocas', () => {
+    const banana = porDescricao('Banana, prata, crua')
+    const maca = porDescricao('Maçã, Fuji, com casca, crua')
+    // A mesma maçã, com outro id e sem medida nenhuma: só se leria em gramas.
+    const semMedida = { ...maca, id: 899_998, descricao: 'Fruta, teste, crua' }
+    expect(trocasDoAlimento({ alimentoId: banana.id, gramas: 75 }, { alimentos: [banana, semMedida] })).toEqual([])
+    expect(trocasDoAlimento({ alimentoId: banana.id, gramas: 75 }, { alimentos: [banana, maca] }).map((t) => t.descricao)).toEqual([maca.descricao])
   })
 })

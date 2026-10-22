@@ -1,6 +1,7 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, type MedidaEquivalente } from './busca.ts'
 import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
+import { posicaoNoConsumo } from './consumoPof.ts'
 import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
@@ -104,8 +105,45 @@ function ehRealista(alimentoId: number, gramas: number): boolean {
   return medida === null || !MEDIDAS_DE_CONTAR.has(medida.medida) || medida.quantidade <= MAXIMO_DE_PEDACOS
 }
 
+/**
+ * D-421 (spec conduta-da-nutricionista, seção 6): o papel do alimento na refeição. A categoria da TACO junta arroz e pão
+ * de forma, e separa arroz de batata; a troca segue o lugar no prato. Lista por nome: alimento novo fica sem papel até
+ * alguém o incluir.
+ */
+type Papel = 'acompanhamento' | 'pao' | 'cereal-do-cafe'
+const PAPEIS: readonly (readonly [Papel, RegExp])[] = [
+  [
+    'acompanhamento',
+    /^(Arroz, (integral|tipo 1|tipo 2), (cozido|cru)|Macarrão, trigo, cru(, com ovos)?|Cuscuz, de milho, cozido( com sal)?|Polenta, pré-cozida|Batata, (inglesa|doce|baroa), cozida|Mandioca, cozida|Cará, cozido)$/,
+  ],
+  ['pao', /^(Pão, (aveia|de soja|glúten|milho|trigo)|Torrada, pão francês)/],
+  ['cereal-do-cafe', /^(Aveia, flocos|Cereal matinal|Cereais, mistura para vitamina|Farinha, láctea)/],
+]
+const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re.test(a.descricao.trim()))?.[0] ?? null
+
+/**
+ * No acompanhamento, pronto troca por pronto e cru por cru. O cru (arroz e macarrão pelo peso cru) é forma de
+ * ingrediente e nunca é troca (CA-658): o arroz cru fica sem troca (CB-394).
+ */
+const mesmoEstado = (base: Alimento, a: Alimento): boolean => ehCru(base) === ehCru(a)
+
+/** Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. */
+function noMesmoPapel(base: Alimento): (a: Alimento) => boolean {
+  const papel = papelDe(base)
+  if (papel === null) return (a) => a.categoria === base.categoria && papelDe(a) === null && mesmaForma(base)(a)
+  return (a) => papelDe(a) === papel && (papel !== 'acompanhamento' || mesmoEstado(base, a))
+}
+
+const FRUTAS = 'Frutas e derivados'
+/** D-422: a troca de fruta é em peça que o paciente conta (a peça da fruta segue a D-423 de `busca.ts`). */
+const PECAS_DE_FRUTA: ReadonlySet<string> = new Set(['unidade', 'unidade pequena', 'fatia', 'pedaço'])
+
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
 const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? descricao).trim().toLowerCase()
+
+/** Todo pão começa por "Pão,": o que distingue o pão é a parte seguinte ("Pão, milho", "Pão, trigo"). */
+const nomeDaVariedade = (a: Alimento): string =>
+  papelDe(a) === 'pao' ? partesDoNome(a.descricao).slice(0, 2).join(', ') : nomeBase(a.descricao)
 
 /**
  * Trocar arroz tipo 1 por arroz tipo 2 não é troca. Deixa passar uma variação do
@@ -114,7 +152,7 @@ const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? desc
 function variedade(baseDoOriginal: string) {
   const vistos = new Map<string, number>()
   return ({ a }: { readonly a: Alimento }): boolean => {
-    const nome = nomeBase(a.descricao)
+    const nome = nomeDaVariedade(a)
     const limite = nome === baseDoOriginal ? 1 : 2
     const quantos = vistos.get(nome) ?? 0
     if (quantos >= limite) return false
@@ -145,9 +183,14 @@ export function trocasDoAlimento(
   // Alimento simples nunca troca por prato composto (spec conduta-da-nutricionista, D-294).
   const baseSimples = !ehPratoComposto(base)
 
+  // D-422: fruta troca por outra fruta (nunca pela mesma de outra variedade), em peça que o paciente conta.
+  const fruta = base.categoria === FRUTAS
+  const papel = papelDe(base)
   const candidatas = opcoes.alimentos
-    .filter((a) => a.id !== base.id && a.categoria === base.categoria && ehPrescritivel(a) && ehTrocaRazoavel(a))
-    .filter(mesmaForma(base))
+    .filter((a) => a.id !== base.id && ehPrescritivel(a) && ehTrocaRazoavel(a))
+    // D-421: no papel do alimento na refeição; sem papel, na categoria (e na forma: ovo, verdura cozida).
+    .filter(noMesmoPapel(base))
+    .filter((a) => !fruta || nomeBase(a.descricao) !== nomeBase(base.descricao))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
     .filter((a) => !casaRestricao(a, restricoes))
@@ -160,6 +203,7 @@ export function trocasDoAlimento(
     })
     // Porção que ninguém come na vida real não ajuda o paciente, nem 7 torradas no lugar de um pão (D-295).
     .filter(({ a, gramas }) => gramas >= 5 && gramas <= 600 && ehRealista(a.id, gramas))
+    .filter(({ a, gramas }) => !fruta || PECAS_DE_FRUTA.has(medidaCaseiraParaPaciente(a.id, gramas)?.medida ?? ''))
 
   // In natura antes de processado: com uma troca não processada à mão, as processadas saem (D-296).
   const semProcessadas = !ehProcessado(base) && candidatas.some(({ a }) => !ehProcessado(a))
@@ -179,6 +223,11 @@ export function trocasDoAlimento(
       if (primeira !== 0) return primeira
       const comum = Number(ehDeUsoComum(y.a)) - Number(ehDeUsoComum(x.a))
       if (comum !== 0) return comum
+      // D-421 e D-422: no papel e na fruta, o mais consumido no Brasil antes (POF 2017-2018): banana por maçã, não por pinha.
+      if (papel !== null || fruta) {
+        const consumo = Math.min(posicaoNoConsumo(x.a.id), 1e6) - Math.min(posicaoNoConsumo(y.a.id), 1e6)
+        if (consumo !== 0) return consumo
+      }
       // Depois do uso comum, quem tem medida caseira ganha: é o que o paciente entende.
       const medida = Number(medidaEquivalente(y.a.id, y.gramas) !== null) - Number(medidaEquivalente(x.a.id, x.gramas) !== null)
       if (medida !== 0) return medida
@@ -187,7 +236,7 @@ export function trocasDoAlimento(
       if (perto !== 0) return perto
       return x.a.descricao.localeCompare(y.a.descricao, 'pt-BR')
     })
-    .filter(variedade(nomeBase(base.descricao)))
+    .filter(variedade(nomeDaVariedade(base)))
     .slice(0, limite)
     .map(({ a, gramas }) => {
       // D-434 (spec alimentos-e-gramaturas, correção A): a troca é uma sugestão de equivalência; os gramas viram os da
