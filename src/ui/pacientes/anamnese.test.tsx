@@ -382,4 +382,11 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     cleanup()
     expect((await escolhasDeDoenca(MULHER_68)).join(' ')).toMatch(/ovários policísticos/)
   })
+
+  it('CA-1271: a menina de 6 anos tem o histórico do crescimento e não tem "Dietas que já fez"', async () => {
+    const { usuario } = montar(MENINA_6)
+    await usuario.click(bloco('Motivo da consulta'))
+    expect(anamnese().getByLabelText('Histórico do peso')).toHaveAccessibleDescription('Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).')
+    expect(anamnese().queryByLabelText('Dietas que já fez')).not.toBeInTheDocument()
+  })
 })

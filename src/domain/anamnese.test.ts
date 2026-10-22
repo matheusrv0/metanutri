@@ -469,3 +469,28 @@ describe('respostas da ficha (D-163)', () => {
     expect(blocosDaFicha(vazio, comResposta, null).find((b) => b.id === 'alcool-fumo')?.perguntas).toEqual([{ id: 'fumo', texto: 'Tabagismo', resposta: 'Não fuma', foraDoRoteiro: true }])
   })
 })
+
+describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 10)', () => {
+  const perguntasDe = (bloco: string, quem: PerfilDaFicha | null, respostas: readonly RespostaAnamnese[] = []) =>
+    blocosDaFicha(ROTEIRO_PADRAO, respostas, quem)
+      .find((b) => b.id === bloco)
+      ?.perguntas.map((q) => q.texto) ?? []
+
+  it('CA-1271: o histórico do peso fala da vida adulta de 18 anos em diante e do crescimento abaixo (D-452)', () => {
+    const adulta = 'Peso habitual, maior e menor peso na vida adulta.'
+    const crescimento = 'Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).'
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 35 }))).toBe(adulta)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 18 }))).toBe(adulta)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 17 }))).toBe(crescimento)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 6 }))).toBe(crescimento)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: null }))).toBe(adulta)
+  })
+
+  it('CA-1271: "Dietas que já fez" aparece de 12 anos em diante; respondida, continua (D-452)', () => {
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 6 }))).toEqual(['Queixa principal', 'Histórico do peso'])
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 11 }))).not.toContain('Dietas que já fez')
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 12 }))).toContain('Dietas que já fez')
+    const dietas = responder([], { id: 'dietas', texto: 'Dietas que já fez' }, 'motivo', 'Sem glúten por conta da mãe')
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 6 }), dietas)).toContain('Dietas que já fez')
+  })
+})

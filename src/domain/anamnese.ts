@@ -151,11 +151,17 @@ const DICAS: ReadonlyMap<string, string> = new Map([
   ['quedas', 'No último ano.'],
 ])
 
-/** A dica da pergunta; algumas mudam com a pessoa (spec ficha-unica, D-363 e seção 2). */
+/** A idade da pessoa, quando a ficha sabe; `null` sem perfil ou sem data de nascimento. */
+const idadeDe = (perfil: PerfilDaFicha | null): number | null => perfil?.idadeAnos ?? null
+
+/** A dica da pergunta; algumas mudam com a pessoa (spec ficha-unica, D-363, seção 2 e D-452). */
 export function dicaDaPergunta(id: string, perfil: PerfilDaFicha | null = null): string | undefined {
   const fixa = DICAS.get(id)
+  const idade = idadeDe(perfil)
   if (id === 'suplementos-uso' && perfil?.momento === 'gestante') return `${fixa ?? ''} Na gestação, anote ferro e ácido fólico.`
-  if (id === 'mastigacao' && perfil?.idadeAnos !== null && perfil?.idadeAnos !== undefined && perfil.idadeAnos >= 60) return 'Prótese, dificuldade para mastigar ou engasgos.'
+  if (id === 'mastigacao' && idade !== null && idade >= 60) return 'Prótese, dificuldade para mastigar ou engasgos.'
+  // D-452: abaixo de 18 anos não há "vida adulta": a criança e o adolescente têm o histórico do crescimento.
+  if (id === 'historico-peso' && idade !== null && idade < 18) return 'Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).'
   return fixa
 }
 
@@ -486,10 +492,13 @@ function blocoDaResposta(r: RespostaAnamnese): string {
   return BLOCO_PADRAO_V3.get(r.perguntaId) ?? BLOCO_DA_RESPOSTA_ANTIGA.get(r.perguntaId) ?? (BLOCO_NOVO as Readonly<Record<string, IdBloco>>)[r.blocoId] ?? r.blocoId
 }
 
-/** Pergunta que só vale para parte das pessoas, dentro de um bloco de todos (seção 2). */
+/** Pergunta que só vale para parte das pessoas, dentro de um bloco de todos (seção 2 e tabela 10.2). */
 function perguntaAparece(id: string, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): boolean {
   if (perfil === null) return true
+  const idade = idadeDe(perfil)
   if (id === 'tempo-de-tela') return menorDe18(perfil)
+  // D-452: criança não faz dieta por conta própria; a restrição da família vai em Alimentação.
+  if (id === 'dietas') return idade === null || idade >= 12
   // D-356: com "Não" em Prática de exercício, as outras perguntas da atividade não se aplicam.
   if (id.startsWith('atividade-') && id !== 'atividade-pratica') return respostas.get('atividade-pratica')?.resposta.trim() !== 'Não'
   return true
