@@ -64,7 +64,16 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
           aoEscolher={setCriterio}
         />
 
-        <EntradaRapida rotulo="Escolher alimento substituto" aoAdicionar={(id) => setSubstitutoId(id)} />
+        <EntradaRapida
+          rotulo="Escolher alimento substituto"
+          aoAdicionar={(id) => setSubstitutoId(id)}
+          // D-486 (correção C): a lista mostra já a porção equivalente, pelo critério escolhido, não os 100 g padrão.
+          porcaoDoResultado={(id) => {
+            if (!item) return null
+            const r = calcularSubstituto(item, id, criterio, buscarAlimento)
+            return r.gramas === null ? null : { gramas: r.gramas, medida: r.medidaDoItem }
+          }}
+        />
 
         {resultado && substituto ? (
           resultado.motivoSemCalculo ? (

@@ -26,6 +26,25 @@ function Anfitriao({ aoMudar }: { readonly aoMudar?: (p: Plano) => void }) {
 
 const entradaDoAlmoco = () => screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
 
+describe('Substituto: a lista mostra a porção equivalente (spec alimentos-e-gramaturas, correção C, D-486)', () => {
+  it('CA-1336: cada resultado da busca mostra a porção que vai entrar, não os 100 g padrão', async () => {
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await usuario.type(entradaDoAlmoco(), '150 arroz tipo 1 cozido{Enter}')
+    await usuario.click(screen.getByRole('button', { name: /^Substituir Arroz/ }))
+    const janela = within(screen.getByRole('dialog', { name: 'Substituto equivalente' }))
+    await usuario.type(janela.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'batata inglesa cozida')
+    const opcao = janela.getAllByRole('option')[0]
+    if (!opcao) throw new Error('sem opção')
+    // 150 g de arroz (192 kcal) equivalem a uns 371 g de batata cozida (52 kcal em 100 g), nunca a 100 g.
+    expect(opcao.textContent).not.toMatch(/(^|[^\d])100 g/)
+    await usuario.keyboard('{Enter}')
+    const escolhido = janela.getByText(/^(\d+ g|.+ · \d+ g)$/).textContent ?? ''
+    const gramas = /(\d+) g$/.exec(escolhido)?.[1]
+    expect(opcao.textContent).toContain(`${gramas} g`)
+  })
+})
+
 describe('Substitutos', () => {
   it('CA-41 e CA-42: calcula porção equivalente por energia, com medida caseira e diferenças', async () => {
     render(<Anfitriao />)

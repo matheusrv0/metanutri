@@ -30,12 +30,23 @@ interface EntradaRapidaProps {
    * a janela com o nome escrito; ao salvar, o alimento entra na medida nova.
    */
   readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
+  /**
+   * A porção que cada resultado mostra no lugar da digitada: na janela de substituto, a equivalente (spec
+   * alimentos-e-gramaturas, correção C, D-486). `null` mantém a da busca.
+   */
+  readonly porcaoDoResultado?: ((alimentoId: number) => { readonly gramas: number; readonly medida: MedidaDoItem | null } | null) | undefined
 }
 
 // Alimento sem energia na tabela mostra travessão, nunca zero (princípio do produto).
 const kcalDe = (r: ResultadoBusca, gramas: number): string => {
   const porCem = r.alimento.nutrientes.energia_kcal
   return porCem === null ? '— kcal' : `${formatarNumero((porCem * gramas) / 100, 0)} kcal`
+}
+
+/** "1 concha e meia · 210 g · 160 kcal" (D-373), ou a porção que o resultado vai ter quando outra vale (D-486). */
+function leituraComKcal(r: ResultadoBusca, gramas: number, outra: { readonly gramas: number; readonly medida: MedidaDoItem | null } | null): string {
+  const porcao = outra ? { ...r, gramas: outra.gramas, medida: outra.medida } : { ...r, gramas }
+  return `${leituraDoResultado(porcao) ?? ''} · ${kcalDe(r, porcao.gramas)}`
 }
 
 /** "1 unidade · 120 g · 204 kcal": a porção (quando fecha em meias medidas), o peso e as kcal pelos ingredientes. */
@@ -68,7 +79,7 @@ type Opcao = { readonly tipo: 'alimento'; readonly r: ResultadoBusca } | { reado
 const chaveDa = (o: Opcao): string => (o.tipo === 'alimento' ? `a-${o.r.alimento.id}` : `r-${o.r.receita.id}`)
 
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
-export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio, aoCriarMedida }: EntradaRapidaProps) {
+export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio, aoCriarMedida, porcaoDoResultado }: EntradaRapidaProps) {
   const [texto, setTexto] = useState('')
   const [selecionado, setSelecionado] = useState(0)
   // D-432: Enter numa linha sem a medida não fica calado.
@@ -201,7 +212,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                           {o.r.alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
                           <MarcaDeCompletude alimento={o.r.alimento} />
-                          <span className="numeros min-w-0 whitespace-nowrap text-xs text-muted-foreground">{`${leituraDoResultado(o.r) ?? ''} · ${kcalDe(o.r, o.r.gramas)}`}</span>
+                          <span className="numeros min-w-0 whitespace-nowrap text-xs text-muted-foreground">{leituraComKcal(o.r, o.r.gramas, porcaoDoResultado?.(o.r.alimento.id) ?? null)}</span>
                         </span>
                       </span>
                     </>
