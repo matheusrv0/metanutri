@@ -140,8 +140,19 @@ describe('avaliarAntropometria', () => {
     expect(avaliarAntropometria(caso({ sexo: 'F', idadeAnos: 70, pesoKg: 60, estaturaCm: 158, circunferenciaPanturrilhaCm: 30 })).panturrilha).toMatchObject({
       classe: 'Indicativo de redução de massa muscular',
     })
-    expect(avaliarAntropometria(caso({ sexo: 'F', idadeAnos: 70, pesoKg: 60, estaturaCm: 158, circunferenciaPanturrilhaCm: 31 })).panturrilha?.classe).toBe('Adequada')
     expect(avaliarAntropometria(caso({ sexo: 'F', idadeAnos: 50, pesoKg: 60, estaturaCm: 158, circunferenciaPanturrilhaCm: 30 })).panturrilha).toBeNull()
+  })
+
+  it('CA-1284: a panturrilha usa o corte brasileiro por sexo, com a fonte e a nota da OMS (D-460)', () => {
+    const panturrilha = (sexo: 'F' | 'M', cm: number) =>
+      avaliarAntropometria(caso({ sexo, idadeAnos: sexo === 'M' ? 70 : 68, pesoKg: 64, estaturaCm: 160, circunferenciaPanturrilhaCm: cm })).panturrilha
+    expect(panturrilha('M', 33.9)?.classe).toBe('Indicativo de redução de massa muscular')
+    expect(panturrilha('M', 34)?.classe).toBe('Adequada')
+    expect(panturrilha('F', 31)?.classe).toBe('Indicativo de redução de massa muscular')
+    expect(panturrilha('F', 32.9)?.classe).toBe('Indicativo de redução de massa muscular')
+    expect(panturrilha('F', 33)?.classe).toBe('Adequada')
+    expect(panturrilha('F', 33)?.fonte).toMatch(/^Pagotto V, .*Rev Bras Enferm 2018;71\(2\):322-8/)
+    expect(panturrilha('F', 33)?.nota).toBe('A referência da OMS (1995) usa 31 cm para os dois sexos.')
   })
 
   it('CB-01: sem peso ou estatura não calcula IMC e diz o que falta', () => {

@@ -149,11 +149,12 @@ export function avaliarAntropometria(caso: Caso): ResultadoAntropometria {
     cintura = { classe: classificar(caso.circunferenciaCinturaCm, referencias.cintura[sexo]).classe, fonte: fonte(referencias.cintura.fonte) }
   }
 
+  // D-460 (spec ficha-unica): o corte brasileiro, por sexo (Pagotto et al., 2018); os 31 cm da OMS ficam na nota.
   if (caso.circunferenciaPanturrilhaCm !== null && idadeAnos >= referencias.panturrilha.idadeMin) {
     panturrilha = {
-      classe: classificar(caso.circunferenciaPanturrilhaCm, referencias.panturrilha.faixas).classe,
+      classe: classificar(caso.circunferenciaPanturrilhaCm, referencias.panturrilha[sexo]).classe,
       fonte: fonte(referencias.panturrilha.fonte),
-      nota: referencias.panturrilha.notaAlternativa,
+      nota: referencias.panturrilha.nota,
     }
   }
 
