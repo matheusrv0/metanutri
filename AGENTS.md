@@ -11,7 +11,7 @@ MetaNutri: software de nutrição para quem está começando na profissão. **O 
 brasileiro faz isso. As missões diárias do paciente são o argumento de venda (check-in
 os concorrentes já têm). Roda no navegador (PWA instalável). Interface em pt-BR.
 
-**Onde moram os dados** (spec `dados-na-nuvem`): os dados ficam na nuvem, presos à conta
+**Onde moram os dados** (spec `dados-na-nuvem`): os dados ficam na nuvem, vinculados à conta
 (Supabase). O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e
 toda mudança sobe sozinha. Só existe "Sair", que apaga a cópia do navegador.
 Sem internet, a área de trabalho trava até a conexão voltar. Sem as chaves do Supabase

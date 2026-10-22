@@ -6,7 +6,7 @@ o que falta e o botão **cobrir** sugere o alimento e a porção que fecham a fa
 nenhum concorrente brasileiro faz isso. Os macros andam ao vivo enquanto o plano é
 montado. E o plano vira **missões diárias** que o paciente marca num link próprio,
 com a tela de Adesão mostrando quem está sumindo — esse é o argumento de venda.
-Funciona no navegador, com os dados na nuvem, presos à conta.
+Funciona no navegador, com os dados na nuvem, salvos na sua conta.
 
 Estratégia, público, preços e fases: [docs/plano-negocio.md](docs/plano-negocio.md).
 
@@ -72,7 +72,7 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
   o plano atual e derruba o link antigo, mantendo o histórico.
 - **Adesão** — a tela que responde "quem está sumindo?". Quem passou 4 dias sem marcar
   aparece no topo, quem marcou em 4 dias ou mais na semana aparece como *em dia*. É
-  também onde você vê quantos pacientes ativos tem contra o limite do seu plano.
+  também onde você vê quantos pacientes ativos tem contra o limite da sua assinatura.
 - **Pacientes** — ficha com restrições, condições clínicas, medicamentos, anamnese,
   histórico de planos e evolução do peso. O plano nasce já sabendo o que a ficha sabe,
   e o retorno começa duplicando o plano anterior. A anamnese segue um roteiro de
@@ -93,11 +93,11 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
   do paciente e backup em arquivo.
 - **Dados na nuvem** — com conta, planos, pacientes, produtos, modelos e configurações ficam
-  na nuvem, presos à conta, e vão para lá sozinhos poucos segundos depois de cada mudança
+  na nuvem, salvos na sua conta, e vão para lá sozinhos poucos segundos depois de cada mudança
   ("Salvo" / "Salvando…" no alto da tela). Dois aparelhos ao mesmo tempo se juntam item por
   item, e o que foi excluído num não volta pelo outro. Sem internet, a área de trabalho
   trava até a conexão voltar. Ver `specs/dados-na-nuvem/`.
-- **Conta e plano** — entrar, sair, ver a assinatura, o cartão que paga e a próxima cobrança, trocar o cartão e
+- **Conta e assinatura** — entrar, sair, ver a assinatura, o cartão que paga e a próxima cobrança, trocar o cartão e
   cancelar. Sair apaga a cópia de trabalho do navegador. Só funciona sem conta quando o Supabase não está
   configurado (modo local); com ele, a conta é obrigatória.
   Criar conta, entrar e pedir código levam uma verificação contra robôs, escondida até o Cloudflare pedir um clique
@@ -275,7 +275,7 @@ Para funcionar de verdade, nesta ordem:
    (rede, bloqueador), o site tenta mesmo assim, sem a verificação (D-119): com o captcha ligado, o Supabase recusa e
    a tela diz "A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a
    página." Se o Cloudflare carregar mas não responder em 30 segundos, o site também segue sem a verificação. Se
-   alguém disser que aparece "Não deu para falar com o servidor" ou que o código não chega, peça para recarregar a
+   alguém disser que aparece "Não foi possível falar com o servidor" ou que o código não chega, peça para recarregar a
    página. **Se o Cloudflare cair (R-43):** desligue o captcha no mesmo painel; o login volta na hora, sem publicar o site
    de novo. Quando o Cloudflare voltar, ligue o captcha outra vez. Com o captcha ligado, o `npm run dev` só entra na
    conta com a mesma Site Key no `.env.local`.
@@ -365,7 +365,7 @@ dentro do sistema, em **Ajuda**.
   nunca zero.
 - Os cálculos ainda não foram conferidos por nutricionista.
 - A prescrição de dieta é privativa de nutricionista com registro no CRN (Lei 8.234/1991).
-- Com conta, os dados ficam na nuvem, presos à conta; sem internet, o MetaNutri não deixa
+- Com conta, os dados ficam na nuvem, salvos na sua conta; sem internet, o MetaNutri não deixa
   editar até a conexão voltar. No modo local (sem Supabase), tudo fica só no navegador.
 
 ## Como o código está organizado
@@ -415,7 +415,7 @@ domínio aponta para o GitHub Pages: quatro registros A no domínio (`185.199.10
 **Settings > Pages > Custom domain**, com **Enforce HTTPS** ligado. O endereço antigo
 (`matheusrv0.github.io/metanutri/`) redireciona para o novo.
 
-Os planos e as fichas ficam na nuvem, presos à conta: no endereço novo, basta entrar. O que ficou só no
+Os planos e as fichas ficam na nuvem, salvos na sua conta: no endereço novo, basta entrar. O que ficou só no
 navegador do endereço antigo vai com **Configurações > Baixar backup** e volta com **Restaurar backup**.
 
 ## O que ainda depende de você

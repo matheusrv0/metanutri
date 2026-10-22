@@ -4,7 +4,7 @@
 
 Fatos confirmados no plano de negócio aprovado (`docs/plano-negocio.md`, 26/09/2026), na SPEC aprovada (`specs/planejador-metanutri/SPEC.md`), nas entrevistas em `docs/entrevista-estudante-2026-09-15.md` e `docs/feedback-nutricionista.md` e nas decisões em `docs/decisoes.md`. Nada aqui foi inventado.
 
-> **Onde o produto está.** O plano de 26/09/2026 organiza a execução em quatro fases. O planejador, o painel de micros e a prescrição rápida (**Fase 2**) estão construídos. As missões diárias e a tela de adesão (**Fase 1**) foram construídas em 26/09; desde 08/10/2026 os dados ficam na nuvem, presos à conta (spec `dados-na-nuvem`), e o link do paciente abre no celular dele. A cobrança do Solo e do Pro está construída, com o Mercado Pago ainda em credenciais de teste. A **Fase 0** — as 10 conversas de validação — não foi feita. Este documento marca o que já existe e o que está decidido mas não construído.
+> **Onde o produto está.** O plano de 26/09/2026 organiza a execução em quatro fases. O planejador, o painel de micros e a prescrição rápida (**Fase 2**) estão construídos. As missões diárias e a tela de adesão (**Fase 1**) foram construídas em 26/09; desde 08/10/2026 os dados ficam na nuvem, vinculados à conta (spec `dados-na-nuvem`), e o link do paciente abre no celular dele. A cobrança do Solo e do Pro está construída, com o Mercado Pago ainda em credenciais de teste. A **Fase 0** — as 10 conversas de validação — não foi feita. Este documento marca o que já existe e o que está decidido mas não construído.
 
 ## Platform
 
@@ -33,7 +33,7 @@ Em volta disso, fazer o plano ser seguido: ele vira missões diárias que o paci
 1. **Painel de micronutrientes com o botão cobrir** (construído): o concorrente mostra a adequação e para por aí. O MetaNutri responde "e agora?" — o botão **cobrir** sugere até cinco alimentos de grupos diferentes que fecham a falta, com a porção em gramas e em medida caseira, quanto da falta cobrem e quantas kcal somam.
 2. **Missões diárias** (construído): o plano alimentar vira tarefas que o paciente marca como feitas num link próprio, sem conta e sem baixar app, e o nutricionista enxerga em *Adesão* quem está sumindo antes de sumir de vez. Quem passa 4 dias sem marcar sobe para o topo da lista.
 
-Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro.
+Hoje o que está no ar pede conta: os dados ficam na nuvem, vinculados à conta, e o navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro.
 
 ## Operating Context
 
@@ -45,8 +45,8 @@ Hoje o que está no ar pede conta: os dados ficam na nuvem, presos à conta, e o
 - Clínica pede gramas; unidade básica de saúde e atendimento social pedem medida caseira.
 - Preceptora usa preset individual (RDA, 90%) e coletivo (EAR, 50%).
 - Uso frequente com internet instável. Decisão de 08/10/2026 (spec `dados-na-nuvem`, D-130): sem internet, a área de trabalho trava até a conexão voltar, em vez de deixar editar o que não chegaria à nuvem; quando ela volta, o que faltava sobe sozinho e a área destrava.
-- Os dados da conta (planos, pacientes, produtos, modelos, perfil e acompanhamentos) ficam na nuvem, presos à conta: entrar em qualquer aparelho mostra os mesmos dados. O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e toda mudança sobe sozinha em poucos segundos ("Salvo"). Só existe "Sair", e sair apaga a cópia do navegador. Dois aparelhos ao mesmo tempo não se apagam: a mudança mais nova de cada item vence. O link do paciente lê as missões da nuvem e abre no celular dele. O backup em arquivo, em Configurações, continua.
-- LGPD: o pedido de autorização antes de gerar o link, a Política de privacidade e os Termos estão no ar, e a conta se exclui pelo próprio site, em Conta e plano, com a senha (spec `exclusao-de-conta`).
+- Os dados da conta (planos, pacientes, produtos, modelos, perfil e acompanhamentos) ficam na nuvem, vinculados à conta: entrar em qualquer aparelho mostra os mesmos dados. O navegador guarda só uma cópia de trabalho enquanto a pessoa está dentro, e toda mudança sobe sozinha em poucos segundos ("Salvo"). Só existe "Sair", e sair apaga a cópia do navegador. Dois aparelhos ao mesmo tempo não se apagam: a mudança mais nova de cada item vence. O link do paciente lê as missões da nuvem e abre no celular dele. O backup em arquivo, em Configurações, continua.
+- LGPD: o pedido de autorização antes de gerar o link, a Política de privacidade e os Termos estão no ar, e a conta se exclui pelo próprio site, em Conta e assinatura, com a senha (spec `exclusao-de-conta`).
 
 ## Capabilities and Constraints
 
