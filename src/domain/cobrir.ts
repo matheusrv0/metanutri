@@ -4,8 +4,9 @@ import type { ResultadoAdequacao } from './adequacao.ts'
 import { medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
+import { tipoDaRefeicao, type TipoRefeicao } from './sugestoes.ts'
 import type { Totais } from './totais.ts'
-import type { Alimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
+import type { Alimento, ChaveNutrienteAlimento, MedidaDoItem, Plano, Refeicao } from './tipos.ts'
 
 /** Porção máxima padrão de uma sugestão, editável pelo usuário (D-5). */
 export const PORCAO_MAXIMA_PADRAO_G = 200
@@ -65,6 +66,15 @@ const GEMA = /^Ovo, de galinha, gema/i
 const CLARA = /^Ovo, de galinha, clara/i
 /** Charque e carne seca cozidos e ovo frito, que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293). */
 const CURADO_OU_FRITO = /^(Carne, bovina, (charque|seca), cozid|Ovo, de galinha, inteiro, frito)/i
+/** Folha crua (D-439): folha comida em salada, inteira ou picada. */
+const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Repolho|Acelga)/i
+const FIGADO = /(fígado|sarapatel)/i
+const CARNE: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
+const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Nhoque)/i
+/** A TACO põe pão de queijo, farinha, farofa, fécula e polvilho entre as verduras: não são verdura (CA-671). */
+const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
+const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(nomeLimpo(a))
+const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
 
 export interface PorcaoDoGrupo {
   readonly grupo: string
@@ -101,6 +111,16 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Cereal matinal e leite em pó', gramas: 30, casa: (a) => /^(Cereal matinal|Leite, de vaca, [^,]+, pó$)/i.test(nomeLimpo(a)) },
   { grupo: 'Leite fermentado', gramas: 80, casa: (a) => /^Leite, fermentado/i.test(nomeLimpo(a)) },
   { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^Farinha, de mandioca/i.test(nomeLimpo(a)) },
+  // Correção A (spec sugestoes-com-criterio, D-439 e seção 8.2): todo alimento num grupo com porção de verdade.
+  { grupo: 'Folha crua', gramas: 60, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
+  { grupo: 'Fígado e sarapatel', gramas: 100, casa: (a) => FIGADO.test(nomeLimpo(a)) },
+  { grupo: 'Carne, ave e peixe', gramas: 120, casa: (a) => CARNE.has(a.categoria) },
+  { grupo: 'Leguminosa cozida e tofu', gramas: 140, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
+  { grupo: 'Cereal e tubérculo cozidos', gramas: 150, casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && a.preparo === 'cozido' },
+  { grupo: 'Verdura e legume', gramas: 100, casa: ehVerdura },
+  { grupo: 'Fruta', gramas: 150, casa: (a) => a.categoria.startsWith('Frutas') },
+  { grupo: 'Leite e iogurte', gramas: 200, casa: (a) => /^(Leite, (de vaca|de cabra)|Iogurte|Bebida láctea)/i.test(nomeLimpo(a)) },
+  { grupo: 'Preparação', gramas: 150, casa: (a) => a.categoria === 'Alimentos preparados' },
 ]
 
 /**
@@ -127,9 +147,86 @@ export function porcaoEmMedida(
   return { gramas: Math.round(quantidade * peso * 10) / 10, medida: { nome: referencia.medida, quantidade, gramasPorMedida: peso }, parcial }
 }
 
-/** A porção máxima do grupo do alimento; `null` quando ele não está em nenhum grupo da tabela. */
+/** A unidade da fruta vale como porção quando pesa de 40 a 250 g (D-439: "fruta até 1 unidade"). */
+const UNIDADE_DA_FRUTA = { minima: 40, maxima: 250 } as const
+
+/** O grupo do alimento e a porção máxima de adulto; `null` quando ele não está em nenhum grupo da tabela. */
+export function porcaoDoGrupo(alimento: Alimento): { readonly grupo: string; readonly maxima: number } | null {
+  const grupo = PORCOES_POR_GRUPO.find((g) => g.casa(alimento))
+  if (!grupo) return null
+  if (grupo.grupo === 'Fruta') {
+    const unidade = medidasDoAlimento(alimento.id).find((m) => m.nome === 'unidade')?.gramas
+    if (unidade !== undefined && unidade >= UNIDADE_DA_FRUTA.minima && unidade <= UNIDADE_DA_FRUTA.maxima) return { grupo: grupo.grupo, maxima: unidade }
+  }
+  return { grupo: grupo.grupo, maxima: grupo.gramas }
+}
+
+/** A porção máxima do grupo do alimento, de adulto; `null` quando ele não está em nenhum grupo da tabela. */
 export function porcaoMaximaDoGrupo(alimento: Alimento): number | null {
-  return PORCOES_POR_GRUPO.find((g) => g.casa(alimento))?.gramas ?? null
+  return porcaoDoGrupo(alimento)?.maxima ?? null
+}
+
+/**
+ * D-439: a porção da criança e do adolescente é uma parte da do adulto: abaixo de 1 ano ¼, de 1 a 3 anos ½, de 4 a 8 ⅔,
+ * de 9 a 13 ¾, de 14 em diante 1. Sem idade, a do adulto (CB-406).
+ */
+export function fatorDaIdade(idadeAnos: number | null | undefined): number {
+  if (idadeAnos === null || idadeAnos === undefined || !Number.isFinite(idadeAnos)) return 1
+  if (idadeAnos < 1) return 0.25
+  if (idadeAnos < 4) return 0.5
+  if (idadeAnos < 9) return 2 / 3
+  if (idadeAnos < 14) return 0.75
+  return 1
+}
+
+/** D-440: carne, ave, peixe e víscera ao menos 50 g; ovo ao menos 1 unidade (45 g), de adulto. */
+const MINIMA_DE_CARNE_G = 50
+const MINIMA_DE_OVO_G = 45
+
+/**
+ * A porção mínima do alimento na idade, arredondada para cima de 5 em 5 g: ninguém come 5 g de fígado. `null` quando o
+ * grupo não tem mínima.
+ */
+export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): number | null {
+  const adulto = CARNE.has(alimento.categoria) || FIGADO.test(nomeLimpo(alimento)) ? MINIMA_DE_CARNE_G : OVO_INTEIRO_DE_GALINHA.test(nomeLimpo(alimento)) ? MINIMA_DE_OVO_G : null
+  if (adulto === null) return null
+  return Math.ceil((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G
+}
+
+/** A porção máxima do grupo na idade, arredondada para baixo de 5 em 5 g, nunca menos que 5 g. */
+function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
+  const adulto = porcaoMaximaDoGrupo(alimento) ?? PORCAO_MAXIMA_PADRAO_G
+  return Math.max(PASSO_PORCAO_G, Math.floor((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G)
+}
+
+/** O tipo de refeição de cada alimento (D-441). */
+function tipoDoAlimento(alimento: Alimento): TipoRefeicao {
+  const nome = nomeLimpo(alimento)
+  if (/^(Pão|Biscoito|Torrada|Cereal matinal|Cereais|Aveia|Tapioca|Cuscuz|Ovo|Omelete|Mingau|Farinha, láctea)/i.test(nome)) return 'desjejum'
+  if (alimento.categoria.startsWith('Frutas') || alimento.categoria === 'Leite e derivados' || alimento.categoria === 'Nozes e sementes' || /^(Amendoim|Castanha|Paçoca)/i.test(nome)) return 'lanche'
+  return 'almoco'
+}
+
+/** Sem a refeição do tipo, a mais perto (CB-407). */
+const ORDEM_DOS_TIPOS: Readonly<Record<TipoRefeicao, readonly TipoRefeicao[]>> = {
+  desjejum: ['desjejum', 'lanche', 'ceia', 'almoco', 'jantar'],
+  lanche: ['lanche', 'ceia', 'desjejum', 'almoco', 'jantar'],
+  almoco: ['almoco', 'jantar', 'lanche', 'desjejum', 'ceia'],
+  jantar: ['jantar', 'almoco', 'lanche', 'ceia', 'desjejum'],
+  ceia: ['ceia', 'lanche', 'jantar', 'desjejum', 'almoco'],
+}
+
+/**
+ * D-441: a refeição para onde a sugestão do Cobrir vai quando a nutricionista não escolheu uma: verdura, carne e
+ * leguminosa no almoço; fruta, laticínio e oleaginosa no lanche; pão, cereal e ovo no café da manhã. `null` sem refeição.
+ */
+export function refeicaoIndicada(plano: Plano, alimento: Alimento): Refeicao | null {
+  const tipos = plano.refeicoes.map((r) => tipoDaRefeicao(r.nome, r.horario))
+  for (const tipo of ORDEM_DOS_TIPOS[tipoDoAlimento(alimento)]) {
+    const i = tipos.indexOf(tipo)
+    if (i >= 0) return plano.refeicoes[i] ?? null
+  }
+  return plano.refeicoes[0] ?? null
 }
 
 export interface OpcoesCobrir {
@@ -148,6 +245,8 @@ export interface OpcoesCobrir {
    * a regra dos gramas com alimentos inventados, cujos ids caem em medidas de alimentos de verdade.
    */
   readonly porcaoEmMedidaCaseira?: boolean
+  /** A idade do paciente, que encolhe a porção do grupo na criança e no adolescente (D-439). Sem ela, a de adulto. */
+  readonly idadeAnos?: number | null
 }
 
 /**
@@ -218,9 +317,12 @@ export function sugerirParaCobrir(
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
 
-    // Vale a menor entre a porção do grupo calórico e a que a pessoa escolheu (CB-197).
-    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaDoGrupo(alimento) ?? porcaoMaxima)
-    const necessarioG = (falta / porCem) * 100
+    // Vale a menor entre a porção do grupo na idade do paciente e a que a pessoa escolheu (CB-197; D-439).
+    const porcaoDoAlimento = Math.min(porcaoMaxima, porcaoMaximaNaIdade(alimento, opcoes.idadeAnos))
+    // D-440: carne e ovo têm porção mínima; a que não cabe na porção máxima escolhida não é porção de verdade.
+    const minima = porcaoMinima(alimento, opcoes.idadeAnos)
+    if (minima !== null && minima > porcaoDoAlimento) continue
+    const necessarioG = Math.max((falta / porCem) * 100, minima ?? 0)
     // G8: em meia medida caseira; sem medida que caiba, o passo de 5 g.
     const emMedida = opcoes.porcaoEmMedidaCaseira === false ? null : porcaoEmMedida(alimento.id, necessarioG, porcaoDoAlimento)
     const necessario = Math.ceil(necessarioG / PASSO_PORCAO_G) * PASSO_PORCAO_G

@@ -57,6 +57,57 @@ describe('GavetaCobrir', () => {
   })
 })
 
+describe('Refeição de cada alimento (spec sugestoes-com-criterio, correção A, D-441)', () => {
+  const montar = (aoAdicionar = vi.fn()) => {
+    const totais = totaisDoPlano(plano, buscarAlimento)
+    const adequacao = calcularAdequacao(totais, caso, caso.adequacao.preset)
+    render(
+      <GavetaCobrir
+        chave="ferro_mg"
+        rotulo="Ferro"
+        caso={caso}
+        plano={plano}
+        totais={totais}
+        adequacao={adequacao}
+        gastoEnergetico={1800}
+        aoAlterarCaso={nada}
+        aoAdicionar={aoAdicionar}
+        aoFechar={nada}
+      />,
+    )
+    return { aoAdicionar, gaveta: within(screen.getByRole('dialog')) }
+  }
+
+  it('CA-1249: "Adicionar em" começa em "Refeição de cada alimento", e cada botão diz para onde vai', async () => {
+    const { aoAdicionar, gaveta } = montar()
+    expect(gaveta.getByLabelText('Adicionar em')).toHaveDisplayValue('Refeição de cada alimento')
+    const itens = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem')
+    expect(itens.length).toBeGreaterThan(0)
+    for (const item of itens) expect(within(item).getByRole('button', { name: /^Adicionar em / })).toBeInTheDocument()
+    const primeiro = itens[0]
+    if (!primeiro) throw new Error('sem sugestão')
+    const botao = within(primeiro).getByRole('button', { name: /^Adicionar em / })
+    const destino = plano.refeicoes.find((r) => botao.textContent === `Adicionar em ${r.nome}`)
+    expect(destino).toBeDefined()
+    await userEvent.setup().click(botao)
+    expect(aoAdicionar.mock.calls[0]?.slice(0, 2)).toEqual([destino?.id, 'principal'])
+  })
+
+  it('CA-1249: escolhida uma refeição na lista, todas vão para ela', async () => {
+    const { aoAdicionar, gaveta } = montar()
+    const usuario = userEvent.setup()
+    const jantar = plano.refeicoes.find((r) => r.nome === 'Jantar')
+    if (!jantar) throw new Error('sem jantar')
+    await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
+    const itens = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem')
+    for (const item of itens) expect(within(item).getByRole('button', { name: 'Adicionar em Jantar' })).toBeInTheDocument()
+    const primeiro = itens[0]
+    if (!primeiro) throw new Error('sem sugestão')
+    await usuario.click(within(primeiro).getByRole('button', { name: 'Adicionar em Jantar' }))
+    expect(aoAdicionar.mock.calls[0]?.slice(0, 2)).toEqual([jantar.id, 'principal'])
+  })
+})
+
 describe('Gaveta aberta para o sódio (CA-714)', () => {
   it('CA-714: se a gaveta chegar a abrir para o sódio, não lista sugestão e mostra a mensagem do domínio', () => {
     const totais = totaisDoPlano(plano, buscarAlimento)
@@ -80,6 +131,6 @@ describe('Gaveta aberta para o sódio (CA-714)', () => {
     const gaveta = within(screen.getByRole('dialog'))
     expect(gaveta.getByText(SODIO_NAO_SE_COBRE)).toBeInTheDocument()
     expect(within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).queryAllByRole('listitem')).toHaveLength(0)
-    expect(gaveta.queryByRole('button', { name: 'Adicionar' })).not.toBeInTheDocument()
+    expect(gaveta.queryByRole('button', { name: /^Adicionar/ })).not.toBeInTheDocument()
   })
 })

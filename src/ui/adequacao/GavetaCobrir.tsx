@@ -1,7 +1,7 @@
 import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
-import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
+import { refeicaoIndicada, sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { formatarQuantidadeMedida } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
@@ -74,7 +74,9 @@ export function GavetaCobrir({
   focoAoFechar,
 }: GavetaCobrirProps) {
   const { adequacao: prefs } = caso
-  const [refeicaoId, setRefeicaoId] = useState(plano.refeicoes[0]?.id ?? '')
+  // D-441 (spec sugestoes-com-criterio): vazio é "Refeição de cada alimento"; cada sugestão vai para a refeição dela.
+  const [refeicaoId, setRefeicaoId] = useState('')
+  const escolhida = plano.refeicoes.find((r) => r.id === refeicaoId) ?? null
   const [opcao] = useState<OpcaoId>('principal')
   const [versaoOcultos, setVersaoOcultos] = useState(0)
   const armazenamento = useArmazenamento()
@@ -91,6 +93,8 @@ export function GavetaCobrir({
             alimentos: alimentosParaSugerir(),
             gastoEnergetico,
             porcaoMaximaG: prefs.porcaoMaximaG,
+            // D-439: a porção do grupo encolhe na criança e no adolescente.
+            idadeAnos: caso.idadeAnos,
             incluirIngredientes: prefs.incluirIngredientes,
             // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
             ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais(armazenamento)]),
@@ -99,7 +103,7 @@ export function GavetaCobrir({
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, chaveRestricoes],
+    [chave, totais, adequacao, gastoEnergetico, prefs, caso.idadeAnos, versaoOcultos, armazenamento, chaveRestricoes],
   )
 
   const ocultar = (alimentoId: number) => {
@@ -152,6 +156,7 @@ export function GavetaCobrir({
             onChange={(e) => setRefeicaoId(e.target.value)}
             className="h-11 rounded-md border border-input bg-card px-3 text-base sm:h-10 sm:text-sm"
           >
+            <option value="">Refeição de cada alimento</option>
             {plano.refeicoes.map((r) => (
               <option key={r.id} value={r.id}>
                 {`${r.horario} ${r.nome}`}
@@ -170,8 +175,10 @@ export function GavetaCobrir({
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
           {(resultado?.sugestoes ?? []).map((s) => {
             // G8 (spec alimentos-e-gramaturas): a porção em meia medida caseira, o peso e a unidade (ml no líquido).
-            const peso = `${formatarNumero(s.gramas, 0)} ${unidadeDo(buscarAlimento(s.alimentoId))}`
+            const alimento = buscarAlimento(s.alimentoId)
+            const peso = `${formatarNumero(s.gramas, 0)} ${unidadeDo(alimento)}`
             const porcao = s.medida ? `${formatarQuantidadeMedida(s.medida.quantidade, s.medida.nome)} · ${peso}` : peso
+            const destino = escolhida ?? (alimento ? refeicaoIndicada(plano, alimento) : null) ?? plano.refeicoes[0] ?? null
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
                 <p className="flex items-center gap-2 text-sm font-semibold text-heading">
@@ -190,9 +197,11 @@ export function GavetaCobrir({
                   </p>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => aoAdicionar(refeicaoId, opcao, s.alimentoId, s.gramas, s.medida)}>
-                    Adicionar
-                  </Button>
+                  {destino ? (
+                    <Button size="sm" onClick={() => aoAdicionar(destino.id, opcao, s.alimentoId, s.gramas, s.medida)}>
+                      {`Adicionar em ${destino.nome}`}
+                    </Button>
+                  ) : null}
                   <Button size="sm" variant="ghost" onClick={() => ocultar(s.alimentoId)} aria-label={`Nunca sugerir ${s.descricao}`}>
                     <EyeOff aria-hidden="true" />
                     Nunca sugerir

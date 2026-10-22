@@ -120,7 +120,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
     await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
     const sugestao = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getAllByRole('listitem')[0]
     if (!sugestao) throw new Error('sem sugestão')
-    await usuario.click(within(sugestao).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(sugestao).getByRole('button', { name: /^Adicionar em / }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(linhas().map((l) => l.textContent)).not.toEqual(antes)
@@ -279,7 +279,7 @@ describe('Testes mais firmes do cartão (revisão de 15/10)', () => {
     const gaveta = within(screen.getByRole('dialog'))
     const sugestao = within(gaveta.getByRole('list', { name: 'Sugestões para cobrir' })).getByRole('listitem')
     expect(sugestao).toHaveTextContent('Iogurte, natural, desnatado')
-    await usuario.click(within(sugestao).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(sugestao).getByRole('button', { name: /^Adicionar em / }))
 
     expect(linhas().some((l) => l.textContent?.startsWith('Cálcio'))).toBe(false)
     expect(cartao().getByText(`${antes - 1} para cobrir.`)).toBeInTheDocument()
@@ -300,7 +300,7 @@ describe('Foco depois do Cobrir (D-212, CA-713, CB-211)', () => {
   /** Abre o Cobrir do nutriente no cartão e clica em "Adicionar" na sugestão (única) da gaveta. */
   const cobrirEAdicionar = async (usuario: ReturnType<typeof userEvent.setup>, rotulo: string) => {
     await usuario.click(cartao().getByRole('button', { name: `Cobrir ${rotulo}` }))
-    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Adicionar em / }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   }
 

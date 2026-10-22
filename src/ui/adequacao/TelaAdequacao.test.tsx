@@ -165,7 +165,7 @@ describe('Etapa 3: adequação', () => {
     const antes = linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
-    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: /^Adicionar em / }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent).not.toBe(antes)
@@ -305,7 +305,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     const antes = Number(ver.textContent?.match(/(\d+)/)?.[1])
     await usuario.click(ver)
     const gaveta = await abrirCobrir(usuario, 'Cálcio')
-    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: /^Adicionar em / }))
 
     const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} na meta` })
     expect(esconder).toHaveAttribute('aria-expanded', 'true')
@@ -632,7 +632,7 @@ describe('Foco depois do Cobrir na etapa 3 (D-212, CA-713)', () => {
     if (!proximo) throw new Error('o cálcio é o último da tabela')
 
     await usuario.click(screen.getByRole('button', { name: 'Cobrir Cálcio' }))
-    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Adicionar em / }))
     expect(screen.queryByRole('button', { name: 'Cobrir Cálcio' })).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: proximo })).toHaveFocus())
   })

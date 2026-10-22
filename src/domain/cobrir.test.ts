@@ -1,5 +1,15 @@
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { COBERTURA_MINIMA_PCT, PORCAO_MAXIMA_PADRAO_G, porcaoEmMedida, porcaoMaximaDoGrupo, sugerirParaCobrir } from './cobrir.ts'
+import {
+  COBERTURA_MINIMA_PCT,
+  fatorDaIdade,
+  PORCAO_MAXIMA_PADRAO_G,
+  porcaoDoGrupo,
+  porcaoEmMedida,
+  porcaoMaximaDoGrupo,
+  porcaoMinima,
+  refeicaoIndicada,
+  sugerirParaCobrir,
+} from './cobrir.ts'
 import { criarExemplo } from './exemplo.ts'
 import { CAFE_OU_CHA, FORMA_DE_INGREDIENTE, NUNCA_APARECE } from './naoProposto.test-utils.ts'
 import { ehDeUsoComum, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
@@ -346,8 +356,9 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       expect(gramasDe(rico(51, 'Queijo, ricota', 'Leite e derivados', 140))).toBe(200)
     })
 
-    it('fruta comum não tem porção de grupo', () => {
-      expect(gramasDe(rico(52, 'Banana, prata, crua', 'Frutas e derivados', 98))).toBe(200)
+    it('D-439 (correção A): fruta até 1 unidade ou 150 g (antes, a fruta comum ia até 200 g)', () => {
+      // O id 52 de teste não tem "unidade" na base: vale 150 g.
+      expect(gramasDe(rico(52, 'Banana, prata, crua', 'Frutas e derivados', 98))).toBe(150)
     })
 
     it('CB-197: vale a menor entre a porção do grupo e a escolhida', () => {
@@ -397,7 +408,9 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       rico(84, 'Feijão, carioca, cozido', 'Leguminosas e derivados', 210),
     ]
     const ordem = sugerirParaCobrir('ferro_mg', plano, adequacao, { gastoEnergetico: 5000, alimentos: base }).sugestoes.map((s) => s.alimentoId)
-    expect(ordem.slice(0, 2)).toEqual([83, 84])
+    // Desde a correção A (D-440), a carne tem porção mínima de 50 g e fica mais calórica que o feijão: os dois de primeira
+    // escolha continuam na frente, em qualquer ordem entre eles.
+    expect([...ordem.slice(0, 2)].sort()).toEqual([83, 84])
   })
 
   it('CA-914: no plano vazio da Maria, segunda escolha de uso comum nunca vem antes de primeira escolha de uso comum', () => {
@@ -682,5 +695,124 @@ describe('porção em meia medida caseira (spec alimentos-e-gramaturas, G8 e D-3
     // Macarrão cru não tem medida; ovo inteiro (45 g) não cabe em 20 g.
     expect(porcaoEmMedida(40, 80, 200)).toBeNull()
     expect(porcaoEmMedida(488, 80, 20)).toBeNull()
+  })
+})
+
+describe('porção realista por grupo e por idade (spec sugestoes-com-criterio, correção A, D-439 e D-440)', () => {
+  const vazio = totaisDeItens([], buscarAlimento)
+  const ALFACE_ROXA = 80
+  const RUCULA = 152
+  const FIGADO = 356
+  const OVO = 488
+  const ESTROGONOFE = 537
+  const alimentoDe = (id: number): Alimento => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return a
+  }
+  const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Repolho|Acelga)/
+  const CARNE = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
+  const perfil = (idadeAnos: number, sexo: 'F' | 'M' = 'F') => ({ sexo, idadeAnos, condicao: { tipo: 'nenhuma' as const } })
+  /** As sugestões dos micronutrientes da adequação, no plano vazio, com a porção máxima padrão da gaveta (200 g). */
+  const todas = (idadeAnos: number, sexo: 'F' | 'M' = 'F') => {
+    const ad = calcularAdequacao(vazio, perfil(idadeAnos, sexo), { tipo: 'individual' })
+    return MICRONUTRIENTES_ADEQUACAO.flatMap((chave) =>
+      sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2500, alimentos: ALIMENTOS, porcaoMaximaG: 200, idadeAnos }).sugestoes.map((s) => ({ chave, s, a: alimentoDe(s.alimentoId) })),
+    )
+  }
+
+  it('CA-1247: o fator da idade é ¼, ½, ⅔, ¾, 1 e 1 aos 0, 2, 6, 10, 16 e 35 anos; sem idade, 1', () => {
+    expect([0, 2, 6, 10, 16, 35].map(fatorDaIdade)).toEqual([0.25, 0.5, 2 / 3, 0.75, 1, 1])
+    expect(fatorDaIdade(null)).toBe(1)
+    expect(fatorDaIdade(undefined)).toBe(1)
+  })
+
+  it('CA-1246: no adulto, folha crua até 60 g, carne até 120 g, mesmo com a porção máxima da gaveta em 200 g', () => {
+    const sugestoes = todas(35, 'M')
+    expect(sugestoes.length).toBeGreaterThan(0)
+    for (const { chave, s, a } of sugestoes) {
+      if (FOLHA.test(a.descricao) && a.preparo === 'cru') expect(s.gramas, `${chave} ${a.descricao}`).toBeLessThanOrEqual(60)
+      if (CARNE.has(a.categoria)) expect(s.gramas, `${chave} ${a.descricao}`).toBeLessThanOrEqual(120)
+    }
+    // A rúcula do cálcio era 200 g (uns 5 maços).
+    const ad = calcularAdequacao(vazio, perfil(35), { tipo: 'individual' })
+    const rucula = sugerirParaCobrir('calcio_mg', vazio, ad, { gastoEnergetico: 2500, alimentos: ALIMENTOS, porcaoMaximaG: 200 }).sugestoes.find((s) => s.alimentoId === RUCULA)
+    if (rucula) expect(rucula.gramas).toBeLessThanOrEqual(60)
+    expect(porcaoDoGrupo(alimentoDe(RUCULA))?.maxima).toBe(60)
+  })
+
+  it('CA-1245: a menina de 6 anos (⅔) não recebe folha acima de 40 g, carne acima de 80 g nem preparação acima de 100 g; nunca folha em "unidade"', () => {
+    for (const { chave, s, a } of todas(6)) {
+      const rotulo = `${chave} ${a.descricao} ${s.gramas} g`
+      if (FOLHA.test(a.descricao) && a.preparo === 'cru') {
+        expect(s.gramas, rotulo).toBeLessThanOrEqual(40)
+        expect(s.medida?.nome, rotulo).not.toBe('unidade')
+      }
+      if (CARNE.has(a.categoria)) expect(s.gramas, rotulo).toBeLessThanOrEqual(80)
+      if (a.categoria === 'Alimentos preparados') expect(s.gramas, rotulo).toBeLessThanOrEqual(100)
+    }
+    const ad = calcularAdequacao(vazio, perfil(6), { tipo: 'individual' })
+    const alface = sugerirParaCobrir('ferro_mg', vazio, ad, { gastoEnergetico: 1300, alimentos: [alimentoDe(ALFACE_ROXA), alimentoDe(ESTROGONOFE)], porcaoMaximaG: 200, idadeAnos: 6 })
+    expect(alface.sugestoes.find((s) => s.alimentoId === ALFACE_ROXA)?.gramas).toBeLessThanOrEqual(40)
+    expect(alface.sugestoes.find((s) => s.alimentoId === ESTROGONOFE)?.gramas ?? 0).toBeLessThanOrEqual(100)
+  })
+
+  it('CA-1247: a porção máxima da gaveta continua valendo como teto', () => {
+    const ad = calcularAdequacao(vazio, perfil(35), { tipo: 'individual' })
+    for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+      for (const s of sugerirParaCobrir(chave, vazio, ad, { gastoEnergetico: 2500, alimentos: ALIMENTOS, porcaoMaximaG: 30 }).sugestoes) {
+        expect(s.gramas, `${chave} ${s.descricao}`).toBeLessThanOrEqual(30)
+      }
+    }
+  })
+
+  it('CA-1248: o fígado nunca sai em 5 g: a porção mínima é 50 g no adulto e cobre 100%; o ovo, 1 unidade', () => {
+    const ad = calcularAdequacao(vazio, perfil(35, 'M'), { tipo: 'individual' })
+    const linha = ad.linhas.find((l) => l.chave === 'vitamina_a_rae_mcg')
+    if (!linha) throw new Error('sem vitamina A')
+    // Falta pequena: 100 µg, que 1 g de fígado cobriria.
+    const quase = totais({ energia_kcal: 1600, vitamina_a_rae_mcg: (linha.referencia.valor * linha.metaPct) / 100 - 100 })
+    const ad2 = calcularAdequacao(quase, perfil(35, 'M'), { tipo: 'individual' })
+    const figado = sugerirParaCobrir('vitamina_a_rae_mcg', quase, ad2, { gastoEnergetico: 2500, alimentos: [alimentoDe(FIGADO)] }).sugestoes[0]
+    expect(figado?.gramas).toBeGreaterThanOrEqual(50)
+    expect(figado?.coberturaPct).toBe(100)
+    const ferro = ad.linhas.find((l) => l.chave === 'ferro_mg')
+    if (!ferro) throw new Error('sem ferro')
+    const poucoFerro = totais({ energia_kcal: 1600, ferro_mg: (ferro.referencia.valor * ferro.metaPct) / 100 - 0.2 })
+    const ovo = sugerirParaCobrir('ferro_mg', poucoFerro, calcularAdequacao(poucoFerro, perfil(35, 'M'), { tipo: 'individual' }), {
+      gastoEnergetico: 2500,
+      alimentos: [alimentoDe(OVO)],
+    }).sugestoes[0]
+    expect(ovo?.gramas).toBeGreaterThanOrEqual(45)
+    // Na criança, a mínima também encolhe: ⅔ de 50 g, arredondados para cima de 5 em 5 g.
+    expect(porcaoMinima(alimentoDe(FIGADO), 6)).toBe(35)
+  })
+})
+
+describe('refeição de cada alimento no Cobrir (spec sugestoes-com-criterio, correção A, D-441)', () => {
+  let n = 0
+  const plano = criarExemplo(() => `r-${++n}`, '2026-10-15').plano
+  const nomeDe = (id: number) => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return refeicaoIndicada(plano, a)?.nome
+  }
+
+  it('CA-1249: verdura, carne e leguminosa no almoço; fruta e iogurte no lanche; pão e ovo no café da manhã', () => {
+    const nomes = plano.refeicoes.map((r) => r.nome)
+    const almoco = nomes.find((x) => /Almoço/.test(x))
+    const lanche = nomes.find((x) => /Lanche/.test(x))
+    const cafe = nomes[0]
+    expect([nomeDe(80), nomeDe(377), nomeDe(561)]).toEqual([almoco, almoco, almoco])
+    expect([nomeDe(182), nomeDe(448)]).toEqual([lanche, lanche])
+    expect([nomeDe(53), nomeDe(488)]).toEqual([cafe, cafe])
+  })
+
+  it('CB-407: sem a refeição do tipo, vale a mais perto; sem refeição, nada', () => {
+    const soJantar = { refeicoes: plano.refeicoes.filter((r) => /Jantar/.test(r.nome)) }
+    const alface = buscarAlimento(80)
+    if (!alface) throw new Error('sem alface')
+    expect(refeicaoIndicada(soJantar, alface)?.nome).toMatch(/Jantar/)
+    expect(refeicaoIndicada({ refeicoes: [] }, alface)).toBeNull()
   })
 })
