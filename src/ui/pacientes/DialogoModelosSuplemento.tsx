@@ -32,7 +32,7 @@ export function DialogoModelosSuplemento({ aoUsar, aoFechar }: DialogoModelosSup
       <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modelos de suplemento</DialogTitle>
-          <DialogDescription>Usar acrescenta uma cópia ao paciente.</DialogDescription>
+          <DialogDescription>“Usar” adiciona uma cópia do modelo à ficha deste paciente.</DialogDescription>
         </DialogHeader>
 
         {modelos.length === 0 ? (
@@ -57,7 +57,7 @@ export function DialogoModelosSuplemento({ aoUsar, aoFechar }: DialogoModelosSup
                     <Button
                       size="iconsm"
                       variant="ghost"
-                      aria-label={`Apagar o modelo ${m.nome}`}
+                      aria-label={`Excluir o modelo ${m.nome}`}
                       onClick={() => {
                         repositorio.excluir(m.id)
                         reler()

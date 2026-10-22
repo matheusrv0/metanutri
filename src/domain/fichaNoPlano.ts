@@ -5,6 +5,7 @@ import { textoDasDoencas } from './doencas.ts'
 import { FAIXAS } from './caso.ts'
 import { condicaoNaData, lerDia, semanasNaData } from './momentoDeVida.ts'
 import { idadeNaData, type Paciente } from './pacientes.ts'
+import { podeGestarOuLactar, type PerfilDaFicha } from './regrasDaFicha.ts'
 import type { Caso, CondicaoFisiologica } from './tipos.ts'
 
 export type DadoQueFalta = 'sexo' | 'nascimento'
@@ -83,4 +84,15 @@ export function pesoAnterior(atual: Caso, registros: readonly { readonly caso: C
     .sort((a, b) => (b.dataConsulta ?? '').localeCompare(a.dataConsulta ?? ''))
   const ultimo = candidatos[0]
   return ultimo && ultimo.pesoKg !== null && ultimo.dataConsulta !== null ? { pesoKg: ultimo.pesoKg, data: ultimo.dataConsulta } : null
+}
+
+/**
+ * O perfil que decide as perguntas da ficha (spec ficha-unica, seção 3): sexo, idade de hoje e gestação ou lactação,
+ * que só conta para quem pode gestar (R1); `temPlano` liga o Retorno (R12).
+ */
+export function perfilDaFicha(paciente: Paciente, hoje: string, temPlano: boolean): PerfilDaFicha {
+  const idade = idadeNaData(paciente.nascimento, hoje)
+  const base = { sexo: paciente.sexo, idadeAnos: idade?.anos ?? null }
+  const momento = paciente.momentoDeVida?.tipo ?? null
+  return { ...base, momento: momento !== null && momento !== 'nenhum' && !podeGestarOuLactar(base) ? null : momento, temPlano }
 }

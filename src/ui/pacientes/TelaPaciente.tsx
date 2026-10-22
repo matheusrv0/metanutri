@@ -1,20 +1,21 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
+import { diaLocal } from '@/domain/acompanhamento.ts'
+import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
-import { normalizarTelefone } from '@/domain/whatsapp.ts'
-import type { ModoPlano, Sexo } from '@/domain/tipos.ts'
+import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
+import type { Paciente } from '@/domain/pacientes.ts'
+import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
+import type { ModoPlano } from '@/domain/tipos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
-import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
-import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
-import { Label } from '@ds/componentes/forms/label.tsx'
-import { Textarea } from '@ds/componentes/forms/textarea.tsx'
+import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
+import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
@@ -31,16 +32,13 @@ interface TelaPacienteProps {
   readonly aoVoltar: () => void
   /** O campo que recebe o cursor ao abrir: o WhatsApp sem telefone leva até ele (spec whatsapp-e-retorno, CA-517). */
   readonly focar?: 'telefone' | undefined
-  /** Injetável no teste; decide se a próxima consulta já passou. */
+  /** Injetável no teste; decide se a próxima consulta já passou, a idade de hoje e as semanas de gestação. */
   readonly agora?: Date | undefined
 }
 
-/** CA-516: o telefone preenchido que o WhatsApp não aceita ganha a dica. */
-const DICA_TELEFONE = 'Para o WhatsApp, use DDD e número do Brasil.'
-
 /**
- * Ficha do paciente: dados, próxima consulta, restrições, anamnese, suplementos, exames, histórico de planos e
- * evolução do peso.
+ * Ficha do paciente (spec ficha-unica, D-359): Dados do paciente, Anamnese na ordem do PCN e Conduta (suplementação
+ * prescrita, pedido de exames e próxima consulta), com o histórico de planos e a evolução do peso ao lado.
  */
 export function TelaPaciente({
   pacienteId,
@@ -54,9 +52,12 @@ export function TelaPaciente({
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
+  const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const idConduta = useId()
 
   const paciente = repositorio.obter(pacienteId)
+  const hoje = diaLocal(agora)
 
   const planos = useMemo(() => casos.filter((c) => c.pacienteId === pacienteId), [casos, pacienteId])
 
@@ -71,6 +72,13 @@ export function TelaPaciente({
       .filter((p): p is PontoEvolucao => p !== null)
       .sort((a, b) => a.data.localeCompare(b.data))
   }, [planos, repoCasos])
+
+  // CA-1064: o último link do paciente, resumido no bloco Retorno.
+  const adesao = useMemo(() => {
+    if (acompanhamentos === null) return null
+    const link = ultimoLinkPorPaciente(acompanhamentos, casos).get(pacienteId)
+    return link ? resumoDaAdesao(link, hoje) : null
+  }, [acompanhamentos, casos, pacienteId, hoje])
 
   if (!paciente) {
     return (
@@ -95,78 +103,27 @@ export function TelaPaciente({
     atualizar()
   }
 
-  const idade = idadeDe(paciente.nascimento)
+  const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Identificação</CardTitle>
-            <CardDescription>{idade ? `${idade.anos} anos e ${idade.meses} meses hoje.` : 'A idade é calculada pela data de nascimento.'}</CardDescription>
-          </CardHeader>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <CampoTexto rotulo="Nome" valor={paciente.nome} aoMudar={(v) => alterar({ nome: v })} placeholder="Maria Silva…" />
-            <CampoTexto rotulo="Data de nascimento" tipo="date" valor={paciente.nascimento ?? ''} aoMudar={(v) => alterar({ nascimento: v || null })} />
-            <GrupoOpcoes<Sexo>
-              rotulo="Sexo"
-              opcoes={[
-                { valor: 'F', rotulo: 'Feminino' },
-                { valor: 'M', rotulo: 'Masculino' },
-              ]}
-              valor={paciente.sexo}
-              aoEscolher={(sexo) => alterar({ sexo })}
-            />
-            <CampoTexto rotulo="Objetivo" valor={paciente.objetivo} aoMudar={(v) => alterar({ objetivo: v })} placeholder="Emagrecimento, ganho de massa…" />
-            <CampoTexto
-              rotulo="Telefone"
-              valor={paciente.telefone}
-              aoMudar={(v) => alterar({ telefone: v })}
-              dica={paciente.telefone.trim() !== '' && normalizarTelefone(paciente.telefone) === null ? DICA_TELEFONE : undefined}
-              focar={focar === 'telefone'}
-            />
-            <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(v) => alterar({ email: v })} />
-          </div>
-        </Card>
+        <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} />
 
-        <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
+        <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} perfil={perfil} hoje={hoje} adesao={adesao} />
 
-        <Card role="region" aria-labelledby="titulo-saude">
-          <CardHeader>
-            <CardTitle id="titulo-saude">Restrições e saúde</CardTitle>
-            <CardDescription>Uma por linha. O que estiver aqui some das sugestões de alimento.</CardDescription>
-          </CardHeader>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="restricoes">Não come ou não pode comer</Label>
-            <Textarea
-              id="restricoes"
-              rows={3}
-              value={paciente.restricoes}
-              onChange={(e) => alterar({ restricoes: e.target.value })}
-              placeholder={'leite\nlactose\ncamarão'}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="condicoes">Condições clínicas</Label>
-              <Textarea id="condicoes" rows={3} value={paciente.condicoesClinicas} onChange={(e) => alterar({ condicoesClinicas: e.target.value })} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="medicamentos">Medicamentos</Label>
-              <Textarea id="medicamentos" rows={3} value={paciente.medicamentos} onChange={(e) => alterar({ medicamentos: e.target.value })} />
-            </div>
-          </div>
-        </Card>
-
-        <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} />
-
-        <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
-
-        <CartaoExames key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
+        <section aria-labelledby={idConduta} className="flex flex-col gap-4">
+          <h2 id={idConduta} className="card-title px-1">
+            Conduta
+          </h2>
+          <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
+          <CartaoExames key={`exames-${paciente.id}`} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
+          <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
+        </section>
 
         <Card className="gap-3">
           <CardHeader>
-            <CardTitle>Apagar paciente</CardTitle>
+            <CardTitle>Excluir paciente</CardTitle>
             <CardDescription>Os planos continuam salvos, mas perdem o vínculo com esta ficha.</CardDescription>
           </CardHeader>
           {confirmandoExclusao ? (
@@ -180,7 +137,7 @@ export function TelaPaciente({
                 }}
               >
                 <Trash aria-hidden="true" />
-                Apagar mesmo assim
+                Excluir paciente
               </Button>
               <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
                 Cancelar
@@ -189,13 +146,13 @@ export function TelaPaciente({
           ) : (
             <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>
               <Trash aria-hidden="true" />
-              Apagar paciente
+              Excluir paciente
             </Button>
           )}
         </Card>
       </div>
 
-      {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Apagar paciente" fica por último. */}
+      {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Excluir paciente" fica por último. */}
       <div className="order-first flex flex-col gap-6 xl:order-none">
         <Card className="gap-4">
           <div className="flex items-center justify-between gap-2">

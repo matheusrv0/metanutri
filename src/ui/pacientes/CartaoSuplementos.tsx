@@ -46,14 +46,14 @@ export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar }:
     const salvo = repositorio.salvarDe(suplemento)
     if (!salvo) return
     // CB-160: o navegador sem espaço não guarda o modelo. CA-573: o mesmo nome troca o modelo.
-    setMensagem(!repositorio.persistente ? 'Este navegador não guardou o modelo.' : salvo.trocou ? 'Modelo atualizado.' : 'Modelo salvo.')
+    setMensagem(!repositorio.persistente ? 'Não foi possível salvar o modelo.' : salvo.trocou ? 'Modelo atualizado.' : 'Modelo salvo.')
   }
 
   return (
     <Card role="region" aria-labelledby={`${id}-titulo`}>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle id={`${id}-titulo`}>Suplementos</CardTitle>
+          <CardTitle id={`${id}-titulo`}>Suplementação prescrita</CardTitle>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => setJanela({ tipo: 'modelos' })}>
               <LayoutTemplate aria-hidden="true" />
@@ -101,7 +101,7 @@ export function CartaoSuplementos({ paciente, assinatura, bloqueio, aoAlterar }:
       <div className="flex flex-wrap items-center gap-3">
         <Button size="sm" variant="lightprimary" onClick={() => mudar([...lista, criarSuplemento(novoId())])}>
           <Plus aria-hidden="true" />
-          Acrescentar suplemento
+          Adicionar suplemento
         </Button>
         {/* Região viva, sem o papel "status": a barra da nuvem é o status da página. */}
         <p aria-live="polite" className="text-xs text-muted-foreground">

@@ -73,3 +73,7 @@ Cada tarefa vai num commit (Conventional Commits, em português), com o teste an
 - **Água (T4b).** Depois da T4 (AI da DRI como meta, decisão 5 do coordenador), o dono corrigiu: a meta sai do peso,
   ajustada pela idade e pela situação. A spec mudou primeiro (D-355, seção 4, CA-1082 a CA-1084 e CA-1090 a CA-1095) e
   a T4b refez a conta; a AI da DRI ficou como linha de referência.
+- **T7 e T8 num commit só.** O roteiro da versão 3 muda os blocos que a tela da ficha desenha: separados, o commit
+  da T7 deixaria o teste de tela da anamnese vermelho. Os dois foram juntos.
+- **Resumo do link no Retorno** saiu num arquivo próprio (`src/domain/adesaoNoRetorno.ts`), para não mexer em
+  `acompanhamento.ts`, que é da frente de textos e da tela Adesão.
