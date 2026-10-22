@@ -442,6 +442,9 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
   return { quantidade, medida, unidade, termos }
 }
 
+/** As terminações de adjetivo em que o gênero muda sem mudar o alimento (D-482c). */
+const GENERO = /(in|id|ad)([oa])$/
+
 /** O termo com e sem o plural (D-372): "ovos" acha ovo; "paes" acha pao; "feijoes" acha feijao. */
 export function variantesDoTermo(termo: string): readonly string[] {
   const singular = termo.endsWith('oes') || termo.endsWith('aes')
@@ -458,7 +461,12 @@ export function variantesDoTermo(termo: string): readonly string[] {
           : termo.length > 3 && termo.endsWith('s')
             ? termo.slice(0, -1)
             : termo
-  return singular === termo ? [termo] : [termo, singular]
+  const variantes = singular === termo ? [termo] : [termo, singular]
+  // D-482c (3ª revisão, R3): o gênero das terminações de adjetivo ("bovino" acha "bovina", "moída" acha "moído",
+  // "assada" acha "assado"). Só -ino, -ido e -ado: "ovo" não vira "ova" (que acharia "Nova Zelândia").
+  const genero = GENERO.exec(singular)
+  if (genero?.[1] && genero[2]) variantes.push(`${singular.slice(0, -1)}${genero[2] === 'o' ? 'a' : 'o'}`)
+  return variantes
 }
 
 /** A medida que o alimento tem com o nome pedido (inteiro ou curto); `null` quando ele não tem. */
@@ -600,17 +608,44 @@ interface Candidato {
   readonly uso: number
 }
 
+/**
+ * D-482c (3ª revisão, R3): apelidos de alimento, como se fala. Valem junto com o nome escrito, nunca no lugar dele: a
+ * busca procura as duas leituras.
+ */
+const APELIDOS: readonly { readonly de: readonly string[]; readonly para: readonly string[] }[] = [
+  { de: ['queijo', 'branco'], para: ['queijo', 'minas', 'frescal'] },
+  { de: ['file', 'frango'], para: ['frango', 'peito'] },
+  { de: ['pao', 'sal'], para: ['pao', 'frances'] },
+  { de: ['aipim'], para: ['mandioca'] },
+  { de: ['macaxeira'], para: ['mandioca'] },
+  { de: ['boi'], para: ['bovina'] },
+]
+
+/** Os termos escritos e, para cada apelido que eles têm por inteiro, os termos com o apelido trocado. */
+function comApelidos(termos: readonly string[]): readonly (readonly string[])[] {
+  const tem = (palavra: string) => termos.findIndex((t) => variantesDoTermo(t).includes(palavra))
+  const leituras: (readonly string[])[] = [termos]
+  for (const { de, para } of APELIDOS) {
+    const posicoes = de.map(tem)
+    if (posicoes.some((p) => p < 0)) continue
+    leituras.unshift([...para, ...termos.filter((_, i) => !posicoes.includes(i))])
+  }
+  return leituras
+}
+
 function candidatosDaBusca(
   termos: readonly string[],
   alimentos: readonly Alimento[],
   opcoes: OpcoesBusca,
   temMedida: (alimento: Alimento) => boolean,
 ): readonly Candidato[] {
-  const variantes = termos.map(variantesDoTermo)
-  const primeiro = variantes[0] ?? []
+  // D-482c: o nome escrito e o dos apelidos ("queijo branco" também procura "queijo minas frescal").
+  const leituras = comApelidos(termos).map((t) => t.map(variantesDoTermo))
+  const casa = (i: Indice, variantes: readonly (readonly string[])[]) => variantes.every((vs) => vs.some((v) => i.texto.includes(v)))
+  const comeca = (i: Indice) => leituras.some((variantes) => casa(i, variantes) && (variantes[0] ?? []).some((v) => i.texto.startsWith(v)))
   return indexar(alimentos)
-    .filter((i) => variantes.every((vs) => vs.some((v) => i.texto.includes(v))))
-    .map((i) => ({ i, temMedida: temMedida(i.alimento), comeca: primeiro.some((v) => i.texto.startsWith(v)), uso: usoDe(i.alimento, opcoes.uso) }))
+    .filter((i) => leituras.some((variantes) => casa(i, variantes)))
+    .map((i) => ({ i, temMedida: temMedida(i.alimento), comeca: comeca(i), uso: usoDe(i.alimento, opcoes.uso) }))
     .sort(
       (a, b) =>
         Number(b.temMedida) - Number(a.temMedida) ||

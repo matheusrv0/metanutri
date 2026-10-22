@@ -532,6 +532,35 @@ describe('número de 20 ou mais é peso, também com nome de corte (spec aliment
   })
 })
 
+describe('sinônimos e gênero na busca (spec alimentos-e-gramaturas, 3ª revisão, D-482c)', () => {
+  const primeiro = (texto: string) => buscarAlimentos(texto, ALIMENTOS).resultados[0]?.alimento.descricao.trim()
+
+  it.each([
+    ['fígado bovino', /^Carne, bovina, fígado/],
+    ['fígado de boi', /^Carne, bovina, fígado/],
+    ['carne moída', /^Carne, bovina, .*moído/],
+    ['queijo branco', /^Queijo, minas, frescal$/],
+    ['frescal minas', /^Queijo, minas, frescal$/],
+    ['aipim', /^Mandioca/],
+    ['macaxeira cozida', /^Mandioca, cozida$/],
+    ['pão de sal', /^Pão, trigo, francês$/],
+    ['filé de frango', /^Frango, peito, sem pele, grelhado$/],
+  ])('CA-1344: "%s" acha o alimento', (texto, esperado) => {
+    expect(primeiro(texto)).toMatch(esperado)
+  })
+
+  it('CA-1344: "120 filé de frango" é o peito grelhado, 120 g (com a D-482a)', () => {
+    expect(buscarAlimentos('120 filé de frango', ALIMENTOS).resultados[0]).toMatchObject({ gramas: 120, alimento: { descricao: 'Frango, peito, sem pele, grelhado' } })
+  })
+
+  it('CA-1344: o gênero vale só nas terminações de adjetivo (-ino, -ido, -ado): "ovo" não vira "ova"', () => {
+    expect(variantesDoTermo('bovino')).toContain('bovina')
+    expect(variantesDoTermo('moida')).toContain('moido')
+    expect(variantesDoTermo('assada')).toContain('assado')
+    expect(variantesDoTermo('ovo')).not.toContain('ova')
+  })
+})
+
 describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
   const ATUM = 277
 

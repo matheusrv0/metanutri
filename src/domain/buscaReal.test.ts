@@ -68,6 +68,10 @@ const ENTRADAS: readonly (readonly [texto: string, alimento: string, gramas: num
   ['2 filés de frango', 'Frango, peito, sem pele, grelhado', 200, '2 filés · 200 g'],
   ['1 iogurte', 'Iogurte, natural', 200, '1 pote · 200 g'],
   ['200 iogurte', 'Iogurte, natural', 200, '200 g'],
+  // D-482c: apelidos e gênero.
+  ['120 filé de frango', 'Frango, peito, sem pele, grelhado', 120, '120 g'],
+  ['100 fígado bovino', 'Carne, bovina, fígado, grelhado', 100, '100 g'],
+  ['1 fatia de queijo branco', 'Queijo, minas, frescal', 45, '1 fatia · 45 g'],
 ]
 
 describe('CA-1110: a entrada rápida com entradas reais', () => {
