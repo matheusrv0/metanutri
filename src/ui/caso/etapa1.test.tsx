@@ -70,9 +70,23 @@ describe('Meta de água pelo peso (spec ficha-unica, D-355; spec conduta-da-nutr
 
   it('CA-1095: a linha escrita à mão antes continua, com o aviso, até "Usar a calculada"', async () => {
     const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
-    expect(screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você usar a calculada.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você digitar uma meta ou usar a calculada.'),
+    ).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
     expect(screen.queryByText(/Linha escrita antes/)).not.toBeInTheDocument()
+  })
+
+  it('CA-1297 (spec ficha-unica, D-464): digitar a meta tira a linha escrita à mão, mas diz e deixa voltar', async () => {
+    const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
+    const campo = screen.getByLabelText('Meta de água')
+    await usuario.clear(campo)
+    await usuario.type(campo, '3')
+    expect(screen.getByText('A linha escrita antes saiu do plano impresso: vale a meta digitada.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Voltar a linha escrita' }))
+    expect(screen.getByText(/^Linha escrita antes: “Beba 2 litros de água, mais no calor\.”/)).toBeInTheDocument()
+    expect(screen.queryByText(/saiu do plano impresso/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Meta de água')).toHaveValue('2,2')
   })
 })
 
