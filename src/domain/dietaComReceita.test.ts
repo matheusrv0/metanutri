@@ -111,7 +111,8 @@ describe('a receita na dieta do link', () => {
   })
 
   it('CA-885: plano sem receita não ganha campo novo, e o link de antes desta versão não aparece como mudado', () => {
-    const semReceita = dietaDoPlano(caso({ orientacoes: 'Beber água.' }), criarPlanoPadrao(ids))
+    // Plano gravado antes desta versão lê "Só medida" (spec alimentos-e-gramaturas, D-376).
+    const semReceita = dietaDoPlano(caso({ orientacoes: 'Beber água.', quantidades: 'medida-caseira' }), criarPlanoPadrao(ids))
     expect('receitasDoPlano' in semReceita).toBe(false)
     const linkAntigo = lerDieta({ refeicoes: [], orientacoes: 'Beber água.', receitas: '', copiadaEm: '2026-10-01' })
     expect(linkAntigo).not.toBeNull()

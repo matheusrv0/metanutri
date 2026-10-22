@@ -2,11 +2,12 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
-import { medidaParaMostrar } from '@/domain/busca.ts'
+import { formatarQuantidadeMedida } from '@/domain/busca.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
-import { ALIMENTOS } from '@/domain/tabelas.ts'
+import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
-import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
+import type { Caso, ChaveNutrienteAlimento, MedidaDoItem, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
@@ -28,7 +29,8 @@ interface GavetaCobrirProps {
   /** O que o paciente não come; a sugestão que casar com qualquer termo é descartada. */
   readonly restricoes?: readonly string[]
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
-  readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number) => void
+  /** Põe a sugestão na refeição, com a medida da porção (spec alimentos-e-gramaturas, G8). */
+  readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number, medida: MedidaDoItem | null) => void
   readonly aoFechar: () => void
   /**
    * Para onde vai o foco quando a gaveta fecha (D-212). A gaveta abre por estado, sem gatilho próprio: sem isto o foco
@@ -40,8 +42,8 @@ interface GavetaCobrirProps {
 function descreverAvisos(s: Sugestao): readonly string[] {
   return s.avisos.map((a) =>
     a.tipo === 'excede-gasto'
-      ? `Passa ${formatarNumero(a.kcalAcima, 0)} kcal do gasto energético.`
-      : `Passa do limite superior de ${a.rotulo}.`,
+      ? `Ultrapassa o gasto energético em ${formatarNumero(a.kcalAcima, 0)} kcal.`
+      : `Ultrapassa o limite superior (UL) de ${a.rotulo}.`,
   )
 }
 
@@ -50,8 +52,8 @@ function fraseDoGasto(kcalDisponiveis: number | null): string {
   if (kcalDisponiveis === null) return ''
   const kcal = Math.round(kcalDisponiveis)
   return kcal < 0
-    ? ` O plano já passou ${formatarNumero(-kcal, 0)} kcal do gasto energético.`
-    : ` Cabem ${formatarNumero(Math.max(kcal, 0), 0)} kcal até o gasto energético.`
+    ? ` O plano já ultrapassa o gasto energético em ${formatarNumero(-kcal, 0)} kcal.`
+    : ` Ainda cabem ${formatarNumero(Math.max(kcal, 0), 0)} kcal até o gasto energético.`
 }
 
 /** CA-34 a CA-40: sugestões de alimentos para cobrir a falta de um micronutriente. */
@@ -163,12 +165,14 @@ export function GavetaCobrir({
 
         <ul aria-label="Sugestões para cobrir" className="flex flex-col gap-3">
           {(resultado?.sugestoes ?? []).map((s) => {
-            const medida = medidaParaMostrar(s.alimentoId, s.gramas)
+            // G8 (spec alimentos-e-gramaturas): a porção em meia medida caseira, o peso e a unidade (ml no líquido).
+            const peso = `${formatarNumero(s.gramas, 0)} ${unidadeDo(buscarAlimento(s.alimentoId))}`
+            const porcao = s.medida ? `${formatarQuantidadeMedida(s.medida.quantidade, s.medida.nome)} · ${peso}` : peso
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">
                 <p className="text-sm font-semibold text-heading">{s.descricao}</p>
                 <p className="numeros text-sm text-muted-foreground">
-                  {`${formatarNumero(s.gramas, 0)} g${medida ? ` · ${medida.texto}` : ''} · cobre ${formatarNumero(s.coberturaPct, 0)}% da falta · +${formatarNumero(
+                  {`${porcao} · cobre ${formatarNumero(s.coberturaPct, 0)}% da falta · +${formatarNumero(
                     s.kcalAdicionadas,
                     0,
                   )} kcal`}
@@ -179,7 +183,7 @@ export function GavetaCobrir({
                   </p>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => aoAdicionar(refeicaoId, opcao, s.alimentoId, s.gramas)}>
+                  <Button size="sm" onClick={() => aoAdicionar(refeicaoId, opcao, s.alimentoId, s.gramas, s.medida)}>
                     Adicionar
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => ocultar(s.alimentoId)} aria-label={`Nunca sugerir ${s.descricao}`}>

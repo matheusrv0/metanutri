@@ -18,7 +18,8 @@ async function textoDoDocx(dados: DadosAconselhamento): Promise<string> {
 let n = 0
 const ids = () => `id${++n}`
 
-const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Paciente Exemplo', sexo: 'F', idadeAnos: 30 }
+// Em "Só medida", o modo dos planos de antes (spec alimentos-e-gramaturas, D-376).
+const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Paciente Exemplo', sexo: 'F', idadeAnos: 30, quantidades: 'medida-caseira' }
 
 function planoComPanqueca(): Plano {
   const plano = criarPlanoPadrao(ids)

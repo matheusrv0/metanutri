@@ -1,6 +1,7 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { modoDeQuantidade } from '@/domain/caso.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
@@ -367,7 +368,15 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
         {...base}
         titulo={registro.caso.nome || 'Plano sem nome'}
         trilha={[irParaCasos]}
-        acoes={<MenuExportar caso={registro.caso} plano={registro.plano} bloqueio={bloqueio} assinatura={quemAssina} />}
+        acoes={
+          <MenuExportar
+            caso={registro.caso}
+            plano={registro.plano}
+            bloqueio={bloqueio}
+            assinatura={quemAssina}
+            aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
+          />
+        }
       >
         <div className="flex flex-col gap-6">
           <EtapasDoCaso abaAtual={rota.aba} aoEscolher={(aba) => navegar({ tela: 'planejador', casoId: rota.casoId, aba })} />
@@ -384,7 +393,12 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           ) : rota.aba === 'plano' ? (
             <div className="flex flex-col gap-6">
               <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                <TelaPlano plano={registro.plano} aoAlterarPlano={alterarPlano} />
+                <TelaPlano
+                  plano={registro.plano}
+                  aoAlterarPlano={alterarPlano}
+                  modo={modoDeQuantidade(registro.caso)}
+                  aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
+                />
                 <div className="flex flex-col gap-6">
                   <ResumoDoDia caso={registro.caso} plano={registro.plano} aoAlterar={alterarCaso} />
                   <MicrosDoDia

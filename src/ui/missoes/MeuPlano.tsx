@@ -6,9 +6,8 @@ import { useId } from 'react'
 import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
 import { modoDaCopia, paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
-import type { QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
+import { textoDaQuantidade, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
 import type { ModoQuantidade } from '@/domain/tipos.ts'
-import { formatarNumero } from '@/export/copiar-tabela.ts'
 
 interface MeuPlanoProps {
   readonly dieta: DietaDoLink
@@ -17,12 +16,11 @@ interface MeuPlanoProps {
 }
 
 /**
- * Uma quantidade só, como na folha (spec conduta-da-nutricionista, D-297): a medida caseira; sem medida, ou com o plano
- * em "Gramas", o peso (CB-156).
+ * A quantidade como na folha (spec alimentos-e-gramaturas, D-376 e D-377): a medida com o peso, só a medida ou só o
+ * peso, na escolha do plano; sem medida que sirva, o peso (CB-156).
  */
 function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
-  if (quantidade.medida === null) return <strong className="numeros font-bold text-heading">{`${formatarNumero(quantidade.gramas, 0)} g`}</strong>
-  return <strong className="font-bold text-heading">{quantidade.medida}</strong>
+  return <strong className="numeros font-bold text-heading">{textoDaQuantidade(quantidade)}</strong>
 }
 
 function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readonly modo: ModoQuantidade }) {

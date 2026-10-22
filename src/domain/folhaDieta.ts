@@ -89,10 +89,16 @@ export interface LinhaDaFolha {
  * unidade"); sem meia porção que feche, ou em "Gramas", o peso.
  */
 export function linhaDaFolha(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): LinhaDaFolha {
-  if (!ehItemDeReceita(item)) return { nome: nomeParaPaciente(buscar(item.alimentoId)), quantidade: quantidadeNaFolha(item.alimentoId, item.gramas, modo) }
+  // G1 (spec alimentos-e-gramaturas): a medida escolhida no item vem antes da automática.
+  if (!ehItemDeReceita(item)) return { nome: nomeParaPaciente(buscar(item.alimentoId)), quantidade: quantidadeNaFolha(item.alimentoId, item.gramas, modo, item.medida) }
   const receita = receitaDoItem(item)
   const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
-  return { nome: nomeDaReceita(receita), quantidade: { medida, gramas: item.gramas } }
+  return { nome: nomeDaReceita(receita), quantidade: quantidadeDaReceita(medida, item.gramas, modo) }
+}
+
+/** A porção da receita como quantidade da folha: em "Medida e gramas", o peso ao lado (D-376). */
+export function quantidadeDaReceita(porcao: string | null, gramas: number, modo: ModoQuantidade): QuantidadeNaFolha {
+  return { medida: porcao, gramas, unidade: 'g', aproximada: false, comPeso: modo === 'medida-e-gramas' }
 }
 
 /** Uma receita na seção "Receitas" da folha (CA-880). */

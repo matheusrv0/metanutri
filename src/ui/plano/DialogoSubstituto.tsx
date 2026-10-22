@@ -2,7 +2,9 @@ import { ArrowLeftRight } from 'lucide-react'
 import { useState } from 'react'
 import { calcularSubstituto, type CriterioEquivalencia } from '@/domain/substitutos.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
-import type { ItemPlano, OpcaoId } from '@/domain/tipos.ts'
+import { formatarQuantidadeMedida } from '@/domain/busca.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
+import type { ItemPlano, MedidaDoItem, OpcaoId } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -13,7 +15,8 @@ import { EntradaRapida } from './EntradaRapida.tsx'
 interface DialogoSubstitutoProps {
   /** Item do Principal que será substituído; `null` mantém a janela fechada. */
   readonly item: ItemPlano | null
-  readonly aoAdicionar: (opcao: OpcaoId, alimentoId: number, gramas: number) => void
+  /** Põe o substituto com a medida da porção (spec alimentos-e-gramaturas, G8). */
+  readonly aoAdicionar: (opcao: OpcaoId, alimentoId: number, gramas: number, medida: MedidaDoItem | null) => void
   readonly aoFechar: () => void
 }
 
@@ -71,7 +74,10 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
             <div className="flex flex-col gap-3 border border-border bg-muted p-4">
               <p className="text-sm font-semibold text-heading">{substituto.descricao}</p>
               <p className="numeros text-lg font-bold text-primary">
-                {`${formatarNumero(resultado.gramas ?? 0, 0)} g${resultado.medida ? ` · ${resultado.medida.texto}` : ''}`}
+                {/* G8: a porção em meia medida caseira, com o peso. */}
+                {resultado.medidaDoItem
+                  ? `${formatarQuantidadeMedida(resultado.medidaDoItem.quantidade, resultado.medidaDoItem.nome)} · ${formatarNumero(resultado.gramas ?? 0, 0)} ${unidadeDo(substituto)}`
+                  : `${formatarNumero(resultado.gramas ?? 0, 0)} ${unidadeDo(substituto)}`}
               </p>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 {DIFERENCAS.map((d) => {
@@ -100,12 +106,12 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
               disabled={!resultado || resultado.gramas === null}
               onClick={() => {
                 if (substitutoId !== null && resultado?.gramas !== null && resultado?.gramas !== undefined) {
-                  aoAdicionar(opcao, substitutoId, resultado.gramas)
+                  aoAdicionar(opcao, substitutoId, resultado.gramas, resultado.medidaDoItem)
                   fechar()
                 }
               }}
             >
-              {opcao === 'substituto1' ? 'Pôr em Substituto 1' : 'Pôr em Substituto 2'}
+              {opcao === 'substituto1' ? 'Usar como substituto 1' : 'Usar como substituto 2'}
             </Button>
           ))}
         </DialogFooter>

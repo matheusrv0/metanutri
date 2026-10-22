@@ -113,8 +113,9 @@ export interface Caso {
   /** Receitas anexadas ao documento (CA-44). */
   readonly receitas: string
   /**
-   * Como a quantidade sai para o paciente na folha, no link e no Word (spec conduta-da-nutricionista, D-297). Plano
-   * gravado antes, sem o campo, lê "medida-caseira" (`modoDeQuantidade`).
+   * Como a quantidade sai para o paciente na folha, no link e no Word (spec conduta-da-nutricionista, D-297; spec
+   * alimentos-e-gramaturas, D-376). Plano novo nasce em "medida-e-gramas"; plano gravado antes, sem o campo, lê
+   * "medida-caseira" (`modoDeQuantidade`).
    */
   readonly quantidades: ModoQuantidade
   /**
@@ -124,8 +125,21 @@ export interface Caso {
   readonly linhaDaAgua: string | null
 }
 
-/** "Medida caseira" (a medida do planejador, para a paciente) ou "Gramas" (só o peso). */
-export type ModoQuantidade = 'medida-caseira' | 'gramas'
+/**
+ * "Medida e gramas" (a medida com o peso ao lado, o padrão de plano novo), "Só medida" (`medida-caseira`, o nome
+ * gravado desde a D-297) ou "Só gramas" (`gramas`). Spec alimentos-e-gramaturas, D-376.
+ */
+export type ModoQuantidade = 'medida-e-gramas' | 'medida-caseira' | 'gramas'
+
+/**
+ * A medida que a nutricionista escolheu para o item (spec alimentos-e-gramaturas, G1 e D-374): uma cópia, que não muda
+ * quando a medida própria muda depois. Os gramas do item continuam sendo a verdade da conta.
+ */
+export interface MedidaDoItem {
+  readonly nome: string
+  readonly quantidade: number
+  readonly gramasPorMedida: number
+}
 
 export type OpcaoId = 'principal' | 'substituto1' | 'substituto2'
 
@@ -161,6 +175,11 @@ export interface ItemPlano {
   readonly alimentoId: number
   /** Na receita, o peso da receita pronta servida. */
   readonly gramas: number
+  /**
+   * D-374 (spec alimentos-e-gramaturas): a medida escolhida; `null` = só gramas para este item; sem o campo, a medida
+   * automática (`medidaParaMostrar`).
+   */
+  readonly medida?: MedidaDoItem | null
   /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
   readonly receita?: ReceitaDoPlano
 }

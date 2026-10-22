@@ -4,7 +4,8 @@ import type { Receita } from '@/domain/receitas.ts'
 import type { SugestaoAlimento, TipoRefeicao } from '@/domain/sugestoes.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
-import type { ItemPlano, OpcaoId, Refeicao } from '@/domain/tipos.ts'
+import type { MedidaCaseira } from '@/domain/busca.ts'
+import type { ItemPlano, MedidaDoItem, ModoQuantidade, OpcaoId, Refeicao } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -26,11 +27,17 @@ interface CartaoRefeicaoProps {
   readonly aoRenomear: (nome: string) => void
   readonly aoMudarHorario: (horario: string) => void
   readonly aoRemover: () => void
-  readonly aoAdicionarItem: (opcao: OpcaoId, alimentoId: number, gramas: number) => void
+  readonly aoAdicionarItem: (opcao: OpcaoId, alimentoId: number, gramas: number, medida?: MedidaDoItem | null) => void
   /** Põe uma receita da conta na opção (spec receitas-com-calculo, D-274). Sem ele, a busca mostra só alimentos. */
   readonly aoAdicionarReceita?: ((opcao: OpcaoId, receita: Receita, gramas: number) => void) | undefined
   readonly aoMudarGramas: (opcao: OpcaoId, itemId: string, gramas: number) => void
   readonly aoRemoverItem: (opcao: OpcaoId, itemId: string) => void
+  /** Escolhe a medida do item (spec alimentos-e-gramaturas, G2 e G3). */
+  readonly aoMudarMedida?: ((opcao: OpcaoId, itemId: string, medida: MedidaDoItem | null) => void) | undefined
+  /** Como o paciente lê as quantidades (D-376). */
+  readonly modo?: ModoQuantidade | undefined
+  /** "+ Nova medida…" no seletor da linha (D-387). */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
   /** Tipo da refeição, pelo nome ou pelo horário (CA-239, CA-240). */
   readonly tipo: TipoRefeicao
   /** A lista de sugestões que vale para esse tipo (CA-237). */
@@ -51,6 +58,9 @@ export function CartaoRefeicao({
   aoAdicionarReceita,
   aoMudarGramas,
   aoRemoverItem,
+  aoMudarMedida,
+  modo,
+  aoCriarMedida,
   tipo,
   sugestoes,
   aoSalvarSugestoes,
@@ -149,7 +159,7 @@ export function CartaoRefeicao({
       <div role="tabpanel" aria-label={`${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`} className="flex flex-col gap-3">
         <EntradaRapida
           rotulo={`Adicionar alimento em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`}
-          aoAdicionar={(alimentoId, gramas) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas)}
+          aoAdicionar={(alimentoId, gramas, medida) => aoAdicionarItem(opcaoAtiva, alimentoId, gramas, medida)}
           aoAdicionarReceita={aoAdicionarReceita ? (receita, gramas) => aoAdicionarReceita(opcaoAtiva, receita, gramas) : undefined}
           quandoVazio={
             <SugestoesDaRefeicao
@@ -172,6 +182,9 @@ export function CartaoRefeicao({
                 aoMudarGramas={(g) => aoMudarGramas(opcaoAtiva, item.id, g)}
                 aoRemover={() => aoRemoverItem(opcaoAtiva, item.id)}
                 aoSubstituir={opcaoAtiva === 'principal' ? () => setItemParaSubstituir(item) : undefined}
+                aoMudarMedida={aoMudarMedida ? (medida) => aoMudarMedida(opcaoAtiva, item.id, medida) : undefined}
+                modo={modo}
+                aoCriarMedida={aoCriarMedida}
               />
             ))}
           </ul>
@@ -191,7 +204,7 @@ export function CartaoRefeicao({
       <DialogoSubstituto
         item={itemParaSubstituir}
         aoFechar={() => setItemParaSubstituir(null)}
-        aoAdicionar={(opcao, alimentoId, gramas) => aoAdicionarItem(opcao, alimentoId, gramas)}
+        aoAdicionar={(opcao, alimentoId, gramas, medida) => aoAdicionarItem(opcao, alimentoId, gramas, medida)}
       />
     </Card>
   )

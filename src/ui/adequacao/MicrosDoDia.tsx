@@ -141,8 +141,8 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoA
         aoAlterarCaso={aoAlterarCaso}
         aoFechar={() => setCobrindo(null)}
         focoAoFechar={focoAoFechar}
-        aoAdicionar={(refeicaoId, opcao, alimentoId, gramas) => {
-          aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas }, gerarId))
+        aoAdicionar={(refeicaoId, opcao, alimentoId, gramas, medida) => {
+          aoAlterarPlano(adicionarItem(plano, refeicaoId, opcao, { alimentoId, gramas, medida: medida ?? undefined }, gerarId))
           setCobrindo(null)
         }}
       />

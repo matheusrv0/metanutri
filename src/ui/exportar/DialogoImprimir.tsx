@@ -1,14 +1,16 @@
 import { Printer } from 'lucide-react'
 import { useId, useState } from 'react'
+import { modoDeQuantidade } from '@/domain/caso.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { gravarOpcoesImpressao, lerOpcoesImpressao, type OpcoesImpressao } from '@/domain/folhaDieta.ts'
 import { suplementosParaDocumento, type Suplemento } from '@/domain/suplementos.ts'
-import type { Caso, Plano } from '@/domain/tipos.ts'
+import type { Caso, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { ModoDasQuantidades } from '../plano/ModoDasQuantidades.tsx'
 import { FolhaDieta } from './FolhaDieta.tsx'
 
 interface DialogoImprimirProps {
@@ -21,6 +23,8 @@ interface DialogoImprimirProps {
   readonly assinatura?: AssinaturaDoPlano | null | undefined
   /** Os suplementos da ficha do paciente (spec anamnese-e-prescricoes, CA-577). */
   readonly suplementos?: readonly Suplemento[] | undefined
+  /** Troca o modo do plano (D-376); sem ele, a escolha vale só para esta impressão. */
+  readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
   readonly aoFechar: () => void
 }
 
@@ -41,12 +45,17 @@ function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; r
  * Prévia da dieta antes de imprimir, com o que mais vai junto (CA-317).
  * Na caixa de impressão do navegador, "Salvar como PDF" gera o arquivo.
  */
-export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, suplementos = [], aoFechar }: DialogoImprimirProps) {
+export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, suplementos = [], aoMudarModo, aoFechar }: DialogoImprimirProps) {
   const armazenamento = useArmazenamento()
   const [opcoes, setOpcoes] = useState<OpcoesImpressao>(() => lerOpcoesImpressao(armazenamento))
   // CA-577: com suplementos na ficha, a opção aparece ligada a cada impressão; sem eles, nem aparece.
   const [comSuplementos, setComSuplementos] = useState(true)
   const temSuplementos = suplementosParaDocumento(suplementos).length > 0
+  // D-376 (spec alimentos-e-gramaturas): a escolha da etapa Refeições também fica aqui. Sem quem grave no plano, vale só
+  // nesta impressão.
+  const [modoLocal, setModoLocal] = useState<ModoQuantidade | null>(null)
+  const modo = aoMudarModo ? modoDeQuantidade(caso) : (modoLocal ?? modoDeQuantidade(caso))
+  const mudarModo = (novo: ModoQuantidade) => (aoMudarModo ? aoMudarModo(novo) : setModoLocal(novo))
 
   const mudar = (mudanca: Partial<OpcoesImpressao>) => {
     const novas = { ...opcoes, ...mudanca }
@@ -63,6 +72,10 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
           <DialogDescription>As refeições, as orientações e a assinatura sempre vão. Marque o que mais quer entregar.</DialogDescription>
         </DialogHeader>
 
+        <div className="print:hidden">
+          <ModoDasQuantidades modo={modo} aoMudar={mudarModo} />
+        </div>
+
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
           <Opcao titulo="Lista de compras" texto="Os alimentos do dia com as quantidades." marcado={opcoes.listaDeCompras} aoMudar={(v) => mudar({ listaDeCompras: v })} />
           <Opcao titulo="Trocas" texto="Até 2 opções para cada alimento do plano." marcado={opcoes.trocas} aoMudar={(v) => mudar({ trocas: v })} />
@@ -72,7 +85,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
         </div>
 
         <div className="area-impressao border border-border print:border-0">
-          <FolhaDieta caso={caso} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} suplementos={comSuplementos ? suplementos : []} />
+          <FolhaDieta caso={{ ...caso, quantidades: modo }} plano={plano} restricoes={restricoes} assinatura={assinatura} opcoes={opcoes} suplementos={comSuplementos ? suplementos : []} />
         </div>
 
         <DialogFooter className="print:hidden">

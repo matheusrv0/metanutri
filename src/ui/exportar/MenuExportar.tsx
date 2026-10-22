@@ -8,7 +8,7 @@ import { calcularEnergia } from '@/domain/energia.ts'
 import { calcularMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
-import type { Caso, Plano } from '@/domain/tipos.ts'
+import type { Caso, ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { criarAconselhamento } from '@/export/aconselhamento-docx.ts'
 import { tabelaAdequacaoParaCopiar } from '@/export/copiar-tabela.ts'
 import { gerarBlob } from '@/export/docx-comum.ts'
@@ -26,10 +26,12 @@ interface MenuExportarProps {
   readonly bloqueio?: string | null | undefined
   /** Quem assina e a situação: o Word de nutricionista sai sem receitas e com uma assinatura só (CA-235, CA-252). */
   readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** Troca como o paciente lê as quantidades, da janela de imprimir (spec alimentos-e-gramaturas, D-376). */
+  readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
 }
 
 /** CA-44 a CA-48: baixar os dois documentos Word e copiar a tabela de adequação. */
-export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportarProps) {
+export function MenuExportar({ caso, plano, bloqueio, assinatura, aoMudarModo }: MenuExportarProps) {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
   // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas e sem suplementos.
@@ -121,6 +123,7 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
         restricoes={restricoes}
         assinatura={assinatura}
         suplementos={suplementos}
+        aoMudarModo={aoMudarModo}
         aoFechar={() => setImprimindo(false)}
       />
     </div>

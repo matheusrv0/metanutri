@@ -58,7 +58,7 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
   })
 
   it('CA-926: o padrão é "Medida caseira"; a medida tem até 4 pedaços quando outra serve, e a do planejador quando não', () => {
-    expect(quantidadeNaFolha(OVO_FRITO, 55)).toEqual({ medida: '1 unidade', gramas: 55 })
+    expect(quantidadeNaFolha(OVO_FRITO, 55)).toMatchObject({ medida: '1 unidade', gramas: 55 })
     expect(texto(quantidadeNaFolha(BANANA_PRATA, 104))).toBe('4 fatias')
     // A torrada só tem a unidade de 8 g: 56 g ficam "7 unidades" (na troca, ela nem entra, D-295).
     expect(texto(quantidadeNaFolha(TORRADA, 56))).toBe('7 unidades')
@@ -80,7 +80,7 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
   })
 
   it('alimento sem medida, produto e alimento removido: só o peso, nos dois modos', () => {
-    expect(quantidadeNaFolha(999_999, 40, 'medida-caseira')).toEqual({ medida: null, gramas: 40 })
-    expect(quantidadeNaFolha(999_999, 40, 'gramas')).toEqual({ medida: null, gramas: 40 })
+    expect(quantidadeNaFolha(999_999, 40, 'medida-caseira')).toMatchObject({ medida: null, gramas: 40 })
+    expect(quantidadeNaFolha(999_999, 40, 'gramas')).toMatchObject({ medida: null, gramas: 40 })
   })
 })

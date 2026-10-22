@@ -370,14 +370,14 @@ describe('Gaveta do Cobrir: o que passou do gasto (CA-694)', () => {
     // O dia do exemplo tem cerca de 1.675 kcal; com gasto de 1.600, passou.
     render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={1600} />)
     const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
-    expect(gaveta.getByText(/O plano já passou \d+ kcal do gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.getByText(/O plano já ultrapassa o gasto energético em \d+ kcal\./)).toBeInTheDocument()
     expect(gaveta.queryByText(/Cabem -/)).not.toBeInTheDocument()
   })
 
   it('CA-694: plano abaixo do gasto continua dizendo quanto cabe', async () => {
     render(<Anfitriao inicial={adulta} planoInicial={exemplo()} gasto={2000} />)
     const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
-    expect(gaveta.getByText(/Cabem \d+ kcal até o gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.getByText(/Ainda cabem \d+ kcal até o gasto energético\./)).toBeInTheDocument()
   })
 })
 
@@ -604,7 +604,7 @@ describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
     const kcal = totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total
     render(<Anfitriao inicial={adulta} planoInicial={plano} gasto={kcal - 0.4} />)
     const gaveta = await abrirCobrir(userEvent.setup(), 'Ferro')
-    expect(gaveta.getByText(/Cabem 0 kcal até o gasto energético\./)).toBeInTheDocument()
+    expect(gaveta.getByText(/Ainda cabem 0 kcal até o gasto energético\./)).toBeInTheDocument()
     expect(gaveta.queryByText(/-0/)).not.toBeInTheDocument()
   })
 

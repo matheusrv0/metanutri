@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
@@ -17,22 +17,10 @@ const montar = (inicial: Partial<Caso>) => {
 
 const adulta: Partial<Caso> = { sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 165 }
 
-describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
-  it('CA-924: plano novo vem com "Medida caseira", e a escolha muda o plano', async () => {
-    const usuario = montar(adulta)
-    const escolha = screen.getByRole('radiogroup', { name: 'Quantidades para o paciente' })
-    expect(within(escolha).getByRole('radio', { name: 'Medida caseira' })).toHaveAttribute('aria-checked', 'true')
-    expect(within(escolha).getByRole('radio', { name: 'Gramas' })).toHaveAttribute('aria-checked', 'false')
-    await usuario.click(within(escolha).getByRole('radio', { name: 'Gramas' }))
-    expect(within(escolha).getByRole('radio', { name: 'Gramas' })).toHaveAttribute('aria-checked', 'true')
-    expect(within(escolha).getByRole('radio', { name: 'Medida caseira' })).toHaveAttribute('aria-checked', 'false')
-  })
-
-  it('CA-924: fica no cartão Identificação, o primeiro da etapa', () => {
+describe('Quantidades para o paciente (spec alimentos-e-gramaturas, D-376)', () => {
+  it('CA-1121: a escolha saiu da etapa 1; fica no topo da etapa Refeições e na janela de imprimir', () => {
     montar(adulta)
-    const identificacao = screen.getByRole('heading', { name: 'Identificação' }).closest('[data-slot="card"]')
-    expect(identificacao).not.toBeNull()
-    expect(within(identificacao as HTMLElement).getByRole('radiogroup', { name: 'Quantidades para o paciente' })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Quantidades para o paciente' })).not.toBeInTheDocument()
   })
 })
 

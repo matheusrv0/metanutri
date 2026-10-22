@@ -58,17 +58,19 @@ export function criarCasoVazio(id: string): Caso {
     adequacao: { preset: { tipo: 'individual' }, porcaoMaximaG: 200, incluirIngredientes: false, ocultos: [] },
     orientacoes: '',
     receitas: '',
-    quantidades: 'medida-caseira',
+    // D-376 (spec alimentos-e-gramaturas): plano novo mostra a medida com o peso ao lado.
+    quantidades: 'medida-e-gramas',
     linhaDaAgua: null,
   }
 }
 
 /**
- * A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297). Sem o campo, ou com valor que esta versão
- * não conhece, vale "Medida caseira" (CB-290, CB-291).
+ * A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297; spec alimentos-e-gramaturas, D-376). Sem o
+ * campo, ou com valor que esta versão não conhece, vale "Só medida" (`medida-caseira`, CB-290, CB-291 e CB-365): o plano
+ * gravado antes desta versão não muda sem a nutricionista pedir.
  */
 export function modoDeQuantidade(caso: { readonly quantidades?: unknown }): ModoQuantidade {
-  return caso.quantidades === 'gramas' ? 'gramas' : 'medida-caseira'
+  return caso.quantidades === 'gramas' || caso.quantidades === 'medida-e-gramas' ? caso.quantidades : 'medida-caseira'
 }
 
 /**

@@ -10,7 +10,8 @@ import { FolhaDieta } from './FolhaDieta.tsx'
 let n = 0
 const ids = () => `id${++n}`
 
-const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Maria, 28 anos', receitas: 'Suco verde: couve, limão e água.' }
+// Em "Só medida", o modo dos planos de antes (spec alimentos-e-gramaturas, D-376).
+const caso: Caso = { ...criarCasoVazio('c1'), nome: 'Maria, 28 anos', receitas: 'Suco verde: couve, limão e água.', quantidades: 'medida-caseira' }
 
 function planoComPanqueca(gramas = 120): Plano {
   const plano = criarPlanoPadrao(ids)

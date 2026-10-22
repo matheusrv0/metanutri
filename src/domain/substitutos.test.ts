@@ -15,20 +15,30 @@ const BATATA = 91
 const OLEO = 272
 
 describe('calcularSubstituto', () => {
-  it('CA-41: por proteína, 100 g de frango equivalem a 89 g de patinho', () => {
+  // G8 e D-379 (spec alimentos-e-gramaturas): os gramas equivalentes viram a meia medida caseira mais perto.
+  /** A porção em meia medida que a regra dá para os gramas equivalentes. */
+  const emMeiaMedida = (alimentoId: number, equivalentes: number) => {
+    const m = medidaParaMostrar(alimentoId, equivalentes)
+    return m ? m.gramasEquivalentes : equivalentes
+  }
+
+  it('CA-41: por proteína, 100 g de frango equivalem a 89 g de patinho, servidos em meia medida', () => {
     const r = calcularSubstituto({ alimentoId: FRANGO, gramas: 100 }, PATINHO, 'proteina', buscarAlimento)
     expect(r.motivoSemCalculo).toBeNull()
-    expect(r.gramas).toBe(89) // 32,0333 / 35,9 × 100 = 89,2 g
+    // 32,0333 / 35,9 × 100 = 89,2 g
+    expect(r.gramas).toBe(emMeiaMedida(PATINHO, 89))
+    expect(Math.abs((r.gramas ?? 0) - 89) / 89).toBeLessThanOrEqual(0.15)
+    expect(r.medidaDoItem).toMatchObject({ nome: r.medida?.medida, quantidade: r.medida?.quantidade })
   })
 
-  it('CA-41: por kcal (padrão), 100 g de frango equivalem a 73 g de patinho', () => {
+  it('CA-41: por kcal (padrão), 100 g de frango equivalem a 73 g de patinho, servidos em meia medida', () => {
     const r = calcularSubstituto({ alimentoId: FRANGO, gramas: 100 }, PATINHO, 'kcal', buscarAlimento)
-    expect(r.gramas).toBe(73) // 159,185 / 219,2593 × 100 = 72,6 g
+    expect(r.gramas).toBe(emMeiaMedida(PATINHO, 73)) // 159,185 / 219,2593 × 100 = 72,6 g
   })
 
-  it('CA-41: por carboidrato, 150 g de arroz equivalem a 352 g de batata cozida', () => {
+  it('CA-41: por carboidrato, 150 g de arroz equivalem a 352 g de batata cozida, servidos em meia medida', () => {
     const r = calcularSubstituto({ alimentoId: ARROZ, gramas: 150 }, BATATA, 'carboidrato', buscarAlimento)
-    expect(r.gramas).toBe(352) // 28,0598 × 1,5 / 11,9438 × 100 = 352,4 g
+    expect(r.gramas).toBe(emMeiaMedida(BATATA, 352)) // 28,0598 × 1,5 / 11,9438 × 100 = 352,4 g
   })
 
   it('CA-42: mostra a porção também em medida caseira', () => {
@@ -40,12 +50,20 @@ describe('calcularSubstituto', () => {
     expect(semMedida.medida).toEqual(medidaParaMostrar(BATATA, 352))
   })
 
-  it('CA-42: mostra a diferença de kcal e macros em relação ao original, com a porção arredondada', () => {
+  it('CA-42: mostra a diferença de kcal e macros em relação ao original, na porção servida', () => {
     const r = calcularSubstituto({ alimentoId: FRANGO, gramas: 100 }, PATINHO, 'proteina', buscarAlimento)
-    expect(r.diferencas.energia_kcal).toBeCloseTo(219.2593 * 0.89 - 159.185, 3)
-    expect(r.diferencas.proteina_g).toBeCloseTo(35.9 * 0.89 - 32.0333, 3)
+    const f = (r.gramas ?? 0) / 100
+    expect(r.diferencas.energia_kcal).toBeCloseTo(219.2593 * f - 159.185, 3)
+    expect(r.diferencas.proteina_g).toBeCloseTo(35.9 * f - 32.0333, 3)
     expect(r.diferencas.carboidrato_g).toBeCloseTo(0, 6)
-    expect(r.diferencas.lipideos_g).toBeCloseTo(7.3133 * 0.89 - 2.4837, 3)
+    expect(r.diferencas.lipideos_g).toBeCloseTo(7.3133 * f - 2.4837, 3)
+  })
+
+  it('CA-1126: sem medida caseira que sirva, os gramas inteiros e nenhuma medida guardada', () => {
+    const r = calcularSubstituto({ alimentoId: FRANGO, gramas: 100 }, 40, 'kcal', buscarAlimento)
+    expect(medidaParaMostrar(40, r.gramas ?? 0)).toBeNull()
+    expect(r.medidaDoItem).toBeNull()
+    expect(Number.isInteger(r.gramas)).toBe(true)
   })
 
   it('substituto sem o nutriente do critério não é calculado e explica', () => {

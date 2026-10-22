@@ -6,6 +6,7 @@ import { ID_DE_RECEITA, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarReceitas, copiaParaOPlano, type Receita, type ResultadoReceita } from '@/domain/receitas.ts'
 import { alimentosComProdutos, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
+import type { MedidaDoItem } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Input } from '@ds/componentes/forms/input.tsx'
@@ -14,7 +15,8 @@ import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
 interface EntradaRapidaProps {
   readonly rotulo: string
-  readonly aoAdicionar: (alimentoId: number, gramas: number) => void
+  /** Põe o alimento; com a medida que a pessoa digitou ou a das unidades (spec alimentos-e-gramaturas, G1 e D-371). */
+  readonly aoAdicionar: (alimentoId: number, gramas: number, medida?: MedidaDoItem) => void
   /**
    * Põe uma receita da conta (spec receitas-com-calculo, D-274). Sem ele, a busca mostra só alimentos: é assim no
    * editor de receita e na janela de substituto.
@@ -94,6 +96,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada.
     if (o.r.gramas === null) return
     if (o.tipo === 'receita') aoAdicionarReceita?.(o.r.receita, o.r.gramas)
+    else if (o.r.medida) aoAdicionar(o.r.alimento.id, o.r.gramas, o.r.medida)
     else aoAdicionar(o.r.alimento.id, o.r.gramas)
     limpar()
   }

@@ -12,6 +12,8 @@ export const PRIMEIRO_ID_PROPRIO = 900_000
 export interface MedidaCaseira {
   readonly nome: string
   readonly gramas: number
+  /** Medida da conta (spec alimentos-e-gramaturas, D-387): vem antes das da POF e leva a marca "sua". */
+  readonly propria?: boolean
 }
 
 const MEDIDAS_POR_ALIMENTO = new Map<number, readonly MedidaCaseira[]>(
@@ -23,7 +25,7 @@ export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] 
 }
 
 /** Medidas mais legíveis num plano, em ordem de preferência; medidas vagas ("porção", "prato") ficam de fora. */
-const PREFERENCIA_MEDIDAS = [
+export const PREFERENCIA_MEDIDAS: readonly string[] = [
   'unidade',
   'fatia',
   'bife',

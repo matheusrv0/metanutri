@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarPlanoPadrao } from '@/domain/plano.ts'
 import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
-import type { Plano } from '@/domain/tipos.ts'
+import type { ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { TelaPlano } from './TelaPlano.tsx'
 
 let n = 0
@@ -155,7 +155,11 @@ describe('Etapa 2: plano alimentar', () => {
     const usuario = montar()
     await usuario.type(entradaDoAlmoco(), '2 colher de sopa arroz, tipo 1, cozido{Enter}')
     const lista = within(screen.getByRole('list', { name: 'Alimentos em Principal de Almoço' }))
-    expect(lista.getByText(/colher de sopa|colheres de sopa/)).toBeInTheDocument()
+    // G1 e G2 (spec alimentos-e-gramaturas): quantidade + medida = gramas, ligados, e o que o paciente lê.
+    expect(lista.getByLabelText('Quantidade de Arroz, tipo 1, cozido')).toHaveValue('2')
+    expect(lista.getByRole('combobox', { name: 'Medida de Arroz, tipo 1, cozido' })).toHaveValue('colher de sopa')
+    expect(lista.getByLabelText('Gramas de Arroz, tipo 1, cozido')).toHaveValue('50')
+    expect(lista.getByText(/O paciente lê:/)).toHaveTextContent('2 colheres de sopa')
     expect(lista.getByText(/kcal$/)).toBeInTheDocument()
   })
 
@@ -264,5 +268,32 @@ describe('Sugestões por refeição (US-A3)', () => {
     expect(painel('Almoço').queryByText('Sugestões para o almoço')).not.toBeInTheDocument()
     await usuario.click(painel('Almoço').getByRole('button', { name: 'Editar sugestões para o almoço' }))
     expect(screen.getByRole('dialog', { name: 'Sugestões para o almoço' })).toBeInTheDocument()
+  })
+})
+
+describe('Quantidades para o paciente no topo da etapa (spec alimentos-e-gramaturas, D-376)', () => {
+  function ComModo() {
+    const [plano, setPlano] = useState<Plano>(criarPlanoPadrao(ids))
+    const [modo, setModo] = useState<ModoQuantidade>('medida-e-gramas')
+    return <TelaPlano plano={plano} aoAlterarPlano={setPlano} gerarId={ids} modo={modo} aoMudarModo={setModo} />
+  }
+
+  it('CA-1121 e CA-1119: a escolha fica no topo, e "O paciente lê" segue o modo', async () => {
+    render(<ComModo />)
+    const usuario = userEvent.setup()
+    await usuario.type(entradaDoAlmoco(), '1 concha e meia de feijão{Enter}')
+    expect(almoco().getByText(/O paciente lê:/)).toHaveTextContent('1 concha e meia (210 g)')
+    const escolha = screen.getByRole('radiogroup', { name: 'Quantidades para o paciente' })
+    await usuario.click(within(escolha).getByRole('radio', { name: 'Só medida' }))
+    expect(almoco().getByText(/O paciente lê:/)).toHaveTextContent('O paciente lê: 1 concha e meia')
+    await usuario.click(within(escolha).getByRole('radio', { name: 'Só gramas' }))
+    expect(almoco().getByText(/O paciente lê:/)).toHaveTextContent('O paciente lê: 210 g')
+  })
+
+  it('CA-1101: "1 banana" entra como 1 unidade, com a medida guardada', async () => {
+    render(<ComModo />)
+    await userEvent.setup().type(entradaDoAlmoco(), '1 banana{Enter}')
+    expect(almoco().getByLabelText('Gramas de Banana, prata, crua')).toHaveValue('75')
+    expect(almoco().getByRole('combobox', { name: 'Medida de Banana, prata, crua' })).toHaveValue('unidade')
   })
 })

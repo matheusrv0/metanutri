@@ -3,6 +3,7 @@
 // nutriente (D-150). Vira texto na hora da cópia (D-151): o aparelho do paciente não tem os
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
 import { modoDeQuantidade } from './caso.ts'
+import { lerMedidaDoItem } from './medidaDoItem.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import {
   ehItemDeReceita,
@@ -13,8 +14,8 @@ import {
   textoDaPorcao,
   textoDoRendimento,
 } from './receitaNoPlano.ts'
-import { buscarAlimento } from './tabelas.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type ReceitaDoPlano } from './tipos.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
+import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type MedidaDoItem, type ModoQuantidade, type Plano, type ReceitaDoPlano } from './tipos.ts'
 
 export interface ItemDaDieta {
   /**
@@ -29,6 +30,15 @@ export interface ItemDaDieta {
    * nunca o procura na base. Item de alimento não leva o campo, e a cópia de um plano sem receita fica igual à de antes.
    */
   readonly receita?: true
+  /**
+   * A medida veio da escolha da nutricionista no item (spec alimentos-e-gramaturas, G1 e D-377): "Meu plano" mostra a
+   * medida guardada, sem refazer a automática. Com `medida: null`, o item é "só gramas".
+   */
+  readonly escolhida?: true
+  /** A medida escolhida não fecha em meia medida: "190 g (cerca de 1 concha e meia)". */
+  readonly aproximada?: true
+  /** Só no alimento que não está na base (alimento próprio) medido em ml (D-378); o da base, "Meu plano" sabe sozinho. */
+  readonly unidade?: 'ml'
 }
 
 export interface RefeicaoDaDieta {
@@ -61,10 +71,11 @@ export interface DietaDoPlano {
    */
   readonly receitasDoPlano?: readonly ReceitaDaDieta[]
   /**
-   * Só existe quando o plano escolheu "Gramas" (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319):
-   * "Meu plano" mostra só o peso e não refaz a medida caseira. A cópia de um plano em "Medida caseira" fica sem o campo.
+   * Só existe quando o plano escolheu "Só gramas" (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319)
+   * ou "Medida e gramas" (spec alimentos-e-gramaturas, D-376). A cópia de um plano em "Só medida" fica sem o campo,
+   * igual à de antes.
    */
-  readonly quantidades?: 'gramas'
+  readonly quantidades?: 'gramas' | 'medida-e-gramas'
 }
 
 /** A cópia que mora no link. */
@@ -76,12 +87,20 @@ export interface DietaDoLink extends DietaDoPlano {
   readonly copiadaEm: string
 }
 
-function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
+const DA_BASE = new Set(ALIMENTOS.map((a) => a.id))
+
+function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlimento, modo: ModoQuantidade, medida?: MedidaDoItem | null): ItemDaDieta {
+  // A quantidade para a paciente, na escolha do plano (spec conduta-da-nutricionista, D-297), com a medida escolhida no
+  // item antes da automática (spec alimentos-e-gramaturas, G1).
+  const q = quantidadeNaFolha(alimentoId, gramas, modo, medida)
+  const escolhida = lerMedidaDoItem(medida) !== undefined
   return {
-    // A quantidade para a paciente, na escolha do plano (spec conduta-da-nutricionista, D-297).
-    medida: quantidadeNaFolha(alimentoId, gramas, modo).medida,
+    medida: q.medida,
     gramas,
     alimento: buscar(alimentoId)?.descricao ?? 'Alimento removido',
+    ...(escolhida ? { escolhida: true as const } : {}),
+    ...(q.aproximada ? { aproximada: true as const } : {}),
+    ...(q.unidade === 'ml' && !DA_BASE.has(alimentoId) ? { unidade: 'ml' as const } : {}),
   }
 }
 
@@ -90,7 +109,7 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
  * (D-297 da conduta-da-nutricionista).
  */
 function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
-  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo)
+  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida)
   const receita = receitaDoItem(item)
   const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return { medida, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
@@ -135,7 +154,7 @@ export function dietaDoPlano(
     orientacoes: caso.orientacoes.trim(),
     receitas: caso.receitas.trim(),
     ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
-    ...(modo === 'gramas' ? { quantidades: 'gramas' as const } : {}),
+    ...(modo === 'medida-caseira' ? {} : { quantidades: modo }),
   }
 }
 
@@ -146,7 +165,7 @@ export function copiarDieta(dieta: DietaDoPlano, dia: string): DietaDoLink {
     orientacoes,
     receitas,
     ...(receitasDoPlano && receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
-    ...(quantidades === 'gramas' ? { quantidades } : {}),
+    ...(quantidades === 'gramas' || quantidades === 'medida-e-gramas' ? { quantidades } : {}),
     copiadaEm: dia,
   }
 }
@@ -158,8 +177,8 @@ const conteudo = (dieta: DietaDoPlano): string =>
     dieta.orientacoes,
     dieta.receitas,
     ...(dieta.receitasDoPlano && dieta.receitasDoPlano.length > 0 ? [dieta.receitasDoPlano] : []),
-    // D-319 (integracao-rodada-1910): trocar entre "Gramas" e "Medida caseira" muda o que o paciente vê.
-    ...(dieta.quantidades === 'gramas' ? ['gramas'] : []),
+    // D-319 (integracao-rodada-1910) e D-376 (alimentos-e-gramaturas): trocar o modo muda o que o paciente vê.
+    ...(dieta.quantidades === 'gramas' || dieta.quantidades === 'medida-e-gramas' ? [dieta.quantidades] : []),
   ])
 
 /** O plano mudou em algo que o paciente vê desde a cópia (CA-545, CA-546). */
@@ -182,8 +201,17 @@ function lerItem(v: unknown): ItemDaDieta | null {
   const { medida, gramas, alimento } = o
   if (typeof alimento !== 'string' || typeof gramas !== 'number' || !Number.isFinite(gramas)) return null
   if (medida !== null && typeof medida !== 'string') return null
-  // D-310 (integracao-rodada-1910): a marca de receita só vale como `true`; outro valor é ignorado.
-  return { medida, gramas, alimento, ...(o['receita'] === true ? { receita: true as const } : {}) }
+  // D-310 (integracao-rodada-1910): a marca de receita só vale como `true`; outro valor é ignorado. As marcas da medida
+  // escolhida também (spec alimentos-e-gramaturas, D-377).
+  return {
+    medida,
+    gramas,
+    alimento,
+    ...(o['receita'] === true ? { receita: true as const } : {}),
+    ...(o['escolhida'] === true ? { escolhida: true as const } : {}),
+    ...(o['aproximada'] === true ? { aproximada: true as const } : {}),
+    ...(o['unidade'] === 'ml' ? { unidade: 'ml' as const } : {}),
+  }
 }
 
 function lerRefeicao(v: unknown): RefeicaoDaDieta | null {
@@ -222,8 +250,9 @@ export function lerDieta(v: unknown): DietaDoLink | null {
     orientacoes: o['orientacoes'],
     receitas: o['receitas'],
     ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
-    // D-319 (integracao-rodada-1910): só "gramas" vale; link de antes não tem o campo e é "Medida caseira".
-    ...(o['quantidades'] === 'gramas' ? { quantidades: 'gramas' as const } : {}),
+    // D-319 (integracao-rodada-1910) e D-376: "gramas" e "medida-e-gramas" valem; link de antes não tem o campo e é
+    // "Só medida".
+    ...(o['quantidades'] === 'gramas' || o['quantidades'] === 'medida-e-gramas' ? { quantidades: o['quantidades'] } : {}),
     copiadaEm: typeof o['copiadaEm'] === 'string' ? o['copiadaEm'] : '',
   }
 }

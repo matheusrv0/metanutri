@@ -141,8 +141,8 @@ describe('a escolha de quantidade do plano no link (spec conduta-da-nutricionist
     expect(lerDieta({ ...copia, quantidades: 1 })).not.toHaveProperty('quantidades')
   })
 
-  it('CA-988 (integracao-rodada-1910, D-319): em "Medida caseira", a cópia não ganha o campo', () => {
-    const copia = copiarDieta(dietaDoPlano(caso(), planoCheio()), '2026-10-20')
+  it('CA-988 (integracao-rodada-1910, D-319): em "Só medida", a cópia não ganha o campo', () => {
+    const copia = copiarDieta(dietaDoPlano(caso({ quantidades: 'medida-caseira' }), planoCheio()), '2026-10-20')
     expect(copia).not.toHaveProperty('quantidades')
     expect(lerDieta(JSON.parse(JSON.stringify(copia)))).not.toHaveProperty('quantidades')
   })

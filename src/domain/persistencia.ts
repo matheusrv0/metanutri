@@ -1,5 +1,5 @@
 // Salvamento dos casos no próprio navegador (SPEC CA-49, CA-50, CB-08, CB-09, D-3).
-import { criarCasoVazio } from './caso.ts'
+import { criarCasoVazio, modoDeQuantidade } from './caso.ts'
 import { duplicarCaso } from './duplicar.ts'
 import { criarPlanoPadrao, type GerarId } from './plano.ts'
 import type { Caso, Plano } from './tipos.ts'
@@ -101,8 +101,14 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
       if (bruto === null) return null
       const v: unknown = JSON.parse(bruto)
       if (!ehCasoSalvo(v)) return null
-      // Casos gravados por versões antigas podem não ter todos os campos: completa com os padrões.
-      return { caso: { ...criarCasoVazio(v.caso.id), ...v.caso }, plano: v.plano, versao: v.versao, atualizadoEm: v.atualizadoEm }
+      // Casos gravados por versões antigas podem não ter todos os campos: completa com os padrões. A escolha de
+      // quantidade que falta é a de antes ("Só medida"), não a de plano novo (spec alimentos-e-gramaturas, D-376).
+      return {
+        caso: { ...criarCasoVazio(v.caso.id), ...v.caso, quantidades: modoDeQuantidade(v.caso) },
+        plano: v.plano,
+        versao: v.versao,
+        atualizadoEm: v.atualizadoEm,
+      }
     } catch {
       return null
     }

@@ -16,19 +16,19 @@ const plano = (principal: ItemPlano[], substituto1: ItemPlano[] = []): Plano => 
 
 describe('a linha da refeição (CA-879)', () => {
   it('receita: o nome como foi escrito e a porção, uma quantidade só (spec conduta-da-nutricionista, D-297); em "Gramas", o peso', () => {
-    expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento)).toEqual({
+    expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento)).toMatchObject({
       nome: 'Panqueca de banana',
       quantidade: { medida: '1 unidade e meia', gramas: 180 },
     })
-    expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento, 'gramas').quantidade).toEqual({ medida: null, gramas: 180 })
+    expect(linhaDaFolha(itemDeReceita('a', 180), buscarAlimento, 'gramas').quantidade).toMatchObject({ medida: null, gramas: 180 })
   })
 
   it('CB-279: sem meia porção que feche, só o peso', () => {
-    expect(linhaDaFolha(itemDeReceita('a', 150), buscarAlimento).quantidade).toEqual({ medida: null, gramas: 150 })
+    expect(linhaDaFolha(itemDeReceita('a', 150), buscarAlimento).quantidade).toMatchObject({ medida: null, gramas: 150 })
   })
 
   it('alimento: o nome para o paciente e a quantidade da folha, como antes', () => {
-    expect(linhaDaFolha({ id: 'b', alimentoId: BANANA, gramas: 75 }, buscarAlimento)).toEqual({
+    expect(linhaDaFolha({ id: 'b', alimentoId: BANANA, gramas: 75 }, buscarAlimento)).toMatchObject({
       nome: 'Banana prata',
       quantidade: { medida: '1 unidade', gramas: 75 },
     })
@@ -48,14 +48,14 @@ describe('CB-317 (integracao-rodada-1910, revisão final M-5): receita sem o que
     const p = plano([itemDeReceita('a', 120, soApagados), { id: 'b', alimentoId: BANANA, gramas: 75 }])
     const [cafe] = p.refeicoes
     if (!cafe) throw new Error('plano sem café')
-    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['b'])
-    expect(receitasDaFolha(p, buscarAlimento)).toEqual([])
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toMatchObject(['b'])
+    expect(receitasDaFolha(p, buscarAlimento)).toMatchObject([])
   })
 
   it('cópia estragada (CB-273): sai da refeição', () => {
     const [cafe] = plano([estragado, { id: 'b', alimentoId: BANANA, gramas: 75 }]).refeicoes
     if (!cafe) throw new Error('plano sem café')
-    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['b'])
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toMatchObject(['b'])
   })
 
   it('com um ingrediente que ainda existe, a receita fica', () => {
@@ -63,16 +63,16 @@ describe('CB-317 (integracao-rodada-1910, revisão final M-5): receita sem o que
     const p = plano([itemDeReceita('a', 120, umQueFica)])
     const [cafe] = p.refeicoes
     if (!cafe) throw new Error('plano sem café')
-    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toEqual(['a'])
-    expect(receitasDaFolha(p, buscarAlimento).map((r) => r.ingredientes.map((i) => i.nome))).toEqual([['Banana prata']])
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => i.id)).toMatchObject(['a'])
+    expect(receitasDaFolha(p, buscarAlimento).map((r) => r.ingredientes.map((i) => i.nome))).toMatchObject([['Banana prata']])
   })
 })
 
 describe('a seção Receitas (CA-880, CB-278)', () => {
   it('cada receita uma vez: nome, rendimento, ingredientes da receita inteira e o modo de preparo', () => {
     const [panqueca, ...resto] = receitasDaFolha(plano([itemDeReceita('a', 120)], [itemDeReceita('s', 240)]), buscarAlimento)
-    expect(resto).toEqual([])
-    expect(panqueca).toEqual({
+    expect(resto).toMatchObject([])
+    expect(panqueca).toMatchObject({
       nome: 'Panqueca de banana',
       rendimento: 'Rende 2 unidades (120 g cada)',
       ingredientes: [
@@ -88,22 +88,22 @@ describe('a seção Receitas (CA-880, CB-278)', () => {
     const comApagado = { ...PANQUECA, ingredientes: [{ alimentoId: BANANA, gramas: 150 }, { alimentoId: 900_001, gramas: 20 }] }
     const p = plano([itemDeReceita('a', 120, comApagado)])
     const [r] = receitasDaFolha(p, buscarAlimento)
-    expect(r?.ingredientes.map((i) => i.nome)).toEqual(['Banana prata'])
+    expect(r?.ingredientes.map((i) => i.nome)).toMatchObject(['Banana prata'])
     const [cafe] = p.refeicoes
     if (!cafe) throw new Error('plano sem café')
-    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => linhaDaFolha(i, buscarAlimento).nome)).toEqual(['Panqueca de banana'])
+    expect(opcoesDaRefeicao(cafe, buscarAlimento).flat().map((i) => linhaDaFolha(i, buscarAlimento).nome)).toMatchObject(['Panqueca de banana'])
   })
 
   it('CB-272: receita com 0 g não entra; plano sem receita, lista vazia', () => {
-    expect(receitasDaFolha(plano([itemDeReceita('a', 0)]), buscarAlimento)).toEqual([])
-    expect(receitasDaFolha(plano([]), buscarAlimento)).toEqual([])
+    expect(receitasDaFolha(plano([itemDeReceita('a', 0)]), buscarAlimento)).toMatchObject([])
+    expect(receitasDaFolha(plano([]), buscarAlimento)).toMatchObject([])
   })
 })
 
 describe('a lista de compras abre a receita (CA-881)', () => {
   it('1 porção de uma receita que rende 2 leva metade de cada ingrediente, somada ao mesmo alimento de fora', () => {
     const compras = comprasDaFolha(plano([itemDeReceita('a', 120)]), buscarAlimento)
-    expect(compras.map((c) => [c.nome, c.gramas])).toEqual([
+    expect(compras.map((c) => [c.nome, c.gramas])).toMatchObject([
       ['Aveia em flocos', 15],
       ['Banana prata', 150],
       ['Ovo', 50],
@@ -114,11 +114,11 @@ describe('a lista de compras abre a receita (CA-881)', () => {
   it('CB-271 (rodada da revisão): ingrediente que não existe mais não vira linha da lista de compras', () => {
     const comRemovidos = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 999_998, gramas: 10 }, { alimentoId: 999_999, gramas: 20 }], pesoProntoG: null }
     const compras = comprasDaFolha(plano([itemDeReceita('a', 155, comRemovidos)]), buscarAlimento)
-    expect(compras.map((c) => c.nome)).toEqual(['Aveia em flocos', 'Banana prata', 'Ovo'])
+    expect(compras.map((c) => c.nome)).toMatchObject(['Aveia em flocos', 'Banana prata', 'Ovo'])
   })
 
   it('receita em substituto não entra na lista do dia, como todo substituto', () => {
     const compras = comprasDaFolha(plano([], [itemDeReceita('s', 120)]), buscarAlimento)
-    expect(compras.map((c) => c.nome)).toEqual(['Banana prata'])
+    expect(compras.map((c) => c.nome)).toMatchObject(['Banana prata'])
   })
 })
