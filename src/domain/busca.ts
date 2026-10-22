@@ -624,6 +624,10 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   return { gramas: lida.quantidade ?? GRAMAS_PADRAO, medida: null, unidade, aviso: null }
 }
 
+/** Gema e clara, como a pessoa escreve ("gemas", "claras") e como a TACO descreve ("Ovo, de galinha, gema"). */
+const PARTE_DO_OVO = /^(gema|clara)s?$/
+const PARTE_DO_OVO_NA_DESCRICAO = /^ovo, [^,]+, (gema|clara)/
+
 export function buscarAlimentos(
   texto: string,
   alimentos: readonly Alimento[],
@@ -634,7 +638,11 @@ export function buscarAlimentos(
   if (termos.length === 0) return { resultados: [], aviso: null }
 
   const pedida = lida.medida
-  const candidatos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null).slice(0, LIMITE_RESULTADOS)
+  // D-482 (correção C): gema e clara são partes do ovo; só aparecem quando a busca as nomeia ("2 ovos" é o ovo inteiro).
+  const nomeiaParte = termos.some((t) => PARTE_DO_OVO.test(t))
+  const candidatos = candidatosDaBusca(termos, alimentos, opcoes, (a) => pedida === null || medidaPedida(a.id, pedida) !== null)
+    .filter(({ i }) => nomeiaParte || !PARTE_DO_OVO_NA_DESCRICAO.test(i.texto))
+    .slice(0, LIMITE_RESULTADOS)
   if (candidatos.length === 0) {
     return { resultados: [], aviso: 'Nenhum alimento encontrado com esse nome. Tente outra palavra ou menos letras.' }
   }

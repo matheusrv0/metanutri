@@ -384,6 +384,27 @@ describe('um copo por nome e a unidade emprestada (spec alimentos-e-gramaturas, 
   })
 })
 
+describe('o número conta peças na entrada rápida (spec alimentos-e-gramaturas, correção C, D-482)', () => {
+  it('CA-1330: "2 ovos" escolhe o ovo inteiro em 2 unidades; gema e clara só quando pedidas', () => {
+    const { resultados } = buscarAlimentos('2 ovos', ALIMENTOS)
+    expect(resultados[0]?.alimento.descricao).toMatch(/^Ovo, de galinha, inteiro/)
+    expect(resultados[0]?.medida).toMatchObject({ nome: 'unidade', quantidade: 2 })
+    for (const r of resultados) expect(r.alimento.descricao, r.alimento.descricao).not.toMatch(/gema|clara/)
+    expect(buscarAlimentos('2 gemas', ALIMENTOS).resultados.map((r) => r.alimento.descricao)).toContain('Ovo, de galinha, gema, cozida/10minutos')
+    expect(buscarAlimentos('clara de ovo', ALIMENTOS).resultados.map((r) => r.alimento.descricao)).toContain('Ovo, de galinha, clara, cozida/10minutos')
+  })
+
+  it('CA-1331: "2 ovos" só traz ovos que se contam; "15 aveia" continua a aveia com 15 g (D-371)', () => {
+    const ovos = buscarAlimentos('2 ovos', ALIMENTOS).resultados.filter((r) => r.alimento.descricao.startsWith('Ovo'))
+    expect(ovos.length).toBeGreaterThan(0)
+    for (const r of ovos) expect(medidaDeContar(r.alimento.id), r.alimento.descricao).not.toBeNull()
+    // O número não puxa para a frente quem tem medida de contar: o pão de aveia viraria 15 fatias.
+    const [aveia] = buscarAlimentos('15 aveia', ALIMENTOS).resultados
+    expect(aveia?.alimento.descricao).toBe('Aveia, flocos, crua')
+    expect(aveia?.gramas).toBe(15)
+  })
+})
+
 describe('sobras do G2 na 2ª revisão (spec alimentos-e-gramaturas, correção C, D-483)', () => {
   const ATUM = 277
 
