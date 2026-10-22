@@ -2,8 +2,6 @@ import { EyeOff, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { refeicaoIndicada, sugerirParaCobrir } from '@/domain/cobrir.ts'
-import { formatarQuantidadeMedida } from '@/domain/busca.ts'
-import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
 import { PRIMEIRO_ID_PROPRIO } from '@/domain/busca.ts'
 import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
@@ -18,7 +16,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
-import { aberturaDoCobrir, descreverAvisos } from './estiloAdequacao.ts'
+import { aberturaDoCobrir, descreverAvisos, porcaoDaSugestao } from './estiloAdequacao.ts'
 
 interface GavetaCobrirProps {
   /** Nutriente a cobrir; `null` mantém a gaveta fechada. */
@@ -172,8 +170,8 @@ export function GavetaCobrir({
           {(resultado?.sugestoes ?? []).map((s) => {
             // G8 (spec alimentos-e-gramaturas): a porção em meia medida caseira, o peso e a unidade (ml no líquido).
             const alimento = buscarAlimento(s.alimentoId)
-            const peso = `${formatarNumero(s.gramas, 0)} ${unidadeDo(alimento)}`
-            const porcao = s.medida ? `${formatarQuantidadeMedida(s.medida.quantidade, s.medida.nome)} · ${peso}` : peso
+            // D-474 (correção C): o que o paciente lê pelo peso cru diz "(peso cru)" também aqui.
+            const porcao = porcaoDaSugestao(s, alimento)
             const destino = escolhida ?? (alimento ? refeicaoIndicada(plano, alimento) : null) ?? plano.refeicoes[0] ?? null
             return (
               <li key={s.alimentoId} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0">

@@ -114,8 +114,12 @@ export const FORMA_DE_INGREDIENTE = new RegExp(
     '^polvilho',
     '^milho, (amido|fubá)',
     '^soja, farinha',
-    '^(feijão|lentilha|grão-de-bico|guandu|arroz|macarrão|lasanha|carne|frango|porco|peru|ovo|salmão|atum|pescada|merluza|sardinha|abadejo|cação|camarão|batata|mandioca|cará|abóbora, (cabotian|moranga)|canjica|milho, verde|bacalhau|corimba|corvina|lambari|pescadinha|pintado|porquinho|tucunaré|quibe|amendoim, grão|tremoço|berinjela|chuchu|pão, de queijo)[ ,].*cru(a|s|as)?(,.*)?$',
+    // O broto de feijão cru é prescritível (C.1 aprovado pela parceira): só existe cru na base.
+    '^(feijão(?!, broto)|lentilha|grão-de-bico|guandu|arroz|macarrão|lasanha|carne|frango|porco|peru|ovo|salmão|atum|pescada|merluza|sardinha|abadejo|cação|camarão|batata|mandioca|cará|abóbora, (cabotian|moranga)|canjica|milho, verde|bacalhau|corimba|corvina|lambari|pescadinha|pintado|porquinho|tucunaré|quibe|amendoim, grão|tremoço|berinjela|chuchu|pão, de queijo)[ ,].*cru(a|s|as)?(,.*)?$',
     '^dourada de água doce, fresca',
+    // Correção C (D-474): a base tem a versão cozida do mesmo alimento; a ervilha em vagem é a fresca, crua.
+    '^(abobrinha, italiana|br[óo]colis|catalonha|couve-flor|espinafre, nova zel[âa]ndia), cru(a)?$',
+    '^ervilha, em vagem$',
     '^(alho|alfavaca|manjeric[ãa]o|salsa|cebolinha|coentro),',
     '^lim[ãa]o, [^,]+, cru',
     '^tomate, (extrato|pur[êe]|molho)',

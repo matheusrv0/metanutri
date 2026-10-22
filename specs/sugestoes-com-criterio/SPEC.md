@@ -361,6 +361,10 @@ trocou de motivo (as margarinas hidrogenadas e o chantilly eram gordura de adiç
 agrupados pelo motivo que vale primeiro, na ordem: nunca, fora da rotina, forma de ingrediente. Todos continuam
 disponíveis pela busca.
 
+*(22/10/2026, correção C, D-474)* Mais 6 na versão crua, marcados "prescritível (mudou em 22/10)": abobrinha italiana,
+brócolis, catalonha, couve-flor e espinafre crus (a base tem a versão cozida do mesmo alimento) e a ervilha em vagem. São
+288 dos 597.
+
 ### Nível 1 — Nunca
 
 #### Bebida alcoólica (2)
@@ -608,7 +612,7 @@ disponíveis pela busca.
 | 581 | Soja, farinha | Leguminosas e derivados | igual |
 | 592 | Farinha, de mesocarpo de babaçu, crua | Nozes e sementes | igual |
 
-#### Versão crua de alimento que se come cozido (97)
+#### Versão crua de alimento que se come cozido (103)
 
 | Id | Alimento | Categoria da TACO | Em 15/10 |
 |---|---|---|---|
@@ -622,12 +626,17 @@ disponíveis pela busca.
 | 44 | Milho, verde, cru | Cereais e derivados | igual |
 | 65 | Abóbora, cabotian, crua | Verduras, hortaliças e derivados | igual |
 | 67 | Abóbora, moranga, crua | Verduras, hortaliças e derivados | igual |
+| 71 | Abobrinha, italiana, crua | Verduras, hortaliças e derivados | prescritível (mudou em 22/10) |
 | 87 | Batata, baroa, crua | Verduras, hortaliças e derivados | igual |
 | 89 | Batata, doce, crua | Verduras, hortaliças e derivados | igual |
 | 92 | Batata, inglesa, crua | Verduras, hortaliças e derivados | igual |
 | 96 | Berinjela, crua | Verduras, hortaliças e derivados | igual |
+| 101 | Brócolis, cru | Verduras, hortaliças e derivados | prescritível (mudou em 22/10) |
 | 103 | Cará, cru | Verduras, hortaliças e derivados | igual |
+| 105 | Catalonha, crua | Verduras, hortaliças e derivados | prescritível (mudou em 22/10) |
 | 113 | Chuchu, cru | Verduras, hortaliças e derivados | igual |
+| 117 | Couve-flor, crua | Verduras, hortaliças e derivados | prescritível (mudou em 22/10) |
+| 119 | Espinafre, Nova Zelândia, cru | Verduras, hortaliças e derivados | prescritível (mudou em 22/10) |
 | 130 | Mandioca, crua | Verduras, hortaliças e derivados | igual |
 | 141 | Pão, de queijo, cru | Verduras, hortaliças e derivados | igual |
 | 275 | Abadejo, filé, congelado, cru | Pescados e frutos do mar | igual |
@@ -698,6 +707,7 @@ disponíveis pela busca.
 | 485 | Ovo, de codorna, inteiro, cru | Ovos e derivados | igual |
 | 489 | Ovo, de galinha, inteiro, cru | Ovos e derivados | igual |
 | 557 | Amendoim, grão, cru | Leguminosas e derivados | igual |
+| 559 | Ervilha, em vagem | Leguminosas e derivados | prescritível (mudou em 22/10) |
 | 562 | Feijão, carioca, cru | Leguminosas e derivados | igual |
 | 564 | Feijão, fradinho, cru | Leguminosas e derivados | igual |
 | 566 | Feijão, jalo, cru | Leguminosas e derivados | igual |

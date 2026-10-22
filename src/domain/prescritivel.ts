@@ -121,9 +121,13 @@ const CATEGORIAS_SO_COZIDAS = new Set([
  * Verduras que se comem cozidas e que a base também traz cozidas (spec sugestoes-com-criterio, D-199a, esclarecido
  * na re-revisão): o cru só sai quando existe a versão cozida do mesmo alimento. A mandioca crua, além disso, é tóxica.
  * O que a base só traz cru (inhame, vagem, taioba, jiló, quiabo, abóbora menina e pescoço…) fica, e a folha impressa
- * marca "(peso cru)". Um teste confere que cada item daqui tem a versão cozida na base.
+ * marca "(peso cru)". Um teste confere que cada item daqui tem a versão cozida na base e, ao contrário (correção C,
+ * D-474), que toda verdura que se come cozida e tem a versão cozida do mesmo alimento está aqui.
  */
-const VERDURA_SO_COZIDA = /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora, (cabotian|moranga)|Berinjela|Chuchu|P(ã|a)o, de queijo),/i
+const VERDURA_SO_COZIDA =
+  /^(Batata, (inglesa|doce|baroa)|Mandioca|Car(á|a)|Ab(ó|o)bora, (cabotian|moranga)|Abobrinha, italiana|Berinjela|Br(ó|o)colis|Catalonha|Chuchu|Couve-flor|Espinafre|P(ã|a)o, de queijo),/i
+/** D-474: a ervilha fresca, na vagem, é crua sem dizer "cru" no nome. */
+const CRU_PELO_NOME = /^Ervilha, em vagem$/i
 /** Peixe "fresco" sem preparo no nome é peixe cru ("Dourada de água doce, fresca"). */
 const PEIXE_FRESCO = /(^|[\s,])fresc[oa]$/i
 const CRU_CONSUMIDO = /^Aveia,/
@@ -199,6 +203,7 @@ export const REGRAS_PRESCRICAO: readonly RegraPrescricao[] = [
     titulo: 'Versão crua de alimento que se come cozido',
     casa: (a) => {
       if (a.categoria === 'Pescados e frutos do mar' && PEIXE_FRESCO.test(a.descricao)) return true
+      if (CRU_PELO_NOME.test(a.descricao)) return true
       if (a.preparo !== 'cru' && !CRU.test(a.descricao)) return false
       if (CRU_CONSUMIDO.test(a.descricao)) return false
       return CATEGORIAS_SO_COZIDAS.has(a.categoria) || VERDURA_SO_COZIDA.test(a.descricao)

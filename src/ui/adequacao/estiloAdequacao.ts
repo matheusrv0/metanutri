@@ -1,5 +1,9 @@
 import type { EstadoAdequacao, LinhaAdequacao } from '@/domain/adequacao.ts'
 import type { Sugestao } from '@/domain/cobrir.ts'
+import { formatarQuantidadeMedida } from '@/domain/busca.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
+import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
+import type { Alimento } from '@/domain/tipos.ts'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
@@ -50,6 +54,18 @@ export function descreverAvisos(s: Pick<Sugestao, 'avisos'>): readonly string[] 
         : `Ultrapassa o limite superior (UL) de ${a.rotulo}.`,
   )
 }
+
+/**
+ * A porção de uma sugestão do Cobrir: a meia medida caseira e o peso, em ml no líquido (G8), e "(peso cru)" quando o
+ * paciente lê o alimento pelo peso cru (D-474 da correção C): "100 g (peso cru)", "1 copo americano · 150 ml".
+ */
+export function porcaoDaSugestao(s: Pick<Sugestao, 'gramas' | 'medida'>, alimento: Alimento | undefined): string {
+  const pesoCru = alimento !== undefined && nomeParaPaciente(alimento).endsWith(PESO_CRU)
+  const peso = `${formatarNumero(s.gramas, 0)} ${unidadeDo(alimento)}${pesoCru ? ` ${PESO_CRU}` : ''}`
+  return s.medida ? `${formatarQuantidadeMedida(s.medida.quantidade, s.medida.nome)} · ${peso}` : peso
+}
+
+const PESO_CRU = '(peso cru)'
 
 /** A primeira frase da gaveta do Cobrir: "O plano tem 28% da referência. " (D-459); sem a linha, nada. */
 export const aberturaDoCobrir = (linha: LinhaAdequacao | undefined): string => (linha ? `O plano tem ${pctDaReferencia(linha)}. ` : '')

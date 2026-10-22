@@ -1,6 +1,7 @@
 // A adequação diz de que é a porcentagem (spec ficha-unica, D-459, CA-1283).
 import type { LinhaAdequacao } from '@/domain/adequacao.ts'
-import { aberturaDoCobrir, descreverAvisos, pctDaReferencia, rotuloDosNaMeta, textoDaAdequacao } from './estiloAdequacao.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { aberturaDoCobrir, descreverAvisos, pctDaReferencia, porcaoDaSugestao, rotuloDosNaMeta, textoDaAdequacao } from './estiloAdequacao.ts'
 
 const linha = (adequacaoPct: number, estado: LinhaAdequacao['estado']): LinhaAdequacao => ({
   chave: 'calcio_mg',
@@ -46,6 +47,13 @@ describe('A adequação em % da referência (CA-1283)', () => {
         avisos: [{ tipo: 'excede-gasto', kcalAcima: 120 }, { tipo: 'excede-limite', chave: 'selenio_mcg', rotulo: 'Selênio' }, { tipo: 'figado-semanal' }],
       }),
     ).toEqual(['Ultrapassa o gasto energético em 120 kcal.', 'Ultrapassa o limite superior (UL) de Selênio.', 'Fígado: no máximo 1 vez por semana.'])
+  })
+
+  it('CA-1320: a porção do que o paciente pesa cru diz "(peso cru)" (D-474)', () => {
+    // 66 Abóbora menina crua: come-se cozida, e a base só a tem crua. 110 Cenoura crua: come-se crua.
+    expect(porcaoDaSugestao({ gramas: 100, medida: null }, buscarAlimento(66))).toBe('100 g (peso cru)')
+    expect(porcaoDaSugestao({ gramas: 100, medida: null }, buscarAlimento(110))).toBe('100 g')
+    expect(porcaoDaSugestao({ gramas: 150, medida: { nome: 'copo americano', quantidade: 1, gramasPorMedida: 150 } }, buscarAlimento(458))).toBe('1 copo americano · 150 ml')
   })
 
   it('a gaveta do Cobrir começa por quanto o plano tem', () => {

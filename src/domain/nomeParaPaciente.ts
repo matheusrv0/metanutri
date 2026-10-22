@@ -186,8 +186,11 @@ const GRUPOS_SEM_CRU = new Set(['Frutas e derivados', 'Nozes e sementes'])
 const GRUPO_VERDURAS = 'Verduras, hortaliças e derivados'
 /** Grupos em que o peso prescrito é do alimento cru, e ele se come preparado: o "cru" vira "(peso cru)". */
 const GRUPOS_PESO_CRU = /^(Cereais|Leguminosas|Carnes|Pescados)/
-/** Legumes e verduras que se comem cozidos: o "cru" também vira "(peso cru)" (seção 2 da spec). */
-const VERDURAS_COZIDAS = new Set([
+/**
+ * Legumes e verduras que se comem cozidos: o "cru" também vira "(peso cru)" (seção 2 da spec). A regra prescritível
+ * usa a mesma lista no teste do cru (spec sugestoes-com-criterio, D-474).
+ */
+export const VERDURAS_QUE_SE_COMEM_COZIDAS: ReadonlySet<string> = new Set([
   'Batata',
   'Mandioca',
   'Cará',
@@ -280,7 +283,7 @@ function pelaRegra(alimento: Alimento): string {
   const baseDaTabela = alimento.base ?? ''
   const pesoCru =
     resto.some((p) => CRU.test(p)) &&
-    (GRUPOS_PESO_CRU.test(alimento.categoria) || (verdura && VERDURAS_COZIDAS.has(baseDaTabela)) || FRUTAS_COZIDAS.has(baseDaTabela))
+    (GRUPOS_PESO_CRU.test(alimento.categoria) || (verdura && VERDURAS_QUE_SE_COMEM_COZIDAS.has(baseDaTabela)) || FRUTAS_COZIDAS.has(baseDaTabela))
   const tirarCru = pesoCru || GRUPOS_SEM_CRU.has(alimento.categoria) || (verdura && !BASES_COM_PREPARO.has(alimento.base))
   const palavras = resto
     .filter((p) => !NOTA.test(p) && !(tirarCru && CRU.test(p)))
