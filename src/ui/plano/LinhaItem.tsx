@@ -165,7 +165,9 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
         {naLinha ? (
           <>
             {aproximada ? (
-              <span className="shrink-0 text-base font-semibold text-warningtext" title="Os gramas não fecham em meia medida.">
+              // No celular o "≈" sai: a linha "O paciente lê: … (cerca de …)" logo abaixo já diz que é aproximado, e o
+              // espaço volta para o nome da medida no seletor.
+              <span className="hidden shrink-0 text-base font-semibold text-warningtext sm:inline" title="Os gramas não fecham em meia medida.">
                 <span aria-hidden="true">≈</span>
                 <span className="sr-only">aproximadamente</span>
               </span>
