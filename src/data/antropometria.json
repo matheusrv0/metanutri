@@ -3,6 +3,7 @@
     "sisvan2011": "Brasil. Ministério da Saúde. Orientações para a coleta e análise de dados antropométricos em serviços de saúde: norma técnica do SISVAN. Brasília; 2011.",
     "nsi1994": "The Nutrition Screening Initiative, 1994 (pontos de corte adotados pelo SISVAN para idosos, Quadro 18).",
     "who1995": "WHO. Physical status: the use and interpretation of anthropometry. Technical Report Series 854. Geneva; 1995 (adultos, Quadro 16 do SISVAN; panturrilha).",
+    "pagotto2018": "Pagotto V, Santos KF, Malaquias SG, Bachion MM, Silveira EA. Calf circumference: clinical validation for evaluation of muscle mass in the elderly. Rev Bras Enferm 2018;71(2):322-8. doi:10.1590/0034-7167-2017-0121 (validação contra DEXA em idosos brasileiros).",
     "who2000": "WHO. Obesity: preventing and managing the global epidemic. Technical Report Series 894. Geneva; 2000 (graus de obesidade).",
     "who2008": "WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation. Geneva, 8-11 December 2008.",
     "who2006e2007": "Curvas OMS 2006 (até 5 anos) e 2007 (5 a 19 anos), classificação do SISVAN (Quadros 10, 11, 13 e 14).",
@@ -80,11 +81,15 @@
   },
   "panturrilha": {
     "idadeMin": 60,
-    "fonte": "who1995",
-    "notaAlternativa": "Estudos brasileiros propõem pontos de corte por sexo (34 cm homens, 33 cm mulheres). A escolha deve ser confirmada pela nutricionista.",
-    "faixas": [
-      { "classe": "Indicativo de redução de massa muscular", "min": null, "minInclusivo": false, "max": 31, "maxInclusivo": false },
-      { "classe": "Adequada", "min": 31, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    "fonte": "pagotto2018",
+    "nota": "A referência da OMS (1995) usa 31 cm para os dois sexos.",
+    "M": [
+      { "classe": "Indicativo de redução de massa muscular", "min": null, "minInclusivo": false, "max": 34, "maxInclusivo": false },
+      { "classe": "Adequada", "min": 34, "minInclusivo": true, "max": null, "maxInclusivo": false }
+    ],
+    "F": [
+      { "classe": "Indicativo de redução de massa muscular", "min": null, "minInclusivo": false, "max": 33, "maxInclusivo": false },
+      { "classe": "Adequada", "min": 33, "minInclusivo": true, "max": null, "maxInclusivo": false }
     ]
   },
   "gestacao": {

@@ -1,5 +1,5 @@
 import { Info, Ruler, TriangleAlert } from 'lucide-react'
-import type { ResultadoAntropometria } from '@/domain/antropometria.ts'
+import { comSinalDeMenos, type ResultadoAntropometria } from '@/domain/antropometria.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Fontes, type ItemFonte } from '@ds/componentes/display/Fontes.tsx'
@@ -83,7 +83,7 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
         {imcIdade ? (
           <Linha
             rotulo="IMC-para-idade"
-            valor={`escore-z ${formatarNumero(imcIdade.z, 2)}`}
+            valor={`escore-z ${comSinalDeMenos(formatarNumero(imcIdade.z, 2))}`}
             classe={imcIdade.classe}
             detalhe={`IMC ${formatarNumero(imcIdade.valorImc, 1)} kg/m² aos ${imcIdade.mesesReferencia} meses`}
           />
@@ -92,7 +92,7 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
         {estaturaIdade ? (
           <Linha
             rotulo="Estatura-para-idade"
-            valor={`escore-z ${formatarNumero(estaturaIdade.z, 2)}`}
+            valor={`escore-z ${comSinalDeMenos(formatarNumero(estaturaIdade.z, 2))}`}
             classe={estaturaIdade.classe}
           />
         ) : null}

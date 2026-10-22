@@ -91,14 +91,14 @@ describe('SecaoPrecos', () => {
 
   it('D-79 e D-407: o texto de cima diz que as funções são as mesmas e o que muda, sem repetir a definição da linha da tabela', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    expect(screen.getByText('Todos os planos têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.')).toBeInTheDocument()
-    expect(within(screen.getByRole('table')).getByText('Quem teve plano ou missão nos últimos 30 dias.')).toBeInTheDocument()
+    expect(screen.getByText('Todas as assinaturas têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Quem teve plano alimentar ou missão nos últimos 30 dias.')).toBeInTheDocument()
     expect(document.body.textContent).not.toContain('—')
   })
 
   it('D-79: no celular, a lista de cada plano também explica o que é paciente ativo', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    expect(within(screen.getByRole('region', { name: 'Plano Free' })).getByText('Quem teve plano ou missão nos últimos 30 dias.')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Plano Free' })).getByText('Quem teve plano alimentar ou missão nos últimos 30 dias.')).toBeInTheDocument()
   })
 
   it('D-79: "cancela quando quiser" aparece uma vez, na nota de baixo; o Free não promete "para sempre"', () => {

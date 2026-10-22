@@ -1,7 +1,7 @@
 // Documento "Aconselhamento nutricional" no formato do modelo de estágio (SPEC CA-44, CA-45, CA-47).
 // Usa só a estrutura do modelo: nenhum nome de pessoa ou instituição do arquivo original entra aqui.
 import { Document, Paragraph, TextRun } from 'docx'
-import type { ResultadoAntropometria } from '../domain/antropometria.ts'
+import { comSinalDeMenos, type ResultadoAntropometria } from '../domain/antropometria.ts'
 import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
@@ -145,7 +145,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
   if (a.imc) {
     linhasAntropometria.push(linha([celula('IMC'), celula(`${formatarNumeroDocx(a.imc.valor)} kg/m²`), celula(a.imc.grau ?? a.imc.classe)]))
   } else if (a.imcIdade) {
-    linhasAntropometria.push(linha([celula('IMC para idade'), celula(`escore-z ${formatarNumeroDocx(a.imcIdade.z, 2)}`), celula(a.imcIdade.classe)]))
+    linhasAntropometria.push(linha([celula('IMC para idade'), celula(`escore-z ${comSinalDeMenos(formatarNumeroDocx(a.imcIdade.z, 2))}`), celula(a.imcIdade.classe)]))
   } else if (a.gestacao) {
     linhasAntropometria.push(
       linha([celula('IMC pré-gestacional'), celula(`${formatarNumeroDocx(a.gestacao.imcPreGestacional)} kg/m²`), celula(a.gestacao.rotulo)]),
@@ -154,7 +154,7 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
     linhasAntropometria.push(linha([celula('IMC'), celula(''), celula('')]))
   }
   if (a.estaturaIdade) {
-    linhasAntropometria.push(linha([celula('Estatura para idade'), celula(`escore-z ${formatarNumeroDocx(a.estaturaIdade.z, 2)}`), celula(a.estaturaIdade.classe)]))
+    linhasAntropometria.push(linha([celula('Estatura para idade'), celula(`escore-z ${comSinalDeMenos(formatarNumeroDocx(a.estaturaIdade.z, 2))}`), celula(a.estaturaIdade.classe)]))
   }
   linhasAntropometria.push(
     linha([

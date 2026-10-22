@@ -1,5 +1,5 @@
 import { idadeNaData, type Paciente } from '@/domain/pacientes.ts'
-import { menorDe18, podeGestarOuLactar, type PerfilDaFicha } from '@/domain/regrasDaFicha.ts'
+import { menorDe18, podeGestarOuLactar, rotuloDaOcupacao, type PerfilDaFicha } from '@/domain/regrasDaFicha.ts'
 import type { Sexo } from '@/domain/tipos.ts'
 import { normalizarTelefone } from '@/domain/whatsapp.ts'
 import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
@@ -64,8 +64,14 @@ export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focar
           focar={focarTelefone}
         />
         <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(email) => aoAlterar({ email })} />
-        <CampoTexto rotulo={menor ? 'Escola e ano' : 'Ocupação'} valor={paciente.ocupacao} aoMudar={(ocupacao) => aoAlterar({ ocupacao })} />
-        <CampoNumero rotulo="Pessoas que moram na casa" valor={paciente.pessoasNaCasa} aoMudar={(v) => aoAlterar({ pessoasNaCasa: v === null ? null : Math.round(v) })} />
+        <CampoTexto rotulo={rotuloDaOcupacao(perfil)} valor={paciente.ocupacao} aoMudar={(ocupacao) => aoAlterar({ ocupacao })} />
+        {/* D-454: o mesmo dado de "Com quem mora", que saiu da Pessoa idosa: 1 é morar só. */}
+        <CampoNumero
+          rotulo="Pessoas que moram na casa"
+          valor={paciente.pessoasNaCasa}
+          aoMudar={(v) => aoAlterar({ pessoasNaCasa: v === null ? null : Math.round(v) })}
+          dica="Contando o paciente: 1 quer dizer que mora só."
+        />
         {menor || paciente.responsavel.trim() !== '' ? (
           <CampoTexto rotulo="Responsável" valor={paciente.responsavel} aoMudar={(responsavel) => aoAlterar({ responsavel })} />
         ) : null}

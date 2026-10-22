@@ -8,7 +8,12 @@ export type Objetivo = 'emagrecer' | 'manter' | 'ganhar'
 export type CondicaoFisiologica =
   | { readonly tipo: 'nenhuma' }
   | { readonly tipo: 'gestante'; readonly semanasGestacao: number | null; readonly pesoPreGestacionalKg: number | null }
-  | { readonly tipo: 'lactante'; readonly mesesPosParto: number | null }
+  | {
+      readonly tipo: 'lactante'
+      readonly mesesPosParto: number | null
+      /** "Peito e outros alimentos", da ficha (spec ficha-unica, D-456); sem o campo, amamentação só no peito. */
+      readonly amamentacao?: 'mista'
+    }
 
 export type FormulaTmb = 'mifflin' | 'harris-benedict'
 

@@ -243,7 +243,7 @@ export function TelaInicio({ aoComecar, aoVerPrecos }: TelaInicioProps) {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="max-w-[60ch] text-sm text-muted-foreground">
-              {`Todos os planos têm as mesmas funções. O preço depende de quantos pacientes ativos você tem: quem teve plano ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`}
+              {`Todas as assinaturas têm as mesmas funções. O preço depende de quantos pacientes ativos você tem: quem teve plano alimentar ou missão nos últimos ${DIAS_PACIENTE_ATIVO} dias.`}
             </p>
             <Button variant="outline" className="bg-transparent" onClick={aoVerPrecos}>
               Comparar planos

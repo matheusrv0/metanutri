@@ -18,11 +18,21 @@ describe('Doenças e diagnósticos (CA-1056)', () => {
   })
 
   it('a síndrome dos ovários policísticos só aparece para o sexo feminino, ou marcada', () => {
-    const sop = (sexo: 'F' | 'M' | null, marcadas: string[] = []) => doencasDaPessoa(sexo, marcadas).some((d) => d.id === 'sop')
+    const sop = (sexo: 'F' | 'M' | null, marcadas: string[] = []) => doencasDaPessoa({ sexo, idadeAnos: 30 }, marcadas).some((d) => d.id === 'sop')
     expect(sop('F')).toBe(true)
     expect(sop('M')).toBe(false)
     expect(sop(null)).toBe(false)
     expect(sop('M', ['sop'])).toBe(true)
+  })
+
+  it('CA-1270: a SOP só aparece de 12 anos em diante; marcada antes, continua (D-451)', () => {
+    const sop = (idadeAnos: number | null, marcadas: string[] = []) => doencasDaPessoa({ sexo: 'F', idadeAnos }, marcadas).some((d) => d.id === 'sop')
+    expect(sop(6)).toBe(false)
+    expect(sop(11)).toBe(false)
+    expect(sop(12)).toBe(true)
+    expect(sop(68)).toBe(true)
+    expect(sop(null)).toBe(false)
+    expect(sop(11, ['sop'])).toBe(true)
   })
 
   it('o "Diagnóstico clínico" do Word junta as marcadas em frase e o texto livre', () => {

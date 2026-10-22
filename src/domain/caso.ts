@@ -95,6 +95,16 @@ export function lerNumero(texto: string): number | null {
 
 const fora = (valor: number, faixa: { readonly min: number; readonly max: number }) => valor < faixa.min || valor > faixa.max
 
+/** Cada campo que falta, com o artigo, como a frase da tela pede (spec ficha-unica, D-461). */
+const CAMPO_COM_ARTIGO: Readonly<Partial<Record<CampoCaso, string>>> = { sexo: 'o sexo', idadeAnos: 'a idade', pesoKg: 'o peso', estaturaCm: 'a estatura' }
+
+/** "o peso e a estatura", "o sexo, a idade, o peso e a estatura": a lista em frase, com "e" antes do último. */
+export function oQueFalta(campos: readonly CampoCaso[]): string {
+  const nomes = campos.map((c) => CAMPO_COM_ARTIGO[c] ?? c)
+  if (nomes.length <= 1) return nomes.join('')
+  return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1] ?? ''}`
+}
+
 export function validarCaso(caso: Caso): ResultadoValidacao {
   const erros: Partial<Record<CampoCaso, string>> = {}
   const faltando: CampoCaso[] = []

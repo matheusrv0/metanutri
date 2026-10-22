@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// Spec ficha-unica: cada pergunta para quem vale (CA-1048 a CA-1051), a etapa 1 com paciente (CA-1066), a restrição na
-// linha do plano (CA-1077) e a meta de água (CA-1092), em 360 px (CA-1086).
+// Spec ficha-unica: cada pergunta para quem vale (CA-1048 a CA-1051; correção B, CA-1282 e a tabela 10.2), a etapa 1
+// com paciente (CA-1066), a restrição na linha do plano (CA-1077) e a meta de água (CA-1092), em 360 px (CA-1086).
 
 interface Pessoa {
   readonly nome: string
@@ -10,6 +10,10 @@ interface Pessoa {
   readonly gestante?: boolean
   readonly blocos: readonly string[]
   readonly semBlocos: readonly string[]
+  /** Correção B (tabela 10.2): perguntas e campos que aparecem e que não aparecem, pelo rótulo. */
+  readonly comRotulos: readonly string[]
+  readonly semRotulos: readonly string[]
+  readonly comSop: boolean
 }
 
 /** As idades contam do dia em que o teste roda: as datas ficam longe dos cortes. */
@@ -19,10 +23,47 @@ const anosAtras = (anos: number) => {
 }
 
 const PESSOAS: readonly Pessoa[] = [
-  { nome: 'João Teste', sexo: 'Masculino', nascimento: anosAtras(35), blocos: ['Álcool e tabagismo'], semBlocos: ['Gestação', 'Lactação', 'Saúde da mulher', 'Infância', 'Pessoa idosa'] },
-  { nome: 'Ana Teste', sexo: 'Feminino', nascimento: anosAtras(28), gestante: true, blocos: ['Gestação'], semBlocos: ['Saúde da mulher', 'Infância', 'Pessoa idosa'] },
-  { nome: 'Bia Teste', sexo: 'Feminino', nascimento: anosAtras(6), blocos: ['Infância'], semBlocos: ['Álcool e tabagismo', 'Gestação', 'Saúde da mulher', 'Pessoa idosa'] },
-  { nome: 'Rosa Teste', sexo: 'Feminino', nascimento: anosAtras(68), blocos: ['Saúde da mulher', 'Pessoa idosa'], semBlocos: ['Gestação', 'Lactação', 'Infância'] },
+  {
+    nome: 'João Teste',
+    sexo: 'Masculino',
+    nascimento: anosAtras(35),
+    blocos: ['Álcool e tabagismo', 'Atividade física'],
+    semBlocos: ['Gestação', 'Lactação', 'Saúde da mulher', 'Infância', 'Pessoa idosa'],
+    comRotulos: ['Ocupação', 'Dietas que já fez', 'Rotina de trabalho ou estudo', 'Tabagismo'],
+    semRotulos: ['Escola e ano', 'Responsável', 'Tempo de tela por dia', 'Menstruação'],
+    comSop: false,
+  },
+  {
+    nome: 'Ana Teste',
+    sexo: 'Feminino',
+    nascimento: anosAtras(28),
+    gestante: true,
+    blocos: ['Gestação'],
+    semBlocos: ['Saúde da mulher', 'Infância', 'Pessoa idosa'],
+    comRotulos: ['Ocupação', 'Náusea ou vômito', 'Dietas que já fez', 'Rotina de trabalho ou estudo'],
+    semRotulos: ['Menstruação', 'Fluxo menstrual intenso', 'Escola e ano', 'Responsável'],
+    comSop: true,
+  },
+  {
+    nome: 'Bia Teste',
+    sexo: 'Feminino',
+    nascimento: anosAtras(6),
+    blocos: ['Infância', 'Atividade física'],
+    semBlocos: ['Álcool e tabagismo', 'Gestação', 'Saúde da mulher', 'Pessoa idosa'],
+    comRotulos: ['Escola e ano', 'Responsável', 'Tempo de tela por dia', 'Rotina da escola ou da creche'],
+    semRotulos: ['Ocupação', 'Dietas que já fez', 'Rotina de trabalho ou estudo', 'Tabagismo'],
+    comSop: false,
+  },
+  {
+    nome: 'Rosa Teste',
+    sexo: 'Feminino',
+    nascimento: anosAtras(68),
+    blocos: ['Saúde da mulher', 'Pessoa idosa'],
+    semBlocos: ['Gestação', 'Lactação', 'Infância'],
+    comRotulos: ['Ocupação', 'Menstruação', 'Reposição hormonal', 'Dietas que já fez', 'Perda de peso sem querer'],
+    semRotulos: ['Fluxo menstrual intenso', 'Anticoncepcional ou reposição hormonal', 'Com quem mora', 'Escola e ano', 'Responsável'],
+    comSop: true,
+  },
 ]
 
 const fichaNova = async (pagina: Page, pessoa: Pick<Pessoa, 'nome' | 'sexo' | 'nascimento'>) => {
@@ -54,6 +95,10 @@ for (const pessoa of PESSOAS) {
     for (const bloco of pessoa.blocos) await expect(anamnese.getByRole('button', { name: new RegExp(`^${bloco}`) })).toBeVisible()
     for (const bloco of pessoa.semBlocos) await expect(anamnese.getByRole('button', { name: new RegExp(`^${bloco}`) })).toHaveCount(0)
     await anamnese.getByRole('button', { name: 'Abrir tudo' }).click()
+    // CA-1282 (correção B): cada pergunta e cada campo, pela tabela 10.2.
+    for (const rotulo of pessoa.comRotulos) await expect(page.getByLabel(rotulo, { exact: true }).first(), rotulo).toBeVisible()
+    for (const rotulo of pessoa.semRotulos) await expect(page.getByLabel(rotulo, { exact: true }), rotulo).toHaveCount(0)
+    await expect(anamnese.getByRole('checkbox', { name: 'Síndrome dos ovários policísticos' })).toHaveCount(pessoa.comSop ? 1 : 0)
     await semRolarParaOLado(page)
   })
 }

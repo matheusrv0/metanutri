@@ -83,3 +83,39 @@ Cada tarefa vai num commit (Conventional Commits, em português), com o teste an
 - **Etapa 1 em três cartões novos** (`CartaoIdentificacao` refeito, `CartaoMedidas` no lugar de `CartaoPessoa`, e
   `CartaoDocumento`), com `ResumoDoPaciente` e `CamposDoPlanoSemPaciente`. A composição corporal foi para Medidas e
   energia, que é onde a medida mora.
+
+## Correção B (22/10/2026): regras da ficha, adequação, português e menores da revisão de código
+
+**Spec:** `./SPEC.md`, seção 10 (D-450 a D-465, CA-1270 a CA-1300, CB-420 a CB-426). Notas datadas em
+`specs/painel-lateral-enxuto` (CA-685, CA-692, CA-697, D-205), `specs/pdf-e-telas-limpas` (CA-338) e
+`specs/planejador-metanutri` (CA-04). Corre ao lado da correção A (alimentos, medidas, Cobrir, PDF, `globals.css`):
+nada aqui toca `busca.ts`, `cobrir.ts`, `produtos.ts`, `trocas.ts`, `folhaDieta.ts`, `FolhaDieta.tsx`, `LinhaItem.tsx`,
+`EntradaRapida.tsx`, `TelaAlimentos.tsx` nem `globals.css`. Em `GavetaCobrir.tsx` e `DialogoImprimir.tsx`, só uma linha
+de texto cada.
+
+**Suposições (para revisar):** a pergunta muda de texto pela idade só quando a conta não a renomeou (D-453, D-458);
+"Peito e outros alimentos" chega ao plano num campo opcional da condição de lactante (`amamentacao: 'mista'`), que o
+plano sem paciente não pede.
+
+| # | Tarefa | Arquivos | Critérios |
+|---|---|---|---|
+| B1 | Spec e plano | `specs/ficha-unica/SPEC.md`, `PLAN.md`, notas nas specs acima | — |
+| B2 | SOP de 12 anos em diante | `src/domain/doencas.ts`, `src/ui/pacientes/CamposDaSaude.tsx`, testes | CA-1270 |
+| B3 | Histórico do peso e dietas pela idade | `src/domain/anamnese.ts`, testes | CA-1271 |
+| B4 | Saúde da mulher pela idade e pela menstruação | `src/domain/anamnese.ts`, `src/ui/pacientes/PerguntaDaAnamnese.tsx`, testes | CA-1272 a CA-1274, CB-421 |
+| B5 | "Com quem mora" sai; dica em Pessoas que moram na casa | `src/domain/anamnese.ts`, `src/ui/pacientes/CartaoDadosDoPaciente.tsx`, testes | CA-1275 |
+| B6 | Lactante é quem amamenta; mista muda a energia; acima de 60 meses avisa | `src/domain/momentoDeVida.ts`, `src/domain/tipos.ts`, `src/domain/energia.ts`, `src/domain/fichaNoPlano.ts`, `src/ui/pacientes/CampoGestacaoLactacao.tsx`, testes | CA-1276 a CA-1278, CB-422, CB-423 |
+| B7 | Rotina, atividade, escola e dobras pela idade | `src/domain/anamnese.ts`, `src/domain/regrasDaFicha.ts`, `src/domain/camposVisiveis.ts`, `src/ui/pacientes/CartaoDadosDoPaciente.tsx`, `src/ui/caso/CartaoMedidas.tsx`, `src/ui/caso/CamposComposicao.tsx`, testes | CA-1279 a CA-1282 |
+| B8 | Adequação "28% da referência" | `src/ui/adequacao/estiloAdequacao.ts`, `TelaAdequacao.tsx`, `ItemListaAdequacao.tsx`, `MicrosDoDia.tsx`, `GavetaCobrir.tsx` (a descrição), testes e e2e | CA-1283 |
+| B9 | Panturrilha pelo corte brasileiro | `src/data/antropometria.json`, `src/domain/antropometria.ts`, testes | CA-1284 |
+| B10 | Português | `src/domain/energia.ts`, `antropometria.ts`, `adequacao.ts`, `descreverEstagio.ts`, `receitas.ts`, `src/ui/adequacao/*`, `src/ui/resumo/ResumoDoDia.tsx`, `src/export/memorial-docx.ts`, `aconselhamento-docx.ts`, `src/ui/caso/PainelAntropometria.tsx`, `CartaoDocumento.tsx`, `src/ui/exportar/DialogoImprimir.tsx` (uma linha), `src/ui/produtos/TelaProdutos.tsx` (uma linha), `src/ui/publico/*`, `src/seo/paginas.ts`, testes | CA-1285 a CA-1293 |
+| B11 | Título do plano | `src/ui/AreaDeTrabalho.tsx`, teste | CA-1294 |
+| B12 | Dado de versão futura | `src/domain/persistencia.ts`, `src/domain/momentoDeVida.ts`, `src/domain/pacientes.ts`, testes | CA-1295, CA-1296, CB-424 |
+| B13 | Linha da água escrita à mão | `src/ui/caso/CampoAgua.tsx`, teste | CA-1297, CB-425 |
+| B14 | Pergunta própria de bloco da versão 2 | `src/domain/anamnese.ts`, testes | CA-1298, CB-426 |
+| B15 | Testes que faltavam | `src/domain/copiaDaConta.test.ts`, `src/domain/anamnese.test.ts` | CA-1299, CA-1300 |
+| B16 | Os 4 pacientes de novo e os prints | e2e da ficha | CA-1282 |
+
+Cada tarefa vai num commit, com o teste antes do código. Riscos: os cortes de idade novos (12 anos na SOP, 40 e 56 na
+menopausa, 14 no anticoncepcional, 3 anos na atividade, 18 nas dobras) e o valor da amamentação mista pedem a
+conferência da parceira pela tela.

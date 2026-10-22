@@ -21,7 +21,7 @@ import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
-import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
+import { COR_TEXTO, rotuloDosNaMeta, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
 import { destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
@@ -75,7 +75,7 @@ function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly a
       </TableCell>
       <TableCell className="min-w-36">
         <Progress value={linha.adequacaoPct} variant={VARIANTE_BARRA[linha.estado]} />
-        <span className={`numeros mt-1 block whitespace-nowrap text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
+        <span className={`numeros mt-1 block text-xs font-semibold ${COR_TEXTO[linha.estado]}`}>{textoDaAdequacao(linha)}</span>
       </TableCell>
       <TableCell>
         {podeCobrir(linha) ? (
@@ -142,7 +142,7 @@ export function TelaAdequacao({
     abertura.current = { chave, ordem: pedemAcao.filter(podeCobrir).map((l) => l.chave) }
     setCobrindo(chave)
   }
-  const rotuloNaMeta = `${mostrarNaMeta ? 'Esconder' : 'Ver'} os ${naMeta.length} na meta`
+  const rotuloNaMeta = rotuloDosNaMeta(naMeta.length, mostrarNaMeta)
   const botaoNaMeta = (
     <Button variant="ghost" size="sm" aria-expanded={mostrarNaMeta} aria-controls={idNaMeta} onClick={() => setMostrarNaMeta((v) => !v)}>
       <ChevronDown className={cn('transition-transform', mostrarNaMeta && 'rotate-180')} aria-hidden="true" />
@@ -272,7 +272,7 @@ export function TelaAdequacao({
             <TableFootnotes>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-                <span>Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.</span>
+                <span>Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.</span>
               </p>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>

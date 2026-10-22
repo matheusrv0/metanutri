@@ -29,7 +29,8 @@ describe('antropometria.json', () => {
       ref.estaturaIdadeEscoreZ.faixas,
       ref.cintura.M,
       ref.cintura.F,
-      ref.panturrilha.faixas,
+      ref.panturrilha.M,
+      ref.panturrilha.F,
       ref.gestacao.imcPreGestacional,
     ]
     tabelas.forEach(expectContinuas)

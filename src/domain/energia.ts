@@ -1,7 +1,7 @@
 // Necessidade energética (SPEC CA-06 a CA-11, CA-06a a CA-06d, CB-02b).
 import tabela from '../data/energia.json'
 import { calcularImc, classificarImcPreGestacional, type ClasseImcPreGestacional } from './antropometria.ts'
-import { validarCaso } from './caso.ts'
+import { oQueFalta, validarCaso } from './caso.ts'
 import type { Caso, FormulaTmb, Sexo } from './tipos.ts'
 
 export type CategoriaAtividade = 'inativo' | 'pouco-ativo' | 'ativo' | 'muito-ativo'
@@ -14,6 +14,16 @@ export const NIVEIS_ATIVIDADE: readonly { readonly id: string; readonly rotulo: 
   { id: 'muito-ativo', rotulo: 'Muito ativo', fator: 1.7, categoria: 'muito-ativo' },
   { id: 'extremamente-ativo', rotulo: 'Extremamente ativo', fator: 1.9, categoria: 'muito-ativo' },
 ]
+
+const ROTULO_DA_CATEGORIA: Readonly<Record<CategoriaAtividade, string>> = {
+  inativo: 'Sedentário',
+  'pouco-ativo': 'Pouco ativo',
+  ativo: 'Moderadamente ativo',
+  'muito-ativo': 'Muito ativo',
+}
+
+/** A categoria do NASEM com o nome do nível da tela (spec ficha-unica, D-461): "Sedentário", nunca "inativo". */
+export const rotuloDaCategoria = (categoria: CategoriaAtividade): string => ROTULO_DA_CATEGORIA[categoria]
 
 const FONTE_FORMULA: Readonly<Record<FormulaAdulto, string>> = {
   mifflin: 'Mifflin MD, St Jeor ST, et al. A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr 1990;51:241-7.',
@@ -95,20 +105,11 @@ const ROTULO_IMC: Readonly<Record<ClasseImcPreGestacional, string>> = {
   obesidade: 'obesidade',
 }
 
-/** Nome de cada dado que falta, como aparece na tela. */
-const NOMES_CAMPO: Readonly<Record<string, string>> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
-
-/** "peso e estatura", "sexo, peso e estatura". */
-function juntar(itens: readonly string[]): string {
-  if (itens.length <= 1) return itens.join('')
-  return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`
-}
-
 /** CA-230: o que falta para calcular a meta do modo rápido; `null` quando não falta nada (o problema é outro, CB-56). */
 function motivoDaMetaRapida(caso: Caso): string | null {
   const { faltando } = validarCaso({ ...caso, modo: 'completo' })
   if (faltando.length === 0) return null
-  return `Informe ${juntar(faltando.map((c) => NOMES_CAMPO[c] ?? c))} para calcular a meta.`
+  return `Informe ${oQueFalta(faltando)} para calcular a meta.`
 }
 
 export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEnergia {
@@ -151,9 +152,8 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
   }
 
   if (!validacao.podeCalcular || sexo === null || idadeAnos === null || pesoKg === null || estaturaCm === null) {
-    const faltando = validacao.faltando.map((c) => NOMES_CAMPO[c] ?? c)
-    const motivo = faltando.length
-      ? `Informe ${faltando.join(', ')} para calcular a energia.`
+    const motivo = validacao.faltando.length
+      ? `Informe ${oQueFalta(validacao.faltando)} para calcular a energia.`
       : 'Corrija os campos inválidos do plano para calcular a energia.'
     return resultado({ metodo: null, tmb: null, categoriaAtividade: null, adicionais: [], get: null, fonte: null, motivoSemCalculo: motivo })
   }
@@ -194,12 +194,15 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
     const { exclusiva, parcial } = tabela.lactacao
     if (meses === null) {
       avisos.push('Informe o tempo pós-parto para somar o custo de produção de leite.')
-    } else if (meses <= exclusiva.mesesMax) {
+    } else if (meses <= exclusiva.mesesMax && condicao.amamentacao !== 'mista') {
       adicionais.push({ descricao: 'Produção de leite (0 a 6 meses)', kcal: exclusiva.producaoLeite })
       adicionais.push({ descricao: 'Mobilização de reservas (0 a 6 meses)', kcal: -exclusiva.mobilizacao })
       get += exclusiva.producaoLeite - exclusiva.mobilizacao
     } else if (meses <= parcial.mesesMax) {
-      adicionais.push({ descricao: 'Produção de leite (7 a 12 meses)', kcal: parcial.producaoLeite })
+      // D-456 (spec ficha-unica): peito e outros alimentos antes dos 6 meses usa o valor que o NASEM dá para a
+      // amamentação parcial (7 a 12 meses), quando o bebê já come outros alimentos e mama menos.
+      const descricao = meses <= exclusiva.mesesMax ? 'Produção de leite, peito e outros alimentos (valor de 7 a 12 meses)' : 'Produção de leite (7 a 12 meses)'
+      adicionais.push({ descricao, kcal: parcial.producaoLeite })
       get += parcial.producaoLeite
     } else {
       avisos.push('Não há adicional de lactação definido nas referências para mais de 12 meses pós-parto.')

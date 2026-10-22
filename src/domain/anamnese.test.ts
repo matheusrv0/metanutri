@@ -72,7 +72,7 @@ describe('roteiro padrão (spec ficha-unica, D-347 e seção 2)', () => {
     expect(textos(ROTEIRO_PADRAO.perguntas.agua)).toEqual(['Água por dia', 'Cor da urina', 'Outras bebidas'])
     expect(textos(ROTEIRO_PADRAO.perguntas['alcool-fumo'])).toEqual(['Álcool', 'Tabagismo'])
     expect(textos(ROTEIRO_PADRAO.perguntas.alimentacao)).toEqual(['Alimentos de que gosta', 'Alimentos de que não gosta', 'Vontade de doce ou salgado', 'Quem prepara as refeições e onde come'])
-    expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas', 'Com quem mora'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas'])
     expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
   })
 
@@ -372,11 +372,66 @@ describe('roteiro salvo na versão 1 ou 2 vira a 3 (spec ficha-unica, D-350, CA-
     expect(lerRoteiro(guardado({ agua: [{ id: 'agua-dia', texto: 'Água' }] }, 2)).perguntas.agua.map((q) => q.id)).toEqual(['agua-dia'])
   })
 
-  it('CB-348: roteiro da versão 3 salvo por uma versão antiga (sem versão, com os blocos novos) é lido como versão 3', () => {
-    const arm = guardado({ motivo: [{ id: 'queixa', texto: 'Queixa' }], objetivo: [{ id: 'queixa', texto: 'Queixa principal' }] })
+  it('CB-348 e CA-1300: o roteiro da versão 3 regravado pela versão no ar (78c0157) é lido de novo igual', () => {
+    // O que a 78c0157 grava ao salvar o roteiro da versão 3: `versao: 2`, os blocos que ela conhece (os que faltavam no
+    // guardado, com o padrão dela; os que existem, como vieram) e os blocos novos como desconhecidos.
+    const daV3 = new Memoria()
+    gravarRoteiro(daV3, ROTEIRO_PADRAO)
+    const blocosV3 = (JSON.parse(daV3.getItem(CHAVE_ROTEIRO) ?? '{}') as { blocos: Record<string, unknown> }).blocos
+    const padraoDaAntiga = {
+      objetivo: [
+        { id: 'queixa', texto: 'Queixa principal' },
+        { id: 'historico-peso', texto: 'Histórico do peso' },
+        { id: 'dietas', texto: 'Dietas que já fez' },
+        { id: 'suplementos-uso', texto: 'Suplementos que já usa' },
+        { id: 'doencas-familia', texto: 'Doenças na família' },
+      ],
+      intestino: [
+        { id: 'evacuacao', texto: 'Frequência de evacuação' },
+        { id: 'fezes', texto: 'Consistência das fezes' },
+        { id: 'desconforto', texto: 'Gases, estufamento ou desconforto' },
+      ],
+      preferencias: [
+        { id: 'gosta', texto: 'Alimentos de que gosta' },
+        { id: 'nao-gosta', texto: 'Alimentos de que não gosta' },
+        { id: 'vontades', texto: 'Vontade de doce ou salgado' },
+        { id: 'apetite', texto: 'Apetite e mastigação' },
+      ],
+      intolerancias: [
+        { id: 'intolerancias-alimentares', texto: 'Intolerâncias alimentares' },
+        { id: 'alergias-alimentares', texto: 'Alergias alimentares' },
+      ],
+    }
+    const arm = guardado({ ...blocosV3, ...padraoDaAntiga }, 2)
     const lido = lerRoteiro(arm)
-    expect(lido.perguntas.motivo).toEqual([{ id: 'queixa', texto: 'Queixa' }])
-    expect(lido.outros).toHaveProperty('objetivo')
+    expect(lido.perguntas).toEqual(ROTEIRO_PADRAO.perguntas)
+    expect(Object.keys(lido.outros).sort()).toEqual(['intestino', 'intolerancias', 'objetivo', 'preferencias'])
+  })
+
+  it('CA-1298 (D-465): pergunta própria criada numa aba antiga em bloco só da versão 2 aparece no bloco novo; tirada, não volta', () => {
+    const arm = guardado(
+      {
+        motivo: ROTEIRO_PADRAO.perguntas.motivo,
+        objetivo: [...(v2({}).objetivo as object[]), { id: 'p-velha', texto: 'Come fora no fim de semana' }],
+        intestino: [{ id: 'evacuacao', texto: 'Frequência de evacuação' }, { id: 'p-int', texto: 'Usa laxante' }],
+        preferencias: [{ id: 'p-pref', texto: 'Prefere doce' }],
+        intolerancias: [{ id: 'p-intol', texto: 'Estufa com feijão' }, { id: 'queixa', texto: 'Repetida' }],
+      },
+      2,
+    )
+    const lido = lerRoteiro(arm)
+    expect(lido.perguntas.motivo.at(-1)).toEqual({ id: 'p-velha', texto: 'Come fora no fim de semana' })
+    expect(lido.perguntas.digestao.at(-1)).toEqual({ id: 'p-int', texto: 'Usa laxante' })
+    expect(lido.perguntas.alimentacao.slice(-2)).toEqual([
+      { id: 'p-pref', texto: 'Prefere doce' },
+      { id: 'p-intol', texto: 'Estufa com feijão' },
+    ])
+    // CB-426: o id que já está no roteiro da versão 3 vale uma vez.
+    expect(BLOCOS_ANAMNESE.flatMap((b) => lido.perguntas[b.id]).filter((q) => q.id === 'queixa')).toEqual([{ id: 'queixa', texto: 'Queixa principal' }])
+    expect(JSON.stringify(lido.outros)).not.toContain('p-velha')
+    gravarRoteiro(arm, tirarPergunta(lido, 'motivo', 'p-velha'))
+    expect(lerRoteiro(arm).perguntas.motivo.map((q) => q.id)).not.toContain('p-velha')
+    expect(lerRoteiro(arm).perguntas.digestao.at(-1)).toEqual({ id: 'p-int', texto: 'Usa laxante' })
   })
 
   it('abrir não grava nada', () => {
@@ -467,5 +522,100 @@ describe('respostas da ficha (D-163)', () => {
     expect(ids(vazio)).not.toContain('alcool-fumo')
     const comResposta = responder([], { id: 'fumo', texto: 'Tabagismo' }, 'alcool-fumo', 'Não fuma')
     expect(blocosDaFicha(vazio, comResposta, null).find((b) => b.id === 'alcool-fumo')?.perguntas).toEqual([{ id: 'fumo', texto: 'Tabagismo', resposta: 'Não fuma', foraDoRoteiro: true }])
+  })
+})
+
+describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 10)', () => {
+  const perguntasDe = (bloco: string, quem: PerfilDaFicha | null, respostas: readonly RespostaAnamnese[] = []) =>
+    blocosDaFicha(ROTEIRO_PADRAO, respostas, quem)
+      .find((b) => b.id === bloco)
+      ?.perguntas.map((q) => q.texto) ?? []
+
+  it('CA-1271: o histórico do peso fala da vida adulta de 18 anos em diante e do crescimento abaixo (D-452)', () => {
+    const adulta = 'Peso habitual, maior e menor peso na vida adulta.'
+    const crescimento = 'Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).'
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 35 }))).toBe(adulta)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 18 }))).toBe(adulta)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 17 }))).toBe(crescimento)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: 6 }))).toBe(crescimento)
+    expect(dicaDaPergunta('historico-peso', perfil({ idadeAnos: null }))).toBe(adulta)
+  })
+
+  it('CA-1271: "Dietas que já fez" aparece de 12 anos em diante; respondida, continua (D-452)', () => {
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 6 }))).toEqual(['Queixa principal', 'Histórico do peso'])
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 11 }))).not.toContain('Dietas que já fez')
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 12 }))).toContain('Dietas que já fez')
+    const dietas = responder([], { id: 'dietas', texto: 'Dietas que já fez' }, 'motivo', 'Sem glúten por conta da mãe')
+    expect(perguntasDe('motivo', perfil({ idadeAnos: 6 }), dietas)).toContain('Dietas que já fez')
+  })
+
+  const menstruacao = { id: 'menstruacao', texto: 'Menstruação' }
+  const mulher = (idadeAnos: number) => perfil({ sexo: 'F', idadeAnos })
+
+  it('CA-1272: as opções de menstruação pela idade; sem idade, as de adulta (D-453, CB-420)', () => {
+    expect(opcoesDaPergunta('menstruacao', mulher(28))).toEqual(['Regular', 'Irregular', 'Não menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(39))).toEqual(['Regular', 'Irregular', 'Não menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(40))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('menstruacao', mulher(55))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('menstruacao', mulher(56))).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(opcoesDaPergunta('menstruacao', mulher(68))).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(opcoesDaPergunta('menstruacao', perfil({ idadeAnos: null }))).toEqual(['Regular', 'Irregular', 'Não menstrua', 'Menopausa'])
+    expect(opcoesDaPergunta('fluxo-intenso', mulher(68))).toEqual(['Sim', 'Não'])
+  })
+
+  it('CA-1273: o fluxo intenso só para quem menstrua; de 56 anos em diante, só com "Ainda menstrua"; respondido, continua', () => {
+    const comMenstruacao = (resposta: string) => responder([], menstruacao, 'saude-mulher', resposta)
+    expect(perguntasDe('saude-mulher', mulher(28))).toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(28), comMenstruacao('Não menstrua'))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(50), comMenstruacao('Menopausa'))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(68))).not.toContain('Fluxo menstrual intenso')
+    expect(perguntasDe('saude-mulher', mulher(68), comMenstruacao('Ainda menstrua'))).toContain('Fluxo menstrual intenso')
+    const fluxo = responder(comMenstruacao('Menopausa'), { id: 'fluxo-intenso', texto: 'Fluxo menstrual intenso' }, 'saude-mulher', 'Sim')
+    expect(perguntasDe('saude-mulher', mulher(50), fluxo)).toContain('Fluxo menstrual intenso')
+  })
+
+  it('CA-1274: anticoncepcional de 14 anos em diante; com menopausa, "Reposição hormonal"; renomeada, fica com o texto da conta', () => {
+    const hormonios = 'Anticoncepcional ou reposição hormonal'
+    expect(perguntasDe('saude-mulher', mulher(12))).not.toContain(hormonios)
+    expect(perguntasDe('saude-mulher', mulher(14))).toContain(hormonios)
+    expect(perguntasDe('saude-mulher', mulher(50), responder([], menstruacao, 'saude-mulher', 'Menopausa'))).toContain('Reposição hormonal')
+    expect(perguntasDe('saude-mulher', mulher(68))).toEqual(['Menstruação', 'Reposição hormonal'])
+    expect(perguntasDe('saude-mulher', mulher(68), responder([], menstruacao, 'saude-mulher', 'Ainda menstrua'))).toContain(hormonios)
+    const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'saude-mulher', 'hormonios', 'Hormônios')
+    const textosRenomeado = blocosDaFicha(renomeado, [], mulher(68)).find((b) => b.id === 'saude-mulher')?.perguntas.map((q) => q.texto)
+    expect(textosRenomeado).toContain('Hormônios')
+  })
+
+  it('CA-1275: "Com quem mora" sai do padrão e do roteiro guardado com o texto padrão; renomeada fica; a resposta antiga aparece (D-454)', () => {
+    const arm = new Memoria()
+    const idoso = (texto: string) => [
+      { id: 'perda-de-peso', texto: 'Perda de peso sem querer' },
+      { id: 'quedas', texto: 'Quedas' },
+      { id: 'mora-com', texto },
+    ]
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 3, blocos: { idoso: idoso('Com quem mora') } }))
+    expect(textos(lerRoteiro(arm).perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas'])
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 3, blocos: { idoso: idoso('Mora com quem?') } }))
+    expect(textos(lerRoteiro(arm).perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas', 'Mora com quem?'])
+    const antiga = responder([], { id: 'mora-com', texto: 'Com quem mora' }, 'idoso', 'Com a filha')
+    const bloco = blocosDaFicha(ROTEIRO_PADRAO, antiga, mulher(68)).find((b) => b.id === 'idoso')
+    expect(bloco?.perguntas.at(-1)).toEqual({ id: 'mora-com', texto: 'Com quem mora', resposta: 'Com a filha', foraDoRoteiro: true })
+  })
+
+  it('CA-1279: abaixo de 14 anos a rotina é a da escola ou da creche; renomeada, fica (D-458)', () => {
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 6 }))[0]).toBe('Rotina da escola ou da creche')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 13 }))[0]).toBe('Rotina da escola ou da creche')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 14 }))[0]).toBe('Rotina de trabalho ou estudo')
+    const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'rotina', 'rotina-trabalho', 'Rotina')
+    expect(blocosDaFicha(renomeado, [], perfil({ idadeAnos: 6 })).find((b) => b.id === 'rotina')?.perguntas[0]?.texto).toBe('Rotina')
+  })
+
+  it('CA-1279: Atividade física de 3 anos em diante; respondida, fica com o aviso (D-458)', () => {
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 2 }))).not.toContain('atividade')
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 3 }))).toContain('atividade')
+    expect(regraDoBloco('atividade')).toBe('a-partir-de-3')
+    const respondida = responder([], { id: 'atividade-tipo', texto: 'Tipo de atividade' }, 'atividade', 'Natação')
+    const bloco = blocosDaFicha(ROTEIRO_PADRAO, respondida, perfil({ idadeAnos: 2 })).find((b) => b.id === 'atividade')
+    expect(bloco?.aviso).toBe('Este bloco vale a partir de 3 anos. As respostas continuam guardadas.')
   })
 })

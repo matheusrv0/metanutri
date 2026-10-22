@@ -1,7 +1,7 @@
 import { Flame, Settings2, SlidersHorizontal, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { arredondarNoEstado } from '@/domain/arredondarNoEstado.ts'
-import { calcularEnergia, FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from '@/domain/energia.ts'
+import { calcularEnergia, FAIXA_DO_GASTO_PADRAO, percentualDoGasto, rotuloDaCategoria } from '@/domain/energia.ts'
 import { calcularMacros, type EstadoFaixa, type ResultadoMacro, type ResultadoMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -187,7 +187,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
           {temMarca ? (
             <p className="text-xs text-muted-foreground">
               <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-              <span>Total possivelmente subestimado: falta o dado em algum alimento.</span>
+              <span>Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.</span>
             </p>
           ) : null}
         </div>
@@ -199,7 +199,7 @@ export function ResumoDoDia({ caso, plano, aoAlterar }: ResumoDoDiaProps) {
               {mostraCalculo ? (
                 <LinhaCalculo
                   rotulo="Fator de atividade"
-                  valor={`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${energia.categoriaAtividade}` : ''}`}
+                  valor={`${formatarNumero(caso.energia.fator, 2)}${energia.categoriaAtividade ? ` · ${rotuloDaCategoria(energia.categoriaAtividade).toLowerCase()}` : ''}`}
                 />
               ) : null}
               {mostraCalculo

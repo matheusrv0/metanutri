@@ -1,5 +1,5 @@
 import { criarCasoVazio } from './caso.ts'
-import { camposDaPessoa, temDadoDeComposicao } from './camposVisiveis.ts'
+import { camposDaPessoa, mostraDobras, mostraNivelDeAtividade, temDadoDeComposicao } from './camposVisiveis.ts'
 import type { Caso } from './tipos.ts'
 
 const caso = (p: Partial<Caso> = {}): Caso => ({ ...criarCasoVazio('c1'), sexo: 'F', idadeAnos: 28, ...p })
@@ -49,5 +49,24 @@ describe('temDadoDeComposicao (CA-332)', () => {
     expect(temDadoDeComposicao(vazio)).toBe(false)
     expect(temDadoDeComposicao({ ...vazio, composicao: { ...vazio.composicao, dobras: { ...vazio.composicao.dobras, tricipital: 12 } } })).toBe(true)
     expect(temDadoDeComposicao({ ...vazio, composicao: { ...vazio.composicao, bioimpedancia: { ...vazio.composicao.bioimpedancia, aparelho: 'InBody' } } })).toBe(true)
+  })
+})
+
+describe('correção B: nível de atividade e dobras pela idade (spec ficha-unica, D-458)', () => {
+  it('CA-1279: o nível de atividade aparece de 3 anos em diante; sem a idade, aparece', () => {
+    expect(mostraNivelDeAtividade(caso({ idadeAnos: 2 }))).toBe(false)
+    expect(mostraNivelDeAtividade(caso({ idadeAnos: 3 }))).toBe(true)
+    expect(mostraNivelDeAtividade(caso({ idadeAnos: null }))).toBe(true)
+  })
+
+  it('CA-1281: as dobras de 18 anos em diante e fora da gestação; com dobra preenchida, ficam', () => {
+    expect(mostraDobras(caso({ idadeAnos: 35 }))).toBe(true)
+    expect(mostraDobras(caso({ idadeAnos: 68 }))).toBe(true)
+    expect(mostraDobras(caso({ idadeAnos: 17 }))).toBe(false)
+    expect(mostraDobras(caso({ idadeAnos: 6 }))).toBe(false)
+    expect(mostraDobras(caso({ idadeAnos: 28, condicao: { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 } }))).toBe(false)
+    expect(mostraDobras(caso({ idadeAnos: null }))).toBe(true)
+    const comDobra = caso({ idadeAnos: 6 })
+    expect(mostraDobras({ ...comDobra, composicao: { ...comDobra.composicao, dobras: { ...comDobra.composicao.dobras, tricipital: 9 } } })).toBe(true)
   })
 })

@@ -96,7 +96,7 @@ describe('Etapa 3: adequação', () => {
     expect(screen.getByRole('columnheader', { name: 'Nutriente' })).toBeInTheDocument()
     const ferro = linhaDe('Ferro')
     expect(ferro.getAllByText(/mg$/).length).toBeGreaterThan(0)
-    expect(ferro.getByText(/^\d+%( abaixo| · acima do limite)?$/)).toBeInTheDocument()
+    expect(ferro.getByText(/^\d+% da referência( · abaixo da meta| · acima do limite)?$/)).toBeInTheDocument()
     expect(screen.queryByRole('columnheader', { name: 'Estado' })).not.toBeInTheDocument()
     expect(screen.getByText(/^Composição: Base MetaNutri/)).toBeInTheDocument()
     expect(screen.queryByText(/TACO/)).not.toBeInTheDocument()
@@ -134,20 +134,20 @@ describe('Etapa 3: adequação', () => {
     const marcas = screen.getAllByTitle(/total possivelmente subestimado/)
     expect(marcas.length).toBeGreaterThan(0)
     expect(marcas[0]).toHaveTextContent("†")
-    expect(screen.getByText(/falta de dado nunca entra como zero/i)).toBeInTheDocument()
+    expect(screen.getByText(/dado que falta não conta como zero/i)).toBeInTheDocument()
   })
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
     const usuario = montar()
-    expect(linhaDe('Ferro').getByText('0% abaixo')).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText('0% da referência · abaixo da meta')).toBeInTheDocument()
     const gaveta = await abrirCobrir(usuario, 'Ferro')
-    expect(gaveta.getByText(/Faltam .* mg para a meta/)).toBeInTheDocument()
+    expect(gaveta.getByText(/^O plano tem 0% da referência\. Faltam .* mg para a meta/)).toBeInTheDocument()
   })
 
   it('CA-791 (spec revisao-geral-trabalho): a falta com a precisão da tabela, sem duas casas', async () => {
     const usuario = montar(adulta, planoComArroz())
     const gaveta = await abrirCobrir(usuario, 'Cálcio')
-    expect(gaveta.getByText(/^Faltam \d[\d.]* mg para a meta\./)).toBeInTheDocument()
+    expect(gaveta.getByText(/^O plano tem \d+% da referência\. Faltam \d[\d.]* mg para a meta\./)).toBeInTheDocument()
   })
 
   it('CA-34 a CA-36: sugestões trazem porção, cobertura e kcal', async () => {
@@ -162,13 +162,13 @@ describe('Etapa 3: adequação', () => {
 
   it('CA-38: escolher a refeição e confirmar adiciona o alimento e recalcula', async () => {
     const usuario = montar(adulta, planoComArroz())
-    const antes = linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent
+    const antes = linhaDe('Ferro').getByText(/^\d+% da referência( · abaixo da meta| · acima do limite)?$/).textContent
     const gaveta = await abrirCobrir(usuario, 'Ferro')
     await usuario.selectOptions(gaveta.getByLabelText('Adicionar em'), gaveta.getByRole('option', { name: /Jantar/ }))
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(linhaDe('Ferro').getByText(/^\d+%( abaixo| · acima do limite)?$/).textContent).not.toBe(antes)
+    expect(linhaDe('Ferro').getByText(/^\d+% da referência( · abaixo da meta| · acima do limite)?$/).textContent).not.toBe(antes)
   })
 
   it('sugestão escondida não volta a aparecer, em nenhum plano', async () => {
@@ -257,7 +257,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(visiveis.length).toBeGreaterThan(0)
     for (const texto of visiveis) expect(texto).toMatch(/abaixo|acima do limite/)
 
-    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const n = Number(botao.textContent?.match(/\d+/)?.[0])
     expect(visiveis.length + n).toBe(TOTAL_DE_LINHAS)
     expect(botao).toHaveAttribute('aria-expanded', 'false')
@@ -265,7 +265,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
     await usuario.click(botao)
     expect(botao).toHaveAttribute('aria-expanded', 'true')
-    expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
+    expect(botao).toHaveTextContent(`Esconder os ${n} nutrientes na meta`)
     expect(linhasVisiveis()).toHaveLength(TOTAL_DE_LINHAS)
     // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
     const ordem = linhasVisiveis()
@@ -274,7 +274,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
   it('CA-691: Cobrir com fundo teal claro, só em linha abaixo da meta', async () => {
     const usuario = montar(adulta, exemplo())
-    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }))
     const cobrir = screen.getAllByRole('button', { name: /^Cobrir / })
     expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo') && !t.startsWith('Sódio')).length)
     for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
@@ -282,7 +282,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
   it('CA-693: notas em uma frase cada, sem repetir o seletor', () => {
     montar(adulta, exemplo())
-    expect(screen.getByText('Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.')).toBeInTheDocument()
+    expect(screen.getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
     expect(screen.getByText('O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.')).toBeInTheDocument()
     expect(screen.getByText('AI: usada quando o nutriente não tem RDA nem EAR.')).toBeInTheDocument()
     expect(screen.queryByText(/RDA no preset individual/)).not.toBeInTheDocument()
@@ -292,7 +292,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
   it('CB-202: nada abaixo da meta, a tabela diz isso e oferece todas as linhas', () => {
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
     expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} na meta` })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} nutrientes na meta` })).toBeInTheDocument()
     expect(TOTAL_DE_LINHAS).toBe(21)
   })
 
@@ -301,13 +301,13 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     const plano = exemplo()
     await gavetaSugere(sugestaoQueLevaAMeta(plano, { ...criarCasoVazio('c1'), ...adulta }, 'calcio_mg', IOGURTE_DESNATADO, ids))
     const usuario = montar(adulta, plano)
-    const ver = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const ver = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const antes = Number(ver.textContent?.match(/(\d+)/)?.[1])
     await usuario.click(ver)
     const gaveta = await abrirCobrir(usuario, 'Cálcio')
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
 
-    const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} na meta` })
+    const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} nutrientes na meta` })
     expect(esconder).toHaveAttribute('aria-expanded', 'true')
     const grupo = document.getElementById(esconder.getAttribute('aria-controls') ?? '')
     if (!grupo) throw new Error('sem o grupo na meta')
@@ -342,7 +342,7 @@ describe('Etapa 3 no celular (CA-692)', () => {
     montar(adulta, exemplo())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     const ferro = itemDe('Ferro')
-    expect(ferro.getByText(/^\d+% abaixo$/)).toHaveClass('text-warningtext')
+    expect(ferro.getByText(/^\d+% da referência · abaixo da meta$/)).toHaveClass('text-warningtext')
     expect(ferro.getByRole('progressbar')).toBeInTheDocument()
     expect(ferro.getByText(/^[\d.,]+ mg de 18 mg$/)).toHaveTextContent(/^[\d.,]+ mg†? de 18 mg rda$/)
     // O nome diz o nutriente: a lista do celular não tem cabeçalho de coluna (CA-700).
@@ -353,7 +353,7 @@ describe('Etapa 3 no celular (CA-692)', () => {
 
   it('CA-692: o recolhimento vale igual, e Cobrir abre a gaveta', async () => {
     const usuario = montar(adulta, exemplo())
-    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const naMeta = document.getElementById(botao.getAttribute('aria-controls') ?? '')
     expect(naMeta).toHaveAttribute('hidden')
     await usuario.click(botao)
@@ -419,14 +419,14 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
     const plano = exemplo()
     const pct = ferroDoExemplo(plano)
     montar(adulta, plano)
-    expect(linhaDe('Ferro').getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.round(pct)}% da referência · abaixo da meta`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na tabela, com a meta logo acima, arredonda para baixo', () => {
     const plano = exemplo()
     const pct = ferroDoExemplo(plano)
     montar(comMetaLogoAcima(pct), plano)
-    expect(linhaDe('Ferro').getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(linhaDe('Ferro').getByText(`${Math.floor(pct)}% da referência · abaixo da meta`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: na lista do celular, também', () => {
@@ -434,11 +434,11 @@ describe('Tabela e lista arredondam sem desmentir o estado (CA-696, CA-712)', ()
     const plano = exemplo()
     const pct = ferroDoExemplo(plano)
     const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    expect(itemDoFerro().getByText(`${Math.round(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.round(pct)}% da referência · abaixo da meta`)).toBeInTheDocument()
     unmount()
 
     render(<Anfitriao inicial={comMetaLogoAcima(pct)} planoInicial={plano} />)
-    expect(itemDoFerro().getByText(`${Math.floor(pct)}% abaixo`)).toBeInTheDocument()
+    expect(itemDoFerro().getByText(`${Math.floor(pct)}% da referência · abaixo da meta`)).toBeInTheDocument()
   })
 })
 
@@ -533,7 +533,7 @@ describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
   it('CA-697: na tabela, o sódio abaixo da meta fica à vista, com o estado e sem Cobrir', () => {
     montar(adulta, exemplo())
     const sodio = linhaDe('Sódio')
-    expect(sodio.getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(sodio.getByText(/^\d+% da referência · abaixo da meta$/)).toBeInTheDocument()
     expect(sodio.getByText('1.500 mg')).toBeInTheDocument()
     expect(sodio.queryByRole('button')).not.toBeInTheDocument()
   })
@@ -550,7 +550,7 @@ describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
       .getAllByRole('listitem')
       .find((i) => i.textContent?.startsWith('Sódio'))
     if (!sodio) throw new Error('sódio fora da lista')
-    expect(within(sodio).getByText(/^\d+% abaixo$/)).toBeInTheDocument()
+    expect(within(sodio).getByText(/^\d+% da referência · abaixo da meta$/)).toBeInTheDocument()
     expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
   })
 })
@@ -558,7 +558,7 @@ describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
 describe('Notas lidas com o símbolo (CA-700)', () => {
   it('CA-700: o † e o ‡ das notas não ficam escondidos do leitor de tela', () => {
     montar(adulta, exemplo())
-    const adaga = screen.getByText(/^Total possivelmente subestimado:/).previousElementSibling
+    const adaga = screen.getByText(/^Pode estar subestimado:/).previousElementSibling
     const duplaAdaga = screen.getByText(/^O limite superior da tabela/).previousElementSibling
     expect(adaga).toHaveTextContent('†')
     expect(adaga).not.toHaveAttribute('aria-hidden')
@@ -611,12 +611,12 @@ describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
   it('CA-690: o recolhido fecha quando a tela abre de novo', async () => {
     const plano = exemplo()
     const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
-    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'true')
     unmount()
 
     render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    expect(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
   })
 })
 

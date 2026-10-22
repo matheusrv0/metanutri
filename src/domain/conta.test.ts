@@ -253,7 +253,7 @@ describe('Comparativo da página de preços', () => {
     const links = linhas.find((l) => l.rotulo === 'Links do paciente')
 
     expect(pacientes?.valores).toEqual(['2', '25', 'Ilimitados'])
-    expect(pacientes?.detalhe).toBe('Quem teve plano ou missão nos últimos 30 dias.')
+    expect(pacientes?.detalhe).toBe('Quem teve plano alimentar ou missão nos últimos 30 dias.')
     expect(links?.valores).toEqual(['2', '25', 'Ilimitados'])
   })
 

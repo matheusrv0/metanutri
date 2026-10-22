@@ -1,7 +1,9 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from './App.tsx'
+import { criarRepositorioPacientes } from './domain/pacientes.ts'
 import { PERFIL_VAZIO } from './domain/perfil.ts'
+import { criarRepositorio } from './domain/persistencia.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
@@ -86,6 +88,18 @@ describe('App: estrutura', () => {
     expect(screen.getByText('Este plano não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Voltar para Planos' }))
     expect(window.location.hash).toBe('#/casos')
+  })
+
+  it('CA-1294: o título do plano com paciente é o nome do plano; o paciente fica no resumo (D-462)', () => {
+    const pacientes = criarRepositorioPacientes(localStorage)
+    const ficha = pacientes.criar('Maria Silva')
+    const casos = criarRepositorio(localStorage)
+    const plano = casos.criar('Retorno de outubro')
+    casos.salvar({ ...plano, caso: { ...plano.caso, pacienteId: ficha.id } })
+    window.location.hash = `#/caso/${plano.caso.id}/caso`
+    renderizar()
+    expect(screen.getByRole('heading', { level: 1, name: 'Retorno de outubro' })).toBeInTheDocument()
+    expect(screen.getByText('Maria Silva', { selector: 'p' })).toBeInTheDocument()
   })
 
   it('navega para Pacientes', async () => {

@@ -61,7 +61,7 @@ describe('arquivos de busca e o index.html', () => {
     expect(llms).toContain(
       '> Software para nutricionistas, no navegador. Monta o plano alimentar e mostra a adequação de 20 vitaminas e minerais e da fibra. Em cada nutriente abaixo da meta, o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença, respeitando as restrições do paciente. O plano vira missões diárias que o paciente marca pelo celular.',
     )
-    expect(llms).toContain('Todos os planos têm as mesmas funções.')
+    expect(llms).toContain('Todas as assinaturas têm as mesmas funções.')
     expect(llms).not.toMatch(/presos|Folha do paciente|até 4 nutricionistas|R\$ 149/i)
   })
 

@@ -319,7 +319,7 @@ test('CA-714: o sódio abaixo da meta não tem Cobrir em lugar nenhum', async ({
   // Etapa 3, tela larga: a linha do sódio fica à vista, com o estado, sem Cobrir; o ferro, abaixo também, tem.
   await micros.getByRole('button', { name: 'Ver todos' }).click()
   const linhaSodio = page.getByRole('row').filter({ hasText: 'Sódio' })
-  await expect(linhaSodio).toContainText(/\d+% abaixo/)
+  await expect(linhaSodio).toContainText(/\d+% da referência · abaixo da meta/)
   await expect(linhaSodio.getByRole('button')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
   await expect(cobrirSodio).toHaveCount(0)
@@ -327,7 +327,7 @@ test('CA-714: o sódio abaixo da meta não tem Cobrir em lugar nenhum', async ({
   // Celular: a lista também.
   await page.setViewportSize({ width: 390, height: 844 })
   const itemSodio = page.getByRole('list', { name: 'Fora da meta' }).getByRole('listitem').filter({ hasText: 'Sódio' })
-  await expect(itemSodio).toContainText(/\d+% abaixo/)
+  await expect(itemSodio).toContainText(/\d+% da referência · abaixo da meta/)
   await expect(itemSodio.getByRole('button')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Cobrir Ferro', exact: true })).toBeVisible()
   await expect(cobrirSodio).toHaveCount(0)
@@ -380,15 +380,15 @@ test('CA-704: o recolhido da etapa 3 é de cada plano, também pelo voltar do na
     }, `#/caso/${encodeURIComponent(id)}/adequacao`)
 
   await irPara(planoA)
-  await page.getByRole('button', { name: /^Ver os \d+ na meta$/ }).click()
-  await expect(page.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }).click()
+  await expect(page.getByRole('button', { name: /^Esconder os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'true')
 
   await irPara(planoB)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('(cópia)')
-  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
 
   // Voltar pelo navegador leva ao plano A, que abre fechado também.
   await page.goBack()
   await expect(page.getByRole('heading', { level: 1 })).not.toContainText('(cópia)')
-  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
 })

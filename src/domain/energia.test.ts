@@ -1,5 +1,5 @@
 import { criarCasoVazio } from './caso.ts'
-import { calcularEnergia, categoriaDoFator, estadoDaMeta, NIVEIS_ATIVIDADE, percentualDoGasto } from './energia.ts'
+import { calcularEnergia, categoriaDoFator, estadoDaMeta, NIVEIS_ATIVIDADE, percentualDoGasto, rotuloDaCategoria } from './energia.ts'
 import type { Caso } from './tipos.ts'
 
 const caso = (p: Partial<Caso>): Caso => ({ ...criarCasoVazio('c'), ...p })
@@ -159,6 +159,14 @@ describe('calcularEnergia: gestação e lactação', () => {
     expect(r.get).toBeCloseTo(2381.15 + 380, 6)
   })
 
+  it('CA-1277: peito e outros alimentos de 0 a 6 meses soma o valor de 7 a 12 meses, sem mobilização (D-456)', () => {
+    const mista = (mesesPosParto: number) =>
+      calcularEnergia(caso({ sexo: 'F', idadeAnos: 30, pesoKg: 65, estaturaCm: 165, condicao: { tipo: 'lactante', mesesPosParto, amamentacao: 'mista' } }), { fator: 1.55 })
+    expect(mista(3).adicionais).toEqual([{ descricao: 'Produção de leite, peito e outros alimentos (valor de 7 a 12 meses)', kcal: 380 }])
+    expect(mista(3).get).toBeCloseTo(2381.15 + 380, 6)
+    expect(mista(9).adicionais).toEqual([{ descricao: 'Produção de leite (7 a 12 meses)', kcal: 380 }])
+  })
+
   it('lactação acima de 12 meses não tem adicional e avisa', () => {
     const r = calcularEnergia(caso({ sexo: 'F', idadeAnos: 30, pesoKg: 65, estaturaCm: 165, condicao: { tipo: 'lactante', mesesPosParto: 14 } }), { fator: 1.55 })
     expect(r.adicionais).toEqual([])
@@ -239,13 +247,21 @@ describe('prescrição rápida: meta calculada (CA-226 a CA-230, CB-56)', () => 
 
   it('CA-230: sem peso ou estatura, diz o que falta', () => {
     expect(calcularEnergia(rapida({ pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
-      'Informe peso e estatura para calcular a meta.',
+      'Informe o peso e a estatura para calcular a meta.',
     )
-    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).motivoSemCalculo).toBe('Informe peso para calcular a meta.')
+    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).motivoSemCalculo).toBe('Informe o peso para calcular a meta.')
     expect(calcularEnergia(rapida({ sexo: null, pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
-      'Informe sexo, peso e estatura para calcular a meta.',
+      'Informe o sexo, o peso e a estatura para calcular a meta.',
     )
     expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).get).toBeNull()
+  })
+
+  it('CA-1285: o atendimento completo diz o que falta com artigo e "e" (D-461)', () => {
+    const completo = (p: Partial<Caso>) => calcularEnergia(caso({ modo: 'completo', sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 163, ...p }), { fator: 1.2 })
+    expect(completo({ pesoKg: null, estaturaCm: null }).motivoSemCalculo).toBe('Informe o peso e a estatura para calcular a energia.')
+    expect(completo({ sexo: null, idadeAnos: null, pesoKg: null, estaturaCm: null }).motivoSemCalculo).toBe(
+      'Informe o sexo, a idade, o peso e a estatura para calcular a energia.',
+    )
   })
 
   it('CB-56: dado que o cálculo não aceita dá o mesmo motivo do atendimento completo', () => {
@@ -254,6 +270,15 @@ describe('prescrição rápida: meta calculada (CA-226 a CA-230, CB-56)', () => 
     expect(r.get).toBeNull()
     expect(r.motivoSemCalculo).toBe(completo.motivoSemCalculo)
     expect(r.motivoSemCalculo).not.toBeNull()
+  })
+})
+
+describe('O nível por extenso (CA-1287)', () => {
+  it('a categoria do NASEM sai com o nome do nível da tela, nunca o código', () => {
+    expect(rotuloDaCategoria('inativo')).toBe('Sedentário')
+    expect(rotuloDaCategoria('pouco-ativo')).toBe('Pouco ativo')
+    expect(rotuloDaCategoria('ativo')).toBe('Moderadamente ativo')
+    expect(rotuloDaCategoria('muito-ativo')).toBe('Muito ativo')
   })
 })
 
@@ -276,7 +301,7 @@ describe('estadoDaMeta (CA-226 a CA-230)', () => {
   it('sem cálculo, com o motivo', () => {
     expect(estadoDaMeta(rapida({ pesoKg: null, estaturaCm: null }))).toEqual({
       tipo: 'sem-calculo',
-      motivo: 'Informe peso e estatura para calcular a meta.',
+      motivo: 'Informe o peso e a estatura para calcular a meta.',
     })
   })
 })

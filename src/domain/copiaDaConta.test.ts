@@ -916,6 +916,23 @@ describe('receitas na nuvem (spec receitas-com-calculo, CA-867, CA-868, CB-275)'
     expect(nomes(montarCopia(arm, AGORA), RECEITAS)).toEqual(['Panqueca', 'Bolo'])
   })
 
+  it('CA-1299 (spec ficha-unica, D-170): a cópia da versão antiga, sem a chave das medidas próprias, não as apaga', () => {
+    const MEDIDAS = 'metanutri:medidas-proprias'
+    const medida = (nome: string, gramas: number) => ({ id: `561:${nome}`, alimentoId: 561, nome, gramas, criadoEm: T(2), atualizadoEm: T(2) })
+    const arm = new Memoria()
+    arm.setItem('metanutri:pacientes', JSON.stringify([paciente('ana', 'Ana')]))
+    arm.setItem(MEDIDAS, JSON.stringify([medida('concha', 120), medida('pote', 200)]))
+    arm.setItem(CHAVE_MUDANCAS, mudancas({ 'pacientes/ana': T(1), 'medidas-proprias/561:concha': T(2), 'medidas-proprias/561:pote': T(2) }))
+    // A 78c0157 não conhece a chave: a cópia dela vem sem ela, mas com as marcas que já existiam.
+    const doAppAntigo = copia({
+      'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana'), paciente('bia', 'Bia', T(3))]),
+      [CHAVE_MUDANCAS]: mudancas({ 'pacientes/ana': T(1), 'pacientes/bia': T(3), 'medidas-proprias/561:concha': T(2) }),
+    })
+    expect(aplicarCopia(arm, doAppAntigo).mantidas).toContain(MEDIDAS)
+    expect(nomes(copia({ [MEDIDAS]: arm.getItem(MEDIDAS) ?? '' }), MEDIDAS)).toEqual(['concha', 'pote'])
+    expect(nomes(montarCopia(arm, AGORA), MEDIDAS)).toEqual(['concha', 'pote'])
+  })
+
   it('D-170: a receita excluída de verdade em outro aparelho (com lápide) sai daqui, mesmo pela cópia da versão antiga', () => {
     const arm = new Memoria()
     arm.setItem(RECEITAS, JSON.stringify([receita('a', 'Panqueca', T(2)), receita('b', 'Bolo', T(2))]))

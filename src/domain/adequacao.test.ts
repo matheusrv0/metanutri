@@ -163,7 +163,13 @@ describe('calcularAdequacao', () => {
     const r = calcularAdequacao(totais({ ferro_mg: 9 }), perfil('F', null), { tipo: 'individual' })
     expect(r.estagio).toBeNull()
     expect(r.linhas).toEqual([])
-    expect(r.motivoSemCalculo).toMatch(/sexo e idade/)
+    expect(r.motivoSemCalculo).toBe('Informe o sexo e a idade, com uma gestação ou lactação compatível, para escolher as referências.')
+  })
+
+  it('CA-1289: a fonte diz a tabela e o livro onde ela está (D-461)', () => {
+    expect(calcularAdequacao(totais({}), MULHER_28, { tipo: 'individual' }).fonte).toBe(
+      'Dietary Reference Intakes Summary Tables (Appendix J). Em: NASEM. Dietary Reference Intakes for Sodium and Potassium. Washington (DC): National Academies Press; 2019.',
+    )
   })
 
   it('personalizado recusa porcentagem inválida', () => {

@@ -43,7 +43,8 @@ export const BLOCOS_ANAMNESE: readonly BlocoAnamnese[] = [
   { id: 'saude-mulher', titulo: 'Saúde da mulher', regra: 'saude-mulher' },
   { id: 'digestao', titulo: 'Digestão' },
   { id: 'rotina', titulo: 'Rotina e sono' },
-  { id: 'atividade', titulo: 'Atividade física' },
+  // D-458: a equação do NASEM de 1 e 2 anos não usa atividade, e "prática de exercício" não se pergunta a quem tem 2 anos.
+  { id: 'atividade', titulo: 'Atividade física', regra: 'a-partir-de-3' },
   { id: 'agua', titulo: 'Hidratação' },
   { id: 'alcool-fumo', titulo: 'Álcool e tabagismo', regra: 'a-partir-de-12' },
   { id: 'alimentacao', titulo: 'Alimentação' },
@@ -116,7 +117,8 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
       p('lanche-escola', 'Lanche e merenda da escola'),
       p('variedade', 'Variedade de alimentos'),
     ],
-    idoso: [p('perda-de-peso', 'Perda de peso sem querer'), p('quedas', 'Quedas'), p('mora-com', 'Com quem mora')],
+    // D-454: "Com quem mora" saiu; repetia "Pessoas que moram na casa", e quem cozinha está em Alimentação.
+    idoso: [p('perda-de-peso', 'Perda de peso sem querer'), p('quedas', 'Quedas')],
     recordatorio: [
       p('r24-acordar', 'Ao acordar'),
       p('r24-cafe', 'Café da manhã'),
@@ -151,11 +153,17 @@ const DICAS: ReadonlyMap<string, string> = new Map([
   ['quedas', 'No último ano.'],
 ])
 
-/** A dica da pergunta; algumas mudam com a pessoa (spec ficha-unica, D-363 e seção 2). */
+/** A idade da pessoa, quando a ficha sabe; `null` sem perfil ou sem data de nascimento. */
+const idadeDe = (perfil: PerfilDaFicha | null): number | null => perfil?.idadeAnos ?? null
+
+/** A dica da pergunta; algumas mudam com a pessoa (spec ficha-unica, D-363, seção 2 e D-452). */
 export function dicaDaPergunta(id: string, perfil: PerfilDaFicha | null = null): string | undefined {
   const fixa = DICAS.get(id)
+  const idade = idadeDe(perfil)
   if (id === 'suplementos-uso' && perfil?.momento === 'gestante') return `${fixa ?? ''} Na gestação, anote ferro e ácido fólico.`
-  if (id === 'mastigacao' && perfil?.idadeAnos !== null && perfil?.idadeAnos !== undefined && perfil.idadeAnos >= 60) return 'Prótese, dificuldade para mastigar ou engasgos.'
+  if (id === 'mastigacao' && idade !== null && idade >= 60) return 'Prótese, dificuldade para mastigar ou engasgos.'
+  // D-452: abaixo de 18 anos não há "vida adulta": a criança e o adolescente têm o histórico do crescimento.
+  if (id === 'historico-peso' && idade !== null && idade < 18) return 'Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).'
   return fixa
 }
 
@@ -183,8 +191,30 @@ export function tipoDaPergunta(id: string): TipoPergunta {
   return 'texto'
 }
 
-/** As opções de uma pergunta de escolha, na ordem da tela. */
-export const opcoesDaPergunta = (id: string): readonly string[] => ESCOLHAS.get(id) ?? []
+// D-453: antes dos 40 anos a parada da menstruação é insuficiência ovariana prematura (vai em Outros diagnósticos), e
+// depois dos 55 a menopausa já é tardia: as opções acompanham a idade.
+const MENOPAUSA = 'Menopausa'
+const AINDA_MENSTRUA = 'Ainda menstrua'
+const NAO_MENSTRUA = 'Não menstrua'
+const MENSTRUACAO_ANTES_DOS_40: readonly string[] = ['Regular', 'Irregular', NAO_MENSTRUA]
+const MENSTRUACAO_DE_56_EM_DIANTE: readonly string[] = [MENOPAUSA, AINDA_MENSTRUA]
+
+/** As opções de uma pergunta de escolha, na ordem da tela; a menstruação muda com a idade (D-453). */
+export function opcoesDaPergunta(id: string, perfil: PerfilDaFicha | null = null): readonly string[] {
+  const idade = idadeDe(perfil)
+  if (id === 'menstruacao' && idade !== null) {
+    if (idade < 40) return MENSTRUACAO_ANTES_DOS_40
+    if (idade >= 56) return MENSTRUACAO_DE_56_EM_DIANTE
+  }
+  return ESCOLHAS.get(id) ?? []
+}
+
+/** D-453: a menopausa marcada, ou 56 anos ou mais sem "Ainda menstrua". */
+function depoisDaMenopausa(perfil: PerfilDaFicha, respostas: ReadonlyMap<string, RespostaAnamnese>): boolean {
+  const menstruacao = respostas.get('menstruacao')?.resposta.trim() ?? ''
+  const idade = idadeDe(perfil)
+  return menstruacao === MENOPAUSA || (idade !== null && idade >= 56 && menstruacao !== AINDA_MENSTRUA)
+}
 
 /** A escala de 8 cores de Armstrong, da urina mais clara à mais escura (seção 1.1 da spec da conduta). */
 export const ESCALA_DA_URINA: readonly { readonly numero: number; readonly nome: string }[] = [
@@ -337,7 +367,44 @@ function daVersao2(fonte: Readonly<Record<string, unknown>>, versaoGuardada: num
   return perguntas
 }
 
+/** Saíram do padrão da versão 3 depois de publicada (D-454): saem do roteiro guardado com o texto padrão. */
+const RETIRADAS_DA_V3: ReadonlyMap<string, string> = new Map([['mora-com', 'Com quem mora']])
+const retirada = (q: PerguntaRoteiro) => RETIRADAS_DA_V3.get(q.id) === q.texto
+
 const BLOCOS_SO_DA_V3: readonly string[] = BLOCOS_ANAMNESE.map((b) => b.id).filter((id) => !(BLOCOS_V2 as readonly string[]).includes(id))
+const BLOCOS_SO_DA_V2: readonly IdBlocoV2[] = BLOCOS_V2.filter((id) => !IDS_BLOCO.has(id))
+
+/**
+ * D-465: no roteiro da versão 3 regravado por uma versão antiga, a pergunta própria que uma aba antiga criou num bloco
+ * que só a versão 2 tem ("Objetivo e queixa", "Intestino", "Preferências e aversões", "Intolerâncias e alergias") vai
+ * para o bloco novo dele e sai do bloco antigo guardado, para não voltar depois de tirada. As padrão da versão 2 ficam.
+ */
+function trazerDosBlocosDaV2(
+  fonte: Readonly<Record<string, unknown>>,
+  perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>,
+  vistos: Set<string>,
+): Record<string, unknown> {
+  const outros: Record<string, unknown> = Object.fromEntries(Object.entries(fonte).filter(([id]) => !IDS_BLOCO.has(id)))
+  for (const antigo of BLOCOS_SO_DA_V2) {
+    const lista = fonte[antigo]
+    if (!Object.hasOwn(fonte, antigo) || !Array.isArray(lista)) continue
+    const trazidas = new Set<string>()
+    for (const q of perguntasValidas(lista, new Set())) {
+      if (PADRAO_V2_POR_ID.has(q.id) || vistos.has(q.id)) continue
+      vistos.add(q.id)
+      trazidas.add(q.id)
+      const destino = BLOCO_NOVO[antigo]
+      perguntas[destino] = [...perguntas[destino], q]
+    }
+    if (trazidas.size > 0) {
+      outros[antigo] = lista.filter((item: unknown) => {
+        const id = typeof item === 'object' && item !== null ? (item as Record<string, unknown>)['id'] : undefined
+        return typeof id !== 'string' || !trazidas.has(id)
+      })
+    }
+  }
+  return outros
+}
 
 /**
  * O roteiro como o app usa: os blocos conhecidos, na ordem deles (CB-162). Bloco que falta usa o padrão; bloco
@@ -348,19 +415,17 @@ function normalizarRoteiro(blocos: unknown, versaoGuardada: number = VERSAO_DO_R
   const fonte = typeof blocos === 'object' && blocos !== null && !Array.isArray(blocos) ? (blocos as Record<string, unknown>) : {}
   // CB-348: um roteiro da versão 3 salvo de novo por uma versão antiga volta sem versão, mas com os blocos novos.
   const ehV3 = versaoGuardada >= 3 || BLOCOS_SO_DA_V3.some((id) => Object.hasOwn(fonte, id))
-  let perguntas: Record<IdBloco, readonly PerguntaRoteiro[]>
   if (ehV3) {
     const vistos = new Set<string>()
-    perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
+    const perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
     for (const { id } of BLOCOS_ANAMNESE) {
       const lista = Object.hasOwn(fonte, id) ? fonte[id] : ROTEIRO_PADRAO.perguntas[id]
-      perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos)
+      perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos).filter((q) => !retirada(q))
     }
-  } else {
-    perguntas = daVersao2(fonte, versaoGuardada)
+    return { perguntas, outros: trazerDosBlocosDaV2(fonte, perguntas, vistos) }
   }
-  const conhecidos = new Set<string>([...IDS_BLOCO, ...(ehV3 ? [] : BLOCOS_V2)])
-  return { perguntas, outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !conhecidos.has(id))) }
+  const conhecidos = new Set<string>([...IDS_BLOCO, ...BLOCOS_V2])
+  return { perguntas: daVersao2(fonte, versaoGuardada), outros: Object.fromEntries(Object.entries(fonte).filter(([id]) => !conhecidos.has(id))) }
 }
 
 /** O roteiro editado como fica depois de salvo: sem pergunta vazia e sem id repetido (CB-161). */
@@ -486,13 +551,33 @@ function blocoDaResposta(r: RespostaAnamnese): string {
   return BLOCO_PADRAO_V3.get(r.perguntaId) ?? BLOCO_DA_RESPOSTA_ANTIGA.get(r.perguntaId) ?? (BLOCO_NOVO as Readonly<Record<string, IdBloco>>)[r.blocoId] ?? r.blocoId
 }
 
-/** Pergunta que só vale para parte das pessoas, dentro de um bloco de todos (seção 2). */
+/** Pergunta que só vale para parte das pessoas, dentro de um bloco de todos (seção 2 e tabela 10.2). */
 function perguntaAparece(id: string, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): boolean {
   if (perfil === null) return true
+  const idade = idadeDe(perfil)
   if (id === 'tempo-de-tela') return menorDe18(perfil)
+  // D-452: criança não faz dieta por conta própria; a restrição da família vai em Alimentação.
+  if (id === 'dietas') return idade === null || idade >= 12
+  // D-453: o fluxo é de quem menstrua; o anticoncepcional, da idade fértil (R1 começa aos 14).
+  if (id === 'fluxo-intenso') return respostas.get('menstruacao')?.resposta.trim() !== NAO_MENSTRUA && !depoisDaMenopausa(perfil, respostas)
+  if (id === 'hormonios') return idade === null || idade >= 14
   // D-356: com "Não" em Prática de exercício, as outras perguntas da atividade não se aplicam.
   if (id.startsWith('atividade-') && id !== 'atividade-pratica') return respostas.get('atividade-pratica')?.resposta.trim() !== 'Não'
   return true
+}
+
+const TEXTO_PADRAO: ReadonlyMap<string, string> = new Map(BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id].map((q) => [q.id, q.texto] as const)))
+
+/**
+ * O texto da pergunta para a pessoa (D-453, D-458): o padrão muda com ela; o renomeado pela conta fica como a conta escreveu.
+ */
+function textoParaAPessoa(pergunta: PerguntaRoteiro, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): string {
+  if (perfil === null || TEXTO_PADRAO.get(pergunta.id) !== pergunta.texto) return pergunta.texto
+  if (pergunta.id === 'hormonios' && depoisDaMenopausa(perfil, respostas)) return 'Reposição hormonal'
+  // D-458: abaixo de 14 anos não há trabalho; a rotina é a da escola ou da creche.
+  const idade = idadeDe(perfil)
+  if (pergunta.id === 'rotina-trabalho' && idade !== null && idade < 14) return 'Rotina da escola ou da creche'
+  return pergunta.texto
 }
 
 /**
@@ -513,7 +598,7 @@ export function blocosDaFicha(
   return BLOCOS_ANAMNESE.flatMap(({ id, titulo, regra }) => {
     const doRoteiro = roteiro.perguntas[id]
       .filter((pergunta) => comResposta(pergunta.id) || perguntaAparece(pergunta.id, perfil, porId))
-      .map((pergunta) => ({ id: pergunta.id, texto: pergunta.texto, resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
+      .map((pergunta) => ({ id: pergunta.id, texto: textoParaAPessoa(pergunta, perfil, porId), resposta: porId.get(pergunta.id)?.resposta ?? '', foraDoRoteiro: false }))
     const fora = respostas
       .filter((r) => blocoDaResposta(r) === id && !noRoteiro.has(r.perguntaId) && r.resposta.trim() !== '')
       .map((r) => ({ id: r.perguntaId, texto: r.pergunta, resposta: r.resposta, foraDoRoteiro: true }))

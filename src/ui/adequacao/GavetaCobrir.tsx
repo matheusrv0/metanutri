@@ -18,6 +18,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
+import { aberturaDoCobrir } from './estiloAdequacao.ts'
 
 interface GavetaCobrirProps {
   /** Nutriente a cobrir; `null` mantém a gaveta fechada. */
@@ -122,7 +123,10 @@ export function GavetaCobrir({
         <SheetTitle className="pr-10">{`Cobrir ${rotulo}`}</SheetTitle>
         <SheetDescription>
           {/* CA-791: a falta com a mesma precisão da tabela da etapa 3 ("244 mg", não "243,60 mg"). */}
-          {resultado ? `Faltam ${quantidadeNoPlano(resultado.falta)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}` : ''}
+          {/* D-459 (spec ficha-unica): a abertura diz quanto o plano tem, na mesma forma da tabela. */}
+          {resultado
+            ? `${aberturaDoCobrir(adequacao.linhas.find((l) => l.chave === chave))}Faltam ${quantidadeNoPlano(resultado.falta)} ${resultado.unidade} para a meta.${fraseDoGasto(resultado.kcalDisponiveis)}`
+            : ''}
         </SheetDescription>
 
         <div className="flex flex-col gap-3 border border-border bg-muted p-4">

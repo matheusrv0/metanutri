@@ -1,4 +1,5 @@
 import { Info } from 'lucide-react'
+import { useState } from 'react'
 import { aguaDoCaso, litros, METODOS_AGUA, metodoDaAgua, referenciaDaDri, textoDaReferencia, type MetodoAgua } from '@/domain/agua.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -18,9 +19,12 @@ interface CampoAguaProps {
  * A meta de água do plano (spec ficha-unica, D-355 e seção 4): pelo peso (faixa da idade, peso ajustado, Holliday-Segar,
  * gestação e lactação) ou por 1 ml/kcal. A conta aparece com o nome do método; o valor digitado vale para o plano
  * impresso e para a missão do link; apagar tira a linha (D-298); "Usar a calculada" volta à conta. A AI da DRI é só
- * referência.
+ * referência. A linha escrita à mão antes desta versão sai quando a meta é digitada, mas não calada: o aviso diz e
+ * "Voltar a linha escrita" a devolve (D-464).
  */
 export function CampoAgua({ caso, aoAlterar, lembrete }: CampoAguaProps) {
+  // D-464: a linha escrita à mão que a meta digitada tirou, para poder voltar enquanto a tela está aberta.
+  const [linhaTirada, setLinhaTirada] = useState<string | null>(null)
   const agua = aguaDoCaso(caso)
   const metodo = metodoDaAgua(caso)
   const textoAntigo = typeof caso.linhaDaAgua === 'string' && caso.linhaDaAgua.trim() !== '' ? caso.linhaDaAgua.trim() : null
@@ -40,7 +44,10 @@ export function CampoAgua({ caso, aoAlterar, lembrete }: CampoAguaProps) {
         <CampoNumero
           rotulo="Meta de água"
           valor={agua.semLinha ? null : agua.litros}
-          aoMudar={(v) => aoAlterar(v === null ? { aguaLitros: null, linhaDaAgua: '' } : { aguaLitros: v, linhaDaAgua: null })}
+          aoMudar={(v) => {
+            if (textoAntigo !== null) setLinhaTirada(textoAntigo)
+            aoAlterar(v === null ? { aguaLitros: null, linhaDaAgua: '' } : { aguaLitros: v, linhaDaAgua: null })
+          }}
           sufixo="litros"
           dica={dica}
         />
@@ -60,7 +67,25 @@ export function CampoAgua({ caso, aoAlterar, lembrete }: CampoAguaProps) {
       {textoAntigo ? (
         <Alert variant="info">
           <Info aria-hidden="true" />
-          <p>{`Linha escrita antes: “${textoAntigo}”. Ela continua no plano impresso até você usar a calculada.`}</p>
+          <p>{`Linha escrita antes: “${textoAntigo}”. Ela continua no plano impresso até você digitar uma meta ou usar a calculada.`}</p>
+        </Alert>
+      ) : linhaTirada !== null ? (
+        <Alert variant="info">
+          <Info aria-hidden="true" />
+          <div className="flex flex-col items-start gap-1">
+            <p>{agua.editada ? 'A linha escrita antes saiu do plano impresso: vale a meta digitada.' : 'A linha escrita antes saiu do plano impresso.'}</p>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto min-h-11 px-0 sm:min-h-8"
+              onClick={() => {
+                aoAlterar({ linhaDaAgua: linhaTirada, aguaLitros: null })
+                setLinhaTirada(null)
+              }}
+            >
+              Voltar a linha escrita
+            </Button>
+          </div>
         </Alert>
       ) : null}
     </div>

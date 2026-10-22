@@ -4,13 +4,16 @@
 import { FAIXAS } from './caso.ts'
 import type { CondicaoFisiologica } from './tipos.ts'
 
-export type Amamentacao = 'exclusiva' | 'mista' | 'nao-amamenta'
+/** D-455: lactante é quem amamenta; quem teve bebê e não amamenta marca "Não". */
+export type Amamentacao = 'exclusiva' | 'mista'
 
 export const AMAMENTACOES: readonly { readonly valor: Amamentacao; readonly rotulo: string }[] = [
   { valor: 'exclusiva', rotulo: 'Só no peito' },
   { valor: 'mista', rotulo: 'Peito e outros alimentos' },
-  { valor: 'nao-amamenta', rotulo: 'Não amamenta' },
 ]
+
+/** A opção que saiu (D-455): gravada antes com "Lactante", é lida como "Não" (o plano já não era de lactante). */
+const NAO_AMAMENTA = 'nao-amamenta'
 
 export type MomentoDeVida =
   | { readonly tipo: 'nenhum' }
@@ -58,13 +61,17 @@ export function mesesEntre(inicio: string, fim: string): number | null {
 const numeroPositivo = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)
 const numeroInteiro = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : null)
 
-/** D-365: o que está guardado; tipo que não se lê é "não informado" (`null`), campo estragado vira vazio. */
+/**
+ * D-365: o que está guardado; tipo que não se lê é "não informado" (`null`), campo estragado vira vazio. D-463: campo a
+ * mais (de uma versão mais nova) fica no objeto, e o tipo desconhecido fica guardado pela ficha (`pacientes.ts`).
+ */
 export function lerMomento(valor: unknown): MomentoDeVida | null {
   if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return null
   const o = valor as Record<string, unknown>
   if (o['tipo'] === 'nenhum') return { tipo: 'nenhum' }
   if (o['tipo'] === 'gestante') {
     return {
+      ...o,
       tipo: 'gestante',
       semanas: numeroInteiro(o['semanas']),
       semanasEm: diaValido(o['semanasEm']),
@@ -72,8 +79,9 @@ export function lerMomento(valor: unknown): MomentoDeVida | null {
     }
   }
   if (o['tipo'] === 'lactante') {
+    if (o['amamentacao'] === NAO_AMAMENTA) return { tipo: 'nenhum' }
     const amamentacao = AMAMENTACOES.find((a) => a.valor === o['amamentacao'])?.valor ?? null
-    return { tipo: 'lactante', dataDoParto: diaValido(o['dataDoParto']), amamentacao }
+    return { ...o, tipo: 'lactante', dataDoParto: diaValido(o['dataDoParto']), amamentacao }
   }
   return null
 }
@@ -96,10 +104,12 @@ export function condicaoNaData(momento: MomentoDeVida | null, dia: string): Cond
     if (semanas === null || semanas < FAIXAS.semanasGestacao.min || semanas > FAIXAS.semanasGestacao.max) return { tipo: 'nenhuma' }
     return { tipo: 'gestante', semanasGestacao: semanas, pesoPreGestacionalKg: momento.pesoPreGestacionalKg }
   }
-  if (momento.amamentacao === 'nao-amamenta') return { tipo: 'nenhuma' }
   if (momento.dataDoParto === null) return { tipo: 'lactante', mesesPosParto: null }
   const meses = mesesEntre(momento.dataDoParto, dia)
-  return meses === null ? { tipo: 'nenhuma' } : { tipo: 'lactante', mesesPosParto: meses }
+  // D-457: acima de 60 meses do parto não há referência de lactação; a ficha e a etapa 1 avisam.
+  if (meses === null || meses > FAIXAS.mesesPosParto.max) return { tipo: 'nenhuma' }
+  // D-456: a amamentação com outros alimentos muda a energia; só no peito (ou sem resposta) é a de sempre.
+  return momento.amamentacao === 'mista' ? { tipo: 'lactante', mesesPosParto: meses, amamentacao: 'mista' } : { tipo: 'lactante', mesesPosParto: meses }
 }
 
 /** O dia `meses` antes de `dia`, no mesmo dia do mês (ou no último dia, quando o mês é mais curto). */

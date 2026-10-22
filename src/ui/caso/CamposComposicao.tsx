@@ -9,6 +9,8 @@ import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 interface CamposComposicaoProps {
   readonly caso: Caso
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
+  /** As dobras valem para a pessoa (spec ficha-unica, D-458); sem elas, só a bioimpedância. */
+  readonly comDobras?: boolean | undefined
 }
 
 const NOME_DOBRA: Record<string, string> = {
@@ -21,7 +23,7 @@ const NOME_DOBRA: Record<string, string> = {
 }
 
 /** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
-export function CamposComposicao({ caso, aoAlterar }: CamposComposicaoProps) {
+export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposComposicaoProps) {
   const { composicao } = caso
   const protocolo = PROTOCOLOS.find((p) => p.id === composicao.protocolo) ?? PROTOCOLOS[0]
   const usadas = caso.sexo && protocolo ? protocolo.necessarias(caso.sexo) : []
@@ -44,44 +46,48 @@ export function CamposComposicao({ caso, aoAlterar }: CamposComposicaoProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <GrupoOpcoes<ProtocoloDobras>
-        rotulo="Protocolo de dobras"
-        opcoes={PROTOCOLOS.map((p) => ({ valor: p.id, rotulo: p.nome }))}
-        valor={composicao.protocolo}
-        aoEscolher={(protocoloNovo) => aoAlterar({ composicao: { ...composicao, protocolo: protocoloNovo } })}
-      />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(Object.keys(NOME_DOBRA) as (keyof typeof composicao.dobras)[]).map((chave) => (
-          <CampoNumero
-            key={chave}
-            rotulo={NOME_DOBRA[chave] ?? chave}
-            valor={composicao.dobras[chave]}
-            aoMudar={(v) => alterarDobra(chave, v)}
-            sufixo="mm"
-            {...(usadas.includes(chave) ? { dica: 'Usada neste protocolo' } : {})}
+      {comDobras ? (
+        <>
+          <GrupoOpcoes<ProtocoloDobras>
+            rotulo="Protocolo de dobras"
+            opcoes={PROTOCOLOS.map((p) => ({ valor: p.id, rotulo: p.nome }))}
+            valor={composicao.protocolo}
+            aoEscolher={(protocoloNovo) => aoAlterar({ composicao: { ...composicao, protocolo: protocoloNovo } })}
           />
-        ))}
-      </div>
 
-      <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <p className="rotulo">Resultado das dobras</p>
-        {resultado.gorduraPct === null ? (
-          <p className="text-sm text-muted-foreground">{resultado.motivoSemCalculo}</p>
-        ) : (
-          <>
-            <p className="numeros text-base font-semibold text-heading">
-              {`${formatarNumero(resultado.gorduraPct, 1)}% de gordura`}
-              {resultado.massaGordaKg !== null && resultado.massaMagraKg !== null
-                ? ` · ${formatarNumero(resultado.massaGordaKg, 1)} kg de massa gorda · ${formatarNumero(resultado.massaMagraKg, 1)} kg de massa magra`
-                : ''}
-            </p>
-            <Fontes itens={[{ texto: resultado.fonte }]} />
-          </>
-        )}
-      </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {(Object.keys(NOME_DOBRA) as (keyof typeof composicao.dobras)[]).map((chave) => (
+              <CampoNumero
+                key={chave}
+                rotulo={NOME_DOBRA[chave] ?? chave}
+                valor={composicao.dobras[chave]}
+                aoMudar={(v) => alterarDobra(chave, v)}
+                sufixo="mm"
+                {...(usadas.includes(chave) ? { dica: 'Usada neste protocolo' } : {})}
+              />
+            ))}
+          </div>
 
-      <div className="flex flex-col gap-4 border-t border-border pt-4">
+          <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <p className="rotulo">Resultado das dobras</p>
+            {resultado.gorduraPct === null ? (
+              <p className="text-sm text-muted-foreground">{resultado.motivoSemCalculo}</p>
+            ) : (
+              <>
+                <p className="numeros text-base font-semibold text-heading">
+                  {`${formatarNumero(resultado.gorduraPct, 1)}% de gordura`}
+                  {resultado.massaGordaKg !== null && resultado.massaMagraKg !== null
+                    ? ` · ${formatarNumero(resultado.massaGordaKg, 1)} kg de massa gorda · ${formatarNumero(resultado.massaMagraKg, 1)} kg de massa magra`
+                    : ''}
+                </p>
+                <Fontes itens={[{ texto: resultado.fonte }]} />
+              </>
+            )}
+          </div>
+        </>
+      ) : null}
+
+      <div className={comDobras ? 'flex flex-col gap-4 border-t border-border pt-4' : 'flex flex-col gap-4'}>
         <p className="rotulo">Bioimpedância</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <CampoNumero rotulo="Gordura" valor={composicao.bioimpedancia.gorduraPct} aoMudar={(v) => alterarBio({ gorduraPct: v })} sufixo="%" />

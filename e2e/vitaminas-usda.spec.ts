@@ -29,7 +29,7 @@ test('CA-969: a etapa 3 do exemplo tem a vitamina D, e o Cobrir dela sugere alim
   await page.getByRole('button', { name: 'Ver um plano de exemplo' }).first().click()
   await page.getByRole('region', { name: 'Micronutrientes' }).getByRole('button', { name: 'Ver todos' }).click()
   const linha = page.getByRole('row').filter({ hasText: 'Vitamina D' })
-  await expect(linha).toContainText(/\d+% abaixo/)
+  await expect(linha).toContainText(/\d+% da referência · abaixo da meta/)
   await linha.getByRole('button', { name: 'Cobrir Vitamina D' }).click()
   const sugestoes = page.getByRole('dialog').getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem')
   await expect(sugestoes.first()).toBeVisible()

@@ -61,7 +61,7 @@ describe('tabelaAdequacaoParaCopiar (CA-48)', () => {
   it('sem estágio de vida, gera só o motivo', () => {
     const vazia = calcularAdequacao(totais({}), { sexo: null, idadeAnos: null, condicao: { tipo: 'nenhuma' } }, { tipo: 'individual' })
     const r = tabelaAdequacaoParaCopiar(vazia)
-    expect(r.texto).toMatch(/Informe sexo e idade/)
+    expect(r.texto).toMatch(/Informe o sexo e a idade/)
     expect(r.html).not.toContain('<table')
   })
 })

@@ -1,6 +1,6 @@
 import { Ruler } from 'lucide-react'
 import type { SugestaoDeNivel } from '@/domain/anamneseNoPlano.ts'
-import { camposDaPessoa, temDadoDeComposicao } from '@/domain/camposVisiveis.ts'
+import { camposDaPessoa, mostraDobras, mostraNivelDeAtividade, temDadoDeComposicao } from '@/domain/camposVisiveis.ts'
 import type { ResultadoValidacao } from '@/domain/caso.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import type { Caso } from '@/domain/tipos.ts'
@@ -34,7 +34,10 @@ const quilos = (kg: number) => String(kg).replace('.', ',')
  */
 export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnterior, sugestaoNivel }: CartaoMedidasProps) {
   const rapido = caso.modo === 'rapido'
-  const campos = camposDaPessoa({ ...caso, idadeAnos: idadeAssentada })
+  const assentado = { ...caso, idadeAnos: idadeAssentada }
+  const campos = camposDaPessoa(assentado)
+  // D-458: as dobras de adulto fora da gestação; o nível de atividade de 3 anos em diante.
+  const comDobras = mostraDobras(assentado)
   const numero = (campo: keyof Caso) => (valor: number | null) => aoAlterar({ [campo]: valor } as Partial<Caso>)
   // R11: o número do fator só aparece na equação de adulto (19 anos ou mais, sem gestação nem lactação).
   const equacaoDeAdulto = caso.idadeAnos !== null && caso.idadeAnos >= 19 && caso.condicao.tipo === 'nenhuma'
@@ -70,17 +73,24 @@ export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnte
       </div>
 
       {rapido ? null : (
-        <Recolhivel key={`composicao-${caso.id}`} titulo="Composição corporal" resumo="Dobras ou bioimpedância. Opcional." abertoInicial={temDadoDeComposicao(caso)}>
-          <CamposComposicao caso={caso} aoAlterar={aoAlterar} />
+        <Recolhivel
+          key={`composicao-${caso.id}`}
+          titulo="Composição corporal"
+          resumo={comDobras ? 'Dobras ou bioimpedância. Opcional.' : 'Bioimpedância. Opcional.'}
+          abertoInicial={temDadoDeComposicao(caso)}
+        >
+          <CamposComposicao caso={caso} aoAlterar={aoAlterar} comDobras={comDobras} />
         </Recolhivel>
       )}
 
-      <CampoNivelAtividade
-        fator={caso.energia.fator}
-        aoEscolher={(fator) => aoAlterar({ energia: { ...caso.energia, fator } })}
-        comFator={equacaoDeAdulto}
-        sugestao={sugestaoNivel}
-      />
+      {mostraNivelDeAtividade(assentado) ? (
+        <CampoNivelAtividade
+          fator={caso.energia.fator}
+          aoEscolher={(fator) => aoAlterar({ energia: { ...caso.energia, fator } })}
+          comFator={equacaoDeAdulto}
+          sugestao={sugestaoNivel}
+        />
+      ) : null}
 
       {rapido ? <CampoMetaEnergia caso={caso} aoMudar={numero('metaEnergiaKcal')} erro={erros.metaEnergiaKcal} /> : null}
 

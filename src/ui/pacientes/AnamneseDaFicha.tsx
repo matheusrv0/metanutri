@@ -7,6 +7,7 @@ import {
   gravarRoteiro,
   lerRoteiro,
   limparRoteiro,
+  opcoesDaPergunta,
   responder,
   resumoDoBloco,
   type CamposDoBloco,
@@ -114,7 +115,7 @@ export function AnamneseDaFicha({ paciente, aoAlterar, perfil, hoje, adesao = nu
         <CampoTexto rotulo="Objetivo do paciente" valor={paciente.objetivo} aoMudar={(objetivo) => aoAlterar({ objetivo })} placeholder="Nas palavras do paciente…" />
       )
     }
-    if (bloco === 'saude') return <CamposDaSaude paciente={paciente} aoAlterar={aoAlterar} />
+    if (bloco === 'saude') return <CamposDaSaude paciente={paciente} idadeAnos={perfil.idadeAnos} aoAlterar={aoAlterar} />
     if (bloco === 'alimentacao') return <CamposDaAlimentacao paciente={paciente} aoAlterar={aoAlterar} />
     if (bloco === 'retorno' && adesao) {
       return (
@@ -185,6 +186,7 @@ export function AnamneseDaFicha({ paciente, aoAlterar, perfil, hoje, adesao = nu
                 campo={`${id}-${bloco.id}-${pergunta.id}`}
                 pergunta={pergunta}
                 dica={dicaDaPergunta(pergunta.id, perfil)}
+                opcoes={opcoesDaPergunta(pergunta.id, perfil)}
                 placeholder={bloco.id === 'recordatorio' || pergunta.id === 'retorno-recordatorio' ? 'Horário, o que comeu e quanto…' : undefined}
                 aoResponder={(resposta) => aoAlterar({ respostasAnamnese: responder(paciente.respostasAnamnese, pergunta, bloco.id, resposta, hoje) })}
               />

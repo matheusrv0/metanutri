@@ -7,6 +7,8 @@ import { EscolhaMultipla } from './EscolhaMultipla.tsx'
 
 interface CamposDaSaudeProps {
   readonly paciente: Paciente
+  /** A idade de hoje, em anos; decide as escolhas que dependem da idade (D-451). */
+  readonly idadeAnos: number | null
   readonly aoAlterar: (mudanca: Partial<Paciente>) => void
 }
 
@@ -14,9 +16,9 @@ interface CamposDaSaudeProps {
  * Os campos da ficha no bloco Saúde (spec ficha-unica, D-349 e D-360): doenças e diagnósticos em escolhas, com o texto
  * livre de antes em "Outros diagnósticos", e os medicamentos em uso. O Word do plano lê o diagnóstico daqui.
  */
-export function CamposDaSaude({ paciente, aoAlterar }: CamposDaSaudeProps) {
+export function CamposDaSaude({ paciente, idadeAnos, aoAlterar }: CamposDaSaudeProps) {
   const id = useId()
-  const opcoes = doencasDaPessoa(paciente.sexo, paciente.doencas).map((d) => ({ valor: d.id, rotulo: d.rotulo }))
+  const opcoes = doencasDaPessoa({ sexo: paciente.sexo, idadeAnos }, paciente.doencas).map((d) => ({ valor: d.id, rotulo: d.rotulo }))
   return (
     <>
       <div className="flex flex-col gap-1.5">

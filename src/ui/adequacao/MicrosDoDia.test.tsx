@@ -97,7 +97,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
     expect([...pcts].sort((a, b) => a - b)).toEqual(pcts)
     for (const item of itens) {
       expect(within(item).getByRole('button', { name: /^Cobrir / })).toBeInTheDocument()
-      expect(within(item).getByText(/^\d+%$/)).toHaveClass('text-warningtext')
+      expect(within(item).getByText(/^\d+% da referência$/)).toHaveClass('text-warningtext')
     }
   })
 
@@ -130,7 +130,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
     montar(adulta, planoCom([ARROZ, 200], [SAL_GROSSO, 10]))
     const sodio = linhas().find((l) => l.textContent?.startsWith('Sódio'))
     if (!sodio) throw new Error('sódio não está no cartão')
-    expect(within(sodio).getByText(/^\d+% · acima do limite$/)).toHaveClass('text-errortext')
+    expect(within(sodio).getByText(/^\d+% da referência · acima do limite$/)).toHaveClass('text-errortext')
     expect(within(sodio).queryByRole('button')).not.toBeInTheDocument()
   })
 
@@ -149,7 +149,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 
   it('CB-201: sem sexo e idade, mostra o motivo e não lista nada', () => {
     montar({}, planoCom([ARROZ, 200]))
-    expect(cartao().getByText(/Informe sexo e idade/)).toBeInTheDocument()
+    expect(cartao().getByText(/Informe o sexo e a idade/)).toBeInTheDocument()
     expect(cartao().queryByRole('list')).not.toBeInTheDocument()
   })
 
@@ -200,7 +200,7 @@ describe('Cartão arredonda sem desmentir o estado (CA-696, CA-712)', () => {
     const pct = ferroDoExemplo(plano)
     expect(pct).toBeLessThan(89)
     montar(adulta, plano)
-    expect(pctDoFerro().getByText(`${Math.round(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.round(pct)}% da referência`)).toBeInTheDocument()
   })
 
   it('CA-696 e CA-712: com a meta logo acima, a adequação arredonda para baixo', () => {
@@ -209,7 +209,7 @@ describe('Cartão arredonda sem desmentir o estado (CA-696, CA-712)', () => {
     // Meta no inteiro logo acima: o mais perto daria o número da meta, em cor de abaixo.
     const preset = { tipo: 'personalizado', referencia: 'rda', minimoPct: Math.ceil(pct) } as const
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, plano)
-    expect(pctDoFerro().getByText(`${Math.floor(pct)}%`)).toBeInTheDocument()
+    expect(pctDoFerro().getByText(`${Math.floor(pct)}% da referência`)).toBeInTheDocument()
   })
 })
 
@@ -237,7 +237,7 @@ describe('Sódio nunca é alvo do Cobrir (CA-697, CA-703)', () => {
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset } }, comSal)
     expect(cartao().getByText('Nada para cobrir.')).toBeInTheDocument()
     expect(linhas()).toHaveLength(1)
-    expect(linhas()[0]).toHaveTextContent(/^Sódio\d+% · acima do limite$/)
+    expect(linhas()[0]).toHaveTextContent(/^Sódio\d+% da referência · acima do limite$/)
   })
 
   it('CA-703: a meta usada vai na descrição da lista, para leitor de tela', () => {
@@ -253,7 +253,7 @@ describe('Legenda do † no cartão (CA-699)', () => {
   it('CA-699: com alguma linha marcada, o pé do cartão explica o †, à vista', () => {
     montar(adulta, criarExemplo(ids, '2026-10-15').plano)
     expect(cartao().getAllByTitle(/total possivelmente subestimado/).length).toBeGreaterThan(0)
-    expect(cartao().getByText('Total possivelmente subestimado: falta o dado em algum alimento.')).toBeInTheDocument()
+    expect(cartao().getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
   })
 
   it('CA-699: sem linha marcada, não há pé', () => {

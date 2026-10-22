@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import type { Caso } from '@/domain/tipos.ts'
+import { AjusteEnergia } from '../resumo/AjusteEnergia.tsx'
 import { TelaCaso } from './TelaCaso.tsx'
 
 function Anfitriao({ inicial }: { readonly inicial: Partial<Caso> }) {
@@ -69,9 +70,23 @@ describe('Meta de água pelo peso (spec ficha-unica, D-355; spec conduta-da-nutr
 
   it('CA-1095: a linha escrita à mão antes continua, com o aviso, até "Usar a calculada"', async () => {
     const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
-    expect(screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você usar a calculada.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Linha escrita antes: “Beba 2 litros de água, mais no calor.”. Ela continua no plano impresso até você digitar uma meta ou usar a calculada.'),
+    ).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Usar a calculada' }))
     expect(screen.queryByText(/Linha escrita antes/)).not.toBeInTheDocument()
+  })
+
+  it('CA-1297 (spec ficha-unica, D-464): digitar a meta tira a linha escrita à mão, mas diz e deixa voltar', async () => {
+    const usuario = montar({ ...adulta, linhaDaAgua: 'Beba 2 litros de água, mais no calor.' })
+    const campo = screen.getByLabelText('Meta de água')
+    await usuario.clear(campo)
+    await usuario.type(campo, '3')
+    expect(screen.getByText('A linha escrita antes saiu do plano impresso: vale a meta digitada.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Voltar a linha escrita' }))
+    expect(screen.getByText(/^Linha escrita antes: “Beba 2 litros de água, mais no calor\.”/)).toBeInTheDocument()
+    expect(screen.queryByText(/saiu do plano impresso/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Meta de água')).toHaveValue('2,2')
   })
 })
 
@@ -232,5 +247,31 @@ describe('Meses sem piscar (spec revisao-geral-trabalho, D-244)', () => {
     await usuario.type(idade(), '8')
     await usuario.tab()
     expect(meses()).toHaveFocus()
+  })
+})
+
+describe('correção B: o que vale para a criança e a gestante na etapa 1 (spec ficha-unica, D-458)', () => {
+  it('CA-1279: com 2 anos não há nível de atividade nem fator próprio; com 3, há', () => {
+    montar({ sexo: 'M', idadeAnos: 2, pesoKg: 12, estaturaCm: 86 })
+    expect(screen.queryByRole('radiogroup', { name: 'Nível de atividade' })).not.toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'M', idadeAnos: 3, pesoKg: 14, estaturaCm: 95 })
+    expect(screen.getByRole('radiogroup', { name: 'Nível de atividade' })).toBeInTheDocument()
+    cleanup()
+    render(<AjusteEnergia caso={{ ...criarCasoVazio('c2'), sexo: 'M', idadeAnos: 2 }} aoAlterar={vi.fn()} mostrarFormula={false} />)
+    expect(screen.queryByLabelText('Fator próprio')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('GET manual')).toBeInTheDocument()
+  })
+
+  it('CA-1281: a criança de 6 anos e a gestante só têm a bioimpedância; o adulto tem as dobras', async () => {
+    const usuario = montar({ sexo: 'F', idadeAnos: 6, pesoKg: 21, estaturaCm: 116 })
+    await usuario.click(screen.getByRole('button', { name: /^Composição corporal/ }))
+    expect(screen.getByRole('button', { name: /^Composição corporal/ })).toHaveTextContent('Bioimpedância. Opcional.')
+    expect(screen.queryByRole('radiogroup', { name: 'Protocolo de dobras' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Aparelho')).toBeInTheDocument()
+    cleanup()
+    const outro = montar(adulta)
+    await outro.click(screen.getByRole('button', { name: /^Composição corporal/ }))
+    expect(screen.getByRole('radiogroup', { name: 'Protocolo de dobras' })).toBeInTheDocument()
   })
 })

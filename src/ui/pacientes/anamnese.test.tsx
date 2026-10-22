@@ -367,3 +367,68 @@ describe('Abrir, recolher e editar o roteiro (CA-563, CA-565 a CA-568, CA-1060)'
     expect(pacientes.obter('p1')?.respostasAnamnese).toEqual([])
   })
 })
+
+describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 10)', () => {
+  const escolhasDeDoenca = async (ajuste: Partial<Paciente>) => {
+    const { usuario } = montar(ajuste)
+    await usuario.click(bloco('Saúde(?! da mulher)'))
+    return anamnese()
+      .getAllByRole('checkbox')
+      .map((c) => c.getAttribute('aria-label') ?? c.textContent ?? '')
+  }
+
+  it('CA-1270: a menina de 6 anos não vê a SOP; a mulher de 68 vê', async () => {
+    expect((await escolhasDeDoenca(MENINA_6)).join(' ')).not.toMatch(/ovários policísticos/)
+    cleanup()
+    expect((await escolhasDeDoenca(MULHER_68)).join(' ')).toMatch(/ovários policísticos/)
+  })
+
+  it('CA-1271: a menina de 6 anos tem o histórico do crescimento e não tem "Dietas que já fez"', async () => {
+    const { usuario } = montar(MENINA_6)
+    await usuario.click(bloco('Motivo da consulta'))
+    expect(anamnese().getByLabelText('Histórico do peso')).toHaveAccessibleDescription('Peso ao nascer e como o peso e a estatura vêm mudando (caderneta de saúde).')
+    expect(anamnese().queryByLabelText('Dietas que já fez')).not.toBeInTheDocument()
+  })
+
+  it('CA-1272 a CA-1274: a mulher de 68 anos vê "Menopausa" e "Ainda menstrua", sem fluxo, e a reposição hormonal', async () => {
+    const { usuario } = montar(MULHER_68)
+    await usuario.click(bloco('Saúde da mulher'))
+    const menstruacao = anamnese().getByRole('radiogroup', { name: 'Menstruação' })
+    expect(within(menstruacao).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Menopausa', 'Ainda menstrua'])
+    expect(anamnese().queryByText('Fluxo menstrual intenso')).not.toBeInTheDocument()
+    expect(anamnese().getByLabelText('Reposição hormonal')).toBeInTheDocument()
+    await usuario.click(within(menstruacao).getByRole('radio', { name: 'Ainda menstrua' }))
+    expect(anamnese().getByRole('radiogroup', { name: 'Fluxo menstrual intenso' })).toBeInTheDocument()
+    expect(anamnese().getByLabelText('Anticoncepcional ou reposição hormonal')).toBeInTheDocument()
+  })
+
+  it('CA-1275: Pessoa idosa não pergunta com quem mora; "Pessoas que moram na casa" diz que 1 é morar só', async () => {
+    const { usuario } = montar(MULHER_68)
+    await usuario.click(bloco('Pessoa idosa'))
+    expect(anamnese().queryByLabelText('Com quem mora')).not.toBeInTheDocument()
+    expect(dados().getByLabelText('Pessoas que moram na casa')).toHaveAccessibleDescription('Contando o paciente: 1 quer dizer que mora só.')
+  })
+
+  it('CA-1276: a lactante escolhe "Só no peito" ou "Peito e outros alimentos", sem "Não amamenta"', () => {
+    montar({ ...MULHER_28, momentoDeVida: { tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'exclusiva' } })
+    const amamentacao = dados().getByRole('radiogroup', { name: 'Amamentação' })
+    expect(within(amamentacao).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Só no peito', 'Peito e outros alimentos'])
+  })
+
+  it('CA-1278: a ficha de lactante com o parto há mais de 60 meses avisa', () => {
+    montar({ sexo: 'F', nascimento: '1990-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2020-01-15', amamentacao: 'mista' } })
+    expect(dados().getByText('Pela data do parto, já se passaram mais de 60 meses. Se a amamentação terminou, marque Não.')).toBeInTheDocument()
+  })
+
+  it('CA-1279 e CA-1280: a menina de 6 anos tem a rotina da escola; aos 4 anos, "Escola ou creche"; aos 2, sem Atividade física', async () => {
+    const { usuario } = montar(MENINA_6)
+    await usuario.click(bloco('Rotina e sono'))
+    expect(anamnese().getByLabelText('Rotina da escola ou da creche')).toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'F', nascimento: '2022-05-01' })
+    expect(dados().getByLabelText('Escola ou creche')).toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'M', nascimento: '2024-03-01' })
+    expect(titulos()).not.toContain('Atividade física')
+  })
+})

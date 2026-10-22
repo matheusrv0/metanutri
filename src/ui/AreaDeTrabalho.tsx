@@ -390,7 +390,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     return (
       <Estrutura
         {...base}
-        titulo={caso.nome || 'Plano sem nome'}
+        // D-462 (spec ficha-unica): o título é o nome do plano, que a nutricionista dá para achá-lo (D-409); o nome do
+        // paciente vai para a folha, o Word e o link pelo caso que vem da ficha.
+        titulo={registro.caso.nome || 'Plano sem nome'}
         trilha={[irParaCasos]}
         acoes={
           <MenuExportar

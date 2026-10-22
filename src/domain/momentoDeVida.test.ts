@@ -1,5 +1,6 @@
 // Gestação e lactação na ficha (spec ficha-unica, D-342 e D-343; CA-1039 a CA-1043, CB-343 a CB-345).
 import {
+  AMAMENTACOES,
   condicaoNaData,
   descricaoDoMomento,
   lerMomento,
@@ -32,6 +33,19 @@ describe('Ler o que está guardado (CA-1088)', () => {
   it('campo estragado dentro do tipo vira vazio, sem perder o tipo', () => {
     expect(lerMomento({ tipo: 'gestante', semanas: 'vinte', semanasEm: 'ontem', pesoPreGestacionalKg: -3 })).toEqual(gestante(null, null, null))
     expect(lerMomento({ tipo: 'lactante', dataDoParto: '21/07/2026', amamentacao: 'muito' })).toEqual({ tipo: 'lactante', dataDoParto: null, amamentacao: null })
+  })
+})
+
+describe('Lactante é quem amamenta (D-455)', () => {
+  it('CA-1276: a amamentação é "Só no peito" ou "Peito e outros alimentos"', () => {
+    expect(AMAMENTACOES).toEqual([
+      { valor: 'exclusiva', rotulo: 'Só no peito' },
+      { valor: 'mista', rotulo: 'Peito e outros alimentos' },
+    ])
+  })
+
+  it('CA-1276: "Lactante" com "Não amamenta", gravado antes, é lido como "Não"', () => {
+    expect(lerMomento({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'nao-amamenta' })).toEqual({ tipo: 'nenhum' })
   })
 })
 
@@ -74,11 +88,11 @@ describe('A condição do plano na data da consulta (D-343)', () => {
   })
 
   it('CA-1043: lactante que amamenta tem os meses daquela data; quem não amamenta não é lactante', () => {
-    const lactante = (amamentacao: 'exclusiva' | 'mista' | 'nao-amamenta' | null): MomentoDeVida => ({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao })
+    const lactante = (amamentacao: 'exclusiva' | 'mista' | null): MomentoDeVida => ({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao })
     expect(condicaoNaData(lactante('exclusiva'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
-    expect(condicaoNaData(lactante('mista'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
+    expect(condicaoNaData(lactante('mista'), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3, amamentacao: 'mista' })
     expect(condicaoNaData(lactante(null), '2026-10-21')).toEqual({ tipo: 'lactante', mesesPosParto: 3 })
-    expect(condicaoNaData(lactante('nao-amamenta'), '2026-10-21')).toEqual({ tipo: 'nenhuma' })
+    expect(condicaoNaData(lerMomento({ tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'nao-amamenta' }), '2026-10-21')).toEqual({ tipo: 'nenhuma' })
   })
 
   it('CB-344 e CB-345: sem data do parto, lactante sem meses; parto depois da consulta, não é lactante', () => {

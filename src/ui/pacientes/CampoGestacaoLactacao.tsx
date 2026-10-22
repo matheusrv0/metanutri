@@ -43,6 +43,7 @@ export function CampoGestacaoLactacao({ valor, hoje, valeParaAPessoa, aoMudar }:
   const semanasHoje = valor?.tipo === 'gestante' ? semanasNaData(valor, hoje) ?? valor.semanas : null
   const passou = semanasHoje !== null && semanasHoje > FAIXAS.semanasGestacao.max
   const meses = valor?.tipo === 'lactante' && valor.dataDoParto ? mesesEntre(valor.dataDoParto, hoje) : null
+  const lactacaoPassou = meses !== null && meses > FAIXAS.mesesPosParto.max
 
   return (
     <div className="flex flex-col gap-4 sm:col-span-2">
@@ -92,6 +93,12 @@ export function CampoGestacaoLactacao({ valor, hoje, valeParaAPessoa, aoMudar }:
             aoEscolher={(amamentacao) => aoMudar({ ...valor, amamentacao })}
           />
         </div>
+      ) : null}
+      {lactacaoPassou ? (
+        <Alert variant="warning">
+          <TriangleAlert aria-hidden="true" />
+          <p>{`Pela data do parto, já se passaram mais de ${FAIXAS.mesesPosParto.max} meses. Se a amamentação terminou, marque Não.`}</p>
+        </Alert>
       ) : null}
     </div>
   )

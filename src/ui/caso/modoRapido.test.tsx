@@ -63,7 +63,7 @@ describe('Prescrição rápida', () => {
   it('no atendimento completo a meta de energia não aparece', () => {
     montar({ modo: 'completo', sexo: 'F', idadeAnos: 28 })
     expect(screen.queryByLabelText('Meta de energia')).not.toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Avaliação antropométrica' })).getByText(/Informe peso, estatura/)).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Avaliação antropométrica' })).getByText(/Informe o peso e a estatura/)).toBeInTheDocument()
   })
 })
 
@@ -122,7 +122,7 @@ describe('Meta de energia no modo rápido (CA-225 a CA-230, CA-232, CA-233)', ()
   it('CA-230: sem peso ou estatura, o nível continua e a tela diz o que falta', () => {
     montar(rapido)
     expect(screen.getByRole('radiogroup', { name: 'Nível de atividade' })).toBeInTheDocument()
-    expect(screen.getByText('Informe peso e estatura para calcular a meta.')).toBeInTheDocument()
+    expect(screen.getByText('Informe o peso e a estatura para calcular a meta.')).toBeInTheDocument()
     expect(meta()).toHaveAttribute('placeholder', 'Digite a meta')
   })
 

@@ -1,7 +1,7 @@
 // Avaliação antropométrica (SPEC CA-02, CA-02a, CA-02b, CA-02c, CA-03, CA-04, CA-05).
 import referencias from '../data/antropometria.json'
 import curvas from '../data/curvas-oms.json'
-import { validarCaso } from './caso.ts'
+import { oQueFalta, validarCaso } from './caso.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
 export interface Faixa {
@@ -31,6 +31,9 @@ export const IDADE_ADULTO = 20
 export const IDADE_IDOSO = 60
 const MESES_ULTIMA_REFERENCIA = 228
 const MESES_CINCO_ANOS = 60
+
+/** O escore-z negativo com o sinal de menos (U+2212), não o hífen (spec ficha-unica, D-461): "−0,18". */
+export const comSinalDeMenos = (numero: string): string => numero.replace(/^-/, '\u2212')
 
 export function calcularImc(pesoKg: number, estaturaCm: number): number {
   const m = estaturaCm / 100
@@ -94,9 +97,7 @@ export function avaliarAntropometria(caso: Caso): ResultadoAntropometria {
   const { sexo, idadeAnos, pesoKg, estaturaCm, condicao } = caso
 
   if (!validacao.podeCalcular || sexo === null || idadeAnos === null || pesoKg === null || estaturaCm === null) {
-    const nomes: Record<string, string> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
-    const faltando = validacao.faltando.map((c) => nomes[c] ?? c)
-    if (faltando.length) avisos.push(`Informe ${faltando.join(', ')} para a avaliação antropométrica.`)
+    if (validacao.faltando.length) avisos.push(`Informe ${oQueFalta(validacao.faltando)} para a avaliação antropométrica.`)
     if (Object.keys(validacao.erros).length) avisos.push('Corrija os campos inválidos para a avaliação antropométrica.')
     return vazio
   }
@@ -149,11 +150,12 @@ export function avaliarAntropometria(caso: Caso): ResultadoAntropometria {
     cintura = { classe: classificar(caso.circunferenciaCinturaCm, referencias.cintura[sexo]).classe, fonte: fonte(referencias.cintura.fonte) }
   }
 
+  // D-460 (spec ficha-unica): o corte brasileiro, por sexo (Pagotto et al., 2018); os 31 cm da OMS ficam na nota.
   if (caso.circunferenciaPanturrilhaCm !== null && idadeAnos >= referencias.panturrilha.idadeMin) {
     panturrilha = {
-      classe: classificar(caso.circunferenciaPanturrilhaCm, referencias.panturrilha.faixas).classe,
+      classe: classificar(caso.circunferenciaPanturrilhaCm, referencias.panturrilha[sexo]).classe,
       fonte: fonte(referencias.panturrilha.fonte),
-      nota: referencias.panturrilha.notaAlternativa,
+      nota: referencias.panturrilha.nota,
     }
   }
 

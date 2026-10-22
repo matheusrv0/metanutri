@@ -2,7 +2,7 @@
 import { Document } from 'docx'
 import type { ResultadoAdequacao } from '../domain/adequacao.ts'
 import { descreverEstagio } from '../domain/descreverEstagio.ts'
-import type { ResultadoEnergia } from '../domain/energia.ts'
+import { rotuloDaCategoria, type ResultadoEnergia } from '../domain/energia.ts'
 import type { ResultadoMacro, ResultadoMacros } from '../domain/macros.ts'
 import type { Caso } from '../domain/tipos.ts'
 import { tabelaAdequacaoParaCopiar } from './copiar-tabela.ts'
@@ -49,7 +49,7 @@ export function criarMemorial(dados: DadosMemorial): Document {
     ['Método', energia.getManual ? 'GET definido manualmente' : energia.metodo ? NOME_METODO[energia.metodo] : ''],
     ['TMB', energia.tmb === null ? '' : `${formatarNumeroDocx(energia.tmb, 0)} kcal`],
     ['Fator de atividade', energia.metodo === 'nasem-2023' || energia.getManual ? '' : formatarNumeroDocx(energia.fator, 2)],
-    ['Categoria de atividade (NASEM)', texto(energia.categoriaAtividade)],
+    ['Categoria de atividade (NASEM)', energia.categoriaAtividade ? rotuloDaCategoria(energia.categoriaAtividade) : ''],
     ...energia.adicionais.map((a) => [a.descricao, `${a.kcal > 0 ? '+' : ''}${formatarNumeroDocx(a.kcal, 0)} kcal`]),
     ['GET', energia.get === null ? '' : `${formatarNumeroDocx(energia.get, 0)} kcal`],
     ['kcal do plano', `${formatarNumeroDocx(dados.kcalPlano, 0)} kcal${energiaIncompleta ? ' *' : ''}`],

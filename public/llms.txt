@@ -18,7 +18,7 @@
 
 ## Planos
 
-Todos os planos têm as mesmas funções. O preço depende de quantos pacientes ativos o nutricionista tem: quem teve plano ou missão nos últimos 30 dias. Pagamento com cartão de crédito, no site.
+Todas as assinaturas têm as mesmas funções. O preço depende de quantos pacientes ativos o nutricionista tem: quem teve plano alimentar ou missão nos últimos 30 dias. Pagamento com cartão de crédito, no site.
 
 - Free: R$ 0, 2 pacientes ativos.
 - Estudante: R$ 0, com o comprovante de matrícula, 10 pacientes ativos.
