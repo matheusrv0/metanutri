@@ -36,10 +36,10 @@ describe('Quantidades para o paciente (spec conduta-da-nutricionista, D-297)', (
   })
 })
 
-describe('Água na dieta (spec conduta-da-nutricionista, D-298)', () => {
-  it('CA-932: o campo mostra a linha automática; escrever troca, apagar tira, e "Usar a automática" volta à conta', async () => {
+describe('Meta de água (spec conduta-da-nutricionista, D-298; spec ficha-unica, D-355)', () => {
+  it('CA-932 e CA-1083: o campo mostra a linha automática; escrever troca, apagar tira, e "Usar a automática" volta à conta', async () => {
     const usuario = montar(adulta)
-    const campo = screen.getByLabelText('Água na dieta')
+    const campo = screen.getByLabelText('Meta de água')
     expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
     expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
 
@@ -53,19 +53,21 @@ describe('Água na dieta (spec conduta-da-nutricionista, D-298)', () => {
     expect(screen.queryByRole('button', { name: 'Usar a automática' })).not.toBeInTheDocument()
   })
 
-  it('CA-932: a linha automática acompanha o peso enquanto não há edição', async () => {
+  it('CA-1083: a dica diz a água total, a parte em bebidas e a fase de vida; o peso não muda a meta', async () => {
     const usuario = montar(adulta)
+    const campo = screen.getByLabelText('Meta de água')
+    expect(campo).toHaveAccessibleDescription(/Referência de água da DRI para mulheres de 19 anos ou mais: 2,7 litros por dia, dos quais cerca de 2,2 litros em bebidas/)
     const peso = screen.getByLabelText('Peso')
     await usuario.clear(peso)
     await usuario.type(peso, '80')
-    expect(screen.getByLabelText('Água na dieta')).toHaveValue('Beba cerca de 2,8 litros de água por dia.')
+    expect(campo).toHaveValue('Beba cerca de 2,2 litros de água por dia.')
   })
 
-  it('CB-298: sem peso, o campo fica vazio, com a dica de informar o peso', () => {
-    montar({ ...adulta, pesoKg: null })
-    const campo = screen.getByLabelText('Água na dieta')
+  it('CA-1083: sem sexo ou idade, o campo fica vazio, com a dica de informar os dois', () => {
+    montar({ ...adulta, sexo: null })
+    const campo = screen.getByLabelText('Meta de água')
     expect(campo).toHaveValue('')
-    expect(campo).toHaveAttribute('placeholder', 'Informe o peso para a meta automática')
+    expect(campo).toHaveAttribute('placeholder', 'Informe sexo e idade para a meta automática.')
   })
 })
 

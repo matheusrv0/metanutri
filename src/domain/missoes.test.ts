@@ -1,4 +1,4 @@
-import { litrosDeAgua, missoesDoPlano } from './missoes.ts'
+import { missoesDoPlano } from './missoes.ts'
 import { adicionarItem, criarPlanoPadrao } from './plano.ts'
 
 let n = 0
@@ -21,19 +21,18 @@ describe('missões do dia', () => {
     expect(missoes.some((m) => m.texto.includes('Almoço por volta das 12:00'))).toBe(true)
   })
 
-  it('a água usa 35 ml por quilo quando há peso', () => {
-    const missoes = missoesDoPlano(comAlimentos(), { pesoKg: 60 })
-    expect(missoes.find((m) => m.id === 'agua')?.texto).toBe('Beber cerca de 2,1 litros de água')
+  it('CA-1082 (spec ficha-unica): a água usa a parte em bebidas da fase de vida, a mesma da folha', () => {
+    const crianca = missoesDoPlano(comAlimentos(), { agua: { totalL: 1.7, bebidasL: 1.2, fase: 'crianças de 4 a 8 anos' } })
+    expect(crianca.find((m) => m.id === 'agua')).toEqual({
+      id: 'agua',
+      texto: 'Beber cerca de 1,2 litro de água',
+      origem: 'Referência de água da DRI para crianças de 4 a 8 anos',
+    })
+    const homem = missoesDoPlano(comAlimentos(), { agua: { totalL: 3.7, bebidasL: 3, fase: 'homens de 19 anos ou mais' } })
+    expect(homem.find((m) => m.id === 'agua')?.texto).toBe('Beber cerca de 3,0 litros de água')
   })
 
-  it('D-298 (spec conduta-da-nutricionista): a conta dos litros é uma só, para as missões e para a folha', () => {
-    expect(litrosDeAgua(62)).toBe(2.2)
-    expect(litrosDeAgua(60)).toBe(2.1)
-    expect(litrosDeAgua(null)).toBeNull()
-    expect(litrosDeAgua(0)).toBeNull()
-  })
-
-  it('sem peso, a missão da água continua existindo sem inventar número', () => {
+  it('sem meta de água (sem sexo ou idade), a missão continua existindo sem inventar número', () => {
     const missoes = missoesDoPlano(comAlimentos())
     expect(missoes.find((m) => m.id === 'agua')?.texto).toBe('Beber água ao longo do dia')
   })

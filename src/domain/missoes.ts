@@ -1,5 +1,6 @@
 // Missões diárias: o plano vira uma lista curta de coisas para o paciente marcar no dia.
 // Tudo é derivado do plano; nada aqui inventa recomendação nova.
+import { litros, type MetaDeAgua } from './agua.ts'
 import { buscarAlimento } from './tabelas.ts'
 import { totaisDoPlano } from './totais.ts'
 import type { Plano } from './tipos.ts'
@@ -14,20 +15,14 @@ export interface Missao {
 const CATEGORIAS_FRUTA = /^Frutas/i
 const CATEGORIAS_VERDURA = /^(Verduras|Hortaliças|Leguminosas)/i
 
-/**
- * A meta de água: 35 ml por quilo de peso, em litros com uma casa (referência de rotina). Sem peso, não há meta. É a
- * mesma conta das missões e da linha automática da folha (spec conduta-da-nutricionista, D-298).
- */
-export function litrosDeAgua(pesoKg: number | null): number | null {
-  if (pesoKg === null || !(pesoKg > 0)) return null
-  return Math.round((pesoKg * 35) / 100) / 10
-}
+/** "1,2 litro", "2,2 litros": abaixo de 2, o singular. */
+export const quantosLitros = (l: number): string => `${litros(l)} ${l < 2 ? 'litro' : 'litros'}`
 
 /**
  * Gera as missões do dia a partir do plano: uma por refeição com alimento,
  * mais as de hábito que o próprio plano justifica.
  */
-export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number | null } = {}): readonly Missao[] {
+export function missoesDoPlano(plano: Plano, opcoes: { readonly agua?: MetaDeAgua | null } = {}): readonly Missao[] {
   const missoes: Missao[] = []
 
   for (const refeicao of plano.refeicoes) {
@@ -58,15 +53,16 @@ export function missoesDoPlano(plano: Plano, opcoes: { readonly pesoKg?: number 
   }
 
   const totais = totaisDoPlano(plano, buscarAlimento)
-  const litros = litrosDeAgua(opcoes.pesoKg ?? null)
+  // A meta de água da fase de vida: a parte em bebidas, a mesma da folha (spec ficha-unica, D-355).
+  const agua = opcoes.agua ?? null
   const temAlimento = itens.some((i) => i.gramas > 0)
 
   if (temAlimento || totais.nutrientes.fibra_g.total > 0) {
-    if (litros !== null) {
+    if (agua !== null) {
       missoes.push({
         id: 'agua',
-        texto: `Beber cerca de ${String(litros).replace('.', ',')} litros de água`,
-        origem: '35 ml por quilo de peso, referência de rotina',
+        texto: `Beber cerca de ${quantosLitros(agua.bebidasL)} de água`,
+        origem: `Referência de água da DRI para ${agua.fase}`,
       })
     } else {
       missoes.push({ id: 'agua', texto: 'Beber água ao longo do dia', origem: 'Hábito que acompanha o plano' })
