@@ -1,6 +1,6 @@
 // A restrição do paciente na etapa 2 (spec ficha-unica, D-353; CA-1076 e CA-1077).
 import { render, screen, within } from '@testing-library/react'
-import { montarRestricoes } from '@/domain/restricoes.ts'
+import { comCuidadosDaFase, montarRestricoes, SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import { SUGESTOES_PADRAO } from '@/domain/sugestoes.ts'
 import { ContextoRestricoes } from '../estado/contextoRestricoes.ts'
 import { LinhaItem } from './LinhaItem.tsx'
@@ -89,5 +89,32 @@ describe('As sugestões da refeição tiram o alimento restrito (CA-1076)', () =
   it('sem restrição, o ovo aparece', () => {
     sugestoes(restricoes([]))
     expect(screen.getByRole('button', { name: /Ovo/ })).toBeInTheDocument()
+  })
+})
+
+describe('Gestação sem fígado na linha e nas sugestões (spec sugestoes-com-criterio, correção A, D-442)', () => {
+  const GESTANTE = comCuidadosDaFase(SEM_RESTRICOES, { condicao: { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 }, idadeAnos: 28 })
+  const FIGADO_GRELHADO = 356
+
+  it('CA-1251: a linha com fígado avisa a gestante', () => {
+    render(
+      <ContextoRestricoes.Provider value={GESTANTE}>
+        <ul>
+          <LinhaItem item={{ id: 'i1', alimentoId: FIGADO_GRELHADO, gramas: 100 }} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+        </ul>
+      </ContextoRestricoes.Provider>,
+    )
+    expect(screen.getByText('Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê.')).toBeInTheDocument()
+  })
+
+  it('CA-1250: o fígado posto na lista do almoço não aparece nas sugestões da gestante', () => {
+    render(
+      <ContextoRestricoes.Provider value={GESTANTE}>
+        <SugestoesDaRefeicao tipo="almoco" sugestoes={[{ alimentoId: FIGADO_GRELHADO, gramas: 100 }, ...SUGESTOES_PADRAO.almoco]} aoEscolher={vi.fn()} />
+      </ContextoRestricoes.Provider>,
+    )
+    const lista = within(screen.getByRole('region', { name: 'Sugestões para o almoço' }))
+    expect(lista.queryByRole('button', { name: /fígado/ })).not.toBeInTheDocument()
+    expect(lista.getByRole('button', { name: /Arroz/ })).toBeInTheDocument()
   })
 })

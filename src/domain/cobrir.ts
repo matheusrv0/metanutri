@@ -75,6 +75,8 @@ const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Man
 const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
 const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(nomeLimpo(a))
 const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
+/** Origem animal: a vitamina A é retinol pré-formado (D-442). */
+const ORIGEM_ANIMAL: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar', 'Ovos e derivados', 'Leite e derivados'])
 
 export interface PorcaoDoGrupo {
   readonly grupo: string
@@ -307,8 +309,10 @@ export function sugerirParaCobrir(
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
   const restricoes = comoRestricoes(opcoes.restricoes)
   let restricaoTirouAlguem = false
+  // D-442: na gestação, a vitamina A vem primeiro das fontes vegetais (carotenoides), não do retinol das animais.
+  const vegetalPrimeiro = chave === 'vitamina_a_rae_mcg' && (restricoes.cuidados ?? []).some((c) => c.id === 'gestacao-figado')
 
-  const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean; readonly naoGosta: boolean })[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean; readonly naoGosta: boolean; readonly animal: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
@@ -351,6 +355,7 @@ export function sugerirParaCobrir(
     }
 
     candidatas.push({
+      animal: vegetalPrimeiro && ORIGEM_ANIMAL.has(alimento.categoria),
       comum: ehDeUsoComum(alimento),
       naoGosta: ehNaoGosta(alimento, restricoes),
       primeira: !ehSegundaEscolha(alimento),
@@ -375,6 +380,7 @@ export function sugerirParaCobrir(
     (a, b) =>
       // O que o paciente não gosta vai para o fim, sem sair (spec ficha-unica, D-354).
       Number(a.naoGosta) - Number(b.naoGosta) ||
+      Number(a.animal) - Number(b.animal) ||
       Number(b.comum) - Number(a.comum) ||
       Number(b.primeira) - Number(a.primeira) ||
       kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) ||

@@ -11,7 +11,7 @@ import { missoesDoPlano } from '@/domain/missoes.ts'
 import { nomeDoPacienteDoPlano } from '@/domain/nomeDoPaciente.ts'
 import { casoComFicha, pesoAnterior, restricoesDaFicha } from '@/domain/fichaNoPlano.ts'
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
-import { SEM_RESTRICOES } from '@/domain/restricoes.ts'
+import { comCuidadosDaFase, SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import { avisoDoEstudante } from '@/domain/pedidoEstudante.ts'
 import { assinaturaDoPlano, camposDeEstagioIniciais } from '@/domain/assinaturaDoPlano.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
@@ -376,8 +376,9 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     const outrosDoPaciente = registro.caso.pacienteId
       ? casos.filter((c) => c.pacienteId === registro.caso.pacienteId && c.id !== registro.caso.id).flatMap((c) => repositorio.obter(c.id) ?? [])
       : []
-    // Spec ficha-unica, D-353: as restrições da ficha valem no Cobrir, nas trocas, nas sugestões e na linha do plano.
-    const restricoesDoPaciente = pacienteDoPlano ? restricoesDaFicha(pacienteDoPlano) : SEM_RESTRICOES
+    // Spec ficha-unica, D-353: as restrições da ficha valem no Cobrir, nas trocas, nas sugestões e na linha do plano; com
+    // elas, os cuidados da fase de vida do plano (spec sugestoes-com-criterio, correção A, D-442 e D-443).
+    const restricoesDoPaciente = comCuidadosDaFase(pacienteDoPlano ? restricoesDaFicha(pacienteDoPlano) : SEM_RESTRICOES, caso)
     // O gasto energético limita as sugestões do Cobrir, na etapa 2 e na 3.
     const gastoEnergetico = calcularEnergia(caso, {
       fator: caso.energia.fator,
