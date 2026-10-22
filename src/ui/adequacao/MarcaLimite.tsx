@@ -1,9 +1,9 @@
 interface MarcaLimiteProps {
-  /** Por que o limite superior da tabela não vale para os alimentos; `null` sem nota. */
+  /** Para que forma o limite superior da tabela vale; `null` sem nota. */
   readonly nota: string | null
 }
 
-/** A marca ‡: o limite superior da tabela não vale para a forma presente nos alimentos. */
+/** A marca ‡: para que forma do nutriente o limite superior da tabela vale (D-470 da spec sugestoes-com-criterio). */
 export function MarcaLimite({ nota }: MarcaLimiteProps) {
   if (!nota) return null
   return (

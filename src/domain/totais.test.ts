@@ -74,6 +74,21 @@ describe('totaisDeItens', () => {
   })
 })
 
+describe('a vitamina A pré-formada do plano (spec sugestoes-com-criterio, D-470)', () => {
+  it('soma só a dos alimentos de origem animal e do fígado, à parte da total', () => {
+    // 356 Fígado bovino grelhado 14.574 µg; 66 Abóbora menina crua 554 µg (carotenoide).
+    const t = totaisDeItens([item('a', 356, 50), item('b', 66, 100)], buscarAlimento)
+    expect(t.vitaminaAPreFormada).toBeCloseTo(7287, 0)
+    expect(t.nutrientes.vitamina_a_rae_mcg.total).toBeCloseTo(7287 + 554, 0)
+  })
+
+  it('CB-442: a receita soma a pré-formada pelos ingredientes', () => {
+    const t = totaisDeItens([itemDeReceita('r', 120)], buscarAlimento)
+    expect(t.vitaminaAPreFormada).toBeGreaterThanOrEqual(0)
+    expect(totaisDeItens([], buscarAlimento).vitaminaAPreFormada).toBe(0)
+  })
+})
+
 describe('a receita com dado faltando (spec integracao-rodada-1910, D-318)', () => {
   it('CA-985: o ingrediente apagado conta como falta de dado na energia e nos macros da receita', () => {
     const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }

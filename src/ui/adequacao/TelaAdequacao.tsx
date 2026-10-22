@@ -276,7 +276,10 @@ export function TelaAdequacao({
               </p>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>
-                <span>O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.</span>
+                {/* D-470 (spec sugestoes-com-criterio): o limite da vitamina A vale para a pré-formada. */}
+                <span>
+                  Vitamina A: o limite superior vale para a pré-formada (fígado, miúdos, ovo, leite), não para os carotenoides dos vegetais. Magnésio, vitamina E, niacina e folato: vale para suplemento e alimento fortificado, não para o que os alimentos trazem.
+                </span>
               </p>
               <p>AI: usada quando o nutriente não tem RDA nem EAR.</p>
               <p className="mt-2 flex flex-wrap items-center gap-x-1">

@@ -45,6 +45,12 @@ describe('tabelaAdequacaoParaCopiar (CA-48)', () => {
     expect(html).toContain('* Um ou mais alimentos não têm dado')
   })
 
+  it('D-470: a vitamina A acima do limite diz que é a pré-formada', () => {
+    // 356 Fígado bovino grelhado, 50 g: cerca de 7.287 µg de retinol.
+    const comFigado = calcularAdequacao(totaisDeItens([{ id: 'a', alimentoId: 356, gramas: 50 }], buscarAlimento), MULHER_28, { tipo: 'individual' })
+    expect(tabelaAdequacaoParaCopiar(comFigado).texto).toMatch(/Pré-formada acima do limite \(UL 3\.000,0 µg\)/)
+  })
+
   it('gera também texto separado por tabulação, para colar em planilha', () => {
     const linhas = texto.split('\n')
     expect(linhas[0]).toBe('Nutriente\tTotal\tReferência\tTipo\tAdequação\tEstado')

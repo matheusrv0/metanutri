@@ -26,7 +26,9 @@ function textoEstado(l: LinhaAdequacao): string {
     'acima-limite': 'Acima do limite',
   }
   if (l.estado === 'acima-limite' && l.limite) {
-    return `${nomes[l.estado]} (${l.limite.tipo.toUpperCase()} ${formatarNumero(l.limite.valor, casasPara(l.unidade, l.limite.valor))} ${l.unidade})`
+    // D-470 (spec sugestoes-com-criterio): na vitamina A, quem passa do limite é a parte pré-formada.
+    const nome = l.chave === 'vitamina_a_rae_mcg' ? 'Pré-formada acima do limite' : nomes[l.estado]
+    return `${nome} (${l.limite.tipo.toUpperCase()} ${formatarNumero(l.limite.valor, casasPara(l.unidade, l.limite.valor))} ${l.unidade})`
   }
   return nomes[l.estado]
 }

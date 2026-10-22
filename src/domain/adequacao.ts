@@ -54,7 +54,12 @@ export interface LinhaAdequacao {
   readonly metaPct: number
   readonly adequacaoPct: number
   readonly limite: { readonly tipo: 'ul' | 'cdrr'; readonly valor: number } | null
-  /** Explica por que o UL da tabela não é usado como alerta para alimentos. */
+  /**
+   * O que se compara ao limite: na vitamina A, só a parte pré-formada (spec sugestoes-com-criterio, D-470); nos outros,
+   * o total.
+   */
+  readonly totalNoLimite: number
+  /** Para que forma do nutriente o UL da tabela vale (a marca ‡). */
   readonly notaLimite: string | null
   readonly estado: EstadoAdequacao
 }
@@ -85,6 +90,9 @@ export function estagioDeVida(perfil: PerfilCaso): EstagioDri | null {
   return DRI.estagios.find((e) => e.sexo === sexo && !e.gestante && !e.lactante && naFaixa(idadeAnos, e)) ?? null
 }
 
+/** O escopo do UL da vitamina A no `dri.json`: vale para a parte pré-formada (D-470). */
+const ESCOPO_PRE_FORMADA = 'vitamina-a-pre-formada'
+
 function limiteSuperior(chave: ChaveNutrienteAlimento, estagio: EstagioDri, ul: number | null) {
   if (chave === 'sodio_mg') {
     const cdrr = DRI.sodioCdrr.find((c) => estagio.idadeMin >= c.idadeMin && (c.idadeMax === null || estagio.idadeMin <= c.idadeMax))
@@ -92,6 +100,9 @@ function limiteSuperior(chave: ChaveNutrienteAlimento, estagio: EstagioDri, ul: 
   }
   const info = DRI.nutrientes[chave]
   if (ul === null) return { limite: null, nota: null }
+  // D-470: o UL da vitamina A vale, contra a parte pré-formada; nos outros escopos (farmacológico, sintética), não vale
+  // para o que os alimentos trazem.
+  if (info && info.ul.escopo === ESCOPO_PRE_FORMADA) return { limite: { tipo: 'ul' as const, valor: ul }, nota: info.ul.nota }
   if (info && info.ul.escopo !== 'total') return { limite: null, nota: info.ul.nota }
   return { limite: { tipo: 'ul' as const, valor: ul }, nota: null }
 }
@@ -136,8 +147,9 @@ export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Pr
     const { total, semDado } = totais.nutrientes[chave]
     const adequacaoPct = (total / valorReferencia) * 100
     const { limite, nota } = limiteSuperior(chave, estagio, dri.ul)
+    const totalNoLimite = chave === 'vitamina_a_rae_mcg' ? (totais.vitaminaAPreFormada ?? 0) : total
     const estado: EstadoAdequacao =
-      limite !== null && total > limite.valor ? 'acima-limite' : Math.round(adequacaoPct * 1e6) / 1e6 < config.minimoPct ? 'abaixo' : 'adequado'
+      limite !== null && totalNoLimite > limite.valor ? 'acima-limite' : Math.round(adequacaoPct * 1e6) / 1e6 < config.minimoPct ? 'abaixo' : 'adequado'
 
     return {
       chave,
@@ -151,6 +163,7 @@ export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Pr
       metaPct: config.minimoPct,
       adequacaoPct,
       limite,
+      totalNoLimite,
       notaLimite: nota,
       estado,
     }

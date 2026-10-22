@@ -1,6 +1,7 @@
 // Totais de nutrientes de uma lista de itens e do plano (SPEC CA-32, CA-43, CB-04, CB-05).
 import { ehItemDeReceita, ingredientesNaQuantidade, receitaDoItem } from './receitaNoPlano.ts'
-import type { BuscarAlimento, ChaveNutrienteAlimento, ItemPlano, Plano } from './tipos.ts'
+import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, ItemPlano, Plano } from './tipos.ts'
+import { vitaminaAPreFormadaPorCem } from './vitaminaA.ts'
 
 export const CHAVES_NUTRIENTES: readonly ChaveNutrienteAlimento[] = [
   'energia_kcal',
@@ -46,12 +47,21 @@ export interface Totais {
   /** Itens com quantidade maior que zero. */
   readonly itens: number
   readonly nutrientes: Readonly<Record<ChaveNutrienteAlimento, TotalNutriente>>
+  /**
+   * A parte da vitamina A que é pré-formada (retinol), em µg: a que conta para o limite superior (spec
+   * sugestoes-com-criterio, D-470). `totaisDeItens` sempre calcula; ausente, vale 0.
+   */
+  readonly vitaminaAPreFormada?: number
 }
 
 export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAlimento): Totais {
   const total = Object.fromEntries(CHAVES_NUTRIENTES.map((k) => [k, 0])) as Record<ChaveNutrienteAlimento, number>
   const semDado = Object.fromEntries(CHAVES_NUTRIENTES.map((k) => [k, 0])) as Record<ChaveNutrienteAlimento, number>
   let contados = 0
+  let preFormada = 0
+  const somarPreFormada = (alimento: Alimento | undefined, gramas: number) => {
+    if (alimento) preFormada += (vitaminaAPreFormadaPorCem(alimento) * gramas) / 100
+  }
 
   for (const item of itens) {
     if (item.gramas < 0 || !Number.isFinite(item.gramas)) {
@@ -70,6 +80,7 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
       for (const ingrediente of ingredientesNaQuantidade(receita, item.gramas)) {
         if (!(ingrediente.gramas > 0)) continue
         const alimento = buscar(ingrediente.alimentoId)
+        somarPreFormada(alimento, ingrediente.gramas)
         for (const chave of CHAVES_NUTRIENTES) {
           // D-248 (revisao-geral-trabalho): o que não é número (produto apagado, nutriente que falta) é falta de dado.
           const valor = alimento?.nutrientes[chave]
@@ -83,6 +94,7 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
     // no plano e conta como falta de dado em tudo; o nutriente que o alimento não traz também. Nunca zero, nunca NaN.
     const alimento = buscar(item.alimentoId)
     contados++
+    somarPreFormada(alimento, item.gramas)
     const fator = item.gramas / 100
     for (const chave of CHAVES_NUTRIENTES) {
       const valor = alimento?.nutrientes[chave]
@@ -95,7 +107,7 @@ export function totaisDeItens(itens: readonly ItemPlano[], buscar: BuscarAliment
     CHAVES_NUTRIENTES.map((k) => [k, { total: total[k], semDado: semDado[k] }]),
   ) as Record<ChaveNutrienteAlimento, TotalNutriente>
 
-  return { itens: contados, nutrientes }
+  return { itens: contados, nutrientes, vitaminaAPreFormada: preFormada }
 }
 
 /** Soma apenas a opção Principal de cada refeição (SPEC D-2). */

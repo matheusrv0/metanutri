@@ -28,7 +28,8 @@ export function pctDaReferencia(linha: LinhaAdequacao): string {
 export function textoDaAdequacao(linha: LinhaAdequacao): string {
   const pct = pctDaReferencia(linha)
   if (linha.estado === 'abaixo') return `${pct} · abaixo da meta`
-  if (linha.estado === 'acima-limite') return `${pct} · acima do limite`
+  // D-470 (spec sugestoes-com-criterio): na vitamina A, o limite é da parte pré-formada.
+  if (linha.estado === 'acima-limite') return `${pct} · ${linha.chave === 'vitamina_a_rae_mcg' ? 'pré-formada acima do limite' : 'acima do limite'}`
   return pct
 }
 

@@ -1,7 +1,7 @@
 import { calcularAdequacao, estagioDeVida, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { DRI } from './tabelas.ts'
+import { buscarAlimento, DRI } from './tabelas.ts'
 import type { Totais } from './totais.ts'
-import { CHAVES_NUTRIENTES } from './totais.ts'
+import { CHAVES_NUTRIENTES, totaisDeItens } from './totais.ts'
 import type { Caso, ChaveNutrienteAlimento, CondicaoFisiologica } from './tipos.ts'
 
 type PerfilCaso = Pick<Caso, 'sexo' | 'idadeAnos' | 'condicao'>
@@ -121,8 +121,12 @@ describe('calcularAdequacao', () => {
     expect(magnesio.limite).toBeNull()
     expect(magnesio.estado).toBe('adequado')
     expect(magnesio.notaLimite).toMatch(/farmacológico/)
+    // D-470 (spec sugestoes-com-criterio): a vitamina A tem limite, mas só contra a pré-formada; 5.000 µg de
+    // carotenoide não passam do limite.
     const vitA = linha(calcularAdequacao(totais({ vitamina_a_rae_mcg: 5000 }), MULHER_28, { tipo: 'individual' }), 'vitamina_a_rae_mcg')
-    expect(vitA.limite).toBeNull()
+    expect(vitA.limite).toEqual({ tipo: 'ul', valor: 3000 })
+    expect(vitA.totalNoLimite).toBe(0)
+    expect(vitA.estado).toBe('adequado')
     expect(vitA.notaLimite).toMatch(/pré-formada/)
     const niacina = linha(calcularAdequacao(totais({ niacina_mg: 60 }), MULHER_28, { tipo: 'individual' }), 'niacina_mg')
     expect(niacina.limite).toBeNull()
@@ -240,5 +244,43 @@ describe('as cinco do complemento do USDA (spec vitaminas-usda)', () => {
     for (const chave of ['selenio_mcg', 'vitamina_d_mcg', 'vitamina_e_mg', 'folato_dfe_mcg', 'vitamina_b12_mcg'] as const) {
       expect(linha(r, chave)).toMatchObject({ adequacaoPct: 0, estado: 'abaixo', subestimado: false })
     }
+  })
+})
+
+describe('o limite da vitamina A vale para a pré-formada (spec sugestoes-com-criterio, D-470)', () => {
+  const item = (id: string, alimentoId: number, gramas: number) => ({ id, alimentoId, gramas })
+  const HOMEM_35 = perfil('M', 35)
+  const MENINA_6 = perfil('F', 6)
+  const GESTANTE_28 = perfil('F', 28, { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 })
+
+  it('CA-1310: 50 g de fígado grelhado passam do limite do homem de 35 anos', () => {
+    // 356 Fígado bovino grelhado: 14.574 µg em 100 g, todo pré-formado.
+    const l = linha(calcularAdequacao(totaisDeItens([item('a', 356, 50)], buscarAlimento), HOMEM_35, { tipo: 'individual' }), 'vitamina_a_rae_mcg')
+    expect(l.limite).toEqual({ tipo: 'ul', valor: 3000 })
+    expect(l.totalNoLimite).toBeCloseTo(7287, 0)
+    expect(l.estado).toBe('acima-limite')
+  })
+
+  it('CA-1311: um plano só de vegetais com mais de 3.000 µg não passa do limite', () => {
+    // 66 Abóbora menina crua 554 µg; 546 Salada de legumes no vapor 255 µg; 596 Pupunha cozida 438 µg.
+    const t = totaisDeItens([item('a', 66, 300), item('b', 546, 300), item('c', 596, 300)], buscarAlimento)
+    expect(t.nutrientes.vitamina_a_rae_mcg.total).toBeGreaterThan(3000)
+    const l = linha(calcularAdequacao(t, HOMEM_35, { tipo: 'individual' }), 'vitamina_a_rae_mcg')
+    expect(l.totalNoLimite).toBe(0)
+    expect(l.estado).toBe('adequado')
+  })
+
+  it('CA-1316 e CA-1317: o limite é o da fase de vida (900 µg aos 6 anos; 3.000 µg na gestante de 28)', () => {
+    const menina = linha(calcularAdequacao(totaisDeItens([item('a', 356, 10)], buscarAlimento), MENINA_6, { tipo: 'individual' }), 'vitamina_a_rae_mcg')
+    expect(menina.limite).toEqual({ tipo: 'ul', valor: 900 })
+    expect(menina.estado).toBe('acima-limite')
+    const gestante = linha(calcularAdequacao(totaisDeItens([item('a', 356, 50)], buscarAlimento), GESTANTE_28, { tipo: 'individual' }), 'vitamina_a_rae_mcg')
+    expect(gestante.limite).toEqual({ tipo: 'ul', valor: 3000 })
+    expect(gestante.estado).toBe('acima-limite')
+  })
+
+  it('nos outros nutrientes, o que se compara ao limite é o total', () => {
+    const l = linha(calcularAdequacao(totais({ selenio_mcg: 450 }), MULHER_28, { tipo: 'individual' }), 'selenio_mcg')
+    expect(l.totalNoLimite).toBe(450)
   })
 })

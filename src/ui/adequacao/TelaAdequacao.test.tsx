@@ -283,7 +283,13 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
   it('CA-693: notas em uma frase cada, sem repetir o seletor', () => {
     montar(adulta, exemplo())
     expect(screen.getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
-    expect(screen.getByText('O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.')).toBeInTheDocument()
+    // CA-1312 (spec sugestoes-com-criterio, D-470): o ‡ diz para que forma o limite vale.
+    expect(
+      screen.getByText(
+        'Vitamina A: o limite superior vale para a pré-formada (fígado, miúdos, ovo, leite), não para os carotenoides dos vegetais. Magnésio, vitamina E, niacina e folato: vale para suplemento e alimento fortificado, não para o que os alimentos trazem.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/não vale para a forma do nutriente presente nos alimentos/)).not.toBeInTheDocument()
     expect(screen.getByText('AI: usada quando o nutriente não tem RDA nem EAR.')).toBeInTheDocument()
     expect(screen.queryByText(/RDA no preset individual/)).not.toBeInTheDocument()
     expect(screen.queryByText(/passar o cursor/)).not.toBeInTheDocument()
@@ -559,7 +565,7 @@ describe('Notas lidas com o símbolo (CA-700)', () => {
   it('CA-700: o † e o ‡ das notas não ficam escondidos do leitor de tela', () => {
     montar(adulta, exemplo())
     const adaga = screen.getByText(/^Pode estar subestimado:/).previousElementSibling
-    const duplaAdaga = screen.getByText(/^O limite superior da tabela/).previousElementSibling
+    const duplaAdaga = screen.getByText(/^Vitamina A: o limite superior/).previousElementSibling
     expect(adaga).toHaveTextContent('†')
     expect(adaga).not.toHaveAttribute('aria-hidden')
     expect(duplaAdaga).toHaveTextContent('‡')

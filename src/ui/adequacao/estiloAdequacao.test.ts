@@ -14,6 +14,7 @@ const linha = (adequacaoPct: number, estado: LinhaAdequacao['estado']): LinhaAde
   metaPct: 90,
   adequacaoPct,
   limite: null,
+  totalNoLimite: adequacaoPct * 10,
   notaLimite: null,
   estado,
 })
@@ -23,6 +24,11 @@ describe('A adequação em % da referência (CA-1283)', () => {
     expect(textoDaAdequacao(linha(27.6, 'abaixo'))).toBe('28% da referência · abaixo da meta')
     expect(textoDaAdequacao(linha(104, 'adequado'))).toBe('104% da referência')
     expect(textoDaAdequacao(linha(230, 'acima-limite'))).toBe('230% da referência · acima do limite')
+  })
+
+  it('CA-1310: na vitamina A, quem passa do limite é a pré-formada (D-470)', () => {
+    const vitaminaA: LinhaAdequacao = { ...linha(810, 'acima-limite'), chave: 'vitamina_a_rae_mcg', rotulo: 'Vitamina A (RAE)', unidade: 'µg' }
+    expect(textoDaAdequacao(vitaminaA)).toBe('810% da referência · pré-formada acima do limite')
   })
 
   it('a vitamina A com 1% não parece quase na meta', () => {
