@@ -10,7 +10,7 @@ interface TelaAjudaProps {
 const PASSOS = [
   { titulo: 'Cadastre o paciente', texto: 'Nome, nascimento e restrições. Os planos seguintes já nascem com esses dados.', tela: 'pacientes' as const },
   { titulo: 'Escolha o caminho', texto: 'Prescrição rápida para retorno e ajuste; atendimento completo quando houver avaliação.', tela: 'painel' as const },
-  { titulo: 'Monte o plano', texto: 'Digite "150 arroz int" e tecle Enter. Medida caseira e kcal aparecem sozinhas.', tela: 'casos' as const },
+  { titulo: 'Monte o plano', texto: 'Digite “1 concha de feijão” e tecle Enter. A medida, os gramas e as kcal aparecem juntos.', tela: 'casos' as const },
   { titulo: 'Confira a adequação', texto: 'Veja o que falta de micronutriente e use o cobrir para fechar a falta.', tela: 'casos' as const },
   { titulo: 'Entregue', texto: 'Dieta para imprimir vira PDF no próprio navegador; o Word segue o modelo do estágio.', tela: 'casos' as const },
 ]

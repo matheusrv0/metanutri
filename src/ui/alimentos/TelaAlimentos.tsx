@@ -14,17 +14,19 @@ import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
+import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
 const ORDENS: readonly { readonly valor: OrdemCatalogo; readonly rotulo: string }[] = [
+  { valor: 'relevancia', rotulo: 'Relevância' },
   { valor: 'nome', rotulo: 'Nome' },
   { valor: 'energia', rotulo: 'Energia' },
-  { valor: 'completude', rotulo: 'Mais completos' },
+  { valor: 'completude', rotulo: 'Mais nutrientes' },
 ]
 
 const NIVEIS: readonly { readonly valor: NivelCompletude; readonly rotulo: string }[] = [
   { valor: 'completo', rotulo: 'Completos' },
-  { valor: 'parcial', rotulo: 'Dado parcial' },
-  { valor: 'minimo', rotulo: 'Dado mínimo' },
+  { valor: 'parcial', rotulo: 'Parte dos nutrientes' },
+  { valor: 'minimo', rotulo: 'Poucos nutrientes' },
 ]
 
 /** As listas de escolha usam o select do navegador, como o paciente da etapa 1 (Decisão 5). */
@@ -38,8 +40,8 @@ const SELO: Readonly<Record<NivelCompletude, string>> = {
 
 const ROTULO_NIVEL: Readonly<Record<NivelCompletude, string>> = {
   completo: 'completo',
-  parcial: 'dado parcial',
-  minimo: 'dado mínimo',
+  parcial: 'parte dos nutrientes',
+  minimo: 'poucos nutrientes',
 }
 
 /** Quantos alimentos a lista mostra de uma vez; o resto entra pelo botão. */
@@ -62,14 +64,16 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
   const [termo, setTermo] = useState('')
   const [categoria, setCategoria] = useState<string | null>(null)
   const [nivel, setNivel] = useState<NivelCompletude | null>(null)
-  const [ordem, setOrdem] = useState<OrdemCatalogo>('nome')
+  const [ordem, setOrdem] = useState<OrdemCatalogo>('relevancia')
   const [quantos, setQuantos] = useState(PAGINA)
   const [aberto, setAberto] = useState<Alimento | null>(null)
   const largo = useMediaQuery(LARGO)
 
   const categorias = useMemo(() => categoriasDoCatalogo(), [])
   const resumo = useMemo(() => resumoDoCatalogo(), [])
-  const lista = useMemo(() => filtrarCatalogo({ termo, categoria, nivel, ordem }), [termo, categoria, nivel, ordem])
+  // A15 e D-370 (spec alimentos-e-gramaturas): com termo, a ordem da entrada rápida, com o uso desta conta.
+  const uso = useUsoDaConta(termo.trim() !== '' && ordem === 'relevancia')
+  const lista = useMemo(() => filtrarCatalogo({ termo, categoria, nivel, ordem, uso }), [termo, categoria, nivel, ordem, uso])
   const visiveis = lista.slice(0, quantos)
 
   const mudarFiltro = (acao: () => void) => {
@@ -139,7 +143,7 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
               </select>
             </div>
             <div className="flex flex-col gap-1 lg:w-44">
-              <Label htmlFor="filtro-completude">Completude do dado</Label>
+              <Label htmlFor="filtro-completude">Nutrientes disponíveis</Label>
               <select
                 id="filtro-completude"
                 value={nivel ?? ''}
@@ -171,11 +175,11 @@ export function TelaAlimentos({ aoAbrirFontes }: TelaAlimentosProps = {}) {
             <ul aria-label="Legenda" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <li className="inline-flex items-center gap-1">
                 <Contrast className="size-3.5 text-warningtext" aria-hidden="true" />
-                dado parcial
+                parte dos nutrientes
               </li>
               <li className="inline-flex items-center gap-1">
                 <CircleDashed className="size-3.5 text-errortext" aria-hidden="true" />
-                dado mínimo
+                poucos nutrientes
               </li>
             </ul>
           </div>

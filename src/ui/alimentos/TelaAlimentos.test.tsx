@@ -25,13 +25,13 @@ describe('Tabela de alimentos (US-B4)', () => {
     expect(screen.getByRole('searchbox', { name: 'Buscar alimento na tabela' })).toBeInTheDocument()
     const grupo = screen.getByRole('combobox', { name: 'Grupo' })
     const ordem = screen.getByRole('combobox', { name: 'Ordem' })
-    const completude = screen.getByRole('combobox', { name: 'Completude do dado' })
+    const completude = screen.getByRole('combobox', { name: 'Nutrientes disponíveis' })
     expect(screen.queryByRole('button', { name: /^Todas · / })).not.toBeInTheDocument()
 
     await usuario.selectOptions(completude, 'minimo')
     const lista = within(screen.getByRole('list', { name: 'Alimentos da tabela' }))
-    expect(lista.getAllByText(', dado mínimo').length).toBeGreaterThan(0)
-    expect(lista.queryByText(', dado parcial')).not.toBeInTheDocument()
+    expect(lista.getAllByText(', poucos nutrientes').length).toBeGreaterThan(0)
+    expect(lista.queryByText(', parte dos nutrientes')).not.toBeInTheDocument()
 
     await usuario.selectOptions(completude, '')
     await usuario.selectOptions(grupo, 'Cereais e derivados')
@@ -42,8 +42,8 @@ describe('Tabela de alimentos (US-B4)', () => {
   it('CA-341: a linha mostra nome, grupo e kcal, e a legenda explica as marcas', () => {
     render(<TelaAlimentos />)
     const legenda = screen.getByRole('list', { name: 'Legenda' })
-    expect(within(legenda).getByText('dado parcial')).toBeInTheDocument()
-    expect(within(legenda).getByText('dado mínimo')).toBeInTheDocument()
+    expect(within(legenda).getByText('parte dos nutrientes')).toBeInTheDocument()
+    expect(within(legenda).getByText('poucos nutrientes')).toBeInTheDocument()
     const primeira = within(screen.getByRole('list', { name: 'Alimentos da tabela' })).getAllByRole('listitem')[0] as HTMLElement
     expect(primeira.textContent).toMatch(/kcal|— kcal/)
     expect(primeira.querySelector('.text-muted-foreground')?.textContent).not.toBe('')

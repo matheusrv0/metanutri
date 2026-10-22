@@ -1,17 +1,19 @@
 // Navegar a tabela de composição inteira: filtrar, ordenar e ler um alimento por completo.
 import { CHAVES_USDA } from './complementoUsda.ts'
 import { completudeDe, NUTRIENTES_CONFERIDOS, nomeDoNutriente, type NivelCompletude } from './completude.ts'
-import { normalizar } from './busca.ts'
+import { normalizar, porRelevancia, type OpcoesBusca } from './busca.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
-export type OrdemCatalogo = 'nome' | 'energia' | 'completude'
+export type OrdemCatalogo = 'relevancia' | 'nome' | 'energia' | 'completude'
 
 export interface FiltroCatalogo {
   readonly termo?: string
   readonly categoria?: string | null
   readonly nivel?: NivelCompletude | null
   readonly ordem?: OrdemCatalogo
+  /** O uso da conta, para a relevância (spec alimentos-e-gramaturas, D-370). */
+  readonly uso?: OpcoesBusca['uso']
 }
 
 /** Categorias da TACO, em ordem alfabética, com quantos alimentos cada uma tem. */
@@ -23,7 +25,7 @@ export function categoriasDoCatalogo(): readonly { readonly nome: string; readon
     .sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'))
 }
 
-const ORDENA: Readonly<Record<OrdemCatalogo, (a: Alimento, b: Alimento) => number>> = {
+const ORDENA: Readonly<Record<Exclude<OrdemCatalogo, 'relevancia'>, (a: Alimento, b: Alimento) => number>> = {
   // CA-794 (spec revisao-geral-trabalho): dois nomes da base começam com espaço; sem o trim, iam antes do "A".
   nome: (a, b) => a.descricao.trim().localeCompare(b.descricao.trim(), 'pt-BR'),
   // Sem energia vai para o fim: não dá para ordenar pelo que não existe.
@@ -31,17 +33,27 @@ const ORDENA: Readonly<Record<OrdemCatalogo, (a: Alimento, b: Alimento) => numbe
   completude: (a, b) => completudeDe(b).preenchidos - completudeDe(a).preenchidos || a.descricao.trim().localeCompare(b.descricao.trim(), 'pt-BR'),
 }
 
-export function filtrarCatalogo(filtro: FiltroCatalogo = {}): readonly Alimento[] {
+/**
+ * A tabela filtrada e ordenada. Com termo e a ordem "Relevância" (a padrão), vale a ordem da entrada rápida (spec
+ * alimentos-e-gramaturas, A15 e D-370): "farinha de trigo" mostra a farinha antes do cação frito na farinha. Sem termo,
+ * a relevância é o nome.
+ */
+export function filtrarCatalogo(filtro: FiltroCatalogo = {}, alimentos: readonly Alimento[] = ALIMENTOS): readonly Alimento[] {
   const termo = normalizar((filtro.termo ?? '').trim())
-  const palavras = termo.split(/\s+/).filter(Boolean)
+  const palavras = termo.split(/\s+/).filter((p) => p !== '' && p !== 'de')
+  const ordem = filtro.ordem ?? 'relevancia'
 
-  return ALIMENTOS.filter((a) => {
+  const filtrados = alimentos.filter((a) => {
     if (filtro.categoria && a.categoria !== filtro.categoria) return false
     if (filtro.nivel && completudeDe(a).nivel !== filtro.nivel) return false
     if (palavras.length === 0) return true
     const alvo = normalizar(a.descricao)
     return palavras.every((p) => alvo.includes(p))
-  }).sort(ORDENA[filtro.ordem ?? 'nome'])
+  })
+  if (ordem !== 'relevancia') return filtrados.sort(ORDENA[ordem])
+  if (palavras.length === 0) return filtrados.sort(ORDENA.nome)
+  const achados = new Set(filtrados)
+  return porRelevancia(palavras, filtrados, filtro.uso ? { uso: filtro.uso } : {}).filter((a) => achados.has(a))
 }
 
 export interface LinhaDeComposicao {

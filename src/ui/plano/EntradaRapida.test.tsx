@@ -15,9 +15,9 @@ const montar = () => {
 }
 
 describe('Texto-guia (spec revisao-geral-trabalho, CA-791)', () => {
-  it('diz "colheres", no plural', () => {
+  it('CA-1112: ensina um exemplo que funciona', () => {
     montar()
-    expect(screen.getByRole('combobox', { name: 'Adicionar alimento' }).getAttribute('placeholder')).toMatch(/2 colheres de sopa/)
+    expect(screen.getByRole('combobox', { name: 'Adicionar alimento' }).getAttribute('placeholder')).toMatch(/^1 concha de feijão/)
   })
 })
 
@@ -62,6 +62,6 @@ describe('Honestidade do dado', () => {
     const usuario = montar()
     await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento' }), 'leite de vaca integral')
     const opcao = screen.getAllByRole('option').find((o) => o.textContent?.includes('Leite, de vaca, integral'))
-    expect(opcao?.textContent).toMatch(/dado (parcial|mínimo)/)
+    expect(opcao?.textContent).toMatch(/(parte dos|poucos) nutrientes/)
   })
 })

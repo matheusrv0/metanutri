@@ -232,6 +232,8 @@ export interface Alimento {
   readonly tracos: readonly ChaveNutrienteAlimento[]
   /** Presente quando o alimento da TACO tem equivalente no USDA (spec vitaminas-usda, D-303). */
   readonly usda?: OrigemUsda
+  /** Só no alimento próprio: medido em g ou em ml (spec alimentos-e-gramaturas, D-378). */
+  readonly unidade?: 'g' | 'ml'
 }
 
 export type BuscarAlimento = (id: number) => Alimento | undefined

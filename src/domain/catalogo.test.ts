@@ -61,6 +61,15 @@ describe('Catálogo de alimentos', () => {
     expect(completos.length).toBe(resumoDoCatalogo().completos)
   })
 
+  it('CA-1153 (spec alimentos-e-gramaturas): com termo, a ordem é a da relevância da entrada rápida', () => {
+    const lista = filtrarCatalogo({ termo: 'farinha de trigo' }).map((a) => a.descricao)
+    expect(lista[0]).toBe('Farinha, de trigo')
+    expect(lista.indexOf('Farinha, de trigo')).toBeLessThan(lista.findIndex((d) => d.startsWith('Cação')))
+    expect(filtrarCatalogo({ termo: 'arroz' })[0]?.descricao).toBe('Arroz, tipo 1, cozido')
+    // A ordem "Nome" continua alfabética.
+    expect(filtrarCatalogo({ termo: 'arroz', ordem: 'nome' })[0]?.descricao).toBe('Arroz carreteiro')
+  })
+
   it('termo que não existe devolve lista vazia, sem estourar', () => {
     expect(filtrarCatalogo({ termo: 'xyzabc' })).toEqual([])
   })

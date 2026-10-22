@@ -1,11 +1,29 @@
-import { buscarAlimentos, formatarQuantidadeMedida, interpretarEntrada, MEDIDAS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, medidaParaMostrar } from './busca.ts'
+import {
+  buscarAlimentos,
+  formatarQuantidadeMedida,
+  interpretarEntrada,
+  leituraDoResultado,
+  MEDIDAS,
+  MEDIDAS_DE_CONTAR,
+  medidaCaseiraParaPaciente,
+  medidaDeContar,
+  medidaEquivalente,
+  medidaParaMostrar,
+  medidaPedida,
+  PRIMEIRO_ID_PROPRIO,
+  variantesDoTermo,
+} from './busca.ts'
+import { CONSUMO_POF } from './consumoPof.ts'
+import { ehLiquido } from './liquido.ts'
+import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
 import { ALIMENTOS } from './tabelas.ts'
+import type { Alimento } from './tipos.ts'
 
 describe('interpretarEntrada', () => {
   it.each([
     ['150 arroz int', { quantidade: 150, medida: null, termos: ['arroz', 'int'] }],
-    ['150g arroz', { quantidade: 150, medida: null, termos: ['arroz'] }],
-    ['150 g de arroz', { quantidade: 150, medida: null, termos: ['arroz'] }],
+    ['150g arroz', { quantidade: 150, medida: null, unidade: 'g', termos: ['arroz'] }],
+    ['150 g de arroz', { quantidade: 150, medida: null, unidade: 'g', termos: ['arroz'] }],
     ['arroz integral', { quantidade: null, medida: null, termos: ['arroz', 'integral'] }],
     ['68,5 frango', { quantidade: 68.5, medida: null, termos: ['frango'] }],
     ['2 colher de sopa arroz', { quantidade: 2, medida: 'colher de sopa', termos: ['arroz'] }],
@@ -18,7 +36,7 @@ describe('interpretarEntrada', () => {
     ['2 pedaços mandioca', { quantidade: 2, medida: 'pedaço', termos: ['mandioca'] }],
     ['colher de sopa arroz', { quantidade: 1, medida: 'colher de sopa', termos: ['arroz'] }],
   ] as const)('"%s"', (texto, esperado) => {
-    expect(interpretarEntrada(texto)).toEqual(esperado)
+    expect(interpretarEntrada(texto)).toEqual({ unidade: null, ...esperado })
   })
 
   it('conhece as medidas cadastradas nas medidas caseiras', () => {
@@ -217,5 +235,83 @@ describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e
     expect([...MEDIDAS_DE_CONTAR].sort()).toEqual(
       ['banda', 'bife', 'coxa', 'fatia', 'filé', 'gomo', 'metade', 'pedaço', 'peito', 'posta', 'rodela', 'sobrecoxa', 'unidade', 'unidade pequena'].sort(),
     )
+  })
+})
+
+describe('entrada rápida que acerta (spec alimentos-e-gramaturas)', () => {
+  it('D-372: palavras, frações, "e meia", ml, litro e nome curto da medida', () => {
+    expect(interpretarEntrada('meia xícara de aveia')).toEqual({ quantidade: 0.5, medida: 'xícara', unidade: null, termos: ['aveia'] })
+    expect(interpretarEntrada('duas conchas de feijão')).toMatchObject({ quantidade: 2, medida: 'concha', termos: ['feijao'] })
+    expect(interpretarEntrada('três ovos')).toMatchObject({ quantidade: 3, medida: null, termos: ['ovos'] })
+    expect(interpretarEntrada('1½ concha de feijão')).toMatchObject({ quantidade: 1.5, medida: 'concha' })
+    expect(interpretarEntrada('uma e meia concha de feijão')).toMatchObject({ quantidade: 1.5, medida: 'concha' })
+    expect(interpretarEntrada('3/4 xícara de leite')).toMatchObject({ quantidade: 0.75, medida: 'xícara', termos: ['leite'] })
+    expect(interpretarEntrada('100 ml de leite')).toEqual({ quantidade: 100, medida: null, unidade: 'ml', termos: ['leite'] })
+    expect(interpretarEntrada('1,5 litro de leite')).toMatchObject({ quantidade: 1500, unidade: 'ml', termos: ['leite'] })
+    expect(interpretarEntrada('2 copos de leite')).toMatchObject({ quantidade: 2, medida: 'copo', termos: ['leite'] })
+    expect(interpretarEntrada('1 colher de sopa de azeite')).toMatchObject({ medida: 'colher de sopa', termos: ['azeite'] })
+  })
+
+  it('a última palavra da medida também é o alimento quando nada sobra ("1 xícara de café")', () => {
+    expect(interpretarEntrada('1 xícara de café')).toMatchObject({ medida: 'xícara de café', termos: ['cafe'] })
+  })
+
+  it('o plural do alimento acha o singular', () => {
+    expect(variantesDoTermo('ovos')).toEqual(['ovos', 'ovo'])
+    expect(variantesDoTermo('paes')).toEqual(['paes', 'pao'])
+    expect(variantesDoTermo('limoes')).toEqual(['limoes', 'limao'])
+    expect(variantesDoTermo('pasteis')).toEqual(['pasteis', 'pastel'])
+    expect(variantesDoTermo('nozes')).toEqual(['nozes', 'noz'])
+    expect(variantesDoTermo('arroz')).toEqual(['arroz'])
+  })
+
+  it('D-371: abaixo de 20 conta unidades só quando o alimento tem medida de contar', () => {
+    expect(medidaDeContar(182)).toEqual({ nome: 'unidade', gramas: 75 })
+    expect(medidaDeContar(3)).toBeNull()
+    expect(buscarAlimentos('19 banana prata', ALIMENTOS).resultados[0]).toMatchObject({ gramas: 1425, medida: { nome: 'unidade', quantidade: 19 } })
+    expect(buscarAlimentos('20 banana prata', ALIMENTOS).resultados[0]).toMatchObject({ gramas: 20, medida: null })
+  })
+
+  it('o nome curto só vale quando o alimento tem a medida', () => {
+    expect(medidaPedida(458, 'copo')?.nome).toBe('copo americano')
+    expect(medidaPedida(7, 'xícara')).toBeNull()
+    expect(medidaPedida(3, 'colher')?.nome).toBe('colher de sopa')
+  })
+
+  it('CA-1111: o alimento mais usado pela conta vem primeiro', () => {
+    const uso = new Map([[1, 4]])
+    expect(buscarAlimentos('150 arroz', ALIMENTOS, { uso }).resultados[0]?.alimento.descricao).toBe('Arroz, integral, cozido')
+  })
+
+  it('o alimento próprio vem antes da base no empate de uso', () => {
+    const proprio = { ...(ALIMENTOS[2] as Alimento), id: PRIMEIRO_ID_PRODUTO, descricao: 'Arroz da casa' }
+    expect(buscarAlimentos('150 arroz', [...ALIMENTOS, proprio]).resultados[0]?.alimento.id).toBe(PRIMEIRO_ID_PRODUTO)
+    expect(PRIMEIRO_ID_PROPRIO).toBe(PRIMEIRO_ID_PRODUTO)
+  })
+
+  it('D-373: a leitura escreve como a folha', () => {
+    expect(leituraDoResultado({ gramas: 210, medida: { nome: 'concha', quantidade: 1.5, gramasPorMedida: 140 }, unidade: 'g' })).toBe('1 concha e meia · 210 g')
+    expect(leituraDoResultado({ gramas: 37.5, medida: { nome: 'unidade', quantidade: 0.5, gramasPorMedida: 75 }, unidade: 'g' })).toBe('meia unidade · 37,5 g')
+    expect(leituraDoResultado({ gramas: 200, medida: null, unidade: 'ml' })).toBe('200 ml')
+    expect(leituraDoResultado({ gramas: null, medida: null, unidade: 'g' })).toBeNull()
+    expect(formatarQuantidadeMedida(0.25, 'xícara de chá')).toBe('0,25 xícara de chá')
+    expect(formatarQuantidadeMedida(2.75, 'colher de sopa')).toBe('2,75 colheres de sopa')
+  })
+
+  it('CB-360 e CB-379: só número, só medida, uma letra ou só "de" não acham nada', () => {
+    for (const texto of ['150', '1 concha', 'a', '150 de', '']) expect(buscarAlimentos(texto, ALIMENTOS).resultados).toEqual([])
+  })
+
+  it('a lista de consumo da POF só tem ids da base, sem repetir', () => {
+    const ids = new Set(ALIMENTOS.map((a) => a.id))
+    for (const id of CONSUMO_POF) expect(ids.has(id)).toBe(true)
+    expect(new Set(CONSUMO_POF).size).toBe(CONSUMO_POF.length)
+  })
+
+  it('D-378: leite, bebida e suco são líquidos; leite em pó não', () => {
+    const porId = (id: number) => ALIMENTOS.find((a) => a.id === id) as Alimento
+    expect([458, 457, 471, 215, 478].map((id) => ehLiquido(porId(id)))).toEqual([true, true, true, true, true])
+    expect([459, 456, 3, 448].map((id) => ehLiquido(porId(id)))).toEqual([false, false, false, false])
+    expect(ehLiquido({ descricao: 'Kefir da casa', categoria: 'Leite e derivados', unidade: 'ml' })).toBe(true)
   })
 })

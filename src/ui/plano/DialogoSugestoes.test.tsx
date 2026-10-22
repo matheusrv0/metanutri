@@ -74,7 +74,7 @@ describe('Editar sugestões (CA-241 a CA-243, CB-70)', () => {
   it('CA-242: medida que não existe para o alimento não vira grama inventada', async () => {
     const { usuario } = montar([])
     await usuario.type(campo(), '1 fatia arroz tipo 1 cozido{Enter}')
-    expect(screen.getByRole('alert')).toHaveTextContent('A medida "fatia" não está cadastrada')
+    expect(screen.getByRole('alert')).toHaveTextContent('A medida “fatia” não está cadastrada')
     expect(screen.getByText('A lista está vazia. A refeição vai mostrar só a busca.')).toBeInTheDocument()
   })
 
