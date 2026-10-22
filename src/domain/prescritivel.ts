@@ -315,6 +315,14 @@ export function ehProcessado(alimento: Pick<Alimento, 'descricao'>): boolean {
 const ULTRAPROCESSADO_NOVA =
   /^(Caldo de (carne|galinha)|Macarr(ã|a)o, instant(â|a)neo|Cereal matinal|Cereais, (mingau|mistura para vitamina)|Farinha, l(á|a)ctea|Empada|Biscoito|Mingau tradicional|Creme de milho|Leite, fermentado|Bebida l(á|a)ctea|Iogurte, sabor|Refrigerante|Achocolatado|Leite, de vaca, achocolatado|Chocolate|Bombom)|enriquecid/i
 
+/**
+ * Frito, à milanesa, empanado ou salgado de fritar: a regra "fritura", também no ovo frito que a parceira liberou. Na
+ * troca, quem não é frito nunca troca por frito (spec conduta-da-nutricionista, D-479).
+ */
+export function ehFrito(alimento: DadosDaRegra): boolean {
+  return REGRAS_PRESCRICAO.some((r) => r.id === 'fritura' && r.casa({ ...alimento, descricao: limpar(alimento.descricao) }))
+}
+
 export function ehUltraprocessado(alimento: Pick<Alimento, 'descricao'>): boolean {
   const nome = limpar(alimento.descricao)
   return ULTRAPROCESSADO_NOVA.test(nome) || EMBUTIDO.test(nome)

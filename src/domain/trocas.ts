@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, ehUltraprocessado, regraQueExclui } from './prescritivel.ts'
+import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehFrito, ehSegundaEscolha, ehUltraprocessado, regraQueExclui } from './prescritivel.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
@@ -194,6 +194,8 @@ export function trocasDoAlimento(
     // muito do limite de vitamina A, e o paciente troca sozinho.
     .filter((a) => a.id !== base.id && ehPrescritivel(a) && ehTrocaRazoavel(a) && !FIGADO.test(a.descricao))
     .filter((a) => baseUltraprocessada || !ehUltraprocessado(a))
+    // D-479: o mesmo preparo ou um mais saudável; a troca nunca é frita (o frito posto à mão troca pelo que não é).
+    .filter((a) => !ehFrito(a))
     // D-421: no papel do alimento na refeição; sem papel, na categoria (e na forma: ovo, verdura cozida).
     .filter(noMesmoPapel(base))
     .filter((a) => !fruta || nomeBase(a.descricao) !== nomeBase(base.descricao))

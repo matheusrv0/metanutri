@@ -96,9 +96,9 @@ describe('Trocas com a medida que o paciente lê (spec alimentos-e-gramaturas, c
     expect(comMedida).toBeGreaterThan(100)
   })
 
-  it('CA-1237: 2 ovos cozidos trocam por "1 unidade" de ovo frito com os 50 g da unidade', () => {
-    const frito = trocasDoAlimento({ alimentoId: 488, gramas: 90 }, { alimentos: ALIMENTOS, porAlimento: 4 }).find((t) => t.alimentoId === 490)
-    expect(frito).toMatchObject({ gramas: 50, medida: { texto: '1 unidade' } })
+  it('CA-1237: 1 ovo frito troca por "2 unidades" de ovo cozido com os 90 g das unidades (o contrário saiu na D-479)', () => {
+    const cozido = trocasDoAlimento({ alimentoId: 490, gramas: 50 }, { alimentos: ALIMENTOS, porAlimento: 4 }).find((t) => t.alimentoId === 488)
+    expect(cozido).toMatchObject({ gramas: 90, medida: { texto: '2 unidades' } })
   })
 })
 
@@ -248,9 +248,8 @@ describe('Trocas pela conduta da nutricionista (spec conduta-da-nutricionista)',
     expect(nomes('Ovo, de galinha, inteiro, cozido/10minutos', 90)).not.toContain('Omelete, de queijo')
     expect(nomes('Cuscuz, de milho, cozido com sal', 135)).not.toContain('Yakisoba')
     expect(nomes('Cuscuz, de milho, cozido com sal', 135)).not.toContain('Salada, de legumes, cozida no vapor')
-    // O ovo cozido continua com troca: o ovo frito voltou e sai em "1 unidade", não em "5 fatias e meia".
-    expect(nomes('Ovo, de galinha, inteiro, cozido/10minutos', 90)).toEqual(['Ovo, de galinha, inteiro, frito'])
-    expect(trocasDoAlimento({ alimentoId: porDescricao('Ovo, de galinha, inteiro, cozido/10minutos').id, gramas: 90 }, opcoes)[0]?.medida?.texto).toBe('1 unidade')
+    // Correção C (D-479): o ovo cozido não troca mais pelo frito, e a omelete é prato composto: ele fica sem troca.
+    expect(nomes('Ovo, de galinha, inteiro, cozido/10minutos', 90)).toEqual([])
     for (const a of ALIMENTOS) {
       if (composto(a.descricao)) continue
       for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, opcoes)) {
@@ -458,6 +457,24 @@ describe('Troca sem ultraprocessado (spec conduta-da-nutricionista, seção 7, D
   it('CB-446: o cereal matinal posto à mão troca pela aveia', () => {
     const cereal = porDescricao('Cereal matinal, milho')
     expect(trocasDoAlimento({ alimentoId: cereal.id, gramas: 30 }, opcoes).map((t) => t.descricao)).toContain('Aveia, flocos, crua')
+  })
+})
+
+describe('Troca no mesmo preparo ou num mais saudável (spec conduta-da-nutricionista, seção 7, D-479)', () => {
+  const FRITO = /(^|[\s,])frit[oa]s?($|[\s,])|milanesa|empanad/i
+
+  it('CA-1326: 2 ovos cozidos não trocam por ovo frito; o peito de frango grelhado, por nada frito', () => {
+    for (const t of trocasDoAlimento({ alimentoId: 488, gramas: 90 }, opcoes)) expect(t.descricao).not.toMatch(FRITO)
+    for (const t of trocasDoAlimento({ alimentoId: 410, gramas: 100 }, opcoes)) expect(t.descricao).not.toMatch(FRITO)
+    for (const a of ALIMENTOS.filter((x) => !FRITO.test(x.descricao))) {
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, { alimentos: ALIMENTOS, porAlimento: 4 })) expect(t.descricao, a.descricao).not.toMatch(FRITO)
+    }
+  })
+
+  it('CA-1326: o ovo frito posto à mão troca por ovo que não é frito', () => {
+    const trocas = trocasDoAlimento({ alimentoId: 490, gramas: 50 }, opcoes)
+    expect(trocas.length).toBeGreaterThan(0)
+    for (const t of trocas) expect(t.descricao).not.toMatch(FRITO)
   })
 })
 
