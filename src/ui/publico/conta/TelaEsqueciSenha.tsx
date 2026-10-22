@@ -76,7 +76,7 @@ export function TelaEsqueciSenha({ conta, aoEnviado, aoIrParaInicio, aoEntrar }:
           </Button>
         </VerificacaoContraRobos>
         <button type="button" onClick={aoEntrar} className="inline-flex min-h-11 items-center self-center rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:underline">
-          Lembrei, quero entrar
+          Voltar para entrar
         </button>
       </form>
     </MolduraConta>

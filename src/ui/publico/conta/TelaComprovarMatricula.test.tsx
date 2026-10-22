@@ -62,9 +62,9 @@ describe('TelaComprovarMatricula', () => {
     expect(aoEnviado).toHaveBeenCalledOnce()
   })
 
-  it('CA-274: "Fazer isso depois" sai sem enviar', async () => {
+  it('CA-274: "Enviar depois" sai sem enviar', async () => {
     const { usuario, aoDepois, enviar } = montar()
-    await usuario.click(screen.getByRole('button', { name: 'Fazer isso depois' }))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar depois' }))
     expect(aoDepois).toHaveBeenCalledOnce()
     expect(enviar).not.toHaveBeenCalled()
   })

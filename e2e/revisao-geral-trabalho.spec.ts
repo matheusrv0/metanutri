@@ -588,10 +588,10 @@ const TELAS: readonly Tela[] = [
     },
   },
   {
-    nome: 'Meus produtos',
+    nome: 'Meus alimentos',
     abrir: async (p) => {
       await p.goto('/#/produtos')
-      return 'Meus produtos'
+      return 'Meus alimentos'
     },
     agir: async (p) => {
       await p.getByRole('button', { name: 'Cadastrar pelo rótulo' }).first().click()
@@ -599,10 +599,10 @@ const TELAS: readonly Tela[] = [
     },
   },
   {
-    nome: 'Conta e plano',
+    nome: 'Conta e assinatura',
     abrir: async (p) => {
       await p.goto('/#/conta')
-      return 'Conta e plano'
+      return 'Conta e assinatura'
     },
     agir: async (p) => {
       await p.getByRole('button', { name: 'Ir para o backup' }).click()

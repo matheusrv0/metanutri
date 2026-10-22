@@ -100,7 +100,7 @@ export function TelaCodigoSenha({ conta, email, aoSenhaTrocada, aoIrParaInicio }
   const subtitulo =
     email === null
       ? 'Digite o e-mail da conta, o código que mandamos e a senha nova.'
-      : `Se existir conta com ${email}, o código chega em alguns minutos. Olhe também o spam.`
+      : `Se existir conta com ${email}, o código chega em alguns minutos. Se não chegar, confira a caixa de spam.`
 
   return (
     <MolduraConta titulo="Crie uma senha nova" subtitulo={subtitulo} aoIrParaInicio={aoIrParaInicio}>

@@ -19,7 +19,7 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
   test('CA-265 e CA-267: o botão do Estudante abre o cadastro já em Estudante', async ({ page }) => {
     await page.goto('/#/precos')
     await page.getByRole('button', { name: 'Criar conta de estudante' }).first().click()
-    await expect(page.getByRole('radio', { name: /Estudante de Nutrição/ })).toBeChecked()
+    await expect(page.getByRole('radio', { name: /Estudante de nutrição/ })).toBeChecked()
     await expect(page.getByLabel('E-mail da faculdade')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Passo 1 de 2' })).toBeVisible()
   })

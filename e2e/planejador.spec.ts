@@ -25,7 +25,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   // Criar caso e preencher a etapa 1
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Atendimento completo/ }).click()
-  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Dados e medidas/ })).toHaveAttribute('aria-current', 'step')
+  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Paciente e medidas/ })).toHaveAttribute('aria-current', 'step')
 
   await preencher(page, 'Nome do plano', 'Maria, 28 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
@@ -41,8 +41,8 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await expect(resumo).toContainText('1.330 kcal')
 
   // CA-13 e CA-16: montar o plano com a entrada rápida
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
-  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Plano alimentar/ })).toHaveAttribute('aria-current', 'step')
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
+  await expect(page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Refeições/ })).toHaveAttribute('aria-current', 'step')
 
   const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
@@ -124,7 +124,7 @@ test('prescrição rápida: meta calculada e sugestões por refeição', async (
   await expect(resumo).toContainText('2.074 kcal')
 
   // CA-237 e CA-238: a sugestão entra com um clique
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
   await almoco.getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' }).click()
   await expect(page.getByRole('list', { name: 'Alimentos em Principal de Almoço' }).getByRole('listitem')).toHaveCount(1)
@@ -148,7 +148,7 @@ test('diálogo de sugestões cabe na tela de 400 px', async ({ page }) => {
   await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
 
   await page.setViewportSize({ width: 400, height: 800 })
@@ -169,7 +169,7 @@ test('no celular, as sugestões ficam numa faixa só que rola para o lado', asyn
   await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
 
   await page.setViewportSize({ width: 400, height: 800 })
   const almoco = page.getByRole('tabpanel', { name: 'Principal de Almoço' })
@@ -204,7 +204,7 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await expect(page.getByRole('region', { name: 'Avaliação antropométrica' })).toContainText('22,0 kg/m²')
 
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entrada = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
   await entrada.fill('100 banana prata')
   await entrada.press('Enter')
@@ -218,7 +218,7 @@ test('PDF: letra grande e lista de compras e trocas opcionais', async ({ page })
   await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   await page.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / }).first().click()
 
   await page.getByRole('button', { name: 'Exportar' }).click()
@@ -268,7 +268,7 @@ test('CA-336: em tela larga as sugestões também ficam numa linha só', async (
   await page.getByRole('dialog', { name: 'Boas-vindas ao MetaNutri' }).getByRole('button', { name: 'Entendi' }).click()
   await page.getByRole('button', { name: 'Novo plano' }).first().click()
   await page.getByRole('menuitem', { name: /Prescrição rápida/ }).click()
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const sugestoes = page.getByRole('region', { name: 'Sugestões para o almoço' }).getByRole('button', { name: /^Adicionar / })
   const primeira = await sugestoes.first().boundingBox()
   const ultima = await sugestoes.last().boundingBox()
@@ -299,7 +299,7 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
   // CA-701: a etapa 3 abre no topo, com o foco no título.
   await expect(page.getByRole('heading', { name: 'Micronutrientes' })).toBeFocused()
 
-  await etapas.getByRole('button', { name: /Dados e medidas/ }).click()
+  await etapas.getByRole('button', { name: /Paciente e medidas/ }).click()
   await expect(page.getByRole('region', { name: 'Resumo do dia' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Micronutrientes' })).toHaveCount(0)
 })

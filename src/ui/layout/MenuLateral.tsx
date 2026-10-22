@@ -123,12 +123,12 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
 
         <Secao titulo="Alimentos">
           <ItemMenu icone={<BookOpen aria-hidden="true" />} rotulo="Tabela de alimentos" ativo={rota.tela === 'alimentos'} aoClicar={() => ir({ tela: 'alimentos' })} />
-          <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus produtos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
+          <ItemMenu icone={<Barcode aria-hidden="true" />} rotulo="Meus alimentos" ativo={rota.tela === 'produtos'} aoClicar={() => ir({ tela: 'produtos' })} />
           <ItemMenu icone={<CookingPot aria-hidden="true" />} rotulo="Receitas" ativo={rota.tela === 'receitas'} aoClicar={() => ir({ tela: 'receitas' })} />
         </Secao>
 
         <Secao titulo="Sistema">
-          <ItemMenu icone={<UserCircle aria-hidden="true" />} rotulo="Conta e plano" ativo={rota.tela === 'conta'} aoClicar={() => ir({ tela: 'conta' })} />
+          <ItemMenu icone={<UserCircle aria-hidden="true" />} rotulo="Conta e assinatura" ativo={rota.tela === 'conta'} aoClicar={() => ir({ tela: 'conta' })} />
           <ItemMenu icone={<Settings aria-hidden="true" />} rotulo="Configurações" ativo={rota.tela === 'config'} aoClicar={() => ir({ tela: 'config' })} />
           <ItemMenu icone={<CircleHelp aria-hidden="true" />} rotulo="Ajuda" ativo={rota.tela === 'ajuda'} aoClicar={() => ir({ tela: 'ajuda' })} />
         </Secao>

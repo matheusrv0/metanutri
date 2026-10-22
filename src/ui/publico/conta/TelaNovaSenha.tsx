@@ -36,7 +36,7 @@ export function TelaNovaSenha({ conta, vencido, aoSenhaTrocada, aoPedirOutro, ao
 
   if (!podeTrocar) {
     return (
-      <MolduraConta titulo="Este link não vale mais" subtitulo="O link de troca de senha venceu ou já foi usado." aoIrParaInicio={aoIrParaInicio}>
+      <MolduraConta titulo="Este link expirou" subtitulo="O link de troca de senha venceu ou já foi usado." aoIrParaInicio={aoIrParaInicio}>
         <Button size="lg" block onClick={aoPedirOutro}>
           Pedir um código
         </Button>

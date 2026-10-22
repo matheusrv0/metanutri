@@ -100,7 +100,7 @@ export function daLinhaAssinatura(linha: unknown, agora: Date = new Date()): Ass
 /** CA-378: cancelada, mas ainda dentro do período pago (o plano pago ainda vale). */
 export const canceladaNoPrazo = (a: Assinatura): boolean => a.status === 'cancelada' && a.plano !== 'free'
 
-/** CA-376 e CA-378: a assinatura paga que Conta e plano mostra com o cartão ou com o "vale até". */
+/** CA-376 e CA-378: a assinatura paga que Conta e assinatura mostra com o cartão ou com o "vale até". */
 export const temAssinaturaPaga = (a: Assinatura): boolean => (a.status === 'ativa' || canceladaNoPrazo(a)) && PAGOS.includes(a.plano)
 
 /**
@@ -113,7 +113,7 @@ export const RECADO_STATUS: Readonly<Record<StatusAssinatura, string | null>> = 
   pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o Free.',
   pausada: 'A assinatura está pausada. Até ela voltar, vale o Free.',
   cancelada: null,
-  vencida: 'Seu plano venceu e a conta voltou ao Free.',
+  vencida: 'Sua assinatura venceu, e a conta voltou ao Free.',
   'sem-assinatura': null,
 }
 

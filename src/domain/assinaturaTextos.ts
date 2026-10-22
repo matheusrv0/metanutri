@@ -1,4 +1,4 @@
-// Os textos da assinatura paga no checkout e em Conta e plano (spec checkout-proprio).
+// Os textos da assinatura paga no checkout e em Conta e assinatura (spec checkout-proprio).
 // As duas contas de data vêm do mesmo arquivo que as funções do servidor usam, para a
 // tela dizer a mesma data que a função grava (decisão 13 do plano).
 import { previsaoDaProximaCobranca } from '../../supabase/functions/_shared/cobranca.ts'
@@ -43,10 +43,10 @@ export function recadoDaAssinatura(a: Assinatura): string | null {
 /** CA-377, CA-395 e CA-396: o que a janela de cancelar diz. A ativa depende da prévia; pendente e pausada, não. */
 export function textoDoCancelamento(a: Assinatura, previa: PreviaDoCancelamento | null): string {
   const nome = planoPorId(a.status === 'ativa' ? a.plano : a.planoPedido)?.nome ?? 'pago'
-  if (a.status !== 'ativa' || !previa) return `A assinatura do plano ${nome} para e nada mais é cobrado. Você continua no plano Free.`
-  if (!previa.cobrada) return 'Ainda não houve cobrança. Cancelando agora, nada é cobrado e a conta volta ao Free na hora.'
-  if (previa.expiraEm) return `O plano ${nome} continua até ${formatarDataLonga(previa.expiraEm)}, o fim do período já pago. Depois você volta para o Free, sem perder nenhum plano.`
-  return 'Cancelando agora, a conta volta ao Free na hora e nada mais é cobrado.'
+  if (a.status !== 'ativa' || !previa) return `A assinatura do plano ${nome} é encerrada e nada mais será cobrado. Você passa para o plano Free.`
+  if (!previa.cobrada) return 'Ainda não houve cobrança. Se cancelar agora, nada será cobrado e a conta volta ao Free na hora.'
+  if (previa.expiraEm) return `A assinatura do plano ${nome} continua até ${formatarDataLonga(previa.expiraEm)}, o fim do período já pago. Depois, a conta volta para o Free, sem perder nenhum plano alimentar.`
+  return 'Se cancelar agora, a conta volta ao Free na hora e nada mais será cobrado.'
 }
 
 /** CA-376: "Mastercard final 6351", o nome do mini cartão para o leitor de tela (CA-389). Sem o cartão gravado (antes do 008), nulo. */

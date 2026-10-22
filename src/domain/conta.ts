@@ -295,7 +295,7 @@ export const MENSAGEM_ERRO: Readonly<Record<ErroConta, string>> = {
   'email-nao-confirmado': 'Confirme seu e-mail antes de entrar.',
   'codigo-incompleto': `Digite os ${DIGITOS_DO_CODIGO} dígitos do código.`,
   'codigo-invalido': 'Código errado ou vencido. Confira o último e-mail ou peça outro.',
-  'link-vencido': 'Este link não vale mais. Peça outro.',
+  'link-vencido': 'Este link expirou. Peça outro.',
   'muitas-tentativas': 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
   // Verificação contra robôs (spec seguranca-lote-3): CA-458, CA-460 e CA-461.
   'verificacao-pendente': 'Espere a verificação de segurança terminar.',

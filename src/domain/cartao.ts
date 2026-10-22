@@ -63,7 +63,7 @@ export const MENSAGEM_DO_CAMPO: Readonly<Record<CampoDoCartao, { readonly vazio:
   validade: { vazio: 'Digite a validade, como 11/30.', invalido: 'Confira a validade do cartão.' },
   codigo: { vazio: 'Digite o código de segurança.', invalido: 'Confira o código de segurança.' },
   nome: { vazio: 'Digite o nome como está impresso no cartão.', invalido: 'Use só letras no nome.' },
-  cpf: { vazio: 'Digite o CPF do titular do cartão.', invalido: 'Confira o CPF: os dígitos não batem.' },
+  cpf: { vazio: 'Digite o CPF do titular do cartão.', invalido: 'Este CPF não é válido. Confira os números.' },
 }
 
 /** CA-370: o erro de cada campo, na ordem da tela; só os que têm erro. */
@@ -116,7 +116,7 @@ const RECUSAS: Readonly<Record<string, string>> = {
   cc_rejected_insufficient_amount: 'O cartão não tem limite para esta cobrança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_call_for_authorize: 'O banco pediu para você autorizar esta cobrança. Ligue para o banco do cartão e tente de novo. Nada foi cobrado.',
   cc_rejected_card_disabled: 'Este cartão está bloqueado. Ligue para o banco ou use outro cartão. Nada foi cobrado.',
-  cc_rejected_duplicated_payment: 'Já existe uma cobrança igual de poucos minutos atrás. Confira em Conta e plano antes de tentar de novo.',
+  cc_rejected_duplicated_payment: 'Já existe uma cobrança igual de poucos minutos atrás. Confira em Conta e assinatura antes de tentar de novo.',
   cc_rejected_high_risk: 'O pagamento foi recusado por segurança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_blacklist: 'O pagamento foi recusado por segurança. Use outro cartão. Nada foi cobrado.',
   cc_rejected_max_attempts: 'Muitas tentativas com este cartão. Use outro cartão ou tente amanhã. Nada foi cobrado.',

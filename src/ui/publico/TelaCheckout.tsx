@@ -198,7 +198,7 @@ export function TelaCheckout({
                 <IconeMarca nome="seta" />
               </Button>
               <Button variant="link" className="inline-flex min-h-11 items-center self-center" onClick={aoIrParaConta}>
-                Ver Conta e plano
+                Ver Conta e assinatura
               </Button>
               <p className="w-full text-center text-xs text-muted-foreground [overflow-wrap:anywhere]">{`O recibo vai para ${email}.`}</p>
             </>
@@ -208,7 +208,7 @@ export function TelaCheckout({
                 <IconeMarca nome="calendario" />
               </span>
               <h1 ref={focarAoAparecer} tabIndex={-1} className="font-titulo text-3xl font-bold text-heading focus:outline-none">Pagamento em análise</h1>
-              <p className="text-sm text-muted-foreground">O banco ainda está confirmando o cartão. Até lá, vale o Free. Assim que confirmar, o plano libera sozinho.</p>
+              <p className="text-sm text-muted-foreground">O banco ainda está confirmando o cartão. Até lá, vale o Free. Assim que o banco confirmar, o plano é liberado automaticamente.</p>
               <Button variant="outline" size="lg" block onClick={aoIrParaPainel}>
                 Ir para o painel
               </Button>
@@ -230,7 +230,7 @@ export function TelaCheckout({
     <>
       <div className="tema-claro">
         <AvisoPagamento tipo="ok">
-          {`Você já assina o plano ${planoPorId(assinaturaAtual.plano)?.nome ?? ''}. A troca de plano pago ainda não é feita pelo site.`}
+          {`Você já assina o plano ${planoPorId(assinaturaAtual.plano)?.nome ?? ''}. Ainda não é possível trocar de plano pago pelo site.`}
         </AvisoPagamento>
       </div>
       <Button variant="outline" size="lg" block onClick={aoIrParaPainel}>
@@ -346,7 +346,7 @@ export function TelaCheckout({
                       {emReais(valorNoCiclo(p, ciclo))} <span className="font-sans text-xs font-semibold text-muted-foreground">{ciclo === 'anual' ? '/ano' : '/mês'}</span>
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {ciclo === 'anual' ? `Sai ${emReais(mensalizadoDoAnual(p))} por mês. ` : ''}
+                      {ciclo === 'anual' ? `Equivale a ${emReais(mensalizadoDoAnual(p))} por mês. ` : ''}
                       {p.recursos[0]}
                     </span>
                   </button>

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Resultado, ValorConta } from '../../estado/usarConta.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
@@ -166,7 +166,7 @@ describe('TelaConfirmarEmail (spec confirmacao-por-codigo)', () => {
   it('CA-143 e CA-414: link antigo vencido continua com a tela própria e pede um código', async () => {
     const conta = contaFalsa()
     montarConfirmar({ conta, email: null, vencido: true })
-    expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Este link expirou' })).toBeInTheDocument()
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
     expect(campoCodigo()).toBeInTheDocument()
     const usuario = userEvent.setup()
@@ -240,6 +240,16 @@ async function preencherSenha(usuario: ReturnType<typeof userEvent.setup>, codig
   await usuario.type(screen.getByLabelText('Repita a senha'), repetida)
   await usuario.click(screen.getByRole('button', { name: 'Salvar a senha' }))
 }
+
+describe('CA-1185 (spec textos-e-promessas): o aviso do spam é o mesmo nas duas telas do código', () => {
+  it('confirmar o e-mail e trocar a senha dizem "Se não chegar, confira a caixa de spam."', () => {
+    montarConfirmar()
+    expect(screen.getByText('Mandamos um código para maria@exemplo.com. Se não chegar, confira a caixa de spam.')).toBeInTheDocument()
+    cleanup()
+    montarCodigoSenha()
+    expect(screen.getByText('Se existir conta com maria@exemplo.com, o código chega em alguns minutos. Se não chegar, confira a caixa de spam.')).toBeInTheDocument()
+  })
+})
 
 describe('TelaCodigoSenha (spec confirmacao-por-codigo)', () => {
   it('CA-412: pede o código e a senha nova duas vezes; código certo troca a senha e segue', async () => {
@@ -366,7 +376,7 @@ describe('TelaNovaSenha (link antigo)', () => {
   it('CA-147 e CA-414: sem a troca liberada pelo link, a tela de link vencido continua', async () => {
     const aoPedirOutro = vi.fn()
     render(<TelaNovaSenha conta={contaFalsa()} vencido={false} aoSenhaTrocada={vi.fn()} aoPedirOutro={aoPedirOutro} aoIrParaInicio={vi.fn()} />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Este link expirou' })).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Pedir um código' }))
     expect(aoPedirOutro).toHaveBeenCalledOnce()
   })

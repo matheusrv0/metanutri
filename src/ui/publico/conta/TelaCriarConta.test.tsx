@@ -83,14 +83,14 @@ describe('TelaCriarConta', () => {
 
   it('CA-265: estudante troca o rótulo do e-mail e mostra o passo 1 de 2', async () => {
     const { usuario } = montar()
-    await usuario.click(screen.getByRole('radio', { name: /Estudante de Nutrição/ }))
+    await usuario.click(screen.getByRole('radio', { name: /Estudante de nutrição/ }))
     expect(screen.getByLabelText('E-mail da faculdade')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Passo 1 de 2' })).toBeInTheDocument()
   })
 
   it('CA-266 e CB-60: e-mail que não é de faculdade não vai, e o contato aparece', async () => {
     const { usuario, conta } = montar({ contato: 'contato@metanutri.com' })
-    await usuario.click(screen.getByRole('radio', { name: /Estudante de Nutrição/ }))
+    await usuario.click(screen.getByRole('radio', { name: /Estudante de nutrição/ }))
     await preencherBase(usuario, 'julia@gmail.com')
     await usuario.click(screen.getByRole('checkbox', { name: 'Declaro ter matrícula ativa no curso de Nutrição.' }))
     await usuario.click(botaoCriar())
@@ -101,7 +101,7 @@ describe('TelaCriarConta', () => {
 
   it('CA-267: pelo botão do Estudante, já vem em Estudante e o Nutricionista fica indisponível', () => {
     montar({ plano: 'estudante' })
-    expect(screen.getByRole('radio', { name: /Estudante de Nutrição/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Estudante de nutrição/ })).toBeChecked()
     expect(screen.getByRole('radio', { name: /Nutricionista/ })).toBeDisabled()
   })
 

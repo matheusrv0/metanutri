@@ -14,7 +14,7 @@ interface CamposSituacaoProps {
 
 const OPCOES: readonly { readonly valor: Situacao; readonly titulo: string; readonly detalhe: string }[] = [
   { valor: 'nutricionista', titulo: 'Nutricionista', detalhe: 'Tenho CRN' },
-  { valor: 'estudante', titulo: 'Estudante de Nutrição', detalhe: 'Ainda na faculdade' },
+  { valor: 'estudante', titulo: 'Estudante de nutrição', detalhe: 'Ainda na faculdade' },
 ]
 
 /** O "Você é" do cadastro, com o CRN ou a declaração de matrícula (protótipo "Criar conta"). */

@@ -84,7 +84,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     const resumo = screen.getByRole('region', { name: 'Resumo' })
     expect(resumo).toHaveTextContent('Solo, anual')
     expect(resumo).toHaveTextContent('Depois, o mesmo valor todo ano, em 2 de outubro. Cancele quando quiser.')
-    expect(screen.getByText(/Sai R\$ 24,92 por mês/)).toBeInTheDocument()
+    expect(screen.getByText(/Equivale a R\$ 24,92 por mês/)).toBeInTheDocument()
     expect(screen.getByText('−29%')).toBeInTheDocument()
   })
 
@@ -159,7 +159,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     await act(async () => terminar(ATIVA))
   })
 
-  it('CA-372 e D-74: banco autorizou: selo, título, recibo, recursos, painel, Conta e plano e o e-mail', async () => {
+  it('CA-372 e D-74: banco autorizou: selo, título, recibo, recursos, painel, Conta e assinatura e o e-mail', async () => {
     const { usuario, falso, aoIrParaPainel, aoIrParaConta } = await montar()
     await preencherTudo(usuario, falso)
     await usuario.click(botaoAssinar())
@@ -182,7 +182,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(within(screen.getByRole('list', { name: 'Andamento' })).getByText('Pronto').closest('li')).toHaveAttribute('aria-current', 'step')
     await usuario.click(screen.getByRole('button', { name: 'Ir para o painel' }))
     expect(aoIrParaPainel).toHaveBeenCalledOnce()
-    await usuario.click(screen.getByRole('button', { name: 'Ver Conta e plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'Ver Conta e assinatura' }))
     expect(aoIrParaConta).toHaveBeenCalledOnce()
   })
 
@@ -242,7 +242,7 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
 
   it('CB-91 e CA-163: quem já assina vê o aviso de hoje e não há formulário', async () => {
     const { falso } = await montar({ assinatura: { ...SEM_ASSINATURA, plano: 'solo', planoPedido: 'solo', status: 'ativa' } })
-    expect(screen.getByText('Você já assina o plano Solo. A troca de plano pago ainda não é feita pelo site.')).toBeInTheDocument()
+    expect(screen.getByText('Você já assina o plano Solo. Ainda não é possível trocar de plano pago pelo site.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Assinar por/ })).not.toBeInTheDocument()
     expect(falso.criados).toBe(0)
   })

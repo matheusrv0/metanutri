@@ -1,5 +1,5 @@
 /**
- * O cartão pequeno de Conta e plano (protótipo v2): a bandeira e os 4 últimos números.
+ * O cartão pequeno de Conta e assinatura (protótipo v2): a bandeira e os 4 últimos números.
  * É o único lugar da tela que mostra o cartão (CA-389): por isso tem nome para o leitor de
  * tela ("Mastercard final 6351"). Sem o cartão gravado, é só enfeite e fica escondido dele.
  */

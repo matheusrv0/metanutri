@@ -125,7 +125,7 @@ describe('Recado de cada estado', () => {
       pendente: 'O banco ainda está confirmando o pagamento. Até lá, vale o Free.',
       pausada: 'A assinatura está pausada. Até ela voltar, vale o Free.',
       cancelada: null,
-      vencida: 'Seu plano venceu e a conta voltou ao Free.',
+      vencida: 'Sua assinatura venceu, e a conta voltou ao Free.',
       'sem-assinatura': null,
     })
   })

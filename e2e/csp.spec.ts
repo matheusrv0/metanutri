@@ -115,7 +115,7 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   await page.getByLabel('Nome do plano').fill('Ana, 30 anos')
   await page.getByRole('radio', { name: 'Feminino' }).click()
   await page.getByLabel('Idade', { exact: true }).fill('30')
-  await page.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entradaAlmoco = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
   await expect(page.getByRole('option').first()).toBeVisible()

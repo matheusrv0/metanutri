@@ -139,7 +139,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
     expect(nuvem.parar).not.toHaveBeenCalled()
   })
 
-  it('CA-809 (L5 da revisão): o servidor cancelou a assinatura e não terminou: a frase dele, e Conta e plano relê a assinatura', async () => {
+  it('CA-809 (L5 da revisão): o servidor cancelou a assinatura e não terminou: a frase dele, e Conta e assinatura relê a assinatura', async () => {
     const { hook, conta, aoCancelarAssinatura } = montar()
     const frase = 'Não foi possível concluir a exclusão. A assinatura já foi cancelada, mas os demais dados da conta continuam salvos. Tente de novo em alguns minutos.'
     cliente.invocar.mockResolvedValue(respondeu(502, { erro: frase, codigo: 'assinatura-cancelada' }))
@@ -172,7 +172,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
   it.each([
     ['CA-801: administrador (403)', 403, { erro: 'Conta de administrador não é excluída pelo site.', codigo: 'administrador' }],
     ['CA-810: pedidos demais (429)', 429, { erro: 'Muitas tentativas seguidas. Espere uma hora e tente de novo.', codigo: 'muitas-chamadas' }],
-    ['CB-253: pagamento em andamento (409)', 409, { erro: 'Já estamos confirmando uma assinatura desta conta. Confira em Conta e plano em um minuto.', codigo: 'em-andamento' }],
+    ['CB-253: pagamento em andamento (409)', 409, { erro: 'Já há uma assinatura sendo confirmada nesta conta. Confira em Conta e assinatura daqui a um minuto.', codigo: 'em-andamento' }],
   ])('%s: a frase do servidor', async (_caso, status, corpo) => {
     const { hook } = montar()
     cliente.invocar.mockResolvedValue(respondeu(status, corpo))

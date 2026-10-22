@@ -26,7 +26,7 @@ describe('TelaEntrar', () => {
   it('CA-135: pede e-mail e senha e tem os atalhos', async () => {
     const { usuario, aoEsqueci, aoCriarConta } = montar()
     await usuario.click(screen.getByRole('button', { name: 'Esqueci a senha' }))
-    await usuario.click(screen.getByRole('button', { name: 'Criar grátis' }))
+    await usuario.click(screen.getByRole('button', { name: 'Criar conta grátis' }))
     expect(aoEsqueci).toHaveBeenCalledOnce()
     expect(aoCriarConta).toHaveBeenCalledOnce()
     expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()

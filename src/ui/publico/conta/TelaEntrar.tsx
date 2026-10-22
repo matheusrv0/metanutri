@@ -119,7 +119,7 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
         <p className="text-center text-sm text-muted-foreground">
           Ainda não tem conta?{' '}
           <button type="button" onClick={aoCriarConta} className={BOTAO_TEXTO}>
-            Criar grátis
+            Criar conta grátis
           </button>
         </p>
       </form>

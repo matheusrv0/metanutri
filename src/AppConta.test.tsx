@@ -412,7 +412,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(window.location.hash).toBe('#/comprovar-matricula')
   })
 
-  it('CA-304: em Conta e plano, a estudante sem pedido vai enviar o comprovante', async () => {
+  it('CA-304: em Conta e assinatura, a estudante sem pedido vai enviar o comprovante', async () => {
     verificacao.perfil = { nome: 'Júlia', situacao: 'estudante', crn: null, statusCrn: null, crnDeclaradoEm: null, crnDecididoEm: null }
     estado.conta = comSessao('conta-1')
     window.location.hash = '#/conta'
@@ -421,7 +421,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(window.location.hash).toBe('#/comprovar-matricula')
   })
 
-  it('CA-289: CRN não encontrado aparece também em Conta e plano', () => {
+  it('CA-289: CRN não encontrado aparece também em Conta e assinatura', () => {
     verificacao.perfil = {
       nome: 'Maria',
       situacao: 'nutricionista',
@@ -433,11 +433,11 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     estado.conta = comSessao('conta-1')
     window.location.hash = '#/conta'
     render(tela())
-    expect(screen.getByRole('heading', { level: 1, name: 'Conta e plano' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Conta e assinatura' })).toBeInTheDocument()
     expect(screen.getByText('Não encontramos seu CRN no conselho')).toBeInTheDocument()
   })
 
-  it('CA-380: depois de cancelar em Conta e plano, o App relê a assinatura (o "Assinar de novo" não usa a ativa antiga)', async () => {
+  it('CA-380: depois de cancelar em Conta e assinatura, o App relê a assinatura (o "Assinar de novo" não usa a ativa antiga)', async () => {
     cobranca.assinatura = {
       plano: 'solo',
       planoPedido: 'solo',
@@ -651,11 +651,11 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     it('CA-414: o link antigo vencido continua abrindo a tela de link vencido', () => {
       window.location.hash = '#/confirmar-email/vencido'
       const { unmount } = render(tela())
-      expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: 'Este link expirou' })).toBeInTheDocument()
       unmount()
       window.location.hash = '#/nova-senha/vencido'
       render(tela())
-      expect(screen.getByRole('heading', { level: 1, name: 'Este link não vale mais' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: 'Este link expirou' })).toBeInTheDocument()
     })
   })
 })

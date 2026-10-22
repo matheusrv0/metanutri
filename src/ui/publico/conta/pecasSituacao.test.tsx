@@ -25,7 +25,7 @@ describe('CamposSituacao', () => {
     render(<Montado />)
     expect(screen.getByRole('group', { name: 'Você é' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Nutricionista/ })).not.toBeChecked()
-    expect(screen.getByRole('radio', { name: /Estudante de Nutrição/ })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: /Estudante de nutrição/ })).not.toBeChecked()
   })
 
   it('CA-263: nutricionista mostra o CRN e a declaração', async () => {
@@ -41,7 +41,7 @@ describe('CamposSituacao', () => {
 
   it('CA-265: estudante mostra a declaração de matrícula, sem CRN', async () => {
     render(<Montado />)
-    await userEvent.setup().click(screen.getByRole('radio', { name: /Estudante de Nutrição/ }))
+    await userEvent.setup().click(screen.getByRole('radio', { name: /Estudante de nutrição/ }))
     expect(screen.getByRole('checkbox', { name: 'Declaro ter matrícula ativa no curso de Nutrição.' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Número do CRN' })).not.toBeInTheDocument()
   })

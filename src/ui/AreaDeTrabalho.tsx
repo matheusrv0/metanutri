@@ -286,7 +286,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   if (rota.tela === 'conta') {
     return (
-      <Estrutura {...base} titulo="Conta e plano">
+      <Estrutura {...base} titulo="Conta e assinatura">
         <TelaConta
           conta={conta}
           perfil={perfil}
@@ -322,7 +322,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   if (rota.tela === 'produtos') {
     return (
-      <Estrutura {...base} titulo="Meus produtos">
+      <Estrutura {...base} titulo="Meus alimentos">
         <TelaProdutos />
       </Estrutura>
     )

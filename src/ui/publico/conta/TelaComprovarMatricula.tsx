@@ -28,7 +28,7 @@ function Lado() {
       <div className="flex flex-col gap-3.5 rounded-3xl bg-card p-5">
         <p className="rotulo">Depois de enviar</p>
         <ol className="flex flex-col gap-3 text-sm">
-          {['Você já usa o MetaNutri como Free.', 'Conferimos o comprovante em até 2 dias úteis.', 'Aprovado, o plano Estudante vale 12 meses ou até a formatura.'].map((t, i) => (
+          {['Enquanto isso, você usa o plano Free.', 'Conferimos o comprovante em até 2 dias úteis.', 'Com o comprovante aprovado, o plano Estudante vale 12 meses ou até a formatura, o que vier antes.'].map((t, i) => (
             <li key={t} className="flex gap-2.5">
               <span className="numeros grid size-6 shrink-0 place-content-center rounded-full bg-surfacerow text-xs font-semibold text-muted-foreground">{i + 1}</span>
               {t}
@@ -60,7 +60,7 @@ export function TelaComprovarMatricula({ email, pedido, enviar, aoEnviado, aoDep
     return (
       <MolduraConta
         titulo="Comprovante em análise"
-        subtitulo={`Enviado em ${formatarDataLonga(pedido.enviadoEm)}. Conferimos em até 2 dias úteis. Enquanto isso, use o MetaNutri como Free.`}
+        subtitulo={`Enviado em ${formatarDataLonga(pedido.enviadoEm)}. Conferimos em até 2 dias úteis. Enquanto isso, use o plano Free.`}
         aoIrParaInicio={aoIrParaInicio}
         lado={<Lado />}
       >
@@ -95,7 +95,7 @@ export function TelaComprovarMatricula({ email, pedido, enviar, aoEnviado, aoDep
   return (
     <MolduraConta
       titulo="Comprove sua matrícula"
-      subtitulo="Passo 2 de 2. Analisamos em até 2 dias úteis."
+      subtitulo="Passo 2 de 2."
       passo={{ atual: 2, total: 2 }}
       aoIrParaInicio={aoIrParaInicio}
       lado={<Lado />}
@@ -162,7 +162,7 @@ export function TelaComprovarMatricula({ email, pedido, enviar, aoEnviado, aoDep
           Enviar para análise
         </Button>
         <button type="button" onClick={aoDepois} className={BOTAO_TEXTO}>
-          Fazer isso depois
+          Enviar depois
         </button>
       </form>
     </MolduraConta>

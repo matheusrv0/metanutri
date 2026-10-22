@@ -86,11 +86,11 @@ export function TelaConfirmarEmail({ conta, email, vencido, aoIrParaInicio, aoEr
   const subtitulo = vencido
     ? 'O link de confirmação venceu ou já foi usado.'
     : email === null
-      ? 'Digite o e-mail da conta e o código que mandamos. Não chegou? Olhe a caixa de spam.'
-      : `Mandamos um código para ${email}. Não chegou? Olhe a caixa de spam.`
+      ? 'Digite o e-mail da conta e o código que mandamos. Se não chegar, confira a caixa de spam.'
+      : `Mandamos um código para ${email}. Se não chegar, confira a caixa de spam.`
 
   return (
-    <MolduraConta titulo={vencido ? 'Este link não vale mais' : 'Confira seu e-mail'} subtitulo={subtitulo} aoIrParaInicio={aoIrParaInicio}>
+    <MolduraConta titulo={vencido ? 'Este link expirou' : 'Confira seu e-mail'} subtitulo={subtitulo} aoIrParaInicio={aoIrParaInicio}>
       <form onSubmit={(e) => void confirmar(e)} noValidate className="flex flex-col gap-4">
         {email === null ? (
           <div className="flex flex-col gap-1.5">

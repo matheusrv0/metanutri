@@ -42,7 +42,7 @@ const TELAS: readonly Tela[] = [
   { nome: 'Confirmar e-mail', endereco: '/#/confirmar-email', titulo: 'Confira seu e-mail', acao: botao('Confirmar') },
   { nome: 'Esqueci a senha', endereco: '/#/esqueci-senha', titulo: 'Esqueci a senha', acao: botao('Mandar o código') },
   { nome: 'Esqueci a senha (o código)', endereco: '/#/esqueci-senha/codigo', titulo: 'Crie uma senha nova', acao: botao('Salvar a senha') },
-  { nome: 'Nova senha', endereco: '/#/nova-senha', titulo: 'Este link não vale mais', acao: botao('Pedir um código') },
+  { nome: 'Nova senha', endereco: '/#/nova-senha', titulo: 'Este link expirou', acao: botao('Pedir um código') },
   { nome: 'Termos', endereco: '/#/termos', titulo: 'Termos de uso', acao: noTopo('Começar grátis') },
   { nome: 'Privacidade', endereco: '/#/privacidade', titulo: 'Política de privacidade', acao: noTopo('Começar grátis') },
   { nome: 'Fontes', endereco: '/#/fontes', titulo: 'Fontes da base', acao: (p) => p.getByRole('main').getByRole('link').first() },

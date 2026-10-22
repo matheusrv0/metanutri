@@ -155,7 +155,7 @@ export function TelaConta({
 
       <Card className="gap-4">
         <CardHeader>
-          <CardTitle>Seu plano</CardTitle>
+          <CardTitle>Sua assinatura</CardTitle>
           {recado ? <CardDescription>{recado}</CardDescription> : null}
         </CardHeader>
 
@@ -232,7 +232,7 @@ export function TelaConta({
           {planoDeNovo ? <Button onClick={() => aoAssinar(planoDeNovo, assinatura.ciclo ?? 'mensal')}>Assinar de novo</Button> : null}
 
           <Button variant="outline" onClick={aoVerPrecos}>
-            Mudar de plano
+            Ver preços
           </Button>
 
           {conta.sessao && !travadaNova && assinatura.status !== 'ativa' && assinatura.status !== 'cancelada'
@@ -256,7 +256,7 @@ export function TelaConta({
             <p className="text-sm text-muted-foreground">Conta de administrador não é excluída pelo site.</p>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="min-w-0 flex-1 basis-56 text-sm text-muted-foreground">Apaga a conta e tudo o que ela guarda na nuvem.</p>
+              <p className="min-w-0 flex-1 basis-56 text-sm text-muted-foreground">Exclui a conta e todos os dados dela na nuvem.</p>
               <Button variant="lighterror" onClick={() => setExcluindoConta(true)}>
                 Excluir conta
               </Button>

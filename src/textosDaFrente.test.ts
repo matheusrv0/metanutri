@@ -150,6 +150,18 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"somem sozinhas" e "some em"', /somem sozinhas|\bsome (em|quando)\b/i],
   ['"não alcança os dados"', /alcança os dados/i],
   ['"organiza e confere"', /organiza e confere/i],
+  // D-408 e CA-1185 a CA-1187: "assinatura" é a cobrança; menu, conta e checkout no glossário.
+  ['"Conta e plano"', /Conta e plano/],
+  ['"Meus produtos"', /Meus produtos/],
+  ['"Mudar de plano"', /Mudar de plano/],
+  ['"Me formei" sem o "Já"', /(^|[^\p{L}])Me formei/u],
+  ['"Estudante de Nutrição" no meio da frase', /Estudante de Nutrição/],
+  ['"não vale mais"', /não vale mais/i],
+  ['"Olhe (também) o spam"', /Olhe (também )?(a caixa de )?spam/i],
+  ['"libera sozinho"', /libera sozinho/i],
+  ['"Lembrei, quero entrar"', /Lembrei, quero entrar/i],
+  ['"Criar grátis"', /Criar grátis/i],
+  ['"Dados e medidas" como etapa', /Dados e medidas/],
 ]
 
 const achados = (padrao: RegExp) =>

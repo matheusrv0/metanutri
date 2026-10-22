@@ -83,7 +83,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
   if (resposta === 'ativa') {
     return (
       <Cartao selo={<IconeMarca nome="check" destaque />} tom="ok" titulo="Assinatura ativa">
-        <p className="text-sm text-muted-foreground">Seu plano agora é o {planoPorId(assinatura.plano)?.nome}. Já dá para usar tudo o que ele inclui.</p>
+        <p className="text-sm text-muted-foreground">Seu plano agora é o {planoPorId(assinatura.plano)?.nome}, já liberado.</p>
         <Button size="lg" block onClick={aoIrParaPainel}>
           Ir para o painel
         </Button>
@@ -94,7 +94,7 @@ export function TelaVoltaPagamento({ assinatura, carregado, recarregar, aoIrPara
   if (resposta === 'analise') {
     return (
       <Cartao selo={<IconeMarca nome="calendario" />} tom="analise" titulo="Pagamento em análise">
-        <p className="text-sm text-muted-foreground">Alguns pagamentos levam uns minutos para confirmar. Até lá, vale o Free. Esta tela confere sozinha.</p>
+        <p className="text-sm text-muted-foreground">Alguns pagamentos levam alguns minutos para ser confirmados. Até lá, vale o Free. Esta tela se atualiza sozinha.</p>
         {esgotou ? (
           <Button size="lg" block onClick={conferirDeNovo}>
             Conferir de novo

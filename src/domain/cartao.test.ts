@@ -76,7 +76,7 @@ describe('erros do formulário (CA-370)', () => {
       numero: 'Confira o número do cartão.',
       codigo: 'Confira o código de segurança.',
       nome: 'Use só letras no nome.',
-      cpf: 'Confira o CPF: os dígitos não batem.',
+      cpf: 'Este CPF não é válido. Confira os números.',
     })
   })
 

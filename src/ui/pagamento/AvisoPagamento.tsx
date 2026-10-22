@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
 
-/** Erro ou confirmação no checkout e em Conta e plano, com o ícone da marca (CA-383). Erro é `alert`; confirmação é `status`. */
+/** Erro ou confirmação no checkout e em Conta e assinatura, com o ícone da marca (CA-383). Erro é `alert`; confirmação é `status`. */
 export function AvisoPagamento({ tipo, children }: { readonly tipo: 'erro' | 'ok'; readonly children: ReactNode }) {
   const erro = tipo === 'erro'
   return (

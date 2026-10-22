@@ -51,6 +51,14 @@ describe('etapas do planejador', () => {
     expect(ETAPAS.map((e) => e.aba)).toEqual(ABAS)
     expect(ETAPAS.map((e) => e.numero)).toEqual([1, 2, 3])
   })
+
+  it('CA-1172 (spec textos-e-promessas): os nomes do glossário, sem "Plano alimentar" como nome de etapa dentro do plano', () => {
+    expect(ETAPAS.map((e) => [e.rotulo, e.descricao])).toEqual([
+      ['Paciente e medidas', 'Dados, medidas e energia'],
+      ['Refeições', 'Alimentos, substitutos e orientações'],
+      ['Adequação', 'Vitaminas, minerais e fibra'],
+    ])
+  })
 })
 
 describe('rotas da conta e do pagamento (spec estilo-spora)', () => {

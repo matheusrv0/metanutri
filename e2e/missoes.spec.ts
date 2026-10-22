@@ -20,7 +20,7 @@ const montarPlanoComAlmoco = async (pagina: Page) => {
   await pagina.getByRole('radio', { name: 'Feminino' }).click()
   await pagina.getByLabel('Idade', { exact: true }).fill('30')
 
-  await pagina.getByRole('button', { name: /Próxima etapa: Plano alimentar/ }).click()
+  await pagina.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
   const entradaAlmoco = pagina.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
   await entradaAlmoco.fill('150 arroz tipo 1 cozido')
   await expect(pagina.getByRole('option').first()).toBeVisible()
@@ -69,9 +69,9 @@ const LINK_DO_DRIVE = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWx
 test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => {
   await abrirLimpo(page)
   await montarPlanoComAlmoco(page)
-  await page.getByRole('button', { name: /Dados e medidas/ }).first().click()
+  await page.getByRole('button', { name: /Paciente e medidas/ }).first().click()
   await page.getByLabel('Orientações nutricionais').fill(`Receitas da semana: ${LINK_DO_DRIVE}`)
-  await page.getByRole('button', { name: /Plano alimentar/ }).first().click()
+  await page.getByRole('button', { name: /Refeições/ }).first().click()
 
   // CA-539 e CA-540: a caixa vem marcada, e o link nasce com a dieta
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
