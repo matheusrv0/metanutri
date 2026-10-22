@@ -299,10 +299,15 @@ export interface InterpretacaoEntrada {
 const fracao = (a: string, b: string): number => (Number(b) === 0 ? Number.NaN : Number(a) / Number(b))
 
 function lerQuantidade(texto: string): { valor: number; resto: string } | null {
-  const m = texto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|[a-z]|$)|^(\d+(?:[.,]\d+)?)(?=\s|[a-z]|$)/)
+  // "1.000 ml": o ponto separa o milhar (Menor da revisão de código, correção A); "1,5" e "1.5" continuam decimais.
+  const milhar = texto.match(/^(\d{1,3}(?:\.\d{3})+)(?=\s|[a-z]|$)/)
+  const m = milhar ? null : texto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|[a-z]|$)|^(\d+(?:[.,]\d+)?)(?=\s|[a-z]|$)/)
   let valor: number
   let resto: string
-  if (m) {
+  if (milhar?.[1]) {
+    valor = Number(milhar[1].replace(/\./g, ''))
+    resto = texto.slice(milhar[0].length).trim()
+  } else if (m) {
     valor = m[1] && m[2] ? fracao(m[1], m[2]) : Number((m[3] ?? '').replace(',', '.'))
     resto = texto.slice(m[0].length).trim()
   } else {
@@ -381,7 +386,10 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
 export function variantesDoTermo(termo: string): readonly string[] {
   const singular = termo.endsWith('oes') || termo.endsWith('aes')
     ? `${termo.slice(0, -3)}ao`
-    : termo.endsWith('ais')
+    : // "franceses" → "frances", "ingleses" → "ingles" (Menor da revisão de código, correção A).
+      termo.length > 5 && termo.endsWith('eses')
+      ? termo.slice(0, -2)
+      : termo.endsWith('ais')
       ? `${termo.slice(0, -3)}al`
       : termo.endsWith('eis')
         ? `${termo.slice(0, -3)}el`

@@ -88,6 +88,16 @@ describe('CA-1110: a entrada rápida com entradas reais', () => {
     expect(aveia?.aviso).toBe('Sem “xícara de chá” · tem colher de sopa (15 g), colher de servir (30 g), colher de sobremesa (7 g)')
   })
 
+  it('CA-1242 (Menores da revisão de código): "2 pães franceses" acha o pão francês; "1.000 ml de leite" são 1.000 ml', () => {
+    const pao = buscarAlimentos('2 pães franceses', ALIMENTOS).resultados[0]
+    expect(pao?.alimento.descricao).toBe('Pão, trigo, francês')
+    expect(pao).toMatchObject({ gramas: 100, medida: { nome: 'unidade', quantidade: 2 } })
+    expect(buscarAlimentos('1.000 ml de leite', ALIMENTOS).resultados[0]).toMatchObject({ gramas: 1000, unidade: 'ml' })
+    expect(buscarAlimentos('1.500 g de arroz', ALIMENTOS).resultados[0]?.gramas).toBe(1500)
+    // A vírgula decimal continua: "1,5 concha".
+    expect(buscarAlimentos('1,5 concha de feijão', ALIMENTOS).resultados[0]?.gramas).toBe(210)
+  })
+
   it('CA-1258: "1 banana nanica" não vira 1 g nem 1 fatia: a fruta sem a unidade pede gramas ou a medida', () => {
     const nanica = buscarAlimentos('1 banana nanica', ALIMENTOS).resultados[0]
     expect(nanica?.alimento.descricao).toBe('Banana, nanica, crua')
