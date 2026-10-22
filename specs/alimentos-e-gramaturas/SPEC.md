@@ -1,0 +1,158 @@
+# SPEC — Alimentos e gramaturas
+
+Status: **pedida pelo dono em 21/10/2026** ("a gente está muito preso a uma base; deixe as pessoas cadastrarem os
+próprios alimentos; dê mais ênfase em como funcionam as gramaturas"); **aprovação pelas telas antes de publicar**.
+Rodada "cuidado total" (coordenador, `plano-geral.md`, decisões 1, 3, 4 e 7). Levantamento:
+`alimentos-e-gramaturas.md` (achados A1 a A26, regras G1 a G9 e "Meus alimentos", seção 2).
+
+**Hoje:** a entrada rápida põe o alimento errado com Enter ("150 arroz integral" adiciona arroz **cru**; "1 banana" vira
+**1 grama**). O item do plano guarda só gramas, e a medida que a paciente lê é recalculada: em 68% dos testes ela lê
+outra medida ("1 pote de iogurte" sai "1 copo americano e meio"). O leite integral não tem energia. "Meus produtos" só
+aceita rótulo, e a leitura do código de barras tem um erro de conta (A13).
+
+**Objetivo:** a entrada rápida acerta o alimento e a quantidade; a medida que a nutricionista escolhe é a que a
+paciente lê, com os gramas ao lado; grama ↔ medida caseira fica claro na linha do plano; a nutricionista cadastra os
+próprios alimentos e as próprias medidas.
+
+## 1. Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-370 | **Ordem dos resultados da busca** (entrada rápida e Tabela de alimentos com termo): (1) quando a pessoa digitou uma medida, os alimentos que têm essa medida; (2) os mais usados **por esta conta** (quantas vezes o alimento aparece nos planos dela) e os alimentos próprios; (3) a forma preparada antes da crua quando a regra prescritível marca o cru como ingrediente (`regraQueExclui(a)?.id === 'cru'`, sem mudar `prescritivel.ts`); (4) o nome que começa pelo primeiro termo; (5) uso comum (`ehDeUsoComum`); (6) a lista de consumo mais frequente da POF/IBGE (arroz, feijão, café, pão francês, carne, frango, leite, banana, ovo…), só como ordem, sem número; (7) menos vírgulas; (8) nome mais curto | O Enter põe o 1º resultado (A1). A forma crua de quem se come cozido não pode ganhar só por ter o nome curto |
+| D-371 | **Número sem medida:** abaixo de 20 e com medida de contar no alimento (unidade, fatia, bife, filé, pedaço, posta, coxa, sobrecoxa, peito, rodela, gomo, banda, metade, unidade pequena), o número conta **unidades** dessa medida (a primeira na ordem de preferência); a partir de 20, ou com "g", são gramas. Alimento sem medida de contar: gramas, como hoje | "1 banana" era 1 g (A3). A lista mostra a leitura escolhida (D-373), então não há surpresa |
+| D-372 | **A entrada entende o jeito de falar** (G6, A10): nome curto da medida ("colher" = colher de sopa e, sem ela, colher de servir; "xícara" = xícara de chá; "copo" = copo americano e, sem ele, copo médio, copo de requeijão ou copo grande); palavras ("meia"/"meio" = ½, "um"/"uma" = 1, "dois"/"duas" = 2, "três" = 3, "quatro", "cinco"); frações ("½", "1/2", "1 e meia", "1 concha e meia"); "ml", "mililitro(s)", "l" e "litro(s)" valem como gramas com densidade 1 (o litro, ×1000); plural do alimento ("ovos", "bananas", "pães": o termo vale com e sem o plural). O nome curto só vale quando o alimento tem a medida | Os testes reais da A10 falhavam com "Nenhum alimento encontrado" |
+| D-373 | **A lista mostra a leitura** como a folha: "1 unidade · 75 g · 67 kcal", "1 concha e meia · 210 g · 160 kcal", "200 ml · 123 kcal" (A21). Fração que não é meia aparece com vírgula ("0,25 xícara de chá") | "2 colher de sopa" e "1.5 concha" saíam fora da regra |
+| D-374 | **O item guarda a medida escolhida** (G1): `ItemPlano.medida?: { nome, quantidade, gramasPorMedida } \| null`. Objeto: a medida escolhida. `null`: "só gramas" para este item. Sem o campo: medida automática de hoje (`medidaParaMostrar`), marcada "auto" na linha (G5). Os gramas continuam sendo a verdade da conta; a quantidade que se mostra é `gramas ÷ gramasPorMedida`, arredondada para meia medida. Se o arredondamento não fecha com os gramas (diferença maior que 1 g e 1%), a medida é **aproximada** | O peso prescrito nunca muda sozinho; uma aba antiga que mexe nos gramas deixa a medida coerente porque a quantidade sai dos gramas |
+| D-375 | **A linha do plano mostra e edita as duas coisas ligadas** (G2, G3): quantidade, seletor de medida ("gramas", as medidas próprias, as da POF na ordem de preferência, cada uma com o peso: "concha · 140 g") e gramas, com "=" entre eles; embaixo, "O paciente lê: 1 concha e meia (210 g)". Mudar a quantidade ou a medida recalcula os gramas; mudar os gramas recalcula a quantidade. Medida aproximada: "≈" em cor de aviso antes do seletor e o botão "Usar só gramas". No celular, três linhas: o nome; quantidade + medida = gramas; o que o paciente lê. A receita continua com a porção dela (spec receitas-com-calculo) | O "como funcionam as gramaturas" que o dono pediu fica na própria linha |
+| D-376 | **Três modos para o paciente** (decisão 3 do coordenador, G4): "Medida e gramas" (**padrão de plano novo**: "1 concha e meia (210 g)"), "Só medida" ("1 concha e meia") e "Só gramas" ("210 g"). Plano gravado em `medida-caseira`, ou sem o campo, lê "Só medida"; em `gramas`, "Só gramas": nada muda sem a nutricionista pedir. A escolha fica **no topo da etapa Refeições** e na janela de imprimir; sai do cartão Identificação da etapa 1 | A clínica trabalha em gramas e a UBS em medida caseira; a medida da POF erra até 15% |
+| D-377 | **Todas as saídas leem a medida guardada antes da automática** (G1): folha impressa, lista de compras (automática, porque soma itens), trocas, link do paciente ("Meu plano"), Word de aconselhamento. Medida aproximada sai "190 g (cerca de 1 concha e meia)" em "Medida e gramas" e em "Só medida", e "190 g" em "Só gramas". Sem medida que sirva, o peso. A cópia do link leva o texto da medida escolhida (`escolhida: true`), a marca de aproximada e a unidade ml; o link de antes desta versão abre como antes | Em 68% dos testes, a paciente lia outra medida (A5) |
+| D-378 | **Líquido em ml** (G9): grupo "Bebidas", leite de vaca, leite de cabra, leite fermentado e bebida láctea, e alimento próprio com unidade ml saem em ml ("1 copo americano (150 ml)", "200 ml"). Densidade 1, dita na ficha do alimento próprio | "200 g de leite" não é como se fala |
+| D-379 | **Cobrir e substituto em meia medida caseira** (G8): a porção sugerida é a meia medida mais próxima que cobre a falta (gramas = quantidade × peso da medida), limitada pela porção do grupo e pela porção máxima do plano; a cobertura e as kcal são calculadas sobre esse peso, e o item entra com a medida guardada. Sem medida que caiba, o passo de 5 g de hoje. O substituto também: os gramas equivalentes viram a meia medida mais próxima, e as diferenças são calculadas sobre ela. `prescritivel.ts` não muda | A medida que a paciente lê valia até 15% menos que o peso da conta (A18) |
+| D-380 | **Macros do USDA** (A4, CC0) para os alimentos da TACO sem energia que deviam ter: leite integral (FDC 172217), leite desnatado (FDC 173432) e iogurte sabor abacaxi (FDC 170889, iogurte de fruta, confiança média), marcados "USDA" na ficha, só onde a TACO não tem o valor. **Coco verde fica sem:** o USDA não tem polpa de coco verde, e o coco maduro (354 kcal) daria quatro vezes a energia. Os sais continuam sem energia (não têm) | Leite somava "— kcal" e 0 g de proteína |
+| D-381 | **Mais medidas da POF** (A9): o mapeamento TACO→POF ganha os alimentos de uso diário sem medida. O cru **herda a unidade** do cozido só quando a unidade não muda com o preparo (ovo); cortes de carne e grãos crus só ganham medida quando a POF mede o cru | 310 de 597 alimentos não tinham medida |
+| D-382 | **Código de barras** (A13, A14, A23, A25): o que vem da Open Food Facts é guardado **por 100 g ou 100 ml** e nunca reescalado para uma porção que a nutricionista ainda vai digitar; a porção do rótulo vira só a medida; entram todos os micros que a OFF tiver e a adequação usa; sem sódio, o sódio sai do sal (÷ 2,5); produto por 100 ml guarda a unidade ml; a chamada manda `X-User-Agent: MetaNutri/1.0 (metanutricontato@gmail.com)` | Sem porção na OFF, os valores por 100 g entravam como da porção e eram multiplicados de novo |
+| D-383 | **"Meus alimentos" evolui a chave `metanutri:produtos`** (decisão 4): tipo (alimento, preparação, rótulo), nome para o paciente, grupo, preparo, unidade (g ou ml), base (por 100 g/ml ou por porção), os 4 macros obrigatórios, micros opcionais (os 20 da adequação), medidas, fonte, observações, "Pode aparecer no Cobrir e nas trocas" e `atualizadoEm`. O item continua lido pela versão antiga (`porcaoG` e `porPorcao` sempre presentes). **Publicação em duas vezes:** esta versão lê e preserva campos desconhecidos (`{ ...anterior, ...dados }`); o formulário novo, "Copiar para Meus alimentos" e "Salvar como alimento" ficam atrás da constante `MEUS_ALIMENTOS_NOVOS = false`, ligada na publicação 2 | A versão no ar hoje (78c0157) refaz o item só com os campos que conhece ao editar (`salvar`): uma aba antiga editando um item novo apagaria grupo, medidas e nome para o paciente. A exclusão, a junção da nuvem e a leitura antiga preservam (conferido em `produtos.ts` e `copiaDaConta.ts`) |
+| D-384 | **Validação** (§2.3): bloqueia nome vazio, grupo vazio, macro vazio ou negativo, porção ≤ 0 ou > 2000, açúcares acima do carboidrato, saturada acima da gordura, proteína + carboidrato + gordura + fibra acima de 105 g por 100 g. Avisa sem bloquear: energia digitada longe de 4P + 4C + 9G (mais de 20% e de 15 kcal) e micro acima do maior valor da base. Vazio é "não informado" (nulo), nunca zero | Os números entram nos cálculos do plano |
+| D-385 | **Como entra no resto:** na busca com a marca "meu" e prioridade (D-370); na Tabela de alimentos, com o filtro "Origem" (Todas, Base MetaNutri, Meus alimentos) e ordem por relevância quando há termo (A15); ficha da base com "Copiar para Meus alimentos"; receita com "Salvar como alimento" (por 100 g da receita pronta, a porção vira medida); editar avisa "Está em N planos. Mudar os valores muda os cálculos deles."; excluir deixa "Alimento excluído" na linha do plano; folha, link e Word usam o nome para o paciente e a medida guardada; limite de 1.000 itens | §2.4 do levantamento |
+| D-386 | **Cobrir e trocas usam alimento próprio só com a chave ligada** (§2.5): "Pode aparecer no Cobrir e nas trocas" ligado, energia e o nutriente informados, passa na regra prescritível com nome, grupo e preparo (a regra "nunca" não se desliga), grupo diferente de "Suplementos" e sem o aviso de energia incoerente. A sugestão leva a marca "meu" | O nome é texto livre; a regra prescritível lê o nome |
+| D-387 | **Medidas próprias para alimentos da base** (§2.6): chave nova `metanutri:medidas-proprias`, lista com id texto `"<alimentoId>:<nome normalizado>"`, `alimentoId`, `nome`, `gramas`, `criadoEm` e `atualizadoEm`; entra em `CHAVES_DE_DADOS`, nas `LISTAS` da junção (item a item, com lápide) e na migração dos dados de antes da conta. As medidas próprias vêm antes das da POF; com o mesmo nome, vale a própria, marcada "sua". Cria-se na ficha da Tabela de alimentos ("+ Medida sua") e no seletor da linha do plano ("+ Nova medida…"). Chave nova é segura já: a versão antiga não a conhece e não a apaga (D-170) | "Concha da minha casa = 120 g" |
+| D-388 | **Receitas na refeição ligadas** (decisão 7): `RECEITAS_NA_REFEICAO = true` | O PWA trocou de versão há dois dias (D-274a da receitas-com-calculo) |
+| D-389 | **Textos** das telas desta frente pelo glossário (`textos.md` §1, §3.11, a parte do Cobrir de §3.12 e §3.16): "Meus alimentos" no lugar de "Meus produtos"; "Excluir" para apagar de vez e "Tirar" para tirar da lista (decisão 1 do coordenador, que vence a linha 119 de `textos.md`); "poucos nutrientes"/"parte dos nutrientes"; o Cobrir "ultrapassa" o gasto; "neste plano" | Decisão 1 do coordenador |
+
+## 2. Critérios de aceite
+
+### US-AG1 · A entrada rápida acerta (A1–A3, A10, A21; G6, G7)
+
+- **CA-1100** · Dado a entrada rápida, quando digito "150 arroz", então o 1º resultado é "Arroz, tipo 1, cozido" com 150 g, e "Arroz, integral, cru" não vem antes de nenhum arroz cozido.
+- **CA-1101** · Dado a entrada, quando digito "1 banana", então o 1º resultado é uma banana crua com "1 unidade · 75 g" (prata), nunca 1 g.
+- **CA-1102** · Dado um número abaixo de 20 sem medida e um alimento sem medida de contar ("3 arroz"), então são gramas ("3 g").
+- **CA-1103** · Dado "25 banana" ou "5 g banana", então são gramas (25 g e 5 g).
+- **CA-1104** · Dado "2 colheres arroz", então "colher" é colher de sopa e o resultado é "Arroz, tipo 1, cozido" com "2 colheres de sopa · 50 g".
+- **CA-1105** · Dado "meia xícara de aveia", "uma concha de feijão", "½ concha de feijão", "1 e meia concha de feijão" e "1 concha e meia de feijão", então as quantidades são ½, 1, ½, 1½ e 1½ da medida.
+- **CA-1106** · Dado "200 ml de leite", então o 1º resultado é "Leite, de vaca, integral" com "200 ml".
+- **CA-1107** · Dado "2 ovos", então o 1º resultado é o ovo de galinha cozido com "2 unidades · 90 g".
+- **CA-1108** · Dado "1 copo de leite", então "copo" vale copo americano e o 1º resultado é "Leite, de vaca, integral" com "1 copo americano · 150 ml".
+- **CA-1109** · Dado a lista de resultados, então a quantidade sai como a folha: plural ("2 colheres de sopa"), meia por extenso ("1 concha e meia"), vírgula decimal, gramas e kcal ("1 concha e meia · 210 g · 160 kcal").
+- **CA-1110** · Dado uma tabela de pelo menos 40 entradas reais ("150 arroz", "1 concha de feijão", "100 frango", "2 ovos", "meia xícara de aveia"…), então cada uma dá o alimento e os gramas esperados (teste de tabela, `buscaReal.test.ts`).
+- **CA-1111** · Dado uma conta que usa muito "Arroz, integral, cozido", quando digito "150 arroz", então ele vem em 1º (D-370, item 2).
+- **CA-1112** · Dado a ajuda e o campo da entrada, então o exemplo que eles ensinam funciona ("1 concha de feijão").
+
+### US-AG2 · A medida escolhida é a que o paciente lê (G1–G5, G8, G9)
+
+- **CA-1113** · Dado "1 pote de iogurte natural" na entrada, quando adiciono, então o item guarda pote, 1 e 200 g, e a folha diz "1 pote (200 g)" no modo "Medida e gramas".
+- **CA-1114** · Dado um item com medida guardada, quando mudo a quantidade para 1,5, então os gramas viram 1,5 × o peso da medida; quando troco a medida, os gramas viram quantidade × o peso da nova.
+- **CA-1115** · Dado um item com medida guardada, quando mudo os gramas para um valor que não fecha em meia medida (190 g de concha de 140 g), então a linha mostra "≈" em cor de aviso e "Usar só gramas"; a folha diz "190 g (cerca de 1 concha e meia)"; o peso não muda sozinho.
+- **CA-1116** · Dado "Usar só gramas" ou "gramas" no seletor, então o item guarda `medida: null` e o paciente lê só o peso.
+- **CA-1117** · Dado um item sem medida guardada (plano antigo), então a linha mostra a medida automática com "auto", e mexer na quantidade ou no seletor a fixa.
+- **CA-1118** · Dado o seletor de medida, então ele mostra "gramas", as medidas próprias, as da POF na ordem de preferência, cada uma com o peso ("concha · 140 g").
+- **CA-1119** · Dado cada linha do plano, então embaixo aparece "O paciente lê: …" no modo do plano.
+- **CA-1120** · Dado um plano novo, então o modo é "Medida e gramas"; dado um plano gravado em "medida-caseira" ou sem o campo, então é "Só medida"; em "gramas", "Só gramas".
+- **CA-1121** · Dado a etapa Refeições, então o topo tem "Quantidades para o paciente" com os três modos; a janela de imprimir também; o cartão Identificação não tem mais.
+- **CA-1122** · Dado os três modos, então a folha, a lista de compras, as trocas, o link e o Word mostram "1 concha e meia (210 g)", "1 concha e meia" e "210 g".
+- **CA-1123** · Dado um plano com medida guardada, quando copio para o link, então "Meu plano" mostra a medida guardada (não a automática) no modo do plano; um link de antes desta versão abre como antes.
+- **CA-1124** · Dado leite, bebida ou alimento próprio em ml, então a folha, o link e o Word escrevem ml ("1 copo americano (150 ml)", "200 ml").
+- **CA-1125** · Dado o Cobrir, então a porção é uma meia medida caseira ("1 copo americano · 150 ml", "2 unidades · 90 g"), a cobertura e as kcal são calculadas sobre esse peso, e "Adicionar" põe o item com a medida guardada.
+- **CA-1126** · Dado a calculadora de substituto, então a porção sai em meia medida, e "Usar como substituto 1" põe o item com a medida guardada.
+- **CA-1127** · Dado a linha do plano no celular (360 px), então nada passa da largura e os campos têm 44 px de altura.
+
+### US-AG3 · A base sem buracos (A4, A9)
+
+- **CA-1128** · Dado "Leite, de vaca, integral", "Leite, de vaca, desnatado, UHT" e "Iogurte, sabor abacaxi", então têm energia, proteína, gordura, carboidrato e fibra do USDA, e a ficha marca essas linhas "USDA" com o número do alimento equivalente.
+- **CA-1129** · Dado um alimento da TACO com o valor, então o complemento de macros nunca o substitui.
+- **CA-1130** · Dado "Coco, verde, cru" e os sais, então continuam sem energia (travessão, nunca zero).
+- **CA-1131** · Dado "Ovo, de galinha, inteiro, cru", "Farinha, de trigo" e os outros alimentos das regras novas, então têm medidas caseiras; "2 unidades de ovo cru" funciona na receita.
+- **CA-1132** · Dado as regras novas, então nenhuma liga um alimento cru a medidas de alimento cozido quando o peso da unidade muda com o preparo (teste das regras).
+
+### US-AG4 · Código de barras (A13, A14, A23, A25)
+
+- **CA-1133** · Dado um produto da OFF sem porção, então os valores ficam por 100 g, nunca multiplicados por uma porção digitada depois.
+- **CA-1134** · Dado um produto da OFF com porção, então os valores ficam por 100 g e a porção vira a medida ("porção · 30 g").
+- **CA-1135** · Dado zinco, potássio, magnésio, vitamina C, fósforo, cobre, manganês, selênio, vitaminas A, D, E, B1, B2, B6, B12, niacina e folato na OFF, então entram convertidos para a unidade da adequação.
+- **CA-1136** · Dado um produto sem sódio e com sal, então o sódio é o sal ÷ 2,5 (em mg).
+- **CA-1137** · Dado um produto por 100 ml, então a unidade é ml.
+- **CA-1138** · Dado a consulta, então ela manda o cabeçalho `X-User-Agent`.
+
+### US-AG5 · Meus alimentos (§2)
+
+- **CA-1139** · Dado "Meus alimentos" com a constante ligada, quando escolho "Novo alimento", então escolho o tipo (alimento, preparação, rótulo) e preencho os campos da D-383.
+- **CA-1140** · Dado um alimento por 100 g ("Cuscuz da casa", 112 kcal, P 2,2, C 25, G 0,3), quando salvo, então ele entra na busca com a marca "meu" e soma no plano como os da base.
+- **CA-1141** · Dado um rótulo por porção (30 g, 120 kcal), quando salvo, então a busca soma 400 kcal por 100 g e a porção vira a medida "porção · 30 g".
+- **CA-1142** · Dado um dos 4 macros vazio, nome ou grupo vazio, porção ≤ 0 ou > 2000, açúcares acima do carboidrato, saturada acima da gordura, ou P + C + G + fibra acima de 105 g por 100 g, então não salva e o campo diz por quê.
+- **CA-1143** · Dado a energia longe dos macros, então aparece "Pelos macros, dá 152 kcal; você digitou 252. Confira." e salva; com esse aviso, a chave do Cobrir fica desligada.
+- **CA-1144** · Dado um micro acima do maior valor da base, então aparece "Confira a unidade: mg ou µg?" e salva.
+- **CA-1145** · Dado um micro vazio, então ele é "não informado" (nulo) e o total do plano ganha a †.
+- **CA-1146** · Dado medidas no cadastro ("fatia · 30 g"), então elas aparecem no seletor da linha do plano e na entrada rápida ("2 fatias de pão da casa").
+- **CA-1147** · Dado o nome para o paciente, então a folha, o link e o Word usam esse nome; vazio, o nome.
+- **CA-1148** · Dado um alimento da base, quando escolho "Copiar para Meus alimentos" na ficha, então o formulário abre com a composição, as medidas e a fonte "cópia da base".
+- **CA-1149** · Dado uma receita, quando escolho "Salvar como alimento", então nasce uma preparação por 100 g da receita pronta, com a porção como medida; com macro sem dado em algum ingrediente, explica e não salva.
+- **CA-1150** · Dado um alimento próprio usado em planos, quando edito, então aparece "Está em N planos. Mudar os valores muda os cálculos deles."
+- **CA-1151** · Dado um alimento próprio excluído, então a linha do plano diz "Alimento excluído" e ele sai da folha e do link.
+- **CA-1152** · Dado a Tabela de alimentos, então o filtro "Origem" mostra Todas, Base MetaNutri e Meus alimentos; o alimento próprio tem a marca "meu" e uma ficha "Cadastrado por você · fonte: rótulo".
+- **CA-1153** · Dado um termo na Tabela de alimentos, então a ordem é por relevância (D-370): "farinha de trigo" mostra "Farinha, de trigo" antes de "Cação, posta, com farinha de trigo, frita".
+- **CA-1154** · Dado um alimento próprio com "Pode aparecer no Cobrir e nas trocas", energia, o nutriente e grupo de alimento, então ele entra no Cobrir com a marca "meu"; sem a chave, com grupo "Suplementos", com aviso de energia ou com nome que a regra "nunca" pega ("cerveja artesanal"), não entra.
+- **CA-1155** · Dado um item novo gravado por esta versão, quando uma versão que só conhece os campos antigos lê, então ele tem `id`, `nome`, `porcaoG` e `porPorcao` coerentes (a mesma energia por 100 g).
+- **CA-1156** · Dado um item com campos que esta versão não conhece, quando ela edita e salva, então os campos desconhecidos continuam lá.
+- **CA-1157** · Dado a constante desligada (publicação 1), então "Meus alimentos" mostra o cadastro pelo rótulo de antes e nenhum botão que cria item novo.
+
+### US-AG6 · Medidas próprias (§2.6)
+
+- **CA-1158** · Dado a ficha de um alimento da base, quando escolho "+ Medida sua" e salvo "concha · 120 g", então a medida aparece primeiro no seletor da linha do plano, marcada "sua", e na entrada rápida ("1 concha de feijão" dá 120 g).
+- **CA-1159** · Dado o seletor da linha do plano, quando escolho "+ Nova medida…", então crio a medida ali e ela fica escolhida.
+- **CA-1160** · Dado uma medida própria com o mesmo nome de uma da POF, então vale a própria.
+- **CA-1161** · Dado duas cópias da conta com medidas próprias diferentes, quando juntam, então ficam as duas; a excluída num aparelho não volta pelo outro (lápide); a mais nova vence no mesmo id.
+- **CA-1162** · Dado um plano antigo com medida guardada, quando a medida própria muda ou é excluída, então o item do plano não muda (a medida do item é uma cópia).
+
+### US-AG7 · Receitas na refeição
+
+- **CA-1163** · Dado a busca da refeição, então as receitas da conta aparecem (constante ligada).
+
+## 3. Casos de borda
+
+- **CB-360** · Entrada vazia, só número ("150") ou só medida ("1 concha"): nada é adicionado, sem erro.
+- **CB-361** · Medida digitada que o alimento não tem: o resultado pede gramas e não inventa conversão (CB-07 continua).
+- **CB-362** · Quantidade zero ou negativa na linha: zero é aceito e não soma; negativo é ignorado (CB-04).
+- **CB-363** · Item com `medida` estragada (sem nome, peso ≤ 0, texto no lugar de número): vale a automática, sem quebrar.
+- **CB-364** · Uma aba antiga muda os gramas de um item com medida guardada: a quantidade sai dos gramas, e a medida fica aproximada se não fechar.
+- **CB-365** · Modo desconhecido gravado por uma versão mais nova: vale "Só medida".
+- **CB-366** · Alimento sem medida nenhuma: o seletor só tem "gramas" (e "+ Nova medida…"), com a dica "Sem medida caseira na base. Crie a sua."; o paciente lê os gramas.
+- **CB-367** · Link de antes desta versão (sem `escolhida`, sem `quantidades`): "Meu plano" mostra como antes.
+- **CB-368** · OFF fora do ar, sem internet ou código inexistente: mensagem no padrão "o que aconteceu e o que fazer", nada é salvo pela metade.
+- **CB-369** · Valor da OFF fora do formato (texto, negativo, NaN): fica nulo.
+- **CB-370** · Lista de "Meus alimentos" com item estragado: o item é ignorado na leitura e preservado na gravação.
+- **CB-371** · Mais de 1.000 alimentos próprios: o cadastro novo é recusado com o motivo.
+- **CB-372** · Medida própria com nome vazio, peso ≤ 0 ou > 2000: não salva.
+- **CB-373** · Medida própria de um alimento que saiu da base: fica guardada e não aparece.
+- **CB-374** · Duas abas da mesma conta: gravar medidas próprias ou alimentos numa avisa a outra (`useOutraAbaGravou`).
+- **CB-375** · Concorrência entre aparelhos: dois aparelhos criam o mesmo id de alimento próprio; a renumeração DP-4 continua valendo para os itens novos (os campos novos andam junto).
+- **CB-376** · Sem armazenamento no navegador: alimentos e medidas próprias valem só na aba, com o aviso de sempre.
+- **CB-377** · Receita salva como alimento com ingrediente excluído: o ingrediente sem dado deixa o nutriente nulo; macro sem dado impede salvar.
+- **CB-378** · Cobrir com porção máxima menor que meia medida: usa o passo de 5 g.
+- **CB-379** · Busca com termo de uma letra ou só "de": nenhum resultado, sem erro.
+
+## 4. Fora de escopo
+
+- Busca por nome na Open Food Facts (proxy, seção 4.1 do levantamento) e Cobrir de macros (seção 5): rodada seguinte.
+- Parte comestível (%) e nome no plural escolhido à mão na medida (o plural segue `pluralDaMedida`).
+- Medida própria de alimento próprio fora do item (mora dentro dele).
+- "Adicionar em" do Cobrir começando pela refeição do tipo do alimento (A19).
+- Mudar a regra prescritível (`prescritivel.ts`).
