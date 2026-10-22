@@ -72,6 +72,18 @@ describe('Produto pelo rótulo', () => {
     expect(repo.listar()).toEqual([])
   })
 
+  it('CA-1335 (D-485): "Obrigatório no rótulo" diz o que mais a RDC 429/2020 obriga, sem campo novo', async () => {
+    render(<TelaProdutos />)
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cadastrar pelo rótulo' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Cadastrar produto pelo rótulo' }))
+    const secao = janela.getByRole('heading', { name: 'Obrigatório no rótulo' }).closest('section')
+    expect(secao).not.toBeNull()
+    expect(
+      within(secao as HTMLElement).getByText('A RDC 429/2020 também obriga açúcares adicionados e gorduras trans; os dois não entram no cálculo do plano.'),
+    ).toBeInTheDocument()
+    expect(janela.queryByLabelText(/Açúcares adicionados|Gorduras trans/)).not.toBeInTheDocument()
+  })
+
   it('cadastra pela tela e mostra o produto na lista', async () => {
     render(<TelaProdutos />)
     const usuario = userEvent.setup()

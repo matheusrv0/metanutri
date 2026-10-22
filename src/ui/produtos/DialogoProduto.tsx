@@ -132,6 +132,8 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
       <section className="flex flex-col gap-3">
         <h3 className="rotulo">Obrigatório no rótulo</h3>
         <div className="grid gap-4 sm:grid-cols-2">{CAMPOS_ROTULO.map(campo)}</div>
+        {/* D-485 (correção C): o art. 5º da RDC 429/2020 obriga também estes dois; os campos não mudam. */}
+        <p className="text-xs text-muted-foreground">A RDC 429/2020 também obriga açúcares adicionados e gorduras trans; os dois não entram no cálculo do plano.</p>
       </section>
 
       <section className="flex flex-col gap-3">
