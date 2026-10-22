@@ -81,9 +81,9 @@ describe('assinar: o núcleo da função (spec checkout-proprio e cobranca-em-pr
   it.each<[string, PedidoDeAssinatura, number, string]>([
     ['sem sessão', { ...PEDIDO, conta: null }, 401, 'Entre na sua conta antes de assinar.'],
     ['sem e-mail', { ...PEDIDO, conta: { id: 'u1', email: null } }, 401, 'Entre na sua conta antes de assinar.'],
-    ['corpo que não era JSON', { ...PEDIDO, corpo: null }, 400, 'Corpo da requisição inválido.'],
-    ['plano que sobe pelo protótipo', comCorpo({ plano: 'constructor' }), 400, 'Plano desconhecido.'],
-    ['Clínica, que não se assina pelo site', comCorpo({ plano: 'clinica' }), 400, 'Plano desconhecido.'],
+    ['corpo que não era JSON', { ...PEDIDO, corpo: null }, 400, 'O pedido chegou incompleto. Recarregue a página e tente de novo.'],
+    ['plano que sobe pelo protótipo', comCorpo({ plano: 'constructor' }), 400, 'Este plano não pode ser assinado pelo site.'],
+    ['Clínica, que não se assina pelo site', comCorpo({ plano: 'clinica' }), 400, 'Este plano não pode ser assinado pelo site.'],
     ['sem o código do cartão', comCorpo({ card_token_id: undefined }), 400, 'Faltam os dados do cartão. Confira e tente de novo.'],
     ['final do cartão com 2 números', comCorpo({ cartao: { bandeira: 'Visa', final: '12' } }), 400, 'Faltam os dados do cartão. Confira e tente de novo.'],
   ])('401 sem sessão ou sem e-mail; 400 com corpo, plano ou cartão inválidos; nada é reservado nem pedido (%s)', async (_caso, pedido, status, mensagem) => {

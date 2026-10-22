@@ -161,6 +161,9 @@ export interface RespostaDaFuncao {
   readonly corpo: Readonly<Record<string, unknown>>
 }
 
+/** O corpo do pedido não é o que a função espera (spec textos-e-promessas, D-401): a frase diz o que fazer. */
+export const PEDIDO_INVALIDO = 'O pedido chegou incompleto. Recarregue a página e tente de novo.'
+
 export const respostaDeErro = (mensagem: string, status: number, codigo?: string): RespostaDaFuncao => ({
   status,
   corpo: codigo ? { erro: mensagem, codigo } : { erro: mensagem },

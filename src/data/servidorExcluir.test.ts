@@ -402,7 +402,7 @@ describe('excluirConta: falha no meio e o pedido seguinte (D-252, CA-821)', () =
   ])('CA-809 (L5 da revisão): o pedido cancelou a assinatura e %s: a frase diz que a assinatura já foi cancelada', async (_caso, opcoes) => {
     const { deps } = montar([ATIVA], BEM, opcoes)
     expect(await excluirConta(PEDIDO, deps)).toEqual(FALHOU_CANCELADA)
-    expect(EXCLUSAO_FALHOU_CANCELADA).toBe('Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.')
+    expect(EXCLUSAO_FALHOU_CANCELADA).toBe('Não foi possível concluir a exclusão. A assinatura já foi cancelada, mas os demais dados da conta continuam salvos. Tente de novo em alguns minutos.')
   })
 
   it('CA-809: a assinatura já estava cancelada antes deste pedido e os arquivos não saem: a frase de sempre', async () => {

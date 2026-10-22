@@ -157,7 +157,7 @@ export function codigoDaRecusa(corpo: unknown): string {
 /** A frase de reserva; a tela troca pela do código (src/domain/cartao.ts). */
 export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou use outro cartão. Nada foi cobrado.'
 /** CA-374: a operadora não respondeu. */
-export const SEM_COBRANCA = 'Não consegui falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
+export const SEM_COBRANCA = 'Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 
 /**
  * D-97: o navegador só deixa o site do MetaNutri chamar as funções. O supabase-js manda

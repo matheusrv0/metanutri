@@ -377,7 +377,7 @@ describe('TelaConta', () => {
   })
 
   it('cancelamento que falha mostra a mensagem dentro da confirmação, que continua aberta', async () => {
-    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.' }))
+    estado.cancelar = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não foi possível falar com o servidor de cobrança. Nada mudou. Tente de novo em alguns minutos.' }))
     estado.assinatura = PAGA
     const { usuario } = montar(nutri)
     const janela = await abrirCancelamento(usuario)
@@ -569,7 +569,7 @@ describe('TelaConta', () => {
 
   it('erro de servidor ao trocar o cartão: a frase vem como está, sem prometer o cartão antigo', async () => {
     estado.assinatura = PAGA
-    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não consegui falar com o servidor de cobrança.' }))
+    estado.trocarCartao = vi.fn(async (): Promise<ResultadoDaMudanca> => ({ ok: false, erro: 'Não foi possível falar com o servidor de cobrança.' }))
     const { usuario, falso } = montar(nutri)
     await usuario.click(screen.getByRole('button', { name: 'Trocar cartão' }))
     const janela = screen.getByRole('dialog', { name: 'Trocar cartão' })
@@ -578,7 +578,7 @@ describe('TelaConta', () => {
     await usuario.type(within(janela).getByRole('textbox', { name: 'Nome impresso no cartão' }), 'APRO')
     await usuario.type(within(janela).getByRole('textbox', { name: 'CPF do titular' }), '12345678909')
     await usuario.click(within(janela).getByRole('button', { name: 'Salvar cartão' }))
-    expect(await within(janela).findByText('Não consegui falar com o servidor de cobrança.')).toBeInTheDocument()
+    expect(await within(janela).findByText('Não foi possível falar com o servidor de cobrança.')).toBeInTheDocument()
     expect(janela).not.toHaveTextContent('cartão antigo')
   })
 

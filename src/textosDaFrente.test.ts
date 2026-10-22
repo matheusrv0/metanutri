@@ -65,6 +65,12 @@ const SOLTOS = [
   'src/domain/persistencia.ts',
   'src/domain/repositorioAcompanhamentos.ts',
   'src/domain/whatsapp.ts',
+  // As funções do servidor cuja mensagem a tela mostra (assinar, gerenciar a assinatura e excluir a conta).
+  'supabase/functions/_shared/assinar.ts',
+  'supabase/functions/_shared/cobranca.ts',
+  'supabase/functions/_shared/excluirConta.ts',
+  'supabase/functions/_shared/gerenciarAssinatura.ts',
+  'supabase/functions/_shared/portas.ts',
 ]
 
 /** Textos que não são código: lidos inteiros. */
@@ -122,6 +128,10 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"Não deu para"', /\bNão deu para\b/i],
   ['"O MetaNutri não conseguiu"', /MetaNutri não conseguiu/i],
   ['"Não dá para desfazer"', /não dá para desfazer/i],
+  // D-401: erro de pedido em linguagem de programador.
+  ['"Corpo da requisição"', /Corpo da requisição/i],
+  ['"Ação desconhecida"', /(^|[^\p{L}])Ação desconhecida/iu],
+  ['"Só dá para"', /\bSó dá para\b/i],
 ]
 
 const achados = (padrao: RegExp) =>

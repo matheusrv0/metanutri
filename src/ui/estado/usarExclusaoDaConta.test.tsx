@@ -141,7 +141,7 @@ describe('useExclusaoDaConta (spec exclusao-de-conta)', () => {
 
   it('CA-809 (L5 da revisão): o servidor cancelou a assinatura e não terminou: a frase dele, e Conta e plano relê a assinatura', async () => {
     const { hook, conta, aoCancelarAssinatura } = montar()
-    const frase = 'Não deu para terminar a exclusão. A assinatura já foi cancelada; o resto da conta continua. Tente de novo em alguns minutos.'
+    const frase = 'Não foi possível concluir a exclusão. A assinatura já foi cancelada, mas os demais dados da conta continuam salvos. Tente de novo em alguns minutos.'
     cliente.invocar.mockResolvedValue(respondeu(502, { erro: frase, codigo: 'assinatura-cancelada' }))
     let resultado
     await act(async () => {
