@@ -322,7 +322,8 @@ test.describe('Link do paciente', () => {
     await expect(linha('12:00 Almoço', 'Macarrão (peso cru)')).toHaveText('90 gMacarrão (peso cru)')
     await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('meia unidadeFilé de merluza assado')
     await expect(linha('19:00 Jantar', 'Ovo cozido')).toHaveText('2 unidadesOvo cozido')
-    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('1 unidade pequena e meiaMaçã Fuji com casca') // D-423: eram "3 fatias e meia"
+    // D-423: eram "3 fatias e meia"; D-484 (correção C): nem "1 unidade pequena e meia".
+    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('130 g (cerca de 1 unidade)Maçã Fuji com casca')
     await expect(page.getByText(/Pão, trigo|lipídeos|cozido\/10minutos/)).toHaveCount(0)
     await semRolagemLateral(page)
   })
