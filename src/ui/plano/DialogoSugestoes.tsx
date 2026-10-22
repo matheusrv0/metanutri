@@ -164,7 +164,7 @@ export function DialogoSugestoes({ tipo, lista, aoSalvar, aoFechar }: DialogoSug
         {naoSalvou ? (
           <Alert variant="warning" role="alert">
             <TriangleAlert aria-hidden="true" />
-            <p>Não deu para salvar neste aparelho. As sugestões continuam como estavam.</p>
+            <p>Não foi possível salvar neste aparelho. As sugestões continuam como estavam.</p>
           </Alert>
         ) : null}
 

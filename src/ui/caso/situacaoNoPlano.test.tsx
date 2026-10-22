@@ -52,9 +52,9 @@ describe('Identificação pela situação (CA-251, CB-51, CB-69)', () => {
     expect(screen.getByText('Preencha em Configurações › Quem assina.')).toBeInTheDocument()
   })
 
-  it('item 8: conta sem nome e CRN manda conferir em Conta e plano, não em Configurações', () => {
+  it('item 8: conta sem nome e CRN manda conferir em Conta e assinatura, não em Configurações', () => {
     montar({ ...ANA, origem: 'conta', linhaNutricionista: null })
-    expect(screen.getByText('Confira nome e CRN em Conta e plano.')).toBeInTheDocument()
+    expect(screen.getByText('Confira nome e CRN em Conta e assinatura.')).toBeInTheDocument()
     expect(screen.queryByText(/Quem assina/)).not.toBeInTheDocument()
   })
 })

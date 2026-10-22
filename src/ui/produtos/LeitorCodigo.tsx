@@ -61,7 +61,7 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
         }
         void procurar()
       } catch {
-        setErro('Não consegui abrir a câmera. Digite o código que está embaixo das barras.')
+        setErro('Não foi possível abrir a câmera. Digite o código que está embaixo das barras.')
         setCamera(false)
       }
     }

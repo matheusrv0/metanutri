@@ -67,7 +67,7 @@ export function CartaoDocumento({ caso, aoAlterar, assinatura, camposDeEstagio, 
             <span className="block text-xs text-muted-foreground">
               {assinatura.linhaNutricionista === null
                 ? assinatura.origem === 'conta'
-                  ? 'Confira nome e CRN em Conta e plano.'
+                  ? 'Confira nome e CRN em Conta e assinatura.'
                   : 'Preencha em Configurações › Quem assina.'
                 : assinatura.origem === 'conta'
                   ? 'Vem do seu cadastro.'

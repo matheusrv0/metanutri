@@ -81,7 +81,7 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Tabela de alimentos** — os 597 da TACO navegáveis: busca, filtro por categoria e por
   completude do dado, ordenação, e a composição inteira de cada alimento com as medidas
   caseiras. "Não analisado" é falta de medição, não zero.
-- **Meus produtos** — industrializado não está na tabela de composição. Cadastre pelo
+- **Meus alimentos** — industrializado não está na tabela de composição. Cadastre pelo
   rótulo, lendo o código de barras pela câmera ou digitando; os dados vêm da Open Food
   Facts para você conferir com a embalagem. Depois ele entra no plano como qualquer alimento.
 - **Trocas** — a folha do paciente sai com uma lista de trocas: mesmo grupo, mesma

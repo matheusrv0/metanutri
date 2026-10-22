@@ -79,7 +79,7 @@ const RECURSOS: readonly { readonly icone: LucideIcon; readonly titulo: string; 
   {
     icone: CookingPot,
     titulo: 'Receitas e alimentos próprios',
-    texto: 'Receitas com valor nutricional por porção e produtos cadastrados pelo rótulo ou pelo código de barras. Entram na refeição como qualquer alimento.',
+    texto: 'Receitas com valor nutricional por porção e, em Meus alimentos, produtos cadastrados pelo rótulo ou pelo código de barras. Os dois entram na refeição pela busca, como qualquer alimento.',
   },
   { icone: Pill, titulo: 'Suplementos e exames', texto: 'Prescrição de suplementos e pedido de exames prontos para imprimir, com a sua assinatura.' },
   {

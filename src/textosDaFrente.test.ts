@@ -250,3 +250,51 @@ describe('CA-1170: termos antigos nos textos desta frente', () => {
     expect(achados(padrao)).toEqual([])
   })
 })
+
+/**
+ * CA-1201 (integração das frentes de 21/10/2026): depois da junção, as telas que eram das outras frentes (ficha, etapa 1,
+ * refeições, alimentos, Adequação, receitas) também ficam sem as vozes antigas que a revisão de texto apontou. Só os
+ * termos que valem para essas telas; os de Preços, landing e documentos continuam na guarda de cima.
+ */
+const PASTAS_DAS_OUTRAS_FRENTES = [
+  'src/ui/pacientes',
+  'src/ui/caso',
+  'src/ui/plano',
+  'src/ui/produtos',
+  'src/ui/alimentos',
+  'src/ui/adequacao',
+  'src/ui/resumo',
+  'src/ui/receitas',
+]
+const SOLTOS_DAS_OUTRAS_FRENTES = ['src/domain/plano.ts', 'src/domain/sugestoes.ts', 'src/domain/receitas.ts', 'src/domain/produtos.ts']
+const TEXTOS_DAS_OUTRAS_FRENTES: ReadonlyMap<string, readonly string[]> = new Map(
+  [...PASTAS_DAS_OUTRAS_FRENTES.flatMap(arquivosDa), ...SOLTOS_DAS_OUTRAS_FRENTES].map((caminho): [string, readonly string[]] => [
+    caminho,
+    textosDoCodigo(caminho, readFileSync(join(RAIZ, caminho), 'utf8')),
+  ]),
+)
+const PROIBIDOS_NAS_OUTRAS_FRENTES: readonly (readonly [string, RegExp])[] = [
+  ['"Não consegui"', /\bNão consegui\b/i],
+  ['"Não deu para"', /\bNão deu para\b/i],
+  ['"Não dá para desfazer"', /não dá para desfazer/i],
+  ['"Conta e plano"', /Conta e plano/],
+  ['"Meus produtos"', /Meus produtos/],
+  ['"presos à conta"', /presos? à/i],
+  // Linha 118 de textos.md: plano novo começa com "Café da manhã" (o "Desjejum" guardado continua, CA-1200).
+  ['"Desjejum"', /Desjejum|o desjejum/],
+]
+
+describe('CA-1201: termos antigos nas telas das outras frentes, depois da junção', () => {
+  it('a varredura lê a ficha, a etapa 1, as refeições, os alimentos e a Adequação', () => {
+    const lidos = [...TEXTOS_DAS_OUTRAS_FRENTES.keys()]
+    for (const esperado of ['src/ui/caso/CartaoDocumento.tsx', 'src/ui/plano/DialogoSugestoes.tsx', 'src/ui/produtos/LeitorCodigo.tsx', 'src/domain/plano.ts']) {
+      expect(lidos).toContain(esperado)
+    }
+    expect(lidos.some((c) => c.includes('.test.'))).toBe(false)
+  })
+
+  it.each(PROIBIDOS_NAS_OUTRAS_FRENTES)('nenhum texto tem %s', (_nome, padrao) => {
+    const achou = [...TEXTOS_DAS_OUTRAS_FRENTES].flatMap(([caminho, textos]) => textos.filter((t) => padrao.test(t)).map((t) => `${caminho}: ${t}`))
+    expect(achou).toEqual([])
+  })
+})

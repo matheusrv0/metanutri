@@ -119,6 +119,10 @@ describe('TelaInicio (spec site-publico-profissional, textos da spec textos-e-pr
       'Na sua conta',
     ])
     expect(secao).toHaveTextContent('produtos cadastrados pelo rótulo ou pelo código de barras')
+    // CA-1202 (integração 22/10/2026): o que esta publicação entrega. A receita entra pela busca da refeição
+    // (RECEITAS_NA_REFEICAO); o formulário do alimento próprio fica para a publicação 2 e não é prometido.
+    expect(secao).toHaveTextContent('em Meus alimentos, produtos cadastrados pelo rótulo ou pelo código de barras. Os dois entram na refeição pela busca, como qualquer alimento.')
+    expect(secao).not.toHaveTextContent(/alimento da sua região|preparação sua|qualquer alimento seu/i)
     expect(secao).toHaveTextContent('Aconselhamento nutricional e memorial de cálculo em Word.')
     expect(secao).toHaveTextContent('Planos e pacientes salvos na nuvem. Abra no computador ou no celular.')
     expect(secao.querySelectorAll('.rounded-3xl')).toHaveLength(0)

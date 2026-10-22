@@ -138,16 +138,16 @@ describe('Editar sugestões (CA-241 a CA-243, CB-70)', () => {
   it('CB-70: aparelho que não guarda avisa e o diálogo fica aberto', async () => {
     const { usuario, aoFechar } = montar(SUGESTOES_PADRAO.almoco, false)
     await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
-    expect(screen.getByText('Não deu para salvar neste aparelho. As sugestões continuam como estavam.')).toBeInTheDocument()
+    expect(screen.getByText('Não foi possível salvar neste aparelho. As sugestões continuam como estavam.')).toBeInTheDocument()
     expect(aoFechar).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert')).toHaveTextContent('Não deu para salvar')
+    expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível salvar')
   })
 
   it('item 11: mexer na lista depois do aviso faz o aviso sumir', async () => {
     const { usuario } = montar(SUGESTOES_PADRAO.almoco, false)
     await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
-    expect(screen.getByText(/Não deu para salvar/)).toBeInTheDocument()
+    expect(screen.getByText(/Não foi possível salvar/)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Tirar Alface, crespa, crua' }))
-    expect(screen.queryByText(/Não deu para salvar/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Não foi possível salvar/)).not.toBeInTheDocument()
   })
 })

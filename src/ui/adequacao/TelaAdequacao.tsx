@@ -3,6 +3,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { calcularAdequacao, minimoInteiro, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
+// Spec textos-e-promessas, D-410: a mesma descrição do estágio que o memorial usa.
+import { descreverEstagio } from '@/domain/descreverEstagio.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
@@ -55,21 +57,6 @@ const MINIMO_MAXIMO_PCT = 1000
 
 /** Abaixo de 640 px a tabela vira lista: a tabela rolava para o lado e escondia o Cobrir (D-207). */
 const CELULAR = '(max-width: 639px)'
-
-/** "feminino-19-30" vira "mulheres de 19 a 30 anos"; "gestante-19-30" vira "gestantes de 19 a 30 anos". */
-function descreverEstagio(estagio: { readonly idadeMin: number; readonly idadeMax: number | null; readonly sexo: string | null; readonly gestante: boolean; readonly lactante: boolean }): string {
-  const grupo = estagio.gestante
-    ? 'gestantes'
-    : estagio.lactante
-      ? 'lactantes'
-      : estagio.sexo === 'F'
-        ? 'mulheres'
-        : estagio.sexo === 'M'
-          ? 'homens'
-          : 'crianças'
-  const faixa = estagio.idadeMax === null ? `${estagio.idadeMin} anos ou mais` : `${estagio.idadeMin} a ${estagio.idadeMax} anos`
-  return `${grupo} de ${faixa}`
-}
 
 function Linha({ linha, aoCobrir }: { readonly linha: LinhaAdequacao; readonly aoCobrir: () => void }) {
   return (
