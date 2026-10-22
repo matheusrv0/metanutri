@@ -278,6 +278,8 @@ export const MEDIDAS_CURTAS: Readonly<Record<string, readonly string[]>> = {
   colher: ['colher de sopa', 'colher de servir'],
   'xícara': ['xícara de chá'],
   copo: ['copo americano', 'copo médio', 'copo de requeijão', 'copo grande'],
+  // D-424: o "copo médio" de 240 ml virou "copo de requeijão" na base; quem escreve o nome antigo acha o mesmo copo.
+  'copo médio': ['copo médio', 'copo de requeijão'],
 }
 
 const PADROES_CURTOS = Object.keys(MEDIDAS_CURTAS).map((nome) => ({ nome, re: padraoDaMedida(nome) }))

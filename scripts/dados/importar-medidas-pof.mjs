@@ -199,6 +199,55 @@ export function motivoDaProporcao(nome, gramas, sopa) {
   return razao < faixa[0] || razao > faixa[1] ? `fora da proporção da colher de sopa (${String(sopa).replace('.', ',')} g)` : null
 }
 
+// ---------- Um nome por copo (spec alimentos-e-gramaturas, D-424) ----------
+// A POF dá o mesmo peso ao "copo médio" e ao "copo de requeijão" (240 ml): dois nomes para o mesmo copo faziam o
+// iogurte natural sair em "meio copo de requeijão" e o desnatado em "meio copo médio" na mesma lista (M20).
+const ORDEM_DOS_COPOS = ['copo americano', 'copo de requeijão', 'copo médio', 'copo grande', 'copo tulipa']
+const COPO_PADRAO_G = 240
+
+/**
+ * Fica um copo por peso, na ordem de `ORDEM_DOS_COPOS`; o "copo médio" de 240 que sobra sozinho vira "copo de requeijão".
+ * Devolve as medidas e o que mudou, para a revisão.
+ */
+export function umNomePorCopo(medidas) {
+  const copo = (m) => ORDEM_DOS_COPOS.includes(m.nome)
+  const mudancas = []
+  const ficam = medidas.filter((m) => {
+    if (!copo(m)) return true
+    const primeiro = medidas.filter((o) => copo(o) && o.gramas === m.gramas).sort((x, y) => ORDEM_DOS_COPOS.indexOf(x.nome) - ORDEM_DOS_COPOS.indexOf(y.nome))[0]
+    if (primeiro.nome === m.nome) return true
+    mudancas.push({ medida: m, acao: `tirado: o mesmo copo que o ${primeiro.nome}` })
+    return false
+  })
+  const final = ficam.map((m) => {
+    if (m.nome !== 'copo médio' || m.gramas !== COPO_PADRAO_G) return m
+    mudancas.push({ medida: m, acao: 'renomeado para copo de requeijão (o mesmo copo de 240 ml)' })
+    return { ...m, nome: 'copo de requeijão' }
+  })
+  return { medidas: final.sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR')), mudancas }
+}
+
+// ---------- Unidade de outra variedade (spec alimentos-e-gramaturas, D-425) ----------
+// Sem peso por variedade na POF, a unidade de uma variedade só vale para outra quando o tamanho é parecido (dentro dos
+// 15% da medida automática). As faixas são das tabelas de porção (por unidade, parte comestível).
+export const EMPRESTIMOS = [
+  {
+    alvo: 'Banana, maçã, crua',
+    de: 'Banana, prata, crua',
+    medidas: ['unidade'],
+    motivo: 'banana maçã e banana prata têm de 55 a 85 g por unidade nas tabelas de porção',
+  },
+]
+
+export const EM_GRAMAS = [
+  ['Banana, nanica, crua', 'maior que a prata (86 a 110 g por unidade); a POF só pesa a unidade da prata'],
+  ['Banana, ouro, crua', 'cerca de 40 g por unidade, metade da prata'],
+  ['Banana, figo, crua', 'banana de cozinhar, sem peso de referência por unidade'],
+  ['Manga, Haden, crua', 'a única unidade da POF é a da manga espada (140 g); a Haden pesa mais que o dobro'],
+  ['Manga, Palmer, crua', 'a única unidade da POF é a da manga espada (140 g); a Palmer pesa cerca de 3 vezes isso'],
+  ['Manga, Tommy Atkins, crua', 'a única unidade da POF é a da manga espada (140 g); a Tommy pesa cerca de 3 vezes isso'],
+]
+
 /** "COPO*" casa qualquer medida que começa com "COPO"; o resto exige nome exato. */
 function medidaExcluida(medida, excluidas) {
   return excluidas.some((e) => (e.endsWith('*') ? medida.startsWith(e.slice(0, -1)) : medida === e))
@@ -234,6 +283,7 @@ export function converter() {
   const semRegra = []
   const tiradas = []
   const paraConferir = []
+  const copos = []
   const peso = (g) => `${String(g).replace('.', ',')} g`
   const celula = (s) => String(s).replace(/\|/g, '/')
 
@@ -283,7 +333,7 @@ export function converter() {
     })
     // A proporção das colheres menores é conferida contra a colher de sopa que ficou.
     const sopa = ficam.find((m) => m.nome === 'colher de sopa')?.gramas
-    const medidas = ficam
+    const plausiveis = ficam
       .filter((m) => {
         const motivo = motivoDaProporcao(m.nome, m.gramas, sopa)
         if (motivo) tirar(m, motivo)
@@ -291,6 +341,9 @@ export function converter() {
       })
       .map(({ nome, gramas }) => ({ nome, gramas }))
       .sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'))
+    // D-424: um nome por copo.
+    const { medidas, mudancas } = umNomePorCopo(plausiveis)
+    for (const { medida, acao } of mudancas) copos.push(`| ${a.id} | ${a.descricao} | ${medida.nome} | ${peso(medida.gramas)} | ${acao} |`)
     for (const m of medidas) {
       if (m.nome === 'colher de sopa' && m.gramas > 30) paraConferir.push(`| ${a.id} | ${a.descricao} | ${m.nome} | ${peso(m.gramas)} | colher de sopa acima de 30 g |`)
     }
@@ -303,6 +356,35 @@ export function converter() {
     saida[a.id] = { pof: { codigo: regra.codigo_pof, descricao: nomePof, preparacao: preparo }, medidas }
     revisao.push(`| ${a.id} | ${a.descricao} | ${nomePof} (${preparo}) | ${medidas.map((m) => `${m.nome} ${m.gramas} g`).join('; ')} |`)
   }
+
+  // D-425: a unidade de outra variedade, só onde o tamanho é parecido.
+  const porDescricao = (descricao) => {
+    const achado = alimentos.find((x) => x.descricao === descricao)
+    if (!achado) throw new Error(`D-425: "${descricao}" não existe na TACO`)
+    return achado
+  }
+  const emprestadas = []
+  for (const e of EMPRESTIMOS) {
+    const alvo = porDescricao(e.alvo)
+    const de = porDescricao(e.de)
+    const daOrigem = saida[de.id]?.medidas ?? []
+    const novas = e.medidas.map((nome) => {
+      const m = daOrigem.find((x) => x.nome === nome)
+      if (!m) throw new Error(`D-425: "${e.de}" não tem "${nome}"`)
+      return m
+    })
+    const registro = saida[alvo.id]
+    if (!registro) throw new Error(`D-425: "${e.alvo}" não tem medidas da POF`)
+    registro.medidas = [...registro.medidas.filter((m) => !e.medidas.includes(m.nome)), ...novas].sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'))
+    for (const m of novas) emprestadas.push(`| ${alvo.id} | ${alvo.descricao} | ${m.nome} | ${peso(m.gramas)} | ${de.descricao} | ${e.motivo} |`)
+    const linha = revisao.findIndex((l) => l.startsWith(`| ${alvo.id} | `))
+    if (linha >= 0) revisao[linha] = revisao[linha].replace(/\| [^|]* \|$/, `| ${registro.medidas.map((m) => `${m.nome} ${m.gramas} g`).join('; ')} |`)
+  }
+  const emGramas = EM_GRAMAS.map(([descricao, motivo]) => {
+    const a = porDescricao(descricao)
+    if (saida[a.id]?.medidas.some((m) => m.nome === 'unidade')) throw new Error(`D-425: "${descricao}" ganhou unidade`)
+    return `| ${a.id} | ${a.descricao} | ${motivo} |`
+  })
 
   const naoUsadas = regras.filter((r) => !regrasUsadas.has(r.linha)).map((r) => `linha ${r.linha}: ${r.padrao_taco}`)
 
@@ -343,6 +425,34 @@ export function converter() {
       '| TACO | Descrição TACO | Medida | Peso | Motivo | Fonte da POF |',
       '|---|---|---|---|---|---|',
       ...tiradas,
+      '',
+      '## Um nome por copo',
+      '',
+      'Spec alimentos-e-gramaturas, D-424: a POF dá o mesmo peso a "copo médio" e "copo de requeijão" (240 ml). Fica um',
+      'copo por peso (copo americano, copo de requeijão, copo médio, copo grande, copo tulipa), e o "copo médio" de 240 que',
+      'sobra sozinho passa a se chamar "copo de requeijão". O item gravado com o nome antigo continua com ele.',
+      '',
+      '| TACO | Descrição TACO | Medida | Peso | O que mudou |',
+      '|---|---|---|---|---|',
+      ...copos,
+      '',
+      '## Unidade emprestada de outra variedade',
+      '',
+      'Spec alimentos-e-gramaturas, D-425: sem peso por variedade na POF, a unidade de uma variedade só vale para outra',
+      'quando o tamanho é parecido (dentro dos 15% da medida automática).',
+      '',
+      '| TACO | Descrição TACO | Medida | Peso | Emprestada de | Por quê |',
+      '|---|---|---|---|---|---|',
+      ...emprestadas,
+      '',
+      '## Variedades que ficam em gramas',
+      '',
+      'Spec alimentos-e-gramaturas, D-425: tamanho diferente do da variedade que a POF pesa, ou sem peso de referência. O',
+      'paciente lê o peso até a nutricionista criar a medida dela ("+ Nova medida", D-387).',
+      '',
+      '| TACO | Descrição TACO | Por quê |',
+      '|---|---|---|',
+      ...emGramas,
       '',
       '## Medidas que ficam e pedem um olho',
       '',

@@ -324,3 +324,23 @@ describe('entrada rápida que acerta (spec alimentos-e-gramaturas)', () => {
     expect(ehLiquido({ descricao: 'Kefir da casa', categoria: 'Leite e derivados', unidade: 'ml' })).toBe(true)
   })
 })
+
+describe('um copo por nome e a unidade emprestada (spec alimentos-e-gramaturas, D-424 e D-425)', () => {
+  it('CA-1209: 240 g de iogurte natural e de iogurte desnatado se leem no mesmo copo', () => {
+    expect(medidaParaMostrar(448, 240)?.texto).toBe('1 copo de requeijão')
+    expect(medidaParaMostrar(449, 240)?.texto).toBe('1 copo de requeijão')
+  })
+
+  it('CA-1209: quem escreve "copo médio" acha o copo de requeijão, o mesmo copo de 240 ml', () => {
+    expect(medidaPedida(449, 'copo médio')).toEqual({ nome: 'copo de requeijão', gramas: 240 })
+    const r = buscarAlimentos('1 copo médio de iogurte natural desnatado', ALIMENTOS).resultados[0]
+    expect(r?.alimento.id).toBe(449)
+    expect(r?.medida).toEqual({ nome: 'copo de requeijão', quantidade: 1, gramasPorMedida: 240 })
+  })
+
+  it('CA-1210: "1 banana maçã" entra com a unidade emprestada da prata, 75 g', () => {
+    const r = buscarAlimentos('1 banana maçã', ALIMENTOS).resultados[0]
+    expect(r?.alimento.descricao).toBe('Banana, maçã, crua')
+    expect(r?.gramas).toBe(75)
+  })
+})

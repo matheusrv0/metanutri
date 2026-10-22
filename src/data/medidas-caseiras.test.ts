@@ -122,12 +122,11 @@ const peso = (id: number, nome: string) => porId[id]?.medidas.find((m) => m.nome
 
 /** O nome da medida na POF: sem acento e em maiúscula, menos a colher de servir, que a POF chama "de arroz". */
 const nomeNaPof = (nome: string) => (nome === 'colher de servir' ? 'COLHER DE ARROZ/SERVIR' : semAcento(nome).toUpperCase())
+const fonteNaPof = (r: Registro, nomePof: string) =>
+  pof.find((l) => l['codigo_alimento'] === r.pof.codigo && l['descricao_preparacao'] === r.pof.preparacao && l['descricao_medida'] === nomePof)?.['descricao_fonte']
+// D-424: o "copo de requeijão" pode ser o "copo médio" de 240 da POF, com o nome de um copo só.
 const fonteDe = (r: Registro, nome: string) =>
-  semAcento(
-    pof.find((l) => l['codigo_alimento'] === r.pof.codigo && l['descricao_preparacao'] === r.pof.preparacao && l['descricao_medida'] === nomeNaPof(nome))?.[
-      'descricao_fonte'
-    ] ?? '',
-  )
+  semAcento(fonteNaPof(r, nomeNaPof(nome)) ?? (nome === 'copo de requeijão' ? fonteNaPof(r, 'COPO MEDIO') : undefined) ?? '')
 
 const FOLHAS_CRUAS = [77, 78, 79, 80, 152, 75, 84, 111, 119, 135, 155, 156, 104, 105]
 const SO_DE_FOLHA = new Set(['folha', 'ramo', 'pires', 'prato de sobremesa', 'prato raso', 'porção'])
@@ -194,8 +193,8 @@ describe('medidas plausíveis (D-430)', () => {
     expect(nomes(490).filter((n) => n !== 'porção')).toEqual(['unidade']) // Ovo frito
   })
 
-  it('CA-1225: a unidade de uma variedade não vale para outra', () => {
-    for (const id of [175, 177, 178, 179, 180, 181]) {
+  it('CA-1225: a unidade de uma variedade não vale para outra (a banana maçã, pela D-425, tem a da prata)', () => {
+    for (const id of [175, 177, 179, 180, 181]) {
       for (const nome of ['unidade', 'unidade pequena', 'banda', 'metade']) expect(nomes(id), `${descricao(id)} · ${nome}`).not.toContain(nome)
     }
     expect(peso(182, 'unidade')).toBe(75) // a banana prata continua
@@ -248,5 +247,29 @@ describe('medidas plausíveis (D-430)', () => {
     const linhas = revisao.split('\n')
     const cobertos = new Set(linhas.flatMap((l) => /^\| (\d+) \|/.exec(l)?.[1] ?? /^- (\d+) /.exec(l)?.[1] ?? []).map(Number))
     for (const a of tabela.alimentos) expect(cobertos.has(a.id), a.descricao).toBe(true)
+  })
+})
+
+describe('sobras da caminhada dos 4 pacientes (spec alimentos-e-gramaturas, seção 6)', () => {
+  it('CA-1209 (D-424): nenhum alimento tem dois copos com o mesmo peso; os iogurtes e os leites leem o mesmo copo', () => {
+    for (const [a, r] of comMedidas) {
+      const copos = r.medidas.filter((m) => m.nome.startsWith('copo'))
+      const pesos = copos.map((m) => m.gramas)
+      expect(new Set(pesos).size, `${a.descricao}: ${copos.map((m) => `${m.nome} ${m.gramas}`).join(', ')}`).toBe(pesos.length)
+      expect(copos.some((m) => m.nome === 'copo médio' && m.gramas === 240), a.descricao).toBe(false)
+    }
+    for (const id of [448, 449, 454, 457, 458]) {
+      expect(peso(id, 'copo de requeijão'), descricao(id)).toBe(240)
+      expect(nomes(id), descricao(id)).not.toContain('copo médio')
+    }
+  })
+
+  it('CA-1210 (D-425): a banana maçã tem a unidade da prata; nanica, ouro, figo e as mangas ficam em gramas', () => {
+    expect(peso(178, 'unidade')).toBe(75)
+    for (const id of [177, 179, 180, 228, 229, 231]) expect(nomes(id), descricao(id)).not.toContain('unidade')
+    expect(revisao).toMatch(/## Unidade emprestada de outra variedade/)
+    expect(revisao).toContain('| 178 | Banana, maçã, crua | unidade | 75 g | Banana, prata, crua |')
+    expect(revisao).toMatch(/## Variedades que ficam em gramas/)
+    for (const id of [177, 179, 180, 228, 229, 231]) expect(revisao, descricao(id)).toContain(`| ${id} | ${descricao(id)} |`)
   })
 })

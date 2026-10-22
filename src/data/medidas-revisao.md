@@ -28,7 +28,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 54 | Pão, trigo, sovado | PAO NAO ESPECIFICADO (NAO SE APLICA) | banda 25 g; bisnaga 200 g; fatia 25 g; metade 25 g; pedaço 25 g; porção 50 g; unidade 50 g |
 | 56 | Pastel, de carne, frito | PASTEL (QUEIJO, CARNE, PALMITO, ETC) (NAO SE APLICA) | metade 16 g; pedaço 8 g; unidade 32 g; unidade pequena 8 g |
 | 58 | Pastel, de queijo, frito | PASTEL (QUEIJO, CARNE, PALMITO, ETC) (NAO SE APLICA) | metade 16 g; pedaço 8 g; unidade 32 g; unidade pequena 8 g |
-| 61 | Pipoca, com óleo de soja, sem sal | PIPOCA DOCE OU SALGADA (NAO SE APLICA) | colher de servir 3 g; concha 6 g; copo americano 6 g; copo de requeijão 7 g; copo grande 11 g; copo médio 7 g; pires 7 g; porção 30 g; pote 9 g; prato de sobremesa 10 g; prato fundo 24 g; prato raso 14 g; punhado 2 g; xícara de café 2 g; xícara de chá 6 g |
+| 61 | Pipoca, com óleo de soja, sem sal | PIPOCA DOCE OU SALGADA (NAO SE APLICA) | colher de servir 3 g; concha 6 g; copo americano 6 g; copo de requeijão 7 g; copo grande 11 g; pires 7 g; porção 30 g; pote 9 g; prato de sobremesa 10 g; prato fundo 24 g; prato raso 14 g; punhado 2 g; xícara de café 2 g; xícara de chá 6 g |
 | 62 | Polenta, pré-cozida | POLENTA (NAO SE APLICA) | colher de servir 60 g; colher de sobremesa 17.5 g; colher de sopa 35 g; concha 150 g; pedaço 150 g; porção 105 g; prato fundo 500 g; prato raso 300 g |
 | 63 | Torrada, pão francês | TORRADA DE QUALQUER PAO (NAO SE APLICA) | porção 40 g; unidade 8 g |
 | 64 | Abóbora, cabotian, cozida | ABOBORA (CROZIDO(A)) | colher de chá 9 g; colher de servir 72 g; colher de sobremesa 18 g; colher de sopa 36 g; escumadeira 100 g; fatia 50 g; pedaço 50 g; porção 70 g |
@@ -66,8 +66,8 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 116 | Couve, manteiga, refogada  | COUVE (REFOGADO(A)) | colher de chá 5 g; colher de servir 42 g; colher de sobremesa 10 g; colher de sopa 20 g; folha 25 g; porção 42 g; prato fundo 120 g |
 | 118 | Couve-flor, cozida | COUVE FLOR (CROZIDO(A)) | colher de servir 50 g; colher de sobremesa 12.5 g; colher de sopa 25 g; pedaço 60 g; porção 69 g; prato de sobremesa 100 g; ramo 60 g; unidade 60 g; unidade pequena 30 g |
 | 120 | Espinafre, Nova Zelândia, refogado | ESPINAFRE (REFOGADO(A)) | colher de sobremesa 12.5 g; colher de sopa 25 g; porção 67 g |
-| 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
-| 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
+| 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
+| 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
 | 127 | Jiló, cru | JILO (CRU(A)) | colher de servir 95 g |
 | 128 | Jurubeba, crua | JURUBEBA (NAO SE APLICA) | unidade 10 g |
 | 129 | Mandioca, cozida | MANDIOCA (CROZIDO(A)) | colher de servir 60 g; colher de sopa 30 g; fatia 100 g; pedaço 100 g; porção 128 g |
@@ -95,7 +95,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 174 | Atemóia, crua | ATEMOIA (FRUTA) (NAO SE APLICA) | unidade 227 g |
 | 175 | Banana, da terra, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
 | 177 | Banana, figo, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
-| 178 | Banana, maçã, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
+| 178 | Banana, maçã, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g; unidade 75 g |
 | 179 | Banana, nanica, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
 | 180 | Banana, ouro, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
 | 181 | Banana, pacova, crua | BANANA (OURO, PRATA, D´AGUA, DA TERRA, ETC) (CRU(A)) | fatia 26 g; pedaço 16 g; porção 86 g |
@@ -117,15 +117,15 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 206 | Jamelão, cru | JAMELAO (JAMBURAO) (NAO SE APLICA) | unidade 5 g |
 | 207 | Kiwi, cru | KIWI (NAO SE APLICA) | pedaço 23.5 g; rodela 11 g; unidade 94 g; unidade pequena 57 g |
 | 208 | Laranja, baía, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; unidade 180 g; unidade pequena 90 g |
-| 209 | Laranja, baía, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 209 | Laranja, baía, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 210 | Laranja, da terra, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | banda 90 g; metade 90 g; unidade 180 g; unidade pequena 90 g |
-| 211 | Laranja, da terra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 211 | Laranja, da terra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 212 | Laranja, lima, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | banda 90 g; metade 90 g; unidade 180 g; unidade pequena 90 g |
-| 213 | Laranja, lima, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 213 | Laranja, lima, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 214 | Laranja, pêra, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | banda 90 g; metade 90 g; unidade 180 g; unidade pequena 90 g |
-| 215 | Laranja, pêra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 215 | Laranja, pêra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 216 | Laranja, valência, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | banda 90 g; metade 90 g; unidade 180 g; unidade pequena 90 g |
-| 217 | Laranja, valência, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 217 | Laranja, valência, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 220 | Limão, tahiti, cru | LIMAO (COMUM, GALEGO, ETC) (NAO SE APLICA) | banda 42 g; fatia 16.8 g; metade 42 g; pedaço 16.8 g; porção 252 g; unidade 84 g |
 | 221 | Maçã, Argentina, com casca, crua | MACA (NAO SE APLICA) | banda 75 g; fatia 37.5 g; metade 75 g; pedaço 37.5 g; porção 130 g; unidade 150 g; unidade pequena 90 g |
 | 222 | Maçã, Fuji, com casca, crua | MACA (NAO SE APLICA) | banda 75 g; fatia 37.5 g; metade 75 g; pedaço 37.5 g; porção 130 g; unidade 150 g; unidade pequena 90 g |
@@ -230,33 +230,33 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 440 | Quibe, assado | QUIBE (NAO SE APLICA) | pedaço 12 g; unidade 50 g; unidade pequena 12 g |
 | 442 | Quibe, frito | QUIBE (NAO SE APLICA) | pedaço 12 g; unidade 50 g; unidade pequena 12 g |
 | 443 | Salame | SALAME (NAO SE APLICA) | fatia 20 g; porção 62 g |
-| 446 | Bebida láctea, pêssego | BEBIDA LACTEA (NAO SE APLICA) | copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g |
-| 447 | Creme de Leite | CREME DE LEITE (NAO SE APLICA) | colher de café 2.5 g; colher de chá 5 g; colher de servir 30 g; colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; copo médio 240 g; ponta de faca 12.5 g |
-| 448 | Iogurte, natural | IOGURTE NATURAL (NAO SE APLICA) | colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; pote 200 g |
-| 449 | Iogurte, natural, desnatado | IOGURTE DESNATADO (NAO SE APLICA) | copo americano 150 g; copo médio 240 g; pote 200 g |
-| 450 | Iogurte, sabor abacaxi | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
-| 451 | Iogurte, sabor morango | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
-| 452 | Iogurte, sabor pêssego | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
-| 454 | Leite, de cabra | LEITE DE CABRA (NAO SE APLICA) | copo americano 150 g; copo médio 240 g; xícara de café 50 g; xícara de chá 200 g |
+| 446 | Bebida láctea, pêssego | BEBIDA LACTEA (NAO SE APLICA) | copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g |
+| 447 | Creme de Leite | CREME DE LEITE (NAO SE APLICA) | colher de café 2.5 g; colher de chá 5 g; colher de servir 30 g; colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; ponta de faca 12.5 g |
+| 448 | Iogurte, natural | IOGURTE NATURAL (NAO SE APLICA) | colher de sopa 15 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; pote 200 g |
+| 449 | Iogurte, natural, desnatado | IOGURTE DESNATADO (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; pote 200 g |
+| 450 | Iogurte, sabor abacaxi | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
+| 451 | Iogurte, sabor morango | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
+| 452 | Iogurte, sabor pêssego | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
+| 454 | Leite, de cabra | LEITE DE CABRA (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; xícara de café 50 g; xícara de chá 200 g |
 | 456 | Leite, de vaca, desnatado, pó | LEITE EM PO DESNATADO (NAO SE APLICA) | colher de café 1.8 g; colher de chá 3.5 g; colher de servir 20 g; colher de sopa 10 g |
-| 457 | Leite, de vaca, desnatado, UHT | LEITE DE VACA DESNATADO (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 270 g; xícara de café 50 g; xícara de chá 200 g |
-| 458 | Leite, de vaca, integral | LEITE DE VACA INTEGRAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 182 g; xícara de café 50 g; xícara de chá 200 g |
+| 457 | Leite, de vaca, desnatado, UHT | LEITE DE VACA DESNATADO (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 270 g; xícara de café 50 g; xícara de chá 200 g |
+| 458 | Leite, de vaca, integral | LEITE DE VACA INTEGRAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; porção 182 g; xícara de café 50 g; xícara de chá 200 g |
 | 459 | Leite, de vaca, integral, pó | LEITE EM PO INTEGRAL (NAO SE APLICA) | colher de café 2.3 g; colher de chá 4.5 g; colher de servir 32 g; colher de sobremesa 9 g; colher de sopa 16 g |
-| 460 | Leite, fermentado | LEITE FERMENTADO (NAO SE APLICA) | copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; pote 80 g; unidade 80 g |
+| 460 | Leite, fermentado | LEITE FERMENTADO (NAO SE APLICA) | copo de requeijão 240 g; copo grande 300 g; pote 80 g; unidade 80 g |
 | 461 | Queijo, minas, frescal | QUEIJO DE MINAS (NAO SE APLICA) | fatia 45 g; porção 50 g |
 | 462 | Queijo, minas, meia cura | QUEIJO DE MINAS (NAO SE APLICA) | fatia 45 g; porção 50 g |
 | 463 | Queijo, mozarela | QUEIJO MUZARELLA (NAO SE APLICA) | fatia 20 g; porção 45 g |
 | 464 | Queijo, parmesão | QUEIJO RALADO (NAO SE APLICA) | colher de café 2 g; colher de chá 4 g; colher de servir 30 g; colher de sobremesa 8 g; colher de sopa 15 g; porção 30 g |
 | 467 | Queijo, prato | QUEIJO PRATO (NAO SE APLICA) | fatia 15 g; porção 30 g |
-| 468 | Queijo, requeijão, cremoso | REQUEIJAO (NAO SE APLICA) | colher de café 3.8 g; colher de chá 7.5 g; colher de servir 60 g; colher de sobremesa 15 g; colher de sopa 30 g; copo médio 240 g; ponta de faca 6 g; porção 45 g |
+| 468 | Queijo, requeijão, cremoso | REQUEIJAO (NAO SE APLICA) | colher de café 3.8 g; colher de chá 7.5 g; colher de servir 60 g; colher de sobremesa 15 g; colher de sopa 30 g; copo de requeijão 240 g; ponta de faca 6 g; porção 45 g |
 | 469 | Queijo, ricota | QUEIJO RICOTA (NAO SE APLICA) | colher de sopa 44 g; fatia 35 g; ponta de faca 6 g; porção 100 g |
-| 471 | Café, infusão 10% | CAFE (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; dose 50 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
-| 475 | Chá, erva-doce, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
-| 476 | Chá, mate, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
-| 477 | Chá, preto, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
-| 478 | Coco, água de | AGUA DE COCO (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; unidade 340 g; xícara de chá 200 g |
-| 480 | Refrigerante, tipo cola | REFRIGERANTE DE COLA TRADICIONAL (NAO SE APLICA) | caneca 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; dose 50 g; taça 150 g; xícara de chá 200 g |
-| 481 | Refrigerante, tipo guaraná | REFRIGERANTE DE GUARANA TRADICIONAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; xícara de café 50 g |
+| 471 | Café, infusão 10% | CAFE (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; dose 50 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 475 | Chá, erva-doce, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 476 | Chá, mate, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 477 | Chá, preto, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
+| 478 | Coco, água de | AGUA DE COCO (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; unidade 340 g; xícara de chá 200 g |
+| 480 | Refrigerante, tipo cola | REFRIGERANTE DE COLA TRADICIONAL (NAO SE APLICA) | caneca 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; dose 50 g; taça 150 g; xícara de chá 200 g |
+| 481 | Refrigerante, tipo guaraná | REFRIGERANTE DE GUARANA TRADICIONAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo tulipa 290 g; xícara de café 50 g |
 | 484 | Omelete, de queijo | OMELETE (NAO SE APLICA) | colher de servir 45 g; colher de sobremesa 7.5 g; colher de sopa 15 g; fatia 10 g; pedaço 25 g; porção 110 g; unidade 65 g |
 | 485 | Ovo, de codorna, inteiro, cru | OVO DE CODORNA (CRU(A)) | unidade 10 g |
 | 488 | Ovo, de galinha, inteiro, cozido/10minutos | OVO DE GALINHA (NAO SE APLICA) | unidade 45 g |
@@ -1510,6 +1510,69 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 594 | Linhaça, semente | colher de café | 0,4 g | fora da proporção da colher de sopa (13 g) | Semente de linhaça - 1/4 colher de sobremesa |
 | 594 | Linhaça, semente | colher de chá | 1,5 g | fora da proporção da colher de sopa (13 g) | Semente de linhaça - 1/2 colher de sobremesa |
 | 594 | Linhaça, semente | colher de sobremesa | 3 g | fora da proporção da colher de sopa (13 g) | Semente de linhaça - colher de sobremesa |
+
+## Um nome por copo
+
+Spec alimentos-e-gramaturas, D-424: a POF dá o mesmo peso a "copo médio" e "copo de requeijão" (240 ml). Fica um
+copo por peso (copo americano, copo de requeijão, copo médio, copo grande, copo tulipa), e o "copo médio" de 240 que
+sobra sozinho passa a se chamar "copo de requeijão". O item gravado com o nome antigo continua com ele.
+
+| TACO | Descrição TACO | Medida | Peso | O que mudou |
+|---|---|---|---|---|
+| 61 | Pipoca, com óleo de soja, sem sal | copo médio | 7 g | tirado: o mesmo copo que o copo de requeijão |
+| 121 | Farinha, de mandioca, crua | copo grande | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 121 | Farinha, de mandioca, crua | copo médio | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 121 | Farinha, de mandioca, crua | copo tulipa | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 122 | Farinha, de mandioca, torrada | copo grande | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 122 | Farinha, de mandioca, torrada | copo médio | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 122 | Farinha, de mandioca, torrada | copo tulipa | 172 g | tirado: o mesmo copo que o copo de requeijão |
+| 209 | Laranja, baía, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 211 | Laranja, da terra, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 213 | Laranja, lima, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 215 | Laranja, pêra, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 217 | Laranja, valência, suco | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 446 | Bebida láctea, pêssego | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 447 | Creme de Leite | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 448 | Iogurte, natural | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 449 | Iogurte, natural, desnatado | copo médio | 240 g | renomeado para copo de requeijão (o mesmo copo de 240 ml) |
+| 450 | Iogurte, sabor abacaxi | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 451 | Iogurte, sabor morango | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 452 | Iogurte, sabor pêssego | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 454 | Leite, de cabra | copo médio | 240 g | renomeado para copo de requeijão (o mesmo copo de 240 ml) |
+| 457 | Leite, de vaca, desnatado, UHT | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 458 | Leite, de vaca, integral | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 460 | Leite, fermentado | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 468 | Queijo, requeijão, cremoso | copo médio | 240 g | renomeado para copo de requeijão (o mesmo copo de 240 ml) |
+| 471 | Café, infusão 10% | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 475 | Chá, erva-doce, infusão 5% | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 476 | Chá, mate, infusão 5% | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 477 | Chá, preto, infusão 5% | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 478 | Coco, água de | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 480 | Refrigerante, tipo cola | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+| 481 | Refrigerante, tipo guaraná | copo médio | 240 g | tirado: o mesmo copo que o copo de requeijão |
+
+## Unidade emprestada de outra variedade
+
+Spec alimentos-e-gramaturas, D-425: sem peso por variedade na POF, a unidade de uma variedade só vale para outra
+quando o tamanho é parecido (dentro dos 15% da medida automática).
+
+| TACO | Descrição TACO | Medida | Peso | Emprestada de | Por quê |
+|---|---|---|---|---|---|
+| 178 | Banana, maçã, crua | unidade | 75 g | Banana, prata, crua | banana maçã e banana prata têm de 55 a 85 g por unidade nas tabelas de porção |
+
+## Variedades que ficam em gramas
+
+Spec alimentos-e-gramaturas, D-425: tamanho diferente do da variedade que a POF pesa, ou sem peso de referência. O
+paciente lê o peso até a nutricionista criar a medida dela ("+ Nova medida", D-387).
+
+| TACO | Descrição TACO | Por quê |
+|---|---|---|
+| 179 | Banana, nanica, crua | maior que a prata (86 a 110 g por unidade); a POF só pesa a unidade da prata |
+| 180 | Banana, ouro, crua | cerca de 40 g por unidade, metade da prata |
+| 177 | Banana, figo, crua | banana de cozinhar, sem peso de referência por unidade |
+| 228 | Manga, Haden, crua | a única unidade da POF é a da manga espada (140 g); a Haden pesa mais que o dobro |
+| 229 | Manga, Palmer, crua | a única unidade da POF é a da manga espada (140 g); a Palmer pesa cerca de 3 vezes isso |
+| 231 | Manga, Tommy Atkins, crua | a única unidade da POF é a da manga espada (140 g); a Tommy pesa cerca de 3 vezes isso |
 
 ## Medidas que ficam e pedem um olho
 
