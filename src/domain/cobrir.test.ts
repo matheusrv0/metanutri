@@ -354,8 +354,8 @@ describe('sugestões com critério (spec sugestoes-com-criterio)', () => {
       expect(gramasDe(rico(50, descricao, categoria))).toBe(maximo)
     })
 
-    it('a ricota é magra e fica na porção padrão', () => {
-      expect(gramasDe(rico(51, 'Queijo, ricota', 'Leite e derivados', 140))).toBe(200)
+    it('a ricota é magra e fica fora dos queijos: 70 g, 2 fatias (correção C, D-489; antes, a porção padrão)', () => {
+      expect(gramasDe(rico(51, 'Queijo, ricota', 'Leite e derivados', 140))).toBe(70)
     })
 
     it('D-439 (correção A): fruta até 1 unidade ou 150 g (antes, a fruta comum ia até 200 g)', () => {
@@ -628,11 +628,11 @@ describe('Porção máxima de ovo no Cobrir (spec vitaminas-usda, D-306 e CA-957
     return porcaoMaximaDoGrupo(a)
   }
 
-  it('ovo inteiro até 100 g (2 ovos), gema até 40 g (2 gemas), clara até 100 g; a omelete não tem porção de grupo', () => {
+  it('ovo inteiro até 100 g (2 ovos), gema até 40 g (2 gemas), clara até 100 g; a omelete, 100 g (D-489)', () => {
     for (const id of OVOS_INTEIROS) expect(porcao(id), String(id)).toBe(100)
     expect(porcao(GEMA)).toBe(40)
     expect(porcao(CLARA)).toBe(100)
-    expect(porcao(OMELETE)).toBeNull()
+    expect(porcao(OMELETE)).toBe(100)
   })
 
   it('no plano vazio e no exemplo, nenhuma sugestão de ovo passa da porção, em nenhuma linha da adequação', () => {
@@ -879,6 +879,22 @@ describe('porção mínima de fruta e máxima de pupunha (spec sugestoes-com-cri
       gastoEnergetico: 2500,
     }).sugestoes
     expect(pupunha?.gramas).toBeLessThanOrEqual(30)
+  })
+})
+
+describe('todo alimento sugerível tem porção de grupo (spec sugestoes-com-criterio, correção C, D-489)', () => {
+  it('CA-1339: nenhum alimento prescritível fica nos 200 g sem grupo (café e chá nunca são sugeridos)', () => {
+    const sem = ALIMENTOS.filter((a) => regraQueExclui(a) === null && !/^(Café|Chá),/.test(a.descricao.trim()) && porcaoDoGrupo(a) === null)
+    expect(sem.map((a) => a.descricao)).toEqual([])
+  })
+
+  it('CA-1339: aveia 30 g, flocão 60 g, ricota 70 g, grão em conserva 60 g, água de coco 200 ml', () => {
+    const maxima = (d: string) => porcaoDoGrupo(ALIMENTOS.find((a) => a.descricao.trim() === d) as Alimento)?.maxima
+    expect(maxima('Aveia, flocos, crua')).toBe(30)
+    expect(maxima('Cereais, milho, flocos, sem sal')).toBe(60)
+    expect(maxima('Queijo, ricota')).toBe(70)
+    expect(maxima('Milho, verde, enlatado, drenado')).toBe(60)
+    expect(maxima('Coco, água de')).toBe(200)
   })
 })
 

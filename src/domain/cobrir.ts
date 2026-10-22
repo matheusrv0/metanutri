@@ -122,7 +122,18 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Azeitona e tremoço em conserva', gramas: 30, casa: (a) => /^(Azeitona,|Tremoço, em conserva)/i.test(nomeLimpo(a)) },
   { grupo: 'Cereal matinal e leite em pó', gramas: 30, casa: (a) => /^(Cereal matinal|Leite, de vaca, [^,]+, pó$)/i.test(nomeLimpo(a)) },
   { grupo: 'Leite fermentado', gramas: 80, casa: (a) => /^Leite, fermentado/i.test(nomeLimpo(a)) },
-  { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^Farinha, de mandioca/i.test(nomeLimpo(a)) },
+  // Correção C (D-489): a farofa com a farinha de mandioca.
+  { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^(Farinha, de mandioca|Mandioca, farofa)/i.test(nomeLimpo(a)) },
+  // D-489: os prescritíveis que caíam nos 200 g sem grupo, pelas medidas da POF.
+  { grupo: 'Aveia em flocos', gramas: 30, casa: (a) => /^Aveia,/i.test(nomeLimpo(a)) },
+  { grupo: 'Flocos de milho (flocão, peso cru do cuscuz)', gramas: 60, casa: (a) => /^Cereais, milho, flocos/i.test(nomeLimpo(a)) },
+  { grupo: 'Grão em conserva', gramas: 60, casa: (a) => /^(Milho, verde, enlatado|Ervilha, enlatada)/i.test(nomeLimpo(a)) },
+  { grupo: 'Ricota', gramas: 70, casa: (a) => /^Queijo, ricota/i.test(nomeLimpo(a)) },
+  { grupo: 'Omelete (2 ovos)', gramas: 100, casa: (a) => /^Omelete/i.test(nomeLimpo(a)) },
+  { grupo: 'Pamonha', gramas: 150, casa: (a) => /^Pamonha/i.test(nomeLimpo(a)) },
+  { grupo: 'Água de coco e extrato de soja', gramas: 200, casa: (a) => /^(Coco, água de|Soja, extrato solúvel, natural, fluido)/i.test(nomeLimpo(a)) },
+  { grupo: 'Pinhão cozido', gramas: 60, casa: (a) => /^Pinhão, cozido/i.test(nomeLimpo(a)) },
+  { grupo: 'Polpa de coco verde', gramas: 50, casa: (a) => /^Coco, verde, cru/i.test(nomeLimpo(a)) },
   // Correção A (spec sugestoes-com-criterio, D-439 e seção 8.2): todo alimento num grupo com porção de verdade.
   { grupo: 'Folha crua', gramas: 60, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
   { grupo: 'Fígado e sarapatel', gramas: 100, casa: (a) => FIGADO.test(nomeLimpo(a)) },
