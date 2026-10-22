@@ -138,6 +138,10 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['recurso do Pro que não existe', /Painel de micros|Relatório de adesão|Modelos próprios de documento/i],
   ['"Tudo do Grátis"', /Tudo do Grátis/i],
   ['"montando a clientela"', /clientela/i],
+  // D-402 a D-404: a landing sem repetição e com o glossário.
+  ['"feche o que falta"', /feche o que falta/i],
+  ['"Comece pelo Free"', /Comece pelo Free/i],
+  ['"Comparar os planos"', /Comparar os planos/i],
 ]
 
 const achados = (padrao: RegExp) =>

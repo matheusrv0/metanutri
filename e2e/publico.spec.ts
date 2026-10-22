@@ -19,11 +19,11 @@ test.describe('Landing (spec estilo-spora)', () => {
     await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
   })
 
-  test('CA-1007 (antes CA-116a): o cartão de 597 alimentos abre Fontes da base, no topo', async ({ page }) => {
+  test('CA-1173 (antes CA-1007): o cartão das sugestões leva a Como funciona; não há cartão de alimentos da base', async ({ page }) => {
     await page.goto('/#/inicio')
-    await page.getByRole('button', { name: /597/ }).click()
-    await expect(page).toHaveURL(/#\/fontes$/)
-    await expect(page.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: /597/ })).toHaveCount(0)
+    await page.getByRole('button', { name: /^Até 5/ }).click()
+    await expect(page.getByRole('heading', { level: 2, name: 'Como funciona' })).toBeInViewport()
   })
 })
 

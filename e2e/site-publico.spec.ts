@@ -97,7 +97,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
 
   const raiz = html.slice(html.indexOf('<div id="root">'))
   expect(raiz).toMatch(/<h1[^>]*>Faltou cálcio\?/)
-  for (const trecho of ['Como funciona', 'Do atendimento à folha do paciente', 'Quanto custa', 'R$ 34,90', 'Termos de uso']) expect(raiz).toContain(trecho)
+  for (const trecho of ['Como funciona', 'Do atendimento ao documento entregue', 'Quanto custa', 'R$ 34,90', 'Termos de uso']) expect(raiz).toContain(trecho)
   expect(html).toMatch(/<link rel="preload" href="\.\/assets\/manrope-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/)
   expect(raiz).toMatch(/<img fetchpriority="high"[^>]*width="1600" height="712" loading="lazy"/)
 })

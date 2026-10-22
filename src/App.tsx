@@ -212,10 +212,6 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
         <TelaInicio
           aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
-          aoVerFontes={() => {
-            navegar({ tela: 'fontes' })
-            globalThis.scrollTo?.({ top: 0 })
-          }}
         />
       </MolduraPublica>
     )
