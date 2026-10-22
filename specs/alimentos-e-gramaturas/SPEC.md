@@ -183,7 +183,7 @@ do Cobrir, a gestação e a criança ficam na spec `sugestoes-com-criterio` (se�
 | D-435 | **Trocar a medida mantém os gramas quando não havia medida guardada** (Importante 1): só o item com medida guardada (objeto) muda os gramas para quantidade × peso da medida nova (CA-1114); com a automática ou sem medida, a quantidade passa a ser gramas ÷ peso da medida nova, como "Fixar a medida" (vale também para "+ Nova medida…") | 102 g de feijão em "6 colheres de sopa" viravam 840 g ao escolher "concha" |
 | D-436 | **A medida própria chega ao link** (Importante 2): quando a medida automática do item usa uma medida própria da conta, a cópia do link a leva como escolhida (`escolhida: true`), e "Meu plano" mostra o mesmo que a folha sem precisar das medidas da conta | Com "concha = 100 g", a folha dizia "1 concha (100 g)" e o link "6 colheres de sopa (100 g)" |
 | D-437 | **Telas:** a ficha da Tabela de alimentos mostra todas as medidas na ordem do seletor da linha (as suas, depois as legíveis com "unidade" primeiro, depois as outras), sem o corte em 8 (I4); a janela do substituto cabe a 1280 px (I5); o rótulo de seção (`rotulo`) e o selo do `CartaoDestaque` saem da caixa alta para a caixa de frase em negrito, regra do dono (I3), a entrada rápida mostra só "poucos nutrientes" e "Do gasto" vira "% do GET" (glossário); a busca entende "2 pães franceses" (plural em "-eses") e "1.000 ml" (milhar com ponto) | Revisão como usuária (I3, I4, I5) e Menores da revisão de código |
-| D-438 | **Landing:** a frase do Cobrir não promete medida que ele nem sempre dá: "o botão Cobrir propõe o alimento e a porção, em medida caseira sempre que a base tem a medida, que fecham a diferença"; as capturas (`scripts/capturas-landing.mjs`) são refeitas depois das correções, sem "Desjejum" e sem "Rúcula 200 g" | I10 e I11 |
+| D-438 | **Landing:** a frase do Cobrir não promete medida que ele nem sempre dá: "o botão Cobrir propõe o alimento e a porção que fecham a diferença, em gramas e, quando a base tem, em medida caseira" (landing, `llms.txt`); a descrição da busca e do compartilhamento deixa de prometer "medida caseira" (D-403 e D-415 da `textos-e-promessas` mudam nesse ponto); as capturas (`scripts/capturas-landing.mjs`) são refeitas depois das correções, sem "Desjejum" e sem "Rúcula 200 g" | I10 e I11 |
 
 ### 5.2 Critérios de aceite
 
@@ -212,7 +212,7 @@ do Cobrir, a gestação e a criança ficam na spec `sugestoes-com-criterio` (se�
 - **CA-1241** · Dado o rótulo de seção e o selo do cartão de destaque, então nenhum usa caixa alta (`text-transform: uppercase`); a entrada rápida não mostra "parte dos nutrientes"; o Resumo do dia diz "% do GET".
 - **CA-1242** · Dado "2 pães franceses", então o 1º resultado é o pão francês com 2 unidades; dado "1.000 ml de leite", então são 1.000 ml.
 - **CA-1243** · Dado a janela do substituto a 1280 px com um resultado escolhido, então nada passa da borda dela (campo de busca, linha do resultado e o botão "Usar como substituto 2").
-- **CA-1244** · Dado a landing, então a frase do Cobrir diz "em medida caseira sempre que a base tem a medida", e as capturas da seção "Como funciona" não mostram "Desjejum" nem "Rúcula, crua 200 g".
+- **CA-1244** · Dado a landing, então a frase do Cobrir diz "em gramas e, quando a base tem, em medida caseira", nenhum texto público promete a porção "em gramas e em medida caseira" sem condição, e as capturas da seção "Como funciona" não mostram "Desjejum" nem "Rúcula, crua 200 g".
 
 ### 5.3 Casos de borda
 

@@ -43,13 +43,14 @@ const PARTES: readonly Parte[] = [
     titulo: 'Monte o plano e cubra o que falta',
     paragrafos: [
       'Digite “150 arroz” e tecle Enter: o alimento entra na refeição já com a medida caseira, e as calorias e os macros do dia se atualizam.',
-      'Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato. O MetaNutri calcula quanto falta em cada nutriente abaixo da meta, e o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença.',
+      'Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato. O MetaNutri calcula quanto falta em cada nutriente abaixo da meta, e o botão Cobrir propõe o alimento e a porção que fecham a diferença, em gramas e, quando a base tem, em medida caseira.',
       'As sugestões vêm de grupos diferentes e respeitam as restrições do paciente. Se nem uma porção realista fecha a diferença, a sugestão mostra quanto ela cobre. Você escolhe, e o alimento entra na refeição.',
     ],
     captura: 'cobrir',
+    // Correção A (D-438): capturas refeitas depois das porções realistas e da refeição de cada alimento.
     largura: 448,
-    altura: 585,
-    alt: 'Tela do botão Cobrir sugerindo rúcula e iogurte para completar o cálcio.',
+    altura: 568,
+    alt: 'Tela do botão Cobrir sugerindo leite desnatado no lanche e quiabo no almoço para completar o cálcio.',
   },
   {
     titulo: 'Acompanhe o paciente entre as consultas',
@@ -59,7 +60,7 @@ const PARTES: readonly Parte[] = [
     ],
     captura: 'missoes',
     largura: 390,
-    altura: 539,
+    altura: 788,
     alt: 'Tela de missões do paciente com 2 missões feitas no dia.',
   },
 ]

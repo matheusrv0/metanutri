@@ -40,7 +40,7 @@ export const PAGINAS: readonly PaginaIndexavel[] = [
     caminho: '',
     // Spec textos-e-promessas, D-415: para quem é e o diferencial, no mesmo vocabulário da landing.
     titulo: 'MetaNutri: software para nutricionistas que diz o que comer',
-    descricao: `Monte o plano alimentar, veja o que ficou abaixo da meta em ${VITAMINAS_E_MINERAIS} vitaminas e minerais e receba o alimento e a porção em medida caseira. Comece grátis.`,
+    descricao: `Monte o plano alimentar, veja o que ficou abaixo da meta em ${VITAMINAS_E_MINERAIS} vitaminas e minerais e receba o alimento e a porção que fecham a diferença. Comece grátis.`,
   },
   {
     rota: 'precos',
