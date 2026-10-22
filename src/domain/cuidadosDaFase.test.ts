@@ -1,7 +1,9 @@
-// Os cuidados da fase de vida: gestação sem fígado (spec sugestoes-com-criterio, correção A, D-442).
+// Os cuidados da fase de vida: gestação sem fígado e criança sem cafeína (spec sugestoes-com-criterio, correção A,
+// D-442 e D-443).
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { sugerirParaCobrir } from './cobrir.ts'
 import {
+  AVISO_CRIANCA_CAFEINA,
   AVISO_GESTACAO_FIGADO,
   comCuidadosDaFase,
   cuidadosDaFase,
@@ -18,6 +20,8 @@ import type { CondicaoFisiologica } from './tipos.ts'
 const GESTANTE: CondicaoFisiologica = { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 }
 const NENHUMA: CondicaoFisiologica = { tipo: 'nenhuma' }
 const FIGADOS = [355, 356, 400, 548] // fígado de boi cru e grelhado, fígado de frango cru, sarapatel
+const CAFEINA = [471, 476, 477, 480, 481, 511, 512] // café infusão, chá-mate, chá preto, refrigerante de cola e de guaraná, café em pó, capuccino
+const CHA_DE_ERVA_DOCE = 475
 const vazio = totaisDeItens([], buscarAlimento)
 const alimento = (id: number) => {
   const a = buscarAlimento(id)
@@ -77,5 +81,33 @@ describe('gestação sem fígado (D-442)', () => {
   it('CB-409: com uma restrição marcada também, o cuidado da fase vem primeiro na linha', () => {
     const ambas = comCuidadosDaFase(montarRestricoes({ marcadas: [], texto: 'fígado', doencas: [], naoGosta: '' }), { condicao: GESTANTE, idadeAnos: 28 })
     expect(restricaoDoAlimento(alimento(356), ambas)).toBe(AVISO_GESTACAO_FIGADO)
+  })
+})
+
+describe('criança sem cafeína (D-443)', () => {
+  const crianca = comCuidadosDaFase(SEM_RESTRICOES, { condicao: NENHUMA, idadeAnos: 6 })
+
+  it('abaixo de 12 anos; com 12 ou mais, nada; sem idade, nada (CB-406)', () => {
+    expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: 11 }).map((c) => c.id)).toEqual(['crianca-cafeina'])
+    expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: 12 })).toEqual([])
+    expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: null })).toEqual([])
+  })
+
+  it('CA-1252: café, chá preto, mate e refrigerante de cola e guaraná avisam; chá de erva-doce não', () => {
+    for (const id of CAFEINA) expect(restricaoDoAlimento(alimento(id), crianca), alimento(id).descricao).toBe(AVISO_CRIANCA_CAFEINA)
+    expect(restricaoDoAlimento(alimento(CHA_DE_ERVA_DOCE), crianca)).toBeNull()
+    expect(AVISO_CRIANCA_CAFEINA).toBe('Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças.')
+  })
+
+  it('CA-1252: as trocas não oferecem cafeína à criança, e o Cobrir não propõe', () => {
+    for (const a of ALIMENTOS) {
+      const ids = trocasDoAlimento({ alimentoId: a.id, gramas: 200 }, { alimentos: ALIMENTOS, restricoes: crianca, porAlimento: 4 }).map((t) => t.alimentoId)
+      expect(ids.filter((id) => CAFEINA.includes(id)), a.descricao).toEqual([])
+    }
+    const ad = calcularAdequacao(vazio, { sexo: 'F', idadeAnos: 6, condicao: NENHUMA }, { tipo: 'individual' })
+    for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+      const ids = sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 1300, restricoes: crianca, incluirIngredientes: true, idadeAnos: 6 }).sugestoes.map((s) => s.alimentoId)
+      expect(ids.filter((id) => CAFEINA.includes(id)), chave).toEqual([])
+    }
   })
 })

@@ -107,6 +107,22 @@ describe('Gestação sem fígado na linha e nas sugestões (spec sugestoes-com-c
     expect(screen.getByText('Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê.')).toBeInTheDocument()
   })
 
+  it('CA-1252: o café não aparece no café da manhã da criança de 6 anos, e a linha com café avisa', () => {
+    const crianca = comCuidadosDaFase(SEM_RESTRICOES, { condicao: { tipo: 'nenhuma' }, idadeAnos: 6 })
+    render(
+      <ContextoRestricoes.Provider value={crianca}>
+        <SugestoesDaRefeicao tipo="desjejum" sugestoes={SUGESTOES_PADRAO.desjejum} aoEscolher={vi.fn()} />
+        <ul>
+          <LinhaItem item={{ id: 'i1', alimentoId: 471, gramas: 50 }} aoMudarGramas={vi.fn()} aoRemover={vi.fn()} />
+        </ul>
+      </ContextoRestricoes.Provider>,
+    )
+    const lista = within(screen.getByRole('region', { name: 'Sugestões para o café da manhã' }))
+    expect(lista.queryByRole('button', { name: /Café/ })).not.toBeInTheDocument()
+    expect(lista.getByRole('button', { name: /Pão/ })).toBeInTheDocument()
+    expect(screen.getByText('Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças.')).toBeInTheDocument()
+  })
+
   it('CA-1250: o fígado posto na lista do almoço não aparece nas sugestões da gestante', () => {
     render(
       <ContextoRestricoes.Provider value={GESTANTE}>

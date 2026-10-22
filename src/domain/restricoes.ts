@@ -63,7 +63,7 @@ export interface RestricoesDoPaciente {
   readonly cuidados?: readonly CuidadoDaFase[]
 }
 
-export type IdCuidado = 'gestacao-figado'
+export type IdCuidado = 'gestacao-figado' | 'crianca-cafeina'
 
 export interface CuidadoDaFase {
   readonly id: IdCuidado
@@ -72,17 +72,24 @@ export interface CuidadoDaFase {
 }
 
 export const AVISO_GESTACAO_FIGADO = 'Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê.'
+export const AVISO_CRIANCA_CAFEINA = 'Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças.'
+
+/** D-443: abaixo desta idade, nada com cafeína. */
+export const IDADE_DA_CAFEINA = 12
 
 /**
  * O que cada cuidado tira, pelo nome sem acento. D-442: o fígado (de boi ou de frango) e o sarapatel concentram retinol
- * pré-formado; coração, língua e bucho não.
+ * pré-formado; coração, língua e bucho não. D-443: café (infusão e pó), capuccino, chá preto, mate e refrigerante de cola e
+ * de guaraná têm cafeína; o chá de erva-doce, não.
  */
 const ALIMENTOS_DO_CUIDADO: Readonly<Record<IdCuidado, RegExp>> = {
   'gestacao-figado': /(figado|sarapatel)/,
+  'crianca-cafeina': /^(cafe,|capuccino|cha, (preto|mate)|refrigerante, tipo (cola|guarana))/,
 }
 
 const CUIDADOS: Readonly<Record<IdCuidado, CuidadoDaFase>> = {
   'gestacao-figado': { id: 'gestacao-figado', aviso: AVISO_GESTACAO_FIGADO },
+  'crianca-cafeina': { id: 'crianca-cafeina', aviso: AVISO_CRIANCA_CAFEINA },
 }
 
 /** A fase de vida do plano: a condição (gestante, lactante) e a idade em anos. */
@@ -95,6 +102,7 @@ export interface FaseDoPlano {
 export function cuidadosDaFase(fase: FaseDoPlano): readonly CuidadoDaFase[] {
   const cuidados: CuidadoDaFase[] = []
   if (fase.condicao.tipo === 'gestante') cuidados.push(CUIDADOS['gestacao-figado'])
+  if (fase.idadeAnos !== null && fase.idadeAnos < IDADE_DA_CAFEINA) cuidados.push(CUIDADOS['crianca-cafeina'])
   return cuidados
 }
 
