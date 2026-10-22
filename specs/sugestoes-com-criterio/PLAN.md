@@ -268,3 +268,45 @@ Plano único da correção C, com as decisões em cinco specs: esta (seção 9: 
   do rótulo é quase sempre adicionada).
 - **12 anos para o fígado da criança (D-472):** a mesma idade da cafeína (D-443).
 - **A aveia fica sem troca (D-478):** o papel "cereal do café" só tem ultraprocessados além dela.
+
+### Validação da correção C (22/10/2026)
+
+| Critério | Onde está o teste |
+|---|---|
+| CA-1310, CA-1311, CA-1316/1317 (limite por fase) | `adequacao.test.ts` "o limite da vitamina A vale para a pré-formada"; `vitaminaA.test.ts`; `totais.test.ts`; `estiloAdequacao.test.ts`; `copiar-tabela.test.ts` |
+| CA-1312 | `TelaAdequacao.test.tsx` "CA-693" e "CA-700" |
+| CA-1313 a CA-1315 | `cobrir.test.ts` "teto da vitamina A pré-formada"; `estiloAdequacao.test.ts` (nota do fígado) |
+| CA-1316 | `cuidadosDaFase.test.ts` "criança sem fígado" |
+| CA-1317, CA-1250 | `cuidadosDaFase.test.ts` "gestação sem fígado" |
+| CA-1318 | `trocas.test.ts` "O fígado nunca é troca" |
+| CA-1319, CA-1320 | `prescritivel.test.ts` "CA-1319" e a lista fixa; `estiloAdequacao.test.ts` "CA-1320" |
+| CA-1321, CA-1322 | `GavetaCobrir.test.tsx` "Porção máxima automática"; `cobrir.test.ts` (mensagens) |
+| CA-1323, CB-445 | `GavetaCobrir.test.tsx` "Gestação: ferro e folato"; `navegacao.test.ts`; `proximaConsulta.test.tsx` |
+| CA-1324 | `cobrir.test.ts` "porção mínima de fruta e máxima de pupunha" |
+| CA-1325, CB-446 | `trocas.test.ts` "Troca sem ultraprocessado" |
+| CA-1326 | `trocas.test.ts` "Troca no mesmo preparo" |
+| CA-1327, CA-1328, CB-448, CB-449 | `DialogoImprimir.test.tsx` "Aviso de restrição antes de imprimir" |
+| CA-1329 | `e2e/correcao-c.spec.ts` (390 e 360 px) |
+| CA-1330, CA-1331 | `busca.test.ts` "o número conta peças" |
+| CA-1332, CA-1333 | `medidas-caseiras.test.ts` "sobras do G2"; `busca.test.ts` "sobras do G2" |
+| CA-1334 | `busca.test.ts` "fruta inteira em peça inteira"; o plano de exemplo em `quantidadeNaFolha`, `dietaParaPaciente`, `FolhaDieta`, `TelaMissoesPaciente` e o e2e do link |
+| CA-1335 | `TelaProdutos.test.tsx` "CA-1335" |
+| CA-1336 | `DialogoSubstituto.test.tsx` "CA-1336" |
+| CA-1337 | `TelaInicio.test.tsx` "CA-1337" (texto alternativo e tamanho do PNG) |
+| CA-1338, CB-453 | `anamnese.test.ts` "CA-1279 e CA-1338"; `anamnese.test.tsx`; `e2e/ficha-unica.spec.ts` |
+| CA-1339 | `cobrir.test.ts` "todo alimento sugerível tem porção de grupo" |
+
+**Desvios na execução:**
+- **D-482 ficou mais estreita.** Pôr à frente quem tem medida de contar, com qualquer número, fazia "15 aveia" virar 15
+  fatias de pão de aveia; ficou só a regra da gema e da clara, e o sem medida de contar continua em gramas (D-371).
+- **D-484 mudou na execução.** A primeira redação deixava 130 g de maçã em gramas; ficou "130 g (cerca de 1 unidade)",
+  com até 20% de folga numa peça (ou meia) de fruta. A folga para mais peças fazia a troca sair 20% acima da energia
+  ("Laranja pera · 1 unidade e meia (270 g)") e foi tirada.
+- **D-477 ganhou a fruta pequena** (o jambo de 40 g sai em 1 unidade na criança) e **D-489 entrou na caminhada**: a
+  aveia caía nos 200 g sem grupo ("6 colheres de servir e meia · 195 g" no ferro da gestante).
+- **D-483 revelou um erro antigo:** "copo médio" só era lido enquanto algum alimento ainda tinha esse copo (o cereal
+  matinal); os nomes curtos agora vão do mais longo para o mais curto.
+- **D-480** lista também os cuidados da fase de vida, com a frase do cuidado (sem "a ficha diz").
+- A trava de texto dos testes (`naoProposto.test-utils.ts`) pegava o broto de feijão, prescritível pelo C.1; ela agora o
+  deixa.
+- A lista da entrada rápida também quebra o nome no celular (a caminhada a 390 px mostrou "cozido/10minut…").
