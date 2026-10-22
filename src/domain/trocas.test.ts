@@ -437,3 +437,23 @@ describe('Troca no papel da refeição e fruta por fruta (spec conduta-da-nutric
     expect(trocasDoAlimento({ alimentoId: banana.id, gramas: 75 }, { alimentos: [banana, maca] }).map((t) => t.descricao)).toEqual([maca.descricao])
   })
 })
+
+describe('O fígado nunca é troca (spec sugestoes-com-criterio, correção C, D-473)', () => {
+  const FIGADOS = [355, 356, 400, 548] // fígado de boi cru e grelhado, fígado de frango cru, sarapatel
+  const PATINHO = 377
+
+  it('CA-1318: 100 g de patinho não trocam por fígado, nem com a base só de carnes e fígado', () => {
+    const carnes = ALIMENTOS.filter((a) => a.categoria === 'Carnes e derivados' && /(fígado|patinho|sarapatel)/i.test(a.descricao))
+    expect(trocasDoAlimento({ alimentoId: PATINHO, gramas: 100 }, { alimentos: carnes, porAlimento: 4 }).map((t) => t.alimentoId)).toEqual([])
+    for (const a of ALIMENTOS) {
+      const ids = trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, { alimentos: ALIMENTOS, porAlimento: 4 }).map((t) => t.alimentoId)
+      expect(ids.filter((id) => FIGADOS.includes(id)), a.descricao).toEqual([])
+    }
+  })
+
+  it('CA-1318: o fígado posto à mão troca por outras carnes', () => {
+    const trocas = trocasDoAlimento({ alimentoId: 356, gramas: 100 }, opcoes)
+    expect(trocas.length).toBeGreaterThan(0)
+    for (const t of trocas) expect(t.descricao).not.toMatch(/fígado|sarapatel/i)
+  })
+})

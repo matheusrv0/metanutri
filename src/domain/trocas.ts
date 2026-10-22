@@ -4,6 +4,7 @@ import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaE
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
+import { FIGADO } from './vitaminaA.ts'
 
 export interface Troca {
   readonly alimentoId: number
@@ -187,7 +188,9 @@ export function trocasDoAlimento(
   const fruta = base.categoria === FRUTAS
   const papel = papelDe(base)
   const candidatas = opcoes.alimentos
-    .filter((a) => a.id !== base.id && ehPrescritivel(a) && ehTrocaRazoavel(a))
+    // D-473 (spec sugestoes-com-criterio, correção C): o fígado nunca é troca; a porção de uma carne em fígado passa
+    // muito do limite de vitamina A, e o paciente troca sozinho.
+    .filter((a) => a.id !== base.id && ehPrescritivel(a) && ehTrocaRazoavel(a) && !FIGADO.test(a.descricao))
     // D-421: no papel do alimento na refeição; sem papel, na categoria (e na forma: ovo, verdura cozida).
     .filter(noMesmoPapel(base))
     .filter((a) => !fruta || nomeBase(a.descricao) !== nomeBase(base.descricao))
