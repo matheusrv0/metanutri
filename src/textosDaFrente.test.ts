@@ -132,6 +132,12 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"Corpo da requisição"', /Corpo da requisição/i],
   ['"Ação desconhecida"', /(^|[^\p{L}])Ação desconhecida/iu],
   ['"Só dá para"', /\bSó dá para\b/i],
+  // D-405 a D-407: Preços sem tagline e sem prometer o que não existe.
+  ['"Grátis na faculdade"', /Grátis na faculdade/i],
+  ['recurso de clínica que não existe', /Painel do gestor|Até 4 nutricionistas|Pacientes compartilhados|Preceptor revisa|nutricionista extra/i],
+  ['recurso do Pro que não existe', /Painel de micros|Relatório de adesão|Modelos próprios de documento/i],
+  ['"Tudo do Grátis"', /Tudo do Grátis/i],
+  ['"montando a clientela"', /clientela/i],
 ]
 
 const achados = (padrao: RegExp) =>

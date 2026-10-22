@@ -43,7 +43,7 @@ describe('as páginas indexáveis (spec site-publico-profissional)', () => {
     expect(solo?.mensal).toBe(34.9)
     expect(precos.titulo).toBe('Preços do MetaNutri: grátis para estudante, Solo a R$ 34,90')
     expect(precos.descricao).toBe(
-      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano, Pro por R$ 64,90 ao mês ou R$ 599 ao ano e Clínica por R$ 149 ao mês.',
+      'Free e Estudante por R$ 0, Solo por R$ 34,90 ao mês ou R$ 299 ao ano e Pro por R$ 64,90 ao mês ou R$ 599 ao ano.',
     )
   })
 })

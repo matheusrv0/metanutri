@@ -18,6 +18,7 @@ import {
   podeGerarLink,
   PLANOS,
   PLANOS_COMPARADOS,
+  RECURSOS_EM_TODOS_OS_PLANOS,
   SENHA_MINIMA,
   soDigitos,
   validarCadastro,
@@ -51,11 +52,27 @@ describe('Planos de assinatura', () => {
     expect(planoPorId('pro')?.limitePacientesAtivos).toBeNull()
   })
 
-  it('Free e Estudante carregam marca no PDF; só o Estudante exige e-mail de faculdade', () => {
-    // O Estudante entrou na lista em 27/09: conta de estágio sai marcada, como no
-    // WebDiet, porque o documento não pode passar por atendimento profissional.
-    expect(PLANOS.filter((p) => p.marcaNoPdf).map((p) => p.id)).toEqual(['free', 'estudante'])
+  it('só o Estudante exige e-mail de faculdade e é de uso não comercial; só a Clínica é por contato (D-406)', () => {
     expect(PLANOS.filter((p) => p.exigeEmailDeFaculdade).map((p) => p.id)).toEqual(['estudante'])
+    expect(PLANOS.filter((p) => p.usoNaoComercial).map((p) => p.id)).toEqual(['estudante'])
+    expect(PLANOS.filter((p) => p.porContato).map((p) => p.id)).toEqual(['clinica'])
+  })
+
+  it('D-405: os recursos de cada assinatura são os limites, escritos a partir dos números do plano', () => {
+    expect(planoPorId('free')?.recursos).toEqual(['2 pacientes ativos', '2 links do paciente'])
+    expect(planoPorId('estudante')?.recursos).toEqual(['10 pacientes ativos', '3 links do paciente', 'Grátis até a formatura'])
+    expect(planoPorId('solo')?.recursos).toEqual(['25 pacientes ativos', '25 links do paciente'])
+    expect(planoPorId('pro')?.recursos).toEqual(['Pacientes ilimitados', 'Links do paciente ilimitados'])
+  })
+
+  it('D-407: o texto de cada assinatura diz para quem ela é, sem tagline', () => {
+    expect(PLANOS.map((p) => [p.id, p.resumo, p.acaoTexto])).toEqual([
+      ['free', 'Para testar com um paciente real, sem cartão.', 'Começar grátis'],
+      ['estudante', 'Para casos de estudo e estágio supervisionado. Uso não comercial.', 'Criar conta de estudante'],
+      ['solo', 'Para quem está começando a atender.', 'Assinar'],
+      ['pro', 'Para quem já tem agenda cheia.', 'Assinar'],
+      ['clinica', 'Condições combinadas por e-mail.', 'Fale com a gente'],
+    ])
   })
 
   it('o anual é sempre mais barato que doze meses do mensal', () => {
@@ -223,8 +240,8 @@ describe('Limite de links de missões (conta de estudante)', () => {
 describe('Comparativo da página de preços', () => {
   const linhas = comparativoDosPlanos()
 
-  it('compara quatro colunas, sem coluna de Estudante', () => {
-    expect(PLANOS_COMPARADOS).toEqual(['free', 'solo', 'pro', 'clinica'])
+  it('D-406: compara Free, Solo e Pro, sem coluna de Estudante nem de Clínica', () => {
+    expect(PLANOS_COMPARADOS).toEqual(['free', 'solo', 'pro'])
   })
 
   it('toda linha tem um valor por coluna', () => {
@@ -233,10 +250,11 @@ describe('Comparativo da página de preços', () => {
 
   it('os números vêm dos planos, não de texto solto na tela', () => {
     const pacientes = linhas.find((l) => l.rotulo === 'Pacientes ativos')
-    const links = linhas.find((l) => l.rotulo === 'Links de missões')
+    const links = linhas.find((l) => l.rotulo === 'Links do paciente')
 
-    expect(pacientes?.valores).toEqual(['2', '25', 'Ilimitados', 'Ilimitados'])
-    expect(links?.valores).toEqual(['2', '25', 'Ilimitados', 'Ilimitados'])
+    expect(pacientes?.valores).toEqual(['2', '25', 'Ilimitados'])
+    expect(pacientes?.detalhe).toBe('Quem teve plano ou missão nos últimos 30 dias.')
+    expect(links?.valores).toEqual(['2', '25', 'Ilimitados'])
   })
 
   it('mudar o limite de um plano muda o comparativo junto', () => {
@@ -245,29 +263,22 @@ describe('Comparativo da página de preços', () => {
     expect(pacientes?.valores[0]).toBe(String(free?.limitePacientesAtivos))
   })
 
-  it('o logo próprio é o inverso da marca no PDF', () => {
-    const logo = linhas.find((l) => l.rotulo === 'Seu logo nos documentos')
-    expect(logo?.valores).toEqual([false, true, true, true])
+  it('D-405: depois dos limites, o que vem em todas as assinaturas, marcado nas três colunas', () => {
+    expect(linhas.map((l) => l.rotulo)).toEqual([
+      'Pacientes ativos',
+      'Links do paciente',
+      ...RECURSOS_EM_TODOS_OS_PLANOS.map((r) => r.texto),
+    ])
+    for (const linha of linhas.slice(2)) expect(linha.valores).toEqual([true, true, true])
   })
 
-  it('o que todo plano tem aparece marcado em todas as colunas', () => {
-    const missoes = linhas.find((l) => l.rotulo === 'Missões diárias do paciente')
-    expect(missoes?.valores).toEqual([true, true, true, true])
-  })
-
-  it('DP-26 (spec dados-na-nuvem): nenhum plano promete uso sem internet; o Free diz que funciona no navegador', () => {
-    for (const plano of PLANOS) expect([...plano.recursos, ...plano.inclui].join(' '), plano.id).not.toMatch(/sem internet/i)
-    expect(planoPorId('free')?.recursos).toContain('Funciona no navegador, sem instalar nada')
+  it('DP-26 (spec dados-na-nuvem): nenhum plano promete uso sem internet', () => {
+    for (const plano of PLANOS) expect([plano.resumo, ...plano.recursos].join(' '), plano.id).not.toMatch(/sem internet/i)
   })
 
   it('CA-483 (spec dados-na-nuvem): "Dados em qualquer aparelho" não está na comparação nem nos recursos de nenhum plano', () => {
     expect(linhas.map((l) => l.rotulo)).not.toContain('Dados em qualquer aparelho')
-    for (const plano of PLANOS) expect([...plano.recursos, ...plano.inclui], plano.id).not.toContain('Dados em qualquer aparelho')
-  })
-
-  it('só a Clínica tem mais de um nutricionista', () => {
-    const equipe = linhas.find((l) => l.rotulo.startsWith('Mais de um nutricionista'))
-    expect(equipe?.valores).toEqual([false, false, false, 'Até 4'])
+    for (const plano of PLANOS) expect(plano.recursos, plano.id).not.toContain('Dados em qualquer aparelho')
   })
 
   it('nenhuma linha fica sem rótulo', () => {

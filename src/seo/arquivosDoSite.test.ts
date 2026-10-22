@@ -41,7 +41,9 @@ describe('arquivos de busca e o index.html', () => {
   it('CA-1019: o llms.txt traz os planos com os preços de PLANOS, o contato e as páginas', () => {
     const llms = ler('public', 'llms.txt')
     expect(llms.startsWith('# MetaNutri\n')).toBe(true)
-    for (const plano of PLANOS) {
+    // D-406 (spec textos-e-promessas): a Clínica é por contato, sem preço.
+    expect(llms).toContain('- Clínica com mais de um nutricionista: condições combinadas pelo e-mail de contato.')
+    for (const plano of PLANOS.filter((p) => !p.porContato)) {
       const linha = llms.split('\n').find((l) => l.startsWith(`- ${plano.nome}: R$ ${reais(plano.mensal)}`))
       expect(linha, plano.nome).toBeDefined()
       if (plano.anual > 0) expect(linha).toContain(`R$ ${reais(plano.anual)} por ano`)

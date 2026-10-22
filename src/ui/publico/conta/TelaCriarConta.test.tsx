@@ -47,7 +47,7 @@ describe('TelaCriarConta', () => {
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Você é' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '#/termos')
-    expect(screen.getByText('No Free você já tem')).toBeInTheDocument()
+    expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
   })
 
   it('CA-268: sem escolher "Você é", nada vai ao servidor', async () => {

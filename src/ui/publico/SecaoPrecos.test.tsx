@@ -35,7 +35,7 @@ describe('SecaoPrecos', () => {
     expect(screen.getAllByText(/comprovante de matrícula/).length).toBeGreaterThan(0)
     expect(document.body.textContent).toContain('uso não comercial: a tela do paciente avisa que não é atendimento profissional.')
     expect(document.body.textContent).not.toContain('PDF sai marcado')
-    await userEvent.setup().click(primeiro('Usar o e-mail da faculdade'))
+    await userEvent.setup().click(primeiro('Criar conta de estudante'))
     expect(aoEscolher).toHaveBeenCalledWith('estudante', 'mensal')
   })
 
@@ -45,9 +45,35 @@ describe('SecaoPrecos', () => {
     expect(screen.getAllByText('contato@exemplo.com').length).toBeGreaterThan(0)
   })
 
-  it('D-46: sem contato ainda, o Clínica diz que está chegando', () => {
+  it('D-46 e CB-385: sem contato ainda, a nota da Clínica diz que está chegando', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato={null} />)
-    expect(screen.getAllByText('Contato em breve.').length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('note', { name: 'Plano Clínica' })[0]).toHaveTextContent('Clínica com mais de um nutricionista: contato em breve.')
+  })
+
+  it('CA-1178 e D-406: a Clínica é uma nota de contato, sem preço nem recurso, com o e-mail como link', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const nota = screen.getAllByRole('note', { name: 'Plano Clínica' })[0]
+    expect(nota).toHaveTextContent('Clínica com mais de um nutricionista: fale com a gente pelo e-mail contato@exemplo.com.')
+    expect(within(nota as HTMLElement).getByRole('link', { name: 'contato@exemplo.com' })).toHaveAttribute('href', 'mailto:contato@exemplo.com')
+    expect(document.body.textContent).not.toMatch(/149|Até 4|WhatsApp|Painel do gestor|compartilhados/)
+  })
+
+  it('CA-1178: a tabela compara Free, Solo e Pro; as linhas são os limites e o que vem em todas, sem suporte', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const tabela = screen.getByRole('table')
+    expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent?.match(/^(Free|Solo|Pro)/)?.[0] ?? '')).toEqual(['', 'Free', 'Solo', 'Pro'])
+    const linhas = within(tabela).getAllByRole('rowheader').map((c) => c.firstChild?.textContent)
+    expect(linhas).toEqual([
+      'Pacientes ativos',
+      'Links do paciente',
+      'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir',
+      'Missões diárias no link do paciente e tela Adesão',
+      'Plano impresso em PDF; aconselhamento e memorial em Word',
+      'Seu logotipo nos documentos impressos',
+      'Meus alimentos e receitas com cálculo',
+    ])
+    expect(within(tabela).queryByText('Suporte')).not.toBeInTheDocument()
+    expect(within(tabela).queryAllByText('Não incluído')).toHaveLength(0)
   })
 
   it('CA-177: o destaque vindo do aviso de limite troca o "Recomendado"', () => {
@@ -63,9 +89,9 @@ describe('SecaoPrecos', () => {
     expect(screen.getAllByText('Recomendado').length).toBeGreaterThan(0)
   })
 
-  it('D-79: o texto de cima diz do que depende o plano, sem repetir a definição que está na linha da tabela', () => {
+  it('D-79 e D-407: o texto de cima diz que as funções são as mesmas e o que muda, sem repetir a definição da linha da tabela', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    expect(screen.getByText('O plano depende de quantos pacientes ativos você atende. Quem parou de vir não entra na conta.')).toBeInTheDocument()
+    expect(screen.getByText('Todos os planos têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Quem teve plano ou missão nos últimos 30 dias.')).toBeInTheDocument()
     expect(document.body.textContent).not.toContain('—')
   })
@@ -85,21 +111,21 @@ describe('SecaoPrecos', () => {
 
   it('D-79: a nota do Estudante chama o plano grátis pelo nome da coluna, Free', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    expect(document.body.textContent).toContain('Aprovado, o Free sobe para')
+    expect(document.body.textContent).toContain('Com o comprovante aprovado, o limite do Free sobe para 10 pacientes e 3 links, por 12 meses ou até a formatura, o que vier antes.')
   })
 
   it('CA-381: a nota de pagamento fala de cartão de crédito no site e não cita o processador', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
     expect(document.body.textContent).not.toMatch(/mercado ?pago/i)
-    expect(screen.getByText('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e plano.')).toBeInTheDocument()
+    expect(screen.getByText('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura.')).toBeInTheDocument()
   })
 
   it('CA-743 (spec revisao-geral-publica): o título é o único h1, e os cartões do celular têm h2', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
     const titulos = screen.getAllByRole('heading', { level: 1 })
     expect(titulos).toHaveLength(1)
-    expect(titulos[0]).toHaveTextContent('Grátis na faculdade, barato ao se formar')
-    for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) {
+    expect(titulos[0]).toHaveTextContent('Planos e preços')
+    for (const plano of ['Free', 'Solo', 'Pro']) {
       expect(within(screen.getByRole('region', { name: `Plano ${plano}` })).getByRole('heading', { level: 2, name: plano })).toBeInTheDocument()
     }
   })
@@ -125,7 +151,7 @@ describe('SecaoPrecos', () => {
 
   it('D-234 e A-24 (spec revisao-geral-publica): os cartões da mesma linha têm a mesma altura', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    for (const plano of ['Free', 'Solo', 'Pro', 'Clínica']) expect(screen.getByRole('region', { name: `Plano ${plano}` }).className).toContain('h-full')
+    for (const plano of ['Free', 'Solo', 'Pro']) expect(screen.getByRole('region', { name: `Plano ${plano}` }).className).toContain('h-full')
   })
 
   it('CA-997 (spec site-publico-profissional): a nota do Estudante empilha no celular, com o botão embaixo do texto', () => {
@@ -136,7 +162,7 @@ describe('SecaoPrecos', () => {
       const texto = within(nota).getByText(/crie a conta com o e-mail da faculdade/).closest('p')
       // Base zero (flex-1) deixava o texto numa coluna de 63 px ao lado do botão.
       expect(texto?.className).not.toMatch(/(^|\s)flex-1(\s|$)/)
-      const botao = within(nota).getByRole('button', { name: 'Usar o e-mail da faculdade' })
+      const botao = within(nota).getByRole('button', { name: 'Criar conta de estudante' })
       expect(texto?.compareDocumentPosition(botao) ?? 0).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     }
   })
@@ -149,12 +175,12 @@ describe('SecaoPrecos', () => {
     expect(solo.getByText('34,90')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('radio', { name: /Anual/ }))
     expect(solo.getByText('24,92')).toBeInTheDocument()
-    expect(solo.getByText('R$ 299 uma vez por ano.')).toBeInTheDocument()
+    expect(solo.getByText('R$ 299 cobrados uma vez por ano.')).toBeInTheDocument()
   })
 
   it('CA-999 (spec site-publico-profissional): os botões dos planos são o Button do design system, sem efeito de onda', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    for (const botao of screen.getAllByRole('button', { name: /Assinar (Solo|Pro)|Começar agora Free/ })) expect(botao.querySelector('span[style]')).toBeNull()
+    for (const botao of screen.getAllByRole('button', { name: /Assinar (Solo|Pro)|Começar grátis Free/ })) expect(botao.querySelector('span[style]')).toBeNull()
     expect(document.body.textContent).not.toMatch(/fundador|vagas?\b|preço travado|não sobe/i)
   })
 })

@@ -31,8 +31,8 @@ const LANDING = /Faltou cálcio/
 const TELAS: readonly Tela[] = [
   { nome: 'o endereço sem caminho abre a landing (CA-730)', endereco: '/', titulo: LANDING, acao: noTopo('Começar grátis') },
   { nome: 'Landing', endereco: '/#/inicio', titulo: LANDING, acao: noTopo('Começar grátis') },
-  { nome: 'Preços', endereco: '/#/precos', titulo: 'Grátis na faculdade, barato ao se formar', acao: botao('Assinar Solo') },
-  { nome: 'Preços com o Solo em destaque', endereco: '/#/precos/solo', titulo: 'Grátis na faculdade, barato ao se formar', acao: botao('Assinar Solo') },
+  { nome: 'Preços', endereco: '/#/precos', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
+  { nome: 'Preços com o Solo em destaque', endereco: '/#/precos/solo', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
   { nome: 'Entrar', endereco: '/#/entrar', titulo: 'Entrar', acao: botao('Entrar') },
   { nome: 'Criar conta (Free)', endereco: '/#/criar-conta', titulo: 'Crie sua conta', acao: botao('Criar conta') },
   { nome: 'Criar conta (Solo)', endereco: '/#/criar-conta/solo', titulo: 'Crie sua conta', acao: botao('Criar conta e continuar') },

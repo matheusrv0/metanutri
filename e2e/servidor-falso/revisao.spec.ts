@@ -164,7 +164,7 @@ test.describe('Preços (D-234)', () => {
     await ligarServidorFalso(page)
     await page.goto('/#/precos')
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
     for (const opcao of await page.getByRole('radiogroup', { name: 'Período de cobrança' }).getByRole('radio').all()) {
       expect((await caixa(opcao)).height).toBeGreaterThanOrEqual(44)
     }

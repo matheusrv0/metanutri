@@ -29,7 +29,7 @@ describe('TelaEntrar', () => {
     await usuario.click(screen.getByRole('button', { name: 'Criar grátis' }))
     expect(aoEsqueci).toHaveBeenCalledOnce()
     expect(aoCriarConta).toHaveBeenCalledOnce()
-    expect(screen.getByText('No Free você já tem')).toBeInTheDocument()
+    expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
   })
 
   it('CA-137: deu certo, avisa quem manda', async () => {

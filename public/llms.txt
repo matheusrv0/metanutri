@@ -24,7 +24,7 @@ A conta é por paciente ativo: quem teve plano ou missão nos últimos 30 dias. 
 - Estudante: R$ 0, com o comprovante de matrícula, 10 pacientes ativos.
 - Solo: R$ 34,90 por mês ou R$ 299 por ano, 25 pacientes ativos.
 - Pro: R$ 64,90 por mês ou R$ 599 por ano, pacientes ilimitados.
-- Clínica: R$ 149 por mês, até 4 nutricionistas, combinado por e-mail.
+- Clínica com mais de um nutricionista: condições combinadas pelo e-mail de contato.
 
 ## Contato
 

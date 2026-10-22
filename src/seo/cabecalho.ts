@@ -29,7 +29,8 @@ const preco = (valor: number) => (valor === 0 ? '0' : valor.toFixed(2))
 /** CA-1011: o MetaNutri e os planos, em schema.org. Sem nota, avaliação nem depoimento: não existem. */
 export function dadosEstruturados(): DadosEstruturados {
   const urlPrecos = enderecoDaPagina(paginaDaRota('precos'))
-  const ofertas = PLANOS.flatMap((plano) => {
+  // D-406 (spec textos-e-promessas): a Clínica é por contato, sem preço público.
+  const ofertas = PLANOS.filter((plano) => !plano.porContato).flatMap((plano) => {
     const oferta = (nome: string, valor: number) => ({ '@type': 'Offer', name: nome, price: preco(valor), priceCurrency: 'BRL', url: urlPrecos })
     if (plano.mensal === 0) return [oferta(plano.nome, 0)]
     return [oferta(`${plano.nome}, mensal`, plano.mensal), ...(plano.anual > 0 ? [oferta(`${plano.nome}, anual`, plano.anual)] : [])]

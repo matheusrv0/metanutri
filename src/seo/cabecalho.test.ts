@@ -57,7 +57,6 @@ describe('o cabeçalho de cada página (spec site-publico-profissional)', () => 
       ['Solo, anual', '299.00'],
       ['Pro, mensal', '64.90'],
       ['Pro, anual', '599.00'],
-      ['Clínica, mensal', '149.00'],
     ])
     expect(ofertas.every((o) => o.priceCurrency === 'BRL')).toBe(true)
     expect(JSON.stringify(dados)).not.toMatch(/aggregateRating|review|ratingValue/)

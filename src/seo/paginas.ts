@@ -22,9 +22,9 @@ const reais = (valor: number) => valor.toLocaleString('pt-BR', { minimumFraction
 
 const VITAMINAS_E_MINERAIS = MICRONUTRIENTES_ADEQUACAO.filter((chave) => chave !== 'fibra_g').length
 
-/** "Solo por R$ 34,90 ao mês ou R$ 299 ao ano": os planos pagos, na ordem de `PLANOS`. */
+/** "Solo por R$ 34,90 ao mês ou R$ 299 ao ano": os planos pagos com preço público, na ordem de `PLANOS` (D-406). */
 function frasesDosPagos(): string[] {
-  return PLANOS.filter((p) => p.mensal > 0).map((p) => `${p.nome} por R$ ${reais(p.mensal)} ao mês${p.anual > 0 ? ` ou R$ ${reais(p.anual)} ao ano` : ''}`)
+  return PLANOS.filter((p) => p.mensal > 0 && !p.porContato).map((p) => `${p.nome} por R$ ${reais(p.mensal)} ao mês${p.anual > 0 ? ` ou R$ ${reais(p.anual)} ao ano` : ''}`)
 }
 
 function descricaoDosPrecos(): string {

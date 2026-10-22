@@ -44,7 +44,7 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
         const nota = page.getByRole('note', { name: 'Plano Estudante' }).filter({ visible: true })
         await expect(nota).toHaveCount(1)
         const texto = await nota.locator('p').boundingBox()
-        const botao = await nota.getByRole('button', { name: 'Usar o e-mail da faculdade' }).boundingBox()
+        const botao = await nota.getByRole('button', { name: 'Criar conta de estudante' }).boundingBox()
         if (!texto || !botao) throw new Error('sem medida da nota')
         expect(texto.width, 'largura do texto da nota').toBeGreaterThanOrEqual(200)
         if (largura < 640) expect(botao.y).toBeGreaterThanOrEqual(texto.y + texto.height - 1)
@@ -92,7 +92,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   const dados = JSON.parse(bloco ?? 'null') as { '@graph': { '@type': string; offers?: { price: string; priceCurrency: string }[] }[] }
   expect(dados['@graph'].map((no) => no['@type'])).toEqual(['Organization', 'SoftwareApplication'])
   const ofertas = dados['@graph'][1]?.offers ?? []
-  expect(ofertas.map((o) => o.price)).toEqual(['0', '0', '34.90', '299.00', '64.90', '599.00', '149.00'])
+  expect(ofertas.map((o) => o.price)).toEqual(['0', '0', '34.90', '299.00', '64.90', '599.00'])
   expect(ofertas.every((o) => o.priceCurrency === 'BRL')).toBe(true)
 
   const raiz = html.slice(html.indexOf('<div id="root">'))
@@ -105,7 +105,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
 test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a mesma CSP e a tela escrita', async ({ request }) => {
   const csp = metaDaPolitica(textoDaPolitica(diretivasDaPolitica({ supabase: null })))
   for (const [caminho, h1] of [
-    ['precos', 'Grátis na faculdade, barato ao se'],
+    ['precos', 'Planos e preços'],
     ['termos', 'Termos de uso'],
     ['privacidade', 'Política de privacidade'],
     ['fontes', 'Fontes da base'],
@@ -124,7 +124,7 @@ test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a m
 test('CA-1015: a página própria abre o app na tela dela, com o endereço da raiz e sem erro no console', async ({ page }) => {
   const erros = await vigiarConsole(page)
   for (const [caminho, h1] of [
-    ['precos', 'Grátis na faculdade, barato ao se formar'],
+    ['precos', 'Planos e preços'],
     ['termos', 'Termos de uso'],
     ['privacidade', 'Política de privacidade'],
     ['fontes', 'Fontes da base'],
@@ -167,7 +167,7 @@ test('CA-1025: com o service worker ativo, os arquivos de texto abrem como arqui
   }
   await page.goto('/precos')
   await expect(page).toHaveURL(/\/#\/precos$/)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
 })
 
 test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique troca de tela sem recarregar', async ({ page, request }) => {
@@ -183,7 +183,7 @@ test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique 
   await expect(precos).toHaveAttribute('href', 'precos/')
   await precos.click()
   await expect(page).toHaveURL(/\/#\/precos$/)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grátis na faculdade, barato ao se formar')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
   expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
   await page.getByRole('contentinfo').getByRole('link', { name: 'Termos de uso' }).click()
   await expect(page).toHaveURL(/\/#\/termos$/)

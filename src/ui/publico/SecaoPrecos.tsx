@@ -1,16 +1,15 @@
 // Página de preços em tabela comparativa, no formato da referência (Outline).
 //
-// Por que não são cartões: quatro cartões repetem a mesma lista de linhas e escondem
-// justamente o que a pessoa veio comparar. Pior, faziam Free e Estudante aparecerem
-// como dois preços diferentes quando os dois custam R$ 0. Na tabela, a diferença entre
-// as colunas é a única coisa que se lê.
+// Por que não são cartões: cartões repetem a mesma lista de linhas e escondem justamente o que a pessoa veio comparar.
+// Na tabela, a diferença entre as colunas é a única coisa que se lê.
 //
-// O conteúdo vem de `comparativoDosPlanos()`, derivado dos próprios planos: a tela não
-// tem como afirmar limite que o plano não tem.
+// O conteúdo vem de `comparativoDosPlanos()`, derivado dos próprios planos: a tela não tem como afirmar limite que o
+// plano não tem. Spec textos-e-promessas (D-405 a D-407): todas as assinaturas têm as mesmas funções, então a tabela
+// compara os limites e marca nas três colunas o que vem em todas; Estudante e Clínica são notas embaixo.
 //
 // Spec site-publico-profissional, D-325: sem animação de entrada (os cartões ficavam em branco até ela acabar), preço
 // em texto e o botão do design system. A página sai pronta também na pré-renderização (D-331).
-import { Check, GraduationCap, Minus } from 'lucide-react'
+import { Building2, Check, GraduationCap, Minus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 import {
@@ -30,7 +29,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface SecaoPrecosProps {
   readonly aoEscolher: (plano: IdPlano, ciclo: Ciclo) => void
-  /** Nulo até o e-mail do MetaNutri existir: o Clínica diz "Contato em breve." */
+  /** Nulo até o e-mail do MetaNutri existir: a nota da Clínica diz "Contato em breve." (CB-385). */
   readonly contato: string | null
   /** Plano em destaque vindo do aviso de limite (CA-177). Sem ele, vale o destaque do próprio plano. */
   readonly destaque?: IdPlano | undefined
@@ -84,13 +83,11 @@ function Preco({
   plano,
   anual,
   destacado,
-  contato,
   aoEscolher,
 }: {
   readonly plano: PlanoAssinatura
   readonly anual: boolean
   readonly destacado: boolean
-  readonly contato: string | null
   readonly aoEscolher: () => void
 }) {
   const temAnual = plano.anual > 0
@@ -110,26 +107,12 @@ function Preco({
 
       <p className="h-8 text-xs text-muted-foreground">
         {/* D-79: o "cancela quando quiser" fica uma vez, na nota de baixo; no mensal a linha fica vazia e só segura o alinhamento. */}
-        {gratis ? 'Sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} uma vez por ano.` : anual ? 'Só no mensal.' : null}
+        {gratis ? 'Sem cartão.' : anual && temAnual ? `R$ ${plano.anual.toLocaleString('pt-BR')} cobrados uma vez por ano.` : anual ? 'Só no mensal.' : null}
       </p>
 
-      {plano.id === 'clinica' ? (
-        <p className="text-center text-xs text-muted-foreground">
-          {contato ? (
-            <>
-              Combinado por conversa:
-              <br />
-              <strong className="select-all text-sm text-heading">{contato}</strong>
-            </>
-          ) : (
-            'Contato em breve.'
-          )}
-        </p>
-      ) : (
-        <Button onClick={aoEscolher} variant={destacado ? 'default' : 'outline'} block aria-label={`${plano.acaoTexto} ${plano.nome}`}>
-          {plano.acaoTexto}
-        </Button>
-      )}
+      <Button onClick={aoEscolher} variant={destacado ? 'default' : 'outline'} block aria-label={`${plano.acaoTexto} ${plano.nome}`}>
+        {plano.acaoTexto}
+      </Button>
     </div>
   )
 }
@@ -155,7 +138,7 @@ function Celula({ valor }: { readonly valor: ValorComparativo }) {
   return <span className="numeros text-sm font-semibold text-heading">{valor}</span>
 }
 
-/** A nota do plano Estudante, que não merece uma coluna: é o Grátis com e-mail de faculdade. */
+/** A nota do plano Estudante, que não merece uma coluna: é o Free com e-mail de faculdade (D-407). */
 function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
   const estudante = planoPorId('estudante')
   if (!estudante) return null
@@ -168,8 +151,9 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
         <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
         <p className="min-w-0 text-sm text-foreground">
           <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
-          Aprovado, o Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e <strong>{estudante.limiteLinksPaciente} links</strong>, por 12
-          meses ou até a formatura. Conta de estágio é de uso não comercial: a tela do paciente avisa que não é atendimento profissional.
+          Com o comprovante aprovado, o limite do Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e{' '}
+          <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses ou até a formatura, o que vier antes. A conta de estudante é de uso não
+          comercial: a tela do paciente avisa que não é atendimento profissional.
         </p>
       </div>
       <Button variant="outline" size="sm" className="self-start sm:shrink-0" onClick={aoEscolher}>
@@ -179,135 +163,158 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
   )
 }
 
+/** D-406: a Clínica é contratada por e-mail; a nota não promete recurso nem preço. */
+function NotaClinica({ contato }: { readonly contato: string | null }) {
+  return (
+    <div role="note" aria-label="Plano Clínica" className="flex items-start gap-3 rounded-3xl bg-card p-5">
+      <Building2 className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
+      <p className="min-w-0 text-sm text-foreground [overflow-wrap:anywhere]">
+        <strong className="font-semibold text-heading">Clínica com mais de um nutricionista:</strong>{' '}
+        {contato ? (
+          <>
+            fale com a gente pelo e-mail{' '}
+            <a href={`mailto:${contato}`} className="font-semibold text-heading underline underline-offset-2">
+              {contato}
+            </a>
+            .
+          </>
+        ) : (
+          'contato em breve.'
+        )}
+      </p>
+    </div>
+  )
+}
+
 export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps) {
   const [anual, setAnual] = useState(false)
   const linhas = comparativoDosPlanos()
   const ciclo: Ciclo = anual ? 'anual' : 'mensal'
   const estaEmDestaque = (p: PlanoAssinatura) => (destaque ? p.id === destaque : p.destaque)
+  const notas = (
+    <>
+      <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
+      <NotaClinica contato={contato} />
+    </>
+  )
 
   return (
     <div className="bg-background px-4 py-16 sm:px-8">
       <div className="mx-auto w-full max-w-6xl">
-      <div className="mx-auto mb-10 max-w-2xl text-center">
-        {/* CA-743 (spec revisao-geral-publica): o título da página é o h1. */}
-        <h1 className="font-titulo text-3xl font-bold text-heading sm:text-5xl">
-          Grátis na faculdade, barato ao se <span className="rounded-md bg-surfaceaccent px-2 text-textonaccent">formar</span>
-        </h1>
-        <p className="mt-4 text-sm text-muted-foreground sm:text-base">
-          O plano depende de quantos pacientes ativos você atende. Quem parou de vir não entra na conta.
-        </p>
-      </div>
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          {/* CA-743 (spec revisao-geral-publica): o título da página é o h1. */}
+          <h1 className="font-titulo text-3xl font-bold text-heading sm:text-5xl">Planos e preços</h1>
+          <p className="mt-4 text-sm text-muted-foreground sm:text-base">
+            Todos os planos têm as mesmas funções. O que muda é quantos pacientes ativos você acompanha.
+          </p>
+        </div>
 
-      <Chave anual={anual} aoTrocar={setAnual} />
+        <Chave anual={anual} aoTrocar={setAnual} />
 
-      {/* Tabela: a partir de 1024 px (D-234: em 768 px ela não cabia e a página rolava para o lado). Abaixo, a mesma
-          informação vira um cartão por plano. */}
-      <div className="mt-10 hidden lg:block">
-        <table className="w-full border-collapse text-sm">
-          <caption className="sr-only">Comparativo dos planos do MetaNutri</caption>
-          <thead>
-            <tr>
-              <th scope="col" className="w-[28%] p-0" />
-              {colunas.map((plano) => (
-                <th
-                  key={plano.id}
-                  scope="col"
-                  className={cn('rounded-t-2xl px-4 pb-5 pt-6 align-top', estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken')}
-                >
-                  <span className="flex flex-col items-center gap-1">
-                    <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
-                    {estaEmDestaque(plano) ? (
-                      <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span>
-                    ) : (
-                      <span className="h-[1.125rem]" />
-                    )}
-                    <span className="mt-3 w-full font-normal">
-                      <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
-                    </span>
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {linhas.map((linha, i) => (
-              <tr key={linha.rotulo} className="border-t border-bordersubtle">
-                <th scope="row" className="py-3.5 pr-6 text-left align-middle font-medium text-foreground">
-                  {linha.rotulo}
-                  {linha.detalhe ? <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{linha.detalhe}</span> : null}
-                </th>
-                {linha.valores.map((valor, coluna) => {
-                  const plano = colunas[coluna]
-                  const ultima = i === linhas.length - 1
-                  return (
-                    <td
-                      key={plano?.id ?? coluna}
-                      className={cn(
-                        'px-4 py-3.5 text-center align-middle',
-                        plano && estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken',
-                        ultima ? 'rounded-b-2xl' : null,
+        {/* Tabela: a partir de 1024 px (D-234: em 768 px ela não cabia e a página rolava para o lado). Abaixo, a mesma
+            informação vira um cartão por plano. */}
+        <div className="mt-10 hidden lg:block">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">Comparativo dos planos do MetaNutri</caption>
+            <thead>
+              <tr>
+                <th scope="col" className="w-[34%] p-0" />
+                {colunas.map((plano) => (
+                  <th
+                    key={plano.id}
+                    scope="col"
+                    className={cn('rounded-t-2xl px-4 pb-5 pt-6 align-top', estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken')}
+                  >
+                    <span className="flex flex-col items-center gap-1">
+                      <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
+                      {estaEmDestaque(plano) ? (
+                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span>
+                      ) : (
+                        <span className="h-[1.125rem]" />
                       )}
-                    >
-                      <Celula valor={valor} />
-                    </td>
+                      <span className="mt-3 w-full font-normal">
+                        <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
+                      </span>
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {linhas.map((linha, i) => (
+                <tr key={linha.rotulo} className="border-t border-bordersubtle">
+                  <th scope="row" className="py-3.5 pr-6 text-left align-middle font-medium text-foreground">
+                    {linha.rotulo}
+                    {linha.detalhe ? <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{linha.detalhe}</span> : null}
+                  </th>
+                  {linha.valores.map((valor, coluna) => {
+                    const plano = colunas[coluna]
+                    const ultima = i === linhas.length - 1
+                    return (
+                      <td
+                        key={plano?.id ?? coluna}
+                        className={cn(
+                          'px-4 py-3.5 text-center align-middle',
+                          plano && estaEmDestaque(plano) ? 'bg-card' : 'bg-surfacesunken',
+                          ultima ? 'rounded-b-2xl' : null,
+                        )}
+                      >
+                        <Celula valor={valor} />
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-6 grid gap-4">{notas}</div>
+        </div>
+
+        {/* Celular e tablet: um cartão por plano, com os mesmos valores da tabela; dois por linha a partir de 640 px. */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:hidden">
+          {colunas.map((plano) => (
+            <section
+              key={plano.id}
+              aria-label={`Plano ${plano.nome}`}
+              className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
+                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
+              </div>
+
+              <div className="mt-4">
+                <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
+              </div>
+
+              <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
+                {linhas.map((linha) => {
+                  const valor = linha.valores[colunas.indexOf(plano)]
+                  if (valor === false) return null
+                  return (
+                    <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
+                      <dt className="text-sm text-foreground">
+                        {linha.rotulo}
+                        {linha.detalhe ? <span className="mt-0.5 block text-xs text-muted-foreground">{linha.detalhe}</span> : null}
+                      </dt>
+                      <dd className="shrink-0 text-sm font-semibold text-heading">
+                        {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
+                      </dd>
+                    </div>
                   )
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </dl>
+            </section>
+          ))}
 
-        <div className="mt-6">
-          <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
+          <div className="grid gap-4 sm:col-span-2">{notas}</div>
         </div>
-      </div>
 
-      {/* Celular e tablet: um cartão por plano, com os mesmos valores da tabela; dois por linha a partir de 640 px. */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:hidden">
-        {colunas.map((plano) => (
-          <section
-            key={plano.id}
-            aria-label={`Plano ${plano.nome}`}
-            className={cn('h-full rounded-2xl border p-5', estaEmDestaque(plano) ? 'border-primary/60 bg-card' : 'border-border bg-card')}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
-              {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
-            </div>
-
-            <div className="mt-4">
-              <Preco plano={plano} anual={anual} destacado={estaEmDestaque(plano)} contato={contato} aoEscolher={() => aoEscolher(plano.id, ciclo)} />
-            </div>
-
-            <dl className="mt-5 flex flex-col gap-2 border-t border-bordersubtle pt-4">
-              {linhas.map((linha) => {
-                const valor = linha.valores[colunas.indexOf(plano)]
-                if (valor === false) return null
-                return (
-                  <div key={linha.rotulo} className="flex items-baseline justify-between gap-4">
-                    <dt className="text-sm text-foreground">
-                      {linha.rotulo}
-                      {linha.detalhe ? <span className="mt-0.5 block text-xs text-muted-foreground">{linha.detalhe}</span> : null}
-                    </dt>
-                    <dd className="shrink-0 text-sm font-semibold text-heading">
-                      {valor === true ? <Check className="size-4" aria-label="Incluído" /> : <span className="numeros">{valor}</span>}
-                    </dd>
-                  </div>
-                )
-              })}
-            </dl>
-          </section>
-        ))}
-
-        <div className="sm:col-span-2">
-          <NotaEstudante aoEscolher={() => aoEscolher('estudante', 'mensal')} />
-        </div>
-      </div>
-
-      <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
-        O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e plano.
-      </p>
+        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-muted-foreground">
+          O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura.
+        </p>
       </div>
     </div>
   )

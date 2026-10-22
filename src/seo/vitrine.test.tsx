@@ -26,7 +26,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
   })
 
   it('CA-1014: Preços, Termos, Privacidade e Fontes saem com o título de cada uma', () => {
-    expect(corpo('precos')).toContain('Grátis na faculdade, barato ao se')
+    expect(corpo('precos')).toMatch(/<h1[^>]*>Planos e preços<\/h1>/)
     expect(corpo('termos')).toMatch(/<h1[^>]*>Termos de uso<\/h1>/)
     expect(corpo('privacidade')).toMatch(/<h1[^>]*>Política de privacidade<\/h1>/)
     expect(corpo('fontes')).toMatch(/<h1[^>]*>Fontes da base<\/h1>/)
