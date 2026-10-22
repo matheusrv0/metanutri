@@ -50,11 +50,11 @@ describe('Pacientes', () => {
   })
 
   it('a restrição casa com o alimento mesmo sem acento', () => {
-    expect(casaRestricao('Camarão, cozido', ['camarao'])).toBe(true)
-    expect(casaRestricao('Leite, de vaca, integral', ['leite'])).toBe(true)
-    expect(casaRestricao('Arroz, tipo 1, cozido', ['leite'])).toBe(false)
+    expect(casaRestricao({ id: 0, descricao: 'Camarão, cozido' }, ['camarao'])).toBe(true)
+    expect(casaRestricao({ id: 0, descricao: 'Leite, de vaca, integral' }, ['leite'])).toBe(true)
+    expect(casaRestricao({ id: 0, descricao: 'Arroz, tipo 1, cozido' }, ['leite'])).toBe(false)
     // termo curto demais não filtra, para não apagar meia base
-    expect(casaRestricao('Arroz, tipo 1, cozido', ['ar'])).toBe(false)
+    expect(casaRestricao({ id: 0, descricao: 'Arroz, tipo 1, cozido' }, ['ar'])).toBe(false)
   })
 
   it('lista vazia convida a cadastrar', async () => {

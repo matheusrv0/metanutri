@@ -1,0 +1,169 @@
+// As restrições do paciente (spec ficha-unica, D-351 a D-354; CA-1078 a CA-1081).
+import { ID_DE_RECEITA } from './receitaNoPlano.ts'
+import {
+  casaRestricao,
+  comoRestricoes,
+  ehNaoGosta,
+  montarRestricoes,
+  RESTRICOES,
+  restricaoDoAlimento,
+  restricaoDoItem,
+  SEM_RESTRICOES,
+} from './restricoes.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
+import type { Alimento, ItemPlano } from './tipos.ts'
+
+const porNome = (descricao: string): Alimento => {
+  const achado = ALIMENTOS.find((a) => a.descricao.trim() === descricao)
+  if (!achado) throw new Error(`"${descricao}" não está na base.`)
+  return achado
+}
+const proprio = (descricao: string, id = 900_001) => ({ id, descricao })
+const marcadas = (...ids: string[]) => montarRestricoes({ marcadas: ids, texto: '', doencas: [], naoGosta: '' })
+
+describe('O catálogo (D-351)', () => {
+  it('tem as alergias, as intolerâncias e as escolhas, na ordem da tela', () => {
+    expect(RESTRICOES.filter((r) => r.tipo === 'alergia').map((r) => r.rotulo)).toEqual([
+      'Leite e derivados',
+      'Ovo',
+      'Trigo',
+      'Soja',
+      'Amendoim',
+      'Castanhas',
+      'Peixe',
+      'Crustáceos e frutos do mar',
+    ])
+    expect(RESTRICOES.filter((r) => r.tipo === 'intolerancia').map((r) => r.rotulo)).toEqual(['Lactose', 'Glúten'])
+    expect(RESTRICOES.filter((r) => r.tipo === 'escolha').map((r) => r.rotulo)).toEqual(['Vegetariano', 'Vegano'])
+  })
+})
+
+describe('Montar as restrições do paciente', () => {
+  it('sem nada, não restringe nada', () => {
+    expect(montarRestricoes({ marcadas: [], texto: '', doencas: [], naoGosta: '' })).toEqual(SEM_RESTRICOES)
+    expect(casaRestricao(porNome('Leite, de vaca, integral'), SEM_RESTRICOES)).toBe(false)
+  })
+
+  it('id desconhecido não conta (CA-1088)', () => {
+    expect(marcadas('mostarda-do-futuro').grupos).toEqual([])
+  })
+
+  it('doença celíaca liga o glúten (D-351)', () => {
+    const r = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+    expect(restricaoDoAlimento(porNome('Pão, trigo, francês'), r)).toBe('Doença celíaca: glúten')
+  })
+
+  it('CA-1079: a linha de texto que nomeia um grupo liga o grupo; as outras valem pelo pedaço do nome', () => {
+    const r = montarRestricoes({ marcadas: [], texto: 'lactose\nGlúten, jiló', doencas: [], naoGosta: '' })
+    expect(restricaoDoAlimento(porNome('Iogurte, natural'), r)).toBe('Não come: lactose')
+    expect(restricaoDoAlimento(porNome('Macarrão, trigo, cru'), r)).toBe('Não come: glúten')
+    expect(restricaoDoAlimento(porNome('Jiló, cru'), r)).toBe('Não come: jiló')
+    expect(restricaoDoAlimento(porNome('Queijo, parmesão'), r)).toBeNull()
+  })
+
+  it('"leite" escrito à mão liga Leite e derivados e continua pegando o que tem leite no nome', () => {
+    const r = montarRestricoes({ marcadas: [], texto: 'leite', doencas: [], naoGosta: '' })
+    expect(casaRestricao(porNome('Queijo, minas, frescal'), r)).toBe(true)
+    expect(casaRestricao(porNome('Leite, de coco'), r)).toBe(true)
+  })
+
+  it('a lista de texto antiga (de antes da ficha única) vira texto', () => {
+    expect(comoRestricoes(['queijo'])).toEqual({ grupos: [], textos: ['queijo'], naoGosta: [] })
+    expect(comoRestricoes(undefined)).toEqual(SEM_RESTRICOES)
+  })
+})
+
+describe('O aviso de cada tipo (D-353)', () => {
+  it('diz o tipo e o grupo', () => {
+    expect(restricaoDoAlimento(porNome('Queijo, minas, frescal'), marcadas('leite'))).toBe('Alergia: leite e derivados')
+    expect(restricaoDoAlimento(porNome('Leite, de vaca, integral'), marcadas('lactose'))).toBe('Intolerância: lactose')
+    expect(restricaoDoAlimento(porNome('Feijoada'), marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    expect(restricaoDoAlimento(porNome('Camarão, Rio Grande, grande, cozido'), marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
+  })
+
+  it('com duas restrições que pegam o mesmo alimento, vale a alergia', () => {
+    expect(restricaoDoAlimento(porNome('Leite, de vaca, integral'), marcadas('lactose', 'leite'))).toBe('Alergia: leite e derivados')
+  })
+})
+
+describe('Alimento próprio pelo nome (CA-1078)', () => {
+  it('iogurte zero lactose tem leite, mas não lactose', () => {
+    expect(casaRestricao(proprio('Iogurte grego zero lactose (Marca)'), marcadas('leite'))).toBe(true)
+    expect(casaRestricao(proprio('Iogurte grego zero lactose (Marca)'), marcadas('lactose'))).toBe(false)
+  })
+
+  it('pão de queijo congelado tem leite e não tem glúten', () => {
+    expect(casaRestricao(proprio('Pão de queijo congelado'), marcadas('leite'))).toBe(true)
+    expect(casaRestricao(proprio('Pão de queijo congelado'), marcadas('gluten'))).toBe(false)
+    expect(casaRestricao(proprio('Pão de forma integral'), marcadas('gluten'))).toBe(true)
+  })
+
+  it('bebida de amêndoas é castanha e não é leite; couve manteiga não é leite', () => {
+    expect(casaRestricao(proprio('Bebida de amêndoas'), marcadas('castanhas'))).toBe(true)
+    expect(casaRestricao(proprio('Bebida de amêndoas'), marcadas('leite'))).toBe(false)
+    expect(casaRestricao(proprio('Couve manteiga picada'), marcadas('leite'))).toBe(false)
+  })
+
+  it('a palavra inteira: "mel" não pega melancia, "ovo" não pega "novo"', () => {
+    expect(casaRestricao(proprio('Melancia em cubos'), marcadas('vegano'))).toBe(false)
+    expect(casaRestricao(proprio('Mel orgânico'), marcadas('vegano'))).toBe(true)
+    expect(casaRestricao(proprio('Granola sabor novo'), marcadas('ovo'))).toBe(false)
+    expect(casaRestricao(proprio('Granola sabor novo'), marcadas('gluten'))).toBe(true)
+  })
+
+  it('torrada só no começo do nome é pão', () => {
+    expect(casaRestricao(proprio('Torradas integrais'), marcadas('trigo'))).toBe(true)
+    expect(casaRestricao(proprio('Castanha torrada'), marcadas('trigo'))).toBe(false)
+  })
+
+  it('vegano junta vegetariano, leite e ovo pelo nome', () => {
+    const vegano = marcadas('vegano')
+    expect(casaRestricao(proprio('Hambúrguer de frango'), vegano)).toBe(true)
+    expect(casaRestricao(proprio('Iogurte natural'), vegano)).toBe(true)
+    expect(casaRestricao(proprio('Hambúrguer vegetal de grão-de-bico'), vegano)).toBe(false)
+  })
+})
+
+describe('Item do plano e receita (D-353)', () => {
+  const item = (alimentoId: number, extra: Partial<ItemPlano> = {}): ItemPlano => ({ id: 'i1', alimentoId, gramas: 100, ...extra })
+
+  it('o alimento da base', () => {
+    expect(restricaoDoItem(item(porNome('Queijo, minas, frescal').id), buscarAlimento, marcadas('leite'))).toBe('Alergia: leite e derivados')
+    expect(restricaoDoItem(item(porNome('Arroz, tipo 1, cozido').id), buscarAlimento, marcadas('leite'))).toBeNull()
+  })
+
+  it('a receita, por qualquer ingrediente', () => {
+    const receita = item(ID_DE_RECEITA, {
+      receita: {
+        origemId: 'r1',
+        nome: 'Vitamina de banana',
+        ingredientes: [
+          { alimentoId: porNome('Banana, prata, crua').id, gramas: 100 },
+          { alimentoId: porNome('Leite, de vaca, integral').id, gramas: 200 },
+        ],
+        porcoes: 1,
+        nomeDaPorcao: 'copo',
+        pesoProntoG: null,
+        preparo: '',
+      },
+    })
+    expect(restricaoDoItem(receita, buscarAlimento, marcadas('lactose'))).toBe('Intolerância: lactose')
+    expect(restricaoDoItem(receita, buscarAlimento, marcadas('ovo'))).toBeNull()
+  })
+
+  it('alimento que não existe mais não ganha aviso', () => {
+    expect(restricaoDoItem(item(123_456_789), buscarAlimento, marcadas('leite'))).toBeNull()
+  })
+})
+
+describe('Não gosta (D-354)', () => {
+  it('separa por vírgula, ponto e vírgula, linha e " e "', () => {
+    const r = montarRestricoes({ marcadas: [], texto: '', doencas: [], naoGosta: 'Fígado, jiló e quiabo\nchuchu' })
+    expect(r.naoGosta).toEqual(['figado', 'jilo', 'quiabo', 'chuchu'])
+    expect(ehNaoGosta(porNome('Carne, bovina, fígado, grelhado'), r)).toBe(true)
+    expect(ehNaoGosta(porNome('Chuchu, cozido'), r)).toBe(true)
+    expect(ehNaoGosta(porNome('Arroz, tipo 1, cozido'), r)).toBe(false)
+    // Não gostar não é restrição: o alimento continua podendo ser sugerido.
+    expect(casaRestricao(porNome('Chuchu, cozido'), r)).toBe(false)
+  })
+})

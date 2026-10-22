@@ -2,7 +2,7 @@
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
 import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
-import { casaRestricao } from './restricoes.ts'
+import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -115,7 +115,7 @@ export interface OpcoesCobrir {
   /** Ids de alimentos que o usuário ocultou para este caso (CA-40). */
   readonly ocultos?: ReadonlySet<number>
   /** O que o paciente não come; filtra antes da escolha das 5, para não deixar a gaveta vazia (CA-675). */
-  readonly restricoes?: readonly string[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[]
 }
 
 /**
@@ -174,7 +174,7 @@ export function sugerirParaCobrir(
   if (!(porcaoMaxima > 0)) throw new RangeError(`Porção máxima inválida: ${porcaoMaxima} g.`)
 
   const limites = adequacao.linhas.filter((l) => l.limite !== null && l.chave !== chave)
-  const restricoes = opcoes.restricoes ?? []
+  const restricoes = comoRestricoes(opcoes.restricoes)
   let restricaoTirouAlguem = false
 
   const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean })[] = []
@@ -193,7 +193,7 @@ export function sugerirParaCobrir(
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
     // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
-    if (casaRestricao(alimento.descricao, restricoes)) {
+    if (casaRestricao(alimento, restricoes)) {
       restricaoTirouAlguem = true
       continue
     }

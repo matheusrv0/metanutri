@@ -1,7 +1,7 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, type MedidaEquivalente } from './busca.ts'
 import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
-import { casaRestricao } from './restricoes.ts'
+import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
 
 export interface Troca {
@@ -25,7 +25,7 @@ export interface OpcoesTrocas {
   /** Quantas trocas por alimento; o papel não aguenta mais do que três. */
   readonly porAlimento?: number
   /** Restrições do paciente, uma por linha ou já em lista. */
-  readonly restricoes?: readonly string[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[]
   /** A lista inteira, para procurar os pares do mesmo grupo. */
   readonly alimentos: readonly Alimento[]
 }
@@ -134,7 +134,7 @@ export function trocasDoAlimento(
   opcoes: OpcoesTrocas,
 ): readonly Troca[] {
   const limite = opcoes.porAlimento ?? 3
-  const restricoes = opcoes.restricoes ?? []
+  const restricoes = comoRestricoes(opcoes.restricoes)
   const base = opcoes.alimentos.find((a) => a.id === original.alimentoId)
   const kcalBase = base ? kcalPorCem(base) : null
   if (!base || kcalBase === null || original.gramas <= 0) return []
@@ -150,7 +150,7 @@ export function trocasDoAlimento(
     .filter(mesmaForma(base))
     // Trocar arroz por azeite tem a mesma energia e não é troca: o macro que sustenta precisa ser o mesmo.
     .filter((a) => macroDominante(a) === macroDominante(base))
-    .filter((a) => !casaRestricao(a.descricao, restricoes))
+    .filter((a) => !casaRestricao(a, restricoes))
     .filter((a) => !baseSimples || !ehPratoComposto(a))
     .map((a) => ({ a, kcal: kcalPorCem(a) }))
     .filter((x): x is { a: Alimento; kcal: number } => x.kcal !== null)
