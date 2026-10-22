@@ -176,6 +176,8 @@ export function motivoDaClasse(alimento, nome) {
     return null
   }
   if (alimento.categoria === 'Gorduras e óleos') return /^(copo|xícara|concha|fatia|garfada|colher de servir|prato)/.test(nome) ? 'gordura só em colher ou ponta de faca' : null
+  // Farinha, fubá, amido e pó não se servem com concha, escumadeira nem prato (os 18 mapeados em 21/10, revisão de 22/10).
+  if (/^(farinha|milho, fuba|milho, amido|fecula|polvilho)|, po$/.test(d)) return /^(concha|escumadeira|prato|pires)/.test(nome) ? 'farinha e pó não se medem em concha nem prato' : null
   if (/^(acucar|mel)\b/.test(d)) return /^(copo|xícara|prato|caneca|caneco)/.test(nome) ? 'açúcar e mel só em colher' : null
   return null
 }

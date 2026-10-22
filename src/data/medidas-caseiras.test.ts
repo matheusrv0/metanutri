@@ -233,6 +233,14 @@ describe('medidas plausíveis (D-430)', () => {
     expect(nomes(3)).not.toContain('copo americano') // Arroz: o "copo" era um prato fundo raso
   })
 
+  it('D-431: farinha e pó não se medem em concha, escumadeira nem prato (farinha de mandioca, leite em pó)', () => {
+    for (const [a, r] of comMedidas) {
+      if (!/^(Farinha|Milho, fubá|Milho, amido)|, pó$/.test(a.descricao.trim())) continue
+      for (const m of r.medidas) expect(m.nome, a.descricao).not.toMatch(/^(concha|escumadeira|prato|pires)/)
+    }
+    expect(nomes(121)).toContain('colher de sopa') // Farinha de mandioca crua: a colher fica
+  })
+
   it('CA-1227: a revisão lista cada medida tirada, com o motivo, e cobre os 597 alimentos', () => {
     expect(revisao).toMatch(/## Medidas tiradas pela camada de plausibilidade/)
     expect(revisao).toMatch(/\| 78 \| Alface, crespa, crua \| concha \| 32 g \| /)

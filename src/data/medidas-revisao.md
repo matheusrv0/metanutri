@@ -1,6 +1,6 @@
 # Revisão das medidas caseiras (TACO ↔ POF)
 
-Gerado por scripts/dados/importar-medidas-pof.mjs. 285 alimentos da TACO com medidas caseiras; 886 medidas da POF tiradas pela camada de plausibilidade.
+Gerado por scripts/dados/importar-medidas-pof.mjs. 285 alimentos da TACO com medidas caseiras; 894 medidas da POF tiradas pela camada de plausibilidade.
 Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentido para a forma de preparo.
 
 | TACO | Descrição TACO | Alimento POF (preparação) | Medidas |
@@ -66,8 +66,8 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 116 | Couve, manteiga, refogada  | COUVE (REFOGADO(A)) | colher de chá 5 g; colher de servir 42 g; colher de sobremesa 10 g; colher de sopa 20 g; folha 25 g; porção 42 g; prato fundo 120 g |
 | 118 | Couve-flor, cozida | COUVE FLOR (CROZIDO(A)) | colher de servir 50 g; colher de sobremesa 12.5 g; colher de sopa 25 g; pedaço 60 g; porção 69 g; prato de sobremesa 100 g; ramo 60 g; unidade 60 g; unidade pequena 30 g |
 | 120 | Espinafre, Nova Zelândia, refogado | ESPINAFRE (REFOGADO(A)) | colher de sobremesa 12.5 g; colher de sopa 25 g; porção 67 g |
-| 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; concha 110 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; prato de sobremesa 150 g; prato fundo 271 g; prato raso 101 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
-| 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; concha 110 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; prato de sobremesa 150 g; prato fundo 271 g; prato raso 101 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
+| 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
+| 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
 | 127 | Jiló, cru | JILO (CRU(A)) | colher de servir 95 g |
 | 128 | Jurubeba, crua | JURUBEBA (NAO SE APLICA) | unidade 10 g |
 | 129 | Mandioca, cozida | MANDIOCA (CROZIDO(A)) | colher de servir 60 g; colher de sopa 30 g; fatia 100 g; pedaço 100 g; porção 128 g |
@@ -935,9 +935,17 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 119 | Espinafre, Nova Zelândia, cru | pegador | 25 g | fonte de outro preparo (cozido) | Espinafre cozido - colher de sopa cheia |
 | 119 | Espinafre, Nova Zelândia, cru | porção | 67 g | fonte de outro preparo (cozido) | Espinafre cozido - porção Guia Alimentar |
 | 120 | Espinafre, Nova Zelândia, refogado | escumadeira | 50 g | a fonte é de outro utensílio | Couve flor cozida - 2 colheres de sopa cheia |
+| 121 | Farinha, de mandioca, crua | concha | 110 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - concha |
 | 121 | Farinha, de mandioca, crua | pote | 148 g | a fonte é de outro utensílio | Farinha de mandioca - tigela |
+| 121 | Farinha, de mandioca, crua | prato de sobremesa | 150 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato raso |
+| 121 | Farinha, de mandioca, crua | prato fundo | 271 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato fundo |
+| 121 | Farinha, de mandioca, crua | prato raso | 101 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato de sobremesa |
 | 121 | Farinha, de mandioca, crua | xícara de café | 42,3 g | a fonte é de outro utensílio | Farinha de mandioca - 1/3 copo pequeno |
+| 122 | Farinha, de mandioca, torrada | concha | 110 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - concha |
 | 122 | Farinha, de mandioca, torrada | pote | 148 g | a fonte é de outro utensílio | Farinha de mandioca - tigela |
+| 122 | Farinha, de mandioca, torrada | prato de sobremesa | 150 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato raso |
+| 122 | Farinha, de mandioca, torrada | prato fundo | 271 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato fundo |
+| 122 | Farinha, de mandioca, torrada | prato raso | 101 g | farinha e pó não se medem em concha nem prato | Farinha de mandioca - prato de sobremesa |
 | 122 | Farinha, de mandioca, torrada | xícara de café | 42,3 g | a fonte é de outro utensílio | Farinha de mandioca - 1/3 copo pequeno |
 | 126 | Inhame, cru | escumadeira | 110 g | fonte de outro preparo (cozido) | Inhame cozido - escumadeira média cheia |
 | 126 | Inhame, cru | porção | 126 g | fonte de outro preparo (cozido) | Inhame cozido/amassado - porção Guia Alimentar |
