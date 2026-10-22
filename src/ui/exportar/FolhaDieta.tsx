@@ -4,7 +4,7 @@ import { modoDeQuantidade } from '@/domain/caso.ts'
 import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
-  comprasDaFolha,
+  comprasDaSemana,
   linhaDaAguaNaFolha,
   linhaDaFolha,
   linhaFinaDaFolha,
@@ -134,7 +134,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
   const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
   const nome = nomeDoPacienteDoPlano(caso, paciente) ?? PACIENTE_SEM_NOME
   const linhaFina = linhaFinaDaFolha(nome, quem)
-  const compras = opcoes.listaDeCompras ? comprasDaFolha(plano, buscarAlimento) : []
+  // D-445 (correção A): a lista de compras da semana, no peso de compra.
+  const compras = opcoes.listaDeCompras ? comprasDaSemana(plano, buscarAlimento) : []
   // CB-188: pelo nome do paciente, sem trocar um alimento por ele mesmo.
   const trocas = opcoes.trocas
     ? trocasDaFolha(
@@ -257,13 +258,12 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
         <div className="anexos-da-folha flex flex-col gap-6 break-before-page">
           {compras.length > 0 ? (
             <section aria-label="Lista de compras" className="flex flex-col gap-2">
-              <h3 className="font-titulo text-lg font-bold text-heading">Lista de compras</h3>
+              <h3 className="font-titulo text-lg font-bold text-heading">Lista de compras da semana</h3>
               <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
                 {compras.map((c) => (
                   <li key={c.nome} className="border-b border-dotted border-border">
                     {`${c.nome} — `}
-                    {/* CA-643: a quantidade do dia pela regra da refeição. */}
-                    <Quantidade quantidade={quantidadeNaFolha(c.alimentoId, c.gramas, modo)} />
+                    <span className="text-muted-foreground sm:text-foreground">{c.texto}</span>
                   </li>
                 ))}
               </ul>

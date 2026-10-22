@@ -54,8 +54,10 @@ describe('a receita na folha (CA-879 a CA-881)', () => {
   it('CA-881: a lista de compras abre a receita nos ingredientes', () => {
     render(<FolhaDieta caso={caso} plano={planoComPanqueca()} opcoes={{ listaDeCompras: true, trocas: false }} />)
     const compras = screen.getByRole('region', { name: 'Lista de compras' })
-    expect(compras).toHaveTextContent('Banana prata — 1 unidade')
-    expect(compras).toHaveTextContent('Aveia em flocos — 1 colher de sopa')
+    // D-445 (correção A): a semana, no peso de compra: meia panqueca por dia leva 75 g de banana, 50 g de ovo e 15 g de aveia.
+    expect(compras).toHaveTextContent('Banana prata — 7 unidades')
+    expect(compras).toHaveTextContent('Ovo — 8 unidades')
+    expect(compras).toHaveTextContent('Aveia em flocos — 150 g')
     expect(compras).not.toHaveTextContent('Panqueca')
   })
 })

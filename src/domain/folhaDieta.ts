@@ -8,8 +8,10 @@ import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaComOQueComer, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
-import { buscarAlimento } from './tabelas.ts'
-import { OPCOES, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type Refeicao } from './tipos.ts'
+import { medidasDoAlimento } from './busca.ts'
+import { unidadeDo } from './liquido.ts'
+import { ALIMENTOS, buscarAlimento } from './tabelas.ts'
+import { OPCOES, type Alimento, type BuscarAlimento, type Caso, type ItemPlano, type ModoQuantidade, type Plano, type Refeicao } from './tipos.ts'
 import type { GrupoDeTrocas, Troca } from './trocas.ts'
 
 export type AssinaturaDaFolha =
@@ -77,6 +79,102 @@ export function comprasDaFolha(plano: Plano, buscar: BuscarAlimento): readonly C
     }
   }
   return [...porNome.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
+// ---------- Lista de compras da semana (spec impressao-do-plano, correção A, D-445) ----------
+
+export interface CompraDaSemana {
+  /** O nome do que se compra: o alimento cru quando se come cozido ("Arroz branco"), sem "(peso cru)". */
+  readonly nome: string
+  /** "400 g", "1,2 kg", "14 unidades", "1,4 litro", "700 ml". */
+  readonly texto: string
+}
+
+export const DIAS_DA_LISTA = 7
+
+/** O que se compra cru e se come cozido, grelhado ou assado: o peso de compra sai da energia da TACO. */
+const CATEGORIAS_DO_PESO_CRU: ReadonlySet<string> = new Set(['Cereais e derivados', 'Leguminosas e derivados', 'Carnes e derivados', 'Pescados e frutos do mar'])
+/** O que se compra contado, pela unidade (ovo, fruta, pão). */
+const contado = (a: Alimento): boolean => a.categoria.startsWith('Frutas') || a.categoria === 'Ovos e derivados' || /^Pão,/.test(a.descricao.trim())
+
+const semAcentoMinusculo = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+const partes = (descricao: string): string[] => semAcentoMinusculo(descricao).split(',').map((p) => p.trim())
+const PRONTO = /^(cozid|grelhad|assad)/
+const CRU = /^cru[ao]?s?$/
+
+/** O alimento cru da base com o mesmo nome do pronto ("Arroz, tipo 1, cozido" → "Arroz, tipo 1, cru"), por raiz do nome. */
+let crusPorRaiz: ReadonlyMap<string, Alimento> | null = null
+function parCru(alimento: Alimento): Alimento | null {
+  const p = partes(alimento.descricao)
+  if (!PRONTO.test(p.at(-1) ?? '')) return null
+  crusPorRaiz ??= new Map(
+    ALIMENTOS.filter((a) => CRU.test(partes(a.descricao).at(-1) ?? '')).map((a) => [partes(a.descricao).slice(0, -1).join(','), a] as const),
+  )
+  return crusPorRaiz.get(p.slice(0, -1).join(',')) ?? null
+}
+
+const pesoDaUnidade = (alimentoId: number): number | null => medidasDoAlimento(alimentoId).find((m) => m.nome === 'unidade')?.gramas ?? null
+const umaCasaDecimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
+const arredondarPara = (valor: number, passo: number): number => Math.ceil(valor / passo - 1e-9) * passo
+
+/** "350 g", "1,2 kg" (de 50 em 50 g; acima de 1 kg, de 100 em 100 g); em ml, "700 ml", "1,4 litro", "2,8 litros". */
+function textoDoPesoDeCompra(total: number, unidade: 'g' | 'ml'): string {
+  if (total < 1000) return `${arredondarPara(total, 50)} ${unidade}`
+  const milhares = arredondarPara(total, 100) / 1000
+  if (unidade === 'g') return `${umaCasaDecimal.format(milhares)} kg`
+  return `${umaCasaDecimal.format(milhares)} ${milhares < 2 ? 'litro' : 'litros'}`
+}
+
+/**
+ * D-445: a lista de compras da semana, no peso de compra. A principal do dia vezes 7; o que a base tem cru e se come
+ * pronto (arroz, feijão, lentilha, massa fresca, carne, ave e peixe) vai para o peso cru pela energia (a energia se
+ * conserva no preparo: só entra ou sai água); ovo, fruta e pão com "unidade" saem em unidades; líquido em ml ou litros;
+ * o resto em gramas. A receita entra pelos ingredientes. Ordem alfabética.
+ */
+export function comprasDaSemana(plano: Plano, buscar: BuscarAlimento): readonly CompraDaSemana[] {
+  const somas = new Map<number, { compra: Alimento; gramas: number; unidades: number }>()
+  const somar = (alimentoId: number, gramasDoDia: number) => {
+    const comido = buscar(alimentoId)
+    if (!comido || !(gramasDoDia > 0)) return
+    const semana = gramasDoDia * DIAS_DA_LISTA
+    const cru = parCru(comido)
+    const compra = cru ?? comido
+    const soma = somas.get(compra.id) ?? { compra, gramas: 0, unidades: 0 }
+    const unidade = contado(comido) ? pesoDaUnidade(comido.id) : null
+    const kcalComido = comido.nutrientes.energia_kcal
+    const kcalCru = cru?.nutrientes.energia_kcal ?? null
+    if (unidade) soma.unidades += semana / unidade
+    else if (cru && CATEGORIAS_DO_PESO_CRU.has(comido.categoria) && kcalComido && kcalCru) soma.gramas += (semana * kcalComido) / kcalCru
+    else soma.gramas += semana
+    somas.set(compra.id, soma)
+  }
+  for (const refeicao of plano.refeicoes) {
+    for (const item of refeicao.opcoes.principal) {
+      if (item.gramas <= 0) continue
+      if (ehItemDeReceita(item)) {
+        const receita = receitaDoItem(item)
+        for (const i of receita ? ingredientesNaQuantidade(receita, item.gramas) : []) somar(i.alimentoId, i.gramas)
+        continue
+      }
+      somar(item.alimentoId, item.gramas)
+    }
+  }
+  const linhas = [...somas.values()].map(({ compra, gramas, unidades }): CompraDaSemana => {
+    const nome = nomeParaPaciente(compra).replace(/\s*\(peso cru\)$/, '')
+    const unidadeDaCompra = pesoDaUnidade(compra.id)
+    if (unidades > 0) {
+      const total = Math.max(1, Math.ceil(unidades + (unidadeDaCompra ? gramas / unidadeDaCompra : 0) - 1e-9))
+      return { nome, texto: `${total} ${total === 1 ? 'unidade' : 'unidades'}` }
+    }
+    return { nome, texto: textoDoPesoDeCompra(gramas, unidadeDo(compra)) }
+  })
+  return linhas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
 /** Uma linha de alimento na folha: o nome que o paciente lê e a quantidade (spec impressao-do-plano). */

@@ -116,14 +116,14 @@ describe('Folha da dieta (US-B1)', () => {
     expect(screen.getByRole('article').textContent).not.toMatch(/ · \d+ g/)
   })
 
-  it('CA-925: em "Gramas", só o peso, na refeição, na lista de compras e nas trocas', () => {
+  it('CA-925: em "Gramas", só o peso, na refeição e nas trocas; a lista de compras é da semana, no peso de compra (D-445)', () => {
     render(<FolhaDieta caso={{ ...caso, quantidades: 'gramas' }} plano={planoComDesjejum()} opcoes={{ listaDeCompras: true, trocas: true }} />)
     const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 130 g$/)
     expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 5 g$/)
     expect(refeicao(/^12:00 Almoço$/).getByText('Arroz branco cozido').closest('li')).toHaveTextContent(/^Arroz branco cozido, 150 g$/)
     const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
-    expect(compra('Arroz branco cozido — 150 g')).toBeInTheDocument()
+    expect(compra('Arroz branco — 400 g')).toBeInTheDocument()
     const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
     expect(trocas.length).toBeGreaterThan(0)
     for (const troca of trocas) expect(troca).toMatch(/ · \d+ g$/)
@@ -263,16 +263,16 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('CA-318 e CA-319: lista de compras e trocas só quando marcadas, numa página nova, com até 2 trocas', () => {
     const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.queryByRole('heading', { name: 'Lista de compras' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Lista de compras da semana' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Trocas' })).not.toBeInTheDocument()
     unmount()
 
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
-    expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
-    // CA-628 e CA-643: a lista de compras usa o nome para o paciente e a quantidade pela regra da refeição.
+    expect(screen.getByRole('heading', { name: 'Lista de compras da semana' })).toBeInTheDocument()
+    // D-445 (correção A, substitui o CA-643): a semana, no peso de compra; o macarrão já é cru, sem "(peso cru)".
     const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
-    expect(compra('Arroz branco cozido — 6 colheres de sopa')).toBeInTheDocument()
-    expect(compra('Macarrão (peso cru) — 80 g')).toBeInTheDocument()
+    expect(compra('Arroz branco — 400 g')).toBeInTheDocument()
+    expect(compra('Macarrão — 600 g')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Trocas' }).textContent).not.toMatch(/,/)
     expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')

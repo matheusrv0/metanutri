@@ -78,7 +78,7 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 print:hidden">
-          <Opcao titulo="Lista de compras" texto="Os alimentos do dia com as quantidades." marcado={opcoes.listaDeCompras} aoMudar={(v) => mudar({ listaDeCompras: v })} />
+          <Opcao titulo="Lista de compras" texto="Para 7 dias, no peso de compra." marcado={opcoes.listaDeCompras} aoMudar={(v) => mudar({ listaDeCompras: v })} />
           <Opcao titulo="Trocas" texto="Até 2 opções para cada alimento do plano." marcado={opcoes.trocas} aoMudar={(v) => mudar({ trocas: v })} />
           {temSuplementos ? (
             <Opcao titulo="Suplementos da ficha" texto="Os suplementos registrados na ficha do paciente." marcado={comSuplementos} aoMudar={setComSuplementos} />

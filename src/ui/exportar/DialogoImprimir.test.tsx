@@ -52,10 +52,11 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     const trocas = janela().getByRole('switch', { name: 'Trocas' })
     expect(compras).toHaveAttribute('aria-checked', 'false')
     expect(trocas).toHaveAttribute('aria-checked', 'false')
-    expect(janela().queryByRole('heading', { name: 'Lista de compras' })).not.toBeInTheDocument()
+    expect(janela().queryByRole('heading', { name: 'Lista de compras da semana' })).not.toBeInTheDocument()
 
     await usuario.click(compras)
-    expect(janela().getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
+    // CA-1257 (correção A, D-445): a lista é da semana, no peso de compra.
+    expect(janela().getByRole('heading', { name: 'Lista de compras da semana' })).toBeInTheDocument()
     await usuario.click(trocas)
     expect(janela().getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
   })
@@ -82,7 +83,7 @@ describe('Janela de imprimir (CA-317, CA-320)', () => {
     // Testa "Lista de compras"
     const switchCompras = janela().getByRole('switch', { name: 'Lista de compras' })
     const tituloCompras = janela().getByText('Lista de compras')
-    const textoCompras = janela().getByText('Os alimentos do dia com as quantidades.')
+    const textoCompras = janela().getByText('Para 7 dias, no peso de compra.')
 
     // Estado inicial: false
     expect(switchCompras).toHaveAttribute('aria-checked', 'false')
