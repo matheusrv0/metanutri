@@ -20,7 +20,8 @@
 **Suposições (para revisar):**
 - A ficha continua uma chave só (`metanutri:pacientes`): os campos novos vão no mesmo objeto, depois dos antigos
   (DP-34). Nenhuma chave nova em `CHAVES_DE_DADOS`.
-- O caso não ganha campo novo. A cópia de nome, sexo e idade no plano novo continua, só para versões antigas do app.
+- O caso ganha só os dois campos da meta de água (`metodoAgua` e `aguaLitros`, T4b), lidos com padrão quando faltam.
+  A cópia de nome, sexo e idade no plano novo continua, só para versões antigas do app.
 - "Paciente com plano anterior" (R12) é paciente com ao menos um plano salvo.
 
 ## Arquivos
@@ -46,7 +47,8 @@
 | T1 | SPEC, PLAN e notas nas specs antigas | — | — |
 | T2 | Restrições: catálogo, mapeamento da base como dado, alimento próprio e receita pelo nome, texto livre que liga grupo, "não gosta" | CA-1073, CA-1078 a CA-1080 | T1 |
 | T3 | Restrição no Cobrir, nas trocas, nas sugestões por refeição e na linha do plano | CA-1074 a CA-1077, CA-1081 | T2 |
-| T4 | Água pela fase de vida na folha, na missão e no campo | CA-1082 a CA-1084 | T1 |
+| T4 | Água pela fase de vida na folha, na missão e no campo (substituída pela T4b) | — | T1 |
+| T4b | Meta de água pelo peso (correção do dono): faixas de ml/kg, peso ajustado, Holliday-Segar, gestação e lactação, 1 ml/kcal, valor editável; a DRI como referência | CA-1082 a CA-1084, CA-1090 a CA-1095 | T4, T6 |
 | T5 | Campos novos da ficha: leitura segura, ordem, gestação e lactação | CA-1039, CA-1040, CA-1087 a CA-1089 | T1 |
 | T6 | O plano lê a ficha: idade na data, condição, nome, ocupação, diagnóstico, divergência, duplicar sem peso | CA-1030 a CA-1035, CA-1041 a CA-1044, CA-1072 (domínio) | T5 |
 | T7 | Anamnese 3: blocos, regras, tipos, migração, data da resposta, nível sugerido | CA-1047 a CA-1053, CA-1060 a CA-1063, CA-1065 (domínio) | T5 |
@@ -65,3 +67,9 @@ Cada tarefa vai num commit (Conventional Commits, em português), com o teste an
    "Orientações e documento" da etapa 1.
 2. **Junção com `textos-e-promessas`:** o item 111 (Configurações › Quem assina) e as mensagens de missão de água.
 3. As listas do Apêndice A e os cortes de idade dependem da conferência da parceira (SPEC, seção 9).
+
+## Desvios na execução (21/10/2026)
+
+- **Água (T4b).** Depois da T4 (AI da DRI como meta, decisão 5 do coordenador), o dono corrigiu: a meta sai do peso,
+  ajustada pela idade e pela situação. A spec mudou primeiro (D-355, seção 4, CA-1082 a CA-1084 e CA-1090 a CA-1095) e
+  a T4b refez a conta; a AI da DRI ficou como linha de referência.

@@ -43,7 +43,7 @@ feminino e põe cada dado num lugar; o Dietbox repete o dado em dois lugares, qu
 | D-352 | **Mapeamento por grupo e por ingrediente, como dado.** Cada restrição tem a lista revisada dos alimentos da base que a contêm, pelo grupo e pelo ingrediente (Apêndice A): Leite e derivados pega a categoria inteira, manteiga, margarina e as preparações com leite ou queijo; Glúten pega trigo, centeio, cevada e aveia e tudo que leva farinha de trigo ou malte. Alimento próprio pela nota (rótulo) e alimento fora da base são lidos pelo nome, com termos por restrição; receita no plano é lida pelos ingredientes. Linha de texto que nomeia um grupo ("lactose", "glúten", "leite", "ovo") liga o grupo; as outras linhas continuam valendo pelo pedaço do nome, como antes |
 | D-353 | **Onde a restrição vale.** O Cobrir não sugere alimento restrito; as trocas da folha não oferecem; as sugestões por refeição da etapa 2 não mostram; e a linha do plano com alimento (ou ingrediente de receita) restrito ganha o aviso "Alergia: leite e derivados", "Intolerância: lactose", "Não come por escolha: vegetariano" ou "Não come: camarão". A busca continua livre (a conduta é do nutricionista): o aviso aparece quando o alimento entra |
 | D-354 | **"Não gosta" vai para o fim do Cobrir.** Os alimentos da resposta "Alimentos de que não gosta" (separados por vírgula, "e" ou linha) continuam podendo ser sugeridos, mas depois dos outros |
-| D-355 | **Água pela fase de vida** (decisão 5 do coordenador): a AI de água total da DRI (NASEM, 2005) e a parte em bebidas, que é a que a folha e a missão usam (seção 4). Gestante e lactante têm as próprias. Plano sem sexo ou sem idade não tem linha automática; o peso deixa de entrar na conta |
+| D-355 | **Meta de água pelo peso** (correção do dono de 21/10/2026, que substitui a decisão 5 do coordenador; seção 4). Adulto (18 anos ou mais): ml por kg pela faixa de idade (35 ml/kg de 18 a 55 anos, 30 de 56 a 65, 25 acima de 65); com IMC de 30 ou mais, o peso ajustado (peso ideal pelo IMC 25 + 25% do excesso), e a tela diz isso. Abaixo de 18 anos: Holliday-Segar pelo peso. Gestação: mais 300 ml por dia; lactação: mais 700 ml. Método alternativo, escolhido no plano: 1 ml por kcal da meta de energia (sem os acréscimos, que a energia já soma). A conta aparece com o nome do método ("35 ml × 72 kg = 2,5 L"); a nutricionista pode trocar o valor final, e a escolha dela vale e fica salva. A AI de água da DRI fica só como referência, numa linha discreta. Sem peso (ou, no método por energia, sem meta de energia), não há valor automático, e a tela pede o dado. A linha da água do plano impresso e a missão de água do link usam esta meta |
 | D-356 | **Atividade física estruturada sugere o nível**: "Prática de exercício" (Sim, Não), "Tipo de atividade", "Vezes por semana", "Minutos por vez", "Horário do exercício". Com "Não", só a primeira aparece. Sugestão: não pratica → Sedentário; 1 ou 2 vezes → Pouco ativo; 3 a 5 → Moderadamente ativo; 6 ou 7 → Muito ativo; sessões de menos de 30 minutos descem um nível. "Extremamente ativo" nunca é sugerido (depende do trabalho). O plano novo nasce com o nível sugerido; a etapa 1 mostra a resposta como lembrete, com "Usar" quando o nível é outro |
 | D-357 | **Nível de atividade num lugar só**, a etapa 1. O número do fator só aparece ao lado do nome na equação de adulto (19 anos ou mais, sem gestação nem lactação; R11). "Ajustar" guarda fórmula, fator próprio e GET manual |
 | D-358 | **Retorno.** Paciente com ao menos um plano: o bloco "Retorno" (Seguir o plano: Fácil, Médio, Difícil; O que ajudou e o que atrapalhou; Mudanças desde a última consulta; Sintomas novos; Recordatório de hoje) vem no topo da anamnese, com o resumo do último link do paciente (dias com missão marcada e a última marcação). Resposta nova guarda a data; o resumo do bloco mostra a data da última resposta. O plano duplicado de paciente nasce com o peso vazio e "Última: 82 kg em 10/09/2026" no campo; idade e semanas saem da data nova (D-341, D-343) |
@@ -104,12 +104,55 @@ A idade é a de hoje na ficha e a da data da consulta no plano.
 | R13 | R1 a R8 na ficha | só com sexo e data de nascimento | a frase "Preencha sexo e data de nascimento para ver as perguntas da fase de vida." |
 | — | Ocupação × Escola e ano; Responsável; Tempo de tela | Ocupação de 18 anos em diante (ou sem idade); Escola e ano, Responsável e Tempo de tela abaixo de 18 | o campo com dado fica |
 
-## 4. Água por fase de vida (D-355)
+## 4. Meta de água (D-355)
+
+**Correção do dono (21/10/2026):** na prática clínica a meta de água sai do peso, ajustada pela idade e pela situação,
+e não só da AI da fase de vida. A decisão 5 do coordenador (AI da DRI como meta) foi substituída; a AI ficou como
+referência.
+
+### 4.1 A conta
+
+| Quem | Método padrão (por peso) | Conta mostrada |
+|---|---|---|
+| 18 a 55 anos | 35 ml/kg | "35 ml × 72 kg = 2,5 L" |
+| 56 a 65 anos | 30 ml/kg | "30 ml × 70 kg = 2,1 L" |
+| Acima de 65 anos | 25 ml/kg | "25 ml × 60 kg = 1,5 L" |
+| Adulto com IMC de 30 ou mais | a faixa da idade sobre o **peso ajustado** = peso ideal (IMC 25 × estatura²) + 0,25 × (peso atual − peso ideal) | "35 ml × 79,5 kg (peso ajustado) = 2,8 L" e a nota "IMC de 30 ou mais: usado o peso ajustado, o peso ideal (IMC 25) mais 25% do excesso." |
+| Abaixo de 18 anos | Holliday-Segar: 100 ml/kg nos primeiros 10 kg, mais 50 ml/kg nos 10 kg seguintes, mais 20 ml/kg acima de 20 kg | "Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L" |
+| Gestante | a conta da idade **mais 300 ml** | "35 ml × 64 kg + 300 ml da gestação = 2,5 L" |
+| Lactante | a conta da idade **mais 700 ml** | "35 ml × 62 kg + 700 ml da lactação = 2,9 L" |
+| Método por energia (escolha do plano) | 1 ml por kcal da meta de energia (GET ou meta digitada); gestação e lactação já estão na energia | "1 ml × 2.050 kcal = 2,1 L" |
+
+O valor vai em litros com uma casa. A estatura só entra para o IMC; sem ela, vale o peso atual. A nutricionista troca o
+valor final no campo "Meta de água" (a troca vale para a folha e para a missão e fica salva no plano); "Usar a
+calculada" volta à conta. Campo apagado tira a linha da folha (D-298), e a missão fica "Beber água ao longo do dia".
+Linha escrita à mão antes desta versão (texto) continua valendo até "Usar a calculada".
+
+### 4.2 Fontes
+
+- Faixas de ml/kg por idade: a tabela de uso corrente na prática clínica brasileira (35 ml/kg para adultos, 30 e
+  25 ml/kg para idosos), como a de Nutritotal PRO, "O cálculo da oferta hídrica é de grande importância para o paciente
+  em Terapia Nutricional Enteral" (16/09/2019), que cita Waitzberg e Dias, *Guia Básico de Terapia Nutricional*
+  (Atheneu, 2005). Os cortes de 55 e 65 anos são os pedidos pelo dono; a tabela da Nutritotal usa 55 a 75 anos para
+  30 ml/kg e acima de 75 para 25 ml/kg. Não foi achada uma diretriz primária com estes cortes: a parceira confere.
+- A mesma fonte dá 1 a 1,5 ml por kcal por dia como alternativa; o app usa 1 ml/kcal.
+- Holliday MA, Segar WE. The maintenance need for water in parenteral fluid therapy. *Pediatrics* 1957;19(5):823-32.
+- Peso ajustado na obesidade: peso ideal + 25% da diferença entre o peso atual e o ideal (a correção usada nas
+  calculadoras de terapia nutricional, como a ClinCalc).
+- Gestação e lactação: a EFSA (Scientific Opinion on Dietary Reference Values for water, *EFSA Journal* 2010) propõe
+  mais 300 ml por dia na gestação e mais 700 ml na lactação. Na DRI de 2004 (Institute of Medicine, *Dietary Reference
+  Intakes for Water, Potassium, Sodium, Chloride, and Sulfate*, NAP 2005), a água total passa de 2,7 L para 3,0 L na
+  gestação (+0,3 L) e para 3,8 L na lactação (+1,1 L). O app usa os +300 e +700 ml pedidos; a diferença na lactação
+  fica para a parceira conferir.
+- Referência à parte (não é meta): ESPEN, Volkert et al., *Clinical Nutrition* 2022: pessoa idosa, ao menos 1,6 L de
+  bebidas por dia para mulheres e 2,0 L para homens.
+
+### 4.3 A referência da DRI (só uma linha de referência)
 
 Fonte: Institute of Medicine (NASEM). *Dietary Reference Intakes for Water, Potassium, Sodium, Chloride, and
 Sulfate*. Washington: National Academies Press, 2005. AI de água total e a parte que vem de bebidas, em litros por dia.
 
-| Fase de vida | Água total | Em bebidas (linha da folha e missão) |
+| Fase de vida | Água total | Em bebidas |
 |---|---|---|
 | 1 a 3 anos | 1,3 | 0,9 |
 | 4 a 8 anos | 1,7 | 1,2 |
@@ -122,9 +165,8 @@ Sulfate*. Washington: National Academies Press, 2005. AI de água total e a part
 | Gestantes | 3,0 | 2,3 |
 | Lactantes | 3,8 | 3,1 |
 
-A linha da folha: "Beba cerca de 2,2 litros de água por dia." A dica do campo "Meta de água" na etapa 1: "Referência
-de água da DRI para mulheres de 19 anos ou mais: 2,7 litros por dia, dos quais cerca de 2,2 litros em bebidas; o resto
-vem dos alimentos. Aparece no início das orientações do plano impresso. Se ficar vazio, não aparece."
+A linha discreta embaixo da conta: "Referência da DRI para mulheres de 19 anos ou mais: 2,7 L de água total, cerca de
+2,2 L em bebidas." A linha da folha continua "Beba cerca de 2,5 litros de água por dia.", com a meta do plano.
 
 ## 5. Histórias e critérios de aceite
 
@@ -197,11 +239,17 @@ Pessoas: **nutricionista**, **estudante** (plano sem paciente) e **paciente**.
 - **CA-1080** · Dado um paciente vegetariano, então nenhuma carne, peixe, fruto do mar, gelatina ou prato com eles é sugerido; ovo e leite podem ser; com vegano, também não.
 - **CA-1081** · Dado "Alimentos de que não gosta: fígado, jiló", quando o Cobrir do ferro abre, então fígado pode aparecer, mas depois de todos os outros.
 
-### US-FU6 · Água pela fase de vida
+### US-FU6 · Meta de água pelo peso (correção do dono)
 
-- **CA-1082** · Dado cada fase de vida da seção 4, então a linha automática e a missão de água usam a parte em bebidas daquela fase (menina de 6 anos: 1,2 L; gestante: 2,3 L; lactante: 3,1 L; homem de 35: 3,0 L), sem depender do peso.
-- **CA-1083** · Dado a etapa 1, então "Meta de água" mostra a linha automática e a dica com a água total, a parte em bebidas e a fase de vida; "Usar a automática" volta à conta; plano sem sexo ou sem idade não tem linha automática e a dica pede "Informe sexo e idade para a meta automática.".
-- **CA-1084** · Dado um plano com a linha da água escrita à mão antes desta versão, então ela continua igual.
+- **CA-1082** · Dado um adulto, então a meta é a faixa da idade vezes o peso: 35 anos e 72 kg dão "35 ml × 72 kg = 2,5 L"; 60 anos e 70 kg, "30 ml × 70 kg = 2,1 L"; 70 anos e 60 kg, "25 ml × 60 kg = 1,5 L".
+- **CA-1083** · Dado um adulto com IMC de 30 ou mais (35 anos, 100 kg, 1,65 m), então a conta usa o peso ajustado (68,1 kg ideal + 25% do excesso = 76 kg): "35 ml × 76 kg (peso ajustado) = 2,7 L", com a nota do peso ajustado.
+- **CA-1084** · Dado uma criança ou adolescente, então a meta é a de Holliday-Segar: 21 kg dão 1,5 L ("Holliday-Segar: 1.000 ml + 500 ml + 20 ml × 1 kg = 1,5 L"); 8 kg, 0,8 L; 15 kg, 1,3 L.
+- **CA-1090** · Dado uma gestante, então a conta soma 300 ml; dada uma lactante, 700 ml, e a conta diz o acréscimo.
+- **CA-1091** · Dado o método "Por energia (1 ml/kcal)" escolhido no plano, então a meta é 1 ml por kcal da meta de energia ("1 ml × 2.050 kcal = 2,1 L"), sem os acréscimos de gestação e lactação; sem meta de energia, não há valor automático. Plano antigo, sem o campo, usa "Por peso".
+- **CA-1092** · Dado a etapa 1, então o campo "Meta de água" mostra o valor em litros, o nome do método e a conta, e uma linha discreta com a referência da DRI para a fase de vida; sem peso, o campo fica vazio, com "Informe o peso para a meta automática.".
+- **CA-1093** · Dado um valor digitado pela nutricionista, então ele vale para a folha e para a missão e fica salvo no plano; "Usar a calculada" volta à conta; campo apagado tira a linha da folha e deixa a missão sem número.
+- **CA-1094** · Dado a folha e o link do mesmo plano, então "Beba cerca de 2,5 litros de água por dia." e "Beber cerca de 2,5 litros de água" usam o mesmo valor.
+- **CA-1095** · Dado um plano com a linha da água escrita à mão antes desta versão, então ela continua igual na folha até "Usar a calculada".
 
 ### US-FU7 · Textos e tela
 
@@ -267,7 +315,9 @@ Pessoas: **nutricionista**, **estudante** (plano sem paciente) e **paciente**.
 | CB-350 | Alimento próprio sem nome reconhecível | Só a lista de texto livre vale para ele; o aviso não aparece |
 | CB-351 | Restrição que tira todas as sugestões do Cobrir | A frase de sempre: "Nenhum alimento de rotina, dentro das restrições do paciente, cobre…" |
 | CB-352 | Plano sem paciente | Sem restrição, como hoje |
-| CB-353 | Linha da água escrita à mão | Continua, mesmo que a fase de vida mude |
+| CB-353 | Linha da água escrita à mão (texto, de antes) | Continua na folha até "Usar a calculada" |
+| CB-357 | Sem estatura | A conta usa o peso atual (sem IMC, não há peso ajustado) |
+| CB-358 | Peso fora da faixa (inválido) | Sem valor automático, como sem peso |
 | CB-354 | Resposta antiga sem data | O resumo do bloco mostra só a contagem |
 | CB-355 | "Vezes por semana" com texto que não é número | Sem sugestão de nível; o texto fica |
 | CB-356 | Plano duplicado sem paciente | Continua com o peso, como hoje |
@@ -292,8 +342,9 @@ Pessoas: **nutricionista**, **estudante** (plano sem paciente) e **paciente**.
 2. **Lactose deixa os queijos maturados e a manteiga** (quase sem lactose), e pães e biscoitos (leite em pouca
    quantidade). É a conduta mais comum; a parceira confere.
 3. **Óleo de soja refinado fica fora de Soja**: o refino tira quase toda a proteína. A parceira confere.
-4. **Água pela DRI em todo adulto** troca os 35 ml/kg (D-298) pela AI da fase de vida, como a decisão 5 pede: um
-   adulto de 100 kg passa de 3,5 L para 3,0 L em bebidas; uma mulher de 50 kg, de 1,8 L para 2,2 L.
+4. **Meta de água** (correção do dono): os cortes de idade (55 e 65 anos) e o acréscimo da lactação (+700 ml, da
+   EFSA; a DRI de 2004 soma 1,1 L de água total) pedem a conferência da parceira. Holliday-Segar é a regra de
+   manutenção de fluidos da pediatria e pode ficar alta para o adolescente pesado (60 kg dão 2,3 L).
 5. **Nível sugerido pela frequência** (D-356) é a leitura usual dos fatores de Harris-Benedict (dias por semana de
    exercício). É sugestão: a nutricionista escolhe.
 6. **Cortes de idade dos blocos** (R4 a R7) seguem o levantamento; a parceira confere pela tela.
