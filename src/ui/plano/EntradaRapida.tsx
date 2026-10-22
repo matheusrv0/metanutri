@@ -208,7 +208,8 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                     <>
                       {/* No celular, o nome numa linha e a leitura embaixo: "1 concha e meia · 210 g · 160 kcal" (D-373). */}
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                        <span className="min-w-0 truncate sm:flex-1">{o.r.alimento.descricao}</span>
+                        {/* D-481 (correção C): no celular o nome quebra linha; "Ovo, de galinha, inteiro, cozido/10minut…" cortava o preparo. */}
+                        <span className="min-w-0 break-words sm:flex-1 sm:truncate">{o.r.alimento.descricao}</span>
                         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                           {o.r.alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
                           <MarcaDeCompletude alimento={o.r.alimento} />

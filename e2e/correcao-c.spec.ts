@@ -26,6 +26,13 @@ const adicionar = async (pagina: Page, refeicao: string, entrada: string, nome: 
 for (const largura of [390, 360]) {
   test(`CA-1329: a ${largura} px, a linha do plano mostra o nome e a medida inteiros, e as abas cabem`, async ({ page }) => {
     await abrirPlanoRapido(page, largura)
+    // Na lista da entrada rápida, o nome do alimento também aparece inteiro.
+    await page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' }).fill('2 ovos')
+    const primeira = page.getByRole('option').first()
+    await expect(primeira).toContainText('Ovo, de galinha, inteiro, cozido/10minutos')
+    const nomeNaLista = primeira.getByText('Ovo, de galinha, inteiro, cozido/10minutos', { exact: true })
+    expect(await nomeNaLista.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(false)
+    await page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' }).fill('')
     await adicionar(page, 'Café da manhã', '2 ovos cozidos', /Ovo, de galinha, inteiro, cozido/)
     await adicionar(page, 'Café da manhã', '1 copo americano de leite integral', /Leite, de vaca, integral/)
     const lista = page.getByRole('list', { name: 'Alimentos em Principal de Café da manhã' })
