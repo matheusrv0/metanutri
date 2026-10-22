@@ -1,7 +1,7 @@
 // Sugestões de alimentos para cobrir um micronutriente abaixo da meta (SPEC CA-34 a CA-40, D-5, CB-06).
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
-import { medidaParaMostrar, medidasDoAlimento } from './busca.ts'
+import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { tipoDaRefeicao, type TipoRefeicao } from './sugestoes.ts'
@@ -146,6 +146,9 @@ export function porcaoEmMedida(
     parcial = true
   }
   if (quantidade < 0.5) return null
+  // Correção A: "7 fatias de tofu" ou "5 unidades e meia de quiabo" não é como se prescreve (D-295 da
+  // conduta-da-nutricionista); sem medida de até 4 pedaços que caiba, vale o peso.
+  if (MEDIDAS_DE_CONTAR.has(referencia.medida) && quantidade > MAXIMO_DE_PEDACOS) return null
   return { gramas: Math.round(quantidade * peso * 10) / 10, medida: { nome: referencia.medida, quantidade, gramasPorMedida: peso }, parcial }
 }
 

@@ -1,3 +1,4 @@
+import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR } from './busca.ts'
 import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import {
   COBERTURA_MINIMA_PCT,
@@ -786,6 +787,21 @@ describe('porção realista por grupo e por idade (spec sugestoes-com-criterio, 
     expect(ovo?.gramas).toBeGreaterThanOrEqual(45)
     // Na criança, a mínima também encolhe: ⅔ de 50 g, arredondados para cima de 5 em 5 g.
     expect(porcaoMinima(alimentoDe(FIGADO), 6)).toBe(35)
+  })
+})
+
+describe('porção de contar realista no Cobrir (correção A, D-439)', () => {
+  it('nenhuma sugestão pede mais de 4 unidades ou pedaços: sem medida que caiba, o peso ("Tofu 140 g", não "7 fatias")', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    for (const idadeAnos of [6, 30]) {
+      const ad = calcularAdequacao(vazio, { sexo: 'F', idadeAnos, condicao: { tipo: 'nenhuma' } }, { tipo: 'individual' })
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const s of sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2400, idadeAnos }).sugestoes) {
+          if (s.medida && MEDIDAS_DE_CONTAR.has(s.medida.nome)) expect(s.medida.quantidade, `${chave} ${s.descricao}`).toBeLessThanOrEqual(MAXIMO_DE_PEDACOS)
+        }
+      }
+    }
+    expect(porcaoEmMedida(584, 140, 150)).toBeNull() // Tofu: 7 fatias de 20 g
   })
 })
 
