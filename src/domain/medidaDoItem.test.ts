@@ -39,6 +39,12 @@ describe('a medida guardada no item (G1, D-374)', () => {
     }
   })
 
+  it('CB-391 (D-424): o item gravado com "copo médio" continua lendo "copo médio", mesmo com o copo renomeado na base', () => {
+    const copoMedio: MedidaDoItem = { nome: 'copo médio', quantidade: 1, gramasPorMedida: 240 }
+    expect(texto(item(449, 240, copoMedio), 'medida-e-gramas')).toBe('1 copo médio (240 g)')
+    expect(texto(item(449, 240), 'medida-caseira')).toBe('1 copo de requeijão')
+  })
+
   it('CA-1113: "1 pote de iogurte natural" guarda pote, 1 e 200 g, e o paciente lê "1 pote (200 g)"', () => {
     const r = buscarAlimentos('1 pote de iogurte natural', ALIMENTOS).resultados[0]
     expect(r?.medida).toEqual({ nome: 'pote', quantidade: 1, gramasPorMedida: 200 })

@@ -283,7 +283,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(linha('Pão francês')).toBe('70 g (cerca de 1 unidade e meia)Pão francês')
     expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
     expect(linha('Banana prata')).toBe('130 g (cerca de 1 unidade e meia)Banana prata')
-    expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meiaMaçã Fuji com casca')
+    expect(linha('Maçã Fuji com casca')).toBe('1 unidade pequena e meiaMaçã Fuji com casca') // D-423
   })
 
   it('CA-750: produto do nutricionista e alimento removido saem como foram guardados', async () => {

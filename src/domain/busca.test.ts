@@ -11,6 +11,7 @@ import {
   medidaParaMostrar,
   medidaPedida,
   PRIMEIRO_ID_PROPRIO,
+  registrarMedidasProprias,
   variantesDoTermo,
 } from './busca.ts'
 import { CONSUMO_POF } from './consumoPof.ts'
@@ -200,7 +201,8 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
   it('CA-781 (com a D-295 da conduta-da-nutricionista): mais de 4 pedaços dá lugar a outra medida que sirva; até 4, aparece', () => {
     // Antes da conduta, 130 g de banana saíam sem medida; a parceira pediu a medida de contar que serve.
     expect(medidaParaMostrar(BANANA_PRATA, 130)?.texto).toBe('1 unidade e meia')
-    expect(medidaParaMostrar(BANANA_PRATA, 104)?.texto).toBe('4 fatias')
+    // D-423 (spec alimentos-e-gramaturas, seção 6): a banana prata não se lê mais em fatia; 104 g é 1 unidade e meia.
+    expect(medidaParaMostrar(BANANA_PRATA, 104)?.texto).toBe('1 unidade e meia')
     expect(medidaParaMostrar(3, 150)?.texto).toBe('6 colheres de sopa')
   })
 
@@ -208,7 +210,8 @@ describe('medidaParaMostrar (spec revisao-geral-trabalho, D-242)', () => {
     expect(medidaEquivalente(MARGARINA, 5)).toBeNull()
     // Desde a correção A (D-430), a gordura não tem mais a "fatia" de 32 g da POF: 30 g é 1 colher de sopa.
     expect(medidaEquivalente(MANTEIGA, 30)?.texto).toBe('1 colher de sopa')
-    expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('5 fatias')
+    // D-423: a fruta pequena só em unidade, também no planejador (eram "5 fatias").
+    expect(medidaEquivalente(BANANA_PRATA, 130)?.texto).toBe('1 unidade e meia')
   })
 })
 
@@ -229,7 +232,8 @@ describe('medida caseira para o paciente (spec conduta-da-nutricionista, D-295 e
 
   it('com até 4 pedaços, é a mesma do planejador', () => {
     expect(medidaCaseiraParaPaciente(3, 150)).toEqual(medidaEquivalente(3, 150))
-    expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('3 fatias e meia')
+    // D-423: a maçã de 130 g era "3 fatias e meia".
+    expect(medidaCaseiraParaPaciente(222, 130)?.texto).toBe('1 unidade pequena e meia')
     expect(medidaCaseiraParaPaciente(40, 100)).toBeNull()
   })
 
@@ -336,6 +340,39 @@ describe('um copo por nome e a unidade emprestada (spec alimentos-e-gramaturas, 
     const r = buscarAlimentos('1 copo médio de iogurte natural desnatado', ALIMENTOS).resultados[0]
     expect(r?.alimento.id).toBe(449)
     expect(r?.medida).toEqual({ nome: 'copo de requeijão', quantidade: 1, gramasPorMedida: 240 })
+  })
+
+  it('CA-1208 (D-423): a fruta inteira se lê em unidade; fatia e pedaço só na fruta grande, até 2', () => {
+    const MACA_FUJI = 222
+    const maca = medidaCaseiraParaPaciente(MACA_FUJI, 130)
+    expect(['unidade', 'unidade pequena']).toContain(maca?.medida)
+    expect(medidaParaMostrar(182, 75)?.texto).toBe('1 unidade')
+    expect(medidaParaMostrar(225, 170)?.texto).toBe('1 fatia')
+    expect(medidaParaMostrar(235, 400)?.texto).toBe('2 fatias')
+    const frutas = ALIMENTOS.filter((a) => a.categoria === 'Frutas e derivados' && a.preparo === 'cru' && !/suco|polpa/i.test(a.descricao))
+    expect(frutas.length).toBeGreaterThan(50)
+    for (const a of frutas) {
+      for (let gramas = 20; gramas <= 400; gramas += 10) {
+        const m = medidaCaseiraParaPaciente(a.id, gramas)
+        if (!m) continue
+        const rotulo = `${a.descricao} ${gramas} g: ${m.texto}`
+        expect(['banda', 'metade', 'gomo', 'rodela'], rotulo).not.toContain(m.medida)
+        if (m.medida === 'fatia' || m.medida === 'pedaço') expect(m.quantidade, rotulo).toBeLessThanOrEqual(2)
+      }
+    }
+    // Maçã, pera, laranja e banana prata (unidade de até 250 g): nunca em fatia ou pedaço.
+    for (const id of [MACA_FUJI, 221, 242, 214, 182]) {
+      for (let gramas = 20; gramas <= 400; gramas += 10) expect(['fatia', 'pedaço'], `${id} ${gramas} g`).not.toContain(medidaCaseiraParaPaciente(id, gramas)?.medida)
+    }
+  })
+
+  it('CB-392 (D-423): a medida que a nutricionista criou para a fruta vale', () => {
+    registrarMedidasProprias([{ alimentoId: 222, nome: 'fatia', gramas: 30 }])
+    try {
+      expect(medidaCaseiraParaPaciente(222, 60)?.texto).toBe('2 fatias')
+    } finally {
+      registrarMedidasProprias([])
+    }
   })
 
   it('CA-1210: "1 banana maçã" entra com a unidade emprestada da prata, 75 g', () => {

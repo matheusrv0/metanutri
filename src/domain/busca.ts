@@ -145,15 +145,39 @@ interface OpcoesDaMedida {
   readonly semFatia?: boolean | undefined
 }
 
+const PECAS_DA_FRUTA_PEQUENA: ReadonlySet<string> = new Set(['unidade', 'unidade pequena'])
+/** Fruta com unidade da base até este peso se come inteira: maçã, pera, laranja, banana prata. */
+const FRUTA_PEQUENA_ATE_G = 250
+const MAXIMO_DE_FATIAS_DE_FRUTA = 2
+
+/**
+ * D-423 (spec alimentos-e-gramaturas, seção 6): a peça que a fruta inteira crua aceita. A fruta pequena só em unidade e
+ * unidade pequena ("1 unidade pequena e meia" de maçã, nunca "3 fatias e meia"); a grande ou sem unidade também em fatia
+ * e pedaço, até 2 ("1 fatia de mamão"). Banda, metade, gomo e rodela saem: a meia unidade já diz "meia unidade". A
+ * medida da conta e o alimento próprio são da nutricionista e sempre valem; colher, xícara e taça não são peça.
+ */
+function pecaDaFruta(alimentoId: number, medidas: readonly MedidaCaseira[]): ((m: MedidaCaseira, quantidade: number) => boolean) | null {
+  const a = alimentoId >= PRIMEIRO_ID_PROPRIO ? undefined : buscarAlimento(alimentoId)
+  if (!a || a.categoria !== 'Frutas e derivados' || a.preparo !== 'cru' || /suco|polpa/i.test(a.descricao)) return null
+  const pequena = medidas.some((m) => m.propria !== true && PECAS_DA_FRUTA_PEQUENA.has(m.nome) && m.gramas <= FRUTA_PEQUENA_ATE_G)
+  return (m, quantidade) => {
+    if (m.propria === true || !MEDIDAS_DE_CONTAR.has(m.nome) || PECAS_DA_FRUTA_PEQUENA.has(m.nome)) return true
+    return !pequena && (m.nome === 'fatia' || m.nome === 'pedaço') && quantidade <= MAXIMO_DE_FATIAS_DE_FRUTA
+  }
+}
+
 /** A medida mais legível entre as preferidas, em passos de meia medida. */
 function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida): MedidaEquivalente | null {
   if (!(gramas > 0)) return null
   let melhor: { m: MedidaCaseira; q: number; pontos: number } | null = null
-  for (const m of medidasDoAlimento(alimentoId)) {
+  const medidas = medidasDoAlimento(alimentoId)
+  const servePraFruta = pecaDaFruta(alimentoId, medidas)
+  for (const m of medidas) {
     const preferencia = PREFERENCIA_MEDIDAS.indexOf(m.nome)
     if (preferencia < 0 || (opcoes.semFatia && m.nome === 'fatia')) continue
     const q = Math.max(0.5, Math.round((gramas / m.gramas) * 2) / 2)
     if (q > QUANTIDADE_MAXIMA) continue
+    if (servePraFruta && !servePraFruta(m, q)) continue
     if (opcoes.maximoDePedacos !== undefined && MEDIDAS_DE_CONTAR.has(m.nome) && q > opcoes.maximoDePedacos) continue
     const erro = Math.abs(q * m.gramas - gramas) / gramas
     if (erro > ERRO_MAXIMO) continue

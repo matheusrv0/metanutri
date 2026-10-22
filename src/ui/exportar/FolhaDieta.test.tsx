@@ -106,7 +106,7 @@ describe('Folha da dieta (US-B1)', () => {
   it('CA-926 e CA-927: em "Medida caseira", só a medida, sem o peso ao lado; margarina em ponta de faca', () => {
     render(<FolhaDieta caso={caso} plano={planoComDesjejum()} />)
     const desjejum = refeicao(/^06:00 Café da manhã$/)
-    expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia$/)
+    expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 1 unidade pequena e meia$/) // D-423: eram "3 fatias e meia"
     // D-295: "5 fatias" de banana vira a medida de até 4 pedaços que serve.
     // D-434 (correção A): 1 unidade e meia são 112,5 g, a mais de 5% dos 130 g: o peso e "cerca de".
     expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 130 g \(cerca de 1 unidade e meia\)$/)
