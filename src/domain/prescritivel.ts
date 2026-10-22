@@ -306,6 +306,20 @@ export function ehProcessado(alimento: Pick<Alimento, 'descricao'>): boolean {
   return PROCESSADO.test(limpar(alimento.descricao))
 }
 
+/**
+ * Ultraprocessado pela classificação NOVA (Guia Alimentar para a População Brasileira, 2014): o que a regra
+ * "ultraprocessado" reconhece, menos azeitona e tremoço em conserva (processados), mais bebida láctea, leite fermentado,
+ * iogurte com sabor, achocolatado, refrigerante, chocolate, biscoito e embutido. Vale mesmo para o que a parceira liberou
+ * no Cobrir (D-290): na troca, nunca no lugar de quem não é (spec conduta-da-nutricionista, D-478).
+ */
+const ULTRAPROCESSADO_NOVA =
+  /^(Caldo de (carne|galinha)|Macarr(ã|a)o, instant(â|a)neo|Cereal matinal|Cereais, (mingau|mistura para vitamina)|Farinha, l(á|a)ctea|Empada|Biscoito|Mingau tradicional|Creme de milho|Leite, fermentado|Bebida l(á|a)ctea|Iogurte, sabor|Refrigerante|Achocolatado|Leite, de vaca, achocolatado|Chocolate|Bombom)|enriquecid/i
+
+export function ehUltraprocessado(alimento: Pick<Alimento, 'descricao'>): boolean {
+  const nome = limpar(alimento.descricao)
+  return ULTRAPROCESSADO_NOVA.test(nome) || EMBUTIDO.test(nome)
+}
+
 /** Verdadeiro quando o alimento é de consumo corriqueiro; usado só para ordenar. */
 export function ehDeUsoComum(alimento: Pick<Alimento, 'descricao'>): boolean {
   return !POUCO_USUAL.test(alimento.descricao)

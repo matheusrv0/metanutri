@@ -1,6 +1,6 @@
 // Lista de trocas: o paciente troca sozinho, dentro do grupo, sem ligar para a nutricionista.
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaCaseiraParaPaciente, medidaEquivalente, type MedidaEquivalente } from './busca.ts'
-import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, regraQueExclui } from './prescritivel.ts'
+import { ehDeUsoComum, ehPratoComposto, ehPrescritivel, ehProcessado, ehSegundaEscolha, ehUltraprocessado, regraQueExclui } from './prescritivel.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Alimento, BuscarAlimento, Plano } from './tipos.ts'
@@ -186,11 +186,14 @@ export function trocasDoAlimento(
 
   // D-422: fruta troca por outra fruta (nunca pela mesma de outra variedade), em peça que o paciente conta.
   const fruta = base.categoria === FRUTAS
+  // D-478: quem não é ultraprocessado nunca troca por ultraprocessado.
+  const baseUltraprocessada = ehUltraprocessado(base)
   const papel = papelDe(base)
   const candidatas = opcoes.alimentos
     // D-473 (spec sugestoes-com-criterio, correção C): o fígado nunca é troca; a porção de uma carne em fígado passa
     // muito do limite de vitamina A, e o paciente troca sozinho.
     .filter((a) => a.id !== base.id && ehPrescritivel(a) && ehTrocaRazoavel(a) && !FIGADO.test(a.descricao))
+    .filter((a) => baseUltraprocessada || !ehUltraprocessado(a))
     // D-421: no papel do alimento na refeição; sem papel, na categoria (e na forma: ovo, verdura cozida).
     .filter(noMesmoPapel(base))
     .filter((a) => !fruta || nomeBase(a.descricao) !== nomeBase(base.descricao))

@@ -438,6 +438,29 @@ describe('Troca no papel da refeição e fruta por fruta (spec conduta-da-nutric
   })
 })
 
+describe('Troca sem ultraprocessado (spec conduta-da-nutricionista, seção 7, D-478)', () => {
+  // Escrita à mão, sem a regra do código: os ultraprocessados da base que podem ser propostos (classificação NOVA).
+  const ULTRA = /^(Cereal matinal|Cereais, (mingau|mistura)|Farinha, l[áa]ctea|Leite, fermentado|Bebida l[áa]ctea|Iogurte, sabor|Chocolate|Biscoito|Achocolatado|Refrigerante|Mortadela|Salsicha|Presunto|Lingui[çc]a|Apresuntado|Salame|Hamb[úu]rguer)/i
+
+  it('CA-1325: 30 g de aveia em flocos não trocam por cereal matinal, farinha láctea nem mistura para vitamina', () => {
+    const aveia = porDescricao('Aveia, flocos, crua')
+    for (const t of trocasDoAlimento({ alimentoId: aveia.id, gramas: 30 }, opcoes)) expect(t.descricao).not.toMatch(ULTRA)
+  })
+
+  it('CA-1325: nenhum alimento que não é ultraprocessado troca por ultraprocessado', () => {
+    for (const a of ALIMENTOS.filter((x) => !ULTRA.test(x.descricao.trim()))) {
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, { alimentos: ALIMENTOS, porAlimento: 4 })) {
+        expect(t.descricao, a.descricao).not.toMatch(ULTRA)
+      }
+    }
+  })
+
+  it('CB-446: o cereal matinal posto à mão troca pela aveia', () => {
+    const cereal = porDescricao('Cereal matinal, milho')
+    expect(trocasDoAlimento({ alimentoId: cereal.id, gramas: 30 }, opcoes).map((t) => t.descricao)).toContain('Aveia, flocos, crua')
+  })
+})
+
 describe('O fígado nunca é troca (spec sugestoes-com-criterio, correção C, D-473)', () => {
   const FIGADOS = [355, 356, 400, 548] // fígado de boi cru e grelhado, fígado de frango cru, sarapatel
   const PATINHO = 377
