@@ -23,6 +23,26 @@ const adicionar = async (pagina: Page, refeicao: string, entrada: string, nome: 
   await pagina.getByRole('option', { name: nome }).first().click()
 }
 
+test('CA-1342 e CA-1343: "120 filé de frango" entra com 120 g; "3000 arroz" não entra; "1 iogurte" é 1 pote', async ({ page }) => {
+  await abrirPlanoRapido(page, 1280)
+  const campo = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Almoço' })
+  await campo.fill('120 filé de frango')
+  await expect(page.getByRole('option').first()).toContainText('Frango, peito, sem pele, grelhado')
+  await expect(page.getByRole('option').first()).toContainText('120 g')
+  await campo.press('Enter')
+  const lista = page.getByRole('list', { name: 'Alimentos em Principal de Almoço' })
+  await expect(lista.getByRole('spinbutton', { name: /^Gramas de Frango/ }).or(lista.getByLabel(/^Gramas de Frango/))).toHaveValue('120')
+
+  await campo.fill('3000 arroz')
+  await expect(page.getByRole('option').first()).toContainText('Quantidade muito alta: confira.')
+  await campo.press('Enter')
+  await expect(page.getByRole('alert').filter({ hasText: 'Nada foi adicionado' })).toBeVisible()
+
+  await campo.fill('1 iogurte')
+  await expect(page.getByRole('option').first()).toContainText('1 pote · 200 g')
+  await expect(lista.getByRole('listitem')).toHaveCount(1)
+})
+
 for (const largura of [390, 360]) {
   test(`CA-1329: a ${largura} px, a linha do plano mostra o nome e a medida inteiros, e as abas cabem`, async ({ page }) => {
     await abrirPlanoRapido(page, largura)
