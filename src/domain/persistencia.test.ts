@@ -67,6 +67,19 @@ describe('repositório de casos', () => {
     expect(c.caso.condicao).toEqual({ tipo: 'nenhuma' })
   })
 
+  it('CA-1200 (integração 22/10/2026, glossário): plano novo começa com "Café da manhã"; o "Desjejum" guardado continua', () => {
+    const memoria = new MemoriaFalsa()
+    const repo = criarRepositorio(memoria, { agora: relogio(), gerarId: ids() })
+    const novo = repo.criar('Plano novo')
+    expect(novo.plano.refeicoes[0]?.nome).toBe('Café da manhã')
+
+    // Um plano de antes, com a primeira refeição gravada como "Desjejum": ninguém troca o nome dela.
+    const antigo = repo.criar('Plano antigo')
+    repo.salvar({ ...antigo, plano: { ...antigo.plano, refeicoes: antigo.plano.refeicoes.map((r, i) => (i === 0 ? { ...r, nome: 'Desjejum' } : r)) } })
+    const reaberto = criarRepositorio(memoria, { agora: relogio(), gerarId: ids() })
+    expect(reaberto.obter(antigo.caso.id)?.plano.refeicoes[0]?.nome).toBe('Desjejum')
+  })
+
   it('CA-50: lista do mais recente para o mais antigo', () => {
     const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
     const a = repo.criar('A')

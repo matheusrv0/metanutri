@@ -34,7 +34,7 @@ describe('Produto apagado no cabeçalho da refeição (spec revisao-geral-trabal
     if (!desjejum) throw new Error('sem desjejum')
     montar({ ...plano, refeicoes: [{ ...desjejum, opcoes: { ...desjejum.opcoes, principal: [{ id: 'x', alimentoId: 900_001, gramas: 40 }] } }, ...plano.refeicoes.slice(1)] })
     const cartao = (nome: string) => within(screen.getByRole('textbox', { name: `Nome da refeição ${nome}` }).closest('[data-slot="card"]') as HTMLElement)
-    expect(cartao('Desjejum').getByText('0 kcal').parentElement).toHaveTextContent('†')
+    expect(cartao('Café da manhã').getByText('0 kcal').parentElement).toHaveTextContent('†')
     expect(cartao('Almoço').getByText('0 kcal').parentElement).not.toHaveTextContent('†')
   })
 })
@@ -46,7 +46,7 @@ describe('Receita com ingrediente apagado no cabeçalho da refeição (spec inte
     if (!desjejum) throw new Error('sem desjejum')
     const comApagado = { ...PANQUECA, ingredientes: [...PANQUECA.ingredientes, { alimentoId: 900_001, gramas: 20 }] }
     montar({ ...plano, refeicoes: [{ ...desjejum, opcoes: { ...desjejum.opcoes, principal: [itemDeReceita('x', 120, comApagado)] } }, ...plano.refeicoes.slice(1)] })
-    const cartao = within(screen.getByRole('textbox', { name: 'Nome da refeição Desjejum' }).closest('[data-slot="card"]') as HTMLElement)
+    const cartao = within(screen.getByRole('textbox', { name: 'Nome da refeição Café da manhã' }).closest('[data-slot="card"]') as HTMLElement)
     // O primeiro "N kcal" do cartão é o do cabeçalho da opção; o segundo, o da linha da receita.
     const [cabecalho] = cartao.getAllByText(/^\d+ kcal$/)
     expect(cabecalho?.parentElement).toHaveTextContent('†')
@@ -56,7 +56,7 @@ describe('Receita com ingrediente apagado no cabeçalho da refeição (spec inte
 describe('Etapa 2: plano alimentar', () => {
   it('CA-12: começa com as seis refeições padrão, com horário', () => {
     montar()
-    for (const nome of ['Desjejum', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia']) {
+    for (const nome of ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia']) {
       expect(screen.getByRole('textbox', { name: `Nome da refeição ${nome}` })).toBeInTheDocument()
     }
     expect(screen.getByLabelText('Horário de Almoço')).toHaveValue('12:00')
@@ -197,7 +197,7 @@ describe('Sugestões por refeição (US-A3)', () => {
     montar()
     expect(painel('Almoço').getByRole('region', { name: 'Sugestões para o almoço' })).toBeInTheDocument()
     expect(painel('Almoço').getByRole('button', { name: 'Adicionar Arroz, tipo 1, cozido, 100 g' })).toBeInTheDocument()
-    expect(painel('Desjejum').getByRole('button', { name: 'Adicionar Cuscuz, de milho, cozido com sal, 135 g' })).toBeInTheDocument()
+    expect(painel('Café da manhã').getByRole('button', { name: 'Adicionar Cuscuz, de milho, cozido com sal, 135 g' })).toBeInTheDocument()
     expect(painel('Lanche da manhã').getByRole('region', { name: 'Sugestões para o lanche' })).toBeInTheDocument()
     expect(painel('Ceia').getByRole('region', { name: 'Sugestões para a ceia' })).toBeInTheDocument()
     expect(screen.queryByText('Você usa muito')).not.toBeInTheDocument()

@@ -81,7 +81,7 @@ describe('As sugestões da refeição tiram o alimento restrito (CA-1076)', () =
 
   it('com alergia a ovo, o ovo cozido não aparece no café da manhã', () => {
     sugestoes()
-    const lista = within(screen.getByRole('region', { name: 'Sugestões para o desjejum' }))
+    const lista = within(screen.getByRole('region', { name: 'Sugestões para o café da manhã' }))
     expect(lista.queryByRole('button', { name: /Ovo/ })).not.toBeInTheDocument()
     expect(lista.getByRole('button', { name: /Mamão/ })).toBeInTheDocument()
   })

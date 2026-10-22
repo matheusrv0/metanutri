@@ -79,7 +79,7 @@ describe('Aconselhamento em Word (CA-44, CA-45, CA-47)', () => {
     expect(texto).toContain('ANTROPOMETRIA')
     expect(texto).toMatch(/IMC.*28,1 kg\/m².*Sobrepeso/s)
     expect(texto).toMatch(/CC \(circunferência da cintura\).*90,0 cm.*Risco substancialmente aumentado/s)
-    for (const r of ['06:00 – Desjejum', '09:00 – Lanche da manhã', '12:00 – Almoço', '16:00 – Lanche da tarde', '19:00 – Jantar', '21:00 – Ceia']) {
+    for (const r of ['06:00 – Café da manhã', '09:00 – Lanche da manhã', '12:00 – Almoço', '16:00 – Lanche da tarde', '19:00 – Jantar', '21:00 – Ceia']) {
       expect(texto).toContain(r)
     }
     expect(texto).toContain('Arroz, tipo 1, cozido (6 colheres de sopa); Feijão, carioca, cozido (1 concha)')

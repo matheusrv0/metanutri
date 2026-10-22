@@ -30,10 +30,10 @@ for (const largura of [360, 390]) {
       await comecarPlano(page)
       await conferirCamposNoCelular(page, 'dados do caso')
       await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
-      const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
+      const busca = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' })
       await busca.fill('120 arroz cozido')
       await busca.press('Enter')
-      await expect(page.getByRole('tabpanel', { name: 'Principal de Desjejum' }).getByRole('textbox', { name: /^Gramas de / })).toBeVisible()
+      await expect(page.getByRole('tabpanel', { name: 'Principal de Café da manhã' }).getByRole('textbox', { name: /^Gramas de / })).toBeVisible()
       await conferirCamposNoCelular(page, 'plano alimentar')
     })
 

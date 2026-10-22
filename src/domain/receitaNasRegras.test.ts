@@ -18,10 +18,10 @@ const ids = () => `id${++n}`
 
 const CASO: Caso = { ...criarCasoVazio('c'), sexo: 'F', idadeAnos: 28 }
 
-/** O plano padrão com a panqueca no Desjejum e, se pedido, arroz no Almoço. */
+/** O plano padrão com a panqueca no café da manhã e, se pedido, arroz no Almoço. */
 function planoComPanqueca(comArroz = false): Plano {
   const plano = criarPlanoPadrao(ids)
-  const desjejum = plano.refeicoes.find((r) => r.nome === 'Desjejum')?.id ?? ''
+  const desjejum = plano.refeicoes.find((r) => r.nome === 'Café da manhã')?.id ?? ''
   const almoco = plano.refeicoes.find((r) => r.nome === 'Almoço')?.id ?? ''
   const comReceita = adicionarReceita(plano, desjejum, 'principal', { receita: PANQUECA, gramas: 120 }, ids)
   return comArroz ? adicionarItem(comReceita, almoco, 'principal', { alimentoId: 3, gramas: 100 }, ids) : comReceita
@@ -47,7 +47,7 @@ describe('missões (CA-878)', () => {
   it('a refeição só com receita tem missão; a receita não conta como fruta nem vegetal', () => {
     const plano = planoComPanqueca()
     const missoes = missoesDoPlano(plano)
-    const desjejum = plano.refeicoes.find((r) => r.nome === 'Desjejum')
+    const desjejum = plano.refeicoes.find((r) => r.nome === 'Café da manhã')
     expect(missoes.map((m) => m.id)).toContain(`refeicao-${desjejum?.id ?? ''}`)
     expect(missoes.map((m) => m.id)).not.toContain('frutas')
     expect(missoes.map((m) => m.id)).not.toContain('vegetais')
@@ -68,7 +68,7 @@ describe('modelo e duplicar levam a cópia (CA-876)', () => {
     const plano = planoComPanqueca()
     const modelo = criarRepositorioModelos(null, { gerarId: ids }).salvar({ nome: 'Café rápido', descricao: '', plano })
     const usado = clonarPlano(modelo.plano, ids)
-    const receitaDe = (p: Plano) => p.refeicoes.find((r) => r.nome === 'Desjejum')?.opcoes.principal[0]?.receita
+    const receitaDe = (p: Plano) => p.refeicoes.find((r) => r.nome === 'Café da manhã')?.opcoes.principal[0]?.receita
     expect(receitaDe(modelo.plano)).toEqual(PANQUECA)
     expect(receitaDe(usado)).toEqual(PANQUECA)
     expect(totaisDoPlano(usado, buscarAlimento).nutrientes.energia_kcal.total).toBeCloseTo(totaisDoPlano(plano, buscarAlimento).nutrientes.energia_kcal.total, 6)
@@ -77,6 +77,6 @@ describe('modelo e duplicar levam a cópia (CA-876)', () => {
   it('duplicar o plano leva a receita', () => {
     const plano = planoComPanqueca()
     const copia = duplicarCaso({ caso: CASO, plano }, ids, { hoje: null })
-    expect(copia.plano.refeicoes.find((r) => r.nome === 'Desjejum')?.opcoes.principal[0]).toMatchObject({ alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
+    expect(copia.plano.refeicoes.find((r) => r.nome === 'Café da manhã')?.opcoes.principal[0]).toMatchObject({ alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
   })
 })

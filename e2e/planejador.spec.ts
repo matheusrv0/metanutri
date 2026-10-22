@@ -205,10 +205,10 @@ test('funciona sem internet depois do primeiro acesso (CB-10)', async ({ page, c
   await expect(page.getByRole('region', { name: 'Avaliação antropométrica' })).toContainText('22,0 kg/m²')
 
   await page.getByRole('button', { name: /Próxima etapa: Refeições/ }).click()
-  const entrada = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' })
+  const entrada = page.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' })
   await entrada.fill('100 banana prata')
   await entrada.press('Enter')
-  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' }).getByRole('listitem')).toHaveCount(1)
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Café da manhã' }).getByRole('listitem')).toHaveCount(1)
 
   await context.setOffline(false)
 })

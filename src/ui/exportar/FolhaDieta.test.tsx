@@ -105,7 +105,7 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('CA-926 e CA-927: em "Medida caseira", só a medida, sem o peso ao lado; margarina em ponta de faca', () => {
     render(<FolhaDieta caso={caso} plano={planoComDesjejum()} />)
-    const desjejum = refeicao(/^06:00 Desjejum$/)
+    const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia$/)
     // D-295: "5 fatias" de banana vira a medida de até 4 pedaços que serve.
     expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 1 unidade e meia$/)
@@ -117,7 +117,7 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('CA-925: em "Gramas", só o peso, na refeição, na lista de compras e nas trocas', () => {
     render(<FolhaDieta caso={{ ...caso, quantidades: 'gramas' }} plano={planoComDesjejum()} opcoes={{ listaDeCompras: true, trocas: true }} />)
-    const desjejum = refeicao(/^06:00 Desjejum$/)
+    const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 130 g$/)
     expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 5 g$/)
     expect(refeicao(/^12:00 Almoço$/).getByText('Arroz branco cozido').closest('li')).toHaveTextContent(/^Arroz branco cozido, 150 g$/)

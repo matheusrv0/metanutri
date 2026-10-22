@@ -84,7 +84,7 @@ describe('lista padrão (seção 3.1, D-36)', () => {
   })
 
   it('o nome do tipo concorda em gênero', () => {
-    expect(NOME_DO_TIPO).toEqual({ desjejum: 'o desjejum', lanche: 'o lanche', almoco: 'o almoço', jantar: 'o jantar', ceia: 'a ceia' })
+    expect(NOME_DO_TIPO).toEqual({ desjejum: 'o café da manhã', lanche: 'o lanche', almoco: 'o almoço', jantar: 'o jantar', ceia: 'a ceia' })
   })
 })
 

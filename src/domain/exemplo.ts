@@ -16,11 +16,11 @@ interface EntradaExemplo {
 
 /** Dia comum, comida do dia a dia brasileiro, com dois substitutos no almoço. */
 const ENTRADAS: readonly EntradaExemplo[] = [
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '70 pao frances' },
+  { refeicao: 'Café da manhã', opcao: 'principal', texto: '70 pao frances' },
   // A com óleo interesterificado: a hidrogenada é gordura trans, "nunca" (spec conduta-da-nutricionista, D-292).
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '5 g margarina interesterificado com sal' },
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '30 queijo minas frescal' },
-  { refeicao: 'Desjejum', opcao: 'principal', texto: '120 mamao formosa' },
+  { refeicao: 'Café da manhã', opcao: 'principal', texto: '5 g margarina interesterificado com sal' },
+  { refeicao: 'Café da manhã', opcao: 'principal', texto: '30 queijo minas frescal' },
+  { refeicao: 'Café da manhã', opcao: 'principal', texto: '120 mamao formosa' },
 
   { refeicao: 'Lanche da manhã', opcao: 'principal', texto: '130 banana prata' },
   // Uma castanha (a unidade da POF, 4 g): com o selênio do USDA (1.917 µg em 100 g), as quatro de antes passavam do UL

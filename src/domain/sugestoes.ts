@@ -10,7 +10,7 @@ export const TIPOS_REFEICAO: readonly TipoRefeicao[] = ['desjejum', 'lanche', 'a
 
 /** "Sugestões para o almoço", "para a ceia". */
 export const NOME_DO_TIPO: Readonly<Record<TipoRefeicao, string>> = {
-  desjejum: 'o desjejum',
+  desjejum: 'o café da manhã',
   lanche: 'o lanche',
   almoco: 'o almoço',
   jantar: 'o jantar',

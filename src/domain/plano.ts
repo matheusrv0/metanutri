@@ -4,8 +4,12 @@ import type { ItemPlano, MedidaDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao 
 
 export type GerarId = () => string
 
+/**
+ * As refeições de um plano novo. "Café da manhã" é o nome do glossário (textos.md §1, linha 118): o paciente lê esse nome
+ * no link e no plano impresso. Vale só para plano novo; a refeição guardada como "Desjejum" fica com o nome dela.
+ */
 export const REFEICOES_PADRAO: readonly { readonly horario: string; readonly nome: string }[] = [
-  { horario: '06:00', nome: 'Desjejum' },
+  { horario: '06:00', nome: 'Café da manhã' },
   { horario: '09:00', nome: 'Lanche da manhã' },
   { horario: '12:00', nome: 'Almoço' },
   { horario: '16:00', nome: 'Lanche da tarde' },

@@ -28,7 +28,7 @@ describe('criarPlanoPadrao (CA-12, CA-14)', () => {
   it('começa com as seis refeições do modelo de estágio, cada uma com três opções vazias', () => {
     const plano = criarPlanoPadrao(gerador())
     expect(plano.refeicoes.map((r) => [r.horario, r.nome])).toEqual([
-      ['06:00', 'Desjejum'],
+      ['06:00', 'Café da manhã'],
       ['09:00', 'Lanche da manhã'],
       ['12:00', 'Almoço'],
       ['16:00', 'Lanche da tarde'],
@@ -58,7 +58,7 @@ describe('operações de refeição (CA-13)', () => {
   it('muda o horário e reordena as refeições por horário', () => {
     const plano = criarPlanoPadrao(gerador())
     const alterado = mudarHorario(plano, refeicao(plano, 'Ceia').id, '07:30')
-    expect(alterado.refeicoes.map((r) => r.nome).slice(0, 2)).toEqual(['Desjejum', 'Ceia'])
+    expect(alterado.refeicoes.map((r) => r.nome).slice(0, 2)).toEqual(['Café da manhã', 'Ceia'])
   })
 
   it.each(['7:30', '24:00', '12:60', 'meio-dia', ''])('recusa horário inválido "%s"', (h) => {
@@ -69,7 +69,7 @@ describe('operações de refeição (CA-13)', () => {
   it('adiciona refeição na posição do horário', () => {
     const id = gerador()
     const plano = adicionarRefeicao(criarPlanoPadrao(id), { nome: 'Pós-treino', horario: '17:30' }, id)
-    expect(plano.refeicoes.map((r) => r.nome)).toEqual(['Desjejum', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Pós-treino', 'Jantar', 'Ceia'])
+    expect(plano.refeicoes.map((r) => r.nome)).toEqual(['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Pós-treino', 'Jantar', 'Ceia'])
     expect(refeicao(plano, 'Pós-treino').opcoes.principal).toEqual([])
   })
 
@@ -130,25 +130,25 @@ describe('receita na refeição (spec receitas-com-calculo, D-273)', () => {
   it('põe a cópia da receita no item, com o id de receita e as gramas servidas', () => {
     const id = gerador()
     const plano = criarPlanoPadrao(id)
-    const cafe = refeicao(plano, 'Desjejum').id
+    const cafe = refeicao(plano, 'Café da manhã').id
     const comReceita = adicionarReceita(plano, cafe, 'principal', { receita: PANQUECA, gramas: 120 }, id)
-    const [item] = refeicao(comReceita, 'Desjejum').opcoes.principal
+    const [item] = refeicao(comReceita, 'Café da manhã').opcoes.principal
     expect(item).toEqual({ id: expect.any(String) as string, alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
   })
 
   it('mudar as gramas guarda a cópia', () => {
     const id = gerador()
     const plano = criarPlanoPadrao(id)
-    const cafe = refeicao(plano, 'Desjejum').id
+    const cafe = refeicao(plano, 'Café da manhã').id
     const comReceita = adicionarReceita(plano, cafe, 'principal', { receita: PANQUECA, gramas: 120 }, id)
-    const itemId = refeicao(comReceita, 'Desjejum').opcoes.principal[0]?.id ?? ''
+    const itemId = refeicao(comReceita, 'Café da manhã').opcoes.principal[0]?.id ?? ''
     const editado = atualizarGramas(comReceita, cafe, 'principal', itemId, 240)
-    expect(refeicao(editado, 'Desjejum').opcoes.principal[0]).toMatchObject({ gramas: 240, receita: PANQUECA })
+    expect(refeicao(editado, 'Café da manhã').opcoes.principal[0]).toMatchObject({ gramas: 240, receita: PANQUECA })
   })
 
   it('CB-04: recusa quantidade negativa', () => {
     const id = gerador()
     const plano = criarPlanoPadrao(id)
-    expect(() => adicionarReceita(plano, refeicao(plano, 'Desjejum').id, 'principal', { receita: PANQUECA, gramas: -1 }, id)).toThrow(RangeError)
+    expect(() => adicionarReceita(plano, refeicao(plano, 'Café da manhã').id, 'principal', { receita: PANQUECA, gramas: -1 }, id)).toThrow(RangeError)
   })
 })

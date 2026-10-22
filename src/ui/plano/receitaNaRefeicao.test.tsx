@@ -52,7 +52,7 @@ const montarPlano = (inicial: Plano = criarPlanoPadrao(ids), receitasNaRefeicao?
 const comPanquecaNoDesjejum = (gramas = 120): Plano => {
   const plano = criarPlanoPadrao(ids)
   return {
-    refeicoes: plano.refeicoes.map((r) => (r.nome === 'Desjejum' ? { ...r, opcoes: { ...r.opcoes, principal: [itemDeReceita('i-panqueca', gramas)] } } : r)),
+    refeicoes: plano.refeicoes.map((r) => (r.nome === 'Café da manhã' ? { ...r, opcoes: { ...r.opcoes, principal: [itemDeReceita('i-panqueca', gramas)] } } : r)),
   }
 }
 
@@ -151,7 +151,7 @@ describe('publicação em duas vezes (D-274a, CA-871a)', () => {
     expect(RECEITAS_NA_REFEICAO).toBe(true)
     guardarReceitas([NA_BIBLIOTECA])
     const usuario = montarPlano()
-    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' }), 'panqueca')
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' }), 'panqueca')
     expect(screen.getByRole('option', { name: /Panqueca de banana/ })).toBeInTheDocument()
     await usuario.keyboard('{Enter}')
     expect(ultimoPlano).not.toBeNull()
@@ -159,23 +159,23 @@ describe('publicação em duas vezes (D-274a, CA-871a)', () => {
 
   it('publicação 1: a receita que já está no plano continua aparecendo e somando', () => {
     montarPlano(comPanquecaNoDesjejum())
-    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     expect(desjejum.getByText('Receita · 1 unidade')).toBeInTheDocument()
   })
 })
 
 describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
-  it('CA-871 (publicação 2, constante ligada): pela busca do Desjejum, a receita entra como cópia', async () => {
+  it('CA-871 (publicação 2, constante ligada): pela busca do café da manhã, a receita entra como cópia', async () => {
     guardarReceitas([NA_BIBLIOTECA])
     const usuario = montarPlano(criarPlanoPadrao(ids), true)
-    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Desjejum' }), 'panqueca{Enter}')
-    const item = ultimoPlano?.refeicoes.find((r) => r.nome === 'Desjejum')?.opcoes.principal[0]
+    await usuario.type(screen.getByRole('combobox', { name: 'Adicionar alimento em Principal de Café da manhã' }), 'panqueca{Enter}')
+    const item = ultimoPlano?.refeicoes.find((r) => r.nome === 'Café da manhã')?.opcoes.principal[0]
     expect(item).toMatchObject({ alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
   })
 
   it('CA-873: a linha mostra o nome, "Receita · 1 unidade", as gramas e as kcal, sem "Substituir"', () => {
     montarPlano(comPanquecaNoDesjejum())
-    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     const linha = desjejum.getByText('Panqueca de banana').closest('li')
     expect(linha).not.toBeNull()
     const naLinha = within(linha as HTMLElement)
@@ -188,20 +188,20 @@ describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
 
   it('CB-279: sem meia porção que feche, a linha diz só "Receita"', () => {
     montarPlano(comPanquecaNoDesjejum(150))
-    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     expect(desjejum.getByText('Receita')).toBeInTheDocument()
   })
 
   it('CA-874: o kcal do cartão da refeição soma a receita', () => {
     montarPlano(comPanquecaNoDesjejum(240))
-    const cartao = screen.getByRole('tablist', { name: 'Opções de Desjejum' }).closest('[data-slot="card"]')
+    const cartao = screen.getByRole('tablist', { name: 'Opções de Café da manhã' }).closest('[data-slot="card"]')
     expect(cartao).toHaveTextContent('409 kcal')
   })
 
   it('CA-870: a receita mudada na biblioteca não muda o plano, que mostra a cópia', () => {
     guardarReceitas([{ ...NA_BIBLIOTECA, nome: 'Panqueca nova', porcoes: 4 }])
     montarPlano(comPanquecaNoDesjejum())
-    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     expect(desjejum.getByText('Panqueca de banana')).toBeInTheDocument()
     expect(desjejum.getByText('Receita · 1 unidade')).toBeInTheDocument()
   })
@@ -209,8 +209,8 @@ describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
   it('CB-273: cópia estragada aparece como "Receita sem dados", com travessão nas kcal, sem quebrar', () => {
     const plano = criarPlanoPadrao(ids)
     const estragado = { id: 'x', alimentoId: ID_DE_RECEITA, gramas: 100, receita: { nome: 'X' } } as unknown as Plano['refeicoes'][number]['opcoes']['principal'][number]
-    montarPlano({ refeicoes: plano.refeicoes.map((r) => (r.nome === 'Desjejum' ? { ...r, opcoes: { ...r.opcoes, principal: [estragado] } } : r)) })
-    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Desjejum' }))
+    montarPlano({ refeicoes: plano.refeicoes.map((r) => (r.nome === 'Café da manhã' ? { ...r, opcoes: { ...r.opcoes, principal: [estragado] } } : r)) })
+    const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     expect(desjejum.getByText('Receita sem dados')).toBeInTheDocument()
     expect(desjejum.getByText('— kcal')).toBeInTheDocument()
   })

@@ -237,7 +237,7 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
     localStorage.setItem(chave, JSON.stringify(registro))
   }, casoId)
   await page.reload()
-  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('Granola da casa (Marca Exemplo)')
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Café da manhã' })).toContainText('Granola da casa (Marca Exemplo)')
 
   await page.goto('/#/produtos')
   await page.getByRole('button', { name: 'Excluir Granola da casa' }).click()
@@ -252,7 +252,7 @@ test('CA-789: produto apagado em Meus produtos não derruba o plano que o usa', 
   }
   await page.goto(`/#/caso/${casoId}/plano`)
   await expect(page.getByText('Alimento excluído', { exact: true })).toBeVisible()
-  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Desjejum' })).toContainText('— kcal')
+  await expect(page.getByRole('list', { name: 'Alimentos em Principal de Café da manhã' })).toContainText('— kcal')
   // O Cobrir e o Exportar continuam funcionando.
   await page.getByRole('button', { name: 'Exportar' }).click()
   await page.getByRole('menuitem', { name: /Plano alimentar \(PDF\)/ }).click()
