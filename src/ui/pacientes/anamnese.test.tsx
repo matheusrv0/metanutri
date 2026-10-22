@@ -408,4 +408,10 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     expect(anamnese().queryByLabelText('Com quem mora')).not.toBeInTheDocument()
     expect(dados().getByLabelText('Pessoas que moram na casa')).toHaveAccessibleDescription('Contando o paciente: 1 quer dizer que mora só.')
   })
+
+  it('CA-1276: a lactante escolhe "Só no peito" ou "Peito e outros alimentos", sem "Não amamenta"', () => {
+    montar({ ...MULHER_28, momentoDeVida: { tipo: 'lactante', dataDoParto: '2026-07-21', amamentacao: 'exclusiva' } })
+    const amamentacao = dados().getByRole('radiogroup', { name: 'Amamentação' })
+    expect(within(amamentacao).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Só no peito', 'Peito e outros alimentos'])
+  })
 })

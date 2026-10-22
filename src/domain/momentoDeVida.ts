@@ -4,13 +4,16 @@
 import { FAIXAS } from './caso.ts'
 import type { CondicaoFisiologica } from './tipos.ts'
 
-export type Amamentacao = 'exclusiva' | 'mista' | 'nao-amamenta'
+/** D-455: lactante é quem amamenta; quem teve bebê e não amamenta marca "Não". */
+export type Amamentacao = 'exclusiva' | 'mista'
 
 export const AMAMENTACOES: readonly { readonly valor: Amamentacao; readonly rotulo: string }[] = [
   { valor: 'exclusiva', rotulo: 'Só no peito' },
   { valor: 'mista', rotulo: 'Peito e outros alimentos' },
-  { valor: 'nao-amamenta', rotulo: 'Não amamenta' },
 ]
+
+/** A opção que saiu (D-455): gravada antes com "Lactante", é lida como "Não" (o plano já não era de lactante). */
+const NAO_AMAMENTA = 'nao-amamenta'
 
 export type MomentoDeVida =
   | { readonly tipo: 'nenhum' }
@@ -72,6 +75,7 @@ export function lerMomento(valor: unknown): MomentoDeVida | null {
     }
   }
   if (o['tipo'] === 'lactante') {
+    if (o['amamentacao'] === NAO_AMAMENTA) return { tipo: 'nenhum' }
     const amamentacao = AMAMENTACOES.find((a) => a.valor === o['amamentacao'])?.valor ?? null
     return { tipo: 'lactante', dataDoParto: diaValido(o['dataDoParto']), amamentacao }
   }
@@ -96,7 +100,6 @@ export function condicaoNaData(momento: MomentoDeVida | null, dia: string): Cond
     if (semanas === null || semanas < FAIXAS.semanasGestacao.min || semanas > FAIXAS.semanasGestacao.max) return { tipo: 'nenhuma' }
     return { tipo: 'gestante', semanasGestacao: semanas, pesoPreGestacionalKg: momento.pesoPreGestacionalKg }
   }
-  if (momento.amamentacao === 'nao-amamenta') return { tipo: 'nenhuma' }
   if (momento.dataDoParto === null) return { tipo: 'lactante', mesesPosParto: null }
   const meses = mesesEntre(momento.dataDoParto, dia)
   return meses === null ? { tipo: 'nenhuma' } : { tipo: 'lactante', mesesPosParto: meses }
