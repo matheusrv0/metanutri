@@ -189,6 +189,19 @@ describe('TelaInicio (spec site-publico-profissional, textos da spec textos-e-pr
     expect(roteiro).toMatch(/'Café da manhã'/)
   })
 
+  it('CA-1337 (correção C, D-487): a captura do Cobrir não mostra alimento cru que se come cozido, e o tamanho reservado é o do arquivo', () => {
+    montar()
+    const capturas = screen.getAllByAltText(/botão Cobrir/)
+    for (const img of capturas) expect(img.getAttribute('alt')).not.toMatch(/quiabo|cru/i)
+    // O PNG é em 2x: largura e altura do arquivo são o dobro das reservadas na página (sem pulo de layout).
+    for (const tema of ['claro', 'escuro']) {
+      const png = readFileSync(join(process.cwd(), 'public', 'imagens', `cobrir-${tema}.png`))
+      const [img] = capturas
+      expect(png.readUInt32BE(16), tema).toBe(Number(img?.getAttribute('width')) * 2)
+      expect(png.readUInt32BE(20), tema).toBe(Number(img?.getAttribute('height')) * 2)
+    }
+  })
+
   it('CA-1177: cada informação uma vez, uma pergunta só, sem comparação com empresa, promessa clínica nem termo antigo', () => {
     montar()
     const vezes = (trecho: string) => texto().split(trecho).length - 1

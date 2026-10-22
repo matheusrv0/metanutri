@@ -47,10 +47,11 @@ const PARTES: readonly Parte[] = [
       'As sugestões vêm de grupos diferentes e respeitam as restrições do paciente. Se nem uma porção realista fecha a diferença, a sugestão mostra quanto ela cobre. Você escolhe, e o alimento entra na refeição.',
     ],
     captura: 'cobrir',
-    // Correção A (D-438): capturas refeitas depois das porções realistas e da refeição de cada alimento.
+    // Correção A (D-438): capturas refeitas depois das porções realistas e da refeição de cada alimento. Correção C
+    // (D-487): de novo, com a porção automática, sem alimento cru que se come cozido.
     largura: 448,
-    altura: 568,
-    alt: 'Tela do botão Cobrir sugerindo leite desnatado no lanche e quiabo no almoço para completar o cálcio.',
+    altura: 606,
+    alt: 'Tela do botão Cobrir sugerindo leite desnatado no lanche e sardinha assada no almoço para completar o cálcio.',
   },
   {
     titulo: 'Acompanhe o paciente entre as consultas',

@@ -50,10 +50,11 @@ async function montarPlano(pagina) {
   }
 }
 
-/** Recorte de uma área da página, com margem, sem passar da borda. */
+/** Recorte de uma área da página, com margem, sem passar da borda. Diz o tamanho em px de CSS (TelaInicio reserva ele). */
 async function recortar(pagina, caixa, arquivo) {
-  await pagina.screenshot({ path: fileURLToPath(new URL(arquivo, SAIDA)), clip: caixa, animations: 'disabled', caret: 'hide' })
-  console.log(`escrevi public/imagens/${arquivo}`)
+  const inteira = { x: Math.round(caixa.x), y: Math.round(caixa.y), width: Math.round(caixa.width), height: Math.round(caixa.height) }
+  await pagina.screenshot({ path: fileURLToPath(new URL(arquivo, SAIDA)), clip: inteira, animations: 'disabled', caret: 'hide' })
+  console.log(`escrevi public/imagens/${arquivo} (${inteira.width} × ${inteira.height})`)
 }
 
 async function capturar(navegador, tema, sufixo) {
@@ -79,6 +80,15 @@ async function capturar(navegador, tema, sufixo) {
   const gaveta = pagina.getByRole('dialog')
   const sugestoes = gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem')
   await sugestoes.nth(1).waitFor()
+  // Correção C (D-487): a vitrine não mostra alimento cru que se come cozido. O quiabo cru (só existe cru na base, C.1
+  // da parceira) sai pelo "Nunca sugerir" da própria gaveta, como a nutricionista faria; entra a próxima sugestão.
+  for (const nome of ['Quiabo, cru']) {
+    const botao = gaveta.getByRole('button', { name: `Nunca sugerir ${nome}` })
+    if (await botao.isVisible().catch(() => false)) await botao.click()
+  }
+  // Sem foco nem cursor por cima de nenhum botão na foto.
+  await pagina.evaluate(() => globalThis.document.activeElement?.blur?.())
+  await pagina.mouse.move(1, 1)
   await pagina.waitForTimeout(400) // a gaveta termina de deslizar
   const caixaGaveta = await gaveta.boundingBox()
   const segunda = await sugestoes.nth(1).boundingBox()
