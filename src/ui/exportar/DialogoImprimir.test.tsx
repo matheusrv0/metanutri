@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import { adicionarItem, criarPlanoPadrao } from '@/domain/plano.ts'
+import { comCuidadosDaFase, montarRestricoes, SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { DialogoImprimir } from './DialogoImprimir.tsx'
 import { MenuExportar } from './MenuExportar.tsx'
@@ -41,6 +42,43 @@ describe('Suplementos da ficha na janela de imprimir (spec anamnese-e-prescricoe
     expect(janela().queryByRole('switch', { name: 'Suplementos da ficha' })).not.toBeInTheDocument()
     // CA-635 (spec impressao-do-plano): os lembretes saíram da folha.
     expect(screen.getByText('Refeições, orientações e assinatura sempre entram. Escolha o que incluir além disso.')).toBeInTheDocument()
+  })
+})
+
+describe('Aviso de restrição antes de imprimir (spec impressao-do-plano, correção C, D-480)', () => {
+  const comOvo = (): Plano => {
+    const p = plano()
+    const cafe = p.refeicoes[0]
+    const jantar = p.refeicoes[4]
+    if (!cafe || !jantar) throw new Error('sem refeição')
+    // 488 Ovo cozido no café e no jantar: uma linha só (CB-448).
+    return adicionarItem(adicionarItem(p, cafe.id, 'principal', { alimentoId: 488, gramas: 90 }, ids), jantar.id, 'substituto1', { alimentoId: 488, gramas: 45 }, ids)
+  }
+  const alergiaAOvo = montarRestricoes({ marcadas: ['ovo'], texto: '', doencas: [], naoGosta: '' })
+
+  it('CA-1327: com ovo no plano e alergia a ovo na ficha, a janela avisa, sem sair no papel, e o botão continua liberado', () => {
+    render(<DialogoImprimir aberto caso={caso} plano={comOvo()} restricoes={alergiaAOvo} assinatura={ANA} aoFechar={vi.fn()} />)
+    const aviso = janela().getByText('Este plano tem Ovo cozido, e a ficha diz Alergia: ovo. Confira antes de imprimir.')
+    expect(aviso.closest('.print\\:hidden')).not.toBeNull()
+    expect(within(document.querySelector('.area-impressao') as HTMLElement).queryByText(/Confira antes de imprimir/)).toBeNull()
+    expect(janela().getAllByText(/Este plano tem Ovo cozido/)).toHaveLength(1)
+    expect(janela().getByRole('button', { name: 'Imprimir ou salvar em PDF' })).toBeEnabled()
+  })
+
+  it('CA-1328: sem nada que bata com a ficha, nenhum aviso', () => {
+    render(<DialogoImprimir aberto caso={caso} plano={plano()} restricoes={alergiaAOvo} assinatura={ANA} aoFechar={vi.fn()} />)
+    expect(janela().queryByText(/Confira antes de imprimir/)).not.toBeInTheDocument()
+  })
+
+  it('CB-449: sem paciente, o cuidado da fase de vida (criança com café) também avisa', () => {
+    const p = plano()
+    const cafe = p.refeicoes[0]
+    if (!cafe) throw new Error('sem café')
+    const comCafe = adicionarItem(p, cafe.id, 'principal', { alimentoId: 471, gramas: 50 }, ids)
+    const crianca = comCuidadosDaFase(SEM_RESTRICOES, { condicao: { tipo: 'nenhuma' }, idadeAnos: 6 })
+    render(<DialogoImprimir aberto caso={caso} plano={comCafe} restricoes={crianca} assinatura={ANA} aoFechar={vi.fn()} />)
+    // O cuidado não vem da ficha: a frase diz o cuidado, sem "a ficha diz".
+    expect(janela().getByText(/^Este plano tem Café[^.]*\. Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças\. Confira antes de imprimir\.$/)).toBeInTheDocument()
   })
 })
 

@@ -2,8 +2,9 @@
 // Grupos marcados na ficha valem pela lista revisada da base (`restricoesDaBase.ts`) e, fora dela, pelo nome; o texto
 // livre vale pelo pedaço do nome, como antes, e a linha que nomeia um grupo liga o grupo.
 import { idsDaRestricao, TERMOS_POR_RESTRICAO, ULTIMO_ID_DA_BASE, type IdRestricaoDaBase } from './restricoesDaBase.ts'
-import { receitaDoItem } from './receitaNoPlano.ts'
-import type { BuscarAlimento, CondicaoFisiologica, ItemPlano } from './tipos.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
+import { nomeDaReceita, receitaDoItem } from './receitaNoPlano.ts'
+import { OPCOES, type BuscarAlimento, type CondicaoFisiologica, type ItemPlano, type Plano } from './tipos.ts'
 
 export type IdRestricao = IdRestricaoDaBase
 export type TipoRestricao = 'alergia' | 'intolerancia' | 'escolha'
@@ -293,6 +294,32 @@ export function restricaoDoItem(item: ItemPlano, buscar: BuscarAlimento, restric
   }
   const alimento = buscar(item.alimentoId)
   return alimento ? restricaoDoAlimento(alimento, restricoes) : null
+}
+
+/**
+ * D-480 (spec impressao-do-plano, correção C): os avisos da janela de imprimir, um por alimento do plano (todas as
+ * opções) que bate com a ficha ou com um cuidado da fase de vida, com o nome que o paciente lê. O mesmo alimento em duas
+ * refeições dá uma linha só (CB-448).
+ */
+export function avisosParaImprimir(plano: Plano, buscar: BuscarAlimento, restricoes: RestricoesDoPaciente): readonly string[] {
+  const avisos: string[] = []
+  for (const refeicao of plano.refeicoes) {
+    for (const opcao of OPCOES) {
+      for (const item of refeicao.opcoes[opcao]) {
+        const aviso = restricaoDoItem(item, buscar, restricoes)
+        if (aviso === null) continue
+        const receita = receitaDoItem(item)
+        const nome = receita ? nomeDaReceita(receita) : nomeParaPaciente(buscar(item.alimentoId))
+        // O cuidado da fase não vem da ficha: a frase diz o cuidado.
+        const doCuidado = (restricoes.cuidados ?? []).some((c) => c.aviso === aviso)
+        const frase = doCuidado
+          ? `Este plano tem ${nome}. ${aviso} Confira antes de imprimir.`
+          : `Este plano tem ${nome}, e a ficha diz ${aviso}. Confira antes de imprimir.`
+        if (!avisos.includes(frase)) avisos.push(frase)
+      }
+    }
+  }
+  return avisos
 }
 
 /** D-354: o alimento está no que o paciente não gosta (vai para o fim do Cobrir). */

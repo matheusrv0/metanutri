@@ -1,5 +1,8 @@
-import { Printer } from 'lucide-react'
+import { Printer, TriangleAlert } from 'lucide-react'
 import { useId, useState } from 'react'
+import { avisosParaImprimir } from '@/domain/restricoes.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
+import { Alert } from '@ds/componentes/display/alert.tsx'
 import { modoDeQuantidade } from '@/domain/caso.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { gravarOpcoesImpressao, lerOpcoesImpressao, type OpcoesImpressao } from '@/domain/folhaDieta.ts'
@@ -28,6 +31,9 @@ interface DialogoImprimirProps {
   readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
   readonly aoFechar: () => void
 }
+
+/** Quantas linhas de aviso a janela mostra; o resto vira "E mais N." (D-480). */
+const MAXIMO_DE_AVISOS = 5
 
 function Opcao({ titulo, texto, marcado, aoMudar }: { readonly titulo: string; readonly texto: string; readonly marcado: boolean; readonly aoMudar: (v: boolean) => void }) {
   const id = useId()
@@ -58,6 +64,8 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
   const modo = aoMudarModo ? modoDeQuantidade(caso) : (modoLocal ?? modoDeQuantidade(caso))
   const mudarModo = (novo: ModoQuantidade) => (aoMudarModo ? aoMudarModo(novo) : setModoLocal(novo))
 
+  const avisos = restricoes ? avisosParaImprimir(plano, buscarAlimento, restricoes) : []
+
   const mudar = (mudanca: Partial<OpcoesImpressao>) => {
     const novas = { ...opcoes, ...mudanca }
     setOpcoes(novas)
@@ -72,6 +80,19 @@ export function DialogoImprimir({ aberto, caso, plano, restricoes, assinatura, s
           <DialogTitle>Plano alimentar para imprimir</DialogTitle>
           <DialogDescription>Refeições, orientações e assinatura sempre entram. Escolha o que incluir além disso.</DialogDescription>
         </DialogHeader>
+
+        {/* D-480 (correção C): o que bate com a ficha avisa a nutricionista antes de imprimir; não sai no papel. */}
+        {avisos.length > 0 ? (
+          <Alert variant="warning" className="print:hidden">
+            <TriangleAlert aria-hidden="true" />
+            <div className="flex flex-col gap-1">
+              {avisos.slice(0, MAXIMO_DE_AVISOS).map((aviso) => (
+                <p key={aviso}>{aviso}</p>
+              ))}
+              {avisos.length > MAXIMO_DE_AVISOS ? <p>{`E mais ${avisos.length - MAXIMO_DE_AVISOS}.`}</p> : null}
+            </div>
+          </Alert>
+        ) : null}
 
         <div className="print:hidden">
           <ModoDasQuantidades modo={modo} aoMudar={mudarModo} />
