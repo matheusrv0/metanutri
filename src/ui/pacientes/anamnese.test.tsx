@@ -367,3 +367,19 @@ describe('Abrir, recolher e editar o roteiro (CA-563, CA-565 a CA-568, CA-1060)'
     expect(pacientes.obter('p1')?.respostasAnamnese).toEqual([])
   })
 })
+
+describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 10)', () => {
+  const escolhasDeDoenca = async (ajuste: Partial<Paciente>) => {
+    const { usuario } = montar(ajuste)
+    await usuario.click(bloco('Saúde(?! da mulher)'))
+    return anamnese()
+      .getAllByRole('checkbox')
+      .map((c) => c.getAttribute('aria-label') ?? c.textContent ?? '')
+  }
+
+  it('CA-1270: a menina de 6 anos não vê a SOP; a mulher de 68 vê', async () => {
+    expect((await escolhasDeDoenca(MENINA_6)).join(' ')).not.toMatch(/ovários policísticos/)
+    cleanup()
+    expect((await escolhasDeDoenca(MULHER_68)).join(' ')).toMatch(/ovários policísticos/)
+  })
+})

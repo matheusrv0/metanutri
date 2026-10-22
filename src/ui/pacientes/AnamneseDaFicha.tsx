@@ -114,7 +114,7 @@ export function AnamneseDaFicha({ paciente, aoAlterar, perfil, hoje, adesao = nu
         <CampoTexto rotulo="Objetivo do paciente" valor={paciente.objetivo} aoMudar={(objetivo) => aoAlterar({ objetivo })} placeholder="Nas palavras do paciente…" />
       )
     }
-    if (bloco === 'saude') return <CamposDaSaude paciente={paciente} aoAlterar={aoAlterar} />
+    if (bloco === 'saude') return <CamposDaSaude paciente={paciente} idadeAnos={perfil.idadeAnos} aoAlterar={aoAlterar} />
     if (bloco === 'alimentacao') return <CamposDaAlimentacao paciente={paciente} aoAlterar={aoAlterar} />
     if (bloco === 'retorno' && adesao) {
       return (
