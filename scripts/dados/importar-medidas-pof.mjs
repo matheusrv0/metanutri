@@ -153,10 +153,15 @@ const SO_FOLHA = new Set(['folha', 'ramo', 'pires', 'prato de sobremesa', 'prato
 const FOLHA_PICADA_OK = new Set([...SO_FOLHA, 'colher de sopa', 'colher de servir', 'colher de sobremesa', 'colher de chá'])
 const FRUTA_OK = new Set(['unidade', 'unidade pequena', 'fatia', 'pedaço', 'banda', 'metade', 'gomo', 'bago', 'rodela', 'cacho', 'taça', 'xícara de chá', 'porção'])
 
+/** D-483a: a mesma lista de `VERDURAS_QUE_SE_COMEM_COZIDAS` (nomeParaPaciente.ts); o teste das medidas confere. */
+const VERDURAS_COZIDAS = new Set(['Batata', 'Mandioca', 'Cará', 'Inhame', 'Abóbora', 'Abobrinha', 'Berinjela', 'Chuchu', 'Brócolis', 'Couve-flor', 'Espinafre', 'Catalonha', 'Taioba', 'Caruru', 'Serralha', 'Mostarda', 'Jiló', 'Maxixe', 'Quiabo', 'Vagem', 'Jurubeba'])
+
 /** (d) O tipo de medida que o grupo do alimento não usa. */
 export function motivoDaClasse(alimento, nome) {
   const d = semAcento(alimento.descricao)
   const verdura = alimento.categoria.startsWith('Verduras')
+  // D-483a (R6): a "unidade" de 70 g da POF é a parte comestível de uma romã pequena; a romã inteira passa de 200 g.
+  if (/^roma,/.test(d)) return 'romã só em gramas (a unidade da POF é a parte comestível)'
   if (verdura && alimento.preparo === 'cru' && FOLHA_CRUA.test(d)) return SO_FOLHA.has(nome) ? null : 'folha crua só em folha, ramo, pires ou prato'
   if (verdura && alimento.preparo === 'cru' && FOLHA_PICADA.test(d)) return FOLHA_PICADA_OK.has(nome) ? null : 'verdura picada só em folha, colher, pires ou prato'
   if (alimento.categoria === 'Frutas e derivados' && alimento.preparo === 'cru' && !/suco|polpa/.test(d)) {
@@ -171,6 +176,13 @@ export function motivoDaClasse(alimento, nome) {
   if (/^pao, [^,]+, forma/.test(d)) return nome === 'fatia' ? null : 'pão de forma só em fatia'
   // D-483: creme de leite se mede em colher ("1 copo de leite" achava o creme de leite).
   if (/^creme de leite/.test(d)) return /^(colher|ponta de faca)/.test(nome) ? null : 'creme de leite só em colher ou ponta de faca'
+  // D-483a (3ª revisão, R4): verdura crua que se come cozida não tem colher, concha nem escumadeira (medidas do cozido);
+  // a lista é a do "(peso cru)" do nome para o paciente (src/domain/nomeParaPaciente.ts), que o teste confere.
+  if (alimento.categoria.startsWith('Verduras') && alimento.preparo === 'cru' && VERDURAS_COZIDAS.has(alimento.base ?? '') && /^(colher|concha|escumadeira)/.test(nome)) {
+    return 'verdura crua que se come cozida não tem medida do cozido'
+  }
+  // D-483a (R7): filé de peixe se mede em filé ou porção ("meia unidade pequena" de merluza não se lê).
+  if (alimento.categoria === 'Pescados e frutos do mar' && /(^|, )file(,|$)/.test(d)) return nome === 'filé' || nome === 'porção' ? null : 'filé de peixe só em filé ou porção'
   // D-483 (N12): camarão grande se conta; a colher de sopa de 20 g é de camarão pequeno.
   if (/^camarao, [^,]+, grande/.test(d)) return ['unidade', 'porção', 'punhado'].includes(nome) ? null : 'camarão grande só em unidade, porção ou punhado'
   if (/^ovo, de galinha, inteiro, frito/.test(d)) return nome === 'unidade' || nome === 'porção' ? null : 'ovo frito só em unidade'

@@ -20,7 +20,7 @@ describe('Base MetaNutri (D-51, CA-322)', () => {
   })
 
   it('conta alimentos, nutrientes, medidas caseiras e o complemento do USDA na base em uso', () => {
-    expect(resumoDaBase()).toEqual({ alimentos: 597, nutrientes: 20, comMedidaCaseira: 285, comComplementoUsda: 308 })
+    expect(resumoDaBase()).toEqual({ alimentos: 597, nutrientes: 20, comMedidaCaseira: 283, comComplementoUsda: 308 })
   })
 
   it('cita as quatro fontes, cada uma com link; o USDA vem ao lado da TACO', () => {

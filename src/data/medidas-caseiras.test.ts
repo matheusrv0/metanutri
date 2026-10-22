@@ -2,6 +2,7 @@ import pofCsv from '../../dados-brutos/pof/pof_medidas_caseiras.csv?raw'
 import tabela from './alimentos.json'
 import medidas from './medidas-caseiras.json'
 import revisao from './medidas-revisao.md?raw'
+import { VERDURAS_QUE_SE_COMEM_COZIDAS } from '../domain/nomeParaPaciente.ts'
 
 type Registro = { pof: { codigo: string; descricao: string; preparacao: string }; medidas: { nome: string; gramas: number }[] }
 const porId = medidas.alimentos as unknown as Record<string, Registro>
@@ -271,6 +272,27 @@ describe('sobras da caminhada dos 4 pacientes (spec alimentos-e-gramaturas, seç
     expect(revisao).toContain('| 178 | Banana, maçã, crua | unidade | 75 g | Banana, prata, crua |')
     expect(revisao).toMatch(/## Variedades que ficam em gramas/)
     for (const id of [177, 179, 180, 228, 229, 231]) expect(revisao, descricao(id)).toContain(`| ${id} | ${descricao(id)} |`)
+  })
+})
+
+describe('menores da 3ª revisão (spec alimentos-e-gramaturas, D-483a)', () => {
+  it('CA-1345: verdura crua que se come cozida não tem colher, concha nem escumadeira (são do cozido)', () => {
+    for (const [a, r] of comMedidas) {
+      if (!a.categoria.startsWith('Verduras') || a.preparo !== 'cru' || !VERDURAS_QUE_SE_COMEM_COZIDAS.has(a.base ?? '')) continue
+      for (const m of r.medidas) expect(m.nome, a.descricao).not.toMatch(/^(colher|concha|escumadeira)/)
+    }
+    expect(nomes(127)).not.toContain('colher de servir') // Jiló, cru
+  })
+
+  it('CA-1345: a romã não tem "unidade"; filé de peixe só em filé e porção', () => {
+    expect(nomes(249)).not.toContain('unidade')
+    for (const [a, r] of comMedidas) {
+      if (a.categoria !== 'Pescados e frutos do mar' || !/filé/.test(a.descricao)) continue
+      for (const m of r.medidas) expect(['filé', 'porção'], `${a.descricao}: ${m.nome}`).toContain(m.nome)
+    }
+    expect(revisao).toContain('| 127 | Jiló, cru | colher de servir | 95 g | verdura crua que se come cozida não tem medida do cozido |')
+    expect(revisao).toContain('| 249 | Romã, crua | unidade | 70 g | romã só em gramas (a unidade da POF é a parte comestível) |')
+    expect(revisao).toContain('| 301 | Merluza, filé, assado | unidade pequena | 150 g | filé de peixe só em filé ou porção |')
   })
 })
 

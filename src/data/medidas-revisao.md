@@ -1,6 +1,6 @@
 # Revisão das medidas caseiras (TACO ↔ POF)
 
-Gerado por scripts/dados/importar-medidas-pof.mjs. 285 alimentos da TACO com medidas caseiras; 914 medidas da POF tiradas pela camada de plausibilidade.
+Gerado por scripts/dados/importar-medidas-pof.mjs. 283 alimentos da TACO com medidas caseiras; 946 medidas da POF tiradas pela camada de plausibilidade.
 Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentido para a forma de preparo.
 
 | TACO | Descrição TACO | Alimento POF (preparação) | Medidas |
@@ -68,7 +68,6 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 120 | Espinafre, Nova Zelândia, refogado | ESPINAFRE (REFOGADO(A)) | colher de sobremesa 12.5 g; colher de sopa 25 g; porção 67 g |
 | 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
 | 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; porção 40 g; punhado 23 g; tigela 148 g; xícara de chá 148 g |
-| 127 | Jiló, cru | JILO (CRU(A)) | colher de servir 95 g |
 | 128 | Jurubeba, crua | JURUBEBA (NAO SE APLICA) | unidade 10 g |
 | 129 | Mandioca, cozida | MANDIOCA (CROZIDO(A)) | colher de servir 60 g; colher de sopa 30 g; fatia 100 g; pedaço 100 g; porção 128 g |
 | 132 | Mandioca, frita | MANDIOCA (FRITO(A)) | bola 45 g; colher de servir 60 g; colher de sopa 35 g; fatia 70 g; pedaço 80 g; porção 80 g; punhado 45 g |
@@ -146,7 +145,6 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 244 | Pêssego, Aurora, cru | PESSEGO (NAO SE APLICA) | pedaço 15 g; porção 226 g; unidade 60 g; unidade pequena 32 g |
 | 246 | Pinha, crua | PINHA (FRUTA DE CONDE) (NAO SE APLICA) | unidade 60 g; unidade pequena 45 g |
 | 247 | Pitanga, crua | PITANGA (NAO SE APLICA) | unidade 10 g |
-| 249 | Romã, crua | ROMA (NAO SE APLICA) | unidade 70 g |
 | 250 | Tamarindo, cru | TAMARINDO (NAO SE APLICA) | porção 25 g; unidade 8.06 g |
 | 251 | Tangerina, Poncã, crua | TANGERINA (NAO SE APLICA) | bago 16.9 g; gomo 16.9 g; metade 67.5 g; unidade 135 g; unidade pequena 100 g |
 | 253 | Tucumã, cru | TUCUMA (NAO SE APLICA) | unidade 11.7 g |
@@ -164,9 +162,9 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 269 | Óleo, de girassol | OLEO NAO ESPECIFICADO (NAO SE APLICA) | colher de café 1 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 8 g |
 | 270 | Óleo, de milho | OLEO NAO ESPECIFICADO (NAO SE APLICA) | colher de café 1 g; colher de sobremesa 5 g; colher de sopa 8 g; porção 8 g |
 | 272 | Óleo, de soja | OLEO DE SOJA (NAO SE APLICA) | colher de café 1 g; colher de chá 2 g; colher de sopa 8 g |
-| 273 | Abadejo, filé, congelado, assado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | banda 100 g; filé 120 g; metade 100 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 274 | Abadejo, filé, congelado,cozido | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (CROZIDO(A)) | filé 120 g; porção 75 g; posta 200 g; unidade 200 g |
-| 276 | Abadejo, filé, congelado, grelhado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g |
+| 273 | Abadejo, filé, congelado, assado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | filé 120 g; porção 75 g |
+| 274 | Abadejo, filé, congelado,cozido | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (CROZIDO(A)) | filé 120 g; porção 75 g |
+| 276 | Abadejo, filé, congelado, grelhado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | filé 120 g; porção 75 g |
 | 277 | Atum, conserva em óleo | ATUM EM CONSERVA (NAO SE APLICA) | colher de sobremesa 10 g; colher de sopa 16 g; porção 112 g |
 | 280 | Bacalhau, salgado, refogado | BACALHAU (REFOGADO(A)) | colher de sopa 20 g |
 | 281 | Cação, posta, com farinha de trigo, frita | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
@@ -179,14 +177,14 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 297 | Lambari, congelado, frito | PEIXE DE AGUA DOCE (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | banda 100 g; bife 120 g; filé 120 g; metade 100 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
 | 299 | Manjuba, com farinha de trigo, frita | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
 | 300 | Manjuba, frita | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 301 | Merluza, filé, assado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | banda 100 g; filé 120 g; metade 100 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 303 | Merluza, filé, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
+| 301 | Merluza, filé, assado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | filé 120 g; porção 75 g |
+| 303 | Merluza, filé, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | filé 120 g; porção 75 g |
 | 305 | Pescada, branca, frita | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 306 | Pescada, filé, com farinha de trigo, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 308 | Pescada, filé, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
+| 306 | Pescada, filé, com farinha de trigo, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | filé 120 g; porção 75 g |
+| 308 | Pescada, filé, frito | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (FRITO(A)) | filé 120 g; porção 75 g |
 | 311 | Pintado, assado | PEIXE DE AGUA DOCE (INTEIRO, EM POSTA, EM FILE, ETC) (ASSADO(A)) | banda 100 g; bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
 | 313 | Pintado, grelhado | PEIXE DE AGUA DOCE (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g; unidade pequena 150 g |
-| 315 | Salmão, filé, com pele, fresco,  grelhado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g |
+| 315 | Salmão, filé, com pele, fresco,  grelhado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | filé 120 g; porção 75 g |
 | 317 | Salmão, sem pele, fresco, grelhado | PEIXE DE MAR (INTEIRO, EM POSTA, EM FILE, ETC) (GRELHADO(A)/BRASA/CHURRASCO) | bife 120 g; filé 120 g; porção 75 g; posta 200 g; unidade 200 g |
 | 319 | Sardinha, conserva em óleo | SARDINHA EM CONSERVA (NAO SE APLICA) | colher de servir 32 g; colher de sobremesa 10 g; colher de sopa 16 g; porção 41.5 g; unidade 41.5 g; unidade pequena 31.1 g |
 | 323 | Apresuntado | APRESUNTADO (NAO SE APLICA) | fatia 15 g |
@@ -310,6 +308,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 - 117 Couve-flor, crua (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 119 Espinafre, Nova Zelândia, cru (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 126 Inhame, cru (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
+- 127 Jiló, cru (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 130 Mandioca, crua (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 134 Maxixe, cru (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 137 Nabo, cru (sem preparação compatível na POF)
@@ -317,6 +316,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 - 156 Taioba, crua (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 162 Vagem, crua (preparação CRU(A): nenhuma medida passou na camada de plausibilidade)
 - 241 Pequi, cru (preparação NAO SE APLICA: nenhuma medida passou na camada de plausibilidade)
+- 249 Romã, crua (preparação NAO SE APLICA: nenhuma medida passou na camada de plausibilidade)
 - 400 Frango, fígado, cru (regra sem mapeamento: sem mapeamento: forma crua de víscera)
 - 559 Ervilha, em vagem (sem preparação compatível na POF)
 
@@ -959,6 +959,7 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 126 | Inhame, cru | porção | 126 g | fonte de outro preparo (cozido) | Inhame cozido/amassado - porção Guia Alimentar |
 | 126 | Inhame, cru | rodela | 30 g | fonte de outro preparo (cozido) | Inhame cozido - pedaço pequeno |
 | 126 | Inhame, cru | unidade | 125 g | fonte de outro preparo (cozido) | Inhame cozido - unidade média |
+| 127 | Jiló, cru | colher de servir | 95 g | verdura crua que se come cozida não tem medida do cozido | Jiló - colher de arroz cheia |
 | 127 | Jiló, cru | colher de sopa | 60 g | fonte de outro preparo (cozido) | Jiló cozido - colher de sopa cheia |
 | 127 | Jiló, cru | pegador | 60 g | fonte de outro preparo (cozido) | Jiló cozido - colher de sopa cheia |
 | 127 | Jiló, cru | porção | 40 g | fonte de outro preparo (cozido) | Jiló cozido - porção Guia Alimentar |
@@ -1240,6 +1241,7 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 244 | Pêssego, Aurora, cru | tigela | 80 g | a fonte é de outro utensílio | Doce de pêssego - 1 unidade |
 | 247 | Pitanga, crua | copo americano | 62,5 g | fruta só em unidade, fatia, pedaço ou taça | Diluição para o preparo de 1 copo americano |
 | 247 | Pitanga, crua | copo médio | 100 g | fruta só em unidade, fatia, pedaço ou taça | Diluição para o preparo de 1 copo médio |
+| 249 | Romã, crua | unidade | 70 g | romã só em gramas (a unidade da POF é a parte comestível) | Romã - unidade pequena |
 | 250 | Tamarindo, cru | copo americano | 62,5 g | fruta só em unidade, fatia, pedaço ou taça | Diluição para o preparo de 1 copo americano |
 | 250 | Tamarindo, cru | copo de requeijão | 100 g | fruta só em unidade, fatia, pedaço ou taça | Diluição para o preparo de 1 copo médio |
 | 250 | Tamarindo, cru | copo grande | 125 g | fruta só em unidade, fatia, pedaço ou taça | Diluição para o preparo de 1 copo grande |
@@ -1304,9 +1306,19 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | garfada | 32 g | a fonte é de outro utensílio | Margarina - colher de sopa cheia |
 | 266 | Margarina, com óleo interesterificado, sem sal (65% de lipídeos) | xícara de chá | 155 g | gordura só em colher ou ponta de faca | Manteiga - xícara de chá |
 | 272 | Óleo, de soja | concha | 32 g | a fonte é de outro utensílio | Óleo vegetal - 4 colheres de sopa |
+| 273 | Abadejo, filé, congelado, assado | banda | 100 g | filé de peixe só em filé ou porção | Peixe cozido - 1/2 posta média |
 | 273 | Abadejo, filé, congelado, assado | bola | 15 g | excluída na regra do mapeamento | Bolinho de bacalhau - unidade média |
-| 273 | Abadejo, filé, congelado, assado | colher de sopa | 20 g | carne grelhada, assada ou frita não se mede em colher ou concha | Peixe cozido - colher de sopa cheia picado |
+| 273 | Abadejo, filé, congelado, assado | colher de sopa | 20 g | filé de peixe só em filé ou porção | Peixe cozido - colher de sopa cheia picado |
+| 273 | Abadejo, filé, congelado, assado | metade | 100 g | filé de peixe só em filé ou porção | Peixe cozido - 1/2 posta média |
+| 273 | Abadejo, filé, congelado, assado | posta | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 273 | Abadejo, filé, congelado, assado | unidade | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 273 | Abadejo, filé, congelado, assado | unidade pequena | 150 g | filé de peixe só em filé ou porção | Peixe cozido - posta pequena |
 | 274 | Abadejo, filé, congelado,cozido | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
+| 274 | Abadejo, filé, congelado,cozido | posta | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 274 | Abadejo, filé, congelado,cozido | unidade | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 276 | Abadejo, filé, congelado, grelhado | bife | 120 g | filé de peixe só em filé ou porção | Peixe cozido - filé médio |
+| 276 | Abadejo, filé, congelado, grelhado | posta | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 276 | Abadejo, filé, congelado, grelhado | unidade | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
 | 280 | Bacalhau, salgado, refogado | concha | 110 g | a fonte é de outro utensílio | Bacalhau cozido - 2 colheres de arroz cheia desfiado |
 | 282 | Cação, posta, cozida | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
 | 284 | Camarão, Rio Grande, grande, cozido | colher de servir | 35 g | camarão grande só em unidade, porção ou punhado | Camarão frito - colher de arroz cheia |
@@ -1327,8 +1339,28 @@ usa, peso acima do razoável ou fora da proporção da colher de sopa. A fonte �
 | 290 | Corimbatá, cozido | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
 | 297 | Lambari, congelado, frito | colher de servir | 40 g | carne grelhada, assada ou frita não se mede em colher ou concha | Peixe cozido - 2 colheres de sopa cheias picado |
 | 297 | Lambari, congelado, frito | concha | 80 g | a fonte é de outro utensílio | Peixe cozido - 4 colheres de sopa cheia picado |
+| 301 | Merluza, filé, assado | banda | 100 g | filé de peixe só em filé ou porção | Peixe cozido - 1/2 posta média |
 | 301 | Merluza, filé, assado | bola | 15 g | excluída na regra do mapeamento | Bolinho de bacalhau - unidade média |
-| 301 | Merluza, filé, assado | colher de sopa | 20 g | carne grelhada, assada ou frita não se mede em colher ou concha | Peixe cozido - colher de sopa cheia picado |
+| 301 | Merluza, filé, assado | colher de sopa | 20 g | filé de peixe só em filé ou porção | Peixe cozido - colher de sopa cheia picado |
+| 301 | Merluza, filé, assado | metade | 100 g | filé de peixe só em filé ou porção | Peixe cozido - 1/2 posta média |
+| 301 | Merluza, filé, assado | posta | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 301 | Merluza, filé, assado | unidade | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 301 | Merluza, filé, assado | unidade pequena | 150 g | filé de peixe só em filé ou porção | Peixe cozido - posta pequena |
+| 303 | Merluza, filé, frito | bife | 120 g | filé de peixe só em filé ou porção | Peixe frito - filé médio |
+| 303 | Merluza, filé, frito | posta | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 303 | Merluza, filé, frito | unidade | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 303 | Merluza, filé, frito | unidade pequena | 150 g | filé de peixe só em filé ou porção | Peixe frito - posta pequena |
+| 306 | Pescada, filé, com farinha de trigo, frito | bife | 120 g | filé de peixe só em filé ou porção | Peixe frito - filé médio |
+| 306 | Pescada, filé, com farinha de trigo, frito | posta | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 306 | Pescada, filé, com farinha de trigo, frito | unidade | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 306 | Pescada, filé, com farinha de trigo, frito | unidade pequena | 150 g | filé de peixe só em filé ou porção | Peixe frito - posta pequena |
+| 308 | Pescada, filé, frito | bife | 120 g | filé de peixe só em filé ou porção | Peixe frito - filé médio |
+| 308 | Pescada, filé, frito | posta | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 308 | Pescada, filé, frito | unidade | 200 g | filé de peixe só em filé ou porção | Peixe frito - posta média |
+| 308 | Pescada, filé, frito | unidade pequena | 150 g | filé de peixe só em filé ou porção | Peixe frito - posta pequena |
+| 315 | Salmão, filé, com pele, fresco,  grelhado | bife | 120 g | filé de peixe só em filé ou porção | Peixe cozido - filé médio |
+| 315 | Salmão, filé, com pele, fresco,  grelhado | posta | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
+| 315 | Salmão, filé, com pele, fresco,  grelhado | unidade | 200 g | filé de peixe só em filé ou porção | Peixe cozido - posta média |
 | 326 | Carne, bovina, acém, moído, cozido | concha | 120 g | a fonte é de outro utensílio | Carne bovina moída - 2 colheres de arroz cheia |
 | 326 | Carne, bovina, acém, moído, cozido | escumadeira | 60 g | a fonte é de outro utensílio | Carne bovina moída - colher de arroz cheia |
 | 326 | Carne, bovina, acém, moído, cozido | prato raso | 60 g | a fonte é de outro utensílio | Carne bovina moída - colher de arroz cheia |

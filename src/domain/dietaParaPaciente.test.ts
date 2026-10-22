@@ -52,7 +52,7 @@ describe('a dieta do link para o paciente (D-231)', () => {
       'Ovo cozido': '2 unidades',
       'Iogurte natural': '1 copo americano',
       'Maçã Fuji com casca': '1 unidade', // D-423: eram "3 fatias e meia"; D-484: nem "unidade pequena e meia"
-      'Filé de merluza assado': 'meia unidade',
+      'Filé de merluza assado': '100 g', // D-483a: filé de peixe só em filé ou porção (era "meia unidade")
       'Peito de frango grelhado sem pele': '1 bife',
       'Banana prata': '1 unidade e meia',
       'Margarina com sal': '1 ponta de faca',

@@ -34,7 +34,7 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
     expect(linhasDoExemplo('medida-caseira')).toMatchObject({
       'Pão francês': '1 unidade e meia',
       'Maçã Fuji com casca': '1 unidade', // D-423: eram "3 fatias e meia"; D-484: nem "unidade pequena e meia"
-      'Filé de merluza assado': 'meia unidade',
+      'Filé de merluza assado': '100 g', // D-483a: filé de peixe só em filé ou porção (era "meia unidade")
       'Peito de frango grelhado sem pele': '1 bife',
       'Patinho grelhado sem gordura': '1 bife',
       // Correção A (D-430): a alface só se mede em folha, e o mamão Formosa só tem a fatia de 170 g, que não serve a 120 g.
