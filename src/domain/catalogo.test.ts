@@ -108,8 +108,16 @@ describe('Catálogo de alimentos', () => {
   })
 
   it('alimento sem energia aparece com valor nulo, nunca zero', () => {
+    const coco = composicaoDe(porDescricao('Coco,  verde, cru'))
+    expect(coco.find((l) => l.chave === 'energia_kcal')?.valor).toBeNull()
+  })
+
+  it('CA-1128 (spec alimentos-e-gramaturas, D-380): energia e macros do leite vêm do USDA, marcados', () => {
     const leite = composicaoDe(porDescricao('Leite, de vaca, integral'))
-    expect(leite.find((l) => l.chave === 'energia_kcal')?.valor).toBeNull()
+    expect(leite.find((l) => l.chave === 'energia_kcal')).toMatchObject({ valor: 61, usda: true })
+    expect(leite.find((l) => l.chave === 'proteina_g')).toMatchObject({ valor: 3.15, usda: true })
+    // O cálcio é da TACO e continua sem a marca.
+    expect(leite.find((l) => l.chave === 'calcio_mg')).toMatchObject({ usda: false })
   })
 
   it('o resumo bate com a tabela em uso', () => {

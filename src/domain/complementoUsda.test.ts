@@ -96,7 +96,10 @@ describe('a base em uso (spec vitaminas-usda)', () => {
       for (const chave of CHAVES_NUTRIENTES) expect(a.nutrientes[chave], `${a.id} ${chave}`).not.toBeUndefined()
       const original = taco.alimentos[i]
       expect(a.id).toBe(original?.id)
-      expect(a.nutrientes).toMatchObject(original?.nutrientes ?? {})
+      // D-380 (spec alimentos-e-gramaturas): os macros do USDA só ocupam o que a TACO deixou nulo.
+      const daTaco = Object.fromEntries(Object.entries(original?.nutrientes ?? {}).filter(([chave]) => !(a.usdaMacros?.chaves ?? []).includes(chave as never)))
+      expect(a.nutrientes).toMatchObject(daTaco)
+      for (const chave of a.usdaMacros?.chaves ?? []) expect((original?.nutrientes as Record<string, unknown> | undefined)?.[chave], `${a.id} ${chave}`).toBeNull()
     }
   })
 

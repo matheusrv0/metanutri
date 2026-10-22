@@ -79,7 +79,8 @@ describe('medidas-caseiras.json', () => {
   it('fruta inteira não tem medida de copo ou caneca (que descreve suco)', () => {
     for (const [id, r] of Object.entries(porId)) {
       const a = tabela.alimentos.find((x) => x.id === Number(id))
-      if (a?.categoria !== 'Frutas e derivados') continue
+      // O suco de fruta é medido em copo (spec alimentos-e-gramaturas, A9).
+      if (a?.categoria !== 'Frutas e derivados' || /(^|, )suco/.test(a.descricao)) continue
       for (const m of r.medidas) expect(m.nome, a.descricao).not.toMatch(/^(copo|caneca|caneco)/)
     }
   })

@@ -359,6 +359,12 @@ function CorpoDaFicha({ alimento }: { readonly alimento: Alimento }) {
         {alimento.usda ? (
           <p>{`Os valores marcados USDA são do alimento equivalente nº ${alimento.usda.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usda)}).`}</p>
         ) : null}
+        {/* D-380 (spec alimentos-e-gramaturas): a TACO não publicou a energia e os macros; vieram do USDA. */}
+        {alimento.usdaMacros && alimento.usdaMacros.fdcId !== alimento.usda?.fdcId ? (
+          <p>{`A energia e os macros marcados USDA são do alimento equivalente nº ${alimento.usdaMacros.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usdaMacros)}), porque a TACO não os publicou.`}</p>
+        ) : alimento.usdaMacros ? (
+          <p>A TACO não publicou a energia e os macros deste alimento: vieram do mesmo equivalente do USDA.</p>
+        ) : null}
       </div>
     </>
   )

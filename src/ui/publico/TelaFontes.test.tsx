@@ -6,7 +6,7 @@ describe('Fontes da base (CA-322)', () => {
     render(<TelaFontes />)
     expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
     expect(screen.getByText(/A Base MetaNutri reúne 597 alimentos/)).toBeInTheDocument()
-    expect(screen.getByText(/medidas caseiras de 287 deles/)).toBeInTheDocument()
+    expect(screen.getByText(/medidas caseiras de 305 deles/)).toBeInTheDocument()
     // CA-964 (spec vitaminas-usda): a frase de abertura conta o complemento do USDA.
     expect(screen.getByText(/Para 308, traz também vitamina D, vitamina E, folato, vitamina B12 e selênio\./)).toBeInTheDocument()
     for (const assunto of ['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Medidas caseiras', 'Produtos de rótulo']) {

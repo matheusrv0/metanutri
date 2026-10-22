@@ -26,7 +26,7 @@ const RECEITA_NO_LINK = {
   rendimento: 'Rende 2 unidades (120 g cada)',
   ingredientes: [
     { medida: '2 unidades', gramas: 150, alimento: 'Banana, prata, crua' },
-    { medida: null, gramas: 100, alimento: 'Ovo, de galinha, inteiro, cru' },
+    { medida: '2 unidades', gramas: 100, alimento: 'Ovo, de galinha, inteiro, cru' },
     { medida: '2 colheres de sopa', gramas: 30, alimento: 'Aveia, flocos, crua' },
   ],
   preparo: PANQUECA.preparo,

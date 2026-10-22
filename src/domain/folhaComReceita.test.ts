@@ -77,7 +77,7 @@ describe('a seção Receitas (CA-880, CB-278)', () => {
       rendimento: 'Rende 2 unidades (120 g cada)',
       ingredientes: [
         { nome: 'Banana prata', quantidade: { medida: '2 unidades', gramas: 150 } },
-        { nome: 'Ovo', quantidade: { medida: null, gramas: 100 } },
+        { nome: 'Ovo', quantidade: { medida: '2 unidades', gramas: 100 } },
         { nome: 'Aveia em flocos', quantidade: { medida: '2 colheres de sopa', gramas: 30 } },
       ],
       preparo: PANQUECA.preparo,

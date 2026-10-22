@@ -1,6 +1,6 @@
 # Revisão das medidas caseiras (TACO ↔ POF)
 
-Gerado por scripts/dados/importar-medidas-pof.mjs. 287 alimentos da TACO com medidas caseiras.
+Gerado por scripts/dados/importar-medidas-pof.mjs. 305 alimentos da TACO com medidas caseiras.
 Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentido para a forma de preparo.
 
 | TACO | Descrição TACO | Alimento POF (preparação) | Medidas |
@@ -17,8 +17,11 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 13 | Biscoito, salgado, cream cracker | BISCOITO SALGADO (NAO SE APLICA) | porção 32.5 g; punhado 17 g; unidade 5 g |
 | 25 | Cereal matinal, milho | CEREAL MATINAL DE MILHO EM FLOCOS (NAO SE APLICA) | caneca 29.5 g; colher de servir 8 g; colher de sopa 4 g; copo americano 25 g; copo médio 29.5 g; cumbuca 30 g; pires 30 g; porção 30 g; prato fundo 60 g; prato raso 30 g; punhado 9 g; taça 30 g; tigela 30 g; xícara de café 7.5 g; xícara de chá 30 g |
 | 29 | Curau, milho verde | CURAU (NAO SE APLICA) | colher de sopa 35 g; pedaço 150 g; pires 150 g; prato fundo 500 g; prato raso 300 g |
+| 33 | Farinha, de milho, amarela | FARINHA DE MILHO (NAO SE APLICA) | colher de chá 3 g; colher de servir 24 g; colher de sobremesa 6 g; colher de sopa 12 g; porção 42 g |
 | 45 | Milho, verde, enlatado, drenado | MILHO VERDE EM CONSERVA (NAO SE APLICA) | colher de café 4.3 g; colher de chá 8.5 g; colher de servir 38 g; colher de sobremesa 17 g; colher de sopa 24 g; concha 76 g; porção 172 g; punhado 38 g; unidade 100 g; unidade pequena 50 g |
 | 47 | Pamonha, barra para cozimento, pré-cozida | PAMONHA (NAO SE APLICA) | banda 80 g; fatia 40 g; pedaço 40 g; rodela 40 g; unidade 160 g |
+| 48 | Pão, aveia, forma | PAO DE FORMA INDUSTRIALIZADO DE QUALQUER MARCA (NAO SE APLICA) | banda 25 g; fatia 25 g; metade 25 g |
+| 50 | Pão, glúten, forma | PAO DE FORMA INDUSTRIALIZADO DE QUALQUER MARCA (NAO SE APLICA) | banda 25 g; fatia 25 g; metade 25 g |
 | 51 | Pão, milho, forma | PAO DE MILHO (NAO SE APLICA) | fatia 35 g; porção 70 g; unidade 70 g |
 | 52 | Pão, trigo, forma, integral | PAO INTEGRAL (NAO SE APLICA) | banda 25 g; fatia 25 g |
 | 53 | Pão, trigo, francês | PAO DE SAL (NAO SE APLICA) | banda 25 g; fatia 25 g; metade 25 g; pedaço 25 g; porção 50 g; rodela 16.7 g; unidade 50 g |
@@ -76,6 +79,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 118 | Couve-flor, cozida | COUVE FLOR (CROZIDO(A)) | colher de servir 50 g; colher de sobremesa 12.5 g; colher de sopa 25 g; concha 100 g; escumadeira 50 g; pedaço 60 g; pegador 25 g; pires 50 g; porção 69 g; prato de sobremesa 100 g; ramo 60 g; unidade 60 g; unidade pequena 30 g |
 | 119 | Espinafre, Nova Zelândia, cru | ESPINAFRE (CRU(A)) | colher de sopa 25 g; pegador 25 g; porção 67 g |
 | 120 | Espinafre, Nova Zelândia, refogado | ESPINAFRE (REFOGADO(A)) | colher de sobremesa 12.5 g; colher de sopa 25 g; escumadeira 50 g; porção 67 g |
+| 121 | Farinha, de mandioca, crua | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; concha 110 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; pote 148 g; prato de sobremesa 150 g; prato fundo 271 g; prato raso 101 g; punhado 23 g; tigela 148 g; xícara de café 42.3 g; xícara de chá 148 g |
 | 122 | Farinha, de mandioca, torrada | FARINHA DE MANDIOCA (NAO SE APLICA) | caneca 171 g; caneco 171 g; colher de café 3 g; colher de chá 5 g; colher de servir 33 g; colher de sobremesa 10 g; colher de sopa 16 g; concha 110 g; copo americano 127 g; copo de cafezinho 42.3 g; copo de requeijão 172 g; copo grande 172 g; copo médio 172 g; copo tulipa 172 g; porção 40 g; pote 148 g; prato de sobremesa 150 g; prato fundo 271 g; prato raso 101 g; punhado 23 g; tigela 148 g; xícara de café 42.3 g; xícara de chá 148 g |
 | 126 | Inhame, cru | INHAME (CRU(A)) | escumadeira 110 g; porção 126 g; rodela 30 g; unidade 125 g |
 | 127 | Jiló, cru | JILO (CRU(A)) | colher de servir 95 g; colher de sopa 60 g; pegador 60 g; porção 40 g; unidade 26 g |
@@ -132,10 +136,15 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 206 | Jamelão, cru | JAMELAO (JAMBURAO) (NAO SE APLICA) | unidade 5 g |
 | 207 | Kiwi, cru | KIWI (NAO SE APLICA) | pedaço 23.5 g; rodela 11 g; unidade 94 g; unidade pequena 57 g |
 | 208 | Laranja, baía, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; rodela 18 g; unidade 180 g; unidade pequena 90 g |
+| 209 | Laranja, baía, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 210 | Laranja, da terra, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; rodela 18 g; unidade 180 g; unidade pequena 90 g |
+| 211 | Laranja, da terra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 212 | Laranja, lima, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; rodela 18 g; unidade 180 g; unidade pequena 90 g |
+| 213 | Laranja, lima, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 214 | Laranja, pêra, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; rodela 18 g; unidade 180 g; unidade pequena 90 g |
+| 215 | Laranja, pêra, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 216 | Laranja, valência, crua | LARANJA (PERA, SELETA, LIMA, DA TERRA, ETC) (NAO SE APLICA) | bago 18 g; banda 90 g; fatia 18 g; gomo 18 g; metade 90 g; pedaço 18 g; porção 144 g; rodela 18 g; unidade 180 g; unidade pequena 90 g |
+| 217 | Laranja, valência, suco | SUCO DE LARANJA (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 220 | Limão, tahiti, cru | LIMAO (COMUM, GALEGO, ETC) (NAO SE APLICA) | banda 42 g; fatia 16.8 g; metade 42 g; pedaço 16.8 g; porção 252 g; rodela 16.8 g; unidade 84 g |
 | 221 | Maçã, Argentina, com casca, crua | MACA (NAO SE APLICA) | banda 75 g; fatia 37.5 g; metade 75 g; pedaço 37.5 g; porção 130 g; unidade 150 g; unidade pequena 90 g |
 | 222 | Maçã, Fuji, com casca, crua | MACA (NAO SE APLICA) | banda 75 g; fatia 37.5 g; metade 75 g; pedaço 37.5 g; porção 130 g; unidade 150 g; unidade pequena 90 g |
@@ -249,9 +258,13 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 451 | Iogurte, sabor morango | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
 | 452 | Iogurte, sabor pêssego | IOGURTE DE QUALQUER SABOR (NAO SE APLICA) | caneca 300 g; caneco 300 g; colher de sopa 15 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 165 g; pote 200 g; xícara de café 50 g; xícara de chá 200 g |
 | 454 | Leite, de cabra | LEITE DE CABRA (NAO SE APLICA) | copo americano 150 g; copo médio 240 g; xícara de café 50 g; xícara de chá 200 g |
+| 456 | Leite, de vaca, desnatado, pó | LEITE EM PO DESNATADO (NAO SE APLICA) | colher de café 1.8 g; colher de chá 3.5 g; colher de servir 20 g; colher de sopa 10 g |
 | 457 | Leite, de vaca, desnatado, UHT | LEITE DE VACA DESNATADO (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 270 g; xícara de café 50 g; xícara de chá 200 g |
 | 458 | Leite, de vaca, integral | LEITE DE VACA INTEGRAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; porção 182 g; prato fundo 300 g; prato raso 240 g; xícara de café 50 g; xícara de chá 200 g |
+| 459 | Leite, de vaca, integral, pó | LEITE EM PO INTEGRAL (NAO SE APLICA) | colher de café 2.3 g; colher de chá 4.5 g; colher de servir 32 g; colher de sobremesa 9 g; colher de sopa 16 g |
+| 460 | Leite, fermentado | LEITE FERMENTADO (NAO SE APLICA) | copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; pote 80 g; unidade 80 g |
 | 461 | Queijo, minas, frescal | QUEIJO DE MINAS (NAO SE APLICA) | fatia 45 g; porção 50 g |
+| 462 | Queijo, minas, meia cura | QUEIJO DE MINAS (NAO SE APLICA) | fatia 45 g; porção 50 g |
 | 463 | Queijo, mozarela | QUEIJO MUZARELLA (NAO SE APLICA) | fatia 20 g; porção 45 g |
 | 464 | Queijo, parmesão | QUEIJO RALADO (NAO SE APLICA) | colher de café 2 g; colher de chá 4 g; colher de servir 30 g; colher de sobremesa 8 g; colher de sopa 15 g; copo americano 74 g; porção 30 g |
 | 467 | Queijo, prato | QUEIJO PRATO (NAO SE APLICA) | fatia 15 g; porção 30 g |
@@ -261,22 +274,26 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 475 | Chá, erva-doce, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; unidade 240 g; xícara de café 50 g; xícara de chá 200 g |
 | 476 | Chá, mate, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; unidade 240 g; xícara de café 50 g; xícara de chá 200 g |
 | 477 | Chá, preto, infusão 5% | CHA (PRETO, CAMOMILA, ERVA CIDREIRA, CAPIM LIMAO, ETC) (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; taça 150 g; unidade 240 g; xícara de café 50 g; xícara de chá 200 g |
+| 478 | Coco, água de | AGUA DE COCO (NAO SE APLICA) | copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; unidade 340 g; xícara de chá 200 g |
 | 480 | Refrigerante, tipo cola | REFRIGERANTE DE COLA TRADICIONAL (NAO SE APLICA) | caneca 300 g; copo americano 150 g; copo de cafezinho 50 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; dose 50 g; taça 150 g; unidade 240 g; unidade pequena 150 g; xícara de chá 200 g |
 | 481 | Refrigerante, tipo guaraná | REFRIGERANTE DE GUARANA TRADICIONAL (NAO SE APLICA) | caneca 300 g; caneco 300 g; copo americano 150 g; copo de requeijão 240 g; copo grande 300 g; copo médio 240 g; copo tulipa 290 g; unidade 240 g; unidade pequena 150 g; xícara de café 50 g |
 | 484 | Omelete, de queijo | OMELETE (NAO SE APLICA) | colher de servir 45 g; colher de sobremesa 7.5 g; colher de sopa 15 g; escumadeira 45 g; fatia 10 g; pedaço 25 g; porção 110 g; unidade 65 g |
 | 485 | Ovo, de codorna, inteiro, cru | OVO DE CODORNA (CRU(A)) | unidade 10 g |
 | 488 | Ovo, de galinha, inteiro, cozido/10minutos | OVO DE GALINHA (NAO SE APLICA) | unidade 45 g |
+| 489 | Ovo, de galinha, inteiro, cru | OVO DE GALINHA (CRU(A)) | metade 22.5 g; unidade 45 g |
 | 490 | Ovo, de galinha, inteiro, frito | OVO DE GALINHA (FRITO(A)) | colher de servir 45 g; colher de sopa 15 g; escumadeira 45 g; fatia 10 g; metade 25 g; pedaço 25 g; porção 50 g; unidade 50 g |
 | 492 | Açúcar, cristal | ACUCAR (NAO SE APLICA) | colher de café 2 g; colher de chá 5 g; colher de sobremesa 16 g; colher de sopa 24 g; copo americano 160 g; copo médio 219 g; porção 28 g |
 | 493 | Açúcar, mascavo | ACUCAR MASCAVO (NAO SE APLICA) | colher de sopa 19 g |
 | 494 | Açúcar, refinado | ACUCAR (NAO SE APLICA) | colher de café 2 g; colher de chá 5 g; colher de sobremesa 16 g; colher de sopa 24 g; copo americano 160 g; copo médio 219 g; porção 28 g |
 | 495 | Chocolate, ao leite | BARRA DE CHOCOLATE (NAO SE APLICA) | barra 170 g; fatia 6.3 g; gomo 6.3 g; metade 85 g; pedaço 6.3 g; porção 25 g; tablete 6.3 g; unidade 170 g |
+| 498 | Chocolate, meio amargo | BARRA DE CHOCOLATE (NAO SE APLICA) | fatia 6.3 g; gomo 6.3 g; pedaço 6.3 g; porção 25 g; tablete 6.3 g |
 | 502 | Geléia, mocotó, natural | GELEIA DE MOCOTO (NAO SE APLICA) | copo americano 200 g; pedaço 34 g; porção 20 g; unidade 200 g |
 | 507 | Mel, de abelha | MEL (NAO SE APLICA) | colher de café 2 g; colher de chá 3 g; colher de servir 30 g; colher de sobremesa 9 g; colher de sopa 15 g; copo médio 240 g; ponta de faca 12.5 g; porção 37.5 g; prato raso 150 g; xícara de café 50 g; xícara de chá 200 g |
 | 533 | Cuscuz, de milho, cozido com sal | CUSCUZ (NAO SE APLICA) | banda 67.5 g; colher de café 1.5 g; colher de chá 3 g; colher de servir 24 g; colher de sobremesa 6 g; colher de sopa 12 g; concha 48 g; escumadeira 24 g; fatia 135 g; metade 67.5 g; pedaço 135 g; porção 42 g; prato de sobremesa 180 g; prato fundo 180 g; prato raso 180 g |
 | 539 | Feijão tropeiro mineiro | FEIJAO TROPEIRO (NAO SE APLICA) | caneco 140 g; colher de servir 35 g; colher de sopa 17 g; concha 140 g; escumadeira 70 g; prato fundo 280 g; prato raso 140 g |
 | 551 | Tapioca, com manteiga | TAPIOCA DE GOMA (NAO SE APLICA) | banda 25 g; fatia 12.5 g; metade 25 g; pedaço 12.5 g; unidade 50 g |
 | 557 | Amendoim, grão, cru | AMENDOIM (EM GRAO) (IN NATURA) (NAO SE APLICA) | bago 0.8 g; colher de sopa 17 g; porção 9 g; punhado 30 g; unidade 0.8 g |
+| 558 | Amendoim, torrado, salgado | AMENDOIM (EM GRAO) (IN NATURA) (NAO SE APLICA) | bago 0.8 g; colher de sopa 17 g; porção 9 g; punhado 30 g; unidade 0.8 g |
 | 560 | Ervilha, enlatada, drenada | ERVILHA EM CONSERVA (NAO SE APLICA) | colher de chá 6.8 g; colher de servir 38 g; colher de sobremesa 13.5 g; colher de sopa 27 g; porção 72.5 g |
 | 561 | Feijão, carioca, cozido | FEIJAO (PRETO, MULATINHO, ROXO, ROSINHA, ETC) (NAO SE APLICA) | colher de chá 4.3 g; colher de servir 35 g; colher de sobremesa 8.5 g; colher de sopa 17 g; concha 140 g; copo americano 140 g; copo médio 280 g; cumbuca 140 g; escumadeira 35 g; pegador 17 g; porção 50 g; prato de sobremesa 140 g; prato fundo 280 g; prato raso 140 g; tigela 140 g; xícara de chá 140 g |
 | 563 | Feijão, fradinho, cozido | FEIJAO DE CORDA (NAO SE APLICA) | colher de chá 4.3 g; colher de servir 35 g; colher de sopa 17 g; concha 140 g; escumadeira 35 g; porção 50 g; prato fundo 280 g; prato raso 140 g |
@@ -287,6 +304,7 @@ Confira se o alimento da POF corresponde ao da TACO e se as medidas fazem sentid
 | 573 | Feijão, roxo, cozido | FEIJAO (PRETO, MULATINHO, ROXO, ROSINHA, ETC) (NAO SE APLICA) | colher de chá 4.3 g; colher de servir 35 g; colher de sobremesa 8.5 g; colher de sopa 17 g; concha 140 g; copo americano 140 g; copo médio 280 g; cumbuca 140 g; escumadeira 35 g; pegador 17 g; porção 50 g; prato de sobremesa 140 g; prato fundo 280 g; prato raso 140 g; tigela 140 g; xícara de chá 140 g |
 | 577 | Lentilha, cozida | LENTILHA (NAO SE APLICA) | colher de servir 32 g; colher de sopa 18 g; concha 160 g; escumadeira 32 g; porção 48 g; prato fundo 320 g; prato raso 160 g; tigela 160 g |
 | 579 | Paçoca, amendoim | PACOCA (NAO SE APLICA) | colher de servir 100 g; colher de sopa 50 g; porção 32 g; unidade 30 g |
+| 584 | Soja, queijo (tofu) | TOFU (NAO SE APLICA) | fatia 20 g |
 | 587 | Amêndoa, torrada, salgada | AMENDOA (NAO SE APLICA) | unidade 1 g |
 | 588 | Castanha-de-caju, torrada, salgada | CASTANHA DE CAJU (NAO SE APLICA) | porção 10 g; punhado 40 g; unidade 2.5 g |
 | 589 | Castanha-do-Brasil, crua | CASTANHA DO PARA (NAO SE APLICA) | porção 8 g; punhado 40 g; unidade 4 g |

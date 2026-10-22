@@ -251,6 +251,11 @@ export interface Alimento {
   readonly tracos: readonly ChaveNutrienteAlimento[]
   /** Presente quando o alimento da TACO tem equivalente no USDA (spec vitaminas-usda, D-303). */
   readonly usda?: OrigemUsda
+  /**
+   * Energia e macros que a TACO não publicou e vieram do USDA (spec alimentos-e-gramaturas, D-380): a origem e as chaves
+   * preenchidas, para a ficha marcar "USDA".
+   */
+  readonly usdaMacros?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
   /** Só no alimento próprio: medido em g ou em ml (spec alimentos-e-gramaturas, D-378). */
   readonly unidade?: 'g' | 'ml'
 }

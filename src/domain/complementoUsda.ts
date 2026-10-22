@@ -1,6 +1,7 @@
 // Complemento do USDA FoodData Central para o que a TACO não traz (spec vitaminas-usda, D-300 a D-303).
 // O arquivo é gerado por scripts/dados/importar-usda.mjs; aqui ele só é juntado aos alimentos ao carregar.
 import complemento from '../data/complemento-usda.json'
+import macros from '../data/macros-usda.json'
 import type { Alimento, ChaveNutrienteAlimento, OrigemUsda } from './tipos.ts'
 
 /** As seis chaves do complemento, na ordem da ficha do alimento (D-308). */
@@ -75,6 +76,45 @@ export function juntarComplemento(alimentos: readonly AlimentoTaco[], dados: Pic
     if (!item) return { ...a, nutrientes: { ...a.nutrientes, ...NULOS } }
     const usda: OrigemUsda = { fdcId: item.fdcId, conjunto: item.conjunto, versao: item.versao }
     return { ...a, nutrientes: { ...a.nutrientes, ...NULOS, ...item.valores }, usda }
+  })
+}
+
+/** As chaves de energia e macros que o complemento de macros pode preencher (D-380). */
+export const CHAVES_MACROS_USDA = ['energia_kcal', 'proteina_g', 'lipideos_g', 'carboidrato_g', 'fibra_g'] as const satisfies readonly ChaveNutrienteAlimento[]
+
+export type ChaveMacroUsda = (typeof CHAVES_MACROS_USDA)[number]
+
+export interface ItemMacrosUsda {
+  /** Id do alimento na TACO. */
+  readonly id: number
+  readonly fdcId: number
+  readonly descricaoUsda: string
+  readonly confianca: string
+  readonly valores: Readonly<Record<ChaveMacroUsda, number>>
+}
+
+export interface MacrosUsda {
+  readonly fonte: { readonly nome: string; readonly conjunto: string; readonly versao: string; readonly criterio: string }
+  readonly alimentos: readonly ItemMacrosUsda[]
+}
+
+// A forma exata é conferida em src/data/macros-usda.test.ts.
+export const MACROS_USDA: MacrosUsda = macros as unknown as MacrosUsda
+
+/**
+ * D-380 (spec alimentos-e-gramaturas): energia e macros do USDA para o alimento da TACO que devia ter e não tem (leite
+ * fluido, iogurte de abacaxi). Só entra onde a TACO é nula (CA-1129); o alimento leva a origem e as chaves preenchidas.
+ */
+export function juntarMacros(alimentos: readonly Alimento[], dados: Pick<MacrosUsda, 'alimentos' | 'fonte'>): readonly Alimento[] {
+  const porId = new Map(dados.alimentos.map((i) => [i.id, i]))
+  return alimentos.map((a): Alimento => {
+    const item = porId.get(a.id)
+    if (!item) return a
+    const chaves = CHAVES_MACROS_USDA.filter((c) => a.nutrientes[c] === null)
+    if (chaves.length === 0) return a
+    const nutrientes = { ...a.nutrientes }
+    for (const c of chaves) nutrientes[c] = item.valores[c]
+    return { ...a, nutrientes, usdaMacros: { fdcId: item.fdcId, conjunto: dados.fonte.conjunto, versao: dados.fonte.versao, chaves } }
   })
 }
 

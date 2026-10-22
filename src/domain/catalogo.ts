@@ -91,7 +91,8 @@ export function composicaoDe(alimento: Alimento): readonly LinhaDeComposicao[] {
     traco: alimento.tracos.includes(chave),
     usda,
   })
-  const taco = NUTRIENTES_CONFERIDOS.map((chave) => linha(chave, false))
+  // D-380 (spec alimentos-e-gramaturas): energia e macros que vieram do USDA levam a marca.
+  const taco = NUTRIENTES_CONFERIDOS.map((chave) => linha(chave, alimento.usdaMacros?.chaves.includes(chave) === true))
   return alimento.usda ? [...taco, ...CHAVES_USDA.map((chave) => linha(chave, true))] : taco
 }
 
