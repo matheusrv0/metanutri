@@ -43,7 +43,8 @@ export const BLOCOS_ANAMNESE: readonly BlocoAnamnese[] = [
   { id: 'saude-mulher', titulo: 'Saúde da mulher', regra: 'saude-mulher' },
   { id: 'digestao', titulo: 'Digestão' },
   { id: 'rotina', titulo: 'Rotina e sono' },
-  { id: 'atividade', titulo: 'Atividade física' },
+  // D-458: a equação do NASEM de 1 e 2 anos não usa atividade, e "prática de exercício" não se pergunta a quem tem 2 anos.
+  { id: 'atividade', titulo: 'Atividade física', regra: 'a-partir-de-3' },
   { id: 'agua', titulo: 'Hidratação' },
   { id: 'alcool-fumo', titulo: 'Álcool e tabagismo', regra: 'a-partir-de-12' },
   { id: 'alimentacao', titulo: 'Alimentação' },
@@ -537,11 +538,14 @@ function perguntaAparece(id: string, perfil: PerfilDaFicha | null, respostas: Re
 const TEXTO_PADRAO: ReadonlyMap<string, string> = new Map(BLOCOS_ANAMNESE.flatMap((b) => ROTEIRO_PADRAO.perguntas[b.id].map((q) => [q.id, q.texto] as const)))
 
 /**
- * O texto da pergunta para a pessoa (D-453): o padrão muda com ela; o renomeado pela conta fica como a conta escreveu.
+ * O texto da pergunta para a pessoa (D-453, D-458): o padrão muda com ela; o renomeado pela conta fica como a conta escreveu.
  */
 function textoParaAPessoa(pergunta: PerguntaRoteiro, perfil: PerfilDaFicha | null, respostas: ReadonlyMap<string, RespostaAnamnese>): string {
   if (perfil === null || TEXTO_PADRAO.get(pergunta.id) !== pergunta.texto) return pergunta.texto
   if (pergunta.id === 'hormonios' && depoisDaMenopausa(perfil, respostas)) return 'Reposição hormonal'
+  // D-458: abaixo de 14 anos não há trabalho; a rotina é a da escola ou da creche.
+  const idade = idadeDe(perfil)
+  if (pergunta.id === 'rotina-trabalho' && idade !== null && idade < 14) return 'Rotina da escola ou da creche'
   return pergunta.texto
 }
 

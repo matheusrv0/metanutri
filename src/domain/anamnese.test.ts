@@ -546,4 +546,21 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     const bloco = blocosDaFicha(ROTEIRO_PADRAO, antiga, mulher(68)).find((b) => b.id === 'idoso')
     expect(bloco?.perguntas.at(-1)).toEqual({ id: 'mora-com', texto: 'Com quem mora', resposta: 'Com a filha', foraDoRoteiro: true })
   })
+
+  it('CA-1279: abaixo de 14 anos a rotina é a da escola ou da creche; renomeada, fica (D-458)', () => {
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 6 }))[0]).toBe('Rotina da escola ou da creche')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 13 }))[0]).toBe('Rotina da escola ou da creche')
+    expect(perguntasDe('rotina', perfil({ idadeAnos: 14 }))[0]).toBe('Rotina de trabalho ou estudo')
+    const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'rotina', 'rotina-trabalho', 'Rotina')
+    expect(blocosDaFicha(renomeado, [], perfil({ idadeAnos: 6 })).find((b) => b.id === 'rotina')?.perguntas[0]?.texto).toBe('Rotina')
+  })
+
+  it('CA-1279: Atividade física de 3 anos em diante; respondida, fica com o aviso (D-458)', () => {
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 2 }))).not.toContain('atividade')
+    expect(ids(ROTEIRO_PADRAO, [], perfil({ idadeAnos: 3 }))).toContain('atividade')
+    expect(regraDoBloco('atividade')).toBe('a-partir-de-3')
+    const respondida = responder([], { id: 'atividade-tipo', texto: 'Tipo de atividade' }, 'atividade', 'Natação')
+    const bloco = blocosDaFicha(ROTEIRO_PADRAO, respondida, perfil({ idadeAnos: 2 })).find((b) => b.id === 'atividade')
+    expect(bloco?.aviso).toBe('Este bloco vale a partir de 3 anos. As respostas continuam guardadas.')
+  })
 })

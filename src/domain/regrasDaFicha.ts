@@ -14,13 +14,14 @@ export interface PerfilDaFicha {
 }
 
 /** As regras que prendem um bloco (seção 3). */
-export type RegraDoBloco = 'gestante' | 'lactante' | 'saude-mulher' | 'infancia' | 'a-partir-de-12' | 'idoso' | 'retorno'
+export type RegraDoBloco = 'gestante' | 'lactante' | 'saude-mulher' | 'infancia' | 'a-partir-de-3' | 'a-partir-de-12' | 'idoso' | 'retorno'
 
 export const ETIQUETA_DA_REGRA: Readonly<Record<RegraDoBloco, string>> = {
   gestante: 'Só gestante',
   lactante: 'Só lactante',
   'saude-mulher': 'Mulheres a partir de 10 anos',
   infancia: 'De 1 a 9 anos',
+  'a-partir-de-3': 'A partir de 3 anos',
   'a-partir-de-12': 'A partir de 12 anos',
   idoso: 'A partir de 60 anos',
   retorno: 'Só no retorno',
@@ -32,6 +33,7 @@ const PARA_QUEM: Readonly<Record<RegraDoBloco, string>> = {
   lactante: 'Este bloco vale só para lactante.',
   'saude-mulher': 'Este bloco vale para o sexo feminino, a partir de 10 anos e fora da gestação.',
   infancia: 'Este bloco vale de 1 a 9 anos.',
+  'a-partir-de-3': 'Este bloco vale a partir de 3 anos.',
   'a-partir-de-12': 'Este bloco vale a partir de 12 anos.',
   idoso: 'Este bloco vale a partir de 60 anos.',
   retorno: 'Este bloco vale a partir do segundo plano.',
@@ -51,6 +53,8 @@ export function podeGestarOuLactar(p: Pick<PerfilDaFicha, 'sexo' | 'idadeAnos'>)
 /** Se o bloco vale para a pessoa (R2 a R7, R12, R13). */
 export function aplicaRegra(regra: RegraDoBloco, p: PerfilDaFicha): boolean {
   if (regra === 'retorno') return p.temPlano
+  // D-458: a atividade física é de quase todos; sem a idade, ela aparece (só some quando a idade diz menos de 3 anos).
+  if (regra === 'a-partir-de-3') return p.idadeAnos === null || p.idadeAnos >= 3
   if (!completo(p)) return false
   switch (regra) {
     case 'gestante':
@@ -70,7 +74,8 @@ export function aplicaRegra(regra: RegraDoBloco, p: PerfilDaFicha): boolean {
 
 /** O aviso do bloco à vista fora da regra: para quem vale, ou o que falta (R13). */
 export function avisoForaDaRegra(regra: RegraDoBloco, p: PerfilDaFicha): string {
-  const motivo = regra !== 'retorno' && !completo(p) ? 'Preencha sexo e data de nascimento.' : PARA_QUEM[regra]
+  const precisaDoPerfil = regra !== 'retorno' && regra !== 'a-partir-de-3'
+  const motivo = precisaDoPerfil && !completo(p) ? 'Preencha sexo e data de nascimento.' : PARA_QUEM[regra]
   return `${motivo} ${RESPOSTAS_GUARDADAS}`
 }
 
@@ -79,3 +84,9 @@ export const faltaPerfil = (p: PerfilDaFicha): boolean => !completo(p)
 
 /** Abaixo de 18 anos (Escola e ano, Responsável, Tempo de tela). Sem idade, `false`. */
 export const menorDe18 = (p: Pick<PerfilDaFicha, 'idadeAnos'>): boolean => p.idadeAnos !== null && p.idadeAnos < 18
+
+/** O rótulo do campo de ocupação pela idade (D-458): "Escola ou creche" de 1 a 5 anos, "Escola e ano" até 17, "Ocupação". */
+export function rotuloDaOcupacao(p: Pick<PerfilDaFicha, 'idadeAnos'>): string {
+  if (p.idadeAnos !== null && p.idadeAnos < 6) return 'Escola ou creche'
+  return menorDe18(p) ? 'Escola e ano' : 'Ocupação'
+}

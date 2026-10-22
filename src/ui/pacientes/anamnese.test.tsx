@@ -419,4 +419,16 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     montar({ sexo: 'F', nascimento: '1990-01-10', momentoDeVida: { tipo: 'lactante', dataDoParto: '2020-01-15', amamentacao: 'mista' } })
     expect(dados().getByText('Pela data do parto, já se passaram mais de 60 meses. Se a amamentação terminou, marque Não.')).toBeInTheDocument()
   })
+
+  it('CA-1279 e CA-1280: a menina de 6 anos tem a rotina da escola; aos 4 anos, "Escola ou creche"; aos 2, sem Atividade física', async () => {
+    const { usuario } = montar(MENINA_6)
+    await usuario.click(bloco('Rotina e sono'))
+    expect(anamnese().getByLabelText('Rotina da escola ou da creche')).toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'F', nascimento: '2022-05-01' })
+    expect(dados().getByLabelText('Escola ou creche')).toBeInTheDocument()
+    cleanup()
+    montar({ sexo: 'M', nascimento: '2024-03-01' })
+    expect(titulos()).not.toContain('Atividade física')
+  })
 })
