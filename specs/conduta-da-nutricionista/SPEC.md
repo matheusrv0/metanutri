@@ -172,3 +172,27 @@ copo com um nome só (D-424) ficam na spec `alimentos-e-gramaturas`, seção 6.
 - **CB-393** · Alimento sem papel na categoria de cereais (flocão de milho, fubá, canjica): troca dentro da categoria, sem pão, arroz, aveia nem outro alimento com papel; sem troca possível, sai da lista (CB-295).
 - **CB-394** · Arroz cru (peso cru) no plano: as trocas cruas são forma de ingrediente (CA-658) e as prontas são de outro estado; ele fica sem troca e sai da lista (CB-295), nunca troca por arroz cozido nem por batata cozida.
 - **CB-395** · Fruta sem nenhuma troca em peça (todas só em gramas): sai da lista de trocas, como o CB-295.
+
+## 7. Troca sem ultraprocessado, sem fritura e sem fígado (correção C, 22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da 2ª revisão como usuária real (`revisao-usuario-2.md`, N5 e
+I9; e N1 no que toca às trocas); ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar. Segue as
+regras da parceira (nunca ultraprocessado; in natura e preparo simples primeiro; troca equivalente). O fígado nas trocas
+é a D-473 da spec `sugestoes-com-criterio` (seção 9), e a criança, a D-472.
+
+### 7.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-478 | **A troca nunca põe um ultraprocessado no lugar de um alimento que não é.** Ultraprocessado (classificação NOVA do Guia Alimentar para a População Brasileira, 2014) é o que a regra "ultraprocessado" da `prescritivel.ts` reconhece pelo nome (cereal matinal, farinha láctea, mistura para vitamina, mingau em pó, caldo pronto, macarrão instantâneo, "enriquecido"…), mais leite fermentado, bebida láctea, achocolatado, refrigerante, chocolate e embutido, mesmo os que a parceira liberou para o Cobrir (D-290). Alimento que não é ultraprocessado só troca por alimento que não é; o ultraprocessado posto à mão ainda troca pelo que não é. Sem troca que sirva, o alimento sai da lista (CB-295): a aveia em flocos fica sem troca, porque o papel "cereal do café" (D-421) só tem ultraprocessados além dela | N5: "Aveia em flocos → Cereal matinal de milho · 4 colheres de servir (32 g)" no plano impresso |
+| D-479 | **A troca mantém o preparo ou um mais saudável.** Alimento que não é frito nunca troca por frito, à milanesa ou empanado (a regra "fritura" da `prescritivel.ts`, também no ovo frito que a parceira liberou); o frito posto à mão ainda troca pelo cozido, grelhado ou assado | I9: "Ovo cozido (2 unidades) → Ovo frito · 1 unidade" |
+
+### 7.2 Critérios de aceite
+
+- **CA-1325** · Dado 30 g de aveia em flocos no plano, então nenhuma troca é cereal matinal, farinha láctea ou mistura para vitamina; e, no plano de exemplo impresso com trocas, nenhum alimento que não é ultraprocessado troca por ultraprocessado.
+- **CA-1326** · Dado 2 ovos cozidos (90 g), então nenhuma troca é ovo frito; dado peito de frango grelhado, nenhuma troca é frita, à milanesa ou empanada; dado ovo frito posto à mão, as trocas não são fritas.
+
+### 7.3 Casos de borda
+
+- **CB-446** · Cereal matinal posto à mão: troca pelo que não é ultraprocessado no mesmo papel (a aveia), como o in natura antes do processado (D-296).
+- **CB-447** · Frito sem nenhuma troca não frita no mesmo papel ou categoria: sai da lista (CB-295).

@@ -256,3 +256,42 @@ trocas no papel da refeição ficam na spec `conduta-da-nutricionista`, seção 
 
 - **CB-391** · Item gravado antes com "copo médio" (escolhido): o paciente continua lendo "copo médio", porque o item guarda a medida (CA-1162); só a medida automática e o seletor passam a dizer "copo de requeijão".
 - **CB-392** · Medida da conta numa fruta ("fatia" de 30 g que a nutricionista criou para a maçã): vale, porque é dela (como CB-402).
+
+## 7. Correção C da rodada "cuidado total" (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da 2ª revisão como usuária real (`revisao-usuario-2.md`: I13,
+I10/I15, as sobras do G2, N3, N8, N12, N13 e I19); ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de
+publicar. Completa a D-430 e a D-431 (plausibilidade, seção 5), a D-423 (fruta, seção 6) e a D-438 (capturas).
+
+### 7.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-481 | **A linha do plano não corta nada a 390 px.** O nome do alimento quebra linha em vez de terminar em reticências; no celular (abaixo de 640 px), o seletor de medida ocupa a linha com a quantidade, e "= gramas" desce para a linha de baixo, para o nome da medida caber inteiro ("copo americano · 150 ml"); as abas "Principal", "Substituto 1" e "Substituto 2" dividem a largura do cartão, sem rolar | I13: "Ovo, de galinha, inteiro…" (cozido ou frito?), "copo american▾" e a aba "Substitut…" cortados |
+| D-482 | **Entrada rápida: o número conta peças.** Com um número sem medida ("2 ovos"), os alimentos que têm medida de contar (unidade, fatia…) vêm antes dos outros; gema e clara (partes do ovo) só aparecem quando a busca diz "gema" ou "clara"; alimento sem medida de contar não vira "2 g": avisa que falta a unidade e oferece "+ Nova medida", como a fruta (CA-1258) | I10/I15: "2 ovos" trazia "gema … 2 g · 7 kcal" e "clara … 2 g" |
+| D-483 | **Mais regras de plausibilidade (sobras do G2).** Na importação da POF: (a) cereal matinal só em xícara de chá e porção (saem colher de servir, colher de sopa, copo, punhado e xícara de café: o cereal se serve em xícara); (b) queijo e gordura com colher de sopa até 30 g (a ricota de 44 g e a manteiga e a margarina de 32 g saem; ficam fatia, colher de chá e ponta de faca); (c) pão de forma só em fatia (a "unidade" e a "porção" de 70 g do pão de milho de forma vêm do pão de milho redondo); (d) creme de leite só em colher e ponta de faca (sem copo: "1 copo de leite" não acha mais o creme de leite); (e) camarão grande só em unidade, porção e punhado (colher de sopa de 20 g de camarão grande não existe; é o N12: o mesmo camarão saía em "4 unidades" no adulto e "4 colheres de sopa" na criança). Na medida que se mostra: (f) carne, ave e peixe em colher (de sopa, de sobremesa, de servir) só até 4 colheres; acima, outra medida que sirva ou o peso. `medidas-revisao.md` é regerado com cada medida tirada e o motivo | G2: "Cereal matinal de milho · 4 colheres de servir (32 g)", "Ricota · 1 colher de sopa e meia (66 g)" (44 g por colher), "Atum · 7 colheres de sopa e meia" |
+| D-484 | **Fruta inteira em peça inteira.** Na fruta inteira crua (D-423), a medida automática usa um número inteiro de unidades ou de unidades pequenas, ou meia unidade quando é menos de 1; "1 unidade pequena e meia" sai. Sem número inteiro a até 15% do peso, a medida automática fica em gramas ("130 g" de maçã Fuji). Medida escolhida pela nutricionista e medida da conta continuam como ela pôs | N8: "Maçã Fuji · 1 unidade pequena e meia (130 g)" e "Laranja pera · 1 unidade pequena e meia" |
+| D-485 | **"Obrigatório no rótulo" diz tudo o que a RDC 429/2020 obriga.** Logo abaixo dos campos, uma linha só de leitura: "A RDC 429/2020 também obriga açúcares adicionados e gorduras trans; os dois não entram no cálculo do plano." Os campos e a validação não mudam | I19: o título afirmava uma lista incompleta (o art. 5º da RDC 429/2020 obriga valor energético, carboidratos, açúcares totais e adicionados, proteínas, gorduras totais, saturadas e trans, fibra alimentar e sódio) |
+| D-486 | **Substituto: a lista já mostra a porção equivalente.** Na janela de substituto, cada resultado da busca mostra a porção que vai entrar pelo critério escolhido ("6 colheres de sopa e meia · 117 g · 93 kcal"), não os 100 g padrão | N13: a lista mostrava "100 g · 93 kcal" e o resultado, outra porção |
+| D-487 | **Capturas da landing refeitas da gaveta atual** (completa a D-438): com "O plano tem N% da referência", a porção automática e sem nenhum alimento cru que se come cozido na parte recortada (sem "Quiabo, cru") | N3: a vitrine do diferencial mostrava "Quiabo, cru · 100 g" e a gaveta antiga |
+
+N9 não muda: a Tabela de alimentos e o seletor da linha mostram as mesmas medidas (D-437); a D-423 vale para a medida
+automática, e a nutricionista ainda escolhe "fatia" à mão.
+
+### 7.2 Critérios de aceite
+
+- **CA-1329** · Dado a linha do plano a 390 px com "Ovo, de galinha, inteiro, cozido/10minutos" e "Leite, de vaca, integral" em "copo americano", então o nome aparece inteiro (sem reticências), o seletor mostra "copo americano · 150 ml" inteiro, as três abas cabem sem rolar, e a página não rola para o lado.
+- **CA-1330** · Dado "2 ovos" na entrada rápida, então o primeiro resultado é um ovo inteiro com "2 unidades", e nenhum resultado é gema ou clara; dado "2 gemas", a gema aparece.
+- **CA-1331** · Dado "2 arroz" (alimento sem medida de contar), então o resultado não é "2 g": avisa que falta a unidade e oferece "+ Nova medida".
+- **CA-1332** · Dado o cereal matinal de milho, então ele não tem colher de servir, colher de sopa, copo nem punhado; dado a ricota, a manteiga e a margarina, nenhuma colher de sopa acima de 30 g; dado o pão de milho de forma, só "fatia"; dado o creme de leite, nenhum copo; dado o camarão grande cozido, nenhuma colher; e `medidas-revisao.md` lista cada uma com o motivo.
+- **CA-1333** · Dado 120 g de atum em óleo, então a medida que se mostra não é "7 colheres de sopa e meia" (nenhuma carne, ave ou peixe lê mais de 4 colheres); dado "1 copo de leite", nenhum resultado é creme de leite.
+- **CA-1334** · Dado 130 g de maçã Fuji e 135 g de laranja pera, então nenhuma lê "unidade pequena e meia"; dado 75 g de banana prata, "1 unidade"; dado 40 g de banana prata, "meia unidade".
+- **CA-1335** · Dado o formulário de rótulo em Meus alimentos, então abaixo de "Obrigatório no rótulo" aparece a linha da D-485, e os campos são os mesmos.
+- **CA-1336** · Dado a janela de substituto de 150 g de arroz por energia, quando a busca mostra "feijão", então cada resultado mostra a porção equivalente em gramas (a mesma que o resultado escolhido mostra), não "100 g".
+- **CA-1337** · Dado as capturas `public/imagens/cobrir-claro.png` e `cobrir-escuro.png`, então elas mostram a gaveta atual ("O plano tem N% da referência") e nenhum alimento cru que se come cozido.
+
+### 7.3 Casos de borda
+
+- **CB-450** · Item gravado antes com a medida que saiu (ricota em "colher de sopa", 44 g): continua com a medida guardada (CA-1162, CB-391).
+- **CB-451** · "2 ovos" com um alimento próprio "Ovo caipira" com unidade: ele entra entre os que têm medida de contar.
+- **CB-452** · Fruta com medida da conta (D-387): vale como ela pôs, inteira ou não (CB-392).

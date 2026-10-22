@@ -136,3 +136,8 @@ SPEC atualizados.
 - **D-183:** gramas só nas medidas vagas (D-189, decisão do coordenador na revisão de 15/10).
 - **Alimento primeiro na linha** (CA-629): a folha de antes punha a medida primeiro. O alimento primeiro responde
   "o que eu como" antes de "quanto".
+
+## Correção C (22/10/2026; seção 4.2 da SPEC: D-480)
+
+O plano está em `specs/sugestoes-com-criterio/PLAN.md`, seção "Correção C": tarefa C9 (aviso de restrição na janela de
+imprimir).

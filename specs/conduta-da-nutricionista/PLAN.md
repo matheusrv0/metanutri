@@ -129,3 +129,8 @@ Ordem, cada passo testado antes (TDD) e com commit próprio:
 Riscos para o dono: os papéis são uma lista por nome (alimento novo na base fica sem papel até alguém o incluir); a
 banana maçã com a unidade da prata é um empréstimo com fonte indireta (tabelas de porção); a fruta grande sem fatia que
 caiba fica em gramas.
+
+## Correção C (22/10/2026; seção 7 da SPEC: D-478, D-479)
+
+O plano está em `specs/sugestoes-com-criterio/PLAN.md`, seção "Correção C": tarefas C4 (fígado nunca é troca), C7
+(troca sem ultraprocessado) e C8 (troca sem fritura).

@@ -119,3 +119,7 @@ plano sem paciente não pede.
 Cada tarefa vai num commit, com o teste antes do código. Riscos: os cortes de idade novos (12 anos na SOP, 40 e 56 na
 menopausa, 14 no anticoncepcional, 3 anos na atividade, 18 nas dobras) e o valor da amamentação mista pedem a
 conferência da parceira pela tela.
+
+## Correção C (22/10/2026; seção 11 da SPEC: D-488)
+
+O plano está em `specs/sugestoes-com-criterio/PLAN.md`, seção "Correção C": tarefa C18 (casa e escola pela idade).

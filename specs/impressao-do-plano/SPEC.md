@@ -204,6 +204,21 @@ ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar.
 - **CB-410** · Alimento pronto sem a versão crua na base (polenta, preparações): entra no peso como se come.
 - **CB-411** · Alimento contado com menos de meia unidade na semana: 1 unidade.
 
+## 4.2 Correção C da rodada "cuidado total" (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da 2ª revisão como usuária real (`revisao-usuario-2.md`, N6);
+ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-480 | **A janela de imprimir avisa a nutricionista da restrição.** Quando um alimento do plano (opção principal ou substituto, ou um ingrediente de receita) bate com uma restrição da ficha (alergia, intolerância, escolha ou texto livre) ou com um cuidado da fase de vida (D-442, D-443, D-472), a janela abre com um aviso no topo, que não sai no papel, com o nome que o paciente lê: "Este plano tem Ovo cozido, e a ficha diz Alergia: ovo. Confira antes de imprimir." Com mais de um, um por linha, até 5, e "e mais N" depois. O botão de imprimir continua liberado: a conduta é da nutricionista. A linha do plano já avisava (D-353 da `ficha-unica`) | N6: a idosa com alergia a ovo recebia "Ovo — 14 unidades" na lista de compras, e a gestante com alergia a leite, "Leite integral — 1,1 litro", sem nenhum aviso na hora de imprimir |
+
+- **CA-1327** · Dado a idosa com alergia a ovo e ovo cozido no plano, quando a janela de imprimir abre, então ela mostra "Este plano tem Ovo cozido, e a ficha diz Alergia: ovo. Confira antes de imprimir."; o aviso tem a classe `print:hidden`, a folha não traz a frase, e o botão "Imprimir ou salvar em PDF" continua liberado.
+- **CA-1328** · Dado um plano sem nada que bata com a ficha, então a janela não mostra o aviso.
+
+- **CB-448** · O mesmo alimento em duas refeições: uma linha só.
+- **CB-449** · Plano sem paciente vinculado: valem só os cuidados da fase de vida.
+
 ## 5. Fora de escopo, explicitamente
 
 - A dieta do link do paciente ("Meu plano", spec `dieta-no-link`): continua com o nome da base e com os gramas. Mudar

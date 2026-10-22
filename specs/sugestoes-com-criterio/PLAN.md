@@ -228,3 +228,43 @@ rodada, então os prints "depois" continuam valendo.
   trava não pegava, e a trava foi completada.
 - O peixe "fresco" (dourada) continua fora: ele segue a regra antiga de peixe cru, que vale mesmo sem versão cozida, como
   pescadinha, corvina e tucunaré crus.
+
+## Correção C (22/10/2026): vitamina A, crus, trocas e os bloqueios da 2ª revisão
+
+Plano único da correção C, com as decisões em cinco specs: esta (seção 9: D-470 a D-477), `conduta-da-nutricionista`
+(seção 7: D-478, D-479), `impressao-do-plano` (seção 4.2: D-480), `alimentos-e-gramaturas` (seção 7: D-481 a D-487) e
+`ficha-unica` (seção 11: D-488). Cada tarefa é um commit, com o teste antes do código (TDD, vendo falhar).
+
+| # | Tarefa | Arquivos | Critérios |
+|---|---|---|---|
+| C1 | Vitamina A pré-formada na adequação: a soma à parte, o limite contra ela, o texto "pré-formada acima do limite" e a nota ‡ | `src/domain/vitaminaA.ts` (novo) e teste, `totais.ts`, `adequacao.ts` e testes, `src/ui/adequacao/estiloAdequacao.ts`, `TelaAdequacao.tsx` e teste, `src/export/copiar-tabela.ts` e teste | CA-1310 a CA-1312, CB-440 a CB-443 |
+| C2 | Cobrir: teto da vitamina A pré-formada em todo nutriente e a nota semanal do fígado | `cobrir.ts` e teste, `GavetaCobrir.tsx` e teste | CA-1313 a CA-1315 |
+| C3 | Criança sem fígado (cuidado da fase) | `restricoes.ts` e teste, `cobrir.test.ts` | CA-1316, CA-1317, CB-444 |
+| C4 | O fígado nunca é troca | `trocas.ts` e teste | CA-1318 |
+| C5 | Cru com a chave desligada e "(peso cru)" na gaveta | `prescritivel.ts` e teste, `GavetaCobrir.tsx` e teste; Apêndice A (lista fixa de ids) | CA-1319, CA-1320 |
+| C6 | Porção máxima automática | `GavetaCobrir.tsx`, `cobrir.ts` e testes | CA-1321, CA-1322 |
+| C7 | Troca sem ultraprocessado (D-478) | `prescritivel.ts`, `trocas.ts` e testes | CA-1325, CB-446 |
+| C8 | Troca sem fritura (D-479) | `prescritivel.ts`, `trocas.ts` e testes | CA-1326, CB-447 |
+| C9 | Aviso de restrição na janela de imprimir (D-480) | `src/domain/restricoes.ts` (lista do plano), `DialogoImprimir.tsx` e teste | CA-1327, CA-1328, CB-448, CB-449 |
+| C10 | Linha do plano a 390 px (D-481) | `LinhaItem.tsx`, `CartaoRefeicao.tsx` e testes; e2e a 390 px | CA-1329 |
+| C11 | Gestação: ferro e folato do suplemento (D-476) | `GavetaCobrir.tsx`, `TelaAdequacao.tsx`, `MicrosDoDia.tsx`, `TelaPlanejador`/`AreaDeTrabalho.tsx`, `navegacao.ts`, `TelaPaciente.tsx`, `CartaoSuplementos.tsx` e testes | CA-1323, CB-445 |
+| C12 | Rótulo: o que a RDC 429/2020 obriga (D-485) | `DialogoProduto.tsx` e teste | CA-1335 |
+| C13 | Plausibilidade das sobras do G2 e carne em colher até 4 (D-483) | `scripts/dados/importar-medidas-pof.mjs`, `src/data/medidas-caseiras.json`, `medidas-revisao.md`, `medidas-caseiras.test.ts`, `busca.ts` e teste | CA-1332, CA-1333, CB-450 |
+| C14 | Entrada rápida: o número conta peças (D-482) | `busca.ts` e teste | CA-1330, CA-1331, CB-451 |
+| C15 | Porção mínima de fruta e polpa; pupunha (D-477) | `cobrir.ts` e teste | CA-1324 |
+| C16 | Fruta em peça inteira (D-484) | `busca.ts` e teste, `cobrir.ts` | CA-1334, CB-452 |
+| C17 | Substituto mostra a porção equivalente (D-486) | `EntradaRapida.tsx`, `DialogoSubstituto.tsx` e teste | CA-1336 |
+| C18 | Casa e escola pela idade (D-488) | `anamnese.ts`, `CartaoDadosDoPaciente.tsx` e testes | CA-1338, CB-453 |
+| C19 | Capturas da landing (D-487) | `scripts/capturas-landing.mjs`, `public/imagens/cobrir-*.png`, `missoes-*.png` | CA-1337 |
+| C20 | Testes de tela e e2e que liam o comportamento antigo; os 4 pacientes de novo, prints | e2e | todos |
+
+**Riscos e decisões para o dono e a parceira:**
+- **Teto em vez de excluir o fígado (D-471).** Na prática, o fígado grelhado nunca cabe; o de frango cru cabe num adulto
+  com a chave ligada, até 75 g, com a nota "no máximo 1 vez por semana". Se a parceira preferir, tirar o fígado do Cobrir
+  de vez é uma linha.
+- **Leite, queijo e ovo sem vitamina A na TACO (CB-440):** a pré-formada do plano fica subestimada quando há laticínio e
+  ovo (a † já avisa). Trazer o retinol da TACO para esses itens é uma mudança de dados para outra rodada.
+- **Alimento próprio fora de frutas e verduras conta como pré-formada (CB-441):** escolha de segurança (a vitamina A
+  do rótulo é quase sempre adicionada).
+- **12 anos para o fígado da criança (D-472):** a mesma idade da cafeína (D-443).
+- **A aveia fica sem troca (D-478):** o papel "cereal do café" só tem ultraprocessados além dela.

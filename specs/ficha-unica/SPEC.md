@@ -487,6 +487,18 @@ M12, M17, M18, M20. Ficam para depois: I14 (ordem da ficha no
 celular, que o CA-1045 decidiu), M2, M4, M5, M15 (o link não sabe a idade do paciente) e M19 (curvas de ganho por
 semana).
 
+## 11. Correção C de 22/10/2026 (rodada "cuidado total")
+
+Status: pedida pelo coordenador em 22/10/2026, depois da 2ª revisão como usuária real (`revisao-usuario-2.md`, N10 e
+N11); ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-488 | **Casa e escola pela idade.** "Pessoas que moram na casa" tem a dica "Contando o paciente: 1 quer dizer que mora só." de 18 anos em diante; abaixo, só "Contando o paciente.". A rotina abaixo de 14 anos (D-458) é "Rotina da creche ou da escola" de 1 a 5 anos e "Rotina da escola" de 6 a 13 (a mesma faixa da opção "Escola ou creche", D-458) | N10: "1 quer dizer que mora só" numa criança de 6 anos; N11: "Rotina da escola ou da creche" aos 6 anos |
+
+- **CA-1338** · Dado a menina de 6 anos, então a ficha mostra "Contando o paciente." em "Pessoas que moram na casa" e a pergunta "Rotina da escola"; dado uma criança de 4 anos, "Rotina da creche ou da escola"; dado o homem de 35 anos, a dica "Contando o paciente: 1 quer dizer que mora só." e "Rotina de trabalho ou estudo" (o texto padrão).
+- **CB-453** · Ficha sem data de nascimento: a dica de adulto e o texto padrão da rotina (R13).
+
 ## Apêndice A — Alimentos da base por restrição
 
 Gerado de `src/domain/restricoesDaBase.ts` e conferido pelo teste `restricoesDaBase.test.ts` (ids da TACO).

@@ -72,3 +72,9 @@ por 100 g); T6 é independente.
 O plano das sobras da caminhada dos 4 pacientes está em `specs/conduta-da-nutricionista/PLAN.md`, seção "Integração de
 22/10/2026": primeiro a importação (D-424 e D-425, com `medidas-revisao.md` regerado), depois a medida da fruta (D-423)
 e por fim as trocas (D-421 e D-422).
+
+## Correção C (22/10/2026; seção 7 da SPEC: D-481 a D-487)
+
+O plano está em `specs/sugestoes-com-criterio/PLAN.md`, seção "Correção C": tarefas C10 (linha a 390 px), C12 (rótulo),
+C13 (plausibilidade, com `medidas-revisao.md` regerado), C14 (entrada rápida), C16 (fruta em peça inteira), C17
+(substituto) e C19 (capturas da landing).

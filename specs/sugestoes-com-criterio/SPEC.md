@@ -280,6 +280,77 @@ conduta da parceira) e ganha os grupos abaixo. Vale o primeiro grupo que casar, 
 - **CB-408** · Alimento próprio com "fígado" no nome numa gestante: o aviso e o filtro valem pelo nome.
 - **CB-409** · Gestante que também tem restrição marcada: os dois avisos valem; a linha mostra o primeiro (o cuidado da fase).
 
+## 9. Correção C da rodada "cuidado total" (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da 2ª revisão como usuária real (`revisao-usuario-2.md`, N1, N2,
+N4, I16 e N7); ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar. A porção mínima da correção A
+(D-440) subiu o fígado de 5 g para "meio bife · 50 g" no homem de 35 anos (cerca de 7.300 µg de retinol, 2,4 vezes o
+limite do adulto) e "1 pedaço · 35 g" na menina de 6 anos (cerca de 5.100 µg, 5,7 vezes o limite de 900 µg), sem aviso:
+o limite superior da vitamina A estava desligado para todo alimento, e a nota ‡ dizia que ele "não vale para a forma do
+nutriente presente nos alimentos", o que é falso justamente no fígado. Muda o CA-30 e o CA-37 da spec
+`planejador-metanutri` na vitamina A (o limite passa a valer para a parte pré-formada) e completa a D-199a (seção 2).
+As trocas (fígado, ultraprocessado, fritura) ficam na spec `conduta-da-nutricionista`, seção 7.
+
+### 9.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-470 | **O limite da vitamina A vale para a parte pré-formada do plano.** A adequação soma à parte a vitamina A pré-formada (retinol): a vitamina A (RAE) dos alimentos de origem animal (categorias de carnes, pescados, ovos e leite e derivados), de todo alimento com "fígado" ou "sarapatel" no nome e do alimento próprio fora dos grupos de frutas e de verduras (no rótulo, a vitamina A é quase sempre adicionada, e a adicionada é pré-formada). A vitamina A das frutas, verduras, leguminosas, cereais e preparações vegetais é carotenoide e não tem limite. A meta continua pela vitamina A total (RAE); o limite superior (UL) da fase de vida vale contra a pré-formada. Acima dele, a linha fica vermelha e diz "N% da referência · pré-formada acima do limite"; a tabela copiada diz "Pré-formada acima do limite (UL 3.000 µg)". A nota ‡ passa a dizer: "Vitamina A: o limite superior vale para a pré-formada (fígado, miúdos, ovo, leite), não para os carotenoides dos vegetais. Magnésio, vitamina E, niacina e folato: vale para suplemento e alimento fortificado, não para o que os alimentos trazem." | O UL da vitamina A (IOM, 2001) é da vitamina A pré-formada que vem de alimento, alimento fortificado e suplemento, e não dos carotenoides. Na TACO, a vitamina A (RAE) das carnes e dos pescados é igual à coluna de retinol (fígado bovino grelhado: 14.574 µg nas duas) |
+| D-471 | **No Cobrir, a sugestão nunca leva a vitamina A pré-formada do plano acima do limite.** Vale no Cobrir de todo nutriente (o fígado é a fonte mais concentrada de ferro, B12, cobre, riboflavina e folato, além da vitamina A): a porção de um alimento com vitamina A pré-formada é cortada (de 5 em 5 g, para baixo) para que a pré-formada do plano mais a da sugestão fique no limite da fase de vida; se a porção cortada fica abaixo da mínima (D-440) ou não cobre 10% da falta, o alimento não é sugerido; com o plano já acima do limite, nada com vitamina A pré-formada é sugerido. Na prática, o fígado bovino grelhado (14.574 µg em 100 g) precisaria de no máximo 20 g num adulto, abaixo dos 50 g mínimos, e nunca aparece; o único fígado que cabe num adulto é o de frango cru (3.863 µg em 100 g), só com a chave "Incluir ingredientes e alimentos crus" ligada, em até 75 g, e a sugestão de fígado diz "Fígado: no máximo 1 vez por semana." **Decidido o teto, e não a exclusão do fígado:** o teto vale para todo alimento com vitamina A pré-formada (o alimento próprio fortificado também), e a conduta continua com a nutricionista, que pode pôr o fígado pela busca | Porção que passa do limite não é sugestão. A orientação de saúde pública britânica (NHS) é que quem come fígado ou patê mais de 1 vez por semana pode estar ingerindo vitamina A demais |
+| D-472 | **Criança sem fígado.** Abaixo de 12 anos (a idade da D-443), o fígado (de boi ou de frango, cru ou grelhado), o sarapatel e o alimento próprio com "fígado" no nome saem do Cobrir, das trocas e das sugestões da refeição, como na gestação (D-442); a linha do plano que tem um deles avisa: "Para crianças, evite fígado: pouca quantidade já passa do limite de vitamina A." | O limite da criança é baixo: 600 µg de 1 a 3 anos, 900 µg de 4 a 8 e 1.700 µg de 9 a 13; 35 g de fígado grelhado têm 5.100 µg. Com 12 anos ou mais, vale o teto da D-471 |
+| D-473 | **O fígado nunca é troca.** Fígado e sarapatel não aparecem como troca de outro alimento: a troca tem a energia de uma porção inteira de carne (cerca de 100 g de fígado, 14.000 µg de retinol). O fígado posto à mão pela nutricionista ainda troca por outras carnes | Na lista de trocas, o paciente troca sozinho, sem a nutricionista conferir o limite |
+| D-474 | **Com a chave desligada, cru só o que a parceira aprovou.** Continua o C.1 aprovado pela parceira: o que a base só tem cru e se come cozido (abóbora menina e pescoço, caruru, broto de feijão, inhame, jiló, quiabo, taioba, vagem, fruta-pão, pequi, maxixe, mostarda e alho-poró). A forma crua de legume ou verdura que se come cozida **e que tem a versão cozida do mesmo alimento na base** nunca aparece com a chave desligada: além de batata, batata-doce, batata-baroa, mandioca, cará, berinjela, chuchu e abóbora cabotiá e moranga, saem a abobrinha italiana, o brócolis, a catalonha, a couve-flor e o espinafre crus. A "Ervilha, em vagem" (ervilha fresca, crua, sem "cru" no nome) conta como leguminosa crua e sai. Um teste confere, a partir da base, que todo legume ou verdura crua que se come cozida (a lista do "(peso cru)" do nome para o paciente) e tem a versão cozida do mesmo alimento (mesma base e mesma variedade) fica de fora. Na gaveta, a sugestão crua que o paciente lê com "(peso cru)" mostra "(peso cru)" logo depois do peso: "Abóbora, menina brasileira, crua · 100 g (peso cru)" | N2: "Abobrinha" e "brócolis" crus podiam sair com a chave desligada, e a gaveta não dizia que os 100 g de abóbora são do peso cru |
+| D-475 | **"Porção máxima por sugestão" vazia por padrão.** O campo fica vazio, com a dica "Automática, pelo grupo do alimento e pela idade. Digite um valor para limitar."; o número digitado vale como teto acima de tudo (D-439); apagar volta à automática. Os 200 g guardados por planos antigos contam como automática (com eles, o teto já era a porção do grupo). Sem nenhuma sugestão na porção automática, a mensagem diz "na porção de cada grupo", não "em até 200 g" | N4: o campo mostrava 200 g, e a gaveta usava 40 g de alface e 80 g de carne na menina |
+| D-476 | **Gestação: o ferro e o folato vêm do suplemento.** Numa gestante, o Cobrir do ferro e o do folato começam pela nota "Na gestação, o ferro e o ácido fólico costumam vir do suplemento prescrito no pré-natal." e, com paciente vinculado, o botão "Ver Suplementação prescrita", que abre a ficha no cartão de suplementos. As sugestões de alimento continuam embaixo | A meta de ferro da gestante (27 mg) não se fecha com comida; o Ministério da Saúde (PNSF) e a OMS (2016) indicam ferro e ácido fólico diários no pré-natal |
+| D-477 | **Fruta e polpa têm porção mínima; pupunha tem porção máxima.** Fruta e polpa de fruta saem com pelo menos 50 g de adulto (na escala de idade da D-439: 35 g aos 6 anos), nunca "Acerola, polpa · 5 g" nem "Jambo · 25 g". A pupunha cozida (218 kcal em 100 g) entra no grupo "Frutas secas e muito calóricas" (30 g). O atum em colher sai pela regra de medidas da D-483 (spec `alimentos-e-gramaturas`) | N7: porção pequena demais para servir e "Pupunha · 150 g · +328 kcal" num lanche |
+
+### 9.2 Critérios de aceite
+
+- **CA-1310** · Dado o homem de 35 anos com 50 g de fígado bovino grelhado no plano, então a linha da vitamina A fica acima do limite (a pré-formada, cerca de 7.287 µg, passa do UL de 3.000 µg), em vermelho, com "pré-formada acima do limite".
+- **CA-1311** · Dado um plano só com vegetais cuja vitamina A total passa de 3.000 µg (abóbora, cenoura, manga), então a linha da vitamina A não fica acima do limite.
+- **CA-1312** · Dado a etapa 3, então a nota ‡ diz o texto da D-470, e a marca ‡ continua na vitamina A, no magnésio, na vitamina E, na niacina e no folato.
+- **CA-1313** · Dado o homem de 35 anos, plano vazio, com a chave desligada, então o Cobrir da vitamina A e o do ferro não trazem fígado, e nenhuma sugestão leva a vitamina A pré-formada do plano acima de 3.000 µg.
+- **CA-1314** · Dado o homem de 35 anos com a chave ligada, quando o fígado de frango cru aparece no Cobrir do ferro, então a porção mantém a pré-formada do plano em até 3.000 µg (no máximo 75 g) e a sugestão diz "Fígado: no máximo 1 vez por semana."
+- **CA-1315** · Dado um plano já acima do limite da vitamina A pré-formada, então o Cobrir de qualquer nutriente não sugere alimento com vitamina A pré-formada.
+- **CA-1316** · Dado a menina de 6 anos, então o Cobrir (vitamina A, ferro e B12, com a chave ligada ou desligada), as trocas e as sugestões da refeição não trazem fígado nem sarapatel; com fígado posto à mão, a linha avisa "Para crianças, evite fígado: pouca quantidade já passa do limite de vitamina A." e a vitamina A fica acima do limite (UL de 900 µg).
+- **CA-1317** · Dado a gestante de 28 anos, então o Cobrir não traz fígado (D-442 continua); com 50 g de fígado grelhado posto à mão, a vitamina A fica acima do limite (UL de 3.000 µg) e a linha avisa o cuidado da gestação.
+- **CA-1318** · Dado 100 g de patinho grelhado no plano, então nenhuma troca é fígado ou sarapatel; dado fígado grelhado posto à mão, as trocas dele são outras carnes.
+- **CA-1319** · Dado o Cobrir com a chave desligada, então não aparecem abobrinha italiana, brócolis, catalonha, couve-flor e espinafre crus nem a ervilha em vagem; e todo legume ou verdura crua que se come cozida e tem a versão cozida do mesmo alimento na base fica de fora; a abóbora menina, o jiló e o quiabo crus continuam prescritíveis.
+- **CA-1320** · Dado a abóbora menina crua sugerida, então a gaveta mostra "(peso cru)" logo depois do peso; dado a cenoura crua (que se come crua), não.
+- **CA-1321** · Dado a gaveta com a porção máxima no padrão (ou em 200 g, de plano antigo), então o campo "Porção máxima por sugestão" fica vazio, com a dica da D-475; digitando 30, o campo mostra 30 e as sugestões não passam de 30 g; apagando, volta à automática.
+- **CA-1322** · Dado nenhuma sugestão possível na porção automática, então a mensagem diz "na porção de cada grupo"; com um teto digitado de 30 g, diz "em até 30 g".
+- **CA-1323** · Dado uma gestante, quando abre o Cobrir do ferro ou do folato, então a nota da D-476 aparece antes das sugestões, que continuam; com paciente vinculado, "Ver Suplementação prescrita" abre a ficha dele no cartão "Suplementação prescrita". Fora da gestação, ou no Cobrir de outro nutriente, a nota não aparece.
+- **CA-1324** · Dado a menina de 6 anos e uma falta pequena, então nenhuma fruta ou polpa sai com menos de 35 g; dado um adulto, menos de 50 g; dado a pupunha cozida, nunca mais de 30 g de adulto.
+
+### 9.3 Casos de borda
+
+- **CB-440** · Leite e ovo não têm vitamina A (RAE) na TACO (a coluna vem vazia; só a de retinol tem número): não entram na pré-formada nem na total, e a † de dado que falta continua a avisar.
+- **CB-441** · Alimento próprio no grupo de frutas ou de verduras: a vitamina A do rótulo conta como carotenoide; em qualquer outro grupo, em "Suplementos" ou sem grupo, conta como pré-formada.
+- **CB-442** · Receita no plano: a pré-formada soma pelos ingredientes, como os outros nutrientes.
+- **CB-443** · Plano sem fase de vida (sem sexo ou idade): a adequação não calcula e o Cobrir não abre, como antes; sem limite, o teto da D-471 não se aplica.
+- **CB-444** · Com 12 anos ou mais, o fígado volta a valer pelo teto da D-471 (de 9 a 13 anos, UL de 1.700 µg).
+- **CB-445** · Gestante de 28 anos sem paciente vinculado (prescrição rápida): a nota da D-476 aparece, sem o botão.
+
+### 9.4 Fontes
+
+- Institute of Medicine (EUA). *Dietary Reference Intakes for Vitamin A, Vitamin K, Arsenic, Boron, Chromium, Copper,
+  Iodine, Iron, Manganese, Molybdenum, Nickel, Silicon, Vanadium, and Zinc.* Washington: National Academies Press, 2001,
+  cap. 4 (vitamina A): o UL vale para a vitamina A pré-formada de alimento, alimento fortificado e suplemento, não para os
+  carotenoides; 600 µg/dia de 1 a 3 anos, 900 de 4 a 8, 1.700 de 9 a 13, 2.800 de 14 a 18 e 3.000 de 19 anos em diante,
+  inclusive na gestação e na lactação (os valores do `dri.json`, tabelas-resumo do NASEM).
+- NIH Office of Dietary Supplements. *Vitamin A and Carotenoids — Fact Sheet for Health Professionals*: o UL é só da
+  vitamina A pré-formada; o fígado bovino é a fonte mais concentrada.
+- NHS (Reino Unido). *Vitamin A* (nhs.uk, "Vitamins and minerals"): quem come fígado ou patê de fígado mais de 1 vez por
+  semana pode estar ingerindo vitamina A demais; gestantes e quem planeja engravidar devem evitar fígado e derivados. A
+  HSE da Irlanda dá a mesma orientação. Committee on Toxicity (Reino Unido), declaração sobre o excesso de vitamina A na
+  saúde materna: a mesma recomendação para a gestação.
+- TACO, 4ª edição (NEPA/UNICAMP, 2011): fígado bovino grelhado, 14.574 µg de retinol em 100 g; fígado bovino cru, 7.937;
+  fígado de frango cru, 3.863; nas carnes e nos pescados a coluna RAE é igual à de retinol; em leite, queijo e ovo a TACO
+  traz retinol e deixa o RAE vazio.
+- Ministério da Saúde. *Programa Nacional de Suplementação de Ferro: manual de condutas gerais.* Brasília, 2013: sulfato
+  ferroso e ácido fólico para toda gestante no pré-natal. WHO. *WHO recommendations on antenatal care for a positive
+  pregnancy experience.* Genebra, 2016: ferro oral diário (30 a 60 mg de ferro elementar) e 400 µg de ácido fólico.
+
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
 
 *(20/10/2026)* Regenerado a partir do código depois da conduta da nutricionista parceira (spec
