@@ -280,6 +280,8 @@ conduta da parceira) e ganha os grupos abaixo. Vale o primeiro grupo que casar, 
 - **CB-408** · Alimento próprio com "fígado" no nome numa gestante: o aviso e o filtro valem pelo nome.
 - **CB-409** · Gestante que também tem restrição marcada: os dois avisos valem; a linha mostra o primeiro (o cuidado da fase).
 
+## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
+
 *(20/10/2026)* Regenerado a partir do código depois da conduta da nutricionista parceira (spec
 `conduta-da-nutricionista`, D-290 a D-292); o teste do CA-664 guarda a mesma lista de ids. 282 dos 597 alimentos
 (eram 298 em 15/10). A coluna "Em 15/10" diz o que mudou: "igual" quando nada mudou; o motivo de antes quando o item
