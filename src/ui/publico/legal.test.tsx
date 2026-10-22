@@ -54,7 +54,8 @@ describe('documentos legais', () => {
     expect(texto).toContain('Fulana de Tal')
     expect(texto).toContain('contato@exemplo.com')
     expect(texto).toContain('art. 18')
-    expect(texto).toContain('presos à conta')
+    expect(texto).toContain('vinculados à conta')
+    expect(texto).not.toContain('presos')
     expect(texto).toContain('Supabase')
     expect(texto).toContain('apagado 30 dias depois')
     expect(texto).toContain('19 de outubro de 2026')
@@ -64,12 +65,13 @@ describe('documentos legais', () => {
     render(<TelaPrivacidade />)
     const dados = screen.getByRole('heading', { name: 'Que dados guardamos e para quê' }).nextElementSibling
     expect(dados).toHaveTextContent(
-      'O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista liga "Mostrar a dieta no link": para o paciente ver a dieta no link dele.',
+      'O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano alimentar no link”: para o paciente consultar o plano.',
     )
     const onde = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
-    expect(onde).toHaveTextContent('A conta, a assinatura, os dados da conta e as missões e a dieta do link do paciente ficam na Supabase')
+    expect(onde).toHaveTextContent('A conta, a assinatura, os dados da conta e as missões e o plano alimentar do link do paciente ficam na Supabase')
     const seguranca = screen.getByRole('heading', { name: 'Segurança' }).nextElementSibling
-    expect(seguranca).toHaveTextContent('O link do paciente usa um endereço secreto e mostra só as missões daquele paciente e, quando o nutricionista liga, a dieta dele.')
+    expect(seguranca).toHaveTextContent('O link do paciente usa um endereço secreto e mostra só as missões daquele paciente e, quando o nutricionista ativa, o plano alimentar dele.')
+    expect(seguranca).toHaveTextContent('um nutricionista não acessa os dados de outro')
     expect(seguranca).not.toHaveTextContent('mostra só as missões daquele paciente.')
   })
 
@@ -77,25 +79,25 @@ describe('documentos legais', () => {
     render(<TelaPrivacidade />)
     const dados = screen.getByRole('heading', { name: 'Que dados guardamos e para quê' }).nextElementSibling
     expect(dados).toHaveTextContent(
-      'Na ficha do paciente, também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista escreve: para o atendimento, os lembretes e as folhas que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
+      'Da ficha do paciente, guardamos também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista registra: para o atendimento, os lembretes e os documentos que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
     )
   })
 
-  it('D-128 e D-131 (spec dados-na-nuvem): a política diz que os dados ficam na nuvem, presos à conta, e que a cópia do navegador sai ao sair', () => {
+  it('D-128 e D-131 (spec dados-na-nuvem) e CA-1184: a política diz que os dados ficam na nuvem, vinculados à conta, e que a cópia do navegador é apagada ao sair', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
-    expect(texto).toContain('Os planos, as fichas de paciente e as configurações ficam na nuvem, presos à conta.')
+    expect(texto).toContain('Os planos, as fichas de paciente e as configurações ficam na nuvem, vinculados à conta.')
     expect(texto).toContain('Enquanto a pessoa está dentro, o navegador guarda uma cópia de trabalho; ao sair da conta, ela é apagada.')
-    expect(texto).toContain('A cópia de trabalho no navegador some quando você sai da conta.')
-    // DP-22 e DP-30: o dado de antes que ainda não foi para a conta não some ao sair.
-    expect(texto).toContain('Dados de antes que ainda não foram para a conta ficam neste navegador até a próxima entrada, quando vão para ela.')
+    expect(texto).toContain('A cópia de trabalho no navegador é apagada quando você sai da conta.')
+    // DP-22 e DP-30: o dado de antes que ainda não foi para a conta não é apagado ao sair.
+    expect(texto).toContain('Dados antigos que ainda não foram enviados ficam neste navegador e sobem para a conta na próxima vez que você entrar.')
     expect(texto).not.toMatch(/Apagar tudo|Sair e apagar|ficam salvos neste aparelho|cópia na nuvem/)
   })
 
   it('D-128 (spec dados-na-nuvem): os termos dizem que os planos ficam na nuvem e que sem internet não dá para editar', () => {
     render(<TelaTermos />)
     const texto = document.body.textContent ?? ''
-    expect(texto).toContain('Os planos ficam na nuvem, presos à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.')
+    expect(texto).toContain('Os planos alimentares ficam na nuvem, vinculados à conta. Sem internet, o MetaNutri não deixa editar até a conexão voltar.')
     expect(texto).not.toContain('Os planos ficam salvos no aparelho')
   })
 
@@ -113,7 +115,7 @@ describe('documentos legais', () => {
     for (let atual = titulo.nextElementSibling; atual && atual.tagName !== 'H2'; atual = atual.nextElementSibling) secao.push(atual)
     const texto = secao.map((elemento) => elemento.textContent).join(' ')
     expect(texto).toContain(
-      'Enquanto a conta existir. Para excluir, use Conta e plano e confirme com a senha: os dados da conta saem da nuvem na hora, inclusive os pacientes e os links deles, que deixam de abrir. Também dá para pedir pelo contato@exemplo.com.',
+      'Enquanto a conta existir. Para excluir, use Conta e assinatura e confirme com a senha: os dados da conta são apagados da nuvem na hora, inclusive os pacientes e os links deles, que deixam de abrir. Você também pode pedir a exclusão pelo e-mail contato@exemplo.com.',
     )
     expect(texto).toContain('Depois da exclusão, ficam só:')
     expect(texto).not.toContain('ficam só três coisas, sem nome, e-mail nem cartão')
@@ -121,23 +123,23 @@ describe('documentos legais', () => {
       'O registro da última assinatura paga (o código dela no Mercado Pago, o plano, o valor e as datas, só com o dia), por 5 anos, sem nome, e-mail nem cartão: a lei fiscal manda guardar, e ele serve para responder a uma contestação de cobrança (LGPD, art. 16, I).',
     )
     // L2 da revisão: "sem ligação direta", porque o dono, com o painel do Mercado Pago, ainda poderia cruzar os dados.
-    expect(texto).toContain('O histórico das mudanças de plano, sem nome nem e-mail e sem ligação direta com a pessoa, com as datas só com o dia, para as contas do MetaNutri.')
-    expect(texto).toContain('O registro dos avisos do Mercado Pago, sem nome nem e-mail, que some em 90 dias.')
+    expect(texto).toContain('O histórico das mudanças de assinatura, sem nome nem e-mail e sem ligação direta com a pessoa, com as datas só com o dia, para as contas do MetaNutri.')
+    expect(texto).toContain('O registro dos avisos do Mercado Pago, sem nome nem e-mail, que é apagado em 90 dias.')
     expect(texto).not.toMatch(/sem ligação com a pessoa|não tem dado pessoal/)
     // D-259 (revisão de 19/10/2026): o registro de acesso guarda o e-mail, e a Política diz.
     expect(texto).toContain('Os registros de acesso dos últimos 6 meses.')
     expect(texto).toContain(
       'Os registros de acesso (data, hora, endereço IP e o e-mail usado para entrar) ficam 6 meses, como manda o Marco Civil da Internet (art. 15), e depois são apagados.',
     )
-    expect(texto).toContain('As cópias de segurança do banco somem sozinhas em até 90 dias.')
+    expect(texto).toContain('As cópias de segurança do banco são apagadas automaticamente em até 90 dias.')
     expect(texto).not.toContain('apagados em até 90 dias, salvo obrigação legal')
   })
 
-  it('CA-828 (spec exclusao-de-conta): os termos dizem que a conta é excluída em Conta e plano, na hora, ou pelo e-mail', () => {
+  it('CA-828 (spec exclusao-de-conta): os termos dizem que a conta é excluída em Conta e assinatura, na hora, ou pelo e-mail', () => {
     render(<TelaTermos />)
     const encerramento = screen.getByRole('heading', { name: 'Encerramento' }).nextElementSibling
     expect(encerramento).toHaveTextContent(
-      'Você pode parar de usar quando quiser. Para excluir a conta, use Conta e plano: os dados na nuvem são apagados na hora. Também dá para pedir pelo contato@exemplo.com.',
+      'Você pode parar de usar quando quiser. Para excluir a conta, use Conta e assinatura: os dados na nuvem são apagados na hora. Você também pode pedir a exclusão pelo e-mail contato@exemplo.com.',
     )
     expect(encerramento).not.toHaveTextContent('Peça a exclusão da conta pelo')
   })
@@ -153,18 +155,22 @@ describe('documentos legais', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
     expect(texto).toContain(
-      'O nome, o e-mail, a situação, o plano e as datas de criação da conta e do último login também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.',
+      'O nome, o e-mail, a situação, a assinatura e as datas de criação da conta e do último acesso também servem para o responsável pelo MetaNutri acompanhar as contas e as assinaturas.',
     )
     expect(texto).toContain('são enviados pelo Resend')
     expect(texto).not.toContain('Gmail')
   })
 
-  it('CA-381: os termos dizem cartão de crédito, renovação sozinha e cancelamento em Conta e plano, sem citar o processador', () => {
+  it('CA-381 e CA-1184: os termos dizem cartão de crédito, renovação automática e cancelamento em Conta e assinatura, sem citar o processador', () => {
     render(<TelaTermos />)
     const texto = document.body.textContent ?? ''
     expect(texto).toContain('Solo e Pro são assinaturas pagas com cartão de crédito')
-    expect(texto).toContain('renovam sozinhas')
-    expect(texto).toContain('Para cancelar, use Conta e plano. O plano pago vale até o fim do período já pago')
+    expect(texto).toContain('renovam automaticamente até você cancelar')
+    expect(texto).toContain('Para cancelar, use Conta e assinatura. A assinatura vale até o fim do período já pago')
+    expect(texto).toContain('Se o registro não for encontrado, o titular tem 7 dias para corrigir')
+    expect(texto).toContain('A conta só passa de estudante para nutricionista quando o CRN é informado.')
+    expect(texto).toContain('casos de estudo e estágio supervisionado')
+    expect(texto).not.toMatch(/Conta e plano|presos|sozinhas|Estudante de Nutrição/)
     expect(texto).not.toMatch(/mercado ?pago/i)
   })
 

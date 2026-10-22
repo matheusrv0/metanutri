@@ -145,6 +145,11 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   // D-415: a busca e os robôs com o mesmo glossário da landing.
   ['"folha do paciente"', /folha do paciente/i],
   ['comentário antigo do index.html', /impeccable:direction|OWN-WORLD/],
+  // CA-1184: Termos, Privacidade e Fontes no glossário (dado "é apagado", não "some"; "renovam automaticamente").
+  ['"renovam sozinhas"', /renovam sozinhas/i],
+  ['"somem sozinhas" e "some em"', /somem sozinhas|\bsome (em|quando)\b/i],
+  ['"não alcança os dados"', /alcança os dados/i],
+  ['"organiza e confere"', /organiza e confere/i],
 ]
 
 const achados = (padrao: RegExp) =>
