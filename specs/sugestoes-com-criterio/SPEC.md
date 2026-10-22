@@ -306,7 +306,21 @@ As trocas (fígado, ultraprocessado, fritura) ficam na spec `conduta-da-nutricio
 
 | D-489 | **Todo alimento sugerível tem porção de grupo** (achado na caminhada da correção C: "Aveia, flocos · 6 colheres de servir e meia · 195 g · +768 kcal" no ferro da gestante). Os 14 prescritíveis que ainda caíam nos 200 g sem grupo ganham porção pelas medidas da POF: aveia em flocos 30 g (1 colher de servir); flocos de milho (flocão, peso cru do cuscuz) 60 g; milho verde e ervilha em conserva 60 g (4 colheres de sopa); ricota 70 g (2 fatias); farofa 30 g (com a farinha de mandioca); omelete 100 g (com o ovo); pamonha 150 g (com as preparações); água de coco e extrato de soja 200 ml (com o leite); pinhão cozido 60 g; polpa de coco verde 50 g. Café e chá nunca são sugeridos (D-193) | Um teste confere que nenhum prescritível fica sem grupo |
 
+**D-477 ampliada (22/10/2026, pedido do coordenador depois da caminhada):** toda sugestão tem a porção mínima de servir
+do grupo, não só carne, ovo e fruta. Falta pequena não vira "Nabo · 5 g" nem "Pão francês · 12,5 g": a sugestão sai na
+mínima e cobre toda a falta (a gaveta mostra "cobre 100% da falta"; a porção passa da falta, e está certo). Mínimas de
+adulto (na escala de idade da D-439, nunca acima da máxima do grupo na idade): folha crua 20 g (2 folhas); verdura e
+legume 30 g (2 colheres de sopa); leguminosa cozida e tofu 50 g; cereal e tubérculo cozidos 50 g (2 colheres de sopa de
+arroz); fruta 50 g; leite e iogurte 100 ml (meio copo); preparação 75 g; pães, biscoitos e torradas 25 g (meio pão);
+queijos 15 g; ricota 30 g; oleaginosas e sementes 5 g (1 castanha-do-pará); frutas secas e muito calóricas 10 g; gordura
+de adição 5 g; mel e chocolate 10 g; azeitona e tremoço 10 g; cereal matinal e leite em pó 15 g; leite fermentado 40 g;
+farinha de mandioca e farofa 10 g; aveia 15 g; flocão 30 g; grão em conserva 15 g; omelete 50 g; pamonha 75 g; água de
+coco e extrato de soja 100 ml; pinhão 20 g; polpa de coco verde 25 g; gema 20 g; clara 30 g; ovo de codorna 20 g (2
+ovos); carne, ave, peixe, víscera e corte gordo 50 g e ovo de galinha 45 g (D-440).
+
 ### 9.2 Critérios de aceite
+
+- **CA-1340** · Dado uma falta pequena de manganês e o nabo cru, então a sugestão tem pelo menos 30 g e cobre 100% da falta; dado qualquer nutriente, plano vazio ou plano de exemplo, adulto ou criança de 6 anos, então nenhuma sugestão fica abaixo da mínima do grupo na idade, e nenhuma verdura ou cereal sai com 10 g ou menos.
 
 - **CA-1339** · Dado qualquer alimento prescritível da base (menos café e chá), então ele tem grupo de porção; aveia em flocos 30 g, flocão 60 g, ricota 70 g, milho em conserva 60 g, água de coco 200 ml.
 - **CA-1310** · Dado o homem de 35 anos com 50 g de fígado bovino grelhado no plano, então a linha da vitamina A fica acima do limite (a pré-formada, cerca de 7.287 µg, passa do UL de 3.000 µg), em vermelho, com "pré-formada acima do limite".

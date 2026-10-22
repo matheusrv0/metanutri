@@ -89,7 +89,10 @@ const ORIGEM_ANIMAL: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pesca
 
 export interface PorcaoDoGrupo {
   readonly grupo: string
+  /** A porção máxima de adulto. */
   readonly gramas: number
+  /** A porção mínima de servir, de adulto (D-477 ampliada, correção C): falta pequena não vira "Nabo · 5 g". */
+  readonly minima: number
   readonly casa: (alimento: Alimento) => boolean
 }
 
@@ -98,52 +101,54 @@ export interface PorcaoDoGrupo {
  * medidas caseiras da POF: 200 g de castanha não é porção, como cerveja não é prescrição.
  */
 export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
-  { grupo: 'Oleaginosas e sementes', gramas: 30, casa: (a) => OLEAGINOSA.test(nomeLimpo(a)) },
-  { grupo: 'Queijos (menos a ricota)', gramas: 50, casa: (a) => /^Queijo,/i.test(nomeLimpo(a)) && !/ricota/i.test(a.descricao) },
-  { grupo: 'Pães, biscoitos e torradas', gramas: 50, casa: (a) => PAO_OU_BISCOITO.test(nomeLimpo(a)) },
+  { grupo: 'Oleaginosas e sementes', gramas: 30, minima: 5, casa: (a) => OLEAGINOSA.test(nomeLimpo(a)) },
+  { grupo: 'Queijos (menos a ricota)', gramas: 50, minima: 15, casa: (a) => /^Queijo,/i.test(nomeLimpo(a)) && !/ricota/i.test(a.descricao) },
+  { grupo: 'Pães, biscoitos e torradas', gramas: 50, minima: 25, casa: (a) => PAO_OU_BISCOITO.test(nomeLimpo(a)) },
   // Ovo (spec vitaminas-usda, D-306): a gema saía com 200 g para a vitamina D, umas 11 gemas. A omelete é preparação.
-  { grupo: 'Ovo inteiro (2 ovos)', gramas: 100, casa: (a) => OVO_INTEIRO.test(nomeLimpo(a)) },
-  { grupo: 'Gema de ovo (2 gemas)', gramas: 40, casa: (a) => GEMA.test(nomeLimpo(a)) },
-  { grupo: 'Clara de ovo', gramas: 100, casa: (a) => CLARA.test(nomeLimpo(a)) },
+  { grupo: 'Ovo inteiro (2 ovos)', gramas: 100, minima: 20, casa: (a) => OVO_INTEIRO.test(nomeLimpo(a)) },
+  { grupo: 'Gema de ovo (2 gemas)', gramas: 40, minima: 20, casa: (a) => GEMA.test(nomeLimpo(a)) },
+  { grupo: 'Clara de ovo', gramas: 100, minima: 30, casa: (a) => CLARA.test(nomeLimpo(a)) },
   {
     grupo: 'Frutas secas e muito calóricas',
     gramas: 30,
+    minima: 10,
     // Correção C (D-477): a pupunha cozida (218 kcal em 100 g) também; saía "150 g · +328 kcal" num lanche.
     casa: (a) => (a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200) || /^Pupunha,/i.test(nomeLimpo(a)),
   },
   {
     grupo: 'Cortes gordos, aves com pele, carne curada e ovo frito',
     gramas: 100,
+    minima: 50,
     casa: (a) => ehCorteGordo(a) || CURADO_OU_FRITO.test(nomeLimpo(a)),
   },
   // Os grupos dos itens que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293).
-  { grupo: 'Gordura de adição', gramas: 10, casa: (a) => a.categoria === 'Gorduras e óleos' },
-  { grupo: 'Mel e chocolate', gramas: 25, casa: (a) => /^(Mel|Chocolate),/i.test(nomeLimpo(a)) },
-  { grupo: 'Azeitona e tremoço em conserva', gramas: 30, casa: (a) => /^(Azeitona,|Tremoço, em conserva)/i.test(nomeLimpo(a)) },
-  { grupo: 'Cereal matinal e leite em pó', gramas: 30, casa: (a) => /^(Cereal matinal|Leite, de vaca, [^,]+, pó$)/i.test(nomeLimpo(a)) },
-  { grupo: 'Leite fermentado', gramas: 80, casa: (a) => /^Leite, fermentado/i.test(nomeLimpo(a)) },
+  { grupo: 'Gordura de adição', gramas: 10, minima: 5, casa: (a) => a.categoria === 'Gorduras e óleos' },
+  { grupo: 'Mel e chocolate', gramas: 25, minima: 10, casa: (a) => /^(Mel|Chocolate),/i.test(nomeLimpo(a)) },
+  { grupo: 'Azeitona e tremoço em conserva', gramas: 30, minima: 10, casa: (a) => /^(Azeitona,|Tremoço, em conserva)/i.test(nomeLimpo(a)) },
+  { grupo: 'Cereal matinal e leite em pó', gramas: 30, minima: 15, casa: (a) => /^(Cereal matinal|Leite, de vaca, [^,]+, pó$)/i.test(nomeLimpo(a)) },
+  { grupo: 'Leite fermentado', gramas: 80, minima: 40, casa: (a) => /^Leite, fermentado/i.test(nomeLimpo(a)) },
   // Correção C (D-489): a farofa com a farinha de mandioca.
-  { grupo: 'Farinha de mandioca', gramas: 30, casa: (a) => /^(Farinha, de mandioca|Mandioca, farofa)/i.test(nomeLimpo(a)) },
+  { grupo: 'Farinha de mandioca', gramas: 30, minima: 10, casa: (a) => /^(Farinha, de mandioca|Mandioca, farofa)/i.test(nomeLimpo(a)) },
   // D-489: os prescritíveis que caíam nos 200 g sem grupo, pelas medidas da POF.
-  { grupo: 'Aveia em flocos', gramas: 30, casa: (a) => /^Aveia,/i.test(nomeLimpo(a)) },
-  { grupo: 'Flocos de milho (flocão, peso cru do cuscuz)', gramas: 60, casa: (a) => /^Cereais, milho, flocos/i.test(nomeLimpo(a)) },
-  { grupo: 'Grão em conserva', gramas: 60, casa: (a) => /^(Milho, verde, enlatado|Ervilha, enlatada)/i.test(nomeLimpo(a)) },
-  { grupo: 'Ricota', gramas: 70, casa: (a) => /^Queijo, ricota/i.test(nomeLimpo(a)) },
-  { grupo: 'Omelete (2 ovos)', gramas: 100, casa: (a) => /^Omelete/i.test(nomeLimpo(a)) },
-  { grupo: 'Pamonha', gramas: 150, casa: (a) => /^Pamonha/i.test(nomeLimpo(a)) },
-  { grupo: 'Água de coco e extrato de soja', gramas: 200, casa: (a) => /^(Coco, água de|Soja, extrato solúvel, natural, fluido)/i.test(nomeLimpo(a)) },
-  { grupo: 'Pinhão cozido', gramas: 60, casa: (a) => /^Pinhão, cozido/i.test(nomeLimpo(a)) },
-  { grupo: 'Polpa de coco verde', gramas: 50, casa: (a) => /^Coco, verde, cru/i.test(nomeLimpo(a)) },
+  { grupo: 'Aveia em flocos', gramas: 30, minima: 15, casa: (a) => /^Aveia,/i.test(nomeLimpo(a)) },
+  { grupo: 'Flocos de milho (flocão, peso cru do cuscuz)', gramas: 60, minima: 30, casa: (a) => /^Cereais, milho, flocos/i.test(nomeLimpo(a)) },
+  { grupo: 'Grão em conserva', gramas: 60, minima: 15, casa: (a) => /^(Milho, verde, enlatado|Ervilha, enlatada)/i.test(nomeLimpo(a)) },
+  { grupo: 'Ricota', gramas: 70, minima: 30, casa: (a) => /^Queijo, ricota/i.test(nomeLimpo(a)) },
+  { grupo: 'Omelete (2 ovos)', gramas: 100, minima: 50, casa: (a) => /^Omelete/i.test(nomeLimpo(a)) },
+  { grupo: 'Pamonha', gramas: 150, minima: 75, casa: (a) => /^Pamonha/i.test(nomeLimpo(a)) },
+  { grupo: 'Água de coco e extrato de soja', gramas: 200, minima: 100, casa: (a) => /^(Coco, água de|Soja, extrato solúvel, natural, fluido)/i.test(nomeLimpo(a)) },
+  { grupo: 'Pinhão cozido', gramas: 60, minima: 20, casa: (a) => /^Pinhão, cozido/i.test(nomeLimpo(a)) },
+  { grupo: 'Polpa de coco verde', gramas: 50, minima: 25, casa: (a) => /^Coco, verde, cru/i.test(nomeLimpo(a)) },
   // Correção A (spec sugestoes-com-criterio, D-439 e seção 8.2): todo alimento num grupo com porção de verdade.
-  { grupo: 'Folha crua', gramas: 60, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
-  { grupo: 'Fígado e sarapatel', gramas: 100, casa: (a) => FIGADO.test(nomeLimpo(a)) },
-  { grupo: 'Carne, ave e peixe', gramas: 120, casa: (a) => CARNE.has(a.categoria) },
-  { grupo: 'Leguminosa cozida e tofu', gramas: 140, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
-  { grupo: 'Cereal e tubérculo cozidos', gramas: 150, casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && a.preparo === 'cozido' },
-  { grupo: 'Verdura e legume', gramas: 100, casa: ehVerdura },
-  { grupo: 'Fruta', gramas: 150, casa: (a) => a.categoria.startsWith('Frutas') },
-  { grupo: 'Leite e iogurte', gramas: 200, casa: (a) => /^(Leite, (de vaca|de cabra)|Iogurte|Bebida láctea)/i.test(nomeLimpo(a)) },
-  { grupo: 'Preparação', gramas: 150, casa: (a) => a.categoria === 'Alimentos preparados' },
+  { grupo: 'Folha crua', gramas: 60, minima: 20, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
+  { grupo: 'Fígado e sarapatel', gramas: 100, minima: 50, casa: (a) => FIGADO.test(nomeLimpo(a)) },
+  { grupo: 'Carne, ave e peixe', gramas: 120, minima: 50, casa: (a) => CARNE.has(a.categoria) },
+  { grupo: 'Leguminosa cozida e tofu', gramas: 140, minima: 50, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
+  { grupo: 'Cereal e tubérculo cozidos', gramas: 150, minima: 50, casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && a.preparo === 'cozido' },
+  { grupo: 'Verdura e legume', gramas: 100, minima: 30, casa: ehVerdura },
+  { grupo: 'Fruta', gramas: 150, minima: 50, casa: (a) => a.categoria.startsWith('Frutas') },
+  { grupo: 'Leite e iogurte', gramas: 200, minima: 100, casa: (a) => /^(Leite, (de vaca|de cabra)|Iogurte|Bebida láctea)/i.test(nomeLimpo(a)) },
+  { grupo: 'Preparação', gramas: 150, minima: 75, casa: (a) => a.categoria === 'Alimentos preparados' },
 ]
 
 /**
@@ -177,14 +182,14 @@ export function porcaoEmMedida(
 const UNIDADE_DA_FRUTA = { minima: 40, maxima: 250 } as const
 
 /** O grupo do alimento e a porção máxima de adulto; `null` quando ele não está em nenhum grupo da tabela. */
-export function porcaoDoGrupo(alimento: Alimento): { readonly grupo: string; readonly maxima: number } | null {
+export function porcaoDoGrupo(alimento: Alimento): { readonly grupo: string; readonly maxima: number; readonly minima: number } | null {
   const grupo = PORCOES_POR_GRUPO.find((g) => g.casa(alimento))
   if (!grupo) return null
   if (grupo.grupo === 'Fruta') {
     const unidade = medidasDoAlimento(alimento.id).find((m) => m.nome === 'unidade')?.gramas
-    if (unidade !== undefined && unidade >= UNIDADE_DA_FRUTA.minima && unidade <= UNIDADE_DA_FRUTA.maxima) return { grupo: grupo.grupo, maxima: unidade }
+    if (unidade !== undefined && unidade >= UNIDADE_DA_FRUTA.minima && unidade <= UNIDADE_DA_FRUTA.maxima) return { grupo: grupo.grupo, maxima: unidade, minima: grupo.minima }
   }
-  return { grupo: grupo.grupo, maxima: grupo.gramas }
+  return { grupo: grupo.grupo, maxima: grupo.gramas, minima: grupo.minima }
 }
 
 /** A porção máxima do grupo do alimento, de adulto; `null` quando ele não está em nenhum grupo da tabela. */
@@ -208,30 +213,24 @@ export function fatorDaIdade(idadeAnos: number | null | undefined): number {
 /** D-440: carne, ave, peixe e víscera ao menos 50 g; ovo ao menos 1 unidade (45 g), de adulto. */
 const MINIMA_DE_CARNE_G = 50
 const MINIMA_DE_OVO_G = 45
-/** D-477 (correção C): fruta e polpa ao menos 50 g de adulto ("Acerola, polpa · 5 g" não se serve). */
-const MINIMA_DE_FRUTA_G = 50
 /** D-477: a fruta pequena (unidade de até 50 g, como o jambo) não se parte na criança: a porção é 1 unidade. */
 const FRUTA_PEQUENA_G = 50
 
-const ehDoGrupoFruta = (alimento: Alimento): boolean => porcaoDoGrupo(alimento)?.grupo === 'Fruta'
-
 /**
- * A porção mínima do alimento na idade, arredondada para cima de 5 em 5 g: ninguém come 5 g de fígado. Na fruta, nunca
- * acima da máxima dela (o jambo de 40 g é 1 unidade). `null` quando o grupo não tem mínima.
+ * A porção mínima do alimento na idade, arredondada para cima de 5 em 5 g: ninguém come 5 g de fígado nem 5 g de nabo
+ * (D-440; D-477 ampliada na correção C: a mínima de servir de cada grupo). Nunca acima da máxima do grupo na idade (o
+ * jambo de 40 g é 1 unidade). `null` quando o alimento não está em nenhum grupo.
  */
 export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): number | null {
-  const fruta = ehDoGrupoFruta(alimento)
   const adulto =
     CARNE.has(alimento.categoria) || FIGADO.test(nomeLimpo(alimento))
       ? MINIMA_DE_CARNE_G
       : OVO_INTEIRO_DE_GALINHA.test(nomeLimpo(alimento))
         ? MINIMA_DE_OVO_G
-        : fruta
-          ? MINIMA_DE_FRUTA_G
-          : null
+        : (porcaoDoGrupo(alimento)?.minima ?? null)
   if (adulto === null) return null
   const minima = Math.ceil((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G
-  return fruta ? Math.min(minima, porcaoMaximaNaIdade(alimento, idadeAnos)) : minima
+  return Math.min(minima, porcaoMaximaNaIdade(alimento, idadeAnos))
 }
 
 /**

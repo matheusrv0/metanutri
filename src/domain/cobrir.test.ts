@@ -882,6 +882,61 @@ describe('porção mínima de fruta e máxima de pupunha (spec sugestoes-com-cri
   })
 })
 
+describe('porção mínima de servir em todo grupo (spec sugestoes-com-criterio, correção C, D-477 ampliada)', () => {
+  const NABO = 137
+  const daBase = (id: number): Alimento => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return a
+  }
+
+  it('CA-1340: falta pequena de manganês não vira "Nabo · 5 g": a sugestão é a porção mínima e cobre toda a falta', () => {
+    const perfil = { sexo: 'F' as const, idadeAnos: 30, condicao: { tipo: 'nenhuma' as const } }
+    const linha = calcularAdequacao(totais({}), perfil, { tipo: 'individual' }).linhas.find((l) => l.chave === 'manganes_mg')
+    if (!linha) throw new Error('sem manganês')
+    const quase = totais({ energia_kcal: 1500, manganes_mg: (linha.referencia.valor * linha.metaPct) / 100 - 0.05 })
+    const [nabo] = sugerirParaCobrir('manganes_mg', quase, calcularAdequacao(quase, perfil, { tipo: 'individual' }), {
+      alimentos: [daBase(NABO)],
+      gastoEnergetico: 2500,
+    }).sugestoes
+    expect(nabo?.descricao).toMatch(/^Nabo/)
+    expect(nabo?.gramas).toBeGreaterThanOrEqual(30)
+    expect(nabo?.coberturaPct).toBe(100)
+  })
+
+  it('CA-1340: em todo nutriente, plano vazio e plano quase completo, adulto e criança, nenhuma sugestão fica abaixo da mínima do grupo', () => {
+    let n = 0
+    const { plano } = criarExemplo(() => `min-${++n}`, '2026-10-15')
+    for (const idadeAnos of [6, 30]) {
+      const perfil = { sexo: 'F' as const, idadeAnos, condicao: { tipo: 'nenhuma' as const } }
+      for (const t of [totaisDeItens([], buscarAlimento), totaisDoPlano(plano, buscarAlimento)]) {
+        const ad = calcularAdequacao(t, perfil, { tipo: 'individual' })
+        for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+          for (const s of sugerirParaCobrir(chave, t, ad, { alimentos: ALIMENTOS, gastoEnergetico: 2400, idadeAnos }).sugestoes) {
+            const minima = porcaoMinima(daBase(s.alimentoId), idadeAnos)
+            expect(minima, s.descricao).not.toBeNull()
+            expect(s.gramas, `${idadeAnos} anos, ${chave}: ${s.descricao}`).toBeGreaterThanOrEqual(minima ?? 0)
+            // Nunca uma verdura ou um pão de 5 a 10 g.
+            if (/Verduras|Cereais/.test(daBase(s.alimentoId).categoria)) expect(s.gramas, s.descricao).toBeGreaterThan(10)
+          }
+        }
+      }
+    }
+  })
+
+  it('CA-1340: as mínimas de adulto por grupo', () => {
+    const minima = (d: string) => porcaoMinima(ALIMENTOS.find((a) => a.descricao.trim() === d) as Alimento, 30)
+    expect(minima('Nabo, cru')).toBe(30)
+    expect(minima('Alface, crespa, crua')).toBe(20)
+    expect(minima('Pão, trigo, francês')).toBe(25)
+    expect(minima('Castanha-do-Brasil, crua')).toBe(5)
+    expect(minima('Feijão, carioca, cozido')).toBe(50)
+    expect(minima('Leite, de vaca, integral')).toBe(100)
+    expect(minima('Carne, bovina, patinho, sem gordura, grelhado')).toBe(50)
+    expect(minima('Ovo, de galinha, inteiro, cozido/10minutos')).toBe(45)
+  })
+})
+
 describe('todo alimento sugerível tem porção de grupo (spec sugestoes-com-criterio, correção C, D-489)', () => {
   it('CA-1339: nenhum alimento prescritível fica nos 200 g sem grupo (café e chá nunca são sugeridos)', () => {
     const sem = ALIMENTOS.filter((a) => regraQueExclui(a) === null && !/^(Café|Chá),/.test(a.descricao.trim()) && porcaoDoGrupo(a) === null)
