@@ -4,6 +4,7 @@ import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { sugerirParaCobrir } from './cobrir.ts'
 import {
   AVISO_CRIANCA_CAFEINA,
+  AVISO_CRIANCA_FIGADO,
   AVISO_GESTACAO_FIGADO,
   comCuidadosDaFase,
   cuidadosDaFase,
@@ -95,7 +96,7 @@ describe('criança sem cafeína (D-443)', () => {
   const crianca = comCuidadosDaFase(SEM_RESTRICOES, { condicao: NENHUMA, idadeAnos: 6 })
 
   it('abaixo de 12 anos; com 12 ou mais, nada; sem idade, nada (CB-406)', () => {
-    expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: 11 }).map((c) => c.id)).toEqual(['crianca-cafeina'])
+    expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: 11 }).map((c) => c.id)).toEqual(['crianca-cafeina', 'crianca-figado'])
     expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: 12 })).toEqual([])
     expect(cuidadosDaFase({ condicao: NENHUMA, idadeAnos: null })).toEqual([])
   })
@@ -115,6 +116,50 @@ describe('criança sem cafeína (D-443)', () => {
     for (const chave of MICRONUTRIENTES_ADEQUACAO) {
       const ids = sugerirParaCobrir(chave, vazio, ad, { alimentos: ALIMENTOS, gastoEnergetico: 1300, restricoes: crianca, incluirIngredientes: true, idadeAnos: 6 }).sugestoes.map((s) => s.alimentoId)
       expect(ids.filter((id) => CAFEINA.includes(id)), chave).toEqual([])
+    }
+  })
+})
+
+describe('criança sem fígado (spec sugestoes-com-criterio, correção C, D-472)', () => {
+  const crianca = (idadeAnos: number) => comCuidadosDaFase(SEM_RESTRICOES, { condicao: NENHUMA, idadeAnos })
+  const soFigados = FIGADOS.map(alimento)
+
+  it('CA-1316: a linha com fígado avisa abaixo de 12 anos; com 12 ou mais, não (CB-444)', () => {
+    expect(restricaoDoItem({ id: 'i', alimentoId: 356, gramas: 30 }, buscarAlimento, crianca(6))).toBe(AVISO_CRIANCA_FIGADO)
+    expect(AVISO_CRIANCA_FIGADO).toBe('Para crianças, evite fígado: pouca quantidade já passa do limite de vitamina A.')
+    expect(restricaoDoAlimento({ id: 900_002, descricao: 'Fígado acebolado da casa' }, crianca(6))).toBe(AVISO_CRIANCA_FIGADO)
+    expect(restricaoDoAlimento(alimento(548), crianca(11))).toBe(AVISO_CRIANCA_FIGADO)
+    expect(restricaoDoAlimento(alimento(356), crianca(12))).toBeNull()
+    // Coração de frango não concentra retinol.
+    expect(restricaoDoAlimento(alimento(394), crianca(6))).toBeNull()
+  })
+
+  it('CA-1316: o Cobrir não propõe fígado à criança, com a chave ligada ou desligada', () => {
+    // Aos 10 anos (limite de 1.700 µg), o fígado de frango cru caberia em 40 g sem o cuidado: o teste não passa à toa.
+    const ad = calcularAdequacao(vazio, { sexo: 'F', idadeAnos: 10, condicao: NENHUMA }, { tipo: 'individual' })
+    const sem = MICRONUTRIENTES_ADEQUACAO.flatMap((chave) =>
+      sugerirParaCobrir(chave, vazio, ad, { alimentos: soFigados, gastoEnergetico: 1800, incluirIngredientes: true, idadeAnos: 10 }).sugestoes.map((s) => s.alimentoId),
+    )
+    expect(sem.some((id) => FIGADOS.includes(id))).toBe(true)
+    for (const idadeAnos of [6, 10]) {
+      const adIdade = calcularAdequacao(vazio, { sexo: 'F', idadeAnos, condicao: NENHUMA }, { tipo: 'individual' })
+      for (const chave of MICRONUTRIENTES_ADEQUACAO) {
+        for (const alimentos of [ALIMENTOS, soFigados]) {
+          for (const incluirIngredientes of [false, true]) {
+            const ids = sugerirParaCobrir(chave, vazio, adIdade, { alimentos, gastoEnergetico: 1500, restricoes: crianca(idadeAnos), incluirIngredientes, idadeAnos }).sugestoes.map(
+              (s) => s.alimentoId,
+            )
+            expect(ids.filter((id) => FIGADOS.includes(id)), `${idadeAnos} anos, ${chave}`).toEqual([])
+          }
+        }
+      }
+    }
+  })
+
+  it('CA-1316: as trocas de nenhum alimento oferecem fígado à criança', () => {
+    for (const a of ALIMENTOS) {
+      const ids = trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, { alimentos: ALIMENTOS, restricoes: crianca(6), porAlimento: 4 }).map((t) => t.alimentoId)
+      expect(ids.filter((id) => FIGADOS.includes(id)), a.descricao).toEqual([])
     }
   })
 })
