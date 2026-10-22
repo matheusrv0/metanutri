@@ -406,7 +406,7 @@ describe('Restrições do paciente no Cobrir do cartão (sugestoes-com-criterio,
     const termo = primeira.split(',')[0]?.trim().toLowerCase() ?? ''
     const com = montar(adulta, plano, [termo])
     await com.usuario.click(cartao().getByRole('button', { name: 'Cobrir Ferro' }))
-    expect(vi.mocked(sugerirParaCobrir)).toHaveBeenLastCalledWith('ferro_mg', expect.anything(), expect.anything(), expect.objectContaining({ restricoes: [termo] }))
+    expect(vi.mocked(sugerirParaCobrir)).toHaveBeenLastCalledWith('ferro_mg', expect.anything(), expect.anything(), expect.objectContaining({ restricoes: { grupos: [], textos: [termo], naoGosta: [] } }))
     expect(nomesSugeridos()).not.toContain(primeira)
   })
 })

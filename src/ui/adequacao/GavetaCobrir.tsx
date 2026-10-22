@@ -7,6 +7,7 @@ import { quantidadeNoPlano } from '@/domain/formatarQuantidade.ts'
 import { ALIMENTOS } from '@/domain/tabelas.ts'
 import type { Totais } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, OpcaoId, Plano } from '@/domain/tipos.ts'
+import { chaveDasRestricoes, comoRestricoes, SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
@@ -26,7 +27,7 @@ interface GavetaCobrirProps {
   readonly adequacao: ResultadoAdequacao
   readonly gastoEnergetico: number | null
   /** O que o paciente não come; a sugestão que casar com qualquer termo é descartada. */
-  readonly restricoes?: readonly string[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[] | undefined
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAdicionar: (refeicaoId: string, opcao: OpcaoId, alimentoId: number, gramas: number) => void
   readonly aoFechar: () => void
@@ -63,7 +64,7 @@ export function GavetaCobrir({
   totais,
   adequacao,
   gastoEnergetico,
-  restricoes = [],
+  restricoes = SEM_RESTRICOES,
   aoAlterarCaso,
   aoAdicionar,
   aoFechar,
@@ -74,8 +75,9 @@ export function GavetaCobrir({
   const [opcao] = useState<OpcaoId>('principal')
   const [versaoOcultos, setVersaoOcultos] = useState(0)
   const armazenamento = useArmazenamento()
-  // As restrições chegam num array novo a cada renderização; o texto delas é a dependência estável (revisão N7).
-  const textoDasRestricoes = restricoes.join('\n')
+  // As restrições chegam num objeto novo a cada renderização; a chave delas é a dependência estável (revisão N7).
+  const doPaciente = comoRestricoes(restricoes)
+  const chaveRestricoes = chaveDasRestricoes(doPaciente)
 
   const resultado = useMemo(
     () =>
@@ -89,11 +91,11 @@ export function GavetaCobrir({
             // Junta o que foi escondido neste caso com o que vale para o aparelho inteiro.
             ocultos: new Set([...prefs.ocultos, ...lerOcultosGlobais(armazenamento)]),
             // A restrição filtra antes da escolha das 5 (spec sugestoes-com-criterio, CA-675).
-            restricoes: textoDasRestricoes === '' ? [] : textoDasRestricoes.split('\n'),
+            restricoes: doPaciente,
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, textoDasRestricoes],
+    [chave, totais, adequacao, gastoEnergetico, prefs, versaoOcultos, armazenamento, chaveRestricoes],
   )
 
   const ocultar = (alimentoId: number) => {

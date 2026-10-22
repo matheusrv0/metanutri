@@ -2,7 +2,7 @@
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
 import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
-import { casaRestricao, comoRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
+import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -177,7 +177,7 @@ export function sugerirParaCobrir(
   const restricoes = comoRestricoes(opcoes.restricoes)
   let restricaoTirouAlguem = false
 
-  const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean })[] = []
+  const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean; readonly naoGosta: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
     if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
@@ -214,6 +214,7 @@ export function sugerirParaCobrir(
 
     candidatas.push({
       comum: ehDeUsoComum(alimento),
+      naoGosta: ehNaoGosta(alimento, restricoes),
       primeira: !ehSegundaEscolha(alimento),
       alimentoId: alimento.id,
       descricao: alimento.descricao,
@@ -233,6 +234,8 @@ export function sugerirParaCobrir(
   // (D-199b), e o que voltou pela conduta da parceira depois do resto (spec conduta-da-nutricionista, D-293).
   candidatas.sort(
     (a, b) =>
+      // O que o paciente não gosta vai para o fim, sem sair (spec ficha-unica, D-354).
+      Number(a.naoGosta) - Number(b.naoGosta) ||
       Number(b.comum) - Number(a.comum) ||
       Number(b.primeira) - Number(a.primeira) ||
       kcalPorFaltaInteira(a) - kcalPorFaltaInteira(b) ||

@@ -5,6 +5,7 @@ import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano } from '@/domain/tipos.ts'
+import { SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -18,7 +19,7 @@ interface MicrosDoDiaProps {
   readonly plano: Plano
   readonly gastoEnergetico: number | null
   /** Restrições do paciente vinculado; filtram as sugestões do cobrir. */
-  readonly restricoes?: readonly string[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[] | undefined
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAlterarPlano: (novo: Plano) => void
   /** Leva à etapa 3, onde estão todas as linhas da adequação. */
@@ -35,7 +36,7 @@ const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
  * O que falta de micronutriente, com o Cobrir, na coluna da etapa 2 (spec painel-lateral-enxuto, D-204).
  * Mostra só o que pede ação; todas as linhas estão na etapa 3.
  */
-export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = [], aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
+export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RESTRICOES, aoAlterarCaso, aoAlterarPlano, aoVerTodos, gerarId = idPadrao }: MicrosDoDiaProps) {
   const [cobrindo, setCobrindo] = useState<ChaveNutrienteAlimento | null>(null)
   const idMeta = useId()
   const idTitulo = useId()

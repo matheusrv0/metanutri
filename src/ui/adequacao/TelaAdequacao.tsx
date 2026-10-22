@@ -7,6 +7,7 @@ import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
+import { SEM_RESTRICOES, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
@@ -31,7 +32,7 @@ interface TelaAdequacaoProps {
   readonly plano: Plano
   readonly gastoEnergetico: number | null
   /** Restrições do paciente vinculado; filtram as sugestões do cobrir. */
-  readonly restricoes?: readonly string[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[] | undefined
   readonly aoAlterarCaso: (mudanca: Partial<Caso>) => void
   readonly aoAlterarPlano: (novo: Plano) => void
   readonly gerarId?: GerarId
@@ -105,7 +106,7 @@ export function TelaAdequacao({
   caso,
   plano,
   gastoEnergetico,
-  restricoes = [],
+  restricoes = SEM_RESTRICOES,
   aoAlterarCaso,
   aoAlterarPlano,
   gerarId = idPadrao,

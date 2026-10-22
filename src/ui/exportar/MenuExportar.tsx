@@ -5,6 +5,7 @@ import { calcularAdequacao } from '@/domain/adequacao.ts'
 import { avaliarAntropometria } from '@/domain/antropometria.ts'
 import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
+import { restricoesDaFicha } from '@/domain/fichaNoPlano.ts'
 import { calcularMacros } from '@/domain/macros.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
@@ -34,7 +35,7 @@ export function MenuExportar({ caso, plano, bloqueio, assinatura }: MenuExportar
   const [imprimindo, setImprimindo] = useState(false)
   // Fora do app (teste isolado) não há ficha de paciente: a folha sai sem filtrar trocas e sem suplementos.
   const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
-  const restricoes = paciente?.restricoes
+  const restricoes = paciente ? restricoesDaFicha(paciente) : undefined
   // Spec anamnese-e-prescricoes, CA-577 e CB-166: os suplementos da ficha do paciente do plano.
   const suplementos = paciente?.suplementos ?? []
 

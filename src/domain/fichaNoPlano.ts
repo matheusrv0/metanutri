@@ -6,6 +6,7 @@ import { FAIXAS } from './caso.ts'
 import { condicaoNaData, lerDia, semanasNaData } from './momentoDeVida.ts'
 import { idadeNaData, type Paciente } from './pacientes.ts'
 import { podeGestarOuLactar, type PerfilDaFicha } from './regrasDaFicha.ts'
+import { montarRestricoes, type RestricoesDoPaciente } from './restricoes.ts'
 import type { Caso, CondicaoFisiologica } from './tipos.ts'
 
 export type DadoQueFalta = 'sexo' | 'nascimento'
@@ -95,4 +96,14 @@ export function perfilDaFicha(paciente: Paciente, hoje: string, temPlano: boolea
   const base = { sexo: paciente.sexo, idadeAnos: idade?.anos ?? null }
   const momento = paciente.momentoDeVida?.tipo ?? null
   return { ...base, momento: momento !== null && momento !== 'nenhum' && !podeGestarOuLactar(base) ? null : momento, temPlano }
+}
+
+/** As restrições da ficha (spec ficha-unica, D-351 a D-354): as marcadas, o texto, a doença celíaca e o que não gosta. */
+export function restricoesDaFicha(paciente: Paciente): RestricoesDoPaciente {
+  return montarRestricoes({
+    marcadas: paciente.restricoesMarcadas,
+    texto: paciente.restricoes,
+    doencas: paciente.doencas,
+    naoGosta: paciente.respostasAnamnese.find((r) => r.perguntaId === 'nao-gosta')?.resposta ?? '',
+  })
 }
