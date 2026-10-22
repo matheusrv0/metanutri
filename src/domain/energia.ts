@@ -1,7 +1,7 @@
 // Necessidade energética (SPEC CA-06 a CA-11, CA-06a a CA-06d, CB-02b).
 import tabela from '../data/energia.json'
 import { calcularImc, classificarImcPreGestacional, type ClasseImcPreGestacional } from './antropometria.ts'
-import { validarCaso } from './caso.ts'
+import { oQueFalta, validarCaso } from './caso.ts'
 import type { Caso, FormulaTmb, Sexo } from './tipos.ts'
 
 export type CategoriaAtividade = 'inativo' | 'pouco-ativo' | 'ativo' | 'muito-ativo'
@@ -95,20 +95,11 @@ const ROTULO_IMC: Readonly<Record<ClasseImcPreGestacional, string>> = {
   obesidade: 'obesidade',
 }
 
-/** Nome de cada dado que falta, como aparece na tela. */
-const NOMES_CAMPO: Readonly<Record<string, string>> = { sexo: 'sexo', idadeAnos: 'idade', pesoKg: 'peso', estaturaCm: 'estatura' }
-
-/** "peso e estatura", "sexo, peso e estatura". */
-function juntar(itens: readonly string[]): string {
-  if (itens.length <= 1) return itens.join('')
-  return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`
-}
-
 /** CA-230: o que falta para calcular a meta do modo rápido; `null` quando não falta nada (o problema é outro, CB-56). */
 function motivoDaMetaRapida(caso: Caso): string | null {
   const { faltando } = validarCaso({ ...caso, modo: 'completo' })
   if (faltando.length === 0) return null
-  return `Informe ${juntar(faltando.map((c) => NOMES_CAMPO[c] ?? c))} para calcular a meta.`
+  return `Informe ${oQueFalta(faltando)} para calcular a meta.`
 }
 
 export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEnergia {
@@ -151,9 +142,8 @@ export function calcularEnergia(caso: Caso, opcoes: OpcoesEnergia): ResultadoEne
   }
 
   if (!validacao.podeCalcular || sexo === null || idadeAnos === null || pesoKg === null || estaturaCm === null) {
-    const faltando = validacao.faltando.map((c) => NOMES_CAMPO[c] ?? c)
-    const motivo = faltando.length
-      ? `Informe ${faltando.join(', ')} para calcular a energia.`
+    const motivo = validacao.faltando.length
+      ? `Informe ${oQueFalta(validacao.faltando)} para calcular a energia.`
       : 'Corrija os campos inválidos do plano para calcular a energia.'
     return resultado({ metodo: null, tmb: null, categoriaAtividade: null, adicionais: [], get: null, fonte: null, motivoSemCalculo: motivo })
   }

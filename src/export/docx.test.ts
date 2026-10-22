@@ -290,7 +290,7 @@ describe('Memorial de cálculo em Word (CA-46, CA-47)', () => {
     })
     const { texto } = await textoDoDocx(await gerarBytes(doc))
     expect(texto).not.toMatch(/undefined|null|NaN/)
-    expect(texto).toMatch(/Informe sexo e idade/)
+    expect(texto).toMatch(/Informe o sexo e a idade/)
   })
 })
 

@@ -149,7 +149,7 @@ describe('Cartão Micronutrientes da etapa 2 (spec painel-lateral-enxuto)', () =
 
   it('CB-201: sem sexo e idade, mostra o motivo e não lista nada', () => {
     montar({}, planoCom([ARROZ, 200]))
-    expect(cartao().getByText(/Informe sexo e idade/)).toBeInTheDocument()
+    expect(cartao().getByText(/Informe o sexo e a idade/)).toBeInTheDocument()
     expect(cartao().queryByRole('list')).not.toBeInTheDocument()
   })
 

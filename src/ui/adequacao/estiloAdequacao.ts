@@ -32,5 +32,11 @@ export function textoDaAdequacao(linha: LinhaAdequacao): string {
   return pct
 }
 
+/** O botão dos nutrientes na meta, com a concordância certa (D-461): "Ver o nutriente na meta", "Ver os 5 nutrientes na meta". */
+export function rotuloDosNaMeta(quantos: number, aberto: boolean): string {
+  const verbo = aberto ? 'Esconder' : 'Ver'
+  return quantos === 1 ? `${verbo} o nutriente na meta` : `${verbo} os ${quantos} nutrientes na meta`
+}
+
 /** A primeira frase da gaveta do Cobrir: "O plano tem 28% da referência. " (D-459); sem a linha, nada. */
 export const aberturaDoCobrir = (linha: LinhaAdequacao | undefined): string => (linha ? `O plano tem ${pctDaReferencia(linha)}. ` : '')

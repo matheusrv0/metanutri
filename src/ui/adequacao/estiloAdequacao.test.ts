@@ -1,6 +1,6 @@
 // A adequação diz de que é a porcentagem (spec ficha-unica, D-459, CA-1283).
 import type { LinhaAdequacao } from '@/domain/adequacao.ts'
-import { aberturaDoCobrir, pctDaReferencia, textoDaAdequacao } from './estiloAdequacao.ts'
+import { aberturaDoCobrir, pctDaReferencia, rotuloDosNaMeta, textoDaAdequacao } from './estiloAdequacao.ts'
 
 const linha = (adequacaoPct: number, estado: LinhaAdequacao['estado']): LinhaAdequacao => ({
   chave: 'calcio_mg',
@@ -37,5 +37,14 @@ describe('A adequação em % da referência (CA-1283)', () => {
   it('a gaveta do Cobrir começa por quanto o plano tem', () => {
     expect(aberturaDoCobrir(linha(27.6, 'abaixo'))).toBe('O plano tem 28% da referência. ')
     expect(aberturaDoCobrir(undefined)).toBe('')
+  })
+})
+
+describe('O botão dos nutrientes na meta (CA-1286)', () => {
+  it('concorda com o número', () => {
+    expect(rotuloDosNaMeta(1, false)).toBe('Ver o nutriente na meta')
+    expect(rotuloDosNaMeta(1, true)).toBe('Esconder o nutriente na meta')
+    expect(rotuloDosNaMeta(5, false)).toBe('Ver os 5 nutrientes na meta')
+    expect(rotuloDosNaMeta(5, true)).toBe('Esconder os 5 nutrientes na meta')
   })
 })

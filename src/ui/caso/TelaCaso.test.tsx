@@ -135,7 +135,7 @@ describe('Etapa 1: dados do caso', () => {
 
   it('CB-01: sem peso e estatura, nada é calculado e o painel diz o que falta', () => {
     montar({ sexo: 'F', idadeAnos: 28 })
-    expect(painel().getByText(/Informe peso, estatura/)).toBeInTheDocument()
+    expect(painel().getByText(/Informe o peso e a estatura/)).toBeInTheDocument()
     semCalculo()
   })
 

@@ -257,7 +257,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     expect(visiveis.length).toBeGreaterThan(0)
     for (const texto of visiveis) expect(texto).toMatch(/abaixo|acima do limite/)
 
-    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const n = Number(botao.textContent?.match(/\d+/)?.[0])
     expect(visiveis.length + n).toBe(TOTAL_DE_LINHAS)
     expect(botao).toHaveAttribute('aria-expanded', 'false')
@@ -265,7 +265,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
     await usuario.click(botao)
     expect(botao).toHaveAttribute('aria-expanded', 'true')
-    expect(botao).toHaveTextContent(`Esconder os ${n} na meta`)
+    expect(botao).toHaveTextContent(`Esconder os ${n} nutrientes na meta`)
     expect(linhasVisiveis()).toHaveLength(TOTAL_DE_LINHAS)
     // A ordem de sempre dentro de cada grupo: Cálcio vem antes de Ferro.
     const ordem = linhasVisiveis()
@@ -274,7 +274,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
   it('CA-691: Cobrir com fundo teal claro, só em linha abaixo da meta', async () => {
     const usuario = montar(adulta, exemplo())
-    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
+    await usuario.click(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }))
     const cobrir = screen.getAllByRole('button', { name: /^Cobrir / })
     expect(cobrir.length).toBe(linhasVisiveis().filter((t) => t.includes('abaixo') && !t.startsWith('Sódio')).length)
     for (const b of cobrir) expect(b.className).toContain('bg-lightprimary')
@@ -292,7 +292,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
   it('CB-202: nada abaixo da meta, a tabela diz isso e oferece todas as linhas', () => {
     montar({ ...adulta, adequacao: { ...criarCasoVazio('x').adequacao, preset: { tipo: 'personalizado', referencia: 'ear', minimoPct: 1 } } }, exemplo())
     expect(screen.getByText('Nenhum nutriente abaixo da meta.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} na meta` })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Ver os ${TOTAL_DE_LINHAS} nutrientes na meta` })).toBeInTheDocument()
     expect(TOTAL_DE_LINHAS).toBe(21)
   })
 
@@ -301,13 +301,13 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
     const plano = exemplo()
     await gavetaSugere(sugestaoQueLevaAMeta(plano, { ...criarCasoVazio('c1'), ...adulta }, 'calcio_mg', IOGURTE_DESNATADO, ids))
     const usuario = montar(adulta, plano)
-    const ver = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const ver = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const antes = Number(ver.textContent?.match(/(\d+)/)?.[1])
     await usuario.click(ver)
     const gaveta = await abrirCobrir(usuario, 'Cálcio')
     await usuario.click(within(primeiraSugestao(gaveta)).getByRole('button', { name: 'Adicionar' }))
 
-    const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} na meta` })
+    const esconder = screen.getByRole('button', { name: `Esconder os ${antes + 1} nutrientes na meta` })
     expect(esconder).toHaveAttribute('aria-expanded', 'true')
     const grupo = document.getElementById(esconder.getAttribute('aria-controls') ?? '')
     if (!grupo) throw new Error('sem o grupo na meta')
@@ -353,7 +353,7 @@ describe('Etapa 3 no celular (CA-692)', () => {
 
   it('CA-692: o recolhimento vale igual, e Cobrir abre a gaveta', async () => {
     const usuario = montar(adulta, exemplo())
-    const botao = screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })
+    const botao = screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })
     const naMeta = document.getElementById(botao.getAttribute('aria-controls') ?? '')
     expect(naMeta).toHaveAttribute('hidden')
     await usuario.click(botao)
@@ -611,12 +611,12 @@ describe('Testes mais firmes da etapa 3 (revisão de 15/10)', () => {
   it('CA-690: o recolhido fecha quando a tela abre de novo', async () => {
     const plano = exemplo()
     const { unmount } = render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ }))
-    expect(screen.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }))
+    expect(screen.getByRole('button', { name: /^Esconder os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'true')
     unmount()
 
     render(<Anfitriao inicial={adulta} planoInicial={plano} />)
-    expect(screen.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
   })
 })
 

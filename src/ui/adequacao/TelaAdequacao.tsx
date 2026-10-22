@@ -21,7 +21,7 @@ import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
-import { COR_TEXTO, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
+import { COR_TEXTO, rotuloDosNaMeta, textoDaAdequacao, VARIANTE_BARRA } from './estiloAdequacao.ts'
 import { destinoDoFoco } from './focoDoCobrir.ts'
 import { GavetaCobrir } from './GavetaCobrir.tsx'
 import { ItemListaAdequacao } from './ItemListaAdequacao.tsx'
@@ -142,7 +142,7 @@ export function TelaAdequacao({
     abertura.current = { chave, ordem: pedemAcao.filter(podeCobrir).map((l) => l.chave) }
     setCobrindo(chave)
   }
-  const rotuloNaMeta = `${mostrarNaMeta ? 'Esconder' : 'Ver'} os ${naMeta.length} na meta`
+  const rotuloNaMeta = rotuloDosNaMeta(naMeta.length, mostrarNaMeta)
   const botaoNaMeta = (
     <Button variant="ghost" size="sm" aria-expanded={mostrarNaMeta} aria-controls={idNaMeta} onClick={() => setMostrarNaMeta((v) => !v)}>
       <ChevronDown className={cn('transition-transform', mostrarNaMeta && 'rotate-180')} aria-hidden="true" />

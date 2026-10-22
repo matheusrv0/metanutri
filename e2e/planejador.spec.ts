@@ -380,15 +380,15 @@ test('CA-704: o recolhido da etapa 3 é de cada plano, também pelo voltar do na
     }, `#/caso/${encodeURIComponent(id)}/adequacao`)
 
   await irPara(planoA)
-  await page.getByRole('button', { name: /^Ver os \d+ na meta$/ }).click()
-  await expect(page.getByRole('button', { name: /^Esconder os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ }).click()
+  await expect(page.getByRole('button', { name: /^Esconder os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'true')
 
   await irPara(planoB)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('(cópia)')
-  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
 
   // Voltar pelo navegador leva ao plano A, que abre fechado também.
   await page.goBack()
   await expect(page.getByRole('heading', { level: 1 })).not.toContainText('(cópia)')
-  await expect(page.getByRole('button', { name: /^Ver os \d+ na meta$/ })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByRole('button', { name: /^Ver os \d+ nutrientes na meta$/ })).toHaveAttribute('aria-expanded', 'false')
 })

@@ -114,7 +114,7 @@ export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Pr
   if (!estagio) {
     return {
       estagio: null,
-      motivoSemCalculo: 'Informe sexo e idade válidos (e uma condição compatível) para escolher as referências.',
+      motivoSemCalculo: 'Informe o sexo e a idade, com uma gestação ou lactação compatível, para escolher as referências.',
       linhas: [],
       fonte,
     }

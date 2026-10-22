@@ -247,13 +247,21 @@ describe('prescrição rápida: meta calculada (CA-226 a CA-230, CB-56)', () => 
 
   it('CA-230: sem peso ou estatura, diz o que falta', () => {
     expect(calcularEnergia(rapida({ pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
-      'Informe peso e estatura para calcular a meta.',
+      'Informe o peso e a estatura para calcular a meta.',
     )
-    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).motivoSemCalculo).toBe('Informe peso para calcular a meta.')
+    expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).motivoSemCalculo).toBe('Informe o peso para calcular a meta.')
     expect(calcularEnergia(rapida({ sexo: null, pesoKg: null, estaturaCm: null }), { fator: 1.2 }).motivoSemCalculo).toBe(
-      'Informe sexo, peso e estatura para calcular a meta.',
+      'Informe o sexo, o peso e a estatura para calcular a meta.',
     )
     expect(calcularEnergia(rapida({ pesoKg: null }), { fator: 1.2 }).get).toBeNull()
+  })
+
+  it('CA-1285: o atendimento completo diz o que falta com artigo e "e" (D-461)', () => {
+    const completo = (p: Partial<Caso>) => calcularEnergia(caso({ modo: 'completo', sexo: 'F', idadeAnos: 28, pesoKg: 62, estaturaCm: 163, ...p }), { fator: 1.2 })
+    expect(completo({ pesoKg: null, estaturaCm: null }).motivoSemCalculo).toBe('Informe o peso e a estatura para calcular a energia.')
+    expect(completo({ sexo: null, idadeAnos: null, pesoKg: null, estaturaCm: null }).motivoSemCalculo).toBe(
+      'Informe o sexo, a idade, o peso e a estatura para calcular a energia.',
+    )
   })
 
   it('CB-56: dado que o cálculo não aceita dá o mesmo motivo do atendimento completo', () => {
@@ -284,7 +292,7 @@ describe('estadoDaMeta (CA-226 a CA-230)', () => {
   it('sem cálculo, com o motivo', () => {
     expect(estadoDaMeta(rapida({ pesoKg: null, estaturaCm: null }))).toEqual({
       tipo: 'sem-calculo',
-      motivo: 'Informe peso e estatura para calcular a meta.',
+      motivo: 'Informe o peso e a estatura para calcular a meta.',
     })
   })
 })

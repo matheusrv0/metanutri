@@ -163,7 +163,7 @@ describe('calcularAdequacao', () => {
     const r = calcularAdequacao(totais({ ferro_mg: 9 }), perfil('F', null), { tipo: 'individual' })
     expect(r.estagio).toBeNull()
     expect(r.linhas).toEqual([])
-    expect(r.motivoSemCalculo).toMatch(/sexo e idade/)
+    expect(r.motivoSemCalculo).toBe('Informe o sexo e a idade, com uma gestação ou lactação compatível, para escolher as referências.')
   })
 
   it('personalizado recusa porcentagem inválida', () => {

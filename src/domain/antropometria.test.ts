@@ -155,6 +155,13 @@ describe('avaliarAntropometria', () => {
     expect(panturrilha('F', 33)?.nota).toBe('A referência da OMS (1995) usa 31 cm para os dois sexos.')
   })
 
+  it('CA-1285: o que falta vem com artigo e "e" (D-461)', () => {
+    expect(avaliarAntropometria(caso({ sexo: null, idadeAnos: null, pesoKg: null, estaturaCm: null })).avisos).toContain(
+      'Informe o sexo, a idade, o peso e a estatura para a avaliação antropométrica.',
+    )
+    expect(avaliarAntropometria(caso({ sexo: 'F', idadeAnos: 30, pesoKg: null, estaturaCm: 165 })).avisos).toContain('Informe o peso para a avaliação antropométrica.')
+  })
+
   it('CB-01: sem peso ou estatura não calcula IMC e diz o que falta', () => {
     const r = avaliarAntropometria(caso({ sexo: 'F', idadeAnos: 30, pesoKg: null, estaturaCm: 165 }))
     expect(r.imc).toBeNull()
