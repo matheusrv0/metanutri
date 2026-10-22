@@ -105,7 +105,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
   )
 
   const campoGramas = (
-    <div className="w-24 shrink-0">
+    // No celular, 84 px bastam para "1000 g"; o resto da largura fica para o nome da medida.
+    <div className="w-[5.25rem] shrink-0 sm:w-24">
       <CampoNumero
         rotulo={`Gramas de ${descricao}`}
         rotuloOculto
@@ -160,7 +161,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
         {acoes}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {naLinha ? (
           <>
             {aproximada ? (
@@ -169,7 +170,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
                 <span className="sr-only">aproximadamente</span>
               </span>
             ) : null}
-            <div className="w-16 shrink-0">
+            <div className="w-14 shrink-0 sm:w-16">
               <CampoNumero
                 rotulo={`Quantidade de ${descricao}`}
                 rotuloOculto

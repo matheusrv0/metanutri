@@ -266,7 +266,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
           </div>
         ) : null}
 
-        <h3 className="rotulo">{d.base === 'por100' ? `Obrigatórios, por 100 ${unidade}` : 'Obrigatórios, na porção'}</h3>
+        {/* Sem caixa alta: a unidade (g, ml) não vira "G". */}
+        <h3 className="text-sm font-semibold text-heading">{d.base === 'por100' ? `Obrigatórios, por 100 ${unidade}` : 'Obrigatórios, na porção'}</h3>
         <div className="grid gap-4 sm:grid-cols-2">{CAMPOS_MACROS.map(campoNutriente)}</div>
         {incoerente ? (
           <Alert variant="warning">
@@ -279,7 +280,7 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
           <p className="text-xs text-muted-foreground">{`Equivale a ${formatarNumero(por100.energia_kcal, 0)} kcal por 100 ${unidade}, valor usado nos cálculos do plano.`}</p>
         ) : null}
 
-        <h3 className="rotulo">Se tiver</h3>
+        <h3 className="text-sm font-semibold text-heading">Se tiver</h3>
         <div className="grid gap-4 sm:grid-cols-2">{CAMPOS_GERAIS.map(campoNutriente)}</div>
 
         <details className="group rounded-2xl bg-surfacerow px-4 py-3">

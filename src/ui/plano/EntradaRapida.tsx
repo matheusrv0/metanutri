@@ -175,10 +175,10 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                       {/* No celular, o nome numa linha e a leitura embaixo: "1 concha e meia · 210 g · 160 kcal" (D-373). */}
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                         <span className="min-w-0 truncate sm:flex-1">{o.r.alimento.descricao}</span>
-                        <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                           {o.r.alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
                           <MarcaDeCompletude alimento={o.r.alimento} />
-                          <span className={cn('numeros min-w-0 text-xs', o.r.gramas === null ? 'text-warningtext' : 'text-muted-foreground')}>
+                          <span className={cn('numeros min-w-0 text-xs', o.r.gramas === null ? 'text-warningtext' : 'whitespace-nowrap text-muted-foreground')}>
                             {o.r.gramas === null ? (o.r.aviso ?? 'Medida indisponível.') : `${leituraDoResultado(o.r) ?? ''} · ${kcalDe(o.r, o.r.gramas)}`}
                           </span>
                         </span>
