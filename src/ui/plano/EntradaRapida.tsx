@@ -1,6 +1,6 @@
 import { Plus, Search } from 'lucide-react'
 import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { buscarAlimentos, leituraDoResultado, PRIMEIRO_ID_PROPRIO, type ResultadoBusca } from '@/domain/busca.ts'
+import { buscarAlimentos, leituraDoResultado, PRIMEIRO_ID_PROPRIO, type MedidaCaseira, type ResultadoBusca } from '@/domain/busca.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
 import { ID_DE_RECEITA, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarReceitas, copiaParaOPlano, type Receita, type ResultadoReceita } from '@/domain/receitas.ts'
@@ -9,6 +9,7 @@ import { totaisDeItens } from '@/domain/totais.ts'
 import type { MedidaDoItem } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { useReceitas } from '../estado/usarReceitas.ts'
 import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
@@ -24,6 +25,11 @@ interface EntradaRapidaProps {
   readonly aoAdicionarReceita?: ((receita: Receita, gramas: number) => void) | undefined
   /** Aparece embaixo do campo enquanto ele está vazio, como as sugestões da refeição (CA-307). */
   readonly quandoVazio?: ReactNode
+  /**
+   * "+ Nova medida" para a medida digitada que o alimento não tem (spec alimentos-e-gramaturas, correção A, D-432): abre
+   * a janela com o nome escrito; ao salvar, o alimento entra na medida nova.
+   */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
 }
 
 // Alimento sem energia na tabela mostra travessão, nunca zero (princípio do produto).
@@ -42,17 +48,16 @@ function quantidadeDaReceita(r: ResultadoReceita): string {
   return [porcao, `${formatarNumero(r.gramas, 0)} g`, kcal].filter(Boolean).join(' · ')
 }
 
-/** Diz, na hora de escolher, o quanto a tabela sabe sobre este alimento. */
+/**
+ * Diz, na hora de escolher, quando a tabela sabe pouco deste alimento. "Parte dos nutrientes" (arroz, feijão, ovo) fica
+ * só na Tabela de alimentos: na entrada rápida ela aparecia em quase todo alimento básico e virava ruído (D-437).
+ */
 function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['alimento'] }) {
   const { nivel } = completudeDe(alimento)
-  if (nivel === 'completo') return null
-  const explicacao = explicarCompletude(alimento) ?? ''
+  if (nivel !== 'minimo') return null
   return (
-    <span
-      className={cn('rotulo shrink-0', nivel === 'minimo' ? 'text-errortext' : 'text-warningtext')}
-      title={explicacao}
-    >
-      {nivel === 'minimo' ? 'poucos nutrientes' : 'parte dos nutrientes'}
+    <span className="rotulo shrink-0 text-errortext" title={explicarCompletude(alimento) ?? ''}>
+      poucos nutrientes
     </span>
   )
 }
@@ -63,9 +68,11 @@ type Opcao = { readonly tipo: 'alimento'; readonly r: ResultadoBusca } | { reado
 const chaveDa = (o: Opcao): string => (o.tipo === 'alimento' ? `a-${o.r.alimento.id}` : `r-${o.r.receita.id}`)
 
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
-export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio }: EntradaRapidaProps) {
+export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio, aoCriarMedida }: EntradaRapidaProps) {
   const [texto, setTexto] = useState('')
   const [selecionado, setSelecionado] = useState(0)
+  // D-432: Enter numa linha sem a medida não fica calado.
+  const [nadaAdicionado, setNadaAdicionado] = useState(false)
   const idLista = useId()
   const { lista: receitas } = useReceitas()
 
@@ -85,16 +92,22 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
   const escolhido = opcoes[Math.min(selecionado, opcoes.length - 1)]
   const avisoDaBusca = daReceita.length > 0 ? null : aviso
   const semResultado = texto.trim() !== '' && opcoes.length === 0
+  // D-432: a linha escolhida pede uma medida que o alimento não tem.
+  const semAMedida = escolhido?.tipo === 'alimento' && escolhido.r.gramas === null && escolhido.r.faltaMedida ? { alimento: escolhido.r.alimento, falta: escolhido.r.faltaMedida } : null
 
   const limpar = () => {
     setTexto('')
     setSelecionado(0)
+    setNadaAdicionado(false)
   }
 
   const adicionar = (o: Opcao | undefined) => {
     if (!o) return
-    // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada.
-    if (o.r.gramas === null) return
+    // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada; a tela diz.
+    if (o.r.gramas === null) {
+      setNadaAdicionado(true)
+      return
+    }
     if (o.tipo === 'receita') aoAdicionarReceita?.(o.r.receita, o.r.gramas)
     else if (o.r.medida) aoAdicionar(o.r.alimento.id, o.r.gramas, o.r.medida)
     else aoAdicionar(o.r.alimento.id, o.r.gramas)
@@ -130,6 +143,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
           onChange={(e) => {
             setTexto(e.target.value)
             setSelecionado(0)
+            setNadaAdicionado(false)
           }}
           onKeyDown={aoTeclar}
           placeholder="1 concha de feijão ou 150 arroz…"
@@ -153,7 +167,10 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                   role="option"
                   aria-selected={atual}
                   onClick={() => adicionar(o)}
-                  onMouseEnter={() => setSelecionado(i)}
+                  onMouseEnter={() => {
+                    setSelecionado(i)
+                    setNadaAdicionado(false)
+                  }}
                   className={cn(
                     'flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left text-sm transition-colors last:border-0',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -170,6 +187,12 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                         <span className="numeros min-w-0 truncate text-xs text-muted-foreground">{quantidadeDaReceita(o.r)}</span>
                       </span>
                     </span>
+                  ) : o.r.gramas === null ? (
+                    // D-432: sem a medida, o nome fica inteiro e o aviso vai numa linha própria, em qualquer largura.
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="min-w-0 break-words">{o.r.alimento.descricao}</span>
+                      <span className="text-xs text-warningtext">{o.r.aviso ?? 'Medida indisponível.'}</span>
+                    </span>
                   ) : (
                     <>
                       {/* No celular, o nome numa linha e a leitura embaixo: "1 concha e meia · 210 g · 160 kcal" (D-373). */}
@@ -178,9 +201,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                           {o.r.alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo shrink-0 text-muted-foreground">meu</span> : null}
                           <MarcaDeCompletude alimento={o.r.alimento} />
-                          <span className={cn('numeros min-w-0 text-xs', o.r.gramas === null ? 'text-warningtext' : 'whitespace-nowrap text-muted-foreground')}>
-                            {o.r.gramas === null ? (o.r.aviso ?? 'Medida indisponível.') : `${leituraDoResultado(o.r) ?? ''} · ${kcalDe(o.r, o.r.gramas)}`}
-                          </span>
+                          <span className="numeros min-w-0 whitespace-nowrap text-xs text-muted-foreground">{`${leituraDoResultado(o.r) ?? ''} · ${kcalDe(o.r, o.r.gramas)}`}</span>
                         </span>
                       </span>
                     </>
@@ -190,6 +211,38 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
             )
           })}
         </ul>
+      ) : null}
+
+      {semAMedida || nadaAdicionado ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {nadaAdicionado ? (
+            <p role="alert" className="text-xs font-medium text-warningtext">
+              {semAMedida ? 'Nada foi adicionado: digite em gramas ou crie a medida.' : 'Nada foi adicionado: digite em gramas.'}
+            </p>
+          ) : null}
+          {semAMedida && aoCriarMedida ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="lightprimary"
+              aria-label={`Nova medida “${semAMedida.falta.nome}” para ${semAMedida.alimento.descricao}`}
+              onClick={() =>
+                aoCriarMedida(
+                  semAMedida.alimento.id,
+                  (m) => {
+                    const { quantidade } = semAMedida.falta
+                    aoAdicionar(semAMedida.alimento.id, Math.round(quantidade * m.gramas * 10) / 10, { nome: m.nome, quantidade, gramasPorMedida: m.gramas })
+                    limpar()
+                  },
+                  semAMedida.falta.nome,
+                )
+              }
+            >
+              <Plus aria-hidden="true" />
+              Nova medida
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

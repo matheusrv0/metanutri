@@ -272,6 +272,11 @@ export interface Alimento {
   readonly unidade?: 'g' | 'ml'
   /** Só no alimento próprio: as medidas do cadastro (D-383). */
   readonly medidas?: readonly { readonly nome: string; readonly gramas: number }[]
+  /**
+   * Só no alimento próprio com a medida da porção no rótulo: a porção ("4 colheres de sopa" de 10 g), que a entrada
+   * rápida usa quando não há quantidade (spec alimentos-e-gramaturas, correção A, D-433).
+   */
+  readonly porcaoPadrao?: { readonly nome: string; readonly quantidade: number; readonly gramasPorMedida: number }
   /** Só no alimento próprio (D-383 a D-386): o que a busca, a folha e o Cobrir precisam saber dele. */
   readonly proprio?: {
     readonly tipo: 'alimento' | 'preparacao' | 'rotulo'

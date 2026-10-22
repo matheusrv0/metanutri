@@ -11,6 +11,8 @@ interface DialogoNovaMedidaProps {
   readonly alimento: { readonly descricao: string } | null
   /** "g" ou "ml" ao lado do peso. */
   readonly unidade: string
+  /** O nome já escrito: a medida que faltou na entrada rápida (spec alimentos-e-gramaturas, correção A, D-432). */
+  readonly nomeInicial?: string
   /**
    * Grava a medida; devolve o motivo quando não deu (CB-372). Quem chama decide onde ela mora: medida própria da conta
    * (alimento da base) ou do próprio alimento (D-387).
@@ -20,18 +22,18 @@ interface DialogoNovaMedidaProps {
 }
 
 /** "Concha da minha casa = 120 g" (spec alimentos-e-gramaturas, D-387): o nome e o peso de uma medida. */
-export function DialogoNovaMedida({ alimento, unidade, aoSalvar, aoFechar }: DialogoNovaMedidaProps) {
+export function DialogoNovaMedida({ alimento, unidade, nomeInicial = '', aoSalvar, aoFechar }: DialogoNovaMedidaProps) {
   return (
     <Dialog open={alimento !== null} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-w-md">
-        {alimento ? <Formulario descricao={alimento.descricao} unidade={unidade} aoSalvar={aoSalvar} aoFechar={aoFechar} /> : null}
+        {alimento ? <Formulario descricao={alimento.descricao} unidade={unidade} nomeInicial={nomeInicial} aoSalvar={aoSalvar} aoFechar={aoFechar} /> : null}
       </DialogContent>
     </Dialog>
   )
 }
 
-function Formulario({ descricao, unidade, aoSalvar, aoFechar }: { readonly descricao: string } & Omit<DialogoNovaMedidaProps, 'alimento'>) {
-  const [nome, setNome] = useState('')
+function Formulario({ descricao, unidade, nomeInicial = '', aoSalvar, aoFechar }: { readonly descricao: string } & Omit<DialogoNovaMedidaProps, 'alimento'>) {
+  const [nome, setNome] = useState(nomeInicial)
   const [gramas, setGramas] = useState<number | null>(null)
   const [erro, setErro] = useState<{ readonly campo: 'nome' | 'gramas' | 'geral'; readonly mensagem: string } | null>(null)
 

@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { medidasDoSeletor } from '@/domain/medidaDoItem.ts'
 import { TelaAlimentos } from './TelaAlimentos.tsx'
 
 describe('Tabela de alimentos (US-B4)', () => {
@@ -81,6 +82,20 @@ describe('Tabela de alimentos (US-B4)', () => {
   it('CA-962 (spec vitaminas-usda): a ficha vazia não diz um número de nutrientes', () => {
     render(<TelaAlimentos />)
     expect(screen.getByText('Escolha um alimento da lista para ver a composição, as medidas caseiras e o que a tabela não mediu.')).toBeInTheDocument()
+  })
+
+  it('CA-1240 (correção A, D-437): a ficha mostra todas as medidas, na ordem do seletor, com a "unidade" primeiro', async () => {
+    render(<TelaAlimentos />)
+    const usuario = userEvent.setup()
+    await usuario.type(screen.getByRole('searchbox', { name: 'Buscar alimento na tabela' }), 'banana prata')
+    await usuario.click(within(screen.getByRole('list', { name: 'Alimentos da tabela' })).getAllByRole('button')[0] as HTMLElement)
+    const ficha = within(screen.getByRole('dialog'))
+    const medidas = within(ficha.getByRole('list', { name: 'Medidas caseiras' }))
+      .getAllByRole('listitem')
+      .map((li) => li.textContent)
+    expect(medidas[0]).toBe('unidade · 75 g')
+    expect(medidas).toHaveLength(medidasDoSeletor(182).length)
+    expect(medidas).toContain('unidade pequena · 56 g')
   })
 
   it('a ficha fala em Base MetaNutri, sem nome de origem', async () => {

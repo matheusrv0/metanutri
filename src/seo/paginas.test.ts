@@ -34,7 +34,7 @@ describe('as páginas indexáveis (spec site-publico-profissional)', () => {
     expect(inicio.titulo).toBe('MetaNutri: software para nutricionistas que diz o que comer')
     const vitaminasEMinerais = MICRONUTRIENTES_ADEQUACAO.filter((c) => c !== 'fibra_g').length
     expect(inicio.descricao).toBe(
-      `Monte o plano alimentar, veja o que ficou abaixo da meta em ${vitaminasEMinerais} vitaminas e minerais e receba o alimento e a porção em medida caseira. Comece grátis.`,
+      `Monte o plano alimentar, veja o que ficou abaixo da meta em ${vitaminasEMinerais} vitaminas e minerais e receba o alimento e a porção que fecham a diferença. Comece grátis.`,
     )
   })
 

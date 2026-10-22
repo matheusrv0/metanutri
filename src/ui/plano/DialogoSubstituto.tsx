@@ -43,7 +43,9 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
 
   return (
     <Dialog open={item !== null} onOpenChange={(v) => !v && fechar()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      {/* Correção A (I5 da revisão, CA-1243): a coluna da janela não cresce com o conteúdo (o resultado e os três botões
+          passavam da borda a 1280 px); os botões quebram linha. */}
+      <DialogContent className="max-h-[85vh] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Substituto equivalente</DialogTitle>
           <DialogDescription>
@@ -79,13 +81,13 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
                   ? `${formatarQuantidadeMedida(resultado.medidaDoItem.quantidade, resultado.medidaDoItem.nome)} · ${formatarNumero(resultado.gramas ?? 0, 0)} ${unidadeDo(substituto)}`
                   : `${formatarNumero(resultado.gramas ?? 0, 0)} ${unidadeDo(substituto)}`}
               </p>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
                 {DIFERENCAS.map((d) => {
                   const valor = resultado.diferencas[d.chave]
                   return (
                     <div key={d.chave} className="flex justify-between gap-2">
                       <dt className="text-muted-foreground">{d.rotulo}</dt>
-                      <dd className="numeros font-medium text-heading">{`${valor > 0 ? '+' : ''}${formatarNumero(valor, d.casas)} ${d.unidade}`}</dd>
+                      <dd className="numeros whitespace-nowrap font-medium text-heading">{`${valor > 0 ? '+' : ''}${formatarNumero(valor, d.casas)} ${d.unidade}`}</dd>
                     </div>
                   )
                 })}
@@ -95,7 +97,7 @@ export function DialogoSubstituto({ item, aoAdicionar, aoFechar }: DialogoSubsti
           )
         ) : null}
 
-        <DialogFooter>
+        <DialogFooter className="sm:flex-wrap">
           <Button variant="ghost" onClick={fechar}>
             Cancelar
           </Button>

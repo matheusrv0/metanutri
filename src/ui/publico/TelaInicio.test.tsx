@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DIAS_PARA_SUMIR } from '@/domain/acompanhamento.ts'
@@ -79,7 +81,7 @@ describe('TelaInicio (spec site-publico-profissional, textos da spec textos-e-pr
       'Digite “150 arroz” e tecle Enter: o alimento entra na refeição já com a medida caseira, e as calorias e os macros do dia se atualizam.',
     )
     expect(cobrir).toHaveTextContent(
-      'Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato. O MetaNutri calcula quanto falta em cada nutriente abaixo da meta, e o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença.',
+      'Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato. O MetaNutri calcula quanto falta em cada nutriente abaixo da meta, e o botão Cobrir propõe o alimento e a porção que fecham a diferença, em gramas e, quando a base tem, em medida caseira.',
     )
     expect(cobrir).toHaveTextContent(
       'As sugestões vêm de grupos diferentes e respeitam as restrições do paciente. Se nem uma porção realista fecha a diferença, a sugestão mostra quanto ela cobre. Você escolhe, e o alimento entra na refeição.',
@@ -177,10 +179,22 @@ describe('TelaInicio (spec site-publico-profissional, textos da spec textos-e-pr
     expect(foto).toHaveAttribute('loading', 'lazy')
   })
 
+  it('CA-1244 (correção A, D-438): as capturas foram refeitas: sem "Desjejum" no roteiro e sem a rúcula de 200 g', () => {
+    montar()
+    for (const img of screen.getAllByRole('img').filter((i) => /Cobrir|missões/.test(i.getAttribute('alt') ?? ''))) {
+      expect(img.getAttribute('alt')).not.toMatch(/rúcula|Desjejum/i)
+    }
+    const roteiro = readFileSync(join(process.cwd(), 'scripts', 'capturas-landing.mjs'), 'utf-8')
+    expect(roteiro).not.toMatch(/'Desjejum'/)
+    expect(roteiro).toMatch(/'Café da manhã'/)
+  })
+
   it('CA-1177: cada informação uma vez, uma pergunta só, sem comparação com empresa, promessa clínica nem termo antigo', () => {
     montar()
     const vezes = (trecho: string) => texto().split(trecho).length - 1
-    expect(vezes('em gramas e em medida caseira')).toBe(1)
+    // D-438 (correção A): o Cobrir dá a medida caseira quando a base tem uma que serve.
+    expect(vezes('em gramas e, quando a base tem, em medida caseira')).toBe(1)
+    expect(vezes('em gramas e em medida caseira')).toBe(0)
     expect(vezes('abaixo da meta')).toBeLessThanOrEqual(2)
     expect(vezes('?')).toBe(1)
     expect(texto()).not.toMatch(/de verdade|nenhum programa|o único|para de abandonar|sem planilha|nunca vira zero/i)

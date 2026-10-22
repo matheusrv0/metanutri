@@ -127,16 +127,52 @@ describe('quantidade + medida = gramas (spec alimentos-e-gramaturas, G2, G3 e G5
     expect(fixada.quantidade * fixada.gramasPorMedida).toBeCloseTo(102, 6)
   })
 
+  it('CA-1238 (Importante 1 da revisão de código): com a medida automática, escolher outra medida não muda os gramas', async () => {
+    const { aoMudarMedida, usuario } = comMedida({ id: 'i1', alimentoId: FEIJAO, gramas: 102 }, 'medida-caseira')
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), 'concha')
+    const escolhida = aoMudarMedida.mock.lastCall?.[0] as { nome: string; quantidade: number; gramasPorMedida: number }
+    expect(escolhida.nome).toBe('concha')
+    // Antes, a quantidade da automática (6) ia para a concha: 6 × 140 = 840 g.
+    expect(escolhida.quantidade * escolhida.gramasPorMedida).toBeCloseTo(102, 6)
+  })
+
+  it('CA-1238: "+ Nova medida…" também mantém os gramas sem medida guardada', async () => {
+    const aoMudarMedida = vi.fn()
+    const aoCriarMedida = vi.fn((_alimentoId: number, aoCriar: (m: { nome: string; gramas: number }) => void) => aoCriar({ nome: 'concha da casa', gramas: 100 }))
+    render(
+      <ul>
+        <LinhaItem
+          item={{ id: 'i1', alimentoId: FEIJAO, gramas: 102 }}
+          aoMudarGramas={vi.fn()}
+          aoRemover={vi.fn()}
+          aoMudarMedida={aoMudarMedida}
+          aoCriarMedida={aoCriarMedida}
+          modo="medida-caseira"
+        />
+      </ul>,
+    )
+    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), '__nova')
+    const criada = aoMudarMedida.mock.lastCall?.[0] as { nome: string; quantidade: number; gramasPorMedida: number }
+    expect(criada.nome).toBe('concha da casa')
+    expect(criada.quantidade * criada.gramasPorMedida).toBeCloseTo(102, 6)
+  })
+
+  it('CA-1238: com medida guardada, trocar a medida muda os gramas (CA-1114 continua)', async () => {
+    const { aoMudarMedida, usuario } = comMedida({ id: 'i1', alimentoId: FEIJAO, gramas: 210, medida: concha })
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), 'colher de servir')
+    expect(aoMudarMedida).toHaveBeenLastCalledWith({ nome: 'colher de servir', quantidade: 1.5, gramasPorMedida: 35 })
+  })
+
   it('CA-1116: "gramas" no seletor deixa o item só em gramas', async () => {
     const { aoMudarMedida, usuario } = comMedida({ id: 'i1', alimentoId: FEIJAO, gramas: 210, medida: concha })
     await usuario.selectOptions(screen.getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), 'gramas')
     expect(aoMudarMedida).toHaveBeenLastCalledWith(null)
   })
 
-  it('CB-366: alimento sem medida mostra só os gramas e diz que não há medida na base', () => {
+  it('CB-366: alimento sem medida mostra só os gramas e diz que não há medida cadastrada', () => {
     comMedida({ id: 'i1', alimentoId: 40, gramas: 90 })
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByText('Sem medida caseira na base.')).toBeInTheDocument()
+    expect(screen.getByText('Sem medida caseira cadastrada.')).toBeInTheDocument()
     expect(screen.getByText(/O paciente lê:/)).toHaveTextContent('90 g')
   })
 

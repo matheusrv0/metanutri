@@ -81,6 +81,25 @@ describe('Trocas por grupo', () => {
   })
 })
 
+describe('Trocas com a medida que o paciente lê (spec alimentos-e-gramaturas, correção A, D-434)', () => {
+  it('CA-1237: os gramas de toda troca com medida são os da medida', () => {
+    let comMedida = 0
+    for (const a of ALIMENTOS) {
+      for (const t of trocasDoAlimento({ alimentoId: a.id, gramas: 100 }, { alimentos: ALIMENTOS, porAlimento: 4 })) {
+        if (!t.medida) continue
+        comMedida += 1
+        expect(t.gramas, `${a.descricao} → ${t.descricao} · ${t.medida.texto}`).toBe(t.medida.gramasEquivalentes)
+      }
+    }
+    expect(comMedida).toBeGreaterThan(100)
+  })
+
+  it('CA-1237: 2 ovos cozidos trocam por "1 unidade" de ovo frito com os 50 g da unidade', () => {
+    const frito = trocasDoAlimento({ alimentoId: 488, gramas: 90 }, { alimentos: ALIMENTOS, porAlimento: 4 }).find((t) => t.alimentoId === 490)
+    expect(frito).toMatchObject({ gramas: 50, medida: { texto: '1 unidade' } })
+  })
+})
+
 describe('Trocas com critério (spec sugestoes-com-criterio)', () => {
   it('CA-658, CA-668 e CA-913: nenhuma troca casa com a trava por texto, para nenhum alimento da base', () => {
     // Trava escrita à mão, sem usar a regra (revisão I3).

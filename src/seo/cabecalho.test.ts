@@ -66,7 +66,7 @@ describe('o cabeçalho de cada página (spec site-publico-profissional)', () => 
     const aplicativo = dadosEstruturados()['@graph'].find((no) => no['@type'] === 'SoftwareApplication')
     expect(aplicativo?.['applicationSubCategory']).toBe('Software para nutricionistas')
     expect(aplicativo?.['description']).toBe(
-      'Software para nutricionistas: plano alimentar com adequação de 20 vitaminas e minerais e da fibra, sugestão de alimento e porção em medida caseira para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.',
+      'Software para nutricionistas: plano alimentar com adequação de 20 vitaminas e minerais e da fibra, sugestão de alimento e porção para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.',
     )
     expect(meta(cabecalhoDaPagina(paginaDaRota('inicio')), 'property', 'og:image:alt')).toBe(
       'Logotipo do MetaNutri em fundo verde-petróleo, com a frase “Software de nutrição que diz o que comer”.',

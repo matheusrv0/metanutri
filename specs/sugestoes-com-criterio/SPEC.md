@@ -221,6 +221,65 @@ Vale a menor entre a porção do grupo e a porção máxima que a pessoa escolhe
 | Frutas secas e muito calóricas | categoria de frutas com mais de 200 kcal em 100 g (hoje macaúba, tamarindo e tucumã) | 30 g | tamarindo: porção 25 g |
 | Cortes gordos e aves com pele | nome com "com gordura", "com pele", costela, cupim, bisteca ou capa de contra-filé | 100 g | bife 100 g; pedaço de costela 40 g |
 
+## 8. Correção A da rodada "cuidado total" (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da revisão como usuária real (`revisao-usuario.md`, G1, G3,
+I6); ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar. Os quatro pacientes da revisão
+mostraram "Alface roxa, 1 unidade · 200 g" no café da manhã de uma menina de 6 anos, "Rúcula, crua 200 g" para todo
+adulto, "fígado 5 g" e fígado para gestante, e café no café da manhã da criança. Substitui a porção máxima fixa de 200 g
+para os alimentos fora da tabela 7.1 (seção 5, "200 g de alface ainda é uma sugestão possível") e o CA-673 no que ele
+tem de "porção do grupo".
+
+### 8.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-439 | **Porção realista por grupo e por idade** (tabela 8.2): todo alimento cai num grupo com porção máxima de adulto, tirada das porções do Guia Alimentar (2006) e das medidas da POF; a porção do grupo é multiplicada pela idade: abaixo de 1 ano ¼, de 1 a 3 anos ½, de 4 a 8 ⅔, de 9 a 13 ¾, de 14 em diante 1. A "Porção máxima por sugestão" da gaveta (200 g por padrão) continua editável e vale como teto acima de tudo. Sem idade, vale a de adulto. Sugestão que não cobre 10% da falta dentro da porção realista sai, como antes | 200 g de rúcula são uns 5 maços; uma criança de 6 anos não come 1 pé de alface |
+| D-440 | **Porção mínima** em carne, ave, peixe, víscera e ovo: carne, ave, peixe e víscera ao menos 50 g (adulto, pela mesma escala de idade); ovo ao menos 1 unidade (45 g). Quando a falta se cobre com menos, a sugestão sobe para a mínima e cobre 100% | Ninguém come 5 g de fígado |
+| D-441 | **"Adicionar em" começa na "Refeição de cada alimento"**: verdura, legume, leguminosa, carne, peixe, preparação e cereal cozido vão para o almoço; fruta, leite e derivados, oleaginosa e semente, para o lanche; pão, cereal matinal, aveia, tapioca, cuscuz e ovo, para o café da manhã. Sem a refeição do tipo, vale a mais perto (almoço → jantar; lanche → ceia → café da manhã; café da manhã → lanche) e, sem nenhuma, a primeira. O botão diz para onde vai ("Adicionar em Almoço"). Escolher uma refeição na lista põe todas nela, como antes | A alface entrou no café da manhã da menina e saiu no plano impresso dela |
+| D-442 | **Gestação: sem fígado.** Com a condição "gestante", o fígado (de boi ou de frango, cru ou grelhado) e o sarapatel saem do Cobrir, das trocas e das sugestões da refeição, e a linha do plano que tem um deles avisa: "Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê." No Cobrir da vitamina A da gestante, as fontes vegetais (carotenoides) vêm antes das animais (retinol). Os outros miúdos (coração, bucho, língua) não concentram retinol e ficam | Retinol pré-formado é teratogênico em excesso; o fígado tem 14.574 µg de vitamina A em 100 g |
+| D-443 | **Criança sem cafeína.** Abaixo de 12 anos, café (infusão e pó), chá preto, chá-mate e refrigerante de cola e de guaraná saem das sugestões da refeição, das trocas e do Cobrir; a linha do plano que tem um deles avisa: "Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças." Chá de erva-doce, sem cafeína, fica | "Café, infusão 10% · 50 g" aparecia no café da manhã de uma criança de 6 anos |
+
+D-442 e D-443 entram como "cuidados da fase de vida" no mesmo objeto das restrições do paciente (spec `ficha-unica`,
+D-353): valem onde as restrições já valem, vêm da condição e da idade do plano (com ou sem paciente) e não mudam a
+ficha.
+
+### 8.2 Porção máxima por grupo (adulto)
+
+A tabela 7.1 continua (oleaginosas 30 g, queijos 50 g, pães 50 g, frutas secas 30 g, cortes gordos 100 g e os grupos da
+conduta da parceira) e ganha os grupos abaixo. Vale o primeiro grupo que casar, na ordem da tabela 7.1 e depois desta.
+
+| Grupo | Como o sistema reconhece | Máxima | Mínima | Referência |
+|---|---|---|---|---|
+| Folha crua | verdura crua: alface, rúcula, agrião, almeirão, chicória, espinafre, mostarda, serralha, taioba, caruru, catalonha, couve, repolho, acelga | 60 g | — | prato raso de alface 50 g, de rúcula 80 g (POF) |
+| Fígado e sarapatel | nome com fígado ou sarapatel | 100 g | 50 g | bife de fígado 100 g (POF) |
+| Carne, ave e peixe | categorias de carnes e de pescados | 120 g | 50 g | bife 100 g, filé de peixe 120 g (POF) |
+| Ovo inteiro | (tabela 7.1, 100 g) | 100 g | 45 g | unidade 45 g (POF) |
+| Leguminosa cozida e tofu | leguminosas cozidas; tofu | 140 g | — | concha de feijão 140 g (POF) |
+| Cereal e tubérculo cozidos | arroz, macarrão, polenta, cuscuz, batata, mandioca, cará, inhame, batata-doce e baroa cozidos | 150 g | — | porção do Guia: arroz 125 g, batata-doce 150 g |
+| Verdura e legume | o resto da categoria de verduras | 100 g | — | porção do Guia: 1 a 2 porções de hortaliça por refeição |
+| Fruta | frutas e derivados: a unidade da fruta quando ela pesa de 40 a 250 g; senão 150 g | 1 unidade ou 150 g | — | "fruta até 1 unidade" (revisão) |
+| Leite e iogurte | leite fluido, bebida láctea e iogurte | 200 g | — | copo americano de leite 150 ml, pote de iogurte 200 g (POF) |
+| Preparação | alimentos preparados | 150 g | — | — |
+
+### 8.3 Critérios de aceite
+
+- **CA-1245** · Dado a menina de 6 anos (fator ⅔) e o Cobrir do ferro, então nenhuma sugestão passa da porção do grupo × ⅔ (folha crua até 40 g, carne até 80 g, preparação até 100 g) nem aparece em "unidade" de folha.
+- **CA-1246** · Dado um adulto, então a rúcula e a alface sugeridas não passam de 60 g e a carne de 120 g, mesmo com a "Porção máxima por sugestão" em 200 g.
+- **CA-1247** · Dado as idades 0, 2, 6, 10, 16 e 35 anos, então o fator é ¼, ½, ⅔, ¾, 1 e 1; dado a "Porção máxima por sugestão" em 30 g, então ela continua valendo como teto.
+- **CA-1248** · Dado uma falta que 5 g de fígado cobririam, então a sugestão do fígado é de 50 g (adulto), nunca 5 g, e cobre 100%; dado o ovo, nunca menos de 1 unidade.
+- **CA-1249** · Dado a gaveta do Cobrir, então "Adicionar em" começa em "Refeição de cada alimento", e o botão de cada sugestão diz a refeição: alface e carne em "Almoço", iogurte e fruta no lanche, pão no café da manhã; escolhendo uma refeição na lista, todas vão para ela.
+- **CA-1250** · Dado um plano de gestante, então o Cobrir (vitamina A, ferro, B12 e todos os outros), as trocas e as sugestões da refeição não trazem fígado nem sarapatel, e o Cobrir da vitamina A começa por fonte vegetal.
+- **CA-1251** · Dado um plano de gestante com fígado numa refeição, então a linha avisa "Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê."
+- **CA-1252** · Dado um plano de criança com menos de 12 anos, então as sugestões do café da manhã não trazem café, e o Cobrir e as trocas não trazem café, chá preto, mate nem refrigerante de cola ou guaraná; com café posto à mão, a linha avisa "Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças."; com 12 anos ou mais, nada muda.
+
+### 8.4 Casos de borda
+
+- **CB-406** · Plano sem idade (prescrição rápida sem idade, plano antigo): porção de adulto e nenhum cuidado de criança.
+- **CB-407** · Plano sem nenhuma refeição: a gaveta não tem destino, como antes.
+- **CB-408** · Alimento próprio com "fígado" no nome numa gestante: o aviso e o filtro valem pelo nome.
+- **CB-409** · Gestante que também tem restrição marcada: os dois avisos valem; a linha mostra o primeiro (o cuidado da fase).
+
 ## Apêndice A — Alimentos que o MetaNutri deixa de propor sozinho
 
 *(20/10/2026)* Regenerado a partir do código depois da conduta da nutricionista parceira (spec

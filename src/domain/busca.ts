@@ -36,11 +36,11 @@ export function registrarMedidasProprias(lista: readonly { readonly alimentoId: 
  * (D-387). O alimento próprio traz as dele no cadastro.
  */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
-  if (alimentoId >= PRIMEIRO_ID_PROPRIO) return buscarAlimento(alimentoId)?.medidas ?? []
-  const daPof = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  // O alimento próprio traz as do cadastro e do rótulo; a medida da conta também vale para ele (correção A, D-433).
+  const daBase = alimentoId >= PRIMEIRO_ID_PROPRIO ? (buscarAlimento(alimentoId)?.medidas ?? []) : (MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? [])
   const proprias = PROPRIAS.get(alimentoId)
-  if (!proprias) return daPof
-  return [...proprias, ...daPof.filter((m) => !proprias.some((p) => p.nome === m.nome))]
+  if (!proprias) return daBase
+  return [...proprias, ...daBase.filter((m) => !proprias.some((p) => p.nome === m.nome))]
 }
 
 /** Medidas mais legíveis num plano, em ordem de preferência; medidas vagas ("porção", "prato") ficam de fora. */
@@ -49,6 +49,8 @@ export const PREFERENCIA_MEDIDAS: readonly string[] = [
   'fatia',
   'bife',
   'filé',
+  // Correção A (spec alimentos-e-gramaturas, D-431): a folha crua só tem folha, pires e prato; "3 folhas" é como se lê.
+  'folha',
   'colher de sopa',
   'colher de servir',
   'concha',
@@ -297,10 +299,15 @@ export interface InterpretacaoEntrada {
 const fracao = (a: string, b: string): number => (Number(b) === 0 ? Number.NaN : Number(a) / Number(b))
 
 function lerQuantidade(texto: string): { valor: number; resto: string } | null {
-  const m = texto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|[a-z]|$)|^(\d+(?:[.,]\d+)?)(?=\s|[a-z]|$)/)
+  // "1.000 ml": o ponto separa o milhar (Menor da revisão de código, correção A); "1,5" e "1.5" continuam decimais.
+  const milhar = texto.match(/^(\d{1,3}(?:\.\d{3})+)(?=\s|[a-z]|$)/)
+  const m = milhar ? null : texto.match(/^(\d+)\s*\/\s*(\d+)(?=\s|[a-z]|$)|^(\d+(?:[.,]\d+)?)(?=\s|[a-z]|$)/)
   let valor: number
   let resto: string
-  if (m) {
+  if (milhar?.[1]) {
+    valor = Number(milhar[1].replace(/\./g, ''))
+    resto = texto.slice(milhar[0].length).trim()
+  } else if (m) {
     valor = m[1] && m[2] ? fracao(m[1], m[2]) : Number((m[3] ?? '').replace(',', '.'))
     resto = texto.slice(m[0].length).trim()
   } else {
@@ -379,7 +386,10 @@ export function interpretarEntrada(texto: string): InterpretacaoEntrada {
 export function variantesDoTermo(termo: string): readonly string[] {
   const singular = termo.endsWith('oes') || termo.endsWith('aes')
     ? `${termo.slice(0, -3)}ao`
-    : termo.endsWith('ais')
+    : // "franceses" → "frances", "ingleses" → "ingles" (Menor da revisão de código, correção A).
+      termo.length > 5 && termo.endsWith('eses')
+      ? termo.slice(0, -2)
+      : termo.endsWith('ais')
       ? `${termo.slice(0, -3)}al`
       : termo.endsWith('eis')
         ? `${termo.slice(0, -3)}el`
@@ -394,7 +404,8 @@ export function variantesDoTermo(termo: string): readonly string[] {
 /** A medida que o alimento tem com o nome pedido (inteiro ou curto); `null` quando ele não tem. */
 export function medidaPedida(alimentoId: number, pedida: string): MedidaCaseira | null {
   const medidas = medidasDoAlimento(alimentoId)
-  const nomes = MEDIDAS_CURTAS[pedida] ?? [pedida]
+  // O nome curto vale primeiro; depois, o nome como foi escrito (o "copo" do rótulo de um alimento próprio, D-433).
+  const nomes = MEDIDAS_CURTAS[pedida] ? [...MEDIDAS_CURTAS[pedida], pedida] : [pedida]
   for (const nome of nomes) {
     const achada = medidas.find((m) => m.nome === nome)
     if (achada) return achada
@@ -405,10 +416,13 @@ export function medidaPedida(alimentoId: number, pedida: string): MedidaCaseira 
 /** A ordem das medidas de contar para "1 banana" (D-371): unidade primeiro, depois fatia, bife, filé… */
 const ORDEM_DE_CONTAR = ['unidade', 'fatia', 'bife', 'filé', 'unidade pequena', 'pedaço', 'posta', 'coxa', 'sobrecoxa', 'peito', 'rodela']
 
+/** Fruta se conta pela unidade: "1 banana nanica" nunca é "1 fatia" (correção A, CA-1258). */
+const ORDEM_DE_CONTAR_FRUTA = ['unidade', 'unidade pequena']
+
 /** A medida de contar do alimento, na ordem acima; `null` quando ele não tem. */
 export function medidaDeContar(alimentoId: number): MedidaCaseira | null {
   const medidas = medidasDoAlimento(alimentoId)
-  for (const nome of ORDEM_DE_CONTAR) {
+  for (const nome of ehFruta(alimentoId) ? ORDEM_DE_CONTAR_FRUTA : ORDEM_DE_CONTAR) {
     const achada = medidas.find((m) => m.nome === nome)
     if (achada) return achada
   }
@@ -429,7 +443,29 @@ export interface ResultadoBusca {
   /** Como o peso se escreve: ml para líquido ou quando a pessoa digitou ml (D-378). */
   readonly unidade: UnidadeDoAlimento
   readonly aviso: string | null
+  /**
+   * A medida pedida que o alimento não tem, com a quantidade digitada: "+ Nova medida" cria e põe o alimento nela
+   * (spec alimentos-e-gramaturas, correção A, D-432).
+   */
+  readonly faltaMedida?: { readonly nome: string; readonly quantidade: number }
 }
+
+/** Quantas medidas que há o aviso cita. */
+const MEDIDAS_NO_AVISO = 3
+
+/** "Sem “xícara de chá” · tem colher de sopa (15 g), colher de servir (30 g)" (D-432). */
+function avisoSemMedida(alimento: Alimento, nome: string, unidade: UnidadeDoAlimento): string {
+  const posicao = (m: MedidaCaseira) => (m.propria === true ? -1 : PREFERENCIA_MEDIDAS.indexOf(m.nome))
+  const legiveis = medidasDoAlimento(alimento.id)
+    .filter((m) => posicao(m) !== -1 || m.propria === true)
+    .sort((a, b) => posicao(a) - posicao(b))
+    .slice(0, MEDIDAS_NO_AVISO)
+  if (legiveis.length === 0) return `Sem “${nome}” e sem outra medida cadastrada`
+  return `Sem “${nome}” · tem ${legiveis.map((m) => `${m.nome} (${formatarPeso(m.gramas)} ${unidade})`).join(', ')}`
+}
+
+/** O alimento é fruta: conta pela unidade (CA-1258). */
+const ehFruta = (alimentoId: number): boolean => buscarAlimento(alimentoId)?.categoria.startsWith('Frutas') === true
 
 interface Indice {
   readonly alimento: Alimento
@@ -525,12 +561,9 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   if (lida.medida !== null) {
     const m = medidaPedida(alimento.id, lida.medida)
     if (!m) {
-      return {
-        gramas: null,
-        medida: null,
-        unidade,
-        aviso: `A medida “${MEDIDAS_CURTAS[lida.medida]?.[0] ?? lida.medida}” não está cadastrada para ${alimento.descricao.trim()}. Informe a quantidade em gramas.`,
-      }
+      // D-432: o aviso diz o que falta e o que há; "+ Nova medida" cria a que falta com a quantidade digitada.
+      const nome = MEDIDAS_CURTAS[lida.medida]?.[0] ?? lida.medida
+      return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, nome, unidade), faltaMedida: { nome, quantidade: lida.quantidade ?? 1 } }
     }
     const q = lida.quantidade ?? 1
     return { gramas: arredondar(q * m.gramas), medida: { nome: m.nome, quantidade: q, gramasPorMedida: m.gramas }, unidade, aviso: null }
@@ -538,6 +571,15 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   if (lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES) {
     const m = medidaDeContar(alimento.id)
     if (m) return { gramas: arredondar(lida.quantidade * m.gramas), medida: { nome: m.nome, quantidade: lida.quantidade, gramasPorMedida: m.gramas }, unidade, aviso: null }
+    // CA-1258: fruta sem a unidade na base não vira 1 g: pede gramas ou a medida.
+    if (ehFruta(alimento.id)) {
+      return { gramas: null, medida: null, unidade, aviso: avisoSemMedida(alimento, 'unidade', unidade), faltaMedida: { nome: 'unidade', quantidade: lida.quantidade } }
+    }
+  }
+  // D-433: sem quantidade, o alimento próprio entra pela porção do rótulo ("4 colheres de sopa · 40 g"), não por 100 g.
+  const porcao = alimento.porcaoPadrao
+  if (lida.quantidade === null && lida.unidade === null && porcao) {
+    return { gramas: arredondar(porcao.quantidade * porcao.gramasPorMedida), medida: { ...porcao }, unidade, aviso: null }
   }
   return { gramas: lida.quantidade ?? GRAMAS_PADRAO, medida: null, unidade, aviso: null }
 }

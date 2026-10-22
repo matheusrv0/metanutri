@@ -1,5 +1,5 @@
 // Spec alimentos-e-gramaturas, G1 a G5, G8, G9 e D-374 a D-379: a medida guardada no item e o que o paciente lê.
-import { buscarAlimentos } from './busca.ts'
+import { buscarAlimentos, registrarMedidasProprias } from './busca.ts'
 import { criarCasoVazio } from './caso.ts'
 import { copiarDieta, dietaDoPlano, dietaMudou, lerDieta } from './dietaDoLink.ts'
 import { modoDaCopia, paraOPaciente } from './dietaParaPaciente.ts'
@@ -89,7 +89,8 @@ describe('a medida guardada no item (G1, D-374)', () => {
   it('CA-1118: o seletor traz as medidas da POF na ordem de preferência, cada uma com o peso', () => {
     const nomes = medidasDoSeletor(FEIJAO).map((m) => m.nome)
     expect(nomes.slice(0, 3)).toEqual(['colher de sopa', 'colher de servir', 'concha'])
-    expect(nomes).toContain('cumbuca')
+    // A "cumbuca" de feijão era uma concha na fonte da POF: saiu pela camada de plausibilidade (D-430).
+    expect(nomes).not.toContain('cumbuca')
     expect(medidasDoSeletor(MACARRAO)).toEqual([])
   })
 })
@@ -172,5 +173,77 @@ describe('o link do paciente lê a medida guardada (D-377)', () => {
   it('a alface da POF lê a medida escolhida, não "2 colheres de sobremesa e meia" (A5)', () => {
     const folha = item(ALFACE, 10, { nome: 'folha', quantidade: 1, gramasPorMedida: 10 })
     expect(texto(folha, 'medida-caseira')).toBe('1 folha')
+  })
+})
+
+describe('uma tolerância só: 5% (correção A, D-434)', () => {
+  const BANANA_PRATA = 182
+  const ARROZ = 3
+
+  it('CA-1235: a medida automática que não fecha em 5% é aproximada: "cerca de" nos modos com medida', () => {
+    // 1 unidade e meia de banana prata = 112,5 g: 13% abaixo dos 130 g prescritos.
+    expect(medidaNaLinha(item(BANANA_PRATA, 130))).toMatchObject({ origem: 'automatica', aproximada: true, texto: '1 unidade e meia' })
+    expect(texto(item(BANANA_PRATA, 130), 'medida-e-gramas')).toBe('130 g (cerca de 1 unidade e meia)')
+    expect(texto(item(BANANA_PRATA, 130), 'medida-caseira')).toBe('130 g (cerca de 1 unidade e meia)')
+    expect(texto(item(BANANA_PRATA, 130), 'gramas')).toBe('130 g')
+    // Fecha: 6 colheres de sopa de arroz = 150 g.
+    expect(medidaNaLinha(item(ARROZ, 150))).toMatchObject({ aproximada: false })
+    expect(texto(item(ARROZ, 150), 'medida-e-gramas')).toBe('6 colheres de sopa (150 g)')
+  })
+
+  it('CA-1235: em nenhum alimento da base, o paciente lê uma medida a mais de 5% dos gramas sem "cerca de"', () => {
+    for (const a of ALIMENTOS) {
+      for (const gramas of [30, 75, 100, 130, 150, 210]) {
+        const q = quantidadeNaFolha(a.id, gramas, 'medida-caseira')
+        const linha = medidaNaLinha(item(a.id, gramas))
+        if (q.medida === null || !linha) continue
+        const erro = Math.abs(linha.quantidade * linha.gramasPorMedida - gramas) / gramas
+        if (erro > 0.05 && Math.abs(linha.quantidade * linha.gramasPorMedida - gramas) > 1) expect(textoDaQuantidade(q), `${a.descricao} ${gramas} g`).toMatch(/cerca de/)
+      }
+    }
+  })
+
+  it('CA-1236: a escolhida fica aproximada só acima de 5%: 200 g de concha de 140 g fecha; 190 g não', () => {
+    expect(medidaNaLinha(item(FEIJAO, 200, CONCHA))).toMatchObject({ aproximada: false, texto: '1 concha e meia' })
+    expect(medidaNaLinha(item(FEIJAO, 190, CONCHA))).toMatchObject({ aproximada: true })
+  })
+
+  it('CA-1123: a cópia do link só marca "aproximada" na medida escolhida; a automática o "Meu plano" refaz', () => {
+    const copia = copiarDieta(dietaDoPlano(caso('medida-caseira'), plano(item(BANANA_PRATA, 130))), '2026-10-22')
+    const i = copia.refeicoes[0]?.opcoes[0]?.[0]
+    expect(i).not.toHaveProperty('aproximada')
+    expect(i ? textoDaQuantidade(paraOPaciente(i, 'medida-caseira').quantidade) : '').toBe('130 g (cerca de 1 unidade e meia)')
+  })
+
+  const caso = (quantidades: ModoQuantidade): Caso => ({ ...criarCasoVazio('c1'), quantidades })
+  const plano = (i: ItemPlano): Plano => {
+    const base = criarPlanoPadrao(() => 'r1')
+    return { refeicoes: base.refeicoes.slice(0, 1).map((r) => ({ ...r, id: 'r1', opcoes: { ...r.opcoes, principal: [i] } })) }
+  }
+})
+
+describe('a medida própria chega ao link (correção A, D-436; Importante 2 da revisão de código)', () => {
+  const caso: Caso = { ...criarCasoVazio('c1'), quantidades: 'medida-e-gramas' }
+  const plano = (i: ItemPlano): Plano => {
+    const base = criarPlanoPadrao(() => 'r1')
+    return { refeicoes: base.refeicoes.slice(0, 1).map((r) => ({ ...r, id: 'r1', opcoes: { ...r.opcoes, principal: [i] } })) }
+  }
+  afterEach(() => registrarMedidasProprias([]))
+
+  it('CA-1239: com "concha = 100 g" da conta, a folha e o "Meu plano" no celular do paciente dizem "1 concha (100 g)"', () => {
+    registrarMedidasProprias([{ alimentoId: FEIJAO, nome: 'concha', gramas: 100 }])
+    const feijao = item(FEIJAO, 100)
+    expect(texto(feijao, 'medida-e-gramas')).toBe('1 concha (100 g)')
+    const copia = copiarDieta(dietaDoPlano(caso, plano(feijao)), '2026-10-22')
+    const noLink = copia.refeicoes[0]?.opcoes[0]?.[0]
+    expect(noLink).toMatchObject({ medida: '1 concha', escolhida: true })
+    // O celular do paciente não tem as medidas da conta.
+    registrarMedidasProprias([])
+    expect(noLink ? textoDaQuantidade(paraOPaciente(noLink, 'medida-e-gramas').quantidade) : '').toBe('1 concha (100 g)')
+  })
+
+  it('CA-1239: sem medida própria, a cópia do item automático continua sem "escolhida" (o link enviado não muda)', () => {
+    const copia = copiarDieta(dietaDoPlano(caso, plano(item(FEIJAO, 102))), '2026-10-22')
+    expect(copia.refeicoes[0]?.opcoes[0]?.[0]).not.toHaveProperty('escolhida')
   })
 })

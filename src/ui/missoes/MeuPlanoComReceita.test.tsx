@@ -53,7 +53,8 @@ describe('a receita no Meu plano', () => {
     // para o paciente e a quantidade da folha, que é o que a folha impressa já mostra na seção Receitas.
     expect(within(receita).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       '2 unidadesBanana prata',
-      '2 unidadesOvo',
+      // D-434 (correção A): 2 ovos são 90 g, a mais de 5% dos 100 g da receita.
+      '100 g (cerca de 2 unidades)Ovo',
     ])
     expect(within(receita).getByText(/Amasse a banana/)).toHaveClass('whitespace-pre-wrap')
     expect(secao.textContent?.indexOf('Suco verde')).toBeGreaterThan(secao.textContent?.indexOf('Amasse a banana') ?? Infinity)

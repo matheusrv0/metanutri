@@ -2,7 +2,8 @@ import { ChevronRight, CircleDashed, Contrast, Copy, Plus, Search, X } from 'luc
 import { useId, useMemo, useState } from 'react'
 import { categoriasDoCatalogo, composicaoDe, filtrarCatalogo, resumoDoCatalogo, type OrdemCatalogo } from '@/domain/catalogo.ts'
 import { dadosDaCopiaDaBase, produtoDosDados } from '@/domain/alimentoProprio.ts'
-import { medidasDoAlimento, PRIMEIRO_ID_PROPRIO, type MedidaCaseira } from '@/domain/busca.ts'
+import { PRIMEIRO_ID_PROPRIO, type MedidaCaseira } from '@/domain/busca.ts'
+import { medidasDoSeletor } from '@/domain/medidaDoItem.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { MEUS_ALIMENTOS_NOVOS, type DadosAlimentoProprio, type FonteAlimentoProprio, type Produto } from '@/domain/produtos.ts'
 import { ALIMENTOS, alimentosComProdutos } from '@/domain/tabelas.ts'
@@ -400,12 +401,14 @@ function FichaDoAlimento({ alimento, acoes }: { readonly alimento: Alimento | nu
 function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readonly acoes: AcoesDaFicha }) {
   const linhas = composicaoDe(alimento)
   const idComposicao = useId()
+  const idMedidas = useId()
   const c = completudeDe(alimento)
   const explicacao = explicarCompletude(alimento)
-  // As medidas da conta vêm primeiro, marcadas "sua" (D-387); a versão faz reler quando uma muda.
+  // As medidas da conta vêm primeiro, marcadas "sua" (D-387), e depois todas as outras na ordem do seletor da linha do
+  // plano, com a "unidade" primeiro (correção A, D-437); a versão faz reler quando uma muda.
   const medidas = useMemo(() => {
     void acoes.versaoDasMedidas
-    return medidasDoAlimento(alimento.id)
+    return medidasDoSeletor(alimento.id)
   }, [alimento.id, acoes.versaoDasMedidas])
   const daBase = alimento.id < PRIMEIRO_ID_PROPRIO
   const unidade = unidadeDo(alimento)
@@ -422,10 +425,12 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
       {explicacao ? <p className="text-xs leading-relaxed text-muted-foreground">{explicacao}</p> : null}
 
       <div className="border-t border-border pt-4">
-        <p className="rotulo mb-2">Medidas caseiras</p>
+        <p id={idMedidas} className="rotulo mb-2">
+          Medidas caseiras
+        </p>
         {medidas.length > 0 ? (
-          <ul className="flex flex-wrap gap-1.5">
-            {medidas.slice(0, 8).map((m) => (
+          <ul aria-labelledby={idMedidas} className="flex flex-wrap gap-1.5">
+            {medidas.map((m) => (
               <li key={`${m.propria === true ? 'p' : 'b'}-${m.nome}`} className="numeros inline-flex items-center gap-1 rounded-full border border-border py-1 pl-2.5 pr-1 text-xs text-muted-foreground">
                 <span className="pr-1.5">{`${m.nome} · ${formatarNumero(m.gramas, m.gramas < 10 && !Number.isInteger(m.gramas) ? 1 : 0)} ${unidade}${m.propria === true ? ' · sua' : ''}`}</span>
                 {m.propria === true ? (
@@ -442,7 +447,7 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground">Sem medida caseira na base.</p>
+          <p className="text-xs text-muted-foreground">Sem medida caseira cadastrada.</p>
         )}
         {daBase ? (
           <div className="mt-3 flex flex-wrap gap-2">

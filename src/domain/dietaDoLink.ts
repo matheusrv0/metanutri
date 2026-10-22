@@ -3,7 +3,8 @@
 // nutriente (D-150). Vira texto na hora da cópia (D-151): o aparelho do paciente não tem os
 // produtos próprios do nutricionista, e o nome escrito não muda quando a base muda.
 import { modoDeQuantidade } from './caso.ts'
-import { lerMedidaDoItem } from './medidaDoItem.ts'
+import { medidasDoAlimento } from './busca.ts'
+import { lerMedidaDoItem, medidaNaLinha } from './medidaDoItem.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import {
@@ -94,14 +95,21 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
   // A quantidade para a paciente, na escolha do plano (spec conduta-da-nutricionista, D-297), com a medida escolhida no
   // item antes da automática (spec alimentos-e-gramaturas, G1).
   const q = quantidadeNaFolha(alimentoId, gramas, modo, medida)
-  const escolhida = lerMedidaDoItem(medida) !== undefined
+  // D-436 (correção A; Importante 2 da revisão de código): a automática que usou uma medida própria da conta vai como
+  // escolhida, porque o celular do paciente não tem as medidas da conta e refaria outra.
+  const doItem = lerMedidaDoItem(medida)
+  const automatica = doItem === undefined && modo !== 'gramas' ? medidaNaLinha({ alimentoId, gramas }) : null
+  const usaPropria = automatica !== null && medidasDoAlimento(alimentoId).some((m) => m.propria === true && m.nome === automatica.nome)
+  const escolhida = doItem !== undefined || usaPropria
   return {
     medida: q.medida,
     gramas,
     // O alimento próprio vai com o nome para o paciente do cadastro (D-385): o celular do paciente não o conhece.
     alimento: DA_BASE.has(alimentoId) ? (buscar(alimentoId)?.descricao ?? 'Alimento removido') : nomeParaPaciente(buscar(alimentoId)),
     ...(escolhida ? { escolhida: true as const } : {}),
-    ...(q.aproximada ? { aproximada: true as const } : {}),
+    // A automática aproximada (D-434) não vai marcada: "Meu plano" refaz a automática e chega ao mesmo "cerca de", e a
+    // cópia de um plano sem medida escolhida fica igual à de antes (o link enviado não aparece como mudado).
+    ...(escolhida && q.aproximada ? { aproximada: true as const } : {}),
     ...(q.unidade === 'ml' && !DA_BASE.has(alimentoId) ? { unidade: 'ml' as const } : {}),
   }
 }

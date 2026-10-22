@@ -28,7 +28,7 @@ export interface MedidaNaLinha {
   readonly gramasPorMedida: number
   /** Os gramas em meias medidas ("1 concha e meia" = 1,5). */
   readonly quantidade: number
-  /** A meia medida não fecha com os gramas: diferença maior que 1 g e que 1% (D-374). */
+  /** A meia medida não fecha com os gramas: diferença maior que 1 g e que 5% (D-374; correção A, D-434). */
   readonly aproximada: boolean
   /** Escolhida pela nutricionista (G1) ou a automática de antes (G5). */
   readonly origem: 'escolhida' | 'automatica'
@@ -42,9 +42,15 @@ export function emMeiasMedidas(gramas: number, gramasPorMedida: number): number 
   return Math.max(0.5, Math.round((gramas / gramasPorMedida) * 2) / 2)
 }
 
-/** A meia medida fecha com os gramas (diferença de até 1 g ou 1%). */
+/**
+ * Uma tolerância só para a medida, escolhida ou automática (spec alimentos-e-gramaturas, correção A, D-434): o paciente
+ * nunca lê uma medida a mais de 5% dos gramas sem "cerca de".
+ */
+export const TOLERANCIA_DA_MEDIDA = 0.05
+
+/** A meia medida fecha com os gramas (diferença de até 1 g ou 5%). */
 export function fechaEmMeiaMedida(gramas: number, quantidade: number, gramasPorMedida: number): boolean {
-  return Math.abs(quantidade * gramasPorMedida - gramas) <= Math.max(1, gramas * 0.01)
+  return Math.abs(quantidade * gramasPorMedida - gramas) <= Math.max(1, gramas * TOLERANCIA_DA_MEDIDA)
 }
 
 /**
@@ -68,7 +74,15 @@ export function medidaNaLinha(item: Pick<ItemPlano, 'alimentoId' | 'gramas' | 'm
   const automatica = medidaParaMostrar(item.alimentoId, item.gramas)
   if (!automatica) return null
   const peso = medidasDoAlimento(item.alimentoId).find((m) => m.nome === automatica.medida)?.gramas ?? automatica.gramasEquivalentes / automatica.quantidade
-  return { nome: automatica.medida, gramasPorMedida: peso, quantidade: automatica.quantidade, aproximada: false, origem: 'automatica', texto: automatica.texto }
+  // D-434: a automática é escolhida a até 15% do peso, mas acima de 5% é aproximada, como a escolhida.
+  return {
+    nome: automatica.medida,
+    gramasPorMedida: peso,
+    quantidade: automatica.quantidade,
+    aproximada: !fechaEmMeiaMedida(item.gramas, automatica.quantidade, peso),
+    origem: 'automatica',
+    texto: automatica.texto,
+  }
 }
 
 /**

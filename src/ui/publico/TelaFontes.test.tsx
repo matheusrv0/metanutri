@@ -6,8 +6,9 @@ describe('Fontes da base (CA-322)', () => {
     render(<TelaFontes />)
     expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
     expect(screen.getByText(/A Base MetaNutri reúne 597 alimentos/)).toBeInTheDocument()
-    // 305 com as medidas novas da POF (spec alimentos-e-gramaturas); a redação é a da spec textos-e-promessas.
-    expect(screen.getByText(/medidas caseiras do IBGE para 305 deles/)).toBeInTheDocument()
+    // 285 depois da camada de plausibilidade das medidas (spec alimentos-e-gramaturas, D-430); a redação é a da spec
+    // textos-e-promessas.
+    expect(screen.getByText(/medidas caseiras do IBGE para 285 deles/)).toBeInTheDocument()
     // CA-964 (spec vitaminas-usda): a frase de abertura conta o complemento do USDA.
     expect(screen.getByText(/Para 308 alimentos, inclui também vitamina D, vitamina E, folato, vitamina B12 e selênio do USDA\./)).toBeInTheDocument()
     // CA-1184 (spec textos-e-promessas): a base não é a única fonte; o resto, a nutricionista cadastra.

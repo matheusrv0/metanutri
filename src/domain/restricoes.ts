@@ -3,7 +3,7 @@
 // livre vale pelo pedaço do nome, como antes, e a linha que nomeia um grupo liga o grupo.
 import { idsDaRestricao, TERMOS_POR_RESTRICAO, ULTIMO_ID_DA_BASE, type IdRestricaoDaBase } from './restricoesDaBase.ts'
 import { receitaDoItem } from './receitaNoPlano.ts'
-import type { BuscarAlimento, ItemPlano } from './tipos.ts'
+import type { BuscarAlimento, CondicaoFisiologica, ItemPlano } from './tipos.ts'
 
 export type IdRestricao = IdRestricaoDaBase
 export type TipoRestricao = 'alergia' | 'intolerancia' | 'escolha'
@@ -56,6 +56,67 @@ export interface RestricoesDoPaciente {
   readonly textos: readonly string[]
   /** Os alimentos de que não gosta, sem acento e em minúscula (D-354). */
   readonly naoGosta: readonly string[]
+  /**
+   * Os cuidados da fase de vida (spec sugestoes-com-criterio, correção A, D-442 e D-443): vêm da condição e da idade do
+   * plano, não da ficha, e valem antes das restrições na linha do plano.
+   */
+  readonly cuidados?: readonly CuidadoDaFase[]
+}
+
+export type IdCuidado = 'gestacao-figado' | 'crianca-cafeina'
+
+export interface CuidadoDaFase {
+  readonly id: IdCuidado
+  /** O aviso da linha do plano. */
+  readonly aviso: string
+}
+
+export const AVISO_GESTACAO_FIGADO = 'Na gestação, evite fígado: o excesso de vitamina A (retinol) faz mal ao bebê.'
+export const AVISO_CRIANCA_CAFEINA = 'Café, chá preto ou mate e refrigerante com cafeína não são indicados para crianças.'
+
+/** D-443: abaixo desta idade, nada com cafeína. */
+export const IDADE_DA_CAFEINA = 12
+
+/**
+ * O que cada cuidado tira, pelo nome sem acento. D-442: o fígado (de boi ou de frango) e o sarapatel concentram retinol
+ * pré-formado; coração, língua e bucho não. D-443: café (infusão e pó), capuccino, chá preto, mate e refrigerante de cola e
+ * de guaraná têm cafeína; o chá de erva-doce, não.
+ */
+const ALIMENTOS_DO_CUIDADO: Readonly<Record<IdCuidado, RegExp>> = {
+  'gestacao-figado': /(figado|sarapatel)/,
+  'crianca-cafeina': /^(cafe,|capuccino|cha, (preto|mate)|refrigerante, tipo (cola|guarana))/,
+}
+
+const CUIDADOS: Readonly<Record<IdCuidado, CuidadoDaFase>> = {
+  'gestacao-figado': { id: 'gestacao-figado', aviso: AVISO_GESTACAO_FIGADO },
+  'crianca-cafeina': { id: 'crianca-cafeina', aviso: AVISO_CRIANCA_CAFEINA },
+}
+
+/** A fase de vida do plano: a condição (gestante, lactante) e a idade em anos. */
+export interface FaseDoPlano {
+  readonly condicao: CondicaoFisiologica
+  readonly idadeAnos: number | null
+}
+
+/** Os cuidados que a fase de vida do plano pede. */
+export function cuidadosDaFase(fase: FaseDoPlano): readonly CuidadoDaFase[] {
+  const cuidados: CuidadoDaFase[] = []
+  if (fase.condicao.tipo === 'gestante') cuidados.push(CUIDADOS['gestacao-figado'])
+  if (fase.idadeAnos !== null && fase.idadeAnos < IDADE_DA_CAFEINA) cuidados.push(CUIDADOS['crianca-cafeina'])
+  return cuidados
+}
+
+/** As restrições do paciente com os cuidados da fase de vida do plano. */
+export function comCuidadosDaFase(restricoes: RestricoesDoPaciente, fase: FaseDoPlano): RestricoesDoPaciente {
+  const cuidados = cuidadosDaFase(fase)
+  return cuidados.length === 0 ? restricoes : { ...restricoes, cuidados }
+}
+
+/** O cuidado da fase de vida que o alimento pega, ou `null`. */
+export function cuidadoDoAlimento(alimento: AlimentoParaRestricao, restricoes: RestricoesDoPaciente): CuidadoDaFase | null {
+  if (!restricoes.cuidados || restricoes.cuidados.length === 0) return null
+  const nome = semAcento(alimento.descricao)
+  return restricoes.cuidados.find((c) => ALIMENTOS_DO_CUIDADO[c.id]?.test(nome)) ?? null
 }
 
 export const SEM_RESTRICOES: RestricoesDoPaciente = { grupos: [], textos: [], naoGosta: [] }
@@ -154,7 +215,7 @@ export function comoRestricoes(valor: RestricoesDoPaciente | readonly string[] |
 
 /** Uma chave estável das restrições, para memorizar o que depende delas. */
 export const chaveDasRestricoes = (r: RestricoesDoPaciente): string =>
-  JSON.stringify([r.grupos.map((g) => g.id), r.textos, r.naoGosta])
+  JSON.stringify([r.grupos.map((g) => g.id), r.textos, r.naoGosta, (r.cuidados ?? []).map((c) => c.id)])
 
 // ---------- Casar alimento com restrição ----------
 
@@ -194,6 +255,9 @@ const daBase = (id: number) => id >= 1 && id <= ULTIMO_ID_DA_BASE
 /** O aviso da restrição que o alimento pega, ou `null`. */
 export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: RestricoesDoPaciente | readonly string[]): string | null {
   const restricoes = comoRestricoes(valor)
+  // O cuidado da fase de vida vem antes (CB-409).
+  const cuidado = cuidadoDoAlimento(alimento, restricoes)
+  if (cuidado) return cuidado.aviso
   const nome = semAcento(alimento.descricao)
   for (const grupo of restricoes.grupos) {
     const pega = daBase(alimento.id) ? idsDaRestricao(grupo.id).has(alimento.id) : casaPeloNome(grupo.id, nome)
@@ -212,7 +276,7 @@ export const casaRestricao = (alimento: AlimentoParaRestricao, restricoes: Restr
 
 /** O aviso da linha do plano: o alimento, ou, na receita, o nome dela e cada ingrediente. */
 export function restricaoDoItem(item: ItemPlano, buscar: BuscarAlimento, restricoes: RestricoesDoPaciente): string | null {
-  if (restricoes.grupos.length === 0 && restricoes.textos.length === 0) return null
+  if (restricoes.grupos.length === 0 && restricoes.textos.length === 0 && (restricoes.cuidados ?? []).length === 0) return null
   const receita = receitaDoItem(item)
   if (receita) {
     for (const ingrediente of receita.ingredientes) {

@@ -3,8 +3,8 @@ import type { MedidaCaseira } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
 import { linhaDaFolha } from '@/domain/folhaDieta.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
-import { emMeiasMedidas, medidaNaLinha, medidasDoSeletor } from '@/domain/medidaDoItem.ts'
-import { MEUS_ALIMENTOS_NOVOS, nomeSemAlimento, PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { lerMedidaDoItem, medidaNaLinha, medidasDoSeletor } from '@/domain/medidaDoItem.ts'
+import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { textoDaQuantidade } from '@/domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaComOQueComer, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { restricaoDoItem } from '@/domain/restricoes.ts'
@@ -82,11 +82,14 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       : medidasDoAlimento
   const leitura = temOQueComer ? textoDaQuantidade(linhaDaFolha(item, buscarAlimento, modo).quantidade) : null
 
-  // Sem a medida de antes, vira a meia medida mais perto dos gramas: escolher a medida não joga o peso para longe.
+  // CA-1114: com a medida guardada, a quantidade dela vai para a medida nova (os gramas saem dela). Sem medida guardada
+  // (a automática ou nenhuma), os gramas ficam, como em "Fixar a medida": a quantidade é gramas ÷ peso da medida nova, e
+  // a linha mostra "≈" quando ela não fecha (Importante 1 da revisão de código; correção A, D-435).
+  const guardada = lerMedidaDoItem(item.medida)
   const escolher = (m: MedidaCaseira | null) => {
     if (!aoMudarMedida) return
     if (m === null) return aoMudarMedida(null)
-    const quantidade = naLinha ? naLinha.quantidade : emMeiasMedidas(item.gramas, m.gramas) || 1
+    const quantidade = guardada && naLinha ? naLinha.quantidade : item.gramas > 0 ? item.gramas / m.gramas : 1
     aoMudarMedida({ nome: m.nome, quantidade, gramasPorMedida: m.gramas })
   }
 
@@ -157,9 +160,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
 
   const aproximada = naLinha?.aproximada === true
   const automatica = naLinha?.origem === 'automatica'
-  // D-383: a medida de um alimento próprio entra no cadastro dele, que só se edita com o formulário novo ligado.
-  const criar =
-    aoCriarMedida && alimento && (alimento.id < PRIMEIRO_ID_PRODUTO || MEUS_ALIMENTOS_NOVOS) ? () => aoCriarMedida(alimento.id, (m) => escolher(m)) : undefined
+  // D-433 (correção A): o alimento próprio também ganha "+ Nova medida…"; quem grava decide onde ela mora (TelaPlano).
+  const criar = aoCriarMedida && alimento ? () => aoCriarMedida(alimento.id, (m) => escolher(m)) : undefined
 
   return (
     // G2: o nome; quantidade + medida = gramas; o que o paciente lê. No celular, as três linhas; nada passa de 360 px.
@@ -241,7 +243,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
           ) : null}
         </p>
       ) : null}
-      {medidasDoAlimento.length === 0 ? <p className="text-xs text-muted-foreground">Sem medida caseira na base.{criar ? ' Crie a sua.' : ''}</p> : null}
+      {medidasDoAlimento.length === 0 ? <p className="text-xs text-muted-foreground">Sem medida caseira cadastrada.{criar ? ' Crie a sua.' : ''}</p> : null}
     </li>
   )
 }

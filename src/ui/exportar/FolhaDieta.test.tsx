@@ -108,21 +108,22 @@ describe('Folha da dieta (US-B1)', () => {
     const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia$/)
     // D-295: "5 fatias" de banana vira a medida de até 4 pedaços que serve.
-    expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 1 unidade e meia$/)
+    // D-434 (correção A): 1 unidade e meia são 112,5 g, a mais de 5% dos 130 g: o peso e "cerca de".
+    expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 130 g \(cerca de 1 unidade e meia\)$/)
     expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
     // A batata de 120 g não sai mais em gramas: tem medida caseira que serve.
     expect(refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li')).not.toHaveTextContent(/\d g$/)
     expect(screen.getByRole('article').textContent).not.toMatch(/ · \d+ g/)
   })
 
-  it('CA-925: em "Gramas", só o peso, na refeição, na lista de compras e nas trocas', () => {
+  it('CA-925: em "Gramas", só o peso, na refeição e nas trocas; a lista de compras é da semana, no peso de compra (D-445)', () => {
     render(<FolhaDieta caso={{ ...caso, quantidades: 'gramas' }} plano={planoComDesjejum()} opcoes={{ listaDeCompras: true, trocas: true }} />)
     const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 130 g$/)
     expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 5 g$/)
     expect(refeicao(/^12:00 Almoço$/).getByText('Arroz branco cozido').closest('li')).toHaveTextContent(/^Arroz branco cozido, 150 g$/)
     const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
-    expect(compra('Arroz branco cozido — 150 g')).toBeInTheDocument()
+    expect(compra('Arroz branco — 400 g')).toBeInTheDocument()
     const trocas = [...screen.getByRole('list', { name: 'Trocas' }).querySelectorAll('.troca')].map((t) => t.textContent ?? '')
     expect(trocas.length).toBeGreaterThan(0)
     for (const troca of trocas) expect(troca).toMatch(/ · \d+ g$/)
@@ -227,7 +228,8 @@ describe('Folha da dieta (US-B1)', () => {
   it('CA-633: refeições, orientações, receitas e assinatura nessa ordem; no atendimento completo, a folha acaba na assinatura', () => {
     const { container } = render(<FolhaDieta caso={{ ...caso, receitas: 'Cuscuz com ovo.' }} plano={planoCheio()} assinatura={ANA} />)
     const antes = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
-    const ceia = screen.getByRole('region', { name: /^21:00 Ceia$/ })
+    // A última refeição com alimento (a refeição vazia não sai na folha, D-444 da correção A).
+    const ceia = screen.getAllByRole('region', { name: /^\d\d:\d\d / }).at(-1) as HTMLElement
     const orientacoes = screen.getByRole('heading', { name: 'Orientações' })
     const receitas = screen.getByRole('heading', { name: 'Receitas' })
     const assinaturas = screen.getByRole('group', { name: 'Assinaturas' })
@@ -261,16 +263,16 @@ describe('Folha da dieta (US-B1)', () => {
 
   it('CA-318 e CA-319: lista de compras e trocas só quando marcadas, numa página nova, com até 2 trocas', () => {
     const { unmount } = render(<FolhaDieta caso={caso} plano={planoCheio()} />)
-    expect(screen.queryByRole('heading', { name: 'Lista de compras' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Lista de compras da semana' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Trocas' })).not.toBeInTheDocument()
     unmount()
 
     const { container } = render(<FolhaDieta caso={caso} plano={planoCheio()} opcoes={{ listaDeCompras: true, trocas: true }} />)
-    expect(screen.getByRole('heading', { name: 'Lista de compras' })).toBeInTheDocument()
-    // CA-628 e CA-643: a lista de compras usa o nome para o paciente e a quantidade pela regra da refeição.
+    expect(screen.getByRole('heading', { name: 'Lista de compras da semana' })).toBeInTheDocument()
+    // D-445 (correção A, substitui o CA-643): a semana, no peso de compra; o macarrão já é cru, sem "(peso cru)".
     const compra = (texto: string) => screen.getByText((_, el) => el?.tagName === 'LI' && el.textContent?.trim() === texto)
-    expect(compra('Arroz branco cozido — 6 colheres de sopa')).toBeInTheDocument()
-    expect(compra('Macarrão (peso cru) — 80 g')).toBeInTheDocument()
+    expect(compra('Arroz branco — 400 g')).toBeInTheDocument()
+    expect(compra('Macarrão — 600 g')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Trocas' })).toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Trocas' }).textContent).not.toMatch(/,/)
     expect(container.querySelector('.anexos-da-folha')).toHaveClass('break-before-page')
@@ -373,11 +375,31 @@ describe('Folha da dieta (US-B1)', () => {
     })
   })
 
-  it('CB-71: plano sem alimento sai com o aviso em cada refeição', () => {
+  it('CB-71 (mudado pela D-444 da correção A, CA-1254): plano sem alimento sai com uma linha só, sem refeição vazia', () => {
     render(<FolhaDieta caso={{ ...caso, orientacoes: '', linhaDaAgua: '' }} plano={criarPlanoPadrao(ids)} />)
-    expect(screen.getAllByText('Sem alimentos nesta refeição.')).toHaveLength(6)
+    expect(screen.getByText('Sem alimentos no plano.')).toBeInTheDocument()
+    expect(screen.queryByText('Sem alimentos nesta refeição.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /^\d\d:\d\d / })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Orientações' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
+  })
+
+  it('CA-1254: a refeição sem alimento não aparece na folha; as outras, sim', () => {
+    let plano = criarPlanoPadrao(ids)
+    const almocoPadrao = plano.refeicoes[2]
+    if (!almocoPadrao) throw new Error('sem almoço')
+    plano = adicionarItem(plano, almocoPadrao.id, 'principal', { alimentoId: BATATA, gramas: 120 }, ids)
+    render(<FolhaDieta caso={caso} plano={plano} />)
+    expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço'])
+    expect(screen.queryByText('Sem alimentos no plano.')).not.toBeInTheDocument()
+  })
+
+  it('CA-1253: o título "Orientações" fica preso ao primeiro parágrafo, num bloco que não se parte', () => {
+    render(<FolhaDieta caso={{ ...caso, pesoKg: 62, orientacoes: 'Coma devagar.\nMastigue bem.' }} plano={planoCheio()} />)
+    const titulo = screen.getByRole('heading', { name: 'Orientações' })
+    const bloco = titulo.parentElement
+    expect(bloco).toHaveClass('break-inside-avoid')
+    expect(bloco?.querySelector('p')?.textContent).toBe('Beba cerca de 2,2 litros de água por dia.')
   })
 })
 

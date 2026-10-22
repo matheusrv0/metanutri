@@ -2,10 +2,11 @@
 // D-387 e §2.6 do levantamento).
 //
 // Ficam na chave `metanutri:medidas-proprias`, uma lista com id texto "<alimentoId>:<nome normalizado>", que vai para a
-// nuvem item por item, com lápide (`LISTAS` de `copiaDaConta.ts`). Só valem para alimento da base (id abaixo de 900 000):
-// a medida de um alimento próprio mora dentro dele. O item do plano guarda uma cópia da medida (G1), então mudar ou
-// excluir a medida própria não muda plano nenhum.
-import { normalizar, PRIMEIRO_ID_PROPRIO } from './busca.ts'
+// nuvem item por item, com lápide (`LISTAS` de `copiaDaConta.ts`). Valem para alimento da base e, desde a correção A
+// (D-433), também para alimento próprio: a versão no ar refaz o alimento próprio ao editar e apagaria uma medida guardada
+// dentro dele. O item do plano guarda uma cópia da medida (G1), então mudar ou excluir a medida própria não muda plano
+// nenhum.
+import { normalizar } from './busca.ts'
 import type { Armazenamento } from './persistencia.ts'
 
 export const CHAVE_MEDIDAS_PROPRIAS = 'metanutri:medidas-proprias'
@@ -34,7 +35,7 @@ export interface ProblemaMedida {
 /** CB-372: o que impede salvar. */
 export function validarMedidaPropria(dados: { readonly alimentoId: number; readonly nome: string; readonly gramas: number | null }): readonly ProblemaMedida[] {
   const problemas: ProblemaMedida[] = []
-  if (dados.alimentoId <= 0 || dados.alimentoId >= PRIMEIRO_ID_PROPRIO) problemas.push({ campo: 'alimento', mensagem: 'A medida própria vale só para alimento da base.' })
+  if (!Number.isInteger(dados.alimentoId) || dados.alimentoId <= 0) problemas.push({ campo: 'alimento', mensagem: 'Escolha o alimento da medida.' })
   if (dados.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'Dê um nome à medida, como “concha”.' })
   if (dados.nome.trim().length > 40) problemas.push({ campo: 'nome', mensagem: 'O nome tem mais de 40 caracteres.' })
   if (dados.gramas === null || !Number.isFinite(dados.gramas) || dados.gramas <= 0) problemas.push({ campo: 'gramas', mensagem: 'Informe quanto pesa a medida.' })
@@ -51,7 +52,6 @@ function ehMedidaPropria(v: unknown): v is MedidaPropria {
     typeof o['id'] === 'string' &&
     ehNumero(o['alimentoId']) &&
     o['alimentoId'] > 0 &&
-    o['alimentoId'] < PRIMEIRO_ID_PROPRIO &&
     typeof o['nome'] === 'string' &&
     o['nome'].trim() !== '' &&
     ehNumero(o['gramas']) &&

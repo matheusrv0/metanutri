@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { registrarMedidasProprias } from '@/domain/busca.ts'
 import { criarPlanoPadrao } from '@/domain/plano.ts'
+import { produtoComoAlimento, type Produto } from '@/domain/produtos.ts'
+import { registrarProdutos } from '@/domain/tabelas.ts'
 import { itemDeReceita, PANQUECA } from '@/domain/receitas.test-utils.ts'
 import type { ModoQuantidade, Plano } from '@/domain/tipos.ts'
 import { TelaPlano } from './TelaPlano.tsx'
@@ -312,5 +314,52 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     expect(almoco().getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' })).toHaveValue('cumbuca da casa')
     expect(almoco().getByText(/cumbuca da casa · 180 g · sua/)).toBeInTheDocument()
     registrarMedidasProprias([])
+  })
+
+  it('CA-1230: na entrada rápida, "meia xícara de aveia" sem a xícara abre "Nova medida" com o nome escrito e põe a aveia nela', async () => {
+    const usuario = montar()
+    await usuario.type(entradaDoAlmoco(), 'meia xícara de aveia')
+    await usuario.click(almoco().getByRole('button', { name: 'Nova medida “xícara de chá” para Aveia, flocos, crua' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    expect(janela.getByLabelText('Nome da medida')).toHaveValue('xícara de chá')
+    await usuario.type(janela.getByLabelText('Peso'), '80')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
+    expect(almoco().getByLabelText('Gramas de Aveia, flocos, crua')).toHaveValue('40')
+    expect(almoco().getByRole('combobox', { name: 'Medida de Aveia, flocos, crua' })).toHaveValue('xícara de chá')
+    expect(entradaDoAlmoco()).toHaveValue('')
+    registrarMedidasProprias([])
+  })
+
+  it('CA-1234: o alimento próprio também ganha "+ Nova medida…", gravada como medida da conta', async () => {
+    const granola: Produto = {
+      id: 900_001,
+      codigoBarras: '',
+      nome: 'Granola',
+      marca: '',
+      porcaoG: 40,
+      medidaCaseira: '',
+      porPorcao: { energia_kcal: 170, carboidrato_g: 26, proteina_g: 4, lipideos_g: 5.6 },
+      criadoEm: '2026-10-22T10:00:00.000Z',
+    }
+    registrarProdutos([produtoComoAlimento(granola)])
+    const plano = criarPlanoPadrao(ids)
+    const almocoPadrao = plano.refeicoes[2]
+    if (!almocoPadrao) throw new Error('sem almoço')
+    const usuario = montar({
+      ...plano,
+      refeicoes: plano.refeicoes.map((r) => (r.id === almocoPadrao.id ? { ...r, opcoes: { ...r.opcoes, principal: [{ id: 'g', alimentoId: 900_001, gramas: 40 }] } } : r)),
+    })
+    expect(almoco().getByText(/^Sem medida caseira cadastrada\. Crie a sua\.$/)).toBeInTheDocument()
+    await usuario.selectOptions(almoco().getByRole('combobox', { name: 'Medida de Granola' }), '+ Nova medida…')
+    const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    await usuario.type(janela.getByLabelText('Nome da medida'), 'xícara de chá')
+    await usuario.type(janela.getByLabelText('Peso'), '80')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
+    expect(almoco().getByRole('combobox', { name: 'Medida de Granola' })).toHaveValue('xícara de chá')
+    expect(JSON.parse(localStorage.getItem('metanutri:medidas-proprias') ?? '[]')).toMatchObject([{ alimentoId: 900_001, nome: 'xícara de chá', gramas: 80 }])
+    // O cadastro do alimento próprio não muda: a versão no ar refaria o item e apagaria a medida (D-383).
+    expect(localStorage.getItem('metanutri:produtos')).toBeNull()
+    registrarMedidasProprias([])
+    registrarProdutos([])
   })
 })

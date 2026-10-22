@@ -59,7 +59,7 @@ describe('arquivos de busca e o index.html', () => {
   it('CA-1183 (spec textos-e-promessas): o llms.txt diz o mesmo que a landing, com o glossário', () => {
     const llms = ler('public', 'llms.txt')
     expect(llms).toContain(
-      '> Software para nutricionistas, no navegador. Monta o plano alimentar e mostra a adequação de 20 vitaminas e minerais e da fibra. Em cada nutriente abaixo da meta, o botão Cobrir propõe o alimento e a porção, em gramas e em medida caseira, que fecham a diferença, respeitando as restrições do paciente. O plano vira missões diárias que o paciente marca pelo celular.',
+      '> Software para nutricionistas, no navegador. Monta o plano alimentar e mostra a adequação de 20 vitaminas e minerais e da fibra. Em cada nutriente abaixo da meta, o botão Cobrir propõe o alimento e a porção que fecham a diferença, em gramas e, quando a base tem, em medida caseira, respeitando as restrições do paciente. O plano vira missões diárias que o paciente marca pelo celular.',
     )
     expect(llms).toContain('Todas as assinaturas têm as mesmas funções.')
     expect(llms).not.toMatch(/presos|Folha do paciente|até 4 nutricionistas|R\$ 149/i)

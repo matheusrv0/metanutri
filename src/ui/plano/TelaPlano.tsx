@@ -16,7 +16,7 @@ import {
 import { tipoDaRefeicao } from '@/domain/sugestoes.ts'
 import type { MedidaCaseira } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
-import { PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { MEUS_ALIMENTOS_NOVOS, PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ModoQuantidade, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -39,8 +39,8 @@ interface TelaPlanoProps {
   /** Como o paciente lê as quantidades e a troca do modo (spec alimentos-e-gramaturas, D-376). Sem eles, não aparece. */
   readonly modo?: ModoQuantidade | undefined
   readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
-  /** "+ Nova medida…" na linha do plano (D-387). */
-  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
+  /** "+ Nova medida…" na linha do plano (D-387) e na entrada rápida (D-432). */
+  readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
 }
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
@@ -58,17 +58,19 @@ export function TelaPlano({
 }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
-  // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha. Alimento da base: medida própria da conta;
-  // alimento próprio: a medida entra no cadastro dele.
+  // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha, gravada como medida própria da conta. O alimento
+  // próprio só guarda a medida no cadastro dele com o formulário novo ligado (publicação 2): a versão no ar refaz o item
+  // ao editar e apagaria a medida (D-383); até lá, ela mora na chave das medidas da conta (correção A, D-433).
   const medidasProprias = useMedidasProprias()
   const meusAlimentos = useMeusAlimentos()
-  const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void } | null>(null)
-  const criarMedida = aoCriarMedida ?? ((alimentoId: number, aoCriar: (m: MedidaCaseira) => void) => setNovaMedida({ alimentoId, aoCriar }))
+  const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void; readonly nome: string } | null>(null)
+  const criarMedida =
+    aoCriarMedida ?? ((alimentoId: number, aoCriar: (m: MedidaCaseira) => void, nomeInicial?: string) => setNovaMedida({ alimentoId, aoCriar, nome: nomeInicial ?? '' }))
   const alimentoDaMedida = novaMedida ? (buscarAlimento(novaMedida.alimentoId) ?? null) : null
   const salvarMedida = (m: MedidaCaseira): string | null => {
     if (!novaMedida) return null
     try {
-      if (novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO) {
+      if (novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO && MEUS_ALIMENTOS_NOVOS) {
         const proprio = meusAlimentos.lista.find((p) => p.id === novaMedida.alimentoId)
         if (!proprio) return 'Este alimento foi excluído. Escolha outro.'
         meusAlimentos.salvar({ ...proprio, medidas: [...(proprio.medidas ?? []).filter((x) => x.nome !== m.nome), { nome: m.nome, gramas: m.gramas }] })
@@ -131,7 +133,13 @@ export function TelaPlano({
       </Button>
 
       <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
-      <DialogoNovaMedida alimento={alimentoDaMedida} unidade={unidadeDo(alimentoDaMedida ?? undefined)} aoSalvar={salvarMedida} aoFechar={() => setNovaMedida(null)} />
+      <DialogoNovaMedida
+        alimento={alimentoDaMedida}
+        unidade={unidadeDo(alimentoDaMedida ?? undefined)}
+        nomeInicial={novaMedida?.nome ?? ''}
+        aoSalvar={salvarMedida}
+        aoFechar={() => setNovaMedida(null)}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { criarCasoVazio } from './caso.ts'
 import {
   assinaturaDaFolha,
   comprasDaFolha,
+  comprasDaSemana,
   gravarOpcoesImpressao,
   lerOpcoesImpressao,
   linhaDaAguaNaFolha,
@@ -136,6 +137,49 @@ describe('comprasDaFolha (spec impressao-do-plano, CA-628 e CB-181)', () => {
       { nome: 'Arroz branco cozido', gramas: 250, alimentoId: ARROZ_TIPO_1 },
       { nome: 'Pão francês', gramas: 50, alimentoId: PAO_FRANCES },
     ])
+  })
+})
+
+describe('comprasDaSemana (spec impressao-do-plano, correção A, D-445)', () => {
+  const ARROZ_TIPO_1 = 3
+  const FEIJAO_CARIOCA = 561
+  const OVO_COZIDO = 488
+  const BANANA_PRATA = 182
+  const LEITE = 458
+  const FRANGO_GRELHADO = 410
+  const POLENTA = 62
+  const QUEIJO_MINAS = 461
+  const comItens = (itens: readonly (readonly [number, number])[]) => {
+    let n = 0
+    const ids = () => `s${++n}`
+    let plano = criarPlanoPadrao(ids)
+    const almoco = plano.refeicoes[2]
+    if (!almoco) throw new Error('plano padrão mudou')
+    for (const [alimentoId, gramas] of itens) plano = adicionarItem(plano, almoco.id, 'principal', { alimentoId, gramas }, ids)
+    return comprasDaSemana(plano, buscarAlimento)
+  }
+  const texto = (compras: readonly { nome: string; texto: string }[]) => compras.map((c) => `${c.nome} — ${c.texto}`)
+
+  it('CA-1255: o cozido vira o peso cru da semana pela energia da TACO: arroz e feijão', () => {
+    // 150 g × 7 × 128 kcal ÷ 358 kcal = 376 g, arredondados para cima de 50 em 50.
+    expect(texto(comItens([[ARROZ_TIPO_1, 150], [FEIJAO_CARIOCA, 140]]))).toEqual(['Arroz branco — 400 g', 'Feijão carioca — 250 g'])
+  })
+
+  it('CA-1256: ovo e fruta em unidades; leite em litros; frango no peso cru', () => {
+    expect(texto(comItens([[OVO_COZIDO, 90], [BANANA_PRATA, 75], [LEITE, 200]]))).toEqual(['Banana prata — 7 unidades', 'Leite integral — 1,4 litro', 'Ovo — 14 unidades'])
+    const [frango] = comItens([[FRANGO_GRELHADO, 100]])
+    // 100 g × 7 × 159 ÷ 119 = 935 g de peito cru.
+    expect(frango).toEqual({ nome: 'Peito de frango sem pele', texto: '950 g' })
+    expect(texto(comItens([[LEITE, 400]]))).toEqual(['Leite integral — 2,8 litros'])
+    expect(texto(comItens([[LEITE, 100]]))).toEqual(['Leite integral — 700 ml'])
+  })
+
+  it('CB-410: o pronto sem a versão crua na base entra no peso como se come; acima de 1 kg, em kg', () => {
+    expect(texto(comItens([[POLENTA, 200], [QUEIJO_MINAS, 30]]))).toEqual(['Polenta pré-cozida — 1,4 kg', 'Queijo minas frescal — 250 g'])
+  })
+
+  it('CB-411: o contado com menos de uma unidade na semana é 1 unidade', () => {
+    expect(texto(comItens([[BANANA_PRATA, 5]]))).toEqual(['Banana prata — 1 unidade'])
   })
 })
 

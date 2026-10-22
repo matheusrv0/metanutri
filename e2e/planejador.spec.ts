@@ -82,7 +82,7 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await expect(gaveta).toContainText('para a meta')
   const sugestoes = gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem')
   await expect(sugestoes.first()).toContainText('cobre')
-  await sugestoes.first().getByRole('button', { name: 'Adicionar' }).click()
+  await sugestoes.first().getByRole('button', { name: /^Adicionar em / }).click()
   await expect(gaveta).toBeHidden()
   await expect(page.getByRole('row').filter({ hasText: 'Ferro' }).first()).not.toHaveText(adequacaoAntes ?? '')
 
@@ -289,7 +289,7 @@ test('etapa 2: o cartão Micronutrientes mostra o que falta e cobre dali (CA-685
 
   const gaveta = page.getByRole('dialog')
   await expect(gaveta).toContainText('para a meta')
-  await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem').first().getByRole('button', { name: 'Adicionar' }).click()
+  await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('listitem').first().getByRole('button', { name: /^Adicionar em / }).click()
   await expect(gaveta).toBeHidden()
   await expect.poll(() => linhas.allTextContents()).not.toEqual(antes)
 

@@ -42,7 +42,8 @@ const celula = (rotulo: string) => {
   if (!pai) throw new Error(`sem a célula ${rotulo}`)
   return pai
 }
-const doGasto = () => within(celula('Do gasto'))
+// Correção A (D-437): "Do gasto" virou "% do GET", pelo glossário.
+const doGasto = () => within(celula('% do GET'))
 
 describe('Faixa do topo da etapa 3 arredonda sem desmentir o estado (CA-696, CA-711, CA-712)', () => {
   it('CA-696: 89,6% do gasto sai "89%" e 110,4% sai "111%"', () => {

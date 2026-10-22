@@ -66,9 +66,9 @@ export function CartaoDestaque({ rotulo, valor, apoio, icone: Icone, tom, unidad
           {valor}
           {unidade ? <span className="ml-1.5 align-super text-sm font-medium">{unidade}</span> : null}
         </p>
-        {/* O utilitário `rotulo` fixa a cor apagada do papel; sobre gradiente escuro
-            o versalete é remontado aqui para herdar a cor do cartão. */}
-        <p className="mt-2 font-titulo text-2xs font-semibold uppercase leading-none tracking-[0.1em] [font-stretch:80%]">{rotulo}</p>
+        {/* O utilitário `rotulo` fixa a cor apagada do papel; sobre gradiente escuro o rótulo é remontado aqui para herdar
+            a cor do cartão, em caixa de frase (regra do dono, D-437 da correção A). */}
+        <p className="mt-2 font-titulo text-xs font-semibold leading-none">{rotulo}</p>
         <p className="mt-1 text-xs leading-snug opacity-85">{apoio}</p>
         {children ? <div className="mt-4 flex flex-wrap gap-2">{children}</div> : null}
       </div>

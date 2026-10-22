@@ -16,7 +16,7 @@ export interface QuantidadeNaFolha {
   /** O peso prescrito, em gramas (ou ml, com densidade 1). */
   readonly gramas: number
   readonly unidade: UnidadeDoAlimento
-  /** A medida escolhida não fecha em meia medida: o peso vem primeiro, e a medida, "cerca de". */
+  /** A medida (escolhida ou automática) fica a mais de 5% dos gramas: o peso vem primeiro, e a medida, "cerca de" (D-434). */
   readonly aproximada: boolean
   /** "Medida e gramas": o peso vai entre parênteses depois da medida. */
   readonly comPeso: boolean

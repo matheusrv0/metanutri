@@ -37,8 +37,9 @@ describe('quantidade para a paciente (spec conduta-da-nutricionista, D-297)', ()
       'Filé de merluza assado': 'meia unidade',
       'Peito de frango grelhado sem pele': '1 bife',
       'Patinho grelhado sem gordura': '1 bife',
-      'Alface crespa': '4 colheres de servir e meia',
-      'Mamão Formosa': '3 colheres de sopa',
+      // Correção A (D-430): a alface só se mede em folha, e o mamão Formosa só tem a fatia de 170 g, que não serve a 120 g.
+      'Alface crespa': '7 folhas',
+      'Mamão Formosa': '120 g',
       'Brócolis cozido': '4 colheres de servir',
       'Cenoura crua': 'meia unidade',
       'Batata inglesa cozida': '2 colheres de servir e meia',

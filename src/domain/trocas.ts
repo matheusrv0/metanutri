@@ -189,7 +189,12 @@ export function trocasDoAlimento(
     })
     .filter(variedade(nomeBase(base.descricao)))
     .slice(0, limite)
-    .map(({ a, gramas }) => ({ alimentoId: a.id, descricao: a.descricao, gramas, medida: medidaCaseiraParaPaciente(a.id, gramas) }))
+    .map(({ a, gramas }) => {
+      // D-434 (spec alimentos-e-gramaturas, correção A): a troca é uma sugestão de equivalência; os gramas viram os da
+      // medida que o paciente lê ("1 copo americano (150 ml)", não "(138 ml)"), a até 15% da energia equivalente.
+      const medida = medidaCaseiraParaPaciente(a.id, gramas)
+      return { alimentoId: a.id, descricao: a.descricao, gramas: medida ? medida.gramasEquivalentes : gramas, medida }
+    })
 }
 
 /**

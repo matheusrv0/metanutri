@@ -57,7 +57,7 @@ export function dadosEstruturados(): DadosEstruturados {
         applicationSubCategory: 'Software para nutricionistas',
         operatingSystem: 'Web',
         inLanguage: 'pt-BR',
-        description: `Software para nutricionistas: plano alimentar com adequação de ${vitaminasEMinerais} vitaminas e minerais e da fibra, sugestão de alimento e porção em medida caseira para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.`,
+        description: `Software para nutricionistas: plano alimentar com adequação de ${vitaminasEMinerais} vitaminas e minerais e da fibra, sugestão de alimento e porção para cada nutriente abaixo da meta (botão Cobrir) e missões diárias para o paciente.`,
         image: IMAGEM_DE_COMPARTILHAR,
         publisher: { '@id': organizacao },
         offers: ofertas,

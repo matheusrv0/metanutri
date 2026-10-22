@@ -185,6 +185,25 @@ Como nutricionista, quero que a suplementação e o pedido de exames saiam com o
   folha. **Conferir à mão** uma vez (o Playwright desta máquina só tem o Chromium; o dono usa o Chrome). Se sair, o
   remédio é desligar "Cabeçalhos e rodapés" na caixa do Firefox.
 
+## 4.1 Correção A da rodada "cuidado total" (22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026** depois da revisão como usuária real (`revisao-usuario.md`, I7 e I8);
+ordem de pé do dono: "apenas faça"; aprovação pelas telas antes de publicar. Substitui o CA-643 e o CB-185.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-444 | **Sem título órfão e sem refeição vazia.** O título "Orientações" fica preso ao primeiro parágrafo (os dois não se partem entre páginas). A refeição sem alimento não aparece na folha, como já não aparece em "Meu plano"; o plano sem nenhum alimento mostra uma linha só, "Sem alimentos no plano." | "Orientações" ficava sozinho no pé da página 1, e quatro refeições vazias saíam "Sem alimentos nesta refeição." no documento do paciente |
+| D-445 | **"Lista de compras da semana", no peso de compra.** A soma do dia (opção principal) vezes 7. O que a base tem cru e se come cozido, grelhado ou assado (arroz, feijão, lentilha, massa fresca, carnes, aves e peixes) vai para o peso cru pela energia da TACO (cru = pronto × kcal do pronto ÷ kcal do cru: 150 g de arroz cozido por dia viram 400 g de arroz branco na semana), com o nome do alimento cru sem "(peso cru)". Alimento contado (ovo; fruta e pão com "unidade") sai em unidades, arredondado para cima ("Ovo — 14 unidades"), pela unidade do que se come (o ovo não muda de peso ao cozinhar); líquido sai em ml até 1 litro e em litros acima ("1,4 litro"); o resto, em gramas arredondados para cima de 50 em 50 ("Queijo minas frescal — 250 g"), em kg acima de 1.000 g ("1,2 kg"). A receita entra pelos ingredientes. Ordem alfabética. A chave da janela diz "Para 7 dias, no peso de compra." | Ninguém compra "6 colheres de sopa de arroz cozido": a lista do dia na medida da refeição não era lista de compras. A energia é conservada no cozimento (só entra ou sai água), então a razão de kcal da própria TACO dá o rendimento |
+
+- **CA-1253** · Dado orientações escritas, então o título "Orientações" e o primeiro parágrafo ficam num bloco que não se parte (`break-inside: avoid`).
+- **CA-1254** · Dado um plano com refeições vazias, então a folha não mostra essas refeições; dado um plano sem nenhum alimento, então mostra "Sem alimentos no plano."
+- **CA-1255** · Dado 150 g de arroz branco cozido e 140 g de feijão carioca cozido por dia, então a lista diz "Arroz branco — 400 g" e "Feijão carioca — 250 g".
+- **CA-1256** · Dado 2 ovos cozidos e 1 banana prata por dia, então a lista diz "Ovo — 14 unidades" e "Banana prata — 7 unidades"; dado 200 ml de leite por dia, "Leite integral — 1,4 litro"; dado 100 g de peito de frango grelhado, o peso cru da semana em gramas ("Peito de frango sem pele — 950 g").
+- **CA-1257** · Dado a janela de imprimir, então a chave "Lista de compras" diz "Para 7 dias, no peso de compra." e o título da seção na folha é "Lista de compras da semana".
+
+- **CB-410** · Alimento pronto sem a versão crua na base (polenta, preparações): entra no peso como se come.
+- **CB-411** · Alimento contado com menos de meia unidade na semana: 1 unidade.
+
 ## 5. Fora de escopo, explicitamente
 
 - A dieta do link do paciente ("Meu plano", spec `dieta-no-link`): continua com o nome da base e com os gramas. Mudar

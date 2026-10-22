@@ -531,7 +531,7 @@ const TELAS: readonly Tela[] = [
     },
     agir: async (p) => {
       const gaveta = p.getByRole('dialog')
-      await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('button', { name: 'Adicionar' }).first().click()
+      await gaveta.getByRole('list', { name: 'Sugestões para cobrir' }).getByRole('button', { name: /^Adicionar em / }).first().click()
       await expect(gaveta).toBeHidden()
     },
   },

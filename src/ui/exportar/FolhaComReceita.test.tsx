@@ -39,7 +39,8 @@ describe('a receita na folha (CA-879 a CA-881)', () => {
     const receita = within(secao).getByRole('article', { name: 'Panqueca de banana' })
     expect(receita).toHaveTextContent('Rende 2 unidades (120 g cada)')
     const ingredientes = within(receita).getAllByRole('listitem').map((li) => li.textContent)
-    expect(ingredientes).toEqual(['Banana prata — 2 unidades', 'Ovo — 2 unidades', 'Aveia em flocos — 2 colheres de sopa'])
+    // D-434 (correção A): 2 ovos são 90 g, a mais de 5% dos 100 g da receita.
+    expect(ingredientes).toEqual(['Banana prata — 2 unidades', 'Ovo — 100 g (cerca de 2 unidades)', 'Aveia em flocos — 2 colheres de sopa'])
     expect(within(receita).getByText(/Amasse a banana/)).toHaveClass('whitespace-pre-wrap')
     // O texto livre vem depois das receitas calculadas.
     expect(secao.textContent?.indexOf('Suco verde')).toBeGreaterThan(secao.textContent?.indexOf('Amasse a banana') ?? Infinity)
@@ -53,8 +54,10 @@ describe('a receita na folha (CA-879 a CA-881)', () => {
   it('CA-881: a lista de compras abre a receita nos ingredientes', () => {
     render(<FolhaDieta caso={caso} plano={planoComPanqueca()} opcoes={{ listaDeCompras: true, trocas: false }} />)
     const compras = screen.getByRole('region', { name: 'Lista de compras' })
-    expect(compras).toHaveTextContent('Banana prata — 1 unidade')
-    expect(compras).toHaveTextContent('Aveia em flocos — 1 colher de sopa')
+    // D-445 (correção A): a semana, no peso de compra: meia panqueca por dia leva 75 g de banana, 50 g de ovo e 15 g de aveia.
+    expect(compras).toHaveTextContent('Banana prata — 7 unidades')
+    expect(compras).toHaveTextContent('Ovo — 8 unidades')
+    expect(compras).toHaveTextContent('Aveia em flocos — 150 g')
     expect(compras).not.toHaveTextContent('Panqueca')
   })
 })
