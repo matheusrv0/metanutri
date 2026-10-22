@@ -108,7 +108,8 @@ describe('Folha da dieta (US-B1)', () => {
     const desjejum = refeicao(/^06:00 Café da manhã$/)
     expect(desjejum.getByText('Maçã Fuji com casca').closest('li')).toHaveTextContent(/^Maçã Fuji com casca, 3 fatias e meia$/)
     // D-295: "5 fatias" de banana vira a medida de até 4 pedaços que serve.
-    expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 1 unidade e meia$/)
+    // D-434 (correção A): 1 unidade e meia são 112,5 g, a mais de 5% dos 130 g: o peso e "cerca de".
+    expect(desjejum.getByText('Banana prata').closest('li')).toHaveTextContent(/^Banana prata, 130 g \(cerca de 1 unidade e meia\)$/)
     expect(desjejum.getByText('Margarina com sal').closest('li')).toHaveTextContent(/^Margarina com sal, 1 ponta de faca$/)
     // A batata de 120 g não sai mais em gramas: tem medida caseira que serve.
     expect(refeicao(/^12:00 Almoço$/).getByText('Batata inglesa cozida').closest('li')).not.toHaveTextContent(/\d g$/)

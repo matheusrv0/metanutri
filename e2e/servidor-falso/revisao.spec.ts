@@ -314,10 +314,11 @@ test.describe('Link do paciente', () => {
     await page.goto('/#/missoes/token-do-teste')
     await page.getByRole('tab', { name: 'Meu plano' }).click()
     const linha = (refeicao: string, nome: string) => page.getByRole('region', { name: refeicao }).getByRole('listitem').filter({ hasText: nome })
-    await expect(linha('06:00 Desjejum', 'Pão francês')).toHaveText('1 unidade e meiaPão francês')
+    // D-434 (spec alimentos-e-gramaturas, correção A): a medida a mais de 5% dos gramas sai com o peso e "cerca de".
+    await expect(linha('06:00 Desjejum', 'Pão francês')).toHaveText('70 g (cerca de 1 unidade e meia)Pão francês')
     await expect(linha('06:00 Desjejum', 'Margarina com sal')).toHaveText('1 ponta de facaMargarina com sal')
     await expect(linha('06:00 Desjejum', 'Queijo minas frescal')).toHaveText('30 gQueijo minas frescal')
-    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('1 unidade e meiaBanana prata')
+    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('130 g (cerca de 1 unidade e meia)Banana prata')
     await expect(linha('12:00 Almoço', 'Macarrão (peso cru)')).toHaveText('90 gMacarrão (peso cru)')
     await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('meia unidadeFilé de merluza assado')
     await expect(linha('19:00 Jantar', 'Ovo cozido')).toHaveText('2 unidadesOvo cozido')

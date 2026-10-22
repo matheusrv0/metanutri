@@ -279,9 +279,10 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     })
     const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
     const linha = (nome: string) => cafe.getByText(nome).closest('li')?.textContent
-    expect(linha('Pão francês')).toBe('1 unidade e meiaPão francês')
+    // D-434 (correção A): a medida a mais de 5% dos gramas sai com o peso e "cerca de".
+    expect(linha('Pão francês')).toBe('70 g (cerca de 1 unidade e meia)Pão francês')
     expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
-    expect(linha('Banana prata')).toBe('1 unidade e meiaBanana prata')
+    expect(linha('Banana prata')).toBe('130 g (cerca de 1 unidade e meia)Banana prata')
     expect(linha('Maçã Fuji com casca')).toBe('3 fatias e meiaMaçã Fuji com casca')
   })
 
