@@ -36,11 +36,11 @@ export function registrarMedidasProprias(lista: readonly { readonly alimentoId: 
  * (D-387). O alimento próprio traz as dele no cadastro.
  */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
-  if (alimentoId >= PRIMEIRO_ID_PROPRIO) return buscarAlimento(alimentoId)?.medidas ?? []
-  const daPof = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? []
+  // O alimento próprio traz as do cadastro e do rótulo; a medida da conta também vale para ele (correção A, D-433).
+  const daBase = alimentoId >= PRIMEIRO_ID_PROPRIO ? (buscarAlimento(alimentoId)?.medidas ?? []) : (MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? [])
   const proprias = PROPRIAS.get(alimentoId)
-  if (!proprias) return daPof
-  return [...proprias, ...daPof.filter((m) => !proprias.some((p) => p.nome === m.nome))]
+  if (!proprias) return daBase
+  return [...proprias, ...daBase.filter((m) => !proprias.some((p) => p.nome === m.nome))]
 }
 
 /** Medidas mais legíveis num plano, em ordem de preferência; medidas vagas ("porção", "prato") ficam de fora. */
@@ -396,7 +396,8 @@ export function variantesDoTermo(termo: string): readonly string[] {
 /** A medida que o alimento tem com o nome pedido (inteiro ou curto); `null` quando ele não tem. */
 export function medidaPedida(alimentoId: number, pedida: string): MedidaCaseira | null {
   const medidas = medidasDoAlimento(alimentoId)
-  const nomes = MEDIDAS_CURTAS[pedida] ?? [pedida]
+  // O nome curto vale primeiro; depois, o nome como foi escrito (o "copo" do rótulo de um alimento próprio, D-433).
+  const nomes = MEDIDAS_CURTAS[pedida] ? [...MEDIDAS_CURTAS[pedida], pedida] : [pedida]
   for (const nome of nomes) {
     const achada = medidas.find((m) => m.nome === nome)
     if (achada) return achada
@@ -540,6 +541,11 @@ function lerParaOAlimento(lida: InterpretacaoEntrada, alimento: Alimento): Omit<
   if (lida.unidade === null && lida.quantidade !== null && lida.quantidade < LIMITE_DE_UNIDADES) {
     const m = medidaDeContar(alimento.id)
     if (m) return { gramas: arredondar(lida.quantidade * m.gramas), medida: { nome: m.nome, quantidade: lida.quantidade, gramasPorMedida: m.gramas }, unidade, aviso: null }
+  }
+  // D-433: sem quantidade, o alimento próprio entra pela porção do rótulo ("4 colheres de sopa · 40 g"), não por 100 g.
+  const porcao = alimento.porcaoPadrao
+  if (lida.quantidade === null && lida.unidade === null && porcao) {
+    return { gramas: arredondar(porcao.quantidade * porcao.gramasPorMedida), medida: { ...porcao }, unidade, aviso: null }
   }
   return { gramas: lida.quantidade ?? GRAMAS_PADRAO, medida: null, unidade, aviso: null }
 }

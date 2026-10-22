@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
+import { medidaCaseiraDaLeitura } from '@/domain/medidaDoRotulo.ts'
 import { CAMPOS_OPCIONAIS, CAMPOS_ROTULO, porCem, validarProduto, type Produto } from '@/domain/produtos.ts'
 import { LeitorCodigo } from './LeitorCodigo.tsx'
 import type { ChaveNutrienteAlimento } from '@/domain/tipos.ts'
@@ -40,6 +41,8 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
   const [codigoBarras, setCodigoBarras] = useState(inicial?.codigoBarras ?? '')
   const [procurando, setProcurando] = useState(false)
   const [avisoCodigo, setAvisoCodigo] = useState<string | null>(null)
+  // A leitura da Open Food Facts marca a fonte: sem peso no texto, a medida não usa os 100 g da leitura (D-433).
+  const [lidoEm, setLidoEm] = useState<string | null>(inicial?.fonte?.tipo === 'open-food-facts' ? inicial.fonte.data : null)
 
   const lerCodigo = async (codigo: string) => {
     setProcurando(true)
@@ -54,9 +57,11 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
       if (achado.nome) setNome(achado.nome)
       if (achado.marca) setMarca(achado.marca)
       // A13 (spec alimentos-e-gramaturas, D-382): os valores ficam por 100 g ou 100 ml, como a base publica; nunca são
-      // reescalados para uma porção digitada depois. A porção do rótulo vai para a medida.
+      // reescalados para uma porção digitada depois. A porção do rótulo vai para a medida, sempre com o peso escrito
+      // ("1 unidade (30 g)"), para a medida nunca virar os 100 g da leitura (correção A, D-433; Importante 3).
       setPorcaoG(100)
-      setMedidaCaseira(achado.porcao ? achado.porcao.texto || `${formatarNumero(achado.porcao.gramas, 0)} ${achado.unidade}` : '')
+      setMedidaCaseira(medidaCaseiraDaLeitura(achado.porcao, achado.unidade))
+      setLidoEm(new Date().toISOString().slice(0, 10))
       setValores((atual) => ({ ...atual, ...achado.por100 }))
       setAvisoCodigo(`Dados da ${achado.fonte}, por 100 ${achado.unidade}. Confira com a embalagem antes de salvar: a base é colaborativa e pode ter erros.`)
     } catch {
@@ -74,6 +79,7 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
     porcaoG: porcaoG ?? 0,
     medidaCaseira,
     porPorcao: valores,
+    ...(lidoEm !== null && codigoBarras !== '' ? { fonte: { tipo: 'open-food-facts' as const, codigo: codigoBarras, data: lidoEm } } : {}),
   }
 
   const problemas = validarProduto(dados)
@@ -120,7 +126,7 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
         <CampoTexto rotulo="Nome do produto" valor={nome} aoMudar={setNome} placeholder="Iogurte natural…" erro={erroDe('nome')} />
         <CampoTexto rotulo="Marca" valor={marca} aoMudar={setMarca} placeholder="Opcional" />
         <CampoNumero rotulo="Porção do rótulo" valor={porcaoG} aoMudar={setPorcaoG} sufixo="g ou ml" erro={erroDe('porcaoG')} />
-        <CampoTexto rotulo="Medida caseira da porção" valor={medidaCaseira} aoMudar={setMedidaCaseira} placeholder="1 pote, 2 fatias…" />
+        <CampoTexto rotulo="Medida caseira da porção" valor={medidaCaseira} aoMudar={setMedidaCaseira} placeholder="4 colheres de sopa, 1 pote…" />
       </div>
 
       <section className="flex flex-col gap-3">

@@ -16,7 +16,7 @@ import {
 import { tipoDaRefeicao } from '@/domain/sugestoes.ts'
 import type { MedidaCaseira } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
-import { PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { MEUS_ALIMENTOS_NOVOS, PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
 import type { ModoQuantidade, OpcaoId, Plano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -58,8 +58,9 @@ export function TelaPlano({
 }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
-  // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha. Alimento da base: medida própria da conta;
-  // alimento próprio: a medida entra no cadastro dele.
+  // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha, gravada como medida própria da conta. O alimento
+  // próprio só guarda a medida no cadastro dele com o formulário novo ligado (publicação 2): a versão no ar refaz o item
+  // ao editar e apagaria a medida (D-383); até lá, ela mora na chave das medidas da conta (correção A, D-433).
   const medidasProprias = useMedidasProprias()
   const meusAlimentos = useMeusAlimentos()
   const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void } | null>(null)
@@ -68,7 +69,7 @@ export function TelaPlano({
   const salvarMedida = (m: MedidaCaseira): string | null => {
     if (!novaMedida) return null
     try {
-      if (novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO) {
+      if (novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO && MEUS_ALIMENTOS_NOVOS) {
         const proprio = meusAlimentos.lista.find((p) => p.id === novaMedida.alimentoId)
         if (!proprio) return 'Este alimento foi excluído. Escolha outro.'
         meusAlimentos.salvar({ ...proprio, medidas: [...(proprio.medidas ?? []).filter((x) => x.nome !== m.nome), { nome: m.nome, gramas: m.gramas }] })

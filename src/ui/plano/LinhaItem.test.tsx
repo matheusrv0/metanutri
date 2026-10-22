@@ -169,10 +169,10 @@ describe('quantidade + medida = gramas (spec alimentos-e-gramaturas, G2, G3 e G5
     expect(aoMudarMedida).toHaveBeenLastCalledWith(null)
   })
 
-  it('CB-366: alimento sem medida mostra só os gramas e diz que não há medida na base', () => {
+  it('CB-366: alimento sem medida mostra só os gramas e diz que não há medida cadastrada', () => {
     comMedida({ id: 'i1', alimentoId: 40, gramas: 90 })
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByText('Sem medida caseira na base.')).toBeInTheDocument()
+    expect(screen.getByText('Sem medida caseira cadastrada.')).toBeInTheDocument()
     expect(screen.getByText(/O paciente lê:/)).toHaveTextContent('90 g')
   })
 

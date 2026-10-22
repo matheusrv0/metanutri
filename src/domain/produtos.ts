@@ -4,6 +4,7 @@
 // Fica na chave `metanutri:produtos`, a mesma de antes, e entra nos cálculos como qualquer alimento. O item sempre tem
 // `id`, `nome`, `porcaoG` e `porPorcao`, que é tudo o que a versão anterior lê: um alimento por 100 g é um item com
 // porção de 100 g. Os campos novos (tipo, grupo, preparo, unidade, medidas, fonte…) são opcionais na leitura.
+import { lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
@@ -319,17 +320,39 @@ export function validarAlimentoProprio(d: DadosAlimentoProprio): { readonly prob
   return { problemas, avisos }
 }
 
-/** "1 pote" → "pote"; o resto não vira nome de medida. */
-const nomeDaMedidaDoRotulo = (texto: string): string | null => /^1\s+([^\d].*)$/.exec(texto.trim())?.[1]?.trim() ?? null
+/**
+ * A medida caseira da porção do rótulo (D-433, correção A): "4 colheres de sopa" com 40 g, "1 copo (200 ml)". O peso
+ * escrito no texto vale mais; sem ele, a porção do rótulo, nunca os 100 g de uma leitura por 100 g da Open Food Facts
+ * (Importante 3 da revisão de código).
+ */
+function medidaDoRotulo(p: Produto): MedidaLidaDoRotulo | null {
+  if (typeof p.medidaCaseira !== 'string') return null
+  const porPorcao = (p.base ?? 'porcao') === 'porcao' && p.fonte?.tipo !== 'open-food-facts' && p.porcaoG > 0
+  return lerMedidaDoRotulo(p.medidaCaseira, porPorcao ? p.porcaoG : null)
+}
 
-/** As medidas do item, lidas com segurança; o rótulo com "1 pote" na porção ganha a medida "pote" (A11). */
+/**
+ * As medidas do item, lidas com segurança, mais a do rótulo e a "porção" (A11; D-433): "granola" de 40 g em "4
+ * colheres de sopa" ganha "colher de sopa · 10 g" e "porção · 40 g". Com o mesmo nome, vale a do cadastro.
+ */
 function medidasDoProduto(p: Produto): readonly MedidaDoProprio[] {
   const lidas = Array.isArray(p.medidas)
     ? p.medidas.filter((m): m is MedidaDoProprio => typeof m === 'object' && m !== null && typeof m.nome === 'string' && m.nome.trim() !== '' && typeof m.gramas === 'number' && m.gramas > 0)
     : []
-  const daPorcao = (p.base ?? 'porcao') === 'porcao' ? nomeDaMedidaDoRotulo(p.medidaCaseira) : null
-  if (daPorcao && p.porcaoG > 0 && !lidas.some((m) => m.nome === daPorcao)) return [...lidas, { nome: daPorcao, gramas: p.porcaoG }]
-  return lidas
+  const rotulo = medidaDoRotulo(p)
+  const doRotulo: MedidaDoProprio[] = rotulo ? [...(rotulo.medida ? [{ nome: rotulo.medida.nome, gramas: rotulo.medida.gramas }] : []), { nome: 'porção', gramas: rotulo.porcaoG }] : []
+  const medidas = [...lidas]
+  for (const m of doRotulo) if (!medidas.some((x) => x.nome === m.nome)) medidas.push(m)
+  return medidas
+}
+
+/** A porção do rótulo com a medida dela, que a entrada rápida usa quando não há quantidade (D-433). */
+function porcaoPadraoDoProduto(p: Produto): Alimento['porcaoPadrao'] {
+  const rotulo = medidaDoRotulo(p)
+  if (!rotulo) return undefined
+  return rotulo.medida
+    ? { nome: rotulo.medida.nome, quantidade: rotulo.medida.quantidade, gramasPorMedida: rotulo.medida.gramas }
+    : { nome: 'porção', quantidade: 1, gramasPorMedida: rotulo.porcaoG }
 }
 
 /**
@@ -346,6 +369,7 @@ export function produtoComoAlimento(p: Produto): Alimento {
   const marca = typeof p.marca === 'string' ? p.marca.trim() : ''
   const descricao = marca ? `${p.nome.trim()} (${marca})` : p.nome.trim()
   const preparo = p.preparo && p.preparo !== 'pronto para consumo' ? p.preparo : null
+  const porcaoPadrao = porcaoPadraoDoProduto(p)
   return {
     id: p.id,
     descricao,
@@ -357,6 +381,7 @@ export function produtoComoAlimento(p: Produto): Alimento {
     tracos: [],
     ...(p.unidade === 'ml' || p.unidade === 'g' ? { unidade: p.unidade } : {}),
     medidas: medidasDoProduto(p),
+    ...(porcaoPadrao ? { porcaoPadrao } : {}),
     proprio: {
       tipo: p.tipo ?? 'rotulo',
       nomeParaPaciente: typeof p.nomeParaPaciente === 'string' ? p.nomeParaPaciente.trim() : '',

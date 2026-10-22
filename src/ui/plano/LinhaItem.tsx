@@ -4,7 +4,7 @@ import { explicarCompletude } from '@/domain/completude.ts'
 import { linhaDaFolha } from '@/domain/folhaDieta.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { lerMedidaDoItem, medidaNaLinha, medidasDoSeletor } from '@/domain/medidaDoItem.ts'
-import { MEUS_ALIMENTOS_NOVOS, nomeSemAlimento, PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
+import { nomeSemAlimento } from '@/domain/produtos.ts'
 import { textoDaQuantidade } from '@/domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaComOQueComer, receitaDoItem, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { restricaoDoItem } from '@/domain/restricoes.ts'
@@ -160,9 +160,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
 
   const aproximada = naLinha?.aproximada === true
   const automatica = naLinha?.origem === 'automatica'
-  // D-383: a medida de um alimento próprio entra no cadastro dele, que só se edita com o formulário novo ligado.
-  const criar =
-    aoCriarMedida && alimento && (alimento.id < PRIMEIRO_ID_PRODUTO || MEUS_ALIMENTOS_NOVOS) ? () => aoCriarMedida(alimento.id, (m) => escolher(m)) : undefined
+  // D-433 (correção A): o alimento próprio também ganha "+ Nova medida…"; quem grava decide onde ela mora (TelaPlano).
+  const criar = aoCriarMedida && alimento ? () => aoCriarMedida(alimento.id, (m) => escolher(m)) : undefined
 
   return (
     // G2: o nome; quantidade + medida = gramas; o que o paciente lê. No celular, as três linhas; nada passa de 360 px.
@@ -244,7 +243,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
           ) : null}
         </p>
       ) : null}
-      {medidasDoAlimento.length === 0 ? <p className="text-xs text-muted-foreground">Sem medida caseira na base.{criar ? ' Crie a sua.' : ''}</p> : null}
+      {medidasDoAlimento.length === 0 ? <p className="text-xs text-muted-foreground">Sem medida caseira cadastrada.{criar ? ' Crie a sua.' : ''}</p> : null}
     </li>
   )
 }

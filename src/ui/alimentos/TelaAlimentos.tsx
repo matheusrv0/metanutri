@@ -442,7 +442,7 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground">Sem medida caseira na base.</p>
+          <p className="text-xs text-muted-foreground">Sem medida caseira cadastrada.</p>
         )}
         {daBase ? (
           <div className="mt-3 flex flex-wrap gap-2">

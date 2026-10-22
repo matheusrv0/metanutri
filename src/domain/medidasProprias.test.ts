@@ -52,11 +52,17 @@ describe('repositório das medidas próprias', () => {
     expect(gravado[1]).toMatchObject({ gramas: 125, novo: 'sim', criadoEm: T(1) })
   })
 
-  it('CB-372: nome vazio, peso fora de 0 a 2.000 e alimento próprio não salvam', () => {
+  it('CB-372: nome vazio, peso fora de 0 a 2.000 e alimento inexistente não salvam', () => {
     expect(validarMedidaPropria({ alimentoId: FEIJAO, nome: ' ', gramas: 10 }).map((p) => p.campo)).toEqual(['nome'])
     expect(validarMedidaPropria({ alimentoId: FEIJAO, nome: 'pote', gramas: 0 }).map((p) => p.campo)).toEqual(['gramas'])
     expect(validarMedidaPropria({ alimentoId: FEIJAO, nome: 'pote', gramas: 2001 }).map((p) => p.campo)).toEqual(['gramas'])
-    expect(validarMedidaPropria({ alimentoId: 900_001, nome: 'pote', gramas: 10 }).map((p) => p.campo)).toEqual(['alimento'])
+    // Correção A (D-433, CA-1234): a medida da conta vale também para o alimento próprio, numa chave que a versão no ar
+    // não conhece nem apaga; id zero ou negativo continua recusado.
+    expect(validarMedidaPropria({ alimentoId: 900_001, nome: 'pote', gramas: 10 })).toEqual([])
+    expect(validarMedidaPropria({ alimentoId: 0, nome: 'pote', gramas: 10 }).map((p) => p.campo)).toEqual(['alimento'])
+    const repo = criarRepositorioMedidasProprias(new Memoria())
+    repo.salvar({ alimentoId: 900_001, nome: 'xícara de chá', gramas: 90 })
+    expect(repo.doAlimento(900_001).map((m) => m.nome)).toEqual(['xícara de chá'])
     expect(() => criarRepositorioMedidasProprias(new Memoria()).salvar({ alimentoId: FEIJAO, nome: '', gramas: 10 })).toThrow(RangeError)
   })
 
