@@ -309,6 +309,36 @@ describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
     expect(guardada?.['doencas']).toEqual(['hipertensao', 'doenca-do-futuro'])
   })
 
+  it('CA-1296 (D-463): gestação ou lactação de um tipo de versão futura fica guardada ao salvar outro campo', () => {
+    const arm = new Memoria()
+    const futuro = { tipo: 'pos-parto', semanas: 3 }
+    arm.setItem('metanutri:pacientes', JSON.stringify([{ id: 'p1', nome: 'Ana', momentoDeVida: futuro, criadoEm: '2026-09-01T00:00:00.000Z', atualizadoEm: '2026-09-01T00:00:00.000Z' }]))
+    const repo = criarRepositorioPacientes(arm, { agora: relogio() })
+    const ana = repo.obter('p1')
+    if (!ana) throw new Error('ficha não lida')
+    expect(ana.momentoDeVida).toBeNull()
+    repo.salvar({ ...ana, nome: 'Ana Souza' })
+    const [guardada] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    expect(guardada?.['momentoDeVida']).toEqual(futuro)
+    expect(guardada?.['nome']).toBe('Ana Souza')
+    // CB-424: escolher na tela troca o objeto de antes.
+    repo.salvar({ ...ana, momentoDeVida: { tipo: 'nenhum' } })
+    const [escolhida] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    expect(escolhida?.['momentoDeVida']).toEqual({ tipo: 'nenhum' })
+  })
+
+  it('CA-1296 (D-463): o campo a mais da gestante, de uma versão futura, continua depois de mudar as semanas', () => {
+    const arm = new Memoria()
+    const gestante = { tipo: 'gestante', semanas: 20, semanasEm: '2026-10-01', pesoPreGestacionalKg: 60, gemelar: true }
+    arm.setItem('metanutri:pacientes', JSON.stringify([{ id: 'p1', nome: 'Ana', momentoDeVida: gestante, criadoEm: '2026-09-01T00:00:00.000Z', atualizadoEm: '2026-09-01T00:00:00.000Z' }]))
+    const repo = criarRepositorioPacientes(arm, { agora: relogio() })
+    const ana = repo.obter('p1')
+    if (!ana || ana.momentoDeVida?.tipo !== 'gestante') throw new Error('gestante não lida')
+    repo.salvar({ ...ana, momentoDeVida: { ...ana.momentoDeVida, semanas: 23, semanasEm: '2026-10-22' } })
+    const [guardada] = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as Record<string, unknown>[]
+    expect(guardada?.['momentoDeVida']).toEqual({ ...gestante, semanas: 23, semanasEm: '2026-10-22' })
+  })
+
   it('a idade na data pedida, em anos e meses', () => {
     expect(idadeNaData('1991-03-10', '2026-10-21')).toEqual({ anos: 35, meses: 7 })
     expect(idadeNaData('1991-03-10', '2026-03-09')).toEqual({ anos: 34, meses: 11 })

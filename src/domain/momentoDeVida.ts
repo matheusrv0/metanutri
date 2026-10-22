@@ -61,13 +61,17 @@ export function mesesEntre(inicio: string, fim: string): number | null {
 const numeroPositivo = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)
 const numeroInteiro = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : null)
 
-/** D-365: o que está guardado; tipo que não se lê é "não informado" (`null`), campo estragado vira vazio. */
+/**
+ * D-365: o que está guardado; tipo que não se lê é "não informado" (`null`), campo estragado vira vazio. D-463: campo a
+ * mais (de uma versão mais nova) fica no objeto, e o tipo desconhecido fica guardado pela ficha (`pacientes.ts`).
+ */
 export function lerMomento(valor: unknown): MomentoDeVida | null {
   if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return null
   const o = valor as Record<string, unknown>
   if (o['tipo'] === 'nenhum') return { tipo: 'nenhum' }
   if (o['tipo'] === 'gestante') {
     return {
+      ...o,
       tipo: 'gestante',
       semanas: numeroInteiro(o['semanas']),
       semanasEm: diaValido(o['semanasEm']),
@@ -77,7 +81,7 @@ export function lerMomento(valor: unknown): MomentoDeVida | null {
   if (o['tipo'] === 'lactante') {
     if (o['amamentacao'] === NAO_AMAMENTA) return { tipo: 'nenhum' }
     const amamentacao = AMAMENTACOES.find((a) => a.valor === o['amamentacao'])?.valor ?? null
-    return { tipo: 'lactante', dataDoParto: diaValido(o['dataDoParto']), amamentacao }
+    return { ...o, tipo: 'lactante', dataDoParto: diaValido(o['dataDoParto']), amamentacao }
   }
   return null
 }

@@ -156,6 +156,12 @@ export function listaDeRestricoes(texto: string): readonly string[] {
     .filter((l) => l !== '')
 }
 
+/** D-463: gestação ou lactação de um tipo que esta versão não conhece (de uma versão mais nova): fica como veio. */
+function momentoDeOutraVersao(valor: unknown): boolean {
+  if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return false
+  return typeof (valor as Record<string, unknown>)['tipo'] === 'string' && lerMomento(valor) === null
+}
+
 export interface RepositorioPacientes {
   listar(): readonly Paciente[]
   obter(id: string): Paciente | null
@@ -255,7 +261,13 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
 
     salvar(paciente) {
       const atualizado = { ...paciente, atualizadoEm: agora() }
-      gravar([...lerGuardados().filter((p) => p.id !== paciente.id), atualizado])
+      const guardados = lerGuardados()
+      // D-463: a ficha lida mostra "não informado" para o tipo de outra versão; salvar outro campo não o apaga.
+      const momentoGuardado: unknown = guardados.find((p) => p.id === paciente.id)?.momentoDeVida
+      const manter = paciente.momentoDeVida === null && momentoDeOutraVersao(momentoGuardado)
+      // O valor de outra versão é gravado como veio; esta versão nunca o lê como tipo (`lerMomento` devolve nulo).
+      const gravado: PacienteGuardado = manter ? { ...atualizado, momentoDeVida: momentoGuardado as MomentoDeVida } : atualizado
+      gravar([...guardados.filter((p) => p.id !== paciente.id), gravado])
       return atualizado
     },
 

@@ -1,3 +1,4 @@
+import { modoDeQuantidade } from './caso.ts'
 import { criarRepositorio, type Armazenamento } from './persistencia.ts'
 import { adicionarItem } from './plano.ts'
 
@@ -197,6 +198,22 @@ describe('repositório de casos', () => {
     delete gravado.caso['quantidades']
     arm.setItem(`metanutri:caso:${antigo.caso.id}`, JSON.stringify(gravado))
     expect(criarRepositorio(arm).obter(antigo.caso.id)?.caso.quantidades).toBe('medida-caseira')
+  })
+
+  it('CA-1295 (spec ficha-unica, D-463): o modo de quantidades de uma versão futura fica gravado como veio', () => {
+    const arm = new MemoriaFalsa()
+    const repo = criarRepositorio(arm)
+    const futuro = repo.criar('Futuro')
+    const gravado = JSON.parse(arm.getItem(`metanutri:caso:${futuro.caso.id}`) ?? '{}') as { caso: Record<string, unknown> }
+    gravado.caso['quantidades'] = 'em-fatias'
+    arm.setItem(`metanutri:caso:${futuro.caso.id}`, JSON.stringify(gravado))
+    const lido = criarRepositorio(arm).obter(futuro.caso.id)
+    if (!lido) throw new Error('plano não lido')
+    expect(modoDeQuantidade(lido.caso)).toBe('medida-caseira')
+    criarRepositorio(arm).salvar({ ...lido, caso: { ...lido.caso, nome: 'Futuro, editado' } })
+    const depois = JSON.parse(arm.getItem(`metanutri:caso:${futuro.caso.id}`) ?? '{}') as { caso: Record<string, unknown> }
+    expect(depois.caso['quantidades']).toBe('em-fatias')
+    expect(depois.caso['nome']).toBe('Futuro, editado')
   })
 
   it('operar em caso inexistente é erro', () => {
