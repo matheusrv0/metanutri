@@ -253,7 +253,7 @@ describe('Legenda do † no cartão (CA-699)', () => {
   it('CA-699: com alguma linha marcada, o pé do cartão explica o †, à vista', () => {
     montar(adulta, criarExemplo(ids, '2026-10-15').plano)
     expect(cartao().getAllByTitle(/total possivelmente subestimado/).length).toBeGreaterThan(0)
-    expect(cartao().getByText('Total possivelmente subestimado: falta o dado em algum alimento.')).toBeInTheDocument()
+    expect(cartao().getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
   })
 
   it('CA-699: sem linha marcada, não há pé', () => {

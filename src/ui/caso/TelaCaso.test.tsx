@@ -89,6 +89,12 @@ describe('Etapa 1: dados do caso', () => {
     expect(painel().getByText(/aos 102 meses/)).toBeInTheDocument()
   })
 
+  it('CA-1291: escore-z negativo com o sinal de menos, não o hífen (D-461)', () => {
+    montar({ sexo: 'F', idadeAnos: 6, idadeMesesAdicionais: 5, pesoKg: 19, estaturaCm: 112 })
+    expect(painel().getAllByText(/^escore-z −\d,\d\d$/).length).toBeGreaterThan(0)
+    expect(painel().queryByText(/escore-z -/)).not.toBeInTheDocument()
+  })
+
   it('CA-02b: gestante pede idade gestacional e peso pré-gestacional e mostra o ganho recomendado', async () => {
     const usuario = montar(adulta)
     await usuario.click(screen.getByRole('radio', { name: 'Gestante' }))

@@ -63,19 +63,19 @@ describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
   it('CA-234: nutricionista vê Orientações e documento, sem Receitas', () => {
     montar(ANA)
     expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Receitas')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Receitas em texto livre')).not.toBeInTheDocument()
   })
 
   it('CB-50: receitas já escritas continuam aparecendo', () => {
     montar(ANA, { receitas: 'Cuscuz com ovo.' })
     expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Receitas')).toHaveValue('Cuscuz com ovo.')
+    expect(screen.getByLabelText('Receitas em texto livre')).toHaveValue('Cuscuz com ovo.')
   })
 
   it('item 6: apagar o texto das receitas não faz o campo sumir no meio da edição', async () => {
     montar(ANA, { receitas: 'Cuscuz com ovo.' })
-    await userEvent.setup().clear(screen.getByLabelText('Receitas'))
-    expect(screen.getByLabelText('Receitas')).toHaveValue('')
+    await userEvent.setup().clear(screen.getByLabelText('Receitas em texto livre'))
+    expect(screen.getByLabelText('Receitas em texto livre')).toHaveValue('')
   })
 
   it('item 6: apagar o estagiário de um plano antigo também mantém os campos', async () => {
@@ -88,6 +88,6 @@ describe('Receitas só para estudante (CA-234, CA-236, CB-50)', () => {
   it('CA-236: estudante continua com o campo Receitas', () => {
     montar(JULIA)
     expect(screen.getByRole('heading', { name: 'Orientações e documento' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Receitas')).toBeInTheDocument()
+    expect(screen.getByLabelText('Receitas em texto livre')).toBeInTheDocument()
   })
 })

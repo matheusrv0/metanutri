@@ -1,5 +1,5 @@
 import { criarCasoVazio } from './caso.ts'
-import { calcularEnergia, categoriaDoFator, estadoDaMeta, NIVEIS_ATIVIDADE, percentualDoGasto } from './energia.ts'
+import { calcularEnergia, categoriaDoFator, estadoDaMeta, NIVEIS_ATIVIDADE, percentualDoGasto, rotuloDaCategoria } from './energia.ts'
 import type { Caso } from './tipos.ts'
 
 const caso = (p: Partial<Caso>): Caso => ({ ...criarCasoVazio('c'), ...p })
@@ -270,6 +270,15 @@ describe('prescrição rápida: meta calculada (CA-226 a CA-230, CB-56)', () => 
     expect(r.get).toBeNull()
     expect(r.motivoSemCalculo).toBe(completo.motivoSemCalculo)
     expect(r.motivoSemCalculo).not.toBeNull()
+  })
+})
+
+describe('O nível por extenso (CA-1287)', () => {
+  it('a categoria do NASEM sai com o nome do nível da tela, nunca o código', () => {
+    expect(rotuloDaCategoria('inativo')).toBe('Sedentário')
+    expect(rotuloDaCategoria('pouco-ativo')).toBe('Pouco ativo')
+    expect(rotuloDaCategoria('ativo')).toBe('Moderadamente ativo')
+    expect(rotuloDaCategoria('muito-ativo')).toBe('Muito ativo')
   })
 })
 

@@ -41,7 +41,8 @@ export function CartaoDocumento({ caso, aoAlterar, assinatura, camposDeEstagio, 
       </div>
       {comReceitas ? (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="receitas">Receitas</Label>
+          {/* D-461 (spec ficha-unica): o menu "Receitas" é das receitas calculadas; este campo é texto. */}
+          <Label htmlFor="receitas">Receitas em texto livre</Label>
           <Textarea id="receitas" rows={4} value={caso.receitas} onChange={(e) => aoAlterar({ receitas: e.target.value })} />
         </div>
       ) : null}

@@ -15,6 +15,16 @@ export const NIVEIS_ATIVIDADE: readonly { readonly id: string; readonly rotulo: 
   { id: 'extremamente-ativo', rotulo: 'Extremamente ativo', fator: 1.9, categoria: 'muito-ativo' },
 ]
 
+const ROTULO_DA_CATEGORIA: Readonly<Record<CategoriaAtividade, string>> = {
+  inativo: 'Sedentário',
+  'pouco-ativo': 'Pouco ativo',
+  ativo: 'Moderadamente ativo',
+  'muito-ativo': 'Muito ativo',
+}
+
+/** A categoria do NASEM com o nome do nível da tela (spec ficha-unica, D-461): "Sedentário", nunca "inativo". */
+export const rotuloDaCategoria = (categoria: CategoriaAtividade): string => ROTULO_DA_CATEGORIA[categoria]
+
 const FONTE_FORMULA: Readonly<Record<FormulaAdulto, string>> = {
   mifflin: 'Mifflin MD, St Jeor ST, et al. A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr 1990;51:241-7.',
   'harris-benedict': 'Harris JA, Benedict FG. A biometric study of human basal metabolism. Proc Natl Acad Sci USA 1918;4:370-3 (coeficientes originais de 1919).',

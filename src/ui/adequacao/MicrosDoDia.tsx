@@ -123,7 +123,7 @@ export function MicrosDoDia({ caso, plano, gastoEnergetico, restricoes = SEM_RES
             {temMarca ? (
               <p className="text-xs text-muted-foreground">
                 <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-                <span>Total possivelmente subestimado: falta o dado em algum alimento.</span>
+                <span>Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.</span>
               </p>
             ) : null}
           </>

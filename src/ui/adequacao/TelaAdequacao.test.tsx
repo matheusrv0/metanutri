@@ -134,7 +134,7 @@ describe('Etapa 3: adequação', () => {
     const marcas = screen.getAllByTitle(/total possivelmente subestimado/)
     expect(marcas.length).toBeGreaterThan(0)
     expect(marcas[0]).toHaveTextContent("†")
-    expect(screen.getByText(/falta de dado nunca entra como zero/i)).toBeInTheDocument()
+    expect(screen.getByText(/dado que falta não conta como zero/i)).toBeInTheDocument()
   })
 
   it('CB-05: plano vazio mostra 0% e o cobrir continua funcionando', async () => {
@@ -282,7 +282,7 @@ describe('Etapa 3 abre no que pede ação (spec painel-lateral-enxuto)', () => {
 
   it('CA-693: notas em uma frase cada, sem repetir o seletor', () => {
     montar(adulta, exemplo())
-    expect(screen.getByText('Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.')).toBeInTheDocument()
+    expect(screen.getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
     expect(screen.getByText('O limite superior da tabela não vale para a forma do nutriente presente nos alimentos.')).toBeInTheDocument()
     expect(screen.getByText('AI: usada quando o nutriente não tem RDA nem EAR.')).toBeInTheDocument()
     expect(screen.queryByText(/RDA no preset individual/)).not.toBeInTheDocument()
@@ -558,7 +558,7 @@ describe('Sódio sem Cobrir na etapa 3 (CA-697)', () => {
 describe('Notas lidas com o símbolo (CA-700)', () => {
   it('CA-700: o † e o ‡ das notas não ficam escondidos do leitor de tela', () => {
     montar(adulta, exemplo())
-    const adaga = screen.getByText(/^Total possivelmente subestimado:/).previousElementSibling
+    const adaga = screen.getByText(/^Pode estar subestimado:/).previousElementSibling
     const duplaAdaga = screen.getByText(/^O limite superior da tabela/).previousElementSibling
     expect(adaga).toHaveTextContent('†')
     expect(adaga).not.toHaveAttribute('aria-hidden')

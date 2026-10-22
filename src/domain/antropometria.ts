@@ -32,6 +32,9 @@ export const IDADE_IDOSO = 60
 const MESES_ULTIMA_REFERENCIA = 228
 const MESES_CINCO_ANOS = 60
 
+/** O escore-z negativo com o sinal de menos (U+2212), não o hífen (spec ficha-unica, D-461): "−0,18". */
+export const comSinalDeMenos = (numero: string): string => numero.replace(/^-/, '\u2212')
+
 export function calcularImc(pesoKg: number, estaturaCm: number): number {
   const m = estaturaCm / 100
   return pesoKg / (m * m)

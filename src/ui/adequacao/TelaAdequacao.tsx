@@ -272,7 +272,7 @@ export function TelaAdequacao({
             <TableFootnotes>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-warningtext">†</span>
-                <span>Total possivelmente subestimado: algum alimento do plano não tem esse dado, e falta de dado nunca entra como zero.</span>
+                <span>Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.</span>
               </p>
               <p>
                 <span className="mr-1 align-super text-[10px] font-semibold text-muted-foreground">‡</span>

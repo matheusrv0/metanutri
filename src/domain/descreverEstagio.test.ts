@@ -15,6 +15,11 @@ describe('CA-1194 (spec textos-e-promessas, D-410): o estágio de vida das refer
     ['crianca-1-3', 'crianças de 1 a 3 anos'],
     ['gestante-19-30', 'gestantes de 19 a 30 anos'],
     ['lactante-14-18', 'lactantes de 14 a 18 anos'],
+    // CA-1288 (spec ficha-unica, D-461): abaixo de 19 anos, a palavra da idade.
+    ['feminino-9-13', 'meninas de 9 a 13 anos'],
+    ['masculino-9-13', 'meninos de 9 a 13 anos'],
+    ['feminino-14-18', 'moças de 14 a 18 anos'],
+    ['masculino-14-18', 'rapazes de 14 a 18 anos'],
   ])('%s vira "%s"', (id, texto) => {
     expect(descreverEstagio(estagio(id))).toBe(texto)
   })

@@ -105,7 +105,8 @@ export function minimoInteiro(minimoPct: number): number {
 }
 
 export function calcularAdequacao(totais: Totais, perfil: PerfilCaso, preset: Preset): ResultadoAdequacao {
-  const fonte = `${DRI.fonte.publicacao} ${DRI.fonte.nome}.`
+  // D-461 (spec ficha-unica): as tabelas-resumo são o Apêndice J do livro de 2019; a fonte diz as duas coisas.
+  const fonte = `${DRI.fonte.nome}. Em: ${DRI.fonte.publicacao}`
   if (preset.tipo === 'personalizado' && (!(preset.minimoPct > 0) || preset.minimoPct > 1000)) {
     throw new RangeError(`Porcentagem mínima inválida: ${preset.minimoPct}.`)
   }

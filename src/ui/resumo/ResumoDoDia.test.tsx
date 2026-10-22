@@ -43,7 +43,7 @@ describe('Produto apagado no Resumo do dia (spec revisao-geral-trabalho, CA-789)
     const energia = resumo().getByText(/kcal$/, { selector: '.text-2xl' })
     expect(energia.parentElement).toHaveTextContent('†')
     for (const macro of ['Proteína', 'Carboidrato', 'Gordura']) expect(resumo().getByText(macro).parentElement).toHaveTextContent('†')
-    expect(resumo().getByText('Total possivelmente subestimado: falta o dado em algum alimento.')).toBeInTheDocument()
+    expect(resumo().getByText('Pode estar subestimado: algum alimento não tem esse dado, e dado que falta não conta como zero.')).toBeInTheDocument()
   })
 
   it('sem item faltando, nenhuma †', () => {
@@ -103,7 +103,8 @@ describe('Resumo do dia', () => {
   it('CA-06c e CA-06d: lactante mostra o adicional da lactação e a categoria de atividade', () => {
     montar({ ...adulta, condicao: { tipo: 'lactante', mesesPosParto: 3 } })
     expect(resumo().getByText(/lactação|leite/i)).toBeInTheDocument()
-    expect(resumo().getByText(/inativo/)).toBeInTheDocument()
+    // CA-1287 (spec ficha-unica, D-461): a categoria com o nome do nível, nunca "inativo".
+    expect(resumo().getByText(/· sedentário$/)).toBeInTheDocument()
   })
 
   it('CA-10 e CA-681: kcal do plano, alvo e uma frase só com o % do GET e a faixa, sem selo', () => {
@@ -220,6 +221,12 @@ describe('Resumo do dia no modo rápido (CA-226, CA-228)', () => {
     expect(resumo().getByText('Meta calculada')).toBeInTheDocument()
     expect(resumo().getByText('1.596 kcal')).toBeInTheDocument()
     expect(resumo().getByText('Fator de atividade')).toBeInTheDocument()
+  })
+
+  it('CA-1287: a gestante (NASEM) vê o fator com o nível por extenso, nunca "inativo" (D-461)', () => {
+    montar({ sexo: 'F', idadeAnos: 28, pesoKg: 66, estaturaCm: 163, modo: 'rapido', condicao: { tipo: 'gestante', semanasGestacao: 24, pesoPreGestacionalKg: 60 } })
+    expect(resumo().getByText('1,20 · sedentário')).toBeInTheDocument()
+    expect(resumo().queryByText(/inativo/)).not.toBeInTheDocument()
   })
 
   it('a meta digitada aparece como definida por você', () => {
