@@ -840,6 +840,48 @@ describe('refeição de cada alimento no Cobrir (spec sugestoes-com-criterio, co
   })
 })
 
+describe('porção mínima de fruta e máxima de pupunha (spec sugestoes-com-criterio, correção C, D-477)', () => {
+  const ACEROLA_POLPA = 170
+  const JAMBO = 205
+  const PUPUNHA = 596
+  const daBase = (id: number): Alimento => {
+    const a = buscarAlimento(id)
+    if (!a) throw new Error(`alimento ${id} não existe`)
+    return a
+  }
+  /** Uma falta pequena de vitamina C (10 mg), que 2 g de polpa de acerola cobririam. */
+  const cobrirPouco = (idadeAnos: number, alimentos: readonly Alimento[], chave: 'vitamina_c_mg' | 'vitamina_a_rae_mcg' = 'vitamina_c_mg') => {
+    const perfil = { sexo: 'F' as const, idadeAnos, condicao: { tipo: 'nenhuma' as const } }
+    const linha = calcularAdequacao(totais({}), perfil, { tipo: 'individual' }).linhas.find((l) => l.chave === chave)
+    if (!linha) throw new Error('sem a linha')
+    const quase = totais({ energia_kcal: 1000, [chave]: (linha.referencia.valor * linha.metaPct) / 100 - 10 })
+    return sugerirParaCobrir(chave, quase, calcularAdequacao(quase, perfil, { tipo: 'individual' }), { alimentos, gastoEnergetico: 2500, idadeAnos }).sugestoes
+  }
+
+  it('CA-1324: aos 6 anos, fruta e polpa nunca abaixo de 35 g; o jambo sai em 1 unidade (40 g)', () => {
+    const [acerola] = cobrirPouco(6, [daBase(ACEROLA_POLPA)])
+    expect(acerola?.gramas).toBeGreaterThanOrEqual(35)
+    const [jambo] = cobrirPouco(6, [daBase(JAMBO)])
+    expect(jambo?.gramas).toBe(40)
+    expect(jambo?.medida).toMatchObject({ nome: 'unidade', quantidade: 1 })
+  })
+
+  it('CA-1324: no adulto, fruta e polpa ao menos 50 g (ou a unidade da fruta pequena)', () => {
+    expect(cobrirPouco(35, [daBase(ACEROLA_POLPA)])[0]?.gramas).toBeGreaterThanOrEqual(50)
+    expect(cobrirPouco(35, [daBase(JAMBO)])[0]?.gramas).toBe(40)
+  })
+
+  it('CA-1324: a pupunha cozida não passa de 30 g no adulto', () => {
+    const vazio = totaisDeItens([], buscarAlimento)
+    const perfil = { sexo: 'F' as const, idadeAnos: 35, condicao: { tipo: 'nenhuma' as const } }
+    const [pupunha] = sugerirParaCobrir('vitamina_a_rae_mcg', vazio, calcularAdequacao(vazio, perfil, { tipo: 'individual' }), {
+      alimentos: [daBase(PUPUNHA)],
+      gastoEnergetico: 2500,
+    }).sugestoes
+    expect(pupunha?.gramas).toBeLessThanOrEqual(30)
+  })
+})
+
 describe('teto da vitamina A pré-formada no Cobrir (spec sugestoes-com-criterio, correção C, D-471)', () => {
   const HOMEM_35 = { sexo: 'M' as const, idadeAnos: 35, condicao: { tipo: 'nenhuma' as const } }
   const FIGADO_GRELHADO = 356

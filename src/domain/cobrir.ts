@@ -108,7 +108,8 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   {
     grupo: 'Frutas secas e muito calóricas',
     gramas: 30,
-    casa: (a) => a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200,
+    // Correção C (D-477): a pupunha cozida (218 kcal em 100 g) também; saía "150 g · +328 kcal" num lanche.
+    casa: (a) => (a.categoria.startsWith('Frutas') && (a.nutrientes.energia_kcal ?? 0) > 200) || /^Pupunha,/i.test(nomeLimpo(a)),
   },
   {
     grupo: 'Cortes gordos, aves com pele, carne curada e ovo frito',
@@ -196,20 +197,40 @@ export function fatorDaIdade(idadeAnos: number | null | undefined): number {
 /** D-440: carne, ave, peixe e víscera ao menos 50 g; ovo ao menos 1 unidade (45 g), de adulto. */
 const MINIMA_DE_CARNE_G = 50
 const MINIMA_DE_OVO_G = 45
+/** D-477 (correção C): fruta e polpa ao menos 50 g de adulto ("Acerola, polpa · 5 g" não se serve). */
+const MINIMA_DE_FRUTA_G = 50
+/** D-477: a fruta pequena (unidade de até 50 g, como o jambo) não se parte na criança: a porção é 1 unidade. */
+const FRUTA_PEQUENA_G = 50
+
+const ehDoGrupoFruta = (alimento: Alimento): boolean => porcaoDoGrupo(alimento)?.grupo === 'Fruta'
 
 /**
- * A porção mínima do alimento na idade, arredondada para cima de 5 em 5 g: ninguém come 5 g de fígado. `null` quando o
- * grupo não tem mínima.
+ * A porção mínima do alimento na idade, arredondada para cima de 5 em 5 g: ninguém come 5 g de fígado. Na fruta, nunca
+ * acima da máxima dela (o jambo de 40 g é 1 unidade). `null` quando o grupo não tem mínima.
  */
 export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): number | null {
-  const adulto = CARNE.has(alimento.categoria) || FIGADO.test(nomeLimpo(alimento)) ? MINIMA_DE_CARNE_G : OVO_INTEIRO_DE_GALINHA.test(nomeLimpo(alimento)) ? MINIMA_DE_OVO_G : null
+  const fruta = ehDoGrupoFruta(alimento)
+  const adulto =
+    CARNE.has(alimento.categoria) || FIGADO.test(nomeLimpo(alimento))
+      ? MINIMA_DE_CARNE_G
+      : OVO_INTEIRO_DE_GALINHA.test(nomeLimpo(alimento))
+        ? MINIMA_DE_OVO_G
+        : fruta
+          ? MINIMA_DE_FRUTA_G
+          : null
   if (adulto === null) return null
-  return Math.ceil((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G
+  const minima = Math.ceil((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G
+  return fruta ? Math.min(minima, porcaoMaximaNaIdade(alimento, idadeAnos)) : minima
 }
 
-/** A porção máxima do grupo na idade, arredondada para baixo de 5 em 5 g, nunca menos que 5 g. */
+/**
+ * A porção máxima do grupo na idade, arredondada para baixo de 5 em 5 g, nunca menos que 5 g. A fruta pequena fica em 1
+ * unidade em qualquer idade (D-477).
+ */
 function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
-  const adulto = porcaoMaximaDoGrupo(alimento) ?? PORCAO_MAXIMA_PADRAO_G
+  const grupo = porcaoDoGrupo(alimento)
+  const adulto = grupo?.maxima ?? PORCAO_MAXIMA_PADRAO_G
+  if (grupo?.grupo === 'Fruta' && adulto <= FRUTA_PEQUENA_G) return adulto
   return Math.max(PASSO_PORCAO_G, Math.floor((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G)
 }
 
