@@ -114,3 +114,18 @@ Cada tarefa é um commit, em TDD: o teste primeiro, vendo falhar, depois o códi
 - **Prints:** "Quase transparente" era cortado na cor 1 e virou "Quase incolor"; a escolha de quantidade saiu do meio
   dos campos de estágio para o fim do cartão Identificação (commit `fix(telas)`).
 - **T6** ganhou um teste (CA-918) que confere o Apêndice A da spec antiga com a lista fixa de ids.
+
+## Integração de 22/10/2026 (seção 6 da SPEC; D-421, D-422; com a seção 6 da `alimentos-e-gramaturas`)
+
+Ordem, cada passo testado antes (TDD) e com commit próprio:
+
+1. `src/data/medidas-caseiras.test.ts` + `scripts/dados/importar-medidas-pof.mjs` (regerar `medidas-caseiras.json` e
+   `medidas-revisao.md`): D-424 (um nome por copo) e D-425 (unidade da banana maçã emprestada; variedades em gramas).
+2. `src/domain/busca.test.ts` + `src/domain/busca.ts` (`melhorMedida`): D-423, a fruta inteira em unidade; fatia e pedaço
+   só na fruta grande, até 2.
+3. `src/domain/trocas.test.ts` + `src/domain/trocas.ts`: D-421 (papel na refeição) e D-422 (fruta por fruta, em peça).
+4. Testes de tela e e2e que liam as trocas ou as medidas antigas; validação completa.
+
+Riscos para o dono: os papéis são uma lista por nome (alimento novo na base fica sem papel até alguém o incluir); a
+banana maçã com a unidade da prata é um empréstimo com fonte indireta (tabelas de porção); a fruta grande sem fatia que
+caiba fica em gramas.

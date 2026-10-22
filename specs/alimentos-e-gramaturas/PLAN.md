@@ -66,3 +66,9 @@ por 100 g); T6 é independente.
   quantidades saem) e com `textos-e-promessas` na `TelaAjuda.tsx` (só a linha do exemplo da entrada rápida).
 - **R-374 · "Desjejum" → "Café da manhã"** (textos.md, linha 118) muda o nome padrão da primeira refeição de plano novo;
   planos guardados não mudam.
+
+## Integração de 22/10/2026 (seção 6 da SPEC: D-423 a D-425)
+
+O plano das sobras da caminhada dos 4 pacientes está em `specs/conduta-da-nutricionista/PLAN.md`, seção "Integração de
+22/10/2026": primeiro a importação (D-424 e D-425, com `medidas-revisao.md` regerado), depois a medida da fruta (D-423)
+e por fim as trocas (D-421 e D-422).

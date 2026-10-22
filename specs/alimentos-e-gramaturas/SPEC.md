@@ -229,3 +229,30 @@ do Cobrir, a gestação e a criança ficam na spec `sugestoes-com-criterio` (se�
   até haver fonte citável.
 - A ordem da medida automática entre "fatia" e "unidade" na fruta (maçã de 130 g lê "3 fatias e meia").
 
+
+## 6. Sobras da caminhada dos 4 pacientes (integração, 22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026**, depois das correções A e B, com o que as duas viram e deixaram de
+fora na caminhada dos 4 pacientes (`revisao-usuario.md`, M20 e a linha da maçã; relatórios das correções); ordem de pé
+do dono: "apenas faça". Aprovação pelas telas antes de publicar. Muda dois pontos da seção 5: o CA-1225 (a banana maçã
+passa a ter unidade, D-425) e o segundo item de 5.4 (a ordem entre "fatia" e "unidade" na fruta entra aqui, D-423). As
+trocas no papel da refeição ficam na spec `conduta-da-nutricionista`, seção 6.
+
+### 6.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-423 | **Fruta inteira se lê em unidade, ou em meia unidade.** Na fruta crua inteira (categoria "Frutas e derivados", sem suco nem polpa), a medida que o paciente lê (`medidaCaseiraParaPaciente`, a mesma da linha, da folha, do link, do Word, do Cobrir e das trocas) usa como peça só "unidade" e "unidade pequena" quando a fruta tem unidade da base de até 250 g (maçã, pera, laranja, banana prata, goiaba, kiwi); "fatia", "pedaço", "banda", "metade", "gomo" e "rodela" saem dela. Na fruta grande ou sem unidade (mamão, melão, melancia, abacaxi, abacate, manga), "fatia" e "pedaço" valem até 2 ("1 fatia de mamão", "2 pedaços de melancia"); "banda", "metade", "gomo" e "rodela" saem (a meia unidade já diz "meia unidade"). Colher, xícara e taça continuam como estão. Medida da conta (D-387) sempre vale | "Maçã · 3 fatias e meia" e "Banana figo · 2 fatias e meia": ninguém come três fatias e meia de maçã; a medida natural da fruta é a unidade, e a da fruta grande é a fatia |
+| D-424 | **Um nome por copo.** Na importação, quando o mesmo alimento tem dois copos com o mesmo peso ("copo médio" e "copo de requeijão", os dois de 240 ml na POF), fica um só, na ordem copo americano, copo de requeijão, copo médio, copo grande, copo tulipa; o "copo médio" de 240 que sobra sozinho passa a se chamar "copo de requeijão", para o iogurte natural e o desnatado (e o leite de vaca e o de cabra) lerem o mesmo copo. O item gravado com "copo médio" continua com o nome dele (cópia no item, CA-1162) | M20: na mesma lista do Cobrir, "meio copo médio" de iogurte desnatado e "meio copo de requeijão" de iogurte natural, o mesmo copo de 240 ml com dois nomes |
+| D-425 | **Unidade de outra variedade só com tamanho parecido.** A banana maçã recebe a unidade da banana prata (75 g, fonte da POF "Banana prata - unidade"): as duas têm de 55 a 85 g por unidade nas tabelas de porção. Banana nanica (86 a 110 g), ouro (cerca de 40 g) e figo (banana de cozinhar, sem peso de referência) ficam sem unidade, em gramas, assim como as mangas Haden, Palmer e Tommy (a única unidade da POF é a da manga espada, 140 g; a Palmer pesa cerca de 3 vezes isso). O empréstimo e as variedades em gramas ficam escritos em `medidas-revisao.md`, com o motivo | Sem fonte por variedade, emprestar a unidade só quando o erro fica dentro dos 15% da medida automática; fora disso, o paciente leria uma unidade que não existe |
+
+### 6.2 Critérios de aceite
+
+- **CA-1208** · Dado 130 g de maçã, então o paciente lê a maçã em unidade ("1 unidade pequena e meia" ou "cerca de 1 unidade"), nunca em fatia; dado 75 g de banana prata, "1 unidade"; dado 170 g de mamão Formosa, "1 fatia"; dado 400 g de melancia, "2 fatias"; nenhuma fruta inteira crua lê mais de 2 fatias ou pedaços, nem "banda", "metade", "gomo" ou "rodela".
+- **CA-1209** · Dado qualquer alimento da base, então ele não tem dois copos com o mesmo peso; dado o iogurte natural e o iogurte natural desnatado, então os dois têm "copo de requeijão" de 240 g e nenhum tem "copo médio"; no Cobrir, 120 g dos dois se leem "meio copo de requeijão".
+- **CA-1210** · Dado a banana maçã, então ela tem "unidade · 75 g" e "1 banana maçã" entra com 75 g; dado as bananas nanica, ouro e figo e as mangas Haden, Palmer e Tommy, então nenhuma tem "unidade"; `medidas-revisao.md` tem as seções "Unidade emprestada de outra variedade" e "Variedades que ficam em gramas", com cada alimento e o motivo.
+
+### 6.3 Casos de borda
+
+- **CB-391** · Item gravado antes com "copo médio" (escolhido): o paciente continua lendo "copo médio", porque o item guarda a medida (CA-1162); só a medida automática e o seletor passam a dizer "copo de requeijão".
+- **CB-392** · Medida da conta numa fruta ("fatia" de 30 g que a nutricionista criou para a maçã): vale, porque é dela (como CB-402).

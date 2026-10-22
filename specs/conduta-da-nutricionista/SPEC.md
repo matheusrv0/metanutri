@@ -143,3 +143,32 @@ boa hidratação." As cores são tokens do design system (`--urina-1` a `--urina
    (CB-295). É o que a parceira pediu: troca equivalente ou nenhuma.
 5. **"Mais de 4 pedaços"** foi decidido sem a parceira (é o número da regra antiga da folha).
 6. **Os nomes das cores da urina** e as perguntas novas foram escritos sem a parceira; ela confere pela tela.
+
+## 6. Troca no papel da refeição e fruta por fruta (integração, 22/10/2026)
+
+Status: **pedida pelo coordenador em 22/10/2026**, com o que as correções A e B viram nos 4 pacientes e deixaram de fora
+(`revisao-usuario.md`, I9; relatório da correção A, "Divergências"); ordem de pé do dono: "apenas faça". Aprovação pelas
+telas antes de publicar. Muda o item "Trocas entre categorias da TACO (cuscuz por pão, arroz por batata)" da seção 4:
+a troca passa a seguir o papel do alimento na refeição, mesmo fora da categoria. A medida da fruta (unidade, D-423) e o
+copo com um nome só (D-424) ficam na spec `alimentos-e-gramaturas`, seção 6.
+
+### 6.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-421 | **A troca fica no papel do alimento na refeição.** Três papéis: **acompanhamento** do almoço e do jantar (arroz cozido, macarrão pelo peso cru, cuscuz de milho, polenta, batata inglesa, doce e baroa cozidas, mandioca cozida, cará cozido); **pão** (pães da categoria de cereais e a torrada de pão francês); **cereal do café** (aveia em flocos, cereal matinal, farinha láctea, mistura para vitamina). Alimento com papel troca só por alimento do mesmo papel, mesmo de outra categoria da TACO (arroz por batata); no acompanhamento, pronto troca por pronto e cru por cru, e o macarrão, que a base só tem cru, vale para os dois. Alimento sem papel troca dentro da categoria, como antes, e nunca por alimento com papel (o flocão de milho não troca por arroz nem por pão). As outras regras continuam (D-294 a D-296, D-434) | I9: arroz do almoço trocava por "Pão de forma de glúten · 3 fatias" e por flocão cru; aveia trocava por "Torrada de pão francês · 4 unidades". A categoria da TACO junta o que tem outro lugar no prato |
+| D-422 | **Fruta troca por outra fruta, em unidade.** Fruta não troca pela mesma fruta de outra variedade (banana prata não troca por banana figo nem nanica); a troca de fruta precisa de medida de peça que o paciente lê (unidade, ou fatia e pedaço da fruta grande, D-423): fruta que só se leria em gramas sai e a próxima entra | "Banana figo · 2 fatias e meia (65 g)" no lugar da banana prata: é a mesma fruta, e meia fatia de outra banana não é como o paciente come |
+
+### 6.2 Critérios de aceite
+
+- **CA-1203** · Dado 150 g de arroz cozido, então as trocas são só de acompanhamento (arroz integral, macarrão, cuscuz, polenta, batata, mandioca, cará): nenhum pão, torrada, flocos, pamonha, canjica nem curau; e entre elas há pelo menos uma de fora da categoria de cereais ou o macarrão.
+- **CA-1204** · Dado 50 g de pão francês, então as trocas são só pães e torrada; dado 30 g de aveia em flocos, nenhuma troca é pão, torrada ou pipoca.
+- **CA-1205** · Dado 150 g de batata inglesa cozida, então as trocas são acompanhamentos (arroz, mandioca, cuscuz…), nunca cenoura, chuchu ou outra verdura.
+- **CA-1206** · Dado 75 g de banana prata, então nenhuma troca é banana; toda troca de fruta tem medida de peça (unidade ou unidade pequena; fatia ou pedaço só da fruta grande, até 2) e nenhuma diz "e meia" de fatia; dado 130 g de maçã, nenhuma troca é maçã.
+- **CA-1207** · Dado o plano de exemplo impresso com trocas, então o arroz do almoço não troca por pão e a banana não troca por banana.
+
+### 6.3 Casos de borda
+
+- **CB-393** · Alimento sem papel na categoria de cereais (flocão de milho, fubá, canjica): troca dentro da categoria, sem pão, arroz, aveia nem outro alimento com papel; sem troca possível, sai da lista (CB-295).
+- **CB-394** · Arroz cru (peso cru) troca por arroz cru de outro tipo ou por macarrão (peso cru), nunca por arroz cozido nem batata cozida.
+- **CB-395** · Fruta sem nenhuma troca em peça (todas só em gramas): sai da lista de trocas, como o CB-295.
