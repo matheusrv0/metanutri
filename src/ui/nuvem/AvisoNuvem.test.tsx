@@ -16,7 +16,7 @@ const NUVEM: ValorNuvem = {
   parar: () => undefined,
 }
 
-const TITULO = 'Seus planos e pacientes agora ficam salvos na nuvem, presos à sua conta.'
+const TITULO = 'Seus planos e pacientes agora ficam salvos na nuvem, vinculados à sua conta.'
 const conta = () => armazenamentoDaConta(localStorage, 'conta-a')
 
 function comNuvem(filho: ReactNode, nuvem: ValorNuvem | null = NUVEM) {
@@ -48,7 +48,7 @@ describe('aviso único da nuvem (spec dados-na-nuvem, DP-26)', () => {
     expect(screen.queryByText(TITULO)).not.toBeInTheDocument()
     unmount()
     render(comNuvem(<AvisoPrimeiroAcesso />))
-    expect(screen.getByText('Os casos ficam salvos na nuvem, presos à sua conta.')).toBeInTheDocument()
+    expect(screen.getByText('Seus planos e pacientes ficam salvos na sua conta.')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Entendi' }))
     expect(conta().getItem(CHAVE_AVISO_NUVEM)).toBe('1')
   })

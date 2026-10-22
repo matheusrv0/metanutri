@@ -19,14 +19,14 @@ function jaViu(armazenamento: Armazenamento | null): boolean {
 }
 
 const PONTOS = [
-  { icone: BookOpen, texto: 'O MetaNutri apoia o estudo e o planejamento alimentar.' },
+  { icone: BookOpen, texto: 'O MetaNutri calcula e sugere.' },
   { icone: Stethoscope, texto: 'A prescrição é responsabilidade do nutricionista.' },
 ] as const
 
-/** Onde os casos ficam: na nuvem, com conta (spec dados-na-nuvem, D-128); no modo local, só no aparelho. */
+/** Onde os planos ficam: na nuvem, com conta (spec dados-na-nuvem, D-128); no modo local, só no aparelho. */
 const ONDE_FICAM = {
-  nuvem: { icone: Cloud, texto: 'Os casos ficam salvos na nuvem, presos à sua conta.' },
-  aparelho: { icone: HardDrive, texto: 'Os casos ficam salvos só neste aparelho e navegador. Nada é enviado para a internet.' },
+  nuvem: { icone: Cloud, texto: 'Seus planos e pacientes ficam salvos na sua conta.' },
+  aparelho: { icone: HardDrive, texto: 'Seus planos ficam salvos só neste aparelho e navegador. Nada é enviado para a internet.' },
 } as const
 
 /** CA-51: aviso mostrado no primeiro acesso, até a pessoa confirmar que leu. */

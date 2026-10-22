@@ -162,6 +162,11 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"Lembrei, quero entrar"', /Lembrei, quero entrar/i],
   ['"Criar grátis"', /Criar grátis/i],
   ['"Dados e medidas" como etapa', /Dados e medidas/],
+  // CA-1189: Painel, lista de planos e primeiro acesso.
+  ['"mexidos"', /\bmexid[oa]s?\b/i],
+  ['"trabalhados em"', /trabalhad[oa]s? em/i],
+  ['"Os casos ficam"', /Os casos ficam/i],
+  ['exemplo de nome com idade e condição', /28 anos, gestante/],
 ]
 
 const achados = (padrao: RegExp) =>

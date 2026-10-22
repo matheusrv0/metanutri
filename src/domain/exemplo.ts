@@ -78,7 +78,7 @@ export function criarExemplo(gerarId: GerarId, hoje: string): { readonly caso: C
     ocupacao: 'Professora',
     diagnosticoClinico: 'Eutrofia',
     dataConsulta: hoje,
-    observacoes: 'Plano de exemplo, criado pelo próprio MetaNutri. Pode apagar quando quiser.',
+    observacoes: 'Plano de exemplo, criado pelo MetaNutri. Você pode excluí-lo quando quiser.',
     // A água sai na folha pela linha automática (spec conduta-da-nutricionista, D-298): aqui não se repete.
     orientacoes: 'Coma devagar e sem tela na frente.',
   }
