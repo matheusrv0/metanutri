@@ -401,4 +401,11 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     expect(anamnese().getByRole('radiogroup', { name: 'Fluxo menstrual intenso' })).toBeInTheDocument()
     expect(anamnese().getByLabelText('Anticoncepcional ou reposição hormonal')).toBeInTheDocument()
   })
+
+  it('CA-1275: Pessoa idosa não pergunta com quem mora; "Pessoas que moram na casa" diz que 1 é morar só', async () => {
+    const { usuario } = montar(MULHER_68)
+    await usuario.click(bloco('Pessoa idosa'))
+    expect(anamnese().queryByLabelText('Com quem mora')).not.toBeInTheDocument()
+    expect(dados().getByLabelText('Pessoas que moram na casa')).toHaveAccessibleDescription('Contando o paciente: 1 quer dizer que mora só.')
+  })
 })

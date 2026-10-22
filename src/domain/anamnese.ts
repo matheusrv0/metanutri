@@ -116,7 +116,8 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
       p('lanche-escola', 'Lanche e merenda da escola'),
       p('variedade', 'Variedade de alimentos'),
     ],
-    idoso: [p('perda-de-peso', 'Perda de peso sem querer'), p('quedas', 'Quedas'), p('mora-com', 'Com quem mora')],
+    // D-454: "Com quem mora" saiu; repetia "Pessoas que moram na casa", e quem cozinha está em Alimentação.
+    idoso: [p('perda-de-peso', 'Perda de peso sem querer'), p('quedas', 'Quedas')],
     recordatorio: [
       p('r24-acordar', 'Ao acordar'),
       p('r24-cafe', 'Café da manhã'),
@@ -365,6 +366,10 @@ function daVersao2(fonte: Readonly<Record<string, unknown>>, versaoGuardada: num
   return perguntas
 }
 
+/** Saíram do padrão da versão 3 depois de publicada (D-454): saem do roteiro guardado com o texto padrão. */
+const RETIRADAS_DA_V3: ReadonlyMap<string, string> = new Map([['mora-com', 'Com quem mora']])
+const retirada = (q: PerguntaRoteiro) => RETIRADAS_DA_V3.get(q.id) === q.texto
+
 const BLOCOS_SO_DA_V3: readonly string[] = BLOCOS_ANAMNESE.map((b) => b.id).filter((id) => !(BLOCOS_V2 as readonly string[]).includes(id))
 
 /**
@@ -382,7 +387,7 @@ function normalizarRoteiro(blocos: unknown, versaoGuardada: number = VERSAO_DO_R
     perguntas = {} as Record<IdBloco, readonly PerguntaRoteiro[]>
     for (const { id } of BLOCOS_ANAMNESE) {
       const lista = Object.hasOwn(fonte, id) ? fonte[id] : ROTEIRO_PADRAO.perguntas[id]
-      perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos)
+      perguntas[id] = perguntasValidas(Array.isArray(lista) ? lista : ROTEIRO_PADRAO.perguntas[id], vistos).filter((q) => !retirada(q))
     }
   } else {
     perguntas = daVersao2(fonte, versaoGuardada)

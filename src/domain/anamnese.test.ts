@@ -72,7 +72,7 @@ describe('roteiro padrão (spec ficha-unica, D-347 e seção 2)', () => {
     expect(textos(ROTEIRO_PADRAO.perguntas.agua)).toEqual(['Água por dia', 'Cor da urina', 'Outras bebidas'])
     expect(textos(ROTEIRO_PADRAO.perguntas['alcool-fumo'])).toEqual(['Álcool', 'Tabagismo'])
     expect(textos(ROTEIRO_PADRAO.perguntas.alimentacao)).toEqual(['Alimentos de que gosta', 'Alimentos de que não gosta', 'Vontade de doce ou salgado', 'Quem prepara as refeições e onde come'])
-    expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas', 'Com quem mora'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas'])
     expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
   })
 
@@ -529,5 +529,21 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     const renomeado = renomearPergunta(ROTEIRO_PADRAO, 'saude-mulher', 'hormonios', 'Hormônios')
     const textosRenomeado = blocosDaFicha(renomeado, [], mulher(68)).find((b) => b.id === 'saude-mulher')?.perguntas.map((q) => q.texto)
     expect(textosRenomeado).toContain('Hormônios')
+  })
+
+  it('CA-1275: "Com quem mora" sai do padrão e do roteiro guardado com o texto padrão; renomeada fica; a resposta antiga aparece (D-454)', () => {
+    const arm = new Memoria()
+    const idoso = (texto: string) => [
+      { id: 'perda-de-peso', texto: 'Perda de peso sem querer' },
+      { id: 'quedas', texto: 'Quedas' },
+      { id: 'mora-com', texto },
+    ]
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 3, blocos: { idoso: idoso('Com quem mora') } }))
+    expect(textos(lerRoteiro(arm).perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas'])
+    arm.setItem(CHAVE_ROTEIRO, JSON.stringify({ formato: 1, versao: 3, blocos: { idoso: idoso('Mora com quem?') } }))
+    expect(textos(lerRoteiro(arm).perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas', 'Mora com quem?'])
+    const antiga = responder([], { id: 'mora-com', texto: 'Com quem mora' }, 'idoso', 'Com a filha')
+    const bloco = blocosDaFicha(ROTEIRO_PADRAO, antiga, mulher(68)).find((b) => b.id === 'idoso')
+    expect(bloco?.perguntas.at(-1)).toEqual({ id: 'mora-com', texto: 'Com quem mora', resposta: 'Com a filha', foraDoRoteiro: true })
   })
 })
