@@ -330,7 +330,7 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     registrarMedidasProprias([])
   })
 
-  it('CA-1234: o alimento próprio também ganha "+ Nova medida…", gravada como medida da conta', async () => {
+  it('CA-1234: o alimento próprio também ganha "+ Nova medida…", gravada no cadastro dele (publicação 2)', async () => {
     const granola: Produto = {
       id: 900_001,
       codigoBarras: '',
@@ -341,6 +341,7 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
       porPorcao: { energia_kcal: 170, carboidrato_g: 26, proteina_g: 4, lipideos_g: 5.6 },
       criadoEm: '2026-10-22T10:00:00.000Z',
     }
+    localStorage.setItem('metanutri:produtos', JSON.stringify([granola]))
     registrarProdutos([produtoComoAlimento(granola)])
     const plano = criarPlanoPadrao(ids)
     const almocoPadrao = plano.refeicoes[2]
@@ -356,9 +357,9 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     await usuario.type(janela.getByLabelText('Peso'), '80')
     await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
     expect(almoco().getByRole('combobox', { name: 'Medida de Granola' })).toHaveValue('xícara de chá')
-    expect(JSON.parse(localStorage.getItem('metanutri:medidas-proprias') ?? '[]')).toMatchObject([{ alimentoId: 900_001, nome: 'xícara de chá', gramas: 80 }])
-    // O cadastro do alimento próprio não muda: a versão no ar refaria o item e apagaria a medida (D-383).
-    expect(localStorage.getItem('metanutri:produtos')).toBeNull()
+    // Publicação 2 (D-383): todo aparelho já preserva os campos novos, então a medida mora no cadastro do alimento.
+    expect(JSON.parse(localStorage.getItem('metanutri:produtos') ?? '[]')).toMatchObject([{ id: 900_001, medidas: [{ nome: 'xícara de chá', gramas: 80 }] }])
+    expect(localStorage.getItem('metanutri:medidas-proprias')).toBeNull()
     registrarMedidasProprias([])
     registrarProdutos([])
   })

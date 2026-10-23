@@ -122,7 +122,7 @@ describe('Tabela de alimentos com Meus alimentos e medidas próprias (D-385, D-3
   })
 
   it('CA-1148: "Copiar para Meus alimentos" só aparece com o formulário novo', async () => {
-    const { unmount } = render(<TelaAlimentos />)
+    const { unmount } = render(<TelaAlimentos formularioNovo={false} />)
     const usuario = userEvent.setup()
     await usuario.type(screen.getByRole('searchbox', { name: 'Buscar alimento na tabela' }), 'feijao carioca cozido')
     await usuario.click(within(screen.getByRole('list', { name: 'Alimentos da tabela' })).getAllByRole('button')[0] as HTMLElement)
