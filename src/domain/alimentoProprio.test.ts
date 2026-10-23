@@ -58,8 +58,8 @@ const BARRA: DadosAlimentoProprio = {
 afterEach(() => registrarProdutos([]))
 
 describe('a publicação em duas vezes (D-383)', () => {
-  it('CA-1157: o formulário novo fica desligado nesta publicação', () => {
-    expect(MEUS_ALIMENTOS_NOVOS).toBe(false)
+  it('CA-1157: o formulário novo está ligado (publicação 2)', () => {
+    expect(MEUS_ALIMENTOS_NOVOS).toBe(true)
   })
 
   it('CA-1155: o item novo tem o que a versão de antes lê, com a mesma energia por 100 g', () => {

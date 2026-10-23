@@ -17,11 +17,11 @@ export const PRIMEIRO_ID_PRODUTO = 900_000
 
 /**
  * D-383 (publicação em duas vezes, decisão 4 do coordenador): o formulário novo de "Meus alimentos", "Copiar para Meus
- * alimentos" e "Salvar como alimento" ficam desligados na publicação 1. A versão que está no ar antes desta refaz o item
- * só com os campos que conhece ao editar: uma aba antiga editando um item novo apagaria grupo, medidas e nome para o
- * paciente. Esta versão já lê e preserva tudo; na publicação 2, o coordenador troca para `true`.
+ * alimentos" e "Salvar como alimento" ficaram desligados na publicação 1 (22/10/2026). A versão de antes dela refaz o
+ * item só com os campos que conhece ao editar: uma aba antiga editando um item novo apagaria grupo, medidas e nome para o
+ * paciente. Com a publicação 1 um dia no ar, todo aparelho já lê e preserva tudo; a publicação 2 liga (CA-1157).
  */
-export const MEUS_ALIMENTOS_NOVOS: boolean = false
+export const MEUS_ALIMENTOS_NOVOS: boolean = true
 
 /** CB-371: com os 26 nutrientes, cada item tem cerca de 1,5 KB; a cópia da conta tem teto de 5 MB. */
 export const LIMITE_ALIMENTOS_PROPRIOS = 1000

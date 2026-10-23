@@ -112,7 +112,7 @@ próprios alimentos e as próprias medidas.
 - **CA-1154** · Dado um alimento próprio com "Pode aparecer no Cobrir e nas trocas", energia, o nutriente e grupo de alimento, então ele entra no Cobrir com a marca "meu"; sem a chave, com grupo "Suplementos", com aviso de energia ou com nome que a regra "nunca" pega ("cerveja artesanal"), não entra.
 - **CA-1155** · Dado um item novo gravado por esta versão, quando uma versão que só conhece os campos antigos lê, então ele tem `id`, `nome`, `porcaoG` e `porPorcao` coerentes (a mesma energia por 100 g).
 - **CA-1156** · Dado um item com campos que esta versão não conhece, quando ela edita e salva, então os campos desconhecidos continuam lá.
-- **CA-1157** · Dado a constante desligada (publicação 1), então "Meus alimentos" mostra o cadastro pelo rótulo de antes e nenhum botão que cria item novo.
+- **CA-1157** · Dado a publicação 2 (constante ligada, 23/10/2026), então "Meus alimentos" abre com "Novo alimento" e o formulário da D-383, sem o cadastro pelo rótulo de antes. Na publicação 1 (22/10), com a constante desligada, a tela mostrava o cadastro pelo rótulo de antes e nenhum botão que criasse item novo.
 
 ### US-AG6 · Medidas próprias (§2.6)
 

@@ -59,8 +59,8 @@ export function TelaPlano({
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
   // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha, gravada como medida própria da conta. O alimento
-  // próprio só guarda a medida no cadastro dele com o formulário novo ligado (publicação 2): a versão no ar refaz o item
-  // ao editar e apagaria a medida (D-383); até lá, ela mora na chave das medidas da conta (correção A, D-433).
+  // próprio guarda a medida no cadastro dele com o formulário novo ligado (publicação 2, D-383); a que foi para a chave
+  // das medidas da conta na publicação 1 continua valendo para ele (correção A, D-433).
   const medidasProprias = useMedidasProprias()
   const meusAlimentos = useMeusAlimentos()
   const [novaMedida, setNovaMedida] = useState<{ readonly alimentoId: number; readonly aoCriar: (m: MedidaCaseira) => void; readonly nome: string } | null>(null)

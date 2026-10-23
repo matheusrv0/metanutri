@@ -23,11 +23,11 @@ beforeEach(() => {
 })
 
 describe('Meus alimentos com o formulário novo (D-383)', () => {
-  it('CA-1157: desligado, a tela é a do rótulo, com o nome novo', () => {
+  it('CA-1157: na publicação 2, a tela abre com o formulário novo', () => {
     render(<TelaProdutos />)
     expect(screen.getByText('Meus alimentos')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cadastrar pelo rótulo' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Novo alimento' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Novo alimento' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cadastrar pelo rótulo' })).not.toBeInTheDocument()
   })
 
   it('CA-1139 e CA-1140: cadastra um alimento por 100 g, que entra na lista e na busca', async () => {
