@@ -36,6 +36,12 @@ function lerQuantidade(texto: string): { readonly quantidade: number; readonly r
   return { quantidade: 1, resto: texto }
 }
 
+/** O texto já começa pela quantidade ("4 colheres", "meia xícara", "½ copo")? "pote" não começa (spec alimentos-e-gramaturas, D-491). */
+export function comecaPelaQuantidade(texto: string): boolean {
+  const limpo = texto.trim()
+  return limpo !== '' && lerQuantidade(limpo).resto !== limpo
+}
+
 /** "colheres" → "colher", "porções" → "porção", "fatias" → "fatia", "pães" → "pão". */
 function singular(palavra: string): string {
   if (/ões$/.test(palavra) || /ães$/.test(palavra)) return `${palavra.slice(0, -3)}ão`

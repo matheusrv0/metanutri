@@ -257,10 +257,10 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
           <div className="grid gap-4 sm:grid-cols-2">
             <CampoNumero rotulo="Porção" valor={d.porcaoG} aoMudar={(porcaoG) => mudar({ porcaoG })} sufixo={unidade} erro={erroDe('porcaoG')} />
             <CampoTexto
-              rotulo="Nome da porção"
+              rotulo="Medida caseira da porção"
               valor={d.nomeDaPorcao}
               aoMudar={(nomeDaPorcao) => mudar({ nomeDaPorcao })}
-              placeholder="pote, fatia, unidade…"
+              placeholder="1 pote, 4 colheres de sopa…"
               dica="Vira uma medida caseira do alimento."
             />
           </div>

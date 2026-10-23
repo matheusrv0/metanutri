@@ -1,6 +1,7 @@
 // O formulário de "Meus alimentos" e o item guardado, nos dois sentidos (spec alimentos-e-gramaturas, D-383 a D-385).
 // Puro: a tela lê e escreve por aqui.
 import { medidasDoAlimento } from './busca.ts'
+import { comecaPelaQuantidade, lerMedidaDoRotulo } from './medidaDoRotulo.ts'
 import {
   energiaIncoerente,
   GRUPOS_PROPRIOS,
@@ -13,8 +14,14 @@ import {
 } from './produtos.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
-/** "1 pote" → "pote" (A11). */
-const nomeDaPorcaoDoTexto = (texto: string): string => /^1\s+([^\d].*)$/.exec(texto.trim())?.[1]?.trim() ?? ''
+/** A medida caseira da porção como o rótulo escreve (D-491): "pote" vira "1 pote"; "4 colheres de sopa" fica como está. */
+const textoDaMedidaCaseira = (texto: string): string => (texto === '' || comecaPelaQuantidade(texto) ? texto : `1 ${texto}`)
+
+/** A medida que a porção vira (A11, D-433 e D-491): "4 colheres de sopa" de 40 g é a colher de sopa de 10 g. */
+function medidaDaPorcao(texto: string, porcaoG: number): MedidaDoProprio | null {
+  const medida = texto === '' ? null : lerMedidaDoRotulo(texto, porcaoG)?.medida
+  return medida ? { nome: medida.nome, gramas: medida.gramas } : null
+}
 
 /** Só números de verdade; o resto é "não informado" (nulo). */
 function valoresLimpos(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
@@ -46,7 +53,9 @@ export function dadosEmBranco(tipo: DadosAlimentoProprio['tipo'] = 'alimento'): 
 /** O item guardado no formulário (para editar). Item antigo, sem os campos novos, abre como rótulo na porção. */
 export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
   const base = p.base ?? 'porcao'
-  const nomeDaPorcao = base === 'porcao' ? nomeDaPorcaoDoTexto(p.medidaCaseira) : ''
+  // D-491: o texto inteiro, como foi gravado (o rótulo antigo com "4 colheres de sopa" não perde a medida ao salvar).
+  const nomeDaPorcao = base === 'porcao' ? p.medidaCaseira.trim() : ''
+  const daPorcao = medidaDaPorcao(nomeDaPorcao, p.porcaoG)
   const fonte: FonteAlimentoProprio = p.fonte ?? (p.codigoBarras ? { tipo: 'open-food-facts', codigo: p.codigoBarras, data: p.criadoEm.slice(0, 10) } : { tipo: 'rotulo' })
   return {
     tipo: p.tipo ?? 'rotulo',
@@ -61,7 +70,8 @@ export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
     porcaoG: base === 'por100' ? 100 : p.porcaoG,
     nomeDaPorcao,
     valores: valoresLimpos(p.porPorcao),
-    medidas: (p.medidas ?? []).filter((m) => m.nome !== nomeDaPorcao),
+    // A medida que vem da porção volta a sair dela ao salvar; na lista, apareceria repetida.
+    medidas: (p.medidas ?? []).filter((m) => m.nome !== daPorcao?.nome),
     fonte,
     observacoes: p.observacoes ?? '',
     sugerirAutomaticamente: p.sugerirAutomaticamente === true,
@@ -74,9 +84,10 @@ export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
  */
 export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosParaSalvar {
   const porcaoG = d.base === 'por100' ? 100 : (d.porcaoG ?? 0)
-  const nomeDaPorcao = d.base === 'porcao' ? d.nomeDaPorcao.trim() : ''
+  const medidaCaseira = d.base === 'porcao' ? textoDaMedidaCaseira(d.nomeDaPorcao.trim()) : ''
+  const daPorcao = medidaDaPorcao(medidaCaseira, porcaoG)
   const medidas: MedidaDoProprio[] = []
-  for (const m of [...d.medidas, ...(nomeDaPorcao ? [{ nome: nomeDaPorcao, gramas: porcaoG }] : [])]) {
+  for (const m of [...d.medidas, ...(daPorcao ? [daPorcao] : [])]) {
     const nome = m.nome.trim()
     if (nome !== '' && m.gramas > 0 && !medidas.some((x) => x.nome === nome)) medidas.push({ nome, gramas: m.gramas })
   }
@@ -94,7 +105,7 @@ export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosPara
     unidade: d.unidade,
     base: d.base,
     porcaoG,
-    medidaCaseira: nomeDaPorcao ? `1 ${nomeDaPorcao}` : '',
+    medidaCaseira,
     porPorcao: valoresLimpos(d.valores),
     medidas,
     ...(d.fonte ? { fonte: d.fonte } : {}),

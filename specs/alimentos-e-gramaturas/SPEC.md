@@ -324,3 +324,21 @@ os menores R4, R6 e R7). Muda a D-371 no que ela tinha de "alimento sem medida d
 - **CA-1345** · Dado o jiló cru, nenhuma colher; dado a romã, nenhuma "unidade"; dado o filé de merluza, nenhuma "unidade"; `medidas-revisao.md` diz o motivo de cada uma.
 - **CB-455** · Alimento próprio com porção do rótulo e "2 granola": 2 porções do rótulo.
 - **CB-456** · "2 litros de água": 2.000 ml entram; "3 litros", não.
+
+## 8. Publicação 2 (23/10/2026)
+
+Status: **ordem de pé do dono, "apenas faça"**; a D-383 previa ligar o formulário novo um dia depois da publicação 1
+(22/10). Antes de publicar, uma revisão como usuária real do formulário ligado, que as três revisões anteriores não
+viram.
+
+### 8.1 Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-490 | **A constante `MEUS_ALIMENTOS_NOVOS` fica ligada.** A janela antiga do rótulo continua no código, testada com o formulário desligado, como volta segura: desligar a constante devolve a tela de antes sem perder dado, porque as duas versões leem e gravam o mesmo item | A publicação 1 ficou um dia no ar com a verificação de versão de hora em hora; todo aparelho já lê e preserva os campos novos (D-383) |
+| D-491 | **A porção do formulário novo é a medida caseira escrita como no rótulo, e a D-433 vale para ela.** O campo se chama "Medida caseira da porção" (como na janela antiga e na RDC 429/2020). "4 colheres de sopa" com porção de 40 g grava a medida "colher de sopa · 10 g"; "pote" com 170 g grava "1 pote" e a medida "pote · 170 g"; "1 copo (200 ml)" grava "copo · 200 ml". Um item antigo abre com o texto inteiro da medida e salva sem perdê-la | O formulário novo gravava "1 4 colheres de sopa" e a medida "4 colheres de sopa · 40 g"; e, ao editar um rótulo antigo cuja medida não começava por "1", apagava a medida caseira |
+
+### 8.2 Critérios de aceite
+
+- **CA-1346** · Dado o formulário novo com porção de 40 g e "4 colheres de sopa" na medida caseira da porção, quando salvo, então o item tem a medida "colher de sopa · 10 g", nenhuma medida chamada "4 colheres de sopa", e o texto da medida fica "4 colheres de sopa"; dado "pote" com 170 g, o texto fica "1 pote" e a medida "pote · 170 g".
+- **CA-1347** · Dado um rótulo gravado pela janela antiga com "4 colheres de sopa" na porção de 40 g, quando abro no formulário novo e salvo sem mudar nada, então o texto da medida e a medida "colher de sopa · 10 g" continuam lá, e o formulário não mostra a medida repetida na lista de medidas.

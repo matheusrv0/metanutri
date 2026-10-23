@@ -226,7 +226,7 @@ export interface DadosAlimentoProprio {
   readonly base: 'por100' | 'porcao'
   /** A porção dos valores quando `base` é "porcao"; 100 quando é "por100". */
   readonly porcaoG: number | null
-  /** Como a porção se chama ("pote"): vira medida (A11). */
+  /** A medida caseira da porção como no rótulo ("1 pote", "4 colheres de sopa"): vira medida (A11, D-491). */
   readonly nomeDaPorcao: string
   readonly valores: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>
   readonly medidas: readonly MedidaDoProprio[]

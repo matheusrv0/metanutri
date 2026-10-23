@@ -164,7 +164,8 @@ describe('como o alimento próprio entra no resto (D-385)', () => {
 
   it('o item guardado volta igual ao formulário (editar)', () => {
     const [barra] = registrar(BARRA) as [Produto]
-    expect(dadosDoProduto(barra)).toMatchObject({ tipo: 'rotulo', base: 'porcao', porcaoG: 30, nomeDaPorcao: 'barra', medidas: [], marca: 'Marca Exemplo' })
+    // D-491: "barra" foi gravada como o rótulo escreve, "1 barra".
+    expect(dadosDoProduto(barra)).toMatchObject({ tipo: 'rotulo', base: 'porcao', porcaoG: 30, nomeDaPorcao: '1 barra', medidas: [], marca: 'Marca Exemplo' })
   })
 
   it('CA-1150: conta em quantos planos o alimento está, também como ingrediente de receita', () => {
@@ -245,5 +246,40 @@ describe('receita como alimento (CA-1149, CB-377)', () => {
   it('sem um macro em algum ingrediente, explica e não vira', () => {
     const r = receitaComoAlimento(receita([{ alimentoId: 591, gramas: 100 }, { alimentoId: 7, gramas: 30 }]), buscarAlimento)
     expect('motivo' in r ? r.motivo : '').toMatch(/sem os 4 macros/)
+  })
+})
+
+describe('a medida caseira da porção no formulário novo (publicação 2, D-491)', () => {
+  const GRANOLA: DadosAlimentoProprio = {
+    ...dadosEmBranco('rotulo'),
+    nome: 'Granola tradicional',
+    grupo: 'Cereais e derivados',
+    porcaoG: 40,
+    nomeDaPorcao: '4 colheres de sopa',
+    valores: { energia_kcal: 170, proteina_g: 4, carboidrato_g: 26, lipideos_g: 5.6 },
+  }
+
+  it('CA-1346: "4 colheres de sopa" de 40 g grava a colher de 10 g; "pote" grava "1 pote"', () => {
+    const granola = produtoDosDados(GRANOLA)
+    expect(granola.medidaCaseira).toBe('4 colheres de sopa')
+    expect(granola.medidas).toEqual([{ nome: 'colher de sopa', gramas: 10 }])
+    const iogurte = produtoDosDados({ ...GRANOLA, nome: 'Iogurte natural', porcaoG: 170, nomeDaPorcao: 'pote' })
+    expect(iogurte.medidaCaseira).toBe('1 pote')
+    expect(iogurte.medidas).toEqual([{ nome: 'pote', gramas: 170 }])
+    const leite = produtoDosDados({ ...GRANOLA, nome: 'Bebida de aveia', unidade: 'ml', porcaoG: 200, nomeDaPorcao: '1 copo (200 ml)' })
+    expect(leite.medidas).toEqual([{ nome: 'copo', gramas: 200 }])
+  })
+
+  it('CA-1347: o rótulo antigo com "4 colheres de sopa" abre e salva sem perder a medida', () => {
+    const repo = criarRepositorioProdutos(new Memoria())
+    const antigo = repo.salvar({ nome: 'Granola tradicional', marca: '', porcaoG: 40, medidaCaseira: '4 colheres de sopa', porPorcao: { energia_kcal: 170, proteina_g: 4, carboidrato_g: 26, lipideos_g: 5.6 } })
+    const noFormulario = dadosDoProduto(antigo)
+    expect(noFormulario).toMatchObject({ nomeDaPorcao: '4 colheres de sopa', medidas: [] })
+    const salvo = repo.salvar(produtoDosDados({ ...noFormulario, grupo: 'Cereais e derivados' }, antigo.id))
+    expect(salvo.medidaCaseira).toBe('4 colheres de sopa')
+    registrarProdutos([produtoComoAlimento(salvo)])
+    expect(medidasDoAlimento(salvo.id)).toContainEqual({ nome: 'colher de sopa', gramas: 10 })
+    // Salvo pelo formulário novo, reabre igual: a colher que veio da porção não se repete na lista de medidas.
+    expect(dadosDoProduto(salvo)).toMatchObject({ nomeDaPorcao: '4 colheres de sopa', medidas: [] })
   })
 })
