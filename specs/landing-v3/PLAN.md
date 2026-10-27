@@ -136,6 +136,8 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
 | CA-1683 a CA-1685 | `TelaInicio.test.tsx` › "CA-1683: …" a "CA-1685: …"; `e2e/landing-v9.spec.ts` › "CA-1684: …" |
 | CA-1686, CA-1687 | `MolduraDaLanding.test.tsx` › "CA-1686: …", "CA-1687: …"; `e2e/landing-v9.spec.ts` › "CA-1686: …" |
 | CA-1688 a CA-1694 | `TelaInicio.test.tsx` › "CA-1688: …", "CA-1693: …"; `e2e/landing-v9.spec.ts` › "CA-1689: …" a "CA-1694: …"; `src/seo/vitrine.test.tsx` (CA-1692) |
+| CA-1695 | `navegacaoPublica.test.ts` › "CA-1695: …"; `MolduraDaLanding.test.tsx` › "CA-1461 e CA-1695: …"; `e2e/landing-v9.spec.ts` › "CA-1695: …" |
+| CA-1696 a CA-1698 | `BotaoFixoDoCelular.test.tsx` › "CA-1696: …" a "CA-1698: …"; `e2e/landing-v9.spec.ts` › "CA-1696 e CA-1697: …" |
 
 ## O que mudou no caminho (v9)
 
@@ -164,3 +166,7 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
   rolagem sem movimento, o "Uso não comercial.", o resumo para o leitor de tela, os anéis desmarcados (com e2e de
   contraste), o véu e a etiqueta do topo (com o e2e que fotografa a foto atrás do título em seis larguras e dois temas),
   a etiqueta que some até 1.023 px (e2e do clique no link) e o espaço do botão fixo para o foco (e2e pelo Tab).
+- **Ajustes da v9 publicada (D-688), um commit por ajuste, em TDD:** (1) `rolarAoTopo` em `navegacaoPublica.ts`, usado
+  pelo "Voltar ao topo" do `RodapeDaLanding.tsx` e pelo `irComAncora`; (2) o `BotaoFixoDoCelular.tsx` observa o
+  "Criar conta grátis" do topo (`data-acao-do-topo` no `HeroiDaLanding.tsx`) e só aparece com ele fora da tela, com o
+  teste próprio (`BotaoFixoDoCelular.test.tsx`); o e2e de CA-1686 passa a rolar antes de procurar o fixo.
