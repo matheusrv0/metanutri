@@ -15,7 +15,7 @@ export const ehPlanoPago = (valor: unknown): valor is PlanoPago => valor === 'so
 export const TELAS_LIVRES = ['inicio', 'precos', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'nova-senha', 'termos', 'privacidade', 'fontes', 'missoes'] as const
 
 /** Telas fora da moldura do app (sem menu lateral). Checkout e volta do pagamento pedem sessão. */
-export const TELAS_PUBLICAS = [...TELAS_LIVRES, 'assinar', 'pagamento', 'comprovar-matricula'] as const
+export const TELAS_PUBLICAS = [...TELAS_LIVRES, 'assinar', 'pagamento', 'comprovar-matricula', 'mudanca'] as const
 export type TelaPublica = (typeof TELAS_PUBLICAS)[number]
 
 export type Rota =
@@ -36,6 +36,8 @@ export type Rota =
   | { readonly tela: 'assinar'; readonly plano: PlanoPago; readonly ciclo: Ciclo }
   | { readonly tela: 'pagamento' }
   | { readonly tela: 'comprovar-matricula' }
+  // Spec separacao-site-app, D-512: a aba que o "Continuar" do site abriu, com o código daquela mudança. Pede sessão.
+  | { readonly tela: 'mudanca'; readonly codigo: string }
   | { readonly tela: 'conta' }
   | { readonly tela: 'painel' }
   | { readonly tela: 'casos' }
@@ -95,6 +97,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
   if (tela === 'negocio') return { tela: 'negocio' }
   if (tela === 'comprovar-matricula') return { tela: 'comprovar-matricula' }
+  if (tela === 'mudanca' && id) return { tela: 'mudanca', codigo: id }
   if (tela === 'caso' && id) {
     return { tela: 'planejador', casoId: id, aba: ABAS.includes(aba as AbaPlanejador) ? (aba as AbaPlanejador) : 'caso' }
   }
@@ -131,6 +134,8 @@ export function escreverRota(rota: Rota): string {
       return '#/pagamento'
     case 'comprovar-matricula':
       return '#/comprovar-matricula'
+    case 'mudanca':
+      return `#/mudanca/${encodeURIComponent(rota.codigo)}`
     case 'conta':
       return '#/conta'
     case 'painel':

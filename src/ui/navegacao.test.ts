@@ -171,3 +171,18 @@ describe('as telas do site no app (spec separacao-site-app, D-504)', () => {
     }
   })
 })
+
+describe('a rota da mudança (spec separacao-site-app, D-512)', () => {
+  const CODIGO = '0123456789abcdef0123456789abcdef'
+
+  it('CA-1430 e CA-1431: #/mudanca/<código> é a rota da mudança, que pede sessão e fica fora da moldura do app', () => {
+    expect(lerRota(`#/mudanca/${CODIGO}`)).toEqual({ tela: 'mudanca', codigo: CODIGO })
+    expect(escreverRota({ tela: 'mudanca', codigo: CODIGO })).toBe(`#/mudanca/${CODIGO}`)
+    expect(ehRotaLivre({ tela: 'mudanca', codigo: CODIGO })).toBe(false)
+    expect(ehTelaPublica({ tela: 'mudanca', codigo: CODIGO })).toBe(true)
+  })
+
+  it('sem código, é o painel', () => {
+    expect(lerRota('#/mudanca')).toEqual({ tela: 'painel' })
+  })
+})

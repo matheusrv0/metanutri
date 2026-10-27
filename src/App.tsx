@@ -37,6 +37,8 @@ import { ContextoEnvios } from './ui/sessao/contextoEnvios.ts'
 import { ContextoFimDaSessao } from './ui/sessao/contextoSessao.ts'
 import { useTempoDeSessao } from './ui/sessao/usarTempoDeSessao.ts'
 import { useRota } from './ui/usarRota.ts'
+import { TelaTrazendoDados } from './ui/mudanca/TelaTrazendoDados.tsx'
+import { useConfirmarMudanca, useMudanca, type ConfirmacaoDaMudanca } from './ui/mudanca/usarMudanca.ts'
 
 const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
 
@@ -219,6 +221,9 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
       )
     }
   }
+
+  // A mudança dos dados (spec separacao-site-app, D-512) é do App, antes dos provedores; aqui, só o instante até o Painel.
+  if (rota.tela === 'mudanca') return conta.disponivel ? telaCarregando : <Redirecionar para={ROTA_PAINEL} navegar={navegar} />
 
   if (rota.tela === 'entrar') {
     return (
@@ -405,8 +410,15 @@ const irParaEntrar = (): void => {
  * e sessão, nunca no link do paciente (CA-1455, CA-1456); o aviso e a capa ficam por cima de qualquer tela (CB-510), e
  * a faixa e os envios chegam à área de trabalho pelos contextos.
  */
-function ContaComTempo({ conta, usuarioId }: Omit<ConteudoProps, 'perfilConta'>) {
+interface ContaComTempoProps extends Omit<ConteudoProps, 'perfilConta'> {
+  /** A mudança gravada que espera a nuvem ter tudo para confirmar ao site (spec separacao-site-app, DP-SA-39). */
+  readonly confirmacao: ConfirmacaoDaMudanca | null
+  readonly aoConfirmada: () => void
+}
+
+function ContaComTempo({ conta, usuarioId, confirmacao, aoConfirmada }: ContaComTempoProps) {
   const sessao = conta.sessao
+  useConfirmarMudanca(confirmacao, aoConfirmada)
   const perfilConta = usePerfilConta(sessao?.id ?? null)
   const noLinkDoPaciente = lerRota(useSyncExternalStore(assinarEndereco, lerEndereco)).tela === 'missoes'
   const tempo = useTempoDeSessao({
@@ -434,10 +446,19 @@ export function App() {
   // deles (spec dados-na-nuvem, D-128). Sem servidor de conta, ou sem sessão, valem os do aparelho,
   // como antes (CA-150, DP-3, DP-14).
   const usuarioId = conta.disponivel ? (conta.sessao?.id ?? null) : null
+  // Spec separacao-site-app, D-512 e DP-SA-11: na aba que o "Continuar" do site abriu, os dados da conta esperam a
+  // mudança terminar (recebida, recusada ou 10 s); a sessão já existe, só os dados esperam.
+  const rota = lerRota(useSyncExternalStore(assinarEndereco, lerEndereco))
+  const mudanca = useMudanca({ rota, usuarioId: conta.carregando ? null : usuarioId })
+  const dadosDe = mudanca.segurar ? null : usuarioId
   return (
-    <ProvedorArmazenamento usuarioId={usuarioId}>
-      <ProvedorNuvem usuarioId={usuarioId}>
-        <ContaComTempo conta={conta} usuarioId={usuarioId} />
+    <ProvedorArmazenamento usuarioId={dadosDe}>
+      <ProvedorNuvem usuarioId={dadosDe}>
+        {mudanca.tela === null ? (
+          <ContaComTempo conta={conta} usuarioId={dadosDe} confirmacao={mudanca.confirmacao} aoConfirmada={mudanca.confirmada} />
+        ) : (
+          <TelaTrazendoDados estado={mudanca.tela} aoContinuar={mudanca.continuar} />
+        )}
       </ProvedorNuvem>
     </ProvedorArmazenamento>
   )
