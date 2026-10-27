@@ -1,4 +1,4 @@
-import { diretivasDaPolitica, NONCE_DO_ANTIFRAUDE, origemDoSupabase, textoDaPolitica, type NomeDaDiretiva, type Politica } from './csp.ts'
+import { cabecalhosDoApp, diretivasDaPolitica, diretivasDoSite, NONCE_DO_ANTIFRAUDE, origemDoSupabase, politicaDoCabecalho, textoDaPolitica, type NomeDaDiretiva, type Politica } from './csp.ts'
 
 const SUPABASE = 'https://qmpljfjbdcrdbqutuvmg.supabase.co'
 const politica = diretivasDaPolitica({ supabase: SUPABASE })
@@ -115,6 +115,69 @@ describe('a regra de conteúdo do site (D-135)', () => {
     }
     // E, com todas entendidas, cada tipo usa a diretiva própria (a reserva não alarga nada no navegador atual).
     for (const tipo of Object.keys(RESERVAS)) expect(efetiva(tipo, null)).toBe(valores(politica, RESERVAS[tipo]?.[0] ?? 'default-src'))
+  })
+})
+
+describe('a regra do site público (spec separacao-site-app, D-502)', () => {
+  const doSite = diretivasDoSite()
+
+  it('CA-1406: o texto da regra do site é exatamente este, só do próprio site', () => {
+    expect(textoDaPolitica(doSite)).toBe(
+      [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "frame-src 'none'",
+        "child-src 'self'",
+        "worker-src 'self'",
+        "manifest-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+        'upgrade-insecure-requests',
+      ].join('; '),
+    )
+  })
+
+  it('CA-1406: nenhuma origem de fora: sem Supabase, Mercado Pago, Cloudflare nem Open Food Facts, e sem o nonce', () => {
+    const texto = textoDaPolitica(doSite)
+    expect(texto).not.toMatch(/https?:\/\//)
+    expect(texto).not.toMatch(/supabase|mercado|cloudflare|openfoodfacts|nonce/)
+    expect(valores(doSite, 'script-src')).toEqual(["'self'"])
+    expect(doSite.filter(([, fontes]) => fontes.includes("'unsafe-inline'")).map(([nome]) => nome)).toEqual(['style-src'])
+  })
+
+  it('CB-128: as mesmas regras da <meta> do app: só diretivas que ela aceita, sem aspas duplas', () => {
+    const nomes = doSite.map(([nome]) => nome)
+    for (const ignorada of ['frame-ancestors', 'report-uri', 'report-to', 'sandbox']) expect(nomes).not.toContain(ignorada)
+    expect(new Set(nomes).size).toBe(nomes.length)
+    expect(textoDaPolitica(doSite)).not.toMatch(/["<>]/)
+  })
+})
+
+describe('os cabeçalhos do app (spec separacao-site-app, D-507)', () => {
+  const daMeta = textoDaPolitica(politica)
+
+  it('CA-1419: a CSP do cabeçalho é a da <meta> mais frame-ancestors none', () => {
+    expect(politicaDoCabecalho(daMeta)).toBe(`${daMeta}; frame-ancestors 'none'`)
+  })
+
+  it('CA-1419: o _headers da Cloudflare manda os cinco cabeçalhos para todo endereço, e nunca o Cross-Origin-Opener-Policy', () => {
+    expect(cabecalhosDoApp(daMeta)).toBe(
+      [
+        '/*',
+        `  Content-Security-Policy: ${daMeta}; frame-ancestors 'none'`,
+        '  X-Content-Type-Options: nosniff',
+        '  Referrer-Policy: strict-origin-when-cross-origin',
+        '  Strict-Transport-Security: max-age=31536000',
+        '  X-Robots-Tag: noindex',
+        '',
+      ].join('\n'),
+    )
+    expect(cabecalhosDoApp(daMeta)).not.toMatch(/cross-origin-opener-policy/i)
   })
 })
 

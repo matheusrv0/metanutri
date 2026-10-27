@@ -1,6 +1,7 @@
 // A regra de conteúdo do site, a CSP (spec seguranca-lote-4, D-135, CA-485, CB-128). Este arquivo é a única fonte:
 // o plugin do build (pluginCsp.ts) a põe numa <meta> do index.html, porque o GitHub Pages não deixa mandar cabeçalho,
-// e os testes a leem daqui. O inventário de cada origem, com o motivo, está em specs/seguranca-lote-4/PLAN-csp.md.
+// e os testes a leem daqui. Spec separacao-site-app: o app tem a regra de sempre, também em cabeçalho (`_headers` da
+// Cloudflare, D-507); o site público tem uma regra menor, só do próprio site (D-502). O inventário de cada origem, com o motivo, está em specs/seguranca-lote-4/PLAN-csp.md.
 // Mudou o que o site carrega de fora? Muda aqui e roda `npm run test:csp`, que usa os scripts de verdade.
 //
 // Nada de DOM nem de Node aqui: o arquivo roda no navegador (o nonce) e no build (a regra).
@@ -10,6 +11,9 @@
  * Ele aceita um nonce, e o site passa este (processadorMercadoPago.ts). Num site estático o nonce é fixo e público;
  * mesmo assim, atributo de evento, `javascript:`, script de outro domínio e `eval` continuam bloqueados.
  */
+/** O que o build monta (spec separacao-site-app, DP-SA-1): o app (`vite build`) ou o site público (`--mode site`). */
+export type AlvoDoBuild = 'app' | 'site'
+
 export const NONCE_DO_ANTIFRAUDE = '5dafffd0bcbd90745abc635124d841de'
 
 /** O SDK dos campos do cartão (script). */
@@ -101,7 +105,53 @@ export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
   ]
 }
 
+/**
+ * D-502 e CA-1406: a regra do site público. Ele só tem a vitrine, sem conta, pagamento, verificação contra robôs nem
+ * leitor de rótulo: nada vem de fora do próprio site, e nenhum script escrito na página passa (sem o nonce).
+ */
+export function diretivasDoSite(): Politica {
+  return [
+    ['default-src', ["'self'"]],
+    ['script-src', ["'self'"]],
+    ['style-src', ["'self'", "'unsafe-inline'"]],
+    ['img-src', ["'self'", 'data:']],
+    ['font-src', ["'self'"]],
+    ['connect-src', ["'self'"]],
+    ['frame-src', ["'none'"]],
+    ['child-src', ["'self'"]],
+    // O service worker que se desliga (DP-SA-13) é do próprio site.
+    ['worker-src', ["'self'"]],
+    // CA-1407: o site não tem manifesto.
+    ['manifest-src', ["'none'"]],
+    ['base-uri', ["'self'"]],
+    ['form-action', ["'self'"]],
+    ['object-src', ["'none'"]],
+    ['upgrade-insecure-requests', []],
+  ]
+}
+
 /** O texto que vai no `content` da <meta>. */
 export function textoDaPolitica(politica: Politica): string {
   return politica.map(([nome, fontes]) => [nome, ...fontes].join(' ')).join('; ')
+}
+
+/** D-507: no cabeçalho, a regra da <meta> mais a moldura, que a <meta> não cobre (CA-1419). */
+export function politicaDoCabecalho(textoDaMeta: string): string {
+  return `${textoDaMeta}; frame-ancestors 'none'`
+}
+
+/**
+ * D-507 e CA-1419: o `_headers` do app na Cloudflare, para todo endereço. Sem `Cross-Origin-Opener-Policy` até a P3: ele
+ * cortaria a ligação entre a aba do site e a do app na mudança dos dados (D-512, R-504).
+ */
+export function cabecalhosDoApp(textoDaMeta: string): string {
+  return [
+    '/*',
+    `  Content-Security-Policy: ${politicaDoCabecalho(textoDaMeta)}`,
+    '  X-Content-Type-Options: nosniff',
+    '  Referrer-Policy: strict-origin-when-cross-origin',
+    '  Strict-Transport-Security: max-age=31536000',
+    '  X-Robots-Tag: noindex',
+    '',
+  ].join('\n')
 }
