@@ -6,13 +6,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import type { AlvoDoBuild } from './src/seguranca/csp.ts'
 import { pluginPoliticaDeConteudo } from './src/seguranca/pluginCsp.ts'
-import { pluginAlvo } from './src/seo/pluginAlvo.ts'
+import { opcoesDoAplicativo, pluginAlvo } from './src/seo/pluginAlvo.ts'
 import { pluginSeo } from './src/seo/pluginSeo.ts'
 
 // O manifest do PWA é JSON puro: não lê var(). Estes dois espelham
 // --mesa e --ink-800 de design-system/tokens/tokens.css — mudou lá, muda aqui.
-const COR_FUNDO_PWA = '#f1f0f0'
-const COR_TEMA_PWA = '#232a33'
+const CORES_DO_APLICATIVO = { fundo: '#f1f0f0', tema: '#232a33' }
 
 // Spec separacao-site-app, DP-SA-1: `vite build` monta o app em dist/; `vite build --mode site`, o site público em
 // dist-site/. Os testes (Vitest, Playwright, `npm run test:csp`) continuam montando o app.
@@ -24,34 +23,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      // CB-10: depois do primeiro acesso, o planejador abre e calcula sem internet.
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'marca/*.svg'],
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-          // A base de alimentos e as tabelas entram no pacote JavaScript: precisa caber no cache.
-          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-          // D-338 (spec site-publico-profissional): sitemap.xml, robots.txt, llms.txt e as imagens abertas no navegador são
-          // o arquivo, não a página do app.
-          navigateFallbackDenylist: [/\.(?:txt|xml|png)$/],
-        },
-        manifest: {
-          name: 'MetaNutri — nutrição que diz o que comer',
-          short_name: 'MetaNutri',
-          description: 'Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente.',
-          lang: 'pt-BR',
-          start_url: './',
-          display: 'standalone',
-          background_color: COR_FUNDO_PWA,
-          theme_color: COR_TEMA_PWA,
-          icons: [
-            { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          ],
-        },
-      }),
+      // CB-10: depois do primeiro acesso, o planejador abre e calcula sem internet. No site, só o service worker que se
+      // desliga (spec separacao-site-app, DP-SA-13 e DP-SA-14); a configuração de cada alvo vive em src/seo/pluginAlvo.ts.
+      VitePWA(opcoesDoAplicativo(alvo, CORES_DO_APLICATIVO)),
       // DP-SA-2: o index.html e a pasta de cada alvo.
       pluginAlvo(alvo),
       // D-135: a regra de conteúdo (CSP) numa <meta> do index.html, só no build. A regra vive em src/seguranca/csp.ts.

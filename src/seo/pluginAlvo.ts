@@ -7,6 +7,7 @@
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadEnv, type Plugin, type ResolvedConfig } from 'vite'
+import type { VitePWAOptions } from 'vite-plugin-pwa'
 import type { AlvoDoBuild } from '../seguranca/csp.ts'
 import { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
 
@@ -63,6 +64,51 @@ export function prepararHtml(html: string, alvo: AlvoDoBuild, app: string): stri
   if (inicio < 0 || fim < inicio) throw new Error('index.html sem as marcas do bloco de busca (seo:inicio e seo:fim).')
   const semBusca = `${html.slice(0, inicio)}${cabecaDoApp(app)}${html.slice(fim + MARCA_FIM.length)}`
   return trocar(semBusca, `src="${SCRIPT_DO_SITE}"`, `src="${SCRIPT_DO_APP}"`)
+}
+
+/** As cores do manifest do app, que o vite.config.ts passa (o manifest é JSON puro: não lê var()). */
+export interface CoresDoAplicativo {
+  readonly fundo: string
+  readonly tema: string
+}
+
+/**
+ * O aplicativo instalado de cada alvo (DP-SA-13 e DP-SA-14). No site, só o service worker que se desliga: quem tinha o
+ * do app velho recebe este, que sai, apaga o que guardava e recarrega a página uma vez (D-508, CA-1407); quem nunca teve
+ * não registra nada, e o site não tem manifesto. No app, o de sempre, com o manifesto preso à raiz do endereço novo.
+ */
+export function opcoesDoAplicativo(alvo: AlvoDoBuild, cores: CoresDoAplicativo): Partial<VitePWAOptions> {
+  if (alvo === 'site') return { selfDestroying: true, injectRegister: false, manifest: false }
+  return {
+    registerType: 'autoUpdate',
+    includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'marca/*.svg'],
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+      // A base de alimentos e as tabelas entram no pacote JavaScript: precisa caber no cache.
+      maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+      // D-338 (spec site-publico-profissional): arquivo de texto, XML ou imagem aberto no navegador é o arquivo, não a
+      // página do app.
+      navigateFallbackDenylist: [/\.(?:txt|xml|png)$/],
+    },
+    manifest: {
+      // DP-SA-14: a identidade do aplicativo instalado é a raiz do endereço do app (D-508).
+      id: '/',
+      name: 'MetaNutri — nutrição que diz o que comer',
+      short_name: 'MetaNutri',
+      description: 'Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente.',
+      lang: 'pt-BR',
+      start_url: './',
+      scope: './',
+      display: 'standalone',
+      background_color: cores.fundo,
+      theme_color: cores.tema,
+      icons: [
+        { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+  }
 }
 
 /** Tira da pasta do build o que é do outro alvo. */

@@ -3,11 +3,13 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { build } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { APP_EM_PRODUCAO, enderecoOuPadrao } from '@/ui/enderecos.ts'
 import { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
-import { APP_PADRAO, cabecaDoApp, enderecoDoApp, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
+import { APP_PADRAO, cabecaDoApp, enderecoDoApp, opcoesDoAplicativo, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
 
 const APP = 'https://app.metanutri.com.br/'
+const CORES = { fundo: 'cor-do-fundo', tema: 'cor-do-tema' }
 const HTML = `<!doctype html>
 <html lang="pt-BR">
   <head>
@@ -92,9 +94,13 @@ describe('o plugin do alvo no build de verdade (R-511)', () => {
     rmSync(pasta, { recursive: true, force: true })
   })
 
-  async function montar(alvo: 'app' | 'site'): Promise<{ readonly html: string; readonly arquivos: readonly string[]; readonly pacote: string }> {
+  async function montar(
+    alvo: 'app' | 'site',
+    comAplicativo = false,
+  ): Promise<{ readonly html: string; readonly arquivos: readonly string[]; readonly pacote: string }> {
     const saida = join(pasta, `dist-${alvo}`)
-    await build({ root: pasta, base: './', configFile: false, envDir: pasta, logLevel: 'silent', plugins: [pluginAlvo(alvo)], build: { outDir: saida } })
+    const plugins = [pluginAlvo(alvo), ...(comAplicativo ? [VitePWA(opcoesDoAplicativo(alvo, CORES))] : [])]
+    await build({ root: pasta, base: './', configFile: false, envDir: pasta, logLevel: 'silent', plugins, build: { outDir: saida } })
     const assets = readdirSync(join(saida, 'assets'))
     const pacote = assets.filter((a) => a.endsWith('.js')).map((a) => readFileSync(join(saida, 'assets', a), 'utf8')).join('\n')
     return { html: readFileSync(join(saida, 'index.html'), 'utf8'), arquivos: readdirSync(saida), pacote }
@@ -134,5 +140,42 @@ describe('o plugin do alvo no build de verdade (R-511)', () => {
     for (const arquivo of SO_DO_SITE) expect(arquivos).not.toContain(arquivo)
     expect(arquivos).toContain('preparar-app.js')
     expect(existsSync(join(pasta, 'dist-app', 'icon-512.png'))).toBe(true)
+  })
+
+  it('CA-1407 e DP-SA-13: o site publica só o service worker que se desliga, sem manifesto e sem registrar nada', async () => {
+    const { html, arquivos, pacote } = await montar('site', true)
+    const trabalhador = readFileSync(join(pasta, 'dist-site', 'sw.js'), 'utf8')
+    expect(trabalhador).toContain('self.registration.unregister()')
+    expect(trabalhador).toContain('client.navigate(client.url)')
+    expect(trabalhador).toContain('self.caches.delete(cacheName)')
+    expect(trabalhador).not.toMatch(/precache|workbox/)
+    expect(arquivos).not.toContain('manifest.webmanifest')
+    expect(arquivos).not.toContain('registerSW.js')
+    expect(html).not.toMatch(/rel="manifest"|registerSW|serviceWorker/)
+    expect(pacote).not.toMatch(/serviceWorker/)
+  })
+
+  it('CA-1421 e DP-SA-14: o app publica o manifesto com id na raiz e o service worker que guarda o app, sem os arquivos do site', async () => {
+    const { html, arquivos } = await montar('app', true)
+    expect(arquivos).toEqual(expect.arrayContaining(['manifest.webmanifest', 'sw.js']))
+    expect(html).toContain('rel="manifest"')
+    const manifesto = JSON.parse(readFileSync(join(pasta, 'dist-app', 'manifest.webmanifest'), 'utf8')) as Record<string, unknown>
+    expect(manifesto).toMatchObject({ id: '/', start_url: './', scope: './', display: 'standalone', short_name: 'MetaNutri' })
+    const trabalhador = readFileSync(join(pasta, 'dist-app', 'sw.js'), 'utf8')
+    expect(trabalhador).toContain('precache')
+    for (const arquivo of SO_DO_SITE) expect(trabalhador, arquivo).not.toContain(arquivo)
+  })
+})
+
+describe('o aplicativo instalado de cada alvo (spec separacao-site-app, DP-SA-13 e DP-SA-14)', () => {
+  it('CA-1407: no site, o service worker se desliga, sem manifesto nem registro', () => {
+    expect(opcoesDoAplicativo('site', CORES)).toEqual({ selfDestroying: true, injectRegister: false, manifest: false })
+  })
+
+  it('CA-1421: no app, a versão nova continua só avisando (D-172) e o manifesto tem id, início e escopo na raiz', () => {
+    const doApp = opcoesDoAplicativo('app', CORES)
+    expect(doApp.selfDestroying).toBeFalsy()
+    expect(doApp.registerType).toBe('autoUpdate')
+    expect(doApp.manifest).toMatchObject({ id: '/', start_url: './', scope: './', display: 'standalone', background_color: 'cor-do-fundo', theme_color: 'cor-do-tema' })
   })
 })
