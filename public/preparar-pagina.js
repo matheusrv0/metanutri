@@ -6,7 +6,8 @@
 //    e-mail, com ?volta=) ou quando há sessão aberta e o endereço é a raiz, que leva ao painel (CA-1016, CA-1024);
 // 3. marca o <html> com o tema claro da landing, quando é o escolhido no botão dela (a chave é a CHAVE_TEMA_DA_LANDING
 //    de src/ui/publico/inicio/temaDaLanding.ts), para a landing pré-desenhada nascer clara (spec landing-v3, D-613).
-// A landing escura não tem foto no topo (spec landing-escura, CA-1485): nada é pré-carregado daqui.
+// Nada é pré-carregado daqui (spec landing-escura, CA-1485): a foto do topo da v9 já está no HTML pré-desenhado, com
+// prioridade alta, e o navegador a acha na primeira leitura (spec landing-v3, D-654).
 ;(function () {
   var raiz = document.documentElement
   var escolha = null

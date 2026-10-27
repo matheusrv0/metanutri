@@ -26,7 +26,7 @@ interface Tela {
 const comSessao = (extra: Cenario = {}): Cenario => ({ sessao: true, perfil: PERFIL_NUTRICIONISTA, ...extra })
 const botao = (nome: string | RegExp) => (p: Page) => p.getByRole('button', { name: nome, exact: typeof nome === 'string' }).filter({ visible: true }).first()
 const noTopo = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('button', { name: nome })
-const LANDING = /Falta cálcio/
+const LANDING = /Planos alimentares completos/
 // Spec landing-escura: na landing, a ação principal é o "Criar conta grátis" do topo da página; a barra tem links.
 const naLanding = (nome: string) => (p: Page) => p.getByRole('region', { name: LANDING }).getByRole('button', { name: nome })
 const naBarra = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('link', { name: nome })

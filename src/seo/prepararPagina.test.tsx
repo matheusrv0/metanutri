@@ -49,7 +49,7 @@ describe('preparar-pagina.js', () => {
 
   const preloadDaFoto = () => document.head.querySelector<HTMLLinkElement>('link[rel="preload"][as="image"]')
 
-  it('CA-1485 (spec landing-escura): a landing escura não tem foto no topo; o <head> não pré-carrega imagem nenhuma', () => {
+  it('CA-1485 e D-654: o <head> não pré-carrega imagem nenhuma (a foto do topo da v9 vem do HTML pré-desenhado)', () => {
     for (const cenario of [{ hash: '#/inicio' }, { hash: '' }, { hash: '#/missoes/abc' }, { hash: '', sessao: true }, { rotaDaPagina: 'precos' }, { busca: '?volta=confirmacao&code=x' }]) {
       for (const link of document.head.querySelectorAll('link[rel="preload"]')) link.remove()
       rodar(cenario)

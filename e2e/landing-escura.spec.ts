@@ -1,14 +1,16 @@
-// Spec landing-escura: a landing escura no navegador de verdade (tema, fontes, laranja, campo vivo, chaves, barra,
-// celular, teclado, movimento e a página pré-desenhada sem JavaScript). Spec landing-v3: o texto em gramas, e o celular
-// nos dois temas da landing (o tema claro tem o e2e dele, landing-v3.spec.ts).
+// Spec landing-escura: a landing escura no navegador de verdade (tema, fontes, laranja, barra, celular, teclado,
+// movimento e a página pré-desenhada sem JavaScript). Spec landing-v3: o celular nos dois temas da landing (o tema claro
+// tem o e2e dele, landing-v3.spec.ts). Seção v9: a Adequação e o celular das missões no lugar do campo vivo e das chaves,
+// e a barra de vidro presa no alto (o e2e da v9 é landing-v9.spec.ts).
 import { expect, test, type Page } from '@playwright/test'
 import { semRolagemLateral, vigiarConsole } from './apoio/fumaca.ts'
 
 const CHAO = 'rgb(16, 26, 29)'
-const TEAL = 'rgb(14, 59, 67)'
 const TINTA = 'rgb(238, 242, 241)'
 const LARANJA = 'rgb(242, 106, 46)'
 const BRANCO = 'rgb(255, 255, 255)'
+/** A barra de vidro no escuro: o chão com 78% (D-651). */
+const VIDRO_ESCURO = 'color(srgb 0.0627451 0.101961 0.113725 / 0.78)'
 
 async function abrirLanding(pagina: Page, tema: 'claro' | 'escuro' = 'claro', temaDaLanding: 'claro' | 'escuro' = 'escuro') {
   await pagina.addInitScript(
@@ -40,13 +42,13 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
   test.use({ reducedMotion: 'reduce' })
 
   for (const tema of ['claro', 'escuro'] as const) {
-    test(`CA-1450: com o app no tema ${tema}, a landing é escura e os títulos se leem`, async ({ page }) => {
+    test(`CA-1450 e CA-1651: com o app no tema ${tema}, a landing é escura, a barra é de vidro e os títulos se leem`, async ({ page }) => {
       const erros = await vigiarConsole(page)
       await abrirLanding(page, tema)
       const raiz = page.locator('.landing')
       expect(await raiz.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(CHAO)
       expect(await raiz.evaluate((el) => getComputedStyle(el).color)).toBe(TINTA)
-      expect(await page.getByRole('banner').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(TEAL)
+      expect(await page.getByRole('banner').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(VIDRO_ESCURO)
       // Cada título de seção contra o fundo da própria seção (a ponte do sistema calculada no <html> claro os apagava).
       for (const titulo of await page.getByRole('heading', { level: 2 }).all()) {
         const [cor, fundo] = await titulo.evaluate((el) => {
@@ -71,11 +73,12 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
     })
     await abrirLanding(page)
     await page.evaluate(() => document.fonts.ready)
-    const familias = await page.locator('main h1, main h2, main p, main button, main td').evaluateAll((els) => [
+    const familias = await page.locator('main h1, main h2, main h3, main p, main button, main td').evaluateAll((els) => [
       ...new Set(els.map((el) => getComputedStyle(el).fontFamily.split(',')[0]?.trim())),
     ])
     expect(familias).toEqual(['"Manrope Variable"'])
-    expect(await page.getByRole('banner').getByText('MetaNutri', { exact: true }).evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^"Bricolage Grotesque Variable"/)
+    const nome = page.getByRole('banner').getByText('MetaNutri', { exact: true }).filter({ visible: true })
+    expect(await nome.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^"Bricolage Grotesque Variable"/)
     expect(pedidos).toEqual([])
   })
 
@@ -90,68 +93,37 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
       LARANJA,
     )
     expect(laranjas).toEqual([])
-    const faixa = page.getByRole('link', { name: /Crie a conta e monte o primeiro plano hoje/ })
+    const faixa = page.getByRole('link', { name: /Crie sua conta e monte o primeiro plano hoje/ })
     await faixa.hover()
     await expect.poll(() => faixa.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(BRANCO)
     await expect.poll(() => faixa.locator('svg').evaluate((el) => getComputedStyle(el).color)).toBe(LARANJA)
   })
 
-  test('CA-1462 a CA-1465: o campo vivo responde ao que se digita e aos exemplos', async ({ page }) => {
+  test('CA-1662 e CA-1663: a Adequação troca de nutriente e de sugestão, e o centro do anel acompanha', async ({ page }) => {
     await abrirLanding(page)
-    const campo = page.getByRole('textbox', { name: 'Digite o nutriente que falta' })
-    const cartao = page.locator('#plano-de-exemplo [aria-live="polite"]')
-    await expect(cartao).toContainText('640 de 1.000 mg no dia')
-    await campo.fill('vitamina d')
-    await expect(cartao).toContainText('Faltam 11,4 µg para a meta.')
-    await campo.fill('ferro')
-    await expect(cartao).toContainText('Experimente cálcio, vitamina E ou vitamina D.')
-    await page.getByRole('button', { name: 'falta vitamina E' }).click()
-    await expect(campo).toHaveValue('falta vitamina E')
-    await expect(cartao).toContainText('Faltam 8,1 mg para a meta.')
-    await expect(page.getByRole('button', { name: 'falta vitamina E' })).toHaveAttribute('aria-pressed', 'true')
-    // CB-537: texto longo rola dentro do campo, a página não.
-    await campo.fill(`${'a'.repeat(500)} cálcio`)
-    await expect(cartao).toContainText('Faltam 260 mg para a meta.')
+    const painel = page.locator('#adequacao [aria-live="polite"]')
+    await expect(painel).toContainText('ainda faltam24,3 mgde 260 mg')
+    await page.getByRole('button', { name: /^Sardinha assada/ }).click()
+    await expect(painel).toContainText('com 60 gMetaatingida')
+    await page.getByRole('button', { name: /^Vitamina E/ }).click()
+    await expect(page.getByRole('button', { name: /^Amêndoa torrada salgada/ })).toHaveAttribute('aria-pressed', 'true')
+    await expect(painel).toContainText('ainda faltam1,0 mgde 8,1 mg')
+    await page.getByRole('button', { name: /^Vitamina D/ }).click()
+    await expect(painel).toContainText('Filé de salmão fresco grelhado com pele')
     await semRolagemLateral(page)
   })
 
-  test('CA-1471 e CB-532: a chave liga pelo teclado, a faixa troca de cor e o efeito aparece', async ({ page }) => {
+  test('CA-1668 e CA-1669: marcar a missão pelo teclado conta no celular e acende a bolinha da Maria', async ({ page }) => {
     await abrirLanding(page)
-    const chave = page.getByRole('switch', { name: 'Respeitar a alergia a leite' })
-    const faixa = chave.locator('..')
-    const antes = await faixa.evaluate((el) => getComputedStyle(el).backgroundColor)
-    await chave.focus()
+    const almoco = page.getByRole('button', { name: /^Almoço por volta das 12h/ })
+    await almoco.focus()
     await page.keyboard.press('Space')
-    await expect(chave).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByText(/O iogurte sai das sugestões de cálcio/)).toBeVisible()
-    await expect.poll(() => faixa.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(antes)
+    await expect(almoco).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('[data-contagem]')).toHaveText('3 de 9')
+    await expect(page.getByText('Em dia · 3 de 9 hoje')).toBeVisible()
     await page.keyboard.press('Enter')
-    await expect(chave).toHaveAttribute('aria-checked', 'false')
-    await expect(page.getByText(/O iogurte sai das sugestões de cálcio/)).toHaveCount(0)
-  })
-
-  test('CA-1459, CA-1460 e CB-533: a barra pinta a seção, sai ao descer, volta ao subir e com foco; no rodapé, sai', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await abrirLanding(page)
-    const barra = page.getByRole('banner')
-    const topoDaBarra = async () => (await barra.boundingBox())?.y ?? 0
-    // O título de Grama por grama no alto e mais 600 px para baixo: a barra fica no meio da seção afundada, a mais longa.
-    await page.getByRole('heading', { name: 'Grama por grama' }).evaluate((el) => el.scrollIntoView({ block: 'start' }))
-    await page.mouse.wheel(0, 600)
-    await expect.poll(topoDaBarra).toBeLessThan(-40)
-    await page.mouse.wheel(0, -150)
-    await expect.poll(topoDaBarra).toBe(0)
-    await expect(barra).toHaveAttribute('data-tinta', 'afundado')
-    expect(await barra.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(20, 34, 38)')
-    await page.mouse.wheel(0, 300)
-    await expect.poll(topoDaBarra).toBeLessThan(-40)
-    await barra.getByRole('link', { name: 'Entrar' }).focus()
-    await expect.poll(topoDaBarra).toBe(0)
-    // Sobre a faixa marfim do fim da página, a barra fica teal (marfim sobre marfim sumiria). O rodapé, mais baixo que a
-    // tela, nunca chega embaixo da barra; a regra de sair nele está no teste de unidade (barraDoTopo.test.ts).
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await page.mouse.wheel(0, -1)
-    await expect(barra).toHaveAttribute('data-tinta', 'teal')
+    await expect(almoco).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.locator('[data-contagem]')).toHaveText('2 de 9')
   })
 
   test('CA-1486: com menos movimento, nada se move e nada fica escondido', async ({ page }) => {
@@ -159,7 +131,9 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
     const altura = await page.evaluate(() => document.documentElement.scrollHeight)
     for (let y = 0; y < altura; y += 600) await page.evaluate((v) => window.scrollTo(0, v), y)
     expect(await page.locator('.landing').getAttribute('data-entrada')).toBeNull()
-    const escondidos = await page.locator('main *').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity === '0').length)
+    const escondidos = await page
+      .locator('main *')
+      .evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity === '0' && !el.closest('[aria-hidden="true"]')).length)
     expect(escondidos).toBe(0)
     const animando = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length)
     expect(animando).toBe(0)
@@ -172,7 +146,7 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
     [360, 'claro'],
     [320, 'claro'],
   ] as const) {
-    test(`CA-1488, CA-1489, CA-1626 e CB-531: em ${largura} px, landing ${temaDaLanding}, sem rolar para o lado e com alvos de 44 px`, async ({ page }) => {
+    test(`CA-1488, CA-1489, CA-1626, CA-1690 e CB-531: em ${largura} px, landing ${temaDaLanding}, sem rolar para o lado e com alvos de 44 px`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 844 })
       await abrirLanding(page, 'claro', temaDaLanding)
       await semRolagemLateral(page)
@@ -189,37 +163,22 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
             .map((el) => el.getAttribute('aria-label') ?? el.textContent),
         )
       expect(foraDaBarra).toEqual([])
-      // Com o texto do tamanho normal, o "Adicionar" das sugestões fica na linha do alimento; só desce com texto grande.
-      const desceram = await page.locator('[data-ui] li').evaluateAll((lis) =>
-        lis
-          .filter((li) => li.getClientRects().length > 0)
-          .filter((li) => {
-            const [texto, botao] = [li.firstElementChild, li.lastElementChild].map((el) => el?.getBoundingClientRect())
-            return texto && botao && botao.top >= texto.bottom - 1
-          })
-          .map((li) => li.textContent),
+      // Nenhuma peça visível passa da largura da tela (o celular das missões rola por dentro).
+      const fora = await page.locator('.landing a, .landing button, .landing input, .landing p, .landing h2, .landing h3, .landing li').evaluateAll((els) =>
+        els
+          .filter((el) => el.getClientRects().length > 0 && !el.closest('[aria-hidden="true"]'))
+          .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 0.5)
+          .map((el) => (el.textContent ?? '').trim().slice(0, 40)),
       )
-      expect(desceram).toEqual([])
-      const pequenos = await page.locator('.landing a, .landing button:not([role="switch"]), .landing summary, .landing input').evaluateAll((els) =>
+      expect(fora).toEqual([])
+      const pequenos = await page.locator('.landing a, .landing button, .landing summary, .landing input').evaluateAll((els) =>
         els
           .filter((el) => el.getClientRects().length > 0)
           .filter((el) => el.getBoundingClientRect().height < 44)
           .map((el) => `${el.tagName} ${el.textContent?.trim() ?? ''} ${Math.round(el.getBoundingClientRect().height)}`),
       )
       expect(pequenos).toEqual([])
-      // A chave: a área de toque passa da bolinha (10 px em volta), conferida pelo que o dedo acerta 20 px acima do centro.
-      for (const chave of await page.getByRole('switch').all()) {
-        await chave.scrollIntoViewIfNeeded()
-        const caixa = await chave.boundingBox()
-        if (!caixa) throw new Error('chave sem medida')
-        expect(caixa.height + 20).toBeGreaterThanOrEqual(44)
-        const acertou = await page.evaluate(
-          ([x, y]) => document.elementFromPoint(x ?? 0, y ?? 0)?.getAttribute('role'),
-          [caixa.x + caixa.width / 2, caixa.y - 8],
-        )
-        expect(acertou).toBe('switch')
-      }
-      // Grama por grama (spec landing-v3, D-603): cada linha é o alimento, os gramas e as calorias, lado a lado.
+      // Quantidades em gramas (D-665): cada linha é o alimento, os gramas e as calorias, lado a lado.
       const linha = page.getByRole('row', { name: /Patinho grelhado sem gordura/ })
       const celulas = await Promise.all([0, 1, 2].map((i) => linha.getByRole('cell').nth(i).boundingBox()))
       const [alimento, gramas, kcal] = celulas
@@ -229,26 +188,36 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
     })
   }
 
-  test('CA-1490: pelo teclado, o foco é visível e nunca cai num botão de fragmento', async ({ page }) => {
+  test('CA-1490 e CA-1694: pelo teclado, o foco é visível e segue a página: a barra, o topo, as abas e as sugestões', async ({ page }) => {
     await abrirLanding(page)
     const vistos: string[] = []
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 20; i++) {
       await page.keyboard.press('Tab')
       const foco = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null
-        if (!el) return null
+        if (!el || el === document.body) return null
         const estilo = getComputedStyle(el)
-        const texto = el instanceof HTMLInputElement ? `campo: ${el.value}` : (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)
-        return { texto, contorno: estilo.outlineStyle, noFragmento: el.closest('[data-ui]') !== null && !(el instanceof HTMLInputElement) }
+        const texto = (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)
+        return { texto, contorno: estilo.outlineStyle, escondido: el.closest('[aria-hidden="true"]') !== null }
       })
       if (!foco) continue
       expect(foco.contorno, foco.texto).not.toBe('none')
-      expect(foco.noFragmento, foco.texto).toBe(false)
+      expect(foco.escondido, foco.texto).toBe(false)
       vistos.push(foco.texto)
     }
-    expect(vistos.slice(0, 2)).toEqual(['MetaNutri, início', 'Como funciona'])
-    expect(vistos).toContain('campo: falta cálcio')
-    expect(vistos).toContain('Respeitar a alergia a leite')
+    expect(vistos.slice(0, 9)).toEqual([
+      'MetaNutri, início',
+      'Funcionalidades',
+      'Como funciona',
+      'Planos',
+      'Usar o tema claro',
+      'Entrar',
+      'Criar conta grátis',
+      'Criar conta grátis',
+      'Ver o plano de exemplo',
+    ])
+    expect(vistos.some((v) => v.startsWith('Cálcio 640 de 1.000 mg'))).toBe(true)
+    expect(vistos.some((v) => v.startsWith('Iogurte natural desnatado'))).toBe(true)
   })
 })
 
@@ -259,13 +228,13 @@ test.describe('com movimento', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await abrirLanding(page)
     await expect(page.locator('.landing')).toHaveAttribute('data-entrada', '')
-    // O título do topo estava na tela quando o app montou: entra marcado, visível.
+    // O título do topo estava na tela quando o app montou: visível.
     expect(await page.getByRole('heading', { level: 1 }).evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
-    const tituloDaCozinha = page.getByRole('heading', { name: 'Grama por grama' })
-    expect(await tituloDaCozinha.evaluate((el) => getComputedStyle(el).opacity)).toBe('0')
-    await tituloDaCozinha.evaluate((el) => el.scrollIntoView({ block: 'center' }))
-    await expect.poll(() => tituloDaCozinha.evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
-    await expect(tituloDaCozinha).toHaveAttribute('data-dentro', '')
+    const titulo = page.getByRole('heading', { name: 'Quantidades em gramas e calorias' })
+    expect(await titulo.evaluate((el) => getComputedStyle(el).opacity)).toBe('0')
+    await titulo.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expect.poll(() => titulo.evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
+    await expect(titulo).toHaveAttribute('data-dentro', '')
     // A foto deriva sem parar: o Playwright nunca a acharia "parada" para rolar até ela.
     const foto = page.getByAltText(/Tomates e cenouras/)
     await foto.evaluate((el) => el.scrollIntoView({ block: 'center' }))
@@ -273,19 +242,39 @@ test.describe('com movimento', () => {
   })
 })
 
-test('CA-1484 e CB-535: sem JavaScript, a landing pré-desenhada mostra tudo, escura, com as respostas no HTML', async ({ browser }) => {
+test('CA-1484, CB-535, CA-1692 e CB-652: sem JavaScript, a landing pré-desenhada mostra tudo, escura, com as respostas no HTML', async ({ browser }) => {
   const contexto = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 800 } })
   const pagina = await contexto.newPage()
   await pagina.goto('/')
   await expect(pagina.locator('[data-vitrine]')).toBeVisible()
-  await expect(pagina.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?\s*150 g de iogurte\./)
-  for (const titulo of ['O que falta no plano da Maria, 28 anos?', 'O plano sai do seu jeito', 'Como funciona', 'Grama por grama', 'Quanto custa', 'Perguntas de quem atende']) {
+  await expect(pagina.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
+  for (const titulo of [
+    'Adequação de micronutrientes com sugestão do que comer',
+    'Acompanhamento da adesão pelo celular',
+    'Funcionalidades',
+    'Como funciona',
+    'Quantidades em gramas e calorias',
+    'Planos e preços',
+    'Perguntas frequentes',
+  ]) {
     await expect(pagina.getByRole('heading', { level: 2, name: titulo })).toBeAttached()
   }
-  await expect(pagina.locator('#plano-de-exemplo input')).toHaveValue('falta cálcio')
+  await expect(pagina.locator('#planos input[type="range"]')).toHaveValue('12')
+  await expect(pagina.getByText('Para 12 pacientes ativos, o plano indicado é o Solo.')).toBeAttached()
   await expect(pagina.locator('details p').first()).toHaveText(/Base MetaNutri/)
   expect(await pagina.locator('.landing').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(CHAO)
-  const escondidos = await pagina.locator('main *').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity === '0').length)
+  // Sem JavaScript, o movimento do CSS corre até o fim (a etiqueta surge em 1,8 s) e nada fica transparente.
+  // Sem JavaScript na página, a espera pergunta daqui (o waitForFunction precisa de script na página).
+  await expect
+    .poll(() =>
+      pagina.evaluate(() =>
+        document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Number.POSITIVE_INFINITY),
+      ),
+    )
+    .toBe(true)
+  const escondidos = await pagina
+    .locator('main *')
+    .evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity === '0' && !el.closest('[aria-hidden="true"]')).length)
   expect(escondidos).toBe(0)
   await contexto.close()
 })
