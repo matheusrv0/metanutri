@@ -4,8 +4,8 @@ import { ChavesDoPlano } from './inicio/ChavesDoPlano.tsx'
 import { ComoFunciona } from './inicio/ComoFunciona.tsx'
 import { FaixaComecar } from './inicio/FaixaComecar.tsx'
 import { FotoDosLegumes } from './inicio/FotoDosLegumes.tsx'
+import { GramaPorGrama } from './inicio/GramaPorGrama.tsx'
 import { HeroiDaLanding } from './inicio/HeroiDaLanding.tsx'
-import { NaMedidaDaCozinha } from './inicio/NaMedidaDaCozinha.tsx'
 import { PerguntasDeQuemAtende } from './inicio/PerguntasDeQuemAtende.tsx'
 import { QuantoCusta } from './inicio/QuantoCusta.tsx'
 import { VitrineDoCobrir } from './inicio/VitrineDoCobrir.tsx'
@@ -19,8 +19,9 @@ interface TelaInicioProps {
 }
 
 /**
- * A landing escura (spec landing-escura, protótipo aprovado pelo dono em 27/10/2026), na ordem da D-534. A barra do
- * topo e o rodapé são da moldura (`MolduraDaLanding`), que também pinta a página de escuro em qualquer tema (D-530).
+ * A landing (spec landing-escura, protótipo aprovado pelo dono em 27/10/2026; spec landing-v3), na ordem da D-534, com
+ * "Grama por grama" no lugar de "Na medida da cozinha". A barra do topo e o rodapé são da moldura (`MolduraDaLanding`),
+ * que também cuida do tema da landing, escuro por padrão.
  */
 export function TelaInicio({ aoComecar, aoEscolher, formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaInicioProps) {
   return (
@@ -30,7 +31,7 @@ export function TelaInicio({ aoComecar, aoEscolher, formularioNovo = MEUS_ALIMEN
       <ChavesDoPlano formularioNovo={formularioNovo} />
       <FotoDosLegumes />
       <ComoFunciona />
-      <NaMedidaDaCozinha />
+      <GramaPorGrama />
       <QuantoCusta aoEscolher={aoEscolher} />
       <PerguntasDeQuemAtende formularioNovo={formularioNovo} />
       <FaixaComecar aoComecar={aoComecar} />

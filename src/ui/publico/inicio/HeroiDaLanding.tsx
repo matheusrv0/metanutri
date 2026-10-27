@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { rolarAte } from '../navegacaoPublica.ts'
+import { PORCAO_DO_TOPO } from './exemploDaLanding.ts'
 import { BOTAO, LEAD, MARGEM } from './estiloDaLanding.ts'
 
 interface HeroiDaLandingProps {
@@ -13,7 +14,10 @@ interface HeroiDaLandingProps {
  */
 const veioPeloApp = () => typeof document !== 'undefined' && document.querySelector('[data-vitrine]') === null
 
-/** O topo (D-535): só palavra, cor e espaço. A bolinha laranja é o ponto do título; o ponto continua para o leitor de tela. */
+/**
+ * O topo (D-535; spec landing-v3, D-601): só palavra, cor e espaço, em gramas. A bolinha laranja é o ponto do título; o
+ * ponto continua para o leitor de tela.
+ */
 export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
   const [animar] = useState(veioPeloApp)
   const sobe = animar ? 'motion-safe:animate-landing-sobe' : ''
@@ -30,7 +34,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
       >
         <span className={`block text-landing-teal-claro ${sobe}`}>Falta cálcio?</span>{' '}
         <span className={`block text-landing-marfim ${sobe} motion-safe:[animation-delay:.12s]`}>
-          1 copo de iogurte
+          {PORCAO_DO_TOPO}
           <span aria-hidden="true" className="ml-[.04em] inline-block size-[.2em] rounded-full bg-landing-laranja" />
           <span className="sr-only">.</span>
         </span>
@@ -55,7 +59,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
         </div>
         <p className={`max-w-[34ch] ${LEAD} max-[720px]:text-[17px]`}>
           Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral no plano alimentar e mostra o que comer para completar, em
-          gramas e, quando a base tem, em medida caseira.
+          gramas.
         </p>
       </div>
     </section>

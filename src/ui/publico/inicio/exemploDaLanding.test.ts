@@ -1,11 +1,13 @@
-// CA-1467 a CA-1469, CA-1472 e CA-1473 (spec landing-escura, D-537 a D-541): os números da landing são os do app. As
-// constantes ficam leves na página; este teste roda o motor e a base de verdade e falha se uma letra divergir (R-530).
+// CA-1467 a CA-1469, CA-1472 e CA-1473 (spec landing-escura, D-537 a D-541) e CA-1601 a CA-1607 (spec landing-v3,
+// D-601 a D-606): os números da landing são os do app. As constantes ficam leves na página; este teste roda o motor e a
+// base de verdade e falha se uma letra divergir (R-530).
 import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
 import { buscarAlimentos, leituraDoResultado } from '@/domain/busca.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
+import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
 import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
 import { ehPrescritivel, regraQueExclui } from '@/domain/prescritivel.ts'
@@ -20,8 +22,9 @@ import {
   AGUA_DO_EXEMPLO,
   CARTOES_DA_VITRINE,
   COBRIR_CALCIO,
-  DIA_EM_MEDIDAS,
+  DIA_EM_GRAMAS,
   FEIJAO_NA_CONCHA,
+  PORCAO_DO_TOPO,
   textoDosAlimentosProprios,
   type ChaveDaVitrine,
   type LinhaDoCobrir,
@@ -64,9 +67,12 @@ const nomeNaLanding = (descricao: string) =>
     .replace(/\/\d+\s*minutos$/, '')
     .trim()
 
+/** D-602: a porção como a gaveta escreve, sem a medida caseira: os gramas (ou mililitros) e o "(peso cru)". */
+const gramasDaSugestao = (s: Sugestao) => porcaoDaSugestao({ gramas: s.gramas, medida: null }, buscarAlimento(s.alimentoId))
+
 const linhaDoCobrir = (s: Sugestao): LinhaDoCobrir => ({
   nome: nomeNaLanding(s.descricao),
-  porcao: porcaoDaSugestao(s, buscarAlimento(s.alimentoId)),
+  gramas: gramasDaSugestao(s),
   cobre: `${formatarNumero(s.coberturaPct, 0)}%`,
   kcal: formatarNumero(s.kcalAdicionadas, 0),
 })
@@ -132,27 +138,38 @@ describe('CA-1468: Como funciona tem os números do motor', () => {
     expect(COBRIR_CALCIO.linhas).toHaveLength(5)
   })
 
-  it('o título "1 copo de iogurte" é uma sugestão do cálcio: 1 copo americano de iogurte', () => {
+})
+
+describe('CA-1601 e CA-1603: a gramatura vem do motor', () => {
+  it('CA-1601: o 150 g de iogurte do topo é a sugestão de iogurte do Cobrir de cálcio', () => {
     const iogurte = oExemplo()
       .cobrir('calcio_mg')
       .sugestoes.find((s) => /^Iogurte,/.test(s.descricao))
-    expect(iogurte?.medida).toMatchObject({ nome: 'copo americano', quantidade: 1 })
+    if (!iogurte) throw new Error('O Cobrir de cálcio não sugere iogurte')
+    expect(PORCAO_DO_TOPO).toBe(`${gramasDaSugestao(iogurte)} de iogurte`)
+    expect(PORCAO_DO_TOPO).toBe('150 g de iogurte')
+  })
+
+  it('CA-1603: o campo vivo e "Cobrir cálcio" mostram só os gramas, sem a medida caseira', () => {
+    const linhas = [...Object.values(CARTOES_DA_VITRINE).flatMap((c) => c.linhas), ...COBRIR_CALCIO.linhas]
+    for (const linha of linhas) expect(linha.gramas, linha.nome).toMatch(/^\d+ (g|ml)( \(peso cru\))?$/)
+    expect(CARTOES_DA_VITRINE.calcio.linhas.map((l) => l.gramas)).toEqual(['60 g', '150 g', '60 g'])
   })
 })
 
-describe('CA-1469: a cozinha e o feijão vêm da Base MetaNutri', () => {
-  /** O texto que a nutricionista digitaria para cada linha. */
+describe('CA-1469 e CA-1605: Grama por grama e o feijão vêm da Base MetaNutri', () => {
+  /** O texto que a nutricionista digitaria para cada linha: os gramas e o alimento. */
   const BUSCA: Readonly<Record<string, string>> = {
-    'Pão francês': '1 pao frances',
-    'Ovo cozido': '1 ovo cozido',
-    'Mamão Formosa': '1 fatia mamao formosa',
-    'Arroz branco cozido': '1 escumadeira arroz tipo 1 cozido',
-    'Feijão carioca cozido': '1 concha feijao carioca cozido',
-    'Patinho grelhado sem gordura': '1 bife patinho grelhado',
-    'Abóbora cabotiá cozida': '1 colher de servir abobora cozida',
-    'Chuchu cozido': '1 escumadeira chuchu cozido',
-    'Banana prata': '1 banana prata',
-    'Iogurte natural desnatado': '1 copo americano iogurte natural desnatado',
+    'Pão francês': '50 pao frances',
+    'Ovo cozido': '45 ovo cozido',
+    'Mamão Formosa': '170 mamao formosa',
+    'Arroz branco cozido': '85 arroz tipo 1 cozido',
+    'Feijão carioca cozido': '140 feijao carioca cozido',
+    'Patinho grelhado sem gordura': '100 patinho grelhado',
+    'Abóbora cabotiá cozida': '72 abobora cabotia cozida',
+    'Chuchu cozido': '110 chuchu cozido',
+    'Banana prata': '75 banana prata',
+    'Iogurte natural desnatado': '150 iogurte natural desnatado',
   }
 
   const pela = (texto: string) => {
@@ -161,8 +178,8 @@ describe('CA-1469: a cozinha e o feijão vêm da Base MetaNutri', () => {
     return r
   }
 
-  it('cada linha da tabela: o nome para a paciente, a medida, os gramas e as calorias', () => {
-    const itens = DIA_EM_MEDIDAS.flatMap((refeicao) => refeicao.itens)
+  it('CA-1605: cada linha da tabela vem da base: o nome para a paciente, os gramas e as calorias', () => {
+    const itens = DIA_EM_GRAMAS.flatMap((refeicao) => refeicao.itens)
     expect(itens).toHaveLength(Object.keys(BUSCA).length)
     for (const item of itens) {
       const texto = BUSCA[item.alimento]
@@ -171,17 +188,36 @@ describe('CA-1469: a cozinha e o feijão vêm da Base MetaNutri', () => {
       const gramas = r.gramas ?? 0
       expect(item, texto).toEqual({
         alimento: nomeParaPaciente(r.alimento),
-        medida: leituraDoResultado(r)?.split(' · ')[0],
         gramas: `${formatarNumero(gramas, 0)} g`,
         kcal: `${formatarNumero(((r.alimento.nutrientes.energia_kcal ?? 0) * gramas) / 100, 0)} kcal`,
       })
     }
   })
 
+  it('CA-1605: os pesos são os de hoje (o retrato, para quem lê o teste)', () => {
+    expect(DIA_EM_GRAMAS.flatMap((r) => r.itens.map((i) => `${i.alimento} ${i.gramas} ${i.kcal}`))).toEqual([
+      'Pão francês 50 g 150 kcal',
+      'Ovo cozido 45 g 66 kcal',
+      'Mamão Formosa 170 g 77 kcal',
+      'Arroz branco cozido 85 g 109 kcal',
+      'Feijão carioca cozido 140 g 107 kcal',
+      'Patinho grelhado sem gordura 100 g 219 kcal',
+      'Abóbora cabotiá cozida 72 g 35 kcal',
+      'Chuchu cozido 110 g 20 kcal',
+      'Banana prata 75 g 74 kcal',
+      'Iogurte natural desnatado 150 g 62 kcal',
+    ])
+  })
+
+  it('CA-1606: "Leite e outros líquidos entram em mililitros": o leite sai em ml, o iogurte em g', () => {
+    expect(unidadeDo(pela('200 leite de vaca integral').alimento)).toBe('ml')
+    expect(unidadeDo(pela('150 iogurte natural desnatado').alimento)).toBe('g')
+  })
+
   it('as refeições da tabela são as do plano padrão', () => {
-    expect(DIA_EM_MEDIDAS.map((r) => r.refeicao)).toEqual(['Café da manhã', 'Almoço', 'Lanche da tarde'])
+    expect(DIA_EM_GRAMAS.map((r) => r.refeicao)).toEqual(['Café da manhã', 'Almoço', 'Lanche da tarde'])
     const { plano } = oExemplo()
-    for (const refeicao of DIA_EM_MEDIDAS) expect(plano.refeicoes.map((r) => r.nome)).toContain(refeicao.refeicao)
+    for (const refeicao of DIA_EM_GRAMAS) expect(plano.refeicoes.map((r) => r.nome)).toContain(refeicao.refeicao)
   })
 
   it('"1 concha de feijão", como se digita, dá o feijão carioca cozido com 140 g e 107 kcal', () => {
@@ -228,12 +264,10 @@ describe('CA-1473: o alimento próprio segue a publicação 2 (D-540)', () => {
     expect(`${texto.efeito} ${texto.resposta}`).not.toMatch(/100 g|medidas caseiras que/)
   })
 
-  it('ligado: o texto do protótipo', () => {
+  it('ligado: o efeito da chave de hoje (a v4 troca a seção) e a resposta da v3, sem medida caseira (CA-1607)', () => {
     const texto = textoDosAlimentosProprios(true)
     expect(texto.efeito).toBe('Cadastre por 100 g ou pela porção do rótulo, com as medidas caseiras que você usa.')
-    expect(texto.resposta).toBe(
-      'Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras, com as medidas caseiras que usa no consultório.',
-    )
+    expect(texto.resposta).toBe('Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.')
   })
 })
 

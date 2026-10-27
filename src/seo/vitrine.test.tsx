@@ -23,7 +23,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
       'O que falta no plano da Maria, 28 anos?',
       'O plano sai do seu jeito',
       'Como funciona',
-      'Na medida da cozinha',
+      'Grama por grama',
       'Quanto custa',
       'Solo: R$ 34,90 por mês',
       'Perguntas de quem atende',

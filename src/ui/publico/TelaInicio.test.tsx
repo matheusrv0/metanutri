@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { ADEQUACAO_DO_EXEMPLO, CARTOES_DA_VITRINE, COBRIR_CALCIO, DIA_EM_MEDIDAS } from './inicio/exemploDaLanding.ts'
+import { ADEQUACAO_DO_EXEMPLO, CARTOES_DA_VITRINE, COBRIR_CALCIO, DIA_EM_GRAMAS } from './inicio/exemploDaLanding.ts'
 import { precosDaLanding } from './inicio/precosDaLanding.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
@@ -23,29 +23,30 @@ const cartaoDaVitrine = () => {
   return cartao
 }
 
-describe('TelaInicio (spec landing-escura)', () => {
-  it('D-534: o título e as seções, nesta ordem, cada uma com título', () => {
+describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
+  it('D-534 e D-603: o título e as seções, nesta ordem, cada uma com título', () => {
     montar()
     expect(screen.getAllByRole('heading').map((h) => `${h.tagName} ${h.textContent ?? ''}`)).toEqual([
-      'H1 Falta cálcio? 1 copo de iogurte.',
+      'H1 Falta cálcio? 150 g de iogurte.',
       'H2 O que falta no plano da Maria, 28 anos?',
       'H2 O plano sai do seu jeito',
       'H2 Como funciona',
-      'H2 Na medida da cozinha',
+      'H2 Grama por grama',
       'H2 Quanto custa',
       'H2 Perguntas de quem atende',
     ])
   })
 
   describe('topo', () => {
-    it('CA-1454: o título, as duas ações e a frase de para quem é', () => {
+    it('CA-1600: o título em gramas, as duas ações e a frase', () => {
       montar()
-      const topo = screen.getByRole('region', { name: 'Falta cálcio? 1 copo de iogurte.' })
+      const topo = screen.getByRole('region', { name: 'Falta cálcio? 150 g de iogurte.' })
       expect(within(topo).getByRole('button', { name: 'Criar conta grátis' })).toBeInTheDocument()
       expect(within(topo).getByRole('link', { name: 'Ver no plano de exemplo' })).toBeInTheDocument()
       expect(topo).toHaveTextContent(
-        'Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral no plano alimentar e mostra o que comer para completar, em gramas e, quando a base tem, em medida caseira.',
+        'Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral no plano alimentar e mostra o que comer para completar, em gramas.',
       )
+      expect(topo).not.toHaveTextContent(/medida caseira/)
       // A bolinha laranja é o ponto: escondida do leitor de tela, que lê o ponto de verdade.
       const bolinha = topo.querySelector('h1 .bg-landing-laranja')
       expect(bolinha).toHaveAttribute('aria-hidden', 'true')
@@ -79,7 +80,7 @@ describe('TelaInicio (spec landing-escura)', () => {
       expect(cartao).toHaveTextContent('Cálcio640 de 1.000 mg no diaFaltam 260 mg para a meta.')
       expect(within(cartao).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
         'Rúcula, crua60 g · cobre 27% · +8 kcalAdicionar',
-        'Iogurte, natural, desnatado1 copo americano · 150 g · cobre 91% · +62 kcalAdicionar',
+        'Iogurte, natural, desnatado150 g · cobre 91% · +62 kcalAdicionar',
         'Sardinha, assada60 g · cobre 100% · +99 kcalAdicionar',
       ])
       expect(screen.getByRole('button', { name: 'falta cálcio' })).toHaveAttribute('aria-pressed', 'true')
@@ -122,6 +123,21 @@ describe('TelaInicio (spec landing-escura)', () => {
       expect(grupo.getAllByRole('button').every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true)
     })
 
+    it('CA-1602: o campo vivo mostra os gramas, sem medida caseira, e o parágrafo novo', async () => {
+      montar()
+      const vitrine = screen.getByRole('region', { name: 'O que falta no plano da Maria, 28 anos?' })
+      expect(vitrine).toHaveTextContent(
+        'O cálculo usa as referências de ingestão para a idade e o sexo da paciente. Cada sugestão traz os gramas, quanto da falta eles cobrem e as calorias que somam ao dia. Você escolhe o que entra.',
+      )
+      // Os gramas ficam em destaque (a tinta em negrito), como no protótipo.
+      expect(within(cartaoDaVitrine()).getAllByText('60 g')[0]).toHaveClass('font-bold')
+      const usuario = userEvent.setup()
+      for (const exemplo of ['falta cálcio', 'falta vitamina E', 'falta vitamina D']) {
+        await usuario.click(screen.getByRole('button', { name: exemplo }))
+        expect(cartaoDaVitrine().textContent).not.toMatch(/copo|colher|folha|unidade|fatia|concha/)
+      }
+    })
+
     it('CA-1466: o cartão é anunciado quando troca, e o campo tem rótulo', () => {
       montar()
       expect(cartaoDaVitrine()).toHaveAttribute('aria-live', 'polite')
@@ -161,7 +177,7 @@ describe('TelaInicio (spec landing-escura)', () => {
       expect(alergia).toHaveAttribute('aria-checked', 'true')
     })
 
-    it('CA-1473: o alimento próprio segue a publicação 2, na chave e na pergunta', async () => {
+    it('CA-1473 e CA-1607: o alimento próprio segue a publicação 2, na chave e na pergunta', async () => {
       const { unmount } = montar({ formularioNovo: false })
       const usuario = userEvent.setup()
       await usuario.click(screen.getByRole('switch', { name: 'Alimentos que a base ainda não tem' }))
@@ -172,11 +188,11 @@ describe('TelaInicio (spec landing-escura)', () => {
       montar({ formularioNovo: true })
       await usuario.click(screen.getByRole('switch', { name: 'Alimentos que a base ainda não tem' }))
       expect(texto()).toContain('Cadastre por 100 g ou pela porção do rótulo, com as medidas caseiras que você usa.')
-      expect(texto()).toContain('com as medidas caseiras que usa no consultório.')
+      expect(texto()).toContain('Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.')
     })
   })
 
-  describe('Como funciona, cozinha e fotos', () => {
+  describe('Como funciona, Grama por grama e fotos', () => {
     it('CA-1474: três passos sem número, cada um com a chamada e o fragmento do app', () => {
       montar()
       const como = screen.getByRole('region', { name: 'Como funciona' })
@@ -194,17 +210,21 @@ describe('TelaInicio (spec landing-escura)', () => {
       expect(como.textContent).not.toMatch(/(^|\s)0?[1-3][.)](\s|$)|Passo \d/)
     })
 
-    it('CA-1475: a frase, as duas fotos com legenda e a tabela com cabeçalho para o leitor de tela', () => {
+    it('CA-1604: Grama por grama, com as fotos em 16:9, as legendas e a tabela sem medida', () => {
       montar()
-      const cozinha = screen.getByRole('region', { name: 'Na medida da cozinha' })
-      expect(cozinha).toHaveTextContent('A paciente lê o plano como come: em concha, escumadeira e copo americano. Os gramas ficam ao lado, para quem pesa.')
-      expect(within(cozinha).getAllByRole('figure')).toHaveLength(2)
-      expect(cozinha).toHaveTextContent('Dois copos, duas medidas: cada uma tem o seu peso no plano.')
-      const tabela = within(cozinha).getByRole('table', { name: 'Um dia em medidas caseiras, com gramas e calorias' })
-      expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Alimento', 'Medida', 'Gramas', 'Energia'])
-      expect(within(tabela).getAllByRole('rowheader').map((c) => c.textContent)).toEqual(DIA_EM_MEDIDAS.map((r) => r.refeicao))
-      expect(within(tabela).getAllByRole('row')).toHaveLength(1 + DIA_EM_MEDIDAS.length + DIA_EM_MEDIDAS.flatMap((r) => r.itens).length)
-      expect(tabela).toHaveTextContent('Feijão carioca cozido1 concha140 g107 kcal')
+      const gramas = screen.getByRole('region', { name: 'Grama por grama' })
+      expect(gramas).toHaveTextContent('Cada alimento do plano sai com o peso e as calorias da Base MetaNutri.')
+      const figuras = within(gramas).getAllByRole('figure')
+      expect(figuras.map((f) => f.querySelector('figcaption')?.textContent)).toEqual([
+        'Leite e outros líquidos entram em mililitros.',
+        'Salada com frango grelhado, rúcula e pimentão.',
+      ])
+      for (const figura of figuras) expect(figura.querySelector('img')).toHaveClass('aspect-video')
+      const tabela = within(gramas).getByRole('table', { name: 'Um dia de plano, com os gramas e as calorias de cada alimento' })
+      expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Alimento', 'Gramas', 'Energia'])
+      expect(within(tabela).getAllByRole('rowheader').map((c) => c.textContent)).toEqual(DIA_EM_GRAMAS.map((r) => r.refeicao))
+      expect(within(tabela).getAllByRole('row')).toHaveLength(1 + DIA_EM_GRAMAS.length + DIA_EM_GRAMAS.flatMap((r) => r.itens).length)
+      expect(tabela).toHaveTextContent('Feijão carioca cozido140 g107 kcal')
     })
 
     it('CA-1476: as três fotos têm texto alternativo, tamanho reservado, versão de 800 px e carregam preguiçosas', () => {
@@ -255,13 +275,16 @@ describe('TelaInicio (spec landing-escura)', () => {
       expect(aoEscolher).toHaveBeenCalledWith('solo', 'mensal')
     })
 
-    it('CA-1479: seis perguntas fechadas, com as respostas que o app sustenta', async () => {
+    it('CA-1479 e CA-1607: seis perguntas fechadas, com as respostas que o app sustenta, sem medida caseira', async () => {
       montar()
       const perguntas = screen.getByRole('region', { name: 'Perguntas de quem atende' })
       const detalhes = [...perguntas.querySelectorAll('details')]
       expect(detalhes).toHaveLength(6)
       expect(detalhes.every((d) => !d.open)).toBe(true)
-      expect(perguntas).toHaveTextContent('quando a base tem, as medidas caseiras com o peso de cada uma.')
+      expect(perguntas).toHaveTextContent(
+        'Da Base MetaNutri, montada a partir de tabelas oficiais de composição e organizada pela nossa equipe, com os valores de cada alimento por 100 g.',
+      )
+      expect(perguntas).not.toHaveTextContent(/medida/)
       expect(perguntas).toHaveTextContent('Pode, com o e-mail da faculdade e o comprovante de matrícula.')
       expect(perguntas).toHaveTextContent('grátis por 12 meses ou até a formatura, o que vier antes')
       expect(perguntas).toHaveTextContent('se você quiser, o mesmo link mostra o plano alimentar. Sem conta e sem senha.')
@@ -285,6 +308,13 @@ describe('TelaInicio (spec landing-escura)', () => {
   })
 
   describe('texto e acessibilidade', () => {
+    it('CA-1608: o topo, o campo vivo, Grama por grama e as perguntas não falam de medida caseira', () => {
+      montar()
+      for (const nome of ['Falta cálcio? 150 g de iogurte.', 'O que falta no plano da Maria, 28 anos?', 'Grama por grama', 'Perguntas de quem atende']) {
+        expect(screen.getByRole('region', { name: nome }).textContent, nome).not.toMatch(/medida caseira|concha|escumadeira|copo americano/i)
+      }
+    })
+
     it('CA-1481: sem tagline, número de passo, comparação, promessa clínica, "495 kcal" nem "30 minutos"; cada frase uma vez', () => {
       montar()
       const t = texto()

@@ -7,15 +7,16 @@ interface PerguntasDeQuemAtendeProps {
 }
 
 /**
- * "Perguntas de quem atende" (D-541): cada resposta é o que o app faz hoje. As respostas ficam no HTML com a pergunta
- * fechada (CB-535): quem lê a página pré-desenhada, e os buscadores, leem tudo.
+ * "Perguntas de quem atende" (D-541; spec landing-v3, D-606): cada resposta é o que o app faz hoje. As respostas ficam no
+ * HTML com a pergunta fechada (CB-535): quem lê a página pré-desenhada, e os buscadores, leem tudo.
  */
 export function PerguntasDeQuemAtende({ formularioNovo }: PerguntasDeQuemAtendeProps) {
   const perguntas: readonly { readonly pergunta: string; readonly resposta: string }[] = [
     {
       pergunta: 'De onde vêm os valores dos alimentos?',
+      // Spec landing-v3, D-606: a resposta do protótipo v3, sem a medida caseira.
       resposta:
-        'Da Base MetaNutri, montada a partir de tabelas oficiais de composição e organizada pela nossa equipe: cada alimento por 100 g e, quando a base tem, as medidas caseiras com o peso de cada uma.',
+        'Da Base MetaNutri, montada a partir de tabelas oficiais de composição e organizada pela nossa equipe, com os valores de cada alimento por 100 g.',
     },
     {
       pergunta: 'O MetaNutri prescreve no meu lugar?',

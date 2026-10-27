@@ -8,7 +8,8 @@ interface ListaDoCobrirProps {
 
 /**
  * As sugestões do Cobrir desenhadas como a gaveta do app (fragmento de interface, D-550): o "Adicionar" é imagem do
- * botão, não controle; não recebe foco nem clique, e o leitor de tela não o lê.
+ * botão, não controle; não recebe foco nem clique, e o leitor de tela não o lê. A porção sai só em gramas, em negrito
+ * (spec landing-v3, D-602).
  */
 export function ListaDoCobrir({ linhas, daFaltaNaPrimeira = false }: ListaDoCobrirProps) {
   return (
@@ -18,7 +19,8 @@ export function ListaDoCobrir({ linhas, daFaltaNaPrimeira = false }: ListaDoCobr
           <div className="min-w-0">
             <div className="font-bold">{linha.nome}</div>
             <div className="text-[13px] text-landing-tinta-suave">
-              {`${linha.porcao} · cobre `}
+              <span className="font-bold text-landing-tinta">{linha.gramas}</span>
+              {' · cobre '}
               <b className="font-bold text-landing-teal-claro">{linha.cobre}</b>
               {`${daFaltaNaPrimeira && i === 0 ? ' da falta' : ''} · +${linha.kcal} kcal`}
             </div>

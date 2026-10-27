@@ -58,8 +58,8 @@ export function VitrineDoCobrir() {
           </div>
         </div>
         <p data-surge="" className={`max-w-[34ch] pt-2 ${LEAD} leading-[1.55] text-landing-tinta-suave`}>
-          O cálculo usa as referências de ingestão para a idade e o sexo da paciente. Cada sugestão traz a porção, quanto da falta ela cobre e as
-          calorias que soma ao dia. Você escolhe o que entra.
+          O cálculo usa as referências de ingestão para a idade e o sexo da paciente. Cada sugestão traz os gramas, quanto da falta eles cobrem e
+          as calorias que somam ao dia. Você escolhe o que entra.
         </p>
       </div>
       <div role="group" aria-label="Outros exemplos" data-surge="" className="mt-9 flex flex-wrap gap-2.5">
