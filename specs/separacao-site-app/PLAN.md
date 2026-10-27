@@ -189,6 +189,17 @@ uma diz o porquê.
   `VITE_ENDERECO_DO_SITE` sempre, nos dois alvos (vazias valem o padrão de produção), e `src/ui/enderecos.ts` as lê pelo
   nome, sem colchete. O `pluginAlvo.test.ts` monta um pacote com o Supabase no ambiente e confere; o teste de navegador
   da T29 lê o pacote servido.
+- **DP-SA-49 · "Sua conta foi excluída." no Entrar do app.** Depois de excluir a conta, o app ia à landing, que mostrava o
+  aviso (CA-808). Agora a landing é de outro endereço, que não lê o armazenamento da aba do app, e a saída leva a Entrar
+  (D-504). O aviso vai para o alto de Entrar, uma vez, como era na landing. O CA-808 fica adaptado: "abre Entrar com
+  'Sua conta foi excluída.' no topo".
+- **DP-SA-50 · Sair do app para o site por uma função.** `sairParaOSite(endereco)` (`src/ui/enderecos.ts`) faz o
+  `location.replace`: os testes de tela trocam a função (o jsdom não navega), e o app tem um lugar só que deixa o endereço.
+- **DP-SA-51 · Criar conta com sessão vai aonde o plano levaria só quando a sessão já existia.** O app só redireciona
+  `#/criar-conta[...]` se a pessoa chegou nele com sessão; a sessão que nasce do próprio cadastro (sem a confirmação do
+  e-mail, no modo de teste) segue pelo caminho do cadastro (`destinoDepoisDoCadastro`), sem dois destinos na mesma hora.
+- **DP-SA-52 · A raiz sem sessão mostra Entrar sem o "Entre para continuar".** O subtítulo de tela pedida (CA-148) vale
+  para a tela de trabalho; na raiz, Entrar abre com o subtítulo de sempre, "Continue de onde parou.".
 
 ## 1. Tarefas
 
@@ -343,11 +354,14 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `src/seo/prepararPagina.test.tsx`. Depende de: T18. Verifica: CA-1405, CA-1423, CB-511, CB-512.
 - [ ] **T20 · As rotas do app.** `src/App.tsx` (raiz sem sessão vai a Entrar; `inicio`, `precos`, `termos`,
   `privacidade` e `fontes` vão à página do site com `location.replace`; Criar conta com sessão vai a `destinoDoPlano`;
-  depois do "Sair", Entrar), `src/ui/navegacao.ts` (`TELAS_DO_SITE`), `src/main.tsx` (saem `enderecoDoApp`,
+  depois do "Sair", Entrar), `src/ui/navegacao.ts` (`TELAS_DO_SITE` e `enderecoNoSite`), `src/ui/enderecos.ts` e `.test.ts`
+  (`sairParaOSite`, DP-SA-50), `src/main.tsx` (saem `enderecoDoApp`,
   `enderecoDaVitrine` e `marcarAbertura`; entra o `enderecoOficial` antes de tudo), `src/seo/rotaDaPagina.ts` e
   `src/seo/rotaDaPagina.test.ts` (saem), `src/ui/aplicativo/aberturaDaPagina.ts` e
   `src/ui/aplicativo/aberturaDaPagina.test.ts` (saem), `src/ui/publico/conta/TelaEntrar.tsx` e
-  `src/ui/publico/conta/MolduraConta.tsx` ("Conheça o MetaNutri" e a logo levam ao site), testes `src/App.test.tsx`,
+  ~~`src/ui/publico/conta/MolduraConta.tsx`~~ ("Conheça o MetaNutri" e a logo levam ao site: a logo já chama `#/inicio`, que o
+  app manda ao site, e a moldura não muda), `src/ui/publico/AvisoContaExcluida.tsx` e `.test.tsx` (DP-SA-49),
+  testes `src/App.test.tsx`,
   `src/AppConta.test.tsx`, `src/ui/navegacao.test.ts`, `src/ui/telasComServidor.test.tsx`,
   `src/ui/publico/conta/TelaEntrar.test.tsx`, `src/ui/estado/usarConta.test.ts` (o endereço de volta sai da origem do
   app). Depende de: T15, T18. Verifica: CA-1409, CA-1410, CA-1411, CA-1412, CA-1413, CA-1415, CA-1417, CA-1463.
