@@ -291,13 +291,15 @@ export function useTempoDeSessao({ ativo, usuarioId, admin, sairPorTempo, aoSair
   const sair = useCallback(
     async (ate: number) => {
       if (usuarioId === null) return
-      // D-517, passo 2: a cópia de trabalho e os links pendentes vão juntos, com até 10 s. Sem motor (sem cliente da
-      // nuvem), não há o que a memória dele saiba: vale só o navegador.
+      // D-517, passo 2: os links pendentes e a cópia de trabalho, com até 10 s no total. Sem motor (sem cliente da nuvem),
+      // não há o que a memória dele saiba: vale só o navegador. Revisão R8 (DP-SA-44): os links vão antes, porque o reenvio
+      // grava no espaço da conta e conta uma mudança, que assim já vai na cópia; se eles tomarem o prazo, a cópia não sai.
       let salvou = nuvem === null
-      const copia = nuvem?.salvarAgora().then((foi) => {
-        salvou = foi
-      })
-      await esperarNoMaximo(Promise.allSettled([copia, envios.enviarTodos()]), PRAZO_DOS_ENVIOS_MS)
+      const enviar = async () => {
+        await envios.enviarTodos()
+        if (nuvem !== null) salvou = await nuvem.salvarAgora()
+      }
+      await esperarNoMaximo(enviar().catch(() => undefined), PRAZO_DOS_ENVIOS_MS)
       // Passo 3. Revisão R1: decide antes de parar o motor. O pendente da migração (D-123) pode estar só na memória
       // dele, e o parar() regrava a situação: depois dele, o navegador pareceria em dia.
       const base = armazenamentoLocal()
