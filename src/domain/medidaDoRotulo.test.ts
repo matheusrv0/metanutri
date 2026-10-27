@@ -121,12 +121,22 @@ describe('a medida da lista de Medidas caseiras (D-496)', () => {
     expect(lerMedidaDaLista('fatia (30 g)', 25)).toEqual({ nome: 'fatia', gramas: 25 })
   })
 
-  it('CB-462: o nome sem número fica como foi escrito; "pires" não perde o "s"', () => {
+  it('CB-462 e CB-469: o nome sem número fica como foi escrito, menos o plural; "pires" não perde o "s"', () => {
     expect(lerMedidaDaLista('fatia', 25)).toEqual({ nome: 'fatia', gramas: 25 })
-    expect(lerMedidaDaLista('fatias', 25)).toEqual({ nome: 'fatias', gramas: 25 })
     expect(lerMedidaDaLista('  concha da casa ', 120)).toEqual({ nome: 'concha da casa', gramas: 120 })
+    expect(lerMedidaDaLista('pires', 50)).toEqual({ nome: 'pires', gramas: 50 })
+    expect(lerMedidaDaLista('prato simples', 300)).toEqual({ nome: 'prato simples', gramas: 300 })
     expect(lerMedidaDaLista('2 pires', 60)).toEqual({ nome: 'pires', gramas: 30 })
     expect(lerMedidaDaLista('', 30)).toEqual({ nome: '', gramas: 30 })
+  })
+
+  it('CA-1374 (D-508): o nome sem número no plural passa ao singular, com o peso do campo', () => {
+    expect(lerMedidaDaLista('fatias', 30)).toEqual({ nome: 'fatia', gramas: 30 })
+    expect(lerMedidaDaLista('fatias grossas', 40)).toEqual({ nome: 'fatia grossa', gramas: 40 })
+    expect(lerMedidaDaLista('colheres de sopa', 15)).toEqual({ nome: 'colher de sopa', gramas: 15 })
+    expect(lerMedidaDaLista('Conchas da casa (120 g)', 120)).toEqual({ nome: 'Concha da casa', gramas: 120 })
+    expect(lerMedidaDaLista('porções', 80)).toEqual({ nome: 'porção', gramas: 80 })
+    expect(medidas(produto({ medidaCaseira: '', medidas: [{ nome: 'fatias', gramas: 30 }] }))).toEqual([{ nome: 'fatia', gramas: 30 }])
   })
 
   it('CA-1360: o item gravado com "2 fatias · 50 g" lê "fatia · 25 g"', () => {

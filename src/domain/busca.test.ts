@@ -136,6 +136,10 @@ describe('formatarQuantidadeMedida', () => {
     [2, 'filé', '2 filés'],
     [2, 'xícara de chá', '2 xícaras de chá'],
     [2, 'copo de requeijão', '2 copos de requeijão'],
+    // CA-1374 (D-508): a palavra que já termina em "s" não ganha outro.
+    [2, 'pires', '2 pires'],
+    [1.5, 'pires', '1 pires e meio'],
+    [3, 'pires de sobremesa', '3 pires de sobremesa'],
   ] as const)('%f %s -> %s', (q, medida, texto) => {
     expect(formatarQuantidadeMedida(q, medida)).toBe(texto)
   })

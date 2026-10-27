@@ -42,12 +42,12 @@ export function comecaPelaQuantidade(texto: string): boolean {
   return limpo !== '' && lerQuantidade(limpo).resto !== limpo
 }
 
-/** Palavras que já são singulares com "s" no fim (D-496): "2 pires" é o pires de metade do peso. */
-const SINGULAR_COM_S: ReadonlySet<string> = new Set(['pires', 'lápis'])
+/** Palavras que já são singulares com "s" no fim (D-496 e D-508): "2 pires" é o pires de metade do peso. */
+const SINGULAR_COM_S: ReadonlySet<string> = new Set(['pires', 'lápis', 'simples'])
 
 /** "colheres" → "colher", "porções" → "porção", "fatias" → "fatia", "pães" → "pão". */
 function singular(palavra: string): string {
-  if (SINGULAR_COM_S.has(palavra)) return palavra
+  if (SINGULAR_COM_S.has(palavra.toLowerCase())) return palavra
   if (/ões$/.test(palavra) || /ães$/.test(palavra)) return `${palavra.slice(0, -3)}ão`
   if (/[rz]es$/.test(palavra)) return palavra.slice(0, -2)
   if (/éis$/.test(palavra)) return `${palavra.slice(0, -3)}el`
@@ -109,14 +109,29 @@ export function lerMedidaDoRotulo(texto: string, porcaoG: number | null): Medida
 }
 
 /**
+ * O nome sem número escrito no plural, no singular (D-508): "fatias" → "fatia", "fatias grossas" → "fatia grossa",
+ * "Conchas da casa" → "Concha da casa". O resto fica como foi escrito; o nome no singular não muda.
+ */
+function noSingular(texto: string): string {
+  const [primeira = '', segunda, ...demais] = texto.split(' ')
+  const lida = singular(primeira)
+  if (lida === primeira) return texto
+  // O adjetivo logo depois concorda ("grossas" → "grossa"); "de", "da", "do" ficam.
+  const adjetivo = segunda === undefined ? [] : [/^d[aeo]s?$/i.test(segunda) ? segunda : singular(segunda)]
+  return [lida, ...adjetivo, ...demais].join(' ')
+}
+
+/**
  * Uma linha de "Medidas caseiras" do alimento próprio (spec alimentos-e-gramaturas, D-496; G4 da revisão da publicação
  * 2): o nome que começa por uma quantidade é lido como a medida da porção (D-433 e D-491), com o peso do campo: "2 fatias"
  * com 50 g é a fatia de 25 g, e o paciente nunca lê "2 2s fatiass". O peso entre parênteses sai do nome (vale o do
- * campo); o nome sem número fica como foi escrito.
+ * campo); o nome sem número fica como foi escrito, menos o plural, que passa ao singular (D-508: "fatias" com 30 g é a
+ * fatia de 30 g, e o paciente nunca lê "2 fatiass").
  */
 export function lerMedidaDaLista(nome: string, gramas: number): { readonly nome: string; readonly gramas: number } {
   const semPeso = nome.replace(PESO_ENTRE_PARENTESES, ' ').trim().replace(/\s+/g, ' ')
-  if (!comecaPelaQuantidade(semPeso) || !(gramas > 0)) return { nome: semPeso, gramas }
+  if (!comecaPelaQuantidade(semPeso)) return { nome: noSingular(semPeso), gramas }
+  if (!(gramas > 0)) return { nome: semPeso, gramas }
   const lida = lerMedidaDoRotulo(semPeso, gramas)?.medida
   return lida ? { nome: lida.nome, gramas: lida.gramas } : { nome: semPeso, gramas }
 }

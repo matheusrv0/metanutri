@@ -21,6 +21,7 @@ import { ALIMENTOS, alimentosComProdutos, alimentosParaSugerir, buscarAlimento, 
 import { totaisDeItens } from './totais.ts'
 import { trocasDoAlimento } from './trocas.ts'
 import { quantidadeNaFolha, textoDaQuantidade } from './quantidadeNaFolha.ts'
+import { medidaEscolhida } from './medidaDoItem.ts'
 import { planosComAlimento } from './usoDaConta.ts'
 import type { Plano } from './tipos.ts'
 
@@ -504,6 +505,23 @@ describe('a medida caseira da porção no formulário novo (publicação 2, D-49
     registrarProdutos([produtoComoAlimento(salvo)])
     expect(textoDaQuantidade(quantidadeNaFolha(salvo.id, 50, 'medida-e-gramas'))).toBe('2 fatias (50 g)')
     expect(buscarAlimentos('2 fatias de pão caseiro', alimentosComProdutos()).resultados[0]).toMatchObject({ gramas: 50, medida: { nome: 'fatia', quantidade: 2 } })
+  })
+
+  it('CA-1374 (D-508): "pires" e "fatias" sem número: o paciente lê "2 pires" e "2 fatias", nunca "piress" nem "fatiass"', () => {
+    const repo = criarRepositorioProdutos(new Memoria())
+    const salada = repo.salvar(produtoDosDados({ ...CUSCUZ, nome: 'Salada de folhas da casa', tipo: 'preparacao', medidas: [{ nome: 'pires', gramas: 50 }] }))
+    const cuscuz: DadosAlimentoProprio = { ...CUSCUZ, nome: 'Cuscuz de tapioca', tipo: 'preparacao', medidas: [{ nome: 'fatias', gramas: 30 }] }
+    const fatiado = repo.salvar(produtoDosDados(cuscuz))
+    expect(salada.medidas).toEqual([{ nome: 'pires', gramas: 50 }])
+    expect(fatiado.medidas).toEqual([{ nome: 'fatia', gramas: 30 }])
+    registrarProdutos([produtoComoAlimento(salada), produtoComoAlimento(fatiado)])
+    // A nutricionista escolhe "pires" na linha do plano, com 2.
+    const doisPires = medidaEscolhida({ nome: 'pires', gramas: 50 }, 2)
+    expect(textoDaQuantidade(quantidadeNaFolha(salada.id, doisPires.gramas, 'medida-e-gramas', doisPires.medida))).toBe('2 pires (100 g)')
+    expect(textoDaQuantidade(quantidadeNaFolha(fatiado.id, 60, 'medida-e-gramas'))).toBe('2 fatias (60 g)')
+    expect(buscarAlimentos('2 fatias de cuscuz de tapioca', alimentosComProdutos()).resultados[0]).toMatchObject({ gramas: 60, medida: { nome: 'fatia', quantidade: 2 } })
+    // CB-469: "fatia" e "fatias" são a mesma medida.
+    expect(validarAlimentoProprio({ ...cuscuz, medidas: [{ nome: 'fatia', gramas: 30 }, { nome: 'fatias', gramas: 30 }] }).problemas).toContainEqual({ campo: 'medida-1-nome', mensagem: 'Já há uma medida “fatia”.' })
   })
 
   it('CA-1369 (D-503): a medida que a porção vira, para a lista dizer que ela já vale', () => {

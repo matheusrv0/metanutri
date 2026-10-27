@@ -132,6 +132,20 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(janela.queryByText(/^Fica /)).not.toBeInTheDocument()
   })
 
+  it('CA-1374 (D-508): a medida sem número no plural mostra o singular antes de salvar', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    await usuario.click(janela.getByRole('button', { name: 'Adicionar medida' }))
+    await usuario.type(janela.getByLabelText('Nome da medida 1'), 'fatias')
+    await usuario.type(janela.getByLabelText('Peso da medida 1'), '30')
+    expect(janela.getByText('Fica fatia · 30 g.')).toBeInTheDocument()
+    await usuario.clear(janela.getByLabelText('Nome da medida 1'))
+    await usuario.type(janela.getByLabelText('Nome da medida 1'), 'pires')
+    expect(janela.queryByText(/^Fica /)).not.toBeInTheDocument()
+  })
+
   it('CA-1361 e CA-1362 (D-497): "1.200" é milhar; "Tr" e "3 g" marcam o campo e não salvam', async () => {
     render(<TelaProdutos formularioNovo />)
     const usuario = userEvent.setup()
