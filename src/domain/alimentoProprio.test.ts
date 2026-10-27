@@ -15,8 +15,10 @@ import {
   type Produto,
 } from './produtos.ts'
 import { receitaComoAlimento, type Receita } from './receitas.ts'
+import { avisosParaImprimir, montarRestricoes } from './restricoes.ts'
 import { ALIMENTOS, alimentosComProdutos, alimentosParaSugerir, buscarAlimento, registrarProdutos } from './tabelas.ts'
 import { totaisDeItens } from './totais.ts'
+import { trocasDoAlimento } from './trocas.ts'
 import { planosComAlimento } from './usoDaConta.ts'
 import type { Plano } from './tipos.ts'
 
@@ -229,6 +231,39 @@ describe('Cobrir e trocas só com a chave (D-386)', () => {
       const id = registrar(d)
       expect(idsSugeridos(), d.nome).not.toContain(id)
     }
+  })
+})
+
+describe('restrição pelo grupo do alimento próprio (D-492)', () => {
+  const vazio = totaisDeItens([], buscarAlimento)
+  const adequacao = calcularAdequacao(vazio, { sexo: 'F', idadeAnos: 30, condicao: { tipo: 'nenhuma' } }, { tipo: 'individual' })
+  const aplv = montarRestricoes({ marcadas: ['leite'], texto: '', doencas: [], naoGosta: '' })
+  const COALHO: DadosAlimentoProprio = {
+    ...CUSCUZ,
+    nome: 'Coalho do Sertão',
+    nomeParaPaciente: '',
+    grupo: 'Leite e derivados',
+    preparo: 'pronto para consumo',
+    // Rico em cálcio, para vir entre as 5 sugestões quando nada o tira, e gordo como o queijo minas, para ser troca dele.
+    valores: { energia_kcal: 260, proteina_g: 17, carboidrato_g: 3, lipideos_g: 20, calcio_mg: 1200 },
+    medidas: [],
+    sugerirAutomaticamente: true,
+  }
+
+  it('CA-1348: com alergia a leite, o coalho não entra no Cobrir nem nas trocas, e a janela de imprimir o cita', () => {
+    const salvo = criarRepositorioProdutos(new Memoria()).salvar(produtoDosDados(COALHO))
+    registrarProdutos([produtoComoAlimento(salvo)])
+    const cobrir = (restricoes = aplv) => sugerirParaCobrir('calcio_mg', vazio, adequacao, { gastoEnergetico: 2000, alimentos: alimentosParaSugerir(), restricoes }).sugestoes.map((s) => s.alimentoId)
+    // Sem a alergia, ele é sugerido: a restrição é o que tira.
+    expect(cobrir(montarRestricoes({ marcadas: [], texto: '', doencas: [], naoGosta: '' }))).toContain(salvo.id)
+    expect(cobrir()).not.toContain(salvo.id)
+    const queijo = ALIMENTOS.find((a) => a.descricao.trim() === 'Queijo, minas, frescal')
+    if (!queijo) throw new Error('sem queijo')
+    const trocas = (restricoes: typeof aplv) => trocasDoAlimento({ alimentoId: queijo.id, gramas: 30 }, { alimentos: alimentosParaSugerir(), restricoes, porAlimento: 50 }).map((t) => t.alimentoId)
+    expect(trocas(montarRestricoes({ marcadas: [], texto: '', doencas: [], naoGosta: '' }))).toContain(salvo.id)
+    expect(trocas(aplv)).not.toContain(salvo.id)
+    const plano: Plano = { refeicoes: [{ id: 'r', nome: 'Lanche da tarde', horario: '16:00', opcoes: { principal: [{ id: 'i', alimentoId: salvo.id, gramas: 30 }], substituto1: [], substituto2: [] } }] }
+    expect(avisosParaImprimir(plano, buscarAlimento, aplv)).toEqual(['Este plano tem Coalho do Sertão, e a ficha diz Alergia: leite e derivados. Confira antes de imprimir.'])
   })
 })
 

@@ -227,6 +227,8 @@ export const chaveDasRestricoes = (r: RestricoesDoPaciente): string =>
 export interface AlimentoParaRestricao {
   readonly id: number
   readonly descricao: string
+  /** O grupo: no alimento próprio, o que a nutricionista escolheu (D-492). A receita não tem. */
+  readonly categoria?: string
 }
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -257,6 +259,27 @@ function casaSoOsTermos(id: IdRestricao, nome: string): boolean {
 
 const daBase = (id: number) => id >= 1 && id <= ULTIMO_ID_DA_BASE
 
+/**
+ * D-492 (G1 da revisão da publicação 2): o grupo que a nutricionista escolheu para o alimento próprio liga a restrição,
+ * além do nome. "Pescados e frutos do mar" junta peixe e crustáceo: numa alergia, sobrar é mais seguro que faltar.
+ */
+const RESTRICOES_DO_GRUPO: Readonly<Record<string, readonly IdRestricao[]>> = {
+  'Leite e derivados': ['leite', 'lactose'],
+  'Ovos e derivados': ['ovo'],
+  'Pescados e frutos do mar': ['peixe', 'frutos-do-mar', 'vegetariano'],
+  'Carnes e derivados': ['vegetariano'],
+}
+
+/** O leite sem lactose é feito para quem tem a intolerância: pelo grupo, só esse nome tira a restrição. */
+const SEM_LACTOSE: readonly string[] = ['sem lactose', 'zero lactose', '0% lactose', 'lactose free']
+
+function casaPeloGrupo(id: IdRestricao, categoria: string | undefined, nome: string): boolean {
+  if (categoria === undefined) return false
+  if (id === 'vegano') return (['vegetariano', 'leite', 'ovo'] as const).some((outro) => casaPeloGrupo(outro, categoria, nome))
+  if (!(RESTRICOES_DO_GRUPO[categoria] ?? []).includes(id)) return false
+  return id !== 'lactose' || !SEM_LACTOSE.some((e) => nome.includes(e))
+}
+
 /** O aviso da restrição que o alimento pega, ou `null`. */
 export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: RestricoesDoPaciente | readonly string[]): string | null {
   const restricoes = comoRestricoes(valor)
@@ -265,7 +288,8 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
   if (cuidado) return cuidado.aviso
   const nome = semAcento(alimento.descricao)
   for (const grupo of restricoes.grupos) {
-    const pega = daBase(alimento.id) ? idsDaRestricao(grupo.id).has(alimento.id) : casaPeloNome(grupo.id, nome)
+    // A base vale pela lista revisada; fora dela, pelo nome e pelo grupo (D-492).
+    const pega = daBase(alimento.id) ? idsDaRestricao(grupo.id).has(alimento.id) : casaPeloNome(grupo.id, nome) || casaPeloGrupo(grupo.id, alimento.categoria, nome)
     if (pega) return grupo.aviso
   }
   for (const linha of restricoes.textos) {
