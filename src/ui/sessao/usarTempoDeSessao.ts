@@ -172,6 +172,12 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
   const usar = (): void => {
     if (!ligado || saindo) return
     const h = horas()
+    // Revisão R3: o computador dormiu com a aba visível e esta tecla chegou antes do relógio do vigia. A sessão já
+    // venceu: o uso não a renova; sai.
+    if (situacaoDaSessao(h).saida !== null) {
+      conferir()
+      return
+    }
     usoEmMemoria = h.agora
     if (deveGravarUso(ultimaGravacao, h.agora)) {
       gravarMarca(armazenamento, { conta, entrada: h.entrada, admin: h.admin, desvio: h.desvio, ...(h.marca ?? {}), uso: h.agora })

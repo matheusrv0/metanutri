@@ -378,6 +378,18 @@ describe('o vigia da sessão (spec separacao-site-app, D-514 a D-517)', () => {
     expect(sairPorTempo).toHaveBeenCalledOnce()
   })
 
+  it('R3 (revisão): o computador dormiu com a aba visível e a primeira tecla chega antes do relógio do vigia: sai, sem renovar a sessão vencida', async () => {
+    const { result, sairPorTempo } = montar()
+    act(() => vi.setSystemTime(INICIO + 45 * MIN))
+    await act(async () => {
+      window.dispatchEvent(new Event('keydown'))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(lerMarca(localStorage, 'u1')?.uso).toBe(INICIO)
+    expect(result.current.capa).toBe(true)
+    expect(sairPorTempo).toHaveBeenCalledWith({ apagar: true, ate: INICIO })
+  })
+
   it('CA-1458: também quando a janela ganha o foco', async () => {
     const { sairPorTempo } = montar()
     act(() => vi.setSystemTime(INICIO + 13 * HORA))
