@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { ADEQUACAO_DO_EXEMPLO, COBRIR_CALCIO, DIA_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
+import { DIA_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
 import { precosDaLanding } from './inicio/precosDaLanding.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
@@ -282,21 +282,31 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   })
 
   describe('Como funciona, Grama por grama e fotos', () => {
-    it('CA-1474: três passos sem número, cada um com a chamada e o fragmento do app', () => {
+    it('CA-1673: quatro passos numerados de 1 a 4, numa lista ordenada, sem os exemplos', () => {
       montar()
       const como = screen.getByRole('region', { name: 'Como funciona' })
-      const passos = ['Primeiro, digite o que a paciente come.', 'Depois, veja quanto falta.', 'Então, cubra o que falta.']
-      const posicoes = passos.map((p) => (como.textContent ?? '').indexOf(p))
-      expect(posicoes.every((p) => p >= 0)).toBe(true)
-      expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes)
-      expect(como).toHaveTextContent('1 concha de feijão')
-      expect(como).toHaveTextContent('Feijão, carioca, cozido140 g · 107 kcal1 concha')
-      for (const linha of ADEQUACAO_DO_EXEMPLO) expect(como).toHaveTextContent(`${linha.nome}${linha.quanto}`)
-      const cobrir = within(como).getAllByRole('list').at(-1)
-      if (!cobrir) throw new Error('sem a lista do Cobrir')
-      expect(within(cobrir).getAllByRole('listitem')).toHaveLength(COBRIR_CALCIO.linhas.length)
-      expect(cobrir.firstElementChild).toHaveTextContent('cobre 27% da falta')
-      expect(como.textContent).not.toMatch(/(^|\s)0?[1-3][.)](\s|$)|Passo \d/)
+      const lista = within(como).getByRole('list')
+      expect(lista.tagName).toBe('OL')
+      const passos = within(lista).getAllByRole('listitem')
+      expect(passos.map((li) => [li.querySelector('span')?.textContent, li.querySelector('h3')?.textContent])).toEqual([
+        ['1', 'Monte o plano'],
+        ['2', 'Analise a adequação'],
+        ['3', 'Complete com as sugestões'],
+        ['4', 'Entregue e acompanhe'],
+      ])
+      expect(passos[0]).toHaveTextContent('Escolha prescrição rápida ou atendimento completo, busque os alimentos na Base MetaNutri e ajuste os gramas.')
+      expect(passos[3]).toHaveTextContent('Gere o PDF ou o Word, envie o link ao paciente e acompanhe a adesão na tela Adesão.')
+      for (const passo of passos) expect(passo.querySelector('span')).toHaveAttribute('aria-hidden', 'true')
+      expect(como.textContent).not.toMatch(/concha|Etapa Adequação|Cobrir cálcio/)
+    })
+
+    it('CA-1674: a linha acende pela entrada ao rolar (data-revela), com os números acendendo em sequência', () => {
+      montar()
+      const lista = within(screen.getByRole('region', { name: 'Como funciona' })).getByRole('list')
+      expect(lista).toHaveAttribute('data-revela')
+      expect(lista.className).toContain('landing-etapas')
+      const atrasos = [...lista.querySelectorAll<HTMLElement>('.landing-numero')].map((n) => n.style.getPropertyValue('--landing-atraso-numero'))
+      expect(atrasos).toEqual(['0s', '0.6s', '1.1s', '1.6s'])
     })
 
     it('CA-1604: Grama por grama, com as fotos em 16:9, as legendas e a tabela sem medida', () => {

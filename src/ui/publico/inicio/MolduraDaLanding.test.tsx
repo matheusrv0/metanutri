@@ -311,6 +311,21 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
       expect(observados).toEqual(resto)
     })
 
+    it('CA-1674: a peça com data-revela não some; ela é observada e ganha data-dentro quando entra na tela', () => {
+      render(
+        <MolduraDaLanding temSessao={false} aoIrPara={vi.fn()}>
+          <ol data-revela="">
+            <li>passo</li>
+          </ol>
+        </MolduraDaLanding>,
+      )
+      const lista = screen.getByRole('list')
+      expect(observados).toContain(lista)
+      expect(lista).not.toHaveAttribute('data-dentro')
+      act(() => avisar?.([{ target: lista, isIntersecting: true }]))
+      expect(lista).toHaveAttribute('data-dentro')
+    })
+
     it('CA-1486: com menos movimento, nada se esconde (a raiz não é marcada)', () => {
       vi.stubGlobal('matchMedia', (consulta: string) => ({ matches: consulta.includes('reduce') }))
       montar()
