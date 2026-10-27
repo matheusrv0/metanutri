@@ -4,7 +4,8 @@
 // Fica na chave `metanutri:produtos`, a mesma de antes, e entra nos cálculos como qualquer alimento. O item sempre tem
 // `id`, `nome`, `porcaoG` e `porPorcao`, que é tudo o que a versão anterior lê: um alimento por 100 g é um item com
 // porção de 100 g. Os campos novos (tipo, grupo, preparo, unidade, medidas, fonte…) são opcionais na leitura.
-import { lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
+import { lerMedidaDaLista, lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
+import { MENSAGEM_ILEGIVEL } from './numeroDoRotulo.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
@@ -17,11 +18,11 @@ export const PRIMEIRO_ID_PRODUTO = 900_000
 
 /**
  * D-383 (publicação em duas vezes, decisão 4 do coordenador): o formulário novo de "Meus alimentos", "Copiar para Meus
- * alimentos" e "Salvar como alimento" ficam desligados na publicação 1. A versão que está no ar antes desta refaz o item
- * só com os campos que conhece ao editar: uma aba antiga editando um item novo apagaria grupo, medidas e nome para o
- * paciente. Esta versão já lê e preserva tudo; na publicação 2, o coordenador troca para `true`.
+ * alimentos" e "Salvar como alimento" ficaram desligados na publicação 1 (22/10/2026). A versão de antes dela refaz o
+ * item só com os campos que conhece ao editar: uma aba antiga editando um item novo apagaria grupo, medidas e nome para o
+ * paciente. Com a publicação 1 um dia no ar, todo aparelho já lê e preserva tudo; a publicação 2 liga (CA-1157).
  */
-export const MEUS_ALIMENTOS_NOVOS: boolean = false
+export const MEUS_ALIMENTOS_NOVOS: boolean = true
 
 /** CB-371: com os 26 nutrientes, cada item tem cerca de 1,5 KB; a cópia da conta tem teto de 5 MB. */
 export const LIMITE_ALIMENTOS_PROPRIOS = 1000
@@ -181,19 +182,36 @@ export function porCem(valorNaPorcao: number, porcaoG: number): number {
 
 export type DadosProduto = Pick<Produto, 'nome' | 'marca' | 'porcaoG' | 'medidaCaseira' | 'porPorcao'>
 
+/**
+ * D-499 (I7 da revisão da publicação 2): as frases dos erros sem depender do gênero de cada nome. A mensagem vai
+ * embaixo do próprio campo, então "O valor" basta; "Informe" leva o artigo e o pronome de cada macro.
+ */
+const NEGATIVO = 'O valor não pode ser negativo.'
+const PORCAO_ACIMA = 'A porção não pode passar de 2.000 g ou ml.'
+const ARTIGO_DO_MACRO: Readonly<Partial<Record<ChaveNutrienteAlimento, { readonly artigo: string; readonly pronome: string }>>> = {
+  energia_kcal: { artigo: 'a', pronome: 'ela' },
+  proteina_g: { artigo: 'a', pronome: 'ela' },
+  carboidrato_g: { artigo: 'o', pronome: 'ele' },
+  lipideos_g: { artigo: 'a', pronome: 'ela' },
+}
+function informe(chave: ChaveNutrienteAlimento, rotulo: string): string {
+  const { artigo, pronome } = ARTIGO_DO_MACRO[chave] ?? { artigo: 'o', pronome: 'ele' }
+  return `Informe ${artigo} ${rotulo.toLowerCase()}: sem ${pronome}, o alimento não entra nos cálculos.`
+}
+
 /** O cadastro pelo rótulo de antes (publicação 1): os campos obrigatórios do rótulo. */
 export function validarProduto(p: DadosProduto): readonly ProblemaProduto[] {
   const problemas: ProblemaProduto[] = []
   if (p.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'O produto precisa de um nome.' })
   if (!(p.porcaoG > 0)) problemas.push({ campo: 'porcaoG', mensagem: 'A porção precisa ser maior que zero.' })
-  if (p.porcaoG > 2000) problemas.push({ campo: 'porcaoG', mensagem: 'A porção não deve passar de 2000 g ou ml.' })
+  if (p.porcaoG > 2000) problemas.push({ campo: 'porcaoG', mensagem: PORCAO_ACIMA })
 
   for (const campo of CAMPOS_ROTULO) {
     const valor = p.porPorcao[campo.chave]
     if (valor === null || valor === undefined) {
-      problemas.push({ campo: campo.chave, mensagem: `${campo.rotulo} é obrigatório no rótulo.` })
+      problemas.push({ campo: campo.chave, mensagem: 'Obrigatório no rótulo.' })
     } else if (valor < 0) {
-      problemas.push({ campo: campo.chave, mensagem: `${campo.rotulo} não pode ser negativo.` })
+      problemas.push({ campo: campo.chave, mensagem: NEGATIVO })
     }
   }
   problemas.push(...coerencia(p.porPorcao))
@@ -205,10 +223,10 @@ function coerencia(v: Produto['porPorcao']): ProblemaProduto[] {
   const problemas: ProblemaProduto[] = []
   const { acucares_g: acucares, carboidrato_g: carboidrato, gordura_saturada_g: saturada, lipideos_g: lipideos } = v
   if (typeof acucares === 'number' && typeof carboidrato === 'number' && acucares > carboidrato) {
-    problemas.push({ campo: 'acucares_g', mensagem: 'Açúcares não podem passar dos carboidratos totais. Confira o rótulo.' })
+    problemas.push({ campo: 'acucares_g', mensagem: 'Açúcares não podem passar dos carboidratos totais. Confira os valores.' })
   }
   if (typeof saturada === 'number' && typeof lipideos === 'number' && saturada > lipideos) {
-    problemas.push({ campo: 'gordura_saturada_g', mensagem: 'Gordura saturada não pode passar da gordura total. Confira o rótulo.' })
+    problemas.push({ campo: 'gordura_saturada_g', mensagem: 'Gordura saturada não pode passar da gordura total. Confira os valores.' })
   }
   return problemas
 }
@@ -226,7 +244,7 @@ export interface DadosAlimentoProprio {
   readonly base: 'por100' | 'porcao'
   /** A porção dos valores quando `base` é "porcao"; 100 quando é "por100". */
   readonly porcaoG: number | null
-  /** Como a porção se chama ("pote"): vira medida (A11). */
+  /** A medida caseira da porção como no rótulo ("1 pote", "4 colheres de sopa"): vira medida (A11, D-491). */
   readonly nomeDaPorcao: string
   readonly valores: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>
   readonly medidas: readonly MedidaDoProprio[]
@@ -269,35 +287,52 @@ export function energiaIncoerente(v: Readonly<Partial<Record<ChaveNutrienteAlime
 }
 
 const inteiro = (n: number): string => String(Math.round(n))
+const comDuasCasas = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
+/** D-501: o óleo, o mais energético dos alimentos, tem 884 kcal em 100 g. */
+const ENERGIA_MAXIMA_KCAL = 900
 
 /**
  * D-384 e CA-1142 a CA-1144: o que impede salvar (problemas) e o que só pede conferência (avisos). Os valores são
- * conferidos como foram digitados e, nas somas, por 100 g.
+ * conferidos como foram digitados e, nas somas, por 100 g. `ilegiveis` são os campos com texto que não é número
+ * (D-497): o problema deles vem no lugar de "Informe…".
  */
-export function validarAlimentoProprio(d: DadosAlimentoProprio): { readonly problemas: readonly ProblemaProduto[]; readonly avisos: readonly AvisoAlimentoProprio[] } {
+export function validarAlimentoProprio(
+  d: DadosAlimentoProprio,
+  ilegiveis: readonly string[] = [],
+): { readonly problemas: readonly ProblemaProduto[]; readonly avisos: readonly AvisoAlimentoProprio[] } {
   const problemas: ProblemaProduto[] = []
   const avisos: AvisoAlimentoProprio[] = []
+  // Na base "por 100 g", o campo da porção nem aparece: o que ficou escrito nele não conta.
+  const ilegivel = (campo: string) => ilegiveis.includes(campo) && (campo !== 'porcaoG' || d.base === 'porcao')
+  for (const campo of new Set(ilegiveis)) if (ilegivel(campo)) problemas.push({ campo, mensagem: MENSAGEM_ILEGIVEL })
   if (d.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'O alimento precisa de um nome.' })
   if (d.nome.length > 120) problemas.push({ campo: 'nome', mensagem: 'O nome tem mais de 120 caracteres.' })
   if (d.nomeParaPaciente.length > 120) problemas.push({ campo: 'nomeParaPaciente', mensagem: 'O nome para o paciente tem mais de 120 caracteres.' })
   if (d.grupo.trim() === '') problemas.push({ campo: 'grupo', mensagem: 'Escolha o grupo do alimento.' })
   if (d.tipo === 'alimento' && d.preparo === null) problemas.push({ campo: 'preparo', mensagem: 'Diga como o alimento é servido: cru, cozido, assado…' })
-  if (d.base === 'porcao') {
+  if (d.base === 'porcao' && !ilegivel('porcaoG')) {
     if (d.porcaoG === null || !(d.porcaoG > 0)) problemas.push({ campo: 'porcaoG', mensagem: 'A porção precisa ser maior que zero.' })
-    else if (d.porcaoG > 2000) problemas.push({ campo: 'porcaoG', mensagem: 'A porção não deve passar de 2.000 g ou ml.' })
+    else if (d.porcaoG > 2000) problemas.push({ campo: 'porcaoG', mensagem: PORCAO_ACIMA })
   }
   for (const campo of CAMPOS_MACROS) {
     const v = d.valores[campo.chave]
-    if (v === null || v === undefined) problemas.push({ campo: campo.chave, mensagem: `Informe ${campo.rotulo.toLowerCase()}: sem ela, o alimento não entra nos cálculos.` })
-    else if (v < 0) problemas.push({ campo: campo.chave, mensagem: `${campo.rotulo} não pode ser negativa.` })
+    if (ilegivel(campo.chave)) continue
+    if (v === null || v === undefined) problemas.push({ campo: campo.chave, mensagem: informe(campo.chave, campo.rotulo) })
+    else if (v < 0) problemas.push({ campo: campo.chave, mensagem: NEGATIVO })
   }
   for (const campo of [...CAMPOS_GERAIS, ...CAMPOS_MICROS]) {
     const v = d.valores[campo.chave]
-    if (typeof v === 'number' && v < 0) problemas.push({ campo: campo.chave, mensagem: `${campo.rotulo} não pode ser negativo.` })
+    if (typeof v === 'number' && v < 0) problemas.push({ campo: campo.chave, mensagem: NEGATIVO })
   }
   problemas.push(...coerencia(d.valores))
+  // D-502 (I13): cada erro no próprio campo; a medida repetida (depois da leitura da D-496) não some em silêncio.
+  const nomesVistos = new Set<string>()
   d.medidas.forEach((m, i) => {
-    if (m.nome.trim() === '' || !(m.gramas > 0) || m.gramas > 2000) problemas.push({ campo: `medida-${i}`, mensagem: 'Cada medida precisa de nome e de peso entre 0 e 2.000 g.' })
+    const lida = lerMedidaDaLista(m.nome, m.gramas)
+    if (lida.nome === '') problemas.push({ campo: `medida-${i}-nome`, mensagem: 'Dê um nome à medida.' })
+    else if (nomesVistos.has(lida.nome)) problemas.push({ campo: `medida-${i}-nome`, mensagem: `Já há uma medida “${lida.nome}”.` })
+    if (!(m.gramas > 0) || m.gramas > 2000) problemas.push({ campo: `medida-${i}-peso`, mensagem: `Peso maior que 0 e até 2.000 ${d.unidade}.` })
+    if (lida.nome !== '') nomesVistos.add(lida.nome)
   })
   if (d.fonte === null) problemas.push({ campo: 'fonte', mensagem: 'Diga de onde vieram os valores.' })
   else if (d.fonte.tipo === 'outra' && d.fonte.texto.trim() === '') problemas.push({ campo: 'fonte', mensagem: 'Escreva de onde vieram os valores.' })
@@ -306,7 +341,12 @@ export function validarAlimentoProprio(d: DadosAlimentoProprio): { readonly prob
   const por100 = valoresPor100(d)
   if (por100) {
     const soma = ['proteina_g', 'carboidrato_g', 'lipideos_g', 'fibra_g'].reduce((t, chave) => t + (por100[chave as ChaveNutrienteAlimento] ?? 0), 0)
-    if (soma > 105) problemas.push({ campo: 'soma', mensagem: `Proteína, carboidrato, gordura e fibra somam ${inteiro(soma)} g em 100 g. Confira os valores.` })
+    if (soma > 105) problemas.push({ campo: 'soma', mensagem: `Proteína, carboidrato, gordura e fibra passam de 105 g em 100 g (somam ${comDuasCasas.format(soma)} g). Confira os valores.` })
+    // D-501 (I10): nem óleo passa de 900 kcal em 100 g; acima disso, é o kJ do rótulo digitado como kcal.
+    const energia = por100.energia_kcal
+    if (typeof energia === 'number' && energia > ENERGIA_MAXIMA_KCAL && !ilegivel('energia_kcal')) {
+      problemas.push({ campo: 'energia_kcal', mensagem: `Energia acima de ${ENERGIA_MAXIMA_KCAL} kcal em 100 ${d.unidade}. O rótulo traz kJ e kcal: use o valor em kcal.` })
+    }
     if (energiaIncoerente(d.valores)) {
       const pelosMacros = energiaPelosMacros(d.valores) ?? 0
       avisos.push({ campo: 'energia_kcal', mensagem: `Pelos macros, dá ${inteiro(pelosMacros)} kcal; você digitou ${inteiro(d.valores.energia_kcal ?? 0)}. Confira.` })
@@ -336,13 +376,14 @@ function medidaDoRotulo(p: Produto): MedidaLidaDoRotulo | null {
  * colheres de sopa" ganha "colher de sopa · 10 g" e "porção · 40 g". Com o mesmo nome, vale a do cadastro.
  */
 function medidasDoProduto(p: Produto): readonly MedidaDoProprio[] {
-  const lidas = Array.isArray(p.medidas)
+  const validas = Array.isArray(p.medidas)
     ? p.medidas.filter((m): m is MedidaDoProprio => typeof m === 'object' && m !== null && typeof m.nome === 'string' && m.nome.trim() !== '' && typeof m.gramas === 'number' && m.gramas > 0)
     : []
   const rotulo = medidaDoRotulo(p)
   const doRotulo: MedidaDoProprio[] = rotulo ? [...(rotulo.medida ? [{ nome: rotulo.medida.nome, gramas: rotulo.medida.gramas }] : []), { nome: 'porção', gramas: rotulo.porcaoG }] : []
-  const medidas = [...lidas]
-  for (const m of doRotulo) if (!medidas.some((x) => x.nome === m.nome)) medidas.push(m)
+  const medidas: MedidaDoProprio[] = []
+  // D-496: "2 fatias · 50 g" gravada antes é lida como "fatia · 25 g".
+  for (const m of [...validas.map((v) => lerMedidaDaLista(v.nome, v.gramas)), ...doRotulo]) if (!medidas.some((x) => x.nome === m.nome)) medidas.push(m)
   return medidas
 }
 
@@ -418,6 +459,14 @@ function ehProduto(v: unknown): v is Produto {
   return typeof o['id'] === 'number' && typeof o['nome'] === 'string' && typeof o['porcaoG'] === 'number' && typeof o['porPorcao'] === 'object' && o['porPorcao'] !== null
 }
 
+const texto = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/**
+ * D-498 (G6 da revisão da publicação 2): o item de uma versão antiga, de uma importação ou mexido à mão pode vir sem
+ * os campos de texto; na leitura eles valem vazio, e a tela não quebra. A gravação continua com o item como veio.
+ */
+const comTextos = (p: Produto): Produto => ({ ...p, marca: texto(p.marca), codigoBarras: texto(p.codigoBarras), medidaCaseira: texto(p.medidaCaseira), criadoEm: texto(p.criadoEm) })
+
 /** Os dados sem as chaves indefinidas: elas não apagam o que o item já tinha. */
 const semIndefinidos = (o: object): Record<string, unknown> => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
@@ -446,7 +495,7 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
     }
   }
 
-  const ler = (): Produto[] => lerBruto().filter(ehProduto)
+  const ler = (): Produto[] => lerBruto().filter(ehProduto).map(comTextos)
   const idDe = (v: unknown): unknown => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>)['id'] : undefined)
 
   return {
@@ -462,7 +511,7 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
       const bruto = lerBruto()
       const lista = ler()
       if (dados.id === undefined && lista.length >= LIMITE_ALIMENTOS_PROPRIOS) {
-        throw new RangeError(`Você já tem ${LIMITE_ALIMENTOS_PROPRIOS} alimentos cadastrados, o limite da conta. Exclua um que não usa mais.`)
+        throw new RangeError(`Você já tem ${LIMITE_ALIMENTOS_PROPRIOS.toLocaleString('pt-BR')} alimentos cadastrados, o limite da conta. Exclua um que não usa mais.`)
       }
       const id = dados.id ?? Math.max(PRIMEIRO_ID_PRODUTO - 1, ...lista.map((p) => p.id), ...idsMarcados(armazenamento)) + 1
       const posicao = bruto.findIndex((v) => idDe(v) === id)

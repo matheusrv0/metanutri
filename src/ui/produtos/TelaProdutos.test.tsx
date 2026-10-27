@@ -38,6 +38,7 @@ const iogurte: Produto = {
   criadoEm: '2026-09-15T12:00:00.000Z',
 }
 
+// A janela antiga do rótulo (formularioNovo={false}) fica como volta segura da publicação 2 (D-383).
 describe('Produto pelo rótulo', () => {
   beforeEach(() => localStorage.clear())
 
@@ -73,7 +74,7 @@ describe('Produto pelo rótulo', () => {
   })
 
   it('CA-1335 (D-485): "Obrigatório no rótulo" diz o que mais a RDC 429/2020 obriga, sem campo novo', async () => {
-    render(<TelaProdutos />)
+    render(<TelaProdutos formularioNovo={false} />)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Cadastrar pelo rótulo' }))
     const janela = within(screen.getByRole('dialog', { name: 'Cadastrar produto pelo rótulo' }))
     const secao = janela.getByRole('heading', { name: 'Obrigatório no rótulo' }).closest('section')
@@ -85,7 +86,7 @@ describe('Produto pelo rótulo', () => {
   })
 
   it('cadastra pela tela e mostra o produto na lista', async () => {
-    render(<TelaProdutos />)
+    render(<TelaProdutos formularioNovo={false} />)
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar pelo rótulo' }))
 
@@ -127,7 +128,7 @@ describe('Produto pelo rótulo', () => {
   })
 
   it('não salva com campo do rótulo faltando', async () => {
-    render(<TelaProdutos />)
+    render(<TelaProdutos formularioNovo={false} />)
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar pelo rótulo' }))
     const janela = within(screen.getByRole('dialog'))

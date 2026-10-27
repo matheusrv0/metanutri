@@ -124,6 +124,75 @@ describe('Alimento próprio pelo nome (CA-1078)', () => {
   })
 })
 
+describe('Alimento próprio pelo grupo (D-492)', () => {
+  const doGrupo = (descricao: string, categoria: string, id = 900_001) => ({ id, descricao, categoria })
+
+  it('CA-1348: "Leite e derivados" pega a alergia a leite, a lactose e o vegano, com o nome neutro', () => {
+    const coalho = doGrupo('Coalho do Sertão', 'Leite e derivados')
+    expect(restricaoDoAlimento(coalho, marcadas('leite'))).toBe('Alergia: leite e derivados')
+    expect(restricaoDoAlimento(coalho, marcadas('lactose'))).toBe('Intolerância: lactose')
+    expect(casaRestricao(coalho, marcadas('vegano'))).toBe(true)
+    expect(casaRestricao(coalho, marcadas('ovo', 'trigo', 'vegetariano'))).toBe(false)
+  })
+
+  it('CA-1349: ovos, pescados e carnes pelo grupo; cereais, não', () => {
+    expect(restricaoDoAlimento(doGrupo('Fritada da casa', 'Ovos e derivados'), marcadas('ovo'))).toBe('Alergia: ovo')
+    const caldeirada = doGrupo('Caldeirada do Pará', 'Pescados e frutos do mar')
+    // D-511: pelo grupo, o aviso diz o grupo.
+    expect(restricaoDoAlimento(caldeirada, marcadas('peixe'))).toBe('Alergia: peixe (grupo Pescados e frutos do mar)')
+    expect(restricaoDoAlimento(caldeirada, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar)')
+    expect(restricaoDoAlimento(caldeirada, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    expect(restricaoDoAlimento(doGrupo('Paçoca de pilão', 'Carnes e derivados'), marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    expect(casaRestricao(doGrupo('Paçoca de pilão', 'Carnes e derivados'), marcadas('vegano'))).toBe(true)
+    expect(casaRestricao(doGrupo('Cuscuz da casa', 'Cereais e derivados'), marcadas('leite', 'ovo', 'peixe', 'frutos-do-mar', 'vegano'))).toBe(false)
+  })
+
+  it('CA-1377 (D-511): o aviso que vem do grupo "Pescados e frutos do mar" diz o grupo; o que vem do nome, não (CB-470)', () => {
+    const pirarucu = doGrupo('Pirarucu de manta', 'Pescados e frutos do mar')
+    const sururu = doGrupo('Sururu do Mundaú', 'Pescados e frutos do mar', 900_002)
+    expect(restricaoDoAlimento(pirarucu, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar)')
+    expect(restricaoDoAlimento(sururu, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
+    expect(restricaoDoAlimento(pirarucu, marcadas('peixe'))).toBe('Alergia: peixe')
+    expect(restricaoDoAlimento(sururu, marcadas('peixe'))).toBe('Alergia: peixe (grupo Pescados e frutos do mar)')
+    // A linha de texto que nomeia o grupo também diz de onde vem; o vegetariano não muda.
+    expect(restricaoDoAlimento(pirarucu, { grupos: [{ id: 'frutos-do-mar', aviso: 'Não come: crustáceos e frutos do mar' }], textos: [], naoGosta: [] })).toBe(
+      'Não come: crustáceos e frutos do mar (grupo Pescados e frutos do mar)',
+    )
+    expect(restricaoDoAlimento(pirarucu, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    // O alimento da base vale pela lista revisada, sem o grupo no texto.
+    expect(restricaoDoAlimento(porNome('Camarão, Rio Grande, grande, cozido'), marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
+  })
+
+  it('CA-1350: "vegetal" sozinho não tira o leite; leite, bebida e queijo vegetais e vegano tiram', () => {
+    const requeijao = doGrupo('Requeijão cremoso com gordura vegetal (Serra Azul)', 'Outros alimentos industrializados')
+    expect(restricaoDoAlimento(requeijao, marcadas('leite'))).toBe('Alergia: leite e derivados')
+    expect(restricaoDoAlimento(requeijao, marcadas('lactose'))).toBe('Intolerância: lactose')
+    for (const nome of ['Leite vegetal de castanha', 'Bebida vegetal de aveia', 'Queijo vegano de castanha']) {
+      expect(casaRestricao(proprio(nome), marcadas('leite')), nome).toBe(false)
+    }
+    expect(casaRestricao(proprio('Hambúrguer vegetal de grão-de-bico'), marcadas('vegetariano'))).toBe(false)
+    expect(casaRestricao(proprio('Frango com legumes e gordura vegetal'), marcadas('vegetariano'))).toBe(true)
+    // "Coalho" é queijo, também sem a palavra "queijo".
+    expect(casaRestricao(proprio('Coalho do Sertão'), marcadas('leite'))).toBe(true)
+  })
+
+  it('CA-1351: o leite sem lactose do grupo tem leite e não tem lactose', () => {
+    const semLactose = doGrupo('Leite sem lactose (Marca)', 'Leite e derivados')
+    expect(casaRestricao(semLactose, marcadas('leite'))).toBe(true)
+    expect(casaRestricao(semLactose, marcadas('lactose'))).toBe(false)
+  })
+
+  it('CB-457: sem grupo (item antigo), vale só o nome', () => {
+    expect(casaRestricao(doGrupo('Coalho do Sertão', 'Meus alimentos'), marcadas('lactose'))).toBe(false)
+    expect(casaRestricao(proprio('Fritada da casa'), marcadas('ovo'))).toBe(false)
+  })
+
+  it('a base continua pela lista revisada, não pelo grupo', () => {
+    // O queijo parmesão da base não tem lactose na lista (D-352), mesmo no grupo Leite e derivados.
+    expect(casaRestricao(porNome('Queijo, parmesão'), marcadas('lactose'))).toBe(false)
+  })
+})
+
 describe('Item do plano e receita (D-353)', () => {
   const item = (alimentoId: number, extra: Partial<ItemPlano> = {}): ItemPlano => ({ id: 'i1', alimentoId, gramas: 100, ...extra })
 

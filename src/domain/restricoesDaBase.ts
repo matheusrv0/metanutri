@@ -173,18 +173,25 @@ const EXCECOES_DO_TRIGO: readonly string[] = [
 ]
 
 /**
+ * D-492 (G1 da revisão da publicação 2): "vegetal" sozinho não tira o leite nem a carne do nome ("Requeijão cremoso com
+ * gordura vegetal" tem leite); só o nome do produto vegetal inteiro.
+ */
+const VEGETAIS_SEM_LEITE: readonly string[] = ['leite vegetal', 'bebida vegetal', 'iogurte vegetal', 'queijo vegetal']
+
+/**
  * Termos para alimento fora da base (alimento próprio, receita), lidos no nome sem acento. `*` no fim casa o começo
  * da palavra ("requeij*" pega "requeijão"); sem `*`, só a palavra inteira ("mel" não pega "melancia"); `^` no começo
- * só casa no início do nome ("^torrada*" pega "Torradas integrais", não "castanha torrada").
+ * só casa no início do nome ("^torrada*" pega "Torradas integrais", não "castanha torrada"). O alimento próprio também
+ * é lido pelo grupo (`restricoes.ts`, D-492).
  */
 export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly termos: readonly string[]; readonly excecoes: readonly string[] }>> = {
   leite: {
-    termos: ['leite', 'leites', 'queijo*', 'iogurte*', 'requeij*', 'manteiga', 'creme de leite', 'nata', 'soro de leite', 'whey', 'caseina', 'ricota', 'coalhada', 'lacteo*', 'lactea*', 'chantilly', 'cream cheese', 'catupiry', 'muçarela', 'mucarela', 'mussarela', 'mozarela', 'parmesao', 'gorgonzola', 'kefir', 'petit suisse'],
-    excecoes: ['leite de coco', 'leite de soja', 'leite de amendoa', 'leite de aveia', 'leite de arroz', 'leite de castanha', 'leite vegetal', 'queijo de soja', 'queijo vegano', 'manteiga de amendoim', 'manteiga de cacau', 'couve manteiga', 'couve-manteiga', 'vegano', 'vegana', 'vegetal'],
+    termos: ['leite', 'leites', 'queijo*', 'iogurte*', 'requeij*', 'manteiga', 'creme de leite', 'nata', 'soro de leite', 'whey', 'caseina', 'ricota', 'coalhada', 'coalho', 'lacteo*', 'lactea*', 'chantilly', 'cream cheese', 'catupiry', 'muçarela', 'mucarela', 'mussarela', 'mozarela', 'parmesao', 'gorgonzola', 'kefir', 'petit suisse'],
+    excecoes: ['leite de coco', 'leite de soja', 'leite de amendoa', 'leite de aveia', 'leite de arroz', 'leite de castanha', ...VEGETAIS_SEM_LEITE, 'queijo de soja', 'queijo vegano', 'manteiga de amendoim', 'manteiga de cacau', 'couve manteiga', 'couve-manteiga', 'vegano', 'vegana'],
   },
   lactose: {
     termos: ['leite', 'leites', 'iogurte*', 'requeij*', 'creme de leite', 'nata', 'ricota', 'coalhada', 'lacteo*', 'lactea*', 'doce de leite', 'leite condensado', 'minas frescal', 'petit suisse', 'cream cheese', 'catupiry', 'kefir', 'chantilly'],
-    excecoes: ['sem lactose', 'zero lactose', '0% lactose', 'lactose free', 'leite de coco', 'leite de soja', 'leite de amendoa', 'leite de aveia', 'leite de arroz', 'leite de castanha', 'leite vegetal', 'vegano', 'vegana', 'vegetal'],
+    excecoes: ['sem lactose', 'zero lactose', '0% lactose', 'lactose free', 'leite de coco', 'leite de soja', 'leite de amendoa', 'leite de aveia', 'leite de arroz', 'leite de castanha', ...VEGETAIS_SEM_LEITE, 'vegano', 'vegana'],
   },
   ovo: {
     termos: ['ovo', 'ovos', 'omelete', 'maionese', 'gema', 'gemas', 'clara', 'claras', 'quindim', 'suspiro', 'merengue'],
@@ -220,7 +227,7 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
   },
   vegetariano: {
     termos: ['carne', 'carnes', 'frango', 'galinha', 'porco', 'suino*', 'bovino*', 'boi', 'presunto', 'bacon', 'linguica*', 'salsicha*', 'mortadela', 'salame', 'peito de peru', 'peru', 'hamburguer*', 'almondega*', 'charque', 'figado', 'toucinho', 'gelatina', 'mocoto', 'bife', 'costela', 'picanha', 'patinho', 'lombo', 'pernil', 'cordeiro', 'carneiro', 'pato', 'coxinha', 'atum', 'sardinha*', 'peixe*', 'salmao', 'bacalhau', 'tilapia', 'camarao', 'camaroes', 'frutos do mar', 'kani', 'surimi', 'caldo de carne', 'caldo de galinha'],
-    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'vegetal', 'plant based'],
+    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'salsicha vegetal', 'linguica vegetal', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'plant based'],
   },
   // Vegano é Vegetariano, Leite e derivados e Ovo pelos termos de cada um, e mais o mel (`restricoes.ts`).
   vegano: {

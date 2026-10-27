@@ -92,7 +92,7 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
             {formularioNovo ? 'Novo alimento' : 'Cadastrar pelo rótulo'}
           </Button>
         </div>
-        {noLimite ? <p className="text-sm text-warningtext">{`Você chegou a ${LIMITE_ALIMENTOS_PROPRIOS} alimentos, o limite da conta. Exclua um que não usa mais para cadastrar outro.`}</p> : null}
+        {noLimite ? <p className="text-sm text-warningtext">{`Você chegou a ${LIMITE_ALIMENTOS_PROPRIOS.toLocaleString('pt-BR')} alimentos, o limite da conta. Exclua um que não usa mais para cadastrar outro.`}</p> : null}
         {/* Sempre montado: a região viva só anuncia o que muda dentro dela. */}
         <p role="status" className={mensagem ? 'text-sm text-muted-foreground' : 'sr-only'}>
           {mensagem}

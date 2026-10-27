@@ -1,7 +1,7 @@
 // A medida caseira do rótulo vale (spec alimentos-e-gramaturas, correção A, D-433; G5 da revisão como usuária e
 // Importante 3 da revisão de código).
 import { buscarAlimentos, leituraDoResultado, medidasDoAlimento, registrarMedidasProprias } from './busca.ts'
-import { lerMedidaDoRotulo, medidaCaseiraDaLeitura } from './medidaDoRotulo.ts'
+import { lerMedidaDaLista, lerMedidaDoRotulo, medidaCaseiraDaLeitura } from './medidaDoRotulo.ts'
 import { produtoComoAlimento, type Produto } from './produtos.ts'
 import { alimentosComProdutos, registrarProdutos } from './tabelas.ts'
 
@@ -105,5 +105,41 @@ describe('o alimento próprio com a medida do rótulo', () => {
       { nome: 'colher de sopa', gramas: 10 },
       { nome: 'porção', gramas: 40 },
     ])
+  })
+})
+
+describe('a medida da lista de Medidas caseiras (D-496)', () => {
+  it('CA-1360: "2 fatias" com 50 g é a fatia de 25 g; "1/2 xícara" com 40 g, a xícara de chá de 80 g', () => {
+    expect(lerMedidaDaLista('2 fatias', 50)).toEqual({ nome: 'fatia', gramas: 25 })
+    expect(lerMedidaDaLista('1/2 xícara', 40)).toEqual({ nome: 'xícara de chá', gramas: 80 })
+    expect(lerMedidaDaLista('meia xícara de chá', 40)).toEqual({ nome: 'xícara de chá', gramas: 80 })
+    expect(lerMedidaDaLista('3 colheres (sopa)', 30)).toEqual({ nome: 'colher de sopa', gramas: 10 })
+  })
+
+  it('o peso entre parênteses sai do nome, e vale o do campo', () => {
+    expect(lerMedidaDaLista('2 fatias (60 g)', 50)).toEqual({ nome: 'fatia', gramas: 25 })
+    expect(lerMedidaDaLista('fatia (30 g)', 25)).toEqual({ nome: 'fatia', gramas: 25 })
+  })
+
+  it('CB-462 e CB-469: o nome sem número fica como foi escrito, menos o plural; "pires" não perde o "s"', () => {
+    expect(lerMedidaDaLista('fatia', 25)).toEqual({ nome: 'fatia', gramas: 25 })
+    expect(lerMedidaDaLista('  concha da casa ', 120)).toEqual({ nome: 'concha da casa', gramas: 120 })
+    expect(lerMedidaDaLista('pires', 50)).toEqual({ nome: 'pires', gramas: 50 })
+    expect(lerMedidaDaLista('prato simples', 300)).toEqual({ nome: 'prato simples', gramas: 300 })
+    expect(lerMedidaDaLista('2 pires', 60)).toEqual({ nome: 'pires', gramas: 30 })
+    expect(lerMedidaDaLista('', 30)).toEqual({ nome: '', gramas: 30 })
+  })
+
+  it('CA-1374 (D-508): o nome sem número no plural passa ao singular, com o peso do campo', () => {
+    expect(lerMedidaDaLista('fatias', 30)).toEqual({ nome: 'fatia', gramas: 30 })
+    expect(lerMedidaDaLista('fatias grossas', 40)).toEqual({ nome: 'fatia grossa', gramas: 40 })
+    expect(lerMedidaDaLista('colheres de sopa', 15)).toEqual({ nome: 'colher de sopa', gramas: 15 })
+    expect(lerMedidaDaLista('Conchas da casa (120 g)', 120)).toEqual({ nome: 'Concha da casa', gramas: 120 })
+    expect(lerMedidaDaLista('porções', 80)).toEqual({ nome: 'porção', gramas: 80 })
+    expect(medidas(produto({ medidaCaseira: '', medidas: [{ nome: 'fatias', gramas: 30 }] }))).toEqual([{ nome: 'fatia', gramas: 30 }])
+  })
+
+  it('CA-1360: o item gravado com "2 fatias · 50 g" lê "fatia · 25 g"', () => {
+    expect(medidas(produto({ medidaCaseira: '', medidas: [{ nome: '2 fatias', gramas: 50 }] }))).toEqual([{ nome: 'fatia', gramas: 25 }])
   })
 })

@@ -83,11 +83,14 @@ const QUANTIDADE_MAXIMA = 8
 // medida (não está em PREFERENCIA_MEDIDAS). "ponta" entrou com a ponta de faca (spec revisao-geral-trabalho, D-242).
 const FEMININOS = new Set(['unidade', 'fatia', 'colher', 'concha', 'xícara', 'escumadeira', 'banda', 'metade', 'rodela', 'posta', 'coxa', 'sobrecoxa', 'folha', 'espiga', 'porção', 'ponta'])
 
-/** "unidade" → "unidades", "colher de sopa" → "colheres de sopa", "porção" → "porções". */
+/**
+ * "unidade" → "unidades", "colher de sopa" → "colheres de sopa", "porção" → "porções". A palavra que já termina em "s"
+ * fica igual: "2 pires", nunca "2 piress" (spec alimentos-e-gramaturas, D-508).
+ */
 export function pluralDaMedida(nome: string): string {
   const [primeira = '', ...resto] = nome.split(' ')
   const p = (w: string) =>
-    w.endsWith('ão') ? `${w.slice(0, -2)}ões` : /[rz]$/.test(w) ? `${w}es` : w.endsWith('l') ? `${w.slice(0, -1)}is` : `${w}s`
+    w.endsWith('s') ? w : w.endsWith('ão') ? `${w.slice(0, -2)}ões` : /[rz]$/.test(w) ? `${w}es` : w.endsWith('l') ? `${w.slice(0, -1)}is` : `${w}s`
   // adjetivo logo depois do substantivo concorda ("unidades pequenas", "copos americanos"); "de ..." fica igual
   const [segunda, ...demais] = resto
   const adjetivo = segunda && segunda !== 'de' ? [p(segunda), ...demais] : resto

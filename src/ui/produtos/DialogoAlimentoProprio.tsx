@@ -1,6 +1,9 @@
 import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
+import { comBase, medidaQueAPorcaoDa, motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
+import { lerMedidaDaLista } from '@/domain/medidaDoRotulo.ts'
+import { ehIlegivel, lerNumeroDoRotulo } from '@/domain/numeroDoRotulo.ts'
 import {
   CAMPOS_GERAIS,
   CAMPOS_MACROS,
@@ -86,15 +89,29 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
   const idObservacoes = useId()
   const idSugerir = useId()
 
-  const mudar = (m: Partial<DadosAlimentoProprio>) => setD((atual) => ({ ...atual, ...m }))
-  const mudarValor = (chave: ChaveNutrienteAlimento, v: number | null) => setD((atual) => ({ ...atual, valores: { ...atual.valores, [chave]: v } }))
+  // D-497: os campos com texto que não é número ("Tr", "3 g"); o formulário não salva enquanto houver um.
+  const [ilegiveis, setIlegiveis] = useState<readonly string[]>([])
+  const marcarTexto = (campo: string, texto: string) =>
+    setIlegiveis((atual) => (ehIlegivel(texto) ? (atual.includes(campo) ? atual : [...atual, campo]) : atual.filter((c) => c !== campo)))
+  const desmarcar = (campos: readonly string[]) => setIlegiveis((atual) => atual.filter((c) => !campos.includes(c)))
 
-  const { problemas, avisos } = validarAlimentoProprio(d)
+  const mudar = (m: Partial<DadosAlimentoProprio>) => setD((atual) => ({ ...atual, ...m }))
+  const mudarValor = (chave: ChaveNutrienteAlimento, v: number | null, texto: string) => {
+    setD((atual) => ({ ...atual, valores: { ...atual.valores, [chave]: v } }))
+    marcarTexto(chave, texto)
+  }
+
+  const { problemas, avisos } = validarAlimentoProprio(d, ilegiveis)
+  const camposComProblema = new Set(problemas.map((p) => p.campo)).size
   const erroDe = (campo: string) => (tentou ? problemas.find((p) => p.campo === campo)?.mensagem : undefined)
   const avisoDe = (campo: string) => avisos.find((a) => a.campo === campo)?.mensagem
   const incoerente = energiaIncoerente(d.valores)
+  // D-493: o motivo da regra do alimento próprio trava a chave do Cobrir, como a energia incoerente.
+  const motivoSemSugestao = motivoParaNaoSugerirDados(d)
+  const chaveTravada = incoerente || motivoSemSugestao !== null
   const unidade = d.unidade
   const por100 = valoresPor100(d)
+  const daPorcao = medidaQueAPorcaoDa(d)
 
   const lerCodigo = async (codigo: string) => {
     setProcurando(true)
@@ -118,6 +135,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         medidas: achado.porcao ? [...atual.medidas.filter((m) => m.nome !== 'porção'), { nome: 'porção', gramas: achado.porcao.gramas }] : atual.medidas,
         fonte: { tipo: 'open-food-facts', codigo: achado.codigo, data: new Date().toISOString().slice(0, 10) },
       }))
+      // Os campos que a leitura preencheu passam a ter número.
+      desmarcar(['porcaoG', ...Object.keys(achado.por100)])
       setAvisoCodigo({ tipo: 'info', texto: `Dados da Open Food Facts, por 100 ${achado.unidade}. Confira com a embalagem antes de salvar: a base é colaborativa e pode ter erros.` })
     } catch {
       setAvisoCodigo({ tipo: 'warning', texto: 'Não foi possível consultar o código sem internet. Digite os valores do rótulo.' })
@@ -131,7 +150,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
       key={c.chave}
       rotulo={c.rotulo}
       valor={d.valores[c.chave] ?? null}
-      aoMudar={(v) => mudarValor(c.chave, v)}
+      aoMudar={(v, texto) => mudarValor(c.chave, v, texto)}
+      ler={lerNumeroDoRotulo}
       sufixo={c.unidade}
       erro={erroDe(c.chave)}
       // O aviso da energia fica num quadro só, embaixo dos macros.
@@ -249,18 +269,33 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
               { valor: 'porcao', rotulo: 'Na porção' },
             ]}
             valor={d.base}
-            aoEscolher={(base) => mudar({ base, porcaoG: base === 'por100' ? 100 : d.porcaoG === 100 ? null : d.porcaoG })}
+            aoEscolher={(base) => {
+              // D-504: para "Por 100 g", a medida caseira da porção vira uma linha de Medidas caseiras.
+              setD((atual) => comBase(atual, base))
+              // O campo da porção sai ou volta vazio: o texto que ficou nele não conta mais.
+              desmarcar(['porcaoG'])
+            }}
           />
         </div>
         {d.unidade === 'ml' ? <p className="text-xs text-muted-foreground">Em mililitros, 1 ml conta como 1 g nos cálculos.</p> : null}
         {d.base === 'porcao' ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <CampoNumero rotulo="Porção" valor={d.porcaoG} aoMudar={(porcaoG) => mudar({ porcaoG })} sufixo={unidade} erro={erroDe('porcaoG')} />
+            <CampoNumero
+              rotulo="Porção"
+              valor={d.porcaoG}
+              aoMudar={(porcaoG, texto) => {
+                mudar({ porcaoG })
+                marcarTexto('porcaoG', texto)
+              }}
+              ler={lerNumeroDoRotulo}
+              sufixo={unidade}
+              erro={erroDe('porcaoG')}
+            />
             <CampoTexto
-              rotulo="Nome da porção"
+              rotulo="Medida caseira da porção"
               valor={d.nomeDaPorcao}
               aoMudar={(nomeDaPorcao) => mudar({ nomeDaPorcao })}
-              placeholder="pote, fatia, unidade…"
+              placeholder="1 pote, 4 colheres de sopa…"
               dica="Vira uma medida caseira do alimento."
             />
           </div>
@@ -282,6 +317,12 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
 
         <h3 className="text-sm font-semibold text-heading">Se tiver</h3>
         <div className="grid gap-4 sm:grid-cols-2">{CAMPOS_GERAIS.map(campoNutriente)}</div>
+        {/* D-500 (completa a D-485): o que a rotulagem também obriga e o formulário não pede; sem citar a norma pelo número. */}
+        {d.tipo === 'rotulo' ? (
+          <p className="text-xs text-muted-foreground">
+            A rotulagem também obriga açúcares adicionados; eles não entram no cálculo do plano. Gordura trans acima de zero tira o alimento do Cobrir e das trocas.
+          </p>
+        ) : null}
 
         <details className="group rounded-2xl bg-surfacerow px-4 py-3">
           <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-heading">Vitaminas e minerais (se tiver)</summary>
@@ -292,31 +333,46 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
 
       <section className="flex flex-col gap-3 border-t border-border pt-5" aria-label="Medidas caseiras">
         <h3 className="text-sm font-semibold text-heading">Medidas caseiras</h3>
-        {d.medidas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma medida. Sem ela, o paciente lê o peso.</p> : null}
+        {/* D-503: com a medida da porção lida, a lista não nega que ela existe. */}
+        {d.medidas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {daPorcao
+              ? `A medida da porção (${daPorcao.nome} · ${formatarNumero(daPorcao.gramas, Number.isInteger(daPorcao.gramas) ? 0 : 1)} ${unidade}) já vale. Acrescente outras, se quiser.`
+              : 'Nenhuma medida. Sem ela, o paciente lê o peso.'}
+          </p>
+        ) : null}
         <ul className="flex flex-col gap-2">
-          {d.medidas.map((m, i) => (
-            <li key={i} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-start gap-2">
-              <CampoTexto
-                rotulo={`Nome da medida ${i + 1}`}
-                rotuloOculto
-                valor={m.nome}
-                aoMudar={(nome) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, nome } : x)) })}
-                placeholder="fatia"
-              />
-              <CampoNumero
-                rotulo={`Peso da medida ${i + 1}`}
-                rotuloOculto
-                valor={m.gramas > 0 ? m.gramas : null}
-                aoMudar={(v) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, gramas: v ?? 0 } : x)) })}
-                sufixo={unidade}
-              />
-              <Button type="button" variant="ghost" size="iconsm" aria-label={`Tirar a medida ${m.nome || i + 1}`} onClick={() => mudar({ medidas: d.medidas.filter((_, j) => j !== i) })}>
-                <X aria-hidden="true" />
-              </Button>
-            </li>
-          ))}
+          {d.medidas.map((m, i) => {
+            // D-496: "2 fatias" com 50 g é gravada como a fatia de 25 g; a linha mostra a leitura antes de salvar.
+            const lida = lerMedidaDaLista(m.nome, m.gramas)
+            const mudou = m.nome.trim() !== '' && m.gramas > 0 && (lida.nome !== m.nome.trim() || lida.gramas !== m.gramas)
+            return (
+              <li key={i} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-start gap-2">
+                <CampoTexto
+                  rotulo={`Nome da medida ${i + 1}`}
+                  rotuloOculto
+                  valor={m.nome}
+                  aoMudar={(nome) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, nome } : x)) })}
+                  placeholder="ex.: fatia"
+                  erro={erroDe(`medida-${i}-nome`)}
+                />
+                <CampoNumero
+                  rotulo={`Peso da medida ${i + 1}`}
+                  rotuloOculto
+                  valor={m.gramas > 0 ? m.gramas : null}
+                  aoMudar={(v) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, gramas: v ?? 0 } : x)) })}
+                  ler={lerNumeroDoRotulo}
+                  sufixo={unidade}
+                  erro={erroDe(`medida-${i}-peso`)}
+                />
+                <Button type="button" variant="ghost" size="iconsm" aria-label={`Tirar a medida ${m.nome || i + 1}`} onClick={() => mudar({ medidas: d.medidas.filter((_, j) => j !== i) })}>
+                  <X aria-hidden="true" />
+                </Button>
+                {mudou ? <p className="col-span-3 text-xs text-muted-foreground">{`Fica ${lida.nome} · ${formatarNumero(lida.gramas, Number.isInteger(lida.gramas) ? 0 : 1)} ${unidade}.`}</p> : null}
+              </li>
+            )
+          })}
         </ul>
-        {problemas.some((p) => p.campo.startsWith('medida-')) && tentou ? <p className="text-xs text-errortext">Cada medida precisa de nome e de peso entre 0 e 2.000.</p> : null}
         <Button type="button" variant="lightprimary" size="sm" className="self-start" onClick={() => mudar({ medidas: [...d.medidas, { nome: '', gramas: 0 }] })}>
           <Plus aria-hidden="true" />
           Adicionar medida
@@ -367,8 +423,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
       <div className="flex items-start gap-3 rounded-2xl bg-surfacerow px-4 py-3">
         <Switch
           id={idSugerir}
-          checked={d.sugerirAutomaticamente && !incoerente}
-          disabled={incoerente}
+          checked={d.sugerirAutomaticamente && !chaveTravada}
+          disabled={chaveTravada}
           onCheckedChange={(v) => mudar({ sugerirAutomaticamente: v })}
           aria-describedby={`${idSugerir}-texto`}
           className="mt-0.5"
@@ -376,7 +432,11 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         <Label htmlFor={idSugerir} className="min-h-11 flex-1 cursor-pointer flex-col items-start gap-0.5 font-normal leading-normal">
           <span className="text-sm font-semibold text-heading">Pode aparecer no Cobrir e nas trocas</span>
           <span id={`${idSugerir}-texto`} className="text-xs text-muted-foreground">
-            {incoerente ? 'Confira a energia antes: com ela fora dos macros, o alimento não é sugerido.' : 'Desligado, o alimento só entra quando você o põe no plano.'}
+            {incoerente
+              ? 'Confira a energia antes: com ela fora dos macros, o alimento não é sugerido.'
+              : motivoSemSugestao !== null
+                ? `Não entra no Cobrir nem nas trocas: ${motivoSemSugestao}.`
+                : 'Desligado, o alimento só entra quando você o põe no plano.'}
           </span>
         </Label>
       </div>
@@ -384,7 +444,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
       {tentou && problemas.length > 0 ? (
         <Alert variant="warning">
           <TriangleAlert aria-hidden="true" />
-          <p>{problemas.length === 1 ? 'Falta acertar um campo.' : `Faltam acertar ${problemas.length} campos.`} Eles estão marcados.</p>
+          {/* D-499: contando campos, não mensagens; com o infinitivo, "faltar" fica no singular. */}
+          <p>{camposComProblema === 1 ? 'Falta acertar um campo. Ele está marcado.' : `Falta acertar ${camposComProblema} campos. Eles estão marcados.`}</p>
         </Alert>
       ) : null}
       {erroGeral ? (

@@ -24,6 +24,12 @@ beforeAll(() => {
   Element.prototype.hasPointerCapture ??= () => false
   Element.prototype.releasePointerCapture ??= () => undefined
   Element.prototype.scrollIntoView ??= () => undefined
+  // O Switch do formulário de "Meus alimentos" mede o próprio tamanho.
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
 })
 
 const salva = (id: string, nome: string, extra: Partial<Receita> = {}): Receita => ({
@@ -205,6 +211,23 @@ describe('a biblioteca de receitas (spec receitas-com-calculo)', () => {
     await usuario.clear(screen.getByLabelText('Buscar receita'))
     await usuario.type(screen.getByLabelText('Buscar receita'), 'lasanha')
     expect(screen.getByText('Nenhuma receita com esse nome.')).toBeInTheDocument()
+  })
+
+  it('CA-1358 e CA-1359 (D-495): com óleo, "Salvar como alimento" abre; com coco verde, um aviso nomeia o ingrediente', async () => {
+    const usuario = montar(new Memoria(), [
+      salva('a', 'Arroz da casa', { ingredientes: [...PANQUECA.ingredientes, { alimentoId: 272, gramas: 10 }, { alimentoId: 517, gramas: 2 }] }),
+      salva('b', 'Mingau de coco', { ingredientes: [...PANQUECA.ingredientes, { alimentoId: 591, gramas: 50 }] }),
+    ])
+    await usuario.click(screen.getByRole('button', { name: 'Mais ações de Mingau de coco' }))
+    await usuario.click(screen.getByRole('menuitem', { name: 'Salvar como alimento' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const aviso = screen.getByText(/^“Coco, verde, cru” não tem energia na tabela\./)
+    // Um quadro de aviso, não o texto cinza da lista.
+    expect(aviso.closest('[role="status"]')).toHaveClass('bg-lightwarning')
+    await usuario.click(screen.getByRole('button', { name: 'Mais ações de Arroz da casa' }))
+    await usuario.click(screen.getByRole('menuitem', { name: 'Salvar como alimento' }))
+    expect(screen.getByRole('dialog', { name: 'Novo alimento' })).toBeInTheDocument()
+    expect(screen.queryByText(/não tem energia na tabela/)).not.toBeInTheDocument()
   })
 
   it('CB-274: sem armazenamento, a tela avisa que as receitas valem só nesta aba', () => {

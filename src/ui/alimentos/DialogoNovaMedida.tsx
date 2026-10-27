@@ -19,20 +19,24 @@ interface DialogoNovaMedidaProps {
    */
   readonly aoSalvar: (medida: MedidaCaseira) => string | null
   readonly aoFechar: () => void
+  /** A medida vai para o cadastro do alimento próprio, não para a conta (D-505): a frase diz isso. */
+  readonly noCadastroDoAlimento?: boolean
 }
 
 /** "Concha da minha casa = 120 g" (spec alimentos-e-gramaturas, D-387): o nome e o peso de uma medida. */
-export function DialogoNovaMedida({ alimento, unidade, nomeInicial = '', aoSalvar, aoFechar }: DialogoNovaMedidaProps) {
+export function DialogoNovaMedida({ alimento, unidade, nomeInicial = '', aoSalvar, aoFechar, noCadastroDoAlimento = false }: DialogoNovaMedidaProps) {
   return (
     <Dialog open={alimento !== null} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-w-md">
-        {alimento ? <Formulario descricao={alimento.descricao} unidade={unidade} nomeInicial={nomeInicial} aoSalvar={aoSalvar} aoFechar={aoFechar} /> : null}
+        {alimento ? (
+          <Formulario descricao={alimento.descricao} unidade={unidade} nomeInicial={nomeInicial} aoSalvar={aoSalvar} aoFechar={aoFechar} noCadastroDoAlimento={noCadastroDoAlimento} />
+        ) : null}
       </DialogContent>
     </Dialog>
   )
 }
 
-function Formulario({ descricao, unidade, nomeInicial = '', aoSalvar, aoFechar }: { readonly descricao: string } & Omit<DialogoNovaMedidaProps, 'alimento'>) {
+function Formulario({ descricao, unidade, nomeInicial = '', aoSalvar, aoFechar, noCadastroDoAlimento = false }: { readonly descricao: string } & Omit<DialogoNovaMedidaProps, 'alimento'>) {
   const [nome, setNome] = useState(nomeInicial)
   const [gramas, setGramas] = useState<number | null>(null)
   const [erro, setErro] = useState<{ readonly campo: 'nome' | 'gramas' | 'geral'; readonly mensagem: string } | null>(null)
@@ -55,7 +59,9 @@ function Formulario({ descricao, unidade, nomeInicial = '', aoSalvar, aoFechar }
     >
       <DialogHeader>
         <DialogTitle>Nova medida</DialogTitle>
-        <DialogDescription>{`${descricao}. A medida fica salva na sua conta e aparece primeiro, marcada “sua”.`}</DialogDescription>
+        <DialogDescription>
+          {noCadastroDoAlimento ? `${descricao}. A medida fica no cadastro deste alimento, em Meus alimentos.` : `${descricao}. A medida fica salva na sua conta e aparece primeiro, marcada “sua”.`}
+        </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem]">
         <CampoTexto rotulo="Nome da medida" valor={nome} aoMudar={setNome} placeholder="concha, pote, fatia…" erro={erro?.campo === 'nome' ? erro.mensagem : undefined} />

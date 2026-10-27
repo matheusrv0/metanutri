@@ -1,9 +1,12 @@
 // O formulário de "Meus alimentos" e o item guardado, nos dois sentidos (spec alimentos-e-gramaturas, D-383 a D-385).
 // Puro: a tela lê e escreve por aqui.
 import { medidasDoAlimento } from './busca.ts'
+import { comecaPelaQuantidade, lerMedidaDaLista, lerMedidaDoRotulo } from './medidaDoRotulo.ts'
+import { motivoParaNaoSugerir } from './sugestaoDoProprio.ts'
 import {
   energiaIncoerente,
   GRUPOS_PROPRIOS,
+  produtoComoAlimento,
   type DadosAlimentoProprio,
   type DadosParaSalvar,
   type FonteAlimentoProprio,
@@ -13,8 +16,55 @@ import {
 } from './produtos.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
-/** "1 pote" → "pote" (A11). */
-const nomeDaPorcaoDoTexto = (texto: string): string => /^1\s+([^\d].*)$/.exec(texto.trim())?.[1]?.trim() ?? ''
+/** A medida caseira da porção como o rótulo escreve (D-491): "pote" vira "1 pote"; "4 colheres de sopa" fica como está. */
+const textoDaMedidaCaseira = (texto: string): string => (texto === '' || comecaPelaQuantidade(texto) ? texto : `1 ${texto}`)
+
+/** A medida que a porção vira (A11, D-433 e D-491): "4 colheres de sopa" de 40 g é a colher de sopa de 10 g. */
+function medidaDaPorcao(texto: string, porcaoG: number): MedidaDoProprio | null {
+  const medida = texto === '' ? null : lerMedidaDoRotulo(texto, porcaoG)?.medida
+  return medida ? { nome: medida.nome, gramas: medida.gramas } : null
+}
+
+/**
+ * A medida que a medida caseira da porção vira ao salvar (D-433 e D-491): "4 colheres de sopa" de 40 g é a colher de
+ * sopa de 10 g; "30 g" é a porção de 30 g. A lista de medidas diz que ela já vale (D-503); `null` sem porção válida ou
+ * sem texto, e na base "por 100 g".
+ */
+export function medidaQueAPorcaoDa(d: Pick<DadosAlimentoProprio, 'base' | 'porcaoG' | 'nomeDaPorcao'>): MedidaDoProprio | null {
+  if (d.base !== 'porcao' || d.porcaoG === null || !(d.porcaoG > 0)) return null
+  const texto = textoDaMedidaCaseira(d.nomeDaPorcao.trim())
+  const lida = texto === '' ? null : lerMedidaDoRotulo(texto, d.porcaoG)
+  if (!lida) return null
+  return lida.medida ? { nome: lida.medida.nome, gramas: lida.medida.gramas } : { nome: 'porção', gramas: lida.porcaoG }
+}
+
+/**
+ * Troca "Na porção" por "Por 100 g" e o contrário. Para "Por 100 g", a medida caseira da porção não some: vira uma linha
+ * de Medidas caseiras, se a lista ainda não tem uma com esse nome (D-504). Para "Na porção", a porção fica para digitar.
+ */
+export function comBase(d: DadosAlimentoProprio, base: DadosAlimentoProprio['base']): DadosAlimentoProprio {
+  if (base === d.base) return d
+  if (base === 'porcao') return { ...d, base, porcaoG: d.porcaoG === 100 ? null : d.porcaoG }
+  const daPorcao = medidaQueAPorcaoDa(d)
+  const jaTem = daPorcao !== null && d.medidas.some((m) => lerMedidaDaLista(m.nome, m.gramas).nome === daPorcao.nome)
+  return { ...d, base, porcaoG: 100, nomeDaPorcao: '', medidas: daPorcao && !jaTem ? [...d.medidas, daPorcao] : d.medidas }
+}
+
+/**
+ * D-506 (I9 da revisão da publicação 2): o valor como a ficha mostra, para a cópia da base e a receita não abrirem o
+ * formulário com "76,4241 kcal": a energia inteira; o resto com 1 casa abaixo de 10 e inteiro a partir de 10, e com 2
+ * casas abaixo de 1, para não zerar um micronutriente pequeno (tiamina de 0,04 mg).
+ */
+function comoAFicha(chave: string, v: number): number {
+  const casas = chave === 'energia_kcal' || Math.abs(v) >= 10 ? 0 : Math.abs(v) >= 1 ? 1 : 2
+  const fator = 10 ** casas
+  return Math.round(v * fator) / fator
+}
+
+/** Os valores arredondados como a ficha mostra (D-506); nulo continua nulo. */
+export function valoresComoAFicha(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
+  return Object.fromEntries(Object.entries(v).map(([chave, n]) => [chave, typeof n === 'number' && Number.isFinite(n) ? comoAFicha(chave, n) : null]))
+}
 
 /** Só números de verdade; o resto é "não informado" (nulo). */
 function valoresLimpos(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
@@ -43,17 +93,25 @@ export function dadosEmBranco(tipo: DadosAlimentoProprio['tipo'] = 'alimento'): 
   }
 }
 
-/** O item guardado no formulário (para editar). Item antigo, sem os campos novos, abre como rótulo na porção. */
+const texto = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/**
+ * O item guardado no formulário (para editar). Item antigo, sem os campos novos, abre como rótulo na porção; sem os
+ * campos de texto (D-498), abre com eles vazios.
+ */
 export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
   const base = p.base ?? 'porcao'
-  const nomeDaPorcao = base === 'porcao' ? nomeDaPorcaoDoTexto(p.medidaCaseira) : ''
-  const fonte: FonteAlimentoProprio = p.fonte ?? (p.codigoBarras ? { tipo: 'open-food-facts', codigo: p.codigoBarras, data: p.criadoEm.slice(0, 10) } : { tipo: 'rotulo' })
+  const codigoBarras = texto(p.codigoBarras)
+  // D-491: o texto inteiro, como foi gravado (o rótulo antigo com "4 colheres de sopa" não perde a medida ao salvar).
+  const nomeDaPorcao = base === 'porcao' ? texto(p.medidaCaseira).trim() : ''
+  const daPorcao = medidaDaPorcao(nomeDaPorcao, p.porcaoG)
+  const fonte: FonteAlimentoProprio = p.fonte ?? (codigoBarras ? { tipo: 'open-food-facts', codigo: codigoBarras, data: texto(p.criadoEm).slice(0, 10) } : { tipo: 'rotulo' })
   return {
     tipo: p.tipo ?? 'rotulo',
     nome: p.nome,
     nomeParaPaciente: p.nomeParaPaciente ?? '',
-    marca: p.marca,
-    codigoBarras: p.codigoBarras,
+    marca: texto(p.marca),
+    codigoBarras,
     grupo: p.grupo ?? '',
     preparo: p.preparo ?? null,
     unidade: p.unidade ?? 'g',
@@ -61,7 +119,8 @@ export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
     porcaoG: base === 'por100' ? 100 : p.porcaoG,
     nomeDaPorcao,
     valores: valoresLimpos(p.porPorcao),
-    medidas: (p.medidas ?? []).filter((m) => m.nome !== nomeDaPorcao),
+    // A medida que vem da porção volta a sair dela ao salvar; na lista, apareceria repetida.
+    medidas: (p.medidas ?? []).filter((m) => m.nome !== daPorcao?.nome),
     fonte,
     observacoes: p.observacoes ?? '',
     sugerirAutomaticamente: p.sugerirAutomaticamente === true,
@@ -74,11 +133,12 @@ export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
  */
 export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosParaSalvar {
   const porcaoG = d.base === 'por100' ? 100 : (d.porcaoG ?? 0)
-  const nomeDaPorcao = d.base === 'porcao' ? d.nomeDaPorcao.trim() : ''
+  const medidaCaseira = d.base === 'porcao' ? textoDaMedidaCaseira(d.nomeDaPorcao.trim()) : ''
+  const daPorcao = medidaDaPorcao(medidaCaseira, porcaoG)
   const medidas: MedidaDoProprio[] = []
-  for (const m of [...d.medidas, ...(nomeDaPorcao ? [{ nome: nomeDaPorcao, gramas: porcaoG }] : [])]) {
-    const nome = m.nome.trim()
-    if (nome !== '' && m.gramas > 0 && !medidas.some((x) => x.nome === nome)) medidas.push({ nome, gramas: m.gramas })
+  // D-496: "2 fatias" com 50 g é a fatia de 25 g.
+  for (const m of [...d.medidas.map((x) => lerMedidaDaLista(x.nome, x.gramas)), ...(daPorcao ? [daPorcao] : [])]) {
+    if (m.nome !== '' && m.gramas > 0 && !medidas.some((x) => x.nome === m.nome)) medidas.push({ nome: m.nome, gramas: m.gramas })
   }
   const rotulo = d.tipo === 'rotulo'
   const preparo: PreparoProprio = d.preparo ?? 'pronto para consumo'
@@ -94,14 +154,38 @@ export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosPara
     unidade: d.unidade,
     base: d.base,
     porcaoG,
-    medidaCaseira: nomeDaPorcao ? `1 ${nomeDaPorcao}` : '',
+    medidaCaseira,
     porPorcao: valoresLimpos(d.valores),
     medidas,
     ...(d.fonte ? { fonte: d.fonte } : {}),
     observacoes: d.observacoes.trim(),
-    // D-384: com a energia incoerente, o alimento não é sugerido automaticamente.
-    sugerirAutomaticamente: d.sugerirAutomaticamente && !energiaIncoerente(d.valores),
+    // D-384 e D-493: com a energia incoerente ou com um motivo da regra do alimento próprio, a chave fica desligada.
+    sugerirAutomaticamente: d.sugerirAutomaticamente && !energiaIncoerente(d.valores) && motivoParaNaoSugerirDados(d) === null,
   }
+}
+
+/**
+ * D-493: por que o alimento do formulário não entra no Cobrir nem nas trocas ("gordura trans declarada", "doce"…);
+ * `null` quando pode entrar ou enquanto a porção não vale (os valores por 100 g ainda não existem).
+ */
+export function motivoParaNaoSugerirDados(d: DadosAlimentoProprio): string | null {
+  const porcaoG = d.base === 'por100' ? 100 : d.porcaoG
+  if (porcaoG === null || !(porcaoG > 0)) return null
+  const alimento = produtoComoAlimento({
+    id: 0,
+    codigoBarras: '',
+    nome: d.nome,
+    marca: d.tipo === 'rotulo' ? d.marca : '',
+    porcaoG,
+    medidaCaseira: '',
+    porPorcao: valoresLimpos(d.valores),
+    criadoEm: '',
+    tipo: d.tipo,
+    grupo: d.grupo,
+    preparo: d.preparo ?? 'pronto para consumo',
+    unidade: d.unidade,
+  })
+  return motivoParaNaoSugerir(alimento)
 }
 
 /** O preparo da base no formulário (D-383): "cru", "cozido"… o que a TACO não diz vira "pronto para consumo". */
@@ -127,7 +211,7 @@ export function dadosDaCopiaDaBase(a: Alimento): DadosAlimentoProprio {
     preparo: preparoDaBase(a),
     base: 'por100',
     porcaoG: 100,
-    valores: valoresLimpos(a.nutrientes),
+    valores: valoresComoAFicha(a.nutrientes),
     medidas: medidasDoAlimento(a.id).map((m) => ({ nome: m.nome, gramas: m.gramas })),
     fonte: { tipo: 'copia-da-base', origemId: a.id },
   }
