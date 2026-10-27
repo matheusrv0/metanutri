@@ -200,6 +200,15 @@ uma diz o porquê.
   e-mail, no modo de teste) segue pelo caminho do cadastro (`destinoDepoisDoCadastro`), sem dois destinos na mesma hora.
 - **DP-SA-52 · A raiz sem sessão mostra Entrar sem o "Entre para continuar".** O subtítulo de tela pedida (CA-148) vale
   para a tela de trabalho; na raiz, Entrar abre com o subtítulo de sempre, "Continue de onde parou.".
+- **DP-SA-53 · O site é um componente que troca a página por "Continuar".** `src/site/Site.tsx` (novo, com
+  `Site.test.tsx`) mostra a página da rota ou, quando um caminho para o app acha dado que só existe aqui, a tela
+  "Continuar" ligada ao remetente; o `main.tsx` só faz a limpeza, decide entre ir direto ao app e montar o `Site`. Um
+  componente por arquivo: o `main.tsx` não ganha componente. O endereço do app para cada pedido do site (tela, volta,
+  ícone instalado) é uma função pura de `limpeza.ts`, testada ali (CA-1424 a CA-1426).
+- **DP-SA-54 · Quem conta como dado só aqui.** Depois da limpeza, sobra dado só aqui quando fica algum espaço de conta ou
+  algum dado de antes das contas. As marcas da sessão (`metanutri:sessao`, `metanutri:sessao:saida`), o tema e os
+  pendentes do aparelho (`metanutri:destino-pendente`, `metanutri:email-pendente`) não são dado da pessoa e não
+  levam a "Continuar".
 
 ## 1. Tarefas
 
@@ -378,7 +387,8 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
 - [ ] **T23 · Limpeza e remetente no site.** `src/site/limpeza.ts` e `.test.ts` (em toda visita, apaga toda
   `sb-*-auth-token` e as contas em dia; diz se sobrou dado só aqui), `src/site/remetente.ts` e `.test.ts` (abre o app em
   aba nova sem `noopener`; responde ao pedido; apaga no `recebido`), `src/site/TelaContinuar.tsx` e `.test.tsx` (os
-  quatro estados do D-526, só com o botão "Continuar"), `src/site/main.tsx` (a ordem: limpeza, depois repasse ou
+  quatro estados do D-526, só com o botão "Continuar"), `src/site/Site.tsx` e `.test.tsx` (novos, DP-SA-53),
+  `src/site/main.tsx` (a ordem: limpeza, depois repasse ou
   "Continuar", depois a página; com dado só aqui, as telas do app, `?volta=`, "Entrar", "Começar grátis", os planos e o
   modo instalado abrem "Continuar", D-527; o modo instalado leva a marca do D-524, também na aba do "Continuar").
   Depende de: T18, T19, T22. Verifica: CA-1401, CA-1424, CA-1425, CA-1427, CA-1428, CA-1429, CA-1430, CA-1436 (o lado do site), CB-500, CB-503,
