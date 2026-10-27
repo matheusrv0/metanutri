@@ -138,12 +138,29 @@ describe('Alimento próprio pelo grupo (D-492)', () => {
   it('CA-1349: ovos, pescados e carnes pelo grupo; cereais, não', () => {
     expect(restricaoDoAlimento(doGrupo('Fritada da casa', 'Ovos e derivados'), marcadas('ovo'))).toBe('Alergia: ovo')
     const caldeirada = doGrupo('Caldeirada do Pará', 'Pescados e frutos do mar')
-    expect(restricaoDoAlimento(caldeirada, marcadas('peixe'))).toBe('Alergia: peixe')
-    expect(restricaoDoAlimento(caldeirada, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
+    // D-511: pelo grupo, o aviso diz o grupo.
+    expect(restricaoDoAlimento(caldeirada, marcadas('peixe'))).toBe('Alergia: peixe (grupo Pescados e frutos do mar)')
+    expect(restricaoDoAlimento(caldeirada, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar)')
     expect(restricaoDoAlimento(caldeirada, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
     expect(restricaoDoAlimento(doGrupo('Paçoca de pilão', 'Carnes e derivados'), marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
     expect(casaRestricao(doGrupo('Paçoca de pilão', 'Carnes e derivados'), marcadas('vegano'))).toBe(true)
     expect(casaRestricao(doGrupo('Cuscuz da casa', 'Cereais e derivados'), marcadas('leite', 'ovo', 'peixe', 'frutos-do-mar', 'vegano'))).toBe(false)
+  })
+
+  it('CA-1377 (D-511): o aviso que vem do grupo "Pescados e frutos do mar" diz o grupo; o que vem do nome, não (CB-470)', () => {
+    const pirarucu = doGrupo('Pirarucu de manta', 'Pescados e frutos do mar')
+    const sururu = doGrupo('Sururu do Mundaú', 'Pescados e frutos do mar', 900_002)
+    expect(restricaoDoAlimento(pirarucu, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar)')
+    expect(restricaoDoAlimento(sururu, marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
+    expect(restricaoDoAlimento(pirarucu, marcadas('peixe'))).toBe('Alergia: peixe')
+    expect(restricaoDoAlimento(sururu, marcadas('peixe'))).toBe('Alergia: peixe (grupo Pescados e frutos do mar)')
+    // A linha de texto que nomeia o grupo também diz de onde vem; o vegetariano não muda.
+    expect(restricaoDoAlimento(pirarucu, { grupos: [{ id: 'frutos-do-mar', aviso: 'Não come: crustáceos e frutos do mar' }], textos: [], naoGosta: [] })).toBe(
+      'Não come: crustáceos e frutos do mar (grupo Pescados e frutos do mar)',
+    )
+    expect(restricaoDoAlimento(pirarucu, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    // O alimento da base vale pela lista revisada, sem o grupo no texto.
+    expect(restricaoDoAlimento(porNome('Camarão, Rio Grande, grande, cozido'), marcadas('frutos-do-mar'))).toBe('Alergia: crustáceos e frutos do mar')
   })
 
   it('CA-1350: "vegetal" sozinho não tira o leite; leite, bebida e queijo vegetais e vegano tiram', () => {

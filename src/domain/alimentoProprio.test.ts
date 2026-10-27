@@ -16,7 +16,7 @@ import {
   type Produto,
 } from './produtos.ts'
 import { MACROS_QUE_NAO_SE_APLICAM, receitaComoAlimento, type Receita } from './receitas.ts'
-import { avisosParaImprimir, montarRestricoes } from './restricoes.ts'
+import { avisosParaImprimir, montarRestricoes, restricaoDoItem } from './restricoes.ts'
 import { ALIMENTOS, alimentosComProdutos, alimentosParaSugerir, buscarAlimento, registrarProdutos } from './tabelas.ts'
 import { totaisDeItens } from './totais.ts'
 import { trocasDoAlimento } from './trocas.ts'
@@ -440,6 +440,32 @@ describe('restrição pelo grupo do alimento próprio (D-492)', () => {
     expect(trocas(aplv)).not.toContain(salvo.id)
     const plano: Plano = { refeicoes: [{ id: 'r', nome: 'Lanche da tarde', horario: '16:00', opcoes: { principal: [{ id: 'i', alimentoId: salvo.id, gramas: 30 }], substituto1: [], substituto2: [] } }] }
     expect(avisosParaImprimir(plano, buscarAlimento, aplv)).toEqual(['Este plano tem Coalho do Sertão, e a ficha diz Alergia: leite e derivados. Confira antes de imprimir.'])
+  })
+})
+
+describe('o aviso pelo grupo de pescados (D-511)', () => {
+  it('CA-1377: a linha do plano e a janela de imprimir dizem o grupo quando o nome não diz', () => {
+    const repo = criarRepositorioProdutos(new Memoria())
+    const pescado = (nome: string): DadosAlimentoProprio => ({ ...CUSCUZ, nome, nomeParaPaciente: '', grupo: 'Pescados e frutos do mar', preparo: 'cozido', medidas: [] })
+    const pirarucu = repo.salvar(produtoDosDados(pescado('Pirarucu de manta')))
+    const sururu = repo.salvar(produtoDosDados(pescado('Sururu do Mundaú')))
+    registrarProdutos([produtoComoAlimento(pirarucu), produtoComoAlimento(sururu)])
+    const crustaceos = montarRestricoes({ marcadas: ['frutos-do-mar'], texto: '', doencas: [], naoGosta: '' })
+    const plano: Plano = {
+      refeicoes: [
+        {
+          id: 'r',
+          nome: 'Almoço',
+          horario: '12:00',
+          opcoes: { principal: [{ id: 'a', alimentoId: pirarucu.id, gramas: 100 }, { id: 'b', alimentoId: sururu.id, gramas: 100 }], substituto1: [], substituto2: [] },
+        },
+      ],
+    }
+    expect(restricaoDoItem({ id: 'a', alimentoId: pirarucu.id, gramas: 100 }, buscarAlimento, crustaceos)).toBe('Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar)')
+    expect(avisosParaImprimir(plano, buscarAlimento, crustaceos)).toEqual([
+      'Este plano tem Pirarucu de manta, e a ficha diz Alergia: crustáceos e frutos do mar (grupo Pescados e frutos do mar). Confira antes de imprimir.',
+      'Este plano tem Sururu do Mundaú, e a ficha diz Alergia: crustáceos e frutos do mar. Confira antes de imprimir.',
+    ])
   })
 })
 

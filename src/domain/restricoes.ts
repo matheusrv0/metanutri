@@ -270,6 +270,14 @@ const RESTRICOES_DO_GRUPO: Readonly<Record<string, readonly IdRestricao[]>> = {
   'Carnes e derivados': ['vegetariano'],
 }
 
+const PESCADOS = 'Pescados e frutos do mar'
+
+/**
+ * D-511: o grupo de pescados junta peixe e crustáceo, e o nome não diz qual ("Pirarucu de manta" na alergia a
+ * crustáceos). Quando a alergia vem só do grupo, o aviso diz o grupo, para a nutricionista não estranhar.
+ */
+const DIZ_O_GRUPO: ReadonlySet<IdRestricao> = new Set(['peixe', 'frutos-do-mar'])
+
 /** O leite sem lactose é feito para quem tem a intolerância: pelo grupo, só esse nome tira a restrição. */
 const SEM_LACTOSE: readonly string[] = ['sem lactose', 'zero lactose', '0% lactose', 'lactose free']
 
@@ -289,8 +297,14 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
   const nome = semAcento(alimento.descricao)
   for (const grupo of restricoes.grupos) {
     // A base vale pela lista revisada; fora dela, pelo nome e pelo grupo (D-492).
-    const pega = daBase(alimento.id) ? idsDaRestricao(grupo.id).has(alimento.id) : casaPeloNome(grupo.id, nome) || casaPeloGrupo(grupo.id, alimento.categoria, nome)
-    if (pega) return grupo.aviso
+    if (daBase(alimento.id)) {
+      if (idsDaRestricao(grupo.id).has(alimento.id)) return grupo.aviso
+      continue
+    }
+    if (casaPeloNome(grupo.id, nome)) return grupo.aviso
+    if (casaPeloGrupo(grupo.id, alimento.categoria, nome)) {
+      return alimento.categoria === PESCADOS && DIZ_O_GRUPO.has(grupo.id) ? `${grupo.aviso} (grupo ${PESCADOS})` : grupo.aviso
+    }
   }
   for (const linha of restricoes.textos) {
     const termo = semAcento(linha)
