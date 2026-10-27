@@ -11,25 +11,22 @@ import { CHAVE_TEMA_DA_LANDING } from './temaDaLanding.ts'
 const montar = (temSessao = false, aoIrPara = vi.fn()) =>
   render(
     <MolduraDaLanding temSessao={temSessao} aoIrPara={aoIrPara}>
-      <section data-capitulo="teal" data-surge="">
+      <section data-surge="">
         <h1>topo</h1>
       </section>
-      <section data-capitulo="afundado" data-surge="" id="como-funciona">
+      <section data-surge="" id="funcionalidades">
+        <h2>funções</h2>
+      </section>
+      <section data-surge="" id="como-funciona">
         <h2>meio</h2>
+      </section>
+      <section data-surge="" id="planos">
+        <h2>planos</h2>
       </section>
     </MolduraDaLanding>,
   )
 
 const barra = () => screen.getByRole('banner')
-
-/** Põe cada seção num lugar da janela, como o navegador faria ao rolar. */
-function posicionar(caixas: Readonly<Record<string, readonly [number, number]>>) {
-  for (const el of document.querySelectorAll<HTMLElement>('[data-capitulo]')) {
-    const [topo, base] = caixas[el.dataset['capitulo'] ?? ''] ?? [9999, 9999]
-    el.getBoundingClientRect = () => ({ top: topo, bottom: base, left: 0, right: 0, width: 0, height: base - topo, x: 0, y: topo, toJSON: () => ({}) })
-  }
-  Object.defineProperty(barra(), 'offsetHeight', { configurable: true, value: 68 })
-}
 
 function rolarPara(y: number) {
   act(() => {
@@ -61,13 +58,14 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     expect(document.documentElement.classList.contains('landing')).toBe(false)
   })
 
-  it('CA-1457: sem sessão, a barra tem a logo, Como funciona, Preços, Entrar e Criar conta grátis; no celular, só a logo, Entrar e Criar conta', async () => {
+  it('CA-1650: sem sessão, a barra tem a logo, Funcionalidades, Como funciona, Planos, o tema, Entrar e Criar conta grátis; no celular, os três primeiros saem', async () => {
     const aoIrPara = vi.fn()
     montar(false, aoIrPara)
-    const menu = within(within(barra()).getByRole('navigation', { name: 'Principal' }))
-    expect(menu.getAllByRole('link').map((l) => l.textContent)).toEqual(['Como funciona', 'Preços', 'Entrar', 'Criar conta grátis'])
-    expect(menu.getByRole('link', { name: 'Como funciona' }).className).toContain('max-[720px]:hidden')
-    expect(menu.getByRole('link', { name: 'Preços' }).className).toContain('max-[720px]:hidden')
+    const nav = within(barra()).getByRole('navigation', { name: 'Principal' })
+    const nomes = [...nav.querySelectorAll('a, button')].map((el) => el.getAttribute('aria-label') ?? el.textContent)
+    expect(nomes).toEqual(['Funcionalidades', 'Como funciona', 'Planos', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
+    const menu = within(nav)
+    for (const nome of ['Funcionalidades', 'Como funciona', 'Planos']) expect(menu.getByRole('link', { name: nome }).className).toContain('max-[720px]:hidden')
     expect(menu.getByRole('link', { name: 'Entrar' }).className).not.toContain('max-[720px]:hidden')
     expect(menu.getByText('grátis', { exact: false }).className).toContain('max-[720px]:hidden')
     expect(within(barra()).getByRole('link', { name: 'MetaNutri, início' })).toBeInTheDocument()
@@ -77,14 +75,20 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     expect(aoIrPara).toHaveBeenCalledWith('entrar')
     await usuario.click(menu.getByRole('link', { name: 'Criar conta grátis' }))
     expect(aoIrPara).toHaveBeenCalledWith('criar-conta')
-    const alvo = document.getElementById('como-funciona')
-    if (!alvo) throw new Error('sem a seção')
-    alvo.scrollIntoView = vi.fn()
-    await usuario.click(menu.getByRole('link', { name: 'Como funciona' }))
-    expect(alvo.scrollIntoView).toHaveBeenCalled()
+    for (const [nome, id] of [
+      ['Funcionalidades', 'funcionalidades'],
+      ['Como funciona', 'como-funciona'],
+      ['Planos', 'planos'],
+    ] as const) {
+      const alvo = document.getElementById(id)
+      if (!alvo) throw new Error(`sem a seção ${id}`)
+      alvo.scrollIntoView = vi.fn()
+      await usuario.click(menu.getByRole('link', { name: nome }))
+      expect(alvo.scrollIntoView, nome).toHaveBeenCalledOnce()
+    }
   })
 
-  it('CA-1458 e CB-540: com sessão, só "Ir para o painel"', async () => {
+  it('CA-1458, CB-540 e CA-1650: com sessão, só "Ir para o painel"', async () => {
     const aoIrPara = vi.fn()
     montar(true, aoIrPara)
     const menu = within(within(barra()).getByRole('navigation', { name: 'Principal' }))
@@ -94,33 +98,17 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     expect(aoIrPara).toHaveBeenCalledWith('painel')
   })
 
-  it('CA-1460: a barra pinta a cor da seção embaixo dela', () => {
+  it('CA-1651: a barra é de vidro e fica presa no alto, em qualquer ponto da página (não pinta a seção nem sai ao descer)', () => {
     montar()
-    posicionar({ teal: [0, 700], afundado: [700, 1500] })
-    rolarPara(0)
-    expect(barra()).toHaveAttribute('data-tinta', 'teal')
-    expect(barra().className).toContain('bg-landing-teal')
-    posicionar({ teal: [-700, 0], afundado: [0, 800] })
-    rolarPara(700)
-    expect(barra()).toHaveAttribute('data-tinta', 'afundado')
-    expect(barra().className).toContain('bg-landing-afundado')
-  })
-
-  it('CA-1459 e CB-533: some ao descer além de 200 px, volta ao subir e com foco; no rodapé, sai', () => {
-    montar()
-    posicionar({ teal: [0, 700], afundado: [700, 1500] })
-    rolarPara(100)
-    expect(barra().className).not.toContain('-translate-y-full')
-    rolarPara(400)
-    expect(barra().className).toContain('-translate-y-full')
-    // Com foco num link dela, a barra volta (o foco ganha do deslocamento).
-    expect(barra().className).toContain('focus-within:translate-y-0')
-    rolarPara(300)
-    expect(barra().className).not.toContain('-translate-y-full')
-    posicionar({ fim: [-100, 900] })
-    rolarPara(200)
-    expect(barra()).toHaveAttribute('data-tinta', 'escondida')
-    expect(barra().className).toContain('-translate-y-full')
+    for (const y of [0, 400, 1200, 300, 5000]) {
+      rolarPara(y)
+      expect(barra().className).toMatch(/\bsticky\b/)
+      expect(barra().className).toContain('top-0')
+      expect(barra().className).toContain('bg-landing-vidro')
+      expect(barra().className).toContain('backdrop-blur-[18px]')
+      expect(barra().className).not.toContain('-translate-y-full')
+      expect(barra()).not.toHaveAttribute('data-tinta')
+    }
   })
 
   it('CA-1461: o rodapé tem a frase, Voltar ao topo, Fale com a gente e os quatro links, com endereço', async () => {
@@ -164,17 +152,23 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
   })
 
   describe('tema claro e escuro (spec landing-v3)', () => {
-    it('CA-1610: o botão de tema fica entre Preços e Entrar, também no celular, com 44 px; com sessão, antes de Ir para o painel', () => {
+    it('CA-1610 e CA-1650: o botão de tema fica entre Planos e Entrar, também no celular, com 44 px; com sessão, antes de Ir para o painel', () => {
       const { unmount } = montar()
       const nomes = (nav: HTMLElement) => [...nav.querySelectorAll('a, button')].map((el) => el.getAttribute('aria-label') ?? el.textContent)
       const menu = within(barra()).getByRole('navigation', { name: 'Principal' })
-      expect(nomes(menu)).toEqual(['Como funciona', 'Preços', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
+      expect(nomes(menu)).toEqual(['Funcionalidades', 'Como funciona', 'Planos', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
       expect(botaoDeTema()).toHaveAttribute('title', 'Usar o tema claro')
       expect(botaoDeTema().className).not.toContain('hidden')
       expect(botaoDeTema().className).toContain('size-11')
       unmount()
       montar(true)
-      expect(nomes(within(barra()).getByRole('navigation', { name: 'Principal' }))).toEqual(['Como funciona', 'Preços', 'Usar o tema claro', 'Ir para o painel'])
+      expect(nomes(within(barra()).getByRole('navigation', { name: 'Principal' }))).toEqual([
+        'Funcionalidades',
+        'Como funciona',
+        'Planos',
+        'Usar o tema claro',
+        'Ir para o painel',
+      ])
     })
 
     it('CA-1611: sem escolha guardada, a landing abre escura, com a lua no botão', () => {
@@ -242,24 +236,16 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
       await waitFor(() => expect(raizDaLanding()).not.toHaveAttribute('data-trocando-tema'))
     })
 
-    it('CA-1617: sobre o teal, a barra é teal com a logo para fundo escuro; sobre o chão claro, ela clareia e a logo também', async () => {
+    it('CA-1617 e CA-1651: no vidro, a logo segue o tema pelo CSS (as duas versões no HTML) e a ação é a do tema', () => {
       montar()
-      const logo = () => barra().querySelector('img')?.getAttribute('src')
-      posicionar({ teal: [0, 700], afundado: [700, 1500] })
-      rolarPara(0)
-      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
-      expect(barra().className).toContain('text-landing-marfim')
-      await userEvent.setup().click(botaoDeTema())
-      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
-      posicionar({ teal: [-700, 0], afundado: [0, 800] })
-      rolarPara(700)
-      expect(barra()).toHaveAttribute('data-tinta', 'afundado')
+      const versao = (v: string) => barra().querySelector(`[data-logo="${v}"]`)
+      expect(versao('escuro')?.querySelector('img')?.getAttribute('src')).toBe('marca/simbolo-fundo-escuro.svg')
+      expect(versao('escuro')?.className).toBe('contents landing-clara:hidden')
+      expect(versao('claro')?.querySelector('img')?.getAttribute('src')).toBe('marca/simbolo.svg')
+      expect(versao('claro')?.className).toBe('hidden landing-clara:contents')
       expect(barra().className).toContain('text-landing-tinta')
-      expect(logo()).toBe('marca/simbolo.svg')
       expect(within(barra()).getByRole('link', { name: 'Criar conta grátis' }).className).toContain('bg-landing-acao')
-      // No escuro, sobre o afundado, a logo continua a do fundo escuro.
-      await userEvent.setup().click(botaoDeTema())
-      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
+      expect(botaoDeTema().className).toContain('border-landing-borda')
     })
 
     it('CA-1618 e CB-602: o aviso de conta excluída segue o tema da landing, mesmo com o app no escuro', async () => {
@@ -310,19 +296,19 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     it('CA-1487: o que já está na tela entra marcado; o resto espera a vez e entra uma vez', () => {
       const original = HTMLElement.prototype.getBoundingClientRect
       HTMLElement.prototype.getBoundingClientRect = function () {
-        const topo = this.dataset['capitulo'] === 'teal' ? 0 : 5000
+        const topo = this.querySelector('h1') ? 0 : 5000
         return { top: topo, bottom: topo + 100, left: 0, right: 0, width: 0, height: 100, x: 0, y: topo, toJSON: () => ({}) }
       }
       montar()
       HTMLElement.prototype.getBoundingClientRect = original
-      const [topo, meio] = [...document.querySelectorAll('[data-surge]')]
+      const [topo, meio, ...resto] = [...document.querySelectorAll('[data-surge]')]
       expect(screen.getByRole('main').parentElement).toHaveAttribute('data-entrada')
       expect(topo).toHaveAttribute('data-dentro')
       expect(meio).not.toHaveAttribute('data-dentro')
-      expect(observados).toEqual([meio])
+      expect(observados).toEqual([meio, ...resto])
       act(() => avisar?.([{ target: meio as Element, isIntersecting: true }]))
       expect(meio).toHaveAttribute('data-dentro')
-      expect(observados).toEqual([])
+      expect(observados).toEqual(resto)
     })
 
     it('CA-1486: com menos movimento, nada se esconde (a raiz não é marcada)', () => {
