@@ -49,7 +49,7 @@ export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaL
       {contato ? (
         <a
           href={`mailto:${contato}`}
-          className="self-end text-(length:--landing-fs-display) leading-[.95] font-extrabold tracking-[-0.05em] no-underline transition-colors duration-200 hover:text-landing-teal-claro max-[720px]:text-[12vw]"
+          className="min-h-11 self-end text-(length:--landing-fs-display) leading-[.95] font-extrabold tracking-[-0.05em] no-underline transition-colors duration-200 hover:text-landing-teal-claro max-[720px]:text-[12vw]"
         >
           Fale com a gente
         </a>

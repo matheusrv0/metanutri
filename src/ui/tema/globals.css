@@ -574,15 +574,17 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .landing-escura[data-entrada] [data-surge] {
+  /* O escondido vale na hora, sem transição: ao montar, o que está fora da tela some sem animar. */
+  .landing-escura[data-entrada] [data-surge]:not([data-dentro]) {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  /* A transição só na entrada: quem ganha `data-dentro` sobe; quem já estava na tela não muda. */
+  .landing-escura[data-entrada] [data-surge][data-dentro] {
     transition:
       opacity 0.6s ease,
       transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
     transition-delay: var(--landing-atraso, 0ms);
-  }
-
-  .landing-escura[data-entrada] [data-surge]:not([data-dentro]) {
-    opacity: 0;
-    transform: translateY(22px);
   }
 }

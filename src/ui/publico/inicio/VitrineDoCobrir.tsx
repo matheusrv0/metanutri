@@ -33,9 +33,10 @@ export function VitrineDoCobrir() {
         spellCheck={false}
         data-ui=""
         data-surge=""
-        className="mt-3.5 block w-full border-0 bg-transparent p-0 text-(length:--landing-fs-xl) leading-[1.05] font-extrabold tracking-[-0.04em] text-landing-teal-claro caret-landing-laranja focus-visible:outline-offset-[6px] max-[720px]:text-[10vw]"
+        className="mt-3.5 block min-h-11 w-full border-0 bg-transparent p-0 text-(length:--landing-fs-xl) leading-[1.05] font-extrabold tracking-[-0.04em] text-landing-teal-claro caret-landing-laranja focus-visible:outline-offset-[6px] max-[720px]:text-[10vw]"
       />
-      <div className="mt-10 grid grid-cols-[minmax(0,520px)_minmax(0,1fr)] items-start gap-x-14 gap-y-10 max-[720px]:grid-cols-1">
+      {/* Até 960 px, o parágrafo desce para baixo do cartão: em 768 px, ao lado, ele ficava numa coluna de 146 px. */}
+      <div className="mt-10 grid grid-cols-[minmax(0,520px)_minmax(0,1fr)] items-start gap-x-14 gap-y-10 max-[960px]:grid-cols-1">
         <div data-ui="" data-surge="" aria-live="polite" className="text-sm leading-[1.4] text-landing-tinta">
           <div className="rounded-[18px] bg-landing-cartao p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
