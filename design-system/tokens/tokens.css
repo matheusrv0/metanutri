@@ -406,6 +406,8 @@
   --landing-celular-caixa: var(--cinza-teal-300);
   --landing-celular-contorno: var(--cinza-teal-200);
   --landing-celular-sombra: 0 1px 2px color-mix(in srgb, var(--teal-900) 8%, transparent);
+  /* A sombra do botão preso no pé da tela do celular (D-674). */
+  --landing-sombra-fixo: 0 12px 30px -10px color-mix(in srgb, var(--aparelho-fundo) 50%, transparent);
   /* As medidas da v9: o título do topo, o título de seção (até 56 px) e o espaço das seções. */
   --landing-fs-topo: clamp(40px, 5vw, 76px);
   --landing-fs-titulo: clamp(30px, 3.8vw, 56px);

@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { armazenamentoLocal } from '@/ui/estado/armazenamentoLocal.ts'
 import type { DestinoPublico } from '../navegacaoPublica.ts'
 import { BarraDaLanding } from './BarraDaLanding.tsx'
+import { BotaoFixoDoCelular } from './BotaoFixoDoCelular.tsx'
 import { RodapeDaLanding } from './RodapeDaLanding.tsx'
 import { guardarTemaDaLanding, lerTemaDaLanding, marcarTemaNoHtml, type TemaDaLanding } from './temaDaLanding.ts'
 import { useEntradaAoRolar } from './useEntradaAoRolar.ts'
@@ -47,6 +48,8 @@ export function MolduraDaLanding({ temSessao, aoIrPara, children }: MolduraDaLan
       <BarraDaLanding temSessao={temSessao} aoIrPara={aoIrPara} tema={tema} aoTrocarTema={trocarTema} />
       <main id="conteudo" className="flex-1">
         {children}
+        {/* Spec landing-v3, D-674: no celular, sem sessão, "Criar conta grátis" fica preso no pé da tela. */}
+        {temSessao ? null : <BotaoFixoDoCelular aoCriarConta={() => aoIrPara('criar-conta')} />}
       </main>
       <RodapeDaLanding aoIrPara={aoIrPara} />
     </div>

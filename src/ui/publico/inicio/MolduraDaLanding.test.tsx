@@ -145,6 +145,27 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     vi.unstubAllGlobals()
   })
 
+  it('CA-1686 e D-674: sem sessão, "Criar conta grátis" fica preso no pé da tela, só até 720 px; com sessão, não aparece', async () => {
+    const aoIrPara = vi.fn()
+    const { unmount } = montar(false, aoIrPara)
+    const fixo = document.querySelector('[data-botao-fixo]')
+    expect(fixo?.className).toContain('fixed')
+    expect(fixo?.className).toContain('hidden max-[720px]:flex')
+    const link = within(fixo as HTMLElement).getByRole('link', { name: 'Criar conta grátis' })
+    expect(link.className).toContain('min-h-[52px]')
+    await userEvent.setup().click(link)
+    expect(aoIrPara).toHaveBeenCalledWith('criar-conta')
+    expect(screen.getByRole('contentinfo').className).toContain('max-[720px]:pb-[88px]')
+    unmount()
+    montar(true)
+    expect(document.querySelector('[data-botao-fixo]')).toBeNull()
+  })
+
+  it('CA-1687 e D-675: o rodapé é o de hoje, sem razão social nem CNPJ', () => {
+    montar()
+    expect(screen.getByRole('contentinfo').textContent).not.toMatch(/Razão social|CNPJ/i)
+  })
+
   it('CB-542: sem e-mail de contato, o "Fale com a gente" não aparece', () => {
     render(<RodapeDaLanding aoIrPara={vi.fn()} contato={null} />)
     expect(screen.queryByRole('link', { name: 'Fale com a gente' })).not.toBeInTheDocument()
