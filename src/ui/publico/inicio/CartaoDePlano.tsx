@@ -1,7 +1,7 @@
 import { Check, User, Users } from 'lucide-react'
 import type { PointerEvent } from 'react'
 import type { Ciclo } from '@/domain/conta.ts'
-import { BOTAO } from './estiloDaLanding.ts'
+import { BOTAO_QUE_QUEBRA, PILULA_QUE_QUEBRA } from './estiloDaLanding.ts'
 import { PrecoDoPlano } from './PrecoDoPlano.tsx'
 import { textoDaAcao, type CartaoDePlanoDaLanding } from './precosDaLanding.ts'
 
@@ -13,8 +13,7 @@ interface CartaoDePlanoProps {
 }
 
 /** A ação dos cartões que não são o indicado (D-670): o afundado com a tinta do tema. */
-const BOTAO_DISCRETO =
-  'inline-flex min-h-11 items-center justify-center rounded-full border border-landing-borda bg-landing-afundado px-[22px] text-base leading-none font-bold whitespace-nowrap text-landing-tinta transition-[scale,background-color] duration-200 hover:bg-landing-borda active:scale-[.97]'
+const BOTAO_DISCRETO = `${PILULA_QUE_QUEBRA} border border-landing-borda bg-landing-afundado text-landing-tinta hover:bg-landing-borda`
 
 /** A troca dos preços (D-668): opacidade e desfoque em 0,35 s, deslize em 0,5 s; com menos movimento, só a opacidade. */
 const TROCA =
@@ -46,7 +45,7 @@ export function CartaoDePlano({ cartao, ciclo, indicado, aoEscolher }: CartaoDeP
       aria-labelledby={titulo}
       data-indicado={indicado ? '' : undefined}
       onPointerMove={seguirOPonteiro}
-      className={`landing-plano relative isolate grid h-full grid-rows-[auto_auto_auto_auto_1fr] overflow-hidden rounded-[22px] border bg-linear-180 from-landing-cartao-alto to-landing-cartao p-8 transition-[translate,border-color] duration-[600ms,400ms] ease-[cubic-bezier(.16,1,.3,1)] ${
+      className={`landing-plano relative isolate grid h-full grid-rows-[auto_auto_auto_auto_1fr] overflow-hidden rounded-[22px] border bg-linear-180 from-landing-cartao-alto to-landing-cartao p-8 max-[720px]:p-6 transition-[translate,border-color] duration-[600ms,400ms] ease-[cubic-bezier(.16,1,.3,1)] ${
         indicado ? '-translate-y-2.5 border-transparent max-[1100px]:translate-y-0 motion-reduce:translate-y-0' : 'border-landing-borda'
       }`}
     >
@@ -88,7 +87,7 @@ export function CartaoDePlano({ cartao, ciclo, indicado, aoEscolher }: CartaoDeP
           </>
         )}
       </div>
-      <button type="button" onClick={aoEscolher} className={`mt-[22px] w-full ${indicado ? BOTAO : BOTAO_DISCRETO}`}>
+      <button type="button" onClick={aoEscolher} className={`mt-[22px] w-full ${indicado ? BOTAO_QUE_QUEBRA : BOTAO_DISCRETO}`}>
         {textoDaAcao(cartao, ciclo)}
       </button>
       <ul className="mt-[26px] grid list-none gap-3 self-start p-0 text-[15px]">

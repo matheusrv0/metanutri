@@ -2,10 +2,21 @@
 // tokens `--landing-*` de design-system/tokens/tokens.css; aqui só a combinação, para cada seção não reescrever a mesma.
 
 const PILULA =
-  'inline-flex min-h-11 items-center justify-center rounded-full px-[22px] text-base font-bold leading-none whitespace-nowrap no-underline transition-[scale,background-color] duration-200 active:scale-[.97]'
+  'inline-flex min-h-11 items-center justify-center rounded-full px-[22px] text-base font-bold leading-none no-underline transition-[scale,background-color] duration-200 active:scale-[.97]'
+
+const ACAO_DO_TEMA = 'bg-landing-acao text-landing-acao-tinta hover:bg-landing-acao-hover'
 
 /** A ação sobre o chão: marfim com texto teal no escuro, teal com texto marfim no claro (D-609). 44 px de alvo (D-551). */
-export const BOTAO = `${PILULA} bg-landing-acao text-landing-acao-tinta hover:bg-landing-acao-hover`
+export const BOTAO = `${PILULA} whitespace-nowrap ${ACAO_DO_TEMA}`
+
+/**
+ * O botão que ocupa a largura do cartão (os planos): com o texto grande do sistema, ele quebra em linhas em vez de
+ * empurrar o cartão para fora da tela (revisão `break-ui`, CA-1691).
+ */
+export const PILULA_QUE_QUEBRA = `${PILULA} py-2.5 text-center leading-tight`
+
+/** A ação do tema no botão que quebra. */
+export const BOTAO_QUE_QUEBRA = `${PILULA_QUE_QUEBRA} ${ACAO_DO_TEMA}`
 
 /** A margem da página nos dois lados, a mesma em todas as seções. */
 export const MARGEM = 'px-(--landing-margem)'

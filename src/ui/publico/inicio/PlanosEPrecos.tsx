@@ -2,7 +2,7 @@ import { useId, useState, type CSSProperties } from 'react'
 import type { Ciclo, IdPlano } from '@/domain/conta.ts'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { CartaoDePlano } from './CartaoDePlano.tsx'
-import { APOIO, ESPACO_DE_SECAO, MARGEM, TITULO_DE_SECAO } from './estiloDaLanding.ts'
+import { APOIO, ESPACO_DE_SECAO, MARGEM, PILULA_QUE_QUEBRA, TITULO_DE_SECAO } from './estiloDaLanding.ts'
 import { cartoesDosPlanos, extrasDosPlanos, pacientesNaRegua, planoIndicado, REGUA_DE_PACIENTES, veredito } from './precosDaLanding.ts'
 
 interface PlanosEPrecosProps {
@@ -18,11 +18,11 @@ const CICLOS: readonly { readonly ciclo: Ciclo; readonly texto: string }[] = [
 ]
 
 /** O botão de contorno dos cartões de baixo (Estudante e Clínica). */
-const BOTAO_CONTORNO =
-  'inline-flex min-h-11 flex-none items-center justify-center rounded-full border border-landing-contorno bg-transparent px-[22px] text-base leading-none font-bold whitespace-nowrap text-landing-tinta no-underline transition-[scale,background-color] duration-200 hover:bg-landing-afundado active:scale-[.97]'
+const BOTAO_CONTORNO = `${PILULA_QUE_QUEBRA} border border-landing-contorno bg-transparent text-landing-tinta hover:bg-landing-afundado`
 
+/** O texto vem antes; quando não sobra lugar ao lado, o botão desce para baixo dele (revisão `break-ui`). */
 const CARTAO_DE_BAIXO =
-  'flex items-center justify-between gap-5 rounded-[22px] border border-landing-borda bg-landing-cartao px-7 py-6 max-[720px]:flex-col max-[720px]:items-start'
+  'flex flex-wrap items-center justify-between gap-5 rounded-[22px] border border-landing-borda bg-landing-cartao px-7 py-6 max-[720px]:flex-col max-[720px]:items-start max-[720px]:px-6'
 
 /**
  * "Planos e preços" (spec landing-v3, D-666 a D-671): a troca Mensal e Anual, a régua de pacientes ativos com o
@@ -69,8 +69,8 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-4">
-          <label htmlFor={regua} className="text-[15px] font-bold">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 max-[720px]:w-full max-[720px]:max-w-[420px]">
+          <label htmlFor={regua} className="text-[15px] font-bold whitespace-nowrap">
             Pacientes ativos
           </label>
           <input
@@ -83,7 +83,7 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
             aria-valuetext={pacientesNaRegua(pacientes)}
             onChange={(evento) => setPacientes(Number(evento.target.value))}
             style={{ '--landing-pct': `${cheio.toFixed(1)}%` } as CSSProperties}
-            className="landing-regua w-60 max-[720px]:w-45"
+            className="landing-regua w-60 max-[720px]:w-auto max-[720px]:min-w-[120px] max-[720px]:flex-1"
           />
           <output htmlFor={regua} className="min-w-[2.6ch] text-right text-[30px] font-extrabold tracking-[-0.03em]">
             {pacientes >= REGUA_DE_PACIENTES.maximo ? `${REGUA_DE_PACIENTES.maximo}+` : pacientes}
@@ -108,7 +108,7 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
       </div>
       <div className="mx-auto mt-6 grid max-w-[1180px] grid-cols-2 gap-6 max-[1100px]:max-w-[520px] max-[1100px]:grid-cols-1">
         <div data-surge="" className={CARTAO_DE_BAIXO}>
-          <div>
+          <div className="min-w-[min(100%,16rem)] flex-1">
             <h3 className="text-lg font-extrabold">{estudante.nome}</h3>
             <p className="mt-1 text-[15px] text-landing-tinta-suave">{estudante.texto}</p>
           </div>
@@ -117,7 +117,7 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
           </button>
         </div>
         <div data-surge="" className={CARTAO_DE_BAIXO}>
-          <div>
+          <div className="min-w-[min(100%,16rem)] flex-1">
             <h3 className="text-lg font-extrabold">{clinica.nome}</h3>
             <p className="mt-1 text-[15px] text-landing-tinta-suave">{clinica.texto}</p>
           </div>

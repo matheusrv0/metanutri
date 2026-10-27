@@ -67,15 +67,18 @@ export function AdequacaoDoExemplo() {
                   type="button"
                   aria-pressed={i === escolha.sugestao}
                   onClick={() => setEscolha({ nutriente: escolha.nutriente, sugestao: i })}
-                  className={`group grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-x-3.5 gap-y-1 rounded-2xl border border-landing-borda bg-landing-afundado px-4 py-3.5 text-left text-landing-tinta aria-pressed:border-landing-destaque aria-pressed:bg-landing-cartao ${TOQUE}`}
+                  className={`group flex w-full flex-wrap items-center gap-x-3.5 gap-y-1 rounded-2xl border border-landing-borda bg-landing-afundado px-4 py-3.5 text-left text-landing-tinta aria-pressed:border-landing-destaque aria-pressed:bg-landing-cartao ${TOQUE}`}
                 >
                   <i
                     aria-hidden="true"
-                    className="row-span-2 size-[22px] rounded-full shadow-[inset_0_0_0_2px_var(--landing-contorno)] transition-shadow duration-200 group-aria-pressed:shadow-[inset_0_0_0_7px_var(--landing-destaque)]"
+                    className="size-[22px] flex-none rounded-full shadow-[inset_0_0_0_2px_var(--landing-contorno)] transition-shadow duration-200 group-aria-pressed:shadow-[inset_0_0_0_7px_var(--landing-destaque)]"
                   />
-                  <strong className="text-[15px] font-extrabold">{s.nome}</strong>{' '}
-                  <span className="col-start-2 text-[13px] text-landing-tinta-suave">{`${s.gramas} · +${s.kcal} kcal`}</span>{' '}
-                  <em className="col-start-3 row-span-2 row-start-1 text-lg font-extrabold text-landing-destaque not-italic">{`${s.cobre}%`}</em>
+                  {/* A base de 9rem decide a quebra: a cobertura só desce quando o texto grande não deixa nem isso. */}
+                  <span className="min-w-0 flex-[1_1_9rem]">
+                    <strong className="block text-[15px] font-extrabold">{s.nome}</strong>{' '}
+                    <span className="block text-[13px] text-landing-tinta-suave">{`${s.gramas} · +${s.kcal} kcal`}</span>
+                  </span>{' '}
+                  <em className="ml-auto flex-none text-lg font-extrabold text-landing-destaque not-italic">{`${s.cobre}%`}</em>
                 </button>
               ))}
             </div>

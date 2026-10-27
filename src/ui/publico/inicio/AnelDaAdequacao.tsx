@@ -12,7 +12,8 @@ const DESLIZE = 'transition-[stroke-dasharray,transform] duration-900 ease-[cubi
 /**
  * O anel da Adequação (spec landing-v3, D-656 e D-658): o trilho, a base do plano em destaque, a soma da sugestão (marfim
  * no escuro, teal claro no claro) começando onde a base termina, e a bolinha laranja na meta, só grafismo. No centro, o
- * que ainda falta com a sugestão, ou "Meta atingida".
+ * que ainda falta com a sugestão, ou "Meta atingida". O texto do centro é em px, como o anel: com o texto do sistema
+ * grande, ele não passa do círculo (revisão `break-ui`, D-682).
  */
 export function AnelDaAdequacao({ nutriente, sugestao }: AnelDaAdequacaoProps) {
   const arcos = arcosDoAnel({ base: nutriente.pct, meta: META_DA_ADEQUACAO, cobre: sugestao.cobre })
@@ -33,10 +34,10 @@ export function AnelDaAdequacao({ nutriente, sugestao }: AnelDaAdequacaoProps) {
         />
         <circle cx={arcos.bolinha.x} cy={arcos.bolinha.y} r={9} strokeWidth={4} className="fill-landing-laranja stroke-landing-cartao" />
       </svg>
-      <div className="absolute inset-0 grid place-content-center gap-0.5 text-center">
+      <div className="absolute inset-0 grid place-content-center gap-[2px] text-center">
         <small className="text-[13px] font-semibold text-landing-tinta-suave">{centro.rotulo}</small>
         <strong className="text-[40px] leading-[1.05] font-extrabold tracking-[-0.04em] max-[720px]:text-[34px]">{centro.valor}</strong>
-        <span className="text-sm font-semibold text-landing-tinta-suave">{centro.nota}</span>
+        <span className="text-[14px] font-semibold text-landing-tinta-suave">{centro.nota}</span>
       </div>
     </div>
   )

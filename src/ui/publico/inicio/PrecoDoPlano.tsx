@@ -10,7 +10,7 @@ export function PrecoDoPlano({ preco }: { readonly preco: PrecoNoCiclo }) {
         <span aria-hidden="true" className="mt-3 text-[22px] tracking-normal text-landing-tinta-suave">
           R$
         </span>
-        <span aria-hidden="true" className="text-[clamp(56px,5.2vw,76px)]">
+        <span aria-hidden="true" className="text-[clamp(56px,5.2vw,76px)] proportional-nums">
           {preco.valor}
         </span>
       </p>
