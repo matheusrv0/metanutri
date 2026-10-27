@@ -116,7 +116,8 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     })
     expect(guardados).toHaveLength(1)
 
-    await page.clock.runFor(30 * MIN + ATE_A_SAIDA)
+    // Sem rede, nada responde: aqui o relógio passa de propósito dos 10 s do envio e dos 5 s do encerramento (CA-1448).
+    await page.clock.runFor(31 * MIN)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     await expect(page.getByText(COM_PENDENCIA)).toBeVisible()
     // A sessão saiu deste navegador mesmo sem resposta do servidor; o espaço da conta ficou, inteiro.
