@@ -499,22 +499,26 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
 
 Cada uma com o teste que falha antes e um commit, no ramo `separacao-p2`; o `separacao-p3` é refeito por cima.
 
-- [ ] **R9 · A troca não para a outra aba (média).** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (a situação nunca
+- [x] **R9 · A troca não para a outra aba (média).** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (a situação nunca
   fica vazia durante a troca, com e sem ela no pacote; DP-SA-57), `e2e/site/mudanca-outra-aba.spec.ts` (novo, só no
   Chromium: com outra aba do app aberta, a troca acontece e o paciente novo dela sobe; e o CB-507, duas abas do site com
   "Continuar"). Verifica: CA-1434, CB-124, CB-507.
-- [ ] **R10 · O link de paciente antigo limpa a sessão.** `public/preparar-pagina.js`, `src/seo/prepararPagina.test.tsx`
+- [x] **R10 · O link de paciente antigo limpa a sessão.** `public/preparar-pagina.js`, `src/seo/prepararPagina.test.tsx`
   (DP-SA-58). Verifica: D-511 (a), CA-1423.
-- [ ] **R11 · As marcas do aparelho saem do endereço antigo.** `src/site/limpeza.ts` e `.test.ts` (DP-SA-59). Verifica:
+- [x] **R11 · As marcas do aparelho saem do endereço antigo.** `src/site/limpeza.ts` e `.test.ts` (DP-SA-59). Verifica:
   D-511, DP-SA-54.
-- [ ] **R12 · Apagar só o que foi entregue sem mudar.** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (`apagarEntregue`
+- [x] **R12 · Apagar só o que foi entregue sem mudar.** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (`apagarEntregue`
   recebe o pacote), `src/site/remetente.ts` e `.test.ts` (guarda o pacote entregue). Verifica: CA-1436, CB-507
   (DP-SA-60).
-- [ ] **R13 · O manifesto sem frase de venda.** `src/seo/pluginAlvo.ts` e `.test.ts` (DP-SA-61). Verifica: CA-1421.
-- [ ] **R14 · Node exato.** `.node-version` e `src/data/sqlCheckout.test.ts` (o teste que já lê a publicação confere a
+- [x] **R13 · O manifesto sem frase de venda.** `src/seo/pluginAlvo.ts` e `.test.ts` (DP-SA-61). Verifica: CA-1421.
+- [x] **R14 · Node exato.** `.node-version` e `src/data/sqlCheckout.test.ts` (o teste que já lê a publicação confere a
   versão exata e mínima; DP-SA-62).
-- [ ] **R15 · O iPhone com o ícone antigo no roteiro do dono.** `README.md` (passo 11 da "Ordem para publicar a P2 e a P3";
+- [x] **R15 · O iPhone com o ícone antigo no roteiro do dono.** `README.md` (passo 11 da "Ordem para publicar a P2 e a P3";
   DP-SA-63). Sem teste automático.
+
+*Feitas em 27/10/2026, uma por commit, com o teste antes (a R15 é só texto): `npm run check` (298 arquivos, 5400 testes,
+também com o Node 22.23.4), `npm run e2e` (354, com os 2 de `e2e/site/mudanca-outra-aba.spec.ts`) e `npm run test:csp`
+(3) passaram; o `npm run publicar:app` passou com o Node 22.23.4.*
 
 ### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
 
@@ -549,8 +553,8 @@ Cada uma com o teste que falha antes e um commit, no ramo `separacao-p2`; o `sep
 | CA-1429, CA-1430 | T23, T29 | `src/site/TelaContinuar.test.tsx`, `src/site/remetente.test.ts`; `e2e/site/mudanca.spec.ts` |
 | CA-1431 | T24, T29 | `src/AppNuvem.test.tsx`; `e2e/site/mudanca.spec.ts` |
 | CA-1432 | T22, T23 | `src/domain/mudancaDeEndereco.test.ts`, `src/site/remetente.test.ts` |
-| CA-1433 a CA-1435 | T22, T24, T29 | `src/domain/mudancaDeEndereco.test.ts`, `src/ui/mudanca/usarMudanca.test.ts`; `e2e/site/mudanca.spec.ts` |
-| CA-1436, CA-1437 | T23, T24, T29 | `src/site/remetente.test.ts`, `src/ui/mudanca/usarMudanca.test.ts`; `e2e/site/mudanca.spec.ts` |
+| CA-1433 a CA-1435 | T22, T24, T29, R9 | `src/domain/mudancaDeEndereco.test.ts`, `src/ui/mudanca/usarMudanca.test.ts`; `e2e/site/mudanca.spec.ts`, `e2e/site/mudanca-outra-aba.spec.ts` (CA-1434 com outra aba aberta) |
+| CA-1436, CA-1437 | T23, T24, T29, R12 | `src/site/remetente.test.ts`, `src/ui/mudanca/usarMudanca.test.ts`, `src/domain/mudancaDeEndereco.test.ts`; `e2e/site/mudanca.spec.ts`, `e2e/site/mudanca-outra-aba.spec.ts` (CB-507) |
 | CA-1438 | T22, T23, T24 | `src/domain/mudancaDeEndereco.test.ts`, `src/site/remetente.test.ts`, `usarMudanca.test.ts` |
 | CA-1439 | T24 | `src/ui/mudanca/usarMudanca.test.ts` (com o motor de verdade e a nuvem falsa) |
 | CA-1440, CA-1441, CA-1443 | T3, T9, T12 | `src/domain/tempoDeSessao.test.ts`, `usarTempoDeSessao.test.tsx`; `e2e/servidor-falso/sessao.spec.ts` |
