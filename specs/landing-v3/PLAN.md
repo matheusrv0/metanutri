@@ -81,3 +81,62 @@ de "Quanto custa" ficam para a v4; essas três seções só passam pelos tokens 
 - **D-606.** A resposta do estudante do protótipo tirava o comprovante e os 12 meses; ficou a de hoje.
 - **D-607.** O botão de tema tem 44 px desenhados (o protótipo, 40 px com 44 de toque).
 - **D-608.** O padrão é o escuro mesmo para quem tem o sistema no claro.
+
+---
+
+# PLAN — Landing v9
+
+Spec: a seção "Landing v9" de `specs/landing-v3/SPEC.md` (D-650 a D-681, CA-1650 a CA-1694, CB-650 a CB-664). Cada
+tarefa é um commit (Conventional Commits, em português), em TDD onde há lógica (os números do motor, o anel, o plano
+indicado, os preços, as missões, o atraso da foto): teste primeiro, ver falhar, depois o código. Nenhuma dependência
+nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da máquina, fora do projeto.
+
+## Ordem
+
+| # | Tarefa | Arquivos | Critérios | Depende de |
+|---|---|---|---|---|
+| T11 | SPEC e PLAN da v9 | `specs/landing-v3/SPEC.md`, `PLAN.md` | — | — |
+| T12 | **Números da v9** (TDD): as abas e as sugestões com `nomeParaPaciente`, o "ainda faltam", a meta, as missões do celular, a data, os dias do painel, o "20" e o "2" do topo, o almoço em gramas; saem os números do campo vivo, das chaves, do feijão e das três refeições | `src/ui/publico/inicio/exemploDaLanding.ts` e `.test.ts` | CA-1653, CA-1659 a CA-1661, CA-1667, CA-1675 (números) | T11 |
+| T13 | **A foto do topo** em webp (1.600 e 800 px) e o registro de licença | `public/imagens/iogurte-com-frutas*.webp`, `THIRD_PARTY_NOTICES.md` | CA-1655 (arquivo) | T11 |
+| T14 | **Tokens da v9** e o CSS que não cabe em classe (o feixe, a régua, as animações do topo, o vidro) | `design-system/tokens/tokens.css`, `src/ui/tema/globals.css`, `DESIGN.md` | D-676 | T11 |
+| T15 | **A barra de vidro presa** (TDD): os itens novos, sem pintar a seção e sem sair; sai `barraDoTopo` | `BarraDaLanding.tsx`, `BotaoDeTema.tsx`, `MolduraDaLanding.tsx` e `.test.tsx`, `barraDoTopo.ts` e `.test.ts` (saem), `src/ui/tema/globals.css` | CA-1650, CA-1651 | T14 |
+| T16 | **O topo em foto** (TDD): o texto, a etiqueta, a foto com o atraso que continua o movimento | `HeroiDaLanding.tsx`, `atrasoDoTopo.ts` e `.test.ts` (novos), `TelaInicio.tsx` e `.test.tsx` | CA-1652, CA-1654 a CA-1657 | T12 a T15 |
+| T17 | **Adequação com o anel** (TDD): abas, painel, sugestões, centro; o anel em peça própria; saem o campo vivo, a lista do Cobrir e a pergunta da vitrine | `AdequacaoDoExemplo.tsx`, `AnelDaAdequacao.tsx`, `anel.ts` e `.test.ts` (novos), `VitrineDoCobrir.tsx`, `ListaDoCobrir.tsx`, `perguntaDaVitrine.ts` e `.test.ts` (saem), `TelaInicio.tsx` e `.test.tsx` | CA-1658, CA-1662 a CA-1665 | T16 |
+| T18 | **Acompanhamento da adesão** (TDD): o celular com as missões, o painel com a Maria, "em segundos" | `AcompanhamentoDaAdesao.tsx`, `CelularDasMissoes.tsx`, `PainelDeAdesao.tsx` (novos), `TelaInicio.tsx` e `.test.tsx` | CA-1666, CA-1668 a CA-1671 | T17 |
+| T19 | **Funcionalidades**; saem as chaves | `Funcionalidades.tsx` (novo), `ChavesDoPlano.tsx`, `FaixaComChave.tsx` (saem), `TelaInicio.tsx` e `.test.tsx` | CA-1672 | T18 |
+| T20 | **Como funciona** em quatro passos com a linha; a entrada ao rolar ganha `data-revela` | `ComoFunciona.tsx`, `PassoDeComoFunciona.tsx` (sai), `useEntradaAoRolar.ts`, `globals.css`, `TelaInicio.tsx` e `.test.tsx`, `MolduraDaLanding.test.tsx` | CA-1673, CA-1674 | T19 |
+| T21 | **Quantidades em gramas e calorias** (só o almoço) | `QuantidadesEmGramas.tsx` (era `GramaPorGrama.tsx`), `TelaInicio.tsx` e `.test.tsx` | CA-1675 | T20 |
+| T22 | **Planos e preços** (TDD): o plano indicado, o veredito, os preços dos dois ciclos, os cartões, a troca, a régua, a luz; sai "Quanto custa" | `precosDaLanding.ts` e `.test.ts`, `PlanosEPrecos.tsx`, `CartaoDePlano.tsx` (novos), `QuantoCusta.tsx` (sai), `TelaInicio.tsx` e `.test.tsx` | CA-1676 a CA-1682 | T21 |
+| T23 | **Perguntas frequentes** (oito) | `PerguntasFrequentes.tsx` (era `PerguntasDeQuemAtende.tsx`), `TelaInicio.tsx` e `.test.tsx` | CA-1683 | T22 |
+| T24 | **A faixa "Começar"** que cresce com a palavra, e o texto novo | `FaixaComecar.tsx`, `TelaInicio.test.tsx` | CA-1684, CA-1685 | T23 |
+| T25 | **O botão fixo do celular** e o rodapé com espaço para ele | `BotaoFixoDoCelular.tsx` (novo), `MolduraDaLanding.tsx` e `.test.tsx`, `RodapeDaLanding.tsx` | CA-1686, CA-1687 | T24 |
+| T26 | **Guardas de texto, página pré-desenhada e e2e**: `textosProibidos`, `textosDaFrente`, `vitrine.test.tsx`, `prepararPagina` (o comentário e o teste da foto), o e2e da landing (escura, v3 e o novo da v9) e os que citavam o texto antigo | `src/seo/*.test.ts*`, `src/textosDaFrente.test.ts`, `public/preparar-pagina.js`, `e2e/landing-escura.spec.ts`, `e2e/landing-v3.spec.ts`, `e2e/landing-v9.spec.ts` (novo), `e2e/site-publico.spec.ts`, `e2e/textos-e-promessas.spec.ts`, `e2e/publico.spec.ts`, `e2e/servidor-falso/*.spec.ts` | CA-1651, CA-1656, CA-1674, CA-1682, CA-1684, CA-1686, CA-1688 a CA-1694 | T15 a T25 |
+| T27 | **Validação**: `npm run check`, `npm run e2e` (configuração temporária com portas e pastas próprias, apagada depois, porque o `node_modules` é o do repositório principal), `npm run test:csp`, `npm run build`; revisão `emil-design-eng` e `break-ui` (360 px, texto a 200%, zoom de 200%); prints nos dois temas em 1440 e 390 px; ajustes num commit próprio | — | todos | T26 |
+
+## Matriz CA → teste (v9)
+
+| CA | Teste |
+|---|---|
+| CA-1650 | `MolduraDaLanding.test.tsx` › "CA-1650: …" |
+| CA-1651 | `MolduraDaLanding.test.tsx` › "CA-1651: …"; `e2e/landing-v9.spec.ts` › "CA-1651: …" |
+| CA-1652 | `TelaInicio.test.tsx` › "CA-1652: …" |
+| CA-1653 | `exemploDaLanding.test.ts` › "CA-1653: …" |
+| CA-1654 | `TelaInicio.test.tsx` › "CA-1654: …"; `e2e/landing-v9.spec.ts` (390 px) |
+| CA-1655 | `TelaInicio.test.tsx` › "CA-1655: …" |
+| CA-1656 | `TelaInicio.test.tsx` › "CA-1656: …"; `e2e/landing-v9.spec.ts` › "CA-1656: …" |
+| CA-1657 | `atrasoDoTopo.test.ts` › "CA-1657: …" |
+| CA-1658 | `TelaInicio.test.tsx` › "CA-1658: …" |
+| CA-1659 a CA-1661 | `exemploDaLanding.test.ts` › "CA-1659: …", "CA-1660: …", "CA-1661: …" |
+| CA-1662 a CA-1665 | `TelaInicio.test.tsx` › "CA-1662: …" a "CA-1665: …"; `anel.test.ts` › "CA-1664: …" |
+| CA-1666, CA-1668 a CA-1671 | `TelaInicio.test.tsx` › "CA-1666: …", "CA-1668: …" a "CA-1671: …" |
+| CA-1667 | `exemploDaLanding.test.ts` › "CA-1667: …" |
+| CA-1672 a CA-1675 | `TelaInicio.test.tsx` › "CA-1672: …" a "CA-1675: …"; `exemploDaLanding.test.ts` (o almoço); `e2e/landing-v9.spec.ts` › "CA-1674: …" |
+| CA-1676 a CA-1681 | `precosDaLanding.test.ts` e `TelaInicio.test.tsx` › "CA-1676: …" a "CA-1681: …" |
+| CA-1682 | `e2e/landing-v9.spec.ts` › "CA-1682: …" |
+| CA-1683 a CA-1685 | `TelaInicio.test.tsx` › "CA-1683: …" a "CA-1685: …"; `e2e/landing-v9.spec.ts` › "CA-1684: …" |
+| CA-1686, CA-1687 | `MolduraDaLanding.test.tsx` › "CA-1686: …", "CA-1687: …"; `e2e/landing-v9.spec.ts` › "CA-1686: …" |
+| CA-1688 a CA-1694 | `TelaInicio.test.tsx` › "CA-1688: …", "CA-1693: …"; `e2e/landing-v9.spec.ts` › "CA-1689: …" a "CA-1694: …"; `src/seo/vitrine.test.tsx` (CA-1692) |
+
+## O que mudou no caminho (v9)
+
+(preenchido antes de cada commit que divergir do plano)

@@ -112,3 +112,155 @@ vivo), D-541 nas respostas 1 e 3, a seção "Na medida da cozinha" de D-534 (vir
 - **R-600** · As constantes envelhecem quando o motor muda: o teste dos números falha de propósito (R-530 continua).
 - **R-601** · A marca `data-tema-da-landing` no `<html>` fica depois que a pessoa sai da landing; ela só vale dentro de `.landing`, então não pinta nenhuma outra tela.
 - **R-602** · A chave "Medida caseira junto dos gramas" e o "1 concha de feijão" de "Como funciona" continuam no ar até a v4, contra o pedido do dono de tirar a ênfase da medida caseira (D-600 e D-616).
+
+---
+
+# Landing v9: topo em foto, adequação com o anel, adesão no celular e preços com movimento
+
+Status: **protótipo v9 (`LandingV9.dc.html` e `LandingV9Claro.dc.html`, Claude Design) aprovado pelo dono em
+27/10/2026.** Esta seção registra o que a v9 muda e as regras que valem acima do protótipo. Ela substitui, da v3: D-600
+(as três seções que ficavam para a v4 saem agora), D-601 e D-602 (o topo e o campo vivo saem), D-603 (vira
+"Quantidades em gramas e calorias", só o almoço), D-606 na lista de perguntas, D-612 (a barra não pinta mais a seção),
+D-615 (os espaços) e D-616 (as seções de hoje saem). Da landing escura: D-534 (a ordem), D-536 a D-539 (campo vivo e
+chaves), D-541 (as perguntas), D-544 ("Quanto custa"), D-545 na parte da barra que pinta a seção e sai ao descer, e a
+regra "passo de Como funciona não leva número" do `DESIGN.md`.
+
+**Fonte:** o protótipo e o pedido do coordenador de 27/10 (13 itens), com as regras de veracidade: todo número sai de
+`exemploDaLanding.ts`, conferido contra o motor e a base pelo `exemploDaLanding.test.ts`; nome de alimento é o do motor
+ou o de `nomeParaPaciente`; missão é o texto de `missoes.ts`; preço e limite saem de `PLANOS`.
+
+## 1. Decisões
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-650 | **A ordem da página:** a barra; o topo em foto; "Adequação de micronutrientes com sugestão do que comer" (afundado); "Acompanhamento da adesão pelo celular" (chão); "Funcionalidades" (chão); a foto dos legumes; "Como funciona" (afundado); "Quantidades em gramas e calorias" (chão); "Planos e preços" (afundado); "Perguntas frequentes" (teal nos dois temas); a faixa "Começar"; o rodapé de hoje. Saem o campo vivo, as chaves, o "Como funciona" com fragmentos, "Grama por grama" com três refeições e "Quanto custa" | Protótipo v9 |
+| D-651 | **A barra é de vidro e fica presa no alto o tempo todo**: o fundo é o chão do tema com 78% (escuro) ou 82% (claro) de opacidade, com desfoque de 18 px e um fio da borda embaixo. Não pinta mais a cor da seção e não sai ao descer (substitui a parte de D-545 e D-612 que fazia isso). Itens: a logo, "Funcionalidades", "Como funciona", "Planos", o botão de tema, "Entrar" e "Criar conta grátis" (com sessão, "Ir para o painel"). Até 720 px, só a logo, o tema, "Entrar" e "Criar conta". As regras de 360 px da D-622 continuam | Protótipo v9 ("barra fixa, com fundo de vidro") |
+| D-652 | **O topo em foto:** a foto de ponta a ponta com o véu (escuro no tema escuro, marfim no claro; no celular, de cima para baixo), o título "Planos alimentares completos em vitaminas e minerais", o texto de apoio "O MetaNutri calcula a adequação de 20 vitaminas e minerais e sugere os alimentos, em gramas, para completar o que falta. Depois, acompanha a adesão do paciente pelo celular.", o botão "Criar conta grátis", o link "Ver o plano de exemplo" (rola até a Adequação) e a linha "Grátis com 2 pacientes ativos. Sem cartão de crédito.". O "20" é a lista da adequação sem a fibra (`MICRONUTRIENTES_ADEQUACAO`) e o "2" é o limite do Free (`PLANOS`) | Protótipo v9; número do domínio |
+| D-653 | **A etiqueta de vidro do topo** diz "No plano de exemplo, falta cálcio" e "150 g de iogurte natural desnatado cobrem 91%", montada da sugestão de iogurte do cálcio (D-657). O protótipo escrevia "iogurte natural"; o nome é o de `nomeParaPaciente`, em minúscula. Ela é enfeite (`aria-hidden`) e some até 720 px | Veracidade: o nome do alimento não é inventado |
+| D-654 | **A foto do topo:** "Healthy Meal Prep (Unsplash)", de Sambazon, CC0, pela Wikimedia Commons (3840 × 2812). Entra como as outras (D-547): webp de 1.600 px e de 800 px, qualidade 78, gerados uma vez nesta máquina com o Pillow (ferramenta da máquina, não dependência do projeto), e o registro em `THIRD_PARTY_NOTICES.md`. Por ser a primeira coisa da tela, ela não é preguiçosa e tem `fetchpriority="high"`. O `<head>` continua sem pré-carregar imagem: a foto já está no HTML pré-desenhado, e o navegador a acha na primeira leitura | D-547; a foto do topo é o maior elemento da primeira tela |
+| D-655 | **A foto assenta ao abrir** (de 107% a 100% em 2,6 s) e a etiqueta surge 0,9 s depois (subindo 14 px, de transparente e desfocada a nítida, em 0,9 s). As duas só com movimento. Na página pré-desenhada, o movimento começa no HTML do build; quando o app troca o desenho pelo dele, o movimento novo continua do ponto em que estava (atraso negativo igual ao tempo desde o primeiro desenho), em vez de recomeçar. Sem JavaScript, o movimento do CSS roda até o fim e tudo fica visível | Protótipo v9, sem o salto da troca do desenho (D-549) |
+| D-656 | **Adequação**, no lugar do campo vivo e das chaves: três abas (cálcio, vitamina E e vitamina D) com o nome, "640 de 1.000 mg no dia" e o percentual da referência (64%, 36% e 14%); o painel com o anel (o trilho, a base em destaque, a soma da sugestão em marfim no escuro e teal claro no claro, e a bolinha laranja na meta de 90%); o nome e o total do nutriente; as três sugestões selecionáveis (nome, gramas, "+kcal" e a cobertura); e o centro do anel com "ainda faltam X" e "de Y", ou "com 60 g", "Meta" e "atingida" quando a sugestão cobre 100%. Abaixo das abas, "Plano de exemplo: Maria, 28 anos. A meta é 90% da referência para a idade e o sexo." O "90" é o `minimoPct` do padrão do app (`PRESETS.individual`) | Protótipo v9 |
+| D-657 | **As sugestões** são as três primeiras de nome diferente que o motor dá, na ordem dele (D-537 continua), com o nome de `nomeParaPaciente`: no cálcio, "Rúcula", "Iogurte natural desnatado" e "Sardinha assada"; na vitamina E, "Almeirão cru", "Amêndoa torrada salgada" e "Abacate"; na vitamina D, "Filé de salmão fresco grelhado com pele", "Atum em óleo" e "Gema de ovo cozida". A escolhida ao abrir cada aba é o iogurte, a amêndoa e o salmão. O protótipo trazia outra ordem e outros nomes ("Rúcula crua", "Amêndoa torrada", "Abacate cru", "Salmão grelhado", "Atum em conserva") | Veracidade: a ordem e o nome são os do app |
+| D-658 | **"Ainda faltam" é a falta menos o que a porção traz** (nutriente da base × gramas da sugestão), escrito como o app escreve quantidade (`quantidadeNoPlano`): no cálcio com o iogurte, "24,3 mg" (o protótipo calculava 23 mg pela cobertura arredondada); na vitamina E com o abacate, "4,6 mg" (o protótipo, 4,5). "Meta atingida" quando a cobertura é 100%. No anel, a base é o percentual mostrado e a soma é (meta − base) × cobertura | Veracidade: vale o motor |
+| D-659 | **O celular** mostra a tela do link do paciente com as missões do plano de exemplo, no texto exato de `missoesDoPlano` (com a água da Maria): as nove, de "Café da manhã por volta das 6h" a "Beber cerca de 2,2 litros de água", com a origem embaixo ("Refeição do plano"). O protótipo tinha quatro missões que o plano não gera ("Café da manhã por volta das 7h", "Comer a fruta do plano"). Como nove não cabem na tela do aparelho, a lista rola dentro dele. Ao abrir, as duas da manhã estão marcadas ("2 de 9"); cada missão é um botão que marca e desmarca (`aria-pressed`), e a barra "Missões de hoje" acompanha | Veracidade; o aparelho do protótipo |
+| D-660 | **A data do celular** é "Terça-feira, 27 de outubro", que é terça em 2026, e a coluna "hoje" do painel é a terça. O protótipo escrevia "Terça-feira, 28 de outubro", que em 2026 é quarta | Coerência entre o celular e o painel |
+| D-661 | **O painel de Adesão** tem três pacientes de exemplo, marcados como exemplo para o leitor de tela (grupo "Pacientes de exemplo"): João Pereira, "4 dias sem marcar" (o `DIAS_PARA_SUMIR` do app), com "Mensagem pronta para retomar o plano" e a imagem do botão "Chamar no WhatsApp"; Ana Beatriz Costa, "Atenção"; e Maria Santos, cuja bolinha de hoje acende quando uma missão do celular está marcada ("Em dia · 2 de 9 hoje"; sem nenhuma, "Ainda não marcou hoje"). O estado da Maria é anunciado (`aria-live`). O botão do WhatsApp é desenho, não controle (D-550): no exemplo, não há para quem mandar | Protótipo v9; D-550 |
+| D-662 | **"Em segundos"** fica entre o celular e o painel, com o ícone de sincronizar. Até 1.100 px, o celular e o painel se empilham e só o ícone gira 90°; o texto continua na horizontal (o protótipo girava o texto junto e ele ficava de lado) | Leitura |
+| D-663 | **Funcionalidades:** a grade de nove itens, só texto, com os textos do protótipo, em três colunas (duas até 1.100 px, uma até 720 px), e "Todas incluídas em qualquer assinatura." Duas mudanças de texto: "com a sua logo" vira "com o seu logotipo" (glossário, CA-1170), e "Cadastro de alimentos" segue a publicação 2 (D-540): ligada, "por 100 g, pela porção do rótulo ou pelo código de barras"; desligada, "pelo rótulo ou pelo código de barras" | Glossário; veracidade |
+| D-664 | **Como funciona** em quatro passos numerados ("Monte o plano", "Analise a adequação", "Complete com as sugestões", "Entregue e acompanhe"), sem os exemplos. A linha entre os números acende da esquerda para a direita (1,8 s) e cada número acende quando a linha chega nele; só com movimento e só depois que o app monta; na página pré-desenhada e com menos movimento, tudo aceso. Até 1.100 px, duas colunas sem a linha; até 720 px, uma | Protótipo v9 (substitui a regra do `DESIGN.md` de passo sem número) |
+| D-665 | **"Quantidades em gramas e calorias"**: o texto "Cada alimento do plano sai com o peso e as calorias da Base MetaNutri.", as duas fotos de hoje com as legendas e a tabela só do almoço (arroz, feijão, patinho, abóbora e chuchu, conferidos na base). A legenda da tabela para o leitor de tela vira "Um almoço de plano, com os gramas e as calorias de cada alimento" (o protótipo dizia "Um dia", com um almoço só) | Protótipo v9; veracidade |
+| D-666 | **Planos e preços:** o título, "Todos os planos incluem todas as funcionalidades. Muda só o número de pacientes ativos. Sem fidelidade e sem preço promocional.", a troca "Mensal" e "Anual" (polegar que desliza, `aria-pressed`), a régua "Pacientes ativos" de 1 a 60 (60 é "60+"), o veredito "Para N pacientes ativos, o plano indicado é o X." (anunciado), os cartões Free, Solo e Pro, os cartões Estudante e Clínica e a nota "O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura." Ao abrir: mensal e 12 pacientes (Solo indicado) | Protótipo v9 |
+| D-667 | **O plano indicado** é o primeiro de Free, Solo e Pro cujo limite de pacientes ativos (`PLANOS`) cabe o número da régua: até 2, Free; até 25, Solo; acima, Pro. O cartão indicado sobe 10 px, ganha o brilho em cima, a borda laranja que gira (7 s por volta, só grafismo, atrás de nada escrito) e o selo "Indicado", que nos outros fica transparente e escondido do leitor de tela. Até 1.100 px, os cartões empilham e o indicado não sobe | Protótipo v9; laranja só como grafismo (D-532) |
+| D-668 | **Os preços trocam com desfoque e deslize** (0,35 s de opacidade e desfoque, 0,5 s de deslize): o que sai sobe e desfoca, o que entra sobe de baixo. Mensal: "R$ 34,90", "por mês" e "ou R$ 299 por ano"; anual: "R$ 299", "por ano" e "R$ 24,92 por mês · economize R$ 119,80" (`mensalizadoDoAnual` e 12 × mensal − anual); o mesmo no Pro. O Free não troca (o preço é o mesmo nos dois ciclos; o protótipo trocava "R$ 0" por "R$ 0"). O leitor de tela lê "R$ 34,90 por mês" de um texto escondido, e o ciclo que não vale fica escondido dele. Com menos movimento, só a opacidade troca | Protótipo v9 |
+| D-669 | **A luz que segue o ponteiro:** em cada cartão de plano, um círculo de luz de 340 px segue o ponteiro, só em quem tem mouse (`hover: hover` e `pointer: fine`) | Protótipo v9 |
+| D-670 | **Os botões dos planos** usam o caminho de hoje (`aoEscolher`): "Começar grátis" (Free) e "Criar conta de estudante" criam conta ("free" e "estudante"); "Assinar o Solo" e "Assinar o Pro" escolhem o ciclo da troca ("Assinar o Solo anual" no anual); "Fale com a gente" (Clínica) abre o e-mail do contato e some sem contato (CB-542). O botão do indicado é a ação cheia; os outros, a ação discreta | Pedido do coordenador; D-544 |
+| D-671 | **O cartão Estudante** diz "Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta." O protótipo não falava do comprovante; o app pede (D-541, D-606). "Na formatura, os pacientes continuam na conta" é o que o app faz: o Estudante vencido volta ao Free sem apagar nada (CA-175) | Veracidade |
+| D-672 | **Perguntas frequentes:** as oito do protótipo, na ordem dele, com a do estudante de hoje (o e-mail da faculdade, o comprovante de matrícula, 12 meses ou a formatura, o que vier antes) e a do alimento que não está na base pela publicação 2 (D-540) | Protótipo v9; veracidade |
+| D-673 | **A faixa "Começar"** cresce com a palavra: a altura mínima é 176 px mais 1,02 vez o tamanho da palavra (até 720 px, o maior entre 320 px e 150 px mais 1,05 vez 20vw), e a palavra fica a 22 px mais 0,22 da letra da borda de baixo. Assim a frase nunca fica embaixo da palavra e o cedilha nunca é cortado, em 2.000, 1.440 e 390 px. A frase vira "Crie sua conta e monte o primeiro plano hoje, sem cartão de crédito." (com vírgula: "Sem cartão de crédito." já é a frase do topo, e a landing não repete frase, CA-1481) | Protótipo v9; regra de texto do dono |
+| D-674 | **O botão fixo "Criar conta grátis"** no pé da tela, só até 720 px, sem sessão, com 52 px de altura e 12 px das bordas; o rodapé ganha 88 px embaixo para ele não cobrir o último link. Com sessão, não aparece (a barra já tem "Ir para o painel") | Protótipo v9 |
+| D-675 | **O rodapé é o de hoje**: sem a linha "[Razão social] · CNPJ…" do protótipo, que ainda não tem os dados | Pedido do coordenador |
+| D-676 | **Tokens novos** (`--landing-*`, com valor nos dois temas, do bloco v9 do protótipo): vidro da barra, véu do topo (e o do celular), tinta e tinta suave do topo, vidro da etiqueta, luz do cartão, sombra do cartão (só no claro), luz do ponteiro, brilho do indicado, cartão de cima do gradiente do plano, âmbar do "Atenção", a soma do anel e as cores do aparelho (corpo, tela, tinta, missão, missão feita, contorno da caixa e do botão). Primitivas novas em `tokens.css` para os valores que não existiam | Cor só por token (D-531) |
+| D-677 | **Medidas da v9:** seções com 88 px em cima e 80 px embaixo (substitui os 104 e 96 da D-615); título de seção de 30 a 56 px (`clamp(30px, 3.8vw, 56px)`, até 24 caracteres por linha); o texto de apoio com 20 px a 20 px do título; o topo com 720 px de altura mínima (640 px até 720 px de largura) | Protótipo v9 |
+| D-678 | **Toque de 44 px** onde o protótipo desenhava menos: os botões "Mensal" e "Anual" (40 px no protótipo) e a régua (a caixa tem 44 px; o trilho desenhado, 6 px, e a bolinha, 26 px) | D-551 |
+| D-679 | **O movimento**, todo com alternativa para menos movimento: o anel e a soma deslizam em 0,9 s; a barra de missões em 0,5 s; a bolinha da Maria cresce ao acender; o polegar da troca em 0,5 s; os preços (D-668); os cartões de plano entram ao rolar (como as outras partes, D-549) com 80 ms entre eles; o feixe gira 7 s por volta; a linha de "Como funciona" (D-664). Com menos movimento: nada desliza nem gira; os preços trocam só a opacidade; o indicado não sobe | Protótipo v9; `emil-design-eng` |
+| D-680 | **A página pré-desenhada** (D-331) continua nos dois temas: o build desenha a v9 inteira, com tudo no estado final (a linha de "Como funciona" acesa, os cartões visíveis), e o script do `<head>` continua marcando o tema claro (D-613) | D-331 e D-613 continuam |
+| D-681 | **Saem do código**: `VitrineDoCobrir`, `ListaDoCobrir`, `perguntaDaVitrine`, `ChavesDoPlano`, `FaixaComChave`, o `ComoFunciona` antigo e `PassoDeComoFunciona`, `GramaPorGrama` (vira `QuantidadesEmGramas`), `QuantoCusta`, `PerguntasDeQuemAtende` (vira `PerguntasFrequentes`) e `barraDoTopo`, com os testes deles; em `exemploDaLanding.ts`, os números do campo vivo, das chaves, do "Cobrir cálcio", do feijão na concha e das três refeições | D-650 |
+
+## 2. Critérios de aceite
+
+### Barra e topo
+
+- **CA-1650** · Dado a landing sem sessão, então a barra tem a logo, "Funcionalidades", "Como funciona", "Planos", o botão de tema, "Entrar" e "Criar conta grátis", nesta ordem; os três primeiros links levam às seções; com sessão, "Ir para o painel" no lugar de "Entrar" e "Criar conta grátis".
+- **CA-1651** · Dado a landing rolada até o meio, então a barra continua no alto, com o fundo de vidro do tema (chão com 78% no escuro, 82% no claro) e o desfoque, em qualquer seção.
+- **CA-1652** · Dado o topo, então ele tem o `h1` "Planos alimentares completos em vitaminas e minerais", o texto de apoio da D-652, "Criar conta grátis" (chama quem manda), "Ver o plano de exemplo" (rola até a Adequação) e "Grátis com 2 pacientes ativos. Sem cartão de crédito."
+- **CA-1653** · Dado o domínio, então o "20" do topo é o número de micronutrientes da adequação sem a fibra e o "2" é o limite de pacientes do Free.
+- **CA-1654** · Dado o topo a 1.440 px, então a etiqueta diz "No plano de exemplo, falta cálcio" e "150 g de iogurte natural desnatado cobrem 91%", e é escondida do leitor de tela; a 390 px, ela não aparece.
+- **CA-1655** · Dado a foto do topo, então ela tem texto alternativo, largura e altura, as versões de 800 e 1.600 px em webp, não é preguiçosa e tem prioridade alta; o arquivo tem no máximo 1.600 px.
+- **CA-1656** · Dado movimento permitido e a landing aberta pelo app, então a foto anima de 107% a 100%; dado menos movimento, então nada anima no topo.
+- **CA-1657** · Dado a página pré-desenhada e o app montando T ms depois do primeiro desenho, então a animação da foto do app começa com atraso de −T ms (continua de onde estava); aberta pelo app, começa do zero.
+
+### Adequação
+
+- **CA-1658** · Dado a Adequação, então há três abas (Cálcio, Vitamina E e Vitamina D), cada uma com o total do dia e o percentual da referência, e só a do cálcio pressionada ao abrir.
+- **CA-1659** · Dado o motor, quando o teste roda o exemplo, então cada aba tem o total, a referência, a falta e o percentual da referência do motor, e a meta é o `minimoPct` do padrão (90).
+- **CA-1660** · Dado o motor, então as três sugestões de cada nutriente são as três primeiras de nome diferente, na ordem do motor, com o nome de `nomeParaPaciente`, os gramas, as kcal e a cobertura do motor.
+- **CA-1661** · Dado cada sugestão, então o "ainda faltam" é a falta menos o nutriente da porção, escrito por `quantidadeNoPlano`, e a sugestão que cobre 100% diz "Meta atingida".
+- **CA-1662** · Dado o cálcio, então o iogurte está escolhido ao abrir e o centro diz "ainda faltam", "24,3 mg" e "de 260 mg"; quando a pessoa escolhe a sardinha, o centro diz "com 60 g", "Meta" e "atingida".
+- **CA-1663** · Dado a aba da vitamina E, quando a pessoa a escolhe, então o painel mostra a vitamina E com a amêndoa escolhida; na vitamina D, o salmão.
+- **CA-1664** · Dado o anel, então a base é o percentual mostrado, a soma começa onde a base termina e mede (meta − base) × cobertura, e a bolinha laranja fica nos 90%.
+- **CA-1665** · Dado a troca de aba ou de sugestão, então o painel é anunciado (`aria-live`), e abas e sugestões são botões com `aria-pressed`, dentro de grupos com nome.
+
+### Acompanhamento da adesão
+
+- **CA-1666** · Dado o celular, então ele mostra "Olá, Maria", "Terça-feira, 27 de outubro", a barra "Missões de hoje" com "2 de 9" e as nove missões de `missoesDoPlano` do exemplo, com a origem de cada uma, e as duas primeiras marcadas.
+- **CA-1667** · Dado o motor, então as missões do celular são, no texto e na ordem, as de `missoesDoPlano` do plano de exemplo com a água da Maria, e 27/10/2026 é terça-feira.
+- **CA-1668** · Dado uma missão, quando a pessoa a marca (clique, Enter ou Espaço), então ela fica pressionada, a barra passa a "3 de 9" e a largura acompanha; marcada de novo, desmarca.
+- **CA-1669** · Dado nenhuma missão marcada, então a Maria diz "Ainda não marcou hoje" e a bolinha de hoje fica vazia; quando uma é marcada, a bolinha acende e o estado vira "Em dia · 1 de 9 hoje", anunciado ao leitor de tela.
+- **CA-1670** · Dado o painel, então ele está num grupo "Pacientes de exemplo", com João Pereira ("4 dias sem marcar", o `DIAS_PARA_SUMIR` do app), Ana Beatriz Costa ("Atenção") e Maria Santos, os dias S, T, Q, Q, S, S, D com a terça como hoje, e "Chamar no WhatsApp" só na linha do João, como imagem (sem foco nem clique).
+- **CA-1671** · Dado a seção, então "em segundos" fica entre o celular e o painel; até 1.100 px, o texto continua na horizontal.
+
+### Funcionalidades, Como funciona e Quantidades
+
+- **CA-1672** · Dado "Funcionalidades", então há "Todas incluídas em qualquer assinatura." e nove itens, cada um com título (`h3`) e texto, os do protótipo com "o seu logotipo" e o cadastro de alimentos pela publicação 2.
+- **CA-1673** · Dado "Como funciona", então há uma lista ordenada de quatro passos, numerados de 1 a 4, com os títulos e textos do protótipo e sem os exemplos.
+- **CA-1674** · Dado movimento permitido e o app montado, quando "Como funciona" entra na tela, então a linha acende e os números acendem em sequência; na página pré-desenhada e com menos movimento, já estão acesos.
+- **CA-1675** · Dado "Quantidades em gramas e calorias", então há o texto, as duas fotos com as legendas e a tabela "Um almoço de plano, com os gramas e as calorias de cada alimento", só com o almoço (cinco alimentos), cada linha conferida na base.
+
+### Planos e preços
+
+- **CA-1676** · Dado "Planos e preços", então há a troca Mensal e Anual (Mensal pressionado), a régua "Pacientes ativos" em 12 e o veredito "Para 12 pacientes ativos, o plano indicado é o Solo."
+- **CA-1677** · Dado os cartões Free, Solo e Pro, então nome, descrição, preço, limites e botões saem de `PLANOS`, e "Todas as funções" fecha cada lista.
+- **CA-1678** · Dado a troca, quando a pessoa escolhe Anual, então o Solo mostra "R$ 299", "por ano" e "R$ 24,92 por mês · economize R$ 119,80", o Pro "R$ 599" e "R$ 49,92 por mês · economize R$ 179,80", os botões viram "Assinar o Solo anual" e "Assinar o Pro anual", e o leitor de tela lê só o ciclo que vale.
+- **CA-1679** · Dado a régua, quando a pessoa escolhe 1, 2, 3, 25, 26 e 60, então o indicado é Free, Free, Solo, Solo, Pro e Pro, o veredito acompanha ("60 ou mais pacientes ativos" e "60+" no 60) e só o indicado leva a classe e o selo.
+- **CA-1680** · Dado os botões, quando a pessoa clica, então "Começar grátis" chama `aoEscolher('free', 'mensal')`, "Assinar o Solo" `('solo', 'mensal')`, "Assinar o Pro anual" `('pro', 'anual')`, "Criar conta de estudante" `('estudante', 'mensal')`, e "Fale com a gente" é um link para o e-mail do contato.
+- **CA-1681** · Dado o cartão Estudante, então ele tem o texto da D-671; a Clínica, "Condições combinadas por e-mail."; e a nota do pagamento fica embaixo.
+- **CA-1682** · Dado o navegador com movimento, quando a pessoa troca para Anual, então o preço que sai desfoca e sobe e o que entra aparece; o cartão indicado tem a borda girando; com menos movimento, nada gira nem desliza.
+
+### Perguntas, faixa final, botão fixo e rodapé
+
+- **CA-1683** · Dado "Perguntas frequentes", então há oito perguntas fechadas, na ordem do protótipo, com a do estudante com o comprovante de matrícula e os 12 meses, e a do alimento que não está na base pela publicação 2.
+- **CA-1684** · Dado a faixa "Começar" a 2.000, 1.440 e 390 px, então a frase termina acima do alto da letra da palavra, e o desenho do cedilha termina dentro da faixa.
+- **CA-1685** · Dado a faixa, então ela é um link para Criar conta com a frase "Crie sua conta e monte o primeiro plano hoje, sem cartão de crédito." e a palavra "Começar".
+- **CA-1686** · Dado 390 px sem sessão, então o botão "Criar conta grátis" fica fixo no pé da tela, com pelo menos 44 px, e chama Criar conta; a 1.440 px e com sessão, não aparece; o rodapé não fica coberto no fim da página.
+- **CA-1687** · Dado o rodapé, então ele é o de hoje (CA-1461) e não tem "Razão social" nem "CNPJ".
+
+### Página toda
+
+- **CA-1688** · Dado a landing, então os títulos são, nesta ordem, o `h1` e os `h2` "Adequação de micronutrientes com sugestão do que comer", "Acompanhamento da adesão pelo celular", "Funcionalidades", "Como funciona", "Quantidades em gramas e calorias", "Planos e preços" e "Perguntas frequentes".
+- **CA-1689** · Dado cada tema, então cada título contrasta pelo menos 4,5:1 com o fundo atrás dele (o do topo, com o véu), e nenhum texto fica em laranja nem sobre laranja.
+- **CA-1690** · Dado 360, 390 e 1.440 px, nos dois temas, então não há rolagem para o lado e todo alvo de toque tem pelo menos 44 px (a régua pela caixa).
+- **CA-1691** · Dado o texto do sistema em 200% e o zoom de 200% (break-ui), então nenhum controle sai da tela e nenhuma seção estoura a largura.
+- **CA-1692** · Dado a página pré-desenhada pelo build, então ela tem os títulos da v9, o preço do Solo e as respostas no HTML, nasce no tema guardado (escura sem escolha, clara com o claro guardado) e nada fica transparente esperando o app.
+- **CA-1693** · Dado o texto de venda, então nenhuma frase se repete, nenhum nome de fonte da base aparece, e nada fala de medida caseira.
+- **CA-1694** · Dado o teclado, então o foco é visível em todo controle e segue a ordem da página (barra, topo, abas, sugestões, missões, troca, régua, botões dos planos, perguntas, faixa, rodapé).
+
+## 3. Casos de borda
+
+- **CB-650** · Menos movimento: a foto e a etiqueta não animam; o anel, a barra das missões e o polegar trocam sem deslizar; o feixe não gira; os preços trocam só a opacidade; "Como funciona" já nasce aceso; os cartões não entram.
+- **CB-651** · Sem `IntersectionObserver`: nada se esconde; "Como funciona" fica aceso e os cartões visíveis.
+- **CB-652** · Sem JavaScript: a página pré-desenhada mostra tudo; os botões não fazem nada (D-331); a régua mostra 12 e o veredito do Solo.
+- **CB-653** · Todas as missões desmarcadas: "0 de 9", a barra vazia, a Maria "Ainda não marcou hoje"; todas marcadas: "9 de 9" e a barra cheia.
+- **CB-654** · Marcar e desmarcar rápido: o estado final é o do último toque (sem animação presa); a bolinha da Maria segue.
+- **CB-655** · Trocar de aba com uma sugestão escolhida: a aba nova abre na sugestão dela (iogurte, amêndoa, salmão), não na posição da anterior.
+- **CB-656** · A régua no teclado: setas mudam de 1 em 1, Home vai a 1 e End a 60; o veredito acompanha.
+- **CB-657** · Trocar Mensal e Anual várias vezes seguidas: os preços terminam no ciclo escolhido e o leitor de tela lê só ele.
+- **CB-658** · Sem contato configurado (`CONTATO_EMAIL` nulo): o cartão da Clínica fica sem o botão (CB-542).
+- **CB-659** · Ponteiro de toque: a luz do ponteiro não aparece; o cartão indicado continua com o brilho e o feixe.
+- **CB-660** · 360 px, texto em 200% e zoom de 200%: a barra quebra em linhas (D-622); os nomes longos das sugestões ("Filé de salmão fresco grelhado com pele") quebram linha sem empurrar a cobertura para fora; o painel de Adesão encolhe o nome com reticências; a tabela vira linhas de grade.
+- **CB-661** · Nome longo de paciente no painel: reticências na mesma linha, sem empurrar as bolinhas.
+- **CB-662** · Com sessão: a barra tem "Ir para o painel", o botão fixo do celular não aparece e o "Criar conta grátis" do topo continua (como hoje).
+- **CB-663** · Trocar o tema com a página rolada: a barra de vidro e as seções trocam na hora (D-614 continua).
+- **CB-664** · Duas abas da landing: o tema continua o da chave da landing (CB-605); o estado das missões, da régua e da troca não é guardado.
+
+## 4. Fora de escopo
+
+- A linha da razão social e do CNPJ no rodapé (os dados não existem).
+- Guardar o estado do exemplo (missões, régua, ciclo) entre visitas.
+- Mudar o motor, a base, as missões ou os planos.
+- Uma foto do topo maior que 1.600 px.
+
+## 5. Riscos
+
+- **R-650** · A foto de 1.600 px em tela de 1.440 px com densidade 2 fica um pouco mole; o véu e o desfoque da própria foto escondem. Se o dono quiser mais nitidez, uma versão de 2.400 px muda a regra da D-547.
+- **R-651** · As missões do exemplo mudam se o plano de exemplo mudar; o teste das missões falha de propósito (R-600).
+- **R-652** · O painel de Adesão é inventado (três pacientes de exemplo); ele é marcado como exemplo para o leitor de tela e não traz número que pareça do app além do "4 dias" e do estado.
