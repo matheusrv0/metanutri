@@ -7,7 +7,7 @@ import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import { desvioDoRelogio, lerToken, situacaoDaSessao } from '@/domain/tempoDeSessao.ts'
 import { contaDaExclusaoPedida, esquecerExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
 import { apagarMarca, gravarMarca, lerMarca, ultimoUso } from '../sessao/marcaDeUso.ts'
-import { esquecerSaida, gravarSaida } from '../sessao/motivoDaSaida.ts'
+import { esquecerSaida, gravarSaida, lerSaida } from '../sessao/motivoDaSaida.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { appConfirmado, confirmarComOApp } from './codigoDoApp.ts'
@@ -232,7 +232,10 @@ export function useConta(): ValorConta {
       const armazenamento = armazenamentoLocal()
       const emDia = armazenamento !== null && contaEmDia(armazenamento, conta, { contarRetidos: false })
       if (emDia) apagarDadosDaConta(armazenamento, conta)
-      gravarSaida(armazenamento, { ate, pendente: !emDia })
+      // Revisão R7: o motivo de uma saída anterior (a por tempo, que já apagou a marca) tem a hora do último uso; esta
+      // só saberia a da entrada. A hora fica a dele, e a pendência só soma.
+      const anterior = lerSaida(armazenamento)
+      gravarSaida(armazenamento, { ate: anterior?.ate ?? ate, pendente: (anterior?.pendente ?? false) || !emDia })
       apagarMarca(armazenamento)
       void encerrarSessaoLocal(cliente)
     }

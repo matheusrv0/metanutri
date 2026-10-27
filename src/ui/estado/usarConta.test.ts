@@ -601,6 +601,23 @@ describe('a sessão com tempo (spec separacao-site-app, D-514 a D-520)', () => {
       expect(lerSaida(localStorage)).not.toBeNull()
     })
 
+    it('R7 (revisão): com o motivo de uma saída anterior guardado, a saída ao abrir mantém a hora dele, a do último uso', async () => {
+      // A saída por tempo gravou o motivo e apagou a marca, mas a sessão ficou no navegador (o encerramento não terminou).
+      const ultimoUso = Date.now() - 40 * MIN
+      gravarSaida(localStorage, { ate: ultimoUso, pendente: false })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(result.current.sessao).toBeNull()
+      expect(lerSaida(localStorage)).toEqual({ ate: ultimoUso, pendente: false })
+    })
+
+    it('R7: a pendência que a saída ao abrir acha soma ao motivo guardado, sem trocar a hora', async () => {
+      localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v1', mudancas: 3, salvas: 2, itens: 1 }))
+      const ultimoUso = Date.now() - 40 * MIN
+      gravarSaida(localStorage, { ate: ultimoUso, pendente: false })
+      await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(lerSaida(localStorage)).toEqual({ ate: ultimoUso, pendente: true })
+    })
+
     it('a saída ao abrir acontece uma vez, mesmo com a sessão chegando pelo getSession e pelo evento', async () => {
       gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 31 * MIN, entrada: null, admin: false, desvio: 0 })
       const vencida = sessaoDe('u1', Date.now() - HORA)
