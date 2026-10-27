@@ -4,11 +4,17 @@ import { precosDaLanding } from './precosDaLanding.ts'
 
 const BASE = import.meta.env.BASE_URL
 
+const SIMBOLO =
+  'absolute top-[-10%] left-[min(42vw,500px)] w-[clamp(64px,8vw,124px)] max-[720px]:top-[-22%] max-[720px]:right-0 max-[720px]:left-auto max-[720px]:w-[18vw]'
+
 interface QuantoCustaProps {
   readonly aoEscolher: (plano: IdPlano, ciclo: Ciclo) => void
 }
 
-/** "Quanto custa" (D-544): o plano em destaque em número grande e uma linha para cada um dos outros, tudo de `PLANOS`. */
+/**
+ * "Quanto custa" (D-544): o plano em destaque em número grande e uma linha para cada um dos outros, tudo de `PLANOS`. Os
+ * cartões do protótipo v3 ficam para a v4 (spec landing-v3, D-600); aqui só as cores passam pelos tokens do tema (D-616).
+ */
 export function QuantoCusta({ aoEscolher }: QuantoCustaProps) {
   const { destaque, outros } = precosDaLanding()
 
@@ -28,7 +34,7 @@ export function QuantoCusta({ aoEscolher }: QuantoCustaProps) {
         </p>
       </div>
       <div data-surge="" className="relative">
-        <p className="flex items-start text-(length:--landing-fs-display) leading-[.85] font-extrabold tracking-[-0.05em] text-landing-marfim max-[720px]:flex-wrap max-[720px]:text-[19vw]">
+        <p className="flex items-start text-(length:--landing-fs-display) leading-[.85] font-extrabold tracking-[-0.05em] text-landing-tinta max-[720px]:flex-wrap max-[720px]:text-[19vw]">
           <span className="sr-only">{destaque.falado}</span>
           <span aria-hidden="true" className="mt-[.12em] mr-[.18em] text-[.38em] tracking-[-0.02em]">
             R$
@@ -41,13 +47,15 @@ export function QuantoCusta({ aoEscolher }: QuantoCustaProps) {
             por mês
           </span>
         </p>
+        {/* O símbolo na versão do fundo de cada tema: o kit não deixa a versão clara em fundo escuro, nem o contrário. */}
         <img
           src={`${BASE}marca/simbolo-fundo-escuro.svg`}
           alt=""
           width={120}
           height={120}
-          className="absolute top-[-10%] left-[min(42vw,500px)] w-[clamp(64px,8vw,124px)] max-[720px]:top-[-22%] max-[720px]:right-0 max-[720px]:left-auto max-[720px]:w-[18vw]"
+          className={`${SIMBOLO} landing-clara:hidden`}
         />
+        <img src={`${BASE}marca/simbolo.svg`} alt="" width={120} height={120} className={`${SIMBOLO} hidden landing-clara:block`} />
         <ul className="mt-9 grid list-none gap-1.5 p-0 text-(length:--landing-fs-lead)">
           {destaque.itens.map((item) => (
             <li key={item}>{item}</li>

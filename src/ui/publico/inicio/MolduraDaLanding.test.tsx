@@ -39,12 +39,12 @@ afterEach(() => {
 })
 
 describe('MolduraDaLanding (spec landing-escura)', () => {
-  it('CA-1450 e CB-544: a raiz é escura em qualquer tema, e a classe não vai para o <html>', () => {
+  it('CA-1450, CA-1611 e CB-544: a raiz é escura por padrão, em qualquer tema do app, e a classe não vai para o <html>', () => {
     montar()
     const raiz = screen.getByRole('main').parentElement
-    expect(raiz?.className).toMatch(/^landing-escura dark /)
+    expect(raiz?.className).toMatch(/^landing dark /)
     expect(raiz?.className).toContain('bg-landing-chao')
-    expect(document.documentElement.classList.contains('landing-escura')).toBe(false)
+    expect(document.documentElement.classList.contains('landing')).toBe(false)
   })
 
   it('CA-1457: sem sessão, a barra tem a logo, Como funciona, Preços, Entrar e Criar conta grátis; no celular, só a logo, Entrar e Criar conta', async () => {

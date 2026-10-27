@@ -21,13 +21,13 @@ export function ListaDoCobrir({ linhas, daFaltaNaPrimeira = false }: ListaDoCobr
             <div className="text-[13px] text-landing-tinta-suave">
               <span className="font-bold text-landing-tinta">{linha.gramas}</span>
               {' · cobre '}
-              <b className="font-bold text-landing-teal-claro">{linha.cobre}</b>
+              <b className="font-bold text-landing-destaque">{linha.cobre}</b>
               {`${daFaltaNaPrimeira && i === 0 ? ' da falta' : ''} · +${linha.kcal} kcal`}
             </div>
           </div>
           <span
             aria-hidden="true"
-            className="inline-flex min-h-[34px] flex-none items-center rounded-full bg-landing-marfim px-3.5 text-[13px] leading-none font-bold whitespace-nowrap text-landing-teal"
+            className="inline-flex min-h-[34px] flex-none items-center rounded-full bg-landing-acao px-3.5 text-[13px] leading-none font-bold whitespace-nowrap text-landing-acao-tinta"
           >
             Adicionar
           </span>

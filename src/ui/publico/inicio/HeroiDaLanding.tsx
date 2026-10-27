@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { rolarAte } from '../navegacaoPublica.ts'
 import { PORCAO_DO_TOPO } from './exemploDaLanding.ts'
-import { BOTAO, LEAD, MARGEM } from './estiloDaLanding.ts'
+import { BOTAO_FIXO, LEAD, MARGEM } from './estiloDaLanding.ts'
 
 interface HeroiDaLandingProps {
   readonly aoComecar: () => void
@@ -43,7 +43,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
         className={`flex flex-wrap items-end justify-between gap-7 max-[720px]:flex-col max-[720px]:items-start ${sobe} motion-safe:[animation-delay:.3s]`}
       >
         <div className="flex flex-wrap items-center gap-x-[22px] gap-y-3">
-          <button type="button" className={BOTAO} onClick={aoComecar}>
+          <button type="button" className={BOTAO_FIXO} onClick={aoComecar}>
             Criar conta grátis
           </button>
           <a

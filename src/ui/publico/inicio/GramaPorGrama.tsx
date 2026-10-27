@@ -72,7 +72,7 @@ export function GramaPorGrama() {
               <th
                 colSpan={3}
                 scope="rowgroup"
-                className={`pb-2.5 text-left font-extrabold tracking-[-0.01em] text-landing-teal-claro max-[720px]:block max-[720px]:pt-9 max-[720px]:text-[20px] ${
+                className={`pb-2.5 text-left font-extrabold tracking-[-0.01em] text-landing-destaque max-[720px]:block max-[720px]:pt-9 max-[720px]:text-[20px] ${
                   r === 0 ? 'pt-0' : 'pt-11'
                 }`}
               >

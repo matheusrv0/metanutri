@@ -1,13 +1,13 @@
 import { MARGEM } from './estiloDaLanding.ts'
 
-/** A cor que a faixa ganha quando a chave liga. */
+/** A cor que a faixa ganha quando a chave liga. A "marfim" é o bloco do tema: marfim no escuro, teal claro no claro. */
 export type CorDaFaixa = 'teal' | 'cartao' | 'teal-medio' | 'marfim'
 
 const LIGADA: Readonly<Record<CorDaFaixa, string>> = {
   teal: 'bg-landing-teal text-landing-marfim',
   cartao: 'bg-landing-cartao text-landing-tinta',
   'teal-medio': 'bg-landing-teal-medio text-landing-marfim',
-  marfim: 'bg-landing-marfim text-landing-teal',
+  marfim: 'bg-landing-bloco text-landing-bloco-tinta',
 }
 
 interface FaixaComChaveProps {

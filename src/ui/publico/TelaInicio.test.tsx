@@ -295,12 +295,12 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(detalhes[0]?.open).toBe(true)
     })
 
-    it('CA-1480: a faixa final é um link para Criar conta, que chama quem manda', async () => {
+    it('CA-1480 e D-610: a faixa final é um link para Criar conta, que chama quem manda; o hover clareia, nunca laranja', async () => {
       const aoComecar = vi.fn()
       montar({ aoComecar })
       const faixa = screen.getByRole('link', { name: /Crie a conta e monte o primeiro plano hoje\. Sem cartão\.\s*Começar/ })
       expect(faixa).toHaveAttribute('href', '#/criar-conta')
-      expect(faixa.className).toMatch(/hover:bg-landing-branco/)
+      expect(faixa.className).toMatch(/hover:bg-landing-chamar-hover/)
       expect(faixa.className).not.toMatch(/bg-landing-laranja/)
       await userEvent.setup().click(faixa)
       expect(aoComecar).toHaveBeenCalledOnce()

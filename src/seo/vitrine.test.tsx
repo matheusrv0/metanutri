@@ -33,8 +33,8 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
     }
     expect(html).toContain('<header')
     expect(html).toContain('<footer')
-    // CA-1450 e CA-1484: a landing sai escura (a raiz da moldura dela) e com o rodapé novo.
-    expect(html).toMatch(/class="landing-escura dark /)
+    // CA-1450, CA-1484 e CA-1611: a landing sai escura (a raiz da moldura dela, o padrão) e com o rodapé novo.
+    expect(html).toMatch(/class="landing dark /)
     for (const trecho of ['Fale com a gente', 'Referências', 'falta cálcio', '640 de 1.000 mg no dia']) expect(html).toContain(trecho)
   })
 

@@ -21,7 +21,7 @@ export function MolduraDaLanding({ temSessao, aoIrPara, children }: MolduraDaLan
   return (
     <div
       ref={raiz}
-      className="landing-escura dark flex min-h-dvh flex-col overflow-x-clip bg-landing-chao font-sans text-(length:--landing-fs-corpo) leading-[1.55] text-landing-tinta tabular-nums antialiased"
+      className="landing dark flex min-h-dvh flex-col overflow-x-clip bg-landing-chao font-sans text-(length:--landing-fs-corpo) leading-[1.55] text-landing-tinta tabular-nums antialiased"
     >
       <BarraDaLanding temSessao={temSessao} aoIrPara={aoIrPara} />
       <main id="conteudo" className="flex-1">

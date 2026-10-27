@@ -18,6 +18,8 @@
 @import '../../../design-system/tokens/tokens.css';
 
 @custom-variant dark (&:is(.dark *));
+/* O tema claro da landing (spec landing-v3, D-609 e D-613): na raiz clara e na página pré-desenhada marcada no <html>. */
+@custom-variant landing-clara (&:where(.landing-clara *, [data-tema-da-landing='claro'] .landing *));
 
 /* ---------- Os tokens do sistema no vocabulário do shadcn/ui ----------
  * Também em .papel: a ponte é calculada onde é declarada, então a folha do paciente a declara de novo para ler o
@@ -185,7 +187,7 @@
   --color-statehigh: var(--state-high);
   --color-stateinfo: var(--state-info);
 
-  /* A landing escura (spec landing-escura, D-531): os semânticos só existem dentro de .landing-escura (tokens.css). */
+  /* A landing (spec landing-escura, D-531; spec landing-v3, D-609): os semânticos só existem dentro de .landing (tokens.css). */
   --color-landing-chao: var(--landing-chao);
   --color-landing-chao-fundo: var(--landing-chao-fundo);
   --color-landing-afundado: var(--landing-afundado);
@@ -204,6 +206,18 @@
   --color-landing-marfim: var(--landing-marfim);
   --color-landing-branco: var(--landing-branco);
   --color-landing-laranja: var(--landing-laranja);
+  --color-landing-destaque: var(--landing-destaque);
+  --color-landing-borda: var(--landing-borda);
+  --color-landing-acao: var(--landing-acao);
+  --color-landing-acao-tinta: var(--landing-acao-tinta);
+  --color-landing-acao-hover: var(--landing-acao-hover);
+  --color-landing-chamar: var(--landing-chamar);
+  --color-landing-chamar-tinta: var(--landing-chamar-tinta);
+  --color-landing-chamar-hover: var(--landing-chamar-hover);
+  --color-landing-rodape: var(--landing-rodape);
+  --color-landing-rodape-tinta: var(--landing-rodape-tinta);
+  --color-landing-bloco: var(--landing-bloco);
+  --color-landing-bloco-tinta: var(--landing-bloco-tinta);
 }
 
 /* O movimento da landing escura (spec landing-escura, D-549). Só vale com `motion-safe:`: com menos movimento, nada se
@@ -556,32 +570,51 @@
   display: none;
 }
 
-/* ---------- Landing escura: a entrada das partes ao rolar (spec landing-escura, D-549) ----------
+/* ---------- Landing: o tema e a entrada das partes ao rolar (spec landing-escura, D-549; spec landing-v3) ----------
    Cada parte marcada com `data-surge` sobe 22 px com opacidade ao entrar na tela, uma vez. O escondido só vale depois
    que o app monta e marca a raiz com `data-entrada`; na página pré-desenhada e sem JavaScript, tudo aparece (CA-998).
    O que já está na tela quando o app monta entra marcado com `data-dentro`, sem piscar. */
-.landing-escura {
+.landing {
   color-scheme: dark;
 }
 
-/* O foco da landing (CA-1490): 3 px de teal claro, fora da peça. Em `base`, para o controle que precisa de outra cor
-   (a chave na faixa marfim, a faixa final) trocar com um utilitário. */
+.landing.landing-clara,
+[data-tema-da-landing='claro'] .landing {
+  color-scheme: light;
+}
+
+/* A troca de tema é um quadro só (spec landing-v3, D-614): enquanto a raiz está marcada, nada da landing anima. */
+.landing[data-trocando-tema],
+.landing[data-trocando-tema] *,
+.landing[data-trocando-tema] *::before,
+.landing[data-trocando-tema] *::after {
+  transition: none !important;
+}
+
+/* O foco da landing (CA-1490; spec landing-v3, D-618): 3 px do destaque do tema, fora da peça; nas áreas teal (o topo,
+   as perguntas, a barra teal), o teal claro nos dois temas. Em `base`, para o controle que precisa de outra cor (a chave
+   na faixa marfim, a faixa final) trocar com um utilitário. */
 @layer base {
-  .landing-escura :focus-visible {
-    outline: 3px solid var(--landing-teal-claro);
+  .landing :focus-visible {
+    outline: 3px solid var(--landing-destaque);
     outline-offset: 3px;
+  }
+
+  .landing [data-capitulo='teal'] :focus-visible,
+  .landing header[data-tinta='teal'] :focus-visible {
+    outline-color: var(--landing-teal-claro);
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   /* O escondido vale na hora, sem transição: ao montar, o que está fora da tela some sem animar. */
-  .landing-escura[data-entrada] [data-surge]:not([data-dentro]) {
+  .landing[data-entrada] [data-surge]:not([data-dentro]) {
     opacity: 0;
     transform: translateY(22px);
   }
 
   /* A transição só na entrada: quem ganha `data-dentro` sobe; quem já estava na tela não muda. */
-  .landing-escura[data-entrada] [data-surge][data-dentro] {
+  .landing[data-entrada] [data-surge][data-dentro] {
     transition:
       opacity 0.6s ease,
       transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);

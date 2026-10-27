@@ -16,7 +16,7 @@ export function PassoDeComoFunciona({ frase, chamada, larga = false, children }:
   return (
     <div data-surge="" className="grid gap-3.5">
       <p className={`${LEAD} font-semibold tracking-[-0.01em]`}>{frase}</p>
-      <div className={`rounded-xl bg-landing-afundado p-[18px] ${LEAD} font-semibold text-landing-teal-claro`}>{chamada}</div>
+      <div className={`rounded-xl bg-landing-afundado p-[18px] ${LEAD} font-semibold text-landing-destaque`}>{chamada}</div>
       <div
         data-ui=""
         className={`ml-[52px] max-[720px]:ml-0 ${

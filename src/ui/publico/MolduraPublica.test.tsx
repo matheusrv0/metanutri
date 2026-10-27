@@ -157,14 +157,14 @@ describe('MolduraPublica', () => {
     expect(fontes.className).not.toContain('sm:min-h-0')
   })
 
-  it('CA-1450 (spec landing-escura): na página inicial, a moldura é a da landing escura, em qualquer tema', () => {
+  it('CA-1450 e CA-1611 (spec landing-v3): na página inicial, a moldura é a da landing, escura por padrão, em qualquer tema do app', () => {
     render(
       <MolduraPublica atual="inicio" temSessao={false} aoIrPara={vi.fn()} recarregar={vi.fn()}>
         <p>conteúdo</p>
       </MolduraPublica>,
     )
     const raiz = screen.getByRole('main').parentElement
-    expect(raiz?.className).toMatch(/^landing-escura dark /)
+    expect(raiz?.className).toMatch(/^landing dark /)
     expect(within(screen.getByRole('banner')).getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
     expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Fale com a gente' })).toBeInTheDocument()
     expect(document.documentElement.classList.contains('dark')).toBe(false)

@@ -63,7 +63,7 @@ export function ComoFunciona() {
                   <div className="font-bold">{linha.nome}</div>
                   <div className="text-[13px] text-landing-tinta-suave">{linha.quanto}</div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-landing-trilho">
-                    <i className="block h-full rounded-full bg-landing-teal-claro" style={{ width: `${linha.pct}%` }} />
+                    <i className="block h-full rounded-full bg-landing-destaque" style={{ width: `${linha.pct}%` }} />
                   </div>
                 </div>
                 <span aria-hidden="true" className={COBRIR_DO_FRAGMENTO}>

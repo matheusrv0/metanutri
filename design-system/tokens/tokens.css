@@ -92,6 +92,15 @@
   --carvao-200: #a9bfc2;
   --carvao-100: #cfdcdd;
   --carvao-50: #eef2f1;
+  /* O marfim e a tinta do tema claro da landing (spec landing-v3, D-609), do protótipo v3. Do mais claro ao mais escuro. */
+  --marfim-200: #efe8dc;
+  --marfim-300: #ece5d8;
+  --marfim-400: #e9e2d5;
+  --marfim-500: #e3dbcc;
+  --marfim-700: #cfc5b3;
+  --tinta-teal-900: #13282d;
+  --tinta-teal-600: #56696d;
+  --tinta-teal-500: #5f7174;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
@@ -277,12 +286,13 @@
   --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* ---------- Camada 3b: a landing escura (spec landing-escura, desde 27/10/2026) ----------
- * A página inicial é escura em qualquer tema (D-530). O escopo vale na raiz da landing, que também leva `.dark`, para
- * os componentes do sistema que ela usa (a logo, o aviso de conta excluída) virem escuros junto. Marfim é a ação;
- * laranja é grafismo e nunca fica atrás de texto nem vira letra (D-532).
+/* ---------- Camada 3b: a landing (spec landing-escura, desde 27/10/2026; spec landing-v3) ----------
+ * A página inicial tem tema próprio, escuro por padrão, com um botão para o claro (spec landing-v3, D-607 a D-611). O
+ * escopo vale na raiz da landing, que também leva `.dark` (no escuro) ou `.tema-claro` (no claro), para os componentes
+ * do sistema que ela usa (a logo, o aviso de conta excluída) seguirem o tema dela. No escuro, marfim é a ação; no
+ * claro, o teal. Laranja é grafismo e nunca fica atrás de texto nem vira letra (D-532).
  */
-.landing-escura {
+.landing {
   --landing-chao: var(--carvao-900);
   --landing-chao-fundo: var(--carvao-950);
   --landing-afundado: var(--carvao-850);
@@ -304,6 +314,22 @@
   --landing-marfim: var(--ivory);
   --landing-branco: var(--gray-0);
   --landing-laranja: var(--orange-500);
+  /* Os semânticos que mudam com o tema (spec landing-v3, D-609). O destaque é o teal do texto sobre o chão (o campo
+   * vivo, a refeição da tabela, a barra da adequação); sobre o teal, vale o teal claro, que não muda. */
+  --landing-destaque: var(--teal-300);
+  --landing-borda: var(--carvao-700);
+  --landing-acao: var(--ivory);
+  --landing-acao-tinta: var(--teal-900);
+  --landing-acao-hover: var(--gray-0);
+  /* A faixa final, "Começar": marfim no escuro, teal no claro. O hover nunca é laranja (D-532). */
+  --landing-chamar: var(--ivory);
+  --landing-chamar-tinta: var(--teal-900);
+  --landing-chamar-hover: var(--gray-0);
+  --landing-rodape: var(--carvao-950);
+  --landing-rodape-tinta: var(--ivory);
+  /* O bloco de cor clara sobre o chão: a faixa da chave marfim. */
+  --landing-bloco: var(--ivory);
+  --landing-bloco-tinta: var(--teal-900);
 
   /* Margem da página e a escala de letra do protótipo: o muito grande, o grande, o de seção e três de texto. */
   --landing-margem: clamp(16px, 3vw, 48px);
@@ -316,6 +342,36 @@
   --landing-fs-s: 14px;
   /* A altura da barra do topo: 44 px de alvo e 12 px em cima e embaixo. */
   --landing-barra: 68px;
+}
+
+/* O tema claro da landing (spec landing-v3, D-609): os valores do bloco `.raiz.claro` do protótipo v3. Vale na raiz com
+ * `.landing-clara` e, no primeiro desenho da página pré-desenhada, pela marca que o script do <head> põe no <html>
+ * (D-613). O teal do topo e das perguntas, o marfim, o branco, o laranja e a tinta da resposta não mudam. */
+.landing.landing-clara,
+[data-tema-da-landing='claro'] .landing {
+  --landing-chao: var(--ivory);
+  --landing-chao-fundo: var(--marfim-300);
+  --landing-afundado: var(--marfim-200);
+  --landing-cartao: var(--gray-0);
+  --landing-cartao-hover: var(--marfim-500);
+  --landing-trilho: var(--marfim-400);
+  --landing-borda: var(--marfim-500);
+  --landing-contorno: var(--marfim-700);
+  /* A frase da chave desligada: 4,6:1 sobre o chão claro. */
+  --landing-apagado: var(--tinta-teal-500);
+  --landing-tinta: var(--tinta-teal-900);
+  --landing-tinta-suave: var(--tinta-teal-600);
+  --landing-destaque: var(--teal-700);
+  --landing-acao: var(--teal-900);
+  --landing-acao-tinta: var(--ivory);
+  --landing-acao-hover: var(--teal-950);
+  --landing-chamar: var(--teal-900);
+  --landing-chamar-tinta: var(--ivory);
+  --landing-chamar-hover: var(--teal-700);
+  --landing-rodape: var(--marfim-300);
+  --landing-rodape-tinta: var(--teal-900);
+  --landing-bloco: var(--teal-300);
+  --landing-bloco-tinta: var(--teal-900);
 }
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */

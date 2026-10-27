@@ -33,12 +33,12 @@ export function VitrineDoCobrir() {
         spellCheck={false}
         data-ui=""
         data-surge=""
-        className="mt-3.5 block min-h-11 w-full border-0 bg-transparent p-0 text-(length:--landing-fs-xl) leading-[1.05] font-extrabold tracking-[-0.04em] text-landing-teal-claro caret-landing-laranja focus-visible:outline-offset-[6px] max-[720px]:text-[10vw]"
+        className="mt-3.5 block min-h-11 w-full border-0 bg-transparent p-0 text-(length:--landing-fs-xl) leading-[1.05] font-extrabold tracking-[-0.04em] text-landing-destaque caret-landing-laranja focus-visible:outline-offset-[6px] max-[720px]:text-[10vw]"
       />
       {/* Até 960 px, o parágrafo desce para baixo do cartão: em 768 px, ao lado, ele ficava numa coluna de 146 px. */}
       <div className="mt-10 grid grid-cols-[minmax(0,520px)_minmax(0,1fr)] items-start gap-x-14 gap-y-10 max-[960px]:grid-cols-1">
         <div data-ui="" data-surge="" aria-live="polite" className="text-sm leading-[1.4] text-landing-tinta">
-          <div className="rounded-[18px] bg-landing-cartao p-5">
+          <div className="rounded-[18px] border border-landing-borda bg-landing-cartao p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <strong className="text-[17px] font-bold">{cartao ? cartao.nome : 'Neste exemplo'}</strong>
               {cartao ? <span className="text-[13px] text-landing-tinta-suave">{cartao.total}</span> : null}
@@ -69,7 +69,7 @@ export function VitrineDoCobrir() {
             type="button"
             aria-pressed={chaveDaPergunta(exemplo) === chave}
             onClick={() => setPergunta(exemplo)}
-            className="min-h-11 rounded-full bg-landing-cartao px-[18px] text-(length:--landing-fs-s) leading-none font-semibold whitespace-nowrap text-landing-tinta transition-colors duration-200 hover:bg-landing-cartao-hover aria-pressed:bg-landing-marfim aria-pressed:text-landing-teal"
+            className="min-h-11 rounded-full border border-landing-borda bg-landing-cartao px-[18px] text-(length:--landing-fs-s) leading-none font-semibold whitespace-nowrap text-landing-tinta transition-colors duration-200 hover:bg-landing-cartao-hover aria-pressed:border-transparent aria-pressed:bg-landing-acao aria-pressed:text-landing-acao-tinta"
           >
             {exemplo}
           </button>
