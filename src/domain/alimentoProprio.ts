@@ -2,9 +2,11 @@
 // Puro: a tela lê e escreve por aqui.
 import { medidasDoAlimento } from './busca.ts'
 import { comecaPelaQuantidade, lerMedidaDoRotulo } from './medidaDoRotulo.ts'
+import { motivoParaNaoSugerir } from './sugestaoDoProprio.ts'
 import {
   energiaIncoerente,
   GRUPOS_PROPRIOS,
+  produtoComoAlimento,
   type DadosAlimentoProprio,
   type DadosParaSalvar,
   type FonteAlimentoProprio,
@@ -116,9 +118,33 @@ export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosPara
     medidas,
     ...(d.fonte ? { fonte: d.fonte } : {}),
     observacoes: d.observacoes.trim(),
-    // D-384: com a energia incoerente, o alimento não é sugerido automaticamente.
-    sugerirAutomaticamente: d.sugerirAutomaticamente && !energiaIncoerente(d.valores),
+    // D-384 e D-493: com a energia incoerente ou com um motivo da regra do alimento próprio, a chave fica desligada.
+    sugerirAutomaticamente: d.sugerirAutomaticamente && !energiaIncoerente(d.valores) && motivoParaNaoSugerirDados(d) === null,
   }
+}
+
+/**
+ * D-493: por que o alimento do formulário não entra no Cobrir nem nas trocas ("gordura trans declarada", "doce"…);
+ * `null` quando pode entrar ou enquanto a porção não vale (os valores por 100 g ainda não existem).
+ */
+export function motivoParaNaoSugerirDados(d: DadosAlimentoProprio): string | null {
+  const porcaoG = d.base === 'por100' ? 100 : d.porcaoG
+  if (porcaoG === null || !(porcaoG > 0)) return null
+  const alimento = produtoComoAlimento({
+    id: 0,
+    codigoBarras: '',
+    nome: d.nome,
+    marca: d.tipo === 'rotulo' ? d.marca : '',
+    porcaoG,
+    medidaCaseira: '',
+    porPorcao: valoresLimpos(d.valores),
+    criadoEm: '',
+    tipo: d.tipo,
+    grupo: d.grupo,
+    preparo: d.preparo ?? 'pronto para consumo',
+    unidade: d.unidade,
+  })
+  return motivoParaNaoSugerir(alimento)
 }
 
 /** O preparo da base no formulário (D-383): "cru", "cozido"… o que a TACO não diz vira "pronto para consumo". */

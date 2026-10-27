@@ -1,0 +1,87 @@
+// Spec alimentos-e-gramaturas, D-493: a regra prescritível do alimento próprio, que lê os campos declarados, o grupo e o
+// nome livre.
+import { dadosEmBranco, produtoDosDados } from './alimentoProprio.ts'
+import { produtoComoAlimento, type DadosAlimentoProprio } from './produtos.ts'
+import { motivoParaNaoSugerir, regraDoProprio } from './sugestaoDoProprio.ts'
+import type { Alimento } from './tipos.ts'
+
+const NEUTRO: DadosAlimentoProprio = {
+  ...dadosEmBranco('alimento'),
+  nome: 'Mistura da casa',
+  grupo: 'Cereais e derivados',
+  preparo: 'cozido',
+  valores: { energia_kcal: 112, proteina_g: 2.2, carboidrato_g: 25, lipideos_g: 0.3 },
+  fonte: { tipo: 'laboratorio' },
+}
+
+const comoAlimento = (d: Partial<DadosAlimentoProprio> & { readonly valoresExtra?: DadosAlimentoProprio['valores'] }): Alimento => {
+  const { valoresExtra, ...resto } = d
+  const dados: DadosAlimentoProprio = { ...NEUTRO, ...resto, valores: { ...NEUTRO.valores, ...valoresExtra } }
+  return produtoComoAlimento({ ...produtoDosDados(dados), id: 900_001, codigoBarras: '', marca: '', medidaCaseira: '', criadoEm: '' })
+}
+
+describe('os campos declarados e o grupo (D-493)', () => {
+  it('CA-1352: gordura trans acima de 0 é "nunca"; 0 ou vazia não tira (CB-460)', () => {
+    expect(regraDoProprio(comoAlimento({ valoresExtra: { gordura_trans_g: 0.6 } }))).toMatchObject({ nivel: 'nunca', motivo: 'gordura trans declarada' })
+    expect(regraDoProprio(comoAlimento({ valoresExtra: { gordura_trans_g: 0 } }))).toBeNull()
+    expect(regraDoProprio(comoAlimento({}))).toBeNull()
+  })
+
+  it('CA-1353: o grupo "Outros alimentos industrializados" fica fora da rotina', () => {
+    expect(regraDoProprio(comoAlimento({ grupo: 'Outros alimentos industrializados' }))).toMatchObject({ nivel: 'fora-da-rotina', motivo: 'grupo Outros alimentos industrializados' })
+  })
+
+  it('CA-1354: açúcares acima de 15 g em 100 g, ou de 7,5 g na bebida e no leite; a fruta não passa pelo limite', () => {
+    expect(regraDoProprio(comoAlimento({ tipo: 'preparacao', valoresExtra: { acucares_g: 35, carboidrato_g: 50 } }))?.motivo).toBe('mais de 15 g de açúcares em 100 g')
+    expect(regraDoProprio(comoAlimento({ valoresExtra: { acucares_g: 14 } }))).toBeNull()
+    const bebida = { grupo: 'Bebidas (alcoólicas e não alcoólicas)', unidade: 'ml' as const, valoresExtra: { acucares_g: 11.5 } }
+    expect(regraDoProprio(comoAlimento(bebida))?.motivo).toBe('mais de 7,5 g de açúcares em 100 ml')
+    expect(regraDoProprio(comoAlimento({ grupo: 'Leite e derivados', valoresExtra: { acucares_g: 12 } }))?.motivo).toBe('mais de 7,5 g de açúcares em 100 g')
+    expect(regraDoProprio(comoAlimento({ grupo: 'Leite e derivados', valoresExtra: { acucares_g: 4.7 } }))).toBeNull()
+    expect(regraDoProprio(comoAlimento({ grupo: 'Frutas e derivados', preparo: 'cru', valoresExtra: { acucares_g: 16 } }))).toBeNull()
+    expect(regraDoProprio(comoAlimento({ grupo: 'Frutas e derivados', tipo: 'preparacao', valoresExtra: { acucares_g: 40, carboidrato_g: 50 } }))?.motivo).toBe('mais de 15 g de açúcares em 100 g')
+    // CB-459: sem açúcar declarado, a regra do açúcar não vale.
+    expect(regraDoProprio(comoAlimento({ grupo: 'Leite e derivados' }))).toBeNull()
+  })
+})
+
+describe('o nome livre (D-493)', () => {
+  it.each([
+    ['Bolo de chocolate da vó', 'doce'],
+    ['Pudim de leite da tia', 'doce'],
+    ['Doce de leite caseiro', 'doce'],
+    ['Goiabada cascão', 'doce'],
+    ['Abacaxi em calda', 'doce'],
+    ['Castanha com cobertura de chocolate', 'doce'],
+    ['Biscoito recheado sabor chocolate', 'ultraprocessado'],
+    ['Rosquinha de coco', 'ultraprocessado'],
+    ['Bolacha de água e sal', 'ultraprocessado'],
+    ['Barra de cereais com castanha', 'ultraprocessado'],
+    ['Salgadinho de milho', 'ultraprocessado'],
+    ['Pão recheado da padaria', 'ultraprocessado'],
+    ['Néctar de acerola', 'bebida adoçada'],
+    ['Refresco de caju', 'bebida adoçada'],
+    ['Suco de uva adoçado', 'bebida adoçada'],
+    ['Chope artesanal', 'bebida alcoólica'],
+    ['Espumante de caju', 'bebida alcoólica'],
+  ])('"%s" fica fora: %s', (nome, motivo) => {
+    expect(regraDoProprio(comoAlimento({ nome }))?.motivo).toBe(motivo)
+  })
+
+  it.each(['Camu-camu, polpa congelada', 'Cuscuz nordestino', 'Batata-doce assada da feira', 'Farinha d’água de Bragança', 'Tapioca com coco', 'Pão caseiro de macaxeira'])('"%s" não é pego pelo nome', (nome) => {
+    expect(regraDoProprio(comoAlimento({ nome }))).toBeNull()
+  })
+})
+
+describe('o motivo que o formulário mostra (CA-1356)', () => {
+  it('a regra da base, a do próprio e o grupo Suplementos; o mais grave primeiro', () => {
+    expect(motivoParaNaoSugerir(comoAlimento({ grupo: 'Suplementos' }))).toBe('suplemento')
+    expect(motivoParaNaoSugerir(comoAlimento({ nome: 'Cerveja de mandioca' }))).toBe('bebida alcoólica')
+    expect(motivoParaNaoSugerir(comoAlimento({ grupo: 'Produtos açucarados' }))).toBe('doce, açúcar ou fruta em calda')
+    // A gordura trans ("nunca") vem antes do grupo industrializado ("fora da rotina").
+    expect(motivoParaNaoSugerir(comoAlimento({ grupo: 'Outros alimentos industrializados', valoresExtra: { gordura_trans_g: 1 } }))).toBe('gordura trans declarada')
+    expect(motivoParaNaoSugerir(comoAlimento({}))).toBeNull()
+    // A forma de ingrediente segue a chave "Incluir ingredientes" do Cobrir: não trava a chave do cadastro.
+    expect(motivoParaNaoSugerir(comoAlimento({ nome: 'Farinha de babaçu', preparo: 'cru' }))).toBeNull()
+  })
+})

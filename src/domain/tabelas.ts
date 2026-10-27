@@ -2,6 +2,7 @@
 import tabelaAlimentos from '../data/alimentos.json'
 import tabelaDri from '../data/dri.json'
 import { COMPLEMENTO_USDA, juntarComplemento, juntarMacros, MACROS_USDA, type AlimentoTaco } from './complementoUsda.ts'
+import { motivoParaNaoSugerir } from './sugestaoDoProprio.ts'
 import type { Alimento, BuscarAlimento, Sexo } from './tipos.ts'
 
 // O JSON importado é tipado pelo TypeScript de forma ampla (string em vez de união de chaves);
@@ -45,12 +46,13 @@ export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? 
 
 /**
  * D-386 (spec alimentos-e-gramaturas): o alimento próprio entra nas sugestões automáticas (Cobrir e trocas da folha) só
- * com "Pode aparecer no Cobrir e nas trocas" ligado, com energia, fora do grupo "Suplementos" e sem o aviso de energia
- * incoerente. A regra prescritível (nome, grupo e preparo) e o nutriente pedido são conferidos por quem sugere; a regra
- * "nunca" não se desliga.
+ * com "Pode aparecer no Cobrir e nas trocas" ligado, com energia, fora do grupo "Suplementos", sem o aviso de energia
+ * incoerente e sem um motivo da regra do alimento próprio (D-493: gordura trans, industrializado, açúcar, nome livre),
+ * que vale também para o item gravado antes dela. O nutriente pedido e a forma de ingrediente são conferidos por quem
+ * sugere; a regra "nunca" não se desliga.
  */
 export function proprioPodeSerSugerido(a: Alimento): boolean {
-  return a.proprio !== undefined && a.proprio.sugerir && !a.proprio.energiaIncoerente && a.categoria !== 'Suplementos' && a.nutrientes.energia_kcal !== null
+  return a.proprio !== undefined && a.proprio.sugerir && !a.proprio.energiaIncoerente && a.nutrientes.energia_kcal !== null && motivoParaNaoSugerir(a) === null
 }
 
 let paraSugerir: readonly Alimento[] | null = null

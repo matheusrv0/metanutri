@@ -232,6 +232,51 @@ describe('Cobrir e trocas só com a chave (D-386)', () => {
       expect(idsSugeridos(), d.nome).not.toContain(id)
     }
   })
+
+  // Gravado com a chave ligada antes desta versão: a regra vale na hora de sugerir (CB-461).
+  const registrarComAChave = (d: DadosAlimentoProprio) => {
+    const salvo = criarRepositorioProdutos(new Memoria()).salvar({ ...produtoDosDados(d), sugerirAutomaticamente: true })
+    registrarProdutos([produtoComoAlimento(salvo)])
+    return salvo.id
+  }
+  /** Registra o alimento e diz se ele entra no Cobrir de ferro (a lista é lida depois de registrar). */
+  const entra = (d: DadosAlimentoProprio): boolean => {
+    const id = registrarComAChave(d)
+    return idsSugeridos().includes(id)
+  }
+
+  it('CA-1352 e CA-1353: gordura trans declarada e o grupo "Outros alimentos industrializados" não entram', () => {
+    expect(entra({ ...rica, valores: { ...rica.valores, gordura_trans_g: 0.6 } })).toBe(false)
+    expect(entra({ ...rica, grupo: 'Outros alimentos industrializados' })).toBe(false)
+    // CB-460: trans zero não tira.
+    expect(entra({ ...rica, valores: { ...rica.valores, gordura_trans_g: 0 } })).toBe(true)
+  })
+
+  it('CA-1354: açúcares acima do limite não entram; a fruta, com o açúcar dela, entra', () => {
+    expect(entra({ ...rica, tipo: 'preparacao', valores: { ...rica.valores, acucares_g: 20 } })).toBe(false)
+    expect(entra({ ...rica, grupo: 'Bebidas (alcoólicas e não alcoólicas)', unidade: 'ml', valores: { ...rica.valores, acucares_g: 11.5 } })).toBe(false)
+    expect(entra({ ...rica, grupo: 'Leite e derivados', valores: { ...rica.valores, acucares_g: 12 } })).toBe(false)
+    expect(entra({ ...rica, nome: 'Camu-camu, polpa congelada', grupo: 'Frutas e derivados', preparo: 'cru', valores: { ...rica.valores, acucares_g: 16 } })).toBe(true)
+  })
+
+  it('CA-1355: o nome livre de doce, ultraprocessado, bebida adoçada e álcool não entra', () => {
+    for (const nome of ['Bolo de chocolate da vó', 'Biscoito recheado sabor chocolate', 'Rosquinha de coco', 'Néctar de acerola', 'Chope artesanal']) {
+      expect(entra({ ...rica, nome, grupo: 'Cereais e derivados' }), nome).toBe(false)
+    }
+    expect(entra({ ...rica, nome: 'Camu-camu, polpa congelada', grupo: 'Frutas e derivados', preparo: 'cru' })).toBe(true)
+  })
+
+  it('CA-1356: o formulário grava a chave desligada quando há motivo', () => {
+    expect(produtoDosDados({ ...rica, sugerirAutomaticamente: true, valores: { ...rica.valores, gordura_trans_g: 0.6 } }).sugerirAutomaticamente).toBe(false)
+    expect(produtoDosDados({ ...rica, sugerirAutomaticamente: true, nome: 'Rosquinha de coco' }).sugerirAutomaticamente).toBe(false)
+    expect(produtoDosDados({ ...rica, sugerirAutomaticamente: true }).sugerirAutomaticamente).toBe(true)
+  })
+
+  it('CA-1357 (D-494): com porção do rótulo, a sugestão não passa dela', () => {
+    const id = registrarComAChave({ ...rica, tipo: 'rotulo', base: 'porcao', porcaoG: 30, nomeDaPorcao: '1 unidade', fonte: { tipo: 'rotulo' }, valores: { energia_kcal: 34, proteina_g: 0.7, carboidrato_g: 7.5, lipideos_g: 0.1, ferro_mg: 3 } })
+    const sugestao = sugerirParaCobrir('ferro_mg', vazio, adequacao, { gastoEnergetico: 2000, alimentos: alimentosParaSugerir() }).sugestoes.find((s) => s.alimentoId === id)
+    expect(sugestao?.gramas).toBeLessThanOrEqual(30)
+  })
 })
 
 describe('restrição pelo grupo do alimento próprio (D-492)', () => {

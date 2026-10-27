@@ -1,5 +1,6 @@
 import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
+import { motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import {
   CAMPOS_GERAIS,
@@ -93,6 +94,9 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
   const erroDe = (campo: string) => (tentou ? problemas.find((p) => p.campo === campo)?.mensagem : undefined)
   const avisoDe = (campo: string) => avisos.find((a) => a.campo === campo)?.mensagem
   const incoerente = energiaIncoerente(d.valores)
+  // D-493: o motivo da regra do alimento próprio trava a chave do Cobrir, como a energia incoerente.
+  const motivoSemSugestao = motivoParaNaoSugerirDados(d)
+  const chaveTravada = incoerente || motivoSemSugestao !== null
   const unidade = d.unidade
   const por100 = valoresPor100(d)
 
@@ -367,8 +371,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
       <div className="flex items-start gap-3 rounded-2xl bg-surfacerow px-4 py-3">
         <Switch
           id={idSugerir}
-          checked={d.sugerirAutomaticamente && !incoerente}
-          disabled={incoerente}
+          checked={d.sugerirAutomaticamente && !chaveTravada}
+          disabled={chaveTravada}
           onCheckedChange={(v) => mudar({ sugerirAutomaticamente: v })}
           aria-describedby={`${idSugerir}-texto`}
           className="mt-0.5"
@@ -376,7 +380,11 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         <Label htmlFor={idSugerir} className="min-h-11 flex-1 cursor-pointer flex-col items-start gap-0.5 font-normal leading-normal">
           <span className="text-sm font-semibold text-heading">Pode aparecer no Cobrir e nas trocas</span>
           <span id={`${idSugerir}-texto`} className="text-xs text-muted-foreground">
-            {incoerente ? 'Confira a energia antes: com ela fora dos macros, o alimento não é sugerido.' : 'Desligado, o alimento só entra quando você o põe no plano.'}
+            {incoerente
+              ? 'Confira a energia antes: com ela fora dos macros, o alimento não é sugerido.'
+              : motivoSemSugestao !== null
+                ? `Não entra no Cobrir nem nas trocas: ${motivoSemSugestao}.`
+                : 'Desligado, o alimento só entra quando você o põe no plano.'}
           </span>
         </Label>
       </div>

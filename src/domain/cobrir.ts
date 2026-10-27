@@ -235,11 +235,15 @@ export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): num
 
 /**
  * A porção máxima do grupo na idade, arredondada para baixo de 5 em 5 g, nunca menos que 5 g. A fruta pequena fica em 1
- * unidade em qualquer idade (D-477).
+ * unidade em qualquer idade (D-477). O alimento próprio com porção do rótulo não passa dela (spec alimentos-e-gramaturas,
+ * D-494): a rosquinha ganhava a porção de um prato de cereal.
  */
 function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
   const grupo = porcaoDoGrupo(alimento)
-  const adulto = grupo?.maxima ?? PORCAO_MAXIMA_PADRAO_G
+  const doGrupo = grupo?.maxima ?? PORCAO_MAXIMA_PADRAO_G
+  const porcao = alimento.proprio ? alimento.porcaoPadrao : undefined
+  const doRotulo = porcao ? porcao.quantidade * porcao.gramasPorMedida : null
+  const adulto = doRotulo !== null && doRotulo > 0 ? Math.min(doGrupo, doRotulo) : doGrupo
   if (grupo?.grupo === 'Fruta' && adulto <= FRUTA_PEQUENA_G) return adulto
   return Math.max(PASSO_PORCAO_G, Math.floor((adulto * fatorDaIdade(idadeAnos)) / PASSO_PORCAO_G) * PASSO_PORCAO_G)
 }
