@@ -3,9 +3,11 @@ import { MENSAGEM_ERRO, validarEntrada, type ErroConta } from '@/domain/conta.ts
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
+import { ENDERECO_DO_SITE } from '../../enderecos.ts'
 import { armazenamentoLocal } from '../../estado/armazenamentoLocal.ts'
 import type { ValorConta } from '../../estado/usarConta.ts'
 import { lerSaida, textoDaSaida } from '../../sessao/motivoDaSaida.ts'
+import { AvisoContaExcluida } from '../AvisoContaExcluida.tsx'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { AvisoSemServidor } from './AvisoSemServidor.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
@@ -81,6 +83,8 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
       aoIrParaInicio={aoIrParaInicio}
       lado={<LadoDoPlano plano={null} ciclo="mensal" />}
     >
+      {/* Spec separacao-site-app, DP-SA-49: depois de excluir a conta, o aviso fica aqui (a landing é de outro endereço). */}
+      <AvisoContaExcluida />
       {conta.disponivel ? null : <AvisoSemServidor aoAbrirSistema={aoAbrirSistema} />}
       {semInternet ? <AvisoFormulario tipo="erro">Você está sem internet. Conecte-se para entrar e abrir seus dados.</AvisoFormulario> : null}
 
@@ -129,6 +133,12 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
           <button type="button" onClick={aoCriarConta} className={BOTAO_TEXTO}>
             Criar conta grátis
           </button>
+        </p>
+        {/* Spec separacao-site-app, D-504 e CA-1409: o site fica em outro endereço; daqui, um link para ele. */}
+        <p className="-mt-2 text-center text-sm">
+          <a href={ENDERECO_DO_SITE} className={BOTAO_TEXTO}>
+            Conheça o MetaNutri
+          </a>
         </p>
       </form>
     </MolduraConta>

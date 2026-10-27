@@ -52,3 +52,11 @@ export function enderecoOficial(local: { readonly hostname: string; readonly sea
   if (host !== CLOUDFLARE && !host.endsWith(`.${CLOUDFLARE}`)) return null
   return telaNoApp(local.hash, local.search)
 }
+
+/**
+ * DP-SA-50: o app deixa o endereço dele e vai a uma página do site, sem ficar no histórico (`location.replace`). Um lugar
+ * só, que os testes de tela trocam (o jsdom não navega).
+ */
+export function sairParaOSite(endereco: string): void {
+  globalThis.location.replace(endereco)
+}

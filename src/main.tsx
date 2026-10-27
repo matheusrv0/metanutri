@@ -5,46 +5,26 @@ import '@fontsource-variable/manrope'
 import '@fontsource-variable/bricolage-grotesque'
 import './ui/tema/globals.css'
 import { App } from './App.tsx'
-import { marcarAbertura } from './ui/aplicativo/aberturaDaPagina.ts'
 import { LimiteDeErro } from './ui/aplicativo/LimiteDeErro.tsx'
 import { registrarAplicativo } from './ui/aplicativo/registrarAplicativo.ts'
 import { avisarVersaoNova } from './ui/aplicativo/versaoNova.ts'
 import { AvisoMoldura } from './ui/AvisoMoldura.tsx'
+import { enderecoOficial } from './ui/enderecos.ts'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
 import { estaEmMoldura } from './ui/moldura.ts'
-import { obterSupabase, supabaseConfigurado } from './ui/estado/supabase.ts'
+import { obterSupabase } from './ui/estado/supabase.ts'
 import { tirarDestino } from './ui/fluxoConta.ts'
 import { escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
-import { enderecoDaVitrine, enderecoDoApp } from './seo/rotaDaPagina.ts'
 
-// D-331 (spec site-publico-profissional): aberta pela página própria (/precos/, /termos/…), o app passa ao endereço da
-// raiz com a rota da página, sem recarregar. Antes de tudo: o resto do app lê o endereço.
-// D-338: também `/precos` sem a barra, quando o service worker entrega a página inicial nesse endereço.
-const enderecoDaPagina = enderecoDoApp(
-  document.documentElement.dataset['rota'],
-  globalThis.location.hash,
-  globalThis.location.search,
-  document.baseURI,
-  globalThis.location.pathname,
-)
-if (enderecoDaPagina) globalThis.history.replaceState(null, '', enderecoDaPagina)
-// D-337: a raiz sem sessão vai para a landing já no endereço dela, sem passar pelo "Carregando…" do portão da conta.
-const enderecoDaLanding = enderecoDaVitrine({
-  hash: globalThis.location.hash,
-  busca: globalThis.location.search,
-  caminho: globalThis.location.pathname,
-  comServidor: supabaseConfigurado(),
-  vitrineEscondida: document.documentElement.classList.contains('sem-vitrine'),
-})
-if (enderecoDaLanding) globalThis.history.replaceState(null, '', enderecoDaLanding)
-// CA-1026: só a página que abriu numa tela de vitrine recarrega sozinha quando chega versão nova.
-marcarAbertura(globalThis.location.hash)
+// Spec separacao-site-app, D-509 e CA-1417: aberto no endereço da Cloudflare (ou numa prévia), vai ao oficial, com a mesma
+// consulta e o mesmo #, antes de tudo: lá o Turnstile e as funções não aceitam o endereço. A regra da Cloudflare faz o
+// mesmo antes (passo 10 do dono); esta é a reserva.
+const oficial = enderecoOficial(globalThis.location)
 
 // D-172: o service worker do aplicativo; a versão nova avisa na área de trabalho em vez de recarregar sozinha.
-// D-320 (spec site-publico-profissional): na vitrine, a moldura pública recarrega a página.
-registrarAplicativo(avisarVersaoNova)
+if (oficial === null) registrarAplicativo(avisarVersaoNova)
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')
@@ -64,8 +44,10 @@ async function tratarVolta(): Promise<void> {
   globalThis.history.replaceState(null, '', `${globalThis.location.pathname}${escreverRota(destinoDaVolta(volta, guardado))}`)
 }
 
-// D-99: aberto dentro de outro site, não monta o app: só o aviso com o link para abrir direto.
-if (estaEmMoldura(globalThis)) {
+if (oficial !== null) {
+  globalThis.location.replace(oficial)
+} else if (estaEmMoldura(globalThis)) {
+  // D-99: aberto dentro de outro site, não monta o app: só o aviso com o link para abrir direto.
   createRoot(raiz).render(
     <StrictMode>
       <ProvedorTema>

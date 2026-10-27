@@ -1,5 +1,6 @@
 // Navegação por endereço (#/casos, #/caso/<id>/<aba>, #/assinar/solo/anual), sem biblioteca de rotas (PLAN R-8).
 import { ehCiclo, ehIdPlano, type Ciclo, type IdPlano } from '@/domain/conta.ts'
+import { paginaDoSite } from './enderecos.ts'
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
@@ -186,6 +187,18 @@ export function ehTelaPublica(rota: Rota): boolean {
 /** O endereço do site sem caminho (sem hash, `#` ou `#/`): sem sessão, abre a landing (spec estilo-spora, CA-730). */
 export function ehEnderecoDaRaiz(hash: string): boolean {
   return hash.replace(/^#\/?/, '') === ''
+}
+
+/**
+ * As telas que agora são páginas do site (spec separacao-site-app, D-504): no app, elas levam ao endereço da página, com
+ * o plano em destaque em Preços (CA-1412).
+ */
+export const TELAS_DO_SITE = ['inicio', 'precos', 'termos', 'privacidade', 'fontes'] as const
+
+/** O endereço da página do site para a rota, ou nulo quando a tela é do app. */
+export function enderecoNoSite(rota: Rota): string | null {
+  if (rota.tela === 'precos') return paginaDoSite('precos', rota.destaque ?? null)
+  return rota.tela === 'inicio' || rota.tela === 'termos' || rota.tela === 'privacidade' || rota.tela === 'fontes' ? paginaDoSite(rota.tela) : null
 }
 
 /** Abre sem sessão mesmo com o servidor configurado (CA-149). */

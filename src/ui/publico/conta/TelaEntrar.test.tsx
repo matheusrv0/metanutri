@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Resultado, ValorConta } from '../../estado/usarConta.ts'
+import { marcarContaExcluida } from '../../contaExcluida.ts'
 import { gravarSaida } from '../../sessao/motivoDaSaida.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaEntrar } from './TelaEntrar.tsx'
@@ -31,6 +32,20 @@ describe('TelaEntrar', () => {
     expect(aoEsqueci).toHaveBeenCalledOnce()
     expect(aoCriarConta).toHaveBeenCalledOnce()
     expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
+  })
+
+  it('CA-1409 (spec separacao-site-app): "Conheça o MetaNutri" leva ao site', () => {
+    montar()
+    expect(screen.getByRole('link', { name: 'Conheça o MetaNutri' })).toHaveAttribute('href', 'https://metanutri.com.br/')
+  })
+
+  it('CA-808 e DP-SA-49: depois de excluir a conta, Entrar diz "Sua conta foi excluída." no alto, uma vez', () => {
+    sessionStorage.clear()
+    marcarContaExcluida(undefined, performance.timeOrigin - 1)
+    montar()
+    const aviso = screen.getByRole('status')
+    expect(aviso).toHaveTextContent('Sua conta foi excluída.')
+    expect(aviso.compareDocumentPosition(screen.getByLabelText('E-mail')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('CA-137: deu certo, avisa quem manda', async () => {

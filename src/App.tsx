@@ -15,12 +15,10 @@ import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
 import { usePerfilConta, type ValorPerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './ui/fluxoConta.ts'
-import { ehEnderecoDaRaiz, ehRotaLivre, escreverRota, lerRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { ehEnderecoDaRaiz, ehRotaLivre, enderecoNoSite, escreverRota, lerRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { sairParaOSite } from './ui/enderecos.ts'
 import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
-import { AvisoContaExcluida } from './ui/publico/AvisoContaExcluida.tsx'
-import { MolduraPublica, type DestinoPublico } from './ui/publico/MolduraPublica.tsx'
-import { SecaoPrecos } from './ui/publico/SecaoPrecos.tsx'
 import { TelaCheckout } from './ui/publico/TelaCheckout.tsx'
 import { TelaComprovarMatricula } from './ui/publico/conta/TelaComprovarMatricula.tsx'
 import { TelaCompletarCadastro } from './ui/publico/conta/TelaCompletarCadastro.tsx'
@@ -31,22 +29,16 @@ import { TelaCodigoSenha } from './ui/publico/conta/TelaCodigoSenha.tsx'
 import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
-import { TelaInicio } from './ui/publico/TelaInicio.tsx'
-import { TelaPrivacidade } from './ui/publico/TelaPrivacidade.tsx'
-import { TelaFontes } from './ui/publico/TelaFontes.tsx'
-import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { Redirecionar } from './ui/Redirecionar.tsx'
 import { AvisoDeInatividade } from './ui/sessao/AvisoDeInatividade.tsx'
 import { CapaEncerrando } from './ui/sessao/CapaEncerrando.tsx'
 import { ContextoEnvios } from './ui/sessao/contextoEnvios.ts'
 import { ContextoFimDaSessao } from './ui/sessao/contextoSessao.ts'
-import { lerSaida } from './ui/sessao/motivoDaSaida.ts'
 import { useTempoDeSessao } from './ui/sessao/usarTempoDeSessao.ts'
 import { useRota } from './ui/usarRota.ts'
 
 const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
-const ROTA_INICIO: Rota = { tela: 'inicio' }
 
 interface ConteudoProps {
   readonly conta: ValorConta
@@ -60,6 +52,22 @@ const ROTA_PAINEL: Rota = { tela: 'painel' }
 
 function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
   const [rota, navegar] = useRota()
+
+  // Spec separacao-site-app, D-504 e CA-1412: início, Preços, Termos, Privacidade e Fontes são páginas do site.
+  const paraOSite = enderecoNoSite(rota)
+  useEffect(() => {
+    if (paraOSite !== null) sairParaOSite(paraOSite)
+  }, [paraOSite])
+
+  // DP-SA-51: Criar conta aberto com sessão vai aonde o plano levaria (D-504, CA-1413). Vale a sessão de quando a pessoa
+  // chegou (depois de conferida); a que nasce do próprio cadastro segue o caminho do cadastro.
+  const enderecoDaRota = escreverRota(rota)
+  const [cadastroAberto, setCadastroAberto] = useState<{ readonly endereco: string; readonly comSessao: boolean } | null>(null)
+  if (rota.tela !== 'criar-conta') {
+    if (cadastroAberto !== null) setCadastroAberto(null)
+  } else if (!(conta.disponivel && conta.carregando) && cadastroAberto?.endereco !== enderecoDaRota) {
+    setCadastroAberto({ endereco: enderecoDaRota, comSessao: conta.sessao !== null })
+  }
 
   // DP-15: a conta trocou direto (A → B, sem passar por Entrar) numa tela de trabalho. O endereço
   // pode ser de um plano ou paciente da conta anterior: a conta nova vai para o painel, uma vez.
@@ -127,13 +135,11 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
     perfilConta.recarregar,
   )
 
-  const irPara = (destino: DestinoPublico) => navegar(destino === 'criar-conta' ? rotaCriarConta(null, 'mensal') : { tela: destino })
-
   // D-96: sem sessão, a área de trabalho e os dados da conta saem da tela. Sair apaga a cópia de
   // trabalho (spec dados-na-nuvem, D-131); recarregar também descarta o que ainda estava a caminho
-  // (uma leitura da nuvem, por exemplo).
+  // (uma leitura da nuvem, por exemplo). Spec separacao-site-app, D-504 e CA-1415: depois de sair, Entrar do app.
   const depoisDeSair = () => {
-    navegar({ tela: 'inicio' })
+    navegar({ tela: 'entrar' })
     globalThis.location.reload()
   }
 
@@ -168,6 +174,9 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
     </div>
   )
 
+  // A página do site já está a caminho (o efeito de cima); nada do app aparece nesse meio-tempo.
+  if (paraOSite !== null) return telaCarregando
+
   // CA-416: com o e-mail pendente, o resto do site leva de volta para a tela do código.
   if (pendente !== null && rota.tela !== 'confirmar-email' && rota.tela !== 'termos' && rota.tela !== 'privacidade') {
     if (conta.disponivel && conta.carregando) return telaCarregando
@@ -179,13 +188,12 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
   if (conta.disponivel && !ehRotaLivre(rota)) {
     if (conta.carregando) return telaCarregando
     if (!sessao) {
-      // CA-730: o endereço do site sem caminho abre a landing; só a tela de trabalho pedida pelo endereço pede Entrar.
-      // Spec separacao-site-app, DP-SA-20: depois da saída por tempo, abre "Entre de novo" (CA-1450).
-      if (ehEnderecoDaRaiz(globalThis.location.hash) && lerSaida(armazenamentoLocal()) === null) return <Redirecionar para={ROTA_INICIO} navegar={navegar} />
+      // Spec separacao-site-app, D-504 e CA-1409: no app, a raiz sem sessão abre Entrar (o CA-730 vale só no site). Na raiz,
+      // com o subtítulo de sempre; a tela de trabalho pedida pelo endereço diz que pede a entrada (CA-148, DP-SA-52).
       return (
         <TelaEntrar
           conta={conta}
-          pedidoPorTela
+          pedidoPorTela={!ehEnderecoDaRaiz(globalThis.location.hash)}
           aoEntrou={() => undefined}
           aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
           aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
@@ -212,37 +220,6 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
     }
   }
 
-  if (rota.tela === 'inicio') {
-    return (
-      <MolduraPublica atual="inicio" aoIrPara={irPara}>
-        {/* Spec exclusao-de-conta, CA-808: a saída depois de excluir a conta chega aqui. */}
-        <AvisoContaExcluida />
-        <TelaInicio
-          aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))}
-          aoEscolher={(plano, ciclo) => {
-            const destino = destinoDoPlano(plano, ciclo, sessao !== null)
-            if (destino) navegar(destino)
-          }}
-        />
-      </MolduraPublica>
-    )
-  }
-
-  if (rota.tela === 'precos') {
-    return (
-      <MolduraPublica atual="precos" aoIrPara={irPara}>
-        <SecaoPrecos
-          contato={CONTATO_EMAIL}
-          {...(rota.destaque ? { destaque: rota.destaque } : {})}
-          aoEscolher={(plano, ciclo) => {
-            const destino = destinoDoPlano(plano, ciclo, sessao !== null)
-            if (destino) navegar(destino)
-          }}
-        />
-      </MolduraPublica>
-    )
-  }
-
   if (rota.tela === 'entrar') {
     return (
       <TelaEntrar
@@ -259,6 +236,10 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   if (rota.tela === 'criar-conta') {
     const ciclo = rota.ciclo ?? 'mensal'
+    if (conta.disponivel && conta.carregando) return telaCarregando
+    if (sessao && cadastroAberto?.comSessao) {
+      return <Redirecionar para={destinoDoPlano(rota.plano ?? 'free', ciclo, true) ?? ROTA_PAINEL} navegar={navegar} />
+    }
     return (
       <TelaCriarConta
         // Trocar de endereço (outro plano) recomeça o formulário.
@@ -398,14 +379,6 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
         aoIrParaPainel={() => navegar({ tela: 'painel' })}
         aoTentarDeNovo={(plano) => navegar({ tela: 'assinar', plano, ciclo: 'mensal' })}
       />
-    )
-  }
-
-  if (rota.tela === 'termos' || rota.tela === 'privacidade' || rota.tela === 'fontes') {
-    return (
-      <MolduraPublica atual={rota.tela} aoIrPara={irPara}>
-        {rota.tela === 'termos' ? <TelaTermos /> : rota.tela === 'privacidade' ? <TelaPrivacidade /> : <TelaFontes />}
-      </MolduraPublica>
     )
   }
 
