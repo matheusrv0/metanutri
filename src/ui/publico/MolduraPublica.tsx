@@ -1,12 +1,14 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { useEffect, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cn } from '@/lib/utils'
 import { paginaAbriuNaVitrine } from '../aplicativo/aberturaDaPagina.ts'
 import { useVersaoNova } from '../aplicativo/versaoNova.ts'
+import { MolduraDaLanding } from './inicio/MolduraDaLanding.tsx'
+import { irComAncora, navegarPeloApp, type DestinoPublico } from './navegacaoPublica.ts'
 
-export type DestinoPublico = 'inicio' | 'precos' | 'entrar' | 'criar-conta' | 'painel' | 'termos' | 'privacidade' | 'fontes'
+export type { DestinoPublico } from './navegacaoPublica.ts'
 
 interface MolduraPublicaProps {
   readonly atual: DestinoPublico | null
@@ -29,29 +31,14 @@ interface LinkPublico {
   readonly href: string
 }
 
-/** D-321 (spec site-publico-profissional): as seções da landing e Preços, em caixa normal. */
+/**
+ * D-321 (spec site-publico-profissional): as seções da landing e Preços, em caixa normal. Spec landing-escura: a landing
+ * nova não tem a seção Recursos; o menu fica com Como funciona e Preços.
+ */
 const LINKS: readonly LinkPublico[] = [
   { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona', href: '#/inicio' },
-  { texto: 'Recursos', destino: 'inicio', ancora: 'recursos', href: '#/inicio' },
   { texto: 'Preços', destino: 'precos', href: 'precos/' },
 ]
-
-/**
- * D-339 (CA-1028): o clique comum troca de tela pelo app, sem recarregar; com Ctrl, Cmd, Shift, Alt ou o botão do meio
- * (aba nova), o navegador segue o endereço do link.
- */
-function navegarPeloApp(evento: MouseEvent<HTMLAnchorElement>, ir: () => void) {
-  if (evento.defaultPrevented || evento.button !== 0 || evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.altKey) return
-  evento.preventDefault()
-  ir()
-}
-
-/** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */
-export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
-  aoIrPara(destino)
-  if (!ancora) return globalThis.scrollTo?.({ top: 0 })
-  globalThis.setTimeout(() => globalThis.document.getElementById(ancora)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
-}
 
 /**
  * Spec revisao-geral-publica, D-235: 44 px de toque e o texto que quebra alinhado à esquerda (o botão centraliza por
@@ -86,6 +73,15 @@ export function MolduraPublica({
     if (versaoNova && abriuNaVitrine) recarregar()
   }, [versaoNova, abriuNaVitrine, recarregar])
 
+  // Spec landing-escura (D-530, D-545): a página inicial tem moldura própria, escura em qualquer tema.
+  if (atual === 'inicio') {
+    return (
+      <MolduraDaLanding temSessao={temSessao} aoIrPara={aoIrPara}>
+        {children}
+      </MolduraDaLanding>
+    )
+  }
+
   const itemMenu =
     'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9'
   const ano = new Date().getFullYear()
@@ -94,7 +90,8 @@ export function MolduraPublica({
       titulo: 'Produto',
       links: [
         ...LINKS.map((link) => ({ texto: link.texto, href: link.href, ir: () => irComAncora(aoIrPara, link.destino, link.ancora) })),
-        { texto: 'Fontes da base', href: 'fontes/', ir: () => irComAncora(aoIrPara, 'fontes') },
+        // Spec landing-escura, D-542: a página das fontes se chama Referências.
+        { texto: 'Referências', href: 'fontes/', ir: () => irComAncora(aoIrPara, 'fontes') },
       ],
     },
     {

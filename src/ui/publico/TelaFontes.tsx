@@ -1,12 +1,15 @@
 import { ExternalLink } from 'lucide-react'
 import { FONTES_DA_BASE, NOME_DA_BASE, resumoDaBase } from '@/domain/baseMetanutri.ts'
 
-/** Página pública que cita as fontes da Base MetaNutri, como manda a licença da TACO (CA-322). */
+/**
+ * Página pública que cita as fontes da Base MetaNutri, como manda a licença da TACO (CA-322). Desde a spec landing-escura
+ * (D-542) ela se chama Referências; o endereço continua `fontes/`. É o único lugar do site que nomeia as fontes.
+ */
 export function TelaFontes() {
   const resumo = resumoDaBase()
   return (
     <article className="mx-auto flex max-w-[72ch] flex-col gap-3 px-4 py-12 text-sm leading-relaxed text-foreground sm:px-8">
-      <h1 className="text-4xl font-bold">Fontes da base</h1>
+      <h1 className="text-4xl font-bold">Referências</h1>
       <p className="text-base">
         {`A ${NOME_DA_BASE} reúne ${resumo.alimentos} alimentos, com os ${resumo.nutrientes} nutrientes da tabela brasileira (energia, macronutrientes, fibra, vitaminas e minerais) e as medidas caseiras do IBGE para ${resumo.comMedidaCaseira} deles. Para ${resumo.comComplementoUsda} alimentos, inclui também vitamina D, vitamina E, folato, vitamina B12 e selênio do USDA. Outros alimentos você cadastra em Meus alimentos.`}
       </p>

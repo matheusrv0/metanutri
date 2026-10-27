@@ -33,13 +33,17 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
     }
     expect(html).toContain('<header')
     expect(html).toContain('<footer')
+    // CA-1450 e CA-1484: a landing sai escura (a raiz da moldura dela) e com o rodapé novo.
+    expect(html).toMatch(/class="landing-escura dark /)
+    for (const trecho of ['Fale com a gente', 'Referências', 'falta cálcio', '640 de 1.000 mg no dia']) expect(html).toContain(trecho)
   })
 
   it('CA-1014: Preços, Termos, Privacidade e Fontes saem com o título de cada uma', () => {
     expect(corpo('precos')).toMatch(/<h1[^>]*>Planos e preços<\/h1>/)
     expect(corpo('termos')).toMatch(/<h1[^>]*>Termos de uso<\/h1>/)
     expect(corpo('privacidade')).toMatch(/<h1[^>]*>Política de privacidade<\/h1>/)
-    expect(corpo('fontes')).toMatch(/<h1[^>]*>Fontes da base<\/h1>/)
+    // Spec landing-escura, D-542: a página das fontes se chama Referências.
+    expect(corpo('fontes')).toMatch(/<h1[^>]*>Referências<\/h1>/)
   })
 
   it('CA-1028: o HTML pré-desenhado liga as páginas entre si por links que os robôs seguem', () => {

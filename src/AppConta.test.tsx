@@ -212,7 +212,8 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
   it('CA-259: Criar conta no topo da landing vai para o cadastro, não para o painel', async () => {
     window.location.hash = '#/inicio'
     render(tela())
-    await userEvent.setup().click(screen.getAllByRole('button', { name: /Começar grátis/ })[0] as HTMLElement)
+    // Spec landing-escura (CA-1457): na barra da landing, "Criar conta grátis" é link (com endereço, para a aba nova).
+    await userEvent.setup().click(within(screen.getByRole('banner')).getByRole('link', { name: 'Criar conta grátis' }))
     expect(window.location.hash).toBe('#/criar-conta')
   })
 

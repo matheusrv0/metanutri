@@ -3,20 +3,22 @@ import userEvent from '@testing-library/user-event'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { MolduraPublica } from './MolduraPublica.tsx'
 
+// A moldura comum das telas públicas, em Preços. A página inicial tem moldura própria (spec landing-escura, D-545),
+// testada em inicio/MolduraDaLanding.test.tsx.
 const montar = (temSessao: boolean, aoIrPara = vi.fn(), recarregar = vi.fn()) =>
   render(
-    <MolduraPublica atual="inicio" temSessao={temSessao} aoIrPara={aoIrPara} recarregar={recarregar}>
+    <MolduraPublica atual="precos" temSessao={temSessao} aoIrPara={aoIrPara} recarregar={recarregar}>
       <p>conteúdo</p>
     </MolduraPublica>,
   )
 
 describe('MolduraPublica', () => {
-  it('CA-991: o menu tem Como funciona, Recursos e Preços, em caixa normal', async () => {
+  it('CA-991: o menu tem Como funciona e Preços, em caixa normal (a landing escura não tem mais Recursos)', async () => {
     const aoIrPara = vi.fn()
     montar(false, aoIrPara)
     const menu = within(screen.getByRole('navigation', { name: 'Seções' }))
     const botoes = menu.getAllByRole('link')
-    expect(botoes.map((b) => b.textContent)).toEqual(['Como funciona', 'Recursos', 'Preços'])
+    expect(botoes.map((b) => b.textContent)).toEqual(['Como funciona', 'Preços'])
     for (const botao of botoes) {
       expect(botao.className).not.toMatch(/\buppercase\b/)
       expect(botao.className).not.toMatch(/tracking-/)
@@ -26,16 +28,16 @@ describe('MolduraPublica', () => {
     expect(aoIrPara).toHaveBeenCalledWith('precos')
   })
 
-  it('CA-991: Como funciona e Recursos levam às seções da landing', async () => {
+  it('CA-991: Como funciona leva à seção da landing', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const aoIrPara = vi.fn()
     montar(false, aoIrPara)
     const alvo = document.createElement('section')
-    alvo.id = 'recursos'
+    alvo.id = 'como-funciona'
     alvo.scrollIntoView = vi.fn()
     document.body.append(alvo)
     await userEvent.setup({ advanceTimers: vi.advanceTimersByTime }).click(
-      within(screen.getByRole('navigation', { name: 'Seções' })).getByRole('link', { name: 'Recursos' }),
+      within(screen.getByRole('navigation', { name: 'Seções' })).getByRole('link', { name: 'Como funciona' }),
     )
     act(() => void vi.advanceTimersByTime(100))
     expect(aoIrPara).toHaveBeenCalledWith('inicio')
@@ -50,14 +52,12 @@ describe('MolduraPublica', () => {
     const enderecos = (raiz: HTMLElement) => within(raiz).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')])
     expect(enderecos(screen.getByRole('navigation', { name: 'Seções' }))).toEqual([
       ['Como funciona', '#/inicio'],
-      ['Recursos', '#/inicio'],
       ['Preços', 'precos/'],
     ])
     expect(enderecos(screen.getByRole('contentinfo'))).toEqual([
       ['Como funciona', '#/inicio'],
-      ['Recursos', '#/inicio'],
       ['Preços', 'precos/'],
-      ['Fontes da base', 'fontes/'],
+      ['Referências', 'fontes/'],
       ['Começar grátis', '#/criar-conta'],
       ['Entrar', '#/entrar'],
       ['Termos de uso', 'termos/'],
@@ -103,7 +103,8 @@ describe('MolduraPublica', () => {
     const usuario = userEvent.setup()
     await usuario.click(rodape.getByRole('link', { name: 'Termos de uso' }))
     expect(aoIrPara).toHaveBeenCalledWith('termos')
-    await usuario.click(rodape.getByRole('link', { name: 'Fontes da base' }))
+    // CA-1483 (spec landing-escura): a página das fontes se chama Referências.
+    await usuario.click(rodape.getByRole('link', { name: 'Referências' }))
     expect(aoIrPara).toHaveBeenCalledWith('fontes')
     expect(rodape.getByText(new RegExp(`© ${new Date().getFullYear()} MetaNutri`))).toBeInTheDocument()
     expect(rodape.getByRole('link', { name: CONTATO_EMAIL ?? '' })).toHaveAttribute('href', `mailto:${CONTATO_EMAIL ?? ''}`)
@@ -123,9 +124,8 @@ describe('MolduraPublica', () => {
     const links = rodape.getAllByRole('link')
     expect(links.map((b) => b.textContent)).toEqual([
       'Como funciona',
-      'Recursos',
       'Preços',
-      'Fontes da base',
+      'Referências',
       'Começar grátis',
       'Entrar',
       'Termos de uso',
@@ -135,7 +135,7 @@ describe('MolduraPublica', () => {
     for (const link of links) {
       expect(link.className, link.textContent ?? '').toContain('min-h-11')
       expect(link.className, link.textContent ?? '').toContain('text-left')
-      // Todos com a mesma altura em qualquer largura: com o "Fontes da base" maior, o rodapé ficava com vãos desiguais.
+      // Todos com a mesma altura em qualquer largura: com o antigo "Fontes da base" maior, o rodapé ficava com vãos desiguais.
       expect(link.className, link.textContent ?? '').not.toContain('sm:min-h-0')
     }
   })
@@ -150,11 +150,24 @@ describe('MolduraPublica', () => {
     expect(acoes?.className).not.toContain('sm:ml-0')
   })
 
-  it('M-1 (spec revisao-geral-publica, CA-741): "Fontes da base" tem 44 px em qualquer largura, como desde 01/10', () => {
+  it('M-1 (spec revisao-geral-publica, CA-741): "Referências" (antes "Fontes da base") tem 44 px em qualquer largura', () => {
     montar(false, vi.fn())
-    const fontes = within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Fontes da base' })
+    const fontes = within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Referências' })
     expect(fontes.className).toContain('min-h-11')
     expect(fontes.className).not.toContain('sm:min-h-0')
+  })
+
+  it('CA-1450 (spec landing-escura): na página inicial, a moldura é a da landing escura, em qualquer tema', () => {
+    render(
+      <MolduraPublica atual="inicio" temSessao={false} aoIrPara={vi.fn()} recarregar={vi.fn()}>
+        <p>conteúdo</p>
+      </MolduraPublica>,
+    )
+    const raiz = screen.getByRole('main').parentElement
+    expect(raiz?.className).toMatch(/^landing-escura dark /)
+    expect(within(screen.getByRole('banner')).getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
+    expect(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Fale com a gente' })).toBeInTheDocument()
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
   })
 
   // Por último: o aviso de versão nova é um estado da página inteira e não volta atrás.

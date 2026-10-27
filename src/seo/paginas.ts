@@ -65,7 +65,8 @@ export const PAGINAS: readonly PaginaIndexavel[] = [
   {
     rota: 'fontes',
     caminho: 'fontes/',
-    titulo: 'Fontes da Base MetaNutri',
+    // Spec landing-escura, D-542: a página se chama Referências; o endereço continua fontes/.
+    titulo: 'Referências da Base MetaNutri',
     descricao:
       'A Base MetaNutri reúne a TACO, as medidas caseiras do IBGE, vitaminas do USDA e rótulos da Open Food Facts, com a citação de cada fonte.',
   },

@@ -4,7 +4,7 @@ import { TelaFontes } from './TelaFontes.tsx'
 describe('Fontes da base (CA-322)', () => {
   it('diz o que é a base e cita as quatro fontes com link', () => {
     render(<TelaFontes />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Referências' })).toBeInTheDocument()
     expect(screen.getByText(/A Base MetaNutri reúne 597 alimentos/)).toBeInTheDocument()
     // 283 depois da camada de plausibilidade das medidas (spec alimentos-e-gramaturas, D-430, D-483 e D-483a); a redação é a da spec
     // textos-e-promessas.

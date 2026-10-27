@@ -30,7 +30,7 @@ describe('App: estrutura', () => {
   it('CA-322: #/fontes abre a página de fontes, sem conta', () => {
     window.location.hash = '#/fontes'
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Fontes da base' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Referências' })).toBeInTheDocument()
   })
 
   it('abre no Painel, sem item de caso enquanto não há planos', () => {
@@ -141,10 +141,10 @@ describe('App: estrutura', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Esqueci a senha' })).toBeInTheDocument()
   })
 
-  it('sem servidor: "Começar grátis" leva ao cadastro, que oferece abrir o sistema (CA-150)', async () => {
+  it('sem servidor: "Criar conta grátis" leva ao cadastro, que oferece abrir o sistema (CA-150; spec landing-escura, CA-1455)', async () => {
     window.location.hash = '#/inicio'
     renderizar()
-    const [botao] = screen.getAllByRole('button', { name: 'Começar grátis' })
+    const [botao] = screen.getAllByRole('button', { name: 'Criar conta grátis' })
     if (!botao) throw new Error('botão ausente')
     await userEvent.setup().click(botao)
     expect(window.location.hash).toBe('#/criar-conta')
