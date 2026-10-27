@@ -1,8 +1,12 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
+import { marcarContaExcluida } from '@/ui/contaExcluida.ts'
+import { CHAVE_TEMA } from '@/ui/tema/contextoTema.ts'
+import { AvisoContaExcluida } from '../AvisoContaExcluida.tsx'
 import { MolduraDaLanding } from './MolduraDaLanding.tsx'
 import { RodapeDaLanding } from './RodapeDaLanding.tsx'
+import { CHAVE_TEMA_DA_LANDING } from './temaDaLanding.ts'
 
 const montar = (temSessao = false, aoIrPara = vi.fn()) =>
   render(
@@ -36,7 +40,17 @@ function rolarPara(y: number) {
 
 afterEach(() => {
   Object.defineProperty(globalThis, 'scrollY', { configurable: true, value: 0 })
+  localStorage.clear()
+  document.documentElement.removeAttribute('data-tema-da-landing')
+  document.documentElement.className = ''
 })
+
+const raizDaLanding = () => {
+  const raiz = screen.getByRole('main').parentElement
+  if (!raiz) throw new Error('sem a raiz da landing')
+  return raiz
+}
+const botaoDeTema = () => within(barra()).getByRole('button', { name: /^Usar o tema (claro|escuro)$/ })
 
 describe('MolduraDaLanding (spec landing-escura)', () => {
   it('CA-1450, CA-1611 e CB-544: a raiz é escura por padrão, em qualquer tema do app, e a classe não vai para o <html>', () => {
@@ -147,6 +161,122 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     render(<RodapeDaLanding aoIrPara={vi.fn()} contato={null} />)
     expect(screen.queryByRole('link', { name: 'Fale com a gente' })).not.toBeInTheDocument()
     expect(document.body.innerHTML).not.toContain('mailto:')
+  })
+
+  describe('tema claro e escuro (spec landing-v3)', () => {
+    it('CA-1610: o botão de tema fica entre Preços e Entrar, também no celular, com 44 px; com sessão, antes de Ir para o painel', () => {
+      const { unmount } = montar()
+      const nomes = (nav: HTMLElement) => [...nav.querySelectorAll('a, button')].map((el) => el.getAttribute('aria-label') ?? el.textContent)
+      const menu = within(barra()).getByRole('navigation', { name: 'Principal' })
+      expect(nomes(menu)).toEqual(['Como funciona', 'Preços', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
+      expect(botaoDeTema()).toHaveAttribute('title', 'Usar o tema claro')
+      expect(botaoDeTema().className).not.toContain('hidden')
+      expect(botaoDeTema().className).toContain('size-11')
+      unmount()
+      montar(true)
+      expect(nomes(within(barra()).getByRole('navigation', { name: 'Principal' }))).toEqual(['Como funciona', 'Preços', 'Usar o tema claro', 'Ir para o painel'])
+    })
+
+    it('CA-1611: sem escolha guardada, a landing abre escura, com a lua no botão', () => {
+      montar()
+      expect(raizDaLanding().className).toMatch(/^landing dark /)
+      expect(raizDaLanding().className).not.toContain('landing-clara')
+      // A lua aparece no escuro; o sol, só dentro da landing clara (pelo CSS, para valer também no primeiro desenho).
+      expect(botaoDeTema().querySelector('.lucide-moon')?.getAttribute('class')).toContain('landing-clara:hidden')
+      expect(botaoDeTema().querySelector('.lucide-sun')?.getAttribute('class')).toContain('hidden landing-clara:block')
+    })
+
+    it('CA-1612: o botão troca para o claro e volta, por clique, Enter e Espaço, sem perder o foco', async () => {
+      montar()
+      const usuario = userEvent.setup()
+      await usuario.click(botaoDeTema())
+      expect(raizDaLanding().className).toMatch(/^landing landing-clara tema-claro /)
+      expect(raizDaLanding().className.split(' ')).not.toContain('dark')
+      expect(botaoDeTema()).toHaveAccessibleName('Usar o tema escuro')
+      expect(botaoDeTema()).toHaveAttribute('title', 'Usar o tema escuro')
+      expect(botaoDeTema()).toHaveFocus()
+      await usuario.keyboard('{Enter}')
+      expect(raizDaLanding().className).toMatch(/^landing dark /)
+      expect(botaoDeTema()).toHaveFocus()
+      await usuario.keyboard(' ')
+      expect(raizDaLanding().className).toContain('landing-clara')
+    })
+
+    it('CA-1613: a escolha fica na chave da landing, a landing reabre clara, e o tema do app não muda', async () => {
+      localStorage.setItem(CHAVE_TEMA, 'escuro')
+      document.documentElement.classList.add('dark')
+      const { unmount } = montar()
+      await userEvent.setup().click(botaoDeTema())
+      expect(localStorage.getItem(CHAVE_TEMA_DA_LANDING)).toBe('claro')
+      expect(localStorage.getItem(CHAVE_TEMA)).toBe('escuro')
+      expect(document.documentElement.className).toBe('dark')
+      // D-613: a marca do <html> acompanha, para o CSS da página pré-desenhada não contradizer o app.
+      expect(document.documentElement).toHaveAttribute('data-tema-da-landing', 'claro')
+      unmount()
+      montar()
+      expect(raizDaLanding().className).toContain('landing-clara')
+      await userEvent.setup().click(botaoDeTema())
+      expect(localStorage.getItem(CHAVE_TEMA_DA_LANDING)).toBe('escuro')
+      expect(document.documentElement).not.toHaveAttribute('data-tema-da-landing')
+    })
+
+    it('CA-1614 e CB-600: sem armazenamento, abre escura e o botão troca o tema mesmo assim', async () => {
+      const ler = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('bloqueado')
+      })
+      const escrever = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('bloqueado')
+      })
+      montar()
+      expect(raizDaLanding().className).toMatch(/^landing dark /)
+      await userEvent.setup().click(botaoDeTema())
+      expect(raizDaLanding().className).toContain('landing-clara')
+      ler.mockRestore()
+      escrever.mockRestore()
+    })
+
+    it('D-614: durante a troca, a raiz fica marcada para nada animar; depois, a marca sai', async () => {
+      montar()
+      fireEvent.click(botaoDeTema())
+      expect(raizDaLanding()).toHaveAttribute('data-trocando-tema')
+      await waitFor(() => expect(raizDaLanding()).not.toHaveAttribute('data-trocando-tema'))
+    })
+
+    it('CA-1617: sobre o teal, a barra é teal com a logo para fundo escuro; sobre o chão claro, ela clareia e a logo também', async () => {
+      montar()
+      const logo = () => barra().querySelector('img')?.getAttribute('src')
+      posicionar({ teal: [0, 700], afundado: [700, 1500] })
+      rolarPara(0)
+      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
+      expect(barra().className).toContain('text-landing-marfim')
+      await userEvent.setup().click(botaoDeTema())
+      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
+      posicionar({ teal: [-700, 0], afundado: [0, 800] })
+      rolarPara(700)
+      expect(barra()).toHaveAttribute('data-tinta', 'afundado')
+      expect(barra().className).toContain('text-landing-tinta')
+      expect(logo()).toBe('marca/simbolo.svg')
+      expect(within(barra()).getByRole('link', { name: 'Criar conta grátis' }).className).toContain('bg-landing-acao')
+      // No escuro, sobre o afundado, a logo continua a do fundo escuro.
+      await userEvent.setup().click(botaoDeTema())
+      expect(logo()).toBe('marca/simbolo-fundo-escuro.svg')
+    })
+
+    it('CA-1618 e CB-602: o aviso de conta excluída segue o tema da landing, mesmo com o app no escuro', async () => {
+      document.documentElement.classList.add('dark')
+      marcarContaExcluida(undefined, performance.timeOrigin - 1)
+      render(
+        <MolduraDaLanding temSessao={false} aoIrPara={vi.fn()}>
+          <AvisoContaExcluida />
+        </MolduraDaLanding>,
+      )
+      const aviso = screen.getByRole('status')
+      expect(aviso).toHaveTextContent('Sua conta foi excluída.')
+      expect(aviso.closest('.dark')).toBe(raizDaLanding())
+      await userEvent.setup().click(botaoDeTema())
+      expect(aviso.closest('.tema-claro')).toBe(raizDaLanding())
+      expect(aviso.closest('.dark')).toBe(document.documentElement)
+    })
   })
 
   describe('D-549: a entrada das partes ao rolar', () => {
