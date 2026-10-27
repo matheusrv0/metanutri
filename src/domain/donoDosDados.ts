@@ -23,7 +23,7 @@ const PREFIXO_CASO = 'metanutri:caso:'
  * As chaves sem prefixo de conta que guardam dado da pessoa e existem no aparelho. Os planos
  * vêm primeiro, o índice depois: o que já foi movido nunca aponta para plano que ainda não foi.
  */
-function chavesSemConta(base: ArmazenamentoListavel): string[] {
+export function chavesSemConta(base: ArmazenamentoListavel): string[] {
   const planos: string[] = []
   for (let i = 0; i < base.length; i += 1) {
     const chave = base.key(i)
