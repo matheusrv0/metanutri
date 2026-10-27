@@ -138,6 +138,28 @@ test.describe('com menos movimento', () => {
     await expect(etiqueta).toBeHidden()
   })
 
+  test('CA-1654 e CB-660: a etiqueta some até 1.023 px e, quando aparece, não fica em cima de "Ver o plano de exemplo"', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await abrir(page)
+    const etiqueta = page.locator('[data-etiqueta]')
+    const link = page.getByRole('link', { name: 'Ver o plano de exemplo' })
+    for (const largura of [721, 760, 790, 900, 1023]) {
+      await page.setViewportSize({ width: largura, height: 900 })
+      await expect(etiqueta, `${largura} px`).toBeHidden()
+    }
+    for (const largura of [1024, 1100, 1280, 1440, 2000]) {
+      await page.setViewportSize({ width: largura, height: 900 })
+      await expect(etiqueta, `${largura} px`).toBeVisible()
+      const [a, b] = [await etiqueta.boundingBox(), await link.boundingBox()]
+      if (!a || !b) throw new Error('sem medida')
+      const cruzam = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+      expect(cruzam, `${largura} px`).toBe(false)
+      // O clique no meio do link cai no link.
+      const noPonto = await page.evaluate(([x, y]) => document.elementFromPoint(x ?? 0, y ?? 0)?.closest('a')?.textContent, [b.x + b.width / 2, b.y + b.height / 2])
+      expect(noPonto, `${largura} px`).toBe('Ver o plano de exemplo')
+    }
+  })
+
   test('CA-1674 e CB-650: com menos movimento, a linha de "Como funciona" e os números já nascem acesos', async ({ page }) => {
     await abrir(page)
     expect(await linhaAcesa(page)).toBe('none')

@@ -70,7 +70,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       const etiqueta = document.querySelector('[data-etiqueta]')
       expect(etiqueta).toHaveAttribute('aria-hidden', 'true')
       expect(etiqueta?.textContent).toBe('No plano de exemplo, falta cálcio150 g de iogurte natural desnatado cobrem 91%')
-      expect(etiqueta?.className).toContain('max-[720px]:hidden')
+      expect(etiqueta?.className).toContain('max-[1024px]:hidden')
     })
 
     it('CA-1655: a foto do topo tem texto alternativo, tamanho, as versões de 800 e 1.600 px, e não é preguiçosa', () => {

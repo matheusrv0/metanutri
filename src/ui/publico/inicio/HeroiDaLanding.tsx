@@ -93,7 +93,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
           aria-hidden="true"
           data-etiqueta=""
           style={jaAnimado > 0 ? { animationDelay: `${ATRASO_DA_ETIQUETA_MS - jaAnimado}ms` } : undefined}
-          className="absolute right-[clamp(24px,9vw,160px)] bottom-[150px] grid max-w-[280px] gap-1 rounded-[18px] bg-landing-vidro-cartao px-[18px] py-4 shadow-(--landing-etiqueta-sombra) backdrop-blur-[16px] backdrop-saturate-[1.5] motion-safe:animate-landing-surgir max-[720px]:hidden"
+          className="absolute right-[clamp(24px,9vw,160px)] bottom-[150px] grid max-w-[280px] gap-1 rounded-[18px] bg-landing-vidro-cartao px-[18px] py-4 shadow-(--landing-etiqueta-sombra) backdrop-blur-[16px] backdrop-saturate-[1.5] motion-safe:animate-landing-surgir max-[1024px]:hidden"
         >
           <span className="text-[13px] font-semibold text-landing-topo-suave">{etiqueta.falta}</span>
           <strong className="text-[17px] font-extrabold tracking-[-0.01em]">
