@@ -20,8 +20,12 @@ export const PRAZO_DOS_ENVIOS_MS = 10_000
 /** DP-SA-27: sem nada mudando antes, o vigia confere de novo depois deste tempo. */
 export const CONFERIR_NO_MAXIMO_A_CADA_MS = 60_000
 
-/** D-515: o que conta como uso. Mexer o mouse (`pointermove`, `mousemove`) não conta. */
-const EVENTOS_DE_USO = ['keydown', 'pointerdown', 'touchstart', 'wheel', 'scroll'] as const
+/**
+ * D-515: o que conta como uso. Mexer o mouse (`pointermove`, `mousemove`) não conta. A rolagem da pessoa chega pela roda
+ * (`wheel`), pelo toque, pelo teclado ou pela barra (`pointerdown`); o `scroll` sozinho não entra, porque o próprio app
+ * também rola a página (revisão R5).
+ */
+const EVENTOS_DE_USO = ['keydown', 'pointerdown', 'touchstart', 'wheel'] as const
 const OUVIR_USO: AddEventListenerOptions = { capture: true, passive: true }
 
 export interface EstadoDoTempo {
@@ -168,7 +172,7 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
     )
   }
 
-  /** Tecla, clique, toque ou rolagem nesta aba (D-515). */
+  /** Tecla, clique, toque ou rolagem da pessoa nesta aba (D-515). */
   const usar = (): void => {
     if (!ligado || saindo) return
     const h = horas()

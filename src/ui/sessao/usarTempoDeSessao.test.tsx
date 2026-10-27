@@ -51,7 +51,7 @@ function montar({ ativo = true, admin = false, salvarAgora, nuvem = true }: Mont
 }
 
 const passar = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
-const usar = (tipo: 'keydown' | 'pointerdown' | 'touchstart' | 'wheel' | 'scroll' = 'keydown') =>
+const usar = (tipo: 'keydown' | 'pointerdown' | 'touchstart' | 'wheel' = 'keydown') =>
   act(() => {
     window.dispatchEvent(new Event(tipo))
   })
@@ -173,12 +173,23 @@ describe('o vigia da sessão (spec separacao-site-app, D-514 a D-517)', () => {
     expect(result.current.faixa).toBe(INICIO + 12 * HORA)
   })
 
-  it.each(['keydown', 'pointerdown', 'touchstart', 'wheel', 'scroll'] as const)('CA-1446: %s conta como uso', async (tipo) => {
+  it.each(['keydown', 'pointerdown', 'touchstart', 'wheel'] as const)('CA-1446: %s conta como uso', async (tipo) => {
     const { sairPorTempo } = montar()
     await passar(20 * MIN)
     usar(tipo)
     await passar(15 * MIN)
     expect(sairPorTempo).not.toHaveBeenCalled()
+  })
+
+  it('R5 (revisão): a rolagem que o próprio app faz (o evento scroll sozinho) não conta como uso', async () => {
+    const { sairPorTempo } = montar()
+    await passar(20 * MIN)
+    act(() => {
+      window.dispatchEvent(new Event('scroll'))
+      document.dispatchEvent(new Event('scroll'))
+    })
+    await passar(10 * MIN)
+    expect(sairPorTempo).toHaveBeenCalledOnce()
   })
 
   it('CA-1446: só mexer o mouse não conta como uso', async () => {
