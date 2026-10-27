@@ -40,7 +40,8 @@ export function PerguntasFrequentes({ formularioNovo }: PerguntasFrequentesProps
     { pergunta: 'E o alimento que não está na base?', resposta: textoDosAlimentosProprios(formularioNovo).resposta },
     {
       pergunta: 'Onde ficam os dados dos pacientes?',
-      resposta: 'Na sua conta, na nuvem, separados das outras contas. O paciente autoriza antes de receber o link.',
+      // Revisão da v9: o app pede que a nutricionista declare a autorização (CartaoLinkMissoes); ele não a colhe do paciente.
+      resposta: 'Na sua conta, na nuvem, separados das outras contas. Antes de gerar o link, você confirma que tem a autorização do paciente.',
     },
     {
       pergunta: 'Sou estudante. Posso usar?',
