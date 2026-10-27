@@ -224,6 +224,10 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     await usuario.type(janela.getByLabelText('Medida caseira da porção'), '4 colheres de sopa')
     expect(janela.getByText('A medida da porção (colher de sopa · 10 g) já vale. Acrescente outras, se quiser.')).toBeInTheDocument()
     expect(janela.queryByText('Nenhuma medida. Sem ela, o paciente lê o peso.')).not.toBeInTheDocument()
+    // CA-1370 (D-504): trocar para "Por 100 g" leva a medida para a lista.
+    await usuario.click(janela.getByRole('radio', { name: 'Por 100 g' }))
+    expect(janela.getByLabelText('Nome da medida 1')).toHaveValue('colher de sopa')
+    expect(janela.getByLabelText('Peso da medida 1')).toHaveValue('10')
   })
 
   it('CA-1141: rótulo na porção mostra quanto dá por 100 g', async () => {

@@ -1,5 +1,5 @@
 // Spec alimentos-e-gramaturas, D-383 a D-386: "Meus alimentos".
-import { dadosDaCopiaDaBase, dadosDoProduto, dadosEmBranco, medidaQueAPorcaoDa, produtoDosDados } from './alimentoProprio.ts'
+import { comBase, dadosDaCopiaDaBase, dadosDoProduto, dadosEmBranco, medidaQueAPorcaoDa, produtoDosDados } from './alimentoProprio.ts'
 import { buscarAlimentos, medidasDoAlimento } from './busca.ts'
 import { sugerirParaCobrir } from './cobrir.ts'
 import { calcularAdequacao } from './adequacao.ts'
@@ -501,6 +501,17 @@ describe('a medida caseira da porção no formulário novo (publicação 2, D-49
     expect(medidaQueAPorcaoDa({ ...GRANOLA, nomeDaPorcao: '' })).toBeNull()
     expect(medidaQueAPorcaoDa({ ...GRANOLA, porcaoG: null })).toBeNull()
     expect(medidaQueAPorcaoDa(CUSCUZ)).toBeNull()
+  })
+
+  it('CA-1370 (D-504): trocar "Na porção" por "Por 100 g" guarda a medida da porção na lista', () => {
+    const por100 = comBase(GRANOLA, 'por100')
+    expect(por100).toMatchObject({ base: 'por100', porcaoG: 100, nomeDaPorcao: '', medidas: [{ nome: 'colher de sopa', gramas: 10 }] })
+    expect(produtoDosDados(por100).medidas).toEqual([{ nome: 'colher de sopa', gramas: 10 }])
+    // A medida que já está na lista não se repete.
+    expect(comBase({ ...GRANOLA, medidas: [{ nome: 'colher de sopa', gramas: 12 }] }, 'por100').medidas).toEqual([{ nome: 'colher de sopa', gramas: 12 }])
+    // De volta para "Na porção", a porção fica para digitar, e a lista continua.
+    expect(comBase(por100, 'porcao')).toMatchObject({ base: 'porcao', porcaoG: null, medidas: [{ nome: 'colher de sopa', gramas: 10 }] })
+    expect(comBase(GRANOLA, 'porcao')).toBe(GRANOLA)
   })
 
   it('CA-1347: o rótulo antigo com "4 colheres de sopa" abre e salva sem perder a medida', () => {

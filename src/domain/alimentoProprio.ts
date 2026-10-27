@@ -38,6 +38,18 @@ export function medidaQueAPorcaoDa(d: Pick<DadosAlimentoProprio, 'base' | 'porca
   return lida.medida ? { nome: lida.medida.nome, gramas: lida.medida.gramas } : { nome: 'porção', gramas: lida.porcaoG }
 }
 
+/**
+ * Troca "Na porção" por "Por 100 g" e o contrário. Para "Por 100 g", a medida caseira da porção não some: vira uma linha
+ * de Medidas caseiras, se a lista ainda não tem uma com esse nome (D-504). Para "Na porção", a porção fica para digitar.
+ */
+export function comBase(d: DadosAlimentoProprio, base: DadosAlimentoProprio['base']): DadosAlimentoProprio {
+  if (base === d.base) return d
+  if (base === 'porcao') return { ...d, base, porcaoG: d.porcaoG === 100 ? null : d.porcaoG }
+  const daPorcao = medidaQueAPorcaoDa(d)
+  const jaTem = daPorcao !== null && d.medidas.some((m) => lerMedidaDaLista(m.nome, m.gramas).nome === daPorcao.nome)
+  return { ...d, base, porcaoG: 100, nomeDaPorcao: '', medidas: daPorcao && !jaTem ? [...d.medidas, daPorcao] : d.medidas }
+}
+
 /** Só números de verdade; o resto é "não informado" (nulo). */
 function valoresLimpos(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
   return Object.fromEntries(Object.entries(v).map(([chave, n]) => [chave, typeof n === 'number' && Number.isFinite(n) ? n : null]))

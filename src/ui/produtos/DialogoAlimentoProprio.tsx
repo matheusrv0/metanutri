@@ -1,6 +1,6 @@
 import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
-import { medidaQueAPorcaoDa, motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
+import { comBase, medidaQueAPorcaoDa, motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import { lerMedidaDaLista } from '@/domain/medidaDoRotulo.ts'
 import { ehIlegivel, lerNumeroDoRotulo } from '@/domain/numeroDoRotulo.ts'
@@ -270,7 +270,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
             ]}
             valor={d.base}
             aoEscolher={(base) => {
-              mudar({ base, porcaoG: base === 'por100' ? 100 : d.porcaoG === 100 ? null : d.porcaoG })
+              // D-504: para "Por 100 g", a medida caseira da porção vira uma linha de Medidas caseiras.
+              setD((atual) => comBase(atual, base))
               // O campo da porção sai ou volta vazio: o texto que ficou nele não conta mais.
               desmarcar(['porcaoG'])
             }}
