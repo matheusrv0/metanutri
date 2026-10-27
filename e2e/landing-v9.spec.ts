@@ -233,6 +233,8 @@ test.describe('com menos movimento', () => {
   test('CA-1686: em 390 px, "Criar conta grátis" fica preso no pé da tela, leva ao cadastro e não cobre o rodapé no fim', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await abrir(page)
+    // D-688: o fixo espera o "Criar conta grátis" do topo sair da tela.
+    await page.locator('#adequacao').evaluate((el) => el.scrollIntoView())
     const fixo = page.locator('[data-botao-fixo]').getByRole('link', { name: 'Criar conta grátis' })
     await expect(fixo).toBeVisible()
     const caixa = await fixo.boundingBox()
@@ -270,6 +272,54 @@ test.describe('com menos movimento', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await abrir(page)
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('auto')
+  })
+
+  test('CA-1696 e CA-1697: em 360 × 740 px, o fixo espera o "Criar conta grátis" do topo sair da tela e nunca fica sobre ele', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await abrir(page)
+    const fixo = page.locator('[data-botao-fixo]')
+    const doTopo = page.getByRole('region', { name: /Planos alimentares completos/ }).getByRole('button', { name: 'Criar conta grátis' })
+    // No alto: o do topo e a linha do Free à vista; o fixo transparente, inerte e fora do leitor de tela.
+    await expect(doTopo).toBeInViewport({ ratio: 1 })
+    await expect(page.getByText('Grátis com 2 pacientes ativos. Sem cartão de crédito.')).toBeInViewport({ ratio: 1 })
+    await expect(fixo).toHaveCSS('opacity', '0')
+    await expect(fixo).toHaveAttribute('aria-hidden', 'true')
+    await expect(fixo).toHaveJSProperty('inert', true)
+    await expect(fixo.getByRole('link', { name: 'Criar conta grátis' })).toHaveCount(0)
+
+    // Descendo de 40 em 40 px: o fixo só fica à vista com o do topo fora da tela, e os dois nunca se cruzam.
+    for (let y = 0; y <= 1200; y += 40) {
+      await page.evaluate((alto) => window.scrollTo(0, alto), y)
+      // Dois quadros: o aviso do IntersectionObserver chega depois da rolagem.
+      await page.evaluate(() => new Promise((pronto) => requestAnimationFrame(() => requestAnimationFrame(pronto))))
+      const medida = await page.evaluate(() => {
+        const [botaoFixo, botaoDoTopo] = [document.querySelector('[data-botao-fixo]'), document.querySelector('[data-acao-do-topo]')]
+        if (!(botaoFixo instanceof HTMLElement) || !botaoDoTopo) return null
+        const [a, b] = [botaoFixo.getBoundingClientRect(), botaoDoTopo.getBoundingClientRect()]
+        return {
+          fixoAVista: !botaoFixo.inert || getComputedStyle(botaoFixo).opacity !== '0',
+          topoNaTela: b.bottom > 0 && b.top < window.innerHeight,
+          cruzam: a.top < b.bottom && b.top < a.bottom && a.left < b.right && b.left < a.right,
+        }
+      })
+      if (!medida) throw new Error('sem um dos botões')
+      if (medida.fixoAVista) {
+        expect(medida.topoNaTela, `em ${y} px, o do topo ainda estava na tela`).toBe(false)
+        expect(medida.cruzam, `em ${y} px`).toBe(false)
+      }
+    }
+    await expect(doTopo).not.toBeInViewport()
+    await expect(fixo).toHaveCSS('opacity', '1')
+    await expect(fixo).not.toHaveAttribute('aria-hidden')
+    await expect(fixo).toHaveJSProperty('inert', false)
+
+    // De volta ao alto, ele some de novo; descendo outra vez, aparece e leva ao cadastro.
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(fixo).toHaveCSS('opacity', '0')
+    await expect(fixo).toHaveJSProperty('inert', true)
+    await page.evaluate(() => window.scrollTo(0, 1200))
+    await fixo.getByRole('link', { name: 'Criar conta grátis' }).click()
+    await expect(page).toHaveURL(/#\/criar-conta$/)
   })
 
   test('CA-1686: no computador, o botão fixo não aparece', async ({ page }) => {
