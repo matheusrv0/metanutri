@@ -56,6 +56,11 @@ describe('arquivos de busca e o index.html', () => {
     for (const pagina of PAGINAS) expect(llms).toContain(enderecoDaPagina(pagina))
   })
 
+  it('CA-1408 (spec separacao-site-app): o llms.txt aponta "Entrar" para o app, junto das páginas', () => {
+    const paginas = ler('public', 'llms.txt').split('## Páginas')[1] ?? ''
+    expect(paginas).toContain('\n- Entrar: https://app.metanutri.com.br/\n')
+  })
+
   it('CA-1183 (spec textos-e-promessas): o llms.txt diz o mesmo que a landing, com o glossário', () => {
     const llms = ler('public', 'llms.txt')
     expect(llms).toContain(

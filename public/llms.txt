@@ -37,3 +37,4 @@ Todas as assinaturas têm as mesmas funções. O preço depende de quantos pacie
 - Termos de uso: https://metanutri.com.br/termos/
 - Política de privacidade: https://metanutri.com.br/privacidade/
 - Referências: https://metanutri.com.br/fontes/
+- Entrar: https://app.metanutri.com.br/

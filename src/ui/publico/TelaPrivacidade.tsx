@@ -65,6 +65,10 @@ export function TelaPrivacidade() {
         </li>
         <li>Os e-mails de confirmação e de troca de senha são enviados pelo Resend, com o endereço do MetaNutri.</li>
         <li>Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.</li>
+        <li>
+          O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub.
+          Os dois recebem dados técnicos do navegador, como o endereço IP, para entregar as páginas.
+        </li>
       </ul>
       <p>Não vendemos dados, não usamos para publicidade e não treinamos modelos de inteligência artificial com eles.</p>
 
@@ -100,7 +104,8 @@ export function TelaPrivacidade() {
 
       <h2>Segurança</h2>
       <p>
-        Acesso por senha, conexão cifrada e separação por conta no banco: um nutricionista não acessa os dados de outro. O link do paciente usa um
+        Acesso por senha, conexão cifrada e separação por conta no banco: um nutricionista não acessa os dados de outro. A sessão termina sozinha
+        depois de 30 minutos sem uso e 12 horas depois da entrada. O link do paciente usa um
         endereço secreto e mostra só as missões daquele paciente e, quando o nutricionista ativa, o plano alimentar dele. Se houver incidente de segurança, o
         nutricionista é avisado em até {PRAZO_INCIDENTE_HORAS} horas.
       </p>
