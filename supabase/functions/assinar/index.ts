@@ -6,23 +6,25 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { assinar } from '../_shared/assinar.ts'
 import { criarBanco, quemPede } from '../_shared/bancoSupabase.ts'
-import { CABECALHOS, responder, SEM_COBRANCA } from '../_shared/cobranca.ts'
+import { cabecalhosPara, responder, SEM_COBRANCA } from '../_shared/cobranca.ts'
 import { lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'
 import { criarOperadora } from '../_shared/operadora.ts'
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })
-  if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405)
+  // D-521 (spec separacao-site-app): a permissão do navegador vai só para um endereço da lista, o mesmo do pedido.
+  const origem = req.headers.get('Origin')
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })
+  if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405, origem)
 
   try {
     // D-110 (CA-451): acima de 64 KB, recusa sem ler o resto e sem processar nada.
     const lido = await lerCorpo(req)
-    if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413)
+    if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)
     const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')
     const urlSupabase = Deno.env.get('SUPABASE_URL')
     const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    const site = (Deno.env.get('SITE_URL') ?? 'https://metanutri.com.br/').replace(/[?#].*$/, '')
-    if (!token || !urlSupabase || !servico) return responder({ erro: 'A função não está configurada no servidor.' }, 500)
+    const site = (Deno.env.get('SITE_URL') ?? 'https://app.metanutri.com.br/').replace(/[?#].*$/, '')
+    if (!token || !urlSupabase || !servico) return responder({ erro: 'A função não está configurada no servidor.' }, 500, origem)
 
     const cliente = createClient(urlSupabase, servico)
     const resposta = await assinar(
@@ -39,10 +41,10 @@ Deno.serve(async (req: Request) => {
         log: console.error,
       },
     )
-    return responder(resposta.corpo, resposta.status)
+    return responder(resposta.corpo, resposta.status, origem)
   } catch (erro) {
-    // Falha inesperada: o registro leva só a mensagem, e o navegador recebe a resposta com os cabeçalhos do site.
+    // Falha inesperada: o registro leva só a mensagem, e o navegador recebe a resposta com a permissão do endereço que pediu.
     console.error('Falha inesperada ao assinar:', erro instanceof Error ? erro.message : 'erro desconhecido')
-    return responder({ erro: SEM_COBRANCA }, 500)
+    return responder({ erro: SEM_COBRANCA }, 500, origem)
   }
 })

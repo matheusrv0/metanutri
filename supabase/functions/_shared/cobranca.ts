@@ -160,13 +160,25 @@ export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou 
 export const SEM_COBRANCA = 'Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 
 /**
- * D-97: o navegador só deixa o site do MetaNutri chamar as funções. O supabase-js manda
- * `apikey` e `x-client-info` em todo pedido: sem eles aqui, o navegador barra antes.
+ * D-521 (spec separacao-site-app): os endereços que podem chamar as funções pelo navegador. Na P1 e na P2, o app no
+ * endereço novo e o de hoje, onde o app ainda roda até a P2; na P3, logo depois do site da P2, só o app (D-528).
  */
-export const CABECALHOS = {
-  'Access-Control-Allow-Origin': 'https://metanutri.com.br',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Content-Type': 'application/json',
-} as const
+export const ORIGENS_PERMITIDAS: readonly string[] = ['https://app.metanutri.com.br', 'https://metanutri.com.br']
 
-export const responder = (corpo: unknown, status = 200): Response => new Response(JSON.stringify(corpo), { status, headers: CABECALHOS })
+/**
+ * D-97 e D-521: o navegador só deixa chamar as funções um endereço da lista, e a permissão repete o endereço do pedido,
+ * nunca `*`. O `Vary: Origin` vai sempre: a resposta muda com o endereço, e um cache no caminho não pode servir a de um
+ * endereço a outro. O supabase-js manda `apikey` e `x-client-info` em todo pedido: sem eles aqui, o navegador barra antes.
+ */
+export function cabecalhosPara(origem: string | null): Record<string, string> {
+  const fixos: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Content-Type': 'application/json',
+    Vary: 'Origin',
+  }
+  return origem !== null && ORIGENS_PERMITIDAS.includes(origem) ? { ...fixos, 'Access-Control-Allow-Origin': origem } : fixos
+}
+
+/** A resposta em JSON, com a permissão só para o endereço que pediu, se ele estiver na lista. */
+export const responder = (corpo: unknown, status = 200, origem: string | null = null): Response =>
+  new Response(JSON.stringify(corpo), { status, headers: cabecalhosPara(origem) })

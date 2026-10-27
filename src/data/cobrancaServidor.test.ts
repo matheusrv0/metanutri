@@ -1,12 +1,13 @@
 // @vitest-environment node
 import {
-  CABECALHOS,
+  cabecalhosPara,
   codigoDaRecusa,
   dataDepoisDe,
   dataOuNula,
   fimDoPeriodoPago,
   lerCartao,
   objeto,
+  ORIGENS_PERMITIDAS,
   planoAssinavel,
   planoPeloValor,
   PLANOS_DO_SERVIDOR,
@@ -18,6 +19,7 @@ import {
 } from '../../supabase/functions/_shared/cobranca.ts'
 import { PLANOS } from '@/domain/conta.ts'
 import assinar from '../../supabase/functions/assinar/index.ts?raw'
+import excluir from '../../supabase/functions/excluir-conta/index.ts?raw'
 import gerenciar from '../../supabase/functions/gerenciar-assinatura/index.ts?raw'
 import webhook from '../../supabase/functions/webhook-mercadopago/index.ts?raw'
 
@@ -94,24 +96,63 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
   })
 
   it('responde JSON com o cabeçalho que o navegador exige do supabase-js', async () => {
-    const resposta = responder({ erro: 'x' }, 402)
+    const resposta = responder({ erro: 'x' }, 402, 'https://app.metanutri.com.br')
     expect(resposta.status).toBe(402)
     expect(await resposta.json()).toEqual({ erro: 'x' })
-    expect(CABECALHOS['Access-Control-Allow-Headers']).toBe('authorization, x-client-info, apikey, content-type')
+    expect(resposta.headers.get('Content-Type')).toBe('application/json')
+    expect(resposta.headers.get('Access-Control-Allow-Headers')).toBe('authorization, x-client-info, apikey, content-type')
   })
 
-  it('CA-425: o navegador só recebe permissão quando a chamada vem de https://metanutri.com.br', () => {
-    expect(CABECALHOS['Access-Control-Allow-Origin']).toBe('https://metanutri.com.br')
-    expect(responder({ ok: true }).headers.get('Access-Control-Allow-Origin')).toBe('https://metanutri.com.br')
-    for (const codigo of [assinar, gerenciar]) {
-      expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })")
-      expect(codigo).not.toContain("'*'")
-    }
+  it('D-521 (spec separacao-site-app): na P1 e na P2, a lista tem o app e o site, e nada mais', () => {
+    expect(ORIGENS_PERMITIDAS).toEqual(['https://app.metanutri.com.br', 'https://metanutri.com.br'])
   })
 
-  it('CA-425: o webhook é chamado de servidor para servidor e não abre CORS', () => {
+  it.each(['https://app.metanutri.com.br', 'https://metanutri.com.br'])(
+    'CA-1459: a chamada de %s recebe permissão para esse mesmo endereço, com Vary: Origin, na prévia e na resposta',
+    (origem) => {
+      for (const cabecalhos of [new Headers(cabecalhosPara(origem)), responder({ ok: true }, 200, origem).headers]) {
+        expect(cabecalhos.get('Access-Control-Allow-Origin')).toBe(origem)
+        expect(cabecalhos.get('Vary')).toBe('Origin')
+      }
+    },
+  )
+
+  it.each([null, '', 'null', '*', 'https://outro.exemplo', 'http://metanutri.com.br', 'https://metanutri.com.br.outro.exemplo', 'https://metanutri-app.pages.dev', 'https://app.metanutri.com.br/'])(
+    'CA-1459 e CA-425: a chamada de %j não recebe permissão (nem *), e a resposta manda Vary: Origin do mesmo jeito',
+    (origem) => {
+      for (const cabecalhos of [new Headers(cabecalhosPara(origem)), responder({ ok: true }, 200, origem).headers]) {
+        expect(cabecalhos.get('Access-Control-Allow-Origin')).toBeNull()
+        expect(cabecalhos.get('Vary')).toBe('Origin')
+      }
+    },
+  )
+
+  it('CA-1459: sem dizer de onde veio, a resposta não dá permissão a ninguém', () => {
+    expect(responder({ ok: true }).headers.get('Access-Control-Allow-Origin')).toBeNull()
+  })
+
+  it.each([
+    ['assinar', assinar],
+    ['gerenciar-assinatura', gerenciar],
+    ['excluir-conta', excluir],
+  ])('CA-1459: %s lê o Origin do pedido e o passa à prévia e a toda resposta', (_, codigo) => {
+    expect(codigo).toContain("const origem = req.headers.get('Origin')")
+    expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })")
+    expect(codigo).not.toContain('CABECALHOS')
+    expect(codigo).not.toContain("'*'")
+    const respostas = codigo.match(/responder\([^\n]*\)/g) ?? []
+    expect(respostas.length).toBeGreaterThanOrEqual(4)
+    for (const resposta of respostas) expect(resposta).toMatch(/, origem\)$/)
+  })
+
+  it('CA-1461: sem o segredo SITE_URL, o endereço de volta mandado à operadora é o do app', () => {
+    expect(assinar).toContain("const site = (Deno.env.get('SITE_URL') ?? 'https://app.metanutri.com.br/').replace(/[?#].*$/, '')")
+  })
+
+  it('CA-425 e CA-1459: o webhook é chamado de servidor para servidor e não abre CORS', () => {
     expect(webhook).not.toContain('Access-Control')
-    expect(webhook).not.toContain('CABECALHOS')
+    expect(webhook).not.toContain('cabecalhosPara')
+    expect(webhook).not.toContain("req.headers.get('Origin')")
   })
 })
 

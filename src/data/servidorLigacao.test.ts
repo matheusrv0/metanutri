@@ -68,10 +68,10 @@ describe('as funções são só ligação (D-88)', () => {
     const pegar = codigo.indexOf('\n  } catch (erro) {\n')
     expect(tentar).toBeGreaterThan(codigo.indexOf("if (req.method !== 'POST')"))
     expect(tentar).toBeLessThan(codigo.indexOf("Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')"))
-    expect(pegar).toBeGreaterThan(codigo.indexOf('return responder(resposta.corpo, resposta.status)'))
+    expect(pegar).toBeGreaterThan(codigo.indexOf('return responder(resposta.corpo, resposta.status, origem)'))
     const depois = codigo.slice(pegar)
     expect(depois).toContain(`console.error('Falha inesperada ${onde}:', erro instanceof Error ? erro.message : 'erro desconhecido')`)
-    expect(depois).toContain(`return responder({ erro: ${frase} }, 500)`)
+    expect(depois).toContain(`return responder({ erro: ${frase} }, 500, origem)`)
   })
 
   it('o aviso lê o data.id e o type da URL e os dois cabeçalhos da assinatura', () => {
@@ -108,16 +108,16 @@ describe('as funções são só ligação (D-88)', () => {
   })
 
   it('CA-451: acima de 64 KB, assinar e gerenciar respondem 413 com os cabeçalhos do site; o aviso responde 413 sem anotar nada', () => {
-    for (const codigo of [assinarIndex, gerenciarIndex]) expect(codigo).toContain('if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413)')
+    for (const codigo of [assinarIndex, gerenciarIndex]) expect(codigo).toContain('if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)')
     const grande = webhookIndex.indexOf("if (lido.grande) return new Response('grande demais', { status: 413 })")
     expect(grande).toBeGreaterThan(-1)
     expect(grande).toBeLessThan(webhookIndex.indexOf('await tratarAviso('))
   })
 
-  it('CA-425: assinar e gerenciar respondem ao pré-voo do navegador só com os cabeçalhos do site', () => {
+  it('CA-425 e CA-1459: assinar e gerenciar respondem ao pré-voo do navegador com os cabeçalhos da lista de endereços', () => {
     for (const codigo of [assinarIndex, gerenciarIndex]) {
-      expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })")
-      expect(codigo).toContain('return responder(resposta.corpo, resposta.status)')
+      expect(codigo).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })")
+      expect(codigo).toContain('return responder(resposta.corpo, resposta.status, origem)')
     }
   })
 })
