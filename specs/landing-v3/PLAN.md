@@ -160,3 +160,7 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
   largura na Manrope (a folga depois da vírgula é do desenho dela, igual no protótipo).
 - **T26:** o e2e roda com uma configuração temporária (`playwright.v9-temp.config.ts`, portas 4573 e 4576 e pastas fora
   do `node_modules`), apagada depois, como na T10.
+- **Revisão independente (D-687), um commit por correção:** a resposta da autorização, o first-contentful-paint, a
+  rolagem sem movimento, o "Uso não comercial.", o resumo para o leitor de tela, os anéis desmarcados (com e2e de
+  contraste), o véu e a etiqueta do topo (com o e2e que fotografa a foto atrás do título em seis larguras e dois temas),
+  a etiqueta que some até 1.023 px (e2e do clique no link) e o espaço do botão fixo para o foco (e2e pelo Tab).
