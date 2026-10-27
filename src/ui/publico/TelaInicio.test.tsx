@@ -456,7 +456,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     it('CA-1681: o Estudante com o comprovante e os 12 meses, a Clínica e a nota do pagamento', () => {
       montar()
       expect(secaoDePlanos()).toHaveTextContent(
-        'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta.',
+        'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta. Uso não comercial.',
       )
       expect(secaoDePlanos()).toHaveTextContent('ClínicaCondições combinadas por e-mail.')
       expect(secaoDePlanos()).toHaveTextContent('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura.')

@@ -110,15 +110,16 @@ export function veredito(pacientes: number, planos: readonly PlanoAssinatura[] =
   return `Para ${pacientesNaRegua(pacientes)}, o plano indicado é o ${planoDe(planos, planoIndicado(pacientes, planos)).nome}.`
 }
 
-/** CA-1681: os cartões de baixo, Estudante (com o comprovante, D-671) e Clínica. */
+/** CA-1681: os cartões de baixo, Estudante (com o comprovante e o uso não comercial de PLANOS, D-671) e Clínica. */
 export function extrasDosPlanos(planos: readonly PlanoAssinatura[] = PLANOS) {
   const estudante = planoDe(planos, 'estudante')
   const clinica = planoDe(planos, 'clinica')
   return {
     estudante: {
       nome: estudante.nome,
-      texto:
-        'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta.',
+      texto: `Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta.${
+        estudante.usoNaoComercial ? ' Uso não comercial.' : ''
+      }`,
       acao: estudante.acaoTexto,
     },
     clinica: { nome: clinica.nome, texto: clinica.resumo, acao: clinica.acaoTexto },

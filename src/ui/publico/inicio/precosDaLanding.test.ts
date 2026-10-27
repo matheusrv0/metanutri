@@ -64,10 +64,15 @@ describe('extrasDosPlanos', () => {
       estudante: {
         nome: 'Estudante',
         texto:
-          'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta.',
+          'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta. Uso não comercial.',
         acao: 'Criar conta de estudante',
       },
       clinica: { nome: 'Clínica', texto: 'Condições combinadas por e-mail.', acao: 'Fale com a gente' },
     })
+  })
+
+  it('D-671: o "uso não comercial" sai de PLANOS; um Estudante comercial não o diria', () => {
+    const comercial = PLANOS.map((p) => (p.id === 'estudante' ? { ...p, usoNaoComercial: false } : p))
+    expect(extrasDosPlanos(comercial).estudante.texto).not.toMatch(/não comercial/)
   })
 })
