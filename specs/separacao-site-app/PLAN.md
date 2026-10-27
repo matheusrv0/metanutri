@@ -412,7 +412,9 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   os endereços novos; seção "Ordem para publicar a P2 e a P3", com os passos do dono da seção 4 deste plano: a P3 vem
   logo depois do site da P2, D-528),
   ~~`scripts/capturas-landing.mjs` (o comentário do comando; o roteiro não muda)~~ (não existe mais, DP-SA-42),
-  `.node-version` (novo, DP-SA-32). Depende de: T18. Verifica: leitura do
+  `.node-version` (novo, DP-SA-32), `src/data/sqlCheckout.test.ts` e `src/ui/publico/conta/turnstile.test.ts` (eles
+  liam no `publicar.yml` as chaves do pagamento e da verificação; agora conferem que o site publicado não as leva e que
+  o app as recebe da Cloudflare, DP-SA-33). Depende de: T18. Verifica: leitura do
   workflow; `npm run build:site` sem `.env.local` monta e passa no CA-1406.
 - [ ] **T29 · Testes de navegador com duas origens.** `playwright.config.ts` (DP-SA-17: os três servidores; o projeto
   `site`; Firefox e WebKit só para a mudança), `playwright.csp.config.ts` (confere que monta o app),
