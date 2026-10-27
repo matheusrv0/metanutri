@@ -20,6 +20,30 @@ Nenhuma dependência nova: as fotos são convertidas com o Pillow que já está 
 | T10 | **Testes de navegador**: os que olhavam a landing antiga passam a olhar a nova; o e2e novo da landing escura (tema claro, primeira tela, campo vivo, chaves, barra, 390 px, 44 px, teclado, menos movimento, pré-desenhada, sem Google Fonts) | `e2e/landing-escura.spec.ts` (novo), `e2e/site-publico.spec.ts`, `e2e/publico.spec.ts`, `e2e/textos-e-promessas.spec.ts`, `e2e/conta.spec.ts`, `e2e/servidor-falso/*.spec.ts` (os que citam a landing) | CA-1450, CA-1452, CA-1453, CA-1456, CA-1459, CA-1484, CA-1486 a CA-1490 | T6 a T9 |
 | T11 | **Validação**: `npm run check`, `npx playwright test` (configuração temporária com portas próprias, apagada depois), `npm run test:csp`, `npm run build`; o inspetor da skill no `vite preview` em 1440, 768 e 390; capturas em 1440 e 390; ajustes que as capturas pedirem (commit próprio); relatório | — | todos | T10 |
 
+## O que mudou no caminho (registrado antes de cada commit)
+
+- **T4:** a base tem medida caseira para 283 dos 597 alimentos; o topo e a pergunta da base passaram a dizer "quando a
+  base tem" (commit de docs próprio, antes do código). Os nomes da tabela da cozinha são os que a paciente lê
+  (`nomeParaPaciente`), e os do campo vivo, os da gaveta do Cobrir sem o tempo de cozimento.
+- **T6** também criou `src/ui/publico/navegacaoPublica.ts` (os links com endereço que trocam de tela pelo app, que a
+  `MolduraPublica` tinha por dentro e as seções novas precisavam), `precosDaLanding.ts` (e o teste: Quanto custa saindo de
+  `PLANOS`), `ListaDoCobrir.tsx` e `PassoDeComoFunciona.tsx` (um componente por arquivo); mexeu em `App.tsx` e
+  `src/seo/vitrine.tsx` (a prop `aoEscolher`) e tirou já o pré-carregamento da foto de `public/preparar-pagina.js` com o
+  teste dele, porque o teste comparava a foto que saiu (a T9 ficou só com os arquivos).
+- **T7** também mexeu em `src/App.test.tsx` e `src/AppConta.test.tsx` ("Criar conta grátis" no lugar de "Começar
+  grátis"). O menu comum perdeu "Recursos" (a seção não existe mais).
+- **T8** acrescentou à varredura dos termos da frente (`textosDaFrente.test.ts`) a conferência de que a pasta nova é
+  lida.
+- **Rodada de capturas (depois da T9, commit `fix` próprio):** os títulos de seção sumiam com o app no tema claro (a
+  ponte do shadcn/ui era calculada no `<html>`); a ponte passou a ser declarada também em `.dark` (`globals.css` e o
+  teste `temaClaro.test.ts`). O botão "Criar conta grátis" da barra perdia o espaço; o cedilha de "Começar" era cortado.
+- **T10:** o e2e achou o campo vivo e o "Fale com a gente" com menos de 44 px no celular e as partes fora da tela
+  esmaecendo à toa ao montar (commit `fix` próprio); e o "no rodapé, sai" da barra não acontece na prática: o rodapé
+  nunca chega embaixo da barra (a faixa marfim fica lá, e a barra fica teal). A regra continua no teste de unidade.
+- **T11:** o inspetor da skill, rodado como está, dá `FAIL still-page` (1 elemento se mexeu): este Windows pede menos
+  movimento, e o Chrome do inspetor obedece. Uma cópia do inspetor no scratchpad, com `no-preference` forçado, dá
+  0 FAIL e nem o aviso de pouco movimento (R-531).
+
 ## Riscos e decisões para o dono revisar
 
 - **D-532 (hover da faixa final).** O protótipo pintava a faixa de laranja com texto por cima; isso fere a regra do
