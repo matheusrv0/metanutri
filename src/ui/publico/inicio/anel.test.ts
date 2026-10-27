@@ -1,5 +1,5 @@
 // CA-1662 e CA-1664 (spec landing-v3, D-656 e D-658): o anel da Adequação e o centro dele.
-import { arcosDoAnel, centroDoAnel } from './anel.ts'
+import { arcosDoAnel, centroDoAnel, resumoParaOLeitor } from './anel.ts'
 import { META_DA_ADEQUACAO, NUTRIENTES_DO_EXEMPLO } from './exemploDaLanding.ts'
 
 describe('arcosDoAnel', () => {
@@ -41,5 +41,22 @@ describe('centroDoAnel', () => {
     const sardinha = calcio.sugestoes.find((s) => s.nome === 'Sardinha assada')
     if (!sardinha) throw new Error('sem a sardinha')
     expect(centroDoAnel(calcio, sardinha)).toEqual({ rotulo: 'com 60 g', valor: 'Meta', nota: 'atingida' })
+  })
+})
+
+describe('resumoParaOLeitor', () => {
+  const [calcio, , vitaminaD] = NUTRIENTES_DO_EXEMPLO
+  if (!calcio || !vitaminaD) throw new Error('sem os nutrientes')
+
+  it('CA-1665: o nutriente, a sugestão com os gramas e o que ainda falta, numa frase', () => {
+    const iogurte = calcio.sugestoes[calcio.escolhida]
+    if (!iogurte) throw new Error('sem o iogurte')
+    expect(resumoParaOLeitor(calcio, iogurte)).toBe('Cálcio. Iogurte natural desnatado, 150 g: ainda faltam 24,3 mg de 260 mg.')
+  })
+
+  it('CA-1665: com a sugestão que cobre 100%, "meta atingida"', () => {
+    const salmao = vitaminaD.sugestoes[vitaminaD.escolhida]
+    if (!salmao) throw new Error('sem o salmão')
+    expect(resumoParaOLeitor(vitaminaD, salmao)).toBe('Vitamina D. Filé de salmão fresco grelhado com pele, 90 g: meta atingida.')
   })
 })

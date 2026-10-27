@@ -39,3 +39,15 @@ export function centroDoAnel(
     ? { rotulo: `com ${sugestao.gramas}`, valor: 'Meta', nota: 'atingida' }
     : { rotulo: 'ainda faltam', valor: sugestao.resta, nota: `de ${nutriente.falta}` }
 }
+
+/**
+ * CA-1665 (revisão da v9): o que o leitor de tela ouve quando a aba ou a sugestão muda, numa frase só: o nutriente, a
+ * sugestão com os gramas e o que ainda falta, ou "meta atingida". O painel inteiro não é região viva: leria tudo de novo.
+ */
+export function resumoParaOLeitor(
+  nutriente: Pick<NutrienteDoExemplo, 'nome' | 'falta'>,
+  sugestao: Pick<SugestaoDoExemplo, 'nome' | 'gramas' | 'resta'>,
+): string {
+  const fim = sugestao.resta === null ? 'meta atingida' : `ainda faltam ${sugestao.resta} de ${nutriente.falta}`
+  return `${nutriente.nome}. ${sugestao.nome}, ${sugestao.gramas}: ${fim}.`
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { resumoParaOLeitor } from './anel.ts'
 import { AnelDaAdequacao } from './AnelDaAdequacao.tsx'
 import { META_DA_ADEQUACAO, NUTRIENTES_DO_EXEMPLO } from './exemploDaLanding.ts'
 import { APOIO, CARTAO_DA_V9, ESPACO_DE_SECAO, MARGEM, TITULO_DE_SECAO } from './estiloDaLanding.ts'
@@ -12,7 +13,8 @@ const TOQUE = 'transition-[background-color,border-color,scale] duration-200 act
 /**
  * "Adequação de micronutrientes com sugestão do que comer" (spec landing-v3, D-656 a D-658): as abas do cálcio, da vitamina
  * E e da vitamina D do plano de exemplo e o painel com o anel e as sugestões, com os números do motor
- * (`exemploDaLanding.ts`). Trocar de aba abre na sugestão escolhida dela (CB-655).
+ * (`exemploDaLanding.ts`). Trocar de aba abre na sugestão escolhida dela (CB-655). A troca é anunciada por um resumo
+ * escondido, não pelo painel inteiro (revisão da v9).
  */
 export function AdequacaoDoExemplo() {
   const [escolha, setEscolha] = useState(() => ({ nutriente: 0, sugestao: NUTRIENTES_DO_EXEMPLO[0]?.escolhida ?? 0 }))
@@ -49,9 +51,13 @@ export function AdequacaoDoExemplo() {
           </div>
           <p className="mt-2">{`Plano de exemplo: Maria, 28 anos. A meta é ${META_DA_ADEQUACAO}% da referência para a idade e o sexo.`}</p>
         </div>
+        {/* Revisão da v9: o leitor de tela ouve só o resumo da escolha, não o painel inteiro de novo. */}
+        <p aria-live="polite" className="sr-only">
+          {resumoParaOLeitor(nutriente, sugestao)}
+        </p>
         <div
           data-surge=""
-          aria-live="polite"
+          data-painel-adequacao=""
           className={`grid grid-cols-[260px_minmax(0,1fr)] items-center gap-9 rounded-[28px] p-9 ${CARTAO_DA_V9} ${LUZ} before:bg-[radial-gradient(70%_60%_at_20%_30%,var(--landing-luz-cartao),transparent_70%)] max-[720px]:grid-cols-1 max-[720px]:justify-items-center max-[720px]:p-6`}
         >
           <AnelDaAdequacao nutriente={nutriente} sugestao={sugestao} />

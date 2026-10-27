@@ -17,7 +17,7 @@ const montar = (acoes: Acoes = {}) =>
 
 const texto = () => document.body.textContent ?? ''
 const painel = () => {
-  const el = document.querySelector('#adequacao [aria-live="polite"]')
+  const el = document.querySelector('[data-painel-adequacao]')
   if (!(el instanceof HTMLElement)) throw new Error('sem o painel da Adequação')
   return el
 }
@@ -161,9 +161,13 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(painel().querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
     })
 
-    it('CA-1665: o painel é anunciado; abas e sugestões são botões com aria-pressed em grupos com nome', () => {
+    it('CA-1665: o resumo é anunciado; abas e sugestões são botões com aria-pressed em grupos com nome', () => {
       montar()
-      expect(painel()).toHaveAttribute('aria-live', 'polite')
+      // Revisão da v9: só o resumo é anunciado; o painel inteiro não é região viva (ele leria tudo de novo).
+      expect(painel()).not.toHaveAttribute('aria-live')
+      const resumo = document.querySelector('#adequacao [aria-live="polite"]')
+      expect(resumo).toHaveClass('sr-only')
+      expect(resumo).toHaveTextContent('Cálcio. Iogurte natural desnatado, 150 g: ainda faltam 24,3 mg de 260 mg.')
       for (const botao of [...abas(), ...sugestoes()]) {
         expect(botao.tagName).toBe('BUTTON')
         expect(botao).toHaveAttribute('aria-pressed')

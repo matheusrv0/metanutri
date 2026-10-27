@@ -101,7 +101,7 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
 
   test('CA-1662 e CA-1663: a Adequação troca de nutriente e de sugestão, e o centro do anel acompanha', async ({ page }) => {
     await abrirLanding(page)
-    const painel = page.locator('#adequacao [aria-live="polite"]')
+    const painel = page.locator('[data-painel-adequacao]')
     await expect(painel).toContainText('ainda faltam24,3 mgde 260 mg')
     await page.getByRole('button', { name: /^Sardinha assada/ }).click()
     await expect(painel).toContainText('com 60 gMetaatingida')
