@@ -3,7 +3,9 @@ import { MENSAGEM_ERRO, validarEntrada, type ErroConta } from '@/domain/conta.ts
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
+import { armazenamentoLocal } from '../../estado/armazenamentoLocal.ts'
 import type { ValorConta } from '../../estado/usarConta.ts'
+import { lerSaida, textoDaSaida } from '../../sessao/motivoDaSaida.ts'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { AvisoSemServidor } from './AvisoSemServidor.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
@@ -31,6 +33,12 @@ const BOTAO_TEXTO =
 /** Entrar (spec estilo-spora, US-1.4; mockup conta e checkout v1). */
 export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirmarEmail, aoIrParaInicio, aoAbrirSistema, pedidoPorTela = false }: TelaEntrarProps) {
   const id = useId()
+  // Spec separacao-site-app, D-526 e DP-SA-22: depois da saída por tempo, "Entre de novo" e uma frase só. O motivo fica
+  // guardado até alguém entrar (DP-SA-19), então todas as abas e as recargas mostram o mesmo.
+  const [subtituloDaSaida] = useState(() => {
+    const saida = lerSaida(armazenamentoLocal())
+    return saida === null ? null : textoDaSaida(saida, Date.now())
+  })
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<ErroConta | null>(null)
@@ -68,8 +76,8 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
 
   return (
     <MolduraConta
-      titulo="Entrar"
-      subtitulo={pedidoPorTela ? 'Entre para continuar de onde parou.' : 'Continue de onde parou.'}
+      titulo={subtituloDaSaida === null ? 'Entrar' : 'Entre de novo'}
+      subtitulo={subtituloDaSaida ?? (pedidoPorTela ? 'Entre para continuar de onde parou.' : 'Continue de onde parou.')}
       aoIrParaInicio={aoIrParaInicio}
       lado={<LadoDoPlano plano={null} ciclo="mensal" />}
     >

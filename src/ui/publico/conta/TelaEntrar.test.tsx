@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Resultado, ValorConta } from '../../estado/usarConta.ts'
+import { gravarSaida } from '../../sessao/motivoDaSaida.ts'
 import { contaFalsa } from './contaFalsa.test-utils.ts'
 import { TelaEntrar } from './TelaEntrar.tsx'
 import { URL_DO_TURNSTILE } from './turnstile.ts'
@@ -175,5 +176,57 @@ describe('TelaEntrar com a verificação contra robôs (spec seguranca-lote-3)',
     await entrar(usuario)
     expect(conta.entrar).toHaveBeenCalledWith('maria@exemplo.com', 'senhaforte1')
     expect(document.querySelector(`script[src="${URL_DO_TURNSTILE}"]`)).toBeNull()
+  })
+})
+
+describe('TelaEntrar depois da saída por tempo (spec separacao-site-app, D-526)', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('CA-1447: em dia, o título é "Entre de novo" e o aviso diz até que hora está salvo', () => {
+    const hoje = new Date()
+    gravarSaida(localStorage, { ate: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 1).getTime(), pendente: false })
+    montar()
+    expect(screen.getByRole('heading', { level: 1, name: 'Entre de novo' })).toBeInTheDocument()
+    expect(screen.getByText('Sua sessão terminou. Tudo até as 00:01 está salvo.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
+  })
+
+  it('CA-1448: com pendência, o aviso pede para entrar e enviar o que ficou; o botão continua "Entrar"', () => {
+    gravarSaida(localStorage, { ate: Date.now(), pendente: true })
+    montar()
+    expect(screen.getByRole('heading', { level: 1, name: 'Entre de novo' })).toBeInTheDocument()
+    expect(screen.getByText('Sua sessão terminou. Entre para enviar o que ficou neste navegador.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
+  })
+
+  it('CB-516: o último uso noutro dia diz o dia', () => {
+    const ontem = new Date()
+    ontem.setDate(ontem.getDate() - 1)
+    ontem.setHours(15, 42, 0, 0)
+    gravarSaida(localStorage, { ate: ontem.getTime(), pendente: false })
+    montar()
+    expect(screen.getByText('Sua sessão terminou. Tudo até ontem às 15:42 está salvo.')).toBeInTheDocument()
+  })
+
+  it('D-526: sem explicar o motivo, sem "segurança" e sem nota sobre as 12 horas ou o e-mail lembrado', () => {
+    gravarSaida(localStorage, { ate: Date.now(), pendente: false })
+    montar()
+    const texto = document.body.textContent ?? ''
+    expect(texto).not.toMatch(/segurança|12 horas|30 minutos|lembrad/i)
+    expect(screen.queryByText('Continue de onde parou.')).not.toBeInTheDocument()
+  })
+
+  it('DP-SA-22: tela pedida por uma tela de trabalho, com o motivo, também mostra "Entre de novo"', () => {
+    gravarSaida(localStorage, { ate: Date.now(), pendente: true })
+    const props = { conta: contaFalsa(), aoEntrou: vi.fn(), aoCriarConta: vi.fn(), aoEsqueci: vi.fn(), aoConfirmarEmail: vi.fn(), aoIrParaInicio: vi.fn(), aoAbrirSistema: vi.fn() }
+    render(<TelaEntrar {...props} pedidoPorTela />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Entre de novo' })).toBeInTheDocument()
+  })
+
+  it('sem motivo guardado, a tela é a de sempre', () => {
+    montar()
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(screen.getByText('Continue de onde parou.')).toBeInTheDocument()
   })
 })
