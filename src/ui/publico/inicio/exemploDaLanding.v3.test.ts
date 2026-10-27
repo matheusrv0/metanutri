@@ -24,7 +24,6 @@ import {
   COBRIR_CALCIO,
   DIA_EM_GRAMAS,
   FEIJAO_NA_CONCHA,
-  PORCAO_DO_TOPO,
   type ChaveDaVitrine,
   type LinhaDoCobrir,
 } from './exemploDaLanding.ts'
@@ -140,15 +139,6 @@ describe('CA-1468: Como funciona tem os números do motor', () => {
 })
 
 describe('CA-1601 e CA-1603: a gramatura vem do motor', () => {
-  it('CA-1601: o 150 g de iogurte do topo é a sugestão de iogurte do Cobrir de cálcio', () => {
-    const iogurte = oExemplo()
-      .cobrir('calcio_mg')
-      .sugestoes.find((s) => /^Iogurte,/.test(s.descricao))
-    if (!iogurte) throw new Error('O Cobrir de cálcio não sugere iogurte')
-    expect(PORCAO_DO_TOPO).toBe(`${gramasDaSugestao(iogurte)} de iogurte`)
-    expect(PORCAO_DO_TOPO).toBe('150 g de iogurte')
-  })
-
   it('CA-1603: o campo vivo e "Cobrir cálcio" mostram só os gramas, sem a medida caseira', () => {
     const linhas = [...Object.values(CARTOES_DA_VITRINE).flatMap((c) => c.linhas), ...COBRIR_CALCIO.linhas]
     for (const linha of linhas) expect(linha.gramas, linha.nome).toMatch(/^\d+ (g|ml)( \(peso cru\))?$/)

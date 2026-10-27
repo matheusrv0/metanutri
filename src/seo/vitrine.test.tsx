@@ -18,9 +18,10 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
   it('CA-1013: a landing sai escrita, dentro da moldura pública, com os títulos, os preços e o rodapé', () => {
     const html = corpo('inicio')
     // Spec landing-escura (CA-1484): a landing nova, com o preço do Solo de PLANOS.
-    expect(html).toMatch(/<h1[^>]*><span[^>]*>Falta cálcio\?<\/span>/)
+    // Spec landing-v3, seção v9 (CA-1692): o topo em foto.
+    expect(html).toMatch(/<h1[^>]*>Planos alimentares completos em vitaminas e minerais<\/h1>/)
     for (const trecho of [
-      'O que falta no plano da Maria, 28 anos?',
+      'Adequação de micronutrientes com sugestão do que comer',
       'O plano sai do seu jeito',
       'Como funciona',
       'Grama por grama',

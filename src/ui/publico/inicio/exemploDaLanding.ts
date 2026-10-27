@@ -231,9 +231,6 @@ export const ADEQUACAO_DO_EXEMPLO: readonly LinhaDaAdequacao[] = [
   { nome: 'Vitamina D', quanto: '2,1 de 15 µg · 14%', pct: 14 },
 ]
 
-/** D-601: o topo da página, "150 g de iogurte": a porção de iogurte que o Cobrir de cálcio sugere para a Maria. */
-export const PORCAO_DO_TOPO = '150 g de iogurte'
-
 /** "Então, cubra o que falta.": as cinco sugestões do cálcio, na ordem do motor. */
 export const COBRIR_CALCIO: { readonly falta: string; readonly linhas: readonly LinhaDoCobrir[] } = {
   falta: '260 mg',

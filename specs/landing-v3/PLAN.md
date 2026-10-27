@@ -139,4 +139,9 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
 
 ## O que mudou no caminho (v9)
 
-(preenchido antes de cada commit que divergir do plano)
+- **T12:** os números da v3 que as seções antigas usam ficaram no fim de `exemploDaLanding.ts`, com o teste deles num
+  arquivo temporário (`exemploDaLanding.v3.test.ts`); cada seção antiga leva os dela ao sair, para cada commit compilar.
+- **T16 e T17 viraram um commit só**: o "Ver no plano de exemplo" do topo antigo rolava até o campo vivo, que a T17
+  tira; o topo novo rola até a Adequação. As guardas de texto (`textosDaFrente`, `textosProibidos`) e a página
+  pré-desenhada (`vitrine.test.tsx`) passaram a olhar a Adequação no mesmo commit.
+- **T14:** a sombra da etiqueta do topo (`--landing-etiqueta-sombra`) entrou na T16, com a etiqueta.

@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { ADEQUACAO_DO_EXEMPLO, CARTOES_DA_VITRINE, COBRIR_CALCIO, DIA_EM_GRAMAS } from './inicio/exemploDaLanding.ts'
+import { ADEQUACAO_DO_EXEMPLO, COBRIR_CALCIO, DIA_EM_GRAMAS, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
 import { precosDaLanding } from './inicio/precosDaLanding.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
@@ -17,18 +17,19 @@ const montar = (acoes: Acoes = {}) =>
 
 const texto = () => document.body.textContent ?? ''
 const secao = (nome: string) => within(screen.getByRole('region', { name: nome }))
-const cartaoDaVitrine = () => {
-  const cartao = document.querySelector('#plano-de-exemplo [aria-live="polite"]')
-  if (!(cartao instanceof HTMLElement)) throw new Error('sem o cartão do campo vivo')
-  return cartao
+const painel = () => {
+  const el = document.querySelector('#adequacao [aria-live="polite"]')
+  if (!(el instanceof HTMLElement)) throw new Error('sem o painel da Adequação')
+  return el
 }
+const TITULO_DO_TOPO = 'Planos alimentares completos em vitaminas e minerais'
 
 describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
-  it('D-534 e D-603: o título e as seções, nesta ordem, cada uma com título', () => {
+  it('CA-1688: o título e as seções, nesta ordem, cada uma com título', () => {
     montar()
     expect(screen.getAllByRole('heading').map((h) => `${h.tagName} ${h.textContent ?? ''}`)).toEqual([
-      'H1 Falta cálcio? 150 g de iogurte.',
-      'H2 O que falta no plano da Maria, 28 anos?',
+      `H1 ${TITULO_DO_TOPO}`,
+      'H2 Adequação de micronutrientes com sugestão do que comer',
       'H2 O plano sai do seu jeito',
       'H2 Como funciona',
       'H2 Grama por grama',
@@ -38,110 +39,135 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   })
 
   describe('topo', () => {
-    it('CA-1600: o título em gramas, as duas ações e a frase', () => {
+    it('CA-1652 e CA-1653: o título, o apoio com o 20 da adequação, as duas ações e a linha do Free', () => {
       montar()
-      const topo = screen.getByRole('region', { name: 'Falta cálcio? 150 g de iogurte.' })
-      expect(within(topo).getByRole('button', { name: 'Criar conta grátis' })).toBeInTheDocument()
-      expect(within(topo).getByRole('link', { name: 'Ver no plano de exemplo' })).toBeInTheDocument()
+      const topo = screen.getByRole('region', { name: TITULO_DO_TOPO })
+      expect(within(topo).getByRole('heading', { level: 1 })).toHaveTextContent(TITULO_DO_TOPO)
       expect(topo).toHaveTextContent(
-        'Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral no plano alimentar e mostra o que comer para completar, em gramas.',
+        'O MetaNutri calcula a adequação de 20 vitaminas e minerais e sugere os alimentos, em gramas, para completar o que falta. Depois, acompanha a adesão do paciente pelo celular.',
       )
-      expect(topo).not.toHaveTextContent(/medida caseira/)
-      // A bolinha laranja é o ponto: escondida do leitor de tela, que lê o ponto de verdade.
-      const bolinha = topo.querySelector('h1 .bg-landing-laranja')
-      expect(bolinha).toHaveAttribute('aria-hidden', 'true')
+      expect(within(topo).getByRole('button', { name: 'Criar conta grátis' })).toBeInTheDocument()
+      expect(within(topo).getByRole('link', { name: 'Ver o plano de exemplo' })).toBeInTheDocument()
+      expect(topo).toHaveTextContent('Grátis com 2 pacientes ativos. Sem cartão de crédito.')
     })
 
-    it('CA-1455: "Criar conta grátis" chama quem manda; "Ver no plano de exemplo" rola até o campo vivo', async () => {
+    it('CA-1652: "Criar conta grátis" chama quem manda; "Ver o plano de exemplo" rola até a Adequação', async () => {
       const aoComecar = vi.fn()
       montar({ aoComecar })
-      const alvo = document.getElementById('plano-de-exemplo')
-      if (!alvo) throw new Error('sem o campo vivo')
+      const alvo = document.getElementById('adequacao')
+      if (!alvo) throw new Error('sem a Adequação')
       alvo.scrollIntoView = vi.fn()
       const usuario = userEvent.setup()
       await usuario.click(screen.getByRole('button', { name: 'Criar conta grátis' }))
       expect(aoComecar).toHaveBeenCalledOnce()
-      await usuario.click(screen.getByRole('link', { name: 'Ver no plano de exemplo' }))
+      await usuario.click(screen.getByRole('link', { name: 'Ver o plano de exemplo' }))
       expect(alvo.scrollIntoView).toHaveBeenCalledOnce()
     })
 
-    it('D-549: aberta pelo app, o título sobe só com motion-safe; sobre a página pré-desenhada, não anima', () => {
+    it('CA-1654: a etiqueta diz o exemplo do cálcio com o nome da paciente, escondida do leitor de tela e do celular', () => {
       montar()
-      const titulo = screen.getByRole('heading', { level: 1 })
-      expect(titulo.querySelector('span')?.className).toContain('motion-safe:animate-landing-sobe')
+      const etiqueta = document.querySelector('[data-etiqueta]')
+      expect(etiqueta).toHaveAttribute('aria-hidden', 'true')
+      expect(etiqueta?.textContent).toBe('No plano de exemplo, falta cálcio150 g de iogurte natural desnatado cobrem 91%')
+      expect(etiqueta?.className).toContain('max-[720px]:hidden')
+    })
+
+    it('CA-1655: a foto do topo tem texto alternativo, tamanho, as versões de 800 e 1.600 px, e não é preguiçosa', () => {
+      montar()
+      const foto = screen.getByAltText('Copo de iogurte com frutas vermelhas, granola e amêndoas sobre a mesa.')
+      expect(foto).toHaveAttribute('width', '1600')
+      expect(foto).toHaveAttribute('height', '1172')
+      expect(foto.getAttribute('srcset')).toBe('/imagens/iogurte-com-frutas-800.webp 800w, /imagens/iogurte-com-frutas.webp 1600w')
+      expect(foto).not.toHaveAttribute('loading')
+      expect(foto).toHaveAttribute('fetchpriority', 'high')
+    })
+
+    it('CA-1656 e CA-1657: aberta pelo app, a foto assenta e a etiqueta surge do zero, só com movimento', () => {
+      montar()
+      const foto = screen.getByAltText(/Copo de iogurte/)
+      expect(foto.className).toContain('motion-safe:animate-landing-assentar')
+      expect(foto.style.animationDelay).toBe('')
+      expect(document.querySelector('[data-etiqueta]')?.className).toContain('motion-safe:animate-landing-surgir')
+    })
+
+    it('CA-1657: sobre a página pré-desenhada, o movimento continua de onde estava', () => {
+      const vitrine = document.createElement('div')
+      vitrine.setAttribute('data-vitrine', '')
+      document.body.append(vitrine)
+      const agora = vi.spyOn(performance, 'now').mockReturnValue(1300)
+      const pintura = vi.spyOn(performance, 'getEntriesByName').mockReturnValue([{ startTime: 300 } as PerformanceEntry])
+      montar()
+      expect(screen.getByAltText(/Copo de iogurte/).style.animationDelay).toBe('-1000ms')
+      expect((document.querySelector('[data-etiqueta]') as HTMLElement | null)?.style.animationDelay).toBe('-100ms')
+      agora.mockRestore()
+      pintura.mockRestore()
+      vitrine.remove()
     })
   })
 
-  describe('campo vivo', () => {
-    it('CA-1462: começa com "falta cálcio" e o cartão do cálcio, com o botão do cálcio pressionado', () => {
+  describe('Adequação', () => {
+    const abas = () => within(screen.getByRole('group', { name: 'Nutrientes do plano de exemplo' })).getAllByRole('button')
+    const sugestoes = () => within(screen.getByRole('group', { name: 'Sugestões para completar' })).getAllByRole('button')
+    const centro = () => painel().querySelector('.absolute.inset-0')?.textContent
+
+    it('CA-1658: três abas com o total e o percentual; o cálcio pressionado ao abrir', () => {
       montar()
-      expect(screen.getByRole('textbox', { name: 'Digite o nutriente que falta' })).toHaveValue('falta cálcio')
-      const cartao = cartaoDaVitrine()
-      expect(cartao).toHaveTextContent('Cálcio640 de 1.000 mg no diaFaltam 260 mg para a meta.')
-      expect(within(cartao).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-        'Rúcula, crua60 g · cobre 27% · +8 kcalAdicionar',
-        'Iogurte, natural, desnatado150 g · cobre 91% · +62 kcalAdicionar',
-        'Sardinha, assada60 g · cobre 100% · +99 kcalAdicionar',
+      expect(abas().map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+        ['Cálcio 640 de 1.000 mg no dia 64%', 'true'],
+        ['Vitamina E 5,4 de 15 mg no dia 36%', 'false'],
+        ['Vitamina D 2,1 de 15 µg no dia 14%', 'false'],
       ])
-      expect(screen.getByRole('button', { name: 'falta cálcio' })).toHaveAttribute('aria-pressed', 'true')
-    })
-
-    it('CA-1463: o que se digita escolhe o cartão', async () => {
-      montar()
-      const campo = screen.getByRole('textbox', { name: 'Digite o nutriente que falta' })
-      const usuario = userEvent.setup()
-      await usuario.clear(campo)
-      await usuario.type(campo, 'vitamina e')
-      expect(cartaoDaVitrine()).toHaveTextContent(`Vitamina E${CARTOES_DA_VITRINE['vitamina-e'].total}Faltam 8,1 mg para a meta.`)
-      await usuario.clear(campo)
-      await usuario.type(campo, 'Vitamina D')
-      expect(cartaoDaVitrine()).toHaveTextContent(`Vitamina D${CARTOES_DA_VITRINE['vitamina-d'].total}Faltam 11,4 µg para a meta.`)
-      await usuario.clear(campo)
-      await usuario.type(campo, 'calcio')
-      expect(cartaoDaVitrine()).toHaveTextContent('Cálcio640 de 1.000 mg no dia')
-    })
-
-    it('CA-1464: os botões de exemplo preenchem o campo, trocam o cartão e só um fica pressionado', async () => {
-      montar()
-      await userEvent.setup().click(screen.getByRole('button', { name: 'falta vitamina D' }))
-      expect(screen.getByRole('textbox', { name: 'Digite o nutriente que falta' })).toHaveValue('falta vitamina D')
-      expect(cartaoDaVitrine()).toHaveTextContent('Salmão, filé, com pele, fresco, grelhado')
-      const grupo = within(screen.getByRole('group', { name: 'Outros exemplos' }))
-      expect(grupo.getAllByRole('button').map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true'])
-    })
-
-    it('CA-1465: fora dos três (ou vazio), o cartão diz o que experimentar e nenhum botão fica pressionado', async () => {
-      montar()
-      const campo = screen.getByRole('textbox', { name: 'Digite o nutriente que falta' })
-      const usuario = userEvent.setup()
-      await usuario.clear(campo)
-      expect(cartaoDaVitrine()).toHaveTextContent('Neste exemploExperimente cálcio, vitamina E ou vitamina D.')
-      await usuario.type(campo, 'ferro')
-      expect(cartaoDaVitrine()).toHaveTextContent('Neste exemploExperimente cálcio, vitamina E ou vitamina D.')
-      expect(within(cartaoDaVitrine()).queryAllByRole('listitem')).toHaveLength(0)
-      const grupo = within(screen.getByRole('group', { name: 'Outros exemplos' }))
-      expect(grupo.getAllByRole('button').every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true)
-    })
-
-    it('CA-1602: o campo vivo mostra os gramas, sem medida caseira, e o parágrafo novo', async () => {
-      montar()
-      const vitrine = screen.getByRole('region', { name: 'O que falta no plano da Maria, 28 anos?' })
-      expect(vitrine).toHaveTextContent(
-        'O cálculo usa as referências de ingestão para a idade e o sexo da paciente. Cada sugestão traz os gramas, quanto da falta eles cobrem e as calorias que somam ao dia. Você escolhe o que entra.',
+      expect(screen.getByRole('region', { name: 'Adequação de micronutrientes com sugestão do que comer' })).toHaveTextContent(
+        'Plano de exemplo: Maria, 28 anos. A meta é 90% da referência para a idade e o sexo.',
       )
-      // Os gramas ficam em destaque (a tinta em negrito), como no protótipo.
-      expect(within(cartaoDaVitrine()).getAllByText('60 g')[0]).toHaveClass('font-bold')
-      const usuario = userEvent.setup()
-      for (const exemplo of ['falta cálcio', 'falta vitamina E', 'falta vitamina D']) {
-        await usuario.click(screen.getByRole('button', { name: exemplo }))
-        expect(cartaoDaVitrine().textContent).not.toMatch(/copo|colher|folha|unidade|fatia|concha/)
-      }
     })
 
-    it('CA-1466: o cartão é anunciado quando troca, e o campo tem rótulo', () => {
+    it('CA-1662: o iogurte escolhido ao abrir, "ainda faltam 24,3 mg de 260 mg"; com a sardinha, "Meta atingida"', async () => {
       montar()
-      expect(cartaoDaVitrine()).toHaveAttribute('aria-live', 'polite')
-      expect(screen.getByLabelText('Digite o nutriente que falta')).toBeInTheDocument()
+      expect(sugestoes().map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+        ['Rúcula 60 g · +8 kcal 27%', 'false'],
+        ['Iogurte natural desnatado 150 g · +62 kcal 91%', 'true'],
+        ['Sardinha assada 60 g · +99 kcal 100%', 'false'],
+      ])
+      expect(centro()).toBe('ainda faltam24,3 mgde 260 mg')
+      await userEvent.setup().click(screen.getByRole('button', { name: /^Sardinha assada/ }))
+      expect(centro()).toBe('com 60 gMetaatingida')
+      expect(screen.getByRole('button', { name: /^Sardinha assada/ })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('CA-1663 e CB-655: a vitamina E abre na amêndoa e a vitamina D no salmão, mesmo depois de outra escolha', async () => {
+      montar()
+      const usuario = userEvent.setup()
+      await usuario.click(screen.getByRole('button', { name: /^Rúcula/ }))
+      await usuario.click(screen.getByRole('button', { name: /^Vitamina E/ }))
+      expect(painel()).toHaveTextContent('Vitamina E5,4 de 15 mg no dia')
+      expect(screen.getByRole('button', { name: /^Amêndoa torrada salgada/ })).toHaveAttribute('aria-pressed', 'true')
+      expect(centro()).toBe('ainda faltam1,0 mgde 8,1 mg')
+      await usuario.click(screen.getByRole('button', { name: /^Vitamina D/ }))
+      expect(screen.getByRole('button', { name: /^Filé de salmão fresco grelhado com pele/ })).toHaveAttribute('aria-pressed', 'true')
+      expect(centro()).toBe('com 90 gMetaatingida')
+      await usuario.click(screen.getByRole('button', { name: /^Cálcio/ }))
+      expect(screen.getByRole('button', { name: /^Iogurte natural desnatado/ })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('CA-1664: no anel, a base é o percentual da aba e a soma começa onde ela termina', () => {
+      montar()
+      const [, base, soma, meta] = [...painel().querySelectorAll('circle')]
+      expect(base?.getAttribute('stroke-dasharray')).toBe('64 100')
+      expect(soma?.getAttribute('stroke-dasharray')).toBe('23.7 100')
+      expect(soma?.style.transform).toBe('rotate(230.4deg)')
+      expect([meta?.getAttribute('cx'), meta?.getAttribute('cy')]).toEqual(['214.1', '68.9'])
+      expect(painel().querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    })
+
+    it('CA-1665: o painel é anunciado; abas e sugestões são botões com aria-pressed em grupos com nome', () => {
+      montar()
+      expect(painel()).toHaveAttribute('aria-live', 'polite')
+      for (const botao of [...abas(), ...sugestoes()]) {
+        expect(botao.tagName).toBe('BUTTON')
+        expect(botao).toHaveAttribute('aria-pressed')
+      }
+      expect(NUTRIENTES_DO_EXEMPLO).toHaveLength(abas().length)
     })
   })
 
@@ -227,9 +253,9 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(tabela).toHaveTextContent('Feijão carioca cozido140 g107 kcal')
     })
 
-    it('CA-1476: as três fotos têm texto alternativo, tamanho reservado, versão de 800 px e carregam preguiçosas', () => {
+    it('CA-1476: as três fotos do meio têm texto alternativo, tamanho reservado, versão de 800 px e carregam preguiçosas', () => {
       montar()
-      const fotos = screen.getAllByRole('img').filter((img) => img.tagName === 'IMG' && img.getAttribute('alt') !== '')
+      const fotos = screen.getAllByRole('img').filter((img) => img.tagName === 'IMG' && img.getAttribute('alt') !== '' && !img.closest('[aria-labelledby="titulo-inicio"]'))
       expect(fotos.map((f) => f.getAttribute('alt'))).toEqual([
         'Tomates e cenouras frescos sobre uma bancada escura.',
         'Dois copos de leite de tamanhos diferentes, lado a lado.',
@@ -243,10 +269,10 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       }
     })
 
-    it('CA-1476: os arquivos das fotos existem e têm no máximo 1.600 px de largura', () => {
+    it('CA-1476 e CA-1655: os arquivos das fotos existem e têm no máximo 1.600 px de largura', () => {
       const pasta = join(process.cwd(), 'public', 'imagens')
-      const arquivos = readdirSync(pasta).filter((n) => /^(legumes-na-bancada|dois-copos-de-leite|salada-com-frango)(-800)?\.webp$/.test(n))
-      expect(arquivos).toHaveLength(6)
+      const arquivos = readdirSync(pasta).filter((n) => /^(iogurte-com-frutas|legumes-na-bancada|dois-copos-de-leite|salada-com-frango)(-800)?\.webp$/.test(n))
+      expect(arquivos).toHaveLength(8)
       for (const nome of arquivos) {
         const webp = readFileSync(join(pasta, nome))
         // VP8 com perda: a largura fica nos bytes 26 e 27 (14 bits).
@@ -310,7 +336,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   describe('texto e acessibilidade', () => {
     it('CA-1608: o topo, o campo vivo, Grama por grama e as perguntas não falam de medida caseira', () => {
       montar()
-      for (const nome of ['Falta cálcio? 150 g de iogurte.', 'O que falta no plano da Maria, 28 anos?', 'Grama por grama', 'Perguntas de quem atende']) {
+      for (const nome of [TITULO_DO_TOPO, 'Adequação de micronutrientes com sugestão do que comer', 'Grama por grama', 'Perguntas de quem atende']) {
         expect(screen.getByRole('region', { name: nome }).textContent, nome).not.toMatch(/medida caseira|concha|escumadeira|copo americano/i)
       }
     })

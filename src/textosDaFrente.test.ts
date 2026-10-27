@@ -212,7 +212,7 @@ describe('CA-1170: termos antigos nos textos desta frente', () => {
     for (const esperado of [
       'src/ui/publico/TelaInicio.tsx',
       // Spec landing-escura: as seções da landing nova moram em src/ui/publico/inicio/.
-      'src/ui/publico/inicio/VitrineDoCobrir.tsx',
+      'src/ui/publico/inicio/AdequacaoDoExemplo.tsx',
       'src/ui/publico/inicio/PerguntasDeQuemAtende.tsx',
       'src/ui/publico/SecaoPrecos.tsx',
       'src/ui/conta/TelaConta.tsx',

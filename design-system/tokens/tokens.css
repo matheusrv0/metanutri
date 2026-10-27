@@ -381,6 +381,8 @@
   --landing-topo-tinta: var(--ivory);
   --landing-topo-suave: var(--carvao-100);
   --landing-vidro-cartao: color-mix(in srgb, var(--carvao-875) 55%, transparent);
+  --landing-etiqueta-sombra: 0 20px 40px -24px color-mix(in srgb, var(--aparelho-fundo) 45%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--gray-0) 18%, transparent);
   /* A luz em cima dos cartões e do painel, a sombra deles (só no claro), a luz que segue o ponteiro nos planos, o brilho
    * laranja do plano indicado e o gradiente do cartão de plano. */
   --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 10%, transparent);
