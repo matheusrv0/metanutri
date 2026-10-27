@@ -43,6 +43,8 @@ vivo), D-541 nas respostas 1 e 3, a seção "Na medida da cozinha" de D-534 (vir
 | D-617 | **O cartão do campo vivo e os exemplos ganham a borda do protótipo** (`--landing-borda`): no claro, o cartão branco sobre o afundado precisava dela; no escuro, a borda tem a cor do trilho e quase não aparece | Protótipo v3 |
 | D-618 | **O foco** é o contorno de 3 px do destaque (teal claro no escuro, teal médio no claro); nas áreas teal (o topo, as perguntas, a barra teal), o teal claro nos dois temas | Contraste do foco sobre o teal |
 | D-619 | **Os nomes do campo vivo continuam os do motor** ("Salmão, filé, com pele, fresco, grelhado", "Ovo, de galinha, gema, cozida"); o protótipo encurtava os dois à mão | D-537 continua |
+| D-621 | **A alternância de fundo das seções continua a de hoje:** "Grama por grama" no afundado, como "Na medida da cozinha" era. O protótipo v3 pintava "Como funciona" e "Quanto custa" no afundado e "Grama por grama" no chão; como as duas primeiras ficam como estão até a v4, seguir o protótipo só em "Grama por grama" deixaria duas seções vizinhas do mesmo tom | D-600 |
+| D-622 | **A barra cabe no celular com o botão de tema** (revisão `break-ui`, CB-608): até 420 px, o espaço entre os itens cai para 8 px e o "Criar conta" fica mais estreito; até 373 px, a logo da barra mostra só o símbolo (o nome continua no rótulo "MetaNutri, início"). Com o texto grande do sistema, a barra e as sugestões do Cobrir quebram em linhas em vez de esconder "Entrar" e "Criar conta". Sem isso, em 360 e 390 px o "Criar conta" passava da margem e era cortado pela raiz (`overflow-x: clip`) | Nenhum controle fora do alcance |
 | D-620 | **Fora do protótipo e mantido:** Manrope do `@fontsource` (o protótipo carregava do Google, D-533), a barra presa que some ao rolar (D-545), a faixa final com hover branco no escuro (D-532), o cabeçalho da tabela para o leitor de tela (CA-1475) e a entrada das partes ao rolar (D-549) | Regras que valem acima do protótipo |
 
 ## 2. Critérios de aceite
@@ -93,7 +95,7 @@ vivo), D-541 nas respostas 1 e 3, a seção "Na medida da cozinha" de D-534 (vir
 - **CB-605** · Duas abas abertas: a escolha numa aba vale para a outra só quando ela recarregar (sem sincronizar ao vivo).
 - **CB-606** · Sem JavaScript: a página pré-desenhada fica escura (o script do `<head>` não roda) e o botão de tema não faz nada, como o resto da página inerte (D-331).
 - **CB-607** · Menos movimento: a troca é instantânea nos dois casos (D-614).
-- **CB-608** · 360 px, texto grande (200%) e zoom de 200%: a barra cabe (a logo, o botão de tema, "Entrar" e "Criar conta"), o título e a tabela não estouram a largura (revisão `break-ui`).
+- **CB-608** · 360 px, texto grande (150% e 200%) e zoom de 200%: a barra cabe (a logo, o botão de tema, "Entrar" e "Criar conta") ou quebra em linhas, sem cortar nenhum controle; o título e a tabela não estouram a largura (revisão `break-ui`, D-622).
 - **CB-609** · Teclado: o botão de tema entra na ordem do Tab entre "Preços" e "Entrar"; Enter e Espaço trocam; o foco não se perde ao trocar.
 - **CB-610** · A barra escondida ao rolar: com foco no botão de tema, a barra volta (`:focus-within`, CB-533).
 

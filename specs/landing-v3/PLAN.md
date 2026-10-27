@@ -51,6 +51,25 @@ de "Quanto custa" ficam para a v4; essas três seções só passam pelos tokens 
 | CA-1626 | `e2e/landing-escura.spec.ts` › "CA-1488, CA-1489, CA-1626 …" (nos dois temas) |
 | CA-1630 | os testes da landing escura das três seções (CA-1470, CA-1471, CA-1474, CA-1477, CA-1478) e o CA-1616 |
 
+## O que mudou no caminho (registrado antes de cada commit)
+
+- **T2 e T3 viraram um commit só**: a troca do tipo da porção (`porcao` para `gramas`) e da tabela (`DIA_EM_MEDIDAS`
+  para `DIA_EM_GRAMAS`) quebrava a tela; o teste dos números e o da tela foram escritos antes do código, e o commit
+  junta os dois para cada commit compilar. `GramaPorGrama.tsx` nasceu já com os espaços do protótipo (a T8 ficou com o
+  resto).
+- **T4** também mexeu em `RodapeDaLanding.tsx`, `FaixaComecar.tsx`, `FaixaComChave.tsx`, `ComoFunciona.tsx`,
+  `PassoDeComoFunciona.tsx`, `QuantoCusta.tsx` e `ListaDoCobrir.tsx` (as cores pelos tokens do tema, D-616) e no teste
+  CA-1480 de `TelaInicio.test.tsx` (o hover da faixa final passou a ser o token `chamar-hover`).
+- **T9:** o clique do Playwright no botão de tema, com a página rolada, rolava a página antes de clicar (a barra é
+  presa); o teste da barra clica pelo evento. Um clique de verdade não rola (conferido com `element.click()`).
+- **T10 (revisão `emil-design-eng`):** o botão de tema ganhou o afundar ao toque (`scale(.97)`, 150 ms). A troca de
+  tema ficou sem animação (D-614), como pede a regra para ação repetida e de teclado.
+- **T10 (revisão `break-ui`, commit `fix` próprio):** em 360 e 390 px, o "Criar conta" da barra passava da margem
+  (cortado pela raiz, por isso o e2e de rolagem lateral não via); com o texto do sistema em 150% e 200%, "Entrar" e
+  "Criar conta" sumiam. Ficou a D-622, e o e2e do celular passou a conferir que a barra inteira cabe (360 px entrou na
+  lista). "Como funciona" (seção da v4) estoura a largura com texto em 200%, pelo seletor e pelo botão do fragmento que
+  não quebram linha; fica para a v4.
+
 ## Riscos e decisões para o dono revisar
 
 - **D-600 e R-602.** A chave "Medida caseira junto dos gramas" (ligada ao abrir) e o "1 concha de feijão" de "Como
