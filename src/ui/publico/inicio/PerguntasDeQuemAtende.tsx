@@ -44,7 +44,7 @@ export function PerguntasDeQuemAtende({ formularioNovo }: PerguntasDeQuemAtendeP
       <h2 id="titulo-perguntas" data-surge="" className={`${TITULO_XL} max-[720px]:text-[9vw]`}>
         Perguntas de quem atende
       </h2>
-      <div className="mt-[72px] ml-[33%] grid gap-2.5 max-[720px]:ml-0">
+      <div className="mt-[52px] ml-[33%] grid gap-2.5 max-[720px]:ml-0">
         {perguntas.map(({ pergunta, resposta }) => (
           <details
             key={pergunta}

@@ -26,11 +26,11 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
     <section
       aria-labelledby="titulo-inicio"
       data-capitulo="teal"
-      className={`grid min-h-[calc(80svh-var(--landing-barra))] grid-rows-[1fr_auto] bg-landing-teal pb-9 text-landing-marfim max-[1100px]:min-h-0 max-[1100px]:gap-y-16 max-[1100px]:pb-[52px] ${MARGEM}`}
+      className={`grid min-h-[calc(640px-var(--landing-barra))] grid-rows-[1fr_auto] bg-landing-teal pb-9 text-landing-marfim max-[1100px]:min-h-0 max-[1100px]:gap-y-16 max-[1100px]:pb-[52px] ${MARGEM}`}
     >
       <h1
         id="titulo-inicio"
-        className="pt-[max(24px,calc(15svh-32px))] text-(length:--landing-fs-display) leading-[.92] font-extrabold tracking-[-0.045em] max-[720px]:pt-[max(24px,calc(16svh-36px))] max-[720px]:text-[clamp(28px,8.6vw,60px)]"
+        className="pt-[calc(150px-var(--landing-barra))] text-(length:--landing-fs-display) leading-[.92] font-extrabold tracking-[-0.045em] max-[720px]:text-[clamp(28px,8.6vw,60px)]"
       >
         <span className={`block text-landing-teal-claro ${sobe}`}>Falta cálcio?</span>{' '}
         <span className={`block text-landing-marfim ${sobe} motion-safe:[animation-delay:.12s]`}>

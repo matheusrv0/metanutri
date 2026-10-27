@@ -6,7 +6,7 @@ const BASE = import.meta.env.BASE_URL
  */
 export function FotoDosLegumes() {
   return (
-    <figure data-capitulo="chao" className="relative m-0 h-[64svh] min-h-[340px] overflow-hidden bg-landing-chao-fundo">
+    <figure data-capitulo="chao" className="relative m-0 h-[420px] overflow-hidden bg-landing-chao-fundo">
       <img
         src={`${BASE}imagens/legumes-na-bancada.webp`}
         srcSet={`${BASE}imagens/legumes-na-bancada-800.webp 800w, ${BASE}imagens/legumes-na-bancada.webp 1024w`}

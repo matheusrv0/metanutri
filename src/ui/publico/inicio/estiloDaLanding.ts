@@ -13,8 +13,8 @@ export const BOTAO_FIXO = `${PILULA} bg-landing-marfim text-landing-teal hover:b
 /** A margem da página nos dois lados, a mesma em todas as seções. */
 export const MARGEM = 'px-(--landing-margem)'
 
-/** O espaço entre seções: 136 px no computador, 104 px no celular. */
-export const ESPACO_DE_SECAO = 'pt-[136px] pb-[120px] max-[720px]:pt-[104px] max-[720px]:pb-24'
+/** O espaço das seções: 104 px em cima e 96 px embaixo, em todas as larguras (spec landing-v3, D-615). */
+export const ESPACO_DE_SECAO = 'pt-[104px] pb-24'
 
 /** O título de seção do tamanho de texto grande (o campo vivo, as chaves, Quanto custa). */
 export const TITULO_L = 'text-(length:--landing-fs-l) font-bold leading-tight tracking-[-0.02em] text-inherit'

@@ -38,7 +38,7 @@ export function ChavesDoPlano({ formularioNovo }: ChavesDoPlanoProps) {
   const [ligadas, setLigadas] = useState<readonly boolean[]>([true, true, false, false, false])
 
   return (
-    <section aria-labelledby="titulo-chaves" data-capitulo="chao" className="bg-landing-chao pt-[136px] max-[720px]:pt-[104px]">
+    <section aria-labelledby="titulo-chaves" data-capitulo="chao" className="bg-landing-chao pt-[104px]">
       <h2 id="titulo-chaves" data-surge="" className={`pb-9 ${TITULO_L} ${MARGEM}`}>
         O plano sai do seu jeito
       </h2>
