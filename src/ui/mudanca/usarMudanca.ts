@@ -54,10 +54,15 @@ interface OpcoesDaMudanca {
 
 type Fase = 'parada' | 'trazendo' | 'sem-espaco' | 'terminou'
 
-/** No fim, o Painel (CA-1431), sem a rota da mudança no histórico. A consulta fica (a marca do ícone, D-524). */
+/**
+ * No fim, o Painel (CA-1431), sem a rota da mudança no histórico. A consulta fica (a marca do ícone, D-524). DP-SA-55:
+ * troca o endereço no lugar e avisa quem ouve o `#`, sem navegar: uma navegação para o mesmo endereço poderia recarregar
+ * a página (o WebKit, com o `upgrade-insecure-requests` em http, recarrega) e perder a ligação com a aba do site.
+ */
 function irParaOPainel(): void {
   const { pathname, search } = globalThis.location
-  globalThis.location.replace(`${pathname}${search}#/painel`)
+  globalThis.history.replaceState(globalThis.history.state, '', `${pathname}${search}#/painel`)
+  globalThis.dispatchEvent(new HashChangeEvent('hashchange'))
 }
 
 /** A aba do site, se esta aba foi aberta por ela e ela ainda está aberta. */

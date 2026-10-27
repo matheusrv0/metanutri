@@ -84,6 +84,20 @@ describe('a mudança no app (spec separacao-site-app, D-512, D-513 e DP-SA-11)',
     expect(result.current.confirmacao).not.toBeNull()
   })
 
+  it('DP-SA-55: no fim, o Painel sem navegar: o endereço troca no lugar, na hora, e quem ouve o # fica sabendo', () => {
+    const ouvir = vi.fn()
+    window.addEventListener('hashchange', ouvir)
+    try {
+      const { janela, receber } = janelaDoApp()
+      montar(janela)
+      receber({ tipo: 'nada', codigo: CODIGO, usuarioId: 'u1' })
+      expect(window.location.hash).toBe('#/painel')
+      expect(ouvir).toHaveBeenCalledOnce()
+    } finally {
+      window.removeEventListener('hashchange', ouvir)
+    }
+  })
+
   it('CA-1435: espaço com algo que ainda não subiu: não grava, abre a conta e não confirma', () => {
     localStorage.setItem('metanutri:conta:u1:nuvem', PENDENTE)
     localStorage.setItem('metanutri:conta:u1:pacientes', '[{"id":"daqui"}]')
