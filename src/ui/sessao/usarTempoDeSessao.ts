@@ -265,13 +265,20 @@ export function useTempoDeSessao({ ativo, usuarioId, admin, sairPorTempo, aoSair
   const sair = useCallback(
     async (ate: number) => {
       if (usuarioId === null) return
-      // D-517, passo 2: a cópia de trabalho e os links pendentes vão juntos, com até 10 s.
-      await esperarNoMaximo(Promise.allSettled([nuvem?.salvarAgora(), envios.enviarTodos()]), PRAZO_DOS_ENVIOS_MS)
-      // Passo 3: o motor para (as outras abas ficam sabendo, DP-11) antes de o espaço ser apagado ou guardado.
-      nuvem?.parar()
+      // D-517, passo 2: a cópia de trabalho e os links pendentes vão juntos, com até 10 s. Sem motor (sem cliente da
+      // nuvem), não há o que a memória dele saiba: vale só o navegador.
+      let salvou = nuvem === null
+      const copia = nuvem?.salvarAgora().then((foi) => {
+        salvou = foi
+      })
+      await esperarNoMaximo(Promise.allSettled([copia, envios.enviarTodos()]), PRAZO_DOS_ENVIOS_MS)
+      // Passo 3. Revisão R1: decide antes de parar o motor. O pendente da migração (D-123) pode estar só na memória
+      // dele, e o parar() regrava a situação: depois dele, o navegador pareceria em dia.
       const base = armazenamentoLocal()
-      const emDia = base !== null && contaEmDia(base, usuarioId, { contarRetidos: false })
-      await sairPorTempo({ apagar: emDia, ate })
+      const apagar = salvou && base !== null && contaEmDia(base, usuarioId, { contarRetidos: false })
+      // O motor para (as outras abas ficam sabendo, DP-11) antes de o espaço ser apagado ou guardado.
+      nuvem?.parar()
+      await sairPorTempo({ apagar, ate })
       aoSair()
     },
     [usuarioId, nuvem, envios, sairPorTempo, aoSair],

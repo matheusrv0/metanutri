@@ -272,6 +272,27 @@ describe('o vigia da sessão (spec separacao-site-app, D-514 a D-517)', () => {
     expect(sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: INICIO })
   })
 
+  it('R1 (revisão): o motor não abriu e só ele sabia do pendente; o parar() zera a situação, e mesmo assim o espaço fica', async () => {
+    // A migração trouxe dado que nunca subiu; sem internet, o motor não abriu (salvarAgora diz que não salvou).
+    localStorage.clear()
+    localStorage.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"}]')
+    gravarMarca(localStorage, { conta: 'u1', uso: INICIO, entrada: INICIO, admin: false, desvio: 0 })
+    const { sairPorTempo, nuvem } = montar({ salvarAgora: async () => false })
+    vi.mocked(nuvem.parar).mockImplementation(() => {
+      // Como o motor de verdade: grava a situação com a marca de saída, sem saber de pendente nenhum.
+      localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v0', mudancas: 0, salvas: 0, itens: 0, saiu: true, motor: 2 }))
+    })
+    await passar(30 * MIN)
+    expect(nuvem.parar).toHaveBeenCalled()
+    expect(sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: INICIO })
+  })
+
+  it('R1 (revisão): a nuvem não confirmou o envio dentro dos 10 s: o espaço fica, mesmo que o navegador pareça em dia', async () => {
+    const { sairPorTempo } = montar({ salvarAgora: async () => false })
+    await passar(30 * MIN)
+    expect(sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: INICIO })
+  })
+
   it('CB-509: uma gravação a caminho é esperada dentro dos 10 s, e o espaço que ficou em dia é apagado', async () => {
     localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v1', mudancas: 2, salvas: 1, itens: 1 }))
     const { sairPorTempo } = montar({
