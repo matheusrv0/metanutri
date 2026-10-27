@@ -75,7 +75,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
             Criar conta grátis
           </button>
           <a
-            href="#/inicio"
+            href="#adequacao"
             className="inline-flex min-h-11 items-center font-semibold underline underline-offset-[5px]"
             onClick={(evento) => {
               evento.preventDefault()

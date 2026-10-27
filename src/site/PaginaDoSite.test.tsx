@@ -43,9 +43,9 @@ describe('a página do site (spec separacao-site-app, D-502 e DP-SA-30)', () => 
     const { aoIrAoApp } = montar('precos')
     const topo = within(screen.getByRole('banner'))
     const usuario = userEvent.setup()
-    await usuario.click(topo.getByRole('button', { name: 'Entrar' }))
+    await usuario.click(topo.getByRole('link', { name: 'Entrar' }))
     expect(aoIrAoApp).toHaveBeenLastCalledWith(APP)
-    await usuario.click(topo.getByRole('button', { name: 'Começar grátis' }))
+    await usuario.click(topo.getByRole('link', { name: 'Começar grátis' }))
     expect(aoIrAoApp).toHaveBeenLastCalledWith(`${APP}#/criar-conta`)
   })
 
@@ -66,6 +66,24 @@ describe('a página do site (spec separacao-site-app, D-502 e DP-SA-30)', () => 
     expect(aoIrAoApp).toHaveBeenLastCalledWith(`${APP}#/criar-conta`)
     await usuario.click(screen.getByRole('button', { name: 'Assinar o Solo' }))
     expect(aoIrAoApp).toHaveBeenLastCalledWith(`${APP}#/criar-conta/solo`)
+  })
+
+  it('CA-1402 e CA-1403: os links ao app têm o endereço dele, e nenhuma página tem "Ir para o painel"', () => {
+    for (const rota of ['inicio', 'precos', 'termos'] as const) {
+      const { unmount } = render(<PaginaDoSite rota={rota} aoIrAoApp={vi.fn()} abrirPagina={vi.fn()} />)
+      const enderecos = screen.getAllByRole('link').map((link) => link.getAttribute('href'))
+      expect(enderecos, rota).toContain(APP)
+      expect(enderecos, rota).toContain(`${APP}#/criar-conta`)
+      expect(enderecos.some((endereco) => endereco?.startsWith('#/')), rota).toBe(false)
+      expect(screen.queryByText('Ir para o painel')).not.toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('CA-1405 e DP-SA-37: em Preços, o plano da consulta (?destaque=) fica em destaque', () => {
+    render(<PaginaDoSite rota="precos" destaque="pro" aoIrAoApp={vi.fn()} abrirPagina={vi.fn()} />)
+    const doPro = screen.getAllByRole('columnheader').find((cabecalho) => cabecalho.textContent?.includes('Pro'))
+    expect(doPro?.textContent).toContain('Recomendado')
   })
 
   it('D-503: de uma página para outra, abre o endereço da página; na mesma página, só volta ao alto', async () => {

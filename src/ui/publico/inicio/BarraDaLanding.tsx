@@ -1,11 +1,11 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { ENDERECO_DO_APP, telaNoApp } from '../../enderecos.ts'
 import { irComAncora, navegarPeloApp, rolarAte, type DestinoPublico } from '../navegacaoPublica.ts'
 import { BotaoDeTema } from './BotaoDeTema.tsx'
 import { MARGEM } from './estiloDaLanding.ts'
 import type { TemaDaLanding } from './temaDaLanding.ts'
 
 interface BarraDaLandingProps {
-  readonly temSessao: boolean
   readonly aoIrPara: (destino: DestinoPublico) => void
   readonly tema: TemaDaLanding
   readonly aoTrocarTema: () => void
@@ -26,17 +26,18 @@ const ACAO =
 
 /**
  * A barra do topo da landing (spec landing-v3, D-651): de vidro, presa no alto o tempo todo, com a logo, as três seções,
- * o botão de tema, "Entrar" e "Criar conta grátis" (com sessão, "Ir para o painel"). O texto, a logo e a ação seguem o
- * tema da landing, não a seção embaixo.
+ * o botão de tema, "Entrar" e "Criar conta grátis". O texto, a logo e a ação seguem o tema da landing, não a seção
+ * embaixo. Spec separacao-site-app: "Entrar" e "Criar conta grátis" têm o endereço do app, e "Ir para o painel" sai do
+ * site (D-501); as seções têm o endereço delas na página (`#<seção>`).
  */
-export function BarraDaLanding({ temSessao, aoIrPara, tema, aoTrocarTema }: BarraDaLandingProps) {
+export function BarraDaLanding({ aoIrPara, tema, aoTrocarTema }: BarraDaLandingProps) {
   return (
     <header
       className={`sticky top-0 z-50 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-landing-vidro py-3 text-landing-tinta shadow-[0_1px_0_var(--landing-borda)] backdrop-blur-[18px] backdrop-saturate-[1.6] max-[420px]:gap-x-2 ${MARGEM}`}
     >
       <a
         id="inicio-da-landing"
-        href="#/inicio"
+        href="./"
         aria-label="MetaNutri, início"
         className="inline-flex min-h-11 items-center rounded-full"
         onClick={(evento) => navegarPeloApp(evento, () => irComAncora(aoIrPara, 'inicio'))}
@@ -62,7 +63,7 @@ export function BarraDaLanding({ temSessao, aoIrPara, tema, aoTrocarTema }: Barr
         {SECOES.map((secao) => (
           <a
             key={secao.id}
-            href="#/inicio"
+            href={`#${secao.id}`}
             className={`${LINK} max-[720px]:hidden`}
             onClick={(evento) => navegarPeloApp(evento, () => rolarAte(secao.id))}
           >
@@ -70,22 +71,14 @@ export function BarraDaLanding({ temSessao, aoIrPara, tema, aoTrocarTema }: Barr
           </a>
         ))}
         <BotaoDeTema tema={tema} aoTrocar={aoTrocarTema} />
-        {temSessao ? (
-          <a href="#/painel" className={ACAO} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('painel'))}>
-            Ir para o painel
-          </a>
-        ) : (
-          <>
-            <a href="#/entrar" className={LINK} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('entrar'))}>
-              Entrar
-            </a>
-            <a href="#/criar-conta" className={ACAO} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('criar-conta'))}>
-              <span>
-                Criar conta <span className="max-[720px]:hidden">grátis</span>
-              </span>
-            </a>
-          </>
-        )}
+        <a href={ENDERECO_DO_APP} className={LINK} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('entrar'))}>
+          Entrar
+        </a>
+        <a href={telaNoApp('#/criar-conta')} className={ACAO} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('criar-conta'))}>
+          <span>
+            Criar conta <span className="max-[720px]:hidden">grátis</span>
+          </span>
+        </a>
       </nav>
     </header>
   )

@@ -214,7 +214,7 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   if (rota.tela === 'inicio') {
     return (
-      <MolduraPublica atual="inicio" temSessao={sessao !== null} aoIrPara={irPara}>
+      <MolduraPublica atual="inicio" aoIrPara={irPara}>
         {/* Spec exclusao-de-conta, CA-808: a saída depois de excluir a conta chega aqui. */}
         <AvisoContaExcluida />
         <TelaInicio
@@ -230,7 +230,7 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   if (rota.tela === 'precos') {
     return (
-      <MolduraPublica atual="precos" temSessao={sessao !== null} aoIrPara={irPara}>
+      <MolduraPublica atual="precos" aoIrPara={irPara}>
         <SecaoPrecos
           contato={CONTATO_EMAIL}
           {...(rota.destaque ? { destaque: rota.destaque } : {})}
@@ -403,7 +403,7 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   if (rota.tela === 'termos' || rota.tela === 'privacidade' || rota.tela === 'fontes') {
     return (
-      <MolduraPublica atual={rota.tela} temSessao={sessao !== null} aoIrPara={irPara}>
+      <MolduraPublica atual={rota.tela} aoIrPara={irPara}>
         {rota.tela === 'termos' ? <TelaTermos /> : rota.tela === 'privacidade' ? <TelaPrivacidade /> : <TelaFontes />}
       </MolduraPublica>
     )

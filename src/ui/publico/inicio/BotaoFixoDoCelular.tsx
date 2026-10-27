@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from 'react'
+import { telaNoApp } from '../../enderecos.ts'
 import { navegarPeloApp } from '../navegacaoPublica.ts'
 import { BOTAO } from './estiloDaLanding.ts'
 
@@ -49,7 +50,8 @@ const naPaginaPreDesenhada = () => false
 
 /**
  * "Criar conta grátis" preso no pé da tela, só até 720 px (spec landing-v3, D-674): 52 px de altura, a 12 px das bordas
- * (e acima da barra de gestos do aparelho). A moldura só o desenha sem sessão; o rodapé deixa 88 px embaixo para ele.
+ * (e acima da barra de gestos do aparelho). O rodapé deixa 88 px embaixo para ele. Spec separacao-site-app: o endereço é
+ * o de Criar conta no app (D-501).
  *
  * D-688: ele só aparece depois que o "Criar conta grátis" do topo sai da tela; antes, os dois repetiam a ação e o fixo
  * cobria a linha do Free. Entra e sai em 200 ms, pela opacidade e por 8 px (com menos movimento, só a opacidade).
@@ -67,7 +69,7 @@ export function BotaoFixoDoCelular({ aoCriarConta }: BotaoFixoDoCelularProps) {
       className={`fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 hidden max-[720px]:flex transition-[opacity,translate] duration-200 ease-out ${aVista ? '' : 'pointer-events-none opacity-0 motion-safe:translate-y-2'}`}
     >
       <a
-        href="#/criar-conta"
+        href={telaNoApp('#/criar-conta')}
         onClick={(evento) => navegarPeloApp(evento, aoCriarConta)}
         className={`${BOTAO} min-h-[52px] w-full shadow-(--landing-sombra-fixo)`}
       >

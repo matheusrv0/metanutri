@@ -14,6 +14,8 @@ import { TelaTermos } from '@/ui/publico/TelaTermos.tsx'
 
 interface PaginaDoSiteProps {
   readonly rota: RotaIndexavel
+  /** Em Preços, o plano da consulta `?destaque=` (DP-SA-37): o aviso de limite do app e as rotas antigas mandam. */
+  readonly destaque?: IdPlano | null | undefined
   /**
    * Vai a uma tela do app (D-501): "Entrar", "Começar grátis" e os planos. Quem monta a página decide: o site vai ao app
    * ou, com dado que só existe neste endereço, mostra "Continuar" (D-527).
@@ -29,13 +31,12 @@ const abrirNoNavegador = (endereco: string) => globalThis.location.assign(endere
  * Uma página do site público (spec separacao-site-app, D-502 e DP-SA-30): a moldura pública com a tela da rota. É o que o
  * build pré-desenha (src/seo/vitrine.tsx) e o que o pacote do site monta por cima (src/site/main.tsx).
  */
-export function PaginaDoSite({ rota, aoIrAoApp, abrirPagina = abrirNoNavegador }: PaginaDoSiteProps) {
+export function PaginaDoSite({ rota, destaque, aoIrAoApp, abrirPagina = abrirNoNavegador }: PaginaDoSiteProps) {
   const irAoApp = (destino: Parameters<typeof escreverRota>[0]) => aoIrAoApp(telaNoApp(escreverRota(destino)))
 
   const irPara = (destino: DestinoPublico) => {
     if (destino === 'entrar') return aoIrAoApp(telaNoApp())
     if (destino === 'criar-conta') return irAoApp(rotaCriarConta(null, 'mensal'))
-    if (destino === 'painel') return irAoApp({ tela: 'painel' })
     // A página em que a pessoa já está só volta ao alto (quem chama rola); as outras abrem no endereço delas.
     if (destino === rota) return undefined
     abrirPagina(new URL(paginaDaRota(destino).caminho, globalThis.document.baseURI).href)
@@ -49,14 +50,14 @@ export function PaginaDoSite({ rota, aoIrAoApp, abrirPagina = abrirNoNavegador }
 
   const telas: Readonly<Record<RotaIndexavel, () => ReactElement>> = {
     inicio: () => <TelaInicio aoComecar={() => irPara('criar-conta')} aoEscolher={escolher} />,
-    precos: () => <SecaoPrecos contato={CONTATO_EMAIL} aoEscolher={escolher} />,
+    precos: () => <SecaoPrecos contato={CONTATO_EMAIL} {...(destaque ? { destaque } : {})} aoEscolher={escolher} />,
     termos: () => <TelaTermos />,
     privacidade: () => <TelaPrivacidade />,
     fontes: () => <TelaFontes />,
   }
 
   return (
-    <MolduraPublica atual={rota} temSessao={false} aoIrPara={irPara}>
+    <MolduraPublica atual={rota} aoIrPara={irPara}>
       {telas[rota]()}
     </MolduraPublica>
   )

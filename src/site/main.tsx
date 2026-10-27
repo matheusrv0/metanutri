@@ -7,12 +7,16 @@ import '@fontsource-variable/manrope'
 // Só o nome da marca usa esta (kit de 27/09/2026); embutida, como as outras.
 import '@fontsource-variable/bricolage-grotesque'
 import '../ui/tema/globals.css'
+import { ehIdPlano } from '../domain/conta.ts'
 import { PAGINAS, type RotaIndexavel } from '../seo/paginas.ts'
 import { ProvedorTema } from '../ui/tema/ProvedorTema.tsx'
 import { PaginaDoSite } from './PaginaDoSite.tsx'
 
 const marcada = document.documentElement.dataset['rota']
 const rota: RotaIndexavel = PAGINAS.find((pagina) => pagina.rota === marcada)?.rota ?? 'inicio'
+// DP-SA-37: o plano em destaque em Preços vem da consulta (`/precos/?destaque=pro`).
+const pedido = new URLSearchParams(globalThis.location.search).get('destaque')
+const destaque = ehIdPlano(pedido) ? pedido : null
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')
@@ -20,7 +24,7 @@ if (!raiz) throw new Error('Elemento #root não encontrado em index.html')
 createRoot(raiz).render(
   <StrictMode>
     <ProvedorTema>
-      <PaginaDoSite rota={rota} aoIrAoApp={(endereco) => globalThis.location.assign(endereco)} />
+      <PaginaDoSite rota={rota} destaque={destaque} aoIrAoApp={(endereco) => globalThis.location.assign(endereco)} />
     </ProvedorTema>
   </StrictMode>,
 )

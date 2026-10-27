@@ -1,3 +1,4 @@
+import { telaNoApp } from '../../enderecos.ts'
 import { navegarPeloApp } from '../navegacaoPublica.ts'
 import { MARGEM } from './estiloDaLanding.ts'
 
@@ -6,7 +7,7 @@ interface FaixaComecarProps {
 }
 
 /**
- * A faixa final (CA-1480): a página inteira vira um link para Criar conta. Marfim no escuro e teal no claro (spec
+ * A faixa final (CA-1480): a página inteira vira um link para Criar conta, no app (spec separacao-site-app, D-501). Marfim no escuro e teal no claro (spec
  * landing-v3, D-610). No hover e no foco, o fundo clareia (branco no escuro, teal médio no claro) e a seta vira laranja e
  * anda (D-532: o laranja nunca fica atrás de texto).
  *
@@ -17,7 +18,7 @@ interface FaixaComecarProps {
 export function FaixaComecar({ aoComecar }: FaixaComecarProps) {
   return (
     <a
-      href="#/criar-conta"
+      href={telaNoApp('#/criar-conta')}
       data-faixa-final=""
       onClick={(evento) => navegarPeloApp(evento, aoComecar)}
       className={`group relative block min-h-[calc(176px+clamp(80px,22.5vw,380px)*1.02)] overflow-hidden bg-landing-chamar pt-[30px] pb-[22px] text-landing-chamar-tinta no-underline transition-colors duration-150 hover:bg-landing-chamar-hover focus-visible:bg-landing-chamar-hover focus-visible:outline-landing-chamar-tinta focus-visible:-outline-offset-8 max-[720px]:min-h-[max(320px,calc(150px+20vw*1.05))] ${MARGEM}`}

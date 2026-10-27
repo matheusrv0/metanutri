@@ -8,9 +8,11 @@ import { MolduraDaLanding } from './MolduraDaLanding.tsx'
 import { RodapeDaLanding } from './RodapeDaLanding.tsx'
 import { CHAVE_TEMA_DA_LANDING } from './temaDaLanding.ts'
 
-const montar = (temSessao = false, aoIrPara = vi.fn()) =>
+const APP = 'https://app.metanutri.com.br/'
+
+const montar = (aoIrPara = vi.fn()) =>
   render(
-    <MolduraDaLanding temSessao={temSessao} aoIrPara={aoIrPara}>
+    <MolduraDaLanding aoIrPara={aoIrPara}>
       <section data-surge="">
         <h1>topo</h1>
       </section>
@@ -58,9 +60,9 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     expect(document.documentElement.classList.contains('landing')).toBe(false)
   })
 
-  it('CA-1650: sem sessão, a barra tem a logo, Funcionalidades, Como funciona, Planos, o tema, Entrar e Criar conta grátis; no celular, os três primeiros saem', async () => {
+  it('CA-1650 e CA-1402: a barra tem a logo, Funcionalidades, Como funciona, Planos, o tema, Entrar e Criar conta grátis (com o endereço do app); no celular, os três primeiros saem', async () => {
     const aoIrPara = vi.fn()
-    montar(false, aoIrPara)
+    montar(aoIrPara)
     const nav = within(barra()).getByRole('navigation', { name: 'Principal' })
     const nomes = [...nav.querySelectorAll('a, button')].map((el) => el.getAttribute('aria-label') ?? el.textContent)
     expect(nomes).toEqual(['Funcionalidades', 'Como funciona', 'Planos', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
@@ -68,7 +70,16 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     for (const nome of ['Funcionalidades', 'Como funciona', 'Planos']) expect(menu.getByRole('link', { name: nome }).className).toContain('max-[720px]:hidden')
     expect(menu.getByRole('link', { name: 'Entrar' }).className).not.toContain('max-[720px]:hidden')
     expect(menu.getByText('grátis', { exact: false }).className).toContain('max-[720px]:hidden')
-    expect(within(barra()).getByRole('link', { name: 'MetaNutri, início' })).toBeInTheDocument()
+    expect(within(barra()).getByRole('link', { name: 'MetaNutri, início' })).toHaveAttribute('href', './')
+    expect(menu.getByRole('link', { name: 'Entrar' })).toHaveAttribute('href', APP)
+    expect(menu.getByRole('link', { name: 'Criar conta grátis' })).toHaveAttribute('href', `${APP}#/criar-conta`)
+    for (const [nome, id] of [
+      ['Funcionalidades', 'funcionalidades'],
+      ['Como funciona', 'como-funciona'],
+      ['Planos', 'planos'],
+    ] as const) {
+      expect(menu.getByRole('link', { name: nome })).toHaveAttribute('href', `#${id}`)
+    }
 
     const usuario = userEvent.setup()
     await usuario.click(menu.getByRole('link', { name: 'Entrar' }))
@@ -88,14 +99,10 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     }
   })
 
-  it('CA-1458, CB-540 e CA-1650: com sessão, só "Ir para o painel"', async () => {
-    const aoIrPara = vi.fn()
-    montar(true, aoIrPara)
-    const menu = within(within(barra()).getByRole('navigation', { name: 'Principal' }))
-    expect(menu.queryByRole('link', { name: 'Entrar' })).not.toBeInTheDocument()
-    expect(menu.queryByRole('link', { name: /Criar conta/ })).not.toBeInTheDocument()
-    await userEvent.setup().click(menu.getByRole('link', { name: 'Ir para o painel' }))
-    expect(aoIrPara).toHaveBeenCalledWith('painel')
+  it('CA-1402 (spec separacao-site-app): o site não lê sessão, e "Ir para o painel" não existe', () => {
+    montar()
+    expect(screen.queryByText('Ir para o painel')).not.toBeInTheDocument()
+    expect(document.body.innerHTML).not.toContain('#/painel')
   })
 
   it('CA-1651: a barra é de vidro e fica presa no alto, em qualquer ponto da página (não pinta a seção nem sai ao descer)', () => {
@@ -113,7 +120,7 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
 
   it('CA-1461: o rodapé tem a frase, Voltar ao topo, Fale com a gente e os quatro links, com endereço', async () => {
     const aoIrPara = vi.fn()
-    montar(false, aoIrPara)
+    montar(aoIrPara)
     const rodape = within(screen.getByRole('contentinfo'))
     expect(rodape.getByText('MetaNutri: software para nutricionistas.')).toBeInTheDocument()
     expect(rodape.getByText(`Brasil, ${new Date().getFullYear()}`)).toBeInTheDocument()
@@ -126,6 +133,8 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
       ['Referências', 'fontes/'],
     ])
     for (const link of [...links, rodape.getByRole('link', { name: 'Voltar ao topo' })]) expect(link.className).toContain('min-h-11')
+    // Spec separacao-site-app: no site, `#/inicio` é rota antiga (recarrega a página); o endereço do topo é a própria landing.
+    expect(rodape.getByRole('link', { name: 'Voltar ao topo' })).toHaveAttribute('href', './')
     // CA-1028: clique comum troca de tela pelo app; Ctrl+clique segue o endereço.
     const referencias = rodape.getByRole('link', { name: 'Referências' })
     expect(fireEvent.click(referencias)).toBe(false)
@@ -156,20 +165,18 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     vi.unstubAllGlobals()
   })
 
-  it('CA-1686 e D-674: sem sessão, "Criar conta grátis" fica preso no pé da tela, só até 720 px; com sessão, não aparece', async () => {
+  it('CA-1686, D-674 e CA-1402: "Criar conta grátis" fica preso no pé da tela, só até 720 px, com o endereço do app', async () => {
     const aoIrPara = vi.fn()
-    const { unmount } = montar(false, aoIrPara)
+    montar(aoIrPara)
     const fixo = document.querySelector('[data-botao-fixo]')
     expect(fixo?.className).toContain('fixed')
     expect(fixo?.className).toContain('hidden max-[720px]:flex')
     const link = within(fixo as HTMLElement).getByRole('link', { name: 'Criar conta grátis' })
     expect(link.className).toContain('min-h-[52px]')
+    expect(link).toHaveAttribute('href', `${APP}#/criar-conta`)
     await userEvent.setup().click(link)
     expect(aoIrPara).toHaveBeenCalledWith('criar-conta')
     expect(screen.getByRole('contentinfo').className).toContain('max-[720px]:pb-[88px]')
-    unmount()
-    montar(true)
-    expect(document.querySelector('[data-botao-fixo]')).toBeNull()
   })
 
   it('CA-1687 e D-675: o rodapé é o de hoje, sem razão social nem CNPJ', () => {
@@ -184,23 +191,14 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
   })
 
   describe('tema claro e escuro (spec landing-v3)', () => {
-    it('CA-1610 e CA-1650: o botão de tema fica entre Planos e Entrar, também no celular, com 44 px; com sessão, antes de Ir para o painel', () => {
-      const { unmount } = montar()
+    it('CA-1610 e CA-1650: o botão de tema fica entre Planos e Entrar, também no celular, com 44 px', () => {
+      montar()
       const nomes = (nav: HTMLElement) => [...nav.querySelectorAll('a, button')].map((el) => el.getAttribute('aria-label') ?? el.textContent)
       const menu = within(barra()).getByRole('navigation', { name: 'Principal' })
       expect(nomes(menu)).toEqual(['Funcionalidades', 'Como funciona', 'Planos', 'Usar o tema claro', 'Entrar', 'Criar conta grátis'])
       expect(botaoDeTema()).toHaveAttribute('title', 'Usar o tema claro')
       expect(botaoDeTema().className).not.toContain('hidden')
       expect(botaoDeTema().className).toContain('size-11')
-      unmount()
-      montar(true)
-      expect(nomes(within(barra()).getByRole('navigation', { name: 'Principal' }))).toEqual([
-        'Funcionalidades',
-        'Como funciona',
-        'Planos',
-        'Usar o tema claro',
-        'Ir para o painel',
-      ])
     })
 
     it('CA-1611: sem escolha guardada, a landing abre escura, com a lua no botão', () => {
@@ -284,7 +282,7 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
       document.documentElement.classList.add('dark')
       marcarContaExcluida(undefined, performance.timeOrigin - 1)
       render(
-        <MolduraDaLanding temSessao={false} aoIrPara={vi.fn()}>
+        <MolduraDaLanding aoIrPara={vi.fn()}>
           <AvisoContaExcluida />
         </MolduraDaLanding>,
       )
@@ -345,7 +343,7 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
 
     it('CA-1674: a peça com data-revela não some; ela é observada e ganha data-dentro quando entra na tela', () => {
       render(
-        <MolduraDaLanding temSessao={false} aoIrPara={vi.fn()}>
+        <MolduraDaLanding aoIrPara={vi.fn()}>
           <ol data-revela="">
             <li>passo</li>
           </ol>
