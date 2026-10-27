@@ -115,7 +115,6 @@
   --aparelho-fundo: #060c0d;
   --aparelho-tela: #f7f4ee;
   --teal-50: #eef5f5;
-  --cinza-teal-300: #b9c7c9;
   --cinza-teal-200: #c9d4d5;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
@@ -393,7 +392,8 @@
   --landing-celular-suave: var(--tinta-teal-600);
   --landing-celular-missao: var(--gray-0);
   --landing-celular-feita: var(--teal-50);
-  --landing-celular-caixa: var(--cinza-teal-300);
+  /* O anel da missão desmarcada: a tinta suave da tela, com 5,7:1 sobre a missão (revisão da v9; 3:1 no mínimo). */
+  --landing-celular-caixa: var(--tinta-teal-600);
   --landing-celular-contorno: var(--cinza-teal-200);
   --landing-celular-sombra: 0 1px 2px color-mix(in srgb, var(--teal-900) 8%, transparent);
   /* A sombra do botão preso no pé da tela do celular (D-674). */

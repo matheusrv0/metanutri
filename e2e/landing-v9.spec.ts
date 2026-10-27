@@ -10,11 +10,47 @@ async function abrir(pagina: Page, temaDaLanding: 'claro' | 'escuro' = 'escuro')
   await expect(pagina.getByRole('heading', { level: 1 })).toBeVisible()
 }
 
+/** Contraste WCAG entre duas cores `rgb(...)` (ou `rgba(...)`, sem a transparência). */
+function contraste(a: string, b: string): number {
+  const lum = (cor: string) => {
+    const [r = 0, g = 0, bl = 0] = (cor.match(/\d+(\.\d+)?/g) ?? []).map(Number).map((c) => {
+      const v = c / 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [x, y] = [lum(a), lum(b)]
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+
+/** A cor do anel desenhado com `box-shadow: inset … cor` e o fundo do botão em volta dele. */
+const corDoAnelEFundo = (pagina: Page, anel: string) =>
+  pagina
+    .locator(anel)
+    .first()
+    .evaluate((el) => {
+      const sombra = getComputedStyle(el).boxShadow
+      // O Tailwind compõe a sombra com camadas transparentes (0 0 #0000); o anel é a camada com cor.
+      const cor = (sombra.match(/rgba?\([^)]*\)/g) ?? []).find((c) => !/,\s*0\)$/.test(c)) ?? ''
+      const botao = el.closest('button')
+      return [cor, botao ? getComputedStyle(botao).backgroundColor : ''] as const
+    })
+
 /** A transformação calculada do traço aceso de "Como funciona" (o `::after` da lista). */
 const linhaAcesa = (pagina: Page) => pagina.locator('.landing-etapas').evaluate((el) => getComputedStyle(el, '::after').transform)
 
 test.describe('com menos movimento', () => {
   test.use({ reducedMotion: 'reduce' })
+
+  for (const tema of ['escuro', 'claro'] as const) {
+    test(`CA-1665 e CA-1668: landing ${tema}, o anel da sugestão não escolhida e o da missão desmarcada têm contraste de 3:1`, async ({ page }) => {
+      await abrir(page, tema)
+      const [anelDaSugestao, fundoDaSugestao] = await corDoAnelEFundo(page, '#adequacao button[aria-pressed="false"] i')
+      expect(contraste(anelDaSugestao, fundoDaSugestao), `${anelDaSugestao} sobre ${fundoDaSugestao}`).toBeGreaterThanOrEqual(3)
+      const [anelDaMissao, fundoDaMissao] = await corDoAnelEFundo(page, '[aria-label="Missões do dia (exemplo)"] button[aria-pressed="false"] > span')
+      expect(contraste(anelDaMissao, fundoDaMissao), `${anelDaMissao} sobre ${fundoDaMissao}`).toBeGreaterThanOrEqual(3)
+    })
+  }
 
   test('CA-1651: a barra fica no alto em qualquer ponto da página, também no rodapé', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })

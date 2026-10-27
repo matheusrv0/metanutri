@@ -77,7 +77,7 @@ export function AdequacaoDoExemplo() {
                 >
                   <i
                     aria-hidden="true"
-                    className="size-[22px] flex-none rounded-full shadow-[inset_0_0_0_2px_var(--landing-contorno)] transition-shadow duration-200 group-aria-pressed:shadow-[inset_0_0_0_7px_var(--landing-destaque)]"
+                    className="size-[22px] flex-none rounded-full shadow-[inset_0_0_0_2px_var(--landing-tinta-suave)] transition-shadow duration-200 group-aria-pressed:shadow-[inset_0_0_0_7px_var(--landing-destaque)]"
                   />
                   {/* A base de 9rem decide a quebra: a cobertura só desce quando o texto grande não deixa nem isso. */}
                   <span className="min-w-0 flex-[1_1_9rem]">
