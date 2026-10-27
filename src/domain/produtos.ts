@@ -4,7 +4,7 @@
 // Fica na chave `metanutri:produtos`, a mesma de antes, e entra nos cálculos como qualquer alimento. O item sempre tem
 // `id`, `nome`, `porcaoG` e `porPorcao`, que é tudo o que a versão anterior lê: um alimento por 100 g é um item com
 // porção de 100 g. Os campos novos (tipo, grupo, preparo, unidade, medidas, fonte…) são opcionais na leitura.
-import { lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
+import { lerMedidaDaLista, lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
@@ -336,13 +336,14 @@ function medidaDoRotulo(p: Produto): MedidaLidaDoRotulo | null {
  * colheres de sopa" ganha "colher de sopa · 10 g" e "porção · 40 g". Com o mesmo nome, vale a do cadastro.
  */
 function medidasDoProduto(p: Produto): readonly MedidaDoProprio[] {
-  const lidas = Array.isArray(p.medidas)
+  const validas = Array.isArray(p.medidas)
     ? p.medidas.filter((m): m is MedidaDoProprio => typeof m === 'object' && m !== null && typeof m.nome === 'string' && m.nome.trim() !== '' && typeof m.gramas === 'number' && m.gramas > 0)
     : []
   const rotulo = medidaDoRotulo(p)
   const doRotulo: MedidaDoProprio[] = rotulo ? [...(rotulo.medida ? [{ nome: rotulo.medida.nome, gramas: rotulo.medida.gramas }] : []), { nome: 'porção', gramas: rotulo.porcaoG }] : []
-  const medidas = [...lidas]
-  for (const m of doRotulo) if (!medidas.some((x) => x.nome === m.nome)) medidas.push(m)
+  const medidas: MedidaDoProprio[] = []
+  // D-496: "2 fatias · 50 g" gravada antes é lida como "fatia · 25 g".
+  for (const m of [...validas.map((v) => lerMedidaDaLista(v.nome, v.gramas)), ...doRotulo]) if (!medidas.some((x) => x.nome === m.nome)) medidas.push(m)
   return medidas
 }
 

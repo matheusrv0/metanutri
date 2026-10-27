@@ -42,8 +42,12 @@ export function comecaPelaQuantidade(texto: string): boolean {
   return limpo !== '' && lerQuantidade(limpo).resto !== limpo
 }
 
+/** Palavras que já são singulares com "s" no fim (D-496): "2 pires" é o pires de metade do peso. */
+const SINGULAR_COM_S: ReadonlySet<string> = new Set(['pires', 'lápis'])
+
 /** "colheres" → "colher", "porções" → "porção", "fatias" → "fatia", "pães" → "pão". */
 function singular(palavra: string): string {
+  if (SINGULAR_COM_S.has(palavra)) return palavra
   if (/ões$/.test(palavra) || /ães$/.test(palavra)) return `${palavra.slice(0, -3)}ão`
   if (/[rz]es$/.test(palavra)) return palavra.slice(0, -2)
   if (/éis$/.test(palavra)) return `${palavra.slice(0, -3)}el`
@@ -102,4 +106,17 @@ export function lerMedidaDoRotulo(texto: string, porcaoG: number | null): Medida
   const nome = nomeDaMedida(semQuantidade.replace(/^de\s+/, ''))
   if (nome === '' || !Number.isFinite(quantidade) || !(quantidade > 0)) return { medida: null, porcaoG: total }
   return { medida: { nome, quantidade, gramas: umaCasa(total / quantidade) }, porcaoG: total }
+}
+
+/**
+ * Uma linha de "Medidas caseiras" do alimento próprio (spec alimentos-e-gramaturas, D-496; G4 da revisão da publicação
+ * 2): o nome que começa por uma quantidade é lido como a medida da porção (D-433 e D-491), com o peso do campo: "2 fatias"
+ * com 50 g é a fatia de 25 g, e o paciente nunca lê "2 2s fatiass". O peso entre parênteses sai do nome (vale o do
+ * campo); o nome sem número fica como foi escrito.
+ */
+export function lerMedidaDaLista(nome: string, gramas: number): { readonly nome: string; readonly gramas: number } {
+  const semPeso = nome.replace(PESO_ENTRE_PARENTESES, ' ').trim().replace(/\s+/g, ' ')
+  if (!comecaPelaQuantidade(semPeso) || !(gramas > 0)) return { nome: semPeso, gramas }
+  const lida = lerMedidaDoRotulo(semPeso, gramas)?.medida
+  return lida ? { nome: lida.nome, gramas: lida.gramas } : { nome: semPeso, gramas }
 }

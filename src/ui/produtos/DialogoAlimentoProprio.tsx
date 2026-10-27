@@ -2,6 +2,7 @@ import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
+import { lerMedidaDaLista } from '@/domain/medidaDoRotulo.ts'
 import {
   CAMPOS_GERAIS,
   CAMPOS_MACROS,
@@ -298,27 +299,33 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         <h3 className="text-sm font-semibold text-heading">Medidas caseiras</h3>
         {d.medidas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma medida. Sem ela, o paciente lê o peso.</p> : null}
         <ul className="flex flex-col gap-2">
-          {d.medidas.map((m, i) => (
-            <li key={i} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-start gap-2">
-              <CampoTexto
-                rotulo={`Nome da medida ${i + 1}`}
-                rotuloOculto
-                valor={m.nome}
-                aoMudar={(nome) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, nome } : x)) })}
-                placeholder="fatia"
-              />
-              <CampoNumero
-                rotulo={`Peso da medida ${i + 1}`}
-                rotuloOculto
-                valor={m.gramas > 0 ? m.gramas : null}
-                aoMudar={(v) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, gramas: v ?? 0 } : x)) })}
-                sufixo={unidade}
-              />
-              <Button type="button" variant="ghost" size="iconsm" aria-label={`Tirar a medida ${m.nome || i + 1}`} onClick={() => mudar({ medidas: d.medidas.filter((_, j) => j !== i) })}>
-                <X aria-hidden="true" />
-              </Button>
-            </li>
-          ))}
+          {d.medidas.map((m, i) => {
+            // D-496: "2 fatias" com 50 g é gravada como a fatia de 25 g; a linha mostra a leitura antes de salvar.
+            const lida = lerMedidaDaLista(m.nome, m.gramas)
+            const mudou = m.nome.trim() !== '' && m.gramas > 0 && (lida.nome !== m.nome.trim() || lida.gramas !== m.gramas)
+            return (
+              <li key={i} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-start gap-2">
+                <CampoTexto
+                  rotulo={`Nome da medida ${i + 1}`}
+                  rotuloOculto
+                  valor={m.nome}
+                  aoMudar={(nome) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, nome } : x)) })}
+                  placeholder="fatia"
+                />
+                <CampoNumero
+                  rotulo={`Peso da medida ${i + 1}`}
+                  rotuloOculto
+                  valor={m.gramas > 0 ? m.gramas : null}
+                  aoMudar={(v) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, gramas: v ?? 0 } : x)) })}
+                  sufixo={unidade}
+                />
+                <Button type="button" variant="ghost" size="iconsm" aria-label={`Tirar a medida ${m.nome || i + 1}`} onClick={() => mudar({ medidas: d.medidas.filter((_, j) => j !== i) })}>
+                  <X aria-hidden="true" />
+                </Button>
+                {mudou ? <p className="col-span-3 text-xs text-muted-foreground">{`Fica ${lida.nome} · ${formatarNumero(lida.gramas, Number.isInteger(lida.gramas) ? 0 : 1)} ${unidade}.`}</p> : null}
+              </li>
+            )
+          })}
         </ul>
         {problemas.some((p) => p.campo.startsWith('medida-')) && tentou ? <p className="text-xs text-errortext">Cada medida precisa de nome e de peso entre 0 e 2.000.</p> : null}
         <Button type="button" variant="lightprimary" size="sm" className="self-start" onClick={() => mudar({ medidas: [...d.medidas, { nome: '', gramas: 0 }] })}>

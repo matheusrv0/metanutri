@@ -19,6 +19,7 @@ import { avisosParaImprimir, montarRestricoes } from './restricoes.ts'
 import { ALIMENTOS, alimentosComProdutos, alimentosParaSugerir, buscarAlimento, registrarProdutos } from './tabelas.ts'
 import { totaisDeItens } from './totais.ts'
 import { trocasDoAlimento } from './trocas.ts'
+import { quantidadeNaFolha, textoDaQuantidade } from './quantidadeNaFolha.ts'
 import { planosComAlimento } from './usoDaConta.ts'
 import type { Plano } from './tipos.ts'
 
@@ -406,6 +407,15 @@ describe('a medida caseira da porção no formulário novo (publicação 2, D-49
     expect(iogurte.medidas).toEqual([{ nome: 'pote', gramas: 170 }])
     const leite = produtoDosDados({ ...GRANOLA, nome: 'Bebida de aveia', unidade: 'ml', porcaoG: 200, nomeDaPorcao: '1 copo (200 ml)' })
     expect(leite.medidas).toEqual([{ nome: 'copo', gramas: 200 }])
+  })
+
+  it('CA-1360 (D-496): "2 fatias" com 50 g na lista grava a fatia de 25 g, e o paciente lê "2 fatias (50 g)"', () => {
+    const pao: DadosAlimentoProprio = { ...CUSCUZ, nome: 'Pão caseiro de macaxeira', tipo: 'preparacao', medidas: [{ nome: '2 fatias', gramas: 50 }] }
+    const salvo = criarRepositorioProdutos(new Memoria()).salvar(produtoDosDados(pao))
+    expect(salvo.medidas).toEqual([{ nome: 'fatia', gramas: 25 }])
+    registrarProdutos([produtoComoAlimento(salvo)])
+    expect(textoDaQuantidade(quantidadeNaFolha(salvo.id, 50, 'medida-e-gramas'))).toBe('2 fatias (50 g)')
+    expect(buscarAlimentos('2 fatias de pão caseiro', alimentosComProdutos()).resultados[0]).toMatchObject({ gramas: 50, medida: { nome: 'fatia', quantidade: 2 } })
   })
 
   it('CA-1347: o rótulo antigo com "4 colheres de sopa" abre e salva sem perder a medida', () => {

@@ -95,6 +95,20 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(janela.getByText('Não entra no Cobrir nem nas trocas: doce.')).toBeInTheDocument()
   })
 
+  it('CA-1360 (D-496): a medida com número mostra a leitura antes de salvar', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    await usuario.click(janela.getByRole('button', { name: 'Adicionar medida' }))
+    await usuario.type(janela.getByLabelText('Nome da medida 1'), '2 fatias')
+    await usuario.type(janela.getByLabelText('Peso da medida 1'), '50')
+    expect(janela.getByText('Fica fatia · 25 g.')).toBeInTheDocument()
+    await usuario.clear(janela.getByLabelText('Nome da medida 1'))
+    await usuario.type(janela.getByLabelText('Nome da medida 1'), 'fatia')
+    expect(janela.queryByText(/^Fica /)).not.toBeInTheDocument()
+  })
+
   it('CA-1363 (D-498): o item antigo sem medida caseira abre, edita, salva e exclui', async () => {
     localStorage.setItem('metanutri:produtos', JSON.stringify([{ id: 900_000, nome: 'Iogurte da fazenda', marca: 'Sítio', porcaoG: 170, porPorcao: { energia_kcal: 110, proteina_g: 6, carboidrato_g: 8, lipideos_g: 6 } }]))
     render(<TelaProdutos formularioNovo />)

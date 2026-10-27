@@ -1,7 +1,7 @@
 // O formulário de "Meus alimentos" e o item guardado, nos dois sentidos (spec alimentos-e-gramaturas, D-383 a D-385).
 // Puro: a tela lê e escreve por aqui.
 import { medidasDoAlimento } from './busca.ts'
-import { comecaPelaQuantidade, lerMedidaDoRotulo } from './medidaDoRotulo.ts'
+import { comecaPelaQuantidade, lerMedidaDaLista, lerMedidaDoRotulo } from './medidaDoRotulo.ts'
 import { motivoParaNaoSugerir } from './sugestaoDoProprio.ts'
 import {
   energiaIncoerente,
@@ -95,9 +95,9 @@ export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosPara
   const medidaCaseira = d.base === 'porcao' ? textoDaMedidaCaseira(d.nomeDaPorcao.trim()) : ''
   const daPorcao = medidaDaPorcao(medidaCaseira, porcaoG)
   const medidas: MedidaDoProprio[] = []
-  for (const m of [...d.medidas, ...(daPorcao ? [daPorcao] : [])]) {
-    const nome = m.nome.trim()
-    if (nome !== '' && m.gramas > 0 && !medidas.some((x) => x.nome === nome)) medidas.push({ nome, gramas: m.gramas })
+  // D-496: "2 fatias" com 50 g é a fatia de 25 g.
+  for (const m of [...d.medidas.map((x) => lerMedidaDaLista(x.nome, x.gramas)), ...(daPorcao ? [daPorcao] : [])]) {
+    if (m.nome !== '' && m.gramas > 0 && !medidas.some((x) => x.nome === m.nome)) medidas.push({ nome: m.nome, gramas: m.gramas })
   }
   const rotulo = d.tipo === 'rotulo'
   const preparo: PreparoProprio = d.preparo ?? 'pronto para consumo'
