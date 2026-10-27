@@ -1,5 +1,9 @@
 import type { ArmazenamentoListavel } from '@/domain/persistencia.ts'
-import { ehLinkDoPaciente, enderecoNoApp, limparEnderecoAntigo } from './limpeza.ts'
+import { CHAVE_EMAIL_PENDENTE } from '@/ui/emailPendente.ts'
+import { CHAVE_DESTINO } from '@/ui/fluxoConta.ts'
+import { CHAVE_MARCA_DA_SESSAO } from '@/ui/sessao/marcaDeUso.ts'
+import { CHAVE_SAIDA } from '@/ui/sessao/motivoDaSaida.ts'
+import { ehLinkDoPaciente, enderecoNoApp, limparEnderecoAntigo, MARCAS_DO_APARELHO } from './limpeza.ts'
 
 /** Um navegador: as chaves listáveis, como o `localStorage`. */
 class Navegador implements ArmazenamentoListavel {
@@ -43,9 +47,9 @@ describe('a limpeza do endereço antigo (spec separacao-site-app, D-511)', () =>
     const n = new Navegador()
     contaEmDia(n, 'u1')
     contaEmDia(n, 'u2')
-    n.setItem('metanutri:sessao', '{"conta":"u1"}')
+    n.setItem('metanutri:tema', 'escuro')
     expect(limparEnderecoAntigo(n)).toBe(false)
-    expect([...n.dados.keys()]).toEqual(['metanutri:sessao'])
+    expect([...n.dados.keys()]).toEqual(['metanutri:tema'])
   })
 
   describe('CA-1428: o que não está em dia fica inteiro, e sobra dado só aqui (um teste por motivo)', () => {
@@ -88,6 +92,19 @@ describe('a limpeza do endereço antigo (spec separacao-site-app, D-511)', () =>
     const n = new Navegador()
     for (const chave of ['metanutri:sessao', 'metanutri:sessao:saida', 'metanutri:tema', 'metanutri:destino-pendente', 'metanutri:email-pendente']) n.setItem(chave, 'x')
     expect(limparEnderecoAntigo(n)).toBe(false)
+  })
+
+  it('R11 (DP-SA-59): as marcas do aparelho que só o app usa saem em toda visita; o tema e o resto ficam', () => {
+    const n = new Navegador()
+    for (const chave of ['metanutri:sessao', 'metanutri:sessao:saida', 'metanutri:destino-pendente', 'metanutri:email-pendente']) n.setItem(chave, 'x')
+    n.setItem('metanutri:tema', 'escuro')
+    n.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"}]')
+    expect(limparEnderecoAntigo(n)).toBe(true)
+    expect([...n.dados.keys()].sort()).toEqual(['metanutri:conta:u1:pacientes', 'metanutri:tema'])
+  })
+
+  it('R11 (DP-SA-59): os nomes escritos na limpeza são os das constantes do app', () => {
+    expect([...MARCAS_DO_APARELHO].sort()).toEqual([CHAVE_MARCA_DA_SESSAO, CHAVE_SAIDA, CHAVE_DESTINO, CHAVE_EMAIL_PENDENTE].sort())
   })
 
   it('CB-503: navegador vazio, nada a fazer e nada só aqui', () => {

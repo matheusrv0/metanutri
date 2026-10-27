@@ -9,12 +9,19 @@ import { telaNoApp } from '@/ui/enderecos.ts'
 /** A sessão do Supabase e as chaves que andam com ela (`sb-<ref>-auth-token`, `-code-verifier`, `-user`). */
 const CHAVE_DE_SESSAO = /^sb-.+-auth-token(?:-code-verifier|-user)?$/
 
+/**
+ * DP-SA-59: as marcas do aparelho que só o app usa (a da sessão, o motivo da saída, o plano e o e-mail pendentes). Os
+ * nomes ficam escritos aqui para o pacote do site não importar as telas do app; o teste confere que são os de lá.
+ */
+export const MARCAS_DO_APARELHO: readonly string[] = ['metanutri:sessao', 'metanutri:sessao:saida', 'metanutri:destino-pendente', 'metanutri:email-pendente']
+
 /** D-524 e DP-SA-37: a marca, na consulta, do ícone instalado do endereço antigo. */
 export const MARCA_DO_ICONE = 'icone-antigo'
 
 /**
- * D-511: (a) toda sessão guardada sai: o site não usa nenhuma, e ela não pode ficar onde roda só código de vitrine; (b) o
- * espaço de cada conta em dia sai, porque a nuvem tem tudo (com valor retido conta: pode ser a única cópia). Devolve se
+ * D-511: (a) toda sessão guardada sai: o site não usa nenhuma, e ela não pode ficar onde roda só código de vitrine; com
+ * ela, as marcas do aparelho que só o app usa (DP-SA-59); (b) o espaço de cada conta em dia sai, porque a nuvem tem tudo
+ * (com valor retido conta: pode ser a única cópia). Devolve se
  * sobrou dado que só existe aqui (DP-SA-54): um espaço de conta ou dado de antes das contas. Sem conseguir mexer no
  * navegador, não lê nem apaga nada e diz que não sobrou (CB-500): os repasses seguem, e "Continuar" não aparece.
  */
@@ -27,6 +34,7 @@ export function limparEnderecoAntigo(base: ArmazenamentoListavel | null): boolea
       if (chave !== null && CHAVE_DE_SESSAO.test(chave)) sessoes.push(chave)
     }
     for (const chave of sessoes) base.removeItem(chave)
+    for (const chave of MARCAS_DO_APARELHO) base.removeItem(chave)
     for (const conta of contasComEspaco(base)) {
       if (contaEmDia(base, conta, { contarRetidos: true })) apagarDadosDaConta(base, conta)
     }
