@@ -775,7 +775,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .landing[data-entrada] [data-revela]:not([data-dentro]) .landing-etapas::after {
+  .landing[data-entrada] .landing-etapas[data-revela]:not([data-dentro])::after {
     transform: scaleX(0);
   }
 
@@ -787,7 +787,7 @@
       inset 0 0 0 2px var(--landing-borda);
   }
 
-  .landing[data-entrada] [data-revela][data-dentro] .landing-etapas::after {
+  .landing[data-entrada] .landing-etapas[data-revela][data-dentro]::after {
     transition: transform 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
   }
 

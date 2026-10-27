@@ -49,7 +49,7 @@ export function ComoFunciona() {
             >
               {i + 1}
             </span>
-            <h3 className="mt-7 text-[clamp(22px,1.9vw,26px)] leading-[1.15] font-extrabold tracking-[-0.02em]">{passo.titulo}</h3>
+            <h3 className="mt-7 text-[clamp(22px,1.9vw,26px)] leading-[1.15] font-extrabold tracking-[-0.02em] text-inherit">{passo.titulo}</h3>
             <p className="mt-2.5 max-w-[32ch] text-landing-tinta-suave">{passo.texto}</p>
           </li>
         ))}

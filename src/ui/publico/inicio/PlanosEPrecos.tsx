@@ -109,7 +109,7 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
       <div className="mx-auto mt-6 grid max-w-[1180px] grid-cols-2 gap-6 max-[1100px]:max-w-[520px] max-[1100px]:grid-cols-1">
         <div data-surge="" className={CARTAO_DE_BAIXO}>
           <div className="min-w-[min(100%,16rem)] flex-1">
-            <h3 className="text-lg font-extrabold">{estudante.nome}</h3>
+            <h3 className="text-lg font-extrabold tracking-normal text-inherit">{estudante.nome}</h3>
             <p className="mt-1 text-[15px] text-landing-tinta-suave">{estudante.texto}</p>
           </div>
           <button type="button" className={BOTAO_CONTORNO} onClick={() => aoEscolher('estudante', 'mensal')}>
@@ -118,7 +118,7 @@ export function PlanosEPrecos({ aoEscolher, contato = CONTATO_EMAIL }: PlanosEPr
         </div>
         <div data-surge="" className={CARTAO_DE_BAIXO}>
           <div className="min-w-[min(100%,16rem)] flex-1">
-            <h3 className="text-lg font-extrabold">{clinica.nome}</h3>
+            <h3 className="text-lg font-extrabold tracking-normal text-inherit">{clinica.nome}</h3>
             <p className="mt-1 text-[15px] text-landing-tinta-suave">{clinica.texto}</p>
           </div>
           {contato ? (

@@ -57,7 +57,7 @@ export function CartaoDePlano({ cartao, ciclo, indicado, aoEscolher }: CartaoDeP
       />
       <span aria-hidden="true" className={`landing-feixe transition-opacity duration-700 ${indicado ? 'opacity-100 motion-safe:animate-landing-girar' : 'opacity-0'}`} />
       <div className="flex items-center justify-between gap-3">
-        <h3 id={titulo} className="flex items-center gap-2.5 text-lg font-extrabold">
+        <h3 id={titulo} className="flex items-center gap-2.5 text-lg font-extrabold tracking-normal text-inherit">
           {Icone ? <Icone aria-hidden="true" size={18} strokeWidth={2} className="text-landing-tinta-suave" /> : null}
           {cartao.nome}
         </h3>

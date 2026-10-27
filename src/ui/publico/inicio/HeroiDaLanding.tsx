@@ -63,7 +63,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
         className="absolute inset-0 -z-20 size-full object-cover object-[78%_50%] motion-safe:animate-landing-assentar max-[720px]:object-[70%_40%]"
       />
       <div className="max-w-[780px]">
-        <h1 id="titulo-inicio" className="max-w-[16ch] text-(length:--landing-fs-topo) leading-[1.02] font-extrabold tracking-[-0.045em]">
+        <h1 id="titulo-inicio" className="max-w-[16ch] text-(length:--landing-fs-topo) leading-[1.02] font-extrabold tracking-[-0.045em] text-inherit">
           Planos alimentares completos em vitaminas e minerais
         </h1>
         <p className="mt-7 max-w-[46ch] text-(length:--landing-fs-lead) leading-normal text-landing-topo-suave max-[720px]:text-[17px]">

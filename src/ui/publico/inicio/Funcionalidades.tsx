@@ -55,7 +55,7 @@ export function Funcionalidades({ formularioNovo }: FuncionalidadesProps) {
       <ul className="mt-14 grid list-none grid-cols-3 gap-x-12 gap-y-10 p-0 max-[1100px]:grid-cols-2 max-[720px]:grid-cols-1">
         {itens.map((item) => (
           <li key={item.titulo} data-surge="">
-            <h3 className="text-[19px] leading-[1.25] font-extrabold tracking-[-0.01em]">{item.titulo}</h3>
+            <h3 className="text-[19px] leading-[1.25] font-extrabold tracking-[-0.01em] text-inherit">{item.titulo}</h3>
             <p className="mt-1.5 max-w-[38ch] text-base text-landing-tinta-suave">{item.texto}</p>
           </li>
         ))}
