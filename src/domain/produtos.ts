@@ -325,8 +325,14 @@ export function validarAlimentoProprio(
     if (typeof v === 'number' && v < 0) problemas.push({ campo: campo.chave, mensagem: NEGATIVO })
   }
   problemas.push(...coerencia(d.valores))
+  // D-502 (I13): cada erro no próprio campo; a medida repetida (depois da leitura da D-496) não some em silêncio.
+  const nomesVistos = new Set<string>()
   d.medidas.forEach((m, i) => {
-    if (m.nome.trim() === '' || !(m.gramas > 0) || m.gramas > 2000) problemas.push({ campo: `medida-${i}`, mensagem: 'Cada medida precisa de nome e de peso entre 0 e 2.000 g.' })
+    const lida = lerMedidaDaLista(m.nome, m.gramas)
+    if (lida.nome === '') problemas.push({ campo: `medida-${i}-nome`, mensagem: 'Dê um nome à medida.' })
+    else if (nomesVistos.has(lida.nome)) problemas.push({ campo: `medida-${i}-nome`, mensagem: `Já há uma medida “${lida.nome}”.` })
+    if (!(m.gramas > 0) || m.gramas > 2000) problemas.push({ campo: `medida-${i}-peso`, mensagem: `Peso maior que 0 e até 2.000 ${d.unidade}.` })
+    if (lida.nome !== '') nomesVistos.add(lida.nome)
   })
   if (d.fonte === null) problemas.push({ campo: 'fonte', mensagem: 'Diga de onde vieram os valores.' })
   else if (d.fonte.tipo === 'outra' && d.fonte.texto.trim() === '') problemas.push({ campo: 'fonte', mensagem: 'Escreva de onde vieram os valores.' })

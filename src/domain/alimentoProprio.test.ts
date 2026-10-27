@@ -174,6 +174,27 @@ describe('validação (D-384)', () => {
     expect(mensagem({ ...CUSCUZ, nome: 'Óleo de buriti', valores: { energia_kcal: 884, proteina_g: 0, carboidrato_g: 0, lipideos_g: 100 } }, 'energia_kcal')).toBeUndefined()
   })
 
+  it('CA-1368 (D-502): cada medida errada marca o próprio campo; a medida repetida não salva', () => {
+    const ruins = validarAlimentoProprio({
+      ...CUSCUZ,
+      medidas: [
+        { nome: '', gramas: 30 },
+        { nome: 'fatia', gramas: 0 },
+        { nome: 'pedaço', gramas: 3000 },
+      ],
+    }).problemas
+    expect(ruins).toEqual([
+      { campo: 'medida-0-nome', mensagem: 'Dê um nome à medida.' },
+      { campo: 'medida-1-peso', mensagem: 'Peso maior que 0 e até 2.000 g.' },
+      { campo: 'medida-2-peso', mensagem: 'Peso maior que 0 e até 2.000 g.' },
+    ])
+    const repetidas = (medidas: DadosAlimentoProprio['medidas']) => validarAlimentoProprio({ ...CUSCUZ, medidas }).problemas
+    expect(repetidas([{ nome: 'fatia', gramas: 25 }, { nome: 'fatia', gramas: 30 }])).toEqual([{ campo: 'medida-1-nome', mensagem: 'Já há uma medida “fatia”.' }])
+    // Depois da leitura da D-496, "2 fatias" é a fatia.
+    expect(repetidas([{ nome: 'fatia', gramas: 25 }, { nome: '2 fatias', gramas: 50 }])).toEqual([{ campo: 'medida-1-nome', mensagem: 'Já há uma medida “fatia”.' }])
+    expect(validarAlimentoProprio({ ...CUSCUZ, unidade: 'ml', medidas: [{ nome: 'copo', gramas: 0 }] }).problemas).toEqual([{ campo: 'medida-0-peso', mensagem: 'Peso maior que 0 e até 2.000 ml.' }])
+  })
+
   it('CA-1362 (D-497): o campo com texto que não é número tem a mensagem dele, no lugar de "Informe…"', () => {
     const r = validarAlimentoProprio({ ...CUSCUZ, valores: { ...CUSCUZ.valores, proteina_g: null, fibra_g: null } }, ['proteina_g', 'fibra_g'])
     expect(r.problemas).toEqual([

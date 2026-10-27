@@ -344,7 +344,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
                   rotuloOculto
                   valor={m.nome}
                   aoMudar={(nome) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, nome } : x)) })}
-                  placeholder="fatia"
+                  placeholder="ex.: fatia"
+                  erro={erroDe(`medida-${i}-nome`)}
                 />
                 <CampoNumero
                   rotulo={`Peso da medida ${i + 1}`}
@@ -353,6 +354,7 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
                   aoMudar={(v) => mudar({ medidas: d.medidas.map((x, j) => (j === i ? { ...x, gramas: v ?? 0 } : x)) })}
                   ler={lerNumeroDoRotulo}
                   sufixo={unidade}
+                  erro={erroDe(`medida-${i}-peso`)}
                 />
                 <Button type="button" variant="ghost" size="iconsm" aria-label={`Tirar a medida ${m.nome || i + 1}`} onClick={() => mudar({ medidas: d.medidas.filter((_, j) => j !== i) })}>
                   <X aria-hidden="true" />
@@ -362,7 +364,6 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
             )
           })}
         </ul>
-        {problemas.some((p) => p.campo.startsWith('medida-')) && tentou ? <p className="text-xs text-errortext">Cada medida precisa de nome e de peso entre 0 e 2.000.</p> : null}
         <Button type="button" variant="lightprimary" size="sm" className="self-start" onClick={() => mudar({ medidas: [...d.medidas, { nome: '', gramas: 0 }] })}>
           <Plus aria-hidden="true" />
           Adicionar medida

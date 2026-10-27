@@ -161,6 +161,24 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(gravado?.porPorcao).toMatchObject({ sodio_mg: 1200, proteina_g: 2.2, fibra_g: 0 })
   })
 
+  it('CA-1368 (D-502): a medida sem nome e a de peso 0 ficam marcadas, cada uma no seu campo', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    await usuario.click(janela.getByRole('button', { name: 'Adicionar medida' }))
+    await usuario.click(janela.getByRole('button', { name: 'Adicionar medida' }))
+    expect(janela.getByLabelText('Nome da medida 1')).toHaveAttribute('placeholder', 'ex.: fatia')
+    await usuario.type(janela.getByLabelText('Peso da medida 1'), '30')
+    await usuario.type(janela.getByLabelText('Nome da medida 2'), 'fatia')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar alimento' }))
+    expect(janela.getByLabelText('Nome da medida 1')).toHaveAttribute('aria-invalid', 'true')
+    expect(janela.getByLabelText('Peso da medida 1')).not.toHaveAttribute('aria-invalid')
+    expect(janela.getByLabelText('Peso da medida 2')).toHaveAttribute('aria-invalid', 'true')
+    expect(janela.getByText('Dê um nome à medida.')).toBeInTheDocument()
+    expect(janela.getByText('Peso maior que 0 e até 2.000 g.')).toBeInTheDocument()
+  })
+
   it('CA-1363 (D-498): o item antigo sem medida caseira abre, edita, salva e exclui', async () => {
     localStorage.setItem('metanutri:produtos', JSON.stringify([{ id: 900_000, nome: 'Iogurte da fazenda', marca: 'Sítio', porcaoG: 170, porPorcao: { energia_kcal: 110, proteina_g: 6, carboidrato_g: 8, lipideos_g: 6 } }]))
     render(<TelaProdutos formularioNovo />)
