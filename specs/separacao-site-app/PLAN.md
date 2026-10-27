@@ -224,10 +224,13 @@ Da revisão independente da P2 (27/10/2026), uma tarefa cada (R9 a R15):
 
 - **DP-SA-57 · A troca nunca esvazia a situação da nuvem (R9).** No modo "trocar" (D-513), as chaves que o pacote traz
   são regravadas no lugar, sem sair antes, e só saem as outras do espaço. Se o pacote não traz a situação da nuvem, a
-  do app ganha uma mudança a mais, como na migração (R1), em vez de sair. Motivo: outra aba do app na mesma conta lê a
-  situação vazia como "a conta saiu nesta aba" (DP-11) e para o motor até recarregar, presa em "Salvando…". A mudança a
-  mais faz o motor juntar o que veio com a nuvem, item por item, como faria sem a situação, e a conta só fica em dia
-  depois de subir.
+  do app fica, ~~com uma mudança a mais, como na migração (R1)~~ sem a versão (nula) e com uma mudança a mais, em vez de
+  sair. Motivo: outra aba do app na mesma conta lê a situação vazia como "a conta saiu nesta aba" (DP-11) e para o motor
+  até recarregar, presa em "Salvando…". *Revisão de 27/10/2026 (2ª rodada):* só a mudança a mais não bastava; com a
+  versão da nuvem guardada, o motor de outra aba aberta salvava por cima da nuvem a cópia que, depois da troca, é só o
+  que veio do site, e o que foi feito no app sumia (provado com as leituras da aba nova falhando por alguns segundos).
+  Com a versão nula, todo envio, de qualquer aba, é uma cópia nova: a nuvem responde que já existe uma, e o motor lê e
+  junta, item por item, antes de subir. A conta só fica em dia (e o app só confirma ao site) depois dessa junta.
 - **DP-SA-58 · O link de paciente antigo também limpa a sessão (R10).** O script do `<head>` apaga as chaves
   `sb-…-auth-token` (e `-code-verifier` e `-user`) antes de mandar o `#/missoes/…` ao app. Motivo: a limpeza do D-511 é
   "em toda visita", e o link do paciente é a visita mais comum ao endereço antigo; ele sai antes de o pacote do site
@@ -503,6 +506,9 @@ Cada uma com o teste que falha antes e um commit, no ramo `separacao-p2`; o `sep
   fica vazia durante a troca, com e sem ela no pacote; DP-SA-57), `e2e/site/mudanca-outra-aba.spec.ts` (novo, só no
   Chromium: com outra aba do app aberta, a troca acontece e o paciente novo dela sobe; e o CB-507, duas abas do site com
   "Continuar"). Verifica: CA-1434, CB-124, CB-507.
+  *2ª rodada da revisão (DP-SA-57): sem a situação no pacote, a do app fica com a versão nula. Teste de unidade ajustado
+  e, no mesmo arquivo de navegador, o pacote sem a situação com a outra aba aberta e as leituras da aba nova falhando
+  por 8 s: o que foi feito no app e o que veio do site ficam na nuvem, e o site recebe a confirmação.*
 - [x] **R10 · O link de paciente antigo limpa a sessão.** `public/preparar-pagina.js`, `src/seo/prepararPagina.test.tsx`
   (DP-SA-58). Verifica: D-511 (a), CA-1423.
 - [x] **R11 · As marcas do aparelho saem do endereço antigo.** `src/site/limpeza.ts` e `.test.ts` (DP-SA-59). Verifica:
