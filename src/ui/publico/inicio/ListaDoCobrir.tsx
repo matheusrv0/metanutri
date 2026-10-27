@@ -15,7 +15,7 @@ export function ListaDoCobrir({ linhas, daFaltaNaPrimeira = false }: ListaDoCobr
   return (
     <ul className="mt-3.5 grid list-none gap-2 p-0">
       {linhas.map((linha, i) => (
-        <li key={linha.nome} className="flex items-center justify-between gap-3 rounded-[14px] bg-landing-afundado py-[11px] pr-[11px] pl-3.5">
+        <li key={linha.nome} className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] bg-landing-afundado py-[11px] pr-[11px] pl-3.5">
           <div className="min-w-0">
             <div className="font-bold">{linha.nome}</div>
             <div className="text-[13px] text-landing-tinta-suave">

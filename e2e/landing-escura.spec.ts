@@ -169,6 +169,7 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
     [390, 'escuro'],
     [320, 'escuro'],
     [390, 'claro'],
+    [360, 'claro'],
     [320, 'claro'],
   ] as const) {
     test(`CA-1488, CA-1489, CA-1626 e CB-531: em ${largura} px, landing ${temaDaLanding}, sem rolar para o lado e com alvos de 44 px`, async ({ page }) => {
@@ -176,6 +177,18 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
       await abrirLanding(page, 'claro', temaDaLanding)
       await semRolagemLateral(page)
       await expect(page.getByRole('banner').getByRole('link', { name: 'Criar conta' })).toBeVisible()
+      // CB-608 (spec landing-v3): a raiz corta o que passa da largura (overflow-x: clip); a barra inteira cabe na tela, com
+      // a margem de 16 px, também com o botão de tema.
+      const foraDaBarra = await page
+        .getByRole('banner')
+        .locator('a, button')
+        .evaluateAll((els) =>
+          els
+            .filter((el) => el.getClientRects().length > 0)
+            .filter((el) => el.getBoundingClientRect().right > window.innerWidth - 16 + 0.5)
+            .map((el) => el.getAttribute('aria-label') ?? el.textContent),
+        )
+      expect(foraDaBarra).toEqual([])
       const pequenos = await page.locator('.landing a, .landing button:not([role="switch"]), .landing summary, .landing input').evaluateAll((els) =>
         els
           .filter((el) => el.getClientRects().length > 0)

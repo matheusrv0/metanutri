@@ -21,7 +21,7 @@ export function BotaoDeTema({ tema, aoTrocar, sobreTeal }: BotaoDeTemaProps) {
       aria-label={nome}
       title={nome}
       onClick={aoTrocar}
-      className={`inline-grid size-11 flex-none place-items-center rounded-full border bg-transparent text-inherit transition-colors duration-200 ${
+      className={`inline-grid size-11 flex-none place-items-center rounded-full border bg-transparent text-inherit transition-[scale,background-color] duration-150 ease-out active:scale-[.97] ${
         sobreTeal ? 'border-landing-marfim/32 hover:bg-landing-marfim/12' : 'border-landing-contorno hover:bg-landing-trilho'
       }`}
     >
