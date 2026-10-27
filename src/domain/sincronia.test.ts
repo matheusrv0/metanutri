@@ -1169,6 +1169,41 @@ describe('marca de saída que ficou (DP-27)', () => {
     await salvar()
     expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
   })
+
+  it('CA-1449 e CB-528 (spec separacao-site-app): a saída por tempo sem internet deixa o espaço com o "saiu"; a próxima entrada da mesma conta sobe o que ficou', async () => {
+    const nuvem = nuvemFalsa()
+    const navegador = new Navegador()
+    const a = abrirAparelho(nuvem, navegador)
+    await ligar(a)
+    a.pacientes.criar('Ana')
+    await salvar()
+    // Sem internet, a mudança não sobe; a saída por tempo para o motor (DP-SA-9) e o espaço fica (D-517, passo 4).
+    nuvem.semInternet = true
+    a.sincronia.desconectou()
+    a.pacientes.criar('Bia')
+    await salvar()
+    a.sincronia.parar()
+    const conta = armazenamentoDaConta(navegador, 'conta-a')
+    expect(lerSituacao(conta)).toMatchObject({ saiu: true })
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana'])
+
+    // Outro aparelho salvou no meio; a internet volta e a mesma conta entra de novo neste navegador.
+    const copia = copiaNaNuvem(nuvem)
+    const pacientes = JSON.parse(copia.dados['metanutri:pacientes'] ?? '[]') as Record<string, unknown>[]
+    nuvem.guardar('conta-a', { ...copia, dados: { ...copia.dados, 'metanutri:pacientes': JSON.stringify([...pacientes, { id: 'p-celular', nome: 'Caio', atualizadoEm: new Date().toISOString() }]) } }, new Date(Date.now() + 1000).toISOString())
+    nuvem.semInternet = false
+    const b = abrirAparelho(nuvem, navegador)
+    await ligar(b)
+    await salvar()
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia', 'Caio'])
+    expect(lerSituacao(conta)?.saiu).toBeUndefined()
+    expect(b.sincronia.estado).toMatchObject({ fase: 'pronta', pendente: false, salvando: false })
+
+    // Depois de aberta, o envio segue normal: o "saiu" velho não para nada.
+    b.pacientes.criar('Duda')
+    await salvar()
+    expect(pacientesNaNuvem(nuvem)).toEqual(['Ana', 'Bia', 'Caio', 'Duda'])
+  })
 })
 
 describe('uma aba envia por vez (DP-27)', () => {
