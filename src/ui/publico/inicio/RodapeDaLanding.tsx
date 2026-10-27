@@ -28,7 +28,7 @@ export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaL
   const ano = new Date().getFullYear()
   return (
     <footer
-      data-capitulo="fim"
+     
       className={`grid min-h-[56svh] grid-rows-[auto_1fr_auto_auto] gap-[22px] bg-landing-rodape pt-9 pb-[26px] text-landing-rodape-tinta max-[720px]:pb-[88px] ${MARGEM}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-6 text-(length:--landing-fs-s) text-landing-tinta-suave">

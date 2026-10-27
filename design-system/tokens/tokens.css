@@ -313,13 +313,10 @@
   --landing-chao-fundo: var(--carvao-950);
   --landing-afundado: var(--carvao-850);
   --landing-cartao: var(--carvao-800);
-  --landing-cartao-hover: var(--carvao-750);
   /* O trilho da barra de adequação e a borda do fragmento de interface. */
   --landing-trilho: var(--carvao-700);
   /* A chave desligada, o contorno do botão secundário do fragmento e do seletor. */
   --landing-contorno: var(--carvao-600);
-  /* A frase da chave desligada: 5,3:1 sobre o chão, em letra de 22 px ou mais. */
-  --landing-apagado: var(--carvao-400);
   --landing-tinta: var(--carvao-50);
   --landing-tinta-suave: var(--carvao-200);
   --landing-tinta-resposta: var(--carvao-100);
@@ -343,21 +340,14 @@
   --landing-chamar-hover: var(--gray-0);
   --landing-rodape: var(--carvao-950);
   --landing-rodape-tinta: var(--ivory);
-  /* O bloco de cor clara sobre o chão: a faixa da chave marfim. */
-  --landing-bloco: var(--ivory);
-  --landing-bloco-tinta: var(--teal-900);
 
   /* Margem da página e a escala de letra do protótipo: o muito grande, o grande, o de seção e três de texto. */
   --landing-margem: clamp(16px, 3vw, 48px);
   --landing-fs-display: clamp(32px, 7.6vw, 136px);
-  --landing-fs-xl: clamp(30px, 4.8vw, 78px);
   --landing-fs-l: clamp(20px, 2.2vw, 34px);
-  --landing-fs-frase: clamp(22px, 3.2vw, 52px);
   --landing-fs-lead: 20px;
   --landing-fs-corpo: 17px;
   --landing-fs-s: 14px;
-  /* A altura da barra do topo: 44 px de alvo e 12 px em cima e embaixo. */
-  --landing-barra: 68px;
 
   /* Landing v9 (spec landing-v3, D-676 e D-677), do bloco v9 do protótipo. A barra de vidro, o véu da foto do topo
    * (de lado no computador, de cima para baixo no celular; embaixo, ele chega ao afundado da seção seguinte), a tinta
@@ -422,12 +412,9 @@
   --landing-chao-fundo: var(--marfim-300);
   --landing-afundado: var(--marfim-200);
   --landing-cartao: var(--gray-0);
-  --landing-cartao-hover: var(--marfim-500);
   --landing-trilho: var(--marfim-400);
   --landing-borda: var(--marfim-500);
   --landing-contorno: var(--marfim-700);
-  /* A frase da chave desligada: 4,6:1 sobre o chão claro. */
-  --landing-apagado: var(--tinta-teal-500);
   --landing-tinta: var(--tinta-teal-900);
   --landing-tinta-suave: var(--tinta-teal-600);
   --landing-destaque: var(--teal-700);
@@ -439,8 +426,6 @@
   --landing-chamar-hover: var(--teal-700);
   --landing-rodape: var(--marfim-300);
   --landing-rodape-tinta: var(--teal-900);
-  --landing-bloco: var(--teal-300);
-  --landing-bloco-tinta: var(--teal-900);
   /* Landing v9 (D-676), no claro. */
   --landing-vidro: color-mix(in srgb, var(--ivory) 82%, transparent);
   --landing-veu:

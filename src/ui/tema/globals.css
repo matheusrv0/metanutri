@@ -192,10 +192,8 @@
   --color-landing-chao-fundo: var(--landing-chao-fundo);
   --color-landing-afundado: var(--landing-afundado);
   --color-landing-cartao: var(--landing-cartao);
-  --color-landing-cartao-hover: var(--landing-cartao-hover);
   --color-landing-trilho: var(--landing-trilho);
   --color-landing-contorno: var(--landing-contorno);
-  --color-landing-apagado: var(--landing-apagado);
   --color-landing-tinta: var(--landing-tinta);
   --color-landing-tinta-suave: var(--landing-tinta-suave);
   --color-landing-tinta-resposta: var(--landing-tinta-resposta);
@@ -216,8 +214,6 @@
   --color-landing-chamar-hover: var(--landing-chamar-hover);
   --color-landing-rodape: var(--landing-rodape);
   --color-landing-rodape-tinta: var(--landing-rodape-tinta);
-  --color-landing-bloco: var(--landing-bloco);
-  --color-landing-bloco-tinta: var(--landing-bloco-tinta);
   /* Landing v9 (spec landing-v3, D-676). */
   --color-landing-vidro: var(--landing-vidro);
   --color-landing-topo-tinta: var(--landing-topo-tinta);
@@ -239,9 +235,7 @@
 /* O movimento da landing escura (spec landing-escura, D-549). Só vale com `motion-safe:`: com menos movimento, nada se
    move. */
 @theme {
-  --animate-landing-sobe: landing-sobe 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-landing-deriva: landing-deriva 18s ease-in-out infinite alternate;
-  --animate-landing-piscar: landing-piscar 1.1s steps(1) infinite;
   /* Landing v9 (D-655): a foto do topo assenta e a etiqueta surge; o feixe do plano indicado gira (D-667). */
   --animate-landing-assentar: landing-assentar 2.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-landing-surgir: landing-surgir 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
@@ -275,16 +269,6 @@
     }
   }
 
-  /* Só deslocamento: o título aparece no primeiro quadro (CA-998); ele sobe, não nasce transparente. */
-  @keyframes landing-sobe {
-    from {
-      transform: translateY(28px);
-    }
-    to {
-      transform: none;
-    }
-  }
-
   @keyframes landing-deriva {
     from {
       transform: scale(1.03);
@@ -294,11 +278,6 @@
     }
   }
 
-  @keyframes landing-piscar {
-    50% {
-      opacity: 0;
-    }
-  }
 }
 
 @layer base {
