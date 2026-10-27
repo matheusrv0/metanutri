@@ -374,8 +374,9 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   T20, T22. Verifica: CA-1431, CA-1433, CA-1434, CA-1435, CA-1436 (o lado do app), CA-1437, CA-1439, CB-505.
 - [ ] **T25 · O aviso do ícone antigo.** `src/ui/aplicativo/AvisoIconeAntigo.tsx` e `.test.tsx` (novos, textos do
   D-526), `src/ui/layout/Estrutura.tsx` (mostra uma vez e tira a marca do endereço). Depende de: T20, T23. Verifica: CA-1426.
-- [ ] **T26 · O aplicativo instalado.** `vite.config.ts` (DP-SA-13 no site; DP-SA-14 no app), `src/seo/pluginAlvo.test.ts`
-  (confere a configuração do PWA de cada alvo). Depende de: T18. Verifica: CA-1407 (a configuração), CA-1421.
+- [ ] **T26 · O aplicativo instalado.** `vite.config.ts` (DP-SA-13 no site; DP-SA-14 no app), `src/seo/pluginAlvo.ts` (a configuração do PWA de cada
+  alvo sai do `vite.config.ts` para uma função que o teste lê), `src/seo/pluginAlvo.test.ts`
+  (confere a configuração do PWA de cada alvo e monta o site com ela). Depende de: T18. Verifica: CA-1407 (a configuração), CA-1421.
 - [ ] **T27 · Política, termos e `llms.txt`.** `src/ui/publico/TelaPrivacidade.tsx` (D-522), `src/domain/legal.ts`
   (versão e data = o dia da P2; publicando em outro dia, troca as duas e o teste), `src/domain/legal.test.ts`,
   `src/ui/publico/legal.test.tsx`, `public/llms.txt` (a linha do Entrar), `src/seo/arquivosDoSite.test.ts` (CA-1019 e
