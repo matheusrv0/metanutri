@@ -418,6 +418,14 @@ function ehProduto(v: unknown): v is Produto {
   return typeof o['id'] === 'number' && typeof o['nome'] === 'string' && typeof o['porcaoG'] === 'number' && typeof o['porPorcao'] === 'object' && o['porPorcao'] !== null
 }
 
+const texto = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/**
+ * D-498 (G6 da revisão da publicação 2): o item de uma versão antiga, de uma importação ou mexido à mão pode vir sem
+ * os campos de texto; na leitura eles valem vazio, e a tela não quebra. A gravação continua com o item como veio.
+ */
+const comTextos = (p: Produto): Produto => ({ ...p, marca: texto(p.marca), codigoBarras: texto(p.codigoBarras), medidaCaseira: texto(p.medidaCaseira), criadoEm: texto(p.criadoEm) })
+
 /** Os dados sem as chaves indefinidas: elas não apagam o que o item já tinha. */
 const semIndefinidos = (o: object): Record<string, unknown> => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
@@ -446,7 +454,7 @@ export function criarRepositorioProdutos(armazenamento: Armazenamento | null, ag
     }
   }
 
-  const ler = (): Produto[] => lerBruto().filter(ehProduto)
+  const ler = (): Produto[] => lerBruto().filter(ehProduto).map(comTextos)
   const idDe = (v: unknown): unknown => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>)['id'] : undefined)
 
   return {

@@ -50,19 +50,25 @@ export function dadosEmBranco(tipo: DadosAlimentoProprio['tipo'] = 'alimento'): 
   }
 }
 
-/** O item guardado no formulário (para editar). Item antigo, sem os campos novos, abre como rótulo na porção. */
+const texto = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/**
+ * O item guardado no formulário (para editar). Item antigo, sem os campos novos, abre como rótulo na porção; sem os
+ * campos de texto (D-498), abre com eles vazios.
+ */
 export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
   const base = p.base ?? 'porcao'
+  const codigoBarras = texto(p.codigoBarras)
   // D-491: o texto inteiro, como foi gravado (o rótulo antigo com "4 colheres de sopa" não perde a medida ao salvar).
-  const nomeDaPorcao = base === 'porcao' ? p.medidaCaseira.trim() : ''
+  const nomeDaPorcao = base === 'porcao' ? texto(p.medidaCaseira).trim() : ''
   const daPorcao = medidaDaPorcao(nomeDaPorcao, p.porcaoG)
-  const fonte: FonteAlimentoProprio = p.fonte ?? (p.codigoBarras ? { tipo: 'open-food-facts', codigo: p.codigoBarras, data: p.criadoEm.slice(0, 10) } : { tipo: 'rotulo' })
+  const fonte: FonteAlimentoProprio = p.fonte ?? (codigoBarras ? { tipo: 'open-food-facts', codigo: codigoBarras, data: texto(p.criadoEm).slice(0, 10) } : { tipo: 'rotulo' })
   return {
     tipo: p.tipo ?? 'rotulo',
     nome: p.nome,
     nomeParaPaciente: p.nomeParaPaciente ?? '',
-    marca: p.marca,
-    codigoBarras: p.codigoBarras,
+    marca: texto(p.marca),
+    codigoBarras,
     grupo: p.grupo ?? '',
     preparo: p.preparo ?? null,
     unidade: p.unidade ?? 'g',

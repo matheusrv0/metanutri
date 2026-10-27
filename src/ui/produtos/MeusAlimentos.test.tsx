@@ -71,6 +71,24 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(janela.getByText('O alimento precisa de um nome.')).toBeInTheDocument()
   })
 
+  it('CA-1363 (D-498): o item antigo sem medida caseira abre, edita, salva e exclui', async () => {
+    localStorage.setItem('metanutri:produtos', JSON.stringify([{ id: 900_000, nome: 'Iogurte da fazenda', marca: 'Sítio', porcaoG: 170, porPorcao: { energia_kcal: 110, proteina_g: 6, carboidrato_g: 8, lipideos_g: 6 } }]))
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    const lista = within(screen.getByRole('list', { name: 'Alimentos cadastrados' }))
+    expect(lista.getByRole('heading', { name: 'Iogurte da fazenda' })).toBeInTheDocument()
+    await usuario.click(lista.getByRole('button', { name: 'Editar Iogurte da fazenda' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Editar alimento' }))
+    expect(janela.getByLabelText('Medida caseira da porção')).toHaveValue('')
+    await usuario.selectOptions(janela.getByLabelText('Grupo'), 'Leite e derivados')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar alterações' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Alimento “Iogurte da fazenda” salvo.')
+    await usuario.click(screen.getByRole('button', { name: 'Excluir Iogurte da fazenda' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir alimento' }))
+    expect(screen.queryByRole('list', { name: 'Alimentos cadastrados' })).not.toBeInTheDocument()
+  })
+
   it('CA-1141: rótulo na porção mostra quanto dá por 100 g', async () => {
     render(<TelaProdutos formularioNovo />)
     const usuario = userEvent.setup()

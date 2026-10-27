@@ -81,6 +81,19 @@ describe('a publicação em duas vezes (D-383)', () => {
     expect(gravado[1]).toMatchObject({ nome: 'Velho editado', campoDoFuturo: 42, criadoEm: '2026-10-01', atualizadoEm: '2026-10-21T10:00:00.000Z' })
   })
 
+  it('CA-1363 (D-498): o item sem os campos de texto é lido com texto vazio e gravado como veio', () => {
+    const memoria = new Memoria()
+    memoria.setItem('metanutri:produtos', JSON.stringify([{ id: 900_000, nome: 'Iogurte da fazenda', porcaoG: 170, porPorcao: { energia_kcal: 110 } }]))
+    const repo = criarRepositorioProdutos(memoria)
+    const [lido] = repo.listar()
+    expect(lido).toMatchObject({ marca: '', codigoBarras: '', medidaCaseira: '', criadoEm: '' })
+    if (!lido) throw new Error('sem item')
+    expect(dadosDoProduto(lido)).toMatchObject({ nomeDaPorcao: '', marca: '', codigoBarras: '' })
+    expect(JSON.parse(memoria.getItem('metanutri:produtos') ?? '[]')).toEqual([{ id: 900_000, nome: 'Iogurte da fazenda', porcaoG: 170, porPorcao: { energia_kcal: 110 } }])
+    // A função pura também aguenta o item cru, sem passar pelo repositório.
+    expect(dadosDoProduto({ id: 900_001, nome: 'Cru', porcaoG: 100, porPorcao: {} } as unknown as Produto).nomeDaPorcao).toBe('')
+  })
+
   it('CB-371: com 1.000 alimentos, o novo é recusado com o motivo', () => {
     const memoria = new Memoria()
     memoria.setItem('metanutri:produtos', JSON.stringify(Array.from({ length: LIMITE_ALIMENTOS_PROPRIOS }, (_, i) => ({ id: 900_000 + i, nome: `A${i}`, porcaoG: 100, porPorcao: {}, criadoEm: 'x' }))))
