@@ -13,7 +13,7 @@ de prioridade média e baixa que não dependem do painel.
 | D-96 | **Sair da conta pergunta se o computador é compartilhado.** "Sair e apagar os dados deste aparelho" apaga pacientes e planos guardados no navegador; "Só sair" mantém. Quando houver mudança que ainda não foi para a nuvem, a janela avisa antes de apagar. **Refinado pelo D-124** (`specs/dados-por-conta/SPEC.md`, 07/10/2026): apaga só os dados da conta que está saindo; os de outras contas continuam |
 | D-97 | **Endurecimento do servidor:** as funções do servidor só aceitam chamadas vindas de `https://metanutri.com.br` (*nota de 27/10/2026, spec `separacao-site-app`, D-521: passa a uma lista de endereços; na P1 e na P2, o app e o site; na P3, só `https://app.metanutri.com.br`*); o banco recusa marcações de missão grandes demais, token de link fora do padrão e envio de comprovante por quem não é estudante (no máximo 10 arquivos por conta); funções internas deixam de ser chamáveis sem login |
 | D-98 | **Erros do banco não aparecem crus na tela**: passam pela tradução de mensagens que o resto do app já usa |
-| D-99 | **O site não abre dentro de outro site** (moldura/iframe): se for aberto assim, mostra só um aviso com o link para abrir direto |
+| D-99 | **O site não abre dentro de outro site** (moldura/iframe): se for aberto assim, mostra só um aviso com o link para abrir direto *Nota de 27/10/2026 (spec `separacao-site-app`, P2): o link do aviso é o do app, `https://app.metanutri.com.br/` (CA-1420); o app também manda `frame-ancestors 'none'` no cabeçalho (D-507).* |
 | D-100 | **O processo de publicação usa versões fixas** das ações do GitHub (pelo identificador do commit), não etiquetas que podem mudar |
 
 ## 2. Critérios de aceite
@@ -29,7 +29,7 @@ de prioridade média e baixa que não dependem do painel.
 - **CA-428** · Dado uma conta que não é de estudante, quando tenta enviar comprovante, então o armazenamento recusa; dado estudante com 10 arquivos, o 11º é recusado e a tela diz "Você já enviou comprovantes demais. Fale com a gente pelo e-mail de contato."
 - **CA-429** · Dado as funções internas do banco desta área (verificação, aprovações), então nenhuma é executável sem login. A função de gatilho do cadastro, que não é chamada direto, fica com as permissões que tem.
 - **CA-430** · Dado um erro do banco ao salvar ou apagar na nuvem, então a tela mostra a mensagem traduzida, não o texto técnico.
-- **CA-431** · Dado o site aberto dentro de uma moldura de outro site, então só aparece "Abra o MetaNutri direto no navegador." com o link.
+- **CA-431** · Dado o site aberto dentro de uma moldura de outro site, então só aparece "Abra o MetaNutri direto no navegador." com o link. *Nota de 27/10/2026 (spec `separacao-site-app`, P2): o link é `https://app.metanutri.com.br/` (CA-1420).*
 - **CA-432** · Dado o arquivo de publicação, então cada ação do GitHub está fixada pelo identificador do commit, com a versão num comentário.
 
 ## 3. Fora de escopo
