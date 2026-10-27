@@ -138,6 +138,19 @@ describe('o remetente da mudança, na aba do site (spec separacao-site-app, D-51
     expect(base.dados.size).toBe(2)
   })
 
+  it('R12 (DP-SA-60): o que mudou aqui depois da entrega fica, mesmo com a confirmação', () => {
+    const base = enderecoAntigo()
+    const { janela, receber } = janelaDoSite()
+    const remetente = criarRemetente({ base, instalado: false, janela })
+    remetente.continuar()
+    const codigo = codigoDaAba(janela)
+    receber({ tipo: 'pedir', codigo, usuarioId: 'u1' })
+    base.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"},{"id":"p2"}]')
+    receber({ tipo: 'recebido', codigo, usuarioId: 'u1' })
+    expect([...base.dados.keys()].sort()).toEqual(['metanutri:conta:u1:pacientes', 'metanutri:conta:u2:nuvem', 'metanutri:tema'])
+    expect(remetente.estado).toBe('pronto')
+  })
+
   it('CA-1438: mensagem de outro endereço, de outra janela, com outro código, de tipo desconhecido ou de outra conta: ignorada', () => {
     const base = enderecoAntigo()
     const { janela, aberta, receber } = janelaDoSite()

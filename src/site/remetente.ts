@@ -4,7 +4,7 @@
 // conta dela; esta responde só com o pacote daquela conta (D-512) e, quando o app confirma que a nuvem tem tudo (D-513),
 // apaga o que entregou. As mensagens só valem do endereço do app, da janela que esta abriu e com o código desta vez.
 // Fora do React, como o vigia da sessão: a tela "Continuar" lê o estado.
-import { apagarEntregue, lerMensagem, novoCodigo, pacoteDaConta, type Mensagem } from '@/domain/mudancaDeEndereco.ts'
+import { apagarEntregue, lerMensagem, novoCodigo, pacoteDaConta, type Mensagem, type Pacote } from '@/domain/mudancaDeEndereco.ts'
 import type { ArmazenamentoListavel } from '@/domain/persistencia.ts'
 import { ENDERECO_DO_APP, telaNoApp } from '@/ui/enderecos.ts'
 import { MARCA_DO_ICONE } from './limpeza.ts'
@@ -37,8 +37,8 @@ export interface Remetente {
 interface Mudanca {
   readonly codigo: string
   readonly aba: Window
-  /** O que foi para o app, e para qual conta: só isso sai quando ele confirmar. */
-  entregue: { readonly usuarioId: string; readonly chaves: readonly string[] } | null
+  /** O que foi para o app (chave e valor), e para qual conta: só isso sai quando ele confirmar (DP-SA-60). */
+  entregue: { readonly usuarioId: string; readonly pacote: Pacote } | null
 }
 
 export function criarRemetente({ base, instalado, janela = globalThis }: OpcoesDoRemetente): Remetente {
@@ -64,14 +64,14 @@ export function criarRemetente({ base, instalado, janela = globalThis }: OpcoesD
     if (mensagem.tipo === 'pedir') {
       // CA-1432: só o pacote da conta pedida; sem nada dela aqui, "nada" (CB-504).
       const pacote = base === null ? null : pacoteDaConta(base, mensagem.usuarioId)
-      mudanca.entregue = pacote === null ? null : { usuarioId: mensagem.usuarioId, chaves: Object.keys(pacote) }
+      mudanca.entregue = pacote === null ? null : { usuarioId: mensagem.usuarioId, pacote }
       const { codigo, usuarioId } = mensagem
       responder(mudanca, pacote === null ? { tipo: 'nada', codigo, usuarioId } : { tipo: 'dados', codigo, usuarioId, chaves: pacote })
       return
     }
     if (mensagem.tipo === 'recebido' && mudanca.entregue?.usuarioId === mensagem.usuarioId && base !== null) {
-      // CA-1436: a nuvem tem tudo; sai o que foi entregue. Repetir não faz mal (CB-507).
-      apagarEntregue(base, mensagem.usuarioId, mudanca.entregue.chaves)
+      // CA-1436: a nuvem tem tudo; sai o que foi entregue e não mudou desde então. Repetir não faz mal (CB-507).
+      apagarEntregue(base, mensagem.usuarioId, mudanca.entregue.pacote)
       definir('pronto')
     }
   }

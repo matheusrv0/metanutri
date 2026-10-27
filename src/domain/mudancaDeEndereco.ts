@@ -92,13 +92,17 @@ export function pacoteDaConta(base: ArmazenamentoListavel, usuarioId: string): P
 }
 
 /**
- * CA-1436 (o lado do site): o app confirmou que a nuvem tem tudo. Sai o espaço da conta e o dado de antes das contas que
- * foi junto; sem mais nada de antes, o dono também. O tema e o resto ficam. Repetir não faz nada (CB-507).
+ * CA-1436 (o lado do site): o app confirmou que a nuvem tem tudo. Sai o que foi entregue, do espaço da conta e de antes
+ * das contas, e só se ainda for o que foi (DP-SA-60): o que mudou ou apareceu depois fica para a próxima visita. Sem mais
+ * nada de antes, o dono também sai. O tema e o resto ficam. Repetir não faz nada (CB-507).
  */
-export function apagarEntregue(base: ArmazenamentoListavel, usuarioId: string, chaves: readonly string[]): void {
+export function apagarEntregue(base: ArmazenamentoListavel, usuarioId: string, entregue: Pacote): void {
   try {
-    armazenamentoDaConta(base, usuarioId).clear()
-    for (const chave of chaves) if (ehDeAntesDasContas(chave)) base.removeItem(chave)
+    const prefixo = prefixoDaConta(usuarioId)
+    for (const [chave, valor] of Object.entries(entregue)) {
+      const daEntrega = (chave.startsWith(prefixo) && chave.length > prefixo.length) || ehDeAntesDasContas(chave)
+      if (daEntrega && base.getItem(chave) === valor) base.removeItem(chave)
+    }
     const dono = base.getItem(CHAVE_DONO)
     if (dono !== null && (dono === '' || dono === usuarioId) && chavesSemConta(base).length === 0) base.removeItem(CHAVE_DONO)
   } catch {

@@ -77,7 +77,7 @@ describe('a mudança do endereço antigo (spec separacao-site-app, D-512, D-513 
       const n = enderecoAntigo(null)
       const primeiro = pacoteDaConta(n, 'u2')
       expect(primeiro).toHaveProperty(['metanutri:casos'])
-      apagarEntregue(n, 'u2', Object.keys(primeiro ?? {}))
+      apagarEntregue(n, 'u2', primeiro ?? {})
       const segundo = pacoteDaConta(n, 'u1')
       expect(segundo).not.toHaveProperty(['metanutri:casos'])
       expect(segundo).toHaveProperty(['metanutri:conta:u1:pacientes'])
@@ -87,22 +87,38 @@ describe('a mudança do endereço antigo (spec separacao-site-app, D-512, D-513 
   describe('apagar o que foi entregue (CA-1436, o lado do site)', () => {
     it('CA-1436: sai o espaço da conta e o dado de antes que foi junto; o dono sai quando não sobra nada; o resto fica', () => {
       const n = enderecoAntigo('u1')
-      apagarEntregue(n, 'u1', Object.keys(pacoteDaConta(n, 'u1') ?? {}))
+      apagarEntregue(n, 'u1', pacoteDaConta(n, 'u1') ?? {})
       expect([...n.dados.keys()].sort()).toEqual(['metanutri:conta:u2:nuvem', 'metanutri:conta:u2:pacientes', CHAVE_DO_TEMA, 'sb-qmpl-auth-token'].sort())
     })
 
     it('CB-507: apagar de novo, com o espaço já apagado, não faz nada', () => {
       const n = enderecoAntigo('u1')
-      const chaves = Object.keys(pacoteDaConta(n, 'u1') ?? {})
-      apagarEntregue(n, 'u1', chaves)
+      const entregue = pacoteDaConta(n, 'u1') ?? {}
+      apagarEntregue(n, 'u1', entregue)
       const depois = new Map(n.dados)
-      apagarEntregue(n, 'u1', chaves)
+      apagarEntregue(n, 'u1', entregue)
       expect(n.dados).toEqual(depois)
+    })
+
+    it('R12 (DP-SA-60): o que mudou ou apareceu depois da entrega fica, e o dono também, com dado de antes que ficou', () => {
+      const n = enderecoAntigo('u1')
+      const entregue = pacoteDaConta(n, 'u1') ?? {}
+      n.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1","nome":"Ana"},{"id":"p2","nome":"Davi"}]')
+      n.setItem('metanutri:conta:u1:modelos', '[{"id":"m1"}]')
+      n.setItem('metanutri:casos', '["c1","c2"]')
+      apagarEntregue(n, 'u1', entregue)
+      expect(n.getItem('metanutri:conta:u1:nuvem')).toBeNull()
+      expect(n.getItem('metanutri:caso:c1')).toBeNull()
+      expect(n.getItem('metanutri:conta:u1:pacientes')).toBe('[{"id":"p1","nome":"Ana"},{"id":"p2","nome":"Davi"}]')
+      expect(n.getItem('metanutri:conta:u1:modelos')).toBe('[{"id":"m1"}]')
+      expect(n.getItem('metanutri:casos')).toBe('["c1","c2"]')
+      expect(n.getItem(CHAVE_DONO)).toBe('u1')
+      expect(n.getItem(CHAVE_DO_TEMA)).toBe('escuro')
     })
 
     it('o dado de antes das contas que não foi junto, nem o dono dele, não sai', () => {
       const n = enderecoAntigo('u1')
-      apagarEntregue(n, 'u2', Object.keys(pacoteDaConta(n, 'u2') ?? {}))
+      apagarEntregue(n, 'u2', pacoteDaConta(n, 'u2') ?? {})
       expect(n.getItem('metanutri:casos')).toBe('["c1"]')
       expect(n.getItem(CHAVE_DONO)).toBe('u1')
       expect(n.getItem('metanutri:conta:u2:pacientes')).toBeNull()
