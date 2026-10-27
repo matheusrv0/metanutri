@@ -248,7 +248,8 @@ Da revisão independente da P2 (27/10/2026), uma tarefa cada (R9 a R15):
   `npm run publicar:app` e o `npm run check` com o 22.23.4 pelo `npx -p node@22.23.4`, sem instalar nada no projeto.
 - **DP-SA-63 · No iPhone, o ícone antigo pode abrir o "Continuar" sem `window.opener` (R15).** No modo instalado do iOS,
   a aba nova pode não ter a ligação com a do site: o app não espera (DP-SA-40), abre com a nuvem e o dado fica no
-  endereço antigo, sem perda. O roteiro do dono ganha esse teste (README, passo 9).
+  endereço antigo, sem perda. O roteiro do dono ganha esse teste (README, passo 11: o ícone antigo só abre o site novo
+  depois que ele vai ao ar).
 
 ## 1. Tarefas
 
@@ -512,7 +513,7 @@ Cada uma com o teste que falha antes e um commit, no ramo `separacao-p2`; o `sep
 - [ ] **R13 · O manifesto sem frase de venda.** `src/seo/pluginAlvo.ts` e `.test.ts` (DP-SA-61). Verifica: CA-1421.
 - [ ] **R14 · Node exato.** `.node-version` e `src/data/sqlCheckout.test.ts` (o teste que já lê a publicação confere a
   versão exata e mínima; DP-SA-62).
-- [ ] **R15 · O iPhone com o ícone antigo no roteiro do dono.** `README.md` (passo 9 da "Ordem para publicar a P2 e a P3";
+- [ ] **R15 · O iPhone com o ícone antigo no roteiro do dono.** `README.md` (passo 11 da "Ordem para publicar a P2 e a P3";
   DP-SA-63). Sem teste automático.
 
 ### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
