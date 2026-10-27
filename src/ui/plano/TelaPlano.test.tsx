@@ -307,6 +307,8 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     await usuario.type(entradaDoAlmoco(), '100 feijao carioca cozido{Enter}')
     await usuario.selectOptions(almoco().getByRole('combobox', { name: 'Medida de Feijão, carioca, cozido' }), '+ Nova medida…')
     const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    // CA-1371 (D-505): no alimento da base, a medida é da conta.
+    expect(janela.getByText('Feijão, carioca, cozido. A medida fica salva na sua conta e aparece primeiro, marcada “sua”.')).toBeInTheDocument()
     await usuario.type(janela.getByLabelText('Nome da medida'), 'cumbuca da casa')
     await usuario.type(janela.getByLabelText('Peso'), '180')
     await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))
@@ -353,6 +355,8 @@ describe('"+ Nova medida…" na linha do plano (spec alimentos-e-gramaturas, D-3
     expect(almoco().getByText(/^Sem medida caseira cadastrada\. Crie a sua\.$/)).toBeInTheDocument()
     await usuario.selectOptions(almoco().getByRole('combobox', { name: 'Medida de Granola' }), '+ Nova medida…')
     const janela = within(screen.getByRole('dialog', { name: 'Nova medida' }))
+    // CA-1371 (D-505): no alimento próprio, a frase diz onde a medida fica.
+    expect(janela.getByText('Granola. A medida fica no cadastro deste alimento, em Meus alimentos.')).toBeInTheDocument()
     await usuario.type(janela.getByLabelText('Nome da medida'), 'xícara de chá')
     await usuario.type(janela.getByLabelText('Peso'), '80')
     await usuario.click(janela.getByRole('button', { name: 'Salvar medida' }))

@@ -137,6 +137,8 @@ export function TelaPlano({
         alimento={alimentoDaMedida}
         unidade={unidadeDo(alimentoDaMedida ?? undefined)}
         nomeInicial={novaMedida?.nome ?? ''}
+        // D-505: o alimento próprio guarda a medida no cadastro dele (publicação 2), e a frase diz isso.
+        noCadastroDoAlimento={novaMedida !== null && novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO && MEUS_ALIMENTOS_NOVOS}
         aoSalvar={salvarMedida}
         aoFechar={() => setNovaMedida(null)}
       />
