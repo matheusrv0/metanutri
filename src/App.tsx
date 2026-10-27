@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { CONTATO_EMAIL } from './domain/legal.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { AreaDeTrabalho } from './ui/AreaDeTrabalho.tsx'
@@ -12,10 +12,10 @@ import { useConta, type ResultadoConfirmacao, type ValorConta } from './ui/estad
 import { useNegocio } from './ui/estado/usarNegocio.ts'
 import { useSegundoFator } from './ui/estado/usarSegundoFator.ts'
 import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
-import { usePerfilConta } from './ui/estado/usarPerfilConta.ts'
+import { usePerfilConta, type ValorPerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './ui/fluxoConta.ts'
-import { ehEnderecoDaRaiz, ehRotaLivre, escreverRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { ehEnderecoDaRaiz, ehRotaLivre, escreverRota, lerRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
 import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
 import { AvisoContaExcluida } from './ui/publico/AvisoContaExcluida.tsx'
@@ -37,6 +37,12 @@ import { TelaFontes } from './ui/publico/TelaFontes.tsx'
 import { TelaTermos } from './ui/publico/TelaTermos.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { Redirecionar } from './ui/Redirecionar.tsx'
+import { AvisoDeInatividade } from './ui/sessao/AvisoDeInatividade.tsx'
+import { CapaEncerrando } from './ui/sessao/CapaEncerrando.tsx'
+import { ContextoEnvios } from './ui/sessao/contextoEnvios.ts'
+import { ContextoFimDaSessao } from './ui/sessao/contextoSessao.ts'
+import { lerSaida } from './ui/sessao/motivoDaSaida.ts'
+import { useTempoDeSessao } from './ui/sessao/usarTempoDeSessao.ts'
 import { useRota } from './ui/usarRota.ts'
 
 const ROTA_CODIGO: Rota = { tela: 'confirmar-email' }
@@ -46,11 +52,13 @@ interface ConteudoProps {
   readonly conta: ValorConta
   /** A conta cujos dados aparecem; `null` sem sessão ou sem servidor de conta. */
   readonly usuarioId: string | null
+  /** Lido em `ContaComTempo`, que também precisa dele (spec separacao-site-app, DP-SA-21). */
+  readonly perfilConta: ValorPerfilConta
 }
 
 const ROTA_PAINEL: Rota = { tela: 'painel' }
 
-function Conteudo({ conta, usuarioId }: ConteudoProps) {
+function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
   const [rota, navegar] = useRota()
 
   // DP-15: a conta trocou direto (A → B, sem passar por Entrar) numa tela de trabalho. O endereço
@@ -106,7 +114,6 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   }
 
   // Situação, pedido de estudante e filas do administrador (spec conta-e-verificacao).
-  const perfilConta = usePerfilConta(sessao?.id ?? null)
   const { perfil } = perfilConta
   const pedidoEstudante = usePedidoEstudante(perfil?.situacao === 'estudante' && sessao ? sessao.id : null)
   const aprovacoes = useAprovacoes(perfilConta.ehAdmin)
@@ -173,7 +180,8 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
     if (conta.carregando) return telaCarregando
     if (!sessao) {
       // CA-730: o endereço do site sem caminho abre a landing; só a tela de trabalho pedida pelo endereço pede Entrar.
-      if (ehEnderecoDaRaiz(globalThis.location.hash)) return <Redirecionar para={ROTA_INICIO} navegar={navegar} />
+      // Spec separacao-site-app, DP-SA-20: depois da saída por tempo, abre "Entre de novo" (CA-1450).
+      if (ehEnderecoDaRaiz(globalThis.location.hash) && lerSaida(armazenamentoLocal()) === null) return <Redirecionar para={ROTA_INICIO} navegar={navegar} />
       return (
         <TelaEntrar
           conta={conta}
@@ -406,6 +414,47 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
   return areaDeTrabalho
 }
 
+/** O endereço da página, para o vigia saber se está no link do paciente sem um segundo `useRota` (DP-SA-21). */
+const assinarEndereco = (avisar: () => void): (() => void) => {
+  globalThis.addEventListener('hashchange', avisar)
+  return () => globalThis.removeEventListener('hashchange', avisar)
+}
+const lerEndereco = (): string => globalThis.location.hash
+
+/** D-517, passo 5: depois da saída por tempo, Entrar; recarregar descarta o que ainda estava a caminho, como o "Sair". */
+const irParaEntrar = (): void => {
+  globalThis.location.hash = escreverRota({ tela: 'entrar' })
+  globalThis.location.reload()
+}
+
+/**
+ * Spec separacao-site-app, D-514 a D-517 e DP-SA-21: o vigia da sessão por cima de toda tela da conta. Roda com servidor
+ * e sessão, nunca no link do paciente (CA-1455, CA-1456); o aviso e a capa ficam por cima de qualquer tela (CB-510), e
+ * a faixa e os envios chegam à área de trabalho pelos contextos.
+ */
+function ContaComTempo({ conta, usuarioId }: Omit<ConteudoProps, 'perfilConta'>) {
+  const sessao = conta.sessao
+  const perfilConta = usePerfilConta(sessao?.id ?? null)
+  const noLinkDoPaciente = lerRota(useSyncExternalStore(assinarEndereco, lerEndereco)).tela === 'missoes'
+  const tempo = useTempoDeSessao({
+    ativo: conta.disponivel && sessao !== null && !noLinkDoPaciente,
+    usuarioId: sessao?.id ?? null,
+    // CB-526: administrador com ou sem o código do app.
+    admin: perfilConta.ehAdmin || perfilConta.precisaSegundoFator,
+    sairPorTempo: conta.sairPorTempo,
+    aoSair: irParaEntrar,
+  })
+  return (
+    <ContextoEnvios.Provider value={tempo.envios}>
+      <ContextoFimDaSessao.Provider value={tempo.faixa}>
+        <Conteudo conta={conta} usuarioId={usuarioId} perfilConta={perfilConta} />
+        <AvisoDeInatividade aberto={tempo.aviso} aoContinuar={tempo.continuar} />
+        {tempo.capa ? <CapaEncerrando /> : null}
+      </ContextoFimDaSessao.Provider>
+    </ContextoEnvios.Provider>
+  )
+}
+
 export function App() {
   const conta = useConta()
   // Cada conta tem os próprios dados no aparelho (spec dados-por-conta, D-120), e a nuvem é a fonte
@@ -415,7 +464,7 @@ export function App() {
   return (
     <ProvedorArmazenamento usuarioId={usuarioId}>
       <ProvedorNuvem usuarioId={usuarioId}>
-        <Conteudo conta={conta} usuarioId={usuarioId} />
+        <ContaComTempo conta={conta} usuarioId={usuarioId} />
       </ProvedorNuvem>
     </ProvedorArmazenamento>
   )

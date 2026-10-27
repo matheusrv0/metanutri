@@ -8,6 +8,8 @@ import type { Resultado, ValorConta } from './ui/estado/usarConta.ts'
 import { CHAVE_EMAIL_PENDENTE, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { CHAVE_DESTINO } from './ui/fluxoConta.ts'
 import { contaFalsa } from './ui/publico/conta/contaFalsa.test-utils.ts'
+import { gravarMarca } from './ui/sessao/marcaDeUso.ts'
+import { gravarSaida } from './ui/sessao/motivoDaSaida.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
 const estado = vi.hoisted(() => ({ conta: null as unknown }))
@@ -460,6 +462,115 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     await usuario.click(within(janela).getByRole('button', { name: 'Cancelar assinatura' }))
     expect(cobranca.cancelar).toHaveBeenCalledOnce()
     await waitFor(() => expect(cobranca.recarregar).toHaveBeenCalled())
+  })
+
+  describe('a sessão com tempo no app (spec separacao-site-app, D-514 a D-519)', () => {
+    const MIN = 60_000
+    const HORA = 60 * MIN
+    /** A marca de uso da conta: o último uso e a hora da entrada, há tanto tempo. */
+    const marcar = (conta: string, { usoHa, entradaHa, admin = false }: { usoHa: number; entradaHa: number; admin?: boolean }) =>
+      gravarMarca(localStorage, { conta, uso: Date.now() - usoHa, entrada: Date.now() - entradaHa, admin, desvio: 0 })
+
+    it('CA-1444: perto do limite total, a faixa aparece no topo da área de trabalho, antes do conteúdo da tela', () => {
+      marcar('conta-1', { usoHa: 0, entradaHa: 12 * HORA - 5 * MIN })
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/pacientes'
+      render(tela())
+      const faixa = screen.getByText(/^A sessão termina às \d\d:\d\d\.$/)
+      // No fluxo da página, como o aviso de versão nova: o primeiro bloco do conteúdo, sem cobrir nada.
+      expect(document.getElementById('conteudo')?.firstElementChild).toContainElement(faixa)
+      expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('CA-1440 e CB-510: vencida fora da área de trabalho (no checkout), a capa cobre a tela e a conta sai', async () => {
+      marcar('conta-1', { usoHa: 31 * MIN, entradaHa: HORA })
+      const conta = comSessao('conta-1')
+      estado.conta = conta
+      window.location.hash = '#/assinar/solo/mensal'
+      render(tela())
+      expect(screen.getByRole('dialog', { name: 'Encerrando a sessão…' })).toBeInTheDocument()
+      await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledOnce())
+    })
+
+    it('CA-1455: o link do paciente aberto no navegador da nutricionista nunca é coberto pelo aviso, pela faixa nem pela capa', async () => {
+      marcar('conta-1', { usoHa: 13 * HORA, entradaHa: 13 * HORA })
+      const conta = comSessao('conta-1')
+      estado.conta = conta
+      window.location.hash = '#/missoes/token-do-teste'
+      render(tela())
+      await act(async () => {
+        await new Promise((resolver) => setTimeout(resolver, 20))
+      })
+      expect(screen.queryByRole('dialog', { name: 'Encerrando a sessão…' })).not.toBeInTheDocument()
+      expect(screen.queryByText(/A sessão termina/)).not.toBeInTheDocument()
+      expect(conta.sairPorTempo).not.toHaveBeenCalled()
+    })
+
+    it('CA-1456: sem servidor de conta (modo local), não há tempo de sessão', async () => {
+      marcar('conta-1', { usoHa: 13 * HORA, entradaHa: 13 * HORA })
+      const conta = contaFalsa({ disponivel: false, sessao: { id: 'conta-1', email: 'conta-1@exemplo.com', nome: 'Maria' } })
+      estado.conta = conta
+      window.location.hash = '#/pacientes'
+      render(tela())
+      await act(async () => {
+        await new Promise((resolver) => setTimeout(resolver, 20))
+      })
+      expect(screen.queryByRole('dialog', { name: 'Encerrando a sessão…' })).not.toBeInTheDocument()
+      expect(conta.sairPorTempo).not.toHaveBeenCalled()
+    })
+
+    it('CB-526 e CA-1441: o administrador sai depois de 15 minutos sem uso, mesmo antes de confirmar o código do app', async () => {
+      verificacao.precisaSegundoFator = true
+      marcar('conta-1', { usoHa: 16 * MIN, entradaHa: HORA })
+      const conta = comSessao('conta-1')
+      estado.conta = conta
+      window.location.hash = '#/aprovacoes'
+      render(tela())
+      await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledOnce())
+    })
+
+    it('CA-1457: o administrador que saiu por tempo entra de novo e Aprovações pede o código do app outra vez', async () => {
+      verificacao.ehAdmin = true
+      marcar('conta-1', { usoHa: 16 * MIN, entradaHa: HORA })
+      const conta = comSessao('conta-1')
+      estado.conta = conta
+      window.location.hash = '#/aprovacoes'
+      const { rerender } = render(tela())
+      await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledOnce())
+
+      // A sessão encerrada era a confirmada pelo app (a conta fica sem sessão); a entrada nova começa sem o código.
+      estado.conta = contaFalsa()
+      rerender(tela())
+      verificacao.ehAdmin = false
+      verificacao.precisaSegundoFator = true
+      marcar('conta-1', { usoHa: 0, entradaHa: 0 })
+      // A saída foi para Entrar; a pessoa entra e volta a Aprovações.
+      expect(window.location.hash).toBe('#/entrar')
+      await act(async () => {
+        window.location.hash = '#/aprovacoes'
+        await new Promise((resolver) => setTimeout(resolver, 0))
+      })
+      estado.conta = comSessao('conta-1')
+      rerender(tela())
+      expect(screen.getByRole('heading', { level: 2, name: 'Digite o código do app autenticador' })).toBeInTheDocument()
+    })
+
+    it('DP-SA-20 e CA-1450: depois da saída por tempo, o endereço do site sem caminho abre "Entre de novo", e não a landing', () => {
+      gravarSaida(localStorage, { ate: Date.now() - MIN, pendente: false })
+      window.location.hash = ''
+      render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: 'Entre de novo' })).toBeInTheDocument()
+      expect(screen.getByText(/^Sua sessão terminou\. Tudo até as \d\d:\d\d está salvo\.$/)).toBeInTheDocument()
+    })
+
+    it('CA-1445: a outra aba que saiu deixa o motivo; a tela de trabalho daqui, sem sessão, mostra "Entre de novo"', () => {
+      gravarSaida(localStorage, { ate: Date.now(), pendente: true })
+      window.location.hash = '#/caso/c1/plano'
+      render(tela())
+      expect(screen.getByRole('heading', { level: 1, name: 'Entre de novo' })).toBeInTheDocument()
+      expect(screen.getByText('Sua sessão terminou. Entre para enviar o que ficou neste navegador.')).toBeInTheDocument()
+    })
   })
 
   describe('confirmar o e-mail e trocar a senha por código (spec confirmacao-por-codigo)', () => {

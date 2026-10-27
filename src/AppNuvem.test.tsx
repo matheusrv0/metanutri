@@ -5,6 +5,7 @@ import { nuvemFalsa, type NuvemFalsa } from './domain/nuvemFalsa.test-utils.ts'
 import type { Backup } from './domain/perfil.ts'
 import type { ValorConta } from './ui/estado/usarConta.ts'
 import { contaFalsa } from './ui/publico/conta/contaFalsa.test-utils.ts'
+import { gravarMarca } from './ui/sessao/marcaDeUso.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
 // Os testes de ponta a ponta da spec dados-na-nuvem: o App inteiro, com a tabela `copias` de mentira.
@@ -245,4 +246,43 @@ describe('sem internet e cópia grande demais (D-130, CB-123)', () => {
     expect(screen.getByText('Seus dados passaram de 5 MB, o limite da conta. Exclua o que não usa mais para voltar a salvar.')).toBeInTheDocument()
     expect(screen.queryByText('Salvo')).not.toBeInTheDocument()
   })
+})
+
+describe('a saída por tempo com a nuvem (spec separacao-site-app, D-517)', () => {
+  const MIN = 60_000
+  /** A sessão de conta-a passou dos 30 minutos sem uso; a aba volta a ficar visível (CA-1458). */
+  const vencerAoVoltar = () => {
+    gravarMarca(localStorage, { conta: 'conta-a', uso: Date.now() - 31 * MIN, entrada: Date.now() - 60 * MIN, admin: false, desvio: 0 })
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+  }
+
+  it('CA-1447: com a nuvem em dia, a capa cobre a tela, o motor para e a conta sai apagando o espaço', async () => {
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima')]) }), '2026-10-07T00:00:00.000Z')
+    const conta = comSessao()
+    estado.conta = conta
+    render(tela())
+    expect(await screen.findByText('Ana Lima')).toBeInTheDocument()
+    vencerAoVoltar()
+    // A volta para a aba também confere a nuvem ("Atualizando…", CB-127); a capa da saída vem junto.
+    expect(screen.getByText('Encerrando a sessão…')).toBeInTheDocument()
+    await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledWith({ apagar: true, ate: expect.any(Number) }))
+    // O motor parou antes: as outras abas ficam sabendo (DP-11).
+    expect(JSON.parse(localStorage.getItem('metanutri:conta:conta-a:nuvem') ?? '{}')).toMatchObject({ saiu: true })
+  })
+
+  it('CA-1448: sem internet, o que não subiu segura o espaço, e a conta sai mesmo assim', async () => {
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima')]) }), '2026-10-07T00:00:00.000Z')
+    const conta = comSessao()
+    estado.conta = conta
+    render(tela())
+    expect(await screen.findByText('Ana Lima')).toBeInTheDocument()
+    nuvem.semInternet = true
+    const chave = 'metanutri:conta:conta-a:nuvem'
+    const situacao = JSON.parse(localStorage.getItem(chave) ?? '{}') as { mudancas: number }
+    localStorage.setItem(chave, JSON.stringify({ ...situacao, mudancas: situacao.mudancas + 1 }))
+    vencerAoVoltar()
+    await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: expect.any(Number) }), { timeout: 15_000 })
+  }, 20_000)
 })
