@@ -181,6 +181,12 @@ uma diz o porquê.
 - **DP-SA-47 · O site não confere moldura.** O aviso de moldura (D-99) protege a conta e os dados, que agora só existem no
   app, onde ele continua, com o `frame-ancestors 'none'` do cabeçalho (D-507). A vitrine numa moldura não tem o que
   proteger: "Entrar" e os planos abrem o app, que se recusa a abrir dentro dela. O pacote do site fica menor.
+- **DP-SA-48 · Os dois endereços sempre definidos no build.** Quando uma variável `VITE_` lida no código não existe, o Vite
+  troca a leitura pelo objeto inteiro das variáveis, e o pacote do site levava o endereço e a chave do Supabase do
+  `.env.local` (achado ao montar o site, contra o CA-1406). O `pluginAlvo` define `VITE_ENDERECO_DO_APP` e
+  `VITE_ENDERECO_DO_SITE` sempre, nos dois alvos (vazias valem o padrão de produção), e `src/ui/enderecos.ts` as lê pelo
+  nome, sem colchete. O `pluginAlvo.test.ts` monta um pacote com o Supabase no ambiente e confere; o teste de navegador
+  da T29 lê o pacote servido.
 
 ## 1. Tarefas
 
@@ -326,7 +332,8 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   texto do site), `public/preparar-app.js` (novo: só o tema), `package.json` (`build` monta os dois; `build:app`,
   `build:site`, `dev:site`, `preview:site`, `publicar:app` do DP-SA-31), `.gitignore` (`dist-site/`),
   `src/seo/arquivosDoSite.test.ts` (o que vai em cada pasta), `src/seo/cabecalho.test.ts`, `src/seo/montarPagina.ts` e
-  `.test.ts` (o `data-rota` entra no `<html>` que já tem o `data-app`, DP-SA-46). Depende de: T15, T16 (antes
+  `.test.ts` (o `data-rota` entra no `<html>` que já tem o `data-app`, DP-SA-46), `src/ui/enderecos.ts` (a leitura das
+  variáveis pelo nome, DP-SA-48). Depende de: T15, T16 (antes
   da T17, DP-SA-29). Verifica: CA-1418 (a cabeça do app, pelo plugin), CA-1408 (o pré-desenho continua no site).
 - [ ] **T19 · O `<head>` do site.** `public/preparar-pagina.js` (o tema; `#/missoes/…` vai ao app na hora; `#/inicio`,
   `#/precos[/<plano>]`, `#/termos`, `#/privacidade` e `#/fontes` vão à página própria; tela do app, `?volta=` e modo
