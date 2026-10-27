@@ -322,28 +322,28 @@ teste que falha antes.
   cópia pode deixar a situação com mudança nova no fim da saída.
 
 Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
-- [ ] **R4 · A recarga da saída não pergunta.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (`parada`),
+- [x] **R4 · A recarga da saída não pergunta.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (`parada`),
   `src/ui/estado/ProvedorNuvem.tsx` e `src/ui/estado/ProvedorNuvem.test.tsx` (o `beforeunload` com o motor parado não
   avisa). Verifica: R4.
-- [ ] **R8 · Os links antes da cópia.** `src/ui/sessao/usarTempoDeSessao.ts` e `usarTempoDeSessao.test.tsx`. Verifica: R8
+- [x] **R8 · Os links antes da cópia.** `src/ui/sessao/usarTempoDeSessao.ts` e `usarTempoDeSessao.test.tsx`. Verifica: R8
   e CA-1447 (a ordem).
 - **R6** fica registrada, sem código (DP-SA-45).
 
 ### P2 · App no endereço novo, site com os repasses e a mudança dos dados
 
-- [ ] **T14 · Spec: notas da P2.** `specs/estilo-spora/SPEC.md` (CA-730), `specs/site-publico-profissional/SPEC.md`
+- [x] **T14 · Spec: notas da P2.** `specs/estilo-spora/SPEC.md` (CA-730), `specs/site-publico-profissional/SPEC.md`
   (D-320, D-331, D-332, D-337, D-338, D-339, CA-992, CA-996, CA-1015, CA-1016, CA-1021, CA-1023 a CA-1026, CA-1028,
   CB-322, CB-323, R-323, R-324), `specs/seguranca-lote-1/SPEC.md` (D-99, CA-431), `specs/seguranca-lote-4/SPEC.md`
   (D-135, CA-485). Depende de: P1 no ar. Verifica: leitura.
-- [ ] **T15 · Endereços.** `src/ui/enderecos.ts` e `.test.ts` (DP-SA-3; `paginaDoSite(rota, destaque?)`,
+- [x] **T15 · Endereços.** `src/ui/enderecos.ts` e `.test.ts` (DP-SA-3; `paginaDoSite(rota, destaque?)`,
   `telaNoApp(hash, busca)` e `enderecoOficial(local)` para o `*.pages.dev`), `src/vite-env.d.ts` (tipos das duas
   variáveis), `src/ui/moldura.ts`, `src/ui/AvisoMoldura.tsx` e `src/ui/AvisoMoldura.test.tsx` (o link do aviso é o app).
   Depende de: T14. Verifica: CA-1420; os padrões de produção; a regra do CA-1417.
-- [ ] **T16 · CSP por alvo e cabeçalhos do app.** `src/seguranca/csp.ts` (`diretivasDoSite()`; `cabecalhosDoApp()`, o
+- [x] **T16 · CSP por alvo e cabeçalhos do app.** `src/seguranca/csp.ts` (`diretivasDoSite()`; `cabecalhosDoApp()`, o
   texto do `_headers` com o D-507), `src/seguranca/pluginCsp.ts` (recebe o alvo; no site, a política do site; no app, a
   de hoje e o `_headers`, DP-SA-16), `src/seguranca/csp.test.ts`, `src/seguranca/pluginCsp.test.ts`. Depende de: T14.
   Verifica: CA-1406 (a CSP), CA-1419 (o texto dos cabeçalhos).
-- [ ] **T17 · Os links das páginas do site.** ~~`src/site/PaginaDoSite.tsx` e `.test.tsx` (novos: a moldura com a tela
+- [x] **T17 · Os links das páginas do site.** ~~`src/site/PaginaDoSite.tsx` e `.test.tsx` (novos: a moldura com a tela
   da página, os links do D-501 e do D-503)~~ (nascem na T18, DP-SA-30; aqui ganham os links do D-501 e do D-503),
   `src/ui/publico/MolduraPublica.tsx` (sem `temSessao`, `abriuNaVitrine` e `recarregar`;
   links de verdade entre as páginas; "Entrar" e "Começar grátis" para o app; o rodapé sem "Ir para o painel"),
@@ -355,7 +355,10 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `src/ui/publico/MolduraPublica.test.tsx`, `src/ui/publico/TelaInicio.test.tsx`, `src/ui/publico/SecaoPrecos.test.tsx`,
   `src/seo/vitrine.test.tsx`, `src/site/main.tsx` (o destaque da consulta). Depende de: T15, T18. Verifica: CA-1402,
   CA-1403, CA-1404.
-- [ ] **T18 · A entrada do site e os dois builds.** `src/site/main.tsx` (novo: monta a `PaginaDoSite` da `data-rota`),
+  *Feita: `SecaoPrecos.tsx` e `.test.tsx` não precisaram mudar. O destaque já vinha por propriedade (a `PaginaDoSite`
+  passa o da consulta) e os botões dos planos chamam `aoEscolher`, que a `PaginaDoSite` leva ao app ou a "Continuar".
+  Os planos continuam botões: o Ctrl+clique do DP-SA-36 vale para os links (Entrar, Começar grátis e o botão fixo).*
+- [x] **T18 · A entrada do site e os dois builds.** `src/site/main.tsx` (novo: monta a `PaginaDoSite` da `data-rota`),
   `src/site/PaginaDoSite.tsx` e `.test.tsx` (novos, DP-SA-30: a moldura com a tela da rota; as páginas e o app pelos
   endereços de verdade), `src/seo/vitrine.tsx` (desenha a `PaginaDoSite`),
   `src/seo/pluginAlvo.ts` e `.test.ts` (novos, DP-SA-2), `vite.config.ts` (DP-SA-1: no site, `dist-site`, `pluginSeo`,
@@ -366,11 +369,11 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `.test.ts` (o `data-rota` entra no `<html>` que já tem o `data-app`, DP-SA-46), `src/ui/enderecos.ts` (a leitura das
   variáveis pelo nome, DP-SA-48). Depende de: T15, T16 (antes
   da T17, DP-SA-29). Verifica: CA-1418 (a cabeça do app, pelo plugin), CA-1408 (o pré-desenho continua no site).
-- [ ] **T19 · O `<head>` do site.** `public/preparar-pagina.js` (o tema; `#/missoes/…` vai ao app na hora; `#/inicio`,
+- [x] **T19 · O `<head>` do site.** `public/preparar-pagina.js` (o tema; `#/missoes/…` vai ao app na hora; `#/inicio`,
   `#/precos[/<plano>]`, `#/termos`, `#/privacidade` e `#/fontes` vão à página própria; tela do app, `?volta=` e modo
   instalado escondem a vitrine e deixam a decisão para o pacote; não procura mais sessão),
   `src/seo/prepararPagina.test.tsx`. Depende de: T18. Verifica: CA-1405, CA-1423, CB-511, CB-512.
-- [ ] **T20 · As rotas do app.** `src/App.tsx` (raiz sem sessão vai a Entrar; `inicio`, `precos`, `termos`,
+- [x] **T20 · As rotas do app.** `src/App.tsx` (raiz sem sessão vai a Entrar; `inicio`, `precos`, `termos`,
   `privacidade` e `fontes` vão à página do site com `location.replace`; Criar conta com sessão vai a `destinoDoPlano`;
   depois do "Sair", Entrar), `src/ui/navegacao.ts` (`TELAS_DO_SITE` e `enderecoNoSite`), `src/ui/enderecos.ts` e `.test.ts`
   (`sairParaOSite`, DP-SA-50), `src/main.tsx` (saem `enderecoDoApp`,
@@ -383,17 +386,22 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `src/AppConta.test.tsx`, `src/ui/navegacao.test.ts`, `src/ui/telasComServidor.test.tsx`,
   `src/ui/publico/conta/TelaEntrar.test.tsx`, `src/ui/estado/usarConta.test.ts` (o endereço de volta sai da origem do
   app). Depende de: T15, T18. Verifica: CA-1409, CA-1410, CA-1411, CA-1412, CA-1413, CA-1415, CA-1417, CA-1463.
-- [ ] **T21 · Links do app para o site.** `src/ui/AreaDeTrabalho.tsx` (Fontes, nas duas telas que a abrem, em aba nova;
+  *Feita. `src/ui/telasComServidor.test.tsx` não precisou mudar. O teste de navegador da T29 achou o aviso de conta
+  excluída abaixo do título; o DP-SA-49 o quer no topo: `MolduraConta.tsx` ganhou o lugar do aviso, antes do título
+  (commit próprio, com o teste antes).*
+- [x] **T21 · Links do app para o site.** `src/ui/AreaDeTrabalho.tsx` (Fontes, nas duas telas que a abrem, em aba nova;
   "Ver preços" vai a Preços do site), `src/ui/fluxoConta.ts` e `src/ui/fluxoConta.test.ts` (o aviso de limite leva a
   Preços do site com o plano seguinte), `src/ui/publico/conta/TelaCriarConta.tsx` e
   `src/ui/publico/conta/TelaCriarConta.test.tsx` (Termos e Política no site, em aba nova; "Trocar plano" vai a Preços
   do site), `src/ui/publico/TelaCheckout.tsx` e `src/ui/publico/TelaCheckout.test.tsx` (o link dos Termos). Depende de:
   T20. Verifica: CA-1412 (o destaque), CA-1414.
-- [ ] **T22 · A mudança (pura).** `src/domain/mudancaDeEndereco.ts` e `.test.ts`: o pacote de uma conta (o espaço, o
+  *Feita: `src/ui/fluxoConta.ts` e `.test.ts` não precisaram mudar. O aviso de limite já dava a rota de Preços com o
+  plano seguinte, e o app manda essa rota ao site com o destaque (T20).*
+- [x] **T22 · A mudança (pura).** `src/domain/mudancaDeEndereco.ts` e `.test.ts`: o pacote de uma conta (o espaço, o
   dado sem conta dela ou sem dono, o tema), a leitura de mensagem (DP-SA-12), como receber (`gravar`, `trocar` ou
   `depois`, pelo T4 com retidos), gravar o pacote (desfaz tudo se não couber) e apagar do site o que foi entregue.
   Depende de: T4. Verifica: CA-1432, CA-1433, CA-1434, CA-1435 e CA-1438 (as regras), CB-501, CB-502, CB-504, CB-520.
-- [ ] **T23 · Limpeza e remetente no site.** `src/site/limpeza.ts` e `.test.ts` (em toda visita, apaga toda
+- [x] **T23 · Limpeza e remetente no site.** `src/site/limpeza.ts` e `.test.ts` (em toda visita, apaga toda
   `sb-*-auth-token` e as contas em dia; diz se sobrou dado só aqui), `src/site/remetente.ts` e `.test.ts` (abre o app em
   aba nova sem `noopener`; responde ao pedido; apaga no `recebido`), `src/site/TelaContinuar.tsx` e `.test.tsx` (os
   quatro estados do D-526, só com o botão "Continuar"), `src/site/Site.tsx` e `.test.tsx` (novos, DP-SA-53),
@@ -402,21 +410,21 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   modo instalado abrem "Continuar", D-527; o modo instalado leva a marca do D-524, também na aba do "Continuar").
   Depende de: T18, T19, T22. Verifica: CA-1401, CA-1424, CA-1425, CA-1427, CA-1428, CA-1429, CA-1430, CA-1436 (o lado do site), CB-500, CB-503,
   CB-507, CB-513 (a volta antiga do pagamento), CB-519.
-- [ ] **T24 · O receptor no app.** `src/ui/navegacao.ts` e `src/ui/navegacao.test.ts` (a rota `mudanca/<código>`, que
+- [x] **T24 · O receptor no app.** `src/ui/navegacao.ts` e `src/ui/navegacao.test.ts` (a rota `mudanca/<código>`, que
   pede sessão), `src/ui/mudanca/usarMudanca.ts` e `.test.ts` (pede ao `window.opener`; espera 10 s; grava pelo T22;
   confirma quando a nuvem tem tudo, D-513), `src/ui/mudanca/TelaTrazendoDados.tsx` ("Trazendo seus dados…" e "Sem
   espaço neste navegador", D-526), `src/App.tsx` (DP-SA-11; no fim, o Painel), `src/AppNuvem.test.tsx`. Depende de:
   T20, T22. Verifica: CA-1431, CA-1433, CA-1434, CA-1435, CA-1436 (o lado do app), CA-1437, CA-1439, CB-505.
-- [ ] **T25 · O aviso do ícone antigo.** `src/ui/aplicativo/AvisoIconeAntigo.tsx` e `.test.tsx` (novos, textos do
+- [x] **T25 · O aviso do ícone antigo.** `src/ui/aplicativo/AvisoIconeAntigo.tsx` e `.test.tsx` (novos, textos do
   D-526), `src/ui/layout/Estrutura.tsx` (mostra uma vez e tira a marca do endereço). Depende de: T20, T23. Verifica: CA-1426.
-- [ ] **T26 · O aplicativo instalado.** `vite.config.ts` (DP-SA-13 no site; DP-SA-14 no app), `src/seo/pluginAlvo.ts` (a configuração do PWA de cada
+- [x] **T26 · O aplicativo instalado.** `vite.config.ts` (DP-SA-13 no site; DP-SA-14 no app), `src/seo/pluginAlvo.ts` (a configuração do PWA de cada
   alvo sai do `vite.config.ts` para uma função que o teste lê), `src/seo/pluginAlvo.test.ts`
   (confere a configuração do PWA de cada alvo e monta o site com ela). Depende de: T18. Verifica: CA-1407 (a configuração), CA-1421.
-- [ ] **T27 · Política, termos e `llms.txt`.** `src/ui/publico/TelaPrivacidade.tsx` (D-522), `src/domain/legal.ts`
+- [x] **T27 · Política, termos e `llms.txt`.** `src/ui/publico/TelaPrivacidade.tsx` (D-522), `src/domain/legal.ts`
   (versão e data = o dia da P2; publicando em outro dia, troca as duas e o teste), `src/domain/legal.test.ts`,
   `src/ui/publico/legal.test.tsx`, `public/llms.txt` (a linha do Entrar), `src/seo/arquivosDoSite.test.ts` (CA-1019 e
   a linha do Entrar). Depende de: T14. Verifica: CA-1408 (o `llms.txt`), CA-1462.
-- [ ] **T28 · A publicação.** `.github/workflows/publicar.yml` (só o site: `npm run build:site` e `dist-site`; saem do
+- [x] **T28 · A publicação.** `.github/workflows/publicar.yml` (só o site: `npm run build:site` e `dist-site`; saem do
   build as chaves do Supabase, do Mercado Pago e do Turnstile), `README.md` ("Projeto já ligado", passos 1, 4 e 8, com
   os endereços novos; seção "Ordem para publicar a P2 e a P3", com os passos do dono da seção 4 deste plano: a P3 vem
   logo depois do site da P2, D-528),
@@ -425,7 +433,7 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   liam no `publicar.yml` as chaves do pagamento e da verificação; agora conferem que o site publicado não as leva e que
   o app as recebe da Cloudflare, DP-SA-33). Depende de: T18. Verifica: leitura do
   workflow; `npm run build:site` sem `.env.local` monta e passa no CA-1406.
-- [ ] **T29 · Testes de navegador com duas origens.** `playwright.config.ts` (DP-SA-17: os três servidores; o projeto
+- [x] **T29 · Testes de navegador com duas origens.** `playwright.config.ts` (DP-SA-17: os três servidores; o projeto
   `site`; Firefox e WebKit só para a mudança), `playwright.csp.config.ts` (confere que monta o app),
   `e2e/apoio/servidorFalso.ts` (responde no contexto). As partes de vitrine de `e2e/publico.spec.ts`,
   `e2e/site-publico.spec.ts`, `e2e/textos-e-promessas.spec.ts`, `e2e/servidor-falso/site-publico.spec.ts`,
@@ -445,8 +453,15 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   (de ponta a ponta, nos três navegadores) e `e2e/servidor-falso/app-separado.spec.ts`. Depende de: T15 a T28.
   Verifica, no navegador: CA-1400, CA-1401, CA-1404, CA-1405, CA-1406 (o pacote servido), CA-1408, CA-1409 a CA-1418,
   CA-1422 (`npm run test:csp`), CA-1423 a CA-1425 e CA-1429 a CA-1439.
-- [ ] **T30 · Fechamento da P2.** Rodar `npm run check`, `npm run e2e` e `npm run test:csp`; conferir a matriz; anotar no
-  relatório qualquer diferença entre o código e a spec. Depende de: T14 a T29.
+- [x] **T30 · Fechamento da P2.** Rodar `npm run check`, `npm run e2e` e `npm run test:csp`; conferir a matriz; anotar no
+  relatório qualquer diferença entre o código e a spec. Depende de: T14 a T29. Também as notas que faltavam nas specs
+  antigas: `specs/exclusao-de-conta/SPEC.md` (CA-808, DP-SA-49) e `specs/landing-v3/SPEC.md` (CA-1656, DP-SA-56).
+  *Feita em 27/10/2026, no ramo `separacao-p2`, sem `.env.local`: `npm run check` (298 arquivos, 5390 testes), `npm run e2e`
+  (352: 129 no app local, 85 no app com o servidor falso, 134 no site e a mudança no Firefox e no WebKit, 2 em cada),
+  `npm run test:csp` (3), `npm run build`, `npm run build:site` e `npm run build:app` passaram. Numa das rodadas do
+  `npm run e2e`, o CA-1442 de `e2e/servidor-falso/sessao.spec.ts` (P1) falhou uma vez, com a máquina cheia; passou em
+  13 repetições seguidas e na rodada inteira de novo. Todo CA da P2 tem teste na matriz. Diferenças entre o código e a
+  spec estão no relatório da P2 (DP-SA-36 nos planos, CA-1656 pelo DP-SA-56, CA-1417, CA-1419 e CA-1407 sem navegador).*
 
 ### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
 
@@ -460,12 +475,12 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
 | Critério | Tarefa | Teste |
 |---|---|---|
 | CA-1400, CA-1401 | T23, T29 | `src/site/limpeza.test.ts`; `e2e/site/repasses.spec.ts` |
-| CA-1402, CA-1403, CA-1404 | T17, T29 | `src/site/PaginaDoSite.test.tsx`, `MolduraPublica.test.tsx`, `SecaoPrecos.test.tsx`; `e2e/site/repasses.spec.ts` |
+| CA-1402, CA-1403, CA-1404 | T17, T29 | `src/site/PaginaDoSite.test.tsx`, `MolduraPublica.test.tsx`, `src/seo/vitrine.test.tsx`; `e2e/site/repasses.spec.ts` (CA-1402, CA-1403), `e2e/site/site-publico.spec.ts` (CA-1404) |
 | CA-1405 | T19, T29 | `src/seo/prepararPagina.test.tsx`; `e2e/site/repasses.spec.ts` |
 | CA-1406 | T16, T18, T29 | `src/seguranca/csp.test.ts`; `e2e/site/repasses.spec.ts` (lê o pacote servido) |
 | CA-1407 | T26 | `src/seo/pluginAlvo.test.ts`; conferência manual do dono (passo P2-12) |
 | CA-1408 | T18, T27 | `src/seo/arquivosDoSite.test.ts`, `src/seo/cabecalho.test.ts`; testes de SEO movidos para `e2e/site/` |
-| CA-1409 a CA-1413, CA-1415 | T20, T29 | `src/App.test.tsx`, `src/AppConta.test.tsx`; `e2e/servidor-falso/app-separado.spec.ts` |
+| CA-1409 a CA-1413, CA-1415 | T20, T29 | `src/App.test.tsx`, `src/AppConta.test.tsx` (CA-1409 a CA-1413); `e2e/servidor-falso/app-separado.spec.ts` (todos) |
 | CA-1414 | T21 | `src/ui/fluxoConta.test.ts`, `TelaCriarConta.test.tsx`, `TelaCheckout.test.tsx`, `src/AppConta.test.tsx` |
 | CA-1416 | T20, T29 | `e2e/servidor-falso/app-separado.spec.ts` (o endereço do link criado) |
 | CA-1417 | T15, T20 | `src/ui/enderecos.test.ts` |
@@ -473,7 +488,7 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
 | CA-1419 | T16 | `src/seguranca/pluginCsp.test.ts`; `curl -I` do dono (passo P2-9) |
 | CA-1420 | T15 | `src/ui/AvisoMoldura.test.tsx` |
 | CA-1421 | T26 | `src/seo/pluginAlvo.test.ts`; os testes do aviso de versão (CA-602) continuam |
-| CA-1422 | T29 | `npm run test:csp` (monta o app) |
+| CA-1422 | T29 | `npm run test:csp` (`e2e-csp/csp-terceiros.spec.ts`, no build do app) |
 | CA-1423 | T19, T29 | `src/seo/prepararPagina.test.tsx`; `e2e/site/repasses.spec.ts` |
 | CA-1424, CA-1425 | T23, T29 | `src/site/limpeza.test.ts`; `e2e/site/repasses.spec.ts` |
 | CA-1426 | T23, T25 | `src/site/limpeza.test.ts`, `AvisoIconeAntigo.test.tsx` |
