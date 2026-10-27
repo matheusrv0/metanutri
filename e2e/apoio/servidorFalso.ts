@@ -2,7 +2,7 @@
 // um endereço do Supabase que não existe (`ENDERECO_FALSO`), e o Playwright responde por ele: nada sai da máquina.
 // Assim dá para abrir, sem banco, as telas que só existem com o servidor ligado: Completar cadastro, Comprovar
 // matrícula, o checkout com sessão, a volta do pagamento e o link do paciente lido da nuvem.
-import type { Page, Route } from '@playwright/test'
+import type { BrowserContext, Page, Route } from '@playwright/test'
 
 export const ENDERECO_FALSO = 'https://falso-e2e.supabase.co'
 /** Só tem o tamanho de uma chave (o site confere o comprimento); não abre nada. */
@@ -92,9 +92,31 @@ export interface ServidorFalso {
 const json = (route: Route, corpo: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) })
 
+/** A linha da conta na tabela `copias`, como o Supabase guarda (spec dados-na-nuvem, D-128). */
+interface LinhaDaCopia {
+  readonly dados: unknown
+  readonly aparelho: unknown
+  readonly atualizado_em: string
+}
+
+/**
+ * A nuvem de cada navegador do teste: as abas do mesmo contexto dividem a mesma linha, como dividiriam o mesmo banco.
+ * Sem guardar a cópia, cada conferência de 60 s achava a nuvem vazia e o app anotava a versão como nula, o que nunca
+ * acontece com o Supabase depois do primeiro envio (correção do CA-1442).
+ */
+const nuvens = new WeakMap<BrowserContext, { copia: LinhaDaCopia | null }>()
+
+const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
+  const linha: unknown = Array.isArray(valor) ? valor[0] : valor
+  return typeof linha === 'object' && linha !== null ? (linha as Record<string, unknown>) : {}
+}
+
 /** Liga o servidor falso numa página, antes do `goto`. */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
   const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], semRede: false }
+  const contexto = pagina.context()
+  const nuvem = nuvens.get(contexto) ?? { copia: null }
+  nuvens.set(contexto, nuvem)
   if (cenario.sessao) {
     await pagina.addInitScript(
       ([chave, valor]) => {
@@ -140,7 +162,27 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
     if (caminho === '/rest/v1/rpc/eh_admin') return json(route, false)
     if (caminho.startsWith('/rest/v1/rpc/')) return json(route, null)
 
-    if (caminho === '/rest/v1/copias' && pedido.method() !== 'GET') servidor.gravacoesDaCopia.push(pedido.postDataJSON())
+    if (caminho === '/rest/v1/copias') {
+      // Como o PostgREST: o insert recusa a linha repetida (23505); o update só grava com a versão certa e devolve a
+      // linha gravada; a leitura devolve a linha guardada.
+      const { copia } = nuvem
+      if (pedido.method() === 'GET') {
+        if (copia === null) return json(route, [])
+        return json(route, [url.searchParams.get('select') === 'atualizado_em' ? { atualizado_em: copia.atualizado_em } : { dados: copia.dados, atualizado_em: copia.atualizado_em }])
+      }
+      const corpo = corpoDoPedido(pedido.postDataJSON())
+      servidor.gravacoesDaCopia.push(corpo)
+      const nova: LinhaDaCopia = { dados: corpo['dados'], aparelho: corpo['aparelho'], atualizado_em: String(corpo['atualizado_em']) }
+      if (pedido.method() === 'POST') {
+        if (copia !== null) return json(route, { code: '23505', message: 'duplicate key value violates unique constraint "copias_pkey"' }, 409)
+        nuvem.copia = nova
+        return json(route, [{ atualizado_em: nova.atualizado_em }], 201)
+      }
+      const versao = url.searchParams.get('atualizado_em')?.replace(/^eq\./, '')
+      if (copia === null || copia.atualizado_em !== versao) return json(route, [])
+      nuvem.copia = nova
+      return json(route, [{ atualizado_em: nova.atualizado_em }])
+    }
     if (pedido.method() !== 'GET') return json(route, [], 201)
     if (caminho === '/rest/v1/perfis') return json(route, cenario.perfil ? [cenario.perfil] : [])
     if (caminho === '/rest/v1/assinaturas') return json(route, cenario.assinatura ? [cenario.assinatura] : [])
