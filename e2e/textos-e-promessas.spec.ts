@@ -21,8 +21,8 @@ test.describe('CA-1198: landing e Preços com o texto novo, em 390 e 1280 px, cl
         await page.setViewportSize({ width: largura, height: 844 })
         const erros = await vigiarConsole(page)
         await abrir(page, '/#/inicio', tema)
-        // Spec landing-escura (CA-1454, CA-1477 e CA-1480): o texto da landing nova, nos dois temas do app.
-        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?\s*1 copo de iogurte\./)
+        // Spec landing-escura (CA-1477 e CA-1480) e spec landing-v3 (CA-1600): o texto da landing, nos dois temas do app.
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?\s*150 g de iogurte\./)
         await expect(page.getByText(/^Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral/)).toBeVisible()
         await expect(page.getByRole('textbox', { name: 'Digite o nutriente que falta' })).toHaveValue('falta cálcio')
         const precos = page.getByRole('region', { name: 'Quanto custa' })
