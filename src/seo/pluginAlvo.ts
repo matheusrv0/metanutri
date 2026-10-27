@@ -93,9 +93,9 @@ export function opcoesDoAplicativo(alvo: AlvoDoBuild, cores: CoresDoAplicativo):
     manifest: {
       // DP-SA-14: a identidade do aplicativo instalado é a raiz do endereço do app (D-508).
       id: '/',
-      name: 'MetaNutri — nutrição que diz o que comer',
+      // DP-SA-61: só o nome, sem frase de venda nem descrição (sem tagline, regra do dono).
+      name: 'MetaNutri',
       short_name: 'MetaNutri',
-      description: 'Software de nutrição que diz o que comer: adequação de micronutrientes com o botão cobrir, macros ao vivo e missões para o paciente.',
       lang: 'pt-BR',
       start_url: './',
       scope: './',

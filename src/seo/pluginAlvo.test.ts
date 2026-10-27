@@ -179,4 +179,10 @@ describe('o aplicativo instalado de cada alvo (spec separacao-site-app, DP-SA-13
     expect(doApp.registerType).toBe('autoUpdate')
     expect(doApp.manifest).toMatchObject({ id: '/', start_url: './', scope: './', display: 'standalone', background_color: 'cor-do-fundo', theme_color: 'cor-do-tema' })
   })
+
+  it('R13 (DP-SA-61): o manifesto do app se chama só MetaNutri, sem frase de venda nem descrição', () => {
+    const manifesto = opcoesDoAplicativo('app', CORES).manifest
+    expect(manifesto).toMatchObject({ name: 'MetaNutri', short_name: 'MetaNutri' })
+    expect(manifesto).not.toHaveProperty('description')
+  })
 })
