@@ -14,15 +14,23 @@ export function navegarPeloApp(evento: MouseEvent<HTMLAnchorElement>, ir: () => 
   ir()
 }
 
+/** Suave com movimento; na hora (`auto`, o CSS desliga a rolagem suave) com menos movimento (revisão da landing v9). */
+const comportamentoDaRolagem = (): ScrollBehavior =>
+  globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true ? 'auto' : 'smooth'
+
 /** Rola até a seção da página, se ela existir: suave, ou na hora com menos movimento (revisão da landing v9). */
 export function rolarAte(id: string) {
-  const semMovimento = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
-  globalThis.document.getElementById(id)?.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: 'start' })
+  globalThis.document.getElementById(id)?.scrollIntoView({ behavior: comportamentoDaRolagem(), block: 'start' })
 }
 
-/** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */
+/** Volta ao alto da página pela mesma regra (spec landing-v3, D-688). */
+export function rolarAoTopo() {
+  globalThis.scrollTo?.({ top: 0, behavior: comportamentoDaRolagem() })
+}
+
+/** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar; sem âncora, volta ao alto. */
 export function irComAncora(aoIrPara: (d: DestinoPublico) => void, destino: DestinoPublico, ancora?: string) {
   aoIrPara(destino)
-  if (!ancora) return globalThis.scrollTo?.({ top: 0 })
+  if (!ancora) return rolarAoTopo()
   globalThis.setTimeout(() => rolarAte(ancora), 60)
 }

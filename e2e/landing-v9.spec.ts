@@ -86,6 +86,24 @@ async function contrasteAtrasDoTitulo(pagina: Page): Promise<{ readonly pior: nu
   return medida
 }
 
+/**
+ * D-688: guarda o `behavior` de cada `window.scrollTo` da página daqui em diante. O Chromium sem janela dos testes não
+ * anima a rolagem suave (ela chega na hora, com ou sem movimento), então o e2e confere o pedido que a página faz.
+ */
+async function vigiarRolagem(pagina: Page): Promise<() => Promise<string[]>> {
+  await pagina.evaluate(() => {
+    const original = window.scrollTo.bind(window)
+    const pedidos: string[] = []
+    Object.assign(window, { pedidosDeRolagem: pedidos })
+    window.scrollTo = ((opcoes?: ScrollToOptions | number, y?: number) => {
+      if (typeof opcoes === 'number') return original(opcoes, y ?? 0)
+      pedidos.push(opcoes?.behavior ?? 'auto')
+      original(opcoes)
+    }) as typeof window.scrollTo
+  })
+  return () => pagina.evaluate(() => (window as Window & { pedidosDeRolagem?: string[] }).pedidosDeRolagem ?? [])
+}
+
 /** A transformação calculada do traço aceso de "Como funciona" (o `::after` da lista). */
 const linhaAcesa = (pagina: Page) => pagina.locator('.landing-etapas').evaluate((el) => getComputedStyle(el, '::after').transform)
 
@@ -260,6 +278,20 @@ test.describe('com menos movimento', () => {
     await expect(page.locator('[data-botao-fixo]')).toBeHidden()
   })
 
+  test('CA-1695: com menos movimento, "Voltar ao topo" chega ao alto na hora e leva o foco para a logo', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await abrir(page)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000)
+    const pedidos = await vigiarRolagem(page)
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Voltar ao topo' }).click()
+    // Sem pedir rolagem suave: com menos movimento, o `auto` da página não anima.
+    expect(await pedidos()).toEqual(['auto'])
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe('auto')
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
+    await expect(page.getByRole('banner').getByRole('link', { name: 'MetaNutri, início' })).toBeFocused()
+  })
+
   for (const [largura, texto] of [
     [360, 200],
     [390, 150],
@@ -283,6 +315,18 @@ test.describe('com menos movimento', () => {
 
 test.describe('com movimento', () => {
   test.use({ reducedMotion: 'no-preference' })
+
+  test('CA-1695: com movimento, "Voltar ao topo" rola suave até o alto e leva o foco para a logo', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await abrir(page)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000)
+    const pedidos = await vigiarRolagem(page)
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Voltar ao topo' }).click()
+    expect(await pedidos()).toEqual(['smooth'])
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+    await expect(page.getByRole('banner').getByRole('link', { name: 'MetaNutri, início' })).toBeFocused()
+  })
 
   test('CA-1656: aberta pelo app, a foto do topo assenta', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })

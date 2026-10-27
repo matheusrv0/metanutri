@@ -1,5 +1,5 @@
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
-import { irComAncora, navegarPeloApp, type DestinoPublico } from '../navegacaoPublica.ts'
+import { irComAncora, navegarPeloApp, rolarAoTopo, type DestinoPublico } from '../navegacaoPublica.ts'
 import { MARGEM } from './estiloDaLanding.ts'
 
 interface RodapeDaLandingProps {
@@ -38,7 +38,8 @@ export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaL
           className={LINK}
           onClick={(evento) => {
             evento.preventDefault()
-            globalThis.scrollTo?.({ top: 0, behavior: 'smooth' })
+            // D-688: suave, ou na hora com menos movimento.
+            rolarAoTopo()
             // Quem usa o teclado volta junto: o foco vai para a logo da barra, sem rolar de novo.
             globalThis.document.getElementById('inicio-da-landing')?.focus({ preventScroll: true })
           }}
