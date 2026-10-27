@@ -94,8 +94,8 @@ describe('a chave pública (D-117, CA-463)', () => {
     expect(playwright).toContain("VITE_TURNSTILE_SITE_KEY: 'desligado'")
   })
 
-  it('D-117: o site publicado recebe a chave pública de uma variável do GitHub, como a do pagamento', () => {
-    expect(publicar).toContain('VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}')
+  it('D-117 e CA-1406 (spec separacao-site-app): o site do GitHub não leva a chave; o app a recebe da Cloudflare (DP-SA-33)', () => {
+    expect(publicar).not.toContain('VITE_TURNSTILE_SITE_KEY')
     expect(publicar).not.toMatch(/secrets\.[A-Z_]*TURNSTILE/)
   })
 })

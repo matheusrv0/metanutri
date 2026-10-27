@@ -34,11 +34,12 @@ Trabalhando com um agente de código? As instruções do repositório estão em
 
 ## As duas áreas
 
-**Pública** (`#/inicio`, `#/precos`, `#/entrar`) — fundo escuro animado, para
-explicar e vender. É o que alguém de fora vê primeiro.
+**O site público**, em `https://metanutri.com.br` (`/`, `/precos/`, `/termos/`, `/privacidade/`, `/fontes/`) —
+fundo escuro animado, para explicar e vender. É o que alguém de fora vê primeiro. Não tem conta nem dado de ninguém.
 
-**De trabalho** (o resto) — papel claro, porque tabela de nutriente se lê em papel,
-por horas. A densidade e os cartões seguem a linguagem do Berry; a identidade
+**O app**, em `https://app.metanutri.com.br` (Entrar, Criar conta e a área de trabalho) — papel claro, porque tabela de
+nutriente se lê em papel, por horas. Os dois saem do mesmo código: `npm run build:site` monta o site em `dist-site/` e
+`npm run build:app`, o app em `dist/` (spec `separacao-site-app`). A densidade e os cartões seguem a linguagem do Berry; a identidade
 continua a da tabela impressa.
 
 ## O que o sistema faz
@@ -148,9 +149,9 @@ logo abaixo; depois siga a lista seguinte.
    `013-exclusao-de-conta.sql`. O `014-seguranca-lote-5.sql` roda depois de o administrador ativar o app autenticador no site (passo 4 da lista
    seguinte).
 4. Publique as funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
-   na *Project URL*), e guarde o endereço do site no segredo `SITE_URL`:
+   na *Project URL*), e guarde o endereço do app no segredo `SITE_URL`:
    ```bash
-   npx supabase secrets set SITE_URL=https://metanutri.com.br/ --project-ref <ref>
+   npx supabase secrets set SITE_URL=https://app.metanutri.com.br/ --project-ref <ref>
    npx supabase functions deploy gerenciar-assinatura --project-ref <ref>
    npx supabase functions deploy assinar --project-ref <ref>
    npx supabase functions deploy excluir-conta --project-ref <ref>
@@ -168,8 +169,10 @@ logo abaixo; depois siga a lista seguinte.
 
 Para funcionar de verdade, nesta ordem:
 
-1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://metanutri.com.br/`.
-   Em *Redirect URLs*: `https://metanutri.com.br/**`, `https://matheusrv0.github.io/metanutri/**` (o endereço antigo, que redireciona) e `http://localhost:5173/**`.
+1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://app.metanutri.com.br/` (o app).
+   Em *Redirect URLs*: `https://app.metanutri.com.br/**` e `http://localhost:5173/**`. Até a P3 da separação, ficam
+   também `https://metanutri.com.br/**` e `https://matheusrv0.github.io/metanutri/**` (veja "Ordem para publicar a P2 e
+   a P3").
 2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8. *Secure
    password change* e *Require current password when updating* LIGADOS: o servidor pede a senha atual para trocar a
    senha, e o código de "Esqueci a senha" continua valendo (spec seguranca-lote-5, R-61). Se o painel não mostrar a
@@ -249,20 +252,16 @@ Para funcionar de verdade, nesta ordem:
    barra a publicação (`scripts/conferir-publicacao.mjs`).
 7. **Chave pública do pagamento.** No Mercado Pago, em *Suas integrações > a aplicação > Credenciais*, copie a
    **Public Key** do mesmo ambiente do token do passo 5 (a de teste enquanto o token for o de teste). Guarde como
-   variável do GitHub, que o build publicado lê (`.github/workflows/publicar.yml`):
-   ```bash
-   gh variable set VITE_MERCADOPAGO_PUBLIC_KEY --body "<a Public Key>"
-   ```
+   variável `VITE_MERCADOPAGO_PUBLIC_KEY` do projeto `metanutri-app` na Cloudflare (*Settings > Variables and
+   Secrets*, em *Production*), que monta o app. O site do GitHub não leva chave nenhuma.
    Ela é pública de propósito: vai no navegador, para os campos seguros do cartão. Sem ela, o checkout publicado diz
    "O pagamento não está disponível agora." Para testar na sua máquina, ponha a mesma chave no `.env.local`.
 8. **Verificação contra robôs (spec seguranca-lote-3).** Cadastro, Entrar, "Esqueci a senha" e "Reenviar o código"
    levam uma verificação do Cloudflare Turnstile, que o Supabase confere no servidor. Ela fica escondida e só
    aparece, logo acima do botão, quando o Cloudflare pede um clique. No Cloudflare, em *Turnstile*, o widget
-   "MetaNutri" (modo *Managed*) tem os domínios `metanutri.com.br`, `localhost` e `127.0.0.1`. A **Site Key** é
-   pública e vai como variável do GitHub, que o build publicado lê:
-   ```bash
-   gh variable set VITE_TURNSTILE_SITE_KEY --body "<a Site Key>"
-   ```
+   "MetaNutri" (modo *Managed*) tem os domínios `metanutri.com.br` (que cobre `app.metanutri.com.br`), `localhost` e
+   `127.0.0.1`. A **Site Key** é pública e vai como variável `VITE_TURNSTILE_SITE_KEY` do projeto `metanutri-app` na
+   Cloudflare, como a do pagamento.
    A **Secret Key** nunca vai para o repositório nem para o chat: só para o painel do Supabase. **Ordem para ligar
    (D-116):** primeiro publique o site com a Site Key. Logo depois de publicar, recarregue o site (Ctrl+Shift+R no
    computador) e confira na Política de privacidade que a "Versão de …" é a data de `DATA_TERMOS`, em
@@ -360,6 +359,80 @@ endereço novo do app (`https://app.metanutri.com.br`, que só existe na P2) e c
    do celular. Quem tinha entrado há mais de 30 minutos entra de novo uma vez: a sessão aberta antes desta publicação não
    tem a marca de uso, e vale a hora da entrada (CB-517, R-500).
 
+### Ordem para publicar a P2 e a P3 da separação (o app em app.metanutri.com.br)
+
+A P2 põe o app em `https://app.metanutri.com.br`, na Cloudflare, e deixa `https://metanutri.com.br` só com o site
+(landing, Preços, Termos, Privacidade e Referências), que leva ao app. A P3 tira o endereço antigo das funções, **no
+mesmo dia**, logo depois do site. O app vai primeiro e o site por último. Os passos marcados **(terminal)** são de quem
+cuida do terminal; os outros são no painel de cada serviço e dão para fazer pelo celular.
+
+Antes de tudo: a P2 na `main` (o ramo `separacao-p2`, com o `npm run check` passando).
+
+1. **Cloudflare > Workers & Pages > Create > Pages > Connect to Git:** autorize o aplicativo da Cloudflare **só** no
+   repositório `matheusrv0/metanutri`. Na tela seguinte:
+   - Project name: `metanutri-app`; Production branch: `main`; Framework preset: `None`.
+   - Build command: `npm run publicar:app`; Build output directory: `dist`; Root directory: vazio.
+   - Environment variables (Production): `VITE_SUPABASE_URL` = `https://qmpljfjbdcrdbqutuvmg.supabase.co`;
+     `VITE_SUPABASE_ANON_KEY` = a chave *anon public* (*Supabase > Project Settings > API Keys*), com *Encrypt*;
+     `VITE_MERCADOPAGO_PUBLIC_KEY` e `VITE_TURNSTILE_SITE_KEY` = os valores das variáveis de mesmo nome em *GitHub >
+     Settings > Secrets and variables > Actions > Variables*. A versão do Node vem do `.node-version` do repositório.
+
+   *Save and Deploy*, e espere o build ficar verde. Em `metanutri-app.pages.dev` o Turnstile e as funções não
+   funcionam: é o esperado.
+2. **metanutri-app > Settings > Builds:** *Automatic production branch deployments* ligado; *Preview branch*: `None`.
+   Daqui em diante, cada merge na `main` publica o app sozinho.
+3. **metanutri-app > Custom domains > Set up a custom domain:** `app.metanutri.com.br` > *Continue* > *Begin CNAME
+   setup*.
+4. **Registro.br > metanutri.com.br > DNS > Editar zona > Nova entrada:** tipo `CNAME`, nome `app`, dados
+   `metanutri-app.pages.dev` > *Salvar*. Espere o domínio ficar *Active* na Cloudflare (minutos a horas). Se a zona
+   tiver registro `CAA`, ele precisa permitir `letsencrypt.org`, `pki.goog` e `ssl.com`.
+5. **(terminal) Conferir os cabeçalhos do app:**
+   ```bash
+   curl -sI https://app.metanutri.com.br/ | grep -iE "content-security-policy|x-content-type|referrer-policy|strict-transport|x-robots|cross-origin-opener"
+   ```
+   Aparecem os cinco primeiros e **não** o `cross-origin-opener-policy`.
+6. **Cloudflare > (início da conta) > Bulk Redirects > Create Bulk Redirect List:** nome `metanutri_pages_dev`, tipo
+   *Redirect*; item: Source URL `metanutri-app.pages.dev`, Target URL `https://app.metanutri.com.br`, Status `301`,
+   com *Preserve query string*, *Include subdomains*, *Subpath matching* e *Preserve path suffix* marcados. Depois
+   *Create Bulk Redirect Rule* com essa lista (nome `metanutri-pages-dev`) > *Save and Deploy*.
+7. **Supabase > Authentication > URL Configuration > Redirect URLs > Add URL:** `https://app.metanutri.com.br/**`.
+   Os outros ficam até a P3 (passo 12).
+8. **Turnstile > widget MetaNutri > Settings > Hostname Management:** só conferir `metanutri.com.br`, `localhost` e
+   `127.0.0.1`. O domínio cobre `app.`. Só se o passo 9 mostrar "A verificação de segurança não carregou",
+   acrescente `app.metanutri.com.br`. Não acrescente `metanutri-app.pages.dev`.
+9. **Testar em `https://app.metanutri.com.br`:** criar uma conta de teste e confirmar pelo código; entrar; o
+   administrador abre Aprovações e digita o código do app autenticador; ir ao checkout até os campos do cartão
+   aparecerem; criar um link de paciente e abrir no celular; "Sair"; ficar 28 minutos parado e ver o aviso.
+10. **Supabase > Authentication > URL Configuration > Site URL:** `https://app.metanutri.com.br/`. **(terminal)**:
+    ```bash
+    npx supabase secrets set SITE_URL=https://app.metanutri.com.br/ --project-ref qmpljfjbdcrdbqutuvmg
+    npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
+    ```
+11. **GitHub > Actions > Publicar no GitHub Pages > Run workflow** (o site). A versão dos termos é 28/10/2026; indo ao
+    ar em outro dia, **antes** troque as duas datas de `src/domain/legal.ts` e o teste delas
+    (`src/domain/legal.test.ts`). Depois, conferir: `metanutri.com.br` abre a landing; "Entrar" leva ao app; um link de
+    paciente antigo (`metanutri.com.br/#/missoes/<token>`) abre a tela do paciente no app;
+    `metanutri.com.br/#/painel` leva ao app; num navegador que já usava o MetaNutri, a primeira visita recarrega uma vez
+    e depois mostra o site.
+12. **P3, logo em seguida, no mesmo dia.** **(terminal)** merge do ramo `separacao-p3` na `main` e as três funções
+    de novo, agora só com o app na lista:
+    ```bash
+    npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
+    npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg
+    npx supabase functions deploy excluir-conta --project-ref qmpljfjbdcrdbqutuvmg
+    curl -i -X OPTIONS https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/assinar -H "Origin: https://metanutri.com.br"
+    ```
+    O `curl` mostra `vary: Origin` e nenhum `access-control-allow-origin`. Depois, em **Supabase > Authentication >
+    URL Configuration > Redirect URLs**, tire `https://metanutri.com.br/**` e `https://matheusrv0.github.io/metanutri/**`.
+13. **Mercado Pago > Suas integrações > aplicação MetaNutri > Webhooks:** só conferir a URL de produção
+    (`https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago`) e os eventos de assinaturas e de
+    pagamentos. A primeira compra real já é feita no app novo.
+14. **Recomendado: GitHub > Settings (da conta) > Pages > Verified domains > Add a domain:** `metanutri.com.br`; crie no
+    Registro.br o registro `TXT` que o GitHub mostrar e clique em *Verify*.
+15. **Avisar quem já usa:** "O MetaNutri mudou para app.metanutri.com.br. Entre de novo e, se usa o ícone no celular ou
+    no computador, instale de novo." Quem tinha dado só no endereço antigo vê "Continuar" no site e leva os dados ao
+    entrar.
+
 ## A marca
 
 O kit do designer (logo provisória, 27/09/2026) está em `public/` (favicons e ícones do
@@ -432,22 +505,23 @@ As telas originais do sistema, como o Claude Design as entregou, ficam guardadas
 
 ## Publicar na internet
 
-O build é estático e o app roda inteiro no navegador, então qualquer hospedagem de
-arquivo serve. Já existe um fluxo pronto para o GitHub Pages:
+São duas publicações do mesmo código (spec `separacao-site-app`):
 
-1. No repositório, **Settings > Pages**, escolha **GitHub Actions** como origem.
-2. Em **Actions > Publicar no GitHub Pages**, clique em **Run workflow**.
-
-Ele só roda quando você manda — nada é publicado sozinho.
-
-O endereço é **https://metanutri.com.br/** (domínio próprio, registrado no Registro.br). O DNS do
-domínio aponta para o GitHub Pages: quatro registros A no domínio (`185.199.108.153`, `185.199.109.153`,
-`185.199.110.153` e `185.199.111.153`) e `www` como CNAME para `matheusrv0.github.io`. O domínio está em
-**Settings > Pages > Custom domain**, com **Enforce HTTPS** ligado. O endereço antigo
-(`matheusrv0.github.io/metanutri/`) redireciona para o novo.
+- **O site** (`https://metanutri.com.br/`), no GitHub Pages: em **Actions > Publicar no GitHub Pages**, clique em
+  **Run workflow** (só roda quando você manda). Ele monta com `npm run build:site`, sem chave nenhuma. Antes da
+  primeira vez, em **Settings > Pages**, escolha **GitHub Actions** como origem. O DNS do domínio aponta para o GitHub
+  Pages: quatro registros A no domínio (`185.199.108.153`, `185.199.109.153`, `185.199.110.153` e
+  `185.199.111.153`) e `www` como CNAME para `matheusrv0.github.io`. O domínio está em **Settings > Pages > Custom
+  domain**, com **Enforce HTTPS** ligado. O endereço antigo (`matheusrv0.github.io/metanutri/`) redireciona para o
+  novo.
+- **O app** (`https://app.metanutri.com.br/`), na Cloudflare Pages (projeto `metanutri-app`), ligada a este
+  repositório: cada merge na `main` publica sozinho, com `npm run publicar:app` (confere os termos, os alertas dos
+  pacotes e monta o app). O `npm run check` roda antes do merge, não na Cloudflare (o build grátis dela para em 20
+  minutos). O `app` é um CNAME no Registro.br para `metanutri-app.pages.dev`. As chaves públicas (Supabase,
+  pagamento e verificação) são variáveis do projeto na Cloudflare.
 
 Os planos e as fichas ficam na nuvem, salvos na sua conta: no endereço novo, basta entrar. O que ficou só no
-navegador do endereço antigo vai com **Configurações > Baixar backup** e volta com **Restaurar backup**.
+navegador do endereço antigo vai junto pelo "Continuar" do site, na primeira vez que a pessoa for do site ao app.
 
 ## O que ainda depende de você
 

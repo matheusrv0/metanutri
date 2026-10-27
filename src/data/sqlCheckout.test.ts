@@ -31,8 +31,10 @@ describe('banco: o cartão da assinatura (spec checkout-proprio, 008)', () => {
 })
 
 describe('o site publicado (D-72)', () => {
-  it('a chave pública do pagamento vem de uma variável do GitHub', () => {
-    expect(publicar).toContain('VITE_MERCADOPAGO_PUBLIC_KEY: ${{ vars.VITE_MERCADOPAGO_PUBLIC_KEY }}')
+  it('CA-1406 (spec separacao-site-app): o GitHub publica só o site, que não leva a chave do pagamento; o app a recebe da Cloudflare (DP-SA-33)', () => {
+    expect(publicar).toContain('run: npm run build:site')
+    expect(publicar).toContain('path: dist-site')
+    expect(publicar).not.toMatch(/VITE_MERCADOPAGO_PUBLIC_KEY|VITE_SUPABASE_|vars\.|secrets\./)
   })
 
   it('CA-432: cada ação do GitHub está fixada pelo commit, com a versão num comentário (D-100)', () => {
