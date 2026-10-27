@@ -145,3 +145,17 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
   tira; o topo novo rola até a Adequação. As guardas de texto (`textosDaFrente`, `textosProibidos`) e a página
   pré-desenhada (`vitrine.test.tsx`) passaram a olhar a Adequação no mesmo commit.
 - **T14:** a sombra da etiqueta do topo (`--landing-etiqueta-sombra`) entrou na T16, com a etiqueta.
+- **T15:** a logo da barra passou a ter as duas versões no HTML, com o CSS escolhendo a do tema (D-683): pelo estado do
+  React, a página pré-desenhada clara nascia com a logo para fundo escuro sobre o vidro claro.
+- **T19 e T22:** o teste de frase repetida (CA-1481 e CA-1693) passou a olhar só o bloco mais de dentro (o item da lista
+  e o parágrafo dele contavam a mesma frase duas vezes) e a deixar de fora os cartões de plano, que repetem "Todas as
+  funções" de propósito.
+- **Depois da T25, um commit `refactor`** tirou o que só as seções antigas usavam: as classes de título da v3, os tokens
+  da chave apagada, do bloco, da barra e da escala antiga, as animações "sobe" e "piscar" e as marcas de capítulo.
+- **T27 (`emil-design-eng` e `break-ui`), commit `fix` próprio:** o preço grande com algarismos proporcionais (D-685), a
+  régua numa linha no celular, a bolinha do estado na primeira linha, o pior caso de 360 px com texto a 200% e de zoom
+  de 200% (D-682). Os testes de navegador acharam mais dois, num `fix` próprio: o `h1` e os `h3` pegavam a cor de
+  título do app (cinza no tema claro), e a linha de "Como funciona" nunca se escondia (o CSS procurava o `data-revela`
+  num ancestral, e ele está na própria lista).
+- **T26:** o e2e roda com uma configuração temporária (`playwright.v9-temp.config.ts`, portas 4573 e 4576 e pastas fora
+  do `node_modules`), apagada depois, como na T10.
