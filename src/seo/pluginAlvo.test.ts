@@ -78,7 +78,8 @@ describe('o alvo do build (spec separacao-site-app, DP-SA-1 e DP-SA-2)', () => {
   })
 })
 
-describe('o plugin do alvo no build de verdade (R-511)', () => {
+// Montam de verdade (o do app com o service worker): com os testes todos em paralelo, passam dos 20 s de sempre.
+describe('o plugin do alvo no build de verdade (R-511)', { timeout: 120_000 }, () => {
   let pasta = ''
   beforeEach(() => {
     pasta = mkdtempSync(join(tmpdir(), 'metanutri-alvo-'))
