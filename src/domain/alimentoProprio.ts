@@ -50,6 +50,22 @@ export function comBase(d: DadosAlimentoProprio, base: DadosAlimentoProprio['bas
   return { ...d, base, porcaoG: 100, nomeDaPorcao: '', medidas: daPorcao && !jaTem ? [...d.medidas, daPorcao] : d.medidas }
 }
 
+/**
+ * D-506 (I9 da revisão da publicação 2): o valor como a ficha mostra, para a cópia da base e a receita não abrirem o
+ * formulário com "76,4241 kcal": a energia inteira; o resto com 1 casa abaixo de 10 e inteiro a partir de 10, e com 2
+ * casas abaixo de 1, para não zerar um micronutriente pequeno (tiamina de 0,04 mg).
+ */
+function comoAFicha(chave: string, v: number): number {
+  const casas = chave === 'energia_kcal' || Math.abs(v) >= 10 ? 0 : Math.abs(v) >= 1 ? 1 : 2
+  const fator = 10 ** casas
+  return Math.round(v * fator) / fator
+}
+
+/** Os valores arredondados como a ficha mostra (D-506); nulo continua nulo. */
+export function valoresComoAFicha(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
+  return Object.fromEntries(Object.entries(v).map(([chave, n]) => [chave, typeof n === 'number' && Number.isFinite(n) ? comoAFicha(chave, n) : null]))
+}
+
 /** Só números de verdade; o resto é "não informado" (nulo). */
 function valoresLimpos(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
   return Object.fromEntries(Object.entries(v).map(([chave, n]) => [chave, typeof n === 'number' && Number.isFinite(n) ? n : null]))
@@ -195,7 +211,7 @@ export function dadosDaCopiaDaBase(a: Alimento): DadosAlimentoProprio {
     preparo: preparoDaBase(a),
     base: 'por100',
     porcaoG: 100,
-    valores: valoresLimpos(a.nutrientes),
+    valores: valoresComoAFicha(a.nutrientes),
     medidas: medidasDoAlimento(a.id).map((m) => ({ nome: m.nome, gramas: m.gramas })),
     fonte: { tipo: 'copia-da-base', origemId: a.id },
   }

@@ -250,7 +250,8 @@ describe('como o alimento próprio entra no resto (D-385)', () => {
     if (!feijao) throw new Error('sem feijão')
     const copia = dadosDaCopiaDaBase(feijao)
     expect(copia).toMatchObject({ tipo: 'alimento', grupo: 'Leguminosas e derivados', preparo: 'cozido', base: 'por100', fonte: { tipo: 'copia-da-base', origemId: 561 } })
-    expect(copia.valores.energia_kcal).toBe(feijao.nutrientes.energia_kcal)
+    // CA-1372 (D-506): como a ficha mostra, sem precisão falsa (76,4241 kcal virava o campo).
+    expect(copia.valores).toMatchObject({ energia_kcal: 76, proteina_g: 4.8, carboidrato_g: 14, lipideos_g: 0.54, fibra_g: 8.5, calcio_mg: 27, ferro_mg: 1.3, tiamina_mg: 0.04, cobre_mg: 0.19, potassio_mg: 255, vitamina_a_rae_mcg: null })
     expect(copia.medidas).toContainEqual({ nome: 'concha', gramas: 140 })
     expect(validarAlimentoProprio(copia).problemas).toEqual([])
   })
@@ -408,7 +409,8 @@ describe('receita como alimento (CA-1149, CB-377)', () => {
     if (!('dados' in r)) throw new Error(r.motivo)
     const total = totaisDeItens([{ id: 'a', alimentoId: 182, gramas: 150 }, { id: 'b', alimentoId: 489, gramas: 100 }, { id: 'c', alimentoId: 7, gramas: 30 }], buscarAlimento)
     expect(r.dados).toMatchObject({ tipo: 'preparacao', nome: 'Panqueca de banana', grupo: 'Alimentos preparados', base: 'por100', medidas: [{ nome: 'unidade', gramas: 100 }] })
-    expect(r.dados.valores.energia_kcal).toBeCloseTo((total.nutrientes.energia_kcal.total * 100) / 200, 2)
+    // CA-1372 (D-506): a energia inteira.
+    expect(r.dados.valores.energia_kcal).toBe(Math.round((total.nutrientes.energia_kcal.total * 100) / 200))
     // A vitamina A falta em algum ingrediente: fica nula, nunca zero.
     expect(r.dados.valores.vitamina_a_rae_mcg).toBeNull()
     expect(validarAlimentoProprio(r.dados).problemas).toEqual([])
@@ -432,12 +434,12 @@ describe('receita como alimento (CA-1149, CB-377)', () => {
       const r = receitaComoAlimento(comMais(alimentoId, gramas), buscarAlimento)
       if (!('dados' in r)) throw new Error(`${alimentoId}: ${r.motivo}`)
       // A proteína é só a da massa: o óleo, o azeite e o sal não somam nada (pronta, a receita pesa 200 g).
-      expect(r.dados.valores.proteina_g, String(alimentoId)).toBeCloseTo((MASSA.proteina_g.total * 100) / 200, 1)
+      expect(r.dados.valores.proteina_g, String(alimentoId)).toBeCloseTo((MASSA.proteina_g.total * 100) / 200, 0)
     }
     const comOleo = receitaComoAlimento(comMais(272, 10), buscarAlimento)
     if (!('dados' in comOleo)) throw new Error(comOleo.motivo)
     // A energia do óleo entra (884 kcal em 100 g).
-    expect(comOleo.dados.valores.energia_kcal).toBeCloseTo(((MASSA.energia_kcal.total + 88.4) * 100) / 200, 0)
+    expect(comOleo.dados.valores.energia_kcal).toBe(Math.round(((MASSA.energia_kcal.total + 88.4) * 100) / 200))
   })
 
   it('CA-1359: o macro que falta de verdade e o ingrediente excluído são nomeados', () => {

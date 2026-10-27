@@ -7,7 +7,7 @@ import { NOME_DA_BASE } from './baseMetanutri.ts'
 import { nomeDaCopia } from './duplicar.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
-import { dadosEmBranco } from './alimentoProprio.ts'
+import { dadosEmBranco, valoresComoAFicha } from './alimentoProprio.ts'
 import type { DadosAlimentoProprio } from './produtos.ts'
 import { ID_DE_RECEITA, NOMES_DA_PORCAO, pesoDaPorcao, pesoProntoDe } from './receitaNoPlano.ts'
 import { CHAVES_NUTRIENTES, totaisDeItens, type Totais } from './totais.ts'
@@ -389,7 +389,7 @@ export function receitaComoAlimento(r: Receita, buscarDaBase: BuscarAlimento): {
   const valores = Object.fromEntries(
     CHAVES_NUTRIENTES.map((chave) => {
       const t = totais.nutrientes[chave]
-      return [chave, t.semDado > 0 ? null : Math.round(((t.total * 100) / peso) * 1000) / 1000]
+      return [chave, t.semDado > 0 ? null : (t.total * 100) / peso]
     }),
   ) as Partial<Record<ChaveNutrienteAlimento, number | null>>
   return {
@@ -400,7 +400,8 @@ export function receitaComoAlimento(r: Receita, buscarDaBase: BuscarAlimento): {
       preparo: 'pronto para consumo',
       base: 'por100',
       porcaoG: 100,
-      valores,
+      // D-506: como a ficha mostra, sem precisão falsa.
+      valores: valoresComoAFicha(valores),
       medidas: [{ nome: r.nomeDaPorcao.trim() || 'porção', gramas: Math.round(pesoDaPorcao(copia) * 10) / 10 }],
       fonte: { tipo: 'outra', texto: `Receita “${r.nome.trim()}”, pelos ingredientes` },
     },
