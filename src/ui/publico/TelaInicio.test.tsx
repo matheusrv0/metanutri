@@ -27,11 +27,12 @@ const TITULO_DO_TOPO = 'Planos alimentares completos em vitaminas e minerais'
 describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   it('CA-1688: o título e as seções, nesta ordem, cada uma com título', () => {
     montar()
-    expect(screen.getAllByRole('heading').map((h) => `${h.tagName} ${h.textContent ?? ''}`)).toEqual([
+    const titulos = screen.getAllByRole('heading').filter((h) => /^H[12]$/.test(h.tagName))
+    expect(titulos.map((h) => `${h.tagName} ${h.textContent ?? ''}`)).toEqual([
       `H1 ${TITULO_DO_TOPO}`,
       'H2 Adequação de micronutrientes com sugestão do que comer',
       'H2 Acompanhamento da adesão pelo celular',
-      'H2 O plano sai do seu jeito',
+      'H2 Funcionalidades',
       'H2 Como funciona',
       'H2 Grama por grama',
       'H2 Quanto custa',
@@ -249,50 +250,34 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     })
   })
 
-  describe('chaves', () => {
-    const chaves = () => screen.getAllByRole('switch')
-
-    it('CA-1470: cinco chaves com nome; as duas primeiras ligadas, com o efeito', () => {
-      montar()
-      expect(chaves().map((c) => [c.getAttribute('aria-label'), c.getAttribute('aria-checked')])).toEqual([
-        ['Medida caseira junto dos gramas', 'true'],
-        ['Água calculada pelo peso', 'true'],
-        ['Respeitar a alergia a leite', 'false'],
-        ['Plano no celular da paciente', 'false'],
-        ['Alimentos que a base ainda não tem', 'false'],
-      ])
-      expect(texto()).toContain('Feijão carioca cozido: 1 concha (140 g).')
-      expect(texto()).toContain('Maria, 62 kg: 35 ml por quilo dá 2,2 litros por dia.')
-      expect(texto()).not.toContain('O iogurte sai das sugestões de cálcio')
-    })
-
-    it('CA-1471: clique, Enter e Espaço ligam e desligam; o efeito aparece e some', async () => {
-      montar()
-      const usuario = userEvent.setup()
-      const alergia = screen.getByRole('switch', { name: 'Respeitar a alergia a leite' })
-      await usuario.click(alergia)
-      expect(alergia).toHaveAttribute('aria-checked', 'true')
-      expect(texto()).toContain('O iogurte sai das sugestões de cálcio, e a linha do plano avisa se um alimento bater com a alergia.')
-      alergia.focus()
-      await usuario.keyboard('{Enter}')
-      expect(alergia).toHaveAttribute('aria-checked', 'false')
-      expect(texto()).not.toContain('O iogurte sai das sugestões de cálcio')
-      await usuario.keyboard(' ')
-      expect(alergia).toHaveAttribute('aria-checked', 'true')
-    })
-
-    it('CA-1473 e CA-1607: o alimento próprio segue a publicação 2, na chave e na pergunta', async () => {
-      const { unmount } = montar({ formularioNovo: false })
-      const usuario = userEvent.setup()
-      await usuario.click(screen.getByRole('switch', { name: 'Alimentos que a base ainda não tem' }))
-      expect(texto()).toContain('Cadastre o produto pelo rótulo ou pelo código de barras, em Meus alimentos.')
-      expect(texto()).toContain('Você cadastra em Meus alimentos, pelo rótulo ou pelo código de barras, e ele entra na refeição pela busca.')
-      expect(texto()).not.toMatch(/Cadastre por 100 g|Meus alimentos: por 100 g|medidas caseiras que (você )?usa/)
-      unmount()
+  describe('Funcionalidades', () => {
+    it('CA-1672: nove itens com título e texto, todos incluídos em qualquer assinatura', () => {
       montar({ formularioNovo: true })
-      await usuario.click(screen.getByRole('switch', { name: 'Alimentos que a base ainda não tem' }))
-      expect(texto()).toContain('Cadastre por 100 g ou pela porção do rótulo, com as medidas caseiras que você usa.')
-      expect(texto()).toContain('Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.')
+      const secao = screen.getByRole('region', { name: 'Funcionalidades' })
+      expect(secao).toHaveTextContent('Todas incluídas em qualquer assinatura.')
+      const itens = within(secao).getAllByRole('listitem')
+      expect(itens.map((li) => li.querySelector('h3')?.textContent)).toEqual([
+        'Prescrição rápida ou completa',
+        'Adequação de micronutrientes',
+        'Sugestão do que comer',
+        'Gasto energético e hidratação',
+        'Avaliação antropométrica',
+        'Anamnese, restrições e alergias',
+        'Substitutos, receitas e modelos',
+        'Cadastro de alimentos',
+        'Documentos prontos',
+      ])
+      expect(secao).toHaveTextContent('20 vitaminas e minerais e a fibra, comparados com a referência para a idade, o sexo e a fase da vida.')
+      expect(secao).toHaveTextContent('PDF com lista de compras, Word no modelo do estágio e pedido de exames, com o seu logotipo e o seu CRN.')
+      expect(secao).toHaveTextContent('O que a base ainda não tem entra por 100 g, pela porção do rótulo ou pelo código de barras.')
+      expect(secao.textContent).not.toMatch(/sua logo/)
+    })
+
+    it('CA-1672 e D-540: sem a publicação 2, o cadastro de alimentos fala só do rótulo e do código de barras', () => {
+      montar({ formularioNovo: false })
+      const secao = screen.getByRole('region', { name: 'Funcionalidades' })
+      expect(secao).toHaveTextContent('O que a base ainda não tem entra pelo rótulo ou pelo código de barras.')
+      expect(secao.textContent).not.toMatch(/por 100 g/)
     })
   })
 
@@ -426,7 +411,9 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(t).not.toMatch(/nenhum programa|o único|de verdade|Dietbox|WebDiet|Nutrium|para de abandonar|resultado garantido/i)
       expect(t).not.toMatch(/TACO|IBGE|POF|USDA|NASEM|\bDRIs?\b|Open Food Facts/)
       // Fora dos fragmentos de interface (o mesmo exemplo aparece no campo vivo e em Como funciona), nenhuma frase se repete.
-      const fora = [...document.body.querySelectorAll('p, h1, h2, li, summary, figcaption')].filter((el) => !el.closest('[data-ui]'))
+      const blocos = 'p, h1, h2, h3, li, summary, figcaption'
+      // Só o bloco mais de dentro: o item da lista e o parágrafo dele contariam a mesma frase duas vezes.
+      const fora = [...document.body.querySelectorAll(blocos)].filter((el) => !el.closest('[data-ui]') && !el.querySelector(blocos))
       const frases = fora.flatMap((el) => (el.textContent ?? '').split(/(?<=[.?!])\s+/)).filter((f) => f.length > 12)
       const repetidas = frases.filter((f, i) => frases.indexOf(f) !== i)
       expect(repetidas).toEqual([])
@@ -452,7 +439,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       }
       expect(screen.queryByRole('button', { name: 'Adicionar' })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Cobrir' })).not.toBeInTheDocument()
-      for (const controle of [...screen.getAllByRole('button'), ...screen.getAllByRole('link'), ...screen.getAllByRole('switch')]) {
+      for (const controle of [...screen.getAllByRole('button'), ...screen.getAllByRole('link'), ...screen.queryAllByRole('switch')]) {
         expect(controle).toHaveAccessibleName()
       }
     })

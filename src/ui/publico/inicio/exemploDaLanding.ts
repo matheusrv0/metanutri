@@ -143,16 +143,14 @@ export const ALMOCO_EM_GRAMAS: readonly AlimentoEmGramas[] = [
  * D-540: o formulário novo de Meus alimentos (por 100 g) só vale na publicação 2 (`MEUS_ALIMENTOS_NOVOS`). Antes dela, o
  * site fala só do que existe: o rótulo e o código de barras. Vale para Funcionalidades (D-663) e para as perguntas (D-672).
  */
-export function textoDosAlimentosProprios(formularioNovo: boolean): { readonly funcionalidade: string; readonly efeito: string; readonly resposta: string } {
+export function textoDosAlimentosProprios(formularioNovo: boolean): { readonly funcionalidade: string; readonly resposta: string } {
   return formularioNovo
     ? {
         funcionalidade: 'O que a base ainda não tem entra por 100 g, pela porção do rótulo ou pelo código de barras.',
-        efeito: 'Cadastre por 100 g ou pela porção do rótulo, com as medidas caseiras que você usa.',
         resposta: 'Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.',
       }
     : {
         funcionalidade: 'O que a base ainda não tem entra pelo rótulo ou pelo código de barras.',
-        efeito: 'Cadastre o produto pelo rótulo ou pelo código de barras, em Meus alimentos.',
         resposta: 'Você cadastra em Meus alimentos, pelo rótulo ou pelo código de barras, e ele entra na refeição pela busca.',
       }
 }
@@ -284,6 +282,3 @@ export const DIA_EM_GRAMAS: readonly RefeicaoEmGramas[] = [
     ],
   },
 ]
-
-/** "Água calculada pelo peso": a conta do app para a Maria. */
-export const AGUA_DO_EXEMPLO = { pesoKg: '62', mlPorKg: '35', litros: '2,2' } as const

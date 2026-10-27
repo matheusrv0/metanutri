@@ -3,7 +3,6 @@
 // D-601 a D-606): os números da landing são os do app. As constantes ficam leves na página; este teste roda o motor e a
 // base de verdade e falha se uma letra divergir (R-530).
 import { calcularAdequacao, type LinhaAdequacao } from '@/domain/adequacao.ts'
-import { aguaDoCaso } from '@/domain/agua.ts'
 import { buscarAlimentos, leituraDoResultado } from '@/domain/busca.ts'
 import { sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
@@ -11,7 +10,7 @@ import { criarExemplo } from '@/domain/exemplo.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
 import { nomeParaPaciente } from '@/domain/nomeParaPaciente.ts'
-import { montarRestricoes, restricaoDoItem, type RestricoesDoPaciente } from '@/domain/restricoes.ts'
+import type { RestricoesDoPaciente } from '@/domain/restricoes.ts'
 import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { ChaveNutrienteAlimento } from '@/domain/tipos.ts'
@@ -19,7 +18,6 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { pctDaReferencia, porcaoDaSugestao } from '@/ui/adequacao/estiloAdequacao.ts'
 import {
   ADEQUACAO_DO_EXEMPLO,
-  AGUA_DO_EXEMPLO,
   CARTOES_DA_VITRINE,
   COBRIR_CALCIO,
   DIA_EM_GRAMAS,
@@ -220,27 +218,5 @@ describe('CA-1469 e CA-1605: Grama por grama e o feijão vêm da Base MetaNutri'
       kcal: `${formatarNumero(((r.alimento.nutrientes.energia_kcal ?? 0) * (r.gramas ?? 0)) / 100, 0)} kcal`,
     })
     expect(leituraDoResultado(r)).toBe(`1 concha · ${FEIJAO_NA_CONCHA.gramas}`)
-  })
-})
-
-describe('CA-1472: o efeito de cada chave é o que o app faz', () => {
-  it('a água da Maria: 35 ml por quilo, 62 kg, 2,2 litros', () => {
-    const { caso } = oExemplo()
-    const agua = aguaDoCaso(caso)
-    expect(agua.calculo?.conta).toBe(`${AGUA_DO_EXEMPLO.mlPorKg} ml × ${AGUA_DO_EXEMPLO.pesoKg} kg = ${AGUA_DO_EXEMPLO.litros} L`)
-    expect(String(caso.pesoKg)).toBe(AGUA_DO_EXEMPLO.pesoKg)
-  })
-
-  it('com alergia a leite, o iogurte sai do Cobrir de cálcio e a linha do iogurte no plano avisa', () => {
-    const alergia = montarRestricoes({ marcadas: ['leite'], texto: '', doencas: [], naoGosta: '' })
-    const semAlergia = oExemplo().cobrir('calcio_mg').sugestoes.map((s) => s.descricao)
-    expect(semAlergia.some((d) => /^Iogurte,/.test(d))).toBe(true)
-    const comAlergia = oExemplo(alergia).cobrir('calcio_mg').sugestoes.map((s) => s.descricao)
-    expect(comAlergia.some((d) => /^(Iogurte|Leite|Queijo),/.test(d))).toBe(false)
-    expect(comAlergia.length).toBeGreaterThan(0)
-    const { plano } = oExemplo()
-    const iogurte = plano.refeicoes.flatMap((r) => r.opcoes.principal).find((i) => /^Iogurte,/.test(buscarAlimento(i.alimentoId)?.descricao ?? ''))
-    if (!iogurte) throw new Error('O exemplo não tem iogurte')
-    expect(restricaoDoItem(iogurte, buscarAlimento, alergia)).toBe('Alergia: leite e derivados')
   })
 })

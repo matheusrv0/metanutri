@@ -2,10 +2,10 @@ import type { Ciclo, IdPlano } from '@/domain/conta.ts'
 import { MEUS_ALIMENTOS_NOVOS } from '@/domain/produtos.ts'
 import { AcompanhamentoDaAdesao } from './inicio/AcompanhamentoDaAdesao.tsx'
 import { AdequacaoDoExemplo } from './inicio/AdequacaoDoExemplo.tsx'
-import { ChavesDoPlano } from './inicio/ChavesDoPlano.tsx'
 import { ComoFunciona } from './inicio/ComoFunciona.tsx'
 import { FaixaComecar } from './inicio/FaixaComecar.tsx'
 import { FotoDosLegumes } from './inicio/FotoDosLegumes.tsx'
+import { Funcionalidades } from './inicio/Funcionalidades.tsx'
 import { GramaPorGrama } from './inicio/GramaPorGrama.tsx'
 import { HeroiDaLanding } from './inicio/HeroiDaLanding.tsx'
 import { PerguntasDeQuemAtende } from './inicio/PerguntasDeQuemAtende.tsx'
@@ -30,7 +30,7 @@ export function TelaInicio({ aoComecar, aoEscolher, formularioNovo = MEUS_ALIMEN
       <HeroiDaLanding aoComecar={aoComecar} />
       <AdequacaoDoExemplo />
       <AcompanhamentoDaAdesao />
-      <ChavesDoPlano formularioNovo={formularioNovo} />
+      <Funcionalidades formularioNovo={formularioNovo} />
       <FotoDosLegumes />
       <ComoFunciona />
       <GramaPorGrama />

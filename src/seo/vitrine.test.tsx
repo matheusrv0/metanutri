@@ -22,7 +22,8 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
     expect(html).toMatch(/<h1[^>]*>Planos alimentares completos em vitaminas e minerais<\/h1>/)
     for (const trecho of [
       'Adequação de micronutrientes com sugestão do que comer',
-      'O plano sai do seu jeito',
+      'Acompanhamento da adesão pelo celular',
+      'Funcionalidades',
       'Como funciona',
       'Grama por grama',
       'Quanto custa',
