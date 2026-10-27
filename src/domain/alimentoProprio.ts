@@ -25,6 +25,19 @@ function medidaDaPorcao(texto: string, porcaoG: number): MedidaDoProprio | null 
   return medida ? { nome: medida.nome, gramas: medida.gramas } : null
 }
 
+/**
+ * A medida que a medida caseira da porção vira ao salvar (D-433 e D-491): "4 colheres de sopa" de 40 g é a colher de
+ * sopa de 10 g; "30 g" é a porção de 30 g. A lista de medidas diz que ela já vale (D-503); `null` sem porção válida ou
+ * sem texto, e na base "por 100 g".
+ */
+export function medidaQueAPorcaoDa(d: Pick<DadosAlimentoProprio, 'base' | 'porcaoG' | 'nomeDaPorcao'>): MedidaDoProprio | null {
+  if (d.base !== 'porcao' || d.porcaoG === null || !(d.porcaoG > 0)) return null
+  const texto = textoDaMedidaCaseira(d.nomeDaPorcao.trim())
+  const lida = texto === '' ? null : lerMedidaDoRotulo(texto, d.porcaoG)
+  if (!lida) return null
+  return lida.medida ? { nome: lida.medida.nome, gramas: lida.medida.gramas } : { nome: 'porção', gramas: lida.porcaoG }
+}
+
 /** Só números de verdade; o resto é "não informado" (nulo). */
 function valoresLimpos(v: Readonly<Partial<Record<ChaveNutrienteAlimento, number | null>>>): Partial<Record<ChaveNutrienteAlimento, number | null>> {
   return Object.fromEntries(Object.entries(v).map(([chave, n]) => [chave, typeof n === 'number' && Number.isFinite(n) ? n : null]))

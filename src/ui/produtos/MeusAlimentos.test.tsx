@@ -212,6 +212,20 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(janela.queryByText(/RDC/)).not.toBeInTheDocument()
   })
 
+  it('CA-1369 (D-503): com a medida da porção lida, a lista de medidas diz que ela já vale', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    expect(janela.getByText('Nenhuma medida. Sem ela, o paciente lê o peso.')).toBeInTheDocument()
+    await usuario.click(janela.getByRole('radio', { name: 'Rótulo' }))
+    await usuario.click(janela.getByRole('radio', { name: 'Na porção' }))
+    await usuario.type(janela.getByLabelText('Porção'), '40')
+    await usuario.type(janela.getByLabelText('Medida caseira da porção'), '4 colheres de sopa')
+    expect(janela.getByText('A medida da porção (colher de sopa · 10 g) já vale. Acrescente outras, se quiser.')).toBeInTheDocument()
+    expect(janela.queryByText('Nenhuma medida. Sem ela, o paciente lê o peso.')).not.toBeInTheDocument()
+  })
+
   it('CA-1141: rótulo na porção mostra quanto dá por 100 g', async () => {
     render(<TelaProdutos formularioNovo />)
     const usuario = userEvent.setup()

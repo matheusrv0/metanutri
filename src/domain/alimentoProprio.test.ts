@@ -1,5 +1,5 @@
 // Spec alimentos-e-gramaturas, D-383 a D-386: "Meus alimentos".
-import { dadosDaCopiaDaBase, dadosDoProduto, dadosEmBranco, produtoDosDados } from './alimentoProprio.ts'
+import { dadosDaCopiaDaBase, dadosDoProduto, dadosEmBranco, medidaQueAPorcaoDa, produtoDosDados } from './alimentoProprio.ts'
 import { buscarAlimentos, medidasDoAlimento } from './busca.ts'
 import { sugerirParaCobrir } from './cobrir.ts'
 import { calcularAdequacao } from './adequacao.ts'
@@ -493,6 +493,14 @@ describe('a medida caseira da porção no formulário novo (publicação 2, D-49
     registrarProdutos([produtoComoAlimento(salvo)])
     expect(textoDaQuantidade(quantidadeNaFolha(salvo.id, 50, 'medida-e-gramas'))).toBe('2 fatias (50 g)')
     expect(buscarAlimentos('2 fatias de pão caseiro', alimentosComProdutos()).resultados[0]).toMatchObject({ gramas: 50, medida: { nome: 'fatia', quantidade: 2 } })
+  })
+
+  it('CA-1369 (D-503): a medida que a porção vira, para a lista dizer que ela já vale', () => {
+    expect(medidaQueAPorcaoDa(GRANOLA)).toEqual({ nome: 'colher de sopa', gramas: 10 })
+    expect(medidaQueAPorcaoDa({ ...GRANOLA, nomeDaPorcao: '30 g', porcaoG: 30 })).toEqual({ nome: 'porção', gramas: 30 })
+    expect(medidaQueAPorcaoDa({ ...GRANOLA, nomeDaPorcao: '' })).toBeNull()
+    expect(medidaQueAPorcaoDa({ ...GRANOLA, porcaoG: null })).toBeNull()
+    expect(medidaQueAPorcaoDa(CUSCUZ)).toBeNull()
   })
 
   it('CA-1347: o rótulo antigo com "4 colheres de sopa" abre e salva sem perder a medida', () => {

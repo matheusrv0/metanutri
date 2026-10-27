@@ -1,6 +1,6 @@
 import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
-import { motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
+import { medidaQueAPorcaoDa, motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
 import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import { lerMedidaDaLista } from '@/domain/medidaDoRotulo.ts'
 import { ehIlegivel, lerNumeroDoRotulo } from '@/domain/numeroDoRotulo.ts'
@@ -111,6 +111,7 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
   const chaveTravada = incoerente || motivoSemSugestao !== null
   const unidade = d.unidade
   const por100 = valoresPor100(d)
+  const daPorcao = medidaQueAPorcaoDa(d)
 
   const lerCodigo = async (codigo: string) => {
     setProcurando(true)
@@ -331,7 +332,14 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
 
       <section className="flex flex-col gap-3 border-t border-border pt-5" aria-label="Medidas caseiras">
         <h3 className="text-sm font-semibold text-heading">Medidas caseiras</h3>
-        {d.medidas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma medida. Sem ela, o paciente lê o peso.</p> : null}
+        {/* D-503: com a medida da porção lida, a lista não nega que ela existe. */}
+        {d.medidas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {daPorcao
+              ? `A medida da porção (${daPorcao.nome} · ${formatarNumero(daPorcao.gramas, Number.isInteger(daPorcao.gramas) ? 0 : 1)} ${unidade}) já vale. Acrescente outras, se quiser.`
+              : 'Nenhuma medida. Sem ela, o paciente lê o peso.'}
+          </p>
+        ) : null}
         <ul className="flex flex-col gap-2">
           {d.medidas.map((m, i) => {
             // D-496: "2 fatias" com 50 g é gravada como a fatia de 25 g; a linha mostra a leitura antes de salvar.
