@@ -117,6 +117,19 @@ describe('a conta está em dia neste navegador (spec separacao-site-app, D-511 e
     expect(contaEmDia(n, 'u1', COM_RETIDOS)).toBe(true)
   })
 
+  it('R1 (revisão): situação sem versão e com dado na conta não está em dia: a nuvem nunca confirmou (o parar() de um motor que não abriu grava assim)', () => {
+    const n = contaEmDiaNoNavegador()
+    n.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: null, mudancas: 0, salvas: 0, itens: 0, saiu: true, motor: 2 }))
+    expect(contaEmDia(n, 'u1', COM_RETIDOS)).toBe(false)
+    expect(contaEmDia(n, 'u1', SEM_RETIDOS)).toBe(false)
+  })
+
+  it('R1: situação sem versão e sem dado continua em dia (DP-SA-23)', () => {
+    const n = new Navegador()
+    n.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: null, mudancas: 0, salvas: 0, itens: 0, saiu: true }))
+    expect(contaEmDia(n, 'u1', COM_RETIDOS)).toBe(true)
+  })
+
   it('situação ilegível com dado na conta: não está em dia', () => {
     const n = contaEmDiaNoNavegador()
     n.setItem('metanutri:conta:u1:nuvem', '{quebrado')

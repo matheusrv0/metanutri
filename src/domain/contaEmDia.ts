@@ -52,6 +52,8 @@ export function contaEmDia(base: ArmazenamentoListavel, usuarioId: string, { con
     const temDado = chaves.some((chave) => chave !== CHAVE_NUVEM && ehChaveDaNuvem(chave))
     const situacao = lerSituacao(conta)
     if (situacao === null) return !temDado && !chaves.includes(CHAVE_NUVEM)
+    // Revisão R1: sem versão, a nuvem nunca confirmou esta cópia (o parar() de um motor que não abriu grava assim).
+    if (situacao.versao === null && temDado) return false
     if (situacao.mudancas > situacao.salvas || situacao.parcial === true) return false
     if (contarRetidos && Object.keys(lerRetidos(conta.getItem(CHAVE_RETIDOS))).length > 0) return false
     return !temLinkPendente(conta.getItem(CHAVE_ACOMPANHAMENTOS))
