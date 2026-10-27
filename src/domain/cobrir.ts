@@ -2,8 +2,9 @@
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
-import { ehCorteGordo, ehDeUsoComum, ehPrescritivel, ehSegundaEscolha } from './prescritivel.ts'
+import { ehCorteGordo, ehDeUsoComum, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
+import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
 import { tipoDaRefeicao, type TipoRefeicao } from './sugestoes.ts'
 import type { Totais } from './totais.ts'
 import type { Alimento, ChaveNutrienteAlimento, MedidaDoItem, Plano, Refeicao } from './tipos.ts'
@@ -365,7 +366,8 @@ export function sugerirParaCobrir(
   const candidatas: (Sugestao & { readonly comum: boolean; readonly primeira: boolean; readonly naoGosta: boolean; readonly animal: boolean })[] = []
   for (const alimento of opcoes.alimentos) {
     if (opcoes.ocultos?.has(alimento.id)) continue
-    if (!ehPrescritivel(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
+    // D-510 (spec alimentos-e-gramaturas): o hambúrguer vegetal feito em casa não passa pela regra do embutido.
+    if (!ehPrescritivelParaSugerir(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
     if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal

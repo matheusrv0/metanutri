@@ -2,7 +2,8 @@
 // nome livre.
 import { dadosEmBranco, produtoDosDados } from './alimentoProprio.ts'
 import { produtoComoAlimento, type DadosAlimentoProprio } from './produtos.ts'
-import { motivoParaNaoSugerir, regraDoProprio } from './sugestaoDoProprio.ts'
+import { ehPrescritivelParaSugerir, motivoParaNaoSugerir, regraDoProprio } from './sugestaoDoProprio.ts'
+import { ALIMENTOS } from './tabelas.ts'
 import type { Alimento } from './tipos.ts'
 
 const NEUTRO: DadosAlimentoProprio = {
@@ -114,6 +115,43 @@ describe('o açúcar do próprio leite não trava o leite (D-509)', () => {
     expect(regraDoProprio(comoAlimento({ nome: 'Leite condensado', grupo: LEITE }))?.motivo).toBe('doce')
     expect(regraDoProprio(comoAlimento({ nome: 'Leite fermentado', grupo: LEITE }))?.motivo).toBe('bebida adoçada')
     expect(regraDoProprio(comoAlimento({ nome: 'Leite em pó sabor baunilha', grupo: LEITE }))?.motivo).toBe('ultraprocessado')
+  })
+})
+
+describe('o embutido vegetal feito em casa não é embutido (D-510)', () => {
+  const LEGUMINOSAS = 'Leguminosas e derivados'
+  const grao = { nome: 'Hambúrguer vegetal de grão-de-bico', grupo: LEGUMINOSAS, preparo: 'grelhado' as const }
+
+  it('CA-1376: nos tipos Preparação e Alimento, a regra do embutido não vale, e o Cobrir o aceita', () => {
+    for (const tipo of ['preparacao', 'alimento'] as const) {
+      const hamburguer = comoAlimento({ ...grao, tipo })
+      expect(motivoParaNaoSugerir(hamburguer), tipo).toBeNull()
+      expect(ehPrescritivelParaSugerir(hamburguer), tipo).toBe(true)
+    }
+    for (const nome of ['Salsicha vegetal de soja', 'Linguiça vegetal da casa', 'Hambúrguer de soja assado', 'Hambúrguer vegano de lentilha']) {
+      expect(motivoParaNaoSugerir(comoAlimento({ ...grao, nome, tipo: 'preparacao' })), nome).toBeNull()
+    }
+  })
+
+  it('CA-1376: no tipo Rótulo, o embutido vegetal é ultraprocessado', () => {
+    const rotulo = comoAlimento({ ...grao, tipo: 'rotulo', preparo: null })
+    expect(motivoParaNaoSugerir(rotulo)).toBe('ultraprocessado')
+  })
+
+  it('CA-1376: o hambúrguer de carne feito em casa continua embutido; as outras regras valem para o vegetal', () => {
+    const frango = comoAlimento({ ...grao, nome: 'Hambúrguer de frango da casa', grupo: 'Carnes e derivados', tipo: 'preparacao' })
+    expect(motivoParaNaoSugerir(frango)).toBe('embutido, carne processada ou curada')
+    expect(ehPrescritivelParaSugerir(frango)).toBe(false)
+    const frito = comoAlimento({ ...grao, nome: 'Hambúrguer vegetal frito', tipo: 'preparacao', preparo: 'frito' })
+    expect(motivoParaNaoSugerir(frito)).toBe('fritura ou salgado frito')
+    expect(ehPrescritivelParaSugerir(frito)).toBe(false)
+  })
+
+  it('a base continua com a regra dela', () => {
+    for (const a of ALIMENTOS.filter((x) => /^Hambúrguer/.test(x.descricao.trim()))) expect(ehPrescritivelParaSugerir(a), a.descricao).toBe(false)
+    const arroz = ALIMENTOS.find((x) => x.descricao.trim() === 'Arroz, tipo 1, cozido')
+    if (!arroz) throw new Error('sem arroz')
+    expect(ehPrescritivelParaSugerir(arroz)).toBe(true)
   })
 })
 

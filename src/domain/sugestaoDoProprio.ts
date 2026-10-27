@@ -4,7 +4,8 @@
 // próprio é livre, e o cadastro traz o que a TACO não tem (gordura trans, açúcares). Por isso, aqui os campos
 // declarados e o grupo vêm antes, e o nome livre é a última linha de defesa. As regras da parceira valem igual à base:
 // nunca álcool, ultraprocessado nem gordura trans nas sugestões.
-import { regraQueExclui } from './prescritivel.ts'
+import { REGRAS_PRESCRICAO, regraQueExclui, type NivelPrescricao, type OpcoesPrescricao, type RegraPrescricao } from './prescritivel.ts'
+import { TERMOS_POR_RESTRICAO } from './restricoesDaBase.ts'
 import type { Alimento } from './tipos.ts'
 
 export interface RegraDoProprio {
@@ -67,6 +68,16 @@ const ULTRAPROCESSADO = [
 const casaAlguma = (regras: readonly RegExp[], nome: string): boolean => regras.some((r) => r.test(nome))
 
 /**
+ * O embutido vegetal (D-510): o nome que a regra "Embutido, carne processada ou curada" da base pega ("Hambúrguer",
+ * "Salsicha", "Linguiça") e que traz uma das exceções vegetais da restrição vegetariana (D-492: "hambúrguer vegetal",
+ * "hambúrguer de grão", "salsicha vegetal", "vegano"…). A restrição e a sugestão leem a mesma lista.
+ */
+const EXCECOES_VEGETAIS = TERMOS_POR_RESTRICAO.vegetariano.excecoes
+const REGRA_DO_EMBUTIDO = REGRAS_PRESCRICAO.find((r) => r.id === 'embutido')
+const ehEmbutidoVegetal = (a: Alimento, nome: string): boolean =>
+  a.proprio !== undefined && EXCECOES_VEGETAIS.some((e) => nome.includes(e)) && REGRA_DO_EMBUTIDO?.casa(a) === true
+
+/**
  * Leite e iogurte sem adição (D-509): o açúcar deles é a lactose do próprio leite (38 g em 100 g do leite em pó integral,
  * uns 5 g no leite reconstituído). O total em 100 g não distingue a lactose do açúcar de adição; o nome distingue.
  */
@@ -108,13 +119,40 @@ export function regraDoProprio(a: Alimento): RegraDoProprio | null {
     return { id: 'acucar', nivel: 'fora-da-rotina', motivo: `mais de ${numeroNaTela(limite)} g de açúcares em 100 ${a.unidade ?? 'g'}` }
   }
   if (casaAlguma(BEBIDA_ADOCADA, nome)) return { id: 'bebida-adocada', nivel: 'fora-da-rotina', motivo: 'bebida adoçada' }
-  // O ultraprocessado antes do doce: o biscoito recheado de chocolate é biscoito.
-  if (casaAlguma(ULTRAPROCESSADO, nome)) return { id: 'ultraprocessado', nivel: 'fora-da-rotina', motivo: 'ultraprocessado' }
+  // O ultraprocessado antes do doce: o biscoito recheado de chocolate é biscoito. O hambúrguer vegetal de rótulo é
+  // produto industrial (D-510).
+  if (casaAlguma(ULTRAPROCESSADO, nome) || (a.proprio?.tipo === 'rotulo' && ehEmbutidoVegetal(a, nome))) {
+    return { id: 'ultraprocessado', nivel: 'fora-da-rotina', motivo: 'ultraprocessado' }
+  }
   if (casaAlguma(DOCE, nome)) return { id: 'doce', nivel: 'fora-da-rotina', motivo: 'doce' }
   return null
 }
 
 const comMinuscula = (s: string): string => s.charAt(0).toLowerCase() + s.slice(1)
+
+const GRAVIDADE: Readonly<Record<NivelPrescricao, number>> = { nunca: 0, 'fora-da-rotina': 1, ingrediente: 2 }
+
+/**
+ * A regra da base como vale para o alimento: a de `prescritivel.ts`, menos a do embutido no embutido vegetal do
+ * alimento próprio (D-510), em que as outras regras da base continuam valendo. Na base, igual a `regraQueExclui`.
+ */
+export function regraDaBaseParaSugerir(a: Alimento): RegraPrescricao | null {
+  const regra = regraQueExclui(a)
+  if (regra === null || !ehEmbutidoVegetal(a, normalizar(a.descricao))) return regra
+  const limpo: Alimento = { ...a, descricao: a.descricao.trim().replace(/\s+/g, ' ') }
+  let pior: RegraPrescricao | null = null
+  for (const r of REGRAS_PRESCRICAO) {
+    if (r.id === REGRA_DO_EMBUTIDO?.id || !r.casa(limpo)) continue
+    if (pior === null || GRAVIDADE[r.nivel] < GRAVIDADE[pior.nivel]) pior = r
+  }
+  return pior
+}
+
+/** `ehPrescritivel` com a regra da base como vale para o alimento próprio (D-510); na base, igual. O Cobrir usa esta. */
+export function ehPrescritivelParaSugerir(a: Alimento, opcoes: OpcoesPrescricao = {}): boolean {
+  const regra = regraDaBaseParaSugerir(a)
+  return regra === null || (regra.nivel === 'ingrediente' && opcoes.incluirIngredientes === true)
+}
 
 /**
  * Por que o alimento próprio não entra no Cobrir nem nas trocas, mesmo com a chave ligada (D-386 e D-493): o grupo
@@ -124,7 +162,7 @@ const comMinuscula = (s: string): string => s.charAt(0).toLowerCase() + s.slice(
  */
 export function motivoParaNaoSugerir(a: Alimento): string | null {
   if (a.categoria === SUPLEMENTOS) return 'suplemento'
-  const daBase = regraQueExclui(a)
+  const daBase = regraDaBaseParaSugerir(a)
   const base = daBase && daBase.nivel !== 'ingrediente' ? { nivel: daBase.nivel, motivo: comMinuscula(daBase.titulo) } : null
   const proprio = regraDoProprio(a)
   if (base?.nivel === 'nunca') return base.motivo

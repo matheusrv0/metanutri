@@ -359,6 +359,28 @@ describe('Cobrir e trocas só com a chave (D-386)', () => {
     expect(produtoDosDados({ ...po, nome: 'Leite em pó sabor morango' }).sugerirAutomaticamente).toBe(false)
   })
 
+  it('CA-1376 (D-510): o hambúrguer vegetal de grão-de-bico feito em casa entra no Cobrir de ferro do vegetariano; o de rótulo, não', () => {
+    const vegetariano = montarRestricoes({ marcadas: ['vegetariano'], texto: '', doencas: [], naoGosta: '' })
+    const hamburguer: DadosAlimentoProprio = {
+      ...rica,
+      tipo: 'preparacao',
+      nome: 'Hambúrguer vegetal de grão-de-bico',
+      grupo: 'Leguminosas e derivados',
+      preparo: 'grelhado',
+      sugerirAutomaticamente: true,
+      valores: { energia_kcal: 180, proteina_g: 8, carboidrato_g: 22, lipideos_g: 6, ferro_mg: 3 },
+    }
+    expect(produtoDosDados(hamburguer).sugerirAutomaticamente).toBe(true)
+    const caseiro = registrar(hamburguer)
+    const ocultos = new Set(ALIMENTOS.map((a) => a.id))
+    const ferro = () => sugerirParaCobrir('ferro_mg', vazio, adequacao, { gastoEnergetico: 2000, alimentos: alimentosParaSugerir(), restricoes: vegetariano, ocultos }).sugestoes.map((s) => s.alimentoId)
+    expect(ferro()).toContain(caseiro)
+    const rotulo = { ...hamburguer, tipo: 'rotulo' as const, preparo: null, fonte: { tipo: 'rotulo' as const } }
+    expect(produtoDosDados(rotulo).sugerirAutomaticamente).toBe(false)
+    const industrial = registrarComAChave(rotulo)
+    expect(ferro()).not.toContain(industrial)
+  })
+
   it('CA-1373 (D-507): a fruta de rótulo com açúcar acima do limite e a "Banana chips" não entram', () => {
     const rotulo = { ...rica, tipo: 'rotulo' as const, grupo: 'Frutas e derivados', preparo: null, fonte: { tipo: 'rotulo' as const } }
     expect(entra({ ...rotulo, nome: 'Açaí com guaraná', valores: { ...rica.valores, acucares_g: 18 } })).toBe(false)
