@@ -138,9 +138,21 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
     }
   }
 
+  /**
+   * Revisão R2: o uso desta aba que ficou só na memória (os eventos gravam no máximo a cada 60 s) vai para a marca. Sem
+   * isso, a outra aba, parada, lia a marca atrasada e saía até 1 minuto antes da hora.
+   */
+  const gravarUsoEmMemoria = (): void => {
+    if (!ligado || saindo || usoEmMemoria === null) return
+    const h = horas()
+    if (h.marca !== null && h.marca.uso >= usoEmMemoria) return
+    gravarMarca(armazenamento, { conta, entrada: h.entrada, admin: h.admin, desvio: h.desvio, ...(h.marca ?? {}), uso: usoEmMemoria })
+  }
+
   function conferir(): void {
     if (!ligado || saindo) return
     pararRelogio()
+    gravarUsoEmMemoria()
     const agora = calcular()
     if (agora.saida) {
       void iniciarSaida(agora.ate)
@@ -174,6 +186,8 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
   }
   const aoVoltar = (): void => {
     if (globalThis.document?.visibilityState !== 'hidden') conferir()
+    // R2: a aba ficou oculta; o uso dela vai para a marca antes de o navegador atrasar os relógios dela (CB-522).
+    else gravarUsoEmMemoria()
   }
 
   return {
@@ -194,6 +208,7 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
       // CA-1458: o computador acordou ou a aba voltou; confere antes de deixar editar.
       globalThis.addEventListener('focus', aoVoltar)
       globalThis.document?.addEventListener('visibilitychange', aoVoltar)
+      globalThis.addEventListener('pagehide', gravarUsoEmMemoria)
       conferir()
     },
     desligar() {
@@ -203,6 +218,7 @@ function criarVigia({ conta, armazenamento }: OpcoesDoVigia): Vigia {
       globalThis.removeEventListener('storage', aoMudarMarca)
       globalThis.removeEventListener('focus', aoVoltar)
       globalThis.document?.removeEventListener('visibilitychange', aoVoltar)
+      globalThis.removeEventListener('pagehide', gravarUsoEmMemoria)
     },
     continuar() {
       usar()

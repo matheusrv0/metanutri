@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import type { EstadoDaNuvem } from '@/domain/sincronia.ts'
+import { situacaoDaSessao } from '@/domain/tempoDeSessao.ts'
 import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import type { ValorConta } from '../estado/usarConta.ts'
 import { CHAVE_MARCA_DA_SESSAO, gravarMarca, lerMarca } from './marcaDeUso.ts'
@@ -54,6 +55,13 @@ const usar = (tipo: 'keydown' | 'pointerdown' | 'touchstart' | 'wheel' | 'scroll
   act(() => {
     window.dispatchEvent(new Event(tipo))
   })
+
+/** O que a outra aba, parada, decide só pela marca do navegador: a saída, ou nula enquanto vale. */
+function situacaoNaMarca(agora: number) {
+  const marca = lerMarca(localStorage, 'u1')
+  if (marca === null || marca.entrada === null) throw new Error('sem marca')
+  return situacaoDaSessao({ agora, uso: marca.uso, entrada: marca.entrada, admin: marca.admin }).saida
+}
 
 /** A cópia de trabalho de u1 em dia com a nuvem. */
 function espacoEmDia() {
@@ -195,6 +203,44 @@ describe('o vigia da sessão (spec separacao-site-app, D-514 a D-517)', () => {
     await passar(30_000)
     usar()
     expect(lerMarca(localStorage, 'u1')?.uso).toBe(INICIO + 2 * MIN)
+  })
+
+  it('R2 (revisão): o uso que ficou só na memória vai para a marca na conferência seguinte, e a outra aba não sai antes da hora', async () => {
+    montar()
+    await passar(MIN)
+    usar()
+    await passar(30_000)
+    usar()
+    expect(lerMarca(localStorage, 'u1')?.uso).toBe(INICIO + MIN)
+    await passar(30_000)
+    expect(lerMarca(localStorage, 'u1')?.uso).toBeGreaterThanOrEqual(INICIO + 90_000)
+    // A outra aba, parada, lê a marca: aos 31 minutos do primeiro uso, a sessão ainda vale (o último foi 30 s depois).
+    await passar(29 * MIN + 1_000)
+    const outra = situacaoNaMarca(INICIO + 31 * MIN)
+    expect(outra).toBe(null)
+  })
+
+  it('R2: ao esconder a aba e ao sair da página, o uso em memória vai para a marca na hora', async () => {
+    montar()
+    await passar(MIN)
+    usar()
+    await passar(10_000)
+    usar()
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'))
+    })
+    expect(lerMarca(localStorage, 'u1')?.uso).toBe(INICIO + 70_000)
+    await passar(10_000)
+    usar()
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
+    try {
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+    } finally {
+      Reflect.deleteProperty(document, 'visibilityState')
+    }
+    expect(lerMarca(localStorage, 'u1')?.uso).toBe(INICIO + 80_000)
   })
 
   it('CA-1445 e CB-508: o uso em outra aba (a marca muda no navegador) fecha o aviso aqui e adia a saída', async () => {
