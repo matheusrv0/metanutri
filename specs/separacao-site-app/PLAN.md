@@ -5,6 +5,7 @@ dono aprovou as telas com dois ajustes: texto mínimo (D-526, no lugar do D-519)
 a P3 logo depois do site da P2 (D-527 e D-528).
 **Base:** `main` em `afa3815` (27/10/2026, já com a publicação 2 de alimentos). A P1 foi feita no ramo
 `separacao-site-app`; a P2 e a P3 vão em ramos próprios, a partir da `main` do dia (`separacao-p2`, `separacao-p3`).
+A P2 partiu da `main` em `fd95b8f`, já com a landing v9 (DP-SA-29).
 **Dependências novas:** nenhuma. A Cloudflare liga ao repositório pelo painel dela; o domínio, as variáveis e a regra
 de redirecionamento ficam lá. O teste da mudança no Firefox e no WebKit usa navegadores do Playwright que já está no
 projeto (`npx playwright install firefox webkit`, sem pacote novo).
@@ -62,9 +63,9 @@ projeto (`npx playwright install firefox webkit`, sem pacote novo).
   manifesto e sem registro: quem tinha o service worker velho recebe o que se desliga; quem nunca teve não registra nada.
 - **DP-SA-14 · App instalável.** O manifesto do app ganha `id: '/'`; `start_url` e `scope` na raiz. O registro do
   service worker (`registrarAplicativo.ts`) e o aviso de versão nova (D-172) não mudam.
-- **DP-SA-15 · Portão da Cloudflare.** O comando de build da Cloudflare é `npm run publicar:app` = `node
+- ~~**DP-SA-15 · Portão da Cloudflare.** O comando de build da Cloudflare é `npm run publicar:app` = `node
   scripts/conferir-publicacao.mjs && npm run check && npm audit --omit=dev --audit-level=high && npm run build:app`, a
-  mesma conferência do `publicar.yml` de hoje. Saída: `dist`.
+  mesma conferência do `publicar.yml` de hoje. Saída: `dist`.~~ Substituída pelo DP-SA-31 (sem o `npm run check`).
 - **DP-SA-16 · `_headers`.** O `pluginCsp.ts` escreve o `dist/_headers` do app a partir do `csp.ts`, a fonte única.
 - **DP-SA-17 · Duas origens nos testes.** App sem conta em `localhost:4173`; app com conta falsa em `localhost:4176`;
   site em `localhost:4178`. O site aponta para o app de `4176`; os dois apps apontam para o site de `4178`. O servidor
@@ -109,6 +110,69 @@ uma diz o porquê.
 - **DP-SA-28 · No navegador, a sessão entra pelo formulário.** O `sessao.spec.ts` entra por Entrar (servidor falso com
   `entrar: 'ok'`): o script de abertura do servidor falso põe a sessão de volta a cada recarga, e a saída recarrega. O
   `ligarServidorFalso` passa a devolver os `logout` pedidos, com o `scope`.
+
+**Decisões da P2 (27/10/2026).** Do coordenador ou tomadas ao ler o código, sem perguntar (regra "apenas faça"); cada
+uma diz o porquê.
+
+- **DP-SA-29 · Base e ordem.** A P2 parte da `main` em `fd95b8f` (com a landing v9), no ramo `separacao-p2`; a P3, no
+  `separacao-p3`, a partir da P2 pronta. Ordem: T14, T15, T16, T22, T27, T18, T19, T26, R4, R8, T17, T20, T21, T23, T24,
+  T25, T28, T29, T30. As tarefas que não tocam a landing vêm antes: o ramo `landing-ajustes` mexe em
+  `BotaoFixoDoCelular.tsx`, `RodapeDaLanding.tsx` e `navegacaoPublica.ts`, e a T17 vem depois de trazer a `main` com ele.
+- **DP-SA-30 · A `PaginaDoSite` nasce na T18.** Com a T18 antes da T17, a página do site (a moldura com a tela da rota,
+  que o build pré-desenha e o pacote do site monta) nasce na T18, com os links de hoje; a T17 só muda os links.
+  `src/site/PaginaDoSite.tsx`, `.test.tsx` e `src/seo/vitrine.tsx` passam da T17 para a T18.
+- **DP-SA-31 · `publicar:app` sem o `npm run check`** (no lugar do DP-SA-15; o R-507 vale desde já: o build grátis da
+  Cloudflare para em 20 minutos): `node scripts/conferir-publicacao.mjs && npm audit --omit=dev --audit-level=high &&
+  npm run build:app`. O `check` é obrigatório antes do merge na `main` (já é a prática). O `conferir-publicacao.mjs` só lê
+  `src/domain/legal.ts`, sem variável de ambiente: roda igual na Cloudflare, sem ajuste.
+- **DP-SA-32 · `.node-version` na raiz, com `22`.** O `engines` pede `>=22.12.0`, o `publicar.yml` usa 22 e a máquina do
+  projeto, 22.16. A Cloudflare lê o arquivo; o passo 5 do dono não tem mais `NODE_VERSION`. Arquivo novo, na T28.
+- **DP-SA-33 · Nomes fixos na Cloudflare** (o dono cria em paralelo): projeto `metanutri-app`, ramo `main`, build `npm run
+  publicar:app`, saída `dist`, variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MERCADOPAGO_PUBLIC_KEY` e
+  `VITE_TURNSTILE_SITE_KEY`. O código não pede outro nome.
+- **DP-SA-34 · Versão dos termos: 28/10/2026.** O dia em que o site da P2 vai ao ar depende do DNS. `VERSAO_TERMOS` e
+  `DATA_TERMOS` (`src/domain/legal.ts`) e o teste delas (`src/domain/legal.test.ts`) são o único lugar a trocar, se for
+  outro dia.
+- **DP-SA-35 · A landing v9 na T17.** Os links do site para o app, na landing de hoje: `MolduraDaLanding.tsx` (sem
+  `temSessao`; o botão fixo sempre, D-501), `BarraDaLanding.tsx` ("Entrar" e "Criar conta grátis" com o endereço do app;
+  sai "Ir para o painel"), `BotaoFixoDoCelular.tsx` e `FaixaComecar.tsx` (o endereço de Criar conta no app), todos em
+  `src/ui/publico/inicio/`, e `src/ui/publico/navegacaoPublica.ts` (sai `painel` do `DestinoPublico`). O topo
+  (`HeroiDaLanding`) e os planos (`PlanosEPrecos`) não mudam: os botões chamam `aoComecar` e `aoEscolher`, que o site
+  liga ao app. O rodapé (`RodapeDaLanding`) não muda: só tem páginas do site.
+- **DP-SA-36 · No site, o clique decide; o endereço é de verdade.** Os links levam o endereço certo (o app ou a página do
+  site), para a aba nova e os robôs. No clique comum, "Entrar", "Começar grátis"/"Criar conta grátis", os planos e o
+  botão fixo chamam o site, que vai ao app ou, com dado só aqui, abre "Continuar" (D-527). De uma página do site para
+  outra, a navegação é a comum; a página em que a pessoa já está só rola ao topo. Com Ctrl, Cmd ou o botão do meio, o
+  navegador segue o endereço do app sem "Continuar": a aba nova é escolha da pessoa, e o dado fica no endereço antigo
+  até a próxima ida pelo site (D-525).
+- **DP-SA-37 · Destaque e marca na consulta.** Preços do site recebe o plano em `?destaque=<plano>`
+  (`/precos/?destaque=pro`); a marca do ícone antigo vai ao app em `?icone-antigo` (D-524). Na consulta, e não no `#`: o
+  `#` do app é a rota, e o do site fica para as seções da landing.
+- **DP-SA-38 · O pacote da mudança é o próprio armazenamento.** `chaves` traz as chaves do navegador com o nome de lá: as
+  do espaço da conta (`metanutri:conta:<id>:…`), as de antes das contas (com `metanutri:dono`), quando o dono é ela ou
+  ninguém, e `metanutri:tema`. O app grava como vieram; as de antes das contas e o tema só entram onde o app ainda não
+  tem a chave, e o dono passa a ser ela. Daí a migração de sempre (D-123) leva o de antes para o espaço dela, e o motor
+  junta com a nuvem (D-513). Chave fora dessas três famílias torna a mensagem ilegível (CB-502).
+- **DP-SA-39 · A confirmação mora dentro dos provedores.** O pedido e a gravação acontecem em `App`, antes dos provedores
+  (DP-SA-11); quem vê que a nuvem tem tudo (fase pronta, nada pendente nem salvando, sem trava, `contaEmDia` sem contar
+  retidos, migração completa) é um gancho dentro deles, no mesmo `usarMudanca.ts`, que manda o `recebido` uma vez.
+- **DP-SA-40 · Sem a aba do site, não espera.** Sem `window.opener`, ou com ele já fechado, o app abre a conta na hora:
+  nenhuma resposta pode chegar. Com a aba aberta e calada, espera os 10 s (CA-1437).
+- **DP-SA-41 · "Sem espaço neste navegador" tem "Continuar".** A tela do D-526 aparece no lugar de "Trazendo seus
+  dados…", e "Continuar" abre a conta com a nuvem (CB-501). Sem o botão, a pessoa ficaria presa nela.
+- **DP-SA-42 · Os testes de navegador da landing vão para o site.** `e2e/landing-escura.spec.ts`, `e2e/landing-v3.spec.ts`
+  e `e2e/landing-v9.spec.ts`, escritos depois deste plano, também passam a `e2e/site/` (T29). O
+  `scripts/capturas-landing.mjs` não existe mais e sai da T28.
+- **DP-SA-43 · R4: a recarga da saída não pergunta.** O motor ganha `parada` (verdadeiro depois do `parar()` e do
+  `saiuEmOutraAba()`), e o aviso de fechar com pendência (`ProvedorNuvem`) não vale com o motor parado: a conta está
+  saindo, e o que não subiu fica no navegador (D-517) ou ficou por escolha da pessoa (CA-479). Vale para a saída por
+  tempo e para o "Sair mesmo assim".
+- **DP-SA-44 · R8: os links antes da cópia.** Na saída por tempo, os links pendentes vão primeiro e a cópia depois, dentro
+  dos mesmos 10 s: o reenvio do link grava no espaço da conta e conta uma mudança, que assim já vai na cópia. Se os links
+  tomarem o prazo inteiro, a cópia não sai e o espaço fica.
+- **DP-SA-45 · R6 fica registrada, sem código.** Acertar o desvio no meio da sessão pede a hora do servidor a cada
+  conferência (um pedido a mais por minuto) ou a data de uma resposta do Supabase; nenhum dos dois é trivial nem está na
+  spec. O erro dura até a próxima renovação do token (no máximo 1 hora).
 
 ## 1. Tarefas
 
@@ -212,6 +276,14 @@ teste que falha antes.
 - **R8 · Ordem entre o envio dos links e o `salvarAgora()`:** hoje os dois vão juntos; um link pendente salvo depois da
   cópia pode deixar a situação com mudança nova no fim da saída.
 
+Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
+- [ ] **R4 · A recarga da saída não pergunta.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (`parada`),
+  `src/ui/estado/ProvedorNuvem.tsx` e `src/ui/estado/ProvedorNuvem.test.tsx` (o `beforeunload` com o motor parado não
+  avisa). Verifica: R4.
+- [ ] **R8 · Os links antes da cópia.** `src/ui/sessao/usarTempoDeSessao.ts` e `usarTempoDeSessao.test.tsx`. Verifica: R8
+  e CA-1447 (a ordem).
+- **R6** fica registrada, sem código (DP-SA-45).
+
 ### P2 · App no endereço novo, site com os repasses e a mudança dos dados
 
 - [ ] **T14 · Spec: notas da P2.** `specs/estilo-spora/SPEC.md` (CA-730), `specs/site-publico-profissional/SPEC.md`
@@ -226,21 +298,27 @@ teste que falha antes.
   texto do `_headers` com o D-507), `src/seguranca/pluginCsp.ts` (recebe o alvo; no site, a política do site; no app, a
   de hoje e o `_headers`, DP-SA-16), `src/seguranca/csp.test.ts`, `src/seguranca/pluginCsp.test.ts`. Depende de: T14.
   Verifica: CA-1406 (a CSP), CA-1419 (o texto dos cabeçalhos).
-- [ ] **T17 · As páginas do site.** `src/site/PaginaDoSite.tsx` e `.test.tsx` (novos: a moldura com a tela da página,
-  os links do D-501 e do D-503), `src/ui/publico/MolduraPublica.tsx` (sem `temSessao`, `abriuNaVitrine` e `recarregar`;
+- [ ] **T17 · Os links das páginas do site.** ~~`src/site/PaginaDoSite.tsx` e `.test.tsx` (novos: a moldura com a tela
+  da página, os links do D-501 e do D-503)~~ (nascem na T18, DP-SA-30; aqui ganham os links do D-501 e do D-503),
+  `src/ui/publico/MolduraPublica.tsx` (sem `temSessao`, `abriuNaVitrine` e `recarregar`;
   links de verdade entre as páginas; "Entrar" e "Começar grátis" para o app; o rodapé sem "Ir para o painel"),
-  `src/ui/publico/TelaInicio.tsx` ("Começar grátis" para o app; "Ver preços" para `precos/`),
+  ~~`src/ui/publico/TelaInicio.tsx` ("Começar grátis" para o app; "Ver preços" para `precos/`)~~ (a landing v9, DP-SA-35:
+  `src/ui/publico/inicio/MolduraDaLanding.tsx`, `BarraDaLanding.tsx`, `BotaoFixoDoCelular.tsx`, `FaixaComecar.tsx` e
+  `MolduraDaLanding.test.tsx`, e `src/ui/publico/navegacaoPublica.ts`),
   `src/ui/publico/SecaoPrecos.tsx` (destaque pelo `?destaque=`; os planos levam a Criar conta no app),
-  `src/seo/vitrine.tsx` (desenha a `PaginaDoSite`), `src/App.tsx` (só as props da moldura que saíram), testes
+  ~~`src/seo/vitrine.tsx` (desenha a `PaginaDoSite`)~~ (T18), `src/App.tsx` (só as props da moldura que saíram), testes
   `src/ui/publico/MolduraPublica.test.tsx`, `src/ui/publico/TelaInicio.test.tsx`, `src/ui/publico/SecaoPrecos.test.tsx`,
-  `src/seo/vitrine.test.tsx`. Depende de: T15. Verifica: CA-1402, CA-1403, CA-1404.
+  `src/seo/vitrine.test.tsx`, `src/site/main.tsx` (o destaque da consulta). Depende de: T15, T18. Verifica: CA-1402,
+  CA-1403, CA-1404.
 - [ ] **T18 · A entrada do site e os dois builds.** `src/site/main.tsx` (novo: monta a `PaginaDoSite` da `data-rota`),
+  `src/site/PaginaDoSite.tsx` e `.test.tsx` (novos, DP-SA-30: a moldura com a tela da rota; as páginas e o app pelos
+  endereços de verdade), `src/seo/vitrine.tsx` (desenha a `PaginaDoSite`),
   `src/seo/pluginAlvo.ts` e `.test.ts` (novos, DP-SA-2), `vite.config.ts` (DP-SA-1: no site, `dist-site`, `pluginSeo`,
   `pluginAlvo` e a CSP do site; no app, `dist`, sem pré-desenho), `index.html` (as marcas que o plugin troca, sem mudar o
   texto do site), `public/preparar-app.js` (novo: só o tema), `package.json` (`build` monta os dois; `build:app`,
-  `build:site`, `dev:site`, `preview:site`, `publicar:app` do DP-SA-15), `.gitignore` (`dist-site/`),
-  `src/seo/arquivosDoSite.test.ts` (o que vai em cada pasta), `src/seo/cabecalho.test.ts`. Depende de: T16, T17.
-  Verifica: CA-1418 (a cabeça do app, pelo plugin), CA-1408 (o pré-desenho continua no site).
+  `build:site`, `dev:site`, `preview:site`, `publicar:app` do DP-SA-31), `.gitignore` (`dist-site/`),
+  `src/seo/arquivosDoSite.test.ts` (o que vai em cada pasta), `src/seo/cabecalho.test.ts`. Depende de: T15, T16 (antes
+  da T17, DP-SA-29). Verifica: CA-1418 (a cabeça do app, pelo plugin), CA-1408 (o pré-desenho continua no site).
 - [ ] **T19 · O `<head>` do site.** `public/preparar-pagina.js` (o tema; `#/missoes/…` vai ao app na hora; `#/inicio`,
   `#/precos[/<plano>]`, `#/termos`, `#/privacidade` e `#/fontes` vão à página própria; tela do app, `?volta=` e modo
   instalado escondem a vitrine e deixam a decisão para o pacote; não procura mais sessão),
@@ -290,14 +368,16 @@ teste que falha antes.
   build as chaves do Supabase, do Mercado Pago e do Turnstile), `README.md` ("Projeto já ligado", passos 1, 4 e 8, com
   os endereços novos; seção "Ordem para publicar a P2 e a P3", com os passos do dono da seção 4 deste plano: a P3 vem
   logo depois do site da P2, D-528),
-  `scripts/capturas-landing.mjs` (o comentário do comando; o roteiro não muda). Depende de: T18. Verifica: leitura do
+  ~~`scripts/capturas-landing.mjs` (o comentário do comando; o roteiro não muda)~~ (não existe mais, DP-SA-42),
+  `.node-version` (novo, DP-SA-32). Depende de: T18. Verifica: leitura do
   workflow; `npm run build:site` sem `.env.local` monta e passa no CA-1406.
 - [ ] **T29 · Testes de navegador com duas origens.** `playwright.config.ts` (DP-SA-17: os três servidores; o projeto
   `site`; Firefox e WebKit só para a mudança), `playwright.csp.config.ts` (confere que monta o app),
   `e2e/apoio/servidorFalso.ts` (responde no contexto). As partes de vitrine de `e2e/publico.spec.ts`,
   `e2e/site-publico.spec.ts`, `e2e/textos-e-promessas.spec.ts`, `e2e/servidor-falso/site-publico.spec.ts`,
   `e2e/servidor-falso/telas-publicas.spec.ts` e `e2e/servidor-falso/textos-e-promessas.spec.ts` passam a abrir o site
-  (`e2e/site/`, mesmos nomes); o resto fica onde está. Novos: `e2e/site/repasses.spec.ts`, `e2e/site/mudanca.spec.ts`
+  (`e2e/site/`, mesmos nomes), como `e2e/landing-escura.spec.ts`, `e2e/landing-v3.spec.ts` e `e2e/landing-v9.spec.ts`
+  (DP-SA-42); o resto fica onde está. Novos: `e2e/site/repasses.spec.ts`, `e2e/site/mudanca.spec.ts`
   (de ponta a ponta, nos três navegadores) e `e2e/servidor-falso/app-separado.spec.ts`. Depende de: T15 a T28.
   Verifica, no navegador: CA-1400, CA-1401, CA-1404, CA-1405, CA-1406 (o pacote servido), CA-1408, CA-1409 a CA-1418,
   CA-1422 (`npm run test:csp`), CA-1423 a CA-1425 e CA-1429 a CA-1439.
@@ -425,8 +505,7 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
    - Build command: `npm run publicar:app`
    - Build output directory: `dist`
    - Root directory: vazio
-   - Environment variables (Production):
-     - `NODE_VERSION` = `22`
+   - Environment variables (Production), sem `NODE_VERSION`: o `.node-version` do repositório diz a versão (DP-SA-32):
      - `VITE_SUPABASE_URL` = `https://qmpljfjbdcrdbqutuvmg.supabase.co`
      - `VITE_SUPABASE_ANON_KEY` = a chave `anon` `public` de *Supabase › Project Settings › API Keys* (a mesma do
        `.env.local`), com *Encrypt*
