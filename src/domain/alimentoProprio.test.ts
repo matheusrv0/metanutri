@@ -14,7 +14,7 @@ import {
   type DadosAlimentoProprio,
   type Produto,
 } from './produtos.ts'
-import { receitaComoAlimento, type Receita } from './receitas.ts'
+import { MACROS_QUE_NAO_SE_APLICAM, receitaComoAlimento, type Receita } from './receitas.ts'
 import { avisosParaImprimir, montarRestricoes } from './restricoes.ts'
 import { ALIMENTOS, alimentosComProdutos, alimentosParaSugerir, buscarAlimento, registrarProdutos } from './tabelas.ts'
 import { totaisDeItens } from './totais.ts'
@@ -338,7 +338,52 @@ describe('receita como alimento (CA-1149, CB-377)', () => {
 
   it('sem um macro em algum ingrediente, explica e não vira', () => {
     const r = receitaComoAlimento(receita([{ alimentoId: 591, gramas: 100 }, { alimentoId: 7, gramas: 30 }]), buscarAlimento)
-    expect('motivo' in r ? r.motivo : '').toMatch(/sem os 4 macros/)
+    expect('motivo' in r ? r.motivo : '').toMatch(/Sem os 4 macros/)
+  })
+
+  // A massa da panqueca (banana, ovo e aveia) com mais um ingrediente.
+  const comMais = (alimentoId: number, gramas: number) => receita([{ alimentoId: 182, gramas: 150 }, { alimentoId: 489, gramas: 100 }, { alimentoId: 7, gramas: 30 }, { alimentoId, gramas }])
+  const MASSA = totaisDeItens([{ id: 'a', alimentoId: 182, gramas: 150 }, { id: 'b', alimentoId: 489, gramas: 100 }, { id: 'c', alimentoId: 7, gramas: 30 }], buscarAlimento).nutrientes
+
+  it('CA-1358 (D-495): óleo, azeite e sal contam zero no que não se aplica, e a receita vira alimento', () => {
+    for (const [alimentoId, gramas] of [
+      [272, 10],
+      [260, 10],
+      [517, 2],
+    ] as const) {
+      const r = receitaComoAlimento(comMais(alimentoId, gramas), buscarAlimento)
+      if (!('dados' in r)) throw new Error(`${alimentoId}: ${r.motivo}`)
+      // A proteína é só a da massa: o óleo, o azeite e o sal não somam nada (pronta, a receita pesa 200 g).
+      expect(r.dados.valores.proteina_g, String(alimentoId)).toBeCloseTo((MASSA.proteina_g.total * 100) / 200, 1)
+    }
+    const comOleo = receitaComoAlimento(comMais(272, 10), buscarAlimento)
+    if (!('dados' in comOleo)) throw new Error(comOleo.motivo)
+    // A energia do óleo entra (884 kcal em 100 g).
+    expect(comOleo.dados.valores.energia_kcal).toBeCloseTo(((MASSA.energia_kcal.total + 88.4) * 100) / 200, 0)
+  })
+
+  it('CA-1359: o macro que falta de verdade e o ingrediente excluído são nomeados', () => {
+    const coco = receitaComoAlimento(comMais(591, 50), buscarAlimento)
+    expect('motivo' in coco ? coco.motivo : '').toBe('“Coco, verde, cru” não tem energia na tabela. Sem os 4 macros, a receita não vira alimento: troque esse ingrediente ou cadastre a preparação em Meus alimentos.')
+    const excluido = receitaComoAlimento(comMais(999_999, 50), buscarAlimento)
+    expect('motivo' in excluido ? excluido.motivo : '').toBe('Um ingrediente desta receita foi excluído de Meus alimentos. Troque-o na receita para salvá-la como alimento.')
+  })
+
+  it('D-495: a lista do que não se aplica é só de óleos, azeites, sais e aguardente, e só onde a tabela é vazia', () => {
+    expect(MACROS_QUE_NAO_SE_APLICAM.size).toBe(11)
+    for (const [id, chaves] of MACROS_QUE_NAO_SE_APLICAM) {
+      const alimento = buscarAlimento(id)
+      expect(alimento?.descricao, String(id)).toMatch(/^(Óleo|Azeite|Sal|Cana, aguardente)/)
+      for (const chave of chaves) expect(alimento?.nutrientes[chave], `${id} ${chave}`).toBeNull()
+    }
+  })
+
+  it('CB-464 e CB-465: com óleo e coco verde, o aviso nomeia o coco; os micros do óleo continuam nulos', () => {
+    const r = receitaComoAlimento(receita([{ alimentoId: 272, gramas: 10 }, { alimentoId: 591, gramas: 50 }]), buscarAlimento)
+    expect('motivo' in r ? r.motivo : '').toMatch(/^“Coco, verde, cru”/)
+    const comOleo = receitaComoAlimento(comMais(272, 10), buscarAlimento)
+    if (!('dados' in comOleo)) throw new Error(comOleo.motivo)
+    expect(comOleo.dados.valores.calcio_mg).toBeNull()
   })
 })
 

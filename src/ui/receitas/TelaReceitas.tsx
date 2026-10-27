@@ -1,4 +1,4 @@
-import { Apple, Copy, CookingPot, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react'
+import { Apple, Copy, CookingPot, MoreHorizontal, Pencil, Plus, Trash, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { textoDoRendimento } from '@/domain/receitaNoPlano.ts'
 import { produtoDosDados } from '@/domain/alimentoProprio.ts'
@@ -44,7 +44,13 @@ export function TelaReceitas({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaRece
   const [editando, setEditando] = useState<Receita | 'nova' | null>(null)
   const [excluindo, setExcluindo] = useState<Receita | null>(null)
   // Última ação concluída: fica escrita na tela e o leitor de tela anuncia.
-  const [mensagem, setMensagem] = useState<string | null>(null)
+  const [mensagem, setMensagemDaAcao] = useState<string | null>(null)
+  // D-495: por que a receita não virou alimento, num quadro de aviso (o texto cinza da lista passava despercebido).
+  const [avisoComoAlimento, setAvisoComoAlimento] = useState<string | null>(null)
+  const setMensagem = (texto: string | null) => {
+    setMensagemDaAcao(texto)
+    setAvisoComoAlimento(null)
+  }
 
   if (editando !== null) {
     return (
@@ -72,8 +78,13 @@ export function TelaReceitas({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaRece
   // CA-1149: a receita pronta vira uma preparação de "Meus alimentos", por 100 g; o formulário abre para conferir.
   const salvarComoAlimento = (receita: Receita) => {
     const r = receitaComoAlimento(receita, buscarAlimento)
-    if ('motivo' in r) setMensagem(r.motivo)
-    else setComoAlimento(r.dados)
+    if ('motivo' in r) {
+      setMensagemDaAcao(null)
+      setAvisoComoAlimento(r.motivo)
+    } else {
+      setAvisoComoAlimento(null)
+      setComoAlimento(r.dados)
+    }
   }
 
   const excluir = () => {
@@ -100,6 +111,12 @@ export function TelaReceitas({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaRece
         <p role="status" className={mensagem ? 'text-sm text-muted-foreground' : 'sr-only'}>
           {mensagem}
         </p>
+        {avisoComoAlimento ? (
+          <Alert variant="warning">
+            <TriangleAlert aria-hidden="true" />
+            <p>{avisoComoAlimento}</p>
+          </Alert>
+        ) : null}
 
         {lista.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">

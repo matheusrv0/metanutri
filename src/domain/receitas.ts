@@ -322,20 +322,70 @@ export function criarRepositorioReceitas(armazenamento: Armazenamento | null, op
 
 // ---------- Receita como alimento (spec alimentos-e-gramaturas, D-385) ----------
 
+const MACROS: readonly ChaveNutrienteAlimento[] = ['energia_kcal', 'proteina_g', 'carboidrato_g', 'lipideos_g']
 const ROTULO_DO_MACRO: Readonly<Record<string, string>> = { energia_kcal: 'energia', proteina_g: 'proteína', carboidrato_g: 'carboidrato', lipideos_g: 'gordura' }
+
+const OLEO_E_AZEITE: readonly ChaveNutrienteAlimento[] = ['proteina_g', 'carboidrato_g']
+/**
+ * D-495 (G3 da revisão da publicação 2): na TACO, "NA" (não se aplica) e "não analisado" chegam iguais, vazios. Nestes,
+ * o vazio do macro é zero por natureza, e "Salvar como alimento" conta zero: óleo e azeite não têm proteína nem
+ * carboidrato; sal não tem energia nem macro; a aguardente não tem proteína, carboidrato nem gordura. A Tabela de
+ * alimentos e os totais do plano continuam como estão.
+ */
+export const MACROS_QUE_NAO_SE_APLICAM: ReadonlyMap<number, readonly ChaveNutrienteAlimento[]> = new Map([
+  [259, OLEO_E_AZEITE],
+  [260, OLEO_E_AZEITE],
+  [267, OLEO_E_AZEITE],
+  [268, OLEO_E_AZEITE],
+  [269, OLEO_E_AZEITE],
+  [270, OLEO_E_AZEITE],
+  [271, OLEO_E_AZEITE],
+  [272, OLEO_E_AZEITE],
+  [472, ['proteina_g', 'carboidrato_g', 'lipideos_g']],
+  [516, MACROS],
+  [517, MACROS],
+])
+
+/** O alimento com zero nos macros que não se aplicam a ele (D-495); o resto fica como está, nulo quando nulo. */
+function comZeroNoQueNaoSeAplica(buscar: BuscarAlimento): BuscarAlimento {
+  return (id) => {
+    const alimento = buscar(id)
+    const zeros = MACROS_QUE_NAO_SE_APLICAM.get(id)
+    if (!alimento || !zeros) return alimento
+    const nutrientes = { ...alimento.nutrientes }
+    for (const chave of zeros) nutrientes[chave] ??= 0
+    return { ...alimento, nutrientes }
+  }
+}
+
+/** Por que a receita não vira alimento, nomeando o ingrediente (D-495); `null` quando todos têm os 4 macros. */
+function ingredienteSemMacro(r: ReceitaDoPlano, buscar: BuscarAlimento): string | null {
+  for (const ingrediente of r.ingredientes) {
+    if (!(ingrediente.gramas > 0)) continue
+    const alimento = buscar(ingrediente.alimentoId)
+    if (!alimento) return 'Um ingrediente desta receita foi excluído de Meus alimentos. Troque-o na receita para salvá-la como alimento.'
+    const falta = MACROS.find((chave) => alimento.nutrientes[chave] === null)
+    if (falta) {
+      const nome = alimento.descricao.trim().replace(/\s+/g, ' ')
+      return `“${nome}” não tem ${ROTULO_DO_MACRO[falta] ?? falta} na tabela. Sem os 4 macros, a receita não vira alimento: troque esse ingrediente ou cadastre a preparação em Meus alimentos.`
+    }
+  }
+  return null
+}
 
 /**
  * "Salvar como alimento" (CA-1149): a receita pronta vira uma preparação de "Meus alimentos", por 100 g, com a porção
- * como medida. O nutriente que algum ingrediente não tem fica nulo (nunca zero); sem um dos 4 macros em algum
- * ingrediente, não vira (CB-377): o alimento próprio precisa deles.
+ * como medida. O nutriente que algum ingrediente não tem fica nulo (nunca zero), menos o macro que não se aplica a ele
+ * (D-495); sem um dos 4 macros em algum ingrediente, não vira, e o motivo nomeia o ingrediente (CB-377).
  */
-export function receitaComoAlimento(r: Receita, buscar: BuscarAlimento): { readonly dados: DadosAlimentoProprio } | { readonly motivo: string } {
+export function receitaComoAlimento(r: Receita, buscarDaBase: BuscarAlimento): { readonly dados: DadosAlimentoProprio } | { readonly motivo: string } {
+  const buscar = comZeroNoQueNaoSeAplica(buscarDaBase)
   const copia = copiaParaOPlano(r)
   const peso = pesoProntoDe(copia)
   if (!(peso > 0)) return { motivo: 'A receita não tem peso: adicione os ingredientes.' }
+  const semMacro = ingredienteSemMacro(copia, buscar)
+  if (semMacro) return { motivo: semMacro }
   const totais = totaisDeItens([{ id: 'como-alimento', alimentoId: ID_DE_RECEITA, gramas: peso, receita: copia }], buscar)
-  const semMacro = Object.keys(ROTULO_DO_MACRO).find((chave) => totais.nutrientes[chave as ChaveNutrienteAlimento].semDado > 0)
-  if (semMacro) return { motivo: `Algum ingrediente não tem ${ROTULO_DO_MACRO[semMacro] ?? semMacro} na tabela: sem os 4 macros, a receita não vira alimento.` }
   const valores = Object.fromEntries(
     CHAVES_NUTRIENTES.map((chave) => {
       const t = totais.nutrientes[chave]
