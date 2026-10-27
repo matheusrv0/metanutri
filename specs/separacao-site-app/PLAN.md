@@ -149,10 +149,12 @@ uma diz o porquê.
   (`/precos/?destaque=pro`); a marca do ícone antigo vai ao app em `?icone-antigo` (D-524). Na consulta, e não no `#`: o
   `#` do app é a rota, e o do site fica para as seções da landing.
 - **DP-SA-38 · O pacote da mudança é o próprio armazenamento.** `chaves` traz as chaves do navegador com o nome de lá: as
-  do espaço da conta (`metanutri:conta:<id>:…`), as de antes das contas (com `metanutri:dono`), quando o dono é ela ou
-  ninguém, e `metanutri:tema`. O app grava como vieram; as de antes das contas e o tema só entram onde o app ainda não
-  tem a chave, e o dono passa a ser ela. Daí a migração de sempre (D-123) leva o de antes para o espaço dela, e o motor
-  junta com a nuvem (D-513). Chave fora dessas três famílias torna a mensagem ilegível (CB-502).
+  do espaço da conta (`metanutri:conta:<id>:…`), as de antes das contas, quando o dono é ela ou ninguém (sem o
+  `metanutri:dono`: quem marca o dono é o app), e `metanutri:tema`. O app grava como vieram, marca ela como dona das de
+  antes das contas e só grava o tema se ainda não tiver um. Daí a migração de sempre (D-123) leva o de antes para o
+  espaço dela, e o motor junta com a nuvem (D-513). Chave fora dessas três famílias torna a mensagem ilegível (CB-502).
+  Se o app já tiver dado de antes das contas (só no modo local, nunca no endereço novo), a mudança fica para depois,
+  como no espaço com pendência: assim nada de fora cai no espaço de outra conta.
 - **DP-SA-39 · A confirmação mora dentro dos provedores.** O pedido e a gravação acontecem em `App`, antes dos provedores
   (DP-SA-11); quem vê que a nuvem tem tudo (fase pronta, nada pendente nem salvando, sem trava, `contaEmDia` sem contar
   retidos, migração completa) é um gancho dentro deles, no mesmo `usarMudanca.ts`, que manda o `recebido` uma vez.
