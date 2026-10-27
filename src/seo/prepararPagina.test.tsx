@@ -116,6 +116,19 @@ describe('preparar-pagina.js', () => {
     expect(rodar({ hash: '#/missoes/abc123', rotaDaPagina: 'termos', caminho: '/termos/' }).foiPara).toBe(`${APP}#/missoes/abc123`)
   })
 
+  it('R10 (DP-SA-58, D-511 a): o link do paciente apaga a sessão guardada antes de ir ao app; o resto fica para a próxima visita', () => {
+    localStorage.clear()
+    let naHoraDeIr: string[] = []
+    const local = { hash: '#/missoes/abc123', search: '', pathname: '/', replace: () => void (naHoraDeIr = Object.keys(localStorage).sort()) }
+    const chaves = ['sb-qmpl-auth-token', 'sb-qmpl-auth-token-code-verifier', 'sb-qmpl-auth-token-user']
+    for (const chave of chaves) localStorage.setItem(chave, '{}')
+    localStorage.setItem('sb-qmpl-outra-coisa', 'x')
+    localStorage.setItem('metanutri:conta:u1:pacientes', '[]')
+    localStorage.setItem(CHAVE_TEMA, 'escuro')
+    new Function('location', SCRIPT)(local)
+    expect(naHoraDeIr).toEqual([CHAVE_TEMA, 'metanutri:conta:u1:pacientes', 'sb-qmpl-outra-coisa'].sort())
+  })
+
   it('DP-SA-2: o endereço do app vem do <html>; sem ele, o de produção', () => {
     expect(rodar({ hash: '#/missoes/abc', app: 'http://localhost:4176/' }).foiPara).toBe('http://localhost:4176/#/missoes/abc')
     expect(rodar({ hash: '#/missoes/abc', app: null }).foiPara).toBe(`${APP}#/missoes/abc`)
@@ -143,8 +156,17 @@ describe('preparar-pagina.js', () => {
     }
   })
 
-  it('D-511: o script não procura mais sessão', () => {
-    expect(SCRIPT).not.toMatch(/auth-token|sessao/)
+  it('D-511 e DP-SA-58: o script não decide pela sessão; só a apaga, e só no link do paciente', () => {
+    expect(SCRIPT).not.toMatch(/sessao/)
+    for (const hash of ['', '#/painel', '#/precos']) {
+      const sem = rodar({ hash })
+      const classesSem = [...sem.classes]
+      const com = rodar({ hash, sessao: true })
+      expect(com.foiPara, hash).toBe(sem.foiPara)
+      expect([...com.classes], hash).toEqual(classesSem)
+      // Fora do link do paciente, quem limpa é o pacote do site (src/site/limpeza.ts).
+      expect(localStorage.getItem('sb-abcdefgh-auth-token'), hash).toBe('{}')
+    }
   })
 
   it('D-527: tela do app, volta do e-mail ou do pagamento e o ícone instalado escondem a vitrine e deixam a decisão para o pacote', () => {
