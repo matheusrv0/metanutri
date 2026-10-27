@@ -53,11 +53,11 @@ Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). 
 - **Teal no lugar do preto.** O que a referência pinta de preto (botão principal, cartão de destaque, faixa final) aqui é o teal da marca.
 - **Laranja nos destaques, nunca no dado.** Botão de começar (`variant="laranja"`) e seta de navegação. Em painel de dado, nunca.
 - **Seta só onde leva a algum lugar.** Cartão de número parado não tem seta (`CartaoNumero` sem `aoClicar`).
-- **Foto só na landing.** Desde a landing escura (27/10/2026), três fotos CC0 no meio da página, nenhuma no topo; ver *Landing escura*. Nenhuma foto no app.
+- **Foto só na landing.** Desde a landing v9 (27/10/2026), a foto CC0 do topo, com véu, e mais três no meio da página; ver *Landing escura*. Nenhuma foto no app.
 - **Componentes da referência:** `CartaoNumero`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
 - **Sem taglines** (D-77 da `limpeza-visual`, 05/10/2026). Nenhum rótulo decorativo em caixa alta acima de título ou de seção, nenhum subtítulo no cabeçalho e nada embaixo da logo do menu. O rótulo em caixa alta (`rotulo`) só nomeia o dado logo abaixo dele, como "Você paga hoje" sobre o total; cabeçalho de tabela, rótulo de campo e grupo do menu também ficam.
 - **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
-- **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; passo de "Como funciona" não leva número; nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
+- **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; desde a landing v9, os passos de "Como funciona" são numerados (aprovado no protótipo); nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
 
 ## Landing escura (desde 27/10/2026; tema claro desde a v3)
 
@@ -102,8 +102,20 @@ e poucas).
   `--landing-cartao` com linhas `--landing-afundado`. Os botões dentro dele são imagem, não controle.
 - **Movimento só com `motion-safe:`** (animações `animate-landing-sobe`, `-deriva` e `-piscar` no `@theme` de
   `globals.css`) e a entrada das partes ao rolar (`data-surge`), que só esconde depois que o app monta.
-- **Fotos:** `legumes-na-bancada`, `dois-copos-de-leite` e `salada-com-frango` (CC0, `THIRD_PARTY_NOTICES.md`), em webp
+- **Fotos:** `iogurte-com-frutas` (o topo, desde a v9), `legumes-na-bancada`, `dois-copos-de-leite` e `salada-com-frango` (CC0, `THIRD_PARTY_NOTICES.md`), em webp
   de até 1.600 px e 800 px, cantos retos ou de 4 px, nunca foto regional.
+- **Landing v9** (spec `landing-v3`, seção v9, 27/10/2026). A barra é de vidro (`--landing-vidro`, desfoque de 18 px) e
+  fica presa no alto, sem pintar a seção. O topo é a foto com o véu (`--landing-veu`, de lado; `--landing-veu-celular`,
+  de cima para baixo) e a tinta do topo (`--landing-topo-tinta`, `-suave`), com a etiqueta de vidro
+  (`--landing-vidro-cartao`). Cartões e painéis ganham a luz de cima (`--landing-luz-cartao`) e, no claro, a sombra
+  (`--landing-sombra-cartao`); o cartão de plano tem o gradiente do `--landing-cartao-alto` ao cartão, a luz que segue o
+  ponteiro (`--landing-luz`, só com mouse) e, no indicado, o brilho (`--landing-brilho`) e o feixe laranja que gira
+  (`.landing-feixe`, só grafismo). O anel da Adequação soma em `--landing-anel-soma`, com a bolinha laranja na meta; o
+  "Atenção" do painel é `--landing-ambar`; o aparelho do exemplo tem tela clara nos dois temas (`--landing-celular-*`).
+  Títulos de seção de 30 a 56 px (`--landing-fs-titulo`), o do topo de 40 a 76 px (`--landing-fs-topo`), seções com
+  88 px em cima e 80 embaixo. Movimento: a foto assenta (`animate-landing-assentar`), a etiqueta surge
+  (`-surgir`), o feixe gira (`-girar`), a linha de "Como funciona" acende ao entrar (`data-revela`); tudo com
+  `motion-safe:` ou dentro de `prefers-reduced-motion: no-preference`.
 
 ## Colors
 

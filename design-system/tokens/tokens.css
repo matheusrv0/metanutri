@@ -101,6 +101,22 @@
   --tinta-teal-900: #13282d;
   --tinta-teal-600: #56696d;
   --tinta-teal-500: #5f7174;
+  /* Da landing v9 (spec landing-v3, D-676): o fundo do véu do topo, o vidro da etiqueta, o cartão de cima do gradiente
+   * dos planos, a tinta suave do topo claro, o marfim de cima do cartão claro, o âmbar do "Atenção" e o aparelho do
+   * exemplo (corpo, tela e os contornos da tela clara). */
+  --carvao-975: #091619;
+  --carvao-875: #101e22;
+  --carvao-775: #1e3238;
+  --tinta-teal-700: #3e5559;
+  --marfim-50: #fdfbf7;
+  --ambar-300: #e3b85f;
+  --aparelho-borda: #2a3b40;
+  --aparelho-meio: #0d1719;
+  --aparelho-fundo: #060c0d;
+  --aparelho-tela: #f7f4ee;
+  --teal-50: #eef5f5;
+  --cinza-teal-300: #b9c7c9;
+  --cinza-teal-200: #c9d4d5;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
@@ -342,6 +358,55 @@
   --landing-fs-s: 14px;
   /* A altura da barra do topo: 44 px de alvo e 12 px em cima e embaixo. */
   --landing-barra: 68px;
+
+  /* Landing v9 (spec landing-v3, D-676 e D-677), do bloco v9 do protótipo. A barra de vidro, o véu da foto do topo
+   * (de lado no computador, de cima para baixo no celular; embaixo, ele chega ao afundado da seção seguinte), a tinta
+   * sobre a foto e o vidro da etiqueta. */
+  --landing-vidro: color-mix(in srgb, var(--carvao-900) 78%, transparent);
+  --landing-veu:
+    linear-gradient(180deg, transparent 70%, var(--landing-afundado) 100%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--carvao-975) 94%, transparent) 0%,
+      color-mix(in srgb, var(--carvao-975) 84%, transparent) 34%,
+      color-mix(in srgb, var(--carvao-975) 35%, transparent) 62%,
+      color-mix(in srgb, var(--carvao-975) 5%, transparent) 100%
+    );
+  --landing-veu-celular: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--carvao-975) 20%, transparent) 0%,
+    color-mix(in srgb, var(--carvao-975) 90%, transparent) 55%,
+    var(--landing-afundado) 100%
+  );
+  --landing-topo-tinta: var(--ivory);
+  --landing-topo-suave: var(--carvao-100);
+  --landing-vidro-cartao: color-mix(in srgb, var(--carvao-875) 55%, transparent);
+  /* A luz em cima dos cartões e do painel, a sombra deles (só no claro), a luz que segue o ponteiro nos planos, o brilho
+   * laranja do plano indicado e o gradiente do cartão de plano. */
+  --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 10%, transparent);
+  --landing-sombra-cartao: none;
+  --landing-luz: color-mix(in srgb, var(--gray-0) 7.5%, transparent);
+  --landing-brilho: color-mix(in srgb, var(--orange-500) 42%, transparent);
+  --landing-cartao-alto: var(--carvao-775);
+  /* O "Atenção" do painel de Adesão e a soma do anel da Adequação (marfim no escuro, teal claro no claro). */
+  --landing-ambar: var(--ambar-300);
+  --landing-anel-soma: var(--ivory);
+  /* O aparelho do exemplo: a tela do link do paciente é clara nos dois temas, como no celular de verdade. */
+  --landing-aparelho: linear-gradient(160deg, var(--aparelho-borda), var(--aparelho-meio) 40%, var(--aparelho-fundo));
+  --landing-aparelho-ilha: var(--aparelho-fundo);
+  --landing-aparelho-sombra: 0 40px 80px -40px color-mix(in srgb, var(--aparelho-fundo) 80%, transparent),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--gray-0) 12%, transparent);
+  --landing-celular-tela: var(--aparelho-tela);
+  --landing-celular-tinta: var(--tinta-teal-900);
+  --landing-celular-suave: var(--tinta-teal-600);
+  --landing-celular-missao: var(--gray-0);
+  --landing-celular-feita: var(--teal-50);
+  --landing-celular-caixa: var(--cinza-teal-300);
+  --landing-celular-contorno: var(--cinza-teal-200);
+  --landing-celular-sombra: 0 1px 2px color-mix(in srgb, var(--teal-900) 8%, transparent);
+  /* As medidas da v9: o título do topo, o título de seção (até 56 px) e o espaço das seções. */
+  --landing-fs-topo: clamp(40px, 5vw, 76px);
+  --landing-fs-titulo: clamp(30px, 3.8vw, 56px);
 }
 
 /* O tema claro da landing (spec landing-v3, D-609): os valores do bloco `.raiz.claro` do protótipo v3. Vale na raiz com
@@ -372,6 +437,33 @@
   --landing-rodape-tinta: var(--teal-900);
   --landing-bloco: var(--teal-300);
   --landing-bloco-tinta: var(--teal-900);
+  /* Landing v9 (D-676), no claro. */
+  --landing-vidro: color-mix(in srgb, var(--ivory) 82%, transparent);
+  --landing-veu:
+    linear-gradient(180deg, transparent 70%, var(--landing-afundado) 100%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ivory) 97%, transparent) 0%,
+      color-mix(in srgb, var(--ivory) 90%, transparent) 36%,
+      color-mix(in srgb, var(--ivory) 40%, transparent) 64%,
+      transparent 100%
+    );
+  --landing-veu-celular: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ivory) 10%, transparent) 0%,
+    color-mix(in srgb, var(--ivory) 92%, transparent) 55%,
+    var(--landing-afundado) 100%
+  );
+  --landing-topo-tinta: var(--teal-900);
+  --landing-topo-suave: var(--tinta-teal-700);
+  --landing-vidro-cartao: color-mix(in srgb, var(--gray-0) 62%, transparent);
+  --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 20%, transparent);
+  --landing-sombra-cartao: 0 1px 2px color-mix(in srgb, var(--teal-900) 6%, transparent),
+    0 22px 44px -28px color-mix(in srgb, var(--teal-900) 28%, transparent);
+  --landing-luz: color-mix(in srgb, var(--teal-900) 6%, transparent);
+  --landing-brilho: color-mix(in srgb, var(--orange-500) 26%, transparent);
+  --landing-cartao-alto: var(--marfim-50);
+  --landing-anel-soma: var(--teal-300);
 }
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */
