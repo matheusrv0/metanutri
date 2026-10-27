@@ -5,6 +5,12 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 import { ligarServidorFalso, PERFIL_NUTRICIONISTA, USUARIO_FALSO, type ServidorFalso } from '../apoio/servidorFalso.ts'
 
 const MIN = 60_000
+/**
+ * Quanto o relógio falso anda depois do instante da saída. Pouco, de propósito: a saída espera a rede (o envio, com
+ * até 10 s, e o encerramento, com até 5 s), e o relógio falso adiantado minutos de uma vez venceria esses prazos antes
+ * de a resposta chegar, o que nunca acontece com o relógio de verdade. Passado o instante, o resto corre no tempo real.
+ */
+const ATE_A_SAIDA = 1_000
 const ENTRE_DE_NOVO = { level: 1, name: 'Entre de novo' } as const
 const EM_DIA = /^Sua sessão terminou\. Tudo até as \d\d:\d\d está salvo\.$/
 const COM_PENDENCIA = 'Sua sessão terminou. Entre para enviar o que ficou neste navegador.'
@@ -68,7 +74,7 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     await page.clock.runFor(27 * MIN)
     await expect(page.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
 
-    await page.clock.runFor(3 * MIN + 15_000)
+    await page.clock.runFor(3 * MIN + ATE_A_SAIDA)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     await expect(page.getByText(EM_DIA)).toBeVisible()
     await expect(page.getByText(/segurança/i)).toHaveCount(0)
@@ -91,7 +97,7 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
 
     await page.keyboard.press('Shift')
-    await page.clock.runFor(10 * MIN)
+    await page.clock.runFor(9 * MIN + ATE_A_SAIDA)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
   })
 
@@ -110,7 +116,7 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     })
     expect(guardados).toHaveLength(1)
 
-    await page.clock.runFor(31 * MIN)
+    await page.clock.runFor(30 * MIN + ATE_A_SAIDA)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     await expect(page.getByText(COM_PENDENCIA)).toBeVisible()
     // A sessão saiu deste navegador mesmo sem resposta do servidor; o espaço da conta ficou, inteiro.
@@ -152,7 +158,8 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     await expect(outra.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
     await expect(outra.getByRole('dialog', { name: 'Você ainda está aí?' })).toHaveCount(0)
 
-    await page.clock.runFor(31 * MIN)
+    // O último uso foi no começo da última volta, 10 minutos atrás: a saída vem 20 minutos depois.
+    await page.clock.runFor(20 * MIN + ATE_A_SAIDA)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     await expect(outra.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     expect(servidor.logouts).toHaveLength(1)
