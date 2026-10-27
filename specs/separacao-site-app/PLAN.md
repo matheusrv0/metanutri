@@ -175,6 +175,12 @@ uma diz o porquê.
 - **DP-SA-45 · R6 fica registrada, sem código.** Acertar o desvio no meio da sessão pede a hora do servidor a cada
   conferência (um pedido a mais por minuto) ou a data de uma resposta do Supabase; nenhum dos dois é trivial nem está na
   spec. O erro dura até a próxima renovação do token (no máximo 1 hora).
+- **DP-SA-46 · O `data-rota` convive com o `data-app`.** O `pluginAlvo` põe `data-app` no `<html>` do site antes de o
+  pré-desenho rodar; o `montarPagina` passa a acrescentar o `data-rota` ao `<html>` que vier, em vez de trocar o texto
+  exato `<html lang="pt-BR">`. Sem isso, as páginas de subpasta perdiam o `data-rota` e abriam a landing.
+- **DP-SA-47 · O site não confere moldura.** O aviso de moldura (D-99) protege a conta e os dados, que agora só existem no
+  app, onde ele continua, com o `frame-ancestors 'none'` do cabeçalho (D-507). A vitrine numa moldura não tem o que
+  proteger: "Entrar" e os planos abrem o app, que se recusa a abrir dentro dela. O pacote do site fica menor.
 
 ## 1. Tarefas
 
@@ -319,7 +325,8 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `pluginAlvo` e a CSP do site; no app, `dist`, sem pré-desenho), `index.html` (as marcas que o plugin troca, sem mudar o
   texto do site), `public/preparar-app.js` (novo: só o tema), `package.json` (`build` monta os dois; `build:app`,
   `build:site`, `dev:site`, `preview:site`, `publicar:app` do DP-SA-31), `.gitignore` (`dist-site/`),
-  `src/seo/arquivosDoSite.test.ts` (o que vai em cada pasta), `src/seo/cabecalho.test.ts`. Depende de: T15, T16 (antes
+  `src/seo/arquivosDoSite.test.ts` (o que vai em cada pasta), `src/seo/cabecalho.test.ts`, `src/seo/montarPagina.ts` e
+  `.test.ts` (o `data-rota` entra no `<html>` que já tem o `data-app`, DP-SA-46). Depende de: T15, T16 (antes
   da T17, DP-SA-29). Verifica: CA-1418 (a cabeça do app, pelo plugin), CA-1408 (o pré-desenho continua no site).
 - [ ] **T19 · O `<head>` do site.** `public/preparar-pagina.js` (o tema; `#/missoes/…` vai ao app na hora; `#/inicio`,
   `#/precos[/<plano>]`, `#/termos`, `#/privacidade` e `#/fontes` vão à página própria; tela do app, `?volta=` e modo
