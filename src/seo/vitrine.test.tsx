@@ -29,7 +29,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
       'Planos e preços',
       'R$ 34,90',
       'Assinar o Solo',
-      'Perguntas de quem atende',
+      'Perguntas frequentes',
       'Termos de uso',
     ]) {
       expect(html).toContain(trecho)

@@ -2,7 +2,7 @@
 // os do app. As constantes ficam leves na página; este teste roda o motor, a base e as missões de verdade e falha se uma
 // letra divergir (R-530, R-600 e R-651).
 import { DIAS_NA_SEMANA_PARA_EM_DIA, DIAS_PARA_SUMIR, ROTULO_ESTADO } from '@/domain/acompanhamento.ts'
-import { calcularAdequacao, MICRONUTRIENTES_ADEQUACAO, PRESETS, type LinhaAdequacao } from '@/domain/adequacao.ts'
+import { calcularAdequacao, estagioDeVida, MICRONUTRIENTES_ADEQUACAO, PRESETS, type LinhaAdequacao } from '@/domain/adequacao.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
 import { buscarAlimentos } from '@/domain/busca.ts'
 import { MAXIMO_SUGESTOES, sugerirParaCobrir, type Sugestao } from '@/domain/cobrir.ts'
@@ -251,6 +251,17 @@ describe('D-663 e D-672: o alimento próprio segue a publicação 2 (D-540)', ()
     const texto = textoDosAlimentosProprios(true)
     expect(texto.funcionalidade).toBe('O que a base ainda não tem entra por 100 g, pela porção do rótulo ou pelo código de barras.')
     expect(texto.resposta).toBe('Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.')
+  })
+})
+
+describe('D-672: "Atende gestante, criança e idoso? Sim, de 1 ano de idade em diante"', () => {
+  it('a adequação tem referência de 1 ano em diante, para gestante, lactante e idoso; abaixo de 1 ano, não', () => {
+    const nenhuma = { tipo: 'nenhuma' } as const
+    expect(estagioDeVida({ sexo: 'F', idadeAnos: 0.5, condicao: nenhuma })).toBeNull()
+    expect(estagioDeVida({ sexo: 'M', idadeAnos: 1, condicao: nenhuma })).not.toBeNull()
+    expect(estagioDeVida({ sexo: 'F', idadeAnos: 80, condicao: nenhuma })).not.toBeNull()
+    expect(estagioDeVida({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'gestante', semanasGestacao: 20, pesoPreGestacionalKg: null } })).not.toBeNull()
+    expect(estagioDeVida({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'lactante', mesesPosParto: 3 } })).not.toBeNull()
   })
 })
 

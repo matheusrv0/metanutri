@@ -1,48 +1,58 @@
 import { textoDosAlimentosProprios } from './exemploDaLanding.ts'
-import { ESPACO_DE_SECAO, MARGEM, TITULO_XL } from './estiloDaLanding.ts'
+import { ESPACO_DE_SECAO, MARGEM, TITULO_DE_SECAO } from './estiloDaLanding.ts'
 
-interface PerguntasDeQuemAtendeProps {
+interface PerguntasFrequentesProps {
   /** O formulário novo de Meus alimentos (publicação 2, D-540). */
   readonly formularioNovo: boolean
 }
 
 /**
- * "Perguntas de quem atende" (D-541; spec landing-v3, D-606): cada resposta é o que o app faz hoje. As respostas ficam no
- * HTML com a pergunta fechada (CB-535): quem lê a página pré-desenhada, e os buscadores, leem tudo.
+ * "Perguntas frequentes" (spec landing-v3, D-672): as oito do protótipo v9, na ordem dele, cada resposta o que o app faz
+ * hoje. A do estudante continua com o comprovante de matrícula e os 12 meses (D-541 e D-606); a do alimento que não
+ * está na base segue a publicação 2. As respostas ficam no HTML com a pergunta fechada (CB-535): quem lê a página
+ * pré-desenhada, e os buscadores, leem tudo.
  */
-export function PerguntasDeQuemAtende({ formularioNovo }: PerguntasDeQuemAtendeProps) {
+export function PerguntasFrequentes({ formularioNovo }: PerguntasFrequentesProps) {
   const perguntas: readonly { readonly pergunta: string; readonly resposta: string }[] = [
     {
       pergunta: 'De onde vêm os valores dos alimentos?',
-      // Spec landing-v3, D-606: a resposta do protótipo v3, sem a medida caseira.
       resposta:
         'Da Base MetaNutri, montada a partir de tabelas oficiais de composição e organizada pela nossa equipe, com os valores de cada alimento por 100 g.',
     },
     {
-      pergunta: 'O MetaNutri prescreve no meu lugar?',
+      pergunta: 'O MetaNutri substitui a conduta do nutricionista?',
       resposta:
-        'Não. Ele calcula e sugere; você escolhe o que entra no plano. Bebida alcoólica, ultraprocessado e gordura trans nunca aparecem nas sugestões.',
+        'Não. Ele calcula e sugere; a decisão sobre o que entra no plano é sempre sua. Bebidas alcoólicas, ultraprocessados e gordura trans nunca aparecem nas sugestões.',
+    },
+    {
+      pergunta: 'Atende gestante, criança e idoso?',
+      resposta:
+        'Sim, de 1 ano de idade em diante, com as equações de gasto energético e as referências de cada fase: crianças e adolescentes, gestantes, lactantes e idosos.',
+    },
+    {
+      pergunta: 'O paciente precisa baixar um aplicativo?',
+      resposta: 'Não. Ele recebe um link, abre no celular e marca as missões do dia; se você quiser, o mesmo link mostra o plano alimentar. Sem conta e sem senha.',
+    },
+    {
+      pergunta: 'Tem fidelidade? Como cancelo?',
+      resposta: 'Não tem fidelidade. Você cancela quando quiser em Conta e assinatura, no próprio site.',
     },
     { pergunta: 'E o alimento que não está na base?', resposta: textoDosAlimentosProprios(formularioNovo).resposta },
     {
       pergunta: 'Onde ficam os dados dos pacientes?',
-      resposta: 'Na sua conta, na nuvem, separados das outras contas. Você entra de qualquer computador ou celular.',
+      resposta: 'Na sua conta, na nuvem, separados das outras contas. O paciente autoriza antes de receber o link.',
     },
     {
       pergunta: 'Sou estudante. Posso usar?',
       resposta:
         'Pode, com o e-mail da faculdade e o comprovante de matrícula. A assinatura Estudante é grátis por 12 meses ou até a formatura, o que vier antes, para casos de estudo e estágio supervisionado. O uso é não comercial.',
     },
-    {
-      pergunta: 'O paciente precisa baixar um aplicativo?',
-      resposta: 'Não. Ele recebe um link, abre no celular e marca as missões do dia; se você quiser, o mesmo link mostra o plano alimentar. Sem conta e sem senha.',
-    },
   ]
 
   return (
-    <section aria-labelledby="titulo-perguntas" data-capitulo="teal" className={`bg-landing-teal text-landing-marfim ${ESPACO_DE_SECAO} ${MARGEM}`}>
-      <h2 id="titulo-perguntas" data-surge="" className={`${TITULO_XL} max-[720px]:text-[9vw]`}>
-        Perguntas de quem atende
+    <section aria-labelledby="titulo-perguntas" data-fundo="teal" className={`bg-landing-teal text-landing-marfim ${ESPACO_DE_SECAO} ${MARGEM}`}>
+      <h2 id="titulo-perguntas" data-surge="" className={TITULO_DE_SECAO}>
+        Perguntas frequentes
       </h2>
       <div className="mt-[52px] ml-[33%] grid gap-2.5 max-[720px]:ml-0">
         {perguntas.map(({ pergunta, resposta }) => (

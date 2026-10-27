@@ -35,7 +35,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       'H2 Como funciona',
       'H2 Quantidades em gramas e calorias',
       'H2 Planos e preços',
-      'H2 Perguntas de quem atende',
+      'H2 Perguntas frequentes',
     ])
   })
 
@@ -472,24 +472,44 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   })
 
   describe('perguntas e faixa final', () => {
-    it('CA-1479 e CA-1607: seis perguntas fechadas, com as respostas que o app sustenta, sem medida caseira', async () => {
-      montar()
-      const perguntas = screen.getByRole('region', { name: 'Perguntas de quem atende' })
+    it('CA-1683: oito perguntas fechadas, na ordem do protótipo, com as respostas que o app sustenta', async () => {
+      montar({ formularioNovo: true })
+      const perguntas = screen.getByRole('region', { name: 'Perguntas frequentes' })
       const detalhes = [...perguntas.querySelectorAll('details')]
-      expect(detalhes).toHaveLength(6)
+      expect(detalhes.map((d) => d.querySelector('summary')?.textContent)).toEqual([
+        'De onde vêm os valores dos alimentos?',
+        'O MetaNutri substitui a conduta do nutricionista?',
+        'Atende gestante, criança e idoso?',
+        'O paciente precisa baixar um aplicativo?',
+        'Tem fidelidade? Como cancelo?',
+        'E o alimento que não está na base?',
+        'Onde ficam os dados dos pacientes?',
+        'Sou estudante. Posso usar?',
+      ])
       expect(detalhes.every((d) => !d.open)).toBe(true)
       expect(perguntas).toHaveTextContent(
         'Da Base MetaNutri, montada a partir de tabelas oficiais de composição e organizada pela nossa equipe, com os valores de cada alimento por 100 g.',
       )
-      expect(perguntas).not.toHaveTextContent(/medida/)
+      expect(perguntas).toHaveTextContent('Sim, de 1 ano de idade em diante')
+      expect(perguntas).toHaveTextContent('Não tem fidelidade. Você cancela quando quiser em Conta e assinatura, no próprio site.')
+      expect(perguntas).toHaveTextContent('Você cadastra em Meus alimentos: por 100 g, pela porção do rótulo ou pelo código de barras.')
+      expect(perguntas).toHaveTextContent('O paciente autoriza antes de receber o link.')
       expect(perguntas).toHaveTextContent('Pode, com o e-mail da faculdade e o comprovante de matrícula.')
       expect(perguntas).toHaveTextContent('grátis por 12 meses ou até a formatura, o que vier antes')
       expect(perguntas).toHaveTextContent('se você quiser, o mesmo link mostra o plano alimentar. Sem conta e sem senha.')
-      expect(perguntas.textContent).not.toMatch(/30 minutos|sai sozinha/)
+      expect(perguntas).not.toHaveTextContent(/medida/)
+      expect(perguntas).toHaveAttribute('data-fundo', 'teal')
       const primeira = detalhes[0]?.querySelector('summary')
       if (!primeira) throw new Error('sem pergunta')
       await userEvent.setup().click(primeira)
       expect(detalhes[0]?.open).toBe(true)
+    })
+
+    it('CA-1683 e D-540: sem a publicação 2, a resposta do alimento próprio fala só do rótulo e do código de barras', () => {
+      montar({ formularioNovo: false })
+      const perguntas = screen.getByRole('region', { name: 'Perguntas frequentes' })
+      expect(perguntas).toHaveTextContent('Você cadastra em Meus alimentos, pelo rótulo ou pelo código de barras, e ele entra na refeição pela busca.')
+      expect(perguntas.textContent).not.toMatch(/Meus alimentos: por 100 g/)
     })
 
     it('CA-1480 e D-610: a faixa final é um link para Criar conta, que chama quem manda; o hover clareia, nunca laranja', async () => {
@@ -507,7 +527,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   describe('texto e acessibilidade', () => {
     it('CA-1608: o topo, o campo vivo, Grama por grama e as perguntas não falam de medida caseira', () => {
       montar()
-      for (const nome of [TITULO_DO_TOPO, 'Adequação de micronutrientes com sugestão do que comer', 'Quantidades em gramas e calorias', 'Perguntas de quem atende']) {
+      for (const nome of [TITULO_DO_TOPO, 'Adequação de micronutrientes com sugestão do que comer', 'Quantidades em gramas e calorias', 'Perguntas frequentes']) {
         expect(screen.getByRole('region', { name: nome }).textContent, nome).not.toMatch(/medida caseira|concha|escumadeira|copo americano/i)
       }
     })

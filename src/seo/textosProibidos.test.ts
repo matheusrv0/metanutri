@@ -92,7 +92,7 @@ describe('CA-1482: o texto de venda não nomeia as fontes da base', () => {
     for (const esperado of [
       'src/ui/publico/TelaInicio.tsx',
       'src/ui/publico/inicio/AdequacaoDoExemplo.tsx',
-      'src/ui/publico/inicio/PerguntasDeQuemAtende.tsx',
+      'src/ui/publico/inicio/PerguntasFrequentes.tsx',
       'src/ui/publico/MolduraPublica.tsx',
       'src/ui/publico/SecaoPrecos.tsx',
       'index.html',
