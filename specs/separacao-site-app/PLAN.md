@@ -118,29 +118,29 @@ antes.
 
 ### P1 · Sessão com tempo e funções com a lista (no endereço de hoje)
 
-- [ ] **T1 · Spec: notas da P1.** `specs/dados-na-nuvem/SPEC.md` (nota no D-131: a saída por tempo guarda o que não
+- [x] **T1 · Spec: notas da P1.** `specs/dados-na-nuvem/SPEC.md` (nota no D-131: a saída por tempo guarda o que não
   subiu, D-517), `specs/dados-na-nuvem/PLAN.md` (nota no DP-27: o "Sair" encerra a sessão local, D-520),
   `specs/seguranca-lote-1/SPEC.md` (nota no D-97 e no CA-425: a lista, D-521). Depende de: SPEC e PLAN aprovados.
   Verifica: leitura.
-- [ ] **T2 · Funções com a lista de endereços.** `supabase/functions/_shared/cobranca.ts` (`ORIGENS_PERMITIDAS` com os
+- [x] **T2 · Funções com a lista de endereços.** `supabase/functions/_shared/cobranca.ts` (`ORIGENS_PERMITIDAS` com os
   dois endereços; `cabecalhosPara(origem)` dá permissão só a endereço da lista e manda sempre `Vary: Origin`;
   `responder(corpo, status, origem)`), `supabase/functions/assinar/index.ts`,
   `supabase/functions/gerenciar-assinatura/index.ts` e `supabase/functions/excluir-conta/index.ts` (passam
   `req.headers.get('Origin')` no `OPTIONS` e em toda resposta; o padrão do `SITE_URL` em `assinar` vira
   `https://app.metanutri.com.br/`), `src/data/cobrancaServidor.test.ts`, `src/data/servidorLigacao.test.ts`,
   `src/data/servidorExcluirLigacao.test.ts`. Depende de: T1. Verifica: CA-1459, CA-1461.
-- [ ] **T3 · Regras do tempo (puras).** `src/domain/tempoDeSessao.ts` e `.test.ts`: os limites (D-514), os avisos
+- [x] **T3 · Regras do tempo (puras).** `src/domain/tempoDeSessao.ts` e `.test.ts`: os limites (D-514), os avisos
   (D-516), a hora da entrada e o desvio (DP-SA-4), a situação da sessão (`seguir`, `avisar`, `faixa`,
   `sair-inatividade`, `sair-limite`, com a hora em que termina) e o texto da hora ("as 15:42", "ontem às 15:42",
   "25/10 às 15:42"). Depende de: —. Verifica: CA-1440 a CA-1444 (a regra), CA-1454, CB-516, CB-517, CB-526.
-- [ ] **T4 · "Em dia" (puro).** `src/domain/contaEmDia.ts` e `.test.ts` (DP-SA-7: situação, parcial, retidos opcionais,
+- [x] **T4 · "Em dia" (puro).** `src/domain/contaEmDia.ts` e `.test.ts` (DP-SA-7: situação, parcial, retidos opcionais,
   `pendentes` dos links, dado sem conta da pessoa; e a lista das contas com espaço no navegador),
   `src/domain/donoDosDados.ts` (exporta `chavesSemConta`). Não importa nada de `src/ui/estado/supabase.ts`: o site vai
   usar. Depende de: —. Verifica: CA-1427 e CA-1428 (a regra, um caso por motivo).
-- [ ] **T5 · Marca de uso e motivo da saída.** `src/ui/sessao/marcaDeUso.ts` e `.test.ts`,
+- [x] **T5 · Marca de uso e motivo da saída.** `src/ui/sessao/marcaDeUso.ts` e `.test.ts`,
   `src/ui/sessao/motivoDaSaida.ts` e `.test.ts` (DP-SA-5). Depende de: T3. Verifica: CA-1445 (a marca dividida entre
   abas), CB-517, CB-518.
-- [ ] **T6 · A conta: "Sair" local, saída por tempo e conferência ao abrir.** `src/ui/estado/usarConta.ts` e
+- [x] **T6 · A conta: "Sair" local, saída por tempo e conferência ao abrir.** `src/ui/estado/usarConta.ts` e
   `usarConta.test.ts`: o "Sair" com `scope: 'local'` (D-520); `sairPorTempo({ apagar, ate })` (DP-SA-5); depois do
   `getSession` e antes do primeiro `setSessao`, a sessão vencida sai (D-518: apaga se em dia sem contar retidos, guarda
   se não) e grava o motivo; DP-SA-10; no `SIGNED_IN`, a marca e o desvio; no `TOKEN_REFRESHED`, o desvio (DP-SA-18).
@@ -148,32 +148,35 @@ antes.
   (a conta falsa das telas ganha o `sairPorTempo`). `e2e/apoio/servidorFalso.ts` (o token falso ganha `amr` e `iat` já
   aqui: sem eles, a sessão dos testes de navegador contaria como vencida até a T12). Depende de: T3, T4, T5. Verifica:
   CA-1450, CA-1451, CA-1452, CA-1453, CB-506.
-- [ ] **T7 · O motor tira o `saiu` velho.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (DP-SA-9).
+- [x] **T7 · O motor tira o `saiu` velho.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (DP-SA-9).
   Depende de: —. Verifica: CA-1449, CB-528.
-- [ ] **T8 · Envios antes de sair.** `src/ui/sessao/contextoEnvios.ts` e `contextoEnvios.test.tsx` (novos),
+- [x] **T8 · Envios antes de sair.** `src/ui/sessao/contextoEnvios.ts` e `contextoEnvios.test.tsx` (novos),
   `src/ui/estado/ProvedorAcompanhamentos.tsx` (registra o `lerDaNuvem`). Depende de: —. Verifica: CA-1447 (a parte dos
   links), CB-510.
-- [ ] **T9 · O vigia da sessão.** `src/ui/sessao/usarTempoDeSessao.ts` e `usarTempoDeSessao.test.tsx` (relógio falso):
+- [x] **T9 · O vigia da sessão.** `src/ui/sessao/usarTempoDeSessao.ts` e `usarTempoDeSessao.test.tsx` (relógio falso):
   escuta `keydown`, `pointerdown`, `touchstart`, `wheel` e `scroll` (não `pointermove` nem `mousemove`); confere ao
   montar, a cada 60 s, em `visibilitychange` e em `focus`; expõe o aviso, a faixa, a capa e `continuar()`; sai na ordem
   do D-517, com uma aba só (DP-SA-6). Depende de: T3 a T8. Verifica: CA-1440, CA-1441, CA-1442, CA-1443, CA-1445,
   CA-1446, CA-1447, CA-1448, CA-1458, CB-508, CB-509, CB-522, CB-527.
-- [ ] **T10 · As telas da sessão.** Novos, um componente por arquivo, com os componentes do design system:
+- [x] **T10 · As telas da sessão.** Novos, um componente por arquivo, com os componentes do design system:
   `src/ui/sessao/AvisoDeInatividade.tsx`, `src/ui/sessao/FaixaDoLimite.tsx`, `src/ui/sessao/CapaEncerrando.tsx`,
   `src/ui/sessao/contextoSessao.ts` (DP-SA-21); `src/ui/publico/conta/TelaEntrar.tsx` (título "Entre de novo" e o aviso
   no subtítulo quando há motivo, DP-SA-22); testes `src/ui/sessao/telasDaSessao.test.tsx` e `src/ui/publico/conta/TelaEntrar.test.tsx`. Textos
   exatos do D-526. Depende de: T3, T5. Verifica: CA-1442 e CA-1444 (as telas), CA-1447 e CA-1448 (os textos), CB-516.
-- [ ] **T11 · Ligar no app.** `src/App.tsx` (o vigia roda com servidor e sessão e nunca na rota `missoes`; o aviso e a
+- [x] **T11 · Ligar no app.** `src/App.tsx` (o vigia roda com servidor e sessão e nunca na rota `missoes`; o aviso e a
   capa por cima; depois da saída, a rota vai para Entrar; a raiz com motivo abre Entrar, DP-SA-20; DP-SA-21), `src/ui/layout/Estrutura.tsx` (a faixa no topo da área, no
   fluxo, como o aviso de versão nova), `src/AppConta.test.tsx` e `src/AppNuvem.test.tsx`. Depende de: T9, T10.
   Verifica: CA-1444 (o lugar), CA-1455, CA-1456, CA-1457.
-- [ ] **T12 · No navegador (P1).** `e2e/apoio/servidorFalso.ts` (token com `amr` e `iat`; o `logout` guarda o `scope`
+- [x] **T12 · No navegador (P1).** `e2e/apoio/servidorFalso.ts` (token com `amr` e `iat`; o `logout` guarda o `scope`
   pedido), `e2e/servidor-falso/sessao.spec.ts` (novo): `page.clock` para 28 e 30 minutos e para 12 horas; reabrir
   (contexto novo com o mesmo `storageState`); duas abas; sem internet na saída (`context.setOffline`). Depende de: T11.
   Verifica: CA-1440, CA-1442, CA-1443, CA-1445, CA-1447, CA-1448, CA-1449, CA-1450, CA-1451, CA-1453.
-- [ ] **T13 · README e fechamento da P1.** `README.md` (seção "Ordem para publicar a P1 da separação": as funções antes
+- [x] **T13 · README e fechamento da P1.** `README.md` (seção "Ordem para publicar a P1 da separação": as funções antes
   do site, e como conferir a lista com `curl`). Rodar `npm run check`, `npm run e2e` e `npm run test:csp`; conferir na
   matriz cada CA da P1. Depende de: T2 a T12.
+  *Feita em 27/10/2026, no ramo `separacao-site-app`: `npm run check` (287 arquivos, 5195 testes), `npm run e2e` (288) e
+  `npm run test:csp` (3) passaram; todo CA da P1 tem teste na matriz. A T7 ficou só no teste (DP-SA-24) e a
+  `usarSaida.test.tsx` não precisou mudar: o "Sair" é o mesmo por fora.*
 
 ### P2 · App no endereço novo, site com os repasses e a mudança dos dados
 
