@@ -16,7 +16,8 @@ export function ListaDoCobrir({ linhas, daFaltaNaPrimeira = false }: ListaDoCobr
     <ul className="mt-3.5 grid list-none gap-2 p-0">
       {linhas.map((linha, i) => (
         <li key={linha.nome} className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] bg-landing-afundado py-[11px] pr-[11px] pl-3.5">
-          <div className="min-w-0">
+          {/* A base de 7rem decide a quebra: o botão só desce quando o texto grande não deixa nem isso (CB-608). */}
+          <div className="min-w-0 flex-[1_1_7rem]">
             <div className="font-bold">{linha.nome}</div>
             <div className="text-[13px] text-landing-tinta-suave">
               <span className="font-bold text-landing-tinta">{linha.gramas}</span>

@@ -189,6 +189,17 @@ test.describe('com menos movimento (o padrão desta máquina)', () => {
             .map((el) => el.getAttribute('aria-label') ?? el.textContent),
         )
       expect(foraDaBarra).toEqual([])
+      // Com o texto do tamanho normal, o "Adicionar" das sugestões fica na linha do alimento; só desce com texto grande.
+      const desceram = await page.locator('[data-ui] li').evaluateAll((lis) =>
+        lis
+          .filter((li) => li.getClientRects().length > 0)
+          .filter((li) => {
+            const [texto, botao] = [li.firstElementChild, li.lastElementChild].map((el) => el?.getBoundingClientRect())
+            return texto && botao && botao.top >= texto.bottom - 1
+          })
+          .map((li) => li.textContent),
+      )
+      expect(desceram).toEqual([])
       const pequenos = await page.locator('.landing a, .landing button:not([role="switch"]), .landing summary, .landing input').evaluateAll((els) =>
         els
           .filter((el) => el.getClientRects().length > 0)
