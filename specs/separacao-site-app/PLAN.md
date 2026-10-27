@@ -209,6 +209,11 @@ uma diz o porquê.
   algum dado de antes das contas. As marcas da sessão (`metanutri:sessao`, `metanutri:sessao:saida`), o tema e os
   pendentes do aparelho (`metanutri:destino-pendente`, `metanutri:email-pendente`) não são dado da pessoa e não
   levam a "Continuar".
+- **DP-SA-55 · O fim da mudança troca o `#` no lugar.** O app vai ao Painel com `history.replaceState` e o aviso de
+  `hashchange`, sem navegar. Achado no teste do WebKit: com o `upgrade-insecure-requests` da CSP, uma navegação para o
+  mesmo endereço em http vira https e recarrega a aba em outra origem, que perde o que gravou e a ligação com o site.
+  No ar é tudo https; trocar sem navegar vale nos dois casos. Nos testes do WebKit, os arquivos pedidos em https voltam
+  ao http do servidor local (`e2e/site/mudanca.spec.ts`).
 
 ## 1. Tarefas
 
@@ -422,7 +427,11 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `e2e/site-publico.spec.ts`, `e2e/textos-e-promessas.spec.ts`, `e2e/servidor-falso/site-publico.spec.ts`,
   `e2e/servidor-falso/telas-publicas.spec.ts` e `e2e/servidor-falso/textos-e-promessas.spec.ts` passam a abrir o site
   (`e2e/site/`, mesmos nomes), como `e2e/landing-escura.spec.ts`, `e2e/landing-v3.spec.ts` e `e2e/landing-v9.spec.ts`
-  (DP-SA-42); o resto fica onde está. Novos: `e2e/site/repasses.spec.ts`, `e2e/site/mudanca.spec.ts`
+  (DP-SA-42); o resto fica onde está. Também mudam: `e2e/conta.spec.ts` e `e2e/csp.spec.ts` (os caminhos da landing e
+  de Preços até o cadastro passam a `e2e/site/repasses.spec.ts`; a CSP do app sem os dados estruturados do site),
+  `e2e/missoes.spec.ts` (CA-1416: o endereço do link criado é o do app), `e2e/servidor-falso/telas-publicas.spec.ts`
+  (as páginas do site vão para `e2e/site/telas-publicas.spec.ts`; a raiz do app abre Entrar) e sai
+  `e2e/servidor-falso/site-publico.spec.ts` (o CA-1023, que sai com o D-337). Novos: `e2e/site/repasses.spec.ts`, `e2e/site/mudanca.spec.ts`
   (de ponta a ponta, nos três navegadores) e `e2e/servidor-falso/app-separado.spec.ts`. Depende de: T15 a T28.
   Verifica, no navegador: CA-1400, CA-1401, CA-1404, CA-1405, CA-1406 (o pacote servido), CA-1408, CA-1409 a CA-1418,
   CA-1422 (`npm run test:csp`), CA-1423 a CA-1425 e CA-1429 a CA-1439.
