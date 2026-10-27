@@ -43,6 +43,13 @@ describe('montarPagina (spec site-publico-profissional, D-331)', () => {
     expect(html).toContain('<h1>Planos e preços</h1>')
   })
 
+  it('DP-SA-46 (spec separacao-site-app): o data-rota entra no <html> que já traz o endereço do app', () => {
+    const doSite = CONSTRUIDO.replace('<html lang="pt-BR">', '<html lang="pt-BR" data-app="https://app.metanutri.com.br/">')
+    const html = montarPagina(doSite, precos, { fonte: null })
+    expect(html).toContain('<html lang="pt-BR" data-app="https://app.metanutri.com.br/" data-rota="precos">')
+    expect(montarPagina(doSite, inicio, { fonte: null })).toContain('<html lang="pt-BR" data-app="https://app.metanutri.com.br/">')
+  })
+
   it('CA-1020: a fonte pré-carregada entra antes do pacote, com crossorigin', () => {
     const html = montarPagina(CONSTRUIDO, inicio, { fonte: 'assets/manrope-latin-wght-normal-XYZ.woff2' })
     const preload = '<link rel="preload" href="./assets/manrope-latin-wght-normal-XYZ.woff2" as="font" type="font/woff2" crossorigin />'

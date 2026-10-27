@@ -17,8 +17,8 @@ export function enderecoOuPadrao(valor: unknown, padrao: string): string {
   }
 }
 
-export const ENDERECO_DO_APP = enderecoOuPadrao(import.meta.env['VITE_ENDERECO_DO_APP'], APP_EM_PRODUCAO)
-export const ENDERECO_DO_SITE = enderecoOuPadrao(import.meta.env['VITE_ENDERECO_DO_SITE'], SITE_EM_PRODUCAO)
+export const ENDERECO_DO_APP = enderecoOuPadrao(import.meta.env.VITE_ENDERECO_DO_APP, APP_EM_PRODUCAO)
+export const ENDERECO_DO_SITE = enderecoOuPadrao(import.meta.env.VITE_ENDERECO_DO_SITE, SITE_EM_PRODUCAO)
 
 /** As páginas do site (D-503), cada uma no seu caminho. */
 export type PaginaDoSite = 'inicio' | 'precos' | 'termos' | 'privacidade' | 'fontes'

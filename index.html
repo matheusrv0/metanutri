@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- D-332 (spec site-publico-profissional): tema e vitrine antes do primeiro desenho. Arquivo próprio: a CSP não aceita script escrito aqui. -->
+    <!-- Spec separacao-site-app (DP-SA-2): no app, src/seo/pluginAlvo.ts troca este script pelo preparar-app.js (só o tema) e o bloco de busca abaixo pela cabeça do app. -->
     <script src="./preparar-pagina.js"></script>
     <!-- A barra do navegador no celular acompanha o fundo da página nos dois temas. -->
     <meta name="theme-color" content="#f2f2f3" media="(prefers-color-scheme: light)" />
@@ -35,6 +36,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- No site, o mesmo plugin troca a entrada por /src/site/main.tsx (DP-SA-2). -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

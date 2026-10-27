@@ -79,4 +79,12 @@ describe('o cabeçalho de cada página (spec site-publico-profissional)', () => 
     expect(bloco).not.toContain('<')
     expect(html.match(/<script/g)).toHaveLength(1)
   })
+
+  it('CA-1408 (spec separacao-site-app): o cabeçalho das páginas do site continua o do site, sem o app nem o noindex do app', () => {
+    for (const rota of ['inicio', 'precos', 'termos', 'privacidade', 'fontes'] as const) {
+      const html = cabecalhoDaPagina(paginaDaRota(rota))
+      expect(html).toContain('<link rel="canonical" href="https://metanutri.com.br/')
+      expect(html).not.toMatch(/app\.metanutri|noindex/)
+    }
+  })
 })
