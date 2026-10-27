@@ -22,11 +22,14 @@
 /* ---------- Os tokens do sistema no vocabulário do shadcn/ui ----------
  * Também em .papel: a ponte é calculada onde é declarada, então a folha do paciente a declara de novo para ler o
  * tema claro de tokens.css (spec impressao-do-plano, D-180). E em .tema-claro, o nome neutro do mesmo escopo (spec
- * revisao-geral-publica, D-236 e M-9).
+ * revisao-geral-publica, D-236 e M-9). E em .dark: a landing escura (spec landing-escura, D-530) é escura dentro de uma
+ * página que pode estar no tema claro; sem declarar a ponte de novo na raiz dela, o título e o cartão do sistema lá
+ * dentro leriam as cores claras já calculadas no <html>. No <html> escuro, o resultado é o mesmo de sempre.
  */
 :root,
 .papel,
-.tema-claro {
+.tema-claro,
+.dark {
   /* A ação principal é a superfície inversa: grafite no claro, clara no escuro. */
   --color-primary: var(--surface-inverse);
   --color-secondary: var(--blue-700);

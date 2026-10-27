@@ -12,7 +12,8 @@ describe('o escopo do tema claro (D-236)', () => {
 
   it('a ponte do shadcn/ui é declarada de novo em .papel e .tema-claro, e os dois são claros', () => {
     const globais = ler('./globals.css')
-    expect(globais).toMatch(/:root,\s*\.papel,\s*\.tema-claro\s*\{\s*\/\*[^]*?--color-primary/)
+    // Spec landing-escura (D-530): também em .dark, para a landing escura dentro de uma página no tema claro.
+    expect(globais).toMatch(/:root,\s*\.papel,\s*\.tema-claro,\s*\.dark\s*\{\s*\/\*[^]*?--color-primary/)
     expect(globais).toMatch(/\.papel,\s*\.tema-claro\s*\{\s*color-scheme: light;/)
   })
 })

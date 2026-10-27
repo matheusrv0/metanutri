@@ -97,7 +97,9 @@ export function BarraDaLanding({ temSessao, aoIrPara }: BarraDaLandingProps) {
               Entrar
             </a>
             <a href="#/criar-conta" className={ACAO} onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('criar-conta'))}>
-              Criar conta{' '}<span className="max-[720px]:hidden">grátis</span>
+              <span>
+                Criar conta <span className="max-[720px]:hidden">grátis</span>
+              </span>
             </a>
           </>
         )}
