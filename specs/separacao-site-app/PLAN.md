@@ -183,23 +183,26 @@ antes.
 As três funções já estão em produção com o código deste ramo; nenhuma correção mexe nelas. Cada uma é um commit, com o
 teste que falha antes.
 
-- [ ] **R1 · A saída por tempo não apaga o que não chegou à nuvem (grave).** Com a migração do D-123, o pendente ficava
+- [x] **R1 · A saída por tempo não apaga o que não chegou à nuvem (grave).** Com a migração do D-123, o pendente ficava
   só na memória do motor (`sujo`); sem o motor abrir, o `parar()` gravava uma situação zerada e o `contaEmDia` dava "em
   dia". Duas partes: (a) `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: guarda o resultado do `salvarAgora()` e
   decide `apagar` (salvou e em dia) antes do `parar()`; sem motor, vale só o `contaEmDia`. (b) Na raiz:
   `src/domain/donoDosDados.ts` e `src/domain/donoDosDados.test.ts` (a migração conta uma mudança no espaço da conta
   que recebeu os dados, com `contarMudanca`) e `src/domain/contaEmDia.ts` e `.test.ts` (situação com `versao` nula e
   dado na conta não está em dia: a nuvem nunca confirmou). Protege também o D-518 e o site da P2.
-- [ ] **R2 · Duas abas não saem antes da hora.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: o `conferir()`
+- [x] **R2 · Duas abas não saem antes da hora.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: o `conferir()`
   grava a marca quando o uso em memória é mais novo que o dela, e a aba grava também ao ficar oculta
   (`visibilitychange`) e no `pagehide`. O uso continua indo no máximo a cada 60 s pelos eventos (DP-SA-5).
-- [ ] **R3 · Uso depois do prazo não renova a sessão vencida.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: o
+- [x] **R3 · Uso depois do prazo não renova a sessão vencida.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: o
   `usar()` confere antes; vencida, sai sem gravar o uso (o computador acordou e a primeira tecla chegou antes do
   relógio do vigia).
-- [ ] **R5 · Rolagem do app não é uso.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: sai o `scroll` da lista
+- [x] **R5 · Rolagem do app não é uso.** `src/ui/sessao/usarTempoDeSessao.ts` e `.test.tsx`: sai o `scroll` da lista
   (D-515). A rolagem da pessoa chega por `wheel`, `touchstart`, `keydown` e `pointerdown`.
-- [ ] **R7 · A saída ao abrir não troca o motivo que já existe.** `src/ui/estado/usarConta.ts` e `usarConta.test.ts`:
+- [x] **R7 · A saída ao abrir não troca o motivo que já existe.** `src/ui/estado/usarConta.ts` e `usarConta.test.ts`:
   com o motivo de uma saída anterior guardado, a hora fica a dele (a do último uso); a pendência só soma.
+
+*Feitas em 27/10/2026, uma por commit, com o teste antes: `npm run check` (287 arquivos, 5207 testes), `npm run e2e`
+(288) e `npm run test:csp` (3) passaram.*
 
 **Pendências da revisão, para a P2** (registradas, sem código agora):
 - **R4 · `beforeunload` na saída sem internet:** a recarga do D-517, passo 5, pode cair no aviso de fechar com
