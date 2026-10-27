@@ -148,7 +148,7 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     await page.clock.install()
     await entrar(page)
     const outra = await context.newPage()
-    await ligarServidorFalso(outra, { perfil: PERFIL_NUTRICIONISTA })
+    const servidorDaOutra = await ligarServidorFalso(outra, { perfil: PERFIL_NUTRICIONISTA })
     await outra.goto('/#/painel')
     await expect(outra.getByRole('heading', { level: 1, name: 'Painel' })).toBeVisible()
 
@@ -163,7 +163,8 @@ test.describe('a sessão que sai sozinha (spec separacao-site-app, P1)', () => {
     await page.clock.runFor(20 * MIN + ATE_A_SAIDA)
     await expect(page.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
     await expect(outra.getByRole('heading', ENTRE_DE_NOVO)).toBeVisible()
-    expect(servidor.logouts).toHaveLength(1)
+    // Qualquer uma das duas pode ser a que sai; o pedido passa pelo servidor falso da aba que saiu.
+    expect([...servidor.logouts, ...servidorDaOutra.logouts]).toEqual(['local'])
   })
 
   test('CA-1451 e CA-1450: reaberto antes dos 30 minutos, abre direto; depois, mostra "Entre de novo" sem a área aparecer', async ({ page, browser }) => {
