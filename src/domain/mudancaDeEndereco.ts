@@ -9,7 +9,7 @@ import { contaEmDia } from './contaEmDia.ts'
 import { CHAVE_DONO, chavesSemConta, OUTRAS_CHAVES_DA_PESSOA } from './donoDosDados.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import { ehQuotaExcedida, type ArmazenamentoListavel } from './persistencia.ts'
-import { CHAVE_NUVEM, contarMudanca } from './sincronia.ts'
+import { CHAVE_NUVEM, lerSituacao } from './sincronia.ts'
 
 /** O tema escolhido no app: vai junto (D-512). A mesma chave de `CHAVE_TEMA` (`src/ui/tema/contextoTema.ts`). */
 export const CHAVE_DO_TEMA = 'metanutri:tema'
@@ -164,11 +164,13 @@ export function gravarPacote(base: ArmazenamentoListavel, usuarioId: string, cha
   try {
     if (modo === 'trocar') {
       // DP-SA-57: a situação da nuvem nunca fica vazia, nem por um instante: outra aba do app na mesma conta leria "a
-      // conta saiu aqui" e pararia de sincronizar (DP-11). Sem ela no pacote, a do app ganha uma mudança a mais: o motor
-      // junta o que veio com a nuvem, como faria sem a situação, e a conta só fica em dia depois de subir.
-      if (!Object.hasOwn(chaves, situacao) && base.getItem(situacao) !== null) {
+      // conta saiu aqui" e pararia de sincronizar (DP-11). Sem ela no pacote, a do app fica sem a versão e com uma
+      // mudança a mais: todo envio, de qualquer aba, vira cópia nova, a nuvem diz que já existe uma, e o motor lê e junta
+      // o que veio com ela antes de subir. Com a versão guardada, outra aba salvaria por cima da nuvem só o que veio.
+      const doApp = lerSituacao(armazenamentoDaConta(base, usuarioId))
+      if (!Object.hasOwn(chaves, situacao) && doApp !== null) {
         lembrar(situacao)
-        contarMudanca(armazenamentoDaConta(base, usuarioId))
+        base.setItem(situacao, JSON.stringify({ ...doApp, versao: null, mudancas: doApp.mudancas + 1 }))
       }
       for (const chave of chavesDoEspaco(base, usuarioId)) {
         if (chave === situacao || Object.hasOwn(chaves, chave)) continue

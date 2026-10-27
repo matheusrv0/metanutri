@@ -238,12 +238,12 @@ describe('a mudança do endereço antigo (spec separacao-site-app, D-512, D-513 
       expect(app.getItem('metanutri:conta:u1:modelos')).toBeNull()
     })
 
-    it('R9 (DP-SA-57): pacote sem a situação da nuvem: a do app fica, com uma mudança a mais, e a conta deixa de estar em dia', () => {
+    it('R9 (DP-SA-57): pacote sem a situação da nuvem: a do app fica, sem a versão e com uma mudança a mais, e a conta deixa de estar em dia', () => {
       const app = appEmDia()
       const semSituacao = { 'metanutri:conta:u1:pacientes': '[{"id":"p1","nome":"Ana"}]' }
       expect(gravarPacote(app, 'u1', semSituacao, 'trocar')).toBe('gravado')
       expect(app.situacaoVazia).toEqual([])
-      expect(JSON.parse(app.getItem('metanutri:conta:u1:nuvem') ?? 'null')).toEqual({ ...(JSON.parse(EM_DIA) as object), mudancas: 4 })
+      expect(JSON.parse(app.getItem('metanutri:conta:u1:nuvem') ?? 'null')).toEqual({ ...(JSON.parse(EM_DIA) as object), versao: null, mudancas: 4 })
       expect(comoReceber(app, 'u1')).toBe('depois')
       expect(app.getItem('metanutri:conta:u1:pacientes')).toBe('[{"id":"p1","nome":"Ana"}]')
     })
