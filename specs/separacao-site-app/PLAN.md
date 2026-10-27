@@ -437,7 +437,8 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   (as páginas do site vão para `e2e/site/telas-publicas.spec.ts`; a raiz do app abre Entrar),
   `e2e/servidor-falso/revisao.spec.ts` (o rodapé e o topo públicos, D-235, e Preços, D-234, passam a
   `e2e/site/revisao.spec.ts`; o M-5 abre uma tela do app), `e2e/exclusao-de-conta.spec.ts` (CA-808: o aviso fica em
-  Entrar, DP-SA-49), `e2e/site/landing-v3.spec.ts` (o "Entrar" da barra é o endereço do app) e
+  Entrar, DP-SA-49), `e2e/fundacao.spec.ts` (CA-100: as fontes conferidas em Entrar, já que `#/inicio` leva ao
+  site), `e2e/site/landing-v3.spec.ts` (o "Entrar" da barra é o endereço do app) e
   `e2e/site/landing-v9.spec.ts` (CA-1656, DP-SA-56), e sai
   `e2e/servidor-falso/site-publico.spec.ts` (o CA-1023, que sai com o D-337). Novos: `e2e/site/repasses.spec.ts`,
   `e2e/site/revisao.spec.ts`, `e2e/site/mudanca.spec.ts`
