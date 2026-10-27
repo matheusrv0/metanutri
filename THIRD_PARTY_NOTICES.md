@@ -107,3 +107,16 @@ fotos, recortadas em círculo. Licença Unsplash (uso livre, inclusive comercial
 - Anna Pelzer — https://unsplash.com/photos/IGfIGP5ONV0 (tigela de salada com grão-de-bico e abacate)
 - Anh Nguyen — https://images.unsplash.com/photo-1546069901-ba9599a7e63c (tigela com tofu, milho e legumes)
 - Stuart Petrie — https://images.unsplash.com/photo-1490645935967-10de6ba17061 (prato azul com ovo, tomate e abobrinha)
+
+## Fotos da landing escura (CC0)
+
+Três fotos em domínio público (CC0 1.0, sem crédito obrigatório; registradas aqui por cuidado), convertidas para webp
+de até 1.600 px e 800 px em `public/imagens/` (spec landing-escura, D-547). Licença:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+- `legumes-na-bancada*.webp` — "Free closeup fresh vegetables kitchen", rawpixel:
+  https://www.rawpixel.com/image/5924770/photo-image-public-domain-plant-nature
+- `dois-copos-de-leite*.webp` — "Two Glasses of Milk (52633675811)", Alabama Extension, Wikimedia Commons:
+  https://commons.wikimedia.org/w/index.php?curid=165949173
+- `salada-com-frango*.webp` — "Chicken salad on striped tablecloth", Kotivalo, Wikimedia Commons:
+  https://commons.wikimedia.org/w/index.php?curid=71067537
