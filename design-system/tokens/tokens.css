@@ -78,6 +78,20 @@
   --orange-700: #c2410c;
   --orange-100: #fdece3;
   --ivory: #f6f2ea;
+  /* O teal mais fundo: a pergunta aberta sobre o teal da marca, na landing escura (spec landing-escura, D-531). */
+  --teal-950: #0b2f36;
+  /* Carvão com o matiz do teal: o escuro da marca (spec landing-escura, D-530 e D-531). Do mais fundo ao mais claro. */
+  --carvao-950: #0b1416;
+  --carvao-900: #101a1d;
+  --carvao-850: #142226;
+  --carvao-800: #192a2f;
+  --carvao-750: #22383e;
+  --carvao-700: #26393f;
+  --carvao-600: #3b5359;
+  --carvao-400: #7d9296;
+  --carvao-200: #a9bfc2;
+  --carvao-100: #cfdcdd;
+  --carvao-50: #eef2f1;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
@@ -261,6 +275,47 @@
   --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.5), 0 10px 24px -10px rgb(0 0 0 / 0.7);
   --shadow-pop: 0 4px 8px rgb(0 0 0 / 0.55), 0 24px 48px -16px rgb(0 0 0 / 0.8);
   --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* ---------- Camada 3b: a landing escura (spec landing-escura, desde 27/10/2026) ----------
+ * A página inicial é escura em qualquer tema (D-530). O escopo vale na raiz da landing, que também leva `.dark`, para
+ * os componentes do sistema que ela usa (a logo, o aviso de conta excluída) virem escuros junto. Marfim é a ação;
+ * laranja é grafismo e nunca fica atrás de texto nem vira letra (D-532).
+ */
+.landing-escura {
+  --landing-chao: var(--carvao-900);
+  --landing-chao-fundo: var(--carvao-950);
+  --landing-afundado: var(--carvao-850);
+  --landing-cartao: var(--carvao-800);
+  --landing-cartao-hover: var(--carvao-750);
+  /* O trilho da barra de adequação e a borda do fragmento de interface. */
+  --landing-trilho: var(--carvao-700);
+  /* A chave desligada, o contorno do botão secundário do fragmento e do seletor. */
+  --landing-contorno: var(--carvao-600);
+  /* A frase da chave desligada: 5,3:1 sobre o chão, em letra de 22 px ou mais. */
+  --landing-apagado: var(--carvao-400);
+  --landing-tinta: var(--carvao-50);
+  --landing-tinta-suave: var(--carvao-200);
+  --landing-tinta-resposta: var(--carvao-100);
+  --landing-teal: var(--teal-900);
+  --landing-teal-medio: var(--teal-700);
+  --landing-teal-fundo: var(--teal-950);
+  --landing-teal-claro: var(--teal-300);
+  --landing-marfim: var(--ivory);
+  --landing-branco: var(--gray-0);
+  --landing-laranja: var(--orange-500);
+
+  /* Margem da página e a escala de letra do protótipo: o muito grande, o grande, o de seção e três de texto. */
+  --landing-margem: clamp(16px, 3vw, 48px);
+  --landing-fs-display: clamp(32px, 7.6vw, 136px);
+  --landing-fs-xl: clamp(30px, 4.8vw, 78px);
+  --landing-fs-l: clamp(20px, 2.2vw, 34px);
+  --landing-fs-frase: clamp(22px, 3.2vw, 52px);
+  --landing-fs-lead: 20px;
+  --landing-fs-corpo: 17px;
+  --landing-fs-s: 14px;
+  /* A altura da barra do topo: 44 px de alvo e 12 px em cima e embaixo. */
+  --landing-barra: 68px;
 }
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */
