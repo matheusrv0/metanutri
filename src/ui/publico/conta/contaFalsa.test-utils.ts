@@ -16,6 +16,7 @@ export function contaFalsa(sobre: Partial<ValorConta> = {}): ValorConta {
     pedirTrocaDeSenha: vi.fn(async () => ({ ok: true, erro: null })),
     trocarSenha: vi.fn(async () => ({ ok: true, erro: null })),
     sair: vi.fn(async () => undefined),
+    sairPorTempo: vi.fn(async () => undefined),
     ...sobre,
   }
 }

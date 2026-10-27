@@ -33,10 +33,25 @@ export interface Cenario {
 
 const base64url = (texto: string): string => Buffer.from(texto).toString('base64url')
 
-/** Um JWT só no formato: o site não confere a assinatura, e o servidor falso não confere nada. */
+/**
+ * Um JWT só no formato: o site não confere a assinatura, e o servidor falso não confere nada. Traz a hora da entrada
+ * (`amr`) e a de emissão (`iat`), como o Supabase: sem elas, a sessão conta como vencida (spec separacao-site-app,
+ * DP-SA-4).
+ */
 function tokenFalso(validoAte: number, email: string): string {
+  const agora = Math.floor(Date.now() / 1000)
   const cabecalho = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const corpo = base64url(JSON.stringify({ sub: USUARIO_FALSO.id, email, role: 'authenticated', aud: 'authenticated', exp: validoAte }))
+  const corpo = base64url(
+    JSON.stringify({
+      sub: USUARIO_FALSO.id,
+      email,
+      role: 'authenticated',
+      aud: 'authenticated',
+      exp: validoAte,
+      iat: agora,
+      amr: [{ method: 'password', timestamp: agora }],
+    }),
+  )
   return `${cabecalho}.${corpo}.assinatura-falsa`
 }
 
