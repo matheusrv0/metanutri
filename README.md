@@ -414,6 +414,11 @@ Antes de tudo: a P2 na `main` (o ramo `separacao-p2`, com o `npm run check` pass
     paciente antigo (`metanutri.com.br/#/missoes/<token>`) abre a tela do paciente no app;
     `metanutri.com.br/#/painel` leva ao app; num navegador que já usava o MetaNutri, a primeira visita recarrega uma vez
     e depois mostra o site.
+    **No iPhone com o ícone do MetaNutri instalado do endereço antigo** (se houver um): abrir pelo ícone. Com dado que só
+    está no aparelho, aparece "Continuar"; tocar e entrar na aba que abre. Se ela abrir o Painel sem trazer os dados, está
+    certo: no modo instalado do iOS a aba nova às vezes abre sem a ligação com a do site; nada se perde, o dado fica no
+    endereço antigo e "Continuar" aparece de novo na próxima vez. Depois, instalar o ícone de novo a partir de
+    `app.metanutri.com.br`.
 12. **P3, logo em seguida, no mesmo dia.** **(terminal)** merge do ramo `separacao-p3` na `main` e as três funções
     de novo, agora só com o app na lista:
     ```bash
