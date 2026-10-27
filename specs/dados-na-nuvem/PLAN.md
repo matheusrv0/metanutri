@@ -361,7 +361,8 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
 - **DP-27 · Menores.** A cópia de quem saiu não sobe; cópia sem itens e sem lápide por cima de nuvem com itens reabre
   ("Carregando seus dados…") em vez de ficar em "Salvando…"; ao esconder ou fechar a aba, o pendente é mandado, e o
   `beforeunload` avisa; restaurar backup aceita só as chaves de dados e os planos, e diz que vale para todos os aparelhos
-  da conta; sair sem internet apaga a sessão local mesmo assim; uma aba envia por vez (`navigator.locks`, quando existe);
+  da conta; sair sem internet apaga a sessão local mesmo assim (*nota de 27/10/2026, spec `separacao-site-app`, D-520:
+  o "Sair" passa a encerrar só a sessão deste navegador, `scope: 'local'`, com ou sem internet*); uma aba envia por vez (`navigator.locks`, quando existe);
   produtos, modelos, busca e perfil se refazem quando outra aba grava; o estado anuncia só "Salvo"; a trava de tamanho
   só reenvia quando a cópia diminui.
 
