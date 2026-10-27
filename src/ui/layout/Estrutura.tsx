@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Alert } from '@ds/componentes/display/alert.tsx'
+import { AvisoIconeAntigo } from '../aplicativo/AvisoIconeAntigo.tsx'
 import { AvisoVersaoNova } from '../aplicativo/AvisoVersaoNova.tsx'
 import { AvisoPrimeiroAcesso } from '../casos/AvisoPrimeiroAcesso.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
@@ -98,6 +99,8 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
       <AvisoPrimeiroAcesso />
       {/* Quem já usava fica sabendo, uma vez, que os dados agora ficam na nuvem (spec dados-na-nuvem, DP-26). */}
       <AvisoNuvem />
+      {/* Spec separacao-site-app, D-524: quem abriu pelo ícone instalado do endereço antigo fica sabendo, uma vez. */}
+      <AvisoIconeAntigo />
     </div>
   )
 }
