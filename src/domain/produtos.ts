@@ -288,6 +288,8 @@ export function energiaIncoerente(v: Readonly<Partial<Record<ChaveNutrienteAlime
 
 const inteiro = (n: number): string => String(Math.round(n))
 const comDuasCasas = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
+/** D-501: o óleo, o mais energético dos alimentos, tem 884 kcal em 100 g. */
+const ENERGIA_MAXIMA_KCAL = 900
 
 /**
  * D-384 e CA-1142 a CA-1144: o que impede salvar (problemas) e o que só pede conferência (avisos). Os valores são
@@ -334,6 +336,11 @@ export function validarAlimentoProprio(
   if (por100) {
     const soma = ['proteina_g', 'carboidrato_g', 'lipideos_g', 'fibra_g'].reduce((t, chave) => t + (por100[chave as ChaveNutrienteAlimento] ?? 0), 0)
     if (soma > 105) problemas.push({ campo: 'soma', mensagem: `Proteína, carboidrato, gordura e fibra passam de 105 g em 100 g (somam ${comDuasCasas.format(soma)} g). Confira os valores.` })
+    // D-501 (I10): nem óleo passa de 900 kcal em 100 g; acima disso, é o kJ do rótulo digitado como kcal.
+    const energia = por100.energia_kcal
+    if (typeof energia === 'number' && energia > ENERGIA_MAXIMA_KCAL && !ilegivel('energia_kcal')) {
+      problemas.push({ campo: 'energia_kcal', mensagem: `Energia acima de ${ENERGIA_MAXIMA_KCAL} kcal em 100 ${d.unidade}. O rótulo traz kJ e kcal: use o valor em kcal.` })
+    }
     if (energiaIncoerente(d.valores)) {
       const pelosMacros = energiaPelosMacros(d.valores) ?? 0
       avisos.push({ campo: 'energia_kcal', mensagem: `Pelos macros, dá ${inteiro(pelosMacros)} kcal; você digitou ${inteiro(d.valores.energia_kcal ?? 0)}. Confira.` })

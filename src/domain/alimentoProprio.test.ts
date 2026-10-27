@@ -166,6 +166,14 @@ describe('validação (D-384)', () => {
     expect(problemas).toContainEqual({ campo: 'sodio_mg', mensagem: 'Obrigatório no rótulo.' })
   })
 
+  it('CA-1367 (D-501): energia acima de 900 kcal em 100 g não salva; a do óleo salva', () => {
+    const kj = { ...CUSCUZ, nome: 'Farinha em kJ', valores: { energia_kcal: 1510, proteina_g: 1.6, carboidrato_g: 87.9, lipideos_g: 0.3 } }
+    expect(mensagem(kj, 'energia_kcal')).toBe('Energia acima de 900 kcal em 100 g. O rótulo traz kJ e kcal: use o valor em kcal.')
+    // Na porção: 453 kcal em 30 g são 1.510 kcal em 100 g.
+    expect(mensagem({ ...BARRA, valores: { ...BARRA.valores, energia_kcal: 453 } }, 'energia_kcal')).toBe('Energia acima de 900 kcal em 100 g. O rótulo traz kJ e kcal: use o valor em kcal.')
+    expect(mensagem({ ...CUSCUZ, nome: 'Óleo de buriti', valores: { energia_kcal: 884, proteina_g: 0, carboidrato_g: 0, lipideos_g: 100 } }, 'energia_kcal')).toBeUndefined()
+  })
+
   it('CA-1362 (D-497): o campo com texto que não é número tem a mensagem dele, no lugar de "Informe…"', () => {
     const r = validarAlimentoProprio({ ...CUSCUZ, valores: { ...CUSCUZ.valores, proteina_g: null, fibra_g: null } }, ['proteina_g', 'fibra_g'])
     expect(r.problemas).toEqual([
