@@ -211,7 +211,10 @@ function Conteudo({ conta, usuarioId }: ConteudoProps) {
         <AvisoContaExcluida />
         <TelaInicio
           aoComecar={() => navegar(rotaCriarConta(null, 'mensal'))}
-          aoVerPrecos={() => navegar({ tela: 'precos' })}
+          aoEscolher={(plano, ciclo) => {
+            const destino = destinoDoPlano(plano, ciclo, sessao !== null)
+            if (destino) navegar(destino)
+          }}
         />
       </MolduraPublica>
     )

@@ -17,8 +17,18 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
 
   it('CA-1013: a landing sai escrita, dentro da moldura pública, com os títulos, os preços e o rodapé', () => {
     const html = corpo('inicio')
-    expect(html).toMatch(/<h1[^>]*>Faltou cálcio\?/)
-    for (const trecho of ['Como funciona', 'Do atendimento ao documento entregue', 'Quanto custa', 'R$ 34,90', 'Teste com um paciente real', 'Termos de uso', 'Fontes da base']) {
+    // Spec landing-escura (CA-1484): a landing nova, com o preço do Solo de PLANOS.
+    expect(html).toMatch(/<h1[^>]*><span[^>]*>Falta cálcio\?<\/span>/)
+    for (const trecho of [
+      'O que falta no plano da Maria, 28 anos?',
+      'O plano sai do seu jeito',
+      'Como funciona',
+      'Na medida da cozinha',
+      'Quanto custa',
+      'Solo: R$ 34,90 por mês',
+      'Perguntas de quem atende',
+      'Termos de uso',
+    ]) {
       expect(html).toContain(trecho)
     }
     expect(html).toContain('<header')
