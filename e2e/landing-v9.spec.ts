@@ -36,6 +36,56 @@ const corDoAnelEFundo = (pagina: Page, anel: string) =>
       return [cor, botao ? getComputedStyle(botao).backgroundColor : ''] as const
     })
 
+/**
+ * CA-1689 (revisão da v9): o contraste do título do topo com cada pixel atrás dele. Esconde a letra, fotografa a caixa
+ * do título e compara cada pixel com a cor do título; devolve o pior pixel e o 1% pior.
+ */
+async function contrasteAtrasDoTitulo(pagina: Page): Promise<{ readonly pior: number; readonly p1: number }> {
+  await pagina.evaluate(() => window.scrollTo(0, 0))
+  const foto = pagina.getByAltText(/Copo de iogurte/)
+  await expect.poll(() => foto.evaluate((img) => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0)).toBe(true)
+  const titulo = pagina.getByRole('heading', { level: 1 })
+  const cor = await titulo.evaluate((el) => getComputedStyle(el).color)
+  const caixa = await titulo.boundingBox()
+  if (!caixa) throw new Error('sem o título')
+  await titulo.evaluate((el) => el.style.setProperty('color', 'transparent'))
+  const png = await pagina.screenshot({ clip: caixa })
+  await titulo.evaluate((el) => el.style.removeProperty('color'))
+  // A decodificação numa página em branco, sem a regra de conteúdo do site.
+  const leitor = await pagina.context().newPage()
+  const medida = await leitor.evaluate(
+    async ({ dados, texto }) => {
+      const img = new Image()
+      img.src = `data:image/png;base64,${dados}`
+      await img.decode()
+      const tela = document.createElement('canvas')
+      tela.width = img.width
+      tela.height = img.height
+      const contexto = tela.getContext('2d')
+      if (!contexto) throw new Error('sem canvas')
+      contexto.drawImage(img, 0, 0)
+      const { data } = contexto.getImageData(0, 0, tela.width, tela.height)
+      const canal = (v: number) => {
+        const c = v / 255
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+      }
+      const lum = (r: number, g: number, b: number) => 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b)
+      const [tr = 0, tg = 0, tb = 0] = (texto.match(/\d+/g) ?? []).map(Number)
+      const daLetra = lum(tr, tg, tb)
+      const razoes: number[] = []
+      for (let i = 0; i < data.length; i += 4) {
+        const l = lum(data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0)
+        razoes.push((Math.max(l, daLetra) + 0.05) / (Math.min(l, daLetra) + 0.05))
+      }
+      razoes.sort((a, b) => a - b)
+      return { pior: razoes[0] ?? 0, p1: razoes[Math.floor(razoes.length * 0.01)] ?? 0 }
+    },
+    { dados: png.toString('base64'), texto: cor },
+  )
+  await leitor.close()
+  return medida
+}
+
 /** A transformação calculada do traço aceso de "Como funciona" (o `::after` da lista). */
 const linhaAcesa = (pagina: Page) => pagina.locator('.landing-etapas').evaluate((el) => getComputedStyle(el, '::after').transform)
 
@@ -50,6 +100,17 @@ test.describe('com menos movimento', () => {
       const [anelDaMissao, fundoDaMissao] = await corDoAnelEFundo(page, '[aria-label="Missões do dia (exemplo)"] button[aria-pressed="false"] > span')
       expect(contraste(anelDaMissao, fundoDaMissao), `${anelDaMissao} sobre ${fundoDaMissao}`).toBeGreaterThanOrEqual(3)
     })
+  }
+
+  for (const tema of ['escuro', 'claro'] as const) {
+    for (const largura of [390, 768, 1024, 1280, 1440, 2000]) {
+      test(`CA-1689: landing ${tema} em ${largura} px, o título do topo contrasta 4,5:1 com cada pixel da foto atrás dele`, async ({ page }) => {
+        await page.setViewportSize({ width: largura, height: largura < 720 ? 844 : 900 })
+        await abrir(page, tema)
+        const { pior, p1 } = await contrasteAtrasDoTitulo(page)
+        expect(pior, `pior pixel ${pior.toFixed(2)}:1, 1% pior ${p1.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+      })
+    }
   }
 
   test('CA-1651: a barra fica no alto em qualquer ponto da página, também no rodapé', async ({ page }) => {

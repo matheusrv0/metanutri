@@ -354,22 +354,30 @@
   --landing-vidro: color-mix(in srgb, var(--carvao-900) 78%, transparent);
   --landing-veu:
     linear-gradient(180deg, transparent 70%, var(--landing-afundado) 100%),
+    /* De lado: denso até onde o título termina (58% da largura), para ele ter 4,5:1 sobre o iogurte claro da foto
+     * (revisão da v9, CA-1689; o protótipo caía a 35% já em 62%). */
     linear-gradient(
       90deg,
       color-mix(in srgb, var(--carvao-975) 94%, transparent) 0%,
-      color-mix(in srgb, var(--carvao-975) 84%, transparent) 34%,
-      color-mix(in srgb, var(--carvao-975) 35%, transparent) 62%,
+      color-mix(in srgb, var(--carvao-975) 86%, transparent) 40%,
+      color-mix(in srgb, var(--carvao-975) 68%, transparent) 58%,
+      color-mix(in srgb, var(--carvao-975) 25%, transparent) 76%,
       color-mix(in srgb, var(--carvao-975) 5%, transparent) 100%
     );
+  /* Até 1.100 px, o véu de cima para baixo: 62% no alto e 85% a um terço da altura, para o título ter 4,5:1 sobre
+   * qualquer pixel da foto (revisão da v9, CA-1689; o protótipo começava em 20%). */
   --landing-veu-celular: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--carvao-975) 20%, transparent) 0%,
+    color-mix(in srgb, var(--carvao-975) 62%, transparent) 0%,
+    color-mix(in srgb, var(--carvao-975) 85%, transparent) 35%,
     color-mix(in srgb, var(--carvao-975) 90%, transparent) 55%,
     var(--landing-afundado) 100%
   );
   --landing-topo-tinta: var(--ivory);
   --landing-topo-suave: var(--carvao-100);
-  --landing-vidro-cartao: color-mix(in srgb, var(--carvao-875) 55%, transparent);
+  /* A etiqueta do topo: vidro de 75% e o número em marfim (revisão da v9: com 55% e o teal claro, o "91%" dava 3:1). */
+  --landing-vidro-cartao: color-mix(in srgb, var(--carvao-875) 75%, transparent);
+  --landing-etiqueta-numero: var(--ivory);
   --landing-etiqueta-sombra: 0 20px 40px -24px color-mix(in srgb, var(--aparelho-fundo) 45%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--gray-0) 18%, transparent);
   /* A luz em cima dos cartões e do painel, a sombra deles (só no claro), a luz que segue o ponteiro nos planos, o brilho
@@ -433,19 +441,22 @@
     linear-gradient(
       90deg,
       color-mix(in srgb, var(--ivory) 97%, transparent) 0%,
-      color-mix(in srgb, var(--ivory) 90%, transparent) 36%,
-      color-mix(in srgb, var(--ivory) 40%, transparent) 64%,
+      color-mix(in srgb, var(--ivory) 90%, transparent) 40%,
+      color-mix(in srgb, var(--ivory) 72%, transparent) 58%,
+      color-mix(in srgb, var(--ivory) 28%, transparent) 76%,
       transparent 100%
     );
   --landing-veu-celular: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--ivory) 10%, transparent) 0%,
+    color-mix(in srgb, var(--ivory) 62%, transparent) 0%,
+    color-mix(in srgb, var(--ivory) 88%, transparent) 35%,
     color-mix(in srgb, var(--ivory) 92%, transparent) 55%,
     var(--landing-afundado) 100%
   );
   --landing-topo-tinta: var(--teal-900);
   --landing-topo-suave: var(--tinta-teal-700);
-  --landing-vidro-cartao: color-mix(in srgb, var(--gray-0) 62%, transparent);
+  --landing-vidro-cartao: color-mix(in srgb, var(--gray-0) 75%, transparent);
+  --landing-etiqueta-numero: var(--teal-700);
   --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 20%, transparent);
   --landing-sombra-cartao: 0 1px 2px color-mix(in srgb, var(--teal-900) 6%, transparent),
     0 22px 44px -28px color-mix(in srgb, var(--teal-900) 28%, transparent);

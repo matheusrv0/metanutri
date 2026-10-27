@@ -98,7 +98,7 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
           <span className="text-[13px] font-semibold text-landing-topo-suave">{etiqueta.falta}</span>
           <strong className="text-[17px] font-extrabold tracking-[-0.01em]">
             {etiqueta.porcao}
-            <b className="text-landing-destaque">{etiqueta.cobre}</b>
+            <b className="text-landing-etiqueta-numero">{etiqueta.cobre}</b>
           </strong>
         </div>
       ) : null}
