@@ -179,6 +179,21 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(screen.queryByRole('list', { name: 'Alimentos cadastrados' })).not.toBeInTheDocument()
   })
 
+  it('CA-1366 (D-500): só o tipo Rótulo tem a linha do que a rotulagem também obriga', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    const linha = 'A rotulagem também obriga açúcares adicionados; eles não entram no cálculo do plano. Gordura trans acima de zero tira o alimento do Cobrir e das trocas.'
+    expect(janela.queryByText(linha)).not.toBeInTheDocument()
+    await usuario.click(janela.getByRole('radio', { name: 'Preparação' }))
+    expect(janela.queryByText(linha)).not.toBeInTheDocument()
+    await usuario.click(janela.getByRole('radio', { name: 'Rótulo' }))
+    expect(janela.getByText(linha)).toBeInTheDocument()
+    // A linha não cita a norma pelo número.
+    expect(janela.queryByText(/RDC/)).not.toBeInTheDocument()
+  })
+
   it('CA-1141: rótulo na porção mostra quanto dá por 100 g', async () => {
     render(<TelaProdutos formularioNovo />)
     const usuario = userEvent.setup()

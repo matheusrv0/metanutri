@@ -315,6 +315,12 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
 
         <h3 className="text-sm font-semibold text-heading">Se tiver</h3>
         <div className="grid gap-4 sm:grid-cols-2">{CAMPOS_GERAIS.map(campoNutriente)}</div>
+        {/* D-500 (completa a D-485): o que a rotulagem também obriga e o formulário não pede; sem citar a norma pelo número. */}
+        {d.tipo === 'rotulo' ? (
+          <p className="text-xs text-muted-foreground">
+            A rotulagem também obriga açúcares adicionados; eles não entram no cálculo do plano. Gordura trans acima de zero tira o alimento do Cobrir e das trocas.
+          </p>
+        ) : null}
 
         <details className="group rounded-2xl bg-surfacerow px-4 py-3">
           <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-heading">Vitaminas e minerais (se tiver)</summary>
