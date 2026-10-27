@@ -9,6 +9,7 @@ import { contaEmDia } from './contaEmDia.ts'
 import { CHAVE_DONO, chavesSemConta, OUTRAS_CHAVES_DA_PESSOA } from './donoDosDados.ts'
 import { CHAVES_DE_DADOS } from './perfil.ts'
 import { ehQuotaExcedida, type ArmazenamentoListavel } from './persistencia.ts'
+import { CHAVE_NUVEM, contarMudanca } from './sincronia.ts'
 
 /** O tema escolhido no app: vai junto (D-512). A mesma chave de `CHAVE_TEMA` (`src/ui/tema/contextoTema.ts`). */
 export const CHAVE_DO_TEMA = 'metanutri:tema'
@@ -52,6 +53,9 @@ function cabeNoPacote(chave: string, usuarioId: string): boolean {
   if (chave.startsWith(prefixo)) return chave.length > prefixo.length
   return chave === CHAVE_DO_TEMA || ehDeAntesDasContas(chave)
 }
+
+/** O nome no navegador de uma chave da conta (`metanutri:nuvem` vira `metanutri:conta:<id>:nuvem`). */
+const noEspaco = (usuarioId: string, chave: string): string => `${prefixoDaConta(usuarioId)}${chave.slice('metanutri:'.length)}`
 
 /** As chaves do espaço da conta, com o nome do navegador. */
 function chavesDoEspaco(base: ArmazenamentoListavel, usuarioId: string): string[] {
@@ -142,24 +146,36 @@ export function comoReceber(base: ArmazenamentoListavel, usuarioId: string): Com
 }
 
 /**
- * Grava o pacote no app (D-513). Ao trocar, o espaço em dia sai antes. O dado de antes das contas fica com ela como dona
- * (a migração de sempre o leva ao espaço dela, D-123); o tema só entra se o app não tiver um. Se não couber (CB-501), o
- * que chegou a ser gravado sai e o que havia volta.
+ * Grava o pacote no app (D-513). Ao trocar, sai do espaço em dia o que o pacote não traz; o que ele traz é regravado no
+ * lugar (DP-SA-57). O dado de antes das contas fica com ela como dona (a migração de sempre o leva ao espaço dela,
+ * D-123); o tema só entra se o app não tiver um. Se não couber (CB-501), o que chegou a ser gravado sai e o que havia
+ * volta.
  */
 export function gravarPacote(base: ArmazenamentoListavel, usuarioId: string, chaves: Pacote, modo: Exclude<ComoReceber, 'depois'>): ResultadoDaGravacao {
   const antes = new Map<string, string | null>()
   const lembrar = (chave: string) => {
     if (!antes.has(chave)) antes.set(chave, base.getItem(chave))
   }
+  const situacao = noEspaco(usuarioId, CHAVE_NUVEM)
   try {
     if (modo === 'trocar') {
+      // DP-SA-57: a situação da nuvem nunca fica vazia, nem por um instante: outra aba do app na mesma conta leria "a
+      // conta saiu aqui" e pararia de sincronizar (DP-11). Sem ela no pacote, a do app ganha uma mudança a mais: o motor
+      // junta o que veio com a nuvem, como faria sem a situação, e a conta só fica em dia depois de subir.
+      if (!Object.hasOwn(chaves, situacao) && base.getItem(situacao) !== null) {
+        lembrar(situacao)
+        contarMudanca(armazenamentoDaConta(base, usuarioId))
+      }
       for (const chave of chavesDoEspaco(base, usuarioId)) {
+        if (chave === situacao || Object.hasOwn(chaves, chave)) continue
         lembrar(chave)
         base.removeItem(chave)
       }
     }
     let deAntesDasContas = false
-    for (const [chave, valor] of Object.entries(chaves)) {
+    // A situação que veio vai antes dos dados: a conta nunca parece em dia com o dado novo ainda não enviado.
+    const emOrdem = Object.entries(chaves).sort(([a], [b]) => Number(b === situacao) - Number(a === situacao))
+    for (const [chave, valor] of emOrdem) {
       if (!cabeNoPacote(chave, usuarioId)) continue
       if (chave === CHAVE_DO_TEMA && base.getItem(chave) !== null) continue
       if (ehDeAntesDasContas(chave)) deAntesDasContas = true

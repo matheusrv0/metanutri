@@ -185,6 +185,62 @@ describe('a mudança do endereço antigo (spec separacao-site-app, D-512, D-513 
       expect(app.getItem('metanutri:conta:u1:pacientes')).toBe('[{"id":"p1","nome":"Ana"}]')
     })
 
+    /** Um navegador que anota, a cada gravação ou remoção, se a situação da nuvem da conta ficou vazia. */
+    class NavegadorVigiado extends Navegador {
+      readonly situacaoVazia: string[] = []
+      constructor(private readonly chave: string) {
+        super()
+      }
+      private anotar(acao: string) {
+        if (this.getItem(this.chave) === null) this.situacaoVazia.push(acao)
+      }
+      override setItem(k: string, v: string) {
+        super.setItem(k, v)
+        this.anotar(`setItem ${k}`)
+      }
+      override removeItem(k: string) {
+        super.removeItem(k)
+        this.anotar(`removeItem ${k}`)
+      }
+    }
+
+    function appEmDia(): NavegadorVigiado {
+      const app = new NavegadorVigiado('metanutri:conta:u1:nuvem')
+      app.dados.set('metanutri:conta:u1:nuvem', EM_DIA)
+      app.dados.set('metanutri:conta:u1:modelos', '[{"id":"m1"}]')
+      app.dados.set('metanutri:conta:u1:pacientes', '[{"id":"p0","nome":"Caio"}]')
+      return app
+    }
+
+    it('R9 (DP-SA-57): ao trocar, a situação da nuvem nunca fica vazia, e o que vem é regravado no lugar, sem sair antes', () => {
+      const app = appEmDia()
+      expect(comoReceber(app, 'u1')).toBe('trocar')
+      expect(gravarPacote(app, 'u1', pacote, 'trocar')).toBe('gravado')
+      expect(app.situacaoVazia).toEqual([])
+      expect(app.getItem('metanutri:conta:u1:nuvem')).toBe(PENDENTE)
+      expect(app.getItem('metanutri:conta:u1:pacientes')).toBe('[{"id":"p1","nome":"Ana"}]')
+      expect(app.getItem('metanutri:conta:u1:modelos')).toBeNull()
+    })
+
+    it('R9 (DP-SA-57): pacote sem a situação da nuvem: a do app fica, com uma mudança a mais, e a conta deixa de estar em dia', () => {
+      const app = appEmDia()
+      const semSituacao = { 'metanutri:conta:u1:pacientes': '[{"id":"p1","nome":"Ana"}]' }
+      expect(gravarPacote(app, 'u1', semSituacao, 'trocar')).toBe('gravado')
+      expect(app.situacaoVazia).toEqual([])
+      expect(JSON.parse(app.getItem('metanutri:conta:u1:nuvem') ?? 'null')).toEqual({ ...(JSON.parse(EM_DIA) as object), mudancas: 4 })
+      expect(comoReceber(app, 'u1')).toBe('depois')
+      expect(app.getItem('metanutri:conta:u1:pacientes')).toBe('[{"id":"p1","nome":"Ana"}]')
+    })
+
+    it('R9: não coube ao trocar sem a situação no pacote, a situação de antes volta como estava', () => {
+      const app = new Navegador(3)
+      app.setItem('metanutri:conta:u1:nuvem', EM_DIA)
+      app.setItem('metanutri:conta:u1:modelos', '[{"id":"m1"}]')
+      const semSituacao = { 'metanutri:conta:u1:pacientes': '[]', 'metanutri:casos': '["c1"]', 'metanutri:caso:c1': '{}' }
+      expect(gravarPacote(app, 'u1', semSituacao, 'trocar')).toBe('sem-espaco')
+      expect(Object.fromEntries(app.dados)).toEqual({ 'metanutri:conta:u1:nuvem': EM_DIA, 'metanutri:conta:u1:modelos': '[{"id":"m1"}]' })
+    })
+
     it('CA-1435 (a regra): espaço com algo que ainda não subiu: fica para depois', () => {
       const app = new Navegador()
       app.setItem('metanutri:conta:u1:nuvem', PENDENTE)
