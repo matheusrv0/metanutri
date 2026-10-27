@@ -33,20 +33,18 @@ const abrirLimpo = async (pagina: Page) => {
 /** Um PNG de 1 x 1, para a logo do perfil (que o site guarda como `data:`). */
 const PNG_1X1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==', 'base64')
 
-test('CA-485: o site servido tem a <meta> da regra, logo depois do charset, igual à do csp.ts', async ({ request }) => {
+test('CA-485: o app servido tem a <meta> da regra, logo depois do charset, igual à do csp.ts', async ({ request }) => {
   const html = await (await request.get('/')).text()
   const meta = metaDaPolitica(textoDaPolitica(diretivasDaPolitica({ supabase: null })))
   expect(html).toContain(`<meta charset="UTF-8" />\n    ${meta}`)
   expect(html.indexOf(meta)).toBeLessThan(html.indexOf('<script'))
-  // CA-1012 (spec site-publico-profissional, D-330): a única exceção é o bloco de dados estruturados, que o navegador
-  // não executa.
-  expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>/)
-  expect(html.match(/<script type="application\/ld\+json">/g)).toHaveLength(1)
+  // Nenhum script escrito na página. Spec separacao-site-app (D-506): o app não tem os dados estruturados do site.
+  expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/)
 })
 
 test('CA-485: a regra bloqueia script escrito na página, atributo de evento, script de outro domínio e eval', async ({ page }) => {
   const violacoes = await vigiar(page)
-  await page.goto('/#/inicio')
+  await page.goto('/#/entrar')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
   const resultado = await page.evaluate(async () => {
@@ -87,9 +85,10 @@ test('CA-485: a regra bloqueia script escrito na página, atributo de evento, sc
   expect(violacoes.join('\n')).toMatch(/bloqueou eval/)
 })
 
-test('CA-486: páginas públicas, Entrar, confirmação por código e checkout abrem sem nenhuma violação', async ({ page }) => {
+// As páginas do site (spec separacao-site-app) têm a regra delas e a fumaça sem violação em e2e/site/.
+test('CA-486: Entrar, Criar conta, confirmação por código e checkout abrem sem nenhuma violação', async ({ page }) => {
   const violacoes = await vigiar(page)
-  for (const rota of ['inicio', 'precos', 'termos', 'privacidade', 'fontes', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'assinar/solo/mensal']) {
+  for (const rota of ['entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'assinar/solo/mensal']) {
     await page.goto(`/#/${rota}`)
     await expect(page.getByRole('heading').first(), rota).toBeVisible()
   }

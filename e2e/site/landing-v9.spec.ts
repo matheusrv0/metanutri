@@ -1,11 +1,11 @@
 // Spec landing-v3, seção v9: a landing v9 no navegador de verdade (a barra presa, a foto do topo, a linha de "Como
 // funciona", a troca dos preços, a faixa "Começar", o botão fixo do celular e o pior caso de texto grande e zoom).
 import { expect, test, type Page } from '@playwright/test'
-import { semRolagemLateral } from './apoio/fumaca.ts'
+import { semRolagemLateral } from '../apoio/fumaca.ts'
 
 async function abrir(pagina: Page, temaDaLanding: 'claro' | 'escuro' = 'escuro') {
   await pagina.addInitScript((l) => localStorage.setItem('metanutri:tema-da-landing', l), temaDaLanding)
-  await pagina.goto('/#/inicio')
+  await pagina.goto('/')
   await expect(pagina.locator('[data-vitrine]')).toHaveCount(0)
   await expect(pagina.getByRole('heading', { level: 1 })).toBeVisible()
 }
@@ -378,20 +378,16 @@ test.describe('com movimento', () => {
     await expect(page.getByRole('banner').getByRole('link', { name: 'MetaNutri, início' })).toBeFocused()
   })
 
-  test('CA-1656: aberta pelo app, a foto do topo assenta', async ({ page }) => {
+  // DP-SA-56: o app não tem mais a landing, e o site sempre abre sobre a página pré-desenhada; o caso "do zero" fica no
+  // teste do componente (src/ui/publico/TelaInicio.test.tsx).
+  test('CA-1656 e CA-1657: no site, a foto do topo assenta, continuando o desenho pronto', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await abrir(page)
-    // Pelo app: sai da landing e volta, para ela montar sem a página pré-desenhada.
-    await page.evaluate(() => {
-      location.hash = '#/precos'
-    })
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
-    await page.evaluate(() => {
-      location.hash = '#/inicio'
-    })
     const foto = page.getByAltText(/Copo de iogurte/)
     await expect(foto).toBeVisible()
     expect(await foto.evaluate((el) => el.getAnimations().map((a) => (a as CSSAnimation).animationName))).toEqual(['landing-assentar'])
+    // O movimento que o React monta começa com atraso negativo: o tempo que o da página pré-desenhada já correu.
+    expect(Number.parseFloat(await foto.evaluate((el) => getComputedStyle(el).animationDelay))).toBeLessThan(0)
   })
 
   test('CA-1674: a linha de "Como funciona" espera a lista entrar na tela e então acende', async ({ page }) => {

@@ -1,7 +1,7 @@
 // CA-758 (spec revisao-geral-publica): cada tela pública abre em 390 e 1280 px com o título certo, sem rolar para o lado,
 // sem erro no console e com a ação principal à vista. O site de teste tem o servidor de conta ligado (falso, D-233),
 // como o site no ar: Entrar e Criar conta aparecem como em produção, e as telas com conta abrem.
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { test, type Locator, type Page } from '@playwright/test'
 import { conferirFumaca, LARGURAS_DA_FUMACA, vigiarConsole } from '../apoio/fumaca.ts'
 import {
   assinaturaFalsa,
@@ -25,17 +25,10 @@ interface Tela {
 
 const comSessao = (extra: Cenario = {}): Cenario => ({ sessao: true, perfil: PERFIL_NUTRICIONISTA, ...extra })
 const botao = (nome: string | RegExp) => (p: Page) => p.getByRole('button', { name: nome, exact: typeof nome === 'string' }).filter({ visible: true }).first()
-const noTopo = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('button', { name: nome })
-const LANDING = /Planos alimentares completos/
-// Spec landing-escura: na landing, a ação principal é o "Criar conta grátis" do topo da página; a barra tem links.
-const naLanding = (nome: string) => (p: Page) => p.getByRole('region', { name: LANDING }).getByRole('button', { name: nome })
-const naBarra = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('link', { name: nome })
 
+// Spec separacao-site-app: a landing, Preços, Termos, Privacidade e Referências são do site (e2e/site/telas-publicas.spec.ts).
 const TELAS: readonly Tela[] = [
-  { nome: 'o endereço sem caminho abre a landing (CA-730)', endereco: '/', titulo: LANDING, acao: naLanding('Criar conta grátis') },
-  { nome: 'Landing', endereco: '/#/inicio', titulo: LANDING, acao: naLanding('Criar conta grátis') },
-  { nome: 'Preços', endereco: '/#/precos', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
-  { nome: 'Preços com o Solo em destaque', endereco: '/#/precos/solo', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
+  { nome: 'o endereço sem caminho abre Entrar (CA-1409)', endereco: '/', titulo: 'Entrar', acao: botao('Entrar') },
   { nome: 'Entrar', endereco: '/#/entrar', titulo: 'Entrar', acao: botao('Entrar') },
   { nome: 'Criar conta (Free)', endereco: '/#/criar-conta', titulo: 'Crie sua conta', acao: botao('Criar conta') },
   { nome: 'Criar conta (Solo)', endereco: '/#/criar-conta/solo', titulo: 'Crie sua conta', acao: botao('Criar conta e continuar') },
@@ -46,9 +39,6 @@ const TELAS: readonly Tela[] = [
   { nome: 'Esqueci a senha', endereco: '/#/esqueci-senha', titulo: 'Esqueci a senha', acao: botao('Mandar o código') },
   { nome: 'Esqueci a senha (o código)', endereco: '/#/esqueci-senha/codigo', titulo: 'Crie uma senha nova', acao: botao('Salvar a senha') },
   { nome: 'Nova senha', endereco: '/#/nova-senha', titulo: 'Este link expirou', acao: botao('Pedir um código') },
-  { nome: 'Termos', endereco: '/#/termos', titulo: 'Termos de uso', acao: noTopo('Começar grátis') },
-  { nome: 'Privacidade', endereco: '/#/privacidade', titulo: 'Política de privacidade', acao: noTopo('Começar grátis') },
-  { nome: 'Referências', endereco: '/#/fontes', titulo: 'Referências', acao: (p) => p.getByRole('main').getByRole('link').first() },
   {
     nome: 'Checkout',
     endereco: '/#/assinar/solo/mensal',
@@ -62,7 +52,6 @@ const TELAS: readonly Tela[] = [
   { nome: 'Volta do pagamento (recusada)', endereco: '/#/pagamento', titulo: 'Pagamento não concluído', acao: botao('Tentar de novo'), cenario: comSessao({ assinatura: assinaturaFalsa('recusada') }) },
   { nome: 'Comprovar matrícula', endereco: '/#/comprovar-matricula', titulo: 'Comprove sua matrícula', acao: botao('Enviar para análise'), cenario: comSessao({ perfil: PERFIL_ESTUDANTE }) },
   { nome: 'Completar cadastro', endereco: '/#/painel', titulo: 'Complete seu cadastro', acao: botao('Continuar'), cenario: comSessao({ perfil: null }) },
-  { nome: 'Landing com sessão', endereco: '/#/inicio', titulo: LANDING, acao: naBarra('Ir para o painel'), cenario: comSessao() },
   {
     nome: 'Link do paciente (missões)',
     endereco: '/#/missoes/token-do-teste',
@@ -92,7 +81,6 @@ for (const largura of LARGURAS_DA_FUMACA) {
         await page.goto(tela.endereco)
         if (tela.antes) await tela.antes(page)
         await conferirFumaca(page, erros, { titulo: tela.titulo, acao: tela.acao })
-        if (tela.endereco === '/') await expect(page).toHaveURL(/#\/inicio$/)
       })
     }
   })

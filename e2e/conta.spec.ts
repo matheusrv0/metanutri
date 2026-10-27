@@ -1,29 +1,8 @@
 import { expect, test } from '@playwright/test'
 
+// Spec separacao-site-app: os caminhos da landing e de Preços até o cadastro (CA-259, CA-122, CA-265) começam no site e
+// estão em e2e/site/repasses.spec.ts (CA-1402 e CA-1403).
 test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () => {
-  test('CA-259: Criar conta grátis (barra da landing escura) leva ao cadastro do Free', async ({ page }) => {
-    await page.goto('/#/inicio')
-    await page.getByRole('banner').getByRole('link', { name: 'Criar conta grátis' }).click()
-    await expect(page).toHaveURL(/#\/criar-conta$/)
-    await expect(page.getByText('No Free, você já tem')).toBeVisible()
-  })
-
-  test('CA-122: Assinar Solo no anual leva ao cadastro com o Solo anual marcado', async ({ page }) => {
-    await page.goto('/#/precos')
-    await page.getByRole('radio', { name: /Anual/ }).click()
-    await page.getByRole('button', { name: 'Assinar Solo' }).first().click()
-    await expect(page).toHaveURL(/#\/criar-conta\/solo\/anual$/)
-    await expect(page.getByRole('img', { name: 'Passo 1 de 3' })).toBeVisible()
-  })
-
-  test('CA-265 e CA-267: o botão do Estudante abre o cadastro já em Estudante', async ({ page }) => {
-    await page.goto('/#/precos')
-    await page.getByRole('button', { name: 'Criar conta de estudante' }).first().click()
-    await expect(page.getByRole('radio', { name: /Estudante de nutrição/ })).toBeChecked()
-    await expect(page.getByLabel('E-mail da faculdade')).toBeVisible()
-    await expect(page.getByRole('img', { name: 'Passo 1 de 2' })).toBeVisible()
-  })
-
   test('CA-260: sem servidor, o cadastro explica e abre o sistema', async ({ page }) => {
     await page.goto('/#/criar-conta')
     await page.getByRole('button', { name: 'Abrir o sistema' }).click()
@@ -50,15 +29,15 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
       })
     })
 
-    test('CA-415 e CA-417: ao abrir o site, cai na tela do código, sem logo-link e com "Errei o e-mail"', async ({ page }) => {
-      await page.goto('/#/inicio')
+    test('CA-415 e CA-417: ao abrir o app, cai na tela do código, sem logo-link e com "Errei o e-mail"', async ({ page }) => {
+      await page.goto('/')
       await expect(page.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeVisible()
       await expect(page.getByText(/maria@exemplo\.com/)).toBeVisible()
       await expect(page.getByRole('button', { name: 'MetaNutri, início' })).toHaveCount(0)
       await expect(page.getByRole('button', { name: 'Errei o e-mail' })).toBeVisible()
     })
 
-    test('CA-416: Entrar volta para a tela do código; Termos continua abrindo', async ({ page }) => {
+    test('CA-416 e CA-1412: Entrar volta para a tela do código; Termos continua abrindo, agora no site', async ({ page }) => {
       await page.goto('/#/entrar')
       await expect(page.getByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeVisible()
       await page.goto('/#/termos')
@@ -101,7 +80,8 @@ test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () =>
     expect(doCloudflare).toEqual([])
   })
 
-  for (const rota of ['/#/criar-conta', '/#/criar-conta/estudante', '/#/criar-conta/solo', '/#/entrar', '/#/termos', '/#/privacidade', '/#/confirmar-email', '/#/esqueci-senha/codigo']) {
+  // Termos e Privacidade são páginas do site (spec separacao-site-app): a fumaça delas está em e2e/site/telas-publicas.spec.ts.
+  for (const rota of ['/#/criar-conta', '/#/criar-conta/estudante', '/#/criar-conta/solo', '/#/entrar', '/#/confirmar-email', '/#/esqueci-senha/codigo']) {
     test(`CB-48: ${rota} cabe em 360 px sem rolagem para o lado`, async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 740 })
       await page.goto(rota)

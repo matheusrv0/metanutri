@@ -5,9 +5,12 @@ import { AMBIENTE_DO_TESTE_CSP, ENDERECO_DA_BANCADA, ENDERECO_DO_SITE, PORTA_DA_
  * `npm run test:csp` (spec seguranca-lote-4, CA-486): a regra de conteúdo com os scripts de verdade do Mercado Pago e
  * do Cloudflare, baixados pela rede. Por isso fica fora do `npx playwright test` de sempre.
  *
- * Dois servidores, cada um com o seu build numa pasta própria (o `dist/` do Playwright de sempre fica intacto): o site,
+ * Dois servidores, cada um com o seu build numa pasta própria (o `dist/` do Playwright de sempre fica intacto): o app,
  * com a chave de teste da verificação contra robôs, e a bancada de e2e-csp/bancada, com os campos do cartão. Os dois
  * builds passam pelo mesmo plugin, com o mesmo ambiente: a mesma <meta>.
+ *
+ * Spec separacao-site-app, CA-1422: o `vite build` sem `--mode site` monta o app, onde ficam Entrar, o cadastro e o
+ * checkout. O site não carrega nada de fora (CA-1406), e o teste dele está em e2e/site/repasses.spec.ts.
  */
 const SAIDA_DO_SITE = 'node_modules/.tmp/csp-site'
 

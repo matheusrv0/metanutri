@@ -3,7 +3,7 @@
 // tem o e2e dele, landing-v3.spec.ts). Seção v9: a Adequação e o celular das missões no lugar do campo vivo e das chaves,
 // e a barra de vidro presa no alto (o e2e da v9 é landing-v9.spec.ts).
 import { expect, test, type Page } from '@playwright/test'
-import { semRolagemLateral, vigiarConsole } from './apoio/fumaca.ts'
+import { semRolagemLateral, vigiarConsole } from '../apoio/fumaca.ts'
 
 const CHAO = 'rgb(16, 26, 29)'
 const TINTA = 'rgb(238, 242, 241)'
@@ -20,7 +20,7 @@ async function abrirLanding(pagina: Page, tema: 'claro' | 'escuro' = 'claro', te
     },
     [tema, temaDaLanding] as const,
   )
-  await pagina.goto('/#/inicio')
+  await pagina.goto('/')
   await expect(pagina.locator('[data-vitrine]')).toHaveCount(0)
   await expect(pagina.getByRole('heading', { level: 1 })).toBeVisible()
 }

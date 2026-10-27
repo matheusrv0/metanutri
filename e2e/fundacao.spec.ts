@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test'
 // Fundação visual da spec estilo-spora.
 test.describe('Fundação visual', () => {
   test('CA-100 / CA-384: títulos e texto em Manrope, só o nome em Bricolage', async ({ page }) => {
-    await page.goto('/#/inicio')
+    // Spec separacao-site-app (D-504): no app, #/inicio leva ao site; Entrar tem título, texto e a marca.
+    await page.goto('/#/entrar')
     const fonte = (seletor: string) => page.locator(seletor).first().evaluate((el) => getComputedStyle(el).fontFamily)
     expect(await fonte('h1')).toContain('Manrope')
     expect(await fonte('h1')).not.toContain('Urbanist')

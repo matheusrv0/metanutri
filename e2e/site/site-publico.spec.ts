@@ -1,8 +1,9 @@
-// Spec site-publico-profissional: o site público no navegador, o HTML que o build publica e as páginas próprias.
+// Spec site-publico-profissional: o site público no navegador, o HTML que o build publica e as páginas próprias. Spec
+// separacao-site-app: o site num endereço próprio, sem o app dentro (D-502 e D-503).
 import { expect, test, type Page } from '@playwright/test'
-import { diretivasDaPolitica, textoDaPolitica } from '../src/seguranca/csp.ts'
-import { metaDaPolitica } from '../src/seguranca/pluginCsp.ts'
-import { semRolagemLateral, vigiarConsole } from './apoio/fumaca.ts'
+import { diretivasDoSite, textoDaPolitica } from '../../src/seguranca/csp.ts'
+import { metaDaPolitica } from '../../src/seguranca/pluginCsp.ts'
+import { semRolagemLateral, vigiarConsole } from '../apoio/fumaca.ts'
 
 const PROIBIDO = /fundador|200 primeiras|até sem internet|funciona sem internet|offline|não foram conferidos/i
 const TEMAS = ['claro', 'escuro'] as const
@@ -21,7 +22,7 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
       test(`landing em ${largura} px, tema ${tema}`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 844 })
         const erros = await vigiarConsole(page)
-        await abrir(page, '/#/inicio', tema)
+        await abrir(page, '/', tema)
         await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
         await semRolagemLateral(page)
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
@@ -43,7 +44,7 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
 
       test(`Preços em ${largura} px, tema ${tema}: a nota do Estudante não fica espremida`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 844 })
-        await abrir(page, '/#/precos', tema)
+        await abrir(page, '/precos/', tema)
         await semRolagemLateral(page)
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
         const nota = page.getByRole('note', { name: 'Plano Estudante' }).filter({ visible: true })
@@ -69,7 +70,7 @@ test.describe('CA-1002 e CA-1456: título e "Criar conta grátis" na primeira te
   ] as const) {
     test(`em ${largura} × ${altura}`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura })
-      await page.goto('/#/inicio')
+      await page.goto('/')
       await expect(page.getByRole('heading', { level: 1 })).toBeInViewport({ ratio: 1 })
       const topo = page.getByRole('region', { name: /Planos alimentares completos/ })
       await expect(topo.getByRole('button', { name: 'Criar conta grátis' })).toBeInViewport({ ratio: 1 })
@@ -77,9 +78,10 @@ test.describe('CA-1002 e CA-1456: título e "Criar conta grátis" na primeira te
   }
 })
 
-test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçalho de busca e a landing escrita', async ({ request }) => {
+test('CA-1009, CA-1011, CA-1013, CA-1020 e CA-1408: o index.html publicado tem o cabeçalho de busca e a landing escrita', async ({ request }) => {
   const html = await (await request.get('/')).text()
-  expect(html).toMatch(/<html lang="pt-BR">/)
+  // Spec separacao-site-app, DP-SA-2: o <html> leva o endereço do app, para o script do <head>.
+  expect(html).toMatch(/<html lang="pt-BR" data-app="http:\/\/localhost:4176\/">/)
   const titulo = atributo(html, /<title>([^<]+)<\/title>/) ?? ''
   expect(titulo).toBe('MetaNutri: software para nutricionistas que diz o que comer')
   expect(titulo.length).toBeLessThanOrEqual(60)
@@ -92,6 +94,7 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />')
   expect(html).toContain('<meta name="theme-color"')
   expect(html).toContain('<link rel="apple-touch-icon" href="apple-touch-icon.png" />')
+  expect(html).not.toMatch(/noindex/)
 
   const bloco = atributo(html, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/)
   const dados = JSON.parse(bloco ?? 'null') as { '@graph': { '@type': string; offers?: { price: string; priceCurrency: string }[] }[] }
@@ -113,8 +116,8 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   expect((raiz.match(/loading="lazy"/g) ?? []).length).toBe(3)
 })
 
-test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a mesma CSP e a tela escrita', async ({ request }) => {
-  const csp = metaDaPolitica(textoDaPolitica(diretivasDaPolitica({ supabase: null })))
+test('CA-1014 e CA-1406: as páginas próprias saem com cabeçalho, <base>, data-rota, a CSP do site e a tela escrita', async ({ request }) => {
+  const csp = metaDaPolitica(textoDaPolitica(diretivasDoSite()))
   for (const [caminho, h1] of [
     ['precos', 'Planos e preços'],
     ['termos', 'Termos de uso'],
@@ -125,14 +128,14 @@ test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a m
     expect(resposta.status()).toBe(200)
     const html = await resposta.text()
     expect(html).toContain(`<link rel="canonical" href="https://metanutri.com.br/${caminho}/" />`)
-    expect(html).toContain(`<html lang="pt-BR" data-rota="${caminho}">`)
+    expect(html).toContain(`<html lang="pt-BR" data-app="http://localhost:4176/" data-rota="${caminho}">`)
     expect(html).toContain(`${csp}\n    <base href="../" />`)
     expect(html).toMatch(new RegExp(`<h1[^>]*>${h1}`))
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>/)
   }
 })
 
-test('CA-1015: a página própria abre o app na tela dela, com o endereço da raiz e sem erro no console', async ({ page }) => {
+test('CA-1404: a página própria fica no endereço dela, sem virar /#/<rota>, e sem erro no console', async ({ page }) => {
   const erros = await vigiarConsole(page)
   for (const [caminho, h1] of [
     ['precos', 'Planos e preços'],
@@ -141,65 +144,42 @@ test('CA-1015: a página própria abre o app na tela dela, com o endereço da ra
     ['fontes', 'Referências'],
   ] as const) {
     await page.goto(`/${caminho}/`)
-    await expect(page).toHaveURL(new RegExp(`/#/${caminho}$`))
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(h1)
     await expect(page.locator('[data-vitrine]')).toHaveCount(0)
+    await expect(page).toHaveURL(new RegExp(`/${caminho}/$`))
   }
-  // Daí em diante o app é o de sempre: o menu leva à landing da raiz.
-  await page.getByRole('banner').getByRole('button', { name: 'MetaNutri, início' }).click()
-  await expect(page).toHaveURL(/\/#\/inicio$/)
+  // A logo leva à landing, no endereço dela.
+  await page.getByRole('banner').getByRole('link', { name: 'MetaNutri, início' }).click()
+  await expect(page).toHaveURL(/:4178\/$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
   expect(erros).toEqual([])
 })
 
-test('CA-1016 e CA-1017: sem o app, o link do paciente não mostra a vitrine e o tema escuro já vale', async ({ page }) => {
-  // O pacote do app não carrega: o que aparece é só o HTML publicado e o script do <head>.
+test('CA-1017: sem o pacote, o tema escuro guardado já vale na vitrine pré-desenhada', async ({ page }) => {
+  // O pacote do site não carrega: o que aparece é só o HTML publicado e o script do <head>.
   await page.route(/\/assets\/index-[\w-]+\.js$/, (rota) => rota.abort())
   await page.addInitScript(() => localStorage.setItem('metanutri:tema', 'escuro'))
-  await page.goto('/#/missoes/qualquer')
-  await expect(page.locator('[data-vitrine]')).toBeHidden()
-  await page.goto('/#/inicio')
-  await page.reload()
+  await page.goto('/precos/')
   await expect(page.locator('[data-vitrine]')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(true)
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe('rgb(241, 240, 240)')
 })
 
-test('CA-1025: com o service worker ativo, os arquivos de texto abrem como arquivo e /precos sem barra abre Preços', async ({ page }) => {
-  await page.goto('/#/inicio')
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready
-  })
-  await page.reload()
-  await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true)
-  for (const arquivo of ['sitemap.xml', 'robots.txt', 'llms.txt']) {
-    await page.goto(`/${arquivo}`)
-    // Sem a lista de exclusão, o service worker entregava o index.html (a página do app) nesse endereço.
-    expect(await page.evaluate(() => document.contentType), arquivo).not.toBe('text/html')
-  }
-  await page.goto('/precos')
-  await expect(page).toHaveURL(/\/#\/precos$/)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
-})
-
-test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique troca de tela sem recarregar', async ({ page, request }) => {
+test('CA-1028 e CA-1404: menu e rodapé são links para as páginas próprias, e o clique abre a página no endereço dela', async ({ page, request }) => {
   const html = await (await request.get('/')).text()
   for (const destino of ['precos/', 'termos/', 'privacidade/', 'fontes/']) expect(html).toContain(`href="${destino}"`)
 
-  await page.goto('/#/inicio')
+  await page.goto('/')
   await expect(page.locator('[data-vitrine]')).toHaveCount(0)
-  await page.evaluate(() => {
-    ;(window as unknown as { mesmaPagina: boolean }).mesmaPagina = true
-  })
   // Spec landing-escura: na landing, o link para a página de Preços fica no rodapé (o da barra rola até a seção).
   const precos = page.getByRole('contentinfo').getByRole('navigation', { name: 'Rodapé' }).getByRole('link', { name: 'Preços' })
   await expect(precos).toHaveAttribute('href', 'precos/')
   await precos.click()
-  await expect(page).toHaveURL(/\/#\/precos$/)
+  await expect(page).toHaveURL(/\/precos\/$/)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos e preços')
-  expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
   await page.getByRole('contentinfo').getByRole('link', { name: 'Termos de uso' }).click()
-  await expect(page).toHaveURL(/\/#\/termos$/)
-  expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
+  await expect(page).toHaveURL(/\/termos\/$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Termos de uso')
 })
 
 test('CA-1485 e D-654: a foto do topo vem do HTML (o <head> não pré-carrega imagem); as do meio são preguiçosas', async ({ page }) => {
@@ -208,7 +188,7 @@ test('CA-1485 e D-654: a foto do topo vem do HTML (o <head> não pré-carrega im
     if (/pratos-heroi|cobrir-(claro|escuro)|missoes-(claro|escuro)/.test(pedido.url())) antigas.push(pedido.url())
   })
   await page.setViewportSize({ width: 1280, height: 720 })
-  await page.goto('/#/inicio')
+  await page.goto('/')
   await page.reload()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
   await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0)
@@ -220,11 +200,10 @@ test('CA-1485 e D-654: a foto do topo vem do HTML (o <head> não pré-carrega im
   await expect(page.locator('main img[srcset][loading="lazy"]')).toHaveCount(3)
 })
 
-test('CA-1018 e CA-1021: robots, sitemap e llms na raiz; o service worker guarda as páginas próprias', async ({ request }) => {
+test('CA-1018 e CA-1408: robots, sitemap e llms na raiz do site, com "Entrar" no app', async ({ request }) => {
   expect(await (await request.get('/robots.txt')).text()).toContain('Sitemap: https://metanutri.com.br/sitemap.xml')
   expect(await (await request.get('/sitemap.xml')).text()).toContain('<loc>https://metanutri.com.br/precos/</loc>')
-  expect(await (await request.get('/llms.txt')).text()).toContain('# MetaNutri')
-  const sw = await (await request.get('/sw.js')).text()
-  for (const caminho of ['precos', 'termos', 'privacidade', 'fontes']) expect(sw).toContain(`"${caminho}/index.html"`)
-  expect(sw).toContain('"preparar-pagina.js"')
+  const llms = await (await request.get('/llms.txt')).text()
+  expect(llms).toContain('# MetaNutri')
+  expect(llms).toContain('- Entrar: https://app.metanutri.com.br/')
 })
