@@ -145,6 +145,17 @@ describe('MolduraDaLanding (spec landing-escura)', () => {
     vi.unstubAllGlobals()
   })
 
+  it('CA-1461 e CA-1695: com menos movimento, "Voltar ao topo" vai ao alto na hora e o foco vai para a logo', async () => {
+    vi.stubGlobal('matchMedia', (consulta: string) => ({ matches: consulta.includes('reduce') }))
+    montar()
+    const rolar = vi.fn()
+    vi.stubGlobal('scrollTo', rolar)
+    await userEvent.setup().click(within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Voltar ao topo' }))
+    expect(rolar).toHaveBeenCalledWith({ top: 0, behavior: 'auto' })
+    expect(within(barra()).getByRole('link', { name: 'MetaNutri, início' })).toHaveFocus()
+    vi.unstubAllGlobals()
+  })
+
   it('CA-1686 e D-674: sem sessão, "Criar conta grátis" fica preso no pé da tela, só até 720 px; com sessão, não aparece', async () => {
     const aoIrPara = vi.fn()
     const { unmount } = montar(false, aoIrPara)

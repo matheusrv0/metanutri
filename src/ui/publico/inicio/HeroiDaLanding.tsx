@@ -70,7 +70,8 @@ export function HeroiDaLanding({ aoComecar }: HeroiDaLandingProps) {
           {`O MetaNutri calcula a adequação de ${VITAMINAS_E_MINERAIS} vitaminas e minerais e sugere os alimentos, em gramas, para completar o que falta. Depois, acompanha a adesão do paciente pelo celular.`}
         </p>
         <div className="mt-9 flex flex-wrap items-center gap-x-[22px] gap-y-3">
-          <button type="button" className={ACAO_DO_TOPO} onClick={aoComecar}>
+          {/* D-688: o botão fixo do celular só aparece depois que este sai da tela (`data-acao-do-topo`). */}
+          <button type="button" data-acao-do-topo="" className={ACAO_DO_TOPO} onClick={aoComecar}>
             Criar conta grátis
           </button>
           <a
