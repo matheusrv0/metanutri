@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { ADEQUACAO_DO_EXEMPLO, COBRIR_CALCIO, DIA_EM_GRAMAS, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
+import { ADEQUACAO_DO_EXEMPLO, COBRIR_CALCIO, DIA_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
 import { precosDaLanding } from './inicio/precosDaLanding.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
@@ -30,6 +30,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     expect(screen.getAllByRole('heading').map((h) => `${h.tagName} ${h.textContent ?? ''}`)).toEqual([
       `H1 ${TITULO_DO_TOPO}`,
       'H2 Adequação de micronutrientes com sugestão do que comer',
+      'H2 Acompanhamento da adesão pelo celular',
       'H2 O plano sai do seu jeito',
       'H2 Como funciona',
       'H2 Grama por grama',
@@ -168,6 +169,83 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
         expect(botao).toHaveAttribute('aria-pressed')
       }
       expect(NUTRIENTES_DO_EXEMPLO).toHaveLength(abas().length)
+    })
+  })
+
+  describe('Acompanhamento da adesão', () => {
+    const missoes = () => within(screen.getByRole('group', { name: 'Missões do dia (exemplo)' })).getAllByRole('button')
+    const contagem = () => document.querySelector('[data-contagem]')?.textContent
+    const painelDeAdesao = () => screen.getByRole('group', { name: 'Pacientes de exemplo' })
+    const linhaDaMaria = () => within(painelDeAdesao()).getByText('Maria Santos').closest('li')
+    const hojeDaMaria = () => linhaDaMaria()?.querySelector('[data-dia="hoje"]')
+
+    it('CA-1666: o celular com a saudação, a data, "2 de 9" e as nove missões do app, as duas da manhã marcadas', () => {
+      montar()
+      const secao = screen.getByRole('region', { name: 'Acompanhamento da adesão pelo celular' })
+      expect(secao).toHaveTextContent('Olá, Maria')
+      expect(secao).toHaveTextContent('Terça-feira, 27 de outubro')
+      expect(secao).toHaveTextContent('Missões de hoje2 de 9')
+      expect(missoes().map((b) => b.textContent)).toEqual(MISSOES_DO_EXEMPLO.map((m) => `${m.texto} ${m.origem}`))
+      expect(missoes().map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'false', 'false', 'false', 'false', 'false', 'false', 'false'])
+      expect(secao).toHaveTextContent('O plano vira missões diárias que o paciente marca pelo celular, sem aplicativo.')
+    })
+
+    it('CA-1668: marcar uma missão (clique, Enter e Espaço) conta e enche a barra; marcar de novo desmarca', async () => {
+      montar()
+      const usuario = userEvent.setup()
+      const almoco = screen.getByRole('button', { name: /^Almoço por volta das 12h/ })
+      await usuario.click(almoco)
+      expect(almoco).toHaveAttribute('aria-pressed', 'true')
+      expect(contagem()).toBe('3 de 9')
+      expect((document.querySelector('[data-barra-das-missoes]') as HTMLElement | null)?.style.transform).toBe(`scaleX(${3 / 9})`)
+      await usuario.keyboard('{Enter}')
+      expect(almoco).toHaveAttribute('aria-pressed', 'false')
+      expect(contagem()).toBe('2 de 9')
+      await usuario.keyboard(' ')
+      expect(almoco).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('CA-1669 e CB-653: sem missão marcada, a Maria "Ainda não marcou hoje"; marcando uma, a bolinha acende e o estado é anunciado', async () => {
+      montar()
+      const usuario = userEvent.setup()
+      for (const nome of [/^Café da manhã/, /^Lanche da manhã/]) await usuario.click(screen.getByRole('button', { name: nome }))
+      expect(contagem()).toBe('0 de 9')
+      expect(linhaDaMaria()).toHaveTextContent('Ainda não marcou hoje')
+      expect(hojeDaMaria()?.className).not.toContain('bg-landing-destaque')
+      await usuario.click(screen.getByRole('button', { name: /^Jantar/ }))
+      const estado = within(linhaDaMaria() as HTMLElement).getByText('Em dia · 1 de 9 hoje')
+      expect(estado).toHaveAttribute('aria-live', 'polite')
+      expect(hojeDaMaria()?.className).toContain('bg-landing-destaque')
+      expect(hojeDaMaria()?.className).toContain('scale-125')
+    })
+
+    it('CA-1670: três pacientes de exemplo, a semana com a terça de hoje e o WhatsApp só no João, como imagem', () => {
+      montar()
+      const painel = painelDeAdesao()
+      const linhas = within(painel).getAllByRole('listitem')
+      expect(linhas.map((li) => li.querySelector('strong')?.textContent)).toEqual(['João Pereira', 'Ana Beatriz Costa', 'Maria Santos'])
+      expect(linhas[0]).toHaveTextContent('4 dias sem marcar')
+      expect(linhas[0]).toHaveTextContent('Mensagem pronta para retomar o plano')
+      expect(linhas[1]).toHaveTextContent('Atenção')
+      expect(linhas[2]).toHaveTextContent('Em dia · 2 de 9 hoje')
+      const dias = [...painel.querySelectorAll('[aria-hidden="true"] > span')].map((d) => d.textContent).filter(Boolean)
+      expect(dias).toEqual(['S', 'T', 'Q', 'Q', 'S', 'S', 'D'])
+      expect(within(painel).getByText('T').className).toContain('text-landing-destaque')
+      const whatsapp = within(painel).getAllByText('Chamar no WhatsApp')
+      expect(whatsapp).toHaveLength(1)
+      expect(whatsapp[0]).toHaveAttribute('aria-hidden', 'true')
+      expect(within(painel).queryAllByRole('button')).toHaveLength(0)
+      expect(within(painel).queryAllByRole('link')).toHaveLength(0)
+    })
+
+    it('CA-1671: "em segundos" entre o celular e o painel; no celular, só o ícone gira', () => {
+      montar()
+      const ponte = screen.getByText('em segundos')
+      expect(ponte.className).not.toContain('rotate')
+      expect(ponte.parentElement?.querySelector('svg')?.getAttribute('class')).toContain('max-[1100px]:rotate-90')
+      const palco = ponte.parentElement?.parentElement
+      const filhos = [...(palco?.children ?? [])]
+      expect(filhos.indexOf(ponte.parentElement as Element)).toBe(1)
     })
   })
 

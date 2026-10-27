@@ -1,5 +1,6 @@
 import type { Ciclo, IdPlano } from '@/domain/conta.ts'
 import { MEUS_ALIMENTOS_NOVOS } from '@/domain/produtos.ts'
+import { AcompanhamentoDaAdesao } from './inicio/AcompanhamentoDaAdesao.tsx'
 import { AdequacaoDoExemplo } from './inicio/AdequacaoDoExemplo.tsx'
 import { ChavesDoPlano } from './inicio/ChavesDoPlano.tsx'
 import { ComoFunciona } from './inicio/ComoFunciona.tsx'
@@ -28,6 +29,7 @@ export function TelaInicio({ aoComecar, aoEscolher, formularioNovo = MEUS_ALIMEN
     <>
       <HeroiDaLanding aoComecar={aoComecar} />
       <AdequacaoDoExemplo />
+      <AcompanhamentoDaAdesao />
       <ChavesDoPlano formularioNovo={formularioNovo} />
       <FotoDosLegumes />
       <ComoFunciona />
