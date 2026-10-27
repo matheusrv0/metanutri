@@ -229,6 +229,31 @@ test.describe('com menos movimento', () => {
     await expect(page).toHaveURL(/#\/criar-conta$/)
   })
 
+  test('CA-1686 e CA-1694: em 390 px, o foco do teclado nunca fica embaixo do botão fixo', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await abrir(page)
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('88px')
+    const fixo = page.locator('[data-botao-fixo]')
+    const topoDoFixo = (await fixo.boundingBox())?.y ?? 0
+    // Do alto da página, o Tab desce pelas perguntas: cada uma, ao ganhar o foco, fica acima do botão.
+    const perguntas = page.locator('summary')
+    await perguntas.first().focus()
+    for (let i = 1; i < (await perguntas.count()); i++) {
+      await page.keyboard.press('Tab')
+      const caixa = await page.evaluate(() => {
+        const el = document.activeElement
+        return el ? { fim: el.getBoundingClientRect().bottom, texto: el.textContent } : null
+      })
+      expect(caixa?.fim ?? 0, caixa?.texto ?? '').toBeLessThanOrEqual(topoDoFixo)
+    }
+  })
+
+  test('CA-1686: no computador, sem o botão fixo, a página não reserva espaço embaixo', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await abrir(page)
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('auto')
+  })
+
   test('CA-1686: no computador, o botão fixo não aparece', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await abrir(page)

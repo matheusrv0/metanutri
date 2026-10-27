@@ -669,6 +669,14 @@
   }
 }
 
+/* D-674 (revisão da v9): com o botão fixo no pé da tela do celular, o foco do teclado e o rolar até uma peça deixam
+   88 px livres embaixo, para nada focado ficar escondido atrás dele. O mesmo corte do botão (`max-[720px]`). */
+@media (width < 720px) {
+  html:has([data-botao-fixo]) {
+    scroll-padding-bottom: 88px;
+  }
+}
+
 /* D-669: a luz que segue o ponteiro, só com mouse. As coordenadas vêm do cartão (`--landing-px`, `--landing-py`). */
 .landing-plano::before {
   content: '';
