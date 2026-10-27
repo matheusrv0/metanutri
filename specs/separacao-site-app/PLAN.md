@@ -1,6 +1,8 @@
 # PLAN — Site e app separados, com a sessão que expira
 
-**Spec:** `specs/separacao-site-app/SPEC.md` (D-500 a D-525, CA-1400 a CA-1463, CB-500 a CB-528).
+**Spec:** `specs/separacao-site-app/SPEC.md` (D-500 a D-528, CA-1400 a CA-1463, CB-500 a CB-528). Em 27/10/2026 o
+dono aprovou as telas com dois ajustes: texto mínimo (D-526, no lugar do D-519) e a mudança obrigatória para o app, com
+a P3 logo depois do site da P2 (D-527 e D-528).
 **Base:** `main` em `83060dc`. Cada publicação num ramo próprio, a partir da `main` do dia: `separacao-p1`,
 `separacao-p2`, `separacao-p3`. O ramo `publicacao-2` (alimentos) ainda não está na `main`; quem chegar depois resolve
 os conflitos em `src/App.tsx` e `src/ui/AreaDeTrabalho.tsx`.
@@ -33,8 +35,8 @@ projeto (`npx playwright install firefox webkit`, sem pacote novo).
   `TOKEN_REFRESHED`) menos `Date.now()`, guardado com a marca para valer ao reabrir. Sem `amr` legível, vale a hora que o
   app gravou no `SIGNED_IN`; sem as duas, a sessão conta como vencida.
 - **DP-SA-5 · As marcas no navegador.** `metanutri:sessao` = `{ conta, uso, admin, desvio }`; `metanutri:sessao:saida`
-  = `{ motivo: 'inatividade' | 'limite', ate, pendente, admin }`. As duas ficam fora do espaço da conta, não vão para a
-  nuvem nem para o backup. O uso é gravado no máximo a cada 60 s; dentro da aba vale o valor exato, em memória. Marca de
+  = `{ ate, pendente }` (D-526: o texto não muda com o motivo nem com o tipo de conta, então a marca não guarda os
+  dois). As duas ficam fora do espaço da conta, não vão para a nuvem nem para o backup. O uso é gravado no máximo a cada 60 s; dentro da aba vale o valor exato, em memória. Marca de
   outra conta não vale (CB-518). Entrar lê o motivo uma vez e o apaga.
 - **DP-SA-6 · Uma aba só faz a saída.** `navigator.locks.request('metanutri:saida', { ifAvailable: true })` quando
   existe; sem ele, `saindo` com prazo de 20 s na `metanutri:sessao` (o mesmo padrão da trava entre abas, DP-30 da
@@ -119,7 +121,7 @@ antes.
   `src/ui/sessao/AvisoDeInatividade.tsx`, `src/ui/sessao/FaixaDoLimite.tsx`, `src/ui/sessao/CapaEncerrando.tsx`,
   `src/ui/publico/conta/AvisoEntreDeNovo.tsx`; `src/ui/publico/conta/TelaEntrar.tsx` (título "Entre de novo" e o aviso
   quando há motivo); testes `src/ui/sessao/telasDaSessao.test.tsx` e `src/ui/publico/conta/TelaEntrar.test.tsx`. Textos
-  exatos do D-519. Depende de: T3, T5. Verifica: CA-1442 e CA-1444 (as telas), CA-1447 e CA-1448 (os textos), CB-516.
+  exatos do D-526. Depende de: T3, T5. Verifica: CA-1442 e CA-1444 (as telas), CA-1447 e CA-1448 (os textos), CB-516.
 - [ ] **T11 · Ligar no app.** `src/App.tsx` (o vigia roda com servidor e sessão e nunca na rota `missoes`; o aviso e a
   capa por cima; depois da saída, a rota vai para Entrar), `src/ui/layout/Estrutura.tsx` (a faixa no topo da área, no
   fluxo, como o aviso de versão nova), `src/AppConta.test.tsx` e `src/AppNuvem.test.tsx`. Depende de: T9, T10.
@@ -188,17 +190,18 @@ antes.
 - [ ] **T23 · Limpeza e remetente no site.** `src/site/limpeza.ts` e `.test.ts` (em toda visita, apaga toda
   `sb-*-auth-token` e as contas em dia; diz se sobrou dado só aqui), `src/site/remetente.ts` e `.test.ts` (abre o app em
   aba nova sem `noopener`; responde ao pedido; apaga no `recebido`), `src/site/TelaContinuar.tsx` e `.test.tsx` (os
-  quatro estados do D-519), `src/site/main.tsx` (a ordem: limpeza, depois repasse ou "Continuar", depois a página;
-  "Entrar" com dado só aqui abre "Continuar"; o modo instalado leva a marca do D-524). Depende de: T18, T19, T22.
-  Verifica: CA-1401, CA-1424, CA-1425, CA-1427, CA-1428, CA-1429, CA-1430, CA-1436 (o lado do site), CB-500, CB-503,
+  quatro estados do D-526, só com o botão "Continuar"), `src/site/main.tsx` (a ordem: limpeza, depois repasse ou
+  "Continuar", depois a página; com dado só aqui, as telas do app, `?volta=`, "Entrar", "Começar grátis", os planos e o
+  modo instalado abrem "Continuar", D-527; o modo instalado leva a marca do D-524, também na aba do "Continuar").
+  Depende de: T18, T19, T22. Verifica: CA-1401, CA-1424, CA-1425, CA-1427, CA-1428, CA-1429, CA-1430, CA-1436 (o lado do site), CB-500, CB-503,
   CB-507, CB-513 (a volta antiga do pagamento), CB-519.
 - [ ] **T24 · O receptor no app.** `src/ui/navegacao.ts` e `src/ui/navegacao.test.ts` (a rota `mudanca/<código>`, que
   pede sessão), `src/ui/mudanca/usarMudanca.ts` e `.test.ts` (pede ao `window.opener`; espera 10 s; grava pelo T22;
-  confirma quando a nuvem tem tudo, D-513), `src/ui/mudanca/TelaTrazendoDados.tsx` (o texto e o "sem espaço"),
-  `src/App.tsx` (DP-SA-11; no fim, o Painel), `src/AppNuvem.test.tsx`. Depende de: T20, T22. Verifica: CA-1431,
-  CA-1433, CA-1434, CA-1435, CA-1436 (o lado do app), CA-1437, CA-1439, CB-505.
-- [ ] **T25 · O aviso do ícone antigo.** `src/ui/aplicativo/AvisoIconeAntigo.tsx` e `.test.tsx` (novos),
-  `src/ui/layout/Estrutura.tsx` (mostra uma vez e tira a marca do endereço). Depende de: T20, T23. Verifica: CA-1426.
+  confirma quando a nuvem tem tudo, D-513), `src/ui/mudanca/TelaTrazendoDados.tsx` ("Trazendo seus dados…" e "Sem
+  espaço neste navegador", D-526), `src/App.tsx` (DP-SA-11; no fim, o Painel), `src/AppNuvem.test.tsx`. Depende de:
+  T20, T22. Verifica: CA-1431, CA-1433, CA-1434, CA-1435, CA-1436 (o lado do app), CA-1437, CA-1439, CB-505.
+- [ ] **T25 · O aviso do ícone antigo.** `src/ui/aplicativo/AvisoIconeAntigo.tsx` e `.test.tsx` (novos, textos do
+  D-526), `src/ui/layout/Estrutura.tsx` (mostra uma vez e tira a marca do endereço). Depende de: T20, T23. Verifica: CA-1426.
 - [ ] **T26 · O aplicativo instalado.** `vite.config.ts` (DP-SA-13 no site; DP-SA-14 no app), `src/seo/pluginAlvo.test.ts`
   (confere a configuração do PWA de cada alvo). Depende de: T18. Verifica: CA-1407 (a configuração), CA-1421.
 - [ ] **T27 · Política, termos e `llms.txt`.** `src/ui/publico/TelaPrivacidade.tsx` (D-522), `src/domain/legal.ts`
@@ -207,7 +210,8 @@ antes.
   a linha do Entrar). Depende de: T14. Verifica: CA-1408 (o `llms.txt`), CA-1462.
 - [ ] **T28 · A publicação.** `.github/workflows/publicar.yml` (só o site: `npm run build:site` e `dist-site`; saem do
   build as chaves do Supabase, do Mercado Pago e do Turnstile), `README.md` ("Projeto já ligado", passos 1, 4 e 8, com
-  os endereços novos; seções "Ordem para publicar a P2" e "P3" com os passos do dono da seção 4 deste plano),
+  os endereços novos; seção "Ordem para publicar a P2 e a P3", com os passos do dono da seção 4 deste plano: a P3 vem
+  logo depois do site da P2, D-528),
   `scripts/capturas-landing.mjs` (o comentário do comando; o roteiro não muda). Depende de: T18. Verifica: leitura do
   workflow; `npm run build:site` sem `.env.local` monta e passa no CA-1406.
 - [ ] **T29 · Testes de navegador com duas origens.** `playwright.config.ts` (DP-SA-17: os três servidores; o projeto
@@ -222,11 +226,12 @@ antes.
 - [ ] **T30 · Fechamento da P2.** Rodar `npm run check`, `npm run e2e` e `npm run test:csp`; conferir a matriz; anotar no
   relatório qualquer diferença entre o código e a spec. Depende de: T14 a T29.
 
-### P3 · O endereço antigo fecha (90 dias depois do site da P2)
+### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
 
 - [ ] **T31 · Só o app nas funções.** `supabase/functions/_shared/cobranca.ts` (a lista fica só com o app),
   `src/data/cobrancaServidor.test.ts`, `specs/separacao-site-app/SPEC.md` (nota de fechamento com a data),
-  `README.md` (os passos da P3 feitos). Depende de: o passo P2-14 do dono, 90 dias antes. Verifica: CA-1460.
+  `README.md` (os passos da P3 feitos). Fica pronta junto com a P2, num ramo próprio, para entrar no mesmo dia. Depende
+  de: o passo 14 do dono (o site da P2 no ar). Verifica: CA-1460.
 
 ## 2. Matriz: critério → tarefa → teste
 
@@ -301,7 +306,13 @@ antes.
 - **R-511 · Troca da entrada pelo plugin:** se não pegar no build, vale o plano B do DP-SA-2 (sem dependência nova).
 - **R-512 · Safari e a janela:** se algum navegador abrir a aba nova sem `window.opener`, a mudança não acontece e cai
   no CA-1437, sem perda. O teste no WebKit cobre o caso comum.
-- **R-513 · Dado esquecido no endereço antigo** de quem nunca volta (D-525, ponto do dono 2).
+- **R-513 · Dado esquecido no endereço antigo** de quem nunca volta (D-525, ponto do dono 2). Com o D-527, quem volta
+  leva na primeira tentativa de entrar.
+- **R-515 · P3 no mesmo dia do site da P2 (D-528):** uma aba do app velho que ficou aberta no endereço antigo, sem
+  recarregar, perde o checkout, o cancelamento e a exclusão de conta (as funções recusam o endereço) até recarregar; a
+  recarga já leva ao site e ao app. A sincronia não passa pelas funções e continua.
+- **R-516 · "Continuar" é a única saída (D-527):** com a janela bloqueada e sem permissão, a pessoa não chega ao app por
+  aquele navegador até permitir. O texto da janela bloqueada diz o que fazer (CB-519).
 - **R-514 · Versão dos termos:** a P2 muda a Política; a versão é o dia da publicação (procedimento de sempre, T27).
 
 ## 4. Passos que só o dono faz
@@ -381,7 +392,8 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
 14. **GitHub › Actions › Publicar no GitHub Pages › Run workflow** (o site). Depois, conferir: `metanutri.com.br`
     abre a landing; "Entrar" leva ao app; um link de paciente antigo (`metanutri.com.br/#/missoes/<token>`) abre a
     tela do paciente no app; `metanutri.com.br/#/painel` leva ao app; num navegador que já usava o MetaNutri, a
-    primeira visita recarrega uma vez e depois mostra o site (CB-515). **Anotar a data: a P3 é 90 dias depois.**
+    primeira visita recarrega uma vez e depois mostra o site (CB-515). **Logo em seguida, no mesmo dia, a P3 (passos
+    18 e 19).**
 15. **Mercado Pago › Suas integrações › aplicação MetaNutri › Webhooks:** conferir, sem mudar, a URL de produção
     `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-mercadopago` e os eventos de assinaturas
     (`subscription_preapproval`, `subscription_authorized_payment`) e de pagamentos. O `back_url` vem do `SITE_URL`
@@ -390,12 +402,13 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
     GitHub mostra um registro TXT (nome `_github-pages-challenge-matheusrv0`, valor = o código mostrado); criar no
     Registro.br (nova entrada, tipo `TXT`) e clicar em *Verify*. Protege os subdomínios contra uso por outra conta do
     GitHub.
-17. **Avisar quem já usa:** "O MetaNutri agora abre em app.metanutri.com.br. Entre de novo e, se usa o ícone no
-    celular ou no computador, instale de novo."
+17. **Avisar quem já usa:** "O MetaNutri mudou para app.metanutri.com.br. Entre de novo e, se usa o ícone no celular
+    ou no computador, instale de novo."
 
-### P3 (90 dias depois do passo 14)
+### P3 (logo depois do passo 14, no mesmo dia; D-528)
 
-18. Merge da P3 na `main`; **Terminal:** as três funções do passo 2 de novo (agora só com o app).
+18. Merge da P3 na `main` (o ramo `separacao-p3`, pronto junto com a P2); **Terminal:** as três funções do passo 2 de
+    novo (agora só com o app).
 19. **Supabase › Authentication › URL Configuration › Redirect URLs:** tirar `https://metanutri.com.br/**` e
     `https://matheusrv0.github.io/metanutri/**`.
 
@@ -404,10 +417,11 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
 1. **Publicação automática do app** a cada mudança na `main` (passo 6). Recomendo ligada, com as prévias desligadas: o
    merge vira a publicação, e o app sempre sai antes do site. A alternativa é desligar e publicar à mão no painel da
    Cloudflare.
-2. **Prazo para apagar o dado esquecido no endereço antigo** (D-525). Recomendo nenhum agora e rever na P3, olhando
-   se ainda há gente com "Continuar".
+2. **Prazo para apagar o dado esquecido no endereço antigo** (D-525). Recomendo nenhum agora e rever 90 dias depois do
+   site da P2, olhando se ainda há gente com "Continuar".
 3. **Supabase Pro** (corte da sessão no servidor: *time-box* de 13 h e inatividade de 2 h). Recomendo quando a receita
    cobrir; até lá, o app faz a parte dele.
 4. **Duas decisões tomadas nesta spec, fáceis de voltar atrás:** o "Sair" encerra só a sessão deste navegador (D-520)
    e a Política passa a citar também o GitHub, que entrega o site (D-522).
-5. **As oito telas que faltam no protótipo** (SPEC, seção 6), antes de publicar a P1 (telas 1 a 4) e a P2 (5 a 8).
+5. ~~**As oito telas que faltam no protótipo** (SPEC, seção 6), antes de publicar a P1 (telas 1 a 4) e a P2 (5 a 8).~~
+   Aprovadas em 27/10/2026, com os textos do D-526.
