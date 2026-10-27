@@ -160,10 +160,10 @@ export const RECUSA_PADRAO = 'O banco recusou este cartão. Confira os dados ou 
 export const SEM_COBRANCA = 'Não foi possível falar com o servidor de cobrança. Nada foi cobrado. Tente de novo em alguns minutos.'
 
 /**
- * D-521 (spec separacao-site-app): os endereços que podem chamar as funções pelo navegador. Na P1 e na P2, o app no
- * endereço novo e o de hoje, onde o app ainda roda até a P2; na P3, logo depois do site da P2, só o app (D-528).
+ * D-521 (spec separacao-site-app): os endereços que podem chamar as funções pelo navegador. Desde a P3, logo depois do
+ * site da P2, só o app (D-528, CA-1460): o site não chama as funções.
  */
-export const ORIGENS_PERMITIDAS: readonly string[] = ['https://app.metanutri.com.br', 'https://metanutri.com.br']
+export const ORIGENS_PERMITIDAS: readonly string[] = ['https://app.metanutri.com.br']
 
 /**
  * D-97 e D-521: o navegador só deixa chamar as funções um endereço da lista, e a permissão repete o endereço do pedido,

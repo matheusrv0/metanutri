@@ -4,6 +4,11 @@ Status: **aprovada pelo dono em 27/10/2026, pelas telas do protótipo, com duas 
 obrigatória para o app (D-527 e D-528).** O protótipo aprovado mostra a tela Entrar em `app.metanutri.com.br`, a tela
 "Entre de novo" e as outras telas da seção 6, com os textos do D-526.
 
+**Fechamento (27/10/2026):** as três publicações estão escritas. A P1 está no ar; a P2 está no ramo `separacao-p2`; a
+P3 (D-528, CA-1460) está no ramo `separacao-p3`, feito sobre a P2: a lista das funções fica só com o app. Ela vale em
+produção quando o dono publicar as três funções, logo depois do site da P2 (README, "Ordem para publicar a P2 e a P3",
+passo 12).
+
 **Fonte:**
 - 23/10: "eu quero essa separação, porque hoje eu entro e eu sequer consigo voltar para a tela inicial, que é a landing
   page [...] eu quero que tenha landing page, mas eu quero que eu entrando no painel encaminhe para outro link".

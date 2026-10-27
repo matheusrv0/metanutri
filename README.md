@@ -170,9 +170,8 @@ logo abaixo; depois siga a lista seguinte.
 Para funcionar de verdade, nesta ordem:
 
 1. **Supabase > Authentication > URL Configuration.** *Site URL*: `https://app.metanutri.com.br/` (o app).
-   Em *Redirect URLs*: `https://app.metanutri.com.br/**` e `http://localhost:5173/**`. Até a P3 da separação, ficam
-   também `https://metanutri.com.br/**` e `https://matheusrv0.github.io/metanutri/**` (veja "Ordem para publicar a P2 e
-   a P3").
+   Em *Redirect URLs*: `https://app.metanutri.com.br/**` e `http://localhost:5173/**`. Desde a P3 da separação, só
+   esses dois (veja "Ordem para publicar a P2 e a P3").
 2. **Supabase > Authentication > Sign In / Providers > Email.** *Confirm email* LIGADO e senha mínima 8. *Secure
    password change* e *Require current password when updating* LIGADOS: o servidor pede a senha atual para trocar a
    senha, e o código de "Esqueci a senha" continua valendo (spec seguranca-lote-5, R-61). Se o painel não mostrar a
@@ -351,7 +350,7 @@ endereço novo do app (`https://app.metanutri.com.br`, que só existe na P2) e c
    curl -i -X OPTIONS https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/assinar -H "Origin: https://exemplo.com"
    ```
    Nos dois primeiros aparecem `access-control-allow-origin` com o mesmo endereço do pedido e `vary: Origin`; no
-   terceiro, `vary: Origin` e nenhum `access-control-allow-origin`.
+   terceiro, `vary: Origin` e nenhum `access-control-allow-origin`. Depois da P3, só o primeiro tem a permissão.
 4. **Publicar o site** (Actions > Publicar no GitHub Pages > Run workflow).
 5. **Testar no site:** entrar; ficar 28 minutos parado (aparece "Você ainda está aí?") e mais 2 (aparece "Entre de
    novo", com "Sua sessão terminou. Tudo até as HH:MM está salvo."). Depois, usar o site por mais de 1 hora seguida (o
@@ -419,8 +418,8 @@ Antes de tudo: a P2 na `main` (o ramo `separacao-p2`, com o `npm run check` pass
     certo: no modo instalado do iOS a aba nova às vezes abre sem a ligação com a do site; nada se perde, o dado fica no
     endereço antigo e "Continuar" aparece de novo na próxima vez. Depois, instalar o ícone de novo a partir de
     `app.metanutri.com.br`.
-12. **P3, logo em seguida, no mesmo dia.** **(terminal)** merge do ramo `separacao-p3` na `main` e as três funções
-    de novo, agora só com o app na lista:
+12. **P3, logo em seguida, no mesmo dia.** **(terminal)** merge do ramo `separacao-p3` na `main` (ele traz a lista só
+    com o app, CA-1460, e este README já no estado depois da P3) e as três funções de novo:
     ```bash
     npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
     npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg

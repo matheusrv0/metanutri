@@ -103,12 +103,12 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
     expect(resposta.headers.get('Access-Control-Allow-Headers')).toBe('authorization, x-client-info, apikey, content-type')
   })
 
-  it('D-521 (spec separacao-site-app): na P1 e na P2, a lista tem o app e o site, e nada mais', () => {
-    expect(ORIGENS_PERMITIDAS).toEqual(['https://app.metanutri.com.br', 'https://metanutri.com.br'])
+  it('CA-1460 (spec separacao-site-app, P3): a lista tem só o app, e nada mais', () => {
+    expect(ORIGENS_PERMITIDAS).toEqual(['https://app.metanutri.com.br'])
   })
 
-  it.each(['https://app.metanutri.com.br', 'https://metanutri.com.br'])(
-    'CA-1459: a chamada de %s recebe permissão para esse mesmo endereço, com Vary: Origin, na prévia e na resposta',
+  it.each(['https://app.metanutri.com.br'])(
+    'CA-1459 e CA-1460: a chamada de %s recebe permissão para esse mesmo endereço, com Vary: Origin, na prévia e na resposta',
     (origem) => {
       for (const cabecalhos of [new Headers(cabecalhosPara(origem)), responder({ ok: true }, 200, origem).headers]) {
         expect(cabecalhos.get('Access-Control-Allow-Origin')).toBe(origem)
@@ -117,8 +117,8 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
     },
   )
 
-  it.each([null, '', 'null', '*', 'https://outro.exemplo', 'http://metanutri.com.br', 'https://metanutri.com.br.outro.exemplo', 'https://metanutri.pages.dev', 'https://app.metanutri.com.br/'])(
-    'CA-1459 e CA-425: a chamada de %j não recebe permissão (nem *), e a resposta manda Vary: Origin do mesmo jeito',
+  it.each([null, '', 'null', '*', 'https://outro.exemplo', 'https://metanutri.com.br', 'http://metanutri.com.br', 'https://metanutri.com.br.outro.exemplo', 'https://metanutri.pages.dev', 'https://app.metanutri.com.br/'])(
+    'CA-1459, CA-1460 e CA-425: a chamada de %j não recebe permissão (nem *), e a resposta manda Vary: Origin do mesmo jeito',
     (origem) => {
       for (const cabecalhos of [new Headers(cabecalhosPara(origem)), responder({ ok: true }, 200, origem).headers]) {
         expect(cabecalhos.get('Access-Control-Allow-Origin')).toBeNull()
