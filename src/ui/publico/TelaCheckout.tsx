@@ -11,6 +11,7 @@ import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import type { ResultadoDaAssinatura } from '../estado/usarAssinatura.ts'
+import { paginaDoSite } from '../enderecos.ts'
 import type { PlanoPago } from '../navegacao.ts'
 import { AndamentoCheckout } from '../pagamento/AndamentoCheckout.tsx'
 import { AvisoPagamento } from '../pagamento/AvisoPagamento.tsx'
@@ -265,7 +266,8 @@ export function TelaCheckout({
         />
         <span>
           {`Autorizo a cobrança de ${emReais(total)} ${ciclo === 'anual' ? 'todo ano' : 'todo mês'} neste cartão até eu cancelar, e li os `}
-          <a href="#/termos" target="_blank" rel="noreferrer" className="font-bold underline underline-offset-2">
+          {/* Spec separacao-site-app, D-505: os Termos são do site, em aba nova; o checkout fica aqui. */}
+          <a href={paginaDoSite('termos')} target="_blank" rel="noreferrer" className="font-bold underline underline-offset-2">
             Termos de uso
           </a>
           .

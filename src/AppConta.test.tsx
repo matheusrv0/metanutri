@@ -253,6 +253,36 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/comprovar-matricula'))
   })
 
+  it('CA-1414: Fontes da base, na Tabela de alimentos e na Ajuda, abre as Referências do site em aba nova, e o app fica', async () => {
+    const abrir = vi.fn()
+    vi.stubGlobal('open', abrir)
+    try {
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/alimentos'
+      const { unmount } = render(tela())
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Fontes da base' }))
+      expect(abrir).toHaveBeenLastCalledWith('https://metanutri.com.br/fontes/', '_blank', 'noopener,noreferrer')
+      expect(window.location.hash).toBe('#/alimentos')
+      unmount()
+      window.location.hash = '#/ajuda'
+      render(tela())
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Fontes da base' }))
+      expect(abrir).toHaveBeenCalledTimes(2)
+      expect(window.location.hash).toBe('#/ajuda')
+      expect(site.sair).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('CA-1414: "Ver preços", em Conta e assinatura, abre Preços do site na mesma aba', async () => {
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/conta'
+    render(tela())
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ver preços' }))
+    await waitFor(() => expect(site.sair).toHaveBeenCalledWith('https://metanutri.com.br/precos/'))
+  })
+
   it('CA-1413 e DP-SA-51: sem sessão, Criar conta mostra o cadastro do plano', () => {
     window.location.hash = '#/criar-conta/solo/anual'
     render(tela())

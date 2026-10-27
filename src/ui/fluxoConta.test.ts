@@ -1,5 +1,6 @@
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { CHAVE_DESTINO, destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, rotaDePlanos, tirarDestino } from './fluxoConta.ts'
+import { enderecoNoSite } from './navegacao.ts'
 
 function memoria(): Armazenamento & { readonly dados: Map<string, string> } {
   const dados = new Map<string, string>()
@@ -70,5 +71,11 @@ describe('limite leva a Preços (CA-177)', () => {
     expect(rotaDePlanos('free')).toEqual({ tela: 'precos', destaque: 'solo' })
     expect(rotaDePlanos('solo')).toEqual({ tela: 'precos', destaque: 'pro' })
     expect(rotaDePlanos('clinica')).toEqual({ tela: 'precos' })
+  })
+
+  it('CA-1414 (spec separacao-site-app): o aviso de limite leva a Preços do site, com o plano seguinte em destaque', () => {
+    expect(enderecoNoSite(rotaDePlanos('free'))).toBe('https://metanutri.com.br/precos/?destaque=solo')
+    expect(enderecoNoSite(rotaDePlanos('solo'))).toBe('https://metanutri.com.br/precos/?destaque=pro')
+    expect(enderecoNoSite(rotaDePlanos('clinica'))).toBe('https://metanutri.com.br/precos/')
   })
 })
