@@ -323,6 +323,21 @@ describe('TelaInicio (spec landing-escura)', () => {
       }
     })
 
+    it('CA-1491 (D-548): saíram as capturas, a foto e os roteiros da landing antiga, e o código não os cita', () => {
+      const raiz = process.cwd()
+      const antigos = /pratos-heroi|pratos_heroi|capturas-landing|cobrir-(claro|escuro)\.png|missoes-(claro|escuro)\.png/
+      expect(readdirSync(join(raiz, 'public', 'imagens')).filter((nome) => antigos.test(nome))).toEqual([])
+      expect(readdirSync(join(raiz, 'scripts')).filter((nome) => antigos.test(nome))).toEqual([])
+      const lerPasta = (pasta: string): string[] =>
+        readdirSync(join(raiz, pasta), { withFileTypes: true }).flatMap((item) =>
+          item.isDirectory() ? lerPasta(join(pasta, item.name)) : /\.(tsx?|m?js|css|html|txt|xml)$/.test(item.name) && !item.name.includes('.test.') ? [join(pasta, item.name)] : [],
+        )
+      const citam = [...lerPasta('src'), ...lerPasta('scripts'), ...lerPasta('public'), 'index.html'].filter((arquivo) =>
+        antigos.test(readFileSync(join(raiz, arquivo), 'utf8')),
+      )
+      expect(citam).toEqual([])
+    })
+
     it('D-549 e CA-998: nada sai com opacidade zero escrita na página; a entrada ao rolar é marcada com data-surge', () => {
       montar()
       expect(document.body.innerHTML).not.toMatch(/opacity:\s*0/)

@@ -190,25 +190,20 @@ test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique 
   expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
 })
 
-test('CA-1027: a foto do topo só é pedida com a landing à vista, e o <head> a pede com o mesmo srcset da tela', async ({ page }) => {
-  const pedidos: string[] = []
+test('CA-1485 (spec landing-escura): a landing não tem foto no topo; o <head> não pré-carrega imagem nenhuma', async ({ page }) => {
+  const antigas: string[] = []
   page.on('request', (pedido) => {
-    if (pedido.url().includes('pratos-heroi')) pedidos.push(pedido.url())
+    if (/pratos-heroi|cobrir-(claro|escuro)|missoes-(claro|escuro)/.test(pedido.url())) antigas.push(pedido.url())
   })
-  await page.goto('/#/missoes/qualquer')
-  await expect(page.locator('[data-vitrine]')).toHaveCount(0)
-  await page.waitForLoadState('networkidle')
-  expect(pedidos).toEqual([])
-
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto('/#/inicio')
   await page.reload()
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Faltou cálcio\?/)
-  await expect.poll(() => pedidos.length).toBeGreaterThan(0)
-  const [preload, foto] = await Promise.all([
-    page.locator('link[rel="preload"][as="image"]').getAttribute('imagesrcset'),
-    page.getByAltText(/Três pratos/).getAttribute('srcset'),
-  ])
-  expect(preload).toBe(foto)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?/)
+  await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
+  expect(antigas).toEqual([])
+  // As três fotos da página são preguiçosas.
+  for (const foto of await page.locator('main img[srcset]').all()) await expect(foto).toHaveAttribute('loading', 'lazy')
 })
 
 test('CA-1018 e CA-1021: robots, sitemap e llms na raiz; o service worker guarda as páginas próprias', async ({ request }) => {

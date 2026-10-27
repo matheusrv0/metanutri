@@ -99,15 +99,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Fotos da landing (Unsplash)
-
-Composição `public/imagens/pratos-heroi*.webp`, gerada por `scripts/pratos_heroi.py` a partir de três
-fotos, recortadas em círculo. Licença Unsplash (uso livre, inclusive comercial): https://unsplash.com/license
-
-- Anna Pelzer — https://unsplash.com/photos/IGfIGP5ONV0 (tigela de salada com grão-de-bico e abacate)
-- Anh Nguyen — https://images.unsplash.com/photo-1546069901-ba9599a7e63c (tigela com tofu, milho e legumes)
-- Stuart Petrie — https://images.unsplash.com/photo-1490645935967-10de6ba17061 (prato azul com ovo, tomate e abobrinha)
-
 ## Fotos da landing escura (CC0)
 
 Três fotos em domínio público (CC0 1.0, sem crédito obrigatório; registradas aqui por cuidado), convertidas para webp
