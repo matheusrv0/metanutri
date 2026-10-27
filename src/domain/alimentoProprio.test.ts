@@ -11,6 +11,7 @@ import {
   MEUS_ALIMENTOS_NOVOS,
   produtoComoAlimento,
   validarAlimentoProprio,
+  validarProduto,
   type DadosAlimentoProprio,
   type Produto,
 } from './produtos.ts'
@@ -128,6 +129,41 @@ describe('validação (D-384)', () => {
     expect(r.problemas).toEqual([])
     expect(r.avisos).toContainEqual({ campo: 'energia_kcal', mensagem: 'Pelos macros, dá 112 kcal; você digitou 252. Confira.' })
     expect(produtoDosDados({ ...errada, sugerirAutomaticamente: true }).sugerirAutomaticamente).toBe(false)
+  })
+
+  const mensagem = (d: DadosAlimentoProprio, campo: string) => validarAlimentoProprio(d).problemas.find((p) => p.campo === campo)?.mensagem
+
+  it('CA-1364 (D-499): "Informe a energia", "o carboidrato", com o artigo e o pronome certos; negativo sem gênero', () => {
+    const vazio = dadosEmBranco('alimento')
+    expect(mensagem(vazio, 'energia_kcal')).toBe('Informe a energia: sem ela, o alimento não entra nos cálculos.')
+    expect(mensagem(vazio, 'proteina_g')).toBe('Informe a proteína: sem ela, o alimento não entra nos cálculos.')
+    expect(mensagem(vazio, 'carboidrato_g')).toBe('Informe o carboidrato: sem ele, o alimento não entra nos cálculos.')
+    expect(mensagem(vazio, 'lipideos_g')).toBe('Informe a gordura total: sem ela, o alimento não entra nos cálculos.')
+    const negativos = { ...CUSCUZ, valores: { ...CUSCUZ.valores, carboidrato_g: -1, fibra_g: -1, acucares_g: -1, tiamina_mg: -1 } }
+    for (const campo of ['carboidrato_g', 'fibra_g', 'acucares_g', 'tiamina_mg']) expect(mensagem(negativos, campo), campo).toBe('O valor não pode ser negativo.')
+  })
+
+  it('CA-1365 (D-499): a soma diz quanto deu, as regras de coerência pedem os valores e a porção "não pode passar"', () => {
+    expect(mensagem({ ...CUSCUZ, valores: { energia_kcal: 500, proteina_g: 40, carboidrato_g: 60, lipideos_g: 5.3 } }, 'soma')).toBe(
+      'Proteína, carboidrato, gordura e fibra passam de 105 g em 100 g (somam 105,3 g). Confira os valores.',
+    )
+    expect(mensagem({ ...CUSCUZ, valores: { ...CUSCUZ.valores, acucares_g: 30 } }, 'acucares_g')).toBe('Açúcares não podem passar dos carboidratos totais. Confira os valores.')
+    expect(mensagem({ ...CUSCUZ, valores: { ...CUSCUZ.valores, gordura_saturada_g: 1 } }, 'gordura_saturada_g')).toBe('Gordura saturada não pode passar da gordura total. Confira os valores.')
+    expect(mensagem({ ...BARRA, porcaoG: 2001 }, 'porcaoG')).toBe('A porção não pode passar de 2.000 g ou ml.')
+  })
+
+  it('CA-1365 (D-499): o limite da conta com ponto de milhar', () => {
+    const memoria = new Memoria()
+    memoria.setItem('metanutri:produtos', JSON.stringify(Array.from({ length: LIMITE_ALIMENTOS_PROPRIOS }, (_, i) => ({ id: 900_000 + i, nome: `A${i}`, porcaoG: 100, porPorcao: {}, criadoEm: 'x' }))))
+    expect(() => criarRepositorioProdutos(memoria).salvar({ nome: 'Mais um', porcaoG: 100, porPorcao: {} })).toThrow('Você já tem 1.000 alimentos cadastrados, o limite da conta. Exclua um que não usa mais.')
+  })
+
+  it('a janela antiga do rótulo usa as mesmas frases (D-499)', () => {
+    const rotulo = { nome: 'Iogurte', marca: '', porcaoG: 2001, medidaCaseira: '', porPorcao: { energia_kcal: 100, carboidrato_g: -1, acucares_g: 1, proteina_g: 1, lipideos_g: 1, gordura_saturada_g: 0, fibra_g: 0 } }
+    const problemas = validarProduto(rotulo)
+    expect(problemas).toContainEqual({ campo: 'porcaoG', mensagem: 'A porção não pode passar de 2.000 g ou ml.' })
+    expect(problemas).toContainEqual({ campo: 'carboidrato_g', mensagem: 'O valor não pode ser negativo.' })
+    expect(problemas).toContainEqual({ campo: 'sodio_mg', mensagem: 'Obrigatório no rótulo.' })
   })
 
   it('CA-1362 (D-497): o campo com texto que não é número tem a mensagem dele, no lugar de "Informe…"', () => {

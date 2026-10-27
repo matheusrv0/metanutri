@@ -102,6 +102,7 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
   }
 
   const { problemas, avisos } = validarAlimentoProprio(d, ilegiveis)
+  const camposComProblema = new Set(problemas.map((p) => p.campo)).size
   const erroDe = (campo: string) => (tentou ? problemas.find((p) => p.campo === campo)?.mensagem : undefined)
   const avisoDe = (campo: string) => avisos.find((a) => a.campo === campo)?.mensagem
   const incoerente = energiaIncoerente(d.valores)
@@ -427,7 +428,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
       {tentou && problemas.length > 0 ? (
         <Alert variant="warning">
           <TriangleAlert aria-hidden="true" />
-          <p>{problemas.length === 1 ? 'Falta acertar um campo.' : `Faltam acertar ${problemas.length} campos.`} Eles estão marcados.</p>
+          {/* D-499: contando campos, não mensagens; com o infinitivo, "faltar" fica no singular. */}
+          <p>{camposComProblema === 1 ? 'Falta acertar um campo. Ele está marcado.' : `Falta acertar ${camposComProblema} campos. Eles estão marcados.`}</p>
         </Alert>
       ) : null}
       {erroGeral ? (

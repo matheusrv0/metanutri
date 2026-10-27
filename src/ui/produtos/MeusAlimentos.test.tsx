@@ -67,8 +67,31 @@ describe('Meus alimentos com o formulário novo (D-383)', () => {
     expect(janela.getByText('Pelos macros, dá 112 kcal; você digitou 252. Confira.')).toBeInTheDocument()
     expect(janela.getByRole('switch', { name: /Pode aparecer no Cobrir e nas trocas/ })).toBeDisabled()
     await usuario.click(janela.getByRole('button', { name: 'Salvar alimento' }))
-    expect(janela.getByText(/Faltam acertar \d+ campos/)).toBeInTheDocument()
+    expect(janela.getByText(/^Falta acertar \d+ campos\. Eles estão marcados\.$/)).toBeInTheDocument()
     expect(janela.getByText('O alimento precisa de um nome.')).toBeInTheDocument()
+  })
+
+  it('CA-1364 (D-499): com um campo só a acertar, o resumo fala no singular', async () => {
+    render(<TelaProdutos formularioNovo />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Novo alimento' }))
+    const janela = within(screen.getByRole('dialog', { name: 'Novo alimento' }))
+    await usuario.type(janela.getByLabelText('Nome'), 'Cuscuz da casa')
+    await usuario.selectOptions(janela.getByLabelText('Grupo'), 'Cereais e derivados')
+    await usuario.selectOptions(janela.getByLabelText('Como é servido'), 'cozido')
+    await usuario.type(janela.getByLabelText('Energia'), '112')
+    await usuario.type(janela.getByLabelText('Proteína'), '2,2')
+    await usuario.type(janela.getByLabelText('Gordura total'), '0,3')
+    await usuario.selectOptions(janela.getByLabelText('Fonte dos valores'), 'laboratorio')
+    await usuario.click(janela.getByRole('button', { name: 'Salvar alimento' }))
+    expect(janela.getByText('Falta acertar um campo. Ele está marcado.')).toBeInTheDocument()
+    expect(janela.getByText('Informe o carboidrato: sem ele, o alimento não entra nos cálculos.')).toBeInTheDocument()
+  })
+
+  it('CA-1365 (D-499): o limite da conta aparece com ponto de milhar', () => {
+    localStorage.setItem('metanutri:produtos', JSON.stringify(Array.from({ length: 1000 }, (_, i) => ({ id: 900_000 + i, nome: `A${i}`, porcaoG: 100, porPorcao: {}, criadoEm: 'x' }))))
+    render(<TelaProdutos formularioNovo />)
+    expect(screen.getByText('Você chegou a 1.000 alimentos, o limite da conta. Exclua um que não usa mais para cadastrar outro.')).toBeInTheDocument()
   })
 
   it('CA-1356 (D-493): com gordura trans ou nome de doce, a chave do Cobrir fica travada e diz o motivo', async () => {
