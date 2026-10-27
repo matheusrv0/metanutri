@@ -22,16 +22,21 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
         await page.setViewportSize({ width: largura, height: 844 })
         const erros = await vigiarConsole(page)
         await abrir(page, '/#/inicio', tema)
-        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Faltou cálcio\?/)
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?/)
         await semRolagemLateral(page)
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
-        for (const item of await page.getByRole('navigation', { name: 'Seções' }).getByRole('link').all()) {
+        // Spec landing-escura (D-545): a barra da landing tem o menu "Principal", em caixa normal.
+        const menu = page.getByRole('navigation', { name: 'Principal' })
+        for (const item of await menu.getByRole('link').all()) {
           expect(await item.evaluate((el) => getComputedStyle(el).textTransform)).toBe('none')
         }
-        await expect(page.getByRole('navigation', { name: 'Seções' }).getByRole('link')).toHaveText(['Como funciona', 'Recursos', 'Preços'])
+        await expect(menu.getByRole('link').filter({ visible: true })).toHaveText(
+          largura < 720 ? ['Entrar', 'Criar conta'] : ['Como funciona', 'Preços', 'Entrar', 'Criar conta grátis'],
+          { useInnerText: true },
+        )
         const rodape = page.getByRole('contentinfo')
         await rodape.scrollIntoViewIfNeeded()
-        await expect(rodape.getByRole('heading')).toHaveText(['Produto', 'Conta', 'Legal'])
+        await expect(rodape.getByRole('navigation', { name: 'Rodapé' }).getByRole('link')).toHaveText(['Preços', 'Termos de uso', 'Política de privacidade', 'Referências'])
         expect(await rodape.innerText()).not.toMatch(/Fontes dos dados|NASEM|conferidos|8\.234|programa de nutrição/)
         expect(erros).toEqual([])
       })
@@ -57,7 +62,7 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
   }
 })
 
-test.describe('CA-1002: título e "Começar grátis" na primeira tela', () => {
+test.describe('CA-1002 e CA-1456: título e "Criar conta grátis" na primeira tela', () => {
   for (const [largura, altura] of [
     [1280, 720],
     [390, 844],
@@ -66,8 +71,8 @@ test.describe('CA-1002: título e "Começar grátis" na primeira tela', () => {
       await page.setViewportSize({ width: largura, height: altura })
       await page.goto('/#/inicio')
       await expect(page.getByRole('heading', { level: 1 })).toBeInViewport({ ratio: 1 })
-      const topo = page.getByRole('region', { name: /Faltou cálcio/ })
-      await expect(topo.getByRole('button', { name: 'Começar grátis' })).toBeInViewport({ ratio: 1 })
+      const topo = page.getByRole('region', { name: /Falta cálcio/ })
+      await expect(topo.getByRole('button', { name: 'Criar conta grátis' })).toBeInViewport({ ratio: 1 })
     })
   }
 })
@@ -96,10 +101,15 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   expect(ofertas.every((o) => o.priceCurrency === 'BRL')).toBe(true)
 
   const raiz = html.slice(html.indexOf('<div id="root">'))
-  expect(raiz).toMatch(/<h1[^>]*>Faltou cálcio\?/)
-  for (const trecho of ['Como funciona', 'Do atendimento ao documento entregue', 'Quanto custa', 'R$ 34,90', 'Termos de uso']) expect(raiz).toContain(trecho)
+  expect(raiz).toMatch(/<h1[^>]*><span[^>]*>Falta cálcio\?/)
+  for (const trecho of ['O que falta no plano da Maria, 28 anos?', 'Como funciona', 'Quanto custa', 'Solo: R$ 34,90 por mês', 'Termos de uso', 'Referências']) {
+    expect(raiz).toContain(trecho)
+  }
   expect(html).toMatch(/<link rel="preload" href="\.\/assets\/manrope-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/)
-  expect(raiz).toMatch(/<img fetchpriority="high"[^>]*width="1600" height="712" loading="lazy"/)
+  // Spec landing-escura: sem foto no topo; as três fotos da página são preguiçosas.
+  expect(raiz).not.toContain('fetchpriority')
+  expect((raiz.match(/-800\.webp 800w/g) ?? []).length).toBe(3)
+  expect((raiz.match(/loading="lazy"/g) ?? []).length).toBe(3)
 })
 
 test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a mesma CSP e a tela escrita', async ({ request }) => {
@@ -108,7 +118,7 @@ test('CA-1014: as páginas próprias saem com cabeçalho, <base>, data-rota, a m
     ['precos', 'Planos e preços'],
     ['termos', 'Termos de uso'],
     ['privacidade', 'Política de privacidade'],
-    ['fontes', 'Fontes da base'],
+    ['fontes', 'Referências'],
   ] as const) {
     const resposta = await request.get(`/${caminho}/`)
     expect(resposta.status()).toBe(200)
@@ -127,7 +137,7 @@ test('CA-1015: a página própria abre o app na tela dela, com o endereço da ra
     ['precos', 'Planos e preços'],
     ['termos', 'Termos de uso'],
     ['privacidade', 'Política de privacidade'],
-    ['fontes', 'Fontes da base'],
+    ['fontes', 'Referências'],
   ] as const) {
     await page.goto(`/${caminho}/`)
     await expect(page).toHaveURL(new RegExp(`/#/${caminho}$`))
@@ -179,7 +189,8 @@ test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique 
   await page.evaluate(() => {
     ;(window as unknown as { mesmaPagina: boolean }).mesmaPagina = true
   })
-  const precos = page.getByRole('navigation', { name: 'Seções' }).getByRole('link', { name: 'Preços' })
+  // Spec landing-escura: na landing, o link para a página de Preços fica no rodapé (o da barra rola até a seção).
+  const precos = page.getByRole('contentinfo').getByRole('navigation', { name: 'Rodapé' }).getByRole('link', { name: 'Preços' })
   await expect(precos).toHaveAttribute('href', 'precos/')
   await precos.click()
   await expect(page).toHaveURL(/\/#\/precos$/)

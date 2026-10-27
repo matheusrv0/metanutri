@@ -72,12 +72,14 @@ async function contrasteDoAviso(aviso: Locator): Promise<number> {
   })
 }
 
+// Spec landing-escura (D-545): a landing tem barra e rodapé próprios; o rodapé e o topo comuns são os das outras telas
+// públicas, conferidos aqui nos Termos.
 test.describe('Rodapé e topo públicos (D-235)', () => {
   for (const largura of [360, 390, 768, 1024, 1280]) {
     test(`CA-740 e CA-992: em ${largura} px, o rodapé só tem links, sem "·" solto nem fontes técnicas`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
-      await page.goto('/#/inicio')
+      await page.goto('/#/termos')
       const rodape = page.getByRole('contentinfo')
       const texto = await rodape.innerText()
       expect(texto).not.toContain('·')
@@ -88,22 +90,22 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
   }
 
   for (const largura of [768, 1280]) {
-    test(`M-1 (CA-741): em ${largura} px, "Fontes da base" continua com 44 px`, async ({ page }) => {
+    test(`M-1 (CA-741): em ${largura} px, "Referências" (antes "Fontes da base") continua com 44 px`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 800 })
       await ligarServidorFalso(page)
-      await page.goto('/#/inicio')
-      expect((await caixa(page.getByRole('contentinfo').getByRole('link', { name: 'Fontes da base' }))).height).toBeGreaterThanOrEqual(44)
+      await page.goto('/#/termos')
+      expect((await caixa(page.getByRole('contentinfo').getByRole('link', { name: 'Referências' }))).height).toBeGreaterThanOrEqual(44)
     })
   }
 
   test('CA-741: em 390 px, a logo e os links do rodapé têm 44 px, e o link que quebra fica à esquerda', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 })
     await ligarServidorFalso(page)
-    await page.goto('/#/inicio')
+    await page.goto('/#/termos')
     expect((await caixa(page.getByRole('banner').getByRole('button', { name: 'MetaNutri, início' }))).height).toBeGreaterThanOrEqual(44)
-    // CA-1028: os itens do rodapé são links (8 e o do e-mail).
+    // CA-1028: os itens do rodapé são links (7 e o do e-mail; Recursos saiu com a landing escura).
     const links = page.getByRole('contentinfo').getByRole('link')
-    expect(await links.count()).toBe(9)
+    expect(await links.count()).toBe(8)
     for (const link of await links.all()) {
       expect((await caixa(link)).height, await link.innerText()).toBeGreaterThanOrEqual(44)
       expect(await link.evaluate((el) => getComputedStyle(el).textAlign)).toBe('left')
@@ -114,7 +116,7 @@ test.describe('Rodapé e topo públicos (D-235)', () => {
 test('D-235 (A-23): em 700 px, Entrar e Começar grátis ficam na linha da logo, e o menu na de baixo', async ({ page }) => {
   await page.setViewportSize({ width: 700, height: 800 })
   await ligarServidorFalso(page)
-  await page.goto('/#/inicio')
+  await page.goto('/#/termos')
   const topo = page.getByRole('banner')
   const [logo, comecar, menu] = await retangulos(
     topo.getByRole('button', { name: 'MetaNutri, início' }),

@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('Caminhos da conta sem servidor (spec conta-e-verificacao)', () => {
-  test('CA-259: Começar grátis leva ao cadastro do Free', async ({ page }) => {
+  test('CA-259: Criar conta grátis (barra da landing escura) leva ao cadastro do Free', async ({ page }) => {
     await page.goto('/#/inicio')
-    await page.getByRole('banner').getByRole('button', { name: 'Começar grátis' }).click()
+    await page.getByRole('banner').getByRole('link', { name: 'Criar conta grátis' }).click()
     await expect(page).toHaveURL(/#\/criar-conta$/)
     await expect(page.getByText('No Free, você já tem')).toBeVisible()
   })

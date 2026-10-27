@@ -26,11 +26,14 @@ interface Tela {
 const comSessao = (extra: Cenario = {}): Cenario => ({ sessao: true, perfil: PERFIL_NUTRICIONISTA, ...extra })
 const botao = (nome: string | RegExp) => (p: Page) => p.getByRole('button', { name: nome, exact: typeof nome === 'string' }).filter({ visible: true }).first()
 const noTopo = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('button', { name: nome })
-const LANDING = /Faltou cálcio/
+const LANDING = /Falta cálcio/
+// Spec landing-escura: na landing, a ação principal é o "Criar conta grátis" do topo da página; a barra tem links.
+const naLanding = (nome: string) => (p: Page) => p.getByRole('region', { name: LANDING }).getByRole('button', { name: nome })
+const naBarra = (nome: string) => (p: Page) => p.getByRole('banner').getByRole('link', { name: nome })
 
 const TELAS: readonly Tela[] = [
-  { nome: 'o endereço sem caminho abre a landing (CA-730)', endereco: '/', titulo: LANDING, acao: noTopo('Começar grátis') },
-  { nome: 'Landing', endereco: '/#/inicio', titulo: LANDING, acao: noTopo('Começar grátis') },
+  { nome: 'o endereço sem caminho abre a landing (CA-730)', endereco: '/', titulo: LANDING, acao: naLanding('Criar conta grátis') },
+  { nome: 'Landing', endereco: '/#/inicio', titulo: LANDING, acao: naLanding('Criar conta grátis') },
   { nome: 'Preços', endereco: '/#/precos', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
   { nome: 'Preços com o Solo em destaque', endereco: '/#/precos/solo', titulo: 'Planos e preços', acao: botao('Assinar Solo') },
   { nome: 'Entrar', endereco: '/#/entrar', titulo: 'Entrar', acao: botao('Entrar') },
@@ -45,7 +48,7 @@ const TELAS: readonly Tela[] = [
   { nome: 'Nova senha', endereco: '/#/nova-senha', titulo: 'Este link expirou', acao: botao('Pedir um código') },
   { nome: 'Termos', endereco: '/#/termos', titulo: 'Termos de uso', acao: noTopo('Começar grátis') },
   { nome: 'Privacidade', endereco: '/#/privacidade', titulo: 'Política de privacidade', acao: noTopo('Começar grátis') },
-  { nome: 'Fontes', endereco: '/#/fontes', titulo: 'Fontes da base', acao: (p) => p.getByRole('main').getByRole('link').first() },
+  { nome: 'Referências', endereco: '/#/fontes', titulo: 'Referências', acao: (p) => p.getByRole('main').getByRole('link').first() },
   {
     nome: 'Checkout',
     endereco: '/#/assinar/solo/mensal',
@@ -59,7 +62,7 @@ const TELAS: readonly Tela[] = [
   { nome: 'Volta do pagamento (recusada)', endereco: '/#/pagamento', titulo: 'Pagamento não concluído', acao: botao('Tentar de novo'), cenario: comSessao({ assinatura: assinaturaFalsa('recusada') }) },
   { nome: 'Comprovar matrícula', endereco: '/#/comprovar-matricula', titulo: 'Comprove sua matrícula', acao: botao('Enviar para análise'), cenario: comSessao({ perfil: PERFIL_ESTUDANTE }) },
   { nome: 'Completar cadastro', endereco: '/#/painel', titulo: 'Complete seu cadastro', acao: botao('Continuar'), cenario: comSessao({ perfil: null }) },
-  { nome: 'Landing com sessão', endereco: '/#/inicio', titulo: LANDING, acao: noTopo('Ir para o painel'), cenario: comSessao() },
+  { nome: 'Landing com sessão', endereco: '/#/inicio', titulo: LANDING, acao: naBarra('Ir para o painel'), cenario: comSessao() },
   {
     nome: 'Link do paciente (missões)',
     endereco: '/#/missoes/token-do-teste',

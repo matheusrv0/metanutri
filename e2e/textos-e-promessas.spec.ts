@@ -21,13 +21,14 @@ test.describe('CA-1198: landing e Preços com o texto novo, em 390 e 1280 px, cl
         await page.setViewportSize({ width: largura, height: 844 })
         const erros = await vigiarConsole(page)
         await abrir(page, '/#/inicio', tema)
-        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Faltou cálcio\?\s*O MetaNutri diz\s*o que comer\./)
-        await expect(page.getByText('Software para nutricionistas. Monte o plano alimentar, entregue em PDF e acompanhe o paciente pelo celular entre as consultas.')).toBeVisible()
-        await expect(page.getByRole('button', { name: /^Até 5/ })).toBeVisible()
-        await expect(page.getByText(/Uma lista dos alimentos mais ricos em cálcio não diz quanto pôr no prato\./)).toBeVisible()
+        // Spec landing-escura (CA-1454, CA-1477 e CA-1480): o texto da landing nova, nos dois temas do app.
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?\s*1 copo de iogurte\./)
+        await expect(page.getByText(/^Para nutricionistas: o MetaNutri calcula quanto falta de cada vitamina e mineral/)).toBeVisible()
+        await expect(page.getByRole('textbox', { name: 'Digite o nutriente que falta' })).toHaveValue('falta cálcio')
         const precos = page.getByRole('region', { name: 'Quanto custa' })
-        for (const plano of ['Free', 'Solo, por mês', 'Pro, por mês']) await expect(precos.getByText(plano, { exact: true })).toBeVisible()
-        await expect(page.getByRole('heading', { level: 2, name: 'Teste com um paciente real' })).toBeVisible()
+        for (const plano of ['Free', 'Pro', 'Estudante', 'Clínica']) await expect(precos.getByText(plano, { exact: true })).toBeVisible()
+        await expect(precos.getByRole('button', { name: 'Assinar o Solo' })).toBeVisible()
+        await expect(page.getByRole('link', { name: /Crie a conta e monte o primeiro plano hoje\. Sem cartão\./ })).toBeVisible()
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
         await semRolagemLateral(page)
         expect(erros).toEqual([])
@@ -51,7 +52,8 @@ test.describe('CA-1198: landing e Preços com o texto novo, em 390 e 1280 px, cl
 test('CA-1198: o HTML publicado já traz o texto novo, sem o cartão de alimentos nem a Clínica a R$ 149', async ({ request }) => {
   const inicio = await (await request.get('/')).text()
   const raiz = inicio.slice(inicio.indexOf('<div id="root">'))
-  for (const trecho of ['Uma lista dos alimentos mais ricos em cálcio', 'Do atendimento ao documento entregue', 'Todas as assinaturas têm as mesmas funções', 'Teste com um paciente real']) {
+  // Spec landing-escura (CA-1484): a landing nova, pré-desenhada.
+  for (const trecho of ['O que falta no plano da Maria, 28 anos?', 'O plano sai do seu jeito', 'Todas as assinaturas têm as mesmas funções', 'Perguntas de quem atende']) {
     expect(raiz).toContain(trecho)
   }
   expect(raiz).not.toMatch(/597|Comece pelo Free|folha do paciente/)
