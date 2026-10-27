@@ -143,9 +143,11 @@ antes.
 - [ ] **T6 · A conta: "Sair" local, saída por tempo e conferência ao abrir.** `src/ui/estado/usarConta.ts` e
   `usarConta.test.ts`: o "Sair" com `scope: 'local'` (D-520); `sairPorTempo({ apagar, ate })` (DP-SA-5); depois do
   `getSession` e antes do primeiro `setSessao`, a sessão vencida sai (D-518: apaga se em dia sem contar retidos, guarda
-  se não) e grava o motivo; DP-SA-10; no `SIGNED_IN`, a marca e o desvio; no `TOKEN_REFRESHED`, o desvio.
-  `src/ui/estado/usarSaida.test.tsx` (o "Sair" continua igual por fora). Depende de: T3, T4, T5. Verifica: CA-1450,
-  CA-1451, CA-1452, CA-1453, CB-506.
+  se não) e grava o motivo; DP-SA-10; no `SIGNED_IN`, a marca e o desvio; no `TOKEN_REFRESHED`, o desvio (DP-SA-18).
+  `src/ui/estado/usarSaida.test.tsx` (o "Sair" continua igual por fora). `src/ui/publico/conta/contaFalsa.test-utils.ts`
+  (a conta falsa das telas ganha o `sairPorTempo`). `e2e/apoio/servidorFalso.ts` (o token falso ganha `amr` e `iat` já
+  aqui: sem eles, a sessão dos testes de navegador contaria como vencida até a T12). Depende de: T3, T4, T5. Verifica:
+  CA-1450, CA-1451, CA-1452, CA-1453, CB-506.
 - [ ] **T7 · O motor tira o `saiu` velho.** `src/domain/sincronia.ts` e `src/domain/sincronia.test.ts` (DP-SA-9).
   Depende de: —. Verifica: CA-1449, CB-528.
 - [ ] **T8 · Envios antes de sair.** `src/ui/sessao/contextoEnvios.ts` e `contextoEnvios.test.tsx` (novos),
