@@ -11,6 +11,7 @@ import {
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
 import { criarRepositorioAcompanhamentos, mesmoLink, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { useRegistrarEnvio } from '../sessao/contextoEnvios.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
@@ -262,6 +263,9 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
     lendo.current = leitura
     return leitura
   }, [cliente, repo, usuarioId, atualizar, marcarNoAparelho])
+
+  // Spec separacao-site-app, DP-SA-8: a saída por tempo espera esta leitura, que reenvia os links pendentes (CB-108).
+  useRegistrarEnvio(lerDaNuvem)
 
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua
