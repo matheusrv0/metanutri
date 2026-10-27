@@ -25,7 +25,7 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
       'Acompanhamento da adesão pelo celular',
       'Funcionalidades',
       'Como funciona',
-      'Grama por grama',
+      'Quantidades em gramas e calorias',
       'Quanto custa',
       'Solo: R$ 34,90 por mês',
       'Perguntas de quem atende',

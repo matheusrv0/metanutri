@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { DIA_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
+import { ALMOCO_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
 import { precosDaLanding } from './inicio/precosDaLanding.ts'
 import { TelaInicio } from './TelaInicio.tsx'
 
@@ -34,7 +34,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       'H2 Acompanhamento da adesão pelo celular',
       'H2 Funcionalidades',
       'H2 Como funciona',
-      'H2 Grama por grama',
+      'H2 Quantidades em gramas e calorias',
       'H2 Quanto custa',
       'H2 Perguntas de quem atende',
     ])
@@ -281,7 +281,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     })
   })
 
-  describe('Como funciona, Grama por grama e fotos', () => {
+  describe('Como funciona, Quantidades em gramas e fotos', () => {
     it('CA-1673: quatro passos numerados de 1 a 4, numa lista ordenada, sem os exemplos', () => {
       montar()
       const como = screen.getByRole('region', { name: 'Como funciona' })
@@ -309,9 +309,9 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(atrasos).toEqual(['0s', '0.6s', '1.1s', '1.6s'])
     })
 
-    it('CA-1604: Grama por grama, com as fotos em 16:9, as legendas e a tabela sem medida', () => {
+    it('CA-1675: Quantidades em gramas e calorias, com as fotos em 16:9, as legendas e a tabela só do almoço', () => {
       montar()
-      const gramas = screen.getByRole('region', { name: 'Grama por grama' })
+      const gramas = screen.getByRole('region', { name: 'Quantidades em gramas e calorias' })
       expect(gramas).toHaveTextContent('Cada alimento do plano sai com o peso e as calorias da Base MetaNutri.')
       const figuras = within(gramas).getAllByRole('figure')
       expect(figuras.map((f) => f.querySelector('figcaption')?.textContent)).toEqual([
@@ -319,11 +319,12 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
         'Salada com frango grelhado, rúcula e pimentão.',
       ])
       for (const figura of figuras) expect(figura.querySelector('img')).toHaveClass('aspect-video')
-      const tabela = within(gramas).getByRole('table', { name: 'Um dia de plano, com os gramas e as calorias de cada alimento' })
+      const tabela = within(gramas).getByRole('table', { name: 'Um almoço de plano, com os gramas e as calorias de cada alimento' })
       expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Alimento', 'Gramas', 'Energia'])
-      expect(within(tabela).getAllByRole('rowheader').map((c) => c.textContent)).toEqual(DIA_EM_GRAMAS.map((r) => r.refeicao))
-      expect(within(tabela).getAllByRole('row')).toHaveLength(1 + DIA_EM_GRAMAS.length + DIA_EM_GRAMAS.flatMap((r) => r.itens).length)
+      expect(within(tabela).getAllByRole('rowheader').map((c) => c.textContent)).toEqual(['Almoço'])
+      expect(within(tabela).getAllByRole('row')).toHaveLength(1 + 1 + ALMOCO_EM_GRAMAS.length)
       expect(tabela).toHaveTextContent('Feijão carioca cozido140 g107 kcal')
+      expect(tabela.textContent).not.toMatch(/Café da manhã|Lanche/)
     })
 
     it('CA-1476: as três fotos do meio têm texto alternativo, tamanho reservado, versão de 800 px e carregam preguiçosas', () => {
@@ -409,7 +410,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
   describe('texto e acessibilidade', () => {
     it('CA-1608: o topo, o campo vivo, Grama por grama e as perguntas não falam de medida caseira', () => {
       montar()
-      for (const nome of [TITULO_DO_TOPO, 'Adequação de micronutrientes com sugestão do que comer', 'Grama por grama', 'Perguntas de quem atende']) {
+      for (const nome of [TITULO_DO_TOPO, 'Adequação de micronutrientes com sugestão do que comer', 'Quantidades em gramas e calorias', 'Perguntas de quem atende']) {
         expect(screen.getByRole('region', { name: nome }).textContent, nome).not.toMatch(/medida caseira|concha|escumadeira|copo americano/i)
       }
     })

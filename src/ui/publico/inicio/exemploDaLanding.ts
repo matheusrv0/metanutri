@@ -154,39 +154,3 @@ export function textoDosAlimentosProprios(formularioNovo: boolean): { readonly f
         resposta: 'Você cadastra em Meus alimentos, pelo rótulo ou pelo código de barras, e ele entra na refeição pela busca.',
       }
 }
-
-// ---------- Da v3: saem com as seções antigas (spec landing-v3, PLAN T16 a T21) ----------
-
-export interface RefeicaoEmGramas {
-  readonly refeicao: string
-  readonly itens: readonly AlimentoEmGramas[]
-}
-
-/** "Grama por grama" (D-603 e D-604): um dia de plano com os gramas e as calorias da base. Não é o dia da Maria. */
-export const DIA_EM_GRAMAS: readonly RefeicaoEmGramas[] = [
-  {
-    refeicao: 'Café da manhã',
-    itens: [
-      { alimento: 'Pão francês', gramas: '50 g', kcal: '150 kcal' },
-      { alimento: 'Ovo cozido', gramas: '45 g', kcal: '66 kcal' },
-      { alimento: 'Mamão Formosa', gramas: '170 g', kcal: '77 kcal' },
-    ],
-  },
-  {
-    refeicao: 'Almoço',
-    itens: [
-      { alimento: 'Arroz branco cozido', gramas: '85 g', kcal: '109 kcal' },
-      { alimento: 'Feijão carioca cozido', gramas: '140 g', kcal: '107 kcal' },
-      { alimento: 'Patinho grelhado sem gordura', gramas: '100 g', kcal: '219 kcal' },
-      { alimento: 'Abóbora cabotiá cozida', gramas: '72 g', kcal: '35 kcal' },
-      { alimento: 'Chuchu cozido', gramas: '110 g', kcal: '20 kcal' },
-    ],
-  },
-  {
-    refeicao: 'Lanche da tarde',
-    itens: [
-      { alimento: 'Banana prata', gramas: '75 g', kcal: '74 kcal' },
-      { alimento: 'Iogurte natural desnatado', gramas: '150 g', kcal: '62 kcal' },
-    ],
-  },
-]
