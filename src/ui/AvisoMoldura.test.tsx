@@ -3,11 +3,11 @@ import { AvisoMoldura } from './AvisoMoldura.tsx'
 import { estaEmMoldura } from './moldura.ts'
 
 describe('Site dentro de moldura (D-99)', () => {
-  it('CA-431: só aparece o aviso, com o link que abre o site fora da moldura', () => {
+  it('CA-431 e CA-1420 (spec separacao-site-app): só aparece o aviso, com o link que abre o app fora da moldura', () => {
     const { container } = render(<AvisoMoldura />)
-    expect(container).toHaveTextContent(/^Abra o MetaNutri direto no navegador\.metanutri\.com\.br$/)
-    const link = screen.getByRole('link', { name: 'metanutri.com.br' })
-    expect(link).toHaveAttribute('href', 'https://metanutri.com.br/')
+    expect(container).toHaveTextContent(/^Abra o MetaNutri direto no navegador\.app\.metanutri\.com\.br$/)
+    const link = screen.getByRole('link', { name: 'app.metanutri.com.br' })
+    expect(link).toHaveAttribute('href', 'https://app.metanutri.com.br/')
     expect(link).toHaveAttribute('target', '_top')
   })
 

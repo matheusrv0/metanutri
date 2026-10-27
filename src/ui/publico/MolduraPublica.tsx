@@ -1,10 +1,9 @@
 import { Logo } from '@ds/componentes/display/Logo.tsx'
-import { Button } from '@ds/componentes/forms/button.tsx'
-import { useEffect, type ReactNode } from 'react'
+import { buttonVariants } from '@ds/componentes/forms/button.tsx'
+import type { ReactNode } from 'react'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cn } from '@/lib/utils'
-import { paginaAbriuNaVitrine } from '../aplicativo/aberturaDaPagina.ts'
-import { useVersaoNova } from '../aplicativo/versaoNova.ts'
+import { ENDERECO_DO_APP, telaNoApp } from '../enderecos.ts'
 import { MolduraDaLanding } from './inicio/MolduraDaLanding.tsx'
 import { irComAncora, navegarPeloApp, type DestinoPublico } from './navegacaoPublica.ts'
 
@@ -12,16 +11,10 @@ export type { DestinoPublico } from './navegacaoPublica.ts'
 
 interface MolduraPublicaProps {
   readonly atual: DestinoPublico | null
-  readonly temSessao: boolean
+  /** Spec separacao-site-app, DP-SA-36: o site decide para onde vai cada clique (outra página, o app ou "Continuar"). */
   readonly aoIrPara: (destino: DestinoPublico) => void
   readonly children: ReactNode
-  /** Recarrega a página quando chega versão nova (D-320). Os testes passam um dublê. */
-  readonly recarregar?: () => void
-  /** A página abriu numa tela de vitrine (CA-1026). Sem ela, vale o que o boot marcou. */
-  readonly abriuNaVitrine?: boolean
 }
-
-const recarregarPagina = () => globalThis.location.reload()
 
 interface LinkPublico {
   readonly texto: string
@@ -31,12 +24,15 @@ interface LinkPublico {
   readonly href: string
 }
 
+/** Spec separacao-site-app, D-503: a seção da landing é endereço próprio, `./#<seção>`, que o navegador abre e rola. */
+const COMO_FUNCIONA = './#como-funciona'
+
 /**
  * D-321 (spec site-publico-profissional): as seções da landing e Preços, em caixa normal. Spec landing-escura: a landing
  * nova não tem a seção Recursos; o menu fica com Como funciona e Preços.
  */
 const LINKS: readonly LinkPublico[] = [
-  { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona', href: '#/inicio' },
+  { texto: 'Como funciona', destino: 'inicio', ancora: 'como-funciona', href: COMO_FUNCIONA },
   { texto: 'Preços', destino: 'precos', href: 'precos/' },
 ]
 
@@ -50,33 +46,22 @@ const LINK_RODAPE =
 
 interface ColunaRodape {
   readonly titulo: string
-  readonly links: readonly { readonly texto: string; readonly href: string; readonly ir: () => void }[]
+  /** Sem `ir`, o link é só o endereço: o navegador abre (a seção da landing). */
+  readonly links: readonly { readonly texto: string; readonly href: string; readonly ir?: () => void }[]
 }
 
 /**
  * Moldura das telas públicas no estilo da referência Spora: menu reto sobre a mesa cinza e o botão de começar em pílula
  * de contorno. Spec site-publico-profissional: o menu em caixa normal (D-321) e o rodapé só com links (D-322).
+ *
+ * Spec separacao-site-app: só o site a usa, e o site não tem sessão (D-501). "Entrar" e "Começar grátis" levam ao app,
+ * e "Ir para o painel" sai; cada página fica no próprio endereço, sem a recarga da vitrine (D-503, fim do D-320).
  */
-export function MolduraPublica({
-  atual,
-  temSessao,
-  aoIrPara,
-  children,
-  recarregar = recarregarPagina,
-  abriuNaVitrine = paginaAbriuNaVitrine(),
-}: MolduraPublicaProps) {
-  // D-320: a vitrine não tem nada digitado a perder; versão nova que passou a valer recarrega a página na hora, para
-  // ninguém ficar lendo textos que já saíram do site. Só a página que abriu na vitrine (CA-1026): quem veio da área de
-  // trabalho não é recarregado no meio do caminho.
-  const versaoNova = useVersaoNova()
-  useEffect(() => {
-    if (versaoNova && abriuNaVitrine) recarregar()
-  }, [versaoNova, abriuNaVitrine, recarregar])
-
+export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProps) {
   // Spec landing-escura (D-530, D-545): a página inicial tem moldura própria, escura em qualquer tema.
   if (atual === 'inicio') {
     return (
-      <MolduraDaLanding temSessao={temSessao} aoIrPara={aoIrPara}>
+      <MolduraDaLanding aoIrPara={aoIrPara}>
         {children}
       </MolduraDaLanding>
     )
@@ -89,19 +74,17 @@ export function MolduraPublica({
     {
       titulo: 'Produto',
       links: [
-        ...LINKS.map((link) => ({ texto: link.texto, href: link.href, ir: () => irComAncora(aoIrPara, link.destino, link.ancora) })),
+        ...LINKS.map((link) => (link.ancora ? { texto: link.texto, href: link.href } : { texto: link.texto, href: link.href, ir: () => irComAncora(aoIrPara, link.destino) })),
         // Spec landing-escura, D-542: a página das fontes se chama Referências.
         { texto: 'Referências', href: 'fontes/', ir: () => irComAncora(aoIrPara, 'fontes') },
       ],
     },
     {
       titulo: 'Conta',
-      links: temSessao
-        ? [{ texto: 'Ir para o painel', href: '#/painel', ir: () => aoIrPara('painel') }]
-        : [
-            { texto: 'Começar grátis', href: '#/criar-conta', ir: () => aoIrPara('criar-conta') },
-            { texto: 'Entrar', href: '#/entrar', ir: () => aoIrPara('entrar') },
-          ],
+      links: [
+        { texto: 'Começar grátis', href: telaNoApp('#/criar-conta'), ir: () => aoIrPara('criar-conta') },
+        { texto: 'Entrar', href: ENDERECO_DO_APP, ir: () => aoIrPara('entrar') },
+      ],
     },
     {
       titulo: 'Legal',
@@ -116,14 +99,13 @@ export function MolduraPublica({
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-50 bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1216px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:px-8 sm:py-4">
-          <button
-            type="button"
-            onClick={() => irComAncora(aoIrPara, 'inicio')}
+          <a
+            href="./"
             aria-label="MetaNutri, início"
             className="inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
           >
             <Logo tamanho={28} />
-          </button>
+          </a>
 
           {/* D-235: até 767 px o menu desce para a segunda linha; em 640 px ele cabia ao lado da logo e empurrava os
               botões de Entrar para uma linha sozinhos. */}
@@ -134,7 +116,7 @@ export function MolduraPublica({
                 <a
                   key={link.texto}
                   href={link.href}
-                  onClick={(evento) => navegarPeloApp(evento, () => irComAncora(aoIrPara, link.destino, link.ancora))}
+                  onClick={link.ancora ? undefined : (evento) => navegarPeloApp(evento, () => irComAncora(aoIrPara, link.destino))}
                   aria-current={aqui ? 'page' : undefined}
                   className={cn(itemMenu, aqui ? 'text-heading underline underline-offset-8' : 'text-foreground hover:bg-card')}
                 >
@@ -145,18 +127,21 @@ export function MolduraPublica({
           </nav>
 
           <div className="ml-auto flex items-center gap-2 md:ml-0">
-            {temSessao ? (
-              <Button onClick={() => aoIrPara('painel')}>Ir para o painel</Button>
-            ) : (
-              <>
-                <button type="button" onClick={() => aoIrPara('entrar')} className={cn(itemMenu, 'text-foreground hover:bg-card')}>
-                  Entrar
-                </button>
-                <Button variant="outline" className="border-heading bg-transparent text-heading" onClick={() => aoIrPara('criar-conta')}>
-                  Começar grátis
-                </Button>
-              </>
-            )}
+            <a
+              href={ENDERECO_DO_APP}
+              onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('entrar'))}
+              className={cn(itemMenu, 'text-foreground hover:bg-card')}
+            >
+              Entrar
+            </a>
+            {/* O botão do design system, como link (o endereço é o do app): a mesma classe, como no WhatsApp. */}
+            <a
+              href={telaNoApp('#/criar-conta')}
+              onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('criar-conta'))}
+              className={cn(buttonVariants({ variant: 'outline' }), 'border-heading bg-transparent text-heading')}
+            >
+              Começar grátis
+            </a>
           </div>
         </div>
       </header>
@@ -176,7 +161,7 @@ export function MolduraPublica({
               <ul className="grid text-sm">
                 {coluna.links.map((link) => (
                   <li key={link.texto}>
-                    <a href={link.href} onClick={(evento) => navegarPeloApp(evento, link.ir)} className={LINK_RODAPE}>
+                    <a href={link.href} onClick={link.ir ? (evento) => navegarPeloApp(evento, link.ir ?? (() => undefined)) : undefined} className={LINK_RODAPE}>
                       {link.texto}
                     </a>
                   </li>

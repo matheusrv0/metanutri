@@ -7,6 +7,13 @@ import { criarRepositorio } from './domain/persistencia.ts'
 import { CHAVE_AVISO_VISTO } from './ui/casos/AvisoPrimeiroAcesso.tsx'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
+// Spec separacao-site-app, DP-SA-50: as páginas do site saem do app por esta função; o jsdom não navega.
+const site = vi.hoisted(() => ({ sair: vi.fn<(endereco: string) => void>() }))
+vi.mock('./ui/enderecos.ts', async (original) => ({
+  ...(await original<typeof import('./ui/enderecos.ts')>()),
+  sairParaOSite: (endereco: string) => site.sair(endereco),
+}))
+
 const renderizar = () =>
   render(
     <ProvedorTema>
@@ -22,15 +29,16 @@ const menuFixo = () => {
 
 describe('App: estrutura', () => {
   beforeEach(() => {
+    site.sair.mockClear()
     localStorage.clear()
     localStorage.setItem(CHAVE_AVISO_VISTO, '1')
     window.location.hash = ''
   })
 
-  it('CA-322: #/fontes abre a página de fontes, sem conta', () => {
+  it('CA-322 e CA-1412 (spec separacao-site-app): #/fontes leva às Referências do site, sem conta', () => {
     window.location.hash = '#/fontes'
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Referências' })).toBeInTheDocument()
+    expect(site.sair).toHaveBeenCalledWith('https://metanutri.com.br/fontes/')
   })
 
   it('abre no Painel, sem item de caso enquanto não há planos', () => {
@@ -141,23 +149,17 @@ describe('App: estrutura', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Esqueci a senha' })).toBeInTheDocument()
   })
 
-  it('sem servidor: "Criar conta grátis" leva ao cadastro, que oferece abrir o sistema (CA-150; spec landing-escura, CA-1455)', async () => {
-    window.location.hash = '#/inicio'
+  it('sem servidor: Criar conta oferece abrir o sistema (CA-150; spec landing-escura, CA-1455)', () => {
+    window.location.hash = '#/criar-conta'
     renderizar()
-    const [botao] = screen.getAllByRole('button', { name: 'Criar conta grátis' })
-    if (!botao) throw new Error('botão ausente')
-    await userEvent.setup().click(botao)
-    expect(window.location.hash).toBe('#/criar-conta')
     expect(screen.getByRole('button', { name: 'Abrir o sistema' })).toBeInTheDocument()
   })
 
-  // O aviso "em preparação" (sem responsável ou contato) é testado em ui/publico/legal.test.tsx.
-  it('sem servidor: #/termos abre os Termos de uso com responsável e contato', () => {
+  // Os Termos (com responsável e contato) são testados em ui/publico/legal.test.tsx; no app, eles abrem no site.
+  it('sem servidor: #/termos leva aos Termos de uso do site (CA-1412)', () => {
     window.location.hash = '#/termos'
     renderizar()
-    expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
-    expect(screen.queryByText('Este texto está sendo finalizado e entra no ar em breve.')).not.toBeInTheDocument()
-    expect(screen.getByText(/É oferecido por Matheus Rondon\./)).toBeInTheDocument()
+    expect(site.sair).toHaveBeenCalledWith('https://metanutri.com.br/termos/')
   })
 
   it('sem servidor: #/assinar/solo/mensal mostra o checkout', () => {

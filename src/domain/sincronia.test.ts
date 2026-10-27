@@ -1113,6 +1113,20 @@ describe('sair (D-131)', () => {
     expect(saiuDaConta(JSON.stringify({ versao: null, mudancas: 1, salvas: 0, itens: 0 }))).toBe(false)
   })
 
+  it('R4 (spec separacao-site-app, DP-SA-43): o motor diz que parou, depois de parar ou de a conta sair em outra aba', async () => {
+    const nuvem = nuvemFalsa()
+    const a = abrirAparelho(nuvem)
+    await ligar(a)
+    expect(a.sincronia.parada).toBe(false)
+    a.pacientes.criar('Ana')
+    a.sincronia.parar()
+    expect(a.sincronia.parada).toBe(true)
+    const b = abrirAparelho(nuvem)
+    await ligar(b)
+    b.sincronia.saiuEmOutraAba()
+    expect(b.sincronia.parada).toBe(true)
+  })
+
   it('DP-11: a outra aba que saiu para esta antes de o espaço sumir', async () => {
     const nuvem = nuvemFalsa()
     const navegador = new Navegador()

@@ -46,7 +46,11 @@ describe('TelaCriarConta', () => {
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Você é' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '#/termos')
+    // Spec separacao-site-app, D-505 e CA-1414: os documentos são do site e abrem em aba nova; o formulário fica aqui.
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', 'https://metanutri.com.br/termos/')
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('target', '_blank')
+    expect(screen.getByRole('link', { name: 'Política de privacidade' })).toHaveAttribute('href', 'https://metanutri.com.br/privacidade/')
+    expect(screen.getByRole('link', { name: 'Política de privacidade' })).toHaveAttribute('target', '_blank')
     expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
   })
 

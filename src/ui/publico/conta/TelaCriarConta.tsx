@@ -6,6 +6,7 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import type { ValorConta } from '../../estado/usarConta.ts'
+import { paginaDoSite } from '../../enderecos.ts'
 import { ehPlanoPago } from '../../navegacao.ts'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { AvisoSemServidor } from './AvisoSemServidor.tsx'
@@ -138,13 +139,14 @@ export function TelaCriarConta({ conta, plano, ciclo, contato, aoCriada, aoEntra
 
         <CamposSituacao id={id} valor={situacao} aoMudar={setSituacao} erro={erroSituacao} travarEstudante={viaEstudante} />
 
+        {/* Spec separacao-site-app, D-505 e CA-1414: os documentos são do site e abrem em aba nova; o formulário fica aqui. */}
         <CaixaDeclaracao id={`${id}-termos`} marcada={aceitou} aoMudar={setAceitou} invalido={erroConta === 'termos'}>
           Li e aceito os{' '}
-          <a href="#/termos" target="_blank" rel="noreferrer" className={LINK}>
+          <a href={paginaDoSite('termos')} target="_blank" rel="noreferrer" className={LINK}>
             Termos de uso
           </a>{' '}
           e a{' '}
-          <a href="#/privacidade" target="_blank" rel="noreferrer" className={LINK}>
+          <a href={paginaDoSite('privacidade')} target="_blank" rel="noreferrer" className={LINK}>
             Política de privacidade
           </a>
           .

@@ -111,14 +111,17 @@ const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
   return typeof linha === 'object' && linha !== null ? (linha as Record<string, unknown>) : {}
 }
 
-/** Liga o servidor falso numa página, antes do `goto`. */
+/**
+ * Liga o servidor falso no navegador da página, antes do `goto`. Spec separacao-site-app (DP-SA-17): responde no
+ * contexto, não só na página, para valer também na aba que o "Continuar" do site abre.
+ */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
   const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], semRede: false }
   const contexto = pagina.context()
   const nuvem = nuvens.get(contexto) ?? { copia: null }
   nuvens.set(contexto, nuvem)
   if (cenario.sessao) {
-    await pagina.addInitScript(
+    await contexto.addInitScript(
       ([chave, valor]) => {
         if (!localStorage.getItem(chave)) localStorage.setItem(chave, valor)
       },
@@ -128,9 +131,9 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
 
   // O script dos campos do cartão nunca sai da máquina: um script vazio carrega, não cria a operadora, e o checkout
   // mostra o aviso de campos que não carregaram, com o botão de assinar parado (CB-88 da checkout-proprio).
-  await pagina.route('https://sdk.mercadopago.com/**', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }))
+  await contexto.route('https://sdk.mercadopago.com/**', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }))
 
-  await pagina.route(`${ENDERECO_FALSO}/**`, async (route) => {
+  await contexto.route(`${ENDERECO_FALSO}/**`, async (route) => {
     const pedido = route.request()
     if (servidor.semRede) return route.abort('internetdisconnected')
     if (pedido.method() === 'OPTIONS') {

@@ -8,7 +8,6 @@ import { guardarTemaDaLanding, lerTemaDaLanding, marcarTemaNoHtml, type TemaDaLa
 import { useEntradaAoRolar } from './useEntradaAoRolar.ts'
 
 interface MolduraDaLandingProps {
-  readonly temSessao: boolean
   readonly aoIrPara: (destino: DestinoPublico) => void
   readonly children: ReactNode
 }
@@ -23,7 +22,7 @@ const noProximoQuadro = (feito: () => void) =>
  * conta excluída, seguem o tema da landing, em qualquer tema do app). A classe fica nesta raiz, nunca no `<html>`: Preços
  * continua no tema do app (CB-544). No build (sem `document`), a landing sai escura, o padrão.
  */
-export function MolduraDaLanding({ temSessao, aoIrPara, children }: MolduraDaLandingProps) {
+export function MolduraDaLanding({ aoIrPara, children }: MolduraDaLandingProps) {
   const raiz = useRef<HTMLDivElement>(null)
   const [tema, setTema] = useState<TemaDaLanding>(() => (typeof document === 'undefined' ? 'escuro' : lerTemaDaLanding(armazenamentoLocal())))
   useEntradaAoRolar(raiz)
@@ -45,11 +44,12 @@ export function MolduraDaLanding({ temSessao, aoIrPara, children }: MolduraDaLan
       ref={raiz}
       className={`landing ${tema === 'claro' ? 'landing-clara tema-claro' : 'dark'} flex min-h-dvh flex-col overflow-x-clip bg-landing-chao font-sans text-(length:--landing-fs-corpo) leading-[1.55] text-landing-tinta tabular-nums antialiased`}
     >
-      <BarraDaLanding temSessao={temSessao} aoIrPara={aoIrPara} tema={tema} aoTrocarTema={trocarTema} />
+      <BarraDaLanding aoIrPara={aoIrPara} tema={tema} aoTrocarTema={trocarTema} />
       <main id="conteudo" className="flex-1">
         {children}
-        {/* Spec landing-v3, D-674: no celular, sem sessão, "Criar conta grátis" fica preso no pé da tela. */}
-        {temSessao ? null : <BotaoFixoDoCelular aoCriarConta={() => aoIrPara('criar-conta')} />}
+        {/* Spec landing-v3, D-674: no celular, "Criar conta grátis" fica preso no pé da tela. Spec separacao-site-app: o site
+            não tem sessão (D-501), então ele aparece sempre. */}
+        <BotaoFixoDoCelular aoCriarConta={() => aoIrPara('criar-conta')} />
       </main>
       <RodapeDaLanding aoIrPara={aoIrPara} />
     </div>

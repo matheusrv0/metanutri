@@ -1,7 +1,7 @@
 // Spec landing-v3: o tema claro e escuro da landing no navegador de verdade (cores, contraste, barra, primeiro desenho,
 // foco e laranja). Seção v9: a barra de vidro, o topo em foto e as medidas da v9 (D-651, D-652 e D-677).
 import { expect, test, type Page } from '@playwright/test'
-import { vigiarConsole } from './apoio/fumaca.ts'
+import { vigiarConsole } from '../apoio/fumaca.ts'
 
 const CHAO_ESCURO = 'rgb(16, 26, 29)'
 const CHAO_CLARO = 'rgb(246, 242, 234)'
@@ -22,7 +22,7 @@ async function abrir(pagina: Page, temaDaLanding?: Tema) {
     localStorage.setItem('metanutri:tema', 'claro')
     if (l) localStorage.setItem('metanutri:tema-da-landing', l)
   }, temaDaLanding ?? null)
-  await pagina.goto('/#/inicio')
+  await pagina.goto('/')
   await expect(pagina.locator('[data-vitrine]')).toHaveCount(0)
   await expect(pagina.getByRole('heading', { level: 1 })).toBeVisible()
 }
@@ -126,7 +126,8 @@ test.describe('com menos movimento', () => {
     await page.mouse.wheel(0, 400)
     await expect.poll(async () => (await barra.boundingBox())?.y).toBe(0)
     expect(await barra.evaluate((el) => getComputedStyle(el).color)).toBe(TINTA_CLARA)
-    const [entrar, fundo] = await corEFundo(page, 'header a[href="#/entrar"]')
+    // Spec separacao-site-app (D-501): o "Entrar" da barra é o endereço do app.
+    const [entrar, fundo] = await corEFundo(page, 'header a[href="http://localhost:4176/"]')
     expect(contraste(entrar, fundo.startsWith('color(') ? CHAO_CLARO : fundo)).toBeGreaterThanOrEqual(4.5)
     const [acao, fundoDaAcao] = await barra
       .getByRole('link', { name: 'Criar conta grátis' })

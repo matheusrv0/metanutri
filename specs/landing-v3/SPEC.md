@@ -183,7 +183,7 @@ ou o de `nomeParaPaciente`; missão é o texto de `missoes.ts`; preço e limite 
 - **CA-1653** · Dado o domínio, então o "20" do topo é o número de micronutrientes da adequação sem a fibra e o "2" é o limite de pacientes do Free.
 - **CA-1654** · Dado o topo a 1.440 px, então a etiqueta diz "No plano de exemplo, falta cálcio" e "150 g de iogurte natural desnatado cobrem 91%", e é escondida do leitor de tela; a 390 px, ela não aparece.
 - **CA-1655** · Dado a foto do topo, então ela tem texto alternativo, largura e altura, as versões de 800 e 1.600 px em webp, não é preguiçosa e tem prioridade alta; o arquivo tem no máximo 1.600 px.
-- **CA-1656** · Dado movimento permitido e a landing aberta pelo app, então a foto anima de 107% a 100%; dado menos movimento, então nada anima no topo.
+- **CA-1656** · Dado movimento permitido e a landing aberta pelo app, então a foto anima de 107% a 100%; dado menos movimento, então nada anima no topo. *Nota de 27/10/2026 (spec `separacao-site-app`, P2, DP-SA-56): o app não tem mais a landing; no site, ela sempre abre sobre a página pré-desenhada, e a foto continua o movimento dela (CA-1657).*
 - **CA-1657** · Dado a página pré-desenhada e o app montando T ms depois do primeiro desenho, então a animação da foto do app começa com atraso de −T ms (continua de onde estava); aberta pelo app, começa do zero.
 
 ### Adequação

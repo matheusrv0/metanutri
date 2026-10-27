@@ -38,7 +38,8 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
-  expect(endereco).toContain('#/missoes/')
+  // CA-1416 (spec separacao-site-app): o link é do endereço do app (aqui, o deste servidor; no ar, app.metanutri.com.br).
+  expect(endereco).toMatch(/^http:\/\/localhost:4173\/#\/missoes\/[a-z0-9]+$/)
   await expect(cartao.getByText('Ainda não começou')).toBeVisible()
 
   // O paciente abre o link: sem menu, sem conta

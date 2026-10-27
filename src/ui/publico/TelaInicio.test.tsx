@@ -48,7 +48,8 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
         'O MetaNutri calcula a adequação de 20 vitaminas e minerais e sugere os alimentos, em gramas, para completar o que falta. Depois, acompanha a adesão do paciente pelo celular.',
       )
       expect(within(topo).getByRole('button', { name: 'Criar conta grátis' })).toBeInTheDocument()
-      expect(within(topo).getByRole('link', { name: 'Ver o plano de exemplo' })).toBeInTheDocument()
+      // Spec separacao-site-app: o endereço é a seção, não a rota antiga #/inicio.
+      expect(within(topo).getByRole('link', { name: 'Ver o plano de exemplo' })).toHaveAttribute('href', '#adequacao')
       expect(topo).toHaveTextContent('Grátis com 2 pacientes ativos. Sem cartão de crédito.')
     })
 
@@ -521,7 +522,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       const aoComecar = vi.fn()
       montar({ aoComecar })
       const faixa = screen.getByRole('link', { name: /Crie sua conta e monte o primeiro plano hoje, sem cartão de crédito\.\s*Começar/ })
-      expect(faixa).toHaveAttribute('href', '#/criar-conta')
+      expect(faixa).toHaveAttribute('href', 'https://app.metanutri.com.br/#/criar-conta')
       expect(faixa.className).toMatch(/hover:bg-landing-chamar-hover/)
       expect(faixa.className).not.toMatch(/bg-landing-laranja/)
       await userEvent.setup().click(faixa)

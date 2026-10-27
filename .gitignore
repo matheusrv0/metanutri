@@ -1,6 +1,7 @@
 # dependências e build
 node_modules/
 dist/
+dist-site/
 coverage/
 
 # testes e2e

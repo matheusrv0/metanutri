@@ -1,11 +1,12 @@
 // Os arquivos de busca na raiz do site e o cabeçalho escrito no index.html (spec site-publico-profissional).
 // São texto parado; estes testes garantem que não se descolam do domínio (D-327, CB-327).
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DIAS_PACIENTE_ATIVO, PLANOS } from '@/domain/conta.ts'
 import { CONTATO_EMAIL } from '@/domain/legal.ts'
 import { cabecalhoDaPagina, MARCA_FIM, MARCA_INICIO } from './cabecalho.ts'
 import { enderecoDaPagina, PAGINAS, paginaDaRota } from './paginas.ts'
+import { SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
 
 const ler = (...partes: string[]) => readFileSync(join(process.cwd(), ...partes), 'utf8')
 const reais = (valor: number) => valor.toLocaleString('pt-BR', { minimumFractionDigits: Number.isInteger(valor) ? 0 : 2, maximumFractionDigits: 2 })
@@ -56,6 +57,11 @@ describe('arquivos de busca e o index.html', () => {
     for (const pagina of PAGINAS) expect(llms).toContain(enderecoDaPagina(pagina))
   })
 
+  it('CA-1408 (spec separacao-site-app): o llms.txt aponta "Entrar" para o app, junto das páginas', () => {
+    const paginas = ler('public', 'llms.txt').split('## Páginas')[1] ?? ''
+    expect(paginas).toContain('\n- Entrar: https://app.metanutri.com.br/\n')
+  })
+
   it('CA-1183 (spec textos-e-promessas): o llms.txt diz o mesmo que a landing, com o glossário', () => {
     const llms = ler('public', 'llms.txt')
     expect(llms).toContain(
@@ -63,6 +69,15 @@ describe('arquivos de busca e o index.html', () => {
     )
     expect(llms).toContain('Todas as assinaturas têm as mesmas funções.')
     expect(llms).not.toMatch(/presos|Folha do paciente|até 4 nutricionistas|R\$ 149/i)
+  })
+
+  it('DP-SA-2 (spec separacao-site-app): os arquivos de cada alvo existem em public/, e o do app só aplica o tema', () => {
+    for (const arquivo of [...SO_DO_SITE, ...SO_DO_APP]) expect(existsSync(join(process.cwd(), 'public', arquivo)), arquivo).toBe(true)
+    const doApp = ler('public', 'preparar-app.js')
+    expect(doApp).toContain("localStorage.getItem('metanutri:tema')")
+    expect(doApp).toContain("classList.add('dark')")
+    // Só o tema: não procura sessão, não esconde vitrine nem troca de endereço.
+    expect(doApp).not.toMatch(/auth-token|sem-vitrine|location|tema-da-landing/)
   })
 
   it('CA-1010: a imagem de compartilhar é um PNG de 1200 × 630 com menos de 300 KB', () => {

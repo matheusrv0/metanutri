@@ -197,6 +197,18 @@ describe('documentos legais', () => {
     expect(texto).not.toContain('Nenhum dado de cartão passa pelo MetaNutri')
   })
 
+  it('CA-1462 (spec separacao-site-app): a política diz quem entrega o app e o site, onde o app fica e quando a sessão termina sozinha', () => {
+    render(<TelaPrivacidade />)
+    const onde = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
+    expect(onde).toHaveTextContent(
+      'O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub. Os dois recebem dados técnicos do navegador, como o endereço IP, para entregar as páginas.',
+    )
+    const seguranca = screen.getByRole('heading', { name: 'Segurança' }).nextElementSibling
+    expect(seguranca).toHaveTextContent('A sessão termina sozinha depois de 30 minutos sem uso e 12 horas depois da entrada.')
+    // D-526: o texto não fala em "por segurança".
+    expect(document.body.textContent).not.toMatch(/por segurança/i)
+  })
+
   it('M1 (LGPD): a política diz que o nome impresso no cartão e o CPF do titular também vão para o Mercado Pago', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''

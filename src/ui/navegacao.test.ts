@@ -1,4 +1,4 @@
-import { ABAS, ehEnderecoDaRaiz, ehRotaLivre, ehTelaPublica, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota } from './navegacao.ts'
+import { ABAS, ehEnderecoDaRaiz, ehRotaLivre, ehTelaPublica, escreverRota, ETAPAS, lerRota, ROTA_INICIAL, type Rota, enderecoNoSite, TELAS_DO_SITE } from './navegacao.ts'
 
 describe('navegação por endereço', () => {
   it.each([
@@ -151,5 +151,38 @@ describe('Fontes da base (CA-322)', () => {
     ['#/painel', false],
   ])('CA-730: %j é o endereço do site sem caminho? %s', (hash, esperado) => {
     expect(ehEnderecoDaRaiz(hash)).toBe(esperado)
+  })
+})
+
+describe('as telas do site no app (spec separacao-site-app, D-504)', () => {
+  it('CA-1412: início, Preços (com o plano em destaque), Termos, Privacidade e Fontes têm o endereço da página do site', () => {
+    expect(enderecoNoSite({ tela: 'inicio' })).toBe('https://metanutri.com.br/')
+    expect(enderecoNoSite({ tela: 'precos' })).toBe('https://metanutri.com.br/precos/')
+    expect(enderecoNoSite({ tela: 'precos', destaque: 'pro' })).toBe('https://metanutri.com.br/precos/?destaque=pro')
+    expect(enderecoNoSite({ tela: 'termos' })).toBe('https://metanutri.com.br/termos/')
+    expect(enderecoNoSite({ tela: 'privacidade' })).toBe('https://metanutri.com.br/privacidade/')
+    expect(enderecoNoSite({ tela: 'fontes' })).toBe('https://metanutri.com.br/fontes/')
+    expect([...TELAS_DO_SITE].sort()).toEqual(['fontes', 'inicio', 'precos', 'privacidade', 'termos'])
+  })
+
+  it('CA-1412: as outras telas ficam no app', () => {
+    for (const rota of [{ tela: 'painel' }, { tela: 'entrar' }, { tela: 'criar-conta' }, { tela: 'missoes', token: 'abc' }] as const) {
+      expect(enderecoNoSite(rota)).toBeNull()
+    }
+  })
+})
+
+describe('a rota da mudança (spec separacao-site-app, D-512)', () => {
+  const CODIGO = '0123456789abcdef0123456789abcdef'
+
+  it('CA-1430 e CA-1431: #/mudanca/<código> é a rota da mudança, que pede sessão e fica fora da moldura do app', () => {
+    expect(lerRota(`#/mudanca/${CODIGO}`)).toEqual({ tela: 'mudanca', codigo: CODIGO })
+    expect(escreverRota({ tela: 'mudanca', codigo: CODIGO })).toBe(`#/mudanca/${CODIGO}`)
+    expect(ehRotaLivre({ tela: 'mudanca', codigo: CODIGO })).toBe(false)
+    expect(ehTelaPublica({ tela: 'mudanca', codigo: CODIGO })).toBe(true)
+  })
+
+  it('sem código, é o painel', () => {
+    expect(lerRota('#/mudanca')).toEqual({ tela: 'painel' })
   })
 })

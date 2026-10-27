@@ -13,6 +13,12 @@ import { gravarSaida } from './ui/sessao/motivoDaSaida.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 
 const estado = vi.hoisted(() => ({ conta: null as unknown }))
+// Spec separacao-site-app, DP-SA-50: as páginas do site saem do app por esta função; o jsdom não navega.
+const site = vi.hoisted(() => ({ sair: vi.fn<(endereco: string) => void>() }))
+vi.mock('./ui/enderecos.ts', async (original) => ({
+  ...(await original<typeof import('./ui/enderecos.ts')>()),
+  sairParaOSite: (endereco: string) => site.sair(endereco),
+}))
 
 vi.mock('./ui/estado/usarConta.ts', () => ({ useConta: () => estado.conta }))
 // Sem o cliente da nuvem: estes testes são do portão e dos dados por conta; os da nuvem estão em AppNuvem.test.tsx.
@@ -110,6 +116,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     localStorage.setItem(CHAVE_AVISO_VISTO, '1')
     window.location.hash = ''
     estado.conta = contaFalsa()
+    site.sair.mockClear()
     cobranca.carregado = true
     cobranca.assinar = vi.fn()
     cobranca.recarregar = vi.fn()
@@ -138,31 +145,47 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Pacientes' })).toBeInTheDocument()
   })
 
-  it('CA-730: o endereço do site sem caminho, sem sessão, abre a landing e não Entrar', () => {
+  it('CA-1409 e DP-SA-52 (spec separacao-site-app): no app, a raiz sem sessão abre Entrar, com "Conheça o MetaNutri" levando ao site', () => {
     window.location.hash = ''
     render(tela())
-    expect(screen.queryByRole('heading', { level: 1, name: 'Entrar' })).not.toBeInTheDocument()
-    expect(document.getElementById('titulo-inicio')).toBeInTheDocument()
-    expect(window.location.hash).toBe('#/inicio')
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(screen.getByText('Continue de onde parou.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Conheça o MetaNutri' })).toHaveAttribute('href', 'https://metanutri.com.br/')
+    expect(document.getElementById('titulo-inicio')).not.toBeInTheDocument()
+    expect(site.sair).not.toHaveBeenCalled()
   })
 
-  it('CA-730: com sessão, o endereço do site sem caminho abre o painel', () => {
+  it('CA-1410: com sessão, a raiz abre o Painel', () => {
     estado.conta = comSessao('conta-1')
     window.location.hash = ''
     render(tela())
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeInTheDocument()
   })
 
-  it('CA-730 e CA-148: o endereço do painel, sem sessão, continua pedindo Entrar', () => {
+  it('CA-148 e CA-1411: o endereço do painel, sem sessão, pede Entrar', () => {
     window.location.hash = '#/painel'
     render(tela())
     expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
   })
 
-  it('CA-149: termos abrem sem sessão', () => {
-    window.location.hash = '#/termos'
+  it.each([
+    ['#/inicio', 'https://metanutri.com.br/'],
+    ['#/precos', 'https://metanutri.com.br/precos/'],
+    ['#/precos/pro', 'https://metanutri.com.br/precos/?destaque=pro'],
+    ['#/termos', 'https://metanutri.com.br/termos/'],
+    ['#/privacidade', 'https://metanutri.com.br/privacidade/'],
+    ['#/fontes', 'https://metanutri.com.br/fontes/'],
+  ])('CA-1412: %s no app abre a página do site (%s), sem pedir entrada, com ou sem sessão', (hash, endereco) => {
+    window.location.hash = hash
+    const { unmount } = render(tela())
+    expect(site.sair).toHaveBeenCalledWith(endereco)
+    expect(screen.queryByRole('heading', { level: 1, name: 'Entrar' })).not.toBeInTheDocument()
+    unmount()
+    site.sair.mockClear()
+    estado.conta = comSessao('conta-1')
+    window.location.hash = hash
     render(tela())
-    expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
+    expect(site.sair).toHaveBeenCalledWith(endereco)
   })
 
   it('CA-150: sem servidor, o app abre no modo local', () => {
@@ -211,12 +234,60 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Entrar' })).not.toBeInTheDocument()
   })
 
-  it('CA-259: Criar conta no topo da landing vai para o cadastro, não para o painel', async () => {
-    window.location.hash = '#/inicio'
+  it('CA-1413: com sessão, Criar conta vai aonde o plano levaria, em vez de mostrar o cadastro', async () => {
+    estado.conta = comSessao('conta-1')
+    for (const [pedido, destino] of [
+      ['#/criar-conta/solo/anual', '#/assinar/solo/anual'],
+      ['#/criar-conta/pro', '#/assinar/pro/mensal'],
+      ['#/criar-conta', '#/painel'],
+    ] as const) {
+      window.location.hash = pedido
+      const { unmount } = render(tela())
+      await waitFor(() => expect(window.location.hash, pedido).toBe(destino))
+      expect(screen.queryByLabelText('Nome completo')).not.toBeInTheDocument()
+      unmount()
+    }
+    verificacao.perfil = { nome: 'Maria', situacao: 'estudante', crn: null, statusCrn: null, crnDeclaradoEm: null, crnDecididoEm: null }
+    window.location.hash = '#/criar-conta/estudante'
     render(tela())
-    // Spec landing-escura (CA-1457): na barra da landing, "Criar conta grátis" é link (com endereço, para a aba nova).
-    await userEvent.setup().click(within(screen.getByRole('banner')).getByRole('link', { name: 'Criar conta grátis' }))
-    expect(window.location.hash).toBe('#/criar-conta')
+    await waitFor(() => expect(window.location.hash).toBe('#/comprovar-matricula'))
+  })
+
+  it('CA-1414: Fontes da base, na Tabela de alimentos e na Ajuda, abre as Referências do site em aba nova, e o app fica', async () => {
+    const abrir = vi.fn()
+    vi.stubGlobal('open', abrir)
+    try {
+      estado.conta = comSessao('conta-1')
+      window.location.hash = '#/alimentos'
+      const { unmount } = render(tela())
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Fontes da base' }))
+      expect(abrir).toHaveBeenLastCalledWith('https://metanutri.com.br/fontes/', '_blank', 'noopener,noreferrer')
+      expect(window.location.hash).toBe('#/alimentos')
+      unmount()
+      window.location.hash = '#/ajuda'
+      render(tela())
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Fontes da base' }))
+      expect(abrir).toHaveBeenCalledTimes(2)
+      expect(window.location.hash).toBe('#/ajuda')
+      expect(site.sair).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('CA-1414: "Ver preços", em Conta e assinatura, abre Preços do site na mesma aba', async () => {
+    estado.conta = comSessao('conta-1')
+    window.location.hash = '#/conta'
+    render(tela())
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ver preços' }))
+    await waitFor(() => expect(site.sair).toHaveBeenCalledWith('https://metanutri.com.br/precos/'))
+  })
+
+  it('CA-1413 e DP-SA-51: sem sessão, Criar conta mostra o cadastro do plano', () => {
+    window.location.hash = '#/criar-conta/solo/anual'
+    render(tela())
+    expect(screen.getByLabelText('Nome completo')).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/criar-conta/solo/anual')
   })
 
   it('Criar conta recomeça quando o endereço troca de plano', async () => {
@@ -556,7 +627,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
       expect(screen.getByRole('heading', { level: 2, name: 'Digite o código do app autenticador' })).toBeInTheDocument()
     })
 
-    it('DP-SA-20 e CA-1450: depois da saída por tempo, o endereço do site sem caminho abre "Entre de novo", e não a landing', () => {
+    it('CA-1450: depois da saída por tempo, a raiz do app abre "Entre de novo"', () => {
       gravarSaida(localStorage, { ate: Date.now() - MIN, pendente: false })
       window.location.hash = ''
       render(tela())
@@ -667,7 +738,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
         expect(screen.queryByRole('link')).not.toBeInTheDocument()
       })
 
-      it.each(['#/inicio', '#/precos', '#/entrar', '#/criar-conta', '#/painel', '#/esqueci-senha', '#/nova-senha/vencido'])(
+      it.each(['', '#/entrar', '#/criar-conta', '#/painel', '#/esqueci-senha', '#/nova-senha/vencido'])(
         'CA-416: com o e-mail pendente, %s volta para a tela do código com o e-mail preenchido',
         async (hash) => {
           guardar()
@@ -679,15 +750,16 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
         },
       )
 
-      it('CA-416: Termos de uso e Política de privacidade continuam abrindo', () => {
+      it('CA-416 e CA-1412: Termos de uso e Política de privacidade continuam abrindo, agora no site', () => {
         guardar()
         window.location.hash = '#/termos'
         const { unmount } = render(tela())
-        expect(screen.getByRole('heading', { level: 1, name: 'Termos de uso' })).toBeInTheDocument()
+        expect(site.sair).toHaveBeenLastCalledWith('https://metanutri.com.br/termos/')
         unmount()
         window.location.hash = '#/privacidade'
         render(tela())
-        expect(screen.getByRole('heading', { level: 1, name: 'Política de privacidade' })).toBeInTheDocument()
+        expect(site.sair).toHaveBeenLastCalledWith('https://metanutri.com.br/privacidade/')
+        expect(window.location.hash).toBe('#/privacidade')
       })
 
       it('CA-417: o cadastro guarda o e-mail no aparelho; abrir o site de novo cai na tela do código', async () => {
@@ -706,7 +778,7 @@ describe('App com a conta ligada (spec estilo-spora)', () => {
         expect(lerEmailPendente(localStorage, new Date())).toBe('maria@exemplo.com')
         primeiro.unmount()
 
-        window.location.hash = '#/inicio'
+        window.location.hash = ''
         render(tela())
         expect(await screen.findByRole('heading', { level: 1, name: 'Confira seu e-mail' })).toBeInTheDocument()
         expect(screen.getByText(/maria@exemplo\.com/)).toBeInTheDocument()

@@ -286,3 +286,90 @@ describe('a saída por tempo com a nuvem (spec separacao-site-app, D-517)', () =
     await waitFor(() => expect(conta.sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: expect.any(Number) }), { timeout: 15_000 })
   }, 20_000)
 })
+
+describe('a mudança do endereço antigo, no app (spec separacao-site-app, D-512 e D-513)', () => {
+  const CODIGO = '0123456789abcdef0123456789abcdef'
+  const SITE = 'https://metanutri.com.br'
+  const abaDoSite = { postMessage: vi.fn(), closed: false }
+  /** O que a aba do site responde, como o site responderia. */
+  const responder = (data: unknown) =>
+    act(() => {
+      const evento = new MessageEvent('message', { data, origin: SITE })
+      Object.defineProperty(evento, 'source', { value: abaDoSite })
+      window.dispatchEvent(evento)
+    })
+  const espacoDoSite = (pacientes: readonly ReturnType<typeof paciente>[]) => ({
+    'metanutri:conta:conta-a:nuvem': JSON.stringify({ versao: null, mudancas: 1, salvas: 0, itens: 0, motor: 2 }),
+    'metanutri:conta:conta-a:pacientes': JSON.stringify(pacientes),
+    'metanutri:conta:conta-a:mudancas': JSON.stringify({ alterados: Object.fromEntries(pacientes.map((p) => [`pacientes/${p.id}`, p.atualizadoEm])), excluidos: {} }),
+  })
+
+  beforeEach(() => {
+    abaDoSite.postMessage = vi.fn()
+    Object.defineProperty(window, 'opener', { value: abaDoSite, configurable: true, writable: true })
+    window.location.hash = `#/mudanca/${CODIGO}`
+    // O app no endereço novo começa sem nada da conta (os avisos já vistos também são dado da conta).
+    localStorage.clear()
+  })
+  afterEach(() => {
+    Object.defineProperty(window, 'opener', { value: null, configurable: true, writable: true })
+  })
+
+  it('CA-1431: com a conta dentro, pede os dados à aba do site antes de abrir a área de trabalho, com "Trazendo seus dados…"', () => {
+    render(tela())
+    expect(screen.getByRole('status')).toHaveTextContent('Trazendo seus dados…')
+    expect(abaDoSite.postMessage).toHaveBeenCalledWith({ tipo: 'pedir', codigo: CODIGO, usuarioId: 'conta-a' }, SITE)
+    // DP-SA-11: os dados da conta esperam: o motor não foi à nuvem.
+    expect(nuvem.pedidos).toEqual([])
+  })
+
+  it('CA-1431, CA-1433 e CA-1436: os dados chegam, a conta abre no Painel, o que veio sobe junto com a nuvem, e o app confirma', async () => {
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima')]) }), '2026-10-07T00:00:00.000Z')
+    render(tela())
+    responder({ tipo: 'dados', codigo: CODIGO, usuarioId: 'conta-a', chaves: espacoDoSite([paciente('bia', 'Bia Souza', '2026-10-20T00:00:00.000Z')]) })
+    await waitFor(() => expect(window.location.hash).toBe('#/painel'))
+    await waitFor(() => expect(pacientesNaNuvem(nuvem)).toEqual(['Ana Lima', 'Bia Souza']))
+    await waitFor(() => expect(abaDoSite.postMessage).toHaveBeenLastCalledWith({ tipo: 'recebido', codigo: CODIGO, usuarioId: 'conta-a' }, SITE))
+    // O app novo mostra os avisos de primeiro acesso por cima (são dado da conta, e o site não os tinha).
+    expect(screen.getByRole('heading', { level: 1, name: 'Painel', hidden: true })).toBeInTheDocument()
+  })
+
+  it('CA-1434: a conta já usou o app (espaço em dia): o que veio entra no lugar, e a nuvem fica com os dois lados, item por item', async () => {
+    nuvem.guardar('conta-a', copiaCom({ 'metanutri:pacientes': JSON.stringify([paciente('ana', 'Ana Lima')]) }), '2026-10-07T00:00:00.000Z')
+    localStorage.setItem('metanutri:conta:conta-a:nuvem', JSON.stringify({ versao: '2026-10-07T00:00:00.000Z', mudancas: 0, salvas: 0, itens: 1, motor: 2 }))
+    localStorage.setItem('metanutri:conta:conta-a:pacientes', JSON.stringify([paciente('ana', 'Ana Lima')]))
+    render(tela())
+    responder({ tipo: 'dados', codigo: CODIGO, usuarioId: 'conta-a', chaves: espacoDoSite([paciente('bia', 'Bia Souza', '2026-10-20T00:00:00.000Z')]) })
+    await waitFor(() => expect(pacientesNaNuvem(nuvem)).toEqual(['Ana Lima', 'Bia Souza']))
+    await waitFor(() => expect(abaDoSite.postMessage).toHaveBeenLastCalledWith({ tipo: 'recebido', codigo: CODIGO, usuarioId: 'conta-a' }, SITE))
+  })
+
+  it('CA-1435: com algo do app que ainda não subiu, não grava, abre a conta e não confirma', async () => {
+    nuvem.semInternet = true
+    localStorage.setItem('metanutri:conta:conta-a:nuvem', JSON.stringify({ versao: 'v1', mudancas: 2, salvas: 1, itens: 1, motor: 2 }))
+    localStorage.setItem('metanutri:conta:conta-a:pacientes', JSON.stringify([paciente('ana', 'Ana Lima')]))
+    render(tela())
+    responder({ tipo: 'dados', codigo: CODIGO, usuarioId: 'conta-a', chaves: espacoDoSite([paciente('bia', 'Bia Souza')]) })
+    await waitFor(() => expect(window.location.hash).toBe('#/painel'))
+    expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).toContain('Ana Lima')
+    expect(localStorage.getItem('metanutri:conta:conta-a:pacientes')).not.toContain('Bia Souza')
+    expect(abaDoSite.postMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it('CB-501: sem espaço para gravar, "Sem espaço neste navegador"; "Continuar" abre a conta com a nuvem', async () => {
+    render(tela())
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, chave: string) {
+      if (chave === 'metanutri:conta:conta-a:pacientes') throw new DOMException('cheio', 'QuotaExceededError')
+    })
+    try {
+      responder({ tipo: 'dados', codigo: CODIGO, usuarioId: 'conta-a', chaves: espacoDoSite([paciente('bia', 'Bia Souza')]) })
+    } finally {
+      setItem.mockRestore()
+    }
+    expect(screen.getByRole('heading', { level: 1, name: 'Sem espaço neste navegador' })).toBeInTheDocument()
+    expect(screen.getByText('Libere espaço e abra o MetaNutri de novo. Nada foi perdido.')).toBeInTheDocument()
+    act(() => screen.getByRole('button', { name: 'Continuar' }).click())
+    await waitFor(() => expect(window.location.hash).toBe('#/painel'))
+    expect(abaDoSite.postMessage).toHaveBeenCalledTimes(1)
+  })
+})

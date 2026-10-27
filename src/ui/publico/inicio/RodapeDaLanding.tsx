@@ -34,7 +34,7 @@ export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaL
       <div className="flex flex-wrap items-center justify-between gap-x-6 text-(length:--landing-fs-s) text-landing-tinta-suave">
         <p>MetaNutri: software para nutricionistas.</p>
         <a
-          href="#/inicio"
+          href="./"
           className={LINK}
           onClick={(evento) => {
             evento.preventDefault()

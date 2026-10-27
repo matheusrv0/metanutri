@@ -11,14 +11,15 @@ test.describe('Excluir a conta (spec exclusao-de-conta)', () => {
     await expect(page.getByRole('button', { name: 'Excluir conta' })).toHaveCount(0)
   })
 
-  test('CA-808: depois de excluir, a página inicial mostra "Sua conta foi excluída." no topo, uma vez só', async ({ page }) => {
+  // Spec separacao-site-app, DP-SA-49: a saída leva a Entrar do app (D-504), e o aviso fica no alto dela.
+  test('CA-808: depois de excluir, Entrar mostra "Sua conta foi excluída." no topo, uma vez só', async ({ page }) => {
     // O que a exclusão deixa antes de recarregar (src/ui/contaExcluida.ts); só na primeira abertura.
     await page.addInitScript(() => {
       if (localStorage.getItem('teste:aviso-posto')) return
       localStorage.setItem('teste:aviso-posto', '1')
       sessionStorage.setItem('metanutri:conta-excluida', '1')
     })
-    await page.goto('/#/inicio')
+    await page.goto('/#/entrar')
     const aviso = page.getByRole('status').filter({ hasText: 'Sua conta foi excluída.' })
     await expect(aviso).toBeVisible()
     const caixa = await aviso.boundingBox()

@@ -8,10 +8,12 @@ const marcarAntesDaRecarga = () => marcarContaExcluida(undefined, performance.ti
 describe('AvisoContaExcluida (spec exclusao-de-conta, D-255)', () => {
   beforeEach(() => sessionStorage.clear())
 
-  it('CA-808: depois de excluir, a página inicial diz "Sua conta foi excluída." uma vez', () => {
+  it('CA-808 (DP-SA-49): depois de excluir, Entrar diz "Sua conta foi excluída." uma vez, sem moldura própria', () => {
     marcarAntesDaRecarga()
     const { unmount } = render(<AvisoContaExcluida />)
     expect(screen.getByRole('status')).toHaveTextContent('Sua conta foi excluída.')
+    // Spec separacao-site-app: o aviso fica dentro do formulário de Entrar; a largura da landing saiu com ela.
+    expect(document.body.innerHTML).not.toContain('max-w-[1216px]')
     expect(contaFoiExcluida(undefined, Number.POSITIVE_INFINITY)).toBe(false)
     unmount()
     render(<AvisoContaExcluida />)

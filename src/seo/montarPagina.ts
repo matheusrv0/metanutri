@@ -54,7 +54,8 @@ export function montarPagina(html: string, pagina: PaginaDesenhada, { fonte }: O
     if (!csp) throw new Error(`Página ${pagina.rota} sem a CSP: o <base> entra logo depois dela.`)
     const depois = csp.index + csp[0].length
     saida = `${saida.slice(0, depois)}\n    <base href="${'../'.repeat(profundidade)}" />${saida.slice(depois)}`
-    saida = saida.replace('<html lang="pt-BR">', `<html lang="pt-BR" data-rota="${pagina.rota}">`)
+    // Spec separacao-site-app, DP-SA-46: o <html> do site já traz o `data-app`; o `data-rota` entra junto.
+    saida = saida.replace(/<html\b([^>]*)>/, `<html$1 data-rota="${pagina.rota}">`)
   }
   return saida
 }

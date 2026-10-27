@@ -45,6 +45,7 @@ import type { ValorPedidoEstudante } from './estado/usarPedidoEstudante.ts'
 import type { ValorPerfilConta } from './estado/usarPerfilConta.ts'
 import type { ValorSegundoFator } from './estado/usarSegundoFator.ts'
 import { MenuExportar } from './exportar/MenuExportar.tsx'
+import { paginaDoSite } from './enderecos.ts'
 import { rotaDePlanos } from './fluxoConta.ts'
 import { Estrutura } from './layout/Estrutura.tsx'
 import type { CasoAtual } from './layout/MenuLateral.tsx'
@@ -98,6 +99,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   const sessao = conta.sessao
   const { assinatura } = cobranca
   const { perfil } = perfilConta
+  // Spec separacao-site-app, D-505 e CA-1414: as Referências são do site e abrem em aba nova; o trabalho fica aberto aqui.
+  const abrirFontes = () => void globalThis.open(paginaDoSite('fontes'), '_blank', 'noopener,noreferrer')
   const agora = new Date()
   const bloqueio = exportacaoBloqueada(perfil, agora) ? MOTIVO_EXPORTACAO_BLOQUEADA : null
   // Quem assina os planos: a conta, ou Configurações quando não há servidor (spec ajustes-de-uso, D-37).
@@ -240,7 +243,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   if (rota.tela === 'ajuda') {
     return (
       <Estrutura {...base} titulo="Ajuda">
-        <TelaAjuda aoIrPara={(tela) => navegar({ tela })} />
+        <TelaAjuda aoIrPara={(tela) => (tela === 'fontes' ? abrirFontes() : navegar({ tela }))} />
       </Estrutura>
     )
   }
@@ -292,7 +295,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   if (rota.tela === 'alimentos') {
     return (
       <Estrutura {...base} titulo="Tabela de alimentos">
-        <TelaAlimentos aoAbrirFontes={() => navegar({ tela: 'fontes' })} />
+        <TelaAlimentos aoAbrirFontes={abrirFontes} />
       </Estrutura>
     )
   }
@@ -479,7 +482,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   restricoes={restricoesDoPaciente}
                   aoAlterarCaso={alterarCaso}
                   aoAlterarPlano={alterarPlano}
-                  aoAbrirFontes={() => navegar({ tela: 'fontes' })}
+                  aoAbrirFontes={abrirFontes}
                   focarTitulo={focarAdequacao}
                   aoFocarTitulo={() => setFocarAdequacao(false)}
                   aoVerSuplementos={verSuplementos}

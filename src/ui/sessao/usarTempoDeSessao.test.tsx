@@ -373,8 +373,37 @@ describe('o vigia da sessão (spec separacao-site-app, D-514 a D-517)', () => {
       })
     })
     await passar(30 * MIN)
-    expect(ordem.slice(0, 2).sort()).toEqual(['links', 'salvar'])
-    expect(ordem.slice(2)).toEqual(['parar', 'sair:apagar', 'entrar'])
+    expect(ordem).toEqual(['links', 'salvar', 'parar', 'sair:apagar', 'entrar'])
+  })
+
+  it('R8 (revisão, DP-SA-44): os links pendentes vão antes da cópia, e a cópia só sai depois que eles terminam', async () => {
+    const { result, ordem } = montar()
+    act(() => {
+      result.current.envios.registrar(
+        () =>
+          new Promise<void>((resolver) => {
+            // O reenvio do link grava no espaço da conta e conta uma mudança: ela tem que ir na cópia.
+            setTimeout(() => {
+              ordem.push('links')
+              resolver()
+            }, 2_000)
+          }),
+      )
+    })
+    await passar(30 * MIN)
+    expect(ordem).toEqual([])
+    await passar(2_000)
+    expect(ordem).toEqual(['links', 'salvar', 'parar', 'sair:apagar', 'entrar'])
+  })
+
+  it('R8 (DP-SA-44): links que tomam os 10 s inteiros deixam a cópia sem sair, e o espaço fica', async () => {
+    const { result, sairPorTempo, nuvem } = montar()
+    act(() => {
+      result.current.envios.registrar(() => new Promise<void>(() => undefined))
+    })
+    await passar(30 * MIN + PRAZO_DOS_ENVIOS_MS)
+    expect(nuvem.salvarAgora).not.toHaveBeenCalled()
+    expect(sairPorTempo).toHaveBeenCalledWith({ apagar: false, ate: INICIO })
   })
 
   it('CA-1458 e CB-522: o computador dormiu; ao voltar para a aba, sai antes de deixar editar', async () => {

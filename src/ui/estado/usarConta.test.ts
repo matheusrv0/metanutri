@@ -78,6 +78,21 @@ describe('useConta', () => {
     expect(pedido.options.emailRedirectTo).toMatch(/\?volta=confirmacao$/)
   })
 
+  it('CA-1463 (spec separacao-site-app): cadastro, reenvio e "Esqueci a senha" pedem a volta para o endereço em que o app está', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
+    auth.resetPasswordForEmail.mockResolvedValue({ error: null })
+    const { result } = renderHook(() => useConta())
+    await waitFor(() => expect(result.current.carregando).toBe(false))
+    await act(async () => {
+      await result.current.cadastrar(dados)
+      await result.current.pedirTrocaDeSenha('maria@usp.br')
+    })
+    // No ar, o app está em https://app.metanutri.com.br/: a volta vai para lá, e nunca para o site.
+    const aqui = `${globalThis.location.origin}${globalThis.location.pathname}`
+    expect(auth.signUp.mock.calls[0]?.[0].options.emailRedirectTo).toBe(`${aqui}?volta=confirmacao`)
+    expect(auth.resetPasswordForEmail.mock.calls[0]?.[1].redirectTo).toBe(`${aqui}?volta=recuperacao`)
+  })
+
   it('cadastro sem versão dos termos não grava termos_versao nem termos_aceitos_em', async () => {
     auth.signUp.mockResolvedValue({ data: { user: { identities: [{}] }, session: null }, error: null })
     const { result } = renderHook(() => useConta())

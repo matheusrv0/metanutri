@@ -55,6 +55,14 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
     }
   })
 
+  it('CA-1402 e CA-1404 (spec separacao-site-app): o HTML pré-desenhado leva "Entrar" e "Criar conta" ao app, sem rota antiga nem "Ir para o painel"', () => {
+    for (const pagina of paginas) {
+      expect(pagina.corpo, pagina.rota).toContain('href="https://app.metanutri.com.br/"')
+      expect(pagina.corpo, pagina.rota).toContain('href="https://app.metanutri.com.br/#/criar-conta"')
+      expect(pagina.corpo, pagina.rota).not.toMatch(/href="#\/|Ir para o painel/)
+    }
+  })
+
   it('CA-998: nada sai invisível esperando animação', () => {
     for (const pagina of paginas) expect(pagina.corpo).not.toMatch(/opacity:\s*0|blur\(/)
   })

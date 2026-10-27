@@ -73,7 +73,9 @@ describe('TelaCheckout (spec checkout-proprio)', () => {
     expect(resumo.textContent?.match(/R\$\s34,90/g)).toHaveLength(3)
     for (const texto of ['Recibo para', 'Próxima cobrança', 'maria@exemplo.com']) expect(resumo).not.toHaveTextContent(texto)
     expect(screen.getByRole('checkbox', { name: 'Autorizo a cobrança de R$ 34,90 todo mês neste cartão até eu cancelar, e li os Termos de uso.' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', '#/termos')
+    // Spec separacao-site-app, D-505 e CA-1414: os Termos são do site e abrem em aba nova; o checkout fica aqui.
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('href', 'https://metanutri.com.br/termos/')
+    expect(screen.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute('target', '_blank')
     expect(botaoAssinar()).toHaveAccessibleName('Assinar por R$ 34,90/mês')
   })
 

@@ -27,6 +27,9 @@ function Tela() {
       <button type="button" onClick={() => armazenamento?.setItem('metanutri:pacientes', '[{"id":"ana","nome":"Ana"}]')}>
         gravar
       </button>
+      <button type="button" onClick={() => nuvem?.parar()}>
+        parar
+      </button>
     </div>
   )
 }
@@ -77,6 +80,17 @@ describe('ProvedorNuvem (spec dados-na-nuvem)', () => {
 
     act(() => void window.dispatchEvent(new Event('pagehide')))
     await waitFor(() => expect(nuvem.linhas.has('conta-a')).toBe(true))
+  })
+
+  it('R4 (spec separacao-site-app, DP-SA-43): com o motor parado (a conta está saindo), fechar ou recarregar não pergunta', async () => {
+    estado.nuvem = nuvemFalsa()
+    render(arvore('conta-a'))
+    await screen.findByText('nuvem: pronta')
+    act(() => screen.getByRole('button', { name: 'gravar' }).click())
+    act(() => screen.getByRole('button', { name: 'parar' }).click())
+    const recarga = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(recarga)
+    expect(recarga.defaultPrevented).toBe(false)
   })
 
   it('CB-124: outra aba grava os produtos e a busca daqui passa a conhecer o produto novo', async () => {
