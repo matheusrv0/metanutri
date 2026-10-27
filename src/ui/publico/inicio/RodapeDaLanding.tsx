@@ -21,14 +21,15 @@ const LINK = 'inline-flex min-h-11 items-center underline-offset-4 hover:text-la
 
 /**
  * O rodapé da landing (D-545, CA-1461): o nome volta grande no "Fale com a gente" (o e-mail do MetaNutri) e uma linha
- * com Preços, os termos, a privacidade e as Referências.
+ * com Preços, os termos, a privacidade e as Referências. Na v9, o mesmo de hoje (spec landing-v3, D-675), com 88 px
+ * embaixo no celular para o botão fixo não cobrir o último link (D-674).
  */
 export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaLandingProps) {
   const ano = new Date().getFullYear()
   return (
     <footer
-      data-capitulo="fim"
-      className={`grid min-h-[56svh] grid-rows-[auto_1fr_auto_auto] gap-[22px] bg-landing-chao-fundo pt-9 pb-[26px] text-landing-marfim ${MARGEM}`}
+     
+      className={`grid min-h-[56svh] grid-rows-[auto_1fr_auto_auto] gap-[22px] bg-landing-rodape pt-9 pb-[26px] text-landing-rodape-tinta max-[720px]:pb-[88px] ${MARGEM}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-6 text-(length:--landing-fs-s) text-landing-tinta-suave">
         <p>MetaNutri: software para nutricionistas.</p>
@@ -49,7 +50,7 @@ export function RodapeDaLanding({ aoIrPara, contato = CONTATO_EMAIL }: RodapeDaL
       {contato ? (
         <a
           href={`mailto:${contato}`}
-          className="min-h-11 self-end text-(length:--landing-fs-display) leading-[.95] font-extrabold tracking-[-0.05em] no-underline transition-colors duration-200 hover:text-landing-teal-claro max-[720px]:text-[12vw]"
+          className="min-h-11 self-end text-(length:--landing-fs-display) leading-[.95] font-extrabold tracking-[-0.05em] no-underline transition-colors duration-200 hover:text-landing-destaque max-[720px]:text-[12vw]"
         >
           Fale com a gente
         </a>

@@ -18,23 +18,26 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
   it('CA-1013: a landing sai escrita, dentro da moldura pública, com os títulos, os preços e o rodapé', () => {
     const html = corpo('inicio')
     // Spec landing-escura (CA-1484): a landing nova, com o preço do Solo de PLANOS.
-    expect(html).toMatch(/<h1[^>]*><span[^>]*>Falta cálcio\?<\/span>/)
+    // Spec landing-v3, seção v9 (CA-1692): o topo em foto.
+    expect(html).toMatch(/<h1[^>]*>Planos alimentares completos em vitaminas e minerais<\/h1>/)
     for (const trecho of [
-      'O que falta no plano da Maria, 28 anos?',
-      'O plano sai do seu jeito',
+      'Adequação de micronutrientes com sugestão do que comer',
+      'Acompanhamento da adesão pelo celular',
+      'Funcionalidades',
       'Como funciona',
-      'Na medida da cozinha',
-      'Quanto custa',
-      'Solo: R$ 34,90 por mês',
-      'Perguntas de quem atende',
+      'Quantidades em gramas e calorias',
+      'Planos e preços',
+      'R$ 34,90',
+      'Assinar o Solo',
+      'Perguntas frequentes',
       'Termos de uso',
     ]) {
       expect(html).toContain(trecho)
     }
     expect(html).toContain('<header')
     expect(html).toContain('<footer')
-    // CA-1450 e CA-1484: a landing sai escura (a raiz da moldura dela) e com o rodapé novo.
-    expect(html).toMatch(/class="landing-escura dark /)
+    // CA-1450, CA-1484 e CA-1611: a landing sai escura (a raiz da moldura dela, o padrão) e com o rodapé novo.
+    expect(html).toMatch(/class="landing dark /)
     for (const trecho of ['Fale com a gente', 'Referências', 'falta cálcio', '640 de 1.000 mg no dia']) expect(html).toContain(trecho)
   })
 

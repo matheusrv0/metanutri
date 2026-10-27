@@ -101,7 +101,7 @@ SOFTWARE.
 
 ## Fotos da landing escura (CC0)
 
-Três fotos em domínio público (CC0 1.0, sem crédito obrigatório; registradas aqui por cuidado), convertidas para webp
+Fotos em domínio público (CC0 1.0, sem crédito obrigatório; registradas aqui por cuidado), convertidas para webp
 de até 1.600 px e 800 px em `public/imagens/` (spec landing-escura, D-547). Licença:
 https://creativecommons.org/publicdomain/zero/1.0/
 
@@ -111,3 +111,5 @@ https://creativecommons.org/publicdomain/zero/1.0/
   https://commons.wikimedia.org/w/index.php?curid=165949173
 - `salada-com-frango*.webp` — "Chicken salad on striped tablecloth", Kotivalo, Wikimedia Commons:
   https://commons.wikimedia.org/w/index.php?curid=71067537
+- `iogurte-com-frutas*.webp` (o topo da landing, spec landing-v3, D-654) — "Healthy Meal Prep (Unsplash)", Sambazon,
+  Wikimedia Commons: https://commons.wikimedia.org/wiki/File:Healthy_Meal_Prep_(Unsplash).jpg

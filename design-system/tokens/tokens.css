@@ -92,6 +92,30 @@
   --carvao-200: #a9bfc2;
   --carvao-100: #cfdcdd;
   --carvao-50: #eef2f1;
+  /* O marfim e a tinta do tema claro da landing (spec landing-v3, D-609), do protótipo v3. Do mais claro ao mais escuro. */
+  --marfim-200: #efe8dc;
+  --marfim-300: #ece5d8;
+  --marfim-400: #e9e2d5;
+  --marfim-500: #e3dbcc;
+  --marfim-700: #cfc5b3;
+  --tinta-teal-900: #13282d;
+  --tinta-teal-600: #56696d;
+  --tinta-teal-500: #5f7174;
+  /* Da landing v9 (spec landing-v3, D-676): o fundo do véu do topo, o vidro da etiqueta, o cartão de cima do gradiente
+   * dos planos, a tinta suave do topo claro, o marfim de cima do cartão claro, o âmbar do "Atenção" e o aparelho do
+   * exemplo (corpo, tela e os contornos da tela clara). */
+  --carvao-975: #091619;
+  --carvao-875: #101e22;
+  --carvao-775: #1e3238;
+  --tinta-teal-700: #3e5559;
+  --marfim-50: #fdfbf7;
+  --ambar-300: #e3b85f;
+  --aparelho-borda: #2a3b40;
+  --aparelho-meio: #0d1719;
+  --aparelho-fundo: #060c0d;
+  --aparelho-tela: #f7f4ee;
+  --teal-50: #eef5f5;
+  --cinza-teal-200: #c9d4d5;
   --blue-100: #e6eef7;
   --blue-500: #3a78b8;
   --blue-700: #1c4f7c;
@@ -277,23 +301,21 @@
   --shadow-inset-sheen: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
-/* ---------- Camada 3b: a landing escura (spec landing-escura, desde 27/10/2026) ----------
- * A página inicial é escura em qualquer tema (D-530). O escopo vale na raiz da landing, que também leva `.dark`, para
- * os componentes do sistema que ela usa (a logo, o aviso de conta excluída) virem escuros junto. Marfim é a ação;
- * laranja é grafismo e nunca fica atrás de texto nem vira letra (D-532).
+/* ---------- Camada 3b: a landing (spec landing-escura, desde 27/10/2026; spec landing-v3) ----------
+ * A página inicial tem tema próprio, escuro por padrão, com um botão para o claro (spec landing-v3, D-607 a D-611). O
+ * escopo vale na raiz da landing, que também leva `.dark` (no escuro) ou `.tema-claro` (no claro), para os componentes
+ * do sistema que ela usa (a logo, o aviso de conta excluída) seguirem o tema dela. No escuro, marfim é a ação; no
+ * claro, o teal. Laranja é grafismo e nunca fica atrás de texto nem vira letra (D-532).
  */
-.landing-escura {
+.landing {
   --landing-chao: var(--carvao-900);
   --landing-chao-fundo: var(--carvao-950);
   --landing-afundado: var(--carvao-850);
   --landing-cartao: var(--carvao-800);
-  --landing-cartao-hover: var(--carvao-750);
   /* O trilho da barra de adequação e a borda do fragmento de interface. */
   --landing-trilho: var(--carvao-700);
   /* A chave desligada, o contorno do botão secundário do fragmento e do seletor. */
   --landing-contorno: var(--carvao-600);
-  /* A frase da chave desligada: 5,3:1 sobre o chão, em letra de 22 px ou mais. */
-  --landing-apagado: var(--carvao-400);
   --landing-tinta: var(--carvao-50);
   --landing-tinta-suave: var(--carvao-200);
   --landing-tinta-resposta: var(--carvao-100);
@@ -304,18 +326,144 @@
   --landing-marfim: var(--ivory);
   --landing-branco: var(--gray-0);
   --landing-laranja: var(--orange-500);
+  /* Os semânticos que mudam com o tema (spec landing-v3, D-609). O destaque é o teal do texto sobre o chão (o campo
+   * vivo, a refeição da tabela, a barra da adequação); sobre o teal, vale o teal claro, que não muda. */
+  --landing-destaque: var(--teal-300);
+  --landing-borda: var(--carvao-700);
+  --landing-acao: var(--ivory);
+  --landing-acao-tinta: var(--teal-900);
+  --landing-acao-hover: var(--gray-0);
+  /* A faixa final, "Começar": marfim no escuro, teal no claro. O hover nunca é laranja (D-532). */
+  --landing-chamar: var(--ivory);
+  --landing-chamar-tinta: var(--teal-900);
+  --landing-chamar-hover: var(--gray-0);
+  --landing-rodape: var(--carvao-950);
+  --landing-rodape-tinta: var(--ivory);
 
   /* Margem da página e a escala de letra do protótipo: o muito grande, o grande, o de seção e três de texto. */
   --landing-margem: clamp(16px, 3vw, 48px);
   --landing-fs-display: clamp(32px, 7.6vw, 136px);
-  --landing-fs-xl: clamp(30px, 4.8vw, 78px);
   --landing-fs-l: clamp(20px, 2.2vw, 34px);
-  --landing-fs-frase: clamp(22px, 3.2vw, 52px);
   --landing-fs-lead: 20px;
   --landing-fs-corpo: 17px;
   --landing-fs-s: 14px;
-  /* A altura da barra do topo: 44 px de alvo e 12 px em cima e embaixo. */
-  --landing-barra: 68px;
+
+  /* Landing v9 (spec landing-v3, D-676 e D-677), do bloco v9 do protótipo. A barra de vidro, o véu da foto do topo
+   * (de lado no computador, de cima para baixo no celular; embaixo, ele chega ao afundado da seção seguinte), a tinta
+   * sobre a foto e o vidro da etiqueta. */
+  --landing-vidro: color-mix(in srgb, var(--carvao-900) 78%, transparent);
+  --landing-veu:
+    linear-gradient(180deg, transparent 70%, var(--landing-afundado) 100%),
+    /* De lado: denso até onde o título termina (58% da largura), para ele ter 4,5:1 sobre o iogurte claro da foto
+     * (revisão da v9, CA-1689; o protótipo caía a 35% já em 62%). */
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--carvao-975) 94%, transparent) 0%,
+      color-mix(in srgb, var(--carvao-975) 86%, transparent) 40%,
+      color-mix(in srgb, var(--carvao-975) 68%, transparent) 58%,
+      color-mix(in srgb, var(--carvao-975) 25%, transparent) 76%,
+      color-mix(in srgb, var(--carvao-975) 5%, transparent) 100%
+    );
+  /* Até 1.100 px, o véu de cima para baixo: 62% no alto e 85% a um terço da altura, para o título ter 4,5:1 sobre
+   * qualquer pixel da foto (revisão da v9, CA-1689; o protótipo começava em 20%). */
+  --landing-veu-celular: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--carvao-975) 62%, transparent) 0%,
+    color-mix(in srgb, var(--carvao-975) 85%, transparent) 35%,
+    color-mix(in srgb, var(--carvao-975) 90%, transparent) 55%,
+    var(--landing-afundado) 100%
+  );
+  --landing-topo-tinta: var(--ivory);
+  --landing-topo-suave: var(--carvao-100);
+  /* A etiqueta do topo: vidro de 75% e o número em marfim (revisão da v9: com 55% e o teal claro, o "91%" dava 3:1). */
+  --landing-vidro-cartao: color-mix(in srgb, var(--carvao-875) 75%, transparent);
+  --landing-etiqueta-numero: var(--ivory);
+  --landing-etiqueta-sombra: 0 20px 40px -24px color-mix(in srgb, var(--aparelho-fundo) 45%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--gray-0) 18%, transparent);
+  /* A luz em cima dos cartões e do painel, a sombra deles (só no claro), a luz que segue o ponteiro nos planos, o brilho
+   * laranja do plano indicado e o gradiente do cartão de plano. */
+  --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 10%, transparent);
+  --landing-sombra-cartao: none;
+  --landing-luz: color-mix(in srgb, var(--gray-0) 7.5%, transparent);
+  --landing-brilho: color-mix(in srgb, var(--orange-500) 42%, transparent);
+  --landing-cartao-alto: var(--carvao-775);
+  /* O "Atenção" do painel de Adesão e a soma do anel da Adequação (marfim no escuro, teal claro no claro). */
+  --landing-ambar: var(--ambar-300);
+  --landing-anel-soma: var(--ivory);
+  /* O aparelho do exemplo: a tela do link do paciente é clara nos dois temas, como no celular de verdade. */
+  --landing-aparelho: linear-gradient(160deg, var(--aparelho-borda), var(--aparelho-meio) 40%, var(--aparelho-fundo));
+  --landing-aparelho-ilha: var(--aparelho-fundo);
+  --landing-aparelho-sombra: 0 40px 80px -40px color-mix(in srgb, var(--aparelho-fundo) 80%, transparent),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--gray-0) 12%, transparent);
+  --landing-celular-tela: var(--aparelho-tela);
+  --landing-celular-tinta: var(--tinta-teal-900);
+  --landing-celular-suave: var(--tinta-teal-600);
+  --landing-celular-missao: var(--gray-0);
+  --landing-celular-feita: var(--teal-50);
+  /* O anel da missão desmarcada: a tinta suave da tela, com 5,7:1 sobre a missão (revisão da v9; 3:1 no mínimo). */
+  --landing-celular-caixa: var(--tinta-teal-600);
+  --landing-celular-contorno: var(--cinza-teal-200);
+  --landing-celular-sombra: 0 1px 2px color-mix(in srgb, var(--teal-900) 8%, transparent);
+  /* A sombra do botão preso no pé da tela do celular (D-674). */
+  --landing-sombra-fixo: 0 12px 30px -10px color-mix(in srgb, var(--aparelho-fundo) 50%, transparent);
+  /* As medidas da v9: o título do topo, o título de seção (até 56 px) e o espaço das seções. */
+  --landing-fs-topo: clamp(40px, 5vw, 76px);
+  --landing-fs-titulo: clamp(30px, 3.8vw, 56px);
+}
+
+/* O tema claro da landing (spec landing-v3, D-609): os valores do bloco `.raiz.claro` do protótipo v3. Vale na raiz com
+ * `.landing-clara` e, no primeiro desenho da página pré-desenhada, pela marca que o script do <head> põe no <html>
+ * (D-613). O teal do topo e das perguntas, o marfim, o branco, o laranja e a tinta da resposta não mudam. */
+.landing.landing-clara,
+[data-tema-da-landing='claro'] .landing {
+  --landing-chao: var(--ivory);
+  --landing-chao-fundo: var(--marfim-300);
+  --landing-afundado: var(--marfim-200);
+  --landing-cartao: var(--gray-0);
+  --landing-trilho: var(--marfim-400);
+  --landing-borda: var(--marfim-500);
+  --landing-contorno: var(--marfim-700);
+  --landing-tinta: var(--tinta-teal-900);
+  --landing-tinta-suave: var(--tinta-teal-600);
+  --landing-destaque: var(--teal-700);
+  --landing-acao: var(--teal-900);
+  --landing-acao-tinta: var(--ivory);
+  --landing-acao-hover: var(--teal-950);
+  --landing-chamar: var(--teal-900);
+  --landing-chamar-tinta: var(--ivory);
+  --landing-chamar-hover: var(--teal-700);
+  --landing-rodape: var(--marfim-300);
+  --landing-rodape-tinta: var(--teal-900);
+  /* Landing v9 (D-676), no claro. */
+  --landing-vidro: color-mix(in srgb, var(--ivory) 82%, transparent);
+  --landing-veu:
+    linear-gradient(180deg, transparent 70%, var(--landing-afundado) 100%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ivory) 97%, transparent) 0%,
+      color-mix(in srgb, var(--ivory) 90%, transparent) 40%,
+      color-mix(in srgb, var(--ivory) 72%, transparent) 58%,
+      color-mix(in srgb, var(--ivory) 28%, transparent) 76%,
+      transparent 100%
+    );
+  --landing-veu-celular: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ivory) 62%, transparent) 0%,
+    color-mix(in srgb, var(--ivory) 88%, transparent) 35%,
+    color-mix(in srgb, var(--ivory) 92%, transparent) 55%,
+    var(--landing-afundado) 100%
+  );
+  --landing-topo-tinta: var(--teal-900);
+  --landing-topo-suave: var(--tinta-teal-700);
+  --landing-vidro-cartao: color-mix(in srgb, var(--gray-0) 75%, transparent);
+  --landing-etiqueta-numero: var(--teal-700);
+  --landing-luz-cartao: color-mix(in srgb, var(--teal-300) 20%, transparent);
+  --landing-sombra-cartao: 0 1px 2px color-mix(in srgb, var(--teal-900) 6%, transparent),
+    0 22px 44px -28px color-mix(in srgb, var(--teal-900) 28%, transparent);
+  --landing-luz: color-mix(in srgb, var(--teal-900) 6%, transparent);
+  --landing-brilho: color-mix(in srgb, var(--orange-500) 26%, transparent);
+  --landing-cartao-alto: var(--marfim-50);
+  --landing-anel-soma: var(--teal-300);
 }
 
 /* ---------- Camada 4: tipografia, espaço, raio, layout, movimento ---------- */

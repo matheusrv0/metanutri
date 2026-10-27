@@ -1,5 +1,7 @@
 # SPEC — Landing escura
 
+> **Substituída em parte pela v3** (`specs/landing-v3/SPEC.md`, 27/10/2026): D-530 (o escuro vira o padrão, com botão de tema claro), D-535 (topo em gramas), D-538 (parágrafo do campo vivo), D-541 nas respostas 1 e 3, "Na medida da cozinha" de D-534 (vira "Grama por grama") e as medidas de D-546.
+
 Status: **protótipo aprovado pelo dono em 27/10/2026.** A tela foi decidida olhando o protótipo no Claude Design
 (`Main.dc.html`, seção por seção) e o rascunho em HTML puro da mesma página (`index2.html`, já medido pelo inspetor da
 skill `design-taste-frontend`). Esta spec registra o que foi aprovado e as regras do dono que valem acima do protótipo.

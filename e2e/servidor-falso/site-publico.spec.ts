@@ -15,7 +15,7 @@ test('CA-1023: a raiz sem sessão abre a landing em #/inicio, sem "Carregando…
   await page.goto('/')
   await expect(page).toHaveURL(/\/#\/inicio$/)
   await expect(page.locator('[data-vitrine]')).toHaveCount(0)
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
   expect(await page.evaluate(() => (window as unknown as { viuCarregando: boolean }).viuCarregando)).toBe(false)
 })
 

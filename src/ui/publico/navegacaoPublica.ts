@@ -14,9 +14,10 @@ export function navegarPeloApp(evento: MouseEvent<HTMLAnchorElement>, ir: () => 
   ir()
 }
 
-/** Rola até a seção da página, se ela existir. */
+/** Rola até a seção da página, se ela existir: suave, ou na hora com menos movimento (revisão da landing v9). */
 export function rolarAte(id: string) {
-  globalThis.document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const semMovimento = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  globalThis.document.getElementById(id)?.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: 'start' })
 }
 
 /** Vai para a tela e, se houver âncora, rola até ela depois que a tela montar. */

@@ -53,44 +53,69 @@ Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). 
 - **Teal no lugar do preto.** O que a referência pinta de preto (botão principal, cartão de destaque, faixa final) aqui é o teal da marca.
 - **Laranja nos destaques, nunca no dado.** Botão de começar (`variant="laranja"`) e seta de navegação. Em painel de dado, nunca.
 - **Seta só onde leva a algum lugar.** Cartão de número parado não tem seta (`CartaoNumero` sem `aoClicar`).
-- **Foto só na landing.** Desde a landing escura (27/10/2026), três fotos CC0 no meio da página, nenhuma no topo; ver *Landing escura*. Nenhuma foto no app.
+- **Foto só na landing.** Desde a landing v9 (27/10/2026), a foto CC0 do topo, com véu, e mais três no meio da página; ver *Landing escura*. Nenhuma foto no app.
 - **Componentes da referência:** `CartaoNumero`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
 - **Sem taglines** (D-77 da `limpeza-visual`, 05/10/2026). Nenhum rótulo decorativo em caixa alta acima de título ou de seção, nenhum subtítulo no cabeçalho e nada embaixo da logo do menu. O rótulo em caixa alta (`rotulo`) só nomeia o dado logo abaixo dele, como "Você paga hoje" sobre o total; cabeçalho de tabela, rótulo de campo e grupo do menu também ficam.
 - **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
-- **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; passo de "Como funciona" não leva número; nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
+- **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; desde a landing v9, os passos de "Como funciona" são numerados (aprovado no protótipo); nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
 
-## Landing escura (desde 27/10/2026)
+## Landing escura (desde 27/10/2026; tema claro desde a v3)
 
-Spec: `specs/landing-escura/SPEC.md`. Protótipo aprovado pelo dono no Claude Design; direção de arte da skill
-`design-taste-frontend` (`type-only-statement`: a primeira tela é só palavra, as fotos vêm depois, grandes e poucas).
+Spec: `specs/landing-escura/SPEC.md` e `specs/landing-v3/SPEC.md` (seção v9). Protótipos aprovados no Claude Design;
+desde a v9, a primeira tela é a foto do topo com o véu e o título por cima.
 
-- **Escura sempre.** A página inicial é escura em qualquer tema do app e do sistema. A raiz dela leva `.landing-escura`
-  (os tokens abaixo) e `.dark` (os componentes do sistema que ela usa, como a `Logo`, viram escuros junto). As outras
-  telas públicas seguem o tema.
+- **Escura por padrão, com botão de tema.** A página inicial abre escura em qualquer tema do app e do sistema; o botão
+  redondo da barra (lua e sol) troca para o claro, e a escolha fica no navegador (`metanutri:tema-da-landing`), separada
+  do tema do app. A raiz leva `.landing` (os tokens abaixo) e `.dark` no escuro ou `.landing-clara` e `.tema-claro` no
+  claro (os componentes do sistema, como a `Logo` e o aviso de conta excluída, seguem o tema da landing). No primeiro
+  desenho, o script do `<head>` marca o `<html>` com `data-tema-da-landing="claro"`, e o claro vale também por essa
+  marca. As outras telas públicas seguem o tema do app.
 - **Carvão com o matiz do teal.** Primitivas novas em `tokens.css`: `--carvao-950` `#0b1416` (rodapé), `--carvao-900`
   `#101a1d` (chão), `--carvao-850` `#142226` (afundado), `--carvao-800` `#192a2f` (cartão), `--carvao-750` `#22383e`
-  (cartão no hover), `--carvao-700` `#26393f` (trilho e borda de fragmento), `--carvao-600` `#3b5359` (contorno e chave
-  desligada), `--carvao-400` `#7d9296` (frase apagada, só em letra de 22 px ou mais: 5,3:1), `--carvao-200` `#a9bfc2`
+  (sem uso desde a v9), `--carvao-700` `#26393f` (trilho e borda), `--carvao-600` `#3b5359` (contorno),
+  `--carvao-400` `#7d9296` (sem uso desde a v9), `--carvao-200` `#a9bfc2`
   (texto suave), `--carvao-100` `#cfdcdd` (resposta sobre teal), `--carvao-50` `#eef2f1` (texto); e `--teal-950`
   `#0b2f36` (pergunta aberta sobre o teal).
-- **Semânticos `--landing-*`**, só dentro de `.landing-escura`, e no Tailwind como `bg-landing-chao`,
-  `text-landing-tinta`, `bg-landing-marfim`…: chão, chão do fundo, afundado, cartão, trilho, contorno, apagado, tinta,
-  tinta suave, teal, teal médio, teal do fundo, teal claro, marfim, branco e laranja. Também a margem
-  (`--landing-margem`, de 16 a 48 px), a escala de letra (`--landing-fs-display` até 136 px, `-xl`, `-l`, `-frase`,
-  `-lead` 20 px, `-corpo` 17 px, `-s` 14 px) e a altura da barra (`--landing-barra`, 68 px).
-- **Marfim na ação, laranja no grafismo.** O botão é marfim com texto teal; no hover, branco. O laranja aparece na
-  bolinha do título, na chave ligada, no cursor da chamada, na seta da faixa final e na logo; nunca é letra e nunca
-  fica atrás de letra (a faixa final, no hover, vai a branco, não a laranja).
+- **Marfim e tinta do claro** (v3): `--marfim-200` `#efe8dc` (afundado), `--marfim-300` `#ece5d8` (chão do fundo e
+  rodapé), `--marfim-400` `#e9e2d5` (trilho), `--marfim-500` `#e3dbcc` (borda e cartão no hover), `--marfim-700`
+  `#cfc5b3` (contorno), `--tinta-teal-900` `#13282d` (texto), `--tinta-teal-600` `#56696d` (texto suave) e
+  `--tinta-teal-500` `#5f7174` (sem uso desde a v9). O chão claro é o marfim da marca (`#f6f2ea`) e o cartão, branco.
+- **Semânticos `--landing-*`**, só dentro de `.landing`, e no Tailwind como `bg-landing-chao`,
+  `text-landing-tinta`, `bg-landing-acao`…: chão, chão do fundo, afundado, cartão, trilho, borda, contorno,
+  tinta, tinta suave, destaque (teal claro no escuro, teal médio no claro: o teal do texto sobre o chão), ação (fundo,
+  tinta e hover), faixa final (`chamar`), rodapé, e os que não mudam com o tema: teal, teal médio, teal do fundo,
+  teal claro (sobre o teal), marfim, branco, laranja e a tinta da resposta. A variante `landing-clara:` do Tailwind
+  vale dentro da landing clara. Também a margem
+  (`--landing-margem`, de 16 a 48 px) e a escala de letra (`--landing-fs-display` até 136 px, `-topo` e `-titulo` da
+  v9, `-l`, `-lead` 20 px, `-corpo` 17 px, `-s` 14 px).
+- **Marfim na ação, laranja no grafismo.** No escuro, o botão é marfim com texto teal (no hover, branco); no claro, teal
+  com texto marfim. As perguntas são teal nos dois temas; a faixa final inverte (marfim no escuro, teal no claro). O
+  laranja aparece na bolinha da meta do anel, no feixe do plano indicado, no brilho em cima dele, na seta da faixa final
+  e na logo; nunca é letra e nunca fica atrás de letra (a faixa final, no hover, vai a branco, não a laranja).
 - **Uma família.** Manrope em tudo, do `@fontsource`; Bricolage só no nome, pela `Logo`. Títulos em 800, com tracking
   de -0,04 a -0,05 em; texto corrido em 17 e 20 px.
-- **Cor por capítulo.** Cada seção é um campo de cor (teal, chão ou afundado) e a barra do topo pinta a cor da seção
-  que está embaixo dela. Sem fio, sem sombra, sem gradiente: a separação é o passo de tom.
-- **Fragmento de interface** (`data-ui`): o cartão do Cobrir e a adequação desenhados como o app, no cartão
-  `--landing-cartao` com linhas `--landing-afundado`. Os botões dentro dele são imagem, não controle.
-- **Movimento só com `motion-safe:`** (animações `animate-landing-sobe`, `-deriva` e `-piscar` no `@theme` de
-  `globals.css`) e a entrada das partes ao rolar (`data-surge`), que só esconde depois que o app monta.
-- **Fotos:** `legumes-na-bancada`, `dois-copos-de-leite` e `salada-com-frango` (CC0, `THIRD_PARTY_NOTICES.md`), em webp
+- **Cor por capítulo.** Cada seção é um campo de cor (teal, chão ou afundado); a separação é o passo de tom. Desde a
+  v9, a barra é de vidro (não pinta a seção), e os cartões e painéis têm a luz de cima e, no claro, a sombra.
+- **Imagem de botão** (D-550): o "Chamar no WhatsApp" do painel de Adesão e o "Ver meu plano alimentar" do celular são
+  desenho do botão do app, escondidos do leitor de tela, sem foco nem clique. O resto do exemplo (abas, sugestões,
+  missões) é controle de verdade.
+- **Movimento só com `motion-safe:`** (animações `animate-landing-deriva`, `-assentar`, `-surgir` e `-girar` no
+  `@theme` de `globals.css`), a entrada das partes ao rolar (`data-surge`), que só esconde depois que o app monta, e a
+  revelação de `data-revela`, que só começa depois que o app monta.
+- **Fotos:** `iogurte-com-frutas` (o topo, desde a v9), `legumes-na-bancada`, `dois-copos-de-leite` e `salada-com-frango` (CC0, `THIRD_PARTY_NOTICES.md`), em webp
   de até 1.600 px e 800 px, cantos retos ou de 4 px, nunca foto regional.
+- **Landing v9** (spec `landing-v3`, seção v9, 27/10/2026). A barra é de vidro (`--landing-vidro`, desfoque de 18 px) e
+  fica presa no alto, sem pintar a seção. O topo é a foto com o véu (`--landing-veu`, de lado; `--landing-veu-celular`,
+  de cima para baixo) e a tinta do topo (`--landing-topo-tinta`, `-suave`), com a etiqueta de vidro
+  (`--landing-vidro-cartao`). Cartões e painéis ganham a luz de cima (`--landing-luz-cartao`) e, no claro, a sombra
+  (`--landing-sombra-cartao`); o cartão de plano tem o gradiente do `--landing-cartao-alto` ao cartão, a luz que segue o
+  ponteiro (`--landing-luz`, só com mouse) e, no indicado, o brilho (`--landing-brilho`) e o feixe laranja que gira
+  (`.landing-feixe`, só grafismo). O anel da Adequação soma em `--landing-anel-soma`, com a bolinha laranja na meta; o
+  "Atenção" do painel é `--landing-ambar`; o aparelho do exemplo tem tela clara nos dois temas (`--landing-celular-*`).
+  Títulos de seção de 30 a 56 px (`--landing-fs-titulo`), o do topo de 40 a 76 px (`--landing-fs-topo`), seções com
+  88 px em cima e 80 embaixo. Movimento: a foto assenta (`animate-landing-assentar`), a etiqueta surge
+  (`-surgir`), o feixe gira (`-girar`), a linha de "Como funciona" acende ao entrar (`data-revela`); tudo com
+  `motion-safe:` ou dentro de `prefers-reduced-motion: no-preference`.
 
 ## Colors
 

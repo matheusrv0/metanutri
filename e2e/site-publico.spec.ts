@@ -22,16 +22,16 @@ test.describe('CA-1022: landing, Preços e rodapé em 390 e 1280 px, claro e esc
         await page.setViewportSize({ width: largura, height: 844 })
         const erros = await vigiarConsole(page)
         await abrir(page, '/#/inicio', tema)
-        await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?/)
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
         await semRolagemLateral(page)
         expect(await page.locator('body').innerText()).not.toMatch(PROIBIDO)
-        // Spec landing-escura (D-545): a barra da landing tem o menu "Principal", em caixa normal.
+        // Spec landing-escura (D-545): a barra da landing tem o menu "Principal", em caixa normal (na v9, D-651).
         const menu = page.getByRole('navigation', { name: 'Principal' })
         for (const item of await menu.getByRole('link').all()) {
           expect(await item.evaluate((el) => getComputedStyle(el).textTransform)).toBe('none')
         }
         await expect(menu.getByRole('link').filter({ visible: true })).toHaveText(
-          largura < 720 ? ['Entrar', 'Criar conta'] : ['Como funciona', 'Preços', 'Entrar', 'Criar conta grátis'],
+          largura < 720 ? ['Entrar', 'Criar conta'] : ['Funcionalidades', 'Como funciona', 'Planos', 'Entrar', 'Criar conta grátis'],
           { useInnerText: true },
         )
         const rodape = page.getByRole('contentinfo')
@@ -71,7 +71,7 @@ test.describe('CA-1002 e CA-1456: título e "Criar conta grátis" na primeira te
       await page.setViewportSize({ width: largura, height: altura })
       await page.goto('/#/inicio')
       await expect(page.getByRole('heading', { level: 1 })).toBeInViewport({ ratio: 1 })
-      const topo = page.getByRole('region', { name: /Falta cálcio/ })
+      const topo = page.getByRole('region', { name: /Planos alimentares completos/ })
       await expect(topo.getByRole('button', { name: 'Criar conta grátis' })).toBeInViewport({ ratio: 1 })
     })
   }
@@ -101,14 +101,15 @@ test('CA-1009, CA-1011, CA-1013 e CA-1020: o index.html publicado tem o cabeçal
   expect(ofertas.every((o) => o.priceCurrency === 'BRL')).toBe(true)
 
   const raiz = html.slice(html.indexOf('<div id="root">'))
-  expect(raiz).toMatch(/<h1[^>]*><span[^>]*>Falta cálcio\?/)
-  for (const trecho of ['O que falta no plano da Maria, 28 anos?', 'Como funciona', 'Quanto custa', 'Solo: R$ 34,90 por mês', 'Termos de uso', 'Referências']) {
+  expect(raiz).toMatch(/<h1[^>]*>Planos alimentares completos em vitaminas e minerais<\/h1>/)
+  for (const trecho of ['Adequação de micronutrientes com sugestão do que comer', 'Como funciona', 'Planos e preços', 'R$ 34,90', 'Assinar o Solo', 'Termos de uso', 'Referências']) {
     expect(raiz).toContain(trecho)
   }
   expect(html).toMatch(/<link rel="preload" href="\.\/assets\/manrope-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin \/>/)
-  // Spec landing-escura: sem foto no topo; as três fotos da página são preguiçosas.
-  expect(raiz).not.toContain('fetchpriority')
-  expect((raiz.match(/-800\.webp 800w/g) ?? []).length).toBe(3)
+  // Spec landing-v3, D-654: a foto do topo com prioridade alta, e as três do meio preguiçosas.
+  expect((raiz.match(/fetchpriority="high"/g) ?? []).length).toBe(1)
+  expect(raiz).toMatch(/<img[^>]*iogurte-com-frutas[^>]*fetchpriority="high"|<img[^>]*fetchpriority="high"[^>]*iogurte-com-frutas/)
+  expect((raiz.match(/-800\.webp 800w/g) ?? []).length).toBe(4)
   expect((raiz.match(/loading="lazy"/g) ?? []).length).toBe(3)
 })
 
@@ -201,7 +202,7 @@ test('CA-1028: menu e rodapé são links para as páginas próprias, e o clique 
   expect(await page.evaluate(() => (window as unknown as { mesmaPagina?: boolean }).mesmaPagina)).toBe(true)
 })
 
-test('CA-1485 (spec landing-escura): a landing não tem foto no topo; o <head> não pré-carrega imagem nenhuma', async ({ page }) => {
+test('CA-1485 e D-654: a foto do topo vem do HTML (o <head> não pré-carrega imagem); as do meio são preguiçosas', async ({ page }) => {
   const antigas: string[] = []
   page.on('request', (pedido) => {
     if (/pratos-heroi|cobrir-(claro|escuro)|missoes-(claro|escuro)/.test(pedido.url())) antigas.push(pedido.url())
@@ -209,12 +210,14 @@ test('CA-1485 (spec landing-escura): a landing não tem foto no topo; o <head> n
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto('/#/inicio')
   await page.reload()
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Falta cálcio\?/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Planos alimentares completos em vitaminas e minerais')
   await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0)
   await page.waitForLoadState('networkidle')
   expect(antigas).toEqual([])
-  // As três fotos da página são preguiçosas.
-  for (const foto of await page.locator('main img[srcset]').all()) await expect(foto).toHaveAttribute('loading', 'lazy')
+  // A do topo não é preguiçosa e tem prioridade alta; as três do meio são preguiçosas.
+  await expect(page.getByAltText(/Copo de iogurte/)).toHaveAttribute('fetchpriority', 'high')
+  for (const foto of await page.locator('main img[srcset][loading]').all()) await expect(foto).toHaveAttribute('loading', 'lazy')
+  await expect(page.locator('main img[srcset][loading="lazy"]')).toHaveCount(3)
 })
 
 test('CA-1018 e CA-1021: robots, sitemap e llms na raiz; o service worker guarda as páginas próprias', async ({ request }) => {
