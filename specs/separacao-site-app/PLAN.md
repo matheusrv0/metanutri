@@ -138,7 +138,9 @@ uma diz o porquê.
   sai "Ir para o painel"), `BotaoFixoDoCelular.tsx` e `FaixaComecar.tsx` (o endereço de Criar conta no app), todos em
   `src/ui/publico/inicio/`, e `src/ui/publico/navegacaoPublica.ts` (sai `painel` do `DestinoPublico`). O topo
   (`HeroiDaLanding`) e os planos (`PlanosEPrecos`) não mudam: os botões chamam `aoComecar` e `aoEscolher`, que o site
-  liga ao app. O rodapé (`RodapeDaLanding`) não muda: só tem páginas do site.
+  liga ao app. No rodapé (`RodapeDaLanding.tsx`), só o endereço do "Voltar ao topo" muda, de `#/inicio` para `./`: no site,
+  `#/inicio` é rota antiga, que recarrega a página (CA-1405). As seções da barra passam a `#<seção>`, e o "Ver o plano de
+  exemplo" do topo (`HeroiDaLanding.tsx`), a `#adequacao`; o resto do topo não muda.
 - **DP-SA-36 · No site, o clique decide; o endereço é de verdade.** Os links levam o endereço certo (o app ou a página do
   site), para a aba nova e os robôs. No clique comum, "Entrar", "Começar grátis"/"Criar conta grátis", os planos e o
   botão fixo chamam o site, que vai ao app ou, com dado só aqui, abre "Continuar" (D-527). De uma página do site para
@@ -317,8 +319,8 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `src/ui/publico/MolduraPublica.tsx` (sem `temSessao`, `abriuNaVitrine` e `recarregar`;
   links de verdade entre as páginas; "Entrar" e "Começar grátis" para o app; o rodapé sem "Ir para o painel"),
   ~~`src/ui/publico/TelaInicio.tsx` ("Começar grátis" para o app; "Ver preços" para `precos/`)~~ (a landing v9, DP-SA-35:
-  `src/ui/publico/inicio/MolduraDaLanding.tsx`, `BarraDaLanding.tsx`, `BotaoFixoDoCelular.tsx`, `FaixaComecar.tsx` e
-  `MolduraDaLanding.test.tsx`, e `src/ui/publico/navegacaoPublica.ts`),
+  `src/ui/publico/inicio/MolduraDaLanding.tsx`, `BarraDaLanding.tsx`, `BotaoFixoDoCelular.tsx`, `FaixaComecar.tsx`,
+  `RodapeDaLanding.tsx`, `HeroiDaLanding.tsx` e `MolduraDaLanding.test.tsx`, e `src/ui/publico/navegacaoPublica.ts`),
   `src/ui/publico/SecaoPrecos.tsx` (destaque pelo `?destaque=`; os planos levam a Criar conta no app),
   ~~`src/seo/vitrine.tsx` (desenha a `PaginaDoSite`)~~ (T18), `src/App.tsx` (só as props da moldura que saíram), testes
   `src/ui/publico/MolduraPublica.test.tsx`, `src/ui/publico/TelaInicio.test.tsx`, `src/ui/publico/SecaoPrecos.test.tsx`,
