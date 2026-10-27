@@ -5,6 +5,7 @@
 // `id`, `nome`, `porcaoG` e `porPorcao`, que é tudo o que a versão anterior lê: um alimento por 100 g é um item com
 // porção de 100 g. Os campos novos (tipo, grupo, preparo, unidade, medidas, fonte…) são opcionais na leitura.
 import { lerMedidaDaLista, lerMedidaDoRotulo, type MedidaLidaDoRotulo } from './medidaDoRotulo.ts'
+import { MENSAGEM_ILEGIVEL } from './numeroDoRotulo.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
@@ -272,22 +273,30 @@ const inteiro = (n: number): string => String(Math.round(n))
 
 /**
  * D-384 e CA-1142 a CA-1144: o que impede salvar (problemas) e o que só pede conferência (avisos). Os valores são
- * conferidos como foram digitados e, nas somas, por 100 g.
+ * conferidos como foram digitados e, nas somas, por 100 g. `ilegiveis` são os campos com texto que não é número
+ * (D-497): o problema deles vem no lugar de "Informe…".
  */
-export function validarAlimentoProprio(d: DadosAlimentoProprio): { readonly problemas: readonly ProblemaProduto[]; readonly avisos: readonly AvisoAlimentoProprio[] } {
+export function validarAlimentoProprio(
+  d: DadosAlimentoProprio,
+  ilegiveis: readonly string[] = [],
+): { readonly problemas: readonly ProblemaProduto[]; readonly avisos: readonly AvisoAlimentoProprio[] } {
   const problemas: ProblemaProduto[] = []
   const avisos: AvisoAlimentoProprio[] = []
+  // Na base "por 100 g", o campo da porção nem aparece: o que ficou escrito nele não conta.
+  const ilegivel = (campo: string) => ilegiveis.includes(campo) && (campo !== 'porcaoG' || d.base === 'porcao')
+  for (const campo of new Set(ilegiveis)) if (ilegivel(campo)) problemas.push({ campo, mensagem: MENSAGEM_ILEGIVEL })
   if (d.nome.trim() === '') problemas.push({ campo: 'nome', mensagem: 'O alimento precisa de um nome.' })
   if (d.nome.length > 120) problemas.push({ campo: 'nome', mensagem: 'O nome tem mais de 120 caracteres.' })
   if (d.nomeParaPaciente.length > 120) problemas.push({ campo: 'nomeParaPaciente', mensagem: 'O nome para o paciente tem mais de 120 caracteres.' })
   if (d.grupo.trim() === '') problemas.push({ campo: 'grupo', mensagem: 'Escolha o grupo do alimento.' })
   if (d.tipo === 'alimento' && d.preparo === null) problemas.push({ campo: 'preparo', mensagem: 'Diga como o alimento é servido: cru, cozido, assado…' })
-  if (d.base === 'porcao') {
+  if (d.base === 'porcao' && !ilegivel('porcaoG')) {
     if (d.porcaoG === null || !(d.porcaoG > 0)) problemas.push({ campo: 'porcaoG', mensagem: 'A porção precisa ser maior que zero.' })
     else if (d.porcaoG > 2000) problemas.push({ campo: 'porcaoG', mensagem: 'A porção não deve passar de 2.000 g ou ml.' })
   }
   for (const campo of CAMPOS_MACROS) {
     const v = d.valores[campo.chave]
+    if (ilegivel(campo.chave)) continue
     if (v === null || v === undefined) problemas.push({ campo: campo.chave, mensagem: `Informe ${campo.rotulo.toLowerCase()}: sem ela, o alimento não entra nos cálculos.` })
     else if (v < 0) problemas.push({ campo: campo.chave, mensagem: `${campo.rotulo} não pode ser negativa.` })
   }

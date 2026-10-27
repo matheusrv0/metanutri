@@ -130,6 +130,18 @@ describe('validação (D-384)', () => {
     expect(produtoDosDados({ ...errada, sugerirAutomaticamente: true }).sugerirAutomaticamente).toBe(false)
   })
 
+  it('CA-1362 (D-497): o campo com texto que não é número tem a mensagem dele, no lugar de "Informe…"', () => {
+    const r = validarAlimentoProprio({ ...CUSCUZ, valores: { ...CUSCUZ.valores, proteina_g: null, fibra_g: null } }, ['proteina_g', 'fibra_g'])
+    expect(r.problemas).toEqual([
+      { campo: 'proteina_g', mensagem: 'Digite só o número, sem a unidade. Traço: 0.' },
+      { campo: 'fibra_g', mensagem: 'Digite só o número, sem a unidade. Traço: 0.' },
+    ])
+    const porcao = validarAlimentoProprio({ ...BARRA, porcaoG: null }, ['porcaoG']).problemas.filter((p) => p.campo === 'porcaoG')
+    expect(porcao).toEqual([{ campo: 'porcaoG', mensagem: 'Digite só o número, sem a unidade. Traço: 0.' }])
+    // Na base "por 100 g", o campo da porção não aparece: o texto que ficou nele não conta.
+    expect(validarAlimentoProprio(CUSCUZ, ['porcaoG']).problemas).toEqual([])
+  })
+
   it('CA-1144: micro acima do maior da base pede para conferir a unidade', () => {
     const r = validarAlimentoProprio({ ...CUSCUZ, valores: { ...CUSCUZ.valores, vitamina_c_mg: 50_000 } })
     expect(r.avisos.find((a) => a.campo === 'vitamina_c_mg')?.mensagem).toMatch(/mg ou µg\?/)
