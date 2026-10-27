@@ -72,3 +72,55 @@ describe('CA-990: textos proibidos no site público', () => {
     expect(promessa?.test('Funciona no navegador, até sem internet.')).toBe(true)
   })
 })
+
+/**
+ * CA-1482 (spec landing-escura, D-542 e D-543): autoridade própria. O texto de venda fala em "Base MetaNutri" e em
+ * "referências de ingestão"; os nomes das fontes ficam só na página Referências (TelaFontes.tsx e a entrada `fontes` de
+ * paginas.ts), onde a licença manda citar.
+ */
+describe('CA-1482: o texto de venda não nomeia as fontes da base', () => {
+  const FONTES = /\b(TACO|IBGE|POF|USDA|NASEM|DRIs?|Open Food Facts)\b/
+  const REFERENCIAS = join(RAIZ, 'src', 'ui', 'publico', 'TelaFontes.tsx')
+  const PAGINAS_DO_SITE = join(RAIZ, 'src', 'seo', 'paginas.ts')
+  const VENDA = [
+    ...ALVOS.filter((arquivo) => arquivo !== REFERENCIAS && arquivo !== PAGINAS_DO_SITE && !arquivo.endsWith('TelaAjuda.tsx')),
+    join(RAIZ, 'public', 'llms.txt'),
+  ]
+
+  it('a varredura lê a landing nova, a moldura, Preços, o index.html e o llms.txt, e deixa Referências de fora', () => {
+    const lidos = VENDA.map((arquivo) => relative(RAIZ, arquivo).replaceAll('\\', '/'))
+    for (const esperado of [
+      'src/ui/publico/TelaInicio.tsx',
+      'src/ui/publico/inicio/VitrineDoCobrir.tsx',
+      'src/ui/publico/inicio/PerguntasDeQuemAtende.tsx',
+      'src/ui/publico/MolduraPublica.tsx',
+      'src/ui/publico/SecaoPrecos.tsx',
+      'index.html',
+      'public/llms.txt',
+    ]) {
+      expect(lidos).toContain(esperado)
+    }
+    expect(lidos).not.toContain('src/ui/publico/TelaFontes.tsx')
+  })
+
+  it('nenhum arquivo de venda cita TACO, IBGE, POF, USDA, NASEM, DRI ou Open Food Facts', () => {
+    const comFonte = VENDA.filter((arquivo) => FONTES.test(readFileSync(arquivo, 'utf8'))).map((arquivo) => relative(RAIZ, arquivo))
+    expect(comFonte).toEqual([])
+  })
+
+  it('o título e a descrição das páginas indexáveis também não; só a de Referências cita', async () => {
+    const { PAGINAS } = await import('./paginas.ts')
+    for (const pagina of PAGINAS.filter((p) => p.rota !== 'fontes')) {
+      expect(`${pagina.titulo} ${pagina.descricao}`, pagina.rota).not.toMatch(FONTES)
+    }
+    const referencias = PAGINAS.find((p) => p.rota === 'fontes')
+    expect(referencias?.titulo).toBe('Referências da Base MetaNutri')
+  })
+
+  it('a guarda pega o nome de uma fonte no meio do texto', () => {
+    expect(FONTES.test('A adequação segue as DRI.')).toBe(true)
+    expect(FONTES.test('Tabela TACO, 4ª edição')).toBe(true)
+    expect(FONTES.test('Base MetaNutri e referências de ingestão')).toBe(false)
+    expect(FONTES.test('Tacos e tortilhas')).toBe(false)
+  })
+})
