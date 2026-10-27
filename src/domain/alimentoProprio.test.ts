@@ -339,6 +339,26 @@ describe('Cobrir e trocas só com a chave (D-386)', () => {
     expect(entra({ ...rica, nome: 'Camu-camu, polpa congelada', grupo: 'Frutas e derivados', preparo: 'cru', valores: { ...rica.valores, acucares_g: 16 } })).toBe(true)
   })
 
+  it('CA-1375 (D-509): o leite em pó integral não é travado pela lactose; a forma de pó segue "Incluir ingredientes" (CB-468)', () => {
+    const po: DadosAlimentoProprio = {
+      ...rica,
+      nome: 'Leite em pó integral',
+      grupo: 'Leite e derivados',
+      sugerirAutomaticamente: true,
+      valores: { energia_kcal: 497, proteina_g: 25, carboidrato_g: 38, lipideos_g: 27, acucares_g: 38, calcio_mg: 1200 },
+    }
+    expect(produtoDosDados(po).sugerirAutomaticamente).toBe(true)
+    const id = registrar(po)
+    // Só os alimentos próprios concorrem: a base fica oculta, para a lista não depender das 5 melhores da tabela.
+    const ocultos = new Set(ALIMENTOS.map((a) => a.id))
+    const calcio = (incluirIngredientes: boolean) =>
+      sugerirParaCobrir('calcio_mg', vazio, adequacao, { gastoEnergetico: 2000, alimentos: alimentosParaSugerir(), incluirIngredientes, ocultos }).sugestoes.map((s) => s.alimentoId)
+    expect(calcio(true)).toContain(id)
+    expect(calcio(false)).not.toContain(id)
+    // Com "sabor" no nome, o limite vale e a chave grava desligada.
+    expect(produtoDosDados({ ...po, nome: 'Leite em pó sabor morango' }).sugerirAutomaticamente).toBe(false)
+  })
+
   it('CA-1373 (D-507): a fruta de rótulo com açúcar acima do limite e a "Banana chips" não entram', () => {
     const rotulo = { ...rica, tipo: 'rotulo' as const, grupo: 'Frutas e derivados', preparo: null, fonte: { tipo: 'rotulo' as const } }
     expect(entra({ ...rotulo, nome: 'Açaí com guaraná', valores: { ...rica.valores, acucares_g: 18 } })).toBe(false)

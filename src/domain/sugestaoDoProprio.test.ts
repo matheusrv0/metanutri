@@ -73,6 +73,50 @@ describe('só a fruta do tipo Alimento fica fora do limite de açúcar (D-507)',
   })
 })
 
+describe('o açúcar do próprio leite não trava o leite (D-509)', () => {
+  const LEITE = 'Leite e derivados'
+  const leite = (nome: string, acucares_g: number) => comoAlimento({ nome, grupo: LEITE, preparo: 'pronto para consumo', valoresExtra: { acucares_g } })
+
+  it('CA-1375: leite e iogurte sem adição ficam fora do limite de açúcar, e a chave fica livre', () => {
+    for (const [nome, acucares] of [
+      ['Leite em pó integral', 38],
+      ['Leite em pó desnatado da fazenda', 52],
+      ['Leite de vaca integral', 4.7],
+      ['Leite semidesnatado', 4.9],
+      ['Leite em pó de cabra', 40],
+      ['Iogurte natural desnatado', 8],
+      ['Iogurte integral', 9],
+    ] as const) {
+      expect(regraDoProprio(leite(nome, acucares)), nome).toBeNull()
+      expect(motivoParaNaoSugerir(leite(nome, acucares)), nome).toBeNull()
+    }
+  })
+
+  it('CA-1375: com sinal de adição no nome, o limite de 7,5 g vale como antes', () => {
+    for (const [nome, acucares] of [
+      ['Iogurte de morango', 12],
+      ['Leite em pó sabor morango', 40],
+      ['Iogurte natural com mel', 10],
+      ['Iogurte natural de coco', 10],
+      ['Leite integral achocolatado', 9],
+      ['Leite em pó integral adoçado', 45],
+      ['Leite condensado', 55],
+      ['Leite fermentado desnatado', 14],
+      ['Leite integral com cacau', 9],
+    ] as const) {
+      expect(regraDoProprio(leite(nome, acucares))?.motivo, nome).toBe('mais de 7,5 g de açúcares em 100 g')
+    }
+    // O achocolatado não começa por "leite": passa pelo limite.
+    expect(regraDoProprio(leite('Achocolatado em pó', 70))?.motivo).toBe('mais de 7,5 g de açúcares em 100 g')
+  })
+
+  it('CB-468: sem açúcar declarado, o nome ainda pega o condensado, o fermentado e o "sabor"', () => {
+    expect(regraDoProprio(comoAlimento({ nome: 'Leite condensado', grupo: LEITE }))?.motivo).toBe('doce')
+    expect(regraDoProprio(comoAlimento({ nome: 'Leite fermentado', grupo: LEITE }))?.motivo).toBe('bebida adoçada')
+    expect(regraDoProprio(comoAlimento({ nome: 'Leite em pó sabor baunilha', grupo: LEITE }))?.motivo).toBe('ultraprocessado')
+  })
+})
+
 describe('o nome livre (D-493)', () => {
   it.each([
     ['Bolo de chocolate da vó', 'doce'],

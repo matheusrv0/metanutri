@@ -66,16 +66,31 @@ const ULTRAPROCESSADO = [
 
 const casaAlguma = (regras: readonly RegExp[], nome: string): boolean => regras.some((r) => r.test(nome))
 
+/**
+ * Leite e iogurte sem adição (D-509): o açúcar deles é a lactose do próprio leite (38 g em 100 g do leite em pó integral,
+ * uns 5 g no leite reconstituído). O total em 100 g não distingue a lactose do açúcar de adição; o nome distingue.
+ */
+const LEITE_OU_IOGURTE = noComeco('leite|iogurte')
+const SEM_ADICAO = noNome('integral|desnatad[oa]|semidesnatad[oa]|semi-desnatad[oa]|natural|po')
+const COM_ADICAO = [
+  noNome('sabor|saborizad[oa]|achocolatad[oa]|chocolate|cacau|adocad[oa]|acucarad[oa]|acucar|condensad[oa]|fermentad[oa]|mel|calda|com'),
+  // "de" só para o animal: "Leite de vaca", "Leite em pó de cabra"; "Iogurte de morango" tem a fruta e o açúcar dela.
+  /(^|\s)de (?!(vaca|cabra|bufala|ovelha)($|[\s,)]))/,
+]
+const ehLeiteSemAdicao = (nome: string): boolean => LEITE_OU_IOGURTE.test(nome) && SEM_ADICAO.test(nome) && !casaAlguma(COM_ADICAO, nome)
+
 /** "7,5", "15": o número como a tela escreve. */
 const numeroNaTela = (n: number): string => String(n).replace('.', ',')
 
 /**
- * O limite de açúcar do alimento, ou `null` quando o açúcar é dele: só a fruta do tipo Alimento (D-507) não passa pelo
- * limite; a de rótulo é produto industrial (açaí com guaraná) e a preparação leva o que a receita põe. A bebida e o leite
- * e derivados passam pelo de líquido: a lactose fica abaixo dele.
+ * O limite de açúcar do alimento, ou `null` quando o açúcar é dele: só a fruta do tipo Alimento (D-507) e o leite e o
+ * iogurte sem adição (D-509) não passam pelo limite; a fruta de rótulo é produto industrial (açaí com guaraná) e a
+ * preparação leva o que a receita põe. A bebida e o leite e derivados passam pelo de líquido: a lactose do leite líquido
+ * fica abaixo dele.
  */
-function limiteDeAcucar(a: Alimento): number | null {
+function limiteDeAcucar(a: Alimento, nome: string): number | null {
   if (a.categoria === FRUTAS && a.proprio?.tipo === 'alimento') return null
+  if (ehLeiteSemAdicao(nome)) return null
   const liquido = a.unidade === 'ml' || a.categoria.startsWith('Bebidas') || a.categoria === LEITE
   return liquido ? ACUCAR_LIQUIDO_G : ACUCAR_SOLIDO_G
 }
@@ -88,7 +103,7 @@ export function regraDoProprio(a: Alimento): RegraDoProprio | null {
   if (ALCOOL.test(nome)) return { id: 'alcool', nivel: 'nunca', motivo: 'bebida alcoólica' }
   if (a.categoria === INDUSTRIALIZADOS) return { id: 'industrializado', nivel: 'fora-da-rotina', motivo: `grupo ${INDUSTRIALIZADOS}` }
   const acucares = a.nutrientes.acucares_g
-  const limite = limiteDeAcucar(a)
+  const limite = limiteDeAcucar(a, nome)
   if (limite !== null && typeof acucares === 'number' && acucares > limite) {
     return { id: 'acucar', nivel: 'fora-da-rotina', motivo: `mais de ${numeroNaTela(limite)} g de açúcares em 100 ${a.unidade ?? 'g'}` }
   }
