@@ -152,10 +152,11 @@ nova: os ícones são do `lucide-react`; a foto é convertida com o Pillow da m�
   funções" de propósito.
 - **Depois da T25, um commit `refactor`** tirou o que só as seções antigas usavam: as classes de título da v3, os tokens
   da chave apagada, do bloco, da barra e da escala antiga, as animações "sobe" e "piscar" e as marcas de capítulo.
-- **T27 (`emil-design-eng` e `break-ui`), commit `fix` próprio:** o preço grande com algarismos proporcionais (D-685), a
-  régua numa linha no celular, a bolinha do estado na primeira linha, o pior caso de 360 px com texto a 200% e de zoom
+- **T27 (`emil-design-eng` e `break-ui`), commit `fix` próprio:** a régua numa linha no celular, a bolinha do estado na primeira linha, o pior caso de 360 px com texto a 200% e de zoom
   de 200% (D-682). Os testes de navegador acharam mais dois, num `fix` próprio: o `h1` e os `h3` pegavam a cor de
   título do app (cinza no tema claro), e a linha de "Como funciona" nunca se escondia (o CSS procurava o `data-revela`
   num ancestral, e ele está na própria lista).
+- **T27:** os algarismos proporcionais no preço grande saíram num commit `revert`: medidos no navegador, não mudam a
+  largura na Manrope (a folga depois da vírgula é do desenho dela, igual no protótipo).
 - **T26:** o e2e roda com uma configuração temporária (`playwright.v9-temp.config.ts`, portas 4573 e 4576 e pastas fora
   do `node_modules`), apagada depois, como na T10.
