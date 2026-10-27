@@ -45,6 +45,34 @@ describe('os campos declarados e o grupo (D-493)', () => {
   })
 })
 
+describe('só a fruta do tipo Alimento fica fora do limite de açúcar (D-507)', () => {
+  const FRUTA = 'Frutas e derivados'
+
+  it('CA-1373: a fruta de rótulo e a preparação de fruta passam pelo limite; a do tipo Alimento, não', () => {
+    const acai = comoAlimento({ tipo: 'rotulo', nome: 'Açaí com guaraná', grupo: FRUTA, preparo: null, valoresExtra: { acucares_g: 18 } })
+    expect(regraDoProprio(acai)?.motivo).toBe('mais de 15 g de açúcares em 100 g')
+    expect(motivoParaNaoSugerir(acai)).toBe('mais de 15 g de açúcares em 100 g')
+    const chips = comoAlimento({ tipo: 'rotulo', nome: 'Banana chips', grupo: FRUTA, preparo: null, valoresExtra: { acucares_g: 35, lipideos_g: 33 } })
+    expect(motivoParaNaoSugerir(chips)).toBe('mais de 15 g de açúcares em 100 g')
+    expect(regraDoProprio(comoAlimento({ tipo: 'preparacao', grupo: FRUTA, valoresExtra: { acucares_g: 16, carboidrato_g: 25 } }))?.motivo).toBe('mais de 15 g de açúcares em 100 g')
+    expect(regraDoProprio(comoAlimento({ tipo: 'alimento', nome: 'Banana-passa', grupo: FRUTA, preparo: 'cru', valoresExtra: { acucares_g: 16 } }))).toBeNull()
+  })
+
+  it('CA-1373: "chips" em qualquer lugar do nome é ultraprocessado, em qualquer tipo (CB-467)', () => {
+    for (const tipo of ['alimento', 'preparacao', 'rotulo'] as const) {
+      expect(regraDoProprio(comoAlimento({ tipo, nome: 'Banana chips', grupo: FRUTA }))?.motivo, tipo).toBe('ultraprocessado')
+    }
+    expect(regraDoProprio(comoAlimento({ nome: 'Chips de banana' }))?.motivo).toBe('ultraprocessado')
+    expect(regraDoProprio(comoAlimento({ nome: 'Mandioca chips assada' }))?.motivo).toBe('ultraprocessado')
+  })
+
+  it('CB-466: a fruta de rótulo medida em ml passa pelo limite de 7,5 g em 100 ml; a do tipo Alimento, não', () => {
+    const suco = { nome: 'Suco de laranja integral', grupo: FRUTA, unidade: 'ml' as const, preparo: null, valoresExtra: { acucares_g: 8.4 } }
+    expect(regraDoProprio(comoAlimento({ ...suco, tipo: 'rotulo' }))?.motivo).toBe('mais de 7,5 g de açúcares em 100 ml')
+    expect(regraDoProprio(comoAlimento({ ...suco, tipo: 'alimento' }))).toBeNull()
+  })
+})
+
 describe('o nome livre (D-493)', () => {
   it.each([
     ['Bolo de chocolate da vó', 'doce'],

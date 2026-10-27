@@ -338,6 +338,15 @@ describe('Cobrir e trocas só com a chave (D-386)', () => {
     expect(entra({ ...rica, nome: 'Camu-camu, polpa congelada', grupo: 'Frutas e derivados', preparo: 'cru', valores: { ...rica.valores, acucares_g: 16 } })).toBe(true)
   })
 
+  it('CA-1373 (D-507): a fruta de rótulo com açúcar acima do limite e a "Banana chips" não entram', () => {
+    const rotulo = { ...rica, tipo: 'rotulo' as const, grupo: 'Frutas e derivados', preparo: null, fonte: { tipo: 'rotulo' as const } }
+    expect(entra({ ...rotulo, nome: 'Açaí com guaraná', valores: { ...rica.valores, acucares_g: 18 } })).toBe(false)
+    expect(entra({ ...rotulo, nome: 'Banana chips' })).toBe(false)
+    expect(entra({ ...rica, nome: 'Banana chips', grupo: 'Frutas e derivados' })).toBe(false)
+    // A chave fica gravada desligada, com o motivo no formulário.
+    expect(produtoDosDados({ ...rotulo, nome: 'Açaí com guaraná', sugerirAutomaticamente: true, valores: { ...rica.valores, acucares_g: 18 } }).sugerirAutomaticamente).toBe(false)
+  })
+
   it('CA-1355: o nome livre de doce, ultraprocessado, bebida adoçada e álcool não entra', () => {
     for (const nome of ['Bolo de chocolate da vó', 'Biscoito recheado sabor chocolate', 'Rosquinha de coco', 'Néctar de acerola', 'Chope artesanal']) {
       expect(entra({ ...rica, nome, grupo: 'Cereais e derivados' }), nome).toBe(false)

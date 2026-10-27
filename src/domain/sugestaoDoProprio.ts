@@ -58,9 +58,10 @@ const DOCE = [
 
 const ULTRAPROCESSADO = [
   noComeco(
-    'biscoito|biscoitos|bolacha|bolachas|rosquinha|rosquinhas|rosca|roscas|wafer|wafers|cookie|cookies|salgadinho|salgadinhos|chips|nugget|nuggets|empanado|empanados|macarrao instantaneo|miojo|lamen|sopa instantanea|caldo em cubo|caldo em po|tempero pronto|cereal matinal|cereais matinais|barra de cereal|barra de cereais|barra de proteina|barrinha|peito de peru',
+    'biscoito|biscoitos|bolacha|bolachas|rosquinha|rosquinhas|rosca|roscas|wafer|wafers|cookie|cookies|salgadinho|salgadinhos|nugget|nuggets|empanado|empanados|macarrao instantaneo|miojo|lamen|sopa instantanea|caldo em cubo|caldo em po|tempero pronto|cereal matinal|cereais matinais|barra de cereal|barra de cereais|barra de proteina|barrinha|peito de peru',
   ),
-  noNome('recheado|recheada|recheados|recheadas|instantaneo|instantanea|sabor'),
+  // D-507: "Chips de banana" e "Banana chips" são o mesmo produto frito.
+  noNome('chips|recheado|recheada|recheados|recheadas|instantaneo|instantanea|sabor'),
 ]
 
 const casaAlguma = (regras: readonly RegExp[], nome: string): boolean => regras.some((r) => r.test(nome))
@@ -69,11 +70,12 @@ const casaAlguma = (regras: readonly RegExp[], nome: string): boolean => regras.
 const numeroNaTela = (n: number): string => String(n).replace('.', ',')
 
 /**
- * O limite de açúcar do alimento, ou `null` quando o açúcar é dele: a fruta (grupo Frutas e derivados, menos a
- * preparação) não passa pelo limite. A bebida e o leite e derivados passam pelo de líquido: a lactose fica abaixo dele.
+ * O limite de açúcar do alimento, ou `null` quando o açúcar é dele: só a fruta do tipo Alimento (D-507) não passa pelo
+ * limite; a de rótulo é produto industrial (açaí com guaraná) e a preparação leva o que a receita põe. A bebida e o leite
+ * e derivados passam pelo de líquido: a lactose fica abaixo dele.
  */
 function limiteDeAcucar(a: Alimento): number | null {
-  if (a.categoria === FRUTAS && a.proprio?.tipo !== 'preparacao') return null
+  if (a.categoria === FRUTAS && a.proprio?.tipo === 'alimento') return null
   const liquido = a.unidade === 'ml' || a.categoria.startsWith('Bebidas') || a.categoria === LEITE
   return liquido ? ACUCAR_LIQUIDO_G : ACUCAR_SOLIDO_G
 }
