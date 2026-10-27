@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ALMOCO_EM_GRAMAS, MISSOES_DO_EXEMPLO, NUTRIENTES_DO_EXEMPLO } from './inicio/exemploDaLanding.ts'
-import { precosDaLanding } from './inicio/precosDaLanding.ts'
+
 import { TelaInicio } from './TelaInicio.tsx'
 
 interface Acoes {
@@ -16,7 +16,6 @@ const montar = (acoes: Acoes = {}) =>
   render(<TelaInicio aoComecar={acoes.aoComecar ?? vi.fn()} aoEscolher={acoes.aoEscolher ?? vi.fn()} formularioNovo={acoes.formularioNovo ?? false} />)
 
 const texto = () => document.body.textContent ?? ''
-const secao = (nome: string) => within(screen.getByRole('region', { name: nome }))
 const painel = () => {
   const el = document.querySelector('#adequacao [aria-live="polite"]')
   if (!(el instanceof HTMLElement)) throw new Error('sem o painel da Adequação')
@@ -35,7 +34,7 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       'H2 Funcionalidades',
       'H2 Como funciona',
       'H2 Quantidades em gramas e calorias',
-      'H2 Quanto custa',
+      'H2 Planos e preços',
       'H2 Perguntas de quem atende',
     ])
   })
@@ -356,25 +355,123 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     })
   })
 
-  describe('Quanto custa, perguntas e faixa final', () => {
-    it('CA-1477: o número grande, a lista do Solo e uma linha para cada outro plano, de PLANOS', () => {
+  describe('Planos e preços', () => {
+    const secaoDePlanos = () => screen.getByRole('region', { name: 'Planos e preços' })
+    const cartao = (nome: string) => {
+      const achado = within(secaoDePlanos()).getByRole('article', { name: new RegExp(`^${nome}`) })
+      return achado
+    }
+    const regua = () => within(secaoDePlanos()).getByRole('slider', { name: 'Pacientes ativos' })
+    /** O que o leitor de tela lê no cartão: sem o ciclo escondido. */
+    const lido = (el: HTMLElement) =>
+      [...el.querySelectorAll('p, h3, button, li')]
+        .filter((n) => !n.closest('[aria-hidden="true"]'))
+        .map((n) => n.textContent)
+        .join(' | ')
+
+    it('CA-1676: a troca em Mensal, a régua em 12 e o veredito do Solo', () => {
       montar()
-      const precos = precosDaLanding()
-      const custa = secao('Quanto custa')
-      expect(custa.getByText(precos.destaque.falado)).toHaveClass('sr-only')
-      expect(custa.getByText(precos.destaque.valor)).toHaveAttribute('aria-hidden', 'true')
-      expect(custa.getAllByRole('listitem').map((li) => li.textContent)).toEqual(precos.destaque.itens)
-      for (const outro of precos.outros) expect(custa.getByText(outro.texto)).toBeInTheDocument()
-      expect(custa.getByText('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura.')).toBeInTheDocument()
+      const troca = within(within(secaoDePlanos()).getByRole('group', { name: 'Forma de cobrança' }))
+      expect(troca.getAllByRole('button').map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+        ['Mensal', 'true'],
+        ['Anual', 'false'],
+      ])
+      expect(regua()).toHaveValue('12')
+      expect(regua()).toHaveAttribute('aria-valuetext', '12 pacientes ativos')
+      expect(secaoDePlanos()).toHaveTextContent('Para 12 pacientes ativos, o plano indicado é o Solo.')
+      expect(within(secaoDePlanos()).getByText(/^Para 12 pacientes ativos/)).toHaveAttribute('aria-live', 'polite')
+      expect(secaoDePlanos()).toHaveTextContent(
+        'Todos os planos incluem todas as funcionalidades. Muda só o número de pacientes ativos. Sem fidelidade e sem preço promocional.',
+      )
     })
 
-    it('CA-1478: "Assinar o Solo" escolhe o Solo mensal', async () => {
+    it('CA-1677: Free, Solo e Pro com nome, descrição, preço, botão e limites de PLANOS', () => {
+      montar()
+      expect(lido(cartao('Free'))).toBe(
+        'Free | Para testar com um paciente real, sem cartão. | R$ 0R$0 | Sem cartão de crédito | Começar grátis | 2 pacientes ativos | 2 links do paciente | Todas as funções',
+      )
+      expect(lido(cartao('Solo'))).toBe(
+        'Solo | Para quem está começando a atender. | R$ 34,90R$34,90 | por mêsou R$ 299 por ano | Assinar o Solo | 25 pacientes ativos | 25 links do paciente | Todas as funções',
+      )
+      expect(lido(cartao('Pro'))).toContain('R$ 64,90R$64,90 | por mêsou R$ 599 por ano | Assinar o Pro | Pacientes ilimitados')
+    })
+
+    it('CA-1678 e CB-657: no Anual, o preço do ano e a economia; o leitor de tela lê só o ciclo que vale', async () => {
+      montar()
+      const usuario = userEvent.setup()
+      await usuario.click(screen.getByRole('button', { name: 'Anual' }))
+      expect(screen.getByRole('button', { name: 'Anual' })).toHaveAttribute('aria-pressed', 'true')
+      expect(lido(cartao('Solo'))).toContain('R$ 299R$299 | por anoR$ 24,92 por mês · economize R$ 119,80 | Assinar o Solo anual')
+      expect(lido(cartao('Solo'))).not.toContain('34,90')
+      expect(lido(cartao('Pro'))).toContain('R$ 599R$599 | por anoR$ 49,92 por mês · economize R$ 179,80 | Assinar o Pro anual')
+      expect(lido(cartao('Free'))).toContain('R$ 0R$0 | Sem cartão de crédito | Começar grátis')
+      await usuario.click(screen.getByRole('button', { name: 'Mensal' }))
+      await usuario.click(screen.getByRole('button', { name: 'Anual' }))
+      await usuario.click(screen.getByRole('button', { name: 'Mensal' }))
+      expect(lido(cartao('Solo'))).toContain('R$ 34,90')
+      expect(lido(cartao('Solo'))).not.toContain('R$ 299R$299')
+    })
+
+    it('CA-1679 e CB-656: a régua escolhe o indicado; só ele sobe e mostra o selo', () => {
+      montar()
+      const indicados = () => within(secaoDePlanos()).getAllByRole('article').filter((a) => a.hasAttribute('data-indicado'))
+      for (const [n, nome, texto] of [
+        [1, 'Free', 'Para 1 paciente ativo, o plano indicado é o Free.'],
+        [2, 'Free', 'Para 2 pacientes ativos, o plano indicado é o Free.'],
+        [3, 'Solo', 'Para 3 pacientes ativos, o plano indicado é o Solo.'],
+        [25, 'Solo', 'Para 25 pacientes ativos, o plano indicado é o Solo.'],
+        [26, 'Pro', 'Para 26 pacientes ativos, o plano indicado é o Pro.'],
+        [60, 'Pro', 'Para 60 ou mais pacientes ativos, o plano indicado é o Pro.'],
+      ] as const) {
+        fireEvent.change(regua(), { target: { value: String(n) } })
+        expect(secaoDePlanos(), String(n)).toHaveTextContent(texto)
+        expect(indicados().map((a) => a.querySelector('h3')?.textContent)).toEqual([nome])
+        expect(within(indicados()[0] as HTMLElement).getByText('Indicado')).toHaveAttribute('aria-hidden', 'false')
+        expect(indicados()[0]?.className).toContain('-translate-y-2.5')
+      }
+      expect(within(secaoDePlanos()).getByText('60+')).toBeInTheDocument()
+      expect(regua()).toHaveAttribute('aria-valuetext', '60 ou mais pacientes ativos')
+      const outros = within(secaoDePlanos()).getAllByText('Indicado').filter((s) => s.getAttribute('aria-hidden') === 'true')
+      expect(outros).toHaveLength(2)
+    })
+
+    it('CA-1680: os botões levam pelo caminho de hoje; a Clínica é um link para o e-mail', async () => {
       const aoEscolher = vi.fn()
       montar({ aoEscolher })
-      await userEvent.setup().click(screen.getByRole('button', { name: 'Assinar o Solo' }))
-      expect(aoEscolher).toHaveBeenCalledWith('solo', 'mensal')
+      const usuario = userEvent.setup()
+      await usuario.click(screen.getByRole('button', { name: 'Começar grátis' }))
+      expect(aoEscolher).toHaveBeenLastCalledWith('free', 'mensal')
+      await usuario.click(screen.getByRole('button', { name: 'Assinar o Solo' }))
+      expect(aoEscolher).toHaveBeenLastCalledWith('solo', 'mensal')
+      await usuario.click(screen.getByRole('button', { name: 'Anual' }))
+      await usuario.click(screen.getByRole('button', { name: 'Assinar o Pro anual' }))
+      expect(aoEscolher).toHaveBeenLastCalledWith('pro', 'anual')
+      await usuario.click(screen.getByRole('button', { name: 'Começar grátis' }))
+      expect(aoEscolher).toHaveBeenLastCalledWith('free', 'mensal')
+      await usuario.click(within(secaoDePlanos()).getByRole('button', { name: 'Criar conta de estudante' }))
+      expect(aoEscolher).toHaveBeenLastCalledWith('estudante', 'mensal')
+      expect(within(secaoDePlanos()).getByRole('link', { name: 'Fale com a gente' }).getAttribute('href')).toMatch(/^mailto:.+@/)
     })
 
+    it('CA-1681: o Estudante com o comprovante e os 12 meses, a Clínica e a nota do pagamento', () => {
+      montar()
+      expect(secaoDePlanos()).toHaveTextContent(
+        'Grátis por 12 meses ou até a formatura, o que vier antes, com o e-mail da faculdade e o comprovante de matrícula. Na formatura, os pacientes continuam na conta.',
+      )
+      expect(secaoDePlanos()).toHaveTextContent('ClínicaCondições combinadas por e-mail.')
+      expect(secaoDePlanos()).toHaveTextContent('O pagamento é com cartão de crédito, aqui no site. Você cancela quando quiser em Conta e assinatura.')
+    })
+
+    it('D-667: o laranja do feixe é só grafismo, escondido e sem texto', () => {
+      montar()
+      for (const feixe of secaoDePlanos().querySelectorAll('.landing-feixe')) {
+        expect(feixe).toHaveAttribute('aria-hidden', 'true')
+        expect(feixe.textContent).toBe('')
+      }
+    })
+  })
+
+  describe('perguntas e faixa final', () => {
     it('CA-1479 e CA-1607: seis perguntas fechadas, com as respostas que o app sustenta, sem medida caseira', async () => {
       montar()
       const perguntas = screen.getByRole('region', { name: 'Perguntas de quem atende' })
@@ -423,8 +520,9 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(t).not.toMatch(/TACO|IBGE|POF|USDA|NASEM|\bDRIs?\b|Open Food Facts/)
       // Fora dos fragmentos de interface (o mesmo exemplo aparece no campo vivo e em Como funciona), nenhuma frase se repete.
       const blocos = 'p, h1, h2, h3, li, summary, figcaption'
-      // Só o bloco mais de dentro: o item da lista e o parágrafo dele contariam a mesma frase duas vezes.
-      const fora = [...document.body.querySelectorAll(blocos)].filter((el) => !el.closest('[data-ui]') && !el.querySelector(blocos))
+      // Só o bloco mais de dentro: o item da lista e o parágrafo dele contariam a mesma frase duas vezes. Os cartões de
+      // plano são tabela de preço: "Todas as funções" fecha os três de propósito (D-666).
+      const fora = [...document.body.querySelectorAll(blocos)].filter((el) => !el.closest('[data-ui], article') && !el.querySelector(blocos))
       const frases = fora.flatMap((el) => (el.textContent ?? '').split(/(?<=[.?!])\s+/)).filter((f) => f.length > 12)
       const repetidas = frases.filter((f, i) => frases.indexOf(f) !== i)
       expect(repetidas).toEqual([])

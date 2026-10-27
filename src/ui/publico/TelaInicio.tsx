@@ -8,8 +8,8 @@ import { FotoDosLegumes } from './inicio/FotoDosLegumes.tsx'
 import { Funcionalidades } from './inicio/Funcionalidades.tsx'
 import { HeroiDaLanding } from './inicio/HeroiDaLanding.tsx'
 import { PerguntasDeQuemAtende } from './inicio/PerguntasDeQuemAtende.tsx'
+import { PlanosEPrecos } from './inicio/PlanosEPrecos.tsx'
 import { QuantidadesEmGramas } from './inicio/QuantidadesEmGramas.tsx'
-import { QuantoCusta } from './inicio/QuantoCusta.tsx'
 
 interface TelaInicioProps {
   readonly aoComecar: () => void
@@ -34,7 +34,7 @@ export function TelaInicio({ aoComecar, aoEscolher, formularioNovo = MEUS_ALIMEN
       <FotoDosLegumes />
       <ComoFunciona />
       <QuantidadesEmGramas />
-      <QuantoCusta aoEscolher={aoEscolher} />
+      <PlanosEPrecos aoEscolher={aoEscolher} />
       <PerguntasDeQuemAtende formularioNovo={formularioNovo} />
       <FaixaComecar aoComecar={aoComecar} />
     </>

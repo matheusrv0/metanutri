@@ -26,8 +26,9 @@ describe('desenharPaginas (spec site-publico-profissional, D-331)', () => {
       'Funcionalidades',
       'Como funciona',
       'Quantidades em gramas e calorias',
-      'Quanto custa',
-      'Solo: R$ 34,90 por mês',
+      'Planos e preços',
+      'R$ 34,90',
+      'Assinar o Solo',
       'Perguntas de quem atende',
       'Termos de uso',
     ]) {
