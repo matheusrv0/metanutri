@@ -3,9 +3,8 @@
 **Spec:** `specs/separacao-site-app/SPEC.md` (D-500 a D-528, CA-1400 a CA-1463, CB-500 a CB-528). Em 27/10/2026 o
 dono aprovou as telas com dois ajustes: texto mínimo (D-526, no lugar do D-519) e a mudança obrigatória para o app, com
 a P3 logo depois do site da P2 (D-527 e D-528).
-**Base:** `main` em `83060dc`. Cada publicação num ramo próprio, a partir da `main` do dia: `separacao-p1`,
-`separacao-p2`, `separacao-p3`. O ramo `publicacao-2` (alimentos) ainda não está na `main`; quem chegar depois resolve
-os conflitos em `src/App.tsx` e `src/ui/AreaDeTrabalho.tsx`.
+**Base:** `main` em `afa3815` (27/10/2026, já com a publicação 2 de alimentos). A P1 foi feita no ramo
+`separacao-site-app`; a P2 e a P3 vão em ramos próprios, a partir da `main` do dia (`separacao-p2`, `separacao-p3`).
 **Dependências novas:** nenhuma. A Cloudflare liga ao repositório pelo painel dela; o domínio, as variáveis e a regra
 de redirecionamento ficam lá. O teste da mudança no Firefox e no WebKit usa navegadores do Playwright que já está no
 projeto (`npx playwright install firefox webkit`, sem pacote novo).
@@ -71,6 +70,46 @@ projeto (`npx playwright install firefox webkit`, sem pacote novo).
   site em `localhost:4178`. O site aponta para o app de `4176`; os dois apps apontam para o site de `4178`. O servidor
   falso passa a responder no contexto do navegador (`context.route`), para valer também na aba que o "Continuar" abre.
 
+**Decisões da implementação da P1 (27/10/2026).** Tomadas ao ler o código, sem perguntar (regra "apenas faça"); cada
+uma diz o porquê.
+
+- **DP-SA-18 · O `SIGNED_IN` não prova entrada nova.** O supabase-js 2.116 também manda `SIGNED_IN` ao restaurar a
+  sessão guardada no navegador e quando outra aba entra. Por isso: o uso vale `max(uso da marca da mesma conta, hora da
+  entrada)`, e uma entrada nova já tem a hora da entrada de agora; o desvio do relógio só vem de token recém-emitido
+  (`TOKEN_REFRESHED` e as entradas que o próprio app faz: entrar, confirmar o código, código de troca de senha). A hora
+  que o app grava (a reserva do `amr`, DP-SA-4) é a dessas entradas, e a marca guarda `entrada` para isso. O
+  `usarConta` confere a sessão sempre que a aba passa de "sem sessão" para "com sessão" (o `getSession`, o
+  `INITIAL_SESSION` e o `SIGNED_IN` de outra aba); com a sessão aberta, quem confere é o vigia.
+- **DP-SA-19 · O motivo da saída fica até alguém entrar.** No lugar de "Entrar lê o motivo uma vez e o apaga" (DP-SA-5):
+  a marca `metanutri:sessao:saida` sai quando uma sessão é aceita (qualquer conta) e no "Sair". Assim as duas abas
+  mostram "Entre de novo" (CA-1445), e recarregar Entrar não perde o aviso.
+- **DP-SA-20 · A raiz com motivo abre Entrar.** Na P1, a raiz sem sessão abre a landing (CA-730). Com o motivo da saída
+  guardado, abre Entrar com "Entre de novo": o CA-1450 vale também em `metanutri.com.br/`. Na P2 isso some: no app, a
+  raiz sem sessão já é Entrar (D-504).
+- **DP-SA-21 · Onde o vigia mora.** `src/App.tsx` ganha um componente interno entre os provedores e o `Conteudo`: ele lê
+  o perfil (o `usePerfilConta` sobe do `Conteudo`, que passa a recebê-lo pronto), roda o vigia, dá os contextos e desenha
+  o aviso e a capa por cima de qualquer tela da conta (CB-510). A rota do paciente vem do endereço (`hashchange`), sem
+  um segundo `useRota`: a guarda de saída do CA-863a rodaria duas vezes. Arquivo novo: `src/ui/sessao/contextoSessao.ts`
+  (a hora do fim, para a faixa dentro da `Estrutura`).
+- **DP-SA-22 · "Entre de novo" é título e subtítulo.** O aviso do D-526 é uma frase só e vai no subtítulo da tela
+  Entrar, sem caixa à parte. Sai `src/ui/publico/conta/AvisoEntreDeNovo.tsx`; o texto vem de `motivoDaSaida.ts`.
+- **DP-SA-23 · Espaço vazio está em dia.** Sem dado da nuvem no espaço e sem dado de antes das contas da pessoa, não há
+  o que perder: conta como em dia mesmo sem a situação da nuvem. Sem isso, a saída diria "Entre para enviar o que ficou
+  neste navegador" sem nada para enviar.
+- **DP-SA-24 · T7 só prende o que o motor já faz.** O `abrirAgora` de `sincronia.ts` já regrava a situação inteira ao
+  abrir, sem o `saiu`. A T7 escreve o teste (CA-1449, CB-528) e só mexe no motor se ele falhar.
+- **DP-SA-25 · Encerrar a sessão local com prazo.** O `signOut({ scope: 'local' })` espera no máximo 5 s. Depois, as
+  chaves `sb-…-auth-token` que sobraram (com `-code-verifier` e `-user`) saem e a renovação automática para (DP-SA-10):
+  sem isso, uma renovação atrasada gravaria a sessão de novo.
+- **DP-SA-26 · A aba que não faz a saída.** Fica com a capa; quando a sessão cai (`SIGNED_OUT`), vai para Entrar. Se a
+  aba que saía for fechada no meio, ela tenta de novo a cada 20 s.
+- **DP-SA-27 · Quando o vigia confere.** Ao montar, no próximo instante em que algo muda (aviso, faixa ou saída), no
+  máximo a cada 60 s, e em `visibilitychange`, `focus` e no `storage` da marca: o uso em outra aba fecha o aviso aqui
+  (CB-508).
+- **DP-SA-28 · No navegador, a sessão entra pelo formulário.** O `sessao.spec.ts` entra por Entrar (servidor falso com
+  `entrar: 'ok'`): o script de abertura do servidor falso põe a sessão de volta a cada recarga, e a saída recarrega. O
+  `ligarServidorFalso` passa a devolver os `logout` pedidos, com o `scope`.
+
 ## 1. Tarefas
 
 Cada tarefa é um commit (Conventional Commits, em português) que passa em `npm run lint`, `npm run typecheck` e
@@ -102,7 +141,7 @@ antes.
   `src/ui/sessao/motivoDaSaida.ts` e `.test.ts` (DP-SA-5). Depende de: T3. Verifica: CA-1445 (a marca dividida entre
   abas), CB-517, CB-518.
 - [ ] **T6 · A conta: "Sair" local, saída por tempo e conferência ao abrir.** `src/ui/estado/usarConta.ts` e
-  `usarConta.test.ts`: o "Sair" com `scope: 'local'` (D-520); `sairPorTempo(motivo, { apagar })`; depois do
+  `usarConta.test.ts`: o "Sair" com `scope: 'local'` (D-520); `sairPorTempo({ apagar, ate })` (DP-SA-5); depois do
   `getSession` e antes do primeiro `setSessao`, a sessão vencida sai (D-518: apaga se em dia sem contar retidos, guarda
   se não) e grava o motivo; DP-SA-10; no `SIGNED_IN`, a marca e o desvio; no `TOKEN_REFRESHED`, o desvio.
   `src/ui/estado/usarSaida.test.tsx` (o "Sair" continua igual por fora). Depende de: T3, T4, T5. Verifica: CA-1450,
@@ -119,11 +158,11 @@ antes.
   CA-1446, CA-1447, CA-1448, CA-1458, CB-508, CB-509, CB-522, CB-527.
 - [ ] **T10 · As telas da sessão.** Novos, um componente por arquivo, com os componentes do design system:
   `src/ui/sessao/AvisoDeInatividade.tsx`, `src/ui/sessao/FaixaDoLimite.tsx`, `src/ui/sessao/CapaEncerrando.tsx`,
-  `src/ui/publico/conta/AvisoEntreDeNovo.tsx`; `src/ui/publico/conta/TelaEntrar.tsx` (título "Entre de novo" e o aviso
-  quando há motivo); testes `src/ui/sessao/telasDaSessao.test.tsx` e `src/ui/publico/conta/TelaEntrar.test.tsx`. Textos
+  `src/ui/sessao/contextoSessao.ts` (DP-SA-21); `src/ui/publico/conta/TelaEntrar.tsx` (título "Entre de novo" e o aviso
+  no subtítulo quando há motivo, DP-SA-22); testes `src/ui/sessao/telasDaSessao.test.tsx` e `src/ui/publico/conta/TelaEntrar.test.tsx`. Textos
   exatos do D-526. Depende de: T3, T5. Verifica: CA-1442 e CA-1444 (as telas), CA-1447 e CA-1448 (os textos), CB-516.
 - [ ] **T11 · Ligar no app.** `src/App.tsx` (o vigia roda com servidor e sessão e nunca na rota `missoes`; o aviso e a
-  capa por cima; depois da saída, a rota vai para Entrar), `src/ui/layout/Estrutura.tsx` (a faixa no topo da área, no
+  capa por cima; depois da saída, a rota vai para Entrar; a raiz com motivo abre Entrar, DP-SA-20; DP-SA-21), `src/ui/layout/Estrutura.tsx` (a faixa no topo da área, no
   fluxo, como o aviso de versão nova), `src/AppConta.test.tsx` e `src/AppNuvem.test.tsx`. Depende de: T9, T10.
   Verifica: CA-1444 (o lugar), CA-1455, CA-1456, CA-1457.
 - [ ] **T12 · No navegador (P1).** `e2e/apoio/servidorFalso.ts` (token com `amr` e `iat`; o `logout` guarda o `scope`
