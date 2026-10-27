@@ -125,8 +125,9 @@ uma diz o porquê.
   Cloudflare para em 20 minutos): `node scripts/conferir-publicacao.mjs && npm audit --omit=dev --audit-level=high &&
   npm run build:app`. O `check` é obrigatório antes do merge na `main` (já é a prática). O `conferir-publicacao.mjs` só lê
   `src/domain/legal.ts`, sem variável de ambiente: roda igual na Cloudflare, sem ajuste.
-- **DP-SA-32 · `.node-version` na raiz, com `22`.** O `engines` pede `>=22.12.0`, o `publicar.yml` usa 22 e a máquina do
-  projeto, 22.16. A Cloudflare lê o arquivo; o passo 5 do dono não tem mais `NODE_VERSION`. Arquivo novo, na T28.
+- **DP-SA-32 · `.node-version` na raiz, ~~com `22`~~ com a versão exata do DP-SA-62.** O `engines` pede `>=22.12.0`, o
+  `publicar.yml` usa 22 e a máquina do projeto, 22.16. A Cloudflare lê o arquivo; o passo 5 do dono não tem mais
+  `NODE_VERSION`. Arquivo novo, na T28.
 - **DP-SA-33 · Nomes fixos na Cloudflare** (o dono cria em paralelo): projeto `metanutri-app`, ramo `main`, build `npm run
   publicar:app`, saída `dist`, variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MERCADOPAGO_PUBLIC_KEY` e
   `VITE_TURNSTILE_SITE_KEY`. O código não pede outro nome.
@@ -218,6 +219,36 @@ uma diz o porquê.
   (D-502) e, no site, cada página é um endereço próprio, que sempre abre sobre o HTML pré-desenhado. No navegador, o
   teste confere a foto assentando no site, continuando o desenho pronto (CA-1657); o caso "do zero" segue coberto no
   componente (`src/ui/publico/TelaInicio.test.tsx`). Não há código a mudar: só o teste de navegador.
+
+Da revisão independente da P2 (27/10/2026), uma tarefa cada (R9 a R15):
+
+- **DP-SA-57 · A troca nunca esvazia a situação da nuvem (R9).** No modo "trocar" (D-513), as chaves que o pacote traz
+  são regravadas no lugar, sem sair antes, e só saem as outras do espaço. Se o pacote não traz a situação da nuvem, a
+  do app ganha uma mudança a mais, como na migração (R1), em vez de sair. Motivo: outra aba do app na mesma conta lê a
+  situação vazia como "a conta saiu nesta aba" (DP-11) e para o motor até recarregar, presa em "Salvando…". A mudança a
+  mais faz o motor juntar o que veio com a nuvem, item por item, como faria sem a situação, e a conta só fica em dia
+  depois de subir.
+- **DP-SA-58 · O link de paciente antigo também limpa a sessão (R10).** O script do `<head>` apaga as chaves
+  `sb-…-auth-token` (e `-code-verifier` e `-user`) antes de mandar o `#/missoes/…` ao app. Motivo: a limpeza do D-511 é
+  "em toda visita", e o link do paciente é a visita mais comum ao endereço antigo; ele sai antes de o pacote do site
+  carregar. Só a sessão: o espaço das contas fica para a próxima visita, como hoje (CB-512).
+- **DP-SA-59 · A limpeza também apaga as marcas do aparelho (R11).** `metanutri:sessao`, `metanutri:sessao:saida`,
+  `metanutri:destino-pendente` e `metanutri:email-pendente` saem em toda visita ao site: só o app as usa, e o e-mail é
+  dado pessoal (minimização do D-511). O tema fica: o site usa. Elas continuam fora do "dado só aqui" (DP-SA-54). Os
+  nomes ficam escritos em `src/site/limpeza.ts` (o pacote do site não importa as telas do app); o teste confere que são
+  os mesmos das constantes do app. A `metanutri:sessao:saida` entra pelo mesmo motivo das outras três.
+- **DP-SA-60 · O site apaga só o que não mudou desde a entrega (R12).** O remetente guarda o pacote entregue (chave e
+  valor); no "recebido", saem só as chaves do pacote, do espaço da conta e de antes das contas, cujo valor ainda é o
+  entregue. O que mudou depois fica e conta como dado só aqui na próxima visita. O dono sai quando não sobra dado de antes
+  das contas; o tema fica, como antes.
+- **DP-SA-61 · O manifesto do app sem frase de venda (R13).** `name` e `short_name` "MetaNutri", sem `description`. A
+  regra do dono é sem tagline (05/10/2026), e o site já não é instalável.
+- **DP-SA-62 · Node exato: 22.23.4 (R14).** O `undici` pede 22.19 ou mais e o `jsdom` dos testes, 22.22.2 ou mais; 22.23.4
+  é a última do 22. Com "22", a Cloudflare podia pegar uma menor. A máquina do projeto tem 22.16: a conferência roda o
+  `npm run publicar:app` e o `npm run check` com o 22.23.4 pelo `npx -p node@22.23.4`, sem instalar nada no projeto.
+- **DP-SA-63 · No iPhone, o ícone antigo pode abrir o "Continuar" sem `window.opener` (R15).** No modo instalado do iOS,
+  a aba nova pode não ter a ligação com a do site: o app não espera (DP-SA-40), abre com a nuvem e o dado fica no
+  endereço antigo, sem perda. O roteiro do dono ganha esse teste (README, passo 9).
 
 ## 1. Tarefas
 
@@ -462,6 +493,27 @@ Na P2, cada uma com o teste que falha antes e um commit (DP-SA-43 a DP-SA-45):
   `npm run e2e`, o CA-1442 de `e2e/servidor-falso/sessao.spec.ts` (P1) falhou uma vez, com a máquina cheia; passou em
   13 repetições seguidas e na rodada inteira de novo. Todo CA da P2 tem teste na matriz. Diferenças entre o código e a
   spec estão no relatório da P2 (DP-SA-36 nos planos, CA-1656 pelo DP-SA-56, CA-1417, CA-1419 e CA-1407 sem navegador).*
+
+#### Correções da revisão independente da P2 (27/10/2026)
+
+Cada uma com o teste que falha antes e um commit, no ramo `separacao-p2`; o `separacao-p3` é refeito por cima.
+
+- [ ] **R9 · A troca não para a outra aba (média).** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (a situação nunca
+  fica vazia durante a troca, com e sem ela no pacote; DP-SA-57), `e2e/site/mudanca-outra-aba.spec.ts` (novo, só no
+  Chromium: com outra aba do app aberta, a troca acontece e o paciente novo dela sobe; e o CB-507, duas abas do site com
+  "Continuar"). Verifica: CA-1434, CB-124, CB-507.
+- [ ] **R10 · O link de paciente antigo limpa a sessão.** `public/preparar-pagina.js`, `src/seo/prepararPagina.test.tsx`
+  (DP-SA-58). Verifica: D-511 (a), CA-1423.
+- [ ] **R11 · As marcas do aparelho saem do endereço antigo.** `src/site/limpeza.ts` e `.test.ts` (DP-SA-59). Verifica:
+  D-511, DP-SA-54.
+- [ ] **R12 · Apagar só o que foi entregue sem mudar.** `src/domain/mudancaDeEndereco.ts` e `.test.ts` (`apagarEntregue`
+  recebe o pacote), `src/site/remetente.ts` e `.test.ts` (guarda o pacote entregue). Verifica: CA-1436, CB-507
+  (DP-SA-60).
+- [ ] **R13 · O manifesto sem frase de venda.** `src/seo/pluginAlvo.ts` e `.test.ts` (DP-SA-61). Verifica: CA-1421.
+- [ ] **R14 · Node exato.** `.node-version` e `src/data/sqlCheckout.test.ts` (o teste que já lê a publicação confere a
+  versão exata e mínima; DP-SA-62).
+- [ ] **R15 · O iPhone com o ícone antigo no roteiro do dono.** `README.md` (passo 9 da "Ordem para publicar a P2 e a P3";
+  DP-SA-63). Sem teste automático.
 
 ### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
 
