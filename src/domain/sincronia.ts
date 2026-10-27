@@ -213,6 +213,11 @@ export interface OpcoesSincronia {
 
 export interface Sincronia {
   readonly estado: EstadoDaNuvem
+  /**
+   * A conta saiu (`parar`) ou saiu em outra aba: nada mais vai para a nuvem. Spec separacao-site-app, DP-SA-43: com o
+   * motor parado, fechar ou recarregar não pergunta (R4).
+   */
+  readonly parada: boolean
   assinar(ouvinte: () => void): () => void
   /** Começa (abre a cópia, se ainda não abriu). A árvore liga ao montar. */
   ligar(): void
@@ -766,6 +771,10 @@ export function criarSincronia(opcoes: OpcoesSincronia): Sincronia {
   return {
     get estado() {
       return estado
+    },
+
+    get parada() {
+      return parada
     },
 
     assinar(ouvinte) {

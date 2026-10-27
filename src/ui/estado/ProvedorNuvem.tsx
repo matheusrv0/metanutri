@@ -78,7 +78,9 @@ export function ProvedorNuvem({ usuarioId, children }: ProvedorNuvemProps) {
       if (sincronia.estado.pendente) void sincronia.salvarAgora()
     }
     const aoFechar = (evento: BeforeUnloadEvent) => {
-      if (!avisarAoFechar(sincronia.estado)) return
+      // Spec separacao-site-app, R4 (DP-SA-43): com o motor parado, a conta está saindo (a saída por tempo, o "Sair mesmo
+      // assim"); a recarga que vem depois não pergunta. O que não subiu fica no navegador ou ficou por escolha da pessoa.
+      if (sincronia.parada || !avisarAoFechar(sincronia.estado)) return
       evento.preventDefault()
       evento.returnValue = ''
     }
