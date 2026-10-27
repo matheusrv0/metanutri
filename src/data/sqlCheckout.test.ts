@@ -1,4 +1,5 @@
 import publicar from '../../.github/workflows/publicar.yml?raw'
+import versaoDoNode from '../../.node-version?raw'
 import sql from '../../supabase/008-cartao-da-assinatura.sql?raw'
 
 // As funções assinar, gerenciar-assinatura e webhook-mercadopago viraram ligação fina (D-88): o que
@@ -35,6 +36,13 @@ describe('o site publicado (D-72)', () => {
     expect(publicar).toContain('run: npm run build:site')
     expect(publicar).toContain('path: dist-site')
     expect(publicar).not.toMatch(/VITE_MERCADOPAGO_PUBLIC_KEY|VITE_SUPABASE_|vars\.|secrets\./)
+  })
+
+  it('R14 (spec separacao-site-app, DP-SA-62): a Cloudflare monta o app com um Node 22 exato, que o undici (22.19) e o jsdom (22.22.2) aceitam', () => {
+    const versao = versaoDoNode.trim()
+    expect(versao).toMatch(/^22\.\d+\.\d+$/)
+    const [, menor = 0, correcao = 0] = versao.split('.').map(Number)
+    expect(menor * 1000 + correcao).toBeGreaterThanOrEqual(22 * 1000 + 2)
   })
 
   it('CA-432: cada ação do GitHub está fixada pelo commit, com a versão num comentário (D-100)', () => {
