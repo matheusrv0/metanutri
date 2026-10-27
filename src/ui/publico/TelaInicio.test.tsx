@@ -512,16 +512,27 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
       expect(perguntas.textContent).not.toMatch(/Meus alimentos: por 100 g/)
     })
 
-    it('CA-1480 e D-610: a faixa final é um link para Criar conta, que chama quem manda; o hover clareia, nunca laranja', async () => {
+    it('CA-1480, CA-1685 e D-610: a faixa final é um link para Criar conta, com a frase nova e a palavra; o hover clareia, nunca laranja', async () => {
       const aoComecar = vi.fn()
       montar({ aoComecar })
-      const faixa = screen.getByRole('link', { name: /Crie a conta e monte o primeiro plano hoje\. Sem cartão\.\s*Começar/ })
+      const faixa = screen.getByRole('link', { name: /Crie sua conta e monte o primeiro plano hoje, sem cartão de crédito\.\s*Começar/ })
       expect(faixa).toHaveAttribute('href', '#/criar-conta')
       expect(faixa.className).toMatch(/hover:bg-landing-chamar-hover/)
       expect(faixa.className).not.toMatch(/bg-landing-laranja/)
       await userEvent.setup().click(faixa)
       expect(aoComecar).toHaveBeenCalledOnce()
     })
+
+    it('CA-1684 e D-673: a altura da faixa acompanha a letra da palavra, e a palavra sobe a profundidade do cedilha', () => {
+      montar()
+      const faixa = document.querySelector('[data-faixa-final]')
+      expect(faixa?.className).toContain('min-h-[calc(176px+clamp(80px,22.5vw,380px)*1.02)]')
+      expect(faixa?.className).toContain('max-[720px]:min-h-[max(320px,calc(150px+20vw*1.05))]')
+      const palavra = faixa?.querySelector('[data-palavra]')
+      expect(palavra?.className).toContain('bottom-[calc(22px+.22em)]')
+      expect(palavra?.className).toContain('text-[clamp(80px,22.5vw,380px)]')
+    })
+
   })
 
   describe('texto e acessibilidade', () => {
