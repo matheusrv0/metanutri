@@ -1,9 +1,13 @@
-import { isAuthRetryableFetchError } from '@supabase/supabase-js'
-import { useCallback, useEffect, useState } from 'react'
+import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { contaEmDia } from '@/domain/contaEmDia.ts'
 import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
 import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
+import { desvioDoRelogio, lerToken, situacaoDaSessao } from '@/domain/tempoDeSessao.ts'
 import { contaDaExclusaoPedida, esquecerExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
+import { apagarMarca, gravarMarca, lerMarca, ultimoUso } from '../sessao/marcaDeUso.ts'
+import { esquecerSaida, gravarSaida, lerSaida } from '../sessao/motivoDaSaida.ts'
 import type { TipoVolta } from '../voltaExterna.ts'
 import { armazenamentoLocal } from './armazenamentoLocal.ts'
 import { appConfirmado, confirmarComOApp } from './codigoDoApp.ts'
@@ -65,8 +69,15 @@ export interface ValorConta {
   /**
    * D-131 (spec dados-na-nuvem): sai e apaga a cópia de trabalho desta conta neste navegador; os dados
    * dela estão na nuvem. Os de outras contas ficam (D-124). Quem chama para a nuvem antes (DP-11).
+   * D-520 (spec separacao-site-app): encerra só a sessão deste navegador.
    */
   readonly sair: () => Promise<void>
+  /**
+   * D-517 (spec separacao-site-app): a saída por tempo, depois de quem chama tentar enviar o que falta. Apaga o espaço
+   * da conta só com `apagar` (a nuvem tem tudo), deixa para Entrar a hora do último uso (`ate`) e encerra só a sessão
+   * deste navegador, mesmo sem resposta do servidor.
+   */
+  readonly sairPorTempo: (saida: { readonly apagar: boolean; readonly ate: number }) => Promise<void>
 }
 
 const SEM_SERVIDOR: Resultado = { ok: false, erro: 'sem-servidor' }
@@ -116,11 +127,68 @@ export function enderecoDeVolta(motivo: Exclude<TipoVolta, 'pagamento'>): string
 
 type Usuario = { id: string; email?: string | undefined; user_metadata?: Record<string, unknown> } | null
 
+/** A sessão como o supabase-js entrega: o token de acesso traz a hora da entrada (`amr`) e a de emissão (`iat`). */
+type SessaoDoServidor = { readonly access_token?: string | undefined; readonly user: Usuario } | null
+
 function montarSessao(usuario: Usuario): Sessao | null {
   if (!usuario?.email) return null
   const meta = usuario.user_metadata ?? {}
   const nome = typeof meta['nome'] === 'string' && meta['nome'].trim() ? (meta['nome'] as string) : nomeSugerido(usuario.email)
   return { id: usuario.id, email: usuario.email, nome }
+}
+
+/** DP-SA-25 (spec separacao-site-app): quanto o encerramento local espera o servidor antes de seguir sem ele. */
+export const PRAZO_DO_ENCERRAMENTO_MS = 5_000
+
+/** Onde o supabase-js guarda a sessão neste navegador: `sb-<projeto>-auth-token`, com o `-code-verifier` e o `-user`. */
+const ehChaveDaSessao = (chave: string): boolean => /^sb-.+-auth-token(-code-verifier|-user)?$/.test(chave)
+
+/** As chaves da sessão que ainda estão no navegador. */
+function chavesDaSessao(): string[] {
+  const armazenamento = armazenamentoLocal()
+  const chaves: string[] = []
+  try {
+    for (let i = 0; armazenamento !== null && i < armazenamento.length; i += 1) {
+      const chave = armazenamento.key(i)
+      if (chave !== null && ehChaveDaSessao(chave)) chaves.push(chave)
+    }
+  } catch {
+    // navegador bloqueado: o supabase-js também não guardou nada
+  }
+  return chaves
+}
+
+/**
+ * D-520 e DP-SA-25 (spec separacao-site-app): encerra só a sessão deste navegador, o que também a invalida no servidor
+ * quando há rede. O servidor tem 5 s; sem resposta, ou quando a biblioteca não apaga a sessão guardada (a renovação
+ * falhou sem rede, DP-SA-10), o app para a renovação automática e apaga ele mesmo as chaves (CB-506).
+ */
+async function encerrarSessaoLocal(cliente: SupabaseClient): Promise<void> {
+  let prazo: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      cliente.auth.signOut({ scope: 'local' }),
+      new Promise<void>((seguir) => {
+        prazo = setTimeout(seguir, PRAZO_DO_ENCERRAMENTO_MS)
+      }),
+    ])
+  } catch {
+    // sem rede: segue para apagar daqui
+  } finally {
+    clearTimeout(prazo)
+  }
+  const sobraram = chavesDaSessao()
+  if (sobraram.length === 0) return
+  try {
+    void cliente.auth.stopAutoRefresh()
+  } catch {
+    // a renovação já estava parada
+  }
+  try {
+    for (const chave of sobraram) armazenamentoLocal()?.removeItem(chave)
+  } catch {
+    // navegador bloqueado: não há o que apagar
+  }
 }
 
 /** Sessão da conta na nuvem. Sem Supabase configurado, devolve sessão nula e `disponivel: false`. */
@@ -131,12 +199,20 @@ export function useConta(): ValorConta {
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [carregando, setCarregando] = useState(cliente !== null)
   const [emRecuperacao, setEmRecuperacao] = useState(false)
+  // DP-SA-18 (spec separacao-site-app): o app está entrando agora (entrar, confirmar o código, código da troca de
+  // senha). Só aí o token que chega é recém-emitido e a entrada é nova: o SIGNED_IN sozinho não prova isso.
+  const entrando = useRef(false)
+  // A conta cuja sessão esta aba já aceitou: só a passagem de "sem sessão" para "com sessão" é conferida aqui; com a
+  // sessão aberta, quem confere o tempo é o vigia (usarTempoDeSessao).
+  const aceita = useRef<string | null>(null)
 
   useEffect(() => {
     if (!cliente) return
     let vivo = true
     // A conta da sessão de agora, para saber quem saiu quando a sessão cai (L6 da revisão da exclusão).
     let contaDaSessao: string | null = null
+    // A conta que está saindo por tempo ao abrir: o getSession e o INITIAL_SESSION trazem a mesma sessão.
+    let saindo: string | null = null
 
     /** Spec exclusao-de-conta (CB-250): a exclusão desta conta foi pedida e a resposta se perdeu; a conta pode já não existir. */
     const apagarSeFoiExcluida = (conta: string) => {
@@ -145,13 +221,65 @@ export function useConta(): ValorConta {
       esquecerExclusaoPedida()
     }
 
+    /**
+     * D-518: a sessão venceu enquanto a aba estava fechada (ou o computador dormia). Sai antes de a área de trabalho
+     * aparecer, sem tentar enviar nada: em dia (sem contar o valor retido, como o "Sair"), o espaço é apagado; com
+     * pendência, fica para a mesma conta enviar ao entrar de novo (CA-1449).
+     */
+    const sairAoAbrir = (conta: string, ate: number): void => {
+      if (saindo === conta) return
+      saindo = conta
+      const armazenamento = armazenamentoLocal()
+      const emDia = armazenamento !== null && contaEmDia(armazenamento, conta, { contarRetidos: false })
+      if (emDia) apagarDadosDaConta(armazenamento, conta)
+      // Revisão R7: o motivo de uma saída anterior (a por tempo, que já apagou a marca) tem a hora do último uso; esta
+      // só saberia a da entrada. A hora fica a dele, e a pendência só soma.
+      const anterior = lerSaida(armazenamento)
+      gravarSaida(armazenamento, { ate: anterior?.ate ?? ate, pendente: (anterior?.pendente ?? false) || !emDia })
+      apagarMarca(armazenamento)
+      void encerrarSessaoLocal(cliente)
+    }
+
+    /**
+     * D-514, D-515 e D-518: aceita a sessão que chegou, ou a encerra se venceu. A hora da entrada vem do token (o `amr`)
+     * ou da marca; o desvio do relógio, só de token recém-emitido (DP-SA-4 e DP-SA-18).
+     */
+    const aceitar = (nova: SessaoDoServidor, evento: string): Sessao | null => {
+      const usuario = nova?.user ?? null
+      if (!usuario?.email) return null
+      const conta = usuario.id
+      const armazenamento = armazenamentoLocal()
+      const token = lerToken(nova?.access_token)
+      const marca = lerMarca(armazenamento, conta)
+      const recemEmitido = entrando.current || evento === 'TOKEN_REFRESHED' || evento === 'MFA_CHALLENGE_VERIFIED'
+      const desvio = recemEmitido && token.emitido !== null ? desvioDoRelogio(token.emitido, Date.now()) : (marca?.desvio ?? 0)
+      const agora = Date.now() + desvio
+      if (aceita.current === conta && !entrando.current) {
+        if (recemEmitido && marca !== null) gravarMarca(armazenamento, { ...marca, desvio })
+        return montarSessao(usuario)
+      }
+      const entrada = token.entrada ?? marca?.entrada ?? (entrando.current ? agora : null)
+      const uso = entrada === null ? null : entrando.current ? agora : ultimoUso(marca, null, entrada)
+      const admin = marca?.admin ?? false
+      if (entrada === null || uso === null || situacaoDaSessao({ agora, uso, entrada, admin }).saida !== null) {
+        sairAoAbrir(conta, (uso ?? agora) - desvio)
+        return null
+      }
+      gravarMarca(armazenamento, { conta, uso, entrada, admin, desvio })
+      // DP-SA-19: alguém entrou; o "Entre de novo" de antes já não vale.
+      esquecerSaida(armazenamento)
+      aceita.current = conta
+      saindo = null
+      return montarSessao(usuario)
+    }
+
     void cliente.auth.getSession().then(({ data }) => {
       if (!vivo) return
       contaDaSessao = data.session?.user.id ?? null
       // O site abre sem sessão depois de uma exclusão sem resposta: a cópia de trabalho daquela conta sai.
       const pendente = contaDaSessao === null ? contaDaExclusaoPedida() : null
       if (pendente !== null) apagarSeFoiExcluida(pendente)
-      setSessao(montarSessao(data.session?.user ?? null))
+      setSessao(aceitar(data.session, 'INITIAL_SESSION'))
       setCarregando(false)
     })
 
@@ -161,11 +289,12 @@ export function useConta(): ValorConta {
       // Sair no meio da troca de senha não deve deixar o modo de recuperação ligado.
       if (evento === 'SIGNED_OUT') {
         setEmRecuperacao(false)
+        aceita.current = null
         // A sessão caiu (a renovação falhou com o login apagado) depois de um pedido de exclusão sem resposta.
         if (contaDaSessao !== null) apagarSeFoiExcluida(contaDaSessao)
       }
       contaDaSessao = nova?.user.id ?? null
-      setSessao(montarSessao(nova?.user ?? null))
+      setSessao(aceitar(nova, evento))
     })
 
     return () => {
@@ -174,12 +303,27 @@ export function useConta(): ValorConta {
     }
   }, [cliente])
 
-  const entrar = useCallback(async (email: string, senha: string, captchaToken?: string): Promise<Resultado> => {
-    const c = obterSupabase()
-    if (!c) return SEM_SERVIDOR
-    const { error } = await c.auth.signInWithPassword({ email: email.trim(), password: senha, ...(captchaToken ? { options: { captchaToken } } : {}) })
-    return error ? { ok: false, erro: erroDoPedido(error, captchaToken) } : OK
+  /** DP-SA-18: o que o app faz para entrar marca a entrada nova, para o token que chega no meio contar como recém-emitido. */
+  const comEntradaNova = useCallback(async <T,>(fazer: () => Promise<T>): Promise<T> => {
+    entrando.current = true
+    try {
+      return await fazer()
+    } finally {
+      entrando.current = false
+    }
   }, [])
+
+  const entrar = useCallback(
+    async (email: string, senha: string, captchaToken?: string): Promise<Resultado> => {
+      const c = obterSupabase()
+      if (!c) return SEM_SERVIDOR
+      const { error } = await comEntradaNova(() =>
+        c.auth.signInWithPassword({ email: email.trim(), password: senha, ...(captchaToken ? { options: { captchaToken } } : {}) }),
+      )
+      return error ? { ok: false, erro: erroDoPedido(error, captchaToken) } : OK
+    },
+    [comEntradaNova],
+  )
 
   const cadastrar = useCallback(async (dados: DadosCadastro, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
@@ -221,18 +365,21 @@ export function useConta(): ValorConta {
     return error ? { ok: false, erro: erroDoPedido(error, captchaToken) } : OK
   }, [])
 
-  const confirmarCodigo = useCallback(async (email: string, codigo: string): Promise<ResultadoConfirmacao> => {
-    const c = obterSupabase()
-    if (!c) return SEM_SERVIDOR
-    // O e-mail de confirmação não traz link que confirme ao ser aberto: o antivírus do
-    // Microsoft 365 abre todo link sozinho (spec confirmacao-por-codigo, D-89).
-    const { data, error } = await c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'email' })
-    if (error) return { ok: false, erro: traduzir(error.message, error.code) }
-    const meta = data.user?.user_metadata ?? {}
-    const situacao: unknown = meta['situacao']
-    const plano: unknown = meta['plano_desejado']
-    return { ...OK, ...(ehSituacao(situacao) ? { situacao } : {}), ...(ehIdPlano(plano) ? { planoDesejado: plano } : {}) }
-  }, [])
+  const confirmarCodigo = useCallback(
+    async (email: string, codigo: string): Promise<ResultadoConfirmacao> => {
+      const c = obterSupabase()
+      if (!c) return SEM_SERVIDOR
+      // O e-mail de confirmação não traz link que confirme ao ser aberto: o antivírus do
+      // Microsoft 365 abre todo link sozinho (spec confirmacao-por-codigo, D-89).
+      const { data, error } = await comEntradaNova(() => c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'email' }))
+      if (error) return { ok: false, erro: traduzir(error.message, error.code) }
+      const meta = data.user?.user_metadata ?? {}
+      const situacao: unknown = meta['situacao']
+      const plano: unknown = meta['plano_desejado']
+      return { ...OK, ...(ehSituacao(situacao) ? { situacao } : {}), ...(ehIdPlano(plano) ? { planoDesejado: plano } : {}) }
+    },
+    [comEntradaNova],
+  )
 
   const pedirTrocaDeSenha = useCallback(async (email: string, captchaToken?: string): Promise<Resultado> => {
     const c = obterSupabase()
@@ -252,13 +399,16 @@ export function useConta(): ValorConta {
     return OK
   }, [])
 
-  const conferirCodigoDeSenha = useCallback(async (email: string, codigo: string): Promise<Resultado> => {
-    const c = obterSupabase()
-    if (!c) return SEM_SERVIDOR
-    // Dando certo, o Supabase avisa PASSWORD_RECOVERY, como no link: o modo de recuperação liga sozinho.
-    const { error } = await c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'recovery' })
-    return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
-  }, [])
+  const conferirCodigoDeSenha = useCallback(
+    async (email: string, codigo: string): Promise<Resultado> => {
+      const c = obterSupabase()
+      if (!c) return SEM_SERVIDOR
+      // Dando certo, o Supabase avisa PASSWORD_RECOVERY, como no link: o modo de recuperação liga sozinho.
+      const { error } = await comEntradaNova(() => c.auth.verifyOtp({ email: email.trim(), token: soDigitos(codigo), type: 'recovery' }))
+      return error ? { ok: false, erro: traduzir(error.message, error.code) } : OK
+    },
+    [comEntradaNova],
+  )
 
   const trocarSenha = useCallback(async (senha: string, codigoDoApp?: string): Promise<Resultado> => {
     const c = obterSupabase()
@@ -285,25 +435,36 @@ export function useConta(): ValorConta {
     async () => {
       // Apaga antes de sair: se a rede falhar no meio, o dado já não fica no computador (D-131).
       // Só o espaço de quem sai, e os dados de antes de que ela é dona (D-124); sem sessão, não há
-      // conta saindo (DP-10).
-      if (usuarioId !== null) apagarDadosDaConta(armazenamentoLocal(), usuarioId)
+      // conta saindo (DP-10). A marca de uso e o "Entre de novo" também saem: quem escolheu sair não saiu por tempo.
+      if (usuarioId !== null) {
+        const armazenamento = armazenamentoLocal()
+        apagarDadosDaConta(armazenamento, usuarioId)
+        apagarMarca(armazenamento)
+        esquecerSaida(armazenamento)
+      }
       const c = obterSupabase()
       if (!c) return
-      // DP-27: sem internet, o servidor não confirma; a sessão deste navegador sai mesmo assim.
-      let falhou: boolean
-      try {
-        const resposta = await c.auth.signOut()
-        falhou = resposta?.error != null
-      } catch {
-        falhou = true
-      }
-      if (falhou) {
-        try {
-          await c.auth.signOut({ scope: 'local' })
-        } catch {
-          // a sessão local sai sem rede; se nem isso der, a página recarrega logo depois
-        }
-      }
+      // DP-27 e D-520: só a sessão deste navegador, e ela sai mesmo sem internet.
+      aceita.current = null
+      await encerrarSessaoLocal(c)
+      setSessao(null)
+      setEmRecuperacao(false)
+    },
+    [usuarioId],
+  )
+
+  const sairPorTempo = useCallback(
+    async ({ apagar, ate }: { readonly apagar: boolean; readonly ate: number }) => {
+      const armazenamento = armazenamentoLocal()
+      if (usuarioId !== null && apagar) apagarDadosDaConta(armazenamento, usuarioId)
+      // O motivo vai antes de encerrar: as outras abas recebem o SIGNED_OUT e já acham o "Entre de novo" (CA-1445).
+      gravarSaida(armazenamento, { ate, pendente: !apagar })
+      apagarMarca(armazenamento)
+      const c = obterSupabase()
+      if (!c) return
+      // CA-1452: só a sessão deste navegador; a do outro aparelho continua.
+      aceita.current = null
+      await encerrarSessaoLocal(c)
       setSessao(null)
       setEmRecuperacao(false)
     },
@@ -323,5 +484,6 @@ export function useConta(): ValorConta {
     conferirCodigoDeSenha,
     trocarSenha,
     sair,
+    sairPorTempo,
   }
 }

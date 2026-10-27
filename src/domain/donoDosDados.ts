@@ -8,6 +8,7 @@ import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
 import { CHAVES_DE_DADOS, expandirChaves } from './perfil.ts'
 import { PRIMEIRO_ID_PRODUTO } from './produtos.ts'
 import { ehQuotaExcedida, type Armazenamento, type ArmazenamentoListavel } from './persistencia.ts'
+import { contarMudanca } from './sincronia.ts'
 
 export const CHAVE_DONO = 'metanutri:dono'
 
@@ -23,7 +24,7 @@ const PREFIXO_CASO = 'metanutri:caso:'
  * As chaves sem prefixo de conta que guardam dado da pessoa e existem no aparelho. Os planos
  * vêm primeiro, o índice depois: o que já foi movido nunca aponta para plano que ainda não foi.
  */
-function chavesSemConta(base: ArmazenamentoListavel): string[] {
+export function chavesSemConta(base: ArmazenamentoListavel): string[] {
   const planos: string[] = []
   for (let i = 0; i < base.length; i += 1) {
     const chave = base.key(i)
@@ -332,6 +333,15 @@ export function migrarDadosSemConta(base: ArmazenamentoListavel | null, usuarioI
     const dono = donoAtual ?? usuarioId
     if (donoAtual === null) base.setItem(CHAVE_DONO, dono)
     const destino = armazenamentoDaConta(base, dono)
+    // Spec separacao-site-app, revisão R1: o que vem de fora nunca esteve na nuvem. A marca de mudança fica no navegador,
+    // antes da primeira cópia, e não só na memória do motor: a saída ao abrir (D-518) e o site do endereço antigo leem
+    // só o navegador, e sem ela a conta pareceria em dia.
+    try {
+      contarMudanca(destino)
+    } catch (erro) {
+      // sem espaço: o motor ainda sabe pela migração (D-133); a conferência de em dia acha o dado sem situação
+      if (!ehQuotaExcedida(erro)) throw erro
+    }
 
     // Uma chave que não coube não para as outras (CA-473).
     for (const chave of chaves) {

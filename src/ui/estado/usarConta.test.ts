@@ -1,7 +1,9 @@
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { anotarExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
-import { traduzir, useConta } from './usarConta.ts'
+import { CHAVE_MARCA_DA_SESSAO, gravarMarca, lerMarca } from '../sessao/marcaDeUso.ts'
+import { CHAVE_SAIDA, gravarSaida, lerSaida } from '../sessao/motivoDaSaida.ts'
+import { PRAZO_DO_ENCERRAMENTO_MS, traduzir, useConta } from './usarConta.ts'
 
 const { auth, avisar } = vi.hoisted(() => {
   let ouvinte: ((evento: string, sessao: unknown) => void) | null = null
@@ -18,6 +20,7 @@ const { auth, avisar } = vi.hoisted(() => {
     updateUser: vi.fn(),
     verifyOtp: vi.fn(),
     signOut: vi.fn(),
+    stopAutoRefresh: vi.fn(),
     mfa: {
       listFactors: vi.fn(),
       challengeAndVerify: vi.fn(),
@@ -27,6 +30,22 @@ const { auth, avisar } = vi.hoisted(() => {
 })
 
 vi.mock('./supabase.ts', () => ({ obterSupabase: () => ({ auth }), supabaseConfigurado: () => true }))
+
+const MIN = 60_000
+const HORA = 60 * MIN
+
+/** O token de acesso, só no formato: o app lê a hora da entrada (`amr`) e a de emissão (`iat`), sem conferir a assinatura. */
+function tokenDe(entrada: number, emitido: number = Date.now()): string {
+  const parte = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const corpo = { sub: 'u1', iat: Math.floor(emitido / 1000), amr: [{ method: 'password', timestamp: Math.floor(entrada / 1000) }] }
+  return `${parte({ alg: 'HS256', typ: 'JWT' })}.${parte(corpo)}.assinatura`
+}
+
+/** A sessão como o supabase-js entrega: o usuário e o token; por padrão, quem acabou de entrar. */
+const sessaoDe = (id = 'u1', entrada: number = Date.now(), emitido?: number) => ({
+  access_token: tokenDe(entrada, emitido),
+  user: { id, email: 'maria@usp.br', user_metadata: {} },
+})
 
 const dados = {
   nome: 'Maria',
@@ -120,7 +139,7 @@ describe('useConta', () => {
   it('CA-145: o link de troca de senha liga o modo de recuperação', async () => {
     const { result } = renderHook(() => useConta())
     await waitFor(() => expect(result.current.carregando).toBe(false))
-    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    act(() => avisar('PASSWORD_RECOVERY', sessaoDe()))
     expect(result.current.emRecuperacao).toBe(true)
     expect(result.current.sessao).toEqual({ id: 'u1', email: 'maria@usp.br', nome: 'Maria' })
   })
@@ -129,7 +148,7 @@ describe('useConta', () => {
     auth.updateUser.mockResolvedValue({ error: null })
     const { result } = renderHook(() => useConta())
     await waitFor(() => expect(result.current.carregando).toBe(false))
-    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    act(() => avisar('PASSWORD_RECOVERY', sessaoDe()))
     await act(async () => {
       expect(await result.current.trocarSenha('novasenha1')).toEqual({ ok: true, erro: null })
     })
@@ -139,7 +158,7 @@ describe('useConta', () => {
   it('sair desliga o modo de recuperação', async () => {
     const { result } = renderHook(() => useConta())
     await waitFor(() => expect(result.current.carregando).toBe(false))
-    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    act(() => avisar('PASSWORD_RECOVERY', sessaoDe()))
     expect(result.current.emRecuperacao).toBe(true)
     await act(async () => {
       await result.current.sair()
@@ -148,8 +167,7 @@ describe('useConta', () => {
   })
 
   describe('sair (spec dados-na-nuvem, D-131)', () => {
-    const comSessao = () =>
-      auth.getSession.mockResolvedValueOnce({ data: { session: { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } } } } as never)
+    const comSessao = () => auth.getSession.mockResolvedValueOnce({ data: { session: sessaoDe() } } as never)
 
     beforeEach(() => {
       localStorage.clear()
@@ -198,9 +216,38 @@ describe('useConta', () => {
       await act(async () => {
         await result.current.sair()
       })
-      expect(auth.signOut).toHaveBeenCalledTimes(2)
+      expect(auth.signOut).toHaveBeenCalledOnce()
       expect(auth.signOut).toHaveBeenLastCalledWith({ scope: 'local' })
       expect(result.current.sessao).toBeNull()
+    })
+
+    it('CA-1453 e D-520 (spec separacao-site-app): o "Sair" encerra só a sessão deste navegador, e a marca e o motivo da saída saem', async () => {
+      comSessao()
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      gravarSaida(localStorage, { ate: Date.now(), pendente: true })
+      await act(async () => {
+        await result.current.sair()
+      })
+      expect(auth.signOut).toHaveBeenCalledOnce()
+      expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+      expect(localStorage.getItem(CHAVE_MARCA_DA_SESSAO)).toBeNull()
+      expect(localStorage.getItem(CHAVE_SAIDA)).toBeNull()
+    })
+
+    it('CB-506 e DP-SA-25: a biblioteca não apaga a sessão guardada (a renovação falhou sem rede): o app apaga as chaves dela e para a renovação', async () => {
+      comSessao()
+      localStorage.setItem('sb-qmpljfjbdcrdbqutuvmg-auth-token', '{"access_token":"x"}')
+      localStorage.setItem('sb-qmpljfjbdcrdbqutuvmg-auth-token-code-verifier', '"v"')
+      auth.signOut.mockResolvedValueOnce({ error: new AuthRetryableFetchError('Failed to fetch', 0) } as never)
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      await act(async () => {
+        await result.current.sair()
+      })
+      expect(Object.keys(localStorage).filter((chave) => chave.startsWith('sb-'))).toEqual([])
+      expect(auth.stopAutoRefresh).toHaveBeenCalled()
+      expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
     })
 
     it('DP-10: sem sessão, sair não apaga nada', async () => {
@@ -215,7 +262,7 @@ describe('useConta', () => {
   })
 
   describe('a exclusão pedida e a resposta perdida (spec exclusao-de-conta, CB-250, L6 da revisão)', () => {
-    const SESSAO_U1 = { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }
+    const SESSAO_U1 = sessaoDe()
 
     beforeEach(() => {
       localStorage.clear()
@@ -265,7 +312,7 @@ describe('useConta', () => {
   it('o evento SIGNED_OUT também desliga o modo de recuperação', async () => {
     const { result } = renderHook(() => useConta())
     await waitFor(() => expect(result.current.carregando).toBe(false))
-    act(() => avisar('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } }))
+    act(() => avisar('PASSWORD_RECOVERY', sessaoDe()))
     expect(result.current.emRecuperacao).toBe(true)
     act(() => avisar('SIGNED_OUT', null))
     expect(result.current.emRecuperacao).toBe(false)
@@ -443,6 +490,248 @@ describe('useConta', () => {
     await waitFor(() => expect(result.current.carregando).toBe(false))
     await act(async () => {
       expect(await result.current.entrar('maria@usp.br', 'senhaforte1')).toEqual({ ok: false, erro: 'email-nao-confirmado' })
+    })
+  })
+})
+
+describe('a sessão com tempo (spec separacao-site-app, D-514 a D-520)', () => {
+  /** A cópia de trabalho da conta u1, em dia com a nuvem, e o espaço de outra conta. */
+  const espacoEmDia = () => {
+    localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v1', mudancas: 2, salvas: 2, itens: 1, motor: 2 }))
+    localStorage.setItem('metanutri:conta:u1:pacientes', '[{"id":"p1"}]')
+    localStorage.setItem('metanutri:conta:u2:pacientes', '[{"id":"p2"}]')
+  }
+  const daConta = (id: string) => Object.keys(localStorage).filter((chave) => chave.startsWith(`metanutri:conta:${id}:`))
+  const abrirCom = async (sessao: unknown) => {
+    auth.getSession.mockResolvedValueOnce({ data: { session: sessao } } as never)
+    const hook = renderHook(() => useConta())
+    await waitFor(() => expect(hook.result.current.carregando).toBe(false))
+    return hook
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    espacoEmDia()
+  })
+
+  describe('ao abrir com a sessão guardada (D-518)', () => {
+    it('CA-1451: antes dos 30 minutos sem uso e dentro das 12 horas, a sessão abre direto', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 20 * MIN, entrada: Date.now() - 2 * HORA, admin: false, desvio: 0 })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - 2 * HORA))
+      expect(result.current.sessao?.id).toBe('u1')
+      expect(auth.signOut).not.toHaveBeenCalled()
+      expect(lerMarca(localStorage, 'u1')).toMatchObject({ entrada: expect.any(Number), admin: false })
+    })
+
+    it('CA-1450: depois de 30 minutos sem uso, sai antes de a área aparecer: em dia, o espaço é apagado, e Entrar ganha o motivo', async () => {
+      const uso = Date.now() - 31 * MIN
+      gravarMarca(localStorage, { conta: 'u1', uso, entrada: Date.now() - 2 * HORA, admin: false, desvio: 0 })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - 2 * HORA))
+      expect(result.current.sessao).toBeNull()
+      expect(daConta('u1')).toEqual([])
+      expect(daConta('u2')).toHaveLength(1)
+      expect(lerSaida(localStorage)).toEqual({ ate: uso, pendente: false })
+      expect(localStorage.getItem(CHAVE_MARCA_DA_SESSAO)).toBeNull()
+      await waitFor(() => expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' }))
+    })
+
+    it('CA-1450: depois das 12 horas desde a entrada, sai mesmo com uso recente', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - MIN, entrada: null, admin: false, desvio: 0 })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - 12 * HORA - MIN))
+      expect(result.current.sessao).toBeNull()
+      expect(lerSaida(localStorage)?.pendente).toBe(false)
+    })
+
+    it('D-518: com algo que não subiu, sai sem tentar enviar e o espaço fica, inteiro', async () => {
+      localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v1', mudancas: 3, salvas: 2, itens: 1 }))
+      const antes = daConta('u1')
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 40 * MIN, entrada: null, admin: false, desvio: 0 })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(result.current.sessao).toBeNull()
+      expect(daConta('u1')).toEqual(antes)
+      expect(lerSaida(localStorage)?.pendente).toBe(true)
+    })
+
+    it('D-518: o valor retido não segura o espaço, como no "Sair" (D-131)', async () => {
+      localStorage.setItem('metanutri:conta:u1:retidos', JSON.stringify({ 'chave/metanutri:perfil': '2026-10-27T09:00:00.000Z' }))
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 40 * MIN, entrada: null, admin: false, desvio: 0 })
+      await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(daConta('u1')).toEqual([])
+    })
+
+    it('CB-526: o administrador sai depois de 15 minutos sem uso; a mesma pausa não derruba a nutricionista', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 16 * MIN, entrada: null, admin: true, desvio: 0 })
+      expect((await abrirCom(sessaoDe('u1', Date.now() - HORA))).result.current.sessao).toBeNull()
+
+      localStorage.clear()
+      espacoEmDia()
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 16 * MIN, entrada: null, admin: false, desvio: 0 })
+      expect((await abrirCom(sessaoDe('u1', Date.now() - HORA))).result.current.sessao?.id).toBe('u1')
+    })
+
+    it('CB-517: sem marca de uso, vale a hora da entrada', async () => {
+      expect((await abrirCom(sessaoDe('u1', Date.now() - 29 * MIN))).result.current.sessao?.id).toBe('u1')
+      localStorage.clear()
+      espacoEmDia()
+      expect((await abrirCom(sessaoDe('u1', Date.now() - 31 * MIN))).result.current.sessao).toBeNull()
+    })
+
+    it('CB-518: a marca de outra conta não vale; vale a hora da entrada', async () => {
+      gravarMarca(localStorage, { conta: 'u2', uso: Date.now(), entrada: Date.now(), admin: false, desvio: 0 })
+      expect((await abrirCom(sessaoDe('u1', Date.now() - 2 * HORA))).result.current.sessao).toBeNull()
+    })
+
+    it('DP-SA-4: sem o amr no token e sem a hora gravada pelo app, a sessão conta como vencida', async () => {
+      const { result } = await abrirCom({ access_token: 'sem.corpo.legivel', user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } })
+      expect(result.current.sessao).toBeNull()
+    })
+
+    it('DP-SA-4: sem o amr, vale a hora da entrada que o app gravou', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 5 * MIN, entrada: Date.now() - HORA, admin: false, desvio: 0 })
+      const { result } = await abrirCom({ access_token: 'sem.corpo.legivel', user: { id: 'u1', email: 'maria@usp.br', user_metadata: {} } })
+      expect(result.current.sessao?.id).toBe('u1')
+    })
+
+    it('DP-SA-18: o SIGNED_IN que o supabase-js manda ao restaurar a sessão guardada não conta como entrada nova', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 2 * HORA, entrada: null, admin: false, desvio: 0 })
+      const { result } = renderHook(() => useConta())
+      act(() => avisar('SIGNED_IN', sessaoDe('u1', Date.now() - 3 * HORA)))
+      expect(result.current.sessao).toBeNull()
+      expect(lerSaida(localStorage)).not.toBeNull()
+    })
+
+    it('R7 (revisão): com o motivo de uma saída anterior guardado, a saída ao abrir mantém a hora dele, a do último uso', async () => {
+      // A saída por tempo gravou o motivo e apagou a marca, mas a sessão ficou no navegador (o encerramento não terminou).
+      const ultimoUso = Date.now() - 40 * MIN
+      gravarSaida(localStorage, { ate: ultimoUso, pendente: false })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(result.current.sessao).toBeNull()
+      expect(lerSaida(localStorage)).toEqual({ ate: ultimoUso, pendente: false })
+    })
+
+    it('R7: a pendência que a saída ao abrir acha soma ao motivo guardado, sem trocar a hora', async () => {
+      localStorage.setItem('metanutri:conta:u1:nuvem', JSON.stringify({ versao: 'v1', mudancas: 3, salvas: 2, itens: 1 }))
+      const ultimoUso = Date.now() - 40 * MIN
+      gravarSaida(localStorage, { ate: ultimoUso, pendente: false })
+      await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      expect(lerSaida(localStorage)).toEqual({ ate: ultimoUso, pendente: true })
+    })
+
+    it('a saída ao abrir acontece uma vez, mesmo com a sessão chegando pelo getSession e pelo evento', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 31 * MIN, entrada: null, admin: false, desvio: 0 })
+      const vencida = sessaoDe('u1', Date.now() - HORA)
+      const { result } = await abrirCom(vencida)
+      act(() => avisar('INITIAL_SESSION', vencida))
+      expect(result.current.sessao).toBeNull()
+      await waitFor(() => expect(auth.signOut).toHaveBeenCalledOnce())
+    })
+  })
+
+  describe('ao entrar', () => {
+    it('a entrada grava a marca com o uso de agora, a entrada do token e o desvio do relógio; o motivo de antes sai', async () => {
+      gravarSaida(localStorage, { ate: Date.now() - HORA, pendente: false })
+      const adiantado = 3 * HORA
+      auth.signInWithPassword.mockImplementationOnce(async () => {
+        // O servidor emite o token na hora dele: 3 horas à frente do relógio deste computador (CA-1454).
+        avisar('SIGNED_IN', sessaoDe('u1', Date.now() + adiantado, Date.now() + adiantado))
+        return { error: null }
+      })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        await result.current.entrar('maria@usp.br', 'senhaforte1')
+      })
+      expect(result.current.sessao?.id).toBe('u1')
+      const marca = lerMarca(localStorage, 'u1')
+      expect(marca?.desvio).toBeGreaterThan(adiantado - 5_000)
+      expect(marca?.desvio).toBeLessThan(adiantado + 5_000)
+      expect(Math.abs((marca?.uso ?? 0) - (Date.now() + adiantado))).toBeLessThan(5_000)
+      expect(lerSaida(localStorage)).toBeNull()
+    })
+
+    it('entrar de novo na mesma conta, depois de uma marca velha, não sai: a entrada nova vale como uso', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 5 * HORA, entrada: Date.now() - 6 * HORA, admin: false, desvio: 0 })
+      auth.signInWithPassword.mockImplementationOnce(async () => {
+        avisar('SIGNED_IN', sessaoDe())
+        return { error: null }
+      })
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      await act(async () => {
+        await result.current.entrar('maria@usp.br', 'senhaforte1')
+      })
+      expect(result.current.sessao?.id).toBe('u1')
+    })
+
+    it('outra aba entrou (o SIGNED_IN chega por ela): a entrada recente vale', async () => {
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.carregando).toBe(false))
+      act(() => avisar('SIGNED_IN', sessaoDe()))
+      expect(result.current.sessao?.id).toBe('u1')
+    })
+
+    it('DP-SA-18: com a sessão aberta, a renovação do token atualiza o desvio e não mexe no uso', async () => {
+      gravarMarca(localStorage, { conta: 'u1', uso: Date.now() - 10 * MIN, entrada: null, admin: true, desvio: 0 })
+      const { result } = await abrirCom(sessaoDe('u1', Date.now() - HORA))
+      const usoAntes = lerMarca(localStorage, 'u1')?.uso
+      act(() => avisar('TOKEN_REFRESHED', sessaoDe('u1', Date.now() - HORA, Date.now() + 2 * MIN)))
+      expect(result.current.sessao?.id).toBe('u1')
+      const marca = lerMarca(localStorage, 'u1')
+      expect(marca?.uso).toBe(usoAntes)
+      expect(marca?.admin).toBe(true)
+      expect(marca?.desvio).toBeGreaterThan(MIN)
+    })
+  })
+
+  describe('a saída por tempo (D-517)', () => {
+    it('CA-1447 e CA-1452: em dia, apaga o espaço, grava o motivo e encerra só a sessão deste navegador', async () => {
+      const { result } = await abrirCom(sessaoDe())
+      const ate = Date.now() - 30 * MIN
+      await act(async () => {
+        await result.current.sairPorTempo({ apagar: true, ate })
+      })
+      expect(daConta('u1')).toEqual([])
+      expect(daConta('u2')).toHaveLength(1)
+      expect(lerSaida(localStorage)).toEqual({ ate, pendente: false })
+      expect(localStorage.getItem(CHAVE_MARCA_DA_SESSAO)).toBeNull()
+      expect(auth.signOut).toHaveBeenCalledOnce()
+      expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+      expect(result.current.sessao).toBeNull()
+    })
+
+    it('CA-1448: com pendência, o espaço fica e o motivo diz que ficou algo para enviar', async () => {
+      const { result } = await abrirCom(sessaoDe())
+      const antes = daConta('u1')
+      await act(async () => {
+        await result.current.sairPorTempo({ apagar: false, ate: Date.now() })
+      })
+      expect(daConta('u1')).toEqual(antes)
+      expect(lerSaida(localStorage)?.pendente).toBe(true)
+      expect(result.current.sessao).toBeNull()
+    })
+
+    it('CA-1448 e DP-SA-25: o servidor não responde: em 5 s a sessão deste navegador sai mesmo assim', async () => {
+      const { result } = await abrirCom(sessaoDe())
+      localStorage.setItem('sb-falso-auth-token', '{"access_token":"x"}')
+      auth.signOut.mockImplementationOnce(() => new Promise(() => undefined))
+      vi.useFakeTimers()
+      try {
+        let terminou = false
+        act(() => {
+          void result.current.sairPorTempo({ apagar: false, ate: Date.now() }).then(() => {
+            terminou = true
+          })
+        })
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(PRAZO_DO_ENCERRAMENTO_MS)
+        })
+        expect(terminou).toBe(true)
+        expect(localStorage.getItem('sb-falso-auth-token')).toBeNull()
+        expect(result.current.sessao).toBeNull()
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 })

@@ -33,10 +33,25 @@ export interface Cenario {
 
 const base64url = (texto: string): string => Buffer.from(texto).toString('base64url')
 
-/** Um JWT só no formato: o site não confere a assinatura, e o servidor falso não confere nada. */
+/**
+ * Um JWT só no formato: o site não confere a assinatura, e o servidor falso não confere nada. Traz a hora da entrada
+ * (`amr`) e a de emissão (`iat`), como o Supabase: sem elas, a sessão conta como vencida (spec separacao-site-app,
+ * DP-SA-4).
+ */
 function tokenFalso(validoAte: number, email: string): string {
+  const agora = Math.floor(Date.now() / 1000)
   const cabecalho = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const corpo = base64url(JSON.stringify({ sub: USUARIO_FALSO.id, email, role: 'authenticated', aud: 'authenticated', exp: validoAte }))
+  const corpo = base64url(
+    JSON.stringify({
+      sub: USUARIO_FALSO.id,
+      email,
+      role: 'authenticated',
+      aud: 'authenticated',
+      exp: validoAte,
+      iat: agora,
+      amr: [{ method: 'password', timestamp: agora }],
+    }),
+  )
   return `${cabecalho}.${corpo}.assinatura-falsa`
 }
 
@@ -64,11 +79,22 @@ function sessao(email: string = USUARIO_FALSO.email) {
   }
 }
 
+/** O que o teste olha e controla no servidor falso depois de ligado (spec separacao-site-app, DP-SA-28). */
+export interface ServidorFalso {
+  /** O `scope` de cada `logout` pedido, na ordem (`global` quando o pedido não diz). */
+  readonly logouts: string[]
+  /** O corpo de cada gravação na tabela `copias` (a cópia de trabalho que subiu), na ordem. */
+  readonly gravacoesDaCopia: unknown[]
+  /** Enquanto verdadeiro, todo pedido ao Supabase cai como sem internet. */
+  semRede: boolean
+}
+
 const json = (route: Route, corpo: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) })
 
 /** Liga o servidor falso numa página, antes do `goto`. */
-export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<void> {
+export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
+  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], semRede: false }
   if (cenario.sessao) {
     await pagina.addInitScript(
       ([chave, valor]) => {
@@ -84,6 +110,7 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
 
   await pagina.route(`${ENDERECO_FALSO}/**`, async (route) => {
     const pedido = route.request()
+    if (servidor.semRede) return route.abort('internetdisconnected')
     if (pedido.method() === 'OPTIONS') {
       return route.fulfill({
         status: 204,
@@ -99,7 +126,10 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       return json(route, { code: 'invalid_credentials', error_code: 'invalid_credentials', msg: 'Invalid login credentials' }, 400)
     }
     if (caminho.startsWith('/auth/v1/user')) return json(route, usuarioFalso(cenario.emailDaSessao ?? USUARIO_FALSO.email))
-    if (caminho.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204 })
+    if (caminho.startsWith('/auth/v1/logout')) {
+      servidor.logouts.push(url.searchParams.get('scope') ?? 'global')
+      return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } })
+    }
     if (caminho.startsWith('/auth/v1/')) return json(route, {})
 
     if (caminho === '/rest/v1/rpc/missoes_por_token') {
@@ -110,12 +140,14 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
     if (caminho === '/rest/v1/rpc/eh_admin') return json(route, false)
     if (caminho.startsWith('/rest/v1/rpc/')) return json(route, null)
 
+    if (caminho === '/rest/v1/copias' && pedido.method() !== 'GET') servidor.gravacoesDaCopia.push(pedido.postDataJSON())
     if (pedido.method() !== 'GET') return json(route, [], 201)
     if (caminho === '/rest/v1/perfis') return json(route, cenario.perfil ? [cenario.perfil] : [])
     if (caminho === '/rest/v1/assinaturas') return json(route, cenario.assinatura ? [cenario.assinatura] : [])
     if (caminho === '/rest/v1/pedidos_estudante') return json(route, cenario.pedidoEstudante ? [cenario.pedidoEstudante] : [])
     return json(route, [])
   })
+  return servidor
 }
 
 // ---------- Linhas prontas ----------

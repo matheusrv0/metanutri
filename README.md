@@ -329,6 +329,37 @@ terminal na pasta do projeto, com a `main` atualizada.
 A receita na refeição continua desligada (`RECEITAS_NA_REFEICAO = false`): ela entra numa segunda publicação, depois
 que todo aparelho já abriu esta versão (spec receitas-com-calculo, D-274a).
 
+### Ordem para publicar a P1 da separação (a sessão que sai sozinha)
+
+A primeira das três publicações da spec `separacao-site-app` (D-523). O site continua em `https://metanutri.com.br`; a
+sessão passa a sair sozinha depois de 30 minutos sem uso e 12 horas depois de entrar (administrador: 15 minutos e 8
+horas), e o "Sair" encerra só a sessão deste navegador. As funções vão **antes** do site: elas passam a aceitar o
+endereço novo do app (`https://app.metanutri.com.br`, que só existe na P2) e continuam aceitando o de hoje.
+
+1. **Supabase > Organization > Billing:** confira que o projeto está no plano Free. A sessão com tempo é feita pelo
+   app; no Pro, o corte no servidor vira uma decisão sua (ponto 3 da seção 5 do `specs/separacao-site-app/PLAN.md`).
+2. **Terminal:** as três funções com a lista de endereços:
+   ```bash
+   npx supabase functions deploy assinar --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy gerenciar-assinatura --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy excluir-conta --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+   O segredo `SITE_URL` continua `https://metanutri.com.br/` até a P2 (ela troca pelo app).
+3. **Conferir a lista**, no terminal:
+   ```bash
+   curl -i -X OPTIONS https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/assinar -H "Origin: https://app.metanutri.com.br"
+   curl -i -X OPTIONS https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/assinar -H "Origin: https://metanutri.com.br"
+   curl -i -X OPTIONS https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/assinar -H "Origin: https://exemplo.com"
+   ```
+   Nos dois primeiros aparecem `access-control-allow-origin` com o mesmo endereço do pedido e `vary: Origin`; no
+   terceiro, `vary: Origin` e nenhum `access-control-allow-origin`.
+4. **Publicar o site** (Actions > Publicar no GitHub Pages > Run workflow).
+5. **Testar no site:** entrar; ficar 28 minutos parado (aparece "Você ainda está aí?") e mais 2 (aparece "Entre de
+   novo", com "Sua sessão terminou. Tudo até as HH:MM está salvo."). Depois, usar o site por mais de 1 hora seguida (o
+   token se renova a cada hora) e conferir que ele não sai antes das 12 horas. "Sair" no computador não derruba a sessão
+   do celular. Quem tinha entrado há mais de 30 minutos entra de novo uma vez: a sessão aberta antes desta publicação não
+   tem a marca de uso, e vale a hora da entrada (CB-517, R-500).
+
 ## A marca
 
 O kit do designer (logo provisória, 27/09/2026) está em `public/` (favicons e ícones do

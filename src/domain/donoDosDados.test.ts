@@ -1,6 +1,8 @@
 import { CHAVE_AVISO_VISTO } from '@/ui/casos/AvisoPrimeiroAcesso.tsx'
 import { armazenamentoDaConta } from './armazenamentoDaConta.ts'
+import { contaEmDia } from './contaEmDia.ts'
 import { CHAVE_DONO, OUTRAS_CHAVES_DA_PESSOA, apagarDadosDaConta, migrarDadosSemConta } from './donoDosDados.ts'
+import { lerSituacao } from './sincronia.ts'
 import type { ArmazenamentoListavel } from './persistencia.ts'
 
 function memoria(inicial: Record<string, string> = {}): ArmazenamentoListavel & { readonly dados: Map<string, string> } {
@@ -444,6 +446,33 @@ describe('dados de antes da mudança vão para a conta dona (spec dados-por-cont
     expect(contaA.getItem('metanutri:caso:solto')).toBe('{}')
     expect(contaA.getItem('metanutri:frequentes')).toBe('{}')
     expect(semPrefixo(arm)).toEqual([CHAVE_DONO])
+  })
+
+  it('R1 (revisão, spec separacao-site-app): o que a migração trouxe fica marcado como não enviado no navegador, não só na memória do motor', () => {
+    const arm = memoria({
+      [CHAVE_DONO]: 'conta-a',
+      ...DADOS_ANTIGOS,
+      'metanutri:conta:conta-a:nuvem': JSON.stringify({ versao: 'v1', mudancas: 3, salvas: 3, itens: 2 }),
+    })
+    expect(contaEmDia(arm, 'conta-a', { contarRetidos: false })).toBe(false)
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('movido')
+    expect(lerSituacao(armazenamentoDaConta(arm, 'conta-a'))).toMatchObject({ versao: 'v1', mudancas: 4, salvas: 3 })
+    // A saída ao abrir (D-518) e o site da P2 leem só o navegador: a conta não pode parecer em dia.
+    expect(contaEmDia(arm, 'conta-a', { contarRetidos: false })).toBe(false)
+  })
+
+  it('R1: sem situação da nuvem ainda, a migração cria uma com a mudança contada; a conta que entrou e não é dona não ganha nada', () => {
+    const arm = memoria({ [CHAVE_DONO]: 'conta-a', ...DADOS_ANTIGOS })
+    migrarDadosSemConta(arm, 'conta-b')
+    expect(lerSituacao(armazenamentoDaConta(arm, 'conta-a'))).toMatchObject({ mudancas: 1, salvas: 0 })
+    expect(armazenamentoDaConta(arm, 'conta-b').length).toBe(0)
+  })
+
+  it('R1: sem nada para levar, a migração não mexe na situação', () => {
+    const situacao = JSON.stringify({ versao: 'v1', mudancas: 3, salvas: 3, itens: 2 })
+    const arm = memoria({ [CHAVE_DONO]: 'conta-a', 'metanutri:conta:conta-a:nuvem': situacao, ...DO_APARELHO })
+    expect(migrarDadosSemConta(arm, 'conta-a')).toBe('nada')
+    expect(arm.dados.get('metanutri:conta:conta-a:nuvem')).toBe(situacao)
   })
 
   it('o aviso de primeiro acesso é dado da pessoa (CB-122)', () => {

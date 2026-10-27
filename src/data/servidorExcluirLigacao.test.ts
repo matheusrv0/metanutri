@@ -28,14 +28,14 @@ describe('excluir-conta: a ligação (index.ts)', () => {
     expect(indice).not.toContain('req.json(')
     expect(ler).toBeLessThan(indice.indexOf("Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')"))
     expect(ler).toBeLessThan(indice.indexOf('createClient(urlSupabase, servico)'))
-    expect(indice).toContain('if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413)')
+    expect(indice).toContain('if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)')
     expect(indice).toContain('corpo: lido.json,')
   })
 
-  it('responde ao pré-voo do navegador só com os cabeçalhos do site, e só aceita POST', () => {
-    expect(indice).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECALHOS })")
-    expect(indice).toContain("if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405)")
-    expect(indice).toContain('return responder(resposta.corpo, resposta.status)')
+  it('responde ao pré-voo do navegador com os cabeçalhos da lista de endereços (CA-1459), e só aceita POST', () => {
+    expect(indice).toContain("if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })")
+    expect(indice).toContain("if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405, origem)")
+    expect(indice).toContain('return responder(resposta.corpo, resposta.status, origem)')
   })
 
   it('quem pede vem do cabeçalho Authorization, lido pelo lado de verdade', () => {
@@ -49,15 +49,15 @@ describe('excluir-conta: a ligação (index.ts)', () => {
   })
 
   it('sem configuração, 500 sem apagar nada; falha inesperada, 500 com a frase do CA-809 e só a mensagem no registro', () => {
-    expect(indice).toContain("if (!token || !urlSupabase || !servico) return responder({ erro: 'A função não está configurada no servidor.' }, 500)")
+    expect(indice).toContain("if (!token || !urlSupabase || !servico) return responder({ erro: 'A função não está configurada no servidor.' }, 500, origem)")
     const tentar = indice.indexOf('\n  try {\n')
     const pegar = indice.indexOf('\n  } catch (erro) {\n')
     expect(tentar).toBeGreaterThan(indice.indexOf("if (req.method !== 'POST')"))
     expect(tentar).toBeLessThan(indice.indexOf('const lido = await lerCorpo(req)'))
-    expect(pegar).toBeGreaterThan(indice.indexOf('return responder(resposta.corpo, resposta.status)'))
+    expect(pegar).toBeGreaterThan(indice.indexOf('return responder(resposta.corpo, resposta.status, origem)'))
     const depois = indice.slice(pegar)
     expect(depois).toContain("console.error('Falha inesperada ao excluir a conta:', erro instanceof Error ? erro.message : 'erro desconhecido')")
-    expect(depois).toContain('return responder({ erro: EXCLUSAO_FALHOU }, 500)')
+    expect(depois).toContain('return responder({ erro: EXCLUSAO_FALHOU }, 500, origem)')
   })
 
   it('nenhum registro leva o corpo, o token da sessão ou o e-mail; ninguém lê o IP', () => {

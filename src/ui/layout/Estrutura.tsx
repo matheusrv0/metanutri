@@ -12,6 +12,7 @@ import { AvisoNuvem } from '../nuvem/AvisoNuvem.tsx'
 import { SituacaoDaNuvem } from '../nuvem/SituacaoDaNuvem.tsx'
 import type { Rota } from '../navegacao.ts'
 import { Cabecalho, type PassoTrilha } from './Cabecalho.tsx'
+import { FaixaDoLimite } from '../sessao/FaixaDoLimite.tsx'
 import { MenuLateral, type CasoAtual } from './MenuLateral.tsx'
 
 interface EstruturaProps {
@@ -72,6 +73,8 @@ export function Estrutura({ rota, navegar, casoAtual, aoNovoCaso, titulo, trilha
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-[1400px] px-4 py-6 focus:outline-none sm:px-8 sm:py-8">
           {/* D-172: a versão nova do MetaNutri passou a valer; recarrega só quando a pessoa pede. */}
           <AvisoVersaoNova />
+          {/* Spec separacao-site-app, D-516: 10 minutos antes do limite total, a hora do fim, também no fluxo. */}
+          <FaixaDoLimite />
           {migracaoIncompleta ? (
             <Alert variant="warning" className="mb-6 print:hidden">
               <TriangleAlert aria-hidden="true" />
