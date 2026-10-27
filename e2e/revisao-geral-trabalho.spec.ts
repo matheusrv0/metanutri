@@ -595,9 +595,10 @@ const TELAS: readonly Tela[] = [
       await p.goto('/#/produtos')
       return 'Meus alimentos'
     },
+    // Publicação 2 (spec alimentos-e-gramaturas, D-490 e CA-1157): o formulário novo no lugar do cadastro pelo rótulo.
     agir: async (p) => {
-      await p.getByRole('button', { name: 'Cadastrar pelo rótulo' }).first().click()
-      await expect(p.getByRole('dialog', { name: 'Cadastrar produto pelo rótulo' })).toBeVisible()
+      await p.getByRole('button', { name: 'Novo alimento' }).first().click()
+      await expect(p.getByRole('dialog', { name: 'Novo alimento' })).toBeVisible()
     },
   },
   {
