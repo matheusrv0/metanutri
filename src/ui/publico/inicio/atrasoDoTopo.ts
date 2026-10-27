@@ -20,11 +20,14 @@ export function tempoJaAnimado({ veioPeloApp, agora, primeiroDesenho }: Relogio)
 
 /**
  * O tempo já animado, lido do navegador: a vitrine (`data-vitrine`) ainda está no HTML no primeiro desenho do app, e a
- * primeira pintura fica no registro de desempenho. No build (sem `document`), zero.
+ * primeira pintura fica no registro de desempenho (o first-paint, ou o first-contentful-paint onde ele não existe). No build
+ * (sem `document`), zero.
  */
 export function atrasoDoTopo(): number {
   if (typeof document === 'undefined' || typeof performance === 'undefined') return 0
-  const pintura = typeof performance.getEntriesByName === 'function' ? performance.getEntriesByName('first-paint')[0] : undefined
+  // O Safari e o Firefox não registram o first-paint; neles vale o first-contentful-paint (revisão da v9).
+  const registro = (nome: string) => (typeof performance.getEntriesByName === 'function' ? performance.getEntriesByName(nome)[0] : undefined)
+  const pintura = registro('first-paint') ?? registro('first-contentful-paint')
   return tempoJaAnimado({
     veioPeloApp: document.querySelector('[data-vitrine]') === null,
     agora: performance.now(),

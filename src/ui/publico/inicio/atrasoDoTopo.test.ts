@@ -36,4 +36,13 @@ describe('atrasoDoTopo', () => {
     vi.spyOn(performance, 'getEntriesByName').mockReturnValue([{ startTime: 400 } as PerformanceEntry])
     expect(atrasoDoTopo()).toBe(1100)
   })
+
+  it('sem first-paint (Safari e Firefox), vale o first-contentful-paint', () => {
+    document.body.innerHTML = '<div data-vitrine=""></div>'
+    vi.spyOn(performance, 'now').mockReturnValue(1500)
+    vi.spyOn(performance, 'getEntriesByName').mockImplementation((nome: string) =>
+      nome === 'first-contentful-paint' ? [{ startTime: 600 } as PerformanceEntry] : [],
+    )
+    expect(atrasoDoTopo()).toBe(900)
+  })
 })
