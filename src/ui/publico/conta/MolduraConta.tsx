@@ -12,10 +12,12 @@ interface MolduraContaProps {
   readonly lado?: ReactNode
   /** Sem ele, a logo não é link (a tela do código prende até confirmar, D-93). */
   readonly aoIrParaInicio?: (() => void) | undefined
+  /** Um aviso no topo, antes do título (spec separacao-site-app, DP-SA-49). */
+  readonly aviso?: ReactNode
   readonly children: ReactNode
 }
 
-export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, children }: MolduraContaProps) {
+export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, aviso, children }: MolduraContaProps) {
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
       {/* D-237 (spec revisao-geral-publica): coluna que encolhe (DESIGN.md). Sem o minmax, um e-mail longo alargava a
@@ -43,6 +45,7 @@ export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, c
               ))}
             </div>
           ) : null}
+          {aviso}
           <div>
             <h1 className="text-3xl font-bold leading-tight">{titulo}</h1>
             <p className="mt-2 text-sm text-muted-foreground [overflow-wrap:anywhere]">{subtitulo}</p>

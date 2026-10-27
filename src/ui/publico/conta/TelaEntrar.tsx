@@ -82,9 +82,9 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
       subtitulo={subtituloDaSaida ?? (pedidoPorTela ? 'Entre para continuar de onde parou.' : 'Continue de onde parou.')}
       aoIrParaInicio={aoIrParaInicio}
       lado={<LadoDoPlano plano={null} ciclo="mensal" />}
+      // Spec separacao-site-app, DP-SA-49: depois de excluir a conta, o aviso fica no topo daqui (a landing é de outro endereço).
+      aviso={<AvisoContaExcluida />}
     >
-      {/* Spec separacao-site-app, DP-SA-49: depois de excluir a conta, o aviso fica aqui (a landing é de outro endereço). */}
-      <AvisoContaExcluida />
       {conta.disponivel ? null : <AvisoSemServidor aoAbrirSistema={aoAbrirSistema} />}
       {semInternet ? <AvisoFormulario tipo="erro">Você está sem internet. Conecte-se para entrar e abrir seus dados.</AvisoFormulario> : null}
 
