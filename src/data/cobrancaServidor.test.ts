@@ -117,7 +117,7 @@ describe('cobrança no servidor: o que as três funções fazem igual (spec chec
     },
   )
 
-  it.each([null, '', 'null', '*', 'https://outro.exemplo', 'http://metanutri.com.br', 'https://metanutri.com.br.outro.exemplo', 'https://metanutri-app.pages.dev', 'https://app.metanutri.com.br/'])(
+  it.each([null, '', 'null', '*', 'https://outro.exemplo', 'http://metanutri.com.br', 'https://metanutri.com.br.outro.exemplo', 'https://metanutri.pages.dev', 'https://app.metanutri.com.br/'])(
     'CA-1459 e CA-425: a chamada de %j não recebe permissão (nem *), e a resposta manda Vary: Origin do mesmo jeito',
     (origem) => {
       for (const cabecalhos of [new Headers(cabecalhosPara(origem)), responder({ ok: true }, 200, origem).headers]) {

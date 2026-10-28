@@ -41,10 +41,10 @@ export function telaNoApp(hash = '', busca = ''): string {
   return `${ENDERECO_DO_APP}${busca}${hash}`
 }
 
-const CLOUDFLARE = 'metanutri-app.pages.dev'
+const CLOUDFLARE = 'metanutri.pages.dev'
 
 /**
- * D-509 e CA-1417: o app aberto no endereço da Cloudflare (ou numa prévia, `<algo>.metanutri-app.pages.dev`) vai para o
+ * D-509 e CA-1417: o app aberto no endereço da Cloudflare (ou numa prévia, `<algo>.metanutri.pages.dev`) vai para o
  * oficial, com a mesma consulta e o mesmo `#`. Em qualquer outro endereço, nulo.
  */
 export function enderecoOficial(local: { readonly hostname: string; readonly search: string; readonly hash: string }): string | null {

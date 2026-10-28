@@ -35,15 +35,15 @@ describe('os dois endereços (spec separacao-site-app, D-500 e DP-SA-3)', () => 
   })
 
   it('CA-1417: o app num endereço da Cloudflare vai ao oficial, com a mesma consulta e o mesmo `#`', () => {
-    expect(enderecoOficial({ hostname: 'metanutri-app.pages.dev', search: '', hash: '#/pacientes' })).toBe('https://app.metanutri.com.br/#/pacientes')
-    expect(enderecoOficial({ hostname: 'a1b2c3.metanutri-app.pages.dev', search: '?volta=pagamento', hash: '' })).toBe(
+    expect(enderecoOficial({ hostname: 'metanutri.pages.dev', search: '', hash: '#/pacientes' })).toBe('https://app.metanutri.com.br/#/pacientes')
+    expect(enderecoOficial({ hostname: 'a1b2c3.metanutri.pages.dev', search: '?volta=pagamento', hash: '' })).toBe(
       'https://app.metanutri.com.br/?volta=pagamento',
     )
-    expect(enderecoOficial({ hostname: 'METANUTRI-APP.PAGES.DEV', search: '', hash: '' })).toBe('https://app.metanutri.com.br/')
+    expect(enderecoOficial({ hostname: 'METANUTRI.PAGES.DEV', search: '', hash: '' })).toBe('https://app.metanutri.com.br/')
   })
 
   it('CA-1417: no endereço oficial e em qualquer outro, nada a fazer', () => {
-    for (const hostname of ['app.metanutri.com.br', 'localhost', 'outro-metanutri-app.pages.dev', 'metanutri-app.pages.dev.exemplo.com', 'pages.dev']) {
+    for (const hostname of ['app.metanutri.com.br', 'localhost', 'outro-metanutri.pages.dev', 'metanutri.pages.dev.exemplo.com', 'pages.dev']) {
       expect(enderecoOficial({ hostname, search: '', hash: '#/painel' })).toBeNull()
     }
   })

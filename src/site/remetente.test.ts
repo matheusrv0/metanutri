@@ -157,7 +157,7 @@ describe('o remetente da mudança, na aba do site (spec separacao-site-app, D-51
     const remetente = criarRemetente({ base, instalado: false, janela })
     remetente.continuar()
     const codigo = codigoDaAba(janela)
-    receber({ tipo: 'pedir', codigo, usuarioId: 'u1' }, { origem: 'https://metanutri-app.pages.dev' })
+    receber({ tipo: 'pedir', codigo, usuarioId: 'u1' }, { origem: 'https://metanutri.pages.dev' })
     receber({ tipo: 'pedir', codigo, usuarioId: 'u1' }, { de: {} })
     receber({ tipo: 'pedir', codigo: 'f'.repeat(32), usuarioId: 'u1' })
     receber({ tipo: 'apagar', codigo, usuarioId: 'u1' })

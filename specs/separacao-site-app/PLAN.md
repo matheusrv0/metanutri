@@ -13,7 +13,7 @@ projeto (`npx playwright install firefox webkit`, sem pacote novo).
 **Suposições** (vindas do README e da pesquisa; o dono confirma nos passos dele):
 - O repositório é `matheusrv0/metanutri`; o projeto do Supabase é `qmpljfjbdcrdbqutuvmg`, no plano Free.
 - O dono já tem conta na Cloudflare (o Turnstile está lá) e a zona DNS de `metanutri.com.br` fica no Registro.br.
-- Ninguém usa `app.metanutri.com.br` nem `metanutri-app` na Cloudflare hoje.
+- Ninguém usa `app.metanutri.com.br` nem `metanutri` na Cloudflare hoje.
 
 ## 0. Decisões do plano
 
@@ -128,7 +128,7 @@ uma diz o porquê.
 - **DP-SA-32 · `.node-version` na raiz, ~~com `22`~~ com a versão exata do DP-SA-62.** O `engines` pede `>=22.12.0`, o
   `publicar.yml` usa 22 e a máquina do projeto, 22.16. A Cloudflare lê o arquivo; o passo 5 do dono não tem mais
   `NODE_VERSION`. Arquivo novo, na T28.
-- **DP-SA-33 · Nomes fixos na Cloudflare** (o dono cria em paralelo): projeto `metanutri-app`, ramo `main`, build `npm run
+- **DP-SA-33 · Nomes fixos na Cloudflare** (o dono cria em paralelo): projeto `metanutri`, ramo `main`, build `npm run
   publicar:app`, saída `dist`, variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MERCADOPAGO_PUBLIC_KEY` e
   `VITE_TURNSTILE_SITE_KEY`. O código não pede outro nome.
 - **DP-SA-34 · Versão dos termos: 28/10/2026.** O dia em que o site da P2 vai ao ar depende do DNS. `VERSAO_TERMOS` e
@@ -641,7 +641,7 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
 4. **Cloudflare › Workers & Pages › Create › Pages › Import an existing Git repository (Connect to Git) › GitHub:**
    autorizar o aplicativo da Cloudflare **só** no repositório `matheusrv0/metanutri`.
 5. **Na mesma tela (Set up builds and deployments):**
-   - Project name: `metanutri-app`
+   - Project name: `metanutri`
    - Production branch: `main`
    - Framework preset: `None`
    - Build command: `npm run publicar:app`
@@ -655,21 +655,21 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
        Actions › Variables* (a Public Key de produção)
      - `VITE_TURNSTILE_SITE_KEY` = o valor da variável de mesmo nome, na mesma tela do GitHub
 
-   *Save and Deploy*, e esperar o build ficar verde. Em `https://metanutri-app.pages.dev` o Turnstile e as funções não
+   *Save and Deploy*, e esperar o build ficar verde. Em `https://metanutri.pages.dev` o Turnstile e as funções não
    funcionam: é o esperado (CB-525).
-6. **Projeto `metanutri-app` › Settings › Builds › Branch control:** Production branch `main`; *Automatic production
+6. **Projeto `metanutri` › Settings › Builds › Branch control:** Production branch `main`; *Automatic production
    branch deployments* ligado (ponto do dono 1); *Preview branch*: `None`.
-7. **Projeto `metanutri-app` › Custom domains › Set up a custom domain:** `app.metanutri.com.br` › *Continue* ›
-   *Begin CNAME setup*. A Cloudflare mostra o alvo `metanutri-app.pages.dev`. Isto vem **antes** do DNS.
+7. **Projeto `metanutri` › Custom domains › Set up a custom domain:** `app.metanutri.com.br` › *Continue* ›
+   *Begin CNAME setup*. A Cloudflare mostra o alvo `metanutri.pages.dev`. Isto vem **antes** do DNS.
 8. **Registro.br › metanutri.com.br › DNS › Editar zona › Nova entrada:** tipo `CNAME`, nome `app`, dados
-   `metanutri-app.pages.dev` › *Salvar*. Esperar o domínio ficar *Active* na Cloudflare (minutos a horas; R-503).
+   `metanutri.pages.dev` › *Salvar*. Esperar o domínio ficar *Active* na Cloudflare (minutos a horas; R-503).
 9. **Conferir os cabeçalhos** (CA-1419):
    ```bash
    curl -sI https://app.metanutri.com.br/ | grep -iE "content-security-policy|x-content-type|referrer-policy|strict-transport|x-robots|cross-origin-opener"
    ```
    Devem aparecer os cinco primeiros e **não** o `cross-origin-opener-policy`.
 10. **Cloudflare › (página inicial da conta) › Bulk Redirects › Create Bulk Redirect List:** nome
-    `metanutri_pages_dev`, tipo *Redirect*; item: Source URL `metanutri-app.pages.dev`, Target URL
+    `metanutri_pages_dev`, tipo *Redirect*; item: Source URL `metanutri.pages.dev`, Target URL
     `https://app.metanutri.com.br`, Status `301`, marcar *Preserve query string*, *Include subdomains*,
     *Subpath matching* e *Preserve path suffix*. Depois *Create Bulk Redirect Rule* com essa lista (nome
     `metanutri-pages-dev`) › *Save and Deploy*.
@@ -678,7 +678,7 @@ Os valores entre aspas são para copiar. "Terminal" é a pasta do projeto, com a
     `http://localhost:5173/**` (até a P3).
 12. **Turnstile › widget MetaNutri › Settings › Hostname Management:** conferir `metanutri.com.br`, `localhost` e
     `127.0.0.1`. Nada a acrescentar: o domínio cobre `app.`. Só se o teste abaixo mostrar "A verificação de segurança
-    não carregou", acrescentar `app.metanutri.com.br` (CB-524). Não acrescentar `metanutri-app.pages.dev`.
+    não carregou", acrescentar `app.metanutri.com.br` (CB-524). Não acrescentar `metanutri.pages.dev`.
 
     **Testar em `https://app.metanutri.com.br`:** criar uma conta de teste (com a verificação) e confirmar pelo código;
     entrar; administrador abre Aprovações e digita o código do app; checkout até os campos do cartão aparecerem, sem

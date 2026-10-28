@@ -252,7 +252,7 @@ Para funcionar de verdade, nesta ordem:
    barra a publicação (`scripts/conferir-publicacao.mjs`).
 7. **Chave pública do pagamento.** No Mercado Pago, em *Suas integrações > a aplicação > Credenciais*, copie a
    **Public Key** do mesmo ambiente do token do passo 5 (a de teste enquanto o token for o de teste). Guarde como
-   variável `VITE_MERCADOPAGO_PUBLIC_KEY` do projeto `metanutri-app` na Cloudflare (*Settings > Variables and
+   variável `VITE_MERCADOPAGO_PUBLIC_KEY` do projeto `metanutri` na Cloudflare (*Settings > Variables and
    Secrets*, em *Production*), que monta o app. O site do GitHub não leva chave nenhuma.
    Ela é pública de propósito: vai no navegador, para os campos seguros do cartão. Sem ela, o checkout publicado diz
    "O pagamento não está disponível agora." Para testar na sua máquina, ponha a mesma chave no `.env.local`.
@@ -260,7 +260,7 @@ Para funcionar de verdade, nesta ordem:
    levam uma verificação do Cloudflare Turnstile, que o Supabase confere no servidor. Ela fica escondida e só
    aparece, logo acima do botão, quando o Cloudflare pede um clique. No Cloudflare, em *Turnstile*, o widget
    "MetaNutri" (modo *Managed*) tem os domínios `metanutri.com.br` (que cobre `app.metanutri.com.br`), `localhost` e
-   `127.0.0.1`. A **Site Key** é pública e vai como variável `VITE_TURNSTILE_SITE_KEY` do projeto `metanutri-app` na
+   `127.0.0.1`. A **Site Key** é pública e vai como variável `VITE_TURNSTILE_SITE_KEY` do projeto `metanutri` na
    Cloudflare, como a do pagamento.
    A **Secret Key** nunca vai para o repositório nem para o chat: só para o painel do Supabase. **Ordem para ligar
    (D-116):** primeiro publique o site com a Site Key. Logo depois de publicar, recarregue o site (Ctrl+Shift+R no
@@ -370,21 +370,21 @@ Antes de tudo: a P2 na `main` (o ramo `separacao-p2`, com o `npm run check` pass
 
 1. **Cloudflare > Workers & Pages > Create > Pages > Connect to Git:** autorize o aplicativo da Cloudflare **só** no
    repositório `matheusrv0/metanutri`. Na tela seguinte:
-   - Project name: `metanutri-app`; Production branch: `main`; Framework preset: `None`.
+   - Project name: `metanutri`; Production branch: `main`; Framework preset: `None`.
    - Build command: `npm run publicar:app`; Build output directory: `dist`; Root directory: vazio.
    - Environment variables (Production): `VITE_SUPABASE_URL` = `https://qmpljfjbdcrdbqutuvmg.supabase.co`;
      `VITE_SUPABASE_ANON_KEY` = a chave *anon public* (*Supabase > Project Settings > API Keys*), com *Encrypt*;
      `VITE_MERCADOPAGO_PUBLIC_KEY` e `VITE_TURNSTILE_SITE_KEY` = os valores das variáveis de mesmo nome em *GitHub >
      Settings > Secrets and variables > Actions > Variables*. A versão do Node vem do `.node-version` do repositório.
 
-   *Save and Deploy*, e espere o build ficar verde. Em `metanutri-app.pages.dev` o Turnstile e as funções não
+   *Save and Deploy*, e espere o build ficar verde. Em `metanutri.pages.dev` o Turnstile e as funções não
    funcionam: é o esperado.
-2. **metanutri-app > Settings > Builds:** *Automatic production branch deployments* ligado; *Preview branch*: `None`.
+2. **metanutri > Settings > Builds:** *Automatic production branch deployments* ligado; *Preview branch*: `None`.
    Daqui em diante, cada merge na `main` publica o app sozinho.
-3. **metanutri-app > Custom domains > Set up a custom domain:** `app.metanutri.com.br` > *Continue* > *Begin CNAME
+3. **metanutri > Custom domains > Set up a custom domain:** `app.metanutri.com.br` > *Continue* > *Begin CNAME
    setup*.
 4. **Registro.br > metanutri.com.br > DNS > Editar zona > Nova entrada:** tipo `CNAME`, nome `app`, dados
-   `metanutri-app.pages.dev` > *Salvar*. Espere o domínio ficar *Active* na Cloudflare (minutos a horas). Se a zona
+   `metanutri.pages.dev` > *Salvar*. Espere o domínio ficar *Active* na Cloudflare (minutos a horas). Se a zona
    tiver registro `CAA`, ele precisa permitir `letsencrypt.org`, `pki.goog` e `ssl.com`.
 5. **(terminal) Conferir os cabeçalhos do app:**
    ```bash
@@ -392,14 +392,14 @@ Antes de tudo: a P2 na `main` (o ramo `separacao-p2`, com o `npm run check` pass
    ```
    Aparecem os cinco primeiros e **não** o `cross-origin-opener-policy`.
 6. **Cloudflare > (início da conta) > Bulk Redirects > Create Bulk Redirect List:** nome `metanutri_pages_dev`, tipo
-   *Redirect*; item: Source URL `metanutri-app.pages.dev`, Target URL `https://app.metanutri.com.br`, Status `301`,
+   *Redirect*; item: Source URL `metanutri.pages.dev`, Target URL `https://app.metanutri.com.br`, Status `301`,
    com *Preserve query string*, *Include subdomains*, *Subpath matching* e *Preserve path suffix* marcados. Depois
    *Create Bulk Redirect Rule* com essa lista (nome `metanutri-pages-dev`) > *Save and Deploy*.
 7. **Supabase > Authentication > URL Configuration > Redirect URLs > Add URL:** `https://app.metanutri.com.br/**`.
    Os outros ficam até a P3 (passo 12).
 8. **Turnstile > widget MetaNutri > Settings > Hostname Management:** só conferir `metanutri.com.br`, `localhost` e
    `127.0.0.1`. O domínio cobre `app.`. Só se o passo 9 mostrar "A verificação de segurança não carregou",
-   acrescente `app.metanutri.com.br`. Não acrescente `metanutri-app.pages.dev`.
+   acrescente `app.metanutri.com.br`. Não acrescente `metanutri.pages.dev`.
 9. **Testar em `https://app.metanutri.com.br`:** criar uma conta de teste e confirmar pelo código; entrar; o
    administrador abre Aprovações e digita o código do app autenticador; ir ao checkout até os campos do cartão
    aparecerem; criar um link de paciente e abrir no celular; "Sair"; ficar 28 minutos parado e ver o aviso.
@@ -519,10 +519,10 @@ São duas publicações do mesmo código (spec `separacao-site-app`):
   `185.199.111.153`) e `www` como CNAME para `matheusrv0.github.io`. O domínio está em **Settings > Pages > Custom
   domain**, com **Enforce HTTPS** ligado. O endereço antigo (`matheusrv0.github.io/metanutri/`) redireciona para o
   novo.
-- **O app** (`https://app.metanutri.com.br/`), na Cloudflare Pages (projeto `metanutri-app`), ligada a este
+- **O app** (`https://app.metanutri.com.br/`), na Cloudflare Pages (projeto `metanutri`), ligada a este
   repositório: cada merge na `main` publica sozinho, com `npm run publicar:app` (confere os termos, os alertas dos
   pacotes e monta o app). O `npm run check` roda antes do merge, não na Cloudflare (o build grátis dela para em 20
-  minutos). O `app` é um CNAME no Registro.br para `metanutri-app.pages.dev`. As chaves públicas (Supabase,
+  minutos). O `app` é um CNAME no Registro.br para `metanutri.pages.dev`. As chaves públicas (Supabase,
   pagamento e verificação) são variáveis do projeto na Cloudflare.
 
 Os planos e as fichas ficam na nuvem, salvos na sua conta: no endereço novo, basta entrar. O que ficou só no
