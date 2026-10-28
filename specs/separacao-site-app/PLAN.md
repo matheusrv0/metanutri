@@ -528,10 +528,12 @@ também com o Node 22.23.4), `npm run e2e` (354, com os 2 de `e2e/site/mudanca-o
 
 ### P3 · O endereço antigo fecha (logo depois do site da P2, D-528)
 
-- [ ] **T31 · Só o app nas funções.** `supabase/functions/_shared/cobranca.ts` (a lista fica só com o app),
+- [x] **T31 · Só o app nas funções.** `supabase/functions/_shared/cobranca.ts` (a lista fica só com o app),
   `src/data/cobrancaServidor.test.ts`, `specs/separacao-site-app/SPEC.md` (nota de fechamento com a data),
   `README.md` (os passos da P3 feitos). Fica pronta junto com a P2, num ramo próprio, para entrar no mesmo dia. Depende
   de: o passo 14 do dono (o site da P2 no ar). Verifica: CA-1460.
+  *Feita em 27/10/2026, no ramo `separacao-p3` (sobre a P2 fechada), com o teste antes; as funções não foram
+  publicadas. O site da P2 é o passo 14 da seção 4 (o 11 do README); a P3 é o passo 12 do README, no mesmo dia.*
 
 ## 2. Matriz: critério → tarefa → teste
 
