@@ -1,6 +1,7 @@
 // A base de alimentos com o nome do MetaNutri e as fontes que a licença da TACO
 // manda citar (spec pdf-e-telas-limpas, D-51 e CA-322), mais o USDA, que pede a citação (spec vitaminas-usda, D-308; spec
 // base-ampliada, D-715). O site lê daqui só o arquivo pequeno da base ampliada, nunca a base.
+import fonteDoCatalogo from '../data/catalogo-off-fonte.json'
 import { FONTE_BASE_AMPLIADA, type FonteBaseAmpliada } from './baseAmpliada.ts'
 import { medidasDoAlimento } from './busca.ts'
 import { FONTE_USDA, mesDaVersao } from './complementoUsda.ts'
@@ -16,7 +17,11 @@ export interface FonteDaBase {
   readonly uso: string
   readonly url: string
   readonly rotuloLink: string
+  /** Um segundo link, para um arquivo publicado com o app (o caminho é relativo ao endereço do app). */
+  readonly arquivos?: { readonly caminho: string; readonly rotulo: string }
 }
+
+const [anoDoCatalogo, mesDoCatalogo, diaDoCatalogo] = fonteDoCatalogo.versao.split('-')
 
 /** Quantos alimentos da base têm equivalente no USDA: contado na base em uso. */
 const comComplementoUsda = (): number => ALIMENTOS.filter((a) => a.usda !== undefined).length
@@ -62,11 +67,13 @@ export const FONTES_DA_BASE: readonly FonteDaBase[] = [
     rotuloLink: 'Abrir a publicação',
   },
   {
-    assunto: 'Produtos de rótulo',
-    citacao: 'Open Food Facts, base colaborativa e aberta de produtos alimentícios, sob a licença Open Database License (ODbL).',
-    uso: 'Usada só nos produtos que você cadastra em Meus alimentos; açúcares e gordura saturada vêm do rótulo.',
+    // D-755 (spec base-ampliada, fase 2): a atribuição e a oferta "compartilhar igual" da ODbL.
+    assunto: 'Produtos de marca',
+    citacao: `Open Food Facts, base colaborativa e aberta de produtos alimentícios, sob a Open Database License (ODbL) v1.0; os conteúdos, sob a Database Contents License (DbCL) v1.0. Exportação de ${diaDoCatalogo}/${mesDoCatalogo}/${anoDoCatalogo}.`,
+    uso: `O catálogo de rótulos tem ${fonteDoCatalogo.produtos.toLocaleString('pt-BR')} produtos do Brasil, achados pelo nome na entrada rápida; o que você escolhe vira uma cópia em Meus alimentos, com o link para o produto. Os arquivos do catálogo são publicados sob a mesma ODbL, separados da TACO e do USDA.`,
     url: 'https://world.openfoodfacts.org/',
     rotuloLink: 'Abrir o Open Food Facts',
+    arquivos: { caminho: `${fonteDoCatalogo.caminho}LICENCA.txt`, rotulo: 'Abrir os arquivos e a licença' },
   },
 ]
 

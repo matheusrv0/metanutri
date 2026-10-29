@@ -22,7 +22,8 @@ const ALVOS = [
   join(RAIZ, 'index.html'),
   // CA-1029: a frase dos cálculos também saiu da Ajuda da área de trabalho; o dono não a quer em lugar nenhum.
   join(RAIZ, 'src', 'ui', 'ajuda', 'TelaAjuda.tsx'),
-  ...arquivos(join(RAIZ, 'public'), (nome) => /\.(txt|xml|webmanifest)$/.test(nome)),
+  // O aviso de licença do catálogo de rótulos tem de citar o Open Food Facts (ODbL); não é texto de venda.
+  ...arquivos(join(RAIZ, 'public'), (nome) => /\.(txt|xml|webmanifest)$/.test(nome)).filter((arquivo) => !arquivo.includes('catalogo-off')),
 ]
 
 const PROIBIDOS: readonly (readonly [string, RegExp])[] = [

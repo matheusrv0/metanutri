@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 import { FONTES_DA_BASE, NOME_DA_BASE, resumoDaBase } from '@/domain/baseMetanutri.ts'
+import { ENDERECO_DO_APP } from '../enderecos.ts'
 
 const milhar = new Intl.NumberFormat('pt-BR')
 
@@ -31,6 +32,17 @@ export function TelaFontes() {
                 {fonte.rotuloLink}
                 <ExternalLink className="size-3.5" aria-hidden="true" />
               </a>
+              {fonte.arquivos ? (
+                <a
+                  href={new URL(fonte.arquivos.caminho, ENDERECO_DO_APP).href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 w-fit items-center gap-1 rounded-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {fonte.arquivos.rotulo}
+                  <ExternalLink className="size-3.5" aria-hidden="true" />
+                </a>
+              ) : null}
             </div>
           </li>
         ))}
