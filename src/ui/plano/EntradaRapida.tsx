@@ -8,8 +8,8 @@ import {
   copiaExistente,
   dadosDaCopia,
   LETRAS_PARA_O_CATALOGO,
+  letrasDaBusca,
   rotuloDoCatalogo,
-  termosDaBusca,
   type ProdutoDoIndice,
 } from '@/domain/catalogoOff.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
@@ -120,7 +120,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     [aoAdicionarReceita, texto, receitas, resultados],
   )
   // Spec base-ampliada, fase 2 (D-758, CA-1764): o índice do catálogo só é pedido com 3 letras ou mais.
-  const comLetras = termosDaBusca(texto).join('').length >= LETRAS_PARA_O_CATALOGO
+  const comLetras = letrasDaBusca(texto) >= LETRAS_PARA_O_CATALOGO
   const catalogo = useCatalogoOff(comLetras)
   const meusAlimentos = useMeusAlimentos()
   const [erroDoProduto, setErroDoProduto] = useState(false)
@@ -141,7 +141,8 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     ...doCatalogo,
   ]
   const escolhido = opcoes[Math.min(selecionado, opcoes.length - 1)]
-  const avisoDaBusca = daReceita.length > 0 ? null : aviso
+  // O produto do catálogo também é resultado: o aviso de "nenhum alimento" só vale sem ele.
+  const avisoDaBusca = daReceita.length > 0 || doCatalogo.length > 0 ? null : aviso
   const semResultado = texto.trim() !== '' && opcoes.length === 0
   // D-432: a linha escolhida pede uma medida que o alimento não tem.
   const semAMedida = escolhido?.tipo === 'alimento' && escolhido.r.gramas === null && escolhido.r.faltaMedida ? { alimento: escolhido.r.alimento, falta: escolhido.r.faltaMedida } : null

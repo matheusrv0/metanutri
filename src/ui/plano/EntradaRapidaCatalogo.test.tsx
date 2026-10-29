@@ -86,6 +86,14 @@ describe('o catálogo na entrada rápida', () => {
     expect(copias()).toHaveLength(1)
   })
 
+  it('o produto que só o catálogo tem não vem com o aviso de "nenhum alimento encontrado"', async () => {
+    servidor()
+    const { usuario, campo } = montar()
+    await usuario.type(campo, 'cremoso integral')
+    await screen.findByRole('option', { name: /Iogurte Natural Integral Cremoso/ })
+    expect(screen.queryByText(/Nenhum alimento encontrado/)).not.toBeInTheDocument()
+  })
+
   it('CB-750: sem o índice, a busca segue com a base e uma linha diz que os produtos de marca precisam de internet', async () => {
     servidor('indice')
     const { usuario, campo } = montar()

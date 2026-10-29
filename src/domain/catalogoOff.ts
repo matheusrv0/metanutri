@@ -101,14 +101,20 @@ export const LIMITE_DO_CATALOGO = 5
 /** CB-753: o catálogo só é consultado com 3 letras ou mais. */
 export const LETRAS_PARA_O_CATALOGO = 3
 
-/** Os termos da busca, sem a quantidade e a medida, como a entrada rápida lê (D-758). */
+/**
+ * Os termos da busca, sem a quantidade e a medida, como a entrada rápida lê (D-758). O número que sobra é do nome
+ * ("Nescau 2.0") e também precisa casar.
+ */
 export function termosDaBusca(texto: string): readonly string[] {
-  return interpretarEntrada(texto).termos.flatMap(palavrasDe).filter((t) => !/^\d+$/.test(t))
+  return interpretarEntrada(texto).termos.flatMap(palavrasDe)
 }
+
+/** CB-753: só as letras contam para o mínimo. */
+export const letrasDaBusca = (texto: string): number => termosDaBusca(texto).join('').replace(/\d/g, '').length
 
 export function buscarNoCatalogo(indice: IndiceDoCatalogo, texto: string, limite = LIMITE_DO_CATALOGO): readonly ProdutoDoIndice[] {
   const termos = termosDaBusca(texto)
-  if (termos.join('').length < LETRAS_PARA_O_CATALOGO) return []
+  if (letrasDaBusca(texto) < LETRAS_PARA_O_CATALOGO) return []
   const achados: { readonly p: ProdutoIndexado; readonly exatos: number }[] = []
   for (const p of indice.produtos) {
     let exatos = 0
@@ -126,7 +132,7 @@ export function buscarNoCatalogo(indice: IndiceDoCatalogo, texto: string, limite
   return achados
     .sort(
       (a, b) =>
-        Number(!b.p.primeira.startsWith(primeiro)) - Number(!a.p.primeira.startsWith(primeiro)) ||
+        Number(!a.p.primeira.startsWith(primeiro)) - Number(!b.p.primeira.startsWith(primeiro)) ||
         b.exatos - a.exatos ||
         a.p.produto.nome.length - b.p.produto.nome.length ||
         a.p.produto.nome.localeCompare(b.p.produto.nome, 'pt-BR') ||

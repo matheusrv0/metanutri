@@ -25,6 +25,9 @@ const INDICE: ArquivoIndice = {
     ['7894900011517', 'Refrigerante de Cola', 'Coca-Cola', 200, '1 copo (200 ml)', 1, 42],
     ['7891000055502', 'Biscoito Integral', 'Marca X', null, '', 0, 430],
     ['7891000055519', 'Biscoito Integral', 'Marca Y', 30, '6 biscoitos (30 g)', 0, 420],
+    ['7891000061190', 'Nescau 2.0', 'Nestlé', 20, '20g', 0, 365],
+    ['7891000008119', 'Cereal Nescau', 'Nestlé', 30, '30 g', 0, 387],
+    ['7891000000001', 'Achocolatado em pó', 'Nescau', 20, '20 g', 0, 380],
   ],
 }
 const CHAVES = ['energia_kcal', 'proteina_g', 'lipideos_g', 'carboidrato_g', 'calcio_mg', 'sodio_mg']
@@ -48,6 +51,12 @@ describe('D-758 e CA-1755: a busca no catálogo', () => {
   it('o que começa pela primeira palavra vem antes; até 5', () => {
     expect(nomes('iogurte')).toEqual(['Iogurte Grego Morango · Vigor', 'Iogurte Natural Integral · Nestlé'])
     expect(buscarNoCatalogo(indice, 'i')).toEqual([])
+  })
+
+  it('o nome que começa pela palavra vem antes do que só a tem no meio ou na marca; o número do nome também conta', () => {
+    expect(nomes('nescau')[0]).toBe('Nescau 2.0 · Nestlé')
+    expect(nomes('nescau').at(-1)).toBe('Achocolatado em pó · Nescau')
+    expect(nomes('40 nescau 2.0')).toEqual(['Nescau 2.0 · Nestlé'])
   })
 
   it('CB-753: com menos de 3 letras, o catálogo não é consultado', () => {
