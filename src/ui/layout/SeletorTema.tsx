@@ -9,13 +9,16 @@ const OPCOES: readonly { readonly valor: PreferenciaTema; readonly rotulo: strin
   { valor: 'sistema', rotulo: 'Sistema', icone: <Monitor aria-hidden="true" /> },
 ]
 
-/** Aparência em três opções sempre visíveis: claro, escuro ou igual ao aparelho. */
+/**
+ * Aparência em três opções sempre visíveis: claro, escuro ou igual ao aparelho. M-020 (spec ajustes-mobile): 44 px de
+ * toque e letra de 12 px, na pílula do seletor segmentado do sistema (DESIGN.md, Shapes), no lugar do quadrado antigo.
+ */
 export function SeletorTema() {
   const { preferencia, definir } = useTema()
 
   return (
-    <div role="radiogroup" aria-label="Aparência" className="grid grid-cols-3 border border-border">
-      {OPCOES.map((o, i) => {
+    <div role="radiogroup" aria-label="Aparência" className="grid grid-cols-3 gap-0.5 rounded-full border border-border p-0.5">
+      {OPCOES.map((o) => {
         const marcado = preferencia === o.valor
         return (
           <button
@@ -25,10 +28,9 @@ export function SeletorTema() {
             aria-checked={marcado}
             onClick={() => definir(o.valor)}
             className={cn(
-              'flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
+              'flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-full px-1 text-xs font-medium transition-colors [&_svg]:size-3.5 [&_svg]:shrink-0',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
-              i > 0 && 'border-l border-border',
-              marcado ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground',
+              marcado ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {o.icone}

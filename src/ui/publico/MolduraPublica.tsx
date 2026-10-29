@@ -39,10 +39,11 @@ const LINKS: readonly LinkPublico[] = [
 /**
  * Spec revisao-geral-publica, D-235: 44 px de toque e o texto que quebra alinhado à esquerda (o botão centraliza por
  * padrão). Spec site-publico-profissional: 44 px em qualquer largura para todos, como já era o "Fontes da base" (M-1),
- * e a lista sem vão entre eles; com alturas diferentes, o rodapé ficava com espaços desiguais.
+ * e a lista sem vão entre eles; com alturas diferentes, o rodapé ficava com espaços desiguais. Spec ajustes-mobile
+ * (D-802): 44 px também na largura; "Entrar" tinha 40.
  */
 const LINK_RODAPE =
-  'inline-flex min-h-11 items-center text-left rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'inline-flex min-h-11 min-w-11 items-center text-left rounded-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 interface ColunaRodape {
   readonly titulo: string
@@ -102,14 +103,22 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
           <a
             href="./"
             aria-label="MetaNutri, início"
-            className="inline-flex min-h-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
+            className="inline-flex min-h-11 min-w-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
           >
-            <Logo tamanho={28} />
+            {/* M-012 (spec ajustes-mobile): até 373 px, só o símbolo, como a barra da landing (D-622), num alvo de 44 px
+                (D-802); o nome da marca continua no rótulo do link. */}
+            <span className="max-[373px]:hidden">
+              <Logo tamanho={28} />
+            </span>
+            <span className="hidden max-[373px]:inline">
+              <Logo tamanho={28} soSimbolo />
+            </span>
           </a>
 
-          {/* D-235: até 767 px o menu desce para a segunda linha; em 640 px ele cabia ao lado da logo e empurrava os
-              botões de Entrar para uma linha sozinhos. */}
-          <nav aria-label="Seções" className="order-3 flex w-full justify-center gap-1 md:order-none md:mx-auto md:w-auto">
+          {/* D-235: de 640 a 767 px o menu desce para a segunda linha; em 640 px ele cabia ao lado da logo e empurrava os
+              botões de Entrar para uma linha sozinhos. M-012 e D-804 (spec ajustes-mobile): no celular, o cabeçalho fixo
+              fica numa linha, como a barra da landing: a logo, "Entrar" e "Começar grátis". As seções ficam no rodapé. */}
+          <nav aria-label="Seções" className="order-3 hidden w-full justify-center gap-1 sm:flex md:order-none md:mx-auto md:w-auto">
             {LINKS.map((link) => {
               const aqui = atual === link.destino && !link.ancora
               return (
@@ -138,7 +147,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
             <a
               href={telaNoApp('#/criar-conta')}
               onClick={(evento) => navegarPeloApp(evento, () => aoIrPara('criar-conta'))}
-              className={cn(buttonVariants({ variant: 'outline' }), 'border-heading bg-transparent text-heading')}
+              className={cn(buttonVariants({ variant: 'outline' }), 'border-heading bg-transparent text-heading max-[420px]:px-4')}
             >
               Começar grátis
             </a>

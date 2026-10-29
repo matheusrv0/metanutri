@@ -21,9 +21,10 @@ export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, a
   return (
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-8 sm:py-16">
       {/* D-237 (spec revisao-geral-publica): coluna que encolhe (DESIGN.md). Sem o minmax, um e-mail longo alargava a
-          coluna e o formulário saía cortado pelo cartão. */}
-      <div className="mx-auto grid max-w-[1000px] grid-cols-[minmax(0,1fr)] overflow-hidden rounded-2xl bg-card lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-        <main className="flex min-w-0 flex-col gap-4 p-6 sm:p-10">
+          coluna e o formulário saía cortado pelo cartão. M-028 (spec ajustes-mobile): empilhadas, as duas partes são dois
+          cartões, cada um com o seu canto; o fim do formulário encostava reto no painel cinza. Lado a lado, um cartão só. */}
+      <div className="mx-auto grid max-w-[1000px] grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-0 lg:overflow-hidden lg:rounded-2xl lg:bg-card">
+        <main className="flex min-w-0 flex-col gap-4 rounded-3xl bg-card p-6 sm:p-10 lg:rounded-none">
           {aoIrParaInicio ? (
             <button
               type="button"
@@ -52,7 +53,7 @@ export function MolduraConta({ titulo, subtitulo, passo, lado, aoIrParaInicio, a
           </div>
           {children}
         </main>
-        {lado ? <aside className="flex flex-col justify-between gap-4 bg-surfacerow p-6 sm:p-8">{lado}</aside> : null}
+        {lado ? <aside className="flex flex-col justify-between gap-4 rounded-3xl bg-surfacerow p-6 sm:p-8 lg:rounded-none">{lado}</aside> : null}
       </div>
     </div>
   )

@@ -1,11 +1,13 @@
-import { CircleCheck, FolderOpen, Info, Plus, TriangleAlert, X } from 'lucide-react'
-import { useState } from 'react'
+import { CircleCheck, FolderOpen, Info, Plus, Search, TriangleAlert, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
+import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
+import { usePacientesOpcional } from '../estado/contextoPacientes.ts'
 import { CartaoCaso } from './CartaoCaso.tsx'
 import { DialogoExcluir } from './DialogoExcluir.tsx'
 import { DialogoRenomear } from './DialogoRenomear.tsx'
@@ -19,11 +21,24 @@ type Acao = { readonly tipo: 'renomear' | 'excluir'; readonly id: string; readon
 
 const nomeVisivel = (nome: string) => nome.trim() || 'Plano sem nome'
 
+/** "Reeducação" e "reeducacao" são a mesma busca. */
+const paraBusca = (texto: string) => texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
 /** Lista de planos salvos: abrir, criar, renomear, duplicar e excluir (CA-50), com avisos de CB-08 e CB-09. */
 export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   const { casos, repositorio, atualizar, avisoArmazenamento, mudouEmOutraAba, dispensarAvisoOutraAba } = useCasos()
+  const pacientes = usePacientesOpcional()
   const [acao, setAcao] = useState<Acao | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
+  const [busca, setBusca] = useState('')
+
+  // M-007 (spec ajustes-mobile): o paciente de cada plano, para o cartão e para a busca.
+  const nomeDoPaciente = useMemo(() => new Map((pacientes?.pacientes ?? []).map((p) => [p.id, p.nome.trim()])), [pacientes])
+  const pacienteDe = (pacienteId: string | null) => (pacienteId ? (nomeDoPaciente.get(pacienteId) ?? null) : null)
+
+  // M-030: com 30 planos, a lista passava de 4.800 px no celular. A busca acha pelo nome do plano ou do paciente.
+  const termo = paraBusca(busca.trim())
+  const visiveis = termo === '' ? casos : casos.filter((c) => paraBusca(`${c.nome} ${pacienteDe(c.pacienteId) ?? ''}`).includes(termo))
 
   const fechar = () => setAcao(null)
 
@@ -98,19 +113,35 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           />
         </Card>
       ) : (
-        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Planos salvos">
-          {casos.map((c) => (
-            <li key={c.id}>
-              <CartaoCaso
-                caso={c}
-                aoAbrir={() => aoAbrir(c.id)}
-                aoRenomear={() => setAcao({ tipo: 'renomear', id: c.id, nome: c.nome })}
-                aoDuplicar={() => duplicar(c.id)}
-                aoExcluir={() => setAcao({ tipo: 'excluir', id: c.id, nome: nomeVisivel(c.nome) })}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <Card className="gap-4">
+            <CampoTexto rotulo="Buscar plano" valor={busca} aoMudar={setBusca} placeholder="Nome do plano ou do paciente…" />
+          </Card>
+          {visiveis.length === 0 ? (
+            <Card className="items-center gap-3 py-12 text-center">
+              <span className="flex size-11 items-center justify-center rounded-full border border-primary/25 bg-lightprimary text-primary">
+                <Search className="size-6" aria-hidden="true" />
+              </span>
+              <h2 className="card-title">Nenhum plano com esse nome</h2>
+              <p className="max-w-[48ch] text-sm text-muted-foreground">Confira o nome ou busque pelo paciente.</p>
+            </Card>
+          ) : (
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Planos salvos">
+              {visiveis.map((c) => (
+                <li key={c.id} className="min-w-0">
+                  <CartaoCaso
+                    caso={c}
+                    paciente={pacienteDe(c.pacienteId)}
+                    aoAbrir={() => aoAbrir(c.id)}
+                    aoRenomear={() => setAcao({ tipo: 'renomear', id: c.id, nome: c.nome })}
+                    aoDuplicar={() => duplicar(c.id)}
+                    aoExcluir={() => setAcao({ tipo: 'excluir', id: c.id, nome: nomeVisivel(c.nome) })}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       <DialogoRenomear nomeAtual={acao?.tipo === 'renomear' ? acao.nome : null} aoConfirmar={renomear} aoFechar={fechar} />

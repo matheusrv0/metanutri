@@ -116,12 +116,17 @@ export function TelaConta({
           <p className="text-sm text-muted-foreground">Conferindo a sessão…</p>
         ) : conta.sessao ? (
           <div className="flex flex-wrap items-center gap-4">
-            <span aria-hidden="true" className="grid size-12 shrink-0 place-content-center rounded-full bg-lightprimary font-titulo text-lg font-bold text-primary">
-              {inicial}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-titulo text-lg font-semibold text-heading">{conta.sessao.nome}</p>
-              <p className="truncate text-sm text-muted-foreground">{conta.sessao.email}</p>
+            {/* M-024 (spec ajustes-mobile): a inicial, o nome e o e-mail andam juntos e medem pelo que têm (`flex-auto`):
+                com um e-mail longo, "Sair" desce para a linha de baixo em vez de espremer o texto numa coluna estreita. */}
+            <div className="flex min-w-0 flex-auto items-center gap-4">
+              <span aria-hidden="true" className="grid size-12 shrink-0 place-content-center rounded-full bg-lightprimary font-titulo text-lg font-bold text-primary">
+                {inicial}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-titulo text-lg font-semibold text-heading">{conta.sessao.nome}</p>
+                {/* M-024: o e-mail é a identidade da conta; quebra inteiro, sem reticências. */}
+                <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{conta.sessao.email}</p>
+              </div>
             </div>
             <Button variant="outline" onClick={() => void saida.pedirSair()} disabled={saida.saindo}>
               {saida.saindo ? 'Saindo…' : 'Sair'}

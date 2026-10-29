@@ -1,8 +1,10 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { criarRepositorioPacientes } from '@/domain/pacientes.ts'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
 import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
+import { ProvedorPacientes } from '../estado/ProvedorPacientes.tsx'
 import { AvisoPrimeiroAcesso, CHAVE_AVISO_VISTO } from './AvisoPrimeiroAcesso.tsx'
 import { TelaCasos } from './TelaCasos.tsx'
 
@@ -131,6 +133,47 @@ describe('Tela Planos', () => {
     expect(screen.getByText(/mudanças feitas em outra aba/)).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Fechar aviso' }))
     expect(screen.queryByText(/mudanças feitas em outra aba/)).not.toBeInTheDocument()
+  })
+
+  it('M-030 (spec ajustes-mobile): "Buscar plano" filtra pelo nome do plano e diz quando nada combina', async () => {
+    const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
+    repositorio.criar('Plano de reeducação alimentar — Ana')
+    repositorio.criar('Plano de reeducação alimentar — Bia')
+    repositorio.criar('Retorno de outubro')
+    montar(repositorio)
+    const usuario = userEvent.setup()
+
+    await usuario.type(screen.getByRole('textbox', { name: 'Buscar plano' }), 'reeducacao')
+    expect(cartoes().map((li) => within(li).getByRole('heading').textContent)).toEqual([
+      'Plano de reeducação alimentar — Bia',
+      'Plano de reeducação alimentar — Ana',
+    ])
+
+    await usuario.clear(screen.getByRole('textbox', { name: 'Buscar plano' }))
+    await usuario.type(screen.getByRole('textbox', { name: 'Buscar plano' }), 'Carla')
+    expect(screen.queryByRole('list', { name: 'Planos salvos' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nenhum plano com esse nome' })).toBeInTheDocument()
+  })
+
+  it('M-030 e M-007 (spec ajustes-mobile): o cartão mostra o paciente, e a busca também acha pelo nome dele', async () => {
+    const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
+    const pacientes = criarRepositorioPacientes(new MemoriaFalsa())
+    const carla = pacientes.criar('Carla Menezes')
+    const plano = repositorio.criar('Retorno de outubro')
+    repositorio.salvar({ ...plano, caso: { ...plano.caso, pacienteId: carla.id } })
+    repositorio.criar('Primeira consulta')
+    render(
+      <ProvedorPacientes repositorio={pacientes}>
+        <ProvedorCasos repositorio={repositorio}>
+          <TelaCasos aoAbrir={vi.fn()} aoNovoCaso={vi.fn()} />
+        </ProvedorCasos>
+      </ProvedorPacientes>,
+    )
+    const cartao = cartoes().find((li) => within(li).queryByRole('heading', { name: 'Retorno de outubro' }))
+    expect(within(cartao as HTMLElement).getByText(/Carla Menezes/)).toBeInTheDocument()
+
+    await userEvent.setup().type(screen.getByRole('textbox', { name: 'Buscar plano' }), 'carla')
+    expect(cartoes().map((li) => within(li).getByRole('heading').textContent)).toEqual(['Retorno de outubro'])
   })
 })
 

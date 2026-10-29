@@ -277,6 +277,25 @@ describe('Tela de adesão', () => {
     await usuario.click(screen.getByRole('button', { name: 'Abrir plano' }))
     expect(abrir).toHaveBeenCalledWith('caso-42')
   })
+
+  it('M-029 (spec ajustes-mobile): "Remover link", que é destrutivo, é a última ação da linha, longe do WhatsApp', () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    // Parou de marcar: a linha tem o WhatsApp, onde o polegar mira.
+    repo.salvar(acompanhamentoDe('c1', 'Ana', [{ dia: '2026-09-15', feitas: ['agua'] }]))
+    render(
+      <Anfitriao repositorio={repo}>
+        <TelaAdesao aoAbrirPlano={vi.fn()} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    const linha = screen.getByRole('listitem')
+    const acoes = within(linha)
+      .getAllByRole('button')
+      .map((b) => b.textContent?.trim())
+    expect(acoes.at(-1)).toBe('Remover link')
+    expect(acoes.indexOf('Abrir plano')).toBeLessThan(acoes.indexOf('Remover link'))
+    expect(acoes.some((nome) => /WhatsApp/.test(nome ?? ''))).toBe(true)
+    expect(acoes.findIndex((nome) => /WhatsApp/.test(nome ?? ''))).toBeLessThan(acoes.indexOf('Remover link'))
+  })
 })
 
 describe('Conta de estudante: uso não comercial', () => {

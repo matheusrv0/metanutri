@@ -178,7 +178,10 @@ export function TelaPaciente({
               {planos.map((p) => (
                 <li key={p.id} className="flex items-center gap-3 border-b border-border py-2 last:border-0">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-heading">{p.nome.trim() || 'Plano sem nome'}</p>
+                    {/* M-007 (spec ajustes-mobile, D-801): até 2 linhas, e o nome inteiro no `title`. */}
+                    <p className="line-clamp-2 break-words text-sm font-medium text-heading" title={p.nome.trim() || 'Plano sem nome'}>
+                      {p.nome.trim() || 'Plano sem nome'}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {`${p.modo === 'rapido' ? 'Prescrição rápida' : 'Atendimento completo'} · ${formatarAlteracao(p.atualizadoEm).toLowerCase()}`}
                     </p>
