@@ -485,4 +485,11 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     expect(forma ? valor(forma, 'energia_kcal') : null).toBeGreaterThan(0)
     expect(porId(100364)?.conjunto).toBe('Foundation Foods')
   })
+
+  it('D-716r: a tortilha de trigo fica sem o folato, como o pão de forma; o pão multigrãos, sem sinal de ácido fólico, fica com ele', () => {
+    const tortilha = porId(100419)
+    expect(tortilha ? valor(tortilha, 'folato_dfe_mcg') : 'sem').toBeNull()
+    const multigraos = porId(100400)
+    expect(multigraos ? valor(multigraos, 'folato_dfe_mcg') : null).toBe(64.4)
+  })
 })
