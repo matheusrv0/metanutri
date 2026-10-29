@@ -144,3 +144,31 @@ describe('D-716b: alergênicos da curadoria, além dos termos do nome (achado 1 
     }
   })
 })
+
+describe('D-716l: restrições que pegavam demais (achado 11 da revisão)', () => {
+  const id = (n: number) => {
+    const a = BASE.find((x) => x.id === n)
+    if (!a) throw new Error(`Sem ${n}.`)
+    return a
+  }
+
+  it('macarrão de arroz, de milho e harussame, biscoito de arroz e trigo-sarraceno não pegam glúten nem trigo', () => {
+    for (const n of [100379, 100380, 100367, 100368, 100284, 100634, 100335, 100336, 100346]) {
+      expect(restricaoDoAlimento(id(n), marcadas('gluten')), id(n).descricao).toBeNull()
+      expect(restricaoDoAlimento(id(n), marcadas('trigo')), id(n).descricao).toBeNull()
+    }
+    // O mesmo nome no alimento próprio, e o macarrão de trigo continua pegando.
+    expect(restricaoDoAlimento({ id: 900_010, descricao: 'Macarrão de arroz integral' }, marcadas('gluten'))).toBeNull()
+    expect(restricaoDoAlimento({ id: 900_011, descricao: 'Macarrão, trigo, cozido' }, marcadas('gluten'))).toBe('Intolerância: glúten')
+  })
+
+  it('a noz-moscada não pega castanhas; a noz e a noz-pecã continuam pegando', () => {
+    expect(restricaoDoAlimento(id(100604), marcadas('castanhas'))).toBeNull()
+    expect(restricaoDoAlimento(id(100316), marcadas('castanhas'))).toBe('Alergia: castanhas')
+    expect(restricaoDoAlimento({ id: 900_012, descricao: 'Noz, crua' }, marcadas('castanhas'))).toBe('Alergia: castanhas')
+  })
+
+  it('o croissant de queijo pega lactose', () => {
+    expect(restricaoDoAlimento(id(100413), marcadas('lactose'))).toBe('Intolerância: lactose')
+  })
+})

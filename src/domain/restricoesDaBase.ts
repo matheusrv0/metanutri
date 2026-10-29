@@ -170,6 +170,13 @@ const EXCECOES_DO_TRIGO: readonly string[] = [
   'fruta pao',
   'massa de mandioca',
   'massa de tapioca',
+  // Spec base-ampliada, D-716l: massas e grãos sem trigo que o nome lembra.
+  'macarrao de milho',
+  'macarrao de feijao mungo',
+  'harussame',
+  'harusame',
+  'biscoito de arroz',
+  'trigo sarraceno',
 ]
 
 /**
@@ -216,7 +223,8 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
   },
   castanhas: {
     termos: ['castanha*', 'amendoa*', 'noz', 'nozes', 'avela*', 'pistache*', 'macadamia', 'pinoli', 'nutella'],
-    excecoes: ['castanha de cupuacu'],
+    // A noz-moscada é semente de especiaria, não castanha (spec base-ampliada, D-716l).
+    excecoes: ['castanha de cupuacu', 'noz moscada'],
   },
   peixe: {
     termos: ['peixe*', 'atum', 'sardinha*', 'salmao', 'bacalhau', 'tilapia', 'merluza', 'pescada', 'pescadinha', 'anchova', 'truta', 'linguado', 'robalo', 'corvina', 'pintado', 'tambaqui', 'pirarucu', 'surimi', 'manjuba', 'lambari', 'dourado', 'abadejo', 'tucunare', 'saint peter', 'badejo', 'namorado', 'cavala', 'arenque'],
