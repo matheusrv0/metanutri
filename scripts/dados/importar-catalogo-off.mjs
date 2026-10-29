@@ -91,8 +91,10 @@ const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os
  * lactose", "gluten free" e "sin TACC" dizem o contrário do que a palavra sozinha diria. Saem antes de ler as palavras;
  * "contém glúten", sem o "não", continua acusando.
  */
-// D-775: também "contêm" (com ê), "glúten-free" (com acento) e "0% lactose".
-const NEGACAO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eéê]m|zero|0%|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)|(gl[uú]ten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
+// D-775: também "contêm" (com ê), "glúten-free" (com acento) e "0% lactose". D-776: uma negação vale para a lista que
+// segue ("não contém glúten e lactose", "nem lactose", "sem glúten, lactose"), mas só para glúten e lactose.
+const NEGACAO =
+  /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eéê]m|zero|0%|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)((\s*,\s*|\s+e\s+|\s+y\s+|\s+nem\s+|\s+ni\s+|\s+ou\s+)(gl[uú]ten|lactose|lactosa))*|(gl[uú]ten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
 
 const semAcentoMinusculo = (t) => t.toLowerCase()
 const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))

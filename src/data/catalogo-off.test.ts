@@ -357,3 +357,14 @@ describe('D-775: mais formas da negação (rodada 3 da revisão da fase 2, ajust
     expect(ler(t)).toEqual([])
   })
 })
+
+describe('D-776: uma negação para duas palavras (rodada 3, ajuste 2)', () => {
+  const ler = (t: string) => alergenicosDoRegistro(registro({ ingredients_text: t })).contem
+  it.each(['Chá. Não contém glúten e lactose.', 'Chá. Não contém glúten nem lactose.', 'Chá. Sem glúten, lactose.', 'Chá. NÃO CONTÉM LACTOSE E GLÚTEN.'])('"%s" não acusa nenhum dos dois', (t) => {
+    expect(ler(t)).toEqual([])
+  })
+
+  it('a segunda palavra que não é glúten nem lactose não é negada: "sem glúten e leite" ainda acusa o leite', () => {
+    expect(ler('Biscoito de arroz. Sem glúten e leite integral.')).toEqual(['leite', 'lactose'])
+  })
+})
