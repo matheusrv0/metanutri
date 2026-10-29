@@ -25,16 +25,16 @@
   ],
   "criterio": "Alimentos genéricos que a TACO não tem, com nome em português, grupo da TACO e preparo, revisados em duas passadas em 29/10/2026. A TACO vence quando tem o mesmo alimento no mesmo preparo; a Foundation vence o SR Legacy, que só completa o que ela não publicou. Fortificação americana não é copiada."
  },
- "alimentos": 613,
+ "alimentos": 614,
  "sugeriveis": 98,
  "porConjunto": {
   "Foundation Foods": 128,
-  "SR Legacy": 485
+  "SR Legacy": 486
  },
  "porGrupo": {
   "Cereais e derivados": 85,
   "Verduras, hortaliças e derivados": 101,
-  "Frutas e derivados": 48,
+  "Frutas e derivados": 49,
   "Gorduras e óleos": 9,
   "Pescados e frutos do mar": 73,
   "Carnes e derivados": 164,

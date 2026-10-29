@@ -73,6 +73,7 @@ export const EXCECOES = new Map([
   [175303, 'cabrito: carne comum no Nordeste, que o USDA põe entre as de caça'],
   [175304, 'cabrito: carne comum no Nordeste, que o USDA põe entre as de caça'],
   [175140, 'sardinha em molho de tomate: a conserva de sardinha mais vendida no Brasil'],
+  [173042, 'suco de uva integral: não há suco fresco no USDA para a regra do enlatado preferir'],
 ])
 
 /** Na ordem: a primeira que casa dá o motivo. Cada regra recebe o alimento e o conjunto de descrições existentes. */
