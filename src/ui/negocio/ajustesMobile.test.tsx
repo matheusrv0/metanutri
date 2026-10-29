@@ -31,24 +31,44 @@ describe('Negócio no celular (spec ajustes-mobile)', () => {
 
   describe('M-016: a lista de contas', () => {
     const muitas = Array.from({ length: 120 }, (_, k) => conta(`c${k}`, { nome: `Conta ${k}`, criadaEm: new Date(Date.UTC(2026, 0, 1) + k * 3_600_000).toISOString() }))
+    /** A tela do celular: abaixo de 768 px. */
+    const noCelular = () =>
+      vi.stubGlobal('matchMedia', (consulta: string) => ({ matches: consulta === '(max-width: 767px)', media: consulta, addEventListener: () => undefined, removeEventListener: () => undefined }))
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
 
-    it('M-016: abaixo de md, cada conta vira um cartão com nome, e-mail, situação e plano; a tabela fica para o md', () => {
+    it('M-016: abaixo de md, cada conta vira um cartão com nome, e-mail, situação e plano, sem a tabela', () => {
+      noCelular()
       render(<ListaDeContas contas={[conta('a', { nome: 'Ana Souza', email: 'ana@exemplo.com' })]} agora={AGORA} />)
-      expect(classes(screen.getByRole('table').parentElement?.parentElement as HTMLElement)).toEqual(expect.arrayContaining(['hidden', 'md:block']))
-      const cartoes = screen.getByRole('list', { name: 'Contas' })
-      expect(classes(cartoes)).toContain('md:hidden')
-      const cartao = within(cartoes).getByRole('listitem')
+      expect(screen.queryByRole('table')).toBeNull()
+      const cartao = within(screen.getByRole('list', { name: 'Contas' })).getByRole('listitem')
       for (const texto of ['Ana Souza', 'ana@exemplo.com', 'Nutricionista', 'CRN-6 conferido', 'Free', 'Situação', 'Plano', 'Criou a conta', 'Último acesso']) {
         expect(within(cartao).getByText(texto)).toBeInTheDocument()
       }
     })
 
-    it('M-016: mostra 50 por vez, e o botão traz mais 50', async () => {
+    it('M-016: a partir de md, a tabela de cinco colunas, sem os cartões', () => {
+      render(<ListaDeContas contas={[conta('a', { nome: 'Ana Souza' })]} agora={AGORA} />)
+      expect(screen.getAllByRole('columnheader')).toHaveLength(5)
+      expect(screen.queryByRole('list', { name: 'Contas' })).toBeNull()
+    })
+
+    it('M-016: mostra 50 por vez na tabela, e o botão traz mais 50', async () => {
+      const user = userEvent.setup()
+      render(<ListaDeContas contas={muitas} agora={AGORA} />)
+      expect(screen.getAllByRole('row').slice(1)).toHaveLength(50)
+      expect(screen.getByText('Mostrando 50 de 120')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Mostrar mais 50' }))
+      expect(screen.getAllByRole('row').slice(1)).toHaveLength(100)
+    })
+
+    it('M-016: mostra 50 cartões por vez no celular, e o botão traz mais 50', async () => {
+      noCelular()
       const user = userEvent.setup()
       render(<ListaDeContas contas={muitas} agora={AGORA} />)
       const cartoes = screen.getByRole('list', { name: 'Contas' })
       expect(within(cartoes).getAllByRole('listitem')).toHaveLength(50)
-      expect(screen.getAllByRole('row').slice(1)).toHaveLength(50)
       expect(screen.getByText('Mostrando 50 de 120')).toBeInTheDocument()
       await user.click(screen.getByRole('button', { name: 'Mostrar mais 50' }))
       expect(within(cartoes).getAllByRole('listitem')).toHaveLength(100)
@@ -58,6 +78,7 @@ describe('Negócio no celular (spec ajustes-mobile)', () => {
     })
 
     it('M-016: trocar de grupo ou buscar volta aos 50 primeiros', async () => {
+      noCelular()
       const user = userEvent.setup()
       render(<ListaDeContas contas={muitas} agora={AGORA} />)
       await user.click(screen.getByRole('button', { name: 'Mostrar mais 50' }))

@@ -7,6 +7,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@ds/componen
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
+import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { LinhaDeConta } from './LinhaDeConta.tsx'
 
 const GRUPOS: readonly { readonly valor: GrupoDeContas; readonly rotulo: string }[] = [
@@ -33,8 +34,9 @@ interface ListaDeContasProps {
 }
 
 /**
- * M-016: abaixo de md, a conta vira um cartão com os mesmos dados da linha da tabela (CA-356 a CA-359). A tabela de
- * 44rem mostrava no celular uma coluna e meia, sem sinal de que havia mais à direita.
+ * M-016: abaixo de md (768 px), a conta vira um cartão com os mesmos dados da linha da tabela (CA-356 a CA-359). A
+ * tabela de 44rem mostrava no celular uma coluna e meia, sem sinal de que havia mais à direita. Só um dos dois vai para a
+ * página (nada duplicado escondido); sem `matchMedia` (testes), fica a tabela.
  */
 function CartaoDeConta({ conta, agora }: { readonly conta: ContaNoPainel; readonly agora: Date }) {
   const { situacao, selo } = seloDaSituacao(conta)
@@ -70,6 +72,7 @@ export function ListaDeContas({ contas, agora }: ListaDeContasProps) {
   const [grupo, setGrupo] = useState<GrupoDeContas>('todas')
   const [busca, setBusca] = useState('')
   const [limite, setLimite] = useState(POR_VEZ)
+  const celular = useMediaQuery('(max-width: 767px)')
   const { visiveis, totalDoGrupo } = useMemo(() => filtrarContas(contas, grupo, busca), [contas, grupo, busca])
   const pagina = visiveis.slice(0, limite)
   const faltam = visiveis.length - pagina.length
@@ -115,12 +118,13 @@ export function ListaDeContas({ contas, agora }: ListaDeContasProps) {
           <p className="py-4 text-center text-sm text-muted-foreground">{busca.trim() ? 'Nenhuma conta com esse nome ou e-mail.' : 'Nenhuma conta neste grupo.'}</p>
         ) : (
           <>
-            <ul aria-label="Contas" className="flex flex-col gap-2 md:hidden">
-              {pagina.map((c) => (
-                <CartaoDeConta key={c.id} conta={c} agora={agora} />
-              ))}
-            </ul>
-            <div className="hidden md:block">
+            {celular ? (
+              <ul aria-label="Contas" className="flex flex-col gap-2">
+                {pagina.map((c) => (
+                  <CartaoDeConta key={c.id} conta={c} agora={agora} />
+                ))}
+              </ul>
+            ) : (
               <Table className="min-w-[44rem]">
                 <TableHeader>
                   <TableRow>
@@ -137,7 +141,7 @@ export function ListaDeContas({ contas, agora }: ListaDeContasProps) {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            )}
             {faltam > 0 ? (
               <div className="flex flex-col items-center gap-2 pt-1">
                 <p className="numeros text-xs text-muted-foreground">{`Mostrando ${inteiro(pagina.length)} de ${inteiro(visiveis.length)}`}</p>
