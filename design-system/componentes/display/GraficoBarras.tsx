@@ -73,7 +73,10 @@ export function GraficoBarras({ descricao, barras, marcas, className }: GraficoB
             style={{ bottom: altura(m.valor) }}
           />
         ))}
-        <ul aria-label={descricao} className="absolute inset-0 flex items-end gap-2 px-1 sm:gap-3.5">
+        {/* O vão entre as barras é recuo dentro de cada item, não gap: o toque no vão cai na barra (a área de toque
+            passa de 30 para 38 px num celular de 360 com seis meses). O desenho é o mesmo: 4 px de margem e 8 px de
+            vão (14 px a partir de 640 px, com a margem corrigida pelo -mx). */}
+        <ul aria-label={descricao} className="absolute inset-0 flex items-end sm:-mx-0.75">
           {barras.map((b, i) => {
             const ancora = ANCORA[ancoraDa(i, barras.length)]
             return (
@@ -81,7 +84,7 @@ export function GraficoBarras({ descricao, barras, marcas, className }: GraficoB
                 key={b.chave}
                 tabIndex={0}
                 aria-label={b.dica}
-                className="group relative flex h-full flex-1 items-end justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group relative flex h-full flex-1 items-end justify-center rounded-md px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-1.75"
               >
                 {/* O texto de cima se prende à barra (não ao item, que no computador é mais largo que ela). */}
                 <span className="relative block w-full max-w-14" style={{ height: altura(b.valor) }}>
@@ -115,9 +118,9 @@ export function GraficoBarras({ descricao, barras, marcas, className }: GraficoB
       </div>
 
       <div aria-hidden="true" />
-      <div aria-hidden="true" className="flex gap-2 px-1 pt-2 sm:gap-3.5">
+      <div aria-hidden="true" className="flex pt-2 sm:-mx-0.75">
         {barras.map((b) => (
-          <span key={b.chave} className="flex-1 text-center text-xs text-muted-foreground">
+          <span key={b.chave} className="flex-1 px-1 text-center text-xs text-muted-foreground sm:px-1.75">
             {b.rotulo}
           </span>
         ))}
