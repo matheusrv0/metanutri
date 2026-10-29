@@ -206,3 +206,34 @@ for (const largura of CELULARES) {
     })
   })
 }
+
+// ------------------------------------------------------------------------------------------------------------- M-025
+
+for (const largura of [...COM_TABLET, 1280]) {
+  test.describe(`M-025 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } })
+
+    test('M-025: o resumo do dia é um cartão de canto arredondado, sem fio de fora nem fio solto na borda', async ({ page }) => {
+      await abrirExemplo(page)
+      await page.getByRole('navigation', { name: 'Etapas do plano' }).getByRole('button', { name: /Adequação/ }).click()
+      const medida = await page.getByRole('region', { name: 'Resumo do dia' }).evaluate((secao) => {
+        const estilo = getComputedStyle(secao)
+        const caixa = secao.getBoundingClientRect()
+        const celulas = [...(secao.firstElementChild?.children ?? [])]
+        const fiosNaBorda = celulas.filter((c) => {
+          const r = c.getBoundingClientRect()
+          const e = getComputedStyle(c)
+          return (
+            (Math.abs(r.right - caixa.right) < 1 && parseFloat(e.borderRightWidth) > 0) ||
+            (Math.abs(r.left - caixa.left) < 1 && parseFloat(e.borderLeftWidth) > 0) ||
+            (Math.abs(r.top - caixa.top) < 1 && parseFloat(e.borderTopWidth) > 0)
+          )
+        }).length
+        return { raio: parseFloat(estilo.borderTopLeftRadius), fio: parseFloat(estilo.borderTopWidth), fiosNaBorda }
+      })
+      expect(medida.raio, 'canto reto').toBeGreaterThan(0)
+      expect(medida.fio, 'fio em volta').toBe(0)
+      expect(medida.fiosNaBorda, 'fio de célula encostado na borda do cartão').toBe(0)
+    })
+  })
+}
