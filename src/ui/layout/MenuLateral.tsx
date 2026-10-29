@@ -103,7 +103,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
             aoClicar={() => ir({ tela: 'casos' })}
             extra={
               casos.length > 0 ? (
-                <span className="numeros rounded-full border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                <span className="numeros rounded-full border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
                   {casos.length}
                   <span className="sr-only"> {casos.length === 1 ? 'caso' : 'casos'}</span>
                 </span>
@@ -143,7 +143,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
               aoClicar={() => ir({ tela: 'aprovacoes' })}
               extra={
                 aprovacoesPendentes > 0 ? (
-                  <span className="numeros rounded-full border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">{aprovacoesPendentes}</span>
+                  <span className="numeros rounded-full border border-border px-1.5 py-0.5 text-xs text-muted-foreground">{aprovacoesPendentes}</span>
                 ) : null
               }
             />
