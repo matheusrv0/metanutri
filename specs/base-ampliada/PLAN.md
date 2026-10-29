@@ -3,7 +3,7 @@
 **Spec:** `specs/base-ampliada/SPEC.md` (pedida em 29/10/2026; "apenas faça"; aprovação pelas telas).
 
 **Objetivo:** 614 alimentos genéricos do USDA (SR Legacy e Foundation), com nome, grupo e preparo da TACO, entram na
-Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 98 `sugerivel`. A fase 2
+Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 96 `sugerivel`. A fase 2
 (Open Food Facts) fica só na spec (seção 6).
 
 **Arquitetura:** três scripts em `scripts/dados/` (leitura dos zips, peneira, importação) geram
@@ -141,6 +141,6 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 
 - D-705: 614 alimentos, não "alguns milhares" (os milhares são a fase 2).
 - D-711: o plano com alimento novo espera a base no primeiro acesso.
-- D-716: os 98 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
+- D-716: os 96 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
 - D-701: a Foundation de outubro de 2026 saiu ontem; o CSV dela veio incompleto, e o JSON é o arquivo usado.
 - Fase 2: a recomendação (b), arquivos estáticos.

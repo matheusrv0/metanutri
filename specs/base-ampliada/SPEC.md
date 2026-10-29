@@ -28,7 +28,7 @@ abertura do app não fica mais lenta.
 | Alimentos lidos do USDA (SR Legacy 7.793 + Foundation 424) | 8.217 |
 | Depois da peneira automática (marca, fast food, prato pronto, infantil, caça, álcool, fortificação, duplicatas óbvias) | 2.610 |
 | **Entram na base ampliada**, depois da curadoria em duas passadas | **614** |
-| Deles, `sugerivel` (podem entrar no Cobrir) | **98** |
+| Deles, `sugerivel` (podem entrar no Cobrir) | **96** |
 | Deles, Foundation Foods (os outros, SR Legacy) | 128 |
 | Base MetaNutri depois desta fase (TACO + ampliada) | 1.211 |
 
@@ -177,7 +177,7 @@ funcionam sem internet, não custam e não mandam a busca da nutricionista para 
 - **R-700** · Valor americano não é o alimento brasileiro (o mesmo R-300): variedade, ração e solo. A ficha diz a
   origem; a TACO vence quando tem o alimento.
 - **R-701** · A curadoria é tradução de modelo de linguagem com revisão de modelo de linguagem; nenhum nutricionista
-  revisou os 614 nomes. Os 98 `sugerivel` são os que mais pesam: estão listados no PLAN para a parceira conferir.
+  revisou os 614 nomes. Os 96 `sugerivel` são os que mais pesam: estão listados no PLAN para a parceira conferir.
 - **R-702** · O Cobrir muda de cara (alimentos novos competem com os da TACO pela densidade do nutriente): a tabela da
   seção 5 mostra o efeito no exemplo.
 - **R-703** · Primeiro acesso sem internet não tem a base ampliada (CB-704).
