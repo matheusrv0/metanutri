@@ -39,7 +39,7 @@ const PARTES: readonly { readonly valor: Parte; readonly rotulo: string }[] = [
  */
 const TRILHO = 'grid w-full grid-cols-2 gap-1 rounded-full border border-borderdefault bg-surfacerow p-1'
 const ABA =
-  'h-11 rounded-full px-4 font-semibold sm:h-9 data-[state=active]:bg-card data-[state=active]:text-heading data-[state=active]:shadow-xs data-[state=active]:after:hidden'
+  'h-11 rounded-full px-4 font-semibold sm:h-9 sm:pointer-coarse:h-11 data-[state=active]:bg-card data-[state=active]:text-heading data-[state=active]:shadow-xs data-[state=active]:after:hidden'
 
 interface TelaMissoesPacienteProps {
   readonly token: string

@@ -56,7 +56,9 @@ Referência: pasta `MetaNutri Design System` (imagens `spora-01` a `spora-07`). 
 - **Foto só na landing.** Desde a landing v9 (27/10/2026), a foto CC0 do topo, com véu, e mais três no meio da página; ver *Landing escura*. Nenhuma foto no app.
 - **Componentes da referência:** `CartaoNumero`, `LinhaLista`, `SeletorSegmentado`, `AnelProgresso` e o `Button` laranja.
 - **Sem taglines** (D-77 da `limpeza-visual`, 05/10/2026). Nenhum rótulo decorativo em caixa alta acima de título ou de seção, nenhum subtítulo no cabeçalho e nada embaixo da logo do menu. O rótulo em caixa alta (`rotulo`) só nomeia o dado logo abaixo dele, como "Você paga hoje" sobre o total; cabeçalho de tabela, rótulo de campo e grupo do menu também ficam.
-- **Toque.** No celular, todo botão tem pelo menos 44 px de altura.
+- **Toque.** Em toda largura com toque (celular e tablet), todo alvo tem pelo menos 44 px: botão, campo, item de
+  menu, opção em pílula, "Fechar". A densidade de computador (botão de 40 e 32 px, campo de 40 px com letra de
+  14 px) vale a partir de 640 px só com mouse (spec `ajustes-mobile`, D-802 e M-018); ver *Layout*.
 - **Área pública sem enfeite** (spec `site-publico-profissional`, 21/10/2026). O menu do topo é em caixa normal; desde a landing v9, os passos de "Como funciona" são numerados (aprovado no protótipo); nada nasce transparente ou borrado esperando animação de entrada (o conteúdo aparece no primeiro quadro, também na página pré-desenhada pelo build); o rodapé tem só a logo, links e o contato. Preço e número da área pública saem do domínio (`PLANOS`, `MICRONUTRIENTES_ADEQUACAO`), nunca escritos à mão.
 
 ## Landing escura (desde 27/10/2026; tema claro desde a v3)
@@ -283,7 +285,15 @@ encolheria todo o texto do app de 14 para 13 px sem ninguém pedir. A escala mor
   celular; coluna `auto` não encolhe abaixo do conteúdo e faz a página rolar para o lado.
 - **Linha que empilha.** Abaixo de 640 px, a linha do alimento põe o nome numa linha e
   gramas, kcal e ações na seguinte.
-- Alvo de toque mínimo de 44 px (`--tap-min`).
+- Alvo de toque mínimo de 44 px (`--tap-min`), também no tablet. O ponto de virada da densidade é o ponteiro, não só
+  a largura: a classe de computador vem com `sm:` e a volta ao toque com `sm:pointer-coarse:` (a variante do
+  Tailwind v4), como em `sm:min-h-9 sm:pointer-coarse:min-h-11`. Nos campos (Input, lista de escolha, caixa de
+  texto), `comToque` (`design-system/lib/toque.ts`) faz a volta sem passar por cima de quem troca a altura ou a letra
+  no `sm:` (D-312). Interruptor e link curto alcançam os 44 px com área invisível (pseudo-elemento, `min-w-11` ou
+  `py-3` no link dentro da frase), sem mexer no desenho.
+- **Nada rola de lado** em 360, 390, 412 e 768 px (D-800): grade de uma coluna é `minmax(0,1fr)`, filho de flex com
+  texto tem `min-w-0`, e o que identifica (nome de paciente, plano, alimento) quebra em até duas linhas em vez de
+  `truncate` (D-801).
 
 ## Elevation & Depth
 
@@ -312,12 +322,18 @@ com o que cada subpasta guarda e como criar um componente novo, está em
 
 ### Buttons
 
-Pílula, altura 40 px (32 sm / 48 lg). `default` grafite sólido, `accent` ficha neutra,
+Pílula, altura 40 px (32 sm / 48 lg) com mouse; 44 px no celular e no toque do tablet (D-802). `default` grafite sólido, `accent` ficha neutra,
 `outline` com fio, `soft` neutro diluído, `ghost` sem moldura, `link` sublinhado, mais
 `secondary`, `lightprimary`, `lighterror` e `destructive` — `accent` e `soft` são ênfase neutra, não uma segunda
 cor. Hover escurece o preenchimento;
 `:active` encolhe 3%; foco é anel de 2 px com 2 px de deslocamento; `disabled` cai para
 50%; `loading` mostra a roda e bloqueia o clique.
+
+### Interruptor e selo
+
+Interruptor de 36 × 20 px no desenho, com área de toque invisível de 46 × 46 px (um pseudo-elemento em volta, que não
+ocupa lugar na linha; M-019). Selo com letra de 12 px (`text-xs`); os 11 px (`text-2xs`) ficam só no versalete de
+rótulo de dado (M-021).
 
 ### Tabela
 
@@ -334,8 +350,9 @@ não aparecem.
 
 ### Campos
 
-Entrada de 40 px, raio 12 (abaixo de 640 px, 44 px e letra de 16 px, para o iPhone não aproximar a tela ao tocar;
-vale também para a lista de escolha e, na letra, para a caixa de texto; spec `integracao-rodada-1910`, D-311),
+Entrada de 40 px com mouse, raio 12 (abaixo de 640 px e no toque do tablet, 44 px e letra de 16 px, para o iPhone e o
+iPad não aproximarem a tela ao tocar; vale também para a lista de escolha e, na letra, para a caixa de texto; spec
+`integracao-rodada-1910`, D-311, e `ajustes-mobile`, M-018),
 sufixo de unidade dentro do campo, rótulo acima ou oculto
 para leitor de tela quando a coluna já nomeia o dado. Foco põe borda forte e anel;
 `aria-invalid` troca a borda para a cor de erro.

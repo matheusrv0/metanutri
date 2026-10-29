@@ -69,7 +69,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
   }
 
   const itemMenu =
-    'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9'
+    'inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9 sm:pointer-coarse:min-h-11'
   const ano = new Date().getFullYear()
   const colunas: readonly ColunaRodape[] = [
     {
@@ -103,7 +103,7 @@ export function MolduraPublica({ atual, aoIrPara, children }: MolduraPublicaProp
           <a
             href="./"
             aria-label="MetaNutri, início"
-            className="inline-flex min-h-11 min-w-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9"
+            className="inline-flex min-h-11 min-w-11 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9 sm:pointer-coarse:min-h-11"
           >
             {/* M-012 (spec ajustes-mobile): até 373 px, só o símbolo, como a barra da landing (D-622), num alvo de 44 px
                 (D-802); o nome da marca continua no rótulo do link. */}

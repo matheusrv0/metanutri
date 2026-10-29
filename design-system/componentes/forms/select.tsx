@@ -2,6 +2,7 @@ import * as React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@ds/lib/cn.ts'
+import { comToque } from '@ds/lib/toque.ts'
 
 export const Select = SelectPrimitive.Root
 export const SelectValue = SelectPrimitive.Value
@@ -11,12 +12,15 @@ export const SelectTrigger = React.forwardRef<React.ElementRef<typeof SelectPrim
   ({ className, children, ...props }, ref) => (
     <SelectPrimitive.Trigger
       ref={ref}
-      className={cn(
-        // A altura e a letra do Input: 44 px e 16 px no celular, 40 px e 14 px a partir de 640 px (spec integracao-rodada-1910, D-311).
-        'flex h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1.5 text-base text-foreground whitespace-nowrap sm:h-10 sm:text-sm',
-        'data-[placeholder]:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-        '[&>span]:line-clamp-1 [&>span]:text-left',
-        className,
+      className={comToque(
+        cn(
+          // A altura e a letra do Input: 44 px e 16 px no celular e no toque, 40 px e 14 px com mouse a partir de 640 px
+          // (spec integracao-rodada-1910, D-311; ajustes-mobile, M-018).
+          'flex h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1.5 text-base text-foreground whitespace-nowrap sm:h-10 sm:text-sm',
+          'data-[placeholder]:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+          '[&>span]:line-clamp-1 [&>span]:text-left',
+          className,
+        ),
       )}
       {...props}
     >
