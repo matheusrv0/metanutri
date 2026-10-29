@@ -151,6 +151,30 @@ function falhar(mensagem) {
   throw new Error(mensagem)
 }
 
+/**
+ * D-716s: o limite do folato total enriquecido. A Foundation publica só o folato total (sem DFE e sem separar o ácido
+ * fólico); no cereal enriquecido, esse total mistura o ácido fólico do enriquecimento americano e não é DFE.
+ */
+export const FOLATO_ENRIQUECIDO = { razao: 1.5, diferencaMcg: 40 }
+
+/**
+ * D-716s: o folato da Foundation fica nulo quando o item é cereal, publica só o total (1177, sem 1190 nem 1187) e o mesmo
+ * alimento no SR Legacy (o complemento) tem ácido fólico, ou tem folato do alimento tão abaixo do total que a diferença é
+ * enriquecimento: o total passa dele em mais de 50% e em mais de 40 µg. Fora dos cereais, a diferença entre duas análises
+ * é variação natural (aspargo, cogumelo, uva-passa), e o folato fica.
+ */
+export function folatoTotalEnriquecido(bruto, par, grupo) {
+  const n = (alimento, id) => alimento.nutrientes.get(id) ?? null
+  if (grupo !== 'Cereais e derivados' || !par) return false
+  const total = n(bruto, 1177)
+  if (total === null || n(bruto, 1190) !== null || n(bruto, 1187) !== null) return false
+  const acidoFolico = n(par, 1186) ?? 0
+  if (acidoFolico > 0) return true
+  const doAlimento = n(par, 1187) ?? n(par, 1177)
+  if (doAlimento === null) return false
+  return total > FOLATO_ENRIQUECIDO.razao * doAlimento && total - doAlimento > FOLATO_ENRIQUECIDO.diferencaMcg
+}
+
 /** A partir desta fibra por 100 g, a conta sem os fatores da fonte tem tolerância maior (D-708 revista). */
 const FIBRA_ALTA_G = 10
 
@@ -227,6 +251,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
       porcoes = [...porcoes, ...comp.porcoes]
       fatores ??= comp.fatores ?? null
     }
+    if (folatoTotalEnriquecido(bruto, item.complemento !== undefined ? usda.get(item.complemento) : null, item.grupo)) valores.folato_dfe_mcg = null
     for (const c of item.naoCopiar ?? []) {
       if (!CHAVES.includes(c)) falhar(`${onde}: naoCopiar com chave desconhecida "${c}".`)
       valores[c] = null

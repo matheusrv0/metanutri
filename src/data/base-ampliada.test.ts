@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { CHAVES, energiaIncoerente, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
+import { CHAVES, energiaIncoerente, FOLATO_ENRIQUECIDO, folatoTotalEnriquecido, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
 import { valoresDoAlimento, type AlimentoUsda, type PorcaoUsda } from '../../scripts/dados/usda-fonte.mjs'
 import { energiaIncoerente as energiaIncoerenteDoApp } from '../domain/produtos.ts'
 import base from './base-ampliada.json'
@@ -339,6 +339,30 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
   })
 })
 
+describe('importar-base-ampliada: folatoTotalEnriquecido (D-716s)', () => {
+  const cereal = (folatoTotal: number) => falso(10, 'Foundation Foods', 'Flour, test', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: folatoTotal })
+  const par = (folatoDoAlimento: number, acidoFolico: number) => falso(11, 'SR Legacy', 'Flour, test, unenriched', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: folatoDoAlimento + acidoFolico, 1186: acidoFolico, 1187: folatoDoAlimento })
+
+  it('o limite é explícito: 50% e 40 µg acima do folato do alimento no par do SR', () => {
+    expect(FOLATO_ENRIQUECIDO).toEqual({ razao: 1.5, diferencaMcg: 40 })
+  })
+
+  it('nulo quando o par do SR tem ácido fólico, ou quando o total passa do limite', () => {
+    expect(folatoTotalEnriquecido(cereal(157), par(25, 86), 'Cereais e derivados')).toBe(true)
+    expect(folatoTotalEnriquecido(cereal(168), par(72, 0), 'Cereais e derivados')).toBe(true)
+    expect(folatoTotalEnriquecido(cereal(124), par(69, 0), 'Cereais e derivados')).toBe(true)
+  })
+
+  it('fica quando está abaixo de um dos dois limites, fora dos cereais, sem par ou com DFE publicado', () => {
+    expect(folatoTotalEnriquecido(cereal(64.4), par(75, 0), 'Cereais e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(16), par(4, 0), 'Cereais e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(182), par(52, 0), 'Verduras, hortaliças e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(168), null, 'Cereais e derivados')).toBe(false)
+    const comDfe = falso(12, 'Foundation Foods', 'Flour, test', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: 168, 1190: 168 })
+    expect(folatoTotalEnriquecido(comDfe, par(72, 0), 'Cereais e derivados')).toBe(false)
+  })
+})
+
 describe('importar-base-ampliada: energiaIncoerente (D-708 revista)', () => {
   // Cacau em pó do SR Legacy (fdcId 169593): 228 kcal pelos fatores de Atwater dele (1,83, 8,37 e 1,33).
   const CACAU = { energia_kcal: 228, proteina_g: 19.6, lipideos_g: 13.7, carboidrato_g: 57.9, fibra_g: 37 }
@@ -484,6 +508,20 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     // O resto do alimento continua: energia, ferro e cálcio.
     expect(forma ? valor(forma, 'energia_kcal') : null).toBeGreaterThan(0)
     expect(porId(100364)?.conjunto).toBe('Foundation Foods')
+  })
+
+  it('D-716s: regra única do folato total enriquecido, nos itens da base', () => {
+    for (const id of [100407, 100419, 100418, 100351, 100364]) {
+      const a = porId(id)
+      expect(a ? valor(a, 'folato_dfe_mcg') : 'sem', a?.nome ?? String(id)).toBeNull()
+    }
+    // Abaixo do limite, ou fora dos cereais, o folato fica.
+    for (const [id, folato] of [[100400, 64.4], [100354, 44], [100571, 68], [100426, 182]] as const) {
+      const a = porId(id)
+      expect(a ? valor(a, 'folato_dfe_mcg') : null, a?.nome ?? String(id)).toBe(folato)
+    }
+    // A regra substitui a lista: nenhum item marca o folato à mão.
+    expect(curadoria.filter((c) => c.naoCopiar?.includes('folato_dfe_mcg')).map((c) => c.id)).toEqual([])
   })
 
   it('D-716r: a tortilha de trigo fica sem o folato, como o pão de forma; o pão multigrãos, sem sinal de ácido fólico, fica com ele', () => {

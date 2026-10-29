@@ -46,6 +46,8 @@ export const PREPAROS: readonly string[]
 export const ALERGENICOS: readonly string[]
 export const CHAVES: readonly string[]
 export const MAXIMOS: Readonly<Record<string, number>>
+export const FOLATO_ENRIQUECIDO: { readonly razao: number; readonly diferencaMcg: number }
+export function folatoTotalEnriquecido(bruto: AlimentoUsda, par: AlimentoUsda | null | undefined, grupo: string): boolean
 export function energiaIncoerente(v: Readonly<Record<string, number | null>>, fatores: readonly [number, number, number] | null): boolean
 export function medidasDaCuradoria(item: Pick<ItemDaCuradoria, 'nome' | 'grupo' | 'preparo'>, porcoes: readonly PorcaoUsda[]): [string, number][]
 export function montarBase(
