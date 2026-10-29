@@ -206,3 +206,23 @@ describe('D-761: ingredientes em espanhol', () => {
     expect(alergenicosDoRegistro(registro({ ingredients_text: 'azúcar, cacao en polvo, leche descremada en polvo, huevo, maní, pescado' })).contem).toEqual(['leite', 'lactose', 'ovo', 'amendoim', 'peixe'])
   })
 })
+
+describe('D-762: a porção do rótulo que não é porção sai (revisão da fase 2, achado 2)', () => {
+  const porcao = (r: Partial<Record<string, string>>) => {
+    const p = produtoDoRegistro(registro(r))
+    if (!p || 'descartado' in p) throw new Error('descartado')
+    return p.porcaoG
+  }
+
+  it('igual ou maior que a embalagem, acima de 300 g, ou molho e condimento acima de 50 g: fica só por 100 g', () => {
+    expect(porcao({ product_name: 'Shoyu Light', serving_quantity: '500', product_quantity: '500', 'energy-kcal_100g': '60', proteins_100g: '6', fat_100g: '0', carbohydrates_100g: '9' })).toBeNull()
+    expect(porcao({ product_name: 'Maionese verde', serving_quantity: '872', product_quantity: '', categories_tags: 'en:sauces,en:mayonnaises' })).toBeNull()
+    expect(porcao({ product_name: 'Pão de queijo', serving_quantity: '1000', product_quantity: '1000' })).toBeNull()
+    expect(porcao({ product_name: 'Molho de tomate', serving_quantity: '60', product_quantity: '340', categories_tags: 'en:sauces' })).toBeNull()
+  })
+
+  it('a porção de verdade fica', () => {
+    expect(porcao({ serving_quantity: '170', product_quantity: '510' })).toBe(170)
+    expect(porcao({ product_name: 'Ketchup', serving_quantity: '12', product_quantity: '400', categories_tags: 'en:condiments' })).toBe(12)
+  })
+})

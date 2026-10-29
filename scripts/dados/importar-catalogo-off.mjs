@@ -163,6 +163,25 @@ export function energiaIncoerente(v) {
 const ENERGIA_MAXIMA_KCAL = 900
 const texto = (v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '')
 
+/** D-762: o teto da porção; molho e condimento se servem às colheres. */
+const PORCAO_MAXIMA_G = 300
+const PORCAO_MAXIMA_DO_MOLHO_G = 50
+const EH_MOLHO = /(?<![\p{L}])(molho|shoyu|maionese|ketchup|catchup|mostarda|tempero|vinagre|barbecue)(?![\p{L}])/iu
+const CATEGORIA_DE_MOLHO = /en:(sauces|condiments|mayonnaises|ketchup|mustards|soy-sauces|vinegars|seasonings|dressings)/
+
+/**
+ * D-762: a porção do rótulo, ou nulo quando ela não é porção: igual ou maior que a embalagem, acima de 300 g, ou molho e
+ * condimento acima de 50 g ("Shoyu Light" com 500 g, "Maionese verde" com 872 g). Sem ela, o produto fica por 100 g.
+ */
+function porcaoQueVale(r) {
+  const porcao = numero(r.serving_quantity)
+  if (porcao === null || porcao <= 0) return null
+  const embalagem = numero(r.product_quantity)
+  const molho = EH_MOLHO.test(texto(r.product_name)) || CATEGORIA_DE_MOLHO.test(texto(r.categories_tags))
+  if ((embalagem !== null && embalagem > 0 && porcao >= embalagem) || porcao > PORCAO_MAXIMA_G || (molho && porcao > PORCAO_MAXIMA_DO_MOLHO_G)) return null
+  return Math.round(porcao * 10) / 10
+}
+
 /** O produto do catálogo, ou `{ descartado: motivo }` (D-752). */
 export function produtoDoRegistro(r) {
   if (!texto(r.countries_tags).split(',').includes('en:brazil')) return { descartado: 'país' }
@@ -175,15 +194,15 @@ export function produtoDoRegistro(r) {
   const macros = [valores.proteina_g, valores.lipideos_g, valores.carboidrato_g]
   if (macros.some((m) => m === null || m > 100) || macros.reduce((a, m) => a + m, 0) > 105) return { descartado: 'macros' }
   if (energiaIncoerente(valores)) return { descartado: 'energia incoerente' }
-  const porcao = numero(r.serving_quantity)
+  const porcao = porcaoQueVale(r)
   // "ml" quando a embalagem ou a porção é em ml ou litro, como `unidadeDo` de `codigoBarras.ts` (A23).
   const unidade = /\d\s*(ml|l|litros?)\b/i.test(`${texto(r.quantity)} ${texto(r.serving_size)}`) ? 'ml' : 'g'
   return {
     codigo,
     nome,
     marca: texto(texto(r.brands).split(',')[0]),
-    porcaoG: porcao !== null && porcao > 0 ? Math.round(porcao * 10) / 10 : null,
-    porcaoTexto: porcao !== null && porcao > 0 ? texto(r.serving_size) : '',
+    porcaoG: porcao,
+    porcaoTexto: porcao !== null ? texto(r.serving_size) : '',
     unidade,
     valores,
     alergenicos: alergenicosDoRegistro(r),
