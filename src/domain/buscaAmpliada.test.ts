@@ -33,8 +33,9 @@ describe('CA-1712: a tilápia na entrada rápida', () => {
   })
 })
 
+// O "150 macarrão" saiu desta lista: com a base, o macarrão de trigo cozido vem antes do cru (D-716i, abaixo).
 describe('CA-1713: a TACO vem antes', () => {
-  const ENTRADAS = ['150 arroz', '150 arroz integral', '1 concha de feijão', '100 feijao', '1 banana', '200 leite', '100 frango', '1 filé de frango', '2 ovos', 'meia xícara de aveia', '100 carne', '1 maçã', '2 pães', '1 iogurte', '30 queijo', '100 batata', '100 brócolis', '150 macarrão', '100 salmão', '60 lentilha', '120 mamão', '100 alface', '1 colher de azeite', '30 castanha', '100 abóbora']
+  const ENTRADAS = ['150 arroz', '150 arroz integral', '1 concha de feijão', '100 feijao', '1 banana', '200 leite', '100 frango', '1 filé de frango', '2 ovos', 'meia xícara de aveia', '100 carne', '1 maçã', '2 pães', '1 iogurte', '30 queijo', '100 batata', '100 brócolis', '100 salmão', '60 lentilha', '120 mamão', '100 alface', '1 colher de azeite', '30 castanha', '100 abóbora']
 
   it.each(ENTRADAS)('"%s" tem o mesmo 1º resultado com e sem a base ampliada', (texto) => {
     const antes = buscar(texto).resultados[0]?.alimento.id
@@ -86,5 +87,36 @@ describe('casos de borda', () => {
   it('CB-712: uma letra não acha nada, sem erro', () => {
     registrarBaseAmpliada(BASE)
     expect(buscar('t').resultados).toEqual([])
+  })
+})
+
+describe('D-716i: cereal e leguminosa cozidos antes do cru (achado 8 da revisão)', () => {
+  const nomes = (texto: string) => buscar(texto).resultados.map((r) => r.alimento.descricao.trim())
+
+  it('"150 macarrao cozido" traz primeiro o macarrão de trigo, não o soba', () => {
+    registrarBaseAmpliada(BASE)
+    expect(buscar('150 macarrao cozido').resultados[0]?.alimento.id).toBe(100363)
+  })
+
+  it('sem "cru" na busca, o cozido vem antes do cru, mesmo quando só a base ampliada tem o cozido', () => {
+    registrarBaseAmpliada(BASE)
+    const grao = nomes('100 grao de bico')
+    expect(grao[0]).toBe('Grão-de-bico, cozido')
+    expect(grao.indexOf('Grão-de-bico, cozido')).toBeLessThan(grao.indexOf('Grão-de-bico, cru'))
+    const macarrao = nomes('150 macarrao')
+    expect(macarrao[0]).toBe('Macarrão, trigo, cozido')
+    expect(macarrao.indexOf('Macarrão, trigo, cozido')).toBeLessThan(macarrao.indexOf('Macarrão, trigo, cru'))
+  })
+
+  it('com "cru" na busca, o cru vem primeiro', () => {
+    registrarBaseAmpliada(BASE)
+    expect(nomes('100 grao de bico cru')[0]).toBe('Grão-de-bico, cru')
+    expect(nomes('150 macarrao cru')[0]).toBe('Macarrão, trigo, cru')
+  })
+
+  it('o resto da TACO não muda: arroz, feijão e lentilha continuam com o mesmo 1º resultado', () => {
+    const antes = ['150 arroz', '100 feijao', '60 lentilha', '150 arroz integral'].map((t) => buscar(t).resultados[0]?.alimento.id)
+    registrarBaseAmpliada(BASE)
+    expect(['150 arroz', '100 feijao', '60 lentilha', '150 arroz integral'].map((t) => buscar(t).resultados[0]?.alimento.id)).toEqual(antes)
   })
 })
