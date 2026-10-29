@@ -310,6 +310,23 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
     expect(medidasDaCuradoria({ nome: 'Feijão, a', grupo: 'Leguminosas e derivados', preparo: 'cozido' }, [porcao('tbsp', 60)])).toEqual([])
     expect(medidasDaCuradoria({ nome: 'Ovo, de galinha, inteiro, pochê', grupo: 'Ovos e derivados', preparo: null }, [porcao('large', 50)])).toEqual([['unidade', 50]])
   })
+
+  it('D-716j: bife, filé e asa acima de 200 g não viram medida; queijo não se mede em xícara', () => {
+    expect(medidasDaCuradoria({ nome: 'Carne, a, grelhada', grupo: 'Carnes e derivados', preparo: 'grelhado' }, [porcao('steak', 277), porcao('piece', 85, 1, 2)])).toEqual([['pedaço', 85]])
+    expect(medidasDaCuradoria({ nome: 'Peixe, a', grupo: 'Pescados e frutos do mar', preparo: 'grelhado' }, [porcao('fillet', 318)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Peru, asa, assada', grupo: 'Carnes e derivados', preparo: 'assado' }, [porcao('wing', 375)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Peixe, b', grupo: 'Pescados e frutos do mar', preparo: 'grelhado' }, [porcao('fillet', 200)])).toEqual([['filé', 200]])
+    expect(medidasDaCuradoria({ nome: 'Queijo, a', grupo: 'Leite e derivados', preparo: null }, [porcao('cup, diced', 132), porcao('slice', 28, 1, 2)])).toEqual([['fatia', 28]])
+  })
+
+  it('D-716j: no arquivo, nenhum bife, filé ou asa passa de 200 g, e nenhum queijo tem xícara', () => {
+    for (const a of alimentos) {
+      for (const [nome, gramas] of a.medidas) {
+        if (['bife', 'filé', 'asa'].includes(nome)) expect(gramas, `${a.nome}: ${nome}`).toBeLessThanOrEqual(200)
+        if (a.nome.startsWith('Queijo')) expect(nome, a.nome).not.toBe('xícara de chá')
+      }
+    }
+  })
 })
 
 describe('importar-base-ampliada: energiaIncoerente (D-708 revista)', () => {

@@ -112,7 +112,8 @@ const MEDIDAS = [
 /** O que cada grupo aceita (a camada de plausibilidade da POF, D-430, no que vale para o USDA). */
 const SO_PECAS = new Set(['filé', 'bife', 'fatia', 'pedaço', 'unidade', 'unidade grande', 'unidade pequena', 'peito', 'coxa', 'sobrecoxa', 'asa', 'bisteca'])
 const FOLHA_CRUA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Couve|Acelga|Escarola|Endívia|Radicchio)/i
-const PESO_MAXIMO = { 'colher de sopa': 45, 'colher de chá': 12, 'xícara de chá': 300, fatia: 100, unidade: 800, 'unidade grande': 800, 'unidade pequena': 400, filé: 400, bife: 400, bisteca: 400, pedaço: 300 }
+// D-716j: bife, filé e asa acima de 200 g não são a peça que se serve (o alabote de 318 g, a asa de peru de 375 g).
+const PESO_MAXIMO = { 'colher de sopa': 45, 'colher de chá': 12, 'xícara de chá': 300, fatia: 100, unidade: 800, 'unidade grande': 800, 'unidade pequena': 400, filé: 200, bife: 200, asa: 200, bisteca: 400, pedaço: 300 }
 
 function nomeDaMedida(p) {
   const texto = [p.unidade, p.modificador].filter(Boolean).join(' ').toLowerCase().trim()
@@ -133,6 +134,8 @@ export function medidasDaCuradoria(item, porcoes) {
     if ((item.grupo === 'Carnes e derivados' || item.grupo === 'Pescados e frutos do mar') && !SO_PECAS.has(nome)) continue
     if (item.grupo === 'Pescados e frutos do mar' && nome === 'bife') continue
     if (item.grupo === 'Gorduras e óleos' && !nome.startsWith('colher')) continue
+    // D-716j: queijo não se mede em xícara.
+    if (item.grupo === 'Leite e derivados' && /^Queijo/i.test(item.nome) && nome === 'xícara de chá') continue
     if (item.grupo === 'Verduras, hortaliças e derivados' && item.preparo === 'cru' && FOLHA_CRUA.test(item.nome) && nome !== 'folha' && nome !== 'unidade') continue
     const maximo = nome === 'fatia' && item.grupo === 'Frutas e derivados' ? 250 : (PESO_MAXIMO[nome] ?? 800)
     if (!(gramas > 0) || gramas > maximo) continue
