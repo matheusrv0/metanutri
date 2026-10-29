@@ -4,11 +4,12 @@ import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 
 /**
  * CA-345 a CA-348: os três cartões do topo. A receita é o destaque da tela e, na grade de
- * duas colunas, ocupa a linha inteira para não sobrar buraco.
+ * duas colunas, ocupa a linha inteira para não sobrar buraco. No celular, a coluna encolhe (`minmax(0,1fr)`, D-800):
+ * coluna `auto` crescia com a receita de oito dígitos e a página rolava para o lado (spec ajustes-mobile, M-014).
  */
 export function NumerosDoNegocio({ resumo }: { readonly resumo: ResumoDoNegocio }) {
   return (
-    <section aria-label="Resumo do negócio" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <section aria-label="Resumo do negócio" className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <CartaoNumero
         tom="teal"
         valor={reais(resumo.receitaCentavos)}
