@@ -60,7 +60,7 @@ describe('Interruptor (M-019)', () => {
   it('M-019: tem uma área de toque invisível de 44 × 44 px em volta dos 36 × 20 px', () => {
     render(<Switch aria-label="Trocas" />)
     const chave = screen.getByRole('switch', { name: 'Trocas' })
-    expect(classes(chave)).toEqual(expect.arrayContaining(['relative', 'h-5', 'w-9', 'before:absolute', 'before:-inset-x-1', 'before:-inset-y-3']))
+    expect(classes(chave)).toEqual(expect.arrayContaining(['relative', 'h-5', 'w-9', 'before:absolute', 'before:-inset-x-1.5', 'before:-inset-y-3.5']))
   })
 })
 
