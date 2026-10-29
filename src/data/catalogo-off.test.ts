@@ -413,7 +413,6 @@ describe('D-778: os casos da revisão com "sem glúten" no rótulo não acusam g
     ['7894904197743', 'Coxinha da Asa (Seara)'],
     ['7896035990088', 'Massa para Tapioca (AMAFIL)'],
     ['7897180010126', 'DAIMARU Molho Shoyu Especial'],
-    ['7896004001036', 'Granola Kellness'],
     ['7898186561032', 'ECOBIO Fermento para Bolos'],
   ])('%s (%s)', (codigo) => {
     const p = indice.produtos.find((x) => x.produto.codigo === codigo)?.produto
@@ -422,6 +421,24 @@ describe('D-778: os casos da revisão com "sem glúten" no rótulo não acusam g
     if (!detalhe) throw new Error(`${codigo} fora da fatia`)
     const alimento = produtoComoAlimento({ ...produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, fonte.versao))), id: 900_901, criadoEm: '2026-10-29' } as Produto)
     expect(restricaoDoAlimento(alimento, celiaca)).toBeNull()
+  })
+})
+
+describe('D-778 revista: o grão no nome continua acusando, mesmo com o rótulo "sem glúten"', () => {
+  const pasta = join(process.cwd(), 'public', fonte.caminho)
+  const indice = decodificarIndice(JSON.parse(readFileSync(join(pasta, 'indice.json'), 'utf8')) as ArquivoIndice)
+  const comCeliaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+  it.each([
+    ['7893500066545', 'MEU BIJU Arroz 8 Grãos Integrais com Aveia'],
+    ['7896004001036', 'Granola Tradicional Kellogg Kellness Müslix'],
+  ])('%s (%s) acusa a doença celíaca pelo nome', (codigo) => {
+    const p = indice.produtos.find((x) => x.produto.codigo === codigo)?.produto
+    if (!p) throw new Error(`${codigo} fora do catálogo`)
+    const detalhe = decodificarFatia(JSON.parse(readFileSync(join(pasta, 'fatias', `${fatiaDoCodigo(codigo)}.json`), 'utf8')) as ArquivoFatia).get(codigo)
+    if (!detalhe) throw new Error(`${codigo} fora da fatia`)
+    expect(detalhe.alergenicos.semGlutenNoRotulo, 'o rótulo diz "sem glúten"').toBe(true)
+    const alimento = produtoComoAlimento({ ...produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, fonte.versao))), id: 900_902, criadoEm: '2026-10-29' } as Produto)
+    expect(restricaoDoAlimento(alimento, comCeliaca)).not.toBeNull()
   })
 })
 
