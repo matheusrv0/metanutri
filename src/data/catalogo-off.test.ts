@@ -120,3 +120,20 @@ describe('CA-1753 (D-753): os arquivos publicados', () => {
     expect(readFileSync(join(pasta, 'LICENCA.txt'), 'utf8')).toMatch(/Open Database License/)
   })
 })
+
+describe('D-754: a atualização mensal abre um pull request', () => {
+  const caminho = join(process.cwd(), '.github', 'workflows', 'atualizar-catalogo-off.yml')
+
+  it('roda todo mês e à mão, regenera pelo script e abre o PR para o dono revisar, sem publicar', () => {
+    expect(existsSync(caminho)).toBe(true)
+    const yml = readFileSync(caminho, 'utf8')
+    expect(yml).toMatch(/schedule:\s*\n\s*- cron: '0 6 1 \* \*'/)
+    expect(yml).toContain('workflow_dispatch:')
+    expect(yml).toContain('node scripts/dados/importar-catalogo-off.mjs --baixar')
+    expect(yml).toContain('gh pr create')
+    expect(yml).toMatch(/pull-requests: write/)
+    expect(yml).not.toMatch(/deploy|pages: write|wrangler/i)
+    // Cada ação fixada pelo commit, como no publicar.yml.
+    for (const uso of yml.match(/uses: .+/g) ?? []) expect(uso).toMatch(/@[0-9a-f]{40}\b/)
+  })
+})
