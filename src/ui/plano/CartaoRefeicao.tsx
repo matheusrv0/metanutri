@@ -149,7 +149,7 @@ export function CartaoRefeicao({
               aria-selected={ativa}
               onClick={() => setOpcaoAtiva(o)}
               className={cn(
-                'inline-flex min-h-11 shrink-0 items-center rounded-full px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9',
+                'inline-flex min-h-11 shrink-0 items-center rounded-full px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9 sm:pointer-coarse:min-h-11',
                 'max-sm:min-w-0 max-sm:justify-center max-sm:rounded-xl max-sm:px-1 max-sm:text-center max-sm:leading-tight max-[379px]:text-xs',
                 ativa ? 'bg-card text-heading shadow-xs' : 'text-muted-foreground hover:text-foreground',
               )}

@@ -39,7 +39,7 @@ export function SeletorDeMedida({ rotulo, medidas, valor, unidade, aoEscolher, a
         aoEscolher(escolhido === SO_GRAMAS ? null : (medidas.find((m) => m.nome === escolhido) ?? null))
       }}
       className={cn(
-        'h-11 min-w-0 rounded-md border border-input bg-card px-2.5 text-base text-foreground sm:h-10 sm:text-sm',
+        'h-11 min-w-0 rounded-md border border-input bg-card px-2.5 text-base text-foreground sm:h-10 sm:text-sm sm:pointer-coarse:h-11 sm:pointer-coarse:text-base',
         'focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className,
       )}

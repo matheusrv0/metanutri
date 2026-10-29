@@ -49,7 +49,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
               <button
                 type="button"
                 onClick={() => aoIrPara(p.tela)}
-                className="inline-flex shrink-0 items-center justify-center self-center rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:size-11"
+                className="inline-flex shrink-0 items-center justify-center self-center rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:size-11 sm:pointer-coarse:size-11"
               >
                 Ir
               </button>
@@ -87,7 +87,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
                 href={r.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11"
+                className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11 sm:pointer-coarse:min-h-11"
               >
                 Abrir
                 <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -117,7 +117,7 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
         <button
           type="button"
           onClick={() => aoIrPara('config')}
-          className="inline-flex items-center self-start rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11"
+          className="inline-flex items-center self-start rounded-sm text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11 sm:pointer-coarse:min-h-11"
         >
           Ir para Configurações
         </button>

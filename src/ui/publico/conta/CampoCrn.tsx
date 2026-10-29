@@ -22,7 +22,7 @@ export function CampoCrn({ id, regiao, numero, aoMudar, invalido = false, dica }
           value={regiao ?? ''}
           aria-invalid={invalido}
           onChange={(e) => aoMudar({ regiao: e.target.value ? Number(e.target.value) : null, numero })}
-          className="h-11 rounded-md border border-input bg-card px-3 text-base text-foreground aria-[invalid=true]:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10 sm:text-sm"
+          className="h-11 rounded-md border border-input bg-card px-3 text-base text-foreground aria-[invalid=true]:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10 sm:text-sm sm:pointer-coarse:h-11 sm:pointer-coarse:text-base"
         >
           <option value="">Região</option>
           {REGIOES_CRN.map((r) => (

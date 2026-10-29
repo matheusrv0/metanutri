@@ -36,7 +36,7 @@ export function Cabecalho({ titulo, trilha, acoes, situacao, aoAbrirMenu }: Cabe
                     <button
                       type="button"
                       onClick={p.aoClicar}
-                      className="relative rounded-sm hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:before:absolute max-sm:before:-inset-x-2 max-sm:before:-top-3.5 max-sm:before:-bottom-5 max-sm:before:content-['']"
+                      className="relative rounded-sm hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:before:absolute max-sm:before:-inset-x-2 max-sm:before:-top-3.5 max-sm:before:-bottom-5 max-sm:before:content-[''] sm:pointer-coarse:before:absolute sm:pointer-coarse:before:-inset-x-2 sm:pointer-coarse:before:-top-3.5 sm:pointer-coarse:before:-bottom-5 sm:pointer-coarse:before:content-['']"
                     >
                       {p.rotulo}
                     </button>
