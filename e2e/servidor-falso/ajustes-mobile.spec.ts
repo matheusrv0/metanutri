@@ -90,3 +90,23 @@ for (const largura of [360, 390, 412, 768]) {
     await semRolagemLateral(page)
   })
 }
+
+for (const largura of [360, 390, 412]) {
+  test(`M-028: em ${largura} px, Entrar mostra o formulário e o plano como dois cartões de canto arredondado`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: ALTURA })
+    await ligarServidorFalso(page)
+    await page.goto('/#/entrar')
+    await expect(page.getByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    const formulario = page.getByRole('main')
+    const lado = page.getByRole('complementary')
+    const raios = await formulario.evaluate((el) => {
+      const e = getComputedStyle(el)
+      return [e.borderTopLeftRadius, e.borderTopRightRadius, e.borderBottomLeftRadius, e.borderBottomRightRadius].map(parseFloat)
+    })
+    for (const raio of raios) expect(raio, 'canto reto no cartão do formulário').toBeGreaterThanOrEqual(16)
+    const f = await caixa(formulario)
+    const l = await caixa(lado)
+    expect(l.y - (f.y + f.height), 'os dois cartões encostam').toBeGreaterThanOrEqual(8)
+    await semRolagemLateral(page)
+  })
+}
