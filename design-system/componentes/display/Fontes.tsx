@@ -40,7 +40,7 @@ export function Fontes({ itens, className }: FontesProps) {
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-controls={id}
-        className="inline-flex w-fit items-center gap-1.5 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11"
+        className="inline-flex w-fit items-center gap-1.5 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-11 sm:pointer-coarse:min-h-11"
       >
         <BookText className="size-3.5 shrink-0" aria-hidden="true" />
         {aberto ? 'Ocultar fontes' : itens.length === 1 ? 'Ver a fonte' : `Ver as ${itens.length} fontes`}

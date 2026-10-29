@@ -24,7 +24,7 @@ export function GrupoOpcoes<T extends string>({ rotulo, opcoes, valor, aoEscolhe
               aria-checked={marcado}
               onClick={() => aoEscolher(o.valor)}
               className={cn(
-                'inline-flex items-center rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors max-sm:min-h-11',
+                'inline-flex items-center rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors max-sm:min-h-11 sm:pointer-coarse:min-h-11',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 marcado ? 'border-primary bg-lightprimary text-primary' : 'border-borderdefault text-muted-foreground hover:border-primary hover:text-primary',
               )}
