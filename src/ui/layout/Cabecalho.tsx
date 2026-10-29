@@ -25,7 +25,9 @@ export function Cabecalho({ titulo, trilha, acoes, situacao, aoAbrirMenu }: Cabe
         <Button variant="ghost" size="icon" className="xl:hidden print:hidden" onClick={aoAbrirMenu} aria-label="Abrir menu">
           <Menu className="size-5" aria-hidden="true" />
         </Button>
-        <div className="min-w-0 flex-1">
+        {/* M-005: com o título em 2 linhas, o bloco encosta no alto; o respiro de cima devolve os 44 px de toque da trilha,
+            cuja área invisível (o `::before`) passa da borda da tela (CA-790). */}
+        <div className="min-w-0 flex-1 max-sm:pt-1.5">
           {trilha && trilha.length > 0 ? (
             <nav aria-label="Você está em">
               <ol className="rotulo flex items-center gap-1">
