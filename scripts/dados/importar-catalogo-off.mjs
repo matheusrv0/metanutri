@@ -86,11 +86,18 @@ const NAO_E = /(?<![\p{L}\p{N}])((en|em) polvo|leite de (coco|soja|am[eê]ndoas?
 /** "Pode conter ..." e "may contain ...": o resto do texto depois disso é "pode conter". */
 const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os de)/
 
+/**
+ * D-770: a negação não é alergênico. "Não contém glúten" é obrigatório no rótulo brasileiro (Lei 10.674/2003), e "sem
+ * lactose", "gluten free" e "sin TACC" dizem o contrário do que a palavra sozinha diria. Saem antes de ler as palavras;
+ * "contém glúten", sem o "não", continua acusando.
+ */
+const NEGACAO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eé]m|zero|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)|(gluten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
+
 const semAcentoMinusculo = (t) => t.toLowerCase()
 const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))
 
 function doTexto(texto, destino) {
-  const limpo = semAcentoMinusculo(texto).replace(NAO_E, ' ')
+  const limpo = semAcentoMinusculo(texto).replace(NEGACAO, ' ').replace(NAO_E, ' ')
   for (const [re, alergenicos] of DOS_INGREDIENTES) if (re.test(limpo)) for (const a of alergenicos) destino.add(a)
 }
 

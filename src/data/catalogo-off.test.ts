@@ -275,3 +275,22 @@ it('D-766: o workflow testa o catálogo e confere o tamanho antes do PR, com o r
   expect(antesDoPr).toContain('-gt 30')
   expect(yml).toContain('ramo="catalogo-off-$(date -u +%Y-%m-%d-%H%M)"')
 })
+
+describe('D-770: a negação não é alergênico (re-revisão da fase 2, achado 1)', () => {
+  const ler = (ingredients_text: string, product_name = 'Produto') => alergenicosDoRegistro(registro({ product_name, ingredients_text }))
+  it.each([
+    ['Feijão Camil', 'Feijão preto, água e sal. NÃO CONTÉM GLÚTEN.'],
+    ['Twinings', 'Chá preto. Não contém glúten. Não contém lactose.'],
+    ['Polvilho', 'Fécula de mandioca fermentada. SEM GLÚTEN.'],
+    ['Chá', 'Black tea. Gluten free. Lactose free.'],
+    ['Importado', 'Té verde. Sin TACC. No contiene gluten. Sin lactosa.'],
+    ['Zero', 'Bebida energética. Zero lactose. Isento de glúten. Livre de glúten.'],
+  ])('%s não acusa glúten nem leite', (nome, ingredientes) => {
+    expect(ler(ingredientes, nome).contem).toEqual([])
+  })
+
+  it('"Contém glúten. Não contém lactose." acusa glúten e não acusa lactose', () => {
+    expect(ler('Farinha de arroz. Contém glúten. Não contém lactose.').contem).toEqual(['gluten'])
+  })
+})
+
