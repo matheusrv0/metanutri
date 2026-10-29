@@ -29,7 +29,7 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Dourado-do-mar | dourado | coberto: Dourado-do-mar, grelhado; Dourado-do-mar, cru |
 | Sardinha em molho de tomate | sardinha molho tomate | coberto: Sardinha, em conserva em molho de tomate |
 | Salmão em conserva | salmão conserva | coberto: Salmão, em conserva |
-| Pescada-branca grelhada | pescada branca grelhada | coberto: Pescada, branca, grelhada |
+| Pescada-branca grelhada | pescada branca grelhada | **falta**: o USDA não tem a pescada-branca (Cynoscion); o "whiting" é merluza |
 | Bagre | bagre | coberto: Bagre, grelhado; Bagre, cru |
 | Polvo | polvo | coberto: Polvo, cozido; Polvo, cru |
 | Lula | lula | coberto: Lula, frita; Lula, crua |
@@ -39,7 +39,7 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Lagosta | lagosta | coberto: Lagosta, cozida; Lagosta, crua |
 | Kani | kani | coberto: Surimi (kani) |
 | Siri | siri | coberto: Siri, cozido; Siri, cru (+2) |
-| Merluza cozida | merluza | **falta**: o USDA não tem merluza (hake); a TACO tem crua, assada e frita |
+| Merluza grelhada | merluza | coberto: Merluza, filé, grelhado |
 
 ### Carnes e aves
 

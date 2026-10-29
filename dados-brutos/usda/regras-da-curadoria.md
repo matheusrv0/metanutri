@@ -139,6 +139,7 @@ Quando `false`, escreva em `porqueNao` o motivo curto ("miúdo", "ingrediente", 
 |---|---|
 | tilapia | tilápia |
 | Alaska pollock | polaca-do-alasca |
+| whiting | merluza (D-716g: não é a pescada-branca, que é Cynoscion) |
 | cod (fresh) | bacalhau fresco |
 | haddock | hadoque |
 | hake / whiting | pescada-branca |

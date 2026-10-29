@@ -33,7 +33,8 @@ export const LISTA: readonly (readonly [alimento: string, termo: string, falta: 
   ['Dourado-do-mar', 'dourado', null],
   ['Sardinha em molho de tomate', 'sardinha molho tomate', null],
   ['Salmão em conserva', 'salmão conserva', null],
-  ['Pescada-branca grelhada', 'pescada branca grelhada', null],
+  // D-716g: o "whiting" do USDA, que estava com o nome de pescada-branca, é merluza.
+  ['Pescada-branca grelhada', 'pescada branca grelhada', 'o USDA não tem a pescada-branca (Cynoscion); o "whiting" é merluza'],
   ['Bagre', 'bagre', null],
   ['Polvo', 'polvo', null],
   ['Lula', 'lula', null],
@@ -43,7 +44,7 @@ export const LISTA: readonly (readonly [alimento: string, termo: string, falta: 
   ['Lagosta', 'lagosta', null],
   ['Kani', 'kani', null],
   ['Siri', 'siri', null],
-  ['Merluza cozida', 'merluza', 'o USDA não tem merluza (hake); a TACO tem crua, assada e frita'],
+  ['Merluza grelhada', 'merluza', null],
   // Carnes e aves
   ['Peito de peru assado', 'peru peito assado', null],
   ['Peito de peru fatiado', 'peito peru fatiado', null],

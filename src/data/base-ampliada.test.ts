@@ -424,4 +424,13 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     expect(porId(100296)?.nome).toBe('Tofu, firme, com sulfato de cálcio')
     expect(porId(100296)?.paciente).toBe('Tofu firme com sulfato de cálcio')
   })
+
+  it('D-716g: o "whiting" do USDA é merluza, não pescada-branca; o cru continua fora porque a TACO tem a merluza crua', () => {
+    expect(porId(100052)?.nome).toBe('Merluza, filé, grelhado')
+    expect(porId(100052)?.paciente).toBe('Filé de merluza grelhado')
+    expect(alimentos.some((a) => /pescada/i.test(a.nome))).toBe(false)
+    const cru = curadoria.find((c) => c.fdcId === 173713)
+    expect(cru?.decisao).toBe('excluir')
+    expect(cru?.motivo).toMatch(/merluza/i)
+  })
 })
