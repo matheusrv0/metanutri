@@ -319,6 +319,16 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
     expect(medidasDaCuradoria({ nome: 'Queijo, a', grupo: 'Leite e derivados', preparo: null }, [porcao('cup, diced', 132), porcao('slice', 28, 1, 2)])).toEqual([['fatia', 28]])
   })
 
+  it('D-716p: bisteca e pedaço (a peça avulsa) acima de 200 g também não viram medida', () => {
+    expect(medidasDaCuradoria({ nome: 'Vitela, a, grelhada', grupo: 'Carnes e derivados', preparo: 'grelhado' }, [porcao('chop', 352)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Carne, a, cozida', grupo: 'Carnes e derivados', preparo: 'cozido' }, [porcao('piece', 289)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Carne, b, cozida', grupo: 'Carnes e derivados', preparo: 'cozido' }, [porcao('piece', 150)])).toEqual([['pedaço', 150]])
+    for (const a of alimentos) {
+      for (const [nome, gramas] of a.medidas) if (['bisteca', 'pedaço'].includes(nome)) expect(gramas, `${a.nome}: ${nome}`).toBeLessThanOrEqual(200)
+    }
+    for (const id of [100257, 100169]) expect(alimentos.find((a) => a.id === id)?.medidas.filter(([, g]) => g > 200), String(id)).toEqual([])
+  })
+
   it('D-716j: no arquivo, nenhum bife, filé ou asa passa de 200 g, e nenhum queijo tem xícara', () => {
     for (const a of alimentos) {
       for (const [nome, gramas] of a.medidas) {

@@ -112,8 +112,9 @@ const MEDIDAS = [
 /** O que cada grupo aceita (a camada de plausibilidade da POF, D-430, no que vale para o USDA). */
 const SO_PECAS = new Set(['filé', 'bife', 'fatia', 'pedaço', 'unidade', 'unidade grande', 'unidade pequena', 'peito', 'coxa', 'sobrecoxa', 'asa', 'bisteca'])
 const FOLHA_CRUA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Couve|Acelga|Escarola|Endívia|Radicchio)/i
-// D-716j: bife, filé e asa acima de 200 g não são a peça que se serve (o alabote de 318 g, a asa de peru de 375 g).
-const PESO_MAXIMO = { 'colher de sopa': 45, 'colher de chá': 12, 'xícara de chá': 300, fatia: 100, unidade: 800, 'unidade grande': 800, 'unidade pequena': 400, filé: 200, bife: 200, asa: 200, bisteca: 400, pedaço: 300 }
+// D-716j e D-716p: bife, filé, asa, bisteca e pedaço acima de 200 g não são a peça que se serve (o alabote de 318 g, a asa
+// de peru de 375 g, a bisteca de vitela de 352 g).
+const PESO_MAXIMO = { 'colher de sopa': 45, 'colher de chá': 12, 'xícara de chá': 300, fatia: 100, unidade: 800, 'unidade grande': 800, 'unidade pequena': 400, filé: 200, bife: 200, asa: 200, bisteca: 200, pedaço: 200 }
 
 function nomeDaMedida(p) {
   const texto = [p.unidade, p.modificador].filter(Boolean).join(' ').toLowerCase().trim()
