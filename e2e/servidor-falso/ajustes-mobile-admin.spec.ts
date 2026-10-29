@@ -237,16 +237,22 @@ test.describe('Negócio no celular (360 px)', () => {
     await expect(page.getByRole('table')).toBeHidden()
     const lista = page.getByRole('list', { name: 'Contas' })
     await expect(lista.getByRole('listitem')).toHaveCount(50)
+    await semRolagemLateral(page)
+    // Antes, as 400 contas davam 30.555 px de página.
+    expect(await page.evaluate(() => document.documentElement.scrollHeight), 'altura da página').toBeLessThan(15_000)
+    await page.getByRole('button', { name: 'Mostrar mais 50' }).click()
+    await expect(lista.getByRole('listitem')).toHaveCount(100)
+
+    // A conta do e-mail enorme é a mais antiga: a busca a traz (e volta a mostrar do começo).
+    await page.getByRole('searchbox', { name: 'Buscar nome ou e-mail' }).fill('maria aparecida')
+    await expect(lista.getByRole('listitem')).toHaveCount(1)
     const tela = await caixaDaTela(page)
-    const primeira = lista.getByRole('listitem').first()
-    for (const texto of [EMAIL_LONGO, 'Estudante', 'Comprovante em análise']) {
-      dentroDe(await caixaDoTexto(primeira.getByText(texto, { exact: true }).first()), tela, texto)
+    const cartao = lista.getByRole('listitem')
+    for (const texto of [EMAIL_LONGO, 'Estudante', 'Comprovante em análise', 'Situação', 'Plano']) {
+      dentroDe(await caixaDoTexto(cartao.getByText(texto, { exact: true })), tela, texto)
     }
     await semRolagemLateral(page)
-
-    await page.getByRole('button', { name: /^Mostrar mais/ }).click()
-    await expect(lista.getByRole('listitem')).toHaveCount(100)
-    expect(await page.evaluate(() => document.documentElement.scrollHeight), 'altura da página').toBeLessThan(20_000)
+    await page.getByRole('searchbox', { name: 'Buscar nome ou e-mail' }).fill('')
 
     const seletor = page.getByRole('radiogroup', { name: 'Grupo de contas' })
     const mascara = await seletor.evaluate((el) => {
