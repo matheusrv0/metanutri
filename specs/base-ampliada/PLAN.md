@@ -35,7 +35,7 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | T6 | Cobrir | `src/domain/cobrir.ts` (porções de grupo), `src/domain/cobrirAmpliada.test.ts` (novo), `src/domain/cobrirAntesDepois.test.ts` (novo) | CA-1724 a CA-1727, CB-709 | T2, T3 |
 | T7 | Carregamento sob demanda e a espera do plano | `src/ui/estado/baseAmpliada.ts` (+ teste), `src/ui/estado/usarBaseAmpliada.ts`, `src/ui/AreaDeTrabalho.tsx`, `src/ui/plano/EsperaDaBase.tsx` (novo, + teste), `src/ui/plano/EntradaRapida.tsx`, `src/ui/plano/DialogoSugestoes.tsx`, `src/ui/adequacao/GavetaCobrir.tsx`, `src/ui/exportar/FolhaDieta.tsx`, `src/ui/adequacao/TelaAdequacao.tsx` (nome do oculto), `vitest.setup.ts` | CA-1716, CA-1717, CB-704, CB-708 | T2 |
 | T8 | Tabela de alimentos e ficha (tela) | `src/ui/alimentos/TelaAlimentos.tsx`, `src/ui/alimentos/TelaAlimentosAmpliada.test.tsx` (novo) | CA-1718, CA-1719, CB-707 | T4, T7 |
-| T9 | Fontes da base | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `THIRD_PARTY_NOTICES.md` | CA-1721, CA-1722 | T1 |
+| T9 | Fontes da base | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `e2e/site/publico.spec.ts` (cinco links), `THIRD_PARTY_NOTICES.md` | CA-1721, CA-1722 | T1 |
 | T10 | Lista de conferência | `specs/base-ampliada/lista-de-conferencia.md`, `src/data/base-ampliada-conferencia.test.ts` | CA-1711 | T1 |
 | T11 | Navegador e validação | `e2e/base-ampliada.spec.ts` (novo), medições, relatório | CA-1712, CA-1716 a CA-1718, CA-1724 (no navegador) | T1 a T10 |
 
@@ -136,6 +136,45 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | CA-1721, CA-1722 | `src/domain/baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.test.tsx`, `src/seo/textosProibidos.test.ts` |
 | CA-1723, CB-710 | `src/domain/restricoesAmpliada.test.ts` |
 | CA-1724 a CA-1727, CB-709 | `src/domain/cobrirAmpliada.test.ts`, `src/domain/cobrirAntesDepois.test.ts`; CA-1724 em `e2e/base-ampliada.spec.ts` |
+
+## Antes e depois do Cobrir (CA-1727)
+
+Plano de exemplo da Maria (28 anos), porção automática, chave de ingredientes desligada; "novo" é da base ampliada.
+Gerada por `src/domain/cobrirAntesDepois.test.ts`.
+
+| Nutriente | Antes (só a TACO) | Depois (com a base ampliada) |
+|---|---|---|
+| Ferro | Alface roxa crua (60 g, 19%); Pão de glúten (50 g, 37%); Tofu (140 g, 26%); Maminha grelhada (120 g, 37%); Estrogonofe de carne (150 g, 52%) | Alface roxa crua (60 g, 19%); **Feijão-branco cozido** novo (140 g, 67%); Pão de glúten (50 g, 37%); **Coxão mole grelhado** novo (120 g, 50%); **Atum em água** novo (120 g, 26%) |
+| B6 | **Aipo cru** (100 g, 41%); Pão de soja (50 g, 91%); Banana pacova (150 g, 58%); Salada de legumes no vapor (150 g, 11%); Maminha grelhada (120 g, 36%) | **Espinafre Nova Zelândia cozido** novo (meia xícara, 90 g, 49%); **Coxão mole grelhado** novo (50 g, 100%); **Atum em água** novo (120 g, 88%); **Ervilha fresca cozida** novo (meia xícara, 80 g, 40%); Pão de soja (50 g, 91%) |
+| Vitamina D | Salmão com pele grelhado (90 g, 100%); Salmão sem pele grelhado (90 g, 100%); Atum em óleo (120 g, 71%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) | **Truta grelhada** novo (60 g, 100%); Salmão com pele (90 g, 100%); Salmão sem pele (90 g, 100%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) |
+| Cálcio | Rúcula crua (60 g, 27%); Iogurte natural desnatado (1 copo americano, 150 g, 91%); Sardinha assada (60 g, 100%); Tofu (140 g, 44%); Laranja da terra (1 unidade, 35%) | Rúcula crua (60 g, 27%); Iogurte natural desnatado (150 g, 91%); Sardinha assada (60 g, 100%); **Tofu firme** novo (meia xícara, 126 g, 98%); **Chia** nova (30 g, 69%) |
+| B12 | já na meta no exemplo (sem sugestão) | já na meta. No plano vazio: **Polaca-do-alasca grelhada** e **Atum em água** (novos) passam a abrir a lista, antes contra-filé e merluza |
+| Folato | já na meta no exemplo (sem sugestão) | já na meta. No plano vazio, igual a antes (chicória, feijão-fradinho, goiaba, pão de glúten, gema) |
+
+O aipo sai da B6. A alface roxa e o pão de glúten continuam no ferro: são da TACO, e tirá-los mexe na ordem do Cobrir
+para a TACO inteira, fora desta spec (fica como pendência). Nenhuma sugestão nova é folha crua, pão ou bebida.
+
+## Os 96 `sugerivel` (para a parceira conferir)
+
+- **Pescados e frutos do mar** (9): Linguado, filé, grelhado; Cavalinha, grelhada; Polaca-do-alasca, filé, cozida; Polaca-do-alasca, filé, grelhada; Tilápia, filé, grelhada; Truta, grelhada; Atum, em conserva em água; Pescada, branca, grelhada; Sardinha, em conserva em molho de tomate.
+- **Leite e derivados** (5): Queijo, cottage, semidesnatado; Queijo, cottage; Leite, de vaca, semidesnatado; Iogurte, grego, natural, desnatado; Iogurte, grego, natural, integral.
+- **Ovos e derivados** (1): Ovo, de galinha, inteiro, pochê.
+- **Carnes e derivados** (22): Frango, peito, sem pele, assado; Frango, coxa e sobrecoxa, sem pele, assadas; Frango, coxa e sobrecoxa, sem pele, cozidas; Frango, sobrecoxa, sem pele, cozida; Frango, moído, refogado; Carne, bovina, fraldão, sem gordura, grelhado; Carne, bovina, moída, 90% magra, refogada; Carne, bovina, moída, 93% magra, refogada; Carne, bovina, moída, 95% magra, refogada; Carne, bovina, maminha, sem gordura, assada; Carne, bovina, filé-mignon, sem gordura, assado; Carne, bovina, alcatra, sem gordura, assada; Carne, bovina, fraldinha, sem gordura, grelhada; Carne, bovina, coxão duro, sem gordura, assado; Carne, bovina, lagarto, sem gordura, assado; Carne, bovina, patinho, sem gordura, assado; Carne, bovina, coxão mole, sem gordura, assado; Carne, bovina, coxão mole, sem gordura, grelhado; Porco, filé-mignon, sem gordura, grelhado; Porco, filé-mignon, sem gordura, assado; Porco, lombo, sem gordura, cozido; Porco, lombo, sem gordura, grelhado.
+- **Leguminosas e derivados** (8): Feijão, vermelho, cozido; Feijão, branco, cozido; Grão-de-bico, cozido; Ervilha, seca, partida, cozida; Amendoim, torrado, sem sal; Tofu, firme; Edamame, cozido; Ervilha, fresca, cozida.
+- **Nozes e sementes** (9): Amêndoa, torrada, sem sal; Amêndoa, crua; Castanha-de-caju, torrada, sem sal; Castanha-de-caju, crua; Semente, de abóbora, sem casca, torrada, sem sal; Semente, de abóbora, sem casca, crua; Semente, de girassol, sem casca, torrada, sem sal; Semente, de girassol, sem casca, crua; Chia, semente.
+- **Cereais e derivados** (6): Macarrão, trigo, com ovos, cozido; Macarrão, trigo, cozido; Macarrão, trigo, integral, cozido; Quinoa, cozida; Arroz, parboilizado, cozido; Milho, verde, cozido.
+- **Verduras, hortaliças e derivados** (21): Vagem, cozida; Repolho, branco, cozido; Couve, manteiga, cozida; Couve, kale, cozida; Feijão, broto, cozido; Feijão, broto, refogado; Cogumelo, portobello, grelhado; Cogumelo, shiitake, cozido; Cogumelo, shiitake, refogado; Cogumelo, paris (champignon), cozido; Cogumelo, paris (champignon), refogado; Espinafre, Nova Zelândia, cozido; Quiabo, cozido; Batata, inglesa, com casca, assada; Abóbora, cozida; Espinafre, cozido; Abóbora, assada; Abóbora, pescoço, assada; Inhame, cozido; Tomate, italiano, cru; Tomate, grape, cru.
+- **Frutas e derivados** (15): Maçã, Gala, com casca, crua; Damasco, seco; Abacate, Hass (avocado), cru; Amora, crua; Mirtilo, cru; Cereja, crua; Tâmara, seca; Uva, verde, sem semente, crua; Uva, vermelha, sem semente, crua; Melão, cantaloupe, cru; Banana, da terra, assada; Ameixa, seca; Uva-passa, preta, sem semente; Framboesa, crua; Nectarina, crua.
+
+## Validação (29/10/2026)
+
+- `npm run check`: lint e tipos limpos; 308 arquivos e 5.839 testes passando.
+- `npm run build:app`: o pedaço novo `base-ampliada-*.js` tem 253,5 kB (58,6 kB comprimido); a entrada principal passou de
+  2.272,7 kB (588,4 kB) para 2.278,4 kB (590,6 kB), +5,7 kB do carregador e da decodificação; o cache do service worker
+  passou de 32 para 33 arquivos (2.516,6 para 2.769,7 KiB).
+- Abertura (Chromium, servidor local, 5 rodadas, mediana, duas séries): primeira pintura 592 e 712 ms antes, 604 e
+  560 ms depois; app montado 727 e 776 ms antes, 734 e 618 ms depois (dentro do ruído). O pedaço da base chega em
+  620 a 680 ms, depois da primeira pintura.
 
 ## Riscos e decisões para o dono revisar
 
