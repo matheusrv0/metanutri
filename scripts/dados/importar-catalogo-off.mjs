@@ -91,7 +91,8 @@ const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os
  * lactose", "gluten free" e "sin TACC" dizem o contrário do que a palavra sozinha diria. Saem antes de ler as palavras;
  * "contém glúten", sem o "não", continua acusando.
  */
-const NEGACAO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eé]m|zero|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)|(gluten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
+// D-775: também "contêm" (com ê), "glúten-free" (com acento) e "0% lactose".
+const NEGACAO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eéê]m|zero|0%|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)|(gl[uú]ten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
 
 const semAcentoMinusculo = (t) => t.toLowerCase()
 const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))

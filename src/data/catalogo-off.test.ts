@@ -350,3 +350,10 @@ describe('D-774: sem o peso da embalagem, teto menor para pó e para pão e bisc
     expect(porcao({ product_name: 'Suco de uva', serving_quantity: '200', quantity: '1 L' })).toBe(200)
   })
 })
+
+describe('D-775: mais formas da negação (rodada 3 da revisão da fase 2, ajuste 1)', () => {
+  const ler = (t: string) => alergenicosDoRegistro(registro({ ingredients_text: t })).contem
+  it.each(['Chá preto. NÃO CONTÊM GLÚTEN.', 'Snack de arroz. Glúten-free.', 'Bebida de cacau. 0% lactose.'])('"%s" não acusa', (t) => {
+    expect(ler(t)).toEqual([])
+  })
+})
