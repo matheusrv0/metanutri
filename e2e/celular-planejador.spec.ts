@@ -129,3 +129,36 @@ for (const largura of COM_TABLET) {
     })
   })
 }
+
+// ------------------------------------------------------------------------------------------------------------- M-010
+
+const REFEICAO_LONGA = 'Almoço de domingo na casa da sogra (com sobremesa liberada)'
+
+for (const largura of COM_TABLET) {
+  test.describe(`M-010 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } })
+
+    test('M-010: na gaveta Cobrir, "Adicionar em <refeição de nome longo>" fica dentro da gaveta e inteiro', async ({ page }) => {
+      await abrirExemplo(page)
+      await page.getByRole('textbox', { name: 'Nome da refeição Almoço' }).fill(REFEICAO_LONGA)
+      await page.getByRole('region', { name: 'Micronutrientes' }).getByRole('button', { name: /^Cobrir / }).first().click()
+      const gaveta = page.getByRole('dialog')
+      const destino = gaveta.getByLabel('Adicionar em')
+      const valor = await destino.locator('option', { hasText: REFEICAO_LONGA }).getAttribute('value')
+      await destino.selectOption(valor ?? '')
+      await expect(gaveta.getByRole('button', { name: `Adicionar em ${REFEICAO_LONGA}` }).first()).toBeVisible()
+      const medidas = await gaveta.evaluate((g) => {
+        const direita = g.getBoundingClientRect().right - parseFloat(getComputedStyle(g).paddingRight)
+        return [...g.querySelectorAll('button')]
+          .filter((b) => (b.textContent ?? '').startsWith('Adicionar em'))
+          .map((b) => ({ passa: b.getBoundingClientRect().right - direita, corta: b.scrollWidth - b.clientWidth, altura: b.getBoundingClientRect().height }))
+      })
+      expect(medidas.length).toBeGreaterThan(0)
+      for (const m of medidas) {
+        expect(m.passa, 'o botão passa da gaveta').toBeLessThanOrEqual(0.5)
+        expect(m.corta, 'o texto do botão é cortado').toBeLessThanOrEqual(1)
+        if (largura < 640) expect(m.altura, 'alvo de toque').toBeGreaterThanOrEqual(44)
+      }
+    })
+  })
+}
