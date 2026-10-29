@@ -196,9 +196,11 @@ const incluir = (fdcId: number, id: number, nome: string, extra: Partial<ItemDaC
   preparo: 'cru',
   paciente: nome,
   sugerivel: false,
+  alergenicos: ['peixe'],
   ...extra,
 })
 const SEM_TACO = new Set<string>()
+const semAlergenicos = (i: ItemDaCuradoria): ItemDaCuradoria => Object.fromEntries(Object.entries(i).filter(([k]) => k !== 'alergenicos')) as unknown as ItemDaCuradoria
 
 describe('importar-base-ampliada: montarBase (CA-1707, CB-701)', () => {
   const boa: readonly ItemDaCuradoria[] = [
@@ -221,6 +223,7 @@ describe('importar-base-ampliada: montarBase (CA-1707, CB-701)', () => {
     expect(grelhado?.medidas).toEqual([['filé', 87]])
     expect(grelhado?.sugerivel).toBe(true)
     expect(grelhado?.complemento).toBeUndefined()
+    expect(grelhado?.alergenicos).toEqual(['peixe'])
   })
 
   it('dá a mesma saída duas vezes', () => {
@@ -241,6 +244,9 @@ describe('importar-base-ampliada: montarBase (CA-1707, CB-701)', () => {
     ['fdcId fora do USDA (CB-701)', [incluir(77, 100002, 'Peixe, a')], SEM_TACO, undefined, /fdcId 77 não está nos arquivos do USDA/],
     ['decisão desconhecida (CB-701)', [{ fdcId: 3, decisao: 'talvez' }], SEM_TACO, undefined, /decisão "talvez"/],
     ['exclusão sem motivo (CB-701)', [{ fdcId: 3, decisao: 'excluir' }], SEM_TACO, undefined, /exclusão sem motivo/],
+    ['sem alergênicos (D-716b)', [semAlergenicos(incluir(3, 100002, 'Peixe, a'))], SEM_TACO, undefined, /alergenicos precisa ser uma lista/],
+    ['alergênico desconhecido (D-716b)', [incluir(3, 100002, 'Peixe, a', { alergenicos: ['mostarda'] })], SEM_TACO, undefined, /alergenicos precisa ser uma lista/],
+    ['alergênico repetido (D-716b)', [incluir(3, 100002, 'Peixe, a', { alergenicos: ['peixe', 'peixe'] })], SEM_TACO, undefined, /alergenicos precisa ser uma lista/],
   ])('recusa %s', (_caso, curadoriaRuim, nomesTaco, antes, mensagem) => {
     expect(() => montarBase(curadoriaRuim, USDA, nomesTaco, antes)).toThrow(mensagem)
   })
@@ -367,5 +373,46 @@ describe('importar-base-ampliada: cache (CB-700)', () => {
   it('com o SHA-256 diferente, para', () => {
     writeFileSync(join(pasta, 'FoodData_Central_sr_legacy_food_csv_2018-04.zip'), 'não é o arquivo oficial')
     expect(rodar(pasta)).toMatch(/SHA-256 [0-9a-f]{64} diferente do esperado/)
+  })
+})
+
+describe('D-716b: alergênicos da curadoria (achado 1 da revisão)', () => {
+  const ALERGENICOS = ['trigo', 'gluten', 'leite', 'lactose', 'ovo', 'soja', 'amendoim', 'castanhas', 'peixe', 'frutos-do-mar']
+  const incluidos = curadoria.filter((c) => c.decisao === 'incluir')
+
+  it('todo item incluído tem o campo, só com alergênicos conhecidos, sem repetir e na ordem da lista', () => {
+    for (const c of incluidos) {
+      expect(Array.isArray(c.alergenicos), c.nome).toBe(true)
+      const lista = c.alergenicos ?? []
+      expect(lista, c.nome).toEqual(ALERGENICOS.filter((a) => lista.includes(a)))
+    }
+  })
+
+  it('conferido contra o nome em inglês: o que o nome diz está no campo', () => {
+    const SEM_GLUTEN = /gluten-free|^Rice noodles|cellophane|^Tortilla, corn|^Buckwheat|^Flour, buckwheat/i
+    const diz: Readonly<Record<string, (o: string, g: string) => boolean>> = {
+      trigo: (o) => !SEM_GLUTEN.test(o) && /\b(wheat|bulgur|couscous|semolina|spelt|durum|bread|pita|croissants?|focaccia|phyllo|crackers?|pasta|noodles|soba)\b/i.test(o),
+      gluten: (o) => /\b(barley|rye|oats?|oat bran)\b/i.test(o),
+      leite: (o, g) => g === 'Leite e derivados' || (/\b(cheese|milk|yogurt|kefir|whey|butter(?!nut))\b/i.test(o) && !/(peanut|almond|cashew|sesame) butter|coconut/i.test(o)),
+      ovo: (o, g) => g === 'Ovos e derivados' || /\beggs?\b|mayonnaise|^Pasta, fresh/i.test(o),
+      soja: (o) => /\b(soy|soybeans?|tofu|tempeh|edamame|miso|natto)\b/i.test(o),
+      amendoim: (o) => /peanut/i.test(o),
+      castanhas: (o) => /\b(almonds?|cashews?|chestnuts|hazelnuts|filberts|macadamia|pecans|pine nuts|pistachio|walnuts?)\b/i.test(o),
+      peixe: (o, g) => g === 'Pescados e frutos do mar' && !/crustaceans|mollusks|lobster|scallops|squid|shrimp|crab|clam|oyster|mussel|octopus/i.test(o),
+      'frutos-do-mar': (o) => !/^Mushroom/i.test(o) && /crustaceans|mollusks|lobster|scallops|squid|shrimp|crab|clam|oyster|mussel|octopus|surimi/i.test(o),
+    }
+    for (const c of incluidos) {
+      for (const [alergenico, regra] of Object.entries(diz)) {
+        if (regra(c.original ?? '', c.grupo ?? '')) expect(c.alergenicos, `${c.nome} (${c.original ?? ''}): ${alergenico}`).toContain(alergenico)
+      }
+    }
+  })
+
+  it('o arquivo gerado leva o campo quando ele não é vazio', () => {
+    const porId = new Map(alimentos.map((a) => [a.id, a]))
+    for (const c of incluidos) {
+      const lista = c.alergenicos ?? []
+      expect(porId.get(c.id ?? 0)?.alergenicos ?? [], c.nome).toEqual(lista)
+    }
   })
 })

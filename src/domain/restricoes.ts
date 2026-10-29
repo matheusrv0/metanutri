@@ -4,7 +4,7 @@
 import { idsDaRestricao, TERMOS_POR_RESTRICAO, ULTIMO_ID_DA_BASE, type IdRestricaoDaBase } from './restricoesDaBase.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { nomeDaReceita, receitaDoItem } from './receitaNoPlano.ts'
-import { OPCOES, type BuscarAlimento, type CondicaoFisiologica, type ItemPlano, type Plano } from './tipos.ts'
+import { OPCOES, type BuscarAlimento, type CondicaoFisiologica, type IdAlergenico, type ItemPlano, type Plano } from './tipos.ts'
 
 export type IdRestricao = IdRestricaoDaBase
 export type TipoRestricao = 'alergia' | 'intolerancia' | 'escolha'
@@ -229,6 +229,8 @@ export interface AlimentoParaRestricao {
   readonly descricao: string
   /** O grupo: no alimento próprio, o que a nutricionista escolheu (D-492). A receita não tem. */
   readonly categoria?: string
+  /** Na base ampliada, os alergênicos da curadoria (spec base-ampliada, D-716b). */
+  readonly ampliada?: { readonly alergenicos?: readonly IdAlergenico[] }
 }
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -302,6 +304,27 @@ function casaPeloGrupo(id: IdRestricao, categoria: string | undefined, nome: str
   return id !== 'lactose' || !SEM_LACTOSE.some((e) => nome.includes(e))
 }
 
+/**
+ * D-716b (spec base-ampliada): os alergênicos que a curadoria marcou no alimento da base ampliada ligam a restrição,
+ * além do nome e do grupo. O trigo conta para o glúten; a lactose, para o leite; leite, ovo, peixe e fruto do mar,
+ * para o vegano; peixe e fruto do mar, para o vegetariano.
+ */
+const RESTRICOES_DO_ALERGENICO: Readonly<Record<IdAlergenico, readonly IdRestricao[]>> = {
+  trigo: ['trigo', 'gluten'],
+  gluten: ['gluten'],
+  leite: ['leite', 'vegano'],
+  lactose: ['lactose', 'leite', 'vegano'],
+  ovo: ['ovo', 'vegano'],
+  soja: ['soja'],
+  amendoim: ['amendoim'],
+  castanhas: ['castanhas'],
+  peixe: ['peixe', 'vegetariano', 'vegano'],
+  'frutos-do-mar': ['frutos-do-mar', 'vegetariano', 'vegano'],
+}
+
+const casaPeloCampo = (id: IdRestricao, alimento: AlimentoParaRestricao): boolean =>
+  (alimento.ampliada?.alergenicos ?? []).some((a) => RESTRICOES_DO_ALERGENICO[a].includes(id))
+
 /** O aviso da restrição que o alimento pega, ou `null`. */
 export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: RestricoesDoPaciente | readonly string[]): string | null {
   const restricoes = comoRestricoes(valor)
@@ -315,7 +338,7 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
       if (idsDaRestricao(grupo.id).has(alimento.id)) return grupo.aviso
       continue
     }
-    if (casaPeloNome(grupo.id, nome)) return grupo.aviso
+    if (casaPeloNome(grupo.id, nome) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
     if (casaPeloGrupo(grupo.id, alimento.categoria, nome)) {
       return alimento.categoria === PESCADOS && DIZ_O_GRUPO.has(grupo.id) ? `${grupo.aviso} (grupo ${PESCADOS})` : grupo.aviso
     }

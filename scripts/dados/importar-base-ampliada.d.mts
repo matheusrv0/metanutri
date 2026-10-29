@@ -4,6 +4,7 @@ import type { AlimentoUsda, PorcaoUsda } from './usda-fonte.mjs'
 export interface ItemDaCuradoria {
   readonly fdcId: number
   readonly decisao: string
+  readonly original?: string
   readonly motivo?: string
   readonly id?: number
   readonly nome?: string
@@ -15,6 +16,8 @@ export interface ItemDaCuradoria {
   readonly complemento?: number
   readonly naoCopiar?: readonly string[]
   readonly ml?: boolean
+  /** D-716b: os alergênicos do item (vazio quando não tem). */
+  readonly alergenicos?: readonly string[]
 }
 
 export interface AlimentoDaBase {
@@ -30,6 +33,7 @@ export interface AlimentoDaBase {
   readonly valores: readonly (number | null)[]
   readonly medidas: readonly (readonly [string, number])[]
   readonly ml?: true
+  readonly alergenicos?: readonly string[]
   readonly complemento?: { readonly fdcId: number; readonly chaves: readonly string[] }
   /** Os fatores de Atwater da fonte (proteína, gordura, carboidrato), quando ela os publica. */
   readonly atwater?: readonly [number, number, number]
@@ -39,6 +43,7 @@ export const PRIMEIRO_ID: number
 export const ULTIMO_ID: number
 export const GRUPOS: readonly string[]
 export const PREPAROS: readonly string[]
+export const ALERGENICOS: readonly string[]
 export const CHAVES: readonly string[]
 export const MAXIMOS: Readonly<Record<string, number>>
 export function energiaIncoerente(v: Readonly<Record<string, number | null>>, fatores: readonly [number, number, number] | null): boolean

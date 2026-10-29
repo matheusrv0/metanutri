@@ -255,6 +255,9 @@ export interface OrigemUsda {
  * O alimento da base ampliada (spec base-ampliada, D-704 e D-714): todos os valores vêm do alimento `fdcId` do USDA; no
  * Foundation completado, as `chaves` do complemento vêm do SR Legacy do mesmo alimento.
  */
+/** D-716b (spec base-ampliada): os alergênicos que a curadoria marca no alimento da base ampliada. */
+export type IdAlergenico = 'trigo' | 'gluten' | 'leite' | 'lactose' | 'ovo' | 'soja' | 'amendoim' | 'castanhas' | 'peixe' | 'frutos-do-mar'
+
 export interface OrigemBaseAmpliada extends OrigemUsda {
   /** A descrição em inglês do USDA, guardada para a ficha e a conferência. */
   readonly nomeOriginal: string
@@ -262,6 +265,8 @@ export interface OrigemBaseAmpliada extends OrigemUsda {
   readonly nomeParaPaciente: string
   /** A curadoria liberou para o Cobrir (D-716); a regra prescritível ainda vale. */
   readonly sugerivel: boolean
+  /** D-716b: os alergênicos da curadoria (as restrições usam além dos termos do nome). */
+  readonly alergenicos?: readonly IdAlergenico[]
   readonly complemento?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
 }
 

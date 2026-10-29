@@ -3,7 +3,7 @@
 // contagens moram no arquivo pequeno, que o site também lê.
 import fonte from '../data/base-ampliada-fonte.json'
 import { receitaDoItem } from './receitaNoPlano.ts'
-import { OPCOES, type Alimento, type ChaveNutrienteAlimento, type Plano } from './tipos.ts'
+import { OPCOES, type Alimento, type ChaveNutrienteAlimento, type IdAlergenico, type Plano } from './tipos.ts'
 
 /** A faixa de ids da base ampliada (D-709): acima da TACO (1 a 597), abaixo dos alimentos próprios (900.000). */
 export const PRIMEIRO_ID_AMPLIADA = 100_001
@@ -25,6 +25,7 @@ interface ItemDoArquivo {
   readonly valores: readonly (number | null)[]
   readonly medidas: readonly (readonly [string, number])[]
   readonly ml?: boolean
+  readonly alergenicos?: readonly IdAlergenico[]
   readonly complemento?: { readonly fdcId: number; readonly chaves: readonly string[] }
 }
 
@@ -86,6 +87,7 @@ export function decodificarBaseAmpliada(arquivo: ArquivoBaseAmpliada): readonly 
         nomeOriginal: a.original,
         nomeParaPaciente: a.paciente,
         sugerivel: a.sugerivel,
+        ...(a.alergenicos && a.alergenicos.length > 0 ? { alergenicos: a.alergenicos } : {}),
         ...(a.complemento
           ? {
               complemento: {

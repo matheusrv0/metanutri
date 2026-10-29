@@ -47,6 +47,13 @@ export const GRUPOS = [
   'Leguminosas e derivados',
   'Nozes e sementes',
 ]
+/**
+ * D-716b: os alergênicos de cada item, na ordem da lista, conferidos contra o nome em inglês e os ingredientes típicos
+ * (as restrições do paciente usam o campo além dos termos do nome). "trigo" já conta para o glúten; "gluten" é o glúten
+ * sem trigo (cevada, centeio, aveia).
+ */
+export const ALERGENICOS = ['trigo', 'gluten', 'leite', 'lactose', 'ovo', 'soja', 'amendoim', 'castanhas', 'peixe', 'frutos-do-mar']
+
 export const PREPAROS = ['cru', 'cozido', 'grelhado', 'assado', 'frito', 'refogado', 'torrado']
 
 /** A ordem dos valores em cada alimento: as chaves de `ChaveNutrienteAlimento`. */
@@ -195,6 +202,9 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
     if (item.preparo !== null && !PREPAROS.includes(item.preparo)) falhar(`${onde}: preparo "${item.preparo}".`)
     if (typeof item.paciente !== 'string' || item.paciente.trim() === '') falhar(`${onde}: sem nome para o paciente.`)
     if (typeof item.sugerivel !== 'boolean') falhar(`${onde}: sugerivel não é verdadeiro ou falso.`)
+    const alergenicos = item.alergenicos
+    if (!Array.isArray(alergenicos) || alergenicos.some((a, i) => !ALERGENICOS.includes(a) || alergenicos.indexOf(a) !== i))
+      falhar(`${onde}: alergenicos precisa ser uma lista de ${ALERGENICOS.join(', ')}, sem repetir.`)
 
     const valores = valoresDoAlimento(bruto)
     const doComplemento = []
@@ -238,6 +248,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
       medidas: medidasDaCuradoria(item, porcoes),
     }
     if (item.ml === true) saida.ml = true
+    if (alergenicos.length > 0) saida.alergenicos = ALERGENICOS.filter((a) => alergenicos.includes(a))
     if (doComplemento.length > 0) saida.complemento = { fdcId: item.complemento, chaves: doComplemento }
     if (fatores) saida.atwater = fatores
     alimentos.push(saida)

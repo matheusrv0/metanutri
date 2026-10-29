@@ -28,8 +28,9 @@ describe('CA-1723: restrições na base ampliada', () => {
     expect(r.sugestoes.map((s) => buscarAlimento(s.alimentoId)?.categoria)).not.toContain('Pescados e frutos do mar')
   })
 
-  it('o peixe que o nome não diz é pego pelo grupo, com o grupo no aviso (D-511)', () => {
-    expect(restricaoDoAlimento(porNome('Hadoque, filé, grelhado'), marcadas('peixe'))).toBe('Alergia: peixe (grupo Pescados e frutos do mar)')
+  it('o peixe que o nome não diz é pego pelo alergênico da curadoria (D-716b); a alergia a crustáceo, pelo grupo, com o grupo no aviso (D-511)', () => {
+    expect(restricaoDoAlimento(porNome('Hadoque, filé, grelhado'), marcadas('peixe'))).toBe('Alergia: peixe')
+    expect(restricaoDoAlimento(porNome('Hadoque, filé, grelhado'), marcadas('frutos-do-mar'))).toMatch(/\(grupo Pescados e frutos do mar\)$/)
   })
 
   it('alergia a soja pega tempeh, edamame e tofu', () => {
@@ -84,5 +85,62 @@ describe('D-716e: alertas falsos (achado 4 da revisão)', () => {
     // O ovo continua sendo ovo para a alergia e para o vegano.
     expect(restricaoDoAlimento(porNome('Ovo, de galinha, inteiro, pochê'), marcadas('ovo'))).toBe('Alergia: ovo')
     expect(restricaoDoAlimento(porNome('Ovo, de galinha, inteiro, pochê'), marcadas('vegano'))).not.toBeNull()
+  })
+})
+
+describe('D-716b: alergênicos da curadoria, além dos termos do nome (achado 1 da revisão)', () => {
+  const celiaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+  const id = (n: number) => {
+    const a = BASE.find((x) => x.id === n)
+    if (!a) throw new Error(`Sem ${n}.`)
+    return a
+  }
+
+  it('trigo e glúten: grissini e focaccia pegam trigo, glúten e doença celíaca', () => {
+    for (const n of [100406, 100414]) {
+      expect(restricaoDoAlimento(id(n), marcadas('trigo')), String(n)).toBe('Alergia: trigo')
+      expect(restricaoDoAlimento(id(n), marcadas('gluten')), String(n)).toBe('Intolerância: glúten')
+      expect(restricaoDoAlimento(id(n), celiaca), String(n)).not.toBeNull()
+    }
+    // Glúten sem trigo: o missô (cevada) e o pão de centeio.
+    expect(restricaoDoAlimento(id(100281), marcadas('gluten'))).toBe('Intolerância: glúten')
+    expect(restricaoDoAlimento(id(100405), marcadas('gluten'))).toBe('Intolerância: glúten')
+  })
+
+  it('ovo: a massa fresca de espinafre (colesterol de 73 mg) e o surimi pegam ovo', () => {
+    for (const n of [100365, 100366, 100042]) expect(restricaoDoAlimento(id(n), marcadas('ovo')), String(n)).toBe('Alergia: ovo')
+  })
+
+  it('leite e lactose: pão de alho e chocolate amargo pegam leite; o croissant de queijo pega lactose', () => {
+    for (const n of [100415, 100618]) expect(restricaoDoAlimento(id(n), marcadas('leite')), String(n)).toBe('Alergia: leite e derivados')
+    expect(restricaoDoAlimento(id(100413), marcadas('lactose'))).toBe('Intolerância: lactose')
+    expect(restricaoDoAlimento(id(100618), marcadas('vegano'))).not.toBeNull()
+  })
+
+  it('soja: o chocolate amargo (lecitina) pega soja', () => {
+    expect(restricaoDoAlimento(id(100619), marcadas('soja'))).toBe('Alergia: soja')
+  })
+
+  it('peixe e crustáceo: o surimi pega os dois; a lula frita pega crustáceo e trigo (empanada)', () => {
+    expect(restricaoDoAlimento(id(100042), marcadas('peixe'))).not.toBeNull()
+    expect(restricaoDoAlimento(id(100042), marcadas('frutos-do-mar'))).not.toBeNull()
+    expect(restricaoDoAlimento(id(100068), marcadas('frutos-do-mar'))).not.toBeNull()
+    expect(restricaoDoAlimento(id(100068), marcadas('trigo'))).toBe('Alergia: trigo')
+  })
+
+  it('castanhas: noz-pecã, macadâmia e farinha de amêndoa pegam castanhas', () => {
+    for (const n of [100316, 100314, 100300]) expect(restricaoDoAlimento(id(n), marcadas('castanhas')), String(n)).toBe('Alergia: castanhas')
+  })
+
+  it('varredura: todo pão, massa, bolo e biscoito de trigo da base pega glúten, trigo e doença celíaca', () => {
+    const DE_TRIGO = /\b(bread|pita|croissants?|focaccia|phyllo|crackers?|pasta|noodles|soba|tortillas?|couscous|cake|cookies?|muffin|bagel|pretzel)\b/i
+    const SEM_TRIGO = /gluten-free|^Rice noodles|cellophane|^Tortilla, corn|corn|rice cakes/i
+    const deTrigo = BASE.filter((a) => a.ampliada && DE_TRIGO.test(a.ampliada.nomeOriginal) && !SEM_TRIGO.test(a.ampliada.nomeOriginal))
+    expect(deTrigo.length).toBeGreaterThan(25)
+    for (const a of deTrigo) {
+      expect(restricaoDoAlimento(a, marcadas('gluten')), a.descricao).toBe('Intolerância: glúten')
+      expect(restricaoDoAlimento(a, marcadas('trigo')), a.descricao).toBe('Alergia: trigo')
+      expect(restricaoDoAlimento(a, celiaca), a.descricao).not.toBeNull()
+    }
   })
 })

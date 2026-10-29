@@ -126,6 +126,12 @@ Quando `false`, escreva em `porqueNao` o motivo curto ("miúdo", "ingrediente", 
   `vitamina_a_rae_mcg`, `folato_dfe_mcg`, `tiamina_mg`, `riboflavina_mg`, `niacina_mg`, `ferro_mg`, `calcio_mg`,
   `vitamina_c_mg`, `vitamina_e_mg`, `vitamina_b12_mcg`).
 - `ml`: `true` no líquido que se mede em ml (kefir, leite, bebida, suco, caldo). Óleo não.
+- `alergenicos` (D-716b): em todo item incluído, a lista (vazia quando não tem) dos alergênicos, na ordem `trigo`,
+  `gluten` (glúten sem trigo: cevada, centeio, aveia), `leite`, `lactose` (laticínio fresco), `ovo`, `soja`,
+  `amendoim`, `castanhas`, `peixe`, `frutos-do-mar`. Conferida contra o nome em inglês (o teste repete as regras) e
+  contra os ingredientes típicos que o nome não diz: o pão de forma e o pão de batata levam leite; o croissant, ovo; a
+  massa fresca, ovo; o surimi, trigo e ovo; a lula frita, trigo; o missô, cevada; o chocolate, leite e soja ("pode
+  conter"). Numa alergia, sobrar é mais seguro que faltar. O coco e a noz-moscada não são castanha.
 
 ## 8. Glossário fixo
 
