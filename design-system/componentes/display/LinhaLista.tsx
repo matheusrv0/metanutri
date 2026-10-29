@@ -26,9 +26,13 @@ export function LinhaLista({ titulo, detalhe, inicio, fim, aoClicar, marcada = f
   const miolo = (
     <>
       {inicio ? <span className="grid size-9 shrink-0 place-content-center rounded-xl bg-card text-primary [&_svg]:size-4">{inicio}</span> : null}
+      {/* D-801 (spec ajustes-mobile, M-006): o título identifica, então quebra em até duas linhas, com o resto no
+          title; o detalhe quebra livre. Cortar numa linha deixava dois planos iguais na tela. */}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-heading">{titulo}</span>
-        {detalhe ? <span className="block truncate text-xs text-muted-foreground">{detalhe}</span> : null}
+        <span className="line-clamp-2 break-words text-sm font-semibold text-heading" title={typeof titulo === 'string' ? titulo : undefined}>
+          {titulo}
+        </span>
+        {detalhe ? <span className="block break-words text-xs text-muted-foreground">{detalhe}</span> : null}
       </span>
       {fim ?? (aoClicar ? <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null)}
     </>
