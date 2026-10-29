@@ -127,6 +127,38 @@ for (const largura of CELULARES) {
   })
 }
 
+// --------------------------------------------------------------------------------------------- M-005 · Cabeçalho
+
+test.describe('M-005: o título do cabeçalho não some', () => {
+  for (const largura of CELULARES) {
+    test(`em ${largura} px, "Ana — retorno de outubro" aparece inteiro, e o cabeçalho fica abaixo de 15% da tela (D-804)`, async ({ page }) => {
+      await page.setViewportSize({ width: largura, height: ALTURA })
+      const exemplo = await criarExemplo(page)
+      await semear(page, exemplo, [{ id: 'plano-ana', nome: 'Ana — retorno de outubro' }], [])
+      await page.goto('/#/caso/plano-ana/plano')
+      const titulo = page.getByRole('heading', { level: 1, name: 'Ana — retorno de outubro' })
+      await expect(titulo).toBeVisible()
+      await inteiroAVista(titulo, 'título')
+      expect((await page.getByRole('banner').boundingBox())?.height ?? 999).toBeLessThanOrEqual(ALTURA * 0.15)
+      await semRolagemLateral(page)
+    })
+  }
+
+  test('em 390 px, o nome enorme quebra em 2 linhas, vai inteiro no title e o cabeçalho continua abaixo de 15%', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: ALTURA })
+    const nome = 'Plano alimentar de manutenção — retorno de outubro com ajustes da preceptora (versão 3, revisada)'
+    const exemplo = await criarExemplo(page)
+    await semear(page, exemplo, [{ id: 'plano-longo', nome }], [])
+    await page.goto('/#/caso/plano-longo/plano')
+    const titulo = page.getByRole('heading', { level: 1 })
+    await expect(titulo).toHaveAttribute('title', nome)
+    expect((await corte(titulo)).largura).toBeLessThanOrEqual(1)
+    const linhas = await titulo.evaluate((el) => Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight)))
+    expect(linhas).toBe(2)
+    expect((await page.getByRole('banner').boundingBox())?.height ?? 999).toBeLessThanOrEqual(ALTURA * 0.15)
+  })
+})
+
 // --------------------------------------------------------------------------------------------- M-007 · Planos e Pacientes
 
 test.describe('M-007: nomes de planos e pacientes que só mudam no fim', () => {
@@ -178,5 +210,23 @@ for (const largura of CELULARES) {
     const itens = page.getByRole('list', { name: 'Alimentos da tabela' }).getByRole('button').filter({ hasText: /Margarina, com óleo interesterificado/ })
     await expect(itens).toHaveCount(2)
     for (const item of await itens.all()) await inteiroAVista(item.locator('p > span').first(), await item.innerText())
+  })
+}
+
+// --------------------------------------------------------------------------------------------- M-020 · Seletor de tema
+
+for (const largura of CELULARES) {
+  test(`M-020: em ${largura} px, o seletor de tema do menu tem 44 px e letra de 12 px`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: ALTURA })
+    await abrirLimpo(page)
+    await page.getByRole('button', { name: 'Abrir menu' }).click()
+    const opcoes = page.getByRole('radiogroup', { name: 'Aparência' }).getByRole('radio')
+    await expect(opcoes).toHaveCount(3)
+    for (const opcao of await opcoes.all()) {
+      const nome = await opcao.innerText()
+      expect((await opcao.boundingBox())?.height ?? 0, `${nome}: altura`).toBeGreaterThanOrEqual(44)
+      expect(await opcao.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)), `${nome}: letra`).toBeGreaterThanOrEqual(12)
+      expect((await corte(opcao)).largura, `${nome}: cortado`).toBeLessThanOrEqual(1)
+    }
   })
 }
