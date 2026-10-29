@@ -77,8 +77,8 @@ const GEMA = /^Ovo, de galinha, gema/i
 const CLARA = /^Ovo, de galinha, clara/i
 /** Charque e carne seca cozidos e ovo frito, que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293). */
 const CURADO_OU_FRITO = /^(Carne, bovina, (charque|seca), cozid|Ovo, de galinha, inteiro, frito)/i
-/** Folha crua (D-439): folha comida em salada, inteira ou picada. */
-const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Repolho|Acelga)/i
+/** Folha crua (D-439): folha comida em salada, inteira ou picada. A couve kale e a escarola vêm da base ampliada. */
+const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Couve, kale|Escarola|Repolho|Acelga)/i
 const FIGADO = /(fígado|sarapatel)/i
 const CARNE: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
 // Quinoa, milho verde e trigo para quibe cozidos vêm da base ampliada (spec base-ampliada, D-716).
@@ -88,6 +88,15 @@ const TUBERCULO = /^(Batata|Mandioca|Cará|Inhame)/i
 /** A TACO põe pão de queijo, farinha, farofa, fécula e polvilho entre as verduras: não são verdura (CA-671). */
 const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
 const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(nomeLimpo(a))
+
+/** A folha crua (D-439): a mesma regra na TACO e na base ampliada (spec base-ampliada, D-716a). */
+export const ehFolhaCrua = (a: Alimento): boolean => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a))
+
+/**
+ * D-716a (spec base-ampliada, rodada do coordenador): na porção real da folha crua (até 60 g, D-439), cobrir pouco da
+ * falta é sugestão fraca ("Alface roxa · 6 folhas" para 19% do ferro). A folha crua só entra com ao menos isto.
+ */
+export const COBERTURA_MINIMA_FOLHA_CRUA_PCT = 25
 const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
 /** Origem animal: a vitamina A é retinol pré-formado (D-442). */
 const ORIGEM_ANIMAL: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar', 'Ovos e derivados', 'Leite e derivados'])
@@ -145,7 +154,7 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Pinhão cozido', gramas: 60, minima: 20, casa: (a) => /^Pinhão, cozido/i.test(nomeLimpo(a)) },
   { grupo: 'Polpa de coco verde', gramas: 50, minima: 25, casa: (a) => /^Coco, verde, cru/i.test(nomeLimpo(a)) },
   // Correção A (spec sugestoes-com-criterio, D-439 e seção 8.2): todo alimento num grupo com porção de verdade.
-  { grupo: 'Folha crua', gramas: 60, minima: 20, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
+  { grupo: 'Folha crua', gramas: 60, minima: 20, casa: ehFolhaCrua },
   { grupo: 'Fígado e sarapatel', gramas: 100, minima: 50, casa: (a) => FIGADO.test(nomeLimpo(a)) },
   { grupo: 'Carne, ave e peixe', gramas: 120, minima: 50, casa: (a) => CARNE.has(a.categoria) },
   { grupo: 'Leguminosa cozida e tofu', gramas: 140, minima: 50, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
@@ -402,6 +411,7 @@ export function sugerirParaCobrir(
     const parcial = emMedida ? emMedida.parcial : necessario > porcaoDoAlimento
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
+    if (ehFolhaCrua(alimento) && coberturaPct < COBERTURA_MINIMA_FOLHA_CRUA_PCT) continue
     // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
     if (casaRestricao(alimento, restricoes)) {
       restricaoTirouAlguem = true
