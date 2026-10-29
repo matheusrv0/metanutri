@@ -190,3 +190,19 @@ for (const largura of CELULARES) {
     })
   })
 }
+
+// ------------------------------------------------------------------------------------------------------------- M-023
+
+for (const largura of CELULARES) {
+  test.describe(`M-023 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } })
+
+    test('M-023: o horário da refeição tem um relógio só, o do campo', async ({ page }) => {
+      await abrirExemplo(page)
+      const horario = page.getByLabel('Horário de Café da manhã')
+      await expect(horario).toBeVisible()
+      const relogiosDesenhados = await horario.evaluate((el) => el.closest('[data-slot="card"]')?.querySelectorAll('svg.lucide-clock').length ?? -1)
+      expect(relogiosDesenhados).toBe(0)
+    })
+  })
+}
