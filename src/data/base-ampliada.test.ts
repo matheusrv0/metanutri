@@ -416,3 +416,12 @@ describe('D-716b: alergênicos da curadoria (achado 1 da revisão)', () => {
     }
   })
 })
+
+describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
+  const porId = (id: number) => alimentos.find((a) => a.id === id)
+
+  it('D-716f: o tofu firme diz o coagulante, também no nome que o paciente vê', () => {
+    expect(porId(100296)?.nome).toBe('Tofu, firme, com sulfato de cálcio')
+    expect(porId(100296)?.paciente).toBe('Tofu firme com sulfato de cálcio')
+  })
+})

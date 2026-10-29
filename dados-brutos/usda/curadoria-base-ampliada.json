@@ -1116,7 +1116,7 @@
 {"fdcId":172450,"conjunto":"SR Legacy","original":"Tofu, dried-frozen (koyadofu)","decisao":"excluir","motivo":"não é usado no Brasil"},
 {"fdcId":174303,"conjunto":"SR Legacy","original":"Tofu, dried-frozen (koyadofu), prepared with calcium sulfate","decisao":"excluir","motivo":"não é usado no Brasil"},
 {"fdcId":174290,"conjunto":"SR Legacy","original":"Tofu, extra firm, prepared with nigari","decisao":"excluir","motivo":"duplicata (fica 172448)"},
-{"fdcId":172448,"conjunto":"SR Legacy","original":"Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)","decisao":"incluir","id":100296,"nome":"Tofu, firme","grupo":"Leguminosas e derivados","preparo":null,"paciente":"Tofu firme","sugerivel":true,"alergenicos":["soja"]},
+{"fdcId":172448,"conjunto":"SR Legacy","original":"Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)","decisao":"incluir","id":100296,"nome":"Tofu, firme, com sulfato de cálcio","grupo":"Leguminosas e derivados","preparo":null,"paciente":"Tofu firme com sulfato de cálcio","sugerivel":true,"alergenicos":["soja"]},
 {"fdcId":172451,"conjunto":"SR Legacy","original":"Tofu, fried","decisao":"incluir","id":100297,"nome":"Tofu, frito","grupo":"Leguminosas e derivados","preparo":"frito","paciente":"Tofu frito","sugerivel":false,"porqueNao":"frito","alergenicos":["soja"]},
 {"fdcId":174304,"conjunto":"SR Legacy","original":"Tofu, fried, prepared with calcium sulfate","decisao":"excluir","motivo":"duplicata (fica 172451)"},
 {"fdcId":174291,"conjunto":"SR Legacy","original":"Tofu, hard, prepared with nigari","decisao":"excluir","motivo":"duplicata (fica 172448)"},

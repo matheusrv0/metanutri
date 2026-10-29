@@ -34,7 +34,7 @@ describe('CA-1723: restrições na base ampliada', () => {
   })
 
   it('alergia a soja pega tempeh, edamame e tofu', () => {
-    for (const nome of ['Tempeh, cru', 'Edamame, cozido', 'Tofu, firme']) expect(restricaoDoAlimento(porNome(nome), marcadas('soja')), nome).toBe('Alergia: soja')
+    for (const nome of ['Tempeh, cru', 'Edamame, cozido', 'Tofu, firme, com sulfato de cálcio']) expect(restricaoDoAlimento(porNome(nome), marcadas('soja')), nome).toBe('Alergia: soja')
   })
 
   it('glúten pega a espelta e o trigo para quibe; trigo pega a espelta', () => {

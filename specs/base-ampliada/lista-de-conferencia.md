@@ -120,7 +120,7 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Lentilha vermelha | lentilha vermelha | coberto: Lentilha, vermelha, crua |
 | Soja em grão cozida | soja grão cozida | coberto: Soja, em grão, cozida |
 | Tempeh | tempeh | coberto: Tempeh, cru; Tempeh, cozido |
-| Tofu firme | tofu firme | coberto: Tofu, firme |
+| Tofu firme | tofu firme | coberto: Tofu, firme, com sulfato de cálcio |
 | Homus | homus | coberto: Homus |
 | Pasta de amendoim | pasta amendoim | coberto: Pasta, de amendoim; Pasta, de amendoim, sem sal |
 | Amendoim torrado sem sal | amendoim torrado sem sal | coberto: Amendoim, torrado, sem sal |
