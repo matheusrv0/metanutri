@@ -241,8 +241,21 @@ function expressao(termo: string): RegExp {
   return new RegExp(`${noInicio ? '^' : '(?<![a-z0-9])'}${corpo}${prefixo ? '' : '(?![a-z0-9])'}`)
 }
 
+/**
+ * D-716e (spec base-ampliada): a exceção compara o nome sem pontuação ("Couve, manteiga, cozida" é "couve manteiga
+ * cozida", e a exceção "couve-manteiga" é "couve manteiga"). O "%" fica ("0% lactose").
+ */
+const semPontuacao = (s: string): string =>
+  s
+    .replace(/[^\p{L}\p{N}% ]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
 const EXPRESSOES: ReadonlyMap<IdRestricao, { readonly termos: readonly RegExp[]; readonly excecoes: readonly string[] }> = new Map(
-  Object.entries(TERMOS_POR_RESTRICAO).map(([id, { termos, excecoes }]) => [id as IdRestricao, { termos: termos.map(expressao), excecoes: excecoes.map(semAcento) }]),
+  Object.entries(TERMOS_POR_RESTRICAO).map(([id, { termos, excecoes }]) => [
+    id as IdRestricao,
+    { termos: termos.map(expressao), excecoes: excecoes.map((e) => semPontuacao(semAcento(e))) },
+  ]),
 )
 
 function casaPeloNome(id: IdRestricao, nome: string): boolean {
@@ -253,7 +266,8 @@ function casaPeloNome(id: IdRestricao, nome: string): boolean {
 function casaSoOsTermos(id: IdRestricao, nome: string): boolean {
   const regra = EXPRESSOES.get(id)
   if (!regra) return false
-  if (regra.excecoes.some((e) => nome.includes(e))) return false
+  const limpo = semPontuacao(nome)
+  if (regra.excecoes.some((e) => limpo.includes(e))) return false
   return regra.termos.some((t) => t.test(nome))
 }
 

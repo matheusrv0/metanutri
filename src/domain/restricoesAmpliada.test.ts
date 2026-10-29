@@ -64,3 +64,25 @@ describe('CB-710: cuidado da fase e mercúrio', () => {
     expect(figado ? restricaoDoAlimento(figado, gestante) : null).toMatch(/Na gestação, evite fígado/)
   })
 })
+
+describe('D-716e: alertas falsos (achado 4 da revisão)', () => {
+  it('a couve-manteiga não é leite: a pontuação sai do nome antes da exceção, na base ampliada e no alimento próprio', () => {
+    expect(restricaoDoAlimento(porNome('Couve, manteiga, cozida'), marcadas('leite'))).toBeNull()
+    expect(restricaoDoAlimento({ id: 900_001, descricao: 'Couve, manteiga, refogada' }, marcadas('leite'))).toBeNull()
+    // A manteiga de verdade continua pegando.
+    expect(restricaoDoAlimento({ id: 900_002, descricao: 'Manteiga, com sal' }, marcadas('leite'))).toBe('Alergia: leite e derivados')
+  })
+
+  it('o ovo de galinha não acusa vegetariano; a galinha e o caldo de galinha continuam acusando', () => {
+    for (const id of [100097, 100098, 100099, 100100, 100639]) {
+      const ovo = BASE.find((a) => a.id === id)
+      expect(ovo, String(id)).toBeDefined()
+      if (ovo) expect(restricaoDoAlimento(ovo, marcadas('vegetariano')), ovo.descricao).toBeNull()
+    }
+    expect(restricaoDoAlimento({ id: 900_003, descricao: 'Galinha caipira, cozida' }, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    expect(restricaoDoAlimento({ id: 900_004, descricao: 'Caldo de galinha' }, marcadas('vegetariano'))).toBe('Não come por escolha: vegetariano')
+    // O ovo continua sendo ovo para a alergia e para o vegano.
+    expect(restricaoDoAlimento(porNome('Ovo, de galinha, inteiro, pochê'), marcadas('ovo'))).toBe('Alergia: ovo')
+    expect(restricaoDoAlimento(porNome('Ovo, de galinha, inteiro, pochê'), marcadas('vegano'))).not.toBeNull()
+  })
+})

@@ -226,9 +226,10 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
     termos: ['camarao', 'camaroes', 'caranguejo*', 'siri', 'lagosta*', 'lula', 'lulas', 'polvo', 'marisco*', 'mexilhao', 'mexilhoes', 'ostra*', 'vieira*', 'sururu', 'frutos do mar', 'kani', 'surimi'],
     excecoes: [],
   },
+  // "Ovo de galinha" é ovo, não galinha (spec base-ampliada, D-716e).
   vegetariano: {
     termos: ['carne', 'carnes', 'frango', 'galinha', 'porco', 'suino*', 'bovino*', 'boi', 'presunto', 'bacon', 'linguica*', 'salsicha*', 'mortadela', 'salame', 'peito de peru', 'peru', 'hamburguer*', 'almondega*', 'charque', 'figado', 'toucinho', 'gelatina', 'mocoto', 'bife', 'costela', 'picanha', 'patinho', 'lombo', 'pernil', 'cordeiro', 'carneiro', 'pato', 'coxinha', 'atum', 'sardinha*', 'peixe*', 'salmao', 'bacalhau', 'tilapia', 'camarao', 'camaroes', 'frutos do mar', 'kani', 'surimi', 'caldo de carne', 'caldo de galinha'],
-    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'salsicha vegetal', 'linguica vegetal', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'plant based'],
+    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'salsicha vegetal', 'linguica vegetal', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'plant based', 'ovo de galinha'],
   },
   // Vegano é Vegetariano, Leite e derivados e Ovo pelos termos de cada um, e mais o mel (`restricoes.ts`).
   vegano: {
