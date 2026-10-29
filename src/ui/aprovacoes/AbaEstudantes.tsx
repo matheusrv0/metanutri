@@ -187,7 +187,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
               <label
                 key={m}
                 className={cn(
-                  'inline-flex min-h-11 sm:min-h-9 cursor-pointer items-center rounded-full border px-3 text-xs font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+                  'inline-flex min-h-11 sm:min-h-9 sm:pointer-coarse:min-h-11 cursor-pointer items-center rounded-full border px-3 text-xs font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
                   motivo === m ? 'border-primary bg-lightprimary text-primary' : 'border-borderdefault bg-card text-foreground',
                 )}
               >

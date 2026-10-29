@@ -38,7 +38,7 @@ export function AbaCrn({ crns, decidirCrn }: AbaCrnProps) {
           href={URL_CONSULTA_CFN}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borderdefault px-5 text-sm font-medium hover:border-primary hover:text-primary sm:min-h-10"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borderdefault px-5 text-sm font-medium hover:border-primary hover:text-primary sm:min-h-10 sm:pointer-coarse:min-h-11"
         >
           <ExternalLink className="size-4" aria-hidden="true" />
           Abrir a Consulta Nacional do CFN
