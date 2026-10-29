@@ -33,6 +33,11 @@ test.describe('No tablet de toque (768 px)', () => {
   test('M-018: opções em pílula, seletor segmentado, caixa de texto e o "Fechar" da gaveta têm o tamanho do toque', async ({ page }) => {
     const casoId = await abrirComExemplo(page)
     expect((await caixa(page.getByRole('radio', { name: 'Medida e gramas' }))).altura, 'opção em pílula').toBeGreaterThanOrEqual(44)
+    // A auditoria final achou mais estes, com a densidade de computador só pela largura.
+    expect((await caixa(page.getByRole('tab', { name: /^Principal/ }).first())).altura, 'aba da refeição').toBeGreaterThanOrEqual(44)
+    expect((await caixa(page.getByRole('combobox', { name: /^Medida de / }).first())).altura, 'medida caseira').toBeGreaterThanOrEqual(44)
+    await page.goto('/#/ajuda')
+    expect((await caixa(page.getByRole('button', { name: 'Ir', exact: true }).first())).altura, 'Ir da Ajuda').toBeGreaterThanOrEqual(44)
     await page.goto(`/#/caso/${casoId}/caso`)
     expect(await letra(page.getByLabel('Orientações nutricionais')), 'letra da caixa de texto').toBe(16)
 
