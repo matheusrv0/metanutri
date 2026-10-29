@@ -33,7 +33,14 @@ entrada rápida soma os produtos depois dos outros resultados; o código de barr
 | T9 | Atualização mensal | `.github/workflows/atualizar-catalogo-off.yml` (novo) | D-754 | T2 |
 | T10 | Navegador e validação | `e2e/catalogo-off.spec.ts` (novo), medições, relatório | CA-1755, CA-1756, CA-1764 no navegador | T1 a T9 |
 
-## Validação
+## Validação (29/10/2026)
 
-`npm run check`, `npm run e2e`, `npm run test:csp` e `npm run build:app`; os tamanhos do índice, das fatias e da
-entrada principal, e o tempo de abertura antes e depois.
+- `npm run check`: lint e tipos limpos; 322 arquivos e 6.021 testes passando.
+- `npm run e2e`: 463 passando (o novo `e2e/catalogo-off.spec.ts` inclusive). `npm run test:csp`: 3 passando.
+- `npm run build:app`: a entrada principal passou de 2.288,45 kB (593,57 kB com gzip) para 2.295,28 kB (595,74 kB),
+  +6,8 kB (+2,2 kB com gzip), do domínio do catálogo e da entrada rápida; o precache, de 2.811,7 para 2.818,4 KiB, porque
+  o catálogo fica fora dele.
+- Catálogo publicado: 23.096 produtos; índice de 1,75 MB (515 KB com gzip); 100 fatias de cerca de 47 KB (7,6 KB com
+  gzip); 5,5 MB na pasta. Decodificar o índice leva 78 ms e uma busca, 18 ms (Node, nesta máquina).
+- Abertura: nenhum arquivo do catálogo é pedido ao abrir o app e o plano (e2e CA-1764); o índice só vem na primeira busca
+  com 3 letras, e a entrada principal cresceu 2,2 kB com gzip.

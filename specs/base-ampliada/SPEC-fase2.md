@@ -20,7 +20,7 @@ existe pelo código de barras e com internet.
 | Depois da peneira (D-752) | **23.096** (saem 7.324 sem energia ou acima de 900 kcal, 2.837 com energia incoerente, 2.710 sem um dos macros ou com macro impossível, 1.709 sem nome e 13 sem código) |
 | Índice de nomes | 1,75 MB (515 KB com gzip, como a Cloudflare serve) |
 | Fatias de detalhe | 100 fatias, 3,8 MB no total (605 KB com gzip; cerca de 47 KB, ou 7,6 KB com gzip, cada) |
-| Impacto na abertura do app | nenhum: nada do catálogo é pedido até a primeira busca na entrada rápida |
+| Impacto na abertura do app | nada do catálogo é pedido até a primeira busca com 3 letras; a entrada principal cresce 2,2 kB com gzip (o código da busca e da cópia) |
 
 ## 2. Decisões
 
