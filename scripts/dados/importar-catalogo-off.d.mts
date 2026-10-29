@@ -20,6 +20,7 @@ export interface AlergenicosDoCatalogo {
   readonly contem: readonly string[]
   readonly podeConter: readonly string[]
   readonly semInformacao: boolean
+  readonly semGlutenNoRotulo: boolean
 }
 
 export const ALERGENICOS: readonly string[]

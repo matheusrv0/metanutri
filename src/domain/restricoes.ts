@@ -352,6 +352,12 @@ const casaPeloCampo = (id: IdRestricao, alimento: AlimentoParaRestricao): boolea
  */
 const podeConter = (id: IdRestricao, alimento: AlimentoParaRestricao): boolean => id !== 'lactose' && ligaARestricao(alimento.proprio?.alergenicos?.podeConter, id)
 
+/**
+ * D-778 revista (spec base-ampliada, fase 2): o grão no nome continua acusando, mesmo com o rótulo "sem glúten" (o texto
+ * de ingredientes do OFF às vezes só traz as alegações do rótulo, sem a lista).
+ */
+const GRAO_NO_NOME = /(?<![a-z0-9])(aveia|trigo|cevada|centeio|malte|espelta|semola|semolina|triticale|kamut|farro|bulgur|granola|musli|muesli)(?![a-z0-9])/
+
 export const SEM_INFORMACAO_DE_ALERGENICOS = 'Sem informação de alergênicos: confira a embalagem.'
 
 /** O aviso da restrição que o alimento pega, ou `null`. */
@@ -367,7 +373,11 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
       if (idsDaRestricao(grupo.id).has(alimento.id)) return grupo.aviso
       continue
     }
-    if (casaPeloNome(grupo.id, nome) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
+    // D-778: o rótulo que diz "sem glúten", sem palavra de glúten, desliga só as palavras de prato do nome (massa, pão,
+    // coxinha, shoyu...); o grão (aveia, trigo, cevada...) e a granola no nome continuam acusando.
+    const nomeVale =
+      !(alimento.proprio?.alergenicos?.semGlutenNoRotulo === true && (grupo.id === 'gluten' || grupo.id === 'trigo')) || GRAO_NO_NOME.test(semPontuacao(nome))
+    if ((nomeVale && casaPeloNome(grupo.id, nome)) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
     if (podeConter(grupo.id, alimento)) return `${grupo.aviso} (pode conter)`
     if (casaPeloGrupo(grupo.id, alimento.categoria, nome)) {
       return alimento.categoria === PESCADOS && DIZ_O_GRUPO.has(grupo.id) ? `${grupo.aviso} (grupo ${PESCADOS})` : grupo.aviso

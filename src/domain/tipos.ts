@@ -266,6 +266,8 @@ export interface AlergenicosDoRotulo {
   readonly contem: readonly IdAlergenico[]
   readonly podeConter: readonly IdAlergenico[]
   readonly semInformacao: boolean
+  /** D-778: o rótulo diz "sem glúten" e não tem palavra de glúten: o nome não acusa glúten nem trigo. */
+  readonly semGlutenNoRotulo?: boolean
 }
 
 export interface OrigemBaseAmpliada extends OrigemUsda {

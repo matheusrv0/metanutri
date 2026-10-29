@@ -77,7 +77,7 @@ describe('CA-1750 e CA-1751 (D-752): a peneira', () => {
 
   it('CB-757: o CSV sem uma coluna necessária para dizendo qual', () => {
     expect(colunasQueFaltam(['code', 'product_name'])).toContain('countries_tags')
-    const todas = [...Object.keys(registro({})), 'energy_100g', 'sodium_100g', 'salt_100g', 'product_quantity', 'categories_tags', 'allergens', 'traces_tags', 'ingredients_text', ...tabelaDoOff.map((t) => `${t.off}_100g`)]
+    const todas = [...Object.keys(registro({})), 'energy_100g', 'sodium_100g', 'salt_100g', 'product_quantity', 'categories_tags', 'allergens', 'labels_tags', 'traces_tags', 'ingredients_text', ...tabelaDoOff.map((t) => `${t.off}_100g`)]
     expect(colunasQueFaltam(todas)).toEqual([])
   })
 })
@@ -114,8 +114,8 @@ describe('CA-1753 (D-753): os arquivos publicados', () => {
     for (const [codigo] of indice.produtos as readonly (readonly [string])[]) {
       const fatia = porFatia.get(codigo.slice(-2))
       expect(fatia?.chaves).toEqual(CHAVES_DO_CATALOGO)
-      // D-761: depois dos valores, "contém", "pode conter" e "sem informação".
-      expect(fatia?.produtos[codigo], codigo).toHaveLength(CHAVES_DO_CATALOGO.length + 3)
+      // D-761 e D-778: depois dos valores, "contém", "pode conter", "sem informação" e "sem glúten no rótulo".
+      expect(fatia?.produtos[codigo], codigo).toHaveLength(CHAVES_DO_CATALOGO.length + 4)
     }
   })
 
@@ -144,12 +144,12 @@ describe('D-754: a atualização mensal abre um pull request', () => {
 
 describe('D-761: os alergênicos de cada produto (revisão da fase 2, achado 1)', () => {
   it('"contém" das tags do OFF e dos ingredientes; "pode conter" das traces e do trecho "pode conter"', () => {
-    expect(alergenicosDoRegistro(registro({ allergens: 'en:gluten,en:milk,en:soybeans', traces_tags: 'en:eggs', ingredients_text: '' }))).toEqual({
+    expect(alergenicosDoRegistro(registro({ allergens: 'en:gluten,en:milk,en:soybeans', traces_tags: 'en:eggs', ingredients_text: '' }))).toMatchObject({
       contem: ['trigo', 'gluten', 'leite', 'lactose', 'soja'],
       podeConter: ['ovo'],
       semInformacao: false,
     })
-    expect(alergenicosDoRegistro(registro({ ingredients_text: 'Farinha de trigo enriquecida, açúcar, gordura vegetal, soro de leite em pó. PODE CONTER AMENDOIM E CASTANHAS.' }))).toEqual({
+    expect(alergenicosDoRegistro(registro({ ingredients_text: 'Farinha de trigo enriquecida, açúcar, gordura vegetal, soro de leite em pó. PODE CONTER AMENDOIM E CASTANHAS.' }))).toMatchObject({
       contem: ['trigo', 'gluten', 'leite', 'lactose'],
       podeConter: ['amendoim', 'castanhas'],
       semInformacao: false,
@@ -166,7 +166,7 @@ describe('D-761: os alergênicos de cada produto (revisão da fase 2, achado 1)'
   })
 
   it('sem tags, sem traces e sem ingredientes: sem informação', () => {
-    expect(alergenicosDoRegistro(registro({ allergens: '', traces_tags: '', ingredients_text: '' }))).toEqual({ contem: [], podeConter: [], semInformacao: true })
+    expect(alergenicosDoRegistro(registro({ allergens: '', traces_tags: '', ingredients_text: '' }))).toMatchObject({ contem: [], podeConter: [], semInformacao: true })
   })
 })
 
@@ -350,3 +350,95 @@ describe('D-774: sem o peso da embalagem, teto menor para pó e para pão e bisc
     expect(porcao({ product_name: 'Suco de uva', serving_quantity: '200', quantity: '1 L' })).toBe(200)
   })
 })
+
+describe('D-775: mais formas da negação (rodada 3 da revisão da fase 2, ajuste 1)', () => {
+  const ler = (t: string) => alergenicosDoRegistro(registro({ ingredients_text: t })).contem
+  it.each(['Chá preto. NÃO CONTÊM GLÚTEN.', 'Snack de arroz. Glúten-free.', 'Bebida de cacau. 0% lactose.'])('"%s" não acusa', (t) => {
+    expect(ler(t)).toEqual([])
+  })
+})
+
+describe('D-776: uma negação para duas palavras (rodada 3, ajuste 2)', () => {
+  const ler = (t: string) => alergenicosDoRegistro(registro({ ingredients_text: t })).contem
+  it.each(['Chá. Não contém glúten e lactose.', 'Chá. Não contém glúten nem lactose.', 'Chá. Sem glúten, lactose.', 'Chá. NÃO CONTÉM LACTOSE E GLÚTEN.'])('"%s" não acusa nenhum dos dois', (t) => {
+    expect(ler(t)).toEqual([])
+  })
+
+  it('a segunda palavra que não é glúten nem lactose não é negada: "sem glúten e leite" ainda acusa o leite', () => {
+    expect(ler('Biscoito de arroz. Sem glúten e leite integral.')).toEqual(['leite', 'lactose'])
+  })
+})
+
+describe('D-777: "sin lactosa" e "deslactosado" no nome (rodada 3, ajuste 3)', () => {
+  it.each(['Leche Descremada Deslactosada (Colun)', 'Lonco Leche Sin Lactosa', 'Yogur deslactosado'])('"%s" com leite pega leite, não lactose', (nome) => {
+    expect(alergenicosDoRegistro(registro({ product_name: nome, allergens: 'en:milk' })).contem).toEqual(['leite'])
+  })
+
+  it('a restrição pelo nome também: sem lactose para a intolerância, leite para a alergia', () => {
+    const marcadas = (...ids: string[]) => montarRestricoes({ marcadas: ids, texto: '', doencas: [], naoGosta: '' })
+    for (const descricao of ['Leite UHT Sin lactosa', 'Leite deslactosado', 'Iogurte natural deslactosada']) {
+      expect(restricaoDoAlimento({ id: 900_700, descricao }, marcadas('lactose')), descricao).toBeNull()
+      expect(restricaoDoAlimento({ id: 900_700, descricao }, marcadas('leite')), descricao).toBe('Alergia: leite e derivados')
+    }
+  })
+})
+
+describe('D-778: o rótulo que diz "sem glúten", sem palavra de glúten, não acusa glúten pelo nome (rodada 3, ajuste 4)', () => {
+  const ler = (r: Partial<Record<string, string>>) => alergenicosDoRegistro(registro({ product_name: 'Coxinha da Asa', ...r }))
+  it('pela negação nos ingredientes ou pela etiqueta do OFF', () => {
+    expect(ler({ ingredients_text: 'ASAS de Frango. NÃO CONTÉM GLÚTEN.' }).semGlutenNoRotulo).toBe(true)
+    expect(ler({ ingredients_text: '', labels_tags: 'en:no-gluten' }).semGlutenNoRotulo).toBe(true)
+    expect(ler({ ingredients_text: 'Fécula de mandioca.', labels_tags: 'en:gluten-free' }).semGlutenNoRotulo).toBe(true)
+  })
+  it('com trigo ou aveia nos ingredientes, ou sem dizer, não vale', () => {
+    expect(ler({ ingredients_text: 'Farinha de trigo. Sem glúten.' }).semGlutenNoRotulo).toBe(false)
+    expect(ler({ ingredients_text: 'Flocos de aveia. Não contém glúten.' }).semGlutenNoRotulo).toBe(false)
+    expect(ler({ ingredients_text: 'Asas de frango.' }).semGlutenNoRotulo).toBe(false)
+  })
+  it('na restrição: a cópia com o rótulo "sem glúten" não acusa glúten, trigo nem celíaca pelo nome; sem o rótulo, acusa', () => {
+    const marcadas = (...ids: string[]) => montarRestricoes({ marcadas: ids, texto: '', doencas: [], naoGosta: '' })
+    const celiaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+    const com = { id: 900_800, descricao: 'Massa para Tapioca (AMAFIL)', proprio: { alergenicos: { contem: [], podeConter: [], semInformacao: false, semGlutenNoRotulo: true } } }
+    for (const r of [marcadas('gluten'), marcadas('trigo'), celiaca]) expect(restricaoDoAlimento(com, r)).toBeNull()
+    const sem = { ...com, proprio: { alergenicos: { contem: [], podeConter: [], semInformacao: false } } }
+    expect(restricaoDoAlimento(sem, marcadas('gluten'))).not.toBeNull()
+  })
+})
+
+describe('D-778: os casos da revisão com "sem glúten" no rótulo não acusam glúten pelo nome', () => {
+  const pasta = join(process.cwd(), 'public', fonte.caminho)
+  const indice = decodificarIndice(JSON.parse(readFileSync(join(pasta, 'indice.json'), 'utf8')) as ArquivoIndice)
+  const celiaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+  it.each([
+    ['7894904197743', 'Coxinha da Asa (Seara)'],
+    ['7896035990088', 'Massa para Tapioca (AMAFIL)'],
+    ['7897180010126', 'DAIMARU Molho Shoyu Especial'],
+    ['7898186561032', 'ECOBIO Fermento para Bolos'],
+  ])('%s (%s)', (codigo) => {
+    const p = indice.produtos.find((x) => x.produto.codigo === codigo)?.produto
+    if (!p) throw new Error(`${codigo} fora do catálogo`)
+    const detalhe = decodificarFatia(JSON.parse(readFileSync(join(pasta, 'fatias', `${fatiaDoCodigo(codigo)}.json`), 'utf8')) as ArquivoFatia).get(codigo)
+    if (!detalhe) throw new Error(`${codigo} fora da fatia`)
+    const alimento = produtoComoAlimento({ ...produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, fonte.versao))), id: 900_901, criadoEm: '2026-10-29' } as Produto)
+    expect(restricaoDoAlimento(alimento, celiaca)).toBeNull()
+  })
+})
+
+describe('D-778 revista: o grão no nome continua acusando, mesmo com o rótulo "sem glúten"', () => {
+  const pasta = join(process.cwd(), 'public', fonte.caminho)
+  const indice = decodificarIndice(JSON.parse(readFileSync(join(pasta, 'indice.json'), 'utf8')) as ArquivoIndice)
+  const comCeliaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+  it.each([
+    ['7893500066545', 'MEU BIJU Arroz 8 Grãos Integrais com Aveia'],
+    ['7896004001036', 'Granola Tradicional Kellogg Kellness Müslix'],
+  ])('%s (%s) acusa a doença celíaca pelo nome', (codigo) => {
+    const p = indice.produtos.find((x) => x.produto.codigo === codigo)?.produto
+    if (!p) throw new Error(`${codigo} fora do catálogo`)
+    const detalhe = decodificarFatia(JSON.parse(readFileSync(join(pasta, 'fatias', `${fatiaDoCodigo(codigo)}.json`), 'utf8')) as ArquivoFatia).get(codigo)
+    if (!detalhe) throw new Error(`${codigo} fora da fatia`)
+    expect(detalhe.alergenicos.semGlutenNoRotulo, 'o rótulo diz "sem glúten"').toBe(true)
+    const alimento = produtoComoAlimento({ ...produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, fonte.versao))), id: 900_902, criadoEm: '2026-10-29' } as Produto)
+    expect(restricaoDoAlimento(alimento, comCeliaca)).not.toBeNull()
+  })
+})
+
