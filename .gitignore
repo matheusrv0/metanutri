@@ -45,3 +45,6 @@ supabase/.temp/
 
 # cópias de trabalho dos agentes (git worktree)
 .claude/worktrees/
+
+# Arquivos oficiais grandes baixados por script (spec base-ampliada): ficam só no aparelho
+dados-brutos/cache/
