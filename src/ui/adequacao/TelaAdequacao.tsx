@@ -5,7 +5,7 @@ import { adicionarItem, type GerarId } from '@/domain/plano.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 // Spec textos-e-promessas, D-410: a mesma descrição do estágio que o memorial usa.
 import { descreverEstagio } from '@/domain/descreverEstagio.ts'
-import { ALIMENTOS, buscarAlimento } from '@/domain/tabelas.ts'
+import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, ChaveNutrienteAlimento, Plano, PresetAdequacao } from '@/domain/tipos.ts'
 import { quantidadeNoPlano, valorDeReferencia } from '@/domain/formatarQuantidade.ts'
@@ -152,7 +152,8 @@ export function TelaAdequacao({
       {rotuloNaMeta}
     </Button>
   )
-  const nomeAlimento = (id: number) => ALIMENTOS.find((a) => a.id === id)?.descricao ?? ''
+  // O oculto pode ser da base ampliada ou um alimento próprio (spec base-ampliada).
+  const nomeAlimento = (id: number) => buscarAlimento(id)?.descricao ?? ''
 
   const metaPct = resultado.linhas[0]?.metaPct ?? null
   const subtitulo = [resultado.estagio ? descreverEstagio(resultado.estagio) : null, metaPct === null ? null : `meta de ${formatarNumero(metaPct, 0)}% da referência`]

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
+import { planoUsaBaseAmpliada } from '@/domain/baseAmpliada.ts'
 import { lembreteDaHidratacao, nivelSugerido } from '@/domain/anamneseNoPlano.ts'
 import { modoDeQuantidade } from '@/domain/caso.ts'
 import { calcularEnergia } from '@/domain/energia.ts'
@@ -33,6 +34,7 @@ import { TelaConfiguracoes } from './config/TelaConfiguracoes.tsx'
 import { TelaConta } from './conta/TelaConta.tsx'
 import { useAcompanhamentos } from './estado/contextoAcompanhamentos.ts'
 import { useArmazenamento } from './estado/contextoArmazenamento.ts'
+import { useBaseAmpliada } from './estado/usarBaseAmpliada.ts'
 import { useCasos } from './estado/contextoCasos.ts'
 import { ContextoRestricoes } from './estado/contextoRestricoes.ts'
 import { usePacientes } from './estado/contextoPacientes.ts'
@@ -61,6 +63,7 @@ import { processadorDoSite } from './pagamento/processadorMercadoPago.ts'
 import { AvisoCrn } from './painel/AvisoCrn.tsx'
 import { AvisoDoEstudante } from './painel/AvisoEstudante.tsx'
 import { TelaPainel } from './painel/TelaPainel.tsx'
+import { EsperaDaBase } from './plano/EsperaDaBase.tsx'
 import { TelaPlano } from './plano/TelaPlano.tsx'
 import { TelaProdutos } from './produtos/TelaProdutos.tsx'
 import { TelaReceitas } from './receitas/TelaReceitas.tsx'
@@ -92,6 +95,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   const { pacientes, repositorio: repoPacientes, atualizar: atualizarPacientes } = usePacientes()
   const { registro, alterarCaso, alterarPlano } = useCasoAberto(rota.tela === 'planejador' ? rota.casoId : '')
   const { fonte } = useAcompanhamentos()
+  // Spec base-ampliada, D-710: a base ampliada é pedida depois da primeira tela; quando chega, a área se redesenha.
+  const baseAmpliada = useBaseAmpliada()
   // "Ver todos" do cartão da etapa 2 leva ao título da etapa 3 (spec painel-lateral-enxuto, CA-701).
   const [focarAdequacao, setFocarAdequacao] = useState(false)
   // O perfil de Configurações é da conta que entrou (D-120).
@@ -363,6 +368,15 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
               Voltar para Planos
             </Button>
           </Card>
+        </Estrutura>
+      )
+    }
+
+    // D-711 (spec base-ampliada): o plano com alimento da base ampliada abre quando ela chega.
+    if (baseAmpliada.estado !== 'pronta' && planoUsaBaseAmpliada(registro.plano)) {
+      return (
+        <Estrutura {...base} titulo={registro.caso.nome || 'Plano sem nome'} trilha={[irParaCasos]}>
+          <EsperaDaBase estado={baseAmpliada.estado === 'erro' ? 'erro' : 'carregando'} aoTentarDeNovo={baseAmpliada.tentarDeNovo} />
         </Estrutura>
       )
     }

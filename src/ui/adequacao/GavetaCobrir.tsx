@@ -11,6 +11,7 @@ import { chaveDasRestricoes, comoRestricoes, SEM_RESTRICOES, type RestricoesDoPa
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { CampoPorcaoMaxima } from './CampoPorcaoMaxima.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
 import { lerOcultosGlobais, ocultarGlobalmente } from '../estado/ocultosGlobais.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -80,6 +81,8 @@ export function GavetaCobrir({
   // As restrições chegam num objeto novo a cada renderização; a chave delas é a dependência estável (revisão N7).
   const doPaciente = comoRestricoes(restricoes)
   const chaveRestricoes = chaveDasRestricoes(doPaciente)
+  // CB-709 (spec base-ampliada): a gaveta aberta se refaz quando a base ampliada chega.
+  const { versao: versaoDaBase } = useBaseAmpliada()
 
   const resultado = useMemo(
     () =>
@@ -100,7 +103,7 @@ export function GavetaCobrir({
           }),
     // versaoOcultos força recalcular quando a pessoa esconde uma sugestão
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chave, totais, adequacao, gastoEnergetico, prefs, caso.idadeAnos, versaoOcultos, armazenamento, chaveRestricoes],
+    [chave, totais, adequacao, gastoEnergetico, prefs, caso.idadeAnos, versaoOcultos, armazenamento, chaveRestricoes, versaoDaBase],
   )
 
   const ocultar = (alimentoId: number) => {

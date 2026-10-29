@@ -11,6 +11,7 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
+import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
 import { useReceitas } from '../estado/usarReceitas.ts'
 import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
@@ -89,7 +90,12 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
 
   // D-370 (spec alimentos-e-gramaturas): o que a conta mais usa vem primeiro; os planos só são lidos quando há texto.
   const uso = useUsoDaConta(texto.trim() !== '')
-  const { resultados, aviso } = useMemo(() => buscarAlimentos(texto, alimentosComProdutos(), { uso }), [texto, uso])
+  // Spec base-ampliada, CA-1716: quando a base ampliada chega, a lista se refaz.
+  const { versao: versaoDaBase } = useBaseAmpliada()
+  const { resultados, aviso } = useMemo(() => {
+    void versaoDaBase
+    return buscarAlimentos(texto, alimentosComProdutos(), { uso })
+  }, [texto, uso, versaoDaBase])
   // D-274: só onde a receita pode entrar (a refeição); a que começa pelo termo vem antes dos alimentos.
   const daReceita = useMemo(
     () => (aoAdicionarReceita ? buscarReceitas(texto, receitas, resultados.map((r) => r.alimento)) : []),
