@@ -1,4 +1,4 @@
-import { EyeOff, Info, TriangleAlert } from 'lucide-react'
+import { ChevronDown, EyeOff, Info, TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ResultadoAdequacao } from '@/domain/adequacao.ts'
 import { refeicaoIndicada, sugerirParaCobrir } from '@/domain/cobrir.ts'
@@ -129,7 +129,8 @@ export function GavetaCobrir({
             : ''}
         </SheetDescription>
 
-        <div className="flex flex-col gap-3 border border-border bg-muted p-4">
+        {/* M-025 (spec ajustes-mobile): o raio do sistema, não o canto reto da direção antiga. */}
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4">
           <CampoPorcaoMaxima valor={prefs.porcaoMaximaG} aoMudar={(porcaoMaximaG) => aoAlterarCaso({ adequacao: { ...prefs, porcaoMaximaG } })} />
           <label className="flex items-center justify-between gap-3 text-sm max-sm:min-h-11">
             <span>Incluir ingredientes e alimentos crus</span>
@@ -145,19 +146,28 @@ export function GavetaCobrir({
           <label className="text-sm font-medium" htmlFor="refeicao-destino">
             Adicionar em
           </label>
-          <select
-            id="refeicao-destino"
-            value={refeicaoId}
-            onChange={(e) => setRefeicaoId(e.target.value)}
-            className="h-11 rounded-md border border-input bg-card px-3 text-base sm:h-10 sm:text-sm"
-          >
-            <option value="">Refeição de cada alimento</option>
-            {plano.refeicoes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {`${r.horario} ${r.nome}`}
-              </option>
-            ))}
-          </select>
+          {/* A lista nativa corta o nome longo da refeição ("Almoço de domingo na casa da sogra…") e não quebra a linha.
+              O nome escolhido fica num texto que quebra, e a lista nativa, transparente, cobre a caixa inteira: o toque
+              e o teclado continuam nela, e no celular a lista abre do jeito do aparelho. */}
+          <div className="relative flex min-h-11 items-center rounded-md border border-input bg-card py-2 pl-3 pr-9 text-base has-[:focus-visible]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:min-h-10 sm:text-sm sm:pointer-coarse:min-h-11 sm:pointer-coarse:text-base">
+            <span aria-hidden="true" className="min-w-0 break-words">
+              {escolhida ? `${escolhida.horario} ${escolhida.nome}` : 'Refeição de cada alimento'}
+            </span>
+            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <select
+              id="refeicao-destino"
+              value={refeicaoId}
+              onChange={(e) => setRefeicaoId(e.target.value)}
+              className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+            >
+              <option value="">Refeição de cada alimento</option>
+              {plano.refeicoes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {`${r.horario} ${r.nome}`}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {chave !== null && caso.condicao.tipo === 'gestante' && DO_SUPLEMENTO_NA_GESTACAO.has(chave) ? (
