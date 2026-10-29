@@ -28,7 +28,7 @@
 "7622210641151":[425.531914893617,63.83,8.085,8.511,14.894,3.404,null,2.553,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,706.383,47,0,0],
 "7622300830151":[453.333333333333,66.667,36.667,5,19,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,35,0,0],
 "7730963887051":[428,68,null,4.8,15.2,7.2,0,1.2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,168,0,0,1],
-"7750489280051":[410,69,9,16,8,1,0,null,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,139.192,64,0,0],
+"7750489280051":[410,69,9,16,8,1,0,null,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,139.192,66,0,0],
 "7802000018251":[479,73,38,3.9,19,4.9,0.1,null,0.01,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,37,111,0,0],
 "7802000021251":[519,57,3.86,7.51,29,3.51,0.17,null,1.36,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,506,47,0,0],
 "7802200140851":[423,77,71,1,11,9.2,0.1,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,100,0,0,1],
@@ -219,7 +219,7 @@
 "7908073103051":[317,51,7.3,7.9,8,1.4,null,3.3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,485,0,0,1],
 "7908154115751":[373.33333333333337,52,null,17,8.333,1.667,null,11,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,0,1],
 "7908793300051":[363.38797814207646,12.022,0,60.109,8.197,4.098,null,10.383,null,null,null,null,null,null,null,null,null,68.306,null,null,null,null,null,null,null,null,null,null,546.448,0,0,1],
-"8445291790551":[362,57.8,41.7,28,2.1,null,null,null,null,800,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,185.928,44,0,0],
+"8445291790551":[362,57.8,41.7,28,2.1,null,null,null,null,800,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,185.928,46,0,0],
 "8445291886551":[402,66.6,62.6,7.8,11.2,6.7,null,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,84,44,0,0],
 "8802233195551":[567,56,54,4.2,35,19,0.5,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,180,110,129,0],
 "8935330207251":[48.5,5.15,2.42,5.15,1.5,0,null,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,30,44,0,0]

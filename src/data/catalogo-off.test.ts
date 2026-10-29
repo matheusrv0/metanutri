@@ -294,3 +294,23 @@ describe('D-770: a negação não é alergênico (re-revisão da fase 2, achado 
   })
 })
 
+
+describe('D-771: palavras que faltavam ou sobravam (re-revisão da fase 2, achado 2)', () => {
+  const ler = (t: string) => alergenicosDoRegistro(registro({ ingredients_text: t })).contem
+  it('lácteo e láctea são leite; avena, cebada e centeno são glúten', () => {
+    expect(ler('proteína láctea, gordura láctea')).toEqual(['leite', 'lactose'])
+    expect(ler('composto lácteo')).toEqual(['leite', 'lactose'])
+    expect(ler('avena, cebada, centeno')).toEqual(['gluten'])
+  })
+
+  it('"leite de soja", "leite de amêndoas" e "leite de aveia" não são leite, mas a soja, a castanha e a aveia continuam', () => {
+    expect(ler('leite de soja')).toEqual(['soja'])
+    expect(ler('leite de amêndoas')).toEqual(['castanhas'])
+    expect(ler('leite de aveia')).toEqual(['gluten'])
+  })
+
+  it('"polvo para hornear" é fermento; "manteiga de amendoim" é amendoim, não leite', () => {
+    expect(ler('harina, polvo para hornear')).toEqual([])
+    expect(ler('manteiga de amendoim')).toEqual(['amendoim'])
+  })
+})

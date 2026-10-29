@@ -70,8 +70,8 @@ const DAS_TAGS = {
 /** Nos ingredientes, em português e em inglês (a lista do OFF vem nas duas línguas). */
 const DOS_INGREDIENTES = [
   [/(?<![\p{L}\p{N}])(trigo|wheat|s[eê]mola|semolina|triticale|espelta|spelt)(?![\p{L}\p{N}])/u, ['trigo', 'gluten']],
-  [/(?<![\p{L}\p{N}])(cevada|barley|centeio|rye|aveia|oats?|oatmeal|malte|malt|gl[uú]ten)(?![\p{L}\p{N}])/u, ['gluten']],
-  [/(?<![\p{L}\p{N}])(leite|leche|milk|soro|suero|whey|case[ií]na|caseinato|casein|lactose|creme de leite|cream|manteiga|butter|queijo|cheese|iogurte|yogurt|nata|requeij[aã]o)(?![\p{L}\p{N}])/u, ['leite', 'lactose']],
+  [/(?<![\p{L}\p{N}])(cevada|cebada|barley|centeio|centeno|rye|aveia|avena|oats?|oatmeal|malte|malt|gl[uú]ten)(?![\p{L}\p{N}])/u, ['gluten']],
+  [/(?<![\p{L}\p{N}])(leite|leche|milk|l[aá]cteos?|l[aá]cteas?|soro|suero|whey|case[ií]na|caseinato|casein|lactose|creme de leite|cream|manteiga|butter|queijo|cheese|iogurte|yogurt|nata|requeij[aã]o)(?![\p{L}\p{N}])/u, ['leite', 'lactose']],
   [/(?<![\p{L}\p{N}])(ovos?|huevos?|eggs?|clara|gema|albumina|albumin)(?![\p{L}\p{N}])/u, ['ovo']],
   [/(?<![\p{L}\p{N}])(soja|soy|soya|soybeans?)(?![\p{L}\p{N}])/u, ['soja']],
   [/(?<![\p{L}\p{N}])(amendoim|amendoins|man[ií]|cacahuetes?|peanuts?|pa[cç]oca)(?![\p{L}\p{N}])/u, ['amendoim']],
@@ -81,7 +81,7 @@ const DOS_INGREDIENTES = [
 ]
 
 /** O que lembra o alergênico e não é: sai do texto antes de procurar (o mesmo cuidado da D-716n). */
-const NAO_E = /(?<![\p{L}\p{N}])((en|em) polvo|leite de (coco|soja|am[eê]ndoas?|aveia|arroz|castanhas?)|coconut milk|manteiga de (cacau|karit[eé])|cocoa butter|[oó]leo de soja|soybean oil|noz[ -]moscada|nutmeg|creme de (cebola|milho))(?![\p{L}\p{N}])/gu
+const NAO_E = /(?<![\p{L}\p{N}])((en|em) polvo|polvo para hornear|coconut milk|manteiga de (cacau|karit[eé])|cocoa butter|[oó]leo de soja|soybean oil|noz[ -]moscada|nutmeg|creme de (cebola|milho))(?![\p{L}\p{N}])/gu
 
 /** "Pode conter ..." e "may contain ...": o resto do texto depois disso é "pode conter". */
 const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os de)/
@@ -96,8 +96,17 @@ const NEGACAO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eé]m|zero|isento de|isenta
 const semAcentoMinusculo = (t) => t.toLowerCase()
 const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))
 
+/**
+ * D-771: "leite de soja" (ou de amêndoas, castanha, aveia, arroz, coco) não é leite, mas a soja, a castanha e a aveia
+ * continuam; "manteiga de amendoim" é amendoim, não leite. Fica só a palavra da planta.
+ */
+const SO_A_PLANTA = [
+  [/(?<![\p{L}\p{N}])(leite|leche|bebida) de (soja|am[eê]ndoas?|aveia|arroz|castanhas?|coco)(?![\p{L}\p{N}])/gu, '$2'],
+  [/(?<![\p{L}\p{N}])(manteiga|pasta) de amendoim(?![\p{L}\p{N}])/gu, 'amendoim'],
+]
+
 function doTexto(texto, destino) {
-  const limpo = semAcentoMinusculo(texto).replace(NEGACAO, ' ').replace(NAO_E, ' ')
+  const limpo = SO_A_PLANTA.reduce((t, [re, por]) => t.replace(re, por), semAcentoMinusculo(texto).replace(NEGACAO, ' ')).replace(NAO_E, ' ')
   for (const [re, alergenicos] of DOS_INGREDIENTES) if (re.test(limpo)) for (const a of alergenicos) destino.add(a)
 }
 
