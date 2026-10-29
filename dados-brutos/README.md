@@ -14,3 +14,10 @@ Codificação especial da TACO: `1e-05` = traço (`Tr`); célula vazia = não an
 | `antropometria/` | Texto extraído (pdftotext, convertido para UTF-8) da norma técnica do SISVAN e do material com as curvas brasileiras de ganho de peso gestacional | Ministério da Saúde, *Orientações para a coleta e análise de dados antropométricos em serviços de saúde: norma técnica do SISVAN* (2011), [PDF](https://portal-antigo.saude.mg.gov.br/images/1_noticias/07_2022/aps/vigilancia-alimentar/orientacoes_coleta_analise_dados_antropometricos.pdf); Kac G, Carrilho TRB et al., Am J Clin Nutr 2021;113:1351-1360, reproduzido em [material Nestlé](https://www.nestleparaespecialistas.com.br/sites/default/files/2023-11/Materna-Bloco-Curvas.pdf), baixados em 15/09/2026 | Documentos públicos, uso com citação |
 | `usda/` | `regras-da-curadoria.md` (glossário e critérios) e `curadoria-base-ampliada.json` (uma linha por candidato: nome original, fdcId, decisão, motivo; e, nos que entram, id, nome, grupo, preparo, nome para o paciente e `sugerivel`). Nenhum número nutricional: eles saem dos arquivos do USDA pelo script | Curadoria da spec `base-ampliada` (29/10/2026), sobre o USDA FoodData Central | A curadoria é do MetaNutri; os dados do USDA são CC0 |
 | `cache/` (fora do git) | Os zips oficiais do USDA FoodData Central: SR Legacy (CSV, abril de 2018) e Foundation Foods (JSON, outubro de 2026). `scripts/dados/importar-base-ampliada.mjs` confere o SHA-256 de cada um; sem eles, diz de onde baixar | https://fdc.nal.usda.gov/download-datasets/, baixados em 29/10/2026 | CC0 1.0 Universal (domínio público) |
+
+## Catálogo de rótulos do Open Food Facts (spec base-ampliada, fase 2)
+
+`node scripts/dados/importar-catalogo-off.mjs --baixar` baixa a exportação oficial em CSV (1,5 GB) para
+`dados-brutos/cache/off/` (fora do git) e grava `public/catalogo-off/<versão>/` (índice, 100 fatias e o aviso da
+ODbL) e `src/data/catalogo-off-fonte.json`. Sem `--baixar`, usa o arquivo do cache; `--versao=AAAA-MM-DD` fixa a
+versão (a data da exportação). Mensalmente, o workflow `atualizar-catalogo-off.yml` faz o mesmo e abre um pull request.
