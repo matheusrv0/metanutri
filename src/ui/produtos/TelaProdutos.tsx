@@ -148,15 +148,28 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
                   {/* M-001: no cartão estreito (celular e tablet), uma linha por dado; a porção com a medida caseira, em meia
                       coluna, virava uma palavra por linha. */}
                   <dl className="numeros grid grid-cols-1 gap-x-4 gap-y-1 border-t border-border pt-3 text-sm lg:grid-cols-2">
-                    <div className="flex justify-between gap-3">
-                      <dt className="shrink-0 text-muted-foreground">{porCemNaBase ? 'Valores' : 'Porção'}</dt>
-                      <dd className="min-w-0 text-right [overflow-wrap:anywhere]">{porCemNaBase ? `por 100 ${unidade}` : `${formatarNumero(p.porcaoG, 0)} ${unidade}${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
-                    </div>
+                    {/* D-769 (spec base-ampliada, fase 2): por 100 g, a linha da energia já diz; a do "Valores" repetia. */}
+                    {porCemNaBase ? null : (
+                      <div className="flex justify-between gap-3">
+                        <dt className="shrink-0 text-muted-foreground">Porção</dt>
+                        <dd className="min-w-0 text-right [overflow-wrap:anywhere]">{`${formatarNumero(p.porcaoG, 0)} ${unidade}${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
+                      </div>
+                    )}
                     <div className="flex justify-between gap-3">
                       <dt className="shrink-0 text-muted-foreground">{`Por 100 ${unidade}`}</dt>
                       <dd>{kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}</dd>
                     </div>
                   </dl>
+                  {/* D-769 e D-755: a cópia do catálogo de rótulos diz a fonte, com o link, como a ficha. */}
+                  {p.fonte?.tipo === 'open-food-facts' && p.fonte.codigo !== '' ? (
+                    <p className="text-xs text-muted-foreground">
+                      Rótulo: Open Food Facts (
+                      <a className="underline underline-offset-2" href={`https://world.openfoodfacts.org/product/${p.fonte.codigo}`} target="_blank" rel="noreferrer">
+                        {`produto nº ${p.fonte.codigo}`}
+                      </a>
+                      {`), versão ${p.fonte.data}, ODbL.`}
+                    </p>
+                  ) : null}
                 </Card>
               </li>
             )

@@ -1,0 +1,66 @@
+# Atualiza o catálogo de rótulos do Open Food Facts (spec base-ampliada, fase 2, D-754): todo dia 1º do mês, ou quando
+# você manda rodar (Actions > Atualizar o catálogo de rótulos > Run workflow), baixa a exportação oficial do OFF (1,5 GB),
+# gera os arquivos com o script e abre um pull request. Nada é publicado daqui: você revisa o PR (quantos produtos, o
+# tamanho) e faz o merge; a Cloudflare publica o app a partir da main, como sempre.
+# Antes da primeira vez, em Settings > Actions > General, ligue "Allow GitHub Actions to create and approve pull requests".
+# Cada ação vai fixada pelo commit, com a versão no comentário, como no publicar.yml.
+name: Atualizar o catálogo de rótulos
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: catalogo-off
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # D-773: a credencial não fica no repositório baixado; só o passo do PR usa o token.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      # D-773: sem os scripts de instalação dos pacotes (só o fsevents, do macOS, tem um).
+      - run: npm ci --ignore-scripts
+      - name: Baixar a exportação e gerar o catálogo
+        run: node scripts/dados/importar-catalogo-off.mjs --baixar --versao="$(date -u +%F)"
+      # D-766: antes de abrir o PR, os testes do catálogo passam e a pasta cabe (R-751); se não, o PR não abre.
+      - name: Conferir o catálogo
+        run: |
+          npx vitest run src/data/catalogo-off.test.ts
+          tamanho=$(du -sm public/catalogo-off | cut -f1)
+          echo "Catálogo com ${tamanho} MB."
+          if [ "$tamanho" -gt 30 ]; then
+            echo "O catálogo passou de 30 MB: reveja as fatias antes de publicar (R-751)."
+            exit 1
+          fi
+      - name: Abrir o pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- public/catalogo-off src/data/catalogo-off-fonte.json && [ -z "$(git ls-files --others --exclude-standard public/catalogo-off)" ]; then
+            echo "O catálogo não mudou."
+            exit 0
+          fi
+          # Data e hora no nome: rodar duas vezes no mesmo dia não colide com o ramo de antes (D-766).
+          ramo="catalogo-off-$(date -u +%Y-%m-%d-%H%M)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$ramo"
+          git add -A public/catalogo-off src/data/catalogo-off-fonte.json
+          git commit -m "chore(dados): catálogo de rótulos do Open Food Facts de $(date -u +%F)"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$ramo"
+          gh pr create --base main --head "$ramo" \
+            --title "Catálogo de rótulos do Open Food Facts de $(date -u +%F)" \
+            --body "Gerado por scripts/dados/importar-catalogo-off.mjs (spec base-ampliada, fase 2, D-754). Confira em src/data/catalogo-off-fonte.json quantos produtos entraram e quantos saíram, e o tamanho da pasta public/catalogo-off. O merge publica com o app."

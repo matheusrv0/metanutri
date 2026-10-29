@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react'
+import fonteDoCatalogo from '@/data/catalogo-off-fonte.json'
+import { ENDERECO_DO_APP } from '../enderecos.ts'
 import { TelaFontes } from './TelaFontes.tsx'
 
 describe('Fontes da base (CA-322)', () => {
@@ -16,12 +18,12 @@ describe('Fontes da base (CA-322)', () => {
     // CA-1184 (spec textos-e-promessas): a base não é a única fonte; o resto, a nutricionista cadastra.
     expect(screen.getByText(/Outros alimentos você cadastra em Meus alimentos\./)).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/Meus produtos|organiza e confere/)
-    for (const assunto of ['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Alimentos que a TACO não tem', 'Medidas caseiras', 'Produtos de rótulo']) {
+    for (const assunto of ['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Alimentos que a TACO não tem', 'Medidas caseiras', 'Produtos de marca']) {
       expect(screen.getByRole('heading', { name: assunto })).toBeInTheDocument()
     }
     expect(screen.getByText(/Tabela Brasileira de Composição de Alimentos \(TACO\), 4ª edição revisada e ampliada/)).toBeInTheDocument()
     const links = screen.getAllByRole('link')
-    expect(links).toHaveLength(5)
+    expect(links).toHaveLength(6)
     for (const link of screen.getAllByRole('link', { name: 'Abrir o FoodData Central' })) expect(link).toHaveAttribute('href', 'https://fdc.nal.usda.gov/')
     expect(screen.getAllByText(/CC0 1\.0 Universal/)).toHaveLength(2)
     expect(screen.getByText(/Foundation Foods \(versão de outubro de 2026\), baixados em 29\/10\/2026/)).toBeInTheDocument()
@@ -32,6 +34,16 @@ describe('Fontes da base (CA-322)', () => {
     render(<TelaFontes />)
     const secao = screen.getByRole('heading', { level: 2, name: 'Referências dos cálculos' }).nextElementSibling
     for (const trecho of ['NASEM', '2019', '2023', 'OMS', '2006 e 2007', 'SISVAN', '2011', 'Kac', '2021']) expect(secao).toHaveTextContent(trecho)
-    expect(screen.getAllByRole('link')).toHaveLength(5)
+    expect(screen.getAllByRole('link')).toHaveLength(6)
+  })
+
+  it('CA-1761 (spec base-ampliada, fase 2): "Produtos de marca" cita o Open Food Facts, a versão, a contagem, a ODbL e os arquivos', () => {
+    render(<TelaFontes />)
+    const secao = screen.getByRole('heading', { name: 'Produtos de marca' }).parentElement
+    expect(secao).toHaveTextContent(`${fonteDoCatalogo.produtos.toLocaleString('pt-BR')} produtos do Brasil`)
+    expect(secao).toHaveTextContent(fonteDoCatalogo.versao.split('-').reverse().join('/'))
+    expect(secao).toHaveTextContent('Open Database License (ODbL)')
+    expect(secao).toHaveTextContent('Database Contents License (DbCL)')
+    expect(screen.getByRole('link', { name: 'Abrir os arquivos e a licença' })).toHaveAttribute('href', new URL(`${fonteDoCatalogo.caminho}LICENCA.txt`, ENDERECO_DO_APP).href)
   })
 })

@@ -121,3 +121,11 @@ https://creativecommons.org/publicdomain/zero/1.0/
   https://commons.wikimedia.org/w/index.php?curid=71067537
 - `iogurte-com-frutas*.webp` (o topo da landing, spec landing-v3, D-654) — "Healthy Meal Prep (Unsplash)", Sambazon,
   Wikimedia Commons: https://commons.wikimedia.org/wiki/File:Healthy_Meal_Prep_(Unsplash).jpg
+
+## Open Food Facts (catálogo de rótulos: produtos de marca do Brasil)
+
+Os 23096 produtos de `public/catalogo-off/2026-10-29/`, gerados por `scripts/dados/importar-catalogo-off.mjs` a
+partir da exportação oficial (https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz) de 2026-10-29 (spec base-ampliada, fase 2). Dados do Open Food
+Facts (https://world.openfoodfacts.org) sob a Open Database License (ODbL) v1.0; conteúdos individuais sob a Database
+Contents License (DbCL) v1.0. Os arquivos publicados são um banco derivado, oferecido sob a mesma ODbL, com o aviso
+`LICENCA.txt` ao lado; ficam separados da TACO e do USDA.

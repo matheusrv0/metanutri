@@ -1,7 +1,6 @@
 import { Plus, TriangleAlert, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { comBase, medidaQueAPorcaoDa, motivoParaNaoSugerirDados } from '@/domain/alimentoProprio.ts'
-import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import { lerMedidaDaLista } from '@/domain/medidaDoRotulo.ts'
 import { ehIlegivel, lerNumeroDoRotulo } from '@/domain/numeroDoRotulo.ts'
 import {
@@ -30,6 +29,7 @@ import { Switch } from '@ds/componentes/forms/switch.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
 import { LeitorCodigo } from './LeitorCodigo.tsx'
+import { procurarRotulo } from '../estado/catalogoOff.ts'
 
 interface DialogoAlimentoProprioProps {
   /** Os dados iniciais (novo, cópia da base, receita ou o item a editar); `null` mantém a janela fechada. */
@@ -118,7 +118,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
     setAvisoCodigo(null)
     mudar({ codigoBarras: codigo })
     try {
-      const achado = await buscarRotuloPorCodigo(codigo)
+      // D-759 (spec base-ampliada, fase 2): primeiro o catálogo de rótulos; depois, o Open Food Facts ao vivo.
+      const achado = await procurarRotulo(codigo)
       if (!achado) {
         setAvisoCodigo({ tipo: 'warning', texto: 'Este código não está na Open Food Facts. Digite os valores do rótulo.' })
         return
@@ -133,11 +134,13 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         porcaoG: 100,
         valores: { ...atual.valores, ...achado.por100 },
         medidas: achado.porcao ? [...atual.medidas.filter((m) => m.nome !== 'porção'), { nome: 'porção', gramas: achado.porcao.gramas }] : atual.medidas,
-        fonte: { tipo: 'open-food-facts', codigo: achado.codigo, data: new Date().toISOString().slice(0, 10) },
+        fonte: { tipo: 'open-food-facts', codigo: achado.codigo, data: /versão (\d{4}-\d{2}-\d{2})/.exec(achado.fonte)?.[1] ?? new Date().toISOString().slice(0, 10) },
+        // D-761 (spec base-ampliada, fase 2): os alergênicos do catálogo de rótulos vão junto.
+        ...(achado.alergenicos ? { alergenicos: achado.alergenicos } : {}),
       }))
       // Os campos que a leitura preencheu passam a ter número.
       desmarcar(['porcaoG', ...Object.keys(achado.por100)])
-      setAvisoCodigo({ tipo: 'info', texto: `Dados da Open Food Facts, por 100 ${achado.unidade}. Confira com a embalagem antes de salvar: a base é colaborativa e pode ter erros.` })
+      setAvisoCodigo({ tipo: 'info', texto: `Dados ${achado.fonte === 'Open Food Facts' ? 'da Open Food Facts' : `do ${achado.fonte}`}, por 100 ${achado.unidade}. Confira com a embalagem antes de salvar: a base é colaborativa e pode ter erros.` })
     } catch {
       setAvisoCodigo({ tipo: 'warning', texto: 'Não foi possível consultar o código sem internet. Digite os valores do rótulo.' })
     } finally {

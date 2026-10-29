@@ -1,6 +1,7 @@
 // Código de barras do produto: validação do EAN e leitura do rótulo em base pública.
+import tabelaDoOff from '../data/off-nutrientes.json'
 import { CONTATO_EMAIL } from './legal.ts'
-import type { ChaveNutrienteAlimento } from './tipos.ts'
+import type { AlergenicosDoRotulo, ChaveNutrienteAlimento } from './tipos.ts'
 
 /** Confere o dígito verificador de EAN-8, EAN-13 ou UPC-A. */
 export function ehCodigoValido(codigo: string): boolean {
@@ -28,6 +29,8 @@ export interface RotuloEncontrado {
   /** Produto medido em ml (bebida, leite) ou em g (A23). */
   readonly unidade: 'g' | 'ml'
   readonly fonte: string
+  /** D-761: os alergênicos do rótulo, quando vêm do catálogo de rótulos. */
+  readonly alergenicos?: AlergenicosDoRotulo
 }
 
 interface ProdutoOpenFoodFacts {
@@ -50,37 +53,11 @@ const numero = (v: number | string | undefined): number | null => {
 
 /**
  * Os nutrientes da Open Food Facts, por 100 g, na unidade da adequação (A14): a OFF guarda minerais e vitaminas em
- * gramas. O folato da OFF vai como está para o folato DFE: é a melhor aproximação que o rótulo dá.
+ * gramas. O folato da OFF vai como está para o folato DFE: é a melhor aproximação que o rótulo dá. A tabela vive em
+ * `src/data/off-nutrientes.json`, a mesma que o script do catálogo de rótulos lê (spec base-ampliada, fase 2, D-751).
  */
-const DA_OFF: readonly { readonly chave: ChaveNutrienteAlimento; readonly off: string; readonly fator: number }[] = [
-  { chave: 'carboidrato_g', off: 'carbohydrates', fator: 1 },
-  { chave: 'acucares_g', off: 'sugars', fator: 1 },
-  { chave: 'proteina_g', off: 'proteins', fator: 1 },
-  { chave: 'lipideos_g', off: 'fat', fator: 1 },
-  { chave: 'gordura_saturada_g', off: 'saturated-fat', fator: 1 },
-  { chave: 'gordura_trans_g', off: 'trans-fat', fator: 1 },
-  { chave: 'fibra_g', off: 'fiber', fator: 1 },
-  { chave: 'colesterol_mg', off: 'cholesterol', fator: 1000 },
-  { chave: 'calcio_mg', off: 'calcium', fator: 1000 },
-  { chave: 'ferro_mg', off: 'iron', fator: 1000 },
-  { chave: 'zinco_mg', off: 'zinc', fator: 1000 },
-  { chave: 'potassio_mg', off: 'potassium', fator: 1000 },
-  { chave: 'magnesio_mg', off: 'magnesium', fator: 1000 },
-  { chave: 'fosforo_mg', off: 'phosphorus', fator: 1000 },
-  { chave: 'cobre_mg', off: 'copper', fator: 1000 },
-  { chave: 'manganes_mg', off: 'manganese', fator: 1000 },
-  { chave: 'selenio_mcg', off: 'selenium', fator: 1_000_000 },
-  { chave: 'vitamina_a_rae_mcg', off: 'vitamin-a', fator: 1_000_000 },
-  { chave: 'vitamina_c_mg', off: 'vitamin-c', fator: 1000 },
-  { chave: 'vitamina_d_mcg', off: 'vitamin-d', fator: 1_000_000 },
-  { chave: 'vitamina_e_mg', off: 'vitamin-e', fator: 1000 },
-  { chave: 'tiamina_mg', off: 'vitamin-b1', fator: 1000 },
-  { chave: 'riboflavina_mg', off: 'vitamin-b2', fator: 1000 },
-  { chave: 'piridoxina_mg', off: 'vitamin-b6', fator: 1000 },
-  { chave: 'niacina_mg', off: 'vitamin-pp', fator: 1000 },
-  { chave: 'folato_dfe_mcg', off: 'vitamin-b9', fator: 1_000_000 },
-  { chave: 'vitamina_b12_mcg', off: 'vitamin-b12', fator: 1_000_000 },
-]
+export const NUTRIENTES_DA_OFF: readonly { readonly chave: string; readonly off: string; readonly fator: number }[] = tabelaDoOff
+const DA_OFF = NUTRIENTES_DA_OFF as readonly { readonly chave: ChaveNutrienteAlimento; readonly off: string; readonly fator: number }[]
 
 const arredondar = (v: number): number => Math.round(v * 1000) / 1000
 
@@ -101,8 +78,13 @@ export function nutrientesPor100(n: Record<string, number | string | undefined>)
   return valores
 }
 
+/** D-763: o pó se mede em gramas (a mesma expressão de `EH_PO` em scripts/dados/importar-catalogo-off.mjs). */
+const EH_PO = /(?<![\p{L}])(p[oó]|powder|whey|achocolatado|cappuccino|capuccino|nescau|toddy|prote[ií]na|protein|composto l[aá]cteo|f[oó]rmula infantil)(?![\p{L}])/iu
+
 /** "ml" quando a OFF diz que a porção ou a embalagem é em ml ou litro (A23). */
 function unidadeDo(p: ProdutoOpenFoodFacts): 'g' | 'ml' {
+  // D-763 (spec base-ampliada, fase 2): o pó é em gramas, mesmo com o preparo em ml no rótulo (a mesma regra do catálogo).
+  if (EH_PO.test(`${p.product_name_pt ?? ''} ${p.product_name ?? ''}`)) return 'g'
   if (p.nutrition_data_per === '100ml' || p.serving_quantity_unit?.toLowerCase() === 'ml') return 'ml'
   return /\d\s*(ml|l|litros?)\b/i.test(p.quantity ?? '') ? 'ml' : 'g'
 }

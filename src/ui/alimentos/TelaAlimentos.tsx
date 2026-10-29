@@ -129,6 +129,10 @@ export function TelaAlimentos({ aoAbrirFontes, formularioNovo = MEUS_ALIMENTOS_N
       const p = produtoDe(a)
       return p ? textoDaFonte(p.fonte, p.codigoBarras) : null
     },
+    rotuloDe: (a: Alimento) => {
+      const fonte = produtoDe(a)?.fonte
+      return fonte?.tipo === 'open-food-facts' && fonte.codigo !== '' ? { codigo: fonte.codigo, data: fonte.data } : null
+    },
   }
   const visiveis = lista.slice(0, quantos)
 
@@ -375,6 +379,8 @@ interface AcoesDaFicha {
   readonly aoCopiar: ((alimento: Alimento) => void) | undefined
   /** A fonte do alimento próprio; `null` para o da base. */
   readonly fonteDe: (alimento: Alimento) => string | null
+  /** O produto do Open Food Facts de onde vieram os valores do alimento próprio (spec base-ampliada, fase 2, D-755). */
+  readonly rotuloDe: (alimento: Alimento) => { readonly codigo: string; readonly data: string } | null
 }
 
 /** "Cereais e derivados · valores por 100 g"; o próprio diz que foi cadastrado e de onde vieram os valores (D-385). */
@@ -410,6 +416,7 @@ function FichaDoAlimento({ alimento, acoes }: { readonly alimento: Alimento | nu
 
 /** Composição completa de um alimento, com o que falta dito por nome. Serve à ficha lateral e à gaveta. */
 function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readonly acoes: AcoesDaFicha }) {
+  const rotulo = acoes.rotuloDe(alimento)
   const linhas = composicaoDe(alimento)
   const idComposicao = useId()
   const idMedidas = useId()
@@ -529,6 +536,16 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
         ) : null}
         {alimento.ampliada?.complemento ? (
           <p>{`Os valores marcados SR são do nº ${alimento.ampliada.complemento.fdcId} (${descreverOrigemUsda(alimento.ampliada.complemento)}), o mesmo alimento, que completa o que a Foundation não publicou.`}</p>
+        ) : null}
+        {/* D-755 (spec base-ampliada, fase 2): a atribuição da ODbL, com o link para o produto. */}
+        {rotulo ? (
+          <p>
+            Rótulo: Open Food Facts (
+            <a className="underline underline-offset-2" href={`https://world.openfoodfacts.org/product/${rotulo.codigo}`} target="_blank" rel="noreferrer">
+              {`produto nº ${rotulo.codigo}`}
+            </a>
+            {`), versão ${rotulo.data}, sob a licença ODbL. Confira com a embalagem: a base é colaborativa.`}
+          </p>
         ) : null}
         {/* D-380 (spec alimentos-e-gramaturas): a TACO não publicou a energia e os macros; vieram do USDA. */}
         {alimento.usdaMacros && alimento.usdaMacros.fdcId !== alimento.usda?.fdcId ? (

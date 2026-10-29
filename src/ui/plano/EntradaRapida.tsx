@@ -1,6 +1,17 @@
 import { Plus, Search } from 'lucide-react'
-import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { buscarAlimentos, leituraDoResultado, PRIMEIRO_ID_PROPRIO, type MedidaCaseira, type ResultadoBusca } from '@/domain/busca.ts'
+import { useEffect, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { produtoDosDados } from '@/domain/alimentoProprio.ts'
+import { buscarAlimentos, leituraDoResultado, leituraDoTexto, PRIMEIRO_ID_PROPRIO, type MedidaCaseira, type ResultadoBusca } from '@/domain/busca.ts'
+import {
+  alimentoProvisorio,
+  buscarNoCatalogo,
+  copiaExistente,
+  dadosDaCopia,
+  LETRAS_PARA_O_CATALOGO,
+  letrasDaBusca,
+  rotuloDoCatalogo,
+  type ProdutoDoIndice,
+} from '@/domain/catalogoOff.ts'
 import { completudeDe, explicarCompletude } from '@/domain/completude.ts'
 import { ID_DE_RECEITA, textoDaPorcao } from '@/domain/receitaNoPlano.ts'
 import { buscarReceitas, copiaParaOPlano, type Receita, type ResultadoReceita } from '@/domain/receitas.ts'
@@ -12,6 +23,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
+import { detalheDoProdutoDoCatalogo, VERSAO_DO_CATALOGO } from '../estado/catalogoOff.ts'
+import { useCatalogoOff } from '../estado/usarCatalogoOff.ts'
+import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useReceitas } from '../estado/usarReceitas.ts'
 import { useUsoDaConta } from '../estado/usarUsoDaConta.ts'
 
@@ -75,9 +89,16 @@ function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['al
 }
 
 /** Uma linha da lista: um alimento da tabela ou uma receita da conta. */
-type Opcao = { readonly tipo: 'alimento'; readonly r: ResultadoBusca } | { readonly tipo: 'receita'; readonly r: ResultadoReceita }
+/** D-767: a espera do catálogo depois da última tecla. */
+const ESPERA_DO_CATALOGO_MS = 150
 
-const chaveDa = (o: Opcao): string => (o.tipo === 'alimento' ? `a-${o.r.alimento.id}` : `r-${o.r.receita.id}`)
+type Opcao =
+  | { readonly tipo: 'alimento'; readonly r: ResultadoBusca }
+  | { readonly tipo: 'receita'; readonly r: ResultadoReceita }
+  // Spec base-ampliada, fase 2 (D-758): o produto do catálogo de rótulos, com a leitura do texto para ele.
+  | { readonly tipo: 'catalogo'; readonly p: ProdutoDoIndice; readonly r: ResultadoBusca }
+
+const chaveDa = (o: Opcao): string => (o.tipo === 'alimento' ? `a-${o.r.alimento.id}` : o.tipo === 'catalogo' ? `c-${o.p.codigo}` : `r-${o.r.receita.id}`)
 
 /** CA-15 a CA-18 e CA-20: digitar quantidade e nome, escolher com as setas e adicionar com Enter. */
 export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoVazio, aoCriarMedida, porcaoDoResultado }: EntradaRapidaProps) {
@@ -101,21 +122,71 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     () => (aoAdicionarReceita ? buscarReceitas(texto, receitas, resultados.map((r) => r.alimento)) : []),
     [aoAdicionarReceita, texto, receitas, resultados],
   )
+  // Spec base-ampliada, fase 2 (D-758, CA-1764): o índice do catálogo só é pedido com 3 letras ou mais.
+  // D-767: o catálogo (23 mil nomes) busca de novo uns 150 ms depois da última tecla, não a cada tecla.
+  const [textoDoCatalogo, setTextoDoCatalogo] = useState('')
+  useEffect(() => {
+    const espera = setTimeout(() => setTextoDoCatalogo(texto), ESPERA_DO_CATALOGO_MS)
+    return () => clearTimeout(espera)
+  }, [texto])
+  const comLetras = letrasDaBusca(textoDoCatalogo) >= LETRAS_PARA_O_CATALOGO
+  const catalogo = useCatalogoOff(comLetras)
+  const meusAlimentos = useMeusAlimentos()
+  const [erroDoProduto, setErroDoProduto] = useState<string | null>(null)
+  // A espera vale para buscar de novo, não para sumir: sem 3 letras no campo agora, o catálogo some na hora.
+  const campoComLetras = letrasDaBusca(texto) >= LETRAS_PARA_O_CATALOGO
+  const doCatalogo = useMemo(() => {
+    if (!comLetras || !campoComLetras || !catalogo.indice) return []
+    // CA-1757: o produto que a conta já copiou aparece como "meu", pela busca de sempre; não se repete aqui.
+    return buscarNoCatalogo(catalogo.indice, textoDoCatalogo)
+      .filter((p) => copiaExistente(meusAlimentos.lista, p.codigo) === undefined)
+      .map((p, i): Opcao => {
+        const alimento = alimentoProvisorio(p, i)
+        return { tipo: 'catalogo', p, r: { alimento, ...leituraDoTexto(textoDoCatalogo, alimento) } }
+      })
+  }, [comLetras, campoComLetras, catalogo.indice, textoDoCatalogo, meusAlimentos.lista])
   const opcoes: readonly Opcao[] = [
     ...daReceita.filter((r) => r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
     ...resultados.map((r): Opcao => ({ tipo: 'alimento', r })),
     ...daReceita.filter((r) => !r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
+    ...doCatalogo,
   ]
   const escolhido = opcoes[Math.min(selecionado, opcoes.length - 1)]
-  const avisoDaBusca = daReceita.length > 0 ? null : aviso
+  // O produto do catálogo também é resultado: o aviso de "nenhum alimento" só vale sem ele.
+  const avisoDaBusca = daReceita.length > 0 || doCatalogo.length > 0 ? null : aviso
   const semResultado = texto.trim() !== '' && opcoes.length === 0
   // D-432: a linha escolhida pede uma medida que o alimento não tem.
   const semAMedida = escolhido?.tipo === 'alimento' && escolhido.r.gramas === null && escolhido.r.faltaMedida ? { alimento: escolhido.r.alimento, falta: escolhido.r.faltaMedida } : null
+  // CB-750: sem o índice, a busca segue com a base, e uma linha discreta diz por quê.
+  const catalogoSemRede = comLetras && catalogo.estado === 'erro'
 
   const limpar = () => {
     setTexto('')
     setSelecionado(0)
     setNadaAdicionado(false)
+    setErroDoProduto(null)
+  }
+
+  /**
+   * D-756 e CA-1756: o produto do catálogo entra como cópia em Meus alimentos (a que a conta já tem, ou uma nova), e o
+   * item aponta para a cópia. Sem a fatia, nada entra e nada é gravado (CB-751).
+   */
+  const adicionarDoCatalogo = async (p: ProdutoDoIndice, gramas: number, medida: MedidaDoItem | undefined) => {
+    setErroDoProduto(null)
+    let copia = copiaExistente(meusAlimentos.lista, p.codigo)
+    if (!copia) {
+      try {
+        const detalhe = await detalheDoProdutoDoCatalogo(p)
+        copia = meusAlimentos.salvar(produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, VERSAO_DO_CATALOGO))))
+      } catch (erro) {
+        // D-768: Meus alimentos no limite diz o limite; tentar de novo não resolveria.
+        setErroDoProduto(erro instanceof RangeError ? erro.message : 'Não foi possível carregar o produto. Tente de novo.')
+        return
+      }
+    }
+    if (medida) aoAdicionar(copia.id, gramas, medida)
+    else aoAdicionar(copia.id, gramas)
+    limpar()
   }
 
   const adicionar = (o: Opcao | undefined) => {
@@ -123,6 +194,10 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     // CB-07: medida que não existe para o alimento (ou que não é a da porção) não vira grama inventada; a tela diz.
     if (o.r.gramas === null) {
       setNadaAdicionado(true)
+      return
+    }
+    if (o.tipo === 'catalogo') {
+      void adicionarDoCatalogo(o.p, o.r.gramas, o.r.medida ?? undefined)
       return
     }
     if (o.tipo === 'receita') aoAdicionarReceita?.(o.r.receita, o.r.gramas)
@@ -172,6 +247,12 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
 
       {avisoDaBusca ? <p className="text-xs text-warningtext">{avisoDaBusca}</p> : null}
       {semResultado && !avisoDaBusca ? <p className="text-xs text-warningtext">Nenhum alimento encontrado. Nada foi adicionado.</p> : null}
+      {catalogoSemRede ? <p className="text-xs text-muted-foreground">Os produtos de marca precisam de internet no primeiro uso.</p> : null}
+      {erroDoProduto ? (
+        <p role="alert" className="text-xs font-medium text-warningtext">
+          {erroDoProduto}
+        </p>
+      ) : null}
 
       {opcoes.length > 0 ? (
         <ul id={idLista} role="listbox" aria-label={`Resultados para ${rotulo}`} className="flex flex-col border border-borderdefault bg-card">
@@ -195,7 +276,18 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                   )}
                 >
                   <Plus className="size-4 shrink-0" aria-hidden="true" />
-                  {o.tipo === 'receita' ? (
+                  {o.tipo === 'catalogo' ? (
+                    // D-758: o produto do catálogo diz a marca e a porção do rótulo.
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="min-w-0 break-words">{o.p.nome}</span>
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="rotulo shrink-0">rótulo</span>
+                        {/* D-764: as kcal por 100 g diferenciam os produtos parecidos (e o genérico sem marca). */}
+                        <span className="min-w-0 break-words">{[o.p.marca, o.p.porcaoTexto, `${Math.round(o.p.kcal)} kcal/100 ${o.p.unidade}`].filter((t) => t !== '').join(' · ')}</span>
+                        {o.r.gramas === null ? <span className="text-warningtext">{o.r.aviso ?? 'Medida indisponível.'}</span> : <span className="numeros whitespace-nowrap">{leituraDoResultado(o.r)}</span>}
+                      </span>
+                    </span>
+                  ) : o.tipo === 'receita' ? (
                     // No celular, o nome numa linha e "Receita" com a quantidade embaixo: o nome não some.
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                       <span className="min-w-0 truncate sm:flex-1">{o.r.receita.nome}</span>

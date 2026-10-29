@@ -24,7 +24,7 @@ describe('Base MetaNutri (D-51, CA-322)', () => {
   })
 
   it('cita as cinco fontes, cada uma com link; o USDA vem ao lado da TACO', () => {
-    expect(FONTES_DA_BASE.map((f) => f.assunto)).toEqual(['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Alimentos que a TACO não tem', 'Medidas caseiras', 'Produtos de rótulo'])
+    expect(FONTES_DA_BASE.map((f) => f.assunto)).toEqual(['Composição dos alimentos', 'Vitaminas D, B12, folato, E e selênio', 'Alimentos que a TACO não tem', 'Medidas caseiras', 'Produtos de marca'])
     expect(FONTES_DA_BASE[0]?.citacao).toMatch(/Tabela Brasileira de Composição de Alimentos \(TACO\), 4ª edição revisada e ampliada/)
     expect(FONTES_DA_BASE[0]?.citacao).toMatch(/NEPA.*UNICAMP/)
     expect(FONTES_DA_BASE[3]?.citacao).toMatch(/IBGE.*Pesquisa de Orçamentos Familiares 2008-2009/)

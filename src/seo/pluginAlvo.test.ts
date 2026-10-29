@@ -6,7 +6,7 @@ import { build } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { APP_EM_PRODUCAO, enderecoOuPadrao } from '@/ui/enderecos.ts'
 import { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
-import { APP_PADRAO, cabecaDoApp, enderecoDoApp, opcoesDoAplicativo, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
+import { APP_PADRAO, cabecaDoApp, enderecoDoApp, limparSaida, opcoesDoAplicativo, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
 
 const APP = 'https://app.metanutri.com.br/'
 const CORES = { fundo: 'cor-do-fundo', tema: 'cor-do-tema' }
@@ -74,7 +74,24 @@ describe('o alvo do build (spec separacao-site-app, DP-SA-1 e DP-SA-2)', () => {
 
   it('DP-SA-2: cada pasta perde o que é do outro', () => {
     expect([...SO_DO_SITE].sort()).toEqual(['llms.txt', 'preparar-pagina.js', 'robots.txt', 'sitemap.xml'])
-    expect(SO_DO_APP).toEqual(['preparar-app.js'])
+    expect(SO_DO_APP).toEqual(['preparar-app.js', 'catalogo-off'])
+  })
+
+  it('CA-1763 (spec base-ampliada, fase 2): o catálogo de rótulos fica fora do precache e é guardado sob demanda', () => {
+    const workbox = opcoesDoAplicativo('app', CORES).workbox
+    expect(workbox?.globPatterns?.join(' ')).not.toMatch(/json/)
+    const regra = workbox?.runtimeCaching?.find((r) => r.urlPattern instanceof RegExp && r.urlPattern.test('/catalogo-off/2026-10-29/indice.json'))
+    expect(regra?.handler).toBe('CacheFirst')
+    expect(regra?.urlPattern instanceof RegExp && regra.urlPattern.test('/assets/index.js')).toBe(false)
+  })
+
+  it('CA-1763: o build do site apaga a pasta inteira do catálogo', () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'metanutri-catalogo-'))
+    mkdirSync(join(pasta, 'catalogo-off', '2026-10-29', 'fatias'), { recursive: true })
+    writeFileSync(join(pasta, 'catalogo-off', '2026-10-29', 'indice.json'), '{}')
+    limparSaida(pasta, 'site')
+    expect(existsSync(join(pasta, 'catalogo-off'))).toBe(false)
+    rmSync(pasta, { recursive: true, force: true })
   })
 })
 

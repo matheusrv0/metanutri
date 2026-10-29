@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { buscarRotuloPorCodigo } from '@/domain/codigoBarras.ts'
 import { medidaCaseiraDaLeitura } from '@/domain/medidaDoRotulo.ts'
 import { CAMPOS_OPCIONAIS, CAMPOS_ROTULO, porCem, validarProduto, type Produto } from '@/domain/produtos.ts'
 import { LeitorCodigo } from './LeitorCodigo.tsx'
@@ -10,6 +9,7 @@ import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { procurarRotulo } from '../estado/catalogoOff.ts'
 
 type Valores = Partial<Record<ChaveNutrienteAlimento, number | null>>
 
@@ -49,7 +49,8 @@ function Formulario({ produto, aoSalvar, aoFechar }: { readonly produto: Produto
     setAvisoCodigo(null)
     setCodigoBarras(codigo)
     try {
-      const achado = await buscarRotuloPorCodigo(codigo)
+      // D-759 (spec base-ampliada, fase 2): primeiro o catálogo de rótulos; depois, o Open Food Facts ao vivo.
+      const achado = await procurarRotulo(codigo)
       if (!achado) {
         setAvisoCodigo('Este código não está na Open Food Facts. Digite os valores do rótulo; o produto fica salvo na sua conta.')
         return

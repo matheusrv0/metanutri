@@ -1,0 +1,19 @@
+{
+ "nome": "Open Food Facts",
+ "licenca": "Open Database License (ODbL) v1.0; conteúdos sob a Database Contents License (DbCL) v1.0",
+ "url": "https://world.openfoodfacts.org",
+ "exportacao": "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz",
+ "versao": "2026-10-29",
+ "sha256": "8951dab1f3af251ec788ab439070528c5a1216e2f9e894fb4e8e4ea72b193873",
+ "caminho": "catalogo-off/2026-10-29/",
+ "doBrasil": 37689,
+ "produtos": 23086,
+ "descartados": {
+  "energia": 7324,
+  "energia incoerente": 2837,
+  "nome": 1709,
+  "macros": 2710,
+  "código": 13,
+  "genérico repetido": 10
+ }
+}

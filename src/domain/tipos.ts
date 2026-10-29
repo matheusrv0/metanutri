@@ -258,6 +258,16 @@ export interface OrigemUsda {
 /** D-716b (spec base-ampliada): os alergênicos que a curadoria marca no alimento da base ampliada. */
 export type IdAlergenico = 'trigo' | 'gluten' | 'leite' | 'lactose' | 'ovo' | 'soja' | 'amendoim' | 'castanhas' | 'peixe' | 'frutos-do-mar'
 
+/**
+ * D-761 (spec base-ampliada, fase 2): os alergênicos do rótulo do Open Food Facts, na cópia em Meus alimentos. "Contém" e
+ * "pode conter" separados; `semInformacao` quando o OFF não traz alergênico, traço nem ingrediente.
+ */
+export interface AlergenicosDoRotulo {
+  readonly contem: readonly IdAlergenico[]
+  readonly podeConter: readonly IdAlergenico[]
+  readonly semInformacao: boolean
+}
+
 export interface OrigemBaseAmpliada extends OrigemUsda {
   /** A descrição em inglês do USDA, guardada para a ficha e a conferência. */
   readonly nomeOriginal: string
@@ -306,6 +316,8 @@ export interface Alimento {
   readonly porcaoPadrao?: { readonly nome: string; readonly quantidade: number; readonly gramasPorMedida: number }
   /** Só no alimento próprio (D-383 a D-386): o que a busca, a folha e o Cobrir precisam saber dele. */
   readonly proprio?: {
+    /** D-761: os alergênicos do rótulo, quando a cópia veio do catálogo de rótulos. */
+    readonly alergenicos?: AlergenicosDoRotulo
     readonly tipo: 'alimento' | 'preparacao' | 'rotulo'
     /** O nome da folha e do link; vazio usa a descrição. */
     readonly nomeParaPaciente: string
