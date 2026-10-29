@@ -162,3 +162,31 @@ for (const largura of COM_TABLET) {
     })
   })
 }
+
+// ------------------------------------------------------------------------------------------------------------- M-022
+
+for (const largura of CELULARES) {
+  test.describe(`M-022 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } })
+
+    test('M-022: a faixa de sugestões esmaece a borda direita, encaixa os chips e deixa o último inteiro no fim', async ({ page }) => {
+      await abrirExemplo(page)
+      const faixa = page.getByRole('region', { name: /^Sugestões para / }).first()
+      const rolagem = faixa.getByRole('button', { name: /^Adicionar / }).first().locator('..')
+      const antes = await rolagem.evaluate((el) => {
+        const e = getComputedStyle(el)
+        return { rola: el.scrollWidth > el.clientWidth, mascara: e.maskImage || e.getPropertyValue('-webkit-mask-image'), encaixe: e.scrollSnapType }
+      })
+      expect(antes.rola, 'a faixa precisa rolar nesta largura').toBe(true)
+      expect(antes.mascara, 'sem sinal de que rola').not.toBe('none')
+      expect(antes.encaixe).toContain('x')
+      const folgaNoFim = await rolagem.evaluate((el) => {
+        el.scrollLeft = el.scrollWidth
+        const chips = el.querySelectorAll('button')
+        const ultimo = chips[chips.length - 1]
+        return ultimo ? el.getBoundingClientRect().right - ultimo.getBoundingClientRect().right : -1
+      })
+      expect(folgaNoFim, 'o último chip fica embaixo do esmaecido').toBeGreaterThanOrEqual(16)
+    })
+  })
+}

@@ -39,14 +39,16 @@ export function SugestoesDaRefeicao({ tipo, sugestoes, aoEscolher, aoEditar }: S
     <section aria-label={titulo} className="flex min-w-0 items-center gap-2">
       <p className="rotulo hidden shrink-0 sm:block">Sugestões</p>
       {/* Uma faixa só, que rola para o lado em qualquer largura (CA-336): quebrar linha empurrava o plano para baixo. */}
-      <div className="-my-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto py-1">
+      {/* M-022: a borda direita esmaece, sinal de que a faixa rola, e o chip encaixa no começo ao parar. O recuo do fim
+          tem a largura do esmaecido: no fim da rolagem, o último chip termina inteiro, fora dele. */}
+      <div className="-my-1 flex min-w-0 flex-1 snap-x snap-proximity scroll-pr-8 gap-1.5 overflow-x-auto py-1 pr-8 [mask-image:linear-gradient(to_right,black_calc(100%-var(--spacing)*8),transparent)]">
         {prontas.map((s, i) => (
           <button
             key={`${s.alimentoId}-${i}`}
             type="button"
             onClick={() => aoEscolher(s.alimentoId, s.gramas)}
             aria-label={`Adicionar ${s.alimento.descricao}, ${formatarNumero(s.gramas, 0)} g`}
-            className="inline-flex min-h-11 max-w-64 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 max-w-64 shrink-0 snap-start items-center gap-1 rounded-full border border-border px-3 text-xs transition-colors hover:border-borderdefault hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="size-3 shrink-0 text-primary" aria-hidden="true" />
             <span className="min-w-0 truncate">{s.alimento.descricao}</span>
