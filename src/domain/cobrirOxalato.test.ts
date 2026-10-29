@@ -36,11 +36,22 @@ describe('D-716d: verdura com muito oxalato fora do Cobrir de cálcio', () => {
     for (const id of [74, 100434, 100365, 97]) expect(ehAltoOxalato(porId(id)), porId(id).descricao).toBe(false)
   })
 
+  it('D-716o: bertalha, caruru e taioba também, nas duas bases; o grão de amaranto e o inhame, não', () => {
+    registrarBaseAmpliada(BASE)
+    const porId = (id: number) => {
+      const a = buscarAlimento(id)
+      if (!a) throw new Error(`Sem ${id}.`)
+      return a
+    }
+    for (const id of [104, 156, 100422, 100461, 100523]) expect(ehAltoOxalato(porId(id)), porId(id).descricao).toBe(true)
+    for (const id of [100330, 100514]) expect(ehAltoOxalato(porId(id)), porId(id).descricao).toBe(false)
+  })
+
   it('nenhuma sugestão de cálcio tem muito oxalato, no exemplo e no plano vazio, com e sem a base ampliada', () => {
     for (const comBase of [false, true]) {
       registrarBaseAmpliada(comBase ? BASE : [])
       for (const plano of [exemplo, VAZIO]) {
-        for (const nome of nomes(plano, 'calcio_mg')) expect(nome, `${String(comBase)}: ${nome}`).not.toMatch(/^(Espinafre|Acelga, suíça|Beterraba, folha)/)
+        for (const nome of nomes(plano, 'calcio_mg')) expect(nome, `${String(comBase)}: ${nome}`).not.toMatch(/^(Espinafre|Acelga, suíça|Beterraba, folha|Bertalha|Caruru|Taioba)/)
       }
     }
   })

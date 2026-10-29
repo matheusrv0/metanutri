@@ -172,3 +172,14 @@ describe('D-716l: restrições que pegavam demais (achado 11 da revisão)', () =
     expect(restricaoDoAlimento(id(100413), marcadas('lactose'))).toBe('Intolerância: lactose')
   })
 })
+
+describe('D-716q: kimchi (re-revisão, achado 4)', () => {
+  it('pega peixe e crustáceo, como o tradicional (molho de peixe e camarão salgado), e o vegetariano', () => {
+    const kimchi = BASE.find((a) => a.id === 100436)
+    expect(kimchi?.ampliada?.alergenicos).toEqual(['peixe', 'frutos-do-mar'])
+    if (!kimchi) return
+    expect(restricaoDoAlimento(kimchi, marcadas('peixe'))).toBe('Alergia: peixe')
+    expect(restricaoDoAlimento(kimchi, marcadas('frutos-do-mar'))).not.toBeNull()
+    expect(restricaoDoAlimento(kimchi, marcadas('vegetariano'))).not.toBeNull()
+  })
+})

@@ -131,7 +131,7 @@ Quando `false`, escreva em `porqueNao` o motivo curto ("miúdo", "ingrediente", 
   `amendoim`, `castanhas`, `peixe`, `frutos-do-mar`. Conferida contra o nome em inglês (o teste repete as regras) e
   contra os ingredientes típicos que o nome não diz: o pão de forma e o pão de batata levam leite; o croissant, ovo; a
   massa fresca, ovo; o surimi, trigo e ovo; a lula frita, trigo; o missô, cevada; o chocolate, leite e soja ("pode
-  conter"). Numa alergia, sobrar é mais seguro que faltar. O coco e a noz-moscada não são castanha.
+  conter"); o kimchi, peixe e crustáceo (o tradicional leva molho de peixe e camarão salgado; o USDA não diz, D-716q). Numa alergia, sobrar é mais seguro que faltar. O coco e a noz-moscada não são castanha.
 
 ## 8. Glossário fixo
 

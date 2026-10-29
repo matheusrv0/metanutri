@@ -99,11 +99,11 @@ export const ehFolhaCrua = (a: Alimento): boolean => ehVerdura(a) && a.preparo =
 export const COBERTURA_MINIMA_FOLHA_CRUA_PCT = 25
 
 /**
- * D-716d (spec base-ampliada, achado 3 da revisão): espinafre (o comum e o da Nova Zelândia), acelga suíça e folha de
- * beterraba têm tanto oxalato que o cálcio delas quase não é absorvido. A "acelga" da TACO e a da base ampliada são a
- * couve-chinesa (pouco oxalato), e ficam.
+ * D-716d e D-716o (spec base-ampliada): espinafre (o comum e o da Nova Zelândia), acelga suíça, folha de beterraba,
+ * bertalha, caruru e taioba têm tanto oxalato que o cálcio delas quase não é absorvido. A "acelga" da TACO e a da base
+ * ampliada são a couve-chinesa (pouco oxalato), e ficam.
  */
-const ALTO_OXALATO = /^(Espinafre|Acelga, suíça|Beterraba, folha)/i
+const ALTO_OXALATO = /^(Espinafre|Acelga, suíça|Beterraba, folha|Bertalha|Caruru|Taioba)/i
 export const ehAltoOxalato = (a: Alimento): boolean => ehVerdura(a) && ALTO_OXALATO.test(nomeLimpo(a))
 const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
 /** Origem animal: a vitamina A é retinol pré-formado (D-442). */

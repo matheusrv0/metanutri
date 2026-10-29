@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { CHAVES, energiaIncoerente, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
+import { CHAVES, energiaIncoerente, FOLATO_ENRIQUECIDO, folatoTotalEnriquecido, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
 import { valoresDoAlimento, type AlimentoUsda, type PorcaoUsda } from '../../scripts/dados/usda-fonte.mjs'
 import { energiaIncoerente as energiaIncoerenteDoApp } from '../domain/produtos.ts'
 import base from './base-ampliada.json'
@@ -319,6 +319,16 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
     expect(medidasDaCuradoria({ nome: 'Queijo, a', grupo: 'Leite e derivados', preparo: null }, [porcao('cup, diced', 132), porcao('slice', 28, 1, 2)])).toEqual([['fatia', 28]])
   })
 
+  it('D-716p: bisteca e pedaço (a peça avulsa) acima de 200 g também não viram medida', () => {
+    expect(medidasDaCuradoria({ nome: 'Vitela, a, grelhada', grupo: 'Carnes e derivados', preparo: 'grelhado' }, [porcao('chop', 352)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Carne, a, cozida', grupo: 'Carnes e derivados', preparo: 'cozido' }, [porcao('piece', 289)])).toEqual([])
+    expect(medidasDaCuradoria({ nome: 'Carne, b, cozida', grupo: 'Carnes e derivados', preparo: 'cozido' }, [porcao('piece', 150)])).toEqual([['pedaço', 150]])
+    for (const a of alimentos) {
+      for (const [nome, gramas] of a.medidas) if (['bisteca', 'pedaço'].includes(nome)) expect(gramas, `${a.nome}: ${nome}`).toBeLessThanOrEqual(200)
+    }
+    for (const id of [100257, 100169]) expect(alimentos.find((a) => a.id === id)?.medidas.filter(([, g]) => g > 200), String(id)).toEqual([])
+  })
+
   it('D-716j: no arquivo, nenhum bife, filé ou asa passa de 200 g, e nenhum queijo tem xícara', () => {
     for (const a of alimentos) {
       for (const [nome, gramas] of a.medidas) {
@@ -326,6 +336,30 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
         if (a.nome.startsWith('Queijo')) expect(nome, a.nome).not.toBe('xícara de chá')
       }
     }
+  })
+})
+
+describe('importar-base-ampliada: folatoTotalEnriquecido (D-716s)', () => {
+  const cereal = (folatoTotal: number) => falso(10, 'Foundation Foods', 'Flour, test', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: folatoTotal })
+  const par = (folatoDoAlimento: number, acidoFolico: number) => falso(11, 'SR Legacy', 'Flour, test, unenriched', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: folatoDoAlimento + acidoFolico, 1186: acidoFolico, 1187: folatoDoAlimento })
+
+  it('o limite é explícito: 50% e 40 µg acima do folato do alimento no par do SR', () => {
+    expect(FOLATO_ENRIQUECIDO).toEqual({ razao: 1.5, diferencaMcg: 40 })
+  })
+
+  it('nulo quando o par do SR tem ácido fólico, ou quando o total passa do limite', () => {
+    expect(folatoTotalEnriquecido(cereal(157), par(25, 86), 'Cereais e derivados')).toBe(true)
+    expect(folatoTotalEnriquecido(cereal(168), par(72, 0), 'Cereais e derivados')).toBe(true)
+    expect(folatoTotalEnriquecido(cereal(124), par(69, 0), 'Cereais e derivados')).toBe(true)
+  })
+
+  it('fica quando está abaixo de um dos dois limites, fora dos cereais, sem par ou com DFE publicado', () => {
+    expect(folatoTotalEnriquecido(cereal(64.4), par(75, 0), 'Cereais e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(16), par(4, 0), 'Cereais e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(182), par(52, 0), 'Verduras, hortaliças e derivados')).toBe(false)
+    expect(folatoTotalEnriquecido(cereal(168), null, 'Cereais e derivados')).toBe(false)
+    const comDfe = falso(12, 'Foundation Foods', 'Flour, test', { 1008: 360, 1003: 12, 1004: 1.5, 1005: 73, 1177: 168, 1190: 168 })
+    expect(folatoTotalEnriquecido(comDfe, par(72, 0), 'Cereais e derivados')).toBe(false)
   })
 })
 
@@ -474,5 +508,26 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     // O resto do alimento continua: energia, ferro e cálcio.
     expect(forma ? valor(forma, 'energia_kcal') : null).toBeGreaterThan(0)
     expect(porId(100364)?.conjunto).toBe('Foundation Foods')
+  })
+
+  it('D-716s: regra única do folato total enriquecido, nos itens da base', () => {
+    for (const id of [100407, 100419, 100418, 100351, 100364]) {
+      const a = porId(id)
+      expect(a ? valor(a, 'folato_dfe_mcg') : 'sem', a?.nome ?? String(id)).toBeNull()
+    }
+    // Abaixo do limite, ou fora dos cereais, o folato fica.
+    for (const [id, folato] of [[100400, 64.4], [100354, 44], [100571, 68], [100426, 182]] as const) {
+      const a = porId(id)
+      expect(a ? valor(a, 'folato_dfe_mcg') : null, a?.nome ?? String(id)).toBe(folato)
+    }
+    // A regra substitui a lista: nenhum item marca o folato à mão.
+    expect(curadoria.filter((c) => c.naoCopiar?.includes('folato_dfe_mcg')).map((c) => c.id)).toEqual([])
+  })
+
+  it('D-716r: a tortilha de trigo fica sem o folato, como o pão de forma; o pão multigrãos, sem sinal de ácido fólico, fica com ele', () => {
+    const tortilha = porId(100419)
+    expect(tortilha ? valor(tortilha, 'folato_dfe_mcg') : 'sem').toBeNull()
+    const multigraos = porId(100400)
+    expect(multigraos ? valor(multigraos, 'folato_dfe_mcg') : null).toBe(64.4)
   })
 })
