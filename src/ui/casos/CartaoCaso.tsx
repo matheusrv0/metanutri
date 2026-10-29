@@ -7,14 +7,17 @@ import { formatarAlteracao } from './formatarAlteracao.ts'
 
 interface CartaoCasoProps {
   readonly caso: ResumoCaso
+  /** O nome do paciente do plano, quando há (M-007 da spec ajustes-mobile). */
+  readonly paciente?: string | null | undefined
   readonly aoAbrir: () => void
   readonly aoRenomear: () => void
   readonly aoDuplicar: () => void
   readonly aoExcluir: () => void
 }
 
-export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }: CartaoCasoProps) {
+export function CartaoCaso({ caso, paciente, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }: CartaoCasoProps) {
   const nome = caso.nome.trim() || 'Plano sem nome'
+  const detalhe = [paciente?.trim() || null, formatarAlteracao(caso.atualizadoEm)].filter(Boolean).join(' · ')
 
   return (
     <Card className="gap-4 p-5">
@@ -23,10 +26,12 @@ export function CartaoCaso({ caso, aoAbrir, aoRenomear, aoDuplicar, aoExcluir }:
           <ClipboardList className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="card-title truncate text-base" title={nome}>
+          {/* M-007 (spec ajustes-mobile, D-801): até 2 linhas. Cortado numa, "Plano de reeducação al…" ficava igual em
+              dez cartões; o paciente, no detalhe, separa os planos de mesmo nome. */}
+          <h2 className="card-title line-clamp-2 break-words text-base" title={nome}>
             {nome}
           </h2>
-          <p className="text-xs text-muted-foreground">{formatarAlteracao(caso.atualizadoEm)}</p>
+          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{detalhe}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

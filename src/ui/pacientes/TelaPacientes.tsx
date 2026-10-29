@@ -73,7 +73,10 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
                       <UserRound className="size-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h2 className="card-title truncate text-base">{nome}</h2>
+                      {/* M-007 (spec ajustes-mobile, D-801): até 2 linhas, e o nome inteiro no `title`. */}
+                      <h2 className="card-title line-clamp-2 break-words text-base" title={nome}>
+                        {nome}
+                      </h2>
                       <p className="text-xs text-muted-foreground">
                         {[idade ? `${idade.anos} anos` : null, paciente.objetivo.trim() || null].filter(Boolean).join(' · ') || 'Sem dados ainda'}
                       </p>

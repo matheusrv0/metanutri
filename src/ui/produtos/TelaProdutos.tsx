@@ -112,7 +112,9 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
           </p>
         </Card>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2" aria-label="Alimentos cadastrados">
+        // M-001 (spec ajustes-mobile, D-800): coluna que encolhe também no celular. Com a coluna `auto`, um nome sem espaço
+        // alargava cada cartão até 1.009 px e a página inteira rolava para o lado.
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2" aria-label="Alimentos cadastrados">
           {produtos.map((p) => {
             const alimento = produtoComoAlimento(p)
             const kcal = alimento.nutrientes.energia_kcal
@@ -121,12 +123,15 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
             const tipo = TIPO[p.tipo ?? 'rotulo']
             const subtitulo = [tipo, p.tipo === 'rotulo' || !p.tipo ? p.marca.trim() || 'Sem marca' : (p.grupo ?? '')].filter(Boolean).join(' · ')
             return (
-              <li key={p.id}>
+              <li key={p.id} className="min-w-0">
                 <Card className="gap-3 p-5">
                   <div className="flex items-start gap-3">
                     <div className="min-w-0 flex-1">
-                      <h2 className="card-title truncate text-base">{p.nome}</h2>
-                      <p className="text-xs text-muted-foreground">{subtitulo}</p>
+                      {/* D-801: o nome quebra em até 2 linhas (também sem espaço) e vai inteiro no `title`. */}
+                      <h2 className="card-title line-clamp-2 break-words text-base" title={p.nome}>
+                        {p.nome}
+                      </h2>
+                      <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{subtitulo}</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -140,13 +145,15 @@ export function TelaProdutos({ formularioNovo = MEUS_ALIMENTOS_NOVOS }: TelaProd
                       <Trash aria-hidden="true" />
                     </Button>
                   </div>
-                  <dl className="numeros grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border pt-3 text-sm">
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">{porCemNaBase ? 'Valores' : 'Porção'}</dt>
-                      <dd>{porCemNaBase ? `por 100 ${unidade}` : `${formatarNumero(p.porcaoG, 0)} ${unidade}${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
+                  {/* M-001: no cartão estreito (celular e tablet), uma linha por dado; a porção com a medida caseira, em meia
+                      coluna, virava uma palavra por linha. */}
+                  <dl className="numeros grid grid-cols-1 gap-x-4 gap-y-1 border-t border-border pt-3 text-sm lg:grid-cols-2">
+                    <div className="flex justify-between gap-3">
+                      <dt className="shrink-0 text-muted-foreground">{porCemNaBase ? 'Valores' : 'Porção'}</dt>
+                      <dd className="min-w-0 text-right [overflow-wrap:anywhere]">{porCemNaBase ? `por 100 ${unidade}` : `${formatarNumero(p.porcaoG, 0)} ${unidade}${p.medidaCaseira.trim() ? ` · ${p.medidaCaseira.trim()}` : ''}`}</dd>
                     </div>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">{`Por 100 ${unidade}`}</dt>
+                    <div className="flex justify-between gap-3">
+                      <dt className="shrink-0 text-muted-foreground">{`Por 100 ${unidade}`}</dt>
                       <dd>{kcal === null ? '— kcal' : `${formatarNumero(kcal, 0)} kcal`}</dd>
                     </div>
                   </dl>

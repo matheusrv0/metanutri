@@ -263,7 +263,8 @@ export function TelaAlimentos({ aoAbrirFontes, formularioNovo = MEUS_ALIMENTOS_N
                       )}
                     >
                       <p className="min-w-0 flex-1 text-sm">
-                        <span className="line-clamp-2">
+                        {/* M-008 (spec ajustes-mobile): no celular, sem limite; "…com s…" escondia o com sal e o sem sal. */}
+                        <span className="break-words sm:line-clamp-2">
                           {a.descricao} <span className="text-xs text-muted-foreground">{a.categoria}</span>
                           {a.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo ml-1.5 text-muted-foreground">meu</span> : null}
                         </span>

@@ -236,16 +236,18 @@ function LinhaPaciente({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="ghost" onClick={() => setConfirmando(true)} disabled={confirmando}>
-            Remover link
-          </Button>
+        {/* M-029 (spec ajustes-mobile): "Remover link" é destrutivo e fica por último, longe do WhatsApp, onde o polegar
+            mira; na mesma linha, com um vão maior. */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* CA-509: a mensagem é para quem está sumindo ou marcando pouco. */}
           {estado === 'sumindo' || estado === 'atencao' ? (
             <BotaoWhatsApp paciente={ficha} texto={textoDeContato(ficha?.nome ?? '', estado)} aoCadastrarTelefone={aoCadastrarTelefone} />
           ) : null}
           <Button type="button" variant="outline" onClick={() => aoAbrirPlano(acompanhamento.casoId)}>
             Abrir plano
+          </Button>
+          <Button type="button" variant="ghost" className="sm:ml-2" onClick={() => setConfirmando(true)} disabled={confirmando}>
+            Remover link
           </Button>
         </div>
       </div>
