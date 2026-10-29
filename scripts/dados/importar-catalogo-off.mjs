@@ -129,7 +129,8 @@ export function alergenicosDoRegistro(r) {
   const trechos = minusculo.match(PODE_CONTER) ?? []
   doTexto(minusculo.replace(PODE_CONTER, '. '), contem)
   if (trechos.length > 0) doTexto(trechos.join('. '), podeConter)
-  if (/(sem|zero|0%|isento de) lactose|lactose free/i.test(texto(r.product_name))) contem.delete('lactose')
+  // D-777: também "sin lactosa" e "deslactosado" (laticínios Colun e Lonco Leche); o leite continua.
+  if (/(sem|zero|0%|isento de) lactose|lactose free|sin lactosa|deslactosad[oa]/i.test(texto(r.product_name))) contem.delete('lactose')
   for (const a of contem) podeConter.delete(a)
   return {
     contem: ordenar(contem),

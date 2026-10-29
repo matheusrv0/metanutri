@@ -53,6 +53,7 @@ existe pelo código de barras e com internet.
 | D-774 | **Sem o peso da embalagem, teto menor por tipo** (re-revisão da fase 2, achado 5). Quando o OFF não traz `product_quantity`, a porção de pó e suplemento acima de 60 g, e a de pão e biscoito acima de 150 g, sai (o produto fica por 100 g). A bebida pronta continua com a porção dela | A porção que é a embalagem inteira escapava da D-762 |
 | D-775 | **Mais formas da negação** (rodada 3, ajuste 1). Entram "contêm" (com ê), "glúten-free" (com acento) e "0% lactose" | Formas que os rótulos usam |
 | D-776 | **Uma negação para duas palavras** (rodada 3, ajuste 2). "Não contém glúten e lactose", "nem lactose" e "sem glúten, lactose" negam as duas. A lista só vale para glúten e lactose: em "sem glúten e leite integral", o leite continua acusando | O rótulo junta as duas negações numa frase |
+| D-777 | **"Sin lactosa" e "deslactosado" no nome** (rodada 3, ajuste 3). Entram na regra do nome para a lactose, no script (o "contém lactose" sai) e nos qualificadores da restrição: "Leche Descremada Deslactosada" (Colun), "Lonco Leche Sin Lactosa" e "Leite UHT … sin lactosa" deixam de acusar a intolerância à lactose. O leite continua acusando para quem tem alergia a leite | O produto sem lactose é feito para quem tem a intolerância |
 
 **Acerto de alergênicos na régua da revisão** (`alergia.py`: os 23.096 produtos, contra o que o próprio OFF publica):
 

@@ -229,7 +229,8 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, TermosDaRe
   lactose: {
     termos: ['leite', 'leites', 'iogurte*', 'requeij*', 'creme de leite', 'nata', 'ricota', 'coalhada', 'lacteo*', 'lactea*', 'doce de leite', 'leite condensado', 'minas frescal', 'petit suisse', 'cream cheese', 'catupiry', 'kefir', 'chantilly'],
     excecoes: ['leite de coco', 'leite de soja', 'leite de amendoa', 'leite de aveia', 'leite de arroz', 'leite de castanha', ...VEGETAIS_SEM_LEITE],
-    qualificadores: ['sem lactose', 'zero lactose', '0% lactose', 'lactose free', ...VEGANO],
+    // "sin lactosa" e "deslactosado" (spec base-ampliada, fase 2, D-777).
+    qualificadores: ['sem lactose', 'zero lactose', '0% lactose', 'lactose free', 'sin lactosa', 'deslactosado', 'deslactosada', ...VEGANO],
   },
   ovo: {
     termos: ['ovo', 'ovos', 'omelete', 'maionese', 'gema', 'gemas', 'clara', 'claras', 'quindim', 'suspiro', 'merengue'],

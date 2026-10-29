@@ -368,3 +368,17 @@ describe('D-776: uma negação para duas palavras (rodada 3, ajuste 2)', () => {
     expect(ler('Biscoito de arroz. Sem glúten e leite integral.')).toEqual(['leite', 'lactose'])
   })
 })
+
+describe('D-777: "sin lactosa" e "deslactosado" no nome (rodada 3, ajuste 3)', () => {
+  it.each(['Leche Descremada Deslactosada (Colun)', 'Lonco Leche Sin Lactosa', 'Yogur deslactosado'])('"%s" com leite pega leite, não lactose', (nome) => {
+    expect(alergenicosDoRegistro(registro({ product_name: nome, allergens: 'en:milk' })).contem).toEqual(['leite'])
+  })
+
+  it('a restrição pelo nome também: sem lactose para a intolerância, leite para a alergia', () => {
+    const marcadas = (...ids: string[]) => montarRestricoes({ marcadas: ids, texto: '', doencas: [], naoGosta: '' })
+    for (const descricao of ['Leite UHT Sin lactosa', 'Leite deslactosado', 'Iogurte natural deslactosada']) {
+      expect(restricaoDoAlimento({ id: 900_700, descricao }, marcadas('lactose')), descricao).toBeNull()
+      expect(restricaoDoAlimento({ id: 900_700, descricao }, marcadas('leite')), descricao).toBe('Alergia: leite e derivados')
+    }
+  })
+})
