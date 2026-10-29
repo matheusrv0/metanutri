@@ -45,6 +45,7 @@ existe pelo código de barras e com internet.
 | D-766 | **O workflow confere antes de abrir o PR** (revisão da fase 2, achado 7). Depois de gerar, roda `npm ci`, os testes do catálogo (`src/data/catalogo-off.test.ts`) e confere que a pasta não passa de 30 MB (R-751); se algo falhar, o PR não abre. O ramo leva data e hora (`catalogo-off-AAAA-MM-DD-HHMM`): rodar duas vezes no mesmo dia não colide | O dono revisa só o que passou nas conferências |
 | D-767 | **Espera de 150 ms na busca do catálogo** (revisão da fase 2, achado 8). O catálogo busca de novo cerca de 150 ms depois da última tecla, não a cada tecla; a TACO, a base ampliada e Meus alimentos continuam respondendo na hora | 23 mil nomes a cada tecla pesam no celular |
 | D-768 | **Limite de Meus alimentos** (revisão da fase 2, achado 5). Com 1.000 alimentos próprios, escolher um produto do catálogo mostra a mensagem do limite ("Você já tem 1.000 alimentos cadastrados, o limite da conta. Exclua um que não usa mais."), não "Tente de novo" | Tentar de novo não resolve |
+| D-769 | **Acabamento** (revisão da fase 2, achado 9). As kcal do catálogo vão arredondadas (no índice e na linha da busca, D-764). O cartão da cópia em Meus alimentos diz "Rótulo: Open Food Facts", com o link para o produto e a versão, como a ficha (D-755). No cartão por 100 g, sai a linha "Valores: por 100 g", que repetia a linha "Por 100 g" da energia | Atribuição onde a cópia aparece; texto sem repetição |
 
 **Acerto de alergênicos na régua da revisão** (`alergia.py`: os 23.096 produtos, contra o que o próprio OFF publica):
 
