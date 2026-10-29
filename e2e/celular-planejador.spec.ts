@@ -91,3 +91,41 @@ for (const largura of COM_TABLET) {
     })
   })
 }
+
+// ------------------------------------------------------------------------------------------------------------- M-003
+
+/** Os textos que a linha corta (reticências ou corte seco) ou deixa passar da borda dela. */
+const textosCortados = (lista: Locator) =>
+  lista.evaluate((ul) =>
+    [...ul.querySelectorAll<HTMLElement>('li')].flatMap((li) => {
+      const linha = li.getBoundingClientRect()
+      return [...li.querySelectorAll<HTMLElement>('*')]
+        .filter((el) => getComputedStyle(el).display !== 'inline' && (el.textContent ?? '').trim() !== '')
+        .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.getBoundingClientRect().right > linha.right + 0.5)
+        .map((el) => (el.textContent ?? '').trim())
+    }),
+  )
+
+for (const largura of COM_TABLET) {
+  test.describe(`M-003 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: 800 } })
+
+    test('M-003: o cartão Micronutrientes mostra o nome inteiro de cada nutriente (dados normais)', async ({ page }) => {
+      await abrirExemplo(page)
+      const lista = page.getByRole('region', { name: 'Micronutrientes' }).getByRole('list', { name: 'Fora da meta' })
+      await expect(lista.getByRole('listitem').first()).toBeVisible()
+      expect(await textosCortados(lista)).toEqual([])
+      await semRolagemLateral(page)
+    })
+
+    test('M-003: com o plano acima do limite, o nome e o "acima do limite" aparecem inteiros (pior caso)', async ({ page }) => {
+      await abrirExemplo(page)
+      const cafe = page.getByRole('tabpanel', { name: 'Principal de Café da manhã' })
+      for (const indice of [0, 1, 2]) await cafe.getByRole('textbox', { name: /^Gramas de / }).nth(indice).fill('1250')
+      const lista = page.getByRole('region', { name: 'Micronutrientes' }).getByRole('list', { name: 'Fora da meta' })
+      await expect(lista.getByRole('listitem').filter({ hasText: 'acima do limite' }).first()).toBeVisible()
+      expect(await textosCortados(lista)).toEqual([])
+      await semRolagemLateral(page)
+    })
+  })
+}
