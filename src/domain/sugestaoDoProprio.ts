@@ -72,7 +72,7 @@ const casaAlguma = (regras: readonly RegExp[], nome: string): boolean => regras.
  * "Salsicha", "Linguiça") e que traz uma das exceções vegetais da restrição vegetariana (D-492: "hambúrguer vegetal",
  * "hambúrguer de grão", "salsicha vegetal", "vegano"…). A restrição e a sugestão leem a mesma lista.
  */
-const EXCECOES_VEGETAIS = TERMOS_POR_RESTRICAO.vegetariano.excecoes
+const EXCECOES_VEGETAIS = [...TERMOS_POR_RESTRICAO.vegetariano.excecoes, ...TERMOS_POR_RESTRICAO.vegetariano.qualificadores]
 const REGRA_DO_EMBUTIDO = REGRAS_PRESCRICAO.find((r) => r.id === 'embutido')
 const ehEmbutidoVegetal = (a: Alimento, nome: string): boolean =>
   a.proprio !== undefined && EXCECOES_VEGETAIS.some((e) => nome.includes(e)) && REGRA_DO_EMBUTIDO?.casa(a) === true

@@ -235,16 +235,8 @@ export interface AlimentoParaRestricao {
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** O termo vira expressão: palavra inteira, ou começo de palavra com `*`, ou começo do nome com `^`. */
-function expressao(termo: string): RegExp {
-  const noInicio = termo.startsWith('^')
-  const prefixo = termo.endsWith('*')
-  const corpo = escapar(semAcento(termo.replace(/^\^/, '').replace(/\*$/, '')))
-  return new RegExp(`${noInicio ? '^' : '(?<![a-z0-9])'}${corpo}${prefixo ? '' : '(?![a-z0-9])'}`)
-}
-
 /**
- * D-716e (spec base-ampliada): a exceção compara o nome sem pontuação ("Couve, manteiga, cozida" é "couve manteiga
+ * D-716e e D-716n (spec base-ampliada): termos, exceções e nome são comparados sem pontuação ("Couve, manteiga, cozida" é "couve manteiga
  * cozida", e a exceção "couve-manteiga" é "couve manteiga"). O "%" fica ("0% lactose").
  */
 const semPontuacao = (s: string): string =>
@@ -253,10 +245,27 @@ const semPontuacao = (s: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const EXPRESSOES: ReadonlyMap<IdRestricao, { readonly termos: readonly RegExp[]; readonly excecoes: readonly string[] }> = new Map(
-  Object.entries(TERMOS_POR_RESTRICAO).map(([id, { termos, excecoes }]) => [
+/** O termo vira expressão: palavra inteira, ou começo de palavra com `*`, ou começo do nome com `^`. */
+function expressao(termo: string): RegExp {
+  const noInicio = termo.startsWith('^')
+  const prefixo = termo.endsWith('*')
+  const corpo = escapar(semPontuacao(semAcento(termo.replace(/^\^/, '').replace(/\*$/, ''))))
+  return new RegExp(`${noInicio ? '^' : '(?<![a-z0-9])'}${corpo}${prefixo ? '' : '(?![a-z0-9])'}`)
+}
+
+/** A exceção casa o trecho inteiro, de palavra a palavra, quantas vezes aparecer. */
+const trecho = (excecao: string): RegExp => new RegExp(`(?<![a-z0-9])${escapar(semPontuacao(semAcento(excecao)))}(?![a-z0-9])`, 'g')
+
+interface Expressoes {
+  readonly termos: readonly RegExp[]
+  readonly excecoes: readonly RegExp[]
+  readonly qualificadores: readonly string[]
+}
+
+const EXPRESSOES: ReadonlyMap<IdRestricao, Expressoes> = new Map(
+  Object.entries(TERMOS_POR_RESTRICAO).map(([id, { termos, excecoes, qualificadores }]) => [
     id as IdRestricao,
-    { termos: termos.map(expressao), excecoes: excecoes.map((e) => semPontuacao(semAcento(e))) },
+    { termos: termos.map(expressao), excecoes: excecoes.map(trecho), qualificadores: qualificadores.map((q) => semPontuacao(semAcento(q))) },
   ]),
 )
 
@@ -269,8 +278,11 @@ function casaSoOsTermos(id: IdRestricao, nome: string): boolean {
   const regra = EXPRESSOES.get(id)
   if (!regra) return false
   const limpo = semPontuacao(nome)
-  if (regra.excecoes.some((e) => limpo.includes(e))) return false
-  return regra.termos.some((t) => t.test(nome))
+  if (regra.qualificadores.some((q) => limpo.includes(q))) return false
+  // D-716n: o trecho da exceção sai do nome, e os termos são procurados no resto (o "#" não deixa o termo de começo de
+  // nome casar no que sobra).
+  const resto = regra.excecoes.reduce((texto, e) => texto.replace(e, ' # '), limpo)
+  return regra.termos.some((t) => t.test(resto))
 }
 
 const daBase = (id: number) => id >= 1 && id <= ULTIMO_ID_DA_BASE
