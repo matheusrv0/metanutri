@@ -33,11 +33,12 @@ export function registrarMedidasProprias(lista: readonly { readonly alimentoId: 
 
 /**
  * As medidas do alimento: as da conta primeiro (marcadas `propria`), depois as da POF; com o mesmo nome, vale a da conta
- * (D-387). O alimento próprio traz as dele no cadastro.
+ * (D-387). O alimento próprio traz as dele no cadastro; o da base ampliada, as do USDA com nome da POF (spec
+ * base-ampliada, D-713).
  */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
   // O alimento próprio traz as do cadastro e do rótulo; a medida da conta também vale para ele (correção A, D-433).
-  const daBase = alimentoId >= PRIMEIRO_ID_PROPRIO ? (buscarAlimento(alimentoId)?.medidas ?? []) : (MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? [])
+  const daBase = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? buscarAlimento(alimentoId)?.medidas ?? []
   const proprias = PROPRIAS.get(alimentoId)
   if (!proprias) return daBase
   return [...proprias, ...daBase.filter((m) => !proprias.some((p) => p.nome === m.nome))]
@@ -553,6 +554,8 @@ const ehFruta = (alimentoId: number): boolean => buscarAlimento(alimentoId)?.cat
 interface Indice {
   readonly alimento: Alimento
   readonly texto: string
+  /** Da base ampliada (spec base-ampliada, D-712): vem depois da TACO e dos próprios. */
+  readonly ampliada: boolean
   /** A forma crua de quem se come cozido, quando a base tem a preparada: vem depois dela (D-370, item 3). */
   readonly cruIngrediente: boolean
   readonly usoComum: boolean
@@ -571,14 +574,18 @@ const indices = new WeakMap<readonly Alimento[], readonly Indice[]>()
 function indexar(alimentos: readonly Alimento[]): readonly Indice[] {
   let i = indices.get(alimentos)
   if (!i) {
-    const preparadas = new Set(alimentos.filter((a) => !CRU_NO_FIM.test(normalizar(a.descricao).trim())).map((a) => semPreparo(a.descricao)))
+    const preparadasDe = (lista: readonly Alimento[]) => new Set(lista.filter((a) => !CRU_NO_FIM.test(normalizar(a.descricao).trim())).map((a) => semPreparo(a.descricao)))
+    // D-712 (spec base-ampliada): o preparo que só a base ampliada tem não empurra o cru da TACO para baixo da TACO.
+    const preparadas = preparadasDe(alimentos)
+    const preparadasSemAmpliada = preparadasDe(alimentos.filter((a) => a.ampliada === undefined))
     i = alimentos.map((alimento) => {
       const texto = normalizar(alimento.descricao).trim()
       const regra = regraQueExclui(alimento)
       return {
         alimento,
         texto,
-        cruIngrediente: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && preparadas.has(semPreparo(alimento.descricao)),
+        ampliada: alimento.ampliada !== undefined,
+        cruIngrediente: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && (alimento.ampliada ? preparadas : preparadasSemAmpliada).has(semPreparo(alimento.descricao)),
         usoComum: ehDeUsoComum(alimento),
         classe: regra === null ? (ehPratoComposto(alimento) ? 2 : 0) : regra.nivel === 'ingrediente' ? 1 : 3,
         consumo: posicaoNoConsumo(alimento.id),
@@ -651,6 +658,8 @@ function candidatosDaBusca(
     .map((i) => ({ i, temMedida: temMedida(i.alimento), comeca: comeca(i), uso: usoDe(i.alimento, opcoes.uso) }))
     .sort(
       (a, b) =>
+        // D-712 (spec base-ampliada): a base ampliada depois da TACO e dos próprios; a que a conta já usa concorre como eles.
+        Number(a.i.ampliada && a.uso === 0) - Number(b.i.ampliada && b.uso === 0) ||
         Number(b.temMedida) - Number(a.temMedida) ||
         b.uso - a.uso ||
         Number(a.i.cruIngrediente) - Number(b.i.cruIngrediente) ||
