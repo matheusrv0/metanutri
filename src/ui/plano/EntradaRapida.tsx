@@ -1,5 +1,5 @@
 import { Plus, Search } from 'lucide-react'
-import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { produtoDosDados } from '@/domain/alimentoProprio.ts'
 import { buscarAlimentos, leituraDoResultado, leituraDoTexto, PRIMEIRO_ID_PROPRIO, type MedidaCaseira, type ResultadoBusca } from '@/domain/busca.ts'
 import {
@@ -89,6 +89,9 @@ function MarcaDeCompletude({ alimento }: { readonly alimento: ResultadoBusca['al
 }
 
 /** Uma linha da lista: um alimento da tabela ou uma receita da conta. */
+/** D-767: a espera do catálogo depois da última tecla. */
+const ESPERA_DO_CATALOGO_MS = 150
+
 type Opcao =
   | { readonly tipo: 'alimento'; readonly r: ResultadoBusca }
   | { readonly tipo: 'receita'; readonly r: ResultadoReceita }
@@ -120,20 +123,26 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     [aoAdicionarReceita, texto, receitas, resultados],
   )
   // Spec base-ampliada, fase 2 (D-758, CA-1764): o índice do catálogo só é pedido com 3 letras ou mais.
-  const comLetras = letrasDaBusca(texto) >= LETRAS_PARA_O_CATALOGO
+  // D-767: o catálogo (23 mil nomes) busca de novo uns 150 ms depois da última tecla, não a cada tecla.
+  const [textoDoCatalogo, setTextoDoCatalogo] = useState('')
+  useEffect(() => {
+    const espera = setTimeout(() => setTextoDoCatalogo(texto), ESPERA_DO_CATALOGO_MS)
+    return () => clearTimeout(espera)
+  }, [texto])
+  const comLetras = letrasDaBusca(textoDoCatalogo) >= LETRAS_PARA_O_CATALOGO
   const catalogo = useCatalogoOff(comLetras)
   const meusAlimentos = useMeusAlimentos()
   const [erroDoProduto, setErroDoProduto] = useState(false)
   const doCatalogo = useMemo(() => {
     if (!comLetras || !catalogo.indice) return []
     // CA-1757: o produto que a conta já copiou aparece como "meu", pela busca de sempre; não se repete aqui.
-    return buscarNoCatalogo(catalogo.indice, texto)
+    return buscarNoCatalogo(catalogo.indice, textoDoCatalogo)
       .filter((p) => copiaExistente(meusAlimentos.lista, p.codigo) === undefined)
       .map((p, i): Opcao => {
         const alimento = alimentoProvisorio(p, i)
-        return { tipo: 'catalogo', p, r: { alimento, ...leituraDoTexto(texto, alimento) } }
+        return { tipo: 'catalogo', p, r: { alimento, ...leituraDoTexto(textoDoCatalogo, alimento) } }
       })
-  }, [comLetras, catalogo.indice, texto, meusAlimentos.lista])
+  }, [comLetras, catalogo.indice, textoDoCatalogo, meusAlimentos.lista])
   const opcoes: readonly Opcao[] = [
     ...daReceita.filter((r) => r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
     ...resultados.map((r): Opcao => ({ tipo: 'alimento', r })),

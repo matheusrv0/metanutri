@@ -43,6 +43,7 @@ existe pelo código de barras e com internet.
 | D-764 | **Genérico sem marca** (revisão da fase 2, achado 3). Sai do catálogo o produto sem marca com o mesmo nome e os mesmos nutrientes de outro produto (entre dois sem marca iguais, fica um). Na busca, o produto com marca vem antes do sem marca, e cada linha mostra as kcal por 100 g, arredondadas, para diferenciar os parecidos | A lista não pode repetir o mesmo arroz cinco vezes |
 | D-765 | **O aviso de licença lista os arquivos** (revisão da fase 2, achado 6). `LICENCA.txt` traz o endereço completo do índice e das 100 fatias no app em produção, para quem quiser baixar o banco derivado inteiro (a oferta "compartilhar igual" da ODbL) | A oferta tem de ser clara |
 | D-766 | **O workflow confere antes de abrir o PR** (revisão da fase 2, achado 7). Depois de gerar, roda `npm ci`, os testes do catálogo (`src/data/catalogo-off.test.ts`) e confere que a pasta não passa de 30 MB (R-751); se algo falhar, o PR não abre. O ramo leva data e hora (`catalogo-off-AAAA-MM-DD-HHMM`): rodar duas vezes no mesmo dia não colide | O dono revisa só o que passou nas conferências |
+| D-767 | **Espera de 150 ms na busca do catálogo** (revisão da fase 2, achado 8). O catálogo busca de novo cerca de 150 ms depois da última tecla, não a cada tecla; a TACO, a base ampliada e Meus alimentos continuam respondendo na hora | 23 mil nomes a cada tecla pesam no celular |
 
 **Acerto de alergênicos na régua da revisão** (`alergia.py`: os 23.096 produtos, contra o que o próprio OFF publica):
 

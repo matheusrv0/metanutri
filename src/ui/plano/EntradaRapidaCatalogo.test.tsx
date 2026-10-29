@@ -96,6 +96,17 @@ describe('o catálogo na entrada rápida', () => {
     expect(screen.queryByText(/Nenhum alimento encontrado/)).not.toBeInTheDocument()
   })
 
+  it('D-767: o catálogo espera cerca de 150 ms depois da última tecla para buscar de novo', async () => {
+    servidor()
+    const { usuario, campo } = montar()
+    await usuario.type(campo, 'iogurte natural')
+    expect(await screen.findByRole('option', { name: /Iogurte Natural Integral Cremoso/ })).toBeInTheDocument()
+    // Logo depois da tecla, a lista do catálogo ainda é a de antes; passada a espera, é a do texto novo.
+    await usuario.type(campo, ' xyz')
+    expect(screen.queryByRole('option', { name: /Iogurte Natural Integral Cremoso/ })).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('option', { name: /Iogurte Natural Integral Cremoso/ })).not.toBeInTheDocument())
+  })
+
   it('CB-750: sem o índice, a busca segue com a base e uma linha diz que os produtos de marca precisam de internet', async () => {
     servidor('indice')
     const { usuario, campo } = montar()
