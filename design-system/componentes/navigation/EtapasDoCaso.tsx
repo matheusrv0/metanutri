@@ -39,7 +39,8 @@ export function EtapasDoCaso({ abaAtual, aoEscolher }: EtapasDoCasoProps) {
                     <span className="sr-only">Etapa {etapa.numero}: </span>
                     {etapa.rotulo}
                   </span>
-                  <span className="hidden truncate text-xs text-muted-foreground sm:block">{etapa.descricao}</span>
+                  {/* Em duas linhas, não cortada numa: em 768 px a coluna não cabe a frase (spec ajustes-mobile, M-027). */}
+                  <span className="hidden text-xs text-muted-foreground sm:line-clamp-2">{etapa.descricao}</span>
                 </span>
               </button>
             </li>
