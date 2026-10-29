@@ -3,7 +3,7 @@
 **Spec:** `specs/base-ampliada/SPEC.md` (pedida em 29/10/2026; "apenas faça"; aprovação pelas telas).
 
 **Objetivo:** 638 alimentos genéricos do USDA (SR Legacy e Foundation), com nome, grupo e preparo da TACO, entram na
-Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 96 `sugerivel`. A fase 2
+Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 98 `sugerivel`. A fase 2
 (Open Food Facts) fica só na spec (seção 6).
 
 **Arquitetura:** três scripts em `scripts/dados/` (leitura dos zips, peneira, importação) geram
@@ -38,6 +38,8 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | T9 | Fontes da base | `src/domain/baseMetanutri.ts`, `baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.tsx`, `TelaFontes.test.tsx`, `e2e/site/publico.spec.ts` (cinco links), `THIRD_PARTY_NOTICES.md` | CA-1721, CA-1722 | T1 |
 | T10 | Lista de conferência | `specs/base-ampliada/lista-de-conferencia.md`, `src/data/base-ampliada-conferencia.test.ts` | CA-1711 | T1 |
 | T11 | Navegador e validação | `e2e/base-ampliada.spec.ts` (novo), medições, relatório | CA-1712, CA-1716 a CA-1718, CA-1724 (no navegador) | T1 a T10 |
+| T12 | Rodada do coordenador: energia pelos fatores de Atwater da fonte (D-708 revista) | `scripts/dados/usda-fonte.mjs` (+ `.d.mts`), `scripts/dados/importar-base-ampliada.mjs` (+ `.d.mts`), `dados-brutos/usda/curadoria-base-ampliada.json`, `src/data/base-ampliada.json`, `base-ampliada-fonte.json`, `src/data/base-ampliada.test.ts`, `src/data/base-ampliada-conferencia.test.ts`, `specs/base-ampliada/lista-de-conferencia.md`, `src/ui/publico/TelaFontes.test.tsx`, `e2e/base-ampliada.spec.ts` (contagem) | CA-1704, CA-1711 | T1, T10 |
+| T13 | Rodada do coordenador: folha crua, uma regra só no Cobrir (D-716a) | `src/domain/cobrir.ts`, `src/domain/cobrirFolhaCrua.test.ts` (novo), `src/domain/cobrirAntesDepois.test.ts`, `src/domain/cobrir.test.ts` (CA-1245), `dados-brutos/usda/curadoria-base-ampliada.json` e `src/data/base-ampliada.json` (romana e kale cruas voltam a `sugerivel`), `src/ui/publico/inicio/exemploDaLanding.ts` (+ teste), `specs/landing-v3/SPEC.md` (D-657) | CA-1727, CA-1728 | T6 |
 
 ## Tarefas
 
@@ -122,6 +124,25 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 2. `npm run check`, `npm run e2e` (busca, Cobrir e o novo), `npm run test:csp`, `npm run build:app`; o tamanho do
    pedaço da base e da entrada principal antes e depois; o tempo de abertura (primeira tela) antes e depois.
 
+### T12 · Energia pelos fatores da fonte (rodada do coordenador)
+
+1. Testes: `energiaIncoerente` aceita o cacau em pó pelos fatores dele e o farelo pela fibra a 2 kcal/g, e continua
+   pegando energia × 1000 e macros trocados (carboidrato com gordura, proteína com gordura); a lista de conferência
+   cobre o farelo, o cacau e a canela.
+2. Scripts: o leitor guarda os fatores de Atwater de cada alimento (SR pelos CSVs de fator, Foundation pelo JSON); a
+   conferência usa os fatores com 12% de tolerância e, sem fatores, a fibra a 2 kcal/g (30% com fibra de 10 g ou mais,
+   20% no resto). Só a base ampliada; a conferência de Meus alimentos não muda. Os 24 alimentos entram com ids novos.
+
+### T13 · Folha crua no Cobrir (rodada do coordenador)
+
+1. Testes (CA-1728): a regra reconhece a folha crua das duas bases; a alface roxa sai do ferro do exemplo e o pão de
+   glúten fica, com e sem a base; a rúcula fica no cálcio; nenhuma folha crua sugerida cobre menos de 25%; a romana e
+   a kale cruas são `sugerivel`. A tabela de antes e depois (CA-1727) no exemplo e no vazio.
+2. `cobrir.ts`: `ehFolhaCrua` (a lista de folhas ganha couve kale e escarola) e o corte de 25% depois do de 10%. A
+   curadoria deixa de tirar folha crua de `sugerivel`.
+3. Consequências conferidas: o CA-1245 passa a exercitar o teto de 40 g com falta pequena; a landing troca "Almeirão
+   cru" por "Pimentão vermelho" na vitamina E (o exemplo segue o motor).
+
 ## Matriz critério → teste
 
 | Critério | Teste |
@@ -136,25 +157,47 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | CA-1721, CA-1722 | `src/domain/baseMetanutri.test.ts`, `src/ui/publico/TelaFontes.test.tsx`, `src/seo/textosProibidos.test.ts` |
 | CA-1723, CB-710 | `src/domain/restricoesAmpliada.test.ts` |
 | CA-1724 a CA-1727, CB-709 | `src/domain/cobrirAmpliada.test.ts`, `src/domain/cobrirAntesDepois.test.ts`; CA-1724 em `e2e/base-ampliada.spec.ts` |
+| CA-1728 | `src/domain/cobrirFolhaCrua.test.ts`; CA-1245 em `src/domain/cobrir.test.ts` (teto de 40 g da folha na criança, agora com falta pequena) |
 
-## Antes e depois do Cobrir (CA-1727)
+## Antes e depois do Cobrir (CA-1727 e CA-1728)
 
-Plano de exemplo da Maria (28 anos), porção automática, chave de ingredientes desligada; "novo" é da base ampliada.
-Gerada por `src/domain/cobrirAntesDepois.test.ts`.
+Maria (28 anos), porção automática, chave de ingredientes desligada. "Antes" é o `main` de 29/10/2026 (só a TACO, sem a
+regra da folha crua); "depois" é esta branch (base ampliada e D-716a). **Novo** é da base ampliada. Gerada e conferida
+por `src/domain/cobrirAntesDepois.test.ts`; a regra da folha crua, por `src/domain/cobrirFolhaCrua.test.ts`.
 
-| Nutriente | Antes (só a TACO) | Depois (com a base ampliada) |
+**Plano de exemplo**
+
+| Nutriente | Antes | Depois |
 |---|---|---|
-| Ferro | Alface roxa crua (60 g, 19%); Pão de glúten (50 g, 37%); Tofu (140 g, 26%); Maminha grelhada (120 g, 37%); Estrogonofe de carne (150 g, 52%) | Alface roxa crua (60 g, 19%); **Feijão-branco cozido** novo (140 g, 67%); Pão de glúten (50 g, 37%); **Coxão mole grelhado** novo (120 g, 50%); **Atum em água** novo (120 g, 26%) |
-| B6 | **Aipo cru** (100 g, 41%); Pão de soja (50 g, 91%); Banana pacova (150 g, 58%); Salada de legumes no vapor (150 g, 11%); Maminha grelhada (120 g, 36%) | **Espinafre Nova Zelândia cozido** novo (meia xícara, 90 g, 49%); **Coxão mole grelhado** novo (50 g, 100%); **Atum em água** novo (120 g, 88%); **Ervilha fresca cozida** novo (meia xícara, 80 g, 40%); Pão de soja (50 g, 91%) |
-| Vitamina D | Salmão com pele grelhado (90 g, 100%); Salmão sem pele grelhado (90 g, 100%); Atum em óleo (120 g, 71%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) | **Truta grelhada** novo (60 g, 100%); Salmão com pele (90 g, 100%); Salmão sem pele (90 g, 100%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) |
-| Cálcio | Rúcula crua (60 g, 27%); Iogurte natural desnatado (1 copo americano, 150 g, 91%); Sardinha assada (60 g, 100%); Tofu (140 g, 44%); Laranja da terra (1 unidade, 35%) | Rúcula crua (60 g, 27%); Iogurte natural desnatado (150 g, 91%); Sardinha assada (60 g, 100%); **Tofu firme** novo (meia xícara, 126 g, 98%); **Chia** nova (30 g, 69%) |
-| B12 | já na meta no exemplo (sem sugestão) | já na meta. No plano vazio: **Polaca-do-alasca grelhada** e **Atum em água** (novos) passam a abrir a lista, antes contra-filé e merluza |
-| Folato | já na meta no exemplo (sem sugestão) | já na meta. No plano vazio, igual a antes (chicória, feijão-fradinho, goiaba, pão de glúten, gema) |
+| Ferro | Alface roxa crua (60 g, 19%); Pão de glúten (50 g, 37%); Tofu (140 g, 26%); Maminha grelhada (120 g, 37%); Estrogonofe de carne (150 g, 52%) | **Espinafre cozido** novo (90 g, 41%); **Feijão-branco cozido** novo (140 g, 67%); Pão de glúten (50 g, 37%); **Coxão mole grelhado** novo (120 g, 50%); **Atum em água** novo (120 g, 26%) |
+| B6 | Aipo cru (100 g, 41%); Pão de soja (50 g, 91%); Banana pacova (150 g, 58%); Salada de legumes no vapor (150 g, 11%); Maminha grelhada (120 g, 36%) | **Espinafre Nova Zelândia cozido** novo (90 g, 49%); **Coxão mole grelhado** novo (50 g, 100%); **Atum em água** novo (120 g, 88%); **Ervilha fresca cozida** novo (80 g, 40%); Pão de soja (50 g, 91%) |
+| Vitamina D | Salmão com pele (90 g, 100%); Salmão sem pele (90 g, 100%); Atum em óleo (120 g, 71%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) | **Truta grelhada** novo (60 g, 100%); Salmão com pele (90 g, 100%); Salmão sem pele (90 g, 100%); Gema cozida (40 g, 19%); Lombo assado (120 g, 11%) |
+| Cálcio | Rúcula crua (60 g, 27%); Iogurte natural desnatado (150 g, 91%); Sardinha assada (60 g, 100%); Tofu (140 g, 44%); Laranja da terra (180 g, 35%) | Rúcula crua (60 g, 27%); Iogurte natural desnatado (150 g, 91%); Sardinha assada (60 g, 100%); **Tofu firme** novo (126 g, 98%); **Chia** novo (30 g, 69%) |
+| B12 | já na meta (sem sugestão) | já na meta (sem sugestão) |
+| Folato | já na meta (sem sugestão) | já na meta (sem sugestão) |
 
-O aipo sai da B6. A alface roxa e o pão de glúten continuam no ferro: são da TACO, e tirá-los mexe na ordem do Cobrir
-para a TACO inteira, fora desta spec (fica como pendência). Nenhuma sugestão nova é folha crua, pão ou bebida.
+**Plano vazio**
 
-## Os 96 `sugerivel` (para a parceira conferir)
+| Nutriente | Antes | Depois |
+|---|---|---|
+| Ferro | Agrião cru; Pão de glúten; Tofu; Maminha grelhada; Estrogonofe de carne | **Espinafre cozido** novo (90 g, 20%); **Feijão-branco cozido** novo (140 g, 32%); Pão de glúten (50 g, 18%); **Coxão mole grelhado** novo (120 g, 24%); **Atum em água** novo (120 g, 12%) |
+| B6 | Aipo cru; Pão de soja; Banana pacova; Maminha grelhada; Castanha-de-caju torrada | **Espinafre Nova Zelândia cozido** novo (90 g, 18%); **Coxão mole grelhado** novo (120 g, 90%); **Atum em água** novo (120 g, 33%); **Ervilha fresca cozida** novo (80 g, 15%); Pão de soja (50 g, 34%) |
+| Vitamina D | Salmão com pele; Salmão sem pele; Atum em óleo; Sardinha em óleo; Gema cozida | **Truta grelhada** novo (106,5 g, 100%); Salmão com pele (105 g, 100%); Salmão sem pele (100 g, 97%); **Linguado grelhado** novo (63,5 g, 16%); Gema cozida (40 g, 16%) |
+| Cálcio | Leite desnatado; Quiabo cru; Sardinha assada; Tofu; Laranja da terra | **Espinafre cozido** novo (90 g, 14%); Leite desnatado (200 g, 30%); Sardinha assada (120 g, 58%); **Tofu firme** novo (126 g, 28%); **Chia** novo (30 g, 20%) |
+| B12 | Contra-filé grelhado; Merluza assada; Filé-mignon grelhado; Leite desnatado; Ovo cozido | **Polaca-do-alasca grelhada** novo (60 g, 100%); **Atum em água** novo (85 g, 100%); Contra-filé grelhado (50 g, 100%); Leite desnatado (200 g, 46%); Ovo cozido (90 g, 46%) |
+| Folato | Chicória crua; Feijão-fradinho; Goiaba branca; Pão de glúten; Gema cozida | **Espinafre cozido** novo (90 g, 37%); Feijão-fradinho (140 g, 54%); Goiaba branca (170 g, 23%); Pão de glúten (50 g, 24%); Gema cozida (40 g, 16%) |
+
+**O que mudou e por quê.** A alface roxa sai do ferro do exemplo (cobria 19% em 60 g), o agrião sai do ferro do plano
+vazio (12%) e a chicória do folato (24%): é a regra da folha crua (D-716a), a mesma nas duas bases. O pão de glúten
+fica no ferro. O aipo sai da B6 (a base traz opções mais densas). A rúcula fica no cálcio do exemplo (27%).
+
+**Nada estranho entrou.** No lugar das folhas cruas entra o espinafre cozido (novo), que é verdura cozida de rotina;
+só com a TACO, entram o almeirão refogado (ferro do exemplo, 100 g, 20%), a sardinha em óleo (ferro do vazio) e o
+brócolis cozido (folato do vazio). Nenhuma sugestão nova é folha crua, aipo, pão, bebida, miúdo ou frito (o teste
+confere). Na landing, a primeira sugestão da vitamina E passa de "Almeirão cru" (17%) a "Pimentão vermelho" (98 g,
+19%), porque o exemplo dela segue o motor (landing-v3, D-657).
+
+## Os 98 `sugerivel` (para a parceira conferir)
 
 - **Pescados e frutos do mar** (9): Linguado, filé, grelhado; Cavalinha, grelhada; Polaca-do-alasca, filé, cozida; Polaca-do-alasca, filé, grelhada; Tilápia, filé, grelhada; Truta, grelhada; Atum, em conserva em água; Pescada, branca, grelhada; Sardinha, em conserva em molho de tomate.
 - **Leite e derivados** (5): Queijo, cottage, semidesnatado; Queijo, cottage; Leite, de vaca, semidesnatado; Iogurte, grego, natural, desnatado; Iogurte, grego, natural, integral.
@@ -163,7 +206,7 @@ para a TACO inteira, fora desta spec (fica como pendência). Nenhuma sugestão n
 - **Leguminosas e derivados** (8): Feijão, vermelho, cozido; Feijão, branco, cozido; Grão-de-bico, cozido; Ervilha, seca, partida, cozida; Amendoim, torrado, sem sal; Tofu, firme; Edamame, cozido; Ervilha, fresca, cozida.
 - **Nozes e sementes** (9): Amêndoa, torrada, sem sal; Amêndoa, crua; Castanha-de-caju, torrada, sem sal; Castanha-de-caju, crua; Semente, de abóbora, sem casca, torrada, sem sal; Semente, de abóbora, sem casca, crua; Semente, de girassol, sem casca, torrada, sem sal; Semente, de girassol, sem casca, crua; Chia, semente.
 - **Cereais e derivados** (6): Macarrão, trigo, com ovos, cozido; Macarrão, trigo, cozido; Macarrão, trigo, integral, cozido; Quinoa, cozida; Arroz, parboilizado, cozido; Milho, verde, cozido.
-- **Verduras, hortaliças e derivados** (21): Vagem, cozida; Repolho, branco, cozido; Couve, manteiga, cozida; Couve, kale, cozida; Feijão, broto, cozido; Feijão, broto, refogado; Cogumelo, portobello, grelhado; Cogumelo, shiitake, cozido; Cogumelo, shiitake, refogado; Cogumelo, paris (champignon), cozido; Cogumelo, paris (champignon), refogado; Espinafre, Nova Zelândia, cozido; Quiabo, cozido; Batata, inglesa, com casca, assada; Abóbora, cozida; Espinafre, cozido; Abóbora, assada; Abóbora, pescoço, assada; Inhame, cozido; Tomate, italiano, cru; Tomate, grape, cru.
+- **Verduras, hortaliças e derivados** (23): Alface, romana, crua; Couve, kale, crua (as duas voltaram com D-716a: no Cobrir, só entram cobrindo 25% ou mais); Vagem, cozida; Repolho, branco, cozido; Couve, manteiga, cozida; Couve, kale, cozida; Feijão, broto, cozido; Feijão, broto, refogado; Cogumelo, portobello, grelhado; Cogumelo, shiitake, cozido; Cogumelo, shiitake, refogado; Cogumelo, paris (champignon), cozido; Cogumelo, paris (champignon), refogado; Espinafre, Nova Zelândia, cozido; Quiabo, cozido; Batata, inglesa, com casca, assada; Abóbora, cozida; Espinafre, cozido; Abóbora, assada; Abóbora, pescoço, assada; Inhame, cozido; Tomate, italiano, cru; Tomate, grape, cru.
 - **Frutas e derivados** (15): Maçã, Gala, com casca, crua; Damasco, seco; Abacate, Hass (avocado), cru; Amora, crua; Mirtilo, cru; Cereja, crua; Tâmara, seca; Uva, verde, sem semente, crua; Uva, vermelha, sem semente, crua; Melão, cantaloupe, cru; Banana, da terra, assada; Ameixa, seca; Uva-passa, preta, sem semente; Framboesa, crua; Nectarina, crua.
 
 ## Validação (29/10/2026)
@@ -180,6 +223,6 @@ para a TACO inteira, fora desta spec (fica como pendência). Nenhuma sugestão n
 
 - D-705: 638 alimentos, não "alguns milhares" (aceito na rodada do coordenador) (os milhares são a fase 2).
 - D-711: o plano com alimento novo espera a base no primeiro acesso.
-- D-716: os 96 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
+- D-716: os 98 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
 - D-701: a Foundation de outubro de 2026 saiu ontem; o CSV dela veio incompleto, e o JSON é o arquivo usado.
 - Fase 2: a recomendação (b), arquivos estáticos.
