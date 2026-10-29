@@ -1,5 +1,7 @@
 // A base de alimentos com o nome do MetaNutri e as fontes que a licença da TACO
-// manda citar (spec pdf-e-telas-limpas, D-51 e CA-322), mais o USDA, que pede a citação (spec vitaminas-usda, D-308).
+// manda citar (spec pdf-e-telas-limpas, D-51 e CA-322), mais o USDA, que pede a citação (spec vitaminas-usda, D-308; spec
+// base-ampliada, D-715). O site lê daqui só o arquivo pequeno da base ampliada, nunca a base.
+import { FONTE_BASE_AMPLIADA, type FonteBaseAmpliada } from './baseAmpliada.ts'
 import { medidasDoAlimento } from './busca.ts'
 import { FONTE_USDA, mesDaVersao } from './complementoUsda.ts'
 import { NUTRIENTES_CONFERIDOS } from './completude.ts'
@@ -20,10 +22,10 @@ export interface FonteDaBase {
 const comComplementoUsda = (): number => ALIMENTOS.filter((a) => a.usda !== undefined).length
 
 /** "Conjuntos SR Legacy (versão de abril de 2018) e Foundation Foods (versão de abril de 2026), baixados em 20/10/2026." */
-function conjuntosDoUsda(): string {
-  const conjuntos = FONTE_USDA.conjuntos.map((c) => `${c.nome} (versão de ${mesDaVersao(c.versao)})`)
+function conjuntosDoUsda(fonte: Pick<FonteBaseAmpliada['fonte'], 'conjuntos' | 'baixadoEm'> = FONTE_USDA): string {
+  const conjuntos = fonte.conjuntos.map((c) => `${c.nome} (versão de ${mesDaVersao(c.versao)})`)
   const lista = conjuntos.length > 1 ? `${conjuntos.slice(0, -1).join(', ')} e ${conjuntos.at(-1) ?? ''}` : (conjuntos[0] ?? '')
-  const [ano, mes, dia] = FONTE_USDA.baixadoEm.split('-')
+  const [ano, mes, dia] = fonte.baixadoEm.split('-')
   return `Conjuntos ${lista}, baixados em ${dia}/${mes}/${ano}.`
 }
 
@@ -44,6 +46,14 @@ export const FONTES_DA_BASE: readonly FonteDaBase[] = [
     rotuloLink: 'Abrir o FoodData Central',
   },
   {
+    // Spec base-ampliada, D-715 e CA-1721.
+    assunto: 'Alimentos que a TACO não tem',
+    citacao: `${FONTE_BASE_AMPLIADA.fonte.citacao} ${conjuntosDoUsda(FONTE_BASE_AMPLIADA.fonte)} Domínio público (CC0 1.0 Universal).`,
+    uso: `${FONTE_BASE_AMPLIADA.alimentos} alimentos genéricos que a tabela brasileira não traz (peixes, carnes, laticínios, grãos, sementes, frutas, verduras e cogumelos), com nome em português e o grupo da tabela brasileira. Quando a TACO tem o alimento no mesmo preparo, vale a TACO. Nutriente que a fonte não publicou fica em branco, nunca zero.`,
+    url: FONTE_BASE_AMPLIADA.fonte.url,
+    rotuloLink: 'Abrir o FoodData Central',
+  },
+  {
     assunto: 'Medidas caseiras',
     citacao:
       'Instituto Brasileiro de Geografia e Estatística (IBGE). Pesquisa de Orçamentos Familiares 2008-2009: tabela de medidas referidas para os alimentos consumidos no Brasil. Rio de Janeiro: IBGE, 2011.',
@@ -61,7 +71,12 @@ export const FONTES_DA_BASE: readonly FonteDaBase[] = [
 ]
 
 export interface ResumoDaBase {
+  /** A base inteira: a tabela brasileira e a base ampliada. */
   readonly alimentos: number
+  /** Os da tabela brasileira (TACO). */
+  readonly daTabela: number
+  /** Os genéricos do USDA que a tabela brasileira não tem (spec base-ampliada), contados no arquivo pequeno. */
+  readonly daBaseAmpliada: number
   /** Os nutrientes da tabela brasileira que a base confere em todo alimento. */
   readonly nutrientes: number
   readonly comMedidaCaseira: number
@@ -72,7 +87,9 @@ export interface ResumoDaBase {
 /** Contado na base em uso: se ela mudar, a página de fontes muda junto. */
 export function resumoDaBase(): ResumoDaBase {
   return {
-    alimentos: ALIMENTOS.length,
+    alimentos: ALIMENTOS.length + FONTE_BASE_AMPLIADA.alimentos,
+    daTabela: ALIMENTOS.length,
+    daBaseAmpliada: FONTE_BASE_AMPLIADA.alimentos,
     nutrientes: NUTRIENTES_CONFERIDOS.length,
     comMedidaCaseira: ALIMENTOS.filter((a) => medidasDoAlimento(a.id).length > 0).length,
     comComplementoUsda: comComplementoUsda(),
