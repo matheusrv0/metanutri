@@ -4,7 +4,7 @@
 import { idsDaRestricao, TERMOS_POR_RESTRICAO, ULTIMO_ID_DA_BASE, type IdRestricaoDaBase } from './restricoesDaBase.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { nomeDaReceita, receitaDoItem } from './receitaNoPlano.ts'
-import { OPCOES, type BuscarAlimento, type CondicaoFisiologica, type IdAlergenico, type ItemPlano, type Plano } from './tipos.ts'
+import { OPCOES, type AlergenicosDoRotulo, type BuscarAlimento, type CondicaoFisiologica, type IdAlergenico, type ItemPlano, type Plano } from './tipos.ts'
 
 export type IdRestricao = IdRestricaoDaBase
 export type TipoRestricao = 'alergia' | 'intolerancia' | 'escolha'
@@ -231,6 +231,8 @@ export interface AlimentoParaRestricao {
   readonly categoria?: string
   /** Na base ampliada, os alergênicos da curadoria (spec base-ampliada, D-716b). */
   readonly ampliada?: { readonly alergenicos?: readonly IdAlergenico[] }
+  /** No alimento próprio copiado do catálogo de rótulos, os alergênicos do rótulo (spec base-ampliada, fase 2, D-761). */
+  readonly proprio?: { readonly alergenicos?: AlergenicosDoRotulo }
 }
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -339,8 +341,18 @@ const RESTRICOES_DO_ALERGENICO: Readonly<Record<IdAlergenico, readonly IdRestric
   'frutos-do-mar': ['frutos-do-mar', 'vegetariano', 'vegano'],
 }
 
+const ligaARestricao = (lista: readonly IdAlergenico[] | undefined, id: IdRestricao): boolean => (lista ?? []).some((a) => RESTRICOES_DO_ALERGENICO[a].includes(id))
+
 const casaPeloCampo = (id: IdRestricao, alimento: AlimentoParaRestricao): boolean =>
-  (alimento.ampliada?.alergenicos ?? []).some((a) => RESTRICOES_DO_ALERGENICO[a].includes(id))
+  ligaARestricao(alimento.ampliada?.alergenicos, id) || ligaARestricao(alimento.proprio?.alergenicos?.contem, id)
+
+/**
+ * D-761: o "pode conter" do rótulo acusa nas alergias e no glúten (doença celíaca), com o texto dizendo; na intolerância
+ * à lactose, só o "contém" acusa.
+ */
+const podeConter = (id: IdRestricao, alimento: AlimentoParaRestricao): boolean => id !== 'lactose' && ligaARestricao(alimento.proprio?.alergenicos?.podeConter, id)
+
+export const SEM_INFORMACAO_DE_ALERGENICOS = 'Sem informação de alergênicos: confira a embalagem.'
 
 /** O aviso da restrição que o alimento pega, ou `null`. */
 export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: RestricoesDoPaciente | readonly string[]): string | null {
@@ -356,6 +368,7 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
       continue
     }
     if (casaPeloNome(grupo.id, nome) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
+    if (podeConter(grupo.id, alimento)) return `${grupo.aviso} (pode conter)`
     if (casaPeloGrupo(grupo.id, alimento.categoria, nome)) {
       return alimento.categoria === PESCADOS && DIZ_O_GRUPO.has(grupo.id) ? `${grupo.aviso} (grupo ${PESCADOS})` : grupo.aviso
     }
@@ -364,6 +377,8 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
     const termo = semAcento(linha)
     if (termo.length >= 3 && nome.includes(termo)) return `Não come: ${linha.trim().toLowerCase()}`
   }
+  // D-761: o rótulo sem informação nenhuma, com alergia ou intolerância marcada, pede a embalagem.
+  if (alimento.proprio?.alergenicos?.semInformacao && restricoes.grupos.some((g) => POR_ID.get(g.id)?.tipo !== 'escolha')) return SEM_INFORMACAO_DE_ALERGENICOS
   return null
 }
 

@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
-import { valoresDoProdutoDoCatalogo, VERSAO_DO_CATALOGO } from '../estado/catalogoOff.ts'
+import { detalheDoProdutoDoCatalogo, VERSAO_DO_CATALOGO } from '../estado/catalogoOff.ts'
 import { useCatalogoOff } from '../estado/usarCatalogoOff.ts'
 import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useReceitas } from '../estado/usarReceitas.ts'
@@ -165,8 +165,8 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     let copia = copiaExistente(meusAlimentos.lista, p.codigo)
     if (!copia) {
       try {
-        const valores = await valoresDoProdutoDoCatalogo(p)
-        copia = meusAlimentos.salvar(produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, valores, VERSAO_DO_CATALOGO))))
+        const detalhe = await detalheDoProdutoDoCatalogo(p)
+        copia = meusAlimentos.salvar(produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, VERSAO_DO_CATALOGO))))
       } catch {
         setErroDoProduto(true)
         return

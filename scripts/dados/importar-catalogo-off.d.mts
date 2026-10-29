@@ -13,7 +13,18 @@ export interface ProdutoDoCatalogo {
   readonly porcaoTexto: string
   readonly unidade: 'g' | 'ml'
   readonly valores: ValoresDoCatalogo
+  readonly alergenicos: AlergenicosDoCatalogo
 }
+
+export interface AlergenicosDoCatalogo {
+  readonly contem: readonly string[]
+  readonly podeConter: readonly string[]
+  readonly semInformacao: boolean
+}
+
+export const ALERGENICOS: readonly string[]
+export function alergenicosDoRegistro(r: RegistroOff): AlergenicosDoCatalogo
+export function mascara(lista: readonly string[]): number
 
 export const URL_DA_EXPORTACAO: string
 export const CACHE: string

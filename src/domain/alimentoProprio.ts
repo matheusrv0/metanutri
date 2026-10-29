@@ -124,6 +124,7 @@ export function dadosDoProduto(p: Produto): DadosAlimentoProprio {
     fonte,
     observacoes: p.observacoes ?? '',
     sugerirAutomaticamente: p.sugerirAutomaticamente === true,
+    ...(p.alergenicos ? { alergenicos: p.alergenicos } : {}),
   }
 }
 
@@ -161,6 +162,7 @@ export function produtoDosDados(d: DadosAlimentoProprio, id?: number): DadosPara
     observacoes: d.observacoes.trim(),
     // D-384 e D-493: com a energia incoerente ou com um motivo da regra do alimento próprio, a chave fica desligada.
     sugerirAutomaticamente: d.sugerirAutomaticamente && !energiaIncoerente(d.valores) && motivoParaNaoSugerirDados(d) === null,
+    ...(d.alergenicos ? { alergenicos: d.alergenicos } : {}),
   }
 }
 

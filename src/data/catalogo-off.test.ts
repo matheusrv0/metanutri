@@ -1,9 +1,12 @@
 // Spec base-ampliada, fase 2: CA-1750 a CA-1754 e CB-757. O script do catálogo de rótulos e os arquivos que ele publica.
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { CHAVES_DO_CATALOGO, colunasQueFaltam, energiaIncoerente, montarCatalogo, porCem, produtoDoRegistro, type RegistroOff } from '../../scripts/dados/importar-catalogo-off.mjs'
+import { alergenicosDoRegistro, CHAVES_DO_CATALOGO, colunasQueFaltam, energiaIncoerente, montarCatalogo, porCem, produtoDoRegistro, type RegistroOff } from '../../scripts/dados/importar-catalogo-off.mjs'
+import { produtoDosDados } from '../domain/alimentoProprio.ts'
+import { dadosDaCopia, decodificarFatia, decodificarIndice, fatiaDoCodigo, rotuloDoCatalogo, type ArquivoFatia, type ArquivoIndice } from '../domain/catalogoOff.ts'
 import { nutrientesPor100 } from '../domain/codigoBarras.ts'
-import { energiaIncoerente as energiaIncoerenteDoApp } from '../domain/produtos.ts'
+import { energiaIncoerente as energiaIncoerenteDoApp, produtoComoAlimento, type Produto } from '../domain/produtos.ts'
+import { montarRestricoes, restricaoDoAlimento } from '../domain/restricoes.ts'
 import fonte from './catalogo-off-fonte.json'
 import tabelaDoOff from './off-nutrientes.json'
 
@@ -74,7 +77,7 @@ describe('CA-1750 e CA-1751 (D-752): a peneira', () => {
 
   it('CB-757: o CSV sem uma coluna necessária para dizendo qual', () => {
     expect(colunasQueFaltam(['code', 'product_name'])).toContain('countries_tags')
-    const todas = [...Object.keys(registro({})), 'energy_100g', 'sodium_100g', 'salt_100g', ...tabelaDoOff.map((t) => `${t.off}_100g`)]
+    const todas = [...Object.keys(registro({})), 'energy_100g', 'sodium_100g', 'salt_100g', 'product_quantity', 'categories_tags', 'allergens', 'traces_tags', 'ingredients_text', ...tabelaDoOff.map((t) => `${t.off}_100g`)]
     expect(colunasQueFaltam(todas)).toEqual([])
   })
 })
@@ -111,7 +114,8 @@ describe('CA-1753 (D-753): os arquivos publicados', () => {
     for (const [codigo] of indice.produtos as readonly (readonly [string])[]) {
       const fatia = porFatia.get(codigo.slice(-2))
       expect(fatia?.chaves).toEqual(CHAVES_DO_CATALOGO)
-      expect(fatia?.produtos[codigo], codigo).toHaveLength(CHAVES_DO_CATALOGO.length)
+      // D-761: depois dos valores, "contém", "pode conter" e "sem informação".
+      expect(fatia?.produtos[codigo], codigo).toHaveLength(CHAVES_DO_CATALOGO.length + 3)
     }
   })
 
@@ -135,5 +139,70 @@ describe('D-754: a atualização mensal abre um pull request', () => {
     expect(yml).not.toMatch(/deploy|pages: write|wrangler/i)
     // Cada ação fixada pelo commit, como no publicar.yml.
     for (const uso of yml.match(/uses: .+/g) ?? []) expect(uso).toMatch(/@[0-9a-f]{40}\b/)
+  })
+})
+
+describe('D-761: os alergênicos de cada produto (revisão da fase 2, achado 1)', () => {
+  it('"contém" das tags do OFF e dos ingredientes; "pode conter" das traces e do trecho "pode conter"', () => {
+    expect(alergenicosDoRegistro(registro({ allergens: 'en:gluten,en:milk,en:soybeans', traces_tags: 'en:eggs', ingredients_text: '' }))).toEqual({
+      contem: ['trigo', 'gluten', 'leite', 'lactose', 'soja'],
+      podeConter: ['ovo'],
+      semInformacao: false,
+    })
+    expect(alergenicosDoRegistro(registro({ ingredients_text: 'Farinha de trigo enriquecida, açúcar, gordura vegetal, soro de leite em pó. PODE CONTER AMENDOIM E CASTANHAS.' }))).toEqual({
+      contem: ['trigo', 'gluten', 'leite', 'lactose'],
+      podeConter: ['amendoim', 'castanhas'],
+      semInformacao: false,
+    })
+    expect(alergenicosDoRegistro(registro({ ingredients_text: '40% wheat flour, sugar, whole milk powder, oatmeal, eggs, soy lecithin' })).contem).toEqual(['trigo', 'gluten', 'leite', 'lactose', 'ovo', 'soja'])
+  })
+
+  it('o que lembra e não é: leite de coco, manteiga de cacau, óleo de soja e noz-moscada', () => {
+    expect(alergenicosDoRegistro(registro({ ingredients_text: 'leite de coco, manteiga de cacau, óleo de soja, noz-moscada' })).contem).toEqual([])
+  })
+
+  it('o produto "zero lactose" com leite pega leite, não lactose', () => {
+    expect(alergenicosDoRegistro(registro({ product_name: 'Leite zero lactose', allergens: 'en:milk' })).contem).toEqual(['leite'])
+  })
+
+  it('sem tags, sem traces e sem ingredientes: sem informação', () => {
+    expect(alergenicosDoRegistro(registro({ allergens: '', traces_tags: '', ingredients_text: '' }))).toEqual({ contem: [], podeConter: [], semInformacao: true })
+  })
+})
+
+describe('D-761: os produtos reais da revisão acusam o que o rótulo diz', () => {
+  const pasta = join(process.cwd(), 'public', fonte.caminho)
+  const indice = decodificarIndice(JSON.parse(readFileSync(join(pasta, 'indice.json'), 'utf8')) as ArquivoIndice)
+  const marcadas = (...ids: string[]) => montarRestricoes({ marcadas: ids, texto: '', doencas: [], naoGosta: '' })
+  const celiaca = montarRestricoes({ marcadas: [], texto: '', doencas: ['celiaca'], naoGosta: '' })
+  /** A cópia em Meus alimentos, como a entrada rápida grava. */
+  const copia = (codigo: string) => {
+    const p = indice.produtos.find((x) => x.produto.codigo === codigo)?.produto
+    if (!p) throw new Error(`${codigo} fora do catálogo`)
+    const detalhe = decodificarFatia(JSON.parse(readFileSync(join(pasta, 'fatias', `${fatiaDoCodigo(codigo)}.json`), 'utf8')) as ArquivoFatia).get(codigo)
+    if (!detalhe) throw new Error(`${codigo} fora da fatia`)
+    const dados = produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, fonte.versao)))
+    return produtoComoAlimento({ ...dados, id: 900_900, criadoEm: '2026-10-29' } as Produto)
+  }
+
+  it.each([
+    ['7891000352175', 'Nescau', ['leite', 'gluten', 'soja']],
+    ['7891000051436', 'Passatempo', ['gluten', 'leite']],
+    ['7895000318254', 'Biscoito de Polvilho Qualitá', ['leite', 'ovo']],
+    ['7896004002194', 'Sucrilhos chocolate', ['gluten']],
+    ['7897173049171', 'Panettone pavê', ['gluten', 'leite', 'ovo']],
+    ['7896336006686', 'Paçoquita', ['amendoim']],
+    ['7894321711478', 'Toddy', ['gluten', 'soja', 'leite']],
+    ['5897400140307', 'Ninho Forti+', ['leite', 'lactose']],
+  ])('%s (%s) acusa %j', (codigo, _nome, restricoes) => {
+    const alimento = copia(codigo)
+    for (const r of restricoes) expect(restricaoDoAlimento(alimento, marcadas(r)), r).not.toBeNull()
+    if (restricoes.includes('gluten')) expect(restricaoDoAlimento(alimento, celiaca)).not.toBeNull()
+  })
+})
+
+describe('D-761: ingredientes em espanhol', () => {
+  it('"en polvo" é pó, não polvo; leche, huevo, maní e pescado contam', () => {
+    expect(alergenicosDoRegistro(registro({ ingredients_text: 'azúcar, cacao en polvo, leche descremada en polvo, huevo, maní, pescado' })).contem).toEqual(['leite', 'lactose', 'ovo', 'amendoim', 'peixe'])
   })
 })

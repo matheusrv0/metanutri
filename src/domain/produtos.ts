@@ -9,7 +9,7 @@ import { MENSAGEM_ILEGIVEL } from './numeroDoRotulo.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { ALIMENTOS } from './tabelas.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
-import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
+import type { AlergenicosDoRotulo, Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const CHAVE = 'metanutri:produtos'
 
@@ -167,6 +167,8 @@ export interface Produto {
   readonly observacoes?: string
   /** "Pode aparecer no Cobrir e nas trocas" (D-386). Padrão desligado. */
   readonly sugerirAutomaticamente?: boolean
+  /** D-761 (spec base-ampliada, fase 2): os alergênicos do rótulo do catálogo; as restrições os leem além do nome. */
+  readonly alergenicos?: AlergenicosDoRotulo
   readonly atualizadoEm?: string
 }
 
@@ -251,6 +253,7 @@ export interface DadosAlimentoProprio {
   readonly fonte: FonteAlimentoProprio | null
   readonly observacoes: string
   readonly sugerirAutomaticamente: boolean
+  readonly alergenicos?: AlergenicosDoRotulo
 }
 
 export interface AvisoAlimentoProprio {
@@ -428,6 +431,7 @@ export function produtoComoAlimento(p: Produto): Alimento {
       nomeParaPaciente: typeof p.nomeParaPaciente === 'string' ? p.nomeParaPaciente.trim() : '',
       sugerir: p.sugerirAutomaticamente === true,
       energiaIncoerente: energiaIncoerente(nutrientes),
+      ...(p.alergenicos ? { alergenicos: p.alergenicos } : {}),
     },
   }
 }

@@ -135,6 +135,8 @@ function Formulario({ inicial, editando, emPlanos, aoSalvar, aoFechar }: Formula
         valores: { ...atual.valores, ...achado.por100 },
         medidas: achado.porcao ? [...atual.medidas.filter((m) => m.nome !== 'porção'), { nome: 'porção', gramas: achado.porcao.gramas }] : atual.medidas,
         fonte: { tipo: 'open-food-facts', codigo: achado.codigo, data: /versão (\d{4}-\d{2}-\d{2})/.exec(achado.fonte)?.[1] ?? new Date().toISOString().slice(0, 10) },
+        // D-761 (spec base-ampliada, fase 2): os alergênicos do catálogo de rótulos vão junto.
+        ...(achado.alergenicos ? { alergenicos: achado.alergenicos } : {}),
       }))
       // Os campos que a leitura preencheu passam a ter número.
       desmarcar(['porcaoG', ...Object.keys(achado.por100)])

@@ -37,6 +37,22 @@ existe pelo código de barras e com internet.
 | D-758 | **Busca.** Na entrada rápida, os produtos do catálogo vêm **depois** da TACO, da base ampliada e de Meus alimentos, com a marca e a porção na linha e a marca "rótulo". O índice de nomes é pedido na primeira busca com 3 letras ou mais e fica no service worker. A busca é sem acento e sem pontuação, por palavras (todas presentes, em qualquer ordem), tolerante a um erro de digitação em palavra de 5 letras ou mais; o nome que começa pela primeira palavra vem antes; até 5 produtos. A quantidade digitada vale como nos outros: "150 iogurte" são 150 g; "1 iogurte X" é a porção do rótulo | O que a nutricionista digita hoje continua igual; o catálogo só soma |
 | D-759 | **Código de barras: primeiro o catálogo.** No cadastro de Meus alimentos, o código procura primeiro na fatia do catálogo; só se não achar chama o OFF ao vivo, como hoje. Achado no catálogo, o aviso diz "do catálogo de rótulos (versão …)" | Funciona sem internet depois do primeiro uso e poupa o OFF |
 | D-760 | **Ids.** O produto do catálogo na lista da busca tem um id provisório da faixa 800.000.000 a 899.999.999, que nunca vai para o plano: ao escolher, vira a cópia com id de alimento próprio | O id de 13 dígitos do código não cabe nas faixas de id |
+| D-761 | **Alergênicos do rótulo** (revisão da fase 2, achado 1, alta). O script grava por produto o que "contém" (as tags `allergens` do OFF e as palavras dos ingredientes, em português, inglês e espanhol: trigo, cevada, centeio, aveia, malte, glúten; leite, soro, caseína, lactose, manteiga, queijo; ovo; soja e lecitina; amendoim; castanhas; peixe; crustáceos e moluscos) e o que "pode conter" (as `traces_tags` e o trecho dos ingredientes depois de "pode conter"), como bits no fim de cada produto da fatia, e marca "sem informação" quando o OFF não traz tag, traço nem ingrediente. O que lembra e não é sai antes de procurar ("leite de coco", "manteiga de cacau", "óleo de soja", "noz-moscada", "en polvo"); o produto "zero lactose" não liga a lactose. A cópia em Meus alimentos grava `alergenicos` ("contém" e "pode conter" separados), e `restricaoDoAlimento` lê o campo nos alimentos próprios, como já lia o da base ampliada. "Pode conter" acusa nas alergias e no glúten, com "(pode conter)" no aviso; na intolerância à lactose, só "contém" acusa. Sem informação, com alergia ou intolerância marcada, a linha diz "Sem informação de alergênicos: confira a embalagem." | Erro de alergia é o mais grave; o nome e a marca não dizem o ingrediente |
+
+**Acerto de alergênicos na régua da revisão** (`alergia.py`: os 23.096 produtos, contra o que o próprio OFF publica):
+
+| Alergênico | "Contém" no OFF: antes | depois | "Pode conter" no OFF: antes | depois | Só nos ingredientes: antes | depois |
+|---|---|---|---|---|---|---|
+| Glúten | 57 de 212 (27%) | 212 (100%) | 163 de 585 | 585 | 546 de 2.255 | 2.255 |
+| Leite | 63 de 217 (29%) | 217 (100%) | 58 de 392 | 392 | 748 de 1.544 | 1.517 |
+| Ovo | 4 de 47 (9%) | 47 (100%) | 4 de 195 | 195 | 49 de 327 | 327 |
+| Soja | 10 de 215 (5%) | 215 (100%) | 1 de 338 | 338 | 28 de 983 | 919 |
+| Amendoim | 21 de 39 (54%) | 39 (100%) | 2 de 204 | 204 | 92 de 250 | 250 |
+| Castanhas | 14 de 39 (36%) | 39 (100%) | 27 de 365 | 365 | 62 de 300 | 294 |
+| Peixe | 8 de 10 (80%) | 10 (100%) | 0 de 30 | 30 | 43 de 55 | 55 |
+| Crustáceos e moluscos | 0 de 4 (0%) | 4 (100%) | 0 de 28 | 28 | 5 de 777 | 64 |
+
+Nos ingredientes, o que fica de fora é de propósito: "leite de coco" e "manteiga de cacau" (leite), "óleo de soja" refinado (soja) e "cacao en polvo", que a régua da revisão lia como polvo; dos 777 produtos que a régua conta em crustáceos, quase todos são esse "en polvo".
 
 ## 3. Critérios de aceite
 
@@ -78,7 +94,7 @@ existe pelo código de barras e com internet.
 ## 5. Fora de escopo
 
 - O catálogo na Tabela de alimentos (só a entrada rápida e o código de barras nesta fase).
-- Foto do produto, ingredientes, alergênicos do OFF e Nutri-Score.
+- Foto do produto e Nutri-Score. (Os alergênicos saíram daqui: D-761.)
 - Atualização automática sem revisão (o PR mensal é revisado pelo dono).
 - Produtos de outros países.
 - Rodar o workflow mensal aqui (sem push); a primeira execução é manual, depois do merge.

@@ -6,7 +6,7 @@ import { interpretarEntrada } from './busca.ts'
 import type { RotuloEncontrado } from './codigoBarras.ts'
 import type { DadosAlimentoProprio, Produto } from './produtos.ts'
 import { CHAVES_NUTRIENTES } from './totais.ts'
-import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
+import type { AlergenicosDoRotulo, Alimento, ChaveNutrienteAlimento, IdAlergenico } from './tipos.ts'
 
 export interface ArquivoIndice {
   readonly versao: string
@@ -17,7 +17,17 @@ export interface ArquivoIndice {
 
 export interface ArquivoFatia {
   readonly chaves: readonly string[]
+  /** D-761: a ordem dos bits de "contém" e "pode conter", que vêm depois dos valores de cada produto. */
+  readonly alergenicos?: readonly string[]
   readonly produtos: Readonly<Record<string, readonly (number | null)[]>>
+}
+
+export type ValoresDoRotulo = Partial<Record<ChaveNutrienteAlimento, number | null>>
+
+/** O que a fatia diz do produto: os valores por 100 e os alergênicos do rótulo (D-761). */
+export interface DetalheDoProduto {
+  readonly valores: ValoresDoRotulo
+  readonly alergenicos: AlergenicosDoRotulo
 }
 
 export interface ProdutoDoIndice {
@@ -145,13 +155,28 @@ export function buscarNoCatalogo(indice: IndiceDoCatalogo, texto: string, limite
 /** D-753: a fatia é a dos dois últimos dígitos do código. */
 export const fatiaDoCodigo = (codigo: string): string => codigo.slice(-2)
 
-export function decodificarFatia(arquivo: ArquivoFatia): ReadonlyMap<string, Partial<Record<ChaveNutrienteAlimento, number | null>>> {
+export function decodificarFatia(arquivo: ArquivoFatia): ReadonlyMap<string, DetalheDoProduto> {
   const chaves = arquivo.chaves as readonly ChaveNutrienteAlimento[]
-  return new Map(Object.entries(arquivo.produtos).map(([codigo, valores]) => [codigo, Object.fromEntries(chaves.map((c, i) => [c, valores[i] ?? null]))]))
+  const nomes = (arquivo.alergenicos ?? []) as readonly IdAlergenico[]
+  const daMascara = (m: number | null | undefined): readonly IdAlergenico[] => nomes.filter((_, i) => ((m ?? 0) & (1 << i)) !== 0)
+  return new Map(
+    Object.entries(arquivo.produtos).map(([codigo, linha]) => {
+      const [contem, podeConter, semInformacao] = linha.slice(chaves.length)
+      return [
+        codigo,
+        {
+          valores: Object.fromEntries(chaves.map((c, i) => [c, linha[i] ?? null])),
+          // Sem as marcas (arquivo antigo), o produto fica sem informação: a restrição pede a embalagem.
+          alergenicos: { contem: daMascara(contem), podeConter: daMascara(podeConter), semInformacao: semInformacao === undefined || semInformacao === 1 },
+        },
+      ]
+    }),
+  )
 }
 
 /** O produto do catálogo na forma da leitura ao vivo (`RotuloEncontrado`), para a cópia e para o código de barras. */
-export function rotuloDoCatalogo(p: ProdutoDoIndice, valores: Partial<Record<ChaveNutrienteAlimento, number | null>>, versao: string): RotuloEncontrado {
+export function rotuloDoCatalogo(p: ProdutoDoIndice, detalhe: DetalheDoProduto, versao: string): RotuloEncontrado {
+  const { valores } = detalhe
   const por100 = Object.fromEntries(CHAVES_NUTRIENTES.filter((c) => c in valores).map((c) => [c, valores[c] ?? null])) as Partial<Record<ChaveNutrienteAlimento, number | null>>
   return {
     codigo: p.codigo,
@@ -161,6 +186,7 @@ export function rotuloDoCatalogo(p: ProdutoDoIndice, valores: Partial<Record<Cha
     porcao: p.porcaoG !== null && p.porcaoG > 0 ? { gramas: p.porcaoG, texto: p.porcaoTexto } : null,
     unidade: p.unidade,
     fonte: `catálogo de rótulos do Open Food Facts (versão ${versao})`,
+    alergenicos: detalhe.alergenicos,
   }
 }
 
@@ -182,6 +208,8 @@ export function dadosDaCopia(rotulo: RotuloEncontrado): DadosAlimentoProprio {
     medidas: rotulo.porcao ? [{ nome: 'porção', gramas: rotulo.porcao.gramas }] : [],
     fonte: { tipo: 'open-food-facts', codigo: rotulo.codigo, data: versao },
     sugerirAutomaticamente: false,
+    // D-761: os alergênicos do rótulo vão junto; as restrições os leem além do nome.
+    ...(rotulo.alergenicos ? { alergenicos: rotulo.alergenicos } : {}),
   }
 }
 

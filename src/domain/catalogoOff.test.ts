@@ -31,7 +31,7 @@ const INDICE: ArquivoIndice = {
   ],
 }
 const CHAVES = ['energia_kcal', 'proteina_g', 'lipideos_g', 'carboidrato_g', 'calcio_mg', 'sodio_mg']
-const FATIA: ArquivoFatia = { chaves: CHAVES, produtos: { '7891000100103': [60, 4, 3, 5, 120, null] } }
+const FATIA: ArquivoFatia = { chaves: CHAVES, alergenicos: ['trigo', 'gluten', 'leite', 'lactose'], produtos: { '7891000100103': [60, 4, 3, 5, 120, null, 12, 0, 0] } }
 
 const indice = decodificarIndice(INDICE)
 const nomes = (texto: string) => buscarNoCatalogo(indice, texto).map((p) => `${p.nome} · ${p.marca}`)
@@ -85,8 +85,10 @@ describe('D-760: o alimento provisório da lista', () => {
 describe('D-756, D-757 e CA-1756: a cópia em Meus alimentos', () => {
   const [iogurte] = buscarNoCatalogo(indice, 'iogurte natural')
   if (!iogurte) throw new Error('sem iogurte')
-  const valores = decodificarFatia(FATIA).get('7891000100103')
-  const rotulo = rotuloDoCatalogo(iogurte, valores ?? {}, '2026-10-29')
+  const detalhe = decodificarFatia(FATIA).get('7891000100103')
+  const valores = detalhe?.valores
+  if (!detalhe) throw new Error('sem detalhe')
+  const rotulo = rotuloDoCatalogo(iogurte, detalhe, '2026-10-29')
 
   it('a fatia é a dos dois últimos dígitos; o valor ausente fica nulo', () => {
     expect(fatiaDoCodigo('7891000100103')).toBe('03')
@@ -110,6 +112,8 @@ describe('D-756, D-757 e CA-1756: a cópia em Meus alimentos', () => {
     expect(d.medidas).toEqual([{ nome: 'porção', gramas: 170 }])
     expect(d.valores.proteina_g).toBe(4)
     expect(d.valores.sodio_mg).toBeNull()
+    // D-761: os bits 2 e 3 (leite e lactose) viram a lista de "contém".
+    expect(d.alergenicos).toEqual({ contem: ['leite', 'lactose'], podeConter: [], semInformacao: false })
     expect(rotulo.fonte).toBe('catálogo de rótulos do Open Food Facts (versão 2026-10-29)')
   })
 
@@ -125,6 +129,6 @@ describe('D-756, D-757 e CA-1756: a cópia em Meus alimentos', () => {
   it('CB-755: o produto em ml vira cópia em ml', () => {
     const [cola] = buscarNoCatalogo(indice, 'refrigerante')
     if (!cola) throw new Error('sem cola')
-    expect(dadosDaCopia(rotuloDoCatalogo(cola, {}, '2026-10-29')).unidade).toBe('ml')
+    expect(dadosDaCopia(rotuloDoCatalogo(cola, { valores: {}, alergenicos: { contem: [], podeConter: [], semInformacao: true } }, '2026-10-29')).unidade).toBe('ml')
   })
 })

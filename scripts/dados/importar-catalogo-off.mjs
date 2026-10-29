@@ -29,7 +29,95 @@ const TABELA = JSON.parse(readFileSync(join(raiz, 'src', 'data', 'off-nutrientes
 /** As chaves gravadas em cada produto, na ordem das fatias. */
 export const CHAVES_DO_CATALOGO = ['energia_kcal', ...TABELA.map((t) => t.chave), 'sodio_mg']
 
-const COLUNAS = ['code', 'product_name', 'brands', 'countries_tags', 'quantity', 'serving_size', 'serving_quantity', 'energy-kcal_100g', 'energy_100g', 'sodium_100g', 'salt_100g', ...TABELA.map((t) => `${t.off}_100g`)]
+const COLUNAS = [
+  'code',
+  'product_name',
+  'brands',
+  'countries_tags',
+  'quantity',
+  'product_quantity',
+  'serving_size',
+  'serving_quantity',
+  'categories_tags',
+  'allergens',
+  'traces_tags',
+  'ingredients_text',
+  'energy-kcal_100g',
+  'energy_100g',
+  'sodium_100g',
+  'salt_100g',
+  ...TABELA.map((t) => `${t.off}_100g`),
+]
+
+/** D-761: os alergênicos, na ordem da base ampliada (D-716b). */
+export const ALERGENICOS = ['trigo', 'gluten', 'leite', 'lactose', 'ovo', 'soja', 'amendoim', 'castanhas', 'peixe', 'frutos-do-mar']
+
+/** As tags do OFF ("en:gluten") e o que cada uma liga. O glúten do OFF também liga o trigo: sobrar é mais seguro. */
+const DAS_TAGS = {
+  'en:gluten': ['trigo', 'gluten'],
+  'en:milk': ['leite', 'lactose'],
+  'en:eggs': ['ovo'],
+  'en:soybeans': ['soja'],
+  'en:peanuts': ['amendoim'],
+  'en:nuts': ['castanhas'],
+  'en:fish': ['peixe'],
+  'en:crustaceans': ['frutos-do-mar'],
+  'en:molluscs': ['frutos-do-mar'],
+}
+
+/** Nos ingredientes, em português e em inglês (a lista do OFF vem nas duas línguas). */
+const DOS_INGREDIENTES = [
+  [/(?<![\p{L}\p{N}])(trigo|wheat|s[eê]mola|semolina|triticale|espelta|spelt)(?![\p{L}\p{N}])/u, ['trigo', 'gluten']],
+  [/(?<![\p{L}\p{N}])(cevada|barley|centeio|rye|aveia|oats?|oatmeal|malte|malt|gl[uú]ten)(?![\p{L}\p{N}])/u, ['gluten']],
+  [/(?<![\p{L}\p{N}])(leite|leche|milk|soro|suero|whey|case[ií]na|caseinato|casein|lactose|creme de leite|cream|manteiga|butter|queijo|cheese|iogurte|yogurt|nata|requeij[aã]o)(?![\p{L}\p{N}])/u, ['leite', 'lactose']],
+  [/(?<![\p{L}\p{N}])(ovos?|huevos?|eggs?|clara|gema|albumina|albumin)(?![\p{L}\p{N}])/u, ['ovo']],
+  [/(?<![\p{L}\p{N}])(soja|soy|soya|soybeans?)(?![\p{L}\p{N}])/u, ['soja']],
+  [/(?<![\p{L}\p{N}])(amendoim|amendoins|man[ií]|cacahuetes?|peanuts?|pa[cç]oca)(?![\p{L}\p{N}])/u, ['amendoim']],
+  [/(?<![\p{L}\p{N}])(castanhas?|am[eê]ndoas?|avel[aã]s?|nozes|noz|pistaches?|macad[aâ]mias?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?)(?![\p{L}\p{N}])/u, ['castanhas']],
+  [/(?<![\p{L}\p{N}])(peixes?|pescados?|fish|atum|tuna|sardinhas?|sardines?|salm[aã]o|salmon|bacalhau|anchovas?|anchov(y|ies)|merluza|til[aá]pia)(?![\p{L}\p{N}])/u, ['peixe']],
+  [/(?<![\p{L}\p{N}])(camar[aã]o|camar[oõ]es|shrimps?|prawns?|caranguejo|crab|siri|lagosta|lobster|lulas?|squid|polvo|octopus|mexilh[aã]o|mussels?|ostras?|oysters?|mariscos?)(?![\p{L}\p{N}])/u, ['frutos-do-mar']],
+]
+
+/** O que lembra o alergênico e não é: sai do texto antes de procurar (o mesmo cuidado da D-716n). */
+const NAO_E = /(?<![\p{L}\p{N}])((en|em) polvo|leite de (coco|soja|am[eê]ndoas?|aveia|arroz|castanhas?)|coconut milk|manteiga de (cacau|karit[eé])|cocoa butter|[oó]leo de soja|soybean oil|noz[ -]moscada|nutmeg|creme de (cebola|milho))(?![\p{L}\p{N}])/gu
+
+/** "Pode conter ..." e "may contain ...": o resto do texto depois disso é "pode conter". */
+const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os de)/
+
+const semAcentoMinusculo = (t) => t.toLowerCase()
+const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))
+
+function doTexto(texto, destino) {
+  const limpo = semAcentoMinusculo(texto).replace(NAO_E, ' ')
+  for (const [re, alergenicos] of DOS_INGREDIENTES) if (re.test(limpo)) for (const a of alergenicos) destino.add(a)
+}
+
+/**
+ * D-761: os alergênicos do produto. "Contém": as tags do OFF (allergens) e as palavras dos ingredientes; "pode conter":
+ * as traces e o trecho dos ingredientes depois de "pode conter". O produto "sem lactose" no nome não liga a lactose. Sem
+ * tag, sem trace e sem ingredientes, o produto fica "sem informação".
+ */
+export function alergenicosDoRegistro(r) {
+  const contem = new Set()
+  const podeConter = new Set()
+  const tags = (campo) => texto(r[campo]).split(',').map((t) => t.trim()).filter((t) => t !== '')
+  for (const t of tags('allergens')) for (const a of DAS_TAGS[t] ?? []) contem.add(a)
+  for (const t of tags('traces_tags')) for (const a of DAS_TAGS[t] ?? []) podeConter.add(a)
+  const ingredientes = texto(r.ingredients_text)
+  const corte = semAcentoMinusculo(ingredientes).search(PODE_CONTER)
+  doTexto(corte < 0 ? ingredientes : ingredientes.slice(0, corte), contem)
+  if (corte >= 0) doTexto(ingredientes.slice(corte), podeConter)
+  if (/(sem|zero|0%|isento de) lactose|lactose free/i.test(texto(r.product_name))) contem.delete('lactose')
+  for (const a of contem) podeConter.delete(a)
+  return {
+    contem: ordenar(contem),
+    podeConter: ordenar(podeConter),
+    semInformacao: tags('allergens').length === 0 && tags('traces_tags').length === 0 && ingredientes === '',
+  }
+}
+
+/** A lista vira um número de bits, na ordem de ALERGENICOS (a forma compacta das fatias). */
+export const mascara = (lista) => lista.reduce((m, a) => m | (1 << ALERGENICOS.indexOf(a)), 0)
 
 /** CB-757: as colunas que o script lê e o cabeçalho do CSV não tem. */
 export function colunasQueFaltam(cabecalho) {
@@ -98,6 +186,7 @@ export function produtoDoRegistro(r) {
     porcaoTexto: porcao !== null && porcao > 0 ? texto(r.serving_size) : '',
     unidade,
     valores,
+    alergenicos: alergenicosDoRegistro(r),
   }
 }
 
@@ -168,8 +257,12 @@ export function gravarCatalogo({ produtos, doBrasil, descartados }, versao, sha,
   for (let n = 0; n < 100; n += 1) {
     const fim = String(n).padStart(2, '0')
     const daFatia = produtos.filter((p) => p.codigo.endsWith(fim))
-    const linhas = daFatia.map((p) => `${JSON.stringify(p.codigo)}:${JSON.stringify(CHAVES_DO_CATALOGO.map((c) => p.valores[c] ?? null))}`)
-    writeFileSync(join(pasta, 'fatias', `${fim}.json`), `{"chaves":${JSON.stringify(CHAVES_DO_CATALOGO)},"produtos":{\n${linhas.join(',\n')}\n}}\n`)
+    // D-761: depois dos valores, "contém" e "pode conter" como bits na ordem de `alergenicos`, e 1 se o OFF não tem informação.
+    const linhas = daFatia.map((p) => {
+      const a = p.alergenicos ?? { contem: [], podeConter: [], semInformacao: true }
+      return `${JSON.stringify(p.codigo)}:${JSON.stringify([...CHAVES_DO_CATALOGO.map((c) => p.valores[c] ?? null), mascara(a.contem), mascara(a.podeConter), a.semInformacao ? 1 : 0])}`
+    })
+    writeFileSync(join(pasta, 'fatias', `${fim}.json`), `{"chaves":${JSON.stringify(CHAVES_DO_CATALOGO)},"alergenicos":${JSON.stringify(ALERGENICOS)},"produtos":{\n${linhas.join(',\n')}\n}}\n`)
   }
   writeFileSync(join(pasta, 'LICENCA.txt'), LICENCA(versao))
   const fonte = {

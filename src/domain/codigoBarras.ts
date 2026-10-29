@@ -1,7 +1,7 @@
 // Código de barras do produto: validação do EAN e leitura do rótulo em base pública.
 import tabelaDoOff from '../data/off-nutrientes.json'
 import { CONTATO_EMAIL } from './legal.ts'
-import type { ChaveNutrienteAlimento } from './tipos.ts'
+import type { AlergenicosDoRotulo, ChaveNutrienteAlimento } from './tipos.ts'
 
 /** Confere o dígito verificador de EAN-8, EAN-13 ou UPC-A. */
 export function ehCodigoValido(codigo: string): boolean {
@@ -29,6 +29,8 @@ export interface RotuloEncontrado {
   /** Produto medido em ml (bebida, leite) ou em g (A23). */
   readonly unidade: 'g' | 'ml'
   readonly fonte: string
+  /** D-761: os alergênicos do rótulo, quando vêm do catálogo de rótulos. */
+  readonly alergenicos?: AlergenicosDoRotulo
 }
 
 interface ProdutoOpenFoodFacts {

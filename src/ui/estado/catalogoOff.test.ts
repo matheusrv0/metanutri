@@ -8,7 +8,7 @@ import {
   prepararCatalogoParaTeste,
   procurarRotulo,
   rotuloDoCatalogoPorCodigo,
-  valoresDoProdutoDoCatalogo,
+  detalheDoProdutoDoCatalogo,
   VERSAO_DO_CATALOGO,
 } from './catalogoOff.ts'
 
@@ -71,8 +71,8 @@ describe('as fatias', () => {
     await carregarIndiceDoCatalogo()
     const [iogurte] = indiceDoCatalogo()?.produtos.map((p) => p.produto) ?? []
     if (!iogurte) throw new Error('sem iogurte')
-    expect(await valoresDoProdutoDoCatalogo(iogurte)).toEqual({ energia_kcal: 60, proteina_g: 4 })
-    await valoresDoProdutoDoCatalogo(iogurte)
+    expect((await detalheDoProdutoDoCatalogo(iogurte)).valores).toEqual({ energia_kcal: 60, proteina_g: 4 })
+    await detalheDoProdutoDoCatalogo(iogurte)
     expect(pedidos.filter((p) => p.endsWith('03.json'))).toHaveLength(1)
   })
 
@@ -82,9 +82,9 @@ describe('as fatias', () => {
     await carregarIndiceDoCatalogo()
     const [iogurte] = indiceDoCatalogo()?.produtos.map((p) => p.produto) ?? []
     if (!iogurte) throw new Error('sem iogurte')
-    await expect(valoresDoProdutoDoCatalogo(iogurte)).rejects.toThrow()
-    expect(await valoresDoProdutoDoCatalogo(iogurte)).toEqual({ energia_kcal: 60, proteina_g: 4 })
-    await expect(valoresDoProdutoDoCatalogo({ ...iogurte, codigo: '7891000100199' })).rejects.toThrow(/não está/)
+    await expect(detalheDoProdutoDoCatalogo(iogurte)).rejects.toThrow()
+    expect((await detalheDoProdutoDoCatalogo(iogurte)).valores).toEqual({ energia_kcal: 60, proteina_g: 4 })
+    await expect(detalheDoProdutoDoCatalogo({ ...iogurte, codigo: '7891000100199' })).rejects.toThrow(/não está/)
   })
 })
 
