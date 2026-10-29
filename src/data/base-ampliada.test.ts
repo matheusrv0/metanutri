@@ -41,6 +41,11 @@ describe('base ampliada: arquivo gerado (spec base-ampliada)', () => {
     expect(base.chaves).toEqual(CHAVES)
   })
 
+  it('D-716m: o aviso de terceiros conta os alimentos da base de hoje', () => {
+    const avisos = readFileSync(join(process.cwd(), 'THIRD_PARTY_NOTICES.md'), 'utf8')
+    expect(avisos).toContain(`Os ${alimentos.length} alimentos de \`src/data/base-ampliada.json\``)
+  })
+
   it('CA-1701: id na faixa e único, fdcId único, conjunto conhecido e nome original guardado', () => {
     const ids = alimentos.map((a) => a.id)
     expect(new Set(ids).size).toBe(ids.length)

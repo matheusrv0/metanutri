@@ -42,7 +42,7 @@ https://fdc.nal.usda.gov/download-datasets/.
 
 ## USDA FoodData Central (base ampliada: alimentos genéricos que a TACO não tem)
 
-Os 613 alimentos de `src/data/base-ampliada.json`, gerado por `scripts/dados/importar-base-ampliada.mjs` a partir dos
+Os 638 alimentos de `src/data/base-ampliada.json`, gerado por `scripts/dados/importar-base-ampliada.mjs` a partir dos
 arquivos oficiais e da curadoria em `dados-brutos/usda/` (spec base-ampliada). Domínio público, CC0 1.0 Universal; o
 USDA pede só a citação: U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019.
 fdc.nal.usda.gov. Conjuntos SR Legacy (abril de 2018) e Foundation Foods (outubro de 2026), baixados em 29/10/2026 de
