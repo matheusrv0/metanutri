@@ -6,6 +6,7 @@ import {
   indiceDoCatalogo,
   inscreverNoCatalogo,
   prepararCatalogoParaTeste,
+  procurarRotulo,
   rotuloDoCatalogoPorCodigo,
   valoresDoProdutoDoCatalogo,
   VERSAO_DO_CATALOGO,
@@ -95,5 +96,27 @@ describe('D-759: o código de barras procura no catálogo', () => {
     expect(rotulo).toMatchObject({ codigo: '7891000100103', nome: 'Iogurte Natural Integral', marca: 'Nestlé', por100: { energia_kcal: 60, proteina_g: 4 } })
     expect(rotulo?.fonte).toContain(VERSAO_DO_CATALOGO)
     expect(await rotuloDoCatalogoPorCodigo('7890000000000')).toBeNull()
+  })
+})
+
+describe('D-759 e CA-1762: no cadastro, o código procura primeiro no catálogo', () => {
+  const aoVivoAchou = () => vi.fn(() => Promise.resolve({ codigo: '7890000000000', nome: 'Ao vivo', marca: '', por100: {}, porcao: null, unidade: 'g' as const, fonte: 'Open Food Facts' }))
+
+  it('achado no catálogo, o OFF ao vivo não é chamado', async () => {
+    prepararCatalogoParaTeste({ buscar: servidor().buscar })
+    const aoVivo = aoVivoAchou()
+    expect((await procurarRotulo('7891000100103', aoVivo))?.nome).toBe('Iogurte Natural Integral')
+    expect(aoVivo).not.toHaveBeenCalled()
+  })
+
+  it('fora do catálogo, ou com o catálogo sem rede ou com arquivo estragado, o OFF ao vivo é chamado como hoje', async () => {
+    prepararCatalogoParaTeste({ buscar: servidor().buscar })
+    const aoVivo = aoVivoAchou()
+    expect((await procurarRotulo('7890000000000', aoVivo))?.nome).toBe('Ao vivo')
+    prepararCatalogoParaTeste({ buscar: servidor({ 'indice.json': 1 }).buscar })
+    expect((await procurarRotulo('7891000100103', aoVivo))?.nome).toBe('Ao vivo')
+    prepararCatalogoParaTeste({ buscar: () => Promise.resolve({ estragado: true }) })
+    expect((await procurarRotulo('7891000100103', aoVivo))?.nome).toBe('Ao vivo')
+    expect(aoVivo).toHaveBeenCalledTimes(3)
   })
 })
