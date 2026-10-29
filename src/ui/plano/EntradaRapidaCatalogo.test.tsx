@@ -115,6 +115,18 @@ describe('o catálogo na entrada rápida', () => {
     expect(within(screen.getByRole('listbox', { name: 'Resultados para Adicionar alimento' })).getAllByRole('option').length).toBeGreaterThan(0)
   })
 
+  it('D-768: com Meus alimentos no limite de 1.000, a linha diz o limite, não "Tente de novo"', async () => {
+    servidor()
+    const cheio = Array.from({ length: 1000 }, (_, i) => ({ id: 900_000 + i, codigoBarras: '', nome: `Alimento ${i}`, marca: '', porcaoG: 100, medidaCaseira: '', porPorcao: {}, criadoEm: '2026-10-29' }))
+    localStorage.setItem('metanutri:produtos', JSON.stringify(cheio))
+    const { usuario, campo } = montar()
+    await usuario.type(campo, 'iogurte natural integral cremoso')
+    await usuario.click(await screen.findByRole('option', { name: /Iogurte Natural Integral Cremoso/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/limite da conta/)
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/Tente de novo/)
+    expect(adicionados).toEqual([])
+  })
+
   it('CB-751: a fatia que não vem não põe nada nem grava cópia pela metade', async () => {
     servidor('fatia')
     const { usuario, campo } = montar()

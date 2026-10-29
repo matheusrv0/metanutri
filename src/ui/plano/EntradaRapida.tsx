@@ -132,7 +132,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
   const comLetras = letrasDaBusca(textoDoCatalogo) >= LETRAS_PARA_O_CATALOGO
   const catalogo = useCatalogoOff(comLetras)
   const meusAlimentos = useMeusAlimentos()
-  const [erroDoProduto, setErroDoProduto] = useState(false)
+  const [erroDoProduto, setErroDoProduto] = useState<string | null>(null)
   const doCatalogo = useMemo(() => {
     if (!comLetras || !catalogo.indice) return []
     // CA-1757: o produto que a conta já copiou aparece como "meu", pela busca de sempre; não se repete aqui.
@@ -162,7 +162,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
     setTexto('')
     setSelecionado(0)
     setNadaAdicionado(false)
-    setErroDoProduto(false)
+    setErroDoProduto(null)
   }
 
   /**
@@ -170,14 +170,15 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
    * item aponta para a cópia. Sem a fatia, nada entra e nada é gravado (CB-751).
    */
   const adicionarDoCatalogo = async (p: ProdutoDoIndice, gramas: number, medida: MedidaDoItem | undefined) => {
-    setErroDoProduto(false)
+    setErroDoProduto(null)
     let copia = copiaExistente(meusAlimentos.lista, p.codigo)
     if (!copia) {
       try {
         const detalhe = await detalheDoProdutoDoCatalogo(p)
         copia = meusAlimentos.salvar(produtoDosDados(dadosDaCopia(rotuloDoCatalogo(p, detalhe, VERSAO_DO_CATALOGO))))
-      } catch {
-        setErroDoProduto(true)
+      } catch (erro) {
+        // D-768: Meus alimentos no limite diz o limite; tentar de novo não resolveria.
+        setErroDoProduto(erro instanceof RangeError ? erro.message : 'Não foi possível carregar o produto. Tente de novo.')
         return
       }
     }
@@ -247,7 +248,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
       {catalogoSemRede ? <p className="text-xs text-muted-foreground">Os produtos de marca precisam de internet no primeiro uso.</p> : null}
       {erroDoProduto ? (
         <p role="alert" className="text-xs font-medium text-warningtext">
-          Não foi possível carregar o produto. Tente de novo.
+          {erroDoProduto}
         </p>
       ) : null}
 

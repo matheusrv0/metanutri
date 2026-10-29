@@ -44,6 +44,7 @@ existe pelo código de barras e com internet.
 | D-765 | **O aviso de licença lista os arquivos** (revisão da fase 2, achado 6). `LICENCA.txt` traz o endereço completo do índice e das 100 fatias no app em produção, para quem quiser baixar o banco derivado inteiro (a oferta "compartilhar igual" da ODbL) | A oferta tem de ser clara |
 | D-766 | **O workflow confere antes de abrir o PR** (revisão da fase 2, achado 7). Depois de gerar, roda `npm ci`, os testes do catálogo (`src/data/catalogo-off.test.ts`) e confere que a pasta não passa de 30 MB (R-751); se algo falhar, o PR não abre. O ramo leva data e hora (`catalogo-off-AAAA-MM-DD-HHMM`): rodar duas vezes no mesmo dia não colide | O dono revisa só o que passou nas conferências |
 | D-767 | **Espera de 150 ms na busca do catálogo** (revisão da fase 2, achado 8). O catálogo busca de novo cerca de 150 ms depois da última tecla, não a cada tecla; a TACO, a base ampliada e Meus alimentos continuam respondendo na hora | 23 mil nomes a cada tecla pesam no celular |
+| D-768 | **Limite de Meus alimentos** (revisão da fase 2, achado 5). Com 1.000 alimentos próprios, escolher um produto do catálogo mostra a mensagem do limite ("Você já tem 1.000 alimentos cadastrados, o limite da conta. Exclua um que não usa mais."), não "Tente de novo" | Tentar de novo não resolve |
 
 **Acerto de alergênicos na régua da revisão** (`alergia.py`: os 23.096 produtos, contra o que o próprio OFF publica):
 
