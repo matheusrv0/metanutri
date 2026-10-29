@@ -17,9 +17,9 @@ existe pelo código de barras e com internet.
 | Download aqui | 164 s (9,3 MB/s) |
 | Leitura em stream | 84 s no script (que só abre as linhas com "en:brazil"); 6 min para ler as 4.881.991 linhas inteiras |
 | Do Brasil (`countries_tags` com `en:brazil`) | 37.689 |
-| Depois da peneira (D-752) | **23.096** (saem 7.324 sem energia ou acima de 900 kcal, 2.837 com energia incoerente, 2.710 sem um dos macros ou com macro impossível, 1.709 sem nome e 13 sem código) |
-| Índice de nomes | 1,75 MB (515 KB com gzip, como a Cloudflare serve) |
-| Fatias de detalhe | 100 fatias, 3,8 MB no total (605 KB com gzip; cerca de 47 KB, ou 7,6 KB com gzip, cada) |
+| Depois da peneira (D-752 e D-764) | **23.086** (saem 7.324 sem energia ou acima de 900 kcal, 2.837 com energia incoerente, 2.710 sem um dos macros ou com macro impossível, 1.709 sem nome, 13 sem código e 10 genéricos sem marca repetidos) |
+| Índice de nomes | 1,74 MB (511 KB com gzip, como a Cloudflare serve) |
+| Fatias de detalhe | 100 fatias com os valores e os alergênicos (D-761), 3,9 MB no total (636 KB com gzip; cerca de 7,9 KB com gzip cada) |
 | Impacto na abertura do app | nada do catálogo é pedido até a primeira busca com 3 letras; a entrada principal cresce 2,2 kB com gzip (o código da busca e da cópia) |
 
 ## 2. Decisões

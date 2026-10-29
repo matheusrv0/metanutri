@@ -44,3 +44,15 @@ entrada rápida soma os produtos depois dos outros resultados; o código de barr
   gzip); 5,5 MB na pasta. Decodificar o índice leva 78 ms e uma busca, 18 ms (Node, nesta máquina).
 - Abertura: nenhum arquivo do catálogo é pedido ao abrir o app e o plano (e2e CA-1764); o índice só vem na primeira busca
   com 3 letras, e a entrada principal cresceu 2,2 kB com gzip.
+
+## Revisão da fase 2 (29/10/2026): os 9 achados
+
+Um commit por achado, com o teste antes: D-761 (alergênicos do rótulo), D-762 (porção absurda), D-763 (pó em gramas),
+D-764 (genérico sem marca), D-765 (aviso de licença com os arquivos), D-766 (workflow confere antes do PR), D-767
+(espera de 150 ms), D-768 (limite de Meus alimentos) e D-769 (acabamento). A tabela de acerto de alergênicos está na
+SPEC-fase2, depois das decisões.
+
+Validação depois deles: `npm run check` com 324 arquivos e 6.055 testes; `npm run e2e` com 463; `npm run test:csp`
+com 3; `npm run build:app` com a entrada principal em 2.296,97 kB (596,34 kB com gzip), +8,5 kB (+2,8 kB com gzip)
+sobre a base-ajustes. Catálogo: 23.086 produtos; índice de 1,74 MB (511 KB com gzip); fatias de 3,9 MB (636 KB com gzip).
+
