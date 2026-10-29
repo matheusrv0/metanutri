@@ -297,6 +297,7 @@ function pelaRegra(alimento: Alimento): string {
 export function nomeParaPaciente(alimento: Alimento | undefined): string {
   if (!alimento) return 'Alimento removido'
     // D-385 (spec alimentos-e-gramaturas): o alimento próprio sai com o nome para o paciente do cadastro; sem ele, como foi escrito.
-  if (!IDS_DA_BASE.has(alimento.id)) return alimento.proprio?.nomeParaPaciente || alimento.descricao.trim() || 'Alimento sem nome'
+  // Spec base-ampliada, D-718: o alimento da base ampliada sai com o nome da curadoria ("Tilápia grelhada").
+  if (!IDS_DA_BASE.has(alimento.id)) return alimento.proprio?.nomeParaPaciente || alimento.ampliada?.nomeParaPaciente || alimento.descricao.trim() || 'Alimento sem nome'
   return NOMES_REVISADOS[alimento.id] ?? pelaRegra(alimento)
 }

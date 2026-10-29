@@ -24,8 +24,27 @@ const extras = new Map<number, Alimento>()
 export function registrarProdutos(lista: readonly Alimento[]): void {
   extras.clear()
   for (const a of lista) extras.set(a.id, a)
+  esquecerListas()
+}
+
+/**
+ * A base ampliada (spec base-ampliada, D-710): chega sob demanda, e a interface a registra aqui. Até lá (e nos testes que
+ * não a registram), as listas são as de antes.
+ */
+let ampliada: readonly Alimento[] = []
+const ampliadaPorId = new Map<number, Alimento>()
+
+export function registrarBaseAmpliada(lista: readonly Alimento[]): void {
+  ampliada = lista
+  ampliadaPorId.clear()
+  for (const a of lista) ampliadaPorId.set(a.id, a)
+  esquecerListas()
+}
+
+function esquecerListas(): void {
   comProdutos = null
   paraSugerir = null
+  daBase = null
 }
 
 /**
@@ -35,14 +54,23 @@ export function registrarProdutos(lista: readonly Alimento[]): void {
  */
 let comProdutos: readonly Alimento[] | null = null
 
-/** A tabela mais os produtos cadastrados; a busca usa esta lista. */
+/** A tabela, os produtos cadastrados e a base ampliada; a busca usa esta lista. */
 export function alimentosComProdutos(): readonly Alimento[] {
-  if (extras.size === 0) return ALIMENTOS
-  comProdutos ??= [...ALIMENTOS, ...extras.values()]
+  if (extras.size === 0 && ampliada.length === 0) return ALIMENTOS
+  comProdutos ??= [...ALIMENTOS, ...extras.values(), ...ampliada]
   return comProdutos
 }
 
-export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? extras.get(id)
+let daBase: readonly Alimento[] | null = null
+
+/** A Base MetaNutri inteira: a TACO e a base ampliada, sem os alimentos próprios (a Tabela de alimentos, D-385). */
+export function alimentosDaBase(): readonly Alimento[] {
+  if (ampliada.length === 0) return ALIMENTOS
+  daBase ??= [...ALIMENTOS, ...ampliada]
+  return daBase
+}
+
+export const buscarAlimento: BuscarAlimento = (id) => alimentosPorId.get(id) ?? extras.get(id) ?? ampliadaPorId.get(id)
 
 /**
  * D-386 (spec alimentos-e-gramaturas): o alimento próprio entra nas sugestões automáticas (Cobrir e trocas da folha) só
@@ -57,10 +85,13 @@ export function proprioPodeSerSugerido(a: Alimento): boolean {
 
 let paraSugerir: readonly Alimento[] | null = null
 
-/** A base e os alimentos próprios que podem ser sugeridos (D-386); a mesma lista enquanto os produtos não mudam. */
+/**
+ * A base, os alimentos próprios que podem ser sugeridos (D-386) e, da base ampliada, só os que a curadoria marcou
+ * `sugerivel` (spec base-ampliada, D-716; a regra prescritível vale depois, para todos). A mesma lista enquanto nada muda.
+ */
 export function alimentosParaSugerir(): readonly Alimento[] {
-  if (extras.size === 0) return ALIMENTOS
-  paraSugerir ??= [...ALIMENTOS, ...[...extras.values()].filter(proprioPodeSerSugerido)]
+  if (extras.size === 0 && ampliada.length === 0) return ALIMENTOS
+  paraSugerir ??= [...ALIMENTOS, ...[...extras.values()].filter(proprioPodeSerSugerido), ...ampliada.filter((a) => a.ampliada?.sugerivel === true)]
   return paraSugerir
 }
 
