@@ -463,4 +463,16 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     // Nenhum sugerível tem aditivo no nome da fonte.
     for (const a of alimentos.filter((x) => x.sugerivel)) expect(a.original, a.nome).not.toMatch(/additive/i)
   })
+
+  it('D-716k: massa fresca de espinafre, pão sem glúten e macarrão integral cru da Foundation sem B1, B2 e B3 da fortificação americana; o pão de forma sem o folato', () => {
+    for (const id of [100365, 100366, 100397, 100398, 100364]) {
+      const a = porId(id)
+      for (const chave of ['tiamina_mg', 'riboflavina_mg', 'niacina_mg']) expect(a ? valor(a, chave) : 'sem', `${a?.nome ?? id}: ${chave}`).toBeNull()
+    }
+    const forma = porId(100407)
+    expect(forma ? valor(forma, 'folato_dfe_mcg') : 'sem').toBeNull()
+    // O resto do alimento continua: energia, ferro e cálcio.
+    expect(forma ? valor(forma, 'energia_kcal') : null).toBeGreaterThan(0)
+    expect(porId(100364)?.conjunto).toBe('Foundation Foods')
+  })
 })
