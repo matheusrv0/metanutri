@@ -22,6 +22,8 @@ export const URL_DA_EXPORTACAO = 'https://static.openfoodfacts.org/data/en.openf
 export const CACHE = join(raiz, 'dados-brutos', 'cache', 'off', 'en.openfoodfacts.org.products.csv.gz')
 const PUBLICO = join(raiz, 'public', 'catalogo-off')
 const CABECALHO = join(raiz, 'src', 'data', 'catalogo-off-fonte.json')
+/** O endereço do app em produção, onde os arquivos são publicados (o aviso de licença os lista, D-765). */
+const ENDERECO_PUBLICO = 'https://app.metanutri.com.br/'
 
 /** D-751: a tabela de conversão é a mesma da leitura ao vivo (`codigoBarras.ts`). */
 const TABELA = JSON.parse(readFileSync(join(raiz, 'src', 'data', 'off-nutrientes.json'), 'utf8'))
@@ -280,6 +282,9 @@ Estes arquivos são um banco derivado (só os produtos com "en:brazil" em countr
 têm a tabela incoerente, com os nutrientes convertidos para a unidade da adequação) e são oferecidos sob a mesma licença
 ODbL v1.0. Gerados por scripts/dados/importar-catalogo-off.mjs a partir de ${URL_DA_EXPORTACAO}.
 Separados da TACO e do USDA FoodData Central, que têm licenças próprias.
+
+Os arquivos deste banco (D-765), para baixar inteiros:
+${[`${ENDERECO_PUBLICO}catalogo-off/${versao}/indice.json`, ...Array.from({ length: 100 }, (_, n) => `${ENDERECO_PUBLICO}catalogo-off/${versao}/fatias/${String(n).padStart(2, '0')}.json`)].join('\n')}
 `
 
 /** Grava a versão: o índice, as 100 fatias, o aviso de licença e o cabeçalho; apaga a versão anterior. */

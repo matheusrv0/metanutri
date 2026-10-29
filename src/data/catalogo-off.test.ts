@@ -258,3 +258,10 @@ describe('D-764: genérico sem marca repetido sai (revisão da fase 2, achado 3)
     expect(r.descartados['genérico repetido']).toBe(2)
   })
 })
+
+it('D-765: o aviso de licença lista os endereços do índice e das 100 fatias (a oferta da ODbL)', () => {
+  const aviso = readFileSync(join(process.cwd(), 'public', fonte.caminho, 'LICENCA.txt'), 'utf8')
+  const base = `https://app.metanutri.com.br/${fonte.caminho}`
+  expect(aviso).toContain(`${base}indice.json`)
+  for (let n = 0; n < 100; n += 1) expect(aviso).toContain(`${base}fatias/${String(n).padStart(2, '0')}.json`)
+})
