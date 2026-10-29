@@ -270,7 +270,8 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
                       <span className="min-w-0 break-words">{o.p.nome}</span>
                       <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                         <span className="rotulo shrink-0">rótulo</span>
-                        <span className="min-w-0 break-words">{[o.p.marca, o.p.porcaoTexto].filter((t) => t !== '').join(' · ')}</span>
+                        {/* D-764: as kcal por 100 g diferenciam os produtos parecidos (e o genérico sem marca). */}
+                        <span className="min-w-0 break-words">{[o.p.marca, o.p.porcaoTexto, `${Math.round(o.p.kcal)} kcal/100 ${o.p.unidade}`].filter((t) => t !== '').join(' · ')}</span>
                         {o.r.gramas === null ? <span className="text-warningtext">{o.r.aviso ?? 'Medida indisponível.'}</span> : <span className="numeros whitespace-nowrap">{leituraDoResultado(o.r)}</span>}
                       </span>
                     </span>

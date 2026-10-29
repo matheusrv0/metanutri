@@ -144,6 +144,8 @@ export function buscarNoCatalogo(indice: IndiceDoCatalogo, texto: string, limite
       (a, b) =>
         Number(!a.p.primeira.startsWith(primeiro)) - Number(!b.p.primeira.startsWith(primeiro)) ||
         b.exatos - a.exatos ||
+        // D-764: o produto com marca vem antes do genérico sem marca.
+        Number(a.p.produto.marca === '') - Number(b.p.produto.marca === '') ||
         a.p.produto.nome.length - b.p.produto.nome.length ||
         a.p.produto.nome.localeCompare(b.p.produto.nome, 'pt-BR') ||
         a.p.produto.marca.localeCompare(b.p.produto.marca, 'pt-BR'),

@@ -62,6 +62,8 @@ describe('o catálogo na entrada rápida', () => {
     const produto = await within(lista).findByRole('option', { name: /Iogurte Natural Integral Cremoso/ })
     expect(produto).toHaveTextContent('rótulo')
     expect(produto).toHaveTextContent('Nestlé · 1 pote (170 g)')
+    // D-764: as kcal por 100 g diferenciam os produtos parecidos.
+    expect(produto).toHaveTextContent('60 kcal/100 g')
     const opcoes = within(lista).getAllByRole('option')
     expect(opcoes.indexOf(produto)).toBe(opcoes.length - 1)
     expect(opcoes.length).toBeGreaterThan(1)

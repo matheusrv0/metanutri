@@ -228,7 +228,21 @@ export function montarCatalogo(registros) {
     const antes = porCodigo.get(p.codigo)
     if (!antes || p.nome.length > antes.nome.length || (p.nome.length === antes.nome.length && p.nome < antes.nome)) porCodigo.set(p.codigo, p)
   }
-  const produtos = [...porCodigo.values()].sort((a, b) => (a.codigo < b.codigo ? -1 : a.codigo > b.codigo ? 1 : 0))
+  const pelosCodigos = [...porCodigo.values()].sort((a, b) => (a.codigo < b.codigo ? -1 : a.codigo > b.codigo ? 1 : 0))
+  // D-764: o genérico sem marca com o mesmo nome e os mesmos nutrientes de outro produto não acrescenta nada.
+  const igual = (p) => `${p.nome.toLowerCase()}|${JSON.stringify(CHAVES_DO_CATALOGO.map((c) => p.valores[c] ?? null))}`
+  const comMarca = new Set(pelosCodigos.filter((p) => p.marca !== '').map(igual))
+  const semMarca = new Set()
+  const produtos = pelosCodigos.filter((p) => {
+    if (p.marca !== '') return true
+    const chave = igual(p)
+    if (comMarca.has(chave) || semMarca.has(chave)) {
+      descartados['genérico repetido'] = (descartados['genérico repetido'] ?? 0) + 1
+      return false
+    }
+    semMarca.add(chave)
+    return true
+  })
   return { produtos, doBrasil, descartados }
 }
 

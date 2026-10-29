@@ -132,3 +132,10 @@ describe('D-756, D-757 e CA-1756: a cópia em Meus alimentos', () => {
     expect(dadosDaCopia(rotuloDoCatalogo(cola, { valores: {}, alergenicos: { contem: [], podeConter: [], semInformacao: true } }, '2026-10-29')).unidade).toBe('ml')
   })
 })
+
+describe('D-764: na busca, o produto com marca vem antes do sem marca', () => {
+  it('com o mesmo começo, a marca decide', () => {
+    const outro = decodificarIndice({ ...INDICE, produtos: [['7890000000028', 'Arroz Branco', '', null, '', 0, 124], ['7890000000011', 'Arroz Branco', 'Tio João', 50, '50 g', 0, 124]] })
+    expect(buscarNoCatalogo(outro, 'arroz branco').map((p) => p.marca)).toEqual(['Tio João', ''])
+  })
+})

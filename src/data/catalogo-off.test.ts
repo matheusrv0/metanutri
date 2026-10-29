@@ -244,3 +244,17 @@ describe('D-763: pó é em gramas (revisão da fase 2, achado 4)', () => {
 it('D-763: a regra do pó é a mesma no script e na leitura ao vivo', () => {
   expect(readFileSync(join(process.cwd(), 'src', 'domain', 'codigoBarras.ts'), 'utf8')).toContain(`const EH_PO = ${EH_PO.toString()}`)
 })
+
+describe('D-764: genérico sem marca repetido sai (revisão da fase 2, achado 3)', () => {
+  it('o sem marca com o mesmo nome e os mesmos nutrientes de outro produto sai; entre dois sem marca, fica um', () => {
+    const r = montarCatalogo([
+      registro({ code: '7890000000011', brands: 'Marca A' }),
+      registro({ code: '7890000000028', brands: '' }),
+      registro({ code: '7890000000035', brands: '', product_name: 'Arroz branco', carbohydrates_100g: '28', proteins_100g: '2.5', fat_100g: '0.2', 'energy-kcal_100g': '124' }),
+      registro({ code: '7890000000042', brands: '', product_name: 'Arroz branco', carbohydrates_100g: '28', proteins_100g: '2.5', fat_100g: '0.2', 'energy-kcal_100g': '124' }),
+      registro({ code: '7890000000059', brands: '', product_name: 'Arroz branco', carbohydrates_100g: '30', proteins_100g: '2.5', fat_100g: '0.2', 'energy-kcal_100g': '132' }),
+    ])
+    expect(r.produtos.map((p) => p.codigo)).toEqual(['7890000000011', '7890000000035', '7890000000059'])
+    expect(r.descartados['genérico repetido']).toBe(2)
+  })
+})
