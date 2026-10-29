@@ -433,4 +433,17 @@ describe('nomes e sugeríveis da revisão (achados 5 a 7)', () => {
     expect(cru?.decisao).toBe('excluir')
     expect(cru?.motivo).toMatch(/merluza/i)
   })
+
+  it('D-716h: a polaca grelhada com aditivo (sódio de 419 mg) diz isso no nome e não é sugerível; a cozida, sem aditivo, é', () => {
+    const comAditivo = porId(100036)
+    expect(comAditivo?.nome).toBe('Polaca-do-alasca, filé, grelhada, com aditivo')
+    expect(comAditivo?.paciente).toMatch(/com aditivo/)
+    expect(comAditivo?.sugerivel).toBe(false)
+    expect(comAditivo ? valor(comAditivo, 'sodio_mg') : null).toBe(419)
+    const semAditivo = porId(100035)
+    expect(semAditivo?.original).not.toMatch(/additive/i)
+    expect(semAditivo?.sugerivel).toBe(true)
+    // Nenhum sugerível tem aditivo no nome da fonte.
+    for (const a of alimentos.filter((x) => x.sugerivel)) expect(a.original, a.nome).not.toMatch(/additive/i)
+  })
 })

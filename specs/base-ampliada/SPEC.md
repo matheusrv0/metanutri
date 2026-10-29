@@ -40,7 +40,7 @@ abertura do app não fica mais lenta.
 | Alimentos lidos do USDA (SR Legacy 7.793 + Foundation 424) | 8.217 |
 | Depois da peneira automática (marca, fast food, prato pronto, infantil, caça, álcool, fortificação, duplicatas óbvias) | 2.610 |
 | **Entram na base ampliada**, depois da curadoria em duas passadas | **638** |
-| Deles, `sugerivel` (podem entrar no Cobrir) | **98** |
+| Deles, `sugerivel` (podem entrar no Cobrir) | **97** |
 | Deles, Foundation Foods (os outros, SR Legacy) | 128 |
 | Base MetaNutri depois desta fase (TACO + ampliada) | 1.235 |
 
@@ -79,6 +79,7 @@ fdc.nal.usda.gov.* Conjuntos: SR Legacy, versão de abril de 2018 (final, CSV); 
 | D-716l | **Restrições que pegavam demais** (achado 11). O glúten e o trigo deixam de pegar macarrão de arroz, de milho e de feijão-mungo (harussame), biscoito de arroz e trigo-sarraceno: exceções novas, comparadas sem pontuação (D-716e). A noz-moscada deixa de pegar castanhas. O croissant de queijo pega lactose pelo alergênico da curadoria (D-716b) | Alerta falso esconde alimento que o paciente pode comer |
 | D-716f | **Tofu com o coagulante no nome** (achado 5): "Tofu, firme, com sulfato de cálcio", e "Tofu firme com sulfato de cálcio" na folha, no link e no Word. O cálcio dele vem do coagulante; o tofu sem sulfato tem bem menos | A sugestão de cálcio diz qual tofu comprar |
 | D-716g | **O "whiting" do USDA é merluza** (achado 6). O 100052 passa de "Pescada, branca, grelhada" a "Merluza, filé, grelhado" ("Filé de merluza grelhado" para o paciente), como as merluzas da TACO. A pescada-branca brasileira é outro peixe (Cynoscion), que o USDA não tem. O whiting cru (173713) continua fora, agora porque a TACO tem a merluza crua (302). A lista de conferência deixa de dizer que o USDA não tem merluza: a merluza grelhada está coberta, e a pescada-branca passa a faltar | Nome errado de peixe engana a nutricionista e o paciente |
+| D-716h | **A polaca grelhada com aditivo não é sugerível** (achado 7). O 100036 ("may contain additives to retain moisture", sódio de 419 mg em 100 g) vira "Polaca-do-alasca, filé, grelhada, com aditivo" ("Polaca-do-alasca grelhada (com aditivo)" para o paciente) e sai do Cobrir. Fica sugerível só a cozida (100035, sem aditivo na fonte, sódio de 166 mg). Sugeríveis: 97. Nenhum sugerível tem aditivo no nome da fonte (teste). No plano vazio, a B12 passa a abrir com o atum em água e a truta | O Cobrir não sugere peixe com sódio de aditivo |
 | D-717 | **Restrições do paciente** valem para a base ampliada pelo nome e pelo grupo, como no alimento próprio (D-492): "Pescados e frutos do mar" liga peixe e crustáceo, "Leite e derivados" liga leite e lactose, "Ovos" liga ovo, carne e pescado ligam vegetariano. Os termos do trigo e do glúten ganham espelta, triticale, kamut, farro, sêmola e semolina; os da soja ganham tempeh, natto e edamame | Numa alergia, sobrar é mais seguro que faltar; o nome em português já leva os termos |
 | D-718 | **Nome para o paciente da curadoria** ("Tilápia grelhada", "Quinoa (peso cru)"): a folha, o link e o Word usam esse nome, como no alimento próprio | A regra geral do nome (D-181) foi escrita para os nomes da TACO |
 
@@ -197,7 +198,7 @@ funcionam sem internet, não custam e não mandam a busca da nutricionista para 
 - **R-700** · Valor americano não é o alimento brasileiro (o mesmo R-300): variedade, ração e solo. A ficha diz a
   origem; a TACO vence quando tem o alimento.
 - **R-701** · A curadoria é tradução de modelo de linguagem com revisão de modelo de linguagem; nenhum nutricionista
-  revisou os 638 nomes. Os 98 `sugerivel` são os que mais pesam: estão listados no PLAN para a parceira conferir.
+  revisou os 638 nomes. Os 97 `sugerivel` são os que mais pesam: estão listados no PLAN para a parceira conferir.
 - **R-702** · O Cobrir muda de cara (alimentos novos competem com os da TACO pela densidade do nutriente): a tabela da
   seção 5 mostra o efeito no exemplo.
 - **R-703** · Primeiro acesso sem internet não tem a base ampliada (CB-704).

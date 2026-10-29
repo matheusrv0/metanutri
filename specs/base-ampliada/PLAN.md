@@ -3,7 +3,7 @@
 **Spec:** `specs/base-ampliada/SPEC.md` (pedida em 29/10/2026; "apenas faça"; aprovação pelas telas).
 
 **Objetivo:** 638 alimentos genéricos do USDA (SR Legacy e Foundation), com nome, grupo e preparo da TACO, entram na
-Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 98 `sugerivel`. A fase 2
+Base MetaNutri, carregados sob demanda; a busca os mostra depois da TACO; o Cobrir usa só os 97 `sugerivel`. A fase 2
 (Open Food Facts) fica só na spec (seção 6).
 
 **Arquitetura:** três scripts em `scripts/dados/` (leitura dos zips, peneira, importação) geram
@@ -197,9 +197,9 @@ brócolis cozido (folato do vazio). Nenhuma sugestão nova é folha crua, aipo, 
 confere). Na landing, a primeira sugestão da vitamina E passa de "Almeirão cru" (17%) a "Pimentão vermelho" (98 g,
 19%), porque o exemplo dela segue o motor (landing-v3, D-657).
 
-## Os 98 `sugerivel` (para a parceira conferir)
+## Os 97 `sugerivel` (para a parceira conferir)
 
-- **Pescados e frutos do mar** (9): Linguado, filé, grelhado; Cavalinha, grelhada; Polaca-do-alasca, filé, cozida; Polaca-do-alasca, filé, grelhada; Tilápia, filé, grelhada; Truta, grelhada; Atum, em conserva em água; Merluza, filé, grelhado; Sardinha, em conserva em molho de tomate.
+- **Pescados e frutos do mar** (8): Linguado, filé, grelhado; Cavalinha, grelhada; Polaca-do-alasca, filé, cozida; Tilápia, filé, grelhada; Truta, grelhada; Atum, em conserva em água; Merluza, filé, grelhado; Sardinha, em conserva em molho de tomate.
 - **Leite e derivados** (5): Queijo, cottage, semidesnatado; Queijo, cottage; Leite, de vaca, semidesnatado; Iogurte, grego, natural, desnatado; Iogurte, grego, natural, integral.
 - **Ovos e derivados** (1): Ovo, de galinha, inteiro, pochê.
 - **Carnes e derivados** (22): Frango, peito, sem pele, assado; Frango, coxa e sobrecoxa, sem pele, assadas; Frango, coxa e sobrecoxa, sem pele, cozidas; Frango, sobrecoxa, sem pele, cozida; Frango, moído, refogado; Carne, bovina, fraldão, sem gordura, grelhado; Carne, bovina, moída, 90% magra, refogada; Carne, bovina, moída, 93% magra, refogada; Carne, bovina, moída, 95% magra, refogada; Carne, bovina, maminha, sem gordura, assada; Carne, bovina, filé-mignon, sem gordura, assado; Carne, bovina, alcatra, sem gordura, assada; Carne, bovina, fraldinha, sem gordura, grelhada; Carne, bovina, coxão duro, sem gordura, assado; Carne, bovina, lagarto, sem gordura, assado; Carne, bovina, patinho, sem gordura, assado; Carne, bovina, coxão mole, sem gordura, assado; Carne, bovina, coxão mole, sem gordura, grelhado; Porco, filé-mignon, sem gordura, grelhado; Porco, filé-mignon, sem gordura, assado; Porco, lombo, sem gordura, cozido; Porco, lombo, sem gordura, grelhado.
@@ -223,6 +223,6 @@ confere). Na landing, a primeira sugestão da vitamina E passa de "Almeirão cru
 
 - D-705: 638 alimentos, não "alguns milhares" (aceito na rodada do coordenador) (os milhares são a fase 2).
 - D-711: o plano com alimento novo espera a base no primeiro acesso.
-- D-716: os 98 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
+- D-716: os 97 `sugerivel` (lista em `src/data/base-ampliada.json`, campo `sugerivel`) para a parceira conferir.
 - D-701: a Foundation de outubro de 2026 saiu ontem; o CSV dela veio incompleto, e o JSON é o arquivo usado.
 - Fase 2: a recomendação (b), arquivos estáticos.
