@@ -6,8 +6,9 @@ import { cn } from '@ds/lib/cn.ts'
  * Selo. As variantes light* carregam o estado da adequação:
  * lightSuccess = dentro · lightWarning = abaixo · lightError = acima do limite
  * · lightInfo = referência/fonte. solid/accent/outline são ênfase de marca.
+ * Letra de 12 px (text-xs), o mínimo legível no celular (spec ajustes-mobile, M-021).
  */
-export const badgeVariants = cva('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-2xs font-semibold whitespace-nowrap', {
+export const badgeVariants = cva('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', {
   variants: {
     variant: {
       default: 'border-primary bg-primary text-primary-foreground',
