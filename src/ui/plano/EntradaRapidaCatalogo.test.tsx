@@ -115,6 +115,15 @@ describe('o catálogo na entrada rápida', () => {
     expect(within(screen.getByRole('listbox', { name: 'Resultados para Adicionar alimento' })).getAllByRole('option').length).toBeGreaterThan(0)
   })
 
+  it('D-767: limpar o campo tira a lista do catálogo na hora, sem esperar', async () => {
+    servidor()
+    const { usuario, campo } = montar()
+    await usuario.type(campo, 'iogurte natural')
+    await screen.findByRole('option', { name: /Iogurte Natural Integral Cremoso/ })
+    await usuario.clear(campo)
+    expect(screen.queryByRole('option', { name: /Iogurte Natural Integral Cremoso/ })).not.toBeInTheDocument()
+  })
+
   it('D-768: com Meus alimentos no limite de 1.000, a linha diz o limite, não "Tente de novo"', async () => {
     servidor()
     const cheio = Array.from({ length: 1000 }, (_, i) => ({ id: 900_000 + i, codigoBarras: '', nome: `Alimento ${i}`, marca: '', porcaoG: 100, medidaCaseira: '', porPorcao: {}, criadoEm: '2026-10-29' }))

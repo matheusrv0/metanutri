@@ -133,8 +133,10 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
   const catalogo = useCatalogoOff(comLetras)
   const meusAlimentos = useMeusAlimentos()
   const [erroDoProduto, setErroDoProduto] = useState<string | null>(null)
+  // A espera vale para buscar de novo, não para sumir: sem 3 letras no campo agora, o catálogo some na hora.
+  const campoComLetras = letrasDaBusca(texto) >= LETRAS_PARA_O_CATALOGO
   const doCatalogo = useMemo(() => {
-    if (!comLetras || !catalogo.indice) return []
+    if (!comLetras || !campoComLetras || !catalogo.indice) return []
     // CA-1757: o produto que a conta já copiou aparece como "meu", pela busca de sempre; não se repete aqui.
     return buscarNoCatalogo(catalogo.indice, textoDoCatalogo)
       .filter((p) => copiaExistente(meusAlimentos.lista, p.codigo) === undefined)
@@ -142,7 +144,7 @@ export function EntradaRapida({ rotulo, aoAdicionar, aoAdicionarReceita, quandoV
         const alimento = alimentoProvisorio(p, i)
         return { tipo: 'catalogo', p, r: { alimento, ...leituraDoTexto(textoDoCatalogo, alimento) } }
       })
-  }, [comLetras, catalogo.indice, textoDoCatalogo, meusAlimentos.lista])
+  }, [comLetras, campoComLetras, catalogo.indice, textoDoCatalogo, meusAlimentos.lista])
   const opcoes: readonly Opcao[] = [
     ...daReceita.filter((r) => r.antesDosAlimentos).map((r): Opcao => ({ tipo: 'receita', r })),
     ...resultados.map((r): Opcao => ({ tipo: 'alimento', r })),
