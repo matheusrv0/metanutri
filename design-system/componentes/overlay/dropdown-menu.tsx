@@ -14,7 +14,9 @@ export const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        'z-50 min-w-[14rem] overflow-hidden rounded-md border border-borderdefault bg-popover p-1 text-popover-foreground shadow-pop',
+        // M-009 (spec ajustes-mobile): nunca mais largo que o espaço que sobra na tela, com a margem do celular dos dois
+        // lados; o texto do item quebra em vez de empurrar o menu para fora.
+        'z-50 min-w-[14rem] max-w-[min(var(--radix-dropdown-menu-content-available-width),calc(100vw-2*var(--layout-gutter-mobile)))] overflow-hidden rounded-md border border-borderdefault bg-popover p-1 text-popover-foreground shadow-pop',
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
         className,
       )}
@@ -30,7 +32,7 @@ export const DropdownMenuItem = React.forwardRef<React.ElementRef<typeof Dropdow
       ref={ref}
       className={cn(
         // 44 px no celular e no toque do tablet (M-018).
-        'relative flex cursor-default select-none items-center gap-2.5 rounded-md px-3 py-2 text-sm outline-none transition-colors max-sm:min-h-11 sm:pointer-coarse:min-h-11',
+        'relative flex cursor-default select-none items-center gap-2.5 whitespace-normal rounded-md px-3 py-2 text-sm outline-none transition-colors max-sm:min-h-11 sm:pointer-coarse:min-h-11',
         'focus:bg-muted focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
         className,
       )}
