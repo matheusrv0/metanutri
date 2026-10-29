@@ -265,3 +265,13 @@ it('D-765: o aviso de licença lista os endereços do índice e das 100 fatias (
   expect(aviso).toContain(`${base}indice.json`)
   for (let n = 0; n < 100; n += 1) expect(aviso).toContain(`${base}fatias/${String(n).padStart(2, '0')}.json`)
 })
+
+it('D-766: o workflow testa o catálogo e confere o tamanho antes do PR, com o ramo nomeado por data e hora', () => {
+  const yml = readFileSync(join(process.cwd(), '.github', 'workflows', 'atualizar-catalogo-off.yml'), 'utf8')
+  const antesDoPr = yml.slice(0, yml.indexOf('gh pr create'))
+  expect(antesDoPr).toContain('npm ci')
+  expect(antesDoPr).toContain('npx vitest run src/data/catalogo-off.test.ts')
+  expect(antesDoPr).toMatch(/du -sm public\/catalogo-off/)
+  expect(antesDoPr).toContain('-gt 30')
+  expect(yml).toContain('ramo="catalogo-off-$(date -u +%Y-%m-%d-%H%M)"')
+})

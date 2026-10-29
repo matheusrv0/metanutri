@@ -28,9 +28,19 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      # O script só usa o Node: sem npm ci.
+      - run: npm ci
       - name: Baixar a exportação e gerar o catálogo
         run: node scripts/dados/importar-catalogo-off.mjs --baixar --versao="$(date -u +%F)"
+      # D-766: antes de abrir o PR, os testes do catálogo passam e a pasta cabe (R-751); se não, o PR não abre.
+      - name: Conferir o catálogo
+        run: |
+          npx vitest run src/data/catalogo-off.test.ts
+          tamanho=$(du -sm public/catalogo-off | cut -f1)
+          echo "Catálogo com ${tamanho} MB."
+          if [ "$tamanho" -gt 30 ]; then
+            echo "O catálogo passou de 30 MB: reveja as fatias antes de publicar (R-751)."
+            exit 1
+          fi
       - name: Abrir o pull request
         env:
           GH_TOKEN: ${{ github.token }}
@@ -39,7 +49,8 @@ jobs:
             echo "O catálogo não mudou."
             exit 0
           fi
-          ramo="catalogo-off-$(date -u +%F)"
+          # Data e hora no nome: rodar duas vezes no mesmo dia não colide com o ramo de antes (D-766).
+          ramo="catalogo-off-$(date -u +%Y-%m-%d-%H%M)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$ramo"
