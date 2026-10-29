@@ -6,7 +6,7 @@ import { PRIMEIRO_ID_PROPRIO, type MedidaCaseira } from '@/domain/busca.ts'
 import { medidasDoSeletor } from '@/domain/medidaDoItem.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { MEUS_ALIMENTOS_NOVOS, type DadosAlimentoProprio, type FonteAlimentoProprio, type Produto } from '@/domain/produtos.ts'
-import { ALIMENTOS, alimentosComProdutos } from '@/domain/tabelas.ts'
+import { alimentosComProdutos, alimentosDaBase } from '@/domain/tabelas.ts'
 import { NOME_DA_BASE } from '@/domain/baseMetanutri.ts'
 import { descreverOrigemUsda } from '@/domain/complementoUsda.ts'
 import { completudeDe, explicarCompletude, type NivelCompletude } from '@/domain/completude.ts'
@@ -19,6 +19,7 @@ import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 import { DialogoAlimentoProprio } from '../produtos/DialogoAlimentoProprio.tsx'
+import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { useMedidasProprias } from '../estado/usarMedidasProprias.ts'
 import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
@@ -97,15 +98,24 @@ export function TelaAlimentos({ aoAbrirFontes, formularioNovo = MEUS_ALIMENTOS_N
   const [mensagem, setMensagem] = useState<string | null>(null)
   const produtoDe = (a: Alimento): Produto | undefined => meusAlimentos.lista.find((p) => p.id === a.id)
 
-  const categorias = useMemo(() => categoriasDoCatalogo(), [])
-  const resumo = useMemo(() => resumoDoCatalogo(), [])
+  // Spec base-ampliada, CA-1716: quando a base ampliada chega, as contagens e a lista se refazem.
+  const { versao: versaoDaBase } = useBaseAmpliada()
+  const categorias = useMemo(() => {
+    void versaoDaBase
+    return categoriasDoCatalogo()
+  }, [versaoDaBase])
+  const resumo = useMemo(() => {
+    void versaoDaBase
+    return resumoDoCatalogo()
+  }, [versaoDaBase])
   // A15 e D-370 (spec alimentos-e-gramaturas): com termo, a ordem da entrada rápida, com o uso desta conta.
   const uso = useUsoDaConta(termo.trim() !== '' && ordem === 'relevancia')
   const daOrigem = useMemo(() => {
     void meusAlimentos.lista
+    void versaoDaBase
     const todos = alimentosComProdutos()
-    return origem === 'base' ? ALIMENTOS : origem === 'meus' ? todos.filter((a) => a.id >= PRIMEIRO_ID_PROPRIO) : todos
-  }, [origem, meusAlimentos.lista])
+    return origem === 'base' ? alimentosDaBase() : origem === 'meus' ? todos.filter((a) => a.id >= PRIMEIRO_ID_PROPRIO) : todos
+  }, [origem, meusAlimentos.lista, versaoDaBase])
   const lista = useMemo(() => filtrarCatalogo({ termo, categoria, nivel, ordem, uso }, daOrigem), [termo, categoria, nivel, ordem, uso, daOrigem])
   const acoesDaFicha = {
     versaoDasMedidas: medidasProprias.versao,
@@ -488,12 +498,19 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
                       <span className="sr-only">valor do USDA</span>
                     </span>
                   ) : null}
+                  {/* Base ampliada: o valor veio do SR Legacy que completou a Foundation (spec base-ampliada, D-714). */}
+                  {l.sr ? (
+                    <span className="ml-1.5 text-xs font-medium tracking-wide text-muted-foreground">
+                      <span aria-hidden="true">SR</span>
+                      <span className="sr-only">valor do SR Legacy</span>
+                    </span>
+                  ) : null}
                 </span>
               )}
             </li>
           ))}
         </ul>
-        {alimento.usda || !daBase ? null : (
+        {alimento.usda || alimento.ampliada || !daBase ? null : (
           <p className="pt-2 text-xs leading-relaxed text-muted-foreground">Sem dado de vitamina D, vitamina E, folato, vitamina B12, selênio e gordura trans.</p>
         )}
       </div>
@@ -505,6 +522,13 @@ function CorpoDaFicha({ alimento, acoes }: { readonly alimento: Alimento; readon
         </p>
         {alimento.usda ? (
           <p>{`Os valores marcados USDA são do alimento equivalente nº ${alimento.usda.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.usda)}).`}</p>
+        ) : null}
+        {/* D-714 (spec base-ampliada): todos os valores são do alimento do USDA; o rodapé diz qual, e o nome original. */}
+        {alimento.ampliada ? (
+          <p>{`Valores do alimento nº ${alimento.ampliada.fdcId} do USDA FoodData Central (${descreverOrigemUsda(alimento.ampliada)}): “${alimento.ampliada.nomeOriginal}”.`}</p>
+        ) : null}
+        {alimento.ampliada?.complemento ? (
+          <p>{`Os valores marcados SR são do nº ${alimento.ampliada.complemento.fdcId} (${descreverOrigemUsda(alimento.ampliada.complemento)}), o mesmo alimento, que completa o que a Foundation não publicou.`}</p>
         ) : null}
         {/* D-380 (spec alimentos-e-gramaturas): a TACO não publicou a energia e os macros; vieram do USDA. */}
         {alimento.usdaMacros && alimento.usdaMacros.fdcId !== alimento.usda?.fdcId ? (
