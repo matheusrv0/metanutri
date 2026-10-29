@@ -1739,7 +1739,7 @@
 {"fdcId":169979,"conjunto":"SR Legacy","original":"Cabbage, chinese (pe-tsai), raw","decisao":"excluir","motivo":"TACO já tem (id 74)"},
 {"fdcId":169976,"conjunto":"SR Legacy","original":"Cabbage, cooked, boiled, drained, without salt","decisao":"incluir","id":100435,"nome":"Repolho, branco, cozido","grupo":"Verduras, hortaliças e derivados","preparo":"cozido","paciente":"Repolho cozido","sugerivel":true,"alergenicos":[]},
 {"fdcId":2346407,"conjunto":"Foundation Foods","original":"Cabbage, green, raw","decisao":"excluir","motivo":"TACO já tem (id 149)"},
-{"fdcId":170392,"conjunto":"SR Legacy","original":"Cabbage, kimchi","decisao":"incluir","id":100436,"nome":"Kimchi","grupo":"Verduras, hortaliças e derivados","preparo":null,"paciente":"Kimchi","sugerivel":false,"porqueNao":"processado","alergenicos":[]},
+{"fdcId":170392,"conjunto":"SR Legacy","original":"Cabbage, kimchi","decisao":"incluir","id":100436,"nome":"Kimchi","grupo":"Verduras, hortaliças e derivados","preparo":null,"paciente":"Kimchi","sugerivel":false,"porqueNao":"processado","alergenicos":["peixe","frutos-do-mar"]},
 {"fdcId":168572,"conjunto":"SR Legacy","original":"Cabbage, napa, cooked","decisao":"excluir","motivo":"duplicata (fica 169980)"},
 {"fdcId":2727583,"conjunto":"Foundation Foods","original":"Cabbage, napa, leaf, destemmed, raw","decisao":"excluir","motivo":"TACO já tem (id 74)"},
 {"fdcId":169975,"conjunto":"SR Legacy","original":"Cabbage, raw","decisao":"excluir","motivo":"TACO já tem (id 149)"},
