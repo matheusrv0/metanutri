@@ -83,8 +83,8 @@ const DOS_INGREDIENTES = [
 /** O que lembra o alergênico e não é: sai do texto antes de procurar (o mesmo cuidado da D-716n). */
 const NAO_E = /(?<![\p{L}\p{N}])((en|em) polvo|polvo para hornear|coconut milk|manteiga de (cacau|karit[eé])|cocoa butter|[oó]leo de soja|soybean oil|noz[ -]moscada|nutmeg|creme de (cebola|milho))(?![\p{L}\p{N}])/gu
 
-/** "Pode conter ..." e "may contain ...": o resto do texto depois disso é "pode conter". */
-const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os de)/
+/** D-772: "pode conter ..." e "may contain ..." até o fim da frase (o ponto): o que vem depois volta a ser "contém". */
+const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os de)[^.]*/g
 
 /**
  * D-770: a negação não é alergênico. "Não contém glúten" é obrigatório no rótulo brasileiro (Lei 10.674/2003), e "sem
@@ -122,9 +122,10 @@ export function alergenicosDoRegistro(r) {
   for (const t of tags('allergens')) for (const a of DAS_TAGS[t] ?? []) contem.add(a)
   for (const t of tags('traces_tags')) for (const a of DAS_TAGS[t] ?? []) podeConter.add(a)
   const ingredientes = texto(r.ingredients_text)
-  const corte = semAcentoMinusculo(ingredientes).search(PODE_CONTER)
-  doTexto(corte < 0 ? ingredientes : ingredientes.slice(0, corte), contem)
-  if (corte >= 0) doTexto(ingredientes.slice(corte), podeConter)
+  const minusculo = semAcentoMinusculo(ingredientes)
+  const trechos = minusculo.match(PODE_CONTER) ?? []
+  doTexto(minusculo.replace(PODE_CONTER, '. '), contem)
+  if (trechos.length > 0) doTexto(trechos.join('. '), podeConter)
   if (/(sem|zero|0%|isento de) lactose|lactose free/i.test(texto(r.product_name))) contem.delete('lactose')
   for (const a of contem) podeConter.delete(a)
   return {

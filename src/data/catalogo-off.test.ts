@@ -314,3 +314,9 @@ describe('D-771: palavras que faltavam ou sobravam (re-revisão da fase 2, achad
     expect(ler('manteiga de amendoim')).toEqual(['amendoim'])
   })
 })
+
+describe('D-772: o "pode conter" termina no fim da frase (re-revisão da fase 2, achado 3)', () => {
+  it('"Pode conter amendoim. CONTÉM GLÚTEN." deixa o glúten como "contém"', () => {
+    expect(alergenicosDoRegistro(registro({ ingredients_text: 'Açúcar, cacau. Pode conter amendoim. CONTÉM GLÚTEN.' }))).toMatchObject({ contem: ['gluten'], podeConter: ['amendoim'] })
+  })
+})
