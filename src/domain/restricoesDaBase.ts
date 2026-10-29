@@ -197,16 +197,17 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
     termos: ['ovo', 'ovos', 'omelete', 'maionese', 'gema', 'gemas', 'clara', 'claras', 'quindim', 'suspiro', 'merengue'],
     excecoes: ['sem ovo', 'sem ovos', 'vegano', 'vegana'],
   },
+  // Espelta, triticale, kamut, farro, sêmola e semolina são trigo; tempeh e natto, soja (spec base-ampliada, D-717).
   trigo: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina'],
     excecoes: EXCECOES_DO_TRIGO,
   },
   gluten: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
     excecoes: EXCECOES_DO_TRIGO.filter((e) => e !== 'sem trigo'),
   },
   soja: {
-    termos: ['soja', 'shoyu', 'tofu', 'edamame', 'misso', 'missô', 'lecitina de soja'],
+    termos: ['soja', 'shoyu', 'tofu', 'edamame', 'misso', 'missô', 'lecitina de soja', 'tempeh', 'natto'],
     excecoes: ['oleo de soja'],
   },
   amendoim: {
