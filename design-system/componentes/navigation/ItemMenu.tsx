@@ -12,7 +12,10 @@ interface ItemMenuProps {
   readonly aoClicar: () => void
 }
 
-/** Entrada do índice na lombada: ativa vira uma tarja de papel sobre a tinta. */
+/**
+ * Entrada do índice na lombada: ativa vira uma tarja de papel sobre a tinta. 44 px no toque (celular e tablet); 40 px
+ * com mouse a partir de 640 px (spec ajustes-mobile, M-020).
+ */
 export function ItemMenu({ icone, rotulo, detalhe, extra, ativo, aoClicar }: ItemMenuProps) {
   return (
     <button
@@ -20,7 +23,7 @@ export function ItemMenu({ icone, rotulo, detalhe, extra, ativo, aoClicar }: Ite
       onClick={aoClicar}
       aria-current={ativo ? 'page' : undefined}
       className={cn(
-        'flex w-full min-h-10 items-center gap-3 rounded-sm px-3 py-2 text-left text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0',
+        'flex w-full min-h-11 items-center gap-3 rounded-sm px-3 py-2 text-left text-sm transition-colors sm:min-h-10 sm:pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         ativo ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:bg-bordersubtle hover:text-foreground',
       )}
