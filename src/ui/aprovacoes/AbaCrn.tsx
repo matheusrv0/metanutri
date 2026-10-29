@@ -38,7 +38,7 @@ export function AbaCrn({ crns, decidirCrn }: AbaCrnProps) {
           href={URL_CONSULTA_CFN}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borderdefault px-5 text-sm font-medium hover:border-primary hover:text-primary sm:min-h-10"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borderdefault px-5 text-sm font-medium hover:border-primary hover:text-primary sm:min-h-10 sm:pointer-coarse:min-h-11"
         >
           <ExternalLink className="size-4" aria-hidden="true" />
           Abrir a Consulta Nacional do CFN
@@ -53,11 +53,13 @@ export function AbaCrn({ crns, decidirCrn }: AbaCrnProps) {
       <ul className="flex flex-col gap-2">
         {crns.map((c) => (
           <li key={c.usuario} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-surfacerow px-4 py-3 text-sm">
+            {/* M-017 (spec ajustes-mobile): o e-mail sem espaço quebra dentro da coluna do nome; sem isso, passava por
+                cima do número do CRN, que agora também não encolhe. */}
             <span className="min-w-40 flex-1">
-              <span className="block font-semibold text-heading">{c.nome || c.email}</span>
-              <span className="text-xs text-muted-foreground">{c.email}</span>
+              <span className="block font-semibold text-heading [overflow-wrap:anywhere]">{c.nome || c.email}</span>
+              <span className="block text-xs text-muted-foreground [overflow-wrap:anywhere]">{c.email}</span>
             </span>
-            <span className="numeros w-32">{formatarCrn(c.crn)}</span>
+            <span className="numeros w-32 shrink-0">{formatarCrn(c.crn)}</span>
             <span className="w-40 text-muted-foreground">{formatarDataLonga(c.contaCriadaEm)}</span>
             <Badge variant={SELO[c.status].variante}>{SELO[c.status].texto}</Badge>
             <span className="ml-auto flex gap-2">

@@ -19,7 +19,8 @@ export function LinhasDeAssinatura({ assinatura }: { readonly assinatura: Assina
       {linhas.map((l) => (
         <div key={l.papel} className={`flex flex-col items-center gap-1 pt-10 ${linhas.length === 1 ? 'sm:col-start-2' : ''}`}>
           <span aria-hidden="true" className="w-full border-b border-foreground" />
-          {l.nome ? <span className="font-semibold text-heading">{l.nome}</span> : null}
+          {/* Centrado como o papel embaixo: um nome longo quebrava alinhado à esquerda (spec ajustes-mobile, M-026). */}
+          {l.nome ? <span className="text-center font-semibold text-heading">{l.nome}</span> : null}
           <span className="text-muted-foreground">{l.papel}</span>
         </div>
       ))}

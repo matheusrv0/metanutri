@@ -11,7 +11,9 @@ import { cn } from '@ds/lib/cn.ts'
  *   outline      fio, fundo do cartão              ghost   sem moldura
  *   lightprimary tinta diluída                     link    só texto sublinhado
  *   destructive  vermelhão                         lighterror vermelhão diluído
- * No celular todo botão tem pelo menos 44 px de altura (spec estilo-spora, CA-108).
+ * No celular todo botão tem pelo menos 44 px de altura (spec estilo-spora, CA-108). A partir de 640 px vale a densidade
+ * de computador (40 e 32 px) só com mouse: no toque (`pointer-coarse`, o tablet), volta aos 44 px (ajustes-mobile, M-018).
+ * Quem troca a altura a partir de 640 px troca também a do toque.
  */
 export const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium tracking-[0.01em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
@@ -31,11 +33,11 @@ export const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-11 px-5 py-2 sm:h-10',
-        sm: 'h-11 px-3.5 text-xs sm:h-8',
+        default: 'h-11 px-5 py-2 sm:h-10 sm:pointer-coarse:h-11',
+        sm: 'h-11 px-3.5 text-xs sm:h-8 sm:pointer-coarse:h-11',
         lg: 'h-12 px-7',
-        icon: 'size-11 px-0 sm:size-10',
-        iconsm: 'size-11 px-0 sm:size-8',
+        icon: 'size-11 px-0 sm:size-10 sm:pointer-coarse:size-11',
+        iconsm: 'size-11 px-0 sm:size-8 sm:pointer-coarse:size-11',
       },
       block: { true: 'w-full', false: '' },
     },

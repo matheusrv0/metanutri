@@ -32,11 +32,20 @@ const APOIO: Readonly<Record<TomCartaoNumero, string>> = {
   teal: 'text-textonbrandmuted',
 }
 
+/**
+ * M-014 (spec ajustes-mobile): de 14 caracteres para cima ("R$ 1.000.000,00"), o valor desce um degrau da escala
+ * (text-3xl), o bastante para "R$ 99.999.999,99" caber no cartão de 288 px de um celular de 360. Se ainda não couber,
+ * quebra em qualquer ponto em vez de vazar do cartão e alargar a página.
+ */
+const VALOR_LONGO = 14
+
 export function CartaoNumero({ valor, rotulo, apoio, tom = 'branco', extra, aoClicar, className }: CartaoNumeroProps) {
   const conteudo = (
     <>
       <span className="flex flex-col gap-3">
-        <span className="font-titulo text-4xl font-bold leading-none tracking-tight">{valor}</span>
+        <span className={cn('font-titulo font-bold leading-none tracking-tight [overflow-wrap:anywhere]', valor.length >= VALOR_LONGO ? 'text-3xl' : 'text-4xl')}>
+          {valor}
+        </span>
         {extra ? <span className="block">{extra}</span> : null}
       </span>
       <span className="mt-6 flex items-end justify-between gap-3">
