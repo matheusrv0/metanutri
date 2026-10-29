@@ -1,4 +1,6 @@
-import { buscarRotuloPorCodigo, ehCodigoValido, IDENTIFICACAO_OFF, nutrientesPor100 } from './codigoBarras.ts'
+import tabelaDoOff from '../data/off-nutrientes.json'
+import { buscarRotuloPorCodigo, ehCodigoValido, IDENTIFICACAO_OFF, NUTRIENTES_DA_OFF, nutrientesPor100 } from './codigoBarras.ts'
+import type { ChaveNutrienteAlimento } from './tipos.ts'
 
 const respostaOk = (corpo: unknown) =>
   Promise.resolve({ ok: true, json: () => Promise.resolve(corpo) } as Response)
@@ -129,5 +131,14 @@ describe('código de barras', () => {
   it('devolve nulo quando a consulta falha', async () => {
     const buscar = vi.fn(() => Promise.resolve({ ok: false } as Response))
     expect(await buscarRotuloPorCodigo('7891000100103', { buscar: buscar as unknown as typeof fetch })).toBeNull()
+  })
+})
+
+describe('D-751 (spec base-ampliada, fase 2): a tabela de conversão do OFF é uma só', () => {
+  it('a leitura ao vivo usa a tabela de src/data/off-nutrientes.json, a mesma do script do catálogo', () => {
+    expect(NUTRIENTES_DA_OFF).toBe(tabelaDoOff)
+    for (const { chave, off, fator } of tabelaDoOff) {
+      expect(nutrientesPor100({ [`${off}_100g`]: 2 })[chave as ChaveNutrienteAlimento], chave).toBeCloseTo(2 * fator, 3)
+    }
   })
 })
