@@ -173,7 +173,7 @@ function NotaClinica({ contato }: { readonly contato: string | null }) {
         {contato ? (
           <>
             fale com a gente pelo e-mail{' '}
-            <a href={`mailto:${contato}`} className="font-semibold text-heading underline underline-offset-2">
+            <a href={`mailto:${contato}`} className="py-3.5 font-semibold text-heading underline underline-offset-2">
               {contato}
             </a>
             .
@@ -228,7 +228,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
                     <span className="flex flex-col items-center gap-1">
                       <span className="font-titulo text-xl font-bold text-heading">{plano.nome}</span>
                       {estaEmDestaque(plano) ? (
-                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span>
+                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Recomendado</span>
                       ) : (
                         <span className="h-[1.125rem]" />
                       )}
@@ -282,7 +282,7 @@ export function SecaoPrecos({ aoEscolher, contato, destaque }: SecaoPrecosProps)
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-titulo text-xl font-bold text-heading">{plano.nome}</h2>
-                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">Recomendado</span> : null}
+                {estaEmDestaque(plano) ? <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Recomendado</span> : null}
               </div>
 
               <div className="mt-4">
