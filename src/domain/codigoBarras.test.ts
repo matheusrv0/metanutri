@@ -142,3 +142,10 @@ describe('D-751 (spec base-ampliada, fase 2): a tabela de conversão do OFF é u
     }
   })
 })
+
+describe('D-763 (spec base-ampliada, fase 2): pó é em gramas também na leitura ao vivo', () => {
+  it('o achocolatado em pó com o preparo em ml fica em g', async () => {
+    const buscar = vi.fn(() => respostaOk({ status: 1, product: { product_name: 'Achocolatado em pó', quantity: '400 ml', serving_quantity: '20', serving_quantity_unit: 'ml', nutriments: { 'energy-kcal_100g': 380 } } }))
+    expect((await buscarRotuloPorCodigo('7891000061190', { buscar }))?.unidade).toBe('g')
+  })
+})

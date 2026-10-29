@@ -1,7 +1,7 @@
 // Spec base-ampliada, fase 2: CA-1750 a CA-1754 e CB-757. O script do catálogo de rótulos e os arquivos que ele publica.
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { alergenicosDoRegistro, CHAVES_DO_CATALOGO, colunasQueFaltam, energiaIncoerente, montarCatalogo, porCem, produtoDoRegistro, type RegistroOff } from '../../scripts/dados/importar-catalogo-off.mjs'
+import { alergenicosDoRegistro, CHAVES_DO_CATALOGO, colunasQueFaltam, EH_PO, energiaIncoerente, montarCatalogo, porCem, produtoDoRegistro, type RegistroOff } from '../../scripts/dados/importar-catalogo-off.mjs'
 import { produtoDosDados } from '../domain/alimentoProprio.ts'
 import { dadosDaCopia, decodificarFatia, decodificarIndice, fatiaDoCodigo, rotuloDoCatalogo, type ArquivoFatia, type ArquivoIndice } from '../domain/catalogoOff.ts'
 import { nutrientesPor100 } from '../domain/codigoBarras.ts'
@@ -225,4 +225,22 @@ describe('D-762: a porção do rótulo que não é porção sai (revisão da fas
     expect(porcao({ serving_quantity: '170', product_quantity: '510' })).toBe(170)
     expect(porcao({ product_name: 'Ketchup', serving_quantity: '12', product_quantity: '400', categories_tags: 'en:condiments' })).toBe(12)
   })
+})
+
+describe('D-763: pó é em gramas (revisão da fase 2, achado 4)', () => {
+  it.each(['Whey Protein Baunilha', 'Achocolatado em pó', 'Cappuccino Classic', 'Leite em pó integral', 'Nescau 2.0'])('"%s" com a porção em ml continua em g', (nome) => {
+    const p = produtoDoRegistro(registro({ product_name: nome, quantity: '400 ml', serving_size: '200 ml', serving_quantity: '20' }))
+    if (!p || 'descartado' in p) throw new Error('descartado')
+    expect(p.unidade).toBe('g')
+  })
+
+  it('a bebida pronta continua em ml', () => {
+    const p = produtoDoRegistro(registro({ product_name: 'Bebida láctea sabor chocolate', quantity: '200 ml', serving_size: '200 ml', serving_quantity: '200' }))
+    if (!p || 'descartado' in p) throw new Error('descartado')
+    expect(p.unidade).toBe('ml')
+  })
+})
+
+it('D-763: a regra do pó é a mesma no script e na leitura ao vivo', () => {
+  expect(readFileSync(join(process.cwd(), 'src', 'domain', 'codigoBarras.ts'), 'utf8')).toContain(`const EH_PO = ${EH_PO.toString()}`)
 })

@@ -23,6 +23,7 @@ export interface AlergenicosDoCatalogo {
 }
 
 export const ALERGENICOS: readonly string[]
+export const EH_PO: RegExp
 export function alergenicosDoRegistro(r: RegistroOff): AlergenicosDoCatalogo
 export function mascara(lista: readonly string[]): number
 

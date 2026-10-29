@@ -78,8 +78,13 @@ export function nutrientesPor100(n: Record<string, number | string | undefined>)
   return valores
 }
 
+/** D-763: o pó se mede em gramas (a mesma expressão de `EH_PO` em scripts/dados/importar-catalogo-off.mjs). */
+const EH_PO = /(?<![\p{L}])(p[oó]|powder|whey|achocolatado|cappuccino|capuccino|nescau|toddy|prote[ií]na|protein|composto l[aá]cteo|f[oó]rmula infantil)(?![\p{L}])/iu
+
 /** "ml" quando a OFF diz que a porção ou a embalagem é em ml ou litro (A23). */
 function unidadeDo(p: ProdutoOpenFoodFacts): 'g' | 'ml' {
+  // D-763 (spec base-ampliada, fase 2): o pó é em gramas, mesmo com o preparo em ml no rótulo (a mesma regra do catálogo).
+  if (EH_PO.test(`${p.product_name_pt ?? ''} ${p.product_name ?? ''}`)) return 'g'
   if (p.nutrition_data_per === '100ml' || p.serving_quantity_unit?.toLowerCase() === 'ml') return 'ml'
   return /\d\s*(ml|l|litros?)\b/i.test(p.quantity ?? '') ? 'ml' : 'g'
 }

@@ -166,7 +166,9 @@ const texto = (v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : ''
 /** D-762: o teto da porção; molho e condimento se servem às colheres. */
 const PORCAO_MAXIMA_G = 300
 const PORCAO_MAXIMA_DO_MOLHO_G = 50
-const EH_MOLHO = /(?<![\p{L}])(molho|shoyu|maionese|ketchup|catchup|mostarda|tempero|vinagre|barbecue)(?![\p{L}])/iu
+/** D-763: o pó se mede em gramas. */
+export const EH_PO = /(?<![\p{L}])(p[oó]|powder|whey|achocolatado|cappuccino|capuccino|nescau|toddy|prote[ií]na|protein|composto l[aá]cteo|f[oó]rmula infantil)(?![\p{L}])/iu
+const EH_MOLHO =/(?<![\p{L}])(molho|shoyu|maionese|ketchup|catchup|mostarda|tempero|vinagre|barbecue)(?![\p{L}])/iu
 const CATEGORIA_DE_MOLHO = /en:(sauces|condiments|mayonnaises|ketchup|mustards|soy-sauces|vinegars|seasonings|dressings)/
 
 /**
@@ -196,7 +198,8 @@ export function produtoDoRegistro(r) {
   if (energiaIncoerente(valores)) return { descartado: 'energia incoerente' }
   const porcao = porcaoQueVale(r)
   // "ml" quando a embalagem ou a porção é em ml ou litro, como `unidadeDo` de `codigoBarras.ts` (A23).
-  const unidade = /\d\s*(ml|l|litros?)\b/i.test(`${texto(r.quantity)} ${texto(r.serving_size)}`) ? 'ml' : 'g'
+  // D-763: o pó (whey, achocolatado, cappuccino, leite em pó) é em gramas, mesmo com o preparo em ml no rótulo.
+  const unidade = !EH_PO.test(nome) && /\d\s*(ml|l|litros?)\b/i.test(`${texto(r.quantity)} ${texto(r.serving_size)}`) ? 'ml' : 'g'
   return {
     codigo,
     nome,
