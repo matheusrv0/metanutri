@@ -331,3 +331,22 @@ it('D-773: o workflow não deixa a credencial no checkout, instala sem scripts e
   expect(passoDoPr).toContain('github.token')
   expect(passoDoPr).toContain('x-access-token')
 })
+
+describe('D-774: sem o peso da embalagem, teto menor para pó e para pão e biscoito (re-revisão da fase 2, achado 5)', () => {
+  const porcao = (r: Partial<Record<string, string>>) => {
+    const p = produtoDoRegistro(registro({ product_quantity: '', ...r }))
+    if (!p || 'descartado' in p) throw new Error('descartado')
+    return p.porcaoG
+  }
+  it('pó e suplemento acima de 60 g, pão e biscoito acima de 150 g: fica só por 100 g', () => {
+    expect(porcao({ product_name: 'Whey Protein', serving_quantity: '900' })).toBeNull()
+    expect(porcao({ product_name: 'Achocolatado em pó', serving_quantity: '400' })).toBeNull()
+    expect(porcao({ product_name: 'Pão de forma', serving_quantity: '500' })).toBeNull()
+    expect(porcao({ product_name: 'Biscoito cream cracker', serving_quantity: '200' })).toBeNull()
+  })
+  it('a porção de verdade fica, e a bebida pronta continua', () => {
+    expect(porcao({ product_name: 'Whey Protein', serving_quantity: '30' })).toBe(30)
+    expect(porcao({ product_name: 'Pão de forma', serving_quantity: '50' })).toBe(50)
+    expect(porcao({ product_name: 'Suco de uva', serving_quantity: '200', quantity: '1 L' })).toBe(200)
+  })
+})

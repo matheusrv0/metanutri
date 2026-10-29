@@ -185,6 +185,10 @@ const texto = (v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : ''
 /** D-762: o teto da porção; molho e condimento se servem às colheres. */
 const PORCAO_MAXIMA_G = 300
 const PORCAO_MAXIMA_DO_MOLHO_G = 50
+/** D-774: os tetos sem o peso da embalagem. */
+const PORCAO_MAXIMA_DO_PO_G = 60
+const PORCAO_MAXIMA_DO_PAO_G = 150
+const EH_PAO_OU_BISCOITO = /(?<![\p{L}])(p[aã]o|p[aã]es|biscoitos?|bolachas?|torradas?|cookies?|wafers?|bisnaguinhas?|rosquinhas?)(?![\p{L}])/iu
 /** D-763: o pó se mede em gramas. */
 export const EH_PO = /(?<![\p{L}])(p[oó]|powder|whey|achocolatado|cappuccino|capuccino|nescau|toddy|prote[ií]na|protein|composto l[aá]cteo|f[oó]rmula infantil)(?![\p{L}])/iu
 const EH_MOLHO =/(?<![\p{L}])(molho|shoyu|maionese|ketchup|catchup|mostarda|tempero|vinagre|barbecue)(?![\p{L}])/iu
@@ -200,6 +204,13 @@ function porcaoQueVale(r) {
   const embalagem = numero(r.product_quantity)
   const molho = EH_MOLHO.test(texto(r.product_name)) || CATEGORIA_DE_MOLHO.test(texto(r.categories_tags))
   if ((embalagem !== null && embalagem > 0 && porcao >= embalagem) || porcao > PORCAO_MAXIMA_G || (molho && porcao > PORCAO_MAXIMA_DO_MOLHO_G)) return null
+  // D-774: sem o peso da embalagem, a porção que ainda é a embalagem inteira cai num teto menor por tipo.
+  if (embalagem === null || embalagem <= 0) {
+    const nome = texto(r.product_name)
+    const categorias = texto(r.categories_tags)
+    if ((EH_PO.test(nome) || /en:(dietary-supplements|protein-powders|bodybuilding-supplements)/.test(categorias)) && porcao > PORCAO_MAXIMA_DO_PO_G) return null
+    if ((EH_PAO_OU_BISCOITO.test(nome) || /en:(breads|biscuits|crackers)/.test(categorias)) && porcao > PORCAO_MAXIMA_DO_PAO_G) return null
+  }
   return Math.round(porcao * 10) / 10
 }
 
