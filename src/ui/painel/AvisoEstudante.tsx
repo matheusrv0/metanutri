@@ -35,20 +35,25 @@ function tomDo(aviso: NonNullable<AvisoEstudante>): Tom {
 /** O aviso da estudante no topo do painel (spec conta-e-verificacao, US-B4; protótipo "Aviso no painel"). */
 export function AvisoDoEstudante({ aviso, aoEnviar, aoFechar }: AvisoDoEstudanteProps) {
   const tom = tomDo(aviso)
+  // M-013 (spec ajustes-mobile): com um botão de texto, abaixo de sm o ícone e o texto ocupam a linha toda e o botão
+  // desce, alinhado ao texto. Com o texto em `flex-1` ao lado do botão, um motivo longo virava uma coluna de 130 px.
+  const comBotao = aviso.tipo === 'enviar' || aviso.tipo === 'renovar' || aviso.tipo === 'recusado'
   return (
     <section aria-label="Plano Estudante" className="flex flex-wrap items-center gap-3.5 rounded-3xl bg-card p-4 sm:flex-nowrap sm:px-5">
-      <span className={cn('grid size-10 shrink-0 place-content-center rounded-md [&_svg]:size-5', tom.fundo)}>{tom.icone}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-titulo text-base font-semibold text-heading">{tom.titulo}</span>
-        <span className="text-sm text-muted-foreground">{tom.texto}</span>
+      <span className={cn('flex min-w-0 flex-1 items-start gap-3.5 sm:items-center', comBotao && 'basis-full sm:basis-auto')}>
+        <span className={cn('grid size-10 shrink-0 place-content-center rounded-md [&_svg]:size-5', tom.fundo)}>{tom.icone}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-titulo text-base font-semibold text-heading">{tom.titulo}</span>
+          <span className="text-sm text-muted-foreground">{tom.texto}</span>
+        </span>
       </span>
       {aviso.tipo === 'enviar' || aviso.tipo === 'renovar' ? (
-        <Button size="sm" onClick={aoEnviar}>
+        <Button size="sm" className="max-sm:ml-13.5" onClick={aoEnviar}>
           Enviar comprovante
         </Button>
       ) : null}
       {aviso.tipo === 'recusado' ? (
-        <Button size="sm" onClick={aoEnviar}>
+        <Button size="sm" className="max-sm:ml-13.5" onClick={aoEnviar}>
           Enviar outro
         </Button>
       ) : null}

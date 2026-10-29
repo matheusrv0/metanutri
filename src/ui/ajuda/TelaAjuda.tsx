@@ -38,7 +38,8 @@ export function TelaAjuda({ aoIrPara }: TelaAjudaProps) {
         <ol className="flex flex-col">
           {PASSOS.map((p, i) => (
             <li key={p.titulo} className="flex gap-3 border-b border-border py-3 last:border-0">
-              <span aria-hidden="true" className="numeros flex size-7 shrink-0 items-center justify-center border border-borderdefault text-sm font-semibold">
+              {/* M-025 (spec ajustes-mobile): o número em círculo, não no quadrado da direção antiga. */}
+              <span aria-hidden="true" className="numeros flex size-7 shrink-0 items-center justify-center rounded-full border border-borderdefault text-sm font-semibold">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">

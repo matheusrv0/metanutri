@@ -31,7 +31,8 @@ function Dado({ rotulo, valor }: { readonly rotulo: string; readonly valor: stri
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{rotulo}</dt>
-      <dd className="text-sm font-semibold text-heading">{valor}</dd>
+      {/* M-011 (spec ajustes-mobile): a matrícula de 22 dígitos não tem onde quebrar; sem isto, invadia "Verificada em". */}
+      <dd className="text-sm font-semibold text-heading [overflow-wrap:anywhere]">{valor}</dd>
     </div>
   )
 }

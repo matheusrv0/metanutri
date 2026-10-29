@@ -230,3 +230,30 @@ for (const largura of CELULARES) {
     }
   })
 }
+
+// --------------------------------------------------------------------------------------------- M-025 · Cantos retos
+
+test.describe('M-025: sem os cantos retos da direção antiga', () => {
+  test.use({ viewport: { width: 360, height: ALTURA } })
+
+  test('Ajuda: os números dos passos são redondos', async ({ page }) => {
+    await abrirLimpo(page)
+    await page.goto('/#/ajuda')
+    const numeros = page.locator('ol > li > span[aria-hidden="true"]')
+    await expect(numeros.first()).toBeVisible()
+    for (const numero of await numeros.all()) {
+      const { raio, lado } = await numero.evaluate((el) => ({ raio: parseFloat(getComputedStyle(el).borderTopLeftRadius), lado: el.getBoundingClientRect().width }))
+      expect(raio).toBeGreaterThanOrEqual(lado / 2)
+    }
+  })
+
+  test('Novo alimento › Rótulo: a caixa do código de barras tem canto arredondado', async ({ page }) => {
+    await abrirLimpo(page)
+    await page.goto('/#/produtos')
+    await page.getByRole('button', { name: 'Novo alimento' }).click()
+    await page.getByRole('dialog').getByRole('radio', { name: /rótulo/i }).click()
+    const caixa = page.getByRole('heading', { level: 3, name: 'Ler pelo código de barras' }).locator('xpath=../..')
+    await expect(caixa).toBeVisible()
+    expect(await caixa.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThanOrEqual(12)
+  })
+})

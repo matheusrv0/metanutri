@@ -89,7 +89,8 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 border border-border bg-muted p-4">
+    // M-025 (spec ajustes-mobile): a caixa com o raio de alerta e campo (DESIGN.md, Shapes), não o canto reto antigo.
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted p-4">
       <div className="flex items-center gap-2">
         <ScanLine className="size-4 text-primary" aria-hidden="true" />
         <h3 className="card-title text-sm">Ler pelo código de barras</h3>
@@ -97,7 +98,7 @@ export function LeitorCodigo({ aoLer, ocupado = false }: LeitorCodigoProps) {
 
       {camera ? (
         <div className="flex flex-col gap-2">
-          <video ref={videoRef} className="w-full max-w-sm border border-borderdefault" muted playsInline aria-label="Câmera lendo o código de barras" />
+          <video ref={videoRef} className="w-full max-w-sm rounded-xl border border-borderdefault" muted playsInline aria-label="Câmera lendo o código de barras" />
           <Button variant="ghost" size="sm" className="self-start" onClick={() => pararRef.current?.()}>
             Parar câmera
           </Button>
