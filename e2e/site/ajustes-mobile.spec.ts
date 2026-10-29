@@ -27,12 +27,18 @@ for (const largura of [360, 390, 412]) {
         await expect(link).toBeVisible()
         const c = await link.boundingBox()
         expect(c?.height ?? 0, `${nome}: toque`).toBeGreaterThanOrEqual(44)
+        // D-802: 44 px também na largura (até 373 px, a logo é só o símbolo, de 28 px).
+        expect(c?.width ?? 0, `${nome}: toque`).toBeGreaterThanOrEqual(44)
         expect((c?.x ?? 0) + (c?.width ?? 0), `${nome}: fora da tela`).toBeLessThanOrEqual(largura)
       }
-      // As seções continuam a um toque, no rodapé.
+      // As seções continuam a um toque, no rodapé, e cada link de lá tem 44 × 44 px no mínimo (D-802).
       const rodape = page.getByRole('contentinfo')
       await expect(rodape.getByRole('link', { name: 'Como funciona' })).toBeAttached()
       await expect(rodape.getByRole('link', { name: 'Preços' })).toBeAttached()
+      for (const link of await rodape.getByRole('link').all()) {
+        const c = await link.boundingBox()
+        expect(c?.width ?? 0, `${await link.innerText()}: toque no rodapé`).toBeGreaterThanOrEqual(44)
+      }
       await semRolagemLateral(page)
     })
   }
