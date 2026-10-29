@@ -160,6 +160,18 @@ export const ULTIMO_ID_DA_BASE = 597
 /** Preparações cujo nome lembra o trigo e que não o levam (o trecho sai do nome; o resto ainda é lido, D-716n). */
 const EXCECOES_DO_TRIGO: readonly string[] = [
   'pao de queijo',
+  // D-716t: o nome de polvilho e de tapioca que parece de trigo; "Tapioca com granola" continua pegando o glúten.
+  'biscoito de polvilho',
+  'biscoito polvilho',
+  'pao de polvilho',
+  'pao de tapioca',
+  'bolo de tapioca',
+  'panqueca de tapioca',
+  'bolo de farinha de arroz',
+  'pao de farinha de arroz',
+  'panqueca de farinha de arroz',
+  'massa de mandioca para pastel',
+  'pastel de mandioca',
   'macarrao de arroz',
   'farinha de arroz',
   'fruta-pao',
@@ -175,8 +187,11 @@ const EXCECOES_DO_TRIGO: readonly string[] = [
   'trigo sarraceno',
 ]
 
-/** O que vale para o nome inteiro: o alimento feito de polvilho ou tapioca, e o que diz não ter glúten ou trigo. */
-const QUALIFICADORES_DO_TRIGO: readonly string[] = ['polvilho', 'tapioca', 'sem gluten', 'sem trigo']
+/**
+ * O que vale para o nome inteiro: o que diz não ter glúten ou trigo. Tapioca e polvilho saíram daqui (D-716t): livravam
+ * "Tapioca com granola" e "Biscoito de polvilho com farinha de trigo".
+ */
+const QUALIFICADORES_DO_TRIGO: readonly string[] = ['sem gluten', 'sem trigo']
 
 /** Vegano no nome: o produto inteiro é feito para quem tem a restrição. */
 const VEGANO: readonly string[] = ['vegano', 'vegana']
@@ -223,12 +238,12 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, TermosDaRe
   },
   // Espelta, triticale, kamut, farro, sêmola e semolina são trigo; tempeh e natto, soja (spec base-ampliada, D-717).
   trigo: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina', 'farinha lactea'],
     excecoes: EXCECOES_DO_TRIGO,
     qualificadores: QUALIFICADORES_DO_TRIGO,
   },
   gluten: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina', 'farinha lactea', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
     excecoes: EXCECOES_DO_TRIGO,
     qualificadores: QUALIFICADORES_DO_TRIGO.filter((q) => q !== 'sem trigo'),
   },

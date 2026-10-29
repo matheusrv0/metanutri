@@ -46,3 +46,37 @@ describe('D-716n: a exceção sai do nome, e o resto ainda é lido', () => {
     expect(pega(nome, restricao)).toBe(false)
   })
 })
+
+describe('D-716t: tapioca e polvilho não livram o nome inteiro (revisão da base-ajustes, falha alta)', () => {
+  it.each([
+    ['Tapioca com granola', 'gluten'],
+    ['Tapioca com aveia e banana', 'gluten'],
+    ['Panqueca de tapioca com aveia', 'gluten'],
+    ['Cuscuz de tapioca com cevada', 'gluten'],
+    ['Mingau de tapioca com farinha láctea', 'gluten'],
+    ['Mingau de tapioca com farinha láctea', 'trigo'],
+    ['Biscoito de polvilho com farinha de trigo', 'gluten'],
+    ['Biscoito de polvilho com farinha de trigo', 'trigo'],
+    ['Pão de tapioca com farinha de trigo', 'gluten'],
+    ['Pão de tapioca com farinha de trigo', 'trigo'],
+    ['Farinha láctea', 'gluten'],
+  ])('"%s" pega %s', (nome, restricao) => {
+    expect(pega(nome, restricao)).toBe(true)
+  })
+
+  it.each([
+    ['Biscoito de polvilho', 'gluten'],
+    ['Biscoito de polvilho com queijo', 'gluten'],
+    ['Biscoito polvilho doce', 'trigo'],
+    ['Pão de polvilho', 'gluten'],
+    ['Pão de tapioca', 'gluten'],
+    ['Bolo de tapioca', 'trigo'],
+    ['Tapioca com queijo', 'gluten'],
+    ['Bolo de farinha de arroz', 'gluten'],
+    ['Pão de farinha de arroz', 'gluten'],
+    ['Panqueca de farinha de arroz', 'trigo'],
+    ['Massa de mandioca para pastel', 'gluten'],
+  ])('"%s" não pega %s', (nome, restricao) => {
+    expect(pega(nome, restricao)).toBe(false)
+  })
+})

@@ -265,7 +265,12 @@ interface Expressoes {
 const EXPRESSOES: ReadonlyMap<IdRestricao, Expressoes> = new Map(
   Object.entries(TERMOS_POR_RESTRICAO).map(([id, { termos, excecoes, qualificadores }]) => [
     id as IdRestricao,
-    { termos: termos.map(expressao), excecoes: excecoes.map(trecho), qualificadores: qualificadores.map((q) => semPontuacao(semAcento(q))) },
+    {
+      termos: termos.map(expressao),
+      // D-716t: o trecho mais longo sai primeiro ("bolo de farinha de arroz" antes de "farinha de arroz").
+      excecoes: [...excecoes].sort((a, b) => b.length - a.length).map(trecho),
+      qualificadores: qualificadores.map((q) => semPontuacao(semAcento(q))),
+    },
   ]),
 )
 
