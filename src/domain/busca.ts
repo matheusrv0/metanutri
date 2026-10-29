@@ -777,6 +777,14 @@ export function buscarAlimentos(
   return { resultados: candidatos.map(({ i }) => ({ alimento: i.alimento, ...comTrava(lerParaOAlimento(lida, i.alimento)) })), aviso: null }
 }
 
+/**
+ * A leitura do texto para um alimento que não veio da busca (spec base-ampliada, fase 2: o produto do catálogo de
+ * rótulos): a quantidade, a medida ou a porção, com a mesma trava da busca.
+ */
+export function leituraDoTexto(texto: string, alimento: Alimento): Omit<ResultadoBusca, 'alimento'> {
+  return comTrava(lerParaOAlimento(interpretarEntrada(texto), alimento))
+}
+
 /** D-482a: leitura acima de 2 kg (ou 2 litros) avisa e não entra; "120 filés (12.000 g)" nunca mais vai para o plano. */
 function comTrava(leitura: Omit<ResultadoBusca, 'alimento'>): Omit<ResultadoBusca, 'alimento'> {
   if (leitura.gramas === null || leitura.gramas <= QUANTIDADE_MAXIMA_G) return leitura
