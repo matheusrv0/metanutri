@@ -69,7 +69,8 @@ export const SODIO_NAO_SE_COBRE = 'O sódio não se cobre com alimento: o sal de
 
 const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' ')
 
-const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
+// Chia, as sementes e o pinoli vêm da base ampliada (spec base-ampliada, D-716).
+const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia|Chia|Semente|Pinoli)/i
 const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
 const OVO_INTEIRO = /^Ovo, de (galinha|codorna), inteiro/i
 const GEMA = /^Ovo, de galinha, gema/i
@@ -80,7 +81,10 @@ const CURADO_OU_FRITO = /^(Carne, bovina, (charque|seca), cozid|Ovo, de galinha,
 const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Repolho|Acelga)/i
 const FIGADO = /(fígado|sarapatel)/i
 const CARNE: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
-const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Nhoque)/i
+// Quinoa, milho verde e trigo para quibe cozidos vêm da base ampliada (spec base-ampliada, D-716).
+const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Nhoque|Quinoa|Milho, verde|Trigo para quibe)/i
+/** O tubérculo assado (da base ampliada) tem a porção do cozido. */
+const TUBERCULO = /^(Batata|Mandioca|Cará|Inhame)/i
 /** A TACO põe pão de queijo, farinha, farofa, fécula e polvilho entre as verduras: não são verdura (CA-671). */
 const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
 const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(nomeLimpo(a))
@@ -145,7 +149,12 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Fígado e sarapatel', gramas: 100, minima: 50, casa: (a) => FIGADO.test(nomeLimpo(a)) },
   { grupo: 'Carne, ave e peixe', gramas: 120, minima: 50, casa: (a) => CARNE.has(a.categoria) },
   { grupo: 'Leguminosa cozida e tofu', gramas: 140, minima: 50, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
-  { grupo: 'Cereal e tubérculo cozidos', gramas: 150, minima: 50, casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && a.preparo === 'cozido' },
+  {
+    grupo: 'Cereal e tubérculo cozidos',
+    gramas: 150,
+    minima: 50,
+    casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && (a.preparo === 'cozido' || (a.preparo === 'assado' && TUBERCULO.test(nomeLimpo(a)))),
+  },
   { grupo: 'Verdura e legume', gramas: 100, minima: 30, casa: ehVerdura },
   { grupo: 'Fruta', gramas: 150, minima: 50, casa: (a) => a.categoria.startsWith('Frutas') },
   { grupo: 'Leite e iogurte', gramas: 200, minima: 100, casa: (a) => /^(Leite, (de vaca|de cabra)|Iogurte|Bebida láctea)/i.test(nomeLimpo(a)) },
