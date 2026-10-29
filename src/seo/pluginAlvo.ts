@@ -21,8 +21,8 @@ const SCRIPT_DO_APP = './preparar-app.js'
 
 /** O que só o site publica: a busca (D-506: o app não tem) e o script do <head> da vitrine. */
 export const SO_DO_SITE: readonly string[] = ['robots.txt', 'sitemap.xml', 'llms.txt', 'preparar-pagina.js']
-/** O que só o app publica: o script do <head> que aplica o tema. */
-export const SO_DO_APP: readonly string[] = ['preparar-app.js']
+/** O que só o app publica: o script do <head> que aplica o tema e o catálogo de rótulos (spec base-ampliada, fase 2, D-753). */
+export const SO_DO_APP: readonly string[] = ['preparar-app.js', 'catalogo-off']
 
 /** O endereço do app pela variável do build, com a regra de `enderecoOuPadrao` (src/ui/enderecos.ts). */
 export function enderecoDoApp(valor: unknown): string {
@@ -89,6 +89,16 @@ export function opcoesDoAplicativo(alvo: AlvoDoBuild, cores: CoresDoAplicativo):
       // D-338 (spec site-publico-profissional): arquivo de texto, XML ou imagem aberto no navegador é o arquivo, não a
       // página do app.
       navigateFallbackDenylist: [/\.(?:txt|xml|png)$/],
+      // D-753 e CA-1763 (spec base-ampliada, fase 2): o catálogo de rótulos não entra no precache (megabytes que quase
+      // ninguém usa inteiros); o índice e cada fatia ficam guardados na primeira vez que são pedidos. O caminho tem a
+      // versão: o que está guardado nunca fica velho.
+      runtimeCaching: [
+        {
+          urlPattern: /\/catalogo-off\/\d{4}-\d{2}-\d{2}\/.+\.json$/,
+          handler: 'CacheFirst',
+          options: { cacheName: 'catalogo-off', expiration: { maxEntries: 120 } },
+        },
+      ],
     },
     manifest: {
       // DP-SA-14: a identidade do aplicativo instalado é a raiz do endereço do app (D-508).
@@ -113,7 +123,7 @@ export function opcoesDoAplicativo(alvo: AlvoDoBuild, cores: CoresDoAplicativo):
 
 /** Tira da pasta do build o que é do outro alvo. */
 export function limparSaida(pasta: string, alvo: AlvoDoBuild): void {
-  for (const arquivo of alvo === 'site' ? SO_DO_APP : SO_DO_SITE) rmSync(join(pasta, arquivo), { force: true })
+  for (const arquivo of alvo === 'site' ? SO_DO_APP : SO_DO_SITE) rmSync(join(pasta, arquivo), { force: true, recursive: true })
 }
 
 export function pluginAlvo(alvo: AlvoDoBuild): Plugin {
