@@ -320,3 +320,14 @@ describe('D-772: o "pode conter" termina no fim da frase (re-revisão da fase 2,
     expect(alergenicosDoRegistro(registro({ ingredients_text: 'Açúcar, cacau. Pode conter amendoim. CONTÉM GLÚTEN.' }))).toMatchObject({ contem: ['gluten'], podeConter: ['amendoim'] })
   })
 })
+
+it('D-773: o workflow não deixa a credencial no checkout, instala sem scripts e só usa o token no passo do PR', () => {
+  const yml = readFileSync(join(process.cwd(), '.github', 'workflows', 'atualizar-catalogo-off.yml'), 'utf8')
+  expect(yml).toMatch(/actions\/checkout@[0-9a-f]{40}.*\n\s+with:\n\s+persist-credentials: false/)
+  expect(yml).toContain('npm ci --ignore-scripts')
+  expect(yml).not.toMatch(/npm ci\s*\n/)
+  const passoDoPr = yml.slice(yml.indexOf('- name: Abrir o pull request'))
+  expect(yml.split('github.token').length - 1).toBe(1)
+  expect(passoDoPr).toContain('github.token')
+  expect(passoDoPr).toContain('x-access-token')
+})

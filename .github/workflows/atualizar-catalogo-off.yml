@@ -24,11 +24,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # D-773: a credencial não fica no repositório baixado; só o passo do PR usa o token.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - run: npm ci
+      # D-773: sem os scripts de instalação dos pacotes (só o fsevents, do macOS, tem um).
+      - run: npm ci --ignore-scripts
       - name: Baixar a exportação e gerar o catálogo
         run: node scripts/dados/importar-catalogo-off.mjs --baixar --versao="$(date -u +%F)"
       # D-766: antes de abrir o PR, os testes do catálogo passam e a pasta cabe (R-751); se não, o PR não abre.
@@ -56,7 +60,7 @@ jobs:
           git checkout -b "$ramo"
           git add -A public/catalogo-off src/data/catalogo-off-fonte.json
           git commit -m "chore(dados): catálogo de rótulos do Open Food Facts de $(date -u +%F)"
-          git push origin "$ramo"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$ramo"
           gh pr create --base main --head "$ramo" \
             --title "Catálogo de rótulos do Open Food Facts de $(date -u +%F)" \
             --body "Gerado por scripts/dados/importar-catalogo-off.mjs (spec base-ampliada, fase 2, D-754). Confira em src/data/catalogo-off-fonte.json quantos produtos entraram e quantos saíram, e o tamanho da pasta public/catalogo-off. O merge publica com o app."
