@@ -12,6 +12,8 @@ type CarregarArquivo = () => Promise<ArquivoBaseAmpliada>
 const doPacote: CarregarArquivo = async () => (await import('@/data/base-ampliada.json')).default as unknown as ArquivoBaseAmpliada
 
 let carregarArquivo: CarregarArquivo = doPacote
+const recarregarDeVerdade = (): void => window.location.reload()
+let recarregarPagina: () => void = recarregarDeVerdade
 let automatico = true
 let estado: EstadoBaseAmpliada = 'parada'
 let versao = 0
@@ -43,6 +45,15 @@ export function carregarBaseAmpliada(): Promise<void> {
   return pendente
 }
 
+/**
+ * D-716c (spec base-ampliada, achado 2 da revisão): o "Tentar de novo". Depois de um erro, o navegador guarda a falha do
+ * import() e não pede o pedaço outra vez na mesma página; só a página recarregada pede. Sem erro, só pede a base.
+ */
+export function tentarCarregarDeNovo(): void {
+  if (estado === 'erro') recarregarPagina()
+  else void carregarBaseAmpliada()
+}
+
 export const estadoDaBaseAmpliada = (): EstadoBaseAmpliada => estado
 
 /** Muda a cada mudança de estado: o que a interface usa para se redesenhar. */
@@ -59,8 +70,9 @@ export function inscreverNaBaseAmpliada(ouvinte: () => void): () => void {
 }
 
 /** Só para teste: volta ao começo, com outro arquivo e com o carregamento automático ligado ou não. */
-export function prepararBaseAmpliadaParaTeste(opcoes: { readonly carregar?: CarregarArquivo; readonly automatico?: boolean }): void {
+export function prepararBaseAmpliadaParaTeste(opcoes: { readonly carregar?: CarregarArquivo; readonly automatico?: boolean; readonly recarregar?: () => void }): void {
   carregarArquivo = opcoes.carregar ?? doPacote
+  recarregarPagina = opcoes.recarregar ?? recarregarDeVerdade
   automatico = opcoes.automatico ?? true
   estado = 'parada'
   pendente = null

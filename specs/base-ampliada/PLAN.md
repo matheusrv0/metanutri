@@ -40,6 +40,7 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | T11 | Navegador e validação | `e2e/base-ampliada.spec.ts` (novo), medições, relatório | CA-1712, CA-1716 a CA-1718, CA-1724 (no navegador) | T1 a T10 |
 | T12 | Rodada do coordenador: energia pelos fatores de Atwater da fonte (D-708 revista) | `scripts/dados/usda-fonte.mjs` (+ `.d.mts`), `scripts/dados/importar-base-ampliada.mjs` (+ `.d.mts`), `dados-brutos/usda/curadoria-base-ampliada.json`, `src/data/base-ampliada.json`, `base-ampliada-fonte.json`, `src/data/base-ampliada.test.ts`, `src/data/base-ampliada-conferencia.test.ts`, `specs/base-ampliada/lista-de-conferencia.md`, `src/ui/publico/TelaFontes.test.tsx`, `e2e/base-ampliada.spec.ts` (contagem) | CA-1704, CA-1711 | T1, T10 |
 | T13 | Rodada do coordenador: folha crua, uma regra só no Cobrir (D-716a) | `src/domain/cobrir.ts`, `src/domain/cobrirFolhaCrua.test.ts` (novo), `src/domain/cobrirAntesDepois.test.ts`, `src/domain/cobrir.test.ts` (CA-1245), `dados-brutos/usda/curadoria-base-ampliada.json` e `src/data/base-ampliada.json` (romana e kale cruas voltam a `sugerivel`), `src/ui/publico/inicio/exemploDaLanding.ts` (+ teste), `specs/landing-v3/SPEC.md` (D-657) | CA-1727, CA-1728 | T6 |
+| T14 | Revisão independente: os 12 achados, um commit cada (D-716b a D-716m) | `dados-brutos/usda/curadoria-base-ampliada.json` e `regras-da-curadoria.md`, `scripts/dados/importar-base-ampliada.mjs` (+ `.d.mts`), `src/data/base-ampliada.json` e `-fonte.json`, `src/domain/tipos.ts`, `baseAmpliada.ts`, `restricoes.ts`, `restricoesDaBase.ts`, `cobrir.ts`, `busca.ts`, `src/ui/estado/baseAmpliada.ts`, `usarBaseAmpliada.ts`, os testes de cada um, `e2e/base-ampliada-sem-rede.spec.ts` (novo), `src/domain/cobrirOxalato.test.ts` (novo), `THIRD_PARTY_NOTICES.md`, a lista de conferência | D-716b a D-716m | T1 a T13 |
 
 ## Tarefas
 
@@ -143,6 +144,13 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 3. Consequências conferidas: o CA-1245 passa a exercitar o teto de 40 g com falta pequena; a landing troca "Almeirão
    cru" por "Pimentão vermelho" na vitamina E (o exemplo segue o motor).
 
+### T14 · Revisão independente (29/10/2026)
+
+Um commit por achado, cada um com o teste antes: 12 (contagem dos avisos), 4 (alertas falsos), 1 (alergênicos), 11
+(restrições que pegavam demais), 5 (tofu), 6 (merluza), 7 (polaca com aditivo), 9 (medidas), 10 (fortificação), 3
+(oxalato no cálcio), 8 (busca) e 2 ("Tentar de novo"). Depois, o rebase sobre a `main` com os ajustes de celular, o
+`npm run check` e os e2e da base, do Cobrir e da landing.
+
 ## Matriz critério → teste
 
 | Critério | Teste |
@@ -158,6 +166,11 @@ trabalho segura o plano que tem alimento da base ampliada até ela chegar (D-711
 | CA-1723, CB-710 | `src/domain/restricoesAmpliada.test.ts` |
 | CA-1724 a CA-1727, CB-709 | `src/domain/cobrirAmpliada.test.ts`, `src/domain/cobrirAntesDepois.test.ts`; CA-1724 em `e2e/base-ampliada.spec.ts` |
 | CA-1728 | `src/domain/cobrirFolhaCrua.test.ts`; CA-1245 em `src/domain/cobrir.test.ts` (teto de 40 g da folha na criança, agora com falta pequena) |
+| D-716b, D-716e, D-716l | `src/domain/restricoesAmpliada.test.ts` (um teste por alergênico e a varredura de pão, massa, bolo e biscoito de trigo); `src/data/base-ampliada.test.ts` (o campo conferido contra o nome em inglês) |
+| D-716c | `src/ui/estado/baseAmpliada.test.ts`; `e2e/base-ampliada-sem-rede.spec.ts` |
+| D-716d | `src/domain/cobrirOxalato.test.ts`; a tabela em `src/domain/cobrirAntesDepois.test.ts` |
+| D-716f, D-716g, D-716h, D-716j, D-716k, D-716m | `src/data/base-ampliada.test.ts`; D-716g também em `src/data/base-ampliada-conferencia.test.ts` |
+| D-716i | `src/domain/buscaAmpliada.test.ts` |
 
 ## Antes e depois do Cobrir (CA-1727 e CA-1728)
 

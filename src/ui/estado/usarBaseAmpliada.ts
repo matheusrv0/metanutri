@@ -1,5 +1,13 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import { carregamentoAutomatico, carregarBaseAmpliada, estadoDaBaseAmpliada, inscreverNaBaseAmpliada, versaoDaBaseAmpliada, type EstadoBaseAmpliada } from './baseAmpliada.ts'
+import {
+  carregamentoAutomatico,
+  carregarBaseAmpliada,
+  estadoDaBaseAmpliada,
+  inscreverNaBaseAmpliada,
+  tentarCarregarDeNovo,
+  versaoDaBaseAmpliada,
+  type EstadoBaseAmpliada,
+} from './baseAmpliada.ts'
 
 export interface ValorBaseAmpliada {
   readonly estado: EstadoBaseAmpliada
@@ -17,5 +25,5 @@ export function useBaseAmpliada(): ValorBaseAmpliada {
   useEffect(() => {
     if (carregamentoAutomatico()) void carregarBaseAmpliada()
   }, [])
-  return { estado: estadoDaBaseAmpliada(), versao, tentarDeNovo: () => void carregarBaseAmpliada() }
+  return { estado: estadoDaBaseAmpliada(), versao, tentarDeNovo: tentarCarregarDeNovo }
 }

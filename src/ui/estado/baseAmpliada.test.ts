@@ -2,7 +2,7 @@
 import arquivo from '@/data/base-ampliada.json'
 import type { ArquivoBaseAmpliada } from '@/domain/baseAmpliada.ts'
 import { buscarAlimento, registrarBaseAmpliada } from '@/domain/tabelas.ts'
-import { carregarBaseAmpliada, estadoDaBaseAmpliada, inscreverNaBaseAmpliada, prepararBaseAmpliadaParaTeste, versaoDaBaseAmpliada } from './baseAmpliada.ts'
+import { carregarBaseAmpliada, estadoDaBaseAmpliada, inscreverNaBaseAmpliada, prepararBaseAmpliadaParaTeste, tentarCarregarDeNovo, versaoDaBaseAmpliada } from './baseAmpliada.ts'
 
 const ARQUIVO = arquivo as unknown as ArquivoBaseAmpliada
 
@@ -42,6 +42,27 @@ describe('carregarBaseAmpliada', () => {
     await carregarBaseAmpliada()
     expect(estadoDaBaseAmpliada()).toBe('pronta')
     expect(buscarAlimento(100044)).toBeDefined()
+  })
+
+  it('D-716c: depois do erro, "Tentar de novo" recarrega a página (o navegador guarda a falha do import() e não pede o pedaço outra vez)', async () => {
+    const carregar = vi.fn<() => Promise<ArquivoBaseAmpliada>>().mockRejectedValue(new Error('sem rede'))
+    const recarregar = vi.fn()
+    prepararBaseAmpliadaParaTeste({ carregar, recarregar })
+    await carregarBaseAmpliada()
+    expect(estadoDaBaseAmpliada()).toBe('erro')
+    tentarCarregarDeNovo()
+    expect(recarregar).toHaveBeenCalledTimes(1)
+    expect(carregar).toHaveBeenCalledTimes(1)
+  })
+
+  it('D-716c: sem erro, "Tentar de novo" só pede a base, sem recarregar', async () => {
+    const carregar = vi.fn(() => Promise.resolve(ARQUIVO))
+    const recarregar = vi.fn()
+    prepararBaseAmpliadaParaTeste({ carregar, recarregar })
+    tentarCarregarDeNovo()
+    await carregarBaseAmpliada()
+    expect(recarregar).not.toHaveBeenCalled()
+    expect(estadoDaBaseAmpliada()).toBe('pronta')
   })
 
   it('o arquivo de verdade vem por import() e decodifica', async () => {
