@@ -42,6 +42,7 @@ const COLUNAS = [
   'serving_quantity',
   'categories_tags',
   'allergens',
+  'labels_tags',
   'traces_tags',
   'ingredients_text',
   'energy-kcal_100g',
@@ -96,6 +97,13 @@ const PODE_CONTER = /(pode conter|podem conter|may contain|traces? of|tra[cç]os
 const NEGACAO =
   /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eéê]m|zero|0%|isento de|isenta de|livre de|sin|no contiene)\s+(gl[uú]ten|lactose|lactosa)((\s*,\s*|\s+e\s+|\s+y\s+|\s+nem\s+|\s+ni\s+|\s+ou\s+)(gl[uú]ten|lactose|lactosa))*|(gl[uú]ten|lactose)[ -]free|sin tacc)(?![\p{L}\p{N}])/gu
 
+/**
+ * D-778: o rótulo que diz não ter glúten (a negação nos ingredientes, também numa lista, ou a etiqueta do OFF). Vale só sem
+ * palavra de glúten nos ingredientes nem na tag: a aveia e o trigo continuam acusando.
+ */
+const GLUTEN_NEGADO = /(?<![\p{L}\p{N}])((sem|n[aã]o cont[eéê]m|zero|isento de|isenta de|livre de|sin|no contiene)\s+((gl[uú]ten|lactose|lactosa)(\s*,\s*|\s+e\s+|\s+y\s+|\s+nem\s+|\s+ni\s+|\s+ou\s+))*gl[uú]ten|gl[uú]ten[ -]free|sin tacc)(?![\p{L}\p{N}])/u
+const ETIQUETA_SEM_GLUTEN = /en:(no-gluten|gluten-free)/
+
 const semAcentoMinusculo = (t) => t.toLowerCase()
 const ordenar = (lista) => ALERGENICOS.filter((a) => lista.has(a))
 
@@ -132,10 +140,12 @@ export function alergenicosDoRegistro(r) {
   // D-777: também "sin lactosa" e "deslactosado" (laticínios Colun e Lonco Leche); o leite continua.
   if (/(sem|zero|0%|isento de) lactose|lactose free|sin lactosa|deslactosad[oa]/i.test(texto(r.product_name))) contem.delete('lactose')
   for (const a of contem) podeConter.delete(a)
+  const declaraSemGluten = GLUTEN_NEGADO.test(semAcentoMinusculo(ingredientes)) || ETIQUETA_SEM_GLUTEN.test(texto(r.labels_tags))
   return {
     contem: ordenar(contem),
     podeConter: ordenar(podeConter),
     semInformacao: tags('allergens').length === 0 && tags('traces_tags').length === 0 && ingredientes === '',
+    semGlutenNoRotulo: declaraSemGluten && !contem.has('gluten') && !contem.has('trigo'),
   }
 }
 
@@ -330,10 +340,11 @@ export function gravarCatalogo({ produtos, doBrasil, descartados }, versao, sha,
   for (let n = 0; n < 100; n += 1) {
     const fim = String(n).padStart(2, '0')
     const daFatia = produtos.filter((p) => p.codigo.endsWith(fim))
-    // D-761: depois dos valores, "contém" e "pode conter" como bits na ordem de `alergenicos`, e 1 se o OFF não tem informação.
+    // D-761: depois dos valores, "contém" e "pode conter" como bits na ordem de `alergenicos`, 1 se o OFF não tem informação
+    // e, D-778, 1 se o rótulo diz "sem glúten" sem palavra de glúten.
     const linhas = daFatia.map((p) => {
       const a = p.alergenicos ?? { contem: [], podeConter: [], semInformacao: true }
-      return `${JSON.stringify(p.codigo)}:${JSON.stringify([...CHAVES_DO_CATALOGO.map((c) => p.valores[c] ?? null), mascara(a.contem), mascara(a.podeConter), a.semInformacao ? 1 : 0])}`
+      return `${JSON.stringify(p.codigo)}:${JSON.stringify([...CHAVES_DO_CATALOGO.map((c) => p.valores[c] ?? null), mascara(a.contem), mascara(a.podeConter), a.semInformacao ? 1 : 0, a.semGlutenNoRotulo ? 1 : 0])}`
     })
     writeFileSync(join(pasta, 'fatias', `${fim}.json`), `{"chaves":${JSON.stringify(CHAVES_DO_CATALOGO)},"alergenicos":${JSON.stringify(ALERGENICOS)},"produtos":{\n${linhas.join(',\n')}\n}}\n`)
   }

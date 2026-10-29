@@ -367,7 +367,9 @@ export function restricaoDoAlimento(alimento: AlimentoParaRestricao, valor: Rest
       if (idsDaRestricao(grupo.id).has(alimento.id)) return grupo.aviso
       continue
     }
-    if (casaPeloNome(grupo.id, nome) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
+    // D-778: o rótulo que diz "sem glúten", sem palavra de glúten, não acusa glúten nem trigo pelo nome.
+    const nomeVale = !(alimento.proprio?.alergenicos?.semGlutenNoRotulo === true && (grupo.id === 'gluten' || grupo.id === 'trigo'))
+    if ((nomeVale && casaPeloNome(grupo.id, nome)) || casaPeloCampo(grupo.id, alimento)) return grupo.aviso
     if (podeConter(grupo.id, alimento)) return `${grupo.aviso} (pode conter)`
     if (casaPeloGrupo(grupo.id, alimento.categoria, nome)) {
       return alimento.categoria === PESCADOS && DIZ_O_GRUPO.has(grupo.id) ? `${grupo.aviso} (grupo ${PESCADOS})` : grupo.aviso

@@ -163,13 +163,18 @@ export function decodificarFatia(arquivo: ArquivoFatia): ReadonlyMap<string, Det
   const daMascara = (m: number | null | undefined): readonly IdAlergenico[] => nomes.filter((_, i) => ((m ?? 0) & (1 << i)) !== 0)
   return new Map(
     Object.entries(arquivo.produtos).map(([codigo, linha]) => {
-      const [contem, podeConter, semInformacao] = linha.slice(chaves.length)
+      const [contem, podeConter, semInformacao, semGluten] = linha.slice(chaves.length)
       return [
         codigo,
         {
           valores: Object.fromEntries(chaves.map((c, i) => [c, linha[i] ?? null])),
           // Sem as marcas (arquivo antigo), o produto fica sem informação: a restrição pede a embalagem.
-          alergenicos: { contem: daMascara(contem), podeConter: daMascara(podeConter), semInformacao: semInformacao === undefined || semInformacao === 1 },
+          alergenicos: {
+            contem: daMascara(contem),
+            podeConter: daMascara(podeConter),
+            semInformacao: semInformacao === undefined || semInformacao === 1,
+            ...(semGluten === 1 ? { semGlutenNoRotulo: true } : {}),
+          },
         },
       ]
     }),
