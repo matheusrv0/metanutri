@@ -9,6 +9,7 @@ import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ds/componentes/overlay/dialog.tsx'
+import { useBaseAmpliada } from '../estado/usarBaseAmpliada.ts'
 
 interface DialogoSugestoesProps {
   readonly tipo: TipoRefeicao
@@ -60,6 +61,8 @@ export function DialogoSugestoes({ tipo, lista, aoSalvar, aoFechar }: DialogoSug
     setNaoSalvou(false)
   }
 
+  // Spec base-ampliada: a busca se refaz quando a base ampliada chega com a janela aberta.
+  useBaseAmpliada()
   const { resultados, aviso } = buscarAlimentos(texto, alimentosComProdutos())
   const primeiro = resultados[0]
   const jaEstaNaLista = primeiro !== undefined && rascunho.some((s) => s.alimentoId === primeiro.alimento.id)

@@ -32,11 +32,13 @@ test.describe('Landing (spec estilo-spora)', () => {
   })
 })
 
-test('CA-322, CA-963 e CA-1483: Referências (antes Fontes da base) abre sem conta e cita as quatro fontes, com o USDA', async ({ page }) => {
+test('CA-322, CA-963, CA-1483 e CA-1721: Referências (antes Fontes da base) abre sem conta e cita as cinco fontes, com o USDA', async ({ page }) => {
   await page.goto('/fontes/')
   await expect(page.getByRole('heading', { level: 1, name: 'Referências' })).toBeVisible()
-  await expect(page.getByRole('main').getByRole('link')).toHaveCount(4)
-  await expect(page.getByRole('main').getByRole('link', { name: 'Abrir o FoodData Central' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('link')).toHaveCount(5)
+  // O complemento de 20/10 e a base ampliada (spec base-ampliada, CA-1721) levam ao FoodData Central.
+  await expect(page.getByRole('main').getByRole('link', { name: 'Abrir o FoodData Central' })).toHaveCount(2)
+  await expect(page.getByRole('heading', { name: 'Alimentos que a TACO não tem' })).toBeVisible()
   await expect(page.getByText(/Tabela Brasileira de Composição de Alimentos \(TACO\)/)).toBeVisible()
 })
 

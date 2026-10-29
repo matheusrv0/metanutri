@@ -63,7 +63,7 @@ export const NUTRIENTES_DO_EXEMPLO: readonly NutrienteDoExemplo[] = [
     falta: '8,1 mg',
     escolhida: 1,
     sugestoes: [
-      { nome: 'Almeirão cru', gramas: '60 g', kcal: '11', cobre: 17, resta: '6,8 mg' },
+      { nome: 'Pimentão vermelho', gramas: '98 g', kcal: '23', cobre: 19, resta: '6,6 mg' },
       { nome: 'Amêndoa torrada salgada', gramas: '30 g', kcal: '174', cobre: 88, resta: '1,0 mg' },
       { nome: 'Abacate', gramas: '135 g', kcal: '130', cobre: 44, resta: '4,6 mg' },
     ],

@@ -170,6 +170,13 @@ const EXCECOES_DO_TRIGO: readonly string[] = [
   'fruta pao',
   'massa de mandioca',
   'massa de tapioca',
+  // Spec base-ampliada, D-716l: massas e grãos sem trigo que o nome lembra.
+  'macarrao de milho',
+  'macarrao de feijao mungo',
+  'harussame',
+  'harusame',
+  'biscoito de arroz',
+  'trigo sarraceno',
 ]
 
 /**
@@ -197,16 +204,17 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
     termos: ['ovo', 'ovos', 'omelete', 'maionese', 'gema', 'gemas', 'clara', 'claras', 'quindim', 'suspiro', 'merengue'],
     excecoes: ['sem ovo', 'sem ovos', 'vegano', 'vegana'],
   },
+  // Espelta, triticale, kamut, farro, sêmola e semolina são trigo; tempeh e natto, soja (spec base-ampliada, D-717).
   trigo: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina'],
     excecoes: EXCECOES_DO_TRIGO,
   },
   gluten: {
-    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
+    termos: ['trigo', 'pao', 'paes', 'macarrao', 'biscoito*', 'bolacha*', 'bolo', 'bolos', 'massa', 'lasanha', 'pizza', '^torrada*', 'farinha de rosca', 'empanad*', 'milanesa', 'pastel', 'pasteis', 'esfiha', 'esfirra', 'croissant', 'bulgur', 'quibe', 'kibe', 'nhoque', 'panqueca', 'wafer', 'cuscuz marroquino', 'seitan', 'shoyu', 'empada', 'coxinha', 'croquete', 'brownie', 'cookie*', 'espelta', 'triticale', 'kamut', 'farro', 'semola', 'semolina', 'centeio', 'cevada', 'aveia', 'malte', 'cerveja', 'granola'],
     excecoes: EXCECOES_DO_TRIGO.filter((e) => e !== 'sem trigo'),
   },
   soja: {
-    termos: ['soja', 'shoyu', 'tofu', 'edamame', 'misso', 'missô', 'lecitina de soja'],
+    termos: ['soja', 'shoyu', 'tofu', 'edamame', 'misso', 'missô', 'lecitina de soja', 'tempeh', 'natto'],
     excecoes: ['oleo de soja'],
   },
   amendoim: {
@@ -215,7 +223,8 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
   },
   castanhas: {
     termos: ['castanha*', 'amendoa*', 'noz', 'nozes', 'avela*', 'pistache*', 'macadamia', 'pinoli', 'nutella'],
-    excecoes: ['castanha de cupuacu'],
+    // A noz-moscada é semente de especiaria, não castanha (spec base-ampliada, D-716l).
+    excecoes: ['castanha de cupuacu', 'noz moscada'],
   },
   peixe: {
     termos: ['peixe*', 'atum', 'sardinha*', 'salmao', 'bacalhau', 'tilapia', 'merluza', 'pescada', 'pescadinha', 'anchova', 'truta', 'linguado', 'robalo', 'corvina', 'pintado', 'tambaqui', 'pirarucu', 'surimi', 'manjuba', 'lambari', 'dourado', 'abadejo', 'tucunare', 'saint peter', 'badejo', 'namorado', 'cavala', 'arenque'],
@@ -225,9 +234,10 @@ export const TERMOS_POR_RESTRICAO: Readonly<Record<IdRestricaoDaBase, { readonly
     termos: ['camarao', 'camaroes', 'caranguejo*', 'siri', 'lagosta*', 'lula', 'lulas', 'polvo', 'marisco*', 'mexilhao', 'mexilhoes', 'ostra*', 'vieira*', 'sururu', 'frutos do mar', 'kani', 'surimi'],
     excecoes: [],
   },
+  // "Ovo de galinha" é ovo, não galinha (spec base-ampliada, D-716e).
   vegetariano: {
     termos: ['carne', 'carnes', 'frango', 'galinha', 'porco', 'suino*', 'bovino*', 'boi', 'presunto', 'bacon', 'linguica*', 'salsicha*', 'mortadela', 'salame', 'peito de peru', 'peru', 'hamburguer*', 'almondega*', 'charque', 'figado', 'toucinho', 'gelatina', 'mocoto', 'bife', 'costela', 'picanha', 'patinho', 'lombo', 'pernil', 'cordeiro', 'carneiro', 'pato', 'coxinha', 'atum', 'sardinha*', 'peixe*', 'salmao', 'bacalhau', 'tilapia', 'camarao', 'camaroes', 'frutos do mar', 'kani', 'surimi', 'caldo de carne', 'caldo de galinha'],
-    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'salsicha vegetal', 'linguica vegetal', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'plant based'],
+    excecoes: ['carne de soja', 'carne vegetal', 'proteina de soja', 'proteina vegetal', 'hamburguer vegetal', 'hamburguer de grao', 'hamburguer de soja', 'salsicha vegetal', 'linguica vegetal', 'vegano', 'vegana', 'vegetariano', 'vegetariana', 'plant based', 'ovo de galinha'],
   },
   // Vegano é Vegetariano, Leite e derivados e Ovo pelos termos de cada um, e mais o mel (`restricoes.ts`).
   vegano: {

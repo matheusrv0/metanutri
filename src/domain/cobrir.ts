@@ -69,21 +69,42 @@ export const SODIO_NAO_SE_COBRE = 'O sódio não se cobre com alimento: o sal de
 
 const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' ')
 
-const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia)/i
+// Chia, as sementes e o pinoli vêm da base ampliada (spec base-ampliada, D-716).
+const OLEAGINOSA = /^(Castanha|Amêndoa|Noz|Amendoim|Gergelim|Linhaça|Coco, cru|Pistache|Avelã|Macadâmia|Chia|Semente|Pinoli)/i
 const PAO_OU_BISCOITO = /^(Pão|Biscoito|Torrada)/i
 const OVO_INTEIRO = /^Ovo, de (galinha|codorna), inteiro/i
 const GEMA = /^Ovo, de galinha, gema/i
 const CLARA = /^Ovo, de galinha, clara/i
 /** Charque e carne seca cozidos e ovo frito, que voltaram pela conduta da parceira (spec conduta-da-nutricionista, D-293). */
 const CURADO_OU_FRITO = /^(Carne, bovina, (charque|seca), cozid|Ovo, de galinha, inteiro, frito)/i
-/** Folha crua (D-439): folha comida em salada, inteira ou picada. */
-const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Repolho|Acelga)/i
+/** Folha crua (D-439): folha comida em salada, inteira ou picada. A couve kale e a escarola vêm da base ampliada. */
+const FOLHA = /^(Alface|Rúcula|Agrião|Almeirão|Chicória|Espinafre|Mostarda|Serralha|Taioba|Caruru|Catalonha|Couve, manteiga|Couve, kale|Escarola|Repolho|Acelga)/i
 const FIGADO = /(fígado|sarapatel)/i
 const CARNE: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar'])
-const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Nhoque)/i
+// Quinoa, milho verde e trigo para quibe cozidos vêm da base ampliada (spec base-ampliada, D-716).
+const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Lasanha|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Nhoque|Quinoa|Milho, verde|Trigo para quibe)/i
+/** O tubérculo assado (da base ampliada) tem a porção do cozido. */
+const TUBERCULO = /^(Batata|Mandioca|Cará|Inhame)/i
 /** A TACO põe pão de queijo, farinha, farofa, fécula e polvilho entre as verduras: não são verdura (CA-671). */
 const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
 const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(nomeLimpo(a))
+
+/** A folha crua (D-439): a mesma regra na TACO e na base ampliada (spec base-ampliada, D-716a). */
+export const ehFolhaCrua = (a: Alimento): boolean => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a))
+
+/**
+ * D-716a (spec base-ampliada, rodada do coordenador): na porção real da folha crua (até 60 g, D-439), cobrir pouco da
+ * falta é sugestão fraca ("Alface roxa · 6 folhas" para 19% do ferro). A folha crua só entra com ao menos isto.
+ */
+export const COBERTURA_MINIMA_FOLHA_CRUA_PCT = 25
+
+/**
+ * D-716d (spec base-ampliada, achado 3 da revisão): espinafre (o comum e o da Nova Zelândia), acelga suíça e folha de
+ * beterraba têm tanto oxalato que o cálcio delas quase não é absorvido. A "acelga" da TACO e a da base ampliada são a
+ * couve-chinesa (pouco oxalato), e ficam.
+ */
+const ALTO_OXALATO = /^(Espinafre|Acelga, suíça|Beterraba, folha)/i
+export const ehAltoOxalato = (a: Alimento): boolean => ehVerdura(a) && ALTO_OXALATO.test(nomeLimpo(a))
 const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
 /** Origem animal: a vitamina A é retinol pré-formado (D-442). */
 const ORIGEM_ANIMAL: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar', 'Ovos e derivados', 'Leite e derivados'])
@@ -141,11 +162,16 @@ export const PORCOES_POR_GRUPO: readonly PorcaoDoGrupo[] = [
   { grupo: 'Pinhão cozido', gramas: 60, minima: 20, casa: (a) => /^Pinhão, cozido/i.test(nomeLimpo(a)) },
   { grupo: 'Polpa de coco verde', gramas: 50, minima: 25, casa: (a) => /^Coco, verde, cru/i.test(nomeLimpo(a)) },
   // Correção A (spec sugestoes-com-criterio, D-439 e seção 8.2): todo alimento num grupo com porção de verdade.
-  { grupo: 'Folha crua', gramas: 60, minima: 20, casa: (a) => ehVerdura(a) && a.preparo === 'cru' && FOLHA.test(nomeLimpo(a)) },
+  { grupo: 'Folha crua', gramas: 60, minima: 20, casa: ehFolhaCrua },
   { grupo: 'Fígado e sarapatel', gramas: 100, minima: 50, casa: (a) => FIGADO.test(nomeLimpo(a)) },
   { grupo: 'Carne, ave e peixe', gramas: 120, minima: 50, casa: (a) => CARNE.has(a.categoria) },
   { grupo: 'Leguminosa cozida e tofu', gramas: 140, minima: 50, casa: (a) => a.categoria.startsWith('Leguminosas') && (a.preparo === 'cozido' || /tofu/i.test(a.descricao)) },
-  { grupo: 'Cereal e tubérculo cozidos', gramas: 150, minima: 50, casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && a.preparo === 'cozido' },
+  {
+    grupo: 'Cereal e tubérculo cozidos',
+    gramas: 150,
+    minima: 50,
+    casa: (a) => CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && (a.preparo === 'cozido' || (a.preparo === 'assado' && TUBERCULO.test(nomeLimpo(a)))),
+  },
   { grupo: 'Verdura e legume', gramas: 100, minima: 30, casa: ehVerdura },
   { grupo: 'Fruta', gramas: 150, minima: 50, casa: (a) => a.categoria.startsWith('Frutas') },
   { grupo: 'Leite e iogurte', gramas: 200, minima: 100, casa: (a) => /^(Leite, (de vaca|de cabra)|Iogurte|Bebida láctea)/i.test(nomeLimpo(a)) },
@@ -369,6 +395,8 @@ export function sugerirParaCobrir(
     // D-510 (spec alimentos-e-gramaturas): o hambúrguer vegetal feito em casa não passa pela regra do embutido.
     if (!ehPrescritivelParaSugerir(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
     if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
+    // D-716d: no cálcio, a verdura com muito oxalato não conta; no ferro, no folato e no magnésio, conta.
+    if (chave === 'calcio_mg' && ehAltoOxalato(alimento)) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue
@@ -393,6 +421,7 @@ export function sugerirParaCobrir(
     const parcial = emMedida ? emMedida.parcial : necessario > porcaoDoAlimento
     const coberturaPct = Math.min(100, ((porCem * gramas) / 100 / falta) * 100)
     if (coberturaPct < COBERTURA_MINIMA_PCT) continue
+    if (ehFolhaCrua(alimento) && coberturaPct < COBERTURA_MINIMA_FOLHA_CRUA_PCT) continue
     // A restrição só conta para a mensagem quando tira alguém que cobriria a falta (revisão N6).
     if (casaRestricao(alimento, restricoes)) {
       restricaoTirouAlguem = true

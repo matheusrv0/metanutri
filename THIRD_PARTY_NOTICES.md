@@ -40,6 +40,14 @@ só a citação: U.S. Department of Agriculture, Agricultural Research Service. 
 fdc.nal.usda.gov. Conjuntos SR Legacy (abril de 2018) e Foundation Foods (abril de 2026), baixados em 20/10/2026 de
 https://fdc.nal.usda.gov/download-datasets/.
 
+## USDA FoodData Central (base ampliada: alimentos genéricos que a TACO não tem)
+
+Os 638 alimentos de `src/data/base-ampliada.json`, gerado por `scripts/dados/importar-base-ampliada.mjs` a partir dos
+arquivos oficiais e da curadoria em `dados-brutos/usda/` (spec base-ampliada). Domínio público, CC0 1.0 Universal; o
+USDA pede só a citação: U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019.
+fdc.nal.usda.gov. Conjuntos SR Legacy (abril de 2018) e Foundation Foods (outubro de 2026), baixados em 29/10/2026 de
+https://fdc.nal.usda.gov/download-datasets/. Os nomes em português, os grupos e as marcas da curadoria são do MetaNutri.
+
 ## Referências nutricionais e antropométricas
 
 Valores factuais citados com fonte: NASEM (Dietary Reference Intakes, 2019 e Energy, 2023), OMS (curvas de crescimento

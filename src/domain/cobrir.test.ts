@@ -754,8 +754,12 @@ describe('porção realista por grupo e por idade (spec sugestoes-com-criterio, 
       if (CARNE.has(a.categoria)) expect(s.gramas, rotulo).toBeLessThanOrEqual(80)
       if (a.categoria === 'Alimentos preparados') expect(s.gramas, rotulo).toBeLessThanOrEqual(100)
     }
-    const ad = calcularAdequacao(vazio, perfil(6), { tipo: 'individual' })
-    const alface = sugerirParaCobrir('ferro_mg', vazio, ad, { gastoEnergetico: 1300, alimentos: [alimentoDe(ALFACE_ROXA), alimentoDe(ESTROGONOFE)], porcaoMaximaG: 200, idadeAnos: 6 })
+    // D-716a (spec base-ampliada): a folha crua só entra cobrindo ao menos 25%; com pouca falta de ferro, a alface roxa
+    // cobre e aparece, e a porção da menina continua até 40 g.
+    const quaseNaMeta = totais({ energia_kcal: 1000, ferro_mg: 7 })
+    const ad = calcularAdequacao(quaseNaMeta, perfil(6), { tipo: 'individual' })
+    const alface = sugerirParaCobrir('ferro_mg', quaseNaMeta, ad, { gastoEnergetico: 1300, alimentos: [alimentoDe(ALFACE_ROXA), alimentoDe(ESTROGONOFE)], porcaoMaximaG: 200, idadeAnos: 6 })
+    expect(alface.sugestoes.some((s) => s.alimentoId === ALFACE_ROXA)).toBe(true)
     expect(alface.sugestoes.find((s) => s.alimentoId === ALFACE_ROXA)?.gramas).toBeLessThanOrEqual(40)
     expect(alface.sugestoes.find((s) => s.alimentoId === ESTROGONOFE)?.gramas ?? 0).toBeLessThanOrEqual(100)
   })

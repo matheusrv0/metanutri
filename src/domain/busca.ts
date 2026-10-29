@@ -33,11 +33,12 @@ export function registrarMedidasProprias(lista: readonly { readonly alimentoId: 
 
 /**
  * As medidas do alimento: as da conta primeiro (marcadas `propria`), depois as da POF; com o mesmo nome, vale a da conta
- * (D-387). O alimento próprio traz as dele no cadastro.
+ * (D-387). O alimento próprio traz as dele no cadastro; o da base ampliada, as do USDA com nome da POF (spec
+ * base-ampliada, D-713).
  */
 export function medidasDoAlimento(alimentoId: number): readonly MedidaCaseira[] {
   // O alimento próprio traz as do cadastro e do rótulo; a medida da conta também vale para ele (correção A, D-433).
-  const daBase = alimentoId >= PRIMEIRO_ID_PROPRIO ? (buscarAlimento(alimentoId)?.medidas ?? []) : (MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? [])
+  const daBase = MEDIDAS_POR_ALIMENTO.get(alimentoId) ?? buscarAlimento(alimentoId)?.medidas ?? []
   const proprias = PROPRIAS.get(alimentoId)
   if (!proprias) return daBase
   return [...proprias, ...daBase.filter((m) => !proprias.some((p) => p.nome === m.nome))]
@@ -553,14 +554,26 @@ const ehFruta = (alimentoId: number): boolean => buscarAlimento(alimentoId)?.cat
 interface Indice {
   readonly alimento: Alimento
   readonly texto: string
+  /** Da base ampliada (spec base-ampliada, D-712): vem depois da TACO e dos próprios. */
+  readonly ampliada: boolean
+  /**
+   * D-716i (spec base-ampliada): o cereal ou a leguminosa cozidos da base ampliada cujo cru está na TACO concorrem como
+   * a TACO, com o uso comum e o consumo do cru (é o mesmo alimento, noutro preparo).
+   */
+  readonly promovida: boolean
   /** A forma crua de quem se come cozido, quando a base tem a preparada: vem depois dela (D-370, item 3). */
   readonly cruIngrediente: boolean
+  /** D-716i: o cru da TACO cujo cozido só a base ampliada tem: vem depois dele quando a busca não diz "cru". */
+  readonly cruCedeAoCozido: boolean
   readonly usoComum: boolean
   /** Desempate depois do uso comum: o prescritível simples, o ingrediente, o prato composto e o fora da rotina. */
   readonly classe: number
   readonly consumo: number
   readonly virgulas: number
 }
+
+/** D-716i: cereal e leguminosa, os grupos em que o cozido vem antes do cru quando a busca não diz "cru". */
+const ehCerealOuLeguminosa = (a: Alimento): boolean => a.categoria.startsWith('Cereais') || a.categoria.startsWith('Leguminosas')
 
 /** "Arroz, integral, cru" termina no preparo cru. */
 const CRU_NO_FIM = /,\s*cru[ao]?s?$/
@@ -571,17 +584,34 @@ const indices = new WeakMap<readonly Alimento[], readonly Indice[]>()
 function indexar(alimentos: readonly Alimento[]): readonly Indice[] {
   let i = indices.get(alimentos)
   if (!i) {
-    const preparadas = new Set(alimentos.filter((a) => !CRU_NO_FIM.test(normalizar(a.descricao).trim())).map((a) => semPreparo(a.descricao)))
+    const preparadasDe = (lista: readonly Alimento[]) => new Set(lista.filter((a) => !CRU_NO_FIM.test(normalizar(a.descricao).trim())).map((a) => semPreparo(a.descricao)))
+    // D-712 (spec base-ampliada): o preparo que só a base ampliada tem não empurra o cru da TACO para baixo da TACO.
+    const preparadas = preparadasDe(alimentos)
+    const preparadasSemAmpliada = preparadasDe(alimentos.filter((a) => a.ampliada === undefined))
+    // D-716i: o cru da TACO de cada cereal e leguminosa, pelo nome sem o preparo ("macarrao, trigo", "grao-de-bico").
+    const cruDaTaco = new Map<string, Alimento>()
+    for (const a of alimentos) {
+      // Só o cru que se come cozido (a regra "cru" da D-370): a aveia em flocos crua, que se come assim, não cede.
+      if (a.ampliada === undefined && ehCerealOuLeguminosa(a) && CRU_NO_FIM.test(normalizar(a.descricao).trim()) && regraQueExclui(a)?.id === 'cru') cruDaTaco.set(semPreparo(a.descricao), a)
+    }
+    const parDaTaco = (a: Alimento): Alimento | undefined =>
+      a.ampliada !== undefined && ehCerealOuLeguminosa(a) && !CRU_NO_FIM.test(normalizar(a.descricao).trim()) ? cruDaTaco.get(semPreparo(a.descricao)) : undefined
+    const promovidas = new Set(alimentos.filter((a) => parDaTaco(a) !== undefined).map((a) => semPreparo(a.descricao)))
     i = alimentos.map((alimento) => {
       const texto = normalizar(alimento.descricao).trim()
       const regra = regraQueExclui(alimento)
+      const par = parDaTaco(alimento)
+      const preparadasDoAlimento = alimento.ampliada ? preparadas : preparadasSemAmpliada
       return {
         alimento,
         texto,
-        cruIngrediente: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && preparadas.has(semPreparo(alimento.descricao)),
-        usoComum: ehDeUsoComum(alimento),
+        ampliada: alimento.ampliada !== undefined,
+        promovida: par !== undefined,
+        cruIngrediente: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && preparadasDoAlimento.has(semPreparo(alimento.descricao)),
+        cruCedeAoCozido: regra?.id === 'cru' && CRU_NO_FIM.test(texto) && promovidas.has(semPreparo(alimento.descricao)),
+        usoComum: ehDeUsoComum(par ?? alimento),
         classe: regra === null ? (ehPratoComposto(alimento) ? 2 : 0) : regra.nivel === 'ingrediente' ? 1 : 3,
-        consumo: posicaoNoConsumo(alimento.id),
+        consumo: posicaoNoConsumo((par ?? alimento).id),
         virgulas: texto.split(',').length,
       }
     })
@@ -646,14 +676,20 @@ function candidatosDaBusca(
   const leituras = comApelidos(termos).map((t) => t.map(variantesDoTermo))
   const casa = (i: Indice, variantes: readonly (readonly string[])[]) => variantes.every((vs) => vs.some((v) => i.texto.includes(v)))
   const comeca = (i: Indice) => leituras.some((variantes) => casa(i, variantes) && (variantes[0] ?? []).some((v) => i.texto.startsWith(v)))
+  // D-716i: "cru" na busca mantém o cru no lugar dele.
+  const pedeCru = termos.some((t) => /^cru[ao]?s?$/.test(normalizar(t)))
+  const depoisDoCozido = (i: Indice) => i.cruIngrediente || (i.cruCedeAoCozido && !pedeCru)
   return indexar(alimentos)
     .filter((i) => leituras.some((variantes) => casa(i, variantes)))
     .map((i) => ({ i, temMedida: temMedida(i.alimento), comeca: comeca(i), uso: usoDe(i.alimento, opcoes.uso) }))
     .sort(
       (a, b) =>
+        // D-712 (spec base-ampliada): a base ampliada depois da TACO e dos próprios; a que a conta já usa concorre como eles.
+        // D-716i: o cereal e a leguminosa cozidos da base ampliada com o cru na TACO concorrem como ela.
+        Number(a.i.ampliada && !a.i.promovida && a.uso === 0) - Number(b.i.ampliada && !b.i.promovida && b.uso === 0) ||
         Number(b.temMedida) - Number(a.temMedida) ||
         b.uso - a.uso ||
-        Number(a.i.cruIngrediente) - Number(b.i.cruIngrediente) ||
+        Number(depoisDoCozido(a.i)) - Number(depoisDoCozido(b.i)) ||
         Number(b.comeca) - Number(a.comeca) ||
         Number(b.i.usoComum) - Number(a.i.usoComum) ||
         a.i.classe - b.i.classe ||

@@ -251,6 +251,25 @@ export interface OrigemUsda {
   readonly versao: string
 }
 
+/**
+ * O alimento da base ampliada (spec base-ampliada, D-704 e D-714): todos os valores vêm do alimento `fdcId` do USDA; no
+ * Foundation completado, as `chaves` do complemento vêm do SR Legacy do mesmo alimento.
+ */
+/** D-716b (spec base-ampliada): os alergênicos que a curadoria marca no alimento da base ampliada. */
+export type IdAlergenico = 'trigo' | 'gluten' | 'leite' | 'lactose' | 'ovo' | 'soja' | 'amendoim' | 'castanhas' | 'peixe' | 'frutos-do-mar'
+
+export interface OrigemBaseAmpliada extends OrigemUsda {
+  /** A descrição em inglês do USDA, guardada para a ficha e a conferência. */
+  readonly nomeOriginal: string
+  /** O nome da folha e do link (D-718). */
+  readonly nomeParaPaciente: string
+  /** A curadoria liberou para o Cobrir (D-716); a regra prescritível ainda vale. */
+  readonly sugerivel: boolean
+  /** D-716b: os alergênicos da curadoria (as restrições usam além dos termos do nome). */
+  readonly alergenicos?: readonly IdAlergenico[]
+  readonly complemento?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
+}
+
 export interface Alimento {
   readonly id: number
   readonly descricao: string
@@ -268,10 +287,18 @@ export interface Alimento {
    * preenchidas, para a ficha marcar "USDA".
    */
   readonly usdaMacros?: OrigemUsda & { readonly chaves: readonly ChaveNutrienteAlimento[] }
-  /** Só no alimento próprio: medido em g ou em ml (spec alimentos-e-gramaturas, D-378). */
+  /**
+   * No alimento próprio e no da base ampliada: medido em g ou em ml (spec alimentos-e-gramaturas, D-378; spec
+   * base-ampliada, CB-711).
+   */
   readonly unidade?: 'g' | 'ml'
-  /** Só no alimento próprio: as medidas do cadastro (D-383). */
+  /**
+   * As medidas que o alimento traz: as do cadastro no próprio (D-383) e as do USDA com nome da POF na base ampliada
+   * (spec base-ampliada, D-713). A TACO tem as da POF em `medidas-caseiras.json`.
+   */
   readonly medidas?: readonly { readonly nome: string; readonly gramas: number }[]
+  /** Só no alimento da base ampliada (spec base-ampliada): de onde vêm os valores e se o Cobrir pode sugeri-lo. */
+  readonly ampliada?: OrigemBaseAmpliada
   /**
    * Só no alimento próprio com a medida da porção no rótulo: a porção ("4 colheres de sopa" de 10 g), que a entrada
    * rápida usa quando não há quantidade (spec alimentos-e-gramaturas, correção A, D-433).

@@ -1,0 +1,51 @@
+{
+ "fonte": {
+  "nome": "USDA FoodData Central",
+  "autor": "U.S. Department of Agriculture, Agricultural Research Service",
+  "citacao": "U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov.",
+  "licenca": "CC0 1.0 Universal (domínio público)",
+  "url": "https://fdc.nal.usda.gov/",
+  "baixadoEm": "2026-10-29",
+  "base": "100 g de parte comestível",
+  "conjuntos": [
+   {
+    "nome": "SR Legacy",
+    "versao": "2018-04",
+    "arquivo": "FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+    "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+    "sha256": "b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0"
+   },
+   {
+    "nome": "Foundation Foods",
+    "versao": "2026-10",
+    "arquivo": "FoodData_Central_foundation_food_json_2026-10-29.zip",
+    "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_json_2026-10-29.zip",
+    "sha256": "dd414cc9f1a132626bad354ef6655972c78b44aff14f16114dc899708663c579"
+   }
+  ],
+  "criterio": "Alimentos genéricos que a TACO não tem, com nome em português, grupo da TACO e preparo, revisados em duas passadas em 29/10/2026. A TACO vence quando tem o mesmo alimento no mesmo preparo; a Foundation vence o SR Legacy, que só completa o que ela não publicou. Fortificação americana não é copiada."
+ },
+ "alimentos": 638,
+ "sugeriveis": 97,
+ "porConjunto": {
+  "Foundation Foods": 128,
+  "SR Legacy": 510
+ },
+ "porGrupo": {
+  "Cereais e derivados": 90,
+  "Verduras, hortaliças e derivados": 102,
+  "Frutas e derivados": 50,
+  "Gorduras e óleos": 9,
+  "Pescados e frutos do mar": 73,
+  "Carnes e derivados": 164,
+  "Leite e derivados": 25,
+  "Bebidas (alcoólicas e não alcoólicas)": 4,
+  "Ovos e derivados": 7,
+  "Produtos açucarados": 6,
+  "Miscelâneas": 33,
+  "Outros alimentos industrializados": 1,
+  "Alimentos preparados": 1,
+  "Leguminosas e derivados": 40,
+  "Nozes e sementes": 33
+ }
+}
