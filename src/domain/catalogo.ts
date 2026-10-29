@@ -2,7 +2,7 @@
 import { CHAVES_USDA } from './complementoUsda.ts'
 import { completudeDe, NUTRIENTES_CONFERIDOS, nomeDoNutriente, type NivelCompletude } from './completude.ts'
 import { normalizar, porRelevancia, type OpcoesBusca } from './busca.ts'
-import { ALIMENTOS } from './tabelas.ts'
+import { alimentosDaBase } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 export type OrdemCatalogo = 'relevancia' | 'nome' | 'energia' | 'completude'
@@ -16,10 +16,10 @@ export interface FiltroCatalogo {
   readonly uso?: OpcoesBusca['uso']
 }
 
-/** Categorias da TACO, em ordem alfabética, com quantos alimentos cada uma tem. */
+/** Categorias da TACO, em ordem alfabética, com quantos alimentos da base cada uma tem (a ampliada, quando carregada). */
 export function categoriasDoCatalogo(): readonly { readonly nome: string; readonly quantos: number }[] {
   const contagem = new Map<string, number>()
-  for (const a of ALIMENTOS) contagem.set(a.categoria, (contagem.get(a.categoria) ?? 0) + 1)
+  for (const a of alimentosDaBase()) contagem.set(a.categoria, (contagem.get(a.categoria) ?? 0) + 1)
   return [...contagem.entries()]
     .map(([nome, quantos]) => ({ nome, quantos }))
     .sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'))
@@ -38,7 +38,7 @@ const ORDENA: Readonly<Record<Exclude<OrdemCatalogo, 'relevancia'>, (a: Alimento
  * alimentos-e-gramaturas, A15 e D-370): "farinha de trigo" mostra a farinha antes do cação frito na farinha. Sem termo,
  * a relevância é o nome.
  */
-export function filtrarCatalogo(filtro: FiltroCatalogo = {}, alimentos: readonly Alimento[] = ALIMENTOS): readonly Alimento[] {
+export function filtrarCatalogo(filtro: FiltroCatalogo = {}, alimentos: readonly Alimento[] = alimentosDaBase()): readonly Alimento[] {
   const termo = normalizar((filtro.termo ?? '').trim())
   const palavras = termo.split(/\s+/).filter((p) => p !== '' && p !== 'de')
   const ordem = filtro.ordem ?? 'relevancia'
@@ -65,6 +65,11 @@ export interface LinhaDeComposicao {
   readonly traco: boolean
   /** Linha do complemento do USDA: o valor é de um alimento equivalente americano (spec vitaminas-usda, D-308). */
   readonly usda: boolean
+  /**
+   * Na base ampliada, o valor veio do SR Legacy que completou a Foundation (spec base-ampliada, D-714). O resto dos
+   * valores do alimento é do USDA, e a ficha diz isso no rodapé, sem marca linha a linha.
+   */
+  readonly sr: boolean
 }
 
 const UNIDADE: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
@@ -83,6 +88,7 @@ const UNIDADE: Readonly<Partial<Record<ChaveNutrienteAlimento, string>>> = {
  * complemento vêm depois, marcadas; sem equivalente, elas não entram (a ficha diz isso numa linha só, D-308).
  */
 export function composicaoDe(alimento: Alimento): readonly LinhaDeComposicao[] {
+  const doSr = new Set(alimento.ampliada?.complemento?.chaves ?? [])
   const linha = (chave: ChaveNutrienteAlimento, usda: boolean): LinhaDeComposicao => ({
     chave,
     nome: nomeDoNutriente(chave),
@@ -90,11 +96,13 @@ export function composicaoDe(alimento: Alimento): readonly LinhaDeComposicao[] {
     valor: alimento.nutrientes[chave] ?? null,
     traco: alimento.tracos.includes(chave),
     usda,
+    sr: doSr.has(chave),
   })
   // D-380 (spec alimentos-e-gramaturas): energia e macros que vieram do USDA levam a marca.
   const taco = NUTRIENTES_CONFERIDOS.map((chave) => linha(chave, alimento.usdaMacros?.chaves.includes(chave) === true))
-  // O alimento próprio mostra as seis também: quem cadastrou pode ter digitado (spec alimentos-e-gramaturas, D-383).
-  if (alimento.proprio) return [...taco, ...CHAVES_USDA.map((chave) => linha(chave, false))]
+  // O alimento próprio mostra as seis também: quem cadastrou pode ter digitado (spec alimentos-e-gramaturas, D-383). O da
+  // base ampliada também, sem a marca USDA: todos os valores dele são do USDA (spec base-ampliada, D-714).
+  if (alimento.proprio || alimento.ampliada) return [...taco, ...CHAVES_USDA.map((chave) => linha(chave, false))]
   return alimento.usda ? [...taco, ...CHAVES_USDA.map((chave) => linha(chave, true))] : taco
 }
 
@@ -107,10 +115,11 @@ export interface ResumoDoCatalogo {
 export function resumoDoCatalogo(): ResumoDoCatalogo {
   let completos = 0
   let semEnergia = 0
-  for (const a of ALIMENTOS) {
+  const base = alimentosDaBase()
+  for (const a of base) {
     const c = completudeDe(a)
     if (c.nivel === 'completo') completos += 1
     if (c.semEnergia) semEnergia += 1
   }
-  return { total: ALIMENTOS.length, completos, semEnergia }
+  return { total: base.length, completos, semEnergia }
 }

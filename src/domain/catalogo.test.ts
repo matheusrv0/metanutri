@@ -1,6 +1,8 @@
+import arquivoAmpliada from '../data/base-ampliada.json'
+import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
 import { categoriasDoCatalogo, composicaoDe, filtrarCatalogo, resumoDoCatalogo } from './catalogo.ts'
 import { completudeDe } from './completude.ts'
-import { ALIMENTOS } from './tabelas.ts'
+import { ALIMENTOS, registrarBaseAmpliada } from './tabelas.ts'
 
 const porDescricao = (d: string) => {
   const a = ALIMENTOS.find((x) => x.descricao === d)
@@ -125,5 +127,40 @@ describe('Catálogo de alimentos', () => {
     expect(r.total).toBe(ALIMENTOS.length)
     expect(r.completos).toBeGreaterThan(0)
     expect(r.completos).toBeLessThan(r.total)
+  })
+})
+
+// Spec base-ampliada, CA-1718 e CA-1719 (domínio): a Tabela de alimentos conta a base ampliada e a ficha diz a origem.
+describe('catálogo com a base ampliada (spec base-ampliada)', () => {
+  const base = decodificarBaseAmpliada(arquivoAmpliada as unknown as ArquivoBaseAmpliada)
+  afterEach(() => registrarBaseAmpliada([]))
+
+  it('CA-1718: as categorias e o resumo contam a base ampliada registrada', () => {
+    const antes = resumoDoCatalogo().total
+    registrarBaseAmpliada(base)
+    expect(resumoDoCatalogo().total).toBe(antes + base.length)
+    const pescados = categoriasDoCatalogo().find((c) => c.nome === 'Pescados e frutos do mar')
+    expect(pescados?.quantos).toBe(50 + base.filter((a) => a.categoria === 'Pescados e frutos do mar').length)
+    expect(filtrarCatalogo({ termo: 'tilápia' }).map((a) => a.descricao)).toContain('Tilápia, filé, grelhada')
+  })
+
+  it('CA-1718: a ficha da tilápia tem os 20 da tabela e os 6 do complemento, sem a marca USDA linha a linha', () => {
+    const tilapia = base.find((a) => a.descricao === 'Tilápia, filé, grelhada')
+    expect(tilapia).toBeDefined()
+    const linhas = tilapia ? composicaoDe(tilapia) : []
+    expect(linhas).toHaveLength(26)
+    expect(linhas.some((l) => l.usda || l.sr)).toBe(false)
+    expect(linhas.find((l) => l.chave === 'vitamina_d_mcg')).toMatchObject({ valor: 3.7, unidade: 'µg' })
+  })
+
+  it('CA-1719: no Foundation completado, só os valores do SR levam a marca SR', () => {
+    const crua = base.find((a) => a.descricao === 'Tilápia, filé, crua')
+    const chaves = crua?.ampliada?.complemento?.chaves ?? []
+    expect(chaves.length).toBeGreaterThan(0)
+    const linhas = crua ? composicaoDe(crua) : []
+    // A ficha não mostra açúcares nem saturada (vêm do rótulo): só as chaves da ficha contam.
+    const naFicha = new Set(linhas.map((l) => l.chave))
+    expect(linhas.filter((l) => l.sr).map((l) => l.chave).sort()).toEqual(chaves.filter((c) => naFicha.has(c)).sort())
+    expect(linhas.some((l) => l.usda)).toBe(false)
   })
 })
