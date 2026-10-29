@@ -16,6 +16,8 @@ export interface AlimentoUsda {
   readonly categoria: string
   readonly nutrientes: ReadonlyMap<number, number>
   readonly porcoes: readonly PorcaoUsda[]
+  /** Os fatores de Atwater do alimento (proteína, gordura, carboidrato), quando a fonte os publica. */
+  readonly fatores?: readonly [number, number, number] | null
 }
 
 export function sha256(caminho: string): string

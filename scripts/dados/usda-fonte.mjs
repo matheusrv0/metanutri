@@ -172,6 +172,13 @@ export function alimentosDoSrLegacy(caminhoZip) {
   const categorias = new Map(csv('food_category.csv').map((c) => [c.id, c.description]))
   const unidadesDoNutriente = new Map(csv('nutrient.csv').map((n) => [Number(n.id), n.unit_name]))
   const unidadesDeMedida = new Map(csv('measure_unit.csv').map((u) => [u.id, u.name]))
+  // Os fatores de Atwater de cada alimento (proteína, gordura, carboidrato), com que o USDA calculou a energia.
+  const conversao = new Map(csv('food_nutrient_conversion_factor.csv').map((c) => [c.id, Number(c.fdc_id)]))
+  const fatores = new Map()
+  for (const c of csv('food_calorie_conversion_factor.csv')) {
+    const trio = [numero(c.protein_value), numero(c.fat_value), numero(c.carbohydrate_value)]
+    if (trio.every((x) => x !== null && x > 0)) fatores.set(conversao.get(c.food_nutrient_conversion_factor_id), trio)
+  }
   const alimentos = new Map()
   for (const f of csv('food.csv')) {
     alimentos.set(Number(f.fdc_id), {
@@ -182,6 +189,7 @@ export function alimentosDoSrLegacy(caminhoZip) {
       categoria: categorias.get(f.food_category_id) ?? '',
       nutrientes: new Map(),
       porcoes: [],
+      fatores: fatores.get(Number(f.fdc_id)) ?? null,
     })
   }
   for (const n of csv('food_nutrient.csv')) {
@@ -220,7 +228,10 @@ export function alimentosDaFoundation(caminhoZip, versao) {
     const porcoes = (f.foodPortions ?? []).map((p) =>
       porcao(p.amount ?? p.value, p.measureUnit?.name === 'undetermined' ? '' : (p.measureUnit?.name ?? ''), p.modifier, p.portionDescription, p.gramWeight, p.sequenceNumber),
     )
-    return { fdcId: f.fdcId, conjunto: 'Foundation Foods', versao, descricao: f.description, categoria: f.foodCategory?.description ?? '', nutrientes, porcoes }
+    const calorias = (f.nutrientConversionFactors ?? []).find((c) => c.type === '.CalorieConversionFactor')
+    const trio = calorias ? [numero(calorias.proteinValue), numero(calorias.fatValue), numero(calorias.carbohydrateValue)] : null
+    const fatores = trio && trio.every((x) => x !== null && x > 0) ? trio : null
+    return { fdcId: f.fdcId, conjunto: 'Foundation Foods', versao, descricao: f.description, categoria: f.foodCategory?.description ?? '', nutrientes, porcoes, fatores }
   })
 }
 

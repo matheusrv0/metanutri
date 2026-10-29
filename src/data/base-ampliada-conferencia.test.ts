@@ -8,7 +8,6 @@ import arquivo from './base-ampliada.json'
 const BASE = decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada)
 
 const NAO_EXISTE = 'não existe no USDA SR Legacy nem na Foundation'
-const ENERGIA = 'a energia da fonte não fecha com os macros pela regra do app (fibra alta, D-708)'
 const PREPARO = 'o USDA não tem esse preparo; a TACO tem o alimento em outro preparo'
 
 /** [o alimento como se pede, o termo da busca, `null` = coberto ou o motivo de faltar]. */
@@ -136,8 +135,8 @@ export const LISTA: readonly (readonly [alimento: string, termo: string, falta: 
   ['Arroz arbóreo', 'arbóreo', NAO_EXISTE],
   ['Macarrão cozido', 'macarrão trigo cozido', null],
   ['Macarrão integral cozido', 'macarrão integral cozido', null],
-  ['Farelo de aveia', 'farelo aveia', ENERGIA],
-  ['Farelo de trigo', 'farelo trigo', ENERGIA],
+  ['Farelo de aveia', 'farelo aveia', null],
+  ['Farelo de trigo', 'farelo trigo', null],
   ['Gérmen de trigo', 'gérmen trigo', null],
   ['Mingau de aveia', 'aveia cozida', null],
   ['Farinha de amêndoa', 'farinha amêndoa', null],
@@ -228,10 +227,10 @@ export const LISTA: readonly (readonly [alimento: string, termo: string, falta: 
   ['Óleo de gergelim', 'óleo gergelim', null],
   ['Óleo de abacate', 'óleo abacate', null],
   ['Óleo de linhaça', 'óleo linhaça', null],
-  ['Cacau em pó', 'cacau pó', ENERGIA],
+  ['Cacau em pó', 'cacau pó', null],
   ['Chocolate 70%', 'chocolate amargo 70', null],
   ['Xarope de agave', 'agave', null],
-  ['Canela', 'canela', ENERGIA],
+  ['Canela', 'canela', null],
   ['Cúrcuma', 'cúrcuma', null],
   ['Gengibre', 'gengibre', null],
   ['Chá verde', 'chá verde', null],

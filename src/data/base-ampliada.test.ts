@@ -3,9 +3,9 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { CHAVES, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
+import { CHAVES, energiaIncoerente, GRUPOS, MAXIMOS, PREPAROS, PRIMEIRO_ID, ULTIMO_ID, medidasDaCuradoria, montarBase, type AlimentoDaBase, type ItemDaCuradoria } from '../../scripts/dados/importar-base-ampliada.mjs'
 import { valoresDoAlimento, type AlimentoUsda, type PorcaoUsda } from '../../scripts/dados/usda-fonte.mjs'
-import { energiaIncoerente } from '../domain/produtos.ts'
+import { energiaIncoerente as energiaIncoerenteDoApp } from '../domain/produtos.ts'
 import base from './base-ampliada.json'
 import fonte from './base-ampliada-fonte.json'
 import taco from './alimentos.json'
@@ -98,12 +98,17 @@ describe('base ampliada: arquivo gerado (spec base-ampliada)', () => {
     }
   })
 
-  it('CA-1704: todo alimento tem energia, coerente com os macros pela regra do app', () => {
+  it('CA-1704 (D-708 revista): todo alimento tem energia, coerente com os macros pelos fatores de Atwater da fonte', () => {
     for (const a of alimentos) {
       const v = Object.fromEntries(CHAVES.map((c, i) => [c, a.valores[i] ?? null]))
       expect(v.energia_kcal, a.nome).not.toBeNull()
-      expect(energiaIncoerente(v), a.nome).toBe(false)
+      expect(energiaIncoerente(v, a.atwater ?? null), a.nome).toBe(false)
     }
+    // Os de fibra alta que a regra 4/4/9 tirava voltam (decisão do coordenador, 29/10/2026).
+    for (const nome of ['Farelo, de aveia, cru', 'Farelo, de trigo, cru', 'Cacau, em pó', 'Canela, em pó', 'Alfarroba, farinha', 'Limão-siciliano, cru', 'Orégano, seco']) {
+      expect(porNome(nome), nome).toBeDefined()
+    }
+    expect(porNome('Cacau, em pó')?.atwater).toEqual([1.83, 8.37, 1.33])
   })
 
   it('CA-1705: a tilápia está na base, grelhada (SR) e crua (Foundation completada pelo SR)', () => {
@@ -293,6 +298,40 @@ describe('importar-base-ampliada: medidasDaCuradoria (CA-1709)', () => {
     expect(medidasDaCuradoria({ nome: 'Alface, romana, crua', grupo: 'Verduras, hortaliças e derivados', preparo: 'cru' }, [porcao('cup, shredded', 47), porcao('leaf', 6, 1, 2)])).toEqual([['folha', 6]])
     expect(medidasDaCuradoria({ nome: 'Feijão, a', grupo: 'Leguminosas e derivados', preparo: 'cozido' }, [porcao('tbsp', 60)])).toEqual([])
     expect(medidasDaCuradoria({ nome: 'Ovo, de galinha, inteiro, pochê', grupo: 'Ovos e derivados', preparo: null }, [porcao('large', 50)])).toEqual([['unidade', 50]])
+  })
+})
+
+describe('importar-base-ampliada: energiaIncoerente (D-708 revista)', () => {
+  // Cacau em pó do SR Legacy (fdcId 169593): 228 kcal pelos fatores de Atwater dele (1,83, 8,37 e 1,33).
+  const CACAU = { energia_kcal: 228, proteina_g: 19.6, lipideos_g: 13.7, carboidrato_g: 57.9, fibra_g: 37 }
+  const FATORES_DO_CACAU = [1.83, 8.37, 1.33] as const
+  // Farinha de alfarroba (173755): sem fatores publicados e 39,8 g de fibra.
+  const ALFARROBA = { energia_kcal: 222, proteina_g: 4.62, lipideos_g: 0.65, carboidrato_g: 88.88, fibra_g: 39.8 }
+
+  it('com os fatores da fonte, a energia publicada fecha; 4/4/9 do app não fecharia', () => {
+    expect(energiaIncoerente(CACAU, FATORES_DO_CACAU)).toBe(false)
+    expect(energiaIncoerenteDoApp(CACAU)).toBe(true)
+  })
+
+  it('pega o erro de verdade: energia × 1000, carboidrato e gordura trocados, proteína e gordura trocadas', () => {
+    expect(energiaIncoerente({ ...CACAU, energia_kcal: 228_000 }, FATORES_DO_CACAU)).toBe(true)
+    expect(energiaIncoerente({ ...CACAU, carboidrato_g: 13.7, lipideos_g: 57.9 }, FATORES_DO_CACAU)).toBe(true)
+    expect(energiaIncoerente({ ...CACAU, proteina_g: 13.7, lipideos_g: 19.6 }, FATORES_DO_CACAU)).toBe(true)
+  })
+
+  it('sem fatores, a fibra conta 2 kcal/g e, com 10 g ou mais de fibra, a tolerância é de 30%; o erro de verdade continua pego', () => {
+    expect(energiaIncoerente(ALFARROBA, null)).toBe(false)
+    expect(energiaIncoerente({ ...ALFARROBA, energia_kcal: 222_000 }, null)).toBe(true)
+    expect(energiaIncoerente({ ...ALFARROBA, carboidrato_g: 0.65, lipideos_g: 88.88 }, null)).toBe(true)
+    // Pouca fibra: a tolerância de 20% de sempre.
+    expect(energiaIncoerente({ energia_kcal: 100, proteina_g: 20, lipideos_g: 10, carboidrato_g: 0, fibra_g: 0 }, null)).toBe(true)
+    expect(energiaIncoerente({ energia_kcal: 128, proteina_g: 26.15, lipideos_g: 2.65, carboidrato_g: 0, fibra_g: 0 }, null)).toBe(false)
+  })
+
+  it('montarBase aceita o alimento de fibra alta pelos fatores da fonte', () => {
+    const cacau: AlimentoUsda = { ...falso(9, 'SR Legacy', 'Cocoa, test', { 1008: 228, 1003: 19.6, 1004: 13.7, 1005: 57.9, 1079: 37 }), fatores: [1.83, 8.37, 1.33] }
+    const { alimentos: saida } = montarBase([incluir(9, 100009, 'Cacau, teste, em pó', { grupo: 'Miscelâneas', preparo: null })], new Map([[9, cacau]]), SEM_TACO)
+    expect(saida[0]?.atwater).toEqual([1.83, 8.37, 1.33])
   })
 })
 

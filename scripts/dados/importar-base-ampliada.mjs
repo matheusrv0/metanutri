@@ -140,12 +140,27 @@ function falhar(mensagem) {
   throw new Error(mensagem)
 }
 
-/** Energia longe de 4P + 4C + 9G (a mesma regra de `energiaIncoerente`, spec alimentos-e-gramaturas, D-384). */
-export function energiaIncoerente(v) {
-  if ([v.energia_kcal, v.proteina_g, v.lipideos_g, v.carboidrato_g].some((x) => x === null)) return false
-  const pelosMacros = 4 * v.proteina_g + 4 * v.carboidrato_g + 9 * v.lipideos_g
-  const diferenca = Math.abs(v.energia_kcal - pelosMacros)
-  return diferenca > 15 && diferenca > 0.2 * Math.max(v.energia_kcal, pelosMacros)
+/** A partir desta fibra por 100 g, a conta sem os fatores da fonte tem tolerância maior (D-708 revista). */
+const FIBRA_ALTA_G = 10
+
+/**
+ * D-708 revista (29/10/2026): a energia que vale é a publicada pela fonte, e a conferência usa os fatores de Atwater
+ * com que o USDA a calculou (proteína, gordura e carboidrato por diferença), com tolerância de 12% (a maior diferença da
+ * base é a da fruta seca da Foundation completada pelo SR, 10,3%; a troca de proteína e gordura dá 14%). Sem eles, 4/4/9 com a
+ * fibra a 2 kcal/g e tolerância de 20%, ou 30% quando a fibra passa de 10 g. Incoerente: diferença maior que 15 kcal e
+ * que a tolerância. Pega o
+ * erro de verdade (energia × 1000, macros trocados) sem tirar farelo, cacau e especiaria, que o 4/4/9 superestima. A
+ * regra de Meus alimentos (`energiaIncoerente` de `produtos.ts`, D-384) não muda.
+ */
+export function energiaIncoerente(v, fatores) {
+  if ([v.energia_kcal, v.proteina_g, v.lipideos_g, v.carboidrato_g].some((x) => x === null || x === undefined)) return false
+  const fibra = v.fibra_g ?? 0
+  const calculada = fatores
+    ? fatores[0] * v.proteina_g + fatores[1] * v.lipideos_g + fatores[2] * v.carboidrato_g
+    : 4 * v.proteina_g + 4 * Math.max(0, v.carboidrato_g - fibra) + 2 * fibra + 9 * v.lipideos_g
+  const tolerancia = fatores ? 0.12 : fibra >= FIBRA_ALTA_G ? 0.3 : 0.2
+  const diferenca = Math.abs(v.energia_kcal - calculada)
+  return diferenca > 15 && diferenca > tolerancia * Math.max(v.energia_kcal, calculada)
 }
 
 /**
@@ -184,6 +199,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
     const valores = valoresDoAlimento(bruto)
     const doComplemento = []
     let porcoes = bruto.porcoes
+    let fatores = bruto.fatores ?? null
     if (item.complemento !== undefined) {
       const comp = usda.get(item.complemento)
       if (!comp || comp.conjunto !== 'SR Legacy' || bruto.conjunto !== 'Foundation Foods') falhar(`${onde}: complemento ${item.complemento} precisa ser SR Legacy de um item Foundation.`)
@@ -195,6 +211,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
         }
       }
       porcoes = [...porcoes, ...comp.porcoes]
+      fatores ??= comp.fatores ?? null
     }
     for (const c of item.naoCopiar ?? []) {
       if (!CHAVES.includes(c)) falhar(`${onde}: naoCopiar com chave desconhecida "${c}".`)
@@ -205,7 +222,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
       if (v !== null && (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > MAXIMOS[c])) falhar(`${onde}: ${c} = ${v} fora da faixa (0 a ${MAXIMOS[c]}).`)
     }
     if (valores.energia_kcal === null) falhar(`${onde}: sem energia.`)
-    if (energiaIncoerente(valores)) falhar(`${onde}: energia incoerente com os macros.`)
+    if (energiaIncoerente(valores, fatores)) falhar(`${onde}: energia incoerente com os macros.`)
 
     const saida = {
       id: item.id,
@@ -222,6 +239,7 @@ export function montarBase(curadoria, usda, nomesDaTaco, idsDeAntes = new Map())
     }
     if (item.ml === true) saida.ml = true
     if (doComplemento.length > 0) saida.complemento = { fdcId: item.complemento, chaves: doComplemento }
+    if (fatores) saida.atwater = fatores
     alimentos.push(saida)
   }
   alimentos.sort((a, b) => a.id - b.id)

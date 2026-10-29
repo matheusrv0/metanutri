@@ -1,7 +1,7 @@
 # Lista de conferência da base ampliada
 
 Spec `base-ampliada`, CA-1711. 217 alimentos comuns no consultório brasileiro que a TACO não tem, montada antes
-da curadoria (29/10/2026). **195 cobertos e 22 faltando**, cada um com o motivo. O teste
+da curadoria (29/10/2026). **199 cobertos e 18 faltando**, cada um com o motivo. O teste
 `src/data/base-ampliada-conferencia.test.ts` tem a mesma lista e confere, pela busca da Tabela de alimentos, que os
 cobertos são achados e os que faltam não são (se um entrar depois, o teste avisa para atualizar a lista).
 
@@ -147,8 +147,8 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Arroz arbóreo | arbóreo | **falta**: não existe no USDA SR Legacy nem na Foundation |
 | Macarrão cozido | macarrão trigo cozido | coberto: Macarrão, trigo, com ovos, cozido; Macarrão, trigo, cozido (+1) |
 | Macarrão integral cozido | macarrão integral cozido | coberto: Macarrão, trigo, integral, cozido |
-| Farelo de aveia | farelo aveia | **falta**: a energia da fonte não fecha com os macros pela regra do app (fibra alta, D-708) |
-| Farelo de trigo | farelo trigo | **falta**: a energia da fonte não fecha com os macros pela regra do app (fibra alta, D-708) |
+| Farelo de aveia | farelo aveia | coberto: Farelo, de aveia, cozido; Farelo, de aveia, cru |
+| Farelo de trigo | farelo trigo | coberto: Farelo, de trigo, cru |
 | Gérmen de trigo | gérmen trigo | coberto: Gérmen, de trigo, cru |
 | Mingau de aveia | aveia cozida | coberto: Aveia, flocos, cozida em água |
 | Farinha de amêndoa | farinha amêndoa | coberto: Farinha, de amêndoa |
@@ -216,7 +216,7 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Maçã Gala | maçã gala | coberto: Maçã, Gala, com casca, crua |
 | Maçã verde | granny smith | coberto: Maçã, Granny Smith, com casca, crua |
 | Toranja | toranja | coberto: Toranja (grapefruit), crua |
-| Limão-siciliano | limão-siciliano | coberto: Limão-siciliano, suco |
+| Limão-siciliano | limão-siciliano | coberto: Limão-siciliano, suco; Limão-siciliano, cru |
 | Melão cantaloupe | cantaloupe | coberto: Melão, cantaloupe, cru |
 | Physalis | physalis | coberto: Physalis, crua |
 | Goji | goji | coberto: Goji berry, seco |
@@ -255,10 +255,10 @@ cobertos são achados e os que faltam não são (se um entrar depois, o teste av
 | Óleo de gergelim | óleo gergelim | coberto: Óleo, de gergelim |
 | Óleo de abacate | óleo abacate | coberto: Óleo, de abacate |
 | Óleo de linhaça | óleo linhaça | coberto: Óleo, de linhaça |
-| Cacau em pó | cacau pó | **falta**: a energia da fonte não fecha com os macros pela regra do app (fibra alta, D-708) |
+| Cacau em pó | cacau pó | coberto: Cacau, em pó |
 | Chocolate 70% | chocolate amargo 70 | coberto: Chocolate, amargo, 70 a 85% |
 | Xarope de agave | agave | coberto: Xarope, de agave |
-| Canela | canela | **falta**: a energia da fonte não fecha com os macros pela regra do app (fibra alta, D-708) |
+| Canela | canela | coberto: Canela, em pó |
 | Cúrcuma | cúrcuma | coberto: Cúrcuma, em pó |
 | Gengibre | gengibre | coberto: Gengibre, cru; Gengibre, em pó |
 | Chá verde | chá verde | coberto: Chá, verde, infusão |

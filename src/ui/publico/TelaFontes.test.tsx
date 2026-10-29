@@ -6,8 +6,8 @@ describe('Fontes da base (CA-322)', () => {
     render(<TelaFontes />)
     expect(screen.getByRole('heading', { level: 1, name: 'Referências' })).toBeInTheDocument()
     // CA-1721 (spec base-ampliada): a frase conta a TACO e a base ampliada.
-    expect(screen.getByText(/A Base MetaNutri reúne 1\.211 alimentos: os 597 da tabela brasileira/)).toBeInTheDocument()
-    expect(screen.getByText(/e 614 alimentos que ela não tem, do USDA\./)).toBeInTheDocument()
+    expect(screen.getByText(/A Base MetaNutri reúne 1\.235 alimentos: os 597 da tabela brasileira/)).toBeInTheDocument()
+    expect(screen.getByText(/e 638 alimentos que ela não tem, do USDA\./)).toBeInTheDocument()
     // 283 depois da camada de plausibilidade das medidas (spec alimentos-e-gramaturas, D-430, D-483 e D-483a); a redação é a da spec
     // textos-e-promessas.
     expect(screen.getByText(/medidas caseiras do IBGE para 283 deles/)).toBeInTheDocument()

@@ -20,7 +20,7 @@ test('CA-1716: a base ampliada vem num pedaço separado, pedido depois da págin
   const pedidos: string[] = []
   page.on('request', (r) => pedidos.push(r.url()))
   await abrirLimpo(page, '/#/alimentos')
-  await expect(page.getByText(/^Base MetaNutri · 1\.?211 alimentos/)).toBeVisible()
+  await expect(page.getByText(/^Base MetaNutri · 1\.?235 alimentos/)).toBeVisible()
   expect(pedidos.some((u) => /base-ampliada-[\w-]+\.js$/.test(u))).toBe(true)
   const html = await (await page.request.get('/')).text()
   expect(html).not.toMatch(/base-ampliada/)

@@ -20,7 +20,7 @@ describe('Base MetaNutri (D-51, CA-322)', () => {
   })
 
   it('conta alimentos, nutrientes, medidas caseiras, o complemento do USDA e a base ampliada (spec base-ampliada, CA-1721)', () => {
-    expect(resumoDaBase()).toEqual({ alimentos: 597 + 614, daTabela: 597, nutrientes: 20, comMedidaCaseira: 283, comComplementoUsda: 308, daBaseAmpliada: 614 })
+    expect(resumoDaBase()).toEqual({ alimentos: 597 + 638, daTabela: 597, nutrientes: 20, comMedidaCaseira: 283, comComplementoUsda: 308, daBaseAmpliada: 638 })
   })
 
   it('cita as cinco fontes, cada uma com link; o USDA vem ao lado da TACO', () => {
@@ -50,7 +50,7 @@ describe('Base MetaNutri (D-51, CA-322)', () => {
       'U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. Conjuntos SR Legacy (versão de abril de 2018) e Foundation Foods (versão de outubro de 2026), baixados em 29/10/2026. Domínio público (CC0 1.0 Universal).',
     )
     expect(ampliada?.uso).toBe(
-      '614 alimentos genéricos que a tabela brasileira não traz (peixes, carnes, laticínios, grãos, sementes, frutas, verduras e cogumelos), com nome em português e o grupo da tabela brasileira. Quando a TACO tem o alimento no mesmo preparo, vale a TACO. Nutriente que a fonte não publicou fica em branco, nunca zero.',
+      '638 alimentos genéricos que a tabela brasileira não traz (peixes, carnes, laticínios, grãos, sementes, frutas, verduras e cogumelos), com nome em português e o grupo da tabela brasileira. Quando a TACO tem o alimento no mesmo preparo, vale a TACO. Nutriente que a fonte não publicou fica em branco, nunca zero.',
     )
     expect(ampliada?.url).toBe('https://fdc.nal.usda.gov/')
     expect(ampliada?.rotuloLink).toBe('Abrir o FoodData Central')
