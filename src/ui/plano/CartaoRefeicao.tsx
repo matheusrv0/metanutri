@@ -1,4 +1,4 @@
-import { Clock, MoreHorizontal, Trash } from 'lucide-react'
+import { MoreHorizontal, Trash } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { Receita } from '@/domain/receitas.ts'
 import type { SugestaoAlimento, TipoRefeicao } from '@/domain/sugestoes.ts'
@@ -89,20 +89,19 @@ export function CartaoRefeicao({
   return (
     <Card className="gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-28 shrink-0">
-          <Clock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input
-            type="time"
-            aria-label={`Horário de ${refeicao.nome}`}
-            value={horarioTexto}
-            onChange={(e) => {
-              setHorarioTexto(e.target.value)
-              if (/^([01]\d|2[0-3]):[0-5]\d$/.test(e.target.value)) aoMudarHorario(e.target.value)
-            }}
-            onBlur={() => setHorarioTexto(refeicao.horario)}
-            className="pl-9"
-          />
-        </div>
+        {/* M-023: um relógio só, o do próprio campo de horário (como o horário da próxima consulta, na ficha), apagado
+            como os outros ícones de campo. */}
+        <Input
+          type="time"
+          aria-label={`Horário de ${refeicao.nome}`}
+          value={horarioTexto}
+          onChange={(e) => {
+            setHorarioTexto(e.target.value)
+            if (/^([01]\d|2[0-3]):[0-5]\d$/.test(e.target.value)) aoMudarHorario(e.target.value)
+          }}
+          onBlur={() => setHorarioTexto(refeicao.horario)}
+          className="w-28 shrink-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
+        />
         <Input
           aria-label={`Nome da refeição ${refeicao.nome}`}
           value={nomeTexto}

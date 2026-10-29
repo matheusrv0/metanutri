@@ -118,8 +118,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
   )
 
   const campoGramas = (
-    // No celular, 84 px bastam para "1000 g"; o resto da largura fica para o nome da medida.
-    <div className="w-[5.25rem] shrink-0 sm:w-24">
+    // M-002 (D-803): 96 px em toda largura mostram cinco algarismos e a unidade; com 84 px, "1250" virava "125".
+    <div className="w-24 shrink-0">
       <CampoNumero
         rotulo={`Gramas de ${descricao}`}
         rotuloOculto

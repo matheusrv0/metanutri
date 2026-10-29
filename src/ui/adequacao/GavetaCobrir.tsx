@@ -205,9 +205,16 @@ export function GavetaCobrir({
                     {a}
                   </p>
                 ))}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {destino ? (
-                    <Button size="sm" onClick={() => aoAdicionar(destino.id, opcao, s.alimentoId, s.gramas, s.medida)}>
+                    // M-010: o nome da refeição pode ser longo ("Almoço de domingo na casa da sogra…"); o botão quebra a
+                    // linha e cresce, em vez de passar da gaveta. Sem o tamanho fixo do Button: 44 px no toque e em tela
+                    // estreita, 32 px só com mouse a partir de 640 px (D-802).
+                    <Button
+                      size={null}
+                      className="min-h-11 max-w-full justify-start whitespace-normal px-3.5 py-2 text-left text-xs sm:[@media(pointer:fine)]:min-h-8"
+                      onClick={() => aoAdicionar(destino.id, opcao, s.alimentoId, s.gramas, s.medida)}
+                    >
                       {`Adicionar em ${destino.nome}`}
                     </Button>
                   ) : null}

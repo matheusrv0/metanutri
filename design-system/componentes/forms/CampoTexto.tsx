@@ -23,6 +23,20 @@ interface CampoTextoProps {
   readonly aoSair?: (() => void) | undefined
 }
 
+/**
+ * A folga da direita é a do sufixo, que fica a 10 px da borda (M-002, D-803 da spec ajustes-mobile). Medido em Manrope
+ * 12 px: "g" e "%" ocupam até 10 px; "ml", "kg" e "mm", até 21; "kcal" e "anos", até 25; "meses", "litros",
+ * "g ou ml" e "semanas", até 46. Com 4 px de respiro, o número digitado não entra por baixo da unidade, e a unidade curta
+ * não rouba o lugar dos algarismos.
+ */
+function folgaDoSufixo(sufixo: string): string {
+  if (sufixo.length === 1) return 'pr-6'
+  if (sufixo.length === 2) return 'pr-9'
+  if (sufixo.length <= 4) return 'pr-10'
+  if (sufixo.length <= 7) return 'pr-15'
+  return 'pr-20'
+}
+
 export function CampoTexto({
   rotulo,
   valor,
@@ -61,9 +75,9 @@ export function CampoTexto({
           disabled={desativado}
           autoFocus={focar}
           onBlur={aoSair}
-          className={sufixo ? 'pr-9' : undefined}
+          className={sufixo ? folgaDoSufixo(sufixo) : undefined}
         />
-        {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}
+        {sufixo ? <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs text-muted-foreground">{sufixo}</span> : null}
       </div>
       {erro ? (
         <p id={idErro} role="alert" className="text-xs text-errortext">

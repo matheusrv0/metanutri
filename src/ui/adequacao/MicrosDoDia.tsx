@@ -111,22 +111,30 @@ export function MicrosDoDia({
               <span id={idMeta} className="sr-only">{`Adequação em % da referência; a meta é ${formatarNumero(metaPct, 0)}%.`}</span>
             )}
             {paraCobrir.length + acima.length > 0 ? (
-              <ul aria-label="Fora da meta" aria-describedby={metaPct === null ? undefined : idMeta} className="flex flex-col">
+              // M-003 (D-801): o nome do nutriente nunca é cortado. Num cartão estreito (a coluna do computador, o
+              // celular), o percentual desce para a linha de baixo do nome; num largo, os dois dividem a linha.
+              <ul aria-label="Fora da meta" aria-describedby={metaPct === null ? undefined : idMeta} className="@container flex flex-col">
                 {paraCobrir.slice(0, MAXIMO).map((linha) => (
                   <li key={linha.chave} className="flex min-h-12 items-center gap-3 border-b border-border py-1.5 last:border-0">
-                    <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
-                    <span className="flex items-baseline">
-                      <span className="numeros text-sm font-semibold text-warningtext">{pctDaReferencia(linha)}</span>
-                      <MarcaSemDado semDado={linha.semDado} />
-                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col @md:flex-row @md:items-baseline @md:justify-between @md:gap-3">
+                      <span className="line-clamp-2 break-words text-sm text-heading" title={linha.rotulo}>
+                        {linha.rotulo}
+                      </span>
+                      <span className="flex items-baseline">
+                        <span className="numeros text-sm font-semibold text-warningtext">{pctDaReferencia(linha)}</span>
+                        <MarcaSemDado semDado={linha.semDado} />
+                      </span>
+                    </div>
                     <Button size="sm" variant="lightprimary" onClick={() => abrirCobrir(linha.chave)} aria-label={`Cobrir ${linha.rotulo}`} data-cobrir={linha.chave}>
                       Cobrir
                     </Button>
                   </li>
                 ))}
                 {acima.map((linha) => (
-                  <li key={linha.chave} className="flex min-h-12 flex-wrap items-center gap-x-3 border-b border-border py-1.5 last:border-0">
-                    <span className="min-w-0 flex-1 truncate text-sm text-heading">{linha.rotulo}</span>
+                  <li key={linha.chave} className="flex min-h-12 flex-col justify-center border-b border-border py-1.5 last:border-0 @md:flex-row @md:flex-wrap @md:content-center @md:items-baseline @md:justify-between @md:gap-x-3">
+                    <span className="line-clamp-2 break-words text-sm text-heading" title={linha.rotulo}>
+                      {linha.rotulo}
+                    </span>
                     <span className="numeros text-sm font-semibold text-errortext">{textoDaAdequacao(linha)}</span>
                   </li>
                 ))}

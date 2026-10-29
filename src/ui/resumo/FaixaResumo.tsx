@@ -8,6 +8,7 @@ import { totaisDoPlano } from '@/domain/totais.ts'
 import type { Caso, Plano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { cn } from '@/lib/utils'
+import { cardVariants } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
 import { AjusteEnergia } from './AjusteEnergia.tsx'
@@ -25,8 +26,9 @@ const COR: Record<EstadoFaixa, string> = {
 }
 
 function Celula({ rotulo, valor, cor, semDado = 0 }: { readonly rotulo: string; readonly valor: string; readonly cor?: string; readonly semDado?: number }) {
+  // M-025: dentro do cartão, os fios só separam as células; a da direita de cada linha não leva fio encostado na borda.
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 border-b border-r border-border px-4 py-2.5 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 xl:border-b-0 xl:border-r xl:first:pl-0 xl:[&:nth-child(3n)]:border-r">
+    <div className="flex min-w-0 flex-col gap-0.5 border-b border-r border-border px-4 py-2.5 last:border-r-0 max-sm:even:border-r-0 sm:[&:nth-child(3n)]:border-r-0 xl:border-b-0 xl:border-r xl:first:pl-0 xl:[&:nth-child(3n)]:border-r">
       <span className="rotulo">{rotulo}</span>
       <span className="flex min-w-0 items-baseline">
         <span className={cn('numeros truncate text-base font-semibold text-heading', cor)}>{valor}</span>
@@ -65,7 +67,8 @@ export function FaixaResumo({ caso, plano, aoAlterar }: FaixaResumoProps) {
   }
 
   return (
-    <section aria-label="Resumo do dia" className="flex flex-col border border-border bg-card">
+    // M-025: o cartão do sistema (raio 24, sem fio em volta), no lugar da caixa de canto reto da direção antiga.
+    <section aria-label="Resumo do dia" className={cn(cardVariants(), 'gap-0 p-0')}>
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-wrap xl:items-center xl:px-4">
         <Celula rotulo="Energia do plano" valor={`${formatarNumero(kcalPlano, 0)} kcal`} semDado={totais.nutrientes.energia_kcal.semDado} />
         <Celula rotulo={energia.getManual ? 'GET manual' : 'GET calculado'} valor={energia.get === null ? '—' : `${formatarNumero(energia.get, 0)} kcal`} />
