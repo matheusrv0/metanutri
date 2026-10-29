@@ -97,6 +97,14 @@ export const ehFolhaCrua = (a: Alimento): boolean => ehVerdura(a) && a.preparo =
  * falta é sugestão fraca ("Alface roxa · 6 folhas" para 19% do ferro). A folha crua só entra com ao menos isto.
  */
 export const COBERTURA_MINIMA_FOLHA_CRUA_PCT = 25
+
+/**
+ * D-716d (spec base-ampliada, achado 3 da revisão): espinafre (o comum e o da Nova Zelândia), acelga suíça e folha de
+ * beterraba têm tanto oxalato que o cálcio delas quase não é absorvido. A "acelga" da TACO e a da base ampliada são a
+ * couve-chinesa (pouco oxalato), e ficam.
+ */
+const ALTO_OXALATO = /^(Espinafre|Acelga, suíça|Beterraba, folha)/i
+export const ehAltoOxalato = (a: Alimento): boolean => ehVerdura(a) && ALTO_OXALATO.test(nomeLimpo(a))
 const OVO_INTEIRO_DE_GALINHA = /^Ovo, de galinha, inteiro/i
 /** Origem animal: a vitamina A é retinol pré-formado (D-442). */
 const ORIGEM_ANIMAL: ReadonlySet<string> = new Set(['Carnes e derivados', 'Pescados e frutos do mar', 'Ovos e derivados', 'Leite e derivados'])
@@ -387,6 +395,8 @@ export function sugerirParaCobrir(
     // D-510 (spec alimentos-e-gramaturas): o hambúrguer vegetal feito em casa não passa pela regra do embutido.
     if (!ehPrescritivelParaSugerir(alimento, { incluirIngredientes: opcoes.incluirIngredientes === true })) continue
     if (CAFE_OU_CHA.test(alimento.descricao.trim())) continue
+    // D-716d: no cálcio, a verdura com muito oxalato não conta; no ferro, no folato e no magnésio, conta.
+    if (chave === 'calcio_mg' && ehAltoOxalato(alimento)) continue
     const porCem = alimento.nutrientes[chave]
     const kcalPorCem = alimento.nutrientes.energia_kcal
     if (porCem === null || porCem <= 0 || kcalPorCem === null) continue

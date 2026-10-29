@@ -183,13 +183,18 @@ por `src/domain/cobrirAntesDepois.test.ts`; a regra da folha crua, por `src/doma
 | Ferro | Agrião cru; Pão de glúten; Tofu; Maminha grelhada; Estrogonofe de carne | **Espinafre cozido** novo (90 g, 20%); **Feijão-branco cozido** novo (140 g, 32%); Pão de glúten (50 g, 18%); **Coxão mole grelhado** novo (120 g, 24%); **Atum em água** novo (120 g, 12%) |
 | B6 | Aipo cru; Pão de soja; Banana pacova; Maminha grelhada; Castanha-de-caju torrada | **Espinafre Nova Zelândia cozido** novo (90 g, 18%); **Coxão mole grelhado** novo (120 g, 90%); **Atum em água** novo (120 g, 33%); **Ervilha fresca cozida** novo (80 g, 15%); Pão de soja (50 g, 34%) |
 | Vitamina D | Salmão com pele; Salmão sem pele; Atum em óleo; Sardinha em óleo; Gema cozida | **Truta grelhada** novo (106,5 g, 100%); Salmão com pele (105 g, 100%); Salmão sem pele (100 g, 97%); **Linguado grelhado** novo (63,5 g, 16%); Gema cozida (40 g, 16%) |
-| Cálcio | Leite desnatado; Quiabo cru; Sardinha assada; Tofu; Laranja da terra | **Espinafre cozido** novo (90 g, 14%); Leite desnatado (200 g, 30%); Sardinha assada (120 g, 58%); **Tofu firme com sulfato de cálcio** novo (126 g, 28%); **Chia** novo (30 g, 20%) |
-| B12 | Contra-filé grelhado; Merluza assada; Filé-mignon grelhado; Leite desnatado; Ovo cozido | **Polaca-do-alasca grelhada** novo (60 g, 100%); **Atum em água** novo (85 g, 100%); Contra-filé grelhado (50 g, 100%); Leite desnatado (200 g, 46%); Ovo cozido (90 g, 46%) |
+| Cálcio | Leite desnatado; Quiabo cru; Sardinha assada; Tofu; Laranja da terra | **Couve-manteiga cozida** novo (95 g, 15%); Leite desnatado (200 g, 30%); Sardinha assada (120 g, 58%); **Tofu firme com sulfato de cálcio** novo (126 g, 28%); **Chia** novo (30 g, 20%) |
+| B12 | Contra-filé grelhado; Merluza assada; Filé-mignon grelhado; Leite desnatado; Ovo cozido | **Atum em água** novo (85 g, 100%); **Truta grelhada** novo (55 g, 100%); Contra-filé grelhado (50 g, 100%); Leite desnatado (200 g, 46%); Ovo cozido (90 g, 46%) |
 | Folato | Chicória crua; Feijão-fradinho; Goiaba branca; Pão de glúten; Gema cozida | **Espinafre cozido** novo (90 g, 37%); Feijão-fradinho (140 g, 54%); Goiaba branca (170 g, 23%); Pão de glúten (50 g, 24%); Gema cozida (40 g, 16%) |
 
 **O que mudou e por quê.** A alface roxa sai do ferro do exemplo (cobria 19% em 60 g), o agrião sai do ferro do plano
 vazio (12%) e a chicória do folato (24%): é a regra da folha crua (D-716a), a mesma nas duas bases. O pão de glúten
 fica no ferro. O aipo sai da B6 (a base traz opções mais densas). A rúcula fica no cálcio do exemplo (27%).
+
+**Depois da revisão (D-716d e D-716h).** No cálcio, o espinafre cozido (14%, cálcio preso no oxalato) sai do plano
+vazio e entra a couve-manteiga cozida (95 g, 15%), verdura de rotina com cálcio que se absorve; no exemplo, o cálcio não
+muda (rúcula, iogurte, sardinha, tofu, chia). Só com a TACO, o cálcio também não muda: nenhum espinafre estava nas cinco.
+Na B12 do plano vazio, a polaca grelhada com aditivo sai e a lista abre com o atum em água e a truta grelhada.
 
 **Nada estranho entrou.** No lugar das folhas cruas entra o espinafre cozido (novo), que é verdura cozida de rotina;
 só com a TACO, entram o almeirão refogado (ferro do exemplo, 100 g, 20%), a sardinha em óleo (ferro do vazio) e o

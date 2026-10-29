@@ -52,7 +52,7 @@ const DEPOIS_VAZIO: Tabela = {
   ferro_mg: ['Espinafre, cozido', 'Feijão, branco, cozido', 'Pão, glúten, forma', 'Carne, bovina, coxão mole, sem gordura, grelhado', 'Atum, em conserva em água'],
   piridoxina_mg: ['Espinafre, Nova Zelândia, cozido', 'Carne, bovina, coxão mole, sem gordura, grelhado', 'Atum, em conserva em água', 'Ervilha, fresca, cozida', 'Pão, de soja'],
   vitamina_d_mcg: ['Truta, grelhada', 'Salmão, filé, com pele, fresco,  grelhado', 'Salmão, sem pele, fresco, grelhado', 'Linguado, filé, grelhado', 'Ovo, de galinha, gema, cozida/10minutos'],
-  calcio_mg: ['Espinafre, cozido', 'Leite, de vaca, desnatado, UHT', 'Sardinha, assada', 'Tofu, firme, com sulfato de cálcio', 'Chia, semente'],
+  calcio_mg: ['Couve, manteiga, cozida', 'Leite, de vaca, desnatado, UHT', 'Sardinha, assada', 'Tofu, firme, com sulfato de cálcio', 'Chia, semente'],
   vitamina_b12_mcg: ['Atum, em conserva em água', 'Truta, grelhada', 'Carne, bovina, contra-filé, sem gordura, grelhado', 'Leite, de vaca, desnatado, UHT', 'Ovo, de galinha, inteiro, cozido/10minutos'],
   folato_dfe_mcg: ['Espinafre, cozido', 'Feijão, fradinho, cozido', 'Goiaba, branca, com casca, crua', 'Pão, glúten, forma', 'Ovo, de galinha, gema, cozida/10minutos'],
 }
