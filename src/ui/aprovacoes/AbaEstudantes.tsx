@@ -30,9 +30,9 @@ interface Erro {
 
 function Dado({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{rotulo}</dt>
-      <dd className="text-sm font-semibold text-heading">{valor}</dd>
+      <dd className="text-sm font-semibold text-heading [overflow-wrap:anywhere]">{valor}</dd>
     </div>
   )
 }
@@ -105,7 +105,9 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
+    // M-004 (spec ajustes-mobile, D-800): a coluna do celular encolhe; `auto` crescia com o e-mail sem quebra e a
+    // página ia a 561 px, com Aprovar e Recusar fora da tela.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start">
       <ul className="flex flex-col gap-2 rounded-3xl bg-card p-3" aria-label="Comprovantes em análise">
         {pedidos.map((p) => (
           <li key={p.id}>
@@ -122,7 +124,10 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
                 <GraduationCap className="size-4" aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-heading">{p.nome || p.email}</span>
+                {/* D-801: o nome identifica o pedido; em até duas linhas, com o resto no title. */}
+                <span className="line-clamp-2 text-sm font-semibold text-heading [overflow-wrap:anywhere]" title={p.nome || p.email}>
+                  {p.nome || p.email}
+                </span>
                 <span className="text-xs text-muted-foreground">{`${p.instituicao} · ${formatarDataLonga(p.enviadoEm)}`}</span>
               </span>
             </button>
@@ -130,13 +135,13 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
         ))}
       </ul>
 
-      <section className="flex flex-col gap-5 rounded-3xl bg-card p-5" aria-labelledby={`${id}-nome`}>
+      <section className="flex min-w-0 flex-col gap-5 rounded-3xl bg-card p-5" aria-labelledby={`${id}-nome`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 id={`${id}-nome`} className="text-2xl font-bold">
+          <div className="min-w-0">
+            <h2 id={`${id}-nome`} className="text-2xl font-bold [overflow-wrap:anywhere]">
               {aberto.nome || 'Sem nome'}
             </h2>
-            <p className="text-sm text-muted-foreground">{aberto.email}</p>
+            <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{aberto.email}</p>
           </div>
           <Badge variant="lightSuccess">
             <Check className="size-3" aria-hidden="true" />
@@ -144,7 +149,7 @@ export function AbaEstudantes({ pedidos, decidirPedido, abrirComprovante }: AbaE
           </Badge>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_13rem]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[minmax(0,1fr)_13rem]">
           <div className="flex flex-col gap-4">
             <dl className="grid grid-cols-2 gap-x-5 gap-y-3.5">
               <Dado rotulo="Instituição" valor={aberto.instituicao} />
