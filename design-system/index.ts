@@ -6,9 +6,9 @@
  * arquivo por arquivo, para o Vite separar melhor o pacote — mas componente novo
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
- * Os 31 componentes do sistema, na taxonomia do design system:
- *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
- *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca
+ * Os 34 componentes do sistema, na taxonomia do design system:
+ *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes · EscolhaDeCor · CampoCor
+ *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca · PlacaLogo
  *   overlay     Dialog · Sheet · DropdownMenu
  *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
@@ -29,6 +29,8 @@ export { Textarea } from './componentes/forms/textarea.tsx'
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './componentes/forms/select.tsx'
 export { Switch } from './componentes/forms/switch.tsx'
 export { GrupoOpcoes } from './componentes/forms/GrupoOpcoes.tsx'
+export { EscolhaDeCor, type OpcaoDeCor } from './componentes/forms/EscolhaDeCor.tsx'
+export { CampoCor, FORMATO_DA_COR } from './componentes/forms/CampoCor.tsx'
 
 // display
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants, type CardProps } from './componentes/display/card.tsx'
@@ -47,6 +49,7 @@ export { LinhaLista } from './componentes/display/LinhaLista.tsx'
 export { AnelProgresso, type TomAnel } from './componentes/display/AnelProgresso.tsx'
 export { IconeMarca, NOMES_ICONE_MARCA, type NomeIconeMarca } from './componentes/display/IconeMarca.tsx'
 export { PontosDaMarca } from './componentes/display/PontosDaMarca.tsx'
+export { PlacaLogo } from './componentes/display/PlacaLogo.tsx'
 
 // overlay
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './componentes/overlay/dialog.tsx'

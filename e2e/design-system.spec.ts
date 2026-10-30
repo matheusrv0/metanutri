@@ -17,6 +17,7 @@ const SECOES = [
   'Fontes',
   'Recolhivel',
   'IconeMarca · PontosDaMarca',
+  'PlacaLogo · EscolhaDeCor · CampoCor',
   'Dialog · Sheet · DropdownMenu',
   'Tabs · ItemMenu · EtapasDoCaso',
   'CartaoDestaque',

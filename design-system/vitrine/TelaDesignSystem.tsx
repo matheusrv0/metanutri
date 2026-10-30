@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Flame, FolderOpen, Download, Sparkles, Search, TriangleAlert, ArrowLeftRight, LayoutDashboard, BookOpen } from 'lucide-react'
+import { CORES_PRONTAS } from '@/domain/corDaMarca.ts'
 import type { ResultadoMacro } from '@/domain/macros.ts'
 import { useTema } from '@/ui/tema/contextoTema.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -12,6 +13,7 @@ import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { GraficoBarras } from '@ds/componentes/display/GraficoBarras.tsx'
 import { IconeMarca, NOMES_ICONE_MARCA } from '@ds/componentes/display/IconeMarca.tsx'
+import { PlacaLogo } from '@ds/componentes/display/PlacaLogo.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
@@ -20,8 +22,10 @@ import { Separator } from '@ds/componentes/display/separator.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@ds/componentes/display/tooltip.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { CampoCor } from '@ds/componentes/forms/CampoCor.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { EscolhaDeCor } from '@ds/componentes/forms/EscolhaDeCor.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
@@ -88,6 +92,7 @@ export function TelaDesignSystem() {
   const [ligado, setLigado] = useState(true)
   const [aba, setAba] = useState<'caso' | 'plano' | 'adequacao'>('plano')
   const [menu, setMenu] = useState('painel')
+  const [corDaMarca, setCorDaMarca] = useState(CORES_PRONTAS[2]?.valor ?? '')
 
   return (
     <TooltipProvider>
@@ -445,6 +450,20 @@ export function TelaDesignSystem() {
           <Linha estado="Pontos da marca: parados e pulsando">
             <PontosDaMarca className="text-heading" />
             <PontosDaMarca pulsando className="text-heading" />
+          </Linha>
+        </Secao>
+
+        <Secao nome="PlacaLogo · EscolhaDeCor · CampoCor" arquivo="display/ · forms/" descricao="A marca da nutricionista: a logo numa placa branca nos dois temas, as cores prontas e outra cor">
+          <Linha estado="Placa no link e grande">
+            <PlacaLogo src="marca/simbolo.svg" alt="Logo de exemplo" />
+            <PlacaLogo src="marca/simbolo.svg" alt="Logo de exemplo, grande" tamanho="grande" className="max-w-sm" />
+          </Linha>
+          <Linha estado="Cores prontas e outra cor">
+            <span id="vitrine-cor" className="sr-only">
+              Cor da marca
+            </span>
+            <EscolhaDeCor rotuloId="vitrine-cor" opcoes={CORES_PRONTAS} valor={corDaMarca} aoEscolher={setCorDaMarca} />
+            <CampoCor rotulo="Outra cor" valor={corDaMarca} aoEscolher={setCorDaMarca} />
           </Linha>
         </Secao>
 

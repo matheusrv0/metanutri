@@ -24,8 +24,8 @@ o projeto já tinha equivalente, ele foi mantido e estendido, não duplicado.
 
 | Grupo | Componentes |
 |---|---|
-| `forms/` | Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes |
-| `display/` | Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · Fontes\* · Recolhivel\* |
+| `forms/` | Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes · EscolhaDeCor\* · CampoCor\* |
+| `display/` | Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · Fontes\* · Recolhivel\* · PlacaLogo\* |
 | `overlay/` | Dialog · Sheet · DropdownMenu |
 | `navigation/` | Tabs · ItemMenu · EtapasDoCaso |
 | `nutricao/` | CartaoDestaque · BarraAdequacao · MedidorMacro |
@@ -36,6 +36,8 @@ Para que serve cada um, quando usar e a API de verdade: [componentes/LEIA-ME.md]
 
 \* `Fontes` nasceu depois, em 24/09/2026, para recolher as citações de procedência.
 \* `Recolhivel` nasceu em 01/10/2026, para recolher o que é opcional nas telas de trabalho.
+\* `PlacaLogo`, `EscolhaDeCor` e `CampoCor` nasceram em 29/10/2026, para a marca da nutricionista no link do paciente
+(spec marca-no-link).
 
 Os de `nutricao/` e alguns de `forms/` e `navigation/` conhecem o domínio (importam
 `@/domain/...`). Isso é de propósito: este design system é do MetaNutri, não um pacote
