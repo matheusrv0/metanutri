@@ -142,7 +142,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
   },
 ]
 
-export type IdRecurso = 'adequacao' | 'adesao' | 'documentos' | 'logotipo' | 'alimentos-proprios'
+export type IdRecurso = 'adequacao' | 'adesao' | 'documentos' | 'marca' | 'alimentos-proprios'
 
 export interface RecursoDeTodos {
   readonly id: IdRecurso
@@ -157,7 +157,8 @@ export const RECURSOS_EM_TODOS_OS_PLANOS: readonly RecursoDeTodos[] = [
   { id: 'adequacao', texto: 'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir' },
   { id: 'adesao', texto: 'Missões diárias no link do paciente e tela Adesão' },
   { id: 'documentos', texto: 'Plano impresso em PDF; aconselhamento e memorial em Word' },
-  { id: 'logotipo', texto: 'Seu logotipo nos documentos impressos' },
+  // Spec marca-no-link (D-959, CA-1979): a logo e a cor em todas as assinaturas, Free e Estudante inclusive.
+  { id: 'marca', texto: 'Sua logo e sua cor no link do paciente; a logo também no plano impresso' },
   { id: 'alimentos-proprios', texto: 'Meus alimentos e receitas com cálculo' },
 ]
 

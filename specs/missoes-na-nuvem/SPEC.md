@@ -5,7 +5,7 @@ Status: **correção de defeito**, sem decisão nova de produto. Achado em 07/10
 **O defeito:** a US-2.5 da `estilo-spora` diz que o paciente vê e marca as missões **no celular dele**. Mas, ao criar o
 link, a tela da nutricionista grava o acompanhamento só no navegador dela (o `salvar` local do provedor), e a tela de
 Adesão lê só esse navegador. Resultado: o paciente abre o link no celular e não acha nada, e o que ele marcaria não
-chegaria à nutricionista. O lado do paciente já usa a nuvem (`missoes_por_token` e `marcar_missoes`).
+chegaria à nutricionista. O lado do paciente já usa a nuvem (`missoes_por_token` e `marcar_missoes`). *Atualizado pela `marca-no-link` (29/10/2026): `missoes_por_token` devolve também a marca da nutricionista (`marca_logo` e `marca_cor`, CA-1974).*
 
 ## 1. Decisões
 

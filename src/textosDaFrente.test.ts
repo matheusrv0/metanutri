@@ -198,7 +198,8 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"os casos não serão salvos"', /os casos não serão salvos/i],
   ['"não sobrevivem ao fechar"', /não sobrevivem/i],
   ['"Se for recusar, o motivo"', /Se for recusar/i],
-  ['"logo" no lugar de "logotipo"', /\b(a|uma|Sua|Remover) logo\b/],
+  // O "logo" no lugar de "logotipo" (D-400) saiu com a spec marca-no-link (D-963): a marca da nutricionista diz "logo"
+  // ("Enviar logo", "Sua logo e sua cor no link do paciente"), aprovado no protótipo de 29/10/2026.
   // Aspas curvas no texto de tela (glossário): "assim" vira “assim”. O HTML do cabeçalho de busca usa aspas de atributo.
   ['aspas retas em volta de palavras', /(^|\s)"[\p{L}\d][^"<>=]*"(\s|[.,:;)]|$)/u],
 ]

@@ -69,7 +69,7 @@ describe('SecaoPrecos', () => {
       'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir',
       'Missões diárias no link do paciente e tela Adesão',
       'Plano impresso em PDF; aconselhamento e memorial em Word',
-      'Seu logotipo nos documentos impressos',
+      'Sua logo e sua cor no link do paciente; a logo também no plano impresso',
       'Meus alimentos e receitas com cálculo',
     ])
     expect(within(tabela).queryByText('Suporte')).not.toBeInTheDocument()
