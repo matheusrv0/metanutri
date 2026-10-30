@@ -112,6 +112,27 @@ rápido que uma lista suspensa. `valor={null}` é o estado vazio.
 />
 ```
 
+### CaixaDeMarcar
+A caixa de marcar do navegador, na cor da ação, com o rótulo como área de toque de 44 px no celular e no tablet. O
+rótulo pode ficar só para o leitor de tela quando a linha já diz o que se marca; `marcada="misto"` é o "algumas
+marcadas" do "Marcar todas". *Nasceu na importação de pacientes (spec importar-pacientes).*
+
+```tsx
+<CaixaDeMarcar rotulo="Marcar todas" marcada={todas ? true : algumas ? 'misto' : false} aoMudar={marcarTodas} />
+<CaixaDeMarcar rotulo={`Importar ${nome}`} rotuloOculto marcada={marcada} aoMudar={alternar} descritaPor={idDoMotivo} />
+```
+
+### ListaNativa
+O `<select>` do navegador com o desenho do Input (44 px e 16 px no toque, 40 px e 14 px com mouse). É a lista das
+telas de trabalho: no celular abre a do aparelho, e dezenas delas numa tela não pesam. O `Select` (Radix) fica para a
+lista que precisa de desenho dentro das opções. *Nasceu na importação de pacientes.*
+
+```tsx
+<ListaNativa aria-label="Destino da coluna Celular" value={destino} onChange={(e) => mudar(e.target.value)}>
+  <option value="telefone">Telefone</option>
+</ListaNativa>
+```
+
 ---
 
 ## display/
@@ -405,6 +426,15 @@ Adequação. As etapas vêm de `@/ui/navegacao.ts`, não de prop.
 
 ```tsx
 <EtapasDoCaso abaAtual="plano" aoEscolher={setAba} />
+```
+
+### Passos
+Os passos de um fluxo curto, no desenho das etapas do plano, sem conhecer o domínio: o atual com
+`aria-current="step"`, o feito com o visto e o botão de voltar, o ainda não alcançado só como texto. *Nasceu na
+importação de pacientes.*
+
+```tsx
+<Passos rotulo="Passos da importação" passos={[{ valor: 'arquivo', rotulo: 'Arquivo' }]} atual="arquivo" aoEscolher={ir} />
 ```
 
 ---

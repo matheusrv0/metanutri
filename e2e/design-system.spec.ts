@@ -19,6 +19,7 @@ const SECOES = [
   'IconeMarca · PontosDaMarca',
   'Dialog · Sheet · DropdownMenu',
   'Tabs · ItemMenu · EtapasDoCaso',
+  'Passos · CaixaDeMarcar · ListaNativa',
   'CartaoDestaque',
   'BarraAdequacao',
   'MedidorMacro',
