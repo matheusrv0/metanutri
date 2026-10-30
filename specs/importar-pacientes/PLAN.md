@@ -56,14 +56,15 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
   `AbortSignal` (CB-911, DP-IP-32).
 - **Cria** `src/domain/importar/textos.ts`: as frases do D-917 num lugar só (as telas e os testes leem daqui).
 - **Cria** `src/domain/importar/lerPlanilha.test.ts`: CA-1909, CA-1910, CB-900, CB-910, CB-911, DP-IP-11.
-- Depende de: T1, T2.
+- Depende de: T1, T2, T4 (a conta de linhas de paciente precisa do cabeçalho; por isso a T4 é feita antes da T3).
 
 ### T4 · Colunas (D-904, D-905)
 - **Cria** `src/domain/importar/colunas.ts`: `destinoDoCabecalho`, `analisarAba` (a linha do cabeçalho entre as 10
   primeiras, "Coluna A"…, as linhas de paciente sem as vazias, o exemplo, os destinos iniciais) e `mudarDestino`.
 - **Cria** `src/domain/importar/colunas.test.ts`: CA-1911 (um teste por grupo), CA-1912, CA-1913, CA-1914 (sem
   Nome), CA-1915, CA-1917 (contas), CB-904 (coluna vazia), CB-905.
-- Depende de: T0.
+- **Também** `LIMITE_DE_LINHAS` e a conta de linhas de paciente da aba (`excede`), que a T3 usa.
+- Depende de: T1 (o registro). Feita antes da T3.
 
 ### T5 · Valores (D-907, D-908)
 - **Cria** `src/domain/importar/valores.ts`: `lerSexo`, `lerData` (formatos do D-907, série do Excel, ano de dois
