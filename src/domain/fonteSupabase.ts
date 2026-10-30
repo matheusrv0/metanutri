@@ -22,10 +22,10 @@ interface Resposta<T> {
 }
 
 /** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
-const traduzido = (erro: ErroDoBanco): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
+export const traduzido = (erro: ErroDoBanco): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
 
 /** Um pedido ao banco. O do cliente de verdade aceita um sinal para desistir dele (CA-439). */
-type Pedido = PromiseLike<Resposta<unknown>> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta<unknown>> }
+export type Pedido = PromiseLike<Resposta<unknown>> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta<unknown>> }
 
 /** O pedaço do cliente Supabase que este arquivo usa — o resto não interessa aqui. */
 export interface ClienteMissoes {
@@ -208,7 +208,7 @@ async function usuarioDaSessao(cliente: { readonly auth: ClienteMissoes['auth'] 
  * dados-por-conta, CA-474). A sessão que trocou de conta no meio de uma leitura é nula, e nada é
  * pedido: o link de uma conta nunca vai para a outra. Sem conta esperada, vale a da sessão.
  */
-async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] }, esperado: string | null | undefined): Promise<string | null> {
+export async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] }, esperado: string | null | undefined): Promise<string | null> {
   const usuario = await usuarioDaSessao(cliente)
   if (usuario === null) return null
   return esperado === undefined || esperado === null || esperado === usuario ? usuario : null
@@ -251,7 +251,7 @@ export const PRAZO_DA_NUVEM_MS = 15_000
  * Corre a ida à nuvem contra o relógio. Exceção e demora viram a falha de rede de sempre,
  * e na demora o pedido é cancelado, para não chegar ao banco depois que a tela desistiu.
  */
-async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
+export async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
   const controle = new AbortController()
   let relogio: ReturnType<typeof setTimeout> | undefined
   const esgotou = new Promise<T>((resolver) => {
@@ -268,7 +268,7 @@ async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (men
 }
 
 /** Liga o sinal de desistir ao pedido, quando o cliente sabe desistir. */
-const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta<unknown>> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
+export const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta<unknown>> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
 
 const mensagem = (texto: string): string => texto
 

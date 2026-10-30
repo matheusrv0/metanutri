@@ -119,6 +119,9 @@ function semear(): Semeado {
     telefone: JAVASCRIPT_PURO,
     email: JAVASCRIPT_PURO,
     logo: 'javascript:alert(1)',
+    // Spec marca-no-link: a cor vai para um estilo; fora de #rrggbb, ela nunca chega lá (lerPerfil a descarta).
+    cor: 'red;background:url(javascript:alert(1))',
+    marcaPublicada: true,
   })
   return { casoId: salvo.caso.id, pacienteId: 'p1' }
 }
