@@ -8,7 +8,7 @@
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
-import { lerMarcaDoLink } from './marca.ts'
+import { lerMarcaDoLink, separarMarca } from './marca.ts'
 import type { Missao } from './missoes.ts'
 import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
@@ -145,11 +145,7 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
 }
 
 /** O link sem a marca que veio com ele (DP-ML-14). */
-function semMarca(link: AcompanhamentoDoLink): Acompanhamento {
-  if (!('marca' in link)) return link
-  // O link sem a chave `marca`: todos os outros campos são os do acompanhamento.
-  return Object.fromEntries(Object.entries(link).filter(([campo]) => campo !== 'marca')) as unknown as Acompanhamento
-}
+const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarMarca(link).acompanhamento
 
 /**
  * A fonte do link do paciente (spec revisao-geral-publica, D-232): a nuvem, com a cópia do aparelho por trás. Sem

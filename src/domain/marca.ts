@@ -3,6 +3,7 @@
 // lê junto com as missões, pelo token, sem dizer de quem é (supabase/015-marca-no-link.sql).
 import { avaliarCor, ehCorPadrao, normalizarCor } from './corDaMarca.ts'
 import { ehLogoPublicavel } from './logoDaMarca.ts'
+import type { Acompanhamento } from './acompanhamento.ts'
 import type { Perfil } from './perfil.ts'
 
 export interface MarcaDoLink {
@@ -37,3 +38,14 @@ export function lerMarcaDoLink(linha: unknown): MarcaDoLink {
 
 /** A marca guardada no perfil: a da prévia e a do plano impresso (D-952). */
 export const marcaDoPerfil = (perfil: Perfil): MarcaDoLink => ({ logo: perfil.logo, cor: perfil.cor })
+
+/**
+ * DP-ML-14: o link aberto, separado em acompanhamento (o que o paciente marca e o aparelho guarda) e marca (o que só se
+ * mostra). Sem marca na leitura (a cópia do aparelho, o modo local), a marca é vazia.
+ */
+export function separarMarca(link: Acompanhamento & { readonly marca?: MarcaDoLink }): { readonly acompanhamento: Acompanhamento; readonly marca: MarcaDoLink } {
+  if (!('marca' in link)) return { acompanhamento: link, marca: SEM_MARCA }
+  // O link sem a chave `marca`: todos os outros campos são os do acompanhamento.
+  const acompanhamento = Object.fromEntries(Object.entries(link).filter(([campo]) => campo !== 'marca')) as unknown as Acompanhamento
+  return { acompanhamento, marca: link.marca ?? SEM_MARCA }
+}
