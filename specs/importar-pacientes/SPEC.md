@@ -1,7 +1,7 @@
 # SPEC — Importar pacientes por planilha
 
-Status: **proposta em 29/10/2026, esperando o dono aprovar pelo protótipo** (`ImportarPacientes.dc.html`, no canvas
-"MetaNutri Redesenho"). Pela regra de 23/10, a função só vira código depois que o dono aprovar as telas.
+Status: **aprovada em 29/10/2026**, junto com o protótipo (`ImportarPacientes.dc.html`, no canvas "MetaNutri
+Redesenho"). O plano está em `PLAN.md`, com as decisões de implementação (DP-IP-1 a DP-IP-35).
 
 **Fonte:** a lista de funções para competir com o WebDiet (proposta comercial de 27/10, memória do projeto): quem vem
 do WebDiet, do Dietbox, do Nutrium ou de uma planilha própria traz a lista de pacientes sem redigitar.
