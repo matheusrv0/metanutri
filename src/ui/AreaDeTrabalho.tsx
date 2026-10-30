@@ -32,6 +32,8 @@ import { TelaCaso } from './caso/TelaCaso.tsx'
 import { TelaCasos } from './casos/TelaCasos.tsx'
 import { TelaConfiguracoes } from './config/TelaConfiguracoes.tsx'
 import { TelaConta } from './conta/TelaConta.tsx'
+import { publicadorDaMarca } from './marca/publicarNaNuvem.ts'
+import { TelaSuaMarca } from './marca/TelaSuaMarca.tsx'
 import { useAcompanhamentos } from './estado/contextoAcompanhamentos.ts'
 import { useArmazenamento } from './estado/contextoArmazenamento.ts'
 import { useBaseAmpliada } from './estado/usarBaseAmpliada.ts'
@@ -325,10 +327,20 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
+          aoAbrirMarca={() => navegar({ tela: 'marca' })}
           aoAssinar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
           aoMudouAssinatura={() => cobranca.recarregar()}
           criarProcessador={processadorDoSite()}
         />
+      </Estrutura>
+    )
+  }
+
+  // Spec marca-no-link (D-950): Conta e assinatura › Sua marca.
+  if (rota.tela === 'marca') {
+    return (
+      <Estrutura {...base} titulo="Sua marca" trilha={[{ rotulo: 'Conta e assinatura', aoClicar: () => navegar({ tela: 'conta' }) }]}>
+        <TelaSuaMarca publicar={publicadorDaMarca(sessao?.id ?? null)} />
       </Estrutura>
     )
   }

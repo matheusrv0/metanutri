@@ -186,3 +186,17 @@ describe('a rota da mudança (spec separacao-site-app, D-512)', () => {
     expect(lerRota('#/mudanca')).toEqual({ tela: 'painel' })
   })
 })
+
+describe('Sua marca (spec marca-no-link, D-950 e DP-ML-23)', () => {
+  it('CA-1950: #/conta/marca abre "Sua marca", e a rota escreve o mesmo endereço', () => {
+    expect(lerRota('#/conta/marca')).toEqual({ tela: 'marca' })
+    expect(escreverRota({ tela: 'marca' })).toBe('#/conta/marca')
+    expect(lerRota('#/conta')).toEqual({ tela: 'conta' })
+    expect(lerRota('#/conta/outra')).toEqual({ tela: 'conta' })
+  })
+
+  it('é tela de trabalho: pede sessão e tem o menu', () => {
+    expect(ehRotaLivre({ tela: 'marca' })).toBe(false)
+    expect(ehTelaPublica({ tela: 'marca' })).toBe(false)
+  })
+})

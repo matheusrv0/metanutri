@@ -39,6 +39,8 @@ export type Rota =
   // Spec separacao-site-app, D-512: a aba que o "Continuar" do site abriu, com o código daquela mudança. Pede sessão.
   | { readonly tela: 'mudanca'; readonly codigo: string }
   | { readonly tela: 'conta' }
+  // Spec marca-no-link (D-950): Conta e assinatura › Sua marca, em `#/conta/marca`.
+  | { readonly tela: 'marca' }
   | { readonly tela: 'painel' }
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
@@ -83,7 +85,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'fontes') return { tela: 'fontes' }
   if (tela === 'assinar') return ehPlanoPago(id) ? { tela: 'assinar', plano: id, ciclo: ehCiclo(aba) ? aba : 'mensal' } : { tela: 'precos' }
   if (tela === 'pagamento') return { tela: 'pagamento' }
-  if (tela === 'conta') return { tela: 'conta' }
+  if (tela === 'conta') return id === 'marca' ? { tela: 'marca' } : { tela: 'conta' }
   if (tela === 'alimentos') return { tela: 'alimentos' }
   if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'receitas') return { tela: 'receitas' }
@@ -138,6 +140,8 @@ export function escreverRota(rota: Rota): string {
       return `#/mudanca/${encodeURIComponent(rota.codigo)}`
     case 'conta':
       return '#/conta'
+    case 'marca':
+      return '#/conta/marca'
     case 'painel':
       return '#/painel'
     case 'casos':

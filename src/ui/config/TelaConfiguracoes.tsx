@@ -1,6 +1,6 @@
-import { Download, Image, ShieldCheck, Upload } from 'lucide-react'
+import { Download, ShieldCheck, Upload } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
-import { ehLogoEmbutida, gravarPerfil, lerPerfil, linhaDeResponsabilidade, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
+import { gravarPerfil, lerPerfil, linhaDeResponsabilidade, restaurarBackup, type Perfil } from '@/domain/perfil.ts'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -12,10 +12,11 @@ import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 import { baixarBackup } from './baixarBackup.ts'
 
 /**
- * Perfil, marca nos documentos e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
+ * Perfil e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
  * Os dados vão para a nuvem sozinhos (spec dados-na-nuvem, D-129): os botões de enviar e trazer a cópia e o
  * "Apagar todos os seus dados deste aparelho" saíram (D-131, CA-482). O backup restaurado entra na cópia de
- * trabalho e sobe como qualquer mudança.
+ * trabalho e sobe como qualquer mudança. A logo saiu daqui (spec marca-no-link, D-950): ela mora em Conta e assinatura ›
+ * Sua marca, uma só para o link do paciente e o plano impresso.
  */
 export function TelaConfiguracoes() {
   const armazenamento = useArmazenamento()
@@ -31,25 +32,6 @@ export function TelaConfiguracoes() {
     const novo = { ...perfil, ...mudanca }
     setPerfil(novo)
     gravarPerfil(armazenamento, novo)
-  }
-
-  const escolherLogo = (arquivo: File | undefined) => {
-    if (!arquivo) return
-    if (arquivo.size > 500_000) {
-      setMensagem('A imagem tem mais de 500 KB. Use um logotipo menor para o documento não ficar pesado.')
-      return
-    }
-    const leitor = new FileReader()
-    leitor.onload = () => {
-      // CA-487: só imagem embutida vira logotipo, a mesma regra de lerPerfil; outro arquivo não é guardado.
-      if (typeof leitor.result !== 'string' || !ehLogoEmbutida(leitor.result)) {
-        setMensagem('Escolha uma imagem PNG, JPG ou SVG.')
-        return
-      }
-      alterar({ logo: leitor.result })
-      setMensagem('Logotipo salvo. Ele aparece no alto do plano impresso.')
-    }
-    leitor.readAsDataURL(arquivo)
   }
 
   const exportarTudo = () => {
@@ -111,32 +93,6 @@ export function TelaConfiguracoes() {
         <p className="border-t border-border pt-3 text-sm text-muted-foreground">
           Como aparece no documento: <span className="text-foreground">{linhaDeResponsabilidade(perfil)}</span>
         </p>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Logotipo</CardTitle>
-          <CardDescription>O logotipo aparece no alto do plano impresso.</CardDescription>
-        </CardHeader>
-        <div className="flex flex-wrap items-center gap-4">
-          {perfil.logo ? (
-            <img src={perfil.logo} alt="Seu logotipo" className="h-16 w-auto border border-border bg-card p-1" />
-          ) : (
-            <span className="flex size-16 items-center justify-center border border-dashed border-borderdefault text-muted-foreground">
-              <Image className="size-6" aria-hidden="true" />
-            </span>
-          )}
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-borderdefault px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary">
-            <Upload className="size-4" aria-hidden="true" />
-            Escolher imagem
-            <input type="file" accept="image/*" className="sr-only" onChange={(e) => escolherLogo(e.target.files?.[0])} />
-          </label>
-          {perfil.logo ? (
-            <Button variant="ghost" onClick={() => alterar({ logo: null })}>
-              Remover logotipo
-            </Button>
-          ) : null}
-        </div>
       </Card>
 
       <Card>

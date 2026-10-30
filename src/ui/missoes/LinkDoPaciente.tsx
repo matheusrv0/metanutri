@@ -68,14 +68,18 @@ export function MolduraDoLink({ children, cor = null, previa }: MolduraDoLinkPro
   if (previa) {
     return (
       <div className={previa === 'escuro' ? 'dark' : 'tema-claro'}>
-        <div className={cn('bg-background px-4 pt-5 pb-8 text-foreground', comCor && 'marca-da-nutricionista')} style={comCor ? estiloDaCor(cor) : undefined}>
+        <div
+          data-link-do-paciente=""
+          className={cn('bg-background px-4 pt-5 pb-8 text-foreground', comCor && 'marca-da-nutricionista')}
+          style={comCor ? estiloDaCor(cor) : undefined}
+        >
           {children}
         </div>
       </div>
     )
   }
   return (
-    <div className={cn('min-h-dvh bg-background px-4 py-8', comCor && 'marca-da-nutricionista')} style={comCor ? estiloDaCor(cor) : undefined}>
+    <div data-link-do-paciente="" className={cn('min-h-dvh bg-background px-4 py-8', comCor && 'marca-da-nutricionista')} style={comCor ? estiloDaCor(cor) : undefined}>
       <main className="mx-auto w-full max-w-md">{children}</main>
     </div>
   )
