@@ -7,10 +7,10 @@
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
  * Os 31 componentes do sistema, na taxonomia do design system:
- *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
+ *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes · CaixaDeMarcar · ListaNativa
  *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca
  *   overlay     Dialog · Sheet · DropdownMenu
- *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
+ *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado · Passos
  *   nutricao    CartaoDestaque · BarraAdequacao · MedidorMacro
  *
  * `efeitos/` fica de fora desta lista: são os efeitos de animação da área
@@ -29,6 +29,8 @@ export { Textarea } from './componentes/forms/textarea.tsx'
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './componentes/forms/select.tsx'
 export { Switch } from './componentes/forms/switch.tsx'
 export { GrupoOpcoes } from './componentes/forms/GrupoOpcoes.tsx'
+export { CaixaDeMarcar } from './componentes/forms/CaixaDeMarcar.tsx'
+export { ListaNativa, type ListaNativaProps } from './componentes/forms/ListaNativa.tsx'
 
 // display
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants, type CardProps } from './componentes/display/card.tsx'
@@ -58,6 +60,7 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './componentes/navigati
 export { ItemMenu } from './componentes/navigation/ItemMenu.tsx'
 export { EtapasDoCaso } from './componentes/navigation/EtapasDoCaso.tsx'
 export { SeletorSegmentado } from './componentes/navigation/SeletorSegmentado.tsx'
+export { Passos } from './componentes/navigation/Passos.tsx'
 
 // nutricao
 export { CartaoDestaque, type TomDestaque } from './componentes/nutricao/CartaoDestaque.tsx'
