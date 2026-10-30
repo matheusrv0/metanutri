@@ -226,6 +226,8 @@ describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
       'doencas',
       'consumoMensal',
       'examesRecentes',
+      // Spec importar-pacientes, D-912 e DP-IP-28: o campo da importação entra depois, no fim.
+      'importacao',
     ])
   })
 
@@ -344,5 +346,62 @@ describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
     expect(idadeNaData('1991-03-10', '2026-03-09')).toEqual({ anos: 34, meses: 11 })
     expect(idadeNaData('2030-01-01', '2026-10-21')).toBeNull()
     expect(idadeNaData(null, '2026-10-21')).toBeNull()
+  })
+})
+describe('A importação de onde o paciente veio (spec importar-pacientes, D-912, D-910, D-913)', () => {
+  it('CA-1937: o campo da importação é o último do paciente, depois dos que já existem (DP-34); paciente novo nasce sem ela', () => {
+    const vazio = criarPacienteVazio('p1', '2026-10-29T12:00:00.000Z')
+    expect(Object.keys(vazio).at(-1)).toBe('importacao')
+    expect(vazio.importacao).toBeNull()
+  })
+
+  it('CA-1937: a importação guardada é lida; estragada vira nula', () => {
+    const arm = new Memoria()
+    arm.setItem(
+      'metanutri:pacientes',
+      JSON.stringify([
+        { id: 'p1', nome: 'Ana', importacao: { id: 'imp1', em: '2026-10-29T14:32:00.000Z' } },
+        { id: 'p2', nome: 'Bia', importacao: { id: 7 } },
+        { id: 'p3', nome: 'Caio', importacao: 'ontem' },
+      ]),
+    )
+    const repo = criarRepositorioPacientes(arm)
+    expect(repo.obter('p1')?.importacao).toEqual({ id: 'imp1', em: '2026-10-29T14:32:00.000Z' })
+    expect(repo.obter('p2')?.importacao).toBeNull()
+    expect(repo.obter('p3')?.importacao).toBeNull()
+  })
+
+  it('D-910: criarVarios grava todos de uma vez, numa gravação só, e deixa os outros como estavam', () => {
+    const arm = new Memoria()
+    const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'ana' })
+    repo.criar('Ana')
+    const antes = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as unknown[]
+    const gravacoes: string[] = []
+    const setItem = arm.setItem.bind(arm)
+    arm.setItem = (k, v) => {
+      gravacoes.push(k)
+      setItem(k, v)
+    }
+    const novos = ['p1', 'p2', 'p3'].map((id) => ({ ...criarPacienteVazio(id, '2026-10-29T14:32:00.000Z'), nome: id }))
+    repo.criarVarios(novos)
+    expect(gravacoes).toEqual(['metanutri:pacientes'])
+    const depois = JSON.parse(arm.getItem('metanutri:pacientes') ?? '[]') as unknown[]
+    expect(depois.slice(0, 1)).toEqual(antes)
+    expect(repo.listar().map((p) => p.id).sort()).toEqual(['ana', 'p1', 'p2', 'p3'])
+  })
+
+  it('D-913: excluirVarios tira os dados numa gravação só', () => {
+    const arm = new Memoria()
+    const repo = criarRepositorioPacientes(arm)
+    repo.criarVarios(['p1', 'p2', 'p3'].map((id) => ({ ...criarPacienteVazio(id, '2026-10-29T14:32:00.000Z'), nome: id })))
+    let gravacoes = 0
+    const setItem = arm.setItem.bind(arm)
+    arm.setItem = (k, v) => {
+      gravacoes += 1
+      setItem(k, v)
+    }
+    repo.excluirVarios(['p1', 'p3', 'nao-existe'])
+    expect(gravacoes).toBe(1)
+    expect(repo.listar().map((p) => p.id)).toEqual(['p2'])
   })
 })

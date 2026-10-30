@@ -87,10 +87,12 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
 - **Altera** `src/domain/pacientes.ts`: `importacao: { id, em } | null` no fim do `Paciente` (DP-34, DP-IP-28), lido
   por `lerImportacao`; `criarVarios` e `excluirVarios` no repositório, cada um numa gravação só (DP-IP-29).
 - **Altera** `src/domain/pacientes.test.ts`: CA-1089 com `importacao` no fim; CA-1937 (a ordem).
-- **Cria** `src/domain/importar/importacao.ts` (sem os leitores: vai no pacote principal): `cabeNaCopia` (DP-IP-18),
-  `pacientesQueSaem` (DP-IP-19), `importacoesRecentes` (DP-IP-20).
+- **Cria** `src/domain/importar/criar.ts` (no pedaço da tela): `novosPacientes`, `cabeNaCopia` (DP-IP-18) e
+  `prepararImportacao`, que confere a lista de novo (DP-IP-17, DP-IP-30) e o teto antes de criar (D-910).
+- **Cria** `src/domain/importar/importacao.ts` (sem os leitores: vai no pacote principal): `pacientesQueSaem`
+  (DP-IP-19), `importacoesRecentes` e o rótulo da linha das 24 horas (DP-IP-20), o texto do desfeito.
 - **Cria** `src/domain/importar/csvDeFora.ts`: o CSV das que ficaram de fora (D-915, DP-IP-22).
-- **Cria** `src/domain/importar/importacao.test.ts` e `csvDeFora.test.ts`: CA-1933, CA-1934, CA-1935, CA-1936,
+- **Cria** `src/domain/importar/criar.test.ts`, `importacao.test.ts` e `csvDeFora.test.ts`: CA-1933, CA-1934, CA-1935, CA-1936,
   CA-1937, CA-1941, CA-1942, CA-1943, CA-1944, CA-1945 (só os criados na cópia), CB-912, CB-917, CB-921.
 - Depende de: T6.
 
