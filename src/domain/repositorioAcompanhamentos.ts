@@ -4,6 +4,7 @@
 import type { Acompanhamento } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import type { Armazenamento } from './persistencia.ts'
+import type { MarcaDoLink } from './marca.ts'
 
 const CHAVE = 'metanutri:acompanhamentos'
 const FORMATO = 1
@@ -242,11 +243,17 @@ export function semMudancasPendentes(guardado: string): string {
  * verdade. Hoje a implementação local responde o que está neste navegador; quando
  * o Supabase entrar, basta uma segunda implementação desta mesma interface.
  */
+/**
+ * O link como o paciente o abre: o acompanhamento e, quando lido da nuvem, a marca da nutricionista (spec marca-no-link,
+ * D-952). A marca não é do link: a tela a separa ao abrir, e ela nunca volta numa gravação (DP-ML-14).
+ */
+export type AcompanhamentoDoLink = Acompanhamento & { readonly marca?: MarcaDoLink }
+
 export interface FonteAcompanhamentos {
   /** Nulo quando o link não existe. Pode rejeitar com `LinkSemConexao` quando nem a nuvem nem o aparelho responderam. */
-  porToken(token: string): Promise<Acompanhamento | null>
-  /** Pode rejeitar com `LinkSemConexao` quando a nuvem não gravou: aí nada foi guardado. */
-  salvar(acompanhamento: Acompanhamento): Promise<Acompanhamento>
+  porToken(token: string): Promise<AcompanhamentoDoLink | null>
+  /** Pode rejeitar com `LinkSemConexao` quando a nuvem não gravou: aí nada foi guardado. A marca, se vier, não é gravada. */
+  salvar(acompanhamento: AcompanhamentoDoLink): Promise<Acompanhamento>
   /** Falso quando os dados só existem neste navegador, para a tela poder avisar. */
   readonly naNuvem: boolean
 }

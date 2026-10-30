@@ -1,7 +1,8 @@
 // Spec marca-no-link: a marca publicada (D-952) — o que o link lê e o que "Salvar" grava.
 import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { LOGO_MAX_BYTES } from './logoDaMarca.ts'
-import { lerMarcaDoLink, marcaDoPerfil, publicarMarca, SEM_MARCA, temMarca, type ClienteDaMarca } from './marca.ts'
+import { lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
+import { publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
 import { PERFIL_VAZIO } from './perfil.ts'
 
 /** Um PNG em data URI com `bytes` bytes (múltiplo de 3). */

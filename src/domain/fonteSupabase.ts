@@ -8,8 +8,9 @@
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
+import { lerMarcaDoLink } from './marca.ts'
 import type { Missao } from './missoes.ts'
-import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -125,7 +126,9 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       }
       // A função devolve uma tabela: vem lista, mesmo com uma linha só.
       const linha = Array.isArray(data) ? data[0] : data
-      return daLinha(linha)
+      const acompanhamento = daLinha(linha)
+      // Spec marca-no-link (CA-1974): a marca vem na mesma linha; a função de antes não a traz, e o link abre sem ela.
+      return acompanhamento ? { ...acompanhamento, marca: lerMarcaDoLink(linha) } : null
     },
 
     /**
@@ -139,6 +142,13 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       return acompanhamento
     },
   }
+}
+
+/** O link sem a marca que veio com ele (DP-ML-14). */
+function semMarca(link: AcompanhamentoDoLink): Acompanhamento {
+  if (!('marca' in link)) return link
+  // O link sem a chave `marca`: todos os outros campos são os do acompanhamento.
+  return Object.fromEntries(Object.entries(link).filter(([campo]) => campo !== 'marca')) as unknown as Acompanhamento
 }
 
 /**
@@ -158,7 +168,7 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
     aoSalvar()
     return salvo
   }
-  if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: salvarAqui }
+  if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: (link) => salvarAqui(semMarca(link)) }
 
   /** A fonte da nuvem de um pedido só, com a marca de que ele falhou e a frase traduzida da falha. */
   const daNuvem = () => {
@@ -184,7 +194,9 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
       if (pedido.falhou) throw new LinkSemConexao()
       return null
     },
-    async salvar(acompanhamento) {
+    async salvar(comMarca) {
+      // DP-ML-14: a marca é da conta, não do link; a cópia do aparelho nunca a guarda.
+      const acompanhamento = semMarca(comMarca)
       const { pedido, fonte } = daNuvem()
       await fonte.salvar(acompanhamento).catch(() => (pedido.falhou = true))
       if (pedido.falhou) throw pedido.motivo !== null && pedido.motivo !== FALHA_DE_REDE ? new MarcacaoRecusada(pedido.motivo) : new LinkSemConexao()
