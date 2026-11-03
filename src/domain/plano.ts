@@ -1,6 +1,7 @@
 // Operações imutáveis sobre o plano (SPEC CA-12, CA-13, CA-14, CB-04).
+import { lerOpcoesDoItem, vagaParaOpcao } from './opcoesDoItem.ts'
 import { ID_DE_RECEITA } from './receitaNoPlano.ts'
-import type { ItemPlano, MedidaDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
+import type { ItemPlano, MedidaDoItem, OpcaoDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
 
 export type GerarId = () => string
 
@@ -139,6 +140,66 @@ export function escolherMedida(plano: Plano, refeicaoId: string, opcao: OpcaoId,
   return alterarOpcao(plano, refeicaoId, opcao, (itens) => {
     exigirItem(itens, itemId)
     return itens.map((i) => (i.id === itemId ? { ...i, medida: medida === null ? null : { ...medida }, ...(gramas === null ? {} : { gramas }) } : i))
+  })
+}
+
+// ---------- Busca de substitutos (spec busca-substitutos, D-1113 e D-1114) ----------
+
+/** Um alimento na porção equivalente: o candidato que substitui o item ou vira opção dele. */
+export interface AlimentoNaPorcao {
+  readonly alimentoId: number
+  readonly gramas: number
+  /** A medida da porção (D-379); `null` = só gramas. */
+  readonly medida: MedidaDoItem | null
+}
+
+const comOpcoes = (item: ItemPlano, opcoes: readonly OpcaoDoItem[]): ItemPlano => {
+  const { opcoesDoItem: _antes, ...semOpcoes } = item
+  void _antes
+  return opcoes.length > 0 ? { ...semOpcoes, opcoesDoItem: opcoes } : semOpcoes
+}
+
+/**
+ * CA-2118: o item do Principal vira o candidato no mesmo lugar e com o mesmo id; as opções ficam, menos a que é o
+ * alimento novo (CB-1105).
+ */
+export function substituirItem(plano: Plano, refeicaoId: string, itemId: string, novo: AlimentoNaPorcao): Plano {
+  validarGramas(novo.gramas)
+  return alterarOpcao(plano, refeicaoId, 'principal', (itens) => {
+    exigirItem(itens, itemId)
+    return itens.map((i) => {
+      if (i.id !== itemId) return i
+      const trocado: ItemPlano = { id: i.id, alimentoId: novo.alimentoId, gramas: novo.gramas, medida: novo.medida === null ? null : { ...novo.medida } }
+      return comOpcoes(
+        trocado,
+        lerOpcoesDoItem(i).filter((o) => o.alimentoId !== novo.alimentoId),
+      )
+    })
+  })
+}
+
+/** CA-2119: o Desfazer põe o item de volta como era; se ele saiu do plano depois, nada muda (CB-1108). */
+export function devolverItem(plano: Plano, refeicaoId: string, item: ItemPlano): Plano {
+  const refeicao = plano.refeicoes.find((r) => r.id === refeicaoId)
+  if (!refeicao || !refeicao.opcoes.principal.some((i) => i.id === item.id)) return plano
+  return alterarOpcao(plano, refeicaoId, 'principal', (itens) => itens.map((i) => (i.id === item.id ? item : i)))
+}
+
+/** CA-2120: mais uma opção no item; a repetida, a do próprio alimento e a terceira não entram (CB-1106). */
+export function adicionarOpcaoAoItem(plano: Plano, refeicaoId: string, itemId: string, opcao: AlimentoNaPorcao): Plano {
+  validarGramas(opcao.gramas)
+  const item = plano.refeicoes.find((r) => r.id === refeicaoId)?.opcoes.principal.find((i) => i.id === itemId)
+  if (!item) throw new Error(`Item ${itemId} não existe nesta opção.`)
+  if (vagaParaOpcao(item, opcao.alimentoId) !== 'livre') return plano
+  const nova: OpcaoDoItem = { alimentoId: opcao.alimentoId, gramas: opcao.gramas, medida: opcao.medida === null ? null : { ...opcao.medida } }
+  return alterarOpcao(plano, refeicaoId, 'principal', (itens) => itens.map((i) => (i.id === itemId ? comOpcoes(i, [...lerOpcoesDoItem(i), nova]) : i)))
+}
+
+/** CA-2120: "Tirar" a opção pela posição; sem nenhuma, o campo sai do item. */
+export function tirarOpcaoDoItem(plano: Plano, refeicaoId: string, itemId: string, indice: number): Plano {
+  return alterarOpcao(plano, refeicaoId, 'principal', (itens) => {
+    exigirItem(itens, itemId)
+    return itens.map((i) => (i.id === itemId ? comOpcoes(i, lerOpcoesDoItem(i).filter((_, n) => n !== indice)) : i))
   })
 }
 

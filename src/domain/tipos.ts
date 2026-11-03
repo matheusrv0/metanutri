@@ -194,6 +194,19 @@ export interface ItemPlano {
   readonly medida?: MedidaDoItem | null
   /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
   readonly receita?: ReceitaDoPlano
+  /**
+   * As opções deste alimento, até 2, escolhidas na busca de substitutos (spec busca-substitutos, D-1114): o paciente lê
+   * "ou" embaixo do item. Plano gravado antes não tem o campo. Lido sempre por `lerOpcoesDoItem`.
+   */
+  readonly opcoesDoItem?: readonly OpcaoDoItem[]
+}
+
+/** Uma opção do item: outro alimento na porção equivalente (spec busca-substitutos, D-1114). */
+export interface OpcaoDoItem {
+  readonly alimentoId: number
+  readonly gramas: number
+  /** A medida da porção (D-379); `null` = só gramas; sem o campo, a automática. */
+  readonly medida?: MedidaDoItem | null
 }
 
 export interface Refeicao {
