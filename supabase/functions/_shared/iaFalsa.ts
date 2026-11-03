@@ -41,12 +41,13 @@ const HOSTS_LOCAIS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]', 'kong', 
 /** CA-2321: o modo falso só vale com o Supabase local; com outro endereço, é ignorado (e quem chama anota). */
 export function modoFalso(iaModo: string | undefined, urlSupabase: string): { readonly ligado: boolean; readonly ignorado: boolean } {
   if (iaModo?.trim() !== 'falso') return { ligado: false, ignorado: false }
-  let local = false
-  try {
-    local = HOSTS_LOCAIS.has(new URL(urlSupabase).hostname)
-  } catch {
-    local = false
-  }
+  const local = ((): boolean => {
+    try {
+      return HOSTS_LOCAIS.has(new URL(urlSupabase).hostname)
+    } catch {
+      return false
+    }
+  })()
   return { ligado: local, ignorado: !local }
 }
 
