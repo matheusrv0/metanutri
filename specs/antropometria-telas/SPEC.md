@@ -303,9 +303,9 @@ Esta spec só descreve o que a F3 terá de cumprir (D-1460); nada dela é implem
 - **CA-2446** · Dado o % pelas dobras, então o gasto de repouso, a proteína de Helms e a meta com gordura alvo trazem
   `origemDoPercentual` `{ origem: 'dobras', metodo: 'Jackson & Pollock, 7 dobras' }`; pela bioimpedância (InBody),
   `{ origem: 'bioimpedancia', metodo: 'Bioimpedância (InBody)' }`; sem %, `null`.
-- **CA-2447** · Dado Petroski numa mulher com Σ 140 mm (recusada) e bioimpedância de 35%, então o gasto, a proteína de
-  Helms, a meta com gordura alvo e o peso de referência (base massa magra) repassam "As dobras não calcularam (Petroski
-  só vale até 115,5 mm de soma, o pico da equação): usado o % da bioimpedância."
+- **CA-2447** · Dado Petroski numa mulher com Σ 140 mm (recusada) e bioimpedância de 35%, então o gasto, a proteína na
+  base massa magra, a meta com gordura alvo e o peso de referência repassam "As dobras não calcularam (Petroski só vale
+  até 115,5 mm de soma, o pico da equação): usado o % da bioimpedância."
 - **CA-2448** · Dado o gasto com a origem na bioimpedância, então o aviso da faixa é "Proposta do app (sem diretriz): a
   faixa usa o erro típico das dobras (3,5 pontos de %); o erro da bioimpedância depende do aparelho e não foi
   conferido." e o das dobras não aparece; com a origem nas dobras, o de sempre; o número da faixa não muda.

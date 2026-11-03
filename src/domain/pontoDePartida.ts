@@ -3,7 +3,7 @@
 import { calcularImc } from './antropometria.ts'
 import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
-import { gorduraDoCaso, inicioDoSobrepesoDeGallagher, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
+import { gorduraDoCaso, inicioDoSobrepesoDeGallagher, origemDoPercentual, type GorduraDoCaso, type OpcoesDaGordura, type OrigemDoPercentual } from './indicadoresDeGordura.ts'
 import { idadeValida, medidaValida, naPrecisao, type CampoQueFalta } from './linhaDoResultado.ts'
 import { pesoDeReferencia, type BaseDoPeso, type OpcaoDePeso } from './pesoDeReferencia.ts'
 import type { Caso } from './tipos.ts'
@@ -38,6 +38,10 @@ export interface GastoDeRepouso {
   readonly arredondarPara: 10
   readonly massaMagraKg: number
   readonly fonte: Fonte
+  /** R4.2a: evidência limitada (estudos de validação de 37 a 102 atletas); a faixa é proposta do app (D-1036). */
+  readonly evidencia: 'limitada'
+  /** De onde veio o % da massa magra (spec antropometria-telas, D-1422). */
+  readonly origemDoPercentual: OrigemDoPercentual
   readonly avisos: readonly string[]
 }
 export type ResultadoDoGasto = GastoDeRepouso | { readonly calculou: false; readonly motivo: string; readonly falta: readonly CampoQueFalta[] }
@@ -46,6 +50,12 @@ export type ResultadoDoGasto = GastoDeRepouso | { readonly calculou: false; read
 const ERRO_DO_PERCENTUAL = 0.035
 /** RMSE da equação, emprestado de ten Haaf e Weijs 2014 (136 a 148 kcal/dia); a faixa usa 140 (D3). */
 const ERRO_DA_EQUACAO = 140
+
+/** D-1424 (spec antropometria-telas): o 0,035 é o erro das dobras; o da bioimpedância a pesquisa não traz. */
+const AVISO_DA_FAIXA: Readonly<Record<GorduraDoCaso['origem'], string>> = {
+  dobras: `${PROPOSTA_DO_APP}: a faixa soma o erro das dobras ao da equação.`,
+  bioimpedancia: `${PROPOSTA_DO_APP}: a faixa usa o erro típico das dobras (3,5 pontos de %); o erro da bioimpedância depende do aparelho e não foi conferido.`,
+}
 
 /**
  * Cunningham 1991 (370 + 21,6 × MLG) no geral; Cunningham 1980 (500 + 22 × MLG) para ativo ou atleta com IMC < 30.
@@ -67,12 +77,14 @@ export function gastoDeRepouso(caso: Caso, perfil: PerfilDeAtividade, opcoes: Op
   const avisos = [
     'Estimativa; a calorimetria indireta é o padrão.',
     'O erro de ± 140 kcal/dia da equação é emprestado de ten Haaf e Weijs (2014).',
-    `${PROPOSTA_DO_APP}: a faixa soma o erro das dobras ao da equação.`,
+    AVISO_DA_FAIXA[g.origem],
   ]
   if (!de1980) avisos.unshift('Katch-McArdle é a mesma fórmula de Cunningham 1991.')
   if (perfil === 'atleta') avisos.push('Em atletas, todas as equações tendem a subestimar o gasto de repouso.')
   if (imc !== null && imc >= 30) avisos.push('IMC de 30 ou mais: compare com a equação por peso.')
   if (ativo && imc === null) avisos.push('Sem a estatura, não dá para saber o IMC: usada a equação geral.')
+  // D-1423: os avisos do % (inclusive o da D-1042) vêm depois dos do gasto.
+  avisos.push(...g.avisos)
   return {
     calculou: true,
     equacao: de1980 ? 'cunningham-1980' : 'cunningham-1991',
@@ -82,6 +94,8 @@ export function gastoDeRepouso(caso: Caso, perfil: PerfilDeAtividade, opcoes: Op
     arredondarPara: 10,
     massaMagraKg: g.massaMagraKg,
     fonte: de1980 ? FONTES.cunningham1980 : FONTES.cunningham1991,
+    evidencia: 'limitada',
+    origemDoPercentual: { origem: g.origem, metodo: g.metodo },
     avisos,
   }
 }
@@ -106,6 +120,8 @@ export interface SugestaoDeProteina {
   readonly gKgDePeso: FaixaDeProteina | null
   readonly fonte: Fonte
   readonly evidencia: Evidencia
+  /** De onde veio o % quando a sugestão usou o % de gordura (Helms, a decisão do atleta, a base massa magra); senão, `null` (D-1422). */
+  readonly origemDoPercentual: OrigemDoPercentual | null
   readonly avisos: readonly string[]
 }
 export type ResultadoDaProteina = SugestaoDeProteina | { readonly calculou: false; readonly motivo: string; readonly falta: readonly CampoQueFalta[] }
@@ -128,6 +144,8 @@ interface Regra {
   readonly fonte: Fonte
   readonly evidencia: Evidencia
   readonly avisos: readonly string[]
+  /** A regra olhou o % de gordura (Helms e a decisão do atleta; D-1422). */
+  readonly usaPercentual?: boolean
 }
 
 const SEM_NUMERO = 'Sem número conferido para este perfil: a RDA de 0,8 g/kg não foi conferida na pesquisa.'
@@ -167,13 +185,13 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
         'População de origem: fisiculturistas naturais em preparação para competição, magros e treinados (Helms 2014).',
         `${PROPOSTA_DO_APP}: "magro" é o % de gordura abaixo do início do sobrepeso de Gallagher, um corte do app.`,
       ]
-      return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'proposta-do-app', avisos }
+      return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'proposta-do-app', avisos, usaPercentual: true }
     }
     const motivo =
       g === null || limite === null
         ? 'Sem o % de gordura (ou fora de 20 a 79 anos), não dá para saber se o atleta é magro: vale a ISSN; a faixa de Helms (2014) é de atletas magros.'
         : 'A faixa de Helms (2014) é de atletas magros (% de gordura abaixo do início do sobrepeso de Gallagher): para este atleta, vale a ISSN.'
-    return { ...issn, avisos: [motivo] }
+    return { ...issn, avisos: [motivo], usaPercentual: g !== null }
   }
   if (ativo) return issn
   return { motivo: SEM_NUMERO, falta: [] }
@@ -194,6 +212,9 @@ export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): Res
   if ('motivo' in regra) return { calculou: false, motivo: regra.motivo, falta: regra.falta }
 
   const base = { fonte: regra.fonte, evidencia: regra.evidencia, faixaGKg: regra.faixa }
+  // D-1422 e D-1423: a origem e os avisos do %, quando a sugestão o usou.
+  const comPercentual = (g: GorduraDoCaso | null, avisos: readonly string[]) =>
+    g === null ? { origemDoPercentual: null, avisos } : { origemDoPercentual: origemDoPercentual(g), avisos: [...avisos, ...g.avisos] }
   if (regra.sobre === 'massa-magra') {
     const g = gorduraDoCaso(caso, entrada.gordura)
     if (g === null || g.massaMagraKg === null) return { calculou: false, motivo: 'A faixa de Helms (2014) é por kg de massa magra: precisa do % de gordura.', falta: [GORDURA] }
@@ -205,7 +226,7 @@ export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): Res
       bases: [{ base: 'massa-magra', pesoKg: g.massaMagraKg, motivo: null }],
       gDia: vezes(regra.faixa, g.massaMagraKg),
       gKgDePeso: vezes(regra.faixa, fracaoMagra),
-      avisos: regra.avisos,
+      ...comPercentual(g, regra.avisos),
     }
   }
 
@@ -215,6 +236,7 @@ export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): Res
   const kg = escolhida === null ? null : (bases.find((o) => o.base === escolhida)?.pesoKg ?? null)
   const avisos = [...regra.avisos]
   if (referencia?.sugerido === null && escolhida === null) avisos.push('IMC de 30 ou mais: escolha o peso de referência (ideal, ajustado ou massa magra).')
+  const usou = regra.usaPercentual === true || escolhida === 'massa-magra'
   return {
     calculou: true,
     ...base,
@@ -222,6 +244,6 @@ export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): Res
     bases,
     gDia: kg === null ? null : vezes(regra.faixa, kg),
     gKgDePeso: kg === null || escolhida === 'peso-atual' ? null : vezes(regra.faixa, kg / peso),
-    avisos,
+    ...comPercentual(usou ? gorduraDoCaso(caso, entrada.gordura) : null, avisos),
   }
 }
