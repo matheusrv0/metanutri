@@ -255,7 +255,7 @@ export function TelaSuaMarca({ desenhista = desenhistaDoNavegador, publicar }: T
                   <span>{`Contraste ${formatarContraste(avaliacao.contraste)}:1 com o texto branco. O mínimo é 4,5:1.`}</span>
                 </p>
                 <Button variant="outline" size="sm" className="self-start" onClick={() => escolherCor(avaliacao.sugestao)}>
-                  <span aria-hidden="true" className="size-4 rounded-full ring-1 ring-inset ring-border" style={{ backgroundColor: avaliacao.sugestao }} />
+                  <span aria-hidden="true" className="size-4 rounded-full ring-1 ring-inset ring-heading/20" style={{ backgroundColor: avaliacao.sugestao }} />
                   {`Usar ${codigoDaCor(avaliacao.sugestao)}`}
                 </Button>
               </div>

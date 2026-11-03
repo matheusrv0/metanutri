@@ -14,6 +14,9 @@ function proporcaoDoSvg(dataUrl: string): number | null {
   } catch {
     return null
   }
+  // Com largura e altura no <svg>, o navegador já sabe a proporção; a caixa só vale quando elas faltam.
+  const raiz = /<svg\b[^>]*>/i.exec(texto)?.[0] ?? ''
+  if (/\swidth\s*=/i.test(raiz) && /\sheight\s*=/i.test(raiz)) return null
   const caixa = /viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(texto)
   const largura = Number(caixa?.[1])
   const altura = Number(caixa?.[2])
@@ -40,9 +43,10 @@ export const desenhistaDoNavegador: Desenhista = {
     const svg = dataUrl.startsWith('data:image/svg+xml')
     let largura = imagem.naturalWidth
     let altura = imagem.naturalHeight
-    // SVG só com viewBox: sem tamanho próprio, ele vale pela proporção da caixa (600 px no lado maior).
-    if (svg && (!largura || !altura)) {
-      const proporcao = proporcaoDoSvg(dataUrl)
+    // SVG é vetor: vale pela proporção (a da caixa `viewBox`, quando ele não diz o tamanho; o Chrome inventa 300 × 150),
+    // desenhado com 600 px no lado maior, o teto da cópia. Um SVG pequeno não vira uma logo borrada no papel.
+    if (svg) {
+      const proporcao = proporcaoDoSvg(dataUrl) ?? (largura > 0 && altura > 0 ? largura / altura : null)
       if (proporcao !== null) {
         largura = proporcao >= 1 ? 600 : Math.round(600 * proporcao)
         altura = proporcao >= 1 ? Math.round(600 / proporcao) : 600

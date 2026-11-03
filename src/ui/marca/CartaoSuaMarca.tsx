@@ -25,7 +25,7 @@ export function CartaoSuaMarca({ aoAbrir }: { readonly aoAbrir: () => void }) {
           </span>
         )}
         <span className="flex min-w-0 flex-1 basis-40 items-center gap-2.5">
-          <span aria-hidden="true" className="size-6 shrink-0 rounded-full ring-1 ring-inset ring-border" style={{ backgroundColor: cor }} />
+          <span aria-hidden="true" className="size-6 shrink-0 rounded-full ring-1 ring-inset ring-heading/20" style={{ backgroundColor: cor }} />
           <span className="min-w-0 text-sm">
             <span className="font-medium text-heading">{nomeDaCorPronta(perfil.cor) ?? 'Outra cor'}</span>{' '}
             <span className="numeros text-muted-foreground">{codigoDaCor(cor)}</span>

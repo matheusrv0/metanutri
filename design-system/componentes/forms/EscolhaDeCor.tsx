@@ -54,7 +54,7 @@ export function EscolhaDeCor({ opcoes, valor, aoEscolher, rotuloId, className }:
             />
             <span
               aria-hidden="true"
-              className="grid size-8 place-items-center rounded-full text-textonink shadow-xs ring-1 ring-inset ring-border"
+              className="grid size-8 place-items-center rounded-full text-textonink shadow-xs ring-1 ring-inset ring-heading/20"
               style={{ backgroundColor: opcao.valor }}
             >
               {escolhida ? <Check className="size-4" strokeWidth={3} /> : null}
