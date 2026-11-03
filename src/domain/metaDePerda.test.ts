@@ -93,3 +93,28 @@ describe('meta de perda (spec antropometria-completa, CA-2067 a CA-2069)', () =>
     expect(lactante?.mostra).toBe(false)
   })
 })
+
+describe('idoso (spec antropometria-completa, revisão, CA-2073)', () => {
+  const idosa = (idadeAnos: number, pesoKg: number): Caso => ({ ...criarCasoVazio('i'), sexo: 'F', idadeAnos, pesoKg, estaturaCm: 155, objetivo: 'emagrecer' })
+
+  it('CA-2073: com IMC de 22 ou menos (baixo peso pelo SISVAN), não há meta de perda', () => {
+    for (const [idade, peso] of [
+      [65, 49.6],
+      [68, 52],
+    ] as const) {
+      const r = metaDePerda(idosa(idade, peso))
+      expect.soft(r?.mostra, `${idade} anos`).toBe(false)
+      if (r && !r.mostra) expect.soft(r.motivo, `${idade} anos`).toMatch(/baixo peso/)
+    }
+  })
+
+  it('CA-2073: de 22 a 27, a faixa de referência do idoso, também não', () => {
+    const r = metaDePerda(idosa(72, 54))
+    expect(r?.mostra).toBe(false)
+    if (r && !r.mostra) expect(r.motivo).toMatch(/faixa de referência/)
+  })
+
+  it('CA-2073: com IMC 28, há', () => {
+    expect(metaDePerda(idosa(70, 28 * 1.55 ** 2))?.mostra).toBe(true)
+  })
+})

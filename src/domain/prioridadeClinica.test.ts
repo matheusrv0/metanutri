@@ -66,3 +66,32 @@ describe('prioridade do caso (spec antropometria-completa, CA-2066)', () => {
     expect(prioridadeDoCaso(caso({ condicao: { tipo: 'gestante', semanasGestacao: 20, pesoPreGestacionalKg: 60 } }))).toBeNull()
   })
 })
+
+describe('idoso (spec antropometria-completa, revisão, CA-2071 e CA-2072)', () => {
+  it('CA-2071: no idoso, IMC de 25 a < 27 não dispara gatilho de IMC; de 27 a 29,99, sim', () => {
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 25.97 })).nivel).toBe(0)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 26.99 })).nivel).toBe(0)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 27 })).nivel).toBe(1)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 28, cinturaCm: 95, estaturaCm: 158, pontoDaCintura: 'crista-iliaca' })).nivel).toBe(2)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 59, imc: 26 })).nivel).toBe(1)
+  })
+
+  it('CA-2071: o aviso do idoso lembra a faixa de referência de > 22 a < 27', () => {
+    expect(nivelDePrioridade(entrada({ idadeAnos: 65, imc: 24 })).avisos.join(' ')).toMatch(/> 22 e < 27/)
+    expect(nivelDePrioridade(entrada({ idadeAnos: 45, imc: 24 })).avisos.join(' ')).not.toMatch(/> 22 e < 27/)
+  })
+
+  it('CA-2072: panturrilha abaixo do corte da D-1029 liga a sobreposição de risco nutricional no idoso', () => {
+    expect(nivelDePrioridade(entrada({ sexo: 'M', idadeAnos: 70, imc: 24, panturrilhaCm: 33.9 })).riscoNutricional).toBe(true)
+    expect(nivelDePrioridade(entrada({ sexo: 'M', idadeAnos: 70, imc: 24, panturrilhaCm: 34 })).riscoNutricional).toBe(false)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 24, panturrilhaCm: 32.9 })).riscoNutricional).toBe(true)
+    expect(nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 24, panturrilhaCm: 33 })).riscoNutricional).toBe(false)
+    expect(nivelDePrioridade(entrada({ sexo: 'M', idadeAnos: 59, imc: 24, panturrilhaCm: 30 })).riscoNutricional).toBe(false)
+  })
+
+  it('CA-2072: no caso, a panturrilha vem da direita e, sem ela, da esquerda', () => {
+    const vazio = criarCasoVazio('i')
+    const idoso: Caso = { ...vazio, sexo: 'M', idadeAnos: 72, pesoKg: 70, estaturaCm: 170, circunferenciaPanturrilhaCm: null, medidasCorporais: { ...vazio.medidasCorporais, panturrilhaEsquerdaCm: 31 } }
+    expect(prioridadeDoCaso(idoso)?.riscoNutricional).toBe(true)
+  })
+})

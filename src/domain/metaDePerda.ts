@@ -71,10 +71,22 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   const estatura = medidaValida(caso.estaturaCm)
   const prioridade = prioridadeDoCaso(caso)
   if (peso === null || estatura === null || prioridade === null) return { mostra: false, motivo: 'A meta de perda precisa do peso e da estatura.' }
-  if (prioridade.riscoNutricional) return { mostra: false, motivo: 'IMC baixo pelo GLIM: a prioridade é preservar ou recuperar a massa magra, não perder peso.' }
+  if (prioridade.riscoNutricional) {
+    return { mostra: false, motivo: 'Risco nutricional (IMC baixo pelo GLIM ou panturrilha baixa no idoso): a prioridade é preservar ou recuperar a massa magra, não perder peso.' }
+  }
   if (prioridade.nivel === 0 && caso.objetivo !== 'emagrecer') return null
 
   const imc = naPrecisao(calcularImc(peso, estatura), 2)
+  // Revisão (item 1): no idoso, só com sobrepeso pelo SISVAN (IMC de 27 ou mais, Quadro 18).
+  if (caso.idadeAnos >= 60 && imc < 27) {
+    return {
+      mostra: false,
+      motivo:
+        imc <= 22
+          ? 'Idoso com IMC de 22 ou menos (baixo peso pelo SISVAN): sem meta de perda de peso.'
+          : 'Idoso com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso.',
+    }
+  }
   const tetoKgPorSemana = Math.min(1, 0.01 * peso)
   const gordura = gorduraDoCaso(caso, entrada.gordura)
   const alvo = medidaValida(entrada.gorduraAlvoPct)
