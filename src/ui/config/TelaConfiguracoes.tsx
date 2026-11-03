@@ -10,6 +10,7 @@ import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 import { useNuvem } from '../estado/contextoNuvem.ts'
 import { useOutraAbaGravou } from '../estado/usarOutraAba.ts'
 import { baixarBackup } from './baixarBackup.ts'
+import { CartaoEmails } from './CartaoEmails.tsx'
 
 /**
  * Perfil e o backup em arquivo, tudo da conta que está dentro (spec dados-por-conta, D-125).
@@ -18,7 +19,15 @@ import { baixarBackup } from './baixarBackup.ts'
  * trabalho e sobe como qualquer mudança. A logo saiu daqui (spec marca-no-link, D-950): ela mora em Conta e assinatura ›
  * Sua marca, uma só para o link do paciente e o plano impresso.
  */
-export function TelaConfiguracoes() {
+/** "Editar no Perfil" (Configurações › E-mails): o cursor vai para o E-mail de "Quem assina", nesta tela. */
+function irParaOEmailDoPerfil(): void {
+  const campo = Array.from(document.querySelectorAll('label')).find((rotulo) => rotulo.textContent?.trim() === 'E-mail')?.control
+  if (!(campo instanceof HTMLElement)) return
+  campo.scrollIntoView?.({ block: 'center' })
+  campo.focus()
+}
+
+export function TelaConfiguracoes({ usuarioId = null }: { readonly usuarioId?: string | null } = {}) {
   const armazenamento = useArmazenamento()
   const [perfil, setPerfil] = useState<Perfil>(() => lerPerfil(armazenamento))
   const [mensagem, setMensagem] = useState<string | null>(null)
@@ -94,6 +103,9 @@ export function TelaConfiguracoes() {
           Como aparece no documento: <span className="text-foreground">{linhaDeResponsabilidade(perfil)}</span>
         </p>
       </Card>
+
+      {/* Spec lado-do-paciente, CA-2266: Configurações › E-mails. */}
+      <CartaoEmails usuarioId={usuarioId} perfil={perfil} aoEditarEmail={irParaOEmailDoPerfil} />
 
       <Card>
         <CardHeader>

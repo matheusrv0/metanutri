@@ -349,7 +349,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   if (rota.tela === 'config') {
     return (
       <Estrutura {...base} titulo="Configurações">
-        <TelaConfiguracoes />
+        <TelaConfiguracoes usuarioId={sessao?.id ?? null} />
       </Estrutura>
     )
   }
