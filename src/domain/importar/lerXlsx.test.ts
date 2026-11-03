@@ -160,6 +160,20 @@ describe('CB-927: referência de coluna absurda (D-919)', () => {
     expect(celulas(aba)).toEqual([['Nome'], ['Ana']])
   })
 
+  it('CB-925 (D-921): a linha com o mesmo número da anterior, ou menor, vira a seguinte', async () => {
+    const [aba] = await lerXlsx(
+      await comAba(`<row r="1">${celula('A1', 'Nome')}</row><row r="2">${celula('A2', 'Ana')}</row><row r="2">${celula('A2', 'Bruno')}</row><row r="1">${celula('A1', 'Caio')}</row><row r="9">${celula('A9', 'Duda')}</row>`),
+      { limiteDeLinhas: 10 },
+    )
+    expect(aba?.registros.map((r) => [r.numero, r.celulas[0]])).toEqual([
+      [1, 'Nome'],
+      [2, 'Ana'],
+      [3, 'Bruno'],
+      [4, 'Caio'],
+      [9, 'Duda'],
+    ])
+  })
+
   it('a célula entre a 201ª e a XFD não estica a linha: vira um sinal de que há colunas além das 200', async () => {
     const [aba] = await lerXlsx(await comAba(`<row r="1">${celula('A1', 'Nome')}${celula('XFD1', 'z')}</row>`), { limiteDeLinhas: 10 })
     const linha = aba?.registros[0]?.celulas ?? []

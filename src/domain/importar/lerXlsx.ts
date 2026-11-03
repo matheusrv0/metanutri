@@ -220,7 +220,9 @@ export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, darAVe
         if (sinal?.aborted) throw new DOMException('Leitura cancelada.', 'AbortError')
         await darAVez?.()
       }
-      const numero = Number(linha.getAttribute('r')) || anterior + 1
+      // D-921 e CB-925: as marcas e as correções são guardadas pelo número; o que não avança vira o seguinte.
+      const declarado = Number(linha.getAttribute('r'))
+      const numero = Number.isInteger(declarado) && declarado > anterior ? declarado : anterior + 1
       anterior = numero
       const celulas: string[] = []
       let coluna = -1
