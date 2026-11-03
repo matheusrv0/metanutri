@@ -2,7 +2,8 @@ import { useId, useMemo, type ReactNode } from 'react'
 import { avaliarCor, codigoDaCor } from '@/domain/corDaMarca.ts'
 import type { MarcaDoLink } from '@/domain/marca.ts'
 import { cn } from '@/lib/utils'
-import { LinkDoPaciente, type TemaDaPrevia } from '../missoes/LinkDoPaciente.tsx'
+import { LinkDoPaciente } from '../missoes/LinkDoPaciente.tsx'
+import type { TemaDaPrevia } from '../missoes/marcaNoLink.ts'
 import { linkDeExemplo } from './exemploDoLink.ts'
 
 /*

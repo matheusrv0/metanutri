@@ -10,7 +10,8 @@ import { diaLocal, marcarMissao, missoesDoDia, type Acompanhamento } from '@/dom
 import { separarMarca, SEM_MARCA, type MarcaDoLink } from '@/domain/marca.ts'
 import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { LinkDoPaciente, MolduraDoLink } from './LinkDoPaciente.tsx'
+import { LinkDoPaciente } from './LinkDoPaciente.tsx'
+import { MolduraDoLink } from './MolduraDoLink.tsx'
 
 interface TelaMissoesPacienteProps {
   readonly token: string

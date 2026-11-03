@@ -2,22 +2,20 @@
 // Só desenha: quem busca e marca é a `TelaMissoesPaciente`. A prévia de "Sua marca" desenha este mesmo componente, num
 // celular claro e num escuro (spec marca-no-link, DP-ML-15): o que a nutricionista vê é o que o paciente vê.
 import { Check, GraduationCap } from 'lucide-react'
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState } from 'react'
 import { diasMarcadosNaSemana, missoesDoDia, progressoDoDia, DIAS_NA_SEMANA_PARA_EM_DIA, type Acompanhamento, type MissaoDoDia, type ProgressoDia } from '@/domain/acompanhamento.ts'
-import { avaliarCor } from '@/domain/corDaMarca.ts'
 import { temDieta } from '@/domain/dietaDoLink.ts'
 import type { MarcaDoLink } from '@/domain/marca.ts'
 import { cn } from '@/lib/utils'
 import { Alert } from '@ds/componentes/display/alert.tsx'
-import { Logo } from '@ds/componentes/display/Logo.tsx'
-import { PlacaLogo } from '@ds/componentes/display/PlacaLogo.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
+import { classeDaAbaEscolhida, FUNDO_DA_ACAO, useLogoDoLink, type TemaDaPrevia } from './marcaNoLink.ts'
 import { MeuPlano } from './MeuPlano.tsx'
+import { MolduraDoLink } from './MolduraDoLink.tsx'
+import { RodapeDoLink } from './RodapeDoLink.tsx'
+import { TopoDoLink } from './TopoDoLink.tsx'
 
 type Parte = 'missoes' | 'plano'
-
-/** O tema fixo de um celular da prévia; fora da prévia, o link segue o tema do celular do paciente. */
-export type TemaDaPrevia = 'claro' | 'escuro'
 
 /** D-154: as duas partes do link, quando ele tem a dieta. */
 const PARTES: readonly { readonly valor: Parte; readonly rotulo: string }[] = [
@@ -25,64 +23,21 @@ const PARTES: readonly { readonly valor: Parte; readonly rotulo: string }[] = [
   { valor: 'plano', rotulo: 'Meu plano' },
 ]
 
-/** O texto alternativo da logo dela: o link não sabe o nome de quem montou o plano, e não precisa saber (D-952). */
-export const ALT_DA_LOGO_NO_LINK = 'Logo de quem montou seu plano'
-
 /*
  * DP-157: as abas do design system (Tabs, do Radix: tablist, tab, tabpanel e setas do teclado) com cara de pílula só
  * nesta tela. O trilho cinza ganha um fio para aparecer sobre a mesa cinza. A régua por baixo da aba do Tabs some aqui.
- * Toque de 44 px no celular. Spec marca-no-link (D-956, DP-ML-8): sem a cor dela, a aba escolhida é a pílula branca de
- * sempre; com a cor, é a pílula na cor (`--link-acao`), com o texto por cima (`--link-acao-texto`).
+ * Toque de 44 px no celular. A aba escolhida segue a marca (`classeDaAbaEscolhida`, spec marca-no-link).
  */
 const TRILHO = 'grid w-full grid-cols-2 gap-1 rounded-full border border-borderdefault bg-surfacerow p-1'
 const ABA = 'h-11 rounded-full px-4 font-semibold transition-colors duration-150 data-[state=active]:shadow-xs data-[state=active]:after:hidden'
 /** Fora da prévia, a densidade do computador a partir de 640 px com mouse; o celular da prévia é sempre celular. */
 const ABA_FORA_DA_PREVIA = 'sm:h-9 sm:pointer-coarse:h-11'
-const ABA_ESCOLHIDA_SEM_COR = 'data-[state=active]:bg-card data-[state=active]:text-heading'
-const ABA_ESCOLHIDA_COM_COR = 'data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto'
 
 const DATA_LONGA = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'UTC' })
 
 function dataPorExtenso(dia: string): string {
   const quando = new Date(`${dia}T00:00:00Z`)
   return Number.isNaN(quando.getTime()) ? '' : DATA_LONGA.format(quando)
-}
-
-/** As variáveis da cor dela na raiz do link: a cor e a versão do escuro (D-955). O CSS escolhe pelo tema. */
-function estiloDaCor(cor: string): CSSProperties {
-  return { '--marca-claro': cor, '--marca-escuro': avaliarCor(cor).escuro } as CSSProperties
-}
-
-interface MolduraDoLinkProps {
-  readonly children: ReactNode
-  readonly cor?: string | null
-  readonly previa?: TemaDaPrevia | undefined
-}
-
-/**
- * CA-757 (spec revisao-geral-publica): o conteúdo da tela é a região principal. Na prévia, o celular é um pedaço da
- * tela de "Sua marca": sem a altura da tela inteira e sem região principal, no escopo do tema dele.
- */
-export function MolduraDoLink({ children, cor = null, previa }: MolduraDoLinkProps) {
-  const comCor = cor !== null
-  if (previa) {
-    return (
-      <div className={previa === 'escuro' ? 'dark' : 'tema-claro'}>
-        <div
-          data-link-do-paciente=""
-          className={cn('bg-background px-4 pt-5 pb-8 text-foreground', comCor && 'marca-da-nutricionista')}
-          style={comCor ? estiloDaCor(cor) : undefined}
-        >
-          {children}
-        </div>
-      </div>
-    )
-  }
-  return (
-    <div data-link-do-paciente="" className={cn('min-h-dvh bg-background px-4 py-8', comCor && 'marca-da-nutricionista')} style={comCor ? estiloDaCor(cor) : undefined}>
-      <main className="mx-auto w-full max-w-md">{children}</main>
-    </div>
-  )
 }
 
 interface LinkDoPacienteProps {
@@ -99,9 +54,8 @@ interface LinkDoPacienteProps {
 export function LinkDoPaciente({ acompanhamento, marca, hoje, naoSalvou, aoAlternar, previa }: LinkDoPacienteProps) {
   // D-154: abre em "Missões", como sempre abriu.
   const [parte, setParte] = useState<Parte>('missoes')
-  // CA-1973: a logo que não abriu volta à do MetaNutri; uma logo nova tenta de novo.
-  const [logoQuebrada, setLogoQuebrada] = useState<string | null>(null)
-  const logo = marca.logo !== null && marca.logo !== logoQuebrada ? marca.logo : null
+  // CA-1973: a logo que não abriu volta à do MetaNutri.
+  const { logo, aoFalhar } = useLogoDoLink(marca.logo)
 
   const missoes = missoesDoDia(acompanhamento, hoje)
   const progresso = progressoDoDia(acompanhamento, hoje)
@@ -111,7 +65,6 @@ export function LinkDoPaciente({ acompanhamento, marca, hoje, naoSalvou, aoAlter
   const primeiroNome = acompanhamento.nome.trim().split(/[\s,;]+/)[0] || 'Olá'
   // CA-536 e CB-159: link sem dieta, ou com a dieta vazia, é a tela de missões de sempre.
   const dieta = temDieta(acompanhamento.dieta) ? acompanhamento.dieta : null
-  const varianteDaLogo = previa === 'claro' ? 'claro' : previa === 'escuro' ? 'escuro' : 'auto'
 
   const parteDasMissoes = (
     <ParteDasMissoes
@@ -140,9 +93,7 @@ export function LinkDoPaciente({ acompanhamento, marca, hoje, naoSalvou, aoAlter
       ) : null}
 
       {/* D-957: a logo dela no lugar da do MetaNutri, numa placa branca; sem logo, o topo de sempre. */}
-      <div className="mb-5 flex items-center">
-        {logo ? <PlacaLogo src={logo} alt={ALT_DA_LOGO_NO_LINK} aoFalhar={() => setLogoQuebrada(logo)} /> : <Logo tamanho={22} variante={varianteDaLogo} />}
-      </div>
+      <TopoDoLink logo={logo} aoFalhar={aoFalhar} previa={previa} />
 
       {dieta ? (
         <Tabs value={parte} onValueChange={(valor) => setParte(valor === 'plano' ? 'plano' : 'missoes')}>
@@ -151,7 +102,7 @@ export function LinkDoPaciente({ acompanhamento, marca, hoje, naoSalvou, aoAlter
               <TabsTrigger
                 key={p.valor}
                 value={p.valor}
-                className={cn(ABA, previa ? null : ABA_FORA_DA_PREVIA, marca.cor !== null ? ABA_ESCOLHIDA_COM_COR : ABA_ESCOLHIDA_SEM_COR)}
+                className={cn(ABA, previa ? null : ABA_FORA_DA_PREVIA, classeDaAbaEscolhida(marca.cor !== null))}
               >
                 {p.rotulo}
               </TabsTrigger>
@@ -169,11 +120,7 @@ export function LinkDoPaciente({ acompanhamento, marca, hoje, naoSalvou, aoAlter
       )}
 
       {/* D-957: com a logo dela no topo, o MetaNutri fica pequeno no rodapé, em todos os planos (D-959). */}
-      {logo ? (
-        <div className="mt-8 flex justify-center opacity-80">
-          <Logo tamanho={16} variante={varianteDaLogo} />
-        </div>
-      ) : null}
+      {logo ? <RodapeDoLink previa={previa} /> : null}
     </MolduraDoLink>
   )
 }
@@ -219,7 +166,7 @@ function ParteDasMissoes({
         </div>
         <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={progresso.pct} aria-valuemin={0} aria-valuemax={100}>
           {/* D-956: a barra do dia é ação (a cor dela, quando há); "Dia completo" continua verde (estado). */}
-          <div className={cn('h-full rounded-full transition-[width] duration-300', tudoFeito ? 'bg-stateok' : 'bg-linkacao')} style={{ width: `${progresso.pct}%` }} />
+          <div className={cn('h-full rounded-full transition-[width] duration-300', tudoFeito ? 'bg-stateok' : FUNDO_DA_ACAO)} style={{ width: `${progresso.pct}%` }} />
         </div>
       </section>
 
