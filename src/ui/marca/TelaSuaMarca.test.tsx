@@ -1,6 +1,6 @@
 // Spec marca-no-link: Conta e assinatura › Sua marca (CA-1950 a CA-1964, CA-1978, CA-1980, CB-950, CB-960). O desenho
 // de verdade da logo (o <canvas>) é testado no Playwright; aqui, um desenhista falso devolve um PNG conhecido.
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import type { Desenhista } from '@/domain/logoDaMarca.ts'
@@ -372,6 +372,40 @@ describe('Sua marca: sair sem salvar (CA-1964)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
     await waitFor(() => expect(screen.getByText('Tela do painel')).toBeInTheDocument())
     expect(perfilGuardado().cor).toBeNull()
+  })
+
+  /** Outra aba da mesma conta gravou o perfil (o evento `storage` só chega às outras abas). */
+  const outraAbaSalvou = (mudanca: Partial<Perfil>) =>
+    act(() => {
+      guardar(mudanca)
+      window.dispatchEvent(new StorageEvent('storage', { key: 'metanutri:perfil' }))
+    })
+
+  it('CB-965: outra aba salvou outra marca, sem mudança aqui: a tela mostra a nova, "Salvar" fica desabilitado e sair não pergunta', async () => {
+    guardar({ cor: '#1f4e8c', marcaPublicada: true })
+    render(<Anfitriao publicar={publicadorFalso().publicar} />)
+    expect(salvar()).toBeDisabled()
+    outraAbaSalvou({ logo: PNG_REDUZIDO, cor: '#7a2944', marcaPublicada: true })
+    expect(screen.getByRole('radio', { name: 'Vinho, #7A2944' })).toBeChecked()
+    expect(screen.getByRole('img', { name: 'Sua logo' })).toHaveAttribute('src', PNG_REDUZIDO)
+    expect(linkNaPrevia('claro')?.style.getPropertyValue('--marca-claro')).toBe('#7a2944')
+    expect(salvar()).toBeDisabled()
+    expect(screen.queryByText('Vale para todos os links já enviados.')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ir ao painel' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(screen.getByText('Tela do painel')).toBeInTheDocument()
+  })
+
+  it('CB-965: com mudança não salva aqui, a mudança fica quando outra aba salva', async () => {
+    guardar({ cor: '#1f4e8c', marcaPublicada: true })
+    render(<Anfitriao publicar={publicadorFalso().publicar} />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('radio', { name: 'Verde-folha, #3F5F2A' }))
+    outraAbaSalvou({ cor: '#7a2944', marcaPublicada: true })
+    expect(screen.getByRole('radio', { name: 'Verde-folha, #3F5F2A' })).toBeChecked()
+    expect(salvar()).toBeEnabled()
+    await usuario.click(screen.getByRole('button', { name: 'Ir ao painel' }))
+    expect(screen.getByRole('alertdialog', { name: 'Sair sem salvar a marca?' })).toBeInTheDocument()
   })
 })
 

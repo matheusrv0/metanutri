@@ -67,8 +67,20 @@ export function TelaSuaMarca({ desenhista = desenhistaDoNavegador, publicar }: T
   const idTituloCor = useId()
   const idDaCor = useId()
 
-  // CB-124 e CB-955: outra aba (ou outro aparelho, pela nuvem) gravou o perfil: a base de comparação se refaz.
-  const relerPerfil = useCallback(() => setPerfil(lerPerfil(armazenamento)), [armazenamento])
+  // CB-124 e CB-955: outra aba (ou outro aparelho, pela nuvem) gravou o perfil: a base de comparação se refaz. CB-965 e
+  // DP-ML-35: sem mudança nesta tela, o rascunho acompanha a marca nova, e "Salvar" não se habilita sozinho nem sair
+  // pergunta nada; com mudança, a mudança fica.
+  const relerPerfil = useCallback(() => {
+    const novo = lerPerfil(armazenamento)
+    const semMudancaAqui = logo === perfil.logo && cor === perfil.cor
+    if (semMudancaAqui && (novo.logo !== perfil.logo || novo.cor !== perfil.cor)) {
+      setLogo(novo.logo)
+      setCor(novo.cor)
+      setLogoClara(false)
+      setEnvio((atual) => (atual.tipo === 'salvando' ? atual : { tipo: 'parado' }))
+    }
+    setPerfil(novo)
+  }, [armazenamento, perfil, logo, cor])
   useOutraAbaGravou('metanutri:perfil', relerPerfil)
 
   const corEscolhida = cor ?? COR_PADRAO
