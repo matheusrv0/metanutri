@@ -82,7 +82,7 @@ export const FONTES = {
   },
   nhlbi1998: {
     curta: 'NHLBI, 1998',
-    citacao: 'National Heart, Lung, and Blood Institute (NIH). Clinical guidelines on the identification, evaluation, and treatment of overweight and obesity in adults; 1998.',
+    citacao: 'National Heart, Lung, and Blood Institute (NIH/NHLBI). Diretrizes de obesidade de 1998 (cintura no topo da crista ilíaca; cortes > 102 cm e > 88 cm).',
   },
   brayGray1988: {
     curta: 'Bray e Gray, 1988',
@@ -99,7 +99,7 @@ export const FONTES = {
   },
   frisancho1981: {
     curta: 'Frisancho, 1981',
-    citacao: 'Frisancho AR. Am J Clin Nutr 1981;34(11):2540-5. doi:10.1093/ajcn/34.11.2540 (HANES I, brancos de 1 a 74 anos).',
+    citacao: 'Frisancho AR. Am J Clin Nutr 1981;34(11):2540. doi:10.1093/ajcn/34.11.2540 (HANES I, brancos de 1 a 74 anos).',
   },
   frisancho1990: {
     curta: 'Frisancho, 1990',
@@ -108,7 +108,7 @@ export const FONTES = {
   },
   heymsfield1982: {
     curta: 'Heymsfield et al., 1982',
-    citacao: 'Heymsfield SB et al. Am J Clin Nutr 1982;36(4):680-90. doi:10.1093/ajcn/36.4.680 (AMB corrigida: − 10 cm² no homem, − 6,5 cm² na mulher).',
+    citacao: 'Heymsfield SB et al. Am J Clin Nutr 1982;36(4):680. doi:10.1093/ajcn/36.4.680 (AMB corrigida: − 10 cm² no homem, − 6,5 cm² na mulher).',
   },
   blackburnThornton1979: {
     curta: 'Blackburn e Thornton, 1979',
@@ -121,7 +121,7 @@ export const FONTES = {
   },
   saoCamilo2025: {
     curta: 'São Camilo, 2025',
-    citacao: 'Centro Universitário São Camilo. Padrões de medidas e referências aplicadas na avaliação e diagnóstico nutricional de adultos e idosos. São Paulo; 2025.',
+    citacao: 'Centro Universitário São Camilo. Padrões de medidas e referências aplicadas na avaliação e diagnóstico nutricional de adultos e idosos. 2025.',
   },
   pesoAjustado: {
     curta: 'CEPRAN, 2014; São Camilo, 2025',
@@ -156,7 +156,7 @@ export const FONTES = {
   },
   issn2017: {
     curta: 'ISSN, 2017',
-    citacao: 'Jäger R et al. International Society of Sports Nutrition position stand: protein and exercise. J Int Soc Sports Nutr 2017. doi:10.1186/s12970-017-0177-8.',
+    citacao: 'Jäger R et al. (International Society of Sports Nutrition, position stand). J Int Soc Sports Nutr 2017. doi:10.1186/s12970-017-0177-8.',
   },
   morton2018: {
     curta: 'Morton et al., 2018',
@@ -173,7 +173,7 @@ export const FONTES = {
   },
   nhlbiGuia2000: {
     curta: 'NHLBI, 2000',
-    citacao: 'National Heart, Lung, and Blood Institute. The practical guide: identification, evaluation, and treatment of overweight and obesity in adults. NIH Pub. 00-4084; 2000 (matriz de risco IMC × cintura).',
+    citacao: 'National Heart, Lung, and Blood Institute. Practical Guide. NIH Pub. 00-4084; 2000 (matriz de risco IMC × cintura).',
   },
   ross2020: {
     curta: 'Ross et al., 2020',
@@ -181,11 +181,11 @@ export const FONTES = {
   },
   abeso2016: {
     curta: 'ABESO, 2016',
-    citacao: 'Associação Brasileira para o Estudo da Obesidade e da Síndrome Metabólica. Diretrizes brasileiras de obesidade 2016. 4. ed. São Paulo: ABESO; 2016.',
+    citacao: 'Associação Brasileira para o Estudo da Obesidade e da Síndrome Metabólica. Diretrizes brasileiras de obesidade 2016. ABESO; 2016.',
   },
   glim2019: {
     curta: 'GLIM, 2019',
-    citacao: 'Cederholm T et al. GLIM criteria for the diagnosis of malnutrition. Clin Nutr 2019;38(1):1-9. doi:10.1016/j.clnu.2018.08.002.',
+    citacao: 'Cederholm T et al. (GLIM). Clin Nutr 2019;38(1):1-9. doi:10.1016/j.clnu.2018.08.002.',
   },
   metaDePerda: {
     curta: 'ABESO, 2016; NHLBI, 2000; AHA/ACC/TOS, 2013',

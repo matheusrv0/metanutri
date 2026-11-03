@@ -91,7 +91,7 @@ const executadoDiretamente = process.argv[1] && fileURLToPath(import.meta.url) =
 if (executadoDiretamente) {
   const dados = {
     fonte:
-      'Pesquisa "Base científica do módulo de antropometria do MetaNutri" (03/11/2026), seção 3.18, copiada sem edição em dados-brutos/antropometria/frisancho-percentis.md. Frisancho 1990: maioria entre São Camilo 2025, CEPRAN/UNESP 2014 e Anahp 2022. Frisancho 1981: o original (Am J Clin Nutr 1981;34(11):2540-5).',
+      'Pesquisa "Base científica do módulo de antropometria do MetaNutri" (03/11/2026), seção 3.18, copiada sem edição em dados-brutos/antropometria/frisancho-percentis.md. Frisancho 1990: maioria entre São Camilo 2025, CEPRAN/UNESP 2014 e Anahp 2022. Frisancho 1981: o original (Am J Clin Nutr 1981;34(11):2540, doi:10.1093/ajcn/34.11.2540).',
     ...extrair(readFileSync(ORIGEM, 'utf8')),
   }
   writeFileSync(DESTINO, serializar(dados), 'utf8')
