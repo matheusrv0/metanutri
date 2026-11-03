@@ -138,6 +138,13 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': 'off' },
   },
   {
+    // Spec lado-do-paciente (DP-LP-9): o HTML dos e-mails não lê variável de CSS nem a fonte do app. As cores e a letra
+    // escritas ali espelham design-system/tokens/tokens.css (--ivory, --teal-900, --ink-900, --gray-700, --gray-200,
+    // --green-100, --green-800 e --mesa) e a Manrope, com Arial de reserva. Só este arquivo.
+    files: ['supabase/functions/_shared/avisos/emails.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
     files: ['scripts/**/*.mjs', 'eslint.config.js'],
     extends: [js.configs.recommended],
     languageOptions: { ecmaVersion: 2022, globals: globals.node },
