@@ -94,3 +94,45 @@ describe('qual estimativa vem primeiro (spec antropometria-completa, CA-2055)', 
     expect(estimativasDePeso(caso({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'gestante', semanasGestacao: 20, pesoPreGestacionalKg: 60 } }))).toEqual([])
   })
 })
+
+describe('lado das medidas (spec antropometria-completa, revisão, CA-2084)', () => {
+  const ambos = caso(
+    { circunferenciaPanturrilhaCm: 36 },
+    { bracoRelaxadoDireitoCm: 30, bracoRelaxadoEsquerdoCm: 28, panturrilhaEsquerdaCm: 34, abdomenCm: 95, alturaDoJoelhoCm: 52 },
+    15,
+  )
+  const porEquacao = (lista: readonly { readonly equacao: string }[], equacao: string) => lista.find((e) => e.equacao === equacao)
+
+  it('CA-2084: Rabito usa o lado esquerdo (o do estudo) e diz o lado', () => {
+    const iv = porEquacao(estimativasDePeso(ambos), 'rabito-iv') as ReturnType<typeof estimativasDePeso>[number]
+    expect(iv.valor).toBeCloseTo(rabitoPesoIV(28, 95, 34), 10)
+    expect(iv.lados).toEqual([
+      { medida: 'braço', lado: 'esquerdo' },
+      { medida: 'panturrilha', lado: 'esquerdo' },
+    ])
+  })
+
+  it('CA-2084: Chumlea usa o direito e diz o lado', () => {
+    const chumlea = porEquacao(estimativasDePeso(ambos), 'chumlea-1988') as ReturnType<typeof estimativasDePeso>[number]
+    expect(chumlea.valor).toBeCloseTo(chumlea1988Peso('M', 30, 36, 15, 52), 10)
+    expect(chumlea.lados).toEqual([
+      { medida: 'braço', lado: 'direito' },
+      { medida: 'panturrilha', lado: 'direito' },
+    ])
+  })
+
+  it('CA-2084: só com o direito, Rabito usa o direito; sem nenhum, a falta aponta o lado esquerdo', () => {
+    const soDireito = caso({ idadeAnos: 40, circunferenciaPanturrilhaCm: 36 }, { bracoRelaxadoDireitoCm: 30, abdomenCm: 95 })
+    const iv = porEquacao(estimativasDePeso(soDireito), 'rabito-iv') as ReturnType<typeof estimativasDePeso>[number]
+    expect(iv.valor).toBeCloseTo(rabitoPesoIV(30, 95, 36), 10)
+    expect(iv.lados).toEqual([
+      { medida: 'braço', lado: 'direito' },
+      { medida: 'panturrilha', lado: 'direito' },
+    ])
+    const nenhum = porEquacao(estimativasDePeso(caso({ idadeAnos: 40 }, { abdomenCm: 95 })), 'rabito-iv') as ReturnType<typeof estimativasDePeso>[number]
+    expect(nenhum.falta).toEqual([
+      { campo: 'medidasCorporais.bracoRelaxadoEsquerdoCm', nome: 'o braço relaxado' },
+      { campo: 'medidasCorporais.panturrilhaEsquerdaCm', nome: 'a panturrilha' },
+    ])
+  })
+})

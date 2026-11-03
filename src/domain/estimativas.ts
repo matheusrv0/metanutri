@@ -1,7 +1,6 @@
 // Estimativas de altura e peso de quem não fica em pé (spec antropometria-completa, D-1030): Chumlea no idoso, Rabito
 // no adulto brasileiro. Medidas em cm, dobra em mm, idade em anos, resultado em cm ou kg, sempre "estimado".
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
-import { ladoMedido } from './indicadoresCorporais.ts'
 import { medidaValida, type CampoQueFalta } from './linhaDoResultado.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
@@ -51,7 +50,16 @@ export interface Estimativa {
   readonly erro: ErroDaEstimativa | null
   readonly fonte: Fonte
   readonly falta: readonly CampoQueFalta[]
+  /** O lado do braço e da panturrilha usados (D-1030 revista). */
+  readonly lados: readonly LadoUsado[]
   readonly avisos: readonly string[]
+}
+
+export type Lado = 'direito' | 'esquerdo'
+
+export interface LadoUsado {
+  readonly medida: 'braço' | 'panturrilha'
+  readonly lado: Lado
 }
 
 const CAMPOS = {
@@ -59,11 +67,15 @@ const CAMPOS = {
   idade: { campo: 'idadeAnos', nome: 'a idade' },
   alturaDoJoelho: { campo: 'medidasCorporais.alturaDoJoelhoCm', nome: 'a altura do joelho' },
   semienvergadura: { campo: 'medidasCorporais.semienvergaduraCm', nome: 'a semienvergadura' },
-  braco: { campo: 'medidasCorporais.bracoRelaxadoDireitoCm', nome: 'o braço relaxado' },
-  panturrilha: { campo: 'circunferenciaPanturrilhaCm', nome: 'a panturrilha' },
   abdomen: { campo: 'medidasCorporais.abdomenCm', nome: 'o abdômen' },
   subescapular: { campo: 'composicao.dobras.subescapular', nome: 'a dobra subescapular' },
 } as const satisfies Readonly<Record<string, CampoQueFalta>>
+
+/** O braço e a panturrilha que faltam apontam o campo do lado preferido da equação (D-1030 revista). */
+const CAMPO_DO_LADO: Readonly<Record<Lado, { readonly braco: CampoQueFalta; readonly panturrilha: CampoQueFalta }>> = {
+  direito: { braco: { campo: 'medidasCorporais.bracoRelaxadoDireitoCm', nome: 'o braço relaxado' }, panturrilha: { campo: 'circunferenciaPanturrilhaCm', nome: 'a panturrilha' } },
+  esquerdo: { braco: { campo: 'medidasCorporais.bracoRelaxadoEsquerdoCm', nome: 'o braço relaxado' }, panturrilha: { campo: 'medidasCorporais.panturrilhaEsquerdaCm', nome: 'a panturrilha' } },
+}
 
 interface Medidas {
   readonly sexo: Sexo | null
@@ -76,36 +88,69 @@ interface Medidas {
   readonly subescapular: number | null
 }
 
-const medidasDoCaso = (caso: Caso): Medidas => ({
-  sexo: caso.sexo,
-  idade: caso.idadeAnos,
-  alturaDoJoelho: medidaValida(caso.medidasCorporais.alturaDoJoelhoCm),
-  semienvergadura: medidaValida(caso.medidasCorporais.semienvergaduraCm),
-  braco: ladoMedido(caso.medidasCorporais.bracoRelaxadoDireitoCm, caso.medidasCorporais.bracoRelaxadoEsquerdoCm)?.valor ?? null,
-  panturrilha: ladoMedido(caso.circunferenciaPanturrilhaCm, caso.medidasCorporais.panturrilhaEsquerdaCm)?.valor ?? null,
-  abdomen: medidaValida(caso.medidasCorporais.abdomenCm),
-  subescapular: medidaValida(caso.composicao.dobras.subescapular),
-})
+interface MedidasComLado {
+  readonly valores: Medidas
+  /** O lado preferido da equação: Chumlea, o direito (padrão do app); Rabito, o esquerdo (o do estudo). */
+  readonly preferido: Lado
+  readonly ladoDoBraco: Lado | null
+  readonly ladoDaPanturrilha: Lado | null
+}
+
+/** O lado preferido; sem ele, o outro. */
+function noLado(direito: number | null, esquerdo: number | null, preferido: Lado): { readonly valor: number; readonly lado: Lado } | null {
+  const ordem: readonly [Lado, number | null][] = preferido === 'direito' ? [['direito', direito], ['esquerdo', esquerdo]] : [['esquerdo', esquerdo], ['direito', direito]]
+  for (const [lado, v] of ordem) {
+    const valor = medidaValida(v)
+    if (valor !== null) return { valor, lado }
+  }
+  return null
+}
+
+function medidasDoCaso(caso: Caso, preferido: Lado): MedidasComLado {
+  const braco = noLado(caso.medidasCorporais.bracoRelaxadoDireitoCm, caso.medidasCorporais.bracoRelaxadoEsquerdoCm, preferido)
+  const panturrilha = noLado(caso.circunferenciaPanturrilhaCm, caso.medidasCorporais.panturrilhaEsquerdaCm, preferido)
+  return {
+    valores: {
+      sexo: caso.sexo,
+      idade: caso.idadeAnos,
+      alturaDoJoelho: medidaValida(caso.medidasCorporais.alturaDoJoelhoCm),
+      semienvergadura: medidaValida(caso.medidasCorporais.semienvergaduraCm),
+      braco: braco?.valor ?? null,
+      panturrilha: panturrilha?.valor ?? null,
+      abdomen: medidaValida(caso.medidasCorporais.abdomenCm),
+      subescapular: medidaValida(caso.composicao.dobras.subescapular),
+    },
+    preferido,
+    ladoDoBraco: braco?.lado ?? null,
+    ladoDaPanturrilha: panturrilha?.lado ?? null,
+  }
+}
 
 type Chave = keyof Medidas
 
+const campoQueFalta = (k: Chave, preferido: Lado): CampoQueFalta => (k === 'braco' || k === 'panturrilha' ? CAMPO_DO_LADO[preferido][k] : CAMPOS[k])
+
 /** A estimativa com as medidas que ela pede; se faltar alguma, valor `null` e a lista do que falta. */
 function estimar(
-  base: Omit<Estimativa, 'valor' | 'falta'>,
-  m: Medidas,
+  base: Omit<Estimativa, 'valor' | 'falta' | 'lados'>,
+  m: MedidasComLado,
   pede: readonly Chave[],
   conta: (v: { readonly [K in Chave]: NonNullable<Medidas[K]> }) => number,
 ): Estimativa {
-  const falta = pede.filter((k) => m[k] === null).map((k) => CAMPOS[k])
-  if (falta.length > 0) return { ...base, valor: null, falta }
+  const falta = pede.filter((k) => m.valores[k] === null).map((k) => campoQueFalta(k, m.preferido))
+  const lados: LadoUsado[] = []
+  if (pede.includes('braco') && m.ladoDoBraco) lados.push({ medida: 'braço', lado: m.ladoDoBraco })
+  if (pede.includes('panturrilha') && m.ladoDaPanturrilha) lados.push({ medida: 'panturrilha', lado: m.ladoDaPanturrilha })
+  if (falta.length > 0) return { ...base, valor: null, falta, lados }
   // Todas as pedidas existem; as outras não entram na conta.
-  return { ...base, valor: conta(m as { readonly [K in Chave]: NonNullable<Medidas[K]> }), falta: [] }
+  return { ...base, valor: conta(m.valores as { readonly [K in Chave]: NonNullable<Medidas[K]> }), falta: [], lados }
 }
 
 const ERRO_RABITO = (pct: number): ErroDaEstimativa => ({ valor: pct, unidade: '%', descricao: 'erro médio em hospitalizados brasileiros' })
 
-function chumleaAltura(m: Medidas): Estimativa {
-  const fora = m.idade !== null && (m.idade < 60 || m.idade > 90)
+function chumleaAltura(m: MedidasComLado): Estimativa {
+  const { idade } = m.valores
+  const fora = idade !== null && (idade < 60 || idade > 90)
   return estimar(
     {
       equacao: 'chumlea-1985',
@@ -122,7 +167,7 @@ function chumleaAltura(m: Medidas): Estimativa {
   )
 }
 
-const rabitoAltura = (m: Medidas): Estimativa =>
+const rabitoAltura = (m: MedidasComLado): Estimativa =>
   estimar(
     { equacao: 'rabito-vii', nome: 'Altura pela semienvergadura (Rabito, 2006)', medida: 'altura', unidade: 'cm', erro: ERRO_RABITO(2.2), fonte: FONTES.rabito2006, avisos: [] },
     m,
@@ -130,7 +175,7 @@ const rabitoAltura = (m: Medidas): Estimativa =>
     (v) => rabitoAlturaVII(v.sexo, v.idade, v.semienvergadura),
   )
 
-const chumleaPeso = (m: Medidas): Estimativa =>
+const chumleaPeso = (m: MedidasComLado): Estimativa =>
   estimar(
     { equacao: 'chumlea-1988', nome: 'Peso por braço, panturrilha, subescapular e joelho (Chumlea, 1988)', medida: 'peso', unidade: 'kg', erro: null, fonte: FONTES.chumlea1988, avisos: ['O erro-padrão da equação não foi publicado nas fontes lidas.'] },
     m,
@@ -138,7 +183,7 @@ const chumleaPeso = (m: Medidas): Estimativa =>
     (v) => chumlea1988Peso(v.sexo, v.braco, v.panturrilha, v.subescapular, v.alturaDoJoelho),
   )
 
-const rabitoV = (m: Medidas): Estimativa =>
+const rabitoV = (m: MedidasComLado): Estimativa =>
   estimar(
     { equacao: 'rabito-v', nome: 'Peso por fita e sexo (Rabito V, 2006)', medida: 'peso', unidade: 'kg', erro: ERRO_RABITO(6), fonte: FONTES.rabito2006, avisos: [] },
     m,
@@ -146,7 +191,7 @@ const rabitoV = (m: Medidas): Estimativa =>
     (v) => rabitoPesoV(v.sexo, v.braco, v.abdomen, v.panturrilha),
   )
 
-const rabitoIV = (m: Medidas): Estimativa =>
+const rabitoIV = (m: MedidasComLado): Estimativa =>
   estimar(
     { equacao: 'rabito-iv', nome: 'Peso só por fita (Rabito IV, 2006)', medida: 'peso', unidade: 'kg', erro: ERRO_RABITO(6.7), fonte: FONTES.rabito2006, avisos: [] },
     m,
@@ -154,7 +199,7 @@ const rabitoIV = (m: Medidas): Estimativa =>
     (v) => rabitoPesoIV(v.braco, v.abdomen, v.panturrilha),
   )
 
-const rabitoIII = (m: Medidas): Estimativa =>
+const rabitoIII = (m: MedidasComLado): Estimativa =>
   estimar(
     { equacao: 'rabito-iii', nome: 'Peso por fita e subescapular (Rabito III, 2006)', medida: 'peso', unidade: 'kg', erro: ERRO_RABITO(7), fonte: FONTES.rabito2006, avisos: [] },
     m,
@@ -171,16 +216,17 @@ function fase(caso: Caso): 'adulto' | 'idoso' | null {
 /** As estimativas de altura, a recomendada primeiro: idoso Chumlea 1985 e Rabito VII; adulto Rabito VII. */
 export function estimativasDeAltura(caso: Caso): Estimativa[] {
   const f = fase(caso)
-  const m = medidasDoCaso(caso)
-  if (f === 'idoso') return [chumleaAltura(m), rabitoAltura(m)]
-  return f === 'adulto' ? [rabitoAltura(m)] : []
+  const rabito = rabitoAltura(medidasDoCaso(caso, 'esquerdo'))
+  if (f === 'idoso') return [chumleaAltura(medidasDoCaso(caso, 'direito')), rabito]
+  return f === 'adulto' ? [rabito] : []
 }
 
 /** As estimativas de peso, a recomendada primeiro: idoso Chumlea 1988, depois Rabito V, IV e III; adulto Rabito V, IV e III. */
 export function estimativasDePeso(caso: Caso): Estimativa[] {
   const f = fase(caso)
-  const m = medidasDoCaso(caso)
-  const rabito = [rabitoV(m), rabitoIV(m), rabitoIII(m)]
-  if (f === 'idoso') return [chumleaPeso(m), ...rabito]
+  // D-1030 revista: Rabito mediu no lado esquerdo; Chumlea, no padrão do app (direito).
+  const esquerdo = medidasDoCaso(caso, 'esquerdo')
+  const rabito = [rabitoV(esquerdo), rabitoIV(esquerdo), rabitoIII(esquerdo)]
+  if (f === 'idoso') return [chumleaPeso(medidasDoCaso(caso, 'direito')), ...rabito]
   return f === 'adulto' ? rabito : []
 }
