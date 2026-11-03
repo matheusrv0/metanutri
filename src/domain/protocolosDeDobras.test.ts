@@ -628,3 +628,20 @@ describe('soma perto do pico: o resultado satura (spec antropometria-completa, r
     expect(jp3(230)).not.toMatch(/satura/)
   })
 })
+
+describe('Durnin & Womersley: faixa da soma por idade (spec antropometria-completa, rodada 2, CA-2094)', () => {
+  const avisos = (sexo: Sexo, idade: number, soma: number) =>
+    calculado(calcularProtocolo('durnin-womersley', paciente(sexo, idade), dobras({ bicipital: soma / 4, tricipital: soma / 4, subescapular: soma / 4, suprailiacaMed: soma / 4 })))
+      .avisos.filter((a) => a.includes('faixa da amostra'))
+
+  it('CA-2094: homem de 25 anos, até 190 mm; com 200, avisa com a faixa da idade', () => {
+    expect(avisos('M', 25, 200)).toEqual(['A soma das dobras está fora da faixa da amostra da equação (15 a 190 mm, de 17 a 29 anos).'])
+    expect(avisos('M', 25, 190)).toEqual([])
+  })
+
+  it('CA-2094: homem de 30 anos e mulher de 25 continuam com 15 a 210 mm', () => {
+    expect(avisos('M', 30, 200)).toEqual([])
+    expect(avisos('M', 30, 220)).toEqual(['A soma das dobras está fora da faixa da amostra da equação (15 a 210 mm).'])
+    expect(avisos('F', 25, 200)).toEqual([])
+  })
+})

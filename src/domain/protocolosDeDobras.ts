@@ -32,6 +32,19 @@ export type MaturacaoSexual = 'pre-pubere' | 'pubere' | 'pos-pubere'
 /** A classificação do estudo de Slaughter; não validada para a população brasileira (D-1012). */
 export type GrupoDoEstudo = 'branco' | 'negro'
 
+/** Faixa da soma das dobras exigidas na amostra, em mm. */
+export interface FaixaDaSoma {
+  readonly min: number
+  readonly max: number
+  /** Sai da faixa de cada dobra, não de um limite publicado da soma. */
+  readonly inferida: boolean
+}
+
+export interface FaixaDaSomaPorIdade extends FaixaDaSoma {
+  /** Em anos completos, inclusiva. */
+  readonly idade: { readonly min: number; readonly max: number }
+}
+
 export interface VarianteDoProtocolo {
   readonly populacao: string
   /** Faixa de idade da amostra, em anos completos, inclusiva; `null` = desconhecida. */
@@ -43,7 +56,9 @@ export interface VarianteDoProtocolo {
   readonly saida: 'densidade' | 'gordura'
   readonly fonte: Fonte
   /** Faixa da soma das dobras exigidas na amostra, em mm; `inferida` quando sai da faixa de cada dobra; `null` = não publicada (D-1038). */
-  readonly somaNaAmostra: { readonly min: number; readonly max: number; readonly inferida: boolean } | null
+  readonly somaNaAmostra: FaixaDaSoma | null
+  /** Faixas da soma por idade, quando a fonte as separa; fora delas vale `somaNaAmostra` (D-1038 revista, rodada 2). */
+  readonly somaNaAmostraPorIdade?: readonly FaixaDaSomaPorIdade[]
   /** Nas quadráticas, a soma (mm) em que a densidade para de cair; acima dela a equação inverte e não calcula (D-1038). */
   readonly picoDaSomaMm: number | null
 }
@@ -104,7 +119,7 @@ const SLAUGHTER = 'crianças e adolescentes (Slaughter et al., 1988)'
 // que seguiu Harrison 1991) e `suprailiaca` quando a pesquisa não registra a linha (Guedes, Faulkner; rodada 2: a média
 // antes da anterior, como Petroski).
 /** D-1038: as faixas da soma publicadas (JP78, Tabela 1; Durnin & Womersley, Tabela 9) e a inferida de Petroski. */
-const publicada = (min: number, max: number) => ({ min, max, inferida: false })
+const publicada = (min: number, max: number): FaixaDaSoma => ({ min, max, inferida: false })
 
 export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
   {
@@ -129,7 +144,19 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'durnin-womersley',
     nome: 'Durnin & Womersley, 4 dobras',
     porSexo: {
-      M: { populacao: 'homens de Glasgow, Escócia', idade: { min: 17, max: 72 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
+      // Rodada 2: na Tabela 9 do original, a coluna dos homens de 17 a 29 anos vai até 190 mm.
+      M: {
+        populacao: 'homens de Glasgow, Escócia',
+        idade: { min: 17, max: 72 },
+        dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'],
+        entradas: ['idade'],
+        forma: 'log10',
+        saida: 'densidade',
+        fonte: FONTES.durninWomersley1974,
+        somaNaAmostra: publicada(15, 210),
+        somaNaAmostraPorIdade: [{ ...publicada(15, 190), idade: { min: 17, max: 29 } }],
+        picoDaSomaMm: null,
+      },
       F: { populacao: 'mulheres de Glasgow, Escócia', idade: { min: 16, max: 68 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
     },
     aviso: null,
@@ -515,14 +542,22 @@ function emMm(valor: number, casas: number): string {
 /** Rodada 2: de 90% do pico em diante, a inclinação da parábola já caiu a 10% da inicial. */
 const FRACAO_DO_PICO_QUE_SATURA = 0.9
 
+/** A faixa da soma na amostra para a idade: a da faixa de idade, quando a fonte separa (rodada 2); senão, a geral. */
+export function faixaDaSomaNaAmostra(variante: VarianteDoProtocolo, idadeAnos: number | null): FaixaDaSoma | FaixaDaSomaPorIdade | null {
+  const idade = idadeValida(idadeAnos)
+  const daIdade = idade === null ? undefined : variante.somaNaAmostraPorIdade?.find((f) => idade >= f.idade.min && idade <= f.idade.max)
+  return daIdade ?? variante.somaNaAmostra
+}
+
 /** D-1038: a soma fora da faixa da amostra calcula, com o aviso e a faixa; perto do pico, avisa que satura (rodada 2). */
-function avisosDaSoma(variante: VarianteDoProtocolo, soma: number): string[] {
+function avisosDaSoma(variante: VarianteDoProtocolo, soma: number, idadeAnos: number | null): string[] {
   const avisos: string[] = []
   const exibida = naPrecisao(soma, 1)
-  const faixa = variante.somaNaAmostra
+  const faixa = faixaDaSomaNaAmostra(variante, idadeAnos)
   if (faixa && (exibida < faixa.min || exibida > faixa.max)) {
     const origem = faixa.inferida ? ', inferida pela faixa de cada dobra' : ''
-    avisos.push(`A soma das dobras está fora da faixa da amostra da equação (${emMm(faixa.min, 0)} a ${emMm(faixa.max, 0)} mm${origem}).`)
+    const daIdade = 'idade' in faixa ? `, de ${faixa.idade.min} a ${faixa.idade.max} anos` : ''
+    avisos.push(`A soma das dobras está fora da faixa da amostra da equação (${emMm(faixa.min, 0)} a ${emMm(faixa.max, 0)} mm${origem}${daIdade}).`)
   }
   const pico = variante.picoDaSomaMm
   if (pico !== null && exibida > FRACAO_DO_PICO_QUE_SATURA * pico) {
@@ -603,7 +638,7 @@ export function calcularProtocolo(id: IdProtocolo, pacienteInformado: PacienteDo
     fontes: conversao === null ? [variante.fonte] : [variante.fonte, FONTE_DA_CONVERSAO[conversao]],
     avisos: [
       ...ap.avisos,
-      ...avisosDaSoma(variante, soma),
+      ...avisosDaSoma(variante, soma, paciente.idadeAnos),
       ...(conversao === 'lohman' ? [AVISO_DE_LOHMAN] : []),
       ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes)),
     ],
