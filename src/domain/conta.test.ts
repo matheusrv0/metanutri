@@ -59,10 +59,10 @@ describe('Planos de assinatura', () => {
   })
 
   it('D-405: os recursos de cada assinatura são os limites, escritos a partir dos números do plano', () => {
-    expect(planoPorId('free')?.recursos).toEqual(['2 pacientes ativos', '2 links do paciente'])
-    expect(planoPorId('estudante')?.recursos).toEqual(['10 pacientes ativos', '3 links do paciente', 'Grátis até a formatura'])
-    expect(planoPorId('solo')?.recursos).toEqual(['25 pacientes ativos', '25 links do paciente'])
-    expect(planoPorId('pro')?.recursos).toEqual(['Pacientes ilimitados', 'Links do paciente ilimitados'])
+    expect(planoPorId('free')?.recursos).toEqual(['2 pacientes ativos', '2 pacientes com link'])
+    expect(planoPorId('estudante')?.recursos).toEqual(['10 pacientes ativos', '3 pacientes com link', 'Grátis até a formatura'])
+    expect(planoPorId('solo')?.recursos).toEqual(['25 pacientes ativos', '25 pacientes com link'])
+    expect(planoPorId('pro')?.recursos).toEqual(['Pacientes ilimitados', 'Pacientes com link ilimitados'])
   })
 
   it('D-407: o texto de cada assinatura diz para quem ela é, sem tagline', () => {

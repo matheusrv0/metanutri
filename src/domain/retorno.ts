@@ -175,6 +175,8 @@ export function ultimoLinkPorPaciente(
 ): ReadonlyMap<string, Acompanhamento> {
   const mapa = new Map<string, Acompanhamento>()
   for (const acompanhamento of acompanhamentos) {
+    // Spec lado-do-paciente, D-1217: o link substituído pelo fixo não conta.
+    if (acompanhamento.substituidoPor) continue
     const pacienteId = pacienteDoAcompanhamento(acompanhamento, casos)
     if (pacienteId === null) continue
     const atual = mapa.get(pacienteId)

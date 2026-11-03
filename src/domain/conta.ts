@@ -46,9 +46,10 @@ export interface PlanoAssinatura {
   readonly recursos: readonly string[]
 }
 
-/** "25 pacientes ativos" e "25 links do paciente", a partir dos números do plano: o texto não tem como divergir deles. */
+/** "25 pacientes ativos" e "25 pacientes com link", a partir dos números do plano: o texto não tem como divergir deles. */
 function textoDosLimites(pacientes: number | null, links: number | null): readonly string[] {
-  return [pacientes === null ? 'Pacientes ilimitados' : `${pacientes} pacientes ativos`, links === null ? 'Links do paciente ilimitados' : `${links} links do paciente`]
+  // Spec lado-do-paciente, D-1214: o link é por paciente; o limite conta pacientes com link.
+  return [pacientes === null ? 'Pacientes ilimitados' : `${pacientes} pacientes ativos`, links === null ? 'Pacientes com link ilimitados' : `${links} pacientes com link`]
 }
 
 /**

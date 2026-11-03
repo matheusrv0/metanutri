@@ -100,7 +100,7 @@ describe('Cartão do link de missões', () => {
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
 
     const campo = screen.getByLabelText('Endereço do link') as HTMLInputElement
-    expect(campo.value).toContain('#/missoes/')
+    expect(campo.value).toContain('/p/')
     expect(screen.getByText('Ainda não começou')).toBeInTheDocument()
   })
 
@@ -183,7 +183,7 @@ describe('Cartão do link de missões', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Copiar' }))
 
-    expect(escrever).toHaveBeenCalledWith(expect.stringContaining('#/missoes/'))
+    expect(escrever).toHaveBeenCalledWith(expect.stringContaining('/p/'))
     expect(await screen.findByRole('button', { name: 'Copiado' })).toBeInTheDocument()
     vi.unstubAllGlobals()
   })

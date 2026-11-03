@@ -393,10 +393,10 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
     it('CA-1677: Free, Solo e Pro com nome, descrição, preço, botão e limites de PLANOS', () => {
       montar()
       expect(lido(cartao('Free'))).toBe(
-        'Free | Para testar com um paciente real, sem cartão. | R$ 0R$0 | Sem cartão de crédito | Começar grátis | 2 pacientes ativos | 2 links do paciente | Todas as funções',
+        'Free | Para testar com um paciente real, sem cartão. | R$ 0R$0 | Sem cartão de crédito | Começar grátis | 2 pacientes ativos | 2 pacientes com link | Todas as funções',
       )
       expect(lido(cartao('Solo'))).toBe(
-        'Solo | Para quem está começando a atender. | R$ 34,90R$34,90 | por mêsou R$ 299 por ano | Assinar o Solo | 25 pacientes ativos | 25 links do paciente | Todas as funções',
+        'Solo | Para quem está começando a atender. | R$ 34,90R$34,90 | por mêsou R$ 299 por ano | Assinar o Solo | 25 pacientes ativos | 25 pacientes com link | Todas as funções',
       )
       expect(lido(cartao('Pro'))).toContain('R$ 64,90R$64,90 | por mêsou R$ 599 por ano | Assinar o Pro | Pacientes ilimitados')
     })

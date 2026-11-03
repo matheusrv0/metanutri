@@ -10,9 +10,11 @@ import {
   LIMITE_DE_LINKS,
   type ClienteMissoes,
 } from '@/domain/fonteSupabase.ts'
+import { linksVigentes, migrarParaLinkFixo } from '@/domain/linkFixo.ts'
 import { criarRepositorioAcompanhamentos, mesmoLink, type MarcasDoLink, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { useRegistrarEnvio } from '../sessao/contextoEnvios.ts'
 import { useArmazenamento } from './contextoArmazenamento.ts'
+import { useCasosOpcional } from './contextoCasos.ts'
 import { obterSupabase } from './supabase.ts'
 import { ContextoAcompanhamentos, type ValorAcompanhamentos } from './contextoAcompanhamentos.ts'
 
@@ -36,6 +38,12 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
   // A cópia da conta que entrou (spec dados-por-conta, D-120).
   const armazenamento = useArmazenamento()
   const [repo] = useState<RepositorioAcompanhamentos>(() => repositorio ?? criarRepositorioAcompanhamentos(armazenamento))
+  // Spec lado-do-paciente, D-1217: a migração para o link fixo acha o paciente de cada link pelo plano (D-147).
+  const planos = useCasosOpcional()?.casos
+  const planosRef = useRef(planos ?? [])
+  useEffect(() => {
+    planosRef.current = planos ?? []
+  }, [planos])
   // O tipo do cliente do Supabase é fundo demais para o TypeScript casar com a interface
   // pequena da porta (TS2589), como em Configurações. A forma em tempo de execução é a mesma.
   const [cliente] = useState(() => obterSupabase() as unknown as ClienteMissoes | null)
@@ -264,6 +272,24 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
     return leitura
   }, [cliente, repo, usuarioId, atualizar, marcarNoAparelho])
 
+  /**
+   * D-1217 e CA-2225 (DP-LP-5): os links de antes, um por plano, passam a apontar para o mais recente do mesmo paciente.
+   * Roda depois de cada leitura da nuvem (o banco já migrou o que existia quando o 017 rodou; isto pega os links que um
+   * app antigo criou depois) e, sem nuvem, ao abrir. Grava pelo `salvar` de sempre.
+   */
+  const migrar = useCallback(() => {
+    for (const mudado of migrarParaLinkFixo(repo.listar(), planosRef.current)) void salvar(mudado)
+  }, [repo, salvar])
+
+  const lerDaNuvemEMigrar = useCallback(async (): Promise<void> => {
+    await lerDaNuvem()
+    if (ativo.current) migrar()
+  }, [lerDaNuvem, migrar])
+
+  useEffect(() => {
+    if (!cliente) migrar()
+  }, [cliente, migrar])
+
   // Spec separacao-site-app, DP-SA-8: a saída por tempo espera esta leitura, que reenvia os links pendentes (CB-108).
   useRegistrarEnvio(lerDaNuvem)
 
@@ -278,17 +304,18 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
     () => ({
       repositorio: repo,
       fonte,
-      acompanhamentos: repo.listar(),
+      // D-1217: o link substituído pela migração some da Adesão, da ficha e do limite; continua guardado.
+      acompanhamentos: linksVigentes(repo.listar()),
       avisoArmazenamento: repo.aviso,
       salvar,
       remover,
-      lerDaNuvem,
+      lerDaNuvem: lerDaNuvemEMigrar,
       avisoNuvem,
       foraDaNuvem,
     }),
     // versao força recalcular a lista depois de cada mudança
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [repo, fonte, salvar, remover, lerDaNuvem, avisoNuvem, foraDaNuvem, versao],
+    [repo, fonte, salvar, remover, lerDaNuvemEMigrar, avisoNuvem, foraDaNuvem, versao],
   )
 
   return <ContextoAcompanhamentos.Provider value={valor}>{children}</ContextoAcompanhamentos.Provider>
