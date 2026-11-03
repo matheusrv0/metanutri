@@ -1,6 +1,7 @@
 import { criarCasoVazio } from './caso.ts'
 import { FONTES } from './fontesAntropometria.ts'
 import { metaDePerda, pesoAlvo, type ResultadoDaMeta } from './metaDePerda.ts'
+import { prioridadeDoCaso } from './prioridadeClinica.ts'
 import type { Caso } from './tipos.ts'
 
 const vazio = criarCasoVazio('c')
@@ -132,5 +133,17 @@ describe('déficit abaixo de IMC 25 (spec antropometria-completa, revisão, CA-2
 describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () => {
   it('CA-2083: o peso-alvo e o prazo mínimo avisam que são proposta do app', () => {
     expect(mostrada(metaDePerda(caso(), { gorduraAlvoPct: 25 })).avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
+  })
+})
+
+describe('objetivo do plano (spec antropometria-completa, revisão, CA-2086)', () => {
+  it.each(['ganhar', 'manter'] as const)('CA-2086: objetivo "%s" com prioridade ≥ 1 → sem meta de perda; a prioridade vem', (objetivo) => {
+    const c = caso({ objetivo })
+    expect(prioridadeDoCaso(c)?.nivel).toBeGreaterThanOrEqual(1)
+    expect(metaDePerda(c)).toBeNull()
+  })
+
+  it('CA-2086: sem objetivo, a mesma prioridade traz a meta', () => {
+    expect(metaDePerda(caso({ objetivo: null }))?.mostra).toBe(true)
   })
 })

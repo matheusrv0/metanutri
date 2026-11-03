@@ -63,10 +63,12 @@ export interface EntradaDaMeta {
 
 const PISO_KCAL = 800
 
-/** A meta de perda do caso (D-1034): com prioridade ≥ 1 ou objetivo "emagrecer"; nunca com risco nutricional. */
+/** A meta de perda do caso (D-1034): com prioridade ≥ 1 ou objetivo "emagrecer"; nunca com "ganhar", "manter" ou risco nutricional. */
 export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoDaMeta | null {
   const idade = idadeValida(caso.idadeAnos)
   if (idade === null || idade < 18 || caso.condicao.tipo === 'gestante') return null
+  // Observação da revisão (D-1034): "ganhar" ou "manter" escolhido pela nutricionista manda sobre a prioridade.
+  if (caso.objetivo === 'ganhar' || caso.objetivo === 'manter') return null
   if (caso.condicao.tipo === 'lactante') return { mostra: false, motivo: 'Nenhuma fonte conferida trata da meta de perda na lactação.' }
   const peso = medidaValida(caso.pesoKg)
   const estatura = medidaValida(caso.estaturaCm)
