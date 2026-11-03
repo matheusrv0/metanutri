@@ -14,26 +14,29 @@ protótipo aprovado.
 | `src/data/sqlAssistenteIa.test.ts` | T1 | novo: o texto do 016 |
 | `testes/seguranca/ia.test.ts` | T1 | novo: o 016 de verdade no Supabase local (RLS, atômico, cascata) |
 | `testes/seguranca/preparo.ts` | T1 | `uso_da_ia` entra na lista de tabelas fechadas |
-| `src/domain/iaLimites.ts` (+ teste) | T2 | novo: limites por plano, mês de Brasília, "renovam em" e o texto do contador |
-| `supabase/functions/_shared/iaContrato.ts` | T3 | novo: o pedido limpo por lista branca, a limpeza de contato, o esquema da resposta e a conferência dela |
+| `src/domain/iaLimites.ts` (+ teste) | T2 | novo: o contador e a frase do limite; a tabela e o mês de Brasília vêm do contrato da função |
+| `supabase/functions/_shared/iaContrato.ts` | T3 | novo: o pedido limpo por lista branca, a limpeza de contato, a conferência da resposta, os limites, o mês de Brasília e as frases (o navegador importa daqui, como já faz com `cobranca.ts`) |
 | `src/data/servidorIaContrato.test.ts` | T3 | novo |
 | `src/domain/iaCatalogo.ts` (+ teste) | T4 | novo: monta o catálogo da IA a partir da base (regra prescritível, "fonte de") |
 | `supabase/functions/_shared/iaCatalogo.ts` | T4 | novo, gerado: o texto do catálogo e os ids; `src/data/iaCatalogo.test.ts` confere e regrava com `ATUALIZAR_CATALOGO_IA=1` |
 | `supabase/functions/_shared/iaPrompt.ts` | T5 | novo: as regras (desenho, seção 10), o esquema e a mensagem do usuário montada do pedido limpo |
 | `src/data/servidorIaPrompt.test.ts` | T5 | novo |
+| `supabase/functions/_shared/iaPortas.ts` | T6 | novo: os tipos das portas (modelo e banco) |
 | `supabase/functions/_shared/iaAnthropic.ts` | T6 | novo: a porta do modelo por `fetch` (corpo, cabeçalhos, prazo, leitura do fluxo SSE, erros, usos por modelo) |
 | `src/data/servidorIaAnthropic.test.ts` | T6 | novo, com `fetch` de mentira |
 | `supabase/functions/_shared/ia.ts` | T7 | novo: o núcleo (ordem do D-1316, limites, teto, custo, conclusão) |
 | `supabase/functions/_shared/iaFalsa.ts` | T7 | novo: a porta do modelo falso (D-1325) |
 | `src/data/servidorIa.test.ts` | T7 | novo: o núcleo com banco e modelo de mentira |
-| `src/data/servidorFalsos.test-utils.ts` | T7 | ganha o banco da IA de mentira |
+| `src/data/servidorIaFalsos.test-utils.ts` | T3 a T7 | novo: o pedido de exemplo, o fluxo SSE, o banco e o modelo da IA de mentira (arquivo próprio, para não mexer no das outras funções) |
 | `supabase/functions/_shared/iaSupabase.ts` | T8 | novo: a porta do banco (RPCs do 016, perfil, assinatura, pedido de estudante) |
 | `supabase/functions/sugerir-plano/index.ts` | T8 | novo: a ligação no Deno |
 | `src/data/servidorIaLigacao.test.ts` | T8 | novo: o texto da ligação |
 | `src/domain/iaPedido.ts` (+ teste) | T9 | novo: `perfilParaIa`, `naoUsar`, `meusAlimentosParaIa`, `metasParaIa`, `focoDaFase`, `motivoParaNaoUsarIa`, `lacunasDoPlano` |
+| `src/domain/ia.test-utils.ts` | T9 | novo: a gestante do desenho e um plano de ids reais, para os testes do domínio |
 | `src/domain/iaConferencia.ts` (+ teste) | T10 | novo: as 13 conferências e o ajuste de energia; `propostaParaPlano` |
+| `src/domain/cobrir.ts` | T10 | `porcaoMaximaNaIdade` passa a ser exportada (a conferência usa a mesma porção do Cobrir) |
 | `src/domain/iaMudancas.ts` (+ teste) | T11 | novo: conferir, aplicar e o efeito das mudanças do modo adequar |
-| `src/seguranca/csp.test.ts` | T11 | o CA-2354 |
+| `src/seguranca/cspIa.test.ts` | T11 | novo: o CA-2354 |
 | `src/data/avaliacaoIa.test.ts` | T12 | novo: os 17 casos; só roda com `AVALIAR_IA=1` e `ANTHROPIC_API_KEY` |
 
 ### P2 — telas, ficha e documentos (depois da aprovação do protótipo)
@@ -55,7 +58,7 @@ protótipo aprovado.
 
 ## 2. Tarefas da P1
 
-- [ ] **T1 — O banco (016).** Depende de nada. Tabela `public.uso_da_ia` (D-1319) com índices por conta e data e por
+- [x] **T1 — O banco (016).** Depende de nada. Tabela `public.uso_da_ia` (D-1319) com índices por conta e data e por
   data, RLS e `revoke all` de `anon` e `authenticated`. `reservar_uso_da_ia(p_conta, p_modo, p_consentimento,
   p_limite_mes, p_inicio_mes, p_limite_hora)` com `pg_advisory_xact_lock` por conta: apaga os de mais de 13 meses,
   conta o mês (`ok` + `reservado` de menos de 10 min desde `p_inicio_mes`) e a hora (tudo da última hora), e anota
@@ -63,29 +66,29 @@ protótipo aprovado.
   `uso_da_ia_no_mes` e `custo_da_ia_desde` para o contador e o teto. Funções só para `service_role`. Transação,
   `notify pgrst` e as consultas de conferência no fim. Teste de texto (CA-2322 a CA-2324) e, no Supabase local, RLS,
   concorrência e cascata.
-- [ ] **T2 — Os limites (domínio).** `LIMITE_DE_SUGESTOES_IA`, `inicioDoMesEmBrasilia`, `renovaEm`,
+- [x] **T2 — Os limites (domínio).** `LIMITE_DE_SUGESTOES_IA`, `inicioDoMesEmBrasilia`, `renovaEm`,
   `textoDoContador` ("7 de 20 sugestões em novembro") e `textoDoLimite` (CA-2307, CA-2374, D-1321). A função tem a
   mesma tabela (`_shared/iaContrato.ts`), e um teste confere que as duas batem.
-- [ ] **T3 — O contrato.** `limparPedido` (lista branca, cortes, números na faixa, "[removido]"; CA-2303, CA-2304 e
+- [x] **T3 — O contrato.** `limparPedido` (lista branca, cortes, números na faixa, "[removido]"; CA-2303, CA-2304 e
   CA-2311) e `conferirResposta` (esquema por código, ids, gramas, cortes, `foraDaBase`; CA-2314 e CA-2317).
-- [ ] **T4 — O catálogo.** `montarCatalogoIa(alimentos)` no domínio e o arquivo gerado na função (CA-2355, D-1315).
+- [x] **T4 — O catálogo.** `montarCatalogoIa(alimentos)` no domínio e o arquivo gerado na função (CA-2355, D-1315).
   Depende de nada.
-- [ ] **T5 — O prompt.** As regras (desenho 10.1), o `ESQUEMA_RESPOSTA` (desenho 3.3) e `montarMensagem(pedidoLimpo,
+- [x] **T5 — O prompt.** As regras (desenho 10.1), o `ESQUEMA_RESPOSTA` (desenho 3.3) e `montarMensagem(pedidoLimpo,
   nomes)` na ordem fixa do desenho 10.2. Testes: sem data nem hora, o texto fixo não muda, a mensagem não tem campo
   fora da lista. Depende de T3 e T4.
-- [ ] **T6 — A porta da IA.** `criarModeloAnthropic(chave, opcoes, buscar = fetch)`: monta o corpo do CA-2312, lê o
+- [x] **T6 — A porta da IA.** `criarModeloAnthropic(chave, opcoes, buscar = fetch)`: monta o corpo do CA-2312, lê o
   fluxo (`message_start`, `content_block_*`, `message_delta`, `error`), devolve `ok` / `recusa` / `cortada` /
   `erro-http` / `erro-fluxo` / `demorou` / `sem-rede`, com o uso por modelo (`usage.iterations` quando vier).
   Depende de T5.
-- [ ] **T7 — O núcleo.** `sugerirPlano(pedido, dependencias)` na ordem do D-1316 (CA-2300 a CA-2321) e a porta falsa
+- [x] **T7 — O núcleo.** `sugerirPlano(pedido, dependencias)` na ordem do D-1316 (CA-2300 a CA-2321) e a porta falsa
   (CA-2321). Depende de T1 a T6.
-- [ ] **T8 — A ligação.** `iaSupabase.ts` (RPCs e leituras com `npm:@supabase/supabase-js@2.117.2`) e o `index.ts`
+- [x] **T8 — A ligação.** `iaSupabase.ts` (RPCs e leituras com `npm:@supabase/supabase-js@2.117.2`) e o `index.ts`
   (CORS, 64 KB, segredos `ANTHROPIC_API_KEY`, `IA_MODELO`, `IA_ESFORCO`, `IA_TETO_DIARIO_USD`, `IA_MODO`). Teste de
   texto: sem decisão no `index.ts`, `npm:` com versão fixa, a chave só lida do ambiente.
-- [ ] **T9 — O pedido no navegador.** CA-2330 a CA-2335 e CA-2352.
-- [ ] **T10 — A conferência.** CA-2336 a CA-2350.
-- [ ] **T11 — O modo adequar e a CSP.** CA-2351, CA-2353 e CA-2354.
-- [ ] **T12 — A avaliação real.** Os 17 casos do desenho, montados com `perfilParaIa`, chamados pelo núcleo com a
+- [x] **T9 — O pedido no navegador.** CA-2330 a CA-2335 e CA-2352.
+- [x] **T10 — A conferência.** CA-2336 a CA-2350.
+- [x] **T11 — O modo adequar e a CSP.** CA-2351, CA-2353 e CA-2354.
+- [x] **T12 — A avaliação real.** Os 17 casos do desenho, montados com `perfilParaIa`, chamados pelo núcleo com a
   porta de verdade e conferidos com `conferirSugestao`; mede as metas do desenho (8.3) e escreve o relatório em
   `AVALIAR_IA_SAIDA` (fora do repositório). Pulado sem `AVALIAR_IA=1` e sem `ANTHROPIC_API_KEY`. Não roda sem o "sim"
   do dono para o gasto.
