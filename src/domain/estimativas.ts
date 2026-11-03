@@ -1,7 +1,7 @@
 // Estimativas de altura e peso de quem não fica em pé (spec antropometria-completa, D-1030): Chumlea no idoso, Rabito
 // no adulto brasileiro. Medidas em cm, dobra em mm, idade em anos, resultado em cm ou kg, sempre "estimado".
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
-import { medidaValida, type CampoQueFalta } from './linhaDoResultado.ts'
+import { idadeValida, medidaValida, type CampoQueFalta } from './linhaDoResultado.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
 /** Chumlea, Roche & Steinbaugh 1985, 60 a 90 anos, altura do joelho deitado [V2]: H = 64,19 − 0,04·idade + 2,02·AJ; M = 84,88 − 0,24·idade + 1,83·AJ. */
@@ -112,7 +112,7 @@ function medidasDoCaso(caso: Caso, preferido: Lado): MedidasComLado {
   return {
     valores: {
       sexo: caso.sexo,
-      idade: caso.idadeAnos,
+      idade: idadeValida(caso.idadeAnos),
       alturaDoJoelho: medidaValida(caso.medidasCorporais.alturaDoJoelhoCm),
       semienvergadura: medidaValida(caso.medidasCorporais.semienvergaduraCm),
       braco: braco?.valor ?? null,
@@ -209,8 +209,9 @@ const rabitoIII = (m: MedidasComLado): Estimativa =>
 
 /** Para quem as estimativas valem: adulto de 18 anos em diante, fora da gestação; o idoso é de 60 em diante (D-1030). */
 function fase(caso: Caso): 'adulto' | 'idoso' | null {
-  if (caso.condicao.tipo === 'gestante' || caso.idadeAnos === null || caso.idadeAnos < 18) return null
-  return caso.idadeAnos >= 60 ? 'idoso' : 'adulto'
+  const idade = idadeValida(caso.idadeAnos)
+  if (caso.condicao.tipo === 'gestante' || idade === null || idade < 18) return null
+  return idade >= 60 ? 'idoso' : 'adulto'
 }
 
 /** As estimativas de altura, a recomendada primeiro: idoso Chumlea 1985 e Rabito VII; adulto Rabito VII. */

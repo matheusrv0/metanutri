@@ -91,6 +91,7 @@ prioridade, meta de perda e mudança mínima detectável).
 | D-1037 | **Tabelas de Frisancho por script, sem redigitar:** `scripts/dados/importar-frisancho.mjs` lê as tabelas copiadas da pesquisa (`dados-brutos/antropometria/frisancho-percentis.md`) e grava `src/data/frisancho.json` nas unidades da fonte (1981: CB e CMB em mm, AMB em mm²); o código converte. Os testes conferem a ordem crescente de cada linha e as células que a pesquisa resolveu | Pesquisa 3.18 e D-B10 |
 | D-1038 | **Faixa da soma e pico da parábola** (revisão independente, item 2). Cada protocolo guarda a faixa da soma na amostra publicada e, nas quadráticas, o pico da parábola (Σ = b ÷ 2c, onde a densidade para de cair). **Acima do pico a equação inverte** (mais dobra daria menos gordura): o motor não calcula e diz por quê. Fora da faixa da amostra, mas até o pico, calcula e avisa com a faixa. Faixas: JP78 Σ3 14–118 mm e Σ7 32–272 mm (Tabela 1 do original); Durnin & Womersley Σ4 15–210 mm (Tabela 9 do original); Petroski mulher 21–118 mm, inferida pela faixa de cada dobra (Petroski e Pires-Neto 1995, Tabela 1: SE 5–35, SI 3–31, CX 13–52; não é limite publicado, e o aviso diz isso); JPW80, Petroski homem, Guedes, Faulkner e Slaughter, não publicada (sem aviso de faixa). Picos: JP3 homem 258,3 mm; JP3 mulher 215,8; JP7 homem 395,4; JP7 mulher 419,4; Petroski homem 191,5; Petroski mulher 115,5. O Slaughter só usa a quadrática até 35 mm, longe do pico dele (51 e 76 mm) | Pesquisa 2.2 e 2.4.3; a sonda da revisão mostrou o % de gordura caindo com a soma subindo em Petroski mulher acima de 115,5 mm |
 | D-1039 | **Suprailíaca pela linha** (revisão independente, item 5). Cada protocolo diz a linha que usa: Jackson & Pollock 3 e 7, a **axilar anterior** (ACSM/JP); Durnin & Womersley e Petroski, a **axilar média** (D&W: "just above the iliac crest in the mid-axillary line"; Petroski seguiu Harrison 1991, o manual de Lohman, que mede na axilar média); Guedes e Faulkner, a pesquisa não registra. A conta usa a dobra da linha do protocolo; sem ela, a de linha não informada (o valor dos planos de antes: a tela de hoje nunca disse a linha), com aviso; sem as duas, a da outra linha, com o aviso de que o resultado pode estar deslocado (a pesquisa 2.7 D5 manda avisar, não bloquear; quem decide é a nutricionista). No protocolo sem linha registrada: a de linha não informada, depois a anterior, depois a média, com o aviso da linha usada. Falta a suprailíaca só quando as três estão vazias, e a falta aponta o campo da linha do protocolo. **Abdominal:** entre os protocolos daqui só Jackson & Pollock diz o local (2 cm à direita da cicatriz umbilical, vertical, ACSM); Guedes e Faulkner não dizem. Sem variação a resolver, o local da abdominal não ganha campo agora: entra com o primeiro protocolo ISAK (5 cm) ou Lohman (3 cm) | Pesquisa 1.4 (quadro "suprailíaca ≠ crista ilíaca ≠ supraespinal": trocar a linha muda o número) e 1.9 D1 |
+| D-1040 | **Idade não informada** (revisão independente, item 11). Idade é número finito de 0 em diante; vazia, `NaN`, `Infinity` ou negativa conta como **não informada** em todo o motor: a fase da vida não sai, os protocolos com idade na conta pedem a idade (com idade fora da conta, calculam sem o aviso de população), as linhas com faixa por idade dizem que falta a idade (e não "sem referência para a idade"), e prioridade, meta de perda, estimativas, peso de referência, gasto de repouso e proteína não vêm. O motor nunca compara uma idade inválida com um corte | A sonda da revisão: idade `NaN` virava adulto nas estimativas, na prioridade e na meta de perda (`NaN < 18` é falso), e idade −3 entrava na conta de JP 3 |
 
 ## 3. Critérios de aceite
 
@@ -311,6 +312,11 @@ prioridade, meta de perda e mudança mínima detectável).
 - **CA-2084** · Dado braço direito 30 e esquerdo 28 e panturrilha direita 36 e esquerda 34, então Rabito usa 28 e 34 e diz
   "esquerdo"; Chumlea usa 30 e 36 e diz "direito"; só com o lado direito, Rabito usa o direito e diz isso; sem nenhum,
   a falta de Rabito aponta o campo do lado esquerdo.
+- **CA-2085** · Dado a idade `NaN`, `Infinity`, `−Infinity`, −3 ou vazia, então: a fase da vida é `null`; JP 3 não calcula
+  e pede a idade; Faulkner calcula, sem o aviso de população; a conversão automática não sai; o IMC do adulto traz o
+  valor e diz que falta a idade; a gordura traz o valor e diz que falta a idade; a panturrilha do idoso, a cintura, as
+  estimativas, o peso de referência, a prioridade, a meta de perda, o gasto de repouso e a proteína não vêm; as linhas
+  do braço dizem que falta a idade.
 
 ## 4. Dobras exigidas por protocolo
 
@@ -357,6 +363,8 @@ prioridade, meta de perda e mudança mínima detectável).
   sem estatura → idem. *Revisto (item 8):* o atleta sem % de gordura que emagrece fica com a ISSN, e o aviso diz que o %
   decide a faixa de Helms.
 - **CB-1014** · Mudança mínima com as duas medidas iguais a zero ou vazias → não calcula.
+- **CB-1016** · Idade inválida (`NaN`, `Infinity`, negativa) → igual a idade vazia (D-1040), com a mesma frase do que
+  falta.
 - **CB-1015** · Erro, tempo esgotado, permissão e concorrência: o motor é puro (sem rede, sem disco, sem estado
   compartilhado), então não há tempo esgotado, permissão nem disputa entre abas aqui; entrada inválida devolve
   resultado com o motivo, nunca exceção. A leitura do plano gravado (CA-2001) continua com as regras de hoje para JSON

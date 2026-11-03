@@ -5,6 +5,7 @@ import { IDADE_ADULTO, IDADE_IDOSO, avaliarAntropometria, calcularImc } from './
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import {
   deAte,
+  idadeValida,
   linhaSemValor,
   medidaValida,
   naPrecisao,
@@ -22,9 +23,10 @@ export type FaseDaVida = 'crianca-adolescente' | 'adulto' | 'idoso' | 'gestante'
 /** A fase que escolhe a referência do IMC: até 19 anos, curvas da OMS; de 20 a 59, adulto; de 60 em diante, idoso. */
 export function faseDaVida(caso: Pick<Caso, 'idadeAnos' | 'condicao'>): FaseDaVida | null {
   if (caso.condicao.tipo === 'gestante') return 'gestante'
-  if (caso.idadeAnos === null) return null
-  if (caso.idadeAnos < IDADE_ADULTO) return 'crianca-adolescente'
-  return caso.idadeAnos < IDADE_IDOSO ? 'adulto' : 'idoso'
+  const idade = idadeValida(caso.idadeAnos)
+  if (idade === null) return null
+  if (idade < IDADE_ADULTO) return 'crianca-adolescente'
+  return idade < IDADE_IDOSO ? 'adulto' : 'idoso'
 }
 
 export const CAMPOS = {
@@ -164,7 +166,7 @@ function linhaImcPreGestacional(caso: Caso): LinhaDoResultado {
 }
 
 /** Adulto de 20 anos ou mais, fora da gestação: onde cintura, RCQ, RCE e pescoço valem. */
-const adultoForaDaGestacao = (caso: Caso) => caso.idadeAnos !== null && caso.idadeAnos >= IDADE_ADULTO && caso.condicao.tipo !== 'gestante'
+const adultoForaDaGestacao = (caso: Caso) => (idadeValida(caso.idadeAnos) ?? -1) >= IDADE_ADULTO && caso.condicao.tipo !== 'gestante'
 
 const PONTOS: readonly PontoDaCintura[] = ['ponto-medio', 'crista-iliaca', 'menor-perimetro']
 /** O ponto gravado; um valor que esta versão não conhece vira `desconhecido` (CB-1008). */
@@ -276,7 +278,8 @@ export function linhaRcq(caso: Caso, referencia: 'oms' | 'bray-gray' = 'oms'): L
   const linha = base('rcq', 'Razão cintura/quadril', '', 2)
   const cintura = medidaValida(caso.circunferenciaCinturaCm)
   const quadril = medidaValida(caso.medidasCorporais.quadrilCm)
-  const { sexo, idadeAnos } = caso
+  const { sexo } = caso
+  const idadeAnos = idadeValida(caso.idadeAnos)
   if (cintura === null || quadril === null || sexo === null) {
     return linhaSemValor(linha, faltasDe([[sexo === null, CAMPOS.sexo], [cintura === null, CAMPOS.cintura], [quadril === null, CAMPOS.quadril]]))
   }
@@ -381,7 +384,7 @@ export function ladoMedido(direito: number | null, esquerdo: number | null): { r
 
 /** Idoso: Pagotto 2018 (< 34 cm no homem; < 33 cm na mulher), com a nota dos 31 cm da OMS, como hoje (D-1029). */
 export function linhaPanturrilha(caso: Caso): LinhaDoResultado | null {
-  if (caso.idadeAnos === null || caso.idadeAnos < referencias.panturrilha.idadeMin) return null
+  if ((idadeValida(caso.idadeAnos) ?? -1) < referencias.panturrilha.idadeMin) return null
   const linha = base('panturrilha', 'Panturrilha', 'cm', 1)
   const medida = ladoMedido(caso.circunferenciaPanturrilhaCm, caso.medidasCorporais.panturrilhaEsquerdaCm)
   const { sexo } = caso

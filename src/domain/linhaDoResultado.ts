@@ -111,6 +111,11 @@ export function medidaValida(valor: number | null | undefined): number | null {
   return typeof valor === 'number' && Number.isFinite(valor) && valor > 0 ? valor : null
 }
 
+/** Idade em anos: número finito de 0 em diante; vazia, `NaN`, `Infinity` ou negativa é idade não informada (D-1040). */
+export function idadeValida(idade: number | null | undefined): number | null {
+  return typeof idade === 'number' && Number.isFinite(idade) && idade >= 0 ? idade : null
+}
+
 /** Intervalo fechado embaixo e aberto em cima: [min, max). */
 export const deAte = (min: number | null, max: number | null): Intervalo => ({ min, minInclusivo: true, max, maxInclusivo: false })
 

@@ -3,7 +3,7 @@
 import { calcularImc } from './antropometria.ts'
 import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
-import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
+import { idadeValida, medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import { prioridadeDoCaso } from './prioridadeClinica.ts'
 import type { Caso } from './tipos.ts'
 
@@ -65,7 +65,8 @@ const PISO_KCAL = 800
 
 /** A meta de perda do caso (D-1034): com prioridade ≥ 1 ou objetivo "emagrecer"; nunca com risco nutricional. */
 export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoDaMeta | null {
-  if (caso.idadeAnos === null || caso.idadeAnos < 18 || caso.condicao.tipo === 'gestante') return null
+  const idade = idadeValida(caso.idadeAnos)
+  if (idade === null || idade < 18 || caso.condicao.tipo === 'gestante') return null
   if (caso.condicao.tipo === 'lactante') return { mostra: false, motivo: 'Nenhuma fonte conferida trata da meta de perda na lactação.' }
   const peso = medidaValida(caso.pesoKg)
   const estatura = medidaValida(caso.estaturaCm)
@@ -78,7 +79,7 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
 
   const imc = naPrecisao(calcularImc(peso, estatura), 2)
   // Revisão (item 1): no idoso, só com sobrepeso pelo SISVAN (IMC de 27 ou mais, Quadro 18).
-  if (caso.idadeAnos >= 60 && imc < 27) {
+  if (idade >= 60 && imc < 27) {
     return {
       mostra: false,
       motivo:

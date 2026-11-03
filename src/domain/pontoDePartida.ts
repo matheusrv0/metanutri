@@ -4,7 +4,7 @@ import { calcularImc } from './antropometria.ts'
 import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
 import { gorduraDoCaso, inicioDoSobrepesoDeGallagher, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
-import { medidaValida, naPrecisao, type CampoQueFalta } from './linhaDoResultado.ts'
+import { idadeValida, medidaValida, naPrecisao, type CampoQueFalta } from './linhaDoResultado.ts'
 import { pesoDeReferencia, type BaseDoPeso, type OpcaoDePeso } from './pesoDeReferencia.ts'
 import type { Caso } from './tipos.ts'
 
@@ -23,7 +23,7 @@ const imcDoCaso = (caso: Caso): number | null => {
 }
 
 /** Adulto de 18 anos em diante e fora da gestação (pesquisa 4.10, D19). */
-const adultoForaDaGestacao = (caso: Caso) => caso.idadeAnos !== null && caso.idadeAnos >= 18 && caso.condicao.tipo !== 'gestante'
+const adultoForaDaGestacao = (caso: Caso) => (idadeValida(caso.idadeAnos) ?? -1) >= 18 && caso.condicao.tipo !== 'gestante'
 
 // --- Gasto de repouso ---------------------------------------------------------------------------------------------
 
@@ -134,7 +134,8 @@ const SEM_NUMERO = 'Sem número conferido para este perfil: a RDA de 0,8 g/kg n�
 
 /** A linha da tabela R4.3b que vale para o caso, ou o motivo de não haver (D-1032). */
 function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | null): Regra | { readonly motivo: string; readonly falta: readonly CampoQueFalta[] } {
-  const idade = caso.idadeAnos ?? 0
+  // Só chega aqui o adulto com idade válida (adultoForaDaGestacao, D-1040).
+  const idade = idadeValida(caso.idadeAnos) ?? 18
   const ativo = entrada.perfil !== 'sedentario'
   if (idade >= 65) {
     // PROT-AGE 2013 e ESPEN 2014.

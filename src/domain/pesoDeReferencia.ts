@@ -4,10 +4,10 @@ import { IDADE_ADULTO, IDADE_IDOSO, calcularImc } from './antropometria.ts'
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
 import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
-import { dentroDoIntervalo, linhaSemValor, medidaValida, naPrecisao, situacaoNaFaixa, type CampoQueFalta, type FaixaRotulada, type Intervalo, type LinhaDoResultado } from './linhaDoResultado.ts'
+import { dentroDoIntervalo, idadeValida, linhaSemValor, medidaValida, naPrecisao, situacaoNaFaixa, type CampoQueFalta, type FaixaRotulada, type Intervalo, type LinhaDoResultado } from './linhaDoResultado.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
-const adultoForaDaGestacao = (caso: Caso) => caso.idadeAnos !== null && caso.idadeAnos >= IDADE_ADULTO && caso.condicao.tipo !== 'gestante'
+const adultoForaDaGestacao = (caso: Caso) => (idadeValida(caso.idadeAnos) ?? -1) >= IDADE_ADULTO && caso.condicao.tipo !== 'gestante'
 const PUNHO: CampoQueFalta = { campo: 'medidasCorporais.punhoCm', nome: 'o punho' }
 
 export type Compleicao = 'pequena' | 'media' | 'grande'
@@ -77,7 +77,7 @@ export function pesoIdeal(caso: Caso, imcAlvoDigitado: number | null = null): Re
   const estatura = medidaValida(caso.estaturaCm)
   if (estatura === null) return { calculou: false, falta: [CAMPOS.estatura] }
   const m2 = (estatura / 100) ** 2
-  const idoso = caso.idadeAnos !== null && caso.idadeAnos >= IDADE_IDOSO
+  const idoso = (idadeValida(caso.idadeAnos) ?? -1) >= IDADE_IDOSO
   const compleicao = idoso ? null : compleicaoDoCaso(caso)
   const digitado = medidaValida(imcAlvoDigitado)
   const imcAlvo = digitado ?? (idoso ? IMC_ALVO_DO_IDOSO : compleicao ? IMC_ALVO_POR_COMPLEICAO[compleicao] : IMC_ALVO_POR_COMPLEICAO.media)

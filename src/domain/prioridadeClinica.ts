@@ -4,7 +4,7 @@
 import { calcularImc } from './antropometria.ts'
 import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { ladoMedido } from './indicadoresCorporais.ts'
-import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
+import { idadeValida, medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import type { Caso, PontoDaCintura, Sexo } from './tipos.ts'
 
 export type NivelDePrioridade = 0 | 1 | 2 | 3 | 4
@@ -37,6 +37,7 @@ export interface Prioridade {
 
 export interface EntradaDaPrioridade {
   readonly sexo: Sexo
+  /** Idade válida de adulto (D-1040): `prioridadeDoCaso` confere antes de chamar. */
   readonly idadeAnos: number
   readonly imc: number
   readonly cinturaCm: number | null
@@ -116,7 +117,8 @@ const PONTOS: readonly PontoDaCintura[] = ['ponto-medio', 'crista-iliaca', 'meno
 
 /** A prioridade do caso: adulto de 18 anos em diante, fora da gestação, com peso e estatura; senão, `null`. */
 export function prioridadeDoCaso(caso: Caso): Prioridade | null {
-  const { sexo, idadeAnos } = caso
+  const { sexo } = caso
+  const idadeAnos = idadeValida(caso.idadeAnos)
   const peso = medidaValida(caso.pesoKg)
   const estatura = medidaValida(caso.estaturaCm)
   if (sexo === null || idadeAnos === null || idadeAnos < 18 || caso.condicao.tipo === 'gestante' || peso === null || estatura === null) return null

@@ -1,6 +1,6 @@
 // % de gordura, massa gorda, massa magra e soma de dobras (spec antropometria-completa, D-1018 e D-1019).
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
-import { deAte, linhaSemValor, medidaValida, situacaoNaFaixa, type CampoQueFalta, type Detalhe, type FaixaRotulada, type LinhaDoResultado } from './linhaDoResultado.ts'
+import { deAte, idadeValida, linhaSemValor, medidaValida, situacaoNaFaixa, type CampoQueFalta, type Detalhe, type FaixaRotulada, type LinhaDoResultado } from './linhaDoResultado.ts'
 import {
   NOME_DA_DOBRA,
   aplicacaoDoProtocolo,
@@ -21,7 +21,7 @@ export interface OpcoesDaGordura extends OpcoesDoProtocolo {
 
 export const pacienteDoProtocolo = (caso: Caso): PacienteDoProtocolo => ({
   sexo: caso.sexo,
-  idadeAnos: caso.idadeAnos,
+  idadeAnos: idadeValida(caso.idadeAnos),
   pesoKg: caso.pesoKg,
   estaturaCm: caso.estaturaCm,
   gestante: caso.condicao.tipo === 'gestante',
@@ -139,9 +139,14 @@ export function linhaGordura(caso: Caso, opcoes: OpcoesDaGordura = {}): LinhaDoR
   const linha = { id: 'gordura', nome: 'Gordura corporal', unidade: '%', casas: 1 } as const
   const g = gorduraDoCaso(caso, opcoes)
   if (!g) return linhaSemValor(linha, faltaDoProtocolo(caso, opcoes), ['Ou informe o % de gordura da bioimpedância.'])
-  const { sexo, idadeAnos } = caso
-  const faixa = sexo === null || idadeAnos === null ? undefined : GALLAGHER[sexo].find((f) => idadeAnos >= f.de && idadeAnos <= f.ate)
+  const { sexo } = caso
+  const idadeAnos = idadeValida(caso.idadeAnos)
   const detalhes = [detalheDoMetodo(g), ...g.detalhes]
+  // D-1040: sem sexo ou sem idade, a faixa diz o que falta (não "sem referência para a idade").
+  if (sexo === null || idadeAnos === null) {
+    return { ...linhaSemValor(linha, [...(sexo === null ? [NOME_DA_ENTRADA_NO_PLANO.sexo] : []), ...(idadeAnos === null ? [NOME_DA_ENTRADA_NO_PLANO.idade] : [])]), valor: g.gorduraPct, detalhes, avisos: g.avisos }
+  }
+  const faixa = GALLAGHER[sexo].find((f) => idadeAnos >= f.de && idadeAnos <= f.ate)
   if (!faixa) {
     return { ...linhaSemValor(linha, []), valor: g.gorduraPct, detalhes, avisos: [...g.avisos, 'Gallagher et al. (2000) cobre de 20 a 79 anos: sem referência para a idade.'] }
   }

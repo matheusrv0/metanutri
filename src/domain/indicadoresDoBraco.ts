@@ -4,7 +4,7 @@
 import frisancho from '../data/frisancho.json'
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import { ladoMedido } from './indicadoresCorporais.ts'
-import { linhaSemValor, medidaValida, naPrecisao, situacaoNaFaixa, type CampoQueFalta, type Detalhe, type FaixaRotulada, type LinhaDoResultado } from './linhaDoResultado.ts'
+import { idadeValida, linhaSemValor, medidaValida, naPrecisao, situacaoNaFaixa, type CampoQueFalta, type Detalhe, type FaixaRotulada, type LinhaDoResultado } from './linhaDoResultado.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
 export interface MedidasDoBraco {
@@ -28,7 +28,7 @@ export function medidasDoBraco(cbCm: number, dctMm: number, sexo: Sexo | null, i
   if (!(cmbCm > 0)) return null
   const areaTotalCm2 = (cbCm * cbCm) / (4 * Math.PI)
   const ambCm2 = (cmbCm * cmbCm) / (4 * Math.PI)
-  const adulto = idadeAnos !== null && idadeAnos >= 18
+  const adulto = (idadeValida(idadeAnos) ?? -1) >= 18
   const ambCorrigidaCm2 = adulto && sexo !== null ? ambCm2 - (sexo === 'M' ? 10 : 6.5) : null
   return { cbCm, dctMm, cmbCm, areaTotalCm2, ambCm2, ambCorrigidaCm2, agbCm2: areaTotalCm2 - ambCm2 }
 }
@@ -159,7 +159,8 @@ function linhaPorPercentis(
     detalhes,
   })
   if (caso.condicao.tipo === 'gestante') return semSituacao(AVISO_GESTACAO)
-  const { sexo, idadeAnos } = caso
+  const { sexo } = caso
+  const idadeAnos = idadeValida(caso.idadeAnos)
   if (sexo === null || idadeAnos === null) return semSituacao(null, [...(sexo === null ? [CAMPOS.sexo] : []), ...(idadeAnos === null ? [CAMPOS.idade] : [])])
   const percentis = percentisDaIdade(referencia, sexo, idadeAnos)
   if (!percentis) return semSituacao(idadeAnos >= 75 ? AVISO_75 : 'Sem referência de Frisancho para a idade.')
@@ -220,7 +221,7 @@ export function linhaCmb(caso: Caso): LinhaDoResultado {
 }
 
 export function linhaAmb(caso: Caso): LinhaDoResultado {
-  const adulto = caso.idadeAnos !== null && caso.idadeAnos >= 18
+  const adulto = (idadeValida(caso.idadeAnos) ?? -1) >= 18
   const entrada: Entrada = adulto
     ? { id: 'amb', nome: 'Área muscular do braço corrigida (AMBc)', unidade: 'cm²', casas: 2 }
     : { id: 'amb', nome: 'Área muscular do braço (AMB)', unidade: 'cm²', casas: 2 }
@@ -257,7 +258,8 @@ const NOME_DA_ADEQUACAO = { cb: 'Adequação da CB', dct: 'Adequação da DCT', 
 /** Adequação = valor ÷ P50 × 100: CB e DCT com o P50 de Frisancho 1990; CMB com o de 1981 (D-1026). */
 export function linhaAdequacao(caso: Caso, medida: 'cb' | 'dct' | 'cmb'): LinhaDoResultado | null {
   // D-1026 revista: Blackburn e Thornton avaliam o adulto; abaixo de 18 anos, a linha não vem.
-  if (caso.idadeAnos !== null && caso.idadeAnos < IDADE_DO_CRITERIO) return null
+  const idade = idadeValida(caso.idadeAnos)
+  if (idade !== null && idade < IDADE_DO_CRITERIO) return null
   const entrada = { id: `adequacao-${medida}`, nome: NOME_DA_ADEQUACAO[medida], unidade: '%', casas: 1 } as const
   const braco = bracoDoCaso(caso)
   const cb = cbDoCaso(caso)
@@ -269,7 +271,8 @@ export function linhaAdequacao(caso: Caso, medida: 'cb' | 'dct' | 'cmb'): LinhaD
   }
   const semReferencia = (aviso: string | null, falta: readonly CampoQueFalta[] = []) => linhaSemValor(entrada, falta, aviso ? [aviso] : [])
   if (caso.condicao.tipo === 'gestante') return semReferencia(AVISO_GESTACAO)
-  const { sexo, idadeAnos } = caso
+  const { sexo } = caso
+  const idadeAnos = idadeValida(caso.idadeAnos)
   if (sexo === null || idadeAnos === null) return semReferencia(null, [...(sexo === null ? [CAMPOS.sexo] : []), ...(idadeAnos === null ? [CAMPOS.idade] : [])])
   const referencia = medida === 'cmb' ? REFERENCIAS.cmb : REFERENCIAS[medida]
   const percentis = percentisDaIdade(referencia, sexo, idadeAnos)

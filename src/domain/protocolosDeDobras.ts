@@ -2,7 +2,7 @@
 // Coeficientes da pesquisa de 03/11/2026, seção 2: só os [V2] do lançamento (2.5.2), com todos os dígitos publicados.
 // Dobras em mm, idade em anos completos, densidade (D) em g/ml, massa em kg, estatura em cm.
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
-import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
+import { idadeValida, medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import type { ComposicaoCorporal, Sexo } from './tipos.ts'
 
 export type Dobras = ComposicaoCorporal['dobras']
@@ -248,9 +248,10 @@ export interface DensidadeConvertida {
 }
 
 /** D-1009. A automática abaixo de 7 anos não tem constante: `null`. */
-export function converterDensidade(densidade: number, conversao: Conversao, sexo: Sexo, idadeAnos: number | null): DensidadeConvertida | null {
+export function converterDensidade(densidade: number, conversao: Conversao, sexo: Sexo, idadeInformada: number | null): DensidadeConvertida | null {
   if (conversao === 'siri') return { gorduraPct: siri(densidade), conversao: 'siri' }
   if (conversao === 'brozek') return { gorduraPct: brozek(densidade), conversao: 'brozek' }
+  const idadeAnos = idadeValida(idadeInformada)
   if (idadeAnos === null) return null
   if (idadeAnos >= 20) return { gorduraPct: siri(densidade), conversao: 'siri' }
   const pct = lohman(densidade, sexo, idadeAnos)
@@ -443,11 +444,14 @@ function aplicacao(protocolo: Protocolo, paciente: PacienteDoProtocolo, dobras: 
   return { dobrasExigidas: variante.dobras, dobrasQueFaltam, entradasQueFaltam, aplicaPeloSexo: true, aplicaPelaIdade, avisos }
 }
 
+/** D-1040: idade `NaN`, `Infinity` ou negativa é idade não informada; o motor nunca a compara com um corte. */
+const comIdadeValida = (paciente: PacienteDoProtocolo): PacienteDoProtocolo => ({ ...paciente, idadeAnos: idadeValida(paciente.idadeAnos) })
+
 /** Quais dobras e entradas faltam, e se o protocolo vale para o paciente pelo sexo e pela idade (CA-2011). */
 export function aplicacaoDoProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo = {}): AplicacaoDoProtocolo {
   const protocolo = protocoloPorId(id)
   if (!protocolo) return { dobrasExigidas: [], dobrasQueFaltam: [], entradasQueFaltam: [], aplicaPeloSexo: null, aplicaPelaIdade: null, avisos: [] }
-  return aplicacao(protocolo, paciente, dobras, opcoes)
+  return aplicacao(protocolo, comIdadeValida(paciente), dobras, opcoes)
 }
 
 export type ResultadoDoProtocolo =
@@ -512,7 +516,8 @@ function avisosDoResultado(protocolo: Protocolo, variante: VarianteDoProtocolo, 
 }
 
 /** O % de gordura do protocolo, com a densidade, a conversão, as massas e os avisos (D-1006 a D-1015). */
-export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo = {}): ResultadoDoProtocolo {
+export function calcularProtocolo(id: IdProtocolo, pacienteInformado: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo = {}): ResultadoDoProtocolo {
+  const paciente = comIdadeValida(pacienteInformado)
   const protocolo = protocoloPorId(id)
   if (!protocolo) return { calculou: false, protocolo: null, motivo: 'Protocolo desconhecido.', aplicacao: null }
   const falha = (motivo: string, ap: AplicacaoDoProtocolo | null = null): ResultadoDoProtocolo => ({ calculou: false, protocolo, motivo, aplicacao: ap })
